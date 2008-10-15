@@ -993,13 +993,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		 */
 		break;
 	case SWITCH_MESSAGE_INDICATE_REDIRECT:
-		if (msg->string_arg) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-directing to %s\n", msg->string_arg);
-			nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
-			switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+		if (!switch_strlen_zero(msg->string_arg)) {
+			if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-directing to %s\n", msg->string_arg);
+				nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
+				switch_set_flag_locked(tech_pvt, TFLAG_BYE);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Too late for Re-directing to %s, already answered\n", msg->string_arg);
+			}
 		}
 		break;
-
 	case SWITCH_MESSAGE_INDICATE_DEFLECT:
 		{
 			char ref_to[128] = "";
@@ -1036,7 +1039,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				code = 488;
 			}
 
-			if (switch_strlen_zero(reason) && code != 407) {
+			if (switch_strlen_zero(reason) && code != 407 && code != 302) {
 				reason = sip_status_phrase(code);
 				if (switch_strlen_zero(reason)) {
 					reason = "Because";
@@ -1074,6 +1077,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_BYE);
 				}
+			} else if (code == 302 && !switch_strlen_zero(msg->string_arg)) {
+				char * p = strchr(msg->string_arg, ' ');
+				*p++ = '\0';
+				msg->message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
+				msg->string_arg = p;
+				switch_core_session_receive_message(session, msg);
+				goto end;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
 
