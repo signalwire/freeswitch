@@ -195,8 +195,11 @@ sub extract_event($$) {
 
   foreach (keys %h) {
     my $new = lc $_;
-    $h{$new} = $h{$_};
-    delete $h{$_};
+    if (!($new eq $_)) {
+      # do not delete keys that were already lowercase
+      $h{$new} = $h{$_};
+      delete $h{$_};
+    }
   }
   foreach(keys %h) {
     htdecode(\$h{$_});
