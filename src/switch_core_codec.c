@@ -44,7 +44,6 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void)
 
 SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t *session)
 {
-	switch_mutex_lock(session->resample_mutex);
 	session->real_read_codec = session->read_codec = NULL;
 }
 
