@@ -46,14 +46,11 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 {
 	switch_mutex_lock(session->resample_mutex);
 	session->real_read_codec = session->read_codec = NULL;
-	switch_mutex_unlock(session->resample_mutex);
 }
 
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t *session)
-{
-	switch_mutex_lock(session->resample_mutex);
+{	
 	session->real_write_codec = session->write_codec = NULL;
-	switch_mutex_unlock(session->resample_mutex);
 }
 
 
@@ -63,8 +60,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
-	switch_mutex_lock(session->resample_mutex);
 
 	if (codec && !codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set UNINITIALIZED codec!\n");
@@ -77,6 +72,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		if (session->real_read_codec) {
 			if (session->real_read_codec->implementation) {
 				session->read_codec = session->real_read_codec;
+				session->read_impl = *session->real_read_codec->implementation;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "resetting to uninitilized codec, setting to NULL\n");
 				session->read_codec = session->real_read_codec = NULL;
@@ -96,25 +92,26 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		}
 
 		session->read_codec = codec;
+		session->read_impl = *codec->implementation;
 
 		if (!session->real_read_codec) {
 			session->real_read_codec = session->read_codec;
 		}
 	}
 
-	if (session->read_codec && session->read_codec->implementation) {
+	if (session->read_codec && codec && session->read_impl.bytes_per_frame) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", session->read_codec->implementation->iananame);
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-rate", "%d", session->read_codec->implementation->actual_samples_per_second);
-			if (session->read_codec->implementation->actual_samples_per_second != session->read_codec->implementation->samples_per_second) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-read-codec-rate", "%d", session->read_codec->implementation->samples_per_second);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", session->read_impl.iananame);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-read-codec-rate", "%d", session->read_impl.actual_samples_per_second);
+			if (session->read_impl.actual_samples_per_second != session->read_impl.samples_per_second) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-read-codec-rate", "%d", session->read_impl.samples_per_second);
 			}
 			switch_event_fire(&event);
 		}
 
-		switch_channel_set_variable(channel, "read_codec", session->read_codec->implementation->iananame);
-		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_codec->implementation->actual_samples_per_second);
+		switch_channel_set_variable(channel, "read_codec", session->read_impl.iananame);
+		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_impl.actual_samples_per_second);
 		switch_channel_set_variable(channel, "read_rate", tmp);
 
 
@@ -125,7 +122,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	}
 
  end:
-	switch_mutex_unlock(session->resample_mutex);
 
 	return status;
 
@@ -133,21 +129,56 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_read_codec(switch_core_session_t *session)
 {
-	switch_codec_t *codec;
-	switch_mutex_lock(session->resample_mutex);
-	codec = session->read_codec;
-	switch_mutex_unlock(session->resample_mutex);
+	switch_codec_t *codec;	codec = session->read_codec;
 	return codec;
 }
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_session_t *session)
 {
-	switch_codec_t *codec;
-	switch_mutex_lock(session->resample_mutex);
-	codec = session->real_read_codec ? session->real_read_codec : session->read_codec;
-	switch_mutex_unlock(session->resample_mutex);
+	switch_codec_t *codec;	codec = session->real_read_codec ? session->real_read_codec : session->read_codec;
 	return codec;
 }
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+{
+	if (session->read_impl.bytes_per_frame) {
+		*impp = session->read_impl;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+{
+	if (session->write_impl.bytes_per_frame) {
+		*impp = session->write_impl;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+{
+	if (session->video_read_impl.bytes_per_frame) {
+		*impp = session->video_read_impl;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
+{
+	if (session->video_write_impl.bytes_per_frame) {
+		*impp = session->video_write_impl;
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_session_t *session, switch_codec_t *codec)
 {
@@ -156,11 +187,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	switch_mutex_lock(session->resample_mutex);
-
 	if (!codec || !codec->implementation) {
 		if (session->real_write_codec) {
 			session->write_codec = session->real_write_codec;
+			session->write_impl = *session->real_write_codec->implementation;
 			session->real_write_codec = NULL;
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set NULL codec!\n");
@@ -171,6 +201,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		if (session->real_write_codec) {
 			if (codec == session->real_write_codec) {
 				session->write_codec = codec;
+				session->write_impl = *codec->implementation;
 				session->real_write_codec = NULL;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
@@ -180,29 +211,32 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		} else {
 			session->real_write_codec = session->write_codec;
 			session->write_codec = codec;
+			session->write_impl = *codec->implementation;
 		}
 	} else {
 		session->write_codec = codec;
+		session->write_impl = *codec->implementation;
 	}
 
-	if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(session->channel, event);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-write-codec-name", session->write_codec->implementation->iananame);
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-rate", "%d", session->write_codec->implementation->actual_samples_per_second);
-		if (session->write_codec->implementation->actual_samples_per_second != session->write_codec->implementation->samples_per_second) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-write-codec-rate", "%d",
-									session->write_codec->implementation->actual_samples_per_second);
+	if (session->write_codec && codec && session->write_impl.bytes_per_frame) {
+		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
+			switch_channel_event_set_data(session->channel, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-write-codec-name", session->write_impl.iananame);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-write-codec-rate", "%d", session->write_impl.actual_samples_per_second);
+			if (session->write_impl.actual_samples_per_second != session->write_impl.samples_per_second) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "channel-reported-write-codec-rate", "%d",
+										session->write_impl.actual_samples_per_second);
+			}
+			switch_event_fire(&event);
 		}
-		switch_event_fire(&event);
-	}
 
-	switch_channel_set_variable(channel, "write_codec", session->write_codec->implementation->iananame);
-	switch_snprintf(tmp, sizeof(tmp), "%d", session->write_codec->implementation->actual_samples_per_second);
-	switch_channel_set_variable(channel, "write_rate", tmp);
+		switch_channel_set_variable(channel, "write_codec", session->write_impl.iananame);
+		switch_snprintf(tmp, sizeof(tmp), "%d", session->write_impl.actual_samples_per_second);
+		switch_channel_set_variable(channel, "write_rate", tmp);
+	}
 
  end:
 
-	switch_mutex_unlock(session->resample_mutex);
 	return status;
 }
 
@@ -210,10 +244,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_write_codec(switch_core_session_t *session)
 {
 	switch_codec_t *codec;
-
-	switch_mutex_lock(session->resample_mutex);
 	codec = session->write_codec;
-	switch_mutex_unlock(session->resample_mutex);
 
 	return codec;
 }
@@ -221,10 +252,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_effective_write_codec(s
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_write_codec(switch_core_session_t *session)
 {
 	switch_codec_t *codec;
-
-	switch_mutex_lock(session->resample_mutex);
 	codec = session->real_write_codec ? session->real_write_codec : session->write_codec;
-	switch_mutex_unlock(session->resample_mutex);
 
 	return codec;
 }
@@ -237,8 +265,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-
-	switch_mutex_lock(session->resample_mutex);
 
 	if (!codec || !codec->implementation) {
 		if (session->video_read_codec) {
@@ -263,20 +289,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_
 	switch_channel_set_variable(channel, "video_read_rate", tmp);
 
 	session->video_read_codec = codec;
-
+	session->video_read_impl = *codec->implementation;
  end:
 
-	switch_mutex_unlock(session->resample_mutex);
 	return status;
 }
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_read_codec(switch_core_session_t *session)
 {
 	switch_codec_t *codec;
-
-	switch_mutex_lock(session->resample_mutex);
 	codec = session->video_read_codec;
-	switch_mutex_unlock(session->resample_mutex);
 	
 	return codec;
 
@@ -288,9 +310,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	
-	switch_mutex_lock(session->resample_mutex);
-	if (!codec || !codec->implementation) {
+		if (!codec || !codec->implementation) {
 		if (session->video_write_codec) {
 			session->video_write_codec = NULL;
         	status = SWITCH_STATUS_SUCCESS;
@@ -313,20 +333,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
 	switch_channel_set_variable(channel, "video_write_rate", tmp);
 
 	session->video_write_codec = codec;
+	session->video_write_impl = *codec->implementation;
 
  end:
 	
-	switch_mutex_unlock(session->resample_mutex);
 	return status;
 }
 
 SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_video_write_codec(switch_core_session_t *session)
 {
 	switch_codec_t *codec;
-
-	switch_mutex_lock(session->resample_mutex);
 	codec = session->video_write_codec;
-	switch_mutex_unlock(session->resample_mutex);
 
 	return codec;
 

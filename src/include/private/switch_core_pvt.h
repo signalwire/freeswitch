@@ -111,6 +111,11 @@ struct switch_core_session {
 	switch_codec_t *video_read_codec;
 	switch_codec_t *video_write_codec;
 
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t write_impl;
+	switch_codec_implementation_t video_read_impl;
+	switch_codec_implementation_t video_write_impl;
+	
 	switch_audio_resampler_t *read_resampler;
 	switch_audio_resampler_t *write_resampler;
 

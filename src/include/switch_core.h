@@ -1134,6 +1134,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(_In_ switch_c
 SWITCH_DECLARE(void) switch_core_session_unset_read_codec(_In_ switch_core_session_t *session);
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(_In_ switch_core_session_t *session);
 
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp);
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp);
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp);
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp);
+
+
 /*! 
   \brief Retrieve the read codec from a given session
   \param session session to retrieve from
