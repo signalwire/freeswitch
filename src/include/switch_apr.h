@@ -1171,13 +1171,36 @@ SWITCH_DECLARE(switch_status_t) switch_mcast_join(switch_socket_t *sock, switch_
 
 /** @} */
 
+typedef enum {
+    SWITCH_NO_DESC,                /**< nothing here */
+    SWITCH_POLL_SOCKET,            /**< descriptor refers to a socket */
+    SWITCH_POLL_FILE,              /**< descriptor refers to a file */
+    SWITCH_POLL_LASTDESC           /**< descriptor is the last one in the list */
+} switch_pollset_type_t;
+
+typedef union {
+    switch_file_t *f;              /**< file */
+    switch_socket_t *s;            /**< socket */
+} switch_descriptor_t;
+
+struct switch_pollfd {
+    switch_memory_pool_t *p;              /**< associated pool */
+    switch_pollset_type_t desc_type;   /**< descriptor type */
+    int16_t reqevents;      /**< requested events */
+    int16_t rtnevents;      /**< returned events */
+    switch_descriptor_t desc;        /**< @see apr_descriptor */
+    void *client_data;          /**< allows app to associate context */
+};
+
+
+
 /**
  * @defgroup apr_poll Poll Routines
  * @ingroup switch_apr
  * @{
  */
 /** Poll descriptor set. */
-	 typedef struct apr_pollfd_t switch_pollfd_t;
+	 typedef struct switch_pollfd switch_pollfd_t;
 
 /** Opaque structure used for pollset API */
 	 typedef struct apr_pollset_t switch_pollset_t;

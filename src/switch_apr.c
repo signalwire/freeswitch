@@ -751,12 +751,12 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t **pollset
 
 SWITCH_DECLARE(switch_status_t) switch_pollset_add(switch_pollset_t *pollset, const switch_pollfd_t *descriptor)
 {
-	return apr_pollset_add(pollset, descriptor);
+	return apr_pollset_add((apr_pollset_t *)pollset, (apr_pollfd_t *)descriptor);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t *aprset, int32_t numsock, int32_t *nsds, switch_interval_time_t timeout)
 {
-	return apr_poll(aprset, numsock, nsds, timeout);
+	return apr_poll((apr_pollfd_t *)aprset, numsock, nsds, timeout);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **poll, switch_socket_t *sock, int16_t flags, switch_memory_pool_t *pool)
