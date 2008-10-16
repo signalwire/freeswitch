@@ -37,6 +37,10 @@ APR_DECLARE(apr_status_t) apr_thread_cond_create(apr_thread_cond_t **cond,
     (*cond)->event = CreateEvent(NULL, TRUE, FALSE, NULL);
     (*cond)->signal_all = 0;
     (*cond)->num_waiting = 0;
+
+	apr_pool_cleanup_register(pool, *cond, thread_cond_cleanup,
+                          apr_pool_cleanup_null);
+
     return APR_SUCCESS;
 }
 
