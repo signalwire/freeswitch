@@ -496,7 +496,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
   even_more_done:
 
-	if (!*frame) {
+	if (!*frame || !(*frame)->codec || !(*frame)->codec->implementation) {
 		*frame = &runtime.dummy_cng_frame;
 	}
 
@@ -559,6 +559,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	switch_assert(frame->codec != NULL);
+	switch_assert(frame->codec->implementation != NULL);
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
