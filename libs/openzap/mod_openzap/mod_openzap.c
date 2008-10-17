@@ -71,7 +71,8 @@ typedef enum {
 	TFLAG_DTMF = (1 << 1),
 	TFLAG_CODEC = (1 << 2),
 	TFLAG_BREAK = (1 << 3),
-	TFLAG_HOLD = (1 << 4)
+	TFLAG_HOLD = (1 << 4),
+	TFLAG_DEAD = (1 << 5)
 } TFLAGS;
 
 static struct {
@@ -341,7 +342,8 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 	switch_set_flag_locked(tech_pvt, TFLAG_CODEC);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-	
+	switch_set_flag_locked(tech_pvt, TFLAG_IO);
+
 	return SWITCH_STATUS_SUCCESS;
 	
 }
@@ -357,7 +359,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 
-	switch_set_flag_locked(tech_pvt, TFLAG_IO);
 	
 	/* Move channel's state machine to ROUTING */
 	switch_channel_set_state(channel, CS_ROUTING);
@@ -493,6 +494,7 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	switch (sig) {
 	case SWITCH_SIG_KILL:
 		switch_clear_flag_locked(tech_pvt, TFLAG_IO);
+		switch_set_flag_locked(tech_pvt, TFLAG_DEAD);
 		break;
 	case SWITCH_SIG_BREAK:
 		switch_set_flag_locked(tech_pvt, TFLAG_BREAK);
@@ -553,6 +555,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	chunk = tech_pvt->zchan->effective_interval * 2;
 	total_to = chunk * 2;
 
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
  top:
 
 	if (switch_channel_test_flag(channel, CF_SUSPEND)) {
@@ -566,9 +572,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	if (switch_test_flag(tech_pvt, TFLAG_HOLD) || do_break) {
 		switch_yield(tech_pvt->zchan->effective_interval * 1000);
-		*frame = &tech_pvt->cng_frame;
 		tech_pvt->cng_frame.datalen = tech_pvt->zchan->packet_len;
 		tech_pvt->cng_frame.samples = tech_pvt->cng_frame.datalen;
+		tech_pvt->cng_frame.flags = SFF_CNG;
+		*frame = &tech_pvt->cng_frame;
 		if (tech_pvt->zchan->effective_codec == ZAP_CODEC_SLIN) {
 			tech_pvt->cng_frame.samples /= 2;
 		}
@@ -650,6 +657,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	assert(tech_pvt != NULL);
 
 	assert(tech_pvt->zchan != NULL);
+
+	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_HOLD)) {
 		return SWITCH_STATUS_SUCCESS;
