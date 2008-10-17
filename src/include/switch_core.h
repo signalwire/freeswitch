@@ -522,7 +522,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_ses
 */
 SWITCH_DECLARE(uint32_t) switch_core_session_count(void);
 
-SWITCH_DECLARE(uint32_t) switch_core_session_get_id(switch_core_session_t *session);
+SWITCH_DECLARE(switch_size_t) switch_core_session_get_id(switch_core_session_t *session);
 
 /*! 
   \brief Provide the current session_id
