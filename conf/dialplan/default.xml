@@ -15,7 +15,7 @@
   <context name="default">
 
     <extension name="unloop">
-      <condition field="${unroll_loops}" expression="^true$"/>
+      <condition field="$${unroll_loops}" expression="^true$"/>
       <condition field="${sip_looped_call}" expression="^true$">
 	<action application="deflect" data="${destination_number}"/>
       </condition>
