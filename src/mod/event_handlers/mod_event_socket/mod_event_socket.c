@@ -47,7 +47,7 @@ typedef enum {
 	LFLAG_FULL = (1 << 4),
 	LFLAG_MYEVENTS = (1 << 5),
 	LFLAG_SESSION = (1 << 6),
-	LFLAG_ASYNC = (1 << 7)
+	LFLAG_ASYNC = (1 << 7),
 } event_flag_t;
 
 typedef enum {
@@ -71,6 +71,7 @@ struct listener {
 	switch_core_session_t *session;
 	int lost_events;
 	int lost_logs;
+	int hup;
 	switch_sockaddr_t *sa;
 	char remote_ip[50];
 	switch_port_t remote_port;
@@ -171,7 +172,7 @@ static void event_handler(switch_event_t *event)
 				send = 1;
 			}
 		}
-
+		
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {
 			char *uuid = switch_event_get_header(event, "unique-id");
 			if (!uuid || strcmp(uuid, switch_core_session_get_uuid(l->session))) {
@@ -428,9 +429,15 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (channel && !switch_channel_ready(channel)) {
+		if (switch_test_flag(listener, LFLAG_MYEVENTS) && !listener->hup && channel && !switch_channel_ready(channel)) {
+			listener->hup = 1;
+		}
+
+		if (listener->hup == 2 || 
+			((!switch_test_flag(listener, LFLAG_MYEVENTS) && !switch_test_flag(listener, LFLAG_EVENTS)) && 
+			 channel && !switch_channel_ready(channel)) ) {
 			status = SWITCH_STATUS_FALSE;
-			break;
+            break;
 		}
 
 		if (mlen) {
@@ -595,6 +602,14 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					switch_safe_free(listener->ebuf);
 
 				  endloop:
+
+					if (listener->hup == 1 && pevent->event_id == SWITCH_EVENT_CHANNEL_HANGUP) {
+						char *uuid = switch_event_get_header(pevent, "unique-id");
+						if (!strcmp(uuid, switch_core_session_get_uuid(listener->session))) {
+							listener->hup = 2;
+						}
+					}
+					
 					switch_event_destroy(&pevent);
 				}
 			}
@@ -604,7 +619,17 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 	}
 
-
+	if (listener->sock) {
+		char buf[512] = "";
+		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
+		int mlen = strlen(message);
+		
+		switch_snprintf(buf, sizeof(buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", mlen);
+		len = strlen(buf);
+		switch_socket_send(listener->sock, buf, &len);
+		len = mlen;
+		switch_socket_send(listener->sock, message, &len);
+	}
 
 	return status;
 
@@ -1137,7 +1162,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", listener->remote_ip, prefs.acl[x]);
 
-				switch_snprintf(buf, sizeof(buf), "Content-Type: rude/rejection\nContent-Length %d\n\n", mlen);
+				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length %d\n\n", mlen);
 				len = strlen(buf);
 				switch_socket_send(listener->sock, buf, &len);
 				len = mlen;
