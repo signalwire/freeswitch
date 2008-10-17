@@ -47,7 +47,7 @@ typedef enum {
 	LFLAG_FULL = (1 << 4),
 	LFLAG_MYEVENTS = (1 << 5),
 	LFLAG_SESSION = (1 << 6),
-	LFLAG_ASYNC = (1 << 7),
+	LFLAG_ASYNC = (1 << 7)
 } event_flag_t;
 
 typedef enum {
