@@ -870,12 +870,18 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 		}
 	}
 
-	if (tech_pvt->remote_sdp_audio_ip && !strcmp(tech_pvt->remote_sdp_audio_ip, rip) && atoi(rp) == tech_pvt->remote_sdp_audio_port) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
-						  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
-		return SWITCH_STATUS_SUCCESS;
-	}
+	if (rip && rp && switch_rtp_ready(tech_pvt->rtp_session)) {
+		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
+		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session), rpi = (switch_port_t) atoi(rp);
 
+		if (remote_host && remote_port && !strcmp(remote_host, rip) && remote_port == rpi) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
+							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+	}
+	
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		if (switch_rtp_set_remote_address(tech_pvt->rtp_session, tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port, SWITCH_TRUE, &err) !=
 			SWITCH_STATUS_SUCCESS) {
