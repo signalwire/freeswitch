@@ -870,7 +870,7 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 		}
 	}
 
-	if (rip && rp && switch_rtp_ready(tech_pvt->rtp_session)) {
+	if (*rip && *rp && switch_rtp_ready(tech_pvt->rtp_session)) {
 		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
 		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session), rpi = (switch_port_t) atoi(rp);
 
