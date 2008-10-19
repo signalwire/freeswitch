@@ -620,14 +620,14 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 	}
 
 	if (listener->sock) {
-		char buf[512] = "";
+		char content_buf[512] = "";
 		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
-		int mlen = strlen(message);
+		int message_len = strlen(message);
 		
-		switch_snprintf(buf, sizeof(buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", mlen);
-		len = strlen(buf);
-		switch_socket_send(listener->sock, buf, &len);
-		len = mlen;
+		switch_snprintf(content_buf, sizeof(content_buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", message_len);
+		len = strlen(content_buf);
+		switch_socket_send(listener->sock, content_buf, &len);
+		len = message_len;
 		switch_socket_send(listener->sock, message, &len);
 	}
 
