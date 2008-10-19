@@ -31,3 +31,5 @@
 #ifndef HAVE_NO_STRERROR
 #define HAVE_STRERROR 1
 #endif
+
+#include <io.h>
