@@ -937,6 +937,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 	switch_speech_interface_t *speech_interface;
 	switch_asr_interface_t *asr_interface;
 
+	/* initialize openmrcp */
+	if (openmrcp_init() != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	speech_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_SPEECH_INTERFACE);
@@ -960,11 +965,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openmrcp_load)
 	asr_interface->asr_pause = openmrcp_asr_pause;
 	asr_interface->asr_check_results = openmrcp_asr_check_results;
 	asr_interface->asr_get_results = openmrcp_asr_get_results;
-
-	/* initialize openmrcp */
-	if (openmrcp_init() != SWITCH_STATUS_SUCCESS) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

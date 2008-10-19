@@ -5290,11 +5290,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	}
 	api_syntax = p;
 
-	SWITCH_ADD_API(api_interface, "conference", "Conference module commands", conf_api_main, p);
-	SWITCH_ADD_APP(app_interface, global_app_name, global_app_name, NULL, conference_function, NULL, SAF_NONE);
-	SWITCH_ADD_APP(app_interface, "conference_set_auto_outcall", "conference_set_auto_outcall", NULL, conference_auto_function, NULL, SAF_NONE);
-	SWITCH_ADD_CHAT(chat_interface, CONF_CHAT_PROTO, chat_send);
-
 	/* create/register custom event message type */
 	if (switch_event_reserve_subclass(CONF_EVENT_MAINT) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't register subclass %s!\n", CONF_EVENT_MAINT);
@@ -5315,6 +5310,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to presence request events!\n");
 		return SWITCH_STATUS_GENERR;
 	}
+
+	SWITCH_ADD_API(api_interface, "conference", "Conference module commands", conf_api_main, p);
+	SWITCH_ADD_APP(app_interface, global_app_name, global_app_name, NULL, conference_function, NULL, SAF_NONE);
+	SWITCH_ADD_APP(app_interface, "conference_set_auto_outcall", "conference_set_auto_outcall", NULL, conference_auto_function, NULL, SAF_NONE);
+	SWITCH_ADD_CHAT(chat_interface, CONF_CHAT_PROTO, chat_send);
 
 	send_presence(SWITCH_EVENT_PRESENCE_IN);
 

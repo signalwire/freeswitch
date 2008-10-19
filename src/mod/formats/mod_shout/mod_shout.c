@@ -1458,6 +1458,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 
 	curl_global_init(CURL_GLOBAL_ALL);
 
+	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	file_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_FILE_INTERFACE);
 	file_interface->interface_name = modname;
@@ -1470,15 +1471,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load)
 	file_interface->file_set_string = shout_file_set_string;
 	file_interface->file_get_string = shout_file_get_string;
 
-	/* connect my internal structure to the blank pointer passed to me */
-	//*module_interface = &shout_module_interface;
-
 	shout_init();
 	mpg123_init();
+	load_config();
 
 	SWITCH_ADD_API(shout_api_interface, "telecast", "telecast", telecast_api_function, TELECAST_SYNTAX);
-
-	load_config();
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
