@@ -343,10 +343,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_API(xml_curl_api_interface, "xml_curl", "XML Curl", xml_curl_function, XML_CURL_SYNTAX);
-	switch_console_set_complete("add xml_curl debug_on");
-	switch_console_set_complete("add xml_curl debug_off");
-
 	memset(&globals,0,sizeof(globals));
 	globals.pool = pool;
 	globals.hash_root = NULL;
@@ -357,6 +353,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load)
 	} else {
 		return SWITCH_STATUS_FALSE;
 	}
+
+	SWITCH_ADD_API(xml_curl_api_interface, "xml_curl", "XML Curl", xml_curl_function, XML_CURL_SYNTAX);
+	switch_console_set_complete("add xml_curl debug_on");
+	switch_console_set_complete("add xml_curl debug_off");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
