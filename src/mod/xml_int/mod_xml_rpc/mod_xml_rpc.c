@@ -697,11 +697,12 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	switch_stream_handle_t stream = { 0 };
 	xmlrpc_value *val = NULL;
 
-
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(envP, paramArrayP, "(ss)", &command, &arg);
+
 	if (envP->fault_occurred) {
-		goto done;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Request!\n");
+		return NULL;
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
@@ -730,7 +731,7 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(envP, paramArrayP, "(sss)", &oid, &s_action, &data);
 	if (envP->fault_occurred) {
-		goto done;
+		return NULL;
 	}
 
 	if (!strncasecmp(oid, FREESWITCH_OID_PREFIX, strlen(FREESWITCH_OID_PREFIX))) {
@@ -768,7 +769,6 @@ static xmlrpc_value *freeswitch_man(xmlrpc_env * const envP, xmlrpc_value * cons
 	/* Return our result. */
 	val = xmlrpc_build_value(envP, "s", buf);
 
-  done:
 	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
 	switch_safe_free(oid);
 	switch_safe_free(s_action);
