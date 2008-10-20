@@ -755,13 +755,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	read_codec = switch_core_session_get_read_codec(session);
 
-	if (!strcasecmp(read_codec->implementation->iananame, "l16")) {
-		l16++;
-	}
-
-	if (switch_strlen_zero(file) || !read_codec) {
+	if (switch_strlen_zero(file) || !read_codec || !read_codec->implementation) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
+	}
+
+	if (!strcasecmp(read_codec->implementation->iananame, "l16")) {
+		l16++;
 	}
 
 	if ((alt = strchr(file, ':'))) {
