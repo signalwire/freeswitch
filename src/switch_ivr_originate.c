@@ -357,17 +357,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 									   "L16",
 									   NULL,
 									   read_codec->implementation->actual_samples_per_second,
-									   read_codec->implementation->microseconds_per_frame / 1000,
+									   read_codec->implementation->microseconds_per_packet / 1000,
 									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 									   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-								  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+								  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
 
 				write_frame.codec = &write_codec;
-				write_frame.datalen = read_codec->implementation->bytes_per_frame;
+				write_frame.datalen = read_codec->implementation->decoded_bytes_per_packet;
 				write_frame.samples = write_frame.datalen / 2;
 				memset(write_frame.data, 255, write_frame.datalen);
 
@@ -460,9 +460,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				unsigned int pos = 0;
 				
 				if (ringback.asis) {
-					mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
+					mlen = write_frame.codec->implementation->encoded_bytes_per_packet;
 				} else {
-					mlen = write_frame.codec->implementation->samples_per_frame;
+					mlen = write_frame.codec->implementation->samples_per_packet;
 				}
 
 				olen = mlen;
@@ -484,7 +484,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			} else if (ringback.audio_buffer) {
 				if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																			  write_frame.data,
-																			  write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+																			  write_frame.codec->implementation->decoded_bytes_per_packet)) <= 0) {
 					break;
 				}
 			}
@@ -1194,7 +1194,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 											   "L16",
 											   NULL,
 											   read_codec->implementation->actual_samples_per_second,
-											   read_codec->implementation->microseconds_per_frame / 1000,
+											   read_codec->implementation->microseconds_per_packet / 1000,
 											   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 											   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 
@@ -1202,9 +1202,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
 										  read_codec->implementation->actual_samples_per_second,
-										  read_codec->implementation->microseconds_per_frame / 1000);
+										  read_codec->implementation->microseconds_per_packet / 1000);
 						write_frame.codec = &write_codec;
-						write_frame.datalen = read_codec->implementation->bytes_per_frame;
+						write_frame.datalen = read_codec->implementation->decoded_bytes_per_packet;
 						write_frame.samples = write_frame.datalen / 2;
 						memset(write_frame.data, 255, write_frame.datalen);
 
@@ -1354,9 +1354,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							unsigned int pos = 0;
 
 							if (ringback.asis) {
-								mlen = write_frame.codec->implementation->encoded_bytes_per_frame;
+								mlen = write_frame.codec->implementation->encoded_bytes_per_packet;
 							} else {
-								mlen = write_frame.codec->implementation->samples_per_frame;
+								mlen = write_frame.codec->implementation->samples_per_packet;
 							}
 
 							olen = mlen;
@@ -1379,7 +1379,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						} else if (ringback.audio_buffer) {
 							if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(ringback.audio_buffer,
 																						  write_frame.data,
-																						  write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+																						  write_frame.codec->implementation->decoded_bytes_per_packet)) <= 0) {
 								break;
 							}
 						}

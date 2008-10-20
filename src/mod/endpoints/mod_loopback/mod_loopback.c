@@ -107,7 +107,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	if (codec) {
 		iananame = codec->implementation->iananame;
 		rate = codec->implementation->samples_per_second;
-		interval = codec->implementation->microseconds_per_frame / 1000;
+		interval = codec->implementation->microseconds_per_packet / 1000;
 	}
 	
 	if (tech_pvt->read_codec.implementation) {
@@ -163,7 +163,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	tech_pvt->cng_frame.datalen = 2;
 
 	tech_pvt->bowout_frame_count = (tech_pvt->read_codec.implementation->actual_samples_per_second / 
-							 tech_pvt->read_codec.implementation->samples_per_frame) * 3;
+							 tech_pvt->read_codec.implementation->samples_per_packet) * 3;
 
 	switch_core_session_set_read_codec(session, &tech_pvt->read_codec);
 	switch_core_session_set_write_codec(session, &tech_pvt->write_codec);
@@ -175,8 +175,8 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	read_impl = tech_pvt->read_codec.implementation;
 
 	switch_core_timer_init(&tech_pvt->timer, "soft", 
-						   read_impl->microseconds_per_frame / 1000, 
-						   read_impl->samples_per_frame *4,
+						   read_impl->microseconds_per_packet / 1000, 
+						   read_impl->samples_per_packet *4,
 						   switch_core_session_get_pool(session));
 	
 

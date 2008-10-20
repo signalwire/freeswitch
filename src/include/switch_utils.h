@@ -41,14 +41,14 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
-#define switch_samples_per_frame(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
+#define switch_samples_per_packet(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768
 #define switch_normalize_to_16bit(n) if (n > SWITCH_SMAX) n = SWITCH_SMAX / 2; else if (n < SWITCH_SMIN) n = SWITCH_SMIN / 2;
 #define switch_codec2str(codec,buf,len) snprintf(buf, len, "%s@%uh@%ui", \
                                                  codec->implementation->iananame, \
                                                  codec->implementation->samples_per_second, \
-                                                 codec->implementation->microseconds_per_frame / 1000)
+                                                 codec->implementation->microseconds_per_packet / 1000)
 #ifdef WIN32
 #define switch_is_file_path(file) (file && (*file == '\\' || *(file +1) == ':' || *file == '/' || strstr(file, SWITCH_URL_SEPARATOR)))
 #else

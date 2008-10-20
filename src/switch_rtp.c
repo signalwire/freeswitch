@@ -2018,14 +2018,14 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 							   codec->implementation->iananame,
 							   NULL,
 							   codec->implementation->samples_per_second,
-							   codec->implementation->microseconds_per_frame / 1000,
+							   codec->implementation->microseconds_per_packet / 1000,
 							   codec->implementation->number_of_channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, rtp_session->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate VAD codec %s %dms\n", codec->implementation->iananame,
-					  codec->implementation->microseconds_per_frame / 1000);
+					  codec->implementation->microseconds_per_packet / 1000);
 	rtp_session->vad_data.diff_level = 400;
 	rtp_session->vad_data.hangunder = 15;
 	rtp_session->vad_data.hangover = 40;

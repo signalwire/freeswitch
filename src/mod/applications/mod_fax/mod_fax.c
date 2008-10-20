@@ -577,12 +577,12 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 							   "L16",
 							   NULL,
 							   orig_read_codec->implementation->samples_per_second,
-							   orig_read_codec->implementation->microseconds_per_frame / 1000,
+							   orig_read_codec->implementation->microseconds_per_packet / 1000,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw read codec activation Success L16 %u\n",
-						  read_codec.implementation->microseconds_per_frame);
+						  read_codec.implementation->microseconds_per_packet);
 		switch_core_session_set_read_codec(session, &read_codec);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Raw read codec activation Failed L16\n");
@@ -593,7 +593,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 							   "L16",
 							   NULL,
 							   orig_read_codec->implementation->samples_per_second,
-							   orig_read_codec->implementation->microseconds_per_frame / 1000,
+							   orig_read_codec->implementation->microseconds_per_packet / 1000,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
@@ -640,7 +640,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
             }
         }
 
-		if ((tx = fax_tx(pvt->fax_state, buf, write_codec.implementation->samples_per_frame)) < 0) {
+		if ((tx = fax_tx(pvt->fax_state, buf, write_codec.implementation->samples_per_packet)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax_tx reported an error\n");
 			goto done;
 		}

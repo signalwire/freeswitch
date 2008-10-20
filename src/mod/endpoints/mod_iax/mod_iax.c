@@ -256,7 +256,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 	}
 
 	leading = iana2ast(codecs[0]->ianacode);
-	interval = codecs[0]->microseconds_per_frame / 1000;
+	interval = codecs[0]->microseconds_per_packet / 1000;
 	if (io == IAX_QUERY) {
 		chosen = leading;
 		*format = chosen;
@@ -296,7 +296,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 						for (imp = codecs[z]; imp; imp = imp->next) {
 							if (prefs[x] == iana2ast(imp->ianacode)) {
 								dname = imp->iananame;
-								interval = imp->microseconds_per_frame / 1000;
+								interval = imp->microseconds_per_packet / 1000;
 								break;
 							}
 						}
@@ -313,7 +313,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 						unsigned int cap = iana2ast(imp->ianacode);
 						if (cap == chosen) {
 							dname = imp->iananame;
-							interval = imp->microseconds_per_frame / 1000;
+							interval = imp->microseconds_per_packet / 1000;
 							break;
 						}
 					}
@@ -326,7 +326,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 						if (cap & mixed_cap) {
 							chosen = cap;
 							dname = imp->iananame;
-							interval = imp->microseconds_per_frame / 1000;
+							interval = imp->microseconds_per_packet / 1000;
 							break;
 						}
 					}
@@ -393,7 +393,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 		} else {
 			int ms;
 			int rate;
-			ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
+			ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 			rate = tech_pvt->write_codec.implementation->samples_per_second;
 			tech_pvt->read_frame.rate = rate;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Codec %s/%d %d ms\n", dname, rate, ms);
@@ -646,7 +646,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		switch_swap_linear(frame->data, (int) frame->datalen / 2);
 	}
 #endif
-	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int) frame->datalen, tech_pvt->write_codec.implementation->samples_per_frame);
+	iax_send_voice(tech_pvt->iax_session, tech_pvt->codec, frame->data, (int) frame->datalen, tech_pvt->write_codec.implementation->samples_per_packet);
 
 	return SWITCH_STATUS_SUCCESS;
 
@@ -1086,14 +1086,14 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 							break;
 						}
 
-						if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
-							bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+						if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
+							bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
 							frames = (int) (tech_pvt->read_frame.datalen / bytes);
 						} else {
 							frames = 1;
 						}
 
-						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_packet;
 						memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
 						/* wake up the i/o thread */
 						switch_set_flag_locked(tech_pvt, TFLAG_VOICE);

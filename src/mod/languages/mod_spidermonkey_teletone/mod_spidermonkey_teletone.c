@@ -113,7 +113,7 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 							   "L16",
 							   NULL,
 							   read_codec->implementation->actual_samples_per_second,
-							   read_codec->implementation->microseconds_per_frame / 1000,
+							   read_codec->implementation->microseconds_per_packet / 1000,
 							   read_codec->implementation->number_of_channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
@@ -123,7 +123,7 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 	}
 
 	if (timer_name) {
-		unsigned int ms = read_codec->implementation->microseconds_per_frame / 1000;
+		unsigned int ms = read_codec->implementation->microseconds_per_packet / 1000;
 		if (switch_core_timer_init(&tto->timer_base,
 								   timer_name,
 								   ms,
@@ -279,7 +279,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 				}
 			}
 			if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(tto->audio_buffer,
-																		  fdata, write_frame.codec->implementation->bytes_per_frame)) <= 0) {
+																		  fdata, write_frame.codec->implementation->decoded_bytes_per_packet)) <= 0) {
 				break;
 			}
 

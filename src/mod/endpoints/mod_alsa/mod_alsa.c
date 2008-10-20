@@ -272,7 +272,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				}
 			}
 
-			switch_yield(globals.read_codec.implementation->microseconds_per_frame);
+			switch_yield(globals.read_codec.implementation->microseconds_per_packet);
 
 		}
 		switch_clear_flag_locked((&globals), GFLAG_RING);
@@ -578,14 +578,14 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			goto hold;
 		}
 	  cng:
-		switch_yield(globals.read_codec.implementation->microseconds_per_frame);
+		switch_yield(globals.read_codec.implementation->microseconds_per_packet);
 		*frame = &globals.cng_frame;
 		return SWITCH_STATUS_SUCCESS;
 
 	  hold:
 
 		{
-			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
+			switch_size_t olen = globals.read_codec.implementation->samples_per_packet;
 			if (switch_core_timer_next(&tech_pvt->timer) != SWITCH_STATUS_SUCCESS) {
 				switch_core_file_close(&tech_pvt->fh);
 				switch_core_codec_destroy(&tech_pvt->write_codec);
@@ -611,7 +611,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	switch_mutex_lock(globals.device_lock);
-	if ((samples = snd_pcm_readi(globals.audio_stream_in, globals.read_frame.data, globals.read_codec.implementation->samples_per_frame)) > 0) {
+	if ((samples = snd_pcm_readi(globals.audio_stream_in, globals.read_frame.data, globals.read_codec.implementation->samples_per_packet)) > 0) {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 
@@ -990,7 +990,7 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 	}
 
 	if (switch_core_timer_init(&globals.timer,
-							   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame, module_pool) != SWITCH_STATUS_SUCCESS) {
+							   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet, module_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 		switch_core_codec_destroy(&globals.read_codec);
 		switch_core_codec_destroy(&globals.write_codec);
@@ -1088,12 +1088,12 @@ static switch_status_t engage_device(unsigned int sample_rate, int codec_ms)
 		goto fail;
 	}
 
-	if ((err = snd_pcm_hw_params_set_period_time(globals.audio_stream_in, hw_params, globals.read_codec.implementation->microseconds_per_frame, 0)) < 0) {
+	if ((err = snd_pcm_hw_params_set_period_time(globals.audio_stream_in, hw_params, globals.read_codec.implementation->microseconds_per_packet, 0)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set period time (%s)\n", snd_strerror(err));
 		goto fail;
 	}
 
-	if ((err = snd_pcm_hw_params_set_period_size(globals.audio_stream_in, hw_params, globals.read_codec.implementation->samples_per_frame, 0)) < 0) {
+	if ((err = snd_pcm_hw_params_set_period_size(globals.audio_stream_in, hw_params, globals.read_codec.implementation->samples_per_packet, 0)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "cannot set period size (%s)\n", snd_strerror(err));
 		goto fail;
 	}

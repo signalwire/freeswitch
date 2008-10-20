@@ -176,8 +176,8 @@ static switch_status_t switch_g711u_decode(switch_codec_t *codec,
 	ebuf = encoded_data;
 
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
-		memset(dbuf, 0, codec->implementation->bytes_per_frame);
-		*decoded_data_len = codec->implementation->bytes_per_frame;
+		memset(dbuf, 0, codec->implementation->decoded_bytes_per_packet);
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 	} else {
 		for (i = 0; i < encoded_data_len; i++) {
 			dbuf[i] = ulaw_to_linear(ebuf[i]);
@@ -247,8 +247,8 @@ static switch_status_t switch_g711a_decode(switch_codec_t *codec,
 	ebuf = encoded_data;
 
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
-		memset(dbuf, 0, codec->implementation->bytes_per_frame);
-		*decoded_data_len = codec->implementation->bytes_per_frame;
+		memset(dbuf, 0, codec->implementation->decoded_bytes_per_packet);
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 	} else {
 		for (i = 0; i < encoded_data_len; i++) {
 			dbuf[i] = alaw_to_linear(ebuf[i]);
@@ -275,7 +275,7 @@ static void mod_g711_load(switch_loadable_module_interface_t **module_interface,
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count, spf * count,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
 											 switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
 	}
 
@@ -283,7 +283,7 @@ static void mod_g711_load(switch_loadable_module_interface_t **module_interface,
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count, spf * count,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
 											 switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
 	}
 
@@ -301,13 +301,13 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	SWITCH_ADD_CODEC(codec_interface, "PROXY VIDEO PASS-THROUGH");
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_VIDEO, 31, "PROXY-VID", NULL, 90000, 90000, 0,
-										 0, 0, 0, 0, 1, 1, 1, switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
+										 0, 0, 0, 0, 1, 1, switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
 
 
 	SWITCH_ADD_CODEC(codec_interface, "PROXY PASS-THROUGH");
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 0, "PROXY", NULL, 8000, 8000, 0,
-										 20000, 160, 320, 320, 1, 1, 12,
+										 20000, 160, 320, 320, 1, 1,
 										 switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
 
 	SWITCH_ADD_CODEC(codec_interface, "RAW Signed Linear (16 bit)");
@@ -316,7 +316,7 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 		for (countb = 12; countb > 0; countb--) {
 			switch_core_codec_add_implementation(pool, codec_interface,
 												 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "L16", NULL, rate, rate, bps,
-												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, spf * countb, spf * countb,
+												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, spf * countb,
 												 switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
 		}
 		rate = rate * 2;
@@ -329,11 +329,11 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 22050, 22050, 352800,
-										 20000, 441, 882, 882, 1, 1, 1, switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
+										 20000, 441, 882, 882, 1, 1, switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
 
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 118, "L16", NULL, 11025, 11025, 176400,
-										 40000, 441, 882, 882, 1, 1, 1, switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
+										 40000, 441, 882, 882, 1, 1, switch_raw_init, switch_raw_encode, switch_raw_decode, switch_raw_destroy);
 
 
 

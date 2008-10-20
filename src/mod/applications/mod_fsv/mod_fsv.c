@@ -123,7 +123,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 							   "L16",
 							   NULL,
 							   read_codec->implementation->samples_per_second,
-							   read_codec->implementation->microseconds_per_frame / 1000,
+							   read_codec->implementation->microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
@@ -146,7 +146,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 			switch_set_string(h.video_fmtp, vid_codec->fmtp_in);
 		}
 		h.audio_rate = read_codec->implementation->samples_per_second;
-		h.audio_ptime = read_codec->implementation->microseconds_per_frame / 1000;
+		h.audio_ptime = read_codec->implementation->microseconds_per_packet / 1000;
 
 		if (write(fd, &h, sizeof(h)) != sizeof(h)) {
 			goto end;
@@ -265,8 +265,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 
 	read_codec = switch_core_session_get_read_codec(session);
 
-	if (switch_core_timer_init(&timer, "soft", read_codec->implementation->microseconds_per_frame / 1000,
-							   read_codec->implementation->samples_per_frame, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&timer, "soft", read_codec->implementation->microseconds_per_packet / 1000,
+							   read_codec->implementation->samples_per_packet, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Activation Fail\n");
 		goto end;
 	}

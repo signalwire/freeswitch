@@ -285,7 +285,7 @@ static switch_status_t switch_amr_decode(switch_codec_t *codec,
 	}
 
 	Decoder_Interface_Decode(context->decoder_state, (unsigned char *) encoded_data, (int16_t *) decoded_data, 0);
-	*decoded_data_len = codec->implementation->bytes_per_frame;
+	*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
@@ -320,8 +320,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR");
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 96, "AMR", "octet-align=0", 8000, 8000, 12200,
-										 20000, 160, 320, 0, 1, 1, 1, switch_amr_init, switch_amr_encode, switch_amr_decode, switch_amr_destroy);
+										 SWITCH_CODEC_TYPE_AUDIO, 96, "AMR", "octet-align=0", 8000, 8000, 12200, 20000, 160, 320, 0, 1, 1, 
+										 switch_amr_init, switch_amr_encode, switch_amr_decode, switch_amr_destroy);
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -126,7 +126,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (session->read_frame_count == 0) {
 			switch_event_t *event;
 			session->read_frame_count = (session->read_codec->implementation->actual_samples_per_second / 
-										 session->read_codec->implementation->samples_per_frame) * session->track_duration;
+										 session->read_codec->implementation->samples_per_packet) * session->track_duration;
 
 			switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
 			switch_channel_event_set_data(session->channel, event);
@@ -220,8 +220,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			session->raw_read_frame.datalen = session->raw_read_frame.buflen;
 
 			if (is_cng) {
-				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->bytes_per_frame);
-				session->raw_read_frame.datalen = read_frame->codec->implementation->bytes_per_frame;
+				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->decoded_bytes_per_packet);
+				session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
 				read_frame = &session->raw_read_frame;
 				status = SWITCH_STATUS_SUCCESS;
@@ -252,9 +252,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_lock(session->resample_mutex);
 					status = switch_resample_create(&session->read_resampler,
 													read_frame->codec->implementation->actual_samples_per_second,
-													read_frame->codec->implementation->bytes_per_frame,
+													read_frame->codec->implementation->decoded_bytes_per_packet,
 													session->read_codec->implementation->actual_samples_per_second,
-													session->read_codec->implementation->bytes_per_frame, session->pool);
+													session->read_codec->implementation->decoded_bytes_per_packet, session->pool);
 					switch_mutex_unlock(session->resample_mutex);
 
 					if (status != SWITCH_STATUS_SUCCESS) {
@@ -284,8 +284,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			case SWITCH_STATUS_BREAK:
-				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->bytes_per_frame);
-				session->raw_read_frame.datalen = read_frame->codec->implementation->bytes_per_frame;
+				memset(session->raw_read_frame.data, 255, read_frame->codec->implementation->decoded_bytes_per_packet);
+				session->raw_read_frame.datalen = read_frame->codec->implementation->decoded_bytes_per_packet;
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
 				session->raw_read_frame.timestamp = read_frame->timestamp;
 				session->raw_read_frame.rate = read_frame->rate;
@@ -371,11 +371,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 			}
 
-			if (read_frame->datalen == session->read_codec->implementation->bytes_per_frame) {
+			if (read_frame->datalen == session->read_codec->implementation->decoded_bytes_per_packet) {
 				perfect = TRUE;
 			} else {
 				if (!session->raw_read_buffer) {
-					switch_size_t bytes = session->read_codec->implementation->bytes_per_frame;
+					switch_size_t bytes = session->read_codec->implementation->decoded_bytes_per_packet;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Engaging Read Buffer at %u bytes vs %u\n", 
 									  (uint32_t) bytes, (uint32_t) (*frame)->datalen);
 					switch_buffer_create_dynamic(&session->raw_read_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, 0);
@@ -387,14 +387,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 
 
-			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_codec->implementation->bytes_per_frame) {
+			if (perfect || switch_buffer_inuse(session->raw_read_buffer) >= session->read_codec->implementation->decoded_bytes_per_packet) {
 				if (perfect) {
 					enc_frame = read_frame;
 					session->raw_read_frame.rate = read_frame->rate;
 				} else {
 					session->raw_read_frame.datalen = (uint32_t) switch_buffer_read(session->raw_read_buffer,
 																					session->raw_read_frame.data,
-																					session->read_codec->implementation->bytes_per_frame);
+																					session->read_codec->implementation->decoded_bytes_per_packet);
 
 					session->raw_read_frame.rate = session->read_codec->implementation->actual_samples_per_second;
 					enc_frame = &session->raw_read_frame;
@@ -416,7 +416,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				case SWITCH_STATUS_RESAMPLE:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fixme 1\n");
 				case SWITCH_STATUS_SUCCESS:
-					session->enc_read_frame.samples = session->read_codec->implementation->bytes_per_frame / sizeof(int16_t);
+					session->enc_read_frame.samples = session->read_codec->implementation->decoded_bytes_per_packet / sizeof(int16_t);
 					if (perfect) {
 						session->enc_read_frame.timestamp = read_frame->timestamp;
 						session->enc_read_frame.rate = read_frame->rate;
@@ -428,7 +428,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					*frame = &session->enc_read_frame;
 					break;
 				case SWITCH_STATUS_NOOP:
-					session->raw_read_frame.samples = enc_frame->codec->implementation->samples_per_frame;
+					session->raw_read_frame.samples = enc_frame->codec->implementation->samples_per_packet;
 					session->raw_read_frame.timestamp = read_frame->timestamp;
 					session->raw_read_frame.payload = enc_frame->codec->implementation->ianacode;
 					session->raw_read_frame.m = read_frame->m;
@@ -618,9 +618,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					switch_mutex_lock(session->resample_mutex);
 					status = switch_resample_create(&session->write_resampler,
 													frame->codec->implementation->actual_samples_per_second,
-													frame->codec->implementation->bytes_per_frame,
+													frame->codec->implementation->decoded_bytes_per_packet,
 													session->write_codec->implementation->actual_samples_per_second,
-													session->write_codec->implementation->bytes_per_frame, session->pool);
+													session->write_codec->implementation->decoded_bytes_per_packet, session->pool);
 					switch_mutex_unlock(session->resample_mutex);
 					if (status != SWITCH_STATUS_SUCCESS) {
 						goto done;
@@ -742,14 +742,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 
 		if (session->write_codec) {
-			if (write_frame->datalen == session->write_codec->implementation->bytes_per_frame) {
+			if (write_frame->datalen == session->write_codec->implementation->decoded_bytes_per_packet) {
 				perfect = TRUE;
 			} else {
 				if (!session->raw_write_buffer) {
-					switch_size_t bytes = session->write_codec->implementation->bytes_per_frame;
+					switch_size_t bytes = session->write_codec->implementation->decoded_bytes_per_packet;
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 									  "Engaging Write Buffer at %u bytes to accommodate %u->%u\n",
-									  (uint32_t) bytes, write_frame->datalen, session->write_codec->implementation->bytes_per_frame);
+									  (uint32_t) bytes, write_frame->datalen, session->write_codec->implementation->decoded_bytes_per_packet);
 					if ((status = switch_buffer_create_dynamic(&session->raw_write_buffer,
 															   bytes * SWITCH_BUFFER_BLOCK_FRAMES,
 															   bytes * SWITCH_BUFFER_START_FRAMES, 0)) != SWITCH_STATUS_SUCCESS) {
@@ -812,7 +812,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				return status;
 			} else {
 				switch_size_t used = switch_buffer_inuse(session->raw_write_buffer);
-				uint32_t bytes = session->write_codec->implementation->bytes_per_frame;
+				uint32_t bytes = session->write_codec->implementation->decoded_bytes_per_packet;
 				switch_size_t frames = (used / bytes);
 
 				status = SWITCH_STATUS_SUCCESS;
@@ -853,9 +853,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 									switch_mutex_lock(session->resample_mutex);
 									status = switch_resample_create(&session->write_resampler,
 																	frame->codec->implementation->actual_samples_per_second,
-																	frame->codec->implementation->bytes_per_frame,
+																	frame->codec->implementation->decoded_bytes_per_packet,
 																	session->write_codec->implementation->actual_samples_per_second,
-																	session->write_codec->implementation->bytes_per_frame, session->pool);
+																	session->write_codec->implementation->decoded_bytes_per_packet, session->pool);
 									switch_mutex_unlock(session->resample_mutex);
 
 									if (status != SWITCH_STATUS_SUCCESS) {

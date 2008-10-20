@@ -622,7 +622,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		ep = switch_core_session_alloc(session, sizeof(*ep));
 
-		tlen = tread_codec->implementation->bytes_per_frame;
+		tlen = tread_codec->implementation->decoded_bytes_per_packet;
 
 		switch_channel_pre_answer(channel);
 
@@ -630,7 +630,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 								   "L16",
 								   NULL,
 								   tread_codec->implementation->actual_samples_per_second,
-								   tread_codec->implementation->microseconds_per_frame / 1000,
+								   tread_codec->implementation->microseconds_per_packet / 1000,
 								   tread_codec->implementation->number_of_channels,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {

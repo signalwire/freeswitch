@@ -339,19 +339,17 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 															 /*! bits transferred per second */
 															 int bits_per_second,
 															 /*! number of microseconds that denote one frame */
-															 int microseconds_per_frame,
+															 int microseconds_per_packet,
 															 /*! number of samples that denote one frame */
-															 uint32_t samples_per_frame,
+															 uint32_t samples_per_packet,
 															 /*! number of bytes that denote one frame decompressed */
-															 uint32_t bytes_per_frame,
+															 uint32_t decoded_bytes_per_packet,
 															 /*! number of bytes that denote one frame compressed */
-															 uint32_t encoded_bytes_per_frame,
+															 uint32_t encoded_bytes_per_packet,
 															 /*! number of channels represented */
 															 uint8_t number_of_channels,
 															 /*! number of frames to send in one netowrk packet */
-															 int pref_frames_per_packet,
-															 /*! max number of frames to send in one network packet */
-															 int max_frames_per_packet,
+															 int codec_frames_per_packet,
 															 /*! function to initialize a codec handle using this implementation */
 															 switch_core_codec_init_func_t init,
 															 /*! function to encode raw data into encoded data */
@@ -361,7 +359,7 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 															 /*! deinitalize a codec handle using this implementation */
 															 switch_core_codec_destroy_func_t destroy)
 {
-	if (codec_type == SWITCH_CODEC_TYPE_VIDEO || SWITCH_ACCEPTABLE_INTERVAL(microseconds_per_frame / 1000)) {
+	if (codec_type == SWITCH_CODEC_TYPE_VIDEO || SWITCH_ACCEPTABLE_INTERVAL(microseconds_per_packet / 1000)) {
 		switch_codec_implementation_t *impl = (switch_codec_implementation_t *) switch_core_alloc(pool, sizeof(*impl));
 		impl->codec_type = codec_type;
 		impl->ianacode = ianacode;
@@ -370,13 +368,12 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 		impl->samples_per_second = samples_per_second;
 		impl->actual_samples_per_second = actual_samples_per_second;
 		impl->bits_per_second = bits_per_second;
-		impl->microseconds_per_frame = microseconds_per_frame;
-		impl->samples_per_frame = samples_per_frame;
-		impl->bytes_per_frame = bytes_per_frame;
-		impl->encoded_bytes_per_frame = encoded_bytes_per_frame;
+		impl->microseconds_per_packet = microseconds_per_packet;
+		impl->samples_per_packet = samples_per_packet;
+		impl->decoded_bytes_per_packet = decoded_bytes_per_packet;
+		impl->encoded_bytes_per_packet = encoded_bytes_per_packet;
 		impl->number_of_channels = number_of_channels;
-		impl->pref_frames_per_packet = pref_frames_per_packet;
-		impl->max_frames_per_packet = max_frames_per_packet;
+		impl->codec_frames_per_packet = codec_frames_per_packet;
 		impl->init = init;
 		impl->encode = encode;
 		impl->decode = decode;

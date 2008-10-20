@@ -664,10 +664,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						*frame = NULL;
 						return SWITCH_STATUS_GENERR;
 					}
-					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame)) {
+					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet)) {
 						frames = (tech_pvt->read_frame.datalen / bytes);
 					}
-					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_frame);
+					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_packet);
 				}
 				break;
 			}
@@ -722,13 +722,13 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 	if (!switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
-		if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
-			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+		if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
+			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
 			frames = ((int) frame->datalen / bytes);
 		} else
 			frames = 1;
 
-		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+		samples = frames * tech_pvt->read_codec.implementation->samples_per_packet;
 	}
 
 	tech_pvt->timestamp_send += samples;

@@ -242,8 +242,8 @@ static switch_status_t switch_g711u_decode(switch_codec_t *codec,
 	ebuf = encoded_data;
 
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
-		memset(dbuf, 0, codec->implementation->bytes_per_frame);
-		*decoded_data_len = codec->implementation->bytes_per_frame;
+		memset(dbuf, 0, codec->implementation->decoded_bytes_per_packet);
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 	} else {
 		for (i = 0; i < encoded_data_len; i++) {
 			dbuf[i] = ulaw_to_linear(ebuf[i]);
@@ -313,8 +313,8 @@ static switch_status_t switch_g711a_decode(switch_codec_t *codec,
 	ebuf = encoded_data;
 
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
-		memset(dbuf, 0, codec->implementation->bytes_per_frame);
-		*decoded_data_len = codec->implementation->bytes_per_frame;
+		memset(dbuf, 0, codec->implementation->decoded_bytes_per_packet);
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 	} else {
 		for (i = 0; i < encoded_data_len; i++) {
 			dbuf[i] = alaw_to_linear(ebuf[i]);
@@ -569,14 +569,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 5, "DVI4", NULL, 8000, 8000, 32000,
-											 mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, spf * count,
 											 switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
 	}
 	mpf = 10000, spf = 160, bpf = 320, ebpf = 160;
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 6, "DVI4", NULL, 16000, 16000, 64000,
-											 mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, (ebpf * count) + 4, 1, spf * count,
 											 switch_adpcm_init, switch_adpcm_encode, switch_adpcm_decode, switch_adpcm_destroy);
 	}
 
@@ -586,14 +586,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 124, "AAL2-G726-16", NULL, 8000, 8000, 16000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 16k");
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 127, "G726-16", NULL, 8000, 8000, 16000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 	/* Increase encoded bytes per frame by 10 */
@@ -603,14 +603,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 123, "AAL2-G726-24", NULL, 8000, 8000, 24000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 24k");
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 126, "G726-24", NULL, 8000, 8000, 24000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 	/* Increase encoded bytes per frame by 10 */
@@ -620,14 +620,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 2, "AAL2-G726-32", NULL, 8000, 8000, 32000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 32k");
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 2, "G726-32", NULL, 8000, 8000, 32000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 	/* Increase encoded bytes per frame by 10 */
@@ -637,14 +637,14 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 122, "AAL2-G726-40", NULL, 8000, 8000, 40000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 	SWITCH_ADD_CODEC(codec_interface, "G.726 40k");
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 125, "G726-40", NULL, 8000, 8000, 40000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g726_init, switch_g726_encode, switch_g726_decode, switch_g726_destroy);
 	}
 
@@ -654,7 +654,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 9, "G722", NULL, 8000, 16000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
 											 switch_g722_init, switch_g722_encode, switch_g722_decode, switch_g722_destroy);
 	}
 
@@ -665,7 +665,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
 											 switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
 	}
 
@@ -673,7 +673,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
 											 switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
 	}
 #endif
@@ -684,7 +684,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	for (count = 6; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 3, "GSM", NULL, 8000, 8000, 13200,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 6,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count,
 											 switch_gsm_init, switch_gsm_encode, switch_gsm_decode, switch_gsm_destroy);
 	}
 	/* LPC10 */
@@ -692,7 +692,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	SWITCH_ADD_CODEC(codec_interface, "LPC-10");
 	switch_core_codec_add_implementation(pool, codec_interface,
 										 SWITCH_CODEC_TYPE_AUDIO, 7, "LPC", NULL, 8000, 8000, 2400,
-										 90000, 720, 1440, 28, 1, 1, 1, switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
+										 90000, 720, 1440, 28, 1, 4, switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
 #endif
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;

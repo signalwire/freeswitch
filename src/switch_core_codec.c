@@ -98,7 +98,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		}
 	}
 
-	if (session->read_codec && codec && session->read_impl.bytes_per_frame) {
+	if (session->read_codec && codec && session->read_impl.decoded_bytes_per_packet) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", session->read_impl.iananame);
@@ -140,7 +140,7 @@ SWITCH_DECLARE(switch_codec_t *) switch_core_session_get_read_codec(switch_core_
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
 {
-	if (session->read_impl.bytes_per_frame) {
+	if (session->read_impl.decoded_bytes_per_packet) {
 		*impp = session->read_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -150,7 +150,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_read_impl(switch_core_se
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
 {
-	if (session->write_impl.bytes_per_frame) {
+	if (session->write_impl.decoded_bytes_per_packet) {
 		*impp = session->write_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -160,7 +160,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_write_impl(switch_core_s
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
 {
-	if (session->video_read_impl.bytes_per_frame) {
+	if (session->video_read_impl.decoded_bytes_per_packet) {
 		*impp = session->video_read_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -170,7 +170,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_read_impl(switch_c
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_video_write_impl(switch_core_session_t *session,  switch_codec_implementation_t *impp)
 {
-	if (session->video_write_impl.bytes_per_frame) {
+	if (session->video_write_impl.decoded_bytes_per_packet) {
 		*impp = session->video_write_impl;
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -217,7 +217,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 		session->write_impl = *codec->implementation;
 	}
 
-	if (session->write_codec && codec && session->write_impl.bytes_per_frame) {
+	if (session->write_codec && codec && session->write_impl.decoded_bytes_per_packet) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-write-codec-name", session->write_impl.iananame);
@@ -416,7 +416,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 	if (!ms) {
 		for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
 			if ((!rate || rate == iptr->samples_per_second) &&
-				(20 == (iptr->microseconds_per_frame / 1000)) && (!channels || channels == iptr->number_of_channels)) {
+				(20 == (iptr->microseconds_per_packet / 1000)) && (!channels || channels == iptr->number_of_channels)) {
 				implementation = iptr;
 				goto found;
 			}
@@ -426,7 +426,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 	/* Either looking for a specific interval or there was no interval specified and there wasn't one @20ms available */
 	for (iptr = codec_interface->implementations; iptr; iptr = iptr->next) {
 		if ((!rate || rate == iptr->samples_per_second) &&
-			(!ms || ms == (iptr->microseconds_per_frame / 1000)) && (!channels || channels == iptr->number_of_channels)) {
+			(!ms || ms == (iptr->microseconds_per_packet / 1000)) && (!channels || channels == iptr->number_of_channels)) {
 			implementation = iptr;
 			break;
 		}

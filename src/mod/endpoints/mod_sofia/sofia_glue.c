@@ -118,7 +118,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
 			if (!ptime) {
-				ptime = imp->microseconds_per_frame / 1000;
+				ptime = imp->microseconds_per_packet / 1000;
 			}
 		}
 	}
@@ -141,7 +141,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=fmtp:%d %s\n", tech_pvt->agreed_pt, tech_pvt->fmtp_out);
 		}
 		if (tech_pvt->read_codec.implementation && !ptime) {
-			ptime = tech_pvt->read_codec.implementation->microseconds_per_frame / 1000;
+			ptime = tech_pvt->read_codec.implementation->microseconds_per_packet / 1000;
 		}
 
 	} else if (tech_pvt->num_codecs) {
@@ -253,7 +253,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 					switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", imp->ianacode);
 					if (!ptime) {
-						ptime = imp->microseconds_per_frame / 1000;
+						ptime = imp->microseconds_per_packet / 1000;
 					}
 				}
 			}
@@ -1487,7 +1487,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 		} else {
 			int ms;
 			tech_pvt->video_read_frame.rate = tech_pvt->video_rm_rate;
-			ms = tech_pvt->video_write_codec.implementation->microseconds_per_frame / 1000;
+			ms = tech_pvt->video_write_codec.implementation->microseconds_per_packet / 1000;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set VIDEO Codec %s %s/%ld %d ms\n",
 							  switch_channel_get_name(tech_pvt->channel), tech_pvt->video_rm_encoding, tech_pvt->video_rm_rate, tech_pvt->video_codec_ms);
 			tech_pvt->video_read_frame.codec = &tech_pvt->video_read_codec;
@@ -1555,7 +1555,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
-	ms = tech_pvt->write_codec.implementation->microseconds_per_frame / 1000;
+	ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 
 	if (!tech_pvt->read_codec.implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
@@ -1564,7 +1564,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
-					  tech_pvt->read_codec.implementation->samples_per_frame);
+					  tech_pvt->read_codec.implementation->samples_per_packet);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
 	tech_pvt->write_codec.agreed_pt = tech_pvt->agreed_pt;
@@ -1721,7 +1721,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	}
 
 	bw = tech_pvt->read_codec.implementation->bits_per_second;
-	ms = tech_pvt->read_codec.implementation->microseconds_per_frame;
+	ms = tech_pvt->read_codec.implementation->microseconds_per_packet;
 
 	if (myflags) {
 		flags = myflags;
@@ -1784,7 +1784,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
-						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
+						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
 	}
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->remote_sdp_audio_port);
@@ -1826,7 +1826,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
-						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
+						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
 
 	} else {
 		timer_name = tech_pvt->profile->timer_name;
@@ -1841,7 +1841,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 										   tech_pvt->remote_sdp_audio_ip,
 										   tech_pvt->remote_sdp_audio_port,
 										   tech_pvt->agreed_pt,
-										   tech_pvt->read_codec.implementation->samples_per_frame,
+										   tech_pvt->read_codec.implementation->samples_per_packet,
 										   tech_pvt->codec_ms * 1000,
 										   (switch_rtp_flag_t) flags, timer_name, &err, switch_core_session_get_pool(tech_pvt->session));
 
@@ -1874,7 +1874,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				}
 			}
 
-			stun_ping = (ival * tech_pvt->read_codec.implementation->samples_per_second) / tech_pvt->read_codec.implementation->samples_per_frame;
+			stun_ping = (ival * tech_pvt->read_codec.implementation->samples_per_second) / tech_pvt->read_codec.implementation->samples_per_packet;
 		}
 
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
@@ -1902,7 +1902,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			} else {
 				int qlen;
 
-				qlen = len / (tech_pvt->read_codec.implementation->microseconds_per_frame / 1000);
+				qlen = len / (tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
 				switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen);
@@ -1925,7 +1925,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if (rtp_timeout_sec) {
 			tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) /
-				tech_pvt->read_codec.implementation->samples_per_frame;
+				tech_pvt->read_codec.implementation->samples_per_packet;
 
 			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			if (!rtp_hold_timeout_sec) {
@@ -1935,7 +1935,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 		if (rtp_hold_timeout_sec) {
 			tech_pvt->max_missed_hold_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_hold_timeout_sec) /
-				tech_pvt->read_codec.implementation->samples_per_frame;
+				tech_pvt->read_codec.implementation->samples_per_packet;
 		}
 
 		if (tech_pvt->te) {
@@ -2362,7 +2362,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 
 					if (match) {
-						if ((ptime && ptime * 1000 != imp->microseconds_per_frame) || map->rm_rate != codec_rate) {
+						if ((ptime && ptime * 1000 != imp->microseconds_per_packet) || map->rm_rate != codec_rate) {
 							near_rate = map->rm_rate;
 							near_match = imp;
 							match = 0;
@@ -2393,7 +2393,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
-									  mimp->iananame, mimp->microseconds_per_frame / 1000, mimp->samples_per_second);
+									  mimp->iananame, mimp->microseconds_per_packet / 1000, mimp->samples_per_second);
 					match = 1;
 				}
 
@@ -2408,7 +2408,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
 					tech_pvt->pt = (switch_payload_t) map->rm_pt;
 					tech_pvt->rm_rate = map->rm_rate;
-					tech_pvt->codec_ms = mimp->microseconds_per_frame / 1000;
+					tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
 					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;
@@ -2492,7 +2492,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						char tmp[50];
 						tech_pvt->video_pt = (switch_payload_t) map->rm_pt;
 						tech_pvt->video_rm_rate = map->rm_rate;
-						tech_pvt->video_codec_ms = mimp->microseconds_per_frame / 1000;
+						tech_pvt->video_codec_ms = mimp->microseconds_per_packet / 1000;
 						tech_pvt->remote_sdp_video_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 						tech_pvt->video_rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 						tech_pvt->remote_sdp_video_port = (switch_port_t) m->m_port;

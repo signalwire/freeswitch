@@ -229,7 +229,7 @@ static switch_status_t switch_speex_decode(switch_codec_t *codec,
 		speex_bits_read_from(&context->decoder_bits, (char *) encoded_data, (int) encoded_data_len);
 		speex_decode_int(context->decoder_state, &context->decoder_bits, buf);
 	}
-	*decoded_data_len = codec->implementation->bytes_per_frame;
+	*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -274,7 +274,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 		for (countb = 1; countb > 0; countb--) {
 			switch_core_codec_add_implementation(pool, codec_interface,
 												 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "SPEEX", NULL, rate, rate, bps[counta],
-												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1, 6,
+												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1,
 												 switch_speex_init, switch_speex_encode, switch_speex_decode, switch_speex_destroy);
 		}
 		rate = rate * 2;

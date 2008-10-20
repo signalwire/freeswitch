@@ -246,15 +246,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_activate_unicast(switch_core_session_
 								   "L16",
 								   NULL,
 								   read_codec->implementation->actual_samples_per_second,
-								   read_codec->implementation->microseconds_per_frame / 1000,
+								   read_codec->implementation->microseconds_per_packet / 1000,
 								   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_frame / 1000);
+							  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
 			goto fail;
 		}
 	}
@@ -519,7 +519,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	}
 
 	rate = read_codec->implementation->actual_samples_per_second;
-	bpf = read_codec->implementation->bytes_per_frame;
+	bpf = read_codec->implementation->decoded_bytes_per_packet;
 
 	switch_channel_set_flag(channel, CF_CONTROLLED);
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PARK) == SWITCH_STATUS_SUCCESS) {
@@ -1733,8 +1733,8 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 	}
 
 	read_codec = switch_core_session_get_read_codec(session);
-	interval = read_codec->implementation->microseconds_per_frame / 1000;
-	samples = switch_samples_per_frame(read_codec->implementation->samples_per_second, interval);
+	interval = read_codec->implementation->microseconds_per_packet / 1000;
+	samples = switch_samples_per_packet(read_codec->implementation->samples_per_second, interval);
 
 	qlen = delay_ms / (interval);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);

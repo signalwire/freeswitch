@@ -879,8 +879,8 @@ static int activate_rtp(struct private_object *tech_pvt)
 												 tech_pvt->remote_ip,
 												 tech_pvt->remote_port,
 												 tech_pvt->codec_num,
-												 tech_pvt->read_codec.implementation->samples_per_frame,
-												 tech_pvt->read_codec.implementation->microseconds_per_frame,
+												 tech_pvt->read_codec.implementation->samples_per_packet,
+												 tech_pvt->read_codec.implementation->microseconds_per_packet,
 												 flags, tech_pvt->profile->timer_name, &err, switch_core_session_get_pool(tech_pvt->session)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP ERROR %s\n", err);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -1389,10 +1389,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 				int frames = 1;
 
 				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
-					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame)) {
+					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet)) {
 						frames = (tech_pvt->read_frame.datalen / bytes);
 					}
-					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_frame);
+					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_packet);
 				}
 				break;
 			}
@@ -1440,13 +1440,13 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 	if (!switch_test_flag(frame, SFF_CNG)) {
-		if (tech_pvt->read_codec.implementation->encoded_bytes_per_frame) {
-			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_frame;
+		if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
+			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
 			frames = ((int) frame->datalen / bytes);
 		} else
 			frames = 1;
 
-		samples = frames * tech_pvt->read_codec.implementation->samples_per_frame;
+		samples = frames * tech_pvt->read_codec.implementation->samples_per_packet;
 	}
 #if 0
 	printf("%s %s->%s send %d bytes %d samples in %d frames ts=%d\n",

@@ -218,7 +218,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load)
 	for (count = 12; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 18, "G729", NULL, 8000, 8000, 8000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 12,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count * 10,
 											 switch_g729_init, switch_g729_encode, switch_g729_decode, switch_g729_destroy);
 	}
 	/* indicate that the module should continue to be loaded */

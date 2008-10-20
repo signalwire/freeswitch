@@ -563,19 +563,17 @@ struct switch_codec_implementation {
 	/*! bits transferred per second */
 	int bits_per_second;
 	/*! number of microseconds that denote one frame */
-	int microseconds_per_frame;
+	int microseconds_per_packet;
 	/*! number of samples that denote one frame */
-	uint32_t samples_per_frame;
+	uint32_t samples_per_packet;
 	/*! number of bytes that denote one frame decompressed */
-	uint32_t bytes_per_frame;
+	uint32_t decoded_bytes_per_packet;
 	/*! number of bytes that denote one frame compressed */
-	uint32_t encoded_bytes_per_frame;
+	uint32_t encoded_bytes_per_packet;
 	/*! number of channels represented */
 	uint8_t number_of_channels;
-	/*! number of frames to send in one netowrk packet */
-	int pref_frames_per_packet;
-	/*! max number of frames to send in one network packet */
-	int max_frames_per_packet;
+	/*! number of codec frames to send in one netowrk packet */
+	int codec_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
 	switch_core_codec_init_func_t init;
 	/*! function to encode raw data into encoded data */

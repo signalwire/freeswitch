@@ -492,7 +492,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	
 	if (!is_master(tech_pvt)) {
 		if (tech_pvt->hold_file) {
-			switch_size_t olen = globals.read_codec.implementation->samples_per_frame;
+			switch_size_t olen = globals.read_codec.implementation->samples_per_packet;
 			
 			if (!tech_pvt->hfh) {
 				int sample_rate = tech_pvt->sample_rate ? tech_pvt->sample_rate : globals.sample_rate;
@@ -541,7 +541,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	
 	switch_mutex_lock(globals.device_lock);
 	samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data,
-							  globals.read_codec.implementation->samples_per_frame, &globals.timer);
+							  globals.read_codec.implementation->samples_per_packet, &globals.timer);
 	switch_mutex_unlock(globals.device_lock);
 	
 	if (samples) {
@@ -740,7 +740,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	globals.read_frame.buflen = sizeof(globals.databuf);
 	globals.cng_frame.data = globals.cngbuf;
 	globals.cng_frame.buflen = sizeof(globals.cngbuf);
-	globals.cng_frame.datalen = switch_samples_per_frame(globals.sample_rate, globals.codec_ms) * 2;
+	globals.cng_frame.datalen = switch_samples_per_packet(globals.sample_rate, globals.codec_ms) * 2;
 	switch_set_flag((&globals.cng_frame), SFF_CNG);
 
 	/* connect my internal structure to the blank pointer passed to me */
@@ -1161,7 +1161,7 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		}
 
 		if (switch_core_timer_init(&globals.timer,
-								   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame,
+								   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
 								   module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 			switch_core_codec_destroy(&globals.read_codec);
@@ -1170,7 +1170,7 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		}
 
 		if (switch_core_timer_init(&globals.hold_timer,
-									   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_frame,
+									   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
 								   module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup hold timer failed!\n");
 			switch_core_codec_destroy(&globals.read_codec);
@@ -1196,7 +1196,7 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
 		outputParameters.hostApiSpecificStreamInfo = NULL;
 		err = OpenAudioStream(&globals.audio_stream, &inputParameters, &outputParameters, sample_rate, paClipOff,
-							  globals.read_codec.implementation->samples_per_frame);
+							  globals.read_codec.implementation->samples_per_packet);
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
 
@@ -1232,7 +1232,7 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 			outputParameters.sampleFormat = SAMPLE_TYPE;
 			outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
 			outputParameters.hostApiSpecificStreamInfo = NULL;
-			err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_frame);
+			err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_packet);
 
 			/* UNLOCKED ************************************************************************************************* */
 			switch_mutex_unlock(globals.device_lock);

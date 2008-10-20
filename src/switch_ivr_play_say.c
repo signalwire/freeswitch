@@ -448,7 +448,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 							   codec_name,
 							   NULL,
 							   read_codec->implementation->actual_samples_per_second,
-							   read_codec->implementation->microseconds_per_frame / 1000,
+							   read_codec->implementation->microseconds_per_packet / 1000,
 							   read_codec->implementation->number_of_channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
 							   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
@@ -457,7 +457,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
-						  fh->channels, read_codec->implementation->microseconds_per_frame / 1000);
+						  fh->channels, read_codec->implementation->microseconds_per_packet / 1000);
 		switch_core_file_close(fh);
 		switch_core_session_reset(session, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
@@ -469,9 +469,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	if (fh->thresh) {
 		if (fh->silence_hits) {
-			fh->silence_hits = fh->samplerate * fh->silence_hits / read_codec->implementation->samples_per_frame;
+			fh->silence_hits = fh->samplerate * fh->silence_hits / read_codec->implementation->samples_per_packet;
 		} else {
-			fh->silence_hits = fh->samplerate * 3 / read_codec->implementation->samples_per_frame;
+			fh->silence_hits = fh->samplerate * 3 / read_codec->implementation->samples_per_packet;
 		}
 		org_silence_hits = fh->silence_hits;
 	}
@@ -616,7 +616,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 							   "L16",
 							   NULL,
 							   read_codec->implementation->actual_samples_per_second,
-							   read_codec->implementation->microseconds_per_frame / 1000,
+							   read_codec->implementation->microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 
@@ -696,7 +696,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 			}
 		}
 
-		if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(audio_buffer, write_frame.data, read_codec->implementation->bytes_per_frame)) <= 0) {
+		if ((write_frame.datalen = (uint32_t) switch_buffer_read_loop(audio_buffer, write_frame.data, read_codec->implementation->decoded_bytes_per_packet)) <= 0) {
 			break;
 		}
 
@@ -902,7 +902,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	switch_assert(read_codec != NULL);
-	interval = read_codec->implementation->microseconds_per_frame / 1000;
+	interval = read_codec->implementation->microseconds_per_packet / 1000;
 
 	if (!fh->audio_buffer) {
 		switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
@@ -919,8 +919,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	if (asis) {
 		write_frame.codec = read_codec;
-		samples = read_codec->implementation->samples_per_frame;
-		framelen = read_codec->implementation->encoded_bytes_per_frame;
+		samples = read_codec->implementation->samples_per_packet;
+		framelen = read_codec->implementation->encoded_bytes_per_packet;
 	} else {
 		codec_name = "L16";
 
@@ -941,8 +941,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			status = SWITCH_STATUS_GENERR;
 			goto end;
 		}
-		samples = codec.implementation->samples_per_frame;
-		framelen = codec.implementation->bytes_per_frame;
+		samples = codec.implementation->samples_per_packet;
+		framelen = codec.implementation->decoded_bytes_per_packet;
 	}
 
 	if (timer_name) {
@@ -1288,7 +1288,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 							   "L16",
 							   NULL,
 							   read_codec->implementation->actual_samples_per_second,
-							   read_codec->implementation->microseconds_per_frame / 1000,
+							   read_codec->implementation->microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 
@@ -1312,14 +1312,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 		}
 
 		if (sample_count) {
-			sample_count -= raw_codec.implementation->samples_per_frame;
+			sample_count -= raw_codec.implementation->samples_per_packet;
 			if (sample_count <= 0) {
 				break;
 			}
 		}
 		
 		if (abuf) {
-			switch_size_t olen = raw_codec.implementation->samples_per_frame;
+			switch_size_t olen = raw_codec.implementation->samples_per_packet;
 			
 			if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
                 break;
@@ -1647,7 +1647,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	switch_assert(codec->implementation != NULL);
 
 	for (x = 0; !done && x < lead_in_out; x++) {
-		switch_yield(codec->implementation->microseconds_per_frame);
+		switch_yield(codec->implementation->microseconds_per_packet);
 		if (timer) {
 			write_frame.timestamp = timer->samplecount;
 		}
@@ -1744,7 +1744,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			for (x = 0; !done && x < lead_in_out; x++) {
-				switch_yield(codec->implementation->microseconds_per_frame);
+				switch_yield(codec->implementation->microseconds_per_packet);
 				if (timer) {
 					write_frame.timestamp = timer->samplecount;
 				}
@@ -1889,7 +1889,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	read_codec = switch_core_session_get_read_codec(session);
 
 	rate = read_codec->implementation->actual_samples_per_second;
-	interval = read_codec->implementation->microseconds_per_frame / 1000;
+	interval = read_codec->implementation->microseconds_per_packet / 1000;
 
 	if (need_create) {
 		memset(sh, 0, sizeof(*sh));

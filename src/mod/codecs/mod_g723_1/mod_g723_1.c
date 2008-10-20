@@ -131,7 +131,7 @@ static switch_status_t switch_g723_encode(switch_codec_t *codec,
 	}
 
 	Coder(&context->encoder_object, (FLOAT *) context->cod_float_buf, ebuf);
-	*encoded_data_len = codec->implementation->encoded_bytes_per_frame;
+	*encoded_data_len = codec->implementation->encoded_bytes_per_packet;
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
@@ -161,7 +161,7 @@ static switch_status_t switch_g723_decode(switch_codec_t *codec,
 	for (x = 0; x < Frame; x++) {
 		to_slin_buf[x] = context->dec_float_buf[x];
 	}
-	*decoded_data_len = codec->implementation->bytes_per_frame;
+	*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
 
 	return SWITCH_STATUS_SUCCESS;
 #endif
@@ -177,7 +177,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g723_1_load)
 	for (count = 1; count > 0; count--) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO, 4, "G723", NULL, 8000, 8000, 6300,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, 1, 4,
+											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count,
 											 switch_g723_init, switch_g723_encode, switch_g723_decode, switch_g723_destroy);
 	}
 	/* indicate that the module should continue to be loaded */

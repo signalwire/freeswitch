@@ -218,7 +218,7 @@ static unsigned long RoundUpToNextPowerOf2(unsigned long n)
  */
 PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 						const PaStreamParameters * inputParameters,
-						const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags, long samples_per_frame)
+						const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags, long samples_per_packet)
 {
 	long bytesPerSample = 2;
 	PaError err;
@@ -244,7 +244,7 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		channels = outputParameters->channelCount;
 	}
 
-	numFrames = RoundUpToNextPowerOf2(samples_per_frame * 5);
+	numFrames = RoundUpToNextPowerOf2(samples_per_packet * 5);
 	aStream->bytesPerFrame = bytesPerSample;
 
 	/* Initialize Ring Buffers */
@@ -268,7 +268,7 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 
 	/* Open a PortAudio stream that we will use to communicate with the underlying
 	 * audio drivers. */
-	err = Pa_OpenStream(&aStream->stream, inputParameters, outputParameters, sampleRate, samples_per_frame, streamFlags, blockingIOCallback, aStream);
+	err = Pa_OpenStream(&aStream->stream, inputParameters, outputParameters, sampleRate, samples_per_packet, streamFlags, blockingIOCallback, aStream);
 
 	if (err != paNoError)
 		goto error;

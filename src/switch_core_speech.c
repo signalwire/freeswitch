@@ -78,7 +78,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 
 	sh->rate = rate;
 	sh->name = switch_core_strdup(pool, module_name);
-	sh->samples = switch_samples_per_frame(rate, interval);
+	sh->samples = switch_samples_per_packet(rate, interval);
 
 	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
 }

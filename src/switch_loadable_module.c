@@ -165,7 +165,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 										  key);
 						break;
 					}
-					if (impl->bytes_per_frame > SWITCH_RECOMMENDED_BUFFER_SIZE) {
+					if (impl->decoded_bytes_per_packet > SWITCH_RECOMMENDED_BUFFER_SIZE) {
 						load_interface = 0;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
 										  "Failed to load codec interface %s from %s due to bytes per frame exceeding buffer size.\n", ptr->interface_name,
@@ -177,7 +177,7 @@ static switch_status_t switch_loadable_module_process(char *key, switch_loadable
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Adding Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_frame / 1000);
+										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
 						if (!switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_insert(loadable_modules.codec_hash, impl->iananame, (const void *) ptr);
 						}
@@ -453,7 +453,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 					for (impl = ptr->implementations; impl; impl = impl->next) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Deleting Codec '%s' (%s) %dhz %dms\n",
-										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_frame / 1000);
+										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
 						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_delete(loadable_modules.codec_hash, impl->iananame);
 						}
@@ -1288,7 +1288,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs(const switch_codec_impleme
 		codec_interface = (switch_codec_interface_t *) val;
 		/* Look for a 20ms implementation because it's the safest choice */
 		for (imp = codec_interface->implementations; imp; imp = imp->next) {
-			if (imp->microseconds_per_frame / 1000 == 20) {
+			if (imp->microseconds_per_packet / 1000 == 20) {
 				array[i++] = imp;
 				goto found;
 			}
@@ -1351,7 +1351,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 					uint8_t match = 1;
 
 					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
-						if ((uint32_t) (imp->microseconds_per_frame / 1000) != 20) {
+						if ((uint32_t) (imp->microseconds_per_packet / 1000) != 20) {
 							match = 0;
 						}
 
@@ -1372,7 +1372,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				uint8_t match = 1;
 
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
-					if (interval && (uint32_t) (imp->microseconds_per_frame / 1000) != interval) {
+					if (interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval) {
 						match = 0;
 					}
 

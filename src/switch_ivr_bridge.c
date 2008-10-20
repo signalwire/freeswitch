@@ -170,7 +170,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 									   "L16",
 									   NULL, 
 									   read_codec->implementation->actual_samples_per_second, 
-									   read_codec->implementation->microseconds_per_frame / 1000,
+									   read_codec->implementation->microseconds_per_packet / 1000,
 									   1,
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
 									   NULL, 
@@ -182,7 +182,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				silence_frame.codec = &silence_codec;
 				silence_frame.data = silence_data;
 				silence_frame.buflen = sizeof(silence_data);
-				silence_frame.datalen = read_codec->implementation->bytes_per_frame;
+				silence_frame.datalen = read_codec->implementation->decoded_bytes_per_packet;
 				silence_frame.samples = silence_frame.datalen / sizeof(int16_t);
 			}
 		}
