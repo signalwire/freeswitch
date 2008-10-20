@@ -1548,7 +1548,6 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 
 static void update_mwi(vm_profile_t *profile, const char *id, const char *domain_name, const char *myfolder)
 {
-	char *mwi_id;
 	const char *yn = "no";
 	int total_new_messages = 0;
 	int total_saved_messages = 0;
@@ -1565,13 +1564,10 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 	if (total_new_messages || total_new_urgent_messages) {
 		yn = "yes";
 	}
-	mwi_id = switch_mprintf("%s@%s", id, domain_name);
-	switch_assert(mwi_id);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "%s", yn);
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", mwi_id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", id, domain_name);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
 	switch_event_fire(&event);
-	switch_safe_free(mwi_id);
 }
 
 
