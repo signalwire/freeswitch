@@ -2891,7 +2891,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
 
-		if (refer_to->r_url->url_headers) {
+		if (refer_to->r_url->url_headers && strstr(refer_to->r_url->url_headers, "Replaces=")) {
 			sip_replaces_t *replaces;
 			nua_handle_t *bnh;
 			char *rep;
