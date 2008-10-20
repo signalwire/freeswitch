@@ -1583,7 +1583,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
 	switch_status_t status;
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
-	const char *thepass = NULL, *myid = id, *actual_id = NULL;
+	const char *thepass = NULL, *myid = id, *actual_id = NULL, *thehash = NULL;
 	char term = 0;
 	uint32_t timeout, attempts = 0;
 	int failed = 0;
@@ -1972,14 +1972,16 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 				x_params = switch_xml_child(x_user, "params");
 
-				thepass = NULL;
+				thepass = thehash = NULL;
 				switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", myid, domain_name);
 				vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
 
-					if (!strcasecmp(var, "password")) {
+					if (!strcasecmp(var, "a1-hash")) {
+						thehash = val;
+					} else if (!strcasecmp(var, "password")) {
 						thepass = val;
 					} else if (!strcasecmp(var, "vm-password")) {
 						thepass = val;
@@ -1999,8 +2001,20 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						auth++;
 					}
 
-					if (!auth && (thepass && mypass && !strcmp(thepass, mypass))) {
-						auth++;
+					if (!auth && (thepass || thehash) && mypass) {
+						if (thehash) {
+							unsigned char digest[SWITCH_MD5_DIGESTSIZE] = { 0 };
+							char *lpbuf = switch_mprintf("%s:%s:%s", myid, domain_name, mypass);
+							switch_md5(digest, (void *) lpbuf, strlen(lpbuf));
+							if (!strcmp(digest, thehash)) {
+								auth++;
+							}
+							switch_safe_free(lpbuf);
+						}
+						
+						if (!auth && thepass && !strcmp(thepass, mypass)) {
+							auth++;
+						}
 					}
 				}
 
