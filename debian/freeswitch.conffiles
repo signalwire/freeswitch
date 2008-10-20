@@ -47,7 +47,6 @@
 /opt/freeswitch/conf/autoload_configs/alsa.conf.xml
 /opt/freeswitch/conf/autoload_configs/portaudio.conf.xml
 /opt/freeswitch/conf/autoload_configs/xml_curl.conf.xml
-/opt/freeswitch/conf/autoload_configs/wanpipe.conf.xml
 /opt/freeswitch/conf/autoload_configs/enum.conf.xml
 /opt/freeswitch/conf/autoload_configs/logfile.conf.xml
 /opt/freeswitch/conf/autoload_configs/limit.conf.xml
