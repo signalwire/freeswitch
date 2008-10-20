@@ -813,6 +813,20 @@ SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGES
 	return apr_md5(digest, input, inputLen);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_md5_string(char digest_str[SWITCH_MD5_DIGEST_STRING_SIZE], const void *input, switch_size_t inputLen)
+{
+	unsigned char digest[SWITCH_MD5_DIGESTSIZE];
+	apr_status_t status = apr_md5(digest, input, inputLen);
+	int x;
+
+	digest_str[SWITCH_MD5_DIGEST_STRING_SIZE - 1] = '\0';
+
+	for( x = 0; x < SWITCH_MD5_DIGESTSIZE; x++) {
+		switch_snprintf(digest_str + (x * 2), 3, "%02x", digest[x]);
+	}
+
+	return status;
+}
 
 /* FIFO queues (apr-util) */
 

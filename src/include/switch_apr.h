@@ -510,6 +510,7 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_destroy(switch_thread_cond_t 
 #define SWITCH_UUID_FORMATTED_LENGTH 36
 
 #define SWITCH_MD5_DIGESTSIZE 16
+#define SWITCH_MD5_DIGEST_STRING_SIZE 33
 
 /**
  * Format a UUID into a string, following the standard format
@@ -540,6 +541,7 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const cha
  * @param inputLen The length of the message block
  */
 SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGESTSIZE], const void *input, switch_size_t inputLen);
+SWITCH_DECLARE(switch_status_t) switch_md5_string(char digest_str[SWITCH_MD5_DIGEST_STRING_SIZE], const void *input, switch_size_t inputLen);
 
 /** @} */
 

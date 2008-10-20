@@ -192,6 +192,22 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+
+SWITCH_STANDARD_API(md5_function)
+{
+	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", "!err!");
+	} else {
+		switch_md5_string(digest, (void *) cmd, strlen(cmd));
+		stream->write_function(stream, "%s", digest);
+	}
+
+    return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(url_decode_function)
 {
 	char *reply = "";
@@ -2725,6 +2741,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_api_interface_t *commands_api_interface;
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");
 	SWITCH_ADD_API(commands_api_interface, "originate", "Originate a Call", originate_function, ORIGINATE_SYNTAX);

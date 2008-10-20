@@ -2003,9 +2003,9 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 					if (!auth && (thepass || thehash) && mypass) {
 						if (thehash) {
-							unsigned char digest[SWITCH_MD5_DIGESTSIZE] = { 0 };
+							char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 							char *lpbuf = switch_mprintf("%s:%s:%s", myid, domain_name, mypass);
-							switch_md5(digest, (void *) lpbuf, strlen(lpbuf));
+							switch_md5_string(digest, (void *) lpbuf, strlen(lpbuf));
 							if (!strcmp(digest, thehash)) {
 								auth++;
 							}
