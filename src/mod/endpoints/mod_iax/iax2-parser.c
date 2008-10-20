@@ -56,7 +56,7 @@ static unsigned short get_uint16(unsigned char *p)
 
 static void internaloutput(const char *str)
 {
-	printf(str);
+	printf("%s", str);
 }
 
 static void internalerror(const char *str)
