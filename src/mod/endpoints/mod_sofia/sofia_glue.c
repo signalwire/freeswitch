@@ -834,12 +834,14 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 		p++;
 	}
 
-
-	if (switch_strlen_zero(tech_pvt->remote_sdp_audio_ip) || !tech_pvt->remote_sdp_audio_port) {
-		tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rip);
-		tech_pvt->remote_sdp_audio_port = (switch_port_t) atoi(rp);
+	if (!(*rip && *rp)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid SDP\n");
+		return SWITCH_STATUS_FALSE;
 	}
 
+	tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, rip);
+	tech_pvt->remote_sdp_audio_port = (switch_port_t) atoi(rp);
+	
 	if (*rvp) {
 		tech_pvt->remote_sdp_video_ip = switch_core_session_strdup(tech_pvt->session, rip);
 		tech_pvt->remote_sdp_video_port = (switch_port_t) atoi(rvp);
@@ -870,11 +872,11 @@ switch_status_t sofia_glue_tech_proxy_remote_addr(private_object_t *tech_pvt)
 		}
 	}
 
-	if (*rip && *rp && switch_rtp_ready(tech_pvt->rtp_session)) {
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		char *remote_host = switch_rtp_get_remote_host(tech_pvt->rtp_session);
-		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session), rpi = (switch_port_t) atoi(rp);
-
-		if (remote_host && remote_port && !strcmp(remote_host, rip) && remote_port == rpi) {
+		switch_port_t remote_port = switch_rtp_get_remote_port(tech_pvt->rtp_session);
+		
+		if (remote_host && remote_port && !strcmp(remote_host, tech_pvt->remote_sdp_audio_ip) && remote_port == tech_pvt->remote_sdp_audio_port) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote address:port [%s:%d] has not changed.\n",
 							  tech_pvt->remote_sdp_audio_ip, tech_pvt->remote_sdp_audio_port);
 			return SWITCH_STATUS_SUCCESS;
