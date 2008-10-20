@@ -673,7 +673,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	if (switch_test_flag(frame, SFF_CNG)) {
 		frame->data = data;
 		frame->buflen = sizeof(data);
-		if ((frame->datalen = tech_pvt->write_codec.implementation->encoded_bytes_per_frame) > frame->buflen) {
+		if ((frame->datalen = tech_pvt->write_codec.implementation->encoded_bytes_per_packet) > frame->buflen) {
 			goto fail;
 		}
 		memset(data, 255, frame->datalen);
