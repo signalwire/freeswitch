@@ -73,11 +73,15 @@ mpg123_handle *our_mpg123_new(const char* decoder, int *error)
 		}
 	} else {
 
+#ifdef WIN32
+		x64++;
+#else
 		if (sizeof(void *) == 4) {
 			arch = "i586";
 		} else {
 			x64++;
 		}
+#endif
 
 		if ((mh = mpg123_new(arch, NULL))) {
 			if (x64) {
