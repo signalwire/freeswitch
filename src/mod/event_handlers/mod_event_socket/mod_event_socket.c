@@ -619,18 +619,6 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 	}
 
-	if (listener->sock && listener->hup) {
-		char content_buf[512] = "";
-		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
-		int message_len = strlen(message);
-		
-		switch_snprintf(content_buf, sizeof(content_buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", message_len);
-		len = strlen(content_buf);
-		switch_socket_send(listener->sock, content_buf, &len);
-		len = message_len;
-		switch_socket_send(listener->sock, message, &len);
-	}
-
 	return status;
 
 }
@@ -1307,8 +1295,21 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
+	
+	if (listener->sock) {
+		char buf[512] = "";
+		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
+		int mlen = strlen(message);
+		
+		switch_snprintf(buf, sizeof(buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", mlen);
+		len = strlen(buf);
+		switch_socket_send(listener->sock, buf, &len);
+		len = mlen;
+		switch_socket_send(listener->sock, message, &len);
+		close_socket(&listener->sock);
+	}
+
 	switch_thread_rwlock_unlock(listener->rwlock);
-	close_socket(&listener->sock);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
 	switch_core_hash_destroy(&listener->event_hash);
