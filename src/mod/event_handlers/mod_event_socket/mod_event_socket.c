@@ -619,7 +619,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 	}
 
-	if (listener->sock) {
+	if (listener->sock && listener->hup) {
 		char content_buf[512] = "";
 		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
 		int message_len = strlen(message);
