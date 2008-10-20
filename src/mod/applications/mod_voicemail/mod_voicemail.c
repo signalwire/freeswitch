@@ -1583,7 +1583,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
 	switch_status_t status;
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
-	const char *thepass = NULL, *myid = id, *actual_id = NULL, *thehash = NULL;
+	const char *thepass = NULL, *myid = id, *actual_id = NULL, *thehash = NULL, *vmhash = NULL;
 	char term = 0;
 	uint32_t timeout, attempts = 0;
 	int failed = 0;
@@ -1981,6 +1981,8 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 					if (!strcasecmp(var, "a1-hash")) {
 						thehash = val;
+					} else if (!strcasecmp(var, "vm-a1-hash")) {
+						vmhash = val;
 					} else if (!strcasecmp(var, "password")) {
 						thepass = val;
 					} else if (!strcasecmp(var, "vm-password")) {
@@ -1992,6 +1994,10 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					} else if (!switch_strlen_zero(cbt.password) && !thepass) {
 						thepass = cbt.password;
 					}
+				}
+				
+				if (vmhash) {
+					thehash = vmhash;
 				}
 
 				if (!auth) {
