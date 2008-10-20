@@ -63,6 +63,7 @@
 /* apr-util headers */
 #include <apr_queue.h>
 #include <apr_uuid.h>
+#include <apr_md5.h>
 
 /* apr stubs */
 
@@ -806,6 +807,12 @@ SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const cha
 {
 	return apr_uuid_parse((apr_uuid_t *) uuid, uuid_str);
 }
+
+SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGESTSIZE], const void *input, switch_size_t inputLen)
+{
+	return apr_md5(digest, input, inputLen);
+}
+
 
 /* FIFO queues (apr-util) */
 

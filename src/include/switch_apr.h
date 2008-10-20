@@ -509,6 +509,8 @@ SWITCH_DECLARE(switch_status_t) switch_thread_cond_destroy(switch_thread_cond_t 
 /** UUIDs are formatted as: 00112233-4455-6677-8899-AABBCCDDEEFF */
 #define SWITCH_UUID_FORMATTED_LENGTH 36
 
+#define SWITCH_MD5_DIGESTSIZE 16
+
 /**
  * Format a UUID into a string, following the standard format
  * @param buffer The buffer to place the formatted UUID string into. It must
@@ -530,6 +532,14 @@ SWITCH_DECLARE(void) switch_uuid_get(switch_uuid_t *uuid);
  * @param uuid_str The formatted UUID
  */
 SWITCH_DECLARE(switch_status_t) switch_uuid_parse(switch_uuid_t *uuid, const char *uuid_str);
+
+/**
+ * MD5 in one step
+ * @param digest The final MD5 digest
+ * @param input The message block to use
+ * @param inputLen The length of the message block
+ */
+SWITCH_DECLARE(switch_status_t) switch_md5(unsigned char digest[SWITCH_MD5_DIGESTSIZE], const void *input, switch_size_t inputLen);
 
 /** @} */
 
