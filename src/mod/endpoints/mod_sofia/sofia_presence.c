@@ -791,6 +791,13 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 {
 	if (switch_stristr("polycom", user_agent)) {
 		*ct = "application/xpidf+xml";
+
+		/* of course!, lets make a big deal over dashes. Now the stupidity is complete. */
+
+		if (!strcmp(prpid, "on-the-phone")) {
+			prpid = "onthephone";
+		}
+
 		return switch_mprintf(
 							  "<?xml version=\"1.0\"?>\n"
 							  "<!DOCTYPE presence PUBLIC \"-//IETF//DTD RFCxxxx XPIDF 1.0//EN\" \"xpidf.dtd\">\n"
