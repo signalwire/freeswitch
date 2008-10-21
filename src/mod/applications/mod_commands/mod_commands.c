@@ -1604,11 +1604,12 @@ SWITCH_STANDARD_API(session_displace_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define BREAK_SYNTAX "<uuid>"
+#define BREAK_SYNTAX "<uuid> [all]"
 SWITCH_STANDARD_API(break_function)
 {
 	switch_core_session_t *psession = NULL;
-
+	char *mycmd, *flag;
+	
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1618,9 +1619,20 @@ SWITCH_STANDARD_API(break_function)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!(psession = switch_core_session_locate(cmd))) {
+	mycmd = strdup(cmd);
+	switch_assert(mycmd);
+
+	if ((flag = strchr(mycmd, ' '))) {
+		*flag++ = '\0';
+	}
+
+	if (!(psession = switch_core_session_locate(mycmd))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (flag && !strcasecmp(flag, "all")) {
+		switch_core_session_flush_private_events(session);
 	}
 
 	switch_channel_set_flag(switch_core_session_get_channel(psession), CF_BREAK);
