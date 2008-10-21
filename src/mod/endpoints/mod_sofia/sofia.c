@@ -3334,6 +3334,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	sip_remote_party_id_t *rpid = NULL;
 	sip_p_asserted_identity_t *passerted = NULL;
 	sip_p_preferred_identity_t *ppreferred = NULL;
+	sip_privacy_t *privacy = NULL;
 	sip_alert_info_t *alert_info = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
@@ -3833,6 +3834,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 			if (rpid->rpid_screen && !strcasecmp(rpid->rpid_screen, "no")) {
 				switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_SCREEN);
+			}
+		}
+
+		if ((privacy = sip_privacy(sip))) {
+			if(msg_params_find(privacy->priv_values, "id")) {
+				switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 			}
 		}
 
