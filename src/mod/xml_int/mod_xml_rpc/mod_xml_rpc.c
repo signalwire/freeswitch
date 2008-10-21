@@ -714,7 +714,6 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 		val = xmlrpc_build_value(envP, "s", "ERROR!");
 	}
 
-  done:
 	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
 	switch_safe_free(command);
 	switch_safe_free(arg);
