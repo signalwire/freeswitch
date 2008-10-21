@@ -1224,7 +1224,9 @@ typedef enum {
 	SCSC_MAX_DTMF_DURATION,
 	SCSC_DEFAULT_DTMF_DURATION,
 	SCSC_SHUTDOWN_ELEGANT,
-	SCSC_CANCEL_SHUTDOWN
+	SCSC_SHUTDOWN_ASAP,
+	SCSC_CANCEL_SHUTDOWN,
+	SCSC_SEND_SIGHUP
 } switch_session_ctl_t;
 
 typedef struct apr_pool_t switch_memory_pool_t;

@@ -709,7 +709,7 @@ SWITCH_STANDARD_API(status_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define CTL_SYNTAX "[hupall|pause|resume|shutdown [cancel|elegant|restart]|sps|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
+#define CTL_SYNTAX "[send_sighup|hupall|pause|resume|shutdown [cancel|elegant|asap|restart]|sps|sync_clock|reclaim_mem|max_sessions|max_dtmf_duration [num]|loglevel [level]]"
 SWITCH_STANDARD_API(ctl_function)
 {
 	int argc;
@@ -732,6 +732,10 @@ SWITCH_STANDARD_API(ctl_function)
 			arg = 1;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
 			stream->write_function(stream, "+OK\n");
+		} else if (!strcasecmp(argv[0], "send_sighup")) {
+			arg = 1;
+			switch_core_session_ctl(SCSC_SEND_SIGHUP, &arg);
+			stream->write_function(stream, "+OK\n");
 		} else if (!strcasecmp(argv[0], "resume")) {
 			arg = 0;
 			switch_core_session_ctl(SCSC_PAUSE_INBOUND, &arg);
@@ -748,6 +752,8 @@ SWITCH_STANDARD_API(ctl_function)
 						break;
 					} else if (!strcasecmp(argv[x], "elegant")) {
 						command = SCSC_SHUTDOWN_ELEGANT;
+					} else if (!strcasecmp(argv[x], "asap")) {
+						command = SCSC_SHUTDOWN_ASAP;
 					} else if (!strcasecmp(argv[x], "restart")) {
 						arg = 1;
 					}
@@ -1789,25 +1795,6 @@ SWITCH_STANDARD_API(originate_function)
 	return status;
 }
 
-static void sch_api_callback(switch_scheduler_task_t *task)
-{
-	char *cmd, *arg = NULL;
-	switch_stream_handle_t stream = { 0 };
-
-	switch_assert(task);
-
-	cmd = (char *) task->cmd_arg;
-
-	if ((arg = strchr(cmd, ' '))) {
-		*arg++ = '\0';
-	}
-
-	SWITCH_STANDARD_STREAM(stream);
-	switch_api_execute(cmd, arg, NULL, &stream);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command %s(%s):\n%s\n", cmd, switch_str_nil(arg), switch_str_nil((char *) stream.data));
-	switch_safe_free(stream.data);
-}
-
 SWITCH_STANDARD_API(sched_del_function)
 {
 	uint32_t cnt = 0;
@@ -1879,14 +1866,65 @@ SWITCH_STANDARD_API(xml_wrap_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct api_task {
+	uint32_t recur;
+	char cmd[];
+};
+
+static void sch_api_callback(switch_scheduler_task_t *task)
+{
+	char *cmd, *arg = NULL;
+	switch_stream_handle_t stream = { 0 };
+	struct api_task *api_task = (struct api_task *) task->cmd_arg;
+	switch_assert(task);
+
+	cmd = strdup(api_task->cmd);
+	switch_assert(cmd);
+
+	if ((arg = strchr(cmd, ' '))) {
+		*arg++ = '\0';
+	}
+
+	SWITCH_STANDARD_STREAM(stream);
+	switch_api_execute(cmd, arg, NULL, &stream);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Command %s(%s):\n%s\n", cmd, switch_str_nil(arg), switch_str_nil((char *) stream.data));
+	switch_safe_free(stream.data);
+	switch_safe_free(cmd);
+
+	if (api_task->recur) {
+		task->runtime = switch_timestamp(NULL) + api_task->recur;
+	}
+
+
+}
+
+#define UNSCHED_SYNTAX "<task_id>"
+SWITCH_STANDARD_API(unsched_api_function)
+{
+	uint32_t id;
+	
+	if (!cmd) {
+		stream->write_function(stream, "-ERR Invalid syntax. USAGE: %s\n", UNSCHED_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if ((id = (uint32_t) atol(cmd))) {
+		stream->write_function(stream, "%s\n", switch_scheduler_del_task_id(id) ? "+OK" : "-ERR no such id");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+#define SCHED_SYNTAX "[+@]<time> <group_name> <command_string>"
 SWITCH_STANDARD_API(sched_api_function)
 {
 	char *tm = NULL, *dcmd, *group;
 	time_t when;
-
+	struct api_task *api_task = NULL;
+	uint32_t recur = 0;
+	
 	if (!cmd) {
-		stream->write_function(stream, "-ERR Invalid syntax\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto bad;
 	}
 	tm = strdup(cmd);
 	switch_assert(tm != NULL);
@@ -1899,21 +1937,32 @@ SWITCH_STANDARD_API(sched_api_function)
 		if ((dcmd = strchr(group, ' '))) {
 			*dcmd++ = '\0';
 
+
 			if (*tm == '+') {
 				when = switch_timestamp(NULL) + atol(tm + 1);
+			} else if (*tm == '@') {
+				recur = (uint32_t) atol(tm + 1);
+				when = switch_timestamp(NULL) + recur;
 			} else {
 				when = atol(tm);
 			}
 
-			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, strdup(dcmd), SSHF_FREE_ARG);
+			switch_zmalloc(api_task, sizeof(*api_task) + strlen(dcmd) + 1);
+			switch_copy_string(api_task->cmd, dcmd, strlen(dcmd));
+			api_task->recur = recur;
+
+			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, api_task, SSHF_FREE_ARG);
 			stream->write_function(stream, "+OK Added: %u\n", id);
 			goto good;
 		}
 	}
 
-	stream->write_function(stream, "-ERR Invalid syntax\n");
+ bad:
+
+	stream->write_function(stream, "-ERR Invalid syntax. USAGE: %s\n", SCHED_SYNTAX);
 
   good:
+
 	switch_safe_free(tm);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -2837,7 +2886,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sched_transfer", "Schedule a broadcast event to a running call", sched_transfer_function,
 				   SCHED_TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, "[+]<time> <group_name> <command_string>");
+	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, SCHED_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "unsched_api", "Unschedule an api command", unsched_api_function, UNSCHED_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "bgapi", "Execute an api command in a thread", bgapi_function, "<command>[ <arg>]");
 	SWITCH_ADD_API(commands_api_interface, "sched_del", "Delete a Scheduled task", sched_del_function, "<task_id>|<group_id>");
 	SWITCH_ADD_API(commands_api_interface, "xml_wrap", "Wrap another api command in xml", xml_wrap_api_function, "<command> <args>");

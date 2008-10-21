@@ -1295,6 +1295,9 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 	}
 
 	switch (cmd) {
+	case SCSC_SEND_SIGHUP:
+		handle_SIGHUP(1);
+		break;
 	case SCSC_SYNC_CLOCK:
 		switch_time_sync();
 		*val = 0;
@@ -1313,21 +1316,29 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
 		switch_clear_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
 		break;
 	case SCSC_SHUTDOWN_ELEGANT:
+	case SCSC_SHUTDOWN_ASAP:
 		{
 			int x = 19;
-			
-			switch_set_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
-			switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
+			uint32_t count;
 
-			while(runtime.running && switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED) && switch_core_session_count()) {
+			switch_set_flag((&runtime), SCF_SHUTDOWN_REQUESTED);
+			if (cmd == SCSC_SHUTDOWN_ASAP) {
+				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
+			}
+
+			while(runtime.running && switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED) && (count = switch_core_session_count())) {
 				switch_yield(500000);
 				if (++x == 20) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Shutdown in progress.....\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+									  "Shutdown in progress, %u session(s) remain.\nShutting down %s\n", 
+									  count,
+									  cmd == SCSC_SHUTDOWN_ASAP ? "ASAP" : "Once there are no active calls.");
 					x = 0;
 				}
 			}
 			
 			if (switch_test_flag((&runtime), SCF_SHUTDOWN_REQUESTED)) {
+				switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 				if (*val) {
 					switch_set_flag((&runtime), SCF_RESTART);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Restarting\n");
