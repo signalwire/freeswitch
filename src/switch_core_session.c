@@ -780,6 +780,39 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 
 }
 
+SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
+{
+	switch_event_t *event;
+	switch_core_session_t *session;
+	char *uuid = task->cmd_arg;
+	
+	if ((session = switch_core_session_locate(uuid))) {
+		switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
+		switch_channel_event_set_data(session->channel, event);
+		switch_event_fire(&event);
+		switch_core_session_rwunlock(session);
+	}
+
+	/* reschedule this task */
+	task->runtime = switch_timestamp(NULL) + session->track_duration;
+}
+
+SWITCH_DECLARE(void) switch_core_session_unsched_heartbeat(switch_core_session_t *session)
+{
+	if (session->track_id) {
+		switch_scheduler_del_task_id(session->track_id);
+		session->track_id = 0;
+	}
+}
+
+SWITCH_DECLARE(void) switch_core_session_sched_heartbeat(switch_core_session_t *session, uint32_t seconds)
+{
+
+	switch_core_session_unsched_heartbeat(session);
+	session->track_id = switch_scheduler_add_task(switch_timestamp(NULL), sch_heartbeat_callback, (char *) __SWITCH_FUNC__, 
+												  switch_core_session_get_uuid(session), 0, strdup(switch_core_session_get_uuid(session)), SSHF_FREE_ARG);
+}
+
 SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t *session, uint32_t seconds)
 {
 	switch_assert(session != NULL);
@@ -788,17 +821,28 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 		seconds = 60;
 	}
 
+	if (switch_channel_test_flag(session->channel,  CF_PROXY_MODE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s using scheduler due to bypass_media mode\n", switch_channel_get_name(session->channel));
+		switch_core_session_sched_heartbeat(session, seconds);
+		return;
+	}
+
+	switch_core_session_unsched_heartbeat(session);
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s setting session heartbeat to %u second(s).\n", 
 					  switch_channel_get_name(session->channel), seconds);
 	session->track_duration = seconds;
 	session->read_frame_count = 0;
+	
 }
 
 SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t *session)
 {
+	switch_core_session_unsched_heartbeat(session);
 	switch_assert(session != NULL);
 	session->read_frame_count = 0;
 	session->track_duration = 0;
+	
 }
 
 static void *SWITCH_THREAD_FUNC switch_core_session_thread(switch_thread_t *thread, void *obj)

@@ -153,6 +153,7 @@ struct switch_core_session {
 	switch_codec_t bug_codec;
 	uint32_t read_frame_count;
 	uint32_t track_duration;
+	uint32_t track_id;
 };
 
 struct switch_media_bug {

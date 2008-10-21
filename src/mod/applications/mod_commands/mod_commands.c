@@ -2352,13 +2352,14 @@ SWITCH_STANDARD_API(help_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define HEARTBEAT_SYNTAX "<uuid> <on|off|<seconds>>"
+#define HEARTBEAT_SYNTAX "<uuid> [sched] <on|off|<seconds>>"
 SWITCH_STANDARD_API(uuid_session_heartbeat_function)
 {
-	char *mycmd = NULL, *argv[2] = { 0 };
+	char *mycmd = NULL, *argv[3] = { 0 };
 	uint32_t seconds = 60;
 	int argc, tmp;
 	switch_core_session_t *l_session = NULL;
+	int x = 0, sched = 0;
 
 	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
 		goto error;
@@ -2366,26 +2367,38 @@ SWITCH_STANDARD_API(uuid_session_heartbeat_function)
 
 	argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
-	if (argc != 2 || !argv[0]) {
+	if (argc < 2 || !argv[0]) {
 		goto error;
 	}
-
+	
 	if (!(l_session = switch_core_session_locate(argv[0]))) {
 		stream->write_function(stream, "-ERR Usage: cannot locate session.\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
+	
+	if (!strcasecmp(argv[1], "sched")) {
+		x = 2;
+		sched++;
+	} else {
+		x = 1;
+	}
 
-	if (switch_is_number(argv[1])) {
-		tmp = atoi(argv[1]);
+	if (switch_is_number(argv[x])) {
+		tmp = atoi(argv[x]);
 		if (tmp > 0) {
 			seconds = tmp;
 		}
-	} else if (!switch_true(argv[1])) {
+	} else if (!switch_true(argv[x])) {
 		seconds = 0;
 	}
 	
 	if (seconds) {
-		switch_core_session_enable_heartbeat(l_session, seconds);
+		if (sched) {
+			switch_core_session_sched_heartbeat(l_session, seconds);
+		} else {
+			switch_core_session_enable_heartbeat(l_session, seconds);
+		}
+
 	} else {
 		switch_core_session_disable_heartbeat(l_session);
 	}

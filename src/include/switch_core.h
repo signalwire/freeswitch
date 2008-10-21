@@ -119,6 +119,9 @@ struct switch_core_port_allocator;
 ///\{
 
 
+SWITCH_DECLARE(void) switch_core_session_sched_heartbeat(switch_core_session_t *session, uint32_t seconds);
+SWITCH_DECLARE(void) switch_core_session_unsched_heartbeat(switch_core_session_t *session);
+
 SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t *session, uint32_t seconds);
 SWITCH_DECLARE(void) switch_core_session_disable_heartbeat(switch_core_session_t *session);
 
