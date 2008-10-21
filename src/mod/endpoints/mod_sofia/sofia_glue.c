@@ -1087,7 +1087,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *invite_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_params");
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error! [%s]\n", tech_pvt->dest);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error!\n");
 			return SWITCH_STATUS_FALSE;
 		}
 

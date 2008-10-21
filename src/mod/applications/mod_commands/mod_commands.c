@@ -2870,8 +2870,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_console_set_complete("add fsctl shutdown");
 	switch_console_set_complete("add fsctl shutdown restart");
 	switch_console_set_complete("add fsctl shutdown elegant");
+	switch_console_set_complete("add fsctl shutdown asap");
 	switch_console_set_complete("add fsctl shutdown elegant restart");
 	switch_console_set_complete("add fsctl shutdown restart elegant");
+	switch_console_set_complete("add fsctl shutdown asap restart");
+	switch_console_set_complete("add fsctl shutdown restart asap");
 	switch_console_set_complete("add fsctl shutdown cancel");
 	switch_console_set_complete("add fsctl sps");
  	switch_console_set_complete("add fsctl sync_clock");
