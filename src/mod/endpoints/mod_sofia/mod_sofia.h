@@ -297,6 +297,7 @@ struct sofia_gateway {
 	reg_state_t state;
 	switch_memory_pool_t *pool;
 	int deleted;
+	switch_event_t *vars;
 	struct sofia_gateway *next;
 };
 

@@ -2029,6 +2029,16 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		} else {
 			tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
 		}
+
+		if (gateway_ptr->vars) {
+			switch_event_header_t *hp;
+			for(hp = gateway_ptr->vars->headers; hp; hp = hp->next) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+								  switch_channel_get_name(nchannel), hp->name, hp->value);
+				switch_channel_set_variable(nchannel, hp->name, hp->value);
+			}
+		}
+
 	} else {
 		if (!(dest = strchr(profile_name, '/'))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid URL\n");

@@ -93,6 +93,9 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_from);
 			switch_core_hash_delete(mod_sofia_globals.gateway_hash, gateway_ptr->register_contact);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleted gateway %s\n", gateway_ptr->name);
+			if (gateway_ptr->vars) {
+				switch_event_destroy(&gateway_ptr->vars);
+			}
 		} else {
 			last = gateway_ptr;
 		}
