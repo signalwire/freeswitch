@@ -1,5 +1,5 @@
 /*
-** $Id: luaconf.h,v 1.82.1.6 2008/01/18 17:07:48 roberto Exp $
+** $Id: luaconf.h,v 1.82.1.7 2008/02/11 16:25:08 roberto Exp $
 ** Configuration file for Lua
 ** See Copyright Notice in lua.h
 */
@@ -91,7 +91,7 @@
 		".\\?.lua;"  LUA_LDIR"?.lua;"  LUA_LDIR"?\\init.lua;" \
 		             LUA_CDIR"?.lua;"  LUA_CDIR"?\\init.lua"
 #define LUA_CPATH_DEFAULT \
-	".\\?.dll;"  LUA_CDIR"?.dll;" LUA_CDIR"loadall.dll"
+	".\\?.dll;"  ".\\?51.dll;"  LUA_CDIR"?.dll;" LUA_CDIR"?51.dll;" LUA_CDIR"clibs\\?.dll;" LUA_CDIR"clibs\\?51.dll;" LUA_CDIR"loadall.dll;" LUA_CDIR"clibs\\loadall.dll"
 
 #else
 #define LUA_ROOT	"/usr/local/"
@@ -101,7 +101,7 @@
 		"./?.lua;"  LUA_LDIR"?.lua;"  LUA_LDIR"?/init.lua;" \
 		            LUA_CDIR"?.lua;"  LUA_CDIR"?/init.lua"
 #define LUA_CPATH_DEFAULT \
-	"./?.so;"  LUA_CDIR"?.so;" LUA_CDIR"loadall.so"
+	"./?.so;"  "./lib?51.so;"  LUA_CDIR"?.so;" LUA_CDIR"lib?51.so;" LUA_CDIR"loadall.so"
 #endif
 
 
@@ -440,10 +440,10 @@
 @* can use.
 ** CHANGE it if you need lots of (Lua) stack space for your C
 ** functions. This limit is arbitrary; its only purpose is to stop C
-** functions to consume unlimited stack space.
+** functions to consume unlimited stack space. (must be smaller than
+** -LUA_REGISTRYINDEX)
 */
-#define LUAI_MCS_AUX	((int)(INT_MAX / (4*sizeof(LUA_NUMBER))))
-#define LUAI_MAXCSTACK	(LUAI_MCS_AUX > SHRT_MAX ? SHRT_MAX : LUAI_MCS_AUX)
+#define LUAI_MAXCSTACK	8000
 
 
 
