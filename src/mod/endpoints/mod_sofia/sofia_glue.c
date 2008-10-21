@@ -1316,6 +1316,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 		
 		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, route_uri, 0, SWITCH_TRUE, NULL);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting proxy route to %s\n", route_uri, switch_channel_get_name(channel));
 	}
 
 	nua_invite(tech_pvt->nh,
