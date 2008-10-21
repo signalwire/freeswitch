@@ -1275,7 +1275,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return_cng_frame();
 		}
 
-		if (bytes && bytes < 8) {
+		if (bytes && bytes < 5) {
 			continue;
 		}
 
