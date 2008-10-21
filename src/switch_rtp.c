@@ -980,7 +980,7 @@ SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
 
 	if (rtp_session->sock_input) {
-		char o[8] = "PING...";
+		char o[4] = "DOH";
 		switch_size_t len = sizeof(o);
 		
 		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) o, &len);
@@ -1275,7 +1275,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			return_cng_frame();
 		}
 
-		if (bytes && bytes <= 12) {
+		if (bytes && bytes < 8) {
 			continue;
 		}
 
