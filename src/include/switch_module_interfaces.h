@@ -562,17 +562,17 @@ struct switch_codec_implementation {
 	uint32_t actual_samples_per_second;
 	/*! bits transferred per second */
 	int bits_per_second;
-	/*! number of microseconds that denote one frame */
+	/*! number of microseconds of media in one packet (ptime * 1000) */
 	int microseconds_per_packet;
-	/*! number of samples that denote one frame */
+	/*! number of samples in one packet */
 	uint32_t samples_per_packet;
-	/*! number of bytes that denote one frame decompressed */
+	/*! number of bytes one packet will decompress to */
 	uint32_t decoded_bytes_per_packet;
-	/*! number of bytes that denote one frame compressed */
+	/*! number of encoded bytes in the RTP payload */
 	uint32_t encoded_bytes_per_packet;
 	/*! number of channels represented */
 	uint8_t number_of_channels;
-	/*! number of codec frames to send in one netowrk packet */
+	/*! number of codec frames packetized into one packet */
 	int codec_frames_per_packet;
 	/*! function to initialize a codec handle using this implementation */
 	switch_core_codec_init_func_t init;
