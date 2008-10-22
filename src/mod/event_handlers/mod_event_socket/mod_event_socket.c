@@ -1297,13 +1297,13 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_thread_rwlock_wrlock(listener->rwlock);
 	
 	if (listener->sock) {
-		char buf[512] = "";
+		char disco_buf[512] = "";
 		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
 		int mlen = strlen(message);
 		
-		switch_snprintf(buf, sizeof(buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", mlen);
-		len = strlen(buf);
-		switch_socket_send(listener->sock, buf, &len);
+		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", mlen);
+		len = strlen(disco_buf);
+		switch_socket_send(listener->sock, disco_buf, &len);
 		len = mlen;
 		switch_socket_send(listener->sock, message, &len);
 		close_socket(&listener->sock);
