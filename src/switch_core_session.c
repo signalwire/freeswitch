@@ -790,11 +790,12 @@ SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
 		switch_event_create(&event, SWITCH_EVENT_SESSION_HEARTBEAT);
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_fire(&event);
+
+		/* reschedule this task */
+		task->runtime = switch_timestamp(NULL) + session->track_duration;
+
 		switch_core_session_rwunlock(session);
 	}
-
-	/* reschedule this task */
-	task->runtime = switch_timestamp(NULL) + session->track_duration;
 }
 
 SWITCH_DECLARE(void) switch_core_session_unsched_heartbeat(switch_core_session_t *session)
