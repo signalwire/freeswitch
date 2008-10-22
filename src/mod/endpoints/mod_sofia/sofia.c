@@ -1149,7 +1149,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							profile->pflags &= ~PFLAG_SECURE;
 						}
 					} else if (!strcasecmp(var, "multiple-registrations")) {
-						if (switch_true(val)) {
+						if (!strcasecmp(val, "contact")) {
+							profile->pflags |= PFLAG_MULTIREG;
+							profile->pflags |= PFLAG_MULTIREG_CONTACT;
+						} else if (switch_true(val)) {
 							profile->pflags |= PFLAG_MULTIREG;
 						} else {
 							profile->pflags &= ~PFLAG_MULTIREG;
@@ -1605,8 +1608,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->pflags |= PFLAG_SECURE;
 						}
 					} else if (!strcasecmp(var, "multiple-registrations")) {
-						if (switch_true(val)) {
+						if (!strcasecmp(val, "contact")) {
 							profile->pflags |= PFLAG_MULTIREG;
+							profile->pflags |= PFLAG_MULTIREG_CONTACT;
+						} else if (switch_true(val)) {
+							profile->pflags |= PFLAG_MULTIREG;
+						} else {
+							profile->pflags &= ~PFLAG_MULTIREG;
 						}
 					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {

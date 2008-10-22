@@ -516,7 +516,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *reg_host = profile->reg_db_domain;
 	char contact_str[1024] = "";
 	int nat_hack = 0;
-	uint8_t multi_reg = 0, avoid_multi_reg = 0;
+	uint8_t multi_reg = 0, multi_reg_contact = 0, avoid_multi_reg = 0;
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
 	long exptime = 60;
@@ -776,6 +776,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	/* Does this profile supports multiple registrations ? */
 	multi_reg = ( sofia_test_pflag(profile, PFLAG_MULTIREG) ) ? 1 : 0;
+	multi_reg_contact = ( sofia_test_pflag(profile, PFLAG_MULTIREG_CONTACT) ) ? 1 : 0;
 
 	if ( multi_reg && avoid_multi_reg ) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
@@ -793,7 +794,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (multi_reg) {
-			sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
+			if (multi_reg_contact) {
+				sql = switch_mprintf("delete from sip_registrations where contact='%q'", contact_str);
+			} else {
+				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
+			}
 		} else {
 			sql = switch_mprintf("delete from sip_registrations where sip_user='%q' and sip_host='%q' and hostname='%q'", 
 								 to_user, reg_host, mod_sofia_globals.hostname);
@@ -856,13 +861,23 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			if ((p = strchr(icontact + 4, ':'))) {
 				*p = '\0';
 			}
-			if ((sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id))) {
-				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+
+			if (multi_reg_contact) {
+				sql = switch_mprintf("delete from sip_subscriptions where contact='%q'", contact_str);
+			} else {
+				sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
 			}
 
-			if ((sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id))) {
-				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+
+			if (multi_reg_contact) {
+				sql = switch_mprintf("delete from sip_registrations where contact='%q'", contact_str);
+			} else {
+				sql = switch_mprintf("delete from sip_registrations where call_id='%q'", call_id);
 			}
+
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+
 			switch_safe_free(icontact);
 		} else {
 			if ((sql = switch_mprintf("delete from sip_subscriptions where sip_user='%q' and sip_host='%q' and hostname='%q'", to_user, reg_host, 
