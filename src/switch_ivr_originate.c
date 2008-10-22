@@ -625,6 +625,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			*e = '\0';
 			data = e + 1;
 		} else {
+			int j = 0, k = 0;
 			if (e) {
 				*e = ',';
 			}
@@ -633,11 +634,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				goto var_extract_error;
 			}
 			/* swallow the opening bracket */
-			int i = 0, j = 0;
-			while ((data + i) && *(data + i)) {
-				j = i; i++;
+			while ((data + k) && *(data + k)) {
+				j = k; k++;
 				/* note that this affects vars[] */
-				data[j] = data[i];
+				data[j] = data[k];
 			}
 			*(--e) = '\0';
 			data = e + 1;
