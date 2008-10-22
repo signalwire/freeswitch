@@ -651,6 +651,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				return status;
 			}
 
+			/* Fast PASS! */
+			if (switch_test_flag((&tech_pvt->read_frame), SFF_PROXY_PACKET)) {
+				switch_clear_flag_locked(tech_pvt, TFLAG_READING);
+				*frame = &tech_pvt->read_frame;
+				return SWITCH_STATUS_SUCCESS;
+			}
+
 			payload = tech_pvt->read_frame.payload;
 
 			if (switch_rtp_has_dtmf(tech_pvt->rtp_session)) {

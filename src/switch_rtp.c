@@ -1308,6 +1308,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			}
 		}
 
+		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+			/* Fast PASS! */
+			*flags |= SFF_PROXY_PACKET;
+			ret = (int) bytes;
+			goto end;
+		}
+
 		if (bytes) {
 			rtp_session->missed_count = 0;
 
@@ -1319,13 +1326,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			} else {
 				rtp_session->cng_count = 0;
 			}
-		}
-
-		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
-			/* Fast PASS! */
-			*flags |= SFF_PROXY_PACKET;
-			ret = (int) bytes;
-			goto end;
 		}
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
