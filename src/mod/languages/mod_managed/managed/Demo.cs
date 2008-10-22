@@ -36,68 +36,45 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace FreeSWITCH.Demo
-{
-    public class AppDemo : AppFunction
-    {
-        new protected static bool Load()
-        {
+namespace FreeSWITCH.Demo {
+    public class AppDemo : AppFunction {
+        new protected static bool Load() {
             Log.WriteLine(LogLevel.Info, "Inside AppDemo::Load.");
             return true;
         }
 
         protected override void Run() {
-            bool isRecording = false;
+            Session.Answer();
             Session.DtmfReceivedFunction = (d, t) => {
-                Log.WriteLine(LogLevel.Critical, "RECORDING is {0}", Session.GetVariable("RECORDING"));
                 Log.WriteLine(LogLevel.Info, "Received {0} for {1}.", d, t);
-
-                if (isRecording) {
-                    Log.WriteLine(LogLevel.Info, "Recording: [TRUE]  Returning crap");
-                    return "1";
-                } else {
-                    Log.WriteLine(LogLevel.Info, "Recording: [FALSE] Returning null");
-                    return null;
-                }
+                return "";
             };
-            Session.StreamFile(@"C:\freeswitch\Debug\sounds\en\us\callie\voicemail\8000\vm-hello.wav", 0);
-            var fn = @"C:\" + Session.GetHashCode() + ".wav";
-            isRecording = true;
-            Session.SetVariable("RECORDING", "true");
-            Session.RecordFile(fn, 600, 500, 3);
-            isRecording = false;
-            Session.SetVariable("RECORDING", "false");
-            Session.sleep(500);
-            Log.WriteLine(LogLevel.Info, "WW GROUP: Finished Recording file");
-            var res = Session.PlayAndGetDigits(1, 1, 3, 3000, "*", @"C:\freeswitch\libs\sounds\en\us\callie\ivr\8000\ivr-sample_submenu.wav", @"C:\freeswitch\libs\sounds\en\us\callie\ivr\8000\ivr-sample_submenu.wav", "1|2|3|9|#");
-            Log.WriteLine(LogLevel.Info, "WW GROUP: Message Menu [" + res + "]");
+            Log.WriteLine(LogLevel.Info, "Inside AppDemo.Run (args '{0}'); HookState is {1}. Now will collect digits.", Arguments, Session.HookState);
+            Session.CollectDigits(5000); // Hanging up here will cause an abort and the next line won't be written
+            Log.WriteLine(LogLevel.Info, "AppDemo is finishing its run and will now hang up.");
+            Session.Hangup("USER_BUSY");
         }
-        
-        void hangupHook()
-        {
+
+        void hangupHook() {
             Log.WriteLine(LogLevel.Debug, "AppDemo hanging up, UUID: {0}.", this.Uuid);
         }
 
-        protected override bool AbortOnHangup { get { return true; } } 
+        protected override bool AbortOnHangup { get { return true; } }
     }
 
-    public class ApiDemo : ApiFunction
-    {
-        new protected static bool Load()
-        {
+    public class ApiDemo : ApiFunction {
+        new protected static bool Load() {
             Log.WriteLine(LogLevel.Debug, "Inside ApiDemo::Load.");
             return true;
         }
 
-        public override void ExecuteBackground(string args)
-        {
+        public override void ExecuteBackground(string args) {
             Log.WriteLine(LogLevel.Debug, "ApiDemo on a background thread #({0}), with args '{1}'.",
                 System.Threading.Thread.CurrentThread.ManagedThreadId,
                 args);
         }
 
-        public override void Execute(Native.Stream stream, Native.Event evt, string args)
-        {
+        public override void Execute(Native.Stream stream, Native.Event evt, string args) {
             stream.Write(string.Format("ApiDemo executed with args '{0}' and event type {1}.",
                 args, evt == null ? "<none>" : evt.GetEventType()));
         }
