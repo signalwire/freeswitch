@@ -743,8 +743,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	}
 
 
-	if (listener->session) {
-		switch_channel_t *channel = switch_core_session_get_channel(listener->session);
+	if (listener->session || !strncasecmp(cmd, "myevents ", 9)) {
+		switch_channel_t *channel = NULL;
+
+		if (listener->session) {
+			channel = switch_core_session_get_channel(listener->session);
+		}
 
 		if (!strncasecmp(cmd, "connect", 7)) {
 			switch_snprintf(reply, reply_len, "+OK");
@@ -777,6 +781,29 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_snprintf(reply, reply_len, "%s", val);
 			goto done;
 		} else if (!strncasecmp(cmd, "myevents", 8)) {
+			if (switch_test_flag(listener, LFLAG_MYEVENTS)) {
+				switch_snprintf(reply, reply_len, "-ERR aready enabled.");
+				goto done;
+			}
+
+			if (!listener->session) {
+				char *uuid;
+				
+				if ((uuid = cmd + 9)) {
+					strip_cr(uuid);
+					
+					if (!(listener->session = switch_core_session_locate(uuid))) {
+						switch_snprintf(reply, reply_len, "-ERR invalid uuid");
+						goto done;
+					}
+
+					switch_set_flag_locked(listener, LFLAG_SESSION);
+					switch_set_flag_locked(listener, LFLAG_ASYNC);
+				}
+				
+
+			}
+
 			listener->event_list[SWITCH_EVENT_CHANNEL_CREATE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_DESTROY] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_STATE] = 1;
@@ -1314,10 +1341,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
 	switch_core_hash_destroy(&listener->event_hash);
 
-	if (session) {
-		switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
+	if (listener->session) {
+		switch_channel_clear_flag(switch_core_session_get_channel(listener->session), CF_CONTROLLED);
 		switch_clear_flag_locked(listener, LFLAG_SESSION);
-		switch_core_session_rwunlock(session);
+		switch_core_session_rwunlock(listener->session);
 	} else if (listener->pool) {
 		switch_memory_pool_t *pool = listener->pool;
 		switch_core_destroy_memory_pool(&pool);
