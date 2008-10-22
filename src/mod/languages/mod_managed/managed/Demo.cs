@@ -46,17 +46,31 @@ namespace FreeSWITCH.Demo
             return true;
         }
 
-        protected override void Run()
-        {
-            Session.Answer();
+        protected override void Run() {
+            bool isRecording = false;
             Session.DtmfReceivedFunction = (d, t) => {
+                Log.WriteLine(LogLevel.Critical, "RECORDING is {0}", Session.GetVariable("RECORDING"));
                 Log.WriteLine(LogLevel.Info, "Received {0} for {1}.", d, t);
-                return "";
+
+                if (isRecording) {
+                    Log.WriteLine(LogLevel.Info, "Recording: [TRUE]  Returning crap");
+                    return "1";
+                } else {
+                    Log.WriteLine(LogLevel.Info, "Recording: [FALSE] Returning null");
+                    return null;
+                }
             };
-            Log.WriteLine(LogLevel.Info, "Inside AppDemo.Run (args '{0}'); HookState is {1}. Now will collect digits.", Arguments, Session.HookState);
-            Session.CollectDigits(5000); // Hanging up here will cause an abort and the next line won't be written
-            Log.WriteLine(LogLevel.Info, "AppDemo is finishing its run and will now hang up.");
-            Session.Hangup("USER_BUSY");
+            Session.StreamFile(@"C:\freeswitch\Debug\sounds\en\us\callie\voicemail\8000\vm-hello.wav", 0);
+            var fn = @"C:\" + Session.GetHashCode() + ".wav";
+            isRecording = true;
+            Session.SetVariable("RECORDING", "true");
+            Session.RecordFile(fn, 600, 500, 3);
+            isRecording = false;
+            Session.SetVariable("RECORDING", "false");
+            Session.sleep(500);
+            Log.WriteLine(LogLevel.Info, "WW GROUP: Finished Recording file");
+            var res = Session.PlayAndGetDigits(1, 1, 3, 3000, "*", @"C:\freeswitch\libs\sounds\en\us\callie\ivr\8000\ivr-sample_submenu.wav", @"C:\freeswitch\libs\sounds\en\us\callie\ivr\8000\ivr-sample_submenu.wav", "1|2|3|9|#");
+            Log.WriteLine(LogLevel.Info, "WW GROUP: Message Menu [" + res + "]");
         }
         
         void hangupHook()

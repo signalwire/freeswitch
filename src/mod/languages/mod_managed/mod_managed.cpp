@@ -362,6 +362,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#ifdef _MANAGED
+#pragma unmanaged
+#endif
 SWITCH_STANDARD_API(managedrun_api_function) 
 {
 	if (switch_strlen_zero(cmd)) {

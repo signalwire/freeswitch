@@ -34,6 +34,10 @@
 #include <switch_cpp.h>
 #include "freeswitch_managed.h"
 
+#ifdef _MANAGED
+#pragma unmanaged
+#endif
+
 ManagedSession::ManagedSession():CoreSession() 
 {
 
