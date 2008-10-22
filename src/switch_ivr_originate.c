@@ -25,6 +25,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael Jerris <mike@jerris.com>
+ * Travis Cross <tc@traviscross.com>
  *
  * switch_ivr_originate.c -- IVR Library (originate)
  *
@@ -577,6 +578,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_call_cause_t reason = SWITCH_CAUSE_NONE;
 	uint8_t to = 0;
 	char *var_val, *vars = NULL;
+	int var_block_count = 0;
+	char *e = NULL;
 	const char *ringback_data = NULL;
 	switch_codec_t *read_codec = NULL;
 	uint8_t sent_ring = 0, early_ok = 1, return_ring_ready = 0, progress = 0;
@@ -611,18 +614,41 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		data++;
 	}
 
-	if (*data == '{') {
-		char *e = switch_find_end_paren(data, '{', '}');
-
-		if (e) {
+	/* extract channel variables, allowing multiple sets of braces */
+	while (*data == '{') {
+		if (!var_block_count) {
+			e = switch_find_end_paren(data, '{', '}');
+			if (!e || !*e) {
+				goto var_extract_error;
+			}
 			vars = data + 1;
-			*e++ = '\0';
-			data = e;
+			*e = '\0';
+			data = e + 1;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
-			status = SWITCH_STATUS_GENERR;
-			goto done;
+			if (e) {
+				*e = ',';
+			}
+			e = switch_find_end_paren(data, '{', '}');
+			if (!e || !*e) {
+				goto var_extract_error;
+			}
+			/* swallow the opening bracket */
+			int i = 0, j = 0;
+			while ((data + i) && *(data + i)) {
+				j = i; i++;
+				/* note that this affects vars[] */
+				data[j] = data[i];
+			}
+			*(--e) = '\0';
+			data = e + 1;
 		}
+		var_block_count++;
+		continue;
+    
+	var_extract_error:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
+		status = SWITCH_STATUS_GENERR;
+		goto done;
 	}
 
 	/* strip leading spaces (again) */
