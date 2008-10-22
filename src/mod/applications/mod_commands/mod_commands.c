@@ -1638,7 +1638,7 @@ SWITCH_STANDARD_API(break_function)
 	}
 
 	if (flag && !strcasecmp(flag, "all")) {
-		switch_core_session_flush_private_events(session);
+		switch_core_session_flush_private_events(psession);
 	}
 
 	switch_channel_set_flag(switch_core_session_get_channel(psession), CF_BREAK);
