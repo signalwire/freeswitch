@@ -847,6 +847,22 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_core_session_sched_heartbeat(SWIGTYPE_p_switch_core_session session, uint seconds) {
+    freeswitchPINVOKE.switch_core_session_sched_heartbeat(SWIGTYPE_p_switch_core_session.getCPtr(session), seconds);
+  }
+
+  public static void switch_core_session_unsched_heartbeat(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_session_unsched_heartbeat(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
+  public static void switch_core_session_enable_heartbeat(SWIGTYPE_p_switch_core_session session, uint seconds) {
+    freeswitchPINVOKE.switch_core_session_enable_heartbeat(SWIGTYPE_p_switch_core_session.getCPtr(session), seconds);
+  }
+
+  public static void switch_core_session_disable_heartbeat(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_session_disable_heartbeat(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
   public static switch_status_t switch_core_media_bug_add(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t callback, SWIGTYPE_p_void user_data, SWIGTYPE_p_time_t stop_time, uint flags, SWIGTYPE_p_p_switch_media_bug new_bug) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_media_bug_add(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_media_bug_p_void_enum_switch_abc_type_t__switch_bool_t.getCPtr(callback), SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_time_t.getCPtr(stop_time), flags, SWIGTYPE_p_p_switch_media_bug.getCPtr(new_bug));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -1079,6 +1095,11 @@ public class freeswitch {
 
   public static uint switch_core_session_count() {
     uint ret = freeswitchPINVOKE.switch_core_session_count();
+    return ret;
+  }
+
+  public static SWIGTYPE_p_switch_size_t switch_core_session_get_id(SWIGTYPE_p_switch_core_session session) {
+    SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_core_session_get_id(SWIGTYPE_p_switch_core_session.getCPtr(session)), true);
     return ret;
   }
 
@@ -1463,6 +1484,30 @@ public class freeswitch {
 
   public static void switch_core_session_unset_read_codec(SWIGTYPE_p_switch_core_session session) {
     freeswitchPINVOKE.switch_core_session_unset_read_codec(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
+  public static void switch_core_session_unset_write_codec(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_session_unset_write_codec(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  }
+
+  public static switch_status_t switch_core_session_get_read_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_get_read_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_session_get_write_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_get_write_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_session_get_video_read_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_get_video_read_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
+  }
+
+  public static switch_status_t switch_core_session_get_video_write_impl(SWIGTYPE_p_switch_core_session session, switch_codec_implementation impp) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_get_video_write_impl(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_codec_implementation.getCPtr(impp));
+    return ret;
   }
 
   public static switch_codec switch_core_session_get_read_codec(SWIGTYPE_p_switch_core_session session) {
@@ -3824,6 +3869,7 @@ public class freeswitch {
   public static readonly int SWITCH_MAX_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MAX_DTMF_DURATION_get();
   public static readonly string SWITCH_PATH_SEPARATOR = freeswitchPINVOKE.SWITCH_PATH_SEPARATOR_get();
   public static readonly string SWITCH_URL_SEPARATOR = freeswitchPINVOKE.SWITCH_URL_SEPARATOR_get();
+  public static readonly string SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE = freeswitchPINVOKE.SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE_get();
   public static readonly string SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE = freeswitchPINVOKE.SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE_get();
   public static readonly string SWITCH_READ_RESULT_VARIABLE = freeswitchPINVOKE.SWITCH_READ_RESULT_VARIABLE_get();
   public static readonly string SWITCH_COPY_XML_CDR_VARIABLE = freeswitchPINVOKE.SWITCH_COPY_XML_CDR_VARIABLE_get();
@@ -4288,6 +4334,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_URL_SEPARATOR_get")]
   public static extern string SWITCH_URL_SEPARATOR_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE_get")]
+  public static extern string SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE_get")]
   public static extern string SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE_get();
@@ -5147,6 +5196,18 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_core_thread_session")]
   public static extern void delete_switch_core_thread_session(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_sched_heartbeat")]
+  public static extern void switch_core_session_sched_heartbeat(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_unsched_heartbeat")]
+  public static extern void switch_core_session_unsched_heartbeat(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_enable_heartbeat")]
+  public static extern void switch_core_session_enable_heartbeat(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_disable_heartbeat")]
+  public static extern void switch_core_session_disable_heartbeat(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_media_bug_add")]
   public static extern int switch_core_media_bug_add(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, uint jarg5, HandleRef jarg6);
 
@@ -5284,6 +5345,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_count")]
   public static extern uint switch_core_session_count();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_id")]
+  public static extern IntPtr switch_core_session_get_id(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_id")]
   public static extern IntPtr switch_core_session_id();
@@ -5515,6 +5579,21 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_unset_read_codec")]
   public static extern void switch_core_session_unset_read_codec(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_unset_write_codec")]
+  public static extern void switch_core_session_unset_write_codec(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_read_impl")]
+  public static extern int switch_core_session_get_read_impl(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_write_impl")]
+  public static extern int switch_core_session_get_write_impl(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_video_read_impl")]
+  public static extern int switch_core_session_get_video_read_impl(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_video_write_impl")]
+  public static extern int switch_core_session_get_video_write_impl(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_get_read_codec")]
   public static extern IntPtr switch_core_session_get_read_codec(HandleRef jarg1);
@@ -7598,29 +7677,29 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_bits_per_second_get")]
   public static extern int switch_codec_implementation_bits_per_second_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_microseconds_per_frame_set")]
-  public static extern void switch_codec_implementation_microseconds_per_frame_set(HandleRef jarg1, int jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_microseconds_per_packet_set")]
+  public static extern void switch_codec_implementation_microseconds_per_packet_set(HandleRef jarg1, int jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_microseconds_per_frame_get")]
-  public static extern int switch_codec_implementation_microseconds_per_frame_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_microseconds_per_packet_get")]
+  public static extern int switch_codec_implementation_microseconds_per_packet_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_samples_per_frame_set")]
-  public static extern void switch_codec_implementation_samples_per_frame_set(HandleRef jarg1, uint jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_samples_per_packet_set")]
+  public static extern void switch_codec_implementation_samples_per_packet_set(HandleRef jarg1, uint jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_samples_per_frame_get")]
-  public static extern uint switch_codec_implementation_samples_per_frame_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_samples_per_packet_get")]
+  public static extern uint switch_codec_implementation_samples_per_packet_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_bytes_per_frame_set")]
-  public static extern void switch_codec_implementation_bytes_per_frame_set(HandleRef jarg1, uint jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_decoded_bytes_per_packet_set")]
+  public static extern void switch_codec_implementation_decoded_bytes_per_packet_set(HandleRef jarg1, uint jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_bytes_per_frame_get")]
-  public static extern uint switch_codec_implementation_bytes_per_frame_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_decoded_bytes_per_packet_get")]
+  public static extern uint switch_codec_implementation_decoded_bytes_per_packet_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_encoded_bytes_per_frame_set")]
-  public static extern void switch_codec_implementation_encoded_bytes_per_frame_set(HandleRef jarg1, uint jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_encoded_bytes_per_packet_set")]
+  public static extern void switch_codec_implementation_encoded_bytes_per_packet_set(HandleRef jarg1, uint jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_encoded_bytes_per_frame_get")]
-  public static extern uint switch_codec_implementation_encoded_bytes_per_frame_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_encoded_bytes_per_packet_get")]
+  public static extern uint switch_codec_implementation_encoded_bytes_per_packet_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_number_of_channels_set")]
   public static extern void switch_codec_implementation_number_of_channels_set(HandleRef jarg1, byte jarg2);
@@ -7628,17 +7707,11 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_number_of_channels_get")]
   public static extern byte switch_codec_implementation_number_of_channels_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_pref_frames_per_packet_set")]
-  public static extern void switch_codec_implementation_pref_frames_per_packet_set(HandleRef jarg1, int jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_codec_frames_per_packet_set")]
+  public static extern void switch_codec_implementation_codec_frames_per_packet_set(HandleRef jarg1, int jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_pref_frames_per_packet_get")]
-  public static extern int switch_codec_implementation_pref_frames_per_packet_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_max_frames_per_packet_set")]
-  public static extern void switch_codec_implementation_max_frames_per_packet_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_max_frames_per_packet_get")]
-  public static extern int switch_codec_implementation_max_frames_per_packet_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_codec_frames_per_packet_get")]
+  public static extern int switch_codec_implementation_codec_frames_per_packet_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_codec_implementation_init_set")]
   public static extern void switch_codec_implementation_init_set(HandleRef jarg1, HandleRef jarg2);
@@ -15559,7 +15632,8 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_USER_CHALLENGE = 603,
   SWITCH_CAUSE_MEDIA_TIMEOUT = 604,
   SWITCH_CAUSE_PICKED_OFF = 605,
-  SWITCH_CAUSE_USER_NOT_REGISTERED = 606
+  SWITCH_CAUSE_USER_NOT_REGISTERED = 606,
+  SWITCH_CAUSE_PROGRESS_TIMEOUT = 607
 }
 
 }
@@ -16713,42 +16787,42 @@ public class switch_codec_implementation : IDisposable {
     } 
   }
 
-  public int microseconds_per_frame {
+  public int microseconds_per_packet {
     set {
-      freeswitchPINVOKE.switch_codec_implementation_microseconds_per_frame_set(swigCPtr, value);
+      freeswitchPINVOKE.switch_codec_implementation_microseconds_per_packet_set(swigCPtr, value);
     } 
     get {
-      int ret = freeswitchPINVOKE.switch_codec_implementation_microseconds_per_frame_get(swigCPtr);
+      int ret = freeswitchPINVOKE.switch_codec_implementation_microseconds_per_packet_get(swigCPtr);
       return ret;
     } 
   }
 
-  public uint samples_per_frame {
+  public uint samples_per_packet {
     set {
-      freeswitchPINVOKE.switch_codec_implementation_samples_per_frame_set(swigCPtr, value);
+      freeswitchPINVOKE.switch_codec_implementation_samples_per_packet_set(swigCPtr, value);
     } 
     get {
-      uint ret = freeswitchPINVOKE.switch_codec_implementation_samples_per_frame_get(swigCPtr);
+      uint ret = freeswitchPINVOKE.switch_codec_implementation_samples_per_packet_get(swigCPtr);
       return ret;
     } 
   }
 
-  public uint bytes_per_frame {
+  public uint decoded_bytes_per_packet {
     set {
-      freeswitchPINVOKE.switch_codec_implementation_bytes_per_frame_set(swigCPtr, value);
+      freeswitchPINVOKE.switch_codec_implementation_decoded_bytes_per_packet_set(swigCPtr, value);
     } 
     get {
-      uint ret = freeswitchPINVOKE.switch_codec_implementation_bytes_per_frame_get(swigCPtr);
+      uint ret = freeswitchPINVOKE.switch_codec_implementation_decoded_bytes_per_packet_get(swigCPtr);
       return ret;
     } 
   }
 
-  public uint encoded_bytes_per_frame {
+  public uint encoded_bytes_per_packet {
     set {
-      freeswitchPINVOKE.switch_codec_implementation_encoded_bytes_per_frame_set(swigCPtr, value);
+      freeswitchPINVOKE.switch_codec_implementation_encoded_bytes_per_packet_set(swigCPtr, value);
     } 
     get {
-      uint ret = freeswitchPINVOKE.switch_codec_implementation_encoded_bytes_per_frame_get(swigCPtr);
+      uint ret = freeswitchPINVOKE.switch_codec_implementation_encoded_bytes_per_packet_get(swigCPtr);
       return ret;
     } 
   }
@@ -16763,22 +16837,12 @@ public class switch_codec_implementation : IDisposable {
     } 
   }
 
-  public int pref_frames_per_packet {
+  public int codec_frames_per_packet {
     set {
-      freeswitchPINVOKE.switch_codec_implementation_pref_frames_per_packet_set(swigCPtr, value);
+      freeswitchPINVOKE.switch_codec_implementation_codec_frames_per_packet_set(swigCPtr, value);
     } 
     get {
-      int ret = freeswitchPINVOKE.switch_codec_implementation_pref_frames_per_packet_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public int max_frames_per_packet {
-    set {
-      freeswitchPINVOKE.switch_codec_implementation_max_frames_per_packet_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_codec_implementation_max_frames_per_packet_get(swigCPtr);
+      int ret = freeswitchPINVOKE.switch_codec_implementation_codec_frames_per_packet_get(swigCPtr);
       return ret;
     } 
   }
@@ -18789,6 +18853,7 @@ public enum switch_event_types_t {
   SWITCH_EVENT_CHANNEL_DATA,
   SWITCH_EVENT_GENERAL,
   SWITCH_EVENT_COMMAND,
+  SWITCH_EVENT_SESSION_HEARTBEAT,
   SWITCH_EVENT_ALL
 }
 
@@ -22058,7 +22123,9 @@ public enum switch_session_ctl_t {
   SCSC_MAX_DTMF_DURATION,
   SCSC_DEFAULT_DTMF_DURATION,
   SCSC_SHUTDOWN_ELEGANT,
-  SCSC_CANCEL_SHUTDOWN
+  SCSC_SHUTDOWN_ASAP,
+  SCSC_CANCEL_SHUTDOWN,
+  SCSC_SEND_SIGHUP
 }
 
 }
