@@ -38,17 +38,8 @@ SWITCH_BEGIN_EXTERN_C
 #include <switch.h>
 #include <switch_cpp.h>
 
-/* calling conventions for Windows */
-#ifndef MANAGED_STDCALL
-#ifdef WIN32
-#   define MANAGED_STDCALL __stdcall
-# else
-#   define MANAGED_STDCALL
-# endif 
-#endif
-
-typedef void (MANAGED_STDCALL *hangupFunction)(void);
-typedef char* (MANAGED_STDCALL *inputFunction)(void*, switch_input_type_t);
+typedef void (*hangupFunction)(void);
+typedef char* (*inputFunction)(void*, switch_input_type_t);
 
 
 #ifndef _MANAGED

@@ -94,16 +94,20 @@ namespace FreeSWITCH
             }
         }
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate bool ExecuteDelegate(string cmd, IntPtr streamH, IntPtr eventH);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate bool ExecuteBackgroundDelegate(string cmd);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate bool RunDelegate(string cmd, IntPtr session);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         delegate bool LoadAssemblyDelegate(string filename);
         static readonly ExecuteDelegate _execute = Execute;
         static readonly ExecuteBackgroundDelegate _executeBackground = ExecuteBackground;
         static readonly RunDelegate _run = Run;
         static readonly LoadAssemblyDelegate _loadAssembly = LoadAssembly;
         //SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, loadAssemblyFunction loadAssembly)  
-        [DllImport("mod_managed", CharSet = CharSet.Ansi)]
+        [DllImport("mod_managed", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         static extern void InitManagedDelegates(RunDelegate run, ExecuteDelegate execute, ExecuteBackgroundDelegate executeBackground, LoadAssemblyDelegate loadAssembly);
 
         // Be rather lenient in finding the Load and Unload methods
