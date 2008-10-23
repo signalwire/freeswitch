@@ -881,13 +881,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 
 		if ((session = switch_core_session_locate(uuid))) {
-			if (!switch_channel_test_flag(switch_core_session_get_channel(session), CF_CONTROLLED)) {
-				switch_core_session_rwunlock(session);
-				session = NULL;
-			}
-		}
-
-		if (session) {
 			if ((status = switch_core_session_queue_private_event(session, event)) == SWITCH_STATUS_SUCCESS) {
 				switch_snprintf(reply, reply_len, "+OK");
 			} else {
