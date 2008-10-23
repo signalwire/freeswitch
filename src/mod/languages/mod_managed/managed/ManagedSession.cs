@@ -47,7 +47,7 @@ namespace FreeSWITCH.Native
     {
         // SWITCH_DECLARE(void) InitManagedSession(ManagedSession *session, MonoObject *dtmfDelegate, MonoObject *hangupDelegate)
         [DllImport("mod_managed.dll", CharSet = CharSet.Ansi, CallingConvention=CallingConvention.Cdecl)]
-        static extern void InitManagedSession(IntPtr sessionPtr, DtmfCallback dtmfDelegate, Action hangupDelegate);
+        static extern void InitManagedSession(IntPtr sessionPtr, DtmfCallback dtmfDelegate, CdeclAction hangupDelegate);
 
         /// <summary>Initializes the native ManagedSession. Must be called after Originate.</summary>
         public void Initialize()
@@ -57,11 +57,11 @@ namespace FreeSWITCH.Native
             // So we don't need to worry about GCHandles and all that....
             // Info here: http://blogs.msdn.com/cbrumme/archive/2003/05/06/51385.aspx
             this._inputCallbackRef = inputCallback;
-            this._hangupCallback = hangupCallback;
-            InitManagedSession(ManagedSession.getCPtr(this).Handle, inputCallback, hangupCallback);
+            this._hangupCallbackRef = hangupCallback;
+            InitManagedSession(ManagedSession.getCPtr(this).Handle, this._inputCallbackRef, this._hangupCallbackRef);
         }
         DtmfCallback _inputCallbackRef;
-        CdeclAction _hangupCallback;
+        CdeclAction _hangupCallbackRef;
 
         /// <summary>Function to execute when this session hangs up.</summary>
         public Action HangupFunction { get; set; }
