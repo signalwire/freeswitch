@@ -209,7 +209,6 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		switch_frame_t write_frame = { 0 };
 		unsigned char *fdata[1024];
 		switch_frame_t *read_frame;
-		switch_core_thread_session_t thread_session = { 0 };
 		switch_channel_t *channel;
 
 		if (argc > 1) {
@@ -237,7 +236,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		channel = switch_core_session_get_channel(session);
 
 		if (tto->timer) {
-			switch_core_service_session(session, &thread_session, 0);
+			switch_core_service_session(session);
 		}
 
 		if (loops) {
@@ -291,7 +290,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		}
 
 		if (tto->timer) {
-			switch_core_thread_session_end(&thread_session);
+			switch_core_thread_session_end(session);
 		}
 		return JS_TRUE;
 	}

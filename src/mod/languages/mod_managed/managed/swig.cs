@@ -1262,12 +1262,12 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_session_launch_thread(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_f_p_switch_thread_t_p_void__p_void.getCPtr(func), SWIGTYPE_p_void.getCPtr(obj));
   }
 
-  public static void switch_core_thread_session_end(switch_core_thread_session thread_session) {
-    freeswitchPINVOKE.switch_core_thread_session_end(switch_core_thread_session.getCPtr(thread_session));
+  public static void switch_core_thread_session_end(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_thread_session_end(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
-  public static void switch_core_service_session(SWIGTYPE_p_switch_core_session session, switch_core_thread_session thread_session, int stream_id) {
-    freeswitchPINVOKE.switch_core_service_session(SWIGTYPE_p_switch_core_session.getCPtr(session), switch_core_thread_session.getCPtr(thread_session), stream_id);
+  public static void switch_core_service_session(SWIGTYPE_p_switch_core_session session) {
+    freeswitchPINVOKE.switch_core_service_session(SWIGTYPE_p_switch_core_session.getCPtr(session));
   }
 
   public static switch_call_cause_t switch_core_session_outgoing_channel(SWIGTYPE_p_switch_core_session session, switch_event var_event, string endpoint_name, switch_caller_profile caller_profile, SWIGTYPE_p_p_switch_core_session new_session, SWIGTYPE_p_p_apr_pool_t pool, uint flags) {
@@ -5449,7 +5449,7 @@ class freeswitchPINVOKE {
   public static extern void switch_core_thread_session_end(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_service_session")]
-  public static extern void switch_core_service_session(HandleRef jarg1, HandleRef jarg2, int jarg3);
+  public static extern void switch_core_service_session(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_outgoing_channel")]
   public static extern int switch_core_session_outgoing_channel(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4, HandleRef jarg5, HandleRef jarg6, uint jarg7);

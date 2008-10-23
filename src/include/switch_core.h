@@ -740,18 +740,15 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(_In_ switch_core_session_
 
 /*! 
   \brief Signal a thread using a thread session to terminate
-  \param thread_session the thread_session to indicate to
+  \param session the session to indicate to
 */
-SWITCH_DECLARE(void) switch_core_thread_session_end(_In_ switch_core_thread_session_t *thread_session);
+SWITCH_DECLARE(void) switch_core_thread_session_end(_In_ switch_core_session_t *session);
 
 /*! 
   \brief Launch a service thread on a session to drop inbound data
   \param session the session the launch thread on
-  \param stream_id which logical media channel to use
-  \param thread_session the thread_session to use
 */
-SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *session,
-												 _In_ switch_core_thread_session_t *thread_session, _In_ int stream_id);
+SWITCH_DECLARE(void) switch_core_service_session(_In_ switch_core_session_t *session);
 
 /*! 
   \brief Request an outgoing session spawned from an existing session using a desired endpoing module

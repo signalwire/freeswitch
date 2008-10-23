@@ -271,53 +271,54 @@ SWITCH_DECLARE(char *) switch_core_get_uuid(void)
 
 static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 {
-	switch_core_thread_session_t *data = obj;
-	switch_core_session_t *session = data->objs[0];
-	int *stream_id_p = data->objs[1];
+	switch_core_session_t *session = obj;
 	switch_channel_t *channel;
 	switch_frame_t *read_frame;
-	int stream_id = *stream_id_p;
 
 	switch_assert(thread != NULL);
 	switch_assert(session != NULL);
+
+	switch_core_session_read_lock(session);
 	channel = switch_core_session_get_channel(session);
 
 	switch_channel_set_flag(channel, CF_SERVICE);
-	while (data->running > 0) {
-		switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) {
+	while (switch_channel_test_flag(channel, CF_SERVICE)) {
+		switch (switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0)) {
 		case SWITCH_STATUS_SUCCESS:
 		case SWITCH_STATUS_TIMEOUT:
 		case SWITCH_STATUS_BREAK:
 			break;
 		default:
-			data->running = -1;
+			switch_channel_clear_flag(channel, CF_SERVICE);
 			continue;
 		}
 	}
 
-	switch_channel_clear_flag(channel, CF_SERVICE);
-	data->running = 0;
+	switch_core_session_rwunlock(session);
 	return NULL;
 }
 
 /* Either add a timeout here or make damn sure the thread cannot get hung somehow (my preference) */
-SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_thread_session_t *thread_session)
+SWITCH_DECLARE(void) switch_core_thread_session_end(switch_core_session_t *session)
 {
-	if (thread_session->running > 0) {
-		thread_session->running = -1;
+	switch_channel_t *channel;
+	switch_assert(session);
 
-		while (thread_session->running) {
-			switch_yield(1000);
-		}
-	}
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel);
+	
+	switch_channel_clear_flag(channel, CF_SERVICE);
 }
 
-SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session, switch_core_thread_session_t *thread_session, int stream_id)
+SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session)
 {
-	thread_session->running = 1;
-	thread_session->objs[0] = session;
-	thread_session->objs[1] = &stream_id;
-	switch_core_session_launch_thread(session, switch_core_service_thread, thread_session);
+	switch_channel_t *channel;
+	switch_assert(session);
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel);
+	
+	switch_core_session_launch_thread(session, switch_core_service_thread, session);
 }
 
 /* This function abstracts the thread creation for modules by allowing you to pass a function ptr and

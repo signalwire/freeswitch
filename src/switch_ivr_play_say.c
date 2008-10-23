@@ -729,7 +729,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_size_t olen = 0, llen = 0;
 	switch_frame_t write_frame = { 0 };
 	switch_timer_t timer = { 0 };
-	switch_core_thread_session_t thread_session = { 0 };
 	switch_codec_t codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
@@ -963,7 +962,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	if (timer_name) {
 		/* start a thread to absorb incoming audio */
-		switch_core_service_session(session, &thread_session, 0);
+		switch_core_service_session(session);
 	}
 
 	ilen = samples;
@@ -1230,7 +1229,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 	if (timer_name) {
 		/* End the audio absorbing thread */
-		switch_core_thread_session_end(&thread_session);
+		switch_core_thread_session_end(session);
 		switch_core_timer_destroy(&timer);
 	}
 
@@ -1842,7 +1841,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 	int interval = 0;
 	switch_frame_t write_frame = { 0 };
 	switch_timer_t ltimer, *timer;
-	switch_core_thread_session_t thread_session = { 0 };
 	switch_codec_t lcodec, *codec;
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
@@ -1948,7 +1946,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", sh->samples * 2, interval);
 		}
 		/* start a thread to absorb incoming audio */
-		switch_core_service_session(session, &thread_session, 0);
+		switch_core_service_session(session);
 
 	}
 
@@ -1962,7 +1960,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	if (timer_name) {
 		/* End the audio absorbing thread */
-		switch_core_thread_session_end(&thread_session);
+		switch_core_thread_session_end(session);
 		if (!cache_obj) {
 			switch_core_timer_destroy(timer);
 		}

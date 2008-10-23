@@ -5441,22 +5441,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_launch_thread(void * jarg
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_thread_session_end(void * jarg1) {
-  switch_core_thread_session_t *arg1 = (switch_core_thread_session_t *) 0 ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   
-  arg1 = (switch_core_thread_session_t *)jarg1; 
+  arg1 = (switch_core_session_t *)jarg1; 
   switch_core_thread_session_end(arg1);
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_service_session(void * jarg1, void * jarg2, int jarg3) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_service_session(void * jarg1) {
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-  switch_core_thread_session_t *arg2 = (switch_core_thread_session_t *) 0 ;
-  int arg3 ;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  arg2 = (switch_core_thread_session_t *)jarg2; 
-  arg3 = (int)jarg3; 
-  switch_core_service_session(arg1,arg2,arg3);
+  switch_core_service_session(arg1);
 }
 
 
