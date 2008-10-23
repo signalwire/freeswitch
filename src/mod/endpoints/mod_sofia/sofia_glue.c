@@ -413,14 +413,6 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	tech_pvt->dtmf_type = profile->dtmf_type;
 
-	if (!(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG)) {
-		if (tech_pvt->bcng_pt) {
-			tech_pvt->cng_pt = tech_pvt->bcng_pt;
-		} else if (!tech_pvt->cng_pt) {
-			tech_pvt->cng_pt = profile->cng_pt;
-		}
-	}
-
 	tech_pvt->session = session;
 	tech_pvt->channel = switch_core_session_get_channel(session);
 	switch_core_session_set_private(session, tech_pvt);

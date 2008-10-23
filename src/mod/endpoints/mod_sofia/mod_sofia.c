@@ -2116,6 +2116,14 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
 
+	if (!(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG)) {
+		if (tech_pvt->bcng_pt) {
+			tech_pvt->cng_pt = tech_pvt->bcng_pt;
+		} else if (!tech_pvt->cng_pt) {
+			tech_pvt->cng_pt = profile->cng_pt;
+		}
+	}
+
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
 		if (profile->pres_type) {
