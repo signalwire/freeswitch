@@ -163,10 +163,27 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+static void expire_listener(listener_t **listener)
+{
+	void *pop;
+	
+	switch_thread_rwlock_unlock((*listener)->rwlock);
+	switch_core_hash_destroy(&(*listener)->event_hash);
+	switch_core_destroy_memory_pool(&(*listener)->pool);
+	
+	while (switch_queue_trypop((*listener)->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		switch_event_t *pevent = (switch_event_t *) pop;
+		switch_event_destroy(&pevent);
+	}
+
+	*listener = NULL;
+}
+
 static void event_handler(switch_event_t *event)
 {
 	switch_event_t *clone = NULL;
-	listener_t *l;
+	listener_t *l, *lp;
 
 	switch_assert(event != NULL);
 
@@ -174,20 +191,24 @@ static void event_handler(switch_event_t *event)
 		return;
 	}
 
-	switch_mutex_lock(listen_list.mutex);
-	for (l = listen_list.listeners; l; l = l->next) {
-		uint8_t send = 0;
+	lp = listen_list.listeners;
 
+	switch_mutex_lock(listen_list.mutex);
+	while(lp) {
+		uint8_t send = 0;
+		
+		l = lp;
+		lp = lp->next;
+		
 		if (!switch_test_flag(l, LFLAG_EVENTS)) {
 			continue;
 		}
-
+		
 		if (switch_test_flag(l, LFLAG_STATEFUL) && l->timeout && switch_timestamp(NULL) - l->last_flush > l->timeout) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Stateful Listener %u has expired\n", l->id);
 			remove_listener(l);
-			switch_thread_rwlock_unlock(l->rwlock);
-			switch_core_hash_destroy(&l->event_hash);
-			switch_core_destroy_memory_pool(&l->pool);
+			expire_listener(&l);
+			continue;
 		}
 
 		if (l->event_list[SWITCH_EVENT_ALL]) {
@@ -559,9 +580,7 @@ SWITCH_STANDARD_API(event_manager_function)
 			stream->write_function(stream, "<data>\n <reply type=\"success\">listener %u destroyed</reply>\n", listener->id);
 			xmlize_listener(listener, stream);
 			stream->write_function(stream, "</data>\n");
-			switch_thread_rwlock_unlock(listener->rwlock);
-			switch_core_hash_destroy(&listener->event_hash);
-			switch_core_destroy_memory_pool(&listener->pool);
+			expire_listener(&listener);
 			goto end;
 		} else {
 			stream->write_function(stream, "<data><reply type=\"error\">Can't find listener</reply></data>\n");
@@ -600,7 +619,7 @@ SWITCH_STANDARD_API(event_manager_function)
 					listener->ebuf = switch_xml_toxml(xml, SWITCH_FALSE);
 					switch_xml_free(xml);
 				} else {
-					stream->write_function(stream, "-ERR XML Error\n");
+					stream->write_function(stream, "<data><reply type=\"error\">XML Render Error</reply></data>\n");
 					break;
 				}
 
