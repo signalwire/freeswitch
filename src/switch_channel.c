@@ -1534,14 +1534,14 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 			switch_mutex_lock(channel->profile_mutex);
 			channel->caller_profile->times->progress_media = switch_timestamp_now();
 			if (channel->caller_profile->originator_caller_profile) {
-				switch_core_session_t *other_session;
-				if ((other_session = switch_core_session_locate(channel->caller_profile->originator_caller_profile->uuid))) {
+				switch_core_session_t *osession;
+				if ((osession = switch_core_session_locate(channel->caller_profile->originator_caller_profile->uuid))) {
 					switch_channel_t *other_channel;
-					other_channel = switch_core_session_get_channel(other_session);
+					other_channel = switch_core_session_get_channel(osession);
 					if (other_channel->caller_profile) {
 						other_channel->caller_profile->times->progress_media = channel->caller_profile->times->progress_media;
 					}
-					switch_core_session_rwunlock(other_session);
+					switch_core_session_rwunlock(osession);
 				}
 				channel->caller_profile->originator_caller_profile->times->progress_media = channel->caller_profile->times->progress_media;
 			}

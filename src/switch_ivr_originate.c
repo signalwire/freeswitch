@@ -878,7 +878,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		for (r = 0; r < or_argc; r++) {
 			uint32_t hups;
-			char *p, *e = NULL;
+			char *p, *end = NULL;
 			const char *var_begin, *var_end;
 			
 			reason = SWITCH_CAUSE_NONE;
@@ -914,14 +914,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			p = pipe_names[r];
 			while(p && *p) {
 				if (*p == '[') {
-					e = switch_find_end_paren(p, '[', ']');
+					end = switch_find_end_paren(p, '[', ']');
 				}
 
-				if (e && p && *p == ',') {
+				if (end && p && *p == ',') {
 					*p = '|';
 				}
 
-				if (p == e) {
+				if (p == end) {
 					e = NULL;
 				}
 
@@ -937,7 +937,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (i = 0; i < and_argc; i++) {
 				char *vdata;
-				e = NULL;
+				end = NULL;
 				chan_type = peer_names[i];
 
 				while (chan_type && *chan_type && *chan_type == ' ') {
@@ -945,12 +945,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				vdata = chan_type;
-				e = switch_find_end_paren(vdata, '[', ']');
+				end = switch_find_end_paren(vdata, '[', ']');
 
-				if (e) {
+				if (end) {
 					vdata++;
-					*e++ = '\0';
-					chan_type = e;
+					*end++ = '\0';
+					chan_type = end;
 				} else {
 					vdata = NULL;
 				}
