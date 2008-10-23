@@ -68,10 +68,10 @@ SWITCH_STANDARD_API(managed_loadassembly); /* Load assembly */
 mod_managed_globals globals = { 0 };
 
 // Global delegates to call managed functions
-typedef int (*runFunction)(const char *data, void *sessionPtr);
-typedef int (*executeFunction)(const char *cmd, void *stream, void *Event);
-typedef int (*executeBackgroundFunction)(const char* cmd);
-typedef int (*loadAssemblyFunction)(const char* filename);
+typedef int (MANAGED_STDCALL *runFunction)(const char *data, void *sessionPtr);
+typedef int (MANAGED_STDCALL *executeFunction)(const char *cmd, void *stream, void *Event);
+typedef int (MANAGED_STDCALL *executeBackgroundFunction)(const char* cmd);
+typedef int (MANAGED_STDCALL *loadAssemblyFunction)(const char* filename);
 static runFunction runDelegate;
 static executeFunction executeDelegate;
 static executeBackgroundFunction executeBackgroundDelegate;
