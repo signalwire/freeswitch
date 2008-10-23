@@ -61,7 +61,7 @@ namespace FreeSWITCH.Native
             InitManagedSession(ManagedSession.getCPtr(this).Handle, inputCallback, hangupCallback);
         }
         DtmfCallback _inputCallbackRef;
-        Action _hangupCallback;
+        CdeclAction _hangupCallback;
 
         /// <summary>Function to execute when this session hangs up.</summary>
         public Action HangupFunction { get; set; }
