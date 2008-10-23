@@ -2114,11 +2114,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		tech_pvt->dest_to = tech_pvt->dest;
 	}
 
-	switch_channel_set_flag(nchannel, CF_OUTBOUND);
-	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
-
-	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
-
 	if (tech_pvt->local_url) {
 		switch_channel_set_variable(nchannel, "sip_local_url", tech_pvt->local_url);
 		if (profile->pres_type) {
@@ -2130,7 +2125,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	caller_profile = switch_caller_profile_clone(nsession, outbound_profile);
 	caller_profile->destination_number = switch_core_strdup(caller_profile->pool, dest);
 	switch_channel_set_caller_profile(nchannel, caller_profile);
+	switch_channel_set_flag(nchannel, CF_OUTBOUND);
+	switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 	switch_clear_flag_locked(tech_pvt, TFLAG_LATE_NEGOTIATION);
+
+	sofia_glue_attach_private(nsession, profile, tech_pvt, dest);
+
 	if (switch_channel_get_state(nchannel) == CS_NEW) {
 		switch_channel_set_state(nchannel, CS_INIT);
 	}
