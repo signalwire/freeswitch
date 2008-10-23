@@ -2329,7 +2329,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 				}
 
 				if (!(tech_pvt->profile->pflags & PFLAG_SUPPRESS_CNG) && !cng_pt && !strcasecmp(rm_encoding, "CN")) {
-					cng_pt = tech_pvt->cng_pt = (switch_payload_t) map->rm_pt;
+					cng_pt = (switch_payload_t) map->rm_pt;
 					if (tech_pvt->rtp_session) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set comfort noise payload to %u\n", cng_pt);
 						switch_rtp_set_cng_pt(tech_pvt->rtp_session, tech_pvt->cng_pt);
@@ -2519,7 +2519,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	}
 	
  done:
-
+	tech_pvt->cng_pt = cng_pt;
 	switch_set_flag_locked(tech_pvt, TFLAG_SDP);
 
 	return match;
