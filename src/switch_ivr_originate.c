@@ -954,7 +954,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				} else {
 					vdata = NULL;
 				}
-				printf("WTF [%s][%s]\n", vdata, chan_type);
 
 				if ((chan_data = strchr(chan_type, '/')) != 0) {
 					*chan_data = '\0';
