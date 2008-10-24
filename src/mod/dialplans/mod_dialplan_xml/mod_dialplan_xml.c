@@ -204,10 +204,6 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 
-	if (!switch_strlen_zero(caller_profile->context)) {
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Hunt-Context", caller_profile->context);
-	}
-
 	switch_channel_event_set_data(channel, params);
 
 	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, params);
