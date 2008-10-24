@@ -1673,7 +1673,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -1788,7 +1788,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -1899,7 +1899,7 @@ static switch_status_t load_config(void)
 			}
 			
 			if (zstatus != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %s %s\n", switch_str_nil(id), switch_str_nil(name));
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
@@ -1991,7 +1991,7 @@ static switch_status_t load_config(void)
 			}
 
 			if (zstatus != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
 			
