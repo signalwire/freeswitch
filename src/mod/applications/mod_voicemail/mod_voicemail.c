@@ -1983,21 +1983,32 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						thehash = val;
 					} else if (!strcasecmp(var, "vm-a1-hash")) {
 						vmhash = val;
-					} else if (!strcasecmp(var, "password")) {
+					} else if (!auth && !thepass && !strcasecmp(var, "password")) {
 						thepass = val;
-					} else if (!strcasecmp(var, "vm-password")) {
-						thepass = val;
+					} else if (!auth && !strcasecmp(var, "vm-password")) {
+						if (!switch_strlen_zero(val) && !strcasecmp(val, "user-choose")) {
+							if (switch_strlen_zero(cbt.password)) {
+								auth = 1;
+							} else {
+								thepass = val;
+							}
+						} else {
+							thepass = val;
+						}
 					} else if (!strcasecmp(var, "vm-mailto")) {
 						vm_email = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
-					} else if (!switch_strlen_zero(cbt.password) && !thepass) {
-						thepass = cbt.password;
-					}
+					} 
+
 				}
 				
 				if (vmhash) {
 					thehash = vmhash;
+				}
+				
+				if (!auth && !thepass && !switch_strlen_zero(cbt.password)) {
+					thepass = cbt.password;
 				}
 
 				if (!auth) {
