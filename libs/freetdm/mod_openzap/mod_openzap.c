@@ -1880,7 +1880,7 @@ static switch_status_t load_config(void)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
 				continue;
 			}
-
+			
 			if (name) {
 				zstatus = zap_span_find_by_name(name, &span);
 			} else {
@@ -1899,7 +1899,7 @@ static switch_status_t load_config(void)
 			}
 			
 			if (zstatus != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %d\n", span_id);
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span %s\n", id);
 				continue;
 			}
 			
