@@ -916,6 +916,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "32khz", "libs\win32\Sound_F
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "flite", "libs\win32\flite\flite.2008.vcproj", "{0AD1177E-1FD8-4643-9391-431467A11084}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D5D2BF72-29FE-4982-A9FA-82FDD086DB1B} = {D5D2BF72-29FE-4982-A9FA-82FDD086DB1B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_flite", "src\mod\asr_tts\mod_flite\mod_flite.2008.vcproj", "{66444AEE-554C-11DD-A9F0-8C5D56D89593}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -954,6 +957,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_shout", "src\mod\format
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libogg", "libs\win32\libogg\libogg.2008.vcproj", "{0FEEAEC6-4399-4C46-B7DB-62ECE80D15B4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{D5D2BF72-29FE-4982-A9FA-82AB1086DB1B} = {D5D2BF72-29FE-4982-A9FA-82AB1086DB1B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_snom", "src\mod\applications\mod_snom\mod_snom.2008.vcproj", "{2A3D00C6-588D-4E86-81AC-9EF5EDE86E03}"
 	ProjectSection(ProjectDependencies) = postProject
