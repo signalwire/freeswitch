@@ -573,7 +573,11 @@ SWITCH_STANDARD_API(event_manager_function)
 		goto end;
 	} else if (!strcasecmp(wcmd, "destroy-listener")) {		
 		char *id = switch_event_get_header(stream->param_event, "listen-id");
-		uint32_t idl = (uint32_t) atol(id);
+		uint32_t idl = 0;
+
+		if (id) {
+			idl = (uint32_t) atol(id);
+		}
 
 		if ((listener = find_listener(idl))) {
 			remove_listener(listener);
@@ -589,10 +593,14 @@ SWITCH_STANDARD_API(event_manager_function)
 
 	} else if (!strcasecmp(wcmd, "check-listener")) {
 		char *id = switch_event_get_header(stream->param_event, "listen-id");
-		uint32_t idl = (uint32_t) atol(id);
+		uint32_t idl = 0;
 		void *pop;
-		switch_event_t *pevent;
+		switch_event_t *pevent = NULL;
 		
+		if (id) {
+			idl = (uint32_t) atol(id);
+		}
+
 		if (!(listener = find_listener(idl))) {
 			stream->write_function(stream, "<data><reply type=\"error\">Can't find listener</reply></data>\n");
 			goto end;
@@ -604,8 +612,8 @@ SWITCH_STANDARD_API(event_manager_function)
 		stream->write_function(stream, "<events>\n");			
 
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			pevent = (switch_event_t *) pop;
 			char *etype;
+			pevent = (switch_event_t *) pop;
 
 			if (listener->format == EVENT_FORMAT_PLAIN) {
 				etype = "plain";
@@ -1039,7 +1047,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		if (!strncasecmp(cmd, "connect", 7)) {
 			switch_snprintf(reply, reply_len, "+OK");
 			goto done;
-		} else if (!strncasecmp(cmd, "sendmsg", 7)) {
+		} else if (listener->session && !strncasecmp(cmd, "sendmsg", 7)) {
 			if (switch_test_flag(listener, LFLAG_ASYNC)) {
 				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
