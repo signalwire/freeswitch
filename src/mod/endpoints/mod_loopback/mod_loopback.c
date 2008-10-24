@@ -130,7 +130,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 									NULL, 
 									switch_core_session_get_pool(session));
 
-	if (status != SWITCH_STATUS_SUCCESS) {
+	if (status != SWITCH_STATUS_SUCCESS || !tech_pvt->read_codec.implementation) {
 		goto end;
 	}
 
@@ -206,10 +206,10 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	switch_caller_profile_t *caller_profile;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 		
@@ -325,10 +325,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL HANGUP\n", switch_channel_get_name(channel));
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_LINKED);
@@ -356,10 +356,10 @@ static switch_status_t channel_kill_channel(switch_core_session_t *session, int 
 	private_t *tech_pvt = NULL;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	switch (sig) {
 	case SWITCH_SIG_BREAK:
@@ -419,8 +419,7 @@ static switch_status_t channel_on_reset(switch_core_session_t *session)
 
 static switch_status_t channel_on_hibernate(switch_core_session_t *session)
 {
-	private_t *tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
+	switch_assert(switch_core_session_get_private(session));
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s HIBERNATE\n", switch_channel_get_name(switch_core_session_get_channel(session)));
 
@@ -448,7 +447,7 @@ static switch_status_t channel_send_dtmf(switch_core_session_t *session, const s
 	private_t *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (tech_pvt->other_channel) {
 		switch_channel_queue_dtmf(tech_pvt->other_channel, dtmf);
@@ -464,10 +463,10 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (!switch_test_flag(tech_pvt, TFLAG_LINKED)) {
 		goto end;
@@ -530,10 +529,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 
 	if (switch_test_flag(frame, SFF_CNG) || switch_test_flag(tech_pvt, TFLAG_CNG) || switch_test_flag(tech_pvt, TFLAG_BOWOUT)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -594,10 +593,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	private_t *tech_pvt;
 
 	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	switch_assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
+	switch_assert(tech_pvt != NULL);
 	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
