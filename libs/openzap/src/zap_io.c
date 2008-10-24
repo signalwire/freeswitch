@@ -2138,7 +2138,7 @@ static zap_status_t load_config(void)
 
 					zap_mutex_lock(globals.mutex);
 					if (!zap_strlen_zero(name) && hashtable_search(globals.span_hash, (void *)name)) {
-						zap_log(ZAP_LOG_WARNING, "name %s is already used, substituting 'span%d' as the name\n", span->span_id);
+						zap_log(ZAP_LOG_WARNING, "name %s is already used, substituting 'span%d' as the name\n", name, span->span_id);
 						name = NULL;
 					}
 
