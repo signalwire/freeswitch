@@ -2121,7 +2121,7 @@ SWITCH_STANDARD_API(oz_function)
 
 				stream->write_function(stream,
 									   "+OK\n"
-									   "span: %u\n"
+									   "span: %u (%s)\n"
 									   "type: %s\n"
 									   "chan_count: %u\n"
 									   "dialplan: %s\n"
@@ -2131,6 +2131,7 @@ SWITCH_STANDARD_API(oz_function)
 									   "hold_music: %s\n"
 									   "analog_options %s\n",
 									   j,
+									   SPAN_CONFIG[j].span->name,
 									   SPAN_CONFIG[j].type,
 									   SPAN_CONFIG[j].span->chan_count,
 									   SPAN_CONFIG[j].dialplan,
