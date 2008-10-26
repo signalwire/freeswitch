@@ -507,6 +507,9 @@ iks_string (ikstack *s, iks *x)
 				size++;
 				size += strlen (IKS_TAG_NAME (y));
 				for (z = IKS_TAG_ATTRIBS (y); z; z = z->next) {
+					if (z->type == IKS_NONE) {
+						continue;
+					}
 					size += 4 + strlen (IKS_ATTRIB_NAME (z))
 						+ escape_size (IKS_ATTRIB_VALUE (z), strlen (IKS_ATTRIB_VALUE (z)));
 				}
