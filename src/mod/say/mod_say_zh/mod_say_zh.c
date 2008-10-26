@@ -335,6 +335,10 @@ static switch_status_t zh_say_time(switch_core_session_t *session,
 	int32_t t;
 	switch_time_t target = 0;
 	switch_time_exp_t tm;
+#if 0
+	switch_time_t this_morning;
+	switch_time_exp_t tm2;
+#endif
 	uint8_t say_date = 0;
     uint8_t say_time = 0;
 
@@ -447,6 +451,55 @@ static switch_status_t zh_say_time(switch_core_session_t *session,
 		say_num(tm.tm_mday, SSM_PRONOUNCED);
 		say_file("time/day.wav");
 		say_file("time/day-%d.wav", tm.tm_wday);
+
+#if 0
+        tm = *localtime(&then);
+
+        this_morning = switch_timestamp_now();
+    	switch_time_exp_lt(&tm2, this_morning);
+        tm2->tm_hour = 0;
+        tm2->tm_min = 0;
+        tm2->tm_sec = 0;
+        this_morning = mktime(tm2);
+
+        if (this_morning <= then  &&  then < (this_morning + 86400L))
+        {
+			say_file("time/today.wav");
+        }
+        else if ((this_morning - 86400L) <= then  &&  then < this_morning)
+        {
+			say_file("time/yesterday.wav");
+        }
+        else if ((this_morning + 86400L) <= then  &&  then < (this_morning + 2*86400L))
+        {
+			say_file("time/tomorrow.wav");
+        }
+        else if ((this_morning - 7*86400L) <= then  &&  then < this_morning)
+        {
+    		say_file("time/day-%d.wav", tm.tm_wday);
+        }
+        else
+        {
+            if (tm2->tm_year != tm.tm_year)
+            {
+                say_num(tm.tm_year + 1900, SSM_ITERATED);
+		        say_file("time/year.wav");
+            }
+            /*endif*/
+            if (tm2->tm_year != tm.tm_year
+                ||
+                tm2->tm_mon != tm.tm_mon)
+            {
+        		say_num(tm.tm_mon + 1, SSM_PRONOUNCED);
+        		say_file("time/month.wav");
+            }
+            /*endif*/
+            /* Always say the day and the day of the week */
+    		say_num(tm.tm_mday, SSM_PRONOUNCED);
+	    	say_file("time/day.wav");
+    		say_file("time/day-%d.wav", tm.tm_wday);
+        }
+#endif
 	}
 
 	if (say_time) {
