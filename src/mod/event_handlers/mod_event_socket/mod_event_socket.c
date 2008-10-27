@@ -1126,24 +1126,27 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			}
 
-			listener->event_list[SWITCH_EVENT_CHANNEL_CREATE] = 1;
-			listener->event_list[SWITCH_EVENT_CHANNEL_DESTROY] = 1;
-			listener->event_list[SWITCH_EVENT_CHANNEL_STATE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_ANSWER] = 1;
-			listener->event_list[SWITCH_EVENT_CHANNEL_HANGUP] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_APPLICATION] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_BRIDGE] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_CREATE] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_DATA] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_DESTROY] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_EXECUTE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE] = 1;
-			listener->event_list[SWITCH_EVENT_CHANNEL_BRIDGE] = 1;
-			listener->event_list[SWITCH_EVENT_CHANNEL_UNBRIDGE] = 1;
-			listener->event_list[SWITCH_EVENT_CHANNEL_PROGRESS] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_HANGUP] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_ORIGINATE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_OUTGOING] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_PARK] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_PROGRESS] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_STATE] = 1;
+			listener->event_list[SWITCH_EVENT_CHANNEL_UNBRIDGE] = 1;
 			listener->event_list[SWITCH_EVENT_CHANNEL_UNPARK] = 1;
-			listener->event_list[SWITCH_EVENT_CHANNEL_APPLICATION] = 1;
-			listener->event_list[SWITCH_EVENT_TALK] = 1;
+			listener->event_list[SWITCH_EVENT_DETECTED_SPEECH] = 1;
 			listener->event_list[SWITCH_EVENT_DTMF] = 1;
 			listener->event_list[SWITCH_EVENT_NOTALK] = 1;
-			listener->event_list[SWITCH_EVENT_DETECTED_SPEECH] = 1;
+			listener->event_list[SWITCH_EVENT_TALK] = 1;
 			switch_set_flag_locked(listener, LFLAG_MYEVENTS);
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 			if (strstr(cmd, "xml") || strstr(cmd, "XML")) {
