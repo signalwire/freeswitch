@@ -78,7 +78,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 				for (x = 0; x < argc; x++) {
 					char *dpname = dp[x];
 					char *dparg = NULL;
-
+					
 					if (dpname) {
 						if ((dparg = strchr(dpname, ':'))) {
 							*dparg++ = '\0';
@@ -89,7 +89,7 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 					if (!(dialplan_interface = switch_loadable_module_get_dialplan_interface(dpname))) {
 						continue;
 					}
-
+					
 					count++;
 
 					if ((extension = dialplan_interface->hunt_function(session, dparg, NULL)) != 0) {
@@ -103,8 +103,13 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 
 		if (!count) {
 			if (switch_channel_test_flag(session->channel, CF_OUTBOUND)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No Dialplan, changing state to HOLD\n");
-				switch_channel_set_state(session->channel, CS_CONSUME_MEDIA);
+				if (switch_channel_test_flag(session->channel, CF_ANSWERED)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Dialplan on answered channel, changing state to HANGUP\n");
+					switch_channel_hangup(session->channel, SWITCH_CAUSE_NO_ROUTE_DESTINATION);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No Dialplan, changing state to CONSUME_MEDIA\n");
+					switch_channel_set_state(session->channel, CS_CONSUME_MEDIA);
+				}
 				goto end;
 			}
 		}
