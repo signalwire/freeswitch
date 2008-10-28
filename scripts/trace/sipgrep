@@ -23,7 +23,7 @@ $ngrep_flags="-l -d eth1"; # Flag for Ngrep
 $colorsmethods="INVITE|REGISTER|BYE|ACK|CANCEL|OPTIONS|REFER|NOTIFY|MESSAGE|INFO|PRACK|UPDATE";
 
 %options=();
-getopts("f:t:l:ahVp:TcCnArm:",\%options);
+getopts("f:t:l:ahVp:d:TcCnArm:",\%options);
 
 $version=<<END;
 Sipgrep version 0.2
@@ -32,7 +32,7 @@ Sipgrep version 0.2
 END
 
     $usage=<<END;
-Usage: sipgrep <-h> <-f number> <-t number> <-a> <-l file> <-V> <-p> <-T> <-n|-c>
+Usage: sipgrep <-h> <-f number> <-t number> <-a> <-l file> <-V> <-p> <-d device> <-T> <-n|-c>
 
     -h	  Displays this help message.
     -A    Match anything.
@@ -42,6 +42,7 @@ Usage: sipgrep <-h> <-f number> <-t number> <-a> <-l file> <-V> <-p> <-T> <-n|-c
     -a	  Search the ARG from '-f' and '-t' parameters in To and From fields.
     -l    ARG Debug file name.
     -V	  Displays the current version.
+    -d	  Device for ngrep.
     -p	  Port for ngrep.
     -T	  Parameter for ngrep. Indicating the delta between packet matches.
     -C    Allow colors in debug file.
@@ -67,6 +68,9 @@ if((!defined $options{f} && !defined $options{t} && !defined $options{c} && !def
 
 #TimeStamp
 $ngrep_flags .= sprintf(" %s", (defined $options{T}) ? "-T" : "-t" );
+
+#Device
+$ngrep_flags .= sprintf(" -d %s", (defined $options{d}) ? $options{d} : "eth0" );
 
 #Port
 $ngrep_flags .= sprintf(" port %d", (defined $options{p}) ? $options{p} : "5060" );
