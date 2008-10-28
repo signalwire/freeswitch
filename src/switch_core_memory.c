@@ -35,6 +35,7 @@
 //#define DEBUG_ALLOC2
 //#define DESTROY_POOLS
 //#define PER_POOL_LOCK
+//#define INSTANTLY_DESTROY_POOLS
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
@@ -260,6 +261,11 @@ SWITCH_DECLARE(void) switch_core_memory_pool_tag(switch_memory_pool_t *pool, con
 SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memory_pool_t **pool, const char *file, const char *func, int line)
 {
 	char *tmp;
+#ifdef INSTANTLY_DESTROY_POOLS
+	apr_pool_create(pool, NULL);
+	switch_assert(*pool != NULL);
+#else
+
 #ifdef PER_POOL_LOCK
 	apr_allocator_t *my_allocator = NULL;
 	apr_thread_mutex_t *my_mutex;
@@ -298,6 +304,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 		switch_assert(*pool != NULL);
 	}
 #endif
+#endif
 
 #ifdef DEBUG_ALLOC2
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "New Pool\n");
@@ -317,9 +324,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(switch_m
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Free Pool\n");
 #endif
 
+#ifdef INSTANTLY_DESTROY_POOLS
+	apr_pool_destroy(*pool);
+#else
 	if ((memory_manager.pool_thread_running != 1) || (switch_queue_push(memory_manager.pool_queue, *pool) != SWITCH_STATUS_SUCCESS)) {
 		apr_pool_destroy(*pool);
 	}
+#endif
+
 	*pool = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -354,6 +366,9 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, swi
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 {
+#ifdef INSTANTLY_DESTROY_POOLS
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Recycled memory pool(s) disabled.\n");
+#else
 	switch_memory_pool_t *pool;
 	void *pop = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled memory pool(s)\n",
@@ -366,6 +381,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 		}
 		apr_pool_destroy(pool);
 	}
+#endif
 }
 
 static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
@@ -425,16 +441,20 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 void switch_core_memory_stop(void)
 {
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping memory pool queue.\n");
+#ifndef INSTANTLY_DESTROY_POOLS
 	memory_manager.pool_thread_running = -1;
 	while (memory_manager.pool_thread_running) {
 		switch_yield(1000);
 	}
+#endif
 }
 
 switch_memory_pool_t *switch_core_memory_init(void)
 {
+#ifndef INSTANTLY_DESTROY_POOLS
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;
+#endif
 #ifdef PER_POOL_LOCK
 	apr_allocator_t *my_allocator = NULL;
 	apr_thread_mutex_t *my_mutex;
@@ -465,6 +485,14 @@ switch_memory_pool_t *switch_core_memory_init(void)
 #endif
 
 	switch_mutex_init(&memory_manager.mem_lock, SWITCH_MUTEX_NESTED, memory_manager.memory_pool);
+
+#ifdef INSTANTLY_DESTROY_POOLS
+	{
+		void *foo;
+		foo = (void*)(intptr_t)pool_thread;
+	}
+#else
+
 	switch_queue_create(&memory_manager.pool_queue, 50000, memory_manager.memory_pool);
 	switch_queue_create(&memory_manager.pool_recycle_queue, 50000, memory_manager.memory_pool);
 
@@ -477,6 +505,7 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	while (!memory_manager.pool_thread_running) {
 		switch_yield(1000);
 	}
+#endif
 
 	return memory_manager.memory_pool;
 }
