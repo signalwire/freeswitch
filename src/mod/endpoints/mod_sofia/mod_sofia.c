@@ -1988,6 +1988,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		tech_pvt->transport = gateway_ptr->register_transport;
 
+		if ((dest_to = strchr(dest, '^'))) {
+			*dest_to++ = '\0';
+		}
+
 		/*
 		 * Handle params, strip them off the destination and add them to the
 		 * invite contact.
@@ -2062,10 +2066,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 		if (profile->domain_name && profile->domain_name != profile->name) {
 			profile_name = profile->domain_name;
-		}
-
-		if ((dest_to = strchr(dest, '^'))) {
-			*dest_to++ = '\0';
 		}
 
 		if (!strncasecmp(dest, "sip:", 4) || !strncasecmp(dest, "sips:", 5)) {
