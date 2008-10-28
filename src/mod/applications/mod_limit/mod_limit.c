@@ -375,7 +375,7 @@ SWITCH_STANDARD_APP(db_function)
 		argc = switch_separate_string(mydata, '/', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-	if (argc < 4 || !argv[0]) {
+	if (argc < 3 || !argv[0]) {
 		goto error;
 	}
 
