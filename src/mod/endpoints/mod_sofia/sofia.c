@@ -1133,7 +1133,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else if (!strcasecmp(val, "both")) {
 							switch_set_flag(profile, TFLAG_VAD_IN);
 							switch_set_flag(profile, TFLAG_VAD_OUT);
-						} else {
+						} else if (strcasecmp(val, "none")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid option %s for VAD\n", val);
 						}
 					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
@@ -1494,7 +1494,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else if (!strcasecmp(val, "both")) {
 							switch_set_flag(profile, TFLAG_VAD_IN);
 							switch_set_flag(profile, TFLAG_VAD_OUT);
-						} else {
+						} else if (strcasecmp(val, "none")) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid option %s for VAD\n", val);
 						}
 					} else if (!strcasecmp(var, "ext-rtp-ip")) {
