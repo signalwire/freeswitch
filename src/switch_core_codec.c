@@ -60,45 +60,34 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (codec && !codec->implementation) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set UNINITIALIZED codec!\n");
-		status = SWITCH_STATUS_FALSE;
-		goto end;
-	}
-
-	if (!codec || codec == session->real_read_codec) {
-
+	if (!codec || !codec->implementation) {
 		if (session->real_read_codec) {
-			if (session->real_read_codec->implementation) {
-				session->read_codec = session->real_read_codec;
-				session->read_impl = *session->real_read_codec->implementation;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "resetting to uninitilized codec, setting to NULL\n");
-				session->read_codec = session->real_read_codec = NULL;
-				status = SWITCH_STATUS_FALSE;
-				goto end;
-			}
+			session->read_codec = session->real_read_codec;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Restore original codec.\n");
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set UNINITIALIZED codec!\n");
 			status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
-		
-	} else if (codec) {
-		if (session->read_codec != session->real_read_codec) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot double-set codec!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto end;
-		}
-
-		session->read_codec = codec;
-		session->read_impl = *codec->implementation;
+	} else {
 
 		if (!session->real_read_codec) {
-			session->real_read_codec = session->read_codec;
+			session->read_codec = session->real_read_codec = codec;
+		} else {
+			session->read_codec = codec;
 		}
 	}
 
-	if (session->read_codec && codec && session->read_impl.decoded_bytes_per_packet) {
+	if (!session->read_codec) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No READ codec!\n");
+        status = SWITCH_STATUS_FALSE;
+        goto end;
+	}
+
+	session->read_impl = *session->read_codec->implementation;
+
+
+	if (session->read_codec && session->read_impl.decoded_bytes_per_packet) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(session->channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-read-codec-name", session->read_impl.iananame);
@@ -477,12 +466,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_ENCODE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec encoder is not initialized!\n");
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
 	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, decoded_rate, encoded_data, encoded_data_len, encoded_rate,
@@ -502,12 +491,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
 	if (!switch_test_flag(codec, SWITCH_CODEC_FLAG_DECODE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec decoder is not initialized!\n");
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
 	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, decoded_data, decoded_data_len, decoded_rate,
@@ -520,7 +509,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initialized!\n");
-		return SWITCH_STATUS_GENERR;
+		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
 	codec->implementation->destroy(codec);

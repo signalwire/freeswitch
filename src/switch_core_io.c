@@ -296,6 +296,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				read_frame = &session->raw_read_frame;
 				status = SWITCH_STATUS_SUCCESS;
 				break;
+			case SWITCH_STATUS_NOT_INITALIZED:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+				goto done;
 			default:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n", session->read_codec->codec_interface->interface_name);
 				goto done;
@@ -437,6 +440,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					*frame = &session->raw_read_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
+				case SWITCH_STATUS_NOT_INITALIZED:
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+					*frame = NULL;
+                    status = SWITCH_STATUS_GENERR;
+                    break;
 				default:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
 									  session->read_codec->codec_interface->interface_name);
@@ -650,11 +658,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			default:
+				if (status == SWITCH_STATUS_NOT_INITALIZED) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+					return status;
+				}
 				if (ptime_mismatch) {
 					status = perform_write(session, frame, flags, stream_id);
 					return SWITCH_STATUS_SUCCESS;
 				}
-
+				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n", frame->codec->codec_interface->interface_name);
 				return status;
 			}
@@ -799,6 +811,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					write_frame = enc_frame;
 					status = SWITCH_STATUS_SUCCESS;
 					break;
+				case SWITCH_STATUS_NOT_INITALIZED:
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+					write_frame = NULL;
+                    return status;					
 				default:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
 									  session->read_codec->codec_interface->interface_name);
@@ -886,6 +902,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								write_frame = enc_frame;
 								status = SWITCH_STATUS_SUCCESS;
 								break;
+							case SWITCH_STATUS_NOT_INITALIZED:
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
+								write_frame = NULL;
+								return status;
 							default:
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error %d!\n",
 												  session->read_codec->codec_interface->interface_name, status);

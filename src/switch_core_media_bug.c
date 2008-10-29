@@ -290,6 +290,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 
 	if (session->bug_codec.implementation) {
 		switch_core_codec_destroy(&session->bug_codec);
+		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
 
 	return SWITCH_STATUS_FALSE;
@@ -346,9 +347,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 		status = switch_core_media_bug_close(&bp);
 	}
-
+	
 	if (!session->bugs && session->bug_codec.implementation) {
 		switch_core_codec_destroy(&session->bug_codec);
+		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
 
 	return status;
