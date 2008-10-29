@@ -2966,7 +2966,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 							switch_clear_flag_locked(b_tech_pvt, TFLAG_SIP_HOLD);
 							switch_clear_flag_locked(tech_pvt, TFLAG_HOLD_LOCK);
-							switch_ivr_park_session(b_session);
+							switch_channel_set_state(switch_core_session_get_channel(b_session), CS_PARK);
+
 							new_b_session = switch_core_session_locate(br_b);
 							a_session = switch_core_session_locate(br_a);
 							sofia_info_send_sipfrag(a_session, new_b_session);
