@@ -163,20 +163,33 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch_bool_t flush_events)
+{
+	void *pop;
+
+	if (listener->log_queue) {
+		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			if (pop) free(pop);
+		}
+	}
+
+	if (listener->event_queue) {
+		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+			if (!pop) continue;
+			switch_event_t *pevent = (switch_event_t *) pop;
+			switch_event_destroy(&pevent);
+		}
+	}
+}
 
 static void expire_listener(listener_t **listener)
 {
-	void *pop;
 	
+	flush_listener(*listener, SWITCH_TRUE, SWITCH_TRUE);
 	switch_thread_rwlock_unlock((*listener)->rwlock);
 	switch_core_hash_destroy(&(*listener)->event_hash);
 	switch_core_destroy_memory_pool(&(*listener)->pool);
 	
-	while (switch_queue_trypop((*listener)->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		switch_event_t *pevent = (switch_event_t *) pop;
-		switch_event_destroy(&pevent);
-	}
-
 	*listener = NULL;
 }
 
@@ -1310,9 +1323,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_snprintf(reply, reply_len, "-ERR invalid log level");
 		}
 	} else if (!strncasecmp(cmd, "nolog", 5)) {
-		void *pop;
-		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS);
-
+		flush_listener(listener, SWITCH_TRUE, SWITCH_FALSE);
 		if (switch_test_flag(listener, LFLAG_LOG)) {
 			switch_clear_flag_locked(listener, LFLAG_LOG);
 			switch_snprintf(reply, reply_len, "+OK no longer logging");
@@ -1434,8 +1445,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		switch_snprintf(reply, reply_len, "+OK events nixed");
 
 	} else if (!strncasecmp(cmd, "noevents", 8)) {
-		void *pop;
-		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS);
+		flush_listener(listener, SWITCH_FALSE, SWITCH_TRUE);
 
 		if (switch_test_flag(listener, LFLAG_EVENTS)) {
 			uint8_t x = 0;
@@ -1640,6 +1650,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
+	flush_listener(listener, SWITCH_TRUE, SWITCH_TRUE);
 	
 	if (listener->sock) {
 		char disco_buf[512] = "";
