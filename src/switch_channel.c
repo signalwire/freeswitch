@@ -473,19 +473,15 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 	const char *uuid;
 	const char *val = NULL;
 	switch_assert(channel != NULL);
-
+	
 	if (!switch_strlen_zero(varname)) {
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_core_session_t *session;
-			switch_mutex_lock(channel->profile_mutex);
 			if ((session = switch_core_session_locate(uuid))) {
 				switch_channel_t *tchannel = switch_core_session_get_channel(session);
-				switch_mutex_lock(tchannel->profile_mutex);
 				val = switch_channel_get_variable(tchannel, varname);
-				switch_mutex_unlock(tchannel->profile_mutex);
 				switch_core_session_rwunlock(session);
 			}
-			switch_mutex_unlock(channel->profile_mutex);
 		}
 	}
 
@@ -619,18 +615,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_chann
 	if (!switch_strlen_zero(varname)) {
 		if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 			switch_core_session_t *session;
-			switch_mutex_lock(channel->profile_mutex);
 			if ((session = switch_core_session_locate(uuid))) {
 				switch_channel_t *tchannel = switch_core_session_get_channel(session);
-				switch_mutex_lock(tchannel->profile_mutex);
-				switch_event_del_header(tchannel->variables, varname);
-				if (value) {
-					switch_event_add_header_string(tchannel->variables, SWITCH_STACK_BOTTOM, varname, value);
-				}
-				switch_mutex_unlock(tchannel->profile_mutex);
+				switch_channel_set_variable(tchannel, varname, value);
 				switch_core_session_rwunlock(session);
 			}
-			switch_mutex_unlock(channel->profile_mutex);
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
