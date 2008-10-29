@@ -1948,6 +1948,9 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(nsession));
 
 	data = switch_core_session_strdup(nsession, outbound_profile->destination_number);
+	if ((dest_to = strchr(data, '^'))) {
+		*dest_to++ = '\0';
+	}
 	profile_name = data;
 
 	nchannel = switch_core_session_get_channel(nsession);
@@ -1987,10 +1990,6 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 
 		tech_pvt->transport = gateway_ptr->register_transport;
-
-		if ((dest_to = strchr(dest, '^'))) {
-			*dest_to++ = '\0';
-		}
 
 		/*
 		 * Handle params, strip them off the destination and add them to the
