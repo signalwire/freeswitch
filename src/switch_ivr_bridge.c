@@ -445,6 +445,7 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		switch_channel_set_private(channel, "_bridge_", NULL);
 		if (bd->session == session && *bd->b_uuid) {
 			audio_bridge_thread(NULL, (void *) bd);
+			switch_core_session_reset(session, SWITCH_TRUE);
 		} else {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		}
@@ -563,7 +564,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 		switch_channel_clear_flag(channel, CF_TRANSFER);
 		switch_channel_clear_flag(other_channel, CF_TRANSFER);
 		switch_core_session_reset(session, SWITCH_TRUE);
-		switch_core_session_reset(other_session, SWITCH_TRUE);
+
 
 		ready_a = switch_channel_ready(channel);
 		ready_b = switch_channel_ready(other_channel);

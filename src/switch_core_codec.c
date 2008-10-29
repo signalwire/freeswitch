@@ -45,6 +45,10 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void)
 SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t *session)
 {
 	session->real_read_codec = session->read_codec = NULL;
+	session->raw_read_frame.codec = session->read_codec;
+	session->raw_write_frame.codec = session->read_codec;
+	session->enc_read_frame.codec = session->read_codec;
+	session->enc_write_frame.codec = session->read_codec;
 }
 
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t *session)
@@ -60,32 +64,36 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (!codec || !codec->implementation) {
+	if (codec && !codec->implementation) {
+		codec = NULL;
+	}
+	
+	if (codec) {
+		if (!session->real_read_codec) {
+			session->read_codec = session->real_read_codec = codec;
+			session->read_impl = *codec->implementation;
+		} else {
+			session->read_codec = codec;
+			session->read_impl = *codec->implementation;
+		}
+	} else {
+		if (session->read_codec == session->real_read_codec) {
+			goto end;
+		}
 		if (session->real_read_codec) {
 			session->read_codec = session->real_read_codec;
+			session->read_impl = *session->real_read_codec->implementation;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Restore original codec.\n");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot set UNINITIALIZED codec!\n");
 			status = SWITCH_STATUS_FALSE;
 			goto end;
 		}
-	} else {
-
-		if (!session->real_read_codec) {
-			session->read_codec = session->real_read_codec = codec;
-		} else {
-			session->read_codec = codec;
-		}
 	}
-
+	
 	if (!session->read_codec) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No READ codec!\n");
         status = SWITCH_STATUS_FALSE;
         goto end;
 	}
-
-	session->read_impl = *session->read_codec->implementation;
-
 
 	if (session->read_codec && session->read_impl.decoded_bytes_per_packet) {
 		if (switch_event_create(&event, SWITCH_EVENT_CODEC) == SWITCH_STATUS_SUCCESS) {
@@ -101,8 +109,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 		switch_channel_set_variable(channel, "read_codec", session->read_impl.iananame);
 		switch_snprintf(tmp, sizeof(tmp), "%d", session->read_impl.actual_samples_per_second);
 		switch_channel_set_variable(channel, "read_rate", tmp);
-
-
+		
 		session->raw_read_frame.codec = session->read_codec;
 		session->raw_write_frame.codec = session->read_codec;
 		session->enc_read_frame.codec = session->read_codec;
