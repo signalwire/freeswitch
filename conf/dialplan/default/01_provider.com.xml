@@ -1,6 +1,6 @@
 <include>
 
-  <extension name="local.provider.com">
+  <extension name="local.example.com">
     <condition field="${toll_allow}" expression="local"/>
     <condition field="destination_number" expression="^(\d{7})$">
       <action application="set" data="effective_caller_id_number=${outbound_caller_id_number}"/>
@@ -9,7 +9,7 @@
     </condition>
   </extension>
 
-  <extension name="domestic.provider.com">
+  <extension name="domestic.example.com">
     <condition field="${toll_allow}" expression="domestic"/>
     <condition field="destination_number" expression="^(\d{11})$">
       <action application="set" data="effective_caller_id_number=${outbound_caller_id_number}"/>
@@ -18,7 +18,7 @@
     </condition>
   </extension>
 
-  <extension name="international.provider.com">
+  <extension name="international.example.com">
     <condition field="${toll_allow}" expression="international"/>
     <condition field="destination_number" expression="^(011\d{10+})$">
       <action application="set" data="effective_caller_id_number=${outbound_caller_id_number}"/>
