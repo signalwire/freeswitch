@@ -605,13 +605,17 @@ SWITCH_DECLARE(char *) switch_event_get_body(switch_event_t *event)
 
 SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, const char *header_name)
 {
-	switch_event_header_t *hp, *lp = NULL;
+	switch_event_header_t *hp, *lp = NULL, *tp;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int x = 0;
-	for (hp = event->headers; hp; hp = hp->next) {
+	tp = event->headers;
+	while (tp) {
+		hp = tp;
+		tp = tp->next;
+		
 		x++;
 		switch_assert(x < 1000);
-		if (!strcmp(header_name, hp->name)) {
+		if (!strcasecmp(header_name, hp->name)) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {
@@ -627,9 +631,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 				FREE(hp);
 			}
 			status = SWITCH_STATUS_SUCCESS;
-			break;
+		} else {
+			lp = hp;
 		}
-		lp = hp;
 	}
 
 	return status;

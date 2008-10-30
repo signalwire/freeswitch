@@ -63,6 +63,7 @@ struct listener {
 	switch_memory_pool_t *pool;
 	event_format_t format;
 	switch_mutex_t *flag_mutex;
+	switch_mutex_t *filter_mutex;
 	uint32_t flags;
 	switch_log_level_t level;
 	char *ebuf;
@@ -79,6 +80,7 @@ struct listener {
 	switch_sockaddr_t *sa;
 	char remote_ip[50];
 	switch_port_t remote_port;
+	switch_event_t *filters;
 	struct listener *next;
 };
 
@@ -189,7 +191,11 @@ static void expire_listener(listener_t **listener)
 	switch_thread_rwlock_unlock((*listener)->rwlock);
 	switch_core_hash_destroy(&(*listener)->event_hash);
 	switch_core_destroy_memory_pool(&(*listener)->pool);
-	
+	switch_mutex_lock((*listener)->filter_mutex);
+	if ((*listener)->filters) {
+		switch_event_destroy(&(*listener)->filters);
+	}
+	switch_mutex_unlock((*listener)->filter_mutex);
 	*listener = NULL;
 }
 
@@ -223,13 +229,37 @@ static void event_handler(switch_event_t *event)
 			expire_listener(&l);
 			continue;
 		}
-
+		
+		
 		if (l->event_list[SWITCH_EVENT_ALL]) {
 			send = 1;
 		} else if ((l->event_list[event->event_id])) {
 			if (event->event_id != SWITCH_EVENT_CUSTOM || !event->subclass_name || (switch_core_hash_find(l->event_hash, event->subclass_name))) {
 				send = 1;
 			}
+		}
+		
+		if (send && l->filters) {
+			switch_event_header_t *hp;
+			const char *hval;
+
+			send = 0;
+			switch_mutex_lock(l->filter_mutex);
+			for (hp = l->filters->headers; hp; hp = hp->next) {
+				if ((hval = switch_event_get_header(event, hp->name))) {
+					if (*hp->value == '/') {
+						switch_regex_t *re = NULL;
+						int ovector[30];
+						send = switch_regex_perform(hval, hp->value, &re, ovector, sizeof(ovector) / sizeof(ovector[0]));
+						switch_regex_safe_free(re);						
+					} else {
+						if (!strcasecmp(hp->value, hval)) {
+							send = 1;
+						}
+					}
+				}
+			}
+			switch_mutex_unlock(l->filter_mutex);
 		}
 		
 		if (send && switch_test_flag(l, LFLAG_MYEVENTS)) {
@@ -341,6 +371,8 @@ SWITCH_STANDARD_APP(socket_function)
 	listener->session = session;
 
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+	switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+
 	switch_core_hash_init(&listener->event_hash, listener->pool);
 	switch_set_flag(listener, LFLAG_AUTHED);
 	for (x = 1; x < argc; x++) {
@@ -520,6 +552,8 @@ SWITCH_STANDARD_API(event_manager_function)
 		listener->pool = pool;
 		listener->format = EVENT_FORMAT_PLAIN;
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+
 		switch_core_hash_init(&listener->event_hash, listener->pool);
 		switch_set_flag(listener, LFLAG_AUTHED);
 		switch_set_flag(listener, LFLAG_STATEFUL);
@@ -1045,6 +1079,44 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 			goto done;
 		}
+
+		goto done;
+	}
+
+	if (!strncasecmp(cmd, "filter ", 7)) {
+		char *header_name = cmd + 7;
+		char *header_val;
+
+		strip_cr(header_name);
+
+		while(header_name && *header_name && *header_name == ' ') header_name++;
+		
+		if (!(header_val = strchr(header_name, ' '))) {
+			switch_snprintf(reply, reply_len, "-ERR invalid syntax");
+			goto done;
+		}
+
+		*header_val++ = '\0';
+
+
+		switch_mutex_lock(listener->filter_mutex);		
+		if (!listener->filters) {
+			switch_event_create(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
+		}
+		
+		if (!strcasecmp(header_name, "delete")) {
+			if (!strcasecmp(header_val, "all")) {
+				switch_event_destroy(&listener->filters);
+				switch_event_create(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
+			} else {
+				switch_event_del_header(listener->filters, header_val);
+			}
+			switch_snprintf(reply, reply_len, "+OK filter deleted. [%s]", header_val);
+		} else {
+			switch_event_add_header_string(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
+			switch_snprintf(reply, reply_len, "+OK filter added. [%s]=[%s]", header_name, header_val);
+		}
+		switch_mutex_unlock(listener->filter_mutex);
 
 		goto done;
 	}
@@ -1651,7 +1723,11 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
 	flush_listener(listener, SWITCH_TRUE, SWITCH_TRUE);
-	
+	switch_mutex_lock(listener->filter_mutex);
+	if (listener->filters) {
+		switch_event_destroy(&listener->filters);
+	}
+	switch_mutex_unlock(listener->filter_mutex);
 	if (listener->sock) {
 		char disco_buf[512] = "";
 		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
@@ -1831,6 +1907,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		listener_pool = NULL;
 		listener->format = EVENT_FORMAT_PLAIN;
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
+
 		switch_core_hash_init(&listener->event_hash, listener->pool);
 		switch_socket_addr_get(&listener->sa, SWITCH_TRUE, listener->sock);
 		switch_get_addr(listener->remote_ip, sizeof(listener->remote_ip), listener->sa);
