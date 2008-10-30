@@ -390,7 +390,9 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 {
 	switch_channel_flush_dtmf(channel);
 	switch_core_hash_destroy(&channel->private_hash);
+	switch_mutex_lock(channel->profile_mutex);
 	switch_event_destroy(&channel->variables);
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state,
@@ -562,7 +564,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 {
 	switch_assert(channel != NULL);
 
-	if (!switch_strlen_zero(varname)) {
+	if (channel->variables && !switch_strlen_zero(varname)) {
 		switch_mutex_lock(channel->profile_mutex);
 		switch_event_del_header(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
@@ -584,7 +586,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channe
 	va_list ap;
 	switch_assert(channel != NULL);
 
-	if (!switch_strlen_zero(varname)) {
+	if (channel->variables && !switch_strlen_zero(varname)) {
 		switch_mutex_lock(channel->profile_mutex);
 		switch_event_del_header(channel->variables, varname);
 

@@ -180,6 +180,7 @@ void sofia_event_callback(nua_event_t event,
 		} else if (!switch_strlen_zero(sofia_private->uuid)) {
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
 				tech_pvt = switch_core_session_get_private(session);
+				switch_assert(tech_pvt);
 				channel = switch_core_session_get_channel(tech_pvt->session);
 				if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
 					tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
@@ -196,7 +197,7 @@ void sofia_event_callback(nua_event_t event,
 	}
 
 	if (session) {
-		switch_core_session_signal_lock(session);
+		switch_mutex_lock(tech_pvt->sofia_mutex);
 
 		if (channel && switch_channel_get_state(channel) >= CS_HANGUP) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
@@ -353,7 +354,7 @@ void sofia_event_callback(nua_event_t event,
 	}
 
 	if (session) {
-		switch_core_session_signal_unlock(session);
+		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		switch_core_session_rwunlock(session);
 	}
 }
@@ -3486,6 +3487,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	switch_mutex_init(&tech_pvt->sofia_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 
 	tech_pvt->remote_ip = switch_core_session_strdup(session, network_ip);
 	tech_pvt->remote_port = network_port;

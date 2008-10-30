@@ -938,7 +938,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 
 			if ((tech_pvt = iax_get_private(iaxevent->session))) {
 				channel = switch_core_session_get_channel(tech_pvt->session);
-				switch_core_session_signal_lock(tech_pvt->session);
 			}
 
 			if (globals.debug && iaxevent->etype != IAX_EVENT_VOICE) {
@@ -1122,9 +1121,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 			}
 			iax_event_free(iaxevent);
 			switch_mutex_unlock(globals.mutex);
-			if (tech_pvt && tech_pvt->session) {
-				switch_core_session_signal_unlock(tech_pvt->session);
-			}
 		}
 	}
 

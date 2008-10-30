@@ -467,6 +467,7 @@ struct private_object {
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
+	switch_mutex_t *sofia_mutex;
 	switch_payload_t te;
 	switch_payload_t bte;
 	switch_payload_t cng_pt;

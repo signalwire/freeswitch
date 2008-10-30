@@ -1702,9 +1702,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	const char *var;
 
 	switch_assert(tech_pvt != NULL);
-
-	switch_core_session_signal_lock(tech_pvt->session);
-
+	switch_mutex_lock(tech_pvt->sofia_mutex);
 
 	if ((var = switch_channel_get_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
@@ -2027,7 +2025,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
   end:
 
-	switch_core_session_signal_unlock(tech_pvt->session);
+	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
 	return status;
 

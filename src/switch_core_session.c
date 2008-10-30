@@ -57,9 +57,10 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 		if ((session = switch_core_hash_find(session_manager.session_table, uuid_str))) {
 			/* Acquire a read lock on the session */
 #ifdef SWITCH_DEBUG_RWLOCKS
-			if (switch_core_session_perform_read_lock(session, file, func, line) != SWITCH_STATUS_SUCCESS) {
+			if (switch_channel_get_state(session->channel) >= CS_HANGUP || 
+				switch_core_session_perform_read_lock(session, file, func, line) != SWITCH_STATUS_SUCCESS) {
 #else
-			if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+			if (switch_channel_get_state(session->channel) >= CS_HANGUP || switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 #endif
 				/* not available, forget it */
 				session = NULL;
@@ -418,8 +419,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 		return status;
 	}
 
-	switch_core_session_signal_lock(session);
-
 	if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
 	}
@@ -433,9 +432,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 	}
 
 	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
-
-	switch_core_session_signal_unlock(session);
-
 	switch_core_session_rwunlock(session);
 
 	return status;
@@ -988,7 +984,6 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 
 	switch_mutex_init(&session->mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_mutex_init(&session->resample_mutex, SWITCH_MUTEX_NESTED, session->pool);
-	switch_mutex_init(&session->signal_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	switch_thread_rwlock_create(&session->bug_rwlock, session->pool);
 	switch_thread_cond_create(&session->cond, session->pool);
 	switch_thread_rwlock_create(&session->rwlock, session->pool);

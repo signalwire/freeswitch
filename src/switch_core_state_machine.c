@@ -396,9 +396,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 							do_extra_handlers = 0;
 						}
 					}
-					switch_core_session_signal_lock(session);
+					
 					STATE_MACRO(hangup, "HANGUP");
-					switch_core_session_signal_unlock(session);
 
 					hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE);
 
@@ -418,19 +417,13 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				}
 				goto done;
 			case CS_INIT:		/* Basic setup tasks */
-				switch_core_session_signal_lock(session);
 				STATE_MACRO(init, "INIT");
-				switch_core_session_signal_unlock(session);
 				break;
 			case CS_ROUTING:	/* Look for a dialplan and find something to do */
-				switch_core_session_signal_lock(session);
 				STATE_MACRO(routing, "ROUTING");
-				switch_core_session_signal_unlock(session);
 				break;
 			case CS_RESET:		/* Reset */
-				switch_core_session_signal_lock(session);
 				STATE_MACRO(reset, "RESET");
-				switch_core_session_signal_unlock(session);
 				break;
 				/* These other states are intended for prolonged durations so we do not signal lock for them */
 			case CS_EXECUTE:	/* Execute an Operation */
