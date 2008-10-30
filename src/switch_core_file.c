@@ -285,6 +285,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 		switch_core_destroy_memory_pool(&fh->memory_pool);
 	}
 
+	memset(fh, 0, sizeof(*fh));
+
 	return status;
 }
 

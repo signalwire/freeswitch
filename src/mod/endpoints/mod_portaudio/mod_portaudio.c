@@ -308,10 +308,30 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 static void deactivate_audio_device(void)
 {
 	switch_mutex_lock(globals.device_lock);
+	/* LOCKED ************************************************************************************************** */
+
 	if (globals.audio_stream) {
 		CloseAudioStream(globals.audio_stream);
 		globals.audio_stream = NULL;
 	}
+
+	if (globals.read_codec.implementation) {
+		switch_core_codec_destroy(&globals.read_codec);
+	}
+
+	if (globals.write_codec.implementation) {
+		switch_core_codec_destroy(&globals.write_codec);
+	}
+
+	if (globals.timer.timer_interface) {
+		switch_core_timer_destroy(&globals.timer);
+	}
+
+	if (globals.hold_timer.timer_interface) {
+		switch_core_timer_destroy(&globals.hold_timer);
+	}
+
+	/* UNLOCKED ************************************************************************************************* */
 	switch_mutex_unlock(globals.device_lock);
 }
 
@@ -1142,13 +1162,17 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 			codec_ms = globals.codec_ms;
 		}
 
-		if (switch_core_codec_init(&globals.read_codec,
-								   "L16",
-								   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-								   NULL) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
-			return SWITCH_STATUS_FALSE;
-		} else {
+		if (!globals.read_codec.implementation) {
+			if (switch_core_codec_init(&globals.read_codec,
+									   "L16",
+									   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+									   NULL) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+
+		if (!globals.write_codec.implementation) {
 			if (switch_core_codec_init(&globals.write_codec,
 									   "L16",
 									   NULL,
@@ -1160,25 +1184,29 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 			}
 		}
 
-		if (switch_core_timer_init(&globals.timer,
-								   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
-								   module_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
-			switch_core_codec_destroy(&globals.read_codec);
-			switch_core_codec_destroy(&globals.write_codec);
-			return SWITCH_STATUS_FALSE;
-		}
-
-		if (switch_core_timer_init(&globals.hold_timer,
+		if (!globals.timer.timer_interface) {
+			if (switch_core_timer_init(&globals.timer,
 									   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
-								   module_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup hold timer failed!\n");
-			switch_core_codec_destroy(&globals.read_codec);
-			switch_core_codec_destroy(&globals.write_codec);
-			switch_core_timer_destroy(&globals.timer);
-			return SWITCH_STATUS_FALSE;
+									   module_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
+				switch_core_codec_destroy(&globals.read_codec);
+				switch_core_codec_destroy(&globals.write_codec);
+				return SWITCH_STATUS_FALSE;
+			}
 		}
 
+		if (!globals.hold_timer.timer_interface) {
+			if (switch_core_timer_init(&globals.hold_timer,
+									   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
+									   module_pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup hold timer failed!\n");
+				switch_core_codec_destroy(&globals.read_codec);
+				switch_core_codec_destroy(&globals.write_codec);
+				switch_core_timer_destroy(&globals.timer);
+				return SWITCH_STATUS_FALSE;
+			}
+		}
+		
 		globals.read_frame.rate = sample_rate;
 		globals.read_frame.codec = &globals.read_codec;
 
@@ -1204,7 +1232,8 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device!\n");
 			switch_core_codec_destroy(&globals.read_codec);
 			switch_core_codec_destroy(&globals.write_codec);
-
+			switch_core_timer_destroy(&globals.timer);
+			switch_core_timer_destroy(&globals.hold_timer);
 			return SWITCH_STATUS_FALSE;
 		}
 	}

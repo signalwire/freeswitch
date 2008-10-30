@@ -125,6 +125,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
 		switch_core_destroy_memory_pool(&timer->memory_pool);
 	}
 
+	memset(timer, 0, sizeof(*timer));
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
