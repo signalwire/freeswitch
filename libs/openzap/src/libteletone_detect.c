@@ -2,61 +2,13 @@
  * libteletone
  * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
  *
- * Version: MPL 1.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is tone_detect.c - General telephony tone detection, and specific detection of DTMF.
- *
- *
- * The Initial Developer of the Original Code is
- * Stephen Underwood <steveu@coppice.org>
- * Portions created by the Initial Developer are Copyright (C)
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- * 
- * The the original interface designed by Steve Underwood was preserved to retain 
- *the optimizations when considering DTMF tones though the names were changed in the interest 
- * of namespace.
- *
  * Much less efficient expansion interface was added to allow for the detection of 
  * a single arbitrary tone combination which may also exceed 2 simultaneous tones.
  * (controlled by compile time constant TELETONE_MAX_TONES)
  *
  * Copyright (C) 2006 Anthony Minessale II <anthmct@yahoo.com>
  *
- *
  * libteletone_detect.c Tone Detection Code
- *
- *
- ********************************************************************************* 
- *
- * Derived from tone_detect.c - General telephony tone detection, and specific
- * detection of DTMF.
- *
- * Copyright (C) 2001  Steve Underwood <steveu@coppice.org>
- *
- * Despite my general liking of the GPL, I place this code in the
- * public domain for the benefit of all mankind - even the slimy
- * ones who might try to proprietize my work and use it to my
- * detriment.
- *
- *
- * Exception:
- * The author hereby grants the use of this source code under the 
- * following license if and only if the source code is distributed
- * as part of the openzap library.	Any use or distribution of this
- * source code outside the scope of the openzap library will nullify the
- * following license and reinact the MPL 1.1 as stated above.
  *
  * Copyright (c) 2007, Anthony Minessale II
  * All rights reserved.
@@ -88,6 +40,21 @@
  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ ********************************************************************************* 
+ *
+ * Derived from tone_detect.c - General telephony tone detection, and specific
+ * detection of DTMF.
+ *
+ * Copyright (C) 2001  Steve Underwood <steveu@coppice.org>
+ *
+ * Despite my general liking of the GPL, I place this code in the
+ * public domain for the benefit of all mankind - even the slimy
+ * ones who might try to proprietize my work and use it to my
+ * detriment.
+ *
+ *
+ *
  */
 
 #include <libteletone_detect.h>
