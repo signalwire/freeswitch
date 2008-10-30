@@ -1,41 +1,5 @@
 /* 
- * libteletone
- * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
- *
- * Version: MPL 1.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is libteletone
- *
- * The Initial Developer of the Original Code is
- * Anthony Minessale II <anthmct@yahoo.com>
- * Portions created by the Initial Developer are Copyright (C)
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- * 
- * Anthony Minessale II <anthmct@yahoo.com>
- *
- *
- * libteletone.c -- Tone Generator
- *
- *
- *
- * Exception:
- * The author hereby grants the use of this source code under the 
- * following license if and only if the source code is distributed
- * as part of the openzap library.	Any use or distribution of this
- * source code outside the scope of the openzap library will nullify the
- * following license and reinact the MPL 1.1 as stated above.
+ * libteletone_generate.c -- Tone Generator
  *
  * Copyright (c) 2007, Anthony Minessale II
  * All rights reserved.
