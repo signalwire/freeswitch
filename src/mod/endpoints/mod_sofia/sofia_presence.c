@@ -1193,7 +1193,8 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	nua_handle_t *nh;
 	struct mwi_helper *h = (struct mwi_helper *) pArg;
 	sofia_profile_t *ext_profile = NULL, *profile = h->profile;
-	
+	char *route = NULL, *route_uri = NULL;
+	char *p;
 
 	if (profile_name && strcasecmp(profile_name, h->profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
@@ -1204,17 +1205,42 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 
 	contact = sofia_glue_get_url_from_contact(o_contact, 1);
+	if ((route = strstr(o_contact, ";fs_path="))) {
+		route = strdup(route + 9);
+		
+		for (p = route; p && *p ; p++) {
+			if (*p == '>' || *p == ';') {
+				*p = '\0';
+				break;
+			}
+		}
+		switch_url_decode(route);
+		route_uri = strdup(route);
+		if ((p = strchr(route_uri, ','))) {
+			while (*(p-1) == ' ') {
+				p--;
+			}
+			if (*p) {
+				*p = '\0';
+			}
+		}
+	}
+
+	if (!route_uri && strstr(o_contact, ";fs_nat")) {
+		route_uri = contact;
+	}
 
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(h->profile->url), TAG_END());
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
-			   TAG_IF(strstr(o_contact, ";fs_nat"), NUTAG_PROXY(contact)),
+			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(contact);
 	switch_safe_free(id);
-
+	switch_safe_free(route);
+	switch_safe_free(route_uri);
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
 	}
