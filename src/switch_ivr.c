@@ -1639,7 +1639,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_generate_xml_cdr(switch_core_session_
 				if (!(x_caller_profile = switch_xml_add_child_d(x_o, "originatee_caller_profile", off++))) {
 					goto error;
 				}
-				switch_ivr_set_xml_profile_data(x_caller_profile, caller_profile->originatee_caller_profile, 0);
+				switch_ivr_set_xml_profile_data(x_caller_profile, cp, 0);
 			}
 		}
 
