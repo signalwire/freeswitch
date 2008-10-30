@@ -245,22 +245,24 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 					}
 				}
 
-				if (!(mypass1 && mypass2)) {
+				if (!switch_strlen_zero(mypass2) && !strcasecmp(mypass2, "user-choose")) {
+					mypass2 = NULL;
+				}
+
+				if (!mypass1) {
 					r->requestInfo.user = strdup(user);
 					goto authed;
 				} else {
-					if (mypass1) {
-						if (at) {
-							switch_snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass1);
-						} else {
-							switch_snprintf(z, sizeof(z), "%s:%s", user, mypass1);
-						}
-						Base64Encode(z, t);
+					if (at) {
+						switch_snprintf(z, sizeof(z), "%s@%s:%s", user, domain_name, mypass1);
+					} else {
+						switch_snprintf(z, sizeof(z), "%s:%s", user, mypass1);
+					}
+					Base64Encode(z, t);
 
-						if (!strcmp(p, t)) {
-							r->requestInfo.user = strdup(box ? box : user);
-							goto authed;
-						}
+					if (!strcmp(p, t)) {
+						r->requestInfo.user = strdup(box ? box : user);
+						goto authed;
 					}
 
 					if (mypass2) {
@@ -278,18 +280,16 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 					}
 
 					if (box) {
-						if (mypass1) {
-							if (at) {
-								switch_snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass1);
-							} else {
-								switch_snprintf(z, sizeof(z), "%s:%s", box, mypass1);
-							}
-							Base64Encode(z, t);
+						if (at) {
+							switch_snprintf(z, sizeof(z), "%s@%s:%s", box, domain_name, mypass1);
+						} else {
+							switch_snprintf(z, sizeof(z), "%s:%s", box, mypass1);
+						}
+						Base64Encode(z, t);
 
-							if (!strcmp(p, t)) {
-								r->requestInfo.user = strdup(box);
-								goto authed;
-							}
+						if (!strcmp(p, t)) {
+							r->requestInfo.user = strdup(box);
+							goto authed;
 						}
 
 						if (mypass2) {
