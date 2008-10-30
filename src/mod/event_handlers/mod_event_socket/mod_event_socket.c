@@ -177,8 +177,8 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 
 	if (listener->event_queue) {
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			if (!pop) continue;
 			switch_event_t *pevent = (switch_event_t *) pop;
+			if (!pop) continue;
 			switch_event_destroy(&pevent);
 		}
 	}
@@ -214,7 +214,7 @@ static void event_handler(switch_event_t *event)
 
 	switch_mutex_lock(listen_list.mutex);
 	while(lp) {
-		uint8_t send = 0;
+		int send = 0;
 		
 		l = lp;
 		lp = lp->next;
@@ -245,7 +245,7 @@ static void event_handler(switch_event_t *event)
 
 			send = 0;
 			switch_mutex_lock(l->filter_mutex);
-			for (hp = l->filters->headers; hp; hp = hp->next) {
+			for (hp = l->filters->headers; hp && !send; hp = hp->next) {
 				if ((hval = switch_event_get_header(event, hp->name))) {
 					if (*hp->value == '/') {
 						switch_regex_t *re = NULL;
