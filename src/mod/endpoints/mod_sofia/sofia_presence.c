@@ -1215,7 +1215,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 			}
 		}
 		switch_url_decode(route);
-		route_uri = strdup(route);
+		route_uri = route;
 		if ((p = strchr(route_uri, ','))) {
 			while (*(p-1) == ' ') {
 				p--;
@@ -1240,7 +1240,6 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	switch_safe_free(contact);
 	switch_safe_free(id);
 	switch_safe_free(route);
-	switch_safe_free(route_uri);
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
 	}
