@@ -2249,21 +2249,21 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 	if (insert_db && switch_file_exists(file_path, pool) == SWITCH_STATUS_SUCCESS) {
 		char *usql;
-		switch_event_t *params;
+		switch_event_t *message_event;
 		
-		switch_event_create_subclass(&params, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "leave-message");
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User", myid);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Caller-ID-Name", caller_id_name);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Caller-ID-Number", caller_id_number);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-File-Path", file_path);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Flags", read_flags);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Folder", myfolder);
-		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "VM-Message-Len", "%u", message_len);
-		switch_event_add_header(params, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_timestamp(NULL));
+		switch_event_create_subclass(&message_event, SWITCH_EVENT_CUSTOM, VM_EVENT_MAINT);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Action", "leave-message");
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-User", myid);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Caller-ID-Name", caller_id_name);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Caller-ID-Number", caller_id_number);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-File-Path", file_path);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Flags", read_flags);
+		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Folder", myfolder);
+		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Message-Len", "%u", message_len);
+		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_timestamp(NULL));
 
-		switch_event_fire(&params);
+		switch_event_fire(&message_event);
 
 		usql = switch_mprintf("insert into voicemail_msgs values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_timestamp(NULL),
 							  myid, domain_name, uuid_str, caller_id_name, caller_id_number,

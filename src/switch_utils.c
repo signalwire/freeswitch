@@ -1071,7 +1071,7 @@ SWITCH_DECLARE(char *) get_addr(char *buf, switch_size_t len, struct sockaddr *s
 	switch_assert(buf);
 	*buf = '\0';
 	if (sa) {
-		getnameinfo(sa, salen, buf, len, NULL, 0, NI_NUMERICHOST);
+		getnameinfo(sa, salen, buf, (socklen_t)len, NULL, 0, NI_NUMERICHOST);
 	}
 	return buf;
 }
