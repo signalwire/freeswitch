@@ -1044,6 +1044,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
             goto fail;
 		}
 
+		zap_channel_init(zchan);
+		
 		return SWITCH_CAUSE_SUCCESS;
 	}
 
