@@ -4664,30 +4664,6 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_destroy() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_signal_lock(void * jarg1) {
-  int jresult ;
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-  switch_status_t result;
-  
-  arg1 = (switch_core_session_t *)jarg1; 
-  result = (switch_status_t)switch_core_session_signal_lock(arg1);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_signal_unlock(void * jarg1) {
-  int jresult ;
-  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
-  switch_status_t result;
-  
-  arg1 = (switch_core_session_t *)jarg1; 
-  result = (switch_status_t)switch_core_session_signal_unlock(arg1);
-  jresult = result; 
-  return jresult;
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_read_lock(void * jarg1) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;

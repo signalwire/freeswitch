@@ -970,16 +970,6 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_session_signal_lock(SWIGTYPE_p_switch_core_session session) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_signal_lock(SWIGTYPE_p_switch_core_session.getCPtr(session));
-    return ret;
-  }
-
-  public static switch_status_t switch_core_session_signal_unlock(SWIGTYPE_p_switch_core_session session) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_signal_unlock(SWIGTYPE_p_switch_core_session.getCPtr(session));
-    return ret;
-  }
-
   public static switch_status_t switch_core_session_read_lock(SWIGTYPE_p_switch_core_session session) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_read_lock(SWIGTYPE_p_switch_core_session.getCPtr(session));
     return ret;
@@ -5270,12 +5260,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_destroy")]
   public static extern int switch_core_destroy();
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_signal_lock")]
-  public static extern int switch_core_session_signal_lock(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_signal_unlock")]
-  public static extern int switch_core_session_signal_unlock(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_read_lock")]
   public static extern int switch_core_session_read_lock(HandleRef jarg1);
@@ -22730,7 +22714,8 @@ public enum switch_status_t {
   SWITCH_STATUS_NOTFOUND,
   SWITCH_STATUS_UNLOAD,
   SWITCH_STATUS_NOUNLOAD,
-  SWITCH_STATUS_IGNORE
+  SWITCH_STATUS_IGNORE,
+  SWITCH_STATUS_NOT_INITALIZED
 }
 
 }
