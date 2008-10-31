@@ -543,9 +543,39 @@ static void event_handler(switch_event_t *event)
 
 static void tztime(const time_t * const timep, const char *tzstring, struct tm * const tmp );
 
-SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *format, char *date, size_t len)
+SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_time_exp_t *tm, switch_time_t thetime)
 {
-	switch_time_t thetime;
+	struct tm xtm = { 0 };
+	const char *tz_name = tz;
+    const char *tzdef;
+	time_t timep;
+	
+	if (!thetime) {
+        thetime = switch_timestamp_now();
+    }
+
+	timep =  (thetime) / (int64_t) (1000000);
+
+	if (!switch_strlen_zero(tz_name)) {
+		tzdef = switch_lookup_timezone( tz_name );
+	} else {
+		/* We set the default timezone to GMT. */
+		tz_name="GMT";
+		tzdef="GMT";
+	}
+	
+	if (tzdef) { /* The lookup of the zone may fail. */
+		tztime( &timep, tzdef, &xtm );
+		tm2switchtime( &xtm, tm);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *format, char *date, size_t len, switch_time_t thetime)
+{
 	time_t timep;
 
 	const char *tz_name = tz;
@@ -556,7 +586,9 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 	struct tm tm = { 0 };
 	switch_time_exp_t stm;
 
-	thetime = switch_timestamp_now();
+	if (!thetime) {
+		thetime = switch_timestamp_now();
+	}
 
 	timep =  (thetime) / (int64_t) (1000000);
 

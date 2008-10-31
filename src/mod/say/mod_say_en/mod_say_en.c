@@ -266,7 +266,9 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 	switch_time_t target = 0;
 	switch_time_exp_t tm;
 	uint8_t say_date = 0, say_time = 0;
-
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *tz = switch_channel_get_variable(channel, "timezone");
+	
 	if (type == SST_TIME_MEASUREMENT) {
 		int64_t hours = 0;
 		int64_t minutes = 0;
@@ -291,7 +293,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 				}
 			}
 		} else {
-			if ((seconds = atoi(tosay)) <= 0) {
+			if ((seconds = atol(tosay)) <= 0) {
 				seconds = (int64_t) switch_timestamp(NULL);
 			}
 
@@ -347,12 +349,22 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((t = atoi(tosay)) > 0) {
+	if ((t = atol(tosay)) > 0) {
 		target = switch_time_make(t, 0);
 	} else {
 		target = switch_timestamp_now();
 	}
-	switch_time_exp_lt(&tm, target);
+	
+	if (tz) {
+		int check = atoi(tz);
+		if (check) {
+			switch_time_exp_tz(&tm, target, check);
+		} else {
+			switch_time_exp_tz_name(tz, &tm, target);
+		}
+	} else {
+		switch_time_exp_lt(&tm, target);
+	}
 
 	switch (type) {
 	case SST_CURRENT_DATE_TIME:

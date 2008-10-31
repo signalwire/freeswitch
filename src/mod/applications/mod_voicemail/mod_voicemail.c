@@ -1983,11 +1983,23 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 				}
 
-				x_params = switch_xml_child(x_user, "params");
+				
 
 				thepass = thehash = NULL;
 				switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", myid, domain_name);
 				vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
+
+				x_params = switch_xml_child(x_user, "variables");
+				for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+					const char *var = switch_xml_attr_soft(x_param, "name");
+					const char *val = switch_xml_attr_soft(x_param, "value");
+
+					if (!strcasecmp(var, "timezone")) {
+						switch_channel_set_variable(channel, var, val);
+					}
+				}
+
+				x_params = switch_xml_child(x_user, "params");
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
@@ -2012,6 +2024,9 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						vm_email = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
+
+					} else if (!strcasecmp(var, "timezone")) {
+						switch_channel_set_variable(channel, var, val);
 					} 
 
 				}
@@ -2188,6 +2203,16 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		filename = path;
 	}
 
+	x_params = switch_xml_child(x_user, "variables");
+	for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+		const char *var = switch_xml_attr_soft(x_param, "name");
+		const char *val = switch_xml_attr_soft(x_param, "value");
+		
+		if (!strcasecmp(var, "timezone")) {
+			vm_timezone = switch_core_strdup(pool, val);
+		}
+	}
+
 	x_params = switch_xml_child(x_user, "params");
 
 	for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
@@ -2297,7 +2322,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		message_count(profile, myid, domain_name, myfolder, &total_new_messages, &total_saved_messages,
 					  &total_new_urgent_messages, &total_saved_urgent_messages);
 
-		if (switch_strlen_zero(vm_timezone) || (switch_strftime_tz(vm_timezone, profile->date_fmt, date, sizeof(date)) != SWITCH_STATUS_SUCCESS)) {
+		if (switch_strlen_zero(vm_timezone) || (switch_strftime_tz(vm_timezone, profile->date_fmt, date, sizeof(date), 0) != SWITCH_STATUS_SUCCESS)) {
 			switch_time_exp_lt(&tm, switch_timestamp_now());
 			switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 		}
