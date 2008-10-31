@@ -1474,7 +1474,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		case IKS_OK:
 			break;
 		case IKS_NET_NODNS:
-			globals.logger(DL_LOG_DEBUG, "hostname lookup failed\n");
+			globals.logger(DL_LOG_DEBUG, "hostname lookup failed for %s\n", handle->server);
 			microsleep(1000);
 			goto fail;
 		case IKS_NET_NOCONN:

@@ -685,6 +685,7 @@ SWITCH_STANDARD_API(enum_api)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
 		root = argv[1];
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Looking up %s@%s\n", dest, root);
 		if (enum_lookup(root, dest, &results) == SWITCH_STATUS_SUCCESS) {
 			for (rp = results; rp; rp = rp->next) {
 				if (!rp->supported) {
