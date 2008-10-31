@@ -409,6 +409,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\..\src\switch_dso.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\src\switch_event.c"
 				>
 			</File>
@@ -568,6 +572,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_cpp.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_dso.h"
 				>
 			</File>
 			<File
