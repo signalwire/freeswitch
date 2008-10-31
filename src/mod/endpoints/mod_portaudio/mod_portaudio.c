@@ -1172,6 +1172,8 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 			}
 		}
 
+		switch_assert(globals.read_codec.implementation);
+
 		if (!globals.write_codec.implementation) {
 			if (switch_core_codec_init(&globals.write_codec,
 									   "L16",
