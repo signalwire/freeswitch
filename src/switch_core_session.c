@@ -57,10 +57,11 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 		if ((session = switch_core_hash_find(session_manager.session_table, uuid_str))) {
 			/* Acquire a read lock on the session */
 #ifdef SWITCH_DEBUG_RWLOCKS
-			if (switch_channel_get_state(session->channel) >= CS_HANGUP || 
+			if (switch_channel_get_state(session->channel) >= CS_HANGUP || switch_test_flag(session, SSF_DESTROYED) ||
 				switch_core_session_perform_read_lock(session, file, func, line) != SWITCH_STATUS_SUCCESS) {
 #else
-			if (switch_channel_get_state(session->channel) >= CS_HANGUP || switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+			if (switch_channel_get_state(session->channel) >= CS_HANGUP || switch_test_flag(session, SSF_DESTROYED) ||
+				switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 #endif
 				/* not available, forget it */
 				session = NULL;
