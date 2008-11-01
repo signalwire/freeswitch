@@ -45,7 +45,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(switch_core_sessio
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->rwlock) {
-		if (switch_test_flag(session, SSF_DESTROYED)) {
+		if (switch_test_flag(session, SSF_DESTROYED) || switch_channel_get_state(session->channel) >= CS_HANGUP) {
 			status = SWITCH_STATUS_FALSE;
 #ifdef SWITCH_DEBUG_RWLOCKS
 			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
