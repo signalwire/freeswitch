@@ -7100,19 +7100,49 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_timestamp(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_strftime_tz(char * jarg1, char * jarg2, char * jarg3, unsigned long jarg4) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_strftime_tz(char * jarg1, char * jarg2, char * jarg3, unsigned long jarg4, void * jarg5) {
   int jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   size_t arg4 ;
+  switch_time_t arg5 ;
   switch_status_t result;
+  switch_time_t *argp5 ;
   
   arg1 = (char *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (size_t)jarg4; 
-  result = (switch_status_t)switch_strftime_tz((char const *)arg1,(char const *)arg2,arg3,arg4);
+  argp5 = (switch_time_t *)jarg5; 
+  if (!argp5) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_time_t", 0);
+    return 0;
+  }
+  arg5 = *argp5; 
+  result = (switch_status_t)switch_strftime_tz((char const *)arg1,(char const *)arg2,arg3,arg4,arg5);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_time_exp_tz_name(char * jarg1, void * jarg2, void * jarg3) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_time_exp_t *arg2 = (switch_time_exp_t *) 0 ;
+  switch_time_t arg3 ;
+  switch_status_t result;
+  switch_time_t *argp3 ;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_time_exp_t *)jarg2; 
+  argp3 = (switch_time_t *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_time_t", 0);
+    return 0;
+  }
+  arg3 = *argp3; 
+  result = (switch_status_t)switch_time_exp_tz_name((char const *)arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
