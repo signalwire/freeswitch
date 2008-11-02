@@ -3436,17 +3436,17 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				acl_token = strdup(token);
 			}
 			if ((profile->pflags & PFLAG_AUTH_CALLS)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl %s[%s]. Access Granted.\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
 								  network_ip, switch_str_nil(last_acl), switch_str_nil(acl_token));
 				is_auth = 1;
 			}
 		} else {
 			if (!(profile->pflags & PFLAG_AUTH_CALLS)) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", network_ip, switch_str_nil(last_acl));
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", network_ip, switch_str_nil(last_acl));
 				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
 				return;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl %s. Falling back to Digest auth.\n",
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
 								  network_ip, switch_str_nil(last_acl));
 			}
 		}

@@ -1604,7 +1604,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 				const char message[] = "Access Denied, go away.\n";
 				int mlen = strlen(message);
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl %s\n", listener->remote_ip, prefs.acl[x]);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip, prefs.acl[x]);
 
 				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length %d\n\n", mlen);
 				len = strlen(buf);
