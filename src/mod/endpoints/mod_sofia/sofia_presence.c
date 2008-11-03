@@ -1205,7 +1205,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 
 	contact = sofia_glue_get_url_from_contact(o_contact, 1);
-	if ((route = strstr(o_contact, ";fs_path=")) && (route = strdup(route + 9))) {
+	if ((route = strstr(contact, ";fs_path=")) && (route = strdup(route + 9))) {
 		
 		for (p = route; p && *p ; p++) {
 			if (*p == '>' || *p == ';') {
@@ -1225,10 +1225,23 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		}
 	}
 
-	if (!route_uri && strstr(o_contact, ";fs_nat")) {
+	if (!route_uri && strstr(contact, ";fs_nat")) {
 		route_uri = contact;
 	}
 
+	if ((p = strstr(contact, ";fs_"))) {
+		*p = '\0';
+	}
+
+	if (route_uri) {
+		while (route_uri && *route_uri && (*route_uri == '<' || *route_uri == ' ')) {
+			route_uri++;
+		}
+		if ((p = strchr(route_uri, '>'))) {
+			*p++ = '\0';
+		}
+	}
+	
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(h->profile->url), TAG_END());
 
 	nua_notify(nh,
