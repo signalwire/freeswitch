@@ -182,6 +182,12 @@ void sofia_event_callback(nua_event_t event,
 				tech_pvt = switch_core_session_get_private(session);
 				switch_assert(tech_pvt);
 				channel = switch_core_session_get_channel(tech_pvt->session);
+				if (status >= 180 && !*sofia_private->auth_gateway_name) {
+					const char *gwname = switch_channel_get_variable(channel, "sip_use_gateway");
+					if (!switch_strlen_zero(gwname)) {
+						switch_set_string(sofia_private->auth_gateway_name, gwname);
+					}
+				}
 				if (!tech_pvt->call_id && sip && sip->sip_call_id && sip->sip_call_id->i_id) {
 					tech_pvt->call_id = switch_core_session_strdup(session, sip->sip_call_id->i_id);
 					switch_channel_set_variable(channel, "sip_call_id", tech_pvt->call_id);
@@ -237,7 +243,7 @@ void sofia_event_callback(nua_event_t event,
 	}
 
 	if (sip && (status == 401 || status == 407)) {
-		sofia_reg_handle_sip_r_challenge(status, phrase, nua, profile, nh, session, gateway, sip, tags);
+		sofia_reg_handle_sip_r_challenge(status, phrase, nua, profile, nh, sofia_private, session, gateway, sip, tags);
 		goto done;
 	}
 
@@ -3899,7 +3905,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	memset(sofia_private, 0, sizeof(*sofia_private));
 	sofia_private->is_call++;
 	tech_pvt->sofia_private = sofia_private;
-
+	
 	if ((profile->pres_type)) {
 		sofia_presence_set_chat_hash(tech_pvt, sip);
 	}

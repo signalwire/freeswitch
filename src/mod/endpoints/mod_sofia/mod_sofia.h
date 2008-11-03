@@ -109,7 +109,8 @@ typedef enum {
 struct sofia_private {
 	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	sofia_gateway_t *gateway;
-	char gateway_name[512];
+	char gateway_name[256];
+	char auth_gateway_name[256];
 	int destroy_nh;
 	int destroy_me;
 	int is_call;
@@ -586,8 +587,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 void sofia_reg_handle_sip_r_challenge(int status,
 									  char const *phrase,
-									  nua_t *nua, sofia_profile_t *profile, 
-									  nua_handle_t *nh, switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip, tagi_t tags[]);
+									  nua_t *nua, sofia_profile_t *profile,
+									  nua_handle_t *nh, sofia_private_t *sofia_private,
+									  switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip, tagi_t tags[]);
 void sofia_reg_handle_sip_r_register(int status,
 					char const *phrase,
 					nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);

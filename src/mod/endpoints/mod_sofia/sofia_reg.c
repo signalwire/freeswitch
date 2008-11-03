@@ -1097,7 +1097,7 @@ void sofia_reg_handle_sip_r_register(int status,
 
 void sofia_reg_handle_sip_r_challenge(int status,
 									  char const *phrase,
-									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh,
+									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private,
 									  switch_core_session_t *session, sofia_gateway_t *gateway, sip_t const *sip, tagi_t tags[])
 {
 	sip_www_authenticate_t const *authenticate = NULL;
@@ -1109,6 +1109,10 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	int ss_state;
 	sofia_gateway_t *var_gateway = NULL;
 	const char *gw_name = NULL;
+
+	if (sofia_private && *sofia_private->auth_gateway_name) {
+		gw_name = sofia_private->auth_gateway_name;
+	}
 
 	if (session) {
 		private_object_t *tech_pvt;
