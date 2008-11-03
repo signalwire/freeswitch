@@ -30,6 +30,7 @@
  */
 
 #include <switch.h>
+#define DEFAULT_LEAD_FRAMES 50
 
 static const switch_state_handler_table_t audio_bridge_peer_state_handlers;
 
@@ -84,6 +85,7 @@ struct switch_ivr_bridge_data {
 	switch_input_callback_function_t input_callback;
 	void *session_data;
 	int clean_exit;
+	uint32_t skip_frames;
 };
 typedef struct switch_ivr_bridge_data switch_ivr_bridge_data_t;
 
@@ -216,7 +218,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			goto end_of_bridge_loop;
 		}
 
-		if (loop_count > 50 && switch_core_session_private_event_count(session_a)) {
+		if (loop_count > DEFAULT_LEAD_FRAMES && switch_core_session_private_event_count(session_a)) {
 			switch_channel_set_flag(chan_b, CF_SUSPEND);
 			msg.string_arg = data->b_uuid;
 			msg.message_id = SWITCH_MESSAGE_INDICATE_UNBRIDGE;
@@ -246,7 +248,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 #endif
 
-		if (loop_count > 50 && bypass_media_after_bridge) {
+		if (loop_count > DEFAULT_LEAD_FRAMES && bypass_media_after_bridge) {
 			switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 			bypass_media_after_bridge = 0;
 		}
@@ -339,6 +341,11 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				} else if (!switch_channel_test_flag(chan_b, CF_ACCEPT_CNG)) {
 					continue;
 				}
+			}
+			
+			if (data->skip_frames) {
+				data->skip_frames--;
+				continue;
 			}
 			
 			if (status != SWITCH_STATUS_BREAK && !switch_channel_test_flag(chan_a, CF_HOLD)) {
@@ -862,13 +869,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_app"))) {
+				switch_event_t *event;
+
 				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data");
-				switch_core_session_execute_application(session, app, data);
+				if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+					switch_core_session_queue_private_event(session, &event);
+					a_leg->skip_frames = DEFAULT_LEAD_FRAMES;
+				}
+
 			}
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_app"))) {
+				switch_event_t *event;
 				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
-				switch_core_session_execute_application(peer_session, app, data);
+				if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
+					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+					switch_core_session_queue_private_event(peer_session, &event);
+					b_leg->skip_frames = DEFAULT_LEAD_FRAMES;
+				}
 			}
 			
 			switch_channel_set_private(peer_channel, "_bridge_", b_leg);
