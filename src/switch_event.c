@@ -586,12 +586,17 @@ SWITCH_DECLARE(switch_status_t) switch_event_set_priority(switch_event_t *event,
 SWITCH_DECLARE(char *) switch_event_get_header(switch_event_t *event, const char *header_name)
 {
 	switch_event_header_t *hp;
-	switch_assert(event);
-	if (!header_name)
-		return NULL;
+	switch_ssize_t hlen = -1;
+	unsigned long hash = 0;
 
+	switch_assert(event);
+
+	if (!header_name) return NULL;
+	
+	hash = switch_ci_hashfunc_default(header_name, &hlen);
+	
 	for (hp = event->headers; hp; hp = hp->next) {
-		if (!strcasecmp(hp->name, header_name)) {
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(hp->name, header_name) ) {
 			return hp->value;
 		}
 	}
@@ -608,6 +613,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 	switch_event_header_t *hp, *lp = NULL, *tp;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int x = 0;
+	switch_ssize_t hlen = -1;
+	unsigned long hash = 0;
+
 	tp = event->headers;
 	while (tp) {
 		hp = tp;
@@ -615,7 +623,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 		
 		x++;
 		switch_assert(x < 1000);
-		if (!strcasecmp(header_name, hp->name)) {
+		hash = switch_ci_hashfunc_default(header_name, &hlen);
+
+		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name)) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {
@@ -642,6 +652,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data)
 {
 	switch_event_header_t *header;
+	switch_ssize_t hlen = -1;
 	void *pop;
 
 	if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
@@ -655,7 +666,8 @@ switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack
 
 	header->name = DUP(header_name);
 	header->value = data;
-
+	header->hash = switch_ci_hashfunc_default(header->name, &hlen);
+	
 	if (stack == SWITCH_STACK_TOP) {
 		header->next = event->headers;
 		event->headers = header;

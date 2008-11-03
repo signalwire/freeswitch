@@ -67,6 +67,8 @@ SWITCH_BEGIN_EXTERN_C
 	char *name;
 	/*! the header value */
 	char *value;
+	/*! hash of the header name */
+	unsigned long hash;
 	struct switch_event_header *next;
 };
 

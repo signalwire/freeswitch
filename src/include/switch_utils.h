@@ -295,6 +295,40 @@ static inline char *switch_safe_strdup(const char *it)
 }
 
 
+static inline char *switch_lc_strdup(const char *it) 
+{
+	char *dup;
+	char *p;
+
+	if (it) {
+		dup = strdup(it);
+		for(p = dup; p && *p; p++) {
+			*p = tolower(*p);
+		}
+		return dup;
+	}
+
+	return NULL;
+}
+
+
+static inline char *switch_uc_strdup(const char *it) 
+{
+	char *dup;
+	char *p;
+
+	if (it) {
+		dup = strdup(it);
+		for(p = dup; p && *p; p++) {
+			*p = toupper(*p);
+		}
+		return dup;
+	}
+
+	return NULL;
+}
+
+
 /*!
   \brief Test if one string is inside another with extra case checking
   \param s the inner string

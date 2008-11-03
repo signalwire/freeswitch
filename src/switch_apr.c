@@ -74,6 +74,30 @@ SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 	apr_pool_clear(p);
 }
 
+SWITCH_DECLARE(unsigned int) switch_ci_hashfunc_default(const char *char_key, switch_ssize_t *klen)
+														
+{
+    unsigned int hash = 0;
+    const unsigned char *key = (const unsigned char *)char_key;
+    const unsigned char *p;
+    apr_ssize_t i;
+    
+    if (*klen == APR_HASH_KEY_STRING) {
+        for (p = key; *p; p++) {
+            hash = hash * 33 + tolower(*p);
+        }
+        *klen = p - key;
+    }
+    else {
+        for (p = key, i = *klen; i; i--, p++) {
+            hash = hash * 33 + tolower(*p);
+        }
+    }
+
+    return hash;
+}
+
+
 SWITCH_DECLARE(unsigned int) switch_hashfunc_default(const char *key, switch_ssize_t *klen)
 {
 	return apr_hashfunc_default(key, klen);
