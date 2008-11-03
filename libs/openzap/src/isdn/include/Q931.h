@@ -563,9 +563,12 @@ typedef struct {
 	L3UINT		Size;           /* Size of message in bytes             */
 	L3UCHAR		ProtDisc;       /* Protocol Discriminator               */
 	L3UCHAR		MesType;        /* Message type                         */
-	L3UCHAR		Tei;            /* TEI                                  */
 	L3UCHAR		CRVFlag;        /* Call reference value flag            */
 	L3INT		CRV;            /* Call reference value                 */
+
+	/* WARNING: don't touch anything above this line (TODO: use Q931mes_Header directly to make sure it's the same) */
+
+	L3UCHAR		Tei;            /* TEI                                  */
 
 	ie		Shift;
 	ie		MoreData;
