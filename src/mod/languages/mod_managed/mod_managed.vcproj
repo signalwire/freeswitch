@@ -135,6 +135,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4505"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -294,6 +295,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4505"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
