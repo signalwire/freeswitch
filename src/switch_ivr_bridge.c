@@ -869,31 +869,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_app"))) {
-				switch_event_t *event;
+				switch_event_t *execute_event;
 
 				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_aleg_data");
-				if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(session, &event);
+				if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
+					switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+					switch_core_session_queue_private_event(session, &execute_event);
 					a_leg->skip_frames = DEFAULT_LEAD_FRAMES;
 				}
 
 			}
 
 			if ((app = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_app"))) {
-				switch_event_t *event;
+				switch_event_t *execute_event;
 				data = switch_channel_get_variable(caller_channel, "bridge_pre_execute_bleg_data");
-				if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
-					switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-lock", "true");
-					switch_core_session_queue_private_event(peer_session, &event);
+				if (switch_event_create(&execute_event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-name", app);
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "execute-app-arg", data);
+					switch_event_add_header(execute_event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+					switch_event_add_header_string(execute_event, SWITCH_STACK_BOTTOM, "event-lock", "true");
+					switch_core_session_queue_private_event(peer_session, &execute_event);
 					b_leg->skip_frames = DEFAULT_LEAD_FRAMES;
 				}
 			}
