@@ -1353,7 +1353,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 	const char *sipip, *format; 
 
 	switch_assert(tech_pvt != NULL);
-
+	switch_mutex_lock(tech_pvt->sofia_mutex);
 	caller_profile = switch_channel_get_caller_profile(channel);
 
 	sipip = tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip;
@@ -1380,6 +1380,7 @@ void sofia_glue_do_xfer_invite(switch_core_session_t *session)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 	}
+	switch_mutex_unlock(tech_pvt->sofia_mutex);
 }
 
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
