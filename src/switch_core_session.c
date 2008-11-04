@@ -316,11 +316,21 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
 		switch_event_t *event;
 		switch_channel_t *peer_channel = switch_core_session_get_channel(*new_session);
+		const char *use_uuid;
 
 		switch_assert(peer_channel);
 
 		peer_profile = switch_channel_get_caller_profile(peer_channel);
-
+		
+		if ((use_uuid = switch_event_get_header(var_event, "origination_uuid"))) {
+			if (switch_core_session_set_uuid(*new_session, use_uuid) == SWITCH_STATUS_SUCCESS) {
+				switch_event_del_header(var_event, "origination_uuid");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(peer_channel), use_uuid);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "%s set UUID=%s FAILED\n", switch_channel_get_name(peer_channel), use_uuid);
+			}
+		}
+		
 		if (channel) {
 			const char *export_vars, *val;
 			switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
@@ -917,14 +927,44 @@ SWITCH_DECLARE(void) switch_core_session_launch_thread(switch_core_session_t *se
 
 }
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch_endpoint_interface_t
-																	*endpoint_interface, switch_memory_pool_t **pool)
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session_t *session, const char *use_uuid)
+{
+	switch_event_t *event;
+
+	switch_assert(use_uuid);
+
+	if (switch_core_hash_find(session_manager.session_table, use_uuid)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+        return SWITCH_STATUS_FALSE;
+	}
+
+	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
+	switch_mutex_lock(runtime.throttle_mutex);
+	switch_core_hash_delete(session_manager.session_table, session->uuid_str);
+	switch_set_string(session->uuid_str, use_uuid);
+	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
+	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_channel_event_set_data(session->channel, event);
+	switch_event_fire(&event);
+	
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(const switch_endpoint_interface_t
+																		 *endpoint_interface, switch_memory_pool_t **pool, const char *use_uuid)
 {
 	switch_memory_pool_t *usepool;
 	switch_core_session_t *session;
 	switch_uuid_t uuid;
 	uint32_t count = 0;
 	int32_t sps = 0;
+
+	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+        return NULL;
+	}
 
 	if (!switch_core_ready() || endpoint_interface == NULL) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "The system cannot create any sessions at this time.\n");
@@ -957,7 +997,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 
 	session = switch_core_alloc(usepool, sizeof(*session));
 	session->pool = usepool;
-
+	
 	if (switch_channel_alloc(&session->channel, session->pool) != SWITCH_STATUS_SUCCESS) {
 		abort();
 	}
@@ -967,8 +1007,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(const switch
 	/* The session *IS* the pool you may not alter it because you have no idea how
 	   its all private it will be passed to the thread run function */
 
-	switch_uuid_get(&uuid);
-	switch_uuid_format(session->uuid_str, &uuid);
+	if (use_uuid) {
+		switch_set_string(session->uuid_str, use_uuid);
+	} else {
+		switch_uuid_get(&uuid);
+		switch_uuid_format(session->uuid_str, &uuid);
+	}
+
 	session->endpoint_interface = endpoint_interface;
 	session->raw_write_frame.data = session->raw_write_buf;
 	session->raw_write_frame.buflen = sizeof(session->raw_write_buf);

@@ -502,9 +502,11 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(_In_ switch_
   \param pool the pool to use for the allocation (a new one will be used if NULL)
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request(_In_ const switch_endpoint_interface_t *endpoint_interface,
-																	_Inout_opt_ switch_memory_pool_t **pool);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ const switch_endpoint_interface_t *endpoint_interface,
+																		 _Inout_opt_ switch_memory_pool_t **pool, _In_ const char *use_uuid);
+#define switch_core_session_request(_ep, _p) switch_core_session_request_uuid(_ep, _p, NULL)
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session_t *session, const char *use_uuid);
 
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_session_t **session,
 														 _In_z_ const char *file, _In_z_ const char *func, _In_ int line);

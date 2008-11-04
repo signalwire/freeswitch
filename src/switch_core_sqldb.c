@@ -258,6 +258,21 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_DESTROY:
 		sql = switch_mprintf("delete from channels where uuid='%q'", switch_event_get_header_nil(event, "unique-id"));
 		break;
+	case SWITCH_EVENT_CHANNEL_UUID:
+		{
+			sql = switch_mprintf(
+								 "update channels set uuid='%q' where uuid='%q';"
+								 "update calls set caller_uuid='%q' where caller_uuid='%q';"
+								 "update calls set callee_uuid='%q' where callee_uuid='%q'",
+								 switch_event_get_header_nil(event, "unique-id"),
+								 switch_event_get_header_nil(event, "old-unique-id"),
+								 switch_event_get_header_nil(event, "unique-id"),
+								 switch_event_get_header_nil(event, "old-unique-id"),
+								 switch_event_get_header_nil(event, "unique-id"),
+								 switch_event_get_header_nil(event, "old-unique-id")
+								 );
+			break;
+		}
 	case SWITCH_EVENT_CHANNEL_CREATE:
 		sql = switch_mprintf("insert into channels (uuid,created,created_epoch, name,state,dialplan,context) values('%q','%q','%ld','%q','%q','%q','%q')",
 							 switch_event_get_header_nil(event, "unique-id"),

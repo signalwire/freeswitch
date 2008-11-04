@@ -1038,6 +1038,7 @@ typedef uint32_t switch_io_flag_t;
 	SWITCH_EVENT_CHANNEL_UNPARK 	- A channel has been unparked
 	SWITCH_EVENT_CHANNEL_APPLICATION- A channel has called and event from an application
 	SWITCH_EVENT_CHANNEL_ORIGINATE  - A channel has been originated
+	SWITCH_EVENT_CHANNEL_UUID       - A channel has changed uuid
     SWITCH_EVENT_API				- An API call has been executed
     SWITCH_EVENT_LOG				- A LOG event has been triggered
     SWITCH_EVENT_INBOUND_CHAN		- A new inbound channel has been created
@@ -1095,6 +1096,7 @@ typedef enum {
 	SWITCH_EVENT_CHANNEL_UNPARK,
 	SWITCH_EVENT_CHANNEL_APPLICATION,
 	SWITCH_EVENT_CHANNEL_ORIGINATE,
+	SWITCH_EVENT_CHANNEL_UUID,
 	SWITCH_EVENT_API,
 	SWITCH_EVENT_LOG,
 	SWITCH_EVENT_INBOUND_CHAN,

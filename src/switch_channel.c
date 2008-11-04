@@ -1150,6 +1150,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 
 	if (switch_test_flag(channel, CF_VERBOSE_EVENTS) || 
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
+		event->event_id == SWITCH_EVENT_CHANNEL_UUID ||
 		event->event_id == SWITCH_EVENT_CHANNEL_ANSWER ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||

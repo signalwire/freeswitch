@@ -1043,6 +1043,19 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					myflags |= SOF_NO_EFFECTIVE_CID_NAME;
 				}
 
+				if (vdata && (var_begin = switch_stristr("origination_uuid=", vdata))) {
+					char tmp[512] = "";
+					var_begin += strlen("origination_uuid=");
+					var_end = strchr(var_begin, '|');
+					if (var_end) {
+						strncpy(tmp, var_begin, var_end-var_begin);
+					} else {
+						strncpy(tmp, var_begin, strlen(var_begin));
+					}
+					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", tmp);
+				}
+				
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", early_ok ? "true" : "false");
 				
 
