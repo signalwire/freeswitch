@@ -99,6 +99,7 @@
     </extension>
 
     <!-- If sip_req_host is not a local domain then this has to be an external sip uri -->
+    <!--
     <extension name="external_sip_uri" continue="true">
       <condition field="source" expression="mod_sofia"/>
       <condition field="${outside_call}" expression="^$"/>
@@ -106,7 +107,7 @@
 	<anti-action application="bridge" data="sofia/${use_profile}/${sip_to_uri}"/>
       </condition>
     </extension>
-
+    -->
     <!--
 	snom button demo, call 9000 to make button 2 mapped to transfer the current call to a conference
     -->
