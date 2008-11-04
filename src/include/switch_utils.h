@@ -303,7 +303,7 @@ static inline char *switch_lc_strdup(const char *it)
 	if (it) {
 		dup = strdup(it);
 		for(p = dup; p && *p; p++) {
-			*p = tolower(*p);
+			*p = (char) tolower(*p);
 		}
 		return dup;
 	}
@@ -320,7 +320,7 @@ static inline char *switch_uc_strdup(const char *it)
 	if (it) {
 		dup = strdup(it);
 		for(p = dup; p && *p; p++) {
-			*p = toupper(*p);
+			*p = (char) toupper(*p);
 		}
 		return dup;
 	}
