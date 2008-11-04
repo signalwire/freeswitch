@@ -48,7 +48,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_hash_init(switch_hash_t **hash, swit
 	newhash = switch_core_alloc(pool, sizeof(*newhash));
 	switch_assert(newhash);
 
-	sqlite3HashInit(&newhash->table, SQLITE_HASH_STRING, 1);
+	sqlite3HashInit(&newhash->table, SQLITE_HASH_BINARY, 1);
 	*hash = newhash;
 
 	return SWITCH_STATUS_SUCCESS;
