@@ -20,8 +20,8 @@ reswig: swigclean freeswitch_wrap.cxx
 local_depend:
 	cd managed && $(MAKE)
 
-local_install: $(MODINSTDIR)/mod_managed.so 
-	cd managed && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(MODINSTDIR) install
+local_install: $(DESTDIR)$(MODINSTDIR)/mod_managed.so 
+	cd managed && $(MAKE) INSTALL="$(LTINSTALL)" MODINSTDIR=$(MODINSTDIR) DESTDIR=$(DESTDIR) install
 
 local_uninstall:
 	rm -fr $(MODINSTDIR)/mod_managed.so
