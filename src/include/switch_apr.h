@@ -40,6 +40,16 @@
 #define SWITCH_APR_H
 
 SWITCH_BEGIN_EXTERN_C
+
+#ifdef WIN32
+typedef HANDLE                switch_thread_id_t;
+#else
+typedef pthread_t             switch_thread_id_t;
+#endif
+
+SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void);
+
+
 /*
    The pieces of apr we allow ppl to pass around between modules we typedef into our namespace and wrap all the functions
    any other apr code should be as hidden as possible.

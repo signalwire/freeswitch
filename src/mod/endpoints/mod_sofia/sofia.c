@@ -170,6 +170,7 @@ void sofia_event_callback(nua_event_t event,
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	sofia_gateway_t *gateway = NULL;
+	int locked = 0;
 
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		if ((gateway = sofia_private->gateway)) {
@@ -203,11 +204,14 @@ void sofia_event_callback(nua_event_t event,
 	}
 
 	if (session) {
-		switch_mutex_lock(tech_pvt->sofia_mutex);
-
 		if (channel && switch_channel_get_state(channel) >= CS_HANGUP) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
 			goto done;
+		}
+
+		if (tech_pvt) {
+			switch_mutex_lock(tech_pvt->sofia_mutex);
+			locked = 1;
 		}
 	} else if (sofia_private && sofia_private->is_call) {
 		sofia_private->destroy_me = 22;
@@ -360,8 +364,11 @@ void sofia_event_callback(nua_event_t event,
 	}
 
 	if (session) {
-		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		switch_core_session_rwunlock(session);
+	}
+
+	if (tech_pvt && locked) {
+		switch_mutex_unlock(tech_pvt->sofia_mutex);
 	}
 }
 

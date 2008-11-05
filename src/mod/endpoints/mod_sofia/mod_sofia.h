@@ -504,6 +504,7 @@ struct private_object {
 	int remote_port;
 	int got_bye;
 	int hold_laps;
+	switch_thread_id_t locker;
 };
 
 struct callback_t {

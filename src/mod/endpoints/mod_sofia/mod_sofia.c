@@ -868,9 +868,15 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	default:
 		break;
 	}
-
+	
 	/* ones that do need to lock sofia mutex */
 	switch_mutex_lock(tech_pvt->sofia_mutex);
+
+	if (switch_channel_get_state(channel) >= CS_HANGUP || !tech_pvt) {
+		status = SWITCH_STATUS_FALSE;
+		goto end_lock;
+	}
+
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ:
 		{
@@ -958,7 +964,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
 						status = SWITCH_STATUS_FALSE;
-						goto end;
+						goto end_lock;
 					}
 					send_invite = 0;
 				}
@@ -968,7 +974,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				sofia_glue_tech_prepare_codecs(tech_pvt);
 				if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 					switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					goto end;
+					goto end_lock;
 				}
 			}
 			sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 1);
@@ -1098,7 +1104,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				msg->message_id = SWITCH_MESSAGE_INDICATE_REDIRECT;
 				msg->string_arg = p;
 				switch_core_session_receive_message(session, msg);
-				goto end;
+				goto end_lock;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
 
@@ -1152,7 +1158,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 						sofia_glue_tech_patch_sdp(tech_pvt);
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 							status = SWITCH_STATUS_FALSE;
-							goto end;
+							goto end_lock;
 						}
 					}
 				} else {
@@ -1165,18 +1171,16 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 							sofia_glue_tech_prepare_codecs(tech_pvt);
 							if (sofia_glue_tech_media(tech_pvt, r_sdp) != SWITCH_STATUS_SUCCESS) {
 								switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
-								//switch_mutex_lock(tech_pvt->sofia_mutex);
 								//nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
-								//switch_mutex_unlock(tech_pvt->sofia_mutex);
 								status = SWITCH_STATUS_FALSE;
-								goto end;
+								goto end_lock;
 							}
 						}
 					}
 
 					if ((status = sofia_glue_tech_choose_port(tech_pvt, 0)) != SWITCH_STATUS_SUCCESS) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-						goto end;
+						goto end_lock;
 					}
 					sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 					if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
@@ -1212,6 +1216,9 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	default:
 		break;
 	}
+
+ end_lock:
+
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
   end:

@@ -1020,19 +1020,19 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 #endif
 
 	switch_core_hash_init(&loadable_modules.module_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.endpoint_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.codec_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.timer_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.application_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.api_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.endpoint_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.codec_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.timer_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.application_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.api_hash, loadable_modules.pool);
 	switch_core_hash_init(&loadable_modules.file_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.speech_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.asr_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.directory_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.chat_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.say_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.management_hash, loadable_modules.pool);
-	switch_core_hash_init(&loadable_modules.dialplan_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.speech_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.asr_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.directory_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.chat_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.say_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.management_hash, loadable_modules.pool);
+	switch_core_hash_init_nocase(&loadable_modules.dialplan_hash, loadable_modules.pool);
 	switch_mutex_init(&loadable_modules.mutex, SWITCH_MUTEX_NESTED, loadable_modules.pool);
 
 	switch_loadable_module_load_module("", "CORE_SOFTTIMER_MODULE", SWITCH_FALSE, &err);

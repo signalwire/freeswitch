@@ -413,7 +413,33 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	return cause;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_session_t *session, switch_core_session_message_t *message)
+static const char *message_names[] = {
+	"SWITCH_MESSAGE_REDIRECT_AUDIO",
+	"SWITCH_MESSAGE_TRANSMIT_TEXT",
+	"SWITCH_MESSAGE_INDICATE_ANSWER",
+	"SWITCH_MESSAGE_INDICATE_PROGRESS",
+	"SWITCH_MESSAGE_INDICATE_BRIDGE",
+	"SWITCH_MESSAGE_INDICATE_UNBRIDGE",
+	"SWITCH_MESSAGE_INDICATE_TRANSFER",
+	"SWITCH_MESSAGE_INDICATE_RINGING",
+	"SWITCH_MESSAGE_INDICATE_MEDIA",
+	"SWITCH_MESSAGE_INDICATE_NOMEDIA",
+	"SWITCH_MESSAGE_INDICATE_HOLD",
+	"SWITCH_MESSAGE_INDICATE_UNHOLD",
+	"SWITCH_MESSAGE_INDICATE_REDIRECT",
+	"SWITCH_MESSAGE_INDICATE_RESPOND",
+	"SWITCH_MESSAGE_INDICATE_BROADCAST",
+	"SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT",
+	"SWITCH_MESSAGE_INDICATE_DEFLECT",
+	"SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ",
+	"SWITCH_MESSAGE_INDICATE_DISPLAY",
+	"SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY",
+	"SWITCH_MESSAGE_INVALID"
+};
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(switch_core_session_t *session, 
+																			switch_core_session_message_t *message,
+																			const char *file, const char *func, int line)
 {
 	switch_io_event_hook_receive_message_t *ptr;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -428,6 +454,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 		return status;
 	}
 
+	message->_file = file;
+	message->_func = func;
+	message->_line = line;
+
+	if (message->message_id > SWITCH_MESSAGE_INVALID) {
+		message->message_id = SWITCH_MESSAGE_INVALID;
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "%s receive message [%s]\n",
+					  switch_channel_get_name(session->channel), message_names[message->message_id]);
+	
 	if (session->endpoint_interface->io_routines->receive_message) {
 		status = session->endpoint_interface->io_routines->receive_message(session, message);
 	}
@@ -439,6 +476,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(switch_core_
 			}
 		}
 	}
+
+	message->_file = NULL;
+	message->_func = NULL;
+	message->_line = 0;
+	
 
 	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
 	switch_core_session_rwunlock(session);

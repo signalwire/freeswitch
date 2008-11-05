@@ -52,9 +52,6 @@
 #include <apr_general.h>
 
 #include <apr_portable.h>
-typedef apr_os_thread_t switch_thread_id_t;
-#define switch_thread_self apr_os_thread_current
-
 
 #ifdef HAVE_MLOCKALL
 #include <sys/mman.h>

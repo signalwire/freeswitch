@@ -69,6 +69,11 @@
 
 /* Memory Pools */
 
+SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void)
+{
+	return apr_os_thread_current();
+}
+
 SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
 {
 	apr_pool_clear(p);

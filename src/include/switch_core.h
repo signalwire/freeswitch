@@ -89,6 +89,9 @@ struct switch_core_session_message {
 	switch_size_t pointer_reply_size;
 	/*! message flags */
 	switch_core_session_message_flag_t flags;
+	const char *_file;
+	const char *_func;
+	int _line;
 };
 
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */
@@ -777,7 +780,11 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_resurrect_channel(_In_z_
   \param message the message to recieve
   \return the status returned by the message handler
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_receive_message(_In_ switch_core_session_t *session, _In_ switch_core_session_message_t *message);
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(_In_ switch_core_session_t *session, 
+																			_In_ switch_core_session_message_t *message,
+																			const char *file, const char *func, int line);
+#define switch_core_session_receive_message(_session, _message) switch_core_session_perform_receive_message(_session, _message, \
+																											__FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*! 
   \brief Queue an event on a given session
@@ -927,7 +934,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(_In_ switch_core_s
   \param pool the pool to use for the new hash
   \return SWITCH_STATUS_SUCCESS if the hash is created
 */
-SWITCH_DECLARE(switch_status_t) switch_core_hash_init(_Out_ switch_hash_t **hash, _In_ switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t **hash, _In_ switch_memory_pool_t *pool, switch_bool_t case_sensitive);
+#define switch_core_hash_init(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_TRUE);
+#define switch_core_hash_init_nocase(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_FALSE);
+
+
 
 /*! 
   \brief Destroy an existing hash table
