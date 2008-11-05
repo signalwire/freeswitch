@@ -935,8 +935,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(_In_ switch_core_s
   \return SWITCH_STATUS_SUCCESS if the hash is created
 */
 SWITCH_DECLARE(switch_status_t) switch_core_hash_init_case(_Out_ switch_hash_t **hash, _In_ switch_memory_pool_t *pool, switch_bool_t case_sensitive);
-#define switch_core_hash_init(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_TRUE);
-#define switch_core_hash_init_nocase(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_FALSE);
+#define switch_core_hash_init(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_TRUE)
+#define switch_core_hash_init_nocase(_hash, _pool) switch_core_hash_init_case(_hash, _pool, SWITCH_FALSE)
 
 
 
