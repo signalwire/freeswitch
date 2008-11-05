@@ -27,9 +27,9 @@
 
     -->
     <extension name="set_domain" continue="true">
-      <condition field="${domain_name}" expression="^$" break="never"/>
-      <condition field="source" expression="mod_sofia" break="never"/>
-      <condition field="${sip_auth_realm}" expression="^$" break="never">
+      <condition field="${domain_name}" expression="^$"/>
+      <condition field="source" expression="mod_sofia"/>
+      <condition field="${sip_auth_realm}" expression="^$">
 	<action application="set" data="domain_name=$${domain}"/>
 	<anti-action application="set" data="domain_name=${sip_auth_realm}"/>
       </condition>
