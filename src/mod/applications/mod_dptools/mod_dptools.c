@@ -2262,11 +2262,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	error_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	error_endpoint_interface->interface_name = "ERROR";
+	error_endpoint_interface->interface_name = "error";
 	error_endpoint_interface->io_routines = &error_io_routines;
 
 	user_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
-	user_endpoint_interface->interface_name = "USER";
+	user_endpoint_interface->interface_name = "user";
 	user_endpoint_interface->io_routines = &user_io_routines;
 
 	SWITCH_ADD_CHAT(chat_interface, "event", event_chat_send);
