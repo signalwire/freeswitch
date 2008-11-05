@@ -36,7 +36,12 @@
 #include "mod_radius_cdr.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load);
-SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_radius_shutdown);
+SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, mod_cdr_radius_shutdown, NULL);
+
+static struct {
+	int shutdown
+} globals = { 0 };
 
 static char cf[] = "mod_radius_cdr.conf";
 static char my_dictionary[PATH_MAX];
@@ -368,6 +373,10 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	switch_time_exp_t tm;
 	char buffer[32] = "";
 
+	if (globals.shutdown) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_hangup\n");
 
 	rad_config = my_radius_init();
@@ -681,6 +690,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_radius_csv_shutdown)
+{
+
+	globals.shutdown = 1;
+	switch_core_remove_state_handler(&state_handlers);
 	return SWITCH_STATUS_SUCCESS;
 }
 
