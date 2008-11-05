@@ -1152,7 +1152,9 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	}
 	
 	if (!(nh = nua_handle_by_call_id(h->profile->nua, call_id))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot find handle for %s\n", call_id);
+		if (profile->debug) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Cannot find handle for %s\n", call_id);
+		}
 		goto end;
 	}
 
