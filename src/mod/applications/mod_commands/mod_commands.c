@@ -2477,6 +2477,21 @@ SWITCH_STANDARD_API(uuid_session_heartbeat_function)
 
 }
 
+SWITCH_STANDARD_API(uuid_flush_dtmf_function)
+{
+	switch_core_session_t *fsession;
+
+	if (!switch_strlen_zero(cmd) && (fsession = switch_core_session_locate(cmd))) {
+		switch_channel_flush_dtmf(switch_core_session_get_channel(fsession));
+		switch_core_session_rwunlock(fsession);
+		stream->write_function(stream, "+OK\n");
+	} else {
+		stream->write_function(stream, "-ERR no such session\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define SETVAR_SYNTAX "<uuid> <var> <value>"
 SWITCH_STANDARD_API(uuid_setvar_function)
 {
@@ -2815,6 +2830,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	switch_api_interface_t *commands_api_interface;
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
+	SWITCH_ADD_API(commands_api_interface, "uuid_flush_dtmf", "Flush dtmf on a given uuid", uuid_flush_dtmf_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "hupall", "hupall", hupall_api_function, "<cause> [<var> <value>]");
 	SWITCH_ADD_API(commands_api_interface, "strftime_tz", "strftime_tz", strftime_tz_api_function, "<Timezone_name> [format string]");

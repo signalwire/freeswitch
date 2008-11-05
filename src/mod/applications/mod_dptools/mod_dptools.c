@@ -411,6 +411,11 @@ SWITCH_STANDARD_APP(check_acl_function)
 
 }
 
+SWITCH_STANDARD_APP(flush_dtmf_function)
+{
+	switch_channel_flush_dtmf(switch_core_session_get_channel(session));
+}
+
 SWITCH_STANDARD_APP(transfer_function)
 {
 	int argc;
@@ -2279,6 +2284,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",
 				   SAF_SUPPORT_NOMEDIA);
 
+	SWITCH_ADD_APP(app_interface, "flush_dtmf", "flush any queued dtmf", "flush any queued dtmf", flush_dtmf_function, "", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "hold", "Send a hold message", "Send a hold message", hold_function, HOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "unhold", "Send a un-hold message", "Send a un-hold message", unhold_function, UNHOLD_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "transfer", "Transfer a channel", TRANSFER_LONG_DESC, transfer_function, "<exten> [<dialplan> <context>]",
