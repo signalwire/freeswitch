@@ -36,11 +36,11 @@
 #include "mod_radius_cdr.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load);
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cdr_radius_shutdown);
-SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, mod_cdr_radius_shutdown, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_radius_cdr_shutdown);
+SWITCH_MODULE_DEFINITION(mod_radius_cdr, mod_radius_cdr_load, mod_radius_cdr_shutdown, NULL);
 
 static struct {
-	int shutdown
+	int shutdown;
 } globals = { 0 };
 
 static char cf[] = "mod_radius_cdr.conf";
@@ -694,7 +694,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load)
 }
 
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_radius_csv_shutdown)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_radius_cdr_shutdown)
 {
 
 	globals.shutdown = 1;
