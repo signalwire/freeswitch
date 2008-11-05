@@ -77,6 +77,10 @@ initInterruptPipe(interruptPipe * pipeP,
 static void
 termInterruptPipe(interruptPipe *pipeP) {
 	if (pipeP->inuse) {
+        int x = 0;
+        write(pipeP->interruptorFd, &x, sizeof(x));
+		usleep(500);
+		shutdown(pipeP->interrupteeFd, 2);
 		sane_close(pipeP->interruptorFd);
 		sane_close(pipeP->interrupteeFd);
 	}
@@ -309,6 +313,7 @@ channelWait(TChannel * const channelP,
     
     rc = poll(pollfds, ARRAY_SIZE(pollfds),
               timeoutMs == TIME_INFINITE ? -1 : timeoutMs);
+
 
     if (rc < 0) {
         if (errno == EINTR) {
