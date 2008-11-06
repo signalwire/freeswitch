@@ -46,7 +46,7 @@ struct switch_loadable_module {
 	char *filename;
 	int perm;
 	switch_loadable_module_interface_t *module_interface;
-	void *lib;
+	switch_dso_lib_t lib;
 	switch_module_load_t switch_module_load;
 	switch_module_runtime_t switch_module_runtime;
 	switch_module_shutdown_t switch_module_shutdown;
@@ -75,6 +75,7 @@ struct switch_loadable_module_container {
 
 static struct switch_loadable_module_container loadable_modules;
 static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload);
+static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fname, switch_bool_t runtime, switch_bool_t global, const char **err);
 
 static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 {
@@ -676,22 +677,19 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 }
 
 
-static switch_status_t switch_loadable_module_load_file(char *path, char *filename, switch_loadable_module_t **new_module)
+static switch_status_t switch_loadable_module_load_file(char *path, char *filename, switch_bool_t global, switch_loadable_module_t **new_module)
 {
 	switch_loadable_module_t *module = NULL;
-	switch_dso_handle_t *dso = NULL;
+	switch_dso_lib_t dso = NULL;
 	apr_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_dso_handle_sym_t interface_struct_handle = NULL;
+	switch_loadable_module_function_table_t *interface_struct_handle = NULL;
 	switch_loadable_module_function_table_t *mod_interface_functions = NULL;
 	char *struct_name = NULL;
-	switch_dso_handle_sym_t load_function_handle = NULL;
-	switch_dso_handle_sym_t shutdown_function_handle = NULL;
-	switch_dso_handle_sym_t runtime_function_handle = NULL;
 	switch_module_load_t load_func_ptr = NULL;
 	int loading = 1;
-	const char *err = NULL;
 	switch_loadable_module_interface_t *module_interface = NULL;
-	char derr[512] = "";
+	char *derr = NULL;
+	const char *err = NULL;
 	switch_memory_pool_t *pool;
 
 	switch_assert(path != NULL);
@@ -702,36 +700,40 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	struct_name = switch_core_sprintf(pool, "%s_module_interface", filename);
 
 #ifdef WIN32
-	status = switch_dso_load(&dso, "FreeSwitch.dll", loadable_modules.pool);
+	dso = switch_dso_open("FreeSwitch.dll", global, &derr);
 #elif defined (MACOSX) || defined(DARWIN)
-	status = switch_dso_load(&dso, SWITCH_PREFIX_DIR "/lib/libfreeswitch.dylib", loadable_modules.pool);
+	dso = switch_dso_open(SWITCH_PREFIX_DIR "/lib/libfreeswitch.dylib", global, &derr);
 #else
-	status = switch_dso_load(&dso, NULL, loadable_modules.pool);
+	dso = switch_dso_open(NULL, global, &derr);
 #endif
-	status = switch_dso_sym(&interface_struct_handle, dso, struct_name);
-
-	if (!interface_struct_handle) {
-		status = switch_dso_load(&dso, path, loadable_modules.pool);
+	if (!derr && dso) {
+		interface_struct_handle = switch_dso_data_sym(dso, struct_name, &derr);
 	}
 
+	switch_safe_free(derr)
+
+	if (!interface_struct_handle) {
+		dso = switch_dso_open(path, global, &derr);
+	}
 
 	while (loading) {
-		if (status != APR_SUCCESS) {
-			switch_dso_error(dso, derr, sizeof(derr));
+		if (derr) {
 			err = derr;
 			break;
 		}
 
 		if (!interface_struct_handle) {
-			status = switch_dso_sym(&interface_struct_handle, dso, struct_name);
+			interface_struct_handle = switch_dso_data_sym(dso, struct_name, &derr);
+		}
+
+		if (derr) {
+			err = derr;
+			break;
 		}
 
 		if (interface_struct_handle) {
 			mod_interface_functions = interface_struct_handle;
 			load_func_ptr = mod_interface_functions->load;
-		} else {
-			status = switch_dso_sym(&load_function_handle, dso, "switch_module_load");
-			load_func_ptr = (switch_module_load_t) (intptr_t) load_function_handle;
 		}
 
 		if (load_func_ptr == NULL) {
@@ -765,6 +767,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 			switch_core_destroy_memory_pool(&pool);
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error Loading module %s\n**%s**\n", path, err);
+		switch_safe_free(derr);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -776,11 +779,6 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	if (mod_interface_functions) {
 		module->switch_module_shutdown = mod_interface_functions->shutdown;
 		module->switch_module_runtime = mod_interface_functions->runtime;
-	} else {
-		switch_dso_sym(&shutdown_function_handle, dso, "switch_module_shutdown");
-		module->switch_module_shutdown = (switch_module_shutdown_t) (intptr_t) shutdown_function_handle;
-		switch_dso_sym(&runtime_function_handle, dso, "switch_module_runtime");
-		module->switch_module_runtime = (switch_module_runtime_t) (intptr_t) runtime_function_handle;
 	}
 
 	module->lib = dso;
@@ -791,8 +789,12 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	return SWITCH_STATUS_SUCCESS;
 
 }
-
 SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, char *fname, switch_bool_t runtime, const char **err)
+{
+	return switch_loadable_module_load_module_ex(dir, fname, runtime, SWITCH_FALSE, err);
+}
+
+static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fname, switch_bool_t runtime, switch_bool_t global, const char **err)
 {
 	switch_size_t len = 0;
 	char *path;
@@ -833,7 +835,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_load_module(char *dir, ch
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s Already Loaded!\n", file);
 		*err = "Module already loaded";
 		status = SWITCH_STATUS_FALSE;
-	} else if ((status = switch_loadable_module_load_file(path, file, &new_module)) == SWITCH_STATUS_SUCCESS) {
+	} else if ((status = switch_loadable_module_load_file(path, file, global, &new_module)) == SWITCH_STATUS_SUCCESS) {
 		if ((status = switch_loadable_module_process(file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
 			if (new_module->switch_module_runtime) {
 				switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
@@ -1042,12 +1044,15 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 		switch_xml_t mods, ld;
 		if ((mods = switch_xml_child(cfg, "modules"))) {
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
+				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
+				const char *sglobal = switch_xml_attr_soft(ld, "global");
 				if (switch_strlen_zero(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
-				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, &err);
+				global = switch_true(sglobal);
+				switch_loadable_module_load_module_ex((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, global, &err);
 				count++;
 			}
 		}
@@ -1062,12 +1067,15 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 
 		if ((mods = switch_xml_child(cfg, "modules"))) {
 			for (ld = switch_xml_child(mods, "load"); ld; ld = ld->next) {
+				switch_bool_t global = SWITCH_FALSE;
 				const char *val = switch_xml_attr_soft(ld, "module");
+				const char *sglobal = switch_xml_attr_soft(ld, "global");
 				if (switch_strlen_zero(val) || (strchr(val, '.') && !strstr(val, ext) && !strstr(val, EXT))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Invalid extension for %s\n", val);
 					continue;
 				}
-				switch_loadable_module_load_module((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, &err);
+				global = switch_true(sglobal);
+				switch_loadable_module_load_module_ex((char *) SWITCH_GLOBAL_dirs.mod_dir, (char *) val, SWITCH_FALSE, global, &err);
 				count++;
 			}
 		}
@@ -1135,8 +1143,7 @@ static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown
 	if (unload && module->status != SWITCH_STATUS_NOUNLOAD 	&& !(flags & SCF_VG)) {
 		switch_memory_pool_t *pool;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
-		switch_dso_unload(module->lib);
-		module->lib = NULL;
+		switch_dso_destroy(&module->lib);
 		if ((pool = module->pool)) {
 			module = NULL;
 			switch_core_destroy_memory_pool(&pool);

@@ -54,8 +54,18 @@ switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, cha
 		DWORD error = GetLastError();
 		*err = switch_mprintf("dll sym error [%ul]\n", error);
 	}
-	return func;
+	return (switch_dso_func_t)func;
 }
+
+void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+	FARPROC addr = GetProcAddress(lib, sym);
+	if (!addr) {
+		DWORD error = GetLastError();
+		*err = switch_mprintf("dll sym error [%ul]\n", error);
+	}
+	return (void *)(intptr_t)addr;
+}
+
 
 #else
 /*
@@ -92,13 +102,22 @@ switch_dso_lib_t switch_dso_open(const char *path, int global, char **err) {
 	return lib;
 }
 
-void *switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err) {
 	void *func = dlsym(lib, sym);
 	if (!func) {
 		*err = strdup(dlerror());
 	}
-	return func;
+	return (switch_dso_func_t)(intptr_t)func;
 }
+
+void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+	void *addr = dlsym(lib, sym);
+	if (!addr) {
+		*err = strdup(dlerror());
+	}
+	return addr;
+}
+
 #endif
 /* }====================================================== */
 

@@ -70,6 +70,7 @@ src/switch_core_port_allocator.c \
 src/switch_core.c \
 src/switch_scheduler.c \
 src/switch_core_db.c\
+src/switch_dso.c\
 src/switch_loadable_module.c \
 src/switch_utils.c \
 src/switch_event.c \
@@ -114,6 +115,7 @@ src/include/switch_config.h\
 src/include/switch_event.h\
 src/include/switch_frame.h\
 src/include/switch_ivr.h\
+src/include/switch_dso.h\
 src/include/switch_loadable_module.h\
 src/include/switch_module_interfaces.h\
 src/include/switch_platform.h\

@@ -21,21 +21,19 @@
 #ifndef _SWITCH_DSO_H
 #define _SWITCH_DSO_H
 
-typedef void (*switch_func_ptr_t) (void);
+typedef int (*switch_dso_func_t) (void);
 #ifdef WIN32
 typedef HINSTANCE switch_dso_lib_t;
 #else
 typedef void * switch_dso_lib_t;
 #endif
-#ifdef WIN32
-typedef FARPROC switch_dso_func_t;
-#else
-typedef void * switch_dso_func_t;
-#endif
+
+typedef void * switch_dso_data_t;
 
 void switch_dso_destroy(switch_dso_lib_t *lib);
 switch_dso_lib_t switch_dso_open(const char *path, int global, char **err);
 switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err);
+void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err);
 
 
 #endif

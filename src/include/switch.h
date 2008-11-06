@@ -98,6 +98,7 @@
 #include "switch_apr.h"
 
 #include "switch_core_db.h"
+#include "switch_dso.h"
 #include "switch_regex.h"
 #include "switch_core.h"
 #include "switch_loadable_module.h"
