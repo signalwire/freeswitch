@@ -359,7 +359,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 		char **names;
 		char **vals;
 		int y = 0;
-		
+		int done = 0;
+
 		if (!(result = SQLFetch(stmt)) == SQL_SUCCESS) {
 			break;
 		}
@@ -385,7 +386,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 		}
 
 		if (callback(pdata, y, vals, names)) {
-			break;
+			done = 1;
 		}
 
 		for (x = 0; x < y; x++) {
@@ -394,6 +395,10 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 		}
 		free(names);
 		free(vals);
+
+		if (done) {
+			break;
+		}
 	}
 	
 	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
