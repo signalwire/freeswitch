@@ -1241,6 +1241,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	switch_app_log_t *log, *lp;
 	switch_event_t *event;
 	const char *var;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (!arg) {
 		arg = "";
@@ -1260,6 +1261,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 			session->app_log = log;
 		}
 	}
+	
+	switch_channel_set_variable(channel, "current_application", application_interface->interface_name);
+	switch_channel_set_variable(channel, "current_application_data", arg);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
