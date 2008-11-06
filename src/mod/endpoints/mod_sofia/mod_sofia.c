@@ -331,7 +331,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		
 		if (cause > 0 && cause < 128) {
 			switch_snprintf(reason, sizeof(reason), "Q.850;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
-		} else if (cause == SWITCH_CAUSE_PICKED_OFF) {
+		} else if (cause == SWITCH_CAUSE_PICKED_OFF || cause == SWITCH_CAUSE_LOSE_RACE) {
 			switch_snprintf(reason, sizeof(reason), "SIP;cause=200;text=\"Call completed elsewhere\"");
 		} else {
 			switch_snprintf(reason, sizeof(reason), "FreeSWITCH;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
