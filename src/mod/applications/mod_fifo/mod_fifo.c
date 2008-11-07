@@ -29,6 +29,9 @@
  *
  */
 #include <switch.h>
+#ifdef SWITCH_HAVE_ODBC
+#include <switch_odbc.h>
+#endif
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown);
 SWITCH_MODULE_LOAD_FUNCTION(mod_fifo_load);
@@ -1745,8 +1748,6 @@ static switch_status_t load_config(int reload, int del_all)
 				const char *simo = switch_xml_attr_soft(member, "simo");
 				const char *lag = switch_xml_attr_soft(member, "lag");
 				const char *timeout = switch_xml_attr_soft(member, "timeout");
-				
-				char *sql;
 				char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 				switch_md5_string(digest, (void *) member->txt, strlen(member->txt));
 
@@ -1866,7 +1867,7 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 	fifo_name = argv[1];
 	originate_string = argv[2];
 	
-	if (!strcasecmp(action, "add")) {
+	if (action && !strcasecmp(action, "add")) {
 		if (argc > 3) {
 			simo_count = atoi(argv[3]);
 		}
@@ -1891,7 +1892,7 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 		
 		fifo_member_add(fifo_name, originate_string, simo_count, timeout, lag, expires);
 		stream->write_function(stream, "%s", "+OK\n");
-	} else if (!strcasecmp(action, "del")) {
+	} else if (action && !strcasecmp(action, "del")) {
 		fifo_member_del(fifo_name, originate_string);
 		stream->write_function(stream, "%s", "+OK\n");
 	} else {
