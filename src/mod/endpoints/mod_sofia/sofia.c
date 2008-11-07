@@ -2505,7 +2505,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 		} else if (tech_pvt && switch_test_flag(tech_pvt, TFLAG_SDP) && !r_sdp) {
-			nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+			nua_respond(tech_pvt->nh, SIP_202_ACCEPTED, TAG_END());
 			goto done;
 		} else {
 			ss_state = nua_callstate_completed;
