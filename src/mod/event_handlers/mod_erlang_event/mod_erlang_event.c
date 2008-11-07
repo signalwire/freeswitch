@@ -1191,11 +1191,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
 	for (;;) {
-		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
-			goto fail;
-		}
-
 		/* zero out errno because ei_accept doesn't differentiate between a
 		 * failed authentication or a socket failure, or a client version
 		 * mismatch or a godzilla attack */
@@ -1214,6 +1209,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 				continue;
 			}
 			break;
+		}
+
+		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
+			goto fail;
 		}
 
 		if (!(listener = switch_core_alloc(listener_pool, sizeof(*listener)))) {
