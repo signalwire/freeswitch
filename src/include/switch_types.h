@@ -153,6 +153,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_LOCAL_VIDEO_IP_VARIABLE "local_video_ip"
 #define SWITCH_LOCAL_VIDEO_PORT_VARIABLE "local_video_port"
 #define SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE "hangup_after_bridge"
+#define SWITCH_PARK_AFTER_BRIDGE_VARIABLE "park_after_bridge"
 #define SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE "exec_after_bridge_app"
 #define SWITCH_EXEC_AFTER_BRIDGE_ARG_VARIABLE "exec_after_bridge_arg"
 #define SWITCH_MAX_FORWARDS_VARIABLE "max_forwards"
