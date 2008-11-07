@@ -2090,7 +2090,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						if (!switch_strlen_zero(vm_storage_dir)) {
 							dir_path = switch_core_session_sprintf(session, "%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
 						} else if ( !switch_strlen_zero(profile->storage_dir) ) {
-							dir_path = switch_core_session_sprintf(session, "%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, myid);
+							dir_path = switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
 						} else {
 							dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 																   SWITCH_PATH_SEPARATOR,
@@ -2244,7 +2244,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	if (!switch_strlen_zero(vm_storage_dir)) {
 		dir_path = switch_mprintf("%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
 	} else if (!switch_strlen_zero(profile->storage_dir)) {
-		dir_path = switch_mprintf("%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, myid);
+		dir_path = switch_mprintf("%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, myid);
 	} else {
 		dir_path = switch_mprintf("%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 								  SWITCH_PATH_SEPARATOR,
@@ -2724,7 +2724,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	if (!switch_strlen_zero(vm_storage_dir)) {
 		dir_path = switch_core_session_sprintf(session, "%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, id);
 	} else if (!switch_strlen_zero(profile->storage_dir)) {
-		dir_path = switch_core_session_sprintf(session, "%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, id);
+		dir_path = switch_core_session_sprintf(session, "%s%s%s%s%s", profile->storage_dir, SWITCH_PATH_SEPARATOR, domain_name, SWITCH_PATH_SEPARATOR, id);
 	} else {
 		dir_path = switch_core_session_sprintf(session, "%s%svoicemail%s%s%s%s%s%s", SWITCH_GLOBAL_dirs.storage_dir,
 											   SWITCH_PATH_SEPARATOR,
