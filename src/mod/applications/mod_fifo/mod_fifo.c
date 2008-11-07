@@ -1376,7 +1376,8 @@ static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 	char exp_buf[128] = "";
 	switch_time_exp_t tm;
 	switch_time_t etime = 0;
-	
+	char *expires = exp_buf;
+
 	if (argv[7]) {
 		if ((etime = atol(argv[7]))) {
 			switch_size_t retsize;
@@ -1396,7 +1397,7 @@ static int xml_callback(void *pArg, int argc, char **argv, char **columnNames)
 	switch_xml_set_attr_d(x_out, "lag", argv[6]);
 	switch_xml_set_attr_d(x_out, "outbound-call-count", argv[10]);
 	switch_xml_set_attr_d(x_out, "outbound-fail-count", argv[11]);
-	switch_xml_set_attr_d(x_out, "next-available", exp_buf);
+	switch_xml_set_attr_d(x_out, "next-available", expires);
 	
 	switch_xml_set_txt_d(x_out, argv[2]);
 
