@@ -687,6 +687,60 @@ static int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_
 			ei_x_encode_string(rbuf, acs->uuid_str);
 
 			break;
+		} else if (!strncmp(tupletag, "sendevent", MAXATOMLEN)) {
+			char ename[MAXATOMLEN];
+
+			if (ei_decode_atom(buf->buff, &buf->index, ename)) {
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "badarg");
+				break;
+			}
+
+			int headerlength;
+
+			if (ei_decode_list_header(buf->buff, &buf->index, &headerlength)) {
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "badarg");
+				break;
+			}
+
+			switch_event_types_t etype;
+			if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
+				switch_event_t *event;
+
+				if (switch_event_create(&event, etype) == SWITCH_STATUS_SUCCESS) {
+
+					char key[1024];
+					char value[1024];
+					int i = 0;
+					while(!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
+						i++;
+						if (ei_decode_string(buf->buff, &buf->index, key))
+							goto sendmsg_fail;
+						if (ei_decode_string(buf->buff, &buf->index, value))
+							goto sendmsg_fail;
+
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, key, value);
+					}
+
+					if (headerlength != i)
+						goto sendmsg_fail;
+					
+
+					switch_event_fire(&event);
+					ei_x_encode_atom(rbuf, "ok");
+					break;
+
+sendmsg_fail:
+					ei_x_encode_tuple_header(rbuf, 2);
+					ei_x_encode_atom(rbuf, "error");
+					ei_x_encode_atom(rbuf, "badarg");
+					break;
+				}
+			}
+
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
@@ -740,7 +794,7 @@ static int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_
 		} else if (!strncmp(atom, "exit", MAXATOMLEN)) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			ei_x_encode_atom(rbuf, "ok");
-			goto done;
+			goto event_done;
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
@@ -762,7 +816,7 @@ static int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_
 noreply:
 	return 0;
 
-done:
+event_done:
 	ei_send(listener->sockfd, &msg->from, rbuf->buff, rbuf->index);
 	return 1;
 }
