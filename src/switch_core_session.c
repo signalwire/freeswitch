@@ -86,7 +86,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 			const char *this_val;
 			session = (switch_core_session_t *) val;
 			switch_core_session_read_lock(session);
-			if ((this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {
+			if ((this_val = switch_channel_get_variable(session->channel, var_name)) && && var_val && (!strcmp(this_val, var_val))) {
 				switch_channel_hangup(switch_core_session_get_channel(session), cause);
 			}
 			switch_core_session_rwunlock(session);
