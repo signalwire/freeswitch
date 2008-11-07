@@ -87,8 +87,12 @@ struct listener {
 typedef struct listener listener_t;
 
 static struct {
+	switch_mutex_t *listener_mutex;	
+	switch_event_node_t *node;
+} globals;
+
+static struct {
 	switch_socket_t *sock;
-	switch_mutex_t *mutex;
 	switch_mutex_t *sock_mutex;
 	listener_t *listeners;
 	uint8_t ready;
@@ -114,9 +118,9 @@ static void remove_listener(listener_t *listener);
 static uint32_t next_id(void)
 {
 	uint32_t id;
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
     id = ++prefs.id;
-    switch_mutex_unlock(listen_list.mutex);
+    switch_mutex_unlock(globals.listener_mutex);
 	return id;
 }
 
@@ -126,16 +130,11 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_pref_pass, prefs.password);
 static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj);
 static void launch_listener_thread(listener_t *listener);
 
-static struct {
-	switch_event_node_t *node;
-} globals;
-
-
 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	listener_t *l;
 
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
 			char *data = strdup(node->data);
@@ -160,7 +159,7 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 			}
 		}
 	}
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -212,7 +211,7 @@ static void event_handler(switch_event_t *event)
 
 	lp = listen_list.listeners;
 
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	while(lp) {
 		int send = 0;
 		
@@ -321,7 +320,7 @@ static void event_handler(switch_event_t *event)
 		}
 
 	}
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 }
 
 SWITCH_STANDARD_APP(socket_function)
@@ -456,11 +455,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 	}
 	switch_event_unbind(&globals.node);
 
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		close_socket(&l->sock);
 	}
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 
 
 
@@ -470,17 +469,17 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 static void add_listener(listener_t *listener)
 {
 	/* add me to the listeners so I get events */
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	listener->next = listen_list.listeners;
 	listen_list.listeners = listener;
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 }
 
 static void remove_listener(listener_t *listener)
 {
 	listener_t *l, *last = NULL;
 
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (l == listener) {
 			if (last) {
@@ -491,7 +490,7 @@ static void remove_listener(listener_t *listener)
 		}
 		last = l;
 	}
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 }
 
 
@@ -499,7 +498,7 @@ static listener_t *find_listener(uint32_t id)
 {
 	listener_t *l, *r = NULL;
 
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (l->id && l->id == id) {
 			if (switch_thread_rwlock_tryrdlock(l->rwlock) == SWITCH_STATUS_SUCCESS) {
@@ -508,7 +507,7 @@ static listener_t *find_listener(uint32_t id)
 			break;
 		}
 	}
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 	return r;
 }
 
@@ -754,6 +753,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
+
+	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1591,9 +1592,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_channel_t *channel = NULL;
 	switch_event_t *revent = NULL;
 
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads++;
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 
 	switch_assert(listener != NULL);
 
@@ -1785,9 +1786,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		switch_core_destroy_memory_pool(&pool);
 	}
 
-	switch_mutex_lock(listen_list.mutex);
+	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads--;
-	switch_mutex_unlock(listen_list.mutex);
+	switch_mutex_unlock(globals.listener_mutex);
 
 	return NULL;
 }
@@ -1871,7 +1872,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		return SWITCH_STATUS_TERM;
 	}
 
-	switch_mutex_init(&listen_list.mutex, SWITCH_MUTEX_NESTED, pool);
+
 	switch_mutex_init(&listen_list.sock_mutex, SWITCH_MUTEX_NESTED, pool);
 
 
