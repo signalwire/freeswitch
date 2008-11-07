@@ -1,0 +1,7 @@
+<configuration name="fifo.conf" description="FIFO Configuration">
+  <fifos>
+    <fifo name="cool_fifo@$${domain}" importance="0">
+      <!--<member timeout="60" simo="1" lag="20">user/1005@$${domain}</member>-->
+    </fifo>
+  </fifos>
+</configuration>
