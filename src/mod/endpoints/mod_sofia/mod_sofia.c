@@ -1276,7 +1276,7 @@ struct cb_helper {
 	switch_stream_handle_t *stream;
 };
 
-#define switch_time_from_sec(sec)   ((switch_time_t)(sec) * 1000000)
+
 
 static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNames)
 {

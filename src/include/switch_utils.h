@@ -404,6 +404,7 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
   \return the epoch time in usec
 */
 SWITCH_DECLARE(switch_time_t) switch_str_time(const char *in);
+#define switch_time_from_sec(sec)   ((switch_time_t)(sec) * 1000000)
 
 /*!
   \brief Declares a function designed to set a dymaic global string
