@@ -547,7 +547,7 @@ SWITCH_STANDARD_APP(limit_function)
 	id = argv[1];
 	max = atoi(argv[2]);
 
-	if (argc == 4) {
+	if (argc >= 4) {
 		xfer_exten = argv[3];
 	} else {
 		xfer_exten = limit_def_xfer_exten;
@@ -568,7 +568,7 @@ SWITCH_STANDARD_APP(limit_function)
 	got = atoi(buf);
 
 	if (got + 1 > max) {
-		switch_ivr_session_transfer(session, xfer_exten, NULL, NULL);
+		switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 		goto done;
 	}
 
