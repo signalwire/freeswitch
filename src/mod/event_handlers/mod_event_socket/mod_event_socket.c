@@ -756,6 +756,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 
 	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
 
+	if (switch_event_bind_removable(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+	
+	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
+
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "socket", "Connect to a socket", "Connect to a socket", socket_function, "<ip>[:<port>]", SAF_SUPPORT_NOMEDIA);
@@ -1900,13 +1907,6 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	}
 
 	listen_list.ready = 1;
-
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
-	}
-
-	switch_log_bind_logger(socket_logger, SWITCH_LOG_DEBUG, SWITCH_FALSE);
 
 
 	for (;;) {
