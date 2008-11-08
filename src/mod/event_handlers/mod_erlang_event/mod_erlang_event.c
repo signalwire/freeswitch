@@ -1199,10 +1199,17 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 
 	/* return value is -1 for error, a descriptor pointing to epmd otherwise */
 	if ((epmdfd = ei_publish(&ec, prefs.port)) == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to publish port to empd\n");
-		/* TODO - start epmd? */
-		close_socket(&listen_list.sockfd);
-		return SWITCH_STATUS_GENERR;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to publish port to empd, trying to start empd manually\n");
+		if (system("epmd -daemon")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start empd manually\n");
+			close_socket(&listen_list.sockfd);
+			return SWITCH_STATUS_GENERR;
+		}
+		if ((epmdfd = ei_publish(&ec, prefs.port)) == -1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to publish port to empd AGAIN\n");
+			close_socket(&listen_list.sockfd);
+			return SWITCH_STATUS_GENERR;
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected and published erlang cnode at %s port %u\n", thisnodename, prefs.port);
