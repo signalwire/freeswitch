@@ -1070,7 +1070,7 @@ static int config(void)
 					set_pref_cookie(val);
 				} else if (!strcmp(var, "nodename")) {
 					set_pref_nodename(val);
-				} else if (!strcmp(var, "shortname") && strcmp(val, "yes")) {
+				} else if (!strcmp(var, "shortname") && strcmp(val, "yes") && strcmp(val, "true")) {
 						prefs.shortname = SWITCH_FALSE;
 				} else if (!strcasecmp(var, "apply-inbound-acl")) {
 					if (prefs.acl_count < MAX_ACL) {
