@@ -52,7 +52,7 @@
 #define SWIFT_FAILED(r) ((void *)(r) < (void *)0)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_cepstral_load);
-SWITCH_MODULE_DEFINITION(mod_cepstral, mod_cepstral_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION_EX(mod_cepstral, mod_cepstral_load, NULL, NULL, SMODF_GLOBAL_SYMBOLS);
 
 static swift_engine *engine;
 

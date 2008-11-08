@@ -1355,7 +1355,7 @@ struct switch_network_list;
 typedef struct switch_network_list switch_network_list_t;
 
 
-#define SWITCH_API_VERSION 1
+#define SWITCH_API_VERSION 2
 #define SWITCH_MODULE_LOAD_ARGS (switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
 #define SWITCH_MODULE_RUNTIME_ARGS (void)
 #define SWITCH_MODULE_SHUTDOWN_ARGS (void)
@@ -1366,22 +1366,32 @@ typedef switch_status_t (*switch_module_shutdown_t) SWITCH_MODULE_SHUTDOWN_ARGS;
 #define SWITCH_MODULE_RUNTIME_FUNCTION(name) switch_status_t name SWITCH_MODULE_RUNTIME_ARGS
 #define SWITCH_MODULE_SHUTDOWN_FUNCTION(name) switch_status_t name SWITCH_MODULE_SHUTDOWN_ARGS
 
+typedef enum {
+	SMODF_NONE = 0,
+	SMODF_GLOBAL_SYMBOLS = (1 << 0)
+} switch_module_flag_enum_t;
+typedef uint32_t switch_module_flag_t;
+
 typedef struct switch_loadable_module_function_table {
 	int switch_api_version;
 	switch_module_load_t load;
 	switch_module_shutdown_t shutdown;
 	switch_module_runtime_t runtime;
+	switch_module_flag_t flags;
 } switch_loadable_module_function_table_t;
 
-#define SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)								\
+#define SWITCH_MODULE_DEFINITION_EX(name, load, shutdown, runtime, flags)					\
 static const char modname[] =  #name ;														\
 SWITCH_MOD_DECLARE_DATA switch_loadable_module_function_table_t name##_module_interface = {	\
 	SWITCH_API_VERSION,																		\
 	load,																					\
 	shutdown,																				\
-	runtime																					\
+	runtime,																				\
+	flags																					\
 }
 
+#define SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime)								\
+		SWITCH_MODULE_DEFINITION_EX(name, load, shutdown, runtime, SMODF_NONE)
 
 /* things we don't deserve to know about */
 /*! \brief A channel */

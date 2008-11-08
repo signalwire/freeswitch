@@ -40,8 +40,7 @@ SWITCH_BEGIN_EXTERN_C
 SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lua_shutdown);
 
-SWITCH_MODULE_DEFINITION(mod_lua, mod_lua_load, mod_lua_shutdown, NULL);
-
+SWITCH_MODULE_DEFINITION_EX(mod_lua, mod_lua_load, mod_lua_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
 static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;

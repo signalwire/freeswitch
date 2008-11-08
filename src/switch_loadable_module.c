@@ -691,6 +691,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	char *derr = NULL;
 	const char *err = NULL;
 	switch_memory_pool_t *pool;
+	switch_bool_t load_global = global;
 
 	switch_assert(path != NULL);
 
@@ -700,11 +701,11 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	struct_name = switch_core_sprintf(pool, "%s_module_interface", filename);
 
 #ifdef WIN32
-	dso = switch_dso_open("FreeSwitch.dll", global, &derr);
+	dso = switch_dso_open("FreeSwitch.dll", load_global, &derr);
 #elif defined (MACOSX) || defined(DARWIN)
-	dso = switch_dso_open(SWITCH_PREFIX_DIR "/lib/libfreeswitch.dylib", global, &derr);
+	dso = switch_dso_open(SWITCH_PREFIX_DIR "/lib/libfreeswitch.dylib", load_global, &derr);
 #else
-	dso = switch_dso_open(NULL, global, &derr);
+	dso = switch_dso_open(NULL, load_global, &derr);
 #endif
 	if (!derr && dso) {
 		interface_struct_handle = switch_dso_data_sym(dso, struct_name, &derr);
@@ -713,7 +714,7 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 	switch_safe_free(derr)
 
 	if (!interface_struct_handle) {
-		dso = switch_dso_open(path, global, &derr);
+		dso = switch_dso_open(path, load_global, &derr);
 	}
 
 	while (loading) {
@@ -729,6 +730,20 @@ static switch_status_t switch_loadable_module_load_file(char *path, char *filena
 		if (derr) {
 			err = derr;
 			break;
+		}
+
+		if (interface_struct_handle && interface_struct_handle->switch_api_version != SWITCH_API_VERSION) {
+			err = "Trying to load an out of date module, please rebuild the module.";
+			break;	
+		}
+
+		if (!load_global && interface_struct_handle && switch_test_flag(interface_struct_handle, SMODF_GLOBAL_SYMBOLS)) {
+			load_global = SWITCH_TRUE;
+			switch_dso_destroy(&dso);
+			interface_struct_handle = NULL;
+			dso = switch_dso_open(path, load_global, &derr);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Loading module with global namespace at request of module\n");
+			continue;
 		}
 
 		if (interface_struct_handle) {
