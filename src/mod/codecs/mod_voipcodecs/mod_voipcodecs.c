@@ -782,10 +782,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	mpf = 10000, spf = 80, bpf = 320, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.722");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO, 9, "G722", NULL, 8000, 16000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
-											 switch_g722_init, switch_g722_encode, switch_g722_decode, switch_g722_destroy);
+		switch_core_codec_add_implementation(pool,
+											 codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 9,							/* the IANA code number */
+											 "G722",					/* the IANA code name */
+											 NULL,						/* default fmtp to send (can be overridden by the init function) */
+											 8000,						/* samples transferred per second */
+											 16000,						/* actual samples transferred per second */
+											 64000,						/* bits transferred per second */
+											 mpf * count,				/* number of microseconds per frame */
+											 spf * count,				/* number of samples per frame */
+											 bpf * count,				/* number of bytes per frame decompressed */
+											 ebpf * count,				/* number of bytes per frame compressed */
+											 1,							/* number of channels represented */
+											 spf * count,				/* number of frames per network packet */
+											 switch_g722_init,			/* function to initialize a codec handle using this implementation */
+											 switch_g722_encode,		/* function to encode raw data into encoded data */
+											 switch_g722_decode,		/* function to decode encoded data into raw data */
+											 switch_g722_destroy);		/* deinitalize a codec handle using this implementation */
 	}
 
 #ifdef ENABLE_G711
@@ -793,18 +808,48 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	mpf = 10000, spf = 80, bpf = 160, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.711 ulaw");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO, 0, "PCMU", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
-											 switch_g711u_init, switch_g711u_encode, switch_g711u_decode, switch_g711u_destroy);
+		switch_core_codec_add_implementation(pool,
+											 codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 0,							/* the IANA code number */
+											 "PCMU",					/* the IANA code name */
+											 NULL,						/* default fmtp to send (can be overridden by the init function) */
+											 8000,						/* samples transferred per second */
+											 8000,						/* actual samples transferred per second */
+											 64000,						/* bits transferred per second */
+											 mpf * count,				/* number of microseconds per frame */
+											 spf * count,				/* number of samples per frame */
+											 bpf * count,				/* number of bytes per frame decompressed */
+											 ebpf * count,				/* number of bytes per frame compressed */
+											 1,							/* number of channels represented */
+											 spf * count,				/* number of frames per network packet */
+											 switch_g711u_init,			/* function to initialize a codec handle using this implementation */
+											 switch_g711u_encode,		/* function to encode raw data into encoded data */
+											 switch_g711u_decode,		/* function to decode encoded data into raw data */
+											 switch_g711u_destroy);		/* deinitalize a codec handle using this implementation */
 	}
 
 	SWITCH_ADD_CODEC(codec_interface, "G.711 alaw");
 	for (count = 12; count > 0; count--) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO, 8, "PCMA", NULL, 8000, 8000, 64000,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, spf * count,
-											 switch_g711a_init, switch_g711a_encode, switch_g711a_decode, switch_g711a_destroy);
+		switch_core_codec_add_implementation(pool,
+											 codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 8,							/* the IANA code number */
+											 "PCMA",					/* the IANA code name */
+											 NULL,						/* default fmtp to send (can be overridden by the init function) */
+											 8000,						/* samples transferred per second */
+											 8000,						/* actual samples transferred per second */
+											 64000,						/* bits transferred per second */
+											 mpf * count,				/* number of microseconds per frame */
+											 spf * count,				/* number of samples per frame */
+											 bpf * count,				/* number of bytes per frame decompressed */
+											 ebpf * count,				/* number of bytes per frame compressed */
+											 1,							/* number of channels represented */
+											 spf * count,				/* number of frames per network packet */
+											 switch_g711a_init,			/* function to initialize a codec handle using this implementation */
+											 switch_g711a_encode,		/* function to encode raw data into encoded data */
+											 switch_g711a_decode,		/* function to decode encoded data into raw data */
+											 switch_g711a_destroy);		/* deinitalize a codec handle using this implementation */
 	}
 #endif
 
@@ -812,10 +857,25 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	mpf = 20000, spf = 160, bpf = 320, ebpf = 33;
 	SWITCH_ADD_CODEC(codec_interface, "GSM");
 	for (count = 6; count > 0; count--) {
-		switch_core_codec_add_implementation(pool, codec_interface,
-											 SWITCH_CODEC_TYPE_AUDIO, 3, "GSM", NULL, 8000, 8000, 13200,
-											 mpf * count, spf * count, bpf * count, ebpf * count, 1, count,
-											 switch_gsm_init, switch_gsm_encode, switch_gsm_decode, switch_gsm_destroy);
+		switch_core_codec_add_implementation(pool,
+											 codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 3,							/* the IANA code number */
+											 "GSM",						/* the IANA code name */
+											 NULL,						/* default fmtp to send (can be overridden by the init function) */
+											 8000,						/* samples transferred per second */
+											 8000,						/* actual samples transferred per second */
+											 13200,						/* bits transferred per second */
+											 mpf * count,				/* number of microseconds per frame */
+											 spf * count,				/* number of samples per frame */
+											 bpf * count,				/* number of bytes per frame decompressed */
+											 ebpf * count,				/* number of bytes per frame compressed */
+											 1,							/* number of channels represented */
+											 count,						/* number of frames per network packet */
+											 switch_gsm_init,			/* function to initialize a codec handle using this implementation */
+											 switch_gsm_encode,			/* function to encode raw data into encoded data */
+											 switch_gsm_decode,			/* function to decode encoded data into raw data */
+											 switch_gsm_destroy);		/* deinitalize a codec handle using this implementation */
 	}
 	/* LPC10 */
 #if SWITCH_MAX_INTERVAL >= 90
