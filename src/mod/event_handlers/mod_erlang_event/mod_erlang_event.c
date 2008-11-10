@@ -302,16 +302,22 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_erlang_event_shutdown)
 
 	prefs.done = 1;
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefs.done: %d\n", prefs.done);
+
 	switch_log_unbind_logger(socket_logger);
 
 	/*close_socket(&listen_list.sockfd);*/
 	
 	while (prefs.threads || prefs.done == 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefs.done: %d\n", prefs.done);
 		switch_yield(10000);
 		if (++sanity == 1000) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Hung Thread!\n");
 			break;
 		}
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefs.done: %d\n", prefs.done);
 
 	switch_event_unbind(&globals.node);
 
@@ -322,6 +328,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_erlang_event_shutdown)
 	}
 
 	switch_mutex_unlock(globals.listener_mutex);
+
+	switch_sleep(1500000); /* sleep for 1.5 seconds */
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -774,7 +782,7 @@ sendevent_fail:
 			}
 
 			switch_core_session_t *session;
-			if (uuid && (session = switch_core_session_locate(uuid))) {
+			if ((session = switch_core_session_locate(uuid))) {
 			} else {
 				ei_x_encode_tuple_header(rbuf, 2);
 				ei_x_encode_atom(rbuf, "error");
@@ -1346,8 +1354,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		switch_safe_free(prefs.acl[x]);
 	}
 
-	prefs.done = 2;
   fail:
+	prefs.done = 2;
 	return SWITCH_STATUS_TERM;
 }
 
