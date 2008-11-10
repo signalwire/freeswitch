@@ -32,7 +32,7 @@ revert to a method that can be a little slow, so the cache thrashing might not
 seem so bad :(
 
 Feel free to submit patches to add fast "find the first 1" support for your own
-favourite processor.
+favorite processor.
 
 Look up tables are used for transcoding between A-law and u-law, since it is
 difficult to achieve the precise transcoding procedure laid down in the G.711
