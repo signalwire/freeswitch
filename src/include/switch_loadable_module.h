@@ -348,7 +348,7 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 															 uint32_t encoded_bytes_per_packet,
 															 /*! number of channels represented */
 															 uint8_t number_of_channels,
-															 /*! number of frames to send in one netowrk packet */
+															 /*! number of frames to send in one network packet */
 															 int codec_frames_per_packet,
 															 /*! function to initialize a codec handle using this implementation */
 															 switch_core_codec_init_func_t init,
