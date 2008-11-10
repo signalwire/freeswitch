@@ -302,22 +302,16 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_erlang_event_shutdown)
 
 	prefs.done = 1;
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefs.done: %d\n", prefs.done);
-
 	switch_log_unbind_logger(socket_logger);
 
 	/*close_socket(&listen_list.sockfd);*/
 	
 	while (prefs.threads || prefs.done == 1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefs.done: %d\n", prefs.done);
 		switch_yield(10000);
 		if (++sanity == 1000) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Hung Thread!\n");
 			break;
 		}
 	}
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "prefs.done: %d\n", prefs.done);
 
 	switch_event_unbind(&globals.node);
 
