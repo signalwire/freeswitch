@@ -686,6 +686,38 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						*frame = NULL;
 						return SWITCH_STATUS_GENERR;
 					}
+
+
+					if (tech_pvt->check_frames < 50) {
+						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
+							switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
+														   tech_pvt->last_ts) / (tech_pvt->read_codec.implementation->samples_per_second / 1000);
+							
+							if ((codec_ms % 10) != 0) {
+								tech_pvt->check_frames = 50;
+							} else {
+								if (switch_rtp_ready(tech_pvt->rtp_session) && codec_ms != tech_pvt->codec_ms) {
+									tech_pvt->codec_ms = codec_ms;
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Changing codec ptime to %d\n", tech_pvt->codec_ms);
+									switch_core_codec_destroy(&tech_pvt->read_codec);
+									switch_core_codec_destroy(&tech_pvt->write_codec);
+									if (sofia_glue_tech_set_codec(tech_pvt, 2) != SWITCH_STATUS_SUCCESS) {
+										*frame = NULL;
+										return SWITCH_STATUS_GENERR;
+									}
+
+									switch_rtp_change_interval(tech_pvt->rtp_session, 
+															   tech_pvt->read_codec.implementation->samples_per_packet,
+															   tech_pvt->codec_ms * 1000);
+								}
+							
+							}
+							tech_pvt->check_frames++;
+							tech_pvt->last_ts = tech_pvt->read_frame.timestamp;
+						}
+					}
+					
+					
 					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet)) {
 						frames = (tech_pvt->read_frame.datalen / bytes);
 					}

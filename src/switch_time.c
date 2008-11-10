@@ -46,6 +46,7 @@ static switch_memory_pool_t *module_pool = NULL;
 static struct {
 	int32_t RUNNING;
 	int32_t STARTED;
+	int32_t use_cond_yield;
 	switch_mutex_t *mutex;
 } globals;
 
@@ -76,6 +77,8 @@ struct timer_matrix {
 	switch_size_t tick;
 	uint32_t count;
 	uint32_t roll;
+	switch_mutex_t *mutex;
+	switch_thread_cond_t *cond;
 };
 typedef struct timer_matrix timer_matrix_t;
 
@@ -102,6 +105,25 @@ static int MONO = 1;
 static int MONO = 0;
 #endif
 
+
+static void do_yield(switch_interval_time_t t)
+{
+#if defined(HAVE_CLOCK_NANOSLEEP) && defined(SWITCH_USE_CLOCK_FUNCS)
+    struct timespec ts;
+    ts.tv_sec = t / APR_USEC_PER_SEC;
+    ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
+
+    clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
+
+#elif defined(HAVE_USLEEP)
+    usleep(t);
+#elif defined(WIN32)
+    Sleep((DWORD) ((t) / 1000));
+#else
+    apr_sleep(t);
+#endif
+
+}
 
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 {
@@ -139,6 +161,11 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
+	if (globals.use_cond_yield == 1) {
+		switch_cond_yield((t) / 1000);
+		return;
+	}
+
 #if defined(HAVE_USLEEP)
 	usleep(t);
 #elif defined(WIN32)
@@ -166,13 +193,29 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 
 }
 
+
+SWITCH_DECLARE(void) switch_cond_yield(uint32_t ms)
+{
+	if (!ms) return;
+
+	if (globals.use_cond_yield != 1) {
+		do_yield(ms * 1000);
+	}
+
+	while(globals.RUNNING == 1 && globals.use_cond_yield == 1 && ms--) {
+		switch_mutex_lock(TIMER_MATRIX[1].mutex);
+		switch_thread_cond_wait(TIMER_MATRIX[1].cond, TIMER_MATRIX[1].mutex);
+		switch_mutex_unlock(TIMER_MATRIX[1].mutex);
+	}
+}
+
 static switch_status_t timer_init(switch_timer_t *timer)
 {
 	timer_private_t *private_info;
 	int sanity = 0;
 
 	while (globals.STARTED == 0) {
-		switch_yield(100000);
+		do_yield(100000);
 		if (++sanity == 10) {
 			break;
 		}
@@ -187,6 +230,10 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		timeBeginPeriod(1);
 #endif
 		switch_mutex_lock(globals.mutex);
+		if (!TIMER_MATRIX[timer->interval].mutex) {
+			switch_mutex_init(&TIMER_MATRIX[timer->interval].mutex, SWITCH_MUTEX_NESTED, module_pool);
+			switch_thread_cond_create(&TIMER_MATRIX[timer->interval].cond, module_pool);
+		}
 		TIMER_MATRIX[timer->interval].count++;
 		switch_mutex_unlock(globals.mutex);
 		timer->private_info = private_info;
@@ -252,13 +299,21 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 static switch_status_t timer_next(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
-
 	timer_step(timer);
 
+#if 1
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
-		switch_yield(1000);
+		switch_mutex_lock(TIMER_MATRIX[timer->interval].mutex);
+		switch_thread_cond_wait(TIMER_MATRIX[timer->interval].cond, TIMER_MATRIX[timer->interval].mutex);
+		switch_mutex_unlock(TIMER_MATRIX[timer->interval].mutex);
 	}
+#else
+	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+		check_roll();
+		do_yield(1000);
+	}
+#endif
 
 	if (globals.RUNNING == 1) {
 		return SWITCH_STATUS_SUCCESS;
@@ -340,7 +395,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				runtime.initiated = runtime.reference;
 				break;
 			}
-			switch_yield(STEP_MIC);
+			do_yield(STEP_MIC);
 			last = ts;
 		}
 	}
@@ -349,8 +404,15 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	last = 0;
 	fwd_errs = rev_errs = 0;
 
+
+	switch_mutex_init(&TIMER_MATRIX[1].mutex, SWITCH_MUTEX_NESTED, module_pool);
+	switch_thread_cond_create(&TIMER_MATRIX[1].cond, module_pool);
+	
+	globals.use_cond_yield = globals.RUNNING == 1;
+	
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
+
 		while ((ts = time_now(runtime.offset)) < runtime.reference) {
 			if (ts < last) {
 				if (MONO) {
@@ -368,7 +430,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				rev_errs = 0;
 			}
-			switch_yield(STEP_MIC);
+			do_yield(STEP_MIC);
 			last = ts;
 		}
 
@@ -413,11 +475,28 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			tick = 0;
 		}
 
+		TIMER_MATRIX[1].tick++;
+		if (switch_mutex_trylock(TIMER_MATRIX[1].mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_cond_broadcast(TIMER_MATRIX[1].cond);
+			switch_mutex_unlock(TIMER_MATRIX[1].mutex);
+		}
+		if (TIMER_MATRIX[1].tick == MAX_TICK) {
+			TIMER_MATRIX[1].tick = 0;
+			TIMER_MATRIX[1].roll++;
+		}
+
+
 		if ((current_ms % MS_PER_TICK) == 0) {
 			for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
 				if ((current_ms % x) == 0) {
 					if (TIMER_MATRIX[x].count) {
 						TIMER_MATRIX[x].tick++;
+#if 1
+						if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
+							switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
+							switch_mutex_unlock(TIMER_MATRIX[x].mutex);
+						}
+#endif
 						if (TIMER_MATRIX[x].tick == MAX_TICK) {
 							TIMER_MATRIX[x].tick = 0;
 							TIMER_MATRIX[x].roll++;
@@ -431,9 +510,21 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		}
 	}
 
+	globals.use_cond_yield = 0;
+	
+	for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
+		if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
+			switch_mutex_unlock(TIMER_MATRIX[x].mutex);
+		}
+	}
+
+
 	switch_mutex_lock(globals.mutex);
 	globals.RUNNING = 0;
 	switch_mutex_unlock(globals.mutex);
+
+	
 
 	return SWITCH_STATUS_TERM;
 }
@@ -641,14 +732,13 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 {
-
-	if (globals.RUNNING) {
+	if (globals.RUNNING == 1) {
 		switch_mutex_lock(globals.mutex);
 		globals.RUNNING = -1;
 		switch_mutex_unlock(globals.mutex);
 
-		while (globals.RUNNING) {
-			switch_yield(10000);
+		while (globals.RUNNING == -1) {
+			do_yield(10000);
 		}
 	}
 #if defined(WIN32)

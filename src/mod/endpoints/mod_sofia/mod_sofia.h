@@ -505,6 +505,8 @@ struct private_object {
 	int got_bye;
 	int hold_laps;
 	switch_thread_id_t locker;
+	switch_size_t last_ts;
+	uint32_t check_frames;
 };
 
 struct callback_t {
@@ -708,3 +710,4 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 void sofia_glue_restart_all_profiles(void);
 void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
 const char * sofia_state_string(int state);
+switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force);

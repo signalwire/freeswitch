@@ -182,6 +182,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	} else {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=silenceSupp:off - - - -\n");
 	}
+
 	if (ptime) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
 	}
@@ -1535,7 +1536,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			return SWITCH_STATUS_SUCCESS;
 		}
 	}
-
+	
 	if (switch_core_codec_init(&tech_pvt->read_codec,
 							   tech_pvt->iananame,
 							   tech_pvt->rm_fmtp,
@@ -1576,8 +1577,11 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	tech_pvt->write_codec.agreed_pt = tech_pvt->agreed_pt;
 	tech_pvt->read_codec.agreed_pt = tech_pvt->agreed_pt;
 
-	switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
-	switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
+	if (force != 2) {
+		switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
+		switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
+	}
+
 	tech_pvt->fmtp_out = switch_core_session_strdup(tech_pvt->session, tech_pvt->write_codec.fmtp_out);
 
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
