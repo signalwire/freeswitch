@@ -741,28 +741,92 @@ static int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_
 					while(!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
 						i++;
 						if (ei_decode_string(buf->buff, &buf->index, key))
-							goto sendmsg_fail;
+							goto sendevent_fail;
 						if (ei_decode_string(buf->buff, &buf->index, value))
-							goto sendmsg_fail;
+							goto sendevent_fail;
 
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, key, value);
 					}
 
 					if (headerlength != i)
-						goto sendmsg_fail;
+						goto sendevent_fail;
 					
 
 					switch_event_fire(&event);
 					ei_x_encode_atom(rbuf, "ok");
 					break;
 
-sendmsg_fail:
+sendevent_fail:
 					ei_x_encode_tuple_header(rbuf, 2);
 					ei_x_encode_atom(rbuf, "error");
 					ei_x_encode_atom(rbuf, "badarg");
 					break;
 				}
 			}
+		} else if (!strncmp(tupletag, "sendmsg", MAXATOMLEN)) {
+			char uuid[37];
+			
+			if (ei_decode_string(buf->buff, &buf->index, uuid)) {
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "badarg");
+				break;
+			}
+
+			switch_core_session_t *session;
+			if (uuid && (session = switch_core_session_locate(uuid))) {
+			} else {
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "nosession");
+				break;
+			}
+
+			int headerlength;
+
+			if (ei_decode_list_header(buf->buff, &buf->index, &headerlength)) {
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "badarg");
+				break;
+			}
+
+			switch_event_t *event;
+
+			if (switch_event_create(&event, SWITCH_EVENT_SEND_MESSAGE) == SWITCH_STATUS_SUCCESS) {
+
+				char key[1024];
+				char value[1024];
+				int i = 0;
+				while(!ei_decode_tuple_header(buf->buff, &buf->index, &arity) && arity == 2) {
+					i++;
+					if (ei_decode_string(buf->buff, &buf->index, key))
+						goto sendmsg_fail;
+					if (ei_decode_string(buf->buff, &buf->index, value))
+						goto sendmsg_fail;
+
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, key, value);
+				}
+
+				if (headerlength != i)
+					goto sendmsg_fail;
+
+				if (switch_core_session_queue_private_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+					ei_x_encode_atom(rbuf, "ok");
+				} else {
+					ei_x_encode_tuple_header(rbuf, 2);
+					ei_x_encode_atom(rbuf, "error");
+					ei_x_encode_atom(rbuf, "badmem");
+				}
+				break;
+
+sendmsg_fail:
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "badarg");
+				break;
+			}
+
 
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
@@ -774,7 +838,7 @@ sendmsg_fail:
 		ei_x_encode_atom(rbuf, "ok");
 		break;
 	case ERL_ATOM_EXT :
-		if(ei_decode_atom(buf->buff, &buf->index, atom)) {
+		if (ei_decode_atom(buf->buff, &buf->index, atom)) {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
 			ei_x_encode_atom(rbuf, "badarg");
@@ -919,19 +983,17 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 		switch(status) {
 			case ERL_TICK :
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Tick\n");
 				break;
 			case ERL_MSG :
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message\n");
 				switch(msg.msgtype) {
 					case ERL_SEND :
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_send\n");
+						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_send\n");*/
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
 							goto done;
 						}
 						break;
 					case ERL_REG_SEND :
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send\n");
+						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send\n");*/
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
 							goto done;
 						}
