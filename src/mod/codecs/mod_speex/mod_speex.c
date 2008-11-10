@@ -264,7 +264,7 @@ static switch_status_t switch_speex_destroy(switch_codec_t *codec)
 SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 {
 	switch_codec_interface_t *codec_interface;
-	int mpf = 20000, spf = 160, bpf = 320, ebpf = 0, rate = 8000, counta, countb;
+	int mpf = 20000, spf = 160, bpf = 320, rate = 8000, counta, countb;
 	switch_payload_t ianacode[4] = { 0, 98, 99, 103 };
 	int bps[4] = { 0, 24600, 42200, 44000 };
 	/* connect my internal structure to the blank pointer passed to me */
@@ -272,15 +272,29 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_speex_load)
 	SWITCH_ADD_CODEC(codec_interface, "Speex");
 	for (counta = 1; counta <= 3; counta++) {
 		for (countb = 1; countb > 0; countb--) {
-			switch_core_codec_add_implementation(pool, codec_interface,
-												 SWITCH_CODEC_TYPE_AUDIO, ianacode[counta], "SPEEX", NULL, rate, rate, bps[counta],
-												 mpf * countb, spf * countb, bpf * countb, ebpf * countb, 1, 1,
-												 switch_speex_init, switch_speex_encode, switch_speex_decode, switch_speex_destroy);
+			switch_core_codec_add_implementation(pool,
+												 codec_interface,
+												 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+												 ianacode[counta],			/* the IANA code number */
+												 "SPEEX",					/* the IANA code name */
+												 NULL,						/* default fmtp to send (can be overridden by the init function) */
+												 rate,						/* samples transferred per second */
+												 rate,						/* actual samples transferred per second */
+												 bps[counta],				/* bits transferred per second */
+												 mpf * countb,				/* number of microseconds per frame */
+												 spf * countb,				/* number of samples per frame */
+												 bpf * countb,				/* number of bytes per frame decompressed */
+												 0,							/* number of bytes per frame compressed */
+												 1,							/* number of channels represented */
+												 1,							/* number of frames per network packet */
+												 switch_speex_init,			/* function to initialize a codec handle using this implementation */
+												 switch_speex_encode,		/* function to encode raw data into encoded data */
+												 switch_speex_decode,		/* function to decode encoded data into raw data */
+												 switch_speex_destroy);		/* deinitalize a codec handle using this implementation */
 		}
 		rate = rate * 2;
 		spf = spf * 2;
 		bpf = bpf * 2;
-		ebpf = ebpf * 2;
 	}
 
 
