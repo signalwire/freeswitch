@@ -202,11 +202,12 @@ SWITCH_DECLARE(void) switch_cond_yield(uint32_t ms)
 		do_yield(ms * 1000);
 	}
 
+	switch_mutex_lock(TIMER_MATRIX[1].mutex);
 	while(globals.RUNNING == 1 && globals.use_cond_yield == 1 && ms--) {
-		switch_mutex_lock(TIMER_MATRIX[1].mutex);
 		switch_thread_cond_wait(TIMER_MATRIX[1].cond, TIMER_MATRIX[1].mutex);
-		switch_mutex_unlock(TIMER_MATRIX[1].mutex);
 	}
+	switch_mutex_unlock(TIMER_MATRIX[1].mutex);
+
 }
 
 static switch_status_t timer_init(switch_timer_t *timer)
@@ -302,12 +303,12 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	timer_step(timer);
 
 #if 1
+	switch_mutex_lock(TIMER_MATRIX[timer->interval].mutex);
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
-		switch_mutex_lock(TIMER_MATRIX[timer->interval].mutex);
-		switch_thread_cond_wait(TIMER_MATRIX[timer->interval].cond, TIMER_MATRIX[timer->interval].mutex);
-		switch_mutex_unlock(TIMER_MATRIX[timer->interval].mutex);
+		switch_thread_cond_wait(TIMER_MATRIX[timer->interval].cond, TIMER_MATRIX[timer->interval].mutex);	
 	}
+	switch_mutex_unlock(TIMER_MATRIX[timer->interval].mutex);
 #else
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
