@@ -61,7 +61,7 @@
     <!--<param name="apply-register-acl" value="domains"/>-->
     <!--<param name="dtmf-type" value="info"/>-->
     <param name="record-template" value="$${base_dir}/recordings/${caller_id_number}.${target_domain}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
-    <!--enable to use presence and mwi -->
+    <!--enable to use presence -->
     <param name="manage-presence" value="true"/>
 
     <!-- used to share presence info across sofia profiles -->
