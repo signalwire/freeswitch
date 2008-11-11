@@ -123,7 +123,7 @@ static int freeswitch_kill_background()
 		}
 #else
 		/* for unix, send the signal to kill. */
-		kill(pid, SIGILL);
+		kill(pid, SIGTERM);
 #endif
 	}
 
@@ -566,6 +566,7 @@ int main(int argc, char *argv[])
 	}
 
 	signal(SIGILL, handle_SIGILL);
+	signal(SIGTERM, handle_SIGILL);
 
 	if (nc) {
 #ifdef WIN32
