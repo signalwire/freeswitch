@@ -21,10 +21,11 @@
 
 struct apr_thread_cond_t {
     apr_pool_t *pool;
-    HANDLE event;
-    int signal_all;
-    int num_waiting;
-    int signalled;
+    HANDLE semaphore;
+    CRITICAL_SECTION csection;
+    unsigned long num_waiting;
+    unsigned long num_wake;
+    unsigned long generation;
 };
 
 #endif  /* THREAD_COND_H */
