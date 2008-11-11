@@ -1159,8 +1159,9 @@ SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session
 	switch_channel_pre_answer(channel);
 
 	if ((buuid = switch_channel_get_variable(rchannel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-		bsession = switch_core_session_locate(buuid);
-		bchannel = switch_core_session_get_channel(bsession);
+		if ((bsession = switch_core_session_locate(buuid))) {
+			bchannel = switch_core_session_get_channel(bsession);
+		}
 	}
 
 	if (!switch_channel_test_flag(rchannel, CF_ANSWERED)) {
