@@ -162,7 +162,7 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
 	if (globals.use_cond_yield == 1) {
-		switch_cond_yield((t) / 1000);
+		switch_cond_yield((uint32_t)(t / 1000));
 		return;
 	}
 
