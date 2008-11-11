@@ -414,12 +414,15 @@ SWITCH_STANDARD_APP(socket_function)
 	if (switch_test_flag(listener, LFLAG_ASYNC)) {
 		launch_listener_thread(listener);
 		switch_ivr_park(session, NULL);
+		return;
 	} else {
 		listener_run(NULL, (void *) listener);
 	}
 
-	while (switch_test_flag(listener, LFLAG_SESSION)) {
-		switch_yield(100000);
+	if (switch_channel_get_state(channel) >= CS_HANGUP) {
+		while (switch_test_flag(listener, LFLAG_SESSION)) {
+			switch_yield(100000);
+		}
 	}
 
 }
@@ -1602,8 +1605,13 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads++;
 	switch_mutex_unlock(globals.listener_mutex);
-
+	
 	switch_assert(listener != NULL);
+	
+	if ((session = listener->session)) {
+		channel = switch_core_session_get_channel(session);
+		switch_core_session_read_lock(session);
+	}
 
 	if (prefs.acl_count && listener->sa && !switch_strlen_zero(listener->remote_ip)) {
 		uint32_t x = 0;
@@ -1624,13 +1632,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			}
 		}
 	}
-
-
-	if ((session = listener->session)) {
-		channel = switch_core_session_get_channel(session);
-		switch_core_session_read_lock(session);
-	}
-
+	
 	if (switch_strlen_zero(listener->remote_ip)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
 	} else {
