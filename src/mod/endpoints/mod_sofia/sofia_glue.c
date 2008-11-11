@@ -91,10 +91,10 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 					"o=FreeSWITCH %010u %010u IN %s %s\n"
 					"s=FreeSWITCH\n"
 					"c=IN %s %s\n" "t=0 0\n"
-					"a=%s\n"
-					"m=audio %d RTP/%sAVP", tech_pvt->owner_id, tech_pvt->session_id, family, ip, family, ip, sr, port,
-					(!switch_strlen_zero(tech_pvt->local_crypto_key) && switch_test_flag(tech_pvt, TFLAG_SECURE)) ? "S" : "");
-
+					"m=audio %d RTP/%sAVP", 
+					tech_pvt->owner_id, tech_pvt->session_id, family, ip, family, ip, port,
+					(!switch_strlen_zero(tech_pvt->local_crypto_key) 
+					&& switch_test_flag(tech_pvt,TFLAG_SECURE)) ? "S" : "");
 
 	if (tech_pvt->rm_encoding) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), " %d", tech_pvt->pt);
@@ -187,6 +187,9 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=ptime:%d\n", ptime);
 	}
 
+	if (sr) {
+		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=%s\n", sr);
+	} 
 
 	if (!switch_strlen_zero(tech_pvt->local_crypto_key) && switch_test_flag(tech_pvt, TFLAG_SECURE)) {
 		switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), "a=crypto:%s\n", tech_pvt->local_crypto_key);
