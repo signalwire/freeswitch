@@ -408,8 +408,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	switch_mutex_init(&TIMER_MATRIX[1].mutex, SWITCH_MUTEX_NESTED, module_pool);
 	switch_thread_cond_create(&TIMER_MATRIX[1].cond, module_pool);
 	
+#ifndef WIN32
 	globals.use_cond_yield = globals.RUNNING == 1;
-	
+#endif	
+
 	while (globals.RUNNING == 1) {
 		runtime.reference += STEP_MIC;
 
