@@ -2259,6 +2259,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	switch_memory_pool_t *pool;
 	uint32_t count;
 	char *dfile = NULL, *expanded = NULL;
+	int say = 0;
 
 	switch_assert(conference != NULL);
 
@@ -2279,13 +2280,17 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 		}
 	}
 
-	if (!async && !strncasecmp(file, "say:", 4)) {
+	if (!strncasecmp(file, "say:", 4)) {
+		say = 1;
+	}
+
+	if (!async && say) {
 		status = conference_say(conference, file + 4, leadin);
 		goto done;
 	}
 
 	if (!switch_is_file_path(file)) {
-		if (conference->sound_prefix) {
+		if (!say && conference->sound_prefix) {
 			if (!(dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, file))) {
 				goto done;
 			}
@@ -4583,16 +4588,22 @@ SWITCH_STANDARD_APP(conference_function)
 		char *toplay = NULL;
 		char *dfile = NULL;
 
-		if (conference->sound_prefix) {
-			dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, conference->kicked_sound);
-			switch_assert(dfile);
-			toplay = dfile;
+		if (!strncasecmp(conference->kicked_sound, "say:", 4)) {
+			if (conference->tts_engine && conference->tts_voice) {
+				switch_ivr_speak_text(session, conference->tts_engine, conference->tts_voice, conference->kicked_sound + 4, NULL);
+			}
 		} else {
-			toplay = conference->kicked_sound;
-		}
+			if (conference->sound_prefix) {
+				dfile = switch_mprintf("%s%s%s", conference->sound_prefix, SWITCH_PATH_SEPARATOR, conference->kicked_sound);
+				switch_assert(dfile);
+				toplay = dfile;
+			} else {
+				toplay = conference->kicked_sound;
+			}
 
-		switch_ivr_play_file(session, NULL, toplay, NULL);
-		switch_safe_free(dfile);
+			switch_ivr_play_file(session, NULL, toplay, NULL);
+			switch_safe_free(dfile);
+		}
 	}
 
 	switch_core_session_reset(session, SWITCH_TRUE);
