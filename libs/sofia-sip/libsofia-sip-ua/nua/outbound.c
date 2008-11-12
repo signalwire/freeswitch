@@ -669,7 +669,7 @@ void outbound_start_keepalive(outbound_t *ob,
 
   udp = ob->ob_via && ob->ob_via->v_protocol == sip_transport_udp;
 
-  if (ob->ob_prefs.natify &&
+  if (/* ob->ob_prefs.natify && */
       /* On UDP, use OPTIONS keepalive by default */
       (udp ? ob->ob_prefs.okeepalive != 0
        /* Otherwise, only if requested */
