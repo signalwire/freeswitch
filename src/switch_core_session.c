@@ -827,7 +827,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	switch_core_destroy_memory_pool(&pool);
 
 	switch_thread_rwlock_unlock(endpoint_interface->rwlock);
-
+	switch_thread_rwlock_unlock(endpoint_interface->parent->rwlock);
 }
 
 SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
@@ -1031,6 +1031,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(const s
 		return NULL;
 	}
 
+	switch_thread_rwlock_rdlock(endpoint_interface->parent->rwlock);
 	switch_thread_rwlock_rdlock(endpoint_interface->rwlock);
 
 	if (pool && *pool) {
@@ -1281,9 +1282,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	switch_channel_set_variable(session->channel, SWITCH_CURRENT_APPLICATION_VARIABLE, application_interface->interface_name);
 
+	switch_thread_rwlock_rdlock(application_interface->parent->rwlock);
 	switch_thread_rwlock_rdlock(application_interface->rwlock);
 	application_interface->application_function(session, arg);
 	switch_thread_rwlock_unlock(application_interface->rwlock);
+	switch_thread_rwlock_unlock(application_interface->parent->rwlock);
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);

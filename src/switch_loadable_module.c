@@ -74,7 +74,7 @@ struct switch_loadable_module_container {
 };
 
 static struct switch_loadable_module_container loadable_modules;
-static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload);
+static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy, const char **err);
 static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fname, switch_bool_t runtime, switch_bool_t global, const char **err);
 
 static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
@@ -416,7 +416,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 	switch_event_t *event;
 
 	switch_mutex_lock(loadable_modules.mutex);
-
+	
 	if (old_module->module_interface->endpoint_interface) {
 		const switch_endpoint_interface_t *ptr;
 
@@ -670,6 +670,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 			}
 		}
 	}
+
 	switch_mutex_unlock(loadable_modules.mutex);
 
 	return SWITCH_STATUS_SUCCESS;
@@ -882,10 +883,14 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod)
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, const char **err)
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, switch_bool_t force, const char **err)
 {
 	switch_loadable_module_t *module = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (force) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Spin the barrel and pull the trigger.......!\n");
+	}
 
 	switch_mutex_lock(loadable_modules.mutex);
 	if ((module = switch_core_hash_find(loadable_modules.module_hash, fname))) {
@@ -895,7 +900,9 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 			status = SWITCH_STATUS_NOUNLOAD;
 			goto end;
 		} else {
-			do_shutdown(module, SWITCH_TRUE, SWITCH_TRUE);
+			if ((status = do_shutdown(module, SWITCH_TRUE, SWITCH_TRUE, !force, err) != SWITCH_STATUS_SUCCESS)) {
+				goto end;
+			}
 		}
 		switch_core_hash_delete(loadable_modules.module_hash, fname);
 	} else {
@@ -904,6 +911,10 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 	}
  end:
 	switch_mutex_unlock(loadable_modules.mutex);
+
+	if (force) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PHEW!\n");
+	}
 
 	return status;
 
@@ -1140,11 +1151,19 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_init()
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload)
+static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy, const char **err)
 {
 	int32_t flags = switch_core_flags();
 	switch_assert(module != NULL);
 	
+	if (fail_if_busy && module->module_interface->rwlock && switch_thread_rwlock_trywrlock(module->module_interface->rwlock) != SWITCH_STATUS_SUCCESS) {
+		if (err) {
+			*err = "Module in use.";
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Module %s is in use, cannot unload.\n", module->module_interface->module_name);
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (shutdown) {
 		switch_loadable_module_unprocess(module);
 		if (module->switch_module_shutdown) {
@@ -1153,6 +1172,10 @@ static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s has no shutdown routine\n", module->module_interface->module_name);
 		}
+	}
+
+	if (fail_if_busy && module->module_interface->rwlock) {
+		switch_thread_rwlock_unlock(module->module_interface->rwlock);
 	}
 
 	if (unload && module->status != SWITCH_STATUS_NOUNLOAD 	&& !(flags & SCF_VG)) {
@@ -1165,6 +1188,8 @@ static void do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown
 		}
 	}
 	
+	return SWITCH_STATUS_SUCCESS;
+
 }
 
 SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
@@ -1177,7 +1202,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 		if (!module->perm) {
-			do_shutdown(module, SWITCH_TRUE, SWITCH_FALSE);
+			do_shutdown(module, SWITCH_TRUE, SWITCH_FALSE, SWITCH_FALSE, NULL);
 		}
 	}
 
@@ -1187,7 +1212,7 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 		switch_hash_this(hi, NULL, NULL, &val);
 		module = (switch_loadable_module_t *) val;
 		if (!module->perm) {
-			do_shutdown(module, SWITCH_FALSE, SWITCH_TRUE);
+			do_shutdown(module, SWITCH_FALSE, SWITCH_TRUE, SWITCH_FALSE, NULL);
 		}
 	}
 
@@ -1447,11 +1472,13 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 
 
 	if (cmd && (api = switch_loadable_module_get_api_interface(cmd)) != 0) {
+		switch_thread_rwlock_rdlock(api->parent->rwlock);
 		switch_thread_rwlock_rdlock(api->rwlock);
 		if ((status = api->function(arg, session, stream)) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
 		}
 		switch_thread_rwlock_unlock(api->rwlock);
+		switch_thread_rwlock_unlock(api->parent->rwlock);
 	} else {
 		status = SWITCH_STATUS_FALSE;
 		stream->write_function(stream, "INVALID COMMAND!\n");
@@ -1476,7 +1503,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 	mod->pool = pool;
 
 	mod->module_name = switch_core_strdup(mod->pool, name);
-
+	switch_thread_rwlock_create(&mod->rwlock, mod->pool);
 	return mod;
 }
 
@@ -1491,6 +1518,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 			mod->_TYPE_##_interface = i;								\
 		}																\
 		switch_thread_rwlock_create(&i->rwlock, mod->pool);				\
+		i->parent = mod;												\
 		return i; }
 
 

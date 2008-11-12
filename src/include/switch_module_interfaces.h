@@ -30,10 +30,10 @@
  *
  */
 /*! \file switch_module_interfaces.h
-    \brief Module Interface Definitions
+  \brief Module Interface Definitions
 
-	This module holds the definition of data abstractions used to implement various pluggable 
-	interfaces and pluggable event handlers.
+  This module holds the definition of data abstractions used to implement various pluggable 
+  interfaces and pluggable event handlers.
 
 */
 #ifndef SWITCH_MODULE_INTERFACES_H
@@ -44,8 +44,8 @@
 
 SWITCH_BEGIN_EXTERN_C
 /*! \brief A table of functions to execute at various states 
-*/
-	typedef enum {
+ */
+typedef enum {
 	SWITCH_SHN_ON_INIT,
 	SWITCH_SHN_ON_ROUTING,
 	SWITCH_SHN_ON_EXECUTE,
@@ -99,31 +99,7 @@ struct switch_io_event_hooks;
 
 
 typedef switch_call_cause_t (*switch_io_outgoing_channel_t)
- 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	    (switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t);
+(switch_core_session_t *, switch_event_t *, switch_caller_profile_t *, switch_core_session_t **, switch_memory_pool_t **, switch_originate_flag_t);
 typedef switch_status_t (*switch_io_read_frame_t) (switch_core_session_t *, switch_frame_t **, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_write_frame_t) (switch_core_session_t *, switch_frame_t *, switch_io_flag_t, int);
 typedef switch_status_t (*switch_io_kill_channel_t) (switch_core_session_t *, int);
@@ -197,6 +173,8 @@ struct switch_endpoint_interface {
 
 	switch_thread_rwlock_t *rwlock;
 
+	/* parent */
+	switch_loadable_module_interface_t *parent;
 	/* to facilitate linking */
 	struct switch_endpoint_interface *next;
 };
@@ -248,6 +226,7 @@ struct switch_timer_interface {
 	/*! function to deallocate the timer */
 	switch_status_t (*timer_destroy) (switch_timer_t *);
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_timer_interface *next;
 };
 
@@ -258,6 +237,7 @@ struct switch_dialplan_interface {
 	/*! the function to read an extension and set a channels dialpan */
 	switch_dialplan_hunt_function_t hunt_function;
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_dialplan_interface *next;
 };
 
@@ -282,6 +262,7 @@ struct switch_file_interface {
 	/*! list of supported file extensions */
 	char **extens;
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_file_interface *next;
 };
 
@@ -359,6 +340,7 @@ struct switch_asr_interface {
 	/*! function to read results from the ASR */
 	switch_status_t (*asr_get_results) (switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_asr_interface *next;
 };
 
@@ -400,6 +382,7 @@ struct switch_speech_interface {
 	void (*speech_numeric_param_tts) (switch_speech_handle_t *sh, char *param, int val);
 	void (*speech_float_param_tts) (switch_speech_handle_t *sh, char *param, double val);
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_speech_interface *next;
 };
 
@@ -433,6 +416,7 @@ struct switch_say_interface {
 	/*! function to pass down to the module */
 	switch_say_callback_t say_function;
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_say_interface *next;
 };
 
@@ -443,6 +427,7 @@ struct switch_chat_interface {
 	/*! function to open the directory interface */
 	switch_status_t (*chat_send) (char *proto, char *from, char *to, char *subject, char *body, char *hint);
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_chat_interface *next;
 };
 
@@ -453,6 +438,7 @@ struct switch_management_interface {
 	/*! function to open the directory interface */
 	switch_status_t (*management_function) (char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen);
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_management_interface *next;
 };
 
@@ -471,6 +457,7 @@ struct switch_directory_interface {
 	/*! function to advance to the next name/value pair in the current record */
 	switch_status_t (*directory_next_pair) (switch_directory_handle_t *dh, char **var, char **val);
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_directory_interface *next;
 };
 
@@ -595,6 +582,7 @@ struct switch_codec_interface {
 	switch_codec_implementation_t *implementations;
 	uint32_t codec_id;
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_codec_interface *next;
 };
 
@@ -613,6 +601,7 @@ struct switch_application_interface {
 	/*! flags to control behaviour */
 	uint32_t flags;
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_application_interface *next;
 };
 
@@ -627,6 +616,7 @@ struct switch_api_interface {
 	/*! an example of the api syntax */
 	const char *syntax;
 	switch_thread_rwlock_t *rwlock;
+	switch_loadable_module_interface_t *parent;
 	struct switch_api_interface *next;
 };
 

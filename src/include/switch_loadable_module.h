@@ -80,6 +80,7 @@ SWITCH_BEGIN_EXTERN_C
 	switch_asr_interface_t *asr_interface;
 	/*! the table of management interfaces the module has implmented */
 	switch_management_interface_t *management_interface;
+	switch_thread_rwlock_t *rwlock;
 	switch_memory_pool_t *pool;
 };
 
@@ -255,7 +256,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_exists(const char *mod);
   \param err pointer to error message
   \return the status
 */
-SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, const char **err);
+SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, char *fname, switch_bool_t force, const char **err);
 
 /* Prototypes of module interface functions */
 
