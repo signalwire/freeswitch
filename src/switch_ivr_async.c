@@ -913,22 +913,18 @@ typedef struct {
 static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_inband_dtmf_t *pvt = (switch_inband_dtmf_t *) user_data;
-	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	switch_frame_t frame = { 0 };
+	switch_frame_t *frame = NULL;
 	char digit_str[80];
 	switch_channel_t *channel = switch_core_session_get_channel(pvt->session);
-
-	frame.data = data;
-	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		break;
-	case SWITCH_ABC_TYPE_READ:
-		if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
-			teletone_dtmf_detect(&pvt->dtmf_detect, frame.data, frame.samples);
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		if ((frame = switch_core_media_bug_get_read_replace_frame(bug))) {
+			teletone_dtmf_detect(&pvt->dtmf_detect, frame->data, frame->samples);
 			teletone_dtmf_get(&pvt->dtmf_detect, digit_str, sizeof(digit_str));
 			if (digit_str[0]) {
 				char *p = digit_str;
@@ -941,6 +937,7 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 			}
+			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -984,7 +981,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 
 	switch_channel_pre_answer(channel);
 
-	if ((status = switch_core_media_bug_add(session, inband_dtmf_callback, pvt, 0, SMBF_READ_STREAM, &bug)) != SWITCH_STATUS_SUCCESS) {
+	if ((status = switch_core_media_bug_add(session, inband_dtmf_callback, pvt, 0, SMBF_READ_REPLACE, &bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
 

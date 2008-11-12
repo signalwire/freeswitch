@@ -212,6 +212,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(_In_ switch_cor
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
+SWITCH_DECLARE(void) switch_core_media_bug_flush(_In_ switch_media_bug_t *bug);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(_In_ switch_core_session_t *session);
+
 ///\}
 
 ///\defgroup pa1 Port Allocation

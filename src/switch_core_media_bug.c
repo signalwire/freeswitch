@@ -76,6 +76,12 @@ SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *b
 	return bug->user_data;
 }
 
+SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
+{
+	switch_buffer_zero(bug->raw_read_buffer);
+	switch_buffer_zero(bug->raw_write_buffer);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
 {
 	uint32_t bytes = 0;
@@ -265,9 +271,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 }
 
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(switch_core_session_t *session)
+{
+	switch_media_bug_t *bp;
+
+	if (session->bugs) {
+		switch_thread_rwlock_wrlock(session->bug_rwlock);
+		for (bp = session->bugs; bp; bp = bp->next) {
+			switch_core_media_bug_flush(bp);
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_session_t *session)
 {
 	switch_media_bug_t *bp;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
@@ -285,7 +309,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 		}
 		session->bugs = NULL;
 		switch_thread_rwlock_unlock(session->bug_rwlock);
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
 	if (session->bug_codec.implementation) {
@@ -293,7 +317,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_close(switch_media_bug_t **bug)

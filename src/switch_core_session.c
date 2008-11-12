@@ -742,6 +742,7 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_clear_flag(session, SSF_WARN_TRANSCODE);
 	switch_ivr_deactivate_unicast(session);
 	switch_channel_clear_flag(channel, CF_BREAK);
+	switch_core_media_bug_flush_all(session);
 }
 
 
