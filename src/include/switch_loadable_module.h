@@ -392,8 +392,7 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void);
 	}
 
 
-#define PROTECT_INTERFACE(_it) switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock)
-#define UNPROTECT_INTERFACE(_it) switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it = NULL
+
 
 
 

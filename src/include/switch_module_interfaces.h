@@ -620,6 +620,9 @@ struct switch_api_interface {
 	struct switch_api_interface *next;
 };
 
+#define PROTECT_INTERFACE(_it) switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock)
+#define UNPROTECT_INTERFACE(_it) switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it = NULL
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
