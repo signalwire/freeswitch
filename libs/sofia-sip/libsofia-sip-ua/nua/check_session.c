@@ -64,6 +64,7 @@ static void call_setup(void)
   s2_case("0.1.1", "Setup for Call Tests", "");
 
   nua = s2_nua_setup(SIPTAG_ORGANIZATION_STR("Pussy Galore's Flying Circus"),
+                     NUTAG_OUTBOUND("no-options-keepalive, no-validate"),
 		     TAG_END());
 
   soa = soa_create(NULL, s2->root, NULL);
