@@ -1257,7 +1257,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 {
 	switch_size_t bytes = 0;
 	switch_status_t status;
-	uint8_t check = 0;
+	int check = 0;
 	stfu_frame_t *jb_frame;
 	int ret = -1;
 	int sleep_mss = 1000;
