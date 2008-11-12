@@ -46,7 +46,7 @@ EXTERN_C void xs_init(pTHX);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_perl_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_perl_shutdown);
-SWITCH_MODULE_DEFINITION(mod_perl, mod_perl_load, mod_perl_shutdown, NULL);
+SWITCH_MODULE_DEFINITION_EX(mod_perl, mod_perl_load, mod_perl_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
 
 static STRLEN n_a;
 
