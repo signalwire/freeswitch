@@ -106,25 +106,6 @@ static int MONO = 0;
 #endif
 
 
-static void do_yield(switch_interval_time_t t)
-{
-#if defined(HAVE_CLOCK_NANOSLEEP) && defined(SWITCH_USE_CLOCK_FUNCS)
-    struct timespec ts;
-    ts.tv_sec = t / APR_USEC_PER_SEC;
-    ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
-
-    clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
-
-#elif defined(HAVE_USLEEP)
-    usleep(t);
-#elif defined(WIN32)
-    Sleep((DWORD) ((t) / 1000));
-#else
-    apr_sleep(t);
-#endif
-
-}
-
 SWITCH_DECLARE(void) switch_time_set_monotonic(switch_bool_t enable)
 {
 	MONO = enable ? 1 : 0;
@@ -158,39 +139,29 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 	runtime.reference = time_now(runtime.offset);
 }
 
+SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t)
+{
+	apr_sleep(t);
+}
+
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
+
+	if (t <= 1000) {
+#if defined(WIN32)
+		Sleep(1);
+#else
+		apr_sleep(t);
+#endif
+		return;
+	}
 
 	if (globals.use_cond_yield == 1) {
 		switch_cond_yield((uint32_t)(t / 1000));
 		return;
 	}
-
-#if defined(HAVE_USLEEP)
-	usleep(t);
-#elif defined(WIN32)
-	Sleep((DWORD) ((t) / 1000));
-#else
+	
 	apr_sleep(t);
-#endif
-
-#if 0
-#if defined(HAVE_CLOCK_NANOSLEEP) && defined(SWITCH_USE_CLOCK_FUNCS)
-	struct timespec ts;
-	ts.tv_sec = t / APR_USEC_PER_SEC;
-	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
-
-	clock_nanosleep(CLOCK_REALTIME, 0, &ts, NULL);
-
-#elif defined(HAVE_USLEEP)
-	usleep(t);
-#elif defined(WIN32)
-	Sleep((DWORD) ((t) / 1000));
-#else
-	apr_sleep(t);
-#endif
-#endif
-
 }
 
 
@@ -199,7 +170,8 @@ SWITCH_DECLARE(void) switch_cond_yield(uint32_t ms)
 	if (!ms) return;
 
 	if (globals.use_cond_yield != 1) {
-		do_yield(ms * 1000);
+		apr_sleep(ms * 1000);
+		return;
 	}
 
 	switch_mutex_lock(TIMER_MATRIX[1].mutex);
@@ -216,7 +188,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	int sanity = 0;
 
 	while (globals.STARTED == 0) {
-		do_yield(100000);
+		apr_sleep(100000);
 		if (++sanity == 10) {
 			break;
 		}
@@ -312,7 +284,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 #else
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
-		do_yield(1000);
+		apr_sleep(1000);
 	}
 #endif
 
@@ -396,7 +368,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				runtime.initiated = runtime.reference;
 				break;
 			}
-			do_yield(STEP_MIC);
+			apr_sleep(STEP_MIC);
 			last = ts;
 		}
 	}
@@ -431,7 +403,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				rev_errs = 0;
 			}
-			do_yield(STEP_MIC);
+			apr_sleep(STEP_MIC);
 			last = ts;
 		}
 
@@ -739,7 +711,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 		switch_mutex_unlock(globals.mutex);
 
 		while (globals.RUNNING == -1) {
-			do_yield(10000);
+			apr_sleep(10000);
 		}
 	}
 #if defined(WIN32)

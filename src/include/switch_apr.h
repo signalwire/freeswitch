@@ -337,6 +337,7 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_tz(switch_time_exp_t *result, sw
  * @warning May sleep for longer than the specified time. 
  */
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t);
+SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t);
 
 /** @} */
 

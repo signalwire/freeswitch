@@ -42,6 +42,36 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
 
+SWITCH_STANDARD_API(time_test_function)
+{
+	switch_time_t now, then;
+	int x;
+	long mss = atol(cmd);
+	uint32_t total = 0;
+	int diff;
+	int max = 10;
+	char *p;
+	
+	if ((p = strchr(cmd, ' '))) {
+		max = atoi(p+1);
+		if (max < 0) {
+			max = 10;
+		}
+	}
+
+	for (x = 0; x < max; x++) {
+		then = switch_time_now();
+		switch_yield(mss);
+		now = switch_time_now();
+		diff = (int) now - then;
+		stream->write_function(stream, "test %d sleep %ld %d\n", x+1, mss, diff);
+		total += diff;
+	}
+	stream->write_function(stream, "avg %d\n", total / x);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_param, x_params;
@@ -2939,6 +2969,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "<expression>");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
