@@ -26,6 +26,7 @@
     <param name="hold-music" value="$${hold_music}"/>
     <param name="use-rtp-timer" value="true"/>
     <param name="rtp-timer-name" value="soft"/>
+    <param name="enable-100rel" value="false"/>
     <!-- This could be set to "passive" -->
     <param name="manage-presence" value="false"/>
 
