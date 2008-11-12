@@ -1110,14 +1110,14 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(const char *endpoint_name, switch_memory_pool_t **pool)
 {
-	const switch_endpoint_interface_t *endpoint_interface;
+	const switch_endpoint_interface_t *endpoint_interface, *e;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
 		return NULL;
 	}
-
-	UNPROTECT_INTERFACE(endpoint_interface);
+	e = endpoint_interface;
+	UNPROTECT_INTERFACE(e);
 	return switch_core_session_request(endpoint_interface, pool);
 
 }
