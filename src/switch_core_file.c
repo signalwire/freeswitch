@@ -56,7 +56,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		file_path = rhs + 3;
 	} else {
 		if ((ext = strrchr(file_path, '.')) == 0) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown file Format [%s]\n", file_path);
 			return SWITCH_STATUS_FALSE;
 		}
 		ext++;
