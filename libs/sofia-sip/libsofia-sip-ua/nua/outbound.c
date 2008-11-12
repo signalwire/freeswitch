@@ -677,7 +677,7 @@ void outbound_start_keepalive(outbound_t *ob,
     interval = ob->ob_prefs.interval;
   need_to_validate = ob->ob_prefs.validate && !ob->ob_validated;
 
-  if (!ob->ob_nat_detected || !register_transaction ||
+  if (!register_transaction ||
       !(need_to_validate || interval != 0)) {
     outbound_stop_keepalive(ob);
     return;
