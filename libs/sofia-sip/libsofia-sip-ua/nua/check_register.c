@@ -717,7 +717,7 @@ TCase *register_tcase(void)
     tcase_add_test(tc, register_1_3_2_1);
     tcase_add_test(tc, register_1_3_2_2);
   }
-  tcase_set_timeout(tc, 5);
+  tcase_set_timeout(tc, 10);
   return tc;
 }
 
@@ -729,7 +729,7 @@ TCase *pingpong_tcase(void)
   {
     tcase_add_test(tc, register_1_3_3_1);
   }
-  tcase_set_timeout(tc, 5);
+  tcase_set_timeout(tc, 10);
   return tc;
 }
 
