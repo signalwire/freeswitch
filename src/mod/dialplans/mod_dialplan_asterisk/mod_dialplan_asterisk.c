@@ -39,12 +39,14 @@ SWITCH_MODULE_DEFINITION(mod_dialplan_asterisk, mod_dialplan_asterisk_load, NULL
 static switch_status_t exec_app(switch_core_session_t *session, char *app, char *arg)
 {
 	const switch_application_interface_t *application_interface;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
-		return switch_core_session_exec(session, application_interface, arg);
+		status = switch_core_session_exec(session, application_interface, arg);
+		UNPROTECT_INTERFACE(application_interface);
 	}
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 SWITCH_STANDARD_APP(dial_function)

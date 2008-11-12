@@ -49,6 +49,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_open(switch_directory_hand
 		dh->memory_pool = pool;
 	} else {
 		if ((status = switch_core_new_memory_pool(&dh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			UNPROTECT_INTERFACE(dh->directory_interface);
 			return status;
 		}
 		switch_set_flag(dh, SWITCH_DIRECTORY_FLAG_FREE_POOL);
@@ -77,6 +78,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_directory_close(switch_directory_han
 	switch_status_t status;
 
 	status = dh->directory_interface->directory_close(dh);
+	UNPROTECT_INTERFACE(dh->directory_interface);
 
 	if (switch_test_flag(dh, SWITCH_DIRECTORY_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&dh->memory_pool);

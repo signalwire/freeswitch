@@ -115,6 +115,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		if ((application_interface = switch_loadable_module_get_application_interface(app_name)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app_name);
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			UNPROTECT_INTERFACE(application_interface);
 			goto wbreak;
 		}
 

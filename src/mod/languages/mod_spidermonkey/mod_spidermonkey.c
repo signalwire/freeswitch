@@ -2222,6 +2222,7 @@ static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 				check_hangup_hook(jss, &ret);
 				retval = JS_TRUE;
 			}
+			UNPROTECT_INTERFACE(application_interface);
 		}
 	}
 

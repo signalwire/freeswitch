@@ -1168,9 +1168,9 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else if (!strcasecmp(val, "contact") || switch_true(val)) {
 							profile->pflags |= PFLAG_MULTIREG;
 							profile->pflags |= PFLAG_MULTIREG_CONTACT;
-						} else {
+						} else if (switch_true(val)) {
 							profile->pflags &= ~PFLAG_MULTIREG;
-							profile->pflags &= ~PFLAG_MULTIREG_CONTACT;
+							//profile->pflags &= ~PFLAG_MULTIREG_CONTACT;
 						}
 					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {
@@ -1629,9 +1629,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else if (!strcasecmp(val, "contact") || switch_true(val)) {
 							profile->pflags |= PFLAG_MULTIREG;
 							profile->pflags |= PFLAG_MULTIREG_CONTACT;
-						} else {
+						} else if (switch_true(val)) {
 							profile->pflags &= ~PFLAG_MULTIREG;
-							profile->pflags &= ~PFLAG_MULTIREG_CONTACT;
+							//profile->pflags &= ~PFLAG_MULTIREG_CONTACT;
 						}
 					} else if (!strcasecmp(var, "supress-cng") || !strcasecmp(var, "suppress-cng")) {
 						if (switch_true(val)) {

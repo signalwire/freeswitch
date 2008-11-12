@@ -87,11 +87,13 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 		if (val) {
 			const char *this_val;
 			session = (switch_core_session_t *) val;
-			switch_core_session_read_lock(session);
-			if ((this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {
-				switch_channel_hangup(switch_core_session_get_channel(session), cause);
+			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+				if (switch_channel_get_state(session->channel) < CS_HANGUP &&
+					(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {
+					switch_channel_hangup(session->channel, cause);
+				}
+				switch_core_session_rwunlock(session);
 			}
-			switch_core_session_rwunlock(session);
 		}
 	}
 	switch_mutex_unlock(runtime.throttle_mutex);
@@ -826,8 +828,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 	*session = NULL;
 	switch_core_destroy_memory_pool(&pool);
 
-	switch_thread_rwlock_unlock(endpoint_interface->rwlock);
-	switch_thread_rwlock_unlock(endpoint_interface->parent->rwlock);
+	UNPROTECT_INTERFACE(endpoint_interface);
 }
 
 SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
@@ -1006,6 +1007,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(const s
 	uint32_t count = 0;
 	int32_t sps = 0;
 
+
 	if (use_uuid && switch_core_hash_find(session_manager.session_table, use_uuid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
         return NULL;
@@ -1016,6 +1018,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(const s
 		return NULL;
 	}
 
+	PROTECT_INTERFACE(endpoint_interface);
+
 	switch_mutex_lock(runtime.throttle_mutex);
 	count = session_manager.session_count;
 	sps = --runtime.sps;
@@ -1023,16 +1027,15 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(const s
 
 	if (sps <= 0) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Throttle Error!\n");
+		UNPROTECT_INTERFACE(endpoint_interface);
 		return NULL;
 	}
 
 	if ((count + 1) > session_manager.session_limit) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Over Session Limit!\n");
+		UNPROTECT_INTERFACE(endpoint_interface);
 		return NULL;
 	}
-
-	switch_thread_rwlock_rdlock(endpoint_interface->parent->rwlock);
-	switch_thread_rwlock_rdlock(endpoint_interface->rwlock);
 
 	if (pool && *pool) {
 		usepool = *pool;
@@ -1114,7 +1117,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(cons
 		return NULL;
 	}
 
+	UNPROTECT_INTERFACE(endpoint_interface);
 	return switch_core_session_request(endpoint_interface, pool);
+
 }
 
 #ifndef SWITCH_PREFIX_DIR
@@ -1195,6 +1200,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 	if (!application_interface->application_function) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", app);
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+		UNPROTECT_INTERFACE(application_interface);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1236,6 +1242,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 		switch_safe_free(expanded);
 	}
 
+	UNPROTECT_INTERFACE(application_interface);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1282,11 +1290,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	switch_channel_set_variable(session->channel, SWITCH_CURRENT_APPLICATION_VARIABLE, application_interface->interface_name);
 
-	switch_thread_rwlock_rdlock(application_interface->parent->rwlock);
-	switch_thread_rwlock_rdlock(application_interface->rwlock);
 	application_interface->application_function(session, arg);
-	switch_thread_rwlock_unlock(application_interface->rwlock);
-	switch_thread_rwlock_unlock(application_interface->parent->rwlock);
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);

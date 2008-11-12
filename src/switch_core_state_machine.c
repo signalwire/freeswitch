@@ -91,8 +91,11 @@ static void switch_core_standard_on_routing(switch_core_session_t *session)
 					}
 					
 					count++;
-
-					if ((extension = dialplan_interface->hunt_function(session, dparg, NULL)) != 0) {
+					
+					extension = dialplan_interface->hunt_function(session, dparg, NULL);
+					UNPROTECT_INTERFACE(dialplan_interface);
+					
+					if (extension) {
 						switch_channel_set_caller_extension(session->channel, extension);
 						switch_channel_set_state(session->channel, CS_EXECUTE);
 						goto end;

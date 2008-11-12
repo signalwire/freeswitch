@@ -76,6 +76,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		fh->memory_pool = pool;
 	} else {
 		if ((status = switch_core_new_memory_pool(&fh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			UNPROTECT_INTERFACE(fh->file_interface);
 			return status;
 		}
 		switch_set_flag(fh, SWITCH_FILE_FLAG_FREE_POOL);
@@ -98,8 +99,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	}
 
 	if ((status = fh->file_interface->file_open(fh, file_path)) != SWITCH_STATUS_SUCCESS) {
+		UNPROTECT_INTERFACE(fh->file_interface);
 		return status;
 	}
+
 
 	if ((flags & SWITCH_FILE_FLAG_READ)) {
 		fh->native_rate = fh->samplerate;
@@ -280,6 +283,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	}
 
 	switch_resample_destroy(&fh->resampler);
+
+	UNPROTECT_INTERFACE(fh->file_interface);
 
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);

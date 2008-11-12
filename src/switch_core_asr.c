@@ -64,6 +64,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_open(switch_asr_handle_t *ah,
 		ah->memory_pool = pool;
 	} else {
 		if ((status = switch_core_new_memory_pool(&ah->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			UNPROTECT_INTERFACE(ah->asr_interface);
 			return status;
 		}
 		switch_set_flag(ah, SWITCH_ASR_FLAG_FREE_POOL);
@@ -127,6 +128,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_asr_close(switch_asr_handle_t *ah, s
 	switch_assert(ah != NULL);
 
 	status = ah->asr_interface->asr_close(ah, flags);
+	UNPROTECT_INTERFACE(ah->asr_interface);
 
 	if (switch_test_flag(ah, SWITCH_ASR_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&ah->memory_pool);

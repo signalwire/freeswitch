@@ -451,11 +451,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 
 		implementation->init(codec, flags, codec_settings);
 		switch_mutex_init(&codec->mutex, SWITCH_MUTEX_NESTED, codec->memory_pool);
+		
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms\n", codec_name, rate,
 						  ms);
 	}
+
+	UNPROTECT_INTERFACE(codec_interface);
 
 	return SWITCH_STATUS_NOTIMPL;
 }
@@ -541,6 +544,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	if (mutex) switch_mutex_lock(mutex);
 
 	codec->implementation->destroy(codec);
+
+	UNPROTECT_INTERFACE(codec->codec_interface);
+
 	memset(codec, 0, sizeof(*codec));
 	
 	if (mutex) switch_mutex_unlock(mutex);

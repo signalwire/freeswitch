@@ -66,6 +66,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 		sh->memory_pool = pool;
 	} else {
 		if ((status = switch_core_new_memory_pool(&sh->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			UNPROTECT_INTERFACE(sh->speech_interface);
 			return status;
 		}
 		switch_set_flag(sh, SWITCH_SPEECH_FLAG_FREE_POOL);
@@ -138,6 +139,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
 {
 	switch_status_t status = sh->speech_interface->speech_close(sh, flags);
+
+	UNPROTECT_INTERFACE(sh->speech_interface);
 
 	if (switch_test_flag(sh, SWITCH_SPEECH_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&sh->memory_pool);

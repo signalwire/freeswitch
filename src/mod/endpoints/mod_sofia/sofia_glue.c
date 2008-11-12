@@ -2865,10 +2865,15 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 		
-		if (switch_odbc_handle_exec(profile->master_odbc, "select hostname from sip_registrations", NULL) != SWITCH_ODBC_SUCCESS) {
+		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
+								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q'", 
+								  mod_sofia_globals.hostname);
+
+		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_registrations", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, reg_sql, NULL);
 		}
+		free(test_sql);
 
 
 		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
@@ -2898,13 +2903,18 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 #else
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
-	} else {
+	} else {		
 		if (!(profile->master_db = switch_core_db_open_file(profile->dbname))) {
 			return 0;
 		}
 
-		switch_core_db_test_reactive(profile->master_db, "select hostname from sip_registrations", "DROP TABLE sip_registrations", reg_sql);
+		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
+								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q'", 
+								  mod_sofia_globals.hostname);
 		
+		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_registrations", reg_sql);
+		free(test_sql);
+
 		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_subscriptions", sub_sql);
 		free(test_sql);

@@ -249,6 +249,11 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	}
 
  done:
+
+	if (fh.file_interface) {
+		switch_core_file_close(&fh);
+	}
+
 	source->ready = 0;
 	switch_mutex_lock(globals.mutex);
 	switch_core_hash_delete(globals.source_hash, source->name);

@@ -477,6 +477,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 								if ((application_interface = switch_loadable_module_get_application_interface(app_name))) {
 									switch_core_session_exec(session, application_interface, app_arg);
+									UNPROTECT_INTERFACE(application_interface);
 									status = SWITCH_STATUS_SUCCESS;
 								}
 							}

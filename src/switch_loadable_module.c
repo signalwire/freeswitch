@@ -455,6 +455,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Deleting Codec '%s' (%s) %dhz %dms\n",
 										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
+						switch_core_session_hupall_matching_var("read_codec", impl->iananame, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+						switch_core_session_hupall_matching_var("write_codec", impl->iananame, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
 						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_delete(loadable_modules.codec_hash, impl->iananame);
 						}
@@ -560,6 +562,15 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		for (ptr = old_module->module_interface->file_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
 				int i;
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
+
 				for (i = 0; ptr->extens[i]; i++) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting File Format '%s'\n", ptr->extens[i]);
 					if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
@@ -577,7 +588,17 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		const switch_speech_interface_t *ptr;
 
 		for (ptr = old_module->module_interface->speech_interface; ptr; ptr = ptr->next) {
+
 			if (ptr->interface_name) {
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Speech interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "speech");
@@ -594,6 +615,15 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 		for (ptr = old_module->module_interface->asr_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Asr interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "asr");
@@ -610,6 +640,15 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 		for (ptr = old_module->module_interface->directory_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Directory interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "directory");
@@ -627,6 +666,14 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 		for (ptr = old_module->module_interface->chat_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
+
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Chat interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "chat");
@@ -643,6 +690,13 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 
 		for (ptr = old_module->module_interface->say_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
+				
+				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
+					switch_thread_rwlock_unlock(ptr->rwlock);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Say interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "say");
@@ -913,6 +967,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_unload_module(char *dir, 
 	switch_mutex_unlock(loadable_modules.mutex);
 
 	if (force) {
+		switch_yield(1000000);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "PHEW!\n");
 	}
 
@@ -1239,7 +1294,11 @@ SWITCH_DECLARE(switch_endpoint_interface_t *) switch_loadable_module_get_endpoin
 
 	switch_mutex_lock(loadable_modules.mutex);
 	ptr = switch_core_hash_find(loadable_modules.endpoint_hash, name);
+	if (ptr) {
+		PROTECT_INTERFACE(ptr);
+	}
 	switch_mutex_unlock(loadable_modules.mutex);
+
 
 	return ptr;
 }
@@ -1263,57 +1322,41 @@ SWITCH_DECLARE(switch_codec_interface_t *) switch_loadable_module_get_codec_inte
 		}
 	}
 	switch_mutex_unlock(loadable_modules.mutex);
+
+	if (codec) {
+		PROTECT_INTERFACE(codec);
+	}
+
 	return codec;
 }
 
-SWITCH_DECLARE(switch_dialplan_interface_t *) switch_loadable_module_get_dialplan_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.dialplan_hash, name, loadable_modules.mutex);
-}
+#define HASH_FUNC(_kind_) SWITCH_DECLARE(switch_##_kind_##_interface_t *) switch_loadable_module_get_##_kind_##_interface(const char *name)	\
+	{																	\
+		switch_##_kind_##_interface_t *i;								\
+		if ((i = switch_core_hash_find_locked(loadable_modules._kind_##_hash, name, loadable_modules.mutex))) {	\
+			PROTECT_INTERFACE(i);										\
+		}																\
+		return i;														\
+	}																	
+	
+HASH_FUNC(dialplan)
+HASH_FUNC(timer)
+HASH_FUNC(application)
+HASH_FUNC(api)
+HASH_FUNC(file)
+HASH_FUNC(speech)
+HASH_FUNC(asr)
+HASH_FUNC(directory)
 
-SWITCH_DECLARE(switch_timer_interface_t *) switch_loadable_module_get_timer_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.timer_hash, name, loadable_modules.mutex);
-}
-
-SWITCH_DECLARE(switch_application_interface_t *) switch_loadable_module_get_application_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.application_hash, name, loadable_modules.mutex);
-}
-
-SWITCH_DECLARE(switch_api_interface_t *) switch_loadable_module_get_api_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.api_hash, name, loadable_modules.mutex);
-}
-
-SWITCH_DECLARE(switch_file_interface_t *) switch_loadable_module_get_file_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.file_hash, name, loadable_modules.mutex);
-}
-
-SWITCH_DECLARE(switch_speech_interface_t *) switch_loadable_module_get_speech_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.speech_hash, name, loadable_modules.mutex);
-}
-
-SWITCH_DECLARE(switch_asr_interface_t *) switch_loadable_module_get_asr_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.asr_hash, name, loadable_modules.mutex);
-}
-
-SWITCH_DECLARE(switch_directory_interface_t *) switch_loadable_module_get_directory_interface(const char *name)
-{
-	return switch_core_hash_find_locked(loadable_modules.directory_hash, name, loadable_modules.mutex);
-}
 
 SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(const char *name)
 {
-	return switch_core_hash_find_locked(loadable_modules.chat_hash, name, loadable_modules.mutex);
+    return switch_core_hash_find_locked(loadable_modules.chat_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name)
 {
-	return switch_core_hash_find_locked(loadable_modules.say_hash, name, loadable_modules.mutex);
+    return switch_core_hash_find_locked(loadable_modules.say_hash, name, loadable_modules.mutex);
 }
 
 SWITCH_DECLARE(switch_management_interface_t *) switch_loadable_module_get_management_interface(const char *relative_oid)
@@ -1472,13 +1515,10 @@ SWITCH_DECLARE(switch_status_t) switch_api_execute(const char *cmd, const char *
 
 
 	if (cmd && (api = switch_loadable_module_get_api_interface(cmd)) != 0) {
-		switch_thread_rwlock_rdlock(api->parent->rwlock);
-		switch_thread_rwlock_rdlock(api->rwlock);
 		if ((status = api->function(arg, session, stream)) != SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "COMMAND RETURNED ERROR!\n");
 		}
-		switch_thread_rwlock_unlock(api->rwlock);
-		switch_thread_rwlock_unlock(api->parent->rwlock);
+		UNPROTECT_INTERFACE(api);
 	} else {
 		status = SWITCH_STATUS_FALSE;
 		stream->write_function(stream, "INVALID COMMAND!\n");

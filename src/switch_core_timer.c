@@ -55,6 +55,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_init(switch_timer_t *timer, co
 		timer->memory_pool = pool;
 	} else {
 		if ((status = switch_core_new_memory_pool(&timer->memory_pool)) != SWITCH_STATUS_SUCCESS) {
+			UNPROTECT_INTERFACE(timer->timer_interface);
 			return status;
 		}
 		switch_set_flag(timer, SWITCH_TIMER_FLAG_FREE_POOL);
@@ -120,6 +121,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_timer_destroy(switch_timer_t *timer)
 	}
 
 	timer->timer_interface->timer_destroy(timer);
+	UNPROTECT_INTERFACE(timer->timer_interface);
 
 	if (switch_test_flag(timer, SWITCH_TIMER_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&timer->memory_pool);

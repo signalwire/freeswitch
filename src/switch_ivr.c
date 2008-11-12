@@ -409,6 +409,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 
 					switch_channel_clear_flag(channel, CF_BROADCAST);
 				}
+				UNPROTECT_INTERFACE(application_interface);
 			}
 		}
 	} else if (cmd_hash == CMD_UNICAST) {

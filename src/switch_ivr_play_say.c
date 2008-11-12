@@ -293,6 +293,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 
 						if ((app = switch_loadable_module_get_application_interface(cmd)) != NULL) {
 							status = switch_core_session_exec(session, app, cmd_args);
+							UNPROTECT_INTERFACE(app);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", cmd);
 						}
