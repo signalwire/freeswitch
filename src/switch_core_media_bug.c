@@ -78,8 +78,13 @@ SWITCH_DECLARE(void *) switch_core_media_bug_get_user_data(switch_media_bug_t *b
 
 SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 {
-	switch_buffer_zero(bug->raw_read_buffer);
-	switch_buffer_zero(bug->raw_write_buffer);
+	if (bug->raw_read_buffer) {
+		switch_buffer_zero(bug->raw_read_buffer);
+	}
+
+	if (bug->raw_write_buffer) {
+		switch_buffer_zero(bug->raw_write_buffer);
+	}
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
