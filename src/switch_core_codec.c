@@ -450,7 +450,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 		}
 
 		implementation->init(codec, flags, codec_settings);
-
+		switch_mutex_init(&codec->mutex, SWITCH_MUTEX_NESTED, codec->memory_pool);
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms\n", codec_name, rate,
@@ -467,6 +467,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 														 uint32_t decoded_rate,
 														 void *encoded_data, uint32_t *encoded_data_len, uint32_t *encoded_rate, unsigned int *flag)
 {
+	switch_status_t status;
+
 	switch_assert(codec != NULL);
 	switch_assert(encoded_data != NULL);
 	switch_assert(decoded_data != NULL);
@@ -481,8 +483,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
-	return codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, decoded_rate, encoded_data, encoded_data_len, encoded_rate,
-										 flag);
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+	status = codec->implementation->encode(codec, other_codec, decoded_data, decoded_data_len, 
+										   decoded_rate, encoded_data, encoded_data_len, encoded_rate, flag);
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+	return status;
+										   
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
@@ -492,6 +499,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 														 uint32_t encoded_rate,
 														 void *decoded_data, uint32_t *decoded_data_len, uint32_t *decoded_rate, unsigned int *flag)
 {
+	switch_status_t status;
+
 	switch_assert(codec != NULL);
 	switch_assert(encoded_data != NULL);
 	switch_assert(decoded_data != NULL);
@@ -506,26 +515,39 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
-	return codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, decoded_data, decoded_data_len, decoded_rate,
-										 flag);
+	if (codec->mutex) switch_mutex_lock(codec->mutex);
+	status = codec->implementation->decode(codec, other_codec, encoded_data, encoded_data_len, encoded_rate, 
+										   decoded_data, decoded_data_len, decoded_rate, flag);
+	if (codec->mutex) switch_mutex_unlock(codec->mutex);
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 {
-	switch_assert(codec != NULL);
+	switch_mutex_t *mutex;
+	switch_memory_pool_t *pool;
 
+	switch_assert(codec != NULL);	
+	
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initialized!\n");
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
 
+	pool = codec->memory_pool;
+	mutex = codec->mutex;
+
+	if (mutex) switch_mutex_lock(mutex);
+
 	codec->implementation->destroy(codec);
+	memset(codec, 0, sizeof(*codec));
+	
+	if (mutex) switch_mutex_unlock(mutex);
 
 	if (switch_test_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL)) {
-		switch_core_destroy_memory_pool(&codec->memory_pool);
+		switch_core_destroy_memory_pool(&pool);
 	}
-
-	memset(codec, 0, sizeof(*codec));
 
 	return SWITCH_STATUS_SUCCESS;
 }

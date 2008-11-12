@@ -544,6 +544,7 @@ struct switch_codec {
 	/*! private data for the codec module to store handle specific info */
 	void *private_info;
 	switch_payload_t agreed_pt;
+	switch_mutex_t *mutex;
 };
 
 /*! \brief A table of settings and callbacks that define a paticular implementation of a codec */
