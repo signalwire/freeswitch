@@ -1355,7 +1355,7 @@ struct switch_network_list;
 typedef struct switch_network_list switch_network_list_t;
 
 
-#define SWITCH_API_VERSION 2
+#define SWITCH_API_VERSION 3
 #define SWITCH_MODULE_LOAD_ARGS (switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool)
 #define SWITCH_MODULE_RUNTIME_ARGS (void)
 #define SWITCH_MODULE_SHUTDOWN_ARGS (void)
