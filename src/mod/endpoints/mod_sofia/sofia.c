@@ -1422,6 +1422,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->mflags = MFLAG_REFER | MFLAG_REGISTER;
 				profile->rport_level = 1;
 				profile->pflags |= PFLAG_STUN_ENABLED;
+				profile->pflags |= PFLAG_DISABLE_100REL;
 				
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1705,8 +1706,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->minimum_session_expires = 90;
 						}
 					} else if (!strcasecmp(var, "enable-100rel")) {
-						if (!switch_true(val)) {
-							profile->pflags |= PFLAG_DISABLE_100REL;
+						if (switch_true(val)) {
+							profile->pflags &= ~PFLAG_DISABLE_100REL;
 						}
 					} else if (!strcasecmp(var, "bitpacking")) {
 						if (!strcasecmp(val, "aal2")) {
