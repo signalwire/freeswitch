@@ -46,12 +46,17 @@ SWITCH_STANDARD_API(time_test_function)
 {
 	switch_time_t now, then;
 	int x;
-	long mss = atol(cmd);
+	long mss;
 	uint32_t total = 0;
 	int diff;
 	int max = 10;
 	char *p;
-	
+	if (switch_strlen_zero(cmd)){
+		stream->write_function(stream, "parameter missing\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+	mss = atol(cmd);
+
 	if ((p = strchr(cmd, ' '))) {
 		max = atoi(p+1);
 		if (max < 0) {
@@ -63,7 +68,7 @@ SWITCH_STANDARD_API(time_test_function)
 		then = switch_time_now();
 		switch_yield(mss);
 		now = switch_time_now();
-		diff = (int) now - then;
+		diff = (int) (now - then);
 		stream->write_function(stream, "test %d sleep %ld %d\n", x+1, mss, diff);
 		total += diff;
 	}
