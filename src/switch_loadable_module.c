@@ -423,7 +423,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		for (ptr = old_module->module_interface->endpoint_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
 
-				switch_core_session_hupall_endpoint(ptr, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+				switch_core_session_hupall_endpoint(ptr, SWITCH_CAUSE_MANAGER_REQUEST);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
                     switch_thread_rwlock_unlock(ptr->rwlock);
@@ -455,8 +455,8 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,
 										  "Deleting Codec '%s' (%s) %dhz %dms\n",
 										  impl->iananame, ptr->interface_name, impl->actual_samples_per_second, impl->microseconds_per_packet / 1000);
-						switch_core_session_hupall_matching_var("read_codec", impl->iananame, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
-						switch_core_session_hupall_matching_var("write_codec", impl->iananame, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+						switch_core_session_hupall_matching_var("read_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
+						switch_core_session_hupall_matching_var("write_codec", impl->iananame, SWITCH_CAUSE_MANAGER_REQUEST);
 						if (switch_core_hash_find(loadable_modules.codec_hash, impl->iananame)) {
 							switch_core_hash_delete(loadable_modules.codec_hash, impl->iananame);
 						}
@@ -508,7 +508,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 		for (ptr = old_module->module_interface->application_interface; ptr; ptr = ptr->next) {
 			if (ptr->interface_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Application '%s'\n", ptr->interface_name);
-				switch_core_session_hupall_matching_var(SWITCH_CURRENT_APPLICATION_VARIABLE, ptr->interface_name, SWITCH_CAUSE_SYSTEM_SHUTDOWN);
+				switch_core_session_hupall_matching_var(SWITCH_CURRENT_APPLICATION_VARIABLE, ptr->interface_name, SWITCH_CAUSE_MANAGER_REQUEST);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock interface '%s' to wait for existing references.\n", ptr->interface_name);
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
