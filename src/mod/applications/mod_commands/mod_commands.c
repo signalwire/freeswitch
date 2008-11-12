@@ -921,26 +921,39 @@ SWITCH_STANDARD_API(reload_xml_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define KILL_SYNTAX "<uuid>"
+#define KILL_SYNTAX "<uuid> [cause]"
 SWITCH_STANDARD_API(kill_function)
 {
 	switch_core_session_t *ksession = NULL;
+	char *mycmd = NULL, *kcause = NULL;
+	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!cmd) {
+	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", KILL_SYNTAX);
-	} else if ((ksession = switch_core_session_locate(cmd))) {
-		switch_channel_t *channel = switch_core_session_get_channel(ksession);
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-		switch_core_session_rwunlock(ksession);
-		stream->write_function(stream, "+OK\n");
-	} else {
-		stream->write_function(stream, "-ERR No Such Channel!\n");
+		return SWITCH_STATUS_SUCCESS;
 	}
 
+	if ((kcause = strchr(mycmd, ' '))) {
+		*kcause++ = '\0';
+	}
+
+	if (switch_strlen_zero(mycmd) || !(ksession = switch_core_session_locate(mycmd))) {
+		stream->write_function(stream, "-ERR No Such Channel!\n");
+	} else {
+		switch_channel_t *channel = switch_core_session_get_channel(ksession);
+		if (!switch_strlen_zero(kcause)){
+			cause = switch_channel_str2cause(kcause);
+		}  
+		switch_channel_hangup(channel, cause);
+		switch_core_session_rwunlock(ksession);
+		stream->write_function(stream, "+OK\n");
+	}
+
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
