@@ -373,6 +373,17 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_safe_free(stream.data);
 	}
 
+	if (tech_pvt->read_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+	}
+
+	if (tech_pvt->write_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+	}
+
+	switch_core_session_unset_read_codec(session);
+	switch_core_session_unset_write_codec(session);
+
 	switch_mutex_lock(tech_pvt->profile->flag_mutex);
 	switch_clear_flag(tech_pvt, TFLAG_IO);
 	tech_pvt->profile->inuse--;

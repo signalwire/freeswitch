@@ -1479,9 +1479,12 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 		  found:
 
+			UNPROTECT_INTERFACE(codec_interface);
+
 			if (i > arraylen) {
 				break;
 			}
+
 		}
 	}
 

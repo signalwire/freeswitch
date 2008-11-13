@@ -633,8 +633,8 @@ struct switch_api_interface {
 	struct switch_api_interface *next;
 };
 
-#define PROTECT_INTERFACE(_it) if (!_it->refs) {switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++;}
-#define UNPROTECT_INTERFACE(_it) if (_it->refs) {switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; _it = NULL;}
+#define PROTECT_INTERFACE(_it) if (_it && !_it->refs) {switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++;} //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK\n");
+#define UNPROTECT_INTERFACE(_it) if (_it && _it->refs) {switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; _it = NULL;} //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "-----------UNLOCK\n");
 
 SWITCH_END_EXTERN_C
 #endif
