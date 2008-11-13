@@ -494,6 +494,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	switch_codec_t *read_codec;
 	uint32_t rate;
 	uint32_t bpf;
+	const char *to;
+	int timeout = 0;
+	time_t expires = 0;
 
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
@@ -522,6 +525,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	rate = read_codec->implementation->actual_samples_per_second;
 	bpf = read_codec->implementation->decoded_bytes_per_packet;
 
+	if ((to = switch_channel_get_variable(channel, "park_timeout"))) {
+		if ((timeout = atoi(to)) < 0) {
+			timeout = 0;
+		} else {
+			expires = switch_timestamp(NULL) + timeout;
+		}
+	}
+
 	switch_channel_set_flag(channel, CF_CONTROLLED);
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PARK) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
@@ -532,6 +543,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 		if ((status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				break;
+			}
+
+			if (expires && switch_timestamp(NULL) >= expires) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
 				break;
 			}
 
