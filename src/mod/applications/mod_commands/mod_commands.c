@@ -2593,7 +2593,7 @@ SWITCH_STANDARD_API(uuid_flush_dtmf_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SETVAR_SYNTAX "<uuid> <var> <value>"
+#define SETVAR_SYNTAX "<uuid> <var> [value]"
 SWITCH_STANDARD_API(uuid_setvar_function)
 {
 	switch_core_session_t *psession = NULL;
@@ -2606,10 +2606,14 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-		if (argc == 3 && !switch_strlen_zero(argv[0])) {
+		if ((argc == 2 || argc == 3) && !switch_strlen_zero(argv[0])) {
 			char *uuid = argv[0];
 			char *var_name = argv[1];
-			char *var_value = argv[2];
+			char *var_value = NULL;
+
+			if (argc == 3) {
+				var_value =	argv[2];
+			}
 
 			if ((psession = switch_core_session_locate(uuid))) {
 				switch_channel_t *channel;
