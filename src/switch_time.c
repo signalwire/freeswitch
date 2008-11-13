@@ -35,6 +35,10 @@
 #include <stdio.h>
 #include "private/switch_core_pvt.h"
 
+#if defined(DARWIN)
+#define DISABLE_1MS_COND
+#endif
+
 #ifndef UINT32_MAX
 #define UINT32_MAX 0xffffffff
 #endif
@@ -83,6 +87,27 @@ struct timer_matrix {
 typedef struct timer_matrix timer_matrix_t;
 
 static timer_matrix_t TIMER_MATRIX[MAX_ELEMENTS + 1];
+
+static void do_sleep(switch_interval_time_t t)
+{
+#if defined(WIN32)
+	if (t < 1000) {
+		t = 1000;
+	}
+#endif
+
+#if defined(DARWIN)
+    struct timespec ts;
+    ts.tv_sec = t / APR_USEC_PER_SEC;
+    ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
+	
+    nanosleep(&ts, NULL);
+	sched_yield();
+#else
+	apr_sleep(t);
+#endif
+
+}
 
 SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void)
 {
@@ -141,27 +166,25 @@ SWITCH_DECLARE(void) switch_time_sync(void)
 
 SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t)
 {
-	apr_sleep(t);
+	do_sleep(t);
 }
 
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
-	if (t <= 1000) {
-#if defined(WIN32)
-		Sleep(1);
-#else
-		apr_sleep(t);
-#endif
+	if (t < 1000) {
+		do_sleep(t);
 		return;
 	}
 
+#ifndef DISABLE_1MS_COND
 	if (globals.use_cond_yield == 1) {
 		switch_cond_yield((uint32_t)(t / 1000));
 		return;
 	}
-	
-	apr_sleep(t);
+#endif	
+
+	do_sleep(t);
 }
 
 
@@ -170,7 +193,7 @@ SWITCH_DECLARE(void) switch_cond_yield(uint32_t ms)
 	if (!ms) return;
 
 	if (globals.use_cond_yield != 1) {
-		apr_sleep(ms * 1000);
+		do_sleep(ms * 1000);
 		return;
 	}
 
@@ -188,7 +211,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	int sanity = 0;
 
 	while (globals.STARTED == 0) {
-		apr_sleep(100000);
+		do_sleep(100000);
 		if (++sanity == 10) {
 			break;
 		}
@@ -199,9 +222,6 @@ static switch_status_t timer_init(switch_timer_t *timer)
 	}
 
 	if ((private_info = switch_core_alloc(timer->memory_pool, sizeof(*private_info)))) {
-#if defined(WIN32)
-		timeBeginPeriod(1);
-#endif
 		switch_mutex_lock(globals.mutex);
 		if (!TIMER_MATRIX[timer->interval].mutex) {
 			switch_mutex_init(&TIMER_MATRIX[timer->interval].mutex, SWITCH_MUTEX_NESTED, module_pool);
@@ -284,7 +304,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 #else
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
-		apr_sleep(1000);
+		do_sleep(1000);
 	}
 #endif
 
@@ -368,7 +388,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				runtime.initiated = runtime.reference;
 				break;
 			}
-			apr_sleep(STEP_MIC);
+			do_sleep(STEP_MIC);
 			last = ts;
 		}
 	}
@@ -377,10 +397,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	last = 0;
 	fwd_errs = rev_errs = 0;
 
-
+#ifndef DISABLE_1MS_COND
 	switch_mutex_init(&TIMER_MATRIX[1].mutex, SWITCH_MUTEX_NESTED, module_pool);
 	switch_thread_cond_create(&TIMER_MATRIX[1].cond, module_pool);
-	
+#endif
+
 	globals.use_cond_yield = globals.RUNNING == 1;
 
 	while (globals.RUNNING == 1) {
@@ -403,7 +424,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			} else {
 				rev_errs = 0;
 			}
-			apr_sleep(STEP_MIC);
+			do_sleep(STEP_MIC);
 			last = ts;
 		}
 
@@ -448,6 +469,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			tick = 0;
 		}
 
+#ifndef DISABLE_1MS_COND
 		TIMER_MATRIX[1].tick++;
 		if (switch_mutex_trylock(TIMER_MATRIX[1].mutex) == SWITCH_STATUS_SUCCESS) {
 			switch_thread_cond_broadcast(TIMER_MATRIX[1].cond);
@@ -457,7 +479,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 			TIMER_MATRIX[1].tick = 0;
 			TIMER_MATRIX[1].roll++;
 		}
-
+#endif
 
 		if ((current_ms % MS_PER_TICK) == 0) {
 			for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
@@ -680,6 +702,10 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	switch_timer_interface_t *timer_interface;
 	module_pool = pool;
 
+#if defined(WIN32)
+	timeBeginPeriod(1);
+#endif
+	
 	memset(&globals, 0, sizeof(globals));
 	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, module_pool);
 
@@ -711,7 +737,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 		switch_mutex_unlock(globals.mutex);
 
 		while (globals.RUNNING == -1) {
-			apr_sleep(10000);
+			do_sleep(10000);
 		}
 	}
 #if defined(WIN32)
