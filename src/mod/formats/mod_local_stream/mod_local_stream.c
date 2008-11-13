@@ -32,7 +32,7 @@
  */
 #include <switch.h>
 /* for apr_pstrcat */
-#define DEFAULT_PREBUFFER_SIZE 1024 * 16
+#define DEFAULT_PREBUFFER_SIZE 1024 * 32
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_local_stream_shutdown);
