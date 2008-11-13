@@ -44,6 +44,7 @@ SWITCH_BEGIN_EXTERN_C
 #ifdef WIN32
 typedef HANDLE                switch_thread_id_t;
 #else
+#include <pthread.h>
 typedef pthread_t             switch_thread_id_t;
 #endif
 
