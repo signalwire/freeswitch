@@ -266,7 +266,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			case SWITCH_STATUS_SUCCESS:
 				session->raw_read_frame.samples = session->raw_read_frame.datalen / sizeof(int16_t);
 				session->raw_read_frame.rate = read_frame->rate;
-				session->raw_read_frame.timestamp = read_frame->timestamp;
+				if (read_frame->codec->implementation->samples_per_packet != session->read_codec->implementation->samples_per_packet) {
+					session->raw_read_frame.timestamp = 0;
+				} else {
+					session->raw_read_frame.timestamp = read_frame->timestamp;
+				}
 				session->raw_read_frame.ssrc = read_frame->ssrc;
 				session->raw_read_frame.seq = read_frame->seq;
 				session->raw_read_frame.m = read_frame->m;
