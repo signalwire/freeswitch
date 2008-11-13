@@ -2639,6 +2639,62 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define SETVAR_MULTI_SYNTAX "<uuid> <var>=<value>;<var>=<value>..."
+SWITCH_STANDARD_API(uuid_setvar_multi_function)
+{
+	switch_core_session_t *psession = NULL;
+	char *mycmd = NULL, *vars, *argv[2] = { 0 };
+	int argc = 0;
+	char *var_name, *var_value;
+
+	if (session) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		char *uuid = mycmd;
+		if (!(vars = strchr(uuid, ' '))) {
+			goto done;
+		}
+		*vars++ = '\0';
+
+		if ((psession = switch_core_session_locate(uuid))) {
+			switch_channel_t *channel = switch_core_session_get_channel(psession);
+			argc = switch_separate_string(vars, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+			int x, y = 0;
+
+			for (x = 0 ; x < argc; x++) {
+				var_name = argv[x];
+				if ((var_value = strchr(var_name, '='))) {
+					*var_value++ = '\0';
+				}
+				if (switch_strlen_zero(var_name)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No variable name specified.\n");
+					stream->write_function(stream, "-ERR No variable specified\n");
+				} else {
+					switch_channel_set_variable(channel, var_name, var_value);
+					y++;
+				}
+			}
+			
+			switch_core_session_rwunlock(psession);
+			if (y) {
+				stream->write_function(stream, "+OK\n");
+				goto done;
+			}
+		} else {
+			stream->write_function(stream, "-ERR No Such Channel!\n");
+		}
+	}
+	
+	stream->write_function(stream, "-USAGE: %s\n", SETVAR_SYNTAX);
+
+  done:
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define GETVAR_SYNTAX "<uuid> <var>"
 SWITCH_STANDARD_API(uuid_getvar_function)
 {
@@ -2970,6 +3026,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "uuid_session_heartbeat", "uuid_session_heartbeat", uuid_session_heartbeat_function, HEARTBEAT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_bridge", "uuid_bridge", uuid_bridge_function, "");
 	SWITCH_ADD_API(commands_api_interface, "uuid_setvar", "uuid_setvar", uuid_setvar_function, SETVAR_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_setvar_multi", "uuid_setvar_multi", uuid_setvar_multi_function, SETVAR_MULTI_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_getvar", "uuid_getvar", uuid_getvar_function, GETVAR_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "uuid_dump", "uuid_dump", uuid_dump_function, DUMP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "global_setvar", "global_setvar", global_setvar_function, GLOBAL_SETVAR_SYNTAX);
