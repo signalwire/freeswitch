@@ -2670,7 +2670,7 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 
 			for (x = 0 ; x < argc; x++) {
 				var_name = argv[x];
-				if ((var_value = strchr(var_name, '='))) {
+				if (var_name && (var_value = strchr(var_name, '='))) {
 					*var_value++ = '\0';
 				}
 				if (switch_strlen_zero(var_name)) {
