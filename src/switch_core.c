@@ -104,7 +104,7 @@ static void check_ip(void) {
 	} else {
 		if (!(ok6 = !strcmp(main_ip6, guess_ip6))) {
 			switch_set_string(main_ip6, guess_ip6);
-			switch_core_set_variable("local_ip_v4", guess_ip6);
+			switch_core_set_variable("local_ip_v6", guess_ip6);
 		}
 	}
 	
