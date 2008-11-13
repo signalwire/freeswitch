@@ -2661,8 +2661,8 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 
 		if ((psession = switch_core_session_locate(uuid))) {
 			switch_channel_t *channel = switch_core_session_get_channel(psession);
+			int x, y = 0;		
 			argc = switch_separate_string(vars, ';', argv, (sizeof(argv) / sizeof(argv[0])));
-			int x, y = 0;
 
 			for (x = 0 ; x < argc; x++) {
 				var_name = argv[x];
