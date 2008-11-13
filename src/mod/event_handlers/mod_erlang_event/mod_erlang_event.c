@@ -63,7 +63,7 @@ struct event_handler {
 
 struct listener {
 	int sockfd;
-	const struct ei_cnode_s *ec;
+	struct ei_cnode_s *ec;
 	erlang_pid log_pid;
 	erlang_pid event_pid;
 	switch_queue_t *event_queue;
@@ -884,6 +884,10 @@ sendmsg_fail:
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			ei_x_encode_atom(rbuf, "ok");
 			goto event_done;
+		} else if (!strncmp(atom, "getpid", MAXATOMLEN)) {
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "ok");
+			ei_x_encode_pid(rbuf, ei_self(listener->ec));
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
@@ -1007,7 +1011,8 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_unlink\n");
 						break;
 					case ERL_EXIT :
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_exit\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_exit from %s <%d.%d.%d>\n", msg.from.node, msg.from.creation, msg.from.num, msg.from.serial);
+						/* TODO - check if this linked pid is any of the log/event handler processes and cleanup if it is. */
 						break;
 					default :
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unexpected msg type %d\n", (int)(msg.msgtype));
