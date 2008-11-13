@@ -790,7 +790,6 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 
 		if (switch_channel_test_flag(switch_core_session_get_channel(conference->floor_holder->session), CF_VIDEO)) {
 			status = switch_core_session_read_video_frame(conference->floor_holder->session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
-
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				conference->floor_holder = NULL;
 				req_iframe = 0;
@@ -817,7 +816,8 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 #endif
 
 				if (vid_frame->codec->implementation->ianacode == 34) {	/* h.263 */
-					iframe = (*((int16_t *) vid_frame->data) >> 12 == 6);
+					//iframe = (*((int16_t *) vid_frame->data) >> 12 == 6);
+					iframe = 1;			
 				} else if (vid_frame->codec->implementation->ianacode == 115) {	/* h.263-1998 */
 					int y = *((int8_t *) vid_frame->data + 2) & 0xfe;
 					iframe = (y == 0x80 || y == 0x82);
@@ -4641,6 +4641,7 @@ static void launch_conference_video_thread(conference_obj_t *conference)
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, conference_video_thread_run, conference, conference->pool);
+	conference->video_running = 1;
 }
 
 static void launch_conference_record_thread(conference_obj_t *conference, char *path)
