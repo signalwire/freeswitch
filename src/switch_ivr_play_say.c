@@ -1380,7 +1380,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 												uint32_t max_digits,
 												const char *prompt_audio_file,
 												const char *var_name,
-												char *digit_buffer, switch_size_t digit_buffer_length, uint32_t timeout, const char *valid_terminators)
+												char *digit_buffer, 
+												switch_size_t digit_buffer_length, 
+												uint32_t timeout, 
+												const char *valid_terminators)
 {
 	switch_channel_t *channel;
 	switch_input_args_t args = { 0 };
@@ -1421,6 +1424,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout, 0, 0);
 	}
 
+	len = strlen(digit_buffer);
+	if ((min_digits && len < min_digits)) {
+		status = SWITCH_STATUS_TOO_SMALL;
+	}
+
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, "success");
 	} else if (status == SWITCH_STATUS_TIMEOUT) {
@@ -1440,7 +1448,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 }
 
-
 SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t *session,
 														   uint32_t min_digits,
 														   uint32_t max_digits,
@@ -1448,113 +1455,41 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   uint32_t timeout,
 														   char *valid_terminators,
 														   char *prompt_audio_file,
-														   char *bad_input_audio_file, void *digit_buffer, uint32_t digit_buffer_length,
+														   char *bad_input_audio_file, 
+														   void *digit_buffer, 
+														   uint32_t digit_buffer_length,
 														   char *digits_regex)
 {
+	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	char terminator;			                                          /* used to hold terminator recieved from */
-	switch_channel_t *channel = switch_core_session_get_channel(session); /* the channel contained in session */
-	switch_status_t status;		                                          /* used to recieve state out of called functions */
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-					  "switch_play_and_get_digits(session, %d, %d, %d, %d, %s, %s, %s, digit_buffer, %d, %s)\n",
-					  min_digits, max_digits, max_tries, timeout, valid_terminators, prompt_audio_file,
-					  bad_input_audio_file, digit_buffer_length, digits_regex);
-
-	/* Answer the channel if it hasn't already been answered */
-	switch_channel_pre_answer(channel);
-
-	/* Start pestering the user for input */
-	for (; switch_channel_ready(channel) && max_tries > 0; max_tries--) {
-		switch_input_args_t args = { 0 };
-		/* make the buffer so fresh and so clean clean */
-		memset(digit_buffer, 0, digit_buffer_length);
-
-		args.buf = digit_buffer;
-		args.buflen = digit_buffer_length;
-		/* Play the file */
-		status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "play gave up %s\n", (char *) digit_buffer);
-
-		/* Make sure we made it out alive */
-		if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-			goto done;
-		}
-		/* we only get one digit out of playback, see if thats all we needed and what we got */
-		if (max_digits == 1 && status == SWITCH_STATUS_BREAK) {
-			/* Check the digit if we have a regex */
-			if (digits_regex != NULL) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, (char *) digit_buffer);
-
-				/* Make sure the digit is allowed */
-				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Match found!\n");
-					/* jobs done */
-					break;
-				} else {
-					/* See if a bad input prompt was specified, if so, play it */
-					if (strlen(bad_input_audio_file) > 0) {
-						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL);
-
-						/* Make sure we made it out alive */
-						if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-							goto done;
-						}
-					}
-				}
-			} else {
-				/* jobs done */
-				break;
-			}
-		}
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Calling more digits try %d\n", max_tries);
-
-		/* Try to grab some more digits for the timeout period */
-		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout, 0, 0);
-		if (status == SWITCH_STATUS_TIMEOUT) {
-			status = SWITCH_STATUS_SUCCESS;
-		}
+	while(switch_channel_ready(channel) && max_tries) {
+		switch_status_t status;
 		
-		/* Make sure we made it out alive */
-		if (status != SWITCH_STATUS_SUCCESS) {
-			/* Bail */
-			goto done;
-		}
-		/* see if we got enough */
-		if (min_digits <= strlen(digit_buffer)) {
-			/* See if we need to test a regex */
-			if (digits_regex != NULL) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking regex [%s] on [%s]\n", digits_regex, (char *) digit_buffer);
-				/* Test the regex */
-				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Match found!\n");
-					/* Jobs done */
+		memset(digit_buffer, 0, digit_buffer_length);
+		switch_channel_flush_dtmf(channel);
+		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, 
+												 digit_buffer, digit_buffer_length, timeout, valid_terminators);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			if (!switch_strlen_zero((char *)digit_buffer)) {
+				if (switch_strlen_zero(digits_regex)) {
 					return SWITCH_STATUS_SUCCESS;
-				} else {
-					/* See if a bad input prompt was specified, if so, play it */
-					if (strlen(bad_input_audio_file) > 0) {
-						status = switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL);
-
-						/* Make sure we made it out alive */
-						if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
-							goto done;
-						}
-					}
 				}
-			} else {
-				/* Jobs done */
-				return SWITCH_STATUS_SUCCESS;
+				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
+					return SWITCH_STATUS_SUCCESS;
+				}
 			}
 		}
+
+		if (!switch_channel_ready(channel)) {
+			break;
+		}
+
+		switch_ivr_play_file(session, NULL, bad_input_audio_file, NULL);
+		max_tries--;
 	}
 
-  done:
-	/* if we got here, we got no digits or lost the channel */
-	digit_buffer = "\0";
 	return SWITCH_STATUS_FALSE;
 }
-
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
