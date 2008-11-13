@@ -1112,7 +1112,7 @@ SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_se
 	return rtp_session->sock_input;
 }
 
-SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint16_t samples_per_interval)
+SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint32_t samples_per_interval)
 {
 	rtp_session->samples_per_interval = samples_per_interval;
 }

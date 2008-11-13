@@ -252,7 +252,7 @@ SWITCH_DECLARE(switch_socket_t *) switch_rtp_get_rtp_socket(switch_rtp_t *rtp_se
   \param rtp_session the RTP session to set the samples per interval on
   \param samples_per_interval the new default samples per interval 
 */
-SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint16_t samples_per_interval);
+SWITCH_DECLARE(void) switch_rtp_set_default_samples_per_interval(switch_rtp_t *rtp_session, uint32_t samples_per_interval);
 
 /*! 
   \brief Get the default samples per interval for a given RTP session
