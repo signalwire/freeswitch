@@ -258,8 +258,8 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	if (state == CS_HANGUP || state == CS_ROUTING) {
 		id = switch_channel_get_variable(channel, "limit_id");
 		realm = switch_channel_get_variable(channel, "limit_realm");
-		sql = switch_mprintf("delete from limit_data where uuid='%q' and hostname='%q' and realm='%q'and id='%q';",
-							 switch_core_session_get_uuid(session), globals.hostname, realm, id);
+		sql = switch_mprintf("delete from limit_data where uuid='%q'",
+							 switch_core_session_get_uuid(session));
 		limit_execute_sql(sql, globals.mutex);
 		switch_safe_free(sql);
 		switch_core_event_hook_remove_state_change(session, hanguphook);
