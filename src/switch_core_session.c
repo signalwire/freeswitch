@@ -789,7 +789,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 {
 	switch_memory_pool_t *pool;
 	switch_event_t *event;
-	const switch_endpoint_interface_t *endpoint_interface = (*session)->endpoint_interface;
+	switch_endpoint_interface_t *endpoint_interface = (*session)->endpoint_interface;
 
 
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Close Channel %s [%s]\n",
@@ -998,7 +998,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(const switch_endpoint_interface_t
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_endpoint_interface_t
 																		 *endpoint_interface, switch_memory_pool_t **pool, const char *use_uuid)
 {
 	switch_memory_pool_t *usepool;
@@ -1110,14 +1110,13 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(const char *endpoint_name, switch_memory_pool_t **pool)
 {
-	const switch_endpoint_interface_t *endpoint_interface, *e;
+	switch_endpoint_interface_t *endpoint_interface;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
 		return NULL;
 	}
-	e = endpoint_interface;
-	UNPROTECT_INTERFACE(e);
+
 	return switch_core_session_request(endpoint_interface, pool);
 
 }
@@ -1187,7 +1186,7 @@ SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_s
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_core_session_t *session, const char *app, const char *arg)
 {
-	const switch_application_interface_t *application_interface;
+	switch_application_interface_t *application_interface;
 	char *expanded = NULL;
 	const char *var;
 

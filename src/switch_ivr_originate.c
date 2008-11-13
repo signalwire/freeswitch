@@ -99,7 +99,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	
 	if (!strcasecmp(collect->key, "exec")) {
 		char *data;
-		const switch_application_interface_t *application_interface;
+		switch_application_interface_t *application_interface;
 		char *app_name, *app_data;
 
 		if (!(data = collect->file)) {

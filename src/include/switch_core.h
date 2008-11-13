@@ -508,7 +508,7 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(_In_ switch_
   \param pool the pool to use for the allocation (a new one will be used if NULL)
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ const switch_endpoint_interface_t *endpoint_interface,
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ switch_endpoint_interface_t *endpoint_interface,
 																		 _Inout_opt_ switch_memory_pool_t **pool, _In_opt_z_ const char *use_uuid);
 #define switch_core_session_request(_ep, _p) switch_core_session_request_uuid(_ep, _p, NULL)
 

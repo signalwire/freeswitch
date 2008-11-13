@@ -81,6 +81,7 @@ SWITCH_BEGIN_EXTERN_C
 	/*! the table of management interfaces the module has implmented */
 	switch_management_interface_t *management_interface;
 	switch_thread_rwlock_t *rwlock;
+	int refs;
 	switch_memory_pool_t *pool;
 };
 

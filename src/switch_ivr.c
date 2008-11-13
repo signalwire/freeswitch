@@ -344,7 +344,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 	}
 
 	if (cmd_hash == CMD_EXECUTE) {
-		const switch_application_interface_t *application_interface;
+		switch_application_interface_t *application_interface;
 		char *app_name = switch_event_get_header(event, "execute-app-name");
 		char *app_arg = switch_event_get_header(event, "execute-app-arg");
 		char *loop_h = switch_event_get_header(event, "loops");

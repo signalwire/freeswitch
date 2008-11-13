@@ -94,7 +94,7 @@ typedef enum {
 struct switch_core_session {
 	switch_memory_pool_t *pool;
 	switch_thread_t *thread;
-	const switch_endpoint_interface_t *endpoint_interface;
+	switch_endpoint_interface_t *endpoint_interface;
 	switch_size_t id;
 	switch_session_flag_t flags;
 	int thread_running;

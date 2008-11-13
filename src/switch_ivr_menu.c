@@ -463,7 +463,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						break;
 					case SWITCH_IVR_ACTION_EXECAPP:
 						{
-							const switch_application_interface_t *application_interface;
+							switch_application_interface_t *application_interface;
 							char *app_name;
 							char *app_arg = NULL;
 
