@@ -112,13 +112,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		}
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-			switch_yield(1000);
+			switch_cond_next();
 			continue;
 		}
 
 		if (switch_channel_test_flag(channel, CF_SERVICE) ||
 			(!switch_channel_test_flag(channel, CF_ANSWERED) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
-			switch_yield(1000);
+			switch_cond_next();
 		} else {
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -709,7 +709,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_callback(switch_core_s
 		}
 
 		if (switch_channel_test_flag(channel, CF_SERVICE)) {
-			switch_yield(1000);
+			switch_cond_next();
 		} else {
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
@@ -824,7 +824,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		}
 
 		if (switch_channel_test_flag(channel, CF_SERVICE)) {
-			switch_yield(1000);
+			switch_cond_next();
 		} else {
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {

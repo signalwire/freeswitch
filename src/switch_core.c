@@ -360,6 +360,7 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 		}
 		ts->objs[0] = obj;
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+		switch_threadattr_priority_increase(thd_attr);
 		switch_thread_create(&thread, thd_attr, func, ts, pool);
 	}
 }

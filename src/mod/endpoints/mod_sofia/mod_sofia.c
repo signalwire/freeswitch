@@ -453,7 +453,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			// Maybe we should timeout?
 			
 			while(switch_channel_ready(channel) && !switch_test_flag(tech_pvt, TFLAG_3PCC_HAS_ACK)) {
-				switch_yield(1000);
+				switch_cond_next();
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
 		}
@@ -2549,7 +2549,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	switch_event_unbind_callback(general_event_handler);
 	
 	while (mod_sofia_globals.threads) {
-		switch_yield(1000);
+		switch_cond_next();
 		if (++sanity >= 10000) {
 			break;
 		}

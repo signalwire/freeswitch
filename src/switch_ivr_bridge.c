@@ -913,7 +913,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			}
 
 			while (switch_channel_get_state(peer_channel) == CS_EXCHANGE_MEDIA) {
-				switch_yield(1000);
+				switch_cond_next();
 			}
 
 			switch_core_session_rwunlock(peer_session);

@@ -446,7 +446,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 	}
 
 	while (x < 10000 && THREAD_COUNT) {
-		switch_yield(1000);
+		switch_cond_next();
 		if (THREAD_COUNT == last) {
 			x++;
 		}
@@ -537,7 +537,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_thread_create(&thread, thd_attr, switch_event_thread, EVENT_QUEUE[2], RUNTIME_POOL);
 
 	while (!THREAD_COUNT) {
-		switch_yield(1000);
+		switch_cond_next();
 	}
 
 

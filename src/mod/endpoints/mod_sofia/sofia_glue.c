@@ -3159,7 +3159,7 @@ char *sofia_glue_execute_sql2str(sofia_profile_t *profile, switch_mutex_t *mutex
 				break;
 			} else if (result == SWITCH_CORE_DB_BUSY) {
 				running++;
-				switch_yield(1000);
+				switch_cond_next();
 				continue;
 			}
 			break;

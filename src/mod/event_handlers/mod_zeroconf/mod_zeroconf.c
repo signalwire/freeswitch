@@ -303,7 +303,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_zeroconf_runtime)
 		sw_uint32 ms;
 		ms = 100;
 		sw_discovery_step(globals.discovery, &ms);
-		switch_yield(1000);
+		switch_cond_next();
 	}
 	RUNNING = 0;
 	return SWITCH_STATUS_TERM;

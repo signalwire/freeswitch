@@ -497,7 +497,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 			}
 		} else {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 
@@ -1199,7 +1199,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 					
-					switch_yield(10000);
+					switch_yield(100000);
 				}
 
 				check_per_channel_timeouts(peer_channels, per_channel_timelimit_sec, per_channel_progress_timelimit_sec, and_argc, start);
@@ -1432,7 +1432,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 
 				} else {
-					switch_yield(10000);
+					switch_yield(100000);
 				}
 				
 			}

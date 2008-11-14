@@ -683,7 +683,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const 
 				status = SWITCH_STATUS_FALSE;
 				break;
 			}
-			switch_yield(1000);
+			switch_cond_next();
 		} else {
 			to_count = 0;
 		}

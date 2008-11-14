@@ -203,7 +203,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 	if (eh.up) {
 		while (eh.up) {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 
@@ -320,7 +320,7 @@ SWITCH_STANDARD_APP(play_fsv_function)
 				switch_core_session_write_video_frame(session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
 			}
 			if (ts && last && last != ts) {
-				switch_yield(1000);
+				switch_cond_next();
 			}
 			last = ts;
 		} else {

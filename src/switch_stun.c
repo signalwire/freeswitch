@@ -518,7 +518,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 			switch_socket_close(sock);
 			return SWITCH_STATUS_TIMEOUT;
 		}
-		switch_yield(1000);
+		switch_cond_next();
 	}
 	switch_socket_close(sock);
 

@@ -444,7 +444,7 @@ void switch_core_memory_stop(void)
 #ifndef INSTANTLY_DESTROY_POOLS
 	memory_manager.pool_thread_running = -1;
 	while (memory_manager.pool_thread_running) {
-		switch_yield(1000);
+		switch_cond_next();
 	}
 #endif
 }
@@ -503,7 +503,7 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	switch_thread_create(&thread, thd_attr, pool_thread, NULL, memory_manager.memory_pool);
 
 	while (!memory_manager.pool_thread_running) {
-		switch_yield(1000);
+		switch_cond_next();
 	}
 #endif
 

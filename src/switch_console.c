@@ -449,7 +449,7 @@ static void *SWITCH_THREAD_FUNC console_thread(switch_thread_t *thread, void *ob
 				free(cmd);
 			}
 		}
-		switch_yield(1000);
+		switch_cond_next();
 	}
 
 	switch_core_destroy_memory_pool(&pool);

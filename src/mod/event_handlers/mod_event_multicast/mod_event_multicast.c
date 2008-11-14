@@ -253,7 +253,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 		globals.running = -1;
 		while (x < 100000 && globals.running) {
 			x++;
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 

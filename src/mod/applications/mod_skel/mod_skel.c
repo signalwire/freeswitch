@@ -64,7 +64,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime)
 {
 	while(looping)
 	{
-		switch_yield(1000);
+		switch_cond_next();
 	}
 	return SWITCH_STATUS_TERM;
 }

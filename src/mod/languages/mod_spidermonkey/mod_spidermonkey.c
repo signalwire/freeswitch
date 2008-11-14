@@ -2135,7 +2135,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 			break;
 		}
 
-		switch_yield(1000);
+		switch_cond_next();
 	}
 	JS_ResumeRequest(cx, saveDepth);
 	check_hangup_hook(jss, &ret);
@@ -2179,7 +2179,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 			break;
 		}
 
-		switch_yield(1000);
+		switch_cond_next();
 	}
 	JS_ResumeRequest(cx, saveDepth);
 	check_hangup_hook(jss, &ret);

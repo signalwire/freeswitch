@@ -1049,7 +1049,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 		if (do_sleep) {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 

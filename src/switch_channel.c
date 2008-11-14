@@ -683,7 +683,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 		if (mystate != ostate || state >= CS_HANGUP || state == want_state) {
 			break;
 		}
-		switch_yield(1000);
+		switch_cond_next();
 	}
 }
 
@@ -709,7 +709,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 			}
 		}
 
-		switch_yield(1000);
+		switch_cond_next();
 
 		if (super_channel && !switch_channel_ready(super_channel)) {
 			return SWITCH_STATUS_FALSE;

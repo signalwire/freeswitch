@@ -157,7 +157,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 #ifdef SWITCH_VIDEO_IN_THREADS
 	if (eh.up) {
 		while (eh.up) {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 #endif

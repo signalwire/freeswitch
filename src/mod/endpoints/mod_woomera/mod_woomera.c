@@ -338,7 +338,7 @@ static switch_status_t woomera_read_frame(switch_core_session_t *session, switch
 		if (switch_test_flag(tech_pvt, TFLAG_MEDIA)) {
 			break;
 		}
-		switch_yield(1000);
+		switch_cond_next();
 	}
 
 	if (!tech_pvt->udp_socket) {

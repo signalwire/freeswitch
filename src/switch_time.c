@@ -172,14 +172,14 @@ SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t)
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
-	if (t < 1000) {
+	if (t < 1000 || t >= 10000) {
 		do_sleep(t);
 		return;
 	}
 
 #ifndef DISABLE_1MS_COND
 	if (globals.use_cond_yield == 1) {
-		switch_cond_yield((uint32_t)(t / 1000));
+		switch_cond_yield(t);
 		return;
 	}
 #endif	
@@ -188,20 +188,39 @@ SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 }
 
 
-SWITCH_DECLARE(void) switch_cond_yield(uint32_t ms)
+SWITCH_DECLARE(void) switch_cond_next(void)
 {
-	if (!ms) return;
-
-	if (globals.use_cond_yield != 1) {
-		do_sleep(ms * 1000);
+#ifdef DISABLE_1MS_COND
+	do_sleep(1000);
+#else
+	if (!runtime.timestamp || globals.use_cond_yield != 1) {
+		do_sleep(1000);
 		return;
 	}
-
 	switch_mutex_lock(TIMER_MATRIX[1].mutex);
-	while(globals.RUNNING == 1 && globals.use_cond_yield == 1 && ms--) {
-		switch_thread_cond_wait(TIMER_MATRIX[1].cond, TIMER_MATRIX[1].mutex);
-	}
+	switch_thread_cond_wait(TIMER_MATRIX[1].cond, TIMER_MATRIX[1].mutex);
 	switch_mutex_unlock(TIMER_MATRIX[1].mutex);
+#endif
+}
+
+SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t)
+{
+	switch_time_t want;
+	if (!t) return;
+
+	if (!runtime.timestamp || globals.use_cond_yield != 1) {
+		do_sleep(t);
+		return;
+	}
+	want = runtime.timestamp + t;
+	while(globals.RUNNING == 1 && globals.use_cond_yield == 1 && runtime.timestamp < want) {
+		switch_mutex_lock(TIMER_MATRIX[1].mutex);
+		if (runtime.timestamp < want) {
+			switch_thread_cond_wait(TIMER_MATRIX[1].cond, TIMER_MATRIX[1].mutex);
+		}
+		switch_mutex_unlock(TIMER_MATRIX[1].mutex);
+	}
+
 
 }
 
@@ -292,22 +311,28 @@ static switch_status_t timer_sync(switch_timer_t *timer)
 static switch_status_t timer_next(switch_timer_t *timer)
 {
 	timer_private_t *private_info = timer->private_info;
-	timer_step(timer);
 
-#if 1
-	switch_mutex_lock(TIMER_MATRIX[timer->interval].mutex);
-	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-		check_roll();
-		switch_thread_cond_wait(TIMER_MATRIX[timer->interval].cond, TIMER_MATRIX[timer->interval].mutex);	
-	}
-	switch_mutex_unlock(TIMER_MATRIX[timer->interval].mutex);
+#ifdef DISABLE_1MS_COND
+	int cond_index = timer->interval;
 #else
-	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
-		check_roll();
-		do_sleep(1000);
-	}
+	int cond_index = 1;
 #endif
 
+	timer_step(timer);
+	
+	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+		check_roll();
+		if (globals.use_cond_yield == 1) {
+			switch_mutex_lock(TIMER_MATRIX[cond_index].mutex);		
+			if (TIMER_MATRIX[timer->interval].tick < private_info->reference) {
+				switch_thread_cond_wait(TIMER_MATRIX[cond_index].cond, TIMER_MATRIX[cond_index].mutex);	
+			}
+			switch_mutex_unlock(TIMER_MATRIX[cond_index].mutex);
+		} else {
+			do_sleep(1000);
+		}
+	}
+	
 	if (globals.RUNNING == 1) {
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -486,7 +511,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				if ((current_ms % x) == 0) {
 					if (TIMER_MATRIX[x].count) {
 						TIMER_MATRIX[x].tick++;
-#if 1
+#ifdef DISABLE_1MS_COND
 						if (TIMER_MATRIX[x].mutex && switch_mutex_trylock(TIMER_MATRIX[x].mutex) == SWITCH_STATUS_SUCCESS) {
 							switch_thread_cond_broadcast(TIMER_MATRIX[x].cond);
 							switch_mutex_unlock(TIMER_MATRIX[x].mutex);
@@ -726,11 +751,13 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	timer_interface->timer_destroy = timer_destroy;
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_NOUNLOAD;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 {
+	globals.use_cond_yield = 0;
+
 	if (globals.RUNNING == 1) {
 		switch_mutex_lock(globals.mutex);
 		globals.RUNNING = -1;

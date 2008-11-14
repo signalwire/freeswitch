@@ -1195,7 +1195,7 @@ void do_telecast(switch_stream_handle_t *stream)
 				switch_buffer_unlock(buffer);
 			} else {
 				if (!bytes) {
-					switch_yield(1000);
+					switch_cond_next();
 					continue;
 				}
 				memset(buf, 0, bytes);

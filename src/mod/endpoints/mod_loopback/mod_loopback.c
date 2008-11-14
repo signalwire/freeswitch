@@ -491,7 +491,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			break;
 		}
 
-		switch_yield(1000);
+		switch_cond_next();
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {

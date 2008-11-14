@@ -402,7 +402,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
 
 	while (!THREAD_RUNNING) {
-		switch_yield(1000);
+		switch_cond_next();
 	}
 
 	if (colorize) {
@@ -438,7 +438,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 	THREAD_RUNNING = -1;
 	switch_queue_push(LOG_QUEUE, NULL);
 	while (THREAD_RUNNING) {
-		switch_yield(1000);
+		switch_cond_next();
 	}
 	switch_core_memory_reclaim_logger();
 

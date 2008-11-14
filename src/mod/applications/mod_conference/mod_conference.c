@@ -1195,7 +1195,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	if (conference->video_running == 1) {
 		conference->video_running = -1;
 		while (conference->video_running) {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 
@@ -2010,7 +2010,7 @@ static void conference_loop_output(conference_member_t *member)
 		if (use_timer) {
 			switch_core_timer_next(&timer);
 		} else {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 
 	}							/* Rinse ... Repeat */
@@ -2032,7 +2032,7 @@ static void conference_loop_output(conference_member_t *member)
 
 	/* Wait for the input thread to end */
 	while (switch_test_flag(member, MFLAG_ITHREAD)) {
-		switch_yield(1000);
+		switch_cond_next();
 	}
 }
 

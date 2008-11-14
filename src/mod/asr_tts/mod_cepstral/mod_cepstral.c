@@ -302,7 +302,7 @@ static switch_status_t cepstral_speech_read_tts(switch_speech_handle_t *sh, void
 				status = SWITCH_STATUS_SUCCESS;
 				break;
 			}
-			switch_yield(1000);
+			switch_cond_next();
 			continue;
 		}
 

@@ -1112,7 +1112,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 		if (switch_test_flag(tech_pvt, TFLAG_BYE) || !switch_test_flag(tech_pvt, TFLAG_IO)) {
 			goto done;
 		}
-		switch_yield(1000);
+		switch_cond_next();
 	}
 
 	if (switch_channel_get_state(channel) >= CS_HANGUP || switch_test_flag(tech_pvt, TFLAG_BYE)) {

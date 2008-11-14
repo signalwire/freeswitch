@@ -462,7 +462,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 		if (endstate == switch_channel_get_running_state(session->channel)) {
 			if (endstate == CS_NEW) {
-				switch_yield(1000);
+				switch_cond_next();
 			} else {
 				switch_thread_cond_wait(session->cond, session->mutex);
 			}

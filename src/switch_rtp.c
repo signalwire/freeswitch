@@ -558,7 +558,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 		if (++x > 1000) {
 			break;
 		}
-		switch_yield(1000);
+		switch_cond_next();
 	}
 	switch_socket_opt_set(new_sock, SWITCH_SO_NONBLOCK, FALSE);
 
@@ -1537,7 +1537,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
 			} else if (!bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_USE_TIMER)) {	/* We're late! We're Late! */
 				if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK) && status == SWITCH_STATUS_BREAK) {
-					switch_yield(1000);
+					switch_cond_next();
 					continue;
 				}
 				

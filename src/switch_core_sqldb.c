@@ -220,7 +220,7 @@ static void *SWITCH_THREAD_FUNC switch_core_sql_thread(switch_thread_t * thread,
 		}
 
 		if (nothing_in_queue) {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 

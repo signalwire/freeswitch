@@ -583,7 +583,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
 
 		if (!switch_test_flag(tech_pvt, TFLAG_CODEC)) {
-			switch_yield(1000);
+			switch_cond_next();
 			continue;
 		}
 		if (switch_test_flag(tech_pvt, TFLAG_BREAK)) {
@@ -615,7 +615,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			return SWITCH_STATUS_SUCCESS;
 		}
 
-		switch_yield(1000);
+		switch_cond_next();
 		if (++ms_count >= 30000) {
 			break;
 		}

@@ -131,7 +131,7 @@ long WriteAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switc
 				PaUtil_FlushRingBuffer(&aStream->outFIFO);
 				return 0;
 			}
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 	return numFrames;
@@ -169,7 +169,7 @@ long ReadAudioStream(PABLIO_Stream * aStream, void *data, long numFrames, switch
 		if (bytesRead) {
 			p += bytesRead;
 		} else {
-			switch_yield(1000);
+			switch_cond_next();
 		}
 	}
 
