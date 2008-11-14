@@ -461,6 +461,8 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 	struct dns_ctx *nctx = NULL;
 	char *num, *mnum = NULL, *mroot = NULL, *p;
 
+	*results = NULL;
+
 	mnum = switch_mprintf("%s%s", *in == '+' ? "" : "+", in);
 
 	if ((p = strchr(mnum, '*'))) {
@@ -563,7 +565,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 SWITCH_STANDARD_DIALPLAN(enum_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
-	enum_record_t *results, *rp;
+	enum_record_t *results = NULL, *rp;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char *dp = (char *) arg;
 
