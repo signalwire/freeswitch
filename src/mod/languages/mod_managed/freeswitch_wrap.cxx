@@ -20047,7 +20047,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_record_file(void * jarg1, void * ja
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, unsigned long jarg5, char * jarg6, char * jarg7, char * jarg8, void * jarg9, unsigned long jarg10, char * jarg11) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, unsigned long jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, unsigned long jarg10, char * jarg11) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   uint32_t arg2 ;
@@ -20057,7 +20057,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsig
   char *arg6 = (char *) 0 ;
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
-  void *arg9 = (void *) 0 ;
+  char *arg9 = (char *) 0 ;
   uint32_t arg10 ;
   char *arg11 = (char *) 0 ;
   switch_status_t result;
@@ -20070,7 +20070,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsig
   arg6 = (char *)jarg6; 
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
-  arg9 = (void *)jarg9; 
+  arg9 = (char *)jarg9; 
   arg10 = (uint32_t)jarg10; 
   arg11 = (char *)jarg11; 
   result = (switch_status_t)switch_play_and_get_digits(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11);
@@ -22888,17 +22888,19 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_xml_open_cfg(char * jarg1, void * ja
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_bind_search_function(void * jarg1, unsigned long jarg2, void * jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_bind_search_function_ret(void * jarg1, unsigned long jarg2, void * jarg3, void * jarg4) {
   int jresult ;
   switch_xml_search_function_t arg1 = (switch_xml_search_function_t) 0 ;
   switch_xml_section_t arg2 ;
   void *arg3 = (void *) 0 ;
+  switch_xml_binding_t **arg4 = (switch_xml_binding_t **) 0 ;
   switch_status_t result;
   
   arg1 = (switch_xml_search_function_t)jarg1; 
   arg2 = (switch_xml_section_t)jarg2; 
   arg3 = (void *)jarg3; 
-  result = (switch_status_t)switch_xml_bind_search_function(arg1,arg2,arg3);
+  arg4 = (switch_xml_binding_t **)jarg4; 
+  result = (switch_status_t)switch_xml_bind_search_function_ret(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }

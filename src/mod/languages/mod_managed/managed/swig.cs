@@ -2938,8 +2938,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_play_and_get_digits(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, uint max_tries, uint timeout, string valid_terminators, string audio_file, string bad_input_audio_file, SWIGTYPE_p_void digit_buffer, uint digit_buffer_length, string digits_regex) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_play_and_get_digits(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, max_tries, timeout, valid_terminators, audio_file, bad_input_audio_file, SWIGTYPE_p_void.getCPtr(digit_buffer), digit_buffer_length, digits_regex);
+  public static switch_status_t switch_play_and_get_digits(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, uint max_tries, uint timeout, string valid_terminators, string audio_file, string bad_input_audio_file, string digit_buffer, uint digit_buffer_length, string digits_regex) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_play_and_get_digits(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, max_tries, timeout, valid_terminators, audio_file, bad_input_audio_file, digit_buffer, digit_buffer_length, digits_regex);
     return ret;
   }
 
@@ -3632,8 +3632,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_xml_bind_search_function(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml function, uint sections, SWIGTYPE_p_void user_data) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_bind_search_function(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml.getCPtr(function), sections, SWIGTYPE_p_void.getCPtr(user_data));
+  public static switch_status_t switch_xml_bind_search_function_ret(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml function, uint sections, SWIGTYPE_p_void user_data, SWIGTYPE_p_p_switch_xml_binding ret) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_bind_search_function_ret(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml.getCPtr(function), sections, SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_p_switch_xml_binding.getCPtr(ret));
     return ret;
   }
 
@@ -8911,7 +8911,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_record_file(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4, uint jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_play_and_get_digits")]
-  public static extern int switch_play_and_get_digits(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, HandleRef jarg9, uint jarg10, string jarg11);
+  public static extern int switch_play_and_get_digits(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, string jarg9, uint jarg10, string jarg11);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_speak_text_handle")]
   public static extern int switch_ivr_speak_text_handle(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, string jarg5, HandleRef jarg6);
@@ -9501,8 +9501,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_open_cfg")]
   public static extern IntPtr switch_xml_open_cfg(string jarg1, HandleRef jarg2, HandleRef jarg3);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_bind_search_function")]
-  public static extern int switch_xml_bind_search_function(HandleRef jarg1, uint jarg2, HandleRef jarg3);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_bind_search_function_ret")]
+  public static extern int switch_xml_bind_search_function_ret(HandleRef jarg1, uint jarg2, HandleRef jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_unbind_search_function")]
   public static extern int switch_xml_unbind_search_function(HandleRef jarg1);

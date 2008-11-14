@@ -1456,7 +1456,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   char *valid_terminators,
 														   char *prompt_audio_file,
 														   char *bad_input_audio_file, 
-														   void *digit_buffer, 
+														   char *digit_buffer, 
 														   uint32_t digit_buffer_length,
 														   char *digits_regex)
 {
@@ -1469,6 +1469,11 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		switch_channel_flush_dtmf(channel);
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, 
 												 digit_buffer, digit_buffer_length, timeout, valid_terminators);
+
+		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+
 		if (status == SWITCH_STATUS_SUCCESS) {
 			if (!switch_strlen_zero((char *)digit_buffer)) {
 				if (switch_strlen_zero(digits_regex)) {
