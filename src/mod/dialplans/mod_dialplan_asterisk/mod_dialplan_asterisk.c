@@ -318,6 +318,9 @@ static switch_call_cause_t sip_outgoing_channel(switch_core_session_t *session, 
 	}
 
 	outbound_profile->destination_number = switch_core_sprintf(outbound_profile->pool, "%s/%s", profile, outbound_profile->destination_number);
+
+	UNPROTECT_INTERFACE(sip_endpoint_interface);
+
 	return switch_core_session_outgoing_channel(session, var_event, "sofia", outbound_profile, new_session, pool, SOF_NONE);
 }
 
@@ -337,6 +340,8 @@ static switch_call_cause_t iax2_outgoing_channel(switch_core_session_t *session,
 												 switch_caller_profile_t *outbound_profile,
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
+	UNPROTECT_INTERFACE(iax2_endpoint_interface);
+
 	return switch_core_session_outgoing_channel(session, var_event, "iax", outbound_profile, new_session, pool, SOF_NONE);
 }
 

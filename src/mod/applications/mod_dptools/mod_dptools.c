@@ -1956,6 +1956,8 @@ static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
 
+	UNPROTECT_INTERFACE(error_endpoint_interface);
+
 	return cause;
 }
 
@@ -2115,6 +2117,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	}
 
   done:
+
+	UNPROTECT_INTERFACE(user_endpoint_interface);
 
 	if (xml) {
 		switch_xml_free(xml);
