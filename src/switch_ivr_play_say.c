@@ -1393,6 +1393,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 
 	switch_assert(session);
 
+	if (max_digits < min_digits) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+						  "Max digits %u is less than Min %u, forcing Max to %u\n", max_digits, min_digits, min_digits);
+		max_digits = min_digits;
+	}
+
 	channel = switch_core_session_get_channel(session);
 	switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, NULL);
 
@@ -1408,7 +1414,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	args.buflen = (uint32_t) digit_buffer_length;
 
 	if (!switch_strlen_zero(prompt_audio_file) && strcasecmp(prompt_audio_file, "silence")) {
-		status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args);
+		if ((status = switch_ivr_play_file(session, NULL, prompt_audio_file, &args)) == SWITCH_STATUS_BREAK) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS && status != SWITCH_STATUS_BREAK) {
@@ -1416,7 +1424,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	}
 
 	len = strlen(digit_buffer);
-
 
 	if ((min_digits && len < min_digits) || len < max_digits) {
 		args.buf = digit_buffer + len;
@@ -1429,16 +1436,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 		status = SWITCH_STATUS_TOO_SMALL;
 	}
 
-	if (status == SWITCH_STATUS_SUCCESS) {
+	switch (status) {
+	case SWITCH_STATUS_SUCCESS:
 		switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, "success");
-	} else if (status == SWITCH_STATUS_TIMEOUT) {
+		break;
+	case SWITCH_STATUS_TIMEOUT:
 		switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, "timeout");
-	} else {
+		break;
+	default:
 		switch_channel_set_variable(channel, SWITCH_READ_RESULT_VARIABLE, "failure");
+		break;
+		
 	}
-
-
-  end:
+	
+ end:
 
 	if (var_name && !switch_strlen_zero(digit_buffer)) {
 		switch_channel_set_variable(channel, var_name, digit_buffer);
@@ -1469,13 +1480,12 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		switch_channel_flush_dtmf(channel);
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, 
 												 digit_buffer, digit_buffer_length, timeout, valid_terminators);
-
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
 		}
 
 		if (status == SWITCH_STATUS_SUCCESS) {
-			if (!switch_strlen_zero((char *)digit_buffer)) {
+			if (!switch_strlen_zero(digit_buffer)) {
 				if (switch_strlen_zero(digits_regex)) {
 					return SWITCH_STATUS_SUCCESS;
 				}
@@ -1493,6 +1503,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		max_tries--;
 	}
 
+	memset(digit_buffer, 0, digit_buffer_length);
 	return SWITCH_STATUS_FALSE;
 }
 
