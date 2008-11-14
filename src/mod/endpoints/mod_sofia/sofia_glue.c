@@ -1089,6 +1089,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *priv = "off";
 		const char *screen = "no";
 		const char *invite_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_params");
+		const char *from_var = switch_channel_get_variable(tech_pvt->channel, "sip_from_uri");
 
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error!\n");
@@ -1103,7 +1104,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 		url_str = url;
 
-		if (!switch_strlen_zero(tech_pvt->gateway_from_str)) {
+		if (from_var) {
+			if (strncasecmp(from_var, "sip:", 4) || strncasecmp(from_var, "sips:", 5)) {
+				use_from_str = switch_core_session_strdup(tech_pvt->session, from_var);
+			} else {
+				use_from_str = switch_core_session_sprintf(tech_pvt->session, "sip:%s", from_var);
+			}
+		} else if (!switch_strlen_zero(tech_pvt->gateway_from_str)) {
 			use_from_str = tech_pvt->gateway_from_str;
 		} else {
 			use_from_str = tech_pvt->from_str;
