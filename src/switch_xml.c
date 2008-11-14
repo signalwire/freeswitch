@@ -251,7 +251,7 @@ SWITCH_DECLARE(void *) switch_xml_get_binding_user_data(switch_xml_binding_t *bi
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret)
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret_binding)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -273,8 +273,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_s
 		BINDINGS = binding;
 	}
 
-	if (ret) {
-		*ret = binding;
+	if (ret_binding) {
+		*ret_binding = binding;
 	}
 
 	switch_thread_rwlock_unlock(B_RWLOCK);

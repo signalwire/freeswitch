@@ -359,7 +359,7 @@ SWITCH_DECLARE(void) switch_xml_set_binding_user_data(switch_xml_binding_t *bind
 SWITCH_DECLARE(switch_xml_section_t) switch_xml_get_binding_sections(switch_xml_binding_t *binding);
 SWITCH_DECLARE(void *) switch_xml_get_binding_user_data(switch_xml_binding_t *binding);
 
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret);
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret_binding);
 #define switch_xml_bind_search_function(_f, _s, _u) switch_xml_bind_search_function_ret(_f, _s, _u, NULL)
 
 

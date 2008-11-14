@@ -3651,8 +3651,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_xml_bind_search_function_ret(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml function, uint sections, SWIGTYPE_p_void user_data, SWIGTYPE_p_p_switch_xml_binding ret) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_bind_search_function_ret(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml.getCPtr(function), sections, SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_p_switch_xml_binding.getCPtr(ret));
+  public static switch_status_t switch_xml_bind_search_function_ret(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml function, uint sections, SWIGTYPE_p_void user_data, SWIGTYPE_p_p_switch_xml_binding ret_binding) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_bind_search_function_ret(SWIGTYPE_p_f_p_q_const__char_p_q_const__char_p_q_const__char_p_q_const__char_p_switch_event_t_p_void__p_switch_xml.getCPtr(function), sections, SWIGTYPE_p_void.getCPtr(user_data), SWIGTYPE_p_p_switch_xml_binding.getCPtr(ret_binding));
     return ret;
   }
 
