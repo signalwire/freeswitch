@@ -7401,11 +7401,22 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_system(char * jarg1, int jarg2) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_cond_yield(unsigned long jarg1) {
-  uint32_t arg1 ;
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_cond_yield(void * jarg1) {
+  switch_interval_time_t arg1 ;
+  switch_interval_time_t *argp1 ;
   
-  arg1 = (uint32_t)jarg1; 
+  argp1 = (switch_interval_time_t *)jarg1; 
+  if (!argp1) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_interval_time_t", 0);
+    return ;
+  }
+  arg1 = *argp1; 
   switch_cond_yield(arg1);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_cond_next() {
+  switch_cond_next();
 }
 
 
