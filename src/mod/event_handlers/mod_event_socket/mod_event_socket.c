@@ -532,7 +532,7 @@ static void xmlize_listener(listener_t *listener, switch_stream_handle_t *stream
 	stream->write_function(stream, " </listener>\n");
 }
 
-SWITCH_STANDARD_API(event_manager_function)
+SWITCH_STANDARD_API(event_sink_function)
 {
 	char *http = NULL;
 	char *wcmd = NULL;
@@ -563,9 +563,51 @@ SWITCH_STANDARD_API(event_manager_function)
 		format = "xml";
 	}
 
-	
-	
-	if (!strcasecmp(wcmd, "create-listener")) {
+
+	if (!strcasecmp(wcmd, "filter")) {
+		char *action = switch_event_get_header(stream->param_event, "action");;
+		char *header_name = switch_event_get_header(stream->param_event, "header_name");;
+		char *header_val = switch_event_get_header(stream->param_event, "header_val");;
+		
+		if (switch_strlen_zero(action)) {
+			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
+            goto end;
+		}
+
+		switch_mutex_lock(listener->filter_mutex);		
+		if (!listener->filters) {
+			switch_event_create(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
+		}
+
+		if (!strcasecmp(action, "delete")) {
+			if (switch_strlen_zero(header_val)) {
+				stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
+				goto filter_end;
+			}
+
+			if (!strcasecmp(header_val, "all")) {
+				switch_event_destroy(&listener->filters);
+				switch_event_create(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
+			} else {
+				switch_event_del_header(listener->filters, header_val);
+			}
+			stream->write_function(stream, "<data>\n <reply type=\"success\">filter deleted.</reply>\n<api-command>\n");
+		} else if (!strcasecmp(action, "add")) {
+			if (switch_strlen_zero(header_name) || switch_strlen_zero(header_val)) {
+				stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
+				goto filter_end;
+			}
+			switch_event_add_header_string(listener->filters, SWITCH_STACK_BOTTOM, header_name, header_val);
+			stream->write_function(stream, "<data>\n <reply type=\"success\">filter added.</reply>\n<api-command>\n");
+		} else {
+			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
+		}
+
+	filter_end:
+
+		switch_mutex_unlock(listener->filter_mutex);
+
+	} else if (!strcasecmp(wcmd, "create-listener")) {
 		char *events = switch_event_get_header(stream->param_event, "events");
 		switch_memory_pool_t *pool;
 		char *next, *cur;
@@ -769,7 +811,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_APP(app_interface, "socket", "Connect to a socket", "Connect to a socket", socket_function, "<ip>[:<port>]", SAF_SUPPORT_NOMEDIA);
-	SWITCH_ADD_API(api_interface, "event_manager", "event_manager", event_manager_function, "<web data>");
+	SWITCH_ADD_API(api_interface, "event_sink", "event_sink", event_sink_function, "<web data>");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
