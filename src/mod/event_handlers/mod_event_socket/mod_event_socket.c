@@ -565,10 +565,21 @@ SWITCH_STANDARD_API(event_sink_function)
 
 
 	if (!strcasecmp(wcmd, "filter")) {
-		char *action = switch_event_get_header(stream->param_event, "action");;
-		char *header_name = switch_event_get_header(stream->param_event, "header_name");;
-		char *header_val = switch_event_get_header(stream->param_event, "header_val");;
-		
+		char *action = switch_event_get_header(stream->param_event, "action");
+		char *header_name = switch_event_get_header(stream->param_event, "header-name");
+		char *header_val = switch_event_get_header(stream->param_event, "header-val");
+		char *id = switch_event_get_header(stream->param_event, "listen-id");
+		uint32_t idl = 0;
+
+		if (id) {
+			idl = (uint32_t) atol(id);
+		}
+
+		if (!(listener = find_listener(idl))) {
+			stream->write_function(stream, "<data><reply type=\"error\">Invalid Listen-ID</reply></data>\n");
+            goto end;
+		}
+
 		if (switch_strlen_zero(action)) {
 			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
             goto end;
