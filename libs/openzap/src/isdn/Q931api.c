@@ -167,13 +167,13 @@ void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, q931pie_func_t *Q931PieProc, q9
         Q931Uie[dialect][iec] = Q931UieProc;
 }
 
-void Q931SetTimeoutProc(L3UCHAR timer, L3UCHAR dialect, q931timeout_func_t *Q931TimeoutProc)
+void Q931SetTimeoutProc(L3UCHAR dialect, L3UCHAR timer, q931timeout_func_t *Q931TimeoutProc)
 {
 	if(Q931Timeout != NULL)
 		Q931Timeout[dialect][timer] = Q931TimeoutProc;
 }
 
-void Q931SetTimerDefault(L3UCHAR timer, L3UCHAR dialect, q931timer_t timeout)
+void Q931SetTimerDefault(L3UCHAR dialect, L3UCHAR timer, q931timer_t timeout)
 {
 	Q931Timer[dialect][timer] = timeout;
 }

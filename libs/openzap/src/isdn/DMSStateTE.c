@@ -231,7 +231,7 @@ L3INT DMSProc0x0fTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 		/* TODO chack against state table for illegal or unexpected message here*/
 
 		/* TODO - Set correct timer here */
-		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	}
 	if (iFrom == 4) {
 		/* TODO Add proc here*/
@@ -269,7 +269,7 @@ L3INT DMSProc0x07TE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 		/* TODO chack against state table for illegal or unexpected message here*/
 
 		/* TODO - Set correct timer here */
-		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	}
 	if (iFrom == 4) {
 		/* TODO Add proc here*/
