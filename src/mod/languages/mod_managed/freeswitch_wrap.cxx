@@ -22888,6 +22888,50 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_xml_open_cfg(char * jarg1, void * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_xml_set_binding_sections(void * jarg1, unsigned long jarg2) {
+  switch_xml_binding_t *arg1 = (switch_xml_binding_t *) 0 ;
+  switch_xml_section_t arg2 ;
+  
+  arg1 = (switch_xml_binding_t *)jarg1; 
+  arg2 = (switch_xml_section_t)jarg2; 
+  switch_xml_set_binding_sections(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_xml_set_binding_user_data(void * jarg1, void * jarg2) {
+  switch_xml_binding_t *arg1 = (switch_xml_binding_t *) 0 ;
+  void *arg2 = (void *) 0 ;
+  
+  arg1 = (switch_xml_binding_t *)jarg1; 
+  arg2 = (void *)jarg2; 
+  switch_xml_set_binding_user_data(arg1,arg2);
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_xml_get_binding_sections(void * jarg1) {
+  unsigned long jresult ;
+  switch_xml_binding_t *arg1 = (switch_xml_binding_t *) 0 ;
+  switch_xml_section_t result;
+  
+  arg1 = (switch_xml_binding_t *)jarg1; 
+  result = (switch_xml_section_t)switch_xml_get_binding_sections(arg1);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_xml_get_binding_user_data(void * jarg1) {
+  void * jresult ;
+  switch_xml_binding_t *arg1 = (switch_xml_binding_t *) 0 ;
+  void *result = 0 ;
+  
+  arg1 = (switch_xml_binding_t *)jarg1; 
+  result = (void *)switch_xml_get_binding_user_data(arg1);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_bind_search_function_ret(void * jarg1, unsigned long jarg2, void * jarg3, void * jarg4) {
   int jresult ;
   switch_xml_search_function_t arg1 = (switch_xml_search_function_t) 0 ;
