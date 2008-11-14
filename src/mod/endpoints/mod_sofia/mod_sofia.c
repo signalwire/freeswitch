@@ -1757,7 +1757,7 @@ static int contact_callback(void *pArg, int argc, char **argv, char **columnName
 	char *contact;
 
 	if (!switch_strlen_zero(argv[0]) && (contact = sofia_glue_get_url_from_contact(argv[0], 1)) ) {
-		cb->stream->write_function(cb->stream, "%ssofia/%s/%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
+		cb->stream->write_function(cb->stream, "%ssofia/%s/sip:%s,", argv[2], argv[1], sofia_glue_strip_proto(contact));
 		free(contact);
 	}
 
@@ -2555,6 +2555,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 		}
 	}
 
+	switch_yield(1000000);
 	su_deinit();
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
