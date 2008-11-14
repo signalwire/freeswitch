@@ -230,7 +230,7 @@ static void expire_listener(listener_t **listener)
 }
 
 
-static void remove_binding(listener_t *listener) {
+static void remove_binding(listener_t *listener, erlang_pid *pid) {
 	struct erlang_binding *ptr, *lst = NULL;
 
 	switch_mutex_lock(globals.listener_mutex);
@@ -238,11 +238,13 @@ static void remove_binding(listener_t *listener) {
 	switch_xml_set_binding_sections(bindings.search_binding, (1 << sizeof(switch_xml_section_enum_t)));
 
 	for (ptr = bindings.head; ptr; lst = ptr, ptr = ptr->next) {
-		if (ptr->listener == listener) {
+		if ((listener && ptr->listener == listener) ||
+			(pid && (&ptr->pid) && (!strcmp(pid->node, ptr->pid.node)) && pid->creation == ptr->pid.creation && pid->num == ptr->pid.num && pid->serial == ptr->pid.serial))  {
 			if (bindings.head == ptr) {
 				if (ptr->next) {
 					bindings.head = ptr->next;
 				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removed all (only?) listeners\n");
 					bindings.head = NULL;
 					break;
 				}
@@ -253,6 +255,7 @@ static void remove_binding(listener_t *listener) {
 					lst->next = NULL;
 				}
 			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removed listener\n");
 		} else {
 			switch_xml_set_binding_sections(bindings.search_binding, switch_xml_get_binding_sections(bindings.search_binding) | ptr->section);
 		}
@@ -610,6 +613,11 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	ei_decode_atom(rep->buff, &rep->index, data);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds!\n", data, i*10);
+
+	switch_core_hash_delete(ptr->listener->fetch_reply_hash, uuid_str);
+
+	free(rep->buff);
+	free(rep);
 
 	return xml;
 }
@@ -1214,6 +1222,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 						break;
 					case ERL_EXIT :
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_exit from %s <%d.%d.%d>\n", msg.from.node, msg.from.creation, msg.from.num, msg.from.serial);
+						remove_binding(NULL, &msg.from);
 						/* TODO - check if this linked pid is any of the log/event handler processes and cleanup if it is. */
 						break;
 					default :
@@ -1293,7 +1302,7 @@ done:
 	switch_core_hash_destroy(&listener->event_hash);
 
 	/* remove any bindings for this connection */
-	remove_binding(listener);
+	remove_binding(listener, NULL);
 
 	if (listener->session) {
 		switch_channel_clear_flag(switch_core_session_get_channel(listener->session), CF_CONTROLLED);
