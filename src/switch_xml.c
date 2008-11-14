@@ -228,7 +228,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data)
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -249,6 +249,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function(switch_xml_searc
 	} else {
 		BINDINGS = binding;
 	}
+
+	if (ret) {
+		*ret = binding;
+	}
+
 	switch_thread_rwlock_unlock(B_RWLOCK);
 
 	return SWITCH_STATUS_SUCCESS;
