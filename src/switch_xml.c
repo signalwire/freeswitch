@@ -228,6 +228,18 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(switch_xml
 	return status;
 }
 
+SWITCH_DECLARE(void) switch_xml_set_binding_sections(switch_xml_binding_t *binding, switch_xml_section_t sections)
+{
+	switch_assert(binding);
+	binding->sections = sections;
+}
+
+SWITCH_DECLARE(void) switch_xml_set_binding_user_data(switch_xml_binding_t *binding, void *user_data)
+{
+	switch_assert(binding);
+	binding->user_data = user_data;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
