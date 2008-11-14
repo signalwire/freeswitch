@@ -1089,8 +1089,8 @@ void    Q931SetHeaderSpace(L3INT space);
 
 void Q931SetMesProc(L3UCHAR mes, L3UCHAR dialect, q931proc_func_t *Q931ProcFunc, q931umes_func_t *Q931UmesFunc, q931pmes_func_t *Q931PmesFunc);
 void Q931SetIEProc(L3UCHAR iec, L3UCHAR dialect, q931pie_func_t *Q931PieProc, q931uie_func_t *Q931UieProc);
-void Q931SetTimeoutProc(L3UCHAR timer, L3UCHAR dialect, q931timeout_func_t *Q931TimeoutProc);
-void Q931SetTimerDefault(L3UCHAR timer, L3UCHAR dialect, q931timer_t timeout);
+void Q931SetTimeoutProc(L3UCHAR dialect, L3UCHAR timer, q931timeout_func_t *Q931TimeoutProc);
+void Q931SetTimerDefault(L3UCHAR dialect, L3UCHAR timer, q931timer_t timeout);
 
 void Q931Initialize(void);
 void Q931AddDialect(L3UCHAR iDialect, void (*Q931CreateDialectCB)(L3UCHAR iDialect));

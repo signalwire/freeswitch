@@ -246,7 +246,7 @@ L3INT Q931ProcAlertingTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 		return ret;
 
 	/* Reset 4 sec timer. */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom == 4) {
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
@@ -275,7 +275,7 @@ L3INT Q931ProcCallProceedingTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iF
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom == 4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -306,7 +306,7 @@ L3INT Q931ProcConnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -340,7 +340,7 @@ L3INT Q931ProcConnectAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -371,7 +371,7 @@ L3INT Q931ProcProgressTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -412,7 +412,7 @@ L3INT Q931ProcSetupTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 		if (ret)
 			return ret;
 
-		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 
 		/* TODO: Add this back when we get the state stuff more filled out */
 		/*Q931SetState(pTrunk, callIndex, Q931_U1);*/
@@ -445,7 +445,7 @@ L3INT Q931ProcSetupTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 		/* Set state U6 */
 		Q931SetState(pTrunk, callIndex, Q931_U6);
 
-		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 #endif
 	}
 	return rc;
@@ -474,12 +474,12 @@ L3INT Q931ProcSetupAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	if (ret != Q931E_NO_ERROR)
 		return ret;
 
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
 	}
 	else if (iFrom == 2) {
-		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	}
 	return ret;
 }
@@ -508,7 +508,7 @@ L3INT Q931ProcResumeTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 			return ret;
 
 		/* Start timer T318 */
-		Q931StartTimer(pTrunk, callIndex, 318);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T318);
 
 		/* set state U17 */
 		Q931SetState(pTrunk, callIndex, Q931_U17);
@@ -537,7 +537,7 @@ L3INT Q931ProcResumeAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -568,7 +568,7 @@ L3INT Q931ProcResumeRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFro
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -599,7 +599,7 @@ L3INT Q931ProcSuspendTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -630,7 +630,7 @@ L3INT Q931ProcSuspendAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -661,7 +661,7 @@ L3INT Q931ProcSuspendRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFr
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -692,7 +692,7 @@ L3INT Q931ProcUserInformationTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT i
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -726,7 +726,7 @@ L3INT Q931ProcDisconnectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -817,7 +817,7 @@ L3INT Q931ProcRestartTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 			return ret;
 
 		/* TODO - Set correct timer here */
-		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	}
 
 	/* TODO chack against state table for illegal or unexpected message here */
@@ -854,7 +854,7 @@ L3INT Q931ProcRestartAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 		if (ret != Q931E_NO_ERROR)
 			return ret;
 		/* TODO - Set correct timer here */
-		Q931StartTimer(pTrunk, callIndex, 303);
+		Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	}
 
 	/* TODO chack against state table for illegal or unexpected message here */
@@ -889,7 +889,7 @@ L3INT Q931ProcCongestionControlTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -920,7 +920,7 @@ L3INT Q931ProcInformationTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -951,7 +951,7 @@ L3INT Q931ProcNotifyTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -982,7 +982,7 @@ L3INT Q931ProcStatusTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1013,7 +1013,7 @@ L3INT Q931ProcStatusEnquiryTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFr
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1044,7 +1044,7 @@ L3INT Q931ProcSegmentTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1079,7 +1079,7 @@ L3INT Q932ProcFacilityTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1110,7 +1110,7 @@ L3INT Q932ProcHoldTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1141,7 +1141,7 @@ L3INT Q932ProcHoldAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1172,7 +1172,7 @@ L3INT Q932ProcHoldRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1203,7 +1203,7 @@ L3INT Q932ProcRegisterTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1234,7 +1234,7 @@ L3INT Q932ProcRetrieveTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom)
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1265,7 +1265,7 @@ L3INT Q932ProcRetrieveAckTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iFrom
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
@@ -1296,7 +1296,7 @@ L3INT Q932ProcRetrieveRejectTE(Q931_TrunkInfo_t *pTrunk, L3UCHAR * buf, L3INT iF
 	/* TODO chack against state table for illegal or unexpected message here */
 
 	/* TODO - Set correct timer here */
-	Q931StartTimer(pTrunk, callIndex, 303);
+	Q931StartTimer(pTrunk, callIndex, Q931_TIMER_T303);
 	if (iFrom ==4) {
 		/* TODO Add proc here */
 		ret = Q931Tx32Data(pTrunk, 0, buf, pMes->Size);
