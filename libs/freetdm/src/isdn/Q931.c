@@ -636,12 +636,14 @@ L3INT Q931GetCallState(Q931_TrunkInfo_t *pTrunk, L3INT iCRV)
  */
 L3INT Q931StartTimer(Q931_TrunkInfo_t *pTrunk, L3INT callIndex, L3USHORT iTimerID)
 {
+#if 0
 	L3ULONG duration = Q931Timer[pTrunk->Dialect][iTimerID];
 
 	if (duration) {
 		pTrunk->call[callIndex].Timer   = Q931GetTime() + duration;
 		pTrunk->call[callIndex].TimerID = iTimerID;
 	}
+#endif
 	return 0;
 }
 
