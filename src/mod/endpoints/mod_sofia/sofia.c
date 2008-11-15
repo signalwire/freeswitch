@@ -3522,7 +3522,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	if (sofia_endpoint_interface) {
-		if (tech_pvt->profile->pflags & PFLAG_CALLID_AS_UUID) {
+		if (profile->pflags & PFLAG_CALLID_AS_UUID) {
 			session = switch_core_session_request_uuid(sofia_endpoint_interface, NULL, sip->sip_call_id->i_id);
 		} else {
 			session = switch_core_session_request(sofia_endpoint_interface, NULL);
