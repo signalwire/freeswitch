@@ -299,6 +299,7 @@ struct sofia_gateway {
 	switch_memory_pool_t *pool;
 	int deleted;
 	switch_event_t *vars;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	struct sofia_gateway *next;
 };
 

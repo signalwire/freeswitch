@@ -799,9 +799,13 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
 				*from_user = "", *from_domain = "", *register_proxy = NULL, *contact_params = NULL, *params = NULL, *register_transport = NULL;
-
+			
 			uint32_t ping_freq = 0;
-
+			switch_uuid_t uuid;
+			
+			switch_uuid_get(&uuid);
+			switch_uuid_format(gateway->uuid_str, &uuid);
+			
 			gateway->register_transport = SOFIA_TRANSPORT_UDP;
 			gateway->pool = profile->pool;
 			gateway->profile = profile;

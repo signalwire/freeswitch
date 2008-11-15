@@ -152,6 +152,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			sofia_reg_kill_reg(gateway_ptr, 0);
 
 			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
+											  SIPTAG_CALL_ID_STR(gateway_ptr->uuid_str),
 											  NUTAG_URL(gateway_ptr->register_proxy),
 											  SIPTAG_TO_STR(gateway_ptr->register_to),
 											  NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
