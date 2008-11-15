@@ -870,7 +870,7 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 	char *path;
 	char *file, *dot;
 	switch_loadable_module_t *new_module = NULL;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 #ifdef WIN32
 	const char *ext = ".dll";
@@ -878,8 +878,10 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 	const char *ext = ".so";
 #endif
 
+	*err = "";
 
 	if ((file = switch_core_strdup(loadable_modules.pool, fname)) == 0) {
+		*err = "allocation error";
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -910,7 +912,11 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 			if (new_module->switch_module_runtime) {
 				switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
 			}
+		} else if (status != SWITCH_STATUS_SUCCESS) {
+			*err = "module load routine returned an error";
 		}
+	} else {
+		*err = "module load file routine returned an error";
 	}
 	switch_mutex_unlock(loadable_modules.mutex);
 
