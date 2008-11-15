@@ -164,7 +164,9 @@ typedef enum {
 	PFLAG_FUNNY_STUN = (1 << 26),
 	PFLAG_STUN_ENABLED = (1 << 27),
 	PFLAG_STUN_AUTO_DISABLE = (1 << 28),
-	PFLAG_3PCC_PROXY = (1 << 29)
+	PFLAG_3PCC_PROXY = (1 << 29),
+	PFLAG_CALLID_AS_UUID = (1 << 30),
+	PFLAG_UUID_AS_CALLID = (1 << 31)
 } PFLAGS;
 
 typedef enum {

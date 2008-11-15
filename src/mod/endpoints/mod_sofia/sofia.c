@@ -1075,6 +1075,18 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							switch_clear_flag(profile, TFLAG_PROXY_MEDIA);
 						}
+					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_CALLID_AS_UUID;
+						} else {
+							profile->pflags &= ~PFLAG_CALLID_AS_UUID;
+						}
+					} else if (!strcasecmp(var, "outbound-use-uuid-as-callid")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_UUID_AS_CALLID;
+						} else {
+							profile->pflags &= ~PFLAG_UUID_AS_CALLID;
+						}
 					} else if (!strcasecmp(var, "NDLB-received-in-nat-reg-contact")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_RECIEVED_IN_NAT_REG_CONTACT;
@@ -1474,6 +1486,18 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_PROXY_MEDIA);
+					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_CALLID_AS_UUID;
+						} else {
+							profile->pflags &= ~PFLAG_CALLID_AS_UUID;
+						}
+					} else if (!strcasecmp(var, "outbound-use-uuid-as-callid")) {
+						if (switch_true(val)) {
+							profile->pflags |= PFLAG_UUID_AS_CALLID;
+						} else {
+							profile->pflags &= ~PFLAG_UUID_AS_CALLID;
+						}
 					} else if (!strcasecmp(var, "NDLB-received-in-nat-reg-contact") && switch_true(val)) {
 						profile->pflags |= PFLAG_RECIEVED_IN_NAT_REG_CONTACT;
 					} else if (!strcasecmp(var, "aggressive-nat-detection") && switch_true(val)) {
@@ -3497,7 +3521,15 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		return;
 	}
 
-	if (!sofia_endpoint_interface || !(session = switch_core_session_request(sofia_endpoint_interface, NULL))) {
+	if (sofia_endpoint_interface) {
+		if (tech_pvt->profile->pflags & PFLAG_CALLID_AS_UUID) {
+			session = switch_core_session_request_uuid(sofia_endpoint_interface, NULL, sip->sip_call_id->i_id);
+		} else {
+			session = switch_core_session_request(sofia_endpoint_interface, NULL);
+		}
+	}
+
+	if (!session) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 		return;
 	}

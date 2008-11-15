@@ -1189,7 +1189,9 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
 		
 		if (!(call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id"))) {
-			call_id = switch_core_session_get_uuid(session);
+			if (tech_pvt->profile->pflags & PFLAG_UUID_AS_CALLID) {
+				call_id = switch_core_session_get_uuid(session);
+			}
 		}
 		
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,

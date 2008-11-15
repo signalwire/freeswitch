@@ -177,6 +177,10 @@
     -->
     <param name="challenge-realm" value="auto_from"/>
     <!--<param name="disable-rtp-auto-adjust" value="true"/>-->
+    <!-- on inbound calls make the uuid of the session equal to the sip call id of that call -->
+    <!--<param name="inbound-use-callid-as-uuid" value="true"/>-->
+    <!-- on outbound calls set the callid to match the uuid of the session -->
+    <!--<param name="outbound-use-uuid-as-callid" value="true"/>-->
   </settings>
 </profile>
 
