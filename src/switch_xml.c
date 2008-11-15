@@ -1097,6 +1097,53 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 	return ebuf;
 }
 
+static int preprocess_exec(const char *cwd, const char *command, int write_fd, int rlevel)
+{
+#ifdef WIN32
+	char *message[] = "<!-- exec not implemented in windows yet -->";
+
+	if (write(write_fd, message, sizeof(message)) < 0) {
+		goto end;
+	}
+
+#else
+	int fds[2], pid = 0;
+
+	if (pipe(fds)) {
+		goto end;
+	} else { /* good to go*/
+		pid = fork();
+
+		if (pid < 0) { /* ok maybe not */
+			close(fds[0]);
+			close(fds[1]);
+			goto end;
+		} else if (pid) { /* parent */
+			char buf[1024] = "";
+			int bytes;
+			close(fds[1]);
+			while ((bytes = read(fds[0], buf, sizeof(buf))) > 0) {
+				if (write(write_fd, buf, bytes) <= 0) {
+					break;
+				}
+			}
+			close(fds[0]);
+		} else { /*  child */
+			close(fds[0]);
+			dup2(fds[1], STDOUT_FILENO);
+			system(command);
+			close(fds[1]);
+			exit(0);
+		}
+	}
+#endif
+ end:
+
+	return write_fd;
+	
+}
+
+
 static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, int rlevel)
 {
 	char *full_path = NULL;
@@ -1244,6 +1291,8 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 				
 			} else if (!strcasecmp(tcmd, "include")) {
 				preprocess_glob(cwd, targ, write_fd, rlevel + 1);
+			} else if (!strcasecmp(tcmd, "exec")) {
+				preprocess_exec(cwd, targ, write_fd, rlevel + 1);
 			}
 
 			continue;
@@ -1300,6 +1349,8 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 
 				} else if (!strcasecmp(cmd, "include")) {
 					preprocess_glob(cwd, arg, write_fd, rlevel + 1);
+				} else if (!strcasecmp(cmd, "exec")) {
+					preprocess_exec(cwd, arg, write_fd, rlevel + 1);
 				}
 			}
 
