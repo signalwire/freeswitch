@@ -1100,7 +1100,7 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 static int preprocess_exec(const char *cwd, const char *command, int write_fd, int rlevel)
 {
 #ifdef WIN32
-	char *message[] = "<!-- exec not implemented in windows yet -->";
+	char message[] = "<!-- exec not implemented in windows yet -->";
 
 	if (write(write_fd, message, sizeof(message)) < 0) {
 		goto end;
