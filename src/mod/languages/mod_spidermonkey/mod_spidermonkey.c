@@ -3317,7 +3317,6 @@ static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		char *arg = NULL;
 		switch_core_session_t *session = NULL;
 		switch_stream_handle_t stream = { 0 };
-		char retbuf[2048] = "";
 
 		if (!strcasecmp(cmd, "jsapi")) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid API Call!\n");
@@ -3339,13 +3338,12 @@ static JSBool js_api_execute(JSContext * cx, JSObject * obj, uintN argc, jsval *
 			}
 		}
 
-		stream.data = retbuf;
-		stream.end = stream.data;
-		stream.data_size = sizeof(retbuf);
-		stream.write_function = switch_console_stream_write;
+		SWITCH_STANDARD_STREAM(stream);
 		switch_api_execute(cmd, arg, session, &stream);
 
-		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, retbuf));
+		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, switch_str_nil((char *)stream.data)));
+		switch_safe_free(stream.data);
+
 	} else {
 		*rval = STRING_TO_JSVAL(JS_NewStringCopyZ(cx, ""));
 	}
