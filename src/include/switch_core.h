@@ -1683,7 +1683,7 @@ SWITCH_DECLARE(switch_status_t) switch_console_set_complete(const char *string);
 SWITCH_DECLARE(switch_status_t) switch_console_set_alias(const char *string);
 SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait);
 SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t);
-SWITCH_DECLARE(void) switch_cond_next();
+SWITCH_DECLARE(void) switch_cond_next(void);
 ///\}
 
 /*!
