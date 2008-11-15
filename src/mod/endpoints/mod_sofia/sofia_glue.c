@@ -1188,9 +1188,13 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		use_from_str = from_str;
 		from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
 		
-
+		if (!(call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id"))) {
+			call_id = switch_core_session_get_uuid(session);
+		}
+		
 		tech_pvt->nh = nua_handle(tech_pvt->profile->nua, NULL,
 								  NUTAG_URL(url_str),
+								  TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
 								  SIPTAG_TO_STR(to_str), 
 								  SIPTAG_FROM_STR(from_str),
 								  SIPTAG_CONTACT_STR(invite_contact),
@@ -1301,8 +1305,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		sofia_glue_tech_patch_sdp(tech_pvt);
 	}
 
-	call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id");
-
 	if (tech_pvt->dest && (route = strstr(tech_pvt->dest, ";fs_path="))) {
 		char *p;
 
@@ -1341,7 +1343,6 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
-			   TAG_IF(call_id, SIPTAG_CALL_ID_STR(call_id)),
 			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
 			   TAG_IF(route, SIPTAG_ROUTE_STR(route)),
 			   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
