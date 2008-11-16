@@ -200,7 +200,7 @@ typedef enum {
 	TFLAG_REINVITE = (1 << 16),
 	TFLAG_REFER = (1 << 17),
 	TFLAG_NOHUP = (1 << 18),
-	TFLAG_XFER = (1 << 19),
+	TFLAG_NOSDP_REINVITE = (1 << 19),
 	TFLAG_NAT = (1 << 20),
 	TFLAG_BUGGY_2833 = (1 << 21),
 	TFLAG_SIP_HOLD = (1 << 22),

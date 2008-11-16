@@ -2534,7 +2534,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			}
 
 		} else if (tech_pvt && switch_test_flag(tech_pvt, TFLAG_SDP) && !r_sdp) {
-			nua_respond(tech_pvt->nh, SIP_202_ACCEPTED, TAG_END());
+			nua_respond(tech_pvt->nh, SIP_200_OK, TAG_END());
+			switch_set_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
 			goto done;
 		} else {
 			ss_state = nua_callstate_completed;
@@ -2673,6 +2674,45 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 		}
 		break;
 	case nua_callstate_ready:
+
+		if (r_sdp && switch_test_flag(tech_pvt, TFLAG_NOSDP_REINVITE)) {
+			sdp_parser_t *parser;
+			sdp_session_t *sdp;
+			uint8_t match = 0;
+			int is_ok = 1;
+			
+			switch_clear_flag_locked(tech_pvt, TFLAG_NOSDP_REINVITE);
+
+			if (tech_pvt->num_codecs) {
+				if ((parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+					if ((sdp = sdp_session(parser))) {
+						match = sofia_glue_negotiate_sdp(session, sdp);
+					}
+					sdp_parser_free(parser);
+				}
+			}
+
+			if (match) {
+				switch_set_flag_locked(tech_pvt, TFLAG_REINVITE);
+				if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "RTP Error!\n");
+					switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RTP ERROR");
+					is_ok = 0;
+				}
+				switch_clear_flag_locked(tech_pvt, TFLAG_REINVITE);
+			} else {
+				switch_channel_set_variable(tech_pvt->channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "CODEC NEGOTIATION ERROR");
+				is_ok = 0;
+			}
+
+			if (!is_ok) {
+				nua_respond(nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
+				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_INCOMPATIBLE_DESTINATION);
+			}
+
+			goto done;
+		}
+
 		if (channel) {
 			switch_channel_clear_flag(channel, CF_REQ_MEDIA);
 		}
