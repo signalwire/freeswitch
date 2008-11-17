@@ -1577,6 +1577,10 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 		char *xmlstr = NULL;
 
 		switch_thread_cond_wait(sth->cond, sth->mutex);
+
+		if(switch_test_flag(sth->ah, SWITCH_ASR_FLAG_CLOSED))
+			break;
+
 		if (switch_core_asr_check_results(sth->ah, &flags) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event;
 
