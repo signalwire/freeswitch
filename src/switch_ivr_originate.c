@@ -1645,16 +1645,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					continue;
 				}
 				
-				switch_channel_clear_flag(peer_channels[i], CF_ORIGINATING);
 				if (status == SWITCH_STATUS_SUCCESS) { 
+					switch_channel_clear_flag(peer_channels[i], CF_ORIGINATING);
 					if (bleg && *bleg && *bleg == peer_sessions[i]) {
 						continue;
 					}
-				} else if ((state=switch_channel_get_state(peer_channels[i])) < CS_HANGUP) {
-					if (!(state == CS_RESET || switch_channel_test_flag(peer_channels[i], CF_TRANSFER))) {
+				} else if ((state=switch_channel_get_state(peer_channels[i])) < CS_HANGUP && switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)) {
+					if (!(state == CS_RESET || switch_channel_test_flag(peer_channels[i], CF_TRANSFER) || 
+						  switch_channel_test_flag(peer_channels[i], CF_BRIDGED))) {
 						switch_channel_hangup(peer_channels[i], *cause);
 					}
 				}
+				switch_channel_clear_flag(peer_channels[i], CF_ORIGINATING);
 
 				switch_core_session_rwunlock(peer_sessions[i]);
 			}

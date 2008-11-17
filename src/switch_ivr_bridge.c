@@ -527,6 +527,7 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM RESET\n", switch_channel_get_name(channel));
 
 	switch_channel_clear_flag(channel, CF_TRANSFER);
+	switch_channel_clear_flag(channel, CF_ORIGINATING);
 
 	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
