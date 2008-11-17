@@ -1131,7 +1131,7 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 		} else { /*  child */
 			close(fds[0]);
 			dup2(fds[1], STDOUT_FILENO);
-			system(command);
+			switch_system(command, SWITCH_TRUE);
 			close(fds[1]);
 			exit(0);
 		}
