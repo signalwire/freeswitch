@@ -608,16 +608,32 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 		switch_yield(10000); /* 10ms */
 	}
 
-	char data[MAXATOMLEN];
+	int type, size;
 
-	ei_decode_atom(rep->buff, &rep->index, data);
+	ei_get_type(rep->buff, &rep->index, &type, &size);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds!\n", data, i*10);
+	if (type != ERL_STRING_EXT) /* XXX no unicode or character codes > 255 */
+		return NULL;
+
+	char *xmlstr = switch_core_alloc(ptr->listener->pool, size + 1);
+
+	ei_decode_string(rep->buff, &rep->index, xmlstr);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds!\n", xmlstr, i*10);
+
+	if (switch_strlen_zero(xmlstr)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
+	} else if (!(xml = switch_xml_parse_str(xmlstr, strlen(xmlstr)))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XML parsed OK!\n");
+	}
 
 	switch_core_hash_delete(ptr->listener->fetch_reply_hash, uuid_str);
 
-	free(rep->buff);
-	free(rep);
+	/*switch_safe_free(rep->buff);*/
+	/*switch_safe_free(rep);*/
+	/*switch_safe_free(xmlstr);*/
 
 	return xml;
 }
