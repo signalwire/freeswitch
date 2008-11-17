@@ -976,6 +976,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 	}
 
 	teletone_dtmf_detect_init(&pvt->dtmf_detect, read_codec->implementation->actual_samples_per_second);
+	printf ("WTF %d\n", read_codec->implementation->actual_samples_per_second);
 
 	pvt->session = session;
 
