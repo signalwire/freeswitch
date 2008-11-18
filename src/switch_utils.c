@@ -1128,6 +1128,9 @@ SWITCH_DECLARE(int) switch_build_uri(char *uri,
 SWITCH_DECLARE(char) switch_rfc2833_to_char(int event)
 {
 	if (event > -1 && event < (int32_t) sizeof(RFC2833_CHARS)) {
+		if (is_dtmf(event)) {
+			return (char) event;
+		}
 		return RFC2833_CHARS[event];
 	}
 	return '\0';
