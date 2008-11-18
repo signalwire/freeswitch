@@ -451,10 +451,15 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			
 			/* Unlock the session signal to allow the ack to make it in */
 			// Maybe we should timeout?
+			switch_mutex_unlock(tech_pvt->sofia_mutex);
 			
 			while(switch_channel_ready(channel) && !switch_test_flag(tech_pvt, TFLAG_3PCC_HAS_ACK)) {
 				switch_cond_next();
 			}
+			
+			/*  Regain lock on sofia */
+			switch_mutex_lock(tech_pvt->sofia_mutex);
+			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Done waiting for ACK\n");
 		}
 
