@@ -758,7 +758,8 @@ SWITCH_DECLARE(void) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint3
 {
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
-	
+	rtp_session->missed_count = 0;
+
 	if (rtp_session->timer_name) {
 		if (rtp_session->timer.timer_interface) {
 			switch_core_timer_destroy(&rtp_session->timer);
