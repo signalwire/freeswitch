@@ -1236,8 +1236,8 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 		}
 	}
 
-	if (argv[7]) {
-		hits = atoi(argv[7]);
+	if (argv[6]) {
+		hits = atoi(argv[6]);
 		if (hits < 0) {
 			hits = 1;
 		}

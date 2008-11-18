@@ -1227,7 +1227,8 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 
 			for (i = 0; i < cont->index; i++) {
 				if (cont->list[i].expires && cont->list[i].expires > switch_timestamp(NULL)) {
-					cont->list[i].hits = cont->list[i].total_hits;
+					cont->list[i].hits = 0;
+					cont->list[i].sleep = 0;
 					cont->list[i].expires = 0;
 				}
 
@@ -1238,38 +1239,41 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 				if (cont->list[i].up && teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
-					if (cont->list[i].hits) {
-						cont->list[i].up = cont->list[i].hits--;
-						cont->list[i].sleep = 25;
-						cont->list[i].expires = switch_timestamp(NULL) + 5;
-						teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
-					} else {
-						cont->list[i].up = 0;
-					}
+					cont->list[i].up = cont->list[i].hits++;
+					cont->list[i].sleep = 25;
+					cont->list[i].expires = switch_timestamp(NULL) + 5;
+					teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s HIT %d/%d\n", 
+									  cont->list[i].key, cont->list[i].up, cont->list[i].total_hits);
 					
-					if (cont->list[i].app) {
-						if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cont->list[i].data);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
-							switch_core_session_queue_private_event(cont->session, &event);
-						}
-					}
 
-					if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
-						switch_event_t *dup;
-						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", cont->list[i].key);
-
-						if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
-							switch_event_fire(&dup);
+					if (cont->list[i].hits >= cont->list[i].total_hits) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
+						cont->list[i].up = 0;
+					
+						if (cont->list[i].app) {
+							if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-arg", cont->list[i].data);
+								switch_event_add_header(event, SWITCH_STACK_BOTTOM, "lead-frames", "%d", 5);
+								switch_core_session_queue_private_event(cont->session, &event);
+							}
 						}
 
-						if (switch_core_session_queue_event(cont->session, &event) != SWITCH_STATUS_SUCCESS) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event queue failed!\n");
-							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
-							switch_event_fire(&event);
+						if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
+							switch_event_t *dup;
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", cont->list[i].key);
+
+							if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
+								switch_event_fire(&dup);
+							}
+
+							if (switch_core_session_queue_event(cont->session, &event) != SWITCH_STATUS_SUCCESS) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event queue failed!\n");
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "delivery-failure", "true");
+								switch_event_fire(&event);
+							}
 						}
 					}
 				}
@@ -1325,6 +1329,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 			if (!switch_strlen_zero(cont->list[cont->index].key) && !strcasecmp(key, cont->list[cont->index].key)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-enabling %s\n", key);
 				cont->list[cont->index].up = 1;
+				cont->list[i].hits = 0;
+				cont->list[i].sleep = 0;
+				cont->list[i].expires = 0;
 				teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
 				return SWITCH_STATUS_SUCCESS;
 			}
@@ -1340,7 +1347,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding tone spec %s index %d\n", tone_spec, cont->index);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding tone spec %s index %d hits %d\n", tone_spec, cont->index, hits);
 
 	i = 0;
 	p = (char *) tone_spec;
@@ -1377,7 +1384,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 
 	if (!hits) hits = 1;
 
-	cont->list[cont->index].hits = hits;
+	cont->list[cont->index].hits = 0;
 	cont->list[cont->index].total_hits = hits;
 
 	cont->list[cont->index].up = 1;
