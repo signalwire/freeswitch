@@ -1290,6 +1290,15 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 		
+		if (rtp_session->max_missed_packets) {
+			if (bytes) {
+				rtp_session->missed_count = 0;
+			} else if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
+				ret = -2;
+				goto end;
+			}
+		}
+
 		check = !bytes;
 
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
@@ -1522,13 +1531,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		if (check || (bytes && !rtp_session->timer.interval)) {
-			if (!bytes && rtp_session->max_missed_packets) {
-				if (++rtp_session->missed_count >= rtp_session->max_missed_packets) {
-					ret = -2;
-					goto end;
-				}
-			}
-
 			if (rtp_session->jb && (jb_frame = stfu_n_read_a_frame(rtp_session->jb))) {
 				memcpy(rtp_session->recv_msg.body, jb_frame->data, jb_frame->dlen);
 				if (jb_frame->plc) {
