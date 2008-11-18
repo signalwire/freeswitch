@@ -1226,7 +1226,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 			}
 
 			for (i = 0; i < cont->index; i++) {
-				if (cont->list[i].expires && cont->list[i].expires > switch_timestamp(NULL)) {
+				if (cont->list[i].expires && cont->list[i].expires < switch_timestamp(NULL)) {
 					cont->list[i].hits = 0;
 					cont->list[i].sleep = 0;
 					cont->list[i].expires = 0;
@@ -1244,7 +1244,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					cont->list[i].expires = switch_timestamp(NULL) + 5;
 					teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s HIT %d/%d\n", 
-									  cont->list[i].key, cont->list[i].up, cont->list[i].total_hits);
+									  cont->list[i].key, cont->list[i].up, cont->list[i].hits);
 					
 
 					if (cont->list[i].hits >= cont->list[i].total_hits) {
