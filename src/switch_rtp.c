@@ -754,7 +754,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval)
+SWITCH_DECLARE(switch_status_t) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint32_t ms_per_packet, uint32_t samples_per_interval)
 {
 	rtp_session->ms_per_packet = ms_per_packet;
 	rtp_session->samples_per_interval = rtp_session->conf_samples_per_interval = samples_per_interval;
@@ -764,11 +764,19 @@ SWITCH_DECLARE(void) switch_rtp_change_interval(switch_rtp_t *rtp_session, uint3
 		if (rtp_session->timer.timer_interface) {
 			switch_core_timer_destroy(&rtp_session->timer);
 		}
-		switch_core_timer_init(&rtp_session->timer, rtp_session->timer_name, ms_per_packet / 1000, samples_per_interval, rtp_session->pool);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "RE-Starting timer [%s] %d bytes per %dms\n", rtp_session->timer_name, samples_per_interval, ms_per_packet);
+		if (switch_core_timer_init(&rtp_session->timer, 
+								   rtp_session->timer_name, ms_per_packet / 1000, samples_per_interval, rtp_session->pool) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+							  "RE-Starting timer [%s] %d bytes per %dms\n", rtp_session->timer_name, samples_per_interval, ms_per_packet);
+		} else {
+			memset(&rtp_session->timer, 0, sizeof(rtp_session->timer));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "Problem RE-Starting timer [%s] %d bytes per %dms\n", rtp_session->timer_name, samples_per_interval, ms_per_packet);
+			return SWITCH_STATUS_FALSE;
+		}
 	}
 		
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session,
