@@ -1192,8 +1192,10 @@ typedef struct {
 	char *key;
 	teletone_tone_map_t map;
 	int up;
+	int total_hits;
 	int hits;
 	int sleep;
+	time_t expires;
 } switch_tone_detect_t;
 
 typedef struct {
@@ -1224,6 +1226,11 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 			}
 
 			for (i = 0; i < cont->index; i++) {
+				if (cont->list[i].expires && cont->list[i].expires > switch_timestamp(NULL)) {
+					cont->list[i].hits = cont->list[i].total_hits;
+					cont->list[i].expires = 0;
+				}
+
 				if (cont->list[i].sleep) {
 					cont->list[i].sleep--;
 					return SWITCH_TRUE;
@@ -1235,6 +1242,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					if (cont->list[i].hits) {
 						cont->list[i].up = cont->list[i].hits--;
 						cont->list[i].sleep = 25;
+						cont->list[i].expires = switch_timestamp(NULL) + 5;
 						teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
 					} else {
 						cont->list[i].up = 0;
@@ -1370,6 +1378,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	if (!hits) hits = 1;
 
 	cont->list[cont->index].hits = hits;
+	cont->list[cont->index].total_hits = hits;
 
 	cont->list[cont->index].up = 1;
 	cont->list[cont->index].mt.sample_rate = read_codec->implementation->actual_samples_per_second;
