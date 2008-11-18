@@ -713,6 +713,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 								tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 							} else {
 								if (switch_rtp_ready(tech_pvt->rtp_session) && codec_ms != tech_pvt->codec_ms) {
+									const char *val;
+									int rtp_timeout_sec = 0;
+									int rtp_hold_timeout_sec = 0;
+									
 									tech_pvt->codec_ms = codec_ms;
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 													  "Changing codec ptime to %d. I bet you have a linksys/sipura =D\n", tech_pvt->codec_ms);
@@ -723,6 +727,36 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 										return SWITCH_STATUS_GENERR;
 									}
 
+
+									if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_timeout_sec"))) {
+										int v = atoi(val);
+										if (v >= 0) {
+											rtp_timeout_sec = v;
+										}
+									}
+									
+									if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_hold_timeout_sec"))) {
+										int v = atoi(val);
+										if (v >= 0) {
+											rtp_hold_timeout_sec = v;
+										}
+									}
+									
+									if (rtp_timeout_sec) {
+										tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) /
+											tech_pvt->read_codec.implementation->samples_per_packet;
+										
+										switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
+										if (!rtp_hold_timeout_sec) {
+											rtp_hold_timeout_sec = rtp_timeout_sec * 10;
+										}
+									}
+									
+									if (rtp_hold_timeout_sec) {
+										tech_pvt->max_missed_hold_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_hold_timeout_sec) /
+											tech_pvt->read_codec.implementation->samples_per_packet;
+									}
+									
 									switch_rtp_change_interval(tech_pvt->rtp_session, 
 															   tech_pvt->read_codec.implementation->samples_per_packet,
 															   tech_pvt->codec_ms * 1000);
