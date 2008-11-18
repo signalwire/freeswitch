@@ -298,7 +298,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_session_t *session,
 															   const char *key, const char *tone_spec,
-															   const char *flags, time_t timeout, const char *app, const char *data);
+															   const char *flags, time_t timeout, int hits, const char *app, const char *data);
+
 
 
 

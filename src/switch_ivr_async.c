@@ -976,7 +976,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_inband_dtmf_session(switch_core_sessi
 	}
 
 	teletone_dtmf_detect_init(&pvt->dtmf_detect, read_codec->implementation->actual_samples_per_second);
-	printf ("WTF %d\n", read_codec->implementation->actual_samples_per_second);
 
 	pvt->session = session;
 
@@ -1193,6 +1192,8 @@ typedef struct {
 	char *key;
 	teletone_tone_map_t map;
 	int up;
+	int hits;
+	int sleep;
 } switch_tone_detect_t;
 
 typedef struct {
@@ -1217,18 +1218,28 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 		frame = switch_core_media_bug_get_read_replace_frame(bug);
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
-
+			
 			if (!frame) {
 				frame = switch_core_media_bug_get_write_replace_frame(bug);
 			}
 
 			for (i = 0; i < cont->index; i++) {
+				if (cont->list[i].sleep) {
+					cont->list[i].sleep--;
+					return SWITCH_TRUE;
+				}
 				if (cont->list[i].up && teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
-					cont->list[i].up = 0;
-
+					if (cont->list[i].hits) {
+						cont->list[i].up = cont->list[i].hits--;
+						cont->list[i].sleep = 25;
+						teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
+					} else {
+						cont->list[i].up = 0;
+					}
+					
 					if (cont->list[i].app) {
 						if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -1279,7 +1290,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_session_t *session,
 															   const char *key, const char *tone_spec,
-															   const char *flags, time_t timeout, const char *app, const char *data)
+															   const char *flags, time_t timeout, int hits, const char *app, const char *data)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
@@ -1340,7 +1351,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		}
 	} while (next);
 	cont->list[cont->index].map.freqs[i++] = 0;
-
+	
 	if (!ok) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid tone spec!\n");
 		return SWITCH_STATUS_FALSE;
@@ -1355,6 +1366,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	if (data) {
 		cont->list[cont->index].data = switch_core_session_strdup(session, data);
 	}
+
+	if (!hits) hits = 1;
+
+	cont->list[cont->index].hits = hits;
 
 	cont->list[cont->index].up = 1;
 	cont->list[cont->index].mt.sample_rate = read_codec->implementation->actual_samples_per_second;

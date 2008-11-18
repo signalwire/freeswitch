@@ -1148,14 +1148,15 @@ SWITCH_STANDARD_API(transfer_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define TONE_DETECT_SYNTAX "<uuid> <key> <tone_spec> [<flags> <timeout> <app> <args>]"
+#define TONE_DETECT_SYNTAX "<uuid> <key> <tone_spec> [<flags> <timeout> <app> <args> <hits>]"
 SWITCH_STANDARD_API(tone_detect_session_function)
 {
-	char *argv[7] = { 0 };
+	char *argv[8] = { 0 };
 	int argc;
 	char *mydata = NULL;
 	time_t to = 0;
 	switch_core_session_t *rsession;
+	int hits = 1;
 
 	if (!cmd) {
 		stream->write_function(stream, "-USAGE: %s\n", TONE_DETECT_SYNTAX);
@@ -1193,7 +1194,14 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 		}
 	}
 
-	switch_ivr_tone_detect_session(rsession, argv[1], argv[2], argv[3], to, argv[5], argv[6]);
+	if (argv[7]) {
+		hits = atoi(argv[7]);
+		if (hits < 0) {
+			hits = 1;
+		}
+	}
+
+	switch_ivr_tone_detect_session(rsession, argv[1], argv[2], argv[3], to, hits, argv[5], argv[6]);
 	stream->write_function(stream, "+OK Enabling tone detection '%s' '%s' '%s'\n", argv[1], argv[2], argv[3]);
 
   done:

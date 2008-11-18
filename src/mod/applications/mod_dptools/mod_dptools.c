@@ -1189,7 +1189,7 @@ SWITCH_STANDARD_APP(stop_dtmf_session_generate_function)
 
 SWITCH_STANDARD_APP(fax_detect_session_function)
 {
-	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, NULL, NULL);
+	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, 1, NULL, NULL);
 }
 
 SWITCH_STANDARD_APP(system_session_function)
@@ -1202,10 +1202,11 @@ SWITCH_STANDARD_APP(system_session_function)
 
 SWITCH_STANDARD_APP(tone_detect_session_function)
 {
-	char *argv[6] = { 0 };
+	char *argv[7] = { 0 };
 	int argc;
 	char *mydata = NULL;
 	time_t to = 0;
+	int hits = 1;
 
 	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
@@ -1235,9 +1236,16 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 		}
 	}
 
+	if (argv[7]) {
+		hits = atoi(argv[7]);
+		if (hits < 0) {
+			hits = 1;
+		}
+	}
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabling tone detection '%s' '%s'\n", argv[0], argv[1]);
 
-	switch_ivr_tone_detect_session(session, argv[0], argv[1], argv[2], to, argv[4], argv[5]);
+	switch_ivr_tone_detect_session(session, argv[0], argv[1], argv[2], to, hits, argv[4], argv[5]);
 }
 
 SWITCH_STANDARD_APP(stop_fax_detect_session_function)
