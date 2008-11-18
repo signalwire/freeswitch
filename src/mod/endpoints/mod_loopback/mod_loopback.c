@@ -694,6 +694,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 			switch_snprintf(name, sizeof(name), "loopback/%s-a", caller_profile->destination_number);
 			switch_channel_set_name(channel, name);
+			switch_channel_set_flag(channel, CF_OUTBOUND);
 
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
