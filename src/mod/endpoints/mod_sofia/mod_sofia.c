@@ -758,8 +758,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 									
 									if (switch_rtp_change_interval(tech_pvt->rtp_session, 
-																   tech_pvt->read_codec.implementation->samples_per_packet,
-																   tech_pvt->codec_ms * 1000) != SWITCH_STATUS_SUCCESS) {
+																   tech_pvt->codec_ms * 1000,
+																   tech_pvt->read_codec.implementation->samples_per_packet
+																   ) != SWITCH_STATUS_SUCCESS) {
 										switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 										
 									}
