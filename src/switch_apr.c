@@ -799,7 +799,7 @@ SWITCH_DECLARE(switch_status_t) switch_socket_create_pollfd(switch_pollfd_t **po
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	if (switch_pollset_create(&pollset, 1, pool, flags) != SWITCH_STATUS_SUCCESS) {
+	if (switch_pollset_create(&pollset, 1, pool, 0) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
