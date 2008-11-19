@@ -489,7 +489,29 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 	message->_line = 0;
 	
 
-	switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+	switch (message->message_id) {
+    case SWITCH_MESSAGE_REDIRECT_AUDIO:
+    case SWITCH_MESSAGE_INDICATE_ANSWER:
+    case SWITCH_MESSAGE_INDICATE_PROGRESS:
+    case SWITCH_MESSAGE_INDICATE_BRIDGE:
+    case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+    case SWITCH_MESSAGE_INDICATE_TRANSFER:
+    case SWITCH_MESSAGE_INDICATE_RINGING:
+    case SWITCH_MESSAGE_INDICATE_MEDIA:
+    case SWITCH_MESSAGE_INDICATE_NOMEDIA:
+    case SWITCH_MESSAGE_INDICATE_HOLD:
+    case SWITCH_MESSAGE_INDICATE_UNHOLD:
+    case SWITCH_MESSAGE_INDICATE_REDIRECT:
+    case SWITCH_MESSAGE_INDICATE_RESPOND:
+    case SWITCH_MESSAGE_INDICATE_BROADCAST:
+    case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
+    case SWITCH_MESSAGE_INDICATE_DEFLECT:
+		switch_core_session_kill_channel(session, SWITCH_SIG_BREAK);
+		break;
+	default:
+		break;
+	}
+
 	switch_core_session_rwunlock(session);
 
 	return status;
