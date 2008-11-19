@@ -54,6 +54,7 @@
 #endif
 
 #define MAX_CODEC_CHECK_FRAMES 50
+#define MAX_MISMATCH_FRAMES 5
 #define MODNAME "mod_sofia"
 static const switch_state_handler_table_t noop_state_handler = { 0 };
 struct sofia_gateway;
@@ -511,6 +512,7 @@ struct private_object {
 	switch_thread_id_t locker;
 	switch_size_t last_ts;
 	uint32_t check_frames;
+	uint32_t mismatch_count;
 };
 
 struct callback_t {
