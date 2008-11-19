@@ -103,17 +103,24 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 															   int stream_id)
 {
 	switch_io_event_hook_read_frame_t *ptr;
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	unsigned int flag = 0;
 
 	switch_assert(session != NULL);
 
+	if (!(session->read_codec && session->read_codec->implementation)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_mutex_lock(session->read_codec->mutex);
+
   top:
 
 	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
 		*frame = NULL;
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE; goto even_more_done;
 	}
 
 
@@ -178,10 +185,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	switch_assert((*frame)->codec != NULL);
 
-	if (!(session->read_codec && session->read_codec->implementation)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (((*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
 		need_codec = TRUE;
@@ -517,6 +520,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		*frame = &runtime.dummy_cng_frame;
 	}
 
+	switch_mutex_unlock(session->read_codec->mutex);
+	
 	return status;
 }
 
@@ -578,6 +583,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_assert(frame->codec != NULL);
 	switch_assert(frame->codec->implementation != NULL);
 
+	if (!(session->write_codec && frame->codec)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	switch_mutex_lock(session->write_codec->mutex);
+	switch_mutex_lock(frame->codec->mutex);
+	
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
 		if (session->write_codec->implementation->codec_id == frame->codec->implementation->codec_id) {
@@ -587,10 +598,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (session->write_codec && !frame->codec) {
 		need_codec = TRUE;
-	}
-
-	if (!session->write_codec && frame->codec) {
-		return SWITCH_STATUS_FALSE;
 	}
 
 	if (session->bugs && !need_codec) {
@@ -655,7 +662,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				write_frame = &session->raw_write_frame;
 				break;
 			case SWITCH_STATUS_BREAK:
-				return SWITCH_STATUS_SUCCESS;
+				status = SWITCH_STATUS_SUCCESS; goto error;
 			case SWITCH_STATUS_NOOP:
 				if (session->write_resampler) {
 					switch_mutex_lock(session->resample_mutex);
@@ -669,15 +676,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			default:
 				if (status == SWITCH_STATUS_NOT_INITALIZED) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
-					return status;
+					goto error;
 				}
 				if (ptime_mismatch) {
 					status = perform_write(session, frame, flags, stream_id);
-					return SWITCH_STATUS_SUCCESS;
+					status = SWITCH_STATUS_SUCCESS; goto error;
 				}
 				
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s decoder error!\n", frame->codec->codec_interface->interface_name);
-				return status;
+				goto error;
 			}
 		}
 
@@ -775,13 +782,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 															   bytes * SWITCH_BUFFER_BLOCK_FRAMES,
 															   bytes * SWITCH_BUFFER_START_FRAMES, 0)) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer Failed!\n");
-						return status;
+						goto error;
 					}
 				}
 
 				if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer %u bytes Failed!\n", write_frame->datalen);
-					return SWITCH_STATUS_MEMERR;
+					status = SWITCH_STATUS_MEMERR; goto error;
 				}
 			}
 
@@ -827,18 +834,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				case SWITCH_STATUS_NOT_INITALIZED:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
 					write_frame = NULL;
-                    return status;					
+                    goto error;					
 				default:
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error!\n",
 									  session->read_codec->codec_interface->interface_name);
 					write_frame = NULL;
-					return status;
+					goto error;
 				}
 				if (flag & SFF_CNG) {
 					switch_set_flag(write_frame, SFF_CNG);
 				}
 				status = perform_write(session, write_frame, flags, stream_id);
-				return status;
+				goto error;
 			} else {
 				switch_size_t used = switch_buffer_inuse(session->raw_write_buffer);
 				uint32_t bytes = session->write_codec->implementation->decoded_bytes_per_packet;
@@ -846,7 +853,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 				status = SWITCH_STATUS_SUCCESS;
 				if (!frames) {
-					return status;
+					goto error;
 				} else {
 					switch_size_t x;
 					for (x = 0; x < frames; x++) {
@@ -918,12 +925,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							case SWITCH_STATUS_NOT_INITALIZED:
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec init error!\n");
 								write_frame = NULL;
-								return status;
+								goto error;
 							default:
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec %s encoder error %d!\n",
 												  session->read_codec->codec_interface->interface_name, status);
 								write_frame = NULL;
-								return status;
+								goto error;
 							}
 
 							if (session->read_resampler) {
@@ -952,7 +959,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							}
 						}
 					}
-					return status;
+					goto error;
 				}
 			}
 		}
@@ -960,11 +967,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		do_write = TRUE;
 	}
 
-  done:
+ done:
 
 	if (do_write) {
-		return perform_write(session, frame, flags, stream_id);
+		status = perform_write(session, frame, flags, stream_id);
 	}
+	
+ error:
+
+	switch_mutex_unlock(session->write_codec->mutex);
+	switch_mutex_unlock(frame->codec->mutex);
+	
 	return status;
 }
 

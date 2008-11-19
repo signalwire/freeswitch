@@ -529,7 +529,7 @@ static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 	switch_channel_clear_flag(channel, CF_TRANSFER);
 	switch_channel_clear_flag(channel, CF_ORIGINATING);
 
-	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+	if (switch_channel_test_flag(channel, CF_MASTER)) {
 		switch_channel_set_state(channel, CS_SOFT_EXECUTE);
 	}
 
@@ -547,9 +547,11 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 	switch_channel_clear_flag(channel, CF_TRANSFER);
 
-	if (!switch_channel_test_flag(channel, CF_ORIGINATOR)) {
+	if (!switch_channel_test_flag(channel, CF_MASTER)) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+
+	switch_channel_clear_flag(channel, CF_MASTER);
 
 	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_UUID_BRIDGE)) && (other_session = switch_core_session_locate(other_uuid))) {
 		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
@@ -724,7 +726,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	switch_channel_set_variable(caller_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, switch_core_session_get_uuid(peer_session));
 	switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, switch_core_session_get_uuid(session));
 
-	switch_channel_set_state_flag(caller_channel, CF_ORIGINATOR);
+	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 
 	switch_channel_clear_state_handler(caller_channel, NULL);
 	switch_channel_clear_state_handler(peer_channel, NULL);
@@ -1033,8 +1035,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 
 			switch_channel_clear_state_handler(originator_channel, NULL);
 			switch_channel_clear_state_handler(originatee_channel, NULL);
-			switch_channel_set_state_flag(originator_channel, CF_ORIGINATOR);
-			switch_channel_clear_flag(originatee_channel, CF_ORIGINATOR);
+			switch_channel_set_state_flag(originator_channel, CF_MASTER);
+			switch_channel_clear_flag(originatee_channel, CF_MASTER);
 			switch_channel_add_state_handler(originator_channel, &uuid_bridge_state_handlers);
 			switch_channel_add_state_handler(originatee_channel, &uuid_bridge_state_handlers);
 			switch_channel_set_variable(originator_channel, SWITCH_UUID_BRIDGE, switch_core_session_get_uuid(originatee_session));

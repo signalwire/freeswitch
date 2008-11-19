@@ -44,16 +44,26 @@ SWITCH_DECLARE(uint32_t) switch_core_codec_next_id(void)
 
 SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t *session)
 {
+	switch_mutex_t *mutex = NULL;
+
+	if (session->read_codec) mutex = session->read_codec->mutex;
+	if (mutex) switch_mutex_lock(mutex);
 	session->real_read_codec = session->read_codec = NULL;
 	session->raw_read_frame.codec = session->read_codec;
 	session->raw_write_frame.codec = session->read_codec;
 	session->enc_read_frame.codec = session->read_codec;
 	session->enc_write_frame.codec = session->read_codec;
+	if (mutex) switch_mutex_unlock(mutex);
 }
 
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t *session)
 {	
+	switch_mutex_t *mutex = NULL;
+
+	if (session->write_codec) mutex = session->write_codec->mutex;
+	if (mutex) switch_mutex_lock(mutex);
 	session->real_write_codec = session->write_codec = NULL;
+	if (mutex) switch_mutex_unlock(mutex);
 }
 
 

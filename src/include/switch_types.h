@@ -784,7 +784,8 @@ typedef enum {
 	CF_PROXY_MEDIA = (1 << 27),
 	CF_INNER_BRIDGE = (1 << 28),
 	CF_REQ_MEDIA = (1 << 29),
-	CF_VERBOSE_EVENTS = (1 << 30)
+	CF_VERBOSE_EVENTS = (1 << 30),
+	CF_MASTER = (1 << 31)
 } switch_channel_flag_enum_t;
 typedef uint32_t switch_channel_flag_t;
 
