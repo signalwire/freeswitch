@@ -301,7 +301,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 
 	result = SQLExecute(stmt);
 
-	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO) {
+	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO && result != SQL_NO_DATA) {
 		goto error;
 	}
 
