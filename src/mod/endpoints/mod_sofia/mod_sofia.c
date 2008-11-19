@@ -706,8 +706,6 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 					if (tech_pvt->check_frames < MAX_CODEC_CHECK_FRAMES) {
 						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
-
-							
 							if (++tech_pvt->mismatch_count >= MAX_MISMATCH_FRAMES) {
 								switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
 															   tech_pvt->last_ts) / (tech_pvt->read_codec.implementation->samples_per_second / 1000);
@@ -774,6 +772,8 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 								}
 								tech_pvt->check_frames++;
 							}
+						} else {
+							tech_pvt->mismatch_count = 0;
 						}
 						tech_pvt->last_ts = tech_pvt->read_frame.timestamp;
 					}

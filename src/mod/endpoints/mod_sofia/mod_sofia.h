@@ -54,7 +54,7 @@
 #endif
 
 #define MAX_CODEC_CHECK_FRAMES 50
-#define MAX_MISMATCH_FRAMES 5
+#define MAX_MISMATCH_FRAMES 3
 #define MODNAME "mod_sofia"
 static const switch_state_handler_table_t noop_state_handler = { 0 };
 struct sofia_gateway;
