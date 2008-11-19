@@ -1195,7 +1195,7 @@ typedef struct {
 	int total_hits;
 	int hits;
 	int sleep;
-	time_t expires;
+	int expires;
 } switch_tone_detect_t;
 
 typedef struct {
@@ -1217,36 +1217,49 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	case SWITCH_ABC_TYPE_CLOSE:
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
-		frame = switch_core_media_bug_get_read_replace_frame(bug);
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
 		{
-			
-			if (!frame) {
+			int skip = 0;
+
+			if (type == SWITCH_ABC_TYPE_READ_REPLACE) {
+				frame = switch_core_media_bug_get_read_replace_frame(bug);
+			} else {
 				frame = switch_core_media_bug_get_write_replace_frame(bug);
 			}
 
+
+
 			for (i = 0; i < cont->index; i++) {
-				if (cont->list[i].expires && cont->list[i].expires < switch_timestamp(NULL)) {
-					cont->list[i].hits = 0;
-					cont->list[i].sleep = 0;
-					cont->list[i].expires = 0;
-				}
 
 				if (cont->list[i].sleep) {
 					cont->list[i].sleep--;
-					return SWITCH_TRUE;
+					if (cont->list[i].sleep) {
+						skip = 1;
+					}
 				}
-				if (cont->list[i].up && teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
+
+				if (cont->list[i].expires) {
+					cont->list[i].expires--;
+					if (!cont->list[i].expires) {
+						cont->list[i].hits = 0;
+						cont->list[i].sleep = 0;
+						cont->list[i].expires = 0;
+					}
+				}
+				
+				if (!cont->list[i].up) skip = 1;
+
+				if (skip) return SWITCH_TRUE;
+				
+				if (teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;
-
-					cont->list[i].up = cont->list[i].hits++;
-					cont->list[i].sleep = 25;
-					cont->list[i].expires = switch_timestamp(NULL) + 5;
-					teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s HIT %d/%d\n", 
-									  cont->list[i].key, cont->list[i].up, cont->list[i].hits);
+					cont->list[i].hits++;
 					
-
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s HIT %d/%d\n", 
+									  cont->list[i].key, cont->list[i].hits, cont->list[i].total_hits);
+					cont->list[i].sleep = 50;
+					cont->list[i].expires = 250;
+					
 					if (cont->list[i].hits >= cont->list[i].total_hits) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
 						cont->list[i].up = 0;
@@ -1332,7 +1345,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 				cont->list[i].hits = 0;
 				cont->list[i].sleep = 0;
 				cont->list[i].expires = 0;
-				teletone_multi_tone_init(&cont->list[i].mt, &cont->list[i].map);
 				return SWITCH_STATUS_SUCCESS;
 			}
 		}
@@ -1403,7 +1415,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 			bflags |= SMBF_WRITE_REPLACE;
 		}
 	}
-
+	
 	if ((status = switch_core_media_bug_add(session, tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
