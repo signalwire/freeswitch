@@ -45,6 +45,7 @@ static struct {
 	uint32_t ignore_cacert_check;
 	int encode;
 	int log_b;
+	int prefix_a;
 	int disable100continue;
 } globals;
 
@@ -77,14 +78,18 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	struct curl_slist *slist = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
+	int is_b;
+	const char * a_prefix = "";
 
 	if (globals.shutdown) {
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!globals.log_b && channel && switch_channel_get_originator_caller_profile(channel)) {
+	is_b = channel && switch_channel_get_originator_caller_profile(channel);
+	if (!globals.log_b && is_b) {
 		return SWITCH_STATUS_SUCCESS;
 	}
+	if (!is_b && globals.prefix_a) a_prefix = "a_";
 
 	if (switch_ivr_generate_xml_cdr(session, &cdr) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Generating Data!\n");
@@ -103,7 +108,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	}
 
 	if (!switch_strlen_zero(logdir)) {
-		if ((path = switch_mprintf("%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session)))) {
+		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -203,7 +208,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		/* if we are here the web post failed for some reason */
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
-		if ((path = switch_mprintf("%s%s%s.cdr.xml", globals.err_log_dir, SWITCH_PATH_SEPARATOR, switch_core_session_get_uuid(session)))) {
+		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", globals.err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
@@ -285,6 +290,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
 				globals.log_b = switch_true(val);
+			} else if (!strcasecmp(var, "prefix-a-leg")) {
+				globals.prefix_a = switch_true(val);
 			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
 				globals.disable100continue = 1;
 			} else if (!strcasecmp(var, "encode") && !switch_strlen_zero(val)) {

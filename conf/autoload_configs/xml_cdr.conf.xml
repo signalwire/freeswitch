@@ -20,6 +20,9 @@
     <!-- true or false if we should create a cdr for the b leg of a call-->
     <param name="log-b-leg" value="false"/>
     
+    <!-- optional: if not present, all filenames are the uuid of the call -->
+    <!-- true or false if a leg files are prefixed "a_" -->
+    <param name="prefix-a-leg" value="true"/>
 
     <!-- encode the post data may be 'true' for url encoding, 'false' for no encoding or 'base64' for base64 encoding -->
     <param name="encode" value="true"/>
