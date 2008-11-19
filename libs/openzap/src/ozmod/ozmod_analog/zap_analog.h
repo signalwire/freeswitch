@@ -41,6 +41,7 @@ typedef enum {
 } zap_analog_flag_t;
 
 #define ZAP_MAX_HOTLINE_STR		20
+#define MAX_DTMF 256
 
 struct zap_analog_data {
 	uint32_t flags;

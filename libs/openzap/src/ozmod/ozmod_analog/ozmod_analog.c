@@ -85,7 +85,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 	const char *tonemap = "us";
 	const char *hotline = "";
 	uint32_t digit_timeout = 10;
-	uint32_t max_dialstr = 11;
+	uint32_t max_dialstr = MAX_DTMF;
 	const char *var, *val;
 	int *intval;
 	uint32_t flags = ZAP_ANALOG_CALLERID;
@@ -143,8 +143,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_analog_configure_span)
 		digit_timeout = 2000;
 	}
 
-	if ((max_dialstr < 2 && !strlen(hotline)) || max_dialstr > 20) {
-		max_dialstr = 11;
+	if ((max_dialstr < 1 && !strlen(hotline)) || max_dialstr > MAX_DTMF) {
+		max_dialstr = MAX_DTMF;
 	}
 	
 	span->start = zap_analog_start;
@@ -228,7 +228,7 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 	uint8_t frame[1024];
 	zap_size_t len, rlen;
 	zap_tone_type_t tt = ZAP_TONE_DTMF;
-	char dtmf[128] = "";
+	char dtmf[MAX_DTMF+1] = "";
 	zap_size_t dtmf_offset = 0;
 	zap_analog_data_t *analog_data = zchan->span->signal_data;
 	zap_channel_t *closed_chan;
