@@ -1773,7 +1773,6 @@ static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 
-	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 
 	if (argc > 1) {
@@ -2055,8 +2054,6 @@ static JSBool session_cdr(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 
 	/*Always a pessimist... sheesh! */
 	*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-
-	METHOD_SANITY_CHECK();
 
 	if (switch_ivr_generate_xml_cdr(jss->session, &cdr) == SWITCH_STATUS_SUCCESS) {
 		char *xml_text;

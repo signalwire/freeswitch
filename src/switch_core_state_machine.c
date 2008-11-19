@@ -413,7 +413,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						}
 						SWITCH_STANDARD_STREAM(stream);
 						switch_channel_get_variables(session->channel, &stream.param_event);
-						switch_api_execute(cmd, arg, NULL, &stream);
+						switch_api_execute(cmd, arg, session, &stream);
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, arg,
 										  switch_str_nil((char *) stream.data));
 						switch_safe_free(stream.data);
