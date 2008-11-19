@@ -385,7 +385,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				{
 					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
 					const char *hook_var;
-
+					switch_core_session_t *use_session = NULL;
+					
 					if (!switch_strlen_zero(var)) {
 						if (!strcasecmp(var, "a_only")) {
 							if (switch_channel_get_originator_caller_profile(session->channel)) {
@@ -401,21 +402,31 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					}
 					
 					STATE_MACRO(hangup, "HANGUP");
-
+					
 					hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE);
+					if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {
+						use_session = session;
+					}
 
 					if (!switch_strlen_zero(hook_var)) {
 						switch_stream_handle_t stream = { 0 };
 						char *cmd = switch_core_session_strdup(session, hook_var);
 						char *arg = NULL;
+						char *expanded = NULL;
+						
 						if ((arg = strchr(cmd, ' '))) {
 							*arg++ = '\0';
 						}
 						SWITCH_STANDARD_STREAM(stream);
 						switch_channel_get_variables(session->channel, &stream.param_event);
-						switch_api_execute(cmd, arg, session, &stream);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, arg,
+						expanded = switch_channel_expand_variables(session->channel, arg);
+						
+						switch_api_execute(cmd, expanded, use_session, &stream);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup Command %s(%s):\n%s\n", cmd, expanded,
 										  switch_str_nil((char *) stream.data));
+						if (expanded != arg) {
+							switch_safe_free(expanded);
+						}
 						switch_safe_free(stream.data);
 					}
 				}
