@@ -706,71 +706,74 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 					if (tech_pvt->check_frames < MAX_CODEC_CHECK_FRAMES) {
 						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
-							switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
-														   tech_pvt->last_ts) / (tech_pvt->read_codec.implementation->samples_per_second / 1000);
+
 							
-							if ((codec_ms % 10) != 0) {
-								tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
-							} else {
-								if (switch_rtp_ready(tech_pvt->rtp_session) && codec_ms != tech_pvt->codec_ms) {
-									const char *val;
-									int rtp_timeout_sec = 0;
-									int rtp_hold_timeout_sec = 0;
-									
-									tech_pvt->codec_ms = codec_ms;
-									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-													  "Changing codec ptime to %d. I bet you have a linksys/sipura =D\n", tech_pvt->codec_ms);
-									switch_core_codec_destroy(&tech_pvt->read_codec);
-									switch_core_codec_destroy(&tech_pvt->write_codec);
-									if (sofia_glue_tech_set_codec(tech_pvt, 2) != SWITCH_STATUS_SUCCESS) {
-										*frame = NULL;
-										return SWITCH_STATUS_GENERR;
-									}
-
-
-									if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_timeout_sec"))) {
-										int v = atoi(val);
-										if (v >= 0) {
-											rtp_timeout_sec = v;
-										}
-									}
-									
-									if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_hold_timeout_sec"))) {
-										int v = atoi(val);
-										if (v >= 0) {
-											rtp_hold_timeout_sec = v;
-										}
-									}
-									
-									if (rtp_timeout_sec) {
-										tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) /
-											tech_pvt->read_codec.implementation->samples_per_packet;
-										
-										switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
-										if (!rtp_hold_timeout_sec) {
-											rtp_hold_timeout_sec = rtp_timeout_sec * 10;
-										}
-									}
-									
-									if (rtp_hold_timeout_sec) {
-										tech_pvt->max_missed_hold_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_hold_timeout_sec) /
-											tech_pvt->read_codec.implementation->samples_per_packet;
-									}
-									
-									if (switch_rtp_change_interval(tech_pvt->rtp_session, 
-																   tech_pvt->codec_ms * 1000,
-																   tech_pvt->read_codec.implementation->samples_per_packet
-																   ) != SWITCH_STATUS_SUCCESS) {
-										switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-										
-									}
-
+							if (++tech_pvt->mismatch_count >= MAX_MISMATCH_FRAMES) {
+								switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
+															   tech_pvt->last_ts) / (tech_pvt->read_codec.implementation->samples_per_second / 1000);
+								
+								if ((codec_ms % 10) != 0) {
 									tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
-								}
-							
-							}
-							tech_pvt->check_frames++;
+								} else {
+									if (switch_rtp_ready(tech_pvt->rtp_session) && codec_ms != tech_pvt->codec_ms) {
+										const char *val;
+										int rtp_timeout_sec = 0;
+										int rtp_hold_timeout_sec = 0;
+									
+										tech_pvt->codec_ms = codec_ms;
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+														  "Changing codec ptime to %d. I bet you have a linksys/sipura =D\n", tech_pvt->codec_ms);
+										switch_core_codec_destroy(&tech_pvt->read_codec);
+										switch_core_codec_destroy(&tech_pvt->write_codec);
+										if (sofia_glue_tech_set_codec(tech_pvt, 2) != SWITCH_STATUS_SUCCESS) {
+											*frame = NULL;
+											return SWITCH_STATUS_GENERR;
+										}
 
+
+										if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_timeout_sec"))) {
+											int v = atoi(val);
+											if (v >= 0) {
+												rtp_timeout_sec = v;
+											}
+										}
+									
+										if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_hold_timeout_sec"))) {
+											int v = atoi(val);
+											if (v >= 0) {
+												rtp_hold_timeout_sec = v;
+											}
+										}
+									
+										if (rtp_timeout_sec) {
+											tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) /
+												tech_pvt->read_codec.implementation->samples_per_packet;
+										
+											switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
+											if (!rtp_hold_timeout_sec) {
+												rtp_hold_timeout_sec = rtp_timeout_sec * 10;
+											}
+										}
+									
+										if (rtp_hold_timeout_sec) {
+											tech_pvt->max_missed_hold_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_hold_timeout_sec) /
+												tech_pvt->read_codec.implementation->samples_per_packet;
+										}
+									
+										if (switch_rtp_change_interval(tech_pvt->rtp_session, 
+																	   tech_pvt->codec_ms * 1000,
+																	   tech_pvt->read_codec.implementation->samples_per_packet
+																	   ) != SWITCH_STATUS_SUCCESS) {
+											switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+										
+										}
+
+										tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
+									}
+							
+								}
+								tech_pvt->check_frames++;
+							}
 						}
 						tech_pvt->last_ts = tech_pvt->read_frame.timestamp;
 					}
