@@ -318,15 +318,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_lock(bp->read_mutex);
 					switch_buffer_write(bp->raw_read_buffer, read_frame->data, read_frame->datalen);
 					if (bp->callback) {
-						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ) == SWITCH_FALSE
-							|| (bp->stop_time && bp->stop_time <= switch_timestamp(NULL))) {
-							ok = SWITCH_FALSE;
-						}
+						ok = bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ);
 					}
 					switch_mutex_unlock(bp->read_mutex);
 				}
-
-				if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
+				
+				if (ok && switch_test_flag(bp, SMBF_READ_REPLACE)) {
 					do_bugs = 0;
 					if (bp->callback) {
 						bp->read_replace_frame_in = read_frame;
@@ -335,6 +332,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 							read_frame = bp->read_replace_frame_out;
 						}
 					}
+				}
+				
+				if (bp->stop_time && bp->stop_time <= switch_timestamp(NULL)) {
+					ok = SWITCH_FALSE;
 				}
 
 				if (ok == SWITCH_FALSE) {
