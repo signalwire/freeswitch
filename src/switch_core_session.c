@@ -242,7 +242,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 {
 	switch_io_event_hook_outgoing_channel_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	const switch_endpoint_interface_t *endpoint_interface;
+	switch_endpoint_interface_t *endpoint_interface;
 	switch_channel_t *channel = NULL;
 	switch_caller_profile_t *outgoing_profile = caller_profile;
 	switch_call_cause_t cause = SWITCH_CAUSE_REQUESTED_CHAN_UNAVAIL;
@@ -301,6 +301,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 	if ((cause =
 		 endpoint_interface->io_routines->outgoing_channel(session, var_event, outgoing_profile, new_session, pool, flags)) != SWITCH_CAUSE_SUCCESS) {
+		UNPROTECT_INTERFACE(endpoint_interface);
 		return cause;
 	}
 
@@ -315,6 +316,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 	if (!*new_session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Outgoing method for endpoint: [%s] returned: [%s] but there is no new session!\n",
 						  endpoint_name, switch_channel_cause2str(cause));
+		UNPROTECT_INTERFACE(endpoint_interface);
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	} else {
 		switch_caller_profile_t *profile = NULL, *peer_profile = NULL, *cloned_profile = NULL;
@@ -414,6 +416,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		}
 	}
 
+	UNPROTECT_INTERFACE(endpoint_interface);
 	return cause;
 }
 
@@ -1111,14 +1114,18 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(const char *endpoint_name, switch_memory_pool_t **pool)
 {
 	switch_endpoint_interface_t *endpoint_interface;
+	switch_core_session_t *session;
 
 	if ((endpoint_interface = switch_loadable_module_get_endpoint_interface(endpoint_name)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not locate channel type %s\n", endpoint_name);
 		return NULL;
 	}
 
-	return switch_core_session_request(endpoint_interface, pool);
+	session = switch_core_session_request(endpoint_interface, pool);
 
+	UNPROTECT_INTERFACE(endpoint_interface);
+
+	return session;
 }
 
 #ifndef SWITCH_PREFIX_DIR

@@ -173,6 +173,7 @@ struct switch_endpoint_interface {
 
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 
 	/* parent */
 	switch_loadable_module_interface_t *parent;
@@ -228,6 +229,7 @@ struct switch_timer_interface {
 	switch_status_t (*timer_destroy) (switch_timer_t *);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_timer_interface *next;
 };
@@ -240,6 +242,7 @@ struct switch_dialplan_interface {
 	switch_dialplan_hunt_function_t hunt_function;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_dialplan_interface *next;
 };
@@ -266,6 +269,7 @@ struct switch_file_interface {
 	char **extens;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_file_interface *next;
 };
@@ -345,6 +349,7 @@ struct switch_asr_interface {
 	switch_status_t (*asr_get_results) (switch_asr_handle_t *ah, char **xmlstr, switch_asr_flag_t *flags);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_asr_interface *next;
 };
@@ -388,6 +393,7 @@ struct switch_speech_interface {
 	void (*speech_float_param_tts) (switch_speech_handle_t *sh, char *param, double val);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_speech_interface *next;
 };
@@ -423,6 +429,7 @@ struct switch_say_interface {
 	switch_say_callback_t say_function;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_say_interface *next;
 };
@@ -435,6 +442,7 @@ struct switch_chat_interface {
 	switch_status_t (*chat_send) (char *proto, char *from, char *to, char *subject, char *body, char *hint);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_chat_interface *next;
 };
@@ -447,6 +455,7 @@ struct switch_management_interface {
 	switch_status_t (*management_function) (char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_management_interface *next;
 };
@@ -467,6 +476,7 @@ struct switch_directory_interface {
 	switch_status_t (*directory_next_pair) (switch_directory_handle_t *dh, char **var, char **val);
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_directory_interface *next;
 };
@@ -593,6 +603,7 @@ struct switch_codec_interface {
 	uint32_t codec_id;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_codec_interface *next;
 };
@@ -613,6 +624,7 @@ struct switch_application_interface {
 	uint32_t flags;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_application_interface *next;
 };
@@ -629,12 +641,14 @@ struct switch_api_interface {
 	const char *syntax;
 	switch_thread_rwlock_t *rwlock;
 	int refs;
+	switch_mutex_t *reflock;
 	switch_loadable_module_interface_t *parent;
 	struct switch_api_interface *next;
 };
 
-#define PROTECT_INTERFACE(_it) if (_it && !_it->refs) {switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++;} //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK\n");
-#define UNPROTECT_INTERFACE(_it) if (_it && _it->refs) {switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; _it = NULL;} //switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "-----------UNLOCK\n");
+#define PROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_rdlock(_it->parent->rwlock); switch_thread_rwlock_rdlock(_it->rwlock); _it->refs++; _it->parent->refs++; switch_mutex_unlock(_it->reflock);} //if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "+++++++++++LOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+#define UNPROTECT_INTERFACE(_it) if (_it) {switch_mutex_lock(_it->reflock); switch_thread_rwlock_unlock(_it->rwlock); switch_thread_rwlock_unlock(_it->parent->rwlock); _it->refs--; _it->parent->refs--; switch_mutex_unlock(_it->reflock);} //if (!strcmp(_it->interface_name, "user")) switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "---------UNLOCK %s %d/%d\n", _it->interface_name, _it->refs, _it->parent->refs);
+
 
 SWITCH_END_EXTERN_C
 #endif

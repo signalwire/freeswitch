@@ -428,7 +428,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
                     switch_thread_rwlock_unlock(ptr->rwlock);
                 } else {
-                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
                 }
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Endpoint '%s'\n", ptr->interface_name);
@@ -513,7 +513,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 				
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
@@ -540,7 +540,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 
 
@@ -568,7 +568,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 
 				for (i = 0; ptr->extens[i]; i++) {
@@ -596,7 +596,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Speech interface '%s'\n", ptr->interface_name);
@@ -621,7 +621,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Asr interface '%s'\n", ptr->interface_name);
@@ -646,7 +646,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Directory interface '%s'\n", ptr->interface_name);
@@ -671,7 +671,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Chat interface '%s'\n", ptr->interface_name);
@@ -695,7 +695,7 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
 				if (switch_thread_rwlock_trywrlock_timeout(ptr->rwlock, 10) == SWITCH_STATUS_SUCCESS) {
 					switch_thread_rwlock_unlock(ptr->rwlock);
 				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up waiting for existing references.\n");
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Giving up on '%s' waiting for existing references.\n", ptr->interface_name);
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Say interface '%s'\n", ptr->interface_name);
 				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
@@ -1567,6 +1567,7 @@ SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_crea
 			mod->_TYPE_##_interface = i;								\
 		}																\
 		switch_thread_rwlock_create(&i->rwlock, mod->pool);				\
+		switch_mutex_init(&i->reflock, SWITCH_MUTEX_NESTED, mod->pool);	\
 		i->parent = mod;												\
 		return i; }
 
