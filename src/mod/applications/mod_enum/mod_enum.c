@@ -652,7 +652,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 				rbl -= l;
 			}
 
-			switch_snprintf(vbuf, sizeof(vbuf), "%d", cnt);
+			switch_snprintf(vbuf, sizeof(vbuf), "%d", cnt - 1);
 			switch_channel_set_variable(channel, "enum_route_count", vbuf);
 			*(rbuf + strlen(rbuf) - 1) = '\0';
 			switch_channel_set_variable(channel, "enum_auto_route", rbuf);
