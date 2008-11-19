@@ -110,7 +110,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 	switch_channel_answer(channel);
 
-	if ((fd = open((char *) data, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) < 0) {
+	if ((fd = open((char *) data, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, S_IRUSR | S_IWUSR)) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error opening file %s\n", (char *) data);
 		return;
 	}
