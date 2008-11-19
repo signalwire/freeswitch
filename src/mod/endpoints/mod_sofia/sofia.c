@@ -2215,22 +2215,9 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 	}
 
 	if (!session && (status == 180 || status == 183 || status == 200)) {
-		/* This should never happen.  It means the sip stack thinks there is a call but FreeSWITCH does not */
-		const char *callid = "n/a";
-
-		if (sip && sip->sip_call_id && sip->sip_call_id->i_id) callid = sip->sip_call_id->i_id;
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received response to invite with no matching session, destroying callid [%s]!\n", callid);
-
-		if (nh) {
-			if (status == 200) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending BYE to orphan call.\n");
-				nua_bye(nh, TAG_END());
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to orphan call.\n");
-				nua_cancel(nh, TAG_END());
-			}
-		}
+		/* nevermind */
+		nua_handle_bind(nh, NULL);
+		nua_handle_destroy(nh);
 	}
 }
 
