@@ -1057,7 +1057,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	switch_channel_clear_state_handler(channel, NULL);
 
 	if ((profile = switch_channel_get_caller_profile(channel))) {
-
+		const char *var;
+		
 		if (switch_strlen_zero(dialplan)) {
 			dialplan = profile->dialplan;
 		}
@@ -1078,6 +1079,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 			extension = "service";
 		}
 
+		if ((var = switch_channel_get_variable(channel, "force_transfer_dialplan"))) {
+			dialplan = var;
+		}
+
+		if ((var = switch_channel_get_variable(channel, "force_transfer_context"))) {
+			context = var;
+		}
+		
 		new_profile = switch_caller_profile_clone(session, profile);
 
 		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);
