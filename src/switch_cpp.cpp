@@ -1090,6 +1090,12 @@ SWITCH_DECLARE(void) console_clean_log(char *msg)
 }
 
 
+SWITCH_DECLARE(void) msleep(uint32_t ms)
+{
+	switch_sleep(ms * 1000);
+	return;
+}
+
 SWITCH_DECLARE(void) bridge(CoreSession &session_a, CoreSession &session_b)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bridge called, session_a uuid: %s\n", session_a.get_uuid());

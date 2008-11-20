@@ -373,6 +373,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
 SWITCH_DECLARE(void) console_log(char *level_str, char *msg);
 SWITCH_DECLARE(void) console_clean_log(char *msg);
+SWITCH_DECLARE(void) msleep(uint32_t ms);
 
 /** \brief bridge the audio of session_b into session_a
  * 
