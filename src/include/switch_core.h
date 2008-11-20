@@ -92,6 +92,7 @@ struct switch_core_session_message {
 	const char *_file;
 	const char *_func;
 	int _line;
+
 };
 
 /*! \brief A generic object to pass as a thread's session object to allow mutiple arguements and a pool */

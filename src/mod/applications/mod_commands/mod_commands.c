@@ -1259,6 +1259,45 @@ SWITCH_STANDARD_API(uuid_chat)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+
+#define UUID_DEFLECT_SYNTAX "<uuid> <uri>"
+SWITCH_STANDARD_API(uuid_deflect)
+{
+	switch_core_session_t *tsession = NULL;
+	char *uuid = NULL, *text = NULL;
+
+	if (!switch_strlen_zero(cmd) && (uuid = strdup(cmd))) {
+		if ((text = strchr(uuid, ' '))) {
+			*text++ = '\0';
+		}
+	}
+
+	if (switch_strlen_zero(uuid) || switch_strlen_zero(text)) {
+		stream->write_function(stream, "-USAGE: %s\n", UUID_DEFLECT_SYNTAX);
+	} else {
+		if ((tsession = switch_core_session_locate(uuid))) {
+			switch_core_session_message_t msg = { 0 };
+
+			/* Tell the channel to deflect the call */
+			msg.from = __FILE__;
+			msg.string_arg = text;
+			msg.message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
+			switch_core_session_receive_message(tsession, &msg);
+			stream->write_function(stream, "+OK:%s\n", msg.string_reply);
+			if (switch_set_flag((&msg), SCSMF_FREE_STRING_REPLY)) {
+				free(msg.string_reply);
+			}
+			switch_core_session_rwunlock(tsession);
+		} else {
+			stream->write_function(stream, "-ERR No Such Channel %s!\n", uuid);
+		}
+	}
+
+	switch_safe_free(uuid);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define SCHED_TRANSFER_SYNTAX "[+]<time> <uuid> <extension> [<dialplan>] [<context>]"
 SWITCH_STANDARD_API(sched_transfer_function)
 {
@@ -3091,6 +3130,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "regex", "Eval a regex", regex_function, "<data>|<pattern>[|<subst string>]");
 	SWITCH_ADD_API(commands_api_interface, "acl", "compare an ip to an acl list", acl_function, "<ip> <list_name>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_chat", "Send a chat message", uuid_chat, UUID_CHAT_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "uuid_deflect", "Send a deflect", uuid_deflect, UUID_DEFLECT_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "find_user_xml", "find a user", find_user_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "user_exists", "find a user", user_exists_function, "<key> <user> <domain>");
 	SWITCH_ADD_API(commands_api_interface, "xml_locate", "find some xml", xml_locate_function, "[root | <section> <tag> <tag_attr_name> <tag_attr_val>]");

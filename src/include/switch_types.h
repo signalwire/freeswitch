@@ -676,7 +676,9 @@ typedef enum {
 } switch_text_channel_t;
 
 typedef enum {
-	SCSMF_DYNAMIC = (1 << 0)
+	SCSMF_DYNAMIC = (1 << 0),
+	SCSMF_FREE_STRING_REPLY = (1 << 1),
+	SCSMF_FREE_POINTER_REPLY = (1 << 2),
 } switch_core_session_message_flag_enum_t;
 typedef uint32_t switch_core_session_message_flag_t;
 

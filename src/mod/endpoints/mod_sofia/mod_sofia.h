@@ -513,6 +513,7 @@ struct private_object {
 	switch_size_t last_ts;
 	uint32_t check_frames;
 	uint32_t mismatch_count;
+	nua_event_t want_event;
 };
 
 struct callback_t {
@@ -717,3 +718,4 @@ void sofia_glue_restart_all_profiles(void);
 void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
 const char * sofia_state_string(int state);
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force);
+void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);

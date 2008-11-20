@@ -83,6 +83,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
 	switch_channel_t *channel = NULL;
+	private_object_t *tech_pvt = NULL;
 
 	/* make sure we have a proper event */
 	if (!sip || !sip->sip_event) {
@@ -94,14 +95,35 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 		return;
 	}
+	
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+		switch_assert(channel != NULL);
+		tech_pvt = switch_core_session_get_private(session);
+		switch_assert(tech_pvt != NULL);
+	}
+
+	if (!strcasecmp(sip->sip_event->o_type, "refer")) {
+		if (session && channel && tech_pvt) {
+			if (sip->sip_payload && sip->sip_payload->pl_data) {
+				if (!switch_stristr("100", sip->sip_payload->pl_data)) {
+					switch_channel_set_variable(channel, "sip_refer_reply", sip->sip_payload->pl_data);
+					if (tech_pvt->want_event == 9999) {
+						tech_pvt->want_event = 0;
+					}
+				}
+			}
+		}
+		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+	}
+
 
 	/* make sure we have a proper "talk" event */
 	if (!session || strcasecmp(sip->sip_event->o_type, "talk")) {
 		goto error;
 	}
 
-	channel = switch_core_session_get_channel(session);
-	switch_assert(channel != NULL);
+	
 	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
 		switch_channel_answer(channel);
 		switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
@@ -109,6 +131,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 		return;
 	}
+	
 
   error:
 	nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS(nua), TAG_END());
@@ -158,6 +181,18 @@ void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
 
 void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip)
 {
+}
+
+void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout)
+{
+	time_t exp = switch_timestamp(NULL) + timeout;
+	
+	tech_pvt->want_event = event;
+
+	while(switch_channel_ready(tech_pvt->channel) && tech_pvt->want_event && switch_timestamp(NULL) < exp) {
+		switch_yield(100000);
+	}
+	
 }
 
 void sofia_event_callback(nua_event_t event,
@@ -335,6 +370,10 @@ void sofia_event_callback(nua_event_t event,
 	}
 
   done:
+
+	if (tech_pvt && tech_pvt->want_event && event == tech_pvt->want_event) {
+		tech_pvt->want_event = 0;
+	}
 
 	switch (event) {
 	case nua_i_subscribe:
@@ -586,6 +625,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("include-session-description")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("message-summary")),
+				   NUTAG_ALLOW_EVENTS("refer"),
 				   SIPTAG_SUPPORTED_STR(supported), SIPTAG_USER_AGENT_STR(profile->user_agent), TAG_END());
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set params for %s\n", profile->name);
@@ -2940,6 +2980,7 @@ static void launch_nightmare_xfer(nightmare_xfer_helper_t *nhelper)
 }
 
 /*---------------------------------------*/
+
 void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, switch_core_session_t *session, sip_t const *sip, tagi_t tags[])
 {
 	/* Incoming refer */
