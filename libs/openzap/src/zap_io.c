@@ -1712,7 +1712,14 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 		if (zap_buffer_read(zchan->gen_dtmf_buffer, digits, dblen) && !zap_strlen_zero_buf(digits)) {
 			zap_log(ZAP_LOG_DEBUG, "%d:%d GENERATE DTMF [%s]\n", zchan->span_id, zchan->chan_id, digits);	
 		
-			for (cur = digits; *cur; cur++) {
+			cur = digits;
+
+			if (*cur == 'F') {
+				zap_channel_command(zchan, ZAP_COMMAND_FLASH, NULL);
+				cur++;
+			}
+
+			for (; *cur; cur++) {
 				int wrote = 0;
 				if ((wrote = teletone_mux_tones(&zchan->tone_session, &zchan->tone_session.TONES[(int)*cur]))) {
 					zap_buffer_write(zchan->dtmf_buffer, zchan->tone_session.buffer, wrote * 2);

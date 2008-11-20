@@ -443,6 +443,15 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 			zap_clear_flag_locked(zchan, ZAP_CHANNEL_OFFHOOK);
 		}
 		break;
+	case ZAP_COMMAND_FLASH:
+		{
+			int command = ZT_FLASH;
+			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "FLASH Failed");
+				return ZAP_FAIL;
+			}
+		}
+		break;
 	case ZAP_COMMAND_GENERATE_RING_ON:
 		{
 			int command = ZT_RING;
