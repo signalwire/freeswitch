@@ -3856,6 +3856,10 @@ public class freeswitch {
     freeswitchPINVOKE.console_clean_log(msg);
   }
 
+  public static void msleep(uint ms) {
+    freeswitchPINVOKE.msleep(ms);
+  }
+
   public static void bridge(CoreSession session_a, CoreSession session_b) {
     freeswitchPINVOKE.bridge(CoreSession.getCPtr(session_a), CoreSession.getCPtr(session_b));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -10506,6 +10510,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_console_clean_log")]
   public static extern void console_clean_log(string jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_msleep")]
+  public static extern void msleep(uint jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_bridge")]
   public static extern void bridge(HandleRef jarg1, HandleRef jarg2);

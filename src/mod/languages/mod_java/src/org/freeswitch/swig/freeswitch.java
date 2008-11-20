@@ -25,6 +25,10 @@ public class freeswitch {
     freeswitchJNI.console_clean_log(msg);
   }
 
+  public static void msleep(SWIGTYPE_p_uint32_t ms) {
+    freeswitchJNI.msleep(SWIGTYPE_p_uint32_t.getCPtr(ms));
+  }
+
   public static void bridge(CoreSession session_a, CoreSession session_b) {
     freeswitchJNI.bridge(CoreSession.getCPtr(session_a), session_a, CoreSession.getCPtr(session_b), session_b);
   }

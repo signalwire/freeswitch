@@ -26839,6 +26839,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_console_clean_log(char * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_msleep(unsigned long jarg1) {
+  uint32_t arg1 ;
+  
+  arg1 = (uint32_t)jarg1; 
+  msleep(arg1);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_bridge(void * jarg1, void * jarg2) {
   CoreSession *arg1 = 0 ;
   CoreSession *arg2 = 0 ;

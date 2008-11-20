@@ -302,6 +302,7 @@ CoreSession_swigregister(CoreSession)
 
 console_log = _freeswitch.console_log
 console_clean_log = _freeswitch.console_clean_log
+msleep = _freeswitch.msleep
 bridge = _freeswitch.bridge
 hanguphook = _freeswitch.hanguphook
 dtmf_callback = _freeswitch.dtmf_callback

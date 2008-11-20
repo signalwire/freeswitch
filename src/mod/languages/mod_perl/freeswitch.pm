@@ -52,6 +52,7 @@ package freeswitch;
 *consoleCleanLog = *freeswitchc::consoleCleanLog;
 *console_log = *freeswitchc::console_log;
 *console_clean_log = *freeswitchc::console_clean_log;
+*msleep = *freeswitchc::msleep;
 *bridge = *freeswitchc::bridge;
 *hanguphook = *freeswitchc::hanguphook;
 *dtmf_callback = *freeswitchc::dtmf_callback;

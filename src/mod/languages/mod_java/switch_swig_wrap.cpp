@@ -3032,6 +3032,22 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_console_1clean_1l
 }
 
 
+SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_msleep(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  uint32_t arg1 ;
+  uint32_t *argp1 ;
+  
+  (void)jenv;
+  (void)jcls;
+  argp1 = *(uint32_t **)&jarg1; 
+  if (!argp1) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "Attempt to dereference null uint32_t");
+    return ;
+  }
+  arg1 = *argp1; 
+  msleep(arg1);
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_bridge(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2, jobject jarg2_) {
   CoreSession *arg1 = 0 ;
   CoreSession *arg2 = 0 ;

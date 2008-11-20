@@ -8683,6 +8683,35 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_msleep(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  uint32_t arg1 ;
+  void *argp1 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:msleep",&obj0)) SWIG_fail;
+  {
+    res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_uint32_t,  0  | 0);
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "msleep" "', argument " "1"" of type '" "uint32_t""'"); 
+    }  
+    if (!argp1) {
+      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "msleep" "', argument " "1"" of type '" "uint32_t""'");
+    } else {
+      uint32_t * temp = reinterpret_cast< uint32_t * >(argp1);
+      arg1 = *temp;
+      if (SWIG_IsNewObj(res1)) delete temp;
+    }
+  }
+  msleep(arg1);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_bridge(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = 0 ;
@@ -9701,6 +9730,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"CoreSession_swigregister", CoreSession_swigregister, METH_VARARGS, NULL},
 	 { (char *)"console_log", _wrap_console_log, METH_VARARGS, NULL},
 	 { (char *)"console_clean_log", _wrap_console_clean_log, METH_VARARGS, NULL},
+	 { (char *)"msleep", _wrap_msleep, METH_VARARGS, NULL},
 	 { (char *)"bridge", _wrap_bridge, METH_VARARGS, NULL},
 	 { (char *)"hanguphook", _wrap_hanguphook, METH_VARARGS, NULL},
 	 { (char *)"dtmf_callback", _wrap_dtmf_callback, METH_VARARGS, NULL},

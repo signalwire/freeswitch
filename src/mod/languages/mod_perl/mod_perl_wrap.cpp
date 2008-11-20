@@ -8968,6 +8968,37 @@ XS(_wrap_console_clean_log) {
 }
 
 
+XS(_wrap_msleep) {
+  {
+    uint32_t arg1 ;
+    void *argp1 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: msleep(ms);");
+    }
+    {
+      res1 = SWIG_ConvertPtr(ST(0), &argp1, SWIGTYPE_p_uint32_t,  0 );
+      if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "msleep" "', argument " "1"" of type '" "uint32_t""'"); 
+      }  
+      if (!argp1) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "msleep" "', argument " "1"" of type '" "uint32_t""'");
+      } else {
+        arg1 = *(reinterpret_cast< uint32_t * >(argp1));
+      }
+    }
+    msleep(arg1);
+    
+    XSRETURN(argvi);
+  fail:
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_bridge) {
   {
     CoreSession *arg1 = 0 ;
@@ -10656,6 +10687,7 @@ static swig_command_info swig_commands[] = {
 {"freeswitchc::CoreSession_run_dtmf_callback", _wrap_CoreSession_run_dtmf_callback},
 {"freeswitchc::console_log", _wrap_console_log},
 {"freeswitchc::console_clean_log", _wrap_console_clean_log},
+{"freeswitchc::msleep", _wrap_msleep},
 {"freeswitchc::bridge", _wrap_bridge},
 {"freeswitchc::hanguphook", _wrap_hanguphook},
 {"freeswitchc::dtmf_callback", _wrap_dtmf_callback},

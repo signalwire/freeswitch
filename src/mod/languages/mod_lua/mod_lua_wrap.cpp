@@ -6791,6 +6791,32 @@ fail:
 }
 
 
+static int _wrap_msleep(lua_State* L) {
+  int SWIG_arg = -1;
+  uint32_t arg1 ;
+  uint32_t *argp1 ;
+  
+  SWIG_check_num_args("msleep",1,1)
+  if(!lua_isuserdata(L,1)) SWIG_fail_arg("msleep",1,"uint32_t");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&argp1,SWIGTYPE_p_uint32_t,0))){
+    SWIG_fail_ptr("msleep",1,SWIGTYPE_p_uint32_t);
+  }
+  arg1 = *argp1;
+  
+  msleep(arg1);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_bridge(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = 0 ;
@@ -7801,6 +7827,7 @@ static const struct luaL_reg swig_commands[] = {
     { "consoleCleanLog", _wrap_consoleCleanLog},
     { "console_log", _wrap_console_log},
     { "console_clean_log", _wrap_console_clean_log},
+    { "msleep", _wrap_msleep},
     { "bridge", _wrap_bridge},
     { "hanguphook", _wrap_hanguphook},
     { "dtmf_callback", _wrap_dtmf_callback},
