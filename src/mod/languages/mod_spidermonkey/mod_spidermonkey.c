@@ -3508,7 +3508,7 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 
 		/* Emaculent conception of session object into the script if one is available */
 		if (!(session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
-			switch_snprintf(buf, sizeof(buf), "~var session = new Object();");
+			switch_snprintf(buf, sizeof(buf), "~var session = false;");
 			eval_some_js(buf, cx, javascript_global_object, &rval);
 			return;
 		}
