@@ -1285,9 +1285,6 @@ SWITCH_STANDARD_API(uuid_deflect)
 			msg.message_id = SWITCH_MESSAGE_INDICATE_DEFLECT;
 			switch_core_session_receive_message(tsession, &msg);
 			stream->write_function(stream, "+OK:%s\n", msg.string_reply);
-			if (switch_set_flag((&msg), SCSMF_FREE_STRING_REPLY)) {
-				free(msg.string_reply);
-			}
 			switch_core_session_rwunlock(tsession);
 		} else {
 			stream->write_function(stream, "-ERR No Such Channel %s!\n", uuid);
