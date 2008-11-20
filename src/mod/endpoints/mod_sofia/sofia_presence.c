@@ -1611,7 +1611,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 					note_txt = note->txt;
 				}
 
-				if (person && (act = switch_xml_child(person, "rpid:activities"))) {
+				if (person && (act = switch_xml_child(person, "rpid:activities")) && act->child && act->child->name) {
 					if ((rpid = strchr(act->child->name, ':'))) {
 						rpid++;
 					} else {
