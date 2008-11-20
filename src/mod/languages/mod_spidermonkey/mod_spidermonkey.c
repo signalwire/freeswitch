@@ -2727,7 +2727,7 @@ static JSObject *new_js_session(JSContext * cx, JSObject * obj, switch_core_sess
 		(*jss)->stack_depth = 0;
 		if ((JS_SetPrivate(cx, session_obj, *jss) &&
 			 JS_DefineProperties(cx, session_obj, session_props) && JS_DefineFunctions(cx, session_obj, session_methods))) {
-			if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_read_lock_hangup(session) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Failure.\n");
 				free(*jss);
 				return NULL;
@@ -3508,8 +3508,9 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 
 		/* Emaculent conception of session object into the script if one is available */
 		if (!(session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
-			switch_snprintf(buf, sizeof(buf), "~var session = false;");
+			switch_snprintf(buf, sizeof(buf), "~var session = new Object();");
 			eval_some_js(buf, cx, javascript_global_object, &rval);
+			return;
 		}
 		if (ro) {
 			new_request(cx, javascript_global_object, ro);

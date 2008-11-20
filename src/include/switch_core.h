@@ -321,6 +321,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock(_In_ switch_core_s
 
 
 #ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock_hangup(_In_ switch_core_session_t *session, const char *file, const char *func, int line);
+#endif
+
+/*! 
+  \brief Acquire a read lock on the session
+  \param session the session to acquire from
+  \return success if it is safe to read from the session
+*/
+#ifdef SWITCH_DEBUG_RWLOCKS
+#define switch_core_session_read_lock(session) switch_core_session_perform_read_lock_hangup(session, __FILE__, __SWITCH_FUNC__, __LINE__)
+#else
+SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock_hangup(_In_ switch_core_session_t *session);
+#endif
+
+
+#ifdef SWITCH_DEBUG_RWLOCKS
 SWITCH_DECLARE(void) switch_core_session_perform_write_lock(_In_ switch_core_session_t *session, const char *file, const char *func, int line);
 #endif
 
