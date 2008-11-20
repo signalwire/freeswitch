@@ -1134,8 +1134,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			switch_mutex_lock(tech_pvt->sofia_mutex);
 			
 			if ((var = switch_channel_get_variable(tech_pvt->channel, "sip_refer_reply"))) {
-				msg->string_reply = strdup(var); 
-				switch_set_flag(msg, SCSMF_FREE_STRING_REPLY);
+				msg->string_reply = switch_core_session_strdup(session, var); 
 			} else {
 				msg->string_reply = "no reply";
 			}
