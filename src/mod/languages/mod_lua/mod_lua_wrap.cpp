@@ -6793,17 +6793,11 @@ fail:
 
 static int _wrap_msleep(lua_State* L) {
   int SWIG_arg = -1;
-  uint32_t arg1 ;
-  uint32_t *argp1 ;
+  unsigned int arg1 ;
   
   SWIG_check_num_args("msleep",1,1)
-  if(!lua_isuserdata(L,1)) SWIG_fail_arg("msleep",1,"uint32_t");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&argp1,SWIGTYPE_p_uint32_t,0))){
-    SWIG_fail_ptr("msleep",1,SWIGTYPE_p_uint32_t);
-  }
-  arg1 = *argp1;
-  
+  if(!lua_isnumber(L,1)) SWIG_fail_arg("msleep",1,"unsigned int");
+  arg1 = (unsigned int)lua_tonumber(L, 1);
   msleep(arg1);
   SWIG_arg=0;
   

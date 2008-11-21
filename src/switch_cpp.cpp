@@ -1090,7 +1090,7 @@ SWITCH_DECLARE(void) console_clean_log(char *msg)
 }
 
 
-SWITCH_DECLARE(void) msleep(uint32_t ms)
+SWITCH_DECLARE(void) msleep(unsigned ms)
 {
 	switch_sleep(ms * 1000);
 	return;

@@ -8970,30 +8970,26 @@ XS(_wrap_console_clean_log) {
 
 XS(_wrap_msleep) {
   {
-    uint32_t arg1 ;
-    void *argp1 ;
-    int res1 = 0 ;
+    unsigned int arg1 ;
+    unsigned int val1 ;
+    int ecode1 = 0 ;
     int argvi = 0;
     dXSARGS;
     
     if ((items < 1) || (items > 1)) {
       SWIG_croak("Usage: msleep(ms);");
     }
-    {
-      res1 = SWIG_ConvertPtr(ST(0), &argp1, SWIGTYPE_p_uint32_t,  0 );
-      if (!SWIG_IsOK(res1)) {
-        SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "msleep" "', argument " "1"" of type '" "uint32_t""'"); 
-      }  
-      if (!argp1) {
-        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "msleep" "', argument " "1"" of type '" "uint32_t""'");
-      } else {
-        arg1 = *(reinterpret_cast< uint32_t * >(argp1));
-      }
-    }
+    ecode1 = SWIG_AsVal_unsigned_SS_int SWIG_PERL_CALL_ARGS_2(ST(0), &val1);
+    if (!SWIG_IsOK(ecode1)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "msleep" "', argument " "1"" of type '" "unsigned int""'");
+    } 
+    arg1 = static_cast< unsigned int >(val1);
     msleep(arg1);
+    
     
     XSRETURN(argvi);
   fail:
+    
     SWIG_croak_null();
   }
 }

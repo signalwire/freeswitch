@@ -26839,10 +26839,10 @@ SWIGEXPORT void SWIGSTDCALL CSharp_console_clean_log(char * jarg1) {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_msleep(unsigned long jarg1) {
-  uint32_t arg1 ;
+SWIGEXPORT void SWIGSTDCALL CSharp_msleep(unsigned int jarg1) {
+  unsigned int arg1 ;
   
-  arg1 = (uint32_t)jarg1; 
+  arg1 = (unsigned int)jarg1; 
   msleep(arg1);
 }
 
