@@ -106,7 +106,15 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	if (!strcasecmp(sip->sip_event->o_type, "refer")) {
 		if (session && channel && tech_pvt) {
 			if (sip->sip_payload && sip->sip_payload->pl_data) {
-				if (!switch_stristr("100", sip->sip_payload->pl_data)) {
+				char *p;
+				int status;
+				if ((p = strchr(sip->sip_payload->pl_data, ' '))) {
+					p++;
+					if (p) {
+						status = atoi(p);
+					}
+				}
+				if (!status || status >= 200) {
 					switch_channel_set_variable(channel, "sip_refer_reply", sip->sip_payload->pl_data);
 					if (tech_pvt->want_event == 9999) {
 						tech_pvt->want_event = 0;
