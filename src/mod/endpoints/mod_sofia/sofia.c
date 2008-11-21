@@ -116,6 +116,9 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 				}
 				if (!status || status >= 200) {
 					switch_channel_set_variable(channel, "sip_refer_reply", sip->sip_payload->pl_data);
+					if (status == 200) {
+						switch_channel_hangup(channel, SWITCH_CAUSE_BLIND_TRANSFER);
+					}
 					if (tech_pvt->want_event == 9999) {
 						tech_pvt->want_event = 0;
 					}
