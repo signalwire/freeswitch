@@ -143,18 +143,18 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 	const char *local_ident;
 	const char *far_ident;
 	switch_core_session_t *session;
-	switch_channel_t *chan;
+	switch_channel_t *channel;
 	pvt_t *pvt;
 	char *tmp;
 
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
-
+    
 	session = pvt->session;
 	switch_assert(session);
 
-	chan = switch_core_session_get_channel(session);
-	switch_assert(chan);
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel);
 
 	t30_get_transfer_statistics(s, &t);
 	local_ident = switch_str_nil(t30_get_tx_ident(s));
@@ -171,11 +171,11 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
         } else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
         }
-		switch_channel_set_variable(chan, "fax_success", "1");
+		switch_channel_set_variable(channel, "fax_success", "1");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
 						  t30_completion_code_to_str(result));
-		switch_channel_set_variable(chan, "fax_success", "0");
+		switch_channel_set_variable(channel, "fax_success", "0");
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
@@ -198,51 +198,53 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 
 	tmp = switch_mprintf("%i", result);
 	if (tmp) {
-		switch_channel_set_variable(chan, "fax_result_code", tmp);
+		switch_channel_set_variable(channel, "fax_result_code", tmp);
 		switch_safe_free(tmp);
 	}
 
-	switch_channel_set_variable(chan, "fax_result_text", t30_completion_code_to_str(result));
+	switch_channel_set_variable(channel, "fax_result_text", t30_completion_code_to_str(result));
 
-	switch_channel_set_variable(chan, "fax_ecm_used", (t.error_correcting_mode) ? "on" : "off");
-	switch_channel_set_variable(chan, "fax_local_station_id", local_ident);
-	switch_channel_set_variable(chan, "fax_remote_station_id", far_ident);
+	switch_channel_set_variable(channel, "fax_ecm_used", (t.error_correcting_mode) ? "on" : "off");
+	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
+	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
 
 	tmp = switch_mprintf("%i", t.pages_transferred);
 	if (tmp) {
-		switch_channel_set_variable(chan, "fax_document_transferred_pages", tmp);
+		switch_channel_set_variable(channel, "fax_document_transferred_pages", tmp);
 		switch_safe_free(tmp);
 	}
 
 	tmp = switch_mprintf("%i", t.pages_in_file);
 	if (tmp) {
-		switch_channel_set_variable(chan, "fax_document_total_pages", tmp);
+		switch_channel_set_variable(channel, "fax_document_total_pages", tmp);
 		switch_safe_free(tmp);
 	}
 
 	tmp = switch_mprintf("%ix%i", t.x_resolution, t.y_resolution);
 	if (tmp) {
-		switch_channel_set_variable(chan, "fax_image_resolution", tmp);
+		switch_channel_set_variable(channel, "fax_image_resolution", tmp);
 		switch_safe_free(tmp);
 	}
 
 	tmp = switch_mprintf("%d", t.image_size);
 	if (tmp) {
-		switch_channel_set_variable(chan, "fax_image_size", tmp);
+		switch_channel_set_variable(channel, "fax_image_size", tmp);
 		switch_safe_free(tmp);
 	}
 
 	tmp = switch_mprintf("%d", t.bad_rows);
 	if (tmp) {
-		switch_channel_set_variable(chan, "fax_bad_rows", tmp);
+		switch_channel_set_variable(channel, "fax_bad_rows", tmp);
 		switch_safe_free(tmp);
 	}
 
 	tmp = switch_mprintf("%i", t.bit_rate);
 	if (tmp) {
-		switch_channel_set_variable(chan, "fax_transfer_rate", tmp);
+		switch_channel_set_variable(channel, "fax_transfer_rate", tmp);
 		switch_safe_free(tmp);
 	}
+
+    switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 	/*
       TODO Fire events
@@ -253,15 +255,15 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 {
 
 	switch_core_session_t *session;
-	switch_channel_t *chan;
+	switch_channel_t *channel;
 	fax_state_t *fax;
 	t30_state_t *t30;
 
 	session = (switch_core_session_t *) pvt->session;
 	switch_assert(session);
 
-	chan = switch_core_session_get_channel(session);
-	switch_assert(chan);
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel);
 
 
 	switch (trans_mode) {
@@ -306,19 +308,19 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 
 		if (pvt->disable_v17) {
 			t30_set_supported_modems(t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER);
-			switch_channel_set_variable(chan, "fax_v17_disabled", "1");
+			switch_channel_set_variable(channel, "fax_v17_disabled", "1");
 		} else {
 			t30_set_supported_modems(t30, T30_SUPPORT_V29 | T30_SUPPORT_V27TER | T30_SUPPORT_V17);
-			switch_channel_set_variable(chan, "fax_v17_disabled", "0");
+			switch_channel_set_variable(channel, "fax_v17_disabled", "0");
 		}
 
 		if (pvt->use_ecm) {
 			t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
 			t30_set_ecm_capability(t30, TRUE);
-			switch_channel_set_variable(chan, "fax_ecm_requested", "1");
+			switch_channel_set_variable(channel, "fax_ecm_requested", "1");
 		} else {
 			t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION);
-			switch_channel_set_variable(chan, "fax_ecm_requested", "0");
+			switch_channel_set_variable(channel, "fax_ecm_requested", "0");
 		}
 
 		if (pvt->app_mode == FUNCTION_TX) {
@@ -326,7 +328,7 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 		} else {
 			t30_set_rx_file(t30, pvt->filename, -1);
 		}
-		switch_channel_set_variable(chan, "fax_filename", pvt->filename);
+		switch_channel_set_variable(channel, "fax_filename", pvt->filename);
 		break;
 	case T38_MODE:
 		/* 
