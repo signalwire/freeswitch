@@ -484,7 +484,7 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		}
 	}
 
-	if (switch_channel_get_state(channel) < CS_HANGUP) {
+	if (switch_channel_get_state(channel) == CS_EXCHANGE_MEDIA) {
 		switch_channel_set_state(channel, CS_RESET);
 	}
 
