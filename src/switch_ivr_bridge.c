@@ -464,11 +464,11 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 
 	if (state < CS_HANGUP && switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 		switch_ivr_park_session(session);
-	}
-
-	if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) && bd && !bd->clean_exit && state != CS_PARK && 
-		state != CS_ROUTING && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
-		switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	} else {
+		if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) && bd && !bd->clean_exit && state != CS_PARK && 
+			state != CS_ROUTING && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
+			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		}
 	}
 
 	if (switch_true(switch_channel_get_variable(channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
@@ -947,10 +947,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 		&& !a_leg->clean_exit && !inner_bridge) {
 		if ((state != CS_EXECUTE && state != CS_SOFT_EXECUTE && state != CS_PARK && state != CS_ROUTING) ||
 			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP)) {
-			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
-				switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
-			} else if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 				switch_ivr_park_session(session);
+			} else if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
+				switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 			}
 		}
 	}
