@@ -253,7 +253,8 @@ int main(int argc, char *argv[])
 {
 	char pid_path[256] = "";	/* full path to the pid file */
 	char pid_buffer[32] = "";	/* pid string */
-	switch_size_t pid_len;
+	char old_pid_buffer[32] = "";	/* pid string */
+	switch_size_t pid_len, old_pid_len;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 #ifndef WIN32
 	int nf = 0;					/* TRUE if we are running in nofork mode */
@@ -603,17 +604,34 @@ int main(int argc, char *argv[])
 	pid_len = strlen(pid_buffer);
 
 	apr_pool_create(&pool, NULL);
+	
+
 	if (switch_file_open(&fd,
-		pid_path,
-		SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE,
-		SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
-		pool) != SWITCH_STATUS_SUCCESS) {
-			fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
-			return 255;
+						 pid_path,
+						 SWITCH_FOPEN_READ,
+						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
+						 pool) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
+		return 255;
+	}
+
+	old_pid_len = sizeof(old_pid_buffer);
+	switch_file_read(fd, old_pid_buffer, &old_pid_len);
+	switch_file_close(fd);
+	
+	if (switch_file_open(&fd,
+						 pid_path,
+						 SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE,
+						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
+						 pool) != SWITCH_STATUS_SUCCESS) {
+		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
+		return 255;
 	}
 
 	if (switch_file_lock(fd, SWITCH_FLOCK_EXCLUSIVE | SWITCH_FLOCK_NONBLOCK) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot lock pid file %s.\n", pid_path);
+		old_pid_len = strlen(old_pid_buffer);
+		switch_file_write(fd, old_pid_buffer, &old_pid_len);
 		return 255;
 	}
 
