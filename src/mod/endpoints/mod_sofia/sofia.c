@@ -107,7 +107,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		if (session && channel && tech_pvt) {
 			if (sip->sip_payload && sip->sip_payload->pl_data) {
 				char *p;
-				int status;
+				int status = 0;
 				if ((p = strchr(sip->sip_payload->pl_data, ' '))) {
 					p++;
 					if (p) {
