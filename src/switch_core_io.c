@@ -155,6 +155,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	}
 
 	if (session->endpoint_interface->io_routines->read_frame) {
+		switch_mutex_unlock(session->read_codec->mutex);
+		switch_mutex_unlock(session->codec_read_mutex);
 		if ((status = session->endpoint_interface->io_routines->read_frame(session, frame, flags, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			for (ptr = session->event_hooks.read_frame; ptr; ptr = ptr->next) {
 				if ((status = ptr->read_frame(session, frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
@@ -162,6 +164,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 				}
 			}
 		}
+		
+		if (!session->read_codec) {
+			*frame = NULL;
+			return SWITCH_STATUS_FALSE;
+		}
+		
+		switch_mutex_lock(session->codec_read_mutex);
+		switch_mutex_lock(session->read_codec->mutex);
 	}
 
 	if (status != SWITCH_STATUS_SUCCESS) {

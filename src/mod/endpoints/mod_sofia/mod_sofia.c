@@ -702,9 +702,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						*frame = NULL;
 						return SWITCH_STATUS_GENERR;
 					}
+					
+					if (tech_pvt->check_frames++ < MAX_CODEC_CHECK_FRAMES) {
+						if (!tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
+							tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
+							goto skip;
+						}
 
-
-					if (tech_pvt->check_frames < MAX_CODEC_CHECK_FRAMES) {
 						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
 							if (++tech_pvt->mismatch_count >= MAX_MISMATCH_FRAMES) {
 								switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
@@ -712,6 +716,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 								
 								if ((codec_ms % 10) != 0) {
 									tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
+									goto skip;
 								} else {
 									if (switch_rtp_ready(tech_pvt->rtp_session) && codec_ms != tech_pvt->codec_ms) {
 										const char *val;
@@ -770,13 +775,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 							
 								}
-								tech_pvt->check_frames++;
 							}
 						} else {
 							tech_pvt->mismatch_count = 0;
 						}
 						tech_pvt->last_ts = tech_pvt->read_frame.timestamp;
 					}
+				skip:
 					
 					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet)) {
 						frames = (tech_pvt->read_frame.datalen / bytes);
