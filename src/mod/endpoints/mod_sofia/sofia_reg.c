@@ -638,7 +638,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (is_nat && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
-			switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", url_ip, network_port);
+			switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
 		}
 
 		if (contact->m_url->url_params) {
@@ -699,7 +699,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 
 				if (*received_data && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
-					switch_snprintf(received_data, sizeof(received_data), ";received=\"%s:%d\"", url_ip, network_port);
+					switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
 				}
 
 				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
