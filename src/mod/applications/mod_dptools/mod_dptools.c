@@ -126,22 +126,6 @@ SWITCH_STANDARD_APP(exe_function)
 	}
 }
 
-#define SAY_SYNTAX "<module_name> <say_type> <say_method> <text>"
-SWITCH_STANDARD_APP(say_function)
-{
-	char *argv[4] = { 0 };
-	int argc;
-	char *lbuf = NULL;
-
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
-		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
-		switch_ivr_say(session, argv[3], argv[0], argv[1], argv[2], NULL);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", SAY_SYNTAX);
-	}
-
-}
-
 #define SOFT_HOLD_SYNTAX "<unhold key> [<moh_a>] [<moh_b>]"
 SWITCH_STANDARD_APP(soft_hold_function)
 {
@@ -563,25 +547,6 @@ SWITCH_STANDARD_APP(eval_function)
 	return;
 }
 
-SWITCH_STANDARD_APP(phrase_function)
-{
-	char *mydata = NULL;
-
-	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
-		const char *lang;
-		char *macro = mydata;
-		char *mdata = NULL;
-
-		if ((mdata = strchr(macro, ','))) {
-			*mdata++ = '\0';
-		}
-
-		lang = switch_channel_get_variable(switch_core_session_get_channel(session), "language");
-
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, switch_str_nil(mdata), switch_str_nil(lang));
-		switch_ivr_phrase_macro(session, macro, mdata, lang, NULL);
-	}
-}
 
 SWITCH_STANDARD_APP(hangup_function)
 {
@@ -1142,7 +1107,6 @@ SWITCH_STANDARD_APP(ivr_application_function)
 						&& switch_ivr_menu_stack_xml_build(xml_ctx, &menu_stack, xml_menus, xml_menu) == SWITCH_STATUS_SUCCESS) {
 						switch_xml_free(cxml);
 						cxml = NULL;
-						switch_channel_pre_answer(channel);
 						switch_ivr_menu_execute(session, menu_stack, (char *) data, NULL);
 						switch_ivr_menu_stack_free(menu_stack);
 					} else {
@@ -1407,8 +1371,6 @@ SWITCH_STANDARD_APP(speak_function)
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 	}
 
-	switch_channel_pre_answer(channel);
-
 	args.input_callback = on_dtmf;
 	args.buf = buf;
 	args.buflen = sizeof(buf);
@@ -1625,12 +1587,64 @@ SWITCH_STANDARD_APP(read_function)
 	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name, digit_buffer, sizeof(digit_buffer), timeout, valid_terminators);
 }
 
+
+
+#define SAY_SYNTAX "<module_name> <say_type> <say_method> <text>"
+SWITCH_STANDARD_APP(say_function)
+{
+	char *argv[4] = { 0 };
+	int argc;
+	char *lbuf = NULL;
+	switch_input_args_t args = { 0 };
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
+		
+		args.input_callback = on_dtmf;
+		
+		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+		
+		switch_ivr_say(session, argv[3], argv[0], argv[1], argv[2], &args);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", SAY_SYNTAX);
+	}
+
+}
+
+
+SWITCH_STANDARD_APP(phrase_function)
+{
+	char *mydata = NULL;
+	switch_input_args_t args = { 0 };
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
+		const char *lang;
+		char *macro = mydata;
+		char *mdata = NULL;
+
+		if ((mdata = strchr(macro, ','))) {
+			*mdata++ = '\0';
+		}
+		
+		lang = switch_channel_get_variable(switch_core_session_get_channel(session), "language");
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, switch_str_nil(mdata), switch_str_nil(lang));
+
+		args.input_callback = on_dtmf;
+		
+		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
+
+		switch_ivr_phrase_macro(session, macro, mdata, lang, &args);
+	}
+}
+
+
 SWITCH_STANDARD_APP(playback_function)
 {
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-
-	switch_channel_pre_answer(switch_core_session_get_channel(session));
 
 	args.input_callback = on_dtmf;
 
@@ -1651,8 +1665,6 @@ SWITCH_STANDARD_APP(gentones_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Params!\n");
 		return;
 	}
-
-	switch_channel_pre_answer(switch_core_session_get_channel(session));
 
 	if ((l = strchr(tone_script, '|'))) {
 		*l++ = '\0';
