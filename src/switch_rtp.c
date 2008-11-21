@@ -1007,8 +1007,11 @@ SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 
 	if (rtp_session->sock_input) {
 		char o[4] = "DOH";
-		switch_size_t len = sizeof(o);
-		
+		switch_size_t len;
+
+		len = sizeof(o);		
+		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) o, &len);
+		len = sizeof(o);
 		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) o, &len);
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
