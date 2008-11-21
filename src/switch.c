@@ -610,15 +610,13 @@ int main(int argc, char *argv[])
 						 pid_path,
 						 SWITCH_FOPEN_READ,
 						 SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE,
-						 pool) != SWITCH_STATUS_SUCCESS) {
-		fprintf(stderr, "Cannot open pid file %s.\n", pid_path);
-		return 255;
+						 pool) == SWITCH_STATUS_SUCCESS) {
+
+		old_pid_len = sizeof(old_pid_buffer);
+		switch_file_read(fd, old_pid_buffer, &old_pid_len);
+		switch_file_close(fd);
 	}
 
-	old_pid_len = sizeof(old_pid_buffer);
-	switch_file_read(fd, old_pid_buffer, &old_pid_len);
-	switch_file_close(fd);
-	
 	if (switch_file_open(&fd,
 						 pid_path,
 						 SWITCH_FOPEN_WRITE | SWITCH_FOPEN_CREATE | SWITCH_FOPEN_TRUNCATE,
@@ -631,7 +629,9 @@ int main(int argc, char *argv[])
 	if (switch_file_lock(fd, SWITCH_FLOCK_EXCLUSIVE | SWITCH_FLOCK_NONBLOCK) != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "Cannot lock pid file %s.\n", pid_path);
 		old_pid_len = strlen(old_pid_buffer);
-		switch_file_write(fd, old_pid_buffer, &old_pid_len);
+		if (strlen(old_pid_buffer)) {
+			switch_file_write(fd, old_pid_buffer, &old_pid_len);
+		}
 		return 255;
 	}
 
