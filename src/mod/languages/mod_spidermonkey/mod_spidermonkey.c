@@ -3510,7 +3510,6 @@ static void js_parse_and_execute(switch_core_session_t *session, const char *inp
 		if (!(session && new_js_session(cx, javascript_global_object, session, &jss, "session", flags))) {
 			switch_snprintf(buf, sizeof(buf), "~var session = false;");
 			eval_some_js(buf, cx, javascript_global_object, &rval);
-			return;
 		}
 		if (ro) {
 			new_request(cx, javascript_global_object, ro);
