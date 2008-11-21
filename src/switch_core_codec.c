@@ -46,6 +46,7 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 {
 	switch_mutex_t *mutex = NULL;
 
+	switch_mutex_lock(session->codec_read_mutex);
 	if (session->read_codec) mutex = session->read_codec->mutex;
 	if (mutex) switch_mutex_lock(mutex);
 	session->real_read_codec = session->read_codec = NULL;
@@ -54,16 +55,19 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 	session->enc_read_frame.codec = session->read_codec;
 	session->enc_write_frame.codec = session->read_codec;
 	if (mutex) switch_mutex_unlock(mutex);
+	switch_mutex_unlock(session->codec_read_mutex);
 }
 
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t *session)
 {	
 	switch_mutex_t *mutex = NULL;
 
+	switch_mutex_lock(session->codec_write_mutex);
 	if (session->write_codec) mutex = session->write_codec->mutex;
 	if (mutex) switch_mutex_lock(mutex);
 	session->real_write_codec = session->write_codec = NULL;
 	if (mutex) switch_mutex_unlock(mutex);
+	switch_mutex_unlock(session->codec_write_mutex);
 }
 
 
@@ -73,6 +77,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	switch_mutex_lock(session->codec_read_mutex);
 
 	if (codec && !codec->implementation) {
 		codec = NULL;
@@ -128,6 +134,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 
  end:
 
+	switch_mutex_unlock(session->codec_read_mutex);
 	return status;
 
 }
@@ -192,6 +199,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
+	switch_mutex_lock(session->codec_write_mutex);
+
 	if (!codec || !codec->implementation) {
 		if (session->real_write_codec) {
 			session->write_codec = session->real_write_codec;
@@ -241,6 +250,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 	}
 
  end:
+	switch_mutex_unlock(session->codec_write_mutex);
 
 	return status;
 }

@@ -118,6 +118,8 @@ struct switch_core_session {
 
 	switch_mutex_t *mutex;
 	switch_mutex_t *resample_mutex;
+	switch_mutex_t *codec_read_mutex;
+	switch_mutex_t *codec_write_mutex;
 	switch_thread_cond_t *cond;
 
 	switch_thread_rwlock_t *rwlock;

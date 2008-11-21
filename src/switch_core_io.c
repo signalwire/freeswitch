@@ -110,10 +110,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_assert(session != NULL);
 
 	if (!(session->read_codec && session->read_codec->implementation)) {
+		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_get_state(session->channel) == CS_HIBERNATE) {
+			*frame = &runtime.dummy_cng_frame;
+			return SWITCH_STATUS_SUCCESS;
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no read codec.\n", switch_channel_get_name(session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_mutex_lock(session->codec_read_mutex);
 	switch_mutex_lock(session->read_codec->mutex);
 
   top:
@@ -521,7 +526,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	}
 
 	switch_mutex_unlock(session->read_codec->mutex);
-	
+	switch_mutex_unlock(session->codec_read_mutex);
+
 	return status;
 }
 
@@ -588,7 +594,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 	switch_mutex_lock(session->write_codec->mutex);
 	switch_mutex_lock(frame->codec->mutex);
-	
+	switch_mutex_lock(session->codec_write_mutex);	
+
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		need_codec = TRUE;
 		if (session->write_codec->implementation->codec_id == frame->codec->implementation->codec_id) {
@@ -977,7 +984,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_mutex_unlock(session->write_codec->mutex);
 	switch_mutex_unlock(frame->codec->mutex);
-	
+	switch_mutex_unlock(session->codec_write_mutex);
+
 	return status;
 }
 

@@ -165,7 +165,7 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 	}
 
 	if (switch_channel_get_state(session->channel) == CS_EXECUTE) {
-		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);
+		switch_channel_hangup(session->channel, SWITCH_CAUSE_NORMAL_CLEARING);		
 	}
 }
 
@@ -185,7 +185,6 @@ static void switch_core_standard_on_park(switch_core_session_t *session)
 {
 	switch_assert(session != NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard PARK\n", switch_channel_get_name(session->channel));
-	switch_channel_clear_flag(session->channel, CF_TRANSFER);
 	switch_core_session_reset(session, SWITCH_TRUE);
 	switch_ivr_park(session, NULL);
 }
@@ -373,6 +372,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			int do_extra_handlers = 1;
 
 			switch_channel_set_running_state(session->channel, state);
+			switch_channel_clear_flag(session->channel, CF_TRANSFER);
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */

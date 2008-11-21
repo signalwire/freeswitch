@@ -732,7 +732,7 @@ CF_EARLY_MEDIA  = (1 <<  2) - Channel is ready for audio before answer
 CF_ORIGINATOR	= (1 <<  3) - Channel is an originator
 CF_TRANSFER		= (1 <<  4) - Channel is being transfered
 CF_ACCEPT_CNG	= (1 <<  5) - Channel will accept CNG frames
-CF_WAIT_FOR_ME	= (1 <<  6) - Channel wants you to wait
+CF_REDIRECT 	= (1 <<  6) - Channel is being redirected
 CF_BRIDGED		= (1 <<  7) - Channel in a bridge
 CF_HOLD			= (1 <<  8) - Channel is on hold
 CF_SERVICE		= (1 <<  9) - Channel has a service thread
@@ -763,7 +763,7 @@ typedef enum {
 	CF_ORIGINATOR = (1 << 3),
 	CF_TRANSFER = (1 << 4),
 	CF_ACCEPT_CNG = (1 << 5),
-	CF_WAIT_FOR_ME = (1 << 6),
+	CF_REDIRECT = (1 << 6),
 	CF_BRIDGED = (1 << 7),
 	CF_HOLD = (1 << 8),
 	CF_SERVICE = (1 << 9),
@@ -787,10 +787,11 @@ typedef enum {
 	CF_PROXY_MEDIA = (1 << 27),
 	CF_INNER_BRIDGE = (1 << 28),
 	CF_REQ_MEDIA = (1 << 29),
-	CF_VERBOSE_EVENTS = (1 << 30),
-	CF_MASTER = (1 << 31)
+	CF_VERBOSE_EVENTS = (1 << 30)
 } switch_channel_flag_enum_t;
+
 typedef uint32_t switch_channel_flag_t;
+
 
 
 /*!

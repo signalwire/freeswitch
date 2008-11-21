@@ -231,7 +231,9 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 
 		state = switch_channel_get_state(peer_channels[i]);
 		if (state >= CS_HANGUP || state == CS_RESET || switch_channel_test_flag(peer_channels[i], CF_TRANSFER) ||
-			switch_channel_test_flag(peer_channels[i], CF_BRIDGED) || !switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
+			switch_channel_test_flag(peer_channels[i], CF_REDIRECT) ||
+			switch_channel_test_flag(peer_channels[i], CF_BRIDGED) || 
+			!switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
 			) {
 			(*hups)++;
 		} else if ((switch_channel_test_flag(peer_channels[i], CF_ANSWERED) ||
@@ -1453,8 +1455,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					continue;
 				}
 
-				if (switch_channel_test_flag(peer_channels[i], CF_TRANSFER) || switch_channel_test_flag(peer_channels[i], CF_BRIDGED) ||
-					switch_channel_get_state(peer_channels[i]) == CS_RESET || !switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
+				if (switch_channel_test_flag(peer_channels[i], CF_TRANSFER) 
+					|| switch_channel_test_flag(peer_channels[i], CF_REDIRECT) 
+					|| switch_channel_test_flag(peer_channels[i], CF_BRIDGED) ||
+					switch_channel_get_state(peer_channels[i]) == CS_RESET || 
+					!switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)
 					) {
 					continue;
 				}
@@ -1652,6 +1657,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 				} else if ((state=switch_channel_get_state(peer_channels[i])) < CS_HANGUP && switch_channel_test_flag(peer_channels[i], CF_ORIGINATING)) {
 					if (!(state == CS_RESET || switch_channel_test_flag(peer_channels[i], CF_TRANSFER) || 
+						  switch_channel_test_flag(peer_channels[i], CF_REDIRECT) ||
 						  switch_channel_test_flag(peer_channels[i], CF_BRIDGED))) {
 						switch_channel_hangup(peer_channels[i], *cause);
 					}
