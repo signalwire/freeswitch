@@ -16791,7 +16791,7 @@ namespace FreeSWITCH.Native {
   CF_ORIGINATOR = (1 << 3),
   CF_TRANSFER = (1 << 4),
   CF_ACCEPT_CNG = (1 << 5),
-  CF_WAIT_FOR_ME = (1 << 6),
+  CF_REDIRECT = (1 << 6),
   CF_BRIDGED = (1 << 7),
   CF_HOLD = (1 << 8),
   CF_SERVICE = (1 << 9),
@@ -16815,8 +16815,7 @@ namespace FreeSWITCH.Native {
   CF_PROXY_MEDIA = (1 << 27),
   CF_INNER_BRIDGE = (1 << 28),
   CF_REQ_MEDIA = (1 << 29),
-  CF_VERBOSE_EVENTS = (1 << 30),
-  CF_MASTER = (1 << 31)
+  CF_VERBOSE_EVENTS = (1 << 30)
 }
 
 }
