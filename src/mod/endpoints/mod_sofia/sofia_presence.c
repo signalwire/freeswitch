@@ -336,6 +336,10 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	if (status && !strcasecmp(status, "n/a")) {
 		status = NULL;
 	}
+	
+	if (switch_stristr("CS_", status)) {
+		status = NULL;
+	}
 
 	if (rpid) {
 		rpid = sofia_presence_translate_rpid(rpid, status);
