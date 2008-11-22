@@ -374,7 +374,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "sip_subscriptions.accept,sip_subscriptions.profile_name"
 								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
 								 "from sip_subscriptions left join sip_presence on "
-								 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 								 "where sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'", status, rpid, from);
 		} else {
@@ -386,7 +386,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "sip_subscriptions.accept,sip_subscriptions.profile_name"
 								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
 								 "from sip_subscriptions left join sip_presence on "
-								 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 								 "where sip_subscriptions.event='presence'", status, rpid);
 		}
@@ -489,7 +489,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 							 ",1,'%q','%q','%q',sip_presence.status,sip_presence.rpid "
 							 "from sip_subscriptions "
 							 "left join sip_presence on "
-							 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+							 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 							 "where (event='%q' or event='%q') and sub_to_user='%q' "
 							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
@@ -505,7 +505,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 							 ",0,'%q','%q','%q',sip_presence.status,sip_presence.rpid "
 							 "from sip_subscriptions "
 							 "left join sip_presence on "
-							 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+							 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 							 "where (event='%q' or event='%q') and sub_to_user='%q' "
 							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
@@ -898,12 +898,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *status = argv[15];
 	char *rpid = argv[16];
 	char *sub_to_host = argv[17];
-	
-	if (argc > 19 && !switch_strlen_zero(argv[18]) && !switch_strlen_zero(argv[19])) {
-		status = argv[18];
-		rpid = argv[19];
-	}
-
 
 	nua_handle_t *nh;
 	char *to = NULL;
@@ -915,6 +909,17 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char exp[80] = "";
 	int is_dialog = 0;
 	sofia_profile_t *ext_profile = NULL, *profile = helper->profile;
+
+
+	if (argc > 19 && !switch_strlen_zero(argv[18]) && !switch_strlen_zero(argv[19])) {
+		status = argv[18];
+		rpid = argv[19];
+	}
+
+	if (switch_strlen_zero(status)) {
+		status = "Available";
+	}
+
 
 	
 	if (profile_name && strcasecmp(profile_name, helper->profile->name)) {
