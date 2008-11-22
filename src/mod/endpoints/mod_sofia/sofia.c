@@ -84,6 +84,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 {
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
+	switch_event_t *s_event = NULL;
 
 	/* make sure we have a proper event */
 	if (!sip || !sip->sip_event) {
@@ -95,12 +96,55 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 		return;
 	}
-	
+
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 		switch_assert(channel != NULL);
 		tech_pvt = switch_core_session_get_private(session);
 		switch_assert(tech_pvt != NULL);
+	}
+
+	/* For additional NOTIFY event packages see http://www.iana.org/assignments/sip-events. */
+	if (!strcasecmp(sip->sip_event->o_type, "refer")) {
+		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_NOTIFY_REFER) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "content-type", sip->sip_content_type->c_type);
+			switch_event_add_body(s_event, "%s", sip->sip_payload->pl_data);
+		}
+	}
+
+	/* add common headers for the NOTIFY to the switch_event and fire if it exists */
+	if (s_event != NULL) {
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event-package", sip->sip_event->o_type);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "event-id", sip->sip_event->o_id);
+
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "contact", "%s@%s", 
+								sip->sip_contact->m_url->url_user, sip->sip_contact->m_url->url_host);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "from", "%s@%s", 
+								sip->sip_from->a_url->url_user, sip->sip_from->a_url->url_host);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "from-tag", sip->sip_from->a_tag);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "to", "%s@%s", 
+								sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-tag", sip->sip_to->a_tag);
+
+		if (sip->sip_call_id && sip->sip_call_id->i_id) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", sip->sip_call_id->i_id);
+		}
+		if (sip->sip_subscription_state && sip->sip_subscription_state->ss_substate) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "subscription-substate", sip->sip_subscription_state->ss_substate);
+		}
+		if (sip->sip_subscription_state && sip->sip_subscription_state->ss_reason) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "subscription-reason", sip->sip_subscription_state->ss_reason);
+		}
+		if (sip->sip_subscription_state && sip->sip_subscription_state->ss_retry_after) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "subscription-retry-after", sip->sip_subscription_state->ss_retry_after);
+		}
+		if (sip->sip_subscription_state && sip->sip_subscription_state->ss_expires) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "subscription-expires", sip->sip_subscription_state->ss_expires);
+		}
+		if (session) {
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "UniqueID", switch_core_session_get_uuid(session));
+		}
+		switch_event_fire(&s_event);
 	}
 
 	if (!strcasecmp(sip->sip_event->o_type, "refer")) {
