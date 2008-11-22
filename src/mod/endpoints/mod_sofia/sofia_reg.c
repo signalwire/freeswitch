@@ -402,6 +402,16 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 
+
+	if (now) {
+		switch_snprintf(sql, sizeof(sql), "delete from sip_presence where expires > 0 and expires <= %ld and hostname='%s'", 
+						(long) now, mod_sofia_globals.hostname);
+	} else {
+		switch_snprintf(sql, sizeof(sql), "delete from sip_presence where expires > 0 and hostname='%s'", mod_sofia_globals.hostname);
+	}
+
+	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
+
 	if (now) {
 		switch_snprintf(sql, sizeof(sql), "delete from sip_authentication where expires > 0 and expires <= %ld and hostname='%s'", 
 						(long) now, mod_sofia_globals.hostname);

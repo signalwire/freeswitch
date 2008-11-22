@@ -367,13 +367,28 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 
 		if (from) {
 			sql = switch_mprintf(
-								 "select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-								 "full_via,expires,user_agent,accept,profile_name"
-								 ",1,'%q','%q' from sip_subscriptions where event='presence' and full_from like '%%%q%%'", status, rpid, from);
+								 "select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
+								 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
+								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
+								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
+								 "sip_subscriptions.accept,sip_subscriptions.profile_name"
+								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
+								 "from sip_subscriptions left join sip_presence on "
+								 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
+								 "where sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'", status, rpid, from);
 		} else {
-			sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-								 "full_via,expires,user_agent,accept,profile_name"
-								 ",1,'%q','%q' from sip_subscriptions where event='presence'", status, rpid);
+			sql = switch_mprintf(
+								 "select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
+								 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
+								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
+								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
+								 "sip_subscriptions.accept,sip_subscriptions.profile_name"
+								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
+								 "from sip_subscriptions left join sip_presence on "
+								 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
+								 "where sip_subscriptions.event='presence'", status, rpid);
 		}
 
 		switch_assert(sql != NULL);
@@ -442,10 +457,13 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			if (probe_euser && probe_host && (profile = sofia_glue_find_profile(probe_host))) {
 				sql = switch_mprintf("select sip_registrations.sip_user, '%q', sip_registrations.status, "
 									 "sip_registrations.rpid,'', sip_dialogs.uuid, sip_dialogs.state, sip_dialogs.direction, "
-									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host "
+									 "sip_dialogs.sip_to_user, sip_dialogs.sip_to_host, sip_presence.status,sip_presence.rpid "
 									 "from sip_registrations left join sip_dialogs on "
-									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user) "
-									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host "
+									 "(sip_dialogs.sip_from_user = sip_registrations.sip_user "
+									 "and sip_dialogs.sip_from_host = sip_registrations.sip_host) "
+									 "left join sip_presence on "
+									 "(sip_registrations.sip_user=sip_presence.sip_user and sip_registrations.sip_host=sip_presence.sip_host and "
+									 "sip_registrations.profile_name=sip_presence.profile_name) "
 									 "where sip_registrations.sip_user='%q' and "
 									 "(sip_registrations.sip_host='%q' or sip_registrations.presence_hosts like '%%%q%%')", 
 									 probe_host, probe_euser, probe_host, probe_host);
@@ -461,17 +479,36 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		}
 		return;
 	case SWITCH_EVENT_PRESENCE_IN:
-		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-							 "full_via,expires,user_agent,accept,profile_name"
-							 ",1,'%q','%q','%q' from sip_subscriptions where (event='%q' or event='%q') and sub_to_user='%q' "
+		sql = switch_mprintf(
+							 
+							 "select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
+							 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
+							 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
+							 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
+							 "sip_subscriptions.accept,sip_subscriptions.profile_name"
+							 ",1,'%q','%q','%q',sip_presence.status,sip_presence.rpid "
+							 "from sip_subscriptions "
+							 "left join sip_presence on "
+							 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
+							 "where (event='%q' or event='%q') and sub_to_user='%q' "
 							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
 							 status, rpid, host, event_type, alt_event_type, euser, host, host);
 		break;
 	case SWITCH_EVENT_PRESENCE_OUT:
-		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-							 "full_via,expires,user_agent,accept,profile_name"
-							 ",0,'%q','%q','%q' from sip_subscriptions where (event='%q' or event='%q') "
-							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
+		sql = switch_mprintf(
+							 "select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
+							 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
+							 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
+							 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
+							 "sip_subscriptions.accept,sip_subscriptions.profile_name"
+							 ",0,'%q','%q','%q',sip_presence.status,sip_presence.rpid "
+							 "from sip_subscriptions "
+							 "left join sip_presence on "
+							 "(sip_subscriptions.sip_user=sip_presence.sip_user and sip_subscriptions.sip_host=sip_presence.sip_host and "
+							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
+							 "where (event='%q' or event='%q') and sub_to_user='%q' "
+							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
 							 status, rpid, host, event_type, alt_event_type, euser, host, host);
 		break;
 	default:
@@ -701,6 +738,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 	char *status = argv[2];
 	char *rpid = argv[3];
 	char *proto = argv[4];
+
 	char *to_user = NULL;
 	char *uuid = NULL;
 	char *state = NULL;
@@ -716,6 +754,10 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_set_string(to_buf, argv[8]);
 			switch_url_decode(to_buf);
 			to_user = to_buf;
+		}
+		if (argc > 10 && !switch_strlen_zero(argv[9]) && !switch_strlen_zero(argv[10])) {
+			status = argv[9];
+			rpid = argv[10];
 		}
 	}
 
@@ -834,7 +876,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							  "  </rpid:activities>\n"
 							  "  <dm:note>%s</dm:note>"
 							  " </dm:person>\n"
-							  "</presence>", id, prpid, rpid, status);
+							  "</presence>", id, open, prpid, status);
 	}
 }
 
@@ -843,20 +885,26 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	struct presence_helper *helper = (struct presence_helper *) pArg;
 	char *pl = NULL;
 	char *clean_id = NULL, *id = NULL;
-	uint32_t in = atoi(argv[14]);
-	char *status = argv[15];
-	char *rpid = argv[16];
-
 	char *proto = argv[0];
 	char *user = argv[1];
 	char *host = argv[2];
 	char *sub_to_user = argv[3];
-	char *sub_to_host = argv[17];
 	char *event = argv[5];
 	char *call_id = argv[7];
 	char *expires = argv[10];
 	char *user_agent = argv[11];
 	char *profile_name = argv[13];
+	uint32_t in = atoi(argv[14]);
+	char *status = argv[15];
+	char *rpid = argv[16];
+	char *sub_to_host = argv[17];
+	
+	if (argc > 19 && !switch_strlen_zero(argv[18]) && !switch_strlen_zero(argv[19])) {
+		status = argv[18];
+		rpid = argv[19];
+	}
+
+
 	nua_handle_t *nh;
 	char *to = NULL;
 	char *open;
@@ -1058,6 +1106,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 		if (!is_dialog) {
 			char status_line[256] = "";
+
+			switch_set_string(status_line, status);
+
 			if (in) {
 				if (!strcmp(astate, "early")) {
 					switch_snprintf(status_line, sizeof(status_line), "Ring %s", switch_str_nil(from_id));
@@ -1073,19 +1124,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 					}
 					
 					if (switch_strlen_zero(from_id)) {
-						switch_snprintf(status_line, sizeof(status_line), "On The Phone");
+						switch_snprintf(status_line, sizeof(status_line), "On The Phone %s", status);
 					} else {
 						switch_snprintf(status_line, sizeof(status_line), "Talk %s", switch_str_nil(from_id));
 					}
 					rpid = "on-the-phone";
-				} else if (!strcmp(astate, "terminated")) {
-					if (!strcasecmp(rpid, "on-the-phone")) {
-						switch_snprintf(status_line, sizeof(status_line), "Dialing");
-					} else {
-						switch_snprintf(status_line, sizeof(status_line), "Available");
-					}
-				} else {
-					switch_set_string(status_line, status);
 				}
 
 				open = "open";
@@ -1093,10 +1136,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 				open = "closed";
 			}
 			
-			if (!strncasecmp(status_line, "registered", 10)) {
-				switch_snprintf(status_line, sizeof(status_line), "Available");
-			}
-
 			prpid = translate_rpid(rpid);
 			pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status_line, &ct);
 		}
@@ -1598,10 +1637,16 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 			switch_event_t *event;
 			uint8_t in = 0;
 			char *sql;
+			char *full_agent = NULL;
+			long exp, exp_raw;
 
 			if ((xml = switch_xml_parse_str(payload->pl_data, strlen(payload->pl_data)))) {
 				char *status_txt = "", *note_txt = "";
 
+				if (sip->sip_user_agent) {
+					full_agent = sip_header_as_string(profile->home, (void *) sip->sip_user_agent);
+				}
+				
 				if ((tuple = switch_xml_child(xml, "tuple")) && (status = switch_xml_child(tuple, "status"))
 					&& (basic = switch_xml_child(status, "basic"))) {
 					status_txt = basic->txt;
@@ -1630,12 +1675,26 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 					}
 				}
 
-				if ((sql =
-					 switch_mprintf("update sip_registrations set status='%q',rpid='%q' where sip_user='%q' and sip_host='%q'",
-									note_txt, rpid, from_user, from_host))) {
-					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-				}
+				exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
+				exp = (long) switch_timestamp(NULL) + exp_raw;
 
+				if ((sql =
+					 switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' "
+									" and profile_name='%q' and hostname='%q'",
+									from_user, from_host, profile->name, mod_sofia_globals.hostname
+									))) {
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+					switch_safe_free(sql);
+				}
+					 
+				if ((sql =
+					 switch_mprintf("insert into sip_presence (sip_user, sip_host, status, rpid, expires, user_agent, profile_name, hostname) "
+									"values ('%q','%q','%q','%q',%ld,'%q','%q','%q')",
+									from_user, from_host, note_txt, rpid, exp, full_agent, profile->name, mod_sofia_globals.hostname))) {
+					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+					switch_safe_free(sql);
+				}
+				
 				event_type = sip_header_as_string(profile->home, (void *) sip->sip_event);
 
 				if (in) {
@@ -1643,8 +1702,8 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user-agent", full_agent);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
-
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", note_txt);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", event_type);
 						switch_event_fire(&event);
@@ -1654,6 +1713,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user-agent", full_agent);
 						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", from_user, from_host);
 
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", event_type);
@@ -1663,6 +1723,10 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 
 				if (event_type) {
 					su_free(profile->home, event_type);
+				}
+
+				if (full_agent) {
+					su_free(profile->home, full_agent);
 				}
 				switch_xml_free(xml);
 			}

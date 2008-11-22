@@ -2820,6 +2820,19 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   server_user     VARCHAR(255),\n"
 		"   server_host     VARCHAR(255),\n" 
 		"   profile_name    VARCHAR(255),\n" 
+		"   hostname        VARCHAR(255),\n" 
+		");\n";
+
+
+	char pres_sql[] =
+		"CREATE TABLE sip_presence (\n"
+		"   sip_user        VARCHAR(255),\n"
+		"   sip_host        VARCHAR(255),\n"
+		"   status          VARCHAR(255),\n"
+		"   rpid            VARCHAR(255),\n" 
+		"   expires         INTEGER,\n" 
+		"   user_agent      VARCHAR(255),\n" 
+		"   profile_name    VARCHAR(255),\n" 
 		"   hostname        VARCHAR(255)\n" 
 		");\n";
 
@@ -2906,6 +2919,13 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			switch_odbc_handle_exec(profile->master_odbc, dialog_sql, NULL);
 		}
 
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q'", mod_sofia_globals.hostname);
+
+		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_presence", NULL);
+			switch_odbc_handle_exec(profile->master_odbc, pres_sql, NULL);
+		}
+
 		free(test_sql);
 		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
 
@@ -2937,6 +2957,11 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_dialogs where hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_dialogs", dialog_sql);
 		free(test_sql);
+
+		test_sql = switch_mprintf("delete from sip_presence where hostname='%q'", mod_sofia_globals.hostname);
+		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_presence", pres_sql);
+		free(test_sql);
+
 		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_authentication", auth_sql);
 		free(test_sql);
