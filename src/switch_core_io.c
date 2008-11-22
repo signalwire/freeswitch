@@ -150,6 +150,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 
 	if (switch_channel_test_flag(session->channel, CF_HOLD)) {
+		switch_yield(session->read_codec->implementation->microseconds_per_packet);
 		status = SWITCH_STATUS_BREAK;
 		goto even_more_done;
 	}
