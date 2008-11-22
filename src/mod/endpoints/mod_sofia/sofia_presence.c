@@ -337,7 +337,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		status = NULL;
 	}
 	
-	if (switch_stristr("CS_", status)) {
+	if (status && switch_stristr("CS_", status)) {
 		status = NULL;
 	}
 
