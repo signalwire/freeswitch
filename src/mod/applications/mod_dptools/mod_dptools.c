@@ -1628,7 +1628,7 @@ SWITCH_STANDARD_APP(phrase_function)
 			*mdata++ = '\0';
 		}
 		
-		lang = switch_channel_get_variable(switch_core_session_get_channel(session), "language");
+		lang = switch_channel_get_variable(channel, "language");
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute %s(%s) lang %s\n", macro, switch_str_nil(mdata), switch_str_nil(lang));
 
