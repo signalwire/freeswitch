@@ -1,4 +1,4 @@
-/* 
+g/* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
  *
@@ -2820,7 +2820,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   server_user     VARCHAR(255),\n"
 		"   server_host     VARCHAR(255),\n" 
 		"   profile_name    VARCHAR(255),\n" 
-		"   hostname        VARCHAR(255),\n" 
+		"   hostname        VARCHAR(255)\n" 
 		");\n";
 
 
