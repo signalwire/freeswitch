@@ -77,6 +77,107 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 	}
 }
 
+void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
+{
+	/* NOTE: A lot of the mechanism in place here for refreshing subscriptions is
+	 * pretty much redundant, as the sofia stack takes it upon itself to
+	 * refresh subscriptions on its own, based on the value of the Expires
+	 * header (which we control in the outgoing subscription request)
+	 */
+	sofia_gateway_t *gateway_ptr;
+	
+	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+		sofia_gateway_subscription_t *gw_sub_ptr;
+
+		for (gw_sub_ptr = gateway_ptr->subscriptions; gw_sub_ptr; gw_sub_ptr = gw_sub_ptr->next) {
+			int ss_state = nua_callstate_authenticating;
+			sub_state_t ostate = gw_sub_ptr->state;
+			
+			if (!now) {
+				gw_sub_ptr->state = ostate = SUB_STATE_UNSUBED;
+				gw_sub_ptr->expires_str = "0";
+			}
+			
+			switch (ostate) {
+			case SUB_STATE_NOSUB:
+				break;
+			case SUB_STATE_SUBSCRIBE:
+				gw_sub_ptr->expires = now + gw_sub_ptr->freq;
+				gw_sub_ptr->state = SUB_STATE_SUBED;
+				break;
+			case SUB_STATE_UNSUBSCRIBE:
+				gw_sub_ptr->state = SUB_STATE_NOSUB;
+				
+				/* not tested .. */
+				nua_unsubscribe(gateway_ptr->nh,
+						NUTAG_URL(gateway_ptr->register_url),
+						SIPTAG_EVENT_STR(gw_sub_ptr->event),
+						SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
+						SIPTAG_TO_STR(gateway_ptr->register_from),
+						SIPTAG_FROM_STR(gateway_ptr->register_from),
+						SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+						TAG_NULL());
+				
+				break;
+			case SUB_STATE_UNSUBED:
+				if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
+												  NUTAG_URL(gateway_ptr->register_proxy),
+												  SIPTAG_TO_STR(gateway_ptr->register_to),
+												  NUTAG_CALLSTATE_REF(ss_state), 
+												  SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "subscribing to [%s] on gateway [%s]\n", gw_sub_ptr->event, gateway_ptr->name);
+				}
+				
+				gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+				switch_assert(gateway_ptr->sofia_private);
+
+				memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
+
+				gateway_ptr->sofia_private->gateway = gateway_ptr;
+				nua_handle_bind(gateway_ptr->nh, gateway_ptr->sofia_private);
+
+				if (now) {
+					nua_subscribe(gateway_ptr->nh,
+							NUTAG_URL(gateway_ptr->register_url),
+							SIPTAG_EVENT_STR(gw_sub_ptr->event),
+							SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),  
+							SIPTAG_TO_STR(gateway_ptr->register_from),
+							SIPTAG_FROM_STR(gateway_ptr->register_from),
+							SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+							SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),  // sofia stack bases its auto-refresh stuff on this
+							TAG_NULL());
+					gw_sub_ptr->retry = now + gw_sub_ptr->retry_seconds;
+				} else {
+					nua_unsubscribe(gateway_ptr->nh,
+							NUTAG_URL(gateway_ptr->register_url),
+							SIPTAG_EVENT_STR(gw_sub_ptr->event),
+							SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
+							SIPTAG_FROM_STR(gateway_ptr->register_from),
+							SIPTAG_TO_STR(gateway_ptr->register_from),
+							SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+							SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),
+							TAG_NULL());
+				}
+				gw_sub_ptr->state = SUB_STATE_TRYING;
+				break;
+				
+			case SUB_STATE_FAILED:
+			case SUB_STATE_TRYING:
+				if (gw_sub_ptr->retry && now >= gw_sub_ptr->retry) {
+					gw_sub_ptr->state = SUB_STATE_UNSUBED;
+					gw_sub_ptr->retry = 0;
+				}
+				break;
+			default:
+				if (now >= gw_sub_ptr->expires) {
+					gw_sub_ptr->state = SUB_STATE_UNSUBED;
+				}
+				break;
+			}
+		}
+	}
+}
+
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 {
 	sofia_gateway_t *gateway_ptr, *last = NULL;

@@ -1617,12 +1617,66 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 	}
 }
 
+sofia_gateway_subscription_t *sofia_find_gateway_subscription(sofia_gateway_t *gateway_ptr, const char *event) {
+	sofia_gateway_subscription_t *gw_sub_ptr;
+	for (gw_sub_ptr = gateway_ptr->subscriptions; gw_sub_ptr; gw_sub_ptr = gw_sub_ptr->next) {
+		if (!strcasecmp(gw_sub_ptr->event, event)) {
+			/* this is the gateway subscription we are interested in */
+			return gw_sub_ptr;
+		}
+	}
+	return NULL;
+}
+
 void sofia_presence_handle_sip_r_subscribe(int status,
 										   char const *phrase,
 										   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,
 										   tagi_t tags[])
 {
+	sip_event_t const *o = NULL;
+	sofia_gateway_subscription_t *gw_sub_ptr;
+	
+	if (!sip) {
+		return;
+	}
 
+	tl_gets(tags, SIPTAG_EVENT_REF(o), TAG_END());
+	/* o->o_type: message-summary (for example) */
+	if (!o) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Event information not given\n");
+		return;
+	}
+
+	if (!sofia_private || !sofia_private->gateway) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway information missing\n");
+		return;
+	}
+	
+	/* Find the subscription if one exists */
+	if (!(gw_sub_ptr = sofia_find_gateway_subscription(sofia_private->gateway, o->o_type))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Could not find gateway subscription.  Gateway: %s.  Subscription Event: %s\n",
+				sofia_private->gateway->name, o->o_type);
+		return;
+	}
+	
+	/* Update the subscription status for the subscription */
+	switch (status) {
+	case 200:
+		/* TODO: in the spec it is possible for the other side to change the original expiry time,
+		 * this needs to be researched (eg, what sip header this information will be in) and implemented.
+		 * Although, since it seems the sofia stack is pretty much handling the subscription expiration
+		 * anyway, then maybe its not even worth bothering.
+		 */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got 200 OK response, updated state to SUB_STATE_SUBSCRIBE.\n");
+		gw_sub_ptr->state = SUB_STATE_SUBSCRIBE;
+		break;
+	case 100:
+		break;
+	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "status (%d) != 200, updated state to SUB_STATE_FAILED.\n", status);
+		gw_sub_ptr->state = SUB_STATE_FAILED;
+		break;
+	}
 }
 
 void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip,

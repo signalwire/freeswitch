@@ -60,6 +60,9 @@ static const switch_state_handler_table_t noop_state_handler = { 0 };
 struct sofia_gateway;
 typedef struct sofia_gateway sofia_gateway_t;
 
+struct sofia_gateway_subscription;
+typedef struct sofia_gateway_subscription sofia_gateway_subscription_t;
+
 struct sofia_profile;
 typedef struct sofia_profile sofia_profile_t;
 #define NUA_MAGIC_T sofia_profile_t
@@ -272,6 +275,31 @@ typedef enum {
 	SOFIA_GATEWAY_UP
 } sofia_gateway_status_t;
 
+typedef enum {
+	SUB_STATE_UNSUBED,
+	SUB_STATE_TRYING,
+	SUB_STATE_SUBSCRIBE,
+	SUB_STATE_SUBED,
+	SUB_STATE_UNSUBSCRIBE,
+	SUB_STATE_FAILED,
+	SUB_STATE_EXPIRED,
+	SUB_STATE_NOSUB,
+	v_STATE_LAST
+} sub_state_t;
+
+struct sofia_gateway_subscription {
+	sofia_gateway_t *gateway;
+	char *expires_str;
+	char *event;  /* eg, 'message-summary' to subscribe to MWI events */
+	char *content_type;  /* eg, application/simple-message-summary in the case of MWI events */
+	uint32_t freq;
+	int32_t retry_seconds;
+	time_t expires;
+	time_t retry;
+	sub_state_t state;
+	struct sofia_gateway_subscription *next;
+};
+
 struct sofia_gateway {
 	sofia_private_t *sofia_private;
 	nua_handle_t *nh;
@@ -306,6 +334,7 @@ struct sofia_gateway {
 	switch_event_t *vars;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	struct sofia_gateway *next;
+	sofia_gateway_subscription_t *subscriptions;
 };
 
 typedef enum {
@@ -622,6 +651,7 @@ void sofia_glue_execute_sql(sofia_profile_t *profile, char **sqlp, switch_bool_t
 void sofia_glue_actually_execute_sql(sofia_profile_t *profile, switch_bool_t master, char *sql, switch_mutex_t *mutex);
 void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot);
 void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now);
+void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now);
 void sofia_reg_unregister(sofia_profile_t *profile);
 switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_object_t *tech_pvt, char **ip, switch_port_t *port, char *sourceip, switch_memory_pool_t *pool);
 
@@ -659,6 +689,8 @@ sofia_profile_t *sofia_glue_find_profile__(const char *file, const char *func, i
 switch_status_t sofia_reg_add_gateway(char *key, sofia_gateway_t *gateway);
 sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, int line, const char *key);
 #define sofia_reg_find_gateway(x) sofia_reg_find_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__,  x)
+
+sofia_gateway_subscription_t *sofia_find_gateway_subscription(sofia_gateway_t *gateway_ptr, const char *event);
 
 void sofia_reg_release_gateway__(const char *file, const char *func, int line, sofia_gateway_t *gateway);
 #define sofia_reg_release_gateway(x) sofia_reg_release_gateway__(__FILE__, __SWITCH_FUNC__, __LINE__, x);

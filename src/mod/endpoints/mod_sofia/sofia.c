@@ -85,6 +85,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	switch_channel_t *channel = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_event_t *s_event = NULL;
+	sofia_gateway_subscription_t *gw_sub_ptr;
 
 	/* make sure we have a proper event */
 	if (!sip || !sip->sip_event) {
@@ -172,21 +173,60 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 	}
 
+	/* if no session, assume it could be an incoming notify from a gateway subscription */
+	if (session) {
+		/* make sure we have a proper "talk" event */
+		if (strcasecmp(sip->sip_event->o_type, "talk")) {
+			goto error;
+		}
 
-	/* make sure we have a proper "talk" event */
-	if (!session || strcasecmp(sip->sip_event->o_type, "talk")) {
-		goto error;
+		if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
+			switch_channel_answer(channel);
+			switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
+			switch_ivr_session_transfer(session, "auto_answer", NULL, NULL);
+			nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+			return;
+		}
+	}
+	
+	if (!sofia_private || !sofia_private->gateway) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway information missing\n");
+		goto error;	
+	}
+				
+	/* find the corresponding gateway subscription (if any) */
+	if (!(gw_sub_ptr = sofia_find_gateway_subscription(sofia_private->gateway, sip->sip_event->o_type))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						  "Could not find gateway subscription.  Gateway: %s.  Subscription Event: %s\n",
+						  sofia_private->gateway->name, sip->sip_event->o_type);
+		goto error;	
 	}
 
-	
-	if (!switch_channel_test_flag(channel, CF_OUTBOUND)) {
-		switch_channel_answer(channel);
-		switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
-		switch_ivr_session_transfer(session, "auto_answer", NULL, NULL);
-		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-		return;
+	if (!(gw_sub_ptr->state == SUB_STATE_SUBED || gw_sub_ptr->state == SUB_STATE_SUBSCRIBE)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+						  "Ignoring notify due to subscription state: %d\n",
+						  gw_sub_ptr->state);
+		goto error;	
 	}
-	
+
+	/* dispatch freeswitch event */
+	if (switch_event_create(&s_event, SWITCH_EVENT_NOTIFY_IN) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "event", "%s", sip->sip_event->o_type);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "pl_data", "%s", sip->sip_payload->pl_data);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "sip_content_type", "%s", sip->sip_content_type->c_type);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "port", "%d", sofia_private->gateway->profile->sip_port);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "module_name", "%s", "mod_sofia");
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_name", "%s", sofia_private->gateway->profile->name);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "profile_uri", "%s", sofia_private->gateway->profile->url);
+		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "gateway_name", "%s", sofia_private->gateway->name);
+		switch_event_fire(&s_event);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dispatched freeswitch event for message-summary NOTIFY\n");
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to create event\n");
+		goto error;	
+	}
+
+	return;
 
   error:
 	nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS(nua), TAG_END());
@@ -565,6 +605,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 				sofia_reg_check_gateway(profile, switch_timestamp(NULL));
 				gateway_loops = 0;
 			}
+			sofia_sub_check_gateway(profile, time(NULL));
 			loops = 0;
 		}
 
@@ -859,9 +900,56 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 	}
 }
 
+static void parse_gateway_subscriptions(sofia_profile_t *profile, sofia_gateway_t *gateway, switch_xml_t gw_subs_tag)
+{
+	switch_xml_t subscription_tag, param;
+
+	for (subscription_tag = switch_xml_child(gw_subs_tag, "subscription"); subscription_tag; subscription_tag = subscription_tag->next) {
+		sofia_gateway_subscription_t *gw_sub;
+
+		if ((gw_sub = switch_core_alloc(profile->pool, sizeof(*gw_sub)))) {
+			char *expire_seconds = "3600", *retry_seconds = "30", *content_type = "NO_CONTENT_TYPE";
+			char *event = (char *) switch_xml_attr_soft(subscription_tag, "event");
+			gw_sub->event = switch_core_strdup(gateway->pool, event);			
+			gw_sub->gateway = gateway;
+			gw_sub->next = NULL;
+			
+			for (param = switch_xml_child(subscription_tag, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+				if (!strcmp(var, "expire-seconds")) {
+					expire_seconds = val;
+				} else if (!strcmp(var, "retry-seconds")) {
+					retry_seconds = val;
+				} else if (!strcmp(var, "content-type")) {
+					content_type = val;
+				}
+			}
+			
+			gw_sub->retry_seconds = atoi(retry_seconds);
+			if (gw_sub->retry_seconds < 10) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "INVALID: retry_seconds correcting the value to 30\n");
+				gw_sub->retry_seconds = 30;
+			}
+			
+			gw_sub->expires_str = switch_core_strdup(gateway->pool, expire_seconds);  
+			
+			if ((gw_sub->freq = atoi(gw_sub->expires_str)) < 5) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+				"Invalid Freq: %d.  Setting Register-Frequency to 3600\n", gw_sub->freq);
+				gw_sub->freq = 3600;
+			}
+			gw_sub->freq -= 2;
+			gw_sub->content_type = switch_core_strdup(gateway->pool, content_type);
+			gw_sub->next = gateway->subscriptions;		
+		}
+		gateway->subscriptions = gw_sub;
+	}
+}
+
 static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 {
-	switch_xml_t gateway_tag, param;
+	switch_xml_t gateway_tag, param, gw_subs_tag;
 	sofia_gateway_t *gp;
 
 	for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
@@ -969,6 +1057,10 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				}
 			}
 
+			if ((gw_subs_tag = switch_xml_child(gateway_tag, "subscriptions"))) {
+				parse_gateway_subscriptions(profile, gateway, gw_subs_tag);
+			}
+			
 			if (switch_strlen_zero(realm)) {
 				realm = name;
 			}
