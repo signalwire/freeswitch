@@ -190,7 +190,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	}
 	
 	if (!sofia_private || !sofia_private->gateway) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway information missing\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Gateway information missing Subscription Event: %s\n", sip->sip_event->o_type);
 		goto error;	
 	}
 				
