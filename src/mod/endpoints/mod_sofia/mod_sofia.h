@@ -257,6 +257,7 @@ typedef enum {
 	REG_STATE_REGED,
 	REG_STATE_UNREGISTER,
 	REG_STATE_FAILED,
+	REG_STATE_FAIL_WAIT,
 	REG_STATE_EXPIRED,
 	REG_STATE_NOREG,
 	REG_STATE_LAST
@@ -333,6 +334,7 @@ struct sofia_gateway {
 	int deleted;
 	switch_event_t *vars;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	int failures;
 	struct sofia_gateway *next;
 	sofia_gateway_subscription_t *subscriptions;
 };

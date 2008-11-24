@@ -228,13 +228,18 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 		switch (ostate) {
 		case REG_STATE_NOREG:
-			gateway_ptr->status = SOFIA_GATEWAY_UP;
+			if (!gateway_ptr->ping && !gateway_ptr->pinging) {
+				gateway_ptr->status = SOFIA_GATEWAY_UP;
+			}
 			break;
 		case REG_STATE_REGISTER:
 			if (profile->debug) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Registered %s\n", gateway_ptr->name);
 			}
-			if (gateway_ptr->expires > 60) {
+
+			gateway_ptr->failures = 0;
+
+			if (gateway_ptr->freq > 60) {
 				gateway_ptr->expires = now + (gateway_ptr->freq - 15);
 			} else {
 				gateway_ptr->expires = now + (gateway_ptr->freq - 2);
@@ -251,7 +256,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		case REG_STATE_UNREGED:
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 			sofia_reg_kill_reg(gateway_ptr, 0);
-
+			
 			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
 											  SIPTAG_CALL_ID_STR(gateway_ptr->uuid_str),
 											  NUTAG_URL(gateway_ptr->register_proxy),
@@ -289,22 +294,31 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 								   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
 								   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
 				}
-
+				gateway_ptr->retry = now + gateway_ptr->retry_seconds;
 				gateway_ptr->state = REG_STATE_TRYING;
 
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error registering %s\n", gateway_ptr->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error registering %s failure #%d\n", gateway_ptr->name, ++gateway_ptr->failures);
 				gateway_ptr->state = REG_STATE_FAILED;
 			}
 			break;
 
 		case REG_STATE_FAILED:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %d seconds.\n", 
+								  gateway_ptr->name, gateway_ptr->retry_seconds * (gateway_ptr->failures + 1));
+			gateway_ptr->retry =  now + (gateway_ptr->retry_seconds * (gateway_ptr->failures + 1));
 			sofia_reg_kill_reg(gateway_ptr, 0);
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
-		case REG_STATE_TRYING:
-			if (gateway_ptr->retry && now >= gateway_ptr->retry) {
+			gateway_ptr->state = REG_STATE_FAIL_WAIT;
+			break;
+		case REG_STATE_FAIL_WAIT:
+			if (!gateway_ptr->retry || now >= gateway_ptr->retry) {
 				gateway_ptr->state = REG_STATE_UNREGED;
-				gateway_ptr->retry = 0;
+			}
+			break;
+		case REG_STATE_TRYING:
+			if (!gateway_ptr->retry || now >= gateway_ptr->retry) {
+				gateway_ptr->state = REG_STATE_FAILED;
 			}
 			break;
 		default:
@@ -1196,7 +1210,8 @@ void sofia_reg_handle_sip_r_register(int status,
 			break;
 		default:
 			sofia_private->gateway->state = REG_STATE_FAILED;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Registration Failed with status %d\n", status);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Registration Failed with status %d. failure #%d\n", 
+							  sofia_private->gateway->name, status, ++sofia_private->gateway->failures);
 			break;
 		}
 		if (ostate != sofia_private->gateway->state) {

@@ -1368,6 +1368,7 @@ static const char *sofia_state_names[] = {
 	"REGED",
 	"UNREGISTER",
 	"FAILED",
+	"FAIL_WAIT",
 	"EXPIRED",
 	"NOREG",
 	NULL

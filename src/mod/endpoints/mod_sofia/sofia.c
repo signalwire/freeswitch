@@ -1001,7 +1001,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
-
+				
 				if (!strcmp(var, "register")) {
 					register_str = val;
 				} else if (!strcmp(var, "scheme")) {
@@ -1027,6 +1027,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				} else if (!strcmp(var, "expire-seconds")) {
 					expire_seconds = val;
 				} else if (!strcmp(var, "retry-seconds")) {
+					retry_seconds = val;
+				} else if (!strcmp(var, "retry_seconds")) { // support typo for back compat
 					retry_seconds = val;
 				} else if (!strcmp(var, "from-user")) {
 					from_user = val;
@@ -1089,6 +1091,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 			if (!switch_true(register_str)) {
 				gateway->state = REG_STATE_NOREG;
+				gateway->status = SOFIA_GATEWAY_UP;
 			}
 
 			if (switch_strlen_zero(from_domain)) {
@@ -1108,7 +1111,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			}
 
 			gateway->retry_seconds = atoi(retry_seconds);
-			if (gateway->retry_seconds < 10) {
+			if (gateway->retry_seconds < 5) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid retry-seconds of %d on gateway %s, using the value of 30 instead.\n",
 								  gateway->retry_seconds, name);
 				gateway->retry_seconds = 30;
@@ -2217,7 +2220,6 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 		if (status == 200 || status == 404 || status == 501) {
 			if (gateway->state == REG_STATE_FAILED) {
 				gateway->state = REG_STATE_UNREGED;
-				gateway->retry = 0;
 			}
 			gateway->status = SOFIA_GATEWAY_UP;
 		} else {
