@@ -30,7 +30,7 @@
       <!-- which transport to use for register -->
       <!--<param name="register-transport" value="udp"/>-->
       <!--How many seconds before a retry when a failure or timeout occurs -->
-      <!--<param name="retry_seconds" value="30"/>-->
+      <!--<param name="retry-seconds" value="30"/>-->
       <!--Use the callerid of an inbound call in the from field on outbound calls via this gateway -->
       <!--<param name="caller-id-in-from" value="false"/>-->
       <!--extra sip params to send in the contact-->
