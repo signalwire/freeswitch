@@ -1186,7 +1186,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		   or did he just suggest it to make our lives miserable?
 		 */
 		use_from_str = from_str;
-		from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
+		if ((val = switch_channel_get_variable(tech_pvt->channel, "suppress_from_cidname")) && switch_true(val)) {
+			from_str = switch_core_session_sprintf(session, "<%s>", use_from_str);
+		} else {
+			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
+		}
 		
 		if (!(call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id"))) {
 			if (tech_pvt->profile->pflags & PFLAG_UUID_AS_CALLID) {

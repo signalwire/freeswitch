@@ -1792,39 +1792,44 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char *subject, const char *body)
 {
 	iks *msg;
-	char *t, *e;
+	const char *t;
+	char *e;
 	char *bdup = NULL;
 	int on = 0;
 	int len = 0;
-	char *my_body = strdup(body);
-	assert(handle != NULL);
-	assert(body != NULL);
-	
-	if (strchr(my_body, '<')) {
-		len = (int) strlen(my_body);
-		if (!(bdup = malloc(len))) {
-			return;
-		}
 
-		memset(bdup, 0, len);
+	assert(handle != NULL);
+
+	if (body) {	
+		if (strchr(body, '<')) {
+			len = (int) strlen(body);
+			if (!(bdup = malloc(len))) {
+				abort();
+			}
+
+			memset(bdup, 0, len);
 		
-		e = bdup;
-		for(t = my_body; *t; t++) {
-			if (*t == '<') {
-				on = 1;
-			} else if (*t == '>') {
-				t++;
-				on = 0;
-			}
+			e = bdup;
+			for(t = body; t && *t; t++) {
+				if (*t == '<') {
+					on = 1;
+				} else if (*t == '>') {
+					t++;
+					on = 0;
+				}
 			
-			if (!on) {
-				*e++ = *t;
+				if (!on) {
+					*e++ = *t;
+				}
 			}
+			body = bdup;
 		}
-		my_body = bdup;
+	} else {
+		body = "";
 	}
+
+	msg = iks_make_msg(IKS_TYPE_NONE, to, body);
 	
-	msg = iks_make_msg(IKS_TYPE_NONE, to, my_body);
 	iks_insert_attrib(msg, "type", "chat");
 
 	if (!from) {
@@ -1840,9 +1845,7 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char 
 	if (bdup) {	
 		free(bdup);
 	}
-
-	free(my_body);
-
+	
 	apr_queue_push(handle->queue, msg);
 	msg = NULL;
 	
