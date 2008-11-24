@@ -536,7 +536,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 					*p = '\0';
 				}
 			}
-			ldl_handle_send_msg(profile->handle, from, to, NULL, body);
+			ldl_handle_send_msg(profile->handle, from, to, NULL, switch_str_nil(body));
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", f_host ? f_host : "NULL");
 			return SWITCH_STATUS_FALSE;
@@ -1713,7 +1713,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 				if ((ptr = strchr(them, '/'))) {
 					*ptr = '\0';
 				}
-				ldl_handle_send_msg(mdl_profile->handle, tech_pvt->us, them, "", cid_msg);
+				ldl_handle_send_msg(mdl_profile->handle, tech_pvt->us, them, "", switch_str_nil(cid_msg));
 			}
 			switch_safe_free(them);
 		}
@@ -2464,7 +2464,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				if (profile->auto_reply) {
 					ldl_handle_send_msg(handle,
 										(profile->user_flags & LDL_FLAG_COMPONENT) ? to : ldl_handle_get_login(profile->handle), from, "",
-										profile->auto_reply);
+										switch_str_nil(profile->auto_reply));
 				}
 #endif
 
@@ -2487,7 +2487,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 
 				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
-					ci->chat_send(MDL_CHAT_PROTO, from, to, subject, msg, hint);
+					ci->chat_send(MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), hint);
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
 				}
