@@ -151,16 +151,16 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		if (session && channel && tech_pvt) {
 			if (sip->sip_payload && sip->sip_payload->pl_data) {
 				char *p;
-				int status = 0;
+				int status_val = 0;
 				if ((p = strchr(sip->sip_payload->pl_data, ' '))) {
 					p++;
 					if (p) {
-						status = atoi(p);
+						status_val = atoi(p);
 					}
 				}
-				if (!status || status >= 200) {
+				if (!status_val || status_val >= 200) {
 					switch_channel_set_variable(channel, "sip_refer_reply", sip->sip_payload->pl_data);
-					if (status == 200) {
+					if (status_val == 200) {
 						switch_channel_hangup(channel, SWITCH_CAUSE_BLIND_TRANSFER);
 					}
 					if (tech_pvt->want_event == 9999) {
