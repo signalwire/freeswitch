@@ -166,7 +166,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 		}
 		
-		if (!session->read_codec) {
+		if (!SWITCH_READ_ACCEPTABLE(status) || !session->read_codec || !session->read_codec->mutex) {
 			*frame = NULL;
 			return SWITCH_STATUS_FALSE;
 		}
