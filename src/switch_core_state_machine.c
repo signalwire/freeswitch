@@ -360,19 +360,15 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	switch_mutex_lock(session->mutex);
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
-		uint8_t exception = 0;
 		midstate = state;
-		if (switch_channel_test_flag(session->channel, CF_REPEAT_STATE)) {
-			switch_channel_clear_flag(session->channel, CF_REPEAT_STATE);
-			exception = 1;
-		}
-		if (state != switch_channel_get_running_state(session->channel) || state == CS_HANGUP || exception) {
+		if (state != switch_channel_get_running_state(session->channel) || state == CS_HANGUP) {
 			int index = 0;
 			int proceed = 1;
 			int do_extra_handlers = 1;
 
 			switch_channel_set_running_state(session->channel, state);
 			switch_channel_clear_flag(session->channel, CF_TRANSFER);
+			switch_channel_clear_flag(session->channel, CF_REDIRECT);
 
 			switch (state) {
 			case CS_NEW:		/* Just created, Waiting for first instructions */

@@ -1263,6 +1263,40 @@ static void do_2833(switch_rtp_t *rtp_session)
 	}
 }
 
+SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session)
+{
+	int was_blocking = 0;
+	switch_size_t bytes;
+	switch_status_t status;
+
+	if (!switch_rtp_ready(rtp_session)) {
+		return;
+	}
+
+	READ_INC(rtp_session);
+
+	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
+		was_blocking = 1;
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);		
+		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
+	}
+	
+	do {
+		bytes = sizeof(rtp_msg_t);
+		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
+	} while(bytes);
+
+	if (was_blocking) {
+		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+        switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
+	}
+	
+	READ_DEC(rtp_session);
+
+
+
+}
+
 #define return_cng_frame() do_cng = 1; goto timer_check
 
 static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_type, switch_frame_flag_t *flags, switch_io_flag_t io_flags)
@@ -1315,12 +1349,17 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 			do_2833(rtp_session);
+			rtp_flush_read_buffer(rtp_session);
 			bytes = 0;
 			return_cng_frame();
 		}
 
 		if (bytes && bytes < 5) {
 			continue;
+		}
+
+		if (bytes && rtp_session->recv_msg.header.m) {
+			rtp_flush_read_buffer(rtp_session);
 		}
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {

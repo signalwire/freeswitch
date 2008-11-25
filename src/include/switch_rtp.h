@@ -351,6 +351,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read(switch_rtp_t *rtp_sessi
 */
 SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp_session, switch_frame_t *frame, switch_io_flag_t io_flags);
 
+SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session);
+
 /*!
   \brief Enable VAD on an RTP Session
   \param rtp_session the RTP session

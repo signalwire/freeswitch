@@ -568,6 +568,7 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ,
 	SWITCH_MESSAGE_INDICATE_DISPLAY,
 	SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY,
+	SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
@@ -742,7 +743,7 @@ CF_CONTROLLED	= (1 << 12) - Channel is under control
 CF_PROXY_MODE		= (1 << 13) - Channel has no media
 CF_SUSPEND		= (1 << 14) - Suspend i/o
 CF_EVENT_PARSE  = (1 << 15) - Suspend control events
-CF_REPEAT_STATE = (1 << 16) - Tell the state machine to repeat a state
+CF_USE_ME = (1 << 16) -   use me
 CF_GEN_RINGBACK = (1 << 17) - Channel is generating it's own ringback
 CF_RING_READY   = (1 << 18) - Channel is ready to send ringback
 CF_BREAK        = (1 << 19) - Channel should stop what it's doing
@@ -773,7 +774,7 @@ typedef enum {
 	CF_PROXY_MODE = (1 << 13),
 	CF_SUSPEND = (1 << 14),
 	CF_EVENT_PARSE = (1 << 15),
-	CF_REPEAT_STATE = (1 << 16),
+	CF_USE_ME = (1 << 16),
 	CF_GEN_RINGBACK = (1 << 17),
 	CF_RING_READY = (1 << 18),
 	CF_BREAK = (1 << 19),

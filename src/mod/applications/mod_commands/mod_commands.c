@@ -1127,8 +1127,8 @@ SWITCH_STANDARD_API(transfer_function)
 		} else if (!strcasecmp(arg, "both")) {
 			if (uuid && (other_session = switch_core_session_locate(uuid))) {
 				switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-				switch_channel_set_flag(other_channel, CF_TRANSFER);
-				switch_channel_set_flag(channel, CF_TRANSFER);
+				switch_channel_set_flag(other_channel, CF_REDIRECT);
+				switch_channel_set_flag(channel, CF_REDIRECT);
 				switch_ivr_session_transfer(other_session, dest, dp, context);
 				switch_core_session_rwunlock(other_session);
 			}
