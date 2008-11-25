@@ -943,6 +943,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}
+
+
 		switch_mutex_unlock(profile->ireg_mutex);
 
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_REGISTER) == SWITCH_STATUS_SUCCESS) {
@@ -953,6 +955,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "contact", contact_str);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", call_id);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "statusd", reg_desc);
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);

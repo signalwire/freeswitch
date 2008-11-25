@@ -337,32 +337,14 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		status = NULL;
 	}
 	
-	if (status && switch_stristr("CS_", status)) {
-		status = NULL;
+	if (status && switch_stristr("CS_HANGUP", status)) {
+		status = "Call Ended";
 	}
 
 	if (rpid) {
 		rpid = sofia_presence_translate_rpid(rpid, status);
 	}
-
-	if (!status) {
-		status = "Available";
-
-		if (rpid) {
-			if (!strcasecmp(rpid, "busy")) {
-				status = "Busy";
-			} else if (!strcasecmp(rpid, "unavailable")) {
-				status = "Idle";
-			} else if (!strcasecmp(rpid, "away")) {
-				status = "Idle";
-			}
-		}
-	}
-
-	if (!rpid) {
-		rpid = "unknown";
-	}
-
+	
 	if (event->event_id == SWITCH_EVENT_ROSTER) {
 		struct presence_helper helper = { 0 };
 
@@ -380,7 +362,8 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "from sip_subscriptions left join sip_presence on "
 								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
-								 "where sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'", status, rpid, from);
+								 "where sip_subscriptions.event='presence' and sip_subscriptions.full_from like '%%%q%%'", 
+								 switch_str_nil(status), switch_str_nil(rpid), from);
 		} else {
 			sql = switch_mprintf(
 								 "select sip_subscriptions.proto,sip_subscriptions.sip_user,sip_subscriptions.sip_host,"
@@ -392,7 +375,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "from sip_subscriptions left join sip_presence on "
 								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 								 "sip_subscriptions.profile_name=sip_presence.profile_name) "
-								 "where sip_subscriptions.event='presence'", status, rpid);
+								 "where sip_subscriptions.event='presence'", switch_str_nil(status), switch_str_nil(rpid));
 		}
 
 		switch_assert(sql != NULL);
@@ -497,7 +480,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 							 "where (event='%q' or event='%q') and sub_to_user='%q' "
 							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
-							 status, rpid, host, event_type, alt_event_type, euser, host, host);
+							 switch_str_nil(status), switch_str_nil(rpid), host, event_type, alt_event_type, euser, host, host);
 		break;
 	case SWITCH_EVENT_PRESENCE_OUT:
 		sql = switch_mprintf(
@@ -513,7 +496,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 							 "where (event='%q' or event='%q') and sub_to_user='%q' "
 							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
-							 status, rpid, host, event_type, alt_event_type, euser, host, host);
+							 switch_str_nil(status), switch_str_nil(rpid), host, event_type, alt_event_type, euser, host, host);
 		break;
 	default:
 		break;
@@ -705,7 +688,6 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 	char *user = argv[1];
 	char *host = argv[2];
 	switch_event_t *event;
-	char *status = NULL;
 	char *event_name = argv[5];
 
 	if (!strcasecmp(event_name, "message-summary")) {
@@ -717,14 +699,10 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 		return 0;
 	}
 
-	if (switch_strlen_zero(status)) {
-		status = "Available";
-	}
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", user, host);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", status);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_subtype", "probe");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto-specific-event-name", event_name);
@@ -920,11 +898,21 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		rpid = argv[19];
 	}
 
-	if (switch_strlen_zero(status)) {
-		status = "Available";
+	if (switch_strlen_zero(rpid)) {
+		rpid = "unknown";
 	}
 
-
+	if (switch_strlen_zero(status)) {
+		if (!strcasecmp(rpid, "busy")) {
+			status = "Busy";
+		} else if (!strcasecmp(rpid, "unavailable")) {
+			status = "Idle";
+		} else if (!strcasecmp(rpid, "away")) {
+			status = "Idle";
+		} else {
+			status = "Available";
+		}
+	}
 	
 	if (profile_name && strcasecmp(profile_name, helper->profile->name)) {
         if ((ext_profile = sofia_glue_find_profile(profile_name))) {
@@ -1747,7 +1735,6 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 									from_user, from_host, profile->name, mod_sofia_globals.hostname
 									))) {
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-					switch_safe_free(sql);
 				}
 					 
 				if ((sql =
@@ -1755,7 +1742,6 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 									"values ('%q','%q','%q','%q',%ld,'%q','%q','%q')",
 									from_user, from_host, note_txt, rpid, exp, full_agent, profile->name, mod_sofia_globals.hostname))) {
 					sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
-					switch_safe_free(sql);
 				}
 				
 				event_type = sip_header_as_string(profile->home, (void *) sip->sip_event);
