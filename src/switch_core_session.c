@@ -346,7 +346,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 			profile = switch_channel_get_caller_profile(channel);
 
-			if (read_codec) {
+			if (read_codec && read_codec->implementation) {
 				char tmp[80];
 				switch_codec2str(read_codec, tmp, sizeof(tmp));
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
