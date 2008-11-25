@@ -50,7 +50,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	cng_frame.data = data;
 	cng_frame.datalen = 2;
 	cng_frame.buflen = 2;
-	cng_frame.flags = SFF_CNG;
+	switch_set_flag(&cng_frame, SFF_CNG);
 
 	for (;;) {
 		now = switch_timestamp_now();

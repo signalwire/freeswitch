@@ -178,7 +178,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 	menu->actions = NULL;
 
 	if (newpool) {
-		menu->flags |= SWITCH_IVR_MENU_FLAG_FREEPOOL;
+		switch_set_flag(menu, SWITCH_IVR_MENU_FLAG_FREEPOOL);
 	}
 
 	if (menu->timeout <= 0) {
@@ -188,7 +188,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 	if (main) {
 		switch_ivr_menu_stack_add(&main, menu);
 	} else {
-		menu->flags |= SWITCH_IVR_MENU_FLAG_STACK;
+		switch_set_flag(menu, SWITCH_IVR_MENU_FLAG_STACK);
 	}
 
 	*new_menu = menu;

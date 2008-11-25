@@ -1769,9 +1769,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 	frame->packet = &rtp_session->recv_msg;
 	frame->packetlen = bytes;
 	frame->source = __FILE__;
-	frame->flags |= SFF_RAW_RTP;
+	switch_set_flag(frame, SFF_RAW_RTP);
 	if (frame->payload == rtp_session->te) {
-		frame->flags |= SFF_RFC2833;
+		switch_set_flag(frame, SFF_RFC2833);
 	}
 	frame->timestamp = ntohl(rtp_session->recv_msg.header.ts);
 	frame->seq = (uint16_t) ntohs((u_short) rtp_session->recv_msg.header.seq);
