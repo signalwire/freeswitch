@@ -1673,6 +1673,10 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
 	}
 	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
 
+	if (bytes) {
+		rtp_flush_read_buffer(rtp_session);
+	}
+
 	return bytes;
 }
 
