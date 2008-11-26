@@ -1269,32 +1269,35 @@ SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session)
 	switch_size_t bytes;
 	switch_status_t status;
 
-	if (!switch_rtp_ready(rtp_session)) {
+	if (!switch_rtp_ready(rtp_session) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
 		return;
 	}
-
+	
 	READ_INC(rtp_session);
 
-	if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
-		was_blocking = 1;
-		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);		
-		switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
-	}
+	if (switch_rtp_ready(rtp_session)) {
+		if (!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
+			was_blocking = 1;
+			switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);		
+			switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, TRUE);
+		}
 	
-	do {
-		bytes = sizeof(rtp_msg_t);
-		status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
-	} while(bytes);
-
-	if (was_blocking) {
-		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
-        switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
+		do {
+			if (switch_rtp_ready(rtp_session)) {
+				bytes = sizeof(rtp_msg_t);
+				status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
+			} else {
+				break;
+			}
+		} while(bytes > 0);
+		
+		if (was_blocking && switch_rtp_ready(rtp_session)) {
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
+			switch_socket_opt_set(rtp_session->sock_input, SWITCH_SO_NONBLOCK, FALSE);
+		}
 	}
 	
 	READ_DEC(rtp_session);
-
-
-
 }
 
 #define return_cng_frame() do_cng = 1; goto timer_check
