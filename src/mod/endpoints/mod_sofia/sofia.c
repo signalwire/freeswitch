@@ -2071,11 +2071,15 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					profile->bindurl = profile->url;
 				}
 
+				profile->tcp_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->url);
+				profile->tls_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->url);
+				
+				
 				if (profile->bind_params) {
 					char *bindurl = profile->bindurl;
 					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
 				}
-
+				
 				/*
 				 * handle TLS params #2
 				 */

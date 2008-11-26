@@ -367,6 +367,8 @@ struct sofia_profile {
 	char *bindurl;
 	char *tls_url;
 	char *tls_bindurl;
+	char *tcp_contact;
+	char *tls_contact;
 	char *sipdomain;
 	char *timer_name;
 	char *hold_music;

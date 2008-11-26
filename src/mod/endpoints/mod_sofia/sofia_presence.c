@@ -1540,7 +1540,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (status < 200) {
 			char *sticky = NULL;
-
+			char *contact_str = profile->url;
+			
 			if (is_nat) {
 				char params[128] = "";
 				if (contact->m_url->url_params) {
@@ -1555,9 +1556,16 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										network_port,
 										params);
 			}
+			
+			if (switch_stristr("port=tcp", contact->m_url->url_params)) {
+				contact_str = profile->tcp_contact;
+			} else if (switch_stristr("port=tls", contact->m_url->url_params)) {
+				contact_str = profile->tls_contact;
+			}
 
-			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS(nua), SIPTAG_SUBSCRIPTION_STATE_STR(sstr), TAG_IF(sticky, NUTAG_PROXY(sticky)),
-						TAG_END());
+
+			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(contact_str), NUTAG_WITH_THIS(nua), SIPTAG_SUBSCRIPTION_STATE_STR(sstr), 
+						TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
 
 			switch_safe_free(sticky);
 
