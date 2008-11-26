@@ -2101,7 +2101,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	switch_channel_t *channel;
 	switch_time_t started;
 	unsigned int elapsed;
-	int32 timeout = 60;
+	int32 timeout = 60000;
 	jsrefcount saveDepth;
 	jsval ret = JS_TRUE;
 
@@ -2114,7 +2114,11 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &timeout);
+		if (timeout < 1000) {
+			timeout = 1000;
+		}
 	}
+
 	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
 		return JS_FALSE;
 	}
@@ -2146,7 +2150,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	switch_channel_t *channel;
 	switch_time_t started;
 	unsigned int elapsed;
-	int32 timeout = 60;
+	int32 timeout = 60000;
 	jsrefcount saveDepth;
 	jsval ret = JS_TRUE;
 	
@@ -2157,6 +2161,9 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &timeout);
+		if (timeout < 1000) {
+			timeout = 1000;
+		}
 	}
 
 	if (check_hangup_hook(jss, NULL) != JS_TRUE) {
