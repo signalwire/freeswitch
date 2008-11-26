@@ -1361,7 +1361,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			continue;
 		}
 
-		if (bytes && rtp_session->recv_msg.header.m) {
+		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->te) {
 			rtp_flush_read_buffer(rtp_session);
 		}
 
