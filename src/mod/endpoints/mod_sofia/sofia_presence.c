@@ -1540,7 +1540,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if (status < 200) {
 			char *sticky = NULL;
-			char *contact_str = profile->url;
+			char *contactstr = profile->url;
 			
 			if (is_nat) {
 				char params[128] = "";
@@ -1558,9 +1558,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 			
 			if (switch_stristr("port=tcp", contact->m_url->url_params)) {
-				contact_str = profile->tcp_contact;
+				contactstr = profile->tcp_contact;
 			} else if (switch_stristr("port=tls", contact->m_url->url_params)) {
-				contact_str = profile->tls_contact;
+				contactstr = profile->tls_contact;
 			}
 
 

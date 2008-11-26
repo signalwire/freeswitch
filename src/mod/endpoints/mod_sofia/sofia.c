@@ -2072,8 +2072,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 				profile->tcp_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->url);
-				profile->tls_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->url);
-				
 				
 				if (profile->bind_params) {
 					char *bindurl = profile->bindurl;
@@ -2130,6 +2128,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					if (!profile->tls_cert_dir) {
 						profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
 					}
+					profile->tls_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_url);
 				}
 			}
 			if (profile) {
