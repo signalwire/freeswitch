@@ -1023,7 +1023,8 @@ switch_status_t measure_file_len(const char *path, switch_size_t *message_len)
 }
 
 static switch_status_t create_file(switch_core_session_t *session, vm_profile_t *profile,
-								   char *macro_name, char *file_path, switch_size_t *message_len, switch_bool_t limit)
+								   char *macro_name, char *file_path, switch_size_t *message_len, switch_bool_t limit,
+								   const char *exit_keys, char *key_pressed)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -1036,13 +1037,17 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 
 	read_codec = switch_core_session_get_read_codec(session);
 
+	if (exit_keys) {
+		*key_pressed = '\0';
+	}
+
 	while (switch_channel_ready(channel)) {
 
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s", profile->listen_file_key, profile->save_file_key, profile->record_file_key);
 
 	  record_file:
 		*message_len = 0;
-		args.input_callback = cancel_on_dtmf;
+
 		TRY_CODE(switch_ivr_phrase_macro(session, macro_name, NULL, NULL, NULL));
 		TRY_CODE(switch_ivr_gentones(session, profile->tone_spec, 0, NULL));
 
@@ -1050,13 +1055,24 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 		fh.thresh = profile->record_threshold;
 		fh.silence_hits = profile->record_silence_hits;
 		fh.samplerate = profile->record_sample_rate;
+
+		memset(input, 0, sizeof(input));
+		args.input_callback = cancel_on_dtmf;
+		args.buf = input;
+		args.buflen = sizeof(input);
+
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
+
 		if (limit && (*message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second) < profile->min_record_len) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n",
-							  profile->min_record_len);
 			if (unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
+			if (exit_keys && input[0] && strchr(exit_keys, input[0])) {
+				*key_pressed = input[0];
+				return SWITCH_STATUS_SUCCESS;
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n",
+							  profile->min_record_len);
 			if (switch_channel_ready(channel)) {
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "too-small", NULL, NULL));
 				goto record_file;
@@ -1385,7 +1401,7 @@ static switch_status_t listen_file(switch_core_session_t *session, vm_profile_t 
 					switch_uuid_format(uuid_str, &uuid);
 
 					forward_file_path = switch_core_session_sprintf(session, "%s%smsg_%s.wav", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str);
-					TRY_CODE(create_file(session, profile, VM_RECORD_MESSAGE_MACRO, forward_file_path, &message_len, SWITCH_TRUE));
+					TRY_CODE(create_file(session, profile, VM_RECORD_MESSAGE_MACRO, forward_file_path, &message_len, SWITCH_TRUE, NULL, NULL));
 					if ((new_path = vm_merge_file(session, profile, forward_file_path, cbt->file_path))) {
 						switch_ivr_sleep(session, 1500, NULL);
 						forward_file_path = new_path;
@@ -1837,7 +1853,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						TRY_CODE(switch_ivr_phrase_macro(session, VM_CHOOSE_GREETING_FAIL_MACRO, NULL, NULL, NULL));
 					} else {
 						file_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
-						TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path, &message_len, SWITCH_TRUE));
+						TRY_CODE(create_file(session, profile, VM_RECORD_GREETING_MACRO, file_path, &message_len, SWITCH_TRUE, NULL, NULL));
 						sql =
 							switch_mprintf("update voicemail_prefs set greeting_path='%s' where username='%s' and domain='%s'", file_path, myid,
 										   domain_name);
@@ -1875,7 +1891,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					
 				} else if (!strcmp(input, profile->record_name_key)) {
 					file_path = switch_mprintf("%s%srecorded_name.%s", dir_path, SWITCH_PATH_SEPARATOR, profile->file_ext);
-					TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len, SWITCH_FALSE));
+					TRY_CODE(create_file(session, profile, VM_RECORD_NAME_MACRO, file_path, &message_len, SWITCH_FALSE, NULL, NULL));
 					sql = switch_mprintf("update voicemail_prefs set name_path='%s' where username='%s' and domain='%s'", file_path, myid, domain_name);
 					vm_execute_sql(profile, sql, profile->mutex);
 					switch_safe_free(file_path);
@@ -2613,6 +2629,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	int priority = 3;
 	int email_attach = 1;
 	char buf[2];
+	char key_buf[80];
 	char *greet_path = NULL;
 	const char *voicemail_greeting_number = NULL;
 	switch_size_t message_len = 0;
@@ -2780,6 +2797,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	}
 
 	if (*buf != '\0') {
+greet_key_press:
 		if (!strcasecmp(buf, profile->main_menu_key)) {
 			voicemail_check_main(session, profile_name, domain_name, id, 0);
 		} else if (!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
@@ -2835,14 +2853,21 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_channel_set_variable(channel, "RECORD_COMMENT", profile->record_comment);
 	switch_channel_set_variable(channel, "RECORD_COPYRIGHT", profile->record_copyright);
 
-	status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len, SWITCH_TRUE);
+	switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->operator_key, profile->vmain_key);
+	memset(buf, 0, sizeof(buf));
+
+	status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len, SWITCH_TRUE, key_buf, buf);
 
 	if ((status == SWITCH_STATUS_NOTFOUND)) {
 		goto end;
 	}
 
+	if (buf[0]) {
+		goto greet_key_press;
+	}
+
 	if ((status == SWITCH_STATUS_SUCCESS || status == SWITCH_STATUS_BREAK) && switch_channel_ready(channel)) {
-		char input[10] = "", key_buf[80] = "", term = 0;
+		char input[10] = "", term = 0;
 
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->urgent_key, profile->terminator_key);
 
