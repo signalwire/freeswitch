@@ -1766,7 +1766,8 @@ SWITCH_STANDARD_API(break_function)
 {
 	switch_core_session_t *psession = NULL;
 	char *mycmd, *flag;
-	
+	switch_channel_t *channel = NULL;
+
 	if (session) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1792,7 +1793,12 @@ SWITCH_STANDARD_API(break_function)
 		switch_core_session_flush_private_events(psession);
 	}
 
-	switch_channel_set_flag(switch_core_session_get_channel(psession), CF_BREAK);
+	channel = switch_core_session_get_channel(psession);
+	if (switch_channel_test_flag(channel, CF_BROADCAST)) {
+		switch_channel_stop_broadcast(channel);
+	} else {
+		switch_channel_set_flag(channel, CF_BREAK);
+	}
 	switch_core_session_rwunlock(psession);
 
 	return SWITCH_STATUS_SUCCESS;
