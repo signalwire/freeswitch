@@ -1542,13 +1542,18 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			char *sticky = NULL;
 
 			if (is_nat) {
+				char params[128] = "";
+				if (contact->m_url->url_params) {
+					switch_snprintf(params, sizeof(params), ";%s", contact->m_url->url_params);
+				}
 				ipv6 = strchr(network_ip, ':');
-				sticky = switch_mprintf("sip:%s@%s%s%s:%d",
+				sticky = switch_mprintf("sip:%s@%s%s%s:%d%s",
 										contact_user,
 										ipv6 ? "[" : "",
 										network_ip,
 										ipv6 ? "]" : "",
-										network_port);
+										network_port,
+										params);
 			}
 
 			nua_respond(nh, SIP_202_ACCEPTED, NUTAG_WITH_THIS(nua), SIPTAG_SUBSCRIPTION_STATE_STR(sstr), TAG_IF(sticky, NUTAG_PROXY(sticky)),
