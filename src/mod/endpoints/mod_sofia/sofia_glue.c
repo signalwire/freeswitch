@@ -448,7 +448,9 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		return status;
 	}
 
-	if (!strncasecmp(sourceip, "stun:", 5)) {
+	if (!strncasecmp(sourceip, "host:", 5)) {
+		status = (*ip = switch_stun_host_lookup(sourceip + 5, pool)) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
+	} else if (!strncasecmp(sourceip, "stun:", 5)) {
 		char *p;
 
 		if (!(profile->pflags & PFLAG_STUN_ENABLED)) {

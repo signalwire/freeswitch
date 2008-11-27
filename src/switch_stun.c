@@ -428,6 +428,16 @@ SWITCH_DECLARE(uint8_t) switch_stun_packet_attribute_add_username(switch_stun_pa
 	return 1;
 }
 
+SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_pool_t *pool)
+{
+	switch_sockaddr_t *addr = NULL;
+	char buf[30];
+	
+	switch_sockaddr_info_get(&addr, host, SWITCH_UNSPEC, 0, 0, pool);
+	return switch_core_strdup(pool, switch_str_nil(switch_get_addr(buf, sizeof(buf), addr)));
+	
+}
+
 SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 												   switch_port_t *port, char *stunip, switch_port_t stunport, char **err, switch_memory_pool_t *pool)
 {

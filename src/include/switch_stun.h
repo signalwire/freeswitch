@@ -147,6 +147,7 @@ SWITCH_DECLARE(switch_stun_packet_t *) switch_stun_packet_parse(uint8_t *buf, ui
 */
 SWITCH_DECLARE(const char *) switch_stun_value_to_name(int32_t type, uint32_t value);
 
+SWITCH_DECLARE(char *) switch_stun_host_lookup(const char *host, switch_memory_pool_t *pool);
 
 /*!
   \brief Extract a mapped address (IP:PORT) from a packet attribute
