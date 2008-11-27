@@ -177,12 +177,14 @@ sub fsxs_show {
 
 sub fsxs_showq {
 	my @varlist = @_;
+	my $count = 0;
 
 	if( $#varlist >= 0 ) {
 		foreach( @varlist ) {
 			if( defined $vars{$_} ) {
-				print "$vars{$_} ";
+				print "$vars{$_}" . (($count < $#varlist) ? " " : "");
 			}
+			$count++;
 		}
 	}
 }
