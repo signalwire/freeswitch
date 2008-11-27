@@ -992,7 +992,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 	if (rtp_session->ice_user) {
 		if (ice_out(rtp_session) != SWITCH_STATUS_SUCCESS) {
-			return -1;
+			return SWITCH_STATUS_FALSE;
 		}
 	}
 
