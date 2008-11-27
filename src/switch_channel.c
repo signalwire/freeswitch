@@ -1688,6 +1688,15 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)", channel->name, app, switch_str_nil(arg));
 		switch_core_session_execute_application(channel->session, app, arg);
 	}
+
+
+	if (switch_channel_media_ready(channel)) {
+		switch_core_session_message_t msg;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
+		msg.from = channel->name;
+		switch_core_session_receive_message(channel->session, &msg);
+	}
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
