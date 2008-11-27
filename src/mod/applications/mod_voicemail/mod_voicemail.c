@@ -1771,7 +1771,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 				vm_execute_sql(profile, sql, profile->mutex);
 				vm_check_state = VM_CHECK_FOLDER_SUMMARY;
 
-				update_mwi(profile, actual_id, domain_name, myfolder);
+				update_mwi(profile, actual_id ? actual_id : myid, domain_name, myfolder);
 			}
 			break;
 		case VM_CHECK_CONFIG:
