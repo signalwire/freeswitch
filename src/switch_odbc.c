@@ -322,12 +322,14 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_
 	return SWITCH_ODBC_FAIL;
 }
 
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odbc_handle_t *handle,
-																	  char *sql, switch_core_db_callback_func_t callback, void *pdata)
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(const char *file, const char *func, int line,
+																			   switch_odbc_handle_t *handle,
+																			   char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	SQLHSTMT stmt = NULL;
 	SQLSMALLINT c = 0, x = 0;
 	SQLLEN m = 0, t = 0;
+	char *err_str = NULL;
 	int result;
 
 	switch_assert(callback != NULL);
@@ -337,10 +339,12 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 	}
 
 	if (SQLAllocHandle(SQL_HANDLE_STMT, handle->con, &stmt) != SQL_SUCCESS) {
+		err_str = "Unable to SQL allocate handle.";
 		goto error;
 	}
 
 	if (SQLPrepare(stmt, (unsigned char *) sql, SQL_NTS) != SQL_SUCCESS) {
+		err_str = "Unable to prepare SQL statement.";
 		goto error;
 	}
 
@@ -407,7 +411,18 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odb
 
   error:
 
+	/* err_str is already defined  for some error cases */
+	if (err_str != NULL) {
+		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+		err_str = NULL;
+	}
+	
 	if (stmt) {
+		err_str = switch_odbc_handle_get_error(handle, stmt);
+		if (!switch_strlen_zero(err_str)) {
+			switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "ERR: [%s]\n[%s]\n", sql, switch_str_nil(err_str));
+		}
+		switch_safe_free(err_str);
 		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	}
 

@@ -64,8 +64,35 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_connect(switch_odbc_hand
 SWITCH_DECLARE(void) switch_odbc_handle_destroy(switch_odbc_handle_t **handlep);
 SWITCH_DECLARE(switch_odbc_state_t) switch_odbc_handle_get_state(switch_odbc_handle_t *handle);
 SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_exec(switch_odbc_handle_t *handle, char *sql, SQLHSTMT * rstmt);
-SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec(switch_odbc_handle_t *handle,
+
+/*!
+  \brief Execute the sql query and issue a callback for each row returned
+  \param file the file from which this function is called
+  \param func the function from which this function is called
+  \param line the line from which this function is called
+  \param handle the ODBC handle
+  \param sql the sql string to execute
+  \param callback the callback function to execute
+  \param pdata the state data passed on each callback invocation
+  \return SWITCH_STATUS_SUCCESS if the operation was successful
+  \note none
+*/
+SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(const char *file, const char *func, int line, switch_odbc_handle_t *handle,
 																	  char *sql, switch_core_db_callback_func_t callback, void *pdata);
+/*!
+  \brief Execute the sql query and issue a callback for each row returned
+  \param handle the ODBC handle
+  \param sql the sql string to execute
+  \param callback the callback function to execute
+  \param pdata the state data passed on each callback invocation
+  \return SWITCH_STATUS_SUCCESS if the operation was successful
+  \note none
+*/
+#define switch_odbc_handle_callback_exec(handle,  sql,  callback, pdata) \
+		switch_odbc_handle_callback_exec_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, \
+												  handle, sql, callback, pdata)
+
+																	  
 SWITCH_DECLARE(char *) switch_odbc_handle_get_error(switch_odbc_handle_t *handle, SQLHSTMT stmt);
 SWITCH_END_EXTERN_C
 #endif
