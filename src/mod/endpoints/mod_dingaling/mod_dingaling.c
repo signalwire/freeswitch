@@ -2896,7 +2896,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 				if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 					switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
-					ldl_session_accept_candidate(dlsession, &candidates[choice]);
+					//ldl_session_accept_candidate(dlsession, &candidates[choice]);
 				}
 
 				if (!strcasecmp(subject, "candidates")) {

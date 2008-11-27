@@ -251,6 +251,19 @@ static unsigned int next_id(void)
 	return globals.id++;
 }
 
+#if 0
+static char *iks_name_nons(iks *x)
+{
+	char *r = iks_name(x);
+	char *p;
+
+	if (r && (p = strchr(r, ':'))) {
+		r = p + 1;
+	}
+
+	return r;
+}
+#endif
 
 char *ldl_session_get_value(ldl_session_t *session, char *key)
 {
@@ -385,10 +398,10 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 				tag = iks_child (xml);
 				
 				while(tag) {
-					if (!strcasecmp(iks_name(tag), "description")) {
+					if (!strcasecmp(iks_name(tag), "pho:description")) {
 						iks * itag = iks_child (tag);
 						while(itag) {
-							if (!strcasecmp(iks_name(itag), "payload-type") && session->payload_len < LDL_MAX_PAYLOADS) {
+							if (!strcasecmp(iks_name(itag), "pho:payload-type") && session->payload_len < LDL_MAX_PAYLOADS) {
 								char *name = iks_find_attrib(itag, "name");
 								char *id = iks_find_attrib(itag, "id");
 								char *rate = iks_find_attrib(itag, "clockrate");
@@ -434,7 +447,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 						}
 						ldl_session_set_value(session, name, value);
 						
-					} else if (!strcasecmp(iks_name(tag), "candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
+					} else if (!strcasecmp(iks_name(tag), "ses:candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
 						char *key;
 						double pref = 0.0;
 						int index = -1;
@@ -647,7 +660,7 @@ static int on_presence(void *user_data, ikspak *pak)
 	char *resource;
 	struct ldl_buffer *buffer;
 	ldl_signal_t dl_signal = LDL_SIGNAL_PRESENCE_IN;
-	
+	int done = 0;
 
 
     if (type && *type) {
@@ -685,10 +698,27 @@ static int on_presence(void *user_data, ikspak *pak)
 
 	if (resource && (strstr(resource, "talk") || strstr(resource, "telepathy")) && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
 		apr_cpystrn(buffer->buf, from, buffer->len);
-		fflush(stderr);
 		buffer->hit = 1;
+		done = 1;
 	} 
-	
+
+	if (!done) {
+		iks *xml = iks_find(pak->x, "c");
+		if (!xml) {
+			xml = iks_find(pak->x, "caps:c");
+		}
+		
+		if (xml) {
+			char *ext = iks_find_attrib(xml, "ext");;
+			if (ext && strstr(ext, "voice-v1") && (buffer = apr_hash_get(handle->probe_hash, id, APR_HASH_KEY_STRING))) {
+				apr_cpystrn(buffer->buf, from, buffer->len);
+				buffer->hit = 1;
+				done = 1;
+			}
+		}
+	}
+
+
     if (handle->session_callback) {
         handle->session_callback(handle, NULL, dl_signal, to, id, status ? status : "n/a", show ? show : "n/a");
     }
@@ -973,7 +1003,7 @@ static int on_commands(void *user_data, ikspak *pak)
 	xml = iks_child (pak->x);
 	while (xml) {
 		char *name = iks_name(xml);
-		if (!strcasecmp(name, "session")) {
+		if (!strcasecmp(name, "ses:session")) {
 			char *id = iks_find_attrib(xml, "id");
 			//printf("SESSION type=%s name=%s id=%s\n", type, name, id);
 			if (parse_session_code(handle, id, from, to, xml, strcasecmp(type, "error") ? NULL : type) == LDL_STATUS_SUCCESS) {
@@ -1474,7 +1504,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		case IKS_OK:
 			break;
 		case IKS_NET_NODNS:
-			globals.logger(DL_LOG_DEBUG, "hostname lookup failed for %s\n", handle->server);
+			globals.logger(DL_LOG_DEBUG, "hostname lookup failed\n");
 			microsleep(1000);
 			goto fail;
 		case IKS_NET_NOCONN:
@@ -1586,8 +1616,8 @@ static ldl_status new_session_iq(ldl_session_t *session, iks **iqp, iks **sessp,
 	iks_insert_attrib(iq, "to", session->them);
 	iks_insert_attrib(iq, "type", "set");
 	iks_insert_attrib(iq, "id", idbuf);
-	sess = iks_insert (iq, "session");
-	iks_insert_attrib(sess, "xmlns", "http://www.google.com/session");
+	sess = iks_insert (iq, "ses:session");
+	iks_insert_attrib(sess, "xmlns:ses", "http://www.google.com/session");
 
 	iks_insert_attrib(sess, "type", type);
 	iks_insert_attrib(sess, "id", session->id);
@@ -1661,8 +1691,8 @@ void ldl_session_accept_candidate(ldl_session_t *session, ldl_candidate_t *candi
 		if (!iks_insert_attrib(iq, "id", idbuf)) goto fail;
 		if (!iks_insert_attrib(iq, "from", session->login)) goto fail;
 		if (!iks_insert_attrib(iq, "to", session->them)) goto fail;
-		if (!(sess = iks_insert (iq, "session"))) goto fail;
-		if (!iks_insert_attrib(sess, "xmlns", "http://www.google.com/session")) goto fail;
+		if (!(sess = iks_insert (iq, "ses:session"))) goto fail;
+		if (!iks_insert_attrib(sess, "xmlns:ses", "http://www.google.com/session")) goto fail;
 		if (!iks_insert_attrib(sess, "type", "transport-accept")) goto fail;
 		if (!iks_insert_attrib(sess, "id", candidate->tid)) goto fail;
 		if (!iks_insert_attrib(sess, "xmlns", "http://www.google.com/session")) goto fail;
@@ -1792,44 +1822,39 @@ void ldl_handle_send_vcard(ldl_handle_t *handle, char *from, char *to, char *id,
 void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char *subject, const char *body)
 {
 	iks *msg;
-	const char *t;
-	char *e;
+	char *t, *e;
 	char *bdup = NULL;
 	int on = 0;
 	int len = 0;
-
+	char *my_body = strdup(body);
 	assert(handle != NULL);
-
-	if (body) {	
-		if (strchr(body, '<')) {
-			len = (int) strlen(body);
-			if (!(bdup = malloc(len))) {
-				abort();
-			}
-
-			memset(bdup, 0, len);
-		
-			e = bdup;
-			for(t = body; t && *t; t++) {
-				if (*t == '<') {
-					on = 1;
-				} else if (*t == '>') {
-					t++;
-					on = 0;
-				}
-			
-				if (!on) {
-					*e++ = *t;
-				}
-			}
-			body = bdup;
-		}
-	} else {
-		body = "";
-	}
-
-	msg = iks_make_msg(IKS_TYPE_NONE, to, body);
+	assert(body != NULL);
 	
+	if (strchr(my_body, '<')) {
+		len = (int) strlen(my_body);
+		if (!(bdup = malloc(len))) {
+			return;
+		}
+
+		memset(bdup, 0, len);
+		
+		e = bdup;
+		for(t = my_body; *t; t++) {
+			if (*t == '<') {
+				on = 1;
+			} else if (*t == '>') {
+				t++;
+				on = 0;
+			}
+			
+			if (!on) {
+				*e++ = *t;
+			}
+		}
+		my_body = bdup;
+	}
+	
+	msg = iks_make_msg(IKS_TYPE_NONE, to, my_body);
 	iks_insert_attrib(msg, "type", "chat");
 
 	if (!from) {
@@ -1845,7 +1870,9 @@ void ldl_handle_send_msg(ldl_handle_t *handle, char *from, char *to, const char 
 	if (bdup) {	
 		free(bdup);
 	}
-	
+
+	free(my_body);
+
 	apr_queue_push(handle->queue, msg);
 	msg = NULL;
 	
@@ -1893,12 +1920,13 @@ unsigned int ldl_session_candidates(ldl_session_t *session,
 		sess = NULL;
 		id = 0;
 		
-		new_session_iq(session, &iq, &sess, &id, "transport-info");
-		tag = iks_insert(sess, "transport");
-		iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+		new_session_iq(session, &iq, &sess, &id, "candidates");
+		//tag = iks_insert(sess, "transport");
+		//iks_insert_attrib(tag, "xmlns", "http://www.google.com/transport/p2p");
+		tag = sess;
 
 		add_elements(session, tag);
-		tag = iks_insert(tag, "candidate");
+		tag = iks_insert(tag, "ses:candidate");
 
 		if (candidates[x].name) {
 			iks_insert_attrib(tag, "name", candidates[x].name);
@@ -2070,13 +2098,13 @@ unsigned int ldl_session_describe(ldl_session_t *session,
 	
 
 	new_session_iq(session, &iq, &sess, &id, description == LDL_DESCRIPTION_ACCEPT ? "accept" : "initiate");
-	tag = iks_insert(sess, "description");
-	iks_insert_attrib(tag, "xmlns", "http://www.google.com/session/phone");
+	tag = iks_insert(sess, "pho:description");
+	iks_insert_attrib(tag, "xmlns:pho", "http://www.google.com/session/phone");
 	iks_insert_attrib(tag, "xml:lang", "en");
 	for (x = 0; x < plen; x++) {
 		char idbuf[80];
-		payload = iks_insert(tag, "payload-type");
-		iks_insert_attrib(payload, "xmlns", "http://www.google.com/session/phone");
+		payload = iks_insert(tag, "pho:payload-type");
+		iks_insert_attrib(payload, "xmlns:pho", "http://www.google.com/session/phone");
 
 		sprintf(idbuf, "%d", payloads[x].id);
 		iks_insert_attrib(payload, "id", idbuf);
