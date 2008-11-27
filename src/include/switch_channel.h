@@ -488,6 +488,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channe
 
 #define switch_channel_media_ready(_channel) ((switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(_channel, CF_PROXY_MODE))
 
+SWITCH_DECLARE(void) switch_channel_audio_sync(switch_channel_t *channel);
+
 /** @} */
 
 SWITCH_END_EXTERN_C

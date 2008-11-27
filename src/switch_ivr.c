@@ -52,6 +52,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	cng_frame.buflen = 2;
 	switch_set_flag((&cng_frame), SFF_CNG);
 
+	switch_channel_audio_sync(channel);
+
 	for (;;) {
 		now = switch_timestamp_now();
 		elapsed = (int32_t) ((now - start) / 1000);

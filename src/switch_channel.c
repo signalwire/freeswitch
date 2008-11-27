@@ -166,6 +166,19 @@ SWITCH_DECLARE(switch_call_cause_t) switch_channel_get_cause(switch_channel_t *c
 	return channel->hangup_cause;
 }
 
+
+SWITCH_DECLARE(void) switch_channel_audio_sync(switch_channel_t *channel) 
+{
+	if (switch_channel_media_ready(channel)) {
+		switch_core_session_message_t msg;
+		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
+		msg.from = channel->name;
+		switch_core_session_receive_message(channel->session, &msg);
+	}
+}
+
+
+
 SWITCH_DECLARE(switch_call_cause_t) switch_channel_cause_q850(switch_call_cause_t cause)
 {
 	if (cause <= SWITCH_CAUSE_INTERWORKING) {
@@ -1689,13 +1702,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		switch_core_session_execute_application(channel->session, app, arg);
 	}
 
-
-	if (switch_channel_media_ready(channel)) {
-		switch_core_session_message_t msg;
-		msg.message_id = SWITCH_MESSAGE_INDICATE_AUDIO_SYNC;
-		msg.from = channel->name;
-		switch_core_session_receive_message(channel->session, &msg);
-	}
+	switch_channel_audio_sync(channel);
 
 	return SWITCH_STATUS_SUCCESS;
 }
