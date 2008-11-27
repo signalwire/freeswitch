@@ -251,7 +251,7 @@ static unsigned int next_id(void)
 	return globals.id++;
 }
 
-#if 0
+
 static char *iks_name_nons(iks *x)
 {
 	char *r = iks_name(x);
@@ -263,7 +263,7 @@ static char *iks_name_nons(iks *x)
 
 	return r;
 }
-#endif
+
 
 char *ldl_session_get_value(ldl_session_t *session, char *key)
 {
@@ -398,10 +398,10 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 				tag = iks_child (xml);
 				
 				while(tag) {
-					if (!strcasecmp(iks_name(tag), "pho:description")) {
+					if (!strcasecmp(iks_name_nons(tag), "description")) {
 						iks * itag = iks_child (tag);
 						while(itag) {
-							if (!strcasecmp(iks_name(itag), "pho:payload-type") && session->payload_len < LDL_MAX_PAYLOADS) {
+							if (!strcasecmp(iks_name_nons(itag), "payload-type") && session->payload_len < LDL_MAX_PAYLOADS) {
 								char *name = iks_find_attrib(itag, "name");
 								char *id = iks_find_attrib(itag, "id");
 								char *rate = iks_find_attrib(itag, "clockrate");
@@ -434,12 +434,12 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 				dl_signal = LDL_SIGNAL_CANDIDATES;
 				tag = iks_child (xml);
 				id = type;
-				if (tag && !strcasecmp(iks_name(tag), "transport")) {
+				if (tag && !strcasecmp(iks_name_nons(tag), "transport")) {
 					tag = iks_child(tag);
 				}
 				
 				while(tag) {
-					if (!strcasecmp(iks_name(tag), "info_element")) {
+					if (!strcasecmp(iks_name_nons(tag), "info_element")) {
 						char *name = iks_find_attrib(tag, "name");
 						char *value = iks_find_attrib(tag, "value");
 						if (globals.debug) {
@@ -447,7 +447,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 						}
 						ldl_session_set_value(session, name, value);
 						
-					} else if (!strcasecmp(iks_name(tag), "ses:candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
+					} else if (!strcasecmp(iks_name_nons(tag), "candidate") && session->candidate_len < LDL_MAX_CANDIDATES) {
 						char *key;
 						double pref = 0.0;
 						int index = -1;
@@ -960,7 +960,7 @@ static int on_commands(void *user_data, ikspak *pak)
 	if (is_result) {
 		iks *tag = iks_child (pak->x);
 		while(tag) {
-			if (!strcasecmp(iks_name(tag), "bind")) {
+			if (!strcasecmp(iks_name_nons(tag), "bind")) {
 				char *jid = iks_find_cdata(tag, "jid");
 				char *resource = strchr(jid, '/');
 				if (resource) {
@@ -1002,8 +1002,8 @@ static int on_commands(void *user_data, ikspak *pak)
 	
 	xml = iks_child (pak->x);
 	while (xml) {
-		char *name = iks_name(xml);
-		if (!strcasecmp(name, "ses:session")) {
+		char *name = iks_name_nons(xml);
+		if (!strcasecmp(name, "session")) {
 			char *id = iks_find_attrib(xml, "id");
 			//printf("SESSION type=%s name=%s id=%s\n", type, name, id);
 			if (parse_session_code(handle, id, from, to, xml, strcasecmp(type, "error") ? NULL : type) == LDL_STATUS_SUCCESS) {
@@ -1177,7 +1177,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 		}
 		break;
 	case IKS_NODE_NORMAL:
-        if (node && strcmp("stream:features", iks_name(node)) == 0) {
+        if (node && strcmp("stream:features", iks_name_nons(node)) == 0) {
 			handle->features = iks_stream_features(node);
 			if (ldl_test_flag(handle, LDL_FLAG_TLS) && !iks_is_secure(handle->parser))
 				break;
@@ -1223,12 +1223,12 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 					
 				}
 			}
-		} else if (node && strcmp("failure", iks_name(node)) == 0) {
+		} else if (node && strcmp("failure", iks_name_nons(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "sasl authentication failed\n");
 			if (handle->session_callback) {
 				handle->session_callback(handle, NULL, LDL_SIGNAL_LOGIN_FAILURE, "user", "core", "Login Failure", handle->login);
 			}
-		} else if (node && strcmp("success", iks_name(node)) == 0) {
+		} else if (node && strcmp("success", iks_name_nons(node)) == 0) {
 			globals.logger(DL_LOG_DEBUG, "XMPP server connected\n");
 			iks_send_header(handle->parser, handle->acc->server);
 			ldl_set_flag_locked(handle, LDL_FLAG_CONNECTED);
