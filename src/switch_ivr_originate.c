@@ -39,12 +39,6 @@ static switch_status_t originate_on_consume_media_transmit(switch_core_session_t
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
-		while (switch_channel_get_state(channel) == CS_CONSUME_MEDIA && !switch_channel_test_flag(channel, CF_TAGGED)) {
-			switch_ivr_sleep(session, 10, NULL);
-		}
-	}
-
 	switch_channel_clear_state_handler(channel, &originate_state_handlers);
 
 	return SWITCH_STATUS_FALSE;
@@ -96,6 +90,8 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 	} else {
 		return NULL;
 	}
+	
+	switch_ivr_sleep(collect->session, 0, NULL);
 	
 	if (!strcasecmp(collect->key, "exec")) {
 		char *data;
@@ -1680,6 +1676,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		*bleg = NULL;
 	}
 
+	if (*bleg) {
+		switch_ivr_sleep(*bleg, 0, NULL);
+	}
+
+	if (session) {
+		switch_ivr_sleep(session, 0, NULL);
+	}
 
 	if (var_event) {
 		switch_event_destroy(&var_event);

@@ -52,7 +52,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	cng_frame.buflen = 2;
 	switch_set_flag((&cng_frame), SFF_CNG);
 
-	switch_channel_audio_sync(channel);
+	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+		switch_channel_audio_sync(channel);
+	}
+	
+	if (!ms) {
+		return SWITCH_STATUS_SUCCESS;
+	}
 
 	for (;;) {
 		now = switch_timestamp_now();
