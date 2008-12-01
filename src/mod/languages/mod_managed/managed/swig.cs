@@ -2515,6 +2515,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_channel_audio_sync(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_audio_sync(SWIGTYPE_p_switch_channel.getCPtr(channel));
+  }
+
   public static switch_status_t switch_buffer_create(SWIGTYPE_p_apr_pool_t pool, SWIGTYPE_p_p_switch_buffer buffer, SWIGTYPE_p_switch_size_t max_len) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_buffer_create(SWIGTYPE_p_apr_pool_t.getCPtr(pool), SWIGTYPE_p_p_switch_buffer.getCPtr(buffer), SWIGTYPE_p_switch_size_t.getCPtr(max_len));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -3388,6 +3392,10 @@ public class freeswitch {
   public static switch_status_t switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp rtp_session, switch_frame frame, uint io_flags) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_rtp_zerocopy_read_frame(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), switch_frame.getCPtr(frame), io_flags);
     return ret;
+  }
+
+  public static void rtp_flush_read_buffer(SWIGTYPE_p_switch_rtp rtp_session) {
+    freeswitchPINVOKE.rtp_flush_read_buffer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
   }
 
   public static switch_status_t switch_rtp_enable_vad(SWIGTYPE_p_switch_rtp rtp_session, SWIGTYPE_p_switch_core_session session, switch_codec codec, uint flags) {
@@ -8495,6 +8503,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_timestamps")]
   public static extern int switch_channel_set_timestamps(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_audio_sync")]
+  public static extern void switch_channel_audio_sync(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_create")]
   public static extern int switch_buffer_create(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
@@ -9352,6 +9363,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_zerocopy_read_frame")]
   public static extern int switch_rtp_zerocopy_read_frame(HandleRef jarg1, HandleRef jarg2, uint jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_rtp_flush_read_buffer")]
+  public static extern void rtp_flush_read_buffer(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_enable_vad")]
   public static extern int switch_rtp_enable_vad(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, uint jarg4);
@@ -16801,7 +16815,7 @@ namespace FreeSWITCH.Native {
   CF_PROXY_MODE = (1 << 13),
   CF_SUSPEND = (1 << 14),
   CF_EVENT_PARSE = (1 << 15),
-  CF_REPEAT_STATE = (1 << 16),
+  CF_USE_ME = (1 << 16),
   CF_GEN_RINGBACK = (1 << 17),
   CF_RING_READY = (1 << 18),
   CF_BREAK = (1 << 19),
@@ -18309,6 +18323,7 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ,
   SWITCH_MESSAGE_INDICATE_DISPLAY,
   SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY,
+  SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -19610,6 +19625,7 @@ public enum switch_event_types_t {
   SWITCH_EVENT_DTMF,
   SWITCH_EVENT_MESSAGE,
   SWITCH_EVENT_PRESENCE_IN,
+  SWITCH_EVENT_NOTIFY_IN,
   SWITCH_EVENT_PRESENCE_OUT,
   SWITCH_EVENT_PRESENCE_PROBE,
   SWITCH_EVENT_MESSAGE_WAITING,

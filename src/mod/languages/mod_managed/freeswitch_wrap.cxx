@@ -17902,6 +17902,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_timestamps(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_audio_sync(void * jarg1) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  switch_channel_audio_sync(arg1);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_buffer_create(void * jarg1, void * jarg2, void * jarg3) {
   int jresult ;
   switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
@@ -21990,6 +21998,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_zerocopy_read_frame(void * jarg1, v
   result = (switch_status_t)switch_rtp_zerocopy_read_frame(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_rtp_flush_read_buffer(void * jarg1) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  rtp_flush_read_buffer(arg1);
 }
 
 
