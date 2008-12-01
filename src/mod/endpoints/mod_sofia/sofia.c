@@ -3170,6 +3170,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	}
 
 	if ((refer_to = sip->sip_refer_to)) {
+		char *rep;
 		full_ref_to = sip_header_as_string(home, (void *) sip->sip_refer_to);
 
 		if (profile->pflags & PFLAG_FULL_ID) {
@@ -3180,10 +3181,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Process REFER to [%s@%s]\n", exten, (char *) refer_to->r_url->url_host);
 
-		if (refer_to->r_url->url_headers && strstr(refer_to->r_url->url_headers, "Replaces=")) {
+		if (refer_to->r_url->url_headers && (rep = (char *)switch_stristr("Replaces=", refer_to->r_url->url_headers))) {
 			sip_replaces_t *replaces;
 			nua_handle_t *bnh;
-			char *rep;
 
 			if (switch_channel_test_flag(channel_a, CF_PROXY_MODE)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Attended Transfer BYPASS MEDIA CALLS!\n");
@@ -3192,13 +3192,18 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 						   NUTAG_SUBSTATE(nua_substate_terminated), SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden"), SIPTAG_EVENT_STR(etmp), TAG_END());
 				goto done;
 			}
-
-			if ((rep = strchr(refer_to->r_url->url_headers, '='))) {
+			
+			if (rep) {
 				const char *br_a = NULL, *br_b = NULL;
 				char *buf;
+				char *p;
 
-				rep++;
+				rep = switch_core_session_strdup(session, rep + 9);
 
+				if ((p = strchr(rep, ';'))) {
+					*p = '\0';
+				}
+				
 				if ((buf = switch_core_session_alloc(session, strlen(rep) + 1))) {
 					rep = url_unescape(buf, (const char *) rep);
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Replaces: [%s]\n", rep);
