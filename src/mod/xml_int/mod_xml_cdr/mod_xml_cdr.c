@@ -33,10 +33,13 @@
 #include <sys/stat.h>
 #include <switch.h>
 #include <curl/curl.h>
+#define MAX_URLS 20
 
 static struct {
 	char *cred;
-	char *url;
+	char *urls[MAX_URLS+1];
+	int url_count;
+	int url_index;
 	char *log_dir;
 	char *err_log_dir;
 	uint32_t delay;
@@ -47,6 +50,7 @@ static struct {
 	int log_b;
 	int prefix_a;
 	int disable100continue;
+	switch_memory_pool_t *pool;
 } globals;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load);
@@ -128,7 +132,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	}
 
 	/* try to post it to the web server */
-	if (!switch_strlen_zero(globals.url)) {
+	if (globals.url_count) {
 		curl_handle = curl_easy_init();
 
 		if (globals.encode) {
@@ -150,11 +154,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			headers = curl_slist_append(headers, "Content-Type: application/x-www-form-plaintext");
 		}
 
-		if (!strncasecmp(globals.url, "https", 5)) {
-			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
-			curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
-		}
-
 		if (!(curl_xml_text = switch_mprintf("cdr=%s", xml_text))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto error;
@@ -168,7 +167,6 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, curl_xml_text);
-		curl_easy_setopt(curl_handle, CURLOPT_URL, globals.url);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, httpCallBack);
 
@@ -190,12 +188,26 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 			if (cur_try > 0) {
 				switch_yield(globals.delay * 1000000);
 			}
+			
+			curl_easy_setopt(curl_handle, CURLOPT_URL, globals.urls[globals.url_index]);
+
+			if (!strncasecmp(globals.urls[globals.url_index], "https", 5)) {
+				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+				curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+			}
+
 			curl_easy_perform(curl_handle);
 			curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
 			if (httpRes == 200) {
 				goto success;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n", httpRes, globals.url);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n", 
+								  httpRes, globals.urls[globals.url_index]);
+				globals.url_index++;
+				if (globals.url_index >= globals.url_count) {
+					globals.url_index = 0;
+				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Retry will be with url [%s]\n", globals.urls[globals.url_index]);
 			}
 		}
 		curl_easy_cleanup(curl_handle);
@@ -270,6 +282,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 	memset(&globals, 0, sizeof(globals));
 	globals.log_b = 1;
 	globals.disable100continue = 0;
+	globals.pool = pool;
 
 	/* parse the config */
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
@@ -283,9 +296,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 
 			if (!strcasecmp(var, "cred") && !switch_strlen_zero(val)) {
-				globals.cred = strdup(val);
+				globals.cred = switch_core_strdup(globals.pool, val);
 			} else if (!strcasecmp(var, "url") && !switch_strlen_zero(val)) {
-				globals.url = strdup(val);
+				if (globals.url_count >= MAX_URLS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "maximum urls configured!\n");
+				} else {
+					globals.urls[globals.url_count++] = switch_core_strdup(globals.pool, val);
+				}
 			} else if (!strcasecmp(var, "delay") && !switch_strlen_zero(val)) {
 				globals.delay = (uint32_t) atoi(val);
 			} else if (!strcasecmp(var, "log-b-leg")) {
@@ -307,7 +324,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 					globals.log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
-						globals.log_dir = strdup(val);
+						globals.log_dir = switch_core_strdup(globals.pool, val);
 					} else {
 						globals.log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
@@ -317,7 +334,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				} else {
 					if (switch_is_file_path(val)) {
-						globals.err_log_dir = strdup(val);
+						globals.err_log_dir = switch_core_strdup(globals.pool, val);
 					} else {
 						globals.err_log_dir = switch_mprintf("%s%s%s", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, val);
 					}
@@ -328,9 +345,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)
 
 			if (switch_strlen_zero(globals.err_log_dir)) {
 				if (!switch_strlen_zero(globals.log_dir)) {
-					globals.err_log_dir = strdup(globals.log_dir);
+					globals.err_log_dir = switch_core_strdup(globals.pool, globals.log_dir);
 				} else {
-					globals.err_log_dir = switch_mprintf("%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
+					globals.err_log_dir = switch_core_sprintf(globals.pool, "%s%sxml_cdr", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR);
 				}
 			}
 		}
