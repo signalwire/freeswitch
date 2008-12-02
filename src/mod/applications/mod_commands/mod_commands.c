@@ -2704,7 +2704,7 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 SWITCH_STANDARD_API(uuid_setvar_multi_function)
 {
 	switch_core_session_t *psession = NULL;
-	char *mycmd = NULL, *vars, *argv[2] = { 0 };
+	char *mycmd = NULL, *vars, *argv[64] = { 0 };
 	int argc = 0;
 	char *var_name, *var_value;
 
@@ -2748,7 +2748,7 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 		}
 	}
 	
-	stream->write_function(stream, "-USAGE: %s\n", SETVAR_SYNTAX);
+	stream->write_function(stream, "-USAGE: %s\n", SETVAR_MULTI_SYNTAX);
 
   done:
 	switch_safe_free(mycmd);
