@@ -1265,6 +1265,11 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session)
 {
+	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+}
+
+static void do_flush(switch_rtp_t *rtp_session)
+{
 	int was_blocking = 0;
 	switch_size_t bytes;
 	switch_status_t status;
@@ -1338,6 +1343,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 		
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH)) {
+			do_flush(rtp_session);
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+			continue;
+		}
+
 		if (rtp_session->max_missed_packets) {
 			if (bytes) {
 				rtp_session->missed_count = 0;

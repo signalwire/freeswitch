@@ -608,10 +608,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_mutex_lock(session->codec_write_mutex);	
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
-		need_codec = TRUE;
 		if (session->write_codec->implementation->codec_id == frame->codec->implementation->codec_id) {
 			ptime_mismatch = TRUE;
+			if (!need_codec) {
+				status = perform_write(session, frame, flags, stream_id);
+				goto error;
+			}
 		}
+		need_codec = TRUE;
 	}
 
 	if (session->write_codec && !frame->codec) {

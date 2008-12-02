@@ -547,6 +547,7 @@ struct private_object {
 	switch_size_t last_ts;
 	uint32_t check_frames;
 	uint32_t mismatch_count;
+	uint32_t last_codec_ms;
 	nua_event_t want_event;
 };
 

@@ -451,7 +451,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_SECURE_SEND_RESET = (1 << 16),
 	SWITCH_RTP_FLAG_SECURE_RECV_RESET = (1 << 17),
 	SWITCH_RTP_FLAG_PROXY_MEDIA = (1 << 18),
-	SWITCH_RTP_FLAG_SHUTDOWN = (1 << 19)
+	SWITCH_RTP_FLAG_SHUTDOWN = (1 << 19),
+	SWITCH_RTP_FLAG_FLUSH = (1 << 20)
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
 
