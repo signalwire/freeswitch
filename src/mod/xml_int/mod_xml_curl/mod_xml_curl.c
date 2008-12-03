@@ -37,13 +37,17 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_xml_curl_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_curl_shutdown);
 SWITCH_MODULE_DEFINITION(mod_xml_curl, mod_xml_curl_load, mod_xml_curl_shutdown, NULL);
 
+
 struct xml_binding {
+	char *method;
 	char *url;
 	char *bindings;
 	char *cred;
 	int disable100continue;
+	int use_get_style;
 	uint32_t ignore_cacert_check;
 	switch_hash_t *vars_map;
+	int use_dynamic_url;
 };
 
 static int keep_files_around = 0;
@@ -105,6 +109,9 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return x;
 }
 
+
+
+
 static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, const char *key_name, const char *key_value, switch_event_t *params,
 								  void *user_data)
 {
@@ -122,7 +129,9 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	struct curl_slist *headers = NULL;
 	char hostname[256] = "";
 	char basic_data[512];
-
+	char *uri = NULL;
+	char *dynamic_url = NULL;
+	
 	gethostname(hostname, sizeof(hostname));
 
 	if (!binding) {
@@ -138,12 +147,37 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 		return xml;
 	}
-
+	
 	switch_snprintf(basic_data, sizeof(basic_data), "hostname=%s&section=%s&tag_name=%s&key_name=%s&key_value=%s",
 					hostname, section, switch_str_nil(tag_name), switch_str_nil(key_name), switch_str_nil(key_value));
 
 	data = switch_event_build_param_string(params, basic_data, binding->vars_map);
 	switch_assert(data);
+	if (binding->use_dynamic_url) {
+		switch_status_t ok;
+		
+		do {
+			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "hostname", switch_str_nil(hostname));
+			if (ok != SWITCH_STATUS_SUCCESS) break;
+			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "section", switch_str_nil(section));
+			if (ok != SWITCH_STATUS_SUCCESS) break;
+			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "tag_name", switch_str_nil(tag_name));
+			if (ok != SWITCH_STATUS_SUCCESS) break;
+			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_name", switch_str_nil(key_name));
+			if (ok != SWITCH_STATUS_SUCCESS) break;
+			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_value", switch_str_nil(key_value));
+		} while (0);
+		switch_assert(ok == SWITCH_STATUS_SUCCESS);
+		dynamic_url = switch_event_expand_headers(params, binding->url);
+		switch_assert(dynamic_url);
+	} else {
+		dynamic_url = binding->url;
+	}
+	if (binding->use_get_style == 1) {
+		uri = malloc(strlen(data) + strlen(dynamic_url) + 16);
+		switch_assert(uri);
+		sprintf(uri, "%s%c%s", dynamic_url, strchr(dynamic_url, '?') != NULL ? '&' : '?', data);
+	} 
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -164,11 +198,14 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 			curl_easy_setopt(curl_handle, CURLOPT_USERPWD, binding->cred);
 		}
 		curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-		curl_easy_setopt(curl_handle, CURLOPT_POST, 1);
+		if (binding->method != NULL)
+			curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, binding->method);
+		curl_easy_setopt(curl_handle, CURLOPT_POST, !binding->use_get_style);
 		curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
 		curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
-		curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
-		curl_easy_setopt(curl_handle, CURLOPT_URL, binding->url);
+		if (!binding->use_get_style)
+			curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, data);
+		curl_easy_setopt(curl_handle, CURLOPT_URL, binding->use_get_style ? uri : dynamic_url);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
 		curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &config_data);
 		curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-xml/1.0");
@@ -211,7 +248,10 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	}
 
 	switch_safe_free(data);
-
+	if (binding->use_get_style == 1)
+		switch_safe_free(uri);
+	if (binding->use_dynamic_url && dynamic_url != binding->url)
+		switch_safe_free(dynamic_url);
 	return xml;
 }
 
@@ -240,7 +280,9 @@ static switch_status_t do_config(void)
 		char *url = NULL;
 		char *bind_cred = NULL;
 		char *bind_mask = NULL;
+		char *method = NULL;
 		int disable100continue = 0;
+		int use_dynamic_url = 0;
 		uint32_t ignore_cacert_check = 0;
 		hash_node_t* hash_node;
 		need_vars_map = 0;
@@ -258,8 +300,12 @@ static switch_status_t do_config(void)
 				bind_cred = val;
 			} else if (!strcasecmp(var, "disable-100-continue") && switch_true(val)) {
 				disable100continue = 1;
+			} else if (!strcasecmp(var, "method")) {
+				method = val;
 			} else if (!strcasecmp(var, "ignore-cacert-check") && switch_true(val)) {
 				ignore_cacert_check = 1;
+			} else if (!strcasecmp(var, "use-dynamic-url") && switch_true(val)) {
+				use_dynamic_url = 1;
 			} else if (!strcasecmp(var, "enable-post-var")) {
 				if (!vars_map && need_vars_map == 0) {
 					if (switch_core_hash_init(&vars_map, globals.pool) != SWITCH_STATUS_SUCCESS) {
@@ -292,7 +338,13 @@ static switch_status_t do_config(void)
 		memset(binding, 0, sizeof(*binding));
 
 		binding->url = strdup(url);
+		switch_assert(binding->url);
 
+		if (method != NULL) {
+			binding->method = strdup(method);
+		} else {
+			binding->method = NULL;
+		}
 		if (bind_mask) {
 			binding->bindings = strdup(bind_mask);
 		}
@@ -302,6 +354,8 @@ static switch_status_t do_config(void)
 		}
 
 		binding->disable100continue = disable100continue;
+		binding->use_get_style = method != NULL && strcasecmp(method,"post") != 0;
+		binding->use_dynamic_url = use_dynamic_url;
 		binding->ignore_cacert_check = ignore_cacert_check;
 
 		binding->vars_map = vars_map;
