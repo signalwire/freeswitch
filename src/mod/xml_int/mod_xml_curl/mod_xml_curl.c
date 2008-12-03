@@ -153,26 +153,19 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 
 	data = switch_event_build_param_string(params, basic_data, binding->vars_map);
 	switch_assert(data);
+
 	if (binding->use_dynamic_url) {
-		switch_status_t ok;
-		
-		do {
-			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "hostname", switch_str_nil(hostname));
-			if (ok != SWITCH_STATUS_SUCCESS) break;
-			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "section", switch_str_nil(section));
-			if (ok != SWITCH_STATUS_SUCCESS) break;
-			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "tag_name", switch_str_nil(tag_name));
-			if (ok != SWITCH_STATUS_SUCCESS) break;
-			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_name", switch_str_nil(key_name));
-			if (ok != SWITCH_STATUS_SUCCESS) break;
-			ok = switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_value", switch_str_nil(key_value));
-		} while (0);
-		switch_assert(ok == SWITCH_STATUS_SUCCESS);
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "hostname", switch_str_nil(hostname));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "section", switch_str_nil(section));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "tag_name", switch_str_nil(tag_name));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_name", switch_str_nil(key_name));
+		switch_event_add_header_string(params, SWITCH_STACK_TOP, "key_value", switch_str_nil(key_value));
 		dynamic_url = switch_event_expand_headers(params, binding->url);
 		switch_assert(dynamic_url);
 	} else {
 		dynamic_url = binding->url;
 	}
+
 	if (binding->use_get_style == 1) {
 		uri = malloc(strlen(data) + strlen(dynamic_url) + 16);
 		switch_assert(uri);
