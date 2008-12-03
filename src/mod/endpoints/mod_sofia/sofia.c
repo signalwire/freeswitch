@@ -2258,9 +2258,23 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		const char *uuid;
 		switch_core_session_t *other_session;
 		private_object_t *tech_pvt = switch_core_session_get_private(session);
+		su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
+		char network_ip[80];
+		int network_port = 0;
+		switch_caller_profile_t *caller_profile = NULL;
+
+		get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
+		network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+
+		switch_channel_set_variable(channel, "sip_reply_host", network_ip);
+		switch_channel_set_variable_printf(channel, "sip_reply_port", "%d", network_port);
+		
+		if ((caller_profile = switch_channel_get_caller_profile(channel))) {
+			caller_profile->network_addr = switch_core_strdup(caller_profile->pool, network_ip);
+		}
 
 		switch_channel_clear_flag(channel, CF_REQ_MEDIA);
-
+		
 		if ((status == 180 || status == 183 || status == 200)) { 
 			if (sip->sip_user_agent && sip->sip_user_agent->g_string) {
 				switch_channel_set_variable(channel, "sip_user_agent", sip->sip_user_agent->g_string);
