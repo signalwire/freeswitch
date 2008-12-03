@@ -1001,18 +1001,22 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 
 SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 {
-	switch_assert(rtp_session != NULL);
+	if (!switch_rtp_ready(rtp_session)) {
+		return;
+	}
+
 	switch_mutex_lock(rtp_session->flag_mutex);
 	switch_set_flag(rtp_session, SWITCH_RTP_FLAG_BREAK);
+	
+	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_NOBLOCK)) {
+		switch_mutex_unlock(rtp_session->flag_mutex);
+		return;
+	}
 
 	if (rtp_session->sock_input) {
-		char o[4] = "DOH";
-		switch_size_t len;
-
-		len = sizeof(o);		
-		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) o, &len);
-		len = sizeof(o);
-		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) o, &len);
+		uint32_t o = UINT_MAX;
+		switch_size_t len = sizeof(o);
+		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
 }
@@ -1265,7 +1269,9 @@ static void do_2833(switch_rtp_t *rtp_session)
 
 SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session)
 {
-	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+	if (switch_rtp_ready(rtp_session) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
+		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+	}
 }
 
 static void do_flush(switch_rtp_t *rtp_session)
@@ -1346,7 +1352,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_FLUSH)) {
 			do_flush(rtp_session);
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
-			continue;
+			bytes = 0;
 		}
 
 		if (rtp_session->max_missed_packets) {
@@ -1359,8 +1365,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 
 		check = !bytes;
-
-		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK)) {
+		
+		if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BREAK) || (bytes && bytes == 4 && *((int *)&rtp_session->recv_msg) == UINT_MAX)) {
 			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_BREAK);
 			do_2833(rtp_session);
 			rtp_flush_read_buffer(rtp_session);
