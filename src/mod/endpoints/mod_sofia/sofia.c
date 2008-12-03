@@ -2546,6 +2546,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_ready:
 	case nua_callstate_completed:
 	case nua_callstate_received:
+	case nua_callstate_proceeding:
 		if (!(session && channel && tech_pvt)) goto done;
 		break;
 	default:
