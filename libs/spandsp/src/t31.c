@@ -42,7 +42,6 @@
 #include <memory.h>
 #include <string.h>
 #include <ctype.h>
-#include <malloc.h>
 #include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>

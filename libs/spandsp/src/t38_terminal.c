@@ -37,7 +37,6 @@
 #include <fcntl.h>
 #include <time.h>
 #include <string.h>
-#include <malloc.h>
 #include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
