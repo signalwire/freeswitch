@@ -2241,11 +2241,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 			vm_notify_email = switch_core_strdup(pool, val);
 		} else if (!strcasecmp(var, "email-addr")) {
 			email_addr = switch_core_strdup(pool, val);
-		} else if (!strcasecmp(var, "vm-email-all-messages")) {
-			send_main = switch_true(val);
+		} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
 			send_mail++;
-		} else if (!strcasecmp(var, "vm-notify-email-all-messages")) {
-			send_notify = switch_true(val);
+		} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 			send_mail++;
 		} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
 			insert_db = switch_true(val);
@@ -2684,13 +2682,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 						vm_notify_email = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "email-addr")) {
 						email_addr = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "vm-email-all-messages")) {
-						send_main = switch_true(val);
+					} else if (!strcasecmp(var, "vm-email-all-messages") && (send_main = switch_true(val))) {
 						send_mail++;
 					} else if (!strcasecmp(var, "storage-dir")) {
 						vm_storage_dir = switch_core_session_strdup(session, val);
-					} else if (!strcasecmp(var, "vm-notify-email-all-messages")) {
-						send_notify = switch_true(val);
+					} else if (!strcasecmp(var, "vm-notify-email-all-messages") && (send_notify = switch_true(val))) {
 						send_mail++;
 					} else if (!strcasecmp(var, "vm-keep-local-after-email")) {
 						insert_db = switch_true(val);
@@ -2768,7 +2764,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		if (num > 0 && num <= VM_MAX_GREETINGS) {
 			greet_path = switch_mprintf("%s%sgreeting_%d.%s", dir_path, SWITCH_PATH_SEPARATOR, num, profile->file_ext);
 		}
-	} else {
+	} else if (!(greet_path = (char *) switch_channel_get_variable(channel, "voicemail_greeting_path"))) {
 		greet_path = cbt.greeting_path;
 	}
 
