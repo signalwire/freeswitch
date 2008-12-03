@@ -1409,6 +1409,36 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 	return 0;
 }
 
+static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **columnNames)
+{
+	struct cb_helper *cb = (struct cb_helper *) pArg;
+	char exp_buf[128] = "";
+	switch_time_exp_t tm;
+  const int buflen = 2048;
+  char xmlbuf[buflen];
+  
+	if (argv[6]) {
+		switch_time_t etime = atoi(argv[6]);
+		switch_size_t retsize;
+
+		switch_time_exp_lt(&tm, switch_time_from_sec(etime));
+		switch_strftime_nocheck(exp_buf, &retsize, sizeof(exp_buf), "%Y-%m-%d %T", &tm);
+	}
+
+	cb->stream->write_function(cb->stream,
+	               "<Registration>\n"
+							   "<Call-ID>%s</Call-ID>\n"
+							   "<User>%s@%s</User>\n"
+							   "<Contact>%s</Contact>\n"
+							   "<Agent>%s</Agent>\n"
+							   "<Status>%s(%s) EXP(%s)</Status>\n"
+							   "<Host>%s</Host>\n"
+                 "</Registration>\n", 
+							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_amp_encode(switch_str_nil(argv[3]),xmlbuf,buflen),
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]));
+	return 0;
+}
+
 static const char *status_names[] = { "DOWN", "UP", NULL };
 
 static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t *stream)
@@ -1591,6 +1621,194 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
 	stream->write_function(stream, "%s\n", line);
 	stream->write_function(stream, "%d profile%s %d alias%s\n", c, c == 1 ? "" : "s", ac, ac == 1 ? "" : "es");
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handle_t *stream)
+{
+	sofia_profile_t *profile = NULL;
+	sofia_gateway_t *gp;
+	switch_hash_index_t *hi;
+	void *val;
+	const void *vvar;
+	const int buflen = 2096;
+	char xmlbuf[buflen];
+	int c = 0;
+	int ac = 0;
+  const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
+	
+  if (argc > 0) {
+		if (argc == 1) {
+			stream->write_function(stream, "Invalid Syntax!\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
+		if (!strcasecmp(argv[0], "gateway")) {
+			if ((gp = sofia_reg_find_gateway(argv[1]))) {
+				switch_assert(gp->state < REG_STATE_LAST);
+        stream->write_function(stream, "%s\n", header);
+        stream->write_function(stream, "<Gateway>\n");
+				stream->write_function(stream, "<Name>%s</Name>\n", switch_str_nil(gp->name));
+				stream->write_function(stream, "<Scheme>%s</Scheme>\n", switch_str_nil(gp->register_scheme));
+				stream->write_function(stream, "<Realm>%s</Realm>\n", switch_str_nil(gp->register_realm));
+				stream->write_function(stream, "<Username>%s</Username>\n", switch_str_nil(gp->register_username));
+				stream->write_function(stream, "<Password>%s</Password>\n", switch_strlen_zero(gp->register_password) ? "no" : "yes");
+				stream->write_function(stream, "<From>%s</From>\n", switch_amp_encode(switch_str_nil(gp->register_from),xmlbuf,buflen));
+				stream->write_function(stream, "<Contact>%s</Contact>\n", switch_amp_encode(switch_str_nil(gp->register_contact),xmlbuf,buflen));
+				stream->write_function(stream, "<To>%s</To>\n", switch_str_nil(gp->register_to));
+				stream->write_function(stream, "<Proxy>%s</Proxy>\n", switch_str_nil(gp->register_proxy));
+				stream->write_function(stream, "<Context>%s</Context>\n", switch_str_nil(gp->register_context));
+				stream->write_function(stream, "<Expires>%s</Expires>\n", switch_str_nil(gp->expires_str));
+				stream->write_function(stream, "<Freq>%d</Freq>\n", gp->freq);
+				stream->write_function(stream, "<Ping>%d</Ping>\n", gp->ping);
+				stream->write_function(stream, "<PingFreq>%d</PingFreq>\n", gp->ping_freq);
+				stream->write_function(stream, "<State>%s</State>\n", sofia_state_names[gp->state]);
+				stream->write_function(stream, "<Status>%s%s</Status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+				stream->write_function(stream, "</Gateway>\n");
+				sofia_reg_release_gateway(gp);
+			} else {
+				stream->write_function(stream, "Invalid Gateway!\n");
+			}
+		} else if (!strcasecmp(argv[0], "profile")) {
+			struct cb_helper cb;
+			char *sql = NULL;
+
+			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
+				if (!argv[2] || strcasecmp(argv[2], "reg")) {
+					stream->write_function(stream, "%s\n", header);
+					stream->write_function(stream, "<Profile>\n");
+					stream->write_function(stream, "<ProfileInfo>\n");
+					stream->write_function(stream, "<Name>%s</Name>\n", switch_str_nil(argv[1]));
+					stream->write_function(stream, "<DomainName>%s</DomainName>\n", profile->domain_name ? profile->domain_name : "N/A");
+					if (strcasecmp(argv[1], profile->name)) {
+						stream->write_function(stream, "<AliasOf>%s</AliasOf>\n", switch_str_nil(profile->name));
+					}
+					stream->write_function(stream, "<DBName>%s</DBName>\n", switch_str_nil(profile->dbname));
+					stream->write_function(stream, "<PresHosts>%s</PresHosts>\n", switch_str_nil(profile->presence_hosts));
+					stream->write_function(stream, "<Dialplan>%s</Dialplan>\n", switch_str_nil(profile->dialplan));
+					stream->write_function(stream, "<Context>%s</Context>\n", switch_str_nil(profile->context));
+					stream->write_function(stream, "<ChallengeRealm>%s</ChallengeRealm>\n", 
+										   switch_strlen_zero(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
+					stream->write_function(stream, "<RTP-IP>%s</RTP-IP>\n", switch_str_nil(profile->rtpip));
+					if (profile->extrtpip) {
+						stream->write_function(stream, "<Ext-RTP-IP>%s</Ext-RTP-IP>\n", profile->extrtpip);
+					}
+
+					stream->write_function(stream, "<SIP-IP>%s</SIP-IP>\n", switch_str_nil(profile->sipip));
+					if (profile->extsipip) {
+						stream->write_function(stream, "<Ext-SIP-IP>%s</Ext-SIP-IP>\n", profile->extsipip);
+					}
+					stream->write_function(stream, "<URL>%s</URL>\n", switch_str_nil(profile->url));
+					stream->write_function(stream, "<BIND-URL>%s</BIND-URL>\n", switch_str_nil(profile->bindurl));
+					if (sofia_test_pflag(profile, PFLAG_TLS)) {
+						stream->write_function(stream, "<TLS-URL>%s</TLS-URL>\n", switch_str_nil(profile->tls_url));
+						stream->write_function(stream, "<TLS-BIND-URL>%s</TLS-BIND-URL>\n", switch_str_nil(profile->tls_bindurl));
+					}
+					stream->write_function(stream, "<HOLD-MUSIC>%s</HOLD-MUSIC>\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
+					stream->write_function(stream, "<CODECS>%s</CODECS>\n", switch_str_nil(profile->codec_string));
+					stream->write_function(stream, "<TEL-EVENT>%d</TEL-EVENT>\n", profile->te);
+					if (profile->dtmf_type == DTMF_2833) {
+						stream->write_function(stream, "<DTMF-MODE>rfc2833</DTMF-MODE>\n");
+					} else if (profile->dtmf_type == DTMF_INFO) {
+						stream->write_function(stream, "<DTMF-MODE>info</DTMF-MODE>\n");
+					} else {
+						stream->write_function(stream, "<DTMF-MODE>none</DTMF-MODE>\n");
+					}
+					stream->write_function(stream, "<CNG>%d</CNG>\n", profile->cng_pt);
+					stream->write_function(stream, "<SESSION-TO>%d</SESSION-TO>\n", profile->session_timeout);
+					stream->write_function(stream, "<MAX-DIALOG>%d</MAX-DIALOG>\n", profile->max_proceeding);
+					stream->write_function(stream, "<NOMEDIA>%s</NOMEDIA>\n", switch_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
+					stream->write_function(stream, "<LATE-NEG>%s</LATE-NEG>\n", switch_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
+					stream->write_function(stream, "<PROXY-MEDIA>%s</PROXY-MEDIA>\n", switch_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
+					stream->write_function(stream, "<AGGRESSIVENAT>%s</AGGRESSIVENAT>\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
+					stream->write_function(stream, "<STUN_ENABLED>%s</STUN_ENABLED>\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
+					stream->write_function(stream, "<STUN_AUTO_DISABLE>%s</STUN_AUTO_DISABLE>\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+				}
+				stream->write_function(stream, "</ProfileInfo>\n");
+				stream->write_function(stream, "<Registrations>\n");
+
+				cb.profile = profile;
+				cb.stream = stream;
+				
+				if (argv[3]) {
+					if (argv[4]) {
+						if (!strcasecmp(argv[3], "pres")) {
+							sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+												 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+												 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
+												 profile->name, argv[4]);
+						}
+					} else {
+						sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+											 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+											 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
+											 profile->name, argv[3]);
+					}
+				}
+
+				if (!sql) {
+					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
+										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+										 " from sip_registrations where profile_name='%q'", 
+										 profile->name);
+				}
+
+				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
+				free(sql);
+
+				stream->write_function(stream, "</Registrations>\n");
+				stream->write_function(stream, "</Profile>\n");
+
+				sofia_glue_release_profile(profile);
+			} else {
+				stream->write_function(stream, "Invalid Profile!\n");
+			}
+		} else {
+			stream->write_function(stream, "Invalid Syntax!\n");
+		}
+
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+  stream->write_function(stream, "%s\n", header);
+  stream->write_function(stream, "<Profiles>\n");
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &vvar, NULL, &val);
+		profile = (sofia_profile_t *) val;
+		if (sofia_test_pflag(profile, PFLAG_RUNNING)) {
+
+			if (strcmp(vvar, profile->name)) {
+				ac++;
+				stream->write_function(stream, "<alias>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s</State>\n</alias>\n", vvar, "alias", profile->name, "ALIASED");
+			} else {
+				stream->write_function(stream, "<profile>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s (%u)</State>\n</profile>\n", profile->name, "profile", profile->url,
+									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
+
+				if (sofia_test_pflag(profile, PFLAG_TLS)) {
+					stream->write_function(stream, "<profile>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s (%u) (TLS)</State>\n</profile>\n", profile->name, "profile", profile->tls_url,
+										   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
+				}
+
+				c++;
+
+				for (gp = profile->gateways; gp; gp = gp->next) {
+					switch_assert(gp->state < REG_STATE_LAST);
+					stream->write_function(stream, "<gateway>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s</State>\n</gateway>\n", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
+					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
+						time_t now = switch_timestamp(NULL);
+						if (gp->retry > now) {
+							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
+						} else {
+							stream->write_function(stream, " (retry: NEVER)");
+						}
+					}
+					stream->write_function(stream, "\n");
+				}
+			}
+		}
+	}
+	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
+	stream->write_function(stream, "</Profiles>\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -1983,6 +2201,8 @@ SWITCH_STANDARD_API(sofia_function)
 		func = cmd_profile;
 	} else if (!strcasecmp(argv[0], "status")) {
 		func = cmd_status;
+	} else if (!strcasecmp(argv[0], "xmlstatus")) {
+		func = cmd_xml_status;
 	} else if (!strcasecmp(argv[0], "loglevel")) {
 		if (argc > 1 && argv[1]) {
 			int level;
