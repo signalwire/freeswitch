@@ -452,6 +452,15 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 			}
 		}
 		break;
+	case ZAP_COMMAND_WINK:
+		{
+			int command = ZT_WINK;
+			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+				snprintf(zchan->last_error, sizeof(zchan->last_error), "WINK Failed");
+				return ZAP_FAIL;
+			}
+		}
+		break;
 	case ZAP_COMMAND_GENERATE_RING_ON:
 		{
 			int command = ZT_RING;
