@@ -203,15 +203,17 @@ SWITCH_DECLARE(void) switch_swap_linear(int16_t *buf, int len)
 
 SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples, uint32_t divisor)
 {
-	int16_t rnd, x;
+	int16_t rnd = 0, rnd2, x;
 	uint32_t i;
 	int sum_rnd = 0;
 
 	assert(divisor);
 
+	rnd2 = (int16_t) (intptr_t) &data + switch_timestamp(NULL);
+
 	for (i = 0; i < samples; i++, sum_rnd = 0) {
-		for (x = 0; x < 7; x++) {
-			rnd = (int16_t) (rand() * sizeof(int16_t));
+		for (x = 0; x < 10; x++) {
+			rnd += ((x + i) * rnd2);
 			sum_rnd += rnd;
 		}
 		switch_normalize_to_16bit(sum_rnd);
