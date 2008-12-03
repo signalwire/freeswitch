@@ -788,64 +788,68 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 			continue;
 		}
 
-		if (switch_channel_test_flag(switch_core_session_get_channel(conference->floor_holder->session), CF_VIDEO)) {
-			status = switch_core_session_read_video_frame(conference->floor_holder->session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				conference->floor_holder = NULL;
-				req_iframe = 0;
-				continue;
-			}
+		if (!switch_channel_test_flag(switch_core_session_get_channel(conference->floor_holder->session), CF_VIDEO)) {
+			switch_cond_next();
+			continue;
+		}
 
-			if (switch_test_flag(vid_frame, SFF_CNG)) {
-				continue;
-			}
+		status = switch_core_session_read_video_frame(conference->floor_holder->session, &vid_frame, SWITCH_IO_FLAG_NONE, 0);
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			conference->floor_holder = NULL;
+			req_iframe = 0;
+			continue;
+		}
 
-			if (conference->floor_holder != last_member) {
-				int iframe = 0;
+		if (switch_test_flag(vid_frame, SFF_CNG)) {
+			continue;
+		}
+
+		if (conference->floor_holder != last_member) {
+			int iframe = 0;
 #if 0
-				switch_core_session_message_t msg = { 0 };
+			switch_core_session_message_t msg = { 0 };
 
 
-				if (!req_iframe) {
-					/* Tell the channel to request a fresh vid frame */
-					msg.from = __FILE__;
-					msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
-					switch_core_session_receive_message(conference->floor_holder->session, &msg);
-					req_iframe = 1;
-				}
+			if (!req_iframe) {
+				/* Tell the channel to request a fresh vid frame */
+				msg.from = __FILE__;
+				msg.message_id = SWITCH_MESSAGE_INDICATE_VIDEO_REFRESH_REQ;
+				switch_core_session_receive_message(conference->floor_holder->session, &msg);
+				req_iframe = 1;
+			}
 #endif
 
-				if (vid_frame->codec->implementation->ianacode == 34) {	/* h.263 */
-					//iframe = (*((int16_t *) vid_frame->data) >> 12 == 6);
-					iframe = 1;			
-				} else if (vid_frame->codec->implementation->ianacode == 115) {	/* h.263-1998 */
-					int y = *((int8_t *) vid_frame->data + 2) & 0xfe;
-					iframe = (y == 0x80 || y == 0x82);
-				} else if (vid_frame->codec->implementation->ianacode == 99) {	/* h.264 */
-					iframe = (*((int16_t *) vid_frame->data) >> 5 == 0x11);
-				} else {		/* we need more defs */
-					iframe = 1;
-				}
-
-				if (!iframe) {
-					continue;
-				}
-
-				req_iframe = 0;
+			if (vid_frame->codec->implementation->ianacode == 34) {	/* h.263 */
+				//iframe = (*((int16_t *) vid_frame->data) >> 12 == 6);
+				iframe = 1;			
+			} else if (vid_frame->codec->implementation->ianacode == 115) {	/* h.263-1998 */
+				int y = *((int8_t *) vid_frame->data + 2) & 0xfe;
+				iframe = (y == 0x80 || y == 0x82);
+			} else if (vid_frame->codec->implementation->ianacode == 99) {	/* h.264 */
+				iframe = (*((int16_t *) vid_frame->data) >> 5 == 0x11);
+			} else {		/* we need more defs */
+				iframe = 1;
 			}
 
-			last_member = conference->floor_holder;
-
-			switch_mutex_lock(conference->member_mutex);
-			has_vid = 0;
-			for (imember = conference->members; imember; imember = imember->next) {
-				if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
-					has_vid++;
-					switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
-				}
+			if (!iframe) {
+				continue;
 			}
-			switch_mutex_unlock(conference->member_mutex);
+
+			req_iframe = 0;
 		}
+
+		last_member = conference->floor_holder;
+
+		switch_mutex_lock(conference->member_mutex);
+		has_vid = 0;
+		for (imember = conference->members; imember; imember = imember->next) {
+			if (switch_channel_test_flag(switch_core_session_get_channel(imember->session), CF_VIDEO)) {
+				has_vid++;
+				switch_core_session_write_video_frame(imember->session, vid_frame, SWITCH_IO_FLAG_NONE, 0);
+			}
+		}
+		switch_mutex_unlock(conference->member_mutex);
+	
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Video thread ending for conference %s\n", conference->name);
 	conference->video_running = 0;
