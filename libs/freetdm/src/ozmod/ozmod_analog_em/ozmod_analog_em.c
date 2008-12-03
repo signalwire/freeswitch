@@ -360,10 +360,7 @@ static void *zap_analog_em_channel_run(zap_thread_t *me, void *obj)
 					teletone_run(&ts, zchan->span->tone_map[ZAP_TONEMAP_DIAL]);
 					indicate = 1;
 
-					zap_sleep(25);
-					zap_channel_command(zchan, ZAP_COMMAND_OFFHOOK, NULL);
-					zap_sleep(200);
-					zap_channel_command(zchan, ZAP_COMMAND_ONHOOK, NULL);
+					zap_channel_command(zchan, ZAP_COMMAND_WINK, NULL);
 				}
 				break;
 			case ZAP_CHANNEL_STATE_RING:
