@@ -1413,7 +1413,7 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	char exp_buf[128] = "";
 	switch_time_exp_t tm;
   const int buflen = 2048;
-  char xmlbuf[buflen];
+  char xmlbuf[2048];
   
 	if (argv[6]) {
 		switch_time_t etime = atoi(argv[6]);
@@ -1630,7 +1630,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	void *val;
 	const void *vvar;
 	const int buflen = 2096;
-	char xmlbuf[buflen];
+	char xmlbuf[2096];
 	int c = 0;
 	int ac = 0;
   const char *header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>";
