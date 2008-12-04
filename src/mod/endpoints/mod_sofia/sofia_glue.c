@@ -1188,7 +1188,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		   or did he just suggest it to make our lives miserable?
 		 */
 		use_from_str = from_str;
-		if (strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+		if (!strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 			from_str = switch_core_session_sprintf(session, "<%s>", use_from_str);
 		} else {
 			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
