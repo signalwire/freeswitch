@@ -116,6 +116,7 @@ struct switch_channel {
 	switch_channel_state_t state;
 	switch_channel_state_t running_state;
 	switch_channel_flag_t flags;
+	uint32_t private_flags;
 	switch_channel_flag_t state_flags;
 	switch_caller_profile_t *caller_profile;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
@@ -748,6 +749,30 @@ SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_c
 		switch_channel_set_variable(channel, "is_outbound", "true");
 	}
 }
+
+
+SWITCH_DECLARE(void) switch_channel_set_private_flag(switch_channel_t *channel, uint32_t flags)
+{
+	switch_assert(channel != NULL);
+	switch_mutex_lock(channel->flag_mutex);
+	channel->private_flags |= flags;
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
+SWITCH_DECLARE(void) switch_channel_clear_private_flag(switch_channel_t *channel, uint32_t flags)
+{
+	switch_assert(channel != NULL);
+	switch_mutex_lock(channel->flag_mutex);
+	channel->private_flags &= ~flags;
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
+SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, uint32_t flags)
+{
+	switch_assert(channel != NULL);
+	return (channel->private_flags & flags);
+}
+
 
 SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flags)
 {

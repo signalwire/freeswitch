@@ -490,6 +490,10 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channe
 
 SWITCH_DECLARE(void) switch_channel_audio_sync(switch_channel_t *channel);
 
+SWITCH_DECLARE(void) switch_channel_set_private_flag(switch_channel_t *channel, uint32_t flags);
+SWITCH_DECLARE(void) switch_channel_clear_private_flag(switch_channel_t *channel, uint32_t flags);
+SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, uint32_t flags);
+
 /** @} */
 
 SWITCH_END_EXTERN_C
