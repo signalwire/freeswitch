@@ -1571,6 +1571,10 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		ldl_clear_flag_locked(handle, LDL_FLAG_CONNECTED);
 		ldl_clear_flag_locked(handle, LDL_FLAG_AUTHORIZED);
 		handle->state = CS_NEW;
+
+		while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
+			microsleep(100);
+		}
 	}
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
 	if (!ldl_test_flag(handle, LDL_FLAG_TLS)) {
