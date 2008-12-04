@@ -1412,8 +1412,8 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	struct cb_helper *cb = (struct cb_helper *) pArg;
 	char exp_buf[128] = "";
 	switch_time_exp_t tm;
-  const int buflen = 2048;
-  char xmlbuf[2048];
+	const int buflen = 2048;
+	char xmlbuf[2048];
   
 	if (argv[6]) {
 		switch_time_t etime = atoi(argv[6]);
@@ -1424,14 +1424,14 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	}
 
 	cb->stream->write_function(cb->stream,
-	               "<Registration>\n"
+							   "<Registration>\n"
 							   "<Call-ID>%s</Call-ID>\n"
 							   "<User>%s@%s</User>\n"
 							   "<Contact>%s</Contact>\n"
 							   "<Agent>%s</Agent>\n"
 							   "<Status>%s(%s) EXP(%s)</Status>\n"
 							   "<Host>%s</Host>\n"
-                 "</Registration>\n", 
+							   "</Registration>\n", 
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_amp_encode(switch_str_nil(argv[3]),xmlbuf,buflen),
 							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]));
 	return 0;
