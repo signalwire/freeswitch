@@ -177,6 +177,7 @@ static switch_bool_t vmd_callback(switch_media_bug_t *bug,
 		vmd_info->vmd_codec.channels = read_codec->implementation->number_of_channels;
 		break;
 
+	case SWITCH_ABC_TYPE_READ_PING:
 	case SWITCH_ABC_TYPE_CLOSE:
 	case SWITCH_ABC_TYPE_READ:
 	case SWITCH_ABC_TYPE_WRITE:
