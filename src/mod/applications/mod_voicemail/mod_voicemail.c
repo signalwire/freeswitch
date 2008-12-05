@@ -1991,8 +1991,10 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						if (x_box) {
 							myid = switch_core_session_strdup(session, x_box);
 						}
-
-						if (!(actual_id = switch_xml_attr(x_user, "id"))) {
+						
+						if ((actual_id = switch_xml_attr(x_user, "id"))) {
+							actual_id = switch_core_session_strdup(session, actual_id);
+						} else {
 							actual_id = id;
 						}
 					}
