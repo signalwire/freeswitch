@@ -40,7 +40,6 @@
 #define ISNAN(x) ((x)== NAN)
 #endif
 
-
 /* Number of points for beep detection */
 #define POINTS 32
 
@@ -102,7 +101,6 @@
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vmd_shutdown);
-/* SWITCH_MODULE_RUNTIME_FUNCTION(mod_vmd_runtime); */
 SWITCH_STANDARD_API(vmd_api_main);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load);
@@ -143,16 +141,10 @@ typedef struct vmd_session_info{
     /* A count of how long a distinct beep was detected by
      * by the discreet energy separation algorithm */
     switch_size_t timestamp;
-/*
-    int16_t *data;
-    ssize_t data_len;
-*/
 } vmd_session_info_t;
 
-static switch_bool_t process_data(vmd_session_info_t *vmd_info, 
-    switch_frame_t *frame);
-static switch_bool_t vmd_callback(switch_media_bug_t *bug, 
-    void *user_data, switch_abc_type_t type);
+static switch_bool_t process_data(vmd_session_info_t *vmd_info, switch_frame_t *frame);
+static switch_bool_t vmd_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type);
 static double freq_estimator(double *x);
 static double ampl_estimator(double *x);
 static void convert_pts(int16_t *i_pts, double *d_pts, int16_t max);
@@ -165,58 +157,60 @@ static double median(double *m, int n);
 */
 
 static switch_bool_t vmd_callback(switch_media_bug_t *bug, 
-    void *user_data, switch_abc_type_t type)
+								  void *user_data,
+								  switch_abc_type_t type)
 {
-    vmd_session_info_t *vmd_info;
-    switch_codec_t *read_codec;
-    switch_frame_t *frame;
-   
-    vmd_info = (vmd_session_info_t *)user_data;
-    if(vmd_info == NULL) return SWITCH_FALSE;
+	vmd_session_info_t *vmd_info;
+	switch_codec_t *read_codec;
+	switch_frame_t *frame;
 
-    switch(type){
+	vmd_info = (vmd_session_info_t *)user_data;
+	if(vmd_info == NULL) {
+		return SWITCH_FALSE;
+	}
 
-    case SWITCH_ABC_TYPE_INIT:
-	read_codec = 
-	    switch_core_session_get_read_codec(vmd_info->session);
-	vmd_info->vmd_codec.rate = 
-	    read_codec->implementation->samples_per_second;
-	vmd_info->vmd_codec.channels = 
-	    read_codec->implementation->number_of_channels;
-	break;
+	switch(type){
 
-    case SWITCH_ABC_TYPE_CLOSE:
-    case SWITCH_ABC_TYPE_READ:
-    case SWITCH_ABC_TYPE_WRITE:
-	break;
+	case SWITCH_ABC_TYPE_INIT:
+		read_codec = switch_core_session_get_read_codec(vmd_info->session);
+		vmd_info->vmd_codec.rate = read_codec->implementation->samples_per_second;
+		vmd_info->vmd_codec.channels = read_codec->implementation->number_of_channels;
+		break;
 
-    case SWITCH_ABC_TYPE_READ_REPLACE:
-	frame = switch_core_media_bug_get_read_replace_frame(bug);
-	return process_data(vmd_info, frame);
+	case SWITCH_ABC_TYPE_CLOSE:
+	case SWITCH_ABC_TYPE_READ:
+	case SWITCH_ABC_TYPE_WRITE:
+		break;
 
-    case SWITCH_ABC_TYPE_WRITE_REPLACE:
-	break;
-    }
+	case SWITCH_ABC_TYPE_READ_REPLACE:
+		frame = switch_core_media_bug_get_read_replace_frame(bug);
+		return process_data(vmd_info, frame);
 
-    return SWITCH_TRUE;
+	case SWITCH_ABC_TYPE_WRITE_REPLACE:
+		break;
+	}
+
+	return SWITCH_TRUE;
 }
 
 static switch_bool_t process_data(vmd_session_info_t *vmd_info, 
-    switch_frame_t *frame)
+								  switch_frame_t *frame)
 {
-    uint32_t i;
-    unsigned int j;
-    double pts[P];
-    int16_t *data;
-    int16_t max;
-    switch_ssize_t len;
+	uint32_t i;
+	unsigned int j;
+	double pts[P];
+	int16_t *data;
+	int16_t max;
+	switch_ssize_t len;
 
-    len = frame->samples * sizeof(int16_t);
-    data = (int16_t *)frame->data;
-    
-    for(max = (int16_t)abs(data[0]), i = 1; i < frame->samples; i++){
-		if((int16_t)abs(data[i]) > max) max = (int16_t)abs(data[i]);
-    }
+	len = frame->samples * sizeof(int16_t);
+	data = (int16_t *)frame->data;
+
+	for(max = (int16_t)abs(data[0]), i = 1; i < frame->samples; i++) {
+		if ((int16_t)abs(data[i]) > max) {
+			max = (int16_t)abs(data[i]);
+		}
+	}
 
 /*
     if(vmd_info->data_len != len){
@@ -239,13 +233,13 @@ static switch_bool_t process_data(vmd_session_info_t *vmd_info,
     }
 */
 
-    for(i = 0, j = vmd_info->pos; i < frame->samples; j++, j %= POINTS, i += 5){
-/*	convert_pts(vmd_info->data + i, pts); */
-	convert_pts(data + i, pts, max);
-	vmd_info->points[j].freq = TO_HZ(freq_estimator(pts));
-	vmd_info->points[j].ampl = ampl_estimator(pts);
-	vmd_info->pos = j % POINTS;
-	find_beep(vmd_info, frame);
+    for(i = 0, j = vmd_info->pos; i < frame->samples; j++, j %= POINTS, i += 5) {
+	/*	convert_pts(vmd_info->data + i, pts); */
+		convert_pts(data + i, pts, max);
+		vmd_info->points[j].freq = TO_HZ(freq_estimator(pts));
+		vmd_info->points[j].ampl = ampl_estimator(pts);
+		vmd_info->pos = j % POINTS;
+		find_beep(vmd_info, frame);
     }
 
     return SWITCH_TRUE;
@@ -259,66 +253,42 @@ static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 	double med;
 	unsigned int j = (vmd_info->pos + 1) % POINTS;
 	unsigned int k = j;
-	switch_status_t status;
 	switch_event_t *event;
+	switch_status_t status;
 	switch_event_t *event_copy;
 
 	switch(vmd_info->state){
 	case BEEP_DETECTED:
 		for(c = 0, i = 0; i < POINTS; j++, j %= POINTS, i++){
 			vmd_info->timestamp++;
-			if(vmd_info->points[j].freq < TOLERANCE_T(vmd_info->beep_freq) &&
-				vmd_info->points[j].freq > TOLERANCE_B(vmd_info->beep_freq)){
+			if (vmd_info->points[j].freq < TOLERANCE_T(vmd_info->beep_freq) &&
+				vmd_info->points[j].freq > TOLERANCE_B(vmd_info->beep_freq)) {
 					c++;
 					vmd_info->beep_freq = (vmd_info->beep_freq * 0.95) + (vmd_info->points[j].freq * 0.05);
 			}
 		}
 
-		if(c < (POINTS - MAX_CHIRP)){
+		if (c < (POINTS - MAX_CHIRP)) {
 			vmd_info->state = BEEP_NOT_DETECTED;
-			if(vmd_info->timestamp < MIN_TIME) break;
+			if (vmd_info->timestamp < MIN_TIME) {
+				break;
+			}
 
-			status = switch_event_create_subclass(&event, 
-				SWITCH_EVENT_CUSTOM, VMD_EVENT_BEEP);
-			if(status != SWITCH_STATUS_SUCCESS) return;
+			status = switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, VMD_EVENT_BEEP);
+			if (status != SWITCH_STATUS_SUCCESS) {
+				return;
+			}
 
-			switch_event_add_header_string(
-				event, 
-				SWITCH_STACK_BOTTOM, 
-				"Beep-Status", 
-				"stop"
-				);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Beep-Status", "stop");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Beep-Time", "%d", vmd_info->timestamp / POINTS);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID",
+				"%s", switch_core_session_get_uuid(vmd_info->session));
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Frequency", "%6.4lf", vmd_info->beep_freq);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "vmd");
 
-			switch_event_add_header(
-				event,
-				SWITCH_STACK_BOTTOM,
-				"Beep-Time",
-				"%d", vmd_info->timestamp / POINTS
-				);
-
-			switch_event_add_header(
-				event,
-				SWITCH_STACK_BOTTOM,
-				"Unique-ID",
-				"%s", switch_core_session_get_uuid(vmd_info->session)
-				);
-
-			switch_event_add_header(
-				event, 
-				SWITCH_STACK_BOTTOM, 
-				"Frequency", 
-				"%6.4lf", vmd_info->beep_freq
-				);
-
-			switch_event_add_header_string(
-				event,
-				SWITCH_STACK_BOTTOM,
-				"call-command",
-				"vmd"
-				);
-
-			status = switch_event_dup(&event_copy, event); 
-			if(status != SWITCH_STATUS_SUCCESS) return;
+			if ((switch_event_dup(&event_copy, event)) != SWITCH_STATUS_SUCCESS) {
+				return;
+			}
 
 			switch_core_session_queue_event(vmd_info->session, &event);
 			switch_event_fire(&event_copy);
@@ -332,13 +302,15 @@ static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 
 		for(i = 0; i < POINTS; k++, k %= POINTS, i++){
 			m[i] = vmd_info->points[k].freq;
-			if(ISNAN(m[i])) m[i] = 0.0;
+			if (ISNAN(m[i])) {
+				m[i] = 0.0;
+			}
 		}
 
 		med = median(m, POINTS);
-		if(ISNAN(med)){
+		if (ISNAN(med)){
 			for(i = 0; i < POINTS; i++){
-				if(!ISNAN(m[i])){
+				if (!ISNAN(m[i])){
 					med = m[i];
 					break;
 				}
@@ -346,9 +318,9 @@ static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 		}
 
 		for(c = 0, i = 0; i < POINTS; j++, j %= POINTS, i++){
-			if(vmd_info->points[j].freq < TOLERANCE_T(med) &&
+			if (vmd_info->points[j].freq < TOLERANCE_T(med) &&
 				vmd_info->points[j].freq > TOLERANCE_B(med)){
-					if(vmd_info->points[j].ampl > MIN_AMPL &&
+					if (vmd_info->points[j].ampl > MIN_AMPL &&
 						vmd_info->points[j].freq > MIN_FREQ &&
 						vmd_info->points[j].freq < MAX_FREQ){
 							c++;
@@ -395,22 +367,35 @@ static double median(double *m, int n)
 		mingtguess = max;
 
 		for(i = 0; i < n; i++) {
-			if(m[i] < guess){
+			if (m[i] < guess) {
 				less++;
-				if(m[i] > maxltguess) maxltguess = m[i];
-			}else if (m[i] > guess) {
+				if(m[i] > maxltguess) {
+					maxltguess = m[i];
+				}
+			} else if (m[i] > guess) {
 				greater++;
-				if(m[i] < mingtguess) mingtguess = m[i];
-			}else equal++;
+				if(m[i] < mingtguess) {
+					mingtguess = m[i];
+				}
+			} else {
+				equal++;
+			}
 		}
 
-		if (less <= ( n + 1 ) / 2 && greater <= ( n + 1 ) / 2) break;
-		else if (less > greater) max = maxltguess;
-		else min = mingtguess;
+		if (less <= ( n + 1 ) / 2 && greater <= ( n + 1 ) / 2) {
+			break;
+		} else if (less > greater) {
+			max = maxltguess;
+		} else {
+			min = mingtguess;
+		}
 	}
 
-	if(less >= ( n + 1 ) / 2) return maxltguess;
-	else if(less + equal >= ( n + 1 ) / 2) return guess;
+	if (less >= ( n + 1 ) / 2) {
+		return maxltguess;
+	} else if (less + equal >= ( n + 1 ) / 2) {
+		return guess;
+	}
 
 	return mingtguess;
 }
@@ -485,14 +470,14 @@ SWITCH_STANDARD_APP(vmd_start_function)
 	vmd_session_info_t *vmd_info;
 	int i;
 
-	if(session == NULL) return;    
+	if (session == NULL) return;
 
 	channel = switch_core_session_get_channel(session);
 
 	/* Is this channel already set? */
 	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_vmd_");
 	/* If yes */
-	if(bug != NULL){
+	if (bug != NULL){
 		/* If we have a stop remove audio bug */
 		if(strcasecmp(data, "stop") == 0){
 			switch_channel_set_private(channel, "_vmd_", NULL);
@@ -567,7 +552,6 @@ SWITCH_STANDARD_API(vmd_api_main)
     switch_media_bug_t *bug;
     vmd_session_info_t *vmd_info;
     switch_channel_t *channel;
-//    switch_event_t *event;
     switch_status_t status;
     int argc;
     char *argv[VMD_PARAMS];
@@ -589,10 +573,10 @@ SWITCH_STANDARD_API(vmd_api_main)
 
     /* If we don't have the expected number of parameters 
      * display usage */
-    if(argc != VMD_PARAMS){
-	stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
-	switch_safe_free(ccmd);
-	return SWITCH_STATUS_SUCCESS;
+    if (argc != VMD_PARAMS){
+		stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
+		switch_safe_free(ccmd);
+		return SWITCH_STATUS_SUCCESS;
     }
 
     uuid = argv[0];
@@ -602,10 +586,10 @@ SWITCH_STANDARD_API(vmd_api_main)
     vmd_session = switch_core_session_locate(uuid);
 
     /* If the session was not found exit */
-    if(vmd_session == NULL){
-	switch_safe_free(ccmd);
-	stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);	
-	return SWITCH_STATUS_FALSE;
+    if (vmd_session == NULL) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);	
+		return SWITCH_STATUS_FALSE;
     }
 
     /* Get current channel of the session to tag the session
@@ -615,9 +599,9 @@ SWITCH_STANDARD_API(vmd_api_main)
     /* Is this channel already set? */
     bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_vmd_");
     /* If yes */
-    if(bug != NULL){
+    if (bug != NULL){
         /* If we have a stop remove audio bug */
-        if(strcasecmp(command, "stop") == 0){
+        if(strcasecmp(command, "stop") == 0) {
             switch_channel_set_private(channel, "_vmd_", NULL);
             switch_core_media_bug_remove(vmd_session, &bug);
             switch_safe_free(ccmd);
@@ -637,10 +621,10 @@ SWITCH_STANDARD_API(vmd_api_main)
     }
 
     /* If we don't see the expected start exit */
-    if(strcasecmp(command, "start") != 0){
-	switch_safe_free(ccmd);	
-	stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
-	return SWITCH_STATUS_FALSE;
+    if(strcasecmp(command, "start") != 0) {
+		switch_safe_free(ccmd);	
+		stream->write_function(stream, "-USAGE: %s\n", VMD_SYNTAX);
+		return SWITCH_STATUS_FALSE;
     }
 
     /* Allocate memory attached to this FreeSWITCH session for
@@ -659,9 +643,9 @@ SWITCH_STANDARD_API(vmd_api_main)
     vmd_info->data_len = 0;
 */
 
-    for(i = 0; i < POINTS; i++){
-	vmd_info->points[i].freq = 0.0;
-	vmd_info->points[i].ampl = 0.0;
+    for(i = 0; i < POINTS; i++) {
+		vmd_info->points[i].freq = 0.0;
+		vmd_info->points[i].ampl = 0.0;
     }
 
     /* Add a media bug that allows me to intercept the 
@@ -676,11 +660,11 @@ SWITCH_STANDARD_API(vmd_api_main)
     );
 
     /* If adding a media bug fails exit */
-    if(status != SWITCH_STATUS_SUCCESS){
-	switch_log_printf(
-	    SWITCH_CHANNEL_LOG, 
-	    SWITCH_LOG_ERROR, 
-	    "Failure hooking to stream\n"
+    if (status != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(
+			SWITCH_CHANNEL_LOG, 
+			SWITCH_LOG_ERROR, 
+			"Failure hooking to stream\n"
 	);
     
 	switch_safe_free(ccmd);
@@ -697,23 +681,6 @@ SWITCH_STANDARD_API(vmd_api_main)
     return SWITCH_STATUS_SUCCESS;
 }
 
-/*
-  If it exists, this is called in it's own thread 
-  when the module-load completes. If it returns anything
-  but SWITCH_STATUS_TERM it will be called again automatically
-*/
-
-/*
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_vmd_runtime)
-{
-	while(looping){
-		
-		switch_yield(1000);
-	}
-
-	return SWITCH_STATUS_TERM;
-}
-*/
 
 /* For Emacs:
  * Local Variables:
