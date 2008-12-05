@@ -167,9 +167,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 
 	menu->inlen = digit_len;
 
-	menu->max_failures = max_failures;
+	if (max_failures > 0) {
+		menu->max_failures = max_failures;
+	} else {
+		menu->max_failures = 3;
+	}
 
-	menu->max_timeouts = max_timeouts;
+	if (max_timeouts > 0) {
+		menu->max_timeouts = max_timeouts;
+	} else {
+		menu->max_timeouts = 3;
+	}
 
 	menu->timeout = timeout;
 
@@ -736,8 +744,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  atoi(inter_timeout),
 									  atoi(digit_len),
 									  atoi(timeout), 
-									  strlen(max_failures)? atoi(max_failures): 1, 
-									  strlen(max_timeouts)? atoi(max_timeouts): 1, 
+									  strlen(max_failures)? atoi(max_failures): 0, 
+									  strlen(max_timeouts)? atoi(max_timeouts): 0, 
 									  xml_menu_ctx->pool);
 		/* set the menu_stack for the caller */
 		if (status == SWITCH_STATUS_SUCCESS && *menu_stack == NULL) {
