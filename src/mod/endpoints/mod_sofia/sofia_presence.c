@@ -1497,7 +1497,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		full_from = sip_header_as_string(profile->home, (void *) sip->sip_from);
 		full_via = sip_header_as_string(profile->home, (void *) sip->sip_via);
 
-		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
+		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 600);
 		exp = (long) switch_timestamp(NULL) + exp_raw;
 
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
@@ -1532,6 +1532,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			
 			switch_assert(sql != NULL);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+
+			if (exp_raw >= 180) {
+				exp_raw -= 120;
+			}
 
 			sstr = switch_mprintf("active;expires=%ld", exp_raw);
 		}
