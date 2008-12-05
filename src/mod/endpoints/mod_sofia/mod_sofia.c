@@ -721,7 +721,9 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 							if (tech_pvt->last_codec_ms && tech_pvt->last_codec_ms == codec_ms) {
 								tech_pvt->mismatch_count++;
 							}
-							
+
+							tech_pvt->last_codec_ms = codec_ms;
+
 							if (tech_pvt->mismatch_count > MAX_MISMATCH_FRAMES) {
 								if (switch_rtp_ready(tech_pvt->rtp_session) && codec_ms != tech_pvt->codec_ms) {
 									const char *val;
