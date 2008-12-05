@@ -31,9 +31,15 @@
 #include <switch.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
 #include <math.h>
+#ifdef WIN32
+#include <float.h>
+#define ISNAN(x) (!!(_isnan(x)))
+#else
+#define ISNAN(x) ((x)== NAN)
+#endif
+
 
 /* Number of points for beep detection */
 #define POINTS 32
@@ -207,13 +213,13 @@ static switch_bool_t process_data(vmd_session_info_t *vmd_info,
     double pts[P];
     int16_t *data;
     int16_t max;
-    ssize_t len;
+    switch_ssize_t len;
 
     len = frame->samples * sizeof(int16_t);
     data = (int16_t *)frame->data;
     
     for(max = abs(data[0]), i = 1; i < frame->samples; i++){
-	if(abs(data[i]) > max) max = abs(data[i]);
+		if(abs(data[i]) > max) max = abs(data[i]);
     }
 
 /*
@@ -251,167 +257,166 @@ static switch_bool_t process_data(vmd_session_info_t *vmd_info,
 
 static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 {
-    int i;
-    int c;
-    double m[POINTS];
-    double med;
-    unsigned int j = (vmd_info->pos + 1) % POINTS;
-    unsigned int k = j;
-    switch_status_t status;
-    switch_event_t *event;
-    switch_event_t *event_copy;
+	int i;
+	int c;
+	double m[POINTS];
+	double med;
+	unsigned int j = (vmd_info->pos + 1) % POINTS;
+	unsigned int k = j;
+	switch_status_t status;
+	switch_event_t *event;
+	switch_event_t *event_copy;
 
-    switch(vmd_info->state){
-    case BEEP_DETECTED:
- 	for(c = 0, i = 0; i < POINTS; j++, j %= POINTS, i++){
-	    vmd_info->timestamp++;
-	    if(vmd_info->points[j].freq < TOLERANCE_T(vmd_info->beep_freq) &&
-		vmd_info->points[j].freq > TOLERANCE_B(vmd_info->beep_freq)){
-		    c++;
-		    vmd_info->beep_freq = (vmd_info->beep_freq * 0.95) + (vmd_info->points[j].freq * 0.05);
-	    }
-	}
-
-	if(c < (POINTS - MAX_CHIRP)){
-	    vmd_info->state = BEEP_NOT_DETECTED;
-	    if(vmd_info->timestamp < MIN_TIME) break;
-
-            status = switch_event_create_subclass(&event, 
-	        SWITCH_EVENT_CUSTOM, VMD_EVENT_BEEP);
-	    if(status != SWITCH_STATUS_SUCCESS) return;
-
-	    switch_event_add_header_string(
-		event, 
-		SWITCH_STACK_BOTTOM, 
-		"Beep-Status", 
-		"stop"
-	    );
-
-	    switch_event_add_header(
-		event,
-		SWITCH_STACK_BOTTOM,
-		"Beep-Time",
-		"%d", vmd_info->timestamp / POINTS
-	    );
-
-	    switch_event_add_header(
-		event,
-		SWITCH_STACK_BOTTOM,
-		"Unique-ID",
-		"%s", switch_core_session_get_uuid(vmd_info->session)
-	    );
-
-	    switch_event_add_header(
-		event, 
-		SWITCH_STACK_BOTTOM, 
-		"Frequency", 
-		"%6.4lf", vmd_info->beep_freq
-	    );
-           
-            switch_event_add_header_string(
-                event,
-                SWITCH_STACK_BOTTOM,
-                "call-command",
-                "vmd"
-            );
-
-            status = switch_event_dup(&event_copy, event); 
-	    if(status != SWITCH_STATUS_SUCCESS) return;
-
-            switch_core_session_queue_event(vmd_info->session, &event);
-	    switch_event_fire(&event_copy);
-
-	    vmd_info->timestamp = 0;
-	}
-
-	break;
-
-    case BEEP_NOT_DETECTED:
-
-        for(i = 0; i < POINTS; k++, k %= POINTS, i++){
-	    m[i] = vmd_info->points[k].freq;
-	    if(m[i] == NAN) m[i] = 0.0;
-	}
-
-	med = median(m, POINTS);
-	if(med == NAN){
-	    for(i = 0; i < POINTS; i++){
-		if(m[i] != NAN){
-		    med = m[i];
-		    break;
+	switch(vmd_info->state){
+	case BEEP_DETECTED:
+		for(c = 0, i = 0; i < POINTS; j++, j %= POINTS, i++){
+			vmd_info->timestamp++;
+			if(vmd_info->points[j].freq < TOLERANCE_T(vmd_info->beep_freq) &&
+				vmd_info->points[j].freq > TOLERANCE_B(vmd_info->beep_freq)){
+					c++;
+					vmd_info->beep_freq = (vmd_info->beep_freq * 0.95) + (vmd_info->points[j].freq * 0.05);
+			}
 		}
-	    }
-	}
 
-	for(c = 0, i = 0; i < POINTS; j++, j %= POINTS, i++){
-	    if(vmd_info->points[j].freq < TOLERANCE_T(med) &&
-		vmd_info->points[j].freq > TOLERANCE_B(med)){
-		if(vmd_info->points[j].ampl > MIN_AMPL &&
-		    vmd_info->points[j].freq > MIN_FREQ &&
-		    vmd_info->points[j].freq < MAX_FREQ){
-		    c++;
+		if(c < (POINTS - MAX_CHIRP)){
+			vmd_info->state = BEEP_NOT_DETECTED;
+			if(vmd_info->timestamp < MIN_TIME) break;
+
+			status = switch_event_create_subclass(&event, 
+				SWITCH_EVENT_CUSTOM, VMD_EVENT_BEEP);
+			if(status != SWITCH_STATUS_SUCCESS) return;
+
+			switch_event_add_header_string(
+				event, 
+				SWITCH_STACK_BOTTOM, 
+				"Beep-Status", 
+				"stop"
+				);
+
+			switch_event_add_header(
+				event,
+				SWITCH_STACK_BOTTOM,
+				"Beep-Time",
+				"%d", vmd_info->timestamp / POINTS
+				);
+
+			switch_event_add_header(
+				event,
+				SWITCH_STACK_BOTTOM,
+				"Unique-ID",
+				"%s", switch_core_session_get_uuid(vmd_info->session)
+				);
+
+			switch_event_add_header(
+				event, 
+				SWITCH_STACK_BOTTOM, 
+				"Frequency", 
+				"%6.4lf", vmd_info->beep_freq
+				);
+
+			switch_event_add_header_string(
+				event,
+				SWITCH_STACK_BOTTOM,
+				"call-command",
+				"vmd"
+				);
+
+			status = switch_event_dup(&event_copy, event); 
+			if(status != SWITCH_STATUS_SUCCESS) return;
+
+			switch_core_session_queue_event(vmd_info->session, &event);
+			switch_event_fire(&event_copy);
+
+			vmd_info->timestamp = 0;
 		}
-	    }
-	}
 
-	
-	if(c >= VALID){
-	    vmd_info->state = BEEP_DETECTED;
-	    vmd_info->beep_freq = med;
-	    vmd_info->timestamp = 0;
-	}
+		break;
 
-	break;
-    }
+	case BEEP_NOT_DETECTED:
+
+		for(i = 0; i < POINTS; k++, k %= POINTS, i++){
+			m[i] = vmd_info->points[k].freq;
+			if(ISNAN(m[i])) m[i] = 0.0;
+		}
+
+		med = median(m, POINTS);
+		if(ISNAN(med)){
+			for(i = 0; i < POINTS; i++){
+				if(!ISNAN(m[i])){
+					med = m[i];
+					break;
+				}
+			}
+		}
+
+		for(c = 0, i = 0; i < POINTS; j++, j %= POINTS, i++){
+			if(vmd_info->points[j].freq < TOLERANCE_T(med) &&
+				vmd_info->points[j].freq > TOLERANCE_B(med)){
+					if(vmd_info->points[j].ampl > MIN_AMPL &&
+						vmd_info->points[j].freq > MIN_FREQ &&
+						vmd_info->points[j].freq < MAX_FREQ){
+							c++;
+					}
+			}
+		}
+
+		if(c >= VALID){
+			vmd_info->state = BEEP_DETECTED;
+			vmd_info->beep_freq = med;
+			vmd_info->timestamp = 0;
+		}
+
+		break;
+	}
 }
 
 /* Find the median of an array of doubles */
 static double median(double *m, int n)
 {
-    int i;
-    int less;
-    int greater;
-    int equal;
-    double min;
-    double max;
-    double guess;
-    double maxltguess;
-    double mingtguess;
+	int i;
+	int less;
+	int greater;
+	int equal;
+	double min;
+	double max;
+	double guess;
+	double maxltguess;
+	double mingtguess;
 
-    min = max = m[0] ;
+	min = max = m[0] ;
 
-    for (i = 1; i < n; i++) {
-	if(m[i] < min) min = m[i];
-	if(m[i] > max) max = m[i];
-    }
-
-    while(1){
-	guess = ( min + max ) / 2;
-        less = 0;
-	greater = 0;
-	equal = 0;
-        maxltguess = min;
-	mingtguess = max;
-    
-	for(i = 0; i < n; i++) {
-	    if(m[i] < guess){
-		less++;
-		if(m[i] > maxltguess) maxltguess = m[i];
-	    }else if (m[i] > guess) {
-		greater++;
-		if(m[i] < mingtguess) mingtguess = m[i];
-	    }else equal++;
+	for (i = 1; i < n; i++) {
+		if(m[i] < min) min = m[i];
+		if(m[i] > max) max = m[i];
 	}
 
-	if (less <= ( n + 1 ) / 2 && greater <= ( n + 1 ) / 2) break;
-        else if (less > greater) max = maxltguess;
-	else min = mingtguess;
-    }
+	while(1){
+		guess = ( min + max ) / 2;
+		less = 0;
+		greater = 0;
+		equal = 0;
+		maxltguess = min;
+		mingtguess = max;
 
-    if(less >= ( n + 1 ) / 2) return maxltguess;
-    else if(less + equal >= ( n + 1 ) / 2) return guess;
+		for(i = 0; i < n; i++) {
+			if(m[i] < guess){
+				less++;
+				if(m[i] > maxltguess) maxltguess = m[i];
+			}else if (m[i] > guess) {
+				greater++;
+				if(m[i] < mingtguess) mingtguess = m[i];
+			}else equal++;
+		}
 
-    return mingtguess;
+		if (less <= ( n + 1 ) / 2 && greater <= ( n + 1 ) / 2) break;
+		else if (less > greater) max = maxltguess;
+		else min = mingtguess;
+	}
+
+	if(less >= ( n + 1 ) / 2) return maxltguess;
+	else if(less + equal >= ( n + 1 ) / 2) return guess;
+
+	return mingtguess;
 }
 
 /* Convert many points for Signed L16 to relative floating point */
@@ -475,75 +480,73 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load)
 /* Same as api function see it for comments */
 SWITCH_STANDARD_APP(vmd_start_function)
 {
-    switch_media_bug_t *bug;
-    switch_status_t status;
-    switch_channel_t *channel;
-    vmd_session_info_t *vmd_info;
-    int i;
+	switch_media_bug_t *bug;
+	switch_status_t status;
+	switch_channel_t *channel;
+	vmd_session_info_t *vmd_info;
+	int i;
 
-    if(session == NULL) return;    
+	if(session == NULL) return;    
 
-    channel = switch_core_session_get_channel(session);
+	channel = switch_core_session_get_channel(session);
 
-    /* Is this channel already set? */
-    bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_vmd_");
-    /* If yes */
-    if(bug != NULL){
-	/* If we have a stop remove audio bug */
-	if(strcasecmp(data, "stop") == 0){
-	    switch_channel_set_private(channel, "_vmd_", NULL);
-	    switch_core_media_bug_remove(session, &bug);
-	    return;
+	/* Is this channel already set? */
+	bug = (switch_media_bug_t *) switch_channel_get_private(channel, "_vmd_");
+	/* If yes */
+	if(bug != NULL){
+		/* If we have a stop remove audio bug */
+		if(strcasecmp(data, "stop") == 0){
+			switch_channel_set_private(channel, "_vmd_", NULL);
+			switch_core_media_bug_remove(session, &bug);
+			return;
+		}
+
+		/* We have already started */
+		switch_log_printf(
+			SWITCH_CHANNEL_LOG, 
+			SWITCH_LOG_WARNING, 
+			"Cannot run 2 at once on the same channel!\n"
+			);
+
+		return;
 	}
 
-	/* We have already started */
-	switch_log_printf(
-	    SWITCH_CHANNEL_LOG, 
-	    SWITCH_LOG_WARNING, 
-	    "Cannot run 2 at once on the same channel!\n"
-	);
+	vmd_info = (vmd_session_info_t *)switch_core_session_alloc(
+		session, 
+		sizeof(vmd_session_info_t)
+		);
 
-	return;
-    }
-    
-    vmd_info = (vmd_session_info_t *)switch_core_session_alloc(
-	session, 
-	sizeof(vmd_session_info_t)
-    );
+	vmd_info->state = BEEP_NOT_DETECTED;
+	vmd_info->session = session;
+	vmd_info->pos = 0;
+	/*
+	vmd_info->data = NULL;
+	vmd_info->data_len = 0;
+	*/
+	for(i = 0; i < POINTS; i++){
+		vmd_info->points[i].freq = 0.0;
+		vmd_info->points[i].ampl = 0.0;
+	}
 
-    vmd_info->state = BEEP_NOT_DETECTED;
-    vmd_info->session = session;
-    vmd_info->pos = 0;
-/*
-    vmd_info->data = NULL;
-    vmd_info->data_len = 0;
-*/
-    for(i = 0; i < POINTS; i++){
-	vmd_info->points[i].freq = 0.0;
-	vmd_info->points[i].ampl = 0.0;
-    }
+	status = switch_core_media_bug_add(
+		session, 
+		vmd_callback, 
+		vmd_info,
+		0, 
+		SMBF_READ_REPLACE, 
+		&bug
+		);
 
-    status = switch_core_media_bug_add(
-	session, 
-	vmd_callback, 
-	vmd_info,
-	0, 
-	SMBF_READ_REPLACE, 
-	&bug
-    );
+	if(status != SWITCH_STATUS_SUCCESS){
+		switch_log_printf(
+			SWITCH_CHANNEL_LOG,
+			SWITCH_LOG_ERROR,
+			"Failure hooking to stream\n"
+			);
+		return;
+	}
 
-    if(status != SWITCH_STATUS_SUCCESS){
-	switch_log_printf(
-	    SWITCH_CHANNEL_LOG,
-	    SWITCH_LOG_ERROR,
-	    "Failure hooking to stream\n"
-	);
-
-	return;
-    }
-    
-
-    switch_channel_set_private(channel, "_vmd_", bug);
+	switch_channel_set_private(channel, "_vmd_", bug);
 
 }
 
@@ -565,7 +568,7 @@ SWITCH_STANDARD_API(vmd_api_main)
     switch_media_bug_t *bug;
     vmd_session_info_t *vmd_info;
     switch_channel_t *channel;
-    switch_event_t *event;
+//    switch_event_t *event;
     switch_status_t status;
     int argc;
     char *argv[VMD_PARAMS];
