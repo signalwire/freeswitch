@@ -2307,7 +2307,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%d", progressmsec);
 	switch_channel_set_variable(channel, "progressmsec", tmp);
 
-	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, progressmsec);
+	switch_snprintf(tmp, sizeof(tmp), "%d" , progressmsec);
 	switch_channel_set_variable(channel, "progress_mediamsec", tmp);
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", legbillmsec);
