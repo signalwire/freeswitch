@@ -2519,6 +2519,19 @@ public class freeswitch {
     freeswitchPINVOKE.switch_channel_audio_sync(SWIGTYPE_p_switch_channel.getCPtr(channel));
   }
 
+  public static void switch_channel_set_private_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
+    freeswitchPINVOKE.switch_channel_set_private_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  }
+
+  public static void switch_channel_clear_private_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
+    freeswitchPINVOKE.switch_channel_clear_private_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  }
+
+  public static int switch_channel_test_private_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
+    int ret = freeswitchPINVOKE.switch_channel_test_private_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+    return ret;
+  }
+
   public static switch_status_t switch_buffer_create(SWIGTYPE_p_apr_pool_t pool, SWIGTYPE_p_p_switch_buffer buffer, SWIGTYPE_p_switch_size_t max_len) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_buffer_create(SWIGTYPE_p_apr_pool_t.getCPtr(pool), SWIGTYPE_p_p_switch_buffer.getCPtr(buffer), SWIGTYPE_p_switch_size_t.getCPtr(max_len));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -2971,8 +2984,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_originate(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_core_session bleg, SWIGTYPE_p_switch_call_cause_t cause, string bridgeto, uint timelimit_sec, switch_state_handler_table table, string cid_name_override, string cid_num_override, switch_caller_profile caller_profile_override, uint flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_originate(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_core_session.getCPtr(bleg), SWIGTYPE_p_switch_call_cause_t.getCPtr(cause), bridgeto, timelimit_sec, switch_state_handler_table.getCPtr(table), cid_name_override, cid_num_override, switch_caller_profile.getCPtr(caller_profile_override), flags);
+  public static switch_status_t switch_ivr_originate(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_core_session bleg, SWIGTYPE_p_switch_call_cause_t cause, string bridgeto, uint timelimit_sec, switch_state_handler_table table, string cid_name_override, string cid_num_override, switch_caller_profile caller_profile_override, switch_event ovars, uint flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_originate(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_core_session.getCPtr(bleg), SWIGTYPE_p_switch_call_cause_t.getCPtr(cause), bridgeto, timelimit_sec, switch_state_handler_table.getCPtr(table), cid_name_override, cid_num_override, switch_caller_profile.getCPtr(caller_profile_override), switch_event.getCPtr(ovars), flags);
     return ret;
   }
 
@@ -8506,6 +8519,15 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_audio_sync")]
   public static extern void switch_channel_audio_sync(HandleRef jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_private_flag")]
+  public static extern void switch_channel_set_private_flag(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_clear_private_flag")]
+  public static extern void switch_channel_clear_private_flag(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_test_private_flag")]
+  public static extern int switch_channel_test_private_flag(HandleRef jarg1, uint jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_create")]
   public static extern int switch_buffer_create(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
@@ -9056,7 +9078,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_speak_text(HandleRef jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_originate")]
-  public static extern int switch_ivr_originate(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, HandleRef jarg9, uint jarg10);
+  public static extern int switch_ivr_originate(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, string jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, HandleRef jarg9, HandleRef jarg10, uint jarg11);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_multi_threaded_bridge")]
   public static extern int switch_ivr_multi_threaded_bridge(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
@@ -22579,7 +22601,8 @@ namespace FreeSWITCH.Native {
   SWITCH_RTP_FLAG_SECURE_SEND_RESET = (1 << 16),
   SWITCH_RTP_FLAG_SECURE_RECV_RESET = (1 << 17),
   SWITCH_RTP_FLAG_PROXY_MEDIA = (1 << 18),
-  SWITCH_RTP_FLAG_SHUTDOWN = (1 << 19)
+  SWITCH_RTP_FLAG_SHUTDOWN = (1 << 19),
+  SWITCH_RTP_FLAG_FLUSH = (1 << 20)
 }
 
 }

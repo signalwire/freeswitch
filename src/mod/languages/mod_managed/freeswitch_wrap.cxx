@@ -17910,6 +17910,40 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_audio_sync(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_private_flag(void * jarg1, unsigned long jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  switch_channel_set_private_flag(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_clear_private_flag(void * jarg1, unsigned long jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  switch_channel_clear_private_flag(arg1,arg2);
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_test_private_flag(void * jarg1, unsigned long jarg2) {
+  int jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  uint32_t arg2 ;
+  int result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  result = (int)switch_channel_test_private_flag(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_buffer_create(void * jarg1, void * jarg2, void * jarg3) {
   int jresult ;
   switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
@@ -20472,7 +20506,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_speak_text(void * jarg1, char * jar
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_originate(void * jarg1, void * jarg2, void * jarg3, char * jarg4, unsigned long jarg5, void * jarg6, char * jarg7, char * jarg8, void * jarg9, unsigned long jarg10) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_originate(void * jarg1, void * jarg2, void * jarg3, char * jarg4, unsigned long jarg5, void * jarg6, char * jarg7, char * jarg8, void * jarg9, void * jarg10, unsigned long jarg11) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   switch_core_session_t **arg2 = (switch_core_session_t **) 0 ;
@@ -20483,7 +20517,8 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_originate(void * jarg1, void * jarg
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   switch_caller_profile_t *arg9 = (switch_caller_profile_t *) 0 ;
-  switch_originate_flag_t arg10 ;
+  switch_event_t *arg10 = (switch_event_t *) 0 ;
+  switch_originate_flag_t arg11 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
@@ -20495,8 +20530,9 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_originate(void * jarg1, void * jarg
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
   arg9 = (switch_caller_profile_t *)jarg9; 
-  arg10 = (switch_originate_flag_t)jarg10; 
-  result = (switch_status_t)switch_ivr_originate(arg1,arg2,arg3,(char const *)arg4,arg5,(switch_state_handler_table const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10);
+  arg10 = (switch_event_t *)jarg10; 
+  arg11 = (switch_originate_flag_t)jarg11; 
+  result = (switch_status_t)switch_ivr_originate(arg1,arg2,arg3,(char const *)arg4,arg5,(switch_state_handler_table const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11);
   jresult = result; 
   return jresult;
 }
