@@ -82,10 +82,6 @@
  * DEPRECATED */
 #define ADJUST_MAX (65536)
 
-/* Signed L16 to relative floating point conversion */
-#define CONVERT_PT(d, i, m) do{ d = ((((double)i + (double)m) /  \
-    (double)(2 * m)) - 0.5) * 2.0; } while(0)
-
 /* Discreet energy separation tolerance to error */
 #define TOLERANCE (0.20)
 
@@ -208,7 +204,7 @@ static switch_bool_t vmd_callback(switch_media_bug_t *bug,
 static switch_bool_t process_data(vmd_session_info_t *vmd_info, 
     switch_frame_t *frame)
 {
-    int i;
+    uint32_t i;
     unsigned int j;
     double pts[P];
     int16_t *data;
@@ -390,7 +386,7 @@ static double median(double *m, int n)
 		if(m[i] > max) max = m[i];
 	}
 
-	while(1){
+	for(;;) {
 		guess = ( min + max ) / 2;
 		less = 0;
 		greater = 0;
@@ -423,7 +419,10 @@ static double median(double *m, int n)
 static void convert_pts(int16_t *i_pts, double *d_pts, int16_t max)
 {
     int i;
-    for(i = 0; i < P; i++) CONVERT_PT(d_pts[i], i_pts[i], max);
+	for(i = 0; i < P; i++) {
+		/* Signed L16 to relative floating point conversion */
+		d_pts[i] = ((((double)(i_pts[i]) + (double)max) / (double)(2 * max)) - 0.5) * 2.0;
+	}
 }
 
 /* Amplitude estimator for DESA-2 */
