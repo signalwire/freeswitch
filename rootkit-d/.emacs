@@ -160,33 +160,6 @@
 
 
 
-(cond ((fboundp 'global-font-lock-mode)
-       ;; Customize face attributes
-       (setq font-lock-face-attributes
-             ;; Symbol-for-Face Foreground Background Bold Italic Underline
-             '((font-lock-comment-face       "DarkGreen")
-	       (font-lock-preprocessor-face       "gray")
-               (font-lock-string-face        "Sienna")
-               (font-lock-keyword-face       "purple")
-               (font-lock-function-name-face "limegreen")
-               (font-lock-variable-name-face "Yellow")
-               (font-lock-type-face          "Yellow")
-               (font-lock-reference-face     "Purple")
-               ))
-       ;; Load the font-lock package.
-       (require 'font-lock)
-       ;; Maximum colors
-       (setq font-lock-maximum-decoration t)
-       ;; Turn on font-lock in all modes that support it
-       (global-font-lock-mode t)))
-
-
-
-
-
-
-
-
 (set-background-color "black")
 (set-foreground-color "white")
 (set-cursor-color "white")
