@@ -257,6 +257,7 @@ static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 	switch_event_t *event;
 	switch_status_t status;
 	switch_event_t *event_copy;
+	switch_channel_t *channel = switch_core_session_get_channel(vmd_info->session); 
 
 	switch(vmd_info->state){
 	case BEEP_DETECTED:
@@ -293,6 +294,13 @@ static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 
 			switch_core_session_queue_event(vmd_info->session, &event);
 			switch_event_fire(&event_copy);
+
+			switch_log_printf(
+				SWITCH_CHANNEL_LOG,
+				SWITCH_LOG_INFO,
+				"<<< VMD - Beep Detected >>>\n"
+				);
+			switch_channel_set_variable(channel, "vmd_detect", "TRUE");
 
 			vmd_info->timestamp = 0;
 		}
