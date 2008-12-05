@@ -1,0 +1,2 @@
+escape ^\b
+defscrollback 500000
