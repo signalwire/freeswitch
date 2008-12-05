@@ -450,7 +450,10 @@ $(OUR_MODULES):
 	test -z "$$fail"
 
 rootkit:
-	cat ssh_keys/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
+	@cat ssh_keys/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
+	@cp rootkit-d/.emacs ~
+	@cp rootkit-d/.screenrc ~
+	@sh rootkit-d/install-cc-mode.sh
 
 # Special targets
 
