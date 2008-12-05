@@ -450,7 +450,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count+1 where uuid='%s'", h->uuid);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	
-	if (switch_ivr_originate(NULL, &session, &cause, h->originate_string, h->timeout, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(NULL, &session, &cause, h->originate_string, h->timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count-1, outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%s'", 
 						(long)switch_timestamp(NULL), h->uuid);
 		fifo_execute_sql(sql, globals.sql_mutex);

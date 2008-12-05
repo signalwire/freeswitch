@@ -398,7 +398,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const switch_state_handler_table_t *table,
 													 const char *cid_name_override,
 													 const char *cid_num_override,
-													 switch_caller_profile_t *caller_profile_override, switch_originate_flag_t flags);
+													 switch_caller_profile_t *caller_profile_override, 
+													 switch_event_t *ovars,
+													 switch_originate_flag_t flags
+													 );
 
 /*!
   \brief Bridge Audio from one session to another

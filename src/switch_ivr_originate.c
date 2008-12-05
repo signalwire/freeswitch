@@ -552,7 +552,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 													 const switch_state_handler_table_t *table,
 													 const char *cid_name_override,
 													 const char *cid_num_override,
-													 switch_caller_profile_t *caller_profile_override, switch_originate_flag_t flags)
+													 switch_caller_profile_t *caller_profile_override, 
+													 switch_event_t *ovars,
+													 switch_originate_flag_t flags
+													 )
 {
 	switch_originate_flag_t dftflags = SOF_NONE, myflags = dftflags;
 	char *pipe_names[MAX_PEERS] = { 0 };
@@ -665,8 +668,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	   so we will normalize dialstring params and channel variables (when there is an originator) into an event that we 
 	   will use as a pseudo hash to consult for params as needed.
 	 */
-	if (switch_event_create(&var_event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
-		abort();
+
+	if (ovars) {
+		var_event = ovars;
+	} else {
+		if (switch_event_create(&var_event, SWITCH_EVENT_GENERAL) != SWITCH_STATUS_SUCCESS) {
+			abort();
+		}
 	}
 
 	if (session) {
@@ -1684,7 +1692,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_ivr_sleep(session, 0, NULL);
 	}
 
-	if (var_event) {
+	if (var_event && var_event != ovars) {
 		switch_event_destroy(&var_event);
 	}
 	switch_safe_free(write_frame.data);

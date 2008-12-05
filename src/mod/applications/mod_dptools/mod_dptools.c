@@ -1480,7 +1480,8 @@ SWITCH_STANDARD_APP(att_xfer_function)
 		timelimit = atoi(var);
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS || !peer_session) {
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, NULL, SOF_NONE) 
+		!= SWITCH_STATUS_SUCCESS || !peer_session) {
 		goto end;
 	}
 
@@ -1864,7 +1865,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		}
 	}
 
-	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
+	if (switch_ivr_originate(session, &peer_session, &cause, data, timelimit, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Originate Failed.  Cause: %s\n", switch_channel_cause2str(cause));
 
 		/* no answer is *always* a reason to continue */
@@ -2097,7 +2098,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		}
 
 		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, 
-								 cid_name_override, cid_num_override, NULL, myflags) == SWITCH_STATUS_SUCCESS) {
+								 cid_name_override, cid_num_override, NULL, var_event, myflags) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
 

@@ -2781,7 +2781,7 @@ static JSBool session_construct(JSContext * cx, JSObject * obj, uintN argc, jsva
 				}
 			}
 			if (switch_ivr_originate(old_jss ? old_jss->session : NULL, 
-									 &jss->session, &jss->cause, uuid, 60, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
+									 &jss->session, &jss->cause, uuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
 				switch_set_flag(jss, S_HUP);
 				switch_channel_set_state(switch_core_session_get_channel(jss->session), CS_SOFT_EXECUTE);
 				*rval = BOOLEAN_TO_JSVAL(JS_TRUE);
@@ -2921,7 +2921,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		caller_profile = switch_caller_profile_new(pool, username, dialplan, cid_name, cid_num, network_addr, ani, aniii, rdnis, modname, context, dest);
 
 		saveDepth = JS_SuspendRequest(cx);
-		status = switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile, SOF_NONE);
+		status = switch_ivr_originate(session, &peer_session, &jss->cause, dest, to ? atoi(to) : 60, NULL, NULL, NULL, caller_profile, NULL, SOF_NONE);
 		JS_ResumeRequest(cx, saveDepth);
 
 		if (status != SWITCH_STATUS_SUCCESS) {

@@ -1902,7 +1902,7 @@ SWITCH_STANDARD_API(originate_function)
 		timeout = atoi(argv[6]);
 	}
 
-	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS
+	if (switch_ivr_originate(NULL, &caller_session, &cause, aleg, timeout, NULL, cid_name, cid_num, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS
 		|| !caller_session) {
 		if (machine) {
 			stream->write_function(stream, "-ERR %s\n", switch_channel_cause2str(cause));

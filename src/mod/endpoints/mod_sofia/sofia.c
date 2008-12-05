@@ -3102,7 +3102,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 			private_object_t *tech_pvt = switch_core_session_get_private(session);
 			switch_channel_t *channel_a = switch_core_session_get_channel(session);
 
-			status = switch_ivr_originate(a_session, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL, NULL, SOF_NONE);
+			status = switch_ivr_originate(a_session, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE);
 							
 			if ((switch_channel_get_state(channel_a) < CS_HANGUP)) {
 				

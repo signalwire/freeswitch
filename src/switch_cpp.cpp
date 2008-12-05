@@ -467,7 +467,8 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(char *nuuid, CoreSession *a_
 		allocated = 1;
     } else {
 		switch_call_cause_t cause;
-		if (switch_ivr_originate(a_leg ? a_leg->session : NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, SOF_NONE) == SWITCH_STATUS_SUCCESS) {
+		if (switch_ivr_originate(a_leg ? a_leg->session : NULL, &session, &cause, nuuid, 60, NULL, NULL, NULL, NULL, NULL, SOF_NONE) 
+			== SWITCH_STATUS_SUCCESS) {
 			channel = switch_core_session_get_channel(session);
 			allocated = 1;
 			switch_set_flag(this, S_HUP);
@@ -919,6 +920,7 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 							 NULL, 
 							 NULL, 
 							 &caller_profile,
+							 NULL,
 							 SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Creating Outgoing Channel! [%s]\n", dest);
 		goto failed;
