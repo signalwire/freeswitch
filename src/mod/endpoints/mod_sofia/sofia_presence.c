@@ -1498,7 +1498,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		full_via = sip_header_as_string(profile->home, (void *) sip->sip_via);
 
 		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 600);
-		exp = (long) switch_timestamp(NULL) + exp_raw;
+		exp = (long) switch_timestamp(NULL) + exp_raw + 120;
 
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
