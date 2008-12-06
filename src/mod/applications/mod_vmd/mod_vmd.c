@@ -282,7 +282,7 @@ static void find_beep(vmd_session_info_t *vmd_info, switch_frame_t *frame)
 			}
 
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Beep-Status", "stop");
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Beep-Time", "%d", vmd_info->timestamp / POINTS);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Beep-Time", "%d", (int)vmd_info->timestamp / POINTS);
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Unique-ID",
 				"%s", switch_core_session_get_uuid(vmd_info->session));
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Frequency", "%6.4lf", vmd_info->beep_freq);
