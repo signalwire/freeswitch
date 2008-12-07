@@ -1177,7 +1177,7 @@ static int on_stream(ldl_handle_t *handle, int type, iks *node)
 		}
 		break;
 	case IKS_NODE_NORMAL:
-        if (node && strcmp("stream:features", iks_name_nons(node)) == 0) {
+        if (node && strcmp("stream:features", iks_name(node)) == 0) {
 			handle->features = iks_stream_features(node);
 			if (ldl_test_flag(handle, LDL_FLAG_TLS) && !iks_is_secure(handle->parser))
 				break;
