@@ -38,11 +38,7 @@
 #ifdef __ICC
 #pragma warning (disable:188)
 #endif
-#ifdef MACOSX
-#include <swift/swift.h>
-#else
 #include <swift.h>
-#endif
 #include <switch.h>
 
 #define MY_BUF_LEN 1024 * 32
