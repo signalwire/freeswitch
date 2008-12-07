@@ -856,7 +856,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							  "  <rpid:activities>\r\n" 
 							  "   <rpid:%s/>\n"
 							  "  </rpid:activities>\n"
-							  "  <dm:note>%s</dm:note>"
+							  "  <dm:note>%s</dm:note>\n"
 							  " </dm:person>\n"
 							  "</presence>", id, open, prpid, status);
 	}
