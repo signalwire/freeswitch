@@ -225,6 +225,10 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 			*progress = 1;
 		}
 
+		if (switch_core_session_private_event_count(peer_sessions[i])) {
+			switch_ivr_parse_all_events(peer_sessions[i]);
+		}
+
 		state = switch_channel_get_state(peer_channels[i]);
 		if (state >= CS_HANGUP || state == CS_RESET || switch_channel_test_flag(peer_channels[i], CF_TRANSFER) ||
 			switch_channel_test_flag(peer_channels[i], CF_REDIRECT) ||
@@ -1327,6 +1331,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				/* When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail. */
 				
 				check_per_channel_timeouts(peer_channels, per_channel_timelimit_sec, per_channel_progress_timelimit_sec, and_argc, start);
+
+				if (session && switch_core_session_private_event_count(session)) {
+					switch_ivr_parse_all_events(session);
+				}
 
 				if (!sent_ring && !progress && (progress_timelimit_sec && elapsed > (time_t) progress_timelimit_sec)) {
 					idx = IDX_TIMEOUT;
