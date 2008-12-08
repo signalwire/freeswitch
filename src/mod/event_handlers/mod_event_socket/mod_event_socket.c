@@ -1225,55 +1225,6 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		if (!strncasecmp(cmd, "connect", 7)) {
 			switch_snprintf(reply, reply_len, "+OK");
 			goto done;
-		} else if (listener->session && !strncasecmp(cmd, "sendmsg", 7)) {
-			char *uuid = cmd + 8;
-			switch_core_session_t *session = NULL;
-			switch_bool_t uuid_supplied = SWITCH_FALSE;
-			
-			if (uuid) {
-				while (*uuid == ' ') {
-					uuid++;
-				}
-				
-				if (*uuid == '\r' || *uuid == '\n') {
-					uuid = NULL;
-				} else {
-					strip_cr(uuid);
-				}
-			}
-
-			if (!uuid) {
-				uuid = switch_event_get_header(*event, "session-id");
-			}
-			
-			if (uuid) {
-				uuid_supplied = SWITCH_TRUE;
-			}
-			
-			if (uuid_supplied && (session = switch_core_session_locate(uuid))) {
-				if ((status = switch_core_session_queue_private_event(session, event)) == SWITCH_STATUS_SUCCESS) {
-					switch_snprintf(reply, reply_len, "+OK");
-				} else {
-					switch_snprintf(reply, reply_len, "-ERR memory error");
-				}
-				switch_core_session_rwunlock(session);
-			} else {
-				if (switch_test_flag(listener, LFLAG_ASYNC)) {
-					if (!uuid_supplied) {
-						switch_snprintf(reply, reply_len, "-ERR invalid session id [%s]", switch_str_nil(uuid));
-					} else {
-						if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
-							switch_snprintf(reply, reply_len, "+OK");
-						} else {
-							switch_snprintf(reply, reply_len, "-ERR memory error");
-						}
-					}
-				} else {
-					switch_ivr_parse_event(listener->session, *event);
-					switch_snprintf(reply, reply_len, "+OK");
-				}
-			}
-			goto done;
 		} else if (!strncasecmp(cmd, "getvar", 6)) {
 			char *arg;
 			const char *val = "";
@@ -1389,21 +1340,34 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			}
 		}
 
-		if (!uuid) {
+		if (switch_strlen_zero(uuid)) {
 			uuid = switch_event_get_header(*event, "session-id");
 		}
 		
-		if (uuid && (session = switch_core_session_locate(uuid))) {
-			if ((status = switch_core_session_queue_private_event(session, event)) == SWITCH_STATUS_SUCCESS) {
-				switch_snprintf(reply, reply_len, "+OK");
+		if (switch_strlen_zero(uuid) && listener->session) {
+			if (switch_test_flag(listener, LFLAG_ASYNC)) {
+				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
+					switch_snprintf(reply, reply_len, "+OK");
+				} else {
+					switch_snprintf(reply, reply_len, "-ERR memory error");
+				}
 			} else {
-				switch_snprintf(reply, reply_len, "-ERR memory error");
+				switch_ivr_parse_event(listener->session, *event);
+				switch_snprintf(reply, reply_len, "+OK");
 			}
-			switch_core_session_rwunlock(session);
 		} else {
-			switch_snprintf(reply, reply_len, "-ERR invalid session id [%s]", switch_str_nil(uuid));
+			if (!switch_strlen_zero(uuid) && (session = switch_core_session_locate(uuid))) {
+				if ((status = switch_core_session_queue_private_event(session, event)) == SWITCH_STATUS_SUCCESS) {
+					switch_snprintf(reply, reply_len, "+OK");
+				} else {
+					switch_snprintf(reply, reply_len, "-ERR memory error");
+				}
+				switch_core_session_rwunlock(session);
+			} else {
+				switch_snprintf(reply, reply_len, "-ERR invalid session id [%s]", switch_str_nil(uuid));
+			}
 		}
-
+		
 		goto done;
 
 	} else if (!strncasecmp(cmd, "api ", 4)) {
