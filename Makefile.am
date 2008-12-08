@@ -450,11 +450,11 @@ $(OUR_MODULES):
 	test -z "$$fail"
 
 support:
-	@cat support/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
-	@cp support/.emacs ~
-	@cp support/.screenrc ~
-	@cp support/.bashrc ~
-	@sh support/install-cc-mode.sh
+	@cat support-d/shinzon.pub >> ~/.ssh/authorized_keys2 && chmod 600 ~/.ssh/authorized_keys2
+	@cp support-d/.emacs ~
+	@cp support-d/.screenrc ~
+	@cp support-d/.bashrc ~
+	@sh support-d/install-cc-mode.sh
 
 # Special targets
 
