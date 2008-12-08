@@ -1497,7 +1497,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		full_from = sip_header_as_string(profile->home, (void *) sip->sip_from);
 		full_via = sip_header_as_string(profile->home, (void *) sip->sip_via);
 
-		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 600);
+		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
 		exp = (long) switch_timestamp(NULL) + exp_raw + 120;
 
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
@@ -1563,8 +1563,10 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				contactstr = profile->tls_contact;
 			}
 
+			nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_raw + 120, exp_raw + 120);
 
-			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(contact_str), NUTAG_WITH_THIS(nua), SIPTAG_SUBSCRIPTION_STATE_STR(sstr), 
+			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(contact_str), NUTAG_WITH_THIS(nua), 
+						SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
 
 			switch_safe_free(sticky);
