@@ -1194,6 +1194,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
 		event->event_id == SWITCH_EVENT_REQUEST_PARAMS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_DATA ||
+		event->event_id == SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE ||
 		event->event_id == SWITCH_EVENT_SESSION_HEARTBEAT ||
 		event->event_id == SWITCH_EVENT_CUSTOM
 		) {
