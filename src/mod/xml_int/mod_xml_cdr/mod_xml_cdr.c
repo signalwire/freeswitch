@@ -204,6 +204,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Got error [%ld] posting to web server [%s]\n", 
 								  httpRes, globals.urls[globals.url_index]);
 				globals.url_index++;
+				switch_assert(globals.url_count <= MAX_URLS);
 				if (globals.url_index >= globals.url_count) {
 					globals.url_index = 0;
 				}
