@@ -1533,10 +1533,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			switch_assert(sql != NULL);
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 
-			if (exp_raw >= 180) {
-				exp_raw -= 120;
-			}
-
 			sstr = switch_mprintf("active;expires=%ld", exp_raw);
 		}
 
