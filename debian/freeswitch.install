@@ -2,6 +2,7 @@ opt/freeswitch/htdocs/*
 opt/freeswitch/bin/freeswitch
 opt/freeswitch/bin/scripts/*
 opt/freeswitch/lib/libfreeswitch*.so*
+opt/freeswitch/lib/libopenzap*.so*
 opt/freeswitch/mod/mod_shout*
 opt/freeswitch/mod/mod_cdr_csv.so*
 opt/freeswitch/mod/mod_console.so*
@@ -30,6 +31,12 @@ opt/freeswitch/mod/mod_portaudio.so*
 opt/freeswitch/mod/mod_sofia.so*
 opt/freeswitch/mod/mod_woomera.so*
 opt/freeswitch/mod/mod_openzap.so
+opt/freeswitch/mod/ozmod_analog_em.so
+opt/freeswitch/mod/ozmod_analog.so
+opt/freeswitch/mod/ozmod_isdn.so
+opt/freeswitch/mod/ozmod_ss7_boost.so
+opt/freeswitch/mod/ozmod_wanpipe.so
+opt/freeswitch/mod/ozmod_zt.so
 opt/freeswitch/mod/mod_event_*.so*
 opt/freeswitch/mod/mod_native_file.so*
 opt/freeswitch/mod/mod_sndfile.so*
