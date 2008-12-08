@@ -1646,12 +1646,27 @@ SWITCH_STANDARD_APP(playback_function)
 {
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
 
 	args.input_callback = on_dtmf;
 
 	switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
-	switch_ivr_play_file(session, NULL, data, &args);
+	status = switch_ivr_play_file(session, NULL, data, &args);
+
+	switch (status) {
+	case SWITCH_STATUS_SUCCESS:
+	case SWITCH_STATUS_BREAK:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE PLAYED");
+		break;
+	case SWITCH_STATUS_NOTFOUND:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "FILE NOT FOUND");
+		break;
+	default:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PLAYBACK ERROR");
+		break;
+	}
+
 }
 
 SWITCH_STANDARD_APP(gentones_function)

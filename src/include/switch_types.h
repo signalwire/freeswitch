@@ -110,6 +110,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
+#define SWITCH_CURRENT_APPLICATION_DATA_VARIABLE "current_application_data"
+#define SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE "current_application_response"
 #define SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE "enable_heartbeat_events"
 #define SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE "bypass_media_after_bridge"
 #define SWITCH_READ_RESULT_VARIABLE "read_result"
