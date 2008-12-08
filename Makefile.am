@@ -454,7 +454,7 @@ support:
 	@cp support-d/.emacs ~
 	@cp support-d/.screenrc ~
 	@cp support-d/.bashrc ~
-	@sh support-d/install-cc-mode.sh
+	@test -f ~/.cc-mode-installed || sh support-d/install-cc-mode.sh && touch ~/.cc-mode-installed
 
 # Special targets
 
