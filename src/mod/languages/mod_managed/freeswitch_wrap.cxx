@@ -905,6 +905,39 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_URL_SEPARATOR_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CURRENT_APPLICATION_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "current_application";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CURRENT_APPLICATION_DATA_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "current_application_data";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "current_application_response";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -943,17 +976,6 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_COPY_XML_CDR_VARIABLE_get() {
   char *result = 0 ;
   
   result = (char *) "copy_xml_cdr";
-  
-  jresult = SWIG_csharp_string_callback((const char *)result); 
-  return jresult;
-}
-
-
-SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CURRENT_APPLICATION_VARIABLE_get() {
-  char * jresult ;
-  char *result = 0 ;
-  
-  result = (char *) "current_application";
   
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;

@@ -3953,11 +3953,13 @@ public class freeswitch {
   public static readonly int SWITCH_MAX_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MAX_DTMF_DURATION_get();
   public static readonly string SWITCH_PATH_SEPARATOR = freeswitchPINVOKE.SWITCH_PATH_SEPARATOR_get();
   public static readonly string SWITCH_URL_SEPARATOR = freeswitchPINVOKE.SWITCH_URL_SEPARATOR_get();
+  public static readonly string SWITCH_CURRENT_APPLICATION_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_VARIABLE_get();
+  public static readonly string SWITCH_CURRENT_APPLICATION_DATA_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_DATA_VARIABLE_get();
+  public static readonly string SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE_get();
   public static readonly string SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE = freeswitchPINVOKE.SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE_get();
   public static readonly string SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE = freeswitchPINVOKE.SWITCH_BYPASS_MEDIA_AFTER_BRIDGE_VARIABLE_get();
   public static readonly string SWITCH_READ_RESULT_VARIABLE = freeswitchPINVOKE.SWITCH_READ_RESULT_VARIABLE_get();
   public static readonly string SWITCH_COPY_XML_CDR_VARIABLE = freeswitchPINVOKE.SWITCH_COPY_XML_CDR_VARIABLE_get();
-  public static readonly string SWITCH_CURRENT_APPLICATION_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_VARIABLE_get();
   public static readonly string SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE = freeswitchPINVOKE.SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_ANSWER_VARIABLE_get();
   public static readonly string SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE = freeswitchPINVOKE.SWITCH_CHANNEL_EXECUTE_ON_RING_VARIABLE_get();
@@ -4421,6 +4423,15 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_URL_SEPARATOR_get")]
   public static extern string SWITCH_URL_SEPARATOR_get();
 
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CURRENT_APPLICATION_VARIABLE_get")]
+  public static extern string SWITCH_CURRENT_APPLICATION_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CURRENT_APPLICATION_DATA_VARIABLE_get")]
+  public static extern string SWITCH_CURRENT_APPLICATION_DATA_VARIABLE_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE_get")]
+  public static extern string SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE_get();
+
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE_get")]
   public static extern string SWITCH_ENABLE_HEARTBEAT_EVENTS_VARIABLE_get();
 
@@ -4432,9 +4443,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_COPY_XML_CDR_VARIABLE_get")]
   public static extern string SWITCH_COPY_XML_CDR_VARIABLE_get();
-
-  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CURRENT_APPLICATION_VARIABLE_get")]
-  public static extern string SWITCH_CURRENT_APPLICATION_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE_get")]
   public static extern string SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE_get();
