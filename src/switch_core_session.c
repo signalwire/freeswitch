@@ -896,7 +896,7 @@ SWITCH_DECLARE(void) switch_core_session_enable_heartbeat(switch_core_session_t 
 {
 	switch_assert(session != NULL);
 
-	if (seconds < 10) {
+	if (!seconds) {
 		seconds = 60;
 	}
 
