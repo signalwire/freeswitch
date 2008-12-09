@@ -356,7 +356,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				int sval = atoi(var);
 
 				if (sval) {
-					ringback_data = switch_core_session_sprintf(session, "ringback:%d", sval);
+					ringback_data = switch_core_session_sprintf(session, "silence:%d", sval);
 				}
 			}
 		}
@@ -385,9 +385,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 				if (ringback_data) {
 					char *tmp_data = NULL;
-
-					switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
-					switch_buffer_set_loops(ringback.audio_buffer, -1);
 
 					if (switch_is_file_path(ringback_data)) {
 						char *ext;
@@ -429,6 +426,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 								ringback.silence = 400;
 							}
 						} else {
+							switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
+							switch_buffer_set_loops(ringback.audio_buffer, -1);
+							
 							teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 							ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
@@ -800,7 +800,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				int sval = atoi(vvar);
 
 				if (sval) {
-					ringback_data = switch_core_session_sprintf(session, "ringback:%d", sval);
+					ringback_data = switch_core_session_sprintf(session, "silence:%d", sval);
 				}
 
 			}
@@ -1296,9 +1296,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						if (ringback_data) {
 							char *tmp_data = NULL;
 
-							switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
-							switch_buffer_set_loops(ringback.audio_buffer, -1);
-
+							
 							if (switch_is_file_path(ringback_data)) {
 								char *ext;
 
@@ -1339,6 +1337,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 									ringback.silence = 400;
 								}
 							} else {
+								switch_buffer_create_dynamic(&ringback.audio_buffer, 512, 1024, 0);
+								switch_buffer_set_loops(ringback.audio_buffer, -1);
+
 								teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 								ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
@@ -1436,6 +1437,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					 || (switch_channel_test_flag(caller_channel, CF_ANSWERED) || switch_channel_test_flag(caller_channel, CF_EARLY_MEDIA)))) {
 
 					switch_status_t tstatus = SWITCH_STATUS_SUCCESS;
+					int silence = 0;
 
 					if (switch_channel_media_ready(caller_channel)) {
 						tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -1482,17 +1484,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								break;
 							}
 						} else if (ringback.silence) {
-							write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
-							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, ringback.silence);
+							silence = ringback.silence;
 						}
-
-						if ((ringback.fh || ringback.silence || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
-							if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
-								break;
-							}
+					} else {
+						silence = 400;
+					}
+					
+					if (silence) {
+						write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
+						switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, silence);
+					}
+					
+					if ((ringback.fh || silence || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
+						if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+							break;
 						}
 					}
-
+					
 				} else {
 					switch_yield(100000);
 				}
