@@ -1103,7 +1103,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 				status = SWITCH_STATUS_SUCCESS;
 				*cc.buf = '\0';
 			} else {
-				status = vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+				(void)vm_macro_get(session, VM_RECORD_FILE_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
 			}
 
 			if (!strcmp(input, profile->listen_file_key)) {
@@ -1111,7 +1111,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 			} else if (!strcmp(input, profile->record_file_key)) {
 				goto record_file;
 			} else {
-				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
+				(void)switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
 				goto end;
 			}
 		}
@@ -2873,13 +2873,13 @@ greet_key_press:
 
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->urgent_key, profile->terminator_key);
 
-		vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
+		(void)vm_macro_get(session, VM_RECORD_URGENT_CHECK_MACRO, key_buf, input, sizeof(input), 1, "", &term, profile->digit_timeout);
 		if (*profile->urgent_key == *input) {
 			read_flags = URGENT_FLAG_STRING;
 			priority = 1;
-			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL));
+			(void)switch_ivr_phrase_macro(session, VM_ACK_MACRO, "marked-urgent", NULL, NULL);
 		} else {
-			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL));
+			(void)switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
 		}
 	}
 	
