@@ -1906,7 +1906,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->cn = 0;
 			m++;
 		}
-		
+
 		send_msg->header.m = m ? 1 : 0;
 
 		memcpy(send_msg->body, data, datalen);
