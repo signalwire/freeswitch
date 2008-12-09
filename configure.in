@@ -46,7 +46,7 @@ else
 fi
 
 AC_SUBST(confdir)
-AC_DEFINE_UNQUOTED([SWITCH_CONF_DIR],"${confdir}",[where to install the modules to])
+AC_DEFINE_UNQUOTED([SWITCH_CONF_DIR],"${confdir}",[directory for configuration files])
 
 #Set default language
 AC_LANG_C
