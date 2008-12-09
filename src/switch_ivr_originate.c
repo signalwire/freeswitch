@@ -279,6 +279,7 @@ struct ringback {
 	teletone_generation_session_t ts;
 	switch_file_handle_t fhb;
 	switch_file_handle_t *fh;
+	int silence;
 	uint8_t asis;
 };
 
@@ -348,9 +349,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 			ringback_data = switch_channel_get_variable(caller_channel, "ringback");
 		}
 
-
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
+		} else {
+			if ((var = switch_channel_get_variable(caller_channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))) {
+				int sval = atoi(var);
+
+				if (sval) {
+					ringback_data = switch_core_session_sprintf(session, "ringback:%d", sval);
+				}
+			}
 		}
 	}
 
@@ -409,14 +417,27 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 						}
 						ringback.fh = &ringback.fhb;
 					} else {
-						teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
-						ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
-						if (teletone_run(&ringback.ts, ringback_data)) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
-							teletone_destroy_session(&ringback.ts);
-							switch_buffer_destroy(&ringback.audio_buffer);
-							ringback_data = NULL;
+						if (!strncasecmp(ringback_data, "silence", 7)) {
+							const char *p = ringback_data + 7;
+							if (*p == ':') {
+								p++;
+								if (p) {
+									ringback.silence = atoi(p);
+								}
+							}
+							if (ringback.silence <= 0) {
+								ringback.silence = 400;
+							}
+						} else {
+							teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
+							ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Play Ringback Tone [%s]\n", ringback_data);
+							if (teletone_run(&ringback.ts, ringback_data)) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Playing Tone\n");
+								teletone_destroy_session(&ringback.ts);
+								switch_buffer_destroy(&ringback.audio_buffer);
+								ringback_data = NULL;
+							}
 						}
 					}
 					switch_safe_free(tmp_data);
@@ -491,9 +512,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 																			  write_frame.codec->implementation->decoded_bytes_per_packet)) <= 0) {
 					break;
 				}
+			} else if (ringback.silence) {
+				write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
+				switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, ringback.silence);
 			}
 
-			if ((ringback.fh || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
+			if ((ringback.fh || ringback.silence || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
 				if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
@@ -769,6 +793,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
+		} else {
+			const char *vvar;
+			
+			if ((vvar = switch_channel_get_variable(caller_channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))) {
+				int sval = atoi(vvar);
+
+				if (sval) {
+					ringback_data = switch_core_session_sprintf(session, "ringback:%d", sval);
+				}
+
+			}
 		}
 	}
 
@@ -1292,7 +1327,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								}
 								ringback.fh = &ringback.fhb;
 
-
+							} else if (!strncasecmp(ringback_data, "silence", 7)) {
+								const char *p = ringback_data + 7;
+								if (*p == ':') {
+									p++;
+									if (p) {
+										ringback.silence = atoi(p);
+									}
+								}
+								if (ringback.silence <= 0) {
+									ringback.silence = 400;
+								}
 							} else {
 								teletone_init_session(&ringback.ts, 0, teletone_handler, &ringback);
 								ringback.ts.rate = read_codec->implementation->actual_samples_per_second;
@@ -1436,9 +1481,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 																						  write_frame.codec->implementation->decoded_bytes_per_packet)) <= 0) {
 								break;
 							}
+						} else if (ringback.silence) {
+							write_frame.datalen = write_frame.codec->implementation->decoded_bytes_per_packet;
+							switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.datalen / 2, ringback.silence);
 						}
 
-						if ((ringback.fh || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
+						if ((ringback.fh || ringback.silence || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
 							if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 								break;
 							}

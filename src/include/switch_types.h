@@ -110,6 +110,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE "send_silence_when_idle"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
 #define SWITCH_CURRENT_APPLICATION_DATA_VARIABLE "current_application_data"
 #define SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE "current_application_response"

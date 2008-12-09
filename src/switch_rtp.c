@@ -158,6 +158,7 @@ struct switch_rtp {
 	uint32_t last_write_ts;
 	uint32_t last_write_samplecount;
 	uint32_t next_write_samplecount;
+	switch_time_t last_write_timestamp;
 	uint32_t flags;
 	switch_memory_pool_t *pool;
 	switch_sockaddr_t *from_addr;
@@ -1885,8 +1886,19 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		rtp_session->send_msg.header.ts = htonl(rtp_session->ts);
 
+
 		if ((rtp_session->ts > (rtp_session->last_write_ts + (rtp_session->samples_per_interval * 10)))
 			|| rtp_session->ts == rtp_session->samples_per_interval) {
+			m++;
+		}
+
+		if (rtp_session->timer.interval && 
+			(rtp_session->timer.samplecount - rtp_session->last_write_samplecount) > rtp_session->samples_per_interval * 2) {
+			m++;
+		}
+
+		if (!rtp_session->timer.interval && 
+			((unsigned)((switch_timestamp_now() - rtp_session->last_write_timestamp))) > (rtp_session->ms_per_packet *2)) {
 			m++;
 		}
 
@@ -1894,6 +1906,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			rtp_session->cn = 0;
 			m++;
 		}
+		
 		send_msg->header.m = m ? 1 : 0;
 
 		memcpy(send_msg->body, data, datalen);
@@ -2049,7 +2062,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 		if (rtp_session->timer.interval) {
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
+		} else {
+			rtp_session->last_write_timestamp = (uint32_t) switch_timestamp_now();
 		}
+
 		rtp_session->last_write_ts = this_ts;
 	}
 
