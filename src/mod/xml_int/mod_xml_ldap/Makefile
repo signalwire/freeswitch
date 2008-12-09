@@ -17,7 +17,7 @@ LOCAL_LIBADD=$(LDAPLA) $(LIBLBERLA) $(LIBLUTILA)
 include $(switch_srcdir)/build/modmake.rules
 
 $(LDAP_DIR):
-	$(GETLIB) $(LDAP).tgz
+	$(GETLIB) $(LDAP).tar.gz
 	cd $(LDAP_DIR) && CFLAGS="`echo $(CFLAGS) | sed -e 's:-std=c99::'`" ./configure $(DEFAULT_ARGS)
 
 $(LIBLUTILA) $(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)
