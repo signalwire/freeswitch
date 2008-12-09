@@ -35,8 +35,18 @@ AC_SUBST(switch_builddir)
 AC_ARG_WITH([modinstdir],
 	[AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: $prefix/mod)])], [modinstdir="$withval"], [modinstdir="${prefix}/mod"])
 
+
 AC_SUBST(modinstdir)
 AC_DEFINE_UNQUOTED([SWITCH_MOD_DIR],"${modinstdir}",[where to install the modules to])
+
+if test "$sysconfdir" = "\${prefix}/etc" ; then
+    confdir="$prefix/conf"
+else
+    confdir="$sysconfdir"
+fi
+
+AC_SUBST(confdir)
+AC_DEFINE_UNQUOTED([SWITCH_CONF_DIR],"${confdir}",[where to install the modules to])
 
 #Set default language
 AC_LANG_C
