@@ -1704,11 +1704,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			if (session) {
-				//switch_core_session_reset(session, SWITCH_FALSE);
+				switch_core_session_reset(session, SWITCH_FALSE);
 			}
 
 			if (write_codec.implementation) {
-				//switch_core_codec_destroy(&write_codec);
+				switch_core_codec_destroy(&write_codec);
 			}
 
 			for (i = 0; i < and_argc; i++) {
