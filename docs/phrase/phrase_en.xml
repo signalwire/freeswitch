@@ -222,7 +222,7 @@
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
       <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>
       <prompt phrase="You are now muted." filename="conf-mute.wav"/>
-      <prompt phrase="You are now unmuted." filename="conf0unmuted.wav"/>
+      <prompt phrase="You are now unmuted." filename="conf-unmuted.wav"/>
       <prompt phrase="You are currently the only person in this conference." filename="conf-alone.wav"/>
       <prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
       <prompt phrase="NULL" filename="conf-enter.wav" type="tone"/>
@@ -233,6 +233,8 @@
       <prompt phrase="The conference is now unlocked." filename="conf-is-unlocked.wav"/>
       <prompt phrase="Please enter the conference pin number." filename="conf-pin.wav"/>
       <prompt phrase="Invalid pin number, try again." filename="conf-bad-pin.wav"/>
+      <prompt phrase="goodbye" filename="conf-goodbye.wav"/>
+      <prompt phrase="Welcome to the conference." filename="conf-welcome.wav"/>
     </conference>
     <ivr>
       <prompt phrase="Account number" filename="ivr-account_number.wav"/>
