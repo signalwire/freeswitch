@@ -250,15 +250,41 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 	strVerRev   = FindVersionStringInConfigure(VersionDir & "configure.in", "SWITCH_VERSION_REVISION")
 	
 	If Right(tmpFolder, 1) <> "\" Then tmpFolder = tmpFolder & "\" End If
-	If Not FSO.FileExists(tmpFolder & "svnversion.exe") Then 
-		Wget ToolsBase & "svnversion.exe", tmpFolder
+	If Not FSO.FileExists(tmpFolder & "fs_svnversion.exe") Then 
+		Wget ToolsBase & "fs_svnversion.exe", tmpFolder
 	End If	
+
+	If Not FSO.FileExists(tmpFolder & "libsvn_diff-1.dll") Then 
+		Wget ToolsBase & "libsvn_diff-1.dll", tmpFolder
+	End If	
+	If Not FSO.FileExists(tmpFolder & "libsvn_subr-1.dll") Then 
+		Wget ToolsBase & "libsvn_subr-1.dll", tmpFolder
+	End If	
+	If Not FSO.FileExists(tmpFolder & "libsvn_wc-1.dll") Then 
+		Wget ToolsBase & "libsvn_wc-1.dll", tmpFolder
+	End If	
+	If Not FSO.FileExists(tmpFolder & "intl3_svn.dll") Then 
+		Wget ToolsBase & "intl3_svn.dll", tmpFolder
+	End If	
+	If Not FSO.FileExists(tmpFolder & "libapr-1.dll") Then 
+		Wget ToolsBase & "libapr-1.dll", tmpFolder
+	End If	
+	If Not FSO.FileExists(tmpFolder & "libaprutil-1.dll") Then 
+		Wget ToolsBase & "libaprutil-1.dll", tmpFolder
+	End If	
+	If Not FSO.FileExists(tmpFolder & "libapriconv-1.dll") Then 
+		Wget ToolsBase & "libapriconv-1.dll", tmpFolder
+	End If	
+	If Not FSO.FileExists(tmpFolder & "libsvn_delta-1.dll") Then 
+		Wget ToolsBase & "libsvn_delta-1.dll", tmpFolder
+	End If	
+
 	Dim sLastFile
 	Const OverwriteIfExist = -1
 	Const ForReading       =  1
 
 	if strVerRev = "" Then
-	    VersionCmd="svnversion " & quote & VersionDir & "." & quote &  " -n"
+	    VersionCmd="fs_svnversion " & quote & VersionDir & "." & quote &  " -n"
 	    Set MyFile = fso.CreateTextFile(tmpFolder & "tmpVersion.Bat", True)
 	    MyFile.WriteLine("@" & "cd " & quote & tmpFolder & quote )
 	    MyFile.WriteLine("@" & VersionCmd)
