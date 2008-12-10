@@ -18,11 +18,12 @@ export CHARSET="ISO-8859-1"
 export PS1='\n\[\033[01;31m\]\u@\h\[\033[01;36m\] [\d \@] \[\033[01;33m\] \w\n\[\033[00m\]<\#>:'
 export PS2="\[\033[1m\]> \[\033[0m\]"
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
-alias icvs='cvs -d :ext:anthm@cvs.sourceforge.net:/cvsroot/iaxclient'
-export CVS_RSH=ssh
 export VISUAL=emacs
 
-
 umask 022
+alias e='emacs'
+alias tcommit='svn commit --no-auth-cache --username=anthm'
+alias mcommit='svn commit --no-auth-cache --username=mikej'
+alias dp='emacs /usr/local/freeswitch/conf/dialplan/default.xml'
 
 # End of file
