@@ -1577,6 +1577,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 			char *val = (char *) switch_xml_attr_soft(param, "value");
 			if (!strcasecmp(var, "log-level")) {
 				su_log_set_level(NULL, atoi(val));
+			} else if (!strcasecmp(var, "debug-presence")) {
+				mod_sofia_globals.debug_presence = atoi(val);
 			}
 		}
 	}

@@ -315,6 +315,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 {
 	sofia_profile_t *profile = NULL;
 	switch_hash_index_t *hi;
+	const void *var;
 	void *val;
 	char *from = switch_event_get_header(event, "from");
 	char *proto = switch_event_get_header(event, "proto");
@@ -381,9 +382,19 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		switch_assert(sql != NULL);
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
 		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, NULL, NULL, &val);
+			switch_hash_this(hi, &var, NULL, &val);
 			profile = (sofia_profile_t *) val;
+
+			if (strcmp((char *)var, profile->name)) {
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s is an alias, skipping\n", (char *) var);
+				}
+				continue;
+			}
 			if (profile->pres_type != PRES_TYPE_FULL) {
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s is passive, skipping\n", (char *) var);
+				}
 				continue;
 			}
 			helper.profile = profile;
@@ -423,6 +434,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 		return;
 	}
 
+
 	switch (event->event_id) {
 	case SWITCH_EVENT_PRESENCE_PROBE:
 		if (proto) {
@@ -455,7 +467,20 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 									 "(sip_registrations.sip_host='%q' or sip_registrations.presence_hosts like '%%%q%%')", 
 									 probe_host, probe_euser, probe_host, probe_host);
 				switch_assert(sql);
+
+				
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s START_PRESENCE_PROBE_SQL\n", profile->name);
+				}
+
+				if (mod_sofia_globals.debug_presence > 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s DUMP PRESENCE_PROBE_SQL:\n%s\n", profile->name, sql);
+				}
+
 				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_resub_callback, profile);
+				if (mod_sofia_globals.debug_presence > 0) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_PROBE_SQL\n\n", profile->name);
+				}
 
 				sofia_glue_release_profile(profile);
 				switch_safe_free(sql);
@@ -465,6 +490,36 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			switch_safe_free(probe_user);
 		}
 		return;
+	default:
+		break;
+	}
+
+	
+
+	if (!mod_sofia_globals.profile_hash)
+		goto done;
+
+	switch_mutex_lock(mod_sofia_globals.hash_mutex);
+	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		profile = (sofia_profile_t *) val;
+
+		if (strcmp((char *)var, profile->name)) {
+			if (mod_sofia_globals.debug_presence > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s is an alias, skipping\n", (char *) var);
+			}
+			continue;
+		}
+
+		if (profile->pres_type != PRES_TYPE_FULL) {
+			if (mod_sofia_globals.debug_presence > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s is passive, skipping\n", (char *) var);
+			}
+			continue;
+		}
+		
+
+		switch (event->event_id) {
 	case SWITCH_EVENT_PRESENCE_IN:
 		sql = switch_mprintf(
 							 
@@ -479,8 +534,9 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 							 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 							 "where (event='%q' or event='%q') and sub_to_user='%q' "
-							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
-							 switch_str_nil(status), switch_str_nil(rpid), host, event_type, alt_event_type, euser, host, host);
+							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%') "
+							 "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host)",
+							 switch_str_nil(status), switch_str_nil(rpid), host, event_type, alt_event_type, euser, host, host, profile->name);
 		break;
 	case SWITCH_EVENT_PRESENCE_OUT:
 		sql = switch_mprintf(
@@ -495,24 +551,15 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 							 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
 							 "sip_subscriptions.profile_name=sip_presence.profile_name) "
 							 "where (event='%q' or event='%q') and sub_to_user='%q' "
-							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
-							 switch_str_nil(status), switch_str_nil(rpid), host, event_type, alt_event_type, euser, host, host);
+							 "and (sub_to_host='%q' or presence_hosts like '%%%q%%') ",
+							 "and (sip_subscriptions.profile_name = '%q' or sip_subscriptions.presence_hosts != sip_subscriptions.sub_to_host)",
+							 switch_str_nil(status), switch_str_nil(rpid), host, event_type, alt_event_type, euser, host, host, profile->name);
 		break;
-	default:
-		break;
-	}
-
-	if (!mod_sofia_globals.profile_hash)
-		goto done;
-
-	switch_mutex_lock(mod_sofia_globals.hash_mutex);
-	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
-		profile = (sofia_profile_t *) val;
-		if (profile->pres_type != PRES_TYPE_FULL) {
-			continue;
+		default:
+			break;
 		}
 
+		
 		if (sql) {
 			struct presence_helper helper = { 0 };
 			helper.profile = profile;
@@ -520,28 +567,47 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 			SWITCH_STANDARD_STREAM(helper.stream);
 			switch_assert(helper.stream.data);
 
+
+			
+			if (mod_sofia_globals.debug_presence > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s START_PRESENCE_SQL\n", profile->name);
+			}
+
+			if (mod_sofia_globals.debug_presence > 1) {
+				char *buf;
+				switch_event_serialize(event, &buf, SWITCH_FALSE);
+				switch_assert(buf);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DUMP PRESENCE SQL:\n%s\nEVENT DUMP:\n%s\n", sql, buf);
+				free(buf);
+			}
+
 			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE,
 											NULL, sql, sofia_presence_sub_callback, &helper);
+			if (mod_sofia_globals.debug_presence > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s END_PRESENCE_SQL\n\n", profile->name);
+			}
+			
+			switch_safe_free(sql);
 
 			if (!switch_strlen_zero((char *) helper.stream.data)) {
-				char *this = (char *) helper.stream.data;
+				char *this_sql = (char *) helper.stream.data;
 				char *next = NULL;
 				char *last = NULL;
 
 				do {
-					if ((next = strchr(this, ';'))) {
+					if ((next = strchr(this_sql, ';'))) {
 						*next++ = '\0';
 						while (*next == '\n' || *next == ' ' || *next == '\r') {
 							*next++ = '\0';
 						}
 					}
 
-					if (!switch_strlen_zero(this) && (!last || strcmp(last, this))) {
-						sofia_glue_execute_sql(profile, &this, SWITCH_FALSE);
-						last = this;
+					if (!switch_strlen_zero(this_sql) && (!last || strcmp(last, this_sql))) {
+						sofia_glue_execute_sql(profile, &this_sql, SWITCH_FALSE);
+						last = this_sql;
 					}
-					this = next;
-				} while (this);
+					this_sql = next;
+				} while (this_sql);
 			}
 			switch_safe_free(helper.stream.data);
 			helper.stream.data = NULL;
@@ -579,14 +645,13 @@ void *SWITCH_THREAD_FUNC sofia_presence_event_thread_run(switch_thread_t *thread
 
 	while (mod_sofia_globals.running == 1) {
 		int count = 0;
-
+		
 		if (switch_queue_trypop(mod_sofia_globals.presence_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *event = (switch_event_t *) pop;
 
 			if (!pop) {
 				break;
 			}
-
 			actual_sofia_presence_event_handler(event);
 			switch_event_destroy(&event);
 			count++;
@@ -745,6 +810,10 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 
 	if (switch_strlen_zero(proto)) {
 		proto = NULL;
+	}
+
+	if (mod_sofia_globals.debug_presence > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s PRESENCE_PROBE %s@%s\n", profile->name, user, host);
 	}
 
 	if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
@@ -946,6 +1015,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		clean_id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
 	} else {
 		clean_id = switch_mprintf("sip:%s+%s@%s", proto, sub_to_user, sub_to_host);
+	}
+
+	if (mod_sofia_globals.debug_presence > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
+						  "SEND PRESENCE\nTo:      \t%s@%s\nFrom:    \t%s@%s\nCall-ID:  \t%s\nProfile:\t%s [%s]\n\n", 
+						  sub_to_user, sub_to_host, user, host, call_id, profile_name, helper->profile->name);
 	}
 
 	if (!strcasecmp(sub_to_host, host)) {

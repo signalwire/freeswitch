@@ -969,6 +969,20 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							  "Register:\nFrom:    [%s@%s]\nContact: [%s]\nExpires: [%ld]\n", to_user, reg_host, contact_str, (long) exptime);
 		}
 
+		
+#if 0
+		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", SOFIA_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", rpid);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "user-agent",
+										   (sip && sip->sip_user_agent) ? sip->sip_user_agent->g_string : "unknown");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", to_user, reg_host);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "Registered");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_fire(&event);
+		}
+#else
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_PROBE) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "sip");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", profile->url);
@@ -980,6 +994,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_fire(&event);
 		}
+#endif
 	} else {
 		if (multi_reg) {
 			char *icontact, *p;
