@@ -888,7 +888,6 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	int done = 0;
 	const char *ct = "no/idea";
 	time_t exptime = switch_timestamp(NULL) + 3600;
-	char exp[80] = "";
 	int is_dialog = 0;
 	sofia_profile_t *ext_profile = NULL, *profile = helper->profile;
 
@@ -1147,9 +1146,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		pl = gen_pidf(user_agent, clean_id, profile->url, open, rpid, prpid, status, &ct);
 	}
 	
-	switch_snprintf(exp, sizeof(exp), "active;expires=%ld", (long) exptime);
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
-	nua_notify(nh, SIPTAG_SUBSCRIPTION_STATE_STR(exp), SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
+	nua_notify(nh, SIPTAG_SUBSCRIPTION_STATE_STR("active"),
+			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(pl), TAG_END());
 	
   end:
 	
@@ -1174,7 +1173,6 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	char *expires = argv[10];
 	char *profile_name = argv[13];
 	char *body = argv[14];
-	char *exp;
 	char *id = NULL;
 	nua_handle_t *nh;
 	int expire_sec = atoi(expires);
@@ -1199,14 +1197,12 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	if (expire_sec < 0) {
 		expire_sec = 3600;
 	}
-	exp = switch_mprintf("active;expires=%ld", expire_sec);
+
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
-	nua_notify(nh,
-			   SIPTAG_SUBSCRIPTION_STATE_STR(exp),
+	nua_notify(nh, SIPTAG_SUBSCRIPTION_STATE_STR("active"),
 			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(id);
-	switch_safe_free(exp);
 
 	h->total++;
 
@@ -1498,7 +1494,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		full_via = sip_header_as_string(profile->home, (void *) sip->sip_via);
 
 		exp_raw = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
-		exp = (long) switch_timestamp(NULL) + exp_raw + 120;
+		if (exp_raw) {
+			exp = (long) switch_timestamp(NULL) + exp_raw + 120;
+		} else {
+			exp = 0;
+			sub_state = nua_substate_terminated;
+		}
 
 		if (sofia_test_pflag(profile, PFLAG_MULTIREG)) {
 			sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", call_id);
