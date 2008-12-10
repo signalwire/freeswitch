@@ -351,7 +351,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
-		} else {
+		} else if (switch_strlen_zero(ringback_data)) {
 			if ((var = switch_channel_get_variable(caller_channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))) {
 				int sval = atoi(var);
 
@@ -793,7 +793,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE) || switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)) {
 			ringback_data = NULL;
-		} else {
+		} else if (switch_strlen_zero(ringback_data)) {
 			const char *vvar;
 			
 			if ((vvar = switch_channel_get_variable(caller_channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE))) {
