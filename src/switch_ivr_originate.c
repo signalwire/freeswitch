@@ -91,7 +91,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		return NULL;
 	}
 	
-	switch_ivr_sleep(collect->session, 0, NULL);
+	switch_ivr_sleep(collect->session, 0, SWITCH_TRUE, NULL);
 	
 	if (!strcasecmp(collect->key, "exec")) {
 		char *data;
@@ -951,7 +951,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			if (try > 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries, sleep_ms);
 				if (caller_channel) {
-					switch_ivr_sleep(session, sleep_ms, NULL);
+					switch_ivr_sleep(session, sleep_ms, SWITCH_TRUE, NULL);
 				} else {
 					switch_yield(sleep_ms * 1000);
 				}
@@ -1749,11 +1749,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if (*bleg) {
-		switch_ivr_sleep(*bleg, 0, NULL);
+		switch_ivr_sleep(*bleg, 0, SWITCH_TRUE, NULL);
 	}
 
 	if (session) {
-		switch_ivr_sleep(session, 0, NULL);
+		switch_ivr_sleep(session, 0, SWITCH_TRUE, NULL);
 	}
 
 	if (var_event && var_event != ovars) {

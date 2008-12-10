@@ -327,7 +327,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 						}
 					}
 
-					switch_ivr_sleep(session, pause, NULL);
+					switch_ivr_sleep(session, pause, SWITCH_FALSE, NULL);
 				}
 			}
 

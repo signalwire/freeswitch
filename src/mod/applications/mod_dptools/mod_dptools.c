@@ -1307,7 +1307,7 @@ SWITCH_STANDARD_APP(sleep_function)
 		
 		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
-		switch_ivr_sleep(session, ms, &args);
+		switch_ivr_sleep(session, ms, SWITCH_TRUE, &args);
 	}
 }
 

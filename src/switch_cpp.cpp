@@ -833,7 +833,7 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
 
 }
 
-SWITCH_DECLARE(int) CoreSession::sleep(int ms) {
+SWITCH_DECLARE(int) CoreSession::sleep(int ms, int sync) {
 
     switch_status_t status;
 
@@ -841,7 +841,7 @@ SWITCH_DECLARE(int) CoreSession::sleep(int ms) {
     sanity_check(-1);
 	
     begin_allow_threads();
-    status = switch_ivr_sleep(session, ms, ap);
+    status = switch_ivr_sleep(session, ms, (switch_bool_t) sync, ap);
     end_allow_threads();
 
     return status == SWITCH_STATUS_SUCCESS ? 1 : 0;

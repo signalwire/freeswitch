@@ -313,7 +313,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 *
 	 */
 		 SWITCH_DECLARE(int) streamFile(char *file, int starting_sample_count = 0);
-		 SWITCH_DECLARE(int) sleep(int ms);
+		 SWITCH_DECLARE(int) sleep(int ms, int sync=0);
 
 	/** \brief flush any pending events
 	 */

@@ -608,7 +608,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		goto done;
 	}
 
-    switch_ivr_sleep(session, 250, NULL);
+    switch_ivr_sleep(session, 250, SWITCH_TRUE, NULL);
     
 	while (switch_channel_ready(channel)) {
 		int tx = 0;

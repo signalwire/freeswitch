@@ -1723,7 +1723,8 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 	switch_input_args_t args = { 0 };
 	int32 ms = 0;
 	jsval ret = JS_TRUE;
-
+	int sync;
+	
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_SANITY_CHECK();
@@ -1755,12 +1756,16 @@ static JSBool session_sleep(JSContext * cx, JSObject * obj, uintN argc, jsval * 
 		}
 	}
 
+	if (argc > 2) {
+		JS_ValueToInt32(cx, argv[2], &sync);
+	}
+
 	cb_state.ret = BOOLEAN_TO_JSVAL(JS_FALSE);
 	cb_state.saveDepth = JS_SuspendRequest(cx);
 	args.input_callback = dtmf_func;
 	args.buf = bp;
 	args.buflen = len;
-	switch_ivr_sleep(jss->session, ms, &args);
+	switch_ivr_sleep(jss->session, ms, sync, &args);
 	JS_ResumeRequest(cx, cb_state.saveDepth);
 	check_hangup_hook(jss, &ret);
 	*rval = cb_state.ret;

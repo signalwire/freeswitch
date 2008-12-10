@@ -38,7 +38,7 @@
 #include <switch_ivr.h>
 #include "stfu.h"
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms, switch_input_args_t *args)
+SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms, switch_bool_t sync, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -80,6 +80,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 		write_frame.datalen = imp.decoded_bytes_per_packet;
 		write_frame.samples = write_frame.datalen / sizeof(int16_t);
+
+		if (!switch_channel_media_ready(channel)) {
+			if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot establish media.\n");
+				return SWITCH_STATUS_FALSE;
+			}
+		}
 	}
 
 	cng_frame.data = data;
@@ -87,7 +94,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	cng_frame.buflen = 2;
 	switch_set_flag((&cng_frame), SFF_CNG);
 
-	if (!switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+	if (sync && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
 		switch_channel_audio_sync(channel);
 	}
 	
