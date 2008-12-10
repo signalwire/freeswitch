@@ -292,8 +292,8 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public int sleep(int ms) {
-    int ret = freeswitchPINVOKE.CoreSession_sleep(swigCPtr, ms);
+  public int sleep(int ms, int sync) {
+    int ret = freeswitchPINVOKE.CoreSession_sleep(swigCPtr, ms, sync);
     return ret;
   }
 
@@ -2834,8 +2834,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_sleep(SWIGTYPE_p_switch_core_session session, uint ms, switch_input_args_t args) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_sleep(SWIGTYPE_p_switch_core_session.getCPtr(session), ms, switch_input_args_t.getCPtr(args));
+  public static switch_status_t switch_ivr_sleep(SWIGTYPE_p_switch_core_session session, uint ms, switch_bool_t sync, switch_input_args_t args) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_sleep(SWIGTYPE_p_switch_core_session.getCPtr(session), ms, (int)sync, switch_input_args_t.getCPtr(args));
     return ret;
   }
 
@@ -3953,6 +3953,7 @@ public class freeswitch {
   public static readonly int SWITCH_MAX_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MAX_DTMF_DURATION_get();
   public static readonly string SWITCH_PATH_SEPARATOR = freeswitchPINVOKE.SWITCH_PATH_SEPARATOR_get();
   public static readonly string SWITCH_URL_SEPARATOR = freeswitchPINVOKE.SWITCH_URL_SEPARATOR_get();
+  public static readonly string SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE = freeswitchPINVOKE.SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get();
   public static readonly string SWITCH_CURRENT_APPLICATION_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_VARIABLE_get();
   public static readonly string SWITCH_CURRENT_APPLICATION_DATA_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_DATA_VARIABLE_get();
   public static readonly string SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE_get();
@@ -4422,6 +4423,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_URL_SEPARATOR_get")]
   public static extern string SWITCH_URL_SEPARATOR_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get")]
+  public static extern string SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_CURRENT_APPLICATION_VARIABLE_get")]
   public static extern string SWITCH_CURRENT_APPLICATION_VARIABLE_get();
@@ -8996,7 +9000,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_parse_next_event(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_sleep")]
-  public static extern int switch_ivr_sleep(HandleRef jarg1, uint jarg2, HandleRef jarg3);
+  public static extern int switch_ivr_sleep(HandleRef jarg1, uint jarg2, int jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_park")]
   public static extern int switch_ivr_park(HandleRef jarg1, HandleRef jarg2);
@@ -10499,7 +10503,7 @@ class freeswitchPINVOKE {
   public static extern int CoreSession_StreamFile(HandleRef jarg1, string jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_sleep")]
-  public static extern int CoreSession_sleep(HandleRef jarg1, int jarg2);
+  public static extern int CoreSession_sleep(HandleRef jarg1, int jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_flushEvents")]
   public static extern int CoreSession_flushEvents(HandleRef jarg1);

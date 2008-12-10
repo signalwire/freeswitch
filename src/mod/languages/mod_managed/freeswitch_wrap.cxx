@@ -905,6 +905,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_URL_SEPARATOR_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "send_silence_when_idle";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_CURRENT_APPLICATION_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -20008,17 +20019,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_parse_next_event(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_sleep(void * jarg1, unsigned long jarg2, void * jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_sleep(void * jarg1, unsigned long jarg2, int jarg3, void * jarg4) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   uint32_t arg2 ;
-  switch_input_args_t *arg3 = (switch_input_args_t *) 0 ;
+  switch_bool_t arg3 ;
+  switch_input_args_t *arg4 = (switch_input_args_t *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (uint32_t)jarg2; 
-  arg3 = (switch_input_args_t *)jarg3; 
-  result = (switch_status_t)switch_ivr_sleep(arg1,arg2,arg3);
+  arg3 = (switch_bool_t)jarg3; 
+  arg4 = (switch_input_args_t *)jarg4; 
+  result = (switch_status_t)switch_ivr_sleep(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
@@ -26694,15 +26707,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_StreamFile(void * jarg1, char * ja
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_sleep(void * jarg1, int jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_CoreSession_sleep(void * jarg1, int jarg2, int jarg3) {
   int jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
+  int arg3 = (int) 0 ;
   int result;
   
   arg1 = (CoreSession *)jarg1; 
   arg2 = (int)jarg2; 
-  result = (int)(arg1)->sleep(arg2);
+  arg3 = (int)jarg3; 
+  result = (int)(arg1)->sleep(arg2,arg3);
   jresult = result; 
   return jresult;
 }
