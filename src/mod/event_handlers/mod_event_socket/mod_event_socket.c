@@ -1649,7 +1649,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", listener->remote_ip, prefs.acl[x]);
 
-				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length %d\n\n", mlen);
+				switch_snprintf(buf, sizeof(buf), "Content-Type: text/rude-rejection\nContent-Length: %d\n\n", mlen);
 				len = strlen(buf);
 				switch_socket_send(listener->sock, buf, &len);
 				len = mlen;
@@ -1799,7 +1799,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
 		int mlen = strlen(message);
 		
-		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length %d\n\n", mlen);
+		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
 		len = strlen(disco_buf);
 		switch_socket_send(listener->sock, disco_buf, &len);
 		len = mlen;
