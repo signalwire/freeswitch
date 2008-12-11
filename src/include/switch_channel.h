@@ -145,7 +145,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(_In_ switch_channel_t **cha
   \param flags the initial channel flags
 */
 SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state,
-													uint32_t flags);
+													switch_channel_flag_t flag);
 
 /*!
   \brief Fire A presence event for the channel
@@ -259,49 +259,49 @@ SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *chann
 SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(switch_channel_t *channel);
 
 /*!
-  \brief Test for presence of given flag(s) on a given channel
+  \brief Test for presence of given flag on a given channel
   \param channel channel to test 
-  \param flags or'd list of channel flags to test
+  \param flag to test
   \return TRUE if flags were present
 */
-SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags);
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
   \brief Set given flag(s) on a given channel
-  \param channel channel on which to set flag(s)
-  \param flags or'd list of flags to set
+  \param channel channel on which to set flag
+  \param flag or'd list of flags to set
 */
-SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags);
+SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
   \brief Set given flag(s) on a given channel's bridge partner
-  \param channel channel to derive the partner channel to set flag(s) on
-  \param flags or'd list of flags to set
+  \param channel channel to derive the partner channel to set flag on
+  \param flag to set
   \return true if the flag was set
 */
-SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags);
+SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
   \brief Clears given flag(s) on a given channel's bridge partner
   \param channel channel to derive the partner channel to clear flag(s) from
-  \param flags the flags to clear
+  \param flag the flag to clear
   \return true if the flag was cleared
 */
-SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags);
+SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
   \brief Set given flag(s) on a given channel to be applied on the next state change
   \param channel channel on which to set flag(s)
-  \param flags or'd list of flags to set
+  \param flag flag to set
 */
-SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flags);
+SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flag);
 
 /*!
   \brief Clear given flag(s) from a channel
   \param channel channel to clear flags from
-  \param flags or'd list of flags to clear
+  \param flag flag to clear
 */
-SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags);
+SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flag);
 
 SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *channel, const char *file, const char *func, int line);
 
@@ -484,7 +484,7 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(_In_ switch_channel_t *
 														 _In_opt_ const char *prefix);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channel_t *channel);
 
-#define switch_channel_stop_broadcast(_channel)	if (switch_channel_test_flag(_channel, CF_BROADCAST)) switch_channel_set_flag(_channel, CF_BREAK | CF_STOP_BROADCAST)
+#define switch_channel_stop_broadcast(_channel)	for(;;) {if (switch_channel_test_flag(_channel, CF_BROADCAST)) {switch_channel_set_flag(_channel, CF_STOP_BROADCAST); switch_channel_set_flag(_channel, CF_BREAK); } break;}
 
 #define switch_channel_media_ready(_channel) ((switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(_channel, CF_PROXY_MODE))
 

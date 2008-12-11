@@ -732,73 +732,70 @@ typedef enum {
   \brief Channel Flags
 
 <pre>
-CF_ANSWERED     = (1 <<  0) - Channel is answered
-CF_OUTBOUND     = (1 <<  1) - Channel is an outbound channel
-CF_EARLY_MEDIA  = (1 <<  2) - Channel is ready for audio before answer 
-CF_ORIGINATOR	= (1 <<  3) - Channel is an originator
-CF_TRANSFER		= (1 <<  4) - Channel is being transfered
-CF_ACCEPT_CNG	= (1 <<  5) - Channel will accept CNG frames
-CF_REDIRECT 	= (1 <<  6) - Channel is being redirected
-CF_BRIDGED		= (1 <<  7) - Channel in a bridge
-CF_HOLD			= (1 <<  8) - Channel is on hold
-CF_SERVICE		= (1 <<  9) - Channel has a service thread
-CF_TAGGED		= (1 << 10) - Channel is tagged
-CF_WINNER		= (1 << 11) - Channel is the winner
-CF_CONTROLLED	= (1 << 12) - Channel is under control
-CF_PROXY_MODE		= (1 << 13) - Channel has no media
-CF_SUSPEND		= (1 << 14) - Suspend i/o
-CF_EVENT_PARSE  = (1 << 15) - Suspend control events
-CF_USE_ME = (1 << 16) -   use me
-CF_GEN_RINGBACK = (1 << 17) - Channel is generating it's own ringback
-CF_RING_READY   = (1 << 18) - Channel is ready to send ringback
-CF_BREAK        = (1 << 19) - Channel should stop what it's doing
-CF_BROADCAST    = (1 << 20) - Channel is broadcasting
-CF_UNICAST      = (1 << 21) - Channel has a unicast connection
-CF_VIDEO		= (1 << 22) - Channel has video
-CF_EVENT_LOCK   = (1 << 23) - Don't parse events
-CF_RESET        = (1 << 24) - Tell extension parser to reset
-CF_ORIGINATING  = (1 << 25) - Channel is originating
-CF_STOP_BROADCAST = (1 << 26) - Signal to stop broadcast
+CF_ANSWERED			- Channel is answered
+CF_OUTBOUND			- Channel is an outbound channel
+CF_EARLY_MEDIA		- Channel is ready for audio before answer 
+CF_ORIGINATOR		- Channel is an originator
+CF_TRANSFER			- Channel is being transfered
+CF_ACCEPT_CNG		- Channel will accept CNG frames
+CF_REDIRECT 		- Channel is being redirected
+CF_BRIDGED			- Channel in a bridge
+CF_HOLD				- Channel is on hold
+CF_SERVICE			- Channel has a service thread
+CF_TAGGED			- Channel is tagged
+CF_WINNER			- Channel is the winner
+CF_CONTROLLED		- Channel is under control
+CF_PROXY_MODE		- Channel has no media
+CF_SUSPEND			- Suspend i/o
+CF_EVENT_PARSE		- Suspend control events
+CF_GEN_RINGBACK		- Channel is generating it's own ringback
+CF_RING_READY		- Channel is ready to send ringback
+CF_BREAK			- Channel should stop what it's doing
+CF_BROADCAST		- Channel is broadcasting
+CF_UNICAST			- Channel has a unicast connection
+CF_VIDEO			- Channel has video
+CF_EVENT_LOCK		- Don't parse events
+CF_RESET			- Tell extension parser to reset
+CF_ORIGINATING		- Channel is originating
+CF_STOP_BROADCAST	- Signal to stop broadcast
 </pre>
  */
 
 typedef enum {
-	CF_ANSWERED = (1 << 0),
-	CF_OUTBOUND = (1 << 1),
-	CF_EARLY_MEDIA = (1 << 2),
-	CF_ORIGINATOR = (1 << 3),
-	CF_TRANSFER = (1 << 4),
-	CF_ACCEPT_CNG = (1 << 5),
-	CF_REDIRECT = (1 << 6),
-	CF_BRIDGED = (1 << 7),
-	CF_HOLD = (1 << 8),
-	CF_SERVICE = (1 << 9),
-	CF_TAGGED = (1 << 10),
-	CF_WINNER = (1 << 11),
-	CF_CONTROLLED = (1 << 12),
-	CF_PROXY_MODE = (1 << 13),
-	CF_SUSPEND = (1 << 14),
-	CF_EVENT_PARSE = (1 << 15),
-	CF_USE_ME = (1 << 16),
-	CF_GEN_RINGBACK = (1 << 17),
-	CF_RING_READY = (1 << 18),
-	CF_BREAK = (1 << 19),
-	CF_BROADCAST = (1 << 20),
-	CF_UNICAST = (1 << 21),
-	CF_VIDEO = (1 << 22),
-	CF_EVENT_LOCK = (1 << 23),
-	CF_RESET = (1 << 24),
-	CF_ORIGINATING = (1 << 25),
-	CF_STOP_BROADCAST = (1 << 26),
-	CF_PROXY_MEDIA = (1 << 27),
-	CF_INNER_BRIDGE = (1 << 28),
-	CF_REQ_MEDIA = (1 << 29),
-	CF_VERBOSE_EVENTS = (1 << 30)
-} switch_channel_flag_enum_t;
+	CF_ANSWERED = 1,
+	CF_OUTBOUND,
+	CF_EARLY_MEDIA,
+	CF_ORIGINATOR,
+	CF_TRANSFER,
+	CF_ACCEPT_CNG,
+	CF_REDIRECT,
+	CF_BRIDGED,
+	CF_HOLD,
+	CF_SERVICE,
+	CF_TAGGED,
+	CF_WINNER,
+	CF_CONTROLLED,
+	CF_PROXY_MODE,
+	CF_SUSPEND,
+	CF_EVENT_PARSE,
+	CF_GEN_RINGBACK,
+	CF_RING_READY,
+	CF_BREAK,
+	CF_BROADCAST,
+	CF_UNICAST,
+	CF_VIDEO,
+	CF_EVENT_LOCK,
+	CF_RESET,
+	CF_ORIGINATING,
+	CF_STOP_BROADCAST,
+	CF_PROXY_MEDIA,
+	CF_INNER_BRIDGE,
+	CF_REQ_MEDIA,
+	CF_VERBOSE_EVENTS,
 
-typedef uint32_t switch_channel_flag_t;
-
-
+	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
+	CF_FLAG_MAX
+} switch_channel_flag_t;
 
 /*!
   \enum switch_frame_flag_t

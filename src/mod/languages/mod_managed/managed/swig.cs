@@ -2209,8 +2209,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_channel_wait_for_state(SWIGTYPE_p_switch_channel.getCPtr(channel), SWIGTYPE_p_switch_channel.getCPtr(other_channel), (int)want_state);
   }
 
-  public static switch_status_t switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel channel, uint want_flag, switch_bool_t pres, uint to, SWIGTYPE_p_switch_channel super_channel) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), want_flag, (int)pres, to, SWIGTYPE_p_switch_channel.getCPtr(super_channel));
+  public static switch_status_t switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t want_flag, switch_bool_t pres, uint to, SWIGTYPE_p_switch_channel super_channel) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_wait_for_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)want_flag, (int)pres, to, SWIGTYPE_p_switch_channel.getCPtr(super_channel));
     return ret;
   }
 
@@ -2260,8 +2260,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_channel_init(SWIGTYPE_p_switch_channel channel, SWIGTYPE_p_switch_core_session session, switch_channel_state_t state, uint flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_init(SWIGTYPE_p_switch_channel.getCPtr(channel), SWIGTYPE_p_switch_core_session.getCPtr(session), (int)state, flags);
+  public static switch_status_t switch_channel_init(SWIGTYPE_p_switch_channel channel, SWIGTYPE_p_switch_core_session session, switch_channel_state_t state, switch_channel_flag_t flag) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_init(SWIGTYPE_p_switch_channel.getCPtr(channel), SWIGTYPE_p_switch_core_session.getCPtr(session), (int)state, (int)flag);
     return ret;
   }
 
@@ -2358,31 +2358,31 @@ public class freeswitch {
     return ret;
   }
 
-  public static uint switch_channel_test_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
-    uint ret = freeswitchPINVOKE.switch_channel_test_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  public static uint switch_channel_test_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    uint ret = freeswitchPINVOKE.switch_channel_test_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
     return ret;
   }
 
-  public static void switch_channel_set_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
-    freeswitchPINVOKE.switch_channel_set_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  public static void switch_channel_set_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    freeswitchPINVOKE.switch_channel_set_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
   }
 
-  public static switch_bool_t switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel channel, uint flags) {
-    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  public static switch_bool_t switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_set_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
     return ret;
   }
 
-  public static switch_bool_t switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel channel, uint flags) {
-    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  public static switch_bool_t switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_channel_clear_flag_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
     return ret;
   }
 
-  public static void switch_channel_set_state_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
-    freeswitchPINVOKE.switch_channel_set_state_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  public static void switch_channel_set_state_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    freeswitchPINVOKE.switch_channel_set_state_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
   }
 
-  public static void switch_channel_clear_flag(SWIGTYPE_p_switch_channel channel, uint flags) {
-    freeswitchPINVOKE.switch_channel_clear_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), flags);
+  public static void switch_channel_clear_flag(SWIGTYPE_p_switch_channel channel, switch_channel_flag_t flag) {
+    freeswitchPINVOKE.switch_channel_clear_flag(SWIGTYPE_p_switch_channel.getCPtr(channel), (int)flag);
   }
 
   public static switch_status_t switch_channel_perform_answer(SWIGTYPE_p_switch_channel channel, string file, string func, int line) {
@@ -8343,7 +8343,7 @@ class freeswitchPINVOKE {
   public static extern void switch_channel_wait_for_state(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_wait_for_flag")]
-  public static extern int switch_channel_wait_for_flag(HandleRef jarg1, uint jarg2, int jarg3, uint jarg4, HandleRef jarg5);
+  public static extern int switch_channel_wait_for_flag(HandleRef jarg1, int jarg2, int jarg3, uint jarg4, HandleRef jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_perform_set_state")]
   public static extern int switch_channel_perform_set_state(HandleRef jarg1, string jarg2, string jarg3, int jarg4, int jarg5);
@@ -8373,7 +8373,7 @@ class freeswitchPINVOKE {
   public static extern int switch_channel_alloc(HandleRef jarg1, HandleRef jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_init")]
-  public static extern int switch_channel_init(HandleRef jarg1, HandleRef jarg2, int jarg3, uint jarg4);
+  public static extern int switch_channel_init(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_presence")]
   public static extern void switch_channel_presence(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
@@ -8433,22 +8433,22 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_channel_get_caller_extension(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_test_flag")]
-  public static extern uint switch_channel_test_flag(HandleRef jarg1, uint jarg2);
+  public static extern uint switch_channel_test_flag(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_flag")]
-  public static extern void switch_channel_set_flag(HandleRef jarg1, uint jarg2);
+  public static extern void switch_channel_set_flag(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_flag_partner")]
-  public static extern int switch_channel_set_flag_partner(HandleRef jarg1, uint jarg2);
+  public static extern int switch_channel_set_flag_partner(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_clear_flag_partner")]
-  public static extern int switch_channel_clear_flag_partner(HandleRef jarg1, uint jarg2);
+  public static extern int switch_channel_clear_flag_partner(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_state_flag")]
-  public static extern void switch_channel_set_state_flag(HandleRef jarg1, uint jarg2);
+  public static extern void switch_channel_set_state_flag(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_clear_flag")]
-  public static extern void switch_channel_clear_flag(HandleRef jarg1, uint jarg2);
+  public static extern void switch_channel_clear_flag(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_perform_answer")]
   public static extern int switch_channel_perform_answer(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
@@ -16832,38 +16832,38 @@ namespace FreeSWITCH.Native {
 
 namespace FreeSWITCH.Native {
 
-[System.Flags] public enum switch_channel_flag_enum_t {
-  CF_ANSWERED = (1 << 0),
-  CF_OUTBOUND = (1 << 1),
-  CF_EARLY_MEDIA = (1 << 2),
-  CF_ORIGINATOR = (1 << 3),
-  CF_TRANSFER = (1 << 4),
-  CF_ACCEPT_CNG = (1 << 5),
-  CF_REDIRECT = (1 << 6),
-  CF_BRIDGED = (1 << 7),
-  CF_HOLD = (1 << 8),
-  CF_SERVICE = (1 << 9),
-  CF_TAGGED = (1 << 10),
-  CF_WINNER = (1 << 11),
-  CF_CONTROLLED = (1 << 12),
-  CF_PROXY_MODE = (1 << 13),
-  CF_SUSPEND = (1 << 14),
-  CF_EVENT_PARSE = (1 << 15),
-  CF_USE_ME = (1 << 16),
-  CF_GEN_RINGBACK = (1 << 17),
-  CF_RING_READY = (1 << 18),
-  CF_BREAK = (1 << 19),
-  CF_BROADCAST = (1 << 20),
-  CF_UNICAST = (1 << 21),
-  CF_VIDEO = (1 << 22),
-  CF_EVENT_LOCK = (1 << 23),
-  CF_RESET = (1 << 24),
-  CF_ORIGINATING = (1 << 25),
-  CF_STOP_BROADCAST = (1 << 26),
-  CF_PROXY_MEDIA = (1 << 27),
-  CF_INNER_BRIDGE = (1 << 28),
-  CF_REQ_MEDIA = (1 << 29),
-  CF_VERBOSE_EVENTS = (1 << 30)
+public enum switch_channel_flag_t {
+  CF_ANSWERED = 1,
+  CF_OUTBOUND,
+  CF_EARLY_MEDIA,
+  CF_ORIGINATOR,
+  CF_TRANSFER,
+  CF_ACCEPT_CNG,
+  CF_REDIRECT,
+  CF_BRIDGED,
+  CF_HOLD,
+  CF_SERVICE,
+  CF_TAGGED,
+  CF_WINNER,
+  CF_CONTROLLED,
+  CF_PROXY_MODE,
+  CF_SUSPEND,
+  CF_EVENT_PARSE,
+  CF_GEN_RINGBACK,
+  CF_RING_READY,
+  CF_BREAK,
+  CF_BROADCAST,
+  CF_UNICAST,
+  CF_VIDEO,
+  CF_EVENT_LOCK,
+  CF_RESET,
+  CF_ORIGINATING,
+  CF_STOP_BROADCAST,
+  CF_PROXY_MEDIA,
+  CF_INNER_BRIDGE,
+  CF_REQ_MEDIA,
+  CF_VERBOSE_EVENTS,
+  CF_FLAG_MAX
 }
 
 }

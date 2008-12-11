@@ -115,9 +115,9 @@ struct switch_channel {
 	switch_core_session_t *session;
 	switch_channel_state_t state;
 	switch_channel_state_t running_state;
-	switch_channel_flag_t flags;
+	uint8_t flags[CF_FLAG_MAX];
+	uint8_t state_flags[CF_FLAG_MAX];
 	uint32_t private_flags;
-	switch_channel_flag_t state_flags;
 	switch_caller_profile_t *caller_profile;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
@@ -410,11 +410,11 @@ SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 }
 
 SWITCH_DECLARE(switch_status_t) switch_channel_init(switch_channel_t *channel, switch_core_session_t *session, switch_channel_state_t state,
-													uint32_t flags)
+													switch_channel_flag_t flag)
 {
 	switch_assert(channel != NULL);
 	channel->state = state;
-	channel->flags = flags;
+	switch_channel_set_flag(channel, flag);
 	channel->session = session;
 	channel->running_state = CS_NONE;
 	return SWITCH_STATUS_SUCCESS;
@@ -643,13 +643,13 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_chann
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flags)
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	switch_assert(channel != NULL);
-	return switch_test_flag(channel, flags) ? 1 : 0;
+	return channel->flags[flag] ? 1 : 0;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags)
+SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	const char *uuid;
 
@@ -658,7 +658,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
-			switch_channel_set_flag(switch_core_session_get_channel(session), flags);
+			switch_channel_set_flag(switch_core_session_get_channel(session), flag);
 			switch_core_session_rwunlock(session);
 			return SWITCH_TRUE;
 		}
@@ -667,7 +667,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *
 	return SWITCH_FALSE;
 }
 
-SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flags)
+SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	const char *uuid;
 
@@ -676,7 +676,7 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
 		switch_core_session_t *session;
 		if ((session = switch_core_session_locate(uuid))) {
-			switch_channel_clear_flag(switch_core_session_get_channel(session), flags);
+			switch_channel_clear_flag(switch_core_session_get_channel(session), flag);
 			switch_core_session_rwunlock(session);
 			return SWITCH_TRUE;
 		}
@@ -714,11 +714,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 
 	for (;;) {
 		if (pres) {
-			if (switch_test_flag(channel, want_flag)) {
+			if (switch_channel_test_flag(channel, want_flag)) {
 				break;
 			}
 		} else {
-			if (!switch_test_flag(channel, want_flag)) {
+			if (!switch_channel_test_flag(channel, want_flag)) {
 				break;
 			}
 		}
@@ -741,11 +741,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flags)
+SWITCH_DECLARE(void) switch_channel_set_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
-	switch_assert(channel != NULL);
-	switch_set_flag_locked(channel, flags);
-	if (flags & CF_OUTBOUND) {
+	switch_assert(channel);
+	switch_assert(channel->flag_mutex);
+
+	switch_mutex_lock(channel->flag_mutex);
+	channel->flags[flag] = 1;
+	switch_mutex_unlock(channel->flag_mutex);
+
+	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", "true");
 	}
 }
@@ -773,21 +778,25 @@ SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, 
 	return (channel->private_flags & flags);
 }
 
-
-SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flags)
+SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->flag_mutex);
-	channel->state_flags |= flags;
+	channel->state_flags[0] = 1;
+	channel->state_flags[flag] = 1;
 	switch_mutex_unlock(channel->flag_mutex);
 }
 
-SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flags)
+SWITCH_DECLARE(void) switch_channel_clear_flag(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	switch_assert(channel != NULL);
-	switch_clear_flag_locked(channel, flags);
-	if (flags & CF_OUTBOUND) {
+	switch_assert(channel->flag_mutex);
+
+	switch_mutex_lock(channel->flag_mutex);
+	channel->flags[flag] = 0;
+	switch_mutex_unlock(channel->flag_mutex);
+	if (flag == CF_OUTBOUND) {
 		switch_channel_set_variable(channel, "is_outbound", NULL);
 	}
 }
@@ -823,7 +832,7 @@ SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
 	switch_assert(channel != NULL);
 
 	if (!channel->hangup_cause && channel->state > CS_ROUTING && channel->state < CS_HANGUP && channel->state != CS_RESET &&
-		!switch_test_flag(channel, CF_TRANSFER)) {
+		!switch_channel_test_flag(channel, CF_TRANSFER)) {
 		ret++;
 	}
 
@@ -867,16 +876,22 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(const char *nam
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel, switch_channel_state_t state,
 																				const char *file, const char *func, int line)
 {
+	int x;
 	switch_mutex_lock(channel->flag_mutex);
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n", channel->name, state_names[state]);
 	channel->running_state = state;
 
-	if (channel->state_flags) {
-		channel->flags |= channel->state_flags;
-		channel->state_flags = 0;
+	if (channel->state_flags[0]) {
+		for(x = 1; x < CF_FLAG_MAX ; x++ ) {
+			if (channel->state_flags[x]) {
+				channel->flags[x] = 1;
+				channel->state_flags[x] = 0;
+			}
+		}
+		channel->state_flags[0] = 0;
 	}
 
-	switch_clear_flag(channel, CF_TAGGED);
+	switch_channel_clear_flag(channel, CF_TAGGED);
 
 	if (channel->state >= CS_ROUTING) {
 		switch_channel_presence(channel, "unknown", (char *) state_names[state], NULL);
@@ -1185,7 +1200,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 	}
 
 
-	if (switch_test_flag(channel, CF_VERBOSE_EVENTS) || 
+	if (switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) || 
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_UUID ||
 		event->event_id == SWITCH_EVENT_CHANNEL_ANSWER ||

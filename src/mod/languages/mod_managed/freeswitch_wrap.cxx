@@ -17084,7 +17084,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_wait_for_state(void * jarg1, v
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_wait_for_flag(void * jarg1, unsigned long jarg2, int jarg3, unsigned long jarg4, void * jarg5) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_wait_for_flag(void * jarg1, int jarg2, int jarg3, unsigned long jarg4, void * jarg5) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
@@ -17230,18 +17230,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_alloc(void * jarg1, void * jarg
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_init(void * jarg1, void * jarg2, int jarg3, unsigned long jarg4) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_init(void * jarg1, void * jarg2, int jarg3, int jarg4) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_core_session_t *arg2 = (switch_core_session_t *) 0 ;
   switch_channel_state_t arg3 ;
-  uint32_t arg4 ;
+  switch_channel_flag_t arg4 ;
   switch_status_t result;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_core_session_t *)jarg2; 
   arg3 = (switch_channel_state_t)jarg3; 
-  arg4 = (uint32_t)jarg4; 
+  arg4 = (switch_channel_flag_t)jarg4; 
   result = (switch_status_t)switch_channel_init(arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
@@ -17481,7 +17481,7 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_channel_get_caller_extension(void * 
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_channel_test_flag(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_channel_test_flag(void * jarg1, int jarg2) {
   unsigned long jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
@@ -17495,7 +17495,7 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_channel_test_flag(void * jarg
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_flag(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_flag(void * jarg1, int jarg2) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
   
@@ -17505,7 +17505,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_flag(void * jarg1, unsigne
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_flag_partner(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_flag_partner(void * jarg1, int jarg2) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
@@ -17519,7 +17519,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_flag_partner(void * jarg1, 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_clear_flag_partner(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_clear_flag_partner(void * jarg1, int jarg2) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
@@ -17533,7 +17533,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_clear_flag_partner(void * jarg1
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_state_flag(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_state_flag(void * jarg1, int jarg2) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
   
@@ -17543,7 +17543,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_state_flag(void * jarg1, u
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_clear_flag(void * jarg1, unsigned long jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_clear_flag(void * jarg1, int jarg2) {
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   switch_channel_flag_t arg2 ;
   
