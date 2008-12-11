@@ -432,6 +432,7 @@ struct sofia_profile {
 	int rport_level;
 	sofia_presence_type_t pres_type;
 	sofia_media_options_t media_options;
+	uint32_t force_subscription_expires;
 };
 
 struct private_object {

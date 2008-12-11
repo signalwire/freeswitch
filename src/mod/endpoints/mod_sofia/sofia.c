@@ -70,12 +70,14 @@ void sofia_handle_sip_r_notify(switch_core_session_t *session, int status,
 							   char const *phrase,
 							   nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
+#if 0
 	if (status >= 300 && sip && sip->sip_call_id) {
 		char *sql;
 		sql = switch_mprintf("delete from sip_subscriptions where call_id='%q'", sip->sip_call_id->i_id);
 		switch_assert(sql != NULL);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 	}
+#endif
 }
 
 void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
@@ -1257,6 +1259,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							switch_clear_flag(profile, TFLAG_INB_NOMEDIA);
 						}
+					} else if (!strcasecmp(var, "force-subscription-expires")) {
+						int tmp = atoi(val);
+						if (tmp > 0) {
+							profile->force_subscription_expires = tmp;
+						}
 					} else if (!strcasecmp(var, "inbound-late-negotiation")) {
 						if (switch_true(val)) {
 							switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
@@ -1686,6 +1693,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						switch_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						switch_set_flag(profile, TFLAG_PROXY_MEDIA);
+					} else if (!strcasecmp(var, "force-subscription-expires")) {
+						int tmp = atoi(val);
+						if (tmp > 0) {
+							profile->force_subscription_expires = tmp;
+						}
 					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_CALLID_AS_UUID;
