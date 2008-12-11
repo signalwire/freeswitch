@@ -4197,6 +4197,8 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 						free(tmp_name);
 					}
 				}
+			} else if (!strncasecmp(un->un_name, "History-Info", 12)) {
+				switch_channel_set_variable(channel, "sip_history_info", un->un_value);
 			} else if (!strncasecmp(un->un_name, "X-", 2) || !strncasecmp(un->un_name, "P-", 2)) {
 				if (!switch_strlen_zero(un->un_value)) {
 					char new_name[512] = "";
