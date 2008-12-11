@@ -50,35 +50,40 @@
 #define ISNAN(x) ((x)== NAN)
 #endif
 
-/* Number of points for beep detection */
+/*! Number of points for beep detection */
 #define POINTS 32
 
-/* Number of valid points required for beep detection */
+/*! Number of valid points required for beep detection */
 #define VALID 22
 
-/* Maximum number of invalid points 
- * to declare beep has stopped */
+/*! Maximum number of invalid points to declare beep has stopped */
 #define MAX_CHIRP 22
 
-/* Minimum time for a beep */
+/*! Minimum time for a beep */
 #define MIN_TIME 8000
 
-/* Minimum amplitude of the signal */
+/*! Minimum amplitude of the signal */
 #define MIN_AMPL 0.10
 
-/* Minimum beep frequency */
+/*! Minimum beep frequency */
 #define MIN_FREQ (600)
 
-/* Maximum beep frequency */
+/*! Maximum beep frequency */
 #define MAX_FREQ (1100)
 
-/* PSI function for amplitude calculation*/
+/*! \brief \f$\psi{(x)}\f$ function for amplitude calculation
+ *
+ *  \f$\psi{(x)} = {x^2_1} - {x_2} {x_0}\f$
+ */
 #define PSI(x) (x[1]*x[1]-x[2]*x[0])
 
-/* Sample rate */
+/*! Sample rate NOTE: this should be dynamic in the future */
 #define F (8000)
 
-/* Conversion of frequency to Hz */
+/*! \brief Conversion of frequency to Hz
+ *
+ * \f$F = \frac{f}{{2}{\pi}}\f$ 
+ */
 #define TO_HZ(f) ((F * f) / (2.0 * M_PI))
 
 /* Number of points in discreet energy separation */
@@ -91,22 +96,22 @@
  * DEPRECATED */
 #define ADJUST_MAX (65536)
 
-/* Discreet energy separation tolerance to error */
+/*! Discreet energy separation tolerance to error */
 #define TOLERANCE (0.20)
 
-/* Maximum value within tolerance */
+/*! Maximum value within tolerance */
 #define TOLERANCE_T(m) (m + (m * TOLERANCE))
 
-/* Minimum value within tolerance */
+/*! Minimum value within tolerance */
 #define TOLERANCE_B(m) (m - (m * TOLERANCE))
 
-/* Syntax of the API call */
+/*! Syntax of the API call */
 #define VMD_SYNTAX "<uuid> <command>"
 
-/* Number of expected parameters in api call */
+/*! Number of expected parameters in api call */
 #define VMD_PARAMS 2
 
-/* FreeSWITCH CUSTOM event type */
+/*! FreeSWITCH CUSTOM event type */
 #define VMD_EVENT_BEEP "vmd::beep"
 
 /* Prototypes */
@@ -117,39 +122,39 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load);
 SWITCH_MODULE_DEFINITION(mod_vmd, mod_vmd_load, NULL, NULL);
 SWITCH_STANDARD_APP(vmd_start_function);
 
-/* Type that holds state information about the beep */
+/*! Type that holds state information about the beep */
 typedef enum vmd_state {
     BEEP_DETECTED, BEEP_NOT_DETECTED
 } vmd_state_t;
 
-/* Type that holds data for 5 points of discreet energy separation */
+/*! Type that holds data for 5 points of discreet energy separation */
 typedef struct vmd_point {
     double freq;
     double ampl;
 } vmd_point_t;
 
-/* Type that holds codec information */
+/*! Type that holds codec information */
 typedef struct vmd_codec_info {
     int rate;
     int channels;
 } vmd_codec_info_t;
 
-/* Type that holds session information pertinent to the vmd module */
+/*! Type that holds session information pertinent to the vmd module */
 typedef struct vmd_session_info {
-    /* State of the session */
+    /*! State of the session */
     vmd_state_t state;
-    /* Snapshot of DESA samples */
+    /*! Snapshot of DESA samples */
     vmd_point_t points[POINTS];
-    /* Internal FreeSWITCH session */
+    /*! Internal FreeSWITCH session */
     switch_core_session_t *session;
-    /* Codec information for the session */
+    /*! Codec information for the session */
     vmd_codec_info_t vmd_codec;
-    /* Current position in the snapshot */
+    /*! Current position in the snapshot */
     unsigned int pos;
-    /* Frequency aproximation of a detected beep */
+    /*! Frequency aproximation of a detected beep */
     double beep_freq;
-    /* A count of how long a distinct beep was detected by
-     * by the discreet energy separation algorithm */
+    /*! A count of how long a distinct beep was detected by
+     *  by the discreet energy separation algorithm */
     switch_size_t timestamp;
 } vmd_session_info_t;
 
@@ -202,6 +207,7 @@ static switch_bool_t vmd_callback(switch_media_bug_t * bug, void *user_data, swi
     return SWITCH_TRUE;
 }
 
+/*! Process and convert data to be used by the find_beep() function */
 static switch_bool_t process_data(vmd_session_info_t * vmd_info, switch_frame_t * frame)
 {
     uint32_t i;
@@ -253,6 +259,7 @@ static switch_bool_t process_data(vmd_session_info_t * vmd_info, switch_frame_t 
     return SWITCH_TRUE;
 }
 
+/*! Find voicemail beep in the audio stream */
 static void find_beep(vmd_session_info_t * vmd_info, switch_frame_t * frame)
 {
     int i;
@@ -347,7 +354,7 @@ static void find_beep(vmd_session_info_t * vmd_info, switch_frame_t * frame)
     }
 }
 
-/* Find the median of an array of doubles */
+/*! Find the median of an array of doubles */
 static double median(double *m, int n)
 {
     int i;
@@ -411,17 +418,20 @@ static double median(double *m, int n)
     return mingtguess;
 }
 
-/* Convert many points for Signed L16 to relative floating point */
+/*! Convert many points for Signed L16 to relative floating point */
 static void convert_pts(int16_t * i_pts, double *d_pts, int16_t max)
 {
     int i;
     for (i = 0; i < P; i++) {
-        /* Signed L16 to relative floating point conversion */
+        /*! Signed L16 to relative floating point conversion */
         d_pts[i] = ((((double) (i_pts[i]) + (double) max) / (double) (2 * max)) - 0.5) * 2.0;
     }
 }
 
-/* Amplitude estimator for DESA-2 */
+/*! \brief Amplitude estimator for DESA-2
+ *  
+ *  \f$A = \sqrt{\frac{\psi{(x)}}{\sin{\Omega^2}}}\f$
+ */
 double ampl_estimator(double *x)
 {
     double freq_sq;
@@ -432,7 +442,15 @@ double ampl_estimator(double *x)
     return sqrt(PSI(x) / sin(freq_sq));
 }
 
-/* The DESA-2 algorithm */
+/*! \brief The DESA-2 algorithm 
+ *
+ *  \f$\frac{1}{2}\arccos{\frac{{{x^2_2} - 
+ *  {x_0}{x_4}} - {{x^2_1} - 
+ *  {x_0}{x_2}} - {{x^2_3} - 
+ *  {x_2}{x_4}}}
+ *  {{2}({x^2_2} - {x_1}{x_3})}}\f$
+ *
+ */
 double freq_estimator(double *x)
 {
     return 0.5 * acos((((x[2] * x[2]) - (x[0] * x[4]))
@@ -443,7 +461,7 @@ double freq_estimator(double *x)
         );
 }
 
-
+/*! FreeSWITCH module loading function */
 SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load)
 {
     switch_application_interface_t *app_interface;
@@ -461,7 +479,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load)
     return SWITCH_STATUS_SUCCESS;
 }
 
-/* Same as api function see it for comments */
+/*! FreeSWITCH application handler function */
 SWITCH_STANDARD_APP(vmd_start_function)
 {
     switch_media_bug_t *bug;
@@ -518,7 +536,7 @@ SWITCH_STANDARD_APP(vmd_start_function)
 
 }
 
-/* Called when the system shuts down */
+/*! Called when the system shuts down */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vmd_shutdown)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Voicemail detection disabled\n");
@@ -526,6 +544,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_vmd_shutdown)
     return SWITCH_STATUS_SUCCESS;
 }
 
+/*! FreeSWITCH API handler function */
 SWITCH_STANDARD_API(vmd_api_main)
 {
     switch_core_session_t *vmd_session;
