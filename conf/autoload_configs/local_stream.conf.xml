@@ -14,7 +14,7 @@
     <param name="interval" value="20"/>
     <param name="timer-name" value="soft"/>
   </directory>
-  <!-- 
+
   <directory name="moh/32000" path="$${base_dir}/sounds/music/32000">
     <param name="rate" value="32000"/>
     <param name="shuffle" value="true"/>
@@ -22,5 +22,5 @@
     <param name="interval" value="20"/>
     <param name="timer-name" value="soft"/>
   </directory>
-  -->
+
 </configuration>
