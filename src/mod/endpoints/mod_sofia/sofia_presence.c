@@ -1206,11 +1206,11 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		switch_set_string(expires_str, "0");
         kill_handle = 1;
 	} else if (exptime > 0) {
-		switch_snprintf(sstr, sizeof(sstr), "active;expires=%d", exptime);
+		switch_snprintf(sstr, sizeof(sstr), "active;expires=%u", (unsigned)exptime);
 	} else {
-		long delta = exptime * -1;
-		switch_snprintf(sstr, sizeof(sstr), "active;expires=%d", delta);
-		switch_snprintf(expires_str, sizeof(expires_str), "%d", delta);
+		unsigned delta = (unsigned) (exptime * -1);
+		switch_snprintf(sstr, sizeof(sstr), "active;expires=%u", delta);
+		switch_snprintf(expires_str, sizeof(expires_str), "%u", delta);
 		nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, delta, delta);
 	}
 

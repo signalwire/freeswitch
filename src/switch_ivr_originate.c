@@ -1326,11 +1326,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 								ringback.fh = &ringback.fhb;
 
 							} else if (!strncasecmp(ringback_data, "silence", 7)) {
-								const char *p = ringback_data + 7;
-								if (*p == ':') {
-									p++;
-									if (p) {
-										ringback.silence = atoi(p);
+								const char *c = ringback_data + 7;
+								if (*c == ':') {
+									c++;
+									if (c) {
+										ringback.silence = atoi(c);
 									}
 								}
 								if (ringback.silence <= 0) {
