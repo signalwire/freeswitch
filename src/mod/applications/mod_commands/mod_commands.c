@@ -704,13 +704,14 @@ SWITCH_STANDARD_API(status_function)
 
 	if (stream->param_event) {
 		http = switch_event_get_header(stream->param_event, "http-host");
+		if ((var = switch_event_get_header(stream->param_event, "content-type"))) {
+			if (!strcasecmp(var, "text/plain")) {
+				http = NULL;
+			}
+		}
 	}
 
-	if ((var = switch_event_get_header(stream->param_event, "content-type"))) {
-		if (!strcasecmp(var, "text/plain")) {
-			http = NULL;
-		}
-	} else {
+	if (http) {
 		stream->write_function(stream, "%s", "Content-Type: text/html\n\n");
 	}
 
