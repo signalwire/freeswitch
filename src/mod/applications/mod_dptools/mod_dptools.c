@@ -2076,7 +2076,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		switch_originate_flag_t myflags = SOF_NONE;
 		char *cid_name_override = NULL;
 		char *cid_num_override = NULL;
-		
+
 		if (var_event) {
 			cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
 			cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
@@ -2094,18 +2094,23 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			d_dest = switch_channel_expand_variables(channel, dest);
 
 		} else {
-			switch_event_t *event = var_event;
-			if (!event) {
+			switch_event_t *event = NULL;
+
+			if (var_event) {
+				switch_event_dup(&event, var_event);
+				switch_event_del_header(event, "dialer_user");
+				switch_event_del_header(event, "dialer_domain");
+			} else {
 				switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(event);
 			}
+			switch_assert(var_event);
 
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
 			d_dest = switch_event_expand_headers(event, dest);
-			if (event && event != var_event) {
-				switch_event_destroy(&event);
-			}
+
+			switch_event_destroy(&event);
 		}
 
 		if ((flags & SOF_FORKED_DIAL)) {
