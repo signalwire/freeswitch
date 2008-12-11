@@ -126,6 +126,13 @@ SWITCH_STANDARD_APP(exe_function)
 	}
 }
 
+#define MKDIR_SYNTAX "<path>"
+SWITCH_STANDARD_APP(mkdir_function)
+{
+	switch_dir_make_recursive(data, SWITCH_DEFAULT_DIR_PERMS, switch_core_session_get_pool(session));
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s MKDIR: %s\n", switch_channel_get_name(switch_core_session_get_channel(session)), data);
+}
+
 #define SOFT_HOLD_SYNTAX "<unhold key> [<moh_a>] [<moh_b>]"
 SWITCH_STANDARD_APP(soft_hold_function)
 {
@@ -2377,6 +2384,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function,
 				   "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX,
