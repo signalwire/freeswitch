@@ -2,6 +2,8 @@
 
   <global_settings>
     <param name="log-level" value="0"/>
+    <!-- <param name="auto-restart" value="false"/> -->
+    <param name="debug-presence" value="0"/>
   </global_settings>
 
   <!--

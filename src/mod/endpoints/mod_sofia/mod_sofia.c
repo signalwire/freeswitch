@@ -2686,7 +2686,7 @@ static void general_event_handler(switch_event_t *event)
 		{
 			const char *cond = switch_event_get_header(event, "condition");
 
-			if (cond && !strcmp(cond, "network-address-change")) {
+			if (cond && !strcmp(cond, "network-address-change") && mod_sofia_globals.auto_restart) {
 				sofia_glue_restart_all_profiles();
 			}
 			

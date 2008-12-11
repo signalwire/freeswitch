@@ -1571,6 +1571,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		goto done;
 	}
 
+	mod_sofia_globals.auto_restart = SWITCH_TRUE;
+
 	if ((settings = switch_xml_child(cfg, "global_settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1579,6 +1581,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				su_log_set_level(NULL, atoi(val));
 			} else if (!strcasecmp(var, "debug-presence")) {
 				mod_sofia_globals.debug_presence = atoi(val);
+			} else if (!strcasecmp(var, "auto-restart")) {
+				mod_sofia_globals.auto_restart = switch_true(val);
 			}
 		}
 	}

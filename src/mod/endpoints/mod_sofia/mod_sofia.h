@@ -243,6 +243,7 @@ struct mod_sofia_globals {
 	switch_event_node_t *custom_node;
 	switch_event_node_t *mwi_node;
 	int debug_presence;
+	int auto_restart;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
