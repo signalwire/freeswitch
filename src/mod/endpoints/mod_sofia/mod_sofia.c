@@ -2598,10 +2598,26 @@ static void general_event_handler(switch_event_t *event)
 			const char *user = switch_event_get_header(event, "user");
 			const char *host = switch_event_get_header(event, "host");
 			const char *call_id = switch_event_get_header(event, "call-id");
+			const char *uuid = switch_event_get_header(event, "uuid");
 			const char *body = switch_event_get_body(event);
 			sofia_profile_t *profile;
 
-			if (profile_name && ct && es && user && host && (profile = sofia_glue_find_profile(profile_name))) {
+			if (uuid && ct && es) {
+				switch_core_session_t *session;
+				private_object_t *tech_pvt;
+
+				if ((session = switch_core_session_locate(uuid))) {
+					if ((tech_pvt = switch_core_session_get_private(session))) {
+						nua_notify(tech_pvt->nh,
+								   NUTAG_NEWSUB(1),
+								   SIPTAG_EVENT_STR(es), 
+								   SIPTAG_CONTENT_TYPE_STR(ct), 
+								   TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
+								   TAG_END());
+					}
+					switch_core_session_rwunlock(session);
+				}
+			} else if (profile_name && ct && es && user && host && (profile = sofia_glue_find_profile(profile_name))) {
 				char *sql;
 
 				if (call_id) {
