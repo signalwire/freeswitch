@@ -885,6 +885,12 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_mutex_unlock(globals.hash_mutex);
 	
 	if (conference->auto_record) {
+		uint32_t sanity = 100;
+
+		while (!conference->members && --sanity) {
+			switch_yield(100000);
+		}
+
 		imember = conference->members;
 		if (imember) {
 			switch_channel_t *channel = switch_core_session_get_channel(imember->session);
