@@ -48,7 +48,8 @@ typedef enum {
 	LFLAG_MYEVENTS = (1 << 5),
 	LFLAG_SESSION = (1 << 6),
 	LFLAG_ASYNC = (1 << 7),
-	LFLAG_STATEFUL = (1 << 8)
+	LFLAG_STATEFUL = (1 << 8),
+	LFLAG_OUTBOUND = (1 << 9)
 } event_flag_t;
 
 typedef enum {
@@ -403,6 +404,7 @@ SWITCH_STANDARD_APP(socket_function)
 
 	switch_core_hash_init(&listener->event_hash, listener->pool);
 	switch_set_flag(listener, LFLAG_AUTHED);
+	switch_set_flag(listener, LFLAG_OUTBOUND);
 	for (x = 1; x < argc; x++) {
 		if (argv[x] && !strcasecmp(argv[x], "full")) {
 			switch_set_flag(listener, LFLAG_FULL);
@@ -1294,39 +1296,12 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_snprintf(reply, reply_len, "+OK Events Enabled");
 			goto done;
 		}
-
-		if (!switch_test_flag(listener, LFLAG_FULL)) {
-			goto done;
-		}
 	}
 
-	if (!strncasecmp(cmd, "sendevent", 9)) {
-		char *ename;
-		strip_cr(cmd);
 
-		ename = cmd + 9;
-
-		while (ename && (*ename == '\t' || *ename == ' ')) {
-			++ename;
-		}
-
-		if (ename && (*ename == '\r' || *ename == '\n')) {
-			ename = NULL;
-		}
-
-		if (ename) {
-			switch_event_types_t etype;
-			if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
-				(*event)->event_id = etype;
-			}
-		}
-
-		switch_event_fire(event);
-		switch_snprintf(reply, reply_len, "+OK");
-		goto done;
-	} else if (!strncasecmp(cmd, "sendmsg", 7)) {
+	if (!strncasecmp(cmd, "sendmsg", 7)) {
 		switch_core_session_t *session;
-		char *uuid = cmd + 8;
+		char *uuid = cmd + 7;
 
 		if (uuid) {
 			while (*uuid == ' ') {
@@ -1343,7 +1318,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		if (switch_strlen_zero(uuid)) {
 			uuid = switch_event_get_header(*event, "session-id");
 		}
-		
+
 		if (switch_strlen_zero(uuid) && listener->session) {
 			if (switch_test_flag(listener, LFLAG_ASYNC)) {
 				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
@@ -1370,6 +1345,37 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		
 		goto done;
 
+	}
+	
+	if (switch_test_flag(listener, LFLAG_OUTBOUND) && !switch_test_flag(listener, LFLAG_FULL)) {
+		goto done;
+	}
+
+
+	if (!strncasecmp(cmd, "sendevent", 9)) {
+		char *ename;
+		strip_cr(cmd);
+
+		ename = cmd + 9;
+
+		while (ename && (*ename == '\t' || *ename == ' ')) {
+			++ename;
+		}
+
+		if (ename && (*ename == '\r' || *ename == '\n')) {
+			ename = NULL;
+		}
+
+		if (ename) {
+			switch_event_types_t etype;
+			if (switch_name_event(ename, &etype) == SWITCH_STATUS_SUCCESS) {
+				(*event)->event_id = etype;
+			}
+		}
+
+		switch_event_fire(event);
+		switch_snprintf(reply, reply_len, "+OK");
+		goto done;
 	} else if (!strncasecmp(cmd, "api ", 4)) {
 		struct api_command_struct acs = { 0 };
 		char *api_cmd = cmd + 4;
@@ -1965,6 +1971,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		listener->pool = listener_pool;
 		listener_pool = NULL;
 		listener->format = EVENT_FORMAT_PLAIN;
+		switch_set_flag(listener, LFLAG_FULL);
 		switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 		switch_mutex_init(&listener->filter_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 
