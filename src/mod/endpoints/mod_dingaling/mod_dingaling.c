@@ -413,6 +413,7 @@ static void pres_event_handler(switch_event_t *event)
 	char *rpid = switch_event_get_header(event, "rpid");
 	char *type = switch_event_get_header(event, "event_subtype");
 	char *sql;
+	char pstr[128] = "";
 
 	if (globals.running != 1) {
 		return;
@@ -475,10 +476,12 @@ static void pres_event_handler(switch_event_t *event)
 		status = "Away";
 	}
 
+	if (proto) {
+		switch_snprintf(pstr, sizeof(pstr), "%s+", proto);
+	}
 
 	sql =
-		switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to like '%%%q'", type, rpid, status, proto, from);
-
+		switch_mprintf("select sub_from, sub_to,'%q','%q','%q','%q' from jabber_subscriptions where sub_to = '%q%q'", type, rpid, status, proto, pstr, from);
 
 	for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
