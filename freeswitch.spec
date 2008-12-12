@@ -312,6 +312,10 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/event_socket.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/cdr_csv.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fax.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/fifo.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/openzap.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/shout.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/timezones.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/iax.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/ivr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/java.conf.xml
@@ -358,6 +362,7 @@ userdel freeswitch
 %endif
 %{prefix}/bin/*
 %{prefix}/lib/libfreeswitch*.so*
+%{prefix}/lib/libopenzap.so*
 %{prefix}/mod/mod_console.so*
 %{prefix}/mod/mod_logfile.so*
 %{prefix}/mod/mod_syslog.so*
@@ -403,6 +408,7 @@ userdel freeswitch
 %{prefix}/mod/ozmod_isdn.so
 %{prefix}/mod/ozmod_ss7_boost.so
 %{prefix}/mod/ozmod_zt.so
+%{prefix}/mod/ozmod_wanpipe.so
 
 %files codec-passthru-amr
 %defattr(-,freeswitch,daemon)
