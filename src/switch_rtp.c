@@ -1204,6 +1204,9 @@ static void do_2833(switch_rtp_t *rtp_session)
 							  rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar,
 							  rtp_session->dtmf_data.out_digit_sub_sofar, rtp_session->dtmf_data.out_digit_dur, rtp_session->seq);
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833)) {
+				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
+			}
 		}
 
 		if (loops != 1) {
