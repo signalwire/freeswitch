@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions="/GAy /QIfdiv /QI0f"
 				Optimization="2"
-				AdditionalIncludeDirectories="&quot;..\..\lame-3.97&quot;,&quot;..\..\lame-3.97\include&quot;"
+				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.97&quot;;&quot;..\..\lame-3.97\include&quot;"
 				PreprocessorDefinitions="NDEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -112,7 +112,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;..\..\lame-3.97&quot;,&quot;..\..\lame-3.97\include&quot;"
+				AdditionalIncludeDirectories=".;&quot;..\..\lame-3.97&quot;;&quot;..\..\lame-3.97\include&quot;"
 				PreprocessorDefinitions="_DEBUG;_WINDOWS;WIN32;HAVE_CONFIG_H"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\Debug/libmp3lame_vc6.pch"
@@ -653,30 +653,6 @@
 			<File
 				RelativePath="..\..\lame-3.97\libmp3lame\bitstream.h"
 				>
-			</File>
-			<File
-				RelativePath="..\..\lame-3.97\configMS.h"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing Custom Build Step on $(InputName)"
-						CommandLine="copy ..\..\lame-3.97\configMS.h ..\..\lame-3.97\config.h&#x0D;&#x0A;"
-						Outputs="..\config.h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="Performing Custom Build Step on $(InputName)"
-						CommandLine="copy ..\..\lame-3.97\configMS.h ..\..\lame-3.97\config.h&#x0D;&#x0A;"
-						Outputs="..\config.h"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\lame-3.97\libmp3lame\encoder.h"
