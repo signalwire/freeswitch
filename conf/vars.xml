@@ -33,6 +33,8 @@
        speex@8000h@20i  - Speex 8kHz using 20ms ptime.
        speex@16000h@20i - Speex 16kHz using 20ms ptime.
        speex@32000h@20i - Speex 32kHz using 20ms ptime.
+       G7221@16000h     - G722.1 16kHz (aka Siren 7)
+       G7221@32000h     - G722.1C 32kHz (aka Siren 14)
        GSM@40i          - GSM 8kHz using 40ms ptime. (GSM is done in multiples of 20, Default is 20ms)
        G722             - G722 16kHz using default 20ms ptime. (multiples of 10)
        PCMU             - G711 8kHz ulaw using default 20ms ptime. (multiples of 10)
