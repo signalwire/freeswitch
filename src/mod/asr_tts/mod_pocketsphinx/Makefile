@@ -18,7 +18,7 @@ $(SPHINXBASE_DIR):
 	$(GETLIB) $(SPHINXBASE).tar.gz
 
 $(SPHINXBASE_DIR)/buildstamp: $(SPHINXBASE_DIR)
-	test -f $(SPHINXBASE_DIR)/Makefile || (cd $(SPHINXBASE_DIR) && ./configure --with-pic --without-python --disable-shared)
+	test -f $(SPHINXBASE_DIR)/Makefile || (cd $(SPHINXBASE_DIR) && ./configure --with-pic --without-python --disable-shared CFLAGS=)
 	test -f $(SPHINXBASE_DIR)/buildstamp || (touch $(SPHINXBASE_DIR)/buildstamp)
 
 $(SPHINXBASE_LA): $(SPHINXBASE_DIR)/buildstamp
@@ -29,7 +29,7 @@ $(POCKETSPHINX_DIR):
 	$(GETLIB) $(POCKETSPHINX).tar.gz
 
 $(POCKETSPHINX_DIR)/Makefile: $(POCKETSPHINX_DIR)
-	cd $(POCKETSPHINX_DIR) && ./configure --with-pic --without-python --disable-shared --with-sphinxbase=$(SPHINXBASE_DIR)
+	cd $(POCKETSPHINX_DIR) && ./configure --with-pic --without-python --disable-shared --with-sphinxbase=$(SPHINXBASE_DIR) CFLAGS=
 	$(TOUCH_TARGET)
 
 $(POCKETSPHINX_DIR)/buildstamp: $(POCKETSPHINX_DIR)/Makefile
