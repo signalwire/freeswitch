@@ -172,7 +172,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 	/*teletone_process_t period = (1.0 / ts->rate) / ts->channels;*/
 	int i, c;
 	int freqlen = 0;
-	teletone_dds_state_t tones[TELETONE_MAX_TONES];
+	teletone_dds_state_t tones[TELETONE_MAX_TONES+1];
 	//int decay = 0;
 	int duration;
 	int wait = 0;
