@@ -27,6 +27,7 @@ codecs/mod_h26x
 codecs/mod_voipcodecs
 codecs/mod_ilbc
 codecs/mod_speex
+#codecs/mod_siren
 #dialplans/mod_dialplan_directory
 dialplans/mod_dialplan_xml
 dialplans/mod_dialplan_asterisk

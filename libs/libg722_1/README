@@ -1,0 +1,51 @@
+libg722_1 0.0.1 - The ITU G.722.1 and G.722.1 Annex codecs, also known
+as Siren 7 and Siren 14.
+----------------------------------------------------------------------
+
+The ITU G.722.1 specification, and its Annexes, define audio codecs targetted
+for wideband speech applications. The variants in G.722.1 support 7kHz and
+14kHz bandwidth (16k samples/second and 32k samples/second) audio. They also
+cover fixed point and floating point realisations of these codecs.
+
+PLEASE NOTE that patented techniques are used in G.722.1, and Polycom is the
+owner of the relevant patents. However, Polycom offers royalty free licences
+to use G.722.1 to anyone who complies with a few simple rules. Just contact them,
+and you should have no problem using G.722.1 without any payment at all (at least
+it was very straightforward for the initial user of this code). You should
+check for any licence conflicts with other code in your application - for example,
+use in a GPL'ed project might be problematic, unless you run the G.722.1 codec as
+a separate process, and your application communicates with it through pipes or
+sockets. 
+
+This implementation of G.722.1 is adapted from the reference source code
+provided by Polycom. Polycom has given its concent for this library to be
+distributed as source code, either on its own or as part of a larger package
+which they have licenced under their royalty free licencing scheme.
+
+This library has been modified to provide a cleaner API than the reference code,
+and to permit many instances of the codec to be run in parallel within a single
+process. It uses either fixed point or floating point processing, depending on
+how the package is configured. No serious optimisation has been performed to
+date. This especially affects the fixed point version of the codec, which uses
+some slow and clumsy ways to achieve a bit exact result. Optimisation is planned.
+
+The fixed point version of the codec passes the ITU test vectors. The floating
+point version produces results which vary a little with the compiler and compiler
+optimisation level chosen. This is normal variability for a codec of this type. On
+the development machine disabling the "-O2" and "-ffast-math" optimisations
+for the floating point version results in an exact match with the ITU test vectors.
+
+By default, ./configure will configure the codec to used floating point
+processing for processors with fast floating point hardware, or fixed point
+processing for a selection of well know fixed point DSPs and embedded processors.
+The command line option "--enable-fixed-point" will force ./configure to enable
+fixed point processing.
+
+To test the codec with the ITU test vectors, get the ITU package
+T-REC-G.722.1-200505-I!!SOFT-ZST-E.zip and place it in top level directory
+for this project. Then run unpack_g722_1_data.sh . This should uppack the
+test vectors into test-data/itu/g722_1. Run configure with the "--enable-tests"
+option, and build the software. Then run regression_tests.sh in the tests
+directory.
+
+Steve Underwood <steveu@coppice.org>

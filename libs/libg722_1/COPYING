@@ -1,0 +1,10 @@
+The 7kHz and 14kHz bandwidth (16k samples/second and 32k samples/second) codecs defined
+in G.722.1 require the licencing of patents from Polycom, in most countries. However, a royalty
+free licence is available from Polycom if certain fairly basic conditions are met. Please contact
+Polycom for their current licence conditions.
+
+For details of the precise license conditions for the original source code, please consult
+Polycom. Polycom permit licenced users of G.722.1 to base their implementations on the
+reference code, so any valid licencee is permitted to use this library.
+
+No additional license conditions are claimed over this implementation.
