@@ -1,8 +1,8 @@
 # ltmain.sh - Provide generalized library-building support services.
 # NOTE: Changing this file will not affect anything until you rerun configure.
 #
-# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006,
-# 2007  Free Software Foundation, Inc.
+# Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005
+# Free Software Foundation, Inc.
 # Originally by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
 #
 # This program is free software; you can redistribute it and/or modify
@@ -43,8 +43,8 @@ EXIT_FAILURE=1
 
 PROGRAM=ltmain.sh
 PACKAGE=libtool
-VERSION=1.5.24
-TIMESTAMP=" (1.1220.2.455 2007/06/24 02:13:29)"
+VERSION=1.5.22
+TIMESTAMP=" (1.1220.2.365 2005/12/18 22:14:06)"
 
 # Be Bourne compatible (taken from Autoconf:_AS_BOURNE_COMPATIBLE).
 if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
@@ -57,8 +57,6 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
 else
   case `(set -o) 2>/dev/null` in *posix*) set -o posix;; esac
 fi
-BIN_SH=xpg4; export BIN_SH # for Tru64
-DUALCASE=1; export DUALCASE # for MKS sh
 
 # Check that we have a working $echo.
 if test "X$1" = X--no-reexec; then
@@ -116,10 +114,10 @@ esac
 for lt_var in LANG LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
 do
   eval "if test \"\${$lt_var+set}\" = set; then
-	  save_$lt_var=\$$lt_var
-	  $lt_var=C
-	  export $lt_var
-	fi"
+         save_$lt_var=\$$lt_var
+         $lt_var=C
+         export $lt_var
+       fi"
 done
 
 # Make sure IFS has a sensible default
@@ -208,13 +206,7 @@ func_win32_libid ()
     if eval $OBJDUMP -f $1 | $SED -e '10q' 2>/dev/null | \
       $EGREP -e 'file format pe-i386(.*architecture: i386)?' >/dev/null ; then
       win32_nmres=`eval $NM -f posix -A $1 | \
-	$SED -n -e '1,100{
-		/ I /{
-			s,.*,import,
-			p
-			q
-			}
-		}'`
+	$SED -n -e '1,100{/ I /{s,.*,import,;p;q;};}'`
       case $win32_nmres in
       import*)  win32_libid_type="x86 archive import";;
       *)        win32_libid_type="x86 archive static";;
@@ -348,11 +340,11 @@ func_extract_archives ()
       my_xlib_u=$my_xlib
       while :; do
         case " $extracted_archives " in
-	*" $my_xlib_u "*)
-	  extracted_serial=`expr $extracted_serial + 1`
-	  my_xlib_u=lt$extracted_serial-$my_xlib ;;
-	*) break ;;
-	esac
+       *" $my_xlib_u "*)
+         extracted_serial=`expr $extracted_serial + 1`
+         my_xlib_u=lt$extracted_serial-$my_xlib ;;
+       *) break ;;
+       esac
       done
       extracted_archives="$extracted_archives $my_xlib_u"
       my_xdir="$my_gentop/$my_xlib_u"
@@ -482,12 +474,11 @@ do
     ;;
 
   --version)
-    echo "\
-$PROGRAM (GNU $PACKAGE) $VERSION$TIMESTAMP
-
-Copyright (C) 2007  Free Software Foundation, Inc.
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
+    $echo "$PROGRAM (GNU $PACKAGE) $VERSION$TIMESTAMP"
+    $echo
+    $echo "Copyright (C) 2005  Free Software Foundation, Inc."
+    $echo "This is free software; see the source for copying conditions.  There is NO"
+    $echo "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE."
     exit $?
     ;;
 
@@ -784,7 +775,7 @@ if test -z "$show_help"; then
     *.class) xform=class ;;
     *.cpp) xform=cpp ;;
     *.cxx) xform=cxx ;;
-    *.[fF][09]?) xform=[fF][09]. ;;
+    *.f90) xform=f90 ;;
     *.for) xform=for ;;
     *.java) xform=java ;;
     *.obj) xform=obj ;;
@@ -1169,8 +1160,8 @@ EOF
     do
       case $arg in
       -all-static | -static | -static-libtool-libs)
-	case $arg in
-	-all-static)
+    case $arg in
+    -all-static)
 	  if test "$build_libtool_libs" = yes && test -z "$link_static_flag"; then
 	    $echo "$modename: warning: complete static linking is impossible in this configuration" 1>&2
 	  fi
@@ -1179,19 +1170,19 @@ EOF
 	  fi
 	  prefer_static_libs=yes
 	  ;;
-	-static)
+    -static)
 	  if test -z "$pic_flag" && test -n "$link_static_flag"; then
 	    dlopen_self=$dlopen_self_static
 	  fi
 	  prefer_static_libs=built
 	  ;;
-	-static-libtool-libs)
-	  if test -z "$pic_flag" && test -n "$link_static_flag"; then
-	    dlopen_self=$dlopen_self_static
-	  fi
-	  prefer_static_libs=yes
-	  ;;
-	esac
+    -static-libtool-libs)
+      if test -z "$pic_flag" && test -n "$link_static_flag"; then
+        dlopen_self=$dlopen_self_static
+      fi
+      prefer_static_libs=yes
+      ;;
+    esac
 	build_libtool_libs=no
 	build_old_libs=yes
 	break
@@ -1639,7 +1630,7 @@ EOF
 	continue
 	;;
 
-     -mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe|-threads)
+     -mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe)
 	compiler_flags="$compiler_flags $arg"
 	compile_command="$compile_command $arg"
 	finalize_command="$finalize_command $arg"
@@ -1659,11 +1650,10 @@ EOF
       # -m* pass through architecture-specific compiler args for GCC
       # -m*, -t[45]*, -txscale* pass through architecture-specific
       # compiler args for GCC
-      # -p, -pg, --coverage, -fprofile-* pass through profiling flag for GCC
-      # -F/path gives path to uninstalled frameworks, gcc on darwin
+      # -pg pass through profiling flag for GCC
       # @file GCC response files
-      -64|-mips[0-9]|-r[0-9][0-9]*|-xarch=*|-xtarget=*|+DA*|+DD*|-q*|-m*| \
-      -t[45]*|-txscale*|-p|-pg|--coverage|-fprofile-*|-F*|@*)
+      -64|-mips[0-9]|-r[0-9][0-9]*|-xarch=*|-xtarget=*|+DA*|+DD*|-q*|-m*|-pg| \
+      -t[45]*|-txscale*|@*)
 
 	# Unknown arguments in both finalize_command and compile_command need
 	# to be aesthetically quoted because they are evaled later.
@@ -1691,9 +1681,9 @@ EOF
 
       -no-install)
 	case $host in
-	*-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2* | *-*-darwin*)
+	*-*-cygwin* | *-*-mingw* | *-*-pw32* | *-*-os2*)
 	  # The PATH hackery in wrapper scripts is required on Windows
-	  # and Darwin in order for the loader to find any dlls it needs.
+	  # in order for the loader to find any dlls it needs.
 	  $echo "$modename: warning: \`-no-install' is ignored for $host" 1>&2
 	  $echo "$modename: warning: assuming \`-no-fast-install' instead" 1>&2
 	  fast_install=no
@@ -2134,7 +2124,7 @@ EOF
 	lib=
 	found=no
 	case $deplib in
-	-mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe|-threads)
+	-mt|-mthreads|-kthread|-Kthread|-pthread|-pthreads|--thread-safe)
 	  if test "$linkmode,$pass" = "prog,link"; then
 	    compile_deplibs="$deplib $compile_deplibs"
 	    finalize_deplibs="$deplib $finalize_deplibs"
@@ -2530,9 +2520,9 @@ EOF
 
 	if test "$linkmode,$pass" = "prog,link"; then
 	  if test -n "$library_names" &&
-	     { { test "$prefer_static_libs" = no ||
-		 test "$prefer_static_libs,$installed" = "built,yes"; } ||
-	       test -z "$old_library"; }; then
+         { { test "$prefer_static_libs" = no ||
+             test "$prefer_static_libs,$installed" = "built,yes"; } ||
+           test -z "$old_library"; }; then
 	    # We need to hardcode the library path
 	    if test -n "$shlibpath_var" && test -z "$avoidtemprpath" ; then
 	      # Make sure the rpath contains only unique directories.
@@ -3239,10 +3229,9 @@ EOF
 	    age="0"
 	    ;;
 	  irix|nonstopux)
-	    current=`expr $number_major + $number_minor`
+	    current=`expr $number_major + $number_minor - 1`
 	    age="$number_minor"
 	    revision="$number_minor"
-	    lt_irix_increment=no
 	    ;;
 	  esac
 	  ;;
@@ -3301,8 +3290,7 @@ EOF
 	  versuffix="$major.$age.$revision"
 	  # Darwin ld doesn't like 0 for these options...
 	  minor_current=`expr $current + 1`
-	  xlcverstring="${wl}-compatibility_version ${wl}$minor_current ${wl}-current_version ${wl}$minor_current.$revision"
-	  verstring="-compatibility_version $minor_current -current_version $minor_current.$revision"
+	  verstring="${wl}-compatibility_version ${wl}$minor_current ${wl}-current_version ${wl}$minor_current.$revision"
 	  ;;
 
 	freebsd-aout)
@@ -3316,11 +3304,8 @@ EOF
 	  ;;
 
 	irix | nonstopux)
-	  if test "X$lt_irix_increment" = "Xno"; then
-	    major=`expr $current - $age`
-	  else
-	    major=`expr $current - $age + 1`
-	  fi
+	  major=`expr $current - $age + 1`
+
 	  case $version_type in
 	    nonstopux) verstring_prefix=nonstopux ;;
 	    *)         verstring_prefix=sgi ;;
@@ -3457,11 +3442,11 @@ EOF
       fi
 
       # Eliminate all temporary directories.
-      #for path in $notinst_path; do
-      #	lib_search_path=`$echo "$lib_search_path " | ${SED} -e "s% $path % %g"`
-      #	deplibs=`$echo "$deplibs " | ${SED} -e "s% -L$path % %g"`
-      #	dependency_libs=`$echo "$dependency_libs " | ${SED} -e "s% -L$path % %g"`
-      #done
+#      for path in $notinst_path; do
+#	lib_search_path=`$echo "$lib_search_path " | ${SED} -e "s% $path % %g"`
+#	deplibs=`$echo "$deplibs " | ${SED} -e "s% -L$path % %g"`
+#	dependency_libs=`$echo "$dependency_libs " | ${SED} -e "s% -L$path % %g"`
+#      done
 
       if test -n "$xrpath"; then
 	# If the user specified any rpath flags, then add them.
@@ -3562,7 +3547,7 @@ EOF
 	  int main() { return 0; }
 EOF
 	  $rm conftest
-	  if $LTCC $LTCFLAGS -o conftest conftest.c $deplibs; then
+      if $LTCC $LTCFLAGS -o conftest conftest.c $deplibs; then
 	    ldd_output=`ldd conftest`
 	    for i in $deplibs; do
 	      name=`expr $i : '-l\(.*\)'`
@@ -3924,10 +3909,7 @@ EOF
 	     test -n "$hardcode_libdirs"; then
 	    libdir="$hardcode_libdirs"
 	    if test -n "$hardcode_libdir_flag_spec_ld"; then
-	      case $archive_cmds in
-	      *\$LD*) eval dep_rpath=\"$hardcode_libdir_flag_spec_ld\" ;;
-	      *)      eval dep_rpath=\"$hardcode_libdir_flag_spec\" ;;
-	      esac
+	      eval dep_rpath=\"$hardcode_libdir_flag_spec_ld\"
 	    else
 	      eval dep_rpath=\"$hardcode_libdir_flag_spec\"
 	    fi
@@ -4293,7 +4275,7 @@ EOF
       if test -n "$convenience"; then
 	if test -n "$whole_archive_flag_spec"; then
 	  eval tmp_whole_archive_flags=\"$whole_archive_flag_spec\"
-	  reload_conv_objs=$reload_objs\ `$echo "X$tmp_whole_archive_flags" | $Xsed -e 's|,| |g'`
+      reload_conv_objs=$reload_objs\ `$echo "X$tmp_whole_archive_flags" | $Xsed -e 's|,| |g'`
 	else
 	  gentop="$output_objdir/${obj}x"
 	  generated="$generated $gentop"
@@ -5313,8 +5295,6 @@ if test -n \"\${ZSH_VERSION+set}\" && (emulate sh) >/dev/null 2>&1; then
 else
   case \`(set -o) 2>/dev/null\` in *posix*) set -o posix;; esac
 fi
-BIN_SH=xpg4; export BIN_SH # for Tru64
-DUALCASE=1; export DUALCASE # for MKS sh
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
@@ -6411,10 +6391,8 @@ relink_command=\"$relink_command\""
 	if test -f "$dir/$objdir/$dlname"; then
 	  dir="$dir/$objdir"
 	else
-	  if test ! -f "$dir/$dlname"; then
-	    $echo "$modename: cannot find \`$dlname' in \`$dir' or \`$dir/$objdir'" 1>&2
-	    exit $EXIT_FAILURE
-	  fi
+	  $echo "$modename: cannot find \`$dlname' in \`$dir' or \`$dir/$objdir'" 1>&2
+	  exit $EXIT_FAILURE
 	fi
 	;;
 
@@ -6480,10 +6458,13 @@ relink_command=\"$relink_command\""
       # Restore saved environment variables
       for lt_var in LANG LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
       do
-	eval "if test \"\${save_$lt_var+set}\" = set; then
-		$lt_var=\$save_$lt_var; export $lt_var
-	      fi"
+       eval "if test \"\${save_$lt_var+set}\" = set; then
+               $lt_var=\$save_$lt_var; export $lt_var
+             else
+               $lt_unset $lt_var
+             fi"
       done
+
 
       # Now prepare to actually exec the command.
       exec_cmd="\$cmd$args"
