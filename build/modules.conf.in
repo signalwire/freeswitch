@@ -37,7 +37,6 @@ endpoints/mod_iax
 #endpoints/mod_portaudio
 endpoints/mod_sofia
 endpoints/mod_loopback
-#endpoints/mod_woomera
 #endpoints/mod_alsa
 #endpoints/mod_opal
 #../../libs/openzap/mod_openzap
