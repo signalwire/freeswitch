@@ -450,6 +450,8 @@ double ampl_estimator(double *x)
  *  {x_2}{x_4}}}
  *  {{2}({x^2_2} - {x_1}{x_3})}}\f$
  *
+ * @param x an array for 5 evenly spaced audio samples \f$x_0, x_1, x_2, x_3, x_4\f$
+ * @return a frequency estimate
  */
 double freq_estimator(double *x)
 {
@@ -461,7 +463,10 @@ double freq_estimator(double *x)
         );
 }
 
-/*! FreeSWITCH module loading function */
+/*! FreeSWITCH module loading function 
+ *
+ * @return load success or failure
+ */
 SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load)
 {
     switch_application_interface_t *app_interface;
@@ -479,7 +484,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_vmd_load)
     return SWITCH_STATUS_SUCCESS;
 }
 
-/*! FreeSWITCH application handler function */
+/*! FreeSWITCH application handler function 
+ *
+ * @return success or failure
+ */
 SWITCH_STANDARD_APP(vmd_start_function)
 {
     switch_media_bug_t *bug;
