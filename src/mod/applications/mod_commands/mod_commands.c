@@ -2106,7 +2106,7 @@ SWITCH_STANDARD_API(sched_api_function)
 			}
 
 			switch_zmalloc(api_task, sizeof(*api_task) + strlen(dcmd) + 1);
-			switch_copy_string(api_task->cmd, dcmd, strlen(dcmd));
+			switch_copy_string(api_task->cmd, dcmd, strlen(dcmd) + 1);
 			api_task->recur = recur;
 
 			id = switch_scheduler_add_task(when, sch_api_callback, (char *) __SWITCH_FUNC__, group, 0, api_task, SSHF_FREE_ARG);
