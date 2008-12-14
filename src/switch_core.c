@@ -781,7 +781,7 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	setrlimit(RLIMIT_CPU, &rlp);
 	setrlimit(RLIMIT_DATA, &rlp);
 	setrlimit(RLIMIT_FSIZE, &rlp);
-#ifndef __OpenBSD__
+#if !defined(__OpenBSD__) && !defined(__NetBSD__)
 	setrlimit(RLIMIT_AS, &rlp);
 #endif
 #endif
