@@ -23,7 +23,7 @@
 #pragma warning(disable:4200)
 #endif
 
-#if !defined(LINUX) && !defined(NETBSD)
+#if !defined(LINUX) && !defined(__NetBSD__)
 #define socklen_t int
 #endif
 
