@@ -1,0 +1,42 @@
+This directory contains software used for interfacing the
+FreeSWITCH voicemail application with the AT&T (aka Lucent
+aka Avaya) System 25 PBX.  It's possible that System 75
+and Definity PBXs may also work.
+
+s25vmail.js goes into the FreeSWITCH scripts directory.
+s25vmail_mwi.c should be compiled and the resulting binary
+put into the FreeSWITCH bin directory.  Modify the FreeSWITCH
+rc.d script to also start / stop s25vmail_mwi.
+
+Configuration fragments look something like:
+
+  conf/openzap.conf:
+
+    [span zt]
+    ; A204DX
+    name => OpenZAP
+    dtmf_hangup = ##99
+
+    number => 551
+    fxo-channel => 49
+
+    number => 552
+    fxo-channel => 50
+
+    number => 553
+    fxo-channel => 51
+
+    number => 554
+    fxo-channel => 52
+
+  conf/dialplan/default.xml
+
+    <extension name="system25_vmail">
+      <condition field="destination_number" expression="^(55[1-4])$">
+        <action application="javascript" data="s25vmail.js"/>
+      </condition>
+    </extension>
+
+Tested using FreeSWITCH SVN 10428 running on FreeBSD 6.3
+with a Sangoma A200DX Analog Series w/ Echo Cancellation
+ports card containing 2 FXO modules.
