@@ -600,12 +600,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_assert(frame->codec != NULL);
 	switch_assert(frame->codec->implementation != NULL);
 
-	if (!(session->write_codec && frame->codec)) {
+	switch_mutex_lock(session->codec_write_mutex);	
+
+	if (!(session->write_codec && session->write_codec->mutex && frame->codec)) {
+		switch_mutex_unlock(session->codec_write_mutex);	
 		return SWITCH_STATUS_FALSE;
 	}
+
 	switch_mutex_lock(session->write_codec->mutex);
 	switch_mutex_lock(frame->codec->mutex);
-	switch_mutex_lock(session->codec_write_mutex);	
+
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		if (session->write_codec->implementation->codec_id == frame->codec->implementation->codec_id) {
