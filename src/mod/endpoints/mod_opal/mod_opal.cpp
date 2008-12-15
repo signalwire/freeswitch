@@ -82,7 +82,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_opal_load) {
 
     /* Prevent the loading of OPAL codecs via "plug ins", this is a directory
        full of DLLs that will be loaded automatically. */
-    putenv("PTLIBPLUGINDIR=/no/thanks");
+    putenv((char *)"PTLIBPLUGINDIR=/no/thanks");
 
 
     *module_interface = switch_loadable_module_create_module_interface(pool, modname);
