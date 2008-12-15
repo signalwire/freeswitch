@@ -1,5 +1,5 @@
 version=5.31.3
-wget http://easynews.dl.sourceforge.net/sourceforge/cc-mode/cc-mode-${version}.tar.gz
+wget http://www.freeswitch.org/eg/cc-mode-${version}.tar.gz
 tar -zxvf cc-mode-${version}.tar.gz
 cd cc-mode-${version}
 emacs -batch -no-site-file -q -f batch-byte-compile cc-*.el
