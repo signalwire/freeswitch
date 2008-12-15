@@ -1746,7 +1746,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 			}
 			dialect = q931_str2Q931Dialect_type(val);
 			if (dialect == Q931_Dialect_Count) {
-				dialect = Q931_Dialect_National;
+				return ZAP_FAIL;
 			}
 		} else if (!strcasecmp(var, "opts")) {
 			opts = va_arg(ap, uint32_t);
