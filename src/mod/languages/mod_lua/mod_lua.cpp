@@ -278,10 +278,6 @@ static switch_status_t do_config(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "binding '%s' to '%s'\n", globals.xml_handler, val);
 					switch_xml_bind_search_function(lua_fetch, switch_xml_parse_section_string(val), NULL);
 				}
-			} else if (!strcmp(var, "startup-script")) {
-				if (val) {
-					lua_thread(val);
-				}
 			} else if (!strcmp(var, "module-directory") && !switch_strlen_zero(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending module directory: '%s'\n", val);
 				if(cpath_stream.data_len) {
@@ -332,6 +328,19 @@ static switch_status_t do_config(void)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: LUA_PATH set to: '%s'\n", (char *)path_stream.data);
 		}
 	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+			if (!strcmp(var, "startup-script")) {
+				if (val) {
+					lua_thread(val);
+				}
+			}
+		}
+	}
+
 	switch_safe_free(path_stream.data);
     
 	switch_xml_free(xml);
