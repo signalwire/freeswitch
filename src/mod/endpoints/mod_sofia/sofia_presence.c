@@ -441,10 +441,10 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_PRESENCE_PROBE:
 		if (proto) {
 			char *to = switch_event_get_header(event, "to");
-			char *probe_user, *probe_euser, *probe_host, *p;
+			char *probe_user = NULL, *probe_euser, *probe_host, *p;
 
 			if (!to || !(probe_user = strdup(to))) {
-				return;
+				goto done;
 			}
 
 			if ((probe_host = strchr(probe_user, '@'))) {
@@ -488,10 +488,9 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 				switch_safe_free(sql);
 			}
 
-			switch_safe_free(user);
 			switch_safe_free(probe_user);
 		}
-		return;
+		goto done;
 	default:
 		break;
 	}
