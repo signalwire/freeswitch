@@ -1657,7 +1657,7 @@ SWITCH_DECLARE(int) switch_tolower(int c)
 #define	_X	0x40
 #define	_B	0x80
 
-const char _switch_C_ctype_[1 + SWITCH_CTYPE_NUM_CHARS] = {
+const int _switch_C_ctype_[1 + SWITCH_CTYPE_NUM_CHARS] = {
 	0,
 	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
 	_C,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C,	_C,
@@ -1695,7 +1695,7 @@ const char _switch_C_ctype_[1 + SWITCH_CTYPE_NUM_CHARS] = {
 	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P  /* F8 */
 };
 
-const char *_switch_ctype_ = _switch_C_ctype_;
+const int *_switch_ctype_ = _switch_C_ctype_;
 
 SWITCH_DECLARE(int) switch_isalnum(int c)
 {
