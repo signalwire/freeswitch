@@ -41,6 +41,10 @@
 #include <switch.h>
 
 SWITCH_BEGIN_EXTERN_C
+
+SWITCH_DECLARE(int) switch_toupper(int c);
+SWITCH_DECLARE(int) switch_tolower(int c);
+
 #define switch_samples_per_packet(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768
@@ -303,7 +307,7 @@ static inline char *switch_lc_strdup(const char *it)
 	if (it) {
 		dup = strdup(it);
 		for(p = dup; p && *p; p++) {
-			*p = (char) tolower(*p);
+			*p = (char) switch_tolower(*p);
 		}
 		return dup;
 	}
@@ -320,7 +324,7 @@ static inline char *switch_uc_strdup(const char *it)
 	if (it) {
 		dup = strdup(it);
 		for(p = dup; p && *p; p++) {
-			*p = (char) toupper(*p);
+			*p = (char) switch_toupper(*p);
 		}
 		return dup;
 	}
@@ -353,7 +357,7 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 	assert(S != NULL);
 
 	for (p = S; p && *p; p++) {
-		*p = (char) toupper(*p);
+		*p = (char) switch_toupper(*p);
 	}
 
 	if (strstr(S, q)) {
@@ -365,7 +369,7 @@ static inline switch_bool_t switch_strstr(char *s, char *q)
 	assert(Q != NULL);
 
 	for (p = Q; p && *p; p++) {
-		*p = (char) toupper(*p);
+		*p = (char) switch_toupper(*p);
 	}
 
 	if (strstr(s, Q)) {

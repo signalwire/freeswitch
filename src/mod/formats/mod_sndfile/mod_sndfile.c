@@ -339,13 +339,13 @@ static switch_status_t setup_formats(void)
 			map->format = info.format;
 			if (map->ext) {
 				for (p = map->ext; *p; p++) {
-					*p = (char) tolower(*p);
+					*p = (char) switch_tolower(*p);
 				}
 				switch_core_hash_insert(globals.format_hash, map->ext, map);
 			}
 			if (map->uext) {
 				for (p = map->uext; *p; p++) {
-					*p = (char) toupper(*p);
+					*p = (char) switch_toupper(*p);
 				}
 				switch_core_hash_insert(globals.format_hash, map->uext, map);
 			}
