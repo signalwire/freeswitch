@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# freeswitch.sh - startup script for freeswitch
+
+. /etc/rc.conf
+. /etc/rc.d/functions
+
+case "$1" in
+
+    start)
+    if [ -x /var/freeswitch/bin/freeswitch ] ; then
+      stat_busy "freeswitch starting..."
+
+      /var/freeswitch/bin/freeswitch -nc &
+      add_daemon freeswitch
+      stat_done
+    fi
+    ;;
+
+    stop)
+    if [ -x /var/freeswitch/bin/freeswitch ] ; then
+      stat_busy "freeswitch stopping..."
+
+      /var/freeswitch/bin/freeswitch -stop &
+      rm_daemon freeswitch
+      stat_done
+    fi
+    ;;
+
+    *)
+    echo "usage: $0 { start | stop }" >&2
+    exit 1
+    ;;
+
+esac
