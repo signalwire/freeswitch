@@ -7514,6 +7514,162 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_console_stream_raw_write(void * jarg1, 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_toupper(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_toupper(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_tolower(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_tolower(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isalnum(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isalnum(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isalpha(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isalpha(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_iscntrl(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_iscntrl(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isdigit(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isdigit(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isgraph(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isgraph(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_islower(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_islower(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isprint(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isprint(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ispunct(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_ispunct(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isspace(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isspace(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isupper(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isupper(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_isxdigit(int jarg1) {
+  int jresult ;
+  int arg1 ;
+  int result;
+  
+  arg1 = (int)jarg1; 
+  result = (int)switch_isxdigit(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_SMAX_get() {
   int jresult ;
   int result;

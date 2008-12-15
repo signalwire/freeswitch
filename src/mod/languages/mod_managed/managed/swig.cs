@@ -1937,6 +1937,71 @@ public class freeswitch {
     return ret;
   }
 
+  public static int switch_toupper(int c) {
+    int ret = freeswitchPINVOKE.switch_toupper(c);
+    return ret;
+  }
+
+  public static int switch_tolower(int c) {
+    int ret = freeswitchPINVOKE.switch_tolower(c);
+    return ret;
+  }
+
+  public static int switch_isalnum(int c) {
+    int ret = freeswitchPINVOKE.switch_isalnum(c);
+    return ret;
+  }
+
+  public static int switch_isalpha(int c) {
+    int ret = freeswitchPINVOKE.switch_isalpha(c);
+    return ret;
+  }
+
+  public static int switch_iscntrl(int c) {
+    int ret = freeswitchPINVOKE.switch_iscntrl(c);
+    return ret;
+  }
+
+  public static int switch_isdigit(int c) {
+    int ret = freeswitchPINVOKE.switch_isdigit(c);
+    return ret;
+  }
+
+  public static int switch_isgraph(int c) {
+    int ret = freeswitchPINVOKE.switch_isgraph(c);
+    return ret;
+  }
+
+  public static int switch_islower(int c) {
+    int ret = freeswitchPINVOKE.switch_islower(c);
+    return ret;
+  }
+
+  public static int switch_isprint(int c) {
+    int ret = freeswitchPINVOKE.switch_isprint(c);
+    return ret;
+  }
+
+  public static int switch_ispunct(int c) {
+    int ret = freeswitchPINVOKE.switch_ispunct(c);
+    return ret;
+  }
+
+  public static int switch_isspace(int c) {
+    int ret = freeswitchPINVOKE.switch_isspace(c);
+    return ret;
+  }
+
+  public static int switch_isupper(int c) {
+    int ret = freeswitchPINVOKE.switch_isupper(c);
+    return ret;
+  }
+
+  public static int switch_isxdigit(int c) {
+    int ret = freeswitchPINVOKE.switch_isxdigit(c);
+    return ret;
+  }
+
   public static switch_bool_t switch_is_moh(string s) {
     switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_is_moh(s);
     return ret;
@@ -5986,6 +6051,45 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_console_stream_raw_write")]
   public static extern int switch_console_stream_raw_write(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_toupper")]
+  public static extern int switch_toupper(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_tolower")]
+  public static extern int switch_tolower(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isalnum")]
+  public static extern int switch_isalnum(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isalpha")]
+  public static extern int switch_isalpha(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_iscntrl")]
+  public static extern int switch_iscntrl(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isdigit")]
+  public static extern int switch_isdigit(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isgraph")]
+  public static extern int switch_isgraph(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_islower")]
+  public static extern int switch_islower(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isprint")]
+  public static extern int switch_isprint(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_ispunct")]
+  public static extern int switch_ispunct(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isspace")]
+  public static extern int switch_isspace(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isupper")]
+  public static extern int switch_isupper(int jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_isxdigit")]
+  public static extern int switch_isxdigit(int jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SMAX_get")]
   public static extern int SWITCH_SMAX_get();
