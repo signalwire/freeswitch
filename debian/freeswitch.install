@@ -29,7 +29,6 @@ opt/freeswitch/mod/mod_dingaling.so*
 opt/freeswitch/mod/mod_iax.so*
 opt/freeswitch/mod/mod_portaudio.so*
 opt/freeswitch/mod/mod_sofia.so*
-opt/freeswitch/mod/mod_woomera.so*
 opt/freeswitch/mod/mod_openzap.so
 opt/freeswitch/mod/ozmod_analog_em.so
 opt/freeswitch/mod/ozmod_analog.so
@@ -110,7 +109,6 @@ opt/freeswitch/conf/autoload_configs/openmrcp.conf.xml
 opt/freeswitch/conf/autoload_configs/modules.conf.xml
 opt/freeswitch/conf/autoload_configs/dingaling.conf.xml
 opt/freeswitch/conf/autoload_configs/iax.conf.xml
-opt/freeswitch/conf/autoload_configs/woomera.conf.xml
 opt/freeswitch/conf/autoload_configs/post_load_modules.conf.xml
 opt/freeswitch/conf/autoload_configs/pocketsphinx.conf.xml
 opt/freeswitch/conf/autoload_configs/xml_cdr.conf.xml
