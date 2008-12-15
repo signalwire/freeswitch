@@ -11,6 +11,7 @@
 #include "exprincl.h"
 
 #include "exprpriv.h"
+#include "switch_utils.h"
 
 
 /* Return the version number */
@@ -27,13 +28,13 @@ int exprValidIdent(char *name)
 		return 0;
 
 	/* First must be letter or underscore */
-	if (isalpha(*name) || *name == '_')
+	if (switch_isalpha(*name) || *name == '_')
 		name++;					/* Point to next letter */
 	else
 		return 0;				/* Not letter or underscore, maybe empty */
 
 	/* others can be letter, number, or underscore */
-	while (isalnum(*name) || *name == '_')
+	while (switch_isalnum(*name) || *name == '_')
 		name++;
 
 	/* When the while breaks out, we should be at the end */

@@ -12,6 +12,7 @@
 
 #include "exprpriv.h"
 #include "exprmem.h"
+#include "switch_utils.h"
 
 /* Data structure used by parser */
 typedef struct _exprToken {
@@ -314,12 +315,12 @@ int exprStringToTokenList(exprObj * obj, char *expr, exprToken ** tokens, int *c
 			default:
 				{
 					if (!comment) {
-						if (expr[pos] == '.' || isdigit(expr[pos])) {
+						if (expr[pos] == '.' || switch_isdigit(expr[pos])) {
 							/* Value */
 							start = pos;
 
 							/* Find digits before a period */
-							while (isdigit(expr[pos]))
+							while (switch_isdigit(expr[pos]))
 								pos++;
 
 							/* Find a period */
@@ -327,7 +328,7 @@ int exprStringToTokenList(exprObj * obj, char *expr, exprToken ** tokens, int *c
 								pos++;
 
 							/* Find digits after a period */
-							while (isdigit(expr[pos]))
+							while (switch_isdigit(expr[pos]))
 								pos++;
 
 							/* pos is AFTER last item, back up */
@@ -356,12 +357,12 @@ int exprStringToTokenList(exprObj * obj, char *expr, exprToken ** tokens, int *c
 								list[tpos].data.val = (EXPRTYPE) atof(buf);
 								tpos++;
 							}
-						} else if (expr[pos] == '_' || isalpha(expr[pos])) {
+						} else if (expr[pos] == '_' || switch_isalpha(expr[pos])) {
 							/* Identifier */
 							start = pos;
 
 							/* Find rest of identifier */
-							while (expr[pos] == '_' || isalnum(expr[pos]))
+							while (expr[pos] == '_' || switch_isalnum(expr[pos]))
 								pos++;
 
 							/* pos is AFTER last item, back up */
@@ -397,7 +398,7 @@ int exprStringToTokenList(exprObj * obj, char *expr, exprToken ** tokens, int *c
 								strcpy(list[tpos].data.str, buf);
 								tpos++;
 							}
-						} else if (isspace(expr[pos])) {
+						} else if (switch_isspace(expr[pos])) {
 							/* Spaces are ignored, do nothing */
 						} else {
 							/* Unknown */
