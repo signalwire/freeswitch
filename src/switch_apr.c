@@ -947,6 +947,61 @@ SWITCH_DECLARE(switch_status_t) switch_match_glob(const char *pattern, switch_ar
 	return apr_match_glob(pattern, (apr_array_header_t **) result, p);
 }
 
+/**
+ * Create an anonymous pipe.
+ * @param in The file descriptor to use as input to the pipe.
+ * @param out The file descriptor to use as output from the pipe.
+ * @param pool The pool to operate on.
+ */
+SWITCH_DECLARE(switch_status_t) switch_file_pipe_create(switch_file_t **in, switch_file_t **out, switch_memory_pool_t *p)
+{
+    return apr_file_pipe_create ((apr_file_t **) in, (apr_file_t **) out, p);
+}
+
+/**
+ * Get the timeout value for a pipe or manipulate the blocking state.
+ * @param thepipe The pipe we are getting a timeout for.
+ * @param timeout The current timeout value in microseconds. 
+ */
+SWITCH_DECLARE(switch_status_t) switch_file_pipe_timeout_get(switch_file_t *thepipe, switch_interval_time_t *timeout)
+{
+	return apr_file_pipe_timeout_get( (apr_file_t *)thepipe, (apr_interval_time_t *)timeout);
+}
+
+/**
+ * Set the timeout value for a pipe or manipulate the blocking state.
+ * @param thepipe The pipe we are setting a timeout on.
+ * @param timeout The timeout value in microseconds.  Values < 0 mean wait 
+ *        forever, 0 means do not wait at all.
+ */
+SWITCH_DECLARE(switch_status_t) switch_file_pipe_timeout_set(switch_file_t *thepipe, switch_interval_time_t timeout)
+{
+	return apr_file_pipe_timeout_set( (apr_file_t *)thepipe, (apr_interval_time_t)timeout);
+}
+
+
+/**
+ * stop the current thread
+ * @param thd The thread to stop
+ * @param retval The return value to pass back to any thread that cares
+ */
+SWITCH_DECLARE(switch_status_t) switch_thread_exit(switch_thread_t *thd, switch_status_t retval)
+{
+	return apr_thread_exit((apr_thread_t *)thd, retval);
+}
+
+/**
+ * block until the desired thread stops executing.
+ * @param retval The return value from the dead thread.
+ * @param thd The thread to join
+ */
+SWITCH_DECLARE(switch_status_t) switch_thread_join(switch_status_t *retval, switch_thread_t *thd)
+{
+	return apr_thread_join((apr_status_t *)retval, (apr_thread_t *)thd); 
+}
+
+
+
 /* For Emacs:
  * Local Variables:
  * mode:c
