@@ -44,6 +44,18 @@ SWITCH_BEGIN_EXTERN_C
 
 SWITCH_DECLARE(int) switch_toupper(int c);
 SWITCH_DECLARE(int) switch_tolower(int c);
+SWITCH_DECLARE(int) switch_isalnum(int c);
+SWITCH_DECLARE(int) switch_isalpha(int c);
+SWITCH_DECLARE(int) switch_iscntrl(int c);
+SWITCH_DECLARE(int) switch_isdigit(int c);
+SWITCH_DECLARE(int) switch_isgraph(int c);
+SWITCH_DECLARE(int) switch_islower(int c);
+SWITCH_DECLARE(int) switch_isprint(int c);
+SWITCH_DECLARE(int) switch_ispunct(int c);
+SWITCH_DECLARE(int) switch_isspace(int c);
+SWITCH_DECLARE(int) switch_isupper(int c);
+SWITCH_DECLARE(int) switch_isxdigit(int c);
+
 
 #define switch_samples_per_packet(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
 #define SWITCH_SMAX 32767

@@ -1605,6 +1605,152 @@ SWITCH_DECLARE(int) switch_tolower(int c)
 	return((_switch_tolower_tab_ + 1)[c]);
 }
 
+/*
+ * Copyright (c) 1989 The Regents of the University of California.
+ * All rights reserved.
+ * (c) UNIX System Laboratories, Inc.
+ * All or some portions of this file are derived from material licensed
+ * to the University of California by American Telephone and Telegraph
+ * Co. or Unix System Laboratories, Inc. and are reproduced herein with
+ * the permission of UNIX System Laboratories, Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+
+#undef _U
+#undef _L
+#undef _N
+#undef _S
+#undef _P
+#undef _C
+#undef _X
+#undef _B
+
+#define	_U	0x01
+#define	_L	0x02
+#define	_N	0x04
+#define	_S	0x08
+#define	_P	0x10
+#define	_C	0x20
+#define	_X	0x40
+#define	_B	0x80
+
+const char _switch_C_ctype_[1 + SWITCH_CTYPE_NUM_CHARS] = {
+	0,
+	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
+	_C,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C|_S,	_C,	_C,
+	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
+	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C,
+   _S|_B,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P,
+	_N,	_N,	_N,	_N,	_N,	_N,	_N,	_N,
+	_N,	_N,	_P,	_P,	_P,	_P,	_P,	_P,
+	_P,	_U|_X,	_U|_X,	_U|_X,	_U|_X,	_U|_X,	_U|_X,	_U,
+	_U,	_U,	_U,	_U,	_U,	_U,	_U,	_U,
+	_U,	_U,	_U,	_U,	_U,	_U,	_U,	_U,
+	_U,	_U,	_U,	_P,	_P,	_P,	_P,	_P,
+	_P,	_L|_X,	_L|_X,	_L|_X,	_L|_X,	_L|_X,	_L|_X,	_L,
+	_L,	_L,	_L,	_L,	_L,	_L,	_L,	_L,
+	_L,	_L,	_L,	_L,	_L,	_L,	_L,	_L,
+/* determine printability based on the IS0 8859 8-bit standard */
+	_L,	_L,	_L,	_P,	_P,	_P,	_P,	_C,
+
+	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 80 */
+	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 88 */
+	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 90 */
+	_C,	_C,	_C,	_C,	_C,	_C,	_C,	_C, /* 98 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* A0 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* A8 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* B0 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* B8 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* C0 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* C8 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* D0 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* D8 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* E0 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* E8 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P, /* F0 */
+	_P,	_P,	_P,	_P,	_P,	_P,	_P,	_P  /* F8 */
+};
+
+const char *_switch_ctype_ = _switch_C_ctype_;
+
+SWITCH_DECLARE(int) switch_isalnum(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_U|_L|_N)));
+}
+
+SWITCH_DECLARE(int) switch_isalpha(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_U|_L)));
+}
+
+SWITCH_DECLARE(int) switch_iscntrl(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _C));
+}
+
+SWITCH_DECLARE(int) switch_isdigit(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _N));
+}
+
+SWITCH_DECLARE(int) switch_isgraph(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_P|_U|_L|_N)));
+}
+
+SWITCH_DECLARE(int) switch_islower(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _L));
+}
+
+SWITCH_DECLARE(int) switch_isprint(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_P|_U|_L|_N|_B)));
+}
+
+SWITCH_DECLARE(int) switch_ispunct(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _P));
+}
+
+SWITCH_DECLARE(int) switch_isspace(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _S));
+}
+
+SWITCH_DECLARE(int) switch_isupper(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & _U));
+}
+
+SWITCH_DECLARE(int) switch_isxdigit(int c)
+{
+	return (c < 0 ? 0 : c > 255 ? 0 : ((_switch_ctype_ + 1)[(unsigned char)c] & (_N|_X)));
+}
 
 /* For Emacs:
  * Local Variables:
