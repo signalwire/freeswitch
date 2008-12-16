@@ -2707,7 +2707,7 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 	switch_core_session_t *psession = NULL;
 	char *mycmd = NULL, *vars, *argv[64] = { 0 };
 	int argc = 0;
-	char *var_name, *var_value;
+	char *var_name, *var_value = NULL;
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
