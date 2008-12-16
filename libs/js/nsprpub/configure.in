@@ -2825,4 +2825,7 @@ if test -n "$USE_CPLUS"; then
     MAKEFILES="$MAKEFILES pr/src/cplus/Makefile pr/src/cplus/tests/Makefile"
 fi
 
+# mmkay, this fixes things on FreeBSD-7.1(-rc1)...
+MAKEFILES="`echo $MAKEFILES | tr -d '\n'`"
+
 AC_OUTPUT([$MAKEFILES], [chmod +x config/nspr-config])
