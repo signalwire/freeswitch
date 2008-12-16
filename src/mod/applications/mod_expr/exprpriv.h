@@ -206,6 +206,16 @@ struct _exprNode
 int exprFuncListAddType(exprFuncList *flist, char *name, int type, int min, int max, int refmin, int refmax);
 int exprFuncListGet(exprFuncList *flist, char *name, exprFuncType *ptr, int *type, int *min, int *max, int *refmin, int *refmax);
 
+#ifdef WIN32
+#define SWITCH_DECLARE(type)			__declspec(dllimport) type __stdcall
+#else
+#define SWITCH_DECLARE(type) type 
+#endif
+
+SWITCH_DECLARE(int) switch_isalnum(int c);
+SWITCH_DECLARE(int) switch_isalpha(int c);
+SWITCH_DECLARE(int) switch_isdigit(int c);
+SWITCH_DECLARE(int) switch_isspace(int c);
 
 #ifdef __cplusplus
 }

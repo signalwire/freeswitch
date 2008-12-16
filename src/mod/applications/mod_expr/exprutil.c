@@ -11,8 +11,6 @@
 #include "exprincl.h"
 
 #include "exprpriv.h"
-#include "switch_utils.h"
-
 
 /* Return the version number */
 void exprGetVersion(int *major, int *minor)

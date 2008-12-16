@@ -12,7 +12,6 @@
 
 #include "exprpriv.h"
 #include "exprmem.h"
-#include "switch_utils.h"
 
 /* Data structure used by parser */
 typedef struct _exprToken {
