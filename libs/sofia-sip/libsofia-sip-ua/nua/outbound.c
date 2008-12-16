@@ -102,7 +102,7 @@ struct outbound {
   /* The registration state machine. */
   /** Initial REGISTER containing ob_rcontact has been sent */
   unsigned ob_registering:1;
-  /** 2XX response to REGISTER containg ob_rcontact has been received */
+  /** 2XX response to REGISTER containing ob_rcontact has been received */
   unsigned ob_registered:1;
   /** The registration has been validated:
    *  We have successfully sent OPTIONS to ourselves.
@@ -361,14 +361,6 @@ int outbound_get_contacts(outbound_t *ob,
   if (ob) {
     if (ob->ob_contacts)
       *return_current_contact = ob->ob_rcontact;
-    else {
-      sip_contact_t *contact = *return_current_contact;
-      if (contact) {
-	if (ob->ob_rcontact)
-	  msg_header_free_all(ob->ob_home, (msg_header_t*)ob->ob_rcontact);
-	ob->ob_rcontact = sip_contact_dup(ob->ob_home, contact);
-      }
-    }
     *return_previous_contact = ob->ob_previous;
   }
   return 0;
@@ -402,21 +394,25 @@ int outbound_register_response(outbound_t *ob,
     return 0;
 
   assert(request->sip_request); assert(response->sip_status);
-  
-  reregister = outbound_check_for_nat(ob, request, response);
-  if (reregister)
-    return reregister;
 
   status = response->sip_status->st_status;
 
   if (status < 300) {
-    if (request->sip_contact && response->sip_contact)
+    if (request->sip_contact && response->sip_contact) {
+      if (ob->ob_rcontact != NULL)
+        msg_header_free(ob->ob_home, (msg_header_t *)ob->ob_rcontact);
+      ob->ob_rcontact = sip_contact_dup(ob->ob_home, request->sip_contact);
       ob->ob_registered = ob->ob_registering;
-    else
+    } else
       ob->ob_registered = 0;
+  }
 
-    if (ob->ob_previous)
-      msg_header_free(ob->ob_home, (void *)ob->ob_previous);
+  reregister = outbound_check_for_nat(ob, request, response);
+  if (reregister)
+    return reregister;
+
+  if (ob->ob_previous && status < 300) {
+    msg_header_free(ob->ob_home, (void *)ob->ob_previous);
     ob->ob_previous = NULL;
   }
 
@@ -1071,7 +1067,6 @@ int outbound_contacts_from_via(outbound_t *ob, sip_via_t const *via)
 {
   su_home_t *home = ob->ob_home;
   sip_contact_t *rcontact, *dcontact;
-  int reg_id = 0;
   char reg_id_param[20] = "";
   sip_contact_t *previous_previous, *previous_rcontact, *previous_dcontact;
   sip_via_t *v, v0[1], *previous_via;
@@ -1110,8 +1105,10 @@ int outbound_contacts_from_via(outbound_t *ob, sip_via_t const *via)
     previous_dcontact = ob->ob_dcontact;
     previous_via = ob->ob_via;
 
-    if (ob->ob_registering &&
-        (reg_id == 0 || ob->ob_info.outbound < outbound_feature_supported))
+    if (ob->ob_registered
+        /* && (ob->ob_reg_id == 0 || ob->ob_info.outbound < outbound_feature_supported)
+         * XXX - multiple connections not yet supported
+	 */)
       previous_rcontact = NULL, ob->ob_previous = ob->ob_rcontact;
     else
       previous_rcontact = ob->ob_rcontact, ob->ob_previous = NULL;
