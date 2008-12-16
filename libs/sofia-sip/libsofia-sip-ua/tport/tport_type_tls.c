@@ -48,6 +48,19 @@
 #include <string.h>
 #include <sofia-sip/string0.h>
 
+#if HAVE_FUNC
+#elif HAVE_FUNCTION
+#define __func__ __FUNCTION__
+#else
+static char const __func__[] = "tport_type_tls";
+#endif
+
+#if HAVE_WIN32
+#include <io.h>
+#define access(_filename, _mode) _access(_filename, _mode)
+#define R_OK (04)
+#endif
+
 /* ---------------------------------------------------------------------- */
 /* TLS */
 
