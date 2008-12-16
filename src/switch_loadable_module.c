@@ -1415,7 +1415,7 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 	for (x = 0; x < preflen; x++) {
 		char *cur, *last = NULL, *next = NULL, *name, *p, buf[256];
-		uint32_t interval = 0, rate = 8000;
+		uint32_t interval = 0, rate = 0;
 
 		switch_copy_string(buf, prefs[x], sizeof(buf));
 		last = name = next = cur = buf;
@@ -1442,24 +1442,24 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 
 		if ((codec_interface = switch_loadable_module_get_codec_interface(name)) != 0) {
 			/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
-			if (!interval) {
-				for (imp = codec_interface->implementations; imp; imp = imp->next) {
-					uint8_t match = 1;
+			for (imp = codec_interface->implementations; imp; imp = imp->next) {
+				uint8_t match = 1;
+				
+				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
 
-					if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
-						if ((uint32_t) (imp->microseconds_per_packet / 1000) != 20) {
-							match = 0;
-						}
-
-						if (match && rate && (uint32_t) imp->samples_per_second != rate) {
-							match = 0;
-						}
+					if ((!interval && (uint32_t) (imp->microseconds_per_packet / 1000) != 20) || 
+						(interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval)) {
+						match = 0;
 					}
 
-					if (match) {
-						array[i++] = imp;
-						goto found;
+					if (match && ((!rate && (uint32_t) imp->samples_per_second != 8000) || (rate && (uint32_t) imp->samples_per_second != rate))) {
+						match = 0;
 					}
+				}
+
+				if (match) {
+					array[i++] = imp;
+					goto found;
 				}
 			}
 
@@ -1468,10 +1468,11 @@ SWITCH_DECLARE(int) switch_loadable_module_get_codecs_sorted(const switch_codec_
 				uint8_t match = 1;
 
 				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO) {
+
 					if (interval && (uint32_t) (imp->microseconds_per_packet / 1000) != interval) {
 						match = 0;
 					}
-
+					
 					if (match && rate && (uint32_t) imp->samples_per_second != rate) {
 						match = 0;
 					}
