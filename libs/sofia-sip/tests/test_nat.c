@@ -128,7 +128,7 @@ struct binding
 
 static struct binding *nat_binding_new(struct nat *nat,
 				       char const *protoname,
-				       int socktype, int protocol, 
+				       int socktype, int protocol,
 				       int connected,
 				       su_socket_t in_socket,
 				       su_sockaddr_t *from,
@@ -178,7 +178,7 @@ test_nat_init(su_root_t *root, struct nat *nat)
   nat->root = root;
   nat->udp_socket = INVALID_SOCKET, nat->tcp_socket = INVALID_SOCKET;
 
-  tl_gets(nat->tags, 
+  tl_gets(nat->tags,
 	  TESTNATTAG_SYMMETRIC_REF(nat->symmetric),
 	  TESTNATTAG_LOGGING_REF(nat->logging),
 	  TAG_END());
@@ -427,7 +427,7 @@ int test_nat_flush(struct nat *nat)
   if (nat == NULL)
     return su_seterrno(EFAULT);
 
-  return su_task_execute(su_clone_task(nat->clone), 
+  return su_task_execute(su_clone_task(nat->clone),
 			 invalidate_bindings, nat, NULL);
 }
 
@@ -485,10 +485,10 @@ static int binding_init(struct binding *b,
   su_wakeup_f in_to_out, out_to_in;
 
   if (b->socktype == SOCK_STREAM)
-    in_to_out = tcp_in_to_out, out_to_in = tcp_out_to_in;    
+    in_to_out = tcp_in_to_out, out_to_in = tcp_out_to_in;
   else
-    in_to_out = udp_in_to_out, out_to_in = udp_out_to_in;    
-  
+    in_to_out = udp_in_to_out, out_to_in = udp_out_to_in;
+
   if (b->in_socket == INVALID_SOCKET) {
     int in_socket;
 
@@ -549,7 +549,7 @@ static int binding_init(struct binding *b,
   b->in_register = su_root_register(nat->root, wait, in_to_out, b, 0);
   if (b->in_register < 0) {
     su_perror("nat_binding_new: su_root_register");
-    su_wait_destroy(wait); 
+    su_wait_destroy(wait);
     return -1;
   }
 
@@ -610,13 +610,13 @@ static int invalidate_bindings(void *arg)
 
 #if 0
 static struct binding *nat_binding_find(struct nat *nat,
-					su_sockaddr_t *from, 
+					su_sockaddr_t *from,
 					int fromlen)
 {
   char name[64], ipname[64];
   size_t namelen;
   struct binding *b;
-				       
+
   su_inet_ntop(from->su_family, SU_ADDR(from), ipname, sizeof ipname);
   snprintf(name, sizeof name,
 	   from->su_family == AF_INET6 ? "[%s]:%u" : "%s:%u",
@@ -629,7 +629,7 @@ static struct binding *nat_binding_find(struct nat *nat,
   }
 
   if (b == NULL)
-    b = nat_binding_new(nat, "UDP", SOCK_DGRAM, IPPROTO_UDP, nat->symmetric, 
+    b = nat_binding_new(nat, "UDP", SOCK_DGRAM, IPPROTO_UDP, nat->symmetric,
 			INVALID_SOCKET, from, fromlen);
 
   return b;
@@ -659,7 +659,7 @@ static int new_udp(struct nat *nat, su_wait_t *wait, struct binding *dummy)
     return 0;
   }
 
-  b = nat_binding_new(nat, "UDP", SOCK_DGRAM, IPPROTO_UDP, nat->symmetric, 
+  b = nat_binding_new(nat, "UDP", SOCK_DGRAM, IPPROTO_UDP, nat->symmetric,
 		      INVALID_SOCKET, from, fromlen);
   if (b == NULL)
     return 0;
@@ -667,7 +667,7 @@ static int new_udp(struct nat *nat, su_wait_t *wait, struct binding *dummy)
   if (nat->symmetric)
     m = su_send(b->out_socket, nat->buffer, n, 0);
   else
-    m = su_sendto(b->out_socket, nat->buffer, n, 0, 
+    m = su_sendto(b->out_socket, nat->buffer, n, 0,
 		  nat->out_address, nat->out_addrlen);
 
   if (nat->logging)
@@ -989,7 +989,7 @@ int test_nat_remove_filter(struct nat *nat,
 
   a->nat = nat;
   a->f = filter;
-  
+
   if (su_task_execute(su_clone_task(nat->clone),
 		      execute_nat_filter_remove, a, NULL) < 0)
     return -1;

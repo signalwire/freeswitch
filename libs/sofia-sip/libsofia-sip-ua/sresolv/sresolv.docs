@@ -32,7 +32,7 @@ or AAAA records, these DNS libraries are inadequate for a SIP application.
 Sofia resolver uses the usual configuration for DNS. In Unix-based systems,
 the DNS configuration is stored in the file /etc/resolv.conf, on Windows, it
 is available through the registry. Sofia resolvers reloads the configuration
-when it detect that it has been changed. 
+when it detect that it has been changed.
 
 In addition to the configuration files, the environment variables
 #SRES_OPTIONS and #RES_OPTIONS can be used to change the behaviour of the
@@ -68,7 +68,7 @@ of calling the sres_query() and sres_query_sockaddr() callback functions.
 @code
 #include <sofia-sip/sresolv.h>
 
-sres_resolver_t *sres_resolver_create(su_root_t *root, 
+sres_resolver_t *sres_resolver_create(su_root_t *root,
 				      char const *resolv_conf,
 				      tag_type_t, tag_value_t, ...);
 
@@ -80,7 +80,7 @@ int sres_resolver_destroy(sres_resolver_t *res);
 
 The second part of interface is used when sending DNS queries:
 
-@code 
+@code
 sres_query_t *sres_query(sres_resolver_t *res,
 			 sres_answer_f *callback,
 			 sres_context_t *context,
@@ -116,7 +116,7 @@ sres_record_t **sres_cached_answers_sockaddr(sres_resolver_t *res,
 
 int sres_sort_answers(sres_resolver_t *res, sres_record_t **answers);
 
-int sres_filter_answers(sres_resolver_t *sres, sres_record_t **answers, 
+int sres_filter_answers(sres_resolver_t *sres, sres_record_t **answers,
 			uint16_t type);
 
 void sres_free_answers(sres_resolver_t *res, sres_record_t **answers);
@@ -127,7 +127,7 @@ void sres_free_answer(sres_resolver_t *res, sres_record_t *answer);
 
 @section sofia_resolv_sres_h Interface in <sofia-resolv/sres.h>
 
-The generic interface to Sofia resolver is defined in <sofia-resolv/sres.h>. 
+The generic interface to Sofia resolver is defined in <sofia-resolv/sres.h>.
 The first part of interface consists of functions for handling resolver
 objects:
 
@@ -182,7 +182,7 @@ int sres_blocking_query_sockaddr(sres_resolver_t *res,
 
 @subsection sresolv_async Asynchronous Interface in <sofia-resolv/sres_async.h>
 
-It is also possible to use resolver asynchronously without #su_root_t object. 
+It is also possible to use resolver asynchronously without #su_root_t object.
 
 @code
 #include <sys/types.h>
@@ -191,7 +191,7 @@ It is also possible to use resolver asynchronously without #su_root_t object.
 
 #include <sofia-resolv/sres_async.h>
 
-sres_async_t *sres_resolver_set_async(sres_resolver_t *res, 
+sres_async_t *sres_resolver_set_async(sres_resolver_t *res,
 				      sres_update_f *update,
 				      sres_async_t *async,
 				      int update_all);
@@ -239,7 +239,7 @@ struct context
     process_natpr(context, NULL, results);
   }
   else {
-    context->query = sres_query(context->sres, 
+    context->query = sres_query(context->sres,
                                 process_natpr, context,
 	                        sres_type_naptr, domain);
     if (!context->query)
@@ -253,9 +253,9 @@ void process_natpr(sres_context_t *context,
 		   sres_record_t *answers[])
 {
   sres_sort_answers(context->sres, answers);
- 
+
   ...
- 
+
   sres_free_answers(context->sres, answers);
 }
 @endcode

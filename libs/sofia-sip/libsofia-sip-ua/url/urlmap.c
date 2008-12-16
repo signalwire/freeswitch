@@ -172,7 +172,7 @@ void red_black_balance_insert(UrlMap **top, UrlMap *um)
   (*top)->um_black = 1;
 }
 
-static 
+static
 void red_black_balance_delete(UrlMap **top, UrlMap *um)
 {
   UrlMap *dad, *brother;
@@ -192,7 +192,7 @@ void red_black_balance_delete(UrlMap **top, UrlMap *um)
 	brother->um_black = 0;
 	um = dad;
 	continue;
-      } 
+      }
 
       if (!brother->um_right || brother->um_right->um_black) {
 	brother->um_left->um_black = 1;
@@ -208,7 +208,7 @@ void red_black_balance_delete(UrlMap **top, UrlMap *um)
       left_rotate(top, dad);
       um = *top;
       break;
-    } else { 
+    } else {
       assert(um == dad->um_right);
       brother = dad->um_left;
 
@@ -224,7 +224,7 @@ void red_black_balance_delete(UrlMap **top, UrlMap *um)
 	brother->um_black = 0;
 	um = dad;
 	continue;
-      } 
+      }
 
       if (!brother->um_left || brother->um_left->um_black) {
 	brother->um_right->um_black = 1;
@@ -424,12 +424,12 @@ void url_map_remove(UrlMap **top, UrlMap *um)
       dad->um_dad->um_right = dad;
 
     dad->um_black = um->um_black;
-    
+
     if ((dad->um_left = um->um_left))
-      dad->um_left->um_dad = dad;      
+      dad->um_left->um_dad = dad;
 
     if ((dad->um_right = um->um_right))
-      dad->um_right->um_dad = dad;      
+      dad->um_right->um_dad = dad;
   }
 
   um->um_left = NULL;
@@ -438,7 +438,7 @@ void url_map_remove(UrlMap **top, UrlMap *um)
   um->um_black = 0;
   um->um_inserted = 0;
 
-  if (need_to_balance) 
+  if (need_to_balance)
     red_black_balance_delete(top, kid);
 }
 
@@ -600,7 +600,7 @@ int test_insert(void)
   six = url_map_new(home, (void*)"/6", sizeof (UrlMap));
   seven = url_map_new(home, (void*)"/7", sizeof (UrlMap));
 
-  TEST_1(one); 
+  TEST_1(one);
   TEST_1(three);
   TEST_1(five);
   TEST_1(six);
@@ -612,16 +612,16 @@ int test_insert(void)
   TEST_P(five->um_left, NULL); TEST_P(five->um_right, NULL);
   TEST_P(five->um_dad, NULL); TEST(five->um_black, 1);
 
-  /* Check after another node: 
+  /* Check after another node:
    *
    *         5b
-   *        / 
+   *        /
    *       3r
    */
   TEST(url_map_insert(&tree, three, &o), 0); TEST_P(o, NULL);
   TEST_P(tree->um_left, three); TEST(tree->um_black, 1);
   TEST_P(three->um_left, NULL); TEST_P(three->um_right, NULL);
-  TEST_P(three->um_dad, tree); TEST(three->um_black, 0); 
+  TEST_P(three->um_dad, tree); TEST(three->um_black, 0);
 
   /* Check third node
    *         5b
@@ -631,21 +631,21 @@ int test_insert(void)
   TEST(url_map_insert(&tree, seven, &o), 0); TEST_P(o, NULL);
   TEST_P(tree->um_right, seven); TEST(tree->um_black, 1);
   TEST_P(seven->um_left, NULL); TEST_P(seven->um_right, NULL);
-  TEST_P(seven->um_dad, tree); TEST(seven->um_black, 0); 
+  TEST_P(seven->um_dad, tree); TEST(seven->um_black, 0);
 
   /* Check after fourth node:
    *         5b
    *        / \
    *       3b  7b
    *      /
-   *     1r  
+   *     1r
    */
   TEST(url_map_insert(&tree, one, &o), 0); TEST_P(o, NULL);
-  TEST_P(tree->um_left->um_left, one); 
-  TEST(tree->um_black, 1); 
+  TEST_P(tree->um_left->um_left, one);
+  TEST(tree->um_black, 1);
   TEST(tree->um_left->um_black, 1); TEST(tree->um_right->um_black, 1);
   TEST_P(one->um_left, NULL); TEST_P(one->um_right, NULL);
-  TEST_P(one->um_dad, tree->um_left); TEST(one->um_black, 0); 
+  TEST_P(one->um_dad, tree->um_left); TEST(one->um_black, 0);
 
   /* Checks that we got after fifth node:
    *         5b
@@ -693,7 +693,7 @@ int test_rotate(void)
   y = url_map_new(home, (void*)"/y", sizeof *y);
 
   TEST_1(x);
-  TEST_1(y); 
+  TEST_1(y);
 
   /*
    *              x                   y               x
@@ -725,9 +725,9 @@ unsigned log2ceil(unsigned k)
   if (k > (1 << 32))
     result += 32, k = (k >> 32) + ((k & ((1 << 32) - 1)) != 0);
 #endif
-  if (k > (1 << 16)) 
+  if (k > (1 << 16))
     result += 16, k = (k >> 16) + ((k & ((1 << 16) - 1)) != 0);
-  if (k > (1 << 8)) 
+  if (k > (1 << 8))
     result += 8, k = (k >> 8) + ((k & ((1 << 8) - 1)) != 0);
   if (k > (1 << 4))
     result += 4, k = (k >> 4) + ((k & 15) != 0);
@@ -737,7 +737,7 @@ unsigned log2ceil(unsigned k)
     result += 1, k = (k >> 1) + (k & 1);
   if (k > 1)
     result += 1;
-  
+
   return result;
 }
 
@@ -803,9 +803,9 @@ int test_balance(void)
     te = (TEntry *)url_map_find(tree, (void*)u, 1);
     TEST_1(te); TEST(te->te_value, i);
     url_map_remove(&tree, te->te_urlmap);
-    TEST_1(te->te_urlmap->um_dad == NULL && 
-	   te->te_urlmap->um_left == NULL && 
-	   te->te_urlmap->um_right == NULL); 
+    TEST_1(te->te_urlmap->um_dad == NULL &&
+	   te->te_urlmap->um_left == NULL &&
+	   te->te_urlmap->um_right == NULL);
     TEST_1(url_map_height(tree) <= 2 * log2ceil(N - i + 1));
     TEST_1(redblack_check(tree));
   }
@@ -814,7 +814,7 @@ int test_balance(void)
 
   for (i = N - 1; i >= 0; i--) {
     o = (void *)-1;
-    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0);
     TEST_P(o, NULL);
     TEST_1(url_map_height(tree) <= 2 * log2ceil(N - i + 1));
     TEST_1(redblack_check(tree));
@@ -837,7 +837,7 @@ int test_balance(void)
     int sn = (i * 57) % N;
     o = (void *)-1;
     TEST(nodes[sn]->te_inserted, 0);
-    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0);
     nodes[sn]->te_inserted = 1;
     TEST_P(o, NULL);
     TEST_1(url_map_height(tree) <= 2 * log2ceil(i + 1 + 1));
@@ -865,7 +865,7 @@ int test_balance(void)
     int sn = (i * 517) % N;	/* relative prime to N */
     o = (void *)-1;
     TEST(nodes[sn]->te_inserted, 0);
-    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0);
     nodes[sn]->te_inserted = 1;
     TEST_P(o, NULL);
     TEST_1(url_map_height(tree) <= 2 * log2ceil(i + 1 + 1));
@@ -893,7 +893,7 @@ int test_balance(void)
     int sn = (i * 1957) % N;	/* relative prime to N */
     o = (void *)-1;
     TEST(nodes[sn]->te_inserted, 0);
-    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0);
     nodes[sn]->te_inserted = 1;
     TEST_P(o, NULL);
     TEST_1(url_map_height(tree) <= 2 * log2ceil(i + 1 + 1));
@@ -923,13 +923,13 @@ int test_balance(void)
     int sn = N - i - 1;
     TEST(nodes[i]->te_inserted, 0);
     o = (void *)-1;
-    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0);
     TEST_P(o, NULL);
     nodes[i]->te_inserted = 1;
 
     TEST(nodes[sn]->te_inserted, 0);
     o = (void *)-1;
-    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0);
     TEST_P(o, NULL);
     nodes[sn]->te_inserted = 1;
   }
@@ -959,13 +959,13 @@ int test_balance(void)
     int sn = N - i - 1;
     TEST(nodes[i]->te_inserted, 0);
     o = (void *)-1;
-    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0);
     TEST_P(o, NULL);
     nodes[i]->te_inserted = 1;
 
     TEST(nodes[sn]->te_inserted, 0);
     o = (void *)-1;
-    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0);
     TEST_P(o, NULL);
     nodes[sn]->te_inserted = 1;
   }
@@ -995,13 +995,13 @@ int test_balance(void)
     int sn = N / 2 + i;
     TEST(nodes[i]->te_inserted, 0);
     o = (void *)-1;
-    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0);
     TEST_P(o, NULL);
     nodes[i]->te_inserted = 1;
 
     TEST(nodes[sn]->te_inserted, 0);
     o = (void *)-1;
-    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0); 
+    TEST(url_map_insert(&tree, nodes[sn]->te_urlmap, &o), 0);
     TEST_P(o, NULL);
     nodes[sn]->te_inserted = 1;
   }
@@ -1026,13 +1026,13 @@ int test_balance(void)
   TEST_P(tree, NULL);
 
   /* Insert in perfect order ... */
-  
+
   for (j = N / 2; j > 0; j /= 2) {
     for (i = N - j; i >= 0; i -= j) {
       if (nodes[i]->te_inserted)
 	continue;
       o = (void *)-1;
-      TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0); 
+      TEST(url_map_insert(&tree, nodes[i]->te_urlmap, &o), 0);
       TEST_P(o, NULL);
       nodes[i]->te_inserted = 1;
     }

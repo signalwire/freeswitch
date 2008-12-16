@@ -40,7 +40,7 @@
 /** @file sofia-sip/su_md5.h MD5 digest interface.
  *
  * @author <Pekka.Pessi@nokia.com>
- */ 
+ */
 
 #ifndef SU_TYPES_H
 #include "sofia-sip/su_types.h"

@@ -91,7 +91,7 @@ struct tport_comp_vtable_s {
   int (*vsc_can_send_comp)(tport_compressor_t const *);
   int (*vsc_can_recv_comp)(tport_compressor_t const *);
 
-  int (*vsc_set_comp_name)(tport_t const *self, 
+  int (*vsc_set_comp_name)(tport_t const *self,
 			   tport_compressor_t const *return_sc,
 			   char const *comp);
 
@@ -104,7 +104,7 @@ struct tport_comp_vtable_s {
 			     char const *name, int namelen,
 			     int create_if_needed);
 
-  struct sigcomp_compartment * 
+  struct sigcomp_compartment *
   (*vsc_compartment_incref)(struct sigcomp_compartment *cc);
 
   void (*vsc_compartment_decref)(struct sigcomp_compartment **pointer_to_cc);
@@ -146,19 +146,19 @@ struct tport_comp_vtable_s {
   (*vsc_sigcomp_assign_if_needed)(tport_t *self,
 				  struct sigcomp_compartment *cc);
 
-  void (*vsc_accept_incomplete)(tport_t const *self, 
+  void (*vsc_accept_incomplete)(tport_t const *self,
 				tport_compressor_t *sc,
 				msg_t *msg);
 
-  int (*vsc_recv_comp)(tport_t const *self, 
+  int (*vsc_recv_comp)(tport_t const *self,
 		       tport_compressor_t *sc,
 		       msg_t **in_out_msg,
 		       su_sockaddr_t *from,
 		       socklen_t fromlen);
 
   ssize_t (*vsc_send_comp)(tport_t const *self,
-		       msg_t *msg, 
-		       msg_iovec_t iov[], 
+		       msg_t *msg,
+		       msg_iovec_t iov[],
 		       size_t iovused,
 		       struct sigcomp_compartment *cc,
 		       tport_compressor_t *sc);

@@ -288,7 +288,7 @@ int test_call_cancel(struct context *ctx)
     printf("TEST NUA-5.1.2: PASSED\n");
 
  /* ----------------------------------------------------------------------- */
- 
+
   if (print_headings)
     printf("TEST NUA-5.2.1: cancel call when ringing\n");
 
@@ -687,7 +687,7 @@ int test_call_destroy_3(struct context *ctx)
   TEST_1(is_offer_recv(e->data->e_tags));
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
-  TEST_1(!e->next);  
+  TEST_1(!e->next);
 
   free_events_in_list(ctx, b->events);
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
@@ -757,7 +757,7 @@ int test_call_destroy_4(struct context *ctx)
     TEST(e->data->e_status, 180);
     TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
     TEST(callstate(e->data->e_tags), nua_callstate_proceeding); /* PROCEEDING */
-    TEST_1(e = e->next); 
+    TEST_1(e = e->next);
   }
   if (e->data->e_event == nua_r_invite) {
     TEST_E(e->data->e_event, nua_r_invite);
@@ -765,7 +765,7 @@ int test_call_destroy_4(struct context *ctx)
     TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
     TEST(callstate(e->data->e_tags), nua_callstate_completing); /* COMPLETING */
     TEST_1(is_answer_recv(e->data->e_tags));
-    TEST_1(e = e->next); 
+    TEST_1(e = e->next);
   }
   TEST_E(e->data->e_event, nua_i_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
@@ -790,7 +790,7 @@ int test_call_destroy_4(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_completed); /* COMPLETED */
   TEST_1(is_answer_sent(e->data->e_tags));
-  TEST_1(!e->next);  
+  TEST_1(!e->next);
 
   free_events_in_list(ctx, b->events);
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
@@ -866,7 +866,7 @@ int test_call_destroy_5(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_completed); /* COMPLETED */
   TEST_1(is_answer_sent(e->data->e_tags));
-  TEST_1(!e->next);  
+  TEST_1(!e->next);
 
   free_events_in_list(ctx, b->events);
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
@@ -885,7 +885,7 @@ int test_call_destroy(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
-  return 
+  return
     test_call_destroy_1(ctx) ||
     test_call_destroy_2(ctx) ||
     test_call_destroy_3(ctx) ||
@@ -1108,12 +1108,12 @@ int test_bye_before_ack(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 180);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_proceeding); 
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
 
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_completing); 
+  TEST(callstate(e->data->e_tags), nua_callstate_completing);
   TEST_1(e = e->next);
 
   TEST_E(e->data->e_event, nua_r_bye); TEST(e->data->e_status, 200);
@@ -1212,7 +1212,7 @@ int test_bye_after_receiving_401(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   /* re-INVITE A. */
-  INVITE(b, b_call, b_call->nh, 
+  INVITE(b, b_call, b_call->nh,
 	 SIPTAG_SUBJECT_STR("NUA-6.3 re-INVITE"),
 	 TAG_END());
   run_ab_until(ctx, -1, reject_reinvite_401, -1, save_until_final_response);
@@ -1224,7 +1224,7 @@ int test_bye_after_receiving_401(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   BYE(b, b_call, b_call->nh, TAG_END());
-  
+
   run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
 
   free_events_in_list(ctx, a->events);
@@ -1287,7 +1287,7 @@ int test_bye_after_sending_401(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   /* re-INVITE A. */
-  INVITE(b, b_call, b_call->nh, 
+  INVITE(b, b_call, b_call->nh,
 	 SIPTAG_SUBJECT_STR("NUA-6.4.1 re-INVITE"),
 	 TAG_END());
   run_ab_until(ctx, -1, reject_reinvite_401, -1, save_until_final_response);
@@ -1299,7 +1299,7 @@ int test_bye_after_sending_401(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   BYE(a, a_call, a_call->nh, TAG_END());
-  
+
   run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
 
   free_events_in_list(ctx, a->events);
@@ -1362,7 +1362,7 @@ int test_bye_after_receiving_401_to_update(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   /* UPDATE A. */
-  UPDATE(b, b_call, b_call->nh, 
+  UPDATE(b, b_call, b_call->nh,
 	 SIPTAG_SUBJECT_STR("NUA-6.4.2 UPDATE"),
 	 TAG_END());
   BYE(b, b_call, b_call->nh, TAG_END()); /* Queued until nua_authenticate */
@@ -1375,7 +1375,7 @@ int test_bye_after_receiving_401_to_update(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   AUTHENTICATE(b, b_call, b_call->nh, TAG_END());
-  
+
   run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
 
   free_events_in_list(ctx, a->events);
@@ -1472,7 +1472,7 @@ int test_bye_with_407(struct context *ctx)
   TEST_1(e = c->events->head); TEST_E(e->data->e_event, nua_i_invite);
   free_events_in_list(ctx, c->events);
 
-  BYE(c, c_call, c_call->nh, 
+  BYE(c, c_call, c_call->nh,
       TAG_END());
   run_c_until(ctx, -1, save_until_final_response);
 
@@ -1482,9 +1482,9 @@ int test_bye_with_407(struct context *ctx)
   free_events_in_list(ctx, a->events);
   free_events_in_list(ctx, c->events);
 
-  AUTHENTICATE(c, c_call, c_call->nh, 
+  AUTHENTICATE(c, c_call, c_call->nh,
 	       NUTAG_AUTH("Digest:\"test-proxy\":charlie:secret"), TAG_END());
-  
+
   run_abc_until(ctx, -1, until_terminated, -1, NULL, -1, until_terminated);
 
   free_events_in_list(ctx, a->events);
@@ -1556,12 +1556,12 @@ int test_bye_to_invalid_contact(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 180);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_proceeding); 
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
 
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_ready); 
+  TEST(callstate(e->data->e_tags), nua_callstate_ready);
   TEST_1(!e->next);
 
   /*
@@ -1588,7 +1588,7 @@ int test_bye_to_invalid_contact(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   BYE(b, b_call, b_call->nh, TAG_END());
-  
+
   run_b_until(ctx, -1, until_terminated);
 
   /* B transitions:
@@ -1651,7 +1651,7 @@ int test_bye_to_invalid_contact(struct context *ctx)
 
 int test_early_bye(struct context *ctx)
 {
-  return 
+  return
     test_bye_with_407(ctx) ||
     test_bye_before_200(ctx) ||
     test_bye_before_ack(ctx) ||

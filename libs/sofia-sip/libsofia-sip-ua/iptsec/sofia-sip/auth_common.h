@@ -26,7 +26,7 @@
 /** Defined when <sofia-sip/auth_common.h> has been included. */
 #define AUTH_COMMON_H
 
-/**@file sofia-sip/auth_common.h 
+/**@file sofia-sip/auth_common.h
  *
  * Functions common for client/server.
  *
@@ -43,7 +43,7 @@ SOFIA_BEGIN_DECLS
 
 SOFIAPUBFUN issize_t auth_get_params(su_home_t *home,
 				     char const * const params[], ...
- 			          /* char const * name, 
+ 			          /* char const * name,
 				     char const **return_value */);
 
 SOFIAPUBFUN int auth_struct_copy(void *dst, void const *src, isize_t s_size);

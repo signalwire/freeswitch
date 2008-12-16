@@ -24,13 +24,13 @@
 
 #ifndef SU_TAG_INLINE_H
 /** Defined when <sofia-sip/su_tag_inline.h> has been included */
-#define SU_TAG_INLINE_H 
+#define SU_TAG_INLINE_H
 /**@SU_TAG
  * @file sofia-sip/su_tag_inline.h
  * Inline functions for object tags and tag lists.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Feb 20 19:48:18 2001 ppessi
  */
 
@@ -69,7 +69,7 @@ su_inline tagi_t const *t_next(tagi_t const *t)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
-  if (tt->tt_next) 
+  if (tt->tt_next)
     return tt->tt_next(t);
   else
     return t + 1;
@@ -79,7 +79,7 @@ su_inline tagi_t *t_move(tagi_t *dst, tagi_t const *src)
 {
   tag_type_t tt = TAG_TYPE_OF(src);
 
-  if (tt->tt_move) 
+  if (tt->tt_move)
     return tt->tt_move(dst, src);
 
   *dst = *src;
@@ -90,7 +90,7 @@ su_inline size_t t_xtra(tagi_t const *t, size_t offset)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
-  if (tt->tt_xtra) 
+  if (tt->tt_xtra)
     return tt->tt_xtra(t, offset);
 
   return 0;
@@ -100,7 +100,7 @@ su_inline tagi_t *t_dup(tagi_t *dst, tagi_t const *src, void **bb)
 {
   tag_type_t tt = TAG_TYPE_OF(src);
 
-  if (tt->tt_dup) 
+  if (tt->tt_dup)
     return tt->tt_dup(dst, src, bb);
 
   *dst = *src;
@@ -112,7 +112,7 @@ su_inline tagi_t const *t_find(tag_type_t tt, tagi_t const *lst)
   if (!tt)
     return NULL;
 
-  if (tt->tt_find) 
+  if (tt->tt_find)
     return tt->tt_find(tt, lst);
 
   for (; lst; lst = t_next(lst)) {
@@ -127,7 +127,7 @@ su_inline tagi_t *t_free(tagi_t *t)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
-  if (tt->tt_free) 
+  if (tt->tt_free)
     return tt->tt_free(t);
   else if (tt->tt_next)
     return (tagi_t *)tt->tt_next(t);
@@ -139,7 +139,7 @@ su_inline size_t t_len(tagi_t const *t)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
 
-  if (tt->tt_len) 
+  if (tt->tt_len)
     return tt->tt_len(t);
 
   return sizeof(*t);

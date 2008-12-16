@@ -48,7 +48,7 @@
 SOFIA_BEGIN_DECLS
 
 /* ----------------------------------------------------------------------
- * 1) Types 
+ * 1) Types
  */
 
 /** NTA agent */
@@ -95,7 +95,7 @@ typedef NTA_OUTGOING_MAGIC_T  nta_outgoing_magic_t;
 typedef NTA_INCOMING_MAGIC_T  nta_incoming_magic_t;
 
 /* ----------------------------------------------------------------------
- * 2) Constants 
+ * 2) Constants
  */
 
 /** NTA API version number */
@@ -122,7 +122,7 @@ typedef int nta_message_f(nta_agent_magic_t *context,
 			  msg_t *msg,
 			  sip_t *sip);
 
-SOFIAPUBFUN 
+SOFIAPUBFUN
 nta_agent_t *nta_agent_create(su_root_t *root,
 			      url_string_t const *name,
 			      nta_message_f *callback,
@@ -148,12 +148,12 @@ SOFIAPUBFUN sip_via_t *nta_agent_public_via(nta_agent_t const *a);
 SOFIAPUBFUN char const *nta_agent_newtag(su_home_t *,
 					 char const *fmt, nta_agent_t *);
 
-SOFIAPUBFUN int nta_agent_set_params(nta_agent_t *agent, 
+SOFIAPUBFUN int nta_agent_set_params(nta_agent_t *agent,
 				     tag_type_t tag, tag_value_t value, ...);
-SOFIAPUBFUN int nta_agent_get_params(nta_agent_t *agent, 
+SOFIAPUBFUN int nta_agent_get_params(nta_agent_t *agent,
 				     tag_type_t tag, tag_value_t value, ...);
 
-SOFIAPUBFUN int nta_agent_get_stats(nta_agent_t *agent, 
+SOFIAPUBFUN int nta_agent_get_stats(nta_agent_t *agent,
 				    tag_type_t tag, tag_value_t value, ...);
 
 /* ----------------------------------------------------------------------
@@ -164,9 +164,9 @@ SOFIAPUBFUN msg_t *nta_msg_create(nta_agent_t *self, int flags);
 
 SOFIAPUBFUN int nta_msg_complete(msg_t *msg);
 
-SOFIAPUBFUN int nta_msg_request_complete(msg_t *msg, 
-					 nta_leg_t *leg, 
-					 sip_method_t method, 
+SOFIAPUBFUN int nta_msg_request_complete(msg_t *msg,
+					 nta_leg_t *leg,
+					 sip_method_t method,
 					 char const *method_name,
 					 url_string_t const *req_url);
 
@@ -176,13 +176,13 @@ SOFIAPUBFUN int nta_sip_is_internal(sip_t const *sip);
 /* ----------------------------------------------------------------------
  * 5) Leg-level prototypes
  */
-typedef int nta_request_f(nta_leg_magic_t *lmagic, 
+typedef int nta_request_f(nta_leg_magic_t *lmagic,
 			  nta_leg_t *leg,
-			  nta_incoming_t *irq, 
+			  nta_incoming_t *irq,
 			  sip_t const *sip);
 
-SOFIAPUBFUN 
-nta_leg_t *nta_leg_tcreate(nta_agent_t *agent,  
+SOFIAPUBFUN
+nta_leg_t *nta_leg_tcreate(nta_agent_t *agent,
 			   nta_request_f *req_callback,
 			   nta_leg_magic_t *magic,
 			   tag_type_t tag, tag_value_t value, ...);
@@ -217,18 +217,18 @@ SOFIAPUBFUN uint32_t nta_leg_get_seq(nta_leg_t const *leg);
 SOFIAPUBFUN uint32_t nta_leg_get_rseq(nta_leg_t const *leg);
 
 /** Set UAC route. */
-SOFIAPUBFUN int nta_leg_client_route(nta_leg_t *leg, 
-				     sip_record_route_t const *route, 
+SOFIAPUBFUN int nta_leg_client_route(nta_leg_t *leg,
+				     sip_record_route_t const *route,
 				     sip_contact_t const *contact);
 
 /** Set UAS route */
-SOFIAPUBFUN int nta_leg_server_route(nta_leg_t *leg, 
-				     sip_record_route_t const *route, 
+SOFIAPUBFUN int nta_leg_server_route(nta_leg_t *leg,
+				     sip_record_route_t const *route,
 				     sip_contact_t const *contact);
 
 /** Get route */
-SOFIAPUBFUN int nta_leg_get_route(nta_leg_t *leg, 
-				  sip_route_t const **return_route, 
+SOFIAPUBFUN int nta_leg_get_route(nta_leg_t *leg,
+				  sip_route_t const **return_route,
 				  sip_contact_t const **return_target);
 
 /** Get leg by destination */
@@ -237,7 +237,7 @@ SOFIAPUBFUN nta_leg_t *nta_leg_by_uri(nta_agent_t const *,
 
 /** Get leg by dialog */
 SOFIAPUBFUN
-nta_leg_t *nta_leg_by_dialog(nta_agent_t const *agent, 
+nta_leg_t *nta_leg_by_dialog(nta_agent_t const *agent,
 			     url_t const *request_uri,
 			     sip_call_id_t const *call_id,
 			     char const *from_tag,
@@ -258,7 +258,7 @@ SOFIAPUBFUN
 nta_leg_t *nta_leg_by_call_id(nta_agent_t *sa, const char *call_id);
 
 /* ----------------------------------------------------------------------
- * 6) Prototypes for incoming transactions 
+ * 6) Prototypes for incoming transactions
  */
 
 SOFIAPUBFUN
@@ -271,19 +271,19 @@ nta_incoming_t *nta_incoming_create(nta_agent_t *agent,
 SOFIAPUBFUN nta_incoming_t *nta_incoming_default(nta_agent_t *agent);
 
 typedef int nta_ack_cancel_f(nta_incoming_magic_t *imagic,
-			     nta_incoming_t *irq, 
+			     nta_incoming_t *irq,
 			     sip_t const *sip);
 
-SOFIAPUBFUN void nta_incoming_bind(nta_incoming_t *irq, 
+SOFIAPUBFUN void nta_incoming_bind(nta_incoming_t *irq,
 				   nta_ack_cancel_f *callback,
 				   nta_incoming_magic_t *imagic);
 
 SOFIAPUBFUN
-nta_incoming_magic_t *nta_incoming_magic(nta_incoming_t *irq, 
+nta_incoming_magic_t *nta_incoming_magic(nta_incoming_t *irq,
 					 nta_ack_cancel_f *callback);
 
 SOFIAPUBFUN
-nta_incoming_t *nta_incoming_find(nta_agent_t const *agent, 
+nta_incoming_t *nta_incoming_find(nta_agent_t const *agent,
 				  sip_t const *sip,
 				  sip_via_t const *v);
 
@@ -307,7 +307,7 @@ SOFIAPUBFUN msg_t *nta_incoming_getresponse(nta_incoming_t *irq);
 SOFIAPUBFUN
 int nta_incoming_complete_response(nta_incoming_t *irq,
 				   msg_t *msg,
-				   int status, 
+				   int status,
 				   char const *phrase,
 				   tag_type_t tag, tag_value_t value, ...);
 
@@ -315,8 +315,8 @@ SOFIAPUBFUN
 msg_t *nta_incoming_create_response(nta_incoming_t *irq, int status, char const *phrase);
 
 SOFIAPUBFUN
-int nta_incoming_treply(nta_incoming_t *ireq, 
-			int status, char const *phrase, 
+int nta_incoming_treply(nta_incoming_t *ireq,
+			int status, char const *phrase,
 			tag_type_t tag, tag_value_t value, ...);
 
 SOFIAPUBFUN int nta_incoming_mreply(nta_incoming_t *irq, msg_t *msg);
@@ -378,7 +378,7 @@ SOFIAPUBFUN
 nta_outgoing_t *nta_outgoing_mcreate(nta_agent_t *agent,
 				     nta_response_f *callback,
 				     nta_outgoing_magic_t *magic,
-				     url_string_t const *route_url, 
+				     url_string_t const *route_url,
 				     msg_t *msg,
 				     tag_type_t tag, tag_value_t value, ...);
 
@@ -405,7 +405,7 @@ SOFIAPUBFUN msg_t *nta_outgoing_getresponse(nta_outgoing_t *orq);
 SOFIAPUBFUN msg_t *nta_outgoing_getrequest(nta_outgoing_t *orq);
 
 SOFIAPUBFUN
-nta_outgoing_t *nta_outgoing_tagged(nta_outgoing_t *orq, 
+nta_outgoing_t *nta_outgoing_tagged(nta_outgoing_t *orq,
 				    nta_response_f *callback,
 				    nta_outgoing_magic_t *magic,
 				    char const *to_tag,
@@ -414,7 +414,7 @@ nta_outgoing_t *nta_outgoing_tagged(nta_outgoing_t *orq,
 SOFIAPUBFUN int nta_outgoing_cancel(nta_outgoing_t *);
 
 SOFIAPUBFUN
-nta_outgoing_t *nta_outgoing_tcancel(nta_outgoing_t *orq, 
+nta_outgoing_t *nta_outgoing_tcancel(nta_outgoing_t *orq,
 				     nta_response_f *callback,
 				     nta_outgoing_magic_t *magic,
 				     tag_type_t, tag_value_t, ...);
@@ -424,7 +424,7 @@ SOFIAPUBFUN void nta_outgoing_destroy(nta_outgoing_t *);
 SOFIAPUBFUN
 nta_outgoing_t *nta_outgoing_find(nta_agent_t const *sa,
 				  msg_t const *msg,
-				  sip_t const *sip, 
+				  sip_t const *sip,
 				  sip_via_t const *v);
 
 SOFIAPUBFUN int nta_tport_keepalive(nta_outgoing_t *orq);
@@ -464,19 +464,19 @@ typedef NTA_RELIABLE_MAGIC_T  nta_reliable_magic_t;
 
 typedef int nta_prack_f(nta_reliable_magic_t *rmagic,
 			nta_reliable_t *rel,
-			nta_incoming_t *prack, 
+			nta_incoming_t *prack,
 			sip_t const *sip);
 
 SOFIAPUBFUN
 nta_reliable_t *nta_reliable_treply(nta_incoming_t *ireq,
 				    nta_prack_f *callback,
 				    nta_reliable_magic_t *rmagic,
-				    int status, char const *phrase, 
-				    tag_type_t tag, 
+				    int status, char const *phrase,
+				    tag_type_t tag,
 				    tag_value_t value, ...);
 
 SOFIAPUBFUN
-nta_reliable_t *nta_reliable_mreply(nta_incoming_t *irq, 
+nta_reliable_t *nta_reliable_mreply(nta_incoming_t *irq,
 				    nta_prack_f *callback,
 				    nta_reliable_magic_t *rmagic,
 				    msg_t *msg);

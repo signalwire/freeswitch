@@ -22,7 +22,7 @@
  *
  */
 
-/**@file sofia-sip/nua.h  
+/**@file sofia-sip/nua.h
  * @brief Sofia-SIP User Agent Library API
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -53,13 +53,13 @@
 
 SOFIA_BEGIN_DECLS
 
-#ifndef NUA_MAGIC_T 
+#ifndef NUA_MAGIC_T
 #define NUA_MAGIC_T void
 #endif
 /** Application context for NUA agent. */
 typedef NUA_MAGIC_T nua_magic_t;
 
-#ifndef NUA_HMAGIC_T 
+#ifndef NUA_HMAGIC_T
 #define NUA_HMAGIC_T void
 #endif
 /** Application context for NUA handle. */
@@ -112,9 +112,9 @@ typedef enum nua_event_e {
   nua_i_media_error,		/**< Offer-answer error indication */
 
   /* Responses */
-  nua_r_set_params,		/**< Answer to nua_set_params() or 
+  nua_r_set_params,		/**< Answer to nua_set_params() or
 				 * nua_get_hparams(). */
-  nua_r_get_params,		/**< Answer to nua_get_params() or 
+  nua_r_get_params,		/**< Answer to nua_get_params() or
 				 * nua_get_hparams(). */
   nua_r_shutdown,		/**< Answer to nua_shutdown() */
   nua_r_notifier,		/**< Answer to nua_notifier() */
@@ -140,7 +140,7 @@ typedef enum nua_event_e {
   nua_r_unsubscribe,		/**< Answer to outgoing un-SUBSCRIBE */
   nua_r_notify,			/**< Answer to outgoing NOTIFY */
   nua_r_method,			/**< Answer to unknown outgoing method */
- 
+
   nua_r_authenticate,		/**< Answer to nua_authenticate() */
 
   /* Internal events: nua hides them from application */
@@ -152,7 +152,7 @@ typedef enum nua_event_e {
 
   /* NOTE: Post 1.12 release events come here (below) to keep ABI
      compatibility! */
-  nua_i_network_changed,        /**< Local IP(v6) address has changed. 
+  nua_i_network_changed,        /**< Local IP(v6) address has changed.
 				   @NEW_1_12_2 */
   nua_i_register		/**< Incoming REGISTER. @NEW_1_12_4. */
 } nua_event_t;
@@ -269,16 +269,16 @@ SOFIAPUBFUN char const *nua_substate_name(enum nua_substate substate);
 /** Convert string to enum nua_substate. @NEW_1_12_5. */
 SOFIAPUBFUN enum nua_substate nua_substate_make(char const *sip_substate);
 
-/** Send SIP REGISTER request to the registrar. */ 
+/** Send SIP REGISTER request to the registrar. */
 SOFIAPUBFUN void nua_register(nua_handle_t *nh, tag_type_t, tag_value_t, ...);
 
-/** Unregister. */ 
+/** Unregister. */
 SOFIAPUBFUN void nua_unregister(nua_handle_t *nh, tag_type_t, tag_value_t, ...);
 
 /** Place a call using SIP INVITE method. */
 SOFIAPUBFUN void nua_invite(nua_handle_t *nh, tag_type_t, tag_value_t, ...);
 
-/** Acknowledge a succesfull response to INVITE request. */ 
+/** Acknowledge a succesfull response to INVITE request. */
 SOFIAPUBFUN void nua_ack(nua_handle_t *nh, tag_type_t, tag_value_t, ...);
 
 /** Acknowledge a reliable preliminary response to INVITE request. */
@@ -320,7 +320,7 @@ SOFIAPUBFUN void nua_terminate(nua_handle_t *, tag_type_t, tag_value_t, ...);
 /** Transfer a call. */
 SOFIAPUBFUN void nua_refer(nua_handle_t *, tag_type_t, tag_value_t, ...);
 
-/** Update a call */ 
+/** Update a call */
 SOFIAPUBFUN void nua_update(nua_handle_t *, tag_type_t, tag_value_t, ...);
 
 /** Hangdown a call. */
@@ -342,9 +342,9 @@ SOFIAPUBFUN void nua_redirect(nua_handle_t *, tag_type_t, tag_value_t, ...);
 SOFIAPUBFUN void nua_method(nua_handle_t *, tag_type_t, tag_value_t, ...);
 
 /** Respond to a request with given status code and phrase. */
-SOFIAPUBFUN void nua_respond(nua_handle_t *nh, 
+SOFIAPUBFUN void nua_respond(nua_handle_t *nh,
 			     int status, char const *phrase,
-			     tag_type_t, tag_value_t, 
+			     tag_type_t, tag_value_t,
 			     ...);
 
 /** Check if event can be responded with nua_respond() */
@@ -377,7 +377,7 @@ SOFIAPUBFUN msg_t *nua_saved_event_request(nua_saved_event_t const *saved);
 /** Get current request message. */
 SOFIAPUBFUN  msg_t *nua_current_request(nua_t const *nua);
 
-SOFIAPUBFUN sip_replaces_t *nua_handle_make_replaces(nua_handle_t *nh, 
+SOFIAPUBFUN sip_replaces_t *nua_handle_make_replaces(nua_handle_t *nh,
 						     su_home_t *home,
 						     int early_only);
 

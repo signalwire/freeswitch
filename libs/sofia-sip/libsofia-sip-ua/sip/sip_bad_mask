@@ -15,7 +15,7 @@
 #
 
 #
-# When updating this file, please update 
+# When updating this file, please update
 # NTATAG_BAD_RESP_MASK()/NTATAG_BAD_REQ_MASK() documentation, too.
 #
 
@@ -55,7 +55,7 @@ Path = sip_mask_registrar
 
 #
 # Headers that must be valid in UA, proxy or registrar
-# 
+#
 Contact = sip_mask_ua | sip_mask_proxy | sip_mask_registrar
 Require = sip_mask_ua | sip_mask_registrar | sip_mask_timer
 Record-Route = sip_mask_ua | sip_mask_proxy

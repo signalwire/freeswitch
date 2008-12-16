@@ -25,7 +25,7 @@
 #ifndef OUTBOUND_H
 /** Defined when <outbound.h> has been included. */
 #define OUTBOUND_H
-/**@IFILE outbound.h 
+/**@IFILE outbound.h
  *
  * @brief Interface to SIP NAT traversal and outbound
  *
@@ -73,8 +73,8 @@ int outbound_set_options(outbound_t *ob,
 int outbound_set_proxy(outbound_t *ob,
 		       url_string_t *proxy);
 
-int outbound_get_contacts(outbound_t *ob, 
-			  sip_contact_t **return_current_contact, 
+int outbound_get_contacts(outbound_t *ob,
+			  sip_contact_t **return_current_contact,
 			  sip_contact_t **return_previous_contact);
 
 int outbound_start_registering(outbound_t *ob);
@@ -110,7 +110,7 @@ void outbound_stop_keepalive(outbound_t *ob);
 
 int outbound_targeted_request(sip_t const *sip);
 
-int outbound_process_request(outbound_t *ob, 
+int outbound_process_request(outbound_t *ob,
 			     nta_incoming_t *irq,
 			     sip_t const *sip);
 

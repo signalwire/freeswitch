@@ -23,13 +23,13 @@
  */
 
 /**@internal
- * @file stun_dns.c 
+ * @file stun_dns.c
  * @brief Functins to discover STUN server address using DNS-SRV.
  *
- * Refs: 
+ * Refs:
  *   - RFC3489/3489bis
  *   - RFC2782
- * 
+ *
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
  */
 
@@ -100,16 +100,16 @@ static void priv_sres_cb(stun_dns_lookup_t *self,
 	self->stun_tcp_target = su_strdup(self->stun_home, rr->srv_target);
 	self->stun_tcp_port = rr->srv_port;
 	self->stun_state |= stun_dns_tls;
-	SU_DEBUG_5(("%s: stun (tcp) for domain %s is at %s:%u.\n", 
-		    __func__, rr->srv_record->r_name, self->stun_tcp_target, self->stun_tcp_port)); 
+	SU_DEBUG_5(("%s: stun (tcp) for domain %s is at %s:%u.\n",
+		    __func__, rr->srv_record->r_name, self->stun_tcp_target, self->stun_tcp_port));
       }
       else if ((self->stun_state & stun_dns_udp) == 0 &&
 	       strncmp(rr->srv_record->r_name, udp_name, strlen(udp_name)) == 0) {
 	self->stun_udp_target = su_strdup(self->stun_home, rr->srv_target);
 	self->stun_udp_port = rr->srv_port;
 	self->stun_state |= stun_dns_udp;
-	SU_DEBUG_5(("%s: stun (udp) for domain %s is at %s:%u.\n", 
-		    __func__, rr->srv_record->r_name, self->stun_udp_target, self->stun_udp_port)); 
+	SU_DEBUG_5(("%s: stun (udp) for domain %s is at %s:%u.\n",
+		    __func__, rr->srv_record->r_name, self->stun_udp_target, self->stun_udp_port));
       }
     }
   }
@@ -130,18 +130,18 @@ static void priv_sres_cb(stun_dns_lookup_t *self,
  * The result will be delivered asynchronously in the
  * 'func' callback. 'root' will be used as the event loop.
  */
-stun_dns_lookup_t *stun_dns_lookup(stun_magic_t *magic, 
+stun_dns_lookup_t *stun_dns_lookup(stun_magic_t *magic,
 				   su_root_t *root,
-				   stun_dns_lookup_f func, 
+				   stun_dns_lookup_f func,
 				   const char *domain)
 {
   stun_dns_lookup_t *self;
   sres_query_t *query;
 
-  if (!domain || 
+  if (!domain ||
       strlen(domain) + strlen(STUN_SRV_SERVICE_UDP ".") + 1>= SRES_MAXDNAME)
     return NULL;
-  
+
   self = su_home_new(sizeof(stun_dns_lookup_t));
 
   /* see nta.c:outgoing_answer_srv() */
@@ -167,7 +167,7 @@ stun_dns_lookup_t *stun_dns_lookup(stun_magic_t *magic,
   else {
     su_free(NULL, self), self = NULL;
   }
-  
+
   return self;
 }
 
@@ -192,7 +192,7 @@ void stun_dns_lookup_destroy(stun_dns_lookup_t *self)
  * @param port location where to store port number
  *
  * @return 0 on success, non-zero otherwise
- */ 
+ */
 int stun_dns_lookup_udp_addr(stun_dns_lookup_t *self, const char **target, uint16_t *port)
 {
   int result = -1;
@@ -215,7 +215,7 @@ int stun_dns_lookup_udp_addr(stun_dns_lookup_t *self, const char **target, uint1
  * @param port location where to store port number
  *
  * @return 0 on success, non-zero otherwise
- */ 
+ */
 int stun_dns_lookup_tcp_addr(stun_dns_lookup_t *self, const char **target, uint16_t *port)
 {
   int result = -1;
@@ -238,7 +238,7 @@ int stun_dns_lookup_tcp_addr(stun_dns_lookup_t *self, const char **target, uint1
  * @param port location where to store port number
  *
  * @return 0 on success, non-zero otherwise
- */ 
+ */
 int stun_dns_lookup_stp_addr(stun_dns_lookup_t *self, const char **target, uint16_t *port)
 {
   /* XXX: not implemented */

@@ -23,14 +23,14 @@
  */
 
 /**@ingroup su_time
- * 
- * @IFILE torture_su_time.c  
+ *
+ * @IFILE torture_su_time.c
  *
  * Tests for su_time functions.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <first.surname@nokia.com>
- * 
+ *
  * @date Created: Fri May 10 16:08:18 2002 ppessi
  */
 
@@ -81,7 +81,7 @@ int test1(int flags)
   su_time_t now;
   su_ntp_t ntp, ntp0, ntp1;
   uint64_t increment = 3019;
-  
+
   BEGIN();
 
   ntp_hi = 2208988800UL;
@@ -138,7 +138,7 @@ int test2(int flags)
   uint64_t tl;
   uint16_t seq1, seq2;
   const uint64_t granularity = 10000000U;
-  const uint64_t ntp_epoch = 
+  const uint64_t ntp_epoch =
     (uint64_t)(141427) * (24 * 60 * 60L) * granularity;
   isize_t i;
 
@@ -175,7 +175,7 @@ int test2(int flags)
 
   for (i = 0; i < 32000; i++) {
     su_guid_generate(g2);
-    seq2 = ((g2->s.clock_seq_hi_and_reserved & 0x3f) << 8) 
+    seq2 = ((g2->s.clock_seq_hi_and_reserved & 0x3f) << 8)
       + g2->s.clock_seq_low;
     TEST((seq1 + i + 2) % 16384, seq2);
   }
@@ -216,15 +216,15 @@ extern uint64_t (*_su_nanotime)(uint64_t *);
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
-	  "usage: %s [-v] [-a]\n", 
+  fprintf(stderr,
+	  "usage: %s [-v] [-a]\n",
 	  name);
   exit(exitcode);
 }
 
 char *lastpart(char *path)
 {
-  if (strchr(path, '/')) 
+  if (strchr(path, '/'))
     return strrchr(path, '/') + 1;
   else
     return path;

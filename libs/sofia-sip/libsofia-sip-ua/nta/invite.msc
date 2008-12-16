@@ -86,14 +86,14 @@ Agent     |             ¦           agent        |
  |        |nta_leg_destroy            |          |
  |        |---------------------------|--------->|
  |        |             ¦             |          X
- |        X             ¦             |          
+ |        X             ¦             |
 
 
 User Agent Server Accepting a Call
 ----------------------------------
 
                     APP ¦ NTA
-User                  	¦	     NTA 
+User                  	¦	     NTA
 Agent                 	¦	    agent
  |                      ¦             |                INVITE
  |			¦             |<----------------------

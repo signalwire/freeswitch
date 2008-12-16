@@ -53,7 +53,7 @@
  * The macro URL_PRINT_FORMAT is used in format string of printf() or
  * similar printing functions.  A URL can be printed like this:
  * @code
- *   printf("%s received URL " URL_PRINT_FORMAT "\n", 
+ *   printf("%s received URL " URL_PRINT_FORMAT "\n",
  *          my_name, URL_PRINT_ARGS(url));
  * @endcode
  */
@@ -65,7 +65,7 @@
  * or similar printing functions.  Using it, a URL can be printed like this:
  *
  * @code
- *   printf("%s received URL " URL_PRINT_FORMAT "\n", 
+ *   printf("%s received URL " URL_PRINT_FORMAT "\n",
  *          my_name, URL_PRINT_ARGS(url));
  * @endcode
  */
@@ -146,14 +146,14 @@
 static char *url_canonize(char *d, char const *s, size_t n,
 			  unsigned syn33,
 			  char const allowed[]);
-static char *url_canonize2(char *d, char const *s, size_t n, 
+static char *url_canonize2(char *d, char const *s, size_t n,
 			   unsigned syn33,
 			   unsigned m32, unsigned m64, unsigned m96);
 static int url_tel_cmp_numbers(char const *A, char const *B);
 
-/**Test if string contains excluded or url-reserved characters. 
+/**Test if string contains excluded or url-reserved characters.
  *
- * 
+ *
  *
  * @param s  string to be searched
  *
@@ -162,7 +162,7 @@ static int url_tel_cmp_numbers(char const *A, char const *B);
  */
 int url_reserved_p(char const *s)
 {
-  if (s) 
+  if (s)
     while (*s) {
       unsigned char u = *s++;
 
@@ -177,11 +177,11 @@ int url_reserved_p(char const *s)
  *
  * Calculate the length of string @a s when the excluded or reserved
  * characters in it have been escaped.
- * 
+ *
  * @param s         String with reserved URL characters. [IN
  * @param reserved  Optional array of reserved characters [IN]
  *
- * @return 
+ * @return
  * The number of characters in corresponding but escaped string.
  *
  * You can handle a part of URL with reserved characters like this:
@@ -230,7 +230,7 @@ char *url_escape(char *d, char const *s, char const reserved[])
 {
   char *retval = d;
   unsigned mask32, mask64, mask96;
- 
+
   MASKS_WITH_RESERVED(reserved, mask32, mask64, mask96);
 
   while (s && *s) {
@@ -251,7 +251,7 @@ char *url_escape(char *d, char const *s, char const reserved[])
   }
 
   *d = '\0';
-  
+
   return retval;
 }
 
@@ -350,7 +350,7 @@ char *url_canonize2(char *d, char const * const s, size_t n,
   size_t i = 0;
 
   if (d == s)
-    for (;s[i] && i < n; d++, i++) 
+    for (;s[i] && i < n; d++, i++)
       if (s[i] == '%')
 	break;
 
@@ -365,12 +365,12 @@ char *url_canonize2(char *d, char const * const s, size_t n,
     }
 
     h1 = s[i + 1], h2 = s[i + 2];
-    
+
     if (!IS_HEX(h1) || !IS_HEX(h2)) {
       *d = '\0';
       return NULL;
     }
-    
+
 #define UNHEX(a) (a - (a >= 'a' ? 'a' - 10 : (a >= 'A' ? 'A' - 10 : '0')))
     c = (UNHEX(h1) << 4) | UNHEX(h2);
 
@@ -391,7 +391,7 @@ char *url_canonize2(char *d, char const * const s, size_t n,
     d +=2, i += 2;
 #undef    UNHEX
   }
-  
+
   *d = '\0';
 
   return d;
@@ -400,7 +400,7 @@ char *url_canonize2(char *d, char const * const s, size_t n,
 
 /** Canonize a URL component (with precomputed mask).
  *
- * This version does not flag error if *s contains character that should 
+ * This version does not flag error if *s contains character that should
  * be escaped.
  */
 static
@@ -410,7 +410,7 @@ char *url_canonize3(char *d, char const * const s, size_t n,
   size_t i = 0;
 
   if (d == s)
-    for (;s[i] && i < n; d++, i++) 
+    for (;s[i] && i < n; d++, i++)
       if (s[i] == '%')
 	break;
 
@@ -423,12 +423,12 @@ char *url_canonize3(char *d, char const * const s, size_t n,
     }
 
     h1 = s[i + 1], h2 = s[i + 2];
-    
+
     if (!IS_HEX(h1) || !IS_HEX(h2)) {
       *d = '\0';
       return NULL;
     }
-    
+
 #define UNHEX(a) (a - (a >= 'a' ? 'a' - 10 : (a >= 'A' ? 'A' - 10 : '0')))
     c = (UNHEX(h1) << 4) | UNHEX(h2);
 
@@ -448,7 +448,7 @@ char *url_canonize3(char *d, char const * const s, size_t n,
     d +=2, i += 2;
 #undef    UNHEX
   }
-  
+
   *d = '\0';
 
   return d;
@@ -478,7 +478,7 @@ char const* url_scheme(enum url_type_e url_type)
   case url_msrp:   return "msrp";
   case url_msrps:  return "msrps";
   case url_wv:     return "wv";
-  default:       
+  default:
     assert(url_type == url_unknown);
     return NULL;
   }
@@ -487,10 +487,10 @@ char const* url_scheme(enum url_type_e url_type)
 su_inline
 int url_type_is_opaque(enum url_type_e url_type)
 {
-  return 
+  return
     url_type == url_invalid ||
-    url_type == url_tel || 
-    url_type == url_modem || 
+    url_type == url_tel ||
+    url_type == url_modem ||
     url_type == url_fax ||
     url_type == url_cid;
 }
@@ -513,29 +513,29 @@ enum url_type_e url_get_type(char const *scheme, size_t len)
 {
 #define test_scheme(s) \
    if (len == strlen(#s) && !strncasecmp(scheme, #s, len)) return url_##s
-  
+
   switch (scheme[0]) {
   case '*': if (strcmp(scheme, "*") == 0) return url_any;
-  case 'c': case 'C': 
+  case 'c': case 'C':
     test_scheme(cid); break;
-  case 'f': case 'F': 
+  case 'f': case 'F':
     test_scheme(ftp); test_scheme(file); test_scheme(fax); break;
-  case 'h': case 'H': 
+  case 'h': case 'H':
     test_scheme(http); test_scheme(https); break;
-  case 'i': case 'I': 
+  case 'i': case 'I':
     test_scheme(im); break;
-  case 'm': case 'M': 
-    test_scheme(mailto); test_scheme(modem); 
+  case 'm': case 'M':
+    test_scheme(mailto); test_scheme(modem);
     test_scheme(msrp); test_scheme(msrps); break;
-  case 'p': case 'P': 
+  case 'p': case 'P':
     test_scheme(pres); break;
-  case 'r': case 'R': 
+  case 'r': case 'R':
     test_scheme(rtsp); test_scheme(rtspu); break;
-  case 's': case 'S': 
+  case 's': case 'S':
     test_scheme(sip); test_scheme(sips); break;
-  case 't': case 'T': 
+  case 't': case 'T':
     test_scheme(tel); break;
-  case 'w': case 'W': 
+  case 'w': case 'W':
     test_scheme(wv); break;
 
 
@@ -560,7 +560,7 @@ enum url_type_e url_get_type(char const *scheme, size_t len)
  *
  * @note The parsed string @a s will be modified when parsing it.
  *
- * @retval 0 if successful, 
+ * @retval 0 if successful,
  * @retval -1 otherwise.
  */
 static
@@ -571,7 +571,7 @@ int _url_d(url_t *url, char *s)
   int have_authority = 1;
 
   memset(url, 0, sizeof(*url));
-  
+
   if (strcmp(s, "*") == 0) {
     url->url_type = url_any;
     url->url_scheme = "*";
@@ -636,7 +636,7 @@ int _url_d(url_t *url, char *s)
 	host += 2; s += 2, url->url_root = '/';
 	n = strcspn(s, "/?#@[]");
       }
-      else 
+      else
 	n = strcspn(s, "@;/?#");
 
       if (s[n] == '@')
@@ -691,7 +691,7 @@ int _url_d(url_t *url, char *s)
     default:
       break;
     }
-    
+
     if (host[n] == ':') {
       char *port = host + n + 1;
       url->url_port = port;
@@ -712,8 +712,8 @@ int _url_d(url_t *url, char *s)
 	/* Port can be *digit, empty string or "*" */
 	while (*port >= '0' && *port <= '9')
 	  port++;
-	
-	if (port != url->url_port ? port[0] != '\0' 
+
+	if (port != url->url_port ? port[0] != '\0'
 	    : (port[0] != '*' || port[1] != '\0'))
 	  return -1;
       }
@@ -755,7 +755,7 @@ int _url_d(url_t *url, char *s)
  *
  * @note The parsed string @a s will be modified when parsing it.
  *
- * @retval 0 if successful, 
+ * @retval 0 if successful,
  * @retval -1 otherwise.
  */
 int url_d(url_t *url, char *s)
@@ -799,7 +799,7 @@ int url_d(url_t *url, char *s)
 
   /* port is canonized by _url_d() */
   s = (char *)url->url_path;
-  if (s && !url_canonize(s, s, SIZE_MAX, 
+  if (s && !url_canonize(s, s, SIZE_MAX,
 			 /* Allow all URI characters but ? */
 			 /* Allow unescaped /;?@, - but do not convert */
 			 SYN33('/') | SYN33(';') | SYN33('=') | SYN33('@') |
@@ -816,7 +816,7 @@ int url_d(url_t *url, char *s)
 			 /* Convert escaped /:&+$ to unescaped */
 			 "/:&+$"))
     return -1;
-  
+
   /* Unhex alphanumeric and unreserved URI characters */
   s = (char *)url->url_headers;
   if (s && !url_canonize3(s, s, SIZE_MAX, RESERVED_MASK))
@@ -830,8 +830,8 @@ int url_d(url_t *url, char *s)
   return 0;
 }
 
-/** Encode an URL. 
- * 
+/** Encode an URL.
+ *
  * The function url_e() combines a URL from substrings in url_t structure
  * according the @ref url_syntax "URL syntax" presented above.  The encoded
  * @a url is stored in a @a buffer of @a n bytes.
@@ -840,8 +840,8 @@ int url_d(url_t *url, char *s)
  * @param n      size of @a buffer.
  * @param url    URL to be encoded.
  *
- * @return 
- * Return the number of bytes in the encoding.  
+ * @return
+ * Return the number of bytes in the encoding.
  *
  * @note The function follows the convention set by C99 snprintf().  Even if
  * the result does not fit into the @a buffer and it is truncated, the
@@ -904,7 +904,7 @@ issize_t url_e(char buffer[], isize_t n, url_t const *url)
 
     if (url->url_password) {
       if (do_copy && (do_copy = 1 <= n))
-	*b = ':'; 
+	*b = ':';
       b++; n--;
       i = strlen(url->url_password);
       if (do_copy && (do_copy = i <= n))
@@ -914,7 +914,7 @@ issize_t url_e(char buffer[], isize_t n, url_t const *url)
 
     if (url->url_host) {
       if (do_copy && (do_copy = 1 <= n))
-	*b = '@'; 
+	*b = '@';
       b++; n--;
     }
   }
@@ -930,7 +930,7 @@ issize_t url_e(char buffer[], isize_t n, url_t const *url)
       if (do_copy && (do_copy = i <= n)) {
 	b[0] = ':';
 	memcpy(b + 1, url->url_port, i - 1);
-      } 
+      }
       b += i; n -= i;
     }
   }
@@ -946,7 +946,7 @@ issize_t url_e(char buffer[], isize_t n, url_t const *url)
       memcpy(b, url->url_path, i);
     b += i; n -= i;
   }
-  
+
   {
     static char const sep[] = ";?#";
     char const *pp[3];
@@ -974,15 +974,15 @@ issize_t url_e(char buffer[], isize_t n, url_t const *url)
     buffer[m - 1] = '\0';
 
   assert((size_t)(b - buffer) == (size_t)(m - n));
-  
-  /* This follows the snprintf(C99) return value, 
+
+  /* This follows the snprintf(C99) return value,
    * Number of characters written (excluding NUL)
    */
   return b - buffer;
 }
 
 
-/** Calculate the length of URL when encoded. 
+/** Calculate the length of URL when encoded.
  *
  */
 isize_t url_len(url_t const * url)
@@ -992,7 +992,7 @@ isize_t url_len(url_t const * url)
   if (url->url_scheme) rv += strlen(url->url_scheme) + 1; /* plus ':' */
   if (url->url_user) {
     rv += strlen(url->url_user);
-    if (url->url_password) 
+    if (url->url_password)
       rv += strlen(url->url_password) + 1;   /* plus ':' */
     rv += url->url_host != NULL;  /* plus '@' */
   }
@@ -1007,11 +1007,11 @@ isize_t url_len(url_t const * url)
 }
 
 /**@def URL_E(buf, end, url)
- * Encode an URL: use @a buf up to @a end. 
+ * Encode an URL: use @a buf up to @a end.
  * @hideinitializer
  */
 
-/** 
+/**
  * Calculate the size of strings associated with a #url_t sructure.
  *
  * @param url pointer to a #url_t structure or string
@@ -1026,7 +1026,7 @@ isize_t url_xtra(url_t const *url)
   }
   else {
     size_t len_scheme, len_user, len_password,
-      len_host, len_port, len_path, len_params, 
+      len_host, len_port, len_path, len_params,
       len_headers, len_fragment;
 
     len_scheme = (url->url_type <= url_unknown && url->url_scheme) ?
@@ -1061,7 +1061,7 @@ char *copy(char *buf, char *end, char const *src)
   for (; buf < end && (*buf = *src); buf++, src++)
     ;
 
-  if (buf >= end) 
+  if (buf >= end)
     while (*src++)
       buf++;
 
@@ -1069,12 +1069,12 @@ char *copy(char *buf, char *end, char const *src)
 #endif
 }
 
-/** 
+/**
  * Duplicate the url.
- * 
+ *
  * The function url_dup() copies the url structure @a src and the strings
  * attached to it to @a url.  The non-constant strings in @a src are copied
- * to @a buf.  If the size of duplicated strings exceed @a bufsize, the 
+ * to @a buf.  If the size of duplicated strings exceed @a bufsize, the
  * corresponding string fields in @a url are set to NULL.
  *
  * The calling function can calculate the size of buffer required by calling
@@ -1108,7 +1108,7 @@ issize_t url_dup(char *buf, isize_t bufsize, url_t *dst, url_t const *src)
   else {
     char *b = buf;
     char *end = b + bufsize;
-    char const **dstp; 
+    char const **dstp;
     char const * const *srcp;
     url_t dst0[1];
 
@@ -1154,7 +1154,7 @@ issize_t url_dup(char *buf, isize_t bufsize, url_t *dst, url_t const *src)
 }
 
 /**@def URL_DUP(buf, end, dst, src)
- *  Duplicate the url: use @a buf up to @a end. @HI 
+ *  Duplicate the url: use @a buf up to @a end. @HI
  *
  * The macro URL_DUP() duplicates the url.  The non-constant strings in @a
  * src are copied to @a buf.  However, no strings are copied past @a end.
@@ -1169,14 +1169,14 @@ issize_t url_dup(char *buf, isize_t bufsize, url_t *dst, url_t const *src)
  * @param dst     Destination URL structure.
  * @param src     Source URL structure.
  *
- * @return 
- * The macro URL_DUP() returns pointer to first unused byte in the 
+ * @return
+ * The macro URL_DUP() returns pointer to first unused byte in the
  * buffer @a buf.
  */
 
 /** Duplicate the url to memory allocated via home.
  *
- * The function url_hdup() duplicates (deep copies) an #url_t structure. 
+ * The function url_hdup() duplicates (deep copies) an #url_t structure.
  * Alternatively, it can be passed a string; string is then copied and
  * parsed to the #url_t structure.
  *
@@ -1190,7 +1190,7 @@ issize_t url_dup(char *buf, isize_t bufsize, url_t *dst, url_t const *src)
  * @return
  * The function url_hdup() returns a pointer to the newly allocated #url_t
  * structure, or NULL upon an error.
- */ 
+ */
 url_t *url_hdup(su_home_t *home, url_t const *src)
 {
   if (src) {
@@ -1211,13 +1211,13 @@ url_t *url_hdup(su_home_t *home, url_t const *src)
 }
 
 
-/** Convert an string to an url */ 
+/** Convert an string to an url */
 url_t *url_make(su_home_t *h, char const *str)
 {
   return url_hdup(h, URL_STRING_MAKE(str)->us_url);
 }
 
-/** Print an URL */ 
+/** Print an URL */
 url_t *url_format(su_home_t *h, char const *fmt, ...)
 {
   url_t *url;
@@ -1263,7 +1263,7 @@ char *url_as_string(su_home_t *home, url_t const *url)
 }
 
 
-/** Test if param @a tag matches to parameter string @a p. 
+/** Test if param @a tag matches to parameter string @a p.
  */
 #define URL_PARAM_MATCH(p, tag) \
  (strncasecmp(p, tag, strlen(tag)) == 0 && \
@@ -1274,8 +1274,8 @@ char *url_as_string(su_home_t *home, url_t const *url)
  *
  * This function searches for a parameter from a parameter list.
  *
- * If you want to test if there is parameter @b user=phone, 
- * call this function like 
+ * If you want to test if there is parameter @b user=phone,
+ * call this function like
  * @code if (url_param(url->url_param, "user=phone", NULL, 0))
  * @endcode
  *
@@ -1287,8 +1287,8 @@ char *url_as_string(su_home_t *home, url_t const *url)
  * @retval positive length of parameter value (including final NUL) if found
  * @retval zero     if not found.
  */
-isize_t url_param(char const *params, 
-		  char const *tag, 
+isize_t url_param(char const *params,
+		  char const *tag,
 		  char value[], isize_t vlen)
 {
   size_t n, tlen, flen;
@@ -1309,7 +1309,7 @@ isize_t url_param(char const *params,
     if (strncasecmp(p, tag, tlen) == 0) {
       if (n == tlen) {
 	if (vlen > 0)
-	  value[0] = '\0';	
+	  value[0] = '\0';
 	return 1;
       }
       if (p[tlen] != '=')
@@ -1328,9 +1328,9 @@ isize_t url_param(char const *params,
   return 0;
 }
 
-/** Check for a parameter. 
+/** Check for a parameter.
  *
- * @deprecated 
+ * @deprecated
  * Bad grammar. Use url_has_param().
  */
 isize_t url_have_param(char const *params, char const *tag)
@@ -1354,7 +1354,7 @@ int url_param_add(su_home_t *h, url_t *url, char const *param)
 
   if (!s)
     return -1;
-  
+
   if (url->url_params)
     strcpy(s, url->url_params)[n - 1] = ';';
   strcpy(s + n, param);
@@ -1374,7 +1374,7 @@ char *url_strip_param_string(char *params, char const *name)
 {
   if (params && name) {
     size_t i, n = strlen(name), remove, rest;
-    
+
     for (i = 0; params[i];) {
       if (strncasecmp(params + i, name, n) ||
 	  (params[i + n] != '=' && params[i + n] != ';' && params[i + n])) {
@@ -1429,7 +1429,7 @@ int url_strip_transport2(url_t *url, int modify)
 
   if (url->url_type != url_sip && url->url_type != url_sips)
     return 0;
-  
+
   if (url->url_port != NULL) {
     if (!modify)
       return 1;
@@ -1475,13 +1475,13 @@ int url_strip_transport2(url_t *url, int modify)
 
   if (d != url->url_params)
     *d = '\0';
-  else 
+  else
     url->url_params = NULL;
 
   return 1;
 }
 
-/** Strip transport-specific stuff. 
+/** Strip transport-specific stuff.
  *
  * The function url_strip_transport() removes transport-specific parameters
  * from a SIP or SIPS URI.  These parameters include:
@@ -1497,7 +1497,7 @@ int url_strip_transport2(url_t *url, int modify)
  * @note
  * If the parameter string contains empty parameters, they are stripped, too.
  *
- * @return 
+ * @return
  * The function url_strip_transport() returns @e true, if the URL was
  * modified, @e false otherwise.
  */
@@ -1506,14 +1506,14 @@ int url_strip_transport(url_t *url)
   return url_strip_transport2(url, 1);
 }
 
-/** Check for transport-specific stuff. 
+/** Check for transport-specific stuff.
  *
  * The function url_have_transport() tests if there are transport-specific
  * parameters in a SIP or SIPS URI. These parameters include:
  * - the port number
  * - "maddr=" parameters
  * - "transport=" parameters
- * 
+ *
  * @note
  * The @a url must be a pointer to a URL structure.
  *
@@ -1538,7 +1538,7 @@ int url_have_transport(url_t const *url)
  *
  * @note Currently, the url parameters are not compared. This is because the
  * url_cmp() is used to sort URLs: taking parameters into account makes that
- * impossible. 
+ * impossible.
  */
 int url_cmp(url_t const *a, url_t const *b)
 {
@@ -1556,7 +1556,7 @@ int url_cmp(url_t const *a, url_t const *b)
     /* presence and instant messaging URLs match magically with SIP */
     enum url_type_e a_type = a->url_type;
     enum url_type_e b_type = b->url_type;
-    
+
     if (a_type == url_im || a_type == url_pres)
       a_type = url_sip;
 
@@ -1570,7 +1570,7 @@ int url_cmp(url_t const *a, url_t const *b)
 
   url_type = a->url_type;	/* Or b->url_type, they are equal! */
 
-  if (url_type <= url_unknown && 
+  if (url_type <= url_unknown &&
       ((rv = !a->url_scheme - !b->url_scheme) ||
        (a->url_scheme && b->url_scheme &&
 	(rv = strcasecmp(a->url_scheme, b->url_scheme)))))
@@ -1589,7 +1589,7 @@ int url_cmp(url_t const *a, url_t const *b)
       a_port = b_port = url_port_default(url_type);
     else
       a_port = b_port = "";
-    
+
     if (a->url_port) a_port = a->url_port;
     if (b->url_port) b_port = b->url_port;
 
@@ -1635,7 +1635,7 @@ int url_tel_cmp_numbers(char const *A, char const *B)
     /* Skip visual-separators */
     do {
       a = *A++;
-      if (a == '%' && IS_HEX(A[0]) && IS_HEX(A[1])) 
+      if (a == '%' && IS_HEX(A[0]) && IS_HEX(A[1]))
 	a = (UNHEX(A[0]) << 4) | UNHEX(A[1]), A +=2;
     } while (a == ' ' || a == '-' || a == '.' || a == '(' || a == ')');
 
@@ -1644,7 +1644,7 @@ int url_tel_cmp_numbers(char const *A, char const *B)
 
     do {
       b = *B++;
-      if (b == '%' && IS_HEX(B[0]) && IS_HEX(B[1])) 
+      if (b == '%' && IS_HEX(B[0]) && IS_HEX(B[1]))
 	b = (UNHEX(B[0]) << 4) | UNHEX(B[1]), B +=2;
     } while (b == ' ' || b == '-' || b == '.' || b == '(' || b == ')');
 
@@ -1678,7 +1678,7 @@ int url_cmp_all(url_t const *a, url_t const *b)
 
   url_type = a->url_type;	/* Or b->url_type, they are equal! */
 
-  if (url_type <= url_unknown && 
+  if (url_type <= url_unknown &&
       ((rv = !a->url_scheme - !b->url_scheme) ||
        (a->url_scheme && b->url_scheme &&
 	(rv = strcasecmp(a->url_scheme, b->url_scheme)))))
@@ -1700,7 +1700,7 @@ int url_cmp_all(url_t const *a, url_t const *b)
       a_port = b_port = url_port_default(url_type);
     else
       a_port = b_port = "";
-    
+
     if (a->url_port) a_port = a->url_port;
     if (b->url_port) b_port = b->url_port;
 
@@ -1790,10 +1790,10 @@ char const *url_port_default(enum url_type_e url_type)
   case url_msrps:
     return "9999";		/* XXXX */
 
-  case url_tel:	
-  case url_fax:	
+  case url_tel:
+  case url_fax:
   case url_modem:
-  case url_im:	
+  case url_im:
   case url_pres:
   case url_cid:
   case url_wv:
@@ -1909,7 +1909,7 @@ void canon_update(su_md5_t *md5, char const *s, size_t n, char const *allow)
 #define   UNHEX(a) (a - (a >= 'a' ? 'a' - 10 : (a >= 'A' ? 'A' - 10 : '0')))
       c = (UNHEX(s[i+1]) << 4) | UNHEX(s[i+2]);
 #undef    UNHEX
-      if (c != '%' && c > ' ' && c < '\177' && 
+      if (c != '%' && c > ' ' && c < '\177' &&
 	  (!strchr(EXCLUDED, c) || strchr(allow, c))) {
 	if (i != j)
 	  su_md5_iupdate(md5, s + j, i - j);
@@ -1955,7 +1955,7 @@ void url_string_update(su_md5_t *md5, char const *s)
   else {
     su_md5_update(md5, "", 1);
   }
-  
+
   if (type == url_sip || type == url_sips) {
     /* SIP URL may have /;? in user part but no path */
     /* user-unreserved  =  "&" / "=" / "+" / "$" / "," / ";" / "?" / "/" */
@@ -1989,7 +1989,7 @@ void url_string_update(su_md5_t *md5, char const *s)
       s += 2;
       n = strcspn(s, "/?#@[]");
     }
-    else 
+    else
       n = strcspn(s, "@;/?#");
 
     if (s[n] == '@') {
@@ -2007,7 +2007,7 @@ void url_string_update(su_md5_t *md5, char const *s)
   }
   else /* if (!have_authority) */ {
     n = strcspn(s, ":/;?#");	/* Until pass, path, query or fragment */
-    
+
     canon_update(md5, s, n, ""); /* user */
     su_md5_update(md5, "\0", 1); /* host, no port */
     su_md5_striupdate(md5, url_port_default(type));
@@ -2019,7 +2019,7 @@ void url_string_update(su_md5_t *md5, char const *s)
     if (colon == NULL || ++colon == s + n || *colon != ':')
       colon = NULL;
   }
-  else 
+  else
     colon = memchr(s, ':', n);
 
   if (colon) {
@@ -2081,26 +2081,26 @@ void url_digest(void *hash, int hsize, url_t const *url, char const *key)
  * the resulting string will be truncated.
  *
  * @param home memory home used to alloate string (if NULL, malloc() it)
- * @param query query part from SIP URL 
- * 
+ * @param query query part from SIP URL
+ *
  * The result string is allocated from @a home, and it can be used as
  * argument to msg_header_parse_str(), msg_header_add_str() or
  * SIPTAG_HEADER_STR().
  *
  * @sa msg_header_add_str(), SIPTAG_HEADER_STR(),
- * sip_headers_as_url_query(), sip_url_query_as_taglist(), 
+ * sip_headers_as_url_query(), sip_url_query_as_taglist(),
  * @RFC3261 section 19.1.1 "Headers", #url_t, url_s#url_headers,
  * url_unescape(), url_unescape_to()
  *
  * @since New in @VERSION_1_12_4.
  */
-char *url_query_as_header_string(su_home_t *home, 
+char *url_query_as_header_string(su_home_t *home,
 				 char const *query)
 {
   size_t i, j, n, b_start = 0, b_len = 0;
   char *s = su_strdup(home, query);
 
-  if (!s) 
+  if (!s)
     return NULL;
 
   for (i = 0, j = 0; s[i];) {

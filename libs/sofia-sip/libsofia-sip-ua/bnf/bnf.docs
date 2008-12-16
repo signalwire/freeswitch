@@ -10,9 +10,9 @@
  *
  * The interface used for validating hostnames and IP addresses is in
  * <sofia-sip/hostdomain.h>.
- * 
+ *
  * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @STATUS @SofiaSIP Core library
  *
  * @LICENSE LGPL

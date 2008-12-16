@@ -51,14 +51,14 @@
 /**@fn void nua_message( \
  *       nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *
- * Send an instant message. 
+ * Send an instant message.
  *
  * Send an instant message using SIP MESSAGE method.
  *
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
- * @return 
+ * @return
  *    nothing
  *
  * @par Related Tags:
@@ -72,7 +72,7 @@
  * @sa #nua_i_message, @RFC3428
  */
 
-static int nua_message_client_init(nua_client_request_t *cr, 
+static int nua_message_client_init(nua_client_request_t *cr,
 				   msg_t *, sip_t *,
 				   tagi_t const *tags);
 
@@ -95,16 +95,16 @@ static nua_client_methods_t const nua_message_client_methods = {
 
 };
 
-int 
+int
 nua_stack_message(nua_t *nua,
 		  nua_handle_t *nh,
 		  nua_event_t e,
 		  tagi_t const *tags)
-{ 
+{
   return nua_client_create(nh, e, &nua_message_client_methods, tags);
 }
 
-static int nua_message_client_init(nua_client_request_t *cr, 
+static int nua_message_client_init(nua_client_request_t *cr,
 				   msg_t *msg, sip_t *sip,
 				   tagi_t const *tags)
 {
@@ -125,7 +125,7 @@ static int nua_message_client_init(nua_client_request_t *cr,
  * @param nh     operation handle associated with the message
  * @param hmagic application context associated with the handle
  * @param sip    response to MESSAGE request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive message in @a phrase parameters)
  * @param tags   empty
  *
@@ -159,11 +159,11 @@ static int nua_message_client_init(nua_client_request_t *cr,
 int nua_message_server_init(nua_server_request_t *sr);
 int nua_message_server_params(nua_server_request_t *, tagi_t const *);
 
-nua_server_methods_t const nua_message_server_methods = 
+nua_server_methods_t const nua_message_server_methods =
   {
     SIP_METHOD_MESSAGE,
     nua_i_message,		/* Event */
-    { 
+    {
       0,			/* Do not create dialog */
       0,			/* Can be initial request */
       0,			/* Perhaps a target refresh request? */

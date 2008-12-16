@@ -22,7 +22,7 @@
  *
  */
 
-/**@ingroup msg_parser 
+/**@ingroup msg_parser
  * @CFILE msg_mclass.c
  *
  * Message factory object.
@@ -63,12 +63,12 @@
  * empty is true, the copied message class object will not recognize any
  * headers. This is useful if more fine-grained control of parsing process
  * is required, for instance.
- * 
- * @param[in] old      pointer to the message class object to be copied 
- * @param[in] newsize  size of hash table in the copied object 
- * @param[in] empty    if true, resulting copy does not contain any headers 
- * 
- * @return 
+ *
+ * @param[in] old      pointer to the message class object to be copied
+ * @param[in] newsize  size of hash table in the copied object
+ * @param[in] empty    if true, resulting copy does not contain any headers
+ *
+ * @return
  * The function msg_mclass_clone() returns a pointer to a newly
  * copied message class object, or NULL upon an error.
  * The returned message class object can be freed with free().
@@ -78,7 +78,7 @@
  * A memory allocation failed.
  * @ERROR EINVAL
  * The function was given invalid arguments.
- * 
+ *
  * @note The empty parser can handle request/status line. All headers are
  * put into list of unknown headers (unless they are malformed, and they are
  * put into list of erronous headers). However, SIP, RTSP, and HTTP
@@ -90,7 +90,7 @@
 msg_mclass_t *msg_mclass_clone(msg_mclass_t const *old, int newsize, int empty)
 {
   size_t size, shortsize;
-  msg_mclass_t *mc; 
+  msg_mclass_t *mc;
   int identical;
   unsigned short i;
 
@@ -126,7 +126,7 @@ msg_mclass_t *msg_mclass_clone(msg_mclass_t const *old, int newsize, int empty)
       memcpy(mc, old, size);
       mc->mc_short = NULL;
     }
-    
+
     if (shortsize) {
       if (empty)
 	mc->mc_short = memset((char *)mc + size, 0, shortsize);
@@ -147,8 +147,8 @@ msg_mclass_t *msg_mclass_clone(msg_mclass_t const *old, int newsize, int empty)
  * structure" is zero, the function extends the public message structure in
  * order to store newly inserted header there.
  *
- * @param[in,out] mc       pointer to a message class object 
- * @param[in]     hc       pointer to a header class object 
+ * @param[in,out] mc       pointer to a message class object
+ * @param[in]     hc       pointer to a header class object
  * @param[in]     offset   offset of the header in
  *                         @ref msg_pub_t "public message structure"
  *
@@ -156,10 +156,10 @@ msg_mclass_t *msg_mclass_clone(msg_mclass_t const *old, int newsize, int empty)
  * the public message structure and places the header at the end of message.
  *
  * @return Number of collisions in hash table, or -1 upon an error.
- * 
+ *
  * @deprecated Use msg_mclass_insert_with_mask() instead.
  */
-int msg_mclass_insert_header(msg_mclass_t *mc, 
+int msg_mclass_insert_header(msg_mclass_t *mc,
 			     msg_hclass_t *hc,
 			     unsigned short offset)
 {
@@ -195,13 +195,13 @@ int msg_mclass_insert_header(msg_mclass_t *mc,
  *
  * @param[in,out] mc       pointer to a message class
  * @param[in]     hc       pointer to a header class
- * @param[in]     offset   offset of the header in 
- *                         @ref msg_pub_t "public message structure" 
- * @param[in]     flags    classification flags for the header 
+ * @param[in]     offset   offset of the header in
+ *                         @ref msg_pub_t "public message structure"
+ * @param[in]     flags    classification flags for the header
  *
  * @return Number of collisions in hash table, or -1 upon an error.
  */
-int msg_mclass_insert_with_mask(msg_mclass_t *mc, 
+int msg_mclass_insert_with_mask(msg_mclass_t *mc,
 				msg_hclass_t *hc,
 				unsigned short offset,
 				unsigned short flags)
@@ -232,8 +232,8 @@ int msg_mclass_insert_with_mask(msg_mclass_t *mc,
  *
  * @relatesalso msg_mclass_s
  *
- * @param[in,out] mc       pointer to a message class object 
- * @param[in]     hr       header reference object 
+ * @param[in,out] mc       pointer to a message class object
+ * @param[in]     hr       header reference object
  *
  * @return Number of collisions in hash table, or -1 upon an error.
  */
@@ -249,7 +249,7 @@ int msg_mclass_insert(msg_mclass_t *mc, msg_href_t const *hr)
     return -1;
   }
 
-  if (hr == NULL || (hc = hr->hr_class) == NULL) 
+  if (hr == NULL || (hc = hr->hr_class) == NULL)
     return 0;
 
   /* Add short form */
@@ -260,10 +260,10 @@ int msg_mclass_insert(msg_mclass_t *mc, msg_href_t const *hr)
     if (compact < 'a' || compact > 'z')
       return -1;
 
-    if (shorts[compact - 'a'].hr_class && 
+    if (shorts[compact - 'a'].hr_class &&
 	shorts[compact - 'a'].hr_class != hc)
       return -1;
-      
+
     shorts[compact - 'a'] = *hr;
   }
 
@@ -281,7 +281,7 @@ int msg_mclass_insert(msg_mclass_t *mc, msg_href_t const *hr)
 
   mc->mc_hash[j] = hr[0];
   mc->mc_hash_used++;
-  
+
   return collisions;
 }
 
@@ -296,8 +296,8 @@ int msg_mclass_insert(msg_mclass_t *mc, msg_href_t const *hr)
  * class based on the contents of the header to be parsed. The buffer @a s
  * should point to the first character in the header name.
  *
- * @param[in]  mc   message class object 
- * @param[in]  s    header contents 
+ * @param[in]  mc   message class object
+ * @param[in]  s    header contents
  * @param[out] return_start_of_content start of header content (may be NULL)
  *
  * @return The function msg_find_hclass() returns a pointer to a header
@@ -309,11 +309,11 @@ int msg_mclass_insert(msg_mclass_t *mc, msg_href_t const *hr)
  * start of the header contents within @a s, or 0 upon an error parsing the
  * header name and following colon.
  *
- * @par 
+ * @par
  * Upon a fatal error, a NULL pointer is returned.
  */
-msg_href_t const *msg_find_hclass(msg_mclass_t const *mc, 
-				  char const *s, 
+msg_href_t const *msg_find_hclass(msg_mclass_t const *mc,
+				  char const *s,
 				  isize_t *return_start_of_content)
 {
   msg_href_t const *hr;

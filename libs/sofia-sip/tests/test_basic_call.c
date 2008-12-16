@@ -75,7 +75,7 @@ int accept_call(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    TAG_END());
     return 0;
   case nua_callstate_early:
@@ -115,7 +115,7 @@ int accept_call_with_early_sdp(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    TAG_IF(call->sdp, SOATAG_USER_SDP_STR(call->sdp)),
 	    NUTAG_M_DISPLAY("Bob"),
 	    NUTAG_M_USERNAME("b+b"),
@@ -212,8 +212,8 @@ int test_basic_call_1(struct context *ctx)
     printf("TEST NUA-3.1: Basic call\n");
 
   /* Disable session timer from proxy */
-  test_proxy_get_session_timer(ctx->p, &se, &min_se); 
-  test_proxy_set_session_timer(ctx->p, 0, 0); 
+  test_proxy_get_session_timer(ctx->p, &se, &min_se);
+  test_proxy_set_session_timer(ctx->p, 0, 0);
 
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
@@ -357,7 +357,7 @@ int test_basic_call_1(struct context *ctx)
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
-  test_proxy_set_session_timer(ctx->p, se, min_se); 
+  test_proxy_set_session_timer(ctx->p, se, min_se);
 
   if (print_headings)
     printf("TEST NUA-3.1: PASSED\n");
@@ -422,7 +422,7 @@ int test_basic_call_2(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call,
 				 SIPTAG_TO_STR("<sip:b@x.org>"),
 				 TAG_END()));
 
@@ -453,7 +453,7 @@ int test_basic_call_2(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_content_type); 
+  TEST_1(sip->sip_content_type);
   TEST_S(sip->sip_content_type->c_type, "application/sdp");
   TEST_1(sip->sip_payload);	/* there is sdp in 200 OK */
   TEST_1(sip->sip_contact);
@@ -533,7 +533,7 @@ int test_basic_call_2(struct context *ctx)
   TEST_1(sip->sip_subscription_state);
   TEST_S(sip->sip_subscription_state->ss_substate, "terminated");
   TEST_1(tl_find(e->data->e_tags, nutag_substate));
-  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, 
+  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value,
        nua_substate_terminated);
   TEST_1(!e->next);
 
@@ -615,7 +615,7 @@ int accept_call_no_media(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    NUTAG_MEDIA_ENABLE(0),
 	    TAG_END());
     return 0;
@@ -655,7 +655,7 @@ int test_basic_call_3(struct context *ctx)
     "t=0 0\r\n"
     "m=audio 5008 RTP/AVP 8\r\n";
 
-  b_call->sdp = 
+  b_call->sdp =
     "v=0\r\n"
     "o=- 2 1 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
@@ -663,7 +663,7 @@ int test_basic_call_3(struct context *ctx)
     "t=0 0\r\n"
     "m=audio 5010 RTP/AVP 0 8\r\n";
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call,
 				 SIPTAG_TO_STR("<sip:b@x.org>"),
 				 TAG_END()));
 
@@ -695,7 +695,7 @@ int test_basic_call_3(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_content_type); 
+  TEST_1(sip->sip_content_type);
   TEST_S(sip->sip_content_type->c_type, "application/sdp");
   TEST_1(sip->sip_payload);	/* there is sdp in 200 OK */
   TEST_1(sip->sip_contact);
@@ -780,7 +780,7 @@ int ack_when_completing_no_media(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_completing:
-    ACK(ep, call, nh, 
+    ACK(ep, call, nh,
 	TAG_IF(call->sdp, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
 	TAG_IF(call->sdp, SIPTAG_PAYLOAD_STR(call->sdp)),
 	TAG_END());
@@ -805,7 +805,7 @@ int accept_call_no_media2(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    NUTAG_MEDIA_ENABLE(0),
 	    TAG_IF(call->sdp, SIPTAG_CONTENT_TYPE_STR("application/sdp")),
 	    TAG_IF(call->sdp, SIPTAG_PAYLOAD_STR(call->sdp)),
@@ -848,7 +848,7 @@ int test_basic_call_4(struct context *ctx)
     "t=0 0\r\n"
     "m=audio 5008 RTP/AVP 8\r\n";
 
-  b_call->sdp = 
+  b_call->sdp =
     "v=0\r\n"
     "o=- 2 1 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
@@ -856,7 +856,7 @@ int test_basic_call_4(struct context *ctx)
     "t=0 0\r\n"
     "m=audio 5010 RTP/AVP 0 8\r\n";
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call,
 				 SIPTAG_TO_STR("<sip:b@x.org>"),
 				 TAG_END()));
 
@@ -889,7 +889,7 @@ int test_basic_call_4(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_content_type); 
+  TEST_1(sip->sip_content_type);
   TEST_S(sip->sip_content_type->c_type, "application/sdp");
   TEST_1(sip->sip_payload);	/* there is sdp in 200 OK */
   TEST_1(sip->sip_contact);
@@ -996,8 +996,8 @@ int change_uri_in_ack(CONDITION_PARAMS)
 }
 
 /* Test changing from/to within dialog */
-/* Test that a proper Contact gets selected in response 
- * regardless of the To URI. 
+/* Test that a proper Contact gets selected in response
+ * regardless of the To URI.
  */
 int test_basic_call_5(struct context *ctx)
 {
@@ -1014,7 +1014,7 @@ int test_basic_call_5(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call,
 				 SIPTAG_TO_STR("<sips:b@x.org>"),
 				 TAG_END()));
 
@@ -1073,8 +1073,8 @@ int test_basic_call_5(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_completed); /* COMPLETED */
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_ack);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_S(sip->sip_to->a_url->url_user, "anonymous"); 
-  TEST_S(sip->sip_from->a_url->url_user, "anonymous"); 
+  TEST_S(sip->sip_to->a_url->url_user, "anonymous");
+  TEST_S(sip->sip_from->a_url->url_user, "anonymous");
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(!e->next);
@@ -1177,8 +1177,8 @@ int test_video_call_1(struct context *ctx)
     printf("TEST NUA-3.6: Basic call\n");
 
   /* Disable session timer from proxy */
-  test_proxy_get_session_timer(ctx->p, &se, &min_se); 
-  test_proxy_set_session_timer(ctx->p, 0, 0); 
+  test_proxy_get_session_timer(ctx->p, &se, &min_se);
+  test_proxy_set_session_timer(ctx->p, 0, 0);
 
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
   b_call->sdp = "m=audio 5010 RTP/AVP 0 8";
@@ -1256,8 +1256,8 @@ int test_video_call_1(struct context *ctx)
   a_call->sdp =
     "m=audio 5008 RTP/AVP 8\n"
     "m=video 5014 RTP/AVP 34 31\n";
-  
-  m = memset(b_video, 0, sizeof b_video);    
+
+  m = memset(b_video, 0, sizeof b_video);
   m->m_size = sizeof *m;
   m->m_session = b_sdp;
   m->m_type = sdp_media_video, m->m_type_name = "video";
@@ -1265,7 +1265,7 @@ int test_video_call_1(struct context *ctx)
   m->m_proto = sdp_proto_rtp; m->m_proto_name = "RTP/AVP";
   m->m_rtpmaps = memset(rm = b_h261, 0, sizeof b_h261);
   rm->rm_size = sizeof *rm;
-  rm->rm_pt = 31; rm->rm_encoding = "h261"; rm->rm_rate = 90000; 
+  rm->rm_pt = 31; rm->rm_encoding = "h261"; rm->rm_rate = 90000;
 
   b_sdp->sdp_media->m_next = m;
 
@@ -1336,7 +1336,7 @@ int test_video_call_1(struct context *ctx)
   nua_handle_destroy(a_call->nh), a_call->nh = NULL;
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
-  test_proxy_set_session_timer(ctx->p, se, min_se); 
+  test_proxy_set_session_timer(ctx->p, se, min_se);
 
   if (print_headings)
     printf("TEST NUA-3.6: PASSED\n");
@@ -1421,7 +1421,7 @@ int accept_call_with_contact(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    TAG_IF(call->sdp, SOATAG_USER_SDP_STR(call->sdp)),
 	    SIPTAG_CONTACT(contact_for_b),
 	    TAG_END());
@@ -1475,11 +1475,11 @@ int test_basic_call_6(struct context *ctx)
   mb->m_url->url_user = "b++b";
 
   contact_for_b = mb;
-  
+
   sip_route_init(rb)->r_url[0] = b->contact->m_url[0];
   rb->r_url->url_user = "bob+0";
   url_param_add(nua_handle_home(a_call->nh), rb->r_url, "lr");
-  
+
   INVITE(a, a_call, a_call->nh,
 	 NUTAG_URL("sip:bob@example.org"), /* Expanded by proxy */
 	 SIPTAG_ROUTE_STR("B2 <sip:bob+2@example.org>;bar=foo"), /* Last in list */
@@ -1582,7 +1582,7 @@ int test_basic_call_6(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
-  
+
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
@@ -1773,7 +1773,7 @@ int test_basic_call_7(struct context *ctx)
   free_events_in_list(ctx, b->events);
 
   /* Make B to process HUMPPA at application level */
-  nua_set_hparams(b_call->nh, NUTAG_APPL_METHOD("HUMPPA"), 
+  nua_set_hparams(b_call->nh, NUTAG_APPL_METHOD("HUMPPA"),
 		  NUTAG_ALLOW("HUMPPA"),
 		  TAG_END());
   run_b_until(ctx, nua_r_set_params, until_final_response);
@@ -1898,7 +1898,7 @@ int test_basic_call_7(struct context *ctx)
   /* Let A allow INFO  */
   nua_set_params(a->nua, NUTAG_ALLOW("INFO"), TAG_END());
   /* Make B to process INFO at application level */
-  nua_set_hparams(b_call->nh, NUTAG_APPL_METHOD("INFO"), 
+  nua_set_hparams(b_call->nh, NUTAG_APPL_METHOD("INFO"),
 		  NUTAG_ALLOW("INFO"),
 		  TAG_END());
   run_ab_until(ctx, nua_r_set_params, NULL, nua_r_set_params, NULL);
@@ -1955,7 +1955,7 @@ int reject_method(CONDITION_PARAMS)
   save_event_in_list(ctx, event, ep, call);
 
   if (event == nua_i_method) {
-    RESPOND(ep, call, nh, 
+    RESPOND(ep, call, nh,
 	    SIP_604_DOES_NOT_EXIST_ANYWHERE,
 	    NUTAG_WITH(current),
 	    TAG_END());
@@ -1974,7 +1974,7 @@ int reject_info(CONDITION_PARAMS)
   save_event_in_list(ctx, event, ep, call);
 
   if (event == nua_i_info) {
-    RESPOND(ep, call, nh, 
+    RESPOND(ep, call, nh,
 	    SIP_480_TEMPORARILY_UNAVAILABLE,
 	    NUTAG_WITH(current),
 	    TAG_END());

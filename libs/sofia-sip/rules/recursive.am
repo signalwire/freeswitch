@@ -2,7 +2,7 @@
 # --------------------------
 
 all-recursive: built-sources-recursive
-built-sources: built-sources-recursive 
+built-sources: built-sources-recursive
 clean-built-sources: clean-built-sources-recursive
 valcheck: valcheck-recursive
 

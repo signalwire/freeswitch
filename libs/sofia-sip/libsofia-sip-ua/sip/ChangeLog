@@ -1,7 +1,7 @@
 2006-01-25  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* Doxyfile (INPUT): Missing sip_dll.c broke refdoc 
-	build. Now changed so that individual are not listed 
+	* Doxyfile (INPUT): Missing sip_dll.c broke refdoc
+	build. Now changed so that individual are not listed
 	anymore in INPUT.
 
 2006-01-10  Kai Vehmanen  <kai.vehmanen@nokia.com>
@@ -52,7 +52,7 @@
 
 	* sip_basic.c: Not encoding comment in Contact. Always using
 	name-addr form for Route headers.
- 
+
 2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* Initial import of the module to Sofia-SIP tree.

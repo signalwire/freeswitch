@@ -25,7 +25,7 @@
 /**@CFILE tport_tag.c
  * @brief Tags for transport module
  *
- * @note This file is used to automatically generate 
+ * @note This file is used to automatically generate
  * tport_tag_ref.c and tport_tag_dll.c
  *
  * Copyright (c) 2002 Nokia Research Center.  All rights reserved.
@@ -54,7 +54,7 @@ tag_typedef_t tptag_any = NSTAG_TYPEDEF(*);
 
 /**@def TPTAG_IDENT(cstr)
  *
- * Identify a transport interface. 
+ * Identify a transport interface.
  *
  * Use with tport_tbind(), tport_tsend(), nua_create(), nta_agent_create(),
  * nta_agent_add_tport(), nta_outgoing_tcreate(), nta_outgoing_mcreate(),
@@ -75,7 +75,7 @@ tag_typedef_t tptag_reuse = BOOLTAG_TYPEDEF(reuse);
 
 /**@def TPTAG_FRESH(boolean)
  *
- * Create new connection (but allow other messages to reuse the new one). 
+ * Create new connection (but allow other messages to reuse the new one).
  *
  * Use with tport_tsend(), nta_outgoing_tcreate(), nta_outgoing_mcreate(),
  * or nth_client_tcreate().
@@ -92,7 +92,7 @@ tag_typedef_t tptag_server = BOOLTAG_TYPEDEF(server);
 
 /**@def TPTAG_PUBLIC(tport_via)
  *
- * Define how the public transport connects to Internet. 
+ * Define how the public transport connects to Internet.
  *
  * Use with tport_tbind(), nua_create(), nta_agent_create(),
  * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
@@ -146,7 +146,7 @@ tag_typedef_t tptag_sdwn_after = BOOLTAG_TYPEDEF(sdwn_after);
 /**@def TPTAG_CLOSE_AFTER(x)
  *
  * Close of a connection after sending the message.
- * 
+ *
  * Use with tport_tsend(), nta_outgoing_tcreate(), nta_outgoing_mcreate(),
  * or nth_client_tcreate().
  */
@@ -156,7 +156,7 @@ tag_typedef_t tptag_close_after = BOOLTAG_TYPEDEF(sdwn_after);
  *
  * How long transports may be idle (value in milliseconds).
  *
- * If 0, zap immediately, 
+ * If 0, zap immediately,
  * if UINT_MAX, leave them there (default value for now).
  *
  * @par Use With
@@ -201,7 +201,7 @@ tag_typedef_t tptag_keepalive = UINTTAG_TYPEDEF(keepalive);
  *
  * Ping-pong interval in milliseconds.
  *
- * If 0 or UINT_MAX, do not check for PONGs. Default value is 0. 
+ * If 0 or UINT_MAX, do not check for PONGs. Default value is 0.
  *
  * If set, the ping-pong protocol is used on TCP connections. If pinger
  * sends a ping and receives no data in the specified ping-pong interval, it
@@ -257,7 +257,7 @@ tag_typedef_t tptag_sigcomp_lifetime = UINTTAG_TYPEDEF(sigcomp_lifetime);
  *
  * Path to the public key certificate directory.
  *
- * Use with tport_tbind(), nua_create(), nta_agent_create(), 
+ * Use with tport_tbind(), nua_create(), nta_agent_create(),
  * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
  */
 tag_typedef_t tptag_certificate = STRTAG_TYPEDEF(certificate);
@@ -275,7 +275,7 @@ tag_typedef_t tptag_compartment = PTRTAG_TYPEDEF(compartment);
  *
  * Sets the TLS version (version 0 implies SSL2/SSL3).
  *
- * Use with tport_tbind(), nua_create(), nta_agent_create(), 
+ * Use with tport_tbind(), nua_create(), nta_agent_create(),
  * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
  */
 tag_typedef_t tptag_tls_version = UINTTAG_TYPEDEF(tls_version);
@@ -399,7 +399,7 @@ tag_typedef_t tptag_tos = INTTAG_TYPEDEF(tos);
  *
  * If set, print out parsed or sent messages at transport layer.
  *
- * Use with tport_tcreate(), nua_create(), nta_agent_create(), 
+ * Use with tport_tcreate(), nua_create(), nta_agent_create(),
  * nth_engine_create(), or initial nth_site_create().
  *
  * @sa #TPORT_LOG environment variable, TPTAG_DUMP()
@@ -410,7 +410,7 @@ tag_typedef_t tptag_log = INTTAG_TYPEDEF(log);
 
 /**@def TPTAG_DUMP(x)
  *
- * Filename for dumping unparsed messages from transport. 
+ * Filename for dumping unparsed messages from transport.
  *
  * Use with tport_tcreate(), nta_agent_create(), nua_create(),
  * nth_engine_create(), or initial nth_site_create().
@@ -421,7 +421,7 @@ tag_typedef_t tptag_log = INTTAG_TYPEDEF(log);
  */
 tag_typedef_t tptag_dump = STRTAG_TYPEDEF(dump);
 
-/** Mark transport as trusted. 
+/** Mark transport as trusted.
  *
  * @note Not implemented by tport module.
  *

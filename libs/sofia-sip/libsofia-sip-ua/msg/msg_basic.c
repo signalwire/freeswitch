@@ -61,7 +61,7 @@
  * @defgroup msg_error Erroneous Headers
  *
  * The erroneous headers are stored in #msg_error_t structure.
- * 
+ *
  * @note Parser may put other headers (like duplicate Content-Length
  * headers) into the list of erroneous headers. If the list of erroneous
  * headers is processed, the header type must be validated first by calling
@@ -111,7 +111,7 @@ char *msg_error_dup_one(msg_header_t *dst, msg_header_t const *src,
  * The unknown headers are handled with #msg_unknown_t structure. The whole
  * unknown header including its name is included in the header value string
  * @a g_value.
- * 
+ *
  * @note It is possible to speed up parsing process by creating a parser
  * which does understand only a minimum number of headers. If such a parser
  * is used, some well-known headers are not regocnized or parser, but they
@@ -139,7 +139,7 @@ issize_t msg_unknown_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
   *s++ = '\0';
   skip_lws(&s);
   un->un_value = s;
-					   
+
   return 0;
 }
 
@@ -153,7 +153,7 @@ issize_t msg_unknown_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
   MSG_CHAR_E(b, end, ':');
   if (!compact) MSG_CHAR_E(b, end, ' ');
   MSG_STRING_E(b, end, un->un_value);
-  
+
   return b - b0;
 }
 
@@ -184,7 +184,7 @@ char *msg_unknown_dup_one(msg_header_t *dst, msg_header_t const *src,
  * @defgroup msg_payload Message Body
  *
  * The payload object contains the message body. The message body has no
- * structure, but it is stored in the @a pl_data buffer as a byte array. 
+ * structure, but it is stored in the @a pl_data buffer as a byte array.
  * Multiple payload objects may be linked to a list.
  */
 
@@ -197,7 +197,7 @@ char *msg_unknown_dup_one(msg_header_t *dst, msg_header_t const *src,
  * @code
  * typedef struct msg_payload_s {
  *   msg_common_t    pl_common[1];      // Common fragment info
- *   msg_header_t   *pl_next;           // Next payload object 
+ *   msg_header_t   *pl_next;           // Next payload object
  *   char           *pl_data;           // Data - may contain zero bytes
  *   usize_t         pl_len;            // Length of message payload
  * } msg_payload_t;
@@ -263,7 +263,7 @@ isize_t msg_payload_dup_xtra(msg_header_t const *h, isize_t offset)
 
 char *msg_payload_dup_one(msg_header_t *dst,
 			  msg_header_t const *src,
-			  char *b, 
+			  char *b,
 			  isize_t xtra)
 {
   msg_payload_t *pl = dst->sh_payload;
@@ -288,7 +288,7 @@ usize_t msg_payload_length(msg_payload_t const *pl)
 /* ====================================================================== */
 
 /**@ingroup msg_headers
- * @defgroup msg_separator Message Separator 
+ * @defgroup msg_separator Message Separator
  *
  * An empty line separates headers from the message body. In order to avoid
  * modifying messages with integrity protection, the separator line has its
@@ -325,7 +325,7 @@ issize_t msg_separator_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen
 
   if (len == 0 && slen > 0)
     return -1;
-  
+
   memcpy(h->sh_separator->sep_data, s, len);
   h->sh_separator->sep_data[len] = '\0';
 
@@ -345,7 +345,7 @@ issize_t msg_separator_e(char b[], isize_t bsiz, msg_header_t const *h, int flag
 
 msg_separator_t *msg_separator_create(su_home_t *home)
 {
-  msg_separator_t *sep = 
+  msg_separator_t *sep =
     msg_header_alloc(home, msg_separator_class, 0)->sh_separator;
 
   if (sep)

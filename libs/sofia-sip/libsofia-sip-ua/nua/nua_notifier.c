@@ -70,10 +70,10 @@ struct notifier_usage
 };
 
 static char const *nua_notify_usage_name(nua_dialog_usage_t const *du);
-static int nua_notify_usage_add(nua_handle_t *nh, 
+static int nua_notify_usage_add(nua_handle_t *nh,
 				   nua_dialog_state_t *ds,
 				   nua_dialog_usage_t *du);
-static void nua_notify_usage_remove(nua_handle_t *nh, 
+static void nua_notify_usage_remove(nua_handle_t *nh,
 				    nua_dialog_state_t *ds,
 				    nua_dialog_usage_t *du,
 				    nua_client_request_t *cr,
@@ -103,8 +103,8 @@ static char const *nua_notify_usage_name(nua_dialog_usage_t const *du)
   return "notify";
 }
 
-static 
-int nua_notify_usage_add(nua_handle_t *nh, 
+static
+int nua_notify_usage_add(nua_handle_t *nh,
 			 nua_dialog_state_t *ds,
 			 nua_dialog_usage_t *du)
 {
@@ -113,15 +113,15 @@ int nua_notify_usage_add(nua_handle_t *nh,
   return 0;
 }
 
-static 
-void nua_notify_usage_remove(nua_handle_t *nh, 
+static
+void nua_notify_usage_remove(nua_handle_t *nh,
 			     nua_dialog_state_t *ds,
 			     nua_dialog_usage_t *du,
 			     nua_client_request_t *cr,
 			     nua_server_request_t *sr)
 {
-  ds->ds_has_events--;	
-  ds->ds_has_notifys--;	
+  ds->ds_has_events--;
+  ds->ds_has_notifys--;
 }
 
 /* ====================================================================== */
@@ -173,14 +173,14 @@ void nua_notify_usage_remove(nua_handle_t *nh,
  * subscriber terminates the subscription, it times out or the application
  * terminates the usage with nua_notify() call containing the tag
  * NUTAG_SUBSTATE(nua_substate_terminated) or @SubscriptionState header with
- * state "terminated" and/or expiration time 0. 
+ * state "terminated" and/or expiration time 0.
  *
  * When the subscriber terminates the subscription, the application is
  * notified of an termination by a #nua_i_subscribe event with
  * NUTAG_SUBSTATE(nua_substate_terminated) tag. When the subscription times
  * out, nua automatically initiates a NOTIFY transaction. When it is
  * terminated, the application is sent a #nua_r_notify event with
- * NUTAG_SUBSTATE(nua_substate_terminated) tag. 
+ * NUTAG_SUBSTATE(nua_substate_terminated) tag.
  *
  * @sa @RFC3265, nua_notify(), NUTAG_SUBSTATE(), @SubscriptionState,
  * @Event, nua_subscribe(), #nua_r_subscribe, #nua_i_refer, nua_refer()
@@ -193,11 +193,11 @@ static int nua_subscribe_server_preprocess(nua_server_request_t *sr);
 static int nua_subscribe_server_respond(nua_server_request_t*, tagi_t const *);
 static int nua_subscribe_server_report(nua_server_request_t*, tagi_t const *);
 
-nua_server_methods_t const nua_subscribe_server_methods = 
+nua_server_methods_t const nua_subscribe_server_methods =
   {
     SIP_METHOD_SUBSCRIBE,
     nua_i_subscribe,		/* Event */
-    { 
+    {
       1,			/* Create dialog */
       0,			/* Initial request */
       1,			/* Target refresh request  */
@@ -218,7 +218,7 @@ int nua_subscribe_server_init(nua_server_request_t *sr)
   sip_t const *sip = sr->sr_request.sip;
   sip_event_t *o = sip->sip_event;
   char const *event = o ? o->o_type : NULL;
-  
+
   if (sr->sr_initial || !nua_dialog_usage_get(ds, nua_notify_usage, o)) {
     if (event && str0cmp(event, "refer") == 0)
       /* refer event subscription should be initiated with REFER */
@@ -246,7 +246,7 @@ int nua_subscribe_server_preprocess(nua_server_request_t *sr)
   sip_time_t now = sip_now();
 
   assert(nh && nh->nh_nua->nua_dhandle != nh);
-  
+
   du = nua_dialog_usage_get(ds, nua_notify_usage, o);
 
   if (du == NULL) {
@@ -271,7 +271,7 @@ int nua_subscribe_server_preprocess(nua_server_request_t *sr)
     nu->nu_requested = SIP_TIME_MAX - 1;
 
 #if SU_HAVE_EXPERIMENTAL
-  nu->nu_etags = 
+  nu->nu_etags =
     sip_suppress_body_if_match(sip) ||
     sip_suppress_notify_if_match(sip) ||
     sip_has_feature(sr->sr_request.sip->sip_supported, "etags");
@@ -294,7 +294,7 @@ int nua_subscribe_server_respond(nua_server_request_t *sr, tagi_t const *tags)
   sip_t *sip = sr->sr_response.sip;
 
   if (200 <= sr->sr_status && sr->sr_status < 300) {
-    sip_expires_t ex[1]; 
+    sip_expires_t ex[1];
 
     sip_expires_init(ex);
 
@@ -304,7 +304,7 @@ int nua_subscribe_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       if (nu->nu_requested) {
 	if (sip->sip_expires) {
 	  /* Expires in response can only shorten the expiration time */
-	  if (nu->nu_requested > now + sip->sip_expires->ex_delta) 
+	  if (nu->nu_requested > now + sip->sip_expires->ex_delta)
 	    nu->nu_requested = now + sip->sip_expires->ex_delta;
 	}
 	else {
@@ -357,14 +357,14 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
     sip_t const *sip = sr->sr_request.sip;
     sip_suppress_notify_if_match_t *snim = sip_suppress_notify_if_match(sip);
     sip_suppress_body_if_match_t *sbim = sip_suppress_body_if_match(sip);
-    
+
     if (!nu->nu_tag)
       notify = 1;
     else if (snim && !strcasecmp(snim->snim_tag, nu->nu_tag))
       notify = 0;
     else if (sbim && !strcasecmp(snim->snim_tag, nu->nu_tag))
       notify = 1, nu->nu_no_body = 1;
-    else 
+    else
 #endif
       notify = 1;
 
@@ -375,12 +375,12 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
 
   if (retval >= 2 || du == NULL)
     return retval;
-  
+
   if (notify) {
     /* Send NOTIFY (and terminate subscription, when needed) */
     nua_dialog_usage_refresh(nh, ds, du, sip_now());
   }
-  
+
   return retval;
 }
 
@@ -399,7 +399,7 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
  *
  * @bug If the @Event is not given by application, stack uses the @Event
  * header from the first subscription usage on handle.
- * 
+ *
  * If there is no active <i>notifier dialog usage</i> or no notifier dialog
  * usage matches the @Event header given by the application the nua_notify()
  * request is rejected locally by the stack with status code 481. The local
@@ -413,7 +413,7 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
- * @return 
+ * @return
  *    nothing
  *
  * @par Related Tags:
@@ -428,7 +428,7 @@ int nua_subscribe_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * @sa @RFC3265, #nua_i_subscribe, #nua_i_refer, NUTAG_ALLOW_EVENTS()
  */
 
-static int nua_notify_client_init(nua_client_request_t *cr, 
+static int nua_notify_client_init(nua_client_request_t *cr,
 				  msg_t *, sip_t *,
 				  tagi_t const *tags);
 static int nua_notify_client_init_etag(nua_client_request_t *cr,
@@ -480,7 +480,7 @@ static int nua_notify_client_init(nua_client_request_t *cr,
   sip_event_t const *o = sip->sip_event;
   sip_subscription_state_t *ss = sip->sip_subscription_state;
   sip_time_t now = sip_now();
-    
+
   if (o == NULL && nh->nh_ds->ds_has_notifys == 1)
     o = NONE;
 
@@ -519,7 +519,7 @@ static int nua_notify_client_init(nua_client_request_t *cr,
       /* We can change the lifetime of unsolicited subscription at will */
       if (nu->nu_requested == 0)
 	nu->nu_expires = nu->nu_requested = now + expires;
-      /* Notifier can only shorten the subscribed time */ 
+      /* Notifier can only shorten the subscribed time */
       else if (nu->nu_requested >= now + expires)
 	nu->nu_expires = nu->nu_requested = now + expires;
     }
@@ -617,7 +617,7 @@ static int nua_notify_client_init_etag(nua_client_request_t *cr,
 
     sip_suppress_body_if_match_t *sbim;
     sip_suppress_notify_if_match_t *snim;
-    
+
     if (cr->cr_usage->du_ready) {
       snim = sip_suppress_notify_if_match(sip);
 
@@ -643,7 +643,7 @@ int nua_notify_client_request(nua_client_request_t *cr,
 			      msg_t *msg, sip_t *sip,
 			      tagi_t const *tags)
 {
-  nua_dialog_usage_t *du = cr->cr_usage; 
+  nua_dialog_usage_t *du = cr->cr_usage;
   struct notifier_usage *nu = nua_dialog_usage_private(du);
   su_home_t *home = msg_home(msg);
   sip_time_t now = sip_now();
@@ -674,7 +674,7 @@ int nua_notify_client_request(nua_client_request_t *cr,
     if (nu->nu_substate == nua_substate_terminated)
       expires = nu->nu_expires > now ? "noresource" : "timeout";
 
-    ss = sip_subscription_state_format(home, "%s;%s", 
+    ss = sip_subscription_state_format(home, "%s;%s",
 				       nua_substate_name(nu->nu_substate),
 				       expires);
 
@@ -737,8 +737,8 @@ int nua_notify_client_request(nua_client_request_t *cr,
  * @param phrase a short textual description of @a status code
  * @param nh     operation handle associated with the subscription
  * @param hmagic application context associated with the handle
- * @param sip    response to @b NOTIFY request or NULL upon an error 
- *               (status code is in @a status and 
+ * @param sip    response to @b NOTIFY request or NULL upon an error
+ *               (status code is in @a status and
  *               descriptive message in @a phrase parameters)
  * @param tags   NUTAG_SUBSTATE() indicating subscription state
  *               SIPTAG_EVENT() indicating subscription event
@@ -762,7 +762,7 @@ static int nua_notify_client_report(nua_client_request_t *cr,
   if (nu && !cr->cr_terminated)
     substate = nu->nu_substate;
 
-  nua_stack_tevent(nh->nh_nua, nh, 
+  nua_stack_tevent(nh->nh_nua, nh,
 		   nta_outgoing_getresponse(orq),
 		   cr->cr_event,
 		   status, phrase,
@@ -816,7 +816,7 @@ static void nua_notify_usage_refresh(nua_handle_t *nh,
   nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
 }
 
-/** @interal Shut down NOTIFY usage. 
+/** @interal Shut down NOTIFY usage.
  *
  * @retval >0  shutdown done
  * @retval 0   shutdown in progress
@@ -836,8 +836,8 @@ static int nua_notify_usage_shutdown(nua_handle_t *nh,
       return 0;
   }
   else {
-    if (nua_client_tcreate(nh, nua_r_notify, 
-			   &nua_notify_client_methods, 
+    if (nua_client_tcreate(nh, nua_r_notify,
+			   &nua_notify_client_methods,
 			   SIPTAG_EVENT(du->du_event),
 			   NUTAG_SUBSTATE(nua_substate_terminated),
 			   TAG_END()) >= 0)
@@ -857,11 +857,11 @@ static int nua_refer_server_preprocess(nua_server_request_t *sr);
 static int nua_refer_server_respond(nua_server_request_t*, tagi_t const *);
 static int nua_refer_server_report(nua_server_request_t*, tagi_t const *);
 
-nua_server_methods_t const nua_refer_server_methods = 
+nua_server_methods_t const nua_refer_server_methods =
   {
     SIP_METHOD_REFER,
     nua_i_refer,		/* Event */
-    { 
+    {
       1,			/* Create dialog */
       0,			/* Initial request */
       1,			/* Target refresh request  */
@@ -914,7 +914,7 @@ int nua_refer_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 
   if (sr->sr_status < 200 || nu == NULL) {
   }
-  else if (sr->sr_status < 300 && 
+  else if (sr->sr_status < 300 &&
 	   /* Application included Refer-Sub: false in response */
 	   (rs == NULL || str0casecmp("false", rs->rs_value))) {
     sr->sr_usage->du_ready = 1;
@@ -942,7 +942,7 @@ int nua_refer_server_respond(nua_server_request_t *sr, tagi_t const *tags)
  * REFER. The @ReferredBy structure contained in the tag is constructed from
  * the @From header if the @ReferredBy header was not present in the REFER
  * request.
- * 
+ *
  * The application can let the nua to send NOTIFYs from the call it
  * initiates with nua_invite() if it includes in the nua_invite() arguments
  * both the NUTAG_NOTIFY_REFER() with the handle with which nua_i_refer was
@@ -956,8 +956,8 @@ int nua_refer_server_respond(nua_server_request_t *sr, tagi_t const *tags)
  * @param sip    incoming REFER request
  * @param tags   NUTAG_REFER_EVENT() \n
  *               SIPTAG_REFERRED_BY()
- *  
- * @sa nua_refer(), #nua_r_refer, @ReferTo, NUTAG_REFER_EVENT(), 
+ *
+ * @sa nua_refer(), #nua_r_refer, @ReferTo, NUTAG_REFER_EVENT(),
  * SIPTAG_REFERRED_BY(), @ReferredBy, NUTAG_NOTIFY_REFER(),
  * NUTAG_REFER_WITH_ID(), @RFC3515.
  *

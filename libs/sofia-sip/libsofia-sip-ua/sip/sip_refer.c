@@ -280,7 +280,7 @@ char *sip_referred_by_dup_one(sip_header_t *dst, sip_header_t const *src,
   return b;
 }
 
-static int sip_referred_by_update(msg_common_t *h, 
+static int sip_referred_by_update(msg_common_t *h,
 			   char const *name, isize_t namelen,
 			   char const *value)
 {
@@ -338,10 +338,10 @@ static int sip_referred_by_update(msg_common_t *h,
  * {
  *   sip_common_t        rp_common[1];   // Common fragment info
  *   sip_error_t        *rp_next;	 // Dummy link to next
- *   char const         *rp_call_id;     // @CallID of dialog to replace 
- *   msg_param_t const  *rp_params;      // List of parameters 
- *   char const         *rp_to_tag;      // Value of "to-tag" parameter 
- *   char const         *rp_from_tag;    // Value of "from-tag" parameter 
+ *   char const         *rp_call_id;     // @CallID of dialog to replace
+ *   msg_param_t const  *rp_params;      // List of parameters
+ *   char const         *rp_to_tag;      // Value of "to-tag" parameter
+ *   char const         *rp_from_tag;    // Value of "from-tag" parameter
  *   unsigned            rp_early_only;  // early-only parameter
  * } sip_replaces_t;
  * @endcode
@@ -414,7 +414,7 @@ char *sip_replaces_dup_one(sip_header_t *dst, sip_header_t const *src,
 }
 
 /** Update parameters in @Replaces header. */
-static int sip_replaces_update(msg_common_t *h, 
+static int sip_replaces_update(msg_common_t *h,
 			       char const *name, isize_t namelen,
 			       char const *value)
 {
@@ -456,7 +456,7 @@ static int sip_replaces_update(msg_common_t *h,
  *  exten           = generic-param
  *
  * The parsed Refer-Sub header is stored in #sip_refer_sub_t structure.
- * 
+ *
  * @NEW_1_12_5. Note that #sip_t does not contain @a sip_refer_sub field,
  * but sip_refer_sub() accessor function should be used for accessing @b
  * Refer-Sub header structure.
@@ -478,10 +478,10 @@ static int sip_replaces_update(msg_common_t *h,
  *   sip_common_t        rs_common[1];   // Common fragment info
  *   sip_error_t        *rs_next;	 // Dummy link to next
  *   char const         *rs_value;       // "true" or "false"
- *   msg_param_t const  *rs_params;      // List of extension parameters 
+ *   msg_param_t const  *rs_params;      // List of extension parameters
  * } sip_refer_sub_t;
  * @endcode
- * 
+ *
  * @NEW_1_12_5.
  */
 
@@ -502,7 +502,7 @@ issize_t sip_refer_sub_d(su_home_t *home,
   if (msg_token_d(&s, &rs->rs_value) < 0)
     return -1;
 
-  if (strcasecmp(rs->rs_value, "false") && 
+  if (strcasecmp(rs->rs_value, "false") &&
       strcasecmp(rs->rs_value, "true"))
     return -1;
 

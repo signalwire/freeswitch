@@ -23,8 +23,8 @@
  */
 
 /**@SU_TAG
- * 
- * @CFILE su_taglist.c  
+ *
+ * @CFILE su_taglist.c
  *
  * Implementation of tag items and lists.
  *
@@ -66,7 +66,7 @@ unsigned longlong strtoull(const char *, char **, int);
  *
  * Object-oriented tag routines for Sofia utility library.
  *
- * The <sofia-sip/su_tag.h> defines a interface to object-oriented tag list routines. 
+ * The <sofia-sip/su_tag.h> defines a interface to object-oriented tag list routines.
  * A tag list is a linear list (array) of tag items, tagi_t structures,
  * terminated by a TAG_END() item. Each tag item has a label, tag, (@c
  * t_tag) and a value (@c t_value). The tag is a pointer (tag_type_t) to a
@@ -86,7 +86,7 @@ unsigned longlong strtoull(const char *, char **, int);
  * be used to a list of named arguments to a @ref tagarg "@em tagarg"
  * function, to store variable amount of data in a memory area, and pass
  * data between processes and threads.
- * 
+ *
  * The tagged argument lists can be used like named arguments in
  * higher-level languages. The argument list consists of tag-value pairs;
  * tags specify the name and type of the value. All the tag items are not
@@ -94,21 +94,21 @@ unsigned longlong strtoull(const char *, char **, int);
  * to other functions. This feature is used also by the Sofia APIs, the
  * lower-layer settings and options are frequently passed through the
  * upper-layer API in the tag lists.
- * 
+ *
  * The tagged argument lists are constructed using special macros that
  * expand to two function arguments, tag and value. Each tag item macro
  * checks its arguments type so the tagged argument lists are typesafe if
  * the list is correctly constructed.
- * 
+ *
  * Each function documents the tags it accepts and also the tags it may pass
  * to the lower layers (at least in theory).
- * 
+ *
  * @par Special Tags
  *
  * There are a new special tags that are used to control and modify the tag
  * list processing itself. These special tags are as follows:
  * - TAG_NULL() or TAG_END() - indicates the end of tag list
- * - TAG_SKIP() - indicates an empty (overwritten) tag item 
+ * - TAG_SKIP() - indicates an empty (overwritten) tag item
  * - TAG_NEXT() - contains a pointer to the next tag list.
  *
  * The tag type structures are declared as tag_typedef_t. They can be
@@ -137,8 +137,8 @@ int t_snprintf(tagi_t const *t, char b[], size_t size)
 {
   tag_type_t tt = TAG_TYPE_OF(t);
   int n, m;
-  
-  n = snprintf(b, size, "%s::%s: ", 
+
+  n = snprintf(b, size, "%s::%s: ",
                tt->tt_ns ? tt->tt_ns : "",
 	       tt->tt_name ? tt->tt_name : "null");
   if (n < 0)
@@ -177,10 +177,10 @@ tagi_t *tl_next(tagi_t const *t)
 }
 
 /**Move a tag list.
- * 
+ *
  * The function tl_tmove() moves the tag list arguments to @a dst.  The @a
  * dst must have big enough for all arguments.
- * 
+ *
  * @param dst   pointer to the destination buffer
  * @param size  sizeof @a dst
  * @param t_tag,t_value,... tag list
@@ -188,14 +188,14 @@ tagi_t *tl_next(tagi_t const *t)
  * @return
  * The function tl_tmove() returns number of tag list items initialized.
  */
-size_t tl_tmove(tagi_t *dst, size_t size, 
+size_t tl_tmove(tagi_t *dst, size_t size,
 		tag_type_t t_tag, tag_value_t t_value, ...)
 {
   size_t n = 0, N = size / sizeof(tagi_t);
   tagi_t tagi[1];
   va_list ap;
-  
-  va_start(ap, t_value); 
+
+  va_start(ap, t_value);
 
   tagi->t_tag = t_tag, tagi->t_value = t_value;
 
@@ -204,7 +204,7 @@ size_t tl_tmove(tagi_t *dst, size_t size,
     if (n < N)
       dst[n] = *tagi;
     n++;
-    if (t_end(tagi)) 
+    if (t_end(tagi))
       break;
 
     tagi->t_tag = va_arg(ap, tag_type_t);
@@ -217,16 +217,16 @@ size_t tl_tmove(tagi_t *dst, size_t size,
 }
 
 /**Move a tag list.
- * 
+ *
  * The function tl_move() copies the tag list @a src to the buffer @a
  * dst. The size of the @a dst list must be at least @c tl_len(src) bytes.
- * 
+ *
  * @param dst pointer to the destination buffer
  * @param src tag list to be moved
  *
  * @return
  * The function tl_move() returns a pointer to the @a dst list after last
- * moved element.  
+ * moved element.
  */
 tagi_t *tl_move(tagi_t *dst, tagi_t const src[])
 {
@@ -242,10 +242,10 @@ tagi_t *tl_move(tagi_t *dst, tagi_t const src[])
 size_t tl_len(tagi_t const lst[])
 {
   size_t len = 0;
-  
+
   do {
     len += t_len(lst);
-  } 
+  }
   while ((lst = t_next(lst)));
 
   return len;
@@ -271,15 +271,15 @@ size_t tl_xtra(tagi_t const lst[], size_t offset)
  * functionality.
  *
  * The size of the @a dst buffer must be at least @c tl_len(src) bytes.  The
- * size of buffer @a **bb must be at least @c tl_dup_xtra(src) bytes. 
- * 
+ * size of buffer @a **bb must be at least @c tl_dup_xtra(src) bytes.
+ *
  * @param[out] dst pointer to the destination buffer
  * @param[in] src tag list to be duplicated
  * @param[in,out] bb  pointer to pointer to buffer
  *
  * @return
  * A pointer to the @a dst list after last
- * duplicated taglist element.  
+ * duplicated taglist element.
  *
  * The pointer at @a *bb is updated to the byte after last duplicated memory
  * area.
@@ -292,12 +292,12 @@ tagi_t *tl_dup(tagi_t dst[], tagi_t const src[], void **bb)
 
   return dst;
 }
-	       
+
 
 /** Free a tag list.
  *
  * The function tl_free() frees resources associated with a tag list.
- * In other words, it calls t_free on each tag item on the list. 
+ * In other words, it calls t_free on each tag item on the list.
  *
  */
 void tl_free(tagi_t list[])
@@ -349,7 +349,7 @@ tagi_t *tl_find(tagi_t const lst[], tag_type_t tt)
 tagi_t *tl_find_last(tagi_t const lst[], tag_type_t tt)
 {
   tagi_t const *last, *next;
-  
+
   for (next = last = t_find(tt, lst); next; next = t_find(tt, t_next(last)))
     last = next;
 
@@ -373,9 +373,9 @@ int t_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
 static int tl_get(tag_type_t tt, void *p, tagi_t const lst[])
 {
   tagi_t const *t, *latest = NULL;
-  
+
   assert(tt);
-  
+
   if (tt == NULL || p == NULL)
     return 0;
 
@@ -414,14 +414,14 @@ int tl_gets(tagi_t const lst[], tag_type_t tag, tag_value_t value, ...)
       assert(tt->tt_class == ref_tag_class);
     }
 #endif
-  } 
+  }
 
   ta_end(ta);
 
   return n;
 }
 
-/** Find tags from given list. 
+/** Find tags from given list.
  *
  * Copies values of argument tag list into the reference tags in the tag
  * list @a lst.
@@ -453,7 +453,7 @@ int tl_tgets(tagi_t lst[], tag_type_t tag, tag_value_t value, ...)
       assert(tt->tt_class == ref_tag_class);
     }
 #endif
-  } 
+  }
 
   ta_end(ta);
 
@@ -462,9 +462,9 @@ int tl_tgets(tagi_t lst[], tag_type_t tag, tag_value_t value, ...)
 
 
 /** Filter an element in tag list */
-tagi_t *t_filter(tagi_t *dst, 
-		 tagi_t const filter[], 
-		 tagi_t const *src, 
+tagi_t *t_filter(tagi_t *dst,
+		 tagi_t const filter[],
+		 tagi_t const *src,
 		 void **bb)
 {
   tag_type_t tt = TAG_TYPE_OF(src);
@@ -475,7 +475,7 @@ tagi_t *t_filter(tagi_t *dst,
       if (TAG_TYPE_OF(f)->tt_filter)
 	dst = TAG_TYPE_OF(f)->tt_filter(dst, f, src, bb);
       else if (f->t_tag == tt)
-	dst = t_dup(dst, src, bb); 
+	dst = t_dup(dst, src, bb);
     }
   }
   else {
@@ -500,7 +500,7 @@ tagi_t *t_filter(tagi_t *dst,
  *
  * Each tag in @a src is checked against tags in list @a filter. If the tag
  * is in the @a filter list, or there is a special filter tag in the list
- * which matches with the tag in @a src, the tag is duplicated to @a dst using 
+ * which matches with the tag in @a src, the tag is duplicated to @a dst using
  * memory buffer in @a b.
  *
  * When @a dst is NULL, this function calculates the size of the filtered list.
@@ -508,9 +508,9 @@ tagi_t *t_filter(tagi_t *dst,
  * @sa tl_afilter(), tl_tfilter(), tl_filtered_tlist(),
  * TAG_FILTER(), TAG_ANY(), #ns_tag_class
  */
-tagi_t *tl_filter(tagi_t dst[], 
-		  tagi_t const filter[], 
-		  tagi_t const src[], 
+tagi_t *tl_filter(tagi_t dst[],
+		  tagi_t const filter[],
+		  tagi_t const src[],
 		  void **b)
 {
   tagi_t const *s;
@@ -536,13 +536,13 @@ tagi_t *tl_filter(tagi_t dst[],
 
 
 
-/**Filter a tag list. 
- * 
+/**Filter a tag list.
+ *
  * The function tl_afilter() will build a tag list containing tags specified
  * in @a filter and extracted from @a src.  It will allocate the memory used by
  * tag list via the specified memory @a home, which may be also @c NULL.
  *
- * @sa tl_afilter(), tl_tfilter(), tl_filtered_tlist(), 
+ * @sa tl_afilter(), tl_tfilter(), tl_filtered_tlist(),
  * TAG_FILTER(), TAG_ANY(), #ns_tag_class
  */
 tagi_t *tl_afilter(su_home_t *home, tagi_t const filter[], tagi_t const src[])
@@ -574,10 +574,10 @@ tagi_t *tl_afilter(su_home_t *home, tagi_t const filter[], tagi_t const src[])
 }
 
 /** Filter tag list @a src with given tags.
- * 
+ *
  * @sa tl_afilter(), tl_filtered_tlist(), TAG_FILTER(), TAG_ANY(), #ns_tag_class
  */
-tagi_t *tl_tfilter(su_home_t *home, tagi_t const src[], 
+tagi_t *tl_tfilter(su_home_t *home, tagi_t const src[],
 		   tag_type_t tag, tag_value_t value, ...)
 {
   tagi_t *tl;
@@ -592,7 +592,7 @@ tagi_t *tl_tfilter(su_home_t *home, tagi_t const src[],
  *
  * @sa tl_afilter(), tl_tfilter(), TAG_FILTER(), TAG_ANY(), #ns_tag_class
  */
-tagi_t *tl_filtered_tlist(su_home_t *home, tagi_t const filter[], 
+tagi_t *tl_filtered_tlist(su_home_t *home, tagi_t const filter[],
 			  tag_type_t tag, tag_value_t value, ...)
 {
   tagi_t *tl;
@@ -687,13 +687,13 @@ tagi_t *tl_vlist2(tag_type_t tag, tag_value_t value, va_list ap)
   for (;t;) {
     *t++ = *tagi;
 
-    if (t_end(tagi)) 
+    if (t_end(tagi))
       break;
 
     tagi->t_tag = va_arg(ap, tag_type_t);
     tagi->t_value = va_arg(ap, tag_value_t);
   }
-  
+
   assert((char *)rv + size == (char *)t);
 
   return rv;
@@ -702,7 +702,7 @@ tagi_t *tl_vlist2(tag_type_t tag, tag_value_t value, va_list ap)
 /** Make a tag list until TAG_NEXT() or TAG_END() */
 tagi_t *tl_list(tag_type_t tag, tag_value_t value, ...)
 {
-  va_list ap;  
+  va_list ap;
   tagi_t *t;
 
   va_start(ap, value);
@@ -728,7 +728,7 @@ size_t tl_vllen(tag_type_t tag, tag_value_t value, va_list ap)
     next = tl_next(tagi);
     if (next != tagi + 1)
       break;
-    
+
     if (tagi->t_tag != tag_skip)
       len += sizeof(tagi_t);
     tagi->t_tag = va_arg(ap, tag_type_t);
@@ -791,7 +791,7 @@ tagi_t *tl_vllist(tag_type_t tag, tag_value_t value, va_list ap)
  */
 tagi_t *tl_llist(tag_type_t tag, tag_value_t value, ...)
 {
-  va_list ap;  
+  va_list ap;
   tagi_t *t;
 
   va_start(ap, value);
@@ -809,7 +809,7 @@ void tl_vfree(tagi_t *t)
 }
 
 /** Convert a string to the a value of a tag. */
-int t_scan(tag_type_t tt, su_home_t *home, char const *s, 
+int t_scan(tag_type_t tt, su_home_t *home, char const *s,
 	   tag_value_t *return_value)
 {
   if (tt == NULL || s == NULL || return_value == NULL)
@@ -856,9 +856,9 @@ tagi_t const * t_null_find(tag_type_t tt, tagi_t const lst[])
   return NULL;
 }
 
-tagi_t *t_null_filter(tagi_t *dst, 
-		      tagi_t const filter[], 
-		      tagi_t const *src, 
+tagi_t *t_null_filter(tagi_t *dst,
+		      tagi_t const filter[],
+		      tagi_t const *src,
 		      void **bb)
 {
   if (TAG_TYPE_OF(src) == tag_null) {
@@ -871,9 +871,9 @@ tagi_t *t_null_filter(tagi_t *dst,
   return dst;
 }
 
-tag_class_t null_tag_class[1] = 
-  {{ 
-    sizeof(null_tag_class), 
+tag_class_t null_tag_class[1] =
+  {{
+    sizeof(null_tag_class),
     /* tc_next */     t_null_next,
     /* tc_len */      NULL,
     /* tc_move */     t_null_move,
@@ -939,15 +939,15 @@ tagi_t *t_skip_dup(tagi_t *dst, tagi_t const *src, void **bb)
   return dst;
 }
 
-tagi_t *t_skip_filter(tagi_t *dst, 
-		    tagi_t const filter[], 
-		    tagi_t const *src, 
+tagi_t *t_skip_filter(tagi_t *dst,
+		    tagi_t const filter[],
+		    tagi_t const *src,
 		    void **bb)
 {
   return dst;
 }
 
-tag_class_t skip_tag_class[1] = 
+tag_class_t skip_tag_class[1] =
   {{
     sizeof(skip_tag_class),
     /* tc_next */     t_skip_next,
@@ -994,15 +994,15 @@ tagi_t *t_next_dup(tagi_t *dst, tagi_t const *src, void **bb)
   return dst;
 }
 
-tagi_t *t_next_filter(tagi_t *dst, 
-		    tagi_t const filter[], 
-		    tagi_t const *src, 
+tagi_t *t_next_filter(tagi_t *dst,
+		    tagi_t const filter[],
+		    tagi_t const *src,
 		    void **bb)
 {
   return dst;
 }
 
-tag_class_t next_tag_class[1] = 
+tag_class_t next_tag_class[1] =
   {{
     sizeof(next_tag_class),
     /* tc_next */     t_next_next,
@@ -1024,8 +1024,8 @@ tag_typedef_t tag_next = TAG_TYPEDEF(tag_next, next);
 /* filter tag  - use function to filter tag */
 
 tagi_t *t_filter_with(tagi_t *dst,
-		      tagi_t const *t, 
-		      tagi_t const *src, 
+		      tagi_t const *t,
+		      tagi_t const *src,
 		      void **bb)
 {
   tag_filter_f *function;
@@ -1039,7 +1039,7 @@ tagi_t *t_filter_with(tagi_t *dst,
     return dst;
 
   if (dst) {
-    return t_dup(dst, src, bb); 
+    return t_dup(dst, src, bb);
   }
   else {
     dst = (tagi_t *)((char *)dst + t_len(src));
@@ -1047,8 +1047,8 @@ tagi_t *t_filter_with(tagi_t *dst,
     return dst;
   }
 }
-		   
-tag_class_t filter_tag_class[1] = 
+
+tag_class_t filter_tag_class[1] =
   {{
     sizeof(filter_tag_class),
     /* tc_next */     NULL,
@@ -1071,14 +1071,14 @@ tag_typedef_t tag_filter = TAG_TYPEDEF(tag_filter, filter);
 /* any tag - match to any tag when filtering */
 
 tagi_t *t_any_filter(tagi_t *dst,
-		     tagi_t const filter[], 
-		     tagi_t const *src, 
+		     tagi_t const filter[],
+		     tagi_t const *src,
 		     void **bb)
 {
   if (!src)
     return dst;
   else if (dst) {
-    return t_dup(dst, src, bb); 
+    return t_dup(dst, src, bb);
   }
   else {
     dst = (tagi_t *)((char *)dst + t_len(src));
@@ -1086,8 +1086,8 @@ tagi_t *t_any_filter(tagi_t *dst,
     return dst;
   }
 }
-		   
-tag_class_t any_tag_class[1] = 
+
+tag_class_t any_tag_class[1] =
   {{
     sizeof(any_tag_class),
     /* tc_next */     NULL,
@@ -1111,8 +1111,8 @@ tag_typedef_t tag_any = TAG_TYPEDEF(tag_any, any);
 
 static
 tagi_t *t_ns_filter(tagi_t *dst,
-		    tagi_t const filter[], 
-		    tagi_t const *src, 
+		    tagi_t const filter[],
+		    tagi_t const *src,
 		    void **bb)
 {
   char const *match, *ns;
@@ -1137,7 +1137,7 @@ tagi_t *t_ns_filter(tagi_t *dst,
     return dst;
 
   if (dst) {
-    return t_dup(dst, src, bb); 
+    return t_dup(dst, src, bb);
   }
   else {
     dst = (tagi_t *)((char *)dst + t_len(src));
@@ -1146,8 +1146,8 @@ tagi_t *t_ns_filter(tagi_t *dst,
   }
 }
 
-/** Namespace filtering class */		   
-tag_class_t ns_tag_class[1] = 
+/** Namespace filtering class */
+tag_class_t ns_tag_class[1] =
   {{
     sizeof(ns_tag_class),
     /* tc_next */     NULL,
@@ -1178,15 +1178,15 @@ int t_int_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
   return 1;
 }
 
-int t_int_scan(tag_type_t tt, su_home_t *home, 
-	       char const *s, 
+int t_int_scan(tag_type_t tt, su_home_t *home,
+	       char const *s,
 	       tag_value_t *return_value)
 {
   int value;
   char *rest;
 
   value = strtol(s, &rest, 0);
-  
+
   if (s != rest) {
     *return_value = (tag_value_t)value;
     return 1;
@@ -1197,7 +1197,7 @@ int t_int_scan(tag_type_t tt, su_home_t *home,
   }
 }
 
-tag_class_t int_tag_class[1] = 
+tag_class_t int_tag_class[1] =
   {{
     sizeof(int_tag_class),
     /* tc_next */     NULL,
@@ -1228,15 +1228,15 @@ int t_uint_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
   return 1;
 }
 
-int t_uint_scan(tag_type_t tt, su_home_t *home, 
-	       char const *s, 
+int t_uint_scan(tag_type_t tt, su_home_t *home,
+	       char const *s,
 	       tag_value_t *return_value)
 {
   unsigned value;
   char *rest;
 
   value = strtoul(s, &rest, 0);
-  
+
   if (s != rest) {
     *return_value = (tag_value_t)value;
     return 1;
@@ -1247,7 +1247,7 @@ int t_uint_scan(tag_type_t tt, su_home_t *home,
   }
 }
 
-tag_class_t uint_tag_class[1] = 
+tag_class_t uint_tag_class[1] =
   {{
     sizeof(int_tag_class),
     /* tc_next */     NULL,
@@ -1282,15 +1282,15 @@ int t_size_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
 }
 
 static
-int t_size_scan(tag_type_t tt, su_home_t *home, 
-		 char const *s, 
+int t_size_scan(tag_type_t tt, su_home_t *home,
+		 char const *s,
 		 tag_value_t *return_value)
 {
   unsigned longlong value;
   char *rest;
 
   value = strtoull(s, &rest, 0);
-  
+
   if (s != rest && value <= SIZE_MAX) {
     *return_value = (tag_value_t)value;
     return 1;
@@ -1302,7 +1302,7 @@ int t_size_scan(tag_type_t tt, su_home_t *home,
 }
 
 /** Tag class for tags with size_t value. @NEW_1_12_5. */
-tag_class_t size_tag_class[1] = 
+tag_class_t size_tag_class[1] =
   {{
     sizeof(int_tag_class),
     /* tc_next */     NULL,
@@ -1330,15 +1330,15 @@ int t_usize_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
 }
 
 static
-int t_usize_scan(tag_type_t tt, su_home_t *home, 
-		 char const *s, 
+int t_usize_scan(tag_type_t tt, su_home_t *home,
+		 char const *s,
 		 tag_value_t *return_value)
 {
   unsigned longlong value;
   char *rest;
 
   value = strtoull(s, &rest, 0);
-  
+
   if (s != rest && value <= USIZE_MAX) {
     *return_value = (tag_value_t)value;
     return 1;
@@ -1350,7 +1350,7 @@ int t_usize_scan(tag_type_t tt, su_home_t *home,
 }
 
 /** Tag class for tags with usize_t value. @NEW_1_12_5. */
-tag_class_t usize_tag_class[1] = 
+tag_class_t usize_tag_class[1] =
   {{
     sizeof(int_tag_class),
     /* tc_next */     NULL,
@@ -1382,17 +1382,17 @@ int t_bool_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
   return 1;
 }
 
-int t_bool_scan(tag_type_t tt, su_home_t *home, 
-	       char const *s, 
+int t_bool_scan(tag_type_t tt, su_home_t *home,
+	       char const *s,
 	       tag_value_t *return_value)
 {
   int retval;
   int value = 0;
 
-  if (strncasecmp(s, "true", 4) == 0 
+  if (strncasecmp(s, "true", 4) == 0
       && strlen(s + 4) == strspn(s + 4, " \t\r\n")) {
     value = 1, retval = 1;
-  } else if (strncasecmp(s, "false", 5) == 0 
+  } else if (strncasecmp(s, "false", 5) == 0
 	     && strlen(s + 5) == strspn(s + 5, " \t\r\n")) {
     value = 0, retval = 1;
   } else {
@@ -1404,11 +1404,11 @@ int t_bool_scan(tag_type_t tt, su_home_t *home,
     *return_value = (tag_value_t)value;
   else
     *return_value = (tag_value_t)0;
-  
+
   return retval;
 }
 
-tag_class_t bool_tag_class[1] = 
+tag_class_t bool_tag_class[1] =
   {{
     sizeof(bool_tag_class),
     /* tc_next */     NULL,
@@ -1440,8 +1440,8 @@ int t_ptr_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
 }
 
 /* This is not usually very safe, so it is not used */
-int t_ptr_scan(tag_type_t tt, su_home_t *home, 
-	       char const *s, 
+int t_ptr_scan(tag_type_t tt, su_home_t *home,
+	       char const *s,
 	       tag_value_t *return_value)
 {
   int retval;
@@ -1453,11 +1453,11 @@ int t_ptr_scan(tag_type_t tt, su_home_t *home,
     *return_value = (tag_value_t)ptr;
   else
     *return_value = (tag_value_t)NULL;
-  
+
   return retval;
 }
 
-tag_class_t ptr_tag_class[1] = 
+tag_class_t ptr_tag_class[1] =
   {{
     sizeof(ptr_tag_class),
     /* tc_next */     NULL,
@@ -1491,7 +1491,7 @@ int t_socket_ref_set(tag_type_t tt, void *ref, tagi_t const value[])
   return 1;
 }
 
-tag_class_t socket_tag_class[1] = 
+tag_class_t socket_tag_class[1] =
   {{
     sizeof(socket_tag_class),
     /* tc_next */     NULL,
@@ -1512,25 +1512,25 @@ tag_class_t socket_tag_class[1] =
 
 int t_str_snprintf(tagi_t const *t, char b[], size_t size)
 {
-  if (t->t_value) 
+  if (t->t_value)
     return snprintf(b, size, "\"%s\"", (char const *)t->t_value);
   else
     return snprintf(b, size, "<null>");
 }
 
-int t_str_scan(tag_type_t tt, su_home_t *home, 
-	       char const *s, 
+int t_str_scan(tag_type_t tt, su_home_t *home,
+	       char const *s,
 	       tag_value_t *return_value)
 {
   int retval;
 
   s = su_strdup(home, s);
-    
+
   if (s)
     *return_value = (tag_value_t)s, retval = 1;
   else
     *return_value = (tag_value_t)NULL, retval = -1;
-  
+
   return retval;
 }
 
@@ -1540,10 +1540,10 @@ tagi_t *t_str_dup(tagi_t *dst, tagi_t const *src, void **bb)
   if (src->t_value) {
     char const *s = (char const *)src->t_value;
     size_t len = strlen(s) + 1;
-    dst->t_value = (tag_value_t)strcpy(*bb, s); 
+    dst->t_value = (tag_value_t)strcpy(*bb, s);
     *bb = (char *)*bb + len;
   }
-  else 
+  else
     dst->t_value = (tag_value_t)0;
 
   return dst + 1;
@@ -1554,7 +1554,7 @@ size_t t_str_xtra(tagi_t const *t, size_t offset)
   return t->t_value ? strlen((char *)t->t_value) + 1 : 0;
 }
 
-tag_class_t str_tag_class[1] = 
+tag_class_t str_tag_class[1] =
   {{
     sizeof(str_tag_class),
     /* tc_next */     NULL,
@@ -1574,7 +1574,7 @@ tag_class_t str_tag_class[1] =
 /* cstr tag - pass constant string value (no need to dup) */
 
 /** Tag class for constant strings */
-tag_class_t cstr_tag_class[1] = 
+tag_class_t cstr_tag_class[1] =
   {{
     sizeof(cstr_tag_class),
     /* tc_next */     NULL,
@@ -1593,7 +1593,7 @@ tag_class_t cstr_tag_class[1] =
 /* ====================================================================== */
 /* ref tag - pass reference */
 
-tag_class_t ref_tag_class[1] = 
+tag_class_t ref_tag_class[1] =
   {{
     sizeof(ref_tag_class),
     /* tc_next */     NULL,

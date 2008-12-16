@@ -4,7 +4,7 @@
 # The parsed headers are accessed with function (or macro) like sip_refer_sub()
 # e.g., sip_refer_sub_t *rsub = sip_refer_sub(sip);
 #
-# The line format is: 
+# The line format is:
 # C-name @SINCE sip_t-like-comment
 #
 # Put all experimental things after EXPERIMENTAL HEADER LIST STARTS HERE...

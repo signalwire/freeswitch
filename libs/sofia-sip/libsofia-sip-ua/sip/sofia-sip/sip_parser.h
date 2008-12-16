@@ -24,10 +24,10 @@
 
 #ifndef SIP_PARSER_H
 /** Defined when <sofia-sip/sip_parser.h> has been included.*/
-#define SIP_PARSER_H 
+#define SIP_PARSER_H
 
 
-/**@ingroup sip_parser 
+/**@ingroup sip_parser
  * @file sofia-sip/sip_parser.h
  *
  * SIP parser provider interface.
@@ -130,11 +130,11 @@ SOFIAPUBFUN issize_t sip_name_addr_d(su_home_t *home,
 				     msg_param_t const **return_params,
 				     char const **return_comment);
 
-SOFIAPUBFUN issize_t sip_name_addr_e(char b[], isize_t bsiz, 
-				     int flags, 
-				     char const *display, 
+SOFIAPUBFUN issize_t sip_name_addr_e(char b[], isize_t bsiz,
+				     int flags,
+				     char const *display,
 				     int always_ltgt, url_t const url[],
-				     msg_param_t const params[], 
+				     msg_param_t const params[],
 				     char const *comment);
 
 SOFIAPUBFUN isize_t sip_name_addr_xtra(char const *display, url_t const *addr,
@@ -143,7 +143,7 @@ SOFIAPUBFUN isize_t sip_name_addr_xtra(char const *display, url_t const *addr,
 
 SOFIAPUBFUN char *sip_name_addr_dup(char const **d_display, char const *display,
 				    url_t *d_addr, url_t const *addr,
-				    msg_param_t const **d_params, 
+				    msg_param_t const **d_params,
 				    msg_param_t const params[],
 				    char *b, isize_t xtra);
 
@@ -167,7 +167,7 @@ SOFIAPUBFUN char *sip_name_addr_dup(char const **d_display, char const *display,
 #define sip_generic_dup_one	msg_generic_dup_one
 
 
-#define	sip_auth_d              msg_auth_d         
+#define	sip_auth_d              msg_auth_d
 #define	sip_auth_e              msg_auth_e
 
 #define sip_header_dup_as	msg_header_dup_as
@@ -205,12 +205,12 @@ SOFIAPUBFUN char *sip_name_addr_dup(char const **d_display, char const *display,
 
 SOFIAPUBFUN int sip_generic_xtra(sip_generic_t const *g);
 
-SOFIAPUBFUN sip_generic_t *sip_generic_dup(su_home_t *home, 
-					   msg_hclass_t *hc, 
+SOFIAPUBFUN sip_generic_t *sip_generic_dup(su_home_t *home,
+					   msg_hclass_t *hc,
 					   sip_generic_t const *u);
 
 SOFIAPUBFUN sip_generic_t *sip_generic_copy(su_home_t *home,
-					    msg_hclass_t *hc, 
+					    msg_hclass_t *hc,
 					    sip_generic_t const *o);
 
 SOFIA_END_DECLS

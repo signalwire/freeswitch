@@ -23,7 +23,7 @@
  */
 
 /**@page sip-options Query SIP OPTIONS
- * 
+ *
  * @section synopsis Synopsis
  * <tt>sip-options [OPTIONS] target-uri </tt>
  *
@@ -46,7 +46,7 @@
  *     preliminary responses are silently discarded.
  * </dd>
  * <dt>--all | -a</dt>
- * <dd>All SIP headers will be printed. If the --all option is given, 
+ * <dd>All SIP headers will be printed. If the --all option is given,
  *     the @em options utility also prints @b From, @b Via, @b Call-ID or
  *     @b CSeq headers.
  * </dd>
@@ -82,7 +82,7 @@
  *
  * @section environment Environment
  * #SIPADDRESS, #sip_proxy, #NTA_DEBUG, #TPORT_DEBUG, #TPORT_LOG.
- * 
+ *
  * @section bugs Reporting Bugs
  * Report bugs to <sofia-sip-devel@lists.sourceforge.net>.
  *
@@ -117,13 +117,13 @@ typedef struct context_s context_t;
 #include <sofia-sip/tport_tag.h>
 
 struct context_s {
-  su_home_t   	  c_home[1];
-  su_root_t   	 *c_root;
-  nta_agent_t 	 *c_agent;
+  su_home_t	  c_home[1];
+  su_root_t	 *c_root;
+  nta_agent_t	 *c_agent;
   url_t          *c_proxy;
   char const     *c_username;
   char const     *c_password;
-  nta_leg_t   	 *c_leg;
+  nta_leg_t	 *c_leg;
   nta_outgoing_t *c_orq;
   auth_client_t  *c_proxy_auth;
   auth_client_t  *c_auth;
@@ -139,7 +139,7 @@ char const name[] = "sip-options";
 static
 void usage(int rc)
 {
-  fprintf(rc ? stderr : stdout, 
+  fprintf(rc ? stderr : stdout,
 	  "usage: %s OPTIONS url [extra-file]\n"
 	  "where OPTIONS are\n"
 	  "    --mf=count | --max-forwards=count\n"
@@ -164,15 +164,15 @@ int main(int argc, char *argv[])
 {
   su_home_t *home;
   context_t context[1] = {{{SU_HOME_INIT(context)}}};
-  char 
+  char
     *extra = NULL,
-    *o_bind = "sip:*:*", 
+    *o_bind = "sip:*:*",
     *o_from = getenv("SIPADDRESS"),
     *o_http_proxy = NULL,
     *o_max_forwards = NULL,
     *o_method = NULL,
     *o_to = NULL;
-   
+
   char *s, *v;
 
   sip_method_t method = sip_method_options;
@@ -190,11 +190,11 @@ int main(int argc, char *argv[])
   while ((s = argv++[1])) {
     if (!MATCH(s, "-"))             { o_to = s;           break; }
     else if (strcmp(s, "") == 0)    { o_to = argv++[1];   break; }
-    else if (MATCH(s, "-a") || MATCH(s, "--all")) 
+    else if (MATCH(s, "-a") || MATCH(s, "--all"))
                                     { context->c_all = 1; }
-    else if (MATCH(s, "-x") || MATCH(s, "--extra")) 
+    else if (MATCH(s, "-x") || MATCH(s, "--extra"))
                                     { extra = "-"; }
-    else if (MATCH(s, "-1") || MATCH(s, "--1XX")) 
+    else if (MATCH(s, "-1") || MATCH(s, "--1XX"))
                                     { context->c_pre = 1; }
     else if (MATCH2(s, "--mf"))     { o_max_forwards = v; }
     else if (MATCH2(s, "--http-proxy"))     { o_http_proxy = v; }
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
     else if (MATCH2(s, "--from"))   { o_from = v; }
     else if (MATCH2(s, "--method")) { o_method = v; }
     else if (MATCH(s, "--help"))    { usage(0); }
-    else 
+    else
       usage(2);
   }
 
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
     extra = argv++[1];
 
   su_init();
-  
+
   su_home_init(home = context->c_home);
 
   context->c_root = su_root_create(context);
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
   if (context->c_root) {
     url_string_t *r_uri;
 
-    context->c_agent = 
+    context->c_agent =
       nta_agent_create(context->c_root,
 		       URL_STRING_MAKE(o_bind),
 		       NULL, NULL, /* Ignore incoming messages */
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
       tag_from_header(context->c_agent, context->c_home, from);
 
       if (o_method) {
-	method = sip_method_code(o_method); 
+	method = sip_method_code(o_method);
       } else {
 	isize_t len;
 	char const *params = to->a_url->url_params;
@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 	  o_method = su_alloc(home, len + 1);
 	  if (o_method == 0 ||
 	      url_param(params, "method", o_method, len + 1) != len) {
-	    fprintf(stderr, "%s: %s\n", name, 
+	    fprintf(stderr, "%s: %s\n", name,
 		    o_method ? "internal error" : strerror(errno));
 	    exit(2);
 	  }
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
 
       if (extra) {
 	FILE *hf;
-	
+
 	if (strcmp(extra, "-"))
 	  hf = fopen(extra, "rb");
 	else
@@ -290,7 +290,7 @@ int main(int argc, char *argv[])
 	extra = readfile(hf);
       }
 
-      context->c_proxy = url_hdup(context->c_home, 
+      context->c_proxy = url_hdup(context->c_home,
 				  (url_t *)getenv("sip_proxy"));
 
       nta_agent_set_params(context->c_agent,
@@ -298,17 +298,17 @@ int main(int argc, char *argv[])
 			   NTATAG_DEFAULT_PROXY(context->c_proxy),
 			   TAG_END());
 
-      context->c_leg = 
+      context->c_leg =
 	nta_leg_tcreate(context->c_agent,
 			NULL, NULL,      /* ignore incoming requests */
 			SIPTAG_FROM(from), /* who is sending OPTIONS? */
 			SIPTAG_TO(to), /* whom we are sending OPTIONS? */
 			TAG_END());
-				      
+
       if (context->c_leg) {
-	context->c_orq = 
+	context->c_orq =
 	  nta_outgoing_tcreate(context->c_leg,
-			       response_to_options, context, 
+			       response_to_options, context,
 			       NULL,
 			       method, o_method, r_uri,
 			       SIPTAG_USER_AGENT_STR("options"),
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
 			       TAG_END());
 
 	if (context->c_orq) {
-	  su_root_run(context->c_root); 
+	  su_root_run(context->c_root);
 	  nta_outgoing_destroy(context->c_orq), context->c_orq = NULL;
 	}
 
@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
 
       nta_agent_destroy(context->c_agent), context->c_agent = NULL;
     }
-    
+
     su_root_destroy(context->c_root);
   }
 
@@ -345,7 +345,7 @@ int response_to_options(context_t *context,
     return 0;
   if (server_authenticate(context, oreq, sip, response_to_options))
     return 0;
-				   
+
   if (sip->sip_status->st_status >= 200 || context->c_pre) {
     sip_header_t *h = (sip_header_t *)sip->sip_status;
     char hname[64];
@@ -362,17 +362,17 @@ int response_to_options(context_t *context,
 
       if (h->sh_class->hc_name == NULL) {
 	sl_header_print(stdout, NULL, h);
-      } 
+      }
       else if (h->sh_class->hc_name[0] == '\0') {
-	sl_header_print(stdout, "%s\n", h); 
+	sl_header_print(stdout, "%s\n", h);
       }
       else {
 	snprintf(hname, sizeof hname, "%s: %%s\n", h->sh_class->hc_name);
-	sl_header_print(stdout, hname, h); 
+	sl_header_print(stdout, hname, h);
       }
     }
   }
-  
+
   if (sip->sip_status->st_status >= 200) {
     context->c_retval = sip->sip_status->st_status >= 300;
     su_root_break(context->c_root);

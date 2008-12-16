@@ -32,7 +32,7 @@
  * not unique if multiple processes are run on the same node.
  *
  * Use su_guid_sprintf() to convert #su_guid_t to printable format.
- * 
+ *
  * The random integers can be generated with functions
  * - su_randint(),
  * - su_randmem(), or
@@ -44,7 +44,7 @@
  * @CFILE su_uniqueid.c Construct a GloballyUniqueID as per H.225.0 v2.
  *
  * @author Pekka Pessi <pessi@research.nokia.com>
- * 
+ *
  * @date Created: Tue Apr 15 06:31:41 1997 pessi
  */
 
@@ -87,7 +87,7 @@ static const uint64_t mask60 = SU_U64_C(0xfffFFFFffffFFFF);
 #define MAGIC (16384)
 
 /* 100-nanosecond intervals between 15 October 1582 and 1 January 1900 */
-static const uint64_t ntp_epoch = 
+static const uint64_t ntp_epoch =
 (uint64_t)(141427) * (24 * 60 * 60L) * granularity;
 
 /* State */
@@ -104,7 +104,7 @@ static uint64_t timestamp(void)
 {
   uint64_t tl = su_ntp_now();
   uint64_t hi = su_ntp_hi(tl), lo = su_ntp_lo(tl);
-  
+
   lo *= granularity;
   hi *= granularity;
 
@@ -143,7 +143,7 @@ static void init(void)
 
   /* Initialize our random number generator */
 #if HAVE_DEV_URANDOM
-  if (!urandom) 
+  if (!urandom)
     urandom = fopen("/dev/urandom", "rb");
 #endif	/* HAVE_DEV_URANDOM */
 
@@ -161,7 +161,7 @@ static void init(void)
       seed[2*i] ^= now.tv_sec; seed[2*i+1] ^= now.tv_sec;
     }
 
-    seed[30] ^= getuid(); 
+    seed[30] ^= getuid();
     seed[31] ^= getpid();
   }
 
@@ -252,12 +252,12 @@ void su_guid_generate(su_guid_t *v)
   uint64_t time;
   unsigned clock;
 
-  if (!initialized) init(); 
+  if (!initialized) init();
 
   time = timestamp();
   clock = clock_sequence;
 
-  v->s.time_high_and_version = 
+  v->s.time_high_and_version =
     htons((unsigned short)(((time >> 48) & 0x0fff) | (version << 12)));
   v->s.time_mid = htons((unsigned short)((time >> 32) & 0xffff));
   v->s.time_low = htonl((unsigned long)(time & 0xffffffffUL));
@@ -278,20 +278,20 @@ isize_t su_guid_sprintf(char* buf, size_t len, su_guid_t const *v)
 	  ntohs(v->s.time_high_and_version),
 	  v->s.clock_seq_low,
 	  v->s.clock_seq_hi_and_reserved,
-	  v->s.node[0], v->s.node[1], v->s.node[2], 
+	  v->s.node[0], v->s.node[1], v->s.node[2],
 	  v->s.node[3], v->s.node[4], v->s.node[5]);
   memcpy(buf, mybuf, len > sizeof(mybuf) ? sizeof(mybuf) : len);
   return su_guid_strlen;
 }
 
-/* 
- * Generate random integer in range [lb, ub] (inclusive) 
+/*
+ * Generate random integer in range [lb, ub] (inclusive)
  */
 int su_randint(int lb, int ub)
 {
   unsigned rnd = 0;
-  
-  if (!initialized) init(); 
+
+  if (!initialized) init();
 
   if (urandom) {
     size_t len = fread(&rnd, 1, sizeof rnd, urandom); (void)len;
@@ -309,7 +309,7 @@ void *su_randmem(void *mem, size_t siz)
 {
   size_t i;
 
-  if (!initialized) init(); 
+  if (!initialized) init();
 
   if (urandom) {
     size_t len = fread(mem, 1, siz, urandom); (void)len;
@@ -322,14 +322,14 @@ void *su_randmem(void *mem, size_t siz)
   return mem;
 }
 
-/** Get random number for RTP timestamps. 
+/** Get random number for RTP timestamps.
  *
  * This function returns a 32-bit random integer. It also initializes the
  * random number generator, if needed.
  */
 uint32_t su_random(void)
 {
-  if (!initialized) init(); 
+  if (!initialized) init();
 
   if (urandom) {
     uint32_t rnd;

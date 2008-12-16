@@ -70,7 +70,7 @@ port=$(./portbind $v6flag $((port + 1))) down=$port
 port=$(./portbind $v6flag $((port + 1))) bind=$port
 port=$(./portbind $v6flag $((port + 1))) contact=$port
 
-# Disable IPv6 resolver for now 
+# Disable IPv6 resolver for now
 if false && eval $ipv6 ; then
     listen="listen-on-v6 port $bind { any; };"
     ns=$me6
@@ -151,11 +151,11 @@ na      NAPTR 20 15 "a" "SIP+D2T" "" a2
 ; No sensible NAPTR match (and we get 503)
 na503   NAPTR 20 15 "S" "SIP+D2F" "" a2
 
-; No SIP NAPTR match 
+; No SIP NAPTR match
 nona   NAPTR 20 15 "S" "ZIP+D2U" "" a2
 _sip._udp.nona   SRV 1 10 $contact ip4
 
-; No SIP SRV match 
+; No SIP SRV match
 nosrv	NAPTR 20 1 "s" "SIP+D2U" "" _sip._udp.nosrv
         NAPTR 20 2 "s" "SIP+D2U" "" _sip._udp.srv
 
@@ -189,7 +189,7 @@ EOF
 named -f -c $namedfile &
 pid=$!
 while ! test -r $pidfile && kill -0 $!
-do 
+do
     sleep 1
 done
 

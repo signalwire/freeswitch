@@ -28,9 +28,9 @@
 
 /**@file sofia-sip/msg_types.h
  * @brief Types for messages and common headers
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Jan 23 15:43:17 2003 ppessi
  *
  */
@@ -65,15 +65,15 @@ typedef unsigned long msg_time_t;
 #endif
 
 #ifndef MSG_PUB_T
-#ifdef MSG_OBJ_T 
+#ifdef MSG_OBJ_T
 #define MSG_PUB_T MSG_OBJ_T
 #else
 #define MSG_PUB_T struct msg_pub_s
 #endif
 #endif
 
-/**Public protocol-specific message structure for accessing the message. 
- * 
+/**Public protocol-specific message structure for accessing the message.
+ *
  * This type can be either #sip_t, #http_t, or #msg_multipart_t, depending
  * on the message. The base structure used by msg module is defined in
  * struct #msg_pub_s.
@@ -104,7 +104,7 @@ typedef struct msg_auth_info_s      msg_auth_info_t;
 
 #define MSG_HEADER_N 16377
 
-/** Common part of the header objects (or message fragments). 
+/** Common part of the header objects (or message fragments).
  *
  * This structure is also known as #msg_common_t or #sip_common_t.
  */
@@ -132,7 +132,7 @@ struct msg_pub_s {
 
 #define msg_ident msg_common->h_class
 
-/** Numeric header. 
+/** Numeric header.
  *
  * A numeric header has value range of a 32-bit, 0..4294967295. The @a
  * x_value field is unsigned long, however.
@@ -143,7 +143,7 @@ struct msg_numeric_s {
   unsigned long  x_value;	    /**< Numeric header value */
 };
 
-/** Generic header. 
+/** Generic header.
  *
  * A generic header does not have any internal structure. Its value is
  * represented as a string.
@@ -154,8 +154,8 @@ struct msg_generic_s {
   char const    *g_string;	    /**< Header value */
 };
 
-/** List header. 
- * 
+/** List header.
+ *
  * A list header consists of comma-separated list of tokens.
  */
 struct msg_list_s {
@@ -164,7 +164,7 @@ struct msg_list_s {
   msg_param_t       *k_items;	    /**< List of items */
 };
 
-/** Authentication header. 
+/** Authentication header.
  *
  * An authentication header has authentication scheme name and
  * comma-separated list of parameters as its value.
@@ -244,13 +244,13 @@ union msg_header_u {
 
 /* ====================================================================== */
 
-/**Define how to handle existing headers 
- * when a new header is added to a message. 
+/**Define how to handle existing headers
+ * when a new header is added to a message.
  */
 typedef enum {
   msg_kind_single,		/**< Only one header is allowed */
   msg_kind_append,		/**< New header is appended */
-  msg_kind_list,		/**< A token list header, 
+  msg_kind_list,		/**< A token list header,
 				 * new header is combined with old one. */
   msg_kind_apndlist,		/**< A complex list header. */
   msg_kind_prepend		/**< New header is prepended */
@@ -259,17 +259,17 @@ typedef enum {
 struct su_home_s;
 
 typedef issize_t msg_parse_f(struct su_home_s *, msg_header_t *, char *, isize_t);
-typedef issize_t msg_print_f(char buf[], isize_t bufsiz, 
+typedef issize_t msg_print_f(char buf[], isize_t bufsiz,
 			     msg_header_t const *, int flags);
-typedef char *msg_dup_f(msg_header_t *dst, msg_header_t const *src, 
+typedef char *msg_dup_f(msg_header_t *dst, msg_header_t const *src,
 			char *buf, isize_t bufsiz);
 typedef isize_t msg_xtra_f(msg_header_t const *h, isize_t offset);
 
 typedef int msg_update_f(msg_common_t *, char const *name, isize_t namelen,
 			 char const *value);
 
-/** Factory object for a header. 
- * 
+/** Factory object for a header.
+ *
  * The #msg_hclass_t object, "header class", defines how a header is
  * handled. It has parsing and printing functions, functions used to copy
  * header objects, header name and other information used when parsing,

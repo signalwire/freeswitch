@@ -25,7 +25,7 @@
 #ifndef NUA_STACK_H
 /** Defined when <nua_stack.h> has been included. */
 #define NUA_STACK_H
-/**@IFILE nua_stack.h 
+/**@IFILE nua_stack.h
  * @brief Sofia-SIP User Agent Engine - internal stack interface
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -103,10 +103,10 @@ typedef struct register_usage nua_registration_t;
   TAG_IF((include) && (soa) && soa_is_remote_chat_active(soa) >= 0,	\
 	 SOATAG_ACTIVE_CHAT(soa_is_remote_chat_active(soa)))
 
-/** @internal @brief NUA handle. 
+/** @internal @brief NUA handle.
  *
  */
-struct nua_handle_s 
+struct nua_handle_s
 {
   su_home_t       nh_home[1];	/**< Memory home  */
   nua_handle_t   *nh_next;
@@ -205,7 +205,7 @@ struct nua_s {
 
   unsigned             nua_from_is_set;
   unsigned :0;
-  
+
   /**< Local SIP address. Contents are kept around for ever. */
   sip_from_t           nua_from[1];
 
@@ -261,12 +261,12 @@ int _nua_handle_unref_by(
 #endif
 
 su_inline nua_t *nua_stack_ref(nua_t *nua)
-{ 
+{
   return (nua_t *)su_home_ref(nua->nua_home);
 }
 
 su_inline void nua_stack_unref(nua_t *nua)
-{ 
+{
   su_home_unref(nua->nua_home);
 }
 
@@ -289,25 +289,25 @@ int nua_registration_process_request(nua_registration_t *nr,
 				     nta_incoming_t *irq,
 				     sip_t const *sip);
 
-void nua_stack_post_signal(nua_handle_t *nh, nua_event_t event, 
+void nua_stack_post_signal(nua_handle_t *nh, nua_event_t event,
 			   tag_type_t tag, tag_value_t value, ...);
 
-typedef int nua_stack_signal_handler(nua_t *, 
-				     nua_handle_t *, 
-				     nua_event_t, 
+typedef int nua_stack_signal_handler(nua_t *,
+				     nua_handle_t *,
+				     nua_event_t,
 				     tagi_t const *);
 
 void nua_move_signal(nua_saved_signal_t a[1], nua_saved_signal_t b[1]);
 nua_signal_data_t const *nua_signal_data(nua_saved_signal_t const saved[1]);
 void nua_destroy_signal(nua_saved_signal_t saved[1]);
 
-nua_stack_signal_handler 
+nua_stack_signal_handler
   nua_stack_set_params, nua_stack_get_params,
-  nua_stack_register, 
-  nua_stack_invite, nua_stack_ack, nua_stack_cancel, 
+  nua_stack_register,
+  nua_stack_invite, nua_stack_ack, nua_stack_cancel,
   nua_stack_bye, nua_stack_info, nua_stack_update,
   nua_stack_prack,
-  nua_stack_options, nua_stack_publish, nua_stack_message, 
+  nua_stack_options, nua_stack_publish, nua_stack_message,
   nua_stack_subscribe, nua_stack_notify, nua_stack_refer,
   nua_stack_method;
 
@@ -358,7 +358,7 @@ void nh_destroy(nua_t *nua, nua_handle_t *nh);
 
 nua_handle_t *nh_validate(nua_t *nua, nua_handle_t *maybe);
 
-sip_replaces_t *nua_stack_handle_make_replaces(nua_handle_t *handle, 
+sip_replaces_t *nua_stack_handle_make_replaces(nua_handle_t *handle,
 					       su_home_t *home,
 					       int early_only);
 
@@ -386,7 +386,7 @@ int nua_stack_launch_network_change_detector(nua_t *nua);
 sip_contact_t const *nua_stack_get_contact(nua_registration_t const *nr);
 
 int nua_registration_add_contact_to_request(nua_handle_t *nh,
-					    msg_t *msg, 
+					    msg_t *msg,
 					    sip_t *sip,
 					    int add_contact,
 					    int add_service_route);

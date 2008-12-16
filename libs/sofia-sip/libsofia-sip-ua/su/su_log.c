@@ -28,7 +28,7 @@
  * Implementation of generic logging interface.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Fri Feb 23 17:30:13 2001 ppessi
  */
 
@@ -51,7 +51,7 @@
 #else
 #define SU_LOG_IS_INIT(log) ((log)->log_init)
 #define SU_LOG_DO_INIT(log) ((log)->log_init = 1)
-#define SU_LOG_LOCK(log) 
+#define SU_LOG_LOCK(log)
 #define SU_LOG_UNLOCK(log)
 #endif
 
@@ -63,9 +63,9 @@
  * interface provides means for redirecting the log and filtering log
  * messages based on message priority.
  *
- * @sa @ref debug_logs, <sofia-sip/su_log.h>, 
+ * @sa @ref debug_logs, <sofia-sip/su_log.h>,
  * su_llog(), su_vllog(), #su_log_t, #SU_DEBUG,
- * SU_DEBUG_0(), SU_DEBUG_1(), SU_DEBUG_2(), SU_DEBUG_3(), SU_DEBUG_5(), 
+ * SU_DEBUG_0(), SU_DEBUG_1(), SU_DEBUG_2(), SU_DEBUG_3(), SU_DEBUG_5(),
  * SU_DEBUG_7(), SU_DEBUG_9()
  */
 
@@ -81,7 +81,7 @@ void su_perror(const char *s)
   su_perror2(s, su_errno());
 }
 
-/** Log a message to default log. 
+/** Log a message to default log.
  *
  * This function is a replacement for printf().
  *
@@ -96,7 +96,7 @@ void su_log(char const *fmt, ...)
   va_end(ap);
 }
 
-/** Log a message with level. 
+/** Log a message with level.
  *
  * @note This function is used mainly by SU_DEBUG_n() macros.
  */
@@ -120,7 +120,7 @@ void su_vllog(su_log_t *log, unsigned level, char const *fmt, va_list ap)
   if (!log->log_init)
     su_log_init(log);
 
-  if (log->log_init > 1 ? 
+  if (log->log_init > 1 ?
       level > log->log_level :
       level > su_log_default->log_level)
     return;
@@ -156,14 +156,14 @@ void su_log_init(su_log_t *log)
 
   if (log->log_env && (env = getenv(log->log_env))) {
     int level = atoi(env);
-    
+
     /* Why? */
     /* if (level == 0) level = 1; */
     log->log_level = level;
     log->log_init = 2;
 
-    if (explicitly_initialized) 
-      su_llog(log, 0, "%s: initialized log to level %u (%s=%s)\n", 
+    if (explicitly_initialized)
+      su_llog(log, 0, "%s: initialized log to level %u (%s=%s)\n",
 	      log->log_name, log->log_level, log->log_env, env);
   }
   else {
@@ -171,10 +171,10 @@ void su_log_init(su_log_t *log)
     log->log_init = 1;
     if (explicitly_initialized) {
       if (log != su_log_default)
-	su_llog(log, 0, "%s: logging at default level %u\n", 
+	su_llog(log, 0, "%s: logging at default level %u\n",
 		log->log_name, su_log_default->log_level);
       else
-	su_llog(log, 0, "%s: initialized log to level %u (default)\n", 
+	su_llog(log, 0, "%s: initialized log to level %u (default)\n",
 		log->log_name, log->log_level);
     }
   }
@@ -188,7 +188,7 @@ void su_log_init(su_log_t *log)
  * @code
  * void logger(void *logarg, char const *format, va_list ap);
  * @endcode
- * 
+ *
  * If @a logger is NULL, the default logger will be used. If @a log is NULL,
  * the default logger is changed.
  */
@@ -206,7 +206,7 @@ void su_log_redirect(su_log_t *log, su_logger_f *logger, void *logarg)
  * The function su_log_set_level() sets the logging level.  The log events
  * have certain level (0..9); if logging level is lower than the level of
  * the event, the log message is ignored.
- * 
+ *
  * If @a log is NULL, the default log level is changed.
  */
 void su_log_set_level(su_log_t *log, unsigned level)
@@ -221,7 +221,7 @@ void su_log_set_level(su_log_t *log, unsigned level)
     explicitly_initialized = getenv("SHOW_DEBUG_LEVELS");
 
   if (explicitly_initialized)
-    su_llog(log, 0, "%s: set log to level %u\n", 
+    su_llog(log, 0, "%s: set log to level %u\n",
 	    log->log_name, log->log_level);
 }
 
@@ -229,11 +229,11 @@ void su_log_set_level(su_log_t *log, unsigned level)
  *
  * The function su_log_soft_set_level() sets the logging level if it is not
  * already set, or the environment variable controlling the log level is not
- * set. 
+ * set.
  *
  * The log events have certain level (0..9); if logging level is lower than
  * the level of the event, the log message is ignored.
- * 
+ *
  * If @a log is NULL, the default log level is changed.
  */
 void su_log_soft_set_level(su_log_t *log, unsigned level)
@@ -254,7 +254,7 @@ void su_log_soft_set_level(su_log_t *log, unsigned level)
       explicitly_initialized = getenv("SHOW_DEBUG_LEVELS");
 
     if (explicitly_initialized)
-      su_llog(log, 0, "%s: soft set log to level %u\n", 
+      su_llog(log, 0, "%s: soft set log to level %u\n",
 	      log->log_name, log->log_level);
   }
 }

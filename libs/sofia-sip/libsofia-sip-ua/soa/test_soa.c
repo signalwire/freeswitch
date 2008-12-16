@@ -72,7 +72,7 @@ int tstflags = 0;
 
 #define NONE ((void*)-1)
 
-struct context 
+struct context
 {
   su_home_t home[1];
   su_root_t *root;
@@ -130,11 +130,11 @@ int test_api_errors(struct context *ctx)
   TEST_1(soa_get_user_sdp(NULL, NULL, NULL, NULL) < 0);
   TEST_1(soa_get_local_sdp(NULL, NULL, NULL, NULL) < 0);
 
-  TEST_1(-1 == soa_generate_offer(NULL, 0, test_api_completed)); 
+  TEST_1(-1 == soa_generate_offer(NULL, 0, test_api_completed));
 
-  TEST_1(-1 == soa_generate_answer(NULL, test_api_completed)); 
+  TEST_1(-1 == soa_generate_answer(NULL, test_api_completed));
 
-  TEST_1(-1 == soa_process_answer(NULL, test_api_completed)); 
+  TEST_1(-1 == soa_process_answer(NULL, test_api_completed));
 
   TEST_1(-1 == soa_process_reject(NULL, test_api_completed));
 
@@ -162,7 +162,7 @@ int test_api_errors(struct context *ctx)
 int test_soa_tags(struct context *ctx)
 {
   BEGIN();
-  
+
   su_home_t home[1] = { SU_HOME_INIT(home) };
   tagi_t *t;
 
@@ -194,7 +194,7 @@ int test_init(struct context *ctx, char *argv[])
 
   ctx->root = su_root_create(ctx); TEST_1(ctx->root);
 
-  ctx->asynch.a = soa_create("asynch", ctx->root, ctx); 
+  ctx->asynch.a = soa_create("asynch", ctx->root, ctx);
   TEST_1(!ctx->asynch.a);
 
 #if 0
@@ -205,7 +205,7 @@ int test_init(struct context *ctx, char *argv[])
 
   TEST_1(soa_find("asynch"));
 
-  ctx->asynch.a = soa_create("asynch", ctx->root, ctx); 
+  ctx->asynch.a = soa_create("asynch", ctx->root, ctx);
   TEST_1(ctx->asynch.a);
 
   ctx->asynch.b = soa_create("asynch", ctx->root, ctx);
@@ -214,7 +214,7 @@ int test_init(struct context *ctx, char *argv[])
 
   /* Create asynchronous endpoints */
 
-  ctx->a = soa_create("static", ctx->root, ctx); 
+  ctx->a = soa_create("static", ctx->root, ctx);
   TEST_1(!ctx->a);
 
   TEST_1(!soa_find("static"));
@@ -349,7 +349,7 @@ int test_static_offer_answer(struct context *ctx)
 {
   BEGIN();
   int n;
-  
+
   soa_session_t *a, *b;
 
   char const *caps = NONE, *offer = NONE, *answer = NONE;
@@ -359,19 +359,19 @@ int test_static_offer_answer(struct context *ctx)
 
   su_home_t home[1] = { SU_HOME_INIT(home) };
 
-  char const a_caps[] = 
+  char const a_caps[] =
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
     "m=audio 0 RTP/AVP 0 8\r\n";
 
-  char const b_caps[] = 
+  char const b_caps[] =
     "m=audio 5004 RTP/AVP 96 8\n"
     "m=rtpmap:96 GSM/8000\n";
 
-  TEST(soa_set_capability_sdp(ctx->a, 0, "m=audio 0 RTP/AVP 0 8", -1), 
+  TEST(soa_set_capability_sdp(ctx->a, 0, "m=audio 0 RTP/AVP 0 8", -1),
        1);
-  TEST(soa_set_capability_sdp(ctx->a, 0, a_caps, strlen(a_caps)), 
+  TEST(soa_set_capability_sdp(ctx->a, 0, a_caps, strlen(a_caps)),
        1);
   TEST(soa_get_capability_sdp(ctx->a, NULL, &caps, &capslen), 1);
 
@@ -402,7 +402,7 @@ int test_static_offer_answer(struct context *ctx)
 		     SOATAG_AF(SOA_AF_IP4_ONLY),
 		     SOATAG_ADDRESS("1.2.3.4"),
 		     TAG_END());
-  
+
   n = soa_generate_answer(b, test_completed); TEST(n, 0);
 
   TEST_1(soa_is_complete(b));
@@ -498,7 +498,7 @@ int test_static_offer_answer(struct context *ctx)
   TEST(soa_is_audio_active(b), SOA_ACTIVE_INACTIVE);
   TEST(soa_is_remote_audio_active(b), SOA_ACTIVE_INACTIVE);
 
-  /* 'A' will release hold. */ 
+  /* 'A' will release hold. */
   TEST(soa_set_params(a, SOATAG_HOLD(NULL), TAG_END()), 1);
 
   TEST(soa_generate_offer(a, 1, test_completed), 0);
@@ -540,7 +540,7 @@ int test_static_offer_answer(struct context *ctx)
       c = sdp->sdp_connection;
     TEST_1(c);
     c->c_address = "0.0.0.0";
-    
+
     TEST_1(p = sdp_print(home, sdp, NULL, 0, sdp_f_realloc));
     TEST_1(sdp_message(p));
     offer = sdp_message(p); offerlen = strlen(offer);
@@ -562,10 +562,10 @@ int test_static_offer_answer(struct context *ctx)
   TEST(soa_is_audio_active(b), SOA_ACTIVE_RECVONLY);
   TEST(soa_is_remote_audio_active(b), SOA_ACTIVE_RECVONLY);
 
-  /* 'A' will propose adding video. */ 
-  /* 'B' will reject. */ 
+  /* 'A' will propose adding video. */
+  /* 'B' will reject. */
   TEST(soa_set_params(a,
-		      SOATAG_HOLD(NULL),  /* 'A' will release hold. */ 
+		      SOATAG_HOLD(NULL),  /* 'A' will release hold. */
 		      SOATAG_USER_SDP_STR("m=audio 5008 RTP/AVP 0 8\r\ni=x\r\n"
 					  "m=video 5006 RTP/AVP 34\r\n"),
 		      TAG_END()), 2);
@@ -596,7 +596,7 @@ int test_static_offer_answer(struct context *ctx)
     sdp_session_t const *l = NULL, *u = NULL, *r = NULL;
     sdp_media_t const *m;
 
-    TEST(soa_get_params(b, 
+    TEST(soa_get_params(b,
 			SOATAG_LOCAL_SDP_REF(l),
 			SOATAG_USER_SDP_REF(u),
 			SOATAG_REMOTE_SDP_REF(r),
@@ -611,7 +611,7 @@ int test_static_offer_answer(struct context *ctx)
 
   /* 'B' will now propose adding video. */
   /* 'A' will accept. */
-  TEST(soa_set_params(b, 
+  TEST(soa_set_params(b,
 		      SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8\r\n"
 					  "m=video 5006 RTP/AVP 34\r\n"),
 		      TAG_END()), 1);
@@ -636,14 +636,14 @@ int test_static_offer_answer(struct context *ctx)
   TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDRECV);
   TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
   TEST(soa_is_video_active(a), SOA_ACTIVE_SENDRECV);
-  
+
   TEST_VOID(soa_terminate(a, NULL));
 
   TEST(soa_is_audio_active(a), SOA_ACTIVE_DISABLED);
   TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_DISABLED);
 
   TEST_VOID(soa_terminate(b, NULL));
-  
+
   TEST_VOID(soa_destroy(a));
   TEST_VOID(soa_destroy(b));
 
@@ -656,7 +656,7 @@ int test_codec_selection(struct context *ctx)
 {
   BEGIN();
   int n;
-  
+
   soa_session_t *a, *b;
 
   char const *offer = NONE, *answer = NONE;
@@ -666,7 +666,7 @@ int test_codec_selection(struct context *ctx)
   sdp_media_t const *m;
   sdp_rtpmap_t const *rm;
 
-  char const a_caps[] = 
+  char const a_caps[] =
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
@@ -674,7 +674,7 @@ int test_codec_selection(struct context *ctx)
     "a=rtpmap:97 GSM/8000\n"
     ;
 
-  char const b_caps[] = 
+  char const b_caps[] =
     "m=audio 5004 RTP/AVP 96 97\n"
     "a=rtpmap:96 G7231/8000\n"
     "a=rtpmap:97 G729/8000\n";
@@ -791,7 +791,7 @@ int test_codec_selection(struct context *ctx)
   /* Re-O/A: add a common codec */
 
   /* Accept media without common codecs */
-  TEST_1(soa_set_params(a, SOATAG_RTP_MISMATCH(0), 
+  TEST_1(soa_set_params(a, SOATAG_RTP_MISMATCH(0),
 			SOATAG_USER_SDP_STR(
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
@@ -799,11 +799,11 @@ int test_codec_selection(struct context *ctx)
     "m=audio 5008 RTP/AVP 0 8 96 3 127\r\n"
     "a=rtpmap:96 G729/8000\n"
     "a=rtpmap:127 CN/8000\n"
-    ),			
+    ),
 			SOATAG_RTP_SORT(SOA_RTP_SORT_REMOTE),
 			SOATAG_RTP_SELECT(SOA_RTP_SELECT_ALL),
 			TAG_END()));
-  TEST_1(soa_set_params(b, SOATAG_RTP_MISMATCH(0), 
+  TEST_1(soa_set_params(b, SOATAG_RTP_MISMATCH(0),
 			SOATAG_USER_SDP_STR(
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
@@ -813,7 +813,7 @@ int test_codec_selection(struct context *ctx)
     "a=rtpmap:97 G729/8000\n"
     "a=rtpmap:111 telephone-event/8000\n"
     "a=fmtp:111 0-15\n"
-    ),			
+    ),
 			SOATAG_AUDIO_AUX("cn telephone-event"),
 			SOATAG_RTP_SORT(SOA_RTP_SORT_LOCAL),
 			SOATAG_RTP_SELECT(SOA_RTP_SELECT_COMMON),
@@ -865,7 +865,7 @@ int test_codec_selection(struct context *ctx)
   /* ---------------------------------------------------------------------- */
   /* Re-O/A: prune down to single codec. */
 
-  TEST_1(soa_set_params(a, 
+  TEST_1(soa_set_params(a,
 			SOATAG_USER_SDP_STR(
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
@@ -874,7 +874,7 @@ int test_codec_selection(struct context *ctx)
     "a=rtpmap:96 G729/8000\n"
     "a=rtpmap:97 GSM/8000\n"
     "a=rtpmap:127 CN/8000\n"
-    ),			
+    ),
 			SOATAG_RTP_MISMATCH(0),
 			SOATAG_RTP_SELECT(SOA_RTP_SELECT_COMMON),
 			TAG_END()));
@@ -911,8 +911,8 @@ int test_codec_selection(struct context *ctx)
   TEST_S(rm->rm_encoding, "CN");
   TEST_1(!rm->rm_next);
 
-  /* Answering end matches payload types 
-     then sorts by local preference, 
+  /* Answering end matches payload types
+     then sorts by local preference,
      then select best codec => GSM with pt 97 */
   TEST_1(m = b_sdp->sdp_media); TEST_1(!m->m_rejected);
   TEST_1(rm = m->m_rtpmaps); TEST(rm->rm_pt, 97);
@@ -1181,7 +1181,7 @@ int test_codec_selection(struct context *ctx)
 
   TEST_VOID(soa_terminate(a, NULL));
   TEST_VOID(soa_terminate(b, NULL));
-  
+
   TEST_VOID(soa_destroy(a));
   TEST_VOID(soa_destroy(b));
 
@@ -1295,7 +1295,7 @@ int test_media_replace(struct context *ctx)
 {
   BEGIN();
   int n;
-  
+
   soa_session_t *a, *b;
 
   char const *offer = NONE, *answer = NONE;
@@ -1304,14 +1304,14 @@ int test_media_replace(struct context *ctx)
   sdp_session_t const *a_sdp, *b_sdp;
   sdp_media_t const *m;
 
-  char const a_caps[] = 
+  char const a_caps[] =
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
     "m=audio 5008 RTP/AVP 0 8\r\n"
     ;
 
-  char const b_caps[] = 
+  char const b_caps[] =
     "m=audio 5004 RTP/AVP 0 8\n"
     "a=rtpmap:96 G7231/8000\n"
     "a=rtpmap:97 G729/8000\n"
@@ -1369,7 +1369,7 @@ int test_media_replace(struct context *ctx)
     "a=T38FaxTranscodingJBIG:0\r\n"
     "a=T38FaxRateManagement:transferredTCF\r\n"
     "a=T38FaxMaxDatagram:400\r\n"
-    ),			
+    ),
 			TAG_END()));
 
   n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
@@ -1392,21 +1392,21 @@ int test_media_replace(struct context *ctx)
   TEST_1(m = a_sdp->sdp_media); TEST_1(!m->m_rejected);
   TEST(m->m_type, sdp_media_image);
   TEST(m->m_proto, sdp_proto_udptl);
-  TEST_1(m->m_format); 
-  TEST_S(m->m_format->l_text, "t38"); 
+  TEST_1(m->m_format);
+  TEST_S(m->m_format->l_text, "t38");
 
   TEST_1(m = b_sdp->sdp_media); TEST_1(!m->m_rejected);
   TEST(m->m_type, sdp_media_image);
   TEST(m->m_proto, sdp_proto_udptl);
-  TEST_1(m->m_format); 
-  TEST_S(m->m_format->l_text, "t38"); 
+  TEST_1(m->m_format);
+  TEST_S(m->m_format->l_text, "t38");
 
   TEST(soa_is_audio_active(a), SOA_ACTIVE_DISABLED);
   TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_DISABLED);
 
   TEST_VOID(soa_terminate(a, NULL));
   TEST_VOID(soa_terminate(b, NULL));
-  
+
   TEST_VOID(soa_destroy(a));
   TEST_VOID(soa_destroy(b));
 
@@ -1571,7 +1571,7 @@ int test_media_reject(struct context *ctx)
 {
   BEGIN();
   int n;
-  
+
   soa_session_t *a, *b;
 
   char const *offer = NONE, *answer = NONE;
@@ -1579,7 +1579,7 @@ int test_media_reject(struct context *ctx)
 
   sdp_session_t const *b_sdp;
 
-  char const a_caps[] = 
+  char const a_caps[] =
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
@@ -1587,7 +1587,7 @@ int test_media_reject(struct context *ctx)
     "a=rtpmap:97 GSM/8000\n"
     ;
 
-  char const b_caps[] = 
+  char const b_caps[] =
     "m=audio 0 RTP/AVP 96 97\n"
     "a=rtpmap:96 G7231/8000\n"
     "a=rtpmap:97 G729/8000\n";
@@ -1620,7 +1620,7 @@ int test_media_reject(struct context *ctx)
 
   TEST_VOID(soa_terminate(a, NULL));
   TEST_VOID(soa_terminate(b, NULL));
-  
+
   TEST_VOID(soa_destroy(a));
   TEST_VOID(soa_destroy(b));
 
@@ -1632,7 +1632,7 @@ int test_media_replace2(struct context *ctx)
 {
   BEGIN();
   int n;
-  
+
   soa_session_t *a, *b;
 
   char const *offer = NONE, *answer = NONE;
@@ -1641,7 +1641,7 @@ int test_media_replace2(struct context *ctx)
   sdp_session_t const *a_sdp, *b_sdp;
   sdp_media_t const *m;
 
-  char const a_caps[] = 
+  char const a_caps[] =
     "v=0\r\n"
     "o=a 432432423423 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
@@ -1657,7 +1657,7 @@ int test_media_replace2(struct context *ctx)
     "a=rtpmap:96 G7231/8000\n"
     "a=rtpmap:97 G729/8000\n";
 
-  char const a_caps2[] = 
+  char const a_caps2[] =
     "v=0\r\n"
     "o=a 432432423423 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
@@ -1671,14 +1671,14 @@ int test_media_replace2(struct context *ctx)
     "a=T38FaxRateManagement:transferredTCF\r\n"
     "a=T38FaxMaxDatagram:400\r\n";
 
-  char const b_caps[] = 
+  char const b_caps[] =
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
     "m=audio 5008 RTP/AVP 0 8\r\n"
     ;
 
-  char const b_caps2[] = 
+  char const b_caps2[] =
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
@@ -1759,22 +1759,22 @@ int test_media_replace2(struct context *ctx)
   TEST_1(m = m->m_next);
   TEST(m->m_type, sdp_media_image);
   TEST(m->m_proto, sdp_proto_udptl);
-  TEST_1(m->m_format); 
-  TEST_S(m->m_format->l_text, "t38"); 
+  TEST_1(m->m_format);
+  TEST_S(m->m_format->l_text, "t38");
 
   TEST_1(m = b_sdp->sdp_media); TEST_1(m->m_rejected);
   TEST_1(m = m->m_next);
   TEST(m->m_type, sdp_media_image);
   TEST(m->m_proto, sdp_proto_udptl);
-  TEST_1(m->m_format); 
-  TEST_S(m->m_format->l_text, "t38"); 
+  TEST_1(m->m_format);
+  TEST_S(m->m_format->l_text, "t38");
 
   TEST(soa_is_audio_active(a), SOA_ACTIVE_DISABLED);
   TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_DISABLED);
 
   TEST_VOID(soa_terminate(a, NULL));
   TEST_VOID(soa_terminate(b, NULL));
-  
+
   TEST_VOID(soa_destroy(a));
   TEST_VOID(soa_destroy(b));
 
@@ -1788,25 +1788,25 @@ int test_asynch_offer_answer(struct context *ctx)
 
 #if 0				/* This has never been implemented */
   int n;
-  
+
   char const *caps = NONE, *offer = NONE, *answer = NONE;
   isize_t capslen = -1, offerlen = -1, answerlen = -1;
 
-  char const a[] = 
+  char const a[] =
     "v=0\r\n"
     "o=left 219498671 2 IN IP4 127.0.0.2\r\n"
     "c=IN IP4 127.0.0.2\r\n"
     "m=audio 5004 RTP/AVP 0 8\r\n";
 
-  char const b[] = 
+  char const b[] =
     "v=0\n"
     "o=right 93298573265 321974 IN IP4 127.0.0.3\n"
     "c=IN IP4 127.0.0.3\n"
     "m=audio 5006 RTP/AVP 96\n"
     "m=rtpmap:96 GSM/8000\n";
 
-  n = soa_set_capability_sdp(ctx->asynch.a, 0, 
-			     "m=audio 5004 RTP/AVP 0 8", -1); 
+  n = soa_set_capability_sdp(ctx->asynch.a, 0,
+			     "m=audio 5004 RTP/AVP 0 8", -1);
   TEST(n, 1);
 
   n = soa_set_capability_sdp(ctx->asynch.a, 0, a, strlen(a)); TEST(n, 1);
@@ -1819,7 +1819,7 @@ int test_asynch_offer_answer(struct context *ctx)
 
   n = soa_generate_offer(ctx->asynch.a, 1, test_completed); TEST(n, 1);
 
-  su_root_run(ctx->root); TEST(ctx->completed, ctx->asynch.a); 
+  su_root_run(ctx->root); TEST(ctx->completed, ctx->asynch.a);
   ctx->completed = NULL;
 
   n = soa_get_local_sdp(ctx->asynch.a, 0, &offer, &offerlen); TEST(n, 1);
@@ -1828,7 +1828,7 @@ int test_asynch_offer_answer(struct context *ctx)
 
   n = soa_generate_answer(ctx->asynch.b, test_completed); TEST(n, 1);
 
-  su_root_run(ctx->root); TEST(ctx->completed, ctx->asynch.b); 
+  su_root_run(ctx->root); TEST(ctx->completed, ctx->asynch.b);
   ctx->completed = NULL;
 
   TEST_1(soa_is_complete(ctx->asynch.b));
@@ -1840,7 +1840,7 @@ int test_asynch_offer_answer(struct context *ctx)
 
   n = soa_process_answer(ctx->asynch.a, test_completed); TEST(n, 1);
 
-  su_root_run(ctx->root); TEST(ctx->completed, ctx->asynch.a); 
+  su_root_run(ctx->root); TEST(ctx->completed, ctx->asynch.a);
   ctx->completed = NULL;
 
   TEST_1(soa_is_complete(ctx->asynch.a));
@@ -1867,7 +1867,7 @@ int test_asynch_offer_answer(struct context *ctx)
   TEST_VOID(soa_terminate(ctx->asynch.b, NULL));
 
 #endif
-  
+
   END();
 }
 
@@ -1878,7 +1878,7 @@ int test_deinit(struct context *ctx)
   su_root_destroy(ctx->root), ctx->root = NULL;
   soa_destroy(ctx->a);
   soa_destroy(ctx->b);
-  
+
   END();
 }
 
@@ -1892,8 +1892,8 @@ static RETSIGTYPE sig_alarm(int s)
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
-	  "usage: %s [-v|-q] [-a] [-l level] [-p outbound-proxy-uri]\n", 
+  fprintf(stderr,
+	  "usage: %s [-v|-q] [-a] [-l level] [-p outbound-proxy-uri]\n",
 	  name);
   exit(exitcode);
 }
@@ -1927,7 +1927,7 @@ int main(int argc, char *argv[])
 
       if (rest == NULL || *rest)
 	usage(1);
-      
+
       su_log_set_level(soa_log, level);
     }
     else if (strcmp(argv[i], "--attach") == 0) {

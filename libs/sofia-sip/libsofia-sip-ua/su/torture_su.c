@@ -57,7 +57,7 @@ static int test_sockaddr(void)
   su_sockaddr_t  su[1], a[1], b[1];
 
   BEGIN();
-  
+
   hints->li_family = AF_INET;
 
   TEST(su_getlocalinfo(hints, &res), 0);
@@ -66,7 +66,7 @@ static int test_sockaddr(void)
     if (li->li_addrlen != res->li_addrlen ||
 	memcmp(li->li_addr, res->li_addr, li->li_addrlen) != 0)
       TEST_1(su_cmp_sockaddr(li->li_addr, res->li_addr) != 0);
-    else 
+    else
       TEST_1(su_cmp_sockaddr(li->li_addr, res->li_addr) == 0);
   }
 
@@ -115,8 +115,8 @@ static int test_sockaddr(void)
   su_getlocalinfo(hints, &res);
   su_freelocalinfo(res), res = NULL;
 
-  memset(a, 0, sizeof *a); 
-  memset(b, 0, sizeof *b); 
+  memset(a, 0, sizeof *a);
+  memset(b, 0, sizeof *b);
 
   TEST_1(su_match_sockaddr(a, b));
   b->su_family = AF_INET;
@@ -206,7 +206,7 @@ int test_sendrecv(void)
   TEST(listen(l, 5), 0);
 
   TEST(su_setblocking(s, 1), 0);
-  
+
   TEST(connect(s, &su.su_sa, sulen), 0);
   a = accept(l, &csu.su_sa, &csulen); TEST_1(a != -1);
 
@@ -253,12 +253,12 @@ int test_sendrecv(void)
   su_close(a);
 
   su_close(l);
-  su_close(s); 
+  su_close(s);
 
   END();
 }
 
-#if HAVE_SELECT 
+#if HAVE_SELECT
 
 #if HAVE_WIN32
 int test_select(void)
@@ -307,7 +307,7 @@ int test_select(void)
   TEST(su_inet_pton(AF_INET, "127.0.0.1", &su.su_sin.sin_addr), 1);
   TEST(bind(s, &su.su_sa, sulen), 0);
   TEST(getsockname(s, &su.su_sa, &sulen), 0);
-  
+
   tv.tv_sec = 0; tv.tv_usec = 1000;
   TEST(select(0, NULL, NULL, NULL, &tv), 0);
 
@@ -320,20 +320,20 @@ int test_select(void)
   TEST(select(s + 1, NULL, wset, NULL, &tv), 1);
   TEST_1(FD_ISSET(s, wset));
 
-  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset);
   FD_SET(s, rset); FD_SET(s, wset);
   tv.tv_sec = 0, tv.tv_usec = 1000;
   TEST(select(s + 1, rset, wset, NULL, &tv), 1);
   TEST_1(!FD_ISSET(s, rset));
   TEST_1(FD_ISSET(s, wset));
 
-  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset);
   FD_SET(s, rset); FD_SET(s, wset);
   tv.tv_sec = 0, tv.tv_usec = 1000;
   TEST(select(s + 1, rset, NULL, NULL, &tv), 0);
   TEST_1(!FD_ISSET(s, rset));
 
-  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset);
   FD_SET(s, rset); FD_CLR(s, wset);
   tv.tv_sec = 0, tv.tv_usec = 1000;
   TEST(select(s + 1, rset, wset, NULL, &tv), 0);
@@ -342,14 +342,14 @@ int test_select(void)
 
   TEST(su_sendto(s, "foo", 3, 0, &su, sulen), 3);
 
-  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset);
   FD_SET(s, rset); FD_CLR(s, wset);
   tv.tv_sec = 0, tv.tv_usec = 1000;
   TEST(select(s + 1, rset, wset, NULL, &tv), 1);
   TEST_1(FD_ISSET(s, rset));
   TEST_1(!FD_ISSET(s, wset));
 
-  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset); 
+  FD_ZERO_TO(s, rset); FD_ZERO_TO(s, wset);
   FD_SET(s, rset); FD_SET(s, wset);
   tv.tv_sec = 0, tv.tv_usec = 1000;
   TEST(select(s + 1, rset, wset, NULL, &tv), 2);
@@ -383,14 +383,14 @@ int test_md5(void)
   char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1];
 
   struct { char *input; uint8_t digest[SU_MD5_DIGEST_SIZE]; } suite[] = {
-    { (""), 
+    { (""),
 	{ 0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04,
 	  0xe9, 0x80, 0x09, 0x98, 0xec, 0xf8, 0x42, 0x7e } },
     { ("a"), { 0x0c, 0xc1, 0x75, 0xb9, 0xc0, 0xf1, 0xb6, 0xa8,
 	       0x31, 0xc3, 0x99, 0xe2, 0x69, 0x77, 0x26, 0x61 } },
     { ("abc"), { 0x90, 0x01, 0x50, 0x98, 0x3c, 0xd2, 0x4f, 0xb0,
 		 0xd6, 0x96, 0x3f, 0x7d, 0x28, 0xe1, 0x7f, 0x72 } },
-    { ("message digest"), 
+    { ("message digest"),
       { 0xf9, 0x6b, 0x69, 0x7d, 0x7c, 0xb7, 0x93, 0x8d,
 	0x52, 0x5a, 0x2f, 0x31, 0xaa, 0xf1, 0x61, 0xd0 } },
     { ("abcdefghijklmnopqrstuvwxyz"),
@@ -456,13 +456,13 @@ int test_md5(void)
   TEST_S(hexdigest, "93b885adfe0da089cdf634904fd59f71");
   su_md5_deinit(md5);
 
-  su_md5_init(md5);   
+  su_md5_init(md5);
   su_md5_stri0update(md5, NULL);
   su_md5_stri0update(md5, "ABBADABBADOO");
   su_md5_hexdigest(md5, hexdigest);
   TEST_S(hexdigest, "101e6dd7cfabdb5c74f44b4c545c05cc");
 
-  su_md5_init(md5); 
+  su_md5_init(md5);
   su_md5_update(md5, "\0abbadabbadoo\0", 14);
   su_md5_hexdigest(md5, hexdigest);
   TEST_S(hexdigest, "101e6dd7cfabdb5c74f44b4c545c05cc");
@@ -512,7 +512,7 @@ int main(int argc, char *argv[])
     else
       usage(1);
   }
-  
+
   retval |= test_sockaddr();
   retval |= test_sendrecv();
   retval |= test_select();

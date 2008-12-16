@@ -58,7 +58,7 @@
 #define POLL2EPOLL_NEEDED \
   (POLLIN != EPOLLIN || POLLOUT != EPOLLOUT || POLLPRI != EPOLLPRI || \
    POLLERR != EPOLLERR || POLLHUP != EPOLLHUP)
- 
+
 #define POLL2EPOLL(e) (e & (POLLIN|POLLOUT|POLLPRI|POLLERR|POLLHUP))
 #define EPOLL2POLL(e) (e & (POLLIN|POLLOUT|POLLPRI|POLLERR|POLLHUP))
 
@@ -71,8 +71,8 @@ struct su_epoll_port_s {
   int              sup_epoll;
   unsigned         sup_multishot; /**< Multishot operation? */
 
-  unsigned         sup_registers; /** Counter incremented by 
-				      su_port_register() or 
+  unsigned         sup_registers; /** Counter incremented by
+				      su_port_register() or
 				      su_port_unregister()
 				   */
   int              sup_n_registrations;
@@ -82,9 +82,9 @@ struct su_epoll_port_s {
   /** Structure containing registration data */
   struct su_epoll_register {
     struct su_epoll_register *ser_next; /* Next in free list */
-    su_wakeup_f     ser_cb; 
-    su_wakeup_arg_t*ser_arg; 
-    su_root_t      *ser_root; 
+    su_wakeup_f     ser_cb;
+    su_wakeup_arg_t*ser_arg;
+    su_root_t      *ser_root;
     int             ser_id; /** registration identifier */
     su_wait_t       ser_wait[1];
   } **sup_indices;
@@ -94,19 +94,19 @@ static void su_epoll_port_decref(su_port_t *self,
 				 int blocking,
 				 char const *who);
 static int su_epoll_port_register(su_port_t *self,
-				  su_root_t *root, 
-				  su_wait_t *wait, 
+				  su_root_t *root,
+				  su_wait_t *wait,
 				  su_wakeup_f callback,
 				  su_wakeup_arg_t *arg,
 				  int priority);
 static int su_epoll_port_unregister(su_port_t *port,
-				    su_root_t *root, 
-				    su_wait_t *wait,	
-				    su_wakeup_f callback, 
+				    su_root_t *root,
+				    su_wait_t *wait,
+				    su_wakeup_f callback,
 				    su_wakeup_arg_t *arg);
 static int su_epoll_port_deregister(su_port_t *self, int i);
 static int su_epoll_port_unregister_all(su_port_t *self, su_root_t *root);
-static int su_epoll_port_eventmask(su_port_t *self, 
+static int su_epoll_port_eventmask(su_port_t *self,
 				   int index,
 				   int socket,
 				   int events);
@@ -174,22 +174,22 @@ static void su_epoll_port_deinit(void *arg)
  *
  *  Please note if identical wait objects are inserted, only first one is
  *  ever signalled.
- * 
+ *
  * @param self	     pointer to port
  * @param root	     pointer to root object
  * @param waits	     pointer to wait object
  * @param callback   callback function pointer
  * @param arg	     argument given to callback function when it is invoked
- * @param priority   relative priority of the wait object 
+ * @param priority   relative priority of the wait object
  *              (0 is normal, 1 important, 2 realtime)
- * 
+ *
  * @return
- *   Positive index of the wait object, 
+ *   Positive index of the wait object,
  *   or -1 upon an error.
  */
 int su_epoll_port_register(su_port_t *self,
-			   su_root_t *root, 
-			   su_wait_t *wait, 
+			   su_root_t *root,
+			   su_wait_t *wait,
 			   su_wakeup_f callback,
 			   su_wakeup_arg_t *arg,
 			   int priority)
@@ -212,7 +212,7 @@ int su_epoll_port_register(su_port_t *self,
     su_home_t *h = su_port_home(self);
 
     i = self->sup_max_index, j = i == 0 ? 15 : i + 16;
-    
+
     if (j >= self->sup_size_indices) {
       /* Reallocate index table */
       n = n < 1024 ? 2 * n : n + 1024;
@@ -246,7 +246,7 @@ int su_epoll_port_register(su_port_t *self,
   ev.events = POLL2EPOLL(wait->events);
   ev.data.u64 = 0;
   ev.data.u32 = (uint32_t)i;
-  
+
   if (epoll_ctl(self->sup_epoll, EPOLL_CTL_ADD, wait->fd, &ev) == -1) {
     SU_DEBUG_0(("EPOLL_CTL_ADD(%u, %u) failed: %s\n",
 		wait->fd, ev.events, strerror(errno)));
@@ -282,13 +282,13 @@ static int su_epoll_port_deregister0(su_port_t *self, int i, int destroy_wait)
   assert(ser->ser_id == i);
 
   if (epoll_ctl(self->sup_epoll, EPOLL_CTL_DEL, ser->ser_wait->fd, NULL) == -1) {
-    SU_DEBUG_1(("su_port(%p): EPOLL_CTL_DEL(%u): %s\n", (void *)self, 
+    SU_DEBUG_1(("su_port(%p): EPOLL_CTL_DEL(%u): %s\n", (void *)self,
 		ser->ser_wait->fd, su_strerror(su_errno())));
   }
 
   if (destroy_wait)
     su_wait_destroy(ser->ser_wait);
-  
+
   memset(ser, 0, sizeof *ser);
   ser->ser_id = i;
   ser->ser_next = indices[0], indices[0] = ser;
@@ -301,25 +301,25 @@ static int su_epoll_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
 
 /** Unregister a su_wait_t object.
- *  
+ *
  *  The function su_epoll_port_unregister() unregisters a su_wait_t object. The
  *  wait object, a callback function and a argument are removed from the
  *  port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param root     - pointer to root object
  * @param wait     - pointer to wait object
  * @param callback - callback function pointer (may be NULL)
- * @param arg      - argument given to callback function when it is invoked 
+ * @param arg      - argument given to callback function when it is invoked
  *                   (may be NULL)
  *
- * @deprecated Use su_epoll_port_deregister() instead. 
+ * @deprecated Use su_epoll_port_deregister() instead.
  *
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
 int su_epoll_port_unregister(su_port_t *self,
-			     su_root_t *root, 
-			     su_wait_t *wait,	
+			     su_root_t *root,
+			     su_wait_t *wait,
 			     su_wakeup_f callback, /* XXX - ignored */
 			     su_wakeup_arg_t *arg)
 {
@@ -347,14 +347,14 @@ int su_epoll_port_unregister(su_port_t *self,
 }
 
 /** Deregister a su_wait_t object.
- *  
+ *
  *  Deregisters a registration by index. The wait object, a callback
  *  function and a argument are removed from the port object. The wait
  *  object is destroyed.
- * 
+ *
  * @param self     - pointer to port object
  * @param i        - registration index
- * 
+ *
  * @return Index of the wait object, or -1 upon an error.
  */
 int su_epoll_port_deregister(su_port_t *self, int i)
@@ -377,10 +377,10 @@ int su_epoll_port_deregister(su_port_t *self, int i)
  *
  * The function su_epoll_port_unregister_all() unregisters all su_wait_t
  * objects associated with given root object.
- * 
+ *
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
- * 
+ *
  * @return Number of wait objects removed.
  */
 int su_epoll_port_unregister_all(su_port_t *self, su_root_t *root)
@@ -437,7 +437,7 @@ int su_epoll_port_eventmask(su_port_t *self, int index, int socket, int events)
   ev.data.u32 = (uint32_t)index;
 
   if (epoll_ctl(self->sup_epoll, EPOLL_CTL_MOD, socket, &ev) == -1) {
-    SU_DEBUG_1(("su_port(%p): EPOLL_CTL_MOD(%u): %s\n", (void *)self, 
+    SU_DEBUG_1(("su_port(%p): EPOLL_CTL_MOD(%u): %s\n", (void *)self,
 		socket, su_strerror(su_errno())));
     return -1;
   }
@@ -454,7 +454,7 @@ int su_epoll_port_eventmask(su_port_t *self, int index, int socket, int events)
  *
  * @param self      pointer to port object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
- * 
+ *
  * @retval 0 multishot mode is disabled
  * @retval 1 multishot mode is enabled
  * @retval -1 an error occurred
@@ -466,7 +466,7 @@ int su_epoll_port_multishot(su_port_t *self, int multishot)
     return self->sup_multishot;
   else if (multishot == 0 || multishot == 1)
     return self->sup_multishot = multishot;
-  else 
+  else
     return (errno = EINVAL), -1;
 }
 
@@ -487,7 +487,7 @@ int su_epoll_port_wait_events(su_port_t *self, su_duration_t tout)
 
   int const M = 4;
   struct epoll_event ev[M];
-    
+
   n = epoll_wait(self->sup_epoll, ev, self->sup_multishot ? M : 1, tout);
 
   assert(n <= M);
@@ -508,7 +508,7 @@ int su_epoll_port_wait_events(su_port_t *self, su_duration_t tout)
     if (version != self->sup_registers)
       /* Callback function used su_register()/su_deregister() */
       return events;
-  }    
+  }
 
   return n;
 }
@@ -522,7 +522,7 @@ su_port_t *su_epoll_port_create(void)
 
   if (epoll == -1) {
     /* Fallback to poll() */
-    SU_DEBUG_3(("%s(): epoll_create() => %u: %s\n", 
+    SU_DEBUG_3(("%s(): epoll_create() => %u: %s\n",
 		"su_port_create", epoll, strerror(errno)));
     return su_poll_port_create();
   }
@@ -537,9 +537,9 @@ su_port_t *su_epoll_port_create(void)
 	      "su_port_create", (void *)self, self->sup_epoll, "OK"));
 
   if (su_home_destructor(su_port_home(self), su_epoll_port_deinit) < 0 ||
-      !(self->sup_indices = 
+      !(self->sup_indices =
 	su_zalloc(su_port_home(self),
-		  (sizeof self->sup_indices[0]) * 
+		  (sizeof self->sup_indices[0]) *
 		  (self->sup_size_indices = 64)))) {
     su_home_unref(su_port_home(self));
     close(epoll);
@@ -561,7 +561,7 @@ int su_epoll_clone_start(su_root_t *parent,
 			 su_root_init_f init,
 			 su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_epoll_port_create, 
+  return su_pthreaded_port_start(su_epoll_port_create,
 				 parent, return_clone, magic, init, deinit);
 }
 

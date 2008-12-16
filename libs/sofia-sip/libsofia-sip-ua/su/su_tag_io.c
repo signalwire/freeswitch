@@ -23,12 +23,12 @@
  */
 
 /**@SU_TAG
- * 
+ *
  * @CFILE su_tag_io.c
  * @brief Printing tag lists.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Wed Feb 21 12:12:27 2001 ppessi
  */
 
@@ -62,7 +62,7 @@ void tl_print(FILE *f, char const *title, tagi_t const lst[])
       if (n > 0 && buffer[n - 1] == '\n')
 	fmt = "   %s";
     }
-    else 
+    else
       buffer[sizeof(buffer) - 1] = '\0';
     fprintf(f, fmt, buffer);
   }

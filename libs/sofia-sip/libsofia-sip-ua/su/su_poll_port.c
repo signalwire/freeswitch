@@ -61,8 +61,8 @@ struct su_poll_port_s {
 
   unsigned         sup_multishot; /**< Multishot operation? */
 
-  unsigned         sup_registers; /** Counter incremented by 
-				      su_port_register() or 
+  unsigned         sup_registers; /** Counter incremented by
+				      su_port_register() or
 				      su_port_unregister()
 				   */
 
@@ -72,39 +72,39 @@ struct su_poll_port_s {
 
 #define INDEX_MAX (0x7fffffff)
 
-  /** Indices from index returned by su_root_register() to tables below. 
+  /** Indices from index returned by su_root_register() to tables below.
    *
    * Free elements are negative. Free elements form a list, value of free
    * element is (0 - index of next free element).
    *
-   * First element sup_indices[0] points to first free element. 
+   * First element sup_indices[0] points to first free element.
    */
   int             *sup_indices;
 
   int             *sup_reverses; /** Reverse index */
-  su_wakeup_f     *sup_wait_cbs; 
-  su_wakeup_arg_t**sup_wait_args; 
-  su_root_t      **sup_wait_roots; 
-  su_wait_t       *sup_waits; 
+  su_wakeup_f     *sup_wait_cbs;
+  su_wakeup_arg_t**sup_wait_args;
+  su_root_t      **sup_wait_roots;
+  su_wait_t       *sup_waits;
 
 };
 
 static void su_poll_port_decref(su_port_t *, int blocking, char const *who);
 
 static int su_poll_port_register(su_port_t *self,
-				 su_root_t *root, 
-				 su_wait_t *wait, 
+				 su_root_t *root,
+				 su_wait_t *wait,
 				 su_wakeup_f callback,
 				 su_wakeup_arg_t *arg,
 				 int priority);
 static int su_poll_port_unregister(su_port_t *port,
-				   su_root_t *root, 
-				   su_wait_t *wait,	
-				   su_wakeup_f callback, 
+				   su_root_t *root,
+				   su_wait_t *wait,
+				   su_wakeup_f callback,
 				   su_wakeup_arg_t *arg);
 static int su_poll_port_deregister(su_port_t *self, int i);
 static int su_poll_port_unregister_all(su_port_t *self, su_root_t *root);
-static int su_poll_port_eventmask(su_port_t *self, 
+static int su_poll_port_eventmask(su_port_t *self,
 				  int index,
 				  int socket,
 				  int events);
@@ -170,22 +170,22 @@ static void su_poll_port_decref(su_port_t *self, int blocking, char const *who)
  *
  *  Please note if identical wait objects are inserted, only first one is
  *  ever signalled.
- * 
+ *
  * @param self	     pointer to port
  * @param root	     pointer to root object
  * @param waits	     pointer to wait object
  * @param callback   callback function pointer
  * @param arg	     argument given to callback function when it is invoked
- * @param priority   relative priority of the wait object 
+ * @param priority   relative priority of the wait object
  *              (0 is normal, 1 important, 2 realtime)
- * 
+ *
  * @return
- *   Positive index of the wait object, 
+ *   Positive index of the wait object,
  *   or -1 upon an error.
  */
 int su_poll_port_register(su_port_t *self,
-			  su_root_t *root, 
-			  su_wait_t *wait, 
+			  su_root_t *root,
+			  su_wait_t *wait,
 			  su_wakeup_f callback,
 			  su_wakeup_arg_t *arg,
 			  int priority)
@@ -212,7 +212,7 @@ int su_poll_port_register(su_port_t *self,
 
     if (self->sup_size_waits == 0)
       size = su_root_size_hint;
-    else 
+    else
       size = 2 * self->sup_size_waits;
 
     if (size < SU_WAIT_MIN)
@@ -239,7 +239,7 @@ int su_poll_port_register(su_port_t *self,
 	reverses[i] = -1;
       self->sup_reverses = reverses;
     }
-      
+
     waits = su_realloc(h, self->sup_waits, size * sizeof(*waits));
     if (waits)
       self->sup_waits = waits;
@@ -254,10 +254,10 @@ int su_poll_port_register(su_port_t *self,
 
     /* Add sup_wait_roots array, if needed */
     wait_tasks = su_realloc(h, self->sup_wait_roots, size * sizeof(*wait_tasks));
-    if (wait_tasks) 
+    if (wait_tasks)
       self->sup_wait_roots = wait_tasks;
 
-    if (!(indices && 
+    if (!(indices &&
 	  reverses && waits && wait_cbs && wait_args && wait_tasks)) {
       return -1;
     }
@@ -276,7 +276,7 @@ int su_poll_port_register(su_port_t *self,
       self->sup_waits[n] = self->sup_waits[n-1];
       self->sup_wait_cbs[n] = self->sup_wait_cbs[n-1];
       self->sup_wait_args[n] = self->sup_wait_args[n-1];
-      self->sup_wait_roots[n] = self->sup_wait_roots[n-1];	
+      self->sup_wait_roots[n] = self->sup_wait_roots[n-1];
     }
 
     self->sup_pri_offset++;
@@ -316,9 +316,9 @@ static int su_poll_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
   if (destroy_wait)
     su_wait_destroy(&self->sup_waits[n]);
-  
+
   N = --self->sup_n_waits;
-  
+
   if (n < self->sup_pri_offset) {
     int j = --self->sup_pri_offset;
     if (n != j) {
@@ -354,7 +354,7 @@ static int su_poll_port_deregister0(su_port_t *self, int i, int destroy_wait)
   self->sup_wait_cbs[n] = NULL;
   self->sup_wait_args[n] = NULL;
   self->sup_wait_roots[n] = NULL;
-  
+
   indices[i] = indices[0];
   indices[0] = -i;
 
@@ -365,25 +365,25 @@ static int su_poll_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
 
 /** Unregister a su_wait_t object.
- *  
+ *
  *  The function su_poll_port_unregister() unregisters a su_wait_t object. The
  *  wait object, a callback function and a argument are removed from the
  *  port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param root     - pointer to root object
  * @param wait     - pointer to wait object
  * @param callback - callback function pointer (may be NULL)
- * @param arg      - argument given to callback function when it is invoked 
+ * @param arg      - argument given to callback function when it is invoked
  *                   (may be NULL)
  *
- * @deprecated Use su_poll_port_deregister() instead. 
+ * @deprecated Use su_poll_port_deregister() instead.
  *
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
 int su_poll_port_unregister(su_port_t *self,
-			    su_root_t *root, 
-			    su_wait_t *wait,	
+			    su_root_t *root,
+			    su_wait_t *wait,
 			    su_wakeup_f callback, /* XXX - ignored */
 			    su_wakeup_arg_t *arg)
 {
@@ -406,14 +406,14 @@ int su_poll_port_unregister(su_port_t *self,
 }
 
 /** Deregister a su_wait_t object.
- *  
+ *
  *  Deregisters a registration by index. The wait object, a callback
  *  function and a argument are removed from the port object. The wait
  *  object is destroyed.
- * 
+ *
  * @param self     - pointer to port object
  * @param i        - registration index
- * 
+ *
  * @return Index of the wait object, or -1 upon an error.
  */
 int su_poll_port_deregister(su_port_t *self, int i)
@@ -429,7 +429,7 @@ int su_poll_port_deregister(su_port_t *self, int i)
 
   if (self->sup_indices[i] < 0)
     return su_seterrno(EBADF);
-    
+
   retval = su_poll_port_deregister0(self, i, 1);
 
   su_wait_destroy(wait);
@@ -443,13 +443,13 @@ int su_poll_port_deregister(su_port_t *self, int i)
  *
  * The function su_poll_port_unregister_all() unregisters all su_wait_t objects
  * and destroys all queued timers associated with given root object.
- * 
+ *
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
- * 
+ *
  * @return Number of wait objects removed.
  */
-int su_poll_port_unregister_all(su_port_t *self, 
+int su_poll_port_unregister_all(su_port_t *self,
 				su_root_t *root)
 {
   int i, j, index, N;
@@ -464,11 +464,11 @@ int su_poll_port_unregister_all(su_port_t *self,
   N          = self->sup_n_waits;
   indices    = self->sup_indices;
   reverses   = self->sup_reverses;
-  waits      = self->sup_waits; 
-  wait_cbs   = self->sup_wait_cbs; 
+  waits      = self->sup_waits;
+  wait_cbs   = self->sup_wait_cbs;
   wait_args  = self->sup_wait_args;
-  wait_roots = self->sup_wait_roots; 
-  
+  wait_roots = self->sup_wait_roots;
+
   for (i = j = 0; i < N; i++) {
     index = reverses[i]; assert(index > 0 && indices[index] == i);
 
@@ -490,10 +490,10 @@ int su_poll_port_unregister_all(su_port_t *self,
       wait_args[j]  = wait_args[i];
       wait_roots[j] = wait_roots[i];
     }
-    
+
     j++;
   }
-  
+
   for (i = j; i < N; i++) {
     reverses[i] = -1;
     wait_cbs[i] = NULL;
@@ -545,7 +545,7 @@ int su_poll_port_eventmask(su_port_t *self, int index, int socket, int events)
  *
  * @param self      pointer to port object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
- * 
+ *
  * @retval 0 multishot mode is disabled
  * @retval 1 multishot mode is enabled
  * @retval -1 an error occurred
@@ -557,7 +557,7 @@ int su_poll_port_multishot(su_port_t *self, int multishot)
     return self->sup_multishot;
   else if (multishot == 0 || multishot == 1)
     return self->sup_multishot = multishot;
-  else 
+  else
     return (errno = EINVAL), -1;
 }
 
@@ -637,7 +637,7 @@ void su_port_dump(su_port_t const *self, FILE *f)
 #endif
   fprintf(f, "\t%d wait objects\n", self->sup_n_waits);
   for (i = 0; i < self->sup_n_waits; i++) {
-    
+
   }
 }
 
@@ -669,7 +669,7 @@ int su_poll_clone_start(su_root_t *parent,
 			su_root_init_f init,
 			su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_poll_port_create, 
+  return su_pthreaded_port_start(su_poll_port_create,
 				 parent, return_clone, magic, init, deinit);
 }
 

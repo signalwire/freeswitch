@@ -17,17 +17,17 @@ API/ABI changes and versioning
 
 <see previous release notes at
  http://sofia-sip.sourceforge.net/relnotes/ for examples ;
- - should include all changes to public headers, and 
-   other important information to developers; 
+ - should include all changes to public headers, and
+   other important information to developers;
  - and should be updated _continuously_! />
 
 **template**: New features in API are marked with Doxytag macro @VERSION_1_XX_X.
 
 libsofia-sip-ua:
 - **template**: Added foobar() function (sofia-sip/foobar.h).
-- This release is ABI/API compatible with applications linked against 
-  any 1.12.x release. However, applications built against this release won't 
-  work against an older library. The ABI has been tested with the nua module 
+- This release is ABI/API compatible with applications linked against
+  any 1.12.x release. However, applications built against this release won't
+  work against an older library. The ABI has been tested with the nua module
   unit test (test_nua) built against original 1.12.0 release.
 
 libsofia-sip-ua-glib:
@@ -41,12 +41,12 @@ Contributors to this release
 <list of people who contributed to _this_ release
  - update as people's patches are added, or when you commit stuff
  - current development team members (see AUTHORS) may be omitted,
-   or listed at the end of the contribur list (depending on the scope 
+   or listed at the end of the contribur list (depending on the scope
    of the work done since the last release)
  - name of the contributor should be enough (email addresses in AUTHORS),
    plus a _brief_ description of what was contributed
  - roughly sorted by number of patches accepted
-/> 
+/>
 
 - **template**: First Surname (patch to nua/soa/msg)
 
@@ -59,7 +59,7 @@ Notes on new features
  - new/changed/removed functionality
  - links to further documentation
  - section may be omitted for minor releases
-/> 
+/>
 
 Bugs fixed in this release
 --------------------------

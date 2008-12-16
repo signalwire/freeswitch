@@ -3,8 +3,8 @@
 
 /**
  * @nofile apps_utils.h
- * @brief 
- * 
+ * @brief
+ *
  * Copyright (C) 2005 Nokia Corporation.
  *
  * Written by Pekka Pessi <pekka -dot pessi -at- nokia -dot- com>
@@ -25,7 +25,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
  * @ENDLGPL@
- * 
+ *
  * @date Created: Thu Apr  8 15:55:15 2004 ppessi
  *
  */
@@ -38,20 +38,20 @@ int proxy_authenticate(context_t *c,
 		       sip_t const *sip,
 		       nta_response_f response_function)
 {
-  if (sip && sip->sip_status->st_status == 407 && 
+  if (sip && sip->sip_status->st_status == 407 &&
       sip->sip_proxy_authenticate &&
-      c->c_proxy_auth_retries++ < 3 && 
+      c->c_proxy_auth_retries++ < 3 &&
       c->c_proxy && c->c_proxy->url_user && c->c_proxy->url_password) {
     url_t *u = c->c_proxy;
     msg_t *rmsg = nta_outgoing_getrequest(oreq);
     sip_t *rsip = sip_object(rmsg);
 
     if (auc_challenge(&c->c_proxy_auth, c->c_home, sip->sip_proxy_authenticate,
-		      sip_proxy_authorization_class) >= 0 
+		      sip_proxy_authorization_class) >= 0
 	&&
-	auc_all_credentials(&c->c_proxy_auth, NULL, NULL, 
+	auc_all_credentials(&c->c_proxy_auth, NULL, NULL,
 			    u->url_user, u->url_password) > 0
-	&& 
+	&&
 	auc_authorization(&c->c_proxy_auth, rmsg, (msg_pub_t *)rsip,
 			  rsip->sip_request->rq_method_name,
 			  rsip->sip_request->rq_url,
@@ -59,14 +59,14 @@ int proxy_authenticate(context_t *c,
       nta_outgoing_destroy(c->c_orq);
       sip_header_remove(rmsg, rsip, (sip_header_t *)rsip->sip_via);
       nta_msg_request_complete(rmsg, c->c_leg, 0, NULL, NULL);
-      c->c_orq = nta_outgoing_tmcreate(c->c_agent, response_function, c, NULL, 
+      c->c_orq = nta_outgoing_tmcreate(c->c_agent, response_function, c, NULL,
 				       rmsg, TAG_END());
       return 1;
     }
   }
 
   return 0;
-}				   
+}
 
 static inline
 int server_authenticate(context_t *c,
@@ -74,18 +74,18 @@ int server_authenticate(context_t *c,
 			sip_t const *sip,
 			nta_response_f response_function)
 {
-  if (sip && sip->sip_status->st_status == 401 && 
+  if (sip && sip->sip_status->st_status == 401 &&
       sip->sip_www_authenticate &&
-      c->c_auth_retries++ < 3 && 
+      c->c_auth_retries++ < 3 &&
       c->c_password && c->c_username) {
     msg_t *rmsg = nta_outgoing_getrequest(oreq);
     sip_t *rsip = sip_object(rmsg);
 
     if (auc_challenge(&c->c_auth, c->c_home, sip->sip_www_authenticate,
-		      sip_authorization_class) >= 0 
+		      sip_authorization_class) >= 0
 	&&
 	auc_all_credentials(&c->c_auth, NULL, NULL, c->c_username, c->c_password) > 0
-	&& 
+	&&
 	auc_authorization(&c->c_auth, rmsg, (msg_pub_t *)rsip,
 			  rsip->sip_request->rq_method_name,
 			  rsip->sip_request->rq_url,
@@ -93,14 +93,14 @@ int server_authenticate(context_t *c,
       nta_outgoing_destroy(c->c_orq);
       sip_header_remove(rmsg, rsip, (sip_header_t *)rsip->sip_via);
       nta_msg_request_complete(rmsg, c->c_leg, 0, NULL, NULL);
-      c->c_orq = nta_outgoing_tmcreate(c->c_agent, response_function, c, NULL, 
+      c->c_orq = nta_outgoing_tmcreate(c->c_agent, response_function, c, NULL,
 				       rmsg, TAG_END());
       return 1;
     }
   }
 
   return 0;
-}				   
+}
 
 static inline
 int tag_from_header(nta_agent_t *nta,

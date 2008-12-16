@@ -24,7 +24,7 @@
 
 /**@ingroup sl_utils
  *
- * @CFILE sl_utils_log.c  
+ * @CFILE sl_utils_log.c
  * @brief Implementation of SIP library utility logging functions.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -45,7 +45,7 @@
 #include <sofia-sip/sip_header.h>
 #include "sofia-sip/sl_utils.h"
 
-/**Log a SIP message. 
+/**Log a SIP message.
  *
  * The function sl_message_log() logs shorthand information identifying
  * the SIP message to the given @a log at level @a level.  The shorthand
@@ -60,8 +60,8 @@
  */
 void sl_sip_log(su_log_t *log,
 		int level,
-		char const *prefix, 
-		sip_t const *sip, 
+		char const *prefix,
+		sip_t const *sip,
 		int details)
 {
   sip_cseq_t const *cs = sip->sip_cseq;
@@ -70,7 +70,7 @@ void sl_sip_log(su_log_t *log,
     log = su_log_default;
 
   assert(cs);
-  
+
   if (sip->sip_request) {
     su_llog(log, level,
 	    "%s%s "URL_FORMAT_STRING" (CSeq %d %s)\n",
@@ -114,19 +114,19 @@ void sl_sip_log(su_log_t *log,
     sl_to_log(log, level, "\tTo: %s\n", sip->sip_to);
 }
 
-/**Log a @From header. 
+/**Log a @From header.
  *
  * The function sl_from_log() logs the contents of @a from header to
  * the output @a log.  The @a fmt specifies the output format, where %s
  * is replaced with header contents. If @a fmt is @c NULL, only the header
  * contents are logged.
- * 
+ *
  * @param log      output log
  * @param level    logging level of output
- * @param fmt      output format 
+ * @param fmt      output format
  * @param from     @From header
  */
-void sl_from_log(su_log_t *log, int level, 
+void sl_from_log(su_log_t *log, int level,
 		 char const *fmt, sip_from_t const *from)
 {
   sip_addr_t a[1];
@@ -137,7 +137,7 @@ void sl_from_log(su_log_t *log, int level,
   memcpy(a, from, sizeof a);
   a->a_params = NULL;
   if (!a->a_display) a->a_display = "";
-    
+
   sl_header_log(log, level, fmt, (sip_header_t *)a);
 }
 
@@ -147,10 +147,10 @@ void sl_from_log(su_log_t *log, int level,
  * log @a log with given @a level.  The @a fmt specifies the output format,
  * where %s is replaced with header contents. If @a fmt is @c NULL, only the
  * header contents are logged.
- * 
+ *
  * @param log      output log
  * @param level    logging level of output
- * @param fmt      output format 
+ * @param fmt      output format
  * @param to       @To header
  */
 void sl_to_log(su_log_t *log, int level, char const *fmt, sip_to_t const *to)
@@ -158,51 +158,51 @@ void sl_to_log(su_log_t *log, int level, char const *fmt, sip_to_t const *to)
   sl_from_log(log, level, fmt, (sip_from_t const *)to);
 }
 
-/**Log a @Contact header. 
+/**Log a @Contact header.
  *
  * The function sl_contact_log() logs the contents of @a contact header
  * to the log @a log with given @a level.  The @a fmt specifies the output
  * format, where %s is replaced with header contents. If @a fmt is @c NULL,
  * only the header contents are logged.
- * 
+ *
  * @param log      output log
  * @param level    logging level of output
- * @param fmt      output format 
+ * @param fmt      output format
  * @param contact  @Contact header
  */
-void sl_contact_log(su_log_t *log, int level, 
+void sl_contact_log(su_log_t *log, int level,
 		     char const *fmt, sip_contact_t const *m)
 {
   sl_from_log(log, level, fmt, (sip_from_t const *)m);
 }
 
-/**Log an @Allow header(s). 
+/**Log an @Allow header(s).
  *
  * The function sl_allow_log() logs the contents of @a allow header to
  * the log @a log with given @a level.  The @a fmt specifies the output
  * format, where %s is replaced with header contents. If @a fmt is @c NULL,
  * only the header contents are logged.
- * 
+ *
  * @param log      output log
  * @param level    logging level of output
- * @param fmt      output format 
+ * @param fmt      output format
  * @param allow    @Allow header
  *
  */
-void sl_allow_log(su_log_t *log, int level, 
+void sl_allow_log(su_log_t *log, int level,
 		  char const *fmt, sip_allow_t const *allow)
 {
   sl_header_log(log, level, fmt, (sip_header_t *)allow);
 }
 
 
-/**Log a @Via header. 
+/**Log a @Via header.
  *
  * The function sl_via_log() logs the contents of @a via header to
  * the @a log.  The @a fmt specifies the output format, where %s
  * is replaced with header contents. If @a fmt is @c NULL, only the header
  * contents are logged.
- * 
+ *
  * @param log  output log
  * @param fmt  format used when logging
  * @param v    via header
@@ -213,21 +213,21 @@ void sl_via_log(su_log_t *log, int level, char const *fmt, sip_via_t const *v)
 }
 
 
-/**Log message payload. 
+/**Log message payload.
  *
  * The function sl_payload_log() logs the contents of @a payload object
  * to the output @a log.  Each line in the payload is prepended with the
  * @a prefix.  If @a prefix is @c NULL, only the header contents are logged.
  * For each line in payload, only first 70 charactes are logged, rest is
  * replaced with "...".
- * 
+ *
  * @param log      output log
  * @param level    logging level of output
- * @param prefix   prefix appended to each payload line 
+ * @param prefix   prefix appended to each payload line
  * @param pl       payload object
  */
-void sl_payload_log(su_log_t *log, int level, 
-		    char const *prefix, 
+void sl_payload_log(su_log_t *log, int level,
+		    char const *prefix,
 		    sip_payload_t const *pl)
 {
   char *s = pl->pl_data, *end = pl->pl_data + pl->pl_len;
@@ -252,14 +252,14 @@ void sl_payload_log(su_log_t *log, int level,
   }
 }
 
-/** Log a header. 
+/** Log a header.
  *
  * Logs the contents of an header to the output @a stream. The @a fmt
- * specifies the output format, where %s is replaced with header contents. 
+ * specifies the output format, where %s is replaced with header contents.
  * If @a fmt is @c NULL, only the header contents are logged.
- * 
+ *
  * @param stream   output stream
- * @param fmt      output format 
+ * @param fmt      output format
  * @param h        a SIP header object
  */
 void sl_header_log(su_log_t *log, int level, char const *fmt,
@@ -275,7 +275,7 @@ void sl_header_log(su_log_t *log, int level, char const *fmt,
   if ((size_t)len >= sizeof b) {
     s = malloc(len + 1); if (!s) return;
     sip_header_field_e(s, len + 1, h, 0);
-  }    
+  }
   s[len] = '\0';
 
   if (fmt == NULL)

@@ -24,10 +24,10 @@
 
 #ifndef SL_UTILS_H
 /** Defined when <sofia-sip/sl_utils.h> has been included. */
-#define SL_UTILS_H 
+#define SL_UTILS_H
 
-/**@ingroup sl_utils 
- * 
+/**@ingroup sl_utils
+ *
  * @file sofia-sip/sl_utils.h @brief Prototypes for SIP helper functions.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -57,7 +57,7 @@ SOFIAPUBFUN sip_payload_t *sl_read_payload(su_home_t *home, char const *fname);
 SOFIAPUBFUN sip_payload_t *sl_fread_payload(su_home_t *home, FILE *);
 
 /* Printing functions */
-SOFIAPUBFUN void 
+SOFIAPUBFUN void
 sl_message_log(FILE *, char const *prefix, sip_t const *, int details);
 SOFIAPUBFUN issize_t
 sl_header_print(FILE *, char const *fmt, sip_header_t const *h),
@@ -69,7 +69,7 @@ sl_payload_print(FILE *, char const *prefix, sip_payload_t const *pl),
 sl_via_print(FILE *, char const *fmt, sip_via_t const *v);
 
 /* Logging functions */
-SOFIAPUBFUN void 
+SOFIAPUBFUN void
 sl_sip_log(su_log_t*, int lvl, char const *, sip_t const *, int details),
 sl_header_log(su_log_t *, int lvl, char const *, sip_header_t const *h),
 sl_from_log(su_log_t *, int lvl, char const *, sip_from_t const *from),

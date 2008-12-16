@@ -24,14 +24,14 @@
 
 #ifndef SU_DEBUG_H
 /** Defined when <sofia-sip/su_debug.h> has been included */
-#define SU_DEBUG_H 
+#define SU_DEBUG_H
 
 /**@ingroup su_log
  * @file sofia-sip/su_debug.h
  * @brief SU debugging macros
  *
  * The logging levels and macros to use are defined as follows:
- *  - SU_DEBUG_0()  fatal errors, panic 
+ *  - SU_DEBUG_0()  fatal errors, panic
  *  - SU_DEBUG_1()  critical errors, minimal progress at subsystem level
  *  - SU_DEBUG_2()  non-critical errors
  *  - SU_DEBUG_3()  warnings, progress messages
@@ -44,10 +44,10 @@
  * structure, e.g., "iptsec_debug.h".
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Feb  8 10:06:33 2000 ppessi
  *
- * @sa @ref debug_logs, su_llog(), su_vllog(), #su_log_t, 
+ * @sa @ref debug_logs, su_llog(), su_vllog(), #su_log_t,
  */
 
 #ifndef SU_LOG_H
@@ -82,7 +82,7 @@ SOFIAPUBVAR su_log_t SU_LOG[];
 SU_DEBUG_DEF(0)
 /** Log messages at level 0.
  *
- * Fatal errors and panic messages should be logged at level 0. 
+ * Fatal errors and panic messages should be logged at level 0.
  *
  * @sa su_llog(), su_vllog(), #su_log_t, @ref debug_logs
  */
@@ -115,7 +115,7 @@ SU_DEBUG_DEF(1)
 
 #if SU_DEBUG_MAX >= 2
 SU_DEBUG_DEF(2)
-/**Log messages at level 2. 
+/**Log messages at level 2.
  *
  * Non-critical errors should be logged at level 2.
  *
@@ -173,7 +173,7 @@ SU_DEBUG_DEF(6)
 SU_DEBUG_DEF(7)
 /** Log messages at level 7.
  *
- * Media protocol actions (incoming packets, etc) should be logged at level 7. 
+ * Media protocol actions (incoming packets, etc) should be logged at level 7.
  *
  * @sa su_llog(), su_vllog(), #su_log_t, @ref debug_logs
  */

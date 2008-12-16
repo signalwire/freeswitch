@@ -67,7 +67,7 @@ enum { MAX_STREAMS = 1 };
 typedef struct tport_sctp_t
 {
   tport_t sctp_base[1];
-  
+
   msg_t *sctp_recv[MAX_STREAMS];
   struct sctp_send {
     msg_t *ss_msg;
@@ -80,17 +80,17 @@ typedef struct tport_sctp_t
 
 #define TP_SCTP_MSG_MAX (65536)
 
-static int tport_sctp_init_primary(tport_primary_t *, 
-				   tp_name_t tpn[1], 
+static int tport_sctp_init_primary(tport_primary_t *,
+				   tp_name_t tpn[1],
 				   su_addrinfo_t *, tagi_t const *,
 				   char const **return_culprit);
-static int tport_sctp_init_client(tport_primary_t *, 
-				  tp_name_t tpn[1], 
+static int tport_sctp_init_client(tport_primary_t *,
+				  tp_name_t tpn[1],
 				  su_addrinfo_t *, tagi_t const *,
 				  char const **return_culprit);
 static int tport_sctp_init_secondary(tport_t *self, int socket, int accepted,
 				     char const **return_reason);
-static int tport_sctp_init_socket(tport_primary_t *pri, 
+static int tport_sctp_init_socket(tport_primary_t *pri,
 				  int socket,
 				  char const **return_reason);
 static int tport_recv_sctp(tport_t *self);
@@ -148,7 +148,7 @@ tport_vtable_t const tport_sctp_vtable =
   tport_sctp_timer,
 };
 
-static int tport_sctp_init_primary(tport_primary_t *pri, 
+static int tport_sctp_init_primary(tport_primary_t *pri,
 				   tp_name_t tpn[1],
 				   su_addrinfo_t *ai,
 				   tagi_t const *tags,
@@ -166,11 +166,11 @@ static int tport_sctp_init_primary(tport_primary_t *pri,
 
   if (tport_sctp_init_socket(pri, socket, return_culprit) < 0)
     return -1;
-  
+
   return tport_stream_init_primary(pri, socket, tpn, ai, tags, return_culprit);
 }
 
-static int tport_sctp_init_client(tport_primary_t *pri, 
+static int tport_sctp_init_client(tport_primary_t *pri,
 				  tp_name_t tpn[1],
 				  su_addrinfo_t *ai,
 				  tagi_t const *tags,
@@ -197,7 +197,7 @@ static int tport_sctp_init_secondary(tport_t *self, int socket, int accepted,
 }
 
 /** Initialize a SCTP socket */
-static int tport_sctp_init_socket(tport_primary_t *pri, 
+static int tport_sctp_init_socket(tport_primary_t *pri,
 				  int socket,
 				  char const **return_reason)
 {
@@ -215,11 +215,11 @@ static int tport_sctp_init_socket(tport_primary_t *pri,
 /** Receive data available on the socket.
  *
  * @retval -1 error
- * @retval 0  end-of-stream  
+ * @retval 0  end-of-stream
  * @retval 1  normal receive
  * @retval 2  incomplete recv, recv again
  */
-static 
+static
 int tport_recv_sctp(tport_t *self)
 {
   msg_t *msg;
@@ -266,14 +266,14 @@ int tport_recv_sctp(tport_t *self)
 static ssize_t tport_send_sctp(tport_t const *self, msg_t *msg,
 			       msg_iovec_t iov[], size_t iovused)
 {
-  
+
 
   return su_vsend(self->tp_socket, iov, iovused, MSG_NOSIGNAL, NULL, 0);
 }
 
 /** Calculate tick timer if send is pending. */
 int tport_next_sctp_send_tick(tport_t *self,
-			    su_time_t *return_target, 
+			    su_time_t *return_target,
 			    char const **return_why)
 {
   unsigned timeout = 100;  /* Retry 10 times a second... */
@@ -293,7 +293,7 @@ void tport_sctp_send_tick_timer(tport_t *self, su_time_t now)
   unsigned timeout = 100;
 
   /* Send timeout */
-  if (tport_has_queued(self) && 
+  if (tport_has_queued(self) &&
       su_time_cmp(su_time_add(self->tp_ktime, timeout), now) < 0) {
     uint64_t bytes = self->tp_stats.sent_bytes;
     su_time_t stime = self->tp_stime;
@@ -307,10 +307,10 @@ void tport_sctp_send_tick_timer(tport_t *self, su_time_t now)
 
 /** Calculate next timer for SCTP. */
 int tport_sctp_next_timer(tport_t *self,
-			 su_time_t *return_target, 
+			 su_time_t *return_target,
 			 char const **return_why)
 {
-  return 
+  return
     tport_next_recv_timeout(self, return_target, return_why) |
     tport_next_sctp_send_tick(self, return_target, return_why);
 }

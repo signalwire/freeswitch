@@ -98,7 +98,7 @@ struct proxy {
   tagi_t      *tags;
 
   su_root_t   *root;
- 
+
   nta_agent_t *agent;
   url_t const *uri;
   sip_route_t *lr;
@@ -119,7 +119,7 @@ struct proxy {
     unsigned t1x64;
     sip_time_t session_expires, min_se;
   } prefs;
-}; 
+};
 
 struct domain {
   su_home_t home[1];
@@ -139,7 +139,7 @@ struct domain {
     int outbound_tcp;		/**< Use inbound TCP connection as outbound */
     char const *authorize;	/**< Authorization realm to use */
     int record_route;
-  } prefs;  
+  } prefs;
 
   tagi_t *tags;
 };
@@ -175,18 +175,18 @@ struct binding
   tport_t *tport;		/**< Reference to tport */
 };
 
-static struct binding *binding_new(su_home_t *home, 
+static struct binding *binding_new(su_home_t *home,
 				   sip_contact_t *contact,
 				   tport_t *tport,
 				   sip_call_id_t const *call_id,
 				   uint32_t cseq,
-				   sip_time_t registered, 
+				   sip_time_t registered,
 				   sip_time_t expires);
 static void binding_destroy(su_home_t *home, struct binding *b);
 static int binding_is_active(struct binding const *b)
 {
   return
-    b->expires > sip_now() && 
+    b->expires > sip_now() &&
     (b->tport == NULL || tport_is_clear_to_send(b->tport));
 }
 
@@ -270,21 +270,21 @@ static auth_challenger_t registrar_challenger[1];
 static auth_challenger_t proxy_challenger[1];
 
 /* Proxy entry point */
-static int 
+static int
 test_proxy_init(su_root_t *root, struct proxy *proxy)
 {
   struct proxy_tr *t;
   struct client_tr *c;
 
-  auth_challenger_t _proxy_challenger[1] = 
-  {{ 
+  auth_challenger_t _proxy_challenger[1] =
+  {{
       SIP_407_PROXY_AUTH_REQUIRED,
       sip_proxy_authenticate_class,
       sip_proxy_authentication_info_class
     }};
 
-  auth_challenger_t _registrar_challenger[1] = 
-  {{ 
+  auth_challenger_t _registrar_challenger[1] =
+  {{
       SIP_401_UNAUTHORIZED,
       sip_www_authenticate_class,
       sip_authentication_info_class
@@ -323,14 +323,14 @@ test_proxy_init(su_root_t *root, struct proxy *proxy)
 		       NTATAG_SIP_T1X64_REF(proxy->prefs.t1x64),
 		       TAG_END());
 
-  if (!proxy->defleg) 
+  if (!proxy->defleg)
     return -1;
   /* if (!proxy->example_net || !proxy->example_org || !proxy->example_com)
      return -1; */
 
   /* Create stateless client */
   t = su_zalloc(proxy->home, sizeof *t);
-  c = su_zalloc(proxy->home, sizeof *c); 
+  c = su_zalloc(proxy->home, sizeof *c);
 
   if (!t || !c)
     return -1;
@@ -350,7 +350,7 @@ test_proxy_init(su_root_t *root, struct proxy *proxy)
 
   if (!proxy->lr)
     return -1;
-  				  
+
   return 0;
 }
 
@@ -391,7 +391,7 @@ struct proxy *test_proxy_create(su_root_t *root,
     ta_start(ta, tag, value);
     p->tags = tl_llist(ta_tags(ta));
     ta_end(ta);
-    
+
     if (su_clone_start(root,
 		       p->clone,
 		       p,
@@ -435,7 +435,7 @@ struct _set_logging {
   struct proxy *p;
   int logging;
 };
- 
+
 static int _set_logging(void *_a)
 {
   struct _set_logging *a = _a;
@@ -451,8 +451,8 @@ void test_proxy_set_logging(struct proxy *p, int logging)
 }
 
 void test_proxy_domain_set_expiration(struct domain *d,
-				      sip_time_t min_expires, 
-				      sip_time_t expires, 
+				      sip_time_t min_expires,
+				      sip_time_t expires,
 				      sip_time_t max_expires)
 {
   if (d) {
@@ -475,7 +475,7 @@ void test_proxy_domain_get_expiration(struct domain *d,
 }
 
 void test_proxy_set_session_timer(struct proxy *p,
-				  sip_time_t session_expires, 
+				  sip_time_t session_expires,
 				  sip_time_t min_se)
 {
   if (p) {
@@ -529,7 +529,7 @@ void test_proxy_domain_get_record_route(struct domain *d,
   }
 }
 
-int test_proxy_domain_set_authorize(struct domain *d, 
+int test_proxy_domain_set_authorize(struct domain *d,
 				     char const *realm)
 {
   if (d) {
@@ -604,14 +604,14 @@ struct domain *test_proxy_add_domain(struct proxy *p,
     d->prefs.outbound_tcp = 0;
     d->prefs.authorize = NULL;
 
-    if (d->uri && d->tags && 
+    if (d->uri && d->tags &&
 	!su_task_execute(su_clone_task(p->clone), _domain_init, d, &init)) {
       if (init == 0)
 	/* OK */;
       else
 	d = NULL;
     }
-    else 
+    else
       su_home_unref(d->home);
   }
 
@@ -687,7 +687,7 @@ static sip_contact_t *create_transport_contacts(struct proxy *p)
   for (v = nta_agent_via(p->agent); v; v = v->v_next) {
     char const *proto = v->v_protocol;
 
-    if (v->v_next && 
+    if (v->v_next &&
 	strcasecmp(v->v_host, v->v_next->v_host) == 0 &&
 	str0cmp(v->v_port, v->v_next->v_port) == 0 &&
 	((proto == sip_transport_udp &&
@@ -753,14 +753,14 @@ static int domain_request(union proxy_or_domain *pod,
 {
   int (*process)(struct proxy_tr *) = NULL;
   sip_method_t method = sip->sip_request->rq_method;
-  
+
   assert(pod->domain->magic = domain_init);
 
   if (leg == pod->domain->uleg)
     process = proxy_transaction;
   else if (method == sip_method_register)
     process = process_register;
-  else if (method == sip_method_options) 
+  else if (method == sip_method_options)
     process = process_options;
 
   if (process == NULL)
@@ -839,15 +839,15 @@ static int respond_transaction(struct proxy_tr *t,
 
   if (t->as)
     info = t->as->as_info, response = t->as->as_response;
-  
-  if (nta_incoming_treply(t->server, t->status = status, phrase, 
+
+  if (nta_incoming_treply(t->server, t->status = status, phrase,
 			  SIPTAG_HEADER(info),
 			  SIPTAG_HEADER(response),
 			  ta_tags(ta)) < 0)
     t->status = status = 500;
 
   ta_end(ta);
-  
+
   return status;
 }
 
@@ -892,8 +892,8 @@ static int validate_transaction(struct proxy_tr *t)
   }
 
   /* Remove our routes */
-  while (t->sip->sip_route && 
-	 url_has_param(t->sip->sip_route->r_url, "lr") && 
+  while (t->sip->sip_route &&
+	 url_has_param(t->sip->sip_route->r_url, "lr") &&
 	 (url_cmp(t->proxy->lr->r_url, t->sip->sip_route->r_url) == 0 ||
 	  url_cmp(t->proxy->rr_uri, t->sip->sip_route->r_url) == 0)) {
     sip_route_remove(t->msg, t->sip);
@@ -902,7 +902,7 @@ static int validate_transaction(struct proxy_tr *t)
 
   if (t->use_auth)
     return challenge_transaction(t);
-  
+
   return 0;
 }
 
@@ -915,7 +915,7 @@ static int session_timers(struct proxy_tr *t)
 
   if (t->method == sip_method_invite) {
     if (t->proxy->prefs.min_se) {
-      if (!sip->sip_min_se || 
+      if (!sip->sip_min_se ||
 	  sip->sip_min_se->min_delta < t->proxy->prefs.min_se) {
 	min_se = sip_min_se_init(min_se0);
 	min_se->min_delta = t->proxy->prefs.min_se;
@@ -959,7 +959,7 @@ static int incoming_transaction(struct proxy_tr *t)
   struct binding *b;
 
 #if 0
-  if (sip->sip_request->rq_method == sip_method_register) 
+  if (sip->sip_request->rq_method == sip_method_register)
     return process_register(proxy, irq, sip);
 #endif
 
@@ -968,7 +968,7 @@ static int incoming_transaction(struct proxy_tr *t)
     return respond_transaction(t, SIP_404_NOT_FOUND, TAG_END());
 
   for (b = e->bindings; b; b = b->next) {
-    if (binding_is_active(b)) 
+    if (binding_is_active(b))
       target_transaction(t, b->contact->m_url, b->tport);
 
     if (t->clients)		/* XXX - enable forking */
@@ -1073,7 +1073,7 @@ static int challenge_transaction(struct proxy_tr *t)
     msg_header_remove(t->msg, (msg_pub_t *)sip, as->as_match);
 
   return 0;
-}		      
+}
 
 int proxy_ack_cancel(struct proxy_tr *t,
 		     nta_incoming_t *irq,
@@ -1083,7 +1083,7 @@ int proxy_ack_cancel(struct proxy_tr *t,
   int status;
 
   if (sip == NULL) {		/* timeout */
-    proxy_tr_destroy(t);	
+    proxy_tr_destroy(t);
     return 0;
   }
 
@@ -1096,7 +1096,7 @@ int proxy_ack_cancel(struct proxy_tr *t,
     if (c->client && c->status < 200)
       /*
        * We don't care about response to CANCEL (or ACK)
-       * so we give NULL as callback pointer (and nta immediately 
+       * so we give NULL as callback pointer (and nta immediately
        * destroys transaction object or marks it disposable)
        */
       if (nta_outgoing_tcancel(c->client, NULL, NULL, TAG_END()) == NULL)
@@ -1117,7 +1117,7 @@ int proxy_response(struct client_tr *c,
   if (sip) {
     msg_t *response = nta_outgoing_getresponse(client);
     if (c->t->method == sip_method_invite)
-      final = sip->sip_status->st_status >= 300, 
+      final = sip->sip_status->st_status >= 300,
 	timeout = sip->sip_status->st_status >= 200;
     else
       final = sip->sip_status->st_status >= 200;
@@ -1150,7 +1150,7 @@ int proxy_late_response(struct client_tr *c,
   assert(c->t);
 
   if (sip &&
-      sip->sip_status->st_status >= 200 && 
+      sip->sip_status->st_status >= 200 &&
       sip->sip_status->st_status < 300) {
     msg_t *response = nta_outgoing_getresponse(client);
     sip_via_remove(response, sip_object(response));
@@ -1168,7 +1168,7 @@ static void proxy_tr_remove_late(su_root_magic_t *magic,
 }
 
 
-/** Proxy only late responses 
+/** Proxy only late responses
  *
  * Keeping the invite transactions live
  */
@@ -1219,7 +1219,7 @@ void proxy_tr_destroy(struct proxy_tr *t)
 
   if (t->as)
     su_home_unref(t->as->as_home), t->as = NULL;
-  
+
   while (t->clients) {
     client_tr_remove(c = t->clients);
     nta_outgoing_destroy(c->client), c->client = NULL;
@@ -1275,7 +1275,7 @@ int process_register(struct proxy_tr *t)
 
   if (check_out_of_order(t))
     return t->status;
-  
+
   return update_bindings(t);
 }
 
@@ -1286,7 +1286,7 @@ static int check_received_contact(struct proxy_tr *t)
   sip_via_t *v = sip->sip_via;
 
   if (m && v && v->v_received && m->m_url->url_host
-      && strcasecmp(v->v_received, m->m_url->url_host) 
+      && strcasecmp(v->v_received, m->m_url->url_host)
       && host_is_ip_address(m->m_url->url_host))
     return respond_transaction(t, 406, "Unacceptable Contact", TAG_END());
 
@@ -1309,7 +1309,7 @@ static int validate_contacts(struct proxy_tr *t)
 
   for (; m; m = m->m_next) {
     expires = sip_contact_expires(m, ex, date, t->domain->prefs.expires, t->now);
-    
+
     if (expires > 0 && expires < t->domain->prefs.min_expires) {
       sip_min_expires_t me[1];
 
@@ -1375,8 +1375,8 @@ registration_entry_new(struct domain *d, url_t const *aor)
   if (d == NULL)
     return NULL;
 
-  e = su_zalloc(d->home, sizeof *e); 
-  if (!e) 
+  e = su_zalloc(d->home, sizeof *e);
+  if (!e)
     return NULL;
 
   e->domain = d;
@@ -1415,16 +1415,16 @@ LIST_BODIES(static, registration_entry, struct registration_entry, next, prev);
 /* Bindings */
 
 static
-struct binding *binding_new(su_home_t *home, 
+struct binding *binding_new(su_home_t *home,
 			    sip_contact_t *contact,
 			    tport_t *tport,
 			    sip_call_id_t const *call_id,
 			    uint32_t cseq,
-			    sip_time_t registered, 
+			    sip_time_t registered,
 			    sip_time_t expires)
 {
   struct binding *b;
-  
+
   b = su_zalloc(home, sizeof *b);
 
   if (b) {
@@ -1444,7 +1444,7 @@ struct binding *binding_new(su_home_t *home,
     if (b)
       msg_header_remove_param(b->contact->m_common, "expires");
   }
-  
+
   return b;
 }
 
@@ -1472,7 +1472,7 @@ static int update_bindings(struct proxy_tr *t)
   sip_date_t *date = t->sip->sip_date;
   sip_time_t expires;
   tport_t *tport = NULL;
-  sip_contact_t *contacts = NULL, **mm = &contacts; 
+  sip_contact_t *contacts = NULL, **mm = &contacts;
   void *tbf;
 
   if (t->sip->sip_contact == NULL) {
@@ -1486,7 +1486,7 @@ static int update_bindings(struct proxy_tr *t)
   if (t->entry == NULL)
     return respond_transaction(t, SIP_500_INTERNAL_SERVER_ERROR, TAG_END());
 
-  if (d->prefs.outbound_tcp && 
+  if (d->prefs.outbound_tcp &&
       str0casecmp(t->sip->sip_via->v_protocol, sip_transport_tcp) == 0)
     tport = nta_incoming_transport(t->proxy->agent, t->server, NULL);
 
@@ -1494,7 +1494,7 @@ static int update_bindings(struct proxy_tr *t)
   for (m = t->sip->sip_contact; m; m = m->m_next) {
     if (m->m_url->url_type == url_any)
       break;
-    
+
     expires = sip_contact_expires(m, ex, date, d->prefs.expires, t->now);
 
     if (expires > d->prefs.max_expires)
@@ -1519,7 +1519,7 @@ static int update_bindings(struct proxy_tr *t)
       next = old->next;
 
       for (b = bindings; b != last; b = b->next) {
-	if (url_cmp_all(old->contact->m_url, b->contact->m_url) != 0) 
+	if (url_cmp_all(old->contact->m_url, b->contact->m_url) != 0)
 	  continue;
 
 	if (strcmp(old->call_id->i_id, b->call_id->i_id) == 0) {
@@ -1561,7 +1561,7 @@ static int update_bindings(struct proxy_tr *t)
 
     *mm = sip_contact_copy(d->home, b->contact);
     if (*mm) {
-      expires = su_sprintf(d->home, "expires=%u", 
+      expires = su_sprintf(d->home, "expires=%u",
 			   (unsigned)(b->expires - t->now));
       msg_header_add_param(d->home, (*mm)->m_common, expires);
       mm = &(*mm)->m_next;
@@ -1586,7 +1586,7 @@ static int close_tports(void *_proxy)
   struct domain *d;
   struct registration_entry *e;
   struct binding *b;
-  
+
   /* Close all outbound transports */
   for (d = p->domains; d; d = d->next) {
     for (e = d->entries; e; e = e->next) {
@@ -1599,6 +1599,6 @@ static int close_tports(void *_proxy)
       }
     }
   }
-  
+
   return 0;
 }

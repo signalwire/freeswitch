@@ -8,7 +8,7 @@
 
    Copyright (C) 1994,1996,1997,1998,1999,2001,2002
    Free Software Foundation, Inc.
-   
+
    This library is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
    License as published by the Free Software Foundation; either
@@ -57,7 +57,7 @@
 #define FDSETSIZE(n) (((n) + NFDBITS - 1) / NFDBITS * (NFDBITS / NBBY))
 #define roundup(n, x) (((n) + (x) - 1) / (x) * (x))
 
-/* Emulated poll() using select(). 
+/* Emulated poll() using select().
 
 This is used by su_wait().
 
@@ -241,7 +241,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
       break;
     }
 
-  if (ready > 0) 
+  if (ready > 0)
     for (f = fds; f < &fds[nfds]; ++f)
       {
 	if (f->fd >= 0)

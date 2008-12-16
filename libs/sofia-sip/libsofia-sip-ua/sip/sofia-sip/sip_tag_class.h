@@ -24,7 +24,7 @@
 
 #ifndef SIP_TAG_CLASS_H
 /** Defined when <sip_tag_class.h> have been included */
-#define SIP_TAG_CLASS_H 
+#define SIP_TAG_CLASS_H
 
 
 /**@SIP_TAG @{ */
@@ -81,9 +81,9 @@ SOFIAPUBVAR tag_class_t sipmsgtag_class[1];
 SOFIAPUBVAR tag_class_t sipexthdrtag_class[1];
 
 
-/**@internal Filter SIP header tag items. */ 
+/**@internal Filter SIP header tag items. */
 SOFIAPUBFUN tagi_t *siptag_filter(tagi_t *dst, tagi_t const f[],
-				  tagi_t const *src, 
+				  tagi_t const *src,
 				  void **bb);
 
 SOFIA_END_DECLS

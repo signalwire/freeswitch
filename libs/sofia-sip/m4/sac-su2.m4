@@ -12,33 +12,33 @@ AC_DEFUN([SAC_SOFIA_SU], [
 
 dnl Define compilation options for su_configure.h
 
-case "$target" in 
+case "$target" in
 *-*-solaris?.* )
   SAC_SU_DEFINE(__EXTENSIONS__, 1, [Define to 1 in Solaris in order to get POSIX extensions.])
 ;;
 esac
 
 # Check includes used by su includes
-AC_CHECK_HEADER(sys/types.h, 
-	SAC_SU_DEFINE([SU_HAVE_SYS_TYPES], 1, 
+AC_CHECK_HEADER(sys/types.h,
+	SAC_SU_DEFINE([SU_HAVE_SYS_TYPES], 1,
 		     [Define to 1 if Sofia uses sys/types.h]))
 
 ax_inttypes=false
 AC_CHECK_HEADER(stdint.h, [
 	ax_inttypes=true
-	SAC_SU_DEFINE([SU_HAVE_STDINT], 1, 
+	SAC_SU_DEFINE([SU_HAVE_STDINT], 1,
 		     [Define to 1 if Sofia uses stdint.h])])
 AC_CHECK_HEADER(inttypes.h,[
 	ax_inttypes=true
-	SAC_SU_DEFINE([SU_HAVE_INTTYPES], 1, 
+	SAC_SU_DEFINE([SU_HAVE_INTTYPES], 1,
 		     [Define to 1 if Sofia uses inttypes.h])])
 
-if $ax_inttypes; then : ; else 
+if $ax_inttypes; then : ; else
 	AC_MSG_ERROR("No <stdint.h> or <inttypes.h> found.")
 fi
 
 if test "x$MINGW_ENVIRONMENT" != x1 ; then
-  AC_CHECK_HEADER(pthread.h, 
+  AC_CHECK_HEADER(pthread.h,
         HAVE_PTHREADS=1;
 	SAC_SU_DEFINE([SU_HAVE_PTHREADS], 1, [Sofia SU uses pthreads]))
 else
@@ -128,7 +128,7 @@ dnl ======================================================================
 dnl SAC_ENABLE_COREFOUNDATION
 dnl ======================================================================
 AC_ARG_ENABLE(corefoundation,
-[  --enable-corefoundation 
+[  --enable-corefoundation
                           compile with OSX COREFOUNDATION [[disabled]]],
  , enable_corefoundation=no)
 AM_CONDITIONAL(COREFOUNDATION, test $enable_corefoundation = yes)
@@ -191,7 +191,7 @@ int main(int avc, char **av)
 	       (tv)6, (tv)7, (tv)8, (tv)9, (tv)10);
 }
 ]])],[ac_cv_tagstack=yes],[ac_cv_tagstack=no],[
-case "$target" in 
+case "$target" in
 i?86-*-* ) ac_cv_tagstack=yes ;;
 * ) ac_cv_tagstack=no ;;
 esac
@@ -229,7 +229,7 @@ dnl Socket features
 
 AC_REQUIRE([AC_SYS_SA_LEN])
 if test "$ac_cv_sa_len" = yes ;then
-  SAC_SU_DEFINE([SU_HAVE_SOCKADDR_SA_LEN], 1, 
+  SAC_SU_DEFINE([SU_HAVE_SOCKADDR_SA_LEN], 1,
 	        [Define to 1 if you have sa_len in struct sockaddr])
 fi
 
@@ -238,7 +238,7 @@ AC_ARG_ENABLE([ip6],
 
 if ! test no$enable_ip6 = nono ; then
 AC_STRUCT_SIN6
-case $ac_cv_sin6 in 
+case $ac_cv_sin6 in
 yes) SAC_SU_DEFINE(SU_HAVE_IN6, 1, [
 	Define to 1 if you have struct sockaddr_in6]) ;;
  no) ;;
@@ -254,7 +254,7 @@ AC_CHECK_HEADERS([winsock2.h], [
   AC_DEFINE([HAVE_WIN32], 1, [Define to 1 you have WIN32])
   SAC_SU_DEFINE([SU_HAVE_WINSOCK], 1, [Define to 1 you have WinSock])
   SAC_SU_DEFINE([SU_HAVE_WINSOCK2], 1, [Define to 1 you have WinSock2])
-  SAC_SU_DEFINE([SU_HAVE_SOCKADDR_STORAGE], 1, 
+  SAC_SU_DEFINE([SU_HAVE_SOCKADDR_STORAGE], 1,
       [Define to 1 if you have struct sockaddr_storage])
   AC_DEFINE([HAVE_ADDRINFO], 1,
       [Define to 1 if you have addrinfo structure.])
@@ -276,7 +276,7 @@ AC_CHECK_HEADERS([winsock2.h], [
 #endif
   ])
   AC_DEFINE([HAVE_FILETIME], 1, [
-     Define to 1 if you have WIN32 FILETIME type and 
+     Define to 1 if you have WIN32 FILETIME type and
      GetSystemTimeAsFileTime().])
 ],[
 dnl no winsock2
@@ -335,7 +335,7 @@ else
 fi])
 
 if test "$ac_cv_struct_addrinfo" = yes; then
-  SAC_SU_DEFINE([SU_HAVE_ADDRINFO], 1, 
+  SAC_SU_DEFINE([SU_HAVE_ADDRINFO], 1,
     [Define to 1 if you have struct addrinfo.])
 fi
 
@@ -349,7 +349,7 @@ else
   ac_cv_struct_sockaddr_storage='sys/socket.h missing'
 fi])
 if test "$ac_cv_struct_sockaddr_storage" = yes; then
-  SAC_SU_DEFINE(SU_HAVE_SOCKADDR_STORAGE, 1, 
+  SAC_SU_DEFINE(SU_HAVE_SOCKADDR_STORAGE, 1,
     [Define to 1 if you have struct sockaddr_storage])
 fi
 
@@ -437,7 +437,7 @@ fi
 AC_CHECK_LIB(pthread, pthread_create)
 AC_CHECK_LIB(socket, socketpair,,,-lnsl)
 
-AC_ARG_WITH(rt,  
+AC_ARG_WITH(rt,
 [  --with-rt               use POSIX realtime library [[used by default]]])
 if test "${with_rt}" != no; then
 	AC_SEARCH_LIBS(clock_gettime, rt)
@@ -451,30 +451,30 @@ fi
 # No GLib path explicitly defined, use pkg-config
 AC_ARG_WITH(glib,
 [  --with-glib=version     use GLib (default=2.0)], [
-case "$with_glib" in 
+case "$with_glib" in
 yes | "" ) with_glib=2.0 ;;
 esac
 ], [with_glib=2.0])
 
 AC_ARG_WITH(glib-dir,
-[  --with-glib-dir=PREFIX  explicitly define GLib path],, 
+[  --with-glib-dir=PREFIX  explicitly define GLib path],,
  with_glib_dir="pkg-config")
 
 if test "$with_glib" = no || test "$with_glib_dir" = "no" ; then
 
   : # No glib
 
-elif test "$with_glib_dir" = "pkg-config" ; then 
+elif test "$with_glib_dir" = "pkg-config" ; then
 
   PKG_CHECK_MODULES(GLIB, glib-$with_glib, [HAVE_GLIB=yes], [HAVE_GLIB=no])
 
-else # GLib path is explicitly defined 
+else # GLib path is explicitly defined
 
   gprefix=$with_glib_dir
   GLIB_VERSION="$with_glib"
   GLIBXXX=glib-$with_glib
 
-  if test "$gprefix" = "yes" ; then 
+  if test "$gprefix" = "yes" ; then
     for gprefix in /usr /usr/local /opt/$GLIBXXX
     do
   	test -d $gprefix/include/$GLIBXXX && break
@@ -492,7 +492,7 @@ else # GLib path is explicitly defined
     # glib_mkenums=glib-mkenums
 
     HAVE_GLIB=yes
-    
+
     if test "x$MINGW_ENVIRONMENT" = x1 ; then
       GLIB_LIBS="${glibdir}/lib$GLIBXXX.dll.a ${glibdir}/libintl.a ${glibdir}/libiconv.a"
     else
@@ -501,7 +501,7 @@ else # GLib path is explicitly defined
     GLIB_CFLAGS="-I${gincludedir}/$GLIBXXX -I${glibdir}/$GLIBXXX/include"
   fi
 
-fi # GLib path is explicitly defined 
+fi # GLib path is explicitly defined
 
 if test "x$HAVE_GLIB" = xyes ; then
   SAC_COMMA_APPEND([SOFIA_GLIB_PKG_REQUIRES],[glib-2.0])
@@ -544,7 +544,7 @@ then
 fi
 
 if test $ac_cv_func_if_nameindex = yes ; then
-  SAC_SU_DEFINE([SU_HAVE_IF_NAMEINDEX], 1, 
+  SAC_SU_DEFINE([SU_HAVE_IF_NAMEINDEX], 1,
     [Define to 1 if you have if_nameindex().])
 fi
 
@@ -619,7 +619,7 @@ fi
 # Check IPv6 addresss configuration
 # ===========================================================================
 case "$target" in
- *-*-linux*) AC_DEFINE([HAVE_PROC_NET_IF_INET6], 1, 
+ *-*-linux*) AC_DEFINE([HAVE_PROC_NET_IF_INET6], 1,
 	[Define to 1 if you have /proc/net/if_inet6 control file]) ;;
 esac
 

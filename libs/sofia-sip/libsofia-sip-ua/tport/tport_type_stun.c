@@ -50,8 +50,8 @@
 #include <sofia-sip/stun.h>
 
 static int tport_udp_init_stun(tport_primary_t *,
-			       tp_name_t tpn[1], 
-			       su_addrinfo_t *, 
+			       tp_name_t tpn[1],
+			       su_addrinfo_t *,
 			       tagi_t const *,
 			       char const **return_culprit);
 
@@ -98,8 +98,8 @@ tport_vtable_t const tport_stun_vtable =
 };
 
 static int tport_udp_init_stun(tport_primary_t *pri,
-			       tp_name_t tpn[1], 
-			       su_addrinfo_t *ai, 
+			       tp_name_t tpn[1],
+			       su_addrinfo_t *ai,
 			       tagi_t const *tags,
 			       char const **return_culprit)
 {
@@ -121,7 +121,7 @@ static int tport_udp_init_stun(tport_primary_t *pri,
     return -1;
 
 #if 0
-  if (stun_obtain_shared_secret(sh, tport_stun_tls_cb, pri, 
+  if (stun_obtain_shared_secret(sh, tport_stun_tls_cb, pri,
 				TAG_NEXT(tags)) < 0) {
     return *return_culprit = "stun_request_shared_secret()", -1;
   }
@@ -142,8 +142,8 @@ static int tport_udp_init_stun(tport_primary_t *pri,
 
 static void tport_udp_deinit_stun(tport_primary_t *pri)
 {
-  if (pri->pri_stun_handle) 
-    stun_handle_destroy(pri->pri_stun_handle); 
+  if (pri->pri_stun_handle)
+    stun_handle_destroy(pri->pri_stun_handle);
   pri->pri_stun_handle = NULL;
 }
 
@@ -195,18 +195,18 @@ void tport_stun_bind_done(tport_primary_t *pri,
     char ipname[SU_ADDRSIZE + 2] = { 0 };
     ai->ai_addr = (void *)su;
 
-    SU_DEBUG_5(("%s: stun_bind() ok: local address NATed as %s:%u\n", 
+    SU_DEBUG_5(("%s: stun_bind() ok: local address NATed as %s:%u\n",
 		__func__,
 		su_inet_ntop(su->su_family, SU_ADDR(su),
 			     ipname, sizeof(ipname)),
 		(unsigned) ntohs(su->su_port)));
   }
 
-  /* Send message to calling application indicating 
-   * there's a new public address available 
+  /* Send message to calling application indicating
+   * there's a new public address available
    */
   tport_has_been_updated(self);
-  
+
   return;
 }
 
@@ -221,12 +221,12 @@ int tport_stun_keepalive(tport_t *tp, su_addrinfo_t const *ai,
   tport_primary_t *pri = tp->tp_pri;
   int err;
 
-  err = stun_keepalive(pri->pri_stun_handle, 
+  err = stun_keepalive(pri->pri_stun_handle,
 		       (su_sockaddr_t *)ai->ai_addr,
 		       STUNTAG_SOCKET(tp->tp_socket),
 		       STUNTAG_TIMEOUT(10000),
 		       TAG_NEXT(taglist));
-  
+
   if (err < 0)
     return -1;
 

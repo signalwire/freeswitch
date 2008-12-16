@@ -79,7 +79,7 @@ char const
 
 char const *http_status_phrase(int status)
 {
-  if (status < 100 || status > 699) 
+  if (status < 100 || status > 699)
     return NULL;
 
   switch (status) {

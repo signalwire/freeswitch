@@ -25,7 +25,7 @@
 /**@CFILE nth_tag.c
  * @brief Tags for HTTP Transaction API
  *
- * @note This file is used to automatically generate 
+ * @note This file is used to automatically generate
  * nth_tag_ref.c and nth_tag_dll.c
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

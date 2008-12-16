@@ -26,7 +26,7 @@
  * @CFILE su_default_log.c
  *
  * Default debug log object.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Fri Feb 23 17:30:46 2001 ppessi
@@ -52,7 +52,7 @@ static void default_logger(void *stream, char const *fmt, va_list ap)
  *
  * The SOFIA_DEBUG environment variable is used to determine the default
  * debug logging level. The normal level is 3.
- * 
+ *
  * @sa <sofia-sip/su_debug.h>, su_log_global
  */
 extern char const SOFIA_DEBUG[];
@@ -63,7 +63,7 @@ extern char const SOFIA_DEBUG[];
 #define SOFIA_DEBUG_ 3
 #endif
 
-/**Default debug log. 
+/**Default debug log.
  *
  * If a source module does not define a log object, the output from su_log()
  * function or SU_DEBUG_X() macros use this log object. Also, if a log
@@ -80,13 +80,13 @@ extern char const SOFIA_DEBUG[];
  * The level of #su_log_default is set using SOFIA_DEBUG environment
  * variable.
  */
-su_log_t su_log_default[1] = {{ 
-  sizeof(su_log_t), 
+su_log_t su_log_default[1] = {{
+  sizeof(su_log_t),
   "sofia",		/* Log name */
   "SOFIA_DEBUG",	/* Environment variable controlling logging level */
   SOFIA_DEBUG_,		/* Default level */
   SU_LOG_MAX,		/* Maximum log level */
   0,
-  default_logger, 
+  default_logger,
   NULL
 }};

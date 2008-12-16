@@ -39,7 +39,7 @@
 #include "config.h"
 
 #define su_base_port_s su_port_s
-#define SU_CLONE_T su_msg_t 
+#define SU_CLONE_T su_msg_t
 
 #include "sofia-sip/su.h"
 #include "su_port.h"
@@ -98,7 +98,7 @@ void su_base_port_unlock(su_port_t *self, char const *who)
  *
  * Currently this is only used if SU_HAVE_PTHREADS is 0.
  */
-int su_base_port_thread(su_port_t const *self, 
+int su_base_port_thread(su_port_t const *self,
 			enum su_port_thread_op op)
 {
   switch (op) {
@@ -120,7 +120,7 @@ int su_base_port_thread(su_port_t const *self,
 void su_base_port_incref(su_port_t *self, char const *who)
 {
   su_home_ref(self->sup_home);
-  PORT_REFCOUNT_DEBUG(("incref(%p) to %u by %s\n", self, 
+  PORT_REFCOUNT_DEBUG(("incref(%p) to %u by %s\n", self,
 		       su_home_refcount(self->sup_home), who));
 }
 
@@ -128,14 +128,14 @@ int su_base_port_decref(su_port_t *self, int blocking, char const *who)
 {
   int zapped = su_home_unref(self->sup_home);
 
-  PORT_REFCOUNT_DEBUG(("%s(%p) to %u%s by %s\n", 
+  PORT_REFCOUNT_DEBUG(("%s(%p) to %u%s by %s\n",
 		       blocking ? "zapref" : "decref",
 		       self, zapped ? 0 : su_home_refcount(self->sup_home),
 		       blocking && !zapped ? " FAILED" :"",
 		       who));
 
   /* We should block until all references are destroyed */
-  if (blocking) 
+  if (blocking)
     /* ...but we just abort() */
     assert(zapped);
 
@@ -159,7 +159,7 @@ int su_base_port_send(su_port_t *self, su_msg_r rmsg)
     int wakeup;
 
     su_port_lock(self, "su_port_send");
-    
+
     wakeup = self->sup_head == NULL;
 
     *self->sup_tail = rmsg[0]; rmsg[0] = NULL;
@@ -219,7 +219,7 @@ int su_base_port_getmsgs_from(su_port_t *self, su_port_t *from)
       *tail = msg, *next = msg->sum_next, tail = &msg->sum_next;
     }
     else
-      next = &msg->sum_next;      
+      next = &msg->sum_next;
   }
 
   *tail = NULL, self->sup_tail = next;
@@ -248,11 +248,11 @@ int su_base_port_getmsgs_of_root(su_port_t *self, su_root_t *root)
       *tail = msg, *next = msg->sum_next, tail = &msg->sum_next;
     }
     else
-      next = &msg->sum_next;      
+      next = &msg->sum_next;
   }
 
   *tail = NULL, self->sup_tail = next;
-  
+
   su_port_unlock(self, "su_base_port_getmsgs_of_root");
 
   return su_base_port_execute_msgs(selected);
@@ -293,7 +293,7 @@ static int su_base_port_execute_msgs(su_msg_t *queue)
  *
  * @param self      pointer to port object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
- * 
+ *
  * @retval 0 multishot mode is disabled
  * @retval 1 multishot mode is enabled
  * @retval -1 an error occurred
@@ -304,16 +304,16 @@ int su_base_port_multishot(su_port_t *self, int multishot)
 }
 
 /** @internal Main loop.
- * 
+ *
  * The function @c su_port_run() waits for wait objects and the timers
  * associated with the port object.  When any wait object is signaled or
  * timer is expired, it invokes the callbacks, and returns waiting.
- * 
+ *
  * The function @c su_port_run() runs until @c su_port_break() is called
  * from a callback.
- * 
+ *
  * @param self     pointer to port object
- * 
+ *
  */
 void su_base_port_run(su_port_t *self)
 {
@@ -395,27 +395,27 @@ void su_base_port_run_tune(su_port_t *self)
 /** @internal
  * The function @c su_port_break() is used to terminate execution of @c
  * su_port_run(). It can be called from a callback function.
- * 
+ *
  * @param self     pointer to port
- * 
+ *
  */
 void su_base_port_break(su_port_t *self)
 {
-  self->sup_running = 0; 
+  self->sup_running = 0;
 }
 
 /** @internal Block until wait object is signaled or timeout.
  *
- * This function waits for wait objects and the timers associated with 
+ * This function waits for wait objects and the timers associated with
  * the root object.  When any wait object is signaled or timer is
- * expired, it invokes the callbacks. 
- * 
+ * expired, it invokes the callbacks.
+ *
  *   This function returns when a callback has been invoked or @c tout
- *   milliseconds is elapsed. 
+ *   milliseconds is elapsed.
  *
  * @param self     pointer to port
  * @param tout     timeout in milliseconds
- * 
+ *
  * @return
  *   Milliseconds to the next invocation of timer, or @c SU_WAIT_FOREVER if
  *   there are no active timers.
@@ -465,8 +465,8 @@ su_duration_t su_base_port_step(su_port_t *self, su_duration_t tout)
  */
 
 int su_base_port_add_prepoll(su_port_t *self,
-			     su_root_t *root, 
-			     su_prepoll_f *callback, 
+			     su_root_t *root,
+			     su_prepoll_f *callback,
 			     su_prepoll_magic_t *magic)
 {
   if (self->sup_prepoll)
@@ -501,8 +501,8 @@ su_timer_queue_t *su_base_port_timers(su_port_t *self)
   return &self->sup_timers;
 }
 
-/* ====================================================================== 
- * Clones 
+/* ======================================================================
+ * Clones
  */
 
 #define SU_TASK_COPY(d, s, by) (void)((d)[0]=(s)[0], \
@@ -529,7 +529,7 @@ int su_base_port_start_shared(su_root_t *parent,
   child->sur_deinit = deinit;
   child->sur_threading = parent->sur_threading;
 
-  SU_TASK_COPY(child->sur_parent, su_root_task(parent), 
+  SU_TASK_COPY(child->sur_parent, su_root_task(parent),
 	       su_base_port_clone_start);
   SU_TASK_COPY(child->sur_task, child->sur_parent,
 	       su_base_port_clone_start);
@@ -564,7 +564,7 @@ static void su_base_port_clone_break(su_root_magic_t *m,
  * @internal
  *
  * Called by su_port_wait() and su_clone_wait()
- */ 
+ */
 void su_base_port_wait(su_clone_r rclone)
 {
   su_port_t *self;

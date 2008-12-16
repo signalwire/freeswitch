@@ -49,7 +49,7 @@ BEGIN {
   # Initialize these as arrays
   split("", symbols);
   split("", names);
-  split("", comments); 
+  split("", comments);
   split("", hashes);
   split("", NAMES);
   split("", Comments);
@@ -81,7 +81,7 @@ function name_hash (name)
 {
   hash = 0;
 
-  len = length(name); 
+  len = length(name);
 
   for (i = 1; i <= len; i++) {
     c = tolower(substr(name, i, 1));
@@ -112,7 +112,7 @@ function name_hash (name)
 function protos (name, comment, hash, since)
 {
   NAME=toupper(name);
-  sub(/.*[\/][*][*][<][ 	]*/, "", comment); 
+  sub(/.*[\/][*][*][<][ 	]*/, "", comment);
   sub(/[ 	]*[*][\/].*/, "", comment);
   sub(/[ 	]+/, " ", comment);
 
@@ -132,12 +132,12 @@ function protos (name, comment, hash, since)
     if (name2 != name && name2 != tprefix "_" name) {
       print name " mismatch with " comment " (" real ")" > "/dev/stderr";
     }
-    
+
     hash = name_hash(parts[1]);
 
     hashed[name] = hash;
 
-    if (comment !~ /header/) { 
+    if (comment !~ /header/) {
       comment = comment " header";
     }
   }
@@ -149,13 +149,13 @@ function protos (name, comment, hash, since)
   COMMENT = toupper(comment);
 
   # Store the various forms into an array for the footer processing
-  N++; 
-  hashes[N] = hash; 
+  N++;
+  hashes[N] = hash;
   names[N] = name;
-  NAMES[N] = NAME; 
-  comments[N] = comment; 
-  Comments[N] = comment; 
-  COMMENTS[N] = COMMENT; 
+  NAMES[N] = NAME;
+  comments[N] = comment;
+  Comments[N] = comment;
+  COMMENTS[N] = COMMENT;
 
   symbols[name] = comment;
   if (since) {
@@ -165,8 +165,8 @@ function protos (name, comment, hash, since)
   expr = (without_experimental > 0 && do_hash);
   if (expr) {
     printf "%s is experimental\n", Comment;
-  }    
-  
+  }
+
   experimental[N] = expr;
 
   if (PR) {
@@ -190,7 +190,7 @@ function replace (p, hash, name, NAME, comment, Comment, COMMENT, since)
   #
   if (p) {
     gsub(/#hash#/, hash, p);
-    gsub(/#xxxxxx#/, name, p); 
+    gsub(/#xxxxxx#/, name, p);
     gsub(/#XXXXXX#/, NAME, p);
     gsub(/#xxxxxxx_xxxxxxx#/, comment, p);
     gsub(/#Xxxxxxx_Xxxxxxx#/, Comment, p);
@@ -203,17 +203,17 @@ function replace (p, hash, name, NAME, comment, Comment, COMMENT, since)
       # Remove line with #version#
       gsub(/\n[^#\n]*#version#[^\n]*/, "", p);
     }
-    	    
+
     print p > PR;
   }
 }
 
-# 
+#
 # Repeat each line in the footer containing the magic replacement
 # pattern with an instance of all headers
 #
 function process_footer (text)
-{ 
+{
   if (!match(tolower(text), /#(xxxxxx(x_xxxxxxx)?|hash)#/)) {
     n = length(text);
     while (substr(text, n) == "\n") {
@@ -224,7 +224,7 @@ function process_footer (text)
       print text > PR;
     return;
   }
-  
+
   n = split(text, lines, RS);
 
   for (i = 1; i <= n; i++) {
@@ -247,7 +247,7 @@ function process_footer (text)
 	gsub(/#xxxxxxx_xxxxxxx#/, comments[j], l);
 	gsub(/#Xxxxxxx_Xxxxxxx#/, Comments[j], l);
 	gsub(/#XXXXXXX_XXXXXXX#/, COMMENTS[j], l);
-	gsub(/#xxxxxx#/, names[j], l); 
+	gsub(/#xxxxxx#/, names[j], l);
 	gsub(/#XXXXXX#/, NAMES[j], l);
 	print l > PR;
       }
@@ -272,7 +272,7 @@ function read_header_flags (flagfile,    line, tokens, name, value)
     if (line ~ /^#/ || line ~ /^$/)
       continue;
 
-    split(line, tokens,  /[ \t]*=[ \t]*/); 
+    split(line, tokens,  /[ \t]*=[ \t]*/);
     name = tolower(tokens[1]);
     gsub(/-/, "_", name);
     gsub(/,/, " ", name);
@@ -297,7 +297,7 @@ function read_header_flags (flagfile,    line, tokens, name, value)
 function templates ()
 {
   if (!auto) {
-    auto = FILENAME; 
+    auto = FILENAME;
 
     if (!prefix) { prefix = module; }
     if (!tprefix) { tprefix = prefix; }
@@ -369,11 +369,11 @@ function templates ()
 
 /^#### EXTRA HEADER LIST STARTS HERE ####$/ { HLIST=1; templates(); }
 HLIST && /^#### DEFAULT HEADER LIST ENDS HERE ####$/ { basic=total; }
-HLIST && /^#### EXPERIMENTAL HEADER LIST STARTS HERE ####$/ { 
+HLIST && /^#### EXPERIMENTAL HEADER LIST STARTS HERE ####$/ {
   without_experimental = total; }
 
-HLIST && /^[a-z]/ { protos($1, $0, 0, $2); 
-  headers[total++] = $1; 
+HLIST && /^[a-z]/ { protos($1, $0, 0, $2);
+  headers[total++] = $1;
   Extra[$1] = extra++;
 }
 /^#### EXTRA HEADER LIST ENDS HERE ####$/ { HLIST=0;  }
@@ -383,14 +383,14 @@ HLIST && /^[a-z]/ { protos($1, $0, 0, $2);
 
 PT && /^ *\/\* === Hash headers end here \*\// { in_header_list=0;}
 
-in_header_list && /^  (sip|rtsp|http|msg|mp)_[a-z_0-9]+_t/ { 
+in_header_list && /^  (sip|rtsp|http|msg|mp)_[a-z_0-9]+_t/ {
   n=$0
-  sub(/;.*$/, "", n);   
+  sub(/;.*$/, "", n);
   sub(/^ *(sip|rtsp|http|msg|mp)_[a-z0-9_]*_t[ 	]*/, "", n);
   sub(/^[*](sip|rtsp|http|msg|mp)_/, "", n);
 
   if ($0 !~ /[\/][*][*][<]/) {
-    getline; 
+    getline;
   }
   if ($0 !~ /[\/][*][*][<]/) {
     printf "msg_protos.awk: header %s is malformed\n", n;
@@ -446,7 +446,7 @@ function print_parser_table(struct, scope, name, N, N_EXPERIMENTAL)
     len = split("request status separator payload unknown error", unnamed, " ");
 
     for (i = 1; i <= len; i++) {
-      printf("  {{ %s_%s_class, msg_offsetof(%s_t, %s_%s) }},\n", 
+      printf("  {{ %s_%s_class, msg_offsetof(%s_t, %s_%s) }},\n",
 	     tprefix, unnamed[i], module, prefix, unnamed[i]) > PT;
     }
     if (multipart) {
@@ -456,7 +456,7 @@ function print_parser_table(struct, scope, name, N, N_EXPERIMENTAL)
       printf("  {{ NULL, 0 }},\n") > PT;
     }
     if (MC_SHORT_SIZE) {
-      printf("  %s_short_forms, \n", module) > PT;      
+      printf("  %s_short_forms, \n", module) > PT;
     }
     else {
       printf("  NULL, \n") > PT;
@@ -488,11 +488,11 @@ function print_parser_table(struct, scope, name, N, N_EXPERIMENTAL)
 
 	if (i >= ordinary) {
 	  printf("    { %s_%s_class,\n" \
-		 "      msg_offsetof(struct %s, extra[%u])%s }%s\n", 
+		 "      msg_offsetof(struct %s, extra[%u])%s }%s\n",
 		 tprefix, n, struct, Extra[n], flags, c) > PT;
 	}
 	else {
-	  printf("    { %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n", 
+	  printf("    { %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n",
 		 tprefix, n, module, prefix, n, flags, c) > PT;
 	}
 
@@ -520,7 +520,7 @@ END {
     if (multipart)
       protos("multipart", "/**< Multipart payload */", -7);
   }
-    
+
   if (PR) {
     process_footer(footer);
   }
@@ -547,17 +547,17 @@ END {
 
     if (MC_SHORT_SIZE) {
       printf("static msg_href_t const " \
-	     "%s_short_forms[MC_SHORT_SIZE] = \n{\n", 
-	     module) > PT;      
+	     "%s_short_forms[MC_SHORT_SIZE] = \n{\n",
+	     module) > PT;
 
       for (i = 1; i <= MC_SHORT_SIZE; i = i + 1) {
 	c = (i == MC_SHORT_SIZE) ? "" : ",";
 	if (i in shorts) {
 	  n = shorts[i];
         flags = header_flags[n]; if (flags) flags = ",\n      " flags;
-	  
-	printf("  { /* %s */ %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n", 
-	       substr(lower_case, i, 1), 
+
+	printf("  { /* %s */ %s_%s_class, msg_offsetof(%s_t, %s_%s)%s }%s\n",
+	       substr(lower_case, i, 1),
 	       tprefix, n, module, prefix, n, flags, c)	\
 	    > PT;
 	}
@@ -566,7 +566,7 @@ END {
 	    > PT;
 	}
       }
-      printf("};\n\n") > PT;      
+      printf("};\n\n") > PT;
     }
 
     # printf("extern msg_hclass_t msg_multipart_class[];\n\n") > PT;

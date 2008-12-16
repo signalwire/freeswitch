@@ -58,7 +58,7 @@ int soa_tag_filter(tagi_t const *f, tagi_t const *t)
   if (!t || !t->t_tag)
     return 0;
 
-  ns = t->t_tag->tt_ns; 
+  ns = t->t_tag->tt_ns;
   if (!ns)
     return 0;
 
@@ -66,7 +66,7 @@ int soa_tag_filter(tagi_t const *f, tagi_t const *t)
 }
 
 /**@def SOATAG_ANY()
- * 
+ *
  * Filter tag matching any SOATAG_*() item.
  */
 tag_typedef_t soatag_any = NSTAG_TYPEDEF(*);
@@ -218,7 +218,7 @@ tag_typedef_t soatag_user_sdp = SDPTAG_TYPEDEF(user_sdp);
  *
  * User SDP is used as basis for SDP Offer/Answer negotiation. It can be
  * very minimal, listing just m= lines with the port numbers and RTP payload
- * numbers of supported codecs, like 
+ * numbers of supported codecs, like
  * @code
  *   SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8")
  * @endcode
@@ -256,7 +256,7 @@ tag_typedef_t soatag_user_sdp_str = STRTAG_TYPEDEF(user_sdp_str);
  *      #SOA_AF_ANY,
  *      #SOA_AF_IP4_ONLY, #SOA_AF_IP6_ONLY,
  *      #SOA_AF_IP4_IP6,  #SOA_AF_IP6_IP4
- *    } 
+ *    }
  *
  * @par Values
  *    - #SOA_AF_ANY       (0) any address family (default)
@@ -303,7 +303,7 @@ tag_typedef_t soatag_address = STRTAG_TYPEDEF(address);
  *    soa_set_params(), soa_get_params(), soa_get_paramlist() \n
  *
  * @par Parameter type
- *    enum { 
+ *    enum {
  *      #SOA_RTP_SELECT_SINGLE, #SOA_RTP_SELECT_COMMON, #SOA_RTP_SELECT_ALL
  *    } \n
  *    (int in range 0..2)
@@ -330,7 +330,7 @@ tag_typedef_t soatag_rtp_select = INTTAG_TYPEDEF(rtp_select);
  * The named audio codecs are considered auxiliary, that is, they are
  * considered as common codec only when they are the only codec listed on
  * the media line.
- * 
+ *
  * When generating answer or second offer soa includes auxiliary audio
  * codecs in the list of codecs even if it is selecting only one codec or
  * common codecs.
@@ -358,10 +358,10 @@ tag_typedef_t soatag_audio_aux = STRTAG_TYPEDEF(audio_aux);
 /**@def SOATAG_RTP_SORT(x)
  *
  * When selecting the common codecs, soa can either select first local codec
- * supported by remote end, or first remote codec supported by local codecs. 
+ * supported by remote end, or first remote codec supported by local codecs.
  * The preference is indicated with ordering: the preferred codec is
  * first and so on.
- * 
+ *
  * The auxiliary audio codecs (specified with SOATAG_AUDIO_AUX()) are listed
  * after other codecs.
  *
@@ -415,14 +415,14 @@ tag_typedef_t soatag_rtp_mismatch = BOOLTAG_TYPEDEF(rtp_mismatch);
 
 
 /**@def SOATAG_ACTIVE_AUDIO(x)
- * 
+ *
  * Audio session status.
  *
  * @par Used with
  *
  * @par Parameter type
- *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED, 
- *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY, 
+ *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED,
+ *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY,
  *           #SOA_ACTIVE_RECVONLY, #SOA_ACTIVE_SENDRECV }
  *
  * @par Values
@@ -438,14 +438,14 @@ tag_typedef_t soatag_rtp_mismatch = BOOLTAG_TYPEDEF(rtp_mismatch);
 tag_typedef_t soatag_active_audio = INTTAG_TYPEDEF(active_audio);
 
 /**@def SOATAG_ACTIVE_VIDEO(x)
- * 
+ *
  * Video session status
  *
  * @par Used with
  *
  * @par Parameter type
- *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED, 
- *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY, 
+ *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED,
+ *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY,
  *           #SOA_ACTIVE_RECVONLY, #SOA_ACTIVE_SENDRECV }
  *
  * @par Values
@@ -460,7 +460,7 @@ tag_typedef_t soatag_active_audio = INTTAG_TYPEDEF(active_audio);
 tag_typedef_t soatag_active_video = INTTAG_TYPEDEF(active_video);
 
 /**@def SOATAG_ACTIVE_IMAGE(x)
- * 
+ *
  * Active image session status
  *
  * @par Used with
@@ -468,8 +468,8 @@ tag_typedef_t soatag_active_video = INTTAG_TYPEDEF(active_video);
  *    #nua_i_state \n
  *
  * @par Parameter type
- *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED, 
- *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY, 
+ *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED,
+ *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY,
  *           #SOA_ACTIVE_RECVONLY, #SOA_ACTIVE_SENDRECV }
  *
  * @par Values
@@ -480,8 +480,8 @@ tag_typedef_t soatag_active_video = INTTAG_TYPEDEF(active_video);
  *    - #SOA_ACTIVE_SENDRECV  (3)
  *
  * @par Parameter type
- *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED, 
- *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY, 
+ *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED,
+ *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY,
  *           #SOA_ACTIVE_RECVONLY, #SOA_ACTIVE_SENDRECV }
  *
  * @par Values
@@ -496,7 +496,7 @@ tag_typedef_t soatag_active_video = INTTAG_TYPEDEF(active_video);
 tag_typedef_t soatag_active_image = INTTAG_TYPEDEF(active_image);
 
 /**@def SOATAG_ACTIVE_CHAT(x)
- * 
+ *
  * Active chat session status.
  *
  * @par Used with
@@ -504,8 +504,8 @@ tag_typedef_t soatag_active_image = INTTAG_TYPEDEF(active_image);
  *    #nua_i_state \n
  *
  * @par Parameter type
- *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED, 
- *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY, 
+ *    enum { #SOA_ACTIVE_DISABLED, #SOA_ACTIVE_REJECTED,
+ *           #SOA_ACTIVE_INACTIVE, #SOA_ACTIVE_SENDONLY,
  *           #SOA_ACTIVE_RECVONLY, #SOA_ACTIVE_SENDRECV }
  *
  * @par Values
@@ -520,7 +520,7 @@ tag_typedef_t soatag_active_image = INTTAG_TYPEDEF(active_image);
 tag_typedef_t soatag_active_chat = INTTAG_TYPEDEF(active_chat);
 
 /**@def SOATAG_SRTP_ENABLE(x)
- *  
+ *
  * Enable SRTP
  *
  * @par Used with
@@ -533,7 +533,7 @@ tag_typedef_t soatag_active_chat = INTTAG_TYPEDEF(active_chat);
  *    @c !=0 enable \n
  *    @c 0 disable
  *
- * Corresponding tag taking reference parameter is 
+ * Corresponding tag taking reference parameter is
  * SOATAG_SRTP_ENABLE_REF()
  *
  * @todo SRTP functionality is not implemented.
@@ -541,7 +541,7 @@ tag_typedef_t soatag_active_chat = INTTAG_TYPEDEF(active_chat);
 tag_typedef_t soatag_srtp_enable = BOOLTAG_TYPEDEF(srtp_enable);
 
 /**@def SOATAG_SRTP_CONFIDENTIALITY(x)
- *  
+ *
  * Enable SRTP confidentiality negotiation.
  *
  * @par Used with
@@ -554,16 +554,16 @@ tag_typedef_t soatag_srtp_enable = BOOLTAG_TYPEDEF(srtp_enable);
  *    @c != 0 enable SRTP confidentiality \n
  *    @c 0 disable SRTP conidentiality
  *
- * Corresponding tag taking reference parameter is 
+ * Corresponding tag taking reference parameter is
  * SOATAG_SRTP_CONFIDENTIALITY_REF()
  *
  * @todo SRTP functionality is not implemented.
  */
-tag_typedef_t soatag_srtp_confidentiality = 
+tag_typedef_t soatag_srtp_confidentiality =
   BOOLTAG_TYPEDEF(srtp_confidentiality);
 
 /**@def SOATAG_SRTP_INTEGRITY(x)
- *  
+ *
  * Enable SRTP integrity protection
  *
  * @par Used with
@@ -576,7 +576,7 @@ tag_typedef_t soatag_srtp_confidentiality =
  *    @c !=0 enable \n
  *    @c 0 disable
  *
- * Corresponding tag taking reference parameter is 
+ * Corresponding tag taking reference parameter is
  * SOATAG_SRTP_INTEGRITY_REF()
  *
  * @todo SRTP functionality is not implemented.
@@ -585,12 +585,12 @@ tag_typedef_t soatag_srtp_integrity = BOOLTAG_TYPEDEF(srtp_integrity);
 
 /**@def SOATAG_HOLD(x)
  *
- * Hold media stream or streams. 
+ * Hold media stream or streams.
  *
  * The hold media stream will have the attribute a=sendonly (meaning that
  * some hold announcements or pause music is sent to the held party but that
  * the held party should not generate any media) or a=inactive (meaning that
- * no media is sent). 
+ * no media is sent).
  *
  * When putting a SIP session on hold with sendonly, the application can
  * include, e.g., SOATAG_HOLD("audio") or SOATAG_HOLD("video") or
@@ -636,7 +636,7 @@ tag_typedef_t soatag_hold = STRTAG_TYPEDEF(hold);
  *   - true (1) - update session with m= line in user SDP based on their order
  *
  * The default value is false and session are updated based on media types.
- * 
+ *
  *
  * Corresponding tag taking a reference parameter is SOATAG_RTP_SELECT_REF().
  *

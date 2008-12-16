@@ -24,14 +24,14 @@
 
 #ifndef SU_TAG_IO_H
 /** Defined when <sofia-sip/su_tag_io.h> has been included */
-#define SU_TAG_IO_H 
+#define SU_TAG_IO_H
 
 /**@SU_TAG
  * @file sofia-sip/su_tag_io.h
  * @brief I/O interface for tag lists
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Wed Feb 21 12:10:06 2001 ppessi
  */
 
@@ -52,8 +52,8 @@ SOFIAPUBFUN void tl_print(FILE *f, char const *title, tagi_t const lst[]);
 su_inline tag_value_t tag_socket_v(su_socket_t v) {
   return (tag_value_t)v;
 }
-su_inline tag_value_t tag_socket_vr(su_socket_t *vp) { 
-  return (tag_value_t)vp; 
+su_inline tag_value_t tag_socket_vr(su_socket_t *vp) {
+  return (tag_value_t)vp;
 }
 #else
 #define tag_socket_v(v)   (tag_value_t)(v)

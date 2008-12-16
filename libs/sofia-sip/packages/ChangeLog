@@ -1,7 +1,7 @@
 2005-11-15  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* sofia-sip.spec.in: Removed the --includedir parameter. 
-	The public headers are now installed under 
+	* sofia-sip.spec.in: Removed the --includedir parameter.
+	The public headers are now installed under
 	includedir/sofia-sip-MAJOR.MINOR/
 
 2005-10-06  Pekka Pessi  <Pekka.Pessi@nokia.com>

@@ -24,16 +24,16 @@
 
 #ifndef MSG_DATE_H
 /** Defined when <sofia-sip/msg_date.h> has been included. */
-#define MSG_DATE_H 
+#define MSG_DATE_H
 
 /**@ingroup msg_parser
- * @file sofia-sip/msg_date.h 
+ * @file sofia-sip/msg_date.h
  * @brief Types and functions for handling dates and times.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Thu Jun  8 19:28:55 2000 ppessi
- * 
+ *
  */
 
 #ifndef SU_TYPES_H

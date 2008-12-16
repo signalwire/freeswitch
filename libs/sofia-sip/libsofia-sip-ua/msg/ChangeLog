@@ -6,7 +6,7 @@
 
 	* Renamed msg_test.c as test_msg.c.
 
-	* Renamed msg_test_class.[hc] as test_class.[hc], 
+	* Renamed msg_test_class.[hc] as test_class.[hc],
 	  msg_test_protos.h(.in) as test_protos.h(.in),
 	  msg_test_table.c(.in) as test_table.c(.in).
 
@@ -40,14 +40,14 @@
 
 	* msg_parser.c: Using header-specific flags to classify parsing
 	errors with msg_extract_errors().
-	
+
 	Added support for apndlist headers.
 
 	* msg_header.h: Added support for apndlist headers.
 
 	* msg_mime.c: Various Accept* headers are now apndlist meaning
 	that they are printed on single line by default.
-	
+
 2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* Initial import of the module to Sofia-SIP tree.

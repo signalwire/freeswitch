@@ -23,14 +23,14 @@
  */
 
 /**@CFILE su_errno.c errno compatibility
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Original: Thu Mar 18 19:40:51 1999 pessi
  * @date Split to su_errno.c: Thu Dec 22 18:37:02 EET 2005 pessi
  */
 
-#include "config.h" 
+#include "config.h"
 
 #include <sofia-sip/su_errno.h>
 #include <sofia-sip/su.h>
@@ -128,7 +128,7 @@ const char *su_strerror(int errcode)
   };
   static char buf[64];
 
-  if (errcode < WSABASEERR) 
+  if (errcode < WSABASEERR)
     return strerror(errcode);
 
   if (errcode < 20000)

@@ -24,7 +24,7 @@
 
 /**@ingroup test_msg
  * @file test_class.c
- * 
+ *
  * Message class for testing parser and transports.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -65,7 +65,7 @@ static msg_xtra_f msg_request_dup_xtra;
 static msg_dup_f msg_request_dup_one;
 
 msg_hclass_t msg_request_class[] =
-MSG_HEADER_CLASS(msg_, request, NULL, "", rq_common, 
+MSG_HEADER_CLASS(msg_, request, NULL, "", rq_common,
 		 single_critical, msg_request, msg_generic);
 
 /** Decode a request line */
@@ -133,7 +133,7 @@ static msg_xtra_f msg_status_dup_xtra;
 static msg_dup_f msg_status_dup_one;
 
 msg_hclass_t msg_status_class[1] =
-MSG_HEADER_CLASS(msg_, status, NULL, "", st_common, 
+MSG_HEADER_CLASS(msg_, status, NULL, "", st_common,
 		 single_critical, msg_status, msg_generic);
 
 /** Parse status line */
@@ -162,7 +162,7 @@ issize_t msg_status_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
   if (status > 999 || status < 100)
     status = 0;
 
-  return snprintf(b, bsiz, "%s %03u %s" CRLF, 
+  return snprintf(b, bsiz, "%s %03u %s" CRLF,
 		  st->st_version, status, st->st_phrase);
 }
 
@@ -201,19 +201,19 @@ msg_hclass_t test_auth_class[] =
   MSG_HEADER_CLASS(msg_, auth, "Auth", "", au_params,
 		   append, msg_auth, msg_generic);
 
-/** Extract the message body, including separator line. 
+/** Extract the message body, including separator line.
  *
- * @param[in,out] msg  message object 
- * @param[in,out] pub  public message structure 
- * @param[in]     b    buffer containing unparsed data 
- * @param[in]     bsiz buffer size 
+ * @param[in,out] msg  message object
+ * @param[in,out] pub  public message structure
+ * @param[in]     b    buffer containing unparsed data
+ * @param[in]     bsiz buffer size
  * @param[in]     eos  true if buffer contains whole message
  *
  * @retval -1     error
  * @retval 0      message is incomplete
  * @retval other  number of bytes extracted
  */
-issize_t msg_test_extract_body(msg_t *msg, msg_pub_t *pub, 
+issize_t msg_test_extract_body(msg_t *msg, msg_pub_t *pub,
 			       char b[], isize_t bsiz, int eos)
 {
   msg_test_t *tst = (msg_test_t *)pub;
@@ -249,14 +249,14 @@ issize_t msg_test_extract_body(msg_t *msg, msg_pub_t *pub,
 
   if ((m = msg_extract_payload(msg, (msg_pub_t *)tst, NULL, body_len, b, bsiz, eos) ) == -1)
     return -1;
-  
+
   tst->msg_flags |= MSG_FLG_FRAGS;
   if (bsiz >= body_len)
     tst->msg_flags |= MSG_FLG_COMPLETE;
   return m;
 }
 
-msg_href_t const msg_content_length_href[1] = 
+msg_href_t const msg_content_length_href[1] =
   {{
     msg_content_length_class,
     offsetof(msg_test_t, msg_content_length)
@@ -269,11 +269,11 @@ msg_href_t const msg_content_length_href[1] =
 
 tagi_t *tsttag_filter(tagi_t *dst,
 		      tagi_t const f[],
-		      tagi_t const *src, 
+		      tagi_t const *src,
 		      void **bb);
 
 /** Tag class for test header tags. @HIDE */
-tag_class_t tsthdrtag_class[1] = 
+tag_class_t tsthdrtag_class[1] =
   {{
     sizeof(tsthdrtag_class),
     /* tc_next */     NULL,
@@ -290,7 +290,7 @@ tag_class_t tsthdrtag_class[1] =
   }};
 
 /** Tag class for TST header string tags. @HIDE */
-tag_class_t tststrtag_class[1] = 
+tag_class_t tststrtag_class[1] =
   {{
     sizeof(tststrtag_class),
     /* tc_next */     NULL,
@@ -307,7 +307,7 @@ tag_class_t tststrtag_class[1] =
   }};
 
 /** Tag class for TST message tags. @HIDE */
-tag_class_t tstmsgtag_class[1] = 
+tag_class_t tstmsgtag_class[1] =
   {{
     sizeof(tstmsgtag_class),
     /* tc_next */     NULL,
@@ -322,7 +322,7 @@ tag_class_t tstmsgtag_class[1] =
     /* tc_ref_set */  t_ptr_ref_set,
   }};
 
-tag_typedef_t tsttag_header = 
+tag_typedef_t tsttag_header =
 	{{ TAG_NAMESPACE, "header", tsthdrtag_class, 0 }};
 
 tag_typedef_t tsttag_header_str = STRTAG_TYPEDEF(header_str);
@@ -330,7 +330,7 @@ tag_typedef_t tsttag_header_str = STRTAG_TYPEDEF(header_str);
 /** Filter a TST header structure. */
 tagi_t *tsttag_filter(tagi_t *dst,
 		      tagi_t const f[],
-		      tagi_t const *src, 
+		      tagi_t const *src,
 		      void **bb)
 {
   tagi_t stub[2] = {{ NULL }};
@@ -348,7 +348,7 @@ tagi_t *tsttag_filter(tagi_t *dst,
       msg_hclass_offset(mc, (msg_pub_t *)tst, hc);
     msg_header_t const *h;
 
-    if (tst == NULL || 
+    if (tst == NULL ||
 	(char *)hh >= ((char *)tst + tst->msg_size) ||
 	(char *)hh < (char const *)&tst->msg_request)
       return dst;

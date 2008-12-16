@@ -75,7 +75,7 @@ int test_extension(struct context *ctx)
   sip_t const *sip;
 
 
-/* Test for EXTENSION 
+/* Test for EXTENSION
 
    A			B
    |------EXTENSION---->|

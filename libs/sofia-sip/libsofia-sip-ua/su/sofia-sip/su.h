@@ -25,11 +25,11 @@
 #ifndef SU_H
 /** Defined when <sofia-sip/su.h> has been included. */
 #define SU_H
-/**@ingroup su_socket 
+/**@ingroup su_socket
  * @file sofia-sip/su.h Socket and network address interface
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
 
@@ -83,14 +83,14 @@ SOFIA_BEGIN_DECLS
 
 #if SU_HAVE_BSDSOCK || DOCUMENTATION_ONLY
 enum {
-  /** Invalid socket descriptor, error from socket() or accept() */ 
+  /** Invalid socket descriptor, error from socket() or accept() */
   INVALID_SOCKET = -1,
 #define INVALID_SOCKET ((su_socket_t)INVALID_SOCKET)
   /** Error from other socket calls */
   SOCKET_ERROR = -1,
 #define SOCKET_ERROR SOCKET_ERROR
   /** Return code for a successful call */
-  su_success = 0, 
+  su_success = 0,
   /** Return code for an unsuccessful call */
   su_failure = -1
 };
@@ -98,9 +98,9 @@ enum {
 #define MSG_NOSIGNAL (0)
 #endif
 #elif SU_HAVE_WINSOCK
-enum { 
-  su_success = 0, 
-  su_failure = 0xffffffffUL 
+enum {
+  su_success = 0,
+  su_failure = 0xffffffffUL
 };
 
 #define MSG_NOSIGNAL (0)
@@ -168,7 +168,7 @@ union su_sockaddr_u {
 #define               su_len          su_array[0]
   short               su_family;
 #endif
-#define               su_port         su_sin.sin_port  
+#define               su_port         su_sin.sin_port
 #endif
 
   char                su_array[32];   /**< Presented as chars */
@@ -230,8 +230,8 @@ typedef size_t su_ioveclen_t;
  * For historical reasons, the structure is known as #msg_iovec_t in @msg
  * module.
  *
- * @sa #su_ioveclen_t, SU_IOVECLEN_MAX, su_vsend(), su_vrecv(), 
- * #msg_iovec_t, msg_iovec(), msg_recv_iovec(), 
+ * @sa #su_ioveclen_t, SU_IOVECLEN_MAX, su_vsend(), su_vrecv(),
+ * #msg_iovec_t, msg_iovec(), msg_recv_iovec(),
  * @c struct @c iovec defined in <sys/uio.h>, writev(2), readv(2),
  * sendmsg(), recvmsg(),
  * <a href="http://msdn.microsoft.com/library/en-us/winsock/winsock/wsabuf_2.asp">
@@ -242,7 +242,7 @@ typedef struct su_iovec_s {
   su_ioveclen_t siv_len;		/**< Size of buffer.  */
 } su_iovec_t;
 
-/** Maximum size of buffer in a single su_iovec_t element. 
+/** Maximum size of buffer in a single su_iovec_t element.
  * @sa #su_ioveclen_t, #su_iovec_t
  *
  * @since New in @VERSION_1_12_2.
@@ -277,7 +277,7 @@ SOFIAPUBFUN int su_close(su_socket_t s);
 SOFIAPUBFUN int su_ioctl(su_socket_t s, int request, ...);
 
 /**Check for in-progress error codes.
- * 
+ *
  * Checks if the @a errcode indicates that the socket call failed because
  * it would have blocked.
  *
@@ -287,7 +287,7 @@ SOFIAPUBFUN int su_ioctl(su_socket_t s, int request, ...);
  */
 SOFIAPUBFUN int su_is_blocking(int errcode);
 
-/** Set/reset blocking option. */ 
+/** Set/reset blocking option. */
 SOFIAPUBFUN int su_setblocking(su_socket_t s, int blocking);
 /** Set/reset address reusing option. */
 SOFIAPUBFUN int su_setreuseaddr(su_socket_t s, int reuse);
@@ -314,7 +314,7 @@ SOFIAPUBFUN int su_getlocalip(su_sockaddr_t *sin);
 #define su_ioctl  ioctl
 /*
  * Note: before 1.12.2, there was su_isblocking() which did not take argument
- * and which was missing from WINSOCK 
+ * and which was missing from WINSOCK
  */
 #define su_is_blocking(e) \
   ((e) == EINPROGRESS || (e) == EAGAIN || (e) == EWOULDBLOCK)
@@ -324,7 +324,7 @@ SOFIAPUBFUN int su_getlocalip(su_sockaddr_t *sin);
 SOFIAPUBFUN int su_inet_pton(int af, char const *src, void *dst);
 SOFIAPUBFUN const char *su_inet_ntop(int af, void const *src,
 				  char *dst, size_t size);
-SOFIAPUBFUN ssize_t 
+SOFIAPUBFUN ssize_t
   su_send(su_socket_t s, void *buffer, size_t length, int flags),
   su_sendto(su_socket_t s, void *buffer, size_t length, int flags,
 	    su_sockaddr_t const *to, socklen_t tolen),
@@ -424,7 +424,7 @@ uint32_t su_ntohl(uint32_t l)
 
 #define SU_SOCKADDR_INADDR_ANY(su) SU_HAS_INADDR_ANY(su)
 
-/**@HI Calculate correct size of su_sockaddr_t structure. */ 
+/**@HI Calculate correct size of su_sockaddr_t structure. */
 #if SU_HAVE_IN6
 #define SU_SOCKADDR_SIZE(su) \
   ((socklen_t)((su)->su_family == AF_INET ? sizeof((su)->su_sin)	  \

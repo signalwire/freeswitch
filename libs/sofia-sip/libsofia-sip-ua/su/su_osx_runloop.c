@@ -46,7 +46,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#define su_port_s su_osx_port_s 
+#define su_port_s su_osx_port_s
 
 #include "su_port.h"
 #include "sofia-sip/su_osx_runloop.h"
@@ -64,14 +64,14 @@
 static su_port_t *su_osx_runloop_create(void) __attribute__((__malloc__));
 
 /* Callback for CFObserver and CFSocket */
-static void cf_observer_cb(CFRunLoopObserverRef observer, 
-			   CFRunLoopActivity activity, 
+static void cf_observer_cb(CFRunLoopObserverRef observer,
+			   CFRunLoopActivity activity,
 			   void *info);
 
-static void su_osx_port_socket_cb(CFSocketRef s, 
-				  CFSocketCallBackType callbackType, 
-				  CFDataRef address, 
-				  const void *data, 
+static void su_osx_port_socket_cb(CFSocketRef s,
+				  CFSocketCallBackType callbackType,
+				  CFDataRef address,
+				  const void *data,
 				  void *info);
 
 static void su_osx_port_deinit(void *arg);
@@ -87,15 +87,15 @@ static CFSocketCallBackType map_poll_event_to_cf_event(int events);
 static int su_osx_port_send(su_port_t *self, su_msg_r rmsg);
 
 static int su_osx_port_register(su_port_t *self,
-			    su_root_t *root, 
-			    su_wait_t *wait, 
+			    su_root_t *root,
+			    su_wait_t *wait,
 			    su_wakeup_f callback,
 			    su_wakeup_arg_t *arg,
 			    int priority);
 static int su_osx_port_unregister(su_port_t *port,
-			      su_root_t *root, 
-			      su_wait_t *wait,	
-			      su_wakeup_f callback, 
+			      su_root_t *root,
+			      su_wait_t *wait,
+			      su_wakeup_f callback,
 			      su_wakeup_arg_t *arg);
 
 static int su_osx_port_deregister(su_port_t *self, int i);
@@ -118,9 +118,9 @@ static char const *su_osx_port_name(su_port_t const *self)
 }
 
 /*
- * Port is a per-thread reactor.  
+ * Port is a per-thread reactor.
  *
- * Multiple root objects executed by single thread share a su_port_t object. 
+ * Multiple root objects executed by single thread share a su_port_t object.
  */
 struct su_osx_port_s {
   su_socket_port_t sup_socket[1];
@@ -143,11 +143,11 @@ struct su_osx_port_s {
     int        o_current;
     int        o_count;
   } osx_magic[1];
-  
+
   unsigned         sup_multishot; /**< Multishot operation? */
 
-  unsigned         sup_registers; /** Counter incremented by 
-				      su_port_register() or 
+  unsigned         sup_registers; /** Counter incremented by
+				      su_port_register() or
 				      su_port_unregister()
 				   */
   int              sup_n_waits; /**< Active su_wait_t in su_waits */
@@ -157,21 +157,21 @@ struct su_osx_port_s {
 
 #define INDEX_MAX (0x7fffffff)
 
-  /** Indices from index returned by su_root_register() to tables below. 
+  /** Indices from index returned by su_root_register() to tables below.
    *
    * Free elements are negative. Free elements form a list, value of free
    * element is (0 - index of next free element).
    *
-   * First element sup_indices[0] points to first free element. 
+   * First element sup_indices[0] points to first free element.
    */
   int             *sup_indices;
 
   int             *sup_reverses; /** Reverse index */
-  su_wakeup_f     *sup_wait_cbs; 
-  su_wakeup_arg_t**sup_wait_args; 
-  su_root_t      **sup_wait_roots; 
+  su_wakeup_f     *sup_wait_cbs;
+  su_wakeup_arg_t**sup_wait_args;
+  su_root_t      **sup_wait_roots;
 
-  su_wait_t       *sup_waits; 
+  su_wait_t       *sup_waits;
 };
 
 
@@ -223,10 +223,10 @@ su_root_t *su_root_osx_runloop_create(su_root_magic_t *magic)
   return su_root_create_with_port(magic, su_osx_runloop_create());
 }
 
-void osx_enabler_cb(CFSocketRef s, 
-		    CFSocketCallBackType type, 
-		    CFDataRef address, 
-		    const void *data, 
+void osx_enabler_cb(CFSocketRef s,
+		    CFSocketCallBackType type,
+		    CFDataRef address,
+		    const void *data,
 		    void *info)
 {
   CFRunLoopRef  rl;
@@ -234,21 +234,21 @@ void osx_enabler_cb(CFSocketRef s,
   su_port_t    *self = magic->o_port;
   su_duration_t tout = 0;
   su_time_t     now = su_now();
-  
+
   rl = CFRunLoopGetCurrent();
 
   if (self->sup_base->sup_running) {
-    
+
     if (self->sup_base->sup_prepoll)
       self->sup_base->sup_prepoll(self->sup_base->sup_pp_magic, self->sup_base->sup_pp_root);
-    
+
     if (self->sup_base->sup_head)
       su_base_port_getmsgs(self);
-    
+
     if (self->sup_base->sup_timers)
       su_timer_expire(&self->sup_base->sup_timers, &tout, now);
   }
-  
+
   CFRunLoopWakeUp(rl);
 }
 
@@ -259,7 +259,7 @@ void osx_enabler_cb(CFSocketRef s,
  *
  * @return
  *   If successful a pointer to the new message port is returned, otherwise
- *   NULL is returned.  
+ *   NULL is returned.
  */
 su_port_t *su_osx_runloop_create(void)
 {
@@ -279,7 +279,7 @@ su_port_t *su_osx_runloop_create(void)
     self->osx_magic->o_port = self;
     self->sup_observer_cntx->info = self->osx_magic;
     self->sup_observer =
-      CFRunLoopObserverCreate(NULL, 
+      CFRunLoopObserverCreate(NULL,
 			      kCFRunLoopAfterWaiting | kCFRunLoopBeforeWaiting,
 			      TRUE, 0, cf_observer_cb, self->sup_observer_cntx);
 #if 0
@@ -295,8 +295,8 @@ su_port_t *su_osx_runloop_create(void)
 }
 
 static
-void cf_observer_cb(CFRunLoopObserverRef observer, 
-		    CFRunLoopActivity activity, 
+void cf_observer_cb(CFRunLoopObserverRef observer,
+		    CFRunLoopActivity activity,
 		    void *info)
 {
   CFRunLoopRef  rl;
@@ -311,17 +311,17 @@ void cf_observer_cb(CFRunLoopObserverRef observer,
 
     if (self->sup_base->sup_prepoll)
       self->sup_base->sup_prepoll(self->sup_base->sup_pp_magic, self->sup_base->sup_pp_root);
-    
+
     if (self->sup_base->sup_head)
       su_port_getmsgs(self);
-    
+
     if (self->sup_base->sup_timers)
       su_timer_expire(&self->sup_base->sup_timers, &tout, now);
   } else
     SU_DEBUG_9(("cf_observer_cb(): PORT IS NOT RUNNING!\n"));
 
   CFRunLoopWakeUp(rl);
-  
+
   return;
 }
 
@@ -342,14 +342,14 @@ CFSocketCallBackType map_poll_event_to_cf_event(int events)
 
   if (events & SU_WAIT_IN)
     type |= kCFSocketReadCallBack;
-  
+
   if (events & SU_WAIT_OUT)
     type |= kCFSocketWriteCallBack;
-  
+
 #if 0
   if (events & SU_WAIT_CONNECT)
     type |= kCFSocketConnectCallBack;
-  
+
   if (events & SU_WAIT_ACCEPT)
     type |= kCFSocketAcceptCallBack;
 #endif
@@ -366,13 +366,13 @@ int map_cf_event_to_poll_event(CFSocketCallBackType type)
 
   if (type & kCFSocketReadCallBack)
     event |= SU_WAIT_IN;
-  
+
   if (type & kCFSocketWriteCallBack)
     event |= SU_WAIT_OUT;
-  
+
   if (type & kCFSocketConnectCallBack)
     event |= SU_WAIT_CONNECT;
-  
+
   if (type & kCFSocketAcceptCallBack)
     event |= SU_WAIT_ACCEPT;
 
@@ -381,37 +381,37 @@ int map_cf_event_to_poll_event(CFSocketCallBackType type)
 #endif
 
 static
-void su_osx_port_socket_cb(CFSocketRef s, 
-			   CFSocketCallBackType type, 
-			   CFDataRef address, 
-			   const void *data, 
+void su_osx_port_socket_cb(CFSocketRef s,
+			   CFSocketCallBackType type,
+			   CFDataRef address,
+			   const void *data,
 			   void *info)
 {
   struct osx_magic *magic = (struct osx_magic *) info;
   su_port_t        *self = magic->o_port;
   int               curr = magic->o_current;
   su_duration_t tout = 0;
-  
+
 #if SU_HAVE_POLL
   {
     su_root_t *root;
     su_wait_t *waits = self->sup_waits;
     int n = self->sup_indices[curr];
-    
+
     assert(self->sup_reverses[n] == curr);
-    
+
     SU_DEBUG_9(("socket_cb(%p): count %u index %d\n", self->sup_sources[n], magic->o_count, curr));
-    
+
     waits[n].revents = map_poll_event_to_cf_event(type);
 
     root = self->sup_wait_roots[n];
-    self->sup_wait_cbs[n](root ? su_root_magic(root) : NULL, 
-			  &waits[n], 
+    self->sup_wait_cbs[n](root ? su_root_magic(root) : NULL,
+			  &waits[n],
 			  self->sup_wait_args[n]);
-    
+
     if (self->sup_base->sup_running) {
       su_port_getmsgs(self);
-      
+
       if (self->sup_base->sup_timers)
 	su_timer_expire(&self->sup_base->sup_timers, &tout, su_now());
 
@@ -420,12 +420,12 @@ void su_osx_port_socket_cb(CFSocketRef s,
 
       /* CFRunLoopWakeUp(CFRunLoopGetCurrent()); */
     }
-    
+
     /* Tell to run loop an su socket fired */
     self->sup_source_fired = 1;
   }
 #endif
-  
+
 }
 
 /** @internal Send a message to the port. */
@@ -437,7 +437,7 @@ int su_osx_port_send(su_port_t *self, su_msg_r rmsg)
     int wakeup;
 
     //XXX - mela SU_OSX_PORT_LOCK(self, "su_osx_port_send");
-    
+
     wakeup = self->sup_base->sup_head == NULL;
 
     *self->sup_base->sup_tail = rmsg[0]; rmsg[0] = NULL;
@@ -480,21 +480,21 @@ static int o_count;
  *
  *  Please note if identical wait objects are inserted, only first one is
  *  ever signalled.
- * 
+ *
  * @param self	     pointer to port
  * @param root	     pointer to root object
  * @param waits	     pointer to wait object
  * @param callback   callback function pointer
  * @param arg	     argument given to callback function when it is invoked
- * @param priority   relative priority of the wait object 
+ * @param priority   relative priority of the wait object
  *              (0 is normal, 1 important, 2 realtime)
- * 
+ *
  * @return
- *   The function @su_osx_port_register returns nonzero index of the wait object, 
+ *   The function @su_osx_port_register returns nonzero index of the wait object,
  *   or -1 upon an error.  */
 int su_osx_port_register(su_port_t *self,
-			 su_root_t *root, 
-			 su_wait_t *wait, 
+			 su_root_t *root,
+			 su_wait_t *wait,
 			 su_wakeup_f callback,
 			 su_wakeup_arg_t *arg,
 			 int priority)
@@ -527,7 +527,7 @@ int su_osx_port_register(su_port_t *self,
 
     if (self->sup_size_waits == 0)
       size = su_root_size_hint;
-    else 
+    else
       size = 2 * self->sup_size_waits;
 
     if (size < SU_WAIT_MIN)
@@ -551,7 +551,7 @@ int su_osx_port_register(su_port_t *self,
 	reverses[i] = -1;
       self->sup_reverses = reverses;
     }
-      
+
     sources = realloc(self->sup_sources, size * sizeof(*sources));
     if (sources)
       self->sup_sources = sources;
@@ -574,10 +574,10 @@ int su_osx_port_register(su_port_t *self,
 
     /* Add sup_wait_roots array, if needed */
     wait_tasks = realloc(self->sup_wait_roots, size * sizeof(*wait_tasks));
-    if (wait_tasks) 
+    if (wait_tasks)
       self->sup_wait_roots = wait_tasks;
 
-    if (!(indices && 
+    if (!(indices &&
 	  reverses && sources && sockets && waits && wait_cbs && wait_args && wait_tasks)) {
       return -1;
     }
@@ -598,7 +598,7 @@ int su_osx_port_register(su_port_t *self,
       self->sup_waits[n] = self->sup_waits[n-1];
       self->sup_wait_cbs[n] = self->sup_wait_cbs[n-1];
       self->sup_wait_args[n] = self->sup_wait_args[n-1];
-      self->sup_wait_roots[n] = self->sup_wait_roots[n-1];	
+      self->sup_wait_roots[n] = self->sup_wait_roots[n-1];
     }
 
     self->sup_pri_offset++;
@@ -672,7 +672,7 @@ int su_osx_port_deregister0(su_port_t *self, int i)
   n = indices[i]; assert(n >= 0); assert(i == reverses[n]);
 
   N = --self->sup_n_waits;
-  
+
   rl = CFRunLoopGetCurrent();
   CFSocketInvalidate(self->sup_sockets[n]);
   CFRelease(self->sup_sockets[n]);
@@ -723,7 +723,7 @@ int su_osx_port_deregister0(su_port_t *self, int i)
   self->sup_wait_cbs[n] = NULL;
   self->sup_wait_args[n] = NULL;
   self->sup_wait_roots[n] = NULL;
-  
+
   indices[i] = indices[0];
   indices[0] = -i;
 
@@ -734,23 +734,23 @@ int su_osx_port_deregister0(su_port_t *self, int i)
 
 
 /** Unregister a su_wait_t object.
- *  
+ *
  *  The function su_osx_port_unregister() unregisters a su_wait_t object. The
  *  wait object, a callback function and a argument are removed from the
  *  port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param root     - pointer to root object
  * @param wait     - pointer to wait object
  * @param callback - callback function pointer (may be NULL)
- * @param arg      - argument given to callback function when it is invoked 
+ * @param arg      - argument given to callback function when it is invoked
  *                   (may be NULL)
- * 
+ *
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
 int su_osx_port_unregister(su_port_t *self,
-		       su_root_t *root, 
-		       su_wait_t *wait,	
+		       su_root_t *root,
+		       su_wait_t *wait,
 		       su_wakeup_f callback, /* XXX - ignored */
 		       su_wakeup_arg_t *arg)
 {
@@ -773,14 +773,14 @@ int su_osx_port_unregister(su_port_t *self,
 }
 
 /** Deregister a su_wait_t object.
- *  
- *  The function su_osx_port_deregister() deregisters a su_wait_t registrattion. 
+ *
+ *  The function su_osx_port_deregister() deregisters a su_wait_t registrattion.
  *  The wait object, a callback function and a argument are removed from the
  *  port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param i        - registration index
- * 
+ *
  * @return Index of the wait object, or -1 upon an error.
  */
 int su_osx_port_deregister(su_port_t *self, int i)
@@ -796,7 +796,7 @@ int su_osx_port_deregister(su_port_t *self, int i)
 
   if (self->sup_indices[i] < 0)
     return su_seterrno(EBADF);
-    
+
   retval = su_osx_port_deregister0(self, i);
 
   su_wait_destroy(wait);
@@ -810,13 +810,13 @@ int su_osx_port_deregister(su_port_t *self, int i)
  *
  * The function su_osx_port_unregister_all() unregisters all su_wait_t objects
  * and destroys all queued timers associated with given root object.
- * 
+ *
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
- * 
+ *
  * @return Number of wait objects removed.
  */
-int su_osx_port_unregister_all(su_port_t *self, 
+int su_osx_port_unregister_all(su_port_t *self,
 			   su_root_t *root)
 {
   int i, j, index, N;
@@ -834,13 +834,13 @@ int su_osx_port_unregister_all(su_port_t *self,
   N          = self->sup_n_waits;
   indices    = self->sup_indices;
   reverses   = self->sup_reverses;
-  sources    = self->sup_sources; 
-  sockets    = self->sup_sockets; 
-  waits      = self->sup_waits; 
-  wait_cbs   = self->sup_wait_cbs; 
+  sources    = self->sup_sources;
+  sockets    = self->sup_sockets;
+  waits      = self->sup_waits;
+  wait_cbs   = self->sup_wait_cbs;
   wait_args  = self->sup_wait_args;
-  wait_roots = self->sup_wait_roots; 
-  
+  wait_roots = self->sup_wait_roots;
+
   rl = CFRunLoopGetCurrent();
 
   for (i = j = 0; i < N; i++) {
@@ -871,7 +871,7 @@ int su_osx_port_unregister_all(su_port_t *self,
       wait_args[j]  = wait_args[i];
       wait_roots[j] = wait_roots[i];
     }
-    
+
     j++;
   }
 
@@ -931,7 +931,7 @@ int su_osx_port_eventmask(su_port_t *self, int index, int socket, int events)
 
   CFSocketSetSocketFlags(self->sup_sockets[n],
 			 map_poll_event_to_cf_event(events));
-  
+
   return ret;
 }
 
@@ -939,7 +939,7 @@ int su_osx_port_eventmask(su_port_t *self, int index, int socket, int events)
  *
  *  Copies the su_wait_t objects from the port. The number of wait objects
  *  can be found out by calling su_osx_port_query() with @a n_waits as zero.
- * 
+ *
  * @note This function is called only by friends.
  *
  * @param self     - pointer to port object
@@ -976,7 +976,7 @@ unsigned su_osx_port_query(su_port_t *self, su_wait_t *waits, unsigned n_waits)
  *
  * @param self      pointer to port object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
- * 
+ *
  * @retval 0 multishot mode is disabled
  * @retval 1 multishot mode is enabled
  * @retval -1 an error occurred
@@ -987,7 +987,7 @@ int su_osx_port_multishot(su_port_t *self, int multishot)
     return self->sup_multishot;
   else if (multishot == 0 || multishot == 1)
     return self->sup_multishot = multishot;
-  else 
+  else
     return (errno = EINVAL), -1;
 }
 
@@ -1007,9 +1007,9 @@ int su_osx_port_threadsafe(su_port_t *port)
  * using Core Foundation's Run Loop.
  *
  * The function su_root_osx_prepare_run() returns immmediately.
- * 
+ *
  * @param root     pointer to root object
- * 
+ *
  * @NEW_1_12_4.
  */
 void su_root_osx_prepare_run(su_root_t *root)
@@ -1030,7 +1030,7 @@ void su_root_osx_prepare_run(su_root_t *root)
 
   if (self->sup_base->sup_head)
     su_port_getmsgs(self);
-  
+
   if (self->sup_base->sup_timers)
     su_timer_expire(&self->sup_base->sup_timers, &tout, su_now());
 
@@ -1044,16 +1044,16 @@ void su_root_osx_prepare_run(su_root_t *root)
 }
 
 /** @internal Main loop.
- * 
+ *
  * The function @c su_osx_port_run() waits for wait objects and the timers
  * associated with the port object.  When any wait object is signaled or
  * timer is expired, it invokes the callbacks, and returns waiting.
- * 
+ *
  * The function @c su_osx_port_run() runs until @c su_osx_port_break() is called
  * from a callback.
- * 
+ *
  * @param self     pointer to port object
- * 
+ *
  */
 void su_osx_port_run(su_port_t *self)
 {
@@ -1072,7 +1072,7 @@ void su_osx_port_run(su_port_t *self)
 
   if (self->sup_base->sup_head)
     su_port_getmsgs(self);
-  
+
   if (self->sup_base->sup_timers)
     su_timer_expire(&self->sup_base->sup_timers, &tout, su_now());
 
@@ -1144,16 +1144,16 @@ void su_osx_port_run_tune(su_port_t *self)
 /** @internal
  * The function @c su_osx_port_break() is used to terminate execution of @c
  * su_osx_port_run(). It can be called from a callback function.
- * 
+ *
  * @param self     pointer to port
- * 
+ *
  */
 void su_osx_port_break(su_port_t *self)
 {
   if (self->sup_main_loop)
     CFRunLoopStop(self->sup_main_loop);
 
-  self->sup_base->sup_running = 0; 
+  self->sup_base->sup_running = 0;
 }
 
 /** @internal
@@ -1178,7 +1178,7 @@ int su_osx_port_wait_events(su_port_t *self, su_duration_t tout)
   i = su_wait(waits, n, tout);
 
   if (i >= 0 && (unsigned)i < n) {
-#if HAVE_POLL			
+#if HAVE_POLL
     /* poll() can return events for multiple wait objects */
     if (self->sup_multishot) {
       for (; i < n; i++) {
@@ -1212,16 +1212,16 @@ int su_osx_port_wait_events(su_port_t *self, su_duration_t tout)
 
 /** @internal Block until wait object is signaled or timeout.
  *
- * This function waits for wait objects and the timers associated with 
+ * This function waits for wait objects and the timers associated with
  * the root object.  When any wait object is signaled or timer is
- * expired, it invokes the callbacks. 
- * 
+ * expired, it invokes the callbacks.
+ *
  *   This function returns when a callback has been invoked or @c tout
- *   milliseconds is elapsed. 
+ *   milliseconds is elapsed.
  *
  * @param self     pointer to port
  * @param tout     timeout in milliseconds
- * 
+ *
  * @return
  *   Milliseconds to the next invocation of timer, or @c SU_WAIT_FOREVER if
  *   there are no active timers.

@@ -26,11 +26,11 @@
 #define BNF_H
 
 /**@file sofia-sip/bnf.h
- * 
+ *
  * Parsing macros and prototypes for HTTP-like protocols.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Jun 06 10:59:34 2000 ppessi
  *
  */
@@ -58,7 +58,7 @@ SOFIA_BEGIN_DECLS
 /** Line-ending characters */
 #define CRLF     CR LF
 /** Whitespace */
-#define WS       SP HT 
+#define WS       SP HT
 /** Linear whitespace */
 #define LWS      SP HT CR LF
 /** Lower-case alphabetic characters */
@@ -71,11 +71,11 @@ SOFIA_BEGIN_DECLS
 #define DIGIT   "0123456789"
 /** RTSP safe characters */
 #define SAFE    "$-_." /* RTSP stuff */
-#define ALPHANUM DIGIT ALPHA 
+#define ALPHANUM DIGIT ALPHA
 #define HEX      DIGIT "ABCDEF" "abcdef"
 
 /** SIP token characters.
- * @note $|&^# were token chars in RFC 2543, but no more in RFC 3261. 
+ * @note $|&^# were token chars in RFC 2543, but no more in RFC 3261.
  */
 #define SIP_TOKEN  ALPHANUM "-.!%*_+`'~"
 /** SIP separator characters */
@@ -109,7 +109,7 @@ SOFIA_BEGIN_DECLS
 #define skip_word(ss) (*(ss) += span_word(*(ss)))
 
 /** Test if @c is CR or LF */
-#define IS_CRLF(c)       ((c) == '\r' || (c) == '\n') 
+#define IS_CRLF(c)       ((c) == '\r' || (c) == '\n')
 /** Test if @c is linear whitespace */
 #define IS_LWS(c)  	 ((c) == ' ' || (c) == '\t' || (c) == '\r' || (c) == '\n')
 /*#define IS_LWS(c)  	 ((_bnf_table[(unsigned char)(c)] & bnf_lws))*/
@@ -150,7 +150,7 @@ enum {
   bnf_unreserved = bnf_alpha | bnf_mark,	/**< URL unreserved */
   bnf_separator = 32,				/**< SIP separator */
   /** SIP token, not alphabetic (0123456789-.!%*_+`'~) */
-  bnf_token0 = 64 | bnf_safe,				
+  bnf_token0 = 64 | bnf_safe,
   bnf_token = bnf_token0 | bnf_alpha,		/**< SIP token */
   bnf_param0 = 128,				/**< SIP parameter, not token */
   bnf_param = bnf_token | bnf_param0 /**< SIP/HTTP parameter */
@@ -171,7 +171,7 @@ SOFIAPUBVAR unsigned char const _bnf_table[256];
 /** Get number of characters before linear whitespace */
 #define span_non_lws(s) strcspn(s, LWS)
 
-/** Calculate span of a linear whitespace. 
+/** Calculate span of a linear whitespace.
  * LWS = [*WSP CRLF] 1*WSP
  */
 su_inline isize_t span_lws(char const *s)
@@ -189,73 +189,73 @@ su_inline isize_t span_lws(char const *s)
 /** Calculate span of a token or linear whitespace characters.  */
 su_inline isize_t span_token_lws(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (_bnf_table[(unsigned char)(*e)] & (bnf_token | bnf_lws))
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of a token characters.  */
 su_inline isize_t span_token(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (_bnf_table[(unsigned char)(*e)] & bnf_token)
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of a alphabetic characters.  */
 su_inline isize_t span_alpha(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (_bnf_table[(unsigned char)(*e)] & bnf_alpha)
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of a digits.  */
 su_inline isize_t span_digit(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (*e >= '0' && *e <= '9')
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of a hex.  */
 su_inline isize_t span_hexdigit(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (IS_HEX(*e))
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of characters belonging to an RTSP token */
 su_inline isize_t span_alpha_digit_safe(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (_bnf_table[(unsigned char)(*e)] & (bnf_alpha | bnf_safe))
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of a characters valid in parameters.  */
 su_inline isize_t span_param(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (IS_PARAM(*e))
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of a SIP word.  */
 su_inline isize_t span_word(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (*e && (IS_TOKEN(*e) || strchr(SIP_WORD, *e)))
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 /** Calculate span of a unreserved characters.  */
@@ -290,13 +290,13 @@ su_inline isize_t span_quoted(char const *s)
 /** Reserved in URLs */
 #define URL_RESERVED        ";/?:=+$,"
 
-/** Non-alphanumeric characters without syntactical meaning. */ 
+/** Non-alphanumeric characters without syntactical meaning. */
 #define URL_MARK            "-_.!~*'()"
 
-/** Unreserved characters. */ 
+/** Unreserved characters. */
 #define URL_UNRESERVED ALPHANUM URL_MARK
 
-/** URL hex escape. */ 
+/** URL hex escape. */
 #define URL_ESCAPED    "%"
 #define URL_DELIMS     "<>#%\""
 #define URL_UNWISE     "{}|\\^[]`"

@@ -29,11 +29,11 @@
 /**
  * @file sofia-sip/nta_tport.h
  * @brief Transport and SigComp handling
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Oct  7 20:04:39 2004 ppessi
- * 
+ *
  */
 
 #ifndef NTA_H

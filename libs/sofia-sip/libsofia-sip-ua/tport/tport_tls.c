@@ -24,7 +24,7 @@
 
 /**@CFILE tport_tls.c
  * @brief TLS interface
- * 
+ *
  * @author Mikko Haataja <ext-Mikko.A.Haataja@nokia.com>
  * @author Pekka Pessi <ext-Pekka.Pessi@nokia.com>
  *
@@ -112,7 +112,7 @@ void tls_log_errors(unsigned level, char const *s, unsigned long e)
       const char *func = ERR_func_error_string(e);
       const char *reason = ERR_reason_error_string(e);
 
-      su_llog(tport_log, level, "%s: %08lx:%s:%s:%s\n", 
+      su_llog(tport_log, level, "%s: %08lx:%s:%s:%s\n",
 	      s, e, error, func, reason);
     }
   }
@@ -165,7 +165,7 @@ int tls_verify_cb(int ok, X509_STORE_CTX *store)
     SU_DEBUG_1(("  subject  = %s\n", data));
     SU_DEBUG_1(("  err %i:%s\n", err, X509_verify_cert_error_string(err)));
   }
- 
+
   return 1;			/* Always return "ok" */
 }
 
@@ -182,7 +182,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     if (ti->randFile &&
 	!RAND_load_file(ti->randFile, 1024 * 1024)) {
       if (ti->configured > 1) {
-	SU_DEBUG_3(("%s: cannot open randFile %s\n", 
+	SU_DEBUG_3(("%s: cannot open randFile %s\n",
 		   "tls_init_context", ti->randFile));
 	tls_log_errors(3, "tls_init_context", 0);
       }
@@ -216,7 +216,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     return -1;
   }
 
-  if (!SSL_CTX_use_certificate_file(tls->ctx, 
+  if (!SSL_CTX_use_certificate_file(tls->ctx,
 				    ti->cert,
 				    SSL_FILETYPE_PEM)) {
     if (ti->configured > 0) {
@@ -230,8 +230,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     }
   }
 
-  if (!SSL_CTX_use_PrivateKey_file(tls->ctx, 
-                                   ti->key, 
+  if (!SSL_CTX_use_PrivateKey_file(tls->ctx,
+                                   ti->key,
                                    SSL_FILETYPE_PEM)) {
     if (ti->configured > 0) {
       tls_log_errors(1, "tls_init_context", 0);
@@ -253,8 +253,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 #endif
   }
 
-  if (!SSL_CTX_load_verify_locations(tls->ctx, 
-                                     ti->CAfile, 
+  if (!SSL_CTX_load_verify_locations(tls->ctx,
+                                     ti->CAfile,
                                      ti->CApath)) {
     if (ti->configured > 0)
       tls_log_errors(1, "tls_init_context", 0);
@@ -264,7 +264,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
   SSL_CTX_set_verify_depth(tls->ctx, ti->verify_depth);
 
-  SSL_CTX_set_verify(tls->ctx, 
+  SSL_CTX_set_verify(tls->ctx,
 		     getenv("SSL_VERIFY_PEER") ? SSL_VERIFY_PEER : SSL_VERIFY_NONE
 		     /* SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT */,
                      tls_verify_cb);
@@ -318,8 +318,8 @@ int tls_get_socket(tls_t *tls)
 
 tls_t *tls_init_master(tls_issues_t *ti)
 {
-  /* Default id in case RAND fails */ 
-  unsigned char sessionId[32] = "sofia/tls"; 
+  /* Default id in case RAND fails */
+  unsigned char sessionId[32] = "sofia/tls";
   tls_t *tls;
 
 #if HAVE_SIGPIPE
@@ -342,8 +342,8 @@ tls_t *tls_init_master(tls_issues_t *ti)
 
   SSL_CTX_set_session_id_context(tls->ctx,
                                  (void*) sessionId,
-				 sizeof(sessionId)); 
-  
+				 sizeof(sessionId));
+
   if (ti->CAfile != NULL)
     SSL_CTX_set_client_CA_list(tls->ctx,
                                SSL_load_client_CA_file(ti->CAfile));
@@ -379,7 +379,7 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
 
   assert(sock != -1);
 
-  tls->bio_con = BIO_new_socket(sock, BIO_NOCLOSE); 
+  tls->bio_con = BIO_new_socket(sock, BIO_NOCLOSE);
   tls->con = SSL_new(tls->ctx);
 
   if (tls->con == NULL) {
@@ -435,10 +435,10 @@ int tls_post_connection_check(tls_t *tls)
 
   if (!tls) return -1;
 
-  cert = SSL_get_peer_certificate(tls->con); 
+  cert = SSL_get_peer_certificate(tls->con);
   if (!cert)
     return X509_V_OK;
-  
+
   extcount = X509_get_ext_count(cert);
 
   for (k = 0; k < TLS_MAX_HOSTS && tls->hosts[k]; k++)
@@ -455,14 +455,14 @@ int tls_post_connection_check(tls_t *tls)
 
     ext = X509_get_ext(cert, i);
     name = OBJ_nid2sn(OBJ_obj2nid(X509_EXTENSION_get_object(ext)));
-    
+
     if (strcmp(name, "subjectAltName") != 0)
       continue;
-      
+
     vp = X509V3_EXT_get(ext); if (!vp) continue;
     d2i = X509V3_EXT_d2i(ext);
     values = vp->i2v(vp, d2i, NULL);
-    
+
     for (j = 0; j < sk_CONF_VALUE_num(values); j++) {
       value = sk_CONF_VALUE_value(values, j);
       if (strcmp(value->name, "DNS") == 0) {
@@ -480,18 +480,18 @@ int tls_post_connection_check(tls_t *tls)
       }
     }
   }
-   
+
   if (k < TLS_MAX_HOSTS) {
     X509_NAME *subject;
     char name[256];
 
     subject = X509_get_subject_name(cert);
     if (subject) {
-      if (X509_NAME_get_text_by_NID(subject, NID_commonName, 
+      if (X509_NAME_get_text_by_NID(subject, NID_commonName,
 				    name, sizeof name) > 0) {
 	name[(sizeof name) - 1] = '\0';
 
-	for (i = 0; tls->hosts[i]; i++) 
+	for (i = 0; tls->hosts[i]; i++)
 	  if (strcasecmp(tls->hosts[i], name) == 0)
 	    break;
 
@@ -507,7 +507,7 @@ int tls_post_connection_check(tls_t *tls)
 
   if (error == X509_V_OK)
     tls->verified = 1;
-  
+
   return error;
 }
 
@@ -518,7 +518,7 @@ int tls_check_hosts(tls_t *tls, char const *hosts[TLS_MAX_HOSTS])
   if (tls == NULL) { errno = EINVAL; return -1; }
   if (!tls->verified) { errno = EAGAIN; return -1; }
 
-  if (!hosts) 
+  if (!hosts)
     return 0;
 
   for (i = 0; hosts[i]; i++) {
@@ -531,7 +531,7 @@ int tls_check_hosts(tls_t *tls, char const *hosts[TLS_MAX_HOSTS])
       return -1;
     }
   }
-  
+
   return 0;
 }
 
@@ -605,12 +605,12 @@ ssize_t tls_read(tls_t *tls)
   if (!tls->verified) {
     int err = tls_post_connection_check(tls);
 
-    if (err != X509_V_OK && 
+    if (err != X509_V_OK &&
 	err != SSL_ERROR_SYSCALL &&
 	err != SSL_ERROR_WANT_WRITE &&
 	err != SSL_ERROR_WANT_READ) {
       SU_DEBUG_1((
-		 "%s: server certificate doesn't verify\n", 
+		 "%s: server certificate doesn't verify\n",
 		 "tls_read"));
     }
   }
@@ -632,11 +632,11 @@ int tls_pending(tls_t const *tls)
 
 /** Check if data is available in TCP connection.
  *
- * 
+ *
  *
  * @retval -1 upon an error
  * @retval 0 end-of-stream
- * @retval 1 nothing to read 
+ * @retval 1 nothing to read
  * @retval 2 there is data to read
  */
 int tls_want_read(tls_t *tls, int events)
@@ -660,8 +660,8 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
 {
   ssize_t ret;
 
-  if (0) 
-    SU_DEBUG_1(("tls_write(%p, %p, "MOD_ZU") called on %s\n", 
+  if (0)
+    SU_DEBUG_1(("tls_write(%p, %p, "MOD_ZU") called on %s\n",
 	    (void *)tls, buf, size,
 	    tls && tls->type == tls_slave ? "server" : "client"));
 
@@ -676,9 +676,9 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
     assert(tls->write_events == 0);
 
     if (tls->write_events ||
-	buf != tls->write_buffer || 
+	buf != tls->write_buffer ||
 	size < tls->write_buffer_len) {
-      errno = EIO;		
+      errno = EIO;
       return -1;
     }
 
@@ -743,9 +743,9 @@ int tls_events(tls_t const *tls, int mask)
 
   if (tls->type == tls_master)
     return mask;
-  
+
   return
     (mask & ~(SU_WAIT_IN|SU_WAIT_OUT)) |
-    ((mask & SU_WAIT_IN) ? tls->read_events : 0) | 
+    ((mask & SU_WAIT_IN) ? tls->read_events : 0) |
     ((mask & SU_WAIT_OUT) ? tls->write_events : 0);
 }

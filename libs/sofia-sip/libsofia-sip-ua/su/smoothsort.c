@@ -24,7 +24,7 @@
 
 /**@file smoothsort.c
  * @brief Smoothsort implementation
- * 
+ *
  * Smoothsort is a in-place sorting algorithm with performance of O(NlogN)
  * in worst case and O(n) in best case.
  *
@@ -60,7 +60,7 @@ static inline size_t stretch_up(stretch s[1])
   size_t next;
 
   s->p >>= 1;
-  
+
   next = s->b + s->c + 1, s->c = s->b, s->b = next;
 
   return next;
@@ -87,8 +87,8 @@ static char const *binary(unsigned long long p)
     return "0";
 
   binary[64] = 0;
-  
-  for (i = 64; p; p >>= 1) 
+
+  for (i = 64; p; p >>= 1)
     binary[--i] = "01"[p & 1];
 
   return binary + i;
@@ -107,7 +107,7 @@ static char const *binary(unsigned long long p)
  * @param s       description of current stretch
  */
 static void sift(array const *array, size_t r, stretch s)
-{ 
+{
   while (s.b >= 3) {
     size_t r2 = r - s.b + s.c;
 
@@ -115,7 +115,7 @@ static void sift(array const *array, size_t r, stretch s)
       r2 = r - 1;
       stretch_down(&s, 0);
     }
- 
+
     if (array->less(array->m, r2, r))
       break;
 
@@ -125,8 +125,8 @@ static void sift(array const *array, size_t r, stretch s)
 
     stretch_down(&s, 0);
   }
-} 
- 
+}
+
 /** Trinkle the roots of the given stretches
  *
  * @param array   description of array to sort
@@ -160,12 +160,12 @@ static void trinkle(array const *array, size_t r, stretch s)
     }
 
     r2 = r - s.b + s.c;
- 
+
     if (array->less(array->m, r2, r - 1)) {
       r2 = r - 1;
       stretch_down(&s, 0);
     }
- 
+
     if (array->less(array->m, r2, r3)) {
       DEBUG(("swap(%p [%zu]=[%zu])\n", array, r, r3));
       array->swap(array->m, r, r3); r = r3;
@@ -175,9 +175,9 @@ static void trinkle(array const *array, size_t r, stretch s)
     DEBUG(("\tswap(%p @%zu <=> @%zu b=%u)\n", array, r, r2, s.b));
     array->swap(array->m, r, r2); r = r2;
     stretch_down(&s, 0);
-    break; 
+    break;
   }
- 
+
   sift(array, r, s);
 }
 
@@ -198,7 +198,7 @@ static void semitrinkle(array const *array, size_t r, stretch s)
     array->swap(array->m, r, r1);
     trinkle(array, r1, s);
   }
-} 
+}
 
 /** Sort array using smoothsort.
  *
@@ -251,10 +251,10 @@ void su_smoothsort(void *base, size_t r, size_t N,
     DEBUG(("loop1 q=%zu: b=%u p=%s\n", q, s.b, binary(s.p)));
 
     if (s.b <= 1) {
-      while ((s.p & 1) == 0) 
+      while ((s.p & 1) == 0)
 	stretch_up(&s);
       --r;
-    } 
+    }
     else /* if b >= 3 */ {
       if (s.p) semitrinkle(array, r - (s.b - s.c), s);
       stretch_down(&s, 1);

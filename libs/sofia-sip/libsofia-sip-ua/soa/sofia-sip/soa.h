@@ -62,20 +62,20 @@ SOFIAPUBFUN void soa_destroy(soa_session_t *);
 
 SOFIAPUBFUN int soa_set_params(soa_session_t *ss,
 			       tag_type_t tag, tag_value_t value, ...);
-SOFIAPUBFUN int soa_get_params(soa_session_t const *ss, 
+SOFIAPUBFUN int soa_get_params(soa_session_t const *ss,
 			       tag_type_t tag, tag_value_t value, ...);
 
 SOFIAPUBFUN tagi_t *soa_get_paramlist(soa_session_t const *ss,
 				      tag_type_t tag, tag_value_t value, ...);
 
-SOFIAPUBFUN int soa_error_as_sip_response(soa_session_t *soa, 
+SOFIAPUBFUN int soa_error_as_sip_response(soa_session_t *soa,
 					  char const **return_phrase);
 
 SOFIAPUBFUN char const *soa_error_as_sip_reason(soa_session_t *soa);
 
 SOFIAPUBFUN int soa_get_warning(soa_session_t *ss, char const **return_phrase);
 
-SOFIAPUBFUN int soa_set_capability_sdp(soa_session_t *ss, 
+SOFIAPUBFUN int soa_set_capability_sdp(soa_session_t *ss,
 				       struct sdp_session_s const *sdp,
 				       char const *str, issize_t len);
 
@@ -84,7 +84,7 @@ SOFIAPUBFUN int soa_get_capability_sdp(soa_session_t const *ss,
 				       char const **return_sdp_str,
 				       isize_t *return_len);
 
-SOFIAPUBFUN int soa_set_remote_sdp(soa_session_t *ss, 
+SOFIAPUBFUN int soa_set_remote_sdp(soa_session_t *ss,
 				   struct sdp_session_s const *sdp,
 				   char const *str, issize_t len);
 
@@ -97,7 +97,7 @@ SOFIAPUBFUN int soa_clear_remote_sdp(soa_session_t *ss);
 
 SOFIAPUBFUN int soa_get_remote_version(soa_session_t const *ss);
 
-SOFIAPUBFUN int soa_set_user_sdp(soa_session_t *ss, 
+SOFIAPUBFUN int soa_set_user_sdp(soa_session_t *ss,
 				 struct sdp_session_s const *sdp,
 				 char const *str, issize_t len);
 

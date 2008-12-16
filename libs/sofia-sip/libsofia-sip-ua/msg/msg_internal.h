@@ -24,10 +24,10 @@
 
 #ifndef MSG_INTERNAL_H
 /** Defined when <msg_internal.h> has been included. */
-#define MSG_INTERNAL_H 
+#define MSG_INTERNAL_H
 
-/**@IFILE msg_internal.h 
- * @brief Abstract messages - internal interface 
+/**@IFILE msg_internal.h
+ * @brief Abstract messages - internal interface
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
@@ -131,7 +131,7 @@ su_inline int msg_is_prepend(msg_header_t const *h)
 
 su_inline int msg_is_append(msg_header_t const *h)
 {
-  return 
+  return
     h->sh_class->hc_kind == msg_kind_append ||
     h->sh_class->hc_kind == msg_kind_apndlist;
 }

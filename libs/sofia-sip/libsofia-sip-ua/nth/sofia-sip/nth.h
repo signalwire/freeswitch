@@ -31,10 +31,10 @@
  */
 
 /* ----------------------------------------------------------------------
- * 1) Types 
+ * 1) Types
  */
 
-#ifndef NTH_H_TYPES 
+#ifndef NTH_H_TYPES
 #define NTH_H_TYPES
 
 /** NTH engine */
@@ -74,7 +74,7 @@ typedef NTH_SITE_MAGIC_T   nth_site_magic_t;
 #define NTH_H
 
 /* ----------------------------------------------------------------------
- * 2) Constants 
+ * 2) Constants
  */
 
 /** Version number */
@@ -108,11 +108,11 @@ NTH_DLL nth_engine_t *nth_engine_create(su_root_t *root,
 					tag_type_t tag, tag_value_t value, ...);
 NTH_DLL void nth_engine_destroy(nth_engine_t *engine);
 
-NTH_DLL int nth_engine_set_params(nth_engine_t *engine, 
+NTH_DLL int nth_engine_set_params(nth_engine_t *engine,
 				  tag_type_t tag, tag_value_t value, ...);
-NTH_DLL int nth_engine_get_params(nth_engine_t const *engine, 
+NTH_DLL int nth_engine_get_params(nth_engine_t const *engine,
 				  tag_type_t tag, tag_value_t value, ...);
-NTH_DLL int nth_engine_get_stats(nth_engine_t const *engine, 
+NTH_DLL int nth_engine_get_stats(nth_engine_t const *engine,
 				 tag_type_t tag, tag_value_t value, ...);
 
 NTH_DLL msg_t *nth_engine_msg_create(nth_engine_t *he, int flags);
@@ -147,15 +147,15 @@ NTH_DLL void nth_client_destroy(nth_client_t *clnt);
  * 5) Server side prototypes
  */
 
-typedef int nth_request_f(nth_site_magic_t *lmagic, 
+typedef int nth_request_f(nth_site_magic_t *lmagic,
 			  nth_site_t *server,
-			  nth_request_t *req, 
+			  nth_request_t *req,
 			  http_t const *http,
 			  char const *path);
 
 char const *nth_site_server_version(void);
 
-NTH_DLL nth_site_t *nth_site_create(nth_site_t *parent,  
+NTH_DLL nth_site_t *nth_site_create(nth_site_t *parent,
 				    nth_request_f *req_callback,
 				    nth_site_magic_t *magic,
 				    url_string_t const *address,
@@ -166,13 +166,13 @@ NTH_DLL void nth_site_destroy(nth_site_t *site);
 
 NTH_DLL nth_site_magic_t *nth_site_magic(nth_site_t const *site);
 
-NTH_DLL void nth_site_bind(nth_site_t *site, 
-			   nth_request_f *callback, 
+NTH_DLL void nth_site_bind(nth_site_t *site,
+			   nth_request_f *callback,
 			   nth_site_magic_t *);
 
 NTH_DLL su_time_t nth_site_access_time(nth_site_t const *site);
 
-NTH_DLL int nth_site_set_params(nth_site_t *site, 
+NTH_DLL int nth_site_set_params(nth_site_t *site,
 				tag_type_t tag, tag_value_t value, ...);
 NTH_DLL int nth_site_get_params(nth_site_t const *site,
 				tag_type_t tag, tag_value_t value, ...);
@@ -182,15 +182,15 @@ NTH_DLL int nth_site_get_stats(nth_site_t const *site,
 NTH_DLL url_t const *nth_site_url(nth_site_t const *site);
 
 /* ----------------------------------------------------------------------
- * 6) Prototypes for server transactions 
+ * 6) Prototypes for server transactions
  */
 
 NTH_DLL int nth_request_status(nth_request_t const *req);
 NTH_DLL http_method_t nth_request_method(nth_request_t const *req);
 NTH_DLL msg_t *nth_request_message(nth_request_t *req);
 
-NTH_DLL int nth_request_treply(nth_request_t *ireq, 
-			       int status, char const *phrase, 
+NTH_DLL int nth_request_treply(nth_request_t *ireq,
+			       int status, char const *phrase,
 			       tag_type_t tag, tag_value_t value, ...);
 
 NTH_DLL void nth_request_destroy(nth_request_t *req);

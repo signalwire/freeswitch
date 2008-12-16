@@ -38,7 +38,7 @@
  */
 
 /** @ingroup su_md5
- * 
+ *
  * @CFILE su_md5.c MD5 Implementation
  *
  * To compute the message digest of a chunk of bytes, declare an su_md5_t
@@ -58,7 +58,7 @@
  * @note Regarding su_* namespace: this avoids potential conflicts
  * with libraries such as some versions of Kerberos.  No particular
  * need to worry about whether the system supplies an MD5 library, as
- * this file is only about 3k of object code. 
+ * this file is only about 3k of object code.
  *
  */
 
@@ -93,7 +93,7 @@ static void putu32(uint32_t data, unsigned char *addr)
  *
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
- * 
+ *
  * @param ctx Pointer to context structure.
  */
 void
@@ -103,7 +103,7 @@ su_md5_init(su_md5_t *ctx)
   ctx->buf[1] = 0xefcdab89;
   ctx->buf[2] = 0x98badcfe;
   ctx->buf[3] = 0x10325476;
-  
+
   ctx->bits[0] = 0;
   ctx->bits[1] = 0;
 }
@@ -111,7 +111,7 @@ su_md5_init(su_md5_t *ctx)
 /** Clear MD5 context.
  *
  * The function su_md5_deinit() clears MD5 context.
- * 
+ *
  * @param context  Pointer to MD5 context structure.
  */
 void su_md5_deinit(su_md5_t *context)
@@ -142,14 +142,14 @@ su_md5_update(su_md5_t *ctx,
   if ((ctx->bits[0] = (t + ((uint32_t)len << 3)) & 0xffffffff) < t)
     ctx->bits[1]++;	/* Carry from low to high */
   ctx->bits[1] += (uint32_t)(len >> 29);
-  
+
   t = (t >> 3) & 0x3f;	/* Bytes already in shsInfo->data */
-  
+
   /* Handle any leading odd-sized chunks */
-  
+
   if ( t ) {
     unsigned char *p = ctx->in + t;
-    
+
     t = 64 - t;
 
     if (len < t) {
@@ -162,9 +162,9 @@ su_md5_update(su_md5_t *ctx,
     buf += t;
     len -= t;
   }
-  
+
   /* Process data in 64-byte chunks */
-  
+
   while (len >= 64) {
     su_md5_transform(ctx->buf, buf);
     buf += 64;
@@ -176,7 +176,7 @@ su_md5_update(su_md5_t *ctx,
 }
 
 /** Copy memory, fix case to lower. */
-static 
+static
 void mem_i_cpy(unsigned char *d, unsigned char const *s, size_t len)
 {
   size_t i;
@@ -211,14 +211,14 @@ su_md5_iupdate(su_md5_t *ctx,
   if ((ctx->bits[0] = (t + ((uint32_t)len << 3)) & 0xffffffff) < t)
     ctx->bits[1]++;	/* Carry from low to high */
   ctx->bits[1] += (uint32_t)(len >> 29);
-  
+
   t = (t >> 3) & 0x3f;	/* Bytes already in shsInfo->data */
-  
+
   /* Handle any leading odd-sized chunks */
-  
+
   if ( t ) {
     unsigned char *p = ctx->in + t;
-    
+
     t = sizeof(ctx->in) - t;
 
     if (len < t) {
@@ -230,7 +230,7 @@ su_md5_iupdate(su_md5_t *ctx,
     buf += t;
     len -= t;
   }
-  
+
   /* Process data in 64-byte chunks */
   while (len >= sizeof(ctx->in)) {
     mem_i_cpy(ctx->in, buf, sizeof(ctx->in));
@@ -253,7 +253,7 @@ su_md5_iupdate(su_md5_t *ctx,
  */
 void su_md5_strupdate(su_md5_t *ctx, char const *s)
 {
-  if (s) 
+  if (s)
     su_md5_update(ctx, s, strlen(s));
 }
 
@@ -267,7 +267,7 @@ void su_md5_strupdate(su_md5_t *ctx, char const *s)
  */
 void su_md5_str0update(su_md5_t *ctx, char const *s)
 {
-  if (!s) 
+  if (!s)
     s = "";
 
   su_md5_update(ctx, s, strlen(s) + 1);
@@ -283,7 +283,7 @@ void su_md5_str0update(su_md5_t *ctx, char const *s)
  */
 void su_md5_striupdate(su_md5_t *ctx, char const *s)
 {
-  if (s) 
+  if (s)
     su_md5_iupdate(ctx, s, strlen(s));
 }
 
@@ -298,7 +298,7 @@ void su_md5_striupdate(su_md5_t *ctx, char const *s)
  */
 void su_md5_stri0update(su_md5_t *ctx, char const *s)
 {
-  if (!s) 
+  if (!s)
     s = "";
 
   su_md5_iupdate(ctx, s, strlen(s) + 1);
@@ -323,35 +323,35 @@ su_md5_digest(su_md5_t const *context, uint8_t digest[16])
   su_md5_t ctx[1];
 
   ctx[0] = context[0];
-  
+
   /* Compute number of bytes mod 64 */
   count = (ctx->bits[0] >> 3) & 0x3F;
-  
+
   /* Set the first char of padding to 0x80.  This is safe since there is
      always at least one byte free */
   p = ctx->in + count;
   *p++ = 0x80;
-  
+
   /* Bytes of padding needed to make 64 bytes */
   count = 64 - 1 - count;
-  
+
   /* Pad out to 56 mod 64 */
   if (count < 8) {
     /* Two lots of padding:  Pad the first block to 64 bytes */
     memset(p, 0, count);
     su_md5_transform (ctx->buf, ctx->in);
-    
+
     /* Now fill the next block with 56 bytes */
     memset(ctx->in, 0, 56);
   } else {
     /* Pad block to 56 bytes */
     memset(p, 0, count-8);
   }
-  
+
   /* Append length in bits and transform */
   putu32(ctx->bits[0], ctx->in + 56);
   putu32(ctx->bits[1], ctx->in + 60);
-  
+
   su_md5_transform(ctx->buf, ctx->in);
   putu32(ctx->buf[0], digest);
   putu32(ctx->buf[1], digest + 4);

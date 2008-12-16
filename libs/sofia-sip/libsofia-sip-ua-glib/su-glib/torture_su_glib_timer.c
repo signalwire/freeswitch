@@ -23,7 +23,7 @@
  */
 
 /**
- * @brief Test program for su-glib timers 
+ * @brief Test program for su-glib timers
  *
  * Based on torture_su_timer.c of libsofia-sip-ua.
  *
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
   su_init(); atexit(su_deinit);
 
   tester->root = root = su_glib_root_create(tester);
-  
+
   source = su_root_gsource(tester->root);
   g_source_attach(source, NULL /*g_main_context_default ()*/);
 

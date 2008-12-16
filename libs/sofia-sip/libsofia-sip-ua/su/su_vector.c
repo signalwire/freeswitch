@@ -37,7 +37,7 @@
  * The vectors are resizeable unidimensional arrays.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Fri Sep 27 14:43:29 2002 ppessi
  */
 
@@ -66,7 +66,7 @@ struct su_vector_s
   void              **v_list;
 };
 
-/** Create a vector. 
+/** Create a vector.
  *
  * The function su_vector_create() creates a pointer vector object. The
  * vector is initially empty. The function clones a memory home for the
@@ -126,19 +126,19 @@ static int su_vector_make_place(su_vector_t *vector, usize_t index)
 	return 0;
 
       memcpy(list, vector->v_list, index * sizeof(vector->v_list[0]));
-      memcpy(list + index + 1, vector->v_list + index, 
+      memcpy(list + index + 1, vector->v_list + index,
 	     (vector->v_len - index) * sizeof(vector->v_list[0]));
 
       if (vector->v_list != (void **)(vector + 1)) {
 	su_free(vector->v_home, vector->v_list);
       }
     }
-    
+
     vector->v_list = list;
     vector->v_size *= 2;
   }
   else {
-    memmove(vector->v_list + index + 1, vector->v_list + index, 
+    memmove(vector->v_list + index + 1, vector->v_list + index,
 	    (vector->v_len - index) * sizeof(vector->v_list[0]));
   }
 
@@ -147,7 +147,7 @@ static int su_vector_make_place(su_vector_t *vector, usize_t index)
   return 1;
 }
 
-/**Insert an item to vector. 
+/**Insert an item to vector.
  *
  * The function su_vector_insert() inserts an @a item to the @a vector.
  * The items after the @a index will be moved further within the vector.
@@ -161,7 +161,7 @@ static int su_vector_make_place(su_vector_t *vector, usize_t index)
  */
 int su_vector_insert(su_vector_t *vector, usize_t index, void *item)
 {
-  if (vector && 
+  if (vector &&
       index <= vector->v_len &&
       su_vector_make_place(vector, index) > 0) {
     vector->v_list[index] = item;
@@ -170,7 +170,7 @@ int su_vector_insert(su_vector_t *vector, usize_t index, void *item)
   return -1;
 }
 
-/**Remove an item from vector. 
+/**Remove an item from vector.
  *
  * The function su_vector_remove() removes an item from the @a vector.
  * The items after the @a index will be moved backwards within the vector.
@@ -186,8 +186,8 @@ int su_vector_remove(su_vector_t *vector, usize_t index)
   if (vector && index < vector->v_len) {
     if (vector->v_free_func)
         (vector->v_free_func)(vector->v_list[index]);
-    
-    memmove(vector->v_list + index, 
+
+    memmove(vector->v_list + index,
             vector->v_list + index + 1,
             (vector->v_len - index - 1) * sizeof(vector->v_list[0]));
     vector->v_len--;
@@ -197,7 +197,7 @@ int su_vector_remove(su_vector_t *vector, usize_t index)
   return -1;
 }
 
-/**Remove all items from vector. 
+/**Remove all items from vector.
  *
  * The function su_vector_empty() removes all items from the @a vector.
  *
@@ -224,7 +224,7 @@ int su_vector_empty(su_vector_t *vector)
   return -1;
 }
 
-/**Append an item to vector. 
+/**Append an item to vector.
  *
  * The function su_vector_append() appends an @a item to the @a vector.
  *
@@ -250,11 +250,11 @@ int su_vector_append(su_vector_t *vector, void *item)
   return 0;
 }
 
-/**Get a numbered item from list. 
+/**Get a numbered item from list.
  *
  * The function su_vector_item() returns a numbered item from vector. The
  * numbering starts from 0.
- * 
+ *
  * @param vector  pointer to a vector object
  * @param i     index
  *
@@ -269,9 +269,9 @@ void *su_vector_item(su_vector_t const *vector, usize_t i)
     return NULL;
 }
 
-/** Get number of items in list. 
+/** Get number of items in list.
  *
- * The function su_vector_len() returns the number of items in the 
+ * The function su_vector_len() returns the number of items in the
  * vector.
  */
 usize_t su_vector_len(su_vector_t const *l)
@@ -284,12 +284,12 @@ int su_vector_is_empty(su_vector_t const *vector)
   return su_vector_len(vector) == 0;
 }
 
-/**Get a pointer array from list. 
+/**Get a pointer array from list.
  *
  * The function su_vector_get_array() returns an array of pointer. The
  * length of the array is always one longer than the length of the vector,
  * and the last item in the returned array is always NULL.
- * 
+ *
  * @param vector  pointer to a vector object
  *
  * @return
@@ -302,7 +302,7 @@ void **su_vector_get_array(su_vector_t *vector)
     size_t newsize = sizeof(retval[0]) * (vector->v_len + 1);
 
     retval = su_alloc(vector->v_home, newsize);
-    
+
     if (retval) {
       retval[vector->v_len] = NULL;
       return memcpy(retval, vector->v_list, sizeof(retval[0]) * vector->v_len);
@@ -312,11 +312,11 @@ void **su_vector_get_array(su_vector_t *vector)
   return NULL;
 }
 
-/**Free a string array. 
+/**Free a string array.
  *
  * The function su_vector_free_array() discards a string array allocated
  * with su_vector_get_array().
- * 
+ *
  * @param vector  pointer to a vector object
  * @param array  string array to be freed
  *

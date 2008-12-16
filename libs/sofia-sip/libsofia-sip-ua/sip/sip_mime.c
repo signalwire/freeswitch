@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE sip_mime.c 
+/**@CFILE sip_mime.c
  *
  * MIME-related SIP headers
  *
@@ -54,7 +54,7 @@
  * The @b Accept request-header field can be used to specify certain media
  * types which are acceptable for the response. Its syntax is defined in
  * [H14.1, S10.6] as follows:
- * 
+ *
  * @code
  *    Accept         =  "Accept" HCOLON
  *                       [ accept-range *(COMMA accept-range) ]
@@ -97,7 +97,7 @@
 #define sip_accept_dup_one  msg_accept_dup_one
 #define sip_accept_update   msg_accept_update
 
-msg_hclass_t sip_accept_class[] = 
+msg_hclass_t sip_accept_class[] =
 SIP_HEADER_CLASS(accept, "Accept", "", ac_params, apndlist, accept);
 
 issize_t sip_accept_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -118,9 +118,9 @@ issize_t sip_accept_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
  * The Accept-Disposition header field is used to indicate what content
  * disposition types are acceptable to a client or server.  Its syntax is
  * defined in draft-lennox-sip-reg-payload-01.txt section 3.2 as follows:
- * 
+ *
  * @code
- *    Accept-Disposition = "Accept-Disposition" ":" 
+ *    Accept-Disposition = "Accept-Disposition" ":"
  *                         #( (disposition-type | "*") *( ";" generic-param ) )
  * @endcode
  *
@@ -129,8 +129,8 @@ issize_t sip_accept_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
  * is stored in #sip_accept_disposition_t structure.
  */
 
-msg_hclass_t sip_accept_disposition_class[] = 
-SIP_HEADER_CLASS(accept_disposition, "Accept-Disposition", "", 
+msg_hclass_t sip_accept_disposition_class[] =
+SIP_HEADER_CLASS(accept_disposition, "Accept-Disposition", "",
 		 ad_params, apndlist, accept_disposition);
 
 issize_t sip_accept_disposition_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -163,7 +163,7 @@ issize_t sip_accept_disposition_e(char b[], isize_t bsiz, sip_header_t const *h,
   MSG_STRING_E(b, end, ad->ad_type);
   MSG_PARAMS_E(b, end, ad->ad_params, flags);
   MSG_TERM_E(b, end);
-    
+
   return b - b0;
 }
 #endif
@@ -175,7 +175,7 @@ issize_t sip_accept_disposition_e(char b[], isize_t bsiz, sip_header_t const *h,
  * The Accept-Encoding header is similar to Accept, but restricts the
  * content-codings that are acceptable in the response.  Its syntax is
  * defined in [H14.3, S10.7] as follows:
- * 
+ *
  * @code
  *    Accept-Encoding  =  "Accept-Encoding" HCOLON
  *                         [ encoding *(COMMA encoding) ]
@@ -202,7 +202,7 @@ issize_t sip_accept_disposition_e(char b[], isize_t bsiz, sip_header_t const *h,
  *   sip_accept_encoding_t *aa_next;   // Pointer to next @AcceptEncoding header
  *   char const            *aa_value;  // Encoding token
  *   msg_param_t const     *aa_params; // List of parameters
- *   char const            *aa_q;      // Value of q parameter 
+ *   char const            *aa_q;      // Value of q parameter
  * } sip_accept_encoding_t;
  * @endcode
  */
@@ -211,8 +211,8 @@ issize_t sip_accept_disposition_e(char b[], isize_t bsiz, sip_header_t const *h,
 #define sip_accept_encoding_dup_one  msg_accept_any_dup_one
 #define sip_accept_encoding_update   msg_accept_any_update
 
-msg_hclass_t sip_accept_encoding_class[] = 
-SIP_HEADER_CLASS(accept_encoding, "Accept-Encoding", "", 
+msg_hclass_t sip_accept_encoding_class[] =
+SIP_HEADER_CLASS(accept_encoding, "Accept-Encoding", "",
 		 aa_params, apndlist, accept_encoding);
 
 issize_t sip_accept_encoding_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -242,7 +242,7 @@ issize_t sip_accept_encoding_e(char b[], isize_t bsiz, sip_header_t const *h, in
  * the server in which language it would prefer to receive reason phrases,
  * session descriptions or status responses carried as message bodies.  Its
  * syntax is defined in [H14.4, S10.8] as follows:
- * 
+ *
  * @code
  *    Accept-Language  =  "Accept-Language" HCOLON
  *                         [ language *(COMMA language) ]
@@ -268,7 +268,7 @@ issize_t sip_accept_encoding_e(char b[], isize_t bsiz, sip_header_t const *h, in
  *   sip_accept_language_t *aa_next;   // Pointer to next <language>
  *   char const            *aa_value;  // Language-range
  *   msg_param_t const     *aa_params; // List of accept-parameters
- *   char const            *aa_q;      // Value of q parameter 
+ *   char const            *aa_q;      // Value of q parameter
  * } sip_accept_language_t;
  * @endcode
  */
@@ -277,8 +277,8 @@ issize_t sip_accept_encoding_e(char b[], isize_t bsiz, sip_header_t const *h, in
 #define sip_accept_language_dup_one  msg_accept_any_dup_one
 #define sip_accept_language_update   msg_accept_any_update
 
-msg_hclass_t sip_accept_language_class[] = 
-SIP_HEADER_CLASS(accept_language, "Accept-Language", "", 
+msg_hclass_t sip_accept_language_class[] =
+SIP_HEADER_CLASS(accept_language, "Accept-Language", "",
 		 aa_params, apndlist, accept_language);
 
 issize_t sip_accept_language_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -307,7 +307,7 @@ issize_t sip_accept_language_e(char b[], isize_t bsiz, sip_header_t const *h, in
  * in the case of multipart messages, a message body part is to be
  * interpreted by the UAC or UAS.  Its syntax is defined in @RFC3261
  * as follows:
- * 
+ *
  * @code
  *    Content-Disposition   =  "Content-Disposition" HCOLON
  *                             disp-type *( SEMI disp-param )
@@ -320,7 +320,7 @@ issize_t sip_accept_language_e(char b[], isize_t bsiz, sip_header_t const *h, in
  *    other-handling        =  token
  *    disp-extension-token  =  token
  * @endcode
- * 
+ *
  * The Content-Disposition header was extended by
  * draft-lennox-sip-reg-payload-01.txt section 3.1 as follows:
  *
@@ -342,7 +342,7 @@ issize_t sip_accept_language_e(char b[], isize_t bsiz, sip_header_t const *h, in
  */
 
 /**@ingroup sip_content_disposition
- * @typedef struct msg_content_disposition_s sip_content_disposition_t; 
+ * @typedef struct msg_content_disposition_s sip_content_disposition_t;
  *
  * The structure #sip_content_disposition_t contains representation of an
  * @ContentDisposition header.
@@ -366,11 +366,11 @@ static msg_xtra_f sip_content_disposition_dup_xtra;
 static msg_dup_f sip_content_disposition_dup_one;
 #define sip_content_disposition_update msg_content_disposition_update
 
-msg_hclass_t sip_content_disposition_class[] = 
+msg_hclass_t sip_content_disposition_class[] =
 SIP_HEADER_CLASS(content_disposition, "Content-Disposition", "", cd_params,
 		 single, content_disposition);
 
-issize_t sip_content_disposition_d(su_home_t *home, sip_header_t *h, 
+issize_t sip_content_disposition_d(su_home_t *home, sip_header_t *h,
 				   char *s, isize_t slen)
 {
   return msg_content_disposition_d(home, h, s, slen);
@@ -388,9 +388,9 @@ isize_t sip_content_disposition_dup_xtra(sip_header_t const *h, isize_t offset)
   return msg_content_disposition_dup_xtra(h, offset);
 }
 
-/** Duplicate one #sip_content_disposition_t object */ 
+/** Duplicate one #sip_content_disposition_t object */
 static
-char *sip_content_disposition_dup_one(sip_header_t *dst, 
+char *sip_content_disposition_dup_one(sip_header_t *dst,
 				      sip_header_t const *src,
 				      char *b, isize_t xtra)
 {
@@ -405,7 +405,7 @@ char *sip_content_disposition_dup_one(sip_header_t *dst,
  * The Content-Encoding header indicates what additional content codings
  * have been applied to the entity-body.  Its syntax is defined in @RFC3261
  * as follows:
- * 
+ *
  * @code
  * Content-Encoding  =  ( "Content-Encoding" / "e" ) HCOLON
  *                      content-coding *(COMMA content-coding)
@@ -417,7 +417,7 @@ char *sip_content_disposition_dup_one(sip_header_t *dst,
  */
 
 /**@ingroup sip_content_encoding
- * @typedef struct msg_list_s sip_content_encoding_t; 
+ * @typedef struct msg_list_s sip_content_encoding_t;
  *
  * The structure #sip_content_encoding_t contains representation of an
  * @ContentEncoding header.
@@ -433,7 +433,7 @@ char *sip_content_disposition_dup_one(sip_header_t *dst,
  * @endcode
  */
 
-msg_hclass_t sip_content_encoding_class[] = 
+msg_hclass_t sip_content_encoding_class[] =
 SIP_HEADER_CLASS_LIST(content_encoding, "Content-Encoding", "e", list);
 
 issize_t sip_content_encoding_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -454,7 +454,7 @@ issize_t sip_content_encoding_e(char b[], isize_t bsiz, sip_header_t const *h, i
  * the intended audience for the enclosed entity. Note that this might not
  * be equivalent to all the languages used within the entity-body. Its
  * syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Content-Language  =  "Content-Language" HCOLON
  *                         language-tag *(COMMA language-tag)
@@ -483,7 +483,7 @@ issize_t sip_content_encoding_e(char b[], isize_t bsiz, sip_header_t const *h, i
  * @endcode
  */
 
-msg_hclass_t sip_content_language_class[] = 
+msg_hclass_t sip_content_language_class[] =
 SIP_HEADER_CLASS_LIST(content_language, "Content-Language", "", list);
 
 issize_t sip_content_language_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -503,7 +503,7 @@ issize_t sip_content_language_e(char b[], isize_t bsiz, sip_header_t const *h, i
  * The Content-Type header indicates the media type of the message-body sent
  * to the recipient.  Its syntax is defined in [H3.7, S] as
  * follows:
- * 
+ *
  * @code
  * Content-Type     =  ( "Content-Type" / "c" ) HCOLON media-type
  * media-type       =  m-type SLASH m-subtype *(SEMI m-parameter)
@@ -548,8 +548,8 @@ static msg_xtra_f sip_content_type_dup_xtra;
 static msg_dup_f sip_content_type_dup_one;
 #define sip_content_type_update NULL
 
-msg_hclass_t sip_content_type_class[] = 
-SIP_HEADER_CLASS(content_type, "Content-Type", "c", c_params, 
+msg_hclass_t sip_content_type_class[] =
+SIP_HEADER_CLASS(content_type, "Content-Type", "c", c_params,
 		 single, content_type);
 
 issize_t sip_content_type_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -568,7 +568,7 @@ isize_t sip_content_type_dup_xtra(sip_header_t const *h, isize_t offset)
   return msg_content_type_dup_xtra((msg_header_t *)h, offset);
 }
 
-/** Duplicate one #sip_content_type_t object */ 
+/** Duplicate one #sip_content_type_t object */
 static
 char *sip_content_type_dup_one(sip_header_t *dst, sip_header_t const *src,
 			       char *b, isize_t xtra)
@@ -585,7 +585,7 @@ char *sip_content_type_dup_one(sip_header_t *dst, sip_header_t const *src,
  * MIME-Version header indicates what version of the MIME protocol was used
  * to construct the message.  Its syntax is defined in [H19.4.1, S10.28]
  * as follows:
- * 
+ *
  * @code
  *    MIME-Version  =  "MIME-Version" HCOLON 1*DIGIT "." 1*DIGIT
  * @endcode
@@ -594,7 +594,7 @@ char *sip_content_type_dup_one(sip_header_t *dst, sip_header_t const *src,
  */
 
 /**@ingroup sip_mime_version
- * @typedef struct msg_generic_s sip_mime_version_t; 
+ * @typedef struct msg_generic_s sip_mime_version_t;
  *
  * The structure #sip_mime_version_t contains representation of an
  * @MIMEVersion header.
@@ -610,7 +610,7 @@ char *sip_content_type_dup_one(sip_header_t *dst, sip_header_t const *src,
  * @endcode
  */
 
-msg_hclass_t sip_mime_version_class[] = 
+msg_hclass_t sip_mime_version_class[] =
 SIP_HEADER_CLASS_G(mime_version, "MIME-Version", "", single);
 
 issize_t sip_mime_version_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -626,11 +626,11 @@ issize_t sip_mime_version_e(char b[], isize_t bsiz, sip_header_t const *h, int f
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_warning Warning Header
- * 
+ *
  * The Warning response-header field is used to carry additional information
  * about the status of a response. Its syntax is defined in @RFC3261 as
  * follows:
- * 
+ *
  * @code
  *    Warning        =  "Warning" HCOLON warning-value *(COMMA warning-value)
  *    warning-value  =  warn-code SP warn-agent SP warn-text
@@ -646,7 +646,7 @@ issize_t sip_mime_version_e(char b[], isize_t bsiz, sip_header_t const *h, int f
  */
 
 /**@ingroup sip_warning
- * @typedef struct msg_warning_s sip_warning_t; 
+ * @typedef struct msg_warning_s sip_warning_t;
  *
  * The structure #sip_warning_t contains representation of an
  * @Warning header.
@@ -669,7 +669,7 @@ issize_t sip_mime_version_e(char b[], isize_t bsiz, sip_header_t const *h, int f
 #define sip_warning_dup_one msg_warning_dup_one
 #define sip_warning_update NULL
 
-msg_hclass_t sip_warning_class[] = 
+msg_hclass_t sip_warning_class[] =
 SIP_HEADER_CLASS(warning, "Warning", "", w_common, append, warning);
 
 issize_t sip_warning_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)

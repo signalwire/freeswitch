@@ -32,7 +32,7 @@
  * socket library and C libraries).
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Dec 22 18:16:06 EET 2005 pessi
  */
 

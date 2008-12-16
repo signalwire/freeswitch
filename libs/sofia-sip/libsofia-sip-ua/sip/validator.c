@@ -22,7 +22,7 @@
  *
  */
 
-/**@internal @IFILE validator.c  
+/**@internal @IFILE validator.c
  *
  * SIP parser tester. This uses output from tport dump where messages are
  * separated with Control-K ('\v') from each other.
@@ -74,7 +74,7 @@ typedef struct {
   unsigned o_very_verbose : 1;	/**< Be very verbose */
   unsigned o_requests : 1;	/**< Only requests */
   unsigned o_responses : 1;	/**< Only responses */
-  unsigned o_decode : 1;	/**< Only try to decode, 
+  unsigned o_decode : 1;	/**< Only try to decode,
 				   print error if unknown headers */
   unsigned o_print : 1;		/**< Print whole message */
   unsigned o_times : 1;		/**< Generate timing information */
@@ -107,7 +107,7 @@ double *histogram_update(histogram_t *h, uint32_t n)
 {
   if (h->bsize > 1)
     n /= h->bsize;
-    
+
   if (n < h->N)
     return &h->buckets[n];
   else
@@ -119,7 +119,7 @@ histogram_div(histogram_t *h, histogram_t const *n)
 {
   size_t i;
   assert(h->N == n->N); assert(h->bsize == n->bsize);
-  
+
   for (i = 0; i <= h->N; i++) {
     if (n->buckets[i]) {
       h->buckets[i] /= n->buckets[i];
@@ -165,8 +165,8 @@ typedef struct {
 
 void usage(void)
 {
-  fprintf(stderr, 
-	  "usage: %s [-vdp]\n", 
+  fprintf(stderr,
+	  "usage: %s [-vdp]\n",
 	  name);
   exit(2);
 }
@@ -175,7 +175,7 @@ char *lastpart(char *path)
 {
   char *p = strrchr(path, '/');
 
-  if (p) 
+  if (p)
     return p + 1;
   else
     return path;
@@ -204,23 +204,23 @@ int main(int argc, char *argv[])
     else if (argv[1][1] == 0) {
       argv++; break;
     }
-    else if (strcmp(argv[1], "-v") == 0) 
+    else if (strcmp(argv[1], "-v") == 0)
       o->o_very_verbose = o->o_verbose, o->o_verbose = 1;
-    else if (strcmp(argv[1], "-d") == 0) 
+    else if (strcmp(argv[1], "-d") == 0)
       o->o_decode = 1;		/* Decode only */
-    else if (strcmp(argv[1], "-p") == 0) 
+    else if (strcmp(argv[1], "-p") == 0)
       o->o_print = 1;
-    else if (strcmp(argv[1], "-q") == 0) 
+    else if (strcmp(argv[1], "-q") == 0)
       o->o_requests = 1;
-    else if (strcmp(argv[1], "-Q") == 0) 
+    else if (strcmp(argv[1], "-Q") == 0)
       o->o_responses = 1;
-    else if (strcmp(argv[1], "-t") == 0) 
+    else if (strcmp(argv[1], "-t") == 0)
       o->o_times = 1;
-    else if (strcmp(argv[1], "-m") == 0) 
+    else if (strcmp(argv[1], "-m") == 0)
       o->o_memstats = 1;
-    else if (strcmp(argv[1], "-s") == 0) 
+    else if (strcmp(argv[1], "-s") == 0)
       o->o_vsipstats = o->o_sipstats, o->o_sipstats = 1;
-    else if (strcmp(argv[1], "-h") == 0) 
+    else if (strcmp(argv[1], "-h") == 0)
       o->o_histogram = 1;
     else
       usage();
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
     validate_file(0, "", ctx);
 
   report(ctx);
-  
+
   exit(0);
 }
 
@@ -289,11 +289,11 @@ int validate_file(int fd, char const *name, context_t *ctx)
   errno = EINVAL;
   perror("mmap not implemented");
   return -1;
-#endif    
+#endif
 
 }
 
-su_inline 
+su_inline
 void nul_terminate(char *b, off_t size)
 {
   char *end;
@@ -320,9 +320,9 @@ int search_msg(char **bb, char const *protocol)
       return 1;			/* status */
 
     linelen = strcspn(b, "\r\n");
-    
-    if (linelen > plen + 1 && 
-	b[linelen - plen - 1] == ' ' && 
+
+    if (linelen > plen + 1 &&
+	b[linelen - plen - 1] == ' ' &&
 	strncmp(b + linelen - plen, protocol, plen) == 0)
       return 1;			/* request */
 
@@ -334,7 +334,7 @@ int search_msg(char **bb, char const *protocol)
 int validate_dump(char *b, off_t size, context_t *ctx)
 {
   size_t n = 0, N = 0;
-  struct message { 
+  struct message {
     char *b;
     int   size;
   } *msgs = NULL;
@@ -352,7 +352,7 @@ int validate_dump(char *b, off_t size, context_t *ctx)
     if (o->o_responses &&
 	memcmp(b, SIP_VERSION_CURRENT, strlen(SIP_VERSION_CURRENT)) != 0)
       ;
-    else if (o->o_requests && 
+    else if (o->o_requests &&
 	memcmp(b, SIP_VERSION_CURRENT, strlen(SIP_VERSION_CURRENT)) == 0)
       ;
     else {
@@ -361,7 +361,7 @@ int validate_dump(char *b, off_t size, context_t *ctx)
 
       if (n == N) {
 	N *= 2; if (n == N) N = 16;
-      
+
 	msgs = realloc(msgs, sizeof(*msgs) * N);
 	if (msgs == NULL) {
 	  perror("realloc");
@@ -370,13 +370,13 @@ int validate_dump(char *b, off_t size, context_t *ctx)
       }
       msgs[n].b = b; msgs[n].size = msize;
       n++;
-      
+
       ctx->bytes += msize;
-      
+
       if (msize > maxsize)
 	maxsize = msize;
     }
-    
+
     b += msize; if (*b) *b++ = '\0';
   }
 
@@ -408,16 +408,16 @@ int validate_dump(char *b, off_t size, context_t *ctx)
 
     if (o->o_memstats)
       su_home_init_stats(msg_home(msg));
-    
+
     msg_buf_set(msg, msgs[n].b, msgs[n].size + 1);
     msg_buf_commit(msg, msgs[n].size, 1);
-    
+
     su_home_preload(msg_home(msg), 1, msgs[n].size + 384);
 
     m = msg_extract(msg);
 
     if (m < 0) {
-      fprintf(stderr, "%s%sparsing error in message "MOD_ZU"\n", 
+      fprintf(stderr, "%s%sparsing error in message "MOD_ZU"\n",
 	      ctx->name, ctx->sep, n);
       ctx->errors++;
     }
@@ -434,7 +434,7 @@ int validate_dump(char *b, off_t size, context_t *ctx)
 
     msg_destroy(msg);
   }
-  
+
   time1 = su_nanocounter();
 
   if (o->o_times) {
@@ -470,7 +470,7 @@ void report_memstats(char const *title, su_home_stat_t const hs[1])
 	   (ull)hs->hs_frees.hsf_number, (ull)hs->hs_frees.hsf_bytes,
 	   (ull)hs->hs_frees.hsf_rbytes);
   if (hs->hs_rehash || hs->hs_clones)
-    printf("\t"LLU" rehashes, "LLU" clones\n", 
+    printf("\t"LLU" rehashes, "LLU" clones\n",
 	   (ull)hs->hs_rehash, (ull)hs->hs_clones);
 }
 
@@ -506,11 +506,11 @@ void memstats(msg_t *msg, uint32_t msize, context_t *ctx)
 void report_sipstat(char const *what, sipstat_t const *sss)
 {
   printf("%s: "LLU" with %.1f headers (total "LLU")\n",
-	 what, (ull)sss->number, (double)sss->headers / sss->number, 
+	 what, (ull)sss->number, (double)sss->headers / sss->number,
 	 (ull)sss->headers);
   if (sss->payloads)
     printf("\t"LLU" with body of %.1f bytes (total "LLU")\n",
-	   (ull)sss->payloads, (double)sss->pl_bytes / sss->payloads, 
+	   (ull)sss->payloads, (double)sss->pl_bytes / sss->payloads,
 	   (ull)sss->payloads);
 }
 
@@ -541,7 +541,7 @@ void sipstats(msg_t *msg, uint32_t msize, sipstats_t *ss, context_t *ctx)
   sss->number++;
 
   /* Count headers */
-  for (n = 0, h = h->sh_succ; h && !sip_is_separator((sip_header_t *)h); h = h->sh_succ) 
+  for (n = 0, h = h->sh_succ; h && !sip_is_separator((sip_header_t *)h); h = h->sh_succ)
     n++;
 
   sss->headers += n;
@@ -574,7 +574,7 @@ void report_histogram(char const *title, histogram_t const *h)
   for (i = h->N - 1; i >= 0 && h->buckets[i] == 0.0; i--)
     ;
   max_i = i;
-  
+
   if (min_i >= max_i)
     return;
 
@@ -600,7 +600,7 @@ int report(context_t const *ctx)
   if (ctx->hist_msgsize)
     report_histogram("Message size", ctx->hist_msgsize);
 
-  if (o->o_times && ctx->files > 1) 
+  if (o->o_times && ctx->files > 1)
     printf("total "LLU" messages in %g seconds (%g msg/sec)\n",
 	   (ull)n, ctx->time, (double)n / ctx->time);
 
@@ -620,7 +620,7 @@ int report(context_t const *ctx)
 
     *hs = *ctx->hs;
     report_memstats("total", hs);
-    
+
     /* Calculate mean */
     hs->hs_clones /= n; hs->hs_rehash /= n;
     hs->hs_allocs.hsa_number /= n; hs->hs_allocs.hsa_bytes /= n;
@@ -632,7 +632,7 @@ int report(context_t const *ctx)
 
     report_memstats("mean", hs);
 
-    printf("\testimator fails %.1f%% times (mean slack %.0f bytes)\n", 
+    printf("\testimator fails %.1f%% times (mean slack %.0f bytes)\n",
 	   100 * (double)ctx->est_fail / (ctx->est_fail + ctx->est_succ),
 	   (double)ctx->est_slack / ctx->est_succ);
 

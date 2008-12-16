@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   char buffer[2048];
   int  n;
   su_home_t *home = su_home_create();
-  int exitcode = 1; 
+  int exitcode = 1;
   FILE *f;
 
   if (argv[1] && strcmp(argv[1], "-"))
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
       perror("test_sdp");
     }
     else {
-      fprintf(stderr, "test_sdp: maximum length of sdp messages is %u bytes\n", 
+      fprintf(stderr, "test_sdp: maximum length of sdp messages is %u bytes\n",
 	      (unsigned)sizeof(buffer));
     }
     exit(1);

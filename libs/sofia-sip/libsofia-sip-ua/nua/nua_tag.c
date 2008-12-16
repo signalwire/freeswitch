@@ -462,15 +462,15 @@ tag_typedef_t nutag_early_media = BOOLTAG_TYPEDEF(early_media);
  *    int (boolean: nonzero is true, zero is false)
  *
  * @par Values
- *    - 0 (false) - include 100rel in all preliminary responses 
+ *    - 0 (false) - include 100rel in all preliminary responses
  *    - 1 (true) - include 100rel only in 183 responses
  *
- * @note 
+ * @note
  * This tag takes only effect when NUTAG_EARLY_MEDIA(1) has been used, too.
  *
  * Corresponding tag taking reference parameter is NUTAG_ONLY183_100REL_REF().
  *
- * @sa 
+ * @sa
  */
 tag_typedef_t nutag_only183_100rel = BOOLTAG_TYPEDEF(only183_100rel);
 
@@ -527,7 +527,7 @@ tag_typedef_t nutag_early_answer = BOOLTAG_TYPEDEF(early_answer);
  *
  * @par Values
  *    - 0 (false) - do not include extra SDP on 200 OK
- *    - 1 (true) - include SDP in 200 OK even if it has been sent 
+ *    - 1 (true) - include SDP in 200 OK even if it has been sent
  *                 a 100rel response, too
  *
  * Corresponding tag taking reference parameter is

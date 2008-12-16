@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE http_extra.c 
+/**@CFILE http_extra.c
  *
  * Extra HTTP headers
  *
@@ -162,7 +162,7 @@ static issize_t cookie_scanner(char *s)
     }
     else {
       s += strcspn(s, ",;" LWS);
-      if (s == v) 
+      if (s == v)
 	return -1;
     }
 
@@ -352,7 +352,7 @@ static issize_t set_cookie_scanner(char *s)
 
   /* Special cases from Netscape spec */
   if (LOOKING_AT(s, "expires=")) {
-    msg_time_t value; 
+    msg_time_t value;
     msg_date_d((char const **)&rest, &value);
   } else if (LOOKING_AT(s, "path=/")) {
     for (;;) {
@@ -366,8 +366,8 @@ static issize_t set_cookie_scanner(char *s)
   }
 #undef LOOKING_AT
 
-  if (IS_LWS(*rest)) { 
-    *rest++ = '\0'; skip_lws(&rest); 
+  if (IS_LWS(*rest)) {
+    *rest++ = '\0'; skip_lws(&rest);
   }
 
   return rest - s;

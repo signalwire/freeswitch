@@ -31,8 +31,8 @@
  */
 
 /**@ingroup msg_mime
- * 
- * @CFILE msg_mime_table.c 
+ *
+ * @CFILE msg_mime_table.c
  * @brief Parser table used for testing.
  *
  * #AUTO#

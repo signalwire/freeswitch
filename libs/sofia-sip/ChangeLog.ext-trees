@@ -20,18 +20,18 @@
 
   * Fixed binding problems in nua and nta.c.
   Returning more appropriate error code from tport_tbind(), too.
-  This patch fixes tracked bugs 
-  #1485624 (nua not binding to 5060), 
-  #1485625 (nua_create() fails if STUN init fails) and 
+  This patch fixes tracked bugs
+  #1485624 (nua not binding to 5060),
+  #1485625 (nua_create() fails if STUN init fails) and
   #1485632 (ncorrect error message for nua bind error).
   Nua now also binds both to NUTAG_URL and NUTAG_SIPS_URL() URIs, nua_create()
   fails if binding either of them fails.
 
   * Fixed msg_addrlen() usage.
-  
+
   msg_addrlen() returns a pointer to ai_addrlen field of struct addrinfo
   inside the msg_t object. ai_addrlen has type size_t. However, system calls
-  taking a return valur pointer to address length, use type socklen_t. 
+  taking a return valur pointer to address length, use type socklen_t.
   Typically size_t is unsigned long, socklen_t is int, so casting
   msg_addrlen() return value to (socklen_t *) will break on (high-endian)
   64-bit platforms. svsp.
@@ -74,22 +74,22 @@
   - win32/tests/test_nua/test_nat_tags.cpp
 
   * Now building libsofia_sip_ua.dll on win32.
-  
+
   We define both IN_LIBSOFIA_SIP_UA and IN_LIBSOFIA_SRES in
   libsofia_sip_ua.dsp.
-  
+
   Because of DLL linkage, we compile tags typedefs as C++
   (see win32/tests/test_nua/test_nat_tags.cpp).
-  
+
   Removed LIBSOFIA_SIP_UA_STATIC from win32/sofia-sip/su_configure.h.
-  
+
   Added libsofia_sip_ua_static.lib, too. If you want to compile against
-  that, you need define LIBSOFIA_SIP_UA_STATIC by yourself. 
-  
+  that, you need define LIBSOFIA_SIP_UA_STATIC by yourself.
+
   Added libsofia-sip-ua-static/libsofia_sip_ua_static.dsp.
-  
+
   Using multithreaded DLL runtime for all projects.
-  
+
   * Added SOFIAPUBFUN/SOFIAPUBVAR to stun module, too.
 
   * Added test_nat_tags.c to nua module.
@@ -99,11 +99,11 @@
   * Added SRESPUBFUN and sres_config.h to sresolv module.
 
   * Updated headers.
-  
+
   Added sofia-sip/ prefix to documentation entries referring to include files.
-  
+
   Added SOFIAPUBFUN and SOFIAPUBVAR to files that missed them.
-  
+
   Removed some deprecated functions and macros.
 
   * Avoid #include ordering problem with sip_parser.h in sip_test_msg.c, too.
@@ -118,7 +118,7 @@
   Avoid #include ordering problem with <sofia-sip/http_parser.h>.
 
   * Removed utf8 and unicode-related stuff from library.
-  
+
   Source files are still included in source tar.
 
   * Reordered #includes in sip module.
@@ -137,9 +137,9 @@
 
   * Fixed includes in outbound.[hc].
 
-  * Added Doxyfiles to libsofia-sip-ua-glib. 
-  
-  Note that the files are not actually commented. 
+  * Added Doxyfiles to libsofia-sip-ua-glib.
+
+  Note that the files are not actually commented.
 
   * nua, soa: Adding Warnings to the response if appropriate.
 
@@ -166,18 +166,18 @@
   * nua_register.c: use nua-generated contact for refresh interval calculation.
   Allow SIPS uris in contacts, too.
 
-  * nua_register.c: ignoring bad received parameters in Via header. 
+  * nua_register.c: ignoring bad received parameters in Via header.
 
-  * Updated config file handling in sresolv/sres.c. 
-  
+  * Updated config file handling in sresolv/sres.c.
+
   Using reference counting with config structure when copying
   resolver objects.
-  
+
   Trying harder to avoid re-parsing resolv.conf and checking for
   updated servers.
-  
+
   Changed SRES_UPDATE_INTERVAL_SECS to 5 for non-WIN32 platforms.
-  
+
   * su/su_alloc.c, su/sofia-sip/su_alloc.h: su_home_ref() takes const pointer.
 
 2006-05-08  kai.vehmanen@nokia.com
@@ -252,10 +252,10 @@
   * test_sresolv.v: added more tests for A6 record parsing.
 
   * sres.c, sres_cache.c: records are now allocated in a single chunk.
-  
+
   Bug hunted down by Thomas Rosenblatt: strings and domains belonging to
   record were allocated from resolver home, not from cache home.
-  
+
   * Fixed problem with config without search domains in sresolv/sres.c.
 
   * Added information for COPYRIGHTS file to README.developers.
@@ -277,7 +277,7 @@
   * Added sofia-sip/auth_ntlm.h auth_ntlm.c to dist in iptsec module.
 
   * Added license to Makefiles (kv)
-    
+
   Added copyright lines and reference to LGPL license to the Makefile.am and
   configure.ac files.
 
@@ -286,7 +286,7 @@
   * Added libsofia-sip-ua-glib/ChangeLog to darcs (kv)
 
   * Added win32 registry name server discovery (kv)
-  
+
   Based on a patch from Dimitri E. Prado.
   Decreased update interval to 180secs (SRES_UPDATE_INTERVAL_SECS).
 
@@ -371,7 +371,7 @@
 	const *, too.
 
 	* Added SOFIAPUBFUN to auth_struct_copy(), too.
-	
+
   * iptsec module (by Martti Mela):
 
 	* ntlm support now compiles, not working.
@@ -393,7 +393,7 @@
   * iptsec module:
 
 	* Updated headers in iptsec module.
-	Added SOFIAPUBFUN and SOFIAPUBVAR where needed. 
+	Added SOFIAPUBFUN and SOFIAPUBVAR where needed.
 	Removed auc_with_uicc().
 
 	* Fixed memory management problems in iptsec module.
@@ -403,7 +403,7 @@
 	freed.
 	Now we are actually running the tests in test_auth_digest.c, too.
 	The problem was reported and patch submitted by Colin Whittaker.
-  
+
   * sresolv module:
 
 	* Updated sresolv API.
@@ -743,7 +743,7 @@
 
     M ./libsofia-sip-ua/nua/test_nua.c +138
 
-  * Fixed NTA API test for SigComp options (they are now always processed). 
+  * Fixed NTA API test for SigComp options (they are now always processed).
 
     M ./libsofia-sip-ua/nta/test_nta_api.c -8 +4
 
@@ -800,7 +800,7 @@
 
 2006-04-11  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-  Synchronizing CVS with darcs (other contributors pp = Pekka Pessi, 
+  Synchronizing CVS with darcs (other contributors pp = Pekka Pessi,
   mm = Martti Mela).
 
   * NDEBUG oops. (pp)
@@ -897,7 +897,7 @@
     M ./libsofia-sip-ua/nua/nua_tag.c -2
     M ./libsofia-sip-ua/nua/sofia-sip/nua_tag.h -7 +6
 
-  * Fixed su_root_run() usage in docs. (pp) 
+  * Fixed su_root_run() usage in docs. (pp)
   Thanks for hint by Julio Auto.
 
     M ./libsofia-sip-ua/nua/nua.docs -1 +1
@@ -915,7 +915,7 @@
     M ./libsofia-sip-ua/nua/nua_register.c -7 +11
 
   * Removed obsoleted nua events. (pp)
-  
+
   Removed nua events nua_i_media_event, nua_r_set_media_param,
   nua_r_get_media_param, nua_r_media_setup, nua_r_media_describe,
   nua_r_media_event, nua_i_announce, nua_i_describe, nua_i_get_parameter,
@@ -923,7 +923,7 @@
   nua_i_setup, nua_i_teardown, nua_r_setup, nua_r_play, nua_r_record,
   nua_r_pause, nua_r_describe, nua_r_teardown, nua_r_options2, nua_r_announce,
   nua_r_get_parameter, and nua_r_set_parameter.
-  
+
   Removed nua functions nua_announce(), nua_describe(), nua_get_media_param(),
   nua_get_parameter(), nua_media_describe(), nua_media_event(),
   nua_media_setup(), nua_options2(), nua_pause(), nua_play(), nua_record(),
@@ -1330,7 +1330,7 @@
     A ./libsofia-sip-ua/tport/tport_type_connect.c
 
   * Split tport.c into multiple modules. (pp)
-  STUN, UPnP and SigComp still need some polishing. 
+  STUN, UPnP and SigComp still need some polishing.
 
     M ./libsofia-sip-ua/tport/Makefile.am -3 +7
     M ./libsofia-sip-ua/tport/test_tport.c -13 +11
@@ -1574,12 +1574,12 @@
     M ./libsofia-sip-ua/nta/nta.c -3 +9
 
   * Using SOFIAPUBFUN in msg_header.h. Avoiding use of msg_param_t where possible. (pp)
-      
+
   API CHANGE:
   Allowing NULL as message public pointer (using default) in calls to
   msg_serialize(), msg_header_add(), msg_header_prepend(),
   msg_header_add_dup(), msg_header_add_dup_as(), msg_header_add_make(),
-  msg_header_add_str(), msg_header_insert(), msg_header_remove(), 
+  msg_header_add_str(), msg_header_insert(), msg_header_remove(),
   msg_header_remove_all(), and msg_header_replace().
 
     M ./libsofia-sip-ua/msg/msg_parser.c -155 +182
@@ -1613,7 +1613,7 @@
   * nua_dialog_store_peer_info() now optionally removes peer info. (pp)
   If the SIP message given to nua_dialog_store_peer_info() is redirection
   response, reset peer info.
-  
+
 
     M ./libsofia-sip-ua/nua/nua_dialog.c +14
 
@@ -1645,7 +1645,7 @@
 2006-03-16  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
   Synchronizing CVS with darcs.
-	
+
   * Fixed lib-sofia-sip-ua-glib Makefile.ams.
   Tried to sanitize glib-less compilation.
 
@@ -1718,7 +1718,7 @@
   * Using alarm() with su_test.c.
 
   * Fixed hc_print usage in msg_header_prepare().
-  Some headers use snprintf() which may return -1 on some platforms if 
+  Some headers use snprintf() which may return -1 on some platforms if
   buffer is too small.
 
   * Fixed problems in test_nua on win32.
@@ -1753,13 +1753,13 @@
     M ./libsofia-sip-ua/nua/nua_stack.c -1 +1
 
 2006-03-13  Martti Mela  <martti.mela@nokia.com>
-	
+
   * win32 defs, compiles and installs in mingw environment
 
 2006-03-09  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-  * Synchronized darcs and CVS. 
-	
+  * Synchronized darcs and CVS.
+
   * Added missing su_source_test.c file.
 
     A ./libsofia-sip-ua-glib/su-glib/su_source_test.c
@@ -1978,8 +1978,8 @@
 
 2006-03-01  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
-  * Synchronized darcs and CVS. 
-	
+  * Synchronized darcs and CVS.
+
   * Added utils/Doxyfile
 
     A ./utils/Doxyfile
@@ -2122,7 +2122,7 @@
 2006-02-15  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
   * Release 1.11.6.
-	
+
   * Fixed problems in doxygen documentation and dist.
 
   * Updated PRACK and nta_outgoing_prack().
@@ -2173,19 +2173,19 @@
   <sofia-sip/su.h>.
 
   You can either fix your applications to use the new include file names
-  with the fix-include-sofia-sip sed script found in scripts/ directory, or 
-  add both ${sofiadir} and ${sofiadir}/sofia-sip into your include path, 
+  with the fix-include-sofia-sip sed script found in scripts/ directory, or
+  add both ${sofiadir} and ${sofiadir}/sofia-sip into your include path,
   e.g.,
 
-  INCLUDES = -I/usr/include/sofia-1.11 -I/usr/include/sofia-1.11/sofia-sip 
+  INCLUDES = -I/usr/include/sofia-1.11 -I/usr/include/sofia-1.11/sofia-sip
 
   At the same time, I took the liberty to rename two include files
 
   sofia_sip_features.h => sofia-sip/features.h
-  su_memmem.h => sofia-sip/su_bm.h	
+  su_memmem.h => sofia-sip/su_bm.h
 
   The fix-include-sofia-sip sed script takes care of both of them.
-	
+
   * Improved 100rel handling in nua.
   Added test_100rel to test_nua.c.
 
@@ -2193,7 +2193,7 @@
 
   * Improving getaddrinfo replacements.
   Testing functions getaddrinfo()/freeaddrinfo(), getnameinfo() and
-  gai_strerror() separately. 
+  gai_strerror() separately.
   There is no gai_strerror() in windows, I think.
 
 2006-02-03  Pekka Pessi  <Pekka.Pessi@nokia.com>
@@ -2286,12 +2286,12 @@
     M ./libsofia-sip-ua/nea/nea_server.c -1 +1
 
   * Added functions for scanning domain names and IP addresses.
-  Added span_ip4_address()/scan_ip4_address(), 
-        span_ip6_address()/scan_ip6_address(), 
+  Added span_ip4_address()/scan_ip4_address(),
+        span_ip6_address()/scan_ip6_address(),
         span_ip6_reference()/scan_ip6_reference(),
-        span_ip_address()/scan_ip_address(), 
+        span_ip_address()/scan_ip_address(),
         span_domain()/scan_domain(), and
-        span_host()/scan_host(). 
+        span_host()/scan_host().
 
     M ./libsofia-sip-ua/bnf/bnf.c -2 +588
     M ./libsofia-sip-ua/bnf/bnf.h -2 +18
@@ -2393,7 +2393,7 @@
 2006-01-03  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
   Syncinc darcs and CVS.
-	
+
   * Added more tests for call hold.
 
   * Using msg_header_replace_param() in nua_stack.c.
@@ -2410,7 +2410,7 @@
 
   * Removed msg_bnf.h
 
-  * Added NTATAG_TCP_RPORT(). 
+  * Added NTATAG_TCP_RPORT().
   Do not use rport with TCP by default.
 
   * Added test for comp=sigcomp.
@@ -2420,7 +2420,7 @@
 
   * Documented TP_AI_ flags.
   Test our TP_AI_ assumptions.
-  Added a test for asymmetric SigComp on TCP. 
+  Added a test for asymmetric SigComp on TCP.
   We use TP_AI_COMPRESSED flag in this test.
 
   * Added TPTAG_FRESH() and a test for it.
@@ -2429,7 +2429,7 @@
 
   * Use #include <stdio.h> for FILE.
 
-  * Fixed include_sofiadir handling in pkg-config and rpm files. 
+  * Fixed include_sofiadir handling in pkg-config and rpm files.
 
 2005-12-27  Martti Mela <martti.mela@nokia.com
 
@@ -2559,7 +2559,7 @@
     M ./libsofia-sip-ua/sip/torture_sip.c -13 +137
 
   * Added manipulation functions for header parameters.
-  msg_header_find_param(), msg_header_add_param(), 
+  msg_header_find_param(), msg_header_add_param(),
   msg_header_replace_param(), and msg_header_remove_param().
 
     M ./libsofia-sip-ua/http/http_basic.c -1 +1
@@ -2659,7 +2659,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
     M ./libsofia-sip-ua/su/su_localinfo.c +3
     M ./libsofia-sip-ua/su/su_localinfo.h -2 +3
-   
+
 2005-12-02  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
    Again, syncing darcs and CVS.
@@ -3025,11 +3025,11 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
   * Cleaned up su_addrinfo.c. [pp]
   Cleaned up comments.
-  Using SU_HAVE_ flags. 
+  Using SU_HAVE_ flags.
   Added support for SCTP in getaddrinfo() replacement.
 
     M ./libsofia-sip-ua/su/su_addrinfo.c -10 +38
-	
+
   * Declaring sockaddr_storage in su.h if it is not provided in environment.
 
     M ./libsofia-sip-ua/su/su.h +23
@@ -3052,7 +3052,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 2005-11-30  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
   Syncing darcs with CVS.
-	
+
   * Silenced warning in su_addrinfo.c.
 
     M ./libsofia-sip-ua/su/su_addrinfo.c -1 +2
@@ -3158,16 +3158,16 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
     M ./libsofia-sip-ua/nua/nua_stack.c -10 +18
 
-  * Rewrote uas_check_session_content(). 
+  * Rewrote uas_check_session_content().
   Returning empty Accept-Encoding header in 415/406 responses.
 
     M ./libsofia-sip-ua/nua/nua_stack.c -21 +41
 
   * Do not throttle at termination. [FIX]
-  
-  nea_server now sends NOTIFYs that terminate subscription even if the 
+
+  nea_server now sends NOTIFYs that terminate subscription even if the
   previous NOTIFY transaction has not completed yet.
-  
+
   This fixes the race condition in nua_terminate() (where terminating NOTIFY
   was is never sent).
 
@@ -3203,7 +3203,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
     M ./RELEASE -3 +16
 
   * Fixed installing and distributing m4 files.
-  Not installing m4/sac-su2.m4. 
+  Not installing m4/sac-su2.m4.
   Including m4/sac-tport.m4 and m4/sac-openssl.m4 in distribution.
 
     M ./Makefile.am -1 +2
@@ -3219,7 +3219,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
     M ./libsofia-sip-ua/docs/mainpage.docs -5 +7
 
   * Updated subscriptuion authorization and nua_terminate() semantics.
-  Subscription authorization now rejects SUBSCRIBE if 
+  Subscription authorization now rejects SUBSCRIBE if
   NUTAG_SUBSTATE(nua_substate_terminated) parameter is set.
   Correct status code is relayed to application, too.
   nua_terminate() now always terminates whole notifier.
@@ -3253,7 +3253,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
     M ./libsofia-sip-ua/docs/Doxyfile -1 +1
     M ./libsofia-sip-ua/features/Doxyfile -1 +1
-	
+
 	M ./libsofia-sip-ua/nea/Doxyfile -1 +1
 
   * Moved typedefs nua_t and nua_handle_t into <nua_tag.h>
@@ -3409,9 +3409,9 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 2005-11-28  Martti Mela  <martti.mela@nokia.com>
 
 	* nua.h: added event nua_i_subscription
-	
+
 	* nua_commmon.c: added event nua_i_subscription
-	
+
 	* nua_stack.c: ua_event for nua_i_subscription (nea subscribers)
 
 	* nea.h, nea_tag.c, nea_tag_ref.c, nea_server.c: support for a new
@@ -3419,7 +3419,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
 2005-11-15  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* configure.ac: Added VER_LIBSOFIA_SIP_UA variables. 
+	* configure.ac: Added VER_LIBSOFIA_SIP_UA variables.
 
 2005-11-14  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
@@ -3469,7 +3469,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
     M ./libsofia-sip-ua/soa/test_soa.c -19 +382
 
   * Added funtions for rtp payload type management.
-  
+
   Added sdp_media_uses_rtp(), sdp_rtpmap_match(), sdp_rtpmap_find_matching()
   and sdp_rtpmap_well_known[]. Fixed RTP timestamp rate for G722: it was 16000
   but it should be 8000.
@@ -3510,8 +3510,8 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
     M ./libsofia-sip-ua/su/su_wait.h +3
 
   * Fixed tport.c on Win32 port.
-  Added a separate "connecting" phase. 
-  Checking EWOULDBLOCK in addition to EAGAIN. 
+  Added a separate "connecting" phase.
+  Checking EWOULDBLOCK in addition to EAGAIN.
   Fixed TP_AI_CLOSE and TP_AI_SHUTDOWN flags.
   Improved logging.
 
@@ -3757,7 +3757,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
   * Cleaned up nta module interfaces.
   Use uint32_t instead of sip_u32_t.
   Removed old funtions not using reference counting with messages:
-  Replaced nta_outgoing_getresponse() with nta_outgoing_getresponse_ref(), 
+  Replaced nta_outgoing_getresponse() with nta_outgoing_getresponse_ref(),
   and nta_outgoing_getrequest() with nta_outgoing_getrequest_ref().
   Removed nta_incoming_getresponse(), nta_leg_stateful().
   Removed nta_outgoing_tmcreate(): use nta_outgoing_mcreate() instead.
@@ -3795,7 +3795,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
     M ./libsofia-sip-ua/sip/sip_protos.h.in -1 +1
 
-  * Cleaned up sip types. 
+  * Cleaned up sip types.
   Not using special typedefs sip_u32_t or sip_u16_t.
 
     M ./libsofia-sip-ua/sip/sip.h -15 +11
@@ -3816,7 +3816,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
   * Removed annoying Last modified from iptsec.
 
 2005-11-04  Pekka Pessi  <Pekka.Pessi@nokia.com>
-	
+
   * Removed annoying Last modified from msg module.
 
   * Removed Last modified things from sip module.
@@ -3852,7 +3852,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
     M ./libsofia-sip-ua/nua/test_nua.c +409
 
-  * Added nua_unpublish(). 
+  * Added nua_unpublish().
   Some cosmetic changes, too.
 
     M ./libsofia-sip-ua/nua/nua.h -1 +4
@@ -3899,14 +3899,14 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
   * Moved deprecated functions to nta/nta_compat.c.
   nta_msg_vsend() and msg_msg_send() should not be used anymore.
-  
+
   nta_msg_discard() is also deprecated, but getting rid of references to it
   takes time.
 
     M ./libsofia-sip-ua/nta/nta.c -43 +42
     M ./libsofia-sip-ua/nta/nta_compat.c -1 +31
 
-  * Plugged memory leak in nth_engine_create() in nth/nth_client.c 
+  * Plugged memory leak in nth_engine_create() in nth/nth_client.c
   Use su_home_new() instead of su_salloc().
 
     M ./libsofia-sip-ua/nth/nth_client.c -3 +2
@@ -4297,7 +4297,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 
 	* Importing darcs-to-cvs-2005-10-04.
 
-  * Using DIST_SUBDIRS when including dist-only dirs 
+  * Using DIST_SUBDIRS when including dist-only dirs
 
     M ./Makefile.am -1 +2
     M ./libsofia-sip-ua/Makefile.am -1 +4
@@ -4308,7 +4308,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 2005-10-03  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
 	* Importing darcs-to-cvs-2005-10-03.
-	
+
   * Removed old .def files.
 
     R ./libsofia-sip-ua/ipt/ipt.def
@@ -4337,7 +4337,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 2005-09-29  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
 	* Importing darcs-to-cvs-2005-09-29.
-		
+
 2005-09-28  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
 	* Added nua improvements.
@@ -4347,7 +4347,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 2005-09-23  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
 	* darcs changes:
-	
+
 	Fri Sep 23 18:58:29 EEST 2005  Pekka.Pessi@nokia.com
 	  * Building msg_test class into msg_test library, use that in tport.
 
@@ -4460,7 +4460,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 	    M ./libsofia-sip-ua/sip/sip_header.h +3
 
 	Mon Sep 19 20:12:33 EEST 2005  Pekka.Pessi@nokia.com
-	  * Updated. Added rules for ignoring SDP. corrected some 
+	  * Updated. Added rules for ignoring SDP. corrected some
 
 	    M ./libsofia-sip-ua/soa/soa.docs -8 +18
 
@@ -4567,7 +4567,7 @@ Tue Dec 20 19:51:57 EET 2005  Pekka.Pessi@nokia.com
 	* Makefile.am: Added requirement for automake-1.6.1
 	or newer.
 
-	* autogen.sh: Fixed interop problem with older automake 
+	* autogen.sh: Fixed interop problem with older automake
 	versions.
 
 	* configure.ac: Do not compile STUN if OpenSSL is not

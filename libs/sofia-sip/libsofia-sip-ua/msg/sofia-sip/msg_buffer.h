@@ -27,10 +27,10 @@
 #define MSG_BUFFER_H
 
 /**@file sofia-sip/msg_buffer.h
- * @brief Internal buffer management functions. 
- * 
+ * @brief Internal buffer management functions.
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Fri Nov  8 12:23:00 2002 ppessi
  *
  */

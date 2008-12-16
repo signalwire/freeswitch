@@ -1,6 +1,6 @@
 2006-10-19  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* tport.c (tport_is_shutdown, tport_is_closed): Added to 
+	* tport.c (tport_is_shutdown, tport_is_closed): Added to
 	public API.
 
 2006-01-15  Martti Mela  <martti.mela@nokia.com>
@@ -22,11 +22,11 @@
 
 	* tport.c (tport_bind_server): Avoid segfault
 	if init for a NAT traversal mechanism has failed.
-	
+
 2005-10-18  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
 	* Feature #1326002.
-	
+
   * Added stun_test(), but not running it.
 
     M ./libsofia-sip-ua/tport/tport_test.c +32

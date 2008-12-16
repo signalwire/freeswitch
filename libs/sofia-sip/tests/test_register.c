@@ -75,10 +75,10 @@ int test_clear_registrations(struct context *ctx)
     printf("TEST NUA-2.3.0.1: un-REGISTER a\n");
 
   TEST_1(a_reg->nh = nua_handle(a->nua, a_reg, TAG_END()));
-  UNREGISTER(a, a_reg, a_reg->nh, SIPTAG_TO(a->to), 
+  UNREGISTER(a, a_reg, a_reg->nh, SIPTAG_TO(a->to),
 	     SIPTAG_CONTACT_STR("*"),
 	     TAG_END());
-  run_a_until(ctx, -1, until_final_response);  
+  run_a_until(ctx, -1, until_final_response);
   AUTHENTICATE(a, a_reg, a_reg->nh,
 	       NUTAG_AUTH("Digest:\"test-proxy\":alice:secret"), TAG_END());
   run_a_until(ctx, -1, until_final_response);
@@ -91,10 +91,10 @@ int test_clear_registrations(struct context *ctx)
     printf("TEST NUA-2.3.0.2: un-REGISTER b\n");
 
   TEST_1(b_reg->nh = nua_handle(b->nua, b_reg, TAG_END()));
-  UNREGISTER(b, b_reg, b_reg->nh, SIPTAG_TO(b->to), 
+  UNREGISTER(b, b_reg, b_reg->nh, SIPTAG_TO(b->to),
 	     SIPTAG_CONTACT_STR("*"),
 	     TAG_END());
-  run_b_until(ctx, -1, until_final_response);  
+  run_b_until(ctx, -1, until_final_response);
   AUTHENTICATE(b, b_reg, b_reg->nh,
 	       NUTAG_AUTH("Digest:\"test-proxy\":bob:secret"), TAG_END());
   run_b_until(ctx, -1, until_final_response);
@@ -111,7 +111,7 @@ int test_clear_registrations(struct context *ctx)
 	     SIPTAG_FROM(c->to), SIPTAG_TO(c->to),
 	     SIPTAG_CONTACT_STR("*"),
 	     TAG_END());
-  run_c_until(ctx, -1, until_final_response);  
+  run_c_until(ctx, -1, until_final_response);
   AUTHENTICATE(c, c_reg, c_reg->nh,
 	       NUTAG_AUTH("Digest:\"test-proxy\":charlie:secret"), TAG_END());
   run_c_until(ctx, -1, until_final_response);
@@ -227,7 +227,7 @@ int test_outbound_cases(struct context *ctx)
   }
 
   run_a_until(ctx, -1, a->next_condition);
-  
+
   for (e = a->events->head; e; e = e->next) {
     TEST_E(e->data->e_event, nua_r_register);
     TEST(e->data->e_status, 200);
@@ -375,7 +375,7 @@ int test_register_b(struct context *ctx)
     if (ctx->p)
       m->m_url->url_params = "transport=tcp";
 
-    REGISTER(b, b_reg, b_reg->nh, SIPTAG_TO(b->to), 
+    REGISTER(b, b_reg, b_reg->nh, SIPTAG_TO(b->to),
 	     SIPTAG_CONTACT(m),
 	     /* Do not include credentials unless challenged */
 	     NUTAG_AUTH_CACHE(nua_auth_cache_challenged),
@@ -440,7 +440,7 @@ int test_register_c(struct context *ctx)
 	   NUTAG_CALLEE_CAPS(1),
 	   SIPTAG_EXPIRES_STR("5"), /* Test 423 negotiation */
 	   TAG_END());
-  run_abc_until(ctx, -1, save_events, -1, save_events, 
+  run_abc_until(ctx, -1, save_events, -1, save_events,
 		-1, save_until_final_response);
 
   TEST_1(e = c->events->head);
@@ -454,7 +454,7 @@ int test_register_c(struct context *ctx)
 
   AUTHENTICATE(c, c_reg, c_reg->nh,
 	       NUTAG_AUTH("Digest:\"test-proxy-0\":charlie:secret"), TAG_END());
-  run_abc_until(ctx, -1, save_events, -1, save_events, 
+  run_abc_until(ctx, -1, save_events, -1, save_events,
 		-1, save_until_final_response);
 
   TEST_1(e = c->events->head);
@@ -527,7 +527,7 @@ int test_register_refresh(struct context *ctx)
   }
 
   run_ab_until(ctx, -1, a->next_condition, -1, b->next_condition);
-  
+
   for (e = a->events->head; e; e = e->next) {
     TEST_E(e->data->e_event, nua_r_register);
     TEST(e->data->e_status, 200);
@@ -628,7 +628,7 @@ int test_register_to_c(struct context *ctx)
 
   TEST_1(b_call->nh = nua_handle(b->nua, b_call, TAG_END()));
 
-  REGISTER(b, b_call, b_call->nh, 
+  REGISTER(b, b_call, b_call->nh,
 	   NUTAG_REGISTRAR((url_string_t *)c->contact->m_url),
 	   SIPTAG_TO(b->to),
 	   NUTAG_OUTBOUND(NULL),
@@ -778,7 +778,7 @@ int test_connectivity(struct context *ctx)
 
     free_events_in_list(ctx, c->events);
 
-    /* Sneakily change the realm */  
+    /* Sneakily change the realm */
 
     TEST(test_proxy_domain_set_authorize(ctx->c.domain, "test-proxy"), 0);
 
@@ -871,7 +871,7 @@ int test_nat_timeout(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-2.5.1: PASSED\n");
-  
+
   if (print_headings)
     printf("TEST NUA-2.5.2: OPTIONS from B to A\n");
 

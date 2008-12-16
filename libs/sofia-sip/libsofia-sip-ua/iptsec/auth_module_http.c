@@ -25,7 +25,7 @@
 /**@internal
  * @file auth_module_http.c
  * @brief Authenticate HTTP request
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Jari Urpalainen <Jari.Urpalainen@nokia.com>
  *
@@ -43,10 +43,10 @@
 
 #include <sofia-sip/auth_module.h>
 
-static auth_challenger_t http_server_challenger[] = 
+static auth_challenger_t http_server_challenger[] =
   {{ HTTP_401_UNAUTHORIZED, http_www_authenticate_class }};
 
-static auth_challenger_t http_proxy_challenger[] = 
+static auth_challenger_t http_proxy_challenger[] =
   {{ HTTP_407_PROXY_AUTH, http_proxy_authenticate_class }};
 
 const char *auth_mod_check_http(auth_mod_t *am,
@@ -54,22 +54,22 @@ const char *auth_mod_check_http(auth_mod_t *am,
 	                        http_t const *http,
 		                auth_kind_t proxy)
 {
-  msg_auth_t *credentials = 
+  msg_auth_t *credentials =
     proxy ? http->http_proxy_authorization : http->http_authorization;
-  auth_challenger_t const *challenger = 
+  auth_challenger_t const *challenger =
     proxy ? http_proxy_challenger : http_server_challenger;
 
   if (http->http_request) {
     if (!as->as_method)
       as->as_method = http->http_request->rq_method_name;
 #if 0
-    if (!as->as_uri) 
+    if (!as->as_uri)
       as->as_uri = http->http_request->rq_url;
 #endif
   }
 
   if (http->http_payload && !as->as_body)
-    as->as_body = http->http_payload->pl_data, 
+    as->as_body = http->http_payload->pl_data,
       as->as_bodylen = http->http_payload->pl_len;
 
   /* Call real authentication method */

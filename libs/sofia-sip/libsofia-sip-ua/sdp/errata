@@ -6,7 +6,7 @@ RFC 2327 omissions and errors:
   but example (RTP/AVP!) contains also "/"
 
 * bwtype is restricted to alpha-numeric, but the RFC text discusses
-  extensions like b=x-y:100 
+  extensions like b=x-y:100
 
 * att-field is restricted to alpha-numeric, but the RFC text discusses
   extensions like a=x-nokia-foo

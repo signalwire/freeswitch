@@ -524,7 +524,7 @@ int test_call_hold(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(!e->next);
   free_events_in_list(ctx, b->events);
-  
+
   TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_ack);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
@@ -618,7 +618,7 @@ int test_call_hold(struct context *ctx)
   TEST_1(!e->next);
 #endif
   free_events_in_list(ctx, b->events);
-  
+
   TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_ack);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
@@ -632,7 +632,7 @@ int test_call_hold(struct context *ctx)
   if (print_headings)
     printf("TEST NUA-7.6.2: PASSED\n");
   }
-  
+
 
   /* ---------------------------------------------------------------------- */
   /*
@@ -742,7 +742,7 @@ int until_complete(CONDITION_PARAMS)
 static size_t remove_first_ack(void *_once, void *message, size_t len)
 {
   int *once = _once;
-  
+
   if (*once)
     return len;
 
@@ -792,8 +792,8 @@ int test_reinvite(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 0 8\n";
   b_call->sdp = "m=audio 5010 RTP/AVP 8\n";
 
-  TEST_1(a_call->nh = 
-	 nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh =
+	 nua_handle(a->nua, a_call,
 		    SIPTAG_FROM_STR("Alice <sip:alice@example.com>"),
 		    SIPTAG_TO(b->to),
 		    NUTAG_AUTOANSWER(0),
@@ -823,12 +823,12 @@ int test_reinvite(struct context *ctx)
 */
 
   /* re-INVITE A, send BYE after receiving 180 */
-  INVITE(b, b_call, b_call->nh, 
+  INVITE(b, b_call, b_call->nh,
 	 SIPTAG_SUBJECT_STR("re-INVITE"),
 	 TAG_END());
   /* Run until both a and b has terminated their call */
   run_ab_until(ctx, -1, ringing_until_terminated, -1, bye_when_ringing);
-  
+
 #if notyet
   struct event *e;
 
@@ -849,8 +849,8 @@ int test_reinvite(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_terminating); /* READY */
   /* Now we can receive events, in any possible order */
   /* XXX */
-  TEST_1(e = e->next); 
-  
+  TEST_1(e = e->next);
+
   TEST_1(!nua_handle_has_active_call(a_call->nh));
 
   /*
@@ -890,7 +890,7 @@ int test_reinvite(struct context *ctx)
 }
 
 /*
- Accept INVITE 
+ Accept INVITE
  X
  |                    |
  |-------INVITE------>|
@@ -998,8 +998,8 @@ int test_reinvite2(struct context *ctx)
   a_call->sdp = "m=audio 5008 RTP/AVP 0 8\n";
   b_call->sdp = "m=audio 5010 RTP/AVP 8\n";
 
-  TEST_1(a_call->nh = 
-	 nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh =
+	 nua_handle(a->nua, a_call,
 		    SIPTAG_FROM_STR("Alice <sip:alice@example.com>"),
 		    SIPTAG_TO(b->to),
 		    TAG_END()));
@@ -1098,7 +1098,7 @@ int accept_and_attempt_reinvite(CONDITION_PARAMS)
   }
   else switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    SIPTAG_REQUIRE_STR("100rel"),
 	    TAG_END());
     return 0;
@@ -1166,7 +1166,7 @@ int test_reinvites(struct context *ctx)
     printf("TEST NUA-7: Test call hold and re-INVITEs\n");
 
   retval = test_call_hold(ctx);
-  
+
   if (retval == 0)
     retval = test_reinvite(ctx);
 

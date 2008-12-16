@@ -107,7 +107,7 @@ SOFIAPUBVAR tag_typedef_t siptag_sip_ref;
 #if SU_INLINE_TAG_CAST
 su_inline
 tag_value_t siptag_sip_v(sip_t const *v) { return (tag_value_t)v; }
-su_inline 
+su_inline
 tag_value_t siptag_sip_vr(sip_t const **vp) { return (tag_value_t)vp; }
 #else
 #define siptag_sip_v(v)   (tag_value_t)(v)
@@ -117,8 +117,8 @@ tag_value_t siptag_sip_vr(sip_t const **vp) { return (tag_value_t)vp; }
 /**Tag list item for header string.
  *
  * The SIPTAG_HEADER() macro is used to include a tag item containing an
- * unknown SIP header in the tag list, e.g., 
- * @code 
+ * unknown SIP header in the tag list, e.g.,
+ * @code
  * sip_header_t *hdr;
  *
  * SIPTAG_HEADER(hdr).
@@ -190,7 +190,7 @@ SOFIAPUBVAR tag_typedef_t siptag_header_str_ref;
  *
  * @param x pointer to a #sip_#xxxxxx#_t structure, or NULL.
  *
- * The corresponding tag taking reference parameter is 
+ * The corresponding tag taking reference parameter is
  * SIPTAG_#XXXXXX#_REF().
  *
  * @since New in #version#.
@@ -202,7 +202,7 @@ SOFIAPUBVAR tag_typedef_t siptag_header_str_ref;
 SOFIAPUBVAR tag_typedef_t siptag_#xxxxxx#;
 
 /**@ingroup sip_#xxxxxx#
- * Tag list item for reference to a 
+ * Tag list item for reference to a
  * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" pointer.
  */
 #define SIPTAG_#XXXXXX#_REF(x) siptag_#xxxxxx#_ref, siptag_#xxxxxx#_vr(&(x))
@@ -212,17 +212,17 @@ SOFIAPUBVAR tag_typedef_t siptag_#xxxxxx#_ref;
  *
  * Tag list item for string with @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" value.
  *
- * The SIPTAG_#XXXXXX#_STR() macro is used to include a tag item with a 
+ * The SIPTAG_#XXXXXX#_STR() macro is used to include a tag item with a
  * string containing value of a #sip_#xxxxxx#_t header in a tag list.
  *
- * @param s pointer to a string containing 
+ * @param s pointer to a string containing
  *    @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" value, or NULL.
  *
  * The string in SIPTAG_#XXXXXX#_STR() can be converted to a
  * #sip_#xxxxxx#_t header structure by giving the string @a s has
  * second argument to function sip_#xxxxxx#_make().
  *
- * The corresponding tag taking reference parameter is 
+ * The corresponding tag taking reference parameter is
  * SIPTAG_#XXXXXX#_STR_REF().
  *
  * @since New in #version#.

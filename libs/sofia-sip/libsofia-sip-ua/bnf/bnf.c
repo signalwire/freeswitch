@@ -96,10 +96,10 @@ size_t bnf_span_token(char const *s)
 /** Span of a token */
 size_t bnf_span_token4(char const *s)
 {
-  char const *e = s; 
+  char const *e = s;
   while (_bnf_table[(unsigned char)(*e)] & bnf_token)
-    e++; 
-  return e - s; 
+    e++;
+  return e - s;
 }
 
 char * bnf_span_token_end(char const *s)
@@ -192,9 +192,9 @@ int span_canonic_ip4_address(char const *host, int *return_canonize)
 
 /** Return length of valid IP4 address.
  *
- * Note that we accept here up to two leading zeroes 
+ * Note that we accept here up to two leading zeroes
  * which makes "dotted decimal" notation ambiguous:
- * 127.000.000.001 is interpreted same as 127.0.0.1 
+ * 127.000.000.001 is interpreted same as 127.0.0.1
  *
  * Note that traditionally IP address octets starting
  * with zero have been interpreted as octal:
@@ -711,7 +711,7 @@ int host_is_ip4_address(char const *string)
 
 /** Return true if @a string is valid IP6 address in hex notation.
  *
- * E.g., fe80::1 is a valid IP6 address. 
+ * E.g., fe80::1 is a valid IP6 address.
  */
 int host_is_ip6_address(char const *string)
 {
@@ -724,7 +724,7 @@ int host_ip6_reference(char const *string)
   return host_is_ip6_reference(string);
 }
 
-/** Return true if @a string is valid IP6 reference, 
+/** Return true if @a string is valid IP6 reference,
  *  i.e. hex notation in square brackets.
  *
  * E.g., [::1] is a valid IP6 reference.
@@ -737,7 +737,7 @@ int host_is_ip6_reference(char const *string)
 
 /** Return true if @a string is valid IP address.
  *
- * Valid IP address is either a IP4 adddress in quad-octet notation, 
+ * Valid IP address is either a IP4 adddress in quad-octet notation,
  * IP6 hex address or IP6 reference in square brackets ([]).
  */
 int host_is_ip_address(char const *string)
@@ -748,7 +748,7 @@ int host_is_ip_address(char const *string)
 
 /** Return true if @a string is valid a domain name.
  *
- * Valid domain name consists of alphanumeric labels separated with 
+ * Valid domain name consists of alphanumeric labels separated with
  * dot ("."). There can be a "-" in the middle of label.
  * The last label must start with a letter.
  *
@@ -777,8 +777,8 @@ int host_is_valid(char const *string)
 
 /** Returns true if @a string is describing a local address.
  *
- * Uses the definitions of local addresses found in RFC1700 and 
- * RFC4291. 
+ * Uses the definitions of local addresses found in RFC1700 and
+ * RFC4291.
  */
 int host_is_local(char const *host)
 {
@@ -793,10 +793,10 @@ int host_is_local(char const *host)
 
   n = span_domain(host);
 
-  return 
+  return
     n >= 9 /* strlen("localhost") */ &&
     strncasecmp(host, "localhost", 9) == 0 &&
-    (n == 9 || 
+    (n == 9 ||
      ((n == 10 || /* localhost. */
        n == 21 || /* strlen("localhost.localdomain") */
        n == 22) && /* strlen("localhost.localdomain.") */
@@ -866,7 +866,7 @@ static size_t convert_ip_address(char const *s,
     if (canonize) {
       char *tmp = buf;
       s = memcpy(tmp, s, len + 1);
-      scan_ip4_address(&tmp);      
+      scan_ip4_address(&tmp);
     }
     if (s[len] == '\0' && su_inet_pton(AF_INET, s, addr) == 1)
       return (void)(*return_addrlen = 4), len;
@@ -877,14 +877,14 @@ static size_t convert_ip_address(char const *s,
 
 /** Compare two host names or IP addresses
  *
- * Converts valid IP addresses to the binary format before comparing them. 
+ * Converts valid IP addresses to the binary format before comparing them.
  * Note that IP6-mapped IP4 addresses and IP6-compatible IP4 addresses are
  * compared as IP4 addresses; that is, ::ffff:127.0.0.1, ::127.0.0.1 and
  * 127.0.0.1 all are all equal.
  *
  * @param a IP address or domain name
  * @param b IP address or domain name
- * 
+ *
  * @retval -1 if a < b
  * @retval 0 if a == b
  * @retval 1 if a > b

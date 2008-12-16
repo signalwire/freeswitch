@@ -138,7 +138,7 @@ static int msg_time_test(void)
 static int addr_test(void)
 {
   BEGIN();
-  
+
   /* It *will* fail. */
   /* TEST(sizeof(socklen_t), sizeof(msg_addrlen(NULL))); */
 
@@ -268,7 +268,7 @@ int test_header_parsing(void)
 
     msg_param_t const *p = NULL;
     char *master = ";0", *list, *end;
-    
+
     for (i = 1; i < 256; i++) {
       master = su_sprintf(home, "%s; %u", master, i); TEST_1(master);
       list = end = su_strdup(home, master);
@@ -294,7 +294,7 @@ int test_header_parsing(void)
 
     msg_list_t k1[1] = {{{{ 0 }}}};
     char list1[] = "foo, bar, baz  zi  \"baz\"";
-    
+
     TEST_1(msg_list_d(home, (msg_header_t *)k1, list1, strlen(list1)) >= 0);
     TEST_1(k1->k_items);
     TEST_S(k1->k_items[0], "foo");
@@ -310,7 +310,7 @@ int test_header_parsing(void)
     su_home_t home[1] = { SU_HOME_INIT(home) };
     msg_list_t k2[1] = {{{{ 0 }}}};
     char list2[] = "one, two, three, four, five, six, seven, eight";
-    
+
     TEST_1(
 	  msg_list_d(home, (msg_header_t *)k2, list2, strlen(list2)) >= 0);
     TEST_1(k2->k_items);
@@ -319,33 +319,33 @@ int test_header_parsing(void)
 
     su_home_deinit(home);
   }
-    
+
   {
     /* Test that list longer than MSG_PARAMS_N is handled correctly */
     su_home_t home[1] = { SU_HOME_INIT(home) };
     msg_list_t k3[1] = {{{{ 0 }}}};
     char list3[] = "one, two, three, four, five, six, seven, eight, nine";
-    
+
     TEST_1(
 	  msg_list_d(home, (msg_header_t *)k3, list3, strlen(list3)) >= 0);
     TEST_1(k3->k_items);
     TEST_1(k3->k_items[7]);
     TEST_1(k3->k_items[8]);
     TEST_1(k3->k_items[9] == NULL);
-  
+
     su_home_deinit(home);
   }
 
   {
     /* Test that long lists are handled correctly */
     su_home_t home[1] = { SU_HOME_INIT(home) };
-    
+
     msg_param_t *k = NULL;
     char *s;
     char list1[] = "one, two, three, four, five, six, seven, eight";
     char list2[] = "one, two, three, four, five, six, seven, eight";
     char list3[] = "one, two, three, four, five, six, seven, eight";
-    char list4[] = "one, two, three, four, five, six, seven, eight, nine";    
+    char list4[] = "one, two, three, four, five, six, seven, eight, nine";
 
     s = list1; TEST_1(msg_commalist_d(home, &s, &k, msg_token_scan) >= 0);
     TEST_1(k);
@@ -366,7 +366,7 @@ int test_header_parsing(void)
 
     msg_param_t *p = NULL;
     char *master = "0", *list, *end;
-    
+
     for (i = 1; i < 256; i++) {
       master = su_sprintf(home, "%s, %u", master, i); TEST_1(master);
       list = end = su_strdup(home, master);
@@ -389,7 +389,7 @@ int test_header_parsing(void)
   {
     /* Test that errors in lists are handled correctly */
     su_home_t home[1] = { SU_HOME_INIT(home) };
-    
+
     msg_param_t *k = NULL;
     char *s;
     char list1[] = "one, two, three, four, five, six, seven, foo=\"eight";
@@ -409,7 +409,7 @@ int test_header_parsing(void)
 
     msg_list_t k4[1] = {{{{ 0 }}}};
     char list4[] = ", ,\t,\r\n\t,  ,   ";
-    
+
     TEST_1(
 	  msg_list_d(home, (msg_header_t *)k4, list4, strlen(list4)) >= 0);
     TEST_1(k4->k_items == NULL);
@@ -423,7 +423,7 @@ int test_header_parsing(void)
     msg_auth_t au[1] = {{{{ 0 }}}};
     char s[] = "Basic foo = \"bar==\" ,, bar=baari,"
       "baz=\"bof,\\\\ \\\" baff\", base\t64/ - is== ,,";
-    
+
     TEST_1(msg_auth_d(home, (msg_header_t *)au, s, strlen(s)) >= 0);
     TEST_S(au->au_scheme, "Basic");
     TEST_1(au->au_params);
@@ -441,7 +441,7 @@ int test_header_parsing(void)
     su_home_t home[1] = { SU_HOME_INIT(home) };
 
     msg_content_type_t *c;
-    
+
     c = msg_content_type_format(home, "%s/%s;%s;%s;%s;%s;%s;%s",
 				"text", "plain",
 				"charset=iso-8859-15",
@@ -487,7 +487,7 @@ int hash_test(void)
   int i, j, hash = 0;
   msg_mclass_t const *mc = msg_test_mclass;
   msg_hclass_t *hc;
-  
+
   BEGIN();
 
   for (i = 0; i < mc->mc_hash_size; i++) {
@@ -517,12 +517,12 @@ msg_t *read_msg(char const buffer[])
   return msg_make(msg_test_mclass, MSG_DO_EXTRACT_COPY, buffer, -1);
 }
 
-/**Check if header chain contains any loops. 
+/**Check if header chain contains any loops.
  *
  * @return
  * Return 0 if no loop, -1 otherwise.
  */
-static 
+static
 int msg_chain_loop(msg_header_t const *h)
 {
   msg_header_t const *h2;
@@ -542,7 +542,7 @@ int msg_chain_loop(msg_header_t const *h)
   return 0;
 }
 
-/** Check header chain consistency. 
+/** Check header chain consistency.
  *
  * @return
  * Return 0 if consistent, number of errors otherwise.
@@ -552,7 +552,7 @@ int msg_chain_errors(msg_header_t const *h)
 {
   if (msg_chain_loop(h))
     return -1;
-  
+
   for (; h; h = h->sh_succ) {
     if (h->sh_succ && h->sh_succ->sh_prev != &h->sh_succ)
       return -1;
@@ -606,14 +606,14 @@ int test_msg_parsing(void)
 
   TEST_1(separator = msg_separator_make(home, "\r\n"));
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (msg_header_t *)separator), 0);
-  TEST_P(tst->msg_separator, separator); 
+  TEST_P(tst->msg_separator, separator);
   TEST_P(separator->sep_common->h_succ, tst->msg_payload);
 
   /* Try to add a new payload */
   TEST_1(payload = msg_payload_make(home, "foofaa\r\n"));
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (msg_header_t *)payload), 0);
   /* It is appended */
-  TEST_P(tst->msg_payload->pl_next, payload); 
+  TEST_P(tst->msg_payload->pl_next, payload);
   TEST_P(tst->msg_payload->pl_common->h_succ, payload);
 
   {
@@ -622,10 +622,10 @@ int test_msg_parsing(void)
     msg_param_t foo = "foo=bar";
 
     vs = NULL;
-    MSG_PARAM_MATCH(vs, foo, "foo"); 
+    MSG_PARAM_MATCH(vs, foo, "foo");
     TEST_S(vs, "bar");
     vs = NULL;
-    MSG_PARAM_MATCH(vs, foo, "fo"); 
+    MSG_PARAM_MATCH(vs, foo, "fo");
     TEST_P(vs, NULL);
     vi = 0;
     MSG_PARAM_MATCH_P(vi, foo, "foo");
@@ -670,14 +670,14 @@ int test_msg_parsing(void)
     TEST_1(se = fi->aa_next);
 
     TEST_S(en->aa_value, "en");
-    TEST_M(en->aa_common->h_data, 
+    TEST_M(en->aa_common->h_data,
 	   "Accept-Language: en;q=0.8, fi, se ; q = 0.6" CRLF,
 	   en->aa_common->h_len);
 
-    TEST_P((char *)en->aa_common->h_data + en->aa_common->h_len, 
+    TEST_P((char *)en->aa_common->h_data + en->aa_common->h_len,
 	   fi->aa_common->h_data);
     TEST(fi->aa_common->h_len, 0);
-    TEST_P((char *)en->aa_common->h_data + en->aa_common->h_len, 
+    TEST_P((char *)en->aa_common->h_data + en->aa_common->h_len,
 	   se->aa_common->h_data);
     TEST(se->aa_common->h_len, 0);
 
@@ -689,9 +689,9 @@ int test_msg_parsing(void)
     TEST_P(fi->aa_next, de);
     TEST_P(de->aa_next, NULL);
 
-    TEST_P(en->aa_common->h_succ, fi); 
+    TEST_P(en->aa_common->h_succ, fi);
     TEST_P(en->aa_common->h_prev, &deflate->aa_common->h_succ);
-    TEST_P(fi->aa_common->h_succ, de); 
+    TEST_P(fi->aa_common->h_succ, de);
     TEST_P(fi->aa_common->h_prev, &en->aa_common->h_succ);
     TEST_P(de->aa_common->h_succ, NULL);
     TEST_P(de->aa_common->h_prev, &fi->aa_common->h_succ);
@@ -700,21 +700,21 @@ int test_msg_parsing(void)
     TEST_P(se->aa_common->h_succ, NULL);
     TEST_P(se->aa_common->h_prev, NULL);
 
-    TEST_1(sv = msg_accept_language_make(msg_home(msg), 
+    TEST_1(sv = msg_accept_language_make(msg_home(msg),
 					 "sv;q=0.6,sv_FI;q=0.7"));
     TEST_1(sv_fi = sv->aa_next);
 
     TEST(msg_header_replace(msg, (msg_pub_t *)tst, (void *)fi, (void *)sv), 0);
 
     TEST_P(en->aa_next, sv);
-    TEST_P(sv->aa_next->aa_next, de); 
+    TEST_P(sv->aa_next->aa_next, de);
     TEST_P(de->aa_next, NULL);
 
-    TEST_P(en->aa_common->h_succ, sv); 
+    TEST_P(en->aa_common->h_succ, sv);
     TEST_P(en->aa_common->h_prev, &deflate->aa_common->h_succ);
-    TEST_P(sv->aa_common->h_succ, sv_fi); 
+    TEST_P(sv->aa_common->h_succ, sv_fi);
     TEST_P(sv->aa_common->h_prev, &en->aa_common->h_succ);
-    TEST_P(sv_fi->aa_common->h_succ, de); 
+    TEST_P(sv_fi->aa_common->h_succ, de);
     TEST_P(sv_fi->aa_common->h_prev, &sv->aa_common->h_succ);
     TEST_P(de->aa_common->h_succ, NULL);
     TEST_P(de->aa_common->h_prev, &sv_fi->aa_common->h_succ);
@@ -727,7 +727,7 @@ int test_msg_parsing(void)
 		 "Foo: bar" CRLF
 		 "Content-Length: 6" CRLF
 		 CRLF
-		 "test" CRLF 
+		 "test" CRLF
 		 "extra stuff" CRLF);
   TEST_1(orig);
   otst = msg_test_public(orig);
@@ -743,7 +743,7 @@ int test_msg_parsing(void)
 
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (void *)request), 0);
 
-  TEST_1(location = 
+  TEST_1(location =
 	 msg_content_location_make(home, "http://localhost:8080/wife"));
 
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (void *)location), 0);
@@ -751,14 +751,14 @@ int test_msg_parsing(void)
   TEST(msg_serialize(msg, (msg_pub_t *)tst), 0);
   TEST_1(msg_prepare(msg) > 0);
 
-  TEST_1(language = 
+  TEST_1(language =
 	 msg_content_language_make(home, "se-FI, fi-FI, sv-FI"));
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (void *)language), 0);
 
   TEST_1(se = msg_accept_language_make(home, "se, fi, sv"));
   TEST_1(se->aa_next);  TEST_1(se->aa_next->aa_next);
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (void *)se), 0);
-  
+
   TEST(msg_serialize(msg, (msg_pub_t *)tst), 0);
   TEST_1(msg_prepare(msg) > 0);
 
@@ -789,9 +789,9 @@ int test_msg_parsing(void)
     char const encoded[] = "Accept-Language: se, fi, sv\r\n";
     TEST_SIZE(se->aa_common->h_len, strlen(encoded));
     TEST_M(se->aa_common->h_data, encoded, se->aa_common->h_len);
-    TEST_P((char *)se->aa_common->h_data + se->aa_common->h_len, 
+    TEST_P((char *)se->aa_common->h_data + se->aa_common->h_len,
 	   se->aa_next->aa_common->h_data);
-    TEST_P((char *)se->aa_common->h_data + se->aa_common->h_len, 
+    TEST_P((char *)se->aa_common->h_data + se->aa_common->h_len,
 	   se->aa_next->aa_next->aa_common->h_data);
   }
 
@@ -804,7 +804,7 @@ int test_msg_parsing(void)
 
     /* Bug #1726034 */
     for (i = 0; i < 15; i++)
-      strcpy(body + i * 66, 
+      strcpy(body + i * 66,
 	     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 	     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n");
     pl = msg_payload_make(msg_home(msg), body);
@@ -812,7 +812,7 @@ int test_msg_parsing(void)
     TEST(msg_header_insert(msg, (msg_pub_t *)tst, (void *)pl), 0);
 
     s = msg_as_string(msg_home(msg), msg, NULL, 0, &size);
-    TEST_S(s, 
+    TEST_S(s,
 "GET a-wife HTTP/1.1" CRLF
 "Foo: bar" CRLF
 "Content-Length: 6" CRLF
@@ -854,7 +854,7 @@ static int test_warning(void)
 
   TEST_1(home = su_home_new(sizeof *home));
 
-  TEST_1((w = msg_warning_make(home, 
+  TEST_1((w = msg_warning_make(home,
 			       "399 host:5060 \"Ok\", "
 			       "399 [::1]:39999 \"foo\\\" bar\"")));
   TEST(w->w_code, 399);
@@ -980,8 +980,8 @@ int test_mclass(void)
   TEST_1(la->k_next->k_common->h_data);
   TEST_1(la->k_next->k_items == NULL);
 
-  TEST(msg_header_add_make(msg, (msg_pub_t *)tst, 
-			   msg_content_language_class, 
+  TEST(msg_header_add_make(msg, (msg_pub_t *)tst,
+			   msg_content_language_class,
 			   "en-gb"), 0);
   TEST_P(la, tst->msg_content_language);
   TEST_P(la->k_common->h_data, NULL);
@@ -998,19 +998,19 @@ int test_mclass(void)
 
   TEST_1(separator = msg_separator_make(home, "\r\n"));
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (msg_header_t *)separator), 0);
-  TEST_P(tst->msg_separator, separator); 
+  TEST_P(tst->msg_separator, separator);
   TEST_P(separator->sep_common->h_succ, tst->msg_payload);
 
   /* Try to add a new payload */
   TEST_1(payload = msg_payload_make(home, "foofaa\r\n"));
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (msg_header_t *)payload), 0);
   /* The new payload should be appended */
-  TEST_P(tst->msg_payload->pl_next, payload); 
+  TEST_P(tst->msg_payload->pl_next, payload);
   TEST_P(tst->msg_payload->pl_common->h_succ, payload);
 
   /* Try to add a new header */
-  TEST_1(l = msg_content_length_create(home, 
-				       tst->msg_payload->pl_len + 
+  TEST_1(l = msg_content_length_create(home,
+				       tst->msg_payload->pl_len +
 				       payload->pl_len));
   TEST(msg_header_insert(msg, (msg_pub_t *)tst, (msg_header_t *)l), 0);
   /* The new header should be last before separator */
@@ -1056,7 +1056,7 @@ int test_copy(void)
   msg_common_t *h, *h_succ;
   msg_iovec_t iovec[8];
 
-  char const s[] = 
+  char const s[] =
     "GET /a-life HTTP/1.1" CRLF
     "Content-Length: 6" CRLF
     "Content-Type: *" CRLF
@@ -1078,10 +1078,10 @@ int test_copy(void)
   TEST_1(copy = msg_test_public(msg));
   TEST_1(copy->msg_request);
   TEST_1(tst0->msg_request);
-  TEST_S(copy->msg_request->rq_url->url_path, 
+  TEST_S(copy->msg_request->rq_url->url_path,
 	 tst0->msg_request->rq_url->url_path);
   TEST_S(copy->msg_request->rq_url->url_path, "a-life");
-  TEST_P(copy->msg_request->rq_url->url_path, 
+  TEST_P(copy->msg_request->rq_url->url_path,
 	 tst0->msg_request->rq_url->url_path);
 
   msg_destroy(msg);
@@ -1090,10 +1090,10 @@ int test_copy(void)
   TEST_1(dup = msg_test_public(msg));
   TEST_1(dup->msg_request);
   TEST_1(tst0->msg_request);
-  TEST_S(dup->msg_request->rq_url->url_path, 
+  TEST_S(dup->msg_request->rq_url->url_path,
 	 tst0->msg_request->rq_url->url_path);
   TEST_S(dup->msg_request->rq_url->url_path, "a-life");
-  TEST_1(dup->msg_request->rq_url->url_path != 
+  TEST_1(dup->msg_request->rq_url->url_path !=
 	 tst0->msg_request->rq_url->url_path);
 
   msg_destroy(msg);
@@ -1156,7 +1156,7 @@ int test_mime(void)
   msg_content_id_t *cid;
   msg_content_transfer_encoding_t *cte;
 
-  char const s[] = 
+  char const s[] =
     "GET /a-life HTTP/1.1" CRLF
     "Accept: text/html;level=4;q=1" CRLF
     "Accept: text / plain;q=0.9" CRLF
@@ -1175,13 +1175,13 @@ int test_mime(void)
     /* "Content-Length: 305" CRLF */
     "Content-MD5: LLO7gLaGqGt4BI6HouiWng==" CRLF
     CRLF
-    "test" CRLF			
+    "test" CRLF
     CRLF			/* 1 */
-    "--LaGqGt4BI6Ho" "  " CRLF	
+    "--LaGqGt4BI6Ho" "  " CRLF
     CRLF			/* 2 */
     "part 1" CRLF		/* 3 */
     CRLF			/* 4 */
-    "--LaGqGt4BI6Ho" CRLF	
+    "--LaGqGt4BI6Ho" CRLF
     "Content-Type: text/plain ; charset = iso-8859-1" CRLF /* 5 */
     "Content-ID: <m7ZvEEm49xdTT0WCDUgnww@localhost>" CRLF /* 6 */
     "Content-Transfer-Encoding: quoted-unreadable" CRLF	/* 7 */
@@ -1191,10 +1191,10 @@ int test_mime(void)
     "Content-Type: text/html" CRLF /* 11 */
     "Content-ID: <4SP77aQZ9z6Top2dvLqKPQ@localhost>" CRLF /* 12 */
     CRLF			/* 13 */
-#define BODY3 "<html><body>part 3</body></html>" CRLF 
+#define BODY3 "<html><body>part 3</body></html>" CRLF
     BODY3			/* 14 */
     CRLF			/* 15 */
-    "--LaGqGt4BI6Ho--" CRLF;	
+    "--LaGqGt4BI6Ho--" CRLF;
 
   BEGIN();
 
@@ -1240,7 +1240,7 @@ int test_mime(void)
   TEST_1(mp->mp_data);
   TEST(memcmp(mp->mp_data, CRLF "--" "LaGqGt4BI6Ho" CRLF, mp->mp_len), 0);
   TEST_1(mp->mp_common->h_data);
-  TEST_M(mp->mp_common->h_data, CRLF "--" "LaGqGt4BI6Ho" "  " CRLF, 
+  TEST_M(mp->mp_common->h_data, CRLF "--" "LaGqGt4BI6Ho" "  " CRLF,
 	 mp->mp_common->h_len);
 
   TEST_1(pl = mp->mp_payload); TEST_1(pl->pl_data);
@@ -1254,7 +1254,7 @@ int test_mime(void)
 
   TEST_1(c = mp->mp_content_type);
   TEST_S(c->c_type, "text/plain"); TEST_S(c->c_subtype, "plain");
-  TEST_1(c->c_params);   TEST_1(c->c_params[0]); 
+  TEST_1(c->c_params);   TEST_1(c->c_params[0]);
   TEST_S(c->c_params[0], "charset=iso-8859-1");
 
   TEST_1(cid = mp->mp_content_id);
@@ -1265,7 +1265,7 @@ int test_mime(void)
   TEST_1(pl = mp->mp_payload); TEST_1(pl->pl_data);
   TEST_SIZE(strlen("part 2"), pl->pl_len);
   TEST(memcmp(pl->pl_data, "part 2", pl->pl_len), 0);
-  
+
   TEST_1(mp = mp->mp_next);
 
   TEST_1(mp->mp_data);
@@ -1295,7 +1295,7 @@ int test_mime(void)
 
   TEST(n, 15);
 
-  head = NULL; 
+  head = NULL;
   TEST_1(h = msg_multipart_serialize(&head, mp0));
   TEST_P(h, mpX->mp_close_delim);
   TEST_1(!msg_chain_errors((msg_header_t *)mp0));
@@ -1306,15 +1306,15 @@ int test_mime(void)
 
   TEST(n, 15);
 
-  /* Add a new part to multipart */   
-  mpnew = su_zalloc(home, sizeof(*mpnew)); TEST_1(mpnew); 
+  /* Add a new part to multipart */
+  mpnew = su_zalloc(home, sizeof(*mpnew)); TEST_1(mpnew);
   removed = mpX->mp_close_delim;
   mpX->mp_next = mpnew; mpX = mpnew;
   mpnew->mp_content_type = msg_content_type_make(home, "multipart/mixed");
   TEST_1(mpnew->mp_content_type);
   TEST(msg_multipart_complete(msg_home(msg), tst->msg_content_type, mp0), 0);
 
-  head = NULL; 
+  head = NULL;
   TEST_1(h = msg_multipart_serialize(&head, mp0));
   TEST_P((void *)h, mpX->mp_close_delim);
   TEST_1(!msg_chain_errors((msg_header_t *)mp0));
@@ -1355,14 +1355,14 @@ int test_mime(void)
   TEST(n, 19);
 
   /* Add an recursive multipart */
-  mpnew = su_zalloc(home, sizeof(*mpnew)); TEST_1(mpnew); 
+  mpnew = su_zalloc(home, sizeof(*mpnew)); TEST_1(mpnew);
   mpX->mp_multipart = mpnew;
   mpnew->mp_content_type = msg_content_type_make(home, "text/plain");
   TEST_1(mpnew->mp_content_type);
   TEST(msg_multipart_complete(msg_home(msg), tst->msg_content_type, mp0), 0);
   TEST_1(mpnew->mp_close_delim);
 
-  head = NULL; 
+  head = NULL;
   TEST_1(h = msg_multipart_serialize(&head, mp0));
   TEST_P(h, mpX->mp_close_delim);
 
@@ -1393,7 +1393,7 @@ int test_mime2(void)
   msg_payload_t *pl;
   char const *end;
 
-  char const s[] = 
+  char const s[] =
     "GET /a-life HTTP/1.1" CRLF
     "Accept: text/html;level=4;q=1" CRLF
     "Accept: text / plain;q=0.9" CRLF
@@ -1411,13 +1411,13 @@ int test_mime2(void)
     "Content-Type: multipart/alternative ; boundary=\"LaGqGt4BI6Ho\"" CRLF
     "Content-MD5: LLO7gLaGqGt4BI6HouiWng==" CRLF
     CRLF
-    "test" CRLF			
+    "test" CRLF
     CRLF			/* 1 */
-    "--LaGqGt4BI6Ho" "  " CRLF	
+    "--LaGqGt4BI6Ho" "  " CRLF
     CRLF			/* 2 */
     "part 1" CRLF		/* 3 */
     CRLF			/* 4 */
-    "--LaGqGt4BI6Ho" CRLF	
+    "--LaGqGt4BI6Ho" CRLF
     "Content-Type: text/plain;charset=iso-8859-1" CRLF /* 5 */
     "Content-ID: <m7ZvEEm49xdTT0WCDUgnww@localhost>" CRLF /* 6 */
     "Content-Transfer-Encoding: quoted-unreadable" CRLF	/* 7 */
@@ -1427,10 +1427,10 @@ int test_mime2(void)
     "Content-Type: text/html" CRLF /* 11 */
     "Content-ID: <4SP77aQZ9z6Top2dvLqKPQ@localhost>" CRLF /* 12 */
     CRLF			/* 13 */
-#define BODY3 "<html><body>part 3</body></html>" CRLF 
+#define BODY3 "<html><body>part 3</body></html>" CRLF
     BODY3			/* 14 */
     CRLF			/* 15 */
-    "--LaGqGt4BI6Ho--" CRLF;	
+    "--LaGqGt4BI6Ho--" CRLF;
 
   char const part1[] = "This is text\n";
   char const part2[] = "<html><body>This is html</body></html>";
@@ -1465,19 +1465,19 @@ int test_mime2(void)
     su_home_t h0[1] = { SU_HOME_INIT(h0) };
 
     pl = msg_payload_dup(h0, tst->msg_payload); TEST_1(pl);
-  
+
     mp = msg_multipart_parse(home, c, pl); TEST_1(mp);
 
-    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++) 
+    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++)
       h->sh_data = NULL, h->sh_len = 0;
     TEST(n, 15);
-    
+
     n = msg_multipart_prepare(msg, mp, 0);
-    
+
     TEST_1(end = strstr(s, "--LaGqGt4BI6Ho  "));
     len = strlen(end);
     TEST(len, n);
-    
+
     TEST_1(mp = msg_multipart_dup(h0, mp));
 
     su_home_check(h0);
@@ -1489,20 +1489,20 @@ int test_mime2(void)
     su_home_t h0[1] = { SU_HOME_INIT(h0) };
 
     pl = msg_payload_dup(h0, tst->msg_payload); TEST_1(pl);
-  
+
     mp = msg_multipart_parse(h0, NULL, pl);
     TEST_1(mp);
 
-    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++) 
+    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++)
       h->sh_data = NULL, h->sh_len = 0;
     TEST(n, 15);
-    
+
     n = msg_multipart_prepare(msg, mp, 0);
-    
+
     TEST_1(end = strstr(s, "--LaGqGt4BI6Ho  "));
     len = strlen(end);
     TEST(len, n);
-    
+
     TEST_1(mp = msg_multipart_dup(h0, mp));
 
     su_home_check(h0);
@@ -1514,7 +1514,7 @@ int test_mime2(void)
     su_home_t h0[1] = { SU_HOME_INIT(h0) };
 
     pl = msg_payload_dup(h0, tst->msg_payload); TEST_1(pl);
-  
+
     n = strstr(pl->pl_data, "--LaGqGt4BI6Ho") - (char *)pl->pl_data;
     pl->pl_data = n + (char *)pl->pl_data; pl->pl_len -= n;
 
@@ -1522,14 +1522,14 @@ int test_mime2(void)
 
     mp = msg_multipart_parse(h0, NULL, pl); TEST_1(mp);
 
-    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++) 
+    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++)
       h->sh_data = NULL, h->sh_len = 0;
     TEST(n, 15);
-    
+
     n = msg_multipart_prepare(msg, mp, 0);
 
     TEST(len, n);
-    
+
     TEST_1(mp = msg_multipart_dup(h0, mp));
 
     su_home_check(h0);
@@ -1542,7 +1542,7 @@ int test_mime2(void)
     char *b;
 
     pl = msg_payload_dup(h0, tst->msg_payload); TEST_1(pl);
-  
+
     /* Remove CRs */
     b = pl->pl_data, len = pl->pl_len;
     for (n = m = 0; n < len; n++) {
@@ -1550,14 +1550,14 @@ int test_mime2(void)
 	m++;
     }
     pl->pl_len = m;
-    
+
     mp = msg_multipart_parse(h0, NULL, pl);
     TEST_1(mp);
-    
-    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++) 
+
+    for (n = 0, h = (msg_header_t *)mp; h; h = h->sh_succ, n++)
       h->sh_data = NULL, h->sh_len = 0;
     TEST(n, 15);
-    
+
     n = msg_multipart_prepare(msg, mp, 0);
     TEST_1(n > 0);
 
@@ -1571,10 +1571,10 @@ int test_mime2(void)
   TEST_1(c = msg_content_type_make(home, "multipart/related"));
 
   TEST_1(mp = msg_multipart_create(home, "text/plain", part1, strlen(part1)));
-  TEST_1(mp->mp_next = 
+  TEST_1(mp->mp_next =
 	 msg_multipart_create(home, "text/html", part2, strlen(part2)));
-  TEST_1(mp->mp_next->mp_next = 
-	 msg_multipart_create(home, "application/octet-stream", 
+  TEST_1(mp->mp_next->mp_next =
+	 msg_multipart_create(home, "application/octet-stream",
 			      part3, sizeof part3));
 
   TEST(msg_multipart_complete(home, c, mp), 0);
@@ -1605,7 +1605,7 @@ int test_serialize(void)
   msg_accept_encoding_t *aen;
   msg_accept_language_t *ala;
 
-  char const s[] = 
+  char const s[] =
     "GET /a-life HTTP/1.1" CRLF
     "Accept-Language: fi" CRLF
     "Accept-Encoding: z0" CRLF
@@ -1629,7 +1629,7 @@ int test_serialize(void)
   TEST(msg_header_remove(msg, (msg_pub_t *)tst, (msg_header_t *)ala), 0);
   TEST_S(ala->aa_value, "de");
 
-  TEST_1(ala = tst->msg_accept_language); 
+  TEST_1(ala = tst->msg_accept_language);
   TEST_1(ala = ala->aa_next); TEST_S(ala->aa_value, "se");
   /* Make sure that cached encoding of se is reset */
   TEST_1(ala->aa_common->h_data == NULL);
@@ -1642,12 +1642,12 @@ int test_serialize(void)
   TEST_1(aen = tst->msg_accept_encoding->aa_next->aa_next);
   TEST(msg_header_remove_all(msg, (msg_pub_t *)tst, (msg_header_t *)aen), 0);
 
-  TEST_1(aen = tst->msg_accept_encoding); 
+  TEST_1(aen = tst->msg_accept_encoding);
   TEST_1(aen = aen->aa_next); TEST_S(aen->aa_value, "z1");
   /* Make sure that cached encoding of z1 is reset */
   TEST_1(aen->aa_common->h_data == NULL);
   TEST_1(aen->aa_common->h_len == 0);
-  TEST_1(aen->aa_next == NULL); 
+  TEST_1(aen->aa_next == NULL);
 
   TEST_1(aen->aa_common->h_succ == (void *)ala);
   TEST_1(ala->aa_next->aa_common);
@@ -1708,7 +1708,7 @@ static int random_test(void)
   TEST_S(token, "aaaaaaaaaaaaa");
   TEST_SIZE(msg_random_token(token, 32, zeros, 12), 20);
   TEST_S(token, "aaaaaaaaaaaaaaaaaaaa");
-  
+
   END();
 }
 

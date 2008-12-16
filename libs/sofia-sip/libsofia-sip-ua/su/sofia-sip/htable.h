@@ -48,11 +48,11 @@
  * When a entry with new identical hash key is added to the table, it can be
  * either @e inserted (before any other entry with same key value) or
  * @e appended.
- * 
+ *
  * Example code can be found from <htable_test.c>.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Sep 25 17:42:40 2001 ppessi
  */
 
@@ -62,7 +62,7 @@ typedef unsigned long hash_value_t;
 #define HTABLE_MIN_SIZE 31
 
 /** Declare hash table structure type.
- * 
+ *
  * The macro HTABLE_DECLARE() expands to a declaration for hash table
  * structure.  The its typedef will be <em>prefix</em><code>_t</code>, the
  * field names start withb @a pr.  The entry type is @a entry_t.

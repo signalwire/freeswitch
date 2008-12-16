@@ -54,8 +54,8 @@
 /* Event server */
 
 static
-nea_event_t *nh_notifier_event(nua_handle_t *nh, 
-			       su_home_t *home, 
+nea_event_t *nh_notifier_event(nua_handle_t *nh,
+			       su_home_t *home,
 			       sip_event_t const *event,
 			       tagi_t const *tags);
 
@@ -81,8 +81,8 @@ nua_stack_notifier(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *ta
 
   nua_stack_init_handle(nua, nh, tags);
 
-  tl_gets(tags, 
-	  NUTAG_URL_REF(url), 
+  tl_gets(tags,
+	  NUTAG_URL_REF(url),
 	  SIPTAG_EVENT_REF(event),
 	  SIPTAG_EVENT_STR_REF(event_s),
 	  SIPTAG_CONTENT_TYPE_STR_REF(ct_s),
@@ -93,16 +93,16 @@ nua_stack_notifier(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *ta
   if (!event && !event_s)
     status = 400, phrase = "Missing Event";
 
-  else if (!ct && !ct_s) 
+  else if (!ct && !ct_s)
     status = 400, phrase = "Missing Content-Type";
 
   else if (!nh->nh_notifier &&
-	   !(nh->nh_notifier = 
+	   !(nh->nh_notifier =
 	     nea_server_create(nua->nua_nta, nua->nua_root,
 			       url->us_url,
-			       NH_PGET(nh, max_subscriptions), 
+			       NH_PGET(nh, max_subscriptions),
 			       NULL, nh,
-			       TAG_NEXT(tags)))) 
+			       TAG_NEXT(tags))))
     status = 900, phrase = nua_internal_error;
 
   else if (!event && !(event = sip_event_make(home, event_s)))
@@ -117,12 +117,12 @@ nua_stack_notifier(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *ta
   else if (nea_server_notify(nh->nh_notifier, ev) < 0)
     status = 900, phrase = "Error when notifying watchers";
 
-  else 
-    nua_stack_tevent(nua, nh, NULL, e, status = SIP_200_OK, 
+  else
+    nua_stack_tevent(nua, nh, NULL, e, status = SIP_200_OK,
 		     SIPTAG_EVENT(event),
 		     SIPTAG_CONTENT_TYPE(ct),
 		     TAG_END());
-	     
+
   if (status != 200)
     nua_stack_event(nua, nh, NULL, e, status, phrase, NULL);
 
@@ -132,8 +132,8 @@ nua_stack_notifier(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *ta
 
 /* Create a event view for notifier */
 static
-nea_event_t *nh_notifier_event(nua_handle_t *nh, 
-			       su_home_t *home, 
+nea_event_t *nh_notifier_event(nua_handle_t *nh,
+			       su_home_t *home,
 			       sip_event_t const *event,
 			       tagi_t const *tags)
 {
@@ -150,13 +150,13 @@ nea_event_t *nh_notifier_event(nua_handle_t *nh,
     if (o_subtype)
       *o_subtype++ = '\0';
 
-    tl_gets(tags, 
+    tl_gets(tags,
 	    SIPTAG_ACCEPT_REF(accept),
 	    SIPTAG_ACCEPT_STR_REF(accept_s),
 	    SIPTAG_CONTENT_TYPE_REF(ct),
 	    SIPTAG_CONTENT_TYPE_STR_REF(ct_s),
 	    TAG_END());
-      
+
     /*
      * XXX - We really should build accept header when we add new content
      * types
@@ -168,7 +168,7 @@ nea_event_t *nh_notifier_event(nua_handle_t *nh,
     if (accept_s == NULL && ct_s)
       accept_s = ct_s;
 
-    ev = nea_event_create(nh->nh_notifier, 
+    ev = nea_event_create(nh->nh_notifier,
 			  authorize_watcher, nh,
 			  o_type, o_subtype,
 			  ct ? ct->c_type : ct_s,
@@ -196,8 +196,8 @@ void authorize_watcher(nea_server_t *nes,
 
   /* OK. In nhp (nua_handle_preferences_t) structure we have the
      current default action (or state) for incoming
-     subscriptions. 
-     Action can now be modified by the application with NUTAG_SUBSTATE(). 
+     subscriptions.
+     Action can now be modified by the application with NUTAG_SUBSTATE().
   */
   irq = nea_sub_get_request(sn->sn_subscriber);
   msg = nta_incoming_getrequest(irq);
@@ -220,7 +220,7 @@ void authorize_watcher(nea_server_t *nes,
       what = "active";
     }
 
-    SU_DEBUG_7(("nua(%p): authorize_watcher: %s\n", (void *)nh, what)); 
+    SU_DEBUG_7(("nua(%p): authorize_watcher: %s\n", (void *)nh, what));
     nea_sub_auth(sn->sn_subscriber, substate,
 		 TAG_IF(substate == nua_substate_pending,
 			NEATAG_FAKE(1)),
@@ -231,8 +231,8 @@ void authorize_watcher(nea_server_t *nes,
   else if (sn->sn_state == nea_terminated || sn->sn_expires == 0) {
     substate = nua_substate_terminated;
     nea_server_flush(nes, NULL);
-    SU_DEBUG_7(("nua(%p): authorize_watcher: %s\n", 
-		(void *)nh, "watcher is removed")); 
+    SU_DEBUG_7(("nua(%p): authorize_watcher: %s\n",
+		(void *)nh, "watcher is removed"));
   }
 
   nua_stack_tevent(nua, nh, msg, nua_i_subscription, status, phrase,
@@ -269,7 +269,7 @@ void nua_stack_authorize(nua_t *nua,
 /** @internal Shutdown notifier object */
 int nh_notifier_shutdown(nua_handle_t *nh,
 			 nea_event_t *ev,
-			 tag_type_t t, 
+			 tag_type_t t,
 			 tag_value_t v, ...)
 {
   nea_server_t *nes = nh->nh_notifier;
@@ -286,17 +286,17 @@ int nh_notifier_shutdown(nua_handle_t *nh,
     ta_list ta;
 
     ta_start(ta, t, v);
-    
+
     for (i = 0; subs[i]; i++)
       nea_sub_auth(subs[i]->sn_subscriber, nea_terminated, ta_tags(ta));
-    
+
     ta_end(ta);
 
     busy++;
   }
 
   nea_server_free_subscribers(nes, subs);
-  
+
   nea_server_flush(nh->nh_notifier, NULL);
 
   if (ev == NULL)
@@ -323,7 +323,7 @@ void nua_stack_terminate(nua_t *nua,
     return;
   }
 
-  tl_gets(tags, 
+  tl_gets(tags,
 	  SIPTAG_EVENT_REF(event),
 	  SIPTAG_EVENT_STR_REF(event_s),
 	  SIPTAG_CONTENT_TYPE_REF(ct),
@@ -332,15 +332,15 @@ void nua_stack_terminate(nua_t *nua,
 	  SIPTAG_PAYLOAD_STR_REF(pl_s),
 	  TAG_END());
 
-  nev = nea_event_get(nh->nh_notifier, 
+  nev = nea_event_get(nh->nh_notifier,
 		      event ? event->o_type : event_s);
 
   if (nev && (pl || pl_s) && (ct || ct_s)) {
     nea_server_update(nh->nh_notifier, nev, TAG_NEXT(tags));
   }
 
-  nh_notifier_shutdown(nh, NULL, 
-		       NEATAG_REASON("noresource"), 
+  nh_notifier_shutdown(nh, NULL,
+		       NEATAG_REASON("noresource"),
 		       TAG_NEXT(tags));
 
   nua_stack_event(nua, nh, NULL, e, SIP_200_OK, NULL);

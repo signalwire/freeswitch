@@ -30,7 +30,7 @@
  * @file sofia-sip/su_alloc.h Home-based memory management interface
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Aug 19 01:12:25 1999 ppessi
  */
 
@@ -54,7 +54,7 @@ typedef struct su_block_s su_block_t;
 typedef struct su_alock su_alock_t;
 
 /** Memory home structure */
-struct su_home_s { 
+struct su_home_s {
   int         suh_size;
   su_block_t *suh_blocks;
   su_alock_t *suh_lock;
@@ -140,7 +140,7 @@ SU_DLL char *su_vsprintf(su_home_t *home, char const *fmt, va_list ap)
      __attribute__((__malloc__));
 
 /* free an independent block */
-SU_DLL void su_free(su_home_t *h, void *);		
+SU_DLL void su_free(su_home_t *h, void *);
 
 /** Check if a memory home is threadsafe */
 SU_DLL int su_home_is_threadsafe(su_home_t const *home);

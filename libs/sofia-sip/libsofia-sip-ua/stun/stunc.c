@@ -24,22 +24,22 @@
 
 /**
  * STUN test client
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Martti Mela <Martti.Mela@nokia.com>
  * @author Kai Vehmanen <Kai.Vehmanen@nokia.com>
- * 
+ *
  * @date Created: Thu Jul 24 17:21:00 2003 ppessi
  */
 
 /**@page stunc STUN test client.
- * 
+ *
  * @section stunc_synopsis Synopsis
  * <tt>stunc [OPTIONS] \<stun-server-address\></tt>
  *
  * @section stunc_description Description
  * The @em stunc utility can be used to gather information about possible
- * NAT devices that are located between the client and STUN server. 
+ * NAT devices that are located between the client and STUN server.
  *
  * @em stunc can provide the following information: the IP address and
  * port as seen by the STUN server, detecting presence of NATs, and
@@ -78,7 +78,7 @@
  *
  * <dt>-s</dt>
  * <dd>Request a shared-secret over TLS. Tests whether the STUN server
- * supports the shared-secret mechanism (needed to protect message 
+ * supports the shared-secret mechanism (needed to protect message
  * integrity). Can be combined with @em -b, @em -l and @em -n.
  * </dd>
  *
@@ -99,7 +99,7 @@
  *
  * @section stunc_environment Environment
  * #STUN_DEBUG
- * 
+ *
  * @section stunc_bugs Reporting Bugs
  * Report bugs to <sofia-sip-devel@lists.sourceforge.net>.
  *
@@ -116,7 +116,7 @@
  * PARTICULAR PURPOSE.
  */
 
-#include "config.h" 
+#include "config.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -156,7 +156,7 @@ static char const __func__[] = "stunc";
 
 void usage(char *name)
 {
-  fprintf(stderr, 
+  fprintf(stderr,
 	  "stunc (%s)\n"
 	  "usage: %s <server> [-b] [-n] [-l] [-r] [-s]\n"
 	  "  -b\tmake a binding request\n"
@@ -216,14 +216,14 @@ void stunc_ss_cb(stunc_t *stunc,
 		      STUNTAG_SOCKET(stunc->sc_socket),
 		      STUNTAG_REGISTER_EVENTS(1),
 		      TAG_NULL());
-    
+
       if (err < 0) {
 	SU_DEBUG_0(("%s: %s  failed\n", __func__, "stun_handle_bind()"));
 	su_root_break(stun_root(sh));
       }
     }
     break;
-    
+
   case stun_tls_connection_failed:
     SU_DEBUG_0(("%s: Obtaining shared secret failed.\n",
 		__func__));
@@ -269,7 +269,7 @@ void stunc_bind_cb(stunc_t *stunc,
   case stun_discovery_done:
     addrlen = sizeof(*sa);
     memset(sa, 0, addrlen);
-    
+
     if (stun_discovery_get_address(sd, sa, &addrlen) < 0) {
       SU_DEBUG_0(("%s: stun_discovery_get_address() failed", __func__));
       return;
@@ -313,7 +313,7 @@ void stunc_nattype_cb(stunc_t *stunc,
     break;
 
   case stun_discovery_done:
-    SU_DEBUG_3(("%s: NAT type determined to be '%s' (%d).\n", 
+    SU_DEBUG_3(("%s: NAT type determined to be '%s' (%d).\n",
 		__func__, stun_nattype_str(sd), (int)stun_nattype(sd)));
     break;
 
@@ -361,12 +361,12 @@ void stunc_lifetime_cb(stunc_t *stunc,
 int main(int argc, char *argv[])
 {
   int err = 0, i, sflags = 0;
-  stunc_t stunc[1]; 
+  stunc_t stunc[1];
   su_root_t *root;
   stun_handle_t *sh;
   su_socket_t s;
 
-  if (su_init() != 0) 
+  if (su_init() != 0)
     return -1;
 
   root = su_root_create(stunc);
@@ -393,16 +393,16 @@ int main(int argc, char *argv[])
 
   /* Running this test requires a local STUN server on default port */
   sh = stun_handle_init(root,
-			STUNTAG_SERVER(argv[1]), 
+			STUNTAG_SERVER(argv[1]),
 			STUNTAG_REQUIRE_INTEGRITY(sflags & do_secret),
-			TAG_NULL()); 
+			TAG_NULL());
 
   if (!sh) {
     SU_DEBUG_0(("%s: %s failed\n", __func__, "stun_handle_init()"));
     return -1;
   }
 
-  s = su_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP); 
+  s = su_socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (s == -1) {
     SU_DEBUG_0(("%s: %s  failed: %s\n", __func__,
 		"su_socket()", su_gli_strerror(errno)));
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
     sockaddr.su_family = AF_INET;
 
     SU_DEBUG_3(("stunc: Binding to local port %u.\n", ntohs(sockaddr.su_port)));
-  
+
     err = bind(s, (struct sockaddr *)&sockaddr, socklen);
     if (err < 0) {
       SU_DEBUG_1(("%s: Error %d binding to %s:%u\n", __func__, err,
@@ -452,7 +452,7 @@ int main(int argc, char *argv[])
 		    STUNTAG_SOCKET(s),
 		    STUNTAG_REGISTER_EVENTS(1),
 		    TAG_NULL());
-    
+
     if (err < 0) {
       SU_DEBUG_0(("%s: %s  failed\n", __func__, "stun_bind()"));
       return -1;
@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
 			    STUNTAG_REGISTER_EVENTS(1),
 			    STUNTAG_SOCKET(stunc->sc_socket),
 			    TAG_NULL());
-    
+
     if (err < 0) {
       SU_DEBUG_0(("%s: %s  failed\n", __func__, "stun_test_nattype()"));
       su_root_break(stun_root(sh));
@@ -476,13 +476,13 @@ int main(int argc, char *argv[])
 			     STUNTAG_REGISTER_EVENTS(1),
 			     STUNTAG_SOCKET(stunc->sc_socket),
 			     TAG_NULL());
-    
+
     if (err < 0) {
       SU_DEBUG_0(("%s: %s  failed\n", __func__, "stun_test_lifetime()"));
       su_root_break(stun_root(sh));
     }
   }
- 
+
   if (err == 0)
     su_root_run(root);
 

@@ -1,7 +1,7 @@
 #! /bin/gawk
 #
 # This script extracts the version information from configure.ac
-# and re-generates win32/config.h and 
+# and re-generates win32/config.h and
 # libsofia-sip-ua/features/sofia_sip_features.h
 #
 # --------------------------------------------------------------------
@@ -38,7 +38,7 @@ BEGIN { IN=1; OUT=0; }
 
 IN && /^AC_INIT/ { version=$2; gsub(/[\]\[)]/, "", version); }
 
-OUT && /@[A-Z_]+@/ { 
+OUT && /@[A-Z_]+@/ {
   gsub(/@PACKAGE_VERSION@/, version);
   gsub(/@PACKAGE_BUGREPORT@/, "sofia-sip-devel@lists.sourceforge.net");
   gsub(/@PACKAGE_NAME@/, "sofia-sip");

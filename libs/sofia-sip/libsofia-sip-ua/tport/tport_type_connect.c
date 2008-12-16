@@ -49,14 +49,14 @@
 #include <sofia-sip/http_header.h>
 
 static int tport_http_connect_init_primary(tport_primary_t *,
-					   tp_name_t tpn[1], 
-					   su_addrinfo_t *, 
+					   tp_name_t tpn[1],
+					   su_addrinfo_t *,
 					   tagi_t const *,
 					   char const **return_culprit);
 
 static void tport_http_connect_deinit_primary(tport_primary_t *);
 
-static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai, 
+static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai,
 				   tp_name_t const *tpn);
 
 static void tport_http_deliver(tport_t *self, msg_t *msg, su_time_t now);
@@ -94,8 +94,8 @@ tport_vtable_t const tport_http_connect_vtable =
 };
 
 static int tport_http_connect_init_primary(tport_primary_t *pri,
-					   tp_name_t tpn[1], 
-					   su_addrinfo_t *ai, 
+					   tp_name_t tpn[1],
+					   su_addrinfo_t *ai,
 					   tagi_t const *tags,
 					   char const **return_culprit)
 {
@@ -122,13 +122,13 @@ static int tport_http_connect_init_primary(tport_primary_t *pri,
     port = "8080";
 
   memcpy(hints, ai, sizeof hints);
-  
+
   hints->ai_flags = 0;
   hints->ai_addr = NULL;
   hints->ai_addrlen = 0;
   hints->ai_next = NULL;
   hints->ai_canonname = NULL;
-  
+
   error = su_getaddrinfo(host, port, hints, &thc->thc_proxy);
   if (error)
     return *return_culprit = "su_getaddrinfo", -1;
@@ -139,24 +139,24 @@ static int tport_http_connect_init_primary(tport_primary_t *pri,
 static void tport_http_connect_deinit_primary(tport_primary_t *pri)
 {
   tport_http_connect_t *thc = (tport_http_connect_t *)pri;
-  
+
   su_freeaddrinfo(thc->thc_proxy), thc->thc_proxy = NULL;
 }
 
-static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai, 
+static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai,
 				   tp_name_t const *tpn)
 {
   tport_http_connect_t *thc = (tport_http_connect_t *)pri;
   tport_http_connect_instance_t *thci;
   tport_master_t *mr = pri->pri_master;
-  
+
   msg_t *msg, *response;
 
   char hostport[TPORT_HOSTPORTSIZE];
 
   tport_t *tport;
   http_request_t *rq;
-  
+
   msg = msg_create(http_default_mclass(), 0);
 
   if (!msg)
@@ -167,21 +167,21 @@ static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai,
   rq = http_request_format(msg_home(msg), "CONNECT %s HTTP/1.1", hostport);
 
   if (msg_header_insert(msg, NULL, (void *)rq) < 0
-      || msg_header_add_str(msg, NULL, 
+      || msg_header_add_str(msg, NULL,
 			    "User-Agent: Sofia-SIP/" VERSION "\n") < 0
       || msg_header_add_str(msg, NULL, "Proxy-Connection: keepalive\n") < 0
       || msg_header_add_make(msg, NULL, http_host_class, hostport) < 0
-      || msg_header_add_make(msg, NULL, http_separator_class, "\r\n") < 0 
+      || msg_header_add_make(msg, NULL, http_separator_class, "\r\n") < 0
       || msg_serialize(msg, NULL) < 0
       || msg_prepare(msg) < 0)
     return (void)msg_destroy(msg), NULL;
 
-  /* 
-   * Create a response message that ignores the body 
-   * if there is no Content-Length 
+  /*
+   * Create a response message that ignores the body
+   * if there is no Content-Length
    */
   response = msg_create(http_default_mclass(), mr->mr_log | MSG_FLG_MAILBOX);
-  
+
   tport = tport_base_connect(pri, thc->thc_proxy, ai, tpn);
   if (!tport) {
     msg_destroy(msg); msg_destroy(response);
@@ -189,17 +189,17 @@ static tport_t *tport_http_connect(tport_primary_t *pri, su_addrinfo_t *ai,
   }
 
   thci = (tport_http_connect_instance_t*)tport;
-  
+
   thci->thci_response = response;
   tport->tp_msg = response;
   msg_set_next(response, thci->thci_stackmsg = tport_msg_alloc(tport, 512));
 
   if (tport_send_msg(tport, msg, tpn, NULL) < 0) {
     SU_DEBUG_9(("tport_send_msg failed in tpot_http_connect\n"));
-    msg_destroy(msg); 
+    msg_destroy(msg);
     tport_zap_secondary(tport);
     return NULL;
-  }  
+  }
 
   tport_set_secondary_timer(tport);
 
@@ -217,7 +217,7 @@ static void tport_http_deliver(tport_t *self, msg_t *msg, su_time_t now)
     http_t *http = http_object(msg);
 
     if (http && http->http_status) {
-      SU_DEBUG_0(("tport_http_connect: %u %s\n", 
+      SU_DEBUG_0(("tport_http_connect: %u %s\n",
 		  http->http_status->st_status,
 		  http->http_status->st_phrase));
       if (http->http_status->st_status < 300) {

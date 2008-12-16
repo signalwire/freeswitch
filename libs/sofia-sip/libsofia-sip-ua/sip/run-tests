@@ -36,8 +36,8 @@ shift
 rc=0
 
 for n in "$@";
-do 
-    if "$msg_test" < "$n" > /dev/null ; then 
+do
+    if "$msg_test" < "$n" > /dev/null ; then
 	true
     else
 	echo "$n: ERROR"; rc=1

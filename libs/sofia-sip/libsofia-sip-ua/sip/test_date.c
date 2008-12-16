@@ -24,7 +24,7 @@
 
 /**@internal
  *
- * @CFILE test_date.c  
+ * @CFILE test_date.c
  *
  * Tester for SIP date parser
  *
@@ -46,7 +46,7 @@
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
+  fprintf(stderr,
 	  "usage: test_date [SIP-date] "
 	  "[YYYYy][DDd][HHh][MMm][SS[s]]\n");
   exit(exitcode);
@@ -70,7 +70,7 @@ int main(int ac, char *av[])
       fprintf(stderr, "test_date: %s is not valid time\n", s);
       exit(1);
     }
-      
+
     if ((s = av[2])) {
       for (delta = 0; *s; ) {
 	t2 = 0;
@@ -96,7 +96,7 @@ int main(int ac, char *av[])
     char buf[80];
 
     msg_date_e(buf, sizeof(buf), t);
-    
+
     if (verbatim)
       printf("%08lx is %s\n", t, buf);
 

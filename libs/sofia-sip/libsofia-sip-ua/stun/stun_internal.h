@@ -99,7 +99,7 @@ int stun_send_message(su_socket_t s, su_sockaddr_t *srvr,
 		      stun_msg_t *msg, stun_buffer_t *pwd);
 
 int stun_make_binding_req(stun_handle_t *se, stun_request_t *req,
-			  stun_msg_t *msg, 
+			  stun_msg_t *msg,
 			  tag_type_t, tag_value_t, ...);
 int stun_process_response(stun_msg_t *msg);
 

@@ -24,7 +24,7 @@
 
 #ifndef MSG_PARSER_H
 /** Defined when <sofia-sip/msg_parser.h> has been included. */
-#define MSG_PARSER_H 
+#define MSG_PARSER_H
 
 /**@ingroup msg_parser
  * @file sofia-sip/msg_parser.h
@@ -101,8 +101,8 @@ SOFIAPUBFUN issize_t msg_extract_header(msg_t *msg, msg_pub_t *mo,
 				   char b[], isize_t bsiz, int eos);
 SOFIAPUBFUN issize_t msg_extract_separator(msg_t *msg, msg_pub_t *mo,
 					   char b[], isize_t bsiz, int eos);
-SOFIAPUBFUN issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo, 
-					 msg_header_t **return_payload, 
+SOFIAPUBFUN issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo,
+					 msg_header_t **return_payload,
 					 usize_t body_len,
 					 char b[], isize_t bsiz, int eos);
 
@@ -113,9 +113,9 @@ SOFIAPUBFUN issize_t msg_extract_payload(msg_t *msg, msg_pub_t *mo,
 SOFIAPUBFUN int msg_firstline_d(char *s, char **ss2, char **ss3);
 
 SOFIAPUBFUN isize_t msg_default_dup_xtra(msg_header_t const *header, isize_t offset);
-SOFIAPUBFUN char *msg_default_dup_one(msg_header_t *dst, 
+SOFIAPUBFUN char *msg_default_dup_one(msg_header_t *dst,
 				      msg_header_t const *src,
-				      char *b, 
+				      char *b,
 				      isize_t xtra);
 
 SOFIAPUBFUN issize_t msg_numeric_d(su_home_t *, msg_header_t *h, char *s, isize_t slen);
@@ -133,7 +133,7 @@ SOFIAPUBFUN issize_t msg_generic_e(char [], isize_t, msg_header_t const *, int);
 SOFIAPUBFUN isize_t msg_generic_dup_xtra(msg_header_t const *h, isize_t offset);
 SOFIAPUBFUN char *msg_generic_dup_one(msg_header_t *dst,
 				      msg_header_t const *src,
-				      char *b, 
+				      char *b,
 				      isize_t xtra);
 
 SOFIAPUBFUN isize_t msg_unknown_dup_xtra(msg_header_t const *h, isize_t offset);
@@ -159,7 +159,7 @@ SOFIAPUBFUN issize_t msg_separator_e(char [], isize_t, msg_header_t const *, int
 SOFIAPUBFUN issize_t msg_auth_d(su_home_t *, msg_header_t *h, char *s, isize_t slen);
 SOFIAPUBFUN issize_t msg_auth_e(char b[], isize_t bsiz, msg_header_t const *h, int f);
 SOFIAPUBFUN isize_t msg_auth_dup_xtra(msg_header_t const *h, isize_t offset);
-SOFIAPUBFUN char *msg_auth_dup_one(msg_header_t *dst, msg_header_t const *src, 
+SOFIAPUBFUN char *msg_auth_dup_one(msg_header_t *dst, msg_header_t const *src,
 				   char *b, isize_t xtra);
 
 /* ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@ SOFIAPUBFUN issize_t msg_parse_next_field(su_home_t *home, msg_header_t *prev,
 #define MSG_TERM_E(p, e) ((p) < (e) ? (p)[0] = '\0' : '\0')
 
 /** Encode a character. @HI */
-#define MSG_CHAR_E(p, e, c) (++(p) < (e) ? ((p)[-1]=(c)) : (c)) 
+#define MSG_CHAR_E(p, e, c) (++(p) < (e) ? ((p)[-1]=(c)) : (c))
 
 /** Calculate separator and string length. @HI */
 #define MSG_STRING_LEN(s, sep_size) ((s) ? (strlen(s) + sep_size) : 0)
@@ -214,7 +214,7 @@ SOFIAPUBFUN issize_t msg_commalist_d(su_home_t *, char **ss,
 SOFIAPUBFUN issize_t msg_token_scan(char *start);
 SOFIAPUBFUN issize_t msg_attribute_value_scanner(char *s);
 
-SOFIAPUBFUN issize_t msg_any_list_d(su_home_t *, char **ss, 
+SOFIAPUBFUN issize_t msg_any_list_d(su_home_t *, char **ss,
 				    msg_param_t **append_list,
 				    issize_t (*scanner)(char *s),
 				    int sep);
@@ -269,7 +269,7 @@ SOFIAPUBFUN issize_t msg_params_join(su_home_t *,
 #define MSG_PARAMS_SIZE(rv, params) (rv = msg_params_dup_xtra(params, rv))
 
 /** Duplicate a parameter list */
-SOFIAPUBFUN char *msg_params_dup(msg_param_t const **d, msg_param_t const *s, 
+SOFIAPUBFUN char *msg_params_dup(msg_param_t const **d, msg_param_t const *s,
 				 char *b, isize_t xtra);
 
 /** Count number of parameters in the list */

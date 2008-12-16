@@ -54,7 +54,7 @@
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
- * @return 
+ * @return
  *    nothing
  *
  * @par Related Tags:
@@ -78,7 +78,7 @@
  * @param nh     operation handle associated with the incoming OPTIONS request
  * @param hmagic application context associated with the handle
  * @param sip    response to OPTIONS request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive message in @a phrase parameters)
  * @param tags   empty
  *
@@ -109,6 +109,6 @@ int nua_stack_options(nua_t *nua,
 		      nua_handle_t *nh,
 		      nua_event_t e,
 		      tagi_t const *tags)
-{ 
+{
   return nua_client_create(nh, e, &nua_options_client_methods, tags);
 }

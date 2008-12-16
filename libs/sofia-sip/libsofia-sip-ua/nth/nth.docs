@@ -1,7 +1,7 @@
 /* -*- c -*- */
 
 /**@MODULEPAGE "nth" - HTTP Transactions Module
- * 
+ *
  * @section nth_meta Module Meta Information
  *
  * NTH provides interface to simple HTTP transaction engines for both HTTP

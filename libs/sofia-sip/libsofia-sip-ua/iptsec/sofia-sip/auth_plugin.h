@@ -24,13 +24,13 @@
 
 #ifndef AUTH_PLUGIN_H
 /** Defined when <sofia-sip/auth_plugin.h> has been included. */
-#define AUTH_PLUGIN_H 
+#define AUTH_PLUGIN_H
 
 /**@file sofia-sip/auth_plugin.h
  * @brief Plugin interface for authentication verification modules.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Apr 27 15:22:07 2004 ppessi
  */
 
@@ -77,20 +77,20 @@ struct auth_scheme
 		   tag_type_t tag, tag_value_t value, ...);
 
   /** Check authentication. Invoked by auth_mod_method(). */
-  void (*asch_check)(auth_mod_t *am, 
+  void (*asch_check)(auth_mod_t *am,
 		     auth_status_t *as,
 		     msg_auth_t *auth,
 		     auth_challenger_t const *ch);
 
   /** Create a challenge. Invoked by auth_mod_challenge(). */
-  void (*asch_challenge)(auth_mod_t *am, 
+  void (*asch_challenge)(auth_mod_t *am,
 			 auth_status_t *as,
 			 auth_challenger_t const *ch);
 
-  /** Cancel an asynchronous authentication request. 
+  /** Cancel an asynchronous authentication request.
    * Invoked by auth_mod_cancel().
    */
-  void (*asch_cancel)(auth_mod_t *am, 
+  void (*asch_cancel)(auth_mod_t *am,
 		      auth_status_t *as);
 
   /** Reclaim resources an authentication module.
@@ -161,7 +161,7 @@ struct auth_mod_t
   unsigned       am_count;	/**< Nonce counter */
 
   uint8_t        am_master_key[16]; /**< Private master key */
-  
+
   su_md5_t       am_hmac_ipad;	/**< MD5 with inner pad */
   su_md5_t       am_hmac_opad;	/**< MD5 with outer pad */
 
@@ -182,11 +182,11 @@ SOFIAPUBFUN int auth_readdb_if_needed(auth_mod_t *am);
 
 SOFIAPUBFUN int auth_readdb(auth_mod_t *am);
 
-SOFIAPUBFUN msg_auth_t *auth_mod_credentials(msg_auth_t *auth, 
+SOFIAPUBFUN msg_auth_t *auth_mod_credentials(msg_auth_t *auth,
 					     char const *scheme,
 					     char const *realm);
 
-SOFIAPUBFUN auth_mod_t *auth_mod_alloc(auth_scheme_t *scheme, 
+SOFIAPUBFUN auth_mod_t *auth_mod_alloc(auth_scheme_t *scheme,
 				       tag_type_t, tag_value_t, ...);
 
 #define AUTH_PLUGIN(am) (auth_plugin_t *)((am) + 1)
@@ -211,13 +211,13 @@ void auth_method_basic(auth_mod_t *am,
 		       auth_challenger_t const *ach);
 
 SOFIAPUBFUN
-void auth_challenge_basic(auth_mod_t *am, 
+void auth_challenge_basic(auth_mod_t *am,
 			  auth_status_t *as,
 			  auth_challenger_t const *ach);
 
 /** Digest scheme */
 SOFIAPUBFUN
-msg_auth_t *auth_digest_credentials(msg_auth_t *auth, 
+msg_auth_t *auth_digest_credentials(msg_auth_t *auth,
 				    char const *realm,
 				    char const *opaque);
 
@@ -228,7 +228,7 @@ void auth_method_digest(auth_mod_t *am,
 			auth_challenger_t const *ach);
 
 SOFIAPUBFUN
-void auth_info_digest(auth_mod_t *am, 
+void auth_info_digest(auth_mod_t *am,
 		      auth_status_t *as,
 		      auth_challenger_t const *ach);
 
@@ -239,19 +239,19 @@ void auth_check_digest(auth_mod_t *am,
 		       auth_challenger_t const *ach);
 
 SOFIAPUBFUN
-void auth_challenge_digest(auth_mod_t *am, 
+void auth_challenge_digest(auth_mod_t *am,
 			   auth_status_t *as,
 			   auth_challenger_t const *ach);
 
 SOFIAPUBFUN
-isize_t auth_generate_digest_nonce(auth_mod_t *am, 
+isize_t auth_generate_digest_nonce(auth_mod_t *am,
 				   char buffer[],
 				   size_t buffer_len,
 				   int nextnonce,
 				   msg_time_t now);
 
 SOFIAPUBFUN
-int auth_validate_digest_nonce(auth_mod_t *am, 
+int auth_validate_digest_nonce(auth_mod_t *am,
 			       auth_status_t *as,
 			       auth_response_t *ar,
 			       msg_time_t now);
@@ -260,7 +260,7 @@ SOFIAPUBFUN int auth_allow_check(auth_mod_t *am, auth_status_t *as);
 
 /** Init md5 for MD5-based HMAC */
 SOFIAPUBFUN void auth_md5_hmac_init(auth_mod_t *am, su_md5_t *md5);
-SOFIAPUBFUN void auth_md5_hmac_digest(auth_mod_t *am, su_md5_t *md5, 
+SOFIAPUBFUN void auth_md5_hmac_digest(auth_mod_t *am, su_md5_t *md5,
 				      void *hmac, size_t size);
 
 SOFIA_END_DECLS

@@ -23,9 +23,9 @@
  */
 
 #ifndef UTF8INTERNAL_H
-#define UTF8INTERNAL_H 
+#define UTF8INTERNAL_H
 
-/**@IFILE utf8internal.h 
+/**@IFILE utf8internal.h
  * UTF-8 macros.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

@@ -9,7 +9,7 @@
 2006-10-12  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* libsofia-sip-ua interface v3 frozen (3:0:3) for the 1.12.3 release
-	
+
 2006-09-26  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* libsofia-sip-ua interface v2 frozen (2:0:2) for the 1.12.2 release
@@ -27,9 +27,9 @@
 	* Added urltag_scan().
 
 2006-08-23  Pekka Pessi  <Pekka.Pessi@nokia.com>
-	
+
 	* nta.c, nta.h: added nta_leg_make_replaces(), nta_leg_by_replaces().
-	
+
 	* nua: event watcher (nua_subscribe, nua_watcher) now tries to re-establish
 	  subscription if the subscription was terminated with reason "deactivated" or
 	  "probation". Likewise, if SUBSCRIBE was returned a suitable error response
@@ -49,13 +49,13 @@
 	* <SUBDIRS>/Doxyfile: Fixed the use of doxytags. Now
 	a separate 'doxytags_MODNAME' file is created for each
 	module.
-	
+
 2005-11-15  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* <SUBDIRS>/Makefile.am: Changed to use the 'include_sofia_HEADERS' 
+	* <SUBDIRS>/Makefile.am: Changed to use the 'include_sofia_HEADERS'
 	variable for listing public library headers. The variable
 	is defined in the top-level configure.ac.
-	
+
 2005-10-27  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
   * Always including stun library.
@@ -84,7 +84,7 @@
 
 2005-10-14  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
-	  * Shell syntax exercise. 
+	  * Shell syntax exercise.
 
 	    M ./autogen.sh -4 +4
 
@@ -94,7 +94,7 @@
 
 2005-10-13  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* <SUBDIRS>/Makefile.am: Build all submodules as proper shared 
+	* <SUBDIRS>/Makefile.am: Build all submodules as proper shared
 	libraries (noinst_LTLIBRARIES). Fixes sf.net:#1264030.
 
 2005-09-09  Pekka Pessi  <Pekka.Pessi@nokia.com>
@@ -179,7 +179,7 @@
 	    M ./iptsec/auth_module.c -5 +5
 
 	Thu Sep  8 21:10:23 EEST 2005  Pekka.Pessi@nokia.com
-	  * Added auth_digest_credentials(). 
+	  * Added auth_digest_credentials().
 	  Use opaque to match Authorization header.
 
 	    M ./iptsec/auth_digest_test.c -2 +3
@@ -319,7 +319,7 @@
 	    M ./url/url.c -1 +6
 
 	Thu Sep  8 18:01:17 EEST 2005  Pekka.Pessi@nokia.com
-	  * Explicitly using <errno.h> 
+	  * Explicitly using <errno.h>
 
 	    M ./msg/msg.c +2
 	    M ./msg/msg_mclass.c +1
@@ -369,10 +369,10 @@
 
 	Thu Sep  8 03:11:35 EEST 2005  Pekka.Pessi@nokia.com
 	  * su_home_new and su_home_unref
-	  Added su_home_new() and su_home_unref(). 
-	  
+	  Added su_home_new() and su_home_unref().
+
 	  Fixed su_home_mutex_lock() and su_home_mutex_unlock().
-	  
+
 	  Slightly changed semantics of su_home_clone() versus
 	  su_home_threadsafe().
 
@@ -386,7 +386,7 @@
 
 	Thu Sep  8 03:07:17 EEST 2005  Pekka.Pessi@nokia.com
 	  * More liberal sdp parsing for config files.
-	  Be more liberal when parsing config files 
+	  Be more liberal when parsing config files
 	  (do not require v=, accept -1 as len argument).
 
 	    M ./sdp/sdp_parse.c -9 +25
@@ -403,7 +403,7 @@
 
 	    M ./sdp/sdp.h +2
 	    M ./sdp/sdp_parse.c +10
-	
+
 2005-09-08  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* Makefile.am: Workaround for automake bug related to adding
@@ -416,7 +416,7 @@
 
 2005-08-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
-	* Fixed BEGIN()/END() pairs in test programs. 
+	* Fixed BEGIN()/END() pairs in test programs.
 
 2005-08-04  Pekka Pessi  <Pekka.Pessi@nokia.com>
 

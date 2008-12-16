@@ -36,7 +36,7 @@
 #include <string.h>
 #include "sofia-sip/base64.h"
 
-static unsigned char const code[] = 
+static unsigned char const code[] =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #define B64NOP 128
@@ -48,22 +48,22 @@ static unsigned char const code[] =
  * stores the result in the buffer @a buf of @a bsiz bytes.
  *
  * If the @a buf is NULL, the function just returns the length of decoded
- * data. In any case, no decoded data is stored in @a buf beyond @a bsiz. 
+ * data. In any case, no decoded data is stored in @a buf beyond @a bsiz.
  * The function always returns the full length of decodable data.
- * 
+ *
  * @param buf  Buffer to store decoded data
  * @param bsiz Size of @a buf
  * @param b64s Base64-encoded string.
  *
- * @return Length of data that can be decoded in bytes. 
+ * @return Length of data that can be decoded in bytes.
  *
- * @sa <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>, 
+ * @sa <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>,
  * <i>"Multipurpose Internet Mail Extensions (MIME) Part One:
  * Format of Internet Message Bodies"</i>,
  * N. Freed, N. Borenstein, November 1996.
  *
  * @par Example
- * The following example code decodes a string of BASE64 data into a 
+ * The following example code decodes a string of BASE64 data into a
  * memory area allocated from heap:
  * @code
  * int decoder(char const *encoded, void **return_decoded)
@@ -76,7 +76,7 @@ static unsigned char const code[] =
  * }
  * @endcode
  */
-isize_t base64_d(char buf[], isize_t bsiz, char const *b64s) 
+isize_t base64_d(char buf[], isize_t bsiz, char const *b64s)
 {
   static unsigned char decode[256] = "";
   unsigned char const *s = (unsigned char const *)b64s;
@@ -90,7 +90,7 @@ isize_t base64_d(char buf[], isize_t bsiz, char const *b64s)
   if (decode['\0'] != B64EOF) {
     /* Prepare decoding table */
     for (i = 1; i < 256; i++)
-      decode[i] = B64NOP; 
+      decode[i] = B64NOP;
 
     for (i = 0; i < 64; i++) {
       decode[code[i]] = (unsigned char)i;
@@ -104,17 +104,17 @@ isize_t base64_d(char buf[], isize_t bsiz, char const *b64s)
     if (c != B64NOP)
       len++;
   }
-  
+
   total_len = len = len * 3 / 4;
 
   if (buf == NULL || bsiz == 0)
     return total_len;
 
-  if (len > bsiz) 
+  if (len > bsiz)
     len = bsiz;
-  
+
   for (i = 0, s = (unsigned char const *)b64s; i < len; ) {
-      
+
     while ((b1 = decode[*s++]) == B64NOP)
       ;
     if (b1 != B64EOF)
@@ -126,7 +126,7 @@ isize_t base64_d(char buf[], isize_t bsiz, char const *b64s)
     if (b3 != B64EOF)
       while ((b4 = decode[*s++]) == B64NOP)
 	;
-      
+
     if (((b1 | b2 | b3 | b4) & (B64NOP|B64EOF)) == 0) {
       /* Normal case, 4 B64 chars to 3 data bytes */
       w = (b1 << 18) | (b2 << 12) | (b3 << 6) | b4;
@@ -163,8 +163,8 @@ isize_t base64_d(char buf[], isize_t bsiz, char const *b64s)
 }
 
 /**Encode data with BASE64.
- * 
- * The function base64_e() encodes @a dsiz bytes of @a data into @a buf. 
+ *
+ * The function base64_e() encodes @a dsiz bytes of @a data into @a buf.
  *
  * @note The function base64_e() uses at most @a bsiz bytes from @a buf.
  *
@@ -183,13 +183,13 @@ isize_t base64_d(char buf[], isize_t bsiz, char const *b64s)
  * @return The function base64_e() return length of encoded string,
  * excluding the final NUL.
  *
- * @sa <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>, 
+ * @sa <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>,
  * <i>"Multipurpose Internet Mail Extensions (MIME) Part One:
  * Format of Internet Message Bodies"</i>,
  * N. Freed, N. Borenstein, November 1996.
  *
  */
-isize_t base64_e(char buf[], isize_t bsiz, void *data, isize_t dsiz) 
+isize_t base64_e(char buf[], isize_t bsiz, void *data, isize_t dsiz)
 {
   unsigned char *s = (unsigned char *)buf;
   unsigned char *b = (unsigned char *)data;
@@ -200,7 +200,7 @@ isize_t base64_e(char buf[], isize_t bsiz, void *data, isize_t dsiz)
 
   if (bsize == 0)
     s = NULL;
-  
+
   for (i = 0, n = 0; i < dsize; i += 3, n += 4) {
     w = (b[i] << 16) | (b[i+1] << 8) | b[i+2];
 
@@ -211,9 +211,9 @@ isize_t base64_e(char buf[], isize_t bsiz, void *data, isize_t dsiz)
 	s[n + 2] = code[(w >> 6) & 63];
 	s[n + 3] = code[(w) & 63];
       } else {
-	if (n + 1 < bsize) 
+	if (n + 1 < bsize)
 	  s[n + 0] = code[(w >> 18) & 63];
-	if (n + 2 < bsize) 
+	if (n + 2 < bsize)
 	  s[n + 1] = code[(w >> 12) & 63];
 	if (n + 3 < bsize)
 	  s[n + 2] = code[(w >> 6) & 63];
@@ -221,8 +221,8 @@ isize_t base64_e(char buf[], isize_t bsiz, void *data, isize_t dsiz)
 	s = NULL;
       }
     }
-  }			   
-  
+  }
+
   if (slack) {
     if (s) {
       if (slack == 2)
@@ -230,7 +230,7 @@ isize_t base64_e(char buf[], isize_t bsiz, void *data, isize_t dsiz)
       else
 	w = (b[i] << 16);
 
-      if (n + 1 < bsize) 
+      if (n + 1 < bsize)
 	s[n + 0] = code[(w >> 18) & 63];
       if (n + 2 < bsize)
 	s[n + 1] = code[(w >> 12) & 63];

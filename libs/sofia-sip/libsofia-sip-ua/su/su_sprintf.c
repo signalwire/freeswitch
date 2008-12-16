@@ -27,7 +27,7 @@
  * @CFILE su_sprintf.c  su_*sprintf() functions
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Apr 17 20:05:21 2001 ppessi
  */
 
@@ -50,7 +50,7 @@
 
 #include "sofia-sip/su_alloc.h"
 
-/**Copy a formatted string. 
+/**Copy a formatted string.
  *
  * The function su_vsprintf() print a string according to a @a fmt like
  * vprintf() or vsnprintf(). The resulting string is copied to a memory area
@@ -61,7 +61,7 @@
  * @param home pointer to memory home (may be NULL)
  * @param fmt format string
  * @param ap @e stdarg argument list (must match with the @a fmt format string)
- * 
+ *
  * @return A pointer to a fresh copy of formatting result, or NULL upon an
  * error.
  */
@@ -76,9 +76,9 @@ char *su_vsprintf(su_home_t *home, char const *fmt, va_list ap)
   n = vsnprintf(s, sizeof(s), fmt, aq);
   va_end(aq);
 
-  if (n >= 0 && (size_t)n + 1 < sizeof(s)) 
+  if (n >= 0 && (size_t)n + 1 < sizeof(s))
     return su_strdup(home, s);
-  
+
   len = n > 0 ? (size_t)n + 1 : 2 * sizeof(s);
 
   for (rv = su_alloc(home, len);
@@ -90,7 +90,7 @@ char *su_vsprintf(su_home_t *home, char const *fmt, va_list ap)
     if (n > -1 && (size_t)n < len)
       break;
     if (n > -1)			/* glibc >2.1 */
-      len = (size_t)n + 1;		
+      len = (size_t)n + 1;
     else			/* glibc 2.0 */
       len *= 2;
 
@@ -101,7 +101,7 @@ char *su_vsprintf(su_home_t *home, char const *fmt, va_list ap)
   return rv;
 }
 
-/**Copy a formatted string. 
+/**Copy a formatted string.
  *
  * The function su_sprintf() print a string according to a @a fmt like
  * printf() or snprintf(). The resulting string is copied to a memory area
@@ -112,7 +112,7 @@ char *su_vsprintf(su_home_t *home, char const *fmt, va_list ap)
  * @param home pointer to memory home (may be NULL)
  * @param fmt format string
  * @param ... argument list (must match with the @a fmt format string)
- * 
+ *
  * @return A pointer to a fresh copy of formatting result, or NULL upon an
  * error.
  */

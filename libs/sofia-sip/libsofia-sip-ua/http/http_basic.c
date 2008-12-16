@@ -197,7 +197,7 @@ issize_t http_status_d(su_home_t *home, http_header_t *h, char *s, isize_t slen)
 
   if (msg_firstline_d(s, &status, &phrase) < 0 ||
       http_version_d(&s, &st->st_version) < 0 || *s ||
-      msg_uint32_d(&status, &code) == -1 || 
+      msg_uint32_d(&status, &code) == -1 ||
       status[0])
     return -1;
 
@@ -341,7 +341,7 @@ HTTP_HEADER_CLASS_LIST(allow, "Allow", list);
 #define http_authentication_info_dup_one msg_list_dup_one
 
 msg_hclass_t http_authentication_info_class[] =
-HTTP_HEADER_CLASS(authentication_info, "Authentication-Info", 
+HTTP_HEADER_CLASS(authentication_info, "Authentication-Info",
 		  ai_params, list, authentication_info);
 
 /* ====================================================================== */
@@ -427,7 +427,7 @@ HTTP_HEADER_CLASS_LIST(connection, "Connection", list_critical);
 /**@ingroup http_content_range
  * @typedef typedef struct http_content_range_s http_content_range_t;
  *
- * The structure #http_content_range_t contains representation of 
+ * The structure #http_content_range_t contains representation of
  * @b Content-Range header.
  *
  * The #http_content_range_t is defined as follows:
@@ -652,7 +652,7 @@ msg_hclass_t http_expires_class[] =
 HTTP_HEADER_CLASS(expires, "Expires", d_common, single, default);
 
 /* ====================================================================== */
-/**@HTTP_HEADER http_from From header. 
+/**@HTTP_HEADER http_from From header.
  *
  * @code
  *    From   = "From" ":" mailbox
@@ -773,7 +773,7 @@ HTTP_HEADER_CLASS_LIST(if_match, "If-Match", list);
 /**@ingroup http_if_modified_since
  * @typedef typedef struct http_if_modified_since_s http_if_modified_since_t;
  *
- * The structure #http_if_modified_since_t contains representation of 
+ * The structure #http_if_modified_since_t contains representation of
  * @b If-Modified-Since header.
  *
  * The #http_if_modified_since_t is defined as follows:
@@ -790,7 +790,7 @@ HTTP_HEADER_CLASS_LIST(if_match, "If-Match", list);
 #define http_if_modified_since_e http_date_e
 
 msg_hclass_t http_if_modified_since_class[] =
-HTTP_HEADER_CLASS(if_modified_since, "If-Modified-Since", 
+HTTP_HEADER_CLASS(if_modified_since, "If-Modified-Since",
 		  d_common, single, default);
 
 /* ====================================================================== */
@@ -802,7 +802,7 @@ msg_hclass_t http_if_none_match_class[] =
 HTTP_HEADER_CLASS_LIST(if_none_match, "If-None-Match", list);
 
 /* ====================================================================== */
-/**@HTTP_HEADER http_if_range If-Range header. 
+/**@HTTP_HEADER http_if_range If-Range header.
  *
  * The @b If-Range header is used when a client has a partial copy of an
  * entity in its cache, and wishes to have an up-to-date copy of the entire
@@ -813,7 +813,7 @@ HTTP_HEADER_CLASS_LIST(if_none_match, "If-None-Match", list);
  * @code
  *   If-Range = "If-Range" ":" ( entity-tag / HTTP-date )
  * @endcode
- */    
+ */
 
 /** Parse If-Range header */
 issize_t http_if_range_d(su_home_t *home, http_header_t *h, char *s, isize_t slen)
@@ -892,7 +892,7 @@ HTTP_HEADER_CLASS(if_range, "If-Range", ifr_common, single, if_range);
 /**@ingroup http_if_unmodified_since
  * @typedef typedef http_date_t http_if_unmodified_since_t;
  *
- * The structure #http_if_unmodified_since_t contains representation of 
+ * The structure #http_if_unmodified_since_t contains representation of
  * @b If-Unmodified-Since header.
  *
  * The #http_if_unmodified_since_t is defined as follows:
@@ -909,7 +909,7 @@ HTTP_HEADER_CLASS(if_range, "If-Range", ifr_common, single, if_range);
 #define http_if_unmodified_since_e http_date_e
 
 msg_hclass_t http_if_unmodified_since_class[] =
-HTTP_HEADER_CLASS(if_unmodified_since, "If-Unmodified-Since", 
+HTTP_HEADER_CLASS(if_unmodified_since, "If-Unmodified-Since",
 		  d_common, single, default);
 
 

@@ -24,7 +24,7 @@
 
 /**@internal @file strcasestr.c
  * @brief Backup implementation of strcasestr()
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  */
 
@@ -67,7 +67,7 @@ char *strcasestr(const char *haystack,
       }
     }
     haystack++;
-  } 
+  }
 
   return NULL;		/* Not found */
 }

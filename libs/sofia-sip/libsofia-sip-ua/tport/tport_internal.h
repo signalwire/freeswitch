@@ -136,21 +136,21 @@ struct tport_s {
   ssize_t             tp_refs;		/**< Number of references to tport */
 
   unsigned            tp_black:1;       /**< Used by red-black-tree */
-  
+
   unsigned            tp_accepted:1;    /**< Originally server? */
   unsigned            tp_conn_orient:1;	/**< Is connection-oriented */
   unsigned            tp_has_connection:1; /**< Has real connection */
   unsigned            tp_reusable:1;    /**< Can this connection be reused */
   unsigned            tp_closed : 1;
   /**< This transport is closed.
-   * 
+   *
    * A closed transport is inserted into pri_closed list.
    */
 
   /** Remote end has sent FIN (2) or we should not just read */
   unsigned            tp_recv_close:2;
   /** We will send FIN (1) or have sent FIN (2) */
-  unsigned            tp_send_close:2; 
+  unsigned            tp_send_close:2;
   unsigned            tp_has_keepalive:1;
   unsigned            tp_has_stun_server:1;
   unsigned            tp_trunc:1;
@@ -172,7 +172,7 @@ struct tport_s {
   su_time_t           tp_ptime;	        /**< Ping sent */
 
   tp_name_t           tp_name[1];	/**< Transport name.
-					 * 
+					 *
 					 * This is either our name (if primary)
 					 * or peer name (if secondary).
 					 */
@@ -205,7 +205,7 @@ struct tport_s {
   unsigned            tp_pused;         /**< Used pends */
   tport_pending_t    *tp_pending;       /**< Pending requests */
   tport_pending_t    *tp_released;      /**< Released pends */
-  
+
   /* ==== Send queue ===================================================== */
 
   msg_t             **tp_queue;		/**< Messages being sent */
@@ -225,7 +225,7 @@ struct tport_s {
   tport_compressor_t *tp_comp;
 
   /* ==== Statistics  ===================================================== */
-  
+
   struct {
     uint64_t sent_msgs, sent_errors, sent_bytes, sent_on_line;
     uint64_t recv_msgs, recv_errors, recv_bytes, recv_on_line;
@@ -244,9 +244,9 @@ struct tport_primary {
 #endif
   tport_vtable_t const
                      *pri_vtable;
-  int                 pri_public;       /**< Type of primary transport; 
+  int                 pri_public;       /**< Type of primary transport;
 					 * tport_type_local,
-					 * tport_type_stun, etc. 
+					 * tport_type_stun, etc.
 					 */
 
   tport_primary_t    *pri_next;	        /**< Next primary tport */
@@ -276,20 +276,20 @@ struct tport_master {
   int                 mr_stun_step_ready; /**< for stun's callback */
 
   tp_stack_t  	     *mr_stack;         /**< Transport consumer */
-  tp_stack_class_t 
+  tp_stack_class_t
                const *mr_tpac;		/**< Methods provided by stack */
   int                 mr_log;	        /**< Do logging of parsed messages */
   su_root_t    	     *mr_root;		/**< SU root pointer */
 
   /**< Timer reclaiming unused connections and compartment */
-  su_timer_t         *mr_timer;		
+  su_timer_t         *mr_timer;
   /** FILE to dump received and sent data */
-  FILE               *mr_dump_file;	
+  FILE               *mr_dump_file;
   char               *mr_dump;	/**< Filename for dumping received/sent data */
   tport_primary_t    *mr_primaries;        /**< List of primary contacts */
 
   tport_params_t      mr_params[1];
-  
+
   unsigned            mr_boundserver:1; /**< Server has been bound */
   unsigned            mr_bindv6only:1; /**< We can bind separately to IPv6/4 */
   unsigned :0;
@@ -340,7 +340,7 @@ struct tport_vtable
 			  char const **return_culprit);
   void (*vtp_deinit_primary)(tport_primary_t *pri);
   int (*vtp_wakeup_pri)(tport_primary_t *pri, int events);
-  tport_t *(*vtp_connect)(tport_primary_t *pri, su_addrinfo_t *ai, 
+  tport_t *(*vtp_connect)(tport_primary_t *pri, su_addrinfo_t *ai,
 			  tp_name_t const *tpn);
 
   size_t vtp_secondary_size;	/* Size of secondary tport */
@@ -355,8 +355,8 @@ struct tport_vtable
   ssize_t (*vtp_send)(tport_t const *self, msg_t *msg,
 		      msg_iovec_t iov[], size_t iovused);
   void (*vtp_deliver)(tport_t *self,  msg_t *msg, su_time_t now);
-  int (*vtp_prepare)(tport_t *self, msg_t *msg, 
-		     tp_name_t const *tpn, 
+  int (*vtp_prepare)(tport_t *self, msg_t *msg,
+		     tp_name_t const *tpn,
 		     struct sigcomp_compartment *cc,
 		     unsigned mtu);
   int (*vtp_keepalive)(tport_t *self, su_addrinfo_t const *ai,
@@ -364,7 +364,7 @@ struct tport_vtable
   int (*vtp_stun_response)(tport_t const *self,
 			   void *msg, size_t msglen,
 			   void *addr, socklen_t addrlen);
-  int (*vtp_next_secondary_timer)(tport_t *self, su_time_t *, 
+  int (*vtp_next_secondary_timer)(tport_t *self, su_time_t *,
 				  char const **return_why);
   void (*vtp_secondary_timer)(tport_t *self, su_time_t);
 };
@@ -391,12 +391,12 @@ int tport_primary_compression(tport_primary_t *pri,
 
 void tport_set_tos(su_socket_t socket, su_addrinfo_t *ai, int tos);
 
-tport_t *tport_base_connect(tport_primary_t *pri, 
+tport_t *tport_base_connect(tport_primary_t *pri,
 			    su_addrinfo_t *ai,
 			    su_addrinfo_t *name,
 			    tp_name_t const *tpn);
 
-int tport_stream_init_primary(tport_primary_t *pri, 
+int tport_stream_init_primary(tport_primary_t *pri,
 			      su_socket_t socket,
 			      tp_name_t tpn[1],
 			      su_addrinfo_t *ai,
@@ -427,36 +427,36 @@ void tport_recv_event(tport_t *self);
 void tport_send_event(tport_t *self);
 void tport_hup_event(tport_t *self);
 
-ssize_t tport_recv_iovec(tport_t const *self, 
+ssize_t tport_recv_iovec(tport_t const *self,
 			 msg_t **mmsg,
-			 msg_iovec_t iovec[msg_n_fragments], size_t N, 
+			 msg_iovec_t iovec[msg_n_fragments], size_t N,
 			 int exact);
 
 msg_t *tport_msg_alloc(tport_t const *self, usize_t size);
 
-int tport_prepare_and_send(tport_t *self, msg_t *msg, 
-			   tp_name_t const *tpn, 
+int tport_prepare_and_send(tport_t *self, msg_t *msg,
+			   tp_name_t const *tpn,
 			   struct sigcomp_compartment *cc,
 			   unsigned mtu);
-int tport_send_msg(tport_t *self, msg_t *msg, 
-		   tp_name_t const *tpn, 
+int tport_send_msg(tport_t *self, msg_t *msg,
+		   tp_name_t const *tpn,
 		   struct sigcomp_compartment *cc);
 
 void tport_send_queue(tport_t *self);
 
-void tport_deliver(tport_t *self, msg_t *msg, msg_t *next, 
+void tport_deliver(tport_t *self, msg_t *msg, msg_t *next,
 		   tport_compressor_t *comp,
 		   su_time_t now);
 void tport_base_deliver(tport_t *self, msg_t *msg, su_time_t now);
 
 int tport_recv_error_report(tport_t *self);
-void tport_error_report(tport_t *self, int errcode, 
+void tport_error_report(tport_t *self, int errcode,
 			su_sockaddr_t const *addr);
 
 int tport_open_log(tport_master_t *mr, tagi_t *tags);
-void tport_log_msg(tport_t *tp, msg_t *msg, char const *what, 
+void tport_log_msg(tport_t *tp, msg_t *msg, char const *what,
 		   char const *via, su_time_t now);
-void tport_dump_iovec(tport_t const *self, msg_t *msg, 
+void tport_dump_iovec(tport_t const *self, msg_t *msg,
 		      size_t n, su_iovec_t const iov[], size_t iovused,
 		      char const *what, char const *how);
 
@@ -466,9 +466,9 @@ int tport_tcp_pong(tport_t *self);
 extern tport_vtable_t const tport_udp_vtable;
 extern tport_vtable_t const tport_udp_client_vtable;
 
-int tport_udp_init_primary(tport_primary_t *, 
-			   tp_name_t tpn[1], 
-			   su_addrinfo_t *, 
+int tport_udp_init_primary(tport_primary_t *,
+			   tp_name_t tpn[1],
+			   su_addrinfo_t *,
 			   tagi_t const *,
 			   char const **return_culprit);
 void tport_udp_deinit_primary(tport_primary_t *);
@@ -480,12 +480,12 @@ int tport_udp_error(tport_t const *self, su_sockaddr_t name[1]);
 extern tport_vtable_t const tport_tcp_vtable;
 extern tport_vtable_t const tport_tcp_client_vtable;
 
-int tport_tcp_init_primary(tport_primary_t *, 
- 			  tp_name_t  tpn[1], 
+int tport_tcp_init_primary(tport_primary_t *,
+ 			  tp_name_t  tpn[1],
  			  su_addrinfo_t *, tagi_t const *,
  			  char const **return_culprit);
-int tport_tcp_init_client(tport_primary_t *, 
- 			 tp_name_t tpn[1], 
+int tport_tcp_init_client(tport_primary_t *,
+ 			 tp_name_t tpn[1],
  			 su_addrinfo_t *, tagi_t const *,
  			 char const **return_culprit);
 int tport_tcp_init_secondary(tport_t *self, int socket, int accepted,
@@ -518,7 +518,7 @@ typedef struct tport_descriptor_s {
   int tpd_is_client_only;
 } tport_descriptor_t;
 
-typedef int const *(tport_set_f)(tport_master_t *mr, 
+typedef int const *(tport_set_f)(tport_master_t *mr,
 				 tp_name_t const *tpn,
 				 tagi_t const *taglist,
 				 tport_descriptor_t **return_set,
@@ -566,8 +566,8 @@ int tport_recv_comp_dgram(tport_t const *self,
 			  socklen_t fromlen);
 
 ssize_t tport_send_comp(tport_t const *self,
-		    msg_t *msg, 
-		    msg_iovec_t iov[], 
+		    msg_t *msg,
+		    msg_iovec_t iov[],
 		    size_t iovused,
 		    struct sigcomp_compartment *cc,
 		    tport_compressor_t *sc);

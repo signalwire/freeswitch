@@ -5,10 +5,10 @@
  * @section iptsec_meta Module Meta Information
  *
  * The iptsec module currently provides interfaces to HTTP
- * Basic and Digest authentication, used by HTTP and SIP protocol elements. 
- * There are both 
- * @ref auth_client "client-side" and 
- * @ref auth_module "server-side" 
+ * Basic and Digest authentication, used by HTTP and SIP protocol elements.
+ * There are both
+ * @ref auth_client "client-side" and
+ * @ref auth_module "server-side"
  * (authentication verification) functionality available.
  *
  * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -25,13 +25,13 @@
  * operation is simple enough:
  * -# server initializes an #auth_status_t structure with information from
  *    the request
- * -# server calls auth_mod_method() 
- * -# server checks the status from auth_status_t structure, sends an error 
+ * -# server calls auth_mod_method()
+ * -# server checks the status from auth_status_t structure, sends an error
  *    response to the client if authentication fails
  * -# server proceeds serving the authenticated request.
  *
  * If the operation is asynchronous, only a preliminary result is stored in
- * the auth_status_t structure when the call to auth_mod_method() returns. 
+ * the auth_status_t structure when the call to auth_mod_method() returns.
  * In that case, the application can assign a callback function to the
  * structure. The callback function is invoked when the authentication
  * operation is completed. An asynchronous authentication operation can be
@@ -62,7 +62,7 @@
  * -# store the challenge to a list with auc_challenge()
  * -# prompt user and feed credentials (username and password) to the list
  *    with auc_credentials() or auc_all_credentials()
- * -# authorize a request (add credential headers to it) with 
+ * -# authorize a request (add credential headers to it) with
  *    auc_authorization() and resend the request
  *
  * If there are several username/password pairs for multiple authentication

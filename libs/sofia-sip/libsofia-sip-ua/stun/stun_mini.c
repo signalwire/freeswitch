@@ -24,14 +24,14 @@
 
 /**@internal
  * @file stun_mini.c
- * @brief Minimal stun server 
- * 
+ * @brief Minimal stun server
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Tat Chan <Tat.Chan@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
- *  
+ *
  * @date Created: Fri Oct  3 13:40:41 2003 ppessi
- * 
+ *
  */
 
 #include "config.h"
@@ -62,11 +62,11 @@ struct stun_mini_s
   stun_bound_t *sockets;
 };
 
-static int process_3489_request(stun_mini_t *mini, 
+static int process_3489_request(stun_mini_t *mini,
 				stun_msg_t *request, stun_msg_t *response,
 				su_socket_t socket, void *, socklen_t);
 
-static int process_bis_request(stun_mini_t *mini, 
+static int process_bis_request(stun_mini_t *mini,
 			       stun_msg_t *request, stun_msg_t *response,
 			       su_socket_t socket, void *, socklen_t);
 
@@ -118,12 +118,12 @@ int stun_mini_add_socket(stun_mini_t *mini, su_socket_t socket)
     return su_seterrno(EAFNOSUPPORT);
 
   ss = calloc(1, offsetof(stun_bound_t, ss_addr.array[addrlen]));
-  
+
   ss->ss_socket = socket;
   ss->ss_scope = su_sockaddr_scope((void *)addr, addrlen);
 
   memcpy(ss->ss_addr.array, addr, ss->ss_addrlen = addrlen);
-  
+
   *next = ss;
 
   return 0;
@@ -168,7 +168,7 @@ void stun_mini_request(stun_mini_t *mini,
 
   if (mini == NULL || msg == NULL || from == NULL)
     return;
-    
+
   if (msglen < 20)
     verdict = "runt";
   else if (data[0] == 1)
@@ -218,7 +218,7 @@ int process_3489_request(stun_mini_t *mini,
 			 stun_msg_t *request,
 			 stun_msg_t *response,
 			 su_socket_t socket,
-			 void *from, 
+			 void *from,
 			 socklen_t fromlen)
 {
   stun_bound_t *ss, *changed = NULL, ss0[1];
@@ -239,12 +239,12 @@ int process_3489_request(stun_mini_t *mini,
   a = stun_get_attr(request->stun_attr, RESPONSE_ADDRESS);
   if (a)
     return STUN_600_GLOBAL_FAILURE;
- 
+
   /* compose header */
   response->stun_hdr.msg_type = BINDING_RESPONSE;
-  memcpy(response->stun_hdr.tran_id, request->stun_hdr.tran_id, 
+  memcpy(response->stun_hdr.tran_id, request->stun_hdr.tran_id,
 	 sizeof response->stun_hdr.tran_id);
-  
+
   next = &response->stun_attr;
 
   /* MAPPED-ADDRESS */
@@ -265,7 +265,7 @@ int process_3489_request(stun_mini_t *mini,
     struct sockaddr_in const *sin, *sin2;
     int scope = su_sockaddr_scope(from, fromlen);
     stun_bound_t *changed_ip = NULL, *same_scope = NULL;
-    
+
     sin = from;
 
     for (changed = mini->sockets; changed; changed = changed->ss_next) {
@@ -296,7 +296,7 @@ int process_3489_request(stun_mini_t *mini,
       /* We don't have socekt with both changed port and ip */
       changed = changed_ip;
 
-    if (changed == NULL) 
+    if (changed == NULL)
       changed = same_scope;
   }
 
@@ -337,11 +337,11 @@ int process_3489_request(stun_mini_t *mini,
   stun_send_message(socket, (void *)from, response, NULL);
 
   return 0;
-} 
+}
 
-static int process_bis_request(stun_mini_t *mini, 
+static int process_bis_request(stun_mini_t *mini,
 			       stun_msg_t *request, stun_msg_t *response,
-			       su_socket_t socket, 
+			       su_socket_t socket,
 			       void *from, socklen_t fromlen)
 {
   return process_3489_request(mini, request, response, socket, from, fromlen);
@@ -365,7 +365,7 @@ int send_stun_error(stun_msg_t *response,
 
   response->stun_hdr.msg_type = BINDING_ERROR_RESPONSE;
   response->stun_hdr.msg_len = 0; /* actual len computed later */
-  
+
   memcpy(response->stun_hdr.tran_id, transaction_id, 16);
 
   /* ERROR-CODE */

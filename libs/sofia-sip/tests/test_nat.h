@@ -33,7 +33,7 @@ SOFIA_BEGIN_DECLS
 struct nat;
 struct nat_filter;
 
-struct nat *test_nat_create(su_root_t *, int family, 
+struct nat *test_nat_create(su_root_t *, int family,
 			    tag_type_t, tag_value_t, ...);
 
 void test_nat_destroy(struct nat *);

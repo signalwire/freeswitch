@@ -24,12 +24,12 @@
 
 /**@internal @ingroup su_root_ex
  *
- * @file su_proxy.c 
+ * @file su_proxy.c
  *
  * @brief Transport level proxy demonstrating various @b su features.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Wed May 23 17:42:40 2001 ppessi
  */
 
@@ -63,7 +63,7 @@ typedef struct buffer_s buffer_t;
 #define __func__ "su_proxy"
 #endif
 
-struct proxy_s 
+struct proxy_s
 {
   su_home_t      pr_home[1];
   su_root_t     *pr_root;
@@ -71,7 +71,7 @@ struct proxy_s
   forwarder_t   *pr_forwarders;
 };
 
-struct forwarder_s 
+struct forwarder_s
 {
   forwarder_t  *f_next;
   forwarder_t **f_prev;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     error = pr_run(pr);
 
   pr_deinit(pr);
-   
+
   su_deinit();
 
   exit(error);
@@ -189,14 +189,14 @@ int pr_config(proxy_t *pr, int argc, char *argv[])
     return 2;
 
   if ((error = su_getaddrinfo(argv[1], argv[2], hints, &res))) {
-    fprintf(stderr, "getaddrinfo: %s:%s: %s\n", 
+    fprintf(stderr, "getaddrinfo: %s:%s: %s\n",
 	    argv[1], argv[2], su_gai_strerror(error));
     return 1;
   }
 
     pr->pr_addrinfo = res;
 
-  if (argv[3]) 
+  if (argv[3])
     service = argv[3];
   else
     service = argv[2];
@@ -208,14 +208,14 @@ int pr_config(proxy_t *pr, int argc, char *argv[])
     return 1;
   }
 
-  for (ai = res; 
+  for (ai = res;
        ai;
        ai = ai->ai_next) {
     forwarder_create_listener(pr, ai);
   }
 
   su_freeaddrinfo(res);
-  
+
   if (!pr->pr_forwarders) {
     fprintf(stderr, "%s:%s: %s\n", argv[1], argv[2], "unable to forward");
     return 1;
@@ -233,7 +233,7 @@ void pr_deinit(proxy_t *pr)
     su_root_destroy(pr->pr_root), pr->pr_root = NULL;
 
   su_home_deinit(pr->pr_home);
-  
+
   su_deinit();
 }
 
@@ -315,8 +315,8 @@ static forwarder_t *forwarder_create_listener(proxy_t *pr, su_addrinfo_t *ai)
       su_setblocking(s, 0);
       su_setreuseaddr(s, 1);
       if (bind(s, ai->ai_addr, ai->ai_addrlen) >= 0) {
-	if (ai->ai_socktype == SOCK_STREAM ? 
-	    forwarder_init_stream(f) >= 0 : 
+	if (ai->ai_socktype == SOCK_STREAM ?
+	    forwarder_init_stream(f) >= 0 :
 	    forwarder_init_dgram(f) >= 0)
 	  return f;
       }
@@ -327,7 +327,7 @@ static forwarder_t *forwarder_create_listener(proxy_t *pr, su_addrinfo_t *ai)
   }
 
   forwarder_destroy(f);
-  
+
   return NULL;
 }
 
@@ -335,11 +335,11 @@ int forwarder_init_stream(forwarder_t *f)
 {
   if (listen(f->f_socket, SOMAXCONN) < 0)
     return SOCKET_ERROR;
-  
+
   if (su_wait_create(f->f_wait, f->f_socket, SU_WAIT_ACCEPT) < 0)
     return SOCKET_ERROR;
 
-  if (su_root_register(f->f_pr->pr_root, f->f_wait, 
+  if (su_root_register(f->f_pr->pr_root, f->f_wait,
 		       forwarder_accept, f, 0) < 0)
     return SOCKET_ERROR;
 
@@ -359,7 +359,7 @@ int forwarder_accept(proxy_t *pr, su_wait_t *w, forwarder_t *f0)
   su_sockaddr_t *su;
   socklen_t  sulen;
   int events;
-  
+
   events = su_wait_events(w, f0->f_socket);
 
   f = forwarder_create(pr);
@@ -371,7 +371,7 @@ int forwarder_accept(proxy_t *pr, su_wait_t *w, forwarder_t *f0)
     f->f_upstream = 1;
     if (f->f_socket != INVALID_SOCKET) {
       char buf[SU_ADDRSIZE];
-      
+
       SU_DEBUG_3(("accept: connection from %s:%u\n",
 		  su_inet_ntop(su->su_family, SU_ADDR(su), buf, sizeof(buf)),
 		  ntohs(su->su_port)));
@@ -400,7 +400,7 @@ int forwarder_stream_peer(proxy_t *pr, forwarder_t *f_peer)
   su_addrinfo_t *ai;
 
   assert(f_peer);
-  
+
   f = forwarder_create(pr);
   if (!f) {
     SU_DEBUG_1(("%s: cannot allocate peer\n", __func__));
@@ -440,7 +440,7 @@ int forwarder_stream_peer(proxy_t *pr, forwarder_t *f_peer)
     goto error;
   }
 
-  if (su_root_register(pr->pr_root, f->f_wait + 1, 
+  if (su_root_register(pr->pr_root, f->f_wait + 1,
 		       forwarder_connected, f, 0) == -1) {
     SU_DEBUG_1(("%s: cannot register\n", __func__));
     goto error;
@@ -495,13 +495,13 @@ int forwarder_recv(proxy_t *pr, su_wait_t *w, forwarder_t *f)
   if (n > 0) {
     b->b_sent = 0; b->b_used = n;
     if (f->f_peer->f_buf) {
-      forwarder_append(f, b); 
+      forwarder_append(f, b);
       return 0;
     }
     if (forwarder_send(pr, f->f_peer, b) >= 0) {
       if (b->b_sent < b->b_used) {
 	su_root_unregister(pr->pr_root, w, forwarder_recv, f);
-	su_root_register(pr->pr_root, f->f_peer->f_wait + 1, 
+	su_root_register(pr->pr_root, f->f_peer->f_wait + 1,
 			 forwarder_empty, f->f_peer, 0);
 	forwarder_append(f, b);
       }
@@ -514,7 +514,7 @@ int forwarder_recv(proxy_t *pr, su_wait_t *w, forwarder_t *f)
   if (n < 0) {
     int error = su_errno();
     SU_DEBUG_1(("recv: %s\n", su_strerror(error)));
-  
+
     if (error == EINTR || error == EAGAIN || error == EWOULDBLOCK) {
       return 0;
     }
@@ -523,7 +523,7 @@ int forwarder_recv(proxy_t *pr, su_wait_t *w, forwarder_t *f)
   }
 
   /* shutdown */
-  forwarder_shutdown(f);	
+  forwarder_shutdown(f);
 
   return 0;
 }
@@ -531,7 +531,7 @@ int forwarder_recv(proxy_t *pr, su_wait_t *w, forwarder_t *f)
 int forwarder_send(proxy_t *pr, forwarder_t *f, buffer_t *b)
 {
   int n, error;
-  
+
   do {
     n = send(f->f_socket, b->b_data + b->b_sent, b->b_used - b->b_sent, 0);
 
@@ -626,11 +626,11 @@ int forwarder_shutdown(forwarder_t *f)
   forwarder_t *f_peer = f->f_peer;
   su_sockaddr_t *su = f->f_dest;
   char buf[SU_ADDRSIZE];
-  
+
   SU_DEBUG_3(("forwarder_shutdown: shutdown from %s:%u\n",
 	      su_inet_ntop(su->su_family, SU_ADDR(su), buf, sizeof(buf)),
 	      ntohs(su->su_port)));
-  
+
   if (su_root_unregister(f->f_pr->pr_root, f->f_wait, forwarder_recv, f) < 0) {
     SU_DEBUG_1(("%s: su_root_unregister failed\n", __func__));
   }

@@ -67,19 +67,19 @@ typedef struct nea_event_s      nea_event_t;
 /** Event view. */
 typedef struct nea_event_view_s nea_event_view_t;
 
-#ifndef NEA_SMAGIC_T 
+#ifndef NEA_SMAGIC_T
 #define NEA_SMAGIC_T            struct nea_smagic_t
 #endif
 /** NEA server context */
 typedef NEA_SMAGIC_T nea_smagic_t;
 
-#ifndef NEA_EMAGIC_T 
+#ifndef NEA_EMAGIC_T
 #define NEA_EMAGIC_T            struct nea_emagic_t
 #endif
 /** NEA server event context */
 typedef NEA_EMAGIC_T nea_emagic_t;
 
-#ifndef NEA_EVMAGIC_T 
+#ifndef NEA_EVMAGIC_T
 #define NEA_EVMAGIC_T           struct nea_evmagic_t
 #endif
 /** Event view context */
@@ -88,7 +88,7 @@ typedef NEA_EVMAGIC_T nea_evmagic_t;
 /** Description of subscription */
 typedef struct nea_subnode_t {
   nea_state_t          sn_state;       	/**< Subscription state */
-  unsigned             sn_fake;	       	/**< True if subscriber is given 
+  unsigned             sn_fake;	       	/**< True if subscriber is given
 				       	 *   fake contents.
 				       	 */
   unsigned             sn_eventlist;    /**< Subscriber supports eventlist */
@@ -98,7 +98,7 @@ typedef struct nea_subnode_t {
   sip_contact_t const *sn_contact;     	/**< Contact of subscriber */
 
   /** Content-Type of SUBSCRIBE body (filter). */
-  sip_content_type_t const *sn_content_type; 
+  sip_content_type_t const *sn_content_type;
   sip_payload_t const *sn_payload;      /**< Body of subscribe*/
 
   unsigned             sn_expires;     	/**< When subscription expires */
@@ -123,7 +123,7 @@ typedef struct nea_payloads_s   nea_payloads_t;
  *
  * @retval 1 application takes care of responding to request
  * @retval 0 application has added new event or payload format
- * @retval -1 nea server rejects request 
+ * @retval -1 nea server rejects request
  */
 typedef int (nea_new_event_f)(nea_smagic_t *context,
 			      nea_server_t *nes,
@@ -166,7 +166,7 @@ SOFIAPUBFUN
 int nea_server_add_irq(nea_server_t *nes,
 		       nta_leg_t *leg,
 		       sip_contact_t const *local_target,
-		       nta_incoming_t *irq, 
+		       nta_incoming_t *irq,
 		       sip_t const *sip);
 
 /** QAUTH callback function type.
@@ -189,7 +189,7 @@ SOFIAPUBFUN
 nea_event_t *nea_event_create(nea_server_t *nes,
 			      nea_watcher_f *callback,
 			      nea_emagic_t *context,
-			      char const *name, 
+			      char const *name,
 			      char const *subname,
 			      char const *default_content_type,
 			      char const *accept);
@@ -199,7 +199,7 @@ SOFIAPUBFUN
 nea_event_t *nea_event_tcreate(nea_server_t *nes,
 			       nea_watcher_f *callback,
 			       nea_emagic_t *context,
-			       char const *name, 
+			       char const *name,
 			       char const *subname,
 			       tag_type_t, tag_value_t, ...);
 
@@ -215,10 +215,10 @@ SOFIAPUBFUN int nea_server_active(nea_server_t *nes, nea_event_t const *ev);
 /** Get number of (non-embryonic) subscribers. */
 int nea_server_non_embryonic(nea_server_t *nes, nea_event_t const *ev);
 
-/** Obtain a list of subscriptions. 
+/** Obtain a list of subscriptions.
  */
 SOFIAPUBFUN
-nea_subnode_t const **nea_server_get_subscribers(nea_server_t *nes, 
+nea_subnode_t const **nea_server_get_subscribers(nea_server_t *nes,
 						 nea_event_t const *ev);
 
 /** Free a list of subscriptions. */
@@ -227,12 +227,12 @@ void nea_server_free_subscribers(nea_server_t *nes, nea_subnode_t const **);
 
 /** Notify subscribers */
 SOFIAPUBFUN
-int nea_server_notify(nea_server_t *nes, 
+int nea_server_notify(nea_server_t *nes,
 		      nea_event_t *ev);
 
 /** Notify a subscriber */
 SOFIAPUBFUN
-int nea_server_notify_one(nea_server_t *nes, 
+int nea_server_notify_one(nea_server_t *nes,
 			  nea_event_t *ev,
 			  nea_sub_t *ns);
 
@@ -257,12 +257,12 @@ SOFIAPUBFUN unsigned nea_sub_pending(nea_sub_t const *);
 #if 0
 /** Do a remote qauth.
  *
- * The function nea_server_qauth() is given as q_callback pointer 
+ * The function nea_server_qauth() is given as q_callback pointer
  * to nea_server_create() if remote authentication from url is desired.
  */
-void nea_server_qauth(nea_server_t *nes, 
+void nea_server_qauth(nea_server_t *nes,
 		      nea_emagic_t *context,
-		      nea_sub_t *subscriber, 
+		      nea_sub_t *subscriber,
 		      sip_t const *sip);
 #endif
 
@@ -329,7 +329,7 @@ SOFIAPUBVAR tag_typedef_t neatag_sub_ref;
 /** NEA Event Watcher */
 typedef struct nea_s     nea_t;
 
-#ifndef NEA_MAGIC_T 
+#ifndef NEA_MAGIC_T
 #define NEA_MAGIC_T struct nea_magic_t
 #endif
 
@@ -337,7 +337,7 @@ typedef struct nea_s     nea_t;
 typedef NEA_MAGIC_T          nea_magic_t;
 
 /** Event notification callback type.
- * 
+ *
  * This callback is called also when initial or refresh subscribe transaction
  * completes with the transaction result in @a sip.
  */
@@ -360,7 +360,7 @@ nea_t *nea_create(nta_agent_t *agent,
 
 /** Update SUBSCRIBE payload (filter rules) */
 SOFIAPUBFUN
-int nea_update(nea_t *nea, 
+int nea_update(nea_t *nea,
 	       tag_type_t tag,
 	       tag_value_t value,
 	       ...);

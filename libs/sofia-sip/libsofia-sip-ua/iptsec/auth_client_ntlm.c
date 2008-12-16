@@ -63,20 +63,20 @@ typedef struct auth_ntlm_client_s
   auth_challenge_t ntlm_ac[1];
 } auth_ntlm_client_t;
 
-static int auc_ntlm_challenge(auth_client_t *ca, 
+static int auc_ntlm_challenge(auth_client_t *ca,
 				msg_auth_t const *ch);
-static int auc_ntlm_authorization(auth_client_t *ca, 
+static int auc_ntlm_authorization(auth_client_t *ca,
 				    su_home_t *h,
-				    char const *method, 
-				    url_t const *url, 
+				    char const *method,
+				    url_t const *url,
 				    msg_payload_t const *body,
 				    msg_header_t **);
 
-auth_client_plugin_t const _ntlm_client_plugin = 
-{ 
+auth_client_plugin_t const _ntlm_client_plugin =
+{
   sizeof ca_ntlm_plugin,
   sizeof (auth_ntlm_client_t),
-  "NTLM", 
+  "NTLM",
   auc_ntlm_challenge,
   auc_ntlm_authorization
 };
@@ -142,7 +142,7 @@ static int auc_ntlm_challenge(auth_client_t *ca, msg_auth_t const *ch)
  * @param pass 	  password
  * @param ac      challenge structure
  * @param cnonce  client nonce
- * @param nc      client nonce count 
+ * @param nc      client nonce count
  * @param method  request method
  * @param uri     request uri
  * @param data    message body
@@ -152,10 +152,10 @@ static int auc_ntlm_challenge(auth_client_t *ca, msg_auth_t const *ch)
  * Returns a pointer to newly created authorization header, or NULL upon an
  * error.
  */
-int auc_ntlm_authorization(auth_client_t *ca, 
+int auc_ntlm_authorization(auth_client_t *ca,
 			     su_home_t *home,
-			     char const *method, 
-			     url_t const *url, 
+			     char const *method,
+			     url_t const *url,
 			     msg_payload_t const *body,
 			     msg_header_t **return_headers)
 {
@@ -201,7 +201,7 @@ int auc_ntlm_authorization(auth_client_t *ca,
   auth_ntlm_sessionkey(ar, sessionkey, pass);
   auth_ntlm_response(ar, response, sessionkey, method, data, dlen);
 
-  h = msg_header_format(home, hc, 
+  h = msg_header_format(home, hc,
 			"NTLM "
 			"username=\"%s\", "
 			"realm=\"%s\", "
@@ -213,21 +213,21 @@ int auc_ntlm_authorization(auth_client_t *ca,
 			"response=\"%s\""
 			"%s%s"
 			"%s%s",
-			ar->ar_username, 
+			ar->ar_username,
 			ar->ar_realm,
 			ar->ar_nonce,
-			cnonce ? "\",  cnonce=\"" : "", 
+			cnonce ? "\",  cnonce=\"" : "",
 			cnonce ? cnonce : "",
-			ar->ar_opaque ? "\",  opaque=\"" : "", 
+			ar->ar_opaque ? "\",  opaque=\"" : "",
 			ar->ar_opaque ? ar->ar_opaque : "",
 			ar->ar_algorithm ? "\", algorithm=" : "",
 			ar->ar_algorithm ? ar->ar_algorithm : "",
 			ar->ar_uri,
 			response,
-			ar->ar_auth || ar->ar_auth_int ? ", qop=" : "", 
-			ar->ar_auth_int ? "auth-int" : 
+			ar->ar_auth || ar->ar_auth_int ? ", qop=" : "",
+			ar->ar_auth_int ? "auth-int" :
 			(ar->ar_auth ? "auth" : ""),
-			cnonce ? ", nc=" : "", 
+			cnonce ? ", nc=" : "",
 			cnonce ? ncount : "");
 
   su_free(home, uri);

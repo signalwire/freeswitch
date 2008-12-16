@@ -24,7 +24,7 @@
 
 #ifndef URL_TAG_CLASS_H
 /**Defined when <sofia-sip/url_tag_class.h> has been included. */
-#define URL_TAG_CLASS_H 
+#define URL_TAG_CLASS_H
 /**@file  url_tag_class.h
  * @brief Tag classes for URLs
  *

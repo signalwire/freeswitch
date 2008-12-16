@@ -24,7 +24,7 @@
 
 #ifndef SU_CONFIGURE_H
 /** Defined when <sofia-sip/su_configure.h> has been included. */
-#define SU_CONFIGURE_H 
+#define SU_CONFIGURE_H
 
 /**@file sofia-sip/su_configure.h
  *
@@ -37,7 +37,7 @@
  * in "config.h".
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Mon Aug 21 20:32:25 2000 ppessi
  */
 
@@ -70,7 +70,7 @@
 #undef SU_HAVE_WINSOCK
 
 /** Define as 1 if you have Winsock2 interface */
-#undef SU_HAVE_WINSOCK2     	
+#undef SU_HAVE_WINSOCK2
 
 /** Define as 1 if you have OSX CoreFoundation interface */
 #undef SU_HAVE_OSX_CF_API
@@ -92,7 +92,7 @@
 #undef SU_INLINE_TAG_CAST
 
 /** Define this as 1 if we can use tags directly from stack. */
-#undef SU_HAVE_TAGSTACK 
+#undef SU_HAVE_TAGSTACK
 
 /* These are valid only for GCC */
 

@@ -24,7 +24,7 @@
 
 #ifndef HTTP_PARSER_H
 /**Defined when <sofia-sip/http_parser.h> has been included.*/
-#define HTTP_PARSER_H 
+#define HTTP_PARSER_H
 /**@file sofia-sip/http_parser.h
  * @brief Typedefs and prototypes used by HTTP parser.
  *
@@ -102,7 +102,7 @@ SOFIAPUBFUN char const *http_method_name(http_method_t method,
 					 char const *name);
 
 /** Extract HTTP message body */
-SOFIAPUBFUN issize_t http_extract_body(msg_t *, http_t *, 
+SOFIAPUBFUN issize_t http_extract_body(msg_t *, http_t *,
 				       char b[], isize_t bsiz, int eos);
 
 SOFIA_END_DECLS

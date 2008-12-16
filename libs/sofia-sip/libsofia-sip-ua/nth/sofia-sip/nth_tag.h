@@ -28,9 +28,9 @@
 
 /**@file sofia-sip/nth_tag.h
  * @brief Tags for @b nth, HTTP engine module.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Sun Oct 13 22:23:48 2002 ppessi
  */
 

@@ -49,7 +49,7 @@
 #include <sofia-sip/http_tag_class.h>
 #include <sofia-sip/su_tagarg.h>
 
-tag_class_t httphdrtag_class[1] = 
+tag_class_t httphdrtag_class[1] =
   {{
     sizeof(httphdrtag_class),
     /* tc_next */     NULL,
@@ -65,7 +65,7 @@ tag_class_t httphdrtag_class[1] =
     /* tc_scan */     msghdrtag_scan,
   }};
 
-tag_class_t httpstrtag_class[1] = 
+tag_class_t httpstrtag_class[1] =
   {{
     sizeof(httpstrtag_class),
     /* tc_next */     NULL,
@@ -81,7 +81,7 @@ tag_class_t httpstrtag_class[1] =
     /* tc_scan */     msghdrtag_scan,
   }};
 
-tag_class_t httpmsgtag_class[1] = 
+tag_class_t httpmsgtag_class[1] =
   {{
     sizeof(httpmsgtag_class),
     /* tc_next */     NULL,
@@ -100,7 +100,7 @@ tag_class_t httpmsgtag_class[1] =
 /** Filter a HTTP header structure. */
 tagi_t *httptag_filter(tagi_t *dst,
 		      tagi_t const f[],
-		      tagi_t const *src, 
+		      tagi_t const *src,
 		      void **bb)
 {
   tagi_t stub[2] = {{ NULL }};
@@ -152,7 +152,7 @@ tagi_t *httptag_filter(tagi_t *dst,
   }
 }
 
-/** Duplicate headers from taglist and add them to the HTTP message. 
+/** Duplicate headers from taglist and add them to the HTTP message.
  *
  * Return the number of headers added to the HTTP message.
  */
@@ -209,8 +209,8 @@ int http_add_tl(msg_t *msg, http_t *http,
     else if (tag == httptag_header_str) {
       if (msg_header_add_str(msg, http, (char const *)value) < 0)
 	break;
-    } 
-    else 
+    }
+    else
       continue;
 
     retval++;
@@ -218,7 +218,7 @@ int http_add_tl(msg_t *msg, http_t *http,
 
   ta_end(ta);
 
-  if (t) 
+  if (t)
     return -1;
 
   return retval;

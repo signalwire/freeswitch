@@ -56,13 +56,13 @@ typedef struct stun_dns_lookup_s stun_dns_lookup_t;
 
 typedef struct stun_mini_s     stun_mini_t;
 
-#ifndef STUN_MAGIC_T 
+#ifndef STUN_MAGIC_T
 #define STUN_MAGIC_T            struct stun_magic_t
 #endif
 /** STUN server context */
 typedef STUN_MAGIC_T stun_magic_t;
 
-#ifndef STUN_DISCOVERY_MAGIC_T 
+#ifndef STUN_DISCOVERY_MAGIC_T
 #define STUN_DISCOVERY_MAGIC_T            struct stun_discovery_magic_t
 #endif
 /** STUN discovery_ context */
@@ -90,44 +90,44 @@ typedef enum stun_action_s {
  * XXX: should be extended to distinguish between filtering and
  *      mapping allocation behaviour (see IETF BEHAVE documents)
  *
- * Note: the NAT type detection algorithm can fail in 
- *       case where the NAT behaves in a nondeterministic 
+ * Note: the NAT type detection algorithm can fail in
+ *       case where the NAT behaves in a nondeterministic
  *       fashion.
  **/
 typedef enum stun_nattype_e {
-  stun_nat_unknown = 0, 
-      
+  stun_nat_unknown = 0,
+
   /* no NAT between client and STUN server */
-  stun_open_internet,     
+  stun_open_internet,
 
   /* UDP communication blocked by FW */
-  stun_udp_blocked,       
+  stun_udp_blocked,
 
   /* No NAT, but a FW element is performing address and port
    * restricted filtering. */
-  stun_sym_udp_fw,        
+  stun_sym_udp_fw,
 
-  /* Endpoint independent filtering (endpoint independent mapping) 
+  /* Endpoint independent filtering (endpoint independent mapping)
    * RFC3489 full cone NAT. */
-  stun_nat_full_cone,     
+  stun_nat_full_cone,
 
   /* Address restricted filtering (endpoint independent mapping),
    * RFC3489 restricted cone NAT. */
-  stun_nat_res_cone,      
+  stun_nat_res_cone,
 
-  /* Address and port restricted filtering (endpoint 
+  /* Address and port restricted filtering (endpoint
    * independent mapping), RFC3489 port restricted cone */
-  stun_nat_port_res_cone, 
+  stun_nat_port_res_cone,
 
   /* Endpoint independent filtering, endpoint dependent mapping. */
-  stun_nat_ei_filt_ad_map, 
+  stun_nat_ei_filt_ad_map,
 
   /* Address dependent filtering, endpoint dependent mapping. */
-  stun_nat_ad_filt_ad_map, 
+  stun_nat_ad_filt_ad_map,
 
-  /* Address and port dependent filtering, endpoint dependent mapping 
+  /* Address and port dependent filtering, endpoint dependent mapping
    * RFC3489 symmetric NAT). */
-  stun_nat_adp_filt_ad_map, 
+  stun_nat_adp_filt_ad_map,
 
 } stun_nattype_t;
 
@@ -138,9 +138,9 @@ typedef enum stun_nattype_e {
  * @see stun_obtain_shared_secret()
  * @see stun_test_nattype()
  * @see stun_test_lifetime()
- */ 
+ */
 typedef enum stun_state_e {
-  
+
   stun_no_assigned_event,
 
   /* TLS events; see stun_obtain_shared_request() */
@@ -211,7 +211,7 @@ int stun_process_request(su_socket_t s, stun_msg_t *req,
 			 int sid, su_sockaddr_t *from_addr,
 			 socklen_t from_len);
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * Functions for 'Binding Discovery' usage (RFC3489/3489bis) */
 
 SOFIAPUBFUN
@@ -219,12 +219,12 @@ int stun_obtain_shared_secret(stun_handle_t *sh, stun_discovery_f,
 			      stun_discovery_magic_t *magic,
 			      tag_type_t tag, tag_value_t value, ...);
 
-SOFIAPUBFUN 
-int stun_bind(stun_handle_t *sh, 
+SOFIAPUBFUN
+int stun_bind(stun_handle_t *sh,
 	      stun_discovery_f, stun_discovery_magic_t *magic,
 	      tag_type_t tag, tag_value_t value, ...);
 
-SOFIAPUBFUN 
+SOFIAPUBFUN
 int stun_discovery_get_address(stun_discovery_t *sd,
 			       void *addr,
 			       socklen_t *return_addrlen);
@@ -244,13 +244,13 @@ int stun_test_lifetime(stun_handle_t *sh,
 		       tag_type_t tag, tag_value_t value, ...);
 SOFIAPUBFUN int stun_lifetime(stun_discovery_t *sd);
 
-/* ------------------------------------------------------------------- 
+/* -------------------------------------------------------------------
  * Functions for 'Connectivity Check' and 'NAT Keepalives' usages (RFC3489bis) */
 
-SOFIAPUBFUN 
+SOFIAPUBFUN
 int stun_set_uname_pwd(stun_handle_t *sh,
 		       const char *uname,
-		       isize_t len_uname, 
+		       isize_t len_uname,
 		       const char *pwd,
 		       isize_t len_pwd);
 
@@ -259,7 +259,7 @@ SOFIAPUBFUN int stun_message_length(void *data, isize_t len, int end_of_message)
 
 /* Create a keepalive dispatcher for bound SIP sockets */
 
-SOFIAPUBFUN 
+SOFIAPUBFUN
 int stun_keepalive(stun_handle_t *sh,
 		   su_sockaddr_t *sa,
 		   tag_type_t tag, tag_value_t value,
@@ -274,10 +274,10 @@ SOFIAPUBFUN int stun_keepalive_destroy(stun_handle_t *sh, su_socket_t s);
 /* -------------------------------------------------------------------
  * Functions for STUN server discovery using DNS (RFC3489/3489bis) */
 
-SOFIAPUBFUN 
-stun_dns_lookup_t *stun_dns_lookup(stun_magic_t *magic, 
+SOFIAPUBFUN
+stun_dns_lookup_t *stun_dns_lookup(stun_magic_t *magic,
 				   su_root_t *root,
-				   stun_dns_lookup_f func, 
+				   stun_dns_lookup_f func,
 				   const char *domain);
 SOFIAPUBFUN void stun_dns_lookup_destroy(stun_dns_lookup_t *self);
 

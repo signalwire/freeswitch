@@ -28,9 +28,9 @@
 
 /**@file sofia-sip/tport_tag.h
  * @brief Tags for tport module.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Sat Oct 12 18:39:48 2002 ppessi
  */
 
@@ -74,7 +74,7 @@ TPORT_DLL extern tag_typedef_t tptag_server;
 TPORT_DLL extern tag_typedef_t tptag_server_ref;
 #define TPTAG_SERVER_REF(x) tptag_server_ref, tag_bool_vr(&(x))
 
-/** Define how the public transport connects to Internet. 
+/** Define how the public transport connects to Internet.
  *
  * @sa TPTAG_PUBLIC(), tport_is_public().
  */

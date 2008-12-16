@@ -24,9 +24,9 @@
 
 /**@internal @file portbind.c
  * @brief Bind a socket to an UDP/TCP port and return the port number
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Mar 25 12:12:25 2004 ppessi
  */
 
@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
     else if (strcmp(opt, "4") == 0)
       o_ip4 = 0;
 #endif
-    else 
+    else
       usage(1);
   }
 
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
     names[N] = pent->p_name, protos[N] = pent->p_proto, types[N++] = SOCK_RAW;
   }
 
-  if (o_tcp) 
+  if (o_tcp)
     names[N] = "TCP", protos[N] = IPPROTO_TCP, types[N++] = SOCK_STREAM;
   if (o_udp)
     names[N] = "UDP", protos[N] = IPPROTO_UDP, types[N++] = SOCK_DGRAM;
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 #endif
 
     if (s == INVALID_SOCKET) {
-      fprintf(stderr, "%s: socket(AF_INET%s, 0, %s): %s\n", 
+      fprintf(stderr, "%s: socket(AF_INET%s, 0, %s): %s\n",
 	      name, af == AF_INET ? "" : "6", names[n], strerror(errno));
       exit(1);
     }
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
 	  continue;
 	}
       }
-	
+
       fprintf(stderr, "%s: bind(%s): %s\n", name, o_port, strerror(errno));
       exit(1);
     }
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
       struct sockaddr_storage ss[1];
       struct sockaddr *sa = (void *)ss;
       struct sockaddr_in *sin = (void *)ss;
-      
+
       salen = sizeof *ss;
       if (getsockname(s, sa, &salen) == -1) {
 	fprintf(stderr, "%s: getsockname(): %s\n", name, strerror(errno));

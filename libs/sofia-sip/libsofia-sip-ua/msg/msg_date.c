@@ -59,7 +59,7 @@ msg_time_t msg_now(void)
  *
  * First day of the epoch year should be Monday.
  */
-#define EPOCH 1900		
+#define EPOCH 1900
 /** Is this year a leap year? @internal */
 #define LEAP_YEAR(y) ((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
 /** Day number of New Year Day of given year. @internal */
@@ -69,25 +69,25 @@ msg_time_t msg_now(void)
 
 /* ====================================================================== */
 
-static unsigned char const days_per_months[12] = 
+static unsigned char const days_per_months[12] =
   {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
   };
 
 /** Offset of first day of the month with formula day = 30 * month + offset. */
-static signed char const first_day_offset[12] = 
+static signed char const first_day_offset[12] =
   {
     0, 1, -1, 0, 0, 1, 1, 2, 3, 3, 4, 4
   };
 
-static char const wkdays[7 * 4] = 
+static char const wkdays[7 * 4] =
   "Mon\0" "Tue\0" "Wed\0" "Thu\0" "Fri\0" "Sat\0" "Sun";
 
-static char const months[12 * 4] = 
-  "Jan\0" "Feb\0" "Mar\0" "Apr\0" "May\0" "Jun\0" 
+static char const months[12 * 4] =
+  "Jan\0" "Feb\0" "Mar\0" "Apr\0" "May\0" "Jun\0"
   "Jul\0" "Aug\0" "Sep\0" "Oct\0" "Nov\0" "Dec";
 
-/** Parse a month name. 
+/** Parse a month name.
  *
  * @return The function month_d() returns 0..11 if given first three letters
  * of month name, or -1 if no month name matches.
@@ -126,19 +126,19 @@ int month_d(char const *s)
 
 /* Parse SP 2DIGIT ":" 2DIGIT ":" 2DIGIT SP */
 su_inline
-int time_d(char const **ss, 
+int time_d(char const **ss,
 	   unsigned long *hour, unsigned long *min, unsigned long *sec)
 {
   char const *s = *ss;
-  if (!IS_LWS(*s)) 
-    return -1; 
+  if (!IS_LWS(*s))
+    return -1;
   skip_lws(&s);
   if (!is_digit(*s)) return -1;
   *hour = *s++ - '0'; if (is_digit(*s)) *hour = 10 * (*hour) + *s++ - '0';
-  if (*s++ != ':' || !is_digit(s[0]) || !is_digit(s[1])) 
+  if (*s++ != ':' || !is_digit(s[0]) || !is_digit(s[1]))
     return -1;
   *min = 10 * s[0] + s[1] - 11 * '0'; s += 2;
-  if (*s++ != ':' || !is_digit(s[0]) || !is_digit(s[1])) 
+  if (*s++ != ':' || !is_digit(s[0]) || !is_digit(s[1]))
     return -1;
   *sec = 10 * s[0] + s[1] - 11 * '0'; s += 2;
   if (*s) {
@@ -149,10 +149,10 @@ int time_d(char const **ss,
 }
 
 /**Decode RFC1123-date, RFC822-date or asctime-date.
- * 
- * The function msg_date_d() decodes <HTTP-date>, which may have 
+ *
+ * The function msg_date_d() decodes <HTTP-date>, which may have
  * different formats.
- * 
+ *
  * @code
  * HTTP-date    = rfc1123-date / rfc850-date / asctime-date
  *
@@ -174,7 +174,7 @@ int time_d(char const **ss,
  * wkday        = "Mon" / "Tue" / "Wed" / "Thu" / "Fri" / "Sat" / "Sun"
  * weekday      = "Monday" / "Tuesday" / "Wednesday"
  *              / "Thursday" / "Friday" / "Saturday" / "Sunday"
- * month        = "Jan" / "Feb" / "Mar" / "Apr" / "May" / "Jun" 
+ * month        = "Jan" / "Feb" / "Mar" / "Apr" / "May" / "Jun"
  *              / "Jul" / "Aug" / "Sep" / "Oct" / "Nov" / "Dec"
  * @endcode
  */
@@ -189,26 +189,26 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
   if (!IS_TOKEN(*s) || !date)
     return -1;
 
-  wkday = s; skip_token(&s); if (*s == ',') s++; 
+  wkday = s; skip_token(&s); if (*s == ',') s++;
   while (IS_LWS(*s)) s++;
 
   if (is_digit(*s)) {
     day = *s++ - '0'; if (is_digit(*s)) day = 10 * day + *s++ - '0';
-    
+
     if (*s == ' ') {
-      /* rfc1123-date = 
+      /* rfc1123-date =
 	 wkday "," SP 2DIGIT SP month SP 4DIGIT SP time SP "GMT"
        */
       mon = month_d(++s); skip_token(&s);
       if (mon < 0 || !IS_LWS(*s)) return -1;
       s++;
-      if (!is_digit(s[0]) || !is_digit(s[1]) || 
+      if (!is_digit(s[0]) || !is_digit(s[1]) ||
 	  !is_digit(s[2]) || !is_digit(s[3]))
 	return -1;
       year = 1000 * s[0] + 100 * s[1] + 10 * s[2] + s[3] - 1111 * '0'; s += 4;
     }
     else if (*s == '-') {
-      /* rfc822-date = 
+      /* rfc822-date =
 	 weekday "," SP 2DIGIT "-" month "-" 2DIGIT SP time SP "GMT"
        */
 
@@ -216,9 +216,9 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
       if (mon < 0 || s[3] != '-' ||
 	  !is_digit(s[4]) || !is_digit(s[5]))
 	return -1;
-      year = 10 * s[4] + s[5] - 11 * '0'; 
+      year = 10 * s[4] + s[5] - 11 * '0';
       if (is_digit(s[6]) && is_digit(s[7])) {
-	/* rfc2822-date = 
+	/* rfc2822-date =
 	   weekday "," SP 2DIGIT "-" month "-" 4DIGIT SP time SP "GMT"
 	*/
 	year = year * 100 + 10 * s[6] + s[7] - 11 * '0';
@@ -243,26 +243,26 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
     }
   }
   else {
-    /* actime-date = 
+    /* actime-date =
        wkday SP month SP ( 2DIGIT | ( SP 1DIGIT )) SP time SP 4DIGIT */
     mon = month_d(s); skip_token(&s);
     if (mon < 0 || !IS_LWS(*s)) return -1; s++;
-    while (IS_LWS(*s)) s++; 
+    while (IS_LWS(*s)) s++;
     if (!is_digit(*s)) return -1;
     day = *s++ - '0'; if (is_digit(*s)) day = 10 * day + *s++ - '0';
     if (time_d(&s, &hour, &min, &sec) < 0) return -1;
-    /* Accept also unix date (if it is GMT) */ 
+    /* Accept also unix date (if it is GMT) */
     if ((s[0] == 'G' && s[1] == 'M' && s[2] == 'T' && s[3] == ' ') ||
 	(s[0] == 'U' && s[1] == 'T' && s[2] == 'C' && s[3] == ' '))
       s += 4;
     else if (s[0] == 'U' && s[1] == 'T' && s[2] == ' ')
       s += 3;
-    if (!is_digit(s[0]) || !is_digit(s[1]) || 
+    if (!is_digit(s[0]) || !is_digit(s[1]) ||
 	!is_digit(s[2]) || !is_digit(s[3]))
       return -1;
     year = 1000 * s[0] + 100 * s[1] + 10 * s[2] + s[3] - 1111 * '0'; s += 4;
   }
-  
+
   if (hour > 24 || min >= 60 || sec >= 60 ||
       (hour == 24 && min > 0 && sec > 0))
     return -1;
@@ -271,7 +271,7 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
     if (day != 29 || mon != 1 || !LEAP_YEAR(year))
       return -1;
   }
-  
+
   if (year < EPOCH) {
     *date = 0;
   }
@@ -281,17 +281,17 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
   else {
     int leap_year = LEAP_YEAR(year);
     msg_time_t ydays = YEAR_DAYS(year) - YEAR_DAYS(EPOCH);
-    
+
 #if 0
-    printf("Year %d%s starts %ld = %d - %d days since epoch (%d)\n", 
-	       year, leap_year ? " (leap year)" : "", 
+    printf("Year %d%s starts %ld = %d - %d days since epoch (%d)\n",
+	       year, leap_year ? " (leap year)" : "",
 	   ydays, YEAR_DAYS(year), YEAR_DAYS(EPOCH), EPOCH);
 #endif
-    
-    *date = sec + 60 * 
-      (min + 60 * 
-	   (hour + 24 * 
-	    (day - 1 + mon * 30 + first_day_offset[mon] + 
+
+    *date = sec + 60 *
+      (min + 60 *
+	   (hour + 24 *
+	    (day - 1 + mon * 30 + first_day_offset[mon] +
 	     (leap_year && mon > 2) + ydays)));
   }
   *ss = s;
@@ -301,10 +301,10 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
 
 
 /**Encode RFC1123-date.
- * 
+ *
  * The function msg_date_e() prints @e http-date in the <rfc1123-date>
  * format. The format is as follows:
- * 
+ *
  * @code
  * rfc1123-date = wkday "," SP date SP time SP "GMT"
  * wkday        = "Mon" | "Tue" | "Wed"
@@ -317,11 +317,11 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
  * time         = 2DIGIT ":" 2DIGIT ":" 2DIGIT
  *                ; 00:00:00 - 23:59:59
  * @endcode
- * 
+ *
  * @param b         buffer to print the date
  * @param bsiz      size of the buffer
  * @param http_date seconds since 01 Jan 1900.
- * 
+ *
  * @return The function msg_date_e() returns the size of the formatted date.
  */
 issize_t msg_date_e(char b[], isize_t bsiz, msg_time_t http_date)
@@ -349,7 +349,7 @@ issize_t msg_date_e(char b[], isize_t bsiz, msg_time_t http_date)
   day -= YEAR_DAYS(year);
   leap_year = LEAP_YEAR(year);
 
-  month = 0, days_per_month = 31; 
+  month = 0, days_per_month = 31;
   while (day >= days_per_month) {
     day -= days_per_month;
     month++;
@@ -357,13 +357,13 @@ issize_t msg_date_e(char b[], isize_t bsiz, msg_time_t http_date)
   }
 
   return snprintf(b, bsiz, "%s, %02ld %s %04ld %02ld:%02ld:%02ld GMT",
-		  wkdays + wkday * 4, day + 1, months + month * 4, 
+		  wkdays + wkday * 4, day + 1, months + month * 4,
 		  year, hour, min, sec);
 }
 
 
 /**Decode a delta-seconds.
- * 
+ *
  * The function msg_delta_d() decodes a <delta-seconds> field.
  *
  * The <delta-seconds> is defined as follows:
@@ -393,9 +393,9 @@ issize_t msg_delta_e(char b[], isize_t bsiz, msg_time_t delta)
   return snprintf(b, bsiz, "%lu", (unsigned long)delta);
 }
 
-/** Decode a HTTP date or delta 
- * 
- * Decode a @ref msg_date_d() "<http-date>" or 
+/** Decode a HTTP date or delta
+ *
+ * Decode a @ref msg_date_d() "<http-date>" or
  * @ref msg_delta_d() "<delta-seconds>" field.
  */
 issize_t msg_date_delta_d(char const **ss,

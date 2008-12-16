@@ -160,7 +160,7 @@ void destroy_callback(nua_event_t event,
 int test_nua_destroy(struct context *ctx)
 {
   BEGIN();
-  
+
   struct endpoint *a = &ctx->a;
 
   TEST_1(ctx->root = su_root_create(NULL));
@@ -307,7 +307,7 @@ int test_unregister_without_register(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-1.2.4: PASSED\n");
-  
+
   END();
 }
 
@@ -384,7 +384,7 @@ int test_register_503(struct context *ctx)
    A
    |------REGISTER--\
    |<-------503-----/
-   |			
+   |
 
 */
 
@@ -393,7 +393,7 @@ int test_register_503(struct context *ctx)
 
   TEST_1(a_reg->nh = nua_handle(a->nua, a_reg, TAG_END()));
 
-  REGISTER(a, a_reg, a_reg->nh, 
+  REGISTER(a, a_reg, a_reg->nh,
 	   NUTAG_REGISTRAR(URL_STRING_MAKE("sip:bad.domain")),
 	   SIPTAG_TO_STR("sip:lissu@bad.domain"),
 	   TAG_END());
@@ -407,7 +407,7 @@ int test_register_503(struct context *ctx)
 
   TEST_1(a_reg->nh = nua_handle(a->nua, a_reg, TAG_END()));
 
-  REGISTER(a, a_reg, a_reg->nh, 
+  REGISTER(a, a_reg, a_reg->nh,
 	   NUTAG_REGISTRAR(URL_STRING_MAKE("sip:bad.domain")),
 	   SIPTAG_TO_STR("sip:lissu@bad.domain"),
 	   TAG_END());
@@ -447,13 +447,13 @@ int test_stack_errors(struct context *ctx)
   nua_shutdown(a->nua);
 
   run_a_until(ctx, -1, until_final_response);
-  
+
   TEST_VOID(nua_destroy(a->nua));
 
   a->nua = NULL;
 
   su_root_destroy(ctx->root), ctx->root = NULL;
-	 
+
   if (print_headings)
     printf("TEST NUA-1.2: PASSED\n");
 

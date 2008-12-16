@@ -145,9 +145,9 @@ below.
 	@ref sip_min_expires "Min-Expires",
 	@ref sip_mime_version "MIME-Version",
 	@ref sip_organization "Organization",
-	@ref sip_p_asserted_identity "P-Asserted-Identity" 
+	@ref sip_p_asserted_identity "P-Asserted-Identity"
         (extension in @VERSION_1_12_7),
-	@ref sip_p_preferred_identity "P-Preferred-Identity" 
+	@ref sip_p_preferred_identity "P-Preferred-Identity"
         (extension in @VERSION_1_12_7),
 	@ref sip_priority "Priority",
 	@ref sip_proxy_authenticate "Proxy-Authenticate",
@@ -479,7 +479,7 @@ below.
 	@RFC3325: Asserted Identity
     </th>
     <td>
-	Sofia-SIP supports 
+	Sofia-SIP supports
 	@ref sip_p_asserted_identity "P-Asserted-Identity" and
 	@ref sip_p_preferred_identity "P-Preferred-Identity" headers
         (generating, parsing and syntax checking). Also the non-standard
@@ -952,7 +952,7 @@ below.
 	(generating, parsing and syntax checking).
 
         The implicit subscription is suppressed by @nua, if the @ReferSub:
-        true header is included in the REFER 
+        true header is included in the REFER
 	request (@ref nua_refer "on server side") or
 	response (@ref nua_i_refer "on client side").
 
@@ -972,7 +972,7 @@ below.
     <td>
 	Sofia-SIP provides function sip_response_terminates_dialog() that
 	can be used to determine the effect of error response with dialog.
-	
+
 	The nua UA engine uses sip_response_terminates_dialog().
     </td>
     <td>
@@ -1131,7 +1131,7 @@ below.
     <td>
         Application must take care of:
 	- Audio or video processing
-        - Generating a=rtpmap or a=fmtp lines when needed 
+        - Generating a=rtpmap or a=fmtp lines when needed
     </td>
 </tr>
 

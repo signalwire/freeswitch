@@ -23,7 +23,7 @@
  */
 
 /**@internal
- * @file lookup_stun_server.c 
+ * @file lookup_stun_server.c
  * @brief Test app for STUN DNS-SRV lookups.
  *
  * @author Kai Vehmanen <Kai.Vehmanen@nokia.com>
@@ -53,16 +53,16 @@ static void lookup_cb(stun_dns_lookup_t *self,
   uint16_t tcp_port = 0, udp_port = 0, stp_port = 0;
   int res = 0;
 
-  printf("STUN DNS-SRV lookup results:\n"); 
+  printf("STUN DNS-SRV lookup results:\n");
 
   res = stun_dns_lookup_udp_addr(self, &udp_target, &udp_port);
-  printf(" _stun._udp.%s:     %s:%u (%s).\n", g_domain, udp_target, udp_port, RESULT(res)); 
+  printf(" _stun._udp.%s:     %s:%u (%s).\n", g_domain, udp_target, udp_port, RESULT(res));
 
   res = stun_dns_lookup_tcp_addr(self, &tcp_target, &tcp_port);
-  printf(" _stun._tcp.%s:     %s:%u (%s).\n", g_domain, tcp_target, tcp_port, RESULT(res)); 
+  printf(" _stun._tcp.%s:     %s:%u (%s).\n", g_domain, tcp_target, tcp_port, RESULT(res));
 
   res = stun_dns_lookup_stp_addr(self, &stp_target, &stp_port);
-  printf(" _stun-tls._tcp.%s: %s:%u (%s).\n", g_domain, stp_target, stp_port, RESULT(res)); 
+  printf(" _stun-tls._tcp.%s: %s:%u (%s).\n", g_domain, stp_target, stp_port, RESULT(res));
 
   su_root_break(root);
 }
@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 {
   su_root_t *root;
   stun_dns_lookup_t *lookup;
-  
+
   if (argc < 2) {
     printf("usage: ./lookup_stun_server <domain>\n");
     return -1;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
   /* step: initiate the DNS-SRV lookup */
   lookup = stun_dns_lookup(root, root, lookup_cb, g_domain);
- 
+
   if (lookup) {
     /* step: enter the main loop (break fro lookup_cb()) */
     su_root_run(root);

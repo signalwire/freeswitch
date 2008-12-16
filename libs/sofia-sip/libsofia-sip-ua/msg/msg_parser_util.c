@@ -102,7 +102,7 @@ int msg_firstline_d(char *s, char **return_part2, char **return_part3)
  * in @a return_token, and updates the @a ss to the end of token and
  * possible whitespace.
  */
-issize_t msg_token_d(char **ss, char const **return_token) 
+issize_t msg_token_d(char **ss, char const **return_token)
 {
   char *s = *ss;
   size_t n = span_token(s);
@@ -131,7 +131,7 @@ issize_t msg_uint32_d(char **ss, uint32_t *return_value)
   uint32_t value;
   unsigned digit;
 
-  if (!IS_DIGIT(*s))	
+  if (!IS_DIGIT(*s))
     return -1;
 
   for (value = 0; IS_DIGIT(*s); s++) {
@@ -169,26 +169,26 @@ issize_t msg_uint32_d(char **ss, uint32_t *return_value)
  * list.
  *
  * The function @b must be passed a scanning function @a scanner. The
- * scanning function scans for a legitimate list item, for example, a token. 
+ * scanning function scans for a legitimate list item, for example, a token.
  * It should also compact the list item, for instance, if the item consists
  * of @c name=value parameter definitions it should remove whitespace around
  * "=" sign. The scanning function returns the length of the scanned item,
  * including any linear whitespace after it.
  *
- * @param[in]     home    memory home for allocating list pointers 
- * @param[in,out] ss      pointer to pointer to string to be parsed 
+ * @param[in]     home    memory home for allocating list pointers
+ * @param[in,out] ss      pointer to pointer to string to be parsed
  * @param[in,out] append_list  pointer to list
  *                             where parsed list items are appended
- * @param[in]     sep     separator character 
+ * @param[in]     sep     separator character
  * @param[in]     scanner pointer to function for scanning a single item
- * 
+ *
  * @retval 0  if successful.
  * @retval -1 upon an error.
  */
-issize_t msg_any_list_d(su_home_t *home, 
-			char **ss, 
+issize_t msg_any_list_d(su_home_t *home,
+			char **ss,
 			msg_param_t **append_list,
-			issize_t (*scanner)(char *s), 
+			issize_t (*scanner)(char *s),
 			int sep)
 {
   char const *stack[MSG_N_PARAMS];
@@ -232,7 +232,7 @@ issize_t msg_any_list_d(su_home_t *home,
 	  goto error;
 	list = re_list;
       }
-      
+
       list[n++] = s;
       s += tlen;
     }
@@ -240,7 +240,7 @@ issize_t msg_any_list_d(su_home_t *home,
     if (*s == sep) {
       *s++ = '\0';
       skip_lws(&s);
-    } 
+    }
     else if (*s)
       break;
   }
@@ -278,11 +278,11 @@ issize_t msg_any_list_d(su_home_t *home,
  * This function compacts the scanned value. It removes the
  * whitespace around equal sign "=" by moving the equal sign character and
  * value towards name.
- * 
- * If there is whitespace within the scanned value or after it, 
+ *
+ * If there is whitespace within the scanned value or after it,
  * NUL-terminates the scanned attribute.
  *
- * @retval > 0 number of characters scanned, 
+ * @retval > 0 number of characters scanned,
  *             including the whitespace within the value
  * @retval -1 upon an error
  */
@@ -313,9 +313,9 @@ issize_t msg_attribute_value_scanner(char *s)
       v = s; s += qlen;
     }
     else {
-      v = s; 
+      v = s;
       skip_param(&s);
-      if (s == v) 
+      if (s == v)
 	return -1;
     }
 
@@ -339,16 +339,16 @@ issize_t msg_attribute_value_scanner(char *s)
  *  av-pair = token ["=" ( value / quoted-string) ]        ; optional value
  * @endcode
  *
- * @param[in]     home      pointer to a memory home 
- * @param[in,out] ss        pointer to string at the start of parameter list 
+ * @param[in]     home      pointer to a memory home
+ * @param[in,out] ss        pointer to string at the start of parameter list
  * @param[in,out] append_list  pointer to list
  *                             where parsed list items are appended
  *
  * @retval >= 0 if successful
  * @retval -1 upon an error
  */
-issize_t msg_avlist_d(su_home_t *home, 
-		      char **ss, 
+issize_t msg_avlist_d(su_home_t *home,
+		      char **ss,
 		      msg_param_t const **append_list)
 {
   char const *stack[MSG_N_PARAMS];
@@ -369,7 +369,7 @@ issize_t msg_avlist_d(su_home_t *home,
     params = stack;
     N = MSG_PARAMS_NUM(1);
   }
-  
+
   for (;;) {
     char *p;
     size_t tlen;
@@ -398,9 +398,9 @@ issize_t msg_avlist_d(su_home_t *home,
 	v = s; s += qlen;
       }
       else {
-	v = s; 
+	v = s;
 	skip_param(&s);
-	if (s == v) 
+	if (s == v)
 	  goto error;
       }
       if (p + tlen + 1 != v) {
@@ -440,7 +440,7 @@ issize_t msg_avlist_d(su_home_t *home,
   }
   else if (n == N) {
     /* Reallocate params */
-    char **nparams = su_alloc(home, 
+    char **nparams = su_alloc(home,
 			      (N = MSG_PARAMS_NUM(N + 1)) * sizeof(*params));
     if (!nparams) {
       goto error;
@@ -467,8 +467,8 @@ issize_t msg_avlist_d(su_home_t *home,
  *  *(";" token [ "=" (token | quoted-string)]).
  * @endcode
  *
- * @param[in]     home      pointer to a memory home 
- * @param[in,out] ss        pointer to string at the start of parameter list 
+ * @param[in]     home      pointer to a memory home
+ * @param[in,out] ss        pointer to string at the start of parameter list
  * @param[in,out] append_list  pointer to list
  *                             where parsed list items are appended
  *
@@ -477,8 +477,8 @@ issize_t msg_avlist_d(su_home_t *home,
  *
  * @sa msg_avlist_d()
  */
-issize_t msg_params_d(su_home_t *home, 
-		      char **ss, 
+issize_t msg_params_d(su_home_t *home,
+		      char **ss,
 		      msg_param_t const **append_list)
 {
   if (**ss == ';') {
@@ -487,7 +487,7 @@ issize_t msg_params_d(su_home_t *home,
     return msg_avlist_d(home, ss, append_list);
   }
 
-  if (IS_LWS(**ss)) { 
+  if (IS_LWS(**ss)) {
     *(*ss)++ = '\0'; skip_lws(ss);
   }
 
@@ -501,7 +501,7 @@ isize_t msg_params_e(char b[], isize_t bsiz, msg_param_t const pparams[])
   char *end = b + bsiz, *b0 = b;
   msg_param_t p;
 
-  if (pparams) 
+  if (pparams)
     for (i = 0; (p = pparams[i]); i++) {
       if (p[0]) {
 	MSG_CHAR_E(b, end, ';');
@@ -537,13 +537,13 @@ char *msg_params_dup(msg_param_t const **d, msg_param_t const s[],
     MSG_STRING_DUP(b, pp[i], s[i]);
   }
   pp[i] = NULL;
- 
+
   assert(b <= end); (void)end;
- 
+
   *d = (msg_param_t const *)pp;
 
   return b;
-} 
+}
 
 
 /** Parse a comma-separated list.
@@ -565,18 +565,18 @@ char *msg_params_dup(msg_param_t const **d, msg_param_t const s[],
  * By default, the scanning function accepts tokens, quoted strings or
  * separators (except comma, of course).
  *
- * @param[in]     home    memory home for allocating list pointers 
- * @param[in,out] ss      pointer to pointer to string to be parsed 
+ * @param[in]     home    memory home for allocating list pointers
+ * @param[in,out] ss      pointer to pointer to string to be parsed
  * @param[in,out] append_list  pointer to list
  *                             where parsed list items are appended
- * @param[in]     scanner pointer to function scanning a single item 
+ * @param[in]     scanner pointer to function scanning a single item
  *                        (optional)
- * 
+ *
  * @retval 0  if successful.
  * @retval -1 upon an error.
  */
-issize_t msg_commalist_d(su_home_t *home, 
-			 char **ss, 
+issize_t msg_commalist_d(su_home_t *home,
+			 char **ss,
 			 msg_param_t **append_list,
 			 issize_t (*scanner)(char *s))
 {
@@ -603,7 +603,7 @@ issize_t msg_comma_scanner(char *start)
 {
   size_t tlen;
   char *s, *p;
-  
+
   s = p = start;
 
   if (s[0] == ',')
@@ -613,22 +613,22 @@ issize_t msg_comma_scanner(char *start)
     /* Grab next section - token, quoted string, or separator character */
     char c = *s;
 
-    if (IS_TOKEN(c)) 
+    if (IS_TOKEN(c))
       tlen = span_token(s);
     else if (c == '"')
       tlen = span_quoted(s);
     else /* if (IS_SEPARATOR(c)) */
       tlen = 1;
-    
+
     if (tlen == 0)
       return -1;
 
     if (p != s)
       memmove(p, s, tlen);	/* Move section to end of paramexter */
     p += tlen; s += tlen;
-    
+
     skip_lws(&s);		/* Skip possible LWS */
-    
+
     if (*s == '\0' || *s == ',') {		/* Test for possible end */
       if (p != s) *p = '\0';
       return s - start;
@@ -661,15 +661,15 @@ issize_t msg_comment_d(char **ss, char const **return_comment)
 
   if (return_comment)
     *return_comment = s;
-      
+
   while (level) switch (*s++) {
   case '(': level++; break;
   case ')': level--; break;
   case '\0': /* ERROR */ return -1;
   }
-      
+
   assert(s[-1] == ')');
-      
+
   s[-1] = '\0';
   skip_lws(&s);
   *ss = s;
@@ -730,12 +730,12 @@ int msg_quoted_len(char const *u)
  * string via @a ss, and pointers to which parsed host and port are assigned
  * via @a hhost and @a pport, respectively. The value-result parameter @a
  * *pport must be initialized to default value (e.g., NULL).
- * 
+ *
  * @param ss    pointer to pointer to string to be parsed
  * @param return_host value-result parameter for @e host
  * @param return_port value-result parameter for @e port
 
- * @return 
+ * @return
  * Returns zero when successful, and a negative value upon an error. The
  * parsed values for host and port are assigned via @a return_host and @a
  * return_port, respectively. The function also updates the pointer @a *ss,
@@ -747,15 +747,15 @@ int msg_quoted_len(char const *u)
  * NUL-terminated.  The calling function @b must NUL terminate the value by
  * setting the @a **ss to NUL after first examining its value.
  */
-int msg_hostport_d(char **ss, 
-		   char const **return_host, 
+int msg_hostport_d(char **ss,
+		   char const **return_host,
 		   char const **return_port)
 {
   char *host, *s = *ss;
   char *port = NULL;
 
   /* Host name */
-  host = s; 
+  host = s;
   if (s[0] != '[') {
     skip_token(&s); if (host == s) return -1;
   }
@@ -785,7 +785,7 @@ int msg_hostport_d(char **ss,
 
   *return_host = host;
   *return_port = port;
-  
+
   *ss = s;
 
   return 0;
@@ -816,7 +816,7 @@ char const *msg_header_find_param(msg_common_t const *h, char const *name)
 }
 
 /**Modify a parameter value or list item in a header.
- * 
+ *
  * A header parameter @a param can be just a C-string (@a is_item > 0), or
  * it can have internal format <i>name [ "=" value]</i>. In the latter case,
  * the value part following = is ignored when replacing or removing the
@@ -834,11 +834,11 @@ char const *msg_header_find_param(msg_common_t const *h, char const *name)
  *                  - 1 add
  *
  * @retval 1 if parameter was replaced or removed successfully
- * @retval 0 if parameter was added successfully, 
+ * @retval 0 if parameter was added successfully,
  *           or there was nothing to remove
  * @retval -1 upon an error
  */
-static 
+static
 int msg_header_param_modify(su_home_t *home, msg_common_t *h,
 			    char const *param,
 			    int is_item,
@@ -855,12 +855,12 @@ int msg_header_param_modify(su_home_t *home, msg_common_t *h,
 
   plen = is_item > 0 ? strlen(param) : strcspn(param, "=");
   n = 0;
-  
+
   if (params) {
     /* Existing list, try to replace or remove  */
     for (; params[n]; n++) {
       char const *maybe = params[n];
-      
+
       if (remove_replace_add > 0)
 	continue;
 
@@ -877,7 +877,7 @@ int msg_header_param_modify(su_home_t *home, msg_common_t *h,
       }
     }
   }
-  
+
   /* Not found? */
   if (!params || !params[n]) {
     if (remove_replace_add < 0)
@@ -885,22 +885,22 @@ int msg_header_param_modify(su_home_t *home, msg_common_t *h,
     else
       remove_replace_add = 1;	/* Add instead of replace */
   }
-  
+
   if (remove_replace_add < 0) { /* Remove */
-    for (; params[n]; n++) 
+    for (; params[n]; n++)
       params[n] = params[n + 1];
   }
   else {
     if (remove_replace_add > 0) { /* Add */
       size_t m_before = MSG_PARAMS_NUM(n + 1);
       size_t m_after =  MSG_PARAMS_NUM(n + 2);
-      
+
       assert(!params || !params[n]);
-      
+
       if (m_before != m_after || !params) {
 	msg_param_t *p;
 	/* XXX - we should know when to do realloc */
-	p = su_alloc(home, m_after * sizeof(*p)); 
+	p = su_alloc(home, m_after * sizeof(*p));
 	if (!p) return -1;
 	if (n > 0)
 	  memcpy(p, params, n * sizeof(p[0]));
@@ -908,25 +908,25 @@ int msg_header_param_modify(su_home_t *home, msg_common_t *h,
       }
       params[n + 1] = NULL;
     }
-    
+
     params[n] = param;	/* Add .. or replace */
   }
-  
+
   msg_fragment_clear(h);
 
   if (h->h_class->hc_update) {
     /* Update shortcuts */
     size_t namelen;
     char const *name, *value;
-    
+
     name = param;
     namelen = strcspn(name, "=");
-    
+
     if (remove_replace_add < 0)
       value = NULL;
     else
       value = param + namelen + (name[namelen] == '=');
-    
+
     h->h_class->hc_update(h, name, namelen, value);
   }
 
@@ -958,21 +958,21 @@ int msg_header_param_modify(su_home_t *home, msg_common_t *h,
  * @retval 0 if parameter was added
  * @retval -1 upon an error
  *
- * @sa msg_header_replace_param(), msg_header_remove_param(), 
+ * @sa msg_header_replace_param(), msg_header_remove_param(),
  * msg_header_update_params(),
- * #msg_common_t, #msg_header_t, 
+ * #msg_common_t, #msg_header_t,
  * #msg_hclass_t, msg_hclass_t::hc_params, msg_hclass_t::hc_update
  */
 int msg_header_add_param(su_home_t *home, msg_common_t *h, char const *param)
 {
-  return msg_header_param_modify(home, h, param, 
-				 0 /* case-insensitive name=value */, 
+  return msg_header_param_modify(home, h, param,
+				 0 /* case-insensitive name=value */,
 				 1 /* add */);
 }
 
 
 
-/** Replace or add a parameter to a header. 
+/** Replace or add a parameter to a header.
  *
  * A header parameter @a param is a string of format <i>name "=" value</i>
  * or just name. The value part following "=" is ignored when selecting a
@@ -994,17 +994,17 @@ int msg_header_add_param(su_home_t *home, msg_common_t *h, char const *param)
  * @retval 1 if parameter was replaced
  * @retval -1 upon an error
  *
- * @sa msg_header_add_param(), msg_header_remove_param(), 
+ * @sa msg_header_add_param(), msg_header_remove_param(),
  * msg_header_update_params(),
- * #msg_common_t, #msg_header_t, 
+ * #msg_common_t, #msg_header_t,
  * #msg_hclass_t, msg_hclass_t::hc_params, msg_hclass_t::hc_update
  */
-int msg_header_replace_param(su_home_t *home, 
-			     msg_common_t *h, 
+int msg_header_replace_param(su_home_t *home,
+			     msg_common_t *h,
 			     char const *param)
 {
-  return msg_header_param_modify(home, h, param, 
-				 0 /* case-insensitive name=value */, 
+  return msg_header_param_modify(home, h, param,
+				 0 /* case-insensitive name=value */,
 				 0 /* replace */);
 }
 
@@ -1028,13 +1028,13 @@ int msg_header_replace_param(su_home_t *home,
  *
  * @sa msg_header_add_param(), msg_header_replace_param(),
  * msg_header_update_params(),
- * #msg_common_t, #msg_header_t, 
+ * #msg_common_t, #msg_header_t,
  * #msg_hclass_t, msg_hclass_t::hc_params, msg_hclass_t::hc_update
  */
 int msg_header_remove_param(msg_common_t *h, char const *name)
 {
-  return msg_header_param_modify(NULL, h, name, 
-				 0 /* case-insensitive name=value */, 
+  return msg_header_param_modify(NULL, h, name,
+				 0 /* case-insensitive name=value */,
 				 -1 /* remove */);
 }
 
@@ -1053,7 +1053,7 @@ int msg_header_remove_param(msg_common_t *h, char const *name)
  *
  * @sa msg_header_add_param(), msg_header_replace_param(),
  * msg_header_update_params(),
- * #msg_common_t, #msg_header_t, 
+ * #msg_common_t, #msg_header_t,
  * #msg_hclass_t, msg_hclass_t::hc_params, msg_hclass_t::hc_update
  */
 int msg_header_update_params(msg_common_t *h, int clear)
@@ -1065,7 +1065,7 @@ int msg_header_update_params(msg_common_t *h, int clear)
   msg_param_t const *params;
   size_t n;
   char const *p, *v;
-  
+
   if (h == NULL)
     return errno = EFAULT, -1;
 
@@ -1107,13 +1107,13 @@ int msg_header_update_params(msg_common_t *h, int clear)
  *
  * @since New in @VERSION_1_12_4
  *
- * @sa msg_header_replace_item(), msg_header_remove_item(), 
+ * @sa msg_header_replace_item(), msg_header_remove_item(),
  * @Allow, @AllowEvents
  */
 char const *msg_header_find_item(msg_common_t const *h, char const *item)
 {
   if (h && h->h_class->hc_params) {
-    char const * const * items = 
+    char const * const * items =
       *(char const * const * const *)
       ((char *)h + h->h_class->hc_params);
 
@@ -1148,22 +1148,22 @@ char const *msg_header_find_item(msg_common_t const *h, char const *item)
  * @since New in @VERSION_1_12_4.
  *
  * @sa msg_header_remove_item(), @Allow, @AllowEvents,
- * msg_header_replace_param(), msg_header_remove_param(), 
+ * msg_header_replace_param(), msg_header_remove_param(),
  * #msg_common_t, #msg_header_t, #msg_list_t
  * #msg_hclass_t, msg_hclass_t::hc_params
  */
-int msg_header_replace_item(su_home_t *home, 
-			    msg_common_t *h, 
+int msg_header_replace_item(su_home_t *home,
+			    msg_common_t *h,
 			    char const *item)
 {
-  return msg_header_param_modify(home, h, item, 
-				 1 /* string item */, 
+  return msg_header_param_modify(home, h, item,
+				 1 /* string item */,
 				 0 /* replace */);
 }
 
 /**Remove an item from a header.
  *
- * This function treats a #msg_header_t as set of C strings. The @a item is a 
+ * This function treats a #msg_header_t as set of C strings. The @a item is a
  * C string. If identical string is found from the list, it is removed.
  *
  * The shortcuts, if any, to item values are updated accordingly.
@@ -1178,14 +1178,14 @@ int msg_header_replace_item(su_home_t *home,
  * @since New in @VERSION_1_12_4.
  *
  * @sa msg_header_replace_item(), @Allow, @AllowEvents,
- * msg_header_replace_param(), msg_header_remove_param(), 
+ * msg_header_replace_param(), msg_header_remove_param(),
  * #msg_common_t, #msg_header_t, #msg_list_t
  * #msg_hclass_t, msg_hclass_t::hc_params
  */
 int msg_header_remove_item(msg_common_t *h, char const *name)
 {
-  return msg_header_param_modify(NULL, h, name, 
-				 1 /* item */, 
+  return msg_header_param_modify(NULL, h, name,
+				 1 /* item */,
 				 -1 /* remove */);
 }
 
@@ -1193,11 +1193,11 @@ int msg_header_remove_item(msg_common_t *h, char const *name)
 /** Find a parameter from a parameter list.
  *
  * Searches for given parameter @a token from the parameter list. If
- * parameter is found, it returns a non-NULL pointer to the parameter value. 
+ * parameter is found, it returns a non-NULL pointer to the parameter value.
  * If there is no value for the parameter (the parameter is of form "name"
  * or "name="), the returned pointer points to a NUL character.
  *
- * @param params list (or vector) of parameters 
+ * @param params list (or vector) of parameters
  * @param token  parameter name (with or without "=" sign)
  *
  * @return
@@ -1230,7 +1230,7 @@ msg_param_t msg_params_find(msg_param_t const params[], msg_param_t token)
  * parameter is found, it returns a non-NULL pointer to the item containing
  * the parameter.
  *
- * @param params list (or vector) of parameters 
+ * @param params list (or vector) of parameters
  * @param token  parameter name (with or without "=" sign)
  *
  * @return
@@ -1259,7 +1259,7 @@ msg_param_t *msg_params_find_slot(msg_param_t params[], msg_param_t token)
   return NULL;
 }
 
-/** Replace or add a parameter from a list. 
+/** Replace or add a parameter from a list.
  *
  * A non-NULL parameter list must have been created by msg_params_d()
  * or by msg_params_dup().
@@ -1275,7 +1275,7 @@ msg_param_t *msg_params_find_slot(msg_param_t params[], msg_param_t token)
  * @retval -1 upon an error
  */
 int msg_params_replace(su_home_t *home,
-		       msg_param_t **inout_params, 
+		       msg_param_t **inout_params,
 		       msg_param_t param)
 {
   msg_param_t *params;
@@ -1297,7 +1297,7 @@ int msg_params_replace(su_home_t *home,
 
       if (!(strncasecmp(maybe, param, n))) {
 	if (maybe[n] == '=' || maybe[n] == 0) {
-	  params[i] = param;	
+	  params[i] = param;
 	  return 1;
 	}
       }
@@ -1308,7 +1308,7 @@ int msg_params_replace(su_home_t *home,
   return msg_params_add(home, inout_params, param);
 }
 
-/** Remove a parameter from a list. 
+/** Remove a parameter from a list.
  *
  * @retval 1 if parameter was removed
  * @retval 0 if parameter was not found
@@ -1369,7 +1369,7 @@ size_t msg_params_length(char const * const * params)
  * @param inout_params   pointer to pointer to parameter list
  * @param param     parameter to be added
  *
- * @retval 0 if parameter was added 
+ * @retval 0 if parameter was added
  * @retval -1 upon an error
  */
 int msg_params_add(su_home_t *home,
@@ -1377,7 +1377,7 @@ int msg_params_add(su_home_t *home,
 		   msg_param_t param)
 {
   size_t n, m_before, m_after;
-  msg_param_t *p = *inout_params;  
+  msg_param_t *p = *inout_params;
 
   if (param == NULL)
     return -1;
@@ -1388,9 +1388,9 @@ int msg_params_add(su_home_t *home,
 
   m_before = MSG_PARAMS_NUM(n + 1);
   m_after =  MSG_PARAMS_NUM(n + 2);
-  
+
   if (m_before != m_after || !p) {
-    p = su_alloc(home, m_after * sizeof(*p)); 
+    p = su_alloc(home, m_after * sizeof(*p));
     assert(p); if (!p) return -1;
     if (n)
       memcpy(p, *inout_params, n * sizeof(*p));
@@ -1403,7 +1403,7 @@ int msg_params_add(su_home_t *home,
   return 0;
 }
 
-static 
+static
 int msg_param_prune(msg_param_t const d[], msg_param_t p, unsigned prune)
 {
   size_t i, nlen;
@@ -1414,10 +1414,10 @@ int msg_param_prune(msg_param_t const d[], msg_param_t p, unsigned prune)
     nlen = 0;
 
   for (i = 0; d[i]; i++) {
-    if ((prune == 1 && 
-	 strncasecmp(p, d[i], nlen) == 0 
+    if ((prune == 1 &&
+	 strncasecmp(p, d[i], nlen) == 0
 	 && (d[i][nlen] == '=' || d[i][nlen] == '\0'))
-	|| 
+	||
 	(prune == 2 && strcasecmp(p, d[i]) == 0)
 	||
 	(prune == 3 && strcmp(p, d[i]) == 0))
@@ -1436,10 +1436,10 @@ int msg_param_prune(msg_param_t const d[], msg_param_t p, unsigned prune)
  * @param home    memory home
  * @param dst     pointer to pointer to destination parameter list
  * @param src     source list
- * @param prune   prune duplicates 
+ * @param prune   prune duplicates
  * @param dup     duplicate parameters in src list
  *
- * @par Pruning 
+ * @par Pruning
  * <table>
  * <tr><td>0<td>do not prune</tr>
  * <tr><td>1<td>prune parameters with identical names</tr>
@@ -1458,7 +1458,7 @@ issize_t msg_params_join(su_home_t *home,
 			 int dup)
 {
   size_t n, m, n_before, n_after, pruned, total = 0;
-  msg_param_t *d = *dst;  
+  msg_param_t *d = *dst;
 
   if (prune > 3)
     return -1;
@@ -1483,9 +1483,9 @@ issize_t msg_params_join(su_home_t *home,
   }
 
   n_after = MSG_PARAMS_NUM(n + m - pruned + 1);
-  
+
   if (n_before != n_after || !d) {
-    d = su_alloc(home, n_after * sizeof(*d)); 
+    d = su_alloc(home, n_after * sizeof(*d));
     assert(d); if (!d) return -1;
     if (n)
       memcpy(d, *dst, n * sizeof(*d));
@@ -1503,7 +1503,7 @@ issize_t msg_params_join(su_home_t *home,
       d[n++] = su_strdup(home, src[m]);	/* XXX */
     else
       d[n++] = src[m];
-  }  
+  }
 
   d[n] = NULL;
 
@@ -1605,12 +1605,12 @@ int msg_header_join_items(su_home_t *home,
 
   for (m = 0; m < M; m++) {
     d[N++] = memcpy(dup, temp[m], len[m] + 1);
-    
+
     if (update)
       update(dst, dup, len[m], dup + len[m]);
 
     dup += len[m] + 1;
-  }  
+  }
 
   d[N] = NULL;
 
@@ -1627,7 +1627,7 @@ int msg_header_join_items(su_home_t *home,
 }
 
 /**Compare parameter lists.
- * 
+ *
  * Compares parameter lists.
  *
  * @param a pointer to a parameter list
@@ -1658,7 +1658,7 @@ int msg_params_cmp(char const * const a[], char const * const b[])
 }
 
 
-/** Unquote string 
+/** Unquote string
  *
  * Duplicates the string @a q in unquoted form.
  */
@@ -1681,7 +1681,7 @@ char *msg_unquote_dup(su_home_t *home, char const *q)
       break;
     m = strcspn(q + n + 2, "\"\\");
     total += m + 1;
-    n += m + 2; 
+    n += m + 2;
   }
 
   if (!(d = su_alloc(home, total + 1)))
@@ -1689,16 +1689,16 @@ char *msg_unquote_dup(su_home_t *home, char const *q)
 
   for (n = 0;;) {
     m = strcspn(q, "\"\\");
-    memcpy(d + n, q, m); 
+    memcpy(d + n, q, m);
     n += m, q += m;
     if (q[0] == '\0' || q[0] == '"' || q[1] == '\0')
       break;
-    d[n++] = q[1]; 
+    d[n++] = q[1];
     q += 2;
   }
   assert(total == n);
   d[n] = '\0';
-  
+
   return d;
 }
 
@@ -1742,7 +1742,7 @@ issize_t msg_unquoted_e(char *b, isize_t bsiz, char const *s)
   if (b && b + 1 < end)
     *b = '"';
   b++;
-  
+
   for (;*s;) {
     size_t n = strcspn(s, "\"\\");
 
@@ -1783,7 +1783,7 @@ unsigned long msg_hash_string(char const *id)
 
   if (hash == 0)
     hash = (unsigned long)-1;
-  
+
   return hash;
 }
 
@@ -1798,14 +1798,14 @@ isize_t msg_header_size(msg_header_t const *h)
 }
 
 
-/** Encode a message to the buffer. 
+/** Encode a message to the buffer.
  *
  * The function msg_encode_e encodes a message to a given buffer.
  * It returns the length of the message to be encoded, even if the
  * buffer is too small (just like snprintf() is supposed to do).
  *
  * @param b        buffer (may be NULL)
- * @param size     size of buffer 
+ * @param size     size of buffer
  * @param mo       public message structure (#sip_t, #http_t)
  * @param flags    see #
  */
@@ -1837,7 +1837,7 @@ issize_t msg_object_e(char b[], isize_t size, msg_pub_t const *mo, int flags)
 /** Encode header contents. */
 issize_t msg_header_field_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
-  assert(h); assert(h->sh_class); 
+  assert(h); assert(h->sh_class);
 
   return h->sh_class->hc_print(b, bsiz, h, flags);
 }
@@ -1846,7 +1846,7 @@ issize_t msg_header_field_e(char b[], isize_t bsiz, msg_header_t const *h, int f
 msg_header_t **
 msg_header_offset(msg_t const *msg, msg_pub_t const *mo, msg_header_t const *h)
 {
-  if (h == NULL || h->sh_class == NULL) 
+  if (h == NULL || h->sh_class == NULL)
     return NULL;
 
   return msg_hclass_offset(msg->m_class, mo, h->sh_class);
@@ -1871,7 +1871,7 @@ msg_header_access(msg_pub_t const *pub, msg_hclass_t *hc)
 
   if (hh)
     return *hh;
-  else 
+  else
     return NULL;
 }
 
@@ -1880,7 +1880,7 @@ msg_header_access(msg_pub_t const *pub, msg_hclass_t *hc)
 /** Generates a random token.
  *
  */
-issize_t msg_random_token(char token[], isize_t tlen, 
+issize_t msg_random_token(char token[], isize_t tlen,
 			  void const *rmemp, isize_t rsize)
 {
   uint32_t random = 0, rword;
@@ -1889,7 +1889,7 @@ issize_t msg_random_token(char token[], isize_t tlen,
   size_t i;
   ssize_t n;
 
-  static char const token_chars[33] = 
+  static char const token_chars[33] =
     /* Create aesthetically pleasing raNDom capS LooK */
     "aBcDeFgHjKmNpQrStUvXyZ0123456789";
 
@@ -1908,7 +1908,7 @@ issize_t msg_random_token(char token[], isize_t tlen,
     else
       return rsize / 5 * 8;
   }
-    
+
   for (i = 0, n = 0; i < tlen;) {
     if (n < 5) {
       if (rsize == 0)
@@ -1931,7 +1931,7 @@ issize_t msg_random_token(char token[], isize_t tlen,
     if (n < 0 || (n == 0 && rsize == 0))
       break;
   }
-  
+
   token[i] = 0;
 
   return i;
@@ -1955,7 +1955,7 @@ issize_t msg_random_token(char token[], isize_t tlen,
  * @param flags message flags (see #msg_flg_user)
  * @param data message text
  * @param len size of message text (if -1, use strlen(data))
- * 
+ *
  * @retval A pointer to a freshly allocated and parsed message.
  *
  * Upon parsing error, the header structure may be left incomplete. The
@@ -1973,7 +1973,7 @@ msg_t *msg_make(msg_mclass_t const *mc, int flags,
 
   if (len == -1)
     len = strlen(data);
-  if (len == 0) 
+  if (len == 0)
     return NULL;
 
   msg = msg_create(mc, flags);

@@ -24,8 +24,8 @@
 
 /**@internal
  * @file torture_su_bm.c
- * @brief Test string search with Boyer-Moore algorithm 
- *  
+ * @brief Test string search with Boyer-Moore algorithm
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @date Created: Sun Apr 17 21:02:10 2005 ppessi
  */
@@ -50,9 +50,9 @@ int tstflags;
 int test_bm(void)
 {
   BEGIN();
-  
+
   {
-    char const hs[] = 
+    char const hs[] =
       "A Boyer-Moore string searching test consisting of a Long String";
     char const *s;
 
@@ -106,9 +106,9 @@ int test_bm(void)
 int test_bm_long(void)
 {
   BEGIN();
-  
+
   {
-    char const hs[] = 
+    char const hs[] =
 "A Boyer-Moore string searching test consisting of a Very Long String\n"
 
 "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Integer felis. "
@@ -151,14 +151,14 @@ int test_bm_long(void)
 "non, mi. Suspendisse vestibulum nunc eu neque. Sed rutrum felis aliquam "
 "urna. Ut tincidunt orci vitae ipsum. Nullam eros. Quisque augue. Quisque "
 "lacinia. Nunc ligula diam, nonummy a, porta in, tristique quis, leo. "
-"Phasellus nunc nulla, fringilla vel, lacinia et, suscipit a, turpis. " 
+"Phasellus nunc nulla, fringilla vel, lacinia et, suscipit a, turpis. "
 "Integer a est. Curabitur mauris lacus, vehicula sit amet, sodales vel, "
 "iaculis vitae, massa. Nam diam est, ultrices vitae, varius et, tempor a, "
 "leo. Class aptent taciti sociosqu ad litora torquent per conubia nostra, "
 "per inceptos hymenaeos. Fusce felis nibh, ullamcorper non, malesuada eget, "
       "facilisis vel, purus.\n";
 
-char const needle[] = 
+char const needle[] =
 "Proin congue. Curabitur placerat diam id eros. "
 "Pellentesque vitae nulla. Quisque at lorem et dolor auctor consequat. Sed "
 "sed tellus non nibh imperdiet venenatis. Integer ultrices dapibus nisi. "
@@ -166,7 +166,7 @@ char const needle[] =
 "ullamcorper pretium lorem. Vestibulum ante ipsum primis in faucibus orci "
 "luctus et ultrices posuere cubilia Curae;\n";
 
-char const Needle[] = 
+char const Needle[] =
 "PROIN CONGUE. CURABITUR PLACERAT DIAM ID EROS. "
 "PELLENTESQUE VITAE NULLA. QUISQUE AT LOREM ET DOLOR AUCTOR CONSEQUAT. SED "
 "SED TELLUS NON NIBH IMPERDIET VENENATIS. INTEGER ULTRICES DAPIBUS NISI. "
@@ -211,8 +211,8 @@ char const Needle[] =
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
-	  "usage: %s [-v] [-a]\n", 
+  fprintf(stderr,
+	  "usage: %s [-v] [-a]\n",
 	  name);
   exit(exitcode);
 }
@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
   int i;
 
   /* Set our name */
-  if (strchr(argv[0], '/')) 
+  if (strchr(argv[0], '/'))
     name = strrchr(argv[0], '/') + 1;
   else
     name = argv[0];

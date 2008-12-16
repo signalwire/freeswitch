@@ -28,7 +28,7 @@
  * Performance test for su message passing
  *
  * @internal
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
@@ -80,7 +80,7 @@ do_print(struct perf *p, su_msg_r msg, struct message *m)
 {
   su_time_t now = su_now();
   double dur = su_time_diff(now, m->started);
-  
+
   printf("su_perf: %g message exchanges per second"
 	 " (%d message exchanges in %g seconds)\n",
 	 (double)p->n / dur, p->n, dur);
@@ -126,7 +126,7 @@ void usage(char *name)
  *
  * Create a ponger and pinger, responding to incoming message do_ping
  *
- * After "target" rounds, print out elapsed time and number of messages 
+ * After "target" rounds, print out elapsed time and number of messages
  * passed.
  *
  */
@@ -136,8 +136,8 @@ int main(int argc, char *argv[])
   su_clone_r ping = SU_CLONE_R_INIT, pong = SU_CLONE_R_INIT;
   su_msg_r start_msg = SU_MSG_R_INIT;
 
-  struct perf 
-    pinger = { PINGER, "ping", 1, 0 }, 
+  struct perf
+    pinger = { PINGER, "ping", 1, 0 },
     ponger = { PONGER, "pong", 1, 0x7fffffff};
 
   int have_threads = 1;
@@ -158,15 +158,15 @@ int main(int argc, char *argv[])
   su_init(); atexit(su_deinit);
 
   root = su_root_create(NULL);
-  
+
   su_root_threading(root, have_threads);
 
   if (su_clone_start(root, ping, &pinger, do_init, do_destroy) != 0)
     perror("su_clone_start"), exit(1);
   if (su_clone_start(root, pong, &ponger, do_init, do_destroy) != 0)
-    perror("su_clone_start"), exit(1); 
+    perror("su_clone_start"), exit(1);
 
-  if (su_msg_create(start_msg, su_clone_task(pong), su_clone_task(ping), 
+  if (su_msg_create(start_msg, su_clone_task(pong), su_clone_task(ping),
 		    do_ping, sizeof(struct message)) == 0) {
     su_msg_data(start_msg)->started = su_now();
     su_msg_send(start_msg);

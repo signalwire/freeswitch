@@ -23,11 +23,11 @@
  */
 
 /**@ingroup su_alloc
- * @CFILE su_alloc_lock.c 
+ * @CFILE su_alloc_lock.c
  * @brief Thread-locking for su_alloc module.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Fri Feb 23 17:38:11 2001 ppessi
  */
 
@@ -121,7 +121,7 @@ int su_home_threadsafe(su_home_t *home)
   if (mutex) {
     /* Mutex for memory operations */
     pthread_mutex_init(mutex, NULL);
-    /* Mutex used for explicit locking */ 
+    /* Mutex used for explicit locking */
     pthread_mutex_init(mutex + 1, NULL);
     home->suh_lock = (void *)mutex;
     return 0;

@@ -75,7 +75,7 @@ int test_msg_class(msg_mclass_t const *mc)
   for (i = 0; i < N; i++) {
     /* Verify each header entry */
     msg_hclass_t *hc = mc->mc_hash[i].hr_class;
-    
+
     if (hc == NULL)
       continue;
 
@@ -94,7 +94,7 @@ int test_msg_class(msg_mclass_t const *mc)
 char * url_print(url_t *url, char buf[1024])
 {
   url_e(buf, 1024, url);
-  
+
   return buf;
 }
 
@@ -118,11 +118,11 @@ void print_contact(FILE *f, sip_contact_t *m)
     }
     fputs(buf, f);
     if (quoted_url) fputs(">", f);
-    
+
     if (m->m_params)
       for (p = m->m_params; *p; p++)
 	fprintf(f, " ;%s", *p);
-    
+
     if (m->m_comment)
       fprintf(f, " (%s)", m->m_comment);
   }
@@ -140,7 +140,7 @@ void print_via(FILE *f, sip_via_t *v)
 
     fprintf(f, "%s %s", v->v_protocol, v->v_host);
     if (v->v_port)
-      fprintf(f, ":%s", v->v_port);      
+      fprintf(f, ":%s", v->v_port);
 
     if (v->v_params)
       for (p = v->v_params; *p; p++)
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
   size_t n;
   int m, tcp;
   sip_t *sip;
-  int exitcode = 0; 
+  int exitcode = 0;
   msg_mclass_t const *sip_mclass = sip_default_mclass();
   msg_t *msg = msg_create(sip_mclass, MSG_FLG_EXTRACT_COPY);
   msg_iovec_t iovec[1];
@@ -248,13 +248,13 @@ int main(int argc, char *argv[])
 	    sip->sip_status->st_version,
 	    sip->sip_status->st_status,
 	    sip->sip_status->st_phrase);
-  
+
   if (sip->sip_cseq)
     fprintf(stdout, "\tCSeq: %u %s (%d)\n",
 	    sip->sip_cseq->cs_seq,
 	    sip->sip_cseq->cs_method_name,
 	    sip->sip_cseq->cs_method);
-  
+
   if (sip->sip_call_id)
     fprintf(stdout, "\tCall-ID: %s (%x)\n",
 	    sip->sip_call_id->i_id,
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
     fprintf(stdout, "\tFrom: %s@%s%s%s\n",
 	    sip->sip_from->a_user ? sip->sip_from->a_user : "[nobody]",
 	    sip->sip_from->a_host ? sip->sip_from->a_host : "[nowhere]",
-	    sip->sip_from->a_tag ? " ;tag=" : "",	
+	    sip->sip_from->a_tag ? " ;tag=" : "",
 	    sip->sip_from->a_tag ? sip->sip_from->a_tag : "");
 
   if (sip->sip_to)

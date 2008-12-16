@@ -28,12 +28,12 @@
 
 /**
  * @file sofia-sip/stun_common.h
- * @brief 
- * 
+ * @brief
+ *
  * @author Tat Chan <Tat.Chan@nokia.com>
- * 
+ *
  * @date Created: Fri Oct  3 13:39:55 2003 ppessi
- * 
+ *
  */
 
 #include <sofia-sip/su_localinfo.h>
@@ -69,7 +69,7 @@ SOFIA_BEGIN_DECLS
 #define STUN_A_REFRESH_INTERVAL       0x8024
 
 /* Defines for mandatory and optional attributes */
-#define STUN_A_LAST_MANDATORY         0x0023 /**< largest attribute in the current 
+#define STUN_A_LAST_MANDATORY         0x0023 /**< largest attribute in the current
 						spec (see above for exceptions
 						for buggy servers) */
 #define STUN_A_OPTIONAL               0x7fff
@@ -209,7 +209,7 @@ int stun_encode_message_integrity(stun_attr_t *attr, unsigned char *buf, int len
 int stun_encode_type_len(stun_attr_t *attr, uint16_t len);
 int stun_encode_response_address(stun_attr_t *attr);
 
-int stun_validate_message_integrity(stun_msg_t *msg, stun_buffer_t *pwd); 
+int stun_validate_message_integrity(stun_msg_t *msg, stun_buffer_t *pwd);
 
 int stun_copy_buffer(stun_buffer_t *p, stun_buffer_t *p2);
 void stun_init_buffer(stun_buffer_t *p);

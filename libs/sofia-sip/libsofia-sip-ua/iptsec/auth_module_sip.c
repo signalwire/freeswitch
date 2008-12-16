@@ -25,7 +25,7 @@
 /**@internal
  * @file auth_module_sip.c
  * @brief Authenticate SIP request
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Jari Urpalainen <Jari.Urpalainen@nokia.com>
  *
@@ -45,19 +45,19 @@
 
 #include <sofia-sip/auth_module.h>
 
-static auth_challenger_t sip_server_challenger[] = 
+static auth_challenger_t sip_server_challenger[] =
   {{ SIP_401_UNAUTHORIZED, sip_www_authenticate_class,
      sip_authentication_info_class
     }};
 
-static auth_challenger_t sip_proxy_challenger[] = 
+static auth_challenger_t sip_proxy_challenger[] =
   {{ SIP_407_PROXY_AUTH_REQUIRED, sip_proxy_authenticate_class }};
 
-/** Authenticate an incoming SIP request. 
+/** Authenticate an incoming SIP request.
  *
  * The function auth_mod_check() completes the @a as structure and calls the
  * scheme-specific authentication method performing the actual
- * authentication.  
+ * authentication.
  *
  * A successful authentication is indicated by setting @a as->as_status to
  * 0.  The authentication module sets @a as->as_match as the matching
@@ -86,7 +86,7 @@ void auth_mod_check(auth_mod_t *am,
     as->as_method = sip->sip_request->rq_method_name;
 
   if (sip->sip_payload)
-    as->as_body = sip->sip_payload->pl_data, 
+    as->as_body = sip->sip_payload->pl_data,
       as->as_bodylen = sip->sip_payload->pl_len;
 
   auth_mod_method(am, as, credentials, challenger);

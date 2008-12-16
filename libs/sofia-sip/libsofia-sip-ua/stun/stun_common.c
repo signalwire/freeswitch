@@ -24,13 +24,13 @@
 
 /**@internal
  * @file stun_common.c
- * @brief 
- * 
+ * @brief
+ *
  * @author Tat Chan <Tat.Chan@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
- *  
+ *
  * @date Created: Fri Oct  3 13:40:41 2003 ppessi
- * 
+ *
  */
 
 #include "config.h"
@@ -88,7 +88,7 @@ int stun_parse_message(stun_msg_t *msg)
   /* parse header first */
   p = msg->enc_buf.data;
   msg->stun_hdr.msg_type = get16(p, 0);
-  msg->stun_hdr.msg_len = get16(p, 2); 
+  msg->stun_hdr.msg_len = get16(p, 2);
   memcpy(msg->stun_hdr.tran_id, p + 4, STUN_TID_BYTES);
 
   SU_DEBUG_5(("%s: Parse STUN message: Length = %d\n", __func__,
@@ -120,7 +120,7 @@ int stun_parse_attribute(stun_msg_t *msg, unsigned char *p)
   attr_type = get16(p, 0);
   len = get16(p, 2);
 
-  SU_DEBUG_5(("%s: received attribute: Type %02X, Length %d - %s\n", 
+  SU_DEBUG_5(("%s: received attribute: Type %02X, Length %d - %s\n",
 	      __func__, attr_type, len, stun_attr_phrase(attr_type)));
 
   if (attr_type > STUN_A_LAST_MANDATORY && attr_type < STUN_A_OPTIONAL) {
@@ -197,8 +197,8 @@ int stun_parse_attribute(stun_msg_t *msg, unsigned char *p)
   return len+4;
 }
 
-int stun_parse_attr_address(stun_attr_t *attr, 
-			    const unsigned char *p, 
+int stun_parse_attr_address(stun_attr_t *attr,
+			    const unsigned char *p,
 			    unsigned len)
 {
   su_sockaddr_t *addr;
@@ -398,7 +398,7 @@ int stun_encode_error_code(stun_attr_t *attr) {
   /* note: align the phrase len (see RFC3489:11.2.9) */
   padded = phrase_len + (phrase_len % 4 == 0 ? 0 : 4 - (phrase_len % 4));
 
-  /* note: error-code has four octets of headers plus the 
+  /* note: error-code has four octets of headers plus the
    *       reason field -> len+4 octets */
   if (stun_encode_type_len(attr, (uint16_t)(padded + 4)) < 0) {
     return -1;
@@ -409,7 +409,7 @@ int stun_encode_error_code(stun_attr_t *attr) {
     attr->enc_buf.data[6] = class;
     attr->enc_buf.data[7] = num;
     /* note: 4 octets of TLV header and 4 octets of error-code header */
-    memcpy(attr->enc_buf.data+8, error->phrase, 
+    memcpy(attr->enc_buf.data+8, error->phrase,
 	   phrase_len);
     memset(attr->enc_buf.data + 8 + phrase_len, 0, padded - phrase_len);
   }
@@ -491,8 +491,8 @@ int stun_encode_type_len(stun_attr_t *attr, uint16_t len) {
   return 0;
 }
 
-/** 
- * Validate the message integrity based on given 
+/**
+ * Validate the message integrity based on given
  * STUN password 'pwd'. The received content should be
  * in msg->enc_buf.
  */
@@ -506,7 +506,7 @@ int stun_validate_message_integrity(stun_msg_t *msg, stun_buffer_t *pwd)
   unsigned char *padded_text;
 #endif
 
-  /* password NULL so shared-secret not established and 
+  /* password NULL so shared-secret not established and
      messege integrity checks can be skipped */
   if (pwd->data == NULL)
     return 0;
@@ -610,7 +610,7 @@ int stun_free_message(stun_msg_t *msg) {
 
 
 int stun_send_message(su_socket_t s, su_sockaddr_t *to_addr,
-		      stun_msg_t *msg, stun_buffer_t *pwd) 
+		      stun_msg_t *msg, stun_buffer_t *pwd)
 {
   int err;
   char ipaddr[SU_ADDRSIZE + 2];
@@ -618,7 +618,7 @@ int stun_send_message(su_socket_t s, su_sockaddr_t *to_addr,
 
   stun_encode_message(msg, pwd);
 
-  err = su_sendto(s, msg->enc_buf.data, msg->enc_buf.size, 0, 
+  err = su_sendto(s, msg->enc_buf.data, msg->enc_buf.size, 0,
 		  to_addr, SU_SOCKADDR_SIZE(to_addr));
 
   free(msg->enc_buf.data), msg->enc_buf.data = NULL;
@@ -648,9 +648,9 @@ int stun_send_message(su_socket_t s, su_sockaddr_t *to_addr,
   }
   else
     STUN_ERROR(errno, sendto);
-  
+
   return err;
-}  
+}
 
 
 /** Send a STUN message.
@@ -673,7 +673,7 @@ int stun_encode_message(stun_msg_t *msg, stun_buffer_t *pwd) {
       case MAPPED_ADDRESS:
       case SOURCE_ADDRESS:
       case CHANGED_ADDRESS:
-      case REFLECTED_FROM:	
+      case REFLECTED_FROM:
 #ifdef USE_TURN
       case TURN_ALTERNATE_SERVER:
       case TURN_DESTINATION_ADDRESS:
@@ -717,7 +717,7 @@ int stun_encode_message(stun_msg_t *msg, stun_buffer_t *pwd) {
     msg->stun_hdr.msg_len = len;
     buf_len = 20 + msg->stun_hdr.msg_len;
     buf = (unsigned char *) malloc(buf_len);
-    
+
     /* convert to binary format for transmission */
     set16(buf, 0, msg->stun_hdr.msg_type);
     set16(buf, 2, msg->stun_hdr.msg_len);
@@ -730,7 +730,7 @@ int stun_encode_message(stun_msg_t *msg, stun_buffer_t *pwd) {
     while(attr) {
       /* attach only if enc_buf is not null */
       if(attr->enc_buf.data && attr->attr_type != MESSAGE_INTEGRITY) {
-	memcpy(buf+len, (void *)attr->enc_buf.data, attr->enc_buf.size); 
+	memcpy(buf+len, (void *)attr->enc_buf.data, attr->enc_buf.size);
 	len += attr->enc_buf.size;
       }
       attr = attr->next;
@@ -742,10 +742,10 @@ int stun_encode_message(stun_msg_t *msg, stun_buffer_t *pwd) {
 	free(buf);
 	return -1;
       }
-      memcpy(buf+len, (void *)msg_int->enc_buf.data, 
+      memcpy(buf+len, (void *)msg_int->enc_buf.data,
 	     msg_int->enc_buf.size);
     }
-    
+
     /* save binary buffer for future reference */
     if (msg->enc_buf.data)
       free(msg->enc_buf.data);
@@ -782,10 +782,10 @@ char *stun_determine_ip_address(int family)
   sa = &temp->su_sin;
 
   address_size = strlen(inet_ntoa(sa->sin_addr));
-  
+
   local_ip_address = malloc(address_size + 1);
   strcpy(local_ip_address, (char *) inet_ntoa(sa->sin_addr)); /* otherwise? */
-    
+
   su_freelocalinfo(li);
 
   return local_ip_address;
@@ -807,7 +807,7 @@ const char *stun_attr_phrase(uint16_t type)
   case UNKNOWN_ATTRIBUTES: return "UNKNOWN-ATTRIBUTES";
   case REFLECTED_FROM: return "REFLECTED-FROM";
   case STUN_A_ALTERNATE_SERVER:
-  case STUN_A_ALTERNATE_SERVER_DEP: 
+  case STUN_A_ALTERNATE_SERVER_DEP:
     return "ALTERNATE-SERVER";
   case STUN_A_REALM: return "REALM";
   case STUN_A_NONCE: return "NONCE";

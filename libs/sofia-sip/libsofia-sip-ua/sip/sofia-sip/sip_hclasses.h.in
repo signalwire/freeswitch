@@ -1,11 +1,11 @@
-/** -*- C -*- 
+/** -*- C -*-
  *
  * @file sofia-sip/sip_hclasses.h.in
  *
  * Template for <sip_hclasses.h>.
  */
 
-/* 
+/*
  * This file is part of the Sofia-SIP package
  *
  * Copyright (C) 2005 Nokia Corporation.
@@ -35,9 +35,9 @@
 
 /**@file sofia-sip/sip_hclasses.h
  * @brief Declarations of SIP header classes.
- * 
+ *
  * #AUTO#
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Thu Jan 23 19:26:31 2003 ppessi
@@ -50,18 +50,18 @@
 SOFIA_BEGIN_DECLS
 
 
-enum { 
-  /**@ingroup sip_#xxxxxx# @internal 
+enum {
+  /**@ingroup sip_#xxxxxx# @internal
    *
    * Hash of @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#".
    *
    * @since New in #version#.
    */
-  sip_#xxxxxx#_hash = #hash# 
+  sip_#xxxxxx#_hash = #hash#
 };
 
 /**Header class for @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#".
- * 
+ *
  * The header class sip_#xxxxxx#_class defines how a SIP
  * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" is parsed and printed.
  * It also contains methods used by SIP parser and other functions to

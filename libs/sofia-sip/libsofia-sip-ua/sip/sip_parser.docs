@@ -7,7 +7,7 @@
  * new parser is added.
  *
  * The @b sip module contains interface to the SIP headers and message
- * objects. The interface is abstracted using objects known as 
+ * objects. The interface is abstracted using objects known as
  * @ref msg_hclass_s "header classes" and @ref msg_mclass_s "message classes".
  *
  * The @ref msg_mclass_s "message class" defines how a message is handled:
@@ -15,14 +15,14 @@
  * classes. It also contains function pointers used by the parser to handle
  * message body and other details that vary between protocols.
  *
- * A @ref msg_hclass_s "header class" defines how a single header is parsed. 
+ * A @ref msg_hclass_s "header class" defines how a single header is parsed.
  * Each header has its own header class. There are also header classes for
  * message elements that are not really headers, like @ref sip_request
- * "request" and @ref sip_status "status line", 
- * @ref sip_separator "separator between headers" and 
+ * "request" and @ref sip_status "status line",
+ * @ref sip_separator "separator between headers" and
  * @ref sip_payload "message body"
  * (which is also known as payload). There is also a header classes
- * for @ref sip_unknown "unknown headers" and 
+ * for @ref sip_unknown "unknown headers" and
  * @ref sip_error "headers that contained parsing errors".
  *
  *
@@ -33,18 +33,18 @@
  *
  * Create a header template for your header just like sip_rfc2543.h.in,
  * e.g, sip_example.h.in:
- * 
+ *
  *@code
 /**@file sip_example.h.in
  *
  * Template for <sofia-sip/sip_example.h>.
  */
 
-#ifndef SIP_EXAMPLE_H 
+#ifndef SIP_EXAMPLE_H
 /** Defined when <sofia-sip/sip_example.h> has been included. */
-#define SIP_EXAMPLE_H 
+#define SIP_EXAMPLE_H
 
-/**@file sofia-sip/sip_example.h 
+/**@file sofia-sip/sip_example.h
 *
  * @brief Example header.
  *

@@ -111,7 +111,7 @@ tport_vtable_t const tport_tcp_client_vtable =
 
 static int tport_tcp_setsndbuf(int socket, int atleast);
 
-int tport_tcp_init_primary(tport_primary_t *pri, 
+int tport_tcp_init_primary(tport_primary_t *pri,
 			   tp_name_t tpn[1],
 			   su_addrinfo_t *ai,
 			   tagi_t const *tags,
@@ -129,7 +129,7 @@ int tport_tcp_init_primary(tport_primary_t *pri,
   return tport_stream_init_primary(pri, socket, tpn, ai, tags, return_culprit);
 }
 
-int tport_stream_init_primary(tport_primary_t *pri, 
+int tport_stream_init_primary(tport_primary_t *pri,
 			      su_socket_t socket,
 			      tp_name_t tpn[1],
 			      su_addrinfo_t *ai,
@@ -168,7 +168,7 @@ int tport_stream_init_primary(tport_primary_t *pri,
   return 0;
 }
 
-int tport_tcp_init_client(tport_primary_t *pri, 
+int tport_tcp_init_client(tport_primary_t *pri,
 			  tp_name_t tpn[1],
 			  su_addrinfo_t *ai,
 			  tagi_t const *tags,
@@ -223,7 +223,7 @@ static inline size_t ws_span(void *buffer, size_t len)
 {
   size_t i;
   char const *b = buffer;
-  
+
   for (i = 0; i < len; i++) {
     if (b[i] != '\r' && b[i] != '\n' && b[i] != ' ' && b[i] != '\t')
       break;
@@ -235,10 +235,10 @@ static inline size_t ws_span(void *buffer, size_t len)
 /** Receive from stream.
  *
  * @retval -1 error
- * @retval 0  end-of-stream  
+ * @retval 0  end-of-stream
  * @retval 1  normal receive
  * @retval 2  incomplete recv, recv again
- * 
+ *
  */
 int tport_recv_stream(tport_t *self)
 {
@@ -343,8 +343,8 @@ int tport_recv_stream(tport_t *self)
 }
 
 /** Send to stream */
-ssize_t tport_send_stream(tport_t const *self, msg_t *msg, 
-			  msg_iovec_t iov[], 
+ssize_t tport_send_stream(tport_t const *self, msg_t *msg,
+			  msg_iovec_t iov[],
 			  size_t iovused)
 {
 #if __sun__			/* XXX - there must be a better way... */
@@ -356,7 +356,7 @@ ssize_t tport_send_stream(tport_t const *self, msg_t *msg,
 
 /** Calculate timeout if receive is incomplete. */
 int tport_next_recv_timeout(tport_t *self,
-			    su_time_t *return_target, 
+			    su_time_t *return_target,
 			    char const **return_why)
 {
   unsigned timeout = self->tp_params->tpp_timeout;
@@ -388,7 +388,7 @@ void tport_recv_timeout_timer(tport_t *self, su_time_t now)
   unsigned timeout = self->tp_params->tpp_timeout;
 
   if (timeout < INT_MAX) {
-    if (self->tp_msg && 
+    if (self->tp_msg &&
 	su_time_cmp(su_time_add(self->tp_rtime, timeout), now) < 0) {
       msg_t *msg = self->tp_msg;
       msg_set_streaming(msg, 0);
@@ -399,7 +399,7 @@ void tport_recv_timeout_timer(tport_t *self, su_time_t now)
 
 #if 0
     /* Send timeout */
-    if (tport_has_queued(self) && 
+    if (tport_has_queued(self) &&
 	su_time_cmp(su_time_add(self->tp_stime, timeout), now) < 0) {
       stime = su_time_add(self->tp_stime, self->tp_params->tpp_timeout);
       if (su_time_cmp(stime, target) < 0)
@@ -411,7 +411,7 @@ void tport_recv_timeout_timer(tport_t *self, su_time_t now)
 
 /** Calculate next timeout for keepalive */
 int tport_next_keepalive(tport_t *self,
-			 su_time_t *return_target, 
+			 su_time_t *return_target,
 			 char const **return_why)
 {
   /* Keepalive timer */
@@ -446,9 +446,9 @@ void tport_keepalive_timer(tport_t *self, su_time_t now)
   if (timeout != 0) {
     if (self->tp_ptime.tv_sec && !self->tp_recv_close &&
 	su_time_cmp(su_time_add(self->tp_ptime, timeout), now) < 0) {
-      SU_DEBUG_3(("%s(%p): %s to " TPN_FORMAT "%s\n", 
+      SU_DEBUG_3(("%s(%p): %s to " TPN_FORMAT "%s\n",
 		  __func__, (void *)self,
-		  "closing connection", TPN_ARGS(self->tp_name), 
+		  "closing connection", TPN_ARGS(self->tp_name),
 		  " because of PONG timeout"));
       tport_error_report(self, EPIPE, NULL);
       if (!self->tp_closed)
@@ -488,8 +488,8 @@ int tport_tcp_ping(tport_t *self, su_time_t now)
     int error = su_errno();
 
     why = " failed";
-    
-    if (!su_is_blocking(error)) 
+
+    if (!su_is_blocking(error))
       tport_error_report(self, error, NULL);
     else
       why = " blocking";
@@ -497,7 +497,7 @@ int tport_tcp_ping(tport_t *self, su_time_t now)
     return -1;
   }
 
-  SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n", 
+  SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n",
 	      __func__, (void *)self,
 	      "sending PING", TPN_ARGS(self->tp_name), why));
 
@@ -512,7 +512,7 @@ int tport_tcp_pong(tport_t *self)
   if (tport_has_queued(self) || !self->tp_params->tpp_pong2ping)
     return 0;
 
-  SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n", 
+  SU_DEBUG_7(("%s(%p): %s to " TPN_FORMAT "%s\n",
 	      __func__, (void *)self,
 	      "sending PONG", TPN_ARGS(self->tp_name), ""));
 
@@ -521,10 +521,10 @@ int tport_tcp_pong(tport_t *self)
 
 /** Calculate next timer for TCP. */
 int tport_tcp_next_timer(tport_t *self,
-			 su_time_t *return_target, 
+			 su_time_t *return_target,
 			 char const **return_why)
 {
-  return 
+  return
     tport_next_recv_timeout(self, return_target, return_why) |
     tport_next_keepalive(self, return_target, return_why);
 }

@@ -39,13 +39,13 @@
 #include <sofia-sip/stun_tag.h>
 
 /**@def STUNTAG_ANY()
- * 
+ *
  * Filter tag matching any STUNTAG_*().
  */
 tag_typedef_t stuntag_any = NSTAG_TYPEDEF(*);
 
 /**@def STUNTAG_DOMAIN(x)
- * 
+ *
  * The domain to use in DNS-SRV based STUN server discovery.
  * Note: this is commonly the domain part of a public SIP
  * address (AOR). See sect 9.1 of RFC3489.
@@ -64,9 +64,9 @@ tag_typedef_t stuntag_domain = STRTAG_TYPEDEF(domain);
 
 /**@def STUNTAG_SERVER(x)
  *
- * Fully qualified host name, or dotted IP address of the STUN server 
+ * Fully qualified host name, or dotted IP address of the STUN server
  * address. If defined, the DNS-SRV based discovery (@see STUNTAG_DOMAIN())
- * will be skipped. 
+ * will be skipped.
  *
  * @par Used with
  *    nua_set_params() \n
@@ -86,9 +86,9 @@ tag_typedef_t stuntag_domain = STRTAG_TYPEDEF(domain);
 tag_typedef_t stuntag_server = STRTAG_TYPEDEF(server);
 
 /**@def STUNTAG_REQUIRE_INTEGRITY(x)
- *  
+ *
  * Whether to require support for shared-secret based packet
- * authentication and integrity checks (see sect 9.2 of RFC3489). 
+ * authentication and integrity checks (see sect 9.2 of RFC3489).
  * If false, integrity checks are performed only when server supports it.
  *
  * @par Used with
@@ -113,7 +113,7 @@ tag_typedef_t stuntag_require_integrity = BOOLTAG_TYPEDEF(require_integrity);
 tag_typedef_t stuntag_integrity = BOOLTAG_TYPEDEF(integrity);
 
 /**@def STUNTAG_SOCKET(x)
- *  
+ *
  * Bind socket for STUN.
  *
  * @par Used with
@@ -130,7 +130,7 @@ tag_typedef_t stuntag_integrity = BOOLTAG_TYPEDEF(integrity);
 tag_typedef_t stuntag_socket = SOCKETTAG_TYPEDEF(socket);
 
 /**@def STUNTAG_REGISTER_EVENTS(x)
- *  
+ *
  * Register socket events for eventloop owned by STUN.
  *
  * @par Used with
@@ -150,7 +150,7 @@ tag_typedef_t stuntag_socket = SOCKETTAG_TYPEDEF(socket);
 tag_typedef_t stuntag_register_events = BOOLTAG_TYPEDEF(register_events);
 
 /**@def STUNTAG_ACTION(x)
- *  
+ *
  * Command action for STUN request.
  *
  * @par Used with
@@ -169,7 +169,7 @@ tag_typedef_t stuntag_action = INTTAG_TYPEDEF(action);
 /* ---------------------------------------------------------------------- */
 
 /**@def STUNTAG_CHANGE_IP(x)
- *  
+ *
  * Add CHANGE-REQUEST attribute with "change IP" flag to the request.
  *
  * @par Used with
@@ -183,7 +183,7 @@ tag_typedef_t stuntag_action = INTTAG_TYPEDEF(action);
 tag_typedef_t stuntag_change_ip = BOOLTAG_TYPEDEF(change_ip);
 
 /**@def STUNTAG_CHANGE_PORT(x)
- *  
+ *
  * Add CHANGE-REQUEST attribute with "change port" flag to the request.
  *
  * @par Used with
@@ -199,7 +199,7 @@ tag_typedef_t stuntag_change_port = BOOLTAG_TYPEDEF(change_port);
 /* ---------------------------------------------------------------------- */
 
 /**@def STUNTAG_TIMEOUT(x)
- *  
+ *
  * Timeout controls the launching of the STUN keepalive timer.
  *
  * @par Used with

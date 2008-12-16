@@ -98,9 +98,9 @@ typedef SU_NETWORK_CHANGED_MAGIC_T su_network_changed_magic_t;
 
 typedef struct su_network_changed_s su_network_changed_t;
 
-/** Function prototype for network-changed callback . 
+/** Function prototype for network-changed callback .
  *
- * 
+ *
  * @since New in @VERSION_1_12_2.
  */
 typedef void (su_network_changed_f)(su_network_changed_magic_t *, su_root_t *);
@@ -112,8 +112,8 @@ typedef void (su_network_changed_f)(su_network_changed_magic_t *, su_root_t *);
 /* Network-changed */
 SOFIAPUBFUN su_network_changed_t *
 su_root_add_network_changed(su_home_t *home,
-			    su_root_t *root, 
-			    su_network_changed_f *, 
+			    su_root_t *root,
+			    su_network_changed_f *,
 			    su_network_changed_magic_t *);
 SOFIAPUBFUN int su_root_remove_network_changed(su_network_changed_t *);
 

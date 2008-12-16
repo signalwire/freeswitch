@@ -128,7 +128,7 @@ int test_reject_a(struct context *ctx)
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
   TEST(e->data->e_status, 100);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_contact); TEST_1(!sip->sip_contact->m_next); 
+  TEST_1(sip->sip_contact); TEST_1(!sip->sip_contact->m_next);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_received); /* RECEIVED */
   TEST_1(is_offer_recv(e->data->e_tags));
@@ -1042,7 +1042,7 @@ int test_reject_401_bad(struct context *ctx)
   TEST(e->data->e_status, 904);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
-  TEST_1(!e->next); 
+  TEST_1(!e->next);
 
   free_events_in_list(ctx, a->events);
 
@@ -1263,7 +1263,7 @@ size_t filter_ACK(void *arg, void *message, size_t len)
 {
   (void)arg;
 
-  if (len >= 7 && strncasecmp(message, "ACK sip", 7) == 0) 
+  if (len >= 7 && strncasecmp(message, "ACK sip", 7) == 0)
     return 0;
   return len;
 }
@@ -1297,7 +1297,7 @@ int test_call_timeouts(struct context *ctx)
   TEST_1(f = test_nat_add_filter(ctx->nat, filter_200_OK, NULL, nat_inbound));
   TEST_1(f2 = test_nat_add_filter(ctx->nat, filter_200_OK,
 				  NULL, nat_outbound));
-  
+
   INVITE(a, a_call, a_call->nh,
 	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
 	 SIPTAG_SUBJECT_STR("NUA-4.7.1"),
@@ -1383,7 +1383,7 @@ int test_call_timeouts(struct context *ctx)
   TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
 
   TEST_1(f = test_nat_add_filter(ctx->nat, filter_ACK, NULL, nat_outbound));
-  
+
   INVITE(a, a_call, a_call->nh,
 	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
 	 SIPTAG_SUBJECT_STR("NUA-4.7.2"),
@@ -1421,14 +1421,14 @@ int test_call_timeouts(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 180);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_proceeding); 
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_terminated); 
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated);
   TEST_1(!e->next);
 
   /*
@@ -1503,7 +1503,7 @@ int test_call_timeouts(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 180);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_proceeding); 
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
@@ -1513,7 +1513,7 @@ int test_call_timeouts(struct context *ctx)
   TEST(callstate(e->data->e_tags), nua_callstate_terminating);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_terminated); 
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated);
   TEST_1(!e->next);
 
   /*
@@ -1559,7 +1559,7 @@ int test_call_timeouts(struct context *ctx)
   TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
 
   TEST_1(f = test_nat_add_filter(ctx->nat, filter_ACK, NULL, nat_outbound));
-  
+
   INVITE(a, a_call, a_call->nh,
 	 TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
 	 SIPTAG_SUBJECT_STR("NUA-4.7.4"),
@@ -1599,14 +1599,14 @@ int test_call_timeouts(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 180);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_proceeding); 
+  TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_ready); /* READY */
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_terminated); 
+  TEST(callstate(e->data->e_tags), nua_callstate_terminated);
   TEST_1(!e->next);
 
   /*
@@ -1626,7 +1626,7 @@ int test_call_timeouts(struct context *ctx)
   TEST_1(is_answer_sent(e->data->e_tags));
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_error);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
-  TEST(callstate(e->data->e_tags), nua_callstate_terminating); 
+  TEST(callstate(e->data->e_tags), nua_callstate_terminating);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_bye);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */

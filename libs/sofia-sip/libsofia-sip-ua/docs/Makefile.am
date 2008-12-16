@@ -22,7 +22,7 @@ EXTRA_DIST = 	Doxyfile.aliases Doxyfile.conf \
 	pictures/autotools.gif \
 	pictures/autotools.vsd \
 	pictures/nta-receiving-message.eps \
-	pictures/nta-receiving-message.gif 
+	pictures/nta-receiving-message.gif
 
 BUILT_SOURCES = Doxyfile.rfc
 

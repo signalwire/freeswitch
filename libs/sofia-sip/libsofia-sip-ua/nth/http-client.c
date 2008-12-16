@@ -32,7 +32,7 @@
 #include "config.h"
 
 /**@page http_client Make HTTP request
- * 
+ *
  * @par Name    
  * http-client - HTTP request tool
  *
@@ -41,10 +41,10 @@
  * <tt>http-client [OPTIONS] url</tt>
  *
  * @par Description
- * 
+ *
  * The @em http-client utility sends a HTTP request to an HTTP server or proxy.
  *
- * @par 
+ * @par
  *
  * The @em http-client tool will print out status line and interesting
  * headers from the response. The message body is also printed.
@@ -142,7 +142,7 @@ int payload_print(FILE *stream, msg_payload_t const *pl)
   return 0;
 }
 
-static 
+static
 char *read_file(FILE *stream)
 {
   int n;
@@ -179,7 +179,7 @@ char *read_file(FILE *stream)
   return buf;
 }
 
-char const _usage[] = 
+char const _usage[] =
 "usage: %s [OPTIONS] url\n"
 "       where OPTIONS are as follows\n"
 "       --method=name\n"
@@ -206,15 +206,15 @@ int main(int argc, char *argv[])
   su_home_t *home;
   context_t context[1] = {{{SU_HOME_INIT(context)}}};
   http_method_t method;
-  char 
-    *o_proxy = NULL, 
+  char
+    *o_proxy = NULL,
     *o_user = NULL,
     *o_max_forwards = NULL,
     *o_method_name = "GET",
     *o_user_agent = "http-client/1.0 " "nth/" NTH_VERSION;
-  int 
+  int
     o_pipe = 0, o_extra = 0;
-   
+
   char *extra = NULL;
   char *v;
 
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
     else if (MATCH(v, "--pipe"))     { o_pipe = 1;         continue; }
     else if (MATCH(v, "--extra"))    { o_extra = 1;        continue; }
     else if (MATCH(v, "--help"))     { usage(0);           continue; }
-    else 
+    else
       usage(1);
   }
 
@@ -259,8 +259,8 @@ int main(int argc, char *argv[])
   su_home_init(home = context->c_home);
 
   if (o_extra) {
-    if (isatty(0)) 
-      fprintf(stderr, 
+    if (isatty(0))
+      fprintf(stderr,
 	      "Type extra HTTP headers, empty line then HTTP message body "
 	      "(^D when complete):\n");
     fflush(stderr);
@@ -271,8 +271,8 @@ int main(int argc, char *argv[])
   context->c_root = su_root_create(context);
 
   if (context->c_root) {
-    context->c_engine = 
-      nth_engine_create(context->c_root, 
+    context->c_engine =
+      nth_engine_create(context->c_root,
 			NTHTAG_ERROR_MSG(0),
 			TAG_END());
 
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
       while ((v = argv++[1])) {
 	nth_client_t *clnt;
 	clnt = nth_client_tcreate(context->c_engine,
-				  response, context, 
+				  response, context,
 				  method, o_method_name,
 				  URL_STRING_MAKE(v),
 				  NTHTAG_PROXY(o_proxy),
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
       }
 
       if (context->c_pending)
-	su_root_run(context->c_root); 
+	su_root_run(context->c_root);
 
       nth_engine_destroy(context->c_engine), context->c_engine = NULL;
     }
@@ -320,7 +320,7 @@ int response(context_t *c,
   } else {
     status = nth_client_status(clnt);
     fprintf(stderr, "HTTP/1.1 %u Error\n", status);
-  } 
+  }
 
   if (http && (c->c_pre || status >= 200)) {
     http_header_t *h = (http_header_t *)http->http_status;
@@ -335,9 +335,9 @@ int response(context_t *c,
 	header_print(stdout, NULL, h);
       else if (h->sh_class->hc_name[0]) {
 	snprintf(hname, sizeof hname, "%s: %%s\n", h->sh_class->hc_name);
-	header_print(stdout, hname, h); 
+	header_print(stdout, hname, h);
       } else {
-	header_print(stdout, "%s\n", h); 
+	header_print(stdout, "%s\n", h);
       }
     }
 
@@ -364,7 +364,7 @@ int response(context_t *c,
 
     //if (user && pass &&
     if (
-	auc_challenge(&c->c_auth, c->c_home, 
+	auc_challenge(&c->c_auth, c->c_home,
 		      http->http_www_authenticate,
 		      http_authorization_class) > 0) {
       char const *scheme = NULL;
@@ -375,7 +375,7 @@ int response(context_t *c,
 				"realm=");
       if (auc_all_credentials(&c->c_auth, scheme, realm, user, pass)
 	  >= 0)
-	newclnt = nth_client_tcreate(c->c_engine, 
+	newclnt = nth_client_tcreate(c->c_engine,
 				     NULL, NULL, HTTP_NO_METHOD, NULL,
 				     NTHTAG_AUTHENTICATION(&c->c_auth),
 				     NTHTAG_TEMPLATE(clnt),
@@ -385,11 +385,11 @@ int response(context_t *c,
 
   if (status == 302 && http->http_location) {
     url_t loc[1];
-    
+
     *loc = *http->http_location->loc_url;
 
     newclnt = nth_client_tcreate(c->c_engine, NULL, NULL,
-				 HTTP_NO_METHOD, 
+				 HTTP_NO_METHOD,
 				 (url_string_t *)loc,
 				 NTHTAG_TEMPLATE(clnt),
 				 TAG_END());
@@ -398,7 +398,7 @@ int response(context_t *c,
 
   if (newclnt)
     c->c_pending++;
-  
+
   nth_client_destroy(clnt);
   if (c->c_pending-- == 1)
     su_root_break(c->c_root);

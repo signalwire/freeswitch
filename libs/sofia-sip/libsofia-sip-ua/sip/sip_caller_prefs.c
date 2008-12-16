@@ -70,14 +70,14 @@
  * @endcode
  *
  *
- * The parsed Request-Disposition header 
+ * The parsed Request-Disposition header
  * is stored in #sip_request_disposition_t structure.
  */
 
 /**@ingroup sip_request_disposition
  * @typedef typedef struct sip_request_disposition_s sip_request_disposition_t;
  *
- * The structure #sip_request_disposition_t contains representation of 
+ * The structure #sip_request_disposition_t contains representation of
  * @RequestDisposition header.
  *
  * The #sip_request_disposition_t is defined as follows:

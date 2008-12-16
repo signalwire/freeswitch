@@ -85,7 +85,7 @@ typedef struct hentry_s entry_t;
 HTABLE_DECLARE(htable, ht, entry_t);
 HTABLE_PROTOS(htable, ht, entry_t);
 
-struct hentry_s 
+struct hentry_s
 {
   unsigned long e_value;
   unsigned long e_n;
@@ -101,7 +101,7 @@ typedef struct context_s
   htable_t c_hash[1];
 } context_t;
 
-context_t *context_create(void) 
+context_t *context_create(void)
 {
   context_t *c = su_home_clone(NULL, sizeof(*c));
 
@@ -131,7 +131,7 @@ entry_t *search(context_t *c, unsigned long value, unsigned long n, int add)
     /* Resize hash table */
     if (htable_is_full(ht)) {
       htable_resize(c->c_home, ht, 0);
-      fprintf(stderr, "htable: resized to %u with %u entries\n", 
+      fprintf(stderr, "htable: resized to %u with %u entries\n",
 	      ht->ht_size, ht->ht_used);
     }
 
@@ -157,9 +157,9 @@ void zap(context_t *c, entry_t *e)
   su_free(c->c_home, e);
 }
 
-/* 
- * Check that all n entries with hash h are in hash table 
- * and they are stored in same order 
+/*
+ * Check that all n entries with hash h are in hash table
+ * and they are stored in same order
  * in which they were added to the hash
  */
 static unsigned long count(context_t *c, hash_value_t h)
@@ -168,7 +168,7 @@ static unsigned long count(context_t *c, hash_value_t h)
   unsigned long n, expect = 1;
 
   for (ee = htable_hash(c->c_hash, h), n = 0;
-       (e = *ee); 
+       (e = *ee);
        ee = htable_next(c->c_hash, ee)) {
     if (e->e_value != h)
       continue;
@@ -225,10 +225,10 @@ int table_test(int flags)
 
     TEST_1(add(c, h, 1)); TEST_1(add(c, h, 2)); TEST_1(add(c, h, 3));
     TEST_1(add(c, h, 4)); TEST_1(add(c, h, 5)); TEST_1(add(c, h, 6));
-    TEST_1(add(c, h, 7)); TEST_1(add(c, h, 8)); TEST_1(add(c, h, 9)); 
+    TEST_1(add(c, h, 7)); TEST_1(add(c, h, 8)); TEST_1(add(c, h, 9));
 
     TEST(count(c, h), 9);
-    
+
     TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
     TEST(htable_resize(c->c_home, c->c_hash, ++size), 0);

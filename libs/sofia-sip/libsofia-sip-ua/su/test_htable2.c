@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 
 typedef struct hentry_s entry_t;
 
-struct hentry_s 
+struct hentry_s
 {
   hash_value_t e_hash;
   unsigned long e_n;
@@ -108,7 +108,7 @@ typedef struct context_s
   htable2_t c_hash[1];
 } context_t;
 
-context_t *context_create(void) 
+context_t *context_create(void)
 {
   context_t *c = su_home_clone(NULL, sizeof(*c));
 
@@ -139,7 +139,7 @@ entry_t *search(context_t *c, unsigned long value, unsigned long n, int add)
     /* Resize hash table */
     if (htable2_is_full(ht)) {
       htable2_resize(c->c_home, ht, 0);
-      fprintf(stderr, "htable: resized to "MOD_ZU" with "MOD_ZU" entries\n", 
+      fprintf(stderr, "htable: resized to "MOD_ZU" with "MOD_ZU" entries\n",
 	      ht->ht2_size, ht->ht2_used);
     }
 
@@ -163,9 +163,9 @@ void zap(context_t *c, entry_t e)
   htable2_remove(c->c_hash, e);
 }
 
-/* 
- * Check that all n entries with hash h are in hash table 
- * and they are stored in same order 
+/*
+ * Check that all n entries with hash h are in hash table
+ * and they are stored in same order
  * in which they were added to the hash
  */
 static unsigned long count(context_t *c, hash_value_t h)
@@ -236,10 +236,10 @@ int table2_test(int flags)
 
     TEST_1(add(c, h, 1)); TEST_1(add(c, h, 2)); TEST_1(add(c, h, 3));
     TEST_1(add(c, h, 4)); TEST_1(add(c, h, 5)); TEST_1(add(c, h, 6));
-    TEST_1(add(c, h, 7)); TEST_1(add(c, h, 8)); TEST_1(add(c, h, 9)); 
+    TEST_1(add(c, h, 7)); TEST_1(add(c, h, 8)); TEST_1(add(c, h, 9));
 
     TEST(count(c, h), 9);
-    
+
     TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);
     TEST(count(c, h), 9);
     TEST(htable2_resize(c->c_home, c->c_hash, ++size), 0);

@@ -28,7 +28,7 @@
  * Testing functions for su_tag module.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Mar  6 18:33:42 2001 ppessi
  */
 
@@ -47,7 +47,7 @@
 #define DEVNULL "/dev/null"
 #else
 #define DEVNULL "nul"
-#endif 
+#endif
 
 int tstflags = 0;
 
@@ -127,27 +127,27 @@ static void init_tags(void)
 
   tag_typedef_t _tag_b = STRTAG_TYPEDEF(b);
   tag_typedef_t _tag_b_ref = REFTAG_TYPEDEF(tag_b);
- 
+
   tag_typedef_t _tag_i = INTTAG_TYPEDEF(i);
   tag_typedef_t _tag_i_ref = REFTAG_TYPEDEF(tag_i);
- 
+
   tag_typedef_t _tag_j = INTTAG_TYPEDEF(j);
   tag_typedef_t _tag_j_ref = REFTAG_TYPEDEF(tag_j);
- 
+
   tag_typedef_t _tag_k = INTTAG_TYPEDEF(k);
   tag_typedef_t _tag_k_ref = REFTAG_TYPEDEF(tag_k);
-  
+
   tag_typedef_t _tag_n = INTTAG_TYPEDEF(n);
   tag_typedef_t _tag_n_ref = REFTAG_TYPEDEF(tag_n);
 
 #undef TAG_NAMESPACE
 #define TAG_NAMESPACE "pq"
-  
+
   tag_typedef_t _tag_any_pq = NSTAG_TYPEDEF(*);
 
   tag_typedef_t _tag_p = BOOLTAG_TYPEDEF(p);
   tag_typedef_t _tag_p_ref = REFTAG_TYPEDEF(tag_p);
-  
+
   tag_typedef_t _tag_q = BOOLTAG_TYPEDEF(q);
   tag_typedef_t _tag_q_ref = REFTAG_TYPEDEF(tag_q);
 
@@ -237,22 +237,22 @@ int main(int avc, char *av[])
 	       (tv)1, (tv)2, (tv)3, (tv)4, (tv)5,
 	       (tv)6, (tv)7, (tv)8, (tv)9, (tv)10);
 }
-], 
+],
 SAC_SU_DEFINE(SU_HAVE_TAGSTACK, 1, [
-Define this as 1 if your compiler puts the variable argument list nicely in memory]), 
+Define this as 1 if your compiler puts the variable argument list nicely in memory]),
 )
 
 */
 
 static int test_stackargs(int l, ...)
 {
-  va_list ap;  
+  va_list ap;
   int i, *p;
 
   BEGIN();
 
   va_start(ap, l);
-  
+
   p = &l;
 
   for (i = l; i <= 10; i++) {
@@ -287,10 +287,10 @@ static int test_dup(void)
 
   BEGIN();
 
-  lst = tl_list(TAG_A("Moro"), 
-		TAG_A("Vaan"), 
-		TAG_I(1), 
-		TAG_SKIP(2), 
+  lst = tl_list(TAG_A("Moro"),
+		TAG_A("Vaan"),
+		TAG_I(1),
+		TAG_SKIP(2),
 		TAG_NEXT(rest));
 
   TEST_P(lst[0].t_tag, tag_a);
@@ -379,12 +379,12 @@ static int test_filters(void)
 
   home = su_home_new(sizeof *home); TEST_1(home);
 
-  lst = tl_list(TAG_A("Moro"), 
+  lst = tl_list(TAG_A("Moro"),
 		TAG_I(2),
 		TAG_Q(3),
-		TAG_SKIP(2), 
-		TAG_A("vaan"), 
-		TAG_I(1), 
+		TAG_SKIP(2),
+		TAG_A("vaan"),
+		TAG_I(1),
 		TAG_P(2),
 		TAG_NULL());
 
@@ -420,7 +420,7 @@ static int test_filters(void)
   su_free(NULL, b1); su_free(NULL, b2); su_free(NULL, b3); su_free(NULL, b4);
 
   nsfilter = tl_list(TAG_ANY_PQ(), TAG_END());
-  
+
   b5 = tl_afilter(NULL, nsfilter, lst);
   TEST_SIZE(tl_len(b5), 3 * sizeof(tagi_t));
   TEST_SIZE(tl_xtra(b5, 0), 0);
@@ -437,7 +437,7 @@ static int test_filters(void)
   b = tl_afilter(home, filter6, lst); TEST_1(b);
   TEST_P(b[0].t_tag, 0);
 
-  tl_vfree(filter1); tl_vfree(filter2); tl_vfree(filter3); 
+  tl_vfree(filter1); tl_vfree(filter2); tl_vfree(filter3);
   tl_vfree(filter4); tl_vfree(filter5); tl_vfree(filter6);
 
   tl_vfree(lst);
@@ -455,14 +455,14 @@ static int test_print(void)
   tagi_t *lst;
   FILE *out;
 
-  lst = tl_list(TAG_A("Moro"), 
-		TAG_I(2), 
+  lst = tl_list(TAG_A("Moro"),
+		TAG_I(2),
 		TAG_J(3),
 		TAG_K(5),
-		TAG_SKIP(2), 
-		TAG_A("Vaan"), 
+		TAG_SKIP(2),
+		TAG_A("Vaan"),
 		TAG_B("b"),
-		TAG_I(1), 
+		TAG_I(1),
 		TAG_NULL());
 
   if (tstflags & tst_verbatim)
@@ -524,15 +524,15 @@ static int test_gets(void)
 
   BEGIN();
 
-  lst = tl_list(TAG_A("Moro"), 
-		TAG_I(2), 
+  lst = tl_list(TAG_A("Moro"),
+		TAG_I(2),
 		TAG_J(3),
 		TAG_K(5),
 		TAG_P(3),
-		TAG_SKIP(2), 
-		TAG_A("Vaan"), 
+		TAG_SKIP(2),
+		TAG_A("Vaan"),
 		TAG_B("b"),
-		TAG_I(1), 
+		TAG_I(1),
 		TAG_NULL());
 
   TEST_1(lst);
@@ -540,7 +540,7 @@ static int test_gets(void)
   TEST_1(t = tl_find(lst, tag_i)); TEST(t->t_value, 2);
   TEST_1(t = tl_find_last(lst, tag_i)); TEST(t->t_value, 1);
 
-  TEST(tl_gets(lst, 
+  TEST(tl_gets(lst,
 	       TAG_A_REF(a),
 	       TAG_B_REF(b),
 	       TAG_I_REF(i),
@@ -566,7 +566,7 @@ static int test_gets(void)
   lst = tl_list(TAG_A_REF(a),
 		TAG_I_REF(i),
 		TAG_NULL());
-  
+
   TEST(tl_tgets(lst, TAG_A("Foo"), TAG_I(-1), TAG_END()), 2);
 
   TEST_S(a, "Foo");
@@ -629,8 +629,8 @@ static int test_scan(void)
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
-	  "usage: %s [-v] [-a]\n", 
+  fprintf(stderr,
+	  "usage: %s [-v] [-a]\n",
 	  name);
   exit(exitcode);
 }

@@ -25,11 +25,11 @@
 /**@internal
  * @file su_bm.c
  * @brief Search with Boyer-Moore algorithm
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Mon Apr 11 16:35:16 2005 ppessi
- * 
+ *
  */
 
 #include "config.h"
@@ -47,7 +47,7 @@
 #define TORTURELOG(x) (void)0
 #endif
 
-struct bw_fwd_table { 
+struct bw_fwd_table {
   unsigned char table[UCHAR_MAX + 1];
 };
 
@@ -81,7 +81,7 @@ bm_memmem_study0(char const *needle, size_t nlen, bm_fwd_table_t *fwd)
  * naive implementation if the searched substring is shorter than the cache
  * line.
  *
- */ 
+ */
 
 /**@ingroup su_bm
  * @typedef struct bw_fwd_table bm_fwd_table_t;
@@ -90,7 +90,7 @@ bm_memmem_study0(char const *needle, size_t nlen, bm_fwd_table_t *fwd)
  *
  */
 
-/** Build case-sensitive forward skip table #bm_fwd_table_t 
+/** Build case-sensitive forward skip table #bm_fwd_table_t
  *  for Boyer-Moore algorithm.
  * @ingroup su_bm
  */
@@ -134,9 +134,9 @@ bm_memmem(char const *haystack, size_t hlen,
   for (i = j = nlen - 1; i < hlen;) {
     unsigned char h = haystack[i];
     if (h == needle[j]) {
-      TORTURELOG(("match \"%s\" at %u\nwith  %*s\"%.*s*%s\": %s\n", 
-		  haystack, (unsigned)i, 
-		  (int)(i - j), "", (int)j, needle, needle + j + 1, 
+      TORTURELOG(("match \"%s\" at %u\nwith  %*s\"%.*s*%s\": %s\n",
+		  haystack, (unsigned)i,
+		  (int)(i - j), "", (int)j, needle, needle + j + 1,
 		  j == 0 ? "match!" : "back by 1"));
       if (j == 0)
 	return (char *)haystack + i;
@@ -145,24 +145,24 @@ bm_memmem(char const *haystack, size_t hlen,
     else {
       if (fwd->table[h] > nlen - j) {
 	TORTURELOG(("match \"%s\" at %u\n"
-		    "last  %*s\"%.*s*%s\": (by %u)\n", 
+		    "last  %*s\"%.*s*%s\": (by %u)\n",
 		    haystack, (unsigned)i,
-		    (int)(i - j), "", 
+		    (int)(i - j), "",
 		    (int)j, needle, needle + j + 1, fwd->table[h]));
       	i += fwd->table[h];
       }
       else {
 	TORTURELOG(("match \"%s\" at %u\n"
-		    "2nd   %*s\"%.*s*%s\": (by %u)\n", 
+		    "2nd   %*s\"%.*s*%s\": (by %u)\n",
 		    haystack, (unsigned)i,
-		    (int)(i - j), "", 
+		    (int)(i - j), "",
 		    (int)j, needle, needle + j + 1, (unsigned)(nlen - j)));
 	i += nlen - j;
       }
       j = nlen - 1;
     }
   }
-  
+
   return NULL;
 }
 
@@ -233,7 +233,7 @@ bm_memcasemem(char const *haystack, size_t hlen,
 
   for (i = j = nlen - 1; i < hlen;) {
     unsigned char h = haystack[i], n = needle[j];
-    if (isupper(h)) 
+    if (isupper(h))
       h = tolower(h);
     if (isupper(n))
       n = tolower(n);
@@ -242,7 +242,7 @@ bm_memcasemem(char const *haystack, size_t hlen,
       TORTURELOG(("match \"%s\" at %u\n"
 		  "with  %*s\"%.*s*%s\": %s\n",
 		  haystack, (unsigned)i,
-		  (int)(i - j), "", (int)j, needle, needle + j + 1, 
+		  (int)(i - j), "", (int)j, needle, needle + j + 1,
 		  j == 0 ? "match!" : "back by 1"));
       if (j == 0)
 	return (char *)haystack + i;
@@ -253,21 +253,21 @@ bm_memcasemem(char const *haystack, size_t hlen,
 	TORTURELOG(("match \"%s\" at %u\n"
 		    "last  %*s\"%.*s*%s\": (by %u)\n",
 		    haystack, (unsigned)i,
-		    (int)(i - j), "", (int)j, needle, needle + j + 1, 
+		    (int)(i - j), "", (int)j, needle, needle + j + 1,
 		    fwd->table[h]));
       	i += fwd->table[h];
       }
       else {
 	TORTURELOG(("match \"%s\" at %u\n"
-		    "2nd   %*s\"%.*s*%s\": (by %u)\n", 
+		    "2nd   %*s\"%.*s*%s\": (by %u)\n",
 		    haystack, (unsigned)i,
-		    (int)(i - j), "", (int)j, needle, needle + j + 1, 
+		    (int)(i - j), "", (int)j, needle, needle + j + 1,
 		    (unsigned)(nlen - j)));
 	i += nlen - j;
       }
       j = nlen - 1;
     }
   }
-  
+
   return NULL;
 }

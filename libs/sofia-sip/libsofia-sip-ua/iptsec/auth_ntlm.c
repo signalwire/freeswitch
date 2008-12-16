@@ -58,7 +58,7 @@ su_inline int has_token(char const *qstring, char const *token);
  * found, or -1 upon an error.
  */
 issize_t auth_ntlm_challenge_get(su_home_t *home,
-				auth_challenge_t *ac0, 
+				auth_challenge_t *ac0,
 				char const * const params[])
 {
   ssize_t n;
@@ -68,7 +68,7 @@ issize_t auth_ntlm_challenge_get(su_home_t *home,
 
   ac->ac_size = sizeof(ac);
 
-  assert(ac0); 
+  assert(ac0);
   assert(ac0->ac_size >= sizeof(*ac));
 
   if (ac0 == NULL || params == NULL)
@@ -103,7 +103,7 @@ issize_t auth_ntlm_challenge_get(su_home_t *home,
   auth_struct_copy(ac0, ac, sizeof(ac));
 
   SU_DEBUG_5(("%s(): got %d\n", "auth_ntlm_challenge_get", n));
-  
+
   return n;
 }
 
@@ -119,7 +119,7 @@ issize_t auth_ntlm_challenge_get(su_home_t *home,
  * found, or -1 upon an error.
  */
 issize_t auth_ntlm_response_get(su_home_t *home,
-				auth_response_t *ar0, 
+				auth_response_t *ar0,
 				char const *const params[])
 {
   ssize_t n;
@@ -169,9 +169,9 @@ issize_t auth_ntlm_response_get(su_home_t *home,
 
 #if 0
 
-/** Generate A1 hash for digest authentication. 
+/** Generate A1 hash for digest authentication.
  */
-int auth_digest_a1(auth_response_t *ar, 
+int auth_digest_a1(auth_response_t *ar,
 		   auth_hexmd5_t ha1,
 		   char const *secret)
 {
@@ -187,13 +187,13 @@ int auth_digest_a1(auth_response_t *ar,
 
   su_md5_hexdigest(md5, ha1);
 
-  SU_DEBUG_5(("auth_digest_a1() has A1 = MD5(%s:%s:%s) = %s\n", 
+  SU_DEBUG_5(("auth_digest_a1() has A1 = MD5(%s:%s:%s) = %s\n",
 	      ar->ar_username, ar->ar_realm, secret, ha1));
 
   return 0;
 }
 
-int auth_digest_a1sess(auth_response_t *ar, 
+int auth_digest_a1sess(auth_response_t *ar,
 		       auth_hexmd5_t ha1sess,
 		       char const *ha1)
 {
@@ -208,15 +208,15 @@ int auth_digest_a1sess(auth_response_t *ar,
 
   su_md5_hexdigest(md5, ha1sess);
 
-  SU_DEBUG_5(("auth_sessionkey has A1' = MD5(%s:%s:%s) = %s\n", 
+  SU_DEBUG_5(("auth_sessionkey has A1' = MD5(%s:%s:%s) = %s\n",
 	      ha1, ar->ar_nonce, ar->ar_cnonce, ha1sess));
 
   return 0;
 }
 
-/** Generate MD5 session key for digest authentication. 
+/** Generate MD5 session key for digest authentication.
  */
-int auth_digest_sessionkey(auth_response_t *ar, 
+int auth_digest_sessionkey(auth_response_t *ar,
 			   auth_hexmd5_t ha1,
 			   char const *secret)
 {
@@ -228,7 +228,7 @@ int auth_digest_sessionkey(auth_response_t *ar,
     return -1;
 
   if (ar->ar_md5sess) {
-    auth_hexmd5_t base_ha1; 
+    auth_hexmd5_t base_ha1;
     auth_digest_a1(ar, base_ha1, secret);
     auth_digest_a1sess(ar, ha1, base_ha1);
   } else {
@@ -243,12 +243,12 @@ int auth_digest_sessionkey(auth_response_t *ar,
 
 #if 0
 
-/** Generate response for digest authentication. 
+/** Generate response for digest authentication.
  *
  */
-int auth_digest_response(auth_response_t *ar, 
+int auth_digest_response(auth_response_t *ar,
 			 auth_hexmd5_t response,
-			 auth_hexmd5_t const ha1, 
+			 auth_hexmd5_t const ha1,
 			 char const *method_name,
 			 void const *data, issize_t dlen)
 {
@@ -284,7 +284,7 @@ int auth_digest_response(auth_response_t *ar,
   }
   su_md5_hexdigest(md5, HA2);
 
-  SU_DEBUG_5(("A2 = MD5(%s:%s%s%s)\n", method_name, ar->ar_uri, 
+  SU_DEBUG_5(("A2 = MD5(%s:%s%s%s)\n", method_name, ar->ar_uri,
 	      ar->ar_auth_int ? ":" : "", ar->ar_auth_int ? Hentity : ""));
 
   /* Calculate response */
@@ -303,17 +303,17 @@ int auth_digest_response(auth_response_t *ar,
   }
 
   su_md5_update(md5, ":", 1);
-  su_md5_update(md5, HA2, 32);      
+  su_md5_update(md5, HA2, 32);
   su_md5_hexdigest(md5, response);
 
-  SU_DEBUG_5(("auth_response: %s = MD5(%s:%s%s%s%s%s%s%s:%s) (qop=%s)\n", 
-	      response, ha1, ar->ar_nonce, 
-	      ar->ar_auth ||  ar->ar_auth_int ? ":" : "", 
-	      ar->ar_auth ||  ar->ar_auth_int ? ar->ar_nc : "", 
-	      ar->ar_auth ||  ar->ar_auth_int ? ":" : "", 
-	      ar->ar_auth ||  ar->ar_auth_int ? ar->ar_cnonce : "", 
-	      ar->ar_auth ||  ar->ar_auth_int ? ":" : "", 
-	      ar->ar_auth ||  ar->ar_auth_int ? ar->ar_qop : "", 
+  SU_DEBUG_5(("auth_response: %s = MD5(%s:%s%s%s%s%s%s%s:%s) (qop=%s)\n",
+	      response, ha1, ar->ar_nonce,
+	      ar->ar_auth ||  ar->ar_auth_int ? ":" : "",
+	      ar->ar_auth ||  ar->ar_auth_int ? ar->ar_nc : "",
+	      ar->ar_auth ||  ar->ar_auth_int ? ":" : "",
+	      ar->ar_auth ||  ar->ar_auth_int ? ar->ar_cnonce : "",
+	      ar->ar_auth ||  ar->ar_auth_int ? ":" : "",
+	      ar->ar_auth ||  ar->ar_auth_int ? ar->ar_qop : "",
 	      HA2,
 	      ar->ar_qop ? ar->ar_qop : "NONE"));
 

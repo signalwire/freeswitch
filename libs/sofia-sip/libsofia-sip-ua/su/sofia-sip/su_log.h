@@ -22,9 +22,9 @@
  *
  */
 
-/**@ingroup su_log 
+/**@ingroup su_log
  * @file sofia-sip/su_log.h   SU logging interface
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *
  * @date Created: Thu Feb 22 18:09:02 2001 ppessi
@@ -79,7 +79,7 @@ SOFIAPUBFUN void su_log(char const *fmt, ...)
 
 SOFIAPUBFUN void su_llog(su_log_t *log, unsigned level, char const *fmt, ...)
   __attribute__ ((__format__ (printf, 3, 4)));
-SOFIAPUBFUN void su_vllog(su_log_t *log, unsigned level, 
+SOFIAPUBFUN void su_vllog(su_log_t *log, unsigned level,
 			  char const *fmt, va_list ap);
 SOFIAPUBFUN void su_log_redirect(su_log_t *log, su_logger_f *f, void *stream);
 SOFIAPUBFUN void su_log_set_level(su_log_t *log, unsigned level);

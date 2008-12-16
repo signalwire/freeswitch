@@ -99,7 +99,7 @@ void su_pthread_port_lock(su_port_t *self, char const *who)
 
   su_home_lock(self->sup_base->sup_home);
 
-  PORT_LOCK_DEBUG((" ...%p at %s locked(%p)...", 
+  PORT_LOCK_DEBUG((" ...%p at %s locked(%p)...",
 		   (void *)pthread_self(), who, self));
 }
 
@@ -107,7 +107,7 @@ void su_pthread_port_unlock(su_port_t *self, char const *who)
 {
   su_home_unlock(self->sup_base->sup_home);
 
-  PORT_LOCK_DEBUG((" ...%p at %s unlocked(%p)\n", 
+  PORT_LOCK_DEBUG((" ...%p at %s unlocked(%p)\n",
 		   (void *)pthread_self(), who, self));
 }
 
@@ -116,7 +116,7 @@ void su_pthread_port_unlock(su_port_t *self, char const *who)
  * Change or query ownership of the port object.
  *
  * @param self pointer to a port object
- * @param op operation 
+ * @param op operation
  *
  * @ERRORS
  * @ERROR EALREADY port already has an owner (or has no owner)
@@ -224,7 +224,7 @@ struct su_pthread_port_waiting_parent {
  *
  * @sa su_root_threading(), su_clone_task(), su_clone_stop(), su_clone_wait(),
  * su_clone_forget().
- * 
+ *
  */
 int su_pthreaded_port_start(su_port_create_f *create,
 			    su_root_t *parent,
@@ -302,7 +302,7 @@ static void *su_pthread_port_clone_main(void *varg)
 
       task->sut_root->sur_threading = 1;	/* By default */
 
-      SU_TASK_COPY(task->sut_root->sur_parent, su_root_task(arg->parent), 
+      SU_TASK_COPY(task->sut_root->sur_parent, su_root_task(arg->parent),
 		   su_pthread_port_clone_main);
       SU_TASK_COPY(task->sut_root->sur_task, task,
 		   su_pthread_port_clone_main);
@@ -329,7 +329,7 @@ static void *su_pthread_port_clone_main(void *varg)
 	    mom->waiting = 0;
 	    pthread_cond_signal(mom->cv);
 	    pthread_mutex_unlock(mom->mutex);
-    
+
 	    pthread_mutex_lock(mom->deinit);
 	    su_port_getmsgs(task->sut_port);
 	    pthread_mutex_unlock(mom->deinit);
@@ -345,7 +345,7 @@ static void *su_pthread_port_clone_main(void *varg)
     }
 
     task->sut_port->sup_base->sup_vtable->
-      su_port_decref(task->sut_port, zap, 
+      su_port_decref(task->sut_port, zap,
 		     "su_pthread_port_clone_main");
   }
 
@@ -373,7 +373,7 @@ static void su_pthread_port_return_to_parent(struct clone_args *arg,
 /** "Stop" message function for pthread clone.
  *
  * @sa su_clone_wait()
- * @internal 
+ * @internal
  */
 static void su_pthread_port_clone_break(su_root_magic_t *m,
 					su_msg_r msg,
@@ -406,8 +406,8 @@ void su_pthread_port_wait(su_clone_r rclone)
     su_base_port_wait(rclone);
     return;
   }
-  
-  assert(parent); assert(clone); 
+
+  assert(parent); assert(clone);
   assert(rclone[0]->sum_func == su_pthread_port_clone_break);
 #if 0
   assert(!clone->sup_paused);
@@ -418,7 +418,7 @@ void su_pthread_port_wait(su_clone_r rclone)
   if (!clone->sup_thread) {	/* Already died */
     su_msg_destroy(rclone);
     pthread_join(tid, NULL);
-    return;  
+    return;
   }
 
   pthread_mutex_init(mom->deinit, NULL);

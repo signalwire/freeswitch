@@ -23,18 +23,18 @@
  */
 
 /**@page sip-date Print or parse SIP date
- * 
+ *
  * @section synopsis Synopsis
  *
  * <tt>sip-date [-n] [SIP-date | [YYYYy] [DDd] [HHh] [MMm] [SS[s]]]</tt>
  *
  * @section description Description
- * 
+ *
  * @em sip-date is an utility for printing a SIP date (in the format
  * specified by RFC 1123, but the timezone must always be GMT) or parsing a
  * given SIP date. The date can be given as a SIP date or by giving year,
  * day, hour, minutes and seconds separately.
- * 
+ *
  * @section options Options
  *
  * The @em sip-date utility takes options as follows:
@@ -84,14 +84,14 @@
 
 void usage(void)
 {
-  fprintf(stderr, 
+  fprintf(stderr,
 	  "usage: sip-date [-n] "
           "[SIP-date | [YYYYy] [DDd] [HHh] [MMm] [SS[s]]]\n");
   exit(1);
 }
 
 /* Epoch year. */
-#define EPOCH 1900		
+#define EPOCH 1900
 /* Day number of New Year Day of given year */
 #define YEAR_DAYS(y) \
   (((y)-1) * 365 + ((y)-1) / 4 - ((y)-1) / 100 + ((y)-1) / 400)
@@ -123,7 +123,7 @@ int main(int ac, char *av[])
     buf[n] = '\0';
 
     s = buf;
-      
+
     if (s[0] < '0' || s[0] > '9') {
       if (msg_date_d(&s, &t) < 0) {
 	fprintf(stderr, "sip-date: %s is not valid time\n", s);
@@ -136,17 +136,17 @@ int main(int ac, char *av[])
 
 	if (msg_delta_d(&s, &t2) < 0)
 	  usage();
-      
+
 	switch (*s) {
-	case 'y': t2 = YEAR_DAYS(t2) - YEAR_DAYS(EPOCH); 
+	case 'y': t2 = YEAR_DAYS(t2) - YEAR_DAYS(EPOCH);
 	  /*FALLTHROUGH*/
 	case 'd': t += t2 * 24 * 60 * 60; s++; break;
 	case 'h': t += t2 * 60 * 60; s++; break;
 	case 'm': t += t2 * 60; s++; break;
-	case 's': 
+	case 's':
 	  s++;
 	default:
-	  t += t2; 
+	  t += t2;
 	  break;
 	}
 

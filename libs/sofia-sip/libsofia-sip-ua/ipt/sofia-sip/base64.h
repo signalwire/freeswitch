@@ -34,10 +34,10 @@
  * [A-Za-z0-9+/=]. Base64 is defined as part of MIME mail format, but it is
  * used widely by other text-based protocols as well.
  *
- * @sa <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>, 
+ * @sa <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a>,
  * <i>"Multipurpose Internet Mail Extensions (MIME) Part One:
  * Format of Internet Message Bodies"</i>,
- * N. Freed, N. Borenstein, 
+ * N. Freed, N. Borenstein,
  * November 1996.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>

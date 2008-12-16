@@ -121,7 +121,7 @@ msg_set_flags
 msg_token_d
 msg_unquote_dup
 msghdrtag_dup
-msghdrtag_snprintf 
+msghdrtag_snprintf
 msghdrtag_xtra
 msgobjtag_dup
 msgobjtag_snprintf
@@ -311,7 +311,7 @@ sip_separator_create
 sip_serialize
 sip_status_create
 sip_status_phrase
-sip_to_add_param   
+sip_to_add_param
 sip_to_create
 sip_to_tag
 sip_version_d

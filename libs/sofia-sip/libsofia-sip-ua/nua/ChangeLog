@@ -16,7 +16,7 @@
 
 	* Fixed call state events with UPDATE in nua.
 
-	Fixed the order the nua_i_update and nua_i_state events are sent. 
+	Fixed the order the nua_i_update and nua_i_state events are sent.
 	Now we are using session-timer headers in responses, too.
 
 	* Added NUTAG_ALLOW() and NUTAG_ALLOW_REF() to nua.
@@ -67,7 +67,7 @@
 
   * Fixed response to 401.
   We are now not terminating call when application is expected to authenticate
-  request. Should we add 
+  request. Should we add
 
     M ./libsofia-sip-ua/nua/nua_stack.c -10 +28
 
@@ -208,7 +208,7 @@
 
 2005-10-10  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
-  * Fixed basic call test run. 
+  * Fixed basic call test run.
 
     M ./libsofia-sip-ua/nua/test_nua.c -8 +11
 
@@ -217,7 +217,7 @@
     M ./libsofia-sip-ua/nua/nua_common.c -1 +1
     M ./libsofia-sip-ua/nua/nua_stack.c -1 +1
     M ./libsofia-sip-ua/nua/test_nua.c -2 +2
-	
+
   * Running a basic call test case.
 
     M ./libsofia-sip-ua/nua/test_nua.c -24 +109
@@ -259,11 +259,11 @@
 
     M ./libsofia-sip-ua/nua/nua.docs -1 +355
 
-  * Used picture-mode here. 
+  * Used picture-mode here.
 
     M ./libsofia-sip-ua/nua/nua.docs -227 +227
 
-  * Fixed nua_set_hparams() documentation. 
+  * Fixed nua_set_hparams() documentation.
 
     M ./libsofia-sip-ua/nua/nua.c -1 +1
 
@@ -444,7 +444,7 @@
   * Do not pass soa handle to application.
 
     M ./libsofia-sip-ua/nua/nua_stack.c -3 +3
-	
+
 2005-09-23  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* nua_stack.c: Fix delivering nua_i_active.
@@ -457,7 +457,7 @@
 
 	* nua_tag.h: Removed NUTAG_MEDIA_SUBSYSTEM.
 
-	* nua.h: Added nua_i_state_change event. Removed 
+	* nua.h: Added nua_i_state_change event. Removed
 	nua_i_media_update (replaced by nua_i_state_change).
 
 2005-09-21  Kai Vehmanen  <kai.vehmanen@nokia.com>
@@ -466,15 +466,15 @@
 	code related to old media subsystem interface (HAVE_MSS).
 	Added nua_i_media_update event. Removed code related
 	to ring-tone generation (HAVE_HERBIE).
-	
+
 2005-09-20  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* nua.h, nua.c: Removed implementation for obsolete media
-	param functions. Added dummy implementations that print 
+	param functions. Added dummy implementations that print
 	a warning to users of the removed interfaces.
 
 	* nua_stack.c: Removed obsolete media param code.
-	
+
 2005-07-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* Initial import of the module to Sofia-SIP tree.

@@ -281,7 +281,7 @@ int host_test(void)
   TEST_SCAN(scan_host, "127.255.249.000.a,", "127.255.249.000.a,", ",");
   TEST_SCAN(scan_host, "0.00.000.000:,", "0.0.0.0", ":,");
   TEST_SCAN(scan_host, "127.255.249.000,", "127.255.249.0", ",");
-  TEST_SCAN(scan_host, "[dead:beef:feed:ded:0:1:2:3]:1", 
+  TEST_SCAN(scan_host, "[dead:beef:feed:ded:0:1:2:3]:1",
                        "[dead:beef:feed:ded::1:2:3]", ":1");
   TEST_SCAN(scan_host, "[::127.0.0.1]:1", "[::127.0.0.1]:1", ":1");
 
@@ -323,10 +323,10 @@ int host_test(void)
   /* Invalid IP4 address (extra leading zeros) */
   TEST_1(!host_cmp("127.0.0.1", "127.0.0.01"));
   /* Invalid reference (extra leading zeros) */
-  TEST_1(host_cmp("[0ffff:0ffff:0ffff:0ffff:0ffff:0ffff:255.255.255.255]", 
+  TEST_1(host_cmp("[0ffff:0ffff:0ffff:0ffff:0ffff:0ffff:255.255.255.255]",
 		  "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"));
 #if SU_HAVE_IN6
-  TEST_1(!host_cmp("[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]", 
+  TEST_1(!host_cmp("[ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]",
 		  "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"));
   TEST_1(!host_cmp("::1", "::001"));
   TEST_1(!host_cmp("[::1]", "::1"));

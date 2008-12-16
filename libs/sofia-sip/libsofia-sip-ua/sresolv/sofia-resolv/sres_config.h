@@ -27,7 +27,7 @@
 #define SOFIA_RESOLV_SRES_CONFIG_H
 
 /**
- * @file sofia-resolv/sres_config.h 
+ * @file sofia-resolv/sres_config.h
  *
  * Configuration for Sofia DNS Resolver.
  *

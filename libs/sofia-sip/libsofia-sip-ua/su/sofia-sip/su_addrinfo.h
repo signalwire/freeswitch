@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, 1998, and 1999 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,7 +13,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -30,12 +30,12 @@
 #ifndef SU_ADDRINFO_H
 /* Defined when <sofia-sip/su_addrinfo.h> has been included */
 #define SU_ADDRINFO_H
-/**@ingroup su_socket 
+/**@ingroup su_socket
  *
  * @file sofia-sip/su_addrinfo.h Network address and service translation.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Wed Nov 30 17:07:04 EET 2005 ppessi
  */
 
@@ -115,10 +115,10 @@ struct addrinfo {
 };
 #endif	/* SU_WITH_GETADDRINFO */
 
-#ifndef EAI_BADHINTS     
+#ifndef EAI_BADHINTS
 #define EAI_BADHINTS	10012
 #endif
-#ifndef EAI_PROTOCOL  
+#ifndef EAI_PROTOCOL
 #define EAI_PROTOCOL	10013
 #endif
 

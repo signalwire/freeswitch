@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE utf8.c 
+/**@CFILE utf8.c
  *
  * utf8 string handling.
  *

@@ -22,7 +22,7 @@
  *
  */
 
-#ifndef SRESOLV_H 
+#ifndef SRESOLV_H
 /** Defined when <sofia-sip/sresolv.h> has been included. */
 #define SRESOLV_H
 
@@ -64,7 +64,7 @@ SOFIAPUBVAR tag_typedef_t srestag_cache_ref;
 #define SRESTAG_CACHE_REF(x) srestag_cache_ref, tag_ptr_vr(&(x), (x))
 
 /** Create a resolver object using @a root reactor. */
-SOFIAPUBFUN sres_resolver_t *sres_resolver_create(su_root_t *root, 
+SOFIAPUBFUN sres_resolver_t *sres_resolver_create(su_root_t *root,
 						  char const *resolv_conf,
 				                  tag_type_t, tag_value_t,
 						  ...);

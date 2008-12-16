@@ -27,11 +27,11 @@
 #define SOFIA_SIP_HOSTDOMAIN_H
 
 /**@file sofia-sip/hostdomain.h
- * 
+ *
  * Predicates for handling host names: IP addresses or domain names.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Mar  9 16:15:22 EET 2006 ppessi
  */
 
@@ -51,7 +51,7 @@ SOFIAPUBFUN int host_is_local(char const *string);
 SOFIAPUBFUN int host_has_domain_invalid(char const *string);
 SOFIAPUBFUN int host_cmp(char const *a, char const *b);
 
-/** This is typo. @deprecated Use host_is_ip6_reference() instead. */ 
+/** This is typo. @deprecated Use host_is_ip6_reference() instead. */
 SOFIAPUBFUN int host_ip6_reference(char const *string);
 
 

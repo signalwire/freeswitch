@@ -22,13 +22,13 @@
  *
  */
 
-/**@internal @file token64.c  
+/**@internal @file token64.c
  *
  * Token encoding.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
- * @date Created: Wed Apr  3 10:45:47 2002 ppessi 
+ * @date Created: Wed Apr  3 10:45:47 2002 ppessi
  */
 
 #include "config.h"
@@ -39,10 +39,10 @@
 
 #include "sofia-sip/token64.h"
 
-static const char code[65] = 
+static const char code[65] =
 "0123456789-abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-/** Encode data as a SIP/HTTP token. 
+/** Encode data as a SIP/HTTP token.
  *
  * @note
  * A token is case-independent, so this is really not a good idea.
@@ -74,7 +74,7 @@ isize_t token64_e(char b[], isize_t bsiz, void const *data, isize_t dlen)
 
   for (i = 0; i < dlen; i += 3, s += 4) {
     unsigned char h0 = h[i], h1 = h[i + 1], h2 = h[i + 2];
-    
+
     s[0] = code[h0 >> 2];
     s[1] = code[((h0 << 4)|(h1 >> 4)) & 63];
     s[2] = code[((h1 << 4)|(h2 >> 6)) & 63];

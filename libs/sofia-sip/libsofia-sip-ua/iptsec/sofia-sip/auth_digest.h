@@ -26,14 +26,14 @@
 /** Defined when <sofia-sip/auth_digest.h> has been included. */
 #define AUTH_DIGEST_H
 
-/**@file sofia-sip/auth_digest.h 
+/**@file sofia-sip/auth_digest.h
  * Datatypes and functions for Digest authentication.
  *
  * The structures and functions here follow the RFC 2617.
  *
  * @sa @RFC2617,
  * <i>"HTTP Authentication: Basic and Digest Access Authentication"</i>,
- * J. Franks et al, 
+ * J. Franks et al,
  * June 1999.
  *
  * @sa @RFC3261 section 22
@@ -96,7 +96,7 @@ typedef struct {
  *
  * @code
  *   credentials      = "Digest" digest-response
- *   digest-response  = 1#( username | realm | nonce | digest-uri | 
+ *   digest-response  = 1#( username | realm | nonce | digest-uri |
  *                          response | [ algorithm ] | [cnonce] | [opaque] |
  *                          [message-qop] | [nonce-count] | [auth-param] )
  *   username         = "username" "=" username-value

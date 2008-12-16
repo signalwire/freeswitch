@@ -82,7 +82,7 @@ int test_session_timer(struct context *ctx)
 
   /* We negotiate session timer of 6 second */
   /* Disable session timer from proxy */
-  test_proxy_set_session_timer(ctx->p, 0, 0); 
+  test_proxy_set_session_timer(ctx->p, 0, 0);
 
   nua_set_params(ctx->b.nua,
 		 NUTAG_SESSION_REFRESHER(nua_any_refresher),
@@ -199,7 +199,7 @@ int test_session_timer(struct context *ctx)
       TEST_1(f);
 
       run_ab_until(ctx, -1, until_terminated, -1, until_terminated);
-      
+
       TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_bye);
 
       free_events_in_list(ctx, a->events);

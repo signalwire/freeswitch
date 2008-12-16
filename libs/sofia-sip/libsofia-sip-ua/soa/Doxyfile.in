@@ -1,7 +1,7 @@
 PROJECT_NAME         = "soa"
 OUTPUT_DIRECTORY     = ../docs/html/soa
 
-INPUT 		     = @srcdir@/soa.docs @srcdir@/sofia-sip/soa.h 
+INPUT 		     = @srcdir@/soa.docs @srcdir@/sofia-sip/soa.h
 INPUT               += @srcdir@/sofia-sip/soa_add.h @srcdir@/soa.c
 INPUT		    += @srcdir@/sofia-sip/soa_tag.h @srcdir@/soa_tag.c
 

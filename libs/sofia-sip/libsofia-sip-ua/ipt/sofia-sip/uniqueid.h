@@ -24,7 +24,7 @@
 
 #ifndef UNIQUEID_H
 /** Defined when <sofia-sip/uniqueid.h> has been included. */
-#define UNIQUEID_H 
+#define UNIQUEID_H
 
 /**@file sofia-sip/uniqueid.h
  *
@@ -38,7 +38,7 @@
  */
 
 /* Compatibility functionality */
-#define guid_t su_guid_t 
+#define guid_t su_guid_t
 #define guid_generate su_guid_generate
 #define guid_sprintf su_guid_sprintf
 #define guid_strlen su_guid_strlen

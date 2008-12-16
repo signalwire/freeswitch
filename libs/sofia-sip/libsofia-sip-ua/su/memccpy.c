@@ -24,9 +24,9 @@
 
 /**@internal @file memccpy.c
  * @brief The memccpy() replacement function.
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Nov 17 17:45:51 EET 2005 ppessi
  */
 
@@ -46,7 +46,7 @@
  * @param n          size of destination area
  *
  * @return
- * Returns a pointer to the next character in @a dest after @a c, 
+ * Returns a pointer to the next character in @a dest after @a c,
  * or NULL if @a c was not found in the first @a n characters of @a src.
  */
 void *memccpy(void *dest, const void *src, int c, size_t n)

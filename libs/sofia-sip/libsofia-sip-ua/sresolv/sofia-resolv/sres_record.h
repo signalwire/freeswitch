@@ -45,7 +45,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
+
 /** Common part of all DNS records. */
 typedef struct sres_common
 {
@@ -101,7 +101,7 @@ typedef struct sres_a_record
   struct in_addr a_addr;	/**< IP4 address */
 } sres_a_record_t;
 
-/** IPv6 address used by sresolv library. 
+/** IPv6 address used by sresolv library.
  *
  * @sa #sres_aaaa_record, #sres_a6_record
  */
@@ -225,10 +225,10 @@ enum sres_qtypes {
   sres_type_nxt = 30,	    /**< Next domain. */
   sres_type_eid = 31,	    /**< Endpoint identifier. */
   sres_type_nimloc = 32,    /**< Nimrod Locator. */
-  sres_type_srv = 33,	    /**< Server Selection (@RFC2782, 
+  sres_type_srv = 33,	    /**< Server Selection (@RFC2782,
 			         #sres_srv_record). */
   sres_type_atma = 34,	    /**< ATM Address */
-  sres_type_naptr = 35,	    /**< Naming Authority PoinTeR (@RFC2915, 
+  sres_type_naptr = 35,	    /**< Naming Authority PoinTeR (@RFC2915,
                                  #sres_naptr_record) */
   sres_type_kx = 36,	    /**< Key Exchange */
   sres_type_cert = 37,	    /**< Certification record */

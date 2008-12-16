@@ -25,7 +25,7 @@ GENHTML_OPTIONS= o= ldir=
 
 while test $# -gt 0;
 do
-  case $1 in 
+  case $1 in
   --lcov-dir | -l ) test -z "$2" && usage 1; shift; ldir=$1; shift; ;;
   --lcov-dir=* ) ldir=${1#--ldir=}; shift ;;
   --srcdir | -s )
@@ -41,21 +41,21 @@ done
 
 cwd=`pwd`
 
-tdir=${TMPDIR:-/tmp}/$USER.uncovered.$$ 
+tdir=${TMPDIR:-/tmp}/$USER.uncovered.$$
 info=${tdir}/lcov.info geninfo=${tdir}/genhtml.info
 
 test -d ${tdir} && { echo ${tdir}: already exists ; exit 2 ; }
 
 mkdir -p ${tdir} &&
 {
-    # Find all lcov.info0 under -t DIR 
+    # Find all lcov.info0 under -t DIR
     test -d ${ldir} &&
     find ${ldir} -name lcov.info |
     while read s
     do
-      find $cwd -type f -not -newer $s | xargs lcov -q -e $s 
+      find $cwd -type f -not -newer $s | xargs lcov -q -e $s
     done
-    
+
     lcov -q -c -d . --compat-libtool
 } > ${info}
 
@@ -65,8 +65,8 @@ test -e ${info} || exit 1
   # remove system includes with with inlined functions
   lcov -q -l ${info} | grep -v "`cd ${srcdir:-.} && pwd`"
   # remove test programs
-  lcov -q -l ${info} | grep "/test\|/torture\|_test[.]c$" 
-} | 
+  lcov -q -l ${info} | grep "/test\|/torture\|_test[.]c$"
+} |
 cut -d: -f1 |
 xargs lcov -q -r ${info} > ${geninfo} &&
 cd ${tdir} &&
@@ -107,7 +107,7 @@ while (<>) {
         for ($f = $ARGV) {
           s:^[.]'$cwd/'::o;
           s:[.]gcov[.]html$::;
-        } 
+        }
         s/^ +(\d+)[^:]+:/$1:/;
         $uncovered = $f . ":" . $_;
       }

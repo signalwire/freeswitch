@@ -2,11 +2,11 @@
 win32/README.txt / Sofia-SIP for win32
 ======================================
 
-The win32 subdirectory contains the build environment for Win32 
+The win32 subdirectory contains the build environment for Win32
 environment using MSVC.
 
 Currently, the provided workspace/solution files will create both
-shared and static libraries for libsofia-sip-ua, and a few test 
+shared and static libraries for libsofia-sip-ua, and a few test
 programs. The test programs can be run with the script check.cmd.
 
 
@@ -18,7 +18,7 @@ compiling Sofia SIP. Note that it uses AWK, so an AWK interpreter
 is needed. You can for example use gawk (3.1.5 or newer) or mawk (tested
 with 1.3.3) implementations. Precompiled binaries are available
 for instance at:
- 
+
   - http://gnuwin32.sourceforge.net/packages/mawk.htm
   - http://ftp.uni-kl.de/pub/windows/cygwin/release/gawk/
   - plus many sites, a web search for "win32 awk" will

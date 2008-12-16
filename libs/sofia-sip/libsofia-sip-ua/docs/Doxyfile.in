@@ -11,7 +11,7 @@ INPUT 		     = @srcdir@/mainpage.docs @srcdir@/docguide.docs @srcdir@/conformanc
 
 GENERATE_TAGFILE    = docs.doxytags
 
-TAGFILES            = 
+TAGFILES            =
 TAGFILES            += su.doxytags=su
 TAGFILES            += ipt.doxytags=ipt
 TAGFILES            += bnf.doxytags=bnf

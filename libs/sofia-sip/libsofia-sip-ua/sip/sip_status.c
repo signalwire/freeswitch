@@ -24,7 +24,7 @@
 
 /**@ingroup sip_status_codes
  * @CFILE sip_status.c
- * 
+ *
  * SIP status codes and standard phrases.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
@@ -37,22 +37,22 @@
 #include <stddef.h>
 #include <sofia-sip/sip_status.h>
 
-char const 
+char const
   sip_100_Trying[] =                   "Trying",
   sip_180_Ringing[] =                  "Ringing",
   sip_181_Call_is_being_forwarded[] =  "Call Is Being Forwarded",
   sip_182_Queued[] =                   "Queued",
   sip_183_Session_progress[] =         "Session Progress",
-  
+
   sip_200_OK[] =                       "OK",
   sip_202_Accepted[] =                 "Accepted",
-  
+
   sip_300_Multiple_choices[] =         "Multiple Choices",
   sip_301_Moved_permanently[] =        "Moved Permanently",
   sip_302_Moved_temporarily[] =        "Moved Temporarily",
   sip_305_Use_proxy[] =                "Use Proxy",
   sip_380_Alternative_service[] =      "Alternative Service",
-  
+
   sip_400_Bad_request[] =              "Bad Request",
   sip_401_Unauthorized[] =             "Unauthorized",
   sip_402_Payment_required[] =         "Payment Required",
@@ -75,7 +75,7 @@ char const
   sip_421_Extension_required[] =       "Extension Required",
   sip_422_Session_timer[] =            "Session Interval Too Small",
   sip_423_Interval_too_brief[] =       "Interval Too Brief",
-  
+
   sip_480_Temporarily_unavailable[] =  "Temporarily Unavailable",
   sip_481_No_transaction[] =           "Call/Transaction Does Not Exist",
   sip_482_Loop_detected[] =            "Loop Detected",
@@ -114,13 +114,13 @@ char const
  * empty string "" is returned.
  *
  * @param status well-known status code in range 100..699
- * 
+ *
  * @return
  * A response message corresponding to status code, or NULL upon an error.
  */
 char const *sip_status_phrase(int status)
 {
-  if (status < 100 || status > 699) 
+  if (status < 100 || status > 699)
     return NULL;
 
   switch (status) {

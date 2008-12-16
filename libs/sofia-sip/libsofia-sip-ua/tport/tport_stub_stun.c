@@ -55,13 +55,13 @@ tport_stun_server_t *vst_create(su_root_t *root, tagi_t const *tags)
 }
 
 static
-tport_stun_server_vtable_t const stun_mini_vtable = 
+tport_stun_server_vtable_t const stun_mini_vtable =
   {
     sizeof stun_mini_vtable,
-    vst_create, 
+    vst_create,
     stun_mini_destroy,
-    stun_mini_add_socket, 
-    stun_mini_remove_socket, 
+    stun_mini_add_socket,
+    stun_mini_remove_socket,
     stun_mini_request
   };
 
@@ -98,10 +98,10 @@ int tport_stun_server_add_socket(tport_t *tp)
 {
   tport_stun_server_t *stun_server = tp->tp_master->mr_stun_server;
 
-  if (tport_stun_server_vtable && 
+  if (tport_stun_server_vtable &&
       stun_server &&
       tp->tp_params->tpp_stun_server) {
-    if (tport_stun_server_vtable->vst_add_socket(stun_server, 
+    if (tport_stun_server_vtable->vst_add_socket(stun_server,
 						 tp->tp_socket) == 0)
       tp->tp_has_stun_server = 1;
   }
@@ -124,7 +124,7 @@ int tport_stun_server_remove_socket(tport_t *tp)
 /**Process stun messagee.
  *
  * @retval -1 error
- * @retval 3  stun message received, ignore  
+ * @retval 3  stun message received, ignore
  */
 int tport_recv_stun_dgram(tport_t const *self,
 			  msg_t **in_out_msg,
@@ -150,7 +150,7 @@ int tport_recv_stun_dgram(tport_t const *self,
   else if (request[0] == 1) {
     /* This is a response. */
     if (self->tp_pri->pri_vtable->vtp_stun_response) {
-      if (self->tp_pri->pri_vtable->vtp_stun_response(self, request, n, 
+      if (self->tp_pri->pri_vtable->vtp_stun_response(self, request, n,
 						      from, fromlen) < 0)
 	retval = -1;
     }
@@ -161,7 +161,7 @@ int tport_recv_stun_dgram(tport_t const *self,
   else if (request[0] == 0 && self->tp_master->mr_stun_server) {
     tport_stun_server_vtable_t const *vst = tport_stun_server_vtable;
     vst->vst_request(self->tp_master->mr_stun_server,
-		     self->tp_socket, request, n, 
+		     self->tp_socket, request, n,
 		     (void *)from, fromlen);
   }
   else if (request[0] == 0) {
@@ -279,7 +279,7 @@ int tport_plug_in_stun_server(tport_stun_server_vtable_t const *vtable)
   if (vtable->vst_size <= (int)sizeof *vtable)
     return su_seterrno(EINVAL);
 
-  if (!vtable->vst_create || 
+  if (!vtable->vst_create ||
       !vtable->vst_destroy ||
       !vtable->vst_add_socket ||
       !vtable->vst_remove_socket ||

@@ -59,7 +59,7 @@
 /* ======================================================================== */
 /* Dialog handling */
 
-static void nua_dialog_usage_remove_at(nua_owner_t*, nua_dialog_state_t*, 
+static void nua_dialog_usage_remove_at(nua_owner_t*, nua_dialog_state_t*,
 				       nua_dialog_usage_t**,
 				       nua_client_request_t *cr,
 				       nua_server_request_t *sr);
@@ -75,9 +75,9 @@ static void nua_dialog_log_usage(nua_owner_t *, nua_dialog_state_t *);
  * @param sip  SIP message containing response used to update dialog
  * @param rtag if true, set remote tag within the leg
  */
-void nua_dialog_uas_route(nua_owner_t *own, 
+void nua_dialog_uas_route(nua_owner_t *own,
 			  nua_dialog_state_t *ds,
-			  sip_t const *sip, 
+			  sip_t const *sip,
 			  int rtag)
 {
   int established = nua_dialog_is_established(ds);
@@ -105,7 +105,7 @@ void nua_dialog_uas_route(nua_owner_t *own,
  * @param sip  SIP message containing response used to update dialog
  * @param rtag if true, set remote tag within the leg
  */
-void nua_dialog_uac_route(nua_owner_t *own, 
+void nua_dialog_uac_route(nua_owner_t *own,
 			  nua_dialog_state_t *ds,
 			  sip_t const *sip,
 			  int rtag)
@@ -126,7 +126,7 @@ void nua_dialog_uac_route(nua_owner_t *own,
 }
 
 /**@internal Store information from remote endpoint. */
-void nua_dialog_store_peer_info(nua_owner_t *own, 
+void nua_dialog_store_peer_info(nua_owner_t *own,
 				nua_dialog_state_t *ds,
 				sip_t const *sip)
 {
@@ -190,7 +190,7 @@ int nua_dialog_zap(nua_owner_t *own,
 		   nua_dialog_state_t *ds)
 {
   /* zap peer info */
-  nua_dialog_store_peer_info(own, ds, NULL); 
+  nua_dialog_store_peer_info(own, ds, NULL);
   /* Local Contact */
   msg_header_free(own, (msg_header_t *)ds->ds_ltarget), ds->ds_ltarget = NULL;
   /* Leg */
@@ -216,7 +216,7 @@ int nua_dialog_remove(nua_owner_t *own,
 
 /** @internal Get dialog usage slot. */
 nua_dialog_usage_t **
-nua_dialog_usage_at(nua_dialog_state_t const *ds, 
+nua_dialog_usage_at(nua_dialog_state_t const *ds,
 		    nua_usage_class const *kind,
 		    sip_event_t const *event)
 {
@@ -257,7 +257,7 @@ nua_dialog_usage_at(nua_dialog_state_t const *ds,
 }
 
 /** @internal Get a dialog usage */
-nua_dialog_usage_t *nua_dialog_usage_get(nua_dialog_state_t const *ds, 
+nua_dialog_usage_t *nua_dialog_usage_get(nua_dialog_state_t const *ds,
 					 nua_usage_class const *kind,
 					 sip_event_t const *event)
 {
@@ -270,11 +270,11 @@ char const *nua_dialog_usage_name(nua_dialog_usage_t const *du)
   if (du == NULL)
     return "<NULL>";
   return du->du_class->usage_name(du);
-} 
+}
 
 /** @internal Add dialog usage */
-nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own, 
-					 struct nua_dialog_state *ds, 
+nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
+					 struct nua_dialog_state *ds,
 					 nua_usage_class const *uclass,
 					 sip_event_t const *event)
 {
@@ -286,9 +286,9 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
     du = *prev_du;
     if (du) {		/* Already exists */
       SU_DEBUG_5(("nua(%p): adding already existing %s usage%s%s\n",
-		  (void *)own, nua_dialog_usage_name(du), 
+		  (void *)own, nua_dialog_usage_name(du),
 		  event ? "  with event " : "", event ? event->o_type : ""));
-      
+
       if (prev_du != &ds->ds_usage) {
 	/* Move as a first usage in the list */
 	*prev_du = du->du_next;
@@ -305,7 +305,7 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
 
     if (du) {
       su_home_ref(own);
-      du->du_dialog = ds; 
+      du->du_dialog = ds;
       du->du_class = uclass;
       du->du_event = o;
 
@@ -314,9 +314,9 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
 	su_free(own, du);
 	return NULL;
       }
-	
+
       SU_DEBUG_5(("nua(%p): adding %s usage%s%s\n",
-		  (void *)own, nua_dialog_usage_name(du), 
+		  (void *)own, nua_dialog_usage_name(du),
 		  o ? " with event " : "", o ? o->o_type :""));
 
       du->du_next = ds->ds_usage, ds->ds_usage = du;
@@ -331,7 +331,7 @@ nua_dialog_usage_t *nua_dialog_usage_add(nua_owner_t *own,
 }
 
 /** @internal Remove dialog usage. */
-void nua_dialog_usage_remove(nua_owner_t *own, 
+void nua_dialog_usage_remove(nua_owner_t *own,
 			     nua_dialog_state_t *ds,
 			     nua_dialog_usage_t *du,
 			     nua_client_request_t *cr,
@@ -350,9 +350,9 @@ void nua_dialog_usage_remove(nua_owner_t *own,
   nua_dialog_usage_remove_at(own, ds, at, cr, sr);
 }
 
-/** @internal Remove dialog usage. 
+/** @internal Remove dialog usage.
  *
- * Zap dialog state (leg, tag and route) if no usages remain. 
+ * Zap dialog state (leg, tag and route) if no usages remain.
 */
 static void
 nua_dialog_usage_remove_at(nua_owner_t *own,
@@ -372,7 +372,7 @@ nua_dialog_usage_remove_at(nua_owner_t *own,
     o = du->du_event;
 
     SU_DEBUG_5(("nua(%p): removing %s usage%s%s\n",
-		(void *)own, nua_dialog_usage_name(du), 
+		(void *)own, nua_dialog_usage_name(du),
 		o ? " with event " : "", o ? o->o_type :""));
     du->du_class->usage_remove(own, ds, du, cr0, sr0);
 
@@ -423,7 +423,7 @@ void nua_dialog_log_usage(nua_owner_t *own, nua_dialog_state_t *ds)
     char buffer[160];
     size_t l = 0, N = sizeof buffer;
     ssize_t n;
-    
+
     buffer[0] = '\0';
 
     for (du = ds->ds_usage; du; du = du->du_next) {
@@ -441,9 +441,9 @@ void nua_dialog_log_usage(nua_owner_t *own, nua_dialog_state_t *ds)
 	l += 2;
       }
     }
-    
+
     SU_DEBUG_3(("nua(%p): handle with %s%s%s\n", (void *)own,
-		ds->ds_has_session ? "session and " : "", 
+		ds->ds_has_session ? "session and " : "",
 		ds->ds_has_events ? "events " : "",
 		buffer));
   }
@@ -486,7 +486,7 @@ void nua_base_usage_update_params(nua_dialog_usage_t const *du,
 }
 
 /**@internal
- * Set refresh value suitably. 
+ * Set refresh value suitably.
  *
  * The refresh time is set either around half of the @a delta interval or,
  * if @a delta is less than 5 minutes but longer than 90 seconds, 30..60
@@ -512,7 +512,7 @@ void nua_dialog_usage_set_refresh(nua_dialog_usage_t *du, unsigned delta)
 }
 
 /**@internal Set refresh in range min..max seconds in the future. */
-void nua_dialog_usage_set_refresh_range(nua_dialog_usage_t *du, 
+void nua_dialog_usage_set_refresh_range(nua_dialog_usage_t *du,
 					unsigned min, unsigned max)
 {
   sip_time_t now = sip_now(), target;
@@ -546,7 +546,7 @@ void nua_dialog_usage_set_refresh_at(nua_dialog_usage_t *du,
   SU_DEBUG_7(("nua(): refresh %s after %lu seconds\n",
 	      nua_dialog_usage_name(du), target - sip_now()));
   du->du_refresh = target;
-} 
+}
 
 /**@internal Do not refresh. */
 void nua_dialog_usage_reset_refresh(nua_dialog_usage_t *du)
@@ -560,7 +560,7 @@ void nua_dialog_usage_reset_refresh(nua_dialog_usage_t *du)
 /** @internal Refresh usage. */
 void nua_dialog_usage_refresh(nua_owner_t *owner,
 			      nua_dialog_state_t *ds,
-			      nua_dialog_usage_t *du, 
+			      nua_dialog_usage_t *du,
 			      sip_time_t now)
 {
   assert(du && du->du_class->usage_refresh);

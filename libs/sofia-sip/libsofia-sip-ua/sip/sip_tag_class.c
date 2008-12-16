@@ -23,7 +23,7 @@
  */
 
 /**@SIP_TAG
- * 
+ *
  * @CFILE sip_tag_class.c  SIP Tag classes
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
@@ -54,7 +54,7 @@
  * Tags in this class are not automatically added to the message with
  * sip_add_tl() or sip_add_tagis().
  */
-tag_class_t sipexthdrtag_class[1] = 
+tag_class_t sipexthdrtag_class[1] =
   {{
     sizeof(siphdrtag_class),
     /* tc_next */     NULL,
@@ -72,7 +72,7 @@ tag_class_t sipexthdrtag_class[1] =
 
 
 /** Tag class for SIP header tags. @HIDE */
-tag_class_t siphdrtag_class[1] = 
+tag_class_t siphdrtag_class[1] =
   {{
     sizeof(siphdrtag_class),
     /* tc_next */     NULL,
@@ -89,7 +89,7 @@ tag_class_t siphdrtag_class[1] =
   }};
 
 /** Tag class for SIP header string tags. @HIDE */
-tag_class_t sipstrtag_class[1] = 
+tag_class_t sipstrtag_class[1] =
   {{
     sizeof(sipstrtag_class),
     /* tc_next */     NULL,
@@ -106,7 +106,7 @@ tag_class_t sipstrtag_class[1] =
   }};
 
 /** Tag class for SIP message tags. @HIDE */
-tag_class_t sipmsgtag_class[1] = 
+tag_class_t sipmsgtag_class[1] =
   {{
     sizeof(sipmsgtag_class),
     /* tc_next */     NULL,
@@ -125,16 +125,16 @@ tag_class_t sipmsgtag_class[1] =
 /** Filter a for SIP header tag.
  *
  * @param[in] dst tag list for filtering result. May be NULL.
- * @param[in] f   filter tag 
- * @param[in] src tag item from source list. 
- * @param[in,out] bb pointer to pointer of mempory area used to dup 
+ * @param[in] f   filter tag
+ * @param[in] src tag item from source list.
+ * @param[in,out] bb pointer to pointer of mempory area used to dup
  *                   the filtering result
  *
  * This function is also used to calculate size for filtering result.
  */
 tagi_t *siptag_filter(tagi_t *dst,
 		      tagi_t const f[],
-		      tagi_t const *src, 
+		      tagi_t const *src,
 		      void **bb)
 {
   tagi_t stub[2] = {{ NULL }};
@@ -154,7 +154,7 @@ tagi_t *siptag_filter(tagi_t *dst,
       return dst;
 
     hh = (sip_header_t const **)
-      msg_hclass_offset((msg_mclass_t *)sip->sip_common->h_class, 
+      msg_hclass_offset((msg_mclass_t *)sip->sip_common->h_class,
 			(msg_pub_t *)sip, hc);
 
     /* Is header present in the SIP message? */
@@ -242,7 +242,7 @@ int sip_add_tagis(msg_t *msg, sip_t *sip, tagi_t const **inout_list)
 	    msg_header_remove(msg, (msg_pub_t *)sip, *hh);
 	}
 	continue;
-      } 
+      }
 
       if (tag == siptag_header)
 	hc = h->sh_class;
@@ -288,13 +288,13 @@ static char const *append_escaped(su_strlst_t *l,
  *
  * @par Example
  * @code
- * url->url_headers = 
+ * url->url_headers =
  *   sip_headers_as_url_query(home, SIPTAG_REPLACES(replaces), TAG_END());
  * @endcode
- * 
+ *
  * @since New in @VERSION_1_12_4.
  *
- * @sa 
+ * @sa
  * url_query_as_header_string(), sip_url_query_as_taglist(),
  * nta_msg_request_complete(),
  * @RFC3261 section 19.1.1 "Headers", #url_t, url_s#url_headers
@@ -383,12 +383,12 @@ char const *append_escaped(su_strlst_t *l,
     for (;*n; n++)
       if (isupper(*n))
 	*n = tolower(*n);
-    
+
     slen = strlen(s); elen = url_esclen(s, HNV_RESERVED);
 
     if ((size_t)elen == slen)
       return su_strlst_append(l, s);
-    
+
     escaped = su_alloc(lhome, elen + 1);
     if (escaped)
       return su_strlst_append(l, url_escape(escaped, s, HNV_RESERVED));
@@ -403,9 +403,9 @@ char const *append_escaped(su_strlst_t *l,
  * Unknown headers are encoded as SIPTAG_HEADER_STR().
  *
  * @param home memory home used to alloate string (if NULL, malloc() it)
- * @param query query part from SIP URL 
+ * @param query query part from SIP URL
  * @param parser optional SIP parser used
- * 
+ *
  * @sa sip_add_tl(), sip_add_tagis(), SIPTAG_HEADER_STR(),
  * sip_headers_as_url_query(), url_query_as_header_string(),
  * @RFC3261 section 19.1.1 "Headers", #url_t, url_s#url_headers

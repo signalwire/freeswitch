@@ -35,7 +35,7 @@
 #include "config.h"
 
 #include <unistd.h>
-#include <in_sock.h> 
+#include <in_sock.h>
 #include <es_sock.h>
 #include <e32base.h>
 #include <s32mem.h>
@@ -58,7 +58,7 @@ extern "C" int su_get_local_ip_addr(su_sockaddr_t *su)
 	su->su_sin.sin_addr.s_addr = sa_global->su_sin.sin_addr.s_addr;
 	su->su_family = sa_global->su_family;
 	su->su_len = sa_global->su_len;
-	
+
 	return 0;
 }
 
@@ -76,32 +76,32 @@ extern "C" void *su_localinfo_ap_set(su_sockaddr_t *su, int *ifindex)
   TCommDbConnPref iPref;
   RSocketServ aSocketServ;
   RSocket sock;
-  
+
   /* Get the IAP id of the underlying interface of this RConnection */
   TUint32 iapId;
-  
+
   iPref.SetDirection(ECommDbConnectionDirectionOutgoing);
   iPref.SetDialogPreference(ECommDbDialogPrefPrompt);
   iPref.SetBearerSet(KCommDbBearerUnknown /*PSD*/);
-  
+
   aSocketServ = RSocketServ();
   aSocketServ.Connect();
   RConnection *aConnection = new RConnection();
   aConnection->Open(aSocketServ);
   aConnection->Start(iPref);
-  
+
   User::LeaveIfError(sock.Open(aSocketServ, KAfInet, KSockStream,
 			       KProtocolInetTcp));
-  
+
   User::LeaveIfError(aConnection->GetIntSetting(_L("IAP\\Id"), iapId));
-  
+
   /* Get IP information from the socket */
   TSoInetInterfaceInfo ifinfo;
   TPckg<TSoInetInterfaceInfo> ifinfopkg(ifinfo);
-  
+
   TSoInetIfQuery ifquery;
   TPckg<TSoInetIfQuery> ifquerypkg(ifquery);
-  
+
   /* To find out which interfaces are using our current IAP, we
    * must enumerate and go through all of them and make a query
    * by name for each. */
@@ -109,7 +109,7 @@ extern "C" void *su_localinfo_ap_set(su_sockaddr_t *su, int *ifindex)
   while(sock.GetOpt(KSoInetNextInterface, KSolInetIfCtrl, ifinfopkg) == KErrNone) {
     ifquery.iName = ifinfo.iName;
     TInt err = sock.GetOpt(KSoInetIfQueryByName, KSolInetIfQuery, ifquerypkg);
-    
+
     /* IAP ID is index 1 of iZone */
     if(err == KErrNone && ifquery.iZone[1] == iapId) {
       /* We have found an interface using the IAP we are interested in. */
@@ -126,7 +126,7 @@ extern "C" void *su_localinfo_ap_set(su_sockaddr_t *su, int *ifindex)
     else if(err != KErrNone)
       break;
   }
-  
+
   sock.Close();
 }
 

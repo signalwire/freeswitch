@@ -31,7 +31,7 @@
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Martti Mela <Martti.Mela@nokia.com>
- * 
+ *
  * @date Created: Tue Sep 14 15:51:04 1999 ppessi
  */
 
@@ -236,8 +236,8 @@ f * #include <sofia-sip/su_wait.h>
 typedef SU_ROOT_MAGIC_T su_root_magic_t;
 
 #ifndef SU_WAKEUP_ARG_T
-/**Default type of @link ::su_wakeup_f wakeup function @endlink 
- * @link ::su_wakeup_arg_t argument type @endlink.  
+/**Default type of @link ::su_wakeup_f wakeup function @endlink
+ * @link ::su_wakeup_arg_t argument type @endlink.
  *
  * The application can define the typedef ::su_wakeup_arg_t by defining
  * the SU_WAKEUP_ARG_T () before including <sofia-sip/su_wait.h>, for example,
@@ -249,7 +249,7 @@ typedef SU_ROOT_MAGIC_T su_root_magic_t;
 #define SU_WAKEUP_ARG_T void
 #endif
 
-/** @link ::su_wakeup_f Wakeup callback @endlink argument type. 
+/** @link ::su_wakeup_f Wakeup callback @endlink argument type.
  *
  * The application can define the typedef ::su_wakeup_arg_t by defining
  * the SU_WAKEUP_ARG_T () before including <sofia-sip/su_wait.h>, for example,
@@ -260,7 +260,7 @@ typedef SU_ROOT_MAGIC_T su_root_magic_t;
  */
 typedef SU_WAKEUP_ARG_T su_wakeup_arg_t;
 
-/** Wakeup callback function pointer type. 
+/** Wakeup callback function pointer type.
  *
  * Whenever a registered wait object receives an event, the @link
  * ::su_wakeup_f callback function @endlink is invoked.
@@ -269,7 +269,7 @@ typedef int (*su_wakeup_f)(su_root_magic_t *,
 			   su_wait_t *,
 			   su_wakeup_arg_t *arg);
 
-enum { 
+enum {
   su_pri_normal,		/**< Normal priority */
   su_pri_first,			/**< Elevated priority */
   su_pri_realtime		/**< Real-time priority */
@@ -310,9 +310,9 @@ SOFIAPUBVAR int su_root_size_hint;
 typedef SU_PREPOLL_MAGIC_T su_prepoll_magic_t;
 
 
-/** Pre-poll callback function prototype. 
+/** Pre-poll callback function prototype.
  *
- * 
+ *
  */
 typedef void su_prepoll_f(su_prepoll_magic_t *, su_root_t *);
 
@@ -327,7 +327,7 @@ typedef void su_prepoll_f(su_prepoll_magic_t *, su_root_t *);
 /** Default type of timer expiration callback function argument type.
  * Application may define this to appropriate type before including
  * <sofia-sip/su_wait.h>. */
-#define SU_TIMER_ARG_T void 
+#define SU_TIMER_ARG_T void
 #endif
 
 /** Timer object type. */
@@ -337,7 +337,7 @@ typedef struct su_timer_s su_timer_t;
 typedef SU_TIMER_ARG_T su_timer_arg_t;
 
 /** Timeout function type. */
-typedef void (*su_timer_f)(su_root_magic_t *magic, 
+typedef void (*su_timer_f)(su_root_magic_t *magic,
 			   su_timer_t *t,
 			   su_timer_arg_t *arg);
 
@@ -372,7 +372,7 @@ typedef _su_task_t const *_su_task_r;
 /** Default type of su_msg_t message data.  Application may define this to
  * appropriate type before including <sofia-sip/su_wait.h>.
  */
-#define SU_MSG_ARG_T void 
+#define SU_MSG_ARG_T void
 #endif
 
 /** Message argument type. */
@@ -394,7 +394,7 @@ typedef su_msg_t * const su_msg_cr[1];
 #define SU_MSG_R_INIT   { NULL }
 
 /** Message delivery function type. */
-typedef void su_msg_function(su_root_magic_t *magic, 
+typedef void su_msg_function(su_root_magic_t *magic,
 			     su_msg_r msg,
 			     su_msg_arg_t *arg);
 
@@ -454,14 +454,14 @@ SOFIAPUBFUN void su_root_destroy(su_root_t*);
 SOFIAPUBFUN char const *su_root_name(su_root_t *self);
 SOFIAPUBFUN int su_root_set_magic(su_root_t *self, su_root_magic_t *magic);
 SOFIAPUBFUN su_root_magic_t *su_root_magic(su_root_t *root);
-SOFIAPUBFUN int su_root_register(su_root_t*, su_wait_t *, 
+SOFIAPUBFUN int su_root_register(su_root_t*, su_wait_t *,
 				 su_wakeup_f, su_wakeup_arg_t *,
 				 int priority);
 /* This is slow. Deprecated. */
-SOFIAPUBFUN int su_root_unregister(su_root_t*, su_wait_t *, 
+SOFIAPUBFUN int su_root_unregister(su_root_t*, su_wait_t *,
 				   su_wakeup_f, su_wakeup_arg_t*);
 SOFIAPUBFUN int su_root_deregister(su_root_t*, int);
-SOFIAPUBFUN int su_root_eventmask(su_root_t *, 
+SOFIAPUBFUN int su_root_eventmask(su_root_t *,
 				  int index, int socket, int events);
 SOFIAPUBFUN su_duration_t su_root_step(su_root_t *root, su_duration_t timeout);
 SOFIAPUBFUN su_duration_t su_root_sleep(su_root_t *root, su_duration_t);
@@ -471,8 +471,8 @@ SOFIAPUBFUN void su_root_break(su_root_t *root);
 SOFIAPUBFUN _su_task_r su_root_task(su_root_t const *root);
 SOFIAPUBFUN _su_task_r su_root_parent(su_root_t const *root);
 
-SOFIAPUBFUN int su_root_add_prepoll(su_root_t *root, 
-				    su_prepoll_f *, 
+SOFIAPUBFUN int su_root_add_prepoll(su_root_t *root,
+				    su_prepoll_f *,
 				    su_prepoll_magic_t *);
 SOFIAPUBFUN int su_root_remove_prepoll(su_root_t *root);
 
@@ -494,13 +494,13 @@ SOFIAPUBFUN int su_timer_set_interval(su_timer_t *t, su_timer_f,
 SOFIAPUBFUN int su_timer_set_at(su_timer_t *, su_timer_f,
 				su_timer_arg_t *, su_time_t);
 SOFIAPUBFUN int su_timer_run(su_timer_t *, su_timer_f, su_timer_arg_t *);
-SOFIAPUBFUN int su_timer_set_for_ever(su_timer_t *, su_timer_f, 
+SOFIAPUBFUN int su_timer_set_for_ever(su_timer_t *, su_timer_f,
 				      su_timer_arg_t *);
 SOFIAPUBFUN int su_timer_reset(su_timer_t *);
 
 SOFIAPUBFUN su_root_t *su_timer_root(su_timer_t const *);
 
-SOFIAPUBFUN int su_timer_expire(su_timer_queue_t * const, 
+SOFIAPUBFUN int su_timer_expire(su_timer_queue_t * const,
 				su_duration_t *tout,
 				su_time_t now);
 
@@ -526,7 +526,7 @@ SOFIAPUBFUN int su_task_execute(su_task_r const task,
 
 /* Messages */
 SOFIAPUBFUN int su_msg_create(su_msg_r msg,
-			      su_task_r const to, su_task_r const from, 
+			      su_task_r const to, su_task_r const from,
 			      su_msg_f wakeup, isize_t size);
 SOFIAPUBFUN int su_msg_report(su_msg_r msg, su_msg_f report);
 SOFIAPUBFUN int su_msg_deinitializer(su_msg_r msg, su_msg_deinit_function *);
@@ -543,7 +543,7 @@ SOFIAPUBFUN int su_msg_send(su_msg_r msg);
 
 SOFIAPUBFUN int su_msg_new(su_msg_r msg, size_t size);
 SOFIAPUBFUN int su_msg_send_to(su_msg_r msg,
-			       su_task_r const to, 
+			       su_task_r const to,
 			       su_msg_f wakeup);
 
 /** Does reference contain a message? */
@@ -559,10 +559,10 @@ int su_msg_is_non_null(su_msg_cr msg)
 
 /* Clones */
 SOFIAPUBFUN int su_root_threading(su_root_t *self, int enable);
-SOFIAPUBFUN int su_clone_start(su_root_t *root, 
+SOFIAPUBFUN int su_clone_start(su_root_t *root,
 			       su_clone_r,
 			       su_root_magic_t *magic,
-			       su_root_init_f, 
+			       su_root_init_f,
 			       su_root_deinit_f);
 SOFIAPUBFUN _su_task_r su_clone_task(su_clone_r);
 SOFIAPUBFUN void su_clone_forget(su_clone_r);

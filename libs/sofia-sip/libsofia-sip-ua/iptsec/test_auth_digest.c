@@ -77,7 +77,7 @@
 int tstflags;
 char *argv0;
 
-#define TSTFLAGS tstflags 
+#define TSTFLAGS tstflags
 
 #include <sofia-sip/tstdef.h>
 
@@ -105,14 +105,14 @@ int test_digest()
     "algorithm=MD5, "
     "qop=\"auth\"";
 
-  char response[] = 
+  char response[] =
     "DIGEST USERNAME=\"digest\", "
     "REALM=\"garage.sr.ntc.nokia.com\", "
     "NONCE=\"MjAwMS0wMS0yMSAxNTowODo1OA==\", "
     "RESPONSE=\"d9d7f1ae99a013cb05f319f0f678251d\", "
     "URI=\"sip:garage.sr.ntc.nokia.com\"";
 
-  char rfc2617[] = 
+  char rfc2617[] =
     "Digest username=\"Mufasa\", "
     "realm=\"testrealm@host.com\", "
     "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
@@ -122,7 +122,7 @@ int test_digest()
     "algorithm=\"md5\", "
     "uri=\"/dir/index.html\"";
 
-  char indigo[] = 
+  char indigo[] =
     "Digest username=\"user1\", "
     "realm=\"nokia-proxy\", "
     "nonce=\"0YXwH29PCT4lEz8+YJipQg==\", "
@@ -134,7 +134,7 @@ int test_digest()
     "qop=auth, "
     "nc=000000002";
 
-  char proxy_authenticate[] = 
+  char proxy_authenticate[] =
     "Digest realm=\"IndigoSw\", "
     "domain=\"indigosw.com aol.com\", "
     "nonce=\"V2VkIEF1ZyAxNSAxNzoxNzozNyBCU1QgMjAwMVtCQDE3OWU4Yg==\", "
@@ -172,12 +172,12 @@ int test_digest()
   TEST_SIZE(auth_digest_response_get(home, ar, au->au_params), 10);
 
   TEST0(auth_digest_sessionkey(ar, sessionkey, "Circle Of Life") == 0);
-  if (tstflags & tst_verbatim) 
+  if (tstflags & tst_verbatim)
     printf("%s: sessionkey=\"%s\"\n", name, sessionkey);
   TEST0(strcmp(sessionkey, "939e7578ed9e3c518a452acee763bce9") == 0);
 
   TEST0(auth_digest_response(ar, hresponse, sessionkey, "GET", NULL, 0) == 0);
-  if (tstflags & tst_verbatim) 
+  if (tstflags & tst_verbatim)
     printf("%s: hresponse=\"%s\"\n", name, hresponse);
   TEST0(strcmp(hresponse, "6629fae49393a05397450978507c4ef1") == 0);
 
@@ -195,11 +195,11 @@ int test_digest()
   TEST_1(ac->ac_auth_int);
 
   {
-    char challenge[] = 
+    char challenge[] =
       "Digest realm=\"opera.ntc.nokia.com\", "
       "nonce=\"InyiWI+qIdvDKkO2jFK7mg==\"";
 
-    char credentials[] = 
+    char credentials[] =
       "Digest username=\"samuel.privat.saturday@opera.ntc.nokia.com\", "
       "realm=\"opera.ntc.nokia.com\", nonce=\"InyiWI+qIdvDKkO2jFK7mg==\", "
       "algorithm=MD5, uri=\"sip:opera.ntc.nokia.com\", "
@@ -247,12 +247,12 @@ Authorization: Digest       username="Mufasa",
                             opaque="5ccc069c403ebaf9f0171e9517f40e41"
     */
 
-    char challenge[] = 
+    char challenge[] =
       "Digest realm=\"testrealm@host.com\", "
       "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
       "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"";
 
-    char rfc2069_cred[] = 
+    char rfc2069_cred[] =
       "Digest username=\"Mufasa\", "
       "realm=\"testrealm@host.com\", "
       "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
@@ -278,10 +278,10 @@ Authorization: Digest       username="Mufasa",
   }
 
   {
-    char worldcom_chal[] = 
+    char worldcom_chal[] =
       "Digest realm=\"WCOM\", nonce=\"ce2292f3f748fbe239bda9e852e8b986\"";
 
-    char worldcom_cred[] = 
+    char worldcom_cred[] =
       "Digest realm=\"WCOM\", username=\"jari\", "
       "nonce=\"ce2292f3f748fbe239bda9e852e8b986\", "
       "response=\"ea692d202019d41a75c70df4b2401e2f\", "
@@ -304,12 +304,12 @@ Authorization: Digest       username="Mufasa",
   }
 
   {
-    char etri_chal[] = 
+    char etri_chal[] =
       "Digest realm=\"nokia-proxy\", domain=\"sip:194.2.188.133\", "
       "nonce=\"wB7JBwIb/XhtgfGp1VuPoQ==\", opaque=\"wkJxwA==\", "
       ", algorithm=MD5, qop=\"auth\"";
 
-    char etri_cred[] = 
+    char etri_cred[] =
       "Digest username=\"myhuh\", realm=\"nokia-proxy\", "
       "nonce=\"wB7JBwIb/XhtgfGp1VuPoQ==\", uri=\"sip:194.2.188.133\", "
       "response=\"32960a62bdc202171ca5a294dc229a6d\", "
@@ -317,13 +317,13 @@ Authorization: Digest       username="Mufasa",
 
     memset(ac, 0, sizeof(ac)); ac->ac_size = sizeof(ac);
     memset(ar, 0, sizeof(ar)); ar->ar_size = sizeof(ar);
-    
+
     TEST0(pa = sip_proxy_authenticate_make(home, etri_chal));
     TEST_SIZE(auth_digest_challenge_get(home, ac, pa->au_params), 8);
 
     TEST0(pz = sip_proxy_authorization_make(home, etri_cred));
     TEST_SIZE(auth_digest_response_get(home, ar, pz->au_params), 6 /* 8 */);
-    
+
     ar->ar_md5 = ac->ac_md5 || ac->ac_algorithm == NULL;
 
     TEST(auth_digest_sessionkey(ar, sessionkey, "myhuh"), 0);
@@ -332,7 +332,7 @@ Authorization: Digest       username="Mufasa",
   }
 
   {
-    char chal[] = 
+    char chal[] =
       "Digest realm=\"nokia-proxy\", domain=\"sip:10.21.32.63\", "
       "nonce=\"GjbLsrozHC6Lx95C57vGlw==\", opaque=\"HN22wQ==\", algorithm=MD5";
 
@@ -344,13 +344,13 @@ Authorization: Digest       username="Mufasa",
 
     memset(ac, 0, sizeof(ac)); ac->ac_size = sizeof(ac);
     memset(ar, 0, sizeof(ar)); ar->ar_size = sizeof(ar);
-    
+
     TEST0(pa = sip_proxy_authenticate_make(home, chal));
     TEST_SIZE(auth_digest_challenge_get(home, ac, pa->au_params), 6);
 
     TEST0(pz = sip_proxy_authorization_make(home, cred));
     TEST_SIZE(auth_digest_response_get(home, ar, pz->au_params), 8);
-    
+
     ar->ar_md5 = ac->ac_md5 || ac->ac_algorithm == NULL;
 
     TEST(auth_digest_sessionkey(ar, sessionkey, "test1"), 0);
@@ -359,18 +359,18 @@ Authorization: Digest       username="Mufasa",
   }
 
   {
-    char challenge[] = 
+    char challenge[] =
       "Digest realm=\"nokia-proxy\", domain=\"sip:194.2.188.133\", "
       "nonce=\"3wWGOvaWn3n+hFv8PK2ABQ==\", opaque=\"+GNywA==\", "
       "algorithm=MD5, qop=\"auth-int\"";
-    char credentials[] = 
+    char credentials[] =
       "Digest username=\"test\", realm=\"nokia-proxy\", "
       "nonce=\"3wWGOvaWn3n+hFv8PK2ABQ==\", "
       "cnonce=\"11RkhFg9EdaIRD36w0EMVA==\", opaque=\"+GNywA==\", "
       "uri=\"sip:3000@194.2.188.133\", algorithm=MD5, "
       "response=\"26e8b9aaacfca2d68770fab1ec04e2c7\", "
       "qop=auth-int, nc=00000001";
-    char data[] = 
+    char data[] =
       "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n"
       "<presence>\n"
       "<presentity uri=\"sip:3000@194.2.188.133\"/>\n"
@@ -389,23 +389,23 @@ Authorization: Digest       username="Mufasa",
 
     memset(ac, 0, sizeof(ac)); ac->ac_size = sizeof(ac);
     memset(ar, 0, sizeof(ar)); ar->ar_size = sizeof(ar);
-    
+
     TEST0(pa = sip_proxy_authenticate_make(home, challenge));
     TEST_SIZE(auth_digest_challenge_get(home, ac, pa->au_params), 8);
 
     TEST0(pz = sip_proxy_authorization_make(home, credentials));
     TEST_SIZE(auth_digest_response_get(home, ar, pz->au_params), 12);
-    
+
     ar->ar_md5 = ac->ac_md5 || ac->ac_algorithm == NULL;
 
     TEST0(!auth_digest_sessionkey(ar, sessionkey, "test"));
-    TEST0(!auth_digest_response(ar, hresponse, sessionkey, "REGISTER", 
+    TEST0(!auth_digest_response(ar, hresponse, sessionkey, "REGISTER",
 				data, strlen(data)));
     TEST_S(hresponse, "26e8b9aaacfca2d68770fab1ec04e2c7");
   }
 
   su_home_deinit(home);
-  
+
   END();
 }
 
@@ -418,7 +418,7 @@ msg_t *read_message(int flags, char const buffer[])
   msg_iovec_t iovec[2];
 
   n = strlen(buffer);
-  if (n == 0) 
+  if (n == 0)
     return NULL;
 
   msg = msg_create(sip_default_mclass(), flags);
@@ -447,10 +447,10 @@ void test_callback(su_root_t *root, auth_status_t *as)
   su_root_break(root);
 }
 
-static 
+static
 void init_as(auth_status_t *as)
 {
-  memset(as, 0, sizeof *as); 
+  memset(as, 0, sizeof *as);
   as->as_home->suh_size = (sizeof *as);
   su_home_init(as->as_home);
   as->as_method = "REGISTER";
@@ -458,14 +458,14 @@ void init_as(auth_status_t *as)
   as->as_phrase = "Infernal Error";
 }
 
-static 
+static
 void deinit_as(auth_status_t *as)
 {
   su_home_deinit(as->as_home);
   memset(as, 0, sizeof *as);
 }
 
-static 
+static
 void reinit_as(auth_status_t *as)
 {
   deinit_as(as); init_as(as);
@@ -475,9 +475,9 @@ void reinit_as(auth_status_t *as)
 int test_digest_client()
 {
   BEGIN();
-  
+
   {
-    char challenge[] = 
+    char challenge[] =
       PROTOCOL " 401 Unauthorized\r\n"
       "Call-ID:0e3dc2b2-dcc6-1226-26ac-258b5ce429ab\r\n"
       "CSeq:32439043 REGISTER\r\n"
@@ -488,8 +488,8 @@ int test_digest_client()
       "Content-Length:0\r\n"
       "Security-Server:digest\r\n"
       "r\n";
-      
-    char request[] = 
+
+    char request[] =
       "REGISTER sip:ims3.so.noklab.net " PROTOCOL "\r\n"
       "Via: SIP/2.0/UDP 10.21.36.70:23800;rport;branch=z9hG4bKRE18GFwa3AS\r\n"
       "Max-Forwards: 80\r\n"
@@ -515,13 +515,13 @@ int test_digest_client()
     auth_mod_t *am;
     auth_status_t as[1];
     sip_www_authenticate_t *au;
-    auth_challenger_t ach[1] = 
-      {{ 401, "Authorization required", 
+    auth_challenger_t ach[1] =
+      {{ 401, "Authorization required",
 	 sip_www_authenticate_class,
 	 sip_authentication_info_class
 	}};
-    auth_challenger_t pach[1] = 
-      {{ 407, "Proxy Authorization required", 
+    auth_challenger_t pach[1] =
+      {{ 407, "Proxy Authorization required",
 	 sip_proxy_authenticate_class,
 	 sip_proxy_authentication_info_class
 	}};
@@ -530,29 +530,29 @@ int test_digest_client()
 
     TEST_1(m1 = read_message(MSG_DO_EXTRACT_COPY, challenge));
     TEST_1(sip = sip_object(m1));
-    
+
     TEST_1(aucs == NULL);
-    TEST(auc_challenge(&aucs, home, sip->sip_www_authenticate, 
+    TEST(auc_challenge(&aucs, home, sip->sip_www_authenticate,
 		       sip_authorization_class), 1);
     TEST_1(aucs != NULL);
     msg_destroy(m1);
 
-    TEST(auc_all_credentials(&aucs, "DIGEST", "\"ims3.so.noklab.net\"", 
+    TEST(auc_all_credentials(&aucs, "DIGEST", "\"ims3.so.noklab.net\"",
 			     "surf3.private@ims3.so.noklab.net", "1234"), 1);
 
     TEST_1(m2 = read_message(MSG_DO_EXTRACT_COPY, request));
     TEST_1(sip = sip_object(m2));
     TEST_P(sip->sip_authorization, NULL);
     TEST_1(rq = sip->sip_request);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
 			   rq->rq_url, sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
     TEST_S(msg_params_find(sip->sip_authorization->au_params,
 			   "response="),
 	   "\"860f5ecc9990772e16937750ced9594d\"");
 
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
     TEST_S(msg_params_find(sip->sip_authorization->au_params,
@@ -571,7 +571,7 @@ int test_digest_client()
 
     TEST_1(root = su_root_create(NULL));
 
-    TEST_1(am = auth_mod_create(NULL, 
+    TEST_1(am = auth_mod_create(NULL,
 				AUTHTAG_METHOD("Digest"),
 				AUTHTAG_REALM("ims3.so.noklab.net"),
 				AUTHTAG_DB(testpasswd),
@@ -582,7 +582,7 @@ int test_digest_client()
     auth_mod_check_client(am, as, sip->sip_authorization, ach);
     TEST(as->as_status, 401);
 
-    TEST_1(au = sip_authorization_make(home, 
+    TEST_1(au = sip_authorization_make(home,
 				       "Digest username=\"user1\", "
 				       "nonce=\"3wWGOvaWn3n+hFv8PK2ABQ==\", "
 				       "opaque=\"+GNywA==\", "
@@ -602,7 +602,7 @@ int test_digest_client()
       char const *uri = au->au_params[3];
       char const *response = au->au_params[4];
       char const *realm = au->au_params[5];
-      
+
       TEST_S(username, "username=\"user1\"");
       TEST_S(nonce, "nonce=\"3wWGOvaWn3n+hFv8PK2ABQ==\"");
       TEST_S(opaque, "opaque=\"+GNywA==\"");
@@ -653,24 +653,24 @@ int test_digest_client()
     as->as_response = (msg_header_t *)
       sip_www_authenticate_make(as->as_home, "Unknown realm=\"huu haa\"");
     TEST_1(as->as_response);
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
     aucs = NULL;
 
     reinit_as(as);
     auth_mod_check_client(am, as, NULL, ach);
     TEST(as->as_status, 401);
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
     reinit_as(as);
-    
-    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+
+    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			     "user1", "secret"), 1);
 
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
 
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -683,7 +683,7 @@ int test_digest_client()
     auth_mod_destroy(am);
     aucs = NULL;
 
-    TEST_1(am = auth_mod_create(NULL, 
+    TEST_1(am = auth_mod_create(NULL,
 				AUTHTAG_METHOD("Digest"),
 				AUTHTAG_REALM("ims3.so.noklab.net"),
 				AUTHTAG_DB(testpasswd),
@@ -713,11 +713,11 @@ int test_digest_client()
       reinit_as(as);
     }
 
-    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			     "user1", "secret"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -750,12 +750,12 @@ int test_digest_client()
       TEST(msg_params_remove((msg_param_t *)au->au_params, "opaque"), 1);
 
       TEST(auc_challenge(&aucs, home, au, sip_authorization_class), 1);
-      TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+      TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			       "user1", "secret"), 1);
       msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
 
-      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			     (url_t *)"sip:surf3@ims3.so.noklab.net", 
+      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			     (url_t *)"sip:surf3@ims3.so.noklab.net",
 			     sip->sip_payload), 1);
 
       TEST_1(sip->sip_authorization);
@@ -774,7 +774,7 @@ int test_digest_client()
     {
       msg_auth_t *au;
 
-      TEST_1(am = auth_mod_create(NULL, 
+      TEST_1(am = auth_mod_create(NULL,
 				  AUTHTAG_METHOD("Digest"),
 				  AUTHTAG_DB(testpasswd),
 				  AUTHTAG_ALGORITHM("MD5-sess"),
@@ -790,12 +790,12 @@ int test_digest_client()
       au = (void *)msg_header_dup(home, as->as_response); TEST_1(au);
 
       TEST(auc_challenge(&aucs, home, au, sip_authorization_class), 1);
-      TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+      TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			       "user1", "secret"), 1);
       msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
 
-      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			     (url_t *)"sip:surf3@ims3.so.noklab.net", 
+      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			     (url_t *)"sip:surf3@ims3.so.noklab.net",
 			     sip->sip_payload), 1);
 
       TEST_1(sip->sip_authorization);
@@ -812,7 +812,7 @@ int test_digest_client()
     {
       char const *nonce1, *nextnonce, *nonce2;
 
-      TEST_1(am = auth_mod_create(NULL, 
+      TEST_1(am = auth_mod_create(NULL,
 				  AUTHTAG_METHOD("Digest"),
 				  AUTHTAG_REALM("ims3.so.noklab.net"),
 				  AUTHTAG_DB(testpasswd),
@@ -823,21 +823,21 @@ int test_digest_client()
 				     if NEXT_EXPIRES in nonzero */
 				  AUTHTAG_NEXT_EXPIRES(900),
 				  TAG_END()));
-      
+
       reinit_as(as);
       auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 401);
-      
-      TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+
+      TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 			 sip_authorization_class), 1);
-      TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+      TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			       "user1", "secret"), 1);
       msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			     (url_t *)"sip:surf3@ims3.so.noklab.net", 
+      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			     (url_t *)"sip:surf3@ims3.so.noklab.net",
 			     sip->sip_payload), 1);
       TEST_1(sip->sip_authorization);
       TEST_1(nonce1 = msg_header_find_param(sip->sip_authorization->au_common, "nonce"));
-      
+
       reinit_as(as);
       auth_mod_check_client(am, as, sip->sip_authorization, ach);
       TEST(as->as_status, 0);
@@ -850,8 +850,8 @@ int test_digest_client()
       TEST(auc_info(&aucs, (msg_auth_info_t const *)as->as_info, sip_authorization_class), 1);
 
       msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			     (url_t *)"sip:surf3@ims3.so.noklab.net", 
+      TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			     (url_t *)"sip:surf3@ims3.so.noklab.net",
 			     sip->sip_payload), 1);
       TEST_1(sip->sip_authorization);
       TEST_1(nonce2 = msg_header_find_param(sip->sip_authorization->au_common, "nonce"));
@@ -867,7 +867,7 @@ int test_digest_client()
       auth_mod_destroy(am); aucs = NULL;
     }
 
-    TEST_1(am = auth_mod_create(NULL, 
+    TEST_1(am = auth_mod_create(NULL,
 				AUTHTAG_METHOD("Digest"),
 				AUTHTAG_REALM("ims3.so.noklab.net"),
 				AUTHTAG_DB(testpasswd),
@@ -878,13 +878,13 @@ int test_digest_client()
     reinit_as(as);
     auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 401);
 
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
-    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			     "user1", "secret"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -893,7 +893,7 @@ int test_digest_client()
     TEST(as->as_status, 0);
     auth_mod_destroy(am); aucs = NULL;
 
-    TEST_1(am = auth_mod_create(NULL, 
+    TEST_1(am = auth_mod_create(NULL,
 				AUTHTAG_METHOD("Digest"),
 				AUTHTAG_REALM("ims3.so.noklab.net"),
 				AUTHTAG_DB(testpasswd),
@@ -907,13 +907,13 @@ int test_digest_client()
     reinit_as(as);
     auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 401);
 
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
-    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			     "user1", "secret"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -924,7 +924,7 @@ int test_digest_client()
     au = (void*)msg_header_copy(msg_home(m2), (void*)sip->sip_authorization);
 
     /* Test with invalid qop (bug #2329) */
-    msg_params_replace(msg_home(m2), (void *)&au->au_params, 
+    msg_params_replace(msg_home(m2), (void *)&au->au_params,
 		       "qop=\"auth,auth-int\"");
     reinit_as(as);
     auth_mod_check_client(am, as, au, ach);
@@ -949,11 +949,11 @@ int test_digest_client()
     TEST_1(au = (void *)as->as_response); TEST_1(au->au_params);
     TEST_S(msg_params_find(au->au_params, "stale="), "true");
 
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
     TEST_S(msg_header_find_param(sip->sip_authorization->au_common, "nc="),
@@ -965,8 +965,8 @@ int test_digest_client()
 
     /* Test nonce count check */
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
     TEST_S(msg_header_find_param(sip->sip_authorization->au_common, "nc="),
@@ -983,15 +983,15 @@ int test_digest_client()
     /* Test anonymous operation */
     reinit_as(as);
     auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 401);
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
     reinit_as(as);
 
-    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			     "anonymous", ""), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -1000,20 +1000,20 @@ int test_digest_client()
     auth_mod_destroy(am); aucs = NULL;
 
     /* Test empty realm */
-    TEST_1(am = auth_mod_create(root, 
+    TEST_1(am = auth_mod_create(root,
 				AUTHTAG_METHOD("Digest"),
 				AUTHTAG_REALM(""),
 				AUTHTAG_DB(testpasswd),
 				TAG_END()));
     reinit_as(as);
     auth_mod_check_client(am, as, NULL, ach); TEST(as->as_status, 401);
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
     reinit_as(as);
 
     TEST(auc_all_credentials(&aucs, "Digest", "\"\"", "user1", "secret"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
 			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
@@ -1021,15 +1021,15 @@ int test_digest_client()
     auth_mod_check_client(am, as, sip->sip_authorization, ach);
     TEST(as->as_status, 0);
     aucs = NULL;
-    reinit_as(as); 
+    reinit_as(as);
     auth_mod_check_client(am, as, NULL, pach); TEST(as->as_status, 407);
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_proxy_authorization_class), 1);
     reinit_as(as);
 
     TEST(auc_credentials(&aucs, as->as_home, "Digest:\"\":user1:secret"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_proxy_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
 			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_proxy_authorization);
@@ -1040,25 +1040,25 @@ int test_digest_client()
     auth_mod_destroy(am); aucs = NULL;
 
     /* Test Basic authentication scheme */
-    TEST_1(am = auth_mod_create(root, 
+    TEST_1(am = auth_mod_create(root,
 				AUTHTAG_METHOD("Basic"),
 				AUTHTAG_REALM("ims3.so.noklab.net"),
 				AUTHTAG_DB(testpasswd),
 				TAG_END()));
 
-    reinit_as(as);    
-    auth_mod_check_client(am, as, NULL, ach); 
+    reinit_as(as);
+    auth_mod_check_client(am, as, NULL, ach);
     TEST(as->as_status, 401);
-    
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
-		       sip_authorization_class), 1);
-    reinit_as(as);    
 
-    TEST(auc_all_credentials(&aucs, "Basic", "\"ims3.so.noklab.net\"", 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
+		       sip_authorization_class), 1);
+    reinit_as(as);
+
+    TEST(auc_all_credentials(&aucs, "Basic", "\"ims3.so.noklab.net\"",
 			     "user1", "secret"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -1067,20 +1067,20 @@ int test_digest_client()
 
     aucs = NULL;
 
-    reinit_as(as);    
-    auth_mod_check_client(am, as, NULL, ach); 
+    reinit_as(as);
+    auth_mod_check_client(am, as, NULL, ach);
     TEST(as->as_status, 401);
-    
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
-		       sip_authorization_class), 1);
-    reinit_as(as);    
 
-    TEST(auc_all_credentials(&aucs, "Basic", "\"ims3.so.noklab.net\"", 
-         "very-long-user-name-that-surely-exceeds-the-static-buffer", 
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
+		       sip_authorization_class), 1);
+    reinit_as(as);
+
+    TEST(auc_all_credentials(&aucs, "Basic", "\"ims3.so.noklab.net\"",
+         "very-long-user-name-that-surely-exceeds-the-static-buffer",
          "at-least-when-used-with-the-even-longer-password"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -1091,7 +1091,7 @@ int test_digest_client()
 
     /* Test asynchronous operation */
     aucs = NULL;
-    TEST_1(am = auth_mod_create(root, 
+    TEST_1(am = auth_mod_create(root,
 				AUTHTAG_METHOD("Delayed+Digest"),
 				AUTHTAG_REALM("ims3.so.noklab.net"),
 				AUTHTAG_DB(testpasswd),
@@ -1107,19 +1107,19 @@ int test_digest_client()
     TEST(as->as_status, 100);
     su_root_run(root);
     TEST(as->as_status, 401);
-    
-    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response, 
+
+    TEST(auc_challenge(&aucs, home, (msg_auth_t *)as->as_response,
 		       sip_authorization_class), 1);
 
     reinit_as(as);
     as->as_callback = test_callback;
     as->as_magic = root;
 
-    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"", 
+    TEST(auc_all_credentials(&aucs, "Digest", "\"ims3.so.noklab.net\"",
 			     "user1", "secret"), 1);
     msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
-    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name, 
-			   (url_t *)"sip:surf3@ims3.so.noklab.net", 
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
 			   sip->sip_payload), 1);
     TEST_1(sip->sip_authorization);
 
@@ -1188,7 +1188,7 @@ int test_module_io()
   TEST(close(tmpfd), 0);
 
   /* Test file reading operation */
-  am = auth_mod_create(NULL, 
+  am = auth_mod_create(NULL,
 		       AUTHTAG_METHOD("Digest"),
 		       AUTHTAG_REALM("realm"),
 		       AUTHTAG_DB(tmppasswd),
@@ -1201,7 +1201,7 @@ int test_module_io()
 
   apw = auth_mod_getpass(am, "user2", NULL); TEST_1(apw);
   TEST_S(apw->apw_hash, "4cbc2aff0b5b2b33675c0731c0db1c14");
-  
+
   apw2 = apw;
 
   *am0 = *am;
@@ -1312,7 +1312,7 @@ int main(int argc, char *argv[])
 
       if (rest == NULL || *rest)
 	usage(1);
-      
+
       su_log_set_level(iptsec_log, level);
     } else {
       usage(1);

@@ -24,9 +24,9 @@
 
 /**@internal @file memcspn.c
  * @brief The memcspn() replacement function.
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Nov 17 17:45:51 EET 2005 ppessi
  */
 
@@ -48,7 +48,7 @@
  * @return
  * The memspn() function returns the number of bytes in the memory area @a
  * which consists entirely of bytes not in @a reject.
- * @par 
+ * @par
  * If @a rejectlen is 0, or @a reject is NULL, it returns @a memlen, size of
  * the memory area.
  */

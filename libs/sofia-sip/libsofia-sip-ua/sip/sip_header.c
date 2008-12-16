@@ -85,7 +85,7 @@ sip_header_t *sip_header_d(su_home_t *home, msg_t const *msg, char const *b)
   return msg_header_d(home, msg, b);
 }
 
-/** Encode a SIP header. 
+/** Encode a SIP header.
  *
  * @deprecated Use msg_header_e() instead.
  */
@@ -94,7 +94,7 @@ issize_t sip_header_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
   return msg_header_e(b, bsiz, (msg_header_t const *)h, flags);
 }
 
-sip_header_t *sip_header_format(su_home_t *home, 
+sip_header_t *sip_header_format(su_home_t *home,
 				msg_hclass_t *hc,
 				char const *fmt,
 				...)

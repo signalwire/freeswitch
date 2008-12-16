@@ -84,7 +84,7 @@ su_inline void nhp_or_set(nua_handle_preferences_t *a,
   a->nhp_set_.set_unsigned[1] |= b->nhp_set_.set_unsigned[1];
 }
 
-static int nhp_set_tags(su_home_t *home, 
+static int nhp_set_tags(su_home_t *home,
 			nua_handle_preferences_t *nhp,
 			nua_global_preferences_t *ngp,
 			tagi_t const *tags);
@@ -127,7 +127,7 @@ static char const nua_allow_str[] =
 "MESSAGE, SUBSCRIBE, NOTIFY, REFER, UPDATE";
 
 /** @internal Set default parameters */
-int nua_stack_set_defaults(nua_handle_t *nh, 
+int nua_stack_set_defaults(nua_handle_t *nh,
 			   nua_handle_preferences_t *nhp)
 {
   su_home_t *home = (su_home_t *)nh;
@@ -222,7 +222,7 @@ int nua_stack_set_from(nua_t *nua, int initial, tagi_t const *tags)
     sip_contact_t const *m;
 
     m = nua_stack_get_contact(nua->nua_registrations);
-    
+
     if (m) {
       f0->a_display = m->m_display;
       *f0->a_url = *m->m_url;
@@ -233,7 +233,7 @@ int nua_stack_set_from(nua_t *nua, int initial, tagi_t const *tags)
 
   if (!f)
     return -1;
-  
+
   nua->nua_from_is_set = set;
   *nua->nua_from = *f;
   return 0;
@@ -269,7 +269,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *
  * @par Related tags:
  *   NUTAG_ALLOW(), SIPTAG_ALLOW(), and SIPTAG_ALLOW_STR() \n
- *   NUTAG_ALLOW_EVENTS(), SIPTAG_ALLOW_EVENTS(), and 
+ *   NUTAG_ALLOW_EVENTS(), SIPTAG_ALLOW_EVENTS(), and
  *                         SIPTAG_ALLOW_EVENTS_STR() \n
  *   NUTAG_AUTOACK() \n
  *   NUTAG_AUTOALERT() \n
@@ -323,7 +323,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *
  * nua_set_params() also accepts any soa tags, defined in
  * <sofia-sip/soa_tag.h>, and nta tags, defined in <sofia-sip/nta_tag.h>.
- * 
+ *
  * @par Events:
  *     #nua_r_set_params
  *
@@ -335,7 +335,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  * @par
  * When multiple tags for the same header are specified, the behaviour
  * depends on the header type. If only a single header field can be included
- * in a SIP message, the latest non-NULL value is used, e.g., @Organization. 
+ * in a SIP message, the latest non-NULL value is used, e.g., @Organization.
  * However, if the SIP header can consist of multiple lines or header fields
  * separated by comma, in this case, @Allow and @Supported, all the tagged
  * values are concatenated.
@@ -390,7 +390,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *
  * @par Tags Used to Set Handle-Specific Parameters:
  *   NUTAG_ALLOW(), SIPTAG_ALLOW(), and SIPTAG_ALLOW_STR() \n
- *   NUTAG_ALLOW_EVENTS(), SIPTAG_ALLOW_EVENTS(), and 
+ *   NUTAG_ALLOW_EVENTS(), SIPTAG_ALLOW_EVENTS(), and
  *                         SIPTAG_ALLOW_EVENTS_STR() \n
  *   NUTAG_AUTH_CACHE() \n
  *   NUTAG_AUTOACK() \n
@@ -437,9 +437,9 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  * Any soa tags are also considered as handle-specific parameters. They are
  * defined in <sofia-sip/soa_tag.h>.
  *
- * The global parameters that can not be set by nua_set_hparams() include 
+ * The global parameters that can not be set by nua_set_hparams() include
  * NUTAG_DETECT_NETWORK_UPDATES(), NUTAG_SMIME_* tags, and all NTA tags.
- * 
+ *
  * @par Events:
  *     #nua_r_set_params
  */
@@ -453,12 +453,12 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  * @param nh     NULL when responding to nua_set_params(),
  *               operation handle when responding to nua_set_hparams()
  * @param hmagic NULL when responding to nua_set_params(),
- *               application contact associated with the operation handle 
+ *               application contact associated with the operation handle
  *               when responding to nua_set_hparams()
  * @param sip    NULL
  * @param tags   None
  *
- * @sa nua_set_params(), nua_set_hparams(), 
+ * @sa nua_set_params(), nua_set_hparams(),
  * #nua_r_get_params, nua_get_params(), nua_get_hparams()
  *
  * @END_NUA_EVENT
@@ -468,7 +468,7 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 			 tagi_t const *tags)
 {
   nua_handle_t *dnh = nua->nua_dhandle;
-  
+
   int status;
   char const *phrase;
 
@@ -486,8 +486,8 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
     *tmp = *nhp; NHP_UNSET_ALL(tmp);
 
     /*
-     * Supported features, allowed methods and events are merged 
-     * with previous or default settings. 
+     * Supported features, allowed methods and events are merged
+     * with previous or default settings.
      *
      * Here we just copy pointers from default settings. However when saving
      * settings we have to be extra careful so that we
@@ -495,20 +495,20 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
      * 2) do not free pointer if the setting has been modified
      * See NHP_ZAP_OVERRIDEN() below for gorier details.
      */
-    if (!NHP_ISSET(nhp, supported)) 
+    if (!NHP_ISSET(nhp, supported))
       tmp->nhp_supported = dnhp->nhp_supported;
-    if (!NHP_ISSET(nhp, allow)) 
+    if (!NHP_ISSET(nhp, allow))
       tmp->nhp_allow = dnhp->nhp_allow;
-    if (!NHP_ISSET(nhp, allow_events)) 
+    if (!NHP_ISSET(nhp, allow_events))
       tmp->nhp_allow_events = dnhp->nhp_allow_events;
-    if (!NHP_ISSET(nhp, appl_method)) 
+    if (!NHP_ISSET(nhp, appl_method))
       tmp->nhp_appl_method = dnhp->nhp_appl_method;
-    
+
     if (nh == dnh) /* nua_set_params() call, save stack-wide params, too */
       ngp = gtmp, *gtmp = *nua->nua_prefs;
 
     /* Set and save parameters to tmp */
-    if (!nh->nh_used_ptags && 
+    if (!nh->nh_used_ptags &&
 	nhp_set_tags(tmphome, tmp, NULL, nh->nh_ptags) < 0)
       status = 900, phrase = "Error storing default handle parameters";
     else if (nhp_set_tags(tmphome, tmp, ngp, tags) < 0)
@@ -531,9 +531,9 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
 
       if (dnh->nh_soa)
 	nh->nh_soa = soa_clone(dnh->nh_soa, nua->nua_root, nh);
-      else  
+      else
 	nh->nh_soa = soa_create(soa_name, nua->nua_root, nh);
-      
+
       if (!nh->nh_soa)
 	status = 900, phrase = "Error Creating SOA Object";
       else if (soa_set_params(nh->nh_soa, TAG_NEXT(nh->nh_ptags)) < 0)
@@ -544,8 +544,8 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
       soa_destroy(nh->nh_soa), nh->nh_soa = NULL;
     }
 
-    if (status == 200 && tags && nh->nh_soa &&	
-	soa_set_params(nh->nh_soa, TAG_NEXT(tags)) < 0) 
+    if (status == 200 && tags && nh->nh_soa &&
+	soa_set_params(nh->nh_soa, TAG_NEXT(tags)) < 0)
       status = 900, phrase = "Error Setting SOA Parameters";
   }
 
@@ -598,7 +598,7 @@ int nua_stack_set_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
  * @param ngp  structure to store global preferences
  * @param tags list of tags to parse
  */
-static int nhp_set_tags(su_home_t *home, 
+static int nhp_set_tags(su_home_t *home,
 			nua_handle_preferences_t *nhp,
 			nua_global_preferences_t *ngp,
 			tagi_t const *tags)
@@ -828,12 +828,12 @@ static int nhp_set_tags(su_home_t *home,
     /* SIPTAG_SUPPORTED_STR(supported_str) */
     /* SIPTAG_SUPPORTED(supported) */
     else if (tag == nutag_supported ||
-	     tag == siptag_supported || 
+	     tag == siptag_supported ||
 	     tag == siptag_supported_str) {
       int ok;
       sip_supported_t *supported = NULL;
 
-      ok = nhp_merge_lists(home, 
+      ok = nhp_merge_lists(home,
 			   sip_supported_class, &supported, nhp->nhp_supported,
 			   NHP_ISSET(nhp, supported), /* already set by tags */
 			   tag == siptag_supported, /* dup it, don't make */
@@ -853,7 +853,7 @@ static int nhp_set_tags(su_home_t *home,
       int ok;
       msg_list_t *allow = NULL;
 
-      ok = nhp_merge_lists(home, 
+      ok = nhp_merge_lists(home,
 			   sip_allow_class,
 			   &allow,
 			   (msg_list_t const *)nhp->nhp_allow,
@@ -875,9 +875,9 @@ static int nhp_set_tags(su_home_t *home,
       int ok;
       sip_allow_events_t *allow_events = NULL;
 
-      ok = nhp_merge_lists(home, 
+      ok = nhp_merge_lists(home,
 			   sip_allow_events_class,
-			   &allow_events, 
+			   &allow_events,
 			   nhp->nhp_allow_events,
 			   NHP_ISSET(nhp, allow_events), /* already set */
 			   tag == siptag_allow_events, /* dup it, don't make */
@@ -902,7 +902,7 @@ static int nhp_set_tags(su_home_t *home,
 			     &appl_method,
 			     (msg_list_t const *)nhp->nhp_appl_method,
 			     /* already set by tags? */
-			     NHP_ISSET(nhp, appl_method), 
+			     NHP_ISSET(nhp, appl_method),
 			     0, /* dup it, don't make */
 			     1, /* merge with old value */
 			     t->t_value);
@@ -1036,7 +1036,7 @@ static int nhp_merge_lists(su_home_t *home,
     return 0;
   }
 
-  if (already_parsed) 
+  if (already_parsed)
     elems = (void *)msg_header_dup_as(home, hc, (msg_header_t *)value);
   else
     elems = (void *)msg_header_make(home, hc, (char const *)value);
@@ -1065,8 +1065,8 @@ static int nhp_merge_lists(su_home_t *home,
   if (msg_params_join(home, (msg_param_t **)&list->k_items, elems->k_items,
 		      2 /* prune */, 0 /* don't dup */) < 0)
     return -1;
-  
-  *return_new_list = 
+
+  *return_new_list =
     (msg_list_t *)msg_header_dup_as(home, hc, (msg_header_t *)list);
   if (!*return_new_list)
     return -1;
@@ -1083,9 +1083,9 @@ static int nhp_merge_lists(su_home_t *home,
  * @retval 0 - no changes in parameters
  * @retval -1 - an error
  */
-static 
+static
 int nhp_save_params(nua_handle_t *nh,
-		    su_home_t *tmphome, 
+		    su_home_t *tmphome,
 		    nua_global_preferences_t *gsrc,
 		    nua_handle_preferences_t *src)
 {
@@ -1112,12 +1112,12 @@ int nhp_save_params(nua_handle_t *nh,
 
   /* Move allocations from tmphome to home */
   su_home_move(nh->nh_home, tmphome);
-  
+
   /* Copy parameters that are set from src to dst */
   nhp_or_set(dst, src);
 
   /* Handle pointer items. Free changed ones and zap unset ones. */
-  /* Note that pointer items where !NHP_ISSET(old, pref) are not freed 
+  /* Note that pointer items where !NHP_ISSET(old, pref) are not freed
      (because they were just on loan from the default preference set) */
 #define NHP_ZAP_OVERRIDEN(old, dst, free, pref)				\
   (((NHP_ISSET(old, pref) &&						\
@@ -1142,7 +1142,7 @@ int nhp_save_params(nua_handle_t *nh,
   NHP_ZAP_OVERRIDEN(old, dst, msg_header_free, initial_route);
 
   nh->nh_prefs = dst;
-  
+
   return memcmp(dst, old, sizeof *dst) != 0;
 }
 
@@ -1239,17 +1239,17 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
   else if (to_str)
     p_to = sip_to_make(tmphome, to_str);
   else if (url)
-    p_to = sip_to_create(tmphome, url), 
+    p_to = sip_to_create(tmphome, url),
       p_to ? sip_aor_strip((url_t*)p_to->a_url) : 0;
   else
     p_to = SIP_NONE;
-  
+
   if (p_to == NULL || p_from == NULL) {
     su_home_deinit(tmphome);
     return -1;
   }
 
-  nh->nh_tags = 
+  nh->nh_tags =
     tl_filtered_tlist(nh->nh_home, tagfilter,
 		      TAG_IF(p_from != SIP_NONE, SIPTAG_FROM(p_from)),
 		      TAG_IF(p_from != SIP_NONE, TAG_FILTER(nua_handle_tags_filter)),
@@ -1257,7 +1257,7 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
 		      TAG_IF(p_to != SIP_NONE, TAG_FILTER(nua_handle_tags_filter)),
 		      TAG_NEXT(tags));
 
-  nh->nh_ptags = 
+  nh->nh_ptags =
     tl_filtered_tlist(nh->nh_home, paramfilter, TAG_NEXT(tags));
 
   error = nh->nh_tags == NULL || nh->nh_ptags == NULL;
@@ -1270,7 +1270,7 @@ int nua_handle_save_tags(nua_handle_t *nh, tagi_t *tags)
 
   if (nh->nh_ptags && nh->nh_ptags->t_tag == NULL)
     su_free(nh->nh_home, nh->nh_ptags), nh->nh_ptags = NULL;
-    
+
   if (identity)
     nh->nh_identity = nua_handle_ref(identity);
 
@@ -1287,12 +1287,12 @@ static int nua_handle_param_filter(tagi_t const *f, tagi_t const *t)
   if (!t || !t->t_tag)
     return 0;
 
-  if (t->t_tag == nutag_url || 
+  if (t->t_tag == nutag_url ||
       t->t_tag == nutag_sips_url ||
       t->t_tag == nutag_identity)
     return 0;
 
-  ns = t->t_tag->tt_ns; 
+  ns = t->t_tag->tt_ns;
   if (!ns)
     return 0;
 
@@ -1311,12 +1311,12 @@ static int nua_handle_tags_filter(tagi_t const *f, tagi_t const *t)
 
   if (tag == tag_filter)
     return 0;
-  
+
   /* Accept @From or @To only when they are followed by
      TAG_FILTER(nua_handle_tags_filter) */
   if (tag == siptag_from || tag == siptag_to) {
     t = tl_next(t);
-    return t && t->t_tag == tag_filter && 
+    return t && t->t_tag == tag_filter &&
       t->t_value == (tag_value_t)nua_handle_tags_filter;
   }
 
@@ -1371,7 +1371,7 @@ int nua_stack_set_smime_params(nua_t *nua, tagi_t const *tags)
     return n;
 
   /* XXX - all other S/MIME parameters? */
-  return sm_set_params(nua->sm, smime_enable, smime_opt, 
+  return sm_set_params(nua->sm, smime_enable, smime_opt,
 		       smime_protection_mode, smime_path);
 #endif
 
@@ -1404,7 +1404,7 @@ int nua_stack_set_smime_params(nua_t *nua, tagi_t const *tags)
  */
 
 /**@fn void nua_get_hparams(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...)
- * 
+ *
  * Get values of handle-specific parameters in #nua_r_get_params event.
  *
  * Application will specify either expilicit list of tags it is interested
@@ -1443,7 +1443,7 @@ int nua_stack_set_smime_params(nua_t *nua, tagi_t const *tags)
  * @param nh     NULL when responding to nua_get_params(),
  *               operation handle when responding to nua_get_hparams()
  * @param hmagic NULL when responding to nua_get_params(),
- *               application contact associated with the operation handle 
+ *               application contact associated with the operation handle
  *               when responding to nua_get_hparams()
  * @param sip    NULL
  * @param tags
@@ -1588,7 +1588,7 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   TAG_IF(nhp->nhp_set.nhb_##pref, TAG(nhp->nhp_##pref))
 
   /* Include tag in the list returned to user
-   * if it has been earlier set (by user) 
+   * if it has been earlier set (by user)
    * but always include in the default parameters */
 #define TIFD(TAG, pref) \
   TAG_IF(nh == dnh || nhp->nhp_set.nhb_##pref, TAG(nhp->nhp_##pref))

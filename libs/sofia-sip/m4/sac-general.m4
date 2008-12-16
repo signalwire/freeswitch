@@ -1,8 +1,8 @@
 dnl =====================================================================
 dnl This file contains autoconf macros shared by Sofia modules.
-dnl 
+dnl
 dnl Author: Pekka Pessi <Pekka.Pessi@nokia.com>
-dnl 
+dnl
 dnl License:
 dnl
 dnl Copyright (c) 2001,2004 Nokia and others. All Rights Reserved.
@@ -12,19 +12,19 @@ dnl its respective author, unless the macro source explicitely says
 dnl otherwise. Permission has been granted, though, to use and distribute
 dnl all macros under the following license, which is a modified version of
 dnl the GNU General Public License version 2:
-dnl 
+dnl
 dnl Each Autoconf macro in this file is free software; you can redistribute it
 dnl and/or modify it under the terms of the GNU General Public License as
 dnl published by the Free Software Foundation; either version 2, or (at your
 dnl option) any later version.
-dnl 
+dnl
 dnl They are distributed in the hope that they will be useful, but WITHOUT ANY
 dnl WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 dnl FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 dnl details. (You should have received a copy of the GNU General Public License
 dnl along with this program; if not, write to the Free Software Foundation,
 dnl Inc., 59 Temple Place -- Suite 330, Boston, MA 02111-1307, USA.)
-dnl 
+dnl
 dnl As a special exception, the Free Software Foundation gives unlimited
 dnl permission to copy, distribute and modify the configure scripts that are
 dnl the output of Autoconf. You need not follow the terms of the GNU General
@@ -32,21 +32,21 @@ dnl Public License when using or distributing such scripts, even though
 dnl portions of the text of Autoconf appear in them. The GNU General Public
 dnl License (GPL) does govern all other use of the material that constitutes
 dnl the Autoconf program.
-dnl 
+dnl
 dnl Certain portions of the Autoconf source text are designed to be copied
-dnl (in certain cases, depending on the input) into the output of Autoconf. 
+dnl (in certain cases, depending on the input) into the output of Autoconf.
 dnl We call these the "data" portions. The rest of the Autoconf source text
 dnl consists of comments plus executable code that decides which of the data
 dnl portions to output in any given case. We call these comments and
 dnl executable code the "non-data" portions. Autoconf never copies any of
 dnl the non-data portions into its output.
-dnl 
+dnl
 dnl This special exception to the GPL applies to versions of Autoconf
 dnl released by the Free Software Foundation. When you make and distribute a
 dnl modified version of Autoconf, you may extend this special exception to
 dnl the GPL to apply to your modified version as well, *unless* your
 dnl modified version has the potential to copy into its output some of the
-dnl text that was the non-data portion of the version that you started with. 
+dnl text that was the non-data portion of the version that you started with.
 dnl (In other words, unless your change moves or copies text from the
 dnl non-data portions to the data portions.) If your modification has such
 dnl potential, you must delete any notice of this special exception to the
@@ -56,7 +56,7 @@ dnl =====================================================================
 
 dnl ===================================================================
 dnl Get host, target and build variables filled with appropriate info,
-dnl and check the validity of the cache 
+dnl and check the validity of the cache
 dnl ===================================================================
 
 AC_DEFUN([SAC_CANONICAL_SYSTEM_CACHE_CHECK], [
@@ -73,7 +73,7 @@ AC_CACHE_VAL(ac_cv_hostcheck, [ ac_cv_hostcheck="$hostcheck" ])
 if test "$ac_cv_hostcheck" != "$hostcheck"; then
   AC_MSG_RESULT(changed)
   AC_MSG_WARN(config.cache exists!)
-  AC_MSG_ERROR([you must do 'make distclean' first to compile 
+  AC_MSG_ERROR([you must do 'make distclean' first to compile
  for different host or different parameters.])
 else
   AC_MSG_RESULT(ok)
@@ -116,7 +116,7 @@ AC_CACHE_CHECK([for maximum warnings compiler flag],
     *solaris*)  ac_cv_cwflag="-erroff=%none,E_END_OF_LOOP_CODE_NOT_REACHED,E_BAD_PTR_INT_COMBINATION -errtags"
 	        ;;
     *)		ac_cv_cwflag=;;
-		esac 
+		esac
   ;;
 esac])
 AC_SUBST([CWFLAG], [$ac_cv_cwflag])
@@ -132,10 +132,10 @@ dnl ======================================================================
 AC_DEFUN([AC_STRUCT_SIN6], [
 AC_CACHE_CHECK([for sockaddr_in6],
   ac_cv_sin6,
-[AC_EGREP_HEADER(struct sockaddr_in6, netinet/in.h, 
+[AC_EGREP_HEADER(struct sockaddr_in6, netinet/in.h,
   ac_cv_sin6=yes, ac_cv_sin6=no)])
 if test $ac_cv_sin6 = yes ;then
-	AC_DEFINE([HAVE_SIN6], 1, 
+	AC_DEFINE([HAVE_SIN6], 1,
 		[Define to 1 if you have IPv6 structures and constants])
 fi
 ])
@@ -150,7 +150,7 @@ AC_CACHE_CHECK([for sa_len],
 #include <sys/socket.h>]], [[
  struct sockaddr t;t.sa_len = 0;]])],[ac_cv_sa_len=yes],[ac_cv_sa_len=no])])
 if test "$ac_cv_sa_len" = yes ;then
-	AC_DEFINE([HAVE_SA_LEN], 1, 
+	AC_DEFINE([HAVE_SA_LEN], 1,
 		[Define to 1 if you have sa_len in struct sockaddr])
 fi
 ])
@@ -160,7 +160,7 @@ dnl Check for MSG_NOSIGNAL flag
 dnl ======================================================================
 AC_DEFUN([AC_FLAG_MSG_NOSIGNAL], [
 AC_REQUIRE([AC_PROG_CC])
-AC_CACHE_CHECK([for MSG_NOSIGNAL], 
+AC_CACHE_CHECK([for MSG_NOSIGNAL],
   ac_cv_flag_msg_nosignal, [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
@@ -169,7 +169,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]])],[ac_cv_flag_msg_nosignal=yes],[ac_cv_flag_msg_nosignal=no])])
 if test "$ac_cv_flag_msg_nosignal" = yes ; then
 	AC_DEFINE([HAVE_MSG_NOSIGNAL], 1,
-		[Define to 1 if you have MSG_NOSIGNAL flag for send()]) 
+		[Define to 1 if you have MSG_NOSIGNAL flag for send()])
 fi
 ])dnl
 
@@ -178,7 +178,7 @@ dnl Check for MSG_ERRQUEUE flag
 dnl ======================================================================
 AC_DEFUN([AC_SYS_MSG_ERRQUEUE], [
 AC_REQUIRE([AC_PROG_CC])
-AC_CACHE_CHECK([for MSG_ERRQUEUE], 
+AC_CACHE_CHECK([for MSG_ERRQUEUE],
   ac_cv_flag_msg_errqueue, [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
@@ -187,7 +187,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]])],[ac_cv_flag_msg_errqueue=yes],[ac_cv_flag_msg_errqueue=no])])
 if test "$ac_cv_flag_msg_errqueue" = yes; then
 	AC_DEFINE([HAVE_MSG_ERRQUEUE], 1,
-		[Define to 1 if you have MSG_ERRQUEUE flag for send()]) 
+		[Define to 1 if you have MSG_ERRQUEUE flag for send()])
 fi
 ])dnl
 
@@ -196,7 +196,7 @@ dnl Check for IP_RECVERR option
 dnl ======================================================================
 AC_DEFUN([AC_SYS_IP_RECVERR], [
 AC_REQUIRE([AC_PROG_CC])
-AC_CACHE_CHECK([for IP_RECVERR], 
+AC_CACHE_CHECK([for IP_RECVERR],
   ac_cv_sys_ip_recverr, [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
@@ -208,7 +208,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
   setsockopt(s, SOL_IP, IP_RECVERR, &one, sizeof(one));
 ]])],[ac_cv_sys_ip_recverr=yes],[ac_cv_sys_ip_recverr=no])])
 if test "$ac_cv_sys_ip_recverr" = yes ; then
-	AC_DEFINE([HAVE_IP_RECVERR], 1, 
+	AC_DEFINE([HAVE_IP_RECVERR], 1,
 		[Define to 1 if you have IP_RECVERR in <netinet/in.h>])
 fi
 ])dnl
@@ -218,7 +218,7 @@ dnl Check for IPV6_RECVERR option
 dnl ======================================================================
 AC_DEFUN([AC_SYS_IPV6_RECVERR], [
 AC_REQUIRE([AC_PROG_CC])
-AC_CACHE_CHECK([for IPV6_RECVERR], 
+AC_CACHE_CHECK([for IPV6_RECVERR],
   ac_cv_sys_ipv6_recverr, [
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
@@ -261,7 +261,7 @@ AC_CACHE_CHECK(whether $CC recognizes __func__, ac_cv_c_var_func,
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[char *s = __func__;
 ]])],[ac_cv_c_var_func=yes],[ac_cv_c_var_func=no]))
 if test $ac_cv_c_var_func = "yes"; then
-AC_DEFINE([HAVE_FUNC], 1, [Define to 1 if the C compiler supports __func__]) 
+AC_DEFINE([HAVE_FUNC], 1, [Define to 1 if the C compiler supports __func__])
 fi
 ])dnl
 
@@ -272,7 +272,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 char *s = __FUNCTION__;
 ]])],[ac_cv_c_macro_function=yes],[ac_cv_c_macro_function=no]))
 if test $ac_cv_c_macro_function = "yes"; then
-AC_DEFINE([HAVE_FUNCTION], 1, [Define to 1 if the C compiler supports __FUNCTION__]) 
+AC_DEFINE([HAVE_FUNCTION], 1, [Define to 1 if the C compiler supports __FUNCTION__])
 fi
 ])dnl
 
@@ -281,8 +281,8 @@ dnl AC_C_INLINE_DEFINE
 dnl ======================================================================
 AC_DEFUN([AC_C_INLINE_DEFINE], [
 AC_C_INLINE
-case "$ac_cv_c_inline" in *inline* | yes) 
-	AC_DEFINE([HAVE_INLINE], 1, [Define to 1 if you have inlining compiler]) ;; 
+case "$ac_cv_c_inline" in *inline* | yes)
+	AC_DEFINE([HAVE_INLINE], 1, [Define to 1 if you have inlining compiler]) ;;
 esac
 ])
 
@@ -298,7 +298,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
 ]])],[ac_cv_c_keyword_struct=yes],[ac_cv_c_keyword_struct=no]))
 if test $ac_cv_c_keyword_struct = "yes"; then
 AC_DEFINE([HAVE_STRUCT_KEYWORDS], 1, [
-Define to 1 if your CC supports C99 struct initialization]) 
+Define to 1 if your CC supports C99 struct initialization])
 fi
 ])
 
@@ -307,7 +307,7 @@ dnl autoconf-version
 dnl should be removed after automake conversion is finished
 dnl ======================================================================
 
-AC_DEFUN([AC_AUTOCONF_PARAM], 
+AC_DEFUN([AC_AUTOCONF_PARAM],
 [
 if autoconf --version | fgrep '2.13' > /dev/null ; then
     AUTOCONF_PARAM="-l"
@@ -349,7 +349,7 @@ dnl ======================================================================
 
 AC_DEFUN([AC_CHECK_COMPILATION_ENVIRONMENT], [
 AC_REQUIRE([AC_PROG_CC])
-AC_CACHE_CHECK([for compilation environment], 
+AC_CACHE_CHECK([for compilation environment],
   ac_cc_environment, [
 machine=`$CC -dumpmachine`
 if test "$machine" = mingw32 ; then
@@ -392,7 +392,7 @@ AC_CACHE_CHECK([/dev/urandom], [ac_cv_dev_urandom],
   [ac_cv_dev_urandom=no
    if test -r /dev/urandom; then ac_cv_dev_urandom=yes; fi])
 if test $ac_cv_dev_urandom = yes; then
-  AC_DEFINE([HAVE_DEV_URANDOM], 1, 
+  AC_DEFINE([HAVE_DEV_URANDOM], 1,
     [Define to 1 if you have /dev/urandom.])
   AC_DEFINE([DEV_URANDOM], 1,
     [Define to the random number source name.])

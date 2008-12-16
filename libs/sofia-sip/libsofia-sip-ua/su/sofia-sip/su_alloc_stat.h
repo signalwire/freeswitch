@@ -24,14 +24,14 @@
 
 #ifndef SU_ALLOC_STAT_H
 /** Defined when <sofia-sip/su_alloc_stat.h> has been included. */
-#define SU_ALLOC_STAT_H 
+#define SU_ALLOC_STAT_H
 
 /**@ingroup su_alloc
  *
  * @file sofia-sip/su_alloc_stat.h Home-based memory management statistics
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Apr  9 10:24:05 2002 ppessi
  */
 
@@ -48,10 +48,10 @@ SOFIA_BEGIN_DECLS
 typedef struct su_home_stat_t su_home_stat_t;
 
 SU_DLL void su_home_init_stats(su_home_t *h);
-SU_DLL void su_home_get_stats(su_home_t *, int include_clones, 
+SU_DLL void su_home_get_stats(su_home_t *, int include_clones,
 			      su_home_stat_t *stats, isize_t statssize);
 
-SU_DLL void su_home_stat_add(su_home_stat_t *total, 
+SU_DLL void su_home_stat_add(su_home_stat_t *total,
 			     su_home_stat_t const *hs);
 
 struct su_home_stat_t

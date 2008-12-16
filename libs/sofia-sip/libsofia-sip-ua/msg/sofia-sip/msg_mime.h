@@ -24,7 +24,7 @@
 
 #ifndef MSG_MIME_H
 /** Defined when <sofia-sip/msg_mime.h> has been included. */
-#define MSG_MIME_H 
+#define MSG_MIME_H
 
 /**@ingroup msg_mime
  * @file sofia-sip/msg_mime.h
@@ -34,7 +34,7 @@
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Fri Aug 16 19:18:26 EEST 2002 ppessi
- * 
+ *
  */
 
 #ifndef URL_H
@@ -58,7 +58,7 @@ typedef msg_accept_any_t            msg_accept_charset_t;
 typedef msg_accept_any_t      	    msg_accept_encoding_t;
 typedef msg_accept_any_t     	    msg_accept_language_t;
 
-typedef struct msg_content_disposition_s 
+typedef struct msg_content_disposition_s
                                     msg_content_disposition_t;
 typedef msg_list_t	      	    msg_content_encoding_t;
 typedef msg_generic_t               msg_content_id_t;
@@ -100,7 +100,7 @@ struct msg_accept_any_s
   char const         *aa_q;	    /**< Value of q parameter */
 };
 
-/**@ingroup msg_content_disposition 
+/**@ingroup msg_content_disposition
  * @brief Structure for @b Content-Disposition header.
  */
 struct msg_content_disposition_s
@@ -208,12 +208,12 @@ msg_multipart_t *msg_multipart_create(su_home_t *home,
 				      char const *content_type,
 				      void const *data,
 				      isize_t dlen);
-SOFIAPUBFUN 
-msg_multipart_t *msg_multipart_parse(su_home_t *home, 
+SOFIAPUBFUN
+msg_multipart_t *msg_multipart_parse(su_home_t *home,
 				     msg_content_type_t const *c,
 				     msg_payload_t *pl);
 SOFIAPUBFUN
-int msg_multipart_complete(su_home_t *home, 
+int msg_multipart_complete(su_home_t *home,
 			   msg_content_type_t *c,
 			   msg_multipart_t *mp);
 SOFIAPUBFUN msg_header_t *msg_multipart_serialize(msg_header_t **head0,

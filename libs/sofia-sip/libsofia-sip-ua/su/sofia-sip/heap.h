@@ -32,7 +32,7 @@
  *
  * This file contain template macros implementing @a heap in C. The @a heap
  * keeps its element in a known order and it can be used to implement, for
- * example, a prioritye queue or an ordered queue. 
+ * example, a prioritye queue or an ordered queue.
  *
  * The ordering within the heap is defined as follows:
  * - indexing starts from 1
@@ -53,14 +53,14 @@
  * to be removed. The template defines also a predicate used to check if the
  * heap is full, and a function used to resize the heap.
  *
- * The heap user must define four primitives: 
- * - less than comparison 
+ * The heap user must define four primitives:
+ * - less than comparison
  * - array setter
  * - heap array allocator
  * - empty element
  *
  * Please note that in order to remove an entry in the heap, the application
- * must know its index in the heap array. 
+ * must know its index in the heap array.
  *
  * The heap struct is declared with macro HEAP_DECLARE(). The prototypes for
  * heap functions are instantiated with macro HEAP_PROTOS(). The
@@ -68,7 +68,7 @@
  *
  * Example code can be found from <su/torture_heap.c> and
  * <sresolv/sres_cache.c>.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  * @NEW_1_12_7.
  */
@@ -77,9 +77,9 @@
 #define HEAP_MIN_SIZE 31
 
 /** Declare heap structure type.
- * 
+ *
  * The macro #HEAP_TYPE contains declaration of the heap structure.
- * 
+ *
  * @showinitializer
  */
 #define HEAP_TYPE struct { void *private; }
@@ -100,7 +100,7 @@
  * @param heaptype  type of heap
  * @param prefix    function prefix
  * @param type      type of entries
- * 
+ *
  * The declared functions will have scope @a scope (for example, @c static
  * or @c static inline). The declared function names will have prefix @a
  * prefix. The heap structure has type @a heaptype. The heap element type is
@@ -144,7 +144,7 @@ scope type prefix##get(heaptype, size_t)
  * Functions have scope @a scope, e.g., @c static @c inline.
  * The heap structure has type @a type.
  * The function names start with @a prefix, the field names start
- * with @a pr. The entry type is @a entrytype. 
+ * with @a pr. The entry type is @a entrytype.
 
  * The function (or macro) @a less compares two entries in heap. It gets two
  * arguments and it returns true if its left argument is less than its right

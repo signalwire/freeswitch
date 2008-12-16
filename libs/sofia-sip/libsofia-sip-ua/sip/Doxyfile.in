@@ -1,7 +1,7 @@
 PROJECT_NAME         = "sip"
 OUTPUT_DIRECTORY     = ../docs/html/sip
 
-INPUT 		     = @srcdir@/sofia-sip sofia-sip @srcdir@/sip.docs @srcdir@/sip_parser.docs @srcdir@ . 
+INPUT 		     = @srcdir@/sofia-sip sofia-sip @srcdir@/sip.docs @srcdir@/sip_parser.docs @srcdir@ .
 
 @INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf

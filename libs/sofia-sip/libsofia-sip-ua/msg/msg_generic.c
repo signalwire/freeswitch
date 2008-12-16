@@ -22,15 +22,15 @@
  *
  */
 
-/**@internal 
+/**@internal
  * @ingroup msg_parser
  * @file msg_generic.c
  * @brief Functions for generic headers
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Thu Jan 23 20:08:00 2003 ppessi
- * 
+ *
  */
 
 #include "config.h"
@@ -55,17 +55,17 @@
  *
  * The function msg_generic_d() parses a generic header structure.
  *
- * @param[in]     home memory home 
- * @param[in,out] h    header structure 
- * @param[in]     s    string to be parsed 
- * @param[in]     slen length of the string 
+ * @param[in]     home memory home
+ * @param[in,out] h    header structure
+ * @param[in]     s    string to be parsed
+ * @param[in]     slen length of the string
  *
- * @retval 0 when successful, 
+ * @retval 0 when successful,
  * @retval -1 upon an error.
  */
 issize_t msg_generic_d(su_home_t *home,
 		       msg_header_t *h,
-		       char *s, 
+		       char *s,
 		       isize_t slen)
 {
   h->sh_generic->g_string = s;
@@ -80,9 +80,9 @@ issize_t msg_generic_d(su_home_t *home,
  */
 issize_t msg_generic_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
-  msg_generic_t const *g = h->sh_generic;  
+  msg_generic_t const *g = h->sh_generic;
   size_t n = strlen(g->g_string);
-  
+
   if (bsiz > n)
     strcpy(b, g->g_string);
 
@@ -142,7 +142,7 @@ issize_t msg_numeric_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 /* ====================================================================== */
 /* Comma-separated list */
 
-/** @typedef struct msg_list_s msg_list_t; 
+/** @typedef struct msg_list_s msg_list_t;
  *
  * Type for token list headers.
  *
@@ -157,14 +157,14 @@ issize_t msg_list_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
   int compact = MSG_IS_COMPACT(flags);
   char *b0 = b, *end = b + bsiz;
-  
+
   MSG_COMMALIST_E(b, end, h->sh_list->k_items, compact);
   MSG_TERM_E(b, end);
 
   return b - b0;
 }
 
-/**@internal 
+/**@internal
  * Extra size of a msg_auth_t object.
  *
  * This function calculates extra size required by a msg_auth_t object.
@@ -182,14 +182,14 @@ isize_t msg_list_dup_xtra(msg_header_t const *h, isize_t offset)
 
 char *msg_list_dup_one(msg_header_t *dst,
 		       msg_header_t const *src,
-		       char *b, 
+		       char *b,
 		       isize_t xtra)
 {
   char *end = b + xtra;
   msg_param_t const ** items = (msg_param_t const **)&dst->sh_list->k_items;
 
   b = msg_params_dup(items, src->sh_list->k_items, b, xtra);
-    
+
   assert(b <= end); (void)end;
 
   return b;
@@ -200,8 +200,8 @@ char *msg_list_dup_one(msg_header_t *dst,
  * @retval 0 when successful
  * @retval -1 upon an error
  */
-int msg_list_append_items(su_home_t *home, 
-			  msg_list_t *k, 
+int msg_list_append_items(su_home_t *home,
+			  msg_list_t *k,
 			  msg_param_t const items[])
 {
   size_t i;

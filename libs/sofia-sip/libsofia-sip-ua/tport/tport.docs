@@ -100,7 +100,7 @@ order, for instance, if a data chunk is lost by the network and then
 retransmitted, application can receive it later than a data chunk that
 was sent after lost one but did not need any retransmissions.
 
-@subsection tp_magic Transport Magic 
+@subsection tp_magic Transport Magic
 
 Transport magic is a cookie, a piece of data specified by stack that can
 be associated with a transport (e.g., a Via header). The protocol stack
@@ -142,7 +142,7 @@ the request.
 
 @note While the reference counting has been implemented in the tport
 module, the transport objects are not destroyed by timers by default as
-all the protocol stacks do @b not properly handle the reference counting. 
+all the protocol stacks do @b not properly handle the reference counting.
 Timers are activated when the tag TPTAG_IDLE() is used.
 
 @subsection tp_pend Pending Requests
@@ -183,11 +183,11 @@ debugging protocols. There are environment variables that are used to
 activate message logging within @b tport module.
 <dl compact>
 <dt>@b #TPORT_LOG
-   <dd>if set, tport module prints out the message contents 
+   <dd>if set, tport module prints out the message contents
        after parsing
 <dt>@b #TPORT_DUMP
    <dd>contains dump file name - incoming data is written
-       dump file @e before parsing 
+       dump file @e before parsing
 <dt>@b #TPORT_DEBUG
    <dd>integer in range -1..9 controlling amount of
        debugging printout from @b tport module. See also #tport_log.

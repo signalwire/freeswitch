@@ -28,7 +28,7 @@
  * OS-Independent Socket Syncronization Interface.
  *
  * This looks like nth reincarnation of "reactor". It implements the
- * poll/select/WaitForMultipleObjects and message passing functionality. 
+ * poll/select/WaitForMultipleObjects and message passing functionality.
  * This is virtual implementation:
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -149,17 +149,17 @@ void su_port_set_system_preferences(char const *name)
   }
 #endif
 
-  if (create == NULL) 
+  if (create == NULL)
     create = su_default_port_create;
 
   if (!preferred_su_port_create ||
-      preferred_su_port_create == su_default_port_create) 
+      preferred_su_port_create == su_default_port_create)
     preferred_su_port_create = create;
 
   if (start == NULL)
     start = su_default_clone_start;
 
-  if (!preferred_su_clone_start || 
+  if (!preferred_su_clone_start ||
       preferred_su_clone_start == su_default_clone_start)
     preferred_su_clone_start = start;
 }
@@ -184,25 +184,25 @@ char const *su_port_name(su_port_t const *port)
  */
 
 /**@ingroup su_wait
- * 
+ *
  * @page su_clone_t Clone Objects
  *
  * The process may be divided into many tasks via cloning. Several tasks may
- * run in context of one thread, or each task may be run by its own thread. 
+ * run in context of one thread, or each task may be run by its own thread.
  * However, only a single thread can execute code within a task. There can
  * be a 1-to-N mapping from thread to tasks. Thus, software using tasks can
  * be executed by multiple threads in a multithreaded environment and by a
  * single thread in a singlethreaded environment.
- * 
+ *
  * The clones are useful for handling tasks that can be executed by a
  * separate threads, but which do not block excessively. When threads are
  * not available or they are not needed, clones can also be run in a
  * single-threaded mode. Running in single-threaded mode is especially
  * useful while debugging.
- * 
+ *
  * A clone task is created with function su_clone_start(). Each clone has
  * its own root object (su_root_t), which holds a context pointer
- * (su_root_magic_t *). The context object can be different from that of 
+ * (su_root_magic_t *). The context object can be different from that of
  * parent task.
  *
  * When a clone is started, the clone initialization function is called. The
@@ -211,7 +211,7 @@ char const *su_port_name(su_port_t const *port)
  * initialization is successful, the clone task reverts to run the event
  * loop and invoking the event callbacks until its parent stops it by
  * calling su_clone_wait() which invokes the deinit function. The clone task
- * is destroyed when the deinit function returns. 
+ * is destroyed when the deinit function returns.
  *
  * The public API consists of following functions:
  *    - su_clone_start()
@@ -219,7 +219,7 @@ char const *su_port_name(su_port_t const *port)
  *    - su_clone_wait()
  *    - su_clone_forget()
  *
- * @note 
+ * @note
  * There is only one event loop for each thread which can be shared by
  * multiple clone tasks. Therefore, the clone tasks can not explicitly run
  * or step the event loop, but they are limited to event callbacks. A clone
@@ -239,7 +239,7 @@ static void su_root_deinit_nothing(su_root_t *root, su_root_magic_t *magic)
  *
  * Allocate and initialize a sub-task. Depending on the su_root_threading()
  * settings, a separate thread may be created to execute the sub-task. The
- * sub-task is represented by clone handle to the rest of the application. 
+ * sub-task is represented by clone handle to the rest of the application.
  * The function su_clone_start() returns the clone handle in @a
  * return_clone. The clone handle is used to communicate with the newly
  * created clone task using messages.
@@ -255,14 +255,14 @@ static void su_root_deinit_nothing(su_root_t *root, su_root_magic_t *magic)
  * Messages can also be used to pass information between tasks or threads.
  *
  * In multi-threaded implementation, su_clone_start() launches a new thread,
- * and the initialization routine is executed by this newly created thread. 
+ * and the initialization routine is executed by this newly created thread.
  * The calling thread blocks until the initialization routine completes. If
  * the initialization routine returns #su_success (0), the sub-task is
  * considered to be created successfully. After the successful
  * initialization, the sub-task continues to execeute the function
  * su_root_run().
  *
- * In single-threaded implementations, just a new root object is created. 
+ * In single-threaded implementations, just a new root object is created.
  * The initialization routine is called directly from su_clone_start().
  *
  * If the initalization function @a init fails, the sub-task (either the
@@ -297,7 +297,7 @@ int su_clone_start(su_root_t *parent,
   if (deinit == NULL)
     deinit = su_root_deinit_nothing;
 
-    
+
   if (parent == NULL || parent->sur_threading) {
     if (preferred_su_clone_start == NULL)
       su_port_set_system_preferences(getenv("SU_PORT"));
@@ -314,7 +314,7 @@ int su_clone_start(su_root_t *parent,
 }
 
 /** Get reference to a clone task.
- * 
+ *
  * @param clone Clone pointer
  *
  * @return A reference to the task structure of the clone.
@@ -325,7 +325,7 @@ _su_task_r su_clone_task(su_clone_r clone)
 }
 
 /**Forget the clone.
- * 
+ *
  * Normally, the clone task executes until it is stopped.  If the parent
  * task does not need to stop the task, it can "forget" the clone.  The
  * clone exits independently of the parent task.
@@ -341,7 +341,7 @@ void su_clone_forget(su_clone_r rclone)
  *
  * This can used only if clone task has sent no report messages (messages
  * with delivery report sent back to clone).
- * 
+ *
  * @deprecated. Use su_clone_wait().
  */
 void su_clone_stop(su_clone_r rclone)

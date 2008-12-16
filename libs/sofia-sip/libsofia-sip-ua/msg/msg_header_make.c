@@ -61,14 +61,14 @@
 #include <assert.h>
 
 /** Make a header from a value string. */
-msg_header_t *msg_header_make(su_home_t *home, 
+msg_header_t *msg_header_make(su_home_t *home,
 			      msg_hclass_t *hc,
 			      char const *s)
 {
   size_t xtra;
   msg_header_t *h;
   int normal = hc->hc_name ||
-    (hc->hc_hash != msg_payload_hash && 
+    (hc->hc_hash != msg_payload_hash &&
      hc->hc_hash != msg_separator_hash &&
      hc->hc_hash != msg_error_hash);
 
@@ -76,7 +76,7 @@ msg_header_t *msg_header_make(su_home_t *home,
     return NULL;
 
   /* For normal headers, strip LWS from both ends */
-  if (normal) 
+  if (normal)
     skip_lws(&s);
   xtra = strlen(s);
   if (normal)
@@ -91,7 +91,7 @@ msg_header_t *msg_header_make(su_home_t *home,
     strncpy(b, s, xtra)[xtra] = 0;
 
     if (hc->hc_parse(home, h, b, xtra) == -1) {
-      /* Note: parsing function is responsible to free 
+      /* Note: parsing function is responsible to free
 	 everything it has allocated (like parameter lists) */
       /* XXX - except header structures */
       su_free(home, h), h = NULL;
@@ -102,13 +102,13 @@ msg_header_t *msg_header_make(su_home_t *home,
 }
 
 /** Make a MSG header with formatting provided. */
-msg_header_t *msg_header_vformat(su_home_t *home, 
+msg_header_t *msg_header_vformat(su_home_t *home,
 				msg_hclass_t *hc,
 				char const *fmt,
 				va_list ap)
 {
   msg_header_t *h;
-  
+
   int n;
   size_t xtra = 64;		/* reasonable default */
 
@@ -121,7 +121,7 @@ msg_header_t *msg_header_vformat(su_home_t *home,
     fmt = va_arg(ap, char const *);
     return msg_header_make(home, hc, fmt);
   }
-  
+
   if (!(h = msg_header_alloc(home, hc, xtra)))
     return NULL;
 
@@ -131,7 +131,7 @@ msg_header_t *msg_header_vformat(su_home_t *home,
     va_copy(aq, ap);
     n = vsnprintf(MSG_HEADER_DATA(h), xtra, fmt, aq);
     va_end(aq);
-    
+
     if (n >= 0 && (size_t)n < xtra)
       break;
 
@@ -148,13 +148,13 @@ msg_header_t *msg_header_vformat(su_home_t *home,
 
     if (xtra > INT_MAX)
       xtra = INT_MAX;
-    
+
     if (!(h = msg_header_alloc(home, hc, xtra)))
       return NULL;
   }
-  
+
   if (hc->hc_parse(home, h, MSG_HEADER_DATA(h), (size_t)n) == -1) {
-    /* Note: parsing function is responsible to free 
+    /* Note: parsing function is responsible to free
        everything it has allocated (like parameter lists) */
     su_free(home, h), h = NULL;
   }
@@ -162,7 +162,7 @@ msg_header_t *msg_header_vformat(su_home_t *home,
   return h;
 }
 
-msg_header_t *msg_header_format(su_home_t *home, 
+msg_header_t *msg_header_format(su_home_t *home,
 				msg_hclass_t *hc,
 				char const *fmt,
 				...)

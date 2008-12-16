@@ -85,7 +85,7 @@ int test_sup_indices(su_port_t const *port)
 
   if (n != port->sup_n_waits)
     return 0;
-  
+
   n = 0;
 
   for (i = 1; i <= N; i++) {
@@ -108,19 +108,19 @@ int test_sup_indices(su_port_t const *port)
   return n == port->sup_size_waits;
 }
 
-struct su_root_magic_s 
+struct su_root_magic_s
 {
   int error, *sockets, *regs, *wakeups;
 };
 
-static int callback(su_root_magic_t *magic, 
+static int callback(su_root_magic_t *magic,
 		    su_wait_t *w,
 		    su_wakeup_arg_t *arg)
 {
   intptr_t i = (intptr_t)arg;
 
   assert(magic);
- 
+
   if (i <= 0 || i > I)
     return ++magic->error;
 
@@ -208,7 +208,7 @@ int test_register(void)
 
     if (bind(sockets[i], &su->su_sa, sizeof su->su_sin) != 0)
       perror("bind"), assert(0);
-    
+
     TEST(su_wait_create(wait + i, sockets[i], SU_WAIT_IN), 0);
 
     reg[i] = su_port_register(port, root, wait + i, callback, (void*)i, 0);
@@ -285,7 +285,7 @@ int test_register(void)
 
 #if HAVE_EPOLL
   /* With epoll we do not bother to prioritize the wait list */
-  if (port->sup_epoll == -1) 
+  if (port->sup_epoll == -1)
 #endif
     TEST(port->sup_pri_offset, prioritized);
 

@@ -8,39 +8,39 @@ This document contains automatically generated reference documentation
 for Sofia-SIP components. Some introductory material and
 pointers to the example code are also included.
 
-For a list of module specific pages, see @ref subdirs 
+For a list of module specific pages, see @ref subdirs
 "source tree structure" or direct links to submodules:<br>
-<a href="nua/index.html">nua</a> 
-<a href="su/index.html">su</a> 
-<a href="features/index.html">features</a> 
-<a href="soa/index.html">soa</a> 
-<a href="sdp/index.html">sdp</a> 
-<a href="nta/index.html">nta</a> 
-<a href="tport/index.html">tport</a> 
-<a href="sresolv/index.html">sresolv</a> 
-<a href="sip/index.html">sip</a> 
-<a href="msg/index.html">msg</a> 
-<a href="url/index.html">url</a> 
-<a href="stun/index.html">stun</a> 
-<a href="iptsec/index.html">iptsec</a> 
-<a href="nea/index.html">nea</a> 
-<a href="nth/index.html">nth</a> 
-<a href="http/index.html">http</a> 
-<a href="bnf/index.html">bnf</a> 
-<a href="ipt/index.html">ipt</a> 
+<a href="nua/index.html">nua</a>
+<a href="su/index.html">su</a>
+<a href="features/index.html">features</a>
+<a href="soa/index.html">soa</a>
+<a href="sdp/index.html">sdp</a>
+<a href="nta/index.html">nta</a>
+<a href="tport/index.html">tport</a>
+<a href="sresolv/index.html">sresolv</a>
+<a href="sip/index.html">sip</a>
+<a href="msg/index.html">msg</a>
+<a href="url/index.html">url</a>
+<a href="stun/index.html">stun</a>
+<a href="iptsec/index.html">iptsec</a>
+<a href="nea/index.html">nea</a>
+<a href="nth/index.html">nth</a>
+<a href="http/index.html">http</a>
+<a href="bnf/index.html">bnf</a>
+<a href="ipt/index.html">ipt</a>
 
 @section who Contact Information
 
-You can download latest Sofia SIP from the project 
-<a href="http://sofia-sip.sf.net">home page</a> at 
+You can download latest Sofia SIP from the project
+<a href="http://sofia-sip.sf.net">home page</a> at
 <a href="sf.net">Sourceforge.net</a>.
 
 Please contact us if you have questions regarding this software:
 
-<ul> 
+<ul>
 <li>Pekka Pessi <Pekka.Pessi@nokia.com></li>
 <li>Kai Vehmanen <Kai.Vehmanen@nokia.com></li>
-</ul> 
+</ul>
 
 Or post to the Sofia-SIP mailing list:
 
@@ -68,7 +68,7 @@ Common runtime library:
 SIP Signaling:
  - <a href="nua/index.html">"nua" - SIP User Agent library</a>
  - <a href="nea/index.html">"nea" - SIP Event API</a>
- - <a href="iptsec/index.html">"iptsec" - 
+ - <a href="iptsec/index.html">"iptsec" -
     Digest authentication for HTTP and SIP</a>
  - <a href="nta/index.html">"nta" - SIP transaction engine</a>
  - <a href="tport/index.html">"tport" - Message transport</a>
@@ -103,7 +103,7 @@ This document gives general guidelines on generic C style and code
 formatting within Sofia-SIP. The guidelines include identifier naming
 conventions, indenting convention, and tool usage directions.
 
-Please note that C style is always a matter of taste. 
+Please note that C style is always a matter of taste.
 
 @section naming Naming Conventions
 
@@ -177,7 +177,7 @@ The default indentation can be achieved with GNU indent with options
 -saw -nsc -nsob -nss
 @endcode
 
-Loops without condition use @c for @c (;;) instead of @c while @c (1). 
+Loops without condition use @c for @c (;;) instead of @c while @c (1).
 
 @code
   for (;;) {
@@ -220,7 +220,7 @@ separate C files and isolated from the rest of the software with a
 wrapper interface.
 
 SU module handles abstraction to OS specific functionality such as
-memory management, sockets, threads and time functions. 
+memory management, sockets, threads and time functions.
 
 @subsection ansi_99 ANSI C 99 features
 
@@ -322,7 +322,7 @@ struct foo {
 
 If compiler decides to pack this structure, this code generates a
 structure that has @a bar and @a foo in the first seven bits, and then
-@a something beginning from the next 32 bit boundary. 
+@a something beginning from the next 32 bit boundary.
 
 One problem arises when using packed bit-fields: on ARM it is
 generally not possible to access a 32 bit field that does not start from
@@ -348,9 +348,9 @@ binary protocols), don't use them.
 @section file_organization File and Directory Structure
 
 A Sofia-SIP library module can be defined as a subdirectory under the
-libsofia-sip-ua directory hierarchy that contains a file \<modulename\>.docs 
-(where the \<modulename\> of course referes to the actual name of 
-the module). 
+libsofia-sip-ua directory hierarchy that contains a file \<modulename\>.docs
+(where the \<modulename\> of course referes to the actual name of
+the module).
 
 In case you like to start developing a new module, please
 contact Sofia-SIP development team so that they can help you to set up
@@ -364,16 +364,16 @@ An overview of the contents of a module directory:
     Contains any pictures/images
     that are needed by the module documentation. The
     file formats to use are GIF (for html pages) and
-    EPS (for latex). If some program (e.g. MS Visio) is 
+    EPS (for latex). If some program (e.g. MS Visio) is
     used to create the pictures, also the original
     files must be stored here.\n
     (Note that old modules may have "images" subdirectory instead of
     "pictures")
   - files Makefile.am \n
     See section @ref build "dealing with GNU Autotools" below.
-  - (optionally) source code file(s) of the module and module tests. 
+  - (optionally) source code file(s) of the module and module tests.
     The source code file(s) can also be located in subdirectories if necesary.
-    
+
 
 @section oo_with_c Writing Object-Oriented Code
 
@@ -423,17 +423,17 @@ header-specific data, like header name.
 
 @subsection oo_derived Inheritance and Derived Objects
 
-Inheritance is a object-oriented practice that has limited use in Sofia. 
+Inheritance is a object-oriented practice that has limited use in Sofia.
 Most common example of inheritance is use of #su_home_t. Many objects are
 derived from #su_home_t, which means that they can use the various
-home-based memory management functions from <su_alloc.h>. 
+home-based memory management functions from <su_alloc.h>.
 
 In this sence, inheritance means that a pointer to a derived object can be
 casted as a pointer to a base object. In other words, the derived object
 must have the base object at the beginning of its memory area:
 
 @code
-struct derived 
+struct derived
 {
   struct base base[1];
   int         extra;
@@ -452,19 +452,19 @@ The third alternative works because base was used as a 1-element array.
 
 @subsection oo_templates Templates
 
-There are a few template types implemented as macros in Sofia libraries. 
+There are a few template types implemented as macros in Sofia libraries.
 They include hash table, defined in <sofia-sip/htable.h>, which can be used
 to define hash tables types and accessor functions for different object, and
 red-black tree, defined in <sofia-sip/rbtree.h>.
 
 @section memory Memory Management
 
-The home-based memory management is useful when a lot of memory blocks are 
-allocated for given task. The allocations are done via the memory home, 
-which keeps a reference to each allocated memory block. When the memory 
-home is then freed, it will free all memory blocks to which it has 
-reference. This simplifies application logic because application code does 
-not need to keep track of the allocated memory and free every allocated block 
+The home-based memory management is useful when a lot of memory blocks are
+allocated for given task. The allocations are done via the memory home,
+which keeps a reference to each allocated memory block. When the memory
+home is then freed, it will free all memory blocks to which it has
+reference. This simplifies application logic because application code does
+not need to keep track of the allocated memory and free every allocated block
 separately.
 
 See documentation of <sofia-sip/su_alloc.h> and @ref su_alloc "memory managment tutorial"
@@ -502,8 +502,8 @@ A typical example of use of a memory home is to have a memory home structure
 @subsection combining Combining allocations
 
 Another place where home-based memory management makes programmers
-life easier is case where a sub-procedure makes multiple memory allocations 
-and, in case the sub-procedure fails, all the allocations must be released 
+life easier is case where a sub-procedure makes multiple memory allocations
+and, in case the sub-procedure fails, all the allocations must be released
 and, in case the sub-procedure is succesfull, all allocations must be
 controlled by upper level memory management.
 
@@ -522,7 +522,7 @@ controlled by upper level memory management.
     }
     /* destroy temporary memory home (and registered allocations) */
     /* Note than in case processing was succesfull the memory     */
-    /* registrations were already moved to upper level home.      */ 
+    /* registrations were already moved to upper level home.      */
     su_home_deinit(temphome);
 
     /* return ok/not-ok */
@@ -542,9 +542,9 @@ Here are some ideas of what you should test:
   - valid args
   - not valid args
 - Aim for 100% line coverage\n
-  (If there is a line of code that you have not tested, you don't know 
+  (If there is a line of code that you have not tested, you don't know
   if its working.) \n
-  For selected part of code you should also aim for 
+  For selected part of code you should also aim for
   100% branch/path coverage.\n
   But be anyway reasonable with these because in practise complete
   coverage is next to impossible to achive (so 80% is ok in practise).
@@ -573,13 +573,13 @@ test_foo_LDADD = -L. -lmy
 
 Each test program should either return zero for success or a non-zero
 error code in its main function. Now when you run "make check",
-@b my_test_foo and @b my_test_bar will be built and then run. 
+@b my_test_foo and @b my_test_bar will be built and then run.
 Make will print a
-summary of how the tests went. As these tests are run from the build 
-system, the tests must be non-interactive (no questions asked) and not 
+summary of how the tests went. As these tests are run from the build
+system, the tests must be non-interactive (no questions asked) and not
 rely on any files that are not in version control system.
 
-Sofia SIP's top-level makefile contains a recursive check target, so 
+Sofia SIP's top-level makefile contains a recursive check target, so
 you can use "cd sofia-sip ; make check" to run all the existing tests
 with a single command.
 
@@ -594,7 +594,7 @@ A good introduction to these tools is available at
 <a href="http://developer.gnome.org/doc/books/WGA/generating-makefiles.html">
 developer.gnome.org</a>. <a href="http://sources.redhat.com/autobook">Autobook</a>
 provides more detailed documentation for autoconf and automake.
-The <a href="http://www.gnu.org/manual/make/">GNU make manual</a> 
+The <a href="http://www.gnu.org/manual/make/">GNU make manual</a>
 is also a good source of information.
 
 @subsection autogen_sh autogen.sh
@@ -629,14 +629,14 @@ Contact Sofia-SIP development team, if you need changes to these files.
 
 @subsection aclocal_m4 aclocal.m4
 
-The aclocal.m4 contains the definitions of the autoconf macros used in 
+The aclocal.m4 contains the definitions of the autoconf macros used in
 @b configure.ac.
 
 This file is generated by aclocal command.
 
 @subsection Makefile_am Makefile.am
 
-Makefile.am is where you define what programs and libraries should 
+Makefile.am is where you define what programs and libraries should
 be built, and also what source files are needed to create them.
 When you run automake, it creates the file Makefile.in.
 
@@ -644,12 +644,12 @@ This file is created by the developer of the module.
 
 @subsection configure configure
 
-When you run configure script, it performs all the checks defined in 
-@b configure.ac and then replaces all @b xxx.in files with equivalent 
-@b xxx files. All @c @@FOO@@ variables in the source @b *.in files are 
+When you run configure script, it performs all the checks defined in
+@b configure.ac and then replaces all @b xxx.in files with equivalent
+@b xxx files. All @c @@FOO@@ variables in the source @b *.in files are
 replaced with values found during the configuration process. For instance
-the variable @c @@srcdir@@ in @b Makefile.in is replaced in @b Makefile 
-with the source directory path (useful when compiling outside the main 
+the variable @c @@srcdir@@ in @b Makefile.in is replaced in @b Makefile
+with the source directory path (useful when compiling outside the main
 source tree).
 
 This file is generated by autoconf command.
@@ -658,14 +658,14 @@ This file is generated by autoconf command.
 
 This script stores the last parameters given to configre command.
 If necessary you can rerun the last given configure script (with given
-parameters) by using command "./config.status -r" or 
+parameters) by using command "./config.status -r" or
 "./config.status --recheck".
 
 This file is generated by configure script.
 
 @subsection config_cache config.cache
 
-This file contains results of the various checks that configure script 
+This file contains results of the various checks that configure script
 performed. In case the configure script failed, you might try to
 delete this file and run the configure script again.
 
@@ -673,8 +673,8 @@ This file is generated by configure script.
 
 @subsection Makefile Makefile
 
-The @b Makefile contains the actual rules how to build the target 
-libraries and program. It is used by the @c make program. @b Makefile 
+The @b Makefile contains the actual rules how to build the target
+libraries and program. It is used by the @c make program. @b Makefile
 is generated from @b Makefile.in when you run @c autoconf command.
 Ensure that "make dist" and "make install" targets work.
 
@@ -726,7 +726,7 @@ The defined debug output levels are:
 - 7 SU_DEBUG_7() - media protocol actions (incoming packets, ...)
 - 9 SU_DEBUG_9() - entering/exiting functions, very verbatim progress
 
-In addition to the macros mentioned above, there is also functions for 
+In addition to the macros mentioned above, there is also functions for
 printing logging messages:
 - su_llog(), su_vllog()
 - su_perror(), su_perror2()

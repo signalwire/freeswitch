@@ -25,14 +25,14 @@
 /**@file sofia-sip/tstdef.h Macros for unit tests
  *
  * The macros defined here can be used by unit test programs. When a test
- * fails, the TEST macros print the offending file name and line number. 
+ * fails, the TEST macros print the offending file name and line number.
  * They use format that is accepted by Emacs and other fine editors so you
  * can directly go to the source code of the failed test with next-error.
- * 
- * @note There is no protection agains multiple inclusion. 
+ *
+ * @note There is no protection agains multiple inclusion.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Wed Aug 22 13:53:24 2001 ppessi
  *
  * @par Example Program
@@ -45,50 +45,50 @@
  *
  * You should typedef longlong to integer type at least 64 bit wide before
  * including <sofia-sip/tstdef.h>, too.
- * 
+ *
  * As an example, we provide a test program making sure that inet_ntop() and
  * inet_pton() behave as expected and that we can create UDP/IPv4 sockets
  * with @b su library:
  *
  * @code
  * #include "config.h"
- * 
+ *
  * #include <stdio.h>
  * #include <limits.h>
- * 
+ *
  * #include <sofia-sip/su.h>
- * 
+ *
  * #define TSTFLAGS tstflags
  *
  * #include <stdlib.h>
  * #include <sofia-sip/tstdef.h>
  *
  * static int tstflags = 0;
- * 
+ *
  * void usage(void)
  * {
  *   fprintf(stderr, "usage: %s [-v|--verbatim]\n", name);
  *   exit(2);
  * }
- * 
+ *
  * static int socket_test(void);
- * 
+ *
  * int main(int argc, char *argv[])
  * {
  *   int retval = 0, i;
- * 
+ *
  *   for (i = 1; argv[i]; i++) {
  *     if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--verbatim") == 0)
  *       tstflags |= tst_verbatim;
  *     else
  *       usage();
  *   }
- * 
+ *
  *   retval |= socket_test(); fflush(stdout);
- * 
+ *
  *   return retval;
  * }
- * 
+ *
  * double max_bandwidth()
  *
  * int socket_test(void)
@@ -99,19 +99,19 @@
  *   unsigned long addr;
  *
  *   BEGIN();
- * 
+ *
  *   // Check inet_ntop() return value (Tests equality of integral values)
  *   TEST(inet_ntop(AF_INET, &localhost, buf, sizeof buf), buf);
- * 
+ *
  *   // Check inet_ntop() result (Tests equality of strings)
  *   TEST_S(buf, "127.0.0.1");
- * 
+ *
  *   // Check inet_pton() argument validation (Tests equality of ints)
  *   TEST(inet_pton(0, buf, &addr), -1);
- * 
+ *
  *   // Check inet_pton() return value (Tests for true value (non-zero))
  *   TEST_1(inet_pton(AF_INET, buf, &addr) > 0);
- * 
+ *
  *   // Check inet_pton() result (Tests equality of memory areas)
  *   TEST_M(&addr, &localhost, sizeof(addr));
  *
@@ -158,7 +158,7 @@ enum {
 /** End a test function. @HIDE */
 #define END() (void) tstdef_dummy; } END_(TSTFLAGS)
 /**Test that @a suite returns a nonzero value.
- * @deprecated Use TEST_1() 
+ * @deprecated Use TEST_1()
  * @HIDE */
 #define TEST0(suite) TEST_1_(TSTFLAGS, suite)
 /** Test that @a suite returns a nonzero value. @HIDE */

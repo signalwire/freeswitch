@@ -17,7 +17,7 @@
 	* sdp_print.c (sdp_printing_error): Fixed return
 	for success to be NULL as defined in function
 	documentation.
-	
+
 2005-09-29  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
   * Added SDPTAG_TYPEDEF().

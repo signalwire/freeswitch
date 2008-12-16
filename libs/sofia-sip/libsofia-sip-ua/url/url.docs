@@ -3,7 +3,7 @@
 @section url_meta Module Meta Information
 
 The Sofia @b url module contains macros and functions for using URL
-datatype #url_t, parsing and printing URLs. 
+datatype #url_t, parsing and printing URLs.
 
 @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
 
@@ -13,11 +13,11 @@ datatype #url_t, parsing and printing URLs.
 
 @section url_syntax Using URL Library
 
-The URL library provides URL datatype and helper functions related to it. 
+The URL library provides URL datatype and helper functions related to it.
 There is URL parser, which separates the URL components to the #url_t
 structure.
 
-@note 
+@note
 Please note that we use terms URL and URI interchangeable.
 
 The formal URI syntax is defined in the @RFC3986.
@@ -39,14 +39,14 @@ as follows: <b> : @ / ; ? & = + </b>and<b> $</b>.
 The URL library understands two alternative URL syntaxes. First, the
 basic syntax used by, e.g., @b ftp:, @b http: and @b rtsp: URLs:
 
-<i>scheme</i> ":" ["//" [ <i>user</i> [":" <i>password</i> ] "@"] 
-<i>host</i> [":" <i>port</i> ] ] 
+<i>scheme</i> ":" ["//" [ <i>user</i> [":" <i>password</i> ] "@"]
+<i>host</i> [":" <i>port</i> ] ]
       ["/" <i>path</i> ] ["?" <i>query</i> ] ["#" <i>fragment</i> ]
 
 Alternatively, the syntax used by @b mailto:, @b sip:, @b im:, @b tel,
 and @b pres: URLs:
 
-<i>scheme</i> ":" [ [ <i>user</i> [":" <i>password</i> ] "@"] 
+<i>scheme</i> ":" [ [ <i>user</i> [":" <i>password</i> ] "@"]
 <i>host</i> [":" <i>port</i> ] ] [";" <i>params</i> ] ["?" <i>query</i> ]
 ["#" <i>fragment</i> ]
 
@@ -80,7 +80,7 @@ the components are NUL-terminated, canonized and assigned to the structure
 as follows:
 @code
  url_type = url_sip
- url_root = 0 
+ url_root = 0
  url_scheme = "sip"
  url_user = "joe.user"
  url_password = NULL
@@ -113,7 +113,7 @@ url_t *url_hdup(su_home_t *h, url_t const *src);
 int url_sanitize(url_t *u);
 char const *url_scheme(enum url_type_e type);
 
-#define URL_INIT_AS(type) 
+#define URL_INIT_AS(type)
 void url_init(url_t *url, enum url_type_e type);
 
 int url_cmp(url_t const *a, url_t const *b);
@@ -138,7 +138,7 @@ There are a few function and macros helping resolving URLs:
 char const *url_port_default(enum url_type_e url_type);
 char const *url_tport_default(enum url_type_e url_type);
 char const *url_port(url_t const *u);
-#define URL_PORT(u) 
+#define URL_PORT(u)
 @endcode
 
 In addition to the basic URL structure, #url_t, the library interface
@@ -149,13 +149,13 @@ of parsed URLs as function arguments:
 #define URL_IS_STRING(u) ((u) && *((url_string_t*)(u))->us_str != 0)
 int url_string_p(url_string_t const * url);
 int url_is_string(url_string_t const * url);
-#define URL_STRING_MAKE(s) 
+#define URL_STRING_MAKE(s)
 @endcode
 
 There are a macros for printf()-like formatting of URLs:
 @code
 #define URL_PRINT_FORMAT
-#define URL_PRINT_ARGS(u) 
+#define URL_PRINT_ARGS(u)
 @endcode
 
 These functions calculate MD5 digest of URL or contribute contents of the
@@ -165,7 +165,7 @@ void url_update(struct su_md5_t *md5, url_t const *url);
 void url_digest(void *hash, int hsize, url_t const *, char const *key);
 @endcode
 
-SIP or SIPS URIs have some parameters that control transport of the request. 
+SIP or SIPS URIs have some parameters that control transport of the request.
 In some cases, they should be detected and removed:
 @code
 int url_have_transport(url_t const *u);
@@ -181,7 +181,7 @@ issize_t url_e(char buffer[], isize_t n, url_t const *url);
 #define URL_E(buf, end, url)
 isize_t url_xtra(url_t const * url);
 issize_t url_dup(char *, isize_t , url_t *dst, url_t const *src);
-#define URL_DUP(buf, end, dst, src) 
+#define URL_DUP(buf, end, dst, src)
 @endcode
 
 */

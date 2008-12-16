@@ -24,9 +24,9 @@
 
 /**@file test_nth.c
  * @brief Tests for nth module
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Oct 22 20:52:37 2002 ppessi
  */
 
@@ -85,7 +85,7 @@ static int init_server(tester_t *t);
 static int test_requests(tester_t *t);
 static int init_engine(tester_t *t);
 
-struct site 
+struct site
 {
   site_t       *s_next, *s_parent;
   tester_t     *s_tester;
@@ -125,9 +125,9 @@ struct tester
   site_t       *t_master;
 };
 
-static int test_site(site_t *t, 
+static int test_site(site_t *t,
 		     nth_site_t *server,
-		     nth_request_t *req, 
+		     nth_request_t *req,
 		     http_t const *http,
 		     char const *path);
 
@@ -155,15 +155,15 @@ static site_t *site_create(tester_t *t, site_t *parent,
 
   ta_start(ta, tag, value);
 
-  s->s_tags = tl_adup(t->t_home, ta_args(ta)); 
+  s->s_tags = tl_adup(t->t_home, ta_args(ta));
   if (s->s_tags)
     s->s_ns = nth_site_create(pns, test_site, s,
-			      (url_string_t *)s->s_url, 
+			      (url_string_t *)s->s_url,
 			      NTHTAG_ROOT(t->t_root),
 			      ta_tags(ta));
 
   ta_end(ta);
-  
+
   if (s->s_ns == NULL)
     return NULL;
 
@@ -179,14 +179,14 @@ static int init_test(tester_t *t)
   BEGIN();
 
   t->t_root = su_root_create(t); TEST_1(t->t_root);
-  t->t_mclass = msg_mclass_clone(http_default_mclass(), 0, 0); 
+  t->t_mclass = msg_mclass_clone(http_default_mclass(), 0, 0);
   TEST_1(t->t_mclass);
 
   t->t_addr->su_len = (sizeof t->t_addr->su_sin);
   s = su_socket(t->t_addr->su_family = AF_INET, SOCK_STREAM, 0);
   TEST_1(s != INVALID_SOCKET);
   TEST_1(su_inet_pton(AF_INET, "127.0.0.1", &t->t_addr->su_sin.sin_addr) >= 0);
-  TEST_1(bind(s, &t->t_addr->su_sa, 
+  TEST_1(bind(s, &t->t_addr->su_sa,
 	      t->t_addrlen = (sizeof t->t_addr->su_sin)) != -1);
   TEST_1(getsockname(s, &t->t_addr->su_sa, &t->t_addrlen) != -1);
   TEST_1(t->t_addr->su_port != 0);
@@ -227,7 +227,7 @@ static int test_nth_client_api(tester_t *t)
 
   BEGIN();
 
-  s = nth_engine_version(); 
+  s = nth_engine_version();
   TEST_1(s); TEST_1(strlen(s)); TEST_S(s, "sofia-http-client/" NTH_CLIENT_VERSION);
 
   TEST_1(nth_engine_create(NULL, TAG_END()) == NULL);
@@ -235,9 +235,9 @@ static int test_nth_client_api(tester_t *t)
   TEST_VOID(nth_engine_destroy(NULL));
   TEST_1(nth_engine_get_params(NULL, TAG_END()) == -1);
   TEST_1(nth_engine_set_params(NULL, TAG_END()) == -1);
-  TEST_1(!nth_client_tcreate(NULL, NULL, NULL, 
-			     HTTP_METHOD_OPTIONS, 
-			     URL_STRING_MAKE("*"), 
+  TEST_1(!nth_client_tcreate(NULL, NULL, NULL,
+			     HTTP_METHOD_OPTIONS,
+			     URL_STRING_MAKE("*"),
 			     TAG_END()));
   TEST(nth_client_status(NULL), 400);
   TEST(nth_client_method(NULL), http_method_invalid);
@@ -247,7 +247,7 @@ static int test_nth_client_api(tester_t *t)
   TEST_P(nth_client_response(NULL), NULL);
   TEST_VOID(nth_client_destroy(NULL));
 
-  t->t_engine = nth_engine_create(t->t_root, 
+  t->t_engine = nth_engine_create(t->t_root,
 				  NTHTAG_ERROR_MSG(2),
 				  NTHTAG_MCLASS(t->t_mclass),
 				  NTHTAG_MFLAGS(MSG_DO_CANONIC|MSG_DO_COMPACT),
@@ -255,7 +255,7 @@ static int test_nth_client_api(tester_t *t)
 				  NTHTAG_PROXY("http://localhost:8888"),
 				  TAG_END());
   TEST_1(t->t_engine);
-  
+
   {
     int error_msg = -1;
     msg_mclass_t const *mclass = (void *)-1;
@@ -266,14 +266,14 @@ static int test_nth_client_api(tester_t *t)
 
     char *proxy_str;
 
-    TEST(nth_engine_get_params(t->t_engine, 
+    TEST(nth_engine_get_params(t->t_engine,
 			       NTHTAG_ERROR_MSG_REF(error_msg),
 			       NTHTAG_MCLASS_REF(mclass),
 			       NTHTAG_MFLAGS_REF(mflags),
 			       NTHTAG_EXPIRES_REF(expires),
 			       NTHTAG_STREAMING_REF(streaming),
 			       NTHTAG_PROXY_REF(proxy),
-			       TAG_END()), 
+			       TAG_END()),
 	 6);
 
     TEST(error_msg, 1);
@@ -287,14 +287,14 @@ static int test_nth_client_api(tester_t *t)
 
     proxy = URL_STRING_MAKE("http://127.0.0.1:80");
 
-    TEST(nth_engine_set_params(t->t_engine, 
+    TEST(nth_engine_set_params(t->t_engine,
 			       NTHTAG_ERROR_MSG(0),
 			       NTHTAG_MCLASS(http_default_mclass()),
 			       NTHTAG_MFLAGS(0),
 			       NTHTAG_EXPIRES(10000),
 			       NTHTAG_STREAMING(2),
 			       NTHTAG_PROXY(proxy),
-			       TAG_END()), 
+			       TAG_END()),
 	 6);
 
     error_msg = -1;
@@ -304,14 +304,14 @@ static int test_nth_client_api(tester_t *t)
     streaming = -1;
     proxy = (void *)-1;
 
-    TEST(nth_engine_get_params(t->t_engine, 
+    TEST(nth_engine_get_params(t->t_engine,
 			       NTHTAG_ERROR_MSG_REF(error_msg),
 			       NTHTAG_MCLASS_REF(mclass),
 			       NTHTAG_MFLAGS_REF(mflags),
 			       NTHTAG_EXPIRES_REF(expires),
 			       NTHTAG_STREAMING_REF(streaming),
 			       NTHTAG_PROXY_REF(proxy),
-			       TAG_END()), 
+			       TAG_END()),
 	 6);
 
     TEST(error_msg, 0);
@@ -319,13 +319,13 @@ static int test_nth_client_api(tester_t *t)
     TEST(mflags, 0);
     TEST(expires, 10000);
     TEST(streaming, 1);
-    TEST_1(proxy != NULL); 
+    TEST_1(proxy != NULL);
     TEST_1(proxy_str = url_as_string(t->t_home, proxy->us_url));
     TEST_S(proxy_str, "http://127.0.0.1:80");
   }
 
   TEST_1(nth_engine_get_stats(NULL, TAG_END()) == -1);
-  
+
   {
     msg_t *msg;
     http_t *http;
@@ -349,9 +349,9 @@ static int test_nth_client_api(tester_t *t)
   END();
 }
 
-static int site_check_all(site_t *t, 
+static int site_check_all(site_t *t,
 			  nth_site_t *server,
-			  nth_request_t *req, 
+			  nth_request_t *req,
 			  http_t const *http,
 			  char const *path);
 
@@ -360,12 +360,12 @@ static int test_nth_server_api(tester_t *t)
 {
   char const *v;
   site_t s[1];
-  
+
   BEGIN();
 
   memset(s, 0, sizeof s);
 
-  v = nth_site_server_version(); 
+  v = nth_site_server_version();
   TEST_1(v); TEST_1(strlen(v)); TEST_S(v, "nth/" NTH_SERVER_VERSION);
 
   /* Fails because no parent site, no root */
@@ -374,8 +374,8 @@ static int test_nth_server_api(tester_t *t)
 			  TAG_END()));
 
   /* Fails because url specifies both host and path */
-  TEST_1(!nth_site_create(NULL, site_check_all, s, 
-			  URL_STRING_MAKE("http://127.0.0.1:8888/foo/"), 
+  TEST_1(!nth_site_create(NULL, site_check_all, s,
+			  URL_STRING_MAKE("http://127.0.0.1:8888/foo/"),
 			  NTHTAG_ROOT(t->t_root), TAG_END()));
 
   TEST_VOID(nth_site_destroy(NULL));
@@ -393,9 +393,9 @@ static int test_nth_server_api(tester_t *t)
   END();
 }
 
-static int test_site(site_t *s, 
+static int test_site(site_t *s,
 		     nth_site_t *ns,
-		     nth_request_t *req, 
+		     nth_request_t *req,
 		     http_t const *http,
 		     char const *path)
 {
@@ -411,9 +411,9 @@ static int test_site(site_t *s,
 }
 
 
-static int site_check_all(site_t *s, 
+static int site_check_all(site_t *s,
 			  nth_site_t *ns,
-			  nth_request_t *req, 
+			  nth_request_t *req,
 			  http_t const *http,
 			  char const *path)
 {
@@ -462,45 +462,45 @@ static int init_server(tester_t *t)
   auth_mod_t *am;
   int temp;
 
-  TEST_1(t->t_master = m = 
+  TEST_1(t->t_master = m =
 	 site_create(t, NULL,
-		     su_sprintf(t->t_home, "HTTP://127.0.0.1:%u", 
+		     su_sprintf(t->t_home, "HTTP://127.0.0.1:%u",
 				htons(t->t_addr->su_port)),
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR("<html><body>Hello</body></html>\n"),
 		     TPTAG_CERTIFICATE(t->t_pem),
 		     TAG_END()));
 
   TEST_1(site_create(t, m, "/sub/sub",
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR
 		     ("<html><body>sub/sub</body></html>\n"),
 		     TAG_END()));
 
   TEST_1(site_create(t, m, "/sub/",
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR("<html><body>sub/</body></html>\n"),
 		     TAG_END()));
 
   TEST_1(site_create(t, m, "/sub/sub/",
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR
 		     ("<html><body>sub/sub/</body></html>\n"),
 		     TAG_END()));
 
-  TEST_1(sub2 = 
+  TEST_1(sub2 =
 	 site_create(t, m, "/sub2/",
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR("<html><body>sub2/</body></html>\n"),
 		     TAG_END()));
 
   TEST_1(site_create(t, sub2, "sub/",
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR
 		     ("<html><body>sub2/sub/</body></html>\n"),
@@ -519,15 +519,15 @@ static int init_server(tester_t *t)
 
   TEST_1(close(temp) == 0);
 
-  am = auth_mod_create(t->t_root, 
-		       AUTHTAG_METHOD("Digest"), 
+  am = auth_mod_create(t->t_root,
+		       AUTHTAG_METHOD("Digest"),
 		       AUTHTAG_REALM("auth"),
 		       AUTHTAG_DB(passwd_name),
 		       TAG_END());
   TEST_1(am);
 
   TEST_1(site_create(t, m, "auth/",
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR
 		     ("<html><body>auth/</body></html>\n"),
@@ -537,15 +537,15 @@ static int init_server(tester_t *t)
   auth_mod_unref(am);
 
 
-  am = auth_mod_create(t->t_root, 
-		       AUTHTAG_METHOD("Delayed+Basic"), 
+  am = auth_mod_create(t->t_root,
+		       AUTHTAG_METHOD("Delayed+Basic"),
 		       AUTHTAG_REALM("auth2"),
 		       AUTHTAG_DB(passwd_name),
 		       TAG_END());
   TEST_1(am);
 
   TEST_1(site_create(t, m, "auth2/",
-		     HTTP_200_OK, 
+		     HTTP_200_OK,
 		     HTTPTAG_CONTENT_TYPE_STR("text/html"),
 		     HTTPTAG_PAYLOAD_STR
 		     ("<html><body>auth/</body></html>\n"),
@@ -604,12 +604,12 @@ static int send_request(tester_t *t, char const *req, size_t reqlen,
   END();
 }
 
-int sspace(char const *buffer) 
+int sspace(char const *buffer)
 {
-  int m = strcspn(buffer, " "); 
+  int m = strcspn(buffer, " ");
 
-  if (buffer[m]) 
-    m += 1 + strcspn(buffer + m + 1, " "); 
+  if (buffer[m])
+    m += 1 + strcspn(buffer + m + 1, " ");
 
   return m;
 }
@@ -624,7 +624,7 @@ static int test_requests(tester_t *t)
   BEGIN();
 
   {
-    static char const get[] = 
+    static char const get[] =
       "GET / HTTP/1.1" CRLF
       "Host: 127.0.0.1" CRLF
       "User-Agent: Test-Tool" CRLF
@@ -638,7 +638,7 @@ static int test_requests(tester_t *t)
   }
 
   {
-    static char const get[] = 
+    static char const get[] =
       "GET / HTTP/1.1" CRLF
       "Host: 127.0.0.1" CRLF
       "User-Agent: Test-Tool" CRLF
@@ -652,7 +652,7 @@ static int test_requests(tester_t *t)
   }
 
   {
-    static char const request[] = 
+    static char const request[] =
       "GET %s HTTP/1.1" CRLF
       "Host: 127.0.0.1" CRLF
       "User-Agent: Test-Tool" CRLF
@@ -724,7 +724,7 @@ static int test_requests(tester_t *t)
   }
 
   {
-    static char const get[] = 
+    static char const get[] =
       "GET /auth2/ HTTP/1.1" CRLF
       "Host: 127.0.0.1" CRLF
       "User-Agent: Test-Tool" CRLF
@@ -739,7 +739,7 @@ static int test_requests(tester_t *t)
   }
 
   {
-    static char const kuik[] = 
+    static char const kuik[] =
       "kuik" CRLF CRLF;
 
     TEST(send_request(t, kuik, -1, 0, buffer, sizeof(buffer), &m), 0);
@@ -748,7 +748,7 @@ static int test_requests(tester_t *t)
   }
 
   {
-    static char const kuik[] = 
+    static char const kuik[] =
       "POST / HTTP/1.1" CRLF
       "Host: 127.0.0.1" CRLF
       "Content-Length: 4294967296" CRLF
@@ -760,7 +760,7 @@ static int test_requests(tester_t *t)
   }
 
   {
-    static char const get[] = 
+    static char const get[] =
       "GET / HTTP/10.10" CRLF
       "Host: 127.0.0.1" CRLF
       "User-Agent: Test-Tool" CRLF
@@ -774,7 +774,7 @@ static int test_requests(tester_t *t)
   }
 
   {
-    static char const get[] = 
+    static char const get[] =
       "GET /" CRLF;
 
     TEST(send_request(t, get, -1, 1, buffer, sizeof(buffer) - 1, &m), 0);
@@ -785,7 +785,7 @@ static int test_requests(tester_t *t)
 
   if (0)
   {
-    static char const post[] = 
+    static char const post[] =
       "POST /foo HTTP/1.1" CRLF
       "Host: 127.0.0.1" CRLF
       "User-Agent: Test-Tool" CRLF
@@ -816,20 +816,20 @@ static int init_engine(tester_t *t)
   BEGIN();
   su_socket_t s;
 
-  t->t_engine = nth_engine_create(t->t_root, 
+  t->t_engine = nth_engine_create(t->t_root,
 				  NTHTAG_STREAMING(0),
 				  TAG_END());
   TEST_1(t->t_engine);
 
   t->t_sink = s = su_socket(AF_INET, SOCK_STREAM, 0); TEST_1(s != -1);
-  TEST(bind(s, &t->t_sinkaddr->su_sa, 
+  TEST(bind(s, &t->t_sinkaddr->su_sa,
 	    t->t_sinkaddrlen = (sizeof t->t_sinkaddr->su_sin)),
        0);
   TEST_1(getsockname(s, &t->t_sinkaddr->su_sa, &t->t_sinkaddrlen) != -1);
   TEST(listen(t->t_sink, 5), 0);
-  
+
   TEST_1(t->t_sinkuri = (url_string_t *)
-	 su_sprintf(t->t_home, "HTTP://127.0.0.1:%u", 
+	 su_sprintf(t->t_home, "HTTP://127.0.0.1:%u",
 		    htons(t->t_sinkaddr->su_port)));
 
   END();
@@ -883,7 +883,7 @@ static int test_client(tester_t *t)
   while (client->c_status == 0) su_root_step(t->t_root, 1);
   TEST(client->c_status, 408);
   nth_client_destroy(hc);
-	 
+
   END();
 }
 #if HAVE_ALARM
@@ -956,7 +956,7 @@ int main(int argc, char **argv)
   retval |= init_engine(t);
   retval |= test_client(t);
   retval |= deinit_test(t);
- 
+
   su_deinit();
 
   return retval;

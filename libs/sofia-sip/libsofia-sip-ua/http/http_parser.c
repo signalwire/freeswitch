@@ -75,7 +75,7 @@ issize_t http_extract_chunk(msg_t *, http_t *, char b[], isize_t bsiz, int eos);
 #define CRLF_TEST(s) \
   (((s)[0]) == '\r' ? (((s)[1]) == '\n') + 1 : ((s)[0])=='\n')
 
-/** Extract the HTTP message body, including separator line. 
+/** Extract the HTTP message body, including separator line.
  *
  * @retval -1    error
  * @retval 0     cannot proceed
@@ -98,7 +98,7 @@ issize_t http_extract_body(msg_t *msg, http_t *http, char b[], isize_t bsiz, int
     if (!eos && (bsiz == 0 || (bsiz == 1 && b[0] == '\r')))
       return 0;
 
-    m = CRLF_TEST(b); 
+    m = CRLF_TEST(b);
 
     assert(m > 0 || eos); /* We should be looking at an empty line */
 
@@ -143,7 +143,7 @@ issize_t http_extract_body(msg_t *msg, http_t *http, char b[], isize_t bsiz, int
 	 */
 	http->http_transfer_encoding->k_items &&
 	http->http_transfer_encoding->k_items[0] &&
-	strcasecmp(http->http_transfer_encoding->k_items[0], 
+	strcasecmp(http->http_transfer_encoding->k_items[0],
 		   "identity") != 0) {
       http->http_flags |= MSG_FLG_CHUNKS;
 
@@ -162,16 +162,16 @@ issize_t http_extract_body(msg_t *msg, http_t *http, char b[], isize_t bsiz, int
     body_len = http->http_content_length->l_length;
   /* We cannot parse multipart/byteranges ... */
   else if (http->http_content_type && http->http_content_type->c_type &&
-	   strcasecmp(http->http_content_type->c_type, "multipart/byteranges") 
+	   strcasecmp(http->http_content_type->c_type, "multipart/byteranges")
 	   == 0)
     return -1;
   else if (MSG_IS_MAILBOX(flags)) /* message fragments */
     body_len = 0;
-  else if (http->http_request) 
+  else if (http->http_request)
     body_len = 0;
   else if (eos)
     body_len = bsiz;
-  else 
+  else
     return 0;			/* XXX */
 
   if (body_len == 0) {
@@ -198,7 +198,7 @@ issize_t http_extract_body(msg_t *msg, http_t *http, char b[], isize_t bsiz, int
   return m;
 }
 
-/** Extract a chunk. 
+/** Extract a chunk.
  *
  * @retval -1    error
  * @retval 0     cannot proceed
@@ -210,7 +210,7 @@ issize_t http_extract_chunk(msg_t *msg, http_t *http, char b[], isize_t bsiz, in
   unsigned crlf, chunk_len;
   char *b0 = b, *s;
   union {
-    msg_header_t *header;  
+    msg_header_t *header;
     msg_payload_t *chunk;
   } h = { NULL };
   size_t bsiz0 = bsiz;
@@ -234,15 +234,15 @@ issize_t http_extract_chunk(msg_t *msg, http_t *http, char b[], isize_t bsiz, in
     assert(crlf < bsiz);
 
     /* Skip crlf */
-    b += crlf; bsiz -= crlf;  
+    b += crlf; bsiz -= crlf;
   }
 
   /* Now, looking at the chunk header */
-  n = strcspn(b, CRLF); 
-  if (!eos && n == bsiz) 
+  n = strcspn(b, CRLF);
+  if (!eos && n == bsiz)
     return 0;
   crlf = CRLF_TEST(b + n);
-  
+
   if (n == 0) {
     if (crlf == bsiz && eos) {
       msg_mark_as_complete(msg, MSG_FLG_COMPLETE | MSG_FLG_FRAGS);
@@ -267,7 +267,7 @@ issize_t http_extract_chunk(msg_t *msg, http_t *http, char b[], isize_t bsiz, in
 
     crlf = bsiz > 0 ? CRLF_TEST(b) : 0;
 
-    if ((eos && bsiz == 0) || crlf == 2 || 
+    if ((eos && bsiz == 0) || crlf == 2 ||
 	(crlf == 1 && (bsiz > 1 || b[0] == '\n'))) {
       /* Shortcut - We got empty trailers */
       b += crlf;
@@ -285,7 +285,7 @@ issize_t http_extract_chunk(msg_t *msg, http_t *http, char b[], isize_t bsiz, in
     b += n + crlf, bsiz -= n + crlf;
 
     /* Extract chunk */
-    chunk = msg_extract_payload(msg, http, 
+    chunk = msg_extract_payload(msg, http,
 				&h.header, chunk_len + (b - b0),
 				b0, bsiz0, eos);
 
@@ -294,7 +294,7 @@ issize_t http_extract_chunk(msg_t *msg, http_t *http, char b[], isize_t bsiz, in
       h.chunk->pl_data += (b - b0);
       h.chunk->pl_len -= (b - b0);
     }
-  
+
     return chunk;
   }
 }
@@ -312,12 +312,12 @@ int http_version_d(char **ss, char const **ver)
   char const *result;
   int const version_size = sizeof(http_version_1_1) - 1;
 
-  if (strncasecmp(s, http_version_1_1, version_size) == 0 && 
+  if (strncasecmp(s, http_version_1_1, version_size) == 0 &&
       !IS_TOKEN(s[version_size])) {
     result = http_version_1_1;
     s += version_size;
   }
-  else if (strncasecmp(s, http_version_1_0, version_size) == 0 && 
+  else if (strncasecmp(s, http_version_1_0, version_size) == 0 &&
 	   !IS_TOKEN(s[version_size])) {
     result = http_version_1_0;
     s += version_size;
@@ -348,7 +348,7 @@ int http_version_d(char **ss, char const **ver)
       memmove(s + l1 + 1, s + n - l2, l2);
       s[l1 + 1 + l2] = 0;
 
-      /* Compare again with compacted version */ 
+      /* Compare again with compacted version */
       if (strcasecmp(s, http_version_1_1) == 0)
 	result = http_version_1_1;
       else if (strcasecmp(s, http_version_1_0) == 0)
@@ -359,10 +359,10 @@ int http_version_d(char **ss, char const **ver)
   }
 
   while (IS_LWS(*s)) *s++ = '\0';
-  
+
   *ss = s;
 
-  if (ver) 
+  if (ver)
     *ver = result;
 
   return 0;
@@ -454,7 +454,7 @@ http_method_t http_method_d(char **ss, char const **nname)
 
 #define MATCH(s, m) (strncasecmp(s, m, n = sizeof(m) - 1) == 0)
 
-  if (c >= 'a' && c <= 'z') 
+  if (c >= 'a' && c <= 'z')
     c += 'A' - 'a';
 
   switch (c) {
@@ -463,7 +463,7 @@ http_method_t http_method_d(char **ss, char const **nname)
   case 'G': if (MATCH(s, "GET")) code = http_method_get; break;
   case 'H': if (MATCH(s, "HEAD")) code = http_method_head; break;
   case 'O': if (MATCH(s, "OPTIONS")) code = http_method_options; break;
-  case 'P': if (MATCH(s, "POST")) code = http_method_post; 
+  case 'P': if (MATCH(s, "POST")) code = http_method_post;
             else
             if (MATCH(s, "PUT")) code = http_method_put; break;
   case 'T': if (MATCH(s, "TRACE")) code = http_method_trace; break;
@@ -510,7 +510,7 @@ http_method_t http_method_code(char const *name)
  * query. For each key, a query element (in the form name=value) is searched
  * from the query string. If a query element has a beginning matching with
  * the key, a copy of the rest of the element is returned in corresponding
- * return_value argument. 
+ * return_value argument.
  *
  * @note The @a query string will be modified.
  *
@@ -538,15 +538,15 @@ issize_t http_query_parse(char *query,
     valuelen = namelen + strcspn(q + namelen, "&");
 
     q_next = q + valuelen;
-    if (*q_next) 
+    if (*q_next)
       *q_next++ = '\0';
 
-    value = q + namelen; 
+    value = q + namelen;
     has_value = (*value) != '\0'; /* is the part in form of name=value? */
     if (has_value)
       *value++ = '\0';
 
-    name = url_unescape(q, q); 
+    name = url_unescape(q, q);
 
     if (has_value) {
       namelen = strlen(name);
@@ -570,4 +570,4 @@ issize_t http_query_parse(char *query,
   }
 
   return N;
-} 
+}

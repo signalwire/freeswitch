@@ -17,7 +17,7 @@
 2005-10-15  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
   * Updated API of soa_get_local_sdp() and friends.
-  
+
   Added parameter for returning SDP C structure to soa_get_capability_sdp(),
   soa_get_remote_sdp(), soa_get_user_sdp(), and soa_get_local_sdp().
 
@@ -62,11 +62,11 @@
     M ./libsofia-sip-ua/soa/test_soa.c -2 +2
 
 2005-10-12  Pekka Pessi  <Pekka.Pessi@nokia.com>
-	
+
   * Updated SOA_VALID_ACTIONS().
 
     M ./libsofia-sip-ua/soa/soa.c -1 +13
-  	      
+
   * Added soa_name.
 
     M ./libsofia-sip-ua/soa/soa.c +1

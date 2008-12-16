@@ -23,13 +23,13 @@
  */
 
 /**@page localinfo list local network addresses
- * 
+ *
  * @section synopsis Synopsis
  *
  * <tt>localinfo [-imdn46gslh] [domainname]</tt>
  *
  * @section description Description
- * 
+ *
  * The @em localinfo utility will obtain the local network addresses
  * and print them.
  *
@@ -61,7 +61,7 @@
  *
  * @section examples Examples
  *
- * You want to find out local IPv6 addresses: 
+ * You want to find out local IPv6 addresses:
  * @code
  * $ localinfo -6
  * @endcode

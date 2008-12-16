@@ -24,9 +24,9 @@
 
 #ifndef SIP_HEADER_H
 /**Defined when <sofia-sip/sip_header.h> has been included.*/
-#define SIP_HEADER_H 
+#define SIP_HEADER_H
 
-/**@file sofia-sip/sip_header.h 
+/**@file sofia-sip/sip_header.h
  *
  * SIP parser library prototypes.
  *
@@ -96,7 +96,7 @@ SOFIAPUBFUN int sip_add_dup_as(msg_t *msg, sip_t *sip,
 			       msg_hclass_t *hc, sip_header_t const *o);
 
 /** Add duplicates of headers to the SIP message. */
-SOFIAPUBFUN int sip_add_headers(msg_t *msg, sip_t *sip, 
+SOFIAPUBFUN int sip_add_headers(msg_t *msg, sip_t *sip,
 				void const *extra, va_list headers);
 
 /** Add duplicates of headers from taglist to the SIP message. */
@@ -127,11 +127,11 @@ SOFIAPUBFUN int sip_complete_message(msg_t *msg);
 
 /* Use __attribute__ to allow argument checking for sip_header_format() */
 #if !defined(__GNUC__) && !defined(__attribute__)
-#define __attribute__(x) 
+#define __attribute__(x)
 #endif
 
 /** Make a SIP header with formatting provided. */
-SOFIAPUBFUN sip_header_t *sip_header_format(su_home_t *home, 
+SOFIAPUBFUN sip_header_t *sip_header_format(su_home_t *home,
 					    msg_hclass_t *hc,
 					    char const *fmt,
 					    ...)
@@ -154,15 +154,15 @@ SOFIAPUBVAR char const sip_method_name_subscribe[];
 SOFIAPUBVAR char const sip_method_name_notify[];
 SOFIAPUBVAR char const sip_method_name_refer[];
 
-/** @internal UDP transport version string. */ 
+/** @internal UDP transport version string. */
 SOFIAPUBVAR char const sip_transport_udp[];
-/** @internal TCP transport version string. */ 
+/** @internal TCP transport version string. */
 SOFIAPUBVAR char const sip_transport_tcp[];
-/** @internal SCTP transport version string. */ 
+/** @internal SCTP transport version string. */
 SOFIAPUBVAR char const sip_transport_sctp[];
-/** @internal TLS transport version string. */ 
+/** @internal TLS transport version string. */
 SOFIAPUBVAR char const sip_transport_tls[];
-/** @internal SIP version string. */ 
+/** @internal SIP version string. */
 SOFIAPUBVAR char const sip_version_2_0[];
 
 #define SIP_VERSION_CURRENT sip_version_2_0
@@ -217,12 +217,12 @@ SOFIAPUBFUN sip_call_id_t *sip_call_id_create(su_home_t *home,
 					      char const *domain);
 
 /** Create a @CSeq header object.  */
-SOFIAPUBFUN sip_cseq_t *sip_cseq_create(su_home_t *, uint32_t seq, 
+SOFIAPUBFUN sip_cseq_t *sip_cseq_create(su_home_t *, uint32_t seq,
 					unsigned method, char const *name);
 
 /** Create a @Contact header object. */
-SOFIAPUBFUN sip_contact_t * sip_contact_create(su_home_t *, 
-					       url_string_t const *url, 
+SOFIAPUBFUN sip_contact_t * sip_contact_create(su_home_t *,
+					       url_string_t const *url,
 					       char const *param,
 					       /* char const *params, */
 					       ...);
@@ -245,7 +245,7 @@ SOFIAPUBFUN sip_date_t *sip_date_create(su_home_t *, sip_time_t t);
 SOFIAPUBFUN sip_expires_t *sip_expires_create(su_home_t *, sip_time_t delta);
 
 /** Create a @Route header object. */
-SOFIAPUBFUN sip_route_t *sip_route_create(su_home_t *home, url_t const *url, 
+SOFIAPUBFUN sip_route_t *sip_route_create(su_home_t *home, url_t const *url,
 					  url_t const *maddr);
 
 /** Create a @RecordRoute header object. */
@@ -263,10 +263,10 @@ SOFIAPUBFUN sip_to_t *sip_to_create(su_home_t *, url_string_t const *url);
 
 SOFIAPUBFUN int sip_to_tag(su_home_t *, sip_to_t *to, char const *tag);
 
-/** Create a @Via object. */ 
+/** Create a @Via object. */
 SOFIAPUBFUN sip_via_t *sip_via_create(su_home_t *h,
 				      char const *host,
-				      char const *port, 
+				      char const *port,
 				      char const *transport,
 				      /* char const *params */
 				      ...);
@@ -277,7 +277,7 @@ su_inline char const *sip_via_transport(sip_via_t const *v)
 {
   char const *tp = v->v_protocol;
   if (tp) {
-    tp = strchr(tp, '/'); 
+    tp = strchr(tp, '/');
     if (tp) {
       tp = strchr(tp + 1, '/');
       if (tp)
@@ -297,12 +297,12 @@ sip_payload_t *sip_payload_create(su_home_t *, void const *data, isize_t len);
 
 /**@ingroup sip_payload
  *
- * Initialize a SIP payload structure with pointer to data and its length. 
+ * Initialize a SIP payload structure with pointer to data and its length.
  *
  * The SIP_PAYLOAD_INIT2() macro initializes a #sip_payload_t header
  * structure with a pointer to data and its length in octets. For
  * instance,
- * @code 
+ * @code
  *  sip_payload_t txt_payload = SIP_PAYLOAD_INIT2(txt, strlen(txt));
  * @endcode
  *
@@ -310,7 +310,7 @@ sip_payload_t *sip_payload_create(su_home_t *, void const *data, isize_t len);
  * from heap is not required, for instance, when the resulting payload
  * structure is immediately copied.
  *
- * @HIDE 
+ * @HIDE
  */
 #define SIP_PAYLOAD_INIT2(data, length) \
   {{{ 0, 0, sip_payload_class, data, length }, NULL, data, length }}
@@ -321,7 +321,7 @@ SOFIAPUBFUN sip_separator_t *sip_separator_create(su_home_t *home);
 /** Check that a required feature is supported. */
 SOFIAPUBFUN
 sip_unsupported_t *sip_has_unsupported(su_home_t *,
-				       sip_supported_t const *support, 
+				       sip_supported_t const *support,
 				       sip_require_t const *require);
 
 SOFIAPUBFUN
@@ -349,7 +349,7 @@ SOFIAPUBFUN
 int sip_has_feature(msg_list_t const *supported, char const *feature);
 
 /** Return true if the method is listed in @Allow header. */
-SOFIAPUBFUN int sip_is_allowed(sip_allow_t const *allow, 
+SOFIAPUBFUN int sip_is_allowed(sip_allow_t const *allow,
 			       sip_method_t method, char const *name);
 
 /** Check if the well-known method is listed in @Allow header. @NEW_1_12_6. */
@@ -404,7 +404,7 @@ enum sip_bad_mask {
    *
    * @MinExpires, @Authorization, @Path, @Supported, @Contact, @Require, and
    * @Expires.
-   * 
+   *
    */
   sip_mask_registrar = (1 << 4),
 
@@ -419,7 +419,7 @@ enum sip_bad_mask {
   /** Bit marking essential headers for SIP events.
    *
    * @Event, @Expires, and @SubscriptionState.
-   * 
+   *
    * @sa @RFC3265.
    */
   sip_mask_events = (1 << 6),
@@ -427,7 +427,7 @@ enum sip_bad_mask {
   /** Bit marking essential headers for session timer extension.
    *
    * @SessionExpires, and @MinSE.
-   * 
+   *
    * @RFC4028
    */
   sip_mask_timer = (1 << 7),
@@ -435,7 +435,7 @@ enum sip_bad_mask {
   /** Bit marking essential headers for privacy extension.
    *
    * @Privacy.
-   * 
+   *
    * @sa @RFC3323
    */
   sip_mask_privacy = (1 << 8),
@@ -443,7 +443,7 @@ enum sip_bad_mask {
   /** Bit marking essential headers for caller preference extension.
    *
    * @RequestDisposition, @AcceptContact, and @RejectContact.
-   * 
+   *
    * @sa @RFC3841.
    */
   sip_mask_pref = (1 << 9),
@@ -451,13 +451,13 @@ enum sip_bad_mask {
   /** Bit marking essential headers for PUBLISH servers and clients.
    *
    * @SIPETag, and @SIPIfMatch.
-   * 
+   *
    * @sa @RFC3903.
    */
   sip_mask_publish = (1 << 10)
 
   /* NOTE:
-   * When adding bits, please update nta_agent_create() and 
+   * When adding bits, please update nta_agent_create() and
    * NTATAG_BAD_RESP_MASK()/NTATAG_BAD_REQ_MASK() documentation.
    */
 };
@@ -482,15 +482,15 @@ SOFIAPUBFUN issize_t sip_header_field_d(su_home_t *, sip_header_t *, char *, isi
 /** Calculate the size of a SIP header and associated memory areas. */
 SOFIAPUBFUN isize_t sip_header_size(sip_header_t const *h);
 
-/** Duplicate (deep copy) a SIP header or whole list. */ 
+/** Duplicate (deep copy) a SIP header or whole list. */
 SOFIAPUBFUN sip_header_t *sip_header_dup(su_home_t *, sip_header_t const *);
 
 /** Copy a SIP header or whole list. */
 SOFIAPUBFUN sip_header_t *sip_header_copy(su_home_t *, sip_header_t const *o);
 
 /** Add an event to @AllowEvents header. */
-SOFIAPUBFUN int sip_allow_events_add(su_home_t *, 
-				     sip_allow_events_t *ae, 
+SOFIAPUBFUN int sip_allow_events_add(su_home_t *,
+				     sip_allow_events_t *ae,
 				     char const *e);
 
 /** Add a parameter to a @Contact header object. */
@@ -501,7 +501,7 @@ SOFIAPUBFUN int sip_to_add_param(su_home_t *, sip_to_t *, char const *);
 
 SOFIAPUBFUN int sip_from_add_param(su_home_t *, sip_from_t *, char const *);
 
-/** Add a parameter to a @Via header object. */ 
+/** Add a parameter to a @Via header object. */
 SOFIAPUBFUN int sip_via_add_param(su_home_t *, sip_via_t *, char const *);
 
 #define sip_from_make_url     sip_from_create
@@ -510,4 +510,4 @@ SOFIAPUBFUN int sip_via_add_param(su_home_t *, sip_via_t *, char const *);
 
 SOFIA_END_DECLS
 
-#endif 
+#endif

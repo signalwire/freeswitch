@@ -1,7 +1,7 @@
 /* -*- c -*- */
 
 /**@MODULEPAGE "nea" - SIP Events Module
- * 
+ *
  * @section nea_meta Module Meta Information
  *
  * Sofia Event API provides an interface to different events used in SIP
@@ -40,9 +40,9 @@
  * {
  *   presentity_t *pr = su_home_clone(p->p_home, sizeof (*pr));
  *   ...
- *   pr->pr_nes = 
+ *   pr->pr_nes =
  *     nea_server_create(agent, root,
- * 		       m->m_url, 
+ * 		       m->m_url,
  * 		       MAX_SUBSCRIBERS,
  * 		       event_callback, pr,
  * 		       SIPTAG_CONTACT(m),
@@ -51,7 +51,7 @@
  * ...
  * }
  * @endcode
- * 
+ *
  * @section nea_event_create Creating Events
  *
  * Next, events are created. The function nea_event_create () defines
@@ -65,7 +65,7 @@
  * #define XPIDF_MIME_TYPE "application/xpidf+xml"
  * #define PIDF_MIME_TYPE "application/cpim-pidf+xml"
 
- * ne = nea_event_create(pr->pr_nes, presence_callback, ep, 
+ * ne = nea_event_create(pr->pr_nes, presence_callback, ep,
  * 		       PRESENCE_PACKAGE, NULL,
  * 		       PIDF_MIME_TYPE,
  * 		       PIDF_MIME_TYPE "," XPIDF_MIME_TYPE);
@@ -83,16 +83,16 @@
  *
  * After the update, subscribers of the event are notified (with SIP
  * NOTIFY) of the changed payload with nea_server_update ().
- * 
+ *
  * @code
  * nea_server_update(pr->pr_nes, home, event, 1,
  *		   SIPTAG_CONTENT_TYPE(ct),
  * 		   SIPTAG_PAYLOAD(pl),
  * 		   TAG_END());
- 
+
  * nea_server_notify(pr->pr_nes, event);
  * @endcode
- * 
+ *
  * Obtaining the event's payload and removing it is presented in the
  * example below. The event is defined as a part of the @a package_t
  * structure. Function nea_payloads_get() is used to return a payload

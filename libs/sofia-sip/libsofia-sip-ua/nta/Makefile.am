@@ -27,7 +27,7 @@ check_PROGRAMS = 	test_nta_api test_nta portbind
 dist_noinst_SCRIPTS =	run_test_nta_api run_test_nta
 
 TESTS =			run_test_nta_api run_test_nta
-TESTS_ENVIRONMENT =	$(SHELL) 
+TESTS_ENVIRONMENT =	$(SHELL)
 
 # ----------------------------------------------------------------------
 # Rules for building the targets
@@ -37,7 +37,7 @@ BUILT_SOURCES =		nta_tag_ref.c
 nobase_include_sofia_HEADERS = \
 			sofia-sip/nta.h sofia-sip/nta_stateless.h \
 			sofia-sip/nta_tport.h sofia-sip/nta_tag.h \
-			sofia-sip/sl_utils.h 
+			sofia-sip/sl_utils.h
 
 libnta_la_SOURCES = 	nta.c nta_check.c nta_tag.c nta_tag_ref.c \
 			nta_internal.h \
@@ -68,7 +68,7 @@ MOSTLYCLEANFILES +=	.test[0-9]*
 
 EXTRA_DIST =		nta.docs sl_utils.docs \
 			agent.pem cafile.pem \
-			invite.msc $(BUILT_SOURCES) 
+			invite.msc $(BUILT_SOURCES)
 
 # ----------------------------------------------------------------------
 # Sofia specific rules

@@ -28,7 +28,7 @@
  *
  * This file contains implementation of headers related to HTTP authentication
  * (@RFC2617):
- * @ref sip_authorization "Authorization", 
+ * @ref sip_authorization "Authorization",
  * @ref sip_authentication_info "Authentication-Info",
  * @ref sip_proxy_authenticate "Proxy-Authenticate",
  * @ref sip_proxy_authentication_info "Proxy-Authentication-Info",
@@ -42,7 +42,7 @@
  * @ref sip_security_verify "Security-Verify" headers.
  *
  * The implementation of @ref sip_privacy "Privacy" header (@RFC3323) is
- * also here. 
+ * also here.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *
@@ -118,9 +118,9 @@
  * The #sip_authorization_t is defined as follows:
  * @code
  * typedef struct msg_auth_s {
- *   msg_common_t       au_common[1];  // Common fragment info 
- *   msg_auth_t        *au_next;       // Link to next header 
- *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest" 
+ *   msg_common_t       au_common[1];  // Common fragment info
+ *   msg_auth_t        *au_next;       // Link to next header
+ *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest"
  *   msg_param_t const *au_params;     // Comma-separated parameters
  * } sip_authorization_t;
  * @endcode
@@ -188,9 +188,9 @@ issize_t sip_authorization_e(char b[], isize_t bsiz, sip_header_t const *h, int 
  * The #sip_proxy_authenticate_t is defined as follows:
  * @code
  * typedef struct msg_auth_s {
- *   msg_common_t       au_common[1];  // Common fragment info 
- *   msg_auth_t        *au_next;       // Link to next header 
- *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest" 
+ *   msg_common_t       au_common[1];  // Common fragment info
+ *   msg_auth_t        *au_next;       // Link to next header
+ *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest"
  *   msg_param_t const *au_params;     // Comma-separated parameters
  * } sip_proxy_authenticate_t;
  * @endcode
@@ -244,9 +244,9 @@ issize_t sip_proxy_authenticate_e(char b[], isize_t bsiz, sip_header_t const *h,
  * The #sip_proxy_authorization_t is defined as follows:
  * @code
  * typedef struct msg_auth_s {
- *   msg_common_t       au_common[1];  // Common fragment info 
- *   msg_auth_t        *au_next;       // Link to next header 
- *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest" 
+ *   msg_common_t       au_common[1];  // Common fragment info
+ *   msg_auth_t        *au_next;       // Link to next header
+ *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest"
  *   msg_param_t const *au_params;     // Comma-separated parameters
  * } sip_proxy_authorization_t;
  * @endcode
@@ -299,9 +299,9 @@ issize_t sip_proxy_authorization_e(char b[], isize_t bsiz, sip_header_t const *h
  * The #sip_www_authenticate_t is defined as follows:
  * @code
  * typedef struct msg_auth_s {
- *   msg_common_t       au_common[1];  // Common fragment info 
- *   msg_auth_t        *au_next;       // Link to next header 
- *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest" 
+ *   msg_common_t       au_common[1];  // Common fragment info
+ *   msg_auth_t        *au_next;       // Link to next header
+ *   char const        *au_scheme;     // Auth-scheme like "Basic" or "Digest"
  *   msg_param_t const *au_params;     // Comma-separated parameters
  * } sip_www_authenticate_t;
  * @endcode
@@ -441,7 +441,7 @@ issize_t sip_proxy_authentication_info_d(su_home_t *home, sip_header_t *h,
   return msg_list_d(home, (msg_header_t *)h, s, slen);
 }
 
-issize_t sip_proxy_authentication_info_e(char b[], isize_t bsiz, 
+issize_t sip_proxy_authentication_info_e(char b[], isize_t bsiz,
 					 sip_header_t const *h, int f)
 {
   assert(sip_is_proxy_authentication_info(h)); /* This is soo popular */
@@ -455,7 +455,7 @@ issize_t sip_proxy_authentication_info_e(char b[], isize_t bsiz,
 typedef struct sip_security_agree_s sip_security_agree_t;
 #define sh_security_agree sh_security_client
 
-static 
+static
 issize_t sip_security_agree_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
   sip_security_agree_t *sa = (sip_security_agree_t *)h;
@@ -465,16 +465,16 @@ issize_t sip_security_agree_d(su_home_t *home, sip_header_t *h, char *s, isize_t
   while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
     *s = '\0', s += span_lws(s + 1) + 1;
 
-  if ((n = span_token(s)) == 0) 
+  if ((n = span_token(s)) == 0)
     return -1;
-  sa->sa_mec = s; s += n; while (IS_LWS(*s)) *s++ = '\0'; 
+  sa->sa_mec = s; s += n; while (IS_LWS(*s)) *s++ = '\0';
   if (*s == ';' && msg_params_d(home, &s, &sa->sa_params) < 0)
     return -1;
 
   return msg_parse_next_field(home, h, s, slen);
 }
 
-static 
+static
 issize_t sip_security_agree_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 {
   char *end = b + bsiz, *b0 = b;
@@ -486,7 +486,7 @@ issize_t sip_security_agree_e(char b[], isize_t bsiz, sip_header_t const *h, int
   return b - b0;
 }
 
-static 
+static
 isize_t sip_security_agree_dup_xtra(sip_header_t const *h, isize_t offset)
 {
   sip_security_agree_t const *sa = h->sh_security_agree;
@@ -497,8 +497,8 @@ isize_t sip_security_agree_dup_xtra(sip_header_t const *h, isize_t offset)
   return offset;
 }
 
-/** Duplicate one sip_security_agree_t object */ 
-static 
+/** Duplicate one sip_security_agree_t object */
+static
 char *sip_security_agree_dup_one(sip_header_t *dst, sip_header_t const *src,
 				 char *b, isize_t xtra)
 {
@@ -513,7 +513,7 @@ char *sip_security_agree_dup_one(sip_header_t *dst, sip_header_t const *src,
   return b;
 }
 
-static int sip_security_agree_update(msg_common_t *h, 
+static int sip_security_agree_update(msg_common_t *h,
 				     char const *name, isize_t namelen,
 				     char const *value)
 {
@@ -589,8 +589,8 @@ static int sip_security_agree_update(msg_common_t *h,
  * @code
  * typedef struct sip_security_agree_s
  * {
- *   sip_common_t        sa_common[1]; // Common fragment info 
- *   sip_security_client_t *sa_next;   // Link to next mechanism 
+ *   sip_common_t        sa_common[1]; // Common fragment info
+ *   sip_security_client_t *sa_next;   // Link to next mechanism
  *   char const         *sa_mec;       // Security mechanism
  *   msg_param_t const  *sa_params;    // List of mechanism parameters
  *   char const         *sa_q;         // Value of q (preference) parameter
@@ -601,8 +601,8 @@ static int sip_security_agree_update(msg_common_t *h,
  * @endcode
  */
 
-msg_hclass_t sip_security_client_class[] = 
-SIP_HEADER_CLASS(security_client, "Security-Client", "", 
+msg_hclass_t sip_security_client_class[] =
+SIP_HEADER_CLASS(security_client, "Security-Client", "",
 		 sa_params, append, security_agree);
 
 issize_t sip_security_client_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -638,8 +638,8 @@ issize_t sip_security_client_e(char b[], isize_t bsiz, sip_header_t const *h, in
  * @code
  * typedef struct sip_security_agree_s
  * {
- *   sip_common_t        sa_common[1]; // Common fragment info 
- *   sip_security_server_t *sa_next;   // Link to next mechanism 
+ *   sip_common_t        sa_common[1]; // Common fragment info
+ *   sip_security_server_t *sa_next;   // Link to next mechanism
  *   char const         *sa_mec;       // Security mechanism
  *   msg_param_t const  *sa_params;    // List of mechanism parameters
  *   char const         *sa_q;         // Value of q (preference) parameter
@@ -650,8 +650,8 @@ issize_t sip_security_client_e(char b[], isize_t bsiz, sip_header_t const *h, in
  * @endcode
  */
 
-msg_hclass_t sip_security_server_class[] = 
-SIP_HEADER_CLASS(security_server, "Security-Server", "", 
+msg_hclass_t sip_security_server_class[] =
+SIP_HEADER_CLASS(security_server, "Security-Server", "",
 		 sa_params, append, security_agree);
 
 issize_t sip_security_server_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -687,8 +687,8 @@ issize_t sip_security_server_e(char b[], isize_t bsiz, sip_header_t const *h, in
  * @code
  * typedef struct sip_security_agree_s
  * {
- *   sip_common_t        sa_common[1]; // Common fragment info 
- *   sip_security_verify_t *sa_next;   // Link to next mechanism 
+ *   sip_common_t        sa_common[1]; // Common fragment info
+ *   sip_security_verify_t *sa_next;   // Link to next mechanism
  *   char const         *sa_mec;       // Security mechanism
  *   msg_param_t const  *sa_params;    // List of mechanism parameters
  *   char const         *sa_q;         // Value of q (preference) parameter
@@ -700,8 +700,8 @@ issize_t sip_security_server_e(char b[], isize_t bsiz, sip_header_t const *h, in
  */
 
 
-msg_hclass_t sip_security_verify_class[] = 
-SIP_HEADER_CLASS(security_verify, "Security-Verify", "", 
+msg_hclass_t sip_security_verify_class[] =
+SIP_HEADER_CLASS(security_verify, "Security-Verify", "",
 		 sa_params, append, security_agree);
 
 issize_t sip_security_verify_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -718,10 +718,10 @@ issize_t sip_security_verify_e(char b[], isize_t bsiz, sip_header_t const *h, in
 /* RFC 3323 */
 
 /**@SIP_HEADER sip_privacy Privacy Header
- * 
+ *
  * The Privacy header is used by User-Agent to request privacy services from
  * the network. Its syntax is defined in @RFC3323 as follows:
- * 
+ *
  * @code
  *    Privacy-hdr  =  "Privacy" HCOLON priv-value *(";" priv-value)
  *    priv-value   =   "header" / "session" / "user" / "none" / "critical"
@@ -740,9 +740,9 @@ issize_t sip_security_verify_e(char b[], isize_t bsiz, sip_header_t const *h, in
  * The #sip_privacy_t is defined as follows:
  * @code
  * typedef struct sip_privacy_s {
- *   sip_common_t       priv_common[1];	// Common fragment info 
- *   sip_error_t       *priv_next;     	// Dummy link 
- *   msg_param_t const *priv_values;   	// List of privacy values 
+ *   sip_common_t       priv_common[1];	// Common fragment info
+ *   sip_error_t       *priv_next;     	// Dummy link
+ *   msg_param_t const *priv_values;   	// List of privacy values
  * } sip_privacy_t;
  * @endcode
  */
@@ -752,10 +752,10 @@ msg_dup_f sip_privacy_dup_one;
 
 #define sip_privacy_update NULL
 
-msg_hclass_t sip_privacy_class[] = 
+msg_hclass_t sip_privacy_class[] =
 SIP_HEADER_CLASS(privacy, "Privacy", "", priv_values, single, privacy);
 
-static 
+static
 issize_t sip_privacy_token_scan(char *start)
 {
   char *s = start;
@@ -811,7 +811,7 @@ issize_t sip_privacy_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
   }
 
   MSG_TERM_E(b, end);
-    
+
   return b - b0;
 }
 

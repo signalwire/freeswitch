@@ -49,7 +49,7 @@
  *
  * If the TPORT_LOG environment variable is set, the tport module logs the
  * contents of parsed messages. This eases debugging the signaling greatly.
- * 
+ *
  * @sa TPORT_DUMP, TPORT_DEBUG, tport_log
  */
 #ifdef DOXYGEN
@@ -63,7 +63,7 @@ extern char const TPORT_LOG[];	/* dummy declaration for Doxygen */
  * The received and sent data is dumped to the file specified by TPORT_DUMP
  * environment variable. This can be used to save message traces and help
  * hairy debugging tasks.
- * 
+ *
  * @sa TPORT_LOG, TPORT_DEBUG, tport_log
  */
 #ifdef DOXYGEN
@@ -76,19 +76,19 @@ extern char const TPORT_DUMP[];	/* dummy declaration for Doxygen */
  *
  * The TPORT_DEBUG environment variable is used to determine the debug logging
  * level for @b tport module. The default level is 3.
- * 
+ *
  * @sa <sofia-sip/su_debug.h>, tport_log, SOFIA_DEBUG
  */
 #ifdef DOXYGEN
 extern char const TPORT_DEBUG[]; /* dummy declaration for Doxygen */
 #endif
 
-/**Debug log for @b tport module. 
- * 
+/**Debug log for @b tport module.
+ *
  * The tport_log is the log object used by @b tport module. The level of
  * #tport_log is set using #TPORT_DEBUG environment variable.
  */
-su_log_t tport_log[] = { 
+su_log_t tport_log[] = {
   SU_LOG_INIT("tport", "TPORT_DEBUG", SU_DEBUG)
 };
 
@@ -99,9 +99,9 @@ int tport_open_log(tport_master_t *mr, tagi_t *tags)
   int log_msg = mr->mr_log != 0;
   char const *dump = NULL;
   int n;
-  
+
   n = tl_gets(tags,
-	      TPTAG_LOG_REF(log_msg), 
+	      TPTAG_LOG_REF(log_msg),
 	      TPTAG_DUMP_REF(dump),
 	      TAG_END());
 
@@ -129,7 +129,7 @@ int tport_open_log(tport_master_t *mr, tagi_t *tags)
     if (mr->mr_dump_file && mr->mr_dump_file != stdout)
       fclose(mr->mr_dump_file), mr->mr_dump_file = NULL;
 
-    if (strcmp(dumpname, "-")) 
+    if (strcmp(dumpname, "-"))
       mr->mr_dump_file = fopen(dumpname, "ab"); /* XXX */
     else
       mr->mr_dump_file = stdout;
@@ -144,8 +144,8 @@ int tport_open_log(tport_master_t *mr, tagi_t *tags)
 }
 
 /** Create log stamp */
-void tport_stamp(tport_t const *self, msg_t *msg, 
-		 char stamp[128], char const *what, 
+void tport_stamp(tport_t const *self, msg_t *msg,
+		 char stamp[128], char const *what,
 		 size_t n, char const *via,
 		 su_time_t now)
 {
@@ -183,7 +183,7 @@ void tport_stamp(tport_t const *self, msg_t *msg,
 }
 
 /** Dump the data from the iovec */
-void tport_dump_iovec(tport_t const *self, msg_t *msg, 
+void tport_dump_iovec(tport_t const *self, msg_t *msg,
 		      size_t n, su_iovec_t const iov[], size_t iovused,
 		      char const *what, char const *how)
 {
@@ -214,7 +214,7 @@ void tport_dump_iovec(tport_t const *self, msg_t *msg,
 }
 
 /** Log the message. */
-void tport_log_msg(tport_t *self, msg_t *msg, 
+void tport_log_msg(tport_t *self, msg_t *msg,
 		   char const *what, char const *via,
 		   su_time_t now)
 {
@@ -234,7 +234,7 @@ void tport_log_msg(tport_t *self, msg_t *msg,
   tport_stamp(self, msg, stamp, what, n, via, now);
   su_log(stamp);
   su_log("   " MSG_SEPARATOR);
- 
+
   for (i = 0; truncated == 0 && i < iovlen && i < 80; i++) {
     char *s = iov[i].mv_base, *end = s + iov[i].mv_len;
 

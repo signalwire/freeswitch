@@ -24,7 +24,7 @@
 
 /**@file resolve_sip.c Use sresolv library to resolve a SIP or SIPS domain.
  *
- * This is an example program for @b sresolv library. 
+ * This is an example program for @b sresolv library.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
@@ -94,9 +94,9 @@ static int query_srv(struct context *sr, char const *domain);
 static int query_a(struct context *sr, char const *domain);
 
 /* Process NAPTR records */
-static 
-void answer_to_naptr_query(sres_context_t *sr, 
-			   sres_query_t *q, 
+static
+void answer_to_naptr_query(sres_context_t *sr,
+			   sres_query_t *q,
 			   sres_record_t *answers[])
 {
   int i;
@@ -104,7 +104,7 @@ void answer_to_naptr_query(sres_context_t *sr,
   sr->sr_query = NULL;
 
   /* Sort NAPTR records by the order. */
-  sres_sort_answers(sr->sres, answers);  
+  sres_sort_answers(sr->sres, answers);
 
   for (i = 0; answers && answers[i]; i++) {
     sres_naptr_record_t const *na = answers[i]->sr_naptr;
@@ -114,8 +114,8 @@ void answer_to_naptr_query(sres_context_t *sr,
       continue;
 
     printf("naptr: %s\n\t%d IN NAPTR %u %u \"%s\" \"%s\" \"%s\" %s\n",
-	   na->na_record->r_name, na->na_record->r_ttl, 
-	   na->na_order, na->na_prefer, 
+	   na->na_record->r_name, na->na_record->r_ttl,
+	   na->na_order, na->na_prefer,
 	   na->na_flags, na->na_services,
 	   na->na_regexp, na->na_replace);
 
@@ -162,8 +162,8 @@ int query_naptr(struct context *sr, char const *domain)
 }
 
 /* Process SRV records */
-static 
-void answer_to_srv_query(sres_context_t *sr, sres_query_t *q, 
+static
+void answer_to_srv_query(sres_context_t *sr, sres_query_t *q,
 			 sres_record_t *answers[])
 {
   int i;
@@ -206,8 +206,8 @@ int query_srv(struct context *sr, char const *domain)
 }
 
 /* Process A records */
-static 
-void answer_to_a_query(sres_context_t *sr, sres_query_t *q, 
+static
+void answer_to_a_query(sres_context_t *sr, sres_query_t *q,
 		       sres_record_t *answers[])
 {
   int i;
@@ -260,11 +260,11 @@ int prepare_run(struct context *sr)
   sr->sr_n_sockets = 1;
   sr->sr_sockets = calloc(1, sizeof(*sr->sr_sockets));
   sr->sr_pollfds = calloc(1, sizeof(*sr->sr_pollfds));
-  
+
   if (!sr->sr_sockets || !sr->sr_pollfds ||
       (sres_resolver_sockets(sr->sres, sr->sr_sockets, 1) == -1))
     return 0;
-  
+
   sr->sr_pollfds[0].fd = sr->sr_sockets[0];
   sr->sr_pollfds[0].events = POLLIN | POLLERR;
 
@@ -280,14 +280,14 @@ void run(struct context *sr)
   while (!sr->sr_ready) {
     events = poll(sr->sr_pollfds, n, 500);
 
-    if (events) 
+    if (events)
       for (i = 0; i < n; i++) {
 	if (sr->sr_pollfds[i].revents)
 	  sres_resolver_receive(sr->sres, sr->sr_pollfds[i].fd);
       }
 
     /* No harm is done (except wasted CPU) if timer is called more often */
-    sres_resolver_timer(sr->sres, sr->sr_sockets[0]); 
+    sres_resolver_timer(sr->sres, sr->sr_sockets[0]);
   }
 }
 
@@ -310,8 +310,8 @@ int main(int argc, char *argv[])
 
   sr->sres = sres_resolver_new(getenv("SRESOLV_CONF"));
 
-  if (sr->sres) 
-    if (prepare_run(sr)) 
+  if (sr->sres)
+    if (prepare_run(sr))
       if (query_naptr(sr, sr->sr_canon = argv[1]) == 0)
 	run(sr);
 

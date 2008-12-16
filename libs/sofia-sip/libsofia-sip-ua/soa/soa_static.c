@@ -35,11 +35,11 @@
  *    a) generating offer (upgrade with user-SDP)
  *    b) generating answer (upgrade with remote-SDP, rejects with user-SDP)
  *  2. session exists
- *    a) generating offer: 
+ *    a) generating offer:
  *       upgrades with user-SDP
- *    b) generating answer: 
+ *    b) generating answer:
  *       upgrades with remote-SDP, rejects with user-SDP
- *    c) processing answer: 
+ *    c) processing answer:
  *       rejects with user-SDP, no upgrades
  *
  * Upgrading session with user SDP:
@@ -101,16 +101,16 @@ static void soa_static_deinit(soa_session_t *);
 static int soa_static_set_params(soa_session_t *ss, tagi_t const *tags);
 static int soa_static_get_params(soa_session_t const *ss, tagi_t *tags);
 static tagi_t *soa_static_get_paramlist(soa_session_t const *ss,
-					tag_type_t tag, tag_value_t value, 
+					tag_type_t tag, tag_value_t value,
 					...);
-static int soa_static_set_capability_sdp(soa_session_t *ss, 
+static int soa_static_set_capability_sdp(soa_session_t *ss,
 				       sdp_session_t *sdp,
 				       char const *, isize_t);
-static int soa_static_set_remote_sdp(soa_session_t *ss, 
+static int soa_static_set_remote_sdp(soa_session_t *ss,
 				   int new_version,
 				   sdp_session_t *sdp,
 				   char const *, isize_t);
-static int soa_static_set_user_sdp(soa_session_t *ss, 
+static int soa_static_set_user_sdp(soa_session_t *ss,
 				   sdp_session_t *sdp,
 				   char const *, isize_t);
 static int soa_static_generate_offer(soa_session_t *ss, soa_callback_f *);
@@ -122,7 +122,7 @@ static int soa_static_activate(soa_session_t *ss, char const *option);
 static int soa_static_deactivate(soa_session_t *ss, char const *option);
 static void soa_static_terminate(soa_session_t *ss, char const *option);
 
-struct soa_session_actions const soa_default_actions = 
+struct soa_session_actions const soa_default_actions =
   {
     (sizeof soa_default_actions),
     sizeof (struct soa_static_session),
@@ -213,7 +213,7 @@ static int soa_static_get_params(soa_session_t const *ss, tagi_t *tags)
 }
 
 static tagi_t *soa_static_get_paramlist(soa_session_t const *ss,
-					tag_type_t tag, tag_value_t value, 
+					tag_type_t tag, tag_value_t value,
 					...)
 {
   soa_static_session_t *sss = (soa_static_session_t *)ss;
@@ -237,28 +237,28 @@ static tagi_t *soa_static_get_paramlist(soa_session_t const *ss,
   return tl;
 }
 
-static int soa_static_set_capability_sdp(soa_session_t *ss, 
+static int soa_static_set_capability_sdp(soa_session_t *ss,
 					 sdp_session_t *sdp,
-					 char const *sdp_str, 
+					 char const *sdp_str,
 					 isize_t sdp_len)
 {
   return soa_base_set_capability_sdp(ss, sdp, sdp_str, sdp_len);
 }
 
 
-static int soa_static_set_remote_sdp(soa_session_t *ss, 
+static int soa_static_set_remote_sdp(soa_session_t *ss,
 				     int new_version,
 				     sdp_session_t *sdp,
-				     char const *sdp_str, 
+				     char const *sdp_str,
 				     isize_t sdp_len)
 {
   return soa_base_set_remote_sdp(ss, new_version, sdp, sdp_str, sdp_len);
 }
 
 
-static int soa_static_set_user_sdp(soa_session_t *ss, 
+static int soa_static_set_user_sdp(soa_session_t *ss,
 				   sdp_session_t *sdp,
-				   char const *sdp_str, 
+				   char const *sdp_str,
 				   isize_t sdp_len)
 {
   return soa_base_set_user_sdp(ss, sdp, sdp_str, sdp_len);
@@ -266,7 +266,7 @@ static int soa_static_set_user_sdp(soa_session_t *ss,
 
 /** Generate a rejected m= line */
 static
-sdp_media_t *soa_sdp_make_rejected_media(su_home_t *home, 
+sdp_media_t *soa_sdp_make_rejected_media(su_home_t *home,
 					 sdp_media_t const *m,
 					 sdp_session_t *sdp,
 					 int include_all_codecs)
@@ -317,7 +317,7 @@ sdp_session_t *soa_sdp_expand_media(su_home_t *home,
   return expanded;
 }
 
-/** Check if @a session should be upgraded with @a remote */ 
+/** Check if @a session should be upgraded with @a remote */
 int soa_sdp_upgrade_is_needed(sdp_session_t const *session,
 			      sdp_session_t const *remote)
 {
@@ -328,7 +328,7 @@ int soa_sdp_upgrade_is_needed(sdp_session_t const *session,
   if (!session)
     return 1;
 
-  for (rm = remote->sdp_media, lm = session->sdp_media; 
+  for (rm = remote->sdp_media, lm = session->sdp_media;
        rm && lm ; rm = rm->m_next, lm = lm->m_next) {
     if (rm->m_rejected)
       continue;
@@ -394,12 +394,12 @@ sdp_rtpmap_t *soa_sdp_media_matching_rtpmap(sdp_rtpmap_t const *from,
 
 /** Find first matching media in table @a mm.
  *
- * - if allow_rtp_mismatch == 0, search for a matching codec 
+ * - if allow_rtp_mismatch == 0, search for a matching codec
  * - if allow_rtp_mismatch == 1, prefer m=line with matching codec
  * - if allow_rtp_mismatch > 1, ignore codecs
  */
 static
-int soa_sdp_matching_mindex(soa_session_t *ss, 
+int soa_sdp_matching_mindex(soa_session_t *ss,
 			    sdp_media_t *mm[],
 			    sdp_media_t const *with,
 			    int *return_codec_mismatch)
@@ -425,11 +425,11 @@ int soa_sdp_matching_mindex(soa_session_t *ss,
 
     if (!sdp_media_match_with(mm[i], with))
       continue;
-    
+
     if (!rtp)
       break;
 
-    if (soa_sdp_media_matching_rtpmap(with->m_rtpmaps, 
+    if (soa_sdp_media_matching_rtpmap(with->m_rtpmaps,
 				      mm[i]->m_rtpmaps,
 				      auxiliary))
       break;
@@ -445,11 +445,11 @@ int soa_sdp_matching_mindex(soa_session_t *ss,
 }
 
 /** Set payload types in @a l_m according to the values in @a r_m.
- * 
+ *
  * @retval number of common codecs
  */
 static
-int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m, 
+int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
 			  sdp_media_t const *r_m)
 {
   sdp_rtpmap_t *lrm, **next_lrm;
@@ -489,7 +489,7 @@ int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
       lrm->rm_any = 1;
     }
   }
-  
+
   if (local_codecs == common_codecs)
     return common_codecs;
 
@@ -511,7 +511,7 @@ int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
       next_lrm = &lrm->rm_next;
       continue;
     }
-    
+
     lrm->rm_any = 0;
 
     pt = lrm->rm_pt;
@@ -520,7 +520,7 @@ int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
       for (pt = 96; pt < 128; pt++)
         if (!dynamic_pt[pt])
           break;
-      
+
       if (pt == 128) {
         for (pt = 0; pt < 128; pt++)
           if (!sdp_rtpmap_well_known[pt] && !dynamic_pt[pt])
@@ -544,7 +544,7 @@ int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
     }
 
     dynamic_pt[pt] = 1;
-  
+
     next_lrm = &lrm->rm_next;
   }
 
@@ -557,7 +557,7 @@ int soa_sdp_set_rtpmap_pt(sdp_media_t *l_m,
  * @return Number of common codecs
  */
 static
-int soa_sdp_sort_rtpmap(sdp_rtpmap_t **inout_list, 
+int soa_sdp_sort_rtpmap(sdp_rtpmap_t **inout_list,
 			sdp_rtpmap_t const *rrm,
 			char const *auxiliary)
 {
@@ -611,7 +611,7 @@ int soa_sdp_sort_rtpmap(sdp_rtpmap_t **inout_list,
  * @return Number of common codecs
  */
 static
-int soa_sdp_select_rtpmap(sdp_rtpmap_t **inout_list, 
+int soa_sdp_select_rtpmap(sdp_rtpmap_t **inout_list,
 			  sdp_rtpmap_t const *rrm,
 			  char const *auxiliary,
 			  int select_single)
@@ -628,7 +628,7 @@ int soa_sdp_select_rtpmap(sdp_rtpmap_t **inout_list,
   for (left = inout_list; *left; ) {
     if (auxiliary && soa_sdp_is_auxiliary_codec(*left, auxiliary))
       /* Insert into list of auxiliary codecs */
-      *next_aux = *left, *left = (*left)->rm_next, 
+      *next_aux = *left, *left = (*left)->rm_next,
 	next_aux = &(*next_aux)->rm_next;
     else if (!(select_single && common_codecs > 0)
 	     && sdp_rtpmap_find_matching(rrm, (*left)))
@@ -645,7 +645,7 @@ int soa_sdp_select_rtpmap(sdp_rtpmap_t **inout_list,
 }
 
 
-/** Sort and select rtpmaps  */ 
+/** Sort and select rtpmaps  */
 static
 int soa_sdp_media_upgrade_rtpmaps(soa_session_t *ss,
 				  sdp_media_t *sm,
@@ -660,7 +660,7 @@ int soa_sdp_media_upgrade_rtpmaps(soa_session_t *ss,
   if (rm->m_type == sdp_media_audio)
     auxiliary = sss->sss_audio_aux;
 
-  if (ss->ss_rtp_sort == SOA_RTP_SORT_REMOTE || 
+  if (ss->ss_rtp_sort == SOA_RTP_SORT_REMOTE ||
       (ss->ss_rtp_sort == SOA_RTP_SORT_DEFAULT &&
        rm->m_mode == sdp_recvonly)) {
     soa_sdp_sort_rtpmap(&sm->m_rtpmaps, rm->m_rtpmaps, auxiliary);
@@ -679,7 +679,7 @@ int soa_sdp_media_upgrade_rtpmaps(soa_session_t *ss,
 }
 
 
-/** Sort and select rtpmaps within session */ 
+/** Sort and select rtpmaps within session */
 static
 int soa_sdp_session_upgrade_rtpmaps(soa_session_t *ss,
 				    sdp_session_t *session,
@@ -688,8 +688,8 @@ int soa_sdp_session_upgrade_rtpmaps(soa_session_t *ss,
   sdp_media_t *sm;
   sdp_media_t const *rm;
 
-  for (sm = session->sdp_media, rm = remote->sdp_media; 
-       sm && rm; 
+  for (sm = session->sdp_media, rm = remote->sdp_media;
+       sm && rm;
        sm = sm->m_next, rm = rm->m_next) {
     if (!sm->m_rejected && sdp_media_uses_rtp(sm))
       soa_sdp_media_upgrade_rtpmaps(ss, sm, rm);
@@ -698,7 +698,7 @@ int soa_sdp_session_upgrade_rtpmaps(soa_session_t *ss,
   return 0;
 }
 
-/** Upgrade m= lines within session */ 
+/** Upgrade m= lines within session */
 static
 int soa_sdp_upgrade(soa_session_t *ss,
 		    su_home_t *home,
@@ -737,7 +737,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
   if (!s_media || !o_media || !u_media || !r_media)
     return -1;
 
-  um = sdp_media_dup_all(home, user->sdp_media, session); 
+  um = sdp_media_dup_all(home, user->sdp_media, session);
   if (!um && user->sdp_media)
     return -1;
 
@@ -819,7 +819,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	for (i = 0; i < Ns; i++) {
 	  if (s_media[i])
 	    continue;
-	  s_media[i] = 
+	  s_media[i] =
 	    soa_sdp_make_rejected_media(home, o_media[i], session, 0);
 	}
       }
@@ -905,7 +905,7 @@ int *u2s_alloc(su_home_t *home, int const *u2s)
   return NULL;
 }
 
-/** Check if @a session contains media that are rejected by @a remote. */ 
+/** Check if @a session contains media that are rejected by @a remote. */
 static
 int soa_sdp_reject_is_needed(sdp_session_t const *session,
 			     sdp_session_t const *remote)
@@ -917,7 +917,7 @@ int soa_sdp_reject_is_needed(sdp_session_t const *session,
   if (!session)
     return 0;
 
-  for (sm = session->sdp_media, rm = remote->sdp_media; 
+  for (sm = session->sdp_media, rm = remote->sdp_media;
        sm && rm; sm = sm->m_next, rm = rm->m_next) {
     if (rm->m_rejected) {
       if (!sm->m_rejected)
@@ -937,7 +937,7 @@ int soa_sdp_reject_is_needed(sdp_session_t const *session,
   return 0;
 }
 
-/** If m= line is rejected by remote mark m= line rejected within session */ 
+/** If m= line is rejected by remote mark m= line rejected within session */
 static
 int soa_sdp_reject(su_home_t *home,
 		   sdp_session_t *session,
@@ -983,7 +983,7 @@ int soa_sdp_reject(su_home_t *home,
  * @sa soatag_hold
  *
  * @retval 1 if session was changed (or to be changed, if @a dryrun is nonzero)
- */ 
+ */
 static
 int soa_sdp_mode_set(sdp_session_t const *user,
 		     int const *s2u,
@@ -1129,7 +1129,7 @@ static int offer_answer_step(soa_session_t *ss,
   if (local && remote) switch (action) {
   case generate_answer:
   case process_answer:
-    if (sdp_media_count(remote, sdp_media_any, "*", 0, 0) < 
+    if (sdp_media_count(remote, sdp_media_any, "*", 0, 0) <
 	sdp_media_count(local, sdp_media_any, "*", 0, 0)) {
       SU_DEBUG_5(("%s: remote %s is truncated: expanding\n",
 		  by, action == generate_answer ? "offer" : "answer"));
@@ -1140,7 +1140,7 @@ static int offer_answer_step(soa_session_t *ss,
   default:
     break;
   }
-  
+
   /* Step A: Create local SDP session (based on user-supplied SDP) */
   if (local == NULL) switch (action) {
   case generate_offer:
@@ -1156,7 +1156,7 @@ static int offer_answer_step(soa_session_t *ss,
       /* o->o_address = local->sdp_origin->o_address; */
     }
     if (!o->o_address)
-      o->o_address = c0; 
+      o->o_address = c0;
     local->sdp_origin = o;
 
     if (soa_init_sdp_origin(ss, o, c_address) < 0) {
@@ -1179,7 +1179,7 @@ static int offer_answer_step(soa_session_t *ss,
       break;
     if (local != local0)
       *local0 = *local, local = local0;
-    SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by, 
+    SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		"upgrade with local description"));
     if (soa_sdp_upgrade(ss, tmphome, local, user, NULL, &u2s, &s2u) < 0)
       goto internal_error;
@@ -1226,7 +1226,7 @@ static int offer_answer_step(soa_session_t *ss,
 	} while (0)
 	DUP_LOCAL(local);
       }
-      SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by, 
+      SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "marking rejected media"));
       soa_sdp_reject(tmphome, local, remote);
     }
@@ -1269,7 +1269,7 @@ static int offer_answer_step(soa_session_t *ss,
       SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		  "upgrade codecs with remote description"));
       if (local != local0) {
-	*local0 = *local, local = local0; 
+	*local0 = *local, local = local0;
 	DUP_LOCAL(local);
       }
       soa_sdp_session_upgrade_rtpmaps(ss, local, remote);
@@ -1281,7 +1281,7 @@ static int offer_answer_step(soa_session_t *ss,
     break;
   }
 
-  /* Step F: Update c= line */ 
+  /* Step F: Update c= line */
   switch (action) {
   case generate_offer:
   case generate_answer:
@@ -1290,12 +1290,12 @@ static int offer_answer_step(soa_session_t *ss,
 	local->sdp_connection)
       break;
 
-    if (local->sdp_connection == NULL || 
-	(user->sdp_connection != NULL && 
+    if (local->sdp_connection == NULL ||
+	(user->sdp_connection != NULL &&
 	 sdp_connection_cmp(local->sdp_connection, user->sdp_connection))) {
       sdp_media_t *m;
 
-      /* Every m= line (even rejected one) must have a c= line 
+      /* Every m= line (even rejected one) must have a c= line
        * or there must be a c= line at session level
        */
       if (user->sdp_connection)
@@ -1309,7 +1309,7 @@ static int offer_answer_step(soa_session_t *ss,
 
       if (m) {
 	if (local != local0) {
-	  *local0 = *local, local = local0; 
+	  *local0 = *local, local = local0;
 	  DUP_LOCAL(local);
 	}
 	local->sdp_connection = c;
@@ -1324,7 +1324,7 @@ static int offer_answer_step(soa_session_t *ss,
   soa_description_free(ss, ss->ss_previous);
 
   if (u2s) {
-    u2s = u2s_alloc(ss->ss_home, u2s); 
+    u2s = u2s_alloc(ss->ss_home, u2s);
     s2u = u2s_alloc(ss->ss_home, s2u);
     if (!u2s || !s2u)
       goto internal_error;
@@ -1379,7 +1379,7 @@ static int offer_answer_step(soa_session_t *ss,
 	ss->ss_previous_user_version = 0;
 	ss->ss_previous_remote_version = 0;
       }
-      
+
       su_free(ss->ss_home, u2s), su_free(ss->ss_home, s2u);
 
       goto internal_error;
@@ -1444,7 +1444,7 @@ static int soa_static_generate_answer(soa_session_t *ss,
 {
   /* NOTE:
    * - local SDP might have changed
-   * - remote SDP might have been updated 
+   * - remote SDP might have been updated
    */
 
   if (offer_answer_step(ss, generate_answer, "soa_generate_answer") < 0)
@@ -1459,7 +1459,7 @@ static int soa_static_process_answer(soa_session_t *ss,
   /* NOTE:
    * - both local and remote information is available
    * - local SDP might have changed
-   * - remote SDP might have been updated 
+   * - remote SDP might have been updated
    */
   if (offer_answer_step(ss, process_answer, "soa_process_answer") < 0)
     return -1;

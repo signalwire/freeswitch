@@ -131,16 +131,16 @@ int tport_udp_init_primary(tport_primary_t *pri,
   tport_set_tos(s, ai, pri->pri_params->tpp_tos);
 
 #if HAVE_IP_ADD_MEMBERSHIP
-  if (ai->ai_family == AF_INET && 
+  if (ai->ai_family == AF_INET &&
       IN_MULTICAST(ntohl(su->su_sin.sin_addr.s_addr))) {
     /* Try to join to the multicast group */
-    /* Bind to the SIP address like 
+    /* Bind to the SIP address like
        <sip:88.77.66.55:5060;maddr=224.0.1.75;transport=udp> */
     struct ip_mreq imr[1];
     struct in_addr iface;
 
     memset(imr, 0, sizeof imr);
-      
+
     imr->imr_multiaddr = su->su_sin.sin_addr;
 
     if (host_is_ip4_address(tpn->tpn_canon) &&
@@ -153,7 +153,7 @@ int tport_udp_init_primary(tport_primary_t *pri,
 		  "IP_ADD_MEMBERSHIP", su_strerror(su_errno())));
     }
 #if HAVE_IP_MULTICAST_LOOP
-    else 
+    else
       if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_LOOP, &one, sizeof one) < 0) {
 	SU_DEBUG_3(("setsockopt(%s): %s\n",
 		    "IP_MULTICAST_LOOP", su_strerror(su_errno())));
@@ -191,26 +191,26 @@ int tport_udp_init_primary(tport_primary_t *pri,
   }
 #endif
 
-  tl_gets(tags, 
+  tl_gets(tags,
 	  TPTAG_UDP_RMEM_REF(rmem),
 	  TPTAG_UDP_WMEM_REF(wmem),
 	  TAG_END());
 
-  if (rmem != 0 && 
+  if (rmem != 0 &&
 #if HAVE_SO_RCVBUFFORCE
       setsockopt(s, SOL_SOCKET, SO_RCVBUFFORCE, (void *)&rmem, sizeof rmem) < 0 &&
 #endif
       setsockopt(s, SOL_SOCKET, SO_RCVBUF, (void *)&rmem, sizeof rmem) < 0) {
-    SU_DEBUG_3(("setsockopt(SO_RCVBUF): %s\n", 
+    SU_DEBUG_3(("setsockopt(SO_RCVBUF): %s\n",
 		su_strerror(su_errno())));
   }
 
-  if (wmem != 0 && 
+  if (wmem != 0 &&
 #if HAVE_SO_SNDBUFFORCE
       setsockopt(s, SOL_SOCKET, SO_SNDBUFFORCE, (void *)&wmem, sizeof wmem) < 0 &&
 #endif
       setsockopt(s, SOL_SOCKET, SO_SNDBUF, (void *)&wmem, sizeof wmem) < 0) {
-    SU_DEBUG_3(("setsockopt(SO_SNDBUF): %s\n", 
+    SU_DEBUG_3(("setsockopt(SO_SNDBUF): %s\n",
 		su_strerror(su_errno())));
   }
 
@@ -255,7 +255,7 @@ static void tport_check_trunc(tport_t *tp, su_addrinfo_t *ai)
     return;
 
   for (;;) {
-    n = su_recvfrom(tp->tp_socket, buffer, sizeof buffer, MSG_TRUNC, 
+    n = su_recvfrom(tp->tp_socket, buffer, sizeof buffer, MSG_TRUNC,
 		    (void *)&su, &sulen);
 
     if (n > (ssize_t)sizeof buffer) {
@@ -273,7 +273,7 @@ static void tport_check_trunc(tport_t *tp, su_addrinfo_t *ai)
 /** Receive datagram.
  *
  * @retval -1 error
- * @retval 0  end-of-stream  
+ * @retval 0  end-of-stream
  * @retval 1  normal receive (should never happen)
  * @retval 2  incomplete recv, call me again (should never happen)
  * @retval 3  STUN keepalive, ignore
@@ -289,7 +289,7 @@ int tport_recv_dgram(tport_t *self)
   uint8_t sample[1];
 
   /* Simulate packet loss */
-  if (self->tp_params->tpp_drop && 
+  if (self->tp_params->tpp_drop &&
       (unsigned)su_randint(0, 1000) < self->tp_params->tpp_drop) {
     su_recv(self->tp_socket, sample, 1, 0);
     SU_DEBUG_3(("tport(%p): simulated packet loss!\n", (void *)self));
@@ -326,9 +326,9 @@ int tport_recv_dgram(tport_t *self)
   from = (su_sockaddr_t *)ai->ai_addr, fromlen = (socklen_t)(ai->ai_addrlen);
 
   n = su_vrecv(self->tp_socket, iovec, veclen, 0, from, &fromlen);
-  
+
   ai->ai_addrlen = fromlen;
-  
+
   if (n == SOCKET_ERROR) {
     int error = su_errno();
     msg_destroy(msg); self->tp_msg = NULL;
@@ -360,7 +360,7 @@ int tport_recv_dgram(tport_t *self)
 
   if ((sample[0] & 0xf8) == 0xf8)
     /* SigComp */
-    return tport_recv_comp_dgram(self, self->tp_comp, &self->tp_msg, 
+    return tport_recv_comp_dgram(self, self->tp_comp, &self->tp_msg,
 				 from, fromlen);
 #if HAVE_SOFIA_STUN
   else if (sample[0] == 0 || sample[0] == 1)
@@ -372,8 +372,8 @@ int tport_recv_dgram(tport_t *self)
 }
 
 /** Send using su_vsend(). Map IPv4 addresses as IPv6 addresses, if needed. */
-ssize_t tport_send_dgram(tport_t const *self, msg_t *msg, 
-			 msg_iovec_t iov[], 
+ssize_t tport_send_dgram(tport_t const *self, msg_t *msg,
+			 msg_iovec_t iov[],
 			 size_t iovused)
 {
   su_sockaddr_t su[1];
@@ -481,12 +481,12 @@ int tport_udp_error(tport_t const *self, su_sockaddr_t name[1])
 	break;
       case SO_EE_ORIGIN_ICMP:
 	origin = "icmp";
-	snprintf(info, sizeof(info), " type=%u code=%u", 
+	snprintf(info, sizeof(info), " type=%u code=%u",
 		 ee->ee_type, ee->ee_code);
 	break;
       case SO_EE_ORIGIN_ICMP6:
 	origin = "icmp6";
-	snprintf(info, sizeof(info), " type=%u code=%u", 
+	snprintf(info, sizeof(info), " type=%u code=%u",
 		ee->ee_type, ee->ee_code);
 	break;
       case SO_EE_ORIGIN_NONE:
@@ -498,11 +498,11 @@ int tport_udp_error(tport_t const *self, su_sockaddr_t name[1])
       }
 
       if (ee->ee_info)
-	snprintf(info + strlen(info), sizeof(info) - strlen(info), 
+	snprintf(info + strlen(info), sizeof(info) - strlen(info),
 		 " info=%08x", ee->ee_info);
 
       SU_DEBUG_3(("%s: %s (%d) [%s%s]\n",
-		  __func__, su_strerror(ee->ee_errno), ee->ee_errno, 
+		  __func__, su_strerror(ee->ee_errno), ee->ee_errno,
 		  origin, info));
       if (from->su_family != AF_UNSPEC)
 	SU_DEBUG_3(("\treported by [%s]:%u\n",

@@ -26,7 +26,7 @@
 /** Defined when <sofia-sip/nta_tag.h> has been included. */
 #define NTA_TAG_H
 
-/**@file sofia-sip/nta_tag.h   
+/**@file sofia-sip/nta_tag.h
  * @brief NTA tags
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -142,7 +142,7 @@ NTA_DLL extern tag_typedef_t ntatag_smime;
 
 NTA_DLL extern tag_typedef_t ntatag_smime_ref;
 #define NTATAG_SMIME_REF(x) ntatag_smime_ref, tag_ptr_vr(&(x), (x))
- 
+
 NTA_DLL extern tag_typedef_t ntatag_maxsize;
 #define NTATAG_MAXSIZE(x) ntatag_maxsize, tag_usize_v((x))
 
@@ -341,13 +341,13 @@ NTA_DLL extern tag_typedef_t ntatag_rel100;
 
 NTA_DLL extern tag_typedef_t ntatag_rel100_ref;
 #define NTATAG_REL100_REF(x) ntatag_rel100_ref, tag_bool_vr(&(x))
- 
+
 NTA_DLL extern tag_typedef_t ntatag_sipflags;
 #define NTATAG_SIPFLAGS(x)     ntatag_sipflags, tag_uint_v((x))
 
 NTA_DLL extern tag_typedef_t ntatag_sipflags_ref;
 #define NTATAG_SIPFLAGS_REF(x) ntatag_sipflags_ref, tag_uint_vr(&(x))
- 
+
 NTA_DLL extern tag_typedef_t ntatag_client_rport;
 #define NTATAG_CLIENT_RPORT(x) ntatag_client_rport, tag_bool_v((x))
 

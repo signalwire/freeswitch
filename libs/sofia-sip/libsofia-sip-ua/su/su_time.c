@@ -30,7 +30,7 @@
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Jari Selin <Jari.Selin@nokia.com>
  * @author Kai Vehmanen <first.surname@nokia.com>
- * 
+ *
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
 
@@ -59,49 +59,49 @@
 /**@defgroup su_time Time Handling
  *
  * OS-independent timing functions and types for the @b su library.
- *  
+ *
  * The @b su library provides three different time formats with different
  * ranges and epochs in <sofia-sip/su_time.h>:
  *
  *   - #su_time_t, second and microsecond as 32-bit values since 1900,
  *   - #su_duration_t, milliseconds between two times, and
- *   - #su_ntp_t, standard NTP timestamp (seconds since 1900 as 
- *     a fixed-point 64-bit value with 32 bits representing subsecond 
+ *   - #su_ntp_t, standard NTP timestamp (seconds since 1900 as
+ *     a fixed-point 64-bit value with 32 bits representing subsecond
  *     value).
  */
 
 /**
  * Compare two timestamps.
- * 
+ *
  * The function su_time_cmp() compares two su_time_t timestamps.
- * 
+ *
  * @param t1 first NTP timestamp in su_time_t structure
  * @param t2 second NTP timestamp in su_time_t structure
- * 
+ *
  * @retval  Negative, if @a t1 is before @a t2,
  * @retval  Zero, if @a t1 is same as @a t2, or
  * @retval  Positive, if @a t1 is after @a t2.
- * 
+ *
  */
 long su_time_cmp(su_time_t const t1, su_time_t const t2)
 {
   long retval = 0;
 
-  if (t1.tv_sec > t2.tv_sec) 
+  if (t1.tv_sec > t2.tv_sec)
     retval = 1;
-  else if (t1.tv_sec < t2.tv_sec) 
+  else if (t1.tv_sec < t2.tv_sec)
     retval = -1;
   else {
-    if (t1.tv_usec > t2.tv_usec) 
+    if (t1.tv_usec > t2.tv_usec)
       retval = 1;
-    else if (t1.tv_usec < t2.tv_usec) 
+    else if (t1.tv_usec < t2.tv_usec)
       retval = -1;
   }
 
   return retval;
 }
 
-/**@def SU_TIME_CMP(t1, t2) 
+/**@def SU_TIME_CMP(t1, t2)
  *
  * Compare two timestamps.
  *
@@ -109,7 +109,7 @@ long su_time_cmp(su_time_t const t1, su_time_t const t2)
  *
  * @param t1   first NTP timestamp in su_time_t structure
  * @param t2   second NTP timestamp in su_time_t  structure
- * 
+ *
  * @retval negative, if t1 is before t2,
  * @retval zero,     if t1 is same as t2, or
  * @retval positive, if t1 is after t2.
@@ -119,19 +119,19 @@ long su_time_cmp(su_time_t const t1, su_time_t const t2)
 
 /** Difference between two timestamps.
  *
- * The function returns difference between two timestamps 
+ * The function returns difference between two timestamps
  * in seconds (t1 - t2).
  *
  * @param t1   first timeval
  * @param t2   second timeval
- * 
+ *
  * @return
  *    The difference between two timestamps in seconds as a double.
  */
 double su_time_diff(su_time_t const t1, su_time_t const t2)
 {
   return
-    ((double)t1.tv_sec - (double)t2.tv_sec) 
+    ((double)t1.tv_sec - (double)t2.tv_sec)
     + (double)((long)t1.tv_usec - (long)t2.tv_usec) / 1000000.0;
 }
 
@@ -151,14 +151,14 @@ su_time_t su_now(void)
 
 /** Print su_time_t timestamp.
  *
- *   This function prints a su_time_t timestamp as a decimal number to the 
+ *   This function prints a su_time_t timestamp as a decimal number to the
  *   given buffer.
  *
  * @param s    pointer to buffer
  * @param n    buffer size
  * @param tv   pointer to the timeval object
- * 
- * @return 
+ *
+ * @return
  *   The number of characters printed, excluding the final @c NUL.
  */
 int su_time_print(char *s, int n, su_time_t const *tv)
@@ -172,11 +172,11 @@ int su_time_print(char *s, int n, su_time_t const *tv)
 
 /** Time difference in milliseconds.
  *
- * Calculates the duration from t2 to t1 in milliseconds.  
+ * Calculates the duration from t2 to t1 in milliseconds.
  *
  * @param t1   after time
  * @param t2   before time
- * 
+ *
  * @return The duration in milliseconds between the two times.
  * If the difference is bigger than #SU_DURATION_MAX, return #SU_DURATION_MAX
  * instead.
@@ -215,7 +215,7 @@ const su_t64_t su_res64 = (su_t64_t)1000000UL;
  *
  * The function su_ntp_now() returns the current NTP timestamp.  NTP
  * timestamp is seconds elapsed since January 1st, 1900.
- * 
+ *
  * @return
  * The current time as NTP timestamp is returned.
  */
@@ -235,20 +235,20 @@ su_ntp_t su_ntp_now(void)
 
     usec = now / 1000;
     nsec = now % 1000;
-    
+
     /*
      * Multiply usec by 4294.967296 (ie. 2**32 / 1E6)
-     * 
-     * Utilize fact that 4294.967296 == 4295 - 511 / 15625 
+     *
+     * Utilize fact that 4294.967296 == 4295 - 511 / 15625
      */
     now = 4295 * usec - 511 * usec / 15625;
     rem = (511U * usec) % 15625U;
-  
+
     /* Multiply nsec by 4.294967296 */
     nsec = 4295 * 125 * nsec - (511 * nsec) / 125;
     nsec -= 8 * rem; /* usec rounding */
     nsec = (nsec + (nsec < 0 ? -62499 : +62499)) / 125000;
-    
+
     return now + nsec;
   }
 }
@@ -317,7 +317,7 @@ su_time_t su_t64_to_time(su_t64_t const us)
   return tv;
 }
 
-/** 
+/**
  * Add milliseconds to the time.
  *
  * @param t0  time in seconds and microseconds as @c su_time_t
@@ -328,7 +328,7 @@ su_time_t su_time_add(su_time_t t0, su_duration_t dur)
   return su_t64_to_time(SU_TIME_TO_T64(t0) + SU_DUR_TO_T64(dur));
 }
 
-/** 
+/**
  * Add seconds to the time.
  *
  * @param t0  time in seconds and microseconds as @c su_time_t
@@ -354,7 +354,7 @@ uint64_t su_nanocounter(void)
 
   if(!counterfreq) {
     LARGE_INTEGER Freq = { 0, 0 };
-    if (!QueryPerformanceFrequency(&Freq)) { 
+    if (!QueryPerformanceFrequency(&Freq)) {
       SU_DEBUG_1(("su_counter: QueryPerformanceFrequency failed\n"));
       return 0;
     }
@@ -366,9 +366,9 @@ uint64_t su_nanocounter(void)
      return 0;
   }
   count = (ULONGLONG) LargeIntCount.QuadPart;
- 
+
   /* return value is in ns */
-  return  ((count * 1000 * 1000 * 1000) / counterfreq) ; 
+  return  ((count * 1000 * 1000 * 1000) / counterfreq) ;
 }
 
 uint64_t su_counter(void)
@@ -384,7 +384,7 @@ uint64_t su_counter(void)
  * for timing purposes.
  *
  * Parameters:
- * 
+ *
  * @return
  *   The current CPU counter value in nanoseconds
  */
@@ -396,7 +396,7 @@ uint64_t su_nanocounter(void)
   static clockid_t cpu = CLOCK_REALTIME;
 
 # define CLOCK_GETTIMEOFDAY 0xdedbeefUL
-  
+
   if (init == 0) {
     init = 1;
 
@@ -425,8 +425,8 @@ uint64_t su_nanocounter(void)
     perror("clock_gettime");
 
   /* return value is in nanoseconds */
-  return 
-    (uint64_t)((unsigned long)tp.tv_nsec) + 
+  return
+    (uint64_t)((unsigned long)tp.tv_nsec) +
     (uint64_t)((unsigned long)tp.tv_sec) * 1000000000ULL;
 }
 
@@ -436,7 +436,7 @@ uint64_t su_nanocounter(void)
  * for timing purposes.
  *
  * Parameters:
- * 
+ *
  * @return
  *   The current CPU counter value in microseconds.
  */
@@ -451,8 +451,8 @@ uint64_t su_counter(void)
   struct timeval tv;
   gettimeofday(&tv, NULL);
   /* return value is in microseconds */
-  return 
-    (uint64_t)((unsigned long)tv.tv_usec) + 
+  return
+    (uint64_t)((unsigned long)tv.tv_usec) +
     (uint64_t)((unsigned long)tv.tv_sec) * 1000000ULL;
 }
 
@@ -461,8 +461,8 @@ uint64_t su_nanocounter(void)
   struct timeval tv;
   gettimeofday(&tv, NULL);
   /* return value is in nanoseconds */
-  return 
-    (uint64_t)((unsigned long)tv.tv_usec) * 1000ULL + 
+  return
+    (uint64_t)((unsigned long)tv.tv_usec) * 1000ULL +
     (uint64_t)((unsigned long)tv.tv_sec) * 1000000000ULL;
 }
 

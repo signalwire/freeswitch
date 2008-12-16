@@ -56,7 +56,7 @@ int urltag_snprintf(tagi_t const *t, char b[], size_t size)
   if (URL_STRING_P(us))
     return snprintf(b, size, "<%s>", us->us_str);
   else
-    return snprintf(b, size, "<" URL_PRINT_FORMAT ">", 
+    return snprintf(b, size, "<" URL_PRINT_FORMAT ">",
 		    URL_PRINT_ARGS(us->us_url));
 }
 
@@ -95,7 +95,7 @@ tagi_t *urltag_dup(tagi_t *dst, tagi_t const *src, void **bb)
     dst->t_value = (tag_value_t)d;
     *bb = b + sizeof(*d) + xtra;
   }
-  
+
   return dst + 1;
 }
 
@@ -110,7 +110,7 @@ tagi_t *urltag_dup(tagi_t *dst, tagi_t const *src, void **bb)
  *
  * @param tt tag type
  * @param home memory home used to allocate new #url_t structure
- * @param str string to convert 
+ * @param str string to convert
  * @param return_value return-value parameter for converted url
  *
  * @retval 0 when successful
@@ -130,7 +130,7 @@ int urltag_scan(tag_type_t tt, su_home_t *home,
 
   for (len = 0; !IS_EXCLUDED(str[len]); len++)
     ;
-  
+
   url = su_alloc(home, (sizeof *url) + len + 1);
   if (!url)
     return -1;
@@ -145,7 +145,7 @@ int urltag_scan(tag_type_t tt, su_home_t *home,
   return 0;
 }
 
-tag_class_t url_tag_class[1] = 
+tag_class_t url_tag_class[1] =
   {{
     sizeof(url_tag_class),
     /* tc_next */     NULL,

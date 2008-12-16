@@ -27,16 +27,16 @@
 
 /**
  * @file su_source.h
- * @brief 
+ * @brief
  *
- * NOTE: This file (su_source.h) is DEPRECATED as of 1.12.2 release. 
+ * NOTE: This file (su_source.h) is DEPRECATED as of 1.12.2 release.
  *       Please use su_glib.h instead.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <first.surname@nokia.com>
- *  
+ *
  * @date Created: Thu Mar  4 19:58:50 2004 ppessi
- * 
+ *
  */
 
 #ifndef SU_WAIT_H

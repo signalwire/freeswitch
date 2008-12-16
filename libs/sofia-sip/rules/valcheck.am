@@ -1,4 +1,4 @@
-# 
+#
 # run tests with valgrind
 #
 
@@ -23,7 +23,7 @@
 # even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.
 
-VALGRIND = valgrind 
+VALGRIND = valgrind
 
 VALGRINDFLAGS = --tool=memcheck
 
@@ -34,7 +34,7 @@ valcheck-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) valcheck-TESTS
 
-# Run tests with valgrind in 
+# Run tests with valgrind in
 valcheck-TESTS:	$(TESTS)
 	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
 	srcdir=$(srcdir); export srcdir; \

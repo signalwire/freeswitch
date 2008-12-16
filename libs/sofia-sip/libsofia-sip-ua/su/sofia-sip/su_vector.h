@@ -28,9 +28,9 @@
 
 /**@file sofia-sip/su_vector.h
  * @brief Vector interface
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Fri Sep 27 14:31:15 2002 ppessi
  */
 

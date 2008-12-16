@@ -152,7 +152,7 @@ msg_mclass_t *sip_extend_mclass(msg_mclass_t *input)
   return mclass;
 }
 
-/** Extract the SIP message body, including separator line. 
+/** Extract the SIP message body, including separator line.
  *
  * @param msg  message object [IN]
  * @param sip  public SIP message structure [IN/OUT]
@@ -162,13 +162,13 @@ msg_mclass_t *sip_extend_mclass(msg_mclass_t *input)
  *
  * @retval -1 error
  * @retval 0  cannot proceed
- * @retval m 
+ * @retval m
  */
 issize_t sip_extract_body(msg_t *msg, sip_t *sip, char b[], isize_t bsiz, int eos)
 {
   ssize_t m = 0;
   size_t body_len;
-  
+
   if (!(sip->sip_flags & MSG_FLG_BODY)) {
     /* We are looking at a potential empty line */
     m = msg_extract_separator(msg, (msg_pub_t *)sip, b, bsiz, eos);
@@ -203,10 +203,10 @@ issize_t sip_extract_body(msg_t *msg, sip_t *sip, char b[], isize_t bsiz, int eo
     return bsiz;
   }
 
-  if ((m = msg_extract_payload(msg, (msg_pub_t *)sip, 
+  if ((m = msg_extract_payload(msg, (msg_pub_t *)sip,
 			       NULL, body_len, b, bsiz, eos)) == -1)
     return -1;
-  
+
   sip->sip_flags |= MSG_FLG_FRAGS;
   if (bsiz >= body_len)
     sip->sip_flags |= MSG_FLG_COMPLETE;
@@ -216,7 +216,7 @@ issize_t sip_extract_body(msg_t *msg, sip_t *sip, char b[], isize_t bsiz, int eo
 
 /** Parse SIP version.
  *
- * Parse a SIP version string. Update the 
+ * Parse a SIP version string. Update the
  * pointer at @a ss to first non-LWS character after the version string.
  *
  * @param ss   string to be parsed [IN/OUT]
@@ -231,7 +231,7 @@ int sip_version_d(char **ss, char const **ver)
   char const *result;
   size_t const version_size = sizeof(sip_version_2_0) - 1;
 
-  if (strncasecmp(s, sip_version_2_0, version_size) == 0 && 
+  if (strncasecmp(s, sip_version_2_0, version_size) == 0 &&
       !IS_TOKEN(s[version_size])) {
     result = sip_version_2_0;
     s += version_size;
@@ -259,7 +259,7 @@ int sip_version_d(char **ss, char const **ver)
       memmove(s + l1 + 1, s + n - l2, l2);
       s[l1 + 1 + l2] = 0;
 
-      /* Compare again with compacted version */ 
+      /* Compare again with compacted version */
       if (strcasecmp(s, sip_version_2_0) == 0)
 	result = sip_version_2_0;
     }
@@ -268,10 +268,10 @@ int sip_version_d(char **ss, char const **ver)
   }
 
   while (IS_WS(*s)) *s++ = '\0';
-  
+
   *ss = s;
 
-  if (ver) 
+  if (ver)
     *ver = result;
 
   return 0;
@@ -344,7 +344,7 @@ char const *sip_method_name(sip_method_t method, char const *name)
 
 /**Parse a SIP method name.
  *
- * Parse a SIP method name and return a code corresponding to the method. 
+ * Parse a SIP method name and return a code corresponding to the method.
  * The address of the first non-LWS character after method name is stored in
  * @a *ss.
  *
@@ -375,11 +375,11 @@ sip_method_t sip_method_d(char **ss, char const **return_name)
   switch (c) {
   case 'A': if (MATCH(s, "ACK")) code = sip_method_ack; break;
   case 'B': if (MATCH(s, "BYE")) code = sip_method_bye; break;
-  case 'C': 
-    if (MATCH(s, "CANCEL")) 
-      code = sip_method_cancel; 
+  case 'C':
+    if (MATCH(s, "CANCEL"))
+      code = sip_method_cancel;
     break;
-  case 'I': 
+  case 'I':
     if (MATCH(s, "INVITE"))
       code = sip_method_invite;
     else if (MATCH(s, "INFO"))
@@ -388,19 +388,19 @@ sip_method_t sip_method_d(char **ss, char const **return_name)
   case 'M': if (MATCH(s, "MESSAGE")) code = sip_method_message; break;
   case 'N': if (MATCH(s, "NOTIFY")) code = sip_method_notify; break;
   case 'O': if (MATCH(s, "OPTIONS")) code = sip_method_options; break;
-  case 'P': 
-    if (MATCH(s, "PRACK")) code = sip_method_prack; 
-    else if (MATCH(s, "PUBLISH")) code = sip_method_publish; 
+  case 'P':
+    if (MATCH(s, "PRACK")) code = sip_method_prack;
+    else if (MATCH(s, "PUBLISH")) code = sip_method_publish;
     break;
-  case 'R': 
-    if (MATCH(s, "REGISTER")) 
-      code = sip_method_register; 
+  case 'R':
+    if (MATCH(s, "REGISTER"))
+      code = sip_method_register;
     else if (MATCH(s, "REFER"))
-      code = sip_method_refer; 
+      code = sip_method_refer;
     break;
-  case 'S': 
-    if (MATCH(s, "SUBSCRIBE")) 
-      code = sip_method_subscribe; 
+  case 'S':
+    if (MATCH(s, "SUBSCRIBE"))
+      code = sip_method_subscribe;
     break;
   case 'U':
     if (MATCH(s, "UPDATE"))
@@ -410,7 +410,7 @@ sip_method_t sip_method_d(char **ss, char const **return_name)
 
 #undef MATCH
 
-  if (IS_NON_WS(s[n])) 
+  if (IS_NON_WS(s[n]))
     /* Unknown method */
     code = sip_method_unknown;
 
@@ -467,14 +467,14 @@ issize_t sip_transport_d(char **ss, char const **ttransport)
        !TRANSPORT_MATCH(sip_transport_tcp) &&
        !TRANSPORT_MATCH(sip_transport_sctp) &&
        !TRANSPORT_MATCH(sip_transport_tls))) {
-    /* Protocol name */ 
+    /* Protocol name */
     transport = pn = s;
     skip_token(&s);
     pn_len = s - pn;
     skip_lws(&s);
     if (pn_len == 0 || *s++ != '/') return -1;
     skip_lws(&s);
-    
+
     /* Protocol version */
     pv = s;
     skip_token(&s);
@@ -482,13 +482,13 @@ issize_t sip_transport_d(char **ss, char const **ttransport)
     skip_lws(&s);
     if (pv_len == 0 || *s++ != '/') return -1;
     skip_lws(&s);
-    
+
     /* Transport protocol */
     pt = s;
     skip_token(&s);
     pt_len = s - pt;
     if (pt_len == 0) return -1;
-    
+
     /* Remove whitespace between protocol name and version */
     if (pn + pn_len + 1 != pv) {
       pn[pn_len] = '/';
@@ -500,7 +500,7 @@ issize_t sip_transport_d(char **ss, char const **ttransport)
       pv[pv_len] = '/';
       pt = memmove(pv + pv_len + 1, pt, pt_len);
       pt[pt_len] = '\0';
-      
+
       /* extra whitespace? */
       if (!strcasecmp(transport, sip_transport_udp))
 	transport = sip_transport_udp;
@@ -580,9 +580,9 @@ char *sip_word_at_word_d(char **ss)
   return rv;
 }
 
-/**Add message separator, then test if message is complete. 
+/**Add message separator, then test if message is complete.
  *
- * Add sip_content_length and sip_separator if they are missing. 
+ * Add sip_content_length and sip_separator if they are missing.
  * The test that all necessary message components ( @From, @To,
  * @CSeq, @CallID, @ContentLength and message separator are present.
  *
@@ -622,7 +622,7 @@ int sip_complete_message(msg_t *msg)
     if (mplen == -1)
       return -1;
     len = (size_t)mplen;
-  } 
+  }
 
   if (sip->sip_payload)
     len += sip->sip_payload->pl_len;
@@ -640,14 +640,14 @@ int sip_complete_message(msg_t *msg)
       sip_fragment_clear(sip->sip_content_length->l_common);
     }
   }
-  
-  if (!sip->sip_cseq || 
+
+  if (!sip->sip_cseq ||
       !sip->sip_call_id ||
       !sip->sip_to ||
       !sip->sip_from ||
       !sip->sip_separator ||
       !sip->sip_content_length)
     return -1;
-  
+
   return 0;
 }

@@ -13,7 +13,7 @@ if test "$with_openssl" = no  ;then
   : # No openssl
 else
 
-  if test "$with_openssl" = "pkg-config" ; then 
+  if test "$with_openssl" = "pkg-config" ; then
     PKG_CHECK_MODULES(openssl, openssl,
 	[HAVE_TLS=1 HAVE_OPENSSL=1 LIBS="$openssl_LIBS $LIBS"],
 	[HAVE_OPENSSL=0])
@@ -26,16 +26,16 @@ else
     AC_CHECK_HEADERS([openssl/tls1.h], [
       HAVE_OPENSSL=1 HAVE_TLS=1
 
-      AC_CHECK_LIB(crypto, BIO_new,, 
+      AC_CHECK_LIB(crypto, BIO_new,,
       	HAVE_OPENSSL=0
       	AC_MSG_WARN(OpenSSL crypto library was not found))
 
-      AC_CHECK_LIB(ssl, TLSv1_method,, 
+      AC_CHECK_LIB(ssl, TLSv1_method,,
       	HAVE_TLS=0
       	AC_MSG_WARN(OpenSSL protocol library was not found))
      ],[AC_MSG_WARN(OpenSSL include files were not found)])
   fi
-  
+
   if test x$HAVE_OPENSSL = x1; then
      AC_DEFINE([HAVE_OPENSSL], 1, [Define to 1 if you have OpenSSL])
   fi

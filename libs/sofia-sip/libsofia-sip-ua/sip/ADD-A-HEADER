@@ -23,7 +23,7 @@ IF YOUR HEADER IS A STANDARD ONE
     You should add a typedef line like this:
 
      typedef struct sip_example_s sip_example_t;
-	
+
     Note that the typedefs are documented together with the
     implementation in the .c file.
 
@@ -50,16 +50,16 @@ IF YOUR HEADER IS A STANDARD ONE
   * Add entry to sip_extra_headers.txt:
    - In this case:
      example @NEW_2_0 /* Example header */
-   - The first is the base C name used for functions and types related to 
+   - The first is the base C name used for functions and types related to
      the type. The AWK script msg_parser.awk automatically creates the
      default prototypes and tags for the newly created header. It will
      complain about mismatches between header name and the base name.
 
-   - If the entry is before #### DEFAULT HEADER LIST ENDS HERE #### 
+   - If the entry is before #### DEFAULT HEADER LIST ENDS HERE ####
      the new header is added to the default parser
    - If after, the new header is added only to the extended parser.
 
-   - The extended parser will be used after call to 
+   - The extended parser will be used after call to
      sip_update_default_mclass(NULL)
 
   * Write parsing tests for your new headers in torture_sip.c:
@@ -79,10 +79,10 @@ IF YOUR HEADER IS A STANDARD ONE
       + sip_example_dup_xtra(), sip_example_dup_one()
 
   * If you added a .c file, add to the Makefile.am
-    - remember to run autogen.sh unless you have given --enable-maintainer-mode 
+    - remember to run autogen.sh unless you have given --enable-maintainer-mode
       to configure script
 
-  * Run "make check" after you are ready 
+  * Run "make check" after you are ready
 
   * Run "make check" after you are ready. Really.
 
@@ -95,10 +95,10 @@ IF YOUR HEADERS ARE COMPLETELY NON-STANDARD
     - There is an example package sofia-sip-2543.tar.gz, available from
       sofia-sip.sourceforge.net
 
-      See the extension package for 1) 
+      See the extension package for 1)
 
-    - Create a header template for your header just like 
-      sofia-sip/rfc2543.h.in (found in <sofia-sip/rfc2543.h> package), 
+    - Create a header template for your header just like
+      sofia-sip/rfc2543.h.in (found in <sofia-sip/rfc2543.h> package),
       e.g, sip_example.h.in:
 
 ---8<----8<----8<----8<----8<----8<----8<----8<----8<----8<----8<----8<---
@@ -107,11 +107,11 @@ IF YOUR HEADERS ARE COMPLETELY NON-STANDARD
  * Template for <sip_example.h>.
  */
 
-#ifndef SIP_EXAMPLE_H 
+#ifndef SIP_EXAMPLE_H
 /** Defined when <sip_example.h> has been included. */
-#define SIP_EXAMPLE_H 
+#define SIP_EXAMPLE_H
 
-/**@file sip_example.h 
+/**@file sip_example.h
 *
  * @brief Example header.
  *

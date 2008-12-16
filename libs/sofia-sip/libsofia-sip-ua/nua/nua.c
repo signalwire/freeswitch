@@ -99,14 +99,14 @@ su_log_t nua_log[] = { SU_LOG_INIT("nua", "NUA_DEBUG", SU_DEBUG) };
  *   (but see also NUTAG_INITIAL_ROUTE()).
  * - NUTAG_URL() (and NUTAG_SIPS_URL(), listing URIs describing
  *   transports)
- * - NUTAG_CERTIFICATE_DIR(), specifying the location of the 
+ * - NUTAG_CERTIFICATE_DIR(), specifying the location of the
  *   root and client/server certificate files
- * - NUTAG_SIP_PARSER(), providing customized parser used to 
+ * - NUTAG_SIP_PARSER(), providing customized parser used to
  *   parse received SIP messages
  * - All parameter tags, listed with nua_set_params()
  * - All NTATAG_* are passed to NTA documented in <sofia-sip/nta_tag.h>:
- *   see NTATAG_EXTRA_100(), 
- * - All tport tags are passed to tport. 
+ *   see NTATAG_EXTRA_100(),
+ * - All tport tags are passed to tport.
  *   They are documented in <sofia-sip/tport_tag.h>
  * - All SOATAG_* are passed to the default SOA (media session) object which
  *   is created by nua_create() unless NUTAG_MEDIA_ENABLE(0) is included in

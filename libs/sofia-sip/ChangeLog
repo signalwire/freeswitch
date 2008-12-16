@@ -2,11 +2,11 @@
 ChangeLog / Sofia-SIP - SIP User-Agent library
 ===============================================================
 
-Sofia-SIP library ChangeLog files are available in the 
+Sofia-SIP library ChangeLog files are available in the
 following places:
 
-- per subdirectory ChangeLog files 
-    - all non-trivial changes to files (unless documented  
+- per subdirectory ChangeLog files
+    - all non-trivial changes to files (unless documented
       elsewhere)
 - version control system changelogs
     - darcs and CVS tree repositories (see README.developers

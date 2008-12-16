@@ -22,7 +22,7 @@
  *
  */
 
-/**@internal 
+/**@internal
  * @file test_poll.c
  * Example code for <sofia-sip/su_wait.h>.
  *
@@ -57,15 +57,15 @@ int main(int argc, char *argv[])
   char *port = host ? argv[2] : NULL;
   su_addrinfo_t *ai = NULL, hints[1] = {{ 0 }};
   int error;
-  
-  if (argv[1] && (strcmp(argv[1], "--help") == 0 || 
-		  strcmp(argv[1], "-?") == 0)) 
+
+  if (argv[1] && (strcmp(argv[1], "--help") == 0 ||
+		  strcmp(argv[1], "-?") == 0))
     usage(argv[0]);
 
   if (!port) port = "echo";
 
   if ((error = su_getaddrinfo(host, port, hints, &ai))) {
-    fprintf(stderr, "poll_test: su_getaddrinfo(): %s\n", 
+    fprintf(stderr, "poll_test: su_getaddrinfo(): %s\n",
 	    su_gai_strerror(error));
     exit(1);
   }
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     su_wait_create(&w, s, SU_WAIT_OUT);
 
     n = su_wait(&w, 1, SU_WAIT_FOREVER);
-    
+
     printf("su_wait returned %d\n", n);
 
     err = su_soerror(s);

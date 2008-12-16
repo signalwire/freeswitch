@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 
   now = su_now();
 
-  printf("Inserting %u timers took %f millisec\n", 
+  printf("Inserting %u timers took %f millisec\n",
 	 i, su_time_diff(inserted, started) * 1000);
 
   printf("Processing %u/%u timers took %f millisec (%f expected)\n",

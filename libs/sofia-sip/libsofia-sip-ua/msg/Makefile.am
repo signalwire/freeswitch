@@ -33,7 +33,7 @@ PUBLIC_H = 		sofia-sip/msg.h sofia-sip/msg_header.h \
 INTERNAL_H = msg_internal.h test_class.h
 
 nobase_include_sofia_HEADERS = \
-			$(GENERATED_H) $(PUBLIC_H) 
+			$(GENERATED_H) $(PUBLIC_H)
 
 GENERATED_HC = $(GENERATED_H) msg_mime_table.c test_table.c test_protos.h
 
@@ -55,7 +55,7 @@ LDADD = 		libtest_msg.a libmsg.la \
 			../bnf/libbnf.la \
 			../url/liburl.la \
 			../ipt/libipt.la \
-			../su/libsu.la 
+			../su/libsu.la
 
 test_msg_LDFLAGS = 	-static
 

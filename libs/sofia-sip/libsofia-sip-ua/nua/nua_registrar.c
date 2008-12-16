@@ -93,11 +93,11 @@
  * @END_NUA_EVENT
  */
 
-nua_server_methods_t const nua_register_server_methods = 
+nua_server_methods_t const nua_register_server_methods =
   {
     SIP_METHOD_REGISTER,
     nua_i_register,		/* Event */
-    { 
+    {
       0,			/* Do not create dialog */
       0,			/* Initial request */
       0,			/* Not a target refresh request  */

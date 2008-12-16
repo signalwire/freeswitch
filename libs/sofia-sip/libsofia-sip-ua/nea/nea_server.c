@@ -71,7 +71,7 @@ struct nea_server_s {
   su_home_t                 nes_home[1];
   su_root_t                *nes_root;
   su_timer_t               *nes_timer;
-  
+
   nta_agent_t              *nes_agent;
   nta_leg_t                *nes_leg;
 
@@ -106,8 +106,8 @@ struct nea_server_s {
   nea_new_event_f          *nes_callback;
   nea_smagic_t             *nes_context;
 
-  /** Events.  
-   * Each subscriber will be added to one of these. */ 
+  /** Events.
+   * Each subscriber will be added to one of these. */
   nea_event_t              *nes_events;
 };
 
@@ -178,11 +178,11 @@ struct nea_event_view_s
 struct nea_sub_s {
   nea_sub_t        *s_next;
   nea_sub_t       **s_prev;
-  
+
   nta_leg_t        *s_leg;
   nta_incoming_t   *s_irq;
   nta_outgoing_t   *s_oreq;
-  
+
   nea_server_t     *s_nes;
 
   sip_contact_t    *s_local;	/**< Local contact */
@@ -204,7 +204,7 @@ struct nea_sub_s {
   unsigned          s_reported :1 ; /**< Made watcher report upon un-SUBSCRIBE */
 
   unsigned          s_processing : 1;
-  unsigned          s_rejected : 1; 
+  unsigned          s_rejected : 1;
   unsigned          s_pending_flush : 1;
   unsigned          s_garbage : 1;
   unsigned          s_fake : 1; /**< Do not send real information to user */
@@ -242,7 +242,7 @@ static void nea_sub_destroy(nea_sub_t *s);
 static
 int nea_server_callback(nea_sub_t *nes_as_sub,
 			nta_leg_t *leg,
-			nta_incoming_t *irq, 
+			nta_incoming_t *irq,
 			sip_t const *sip);
 
 static int nea_sub_process_incoming(nea_sub_t *s,
@@ -255,9 +255,9 @@ static int nea_sub_process_subscribe(nea_sub_t *s,
 				     nta_incoming_t *irq,
 				     sip_t const *sip);
 
-static int nea_sub_notify(nea_server_t *nes, 
-			  nea_sub_t *s, 
-			  sip_time_t now, 
+static int nea_sub_notify(nea_server_t *nes,
+			  nea_sub_t *s,
+			  sip_time_t now,
 			  tag_type_t tag, tag_value_t value, ...);
 
 static int response_to_notify(nea_sub_t *s,
@@ -268,8 +268,8 @@ static void nes_event_timer(nea_server_t *nes,
 			    su_timer_t *timer,
 			    su_timer_arg_t *arg);
 
-static int nea_view_queue(nea_server_t *nes, 
-			  nea_event_view_t *evv, 
+static int nea_view_queue(nea_server_t *nes,
+			  nea_event_view_t *evv,
 			  nea_event_queue_t *evq);
 
 /** Assign an event view to subscriber. */
@@ -283,7 +283,7 @@ void nea_sub_assign_view(nea_sub_t *s, nea_event_view_t *evv)
   s->s_throttle = evv->evv_throttle;
 }
 
-su_inline 
+su_inline
 void nea_subnode_init(nea_subnode_t *sn, nea_sub_t *s, sip_time_t now)
 {
   sn->sn_state = s->s_state;
@@ -312,18 +312,18 @@ void nea_subnode_init(nea_subnode_t *sn, nea_sub_t *s, sip_time_t now)
  * The function nea_server_create() initializes an event server object and
  * registers it with @b nta. An event server object takes care of all events
  * for a particular URI (@em eventity).
- * 
+ *
  * @param agent       pointer to an @b nta agent object
  * @param root        pointer to an @b root object
  * @param url         url of the server to be created
  * @param max_subs    maximum number of subscriptions
- * @param callback    authorization function, 
+ * @param callback    authorization function,
  *                    or @c NULL if no authorization is required
  * @param context     server context (pointer to application data)
  * @param tag, value, ... optional list of tag parameters
  *
  * @TAGS
- * The function nea_server_create() takes the following tag values as its 
+ * The function nea_server_create() takes the following tag values as its
  * arguments:
  * <dl>
  *
@@ -339,26 +339,26 @@ void nea_subnode_init(nea_subnode_t *sn, nea_sub_t *s, sip_time_t now)
  *
  * <dt>NEATAG_MINSUB()
  * <dd>Minimum duration of a subscription.
- * 
+ *
  * <dt>NEATAG_THROTTLE()
  * <dd>Default value for event throttle (by default, 5 seconds).
  * Throttle determines the minimum interval betweeen notifications. Note
  * that the notification indicating that the subscription has terminated
  * will be sent regardless of throttle.
- * 
+ *
  * The default throttle value is used if the subscriber does not include
  * a throttle parameter in @ref sip_event "Event" header of SUBSCRIBE request.
- * 
+ *
  * <dt>NEATAG_MINTHROTTLE()
  * <dd>Minimum allowed throttle value (by default, 5 seconds).
- * 
+ *
  * <dt>NEATAG_EVENTLIST()
  * <dd>If true, the subscribers must support eventlists. If SIPTAG_REQUIRE()
  * is given, it must contain the "eventlist" feature.
  *
  * <dt>NEATAG_DIALOG()
  * <dd>Give an optional NTA destination leg to event server.
- * 
+ *
  * <dt>SIPTAG_REQUIRE()/SIPTAG_REQUIRE_STR()
  * <dd>The @b Require header for the event server. The subscribers must
  * indicate support the specified features.
@@ -384,8 +384,8 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
   char const *contact_str = NULL;
   char const *server_str = NULL;
   char const *rq_str = NULL;
-  unsigned 
-    min_expires = 15 * 60, 
+  unsigned
+    min_expires = 15 * 60,
     expires = NEA_DEFAULT_EXPIRES,
     max_expires = 24 * 60 * 60;
   nta_leg_t *leg = NONE;
@@ -397,7 +397,7 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
 
     ta_start(ta, tag, value);
 
-    tl_gets(ta_args(ta), 
+    tl_gets(ta_args(ta),
 	    SIPTAG_CONTACT_REF(contact),
 	    SIPTAG_CONTACT_STR_REF(contact_str),
 	    SIPTAG_ALLOW_EVENTS_REF(allow_events),
@@ -428,7 +428,7 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
     SU_DEBUG_5(("nea_server_create(): invalid expiration range\n"));
     return NULL;
   }
-  
+
   nes = su_home_new(sizeof(nea_server_t));
 
   if (nes) {
@@ -453,10 +453,10 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
 
     nes->nes_allow_methods = sip_allow_make(home, "SUBSCRIBE");
 
-    nes->nes_server = 
-      su_sprintf(home, "%s%snea/" NEA_VERSION_STR " %s", 
+    nes->nes_server =
+      su_sprintf(home, "%s%snea/" NEA_VERSION_STR " %s",
 		 server_str ? server_str : "",
-		 server_str ? " " : "", 
+		 server_str ? " " : "",
 		 nta_agent_version(agent));
 
     if (contact)
@@ -471,15 +471,15 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
       if (leg != NULL)
 	nta_leg_bind(leg, nea_server_callback, (nea_sub_t*)nes);
     } else {
-      nes->nes_leg = nta_leg_tcreate(agent, 
-				     nea_server_callback, 
-				     (nea_sub_t*)nes, 
+      nes->nes_leg = nta_leg_tcreate(agent,
+				     nea_server_callback,
+				     (nea_sub_t*)nes,
 				     NTATAG_NO_DIALOG(1),
 				     NTATAG_METHOD("SUBSCRIBE"),
 				     URLTAG_URL(url),
 				     TAG_END());
     }
-				     
+
     nes->nes_eventlist = eventlist; /* Every event is a list */
     if (eventlist && rq == NULL && rq_str == NULL)
       rq_str = "eventlist";
@@ -489,9 +489,9 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
     else if (rq_str)
       nes->nes_require = sip_require_make(nes->nes_home, rq_str);
 
-    nes->nes_timer = su_timer_create(su_root_task(nes->nes_root), 
+    nes->nes_timer = su_timer_create(su_root_task(nes->nes_root),
 				     nes->nes_min_throttle
-				     ? 500L * nes->nes_min_throttle 
+				     ? 500L * nes->nes_min_throttle
 				     : 500L);
 
     if (nes->nes_allow_events &&
@@ -515,8 +515,8 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
 
 /** Invoke the new event callback.
  *
- * The function nes_event_callback() calls the callback provided by the 
- * application using the notifier object. 
+ * The function nes_event_callback() calls the callback provided by the
+ * application using the notifier object.
  *
  * @param nes pointer to notifier object
  * @param ev  pointer to event view
@@ -528,9 +528,9 @@ nea_server_t *nea_server_create(nta_agent_t *agent,
  * has been destroyed by the callback function, 0 otherwise.
  */
 static
-int nes_new_event_callback(nea_server_t *nes, 
-			   nea_event_t **ev_p, 
-			   nea_event_view_t **view_p, 
+int nes_new_event_callback(nea_server_t *nes,
+			   nea_event_t **ev_p,
+			   nea_event_view_t **view_p,
 			   nta_incoming_t *irq,
 			   sip_t const *sip)
 {
@@ -556,7 +556,7 @@ int nea_server_shutdown(nea_server_t *nes,
     SU_DEBUG_5(("nea_server_shutdown(%p) while in callback\n", (void *)nes));
     return 100;
   }
-  
+
   SU_DEBUG_5(("nea_server_shutdown(%p)\n", (void *)nes));
 
   in_callback = nes->nes_in_callback; nes->nes_in_callback = 1;
@@ -567,16 +567,16 @@ int nea_server_shutdown(nea_server_t *nes,
     if (s->s_pending_flush)
       continue;
     if (s->s_oreq == NULL)
-      nea_sub_auth(s, nea_terminated, 
+      nea_sub_auth(s, nea_terminated,
 		   TAG_IF(retry_after, NEATAG_REASON("probation")),
 		   TAG_IF(!retry_after, NEATAG_REASON("deactivated")),
 		   TAG_IF(retry_after, NEATAG_RETRY_AFTER(retry_after)),
 		   TAG_END());
     else
       status = 180;
-  }    
+  }
 
-  nes->nes_in_callback = in_callback;   
+  nes->nes_in_callback = in_callback;
 
   return 200;
 }
@@ -591,16 +591,16 @@ void nea_server_destroy(nea_server_t *nes)
     nes->nes_pending_destroy = 1;
     return;
   }
-  
+
   SU_DEBUG_5(("nea_server_destroy(%p)\n", (void *)nes));
-  
+
   nta_leg_destroy(nes->nes_leg), nes->nes_leg = NULL;
-  
+
   while (nes->nes_subscribers)
     nea_sub_destroy(nes->nes_subscribers);
-  
+
   su_timer_destroy(nes->nes_timer), nes->nes_timer = NULL;
-  
+
   su_home_unref(nes->nes_home);
 }
 
@@ -611,10 +611,10 @@ void nea_server_destroy(nea_server_t *nes)
  * A nea event server has typed content that is delivered to the
  * subscribers. Different content types are each assigned a separate primary
  * view. There can be also primary views with "fake" content, content
- * delivered to politely blocked subscribers. 
+ * delivered to politely blocked subscribers.
  *
  * In addition to primary views, there can be secondary views, views
- * assigned to a single subscriber only. 
+ * assigned to a single subscriber only.
  *
  * @TAGS
  * The following tagged arguments are accepted:
@@ -629,7 +629,7 @@ void nea_server_destroy(nea_server_t *nes)
  * <dt>NEATAG_FAKE(fak)
  * <dd>If @a fake is true, 'fake' view is updated.
  *
- * <dt>NEATAG_VIEW(view) 
+ * <dt>NEATAG_VIEW(view)
  * <dd>If included in tagged arguments, @a view is * updated. Used when
  * updating secondary view.
  *
@@ -642,8 +642,8 @@ void nea_server_destroy(nea_server_t *nes)
  * <dd>Application-provided @a context pointer.
  * The @a context pointer is returned by nea_view_magic() function.
  *
- * <dt>NEATAG_RELIABLE(reliable) 
- * <dd>The @a reliable flag determines how overlapping updates are handled. 
+ * <dt>NEATAG_RELIABLE(reliable)
+ * <dd>The @a reliable flag determines how overlapping updates are handled.
  * If @a reliable is true, all updates are delivered to the subscribers.
  *
  * <dt>NEATAG_THROTTLE(throttl)
@@ -651,10 +651,10 @@ void nea_server_destroy(nea_server_t *nes)
  * determines the minimum interval in seconds betweeen notifications. Note
  * that the notification indicating that the subscription has terminated
  * will be sent regardless of throttle.
- * 
+ *
  * The default throttle value is used if the subscriber does not include
  * a throttle parameter in @ref sip_event "Event" header of SUBSCRIBE request.
- * 
+ *
  * <dt>NEATAG_MINTHROTTLE()
  * <dd>Minimum allowed throttle value for updated event view.
  *
@@ -684,7 +684,7 @@ int nea_server_update(nea_server_t *nes,
 	  NEATAG_FAKE_REF(fake),
 	  NEATAG_VIEW_REF(evv),
 	  TAG_NULL());
-  
+
   updated = nea_view_update(nes, ev, &evv, 0, fake, ta_tags(ta));
 
   ta_end(ta);
@@ -733,7 +733,7 @@ int nea_view_update(nea_server_t *nes,
 	  NEATAG_THROTTLE_REF(throttle),
 	  NEATAG_MINTHROTTLE_REF(min_throttle),
 	  TAG_NULL());
-  
+
   ta_end(ta);
 
   if (min_throttle < throttle)
@@ -754,7 +754,7 @@ int nea_view_update(nea_server_t *nes,
     for (i = 0; (evv = ev->ev_views[i]); i++)
       if (str0casecmp(cts, evv->evv_content_type->c_type) == 0)
 	break;
-    
+
     if (private && evv == NULL) /* No private view without primary view. */
       return -1;
 
@@ -762,7 +762,7 @@ int nea_view_update(nea_server_t *nes,
       return -1;
 
     primary_p = eevv = ev->ev_views + i;
-    
+
     /* Search for fakeness/eventlist/private view */
     if (evv && (private || evv->evv_private || evv->evv_fake != (unsigned)fake)) {
       for (eevv = &evv->evv_next; (evv = *eevv); eevv = &evv->evv_next) {
@@ -773,7 +773,7 @@ int nea_view_update(nea_server_t *nes,
       }
     }
   }
-   
+
   /* New event view, allocate and link to chain */
   if (!evv) {
     sip_content_type_t *new_ct;
@@ -781,20 +781,20 @@ int nea_view_update(nea_server_t *nes,
     evv = su_zalloc(home, sizeof (*evv));
     if (!evv)
       return -1;
-    
+
     new_pl = pl ? sip_payload_dup(home, pl)
       : sip_payload_make(home, pls);
-    
-    new_ct = ct ? sip_content_type_dup(home, ct) 
+
+    new_ct = ct ? sip_content_type_dup(home, ct)
       : sip_content_type_make(home, cts);
-    
+
     if ((!new_pl && pl) || !new_ct) {
       su_free(home, evv); su_free(home, new_pl);
       return -1;
     }
 
     *evvp = *eevv = evv;
-      
+
     evv->evv_primary = *primary_p;
     evv->evv_private = private != 0;
     evv->evv_fake = fake != 0;
@@ -808,13 +808,13 @@ int nea_view_update(nea_server_t *nes,
     assert(evv->evv_content_type);
   }
   else {
-    if (pl && 
-	evv->evv_payload && 
+    if (pl &&
+	evv->evv_payload &&
 	evv->evv_payload->pl_len == pl->pl_len &&
 	memcmp(evv->evv_payload->pl_data, pl->pl_data, pl->pl_len) == 0)
       return 0;
-    if (!pl && pls && evv->evv_payload && 
-	evv->evv_payload->pl_len == strlen(pls) && 
+    if (!pl && pls && evv->evv_payload &&
+	evv->evv_payload->pl_len == strlen(pls) &&
 	memcmp(evv->evv_payload->pl_data, pls, evv->evv_payload->pl_len) == 0)
       return 0;
     if (!pl && !pls && !evv->evv_payload)
@@ -826,7 +826,7 @@ int nea_view_update(nea_server_t *nes,
 
     if (!new_pl && (pl || pls))
       return -1;
-    
+
     evv->evv_payload = new_pl;
   }
 
@@ -861,7 +861,7 @@ nea_event_view_t *nea_view_create(nea_server_t *nes,
   ta_start(ta, tag, value);
 
   nea_view_update(nes, ev, &evv, 1, 0, ta_tags(ta));
-			 
+
   ta_end(ta);
 
   return evv;
@@ -935,8 +935,8 @@ sip_content_type_t const *nea_view_content_type(nea_event_view_t const *evv)
 
 /** Queue an old notification if needed. */
 static
-int nea_view_queue(nea_server_t *nes, 
-		   nea_event_view_t *evv, 
+int nea_view_queue(nea_server_t *nes,
+		   nea_event_view_t *evv,
 		   nea_event_queue_t *evq)
 {
   nea_sub_t *s = NULL;
@@ -953,7 +953,7 @@ int nea_view_queue(nea_server_t *nes,
 	continue;
       break;			/* This  */
     }
-  
+
   if (s) {
     nea_event_queue_t *evq0 = su_alloc(nes->nes_home, sizeof *evq);
 
@@ -963,7 +963,7 @@ int nea_view_queue(nea_server_t *nes,
     *evq0 = *evq, evq = evq0;
 
     /* evq should be copy of old head but with changed payload  */
-    assert(evq->evq_next == evv->evv_head->evq_next); 
+    assert(evq->evq_next == evv->evv_head->evq_next);
 
     evv->evv_head->evq_next = evq;     /* insert to the queue */
 
@@ -977,7 +977,7 @@ int nea_view_queue(nea_server_t *nes,
 
 /** Remove old unneeded notifications. */
 static
-int nea_view_dequeue(nea_server_t *nes, 
+int nea_view_dequeue(nea_server_t *nes,
 		     nea_event_t *ev)
 {
   int i;
@@ -1011,7 +1011,7 @@ int nea_view_dequeue(nea_server_t *nes,
 
 /** Notify watchers.
  *
- * @return 
+ * @return
  * The function nea_server_notify() returns number of subscribers that the
  * notification could be sent, or -1 upon an error.
  */
@@ -1045,11 +1045,11 @@ int nea_server_notify(nea_server_t *nes, nea_event_t *ev)
     if (ev == NULL)
       for (ev = nes->nes_events; ev; ev = ev->ev_next) {
 	nea_view_dequeue(nes, ev);
-	SU_DEBUG_3(("nea_server(): notified %u, throttling at %u\n", 
+	SU_DEBUG_3(("nea_server(): notified %u, throttling at %u\n",
 		    notified, ev->ev_throttling));
       }
     else {
-      SU_DEBUG_3(("nea_server(): notified %u, throttling at %u\n", 
+      SU_DEBUG_3(("nea_server(): notified %u, throttling at %u\n",
 		  notified, ev->ev_throttling));
       nea_view_dequeue(nes, ev);
     }
@@ -1087,7 +1087,7 @@ void nea_server_flush(nea_server_t *nes, nea_event_t *event)
 	nea_sub_destroy(*ss);
 	continue;
       }
-    } 
+    }
     ss = &((*ss)->s_next);
   }
 }
@@ -1127,7 +1127,7 @@ nea_sub_t *nea_sub_create(nea_server_t *nes)
     nes->nes_subscribers = s;
 
     /* Copy default values */
-    s->s_throttle = nes->nes_throttle;	
+    s->s_throttle = nes->nes_throttle;
   }
 
   return s;
@@ -1180,9 +1180,9 @@ void nea_sub_destroy(nea_sub_t *s)
     su_free(home, del->s_local), del->s_local = NULL;
     su_free(home, del->s_remote), del->s_remote = NULL;
 
-    if (del->s_oreq) 
+    if (del->s_oreq)
       nta_outgoing_destroy(del->s_oreq), del->s_oreq = NULL;
-    if (del->s_leg) 
+    if (del->s_leg)
       nta_leg_destroy(del->s_leg), del->s_leg = NULL;
     if (del->s_from)
       su_free(home, del->s_from), del->s_from = NULL;
@@ -1198,14 +1198,14 @@ void nea_sub_destroy(nea_sub_t *s)
 nea_event_t *nea_event_create(nea_server_t *nes,
 			      nea_watcher_f *callback,
 			      nea_emagic_t *context,
-			      char const *name, 
+			      char const *name,
 			      char const *subname,
 			      char const *default_content_type,
 			      char const *accept)
 {
-  return nea_event_tcreate(nes, callback, context, 
-			   name, subname, 
-			   SIPTAG_CONTENT_TYPE_STR(default_content_type), 
+  return nea_event_tcreate(nes, callback, context,
+			   name, subname,
+			   SIPTAG_CONTENT_TYPE_STR(default_content_type),
 			   SIPTAG_ACCEPT_STR(accept),
 			   TAG_END());
 }
@@ -1214,7 +1214,7 @@ nea_event_t *nea_event_create(nea_server_t *nes,
 nea_event_t *nea_event_tcreate(nea_server_t *nes,
 			       nea_watcher_f *callback,
 			       nea_emagic_t *context,
-			       char const *name, 
+			       char const *name,
 			       char const *subname,
 			       tag_type_t tag, tag_value_t value, ...)
 {
@@ -1253,7 +1253,7 @@ nea_event_t *nea_event_tcreate(nea_server_t *nes,
     sip_supported_t const *k = NULL;
     sip_require_t const *rq = NULL;
     char const *ct_str = NULL, *ac_str = NULL, *k_str = NULL, *rq_str = NULL;
-    
+
     unsigned throttle = nes->nes_throttle, min_throttle = nes->nes_min_throttle;
     int eventlist = nes->nes_eventlist;
 
@@ -1274,11 +1274,11 @@ nea_event_t *nea_event_tcreate(nea_server_t *nes,
 
     ev->ev_callback = callback;
     ev->ev_magic = context;
-    ev->ev_event = sip_event_format(nes->nes_home, "%s%s%s", 
-				    name, 
-				    subname ? "." : "", 
+    ev->ev_event = sip_event_format(nes->nes_home, "%s%s%s",
+				    name,
+				    subname ? "." : "",
 				    subname ? subname : "");
- 
+
     ev->ev_reliable = reliable != 0;
     ev->ev_throttle = throttle;
     ev->ev_min_throttle = min_throttle;
@@ -1294,15 +1294,15 @@ nea_event_t *nea_event_tcreate(nea_server_t *nes,
 
     if (ev->ev_event) {
 #define sip_allow_events_find(k, i) sip_params_find(k->k_items, i)
-      if (!sip_allow_events_find(nes->nes_allow_events, 
+      if (!sip_allow_events_find(nes->nes_allow_events,
 				 ev->ev_event->o_type))
-	sip_allow_events_add(nes->nes_home, nes->nes_allow_events, 
+	sip_allow_events_add(nes->nes_home, nes->nes_allow_events,
 			     ev->ev_event->o_type);
     }
 
     if (ct)
       ev->ev_default = sip_accept_make(nes->nes_home, ct->c_type);
-    else 
+    else
       ev->ev_default = sip_accept_make(nes->nes_home, ct_str);
 
     if (ac == NULL && ac_str == NULL)
@@ -1319,7 +1319,7 @@ nea_event_t *nea_event_tcreate(nea_server_t *nes,
       ev->ev_supported = sip_supported_make(nes->nes_home, k_str);
 
     ev->ev_prev = pev;
-    *pev = ev; 
+    *pev = ev;
   }
 
   ta_end(ta);
@@ -1370,8 +1370,8 @@ nta_incoming_t *nea_sub_get_request(nea_sub_t *sub)
 
 /** Invoke the event callback.
  *
- * The function nes_watcher_callback() calls the callback provided by the 
- * application using the notifier object. 
+ * The function nes_watcher_callback() calls the callback provided by the
+ * application using the notifier object.
  *
  * @param nes pointer to notifier object
  * @param ev  pointer to event view
@@ -1383,9 +1383,9 @@ nta_incoming_t *nea_sub_get_request(nea_sub_t *sub)
  * has been destroyed by the callback function, 0 otherwise.
  */
 static
-int nes_watcher_callback(nea_server_t *nes, 
-			 nea_event_t *ev, 
-			 nea_sub_t *s, 
+int nes_watcher_callback(nea_server_t *nes,
+			 nea_event_t *ev,
+			 nea_sub_t *s,
 			 sip_t const *sip,
 			 sip_time_t now)
 {
@@ -1395,7 +1395,7 @@ int nes_watcher_callback(nea_server_t *nes,
       nea_subnode_t sn[1];
 
       nea_subnode_init(sn, s, now);
-      
+
       if (sn->sn_expires == 0  || sn->sn_state == nea_terminated)
 	s->s_reported = 1;
 
@@ -1405,12 +1405,12 @@ int nes_watcher_callback(nea_server_t *nes,
 
     if (nes->nes_in_list)
       return 0;
-    
+
     if (nes->nes_pending_destroy) {
       nea_server_destroy(nes);
       return -2;
     }
-    
+
     if (sip == NULL && nes->nes_pending_flush) {
       int flushed = s->s_pending_flush;
       nea_server_pending_flush(nes);
@@ -1429,18 +1429,18 @@ int nes_watcher_callback(nea_server_t *nes,
  *
  * The function nea_server_add() is called when the notifier receives a
  * SUBSCRIBE request without existing event dialog.
- * 
+ *
  * @param nes pointer to notifier
- * @param local_target optional contact header 
+ * @param local_target optional contact header
  * @param msg pointer to request message
  * @param sip pointer to SIP view to request message
  *
- * @return 
+ * @return
  * The function nea_server_add() returns 0 if successful, -1 upon an
  * error.
- *  
+ *
  */
-int nea_server_add(nea_server_t *nes, 
+int nea_server_add(nea_server_t *nes,
 		   sip_contact_t const *local_target,
 		   msg_t *msg, sip_t *sip)
 {
@@ -1480,7 +1480,7 @@ int nea_server_add(nea_server_t *nes,
 static
 int nea_server_callback(nea_sub_t *nes_as_sub,
 			nta_leg_t *leg,
-			nta_incoming_t *irq, 
+			nta_incoming_t *irq,
 			sip_t const *sip)
 {
   return nea_server_add_irq((nea_server_t *)nes_as_sub, leg, NULL, irq, sip);
@@ -1490,7 +1490,7 @@ int nea_server_callback(nea_sub_t *nes_as_sub,
 int nea_server_add_irq(nea_server_t *nes,
 		       nta_leg_t *leg,
 		       sip_contact_t const *local_target,
-		       nta_incoming_t *irq, 
+		       nta_incoming_t *irq,
 		       sip_t const *sip)
 {
   nea_sub_t *s = nea_sub_create(nes);
@@ -1506,10 +1506,10 @@ int nea_server_add_irq(nea_server_t *nes,
 
   if (leg == NULL || leg == nes->nes_leg) {
     url_t target[1];
-    
+
     *target = *local_target->m_url;
 
-    s->s_leg = nta_leg_tcreate(nes->nes_agent, nea_sub_process_incoming, s, 
+    s->s_leg = nta_leg_tcreate(nes->nes_agent, nea_sub_process_incoming, s,
 			       SIPTAG_FROM(sip->sip_to),
 			       SIPTAG_TO(sip->sip_from),
 			       SIPTAG_CALL_ID(sip->sip_call_id),
@@ -1519,7 +1519,7 @@ int nea_server_add_irq(nea_server_t *nes,
   else {
     nta_leg_bind(s->s_leg = leg, nea_sub_process_incoming, s);
   }
-  
+
   if (s->s_leg) {
     if (sip->sip_to->a_tag == NULL) {
       nta_leg_tag(s->s_leg, NULL);
@@ -1568,7 +1568,7 @@ int nea_sub_process_incoming(nea_sub_t *s,
     break;
 
   default:
-    nta_incoming_treply(irq, 
+    nta_incoming_treply(irq,
 			retval = SIP_405_METHOD_NOT_ALLOWED,
 			SIPTAG_ALLOW_STR("SUBSCRIBE"),
 			TAG_END());
@@ -1579,7 +1579,7 @@ int nea_sub_process_incoming(nea_sub_t *s,
 
   if (s->s_irq)
     nta_incoming_destroy(irq), s->s_irq = NULL;
-  
+
   if (s->s_pending_flush || s->s_state == nea_embryonic)
     nea_sub_destroy(s);
 
@@ -1624,7 +1624,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
   int once, what, supported_eventlist, require_eventlist;
 
   if (sip->sip_payload && !sip->sip_content_type) {
-    nta_incoming_treply(irq, 400, "Missing Content-Type", 
+    nta_incoming_treply(irq, 400, "Missing Content-Type",
 			SIPTAG_SERVER_STR(nes->nes_server),
 			SIPTAG_ALLOW_EVENTS(nes->nes_allow_events),
 			SIPTAG_ALLOW(nes->nes_allow_methods),
@@ -1632,16 +1632,16 @@ int nea_sub_process_subscribe(nea_sub_t *s,
     return 0;
   }
 
-  if (sip->sip_expires && 
-      sip->sip_expires->ex_delta > 0 && 
+  if (sip->sip_expires &&
+      sip->sip_expires->ex_delta > 0 &&
       sip->sip_expires->ex_delta < nes->nes_min_expires) {
-    sip_min_expires_t me[1]; 
+    sip_min_expires_t me[1];
 
     sip_min_expires_init(me);
 
     me->me_delta = nes->nes_min_expires;
 
-    nta_incoming_treply(irq, 423, "Subscription Interval Too Small", 
+    nta_incoming_treply(irq, 423, "Subscription Interval Too Small",
 			SIPTAG_ACCEPT(accept),
 			SIPTAG_MIN_EXPIRES(me),
 			SIPTAG_SERVER_STR(nes->nes_server),
@@ -1653,13 +1653,13 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 
   /* Check features */
   if (nes->nes_require) {
-    unsupported = sip_has_unsupported2(nes->nes_home, 
+    unsupported = sip_has_unsupported2(nes->nes_home,
 				       sip->sip_supported,
 				       sip->sip_require,
 				       nes->nes_require);
 
     if (unsupported) {
-      nta_incoming_treply(irq, SIP_421_EXTENSION_REQUIRED, 
+      nta_incoming_treply(irq, SIP_421_EXTENSION_REQUIRED,
 			  SIPTAG_REQUIRE(nes->nes_require),
 			  SIPTAG_UNSUPPORTED(unsupported),
 			  SIPTAG_SERVER_STR(nes->nes_server),
@@ -1676,12 +1676,12 @@ int nea_sub_process_subscribe(nea_sub_t *s,
   require_eventlist = sip_has_feature(sip->sip_require, "eventlist");
   supported_eventlist = supported_eventlist || require_eventlist;
 
-  if (s->s_id && (!sip->sip_event || 
+  if (s->s_id && (!sip->sip_event ||
 		  str0cmp(s->s_id->o_type, sip->sip_event->o_type) != 0 ||
 		  str0cmp(s->s_id->o_id, sip->sip_event->o_id))) {
     /* Multiple subscriptions per dialog are not supported. */
-    return nta_incoming_treply(irq, 501, 
-			       "Multiple subscriptions not implemented", 
+    return nta_incoming_treply(irq, 501,
+			       "Multiple subscriptions not implemented",
 			       SIPTAG_SERVER_STR(nes->nes_server),
 			       TAG_NULL());
   }
@@ -1709,13 +1709,13 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 
     if (!ev && !require_eventlist)
       ev = ev_maybe;
-          
+
     if (ev || once)
       break;
 
     /* Ask the application either to
-       1) add a new event or assing us an event/payload (0), 
-       2) take care of transaction (positive), or 
+       1) add a new event or assing us an event/payload (0),
+       2) take care of transaction (positive), or
        3) drop request (negative).
     */
     if ((what = nes_new_event_callback(nes, &ev, &evv, irq, sip)) < 0)
@@ -1727,7 +1727,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
   }
 
   if (ev_maybe == NULL && ev == NULL) {
-    nta_incoming_treply(irq, SIP_489_BAD_EVENT, 
+    nta_incoming_treply(irq, SIP_489_BAD_EVENT,
 			SIPTAG_SERVER_STR(nes->nes_server),
 			SIPTAG_ALLOW_EVENTS(nes->nes_allow_events),
 			SIPTAG_ALLOW(nes->nes_allow_methods),
@@ -1739,7 +1739,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
     unsupported = sip_has_unsupported(nes->nes_home, ev->ev_supported,
 				      sip->sip_require);
 
-    nta_incoming_treply(irq, SIP_420_BAD_EXTENSION, 
+    nta_incoming_treply(irq, SIP_420_BAD_EXTENSION,
 			SIPTAG_UNSUPPORTED(unsupported),
 			SIPTAG_REQUIRE(ev->ev_require),
 			SIPTAG_SUPPORTED(ev->ev_supported),
@@ -1775,12 +1775,12 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 	  /* Sort the accept list by Q values */
 	  for (a = a0, accept = NULL; a; a = a_next) {
 	    a_next = a->ac_next;
-	    
-	    for (aa = (sip_accept_t **)&accept; 
-		 *aa && sip_q_value((*aa)->ac_q) >= sip_q_value(a->ac_q); 
+
+	    for (aa = (sip_accept_t **)&accept;
+		 *aa && sip_q_value((*aa)->ac_q) >= sip_q_value(a->ac_q);
 		 aa = &(*aa)->ac_next)
 	      ;
-	    
+
 	    a->ac_next = *aa; *aa = a; 	/* Insert */
 	  }
 	}
@@ -1795,11 +1795,11 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 
       if (ac->ac_type == NULL || ac->ac_subtype == NULL)
 	continue;
-      
+
       /* Check all supported content types v. accept */
       for (i = 0; (evv = ev->ev_views[i]); i++) {
 	assert(evv->evv_content_type && evv->evv_content_type->c_type);
-	
+
 	if (strcmp(ac->ac_type, "*/*") == 0)
 	  break;
 
@@ -1807,7 +1807,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 
 	if ((strcasecmp(ac->ac_type, type) == 0) ||
 	    (strcasecmp(ac->ac_subtype, "*") == 0 &&
-	     strncasecmp(ac->ac_type, type, 
+	     strncasecmp(ac->ac_type, type,
 			 ac->ac_subtype - ac->ac_type) == 0)) {
 	  if (evv_maybe == NULL)
 	    evv_maybe = evv;
@@ -1820,17 +1820,17 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 
     /* Free the sorted Accept list */
     for (a = a0; a; a = a_next)
-      a_next = a->ac_next, su_free(home, a); 
+      a_next = a->ac_next, su_free(home, a);
 
     if (!evv)
       evv = evv_maybe;
-  
+
     if (evv || once)
       break;
 
     /* Ask the application either to
-       1) add a new event view or assign us an event view (0), 
-       2) take care of transaction (positive), or 
+       1) add a new event view or assign us an event view (0),
+       2) take care of transaction (positive), or
        3) drop request (negative).
     */
     if ((what = nes_new_event_callback(nes, &ev, &evv, irq, sip)) < 0)
@@ -1846,7 +1846,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 		ev->ev_event->o_type, SIP_406_NOT_ACCEPTABLE));
 
     /* There is no media acceptable to watcher */
-    return nta_incoming_treply(irq, SIP_406_NOT_ACCEPTABLE, 
+    return nta_incoming_treply(irq, SIP_406_NOT_ACCEPTABLE,
 			       SIPTAG_ACCEPT(ev->ev_accept),
 			       SIPTAG_SERVER_STR(nes->nes_server),
 			       SIPTAG_ALLOW_EVENTS(nes->nes_allow_events),
@@ -1859,7 +1859,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
     evv = s->s_view;
 
   /* Set throttle */
-  if (sip->sip_event && 
+  if (sip->sip_event &&
       (throttle = sip_params_find(sip->sip_event->o_params, "throttle="))) {
     proposed_throttle = strtoul(throttle, NULL, 10);
 
@@ -1902,7 +1902,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
   s->s_updated = evv->evv_updated - 1;  /* Force notify */
 
   if (nes->nes_202_before_notify) {
-    nta_incoming_treply(irq, SIP_202_ACCEPTED, 
+    nta_incoming_treply(irq, SIP_202_ACCEPTED,
 			SIPTAG_SERVER_STR(nes->nes_server),
 			SIPTAG_ALLOW_EVENTS(nes->nes_allow_events),
 			SIPTAG_ALLOW(nes->nes_allow_methods),
@@ -1923,8 +1923,8 @@ int nea_sub_process_subscribe(nea_sub_t *s,
     return -1;
   }
 
-  
-  
+
+
   evv = s->s_view;  /* Callback can change event view */
 
   if (s->s_state == nea_embryonic)
@@ -1935,11 +1935,11 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 
   if (irq) {
     if (s->s_rejected)
-      nta_incoming_treply(irq, SIP_403_FORBIDDEN, 
+      nta_incoming_treply(irq, SIP_403_FORBIDDEN,
 			  SIPTAG_SERVER_STR(nes->nes_server),
 			  TAG_END());
     else if (s->s_state == nea_active)
-      nta_incoming_treply(irq, SIP_200_OK, 
+      nta_incoming_treply(irq, SIP_200_OK,
 			  SIPTAG_REQUIRE(ev->ev_require),
 			  SIPTAG_SUPPORTED(ev->ev_supported),
 			  SIPTAG_EXPIRES(expires),
@@ -1949,7 +1949,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 			  SIPTAG_ALLOW(nes->nes_allow_methods),
 			  TAG_END());
     else
-      nta_incoming_treply(irq, SIP_202_ACCEPTED, 
+      nta_incoming_treply(irq, SIP_202_ACCEPTED,
 			  SIPTAG_REQUIRE(ev->ev_require),
 			  SIPTAG_SUPPORTED(ev->ev_supported),
 			  SIPTAG_EXPIRES(expires),
@@ -1964,7 +1964,7 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 }
 
 /* ----------------------------------------------------------------- */
-/**Notify subscriber 
+/**Notify subscriber
  *
  * The function nea_sub_notify() sends a notification to the subscriber. The
  * event type is specified by subscriber event, payload type and payload in
@@ -1973,12 +1973,12 @@ int nea_sub_process_subscribe(nea_sub_t *s,
  *
  * @param nes pointer to the notifier object
  * @param s   pointer to the subscription object
- * @param now current SIP time (if 0, no body is sent, 
+ * @param now current SIP time (if 0, no body is sent,
  *            but updated Subscription-State header only
  * @param tag,value,... tag list
  *
  */
-int nea_sub_notify(nea_server_t *nes, nea_sub_t *s, 
+int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 		   sip_time_t now,
 		   tag_type_t tag, tag_value_t value, ...)
 {
@@ -1999,7 +1999,7 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 
   assert(s->s_view); assert(ev);
 
-  if (suppress && s->s_view->evv_updated == s->s_updated) 
+  if (suppress && s->s_view->evv_updated == s->s_updated)
     return 0;
 
   if (now == 0)
@@ -2007,7 +2007,7 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 
   if (s->s_notified + s->s_throttle > now &&
       /* Do not throttle state termination notification */
-      substate != nea_terminated && 
+      substate != nea_terminated &&
       (long)(s->s_expires - now) > 0) {
     if (ev->ev_throttling > s->s_updated && !s->s_fake)
       ev->ev_throttling = s->s_updated;
@@ -2034,7 +2034,7 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 
     sip_subscription_state_init(ss);
 
-    tl_gets(ta_args(ta), 
+    tl_gets(ta_args(ta),
 	    NEATAG_REASON_REF(reason),
 	    NEATAG_FAKE_REF(fake), /* XXX - semantics??? */
 	    NEATAG_RETRY_AFTER_REF(retry_after),
@@ -2042,10 +2042,10 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 
     if (substate == nea_terminated) {
       if (reason)
-	snprintf(reason_buf, sizeof(reason_buf), 
+	snprintf(reason_buf, sizeof(reason_buf),
 		 "reason=%s", reason), params[i++] = reason_buf;
       if (retry_after != (unsigned)-1)
-	snprintf(retry_after_buf, sizeof(retry_after_buf), 
+	snprintf(retry_after_buf, sizeof(retry_after_buf),
 		 "retry-after=%u", retry_after), params[i++] = retry_after_buf;
     }
     else if ((long)(s->s_expires - now) <= 0) {
@@ -2065,10 +2065,10 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
     case nea_pending:  ss->ss_substate = "pending"; break;
     case nea_active:   ss->ss_substate = "active"; break;
     case nea_terminated: ss->ss_substate = "terminated"; break;
-      /* Do not send notifys for embryonic subscriptions */      
+      /* Do not send notifys for embryonic subscriptions */
     case nea_embryonic:
       ta_end(ta);
-      return 0; 
+      return 0;
     }
 
     callback = substate != nea_terminated ? response_to_notify : NULL;
@@ -2082,9 +2082,9 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 
     n_evq = evq->evq_payload ? evq : evv->evv_primary->evv_head;
 
-    s->s_oreq = 
-      nta_outgoing_tcreate(s->s_leg, 
-			   callback, s, NULL, 
+    s->s_oreq =
+      nta_outgoing_tcreate(s->s_leg,
+			   callback, s, NULL,
 			   SIP_METHOD_NOTIFY, NULL,
 			   SIPTAG_SUBSCRIPTION_STATE(ss),
 			   SIPTAG_REQUIRE(ev->ev_require),
@@ -2092,11 +2092,11 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 			   SIPTAG_USER_AGENT_STR(nes->nes_server),
 			   SIPTAG_CONTACT(s->s_local),
 			   SIPTAG_EVENT(s->s_id),
-			   TAG_IF(!suppress, 
+			   TAG_IF(!suppress,
 				  SIPTAG_CONTENT_TYPE(n_evq->evq_content_type)),
 			   TAG_IF(!suppress,
 				  SIPTAG_PAYLOAD(n_evq->evq_payload)),
-			   ta_tags(ta)); 
+			   ta_tags(ta));
 
 
     notified = s->s_oreq != 0;
@@ -2123,8 +2123,8 @@ int nea_sub_notify(nea_server_t *nes, nea_sub_t *s,
 
 /* ----------------------------------------------------------------- */
 /**Process responses to the NOTIFY.
- * 
- * The response_to_notify() processes the responses to the NOTIFY request. 
+ *
+ * The response_to_notify() processes the responses to the NOTIFY request.
  * If there was an error with delivering the NOTIFY, the subscription is
  * considered terminated.
  *
@@ -2172,7 +2172,7 @@ int response_to_notify(nea_sub_t *s,
  *
  * @param nes notifier
  * @param ev  event
- * 
+ *
  * The function nea_server_active() returns number of active subscribers.
  */
 int nea_server_active(nea_server_t *nes, nea_event_t const *ev)
@@ -2182,7 +2182,7 @@ int nea_server_active(nea_server_t *nes, nea_event_t const *ev)
 
   /* Count the number of subscribers watching this event */
   for (s = nes->nes_subscribers; s ; s = s->s_next)
-    if (!s->s_pending_flush && s->s_state == nea_active 
+    if (!s->s_pending_flush && s->s_state == nea_active
 	&& (ev == NULL || ev == s->s_event))
       n++;
 
@@ -2198,7 +2198,7 @@ int nea_server_active(nea_server_t *nes, nea_event_t const *ev)
  *
  * @param nes notifier
  * @param ev  event view
- * 
+ *
  * The function nea_server_active() returns number of active subscribers.
  */
 int nea_server_non_embryonic(nea_server_t *nes, nea_event_t const *ev)
@@ -2208,7 +2208,7 @@ int nea_server_non_embryonic(nea_server_t *nes, nea_event_t const *ev)
 
   /* Count the number of subscribers watching this event */
   for (s = nes->nes_subscribers; s ; s = s->s_next)
-    if (!s->s_pending_flush && s->s_state != nea_embryonic 
+    if (!s->s_pending_flush && s->s_state != nea_embryonic
 	&& (ev == NULL || ev == s->s_event))
       n++;
 
@@ -2248,7 +2248,7 @@ int nea_sub_version(nea_sub_t *s, unsigned version)
  * @retval 0 if successful
  * @retval -1 upon an error
  */
-int nea_sub_auth(nea_sub_t *s, 
+int nea_sub_auth(nea_sub_t *s,
 		 nea_state_t state,
 		 tag_type_t tag, tag_value_t value, ...)
 {
@@ -2289,9 +2289,9 @@ int nea_sub_auth(nea_sub_t *s,
   }
 
   tl_gets(ta_args(ta), NEATAG_REASON_REF(reason), TAG_END());
-  
+
   rejected = reason && strcasecmp(reason, "rejected") == 0;
-  
+
   if (state == nea_terminated && embryonic && rejected && s->s_irq)
     retval = 0, s->s_rejected = 1;
   else
@@ -2303,7 +2303,7 @@ int nea_sub_auth(nea_sub_t *s,
 }
 
 /** Obtain a list of subscribers */
-nea_subnode_t const **nea_server_get_subscribers(nea_server_t *nes, 
+nea_subnode_t const **nea_server_get_subscribers(nea_server_t *nes,
 						 nea_event_t const *ev)
 {
   nea_sub_t *s;
@@ -2315,13 +2315,13 @@ nea_subnode_t const **nea_server_get_subscribers(nea_server_t *nes,
   if (n == 0)
     return NULL;
 
-  sn_list = su_zalloc(nes->nes_home, 
+  sn_list = su_zalloc(nes->nes_home,
 		      (n + 1) * sizeof(sn) + n * sizeof(*sn));
   if (sn_list) {
     sn = (nea_subnode_t *)(sn_list + n + 1);
 
     for (i = 0, s = nes->nes_subscribers; s; s = s->s_next) {
-      if (!s->s_pending_flush && s->s_state != nea_embryonic 
+      if (!s->s_pending_flush && s->s_state != nea_embryonic
 	  && (ev == NULL || ev == s->s_event)) {
 	assert(i < n);
 	nea_subnode_init(sn, s, now);
@@ -2338,7 +2338,7 @@ nea_subnode_t const **nea_server_get_subscribers(nea_server_t *nes,
 }
 
 /** Free a list of subscriptions. */
-void nea_server_free_subscribers(nea_server_t *nes, 
+void nea_server_free_subscribers(nea_server_t *nes,
 				 nea_subnode_t const **sn_list)
 {
   if (sn_list) {

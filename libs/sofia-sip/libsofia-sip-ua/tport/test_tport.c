@@ -49,7 +49,7 @@ typedef struct tp_test_s tp_test_t;
 
 #define TP_STACK_T tp_test_t
 #define TP_CLIENT_T struct called
- 
+
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_md5.h>
 
@@ -158,7 +158,7 @@ int count_tports(tport_t *tp)
 
   for (tp = tport_primaries(tp); tp; tp = tport_next(tp))
     n++;
-  
+
   return n;
 }
 
@@ -169,7 +169,7 @@ static int check_msg(tp_test_t *tt, msg_t *msg, char const *ident)
   usize_t i, len;
 
   BEGIN();
-  
+
   TEST_1(tst = msg_test_public(msg));
   TEST_1(pl = tst->msg_payload);
 
@@ -197,7 +197,7 @@ static int test_create_md5(tp_test_t *tt, msg_t *msg)
   msg_test_t *tst;
   msg_payload_t *pl;
   su_md5_t md5[1];
-  
+
   BEGIN();
 
   TEST_1(tst = msg_test_public(msg));
@@ -255,7 +255,7 @@ static int test_msg_md5(tp_test_t *tt, msg_t *msg)
     if (strcmp(b64, tst->msg_content_md5->g_string)) {
       ;
     }
-    
+
     TEST_S(b64, tst->msg_content_md5->g_string);
   } else {
     TEST_1(tst->msg_content_md5);
@@ -266,7 +266,7 @@ static int test_msg_md5(tp_test_t *tt, msg_t *msg)
 
 #define TPORT_TEST_VERSION MSG_TEST_VERSION_CURRENT
 
-static int new_test_msg(tp_test_t *tt, msg_t **retval, 
+static int new_test_msg(tp_test_t *tt, msg_t **retval,
 			char const *ident,
 			int N, int len)
 {
@@ -336,7 +336,7 @@ static int new_test_msg(tp_test_t *tt, msg_t **retval,
 
   TEST_1(md5 = msg_content_md5_make(home, b64));
   TEST(msg_header_insert(msg, (void *)tst, (msg_header_t *)md5), 0);
-  
+
   TEST_1(sep = msg_separator_create(home));
   TEST(msg_header_insert(msg, (void *)tst, (msg_header_t *)sep), 0);
 
@@ -361,7 +361,7 @@ static void tp_test_recv(tp_test_t *tt,
 
   if (tport_delivered_from(tp, msg, frm) != -1 && frm->tpn_comp) {
     struct sigcomp_compartment *cc = test_sigcomp_compartment(tt, tp, frm);
-   
+
     tport_sigcomp_accept(tp, cc, msg);
   }
 
@@ -374,7 +374,7 @@ static void tp_test_recv(tp_test_t *tt,
   }
   else if (test_msg_md5(tt, msg))
     msg_destroy(msg);
-  else if (tt->tt_rmsg) 
+  else if (tt->tt_rmsg)
     msg_destroy(msg);
   else {
     tt->tt_rmsg = msg;
@@ -388,14 +388,14 @@ static void tp_test_error(tp_test_t *tt,
 			  char const *remote)
 {
   tt->tt_status = -1;
-  fprintf(stderr, "tp_test_error(%p): error %d (%s) from %s\n", 
-	  (void *)tp, errcode, su_strerror(errcode), 
+  fprintf(stderr, "tp_test_error(%p): error %d (%s) from %s\n",
+	  (void *)tp, errcode, su_strerror(errcode),
 	  remote ? remote : "<unknown destination>");
 }
 
 msg_t *tp_test_msg(tp_test_t *tt, int flags,
 		   char const data[], usize_t size,
-		   tport_t const *tp, 
+		   tport_t const *tp,
 		   tp_client_t *tpc)
 {
   msg_t *msg = msg_create(tt->tt_mclass, flags);
@@ -408,15 +408,15 @@ msg_t *tp_test_msg(tp_test_t *tt, int flags,
 
 static
 struct sigcomp_compartment *
-test_sigcomp_compartment(tp_test_t *tt, 
-			 tport_t *tp, 
+test_sigcomp_compartment(tp_test_t *tt,
+			 tport_t *tp,
 			 tp_name_t const *tpn)
 {
   struct sigcomp_compartment *cc = NULL;
 #if HAVE_SIGCOMP
   char name[256];
   int namesize;
-  
+
   namesize = snprintf(name, sizeof name, "TEST_%s/%s:%s",
 		     tpn->tpn_proto,
 		     tpn->tpn_host,
@@ -425,11 +425,11 @@ test_sigcomp_compartment(tp_test_t *tt,
   if (namesize <= 0 || namesize >= sizeof name)
     return NULL;
 
-  cc = sigcomp_compartment_access(tt->state_handler, 
+  cc = sigcomp_compartment_access(tt->state_handler,
 				  0, name, namesize, NULL, 0);
 
   if (cc == NULL) {
-    cc = sigcomp_compartment_create(tt->algorithm, tt->state_handler, 
+    cc = sigcomp_compartment_create(tt->algorithm, tt->state_handler,
 				    0, name, namesize, NULL, 0);
 
     sigcomp_compartment_option(cc, "dms=32768");
@@ -506,23 +506,23 @@ static int init_test(tp_test_t *tt)
 
 #if HAVE_SIGCOMP
   TEST_1(tt->state_handler = sigcomp_state_handler_create());
-  TEST_1(tt->algorithm = 
+  TEST_1(tt->algorithm =
 	 sigcomp_algorithm_by_name(getenv("SIGCOMP_ALGORITHM")));
-  TEST_1(tt->master_cc = 
-	 sigcomp_compartment_create(tt->algorithm, tt->state_handler, 
+  TEST_1(tt->master_cc =
+	 sigcomp_compartment_create(tt->algorithm, tt->state_handler,
 				    0, "", 0, NULL, 0));
   TEST(sigcomp_compartment_option(tt->master_cc, "stateless"), 1);
 #endif
 
   /* Create client transport */
-  TEST_1(tt->tt_tports = 
+  TEST_1(tt->tt_tports =
 	 tport_tcreate(tt, tp_test_class, tt->tt_root,
 		       IF_SIGCOMP_TPTAG_COMPARTMENT(tt->master_cc)
 		       TAG_END()));
 
   /* Bind client transports */
   TEST(tport_tbind(tt->tt_tports, myname, transports,
-		   TPTAG_SERVER(0), TAG_END()), 
+		   TPTAG_SERVER(0), TAG_END()),
        0);
 
   if (getenv("TPORT_TEST_HOST"))
@@ -536,15 +536,15 @@ static int init_test(tp_test_t *tt)
   myname->tpn_ident = "server";
 
   /* Create server transport */
-  TEST_1(tt->tt_srv_tports = 
+  TEST_1(tt->tt_srv_tports =
 	 tport_tcreate(tt, tp_test_class, tt->tt_root,
 		       IF_SIGCOMP_TPTAG_COMPARTMENT(tt->master_cc)
 		       TAG_END()));
 
   /* Bind server transports */
-  TEST(tport_tbind(tt->tt_srv_tports, myname, transports, 
+  TEST(tport_tbind(tt->tt_srv_tports, myname, transports,
 		   TPTAG_SERVER(1),
-		   TAG_END()), 
+		   TAG_END()),
        0);
 
   /* Check that the master transport has idle parameter */
@@ -578,13 +578,13 @@ static int init_test(tp_test_t *tt)
 
     rname->tpn_port = port;
     rname->tpn_ident = "failure";
-    
+
     before = count_tports(tt->tt_srv_tports);
 
     /* Bind server transports to an reserved port - this should fail */
-    TEST(tport_tbind(tt->tt_srv_tports, rname, transports, 
+    TEST(tport_tbind(tt->tt_srv_tports, rname, transports,
 		     TPTAG_SERVER(1),
-		     TAG_END()), 
+		     TAG_END()),
 	 -1);
 
     after = count_tports(tt->tt_srv_tports);
@@ -601,9 +601,9 @@ static int init_test(tp_test_t *tt)
     rname->tpn_ident = "server2";
 
     /* Bind server transports to another port */
-    TEST(tport_tbind(tt->tt_srv_tports, rname, transports, 
+    TEST(tport_tbind(tt->tt_srv_tports, rname, transports,
 		     TPTAG_SERVER(1),
-		     TAG_END()), 
+		     TAG_END()),
 	 0);
 
     /* Check that new transports are after old ones. */
@@ -631,16 +631,16 @@ static int init_test(tp_test_t *tt)
 
     /* Bind client transports */
     TEST(tport_tbind(tt->tt_tports, tlsname, transports,
-		     TPTAG_SERVER(0), 
+		     TPTAG_SERVER(0),
 		     TPTAG_CERTIFICATE(srcdir),
-		     TAG_END()), 
+		     TAG_END()),
 	 0);
 
     /* Bind tls server transport */
-    TEST(tport_tbind(tt->tt_srv_tports, tlsname, transports, 
+    TEST(tport_tbind(tt->tt_srv_tports, tlsname, transports,
 		     TPTAG_SERVER(1),
 		     TPTAG_CERTIFICATE(srcdir),
-		     TAG_END()), 
+		     TAG_END()),
 	 0);
   }
 #endif
@@ -651,9 +651,9 @@ static int init_test(tp_test_t *tt)
     if (tt->tt_flags & tst_verbatim) {
       char const *host = tpn->tpn_host != tpn->tpn_canon ? tpn->tpn_host : "";
       printf("bound transport to %s/%s:%s%s%s%s%s\n",
-	     tpn->tpn_proto, tpn->tpn_canon, tpn->tpn_port, 
+	     tpn->tpn_proto, tpn->tpn_canon, tpn->tpn_port,
 	     host[0] ? ";maddr=" : "", host,
-	     tpn->tpn_comp ? ";comp=" : "", 
+	     tpn->tpn_comp ? ";comp=" : "",
 	     tpn->tpn_comp ? tpn->tpn_comp : "");
     }
 
@@ -676,10 +676,10 @@ static int init_test(tp_test_t *tt)
       tt->tt_tcp_comp->tpn_ident = NULL;
 
       if (tt->tt_tcp_addr == NULL) {
-	tt->tt_tcp_addr = tport_get_address(tp); 
+	tt->tt_tcp_addr = tport_get_address(tp);
 	tt->tt_tcp = tp;
       }
-    } 
+    }
     else if (strcmp(tpn->tpn_proto, "sctp") == 0) {
       *tt->tt_sctp_name = *tpn;
       tt->tt_sctp_name->tpn_ident = NULL;
@@ -693,13 +693,13 @@ static int init_test(tp_test_t *tt)
   END();
 }
 
-char const payload[] = 
+char const payload[] =
 "Some data\n"
 "More data\n";
 
 #include <time.h>
 
-int 
+int
 tport_test_run(tp_test_t *tt, unsigned timeout)
 {
   time_t now = time(NULL);
@@ -715,7 +715,7 @@ tport_test_run(tp_test_t *tt, unsigned timeout)
     }
     su_root_step(tt->tt_root, 500L);
 
-    if (!getenv("TPORT_TEST_DEBUG") && 
+    if (!getenv("TPORT_TEST_DEBUG") &&
 	time(NULL) > (time_t)(now + timeout))
       return 0;
   }
@@ -838,7 +838,7 @@ static int tcp_test(tp_test_t *tt)
   msg_destroy(msg);
 
   tport_set_params(tp,
-       	    TPTAG_KEEPALIVE(100), 
+       	    TPTAG_KEEPALIVE(100),
        	    TPTAG_PINGPONG(500),
        	    TPTAG_IDLE(500),
        	    TAG_END());
@@ -901,7 +901,7 @@ static int tcp_test(tp_test_t *tt)
 
   /* This uses a new connection */
   TEST_1(!new_test_msg(tt, &msg, "tcp-no-reuse", 1, 1024));
-  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name,
        		   TPTAG_REUSE(0), TAG_END()));
   N++;
   TEST_S(tport_name(tp)->tpn_ident, "client");
@@ -910,7 +910,7 @@ static int tcp_test(tp_test_t *tt)
 
   /* This uses the old connection */
   TEST_1(!new_test_msg(tt, &msg, "tcp-reuse", 1, 1024));
-  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name,
        		   TPTAG_REUSE(1), TAG_END()));
   N++;
   TEST_S(tport_name(tp)->tpn_ident, "client");
@@ -940,8 +940,8 @@ static int tcp_test(tp_test_t *tt)
   TEST_1(pending_server_close && pending_client_close);
   SU_DEBUG_3(("tport_test(%p): waiting for PONG timeout\n", (void *)tp0));
 
-  /* Wait until notifications - 
-     client closes when no pong is received and notifys pending, 
+  /* Wait until notifications -
+     client closes when no pong is received and notifys pending,
      then server closes and notifys pending */
   while (pending_server_close || pending_client_close)
     su_root_step(tt->tt_root, 50);
@@ -956,7 +956,7 @@ static int tcp_test(tp_test_t *tt)
   msg_destroy(msg);
 
   tport_set_params(tp0,
-       	    TPTAG_KEEPALIVE(250), 
+       	    TPTAG_KEEPALIVE(250),
        	    TPTAG_PINGPONG(200),
        	    TAG_END());
 
@@ -999,7 +999,7 @@ static int tcp_test(tp_test_t *tt)
 static int test_incomplete(tp_test_t *tt)
 {
   BEGIN();
-  
+
   su_addrinfo_t const *ai = tt->tt_tcp_addr;
   su_socket_t s;
   int connected;
@@ -1010,12 +1010,12 @@ static int test_incomplete(tp_test_t *tt)
 
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
   TEST_1(s != SOCKET_ERROR);
-  
+
   su_setblocking(s, 1);
   connected = connect(s, ai->ai_addr, (socklen_t)ai->ai_addrlen);
 
   su_root_step(tt->tt_root, 50);
-  
+
   TEST(su_send(s, "F", 1, 0), 1);
   su_root_step(tt->tt_root, 50);
   TEST(su_send(s, "O", 1, 0), 1);
@@ -1024,12 +1024,12 @@ static int test_incomplete(tp_test_t *tt)
   su_root_step(tt->tt_root, 50);
   TEST(su_send(s, " ", 1, 0), 1);
   su_root_step(tt->tt_root, 50);
-  
+
   tt->tt_received = 0;
   TEST(tport_test_run(tt, 5), -1);
   TEST(tt->tt_received, 1);
   TEST_P(tt->tt_rmsg, NULL);
-  
+
   su_close(s);
 
   END();
@@ -1050,7 +1050,7 @@ static int reuse_test(tp_test_t *tt)
   TEST_1(tp = tport_by_name(tt->tt_tports, tpn));
   TEST_1(tport_is_primary(tp));
   TEST(tport_flush(tp), 0);
-  
+
   for (i = 0; i < 10; i++)
     su_root_step(tt->tt_root, 10L);
 
@@ -1083,7 +1083,7 @@ static int reuse_test(tp_test_t *tt)
   /* Enable reuse on single connection */
   TEST(tport_set_params(tp1, TPTAG_REUSE(1), TAG_END()), 1);
   TEST(new_test_msg(tt, &msg, "reuse-3", 1, 1024), 0);
-  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name,
 			  TPTAG_REUSE(1),
 			  TAG_END()));
   TEST_S(tport_name(tp)->tpn_ident, "client");
@@ -1101,7 +1101,7 @@ static int reuse_test(tp_test_t *tt)
 
   /* Send a single message with different connection */
   TEST_1(!new_test_msg(tt, &msg, "fresh-1", 1, 1024));
-  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name, 
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, tt->tt_tcp_name,
 			  TPTAG_FRESH(1),
 			  TPTAG_REUSE(1),
 			  TAG_END()));
@@ -1135,7 +1135,7 @@ static int sctp_test(tp_test_t *tt)
   tport_t *tp, *tp0;
   char buffer[32];
 
-  if (!tt->tt_sctp_name->tpn_proto) 
+  if (!tt->tt_sctp_name->tpn_proto)
     return 0;
 
   /* Just a small and nice message first */
@@ -1148,7 +1148,7 @@ static int sctp_test(tp_test_t *tt)
   tport_set_params(tp, TPTAG_KEEPALIVE(100), TPTAG_IDLE(500), TAG_END());
 
   TEST(tport_test_run(tt, 5), 1);
-    
+
   TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
   test_check_md5(tt, tt->tt_rmsg);
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
@@ -1177,7 +1177,7 @@ static int sctp_test(tp_test_t *tt)
     TEST_S(tport_name(tp)->tpn_ident, "client");
     msg_destroy(msg);
   }
-  
+
   /* Fill up the queue */
   for (i = 1; i < TPORT_QUEUESIZE; i++) {
     snprintf(buffer, sizeof buffer, "cid:sctp-%u", n + i);
@@ -1191,16 +1191,16 @@ static int sctp_test(tp_test_t *tt)
   TEST_1(!new_test_msg(tt, &msg, buffer, 1, 1024));
   TEST_1(!tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name, TAG_END()));
   msg_destroy(msg);
-  
+
   TEST(tport_test_run(tt, 5), 1);
-    
+
   TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
   test_check_md5(tt, tt->tt_rmsg);
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
 
   /* This uses a new connection */
   TEST_1(!new_test_msg(tt, &msg, "cid:sctp-new", 1, 1024));
-  TEST_1(tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name, 
+  TEST_1(tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name,
 		     TPTAG_REUSE(0), TAG_END()));
   msg_destroy(msg);
 
@@ -1211,22 +1211,22 @@ static int sctp_test(tp_test_t *tt)
     TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
     msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
   }
-  
+
   /* Try to send a single message */
   TEST_1(!new_test_msg(tt, &msg, "cid:sctp-final", 1, 512));
   TEST_1(tport_tsend(tt->tt_tports, msg, tt->tt_sctp_name, TAG_END()));
   msg_destroy(msg);
-  
+
   TEST(tport_test_run(tt, 10), 1);
-  
+
   TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
   msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
   }
 
   tport_unref(tp0);
 
-  /* Wait until notifications - 
-     client closes when idle and notifys pending, 
+  /* Wait until notifications -
+     client closes when idle and notifys pending,
      then server closes and notifys pending */
   while (pending_server_close || pending_client_close)
     su_root_step(tt->tt_root, 50);
@@ -1256,7 +1256,7 @@ void tls_error_callback(tp_stack_t *tt, tp_client_t *client,
 
 static int tls_test(tp_test_t *tt)
 {
-  BEGIN(); 
+  BEGIN();
 
 #if HAVE_TLS
   tp_name_t const *dst = tt->tt_tls_name;
@@ -1319,7 +1319,7 @@ static int tls_test(tp_test_t *tt)
 
   /* This uses a new connection */
   TEST_1(!new_test_msg(tt, &msg, "tls-no-reuse", 1, 1024));
-  TEST_1(tp = tport_tsend(tt->tt_tports, msg, dst, 
+  TEST_1(tp = tport_tsend(tt->tt_tports, msg, dst,
 		     TPTAG_REUSE(0), TAG_END()));
   TEST_1(tp != tp0);
   msg_destroy(msg);
@@ -1345,12 +1345,12 @@ static int tls_test(tp_test_t *tt)
 
   tport_decref(&tp0);
 
-  /* Wait until notifications - 
-     client closes when idle and notifys pending, 
+  /* Wait until notifications -
+     client closes when idle and notifys pending,
      then server closes and notifys pending */
   while (pending_server_close || pending_client_close)
     su_root_step(tt->tt_root, 50);
-  
+
 #endif
 
   END();
@@ -1364,7 +1364,7 @@ static int sigcomp_test(tp_test_t *tt)
   su_home_t *home;
   tp_name_t tpn[1] = {{ NULL }};
   struct sigcomp_compartment *cc;
-  
+
   if (tt->tt_udp_comp->tpn_comp) {
     msg_t *msg = NULL;
 
@@ -1372,8 +1372,8 @@ static int sigcomp_test(tp_test_t *tt)
 
     TEST_1(!new_test_msg(tt, &msg, "udp-sigcomp", 1, 1200));
     test_create_md5(tt, msg);
-    TEST_1(tport_tsend(tt->tt_tports, 
-		       msg, 
+    TEST_1(tport_tsend(tt->tt_tports,
+		       msg,
 		       tt->tt_udp_comp,
 		       TPTAG_COMPARTMENT(cc),
 		       TAG_END()));
@@ -1386,25 +1386,25 @@ static int sigcomp_test(tp_test_t *tt)
     test_check_md5(tt, tt->tt_rmsg);
 
     TEST_1(msg = tt->tt_rmsg); tt->tt_rmsg = NULL;
-    
+
     TEST_1(home = msg_home(msg));
-    
+
     TEST_1(tport_convert_addr(home, tpn, "udp", NULL, msg_addr(msg)) == 0);
-    
+
     tpn->tpn_comp = tport_name(tt->tt_rtport)->tpn_comp;
-    
+
     /* reply */
     TEST_1(cc = test_sigcomp_compartment(tt, tt->tt_tports, tpn));
-    TEST_1(tport_tsend(tt->tt_rtport, msg, tpn, 
+    TEST_1(tport_tsend(tt->tt_rtport, msg, tpn,
 		       TPTAG_COMPARTMENT(cc),
 		       TAG_END()) != NULL);
-    
+
     msg_destroy(msg);
-    
+
     TEST(tport_test_run(tt, 5), 1);
 
-    TEST_1(!check_msg(tt, tt->tt_rmsg, NULL)); 
-    test_check_md5(tt, tt->tt_rmsg); 
+    TEST_1(!check_msg(tt, tt->tt_rmsg, NULL));
+    test_check_md5(tt, tt->tt_rmsg);
     msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
   }
 
@@ -1420,9 +1420,9 @@ static int sigcomp_test(tp_test_t *tt)
     tport_log->log_level = 9;
 
     TEST_1(cc = test_sigcomp_compartment(tt, tt->tt_tports, tpn));
-    TEST_1(tp = tport_tsend(tt->tt_tports, 
-			    msg, 
-			    tpn, 
+    TEST_1(tp = tport_tsend(tt->tt_tports,
+			    msg,
+			    tpn,
 			    TPTAG_COMPARTMENT(cc),
 			    TAG_END()));
     TEST_1(tport_incref(tp)); tport_decref(&tp);
@@ -1436,9 +1436,9 @@ static int sigcomp_test(tp_test_t *tt)
 
     TEST_1(!new_test_msg(tt, &msg, "tcp-sigcomp-2", 1, 3000));
     test_create_md5(tt, msg);
-    TEST_1(tp = tport_tsend(tt->tt_tports, 
-			    msg, 
-			    tt->tt_tcp_comp, 
+    TEST_1(tp = tport_tsend(tt->tt_tports,
+			    msg,
+			    tt->tt_tcp_comp,
 			    TPTAG_COMPARTMENT(cc),
 			    TAG_END()));
     TEST_1(tport_incref(tp)); tport_decref(&tp);
@@ -1447,15 +1447,15 @@ static int sigcomp_test(tp_test_t *tt)
     TEST(tport_test_run(tt, 5), 1);
 
     TEST_1(!check_msg(tt, tt->tt_rmsg, "tcp-sigcomp-2"));
-    test_check_md5(tt, tt->tt_rmsg); 
+    test_check_md5(tt, tt->tt_rmsg);
 
     msg_destroy(tt->tt_rmsg), tt->tt_rmsg = NULL;
 
     TEST_1(!new_test_msg(tt, &msg, "tcp-sigcomp-3", 1, 45500));
     test_create_md5(tt, msg);
-    TEST_1(tp = tport_tsend(tt->tt_tports, 
-			    msg, 
-			    tt->tt_tcp_comp, 
+    TEST_1(tp = tport_tsend(tt->tt_tports,
+			    msg,
+			    tt->tt_tcp_comp,
 			    TPTAG_COMPARTMENT(cc),
 			    TAG_END()));
     TEST_1(tport_incref(tp));
@@ -1476,9 +1476,9 @@ static int sigcomp_test(tp_test_t *tt)
 
       TEST_1(!new_test_msg(tt, &msg, "tcp-sigcomp-4", 1, 1000));
       test_create_md5(tt, msg);
-      TEST_1(tp = tport_tsend(tt->tt_tports, 
-			      msg, 
-			      tpn, 
+      TEST_1(tp = tport_tsend(tt->tt_tports,
+			      msg,
+			      tpn,
 			      TPTAG_COMPARTMENT(cc),
 			      TPTAG_FRESH(1),
 			      TAG_END()));
@@ -1486,7 +1486,7 @@ static int sigcomp_test(tp_test_t *tt)
       msg_destroy(msg);
 
       TEST(tport_test_run(tt, 5), 1);
-      
+
       TEST_1(!check_msg(tt, tt->tt_rmsg, "tcp-sigcomp-4"));
       test_check_md5(tt, tt->tt_rmsg);
       TEST_1((msg_addrinfo(tt->tt_rmsg)->ai_flags & TP_AI_COMPRESSED) == 0);
@@ -1496,14 +1496,14 @@ static int sigcomp_test(tp_test_t *tt)
       TEST_1(!new_test_msg(tt, &msg, "tcp-sigcomp-5", 1, 1000));
       test_create_md5(tt, msg);
       {
-	/* Mess with internal data structures in order to 
+	/* Mess with internal data structures in order to
 	   force tport to use SigComp on this connection */
 	tp_name_t *tpn = (tp_name_t *)tport_name(rtp);
 	tpn->tpn_comp = "sigcomp";
       }
-      TEST_1(tp = tport_tsend(rtp, 
-			      msg, 
-			      tt->tt_tcp_comp, 
+      TEST_1(tp = tport_tsend(rtp,
+			      msg,
+			      tt->tt_tcp_comp,
 			      TPTAG_COMPARTMENT(cc),
 			      TAG_END()));
       TEST_1(tport_incref(tp));
@@ -1544,8 +1544,8 @@ static int stun_test(tp_test_t *tt)
 #endif
 
   TEST_1(mr = tport_tcreate(tt, tp_test_class, tt->tt_root, TAG_END()));
-  
-  TEST(tport_tbind(tt->tt_tports, tpn, transports, TPTAG_SERVER(1), 
+
+  TEST(tport_tbind(tt->tt_tports, tpn, transports, TPTAG_SERVER(1),
 		   STUNTAG_SERVER("999.999.999.999"),
 		   TAG_END()), -1);
 
@@ -1587,7 +1587,7 @@ static int filter_test(tp_test_t *tt)
   BEGIN();
 
   lst = tl_list(TSTTAG_HEADER_STR("X: Y"),
-		TAG_SKIP(2), 
+		TAG_SKIP(2),
 		TPTAG_IDENT("foo"),
 		TSTTAG_HEADER_STR("X: Y"),
 		TPTAG_IDENT("bar"),

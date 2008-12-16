@@ -41,20 +41,20 @@
 
 SOFIA_BEGIN_DECLS
 
-enum { 
+enum {
   /** Default size of hash table */
-  MC_HASH_SIZE = 127, 
+  MC_HASH_SIZE = 127,
   /** Size of short form table */
-  MC_SHORT_SIZE = 'Z' - 'A' + 1 
+  MC_SHORT_SIZE = 'Z' - 'A' + 1
 };
 
 /**Header reference.
  *
- * A header reference object contains a pointer to a 
- * @ref msg_hclass_s "header class" 
+ * A header reference object contains a pointer to a
+ * @ref msg_hclass_s "header class"
  * and a offset to the header objects within the @ref msg_pub_t "public
  * message structure".
- * 
+ *
  * The @a hr_flags field is used to provide classification of headers. For
  * instance, the msg_extract_errors() returns bitwise or of all hr_flags
  * belonging to headers with parsing errors.
@@ -102,7 +102,7 @@ struct msg_mclass_s
   unsigned      mc_flags;	/**< Default flags */
   unsigned      mc_msize;	/**< Size of public message structure */
   /** Function extracting the message contents. */
-  issize_t    (*mc_extract_body)(msg_t *msg, msg_pub_t *pub, 
+  issize_t    (*mc_extract_body)(msg_t *msg, msg_pub_t *pub,
 				 char b[], isize_t bsiz, int eos);
 
   msg_href_t    mc_request[1];	/**< Request line reference */
@@ -117,7 +117,7 @@ struct msg_mclass_s
   short         mc_hash_size;	/**< Size of parsing table  */
   short         mc_hash_used;	/**< Number of headers in parsing table */
   /** Hash table for parsing containing reference for each header. */
-  msg_href_t    mc_hash[MC_HASH_SIZE]; 
+  msg_href_t    mc_hash[MC_HASH_SIZE];
 };
 
 enum { msg_mclass_copy = 0, msg_mclass_empty = 1 };
@@ -128,12 +128,12 @@ SOFIAPUBFUN msg_mclass_t *msg_mclass_clone(msg_mclass_t const *old,
 SOFIAPUBFUN int msg_mclass_insert(msg_mclass_t *mc, msg_href_t const *hr);
 
 SOFIAPUBFUN
-int msg_mclass_insert_header(msg_mclass_t *mc, 
+int msg_mclass_insert_header(msg_mclass_t *mc,
 			     msg_hclass_t *hc,
 			     unsigned short offset);
 
 SOFIAPUBFUN
-int msg_mclass_insert_with_mask(msg_mclass_t *mc, 
+int msg_mclass_insert_with_mask(msg_mclass_t *mc,
 				msg_hclass_t *hc,
 				unsigned short offset,
 				unsigned short mask);

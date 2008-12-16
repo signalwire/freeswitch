@@ -52,7 +52,7 @@
  * The Reason header is used to indicate why a SIP request was issued or why
  * a provisional response was sent. It can be used with HRPF scenarios. It
  * is defined in @RFC3326 as follows:
- * 
+ *
  * @code
  *   Reason            =  "Reason" HCOLON reason-value *(COMMA reason-value)
  *   reason-value      =  protocol *(SEMI reason-params)
@@ -64,7 +64,7 @@
  *   reason-text       =  "text" EQUAL quoted-string
  *   reason-extension  =  generic-param
  * @endcode
- * 
+ *
  * The parsed Reason header is stored in #sip_reason_t structure.
  */
 
@@ -77,12 +77,12 @@
  * @code
  * typedef struct sip_reason_s
  * {
- *   sip_common_t        re_common[1]; // Common fragment info 
- *   sip_reason_t       *re_next;      // Link to next <reason-value> 
- *   char const         *re_protocol;  // Protocol 
- *   msg_param_t const  *re_params;    // List of reason parameters 
- *   char const         *re_cause;     // Value of cause parameter 
- *   char const         *re_text;      // Value of text parameter 
+ *   sip_common_t        re_common[1]; // Common fragment info
+ *   sip_reason_t       *re_next;      // Link to next <reason-value>
+ *   char const         *re_protocol;  // Protocol
+ *   msg_param_t const  *re_params;    // List of reason parameters
+ *   char const         *re_cause;     // Value of cause parameter
+ *   char const         *re_text;      // Value of text parameter
  * } sip_reason_t;
  * @endcode
  */
@@ -91,7 +91,7 @@ static msg_xtra_f sip_reason_dup_xtra;
 static msg_dup_f sip_reason_dup_one;
 static msg_update_f sip_reason_update;
 
-msg_hclass_t sip_reason_class[] = 
+msg_hclass_t sip_reason_class[] =
 SIP_HEADER_CLASS(reason, "Reason", "", re_params, append, reason);
 
 issize_t sip_reason_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -103,9 +103,9 @@ issize_t sip_reason_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
     *s = '\0', s += span_lws(s + 1) + 1;
 
   re->re_protocol = s;
-  if ((n = span_token(s)) == 0) 
+  if ((n = span_token(s)) == 0)
     return -1;
-  s += n; while (IS_LWS(*s)) *s++ = '\0'; 
+  s += n; while (IS_LWS(*s)) *s++ = '\0';
   if (*s == ';' && msg_params_d(home, &s, &re->re_params) < 0)
     return -1;
 
@@ -134,7 +134,7 @@ isize_t sip_reason_dup_xtra(sip_header_t const *h, isize_t offset)
   return offset;
 }
 
-/** Duplicate one #sip_reason_t object */ 
+/** Duplicate one #sip_reason_t object */
 char *sip_reason_dup_one(sip_header_t *dst, sip_header_t const *src,
 			char *b, isize_t xtra)
 {
@@ -150,7 +150,7 @@ char *sip_reason_dup_one(sip_header_t *dst, sip_header_t const *src,
 }
 
 /** Update parameter values for @Reason header */
-static int sip_reason_update(msg_common_t *h, 
+static int sip_reason_update(msg_common_t *h,
 			     char const *name, isize_t namelen,
 			     char const *value)
 {

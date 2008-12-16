@@ -24,7 +24,7 @@
 
 /**@internal
  *
- * @CFILE sdp_torture.c  
+ * @CFILE sdp_torture.c
  *
  * Torture testing sdp module.
  *
@@ -59,10 +59,10 @@ char const *name = "torture_sdp.c";
 
 FILE *null;
 
-static char const e0_msg[] = 
+static char const e0_msg[] =
 "foo";
 
-static char const e1_msg[] = 
+static char const e1_msg[] =
     "v=1\n"
     "s=/sdp_torture\n"
     "o=sdp_torture 0 0 IN IP4 0.0.0.0\n"
@@ -102,7 +102,7 @@ static int test_error(void)
   END();
 }
 
-static char const s0_msg[] = 
+static char const s0_msg[] =
     "v=0\n"
     "s=/sdp_torture\n"
     "o=sdp_torture 0 0 IN IP4 0.0.0.0\n"
@@ -136,7 +136,7 @@ static int test_session(void)
 
   su_home_check(home2);
   TEST_1(home2);
-  
+
   TEST_1((parser = sdp_parse(home, s0_msg, sizeof(s0_msg), sdp_f_config)));
   TEST_1((sdp_src = sdp_session(parser)));
   TEST_1(sdp_src->sdp_media);
@@ -179,7 +179,7 @@ static int test_session(void)
   /* destroy the first home instance */
   su_home_check(home);
   su_home_unref(home);
-    
+
   /* access all cloned data by printing it */
   printer = sdp_print(home2, sdp_target, buffer, sizeof(buffer), 0);
   if (printer != NULL) {
@@ -188,7 +188,7 @@ static int test_session(void)
     if (tstflags & tst_verbatim) {
       printf("sdp_torture.c: parsed SDP message:\"%s\".\n", msg);
     }
-      
+
     sdp_printer_free(printer);
   }
 
@@ -224,7 +224,7 @@ static int test_session(void)
   END();
 }
 
-static char const s1_msg[] = 
+static char const s1_msg[] =
   "v=0\r\n"
   "o=- 2435697 2435697 IN IP4 172.21.137.44\r\n"
   "s=-\r\n"
@@ -238,7 +238,7 @@ static char const s1_msg[] =
   "a=fmtp:97 mode-set=\"0,1,2,3,4\"\r\n"
   "a=ptime:400\r\n";
 
-static char const s2_msg[] = 
+static char const s2_msg[] =
   "v=0\r\n"
   "o=- 308519342 2 IN IP4 172.168.1.55\r\n"
   "s=-\r\n"
@@ -413,7 +413,7 @@ static int test_session2(void)
 	   &sdp_rtpmap_cn_reserved);
     TEST_1(!rm->rm_next);
   }
-  
+
   TEST_1((parser = sdp_parse(home, s2_msg, sizeof (s2_msg), 0)));
   TEST_1((sdp = sdp_session(parser)));
   TEST_1(m = sdp->sdp_media);
@@ -438,7 +438,7 @@ static int test_session2(void)
   END();
 }
 
-static char const s3_msg[] = 
+static char const s3_msg[] =
   "v=0\r\n"
   "o=- 2435697 2435697 IN IP4 172.21.137.44\r\n"
   "s=-\r\n"
@@ -461,7 +461,7 @@ static int test_sanity(void)
   su_home_check(home); TEST_1(home);
 
   TEST_1((parser = sdp_parse(home, s3_msg, sizeof(s3_msg) - 1, 0)));
-  
+
   TEST_1(sdp_sanity_check(parser) == 0);
 
   su_home_unref(home);
@@ -469,7 +469,7 @@ static int test_sanity(void)
   END();
 }
 
-static char const pint_msg[] = 
+static char const pint_msg[] =
   "v=0\r\n"
   "o=- 2353687640 2353687640 IN IP4 128.3.4.5\r\n"
   "s=marketing\r\n"
@@ -479,7 +479,7 @@ static char const pint_msg[] =
   "m=audio 1 voice -\r\n"
   ;
 
-static char const pint_torture_msg[] = 
+static char const pint_torture_msg[] =
   "v=0\r\n"
   "o=- 2353687640 2353687640 IN IP4 128.3.4.5\r\n"
   "s=marketing\r\n"
@@ -514,7 +514,7 @@ static int test_pint(void)
   TEST_1((parser = sdp_parse(home, pint_torture_msg, sizeof(pint_torture_msg) - 1,
 			     sdp_f_anynet)));
   TEST_1((sdp = sdp_session(parser)));
-  
+
   su_home_check(home);
   su_home_unref(home);
 
@@ -555,16 +555,16 @@ int test_list(void)
 }
 
 static
-sdp_rtpmap_t const rm0[1] = 
-  {{ 
+sdp_rtpmap_t const rm0[1] =
+  {{
       sizeof(rm0), NULL, "AMR", 8000, "1",
       "mode-set=4,5,6 interleaving crc use-redundancy=1",
       0, 96, 0
   }};
 
 static
-sdp_rtpmap_t const rm1[1] = 
-  {{ 
+sdp_rtpmap_t const rm1[1] =
+  {{
       sizeof(rm1), (sdp_rtpmap_t *)rm0, "PCMA", 8000, "1",
       NULL,
       1, 8, 0,
@@ -605,7 +605,7 @@ int test_rtpmap(void)
 
 static sdp_attribute_t const a0[1] =
   {{ sizeof(a0), NULL, "foo", "2"}};
-static sdp_attribute_t const a1[1] = 
+static sdp_attribute_t const a1[1] =
   {{ sizeof(a1), (sdp_attribute_t *)a0, "bar", "1" }};
 
 static int test_attribute(void)
@@ -648,12 +648,12 @@ static int test_attribute(void)
   replaced = (void *)-1;
   TEST(sdp_attribute_replace(&list, NULL, &replaced), -1);
   TEST_P(replaced, NULL);
-  TEST(sdp_attribute_replace(&list, a, &replaced), 0); 
+  TEST(sdp_attribute_replace(&list, a, &replaced), 0);
   TEST_P(replaced, NULL);
-  TEST(sdp_attribute_replace(&list, a_new, &replaced), 1); 
+  TEST(sdp_attribute_replace(&list, a_new, &replaced), 1);
   TEST_P(replaced, a);
 
-  TEST_VOID(sdp_attribute_append(&list, a)); 
+  TEST_VOID(sdp_attribute_append(&list, a));
 
   TEST_P(sdp_attribute_remove(&list, "bAr"), a_new);
   TEST_P(sdp_attribute_remove(&list, "BAR"), a);
@@ -672,7 +672,7 @@ static int test_connection(void)
   END();
 }
 
-static char const media_msg[] = 
+static char const media_msg[] =
 "v=0\n"
 "s=/sdp_torture\n"
 "o=sdp_torture 0 0 IN IP4 1.2.3.4\n"
@@ -689,13 +689,13 @@ static char const media_msg[] =
 "c=IN IP4 2.3.4.5\n";
 
 static sdp_media_t const m0[1] =
-  {{ sizeof(m0), 
-     NULL, 
+  {{ sizeof(m0),
+     NULL,
      NULL,
      sdp_media_audio,
-     NULL, 
-     1234, 
-     5, 
+     NULL,
+     1234,
+     5,
      sdp_proto_udp,
      "udp",
   }};
@@ -781,20 +781,20 @@ static int test_time(void)
   TEST_1(sdp_time_cmp(t1, t1) == 0);
   TEST_1(sdp_time_cmp(t1, t2) == 0);
   TEST_1(sdp_time_cmp(t2, t1) == 0);
-  TEST_1((t = t->t_next)); *t1 = *t; t1->t_next = NULL; 
+  TEST_1((t = t->t_next)); *t1 = *t; t1->t_next = NULL;
   TEST_1(sdp_time_cmp(t1, t2) > 0);
   TEST_1(sdp_time_cmp(t2, t1) < 0);
-  TEST_1((t = t->t_next)); *t2 = *t; t2->t_next = NULL; 
+  TEST_1((t = t->t_next)); *t2 = *t; t2->t_next = NULL;
   TEST_1(t2->t_zone); TEST_1(t2->t_repeat);
   TEST_1(sdp_time_cmp(t2, t2) == 0);
   TEST_1(sdp_time_cmp(t1, t2) > 0);
   TEST_1(sdp_time_cmp(t2, t1) < 0);
-  TEST_1((t = t->t_next)); *t1 = *t; t1->t_next = NULL; 
+  TEST_1((t = t->t_next)); *t1 = *t; t1->t_next = NULL;
   TEST_1(t1->t_zone); TEST_1(t1->t_repeat);
   TEST_1(sdp_time_cmp(t1, t1) == 0);
   TEST_1(sdp_time_cmp(t2, t2) == 0);
   TEST_1(sdp_time_cmp(t1, t2) == 0);
-  
+
   sdp_parser_free(parser);
 
   END();
@@ -829,9 +829,9 @@ static int test_build(void)
 
   TEST_1(home = su_home_create());
 
-  /* 
+  /*
    * Allocate an SDP structure using su_salloc().
-   * su_salloc() puts memory area size to the beginning of structure 
+   * su_salloc() puts memory area size to the beginning of structure
    * and zeroes rest of the structure.
    */
   TEST_1(sdp = su_salloc(home, sizeof(*sdp)));
@@ -850,7 +850,7 @@ static int test_build(void)
   o->o_id = rand();
   o->o_version = 1;
   o->o_address = c;
-  
+
   c->c_nettype = sdp_net_in;
   c->c_addrtype = sdp_addr_ip4;
   c->c_address = "172.21.40.40";
@@ -860,10 +860,10 @@ static int test_build(void)
   m->m_port = 5004;
   m->m_proto = sdp_proto_rtp; m->m_proto_name = "RTP/AVP";
   m->m_rtpmaps = rm;
-  
+
   rm->rm_predef = 1;
   rm->rm_pt = 8;
-  rm->rm_encoding = "PCMA"; 
+  rm->rm_encoding = "PCMA";
   rm->rm_rate = 8000;
 
   TEST_1(m1 = su_salloc(home, sizeof(*m1)));

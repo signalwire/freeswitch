@@ -1,6 +1,6 @@
 This package contains the Sofia-SIP library.
 
-Copyright (C) 2005-2006 Nokia Corporation and others (see the 
+Copyright (C) 2005-2006 Nokia Corporation and others (see the
 in individual files for a detailed list of copyright holders).
 
 Contact: Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -102,23 +102,23 @@ libsofia-sip-ua/su/getopt.c
 The package also contains files licensed by IBM Corporation. These files are
 distributed with the following copyright notice:
 
-           This module contains code made available by IBM 
-           Corporation on an AS IS basis.  Any one receiving the 
-           module is considered to be licensed under IBM copyrights 
-           to use the IBM-provided source code in any way he or she 
-           deems fit, including copying it, compiling it, modifying 
-           it, and redistributing it, with or without 
-           modifications.  No license under any IBM patents or 
-           patent applications is to be implied from this copyright 
-           license. 
+           This module contains code made available by IBM
+           Corporation on an AS IS basis.  Any one receiving the
+           module is considered to be licensed under IBM copyrights
+           to use the IBM-provided source code in any way he or she
+           deems fit, including copying it, compiling it, modifying
+           it, and redistributing it, with or without
+           modifications.  No license under any IBM patents or
+           patent applications is to be implied from this copyright
+           license.
 
-           A user of the module should understand that IBM cannot 
-           provide technical support for the module and will not be 
-           responsible for any consequences of use of the program. 
+           A user of the module should understand that IBM cannot
+           provide technical support for the module and will not be
+           responsible for any consequences of use of the program.
 
-           Any notices, including this one, are not to be removed 
-           from the module without the prior written consent of 
-           IBM. 
+           Any notices, including this one, are not to be removed
+           from the module without the prior written consent of
+           IBM.
 
 ----------------------------------------------------------------------------
 
@@ -149,7 +149,7 @@ Copyright (c) 1994 Sun Microsystems, Inc.
 
 The following license.terms for information on usage and redistribution
 of this individual file, and for a DISCLAIMER OF ALL WARRANTIES.
- 
+
 This software is copyrighted by the Regents of the University of
 California, Sun Microsystems, Inc., Scriptics Corporation, ActiveState
 Corporation and other parties.  The following terms apply to all files
@@ -181,7 +181,7 @@ MODIFICATIONS.
 
 GOVERNMENT USE: If you are acquiring this software on behalf of the
 U.S. government, the Government shall have only "Restricted Rights"
-in the software and related documentation as defined in the Federal 
+in the software and related documentation as defined in the Federal
 Acquisition Regulations (FARs) in Clause 52.227.19 (c) (2).  If you
 are acquiring the software on behalf of the Department of Defense, the
 software shall be classified as "Commercial Computer Software" and the
@@ -189,7 +189,7 @@ Government shall have only "Restricted Rights" as defined in Clause
 252.227-7013 (c) (1) of DFARs.  Notwithstanding the foregoing, the
 authors grant the U.S. Government and others acting in its behalf
 permission to use and distribute the software in accordance with the
-terms specified in this license. 
+terms specified in this license.
 
 ----------------------------------------------------------------------------
 

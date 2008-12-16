@@ -55,7 +55,7 @@ SOFIAPUBFUN void msg_set_parent(msg_t *kid, msg_t *dad);
 
 SOFIAPUBFUN msg_t *msg_ref_create(msg_t *);
 SOFIAPUBFUN void msg_ref_destroy(msg_t *);
-     
+
 SOFIAPUBFUN msg_pub_t *msg_public(msg_t const *msg, void *tag);
 SOFIAPUBFUN msg_pub_t *msg_object(msg_t const *msg);
 SOFIAPUBFUN msg_mclass_t const *msg_mclass(msg_t const *msg);
@@ -103,9 +103,9 @@ enum msg_flg_user {
   /** Cache a copy of headers when parsing. */
   MSG_FLG_EXTRACT_COPY = (1<<2),
   /** Print comma-separated lists instead of separate headers */
-  MSG_FLG_COMMA_LISTS = (1<<3),	
+  MSG_FLG_COMMA_LISTS = (1<<3),
 
-  /**Use mailbox format when parsing - in mailbox format 
+  /**Use mailbox format when parsing - in mailbox format
    * message has no body unless Content-Length header is present.
    */
   MSG_FLG_MAILBOX = (1<<4),

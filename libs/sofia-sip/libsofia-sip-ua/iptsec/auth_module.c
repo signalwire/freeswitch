@@ -80,7 +80,7 @@ static void auth_call_scheme_destructor(void *);
 static void auth_md5_hmac_key(auth_mod_t *am);
 
 HTABLE_PROTOS_WITH(auth_htable, aht, auth_passwd_t, usize_t, unsigned);
-HTABLE_BODIES_WITH(auth_htable, aht, auth_passwd_t, APW_HASH, 
+HTABLE_BODIES_WITH(auth_htable, aht, auth_passwd_t, APW_HASH,
 		   usize_t, unsigned);
 
 /**Allocate an authentication module instance.

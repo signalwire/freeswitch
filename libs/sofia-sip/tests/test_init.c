@@ -23,7 +23,7 @@
  */
 
 /**@CFILE test_init.c
- * @brief Init nua test context 
+ * @brief Init nua test context
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Martti Mela <Martti Mela@nokia.com>
@@ -114,7 +114,7 @@ int test_nua_init(struct context *ctx,
 			       TAG_END());
 
     if (ctx->p) {
-      ctx->a.domain = 
+      ctx->a.domain =
 	test_proxy_add_domain(ctx->p,
 			      URL_STRING_MAKE("sip:example.com")->us_url,
 			      AUTHTAG_METHOD("Digest"),
@@ -126,7 +126,7 @@ int test_nua_init(struct context *ctx,
 			      AUTHTAG_NEXT_EXPIRES(60),
 			      TAG_END());
 
-      ctx->b.domain = 
+      ctx->b.domain =
 	test_proxy_add_domain(ctx->p,
 			      URL_STRING_MAKE("sip:example.org")->us_url,
 			      AUTHTAG_METHOD("Digest"),
@@ -140,7 +140,7 @@ int test_nua_init(struct context *ctx,
 
       test_proxy_domain_set_outbound(ctx->b.domain, 1);
 
-      ctx->c.domain = 
+      ctx->c.domain =
 	test_proxy_add_domain(ctx->p,
 			      URL_STRING_MAKE("sip:example.net")->us_url,
 			      AUTHTAG_METHOD("Digest"),
@@ -379,7 +379,7 @@ int test_nua_init(struct context *ctx,
 	            NUTAG_APPL_METHOD_REF(appl_method),
 	            SIPTAG_SUPPORTED_REF(supported),
 	            TAG_END());
-  
+
   TEST(err, 4); TEST_1(m);
   TEST_1(ctx->c.contact = sip_contact_dup(ctx->home, m));
   TEST_1(ctx->c.allow = sip_allow_dup(ctx->home, allow));

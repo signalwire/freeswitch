@@ -155,7 +155,7 @@ int test_nua_params(struct context *ctx)
 		 SIPTAG_USER_AGENT_STR("test_nua/1.0"),
 
 		 SIPTAG_ORGANIZATION_STR("Open Laboratory"),
-		 
+
 		 NUTAG_M_DISPLAY("XXX"),
 		 NUTAG_M_USERNAME("xxx"),
 		 NUTAG_M_PARAMS("user=ip"),
@@ -310,7 +310,7 @@ int test_nua_params(struct context *ctx)
     char const *m_params = "NONE";
     char const *m_features = "NONE";
     char const *instance = "NONE";
-    
+
     url_string_t const *registrar = NONE;
     unsigned keepalive = (unsigned)-1, keepalive_stream = (unsigned)-1;
 
@@ -424,10 +424,10 @@ int test_nua_params(struct context *ctx)
     TEST_S(sip_header_as_string(tmphome, (void *)allow), "OPTIONS, INFO, ACK");
     TEST_S(allow_str, "OPTIONS, INFO, ACK");
     TEST_S(appl_method, "INVITE, REGISTER, PUBLISH, SUBSCRIBE, NOTIFY");
-    TEST_S(sip_header_as_string(tmphome, (void *)allow_events), 
+    TEST_S(sip_header_as_string(tmphome, (void *)allow_events),
 	   "reg, presence, presence.winfo");
     TEST_S(allow_events_str, "reg, presence, presence.winfo");
-    TEST_S(sip_header_as_string(tmphome, (void *)supported), 
+    TEST_S(sip_header_as_string(tmphome, (void *)supported),
 	   "foo, bar, baz");
     TEST_S(supported_str, "foo, bar, baz");
     TEST_S(sip_header_as_string(tmphome, (void *)user_agent), "test_nua");

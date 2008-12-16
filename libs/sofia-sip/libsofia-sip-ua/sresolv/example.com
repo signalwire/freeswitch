@@ -53,7 +53,7 @@ alias6  A6      128 a6
 full	A6	0 3ff0:12:3012:c006:0a08:20ff:fe7d:e7ac
 
 sip00	A	194.2.188.133
-	AAAA	3ff0:0010:3012:c000:02c0:95ff:fee2:4b78 
+	AAAA	3ff0:0010:3012:c000:02c0:95ff:fee2:4b78
 
 sip01	A	194.2.188.134
 	AAAA	3ff0:0012:3012:c006:0a08:20ff:fe7d:e7ac

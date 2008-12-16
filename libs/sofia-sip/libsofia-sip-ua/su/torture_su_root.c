@@ -121,33 +121,33 @@ int test_api(root_test_t *rt)
 {
   BEGIN();
   TEST_1(rt->rt_root = su_root_create(NULL));
-  
+
   TEST_VOID(su_root_destroy(NULL));
-  TEST_P(su_root_name(NULL), NULL);  
-  TEST_1(su_root_name(rt->rt_root) != NULL);  
+  TEST_P(su_root_name(NULL), NULL);
+  TEST_1(su_root_name(rt->rt_root) != NULL);
   TEST(su_root_set_magic(NULL, rt), -1);
   TEST_P(su_root_magic(rt->rt_root), NULL);
   TEST(su_root_set_magic(rt->rt_root, rt), 0);
   TEST_P(su_root_magic(rt->rt_root), rt);
   TEST_P(su_root_magic(NULL), NULL);
-  TEST(su_root_register(NULL, NULL, NULL, NULL, 0), -1);  
-  TEST(su_root_unregister(NULL, NULL, NULL, NULL), -1);  
-  TEST(su_root_deregister(NULL, 0), -1);  
-  TEST(su_root_deregister(rt->rt_root, 0), -1);  
-  TEST(su_root_deregister(rt->rt_root, -1), -1);  
-  TEST(su_root_eventmask(NULL, 0, -1, -1), -1);  
-  TEST((long int)su_root_step(NULL, 0), -1L);  
-  TEST((long int)su_root_sleep(NULL, 0), -1L);  
-  TEST(su_root_multishot(NULL, 0), -1);  
-  TEST_VOID((void)su_root_run(NULL));  
-  TEST_VOID((void)su_root_break(NULL));  
+  TEST(su_root_register(NULL, NULL, NULL, NULL, 0), -1);
+  TEST(su_root_unregister(NULL, NULL, NULL, NULL), -1);
+  TEST(su_root_deregister(NULL, 0), -1);
+  TEST(su_root_deregister(rt->rt_root, 0), -1);
+  TEST(su_root_deregister(rt->rt_root, -1), -1);
+  TEST(su_root_eventmask(NULL, 0, -1, -1), -1);
+  TEST((long int)su_root_step(NULL, 0), -1L);
+  TEST((long int)su_root_sleep(NULL, 0), -1L);
+  TEST(su_root_multishot(NULL, 0), -1);
+  TEST_VOID((void)su_root_run(NULL));
+  TEST_VOID((void)su_root_break(NULL));
   TEST_M(su_root_task(NULL), su_task_null, sizeof su_task_null);
   TEST_M(su_root_parent(NULL), su_task_null, sizeof su_task_null);
-  TEST(su_root_add_prepoll(NULL, NULL, NULL), -1);  
-  TEST(su_root_remove_prepoll(NULL), -1);  
-  TEST_P(su_root_gsource(NULL), NULL);  
-  TEST_VOID((void)su_root_gsource(rt->rt_root));  
-  TEST(su_root_yield(NULL), -1);  
+  TEST(su_root_add_prepoll(NULL, NULL, NULL), -1);
+  TEST(su_root_remove_prepoll(NULL), -1);
+  TEST_P(su_root_gsource(NULL), NULL);
+  TEST_VOID((void)su_root_gsource(rt->rt_root));
+  TEST(su_root_yield(NULL), -1);
   TEST(su_root_release(NULL), -1);
   TEST(su_root_obtain(NULL), -1);
   TEST(su_root_has_thread(NULL), -1);
@@ -166,7 +166,7 @@ int test_api(root_test_t *rt)
 
 #include <pthread.h>
 
-void *suspend_resume_test_thread(void *_rt) 
+void *suspend_resume_test_thread(void *_rt)
 {
   root_test_t *rt = _rt;
 
@@ -221,7 +221,7 @@ int init_test(root_test_t *rt,
   TEST_1(rt->rt_root);
   TEST(su_root_obtain(rt->rt_root), 0);
   TEST(su_root_has_thread(rt->rt_root), 2);
-#else  
+#else
   TEST_1(rt->rt_root = su_root_create(rt));
 #endif
 
@@ -263,7 +263,7 @@ static int deinit_test(root_test_t *rt)
   pthread_mutex_destroy(rt->rt_sr.deinit);
 #else
   TEST_VOID(su_root_destroy(rt->rt_root)); rt->rt_root = NULL;
-#endif  
+#endif
 
   END();
 }
@@ -274,19 +274,19 @@ int wakeup(root_test_t *rt,
 {
   char buffer[64];
   int n, error;
- 
+
   su_wait_events(w, ep->s);
 
   n = recv(ep->s, buffer, sizeof(buffer), 0);
   error = su_errno();
- 
+
   if (n < 0)
     fprintf(stderr, "%s: %s\n", "recv", su_strerror(error));
 
   TEST_1(n > 0);
 
   rt->rt_received = ep->i;
-	   
+
   return 0;
 }
 
@@ -340,15 +340,15 @@ static int register_test(root_test_t *rt)
   TEST_1((s = su_socket(rt->rt_family, SOCK_DGRAM, 0)) != -1);
 
   for (i = 0; i < 5; i++) {
-    rt->rt_ep[i]->registered = 
-      su_root_register(rt->rt_root, rt->rt_ep[i]->wait, 
+    rt->rt_ep[i]->registered =
+      su_root_register(rt->rt_root, rt->rt_ep[i]->wait,
 		       wakeups[i], rt->rt_ep[i], 0);
     TEST(rt->rt_ep[i]->registered, i + 1 + SU_HAVE_PTHREADS);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
-    TEST_SIZE(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen), 
+    TEST_SIZE(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen),
 	      sizeof(msg));
     test_run(rt);
     TEST(rt->rt_received, i);
@@ -356,22 +356,22 @@ static int register_test(root_test_t *rt)
   }
 
   for (i = 0; i < 5; i++) {
-    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait, 
-			    wakeups[i], rt->rt_ep[i]), 
+    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait,
+			    wakeups[i], rt->rt_ep[i]),
 	 rt->rt_ep[i]->registered);
   }
 
 
   for (i = 0; i < 5; i++) {
-    rt->rt_ep[i]->registered = 
-      su_root_register(rt->rt_root, rt->rt_ep[i]->wait, 
+    rt->rt_ep[i]->registered =
+      su_root_register(rt->rt_root, rt->rt_ep[i]->wait,
 		       wakeups[i], rt->rt_ep[i], 1);
     TEST_1(rt->rt_ep[i]->registered > 0);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
-    TEST_SIZE(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen), 
+    TEST_SIZE(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen),
 	      sizeof(msg));
     test_run(rt);
     TEST(rt->rt_received, i);
@@ -379,22 +379,22 @@ static int register_test(root_test_t *rt)
   }
 
   for (i = 0; i < 5; i++) {
-    TEST(su_root_deregister(rt->rt_root, rt->rt_ep[i]->registered), 
+    TEST(su_root_deregister(rt->rt_root, rt->rt_ep[i]->registered),
 	 rt->rt_ep[i]->registered);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
     TEST_1(su_wait_create(ep->wait, ep->s, SU_WAIT_IN|SU_WAIT_ERR) != -1);
-    ep->registered = 
-      su_root_register(rt->rt_root, ep->wait, 
+    ep->registered =
+      su_root_register(rt->rt_root, ep->wait,
 		       wakeups[i], ep, 1);
     TEST_1(ep->registered > 0);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
-    TEST_SIZE(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen), 
+    TEST_SIZE(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen),
 	      sizeof(msg));
     test_run(rt);
     TEST(rt->rt_received, i);
@@ -402,8 +402,8 @@ static int register_test(root_test_t *rt)
   }
 
   for (i = 0; i < 5; i++) {
-    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait, 
-			    wakeups[i], rt->rt_ep[i]), 
+    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait,
+			    wakeups[i], rt->rt_ep[i]),
 	 rt->rt_ep[i]->registered);
   }
 
@@ -415,7 +415,7 @@ int wakeup_remove(root_test_t *rt, su_wait_t *w, test_ep_t *node)
 {
   char buffer[64];
   ssize_t x;
-  test_ep_t *n = node->next; 
+  test_ep_t *n = node->next;
 
   su_wait_events(w, node->s);
 
@@ -428,14 +428,14 @@ int wakeup_remove(root_test_t *rt, su_wait_t *w, test_ep_t *node)
     *node->prev = n;
 
     if (n) {
-      *node->prev = node->next;    
+      *node->prev = node->next;
       node->next->prev = node->prev;
       sendto(n->s, "foo", 3, 0, (void *)n->addr, n->addrlen);
     }
 
     node->next = NULL;
     node->prev = NULL;
-    
+
     if (!*node->list) {
       su_root_break(rt->rt_root);
     }
@@ -456,9 +456,9 @@ int event_test(root_test_t rt[1])
   test_ep_t *n, *nodes, *list = NULL;
   su_sockaddr_t su[1];
   socklen_t sulen;
-  
+
   TEST_1(nodes = calloc(N, sizeof *nodes));
-  
+
   memset(su, 0, sulen = sizeof su->su_sin);
   su->su_len = sizeof su->su_sin;
   su->su_family = AF_INET;
@@ -480,7 +480,7 @@ int event_test(root_test_t rt[1])
       su_close(n->s);
       break;
     }
-      
+
     if (getsockname(n->s, (void *)n->addr, &n->addrlen)) {
       su_perror("getsockname()");
       su_close(n->s);
@@ -499,7 +499,7 @@ int event_test(root_test_t rt[1])
       su_close(n->s);
       break;
     }
-    
+
     n->list = &list, n->prev = &list;
     if ((n->next = list))
       n->next->prev = &n->next;
@@ -559,21 +559,21 @@ void success_deinit(su_root_t *root, root_test_t *rt)
   rt->rt_success_deinit = 1;
 }
 
-void receive_a_reporter(root_test_t *rt, 
+void receive_a_reporter(root_test_t *rt,
 			su_msg_r msg,
 			su_msg_arg_t *arg)
 {
   rt->rt_recv_reporter = 1;
 }
 
-void receive_recv_report(root_test_t *rt, 
+void receive_recv_report(root_test_t *rt,
 			 su_msg_r msg,
 			 su_msg_arg_t *arg)
 {
   rt->rt_reported_reporter = 1;
 }
 
-void send_a_reporter_msg(root_test_t *rt, 
+void send_a_reporter_msg(root_test_t *rt,
 			 su_msg_r msg,
 			 su_msg_arg_t *arg)
 {
@@ -602,12 +602,12 @@ static void deinit_simple_msg(su_msg_arg_t *arg)
   rt->rt_msg_destroyed++;
 }
 
-static void receive_simple_msg(root_test_t *rt, 
+static void receive_simple_msg(root_test_t *rt,
 			       su_msg_r msg,
 			       su_msg_arg_t *arg)
 {
   assert(rt == *arg);
-  rt->rt_msg_received = 
+  rt->rt_msg_received =
     su_task_cmp(su_msg_from(msg), su_task_null) == 0 &&
     su_task_cmp(su_msg_to(msg), su_task_null) == 0;
 }
@@ -657,10 +657,10 @@ static int clone_test(root_test_t rt[1])
 
   rt->rt_msg_received = 0;
   rt->rt_msg_destroyed = 0;
-  
+
   TEST(su_msg_deinitializer(m, deinit_simple_msg), 0);
   TEST(su_msg_send_to(m, su_clone_task(rt->rt_clone), receive_simple_msg), 0);
-  
+
   while (rt->rt_msg_destroyed == 0)
     su_root_step(rt->rt_root, 1);
 
@@ -680,7 +680,7 @@ static int clone_test(root_test_t rt[1])
   TEST_1(rt->rt_sent_reporter);
   TEST_1(rt->rt_recv_reporter);
   TEST_1(rt->rt_reported_reporter);
-  
+
   rt->rt_recv_reporter = 0;
 
   /* Make sure we can handle messages done as expected */
@@ -701,8 +701,8 @@ static int clone_test(root_test_t rt[1])
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
-	  "usage: %s [-v] [-a]\n", 
+  fprintf(stderr,
+	  "usage: %s [-v] [-a]\n",
 	  name);
   exit(exitcode);
 }

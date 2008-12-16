@@ -22,7 +22,7 @@
  *
  */
 
-/**@ingroup sdp_printer 
+/**@ingroup sdp_printer
  *
  * @CFILE sdp_print.c  Simple SDP printer interface.
  *
@@ -81,7 +81,7 @@ struct sdp_printer_s {
 static struct sdp_printer_s printer_memory_error = {
   sizeof(printer_memory_error),
   NULL,
-  "memory exhausted", 
+  "memory exhausted",
   sizeof(printer_memory_error.pr_buffer),
   sizeof(printer_memory_error.pr_buffer)
 };
@@ -90,14 +90,14 @@ static void print_session(sdp_printer_t *p, sdp_session_t const *session);
 
 /** Print a SDP description.
  *
- * Encode the contents of the SDP session structure #sdp_session_t 
+ * Encode the contents of the SDP session structure #sdp_session_t
  * to the @a msgbuf. The @a msgbuf has size @a msgsize
  * bytes. If @a msgbuf is @c NULL, the sdp_print() function allocates the
  * required buffer from the @a home heap.
  *
  * @param home     Memory home (may be NULL).
  * @param session  SDP session description structure to be encoded.
- * @param msgbuf   Buffer to which encoding is stored (may be NULL). 
+ * @param msgbuf   Buffer to which encoding is stored (may be NULL).
  * @param msgsize  Size of @a msgbuf.
  * @param flags    Flags specifying the encoding options.
  *
@@ -117,17 +117,17 @@ static void print_session(sdp_printer_t *p, sdp_session_t const *session);
  *
  * @li #sdp_f_mode_manual - Do not generate mode attributes
  *
- * @return 
+ * @return
  * Always return a handle to an #sdp_printer_t object.
  *
  * @sa #sdp_printer_t, #sdp_session_t, sdp_printing_error(),
  * sdp_message(), sdp_message_size(), sdp_printer_free(),
  * sdp_parse().
  */
-sdp_printer_t *sdp_print(su_home_t *home, 
-			 sdp_session_t const *session, 
-			 char msgbuf[], 
-			 isize_t msgsize, 
+sdp_printer_t *sdp_print(su_home_t *home,
+			 sdp_session_t const *session,
+			 char msgbuf[],
+			 isize_t msgsize,
 			 int flags)
 {
   sdp_printer_t *p = su_salloc(home, sizeof(*p));
@@ -186,10 +186,10 @@ char const *sdp_printing_error(sdp_printer_t *p)
 /** @brief Get encoded SDP message.
  *
  * Return a pointer to a C string containing the SDP message.
- * 
+ *
  * @param p Pointer to an #sdp_printer_t object.
  *
- * @return 
+ * @return
  * Return a pointer to a C string containing the encoded SDP message, or
  * NULL upon an error.
  */
@@ -207,7 +207,7 @@ char const *sdp_message(sdp_printer_t *p)
  *
  * @param p Pointer to an #sdp_printer_t object.
  *
- * @return 
+ * @return
  * Number of bytes in SDP message excluding final NUL or 0 upon an error.
  */
 isize_t sdp_message_size(sdp_printer_t *p)
@@ -253,10 +253,10 @@ static void print_typed_time(sdp_printer_t *p, unsigned long t);
 static void print_key(sdp_printer_t *p, sdp_key_t const *k);
 static void print_attributes(sdp_printer_t *p, sdp_attribute_t const *a);
 static void print_charset(sdp_printer_t *p, sdp_text_t *charset);
-static void print_media(sdp_printer_t *p, sdp_session_t const *, 
+static void print_media(sdp_printer_t *p, sdp_session_t const *,
 			sdp_media_t const *m);
 
-static void print_text_list(sdp_printer_t*, 
+static void print_text_list(sdp_printer_t*,
 			    const char *, sdp_list_t const *l);
 
 static void sdp_printf(sdp_printer_t *p, const char *fmt, ...);
@@ -319,7 +319,7 @@ static void print_origin(sdp_printer_t *p, sdp_origin_t const *o)
     return;
   }
 
-  sdp_printf(p, "o=%s "LLU" "LLU" ", 
+  sdp_printf(p, "o=%s "LLU" "LLU" ",
 	     o->o_username,
 	     (ull)o->o_id,
 	     (ull)o->o_version);
@@ -411,7 +411,7 @@ static void print_connection2(sdp_printer_t *p, sdp_connection_t const *c)
     sdp_printf(p, "%s%s%s", nettype, c->c_address);
   else
     sdp_printf(p, "%s", c->c_address);
-    
+
   if (c->c_mcast || c->c_ttl) {
     sdp_printf(p, "/%u", c->c_ttl);
     if (c->c_groups > 1)
@@ -424,13 +424,13 @@ static void print_bandwidths(sdp_printer_t *p, sdp_bandwidth_t const *b)
 {
   for (; b ; b = b->b_next) {
     char const *name;
-    
+
     switch (b->b_modifier) {
     case sdp_bw_ct: name = "CT"; break;
     case sdp_bw_as: name = "AS"; break;
     default:        name = b->b_modifier_name; break;
     }
-    
+
     sdp_printf(p, "b=%s:%lu" CRLF, name, b->b_value);
   }
 }
@@ -463,9 +463,9 @@ static void print_zone(sdp_printer_t *p, sdp_zone_t const *z)
 
   for (i = 0; i < z->z_number_of_adjustments; i++) {
     int negative = z->z_adjustments[i].z_offset < 0L;
-    sdp_printf(p, "%s%lu %s", 
+    sdp_printf(p, "%s%lu %s",
 	       i > 0 ? " " : "",
-	       z->z_adjustments[i].z_at, 
+	       z->z_adjustments[i].z_at,
 	       negative ? "-" : "");
     if (negative)
       print_typed_time(p, -z->z_adjustments[i].z_offset);
@@ -523,7 +523,7 @@ static void print_key(sdp_printer_t *p, sdp_key_t const *k)
     return;
   }
 
-  sdp_printf(p, "k=%s%s%s" CRLF, method, 
+  sdp_printf(p, "k=%s%s%s" CRLF, method,
 	     have_material ? ":" : "",
 	     have_material ? k->k_material : "");
 }
@@ -537,7 +537,7 @@ static void print_attributes(sdp_printer_t *p, sdp_attribute_t const *a)
   }
 }
 
-static void 
+static void
 print_attributes_without_mode(sdp_printer_t *p, sdp_attribute_t const *a)
 {
   for (;a; a = a->a_next) {
@@ -559,7 +559,7 @@ static void print_charset(sdp_printer_t *p, sdp_text_t *charset)
   sdp_printf(p, "a=charset%s%s" CRLF, charset ? ":" : "", charset ? charset : "");
 }
 
-static void print_media(sdp_printer_t *p, 
+static void print_media(sdp_printer_t *p,
 			sdp_session_t const *sdp,
 			sdp_media_t const *m)
 {
@@ -582,7 +582,7 @@ static void print_media(sdp_printer_t *p,
     case sdp_media_image  :     media = "image"; break;
     default:                    media = m->m_type_name;
     }
-    
+
     switch (m->m_proto) {
     case sdp_proto_tcp:   proto = "tcp"; break;
     case sdp_proto_udp:   proto = "udp"; break;
@@ -592,11 +592,11 @@ static void print_media(sdp_printer_t *p,
     case sdp_proto_tls:   proto = "tls"; break;
     default:              proto = m->m_proto_name; break;
     }
-    
+
     if (m->m_number_of_ports <= 1)
       sdp_printf(p, "m=%s %u %s", media, m->m_port, proto);
     else
-      sdp_printf(p, "m=%s %u/%u %s", 
+      sdp_printf(p, "m=%s %u/%u %s",
 		 media, m->m_port, m->m_number_of_ports, proto);
 
     if (m->m_rtpmaps) {
@@ -625,7 +625,7 @@ static void print_media(sdp_printer_t *p,
     if (m->m_connections)
 #ifdef nomore
     if (m->m_connections != sdp->sdp_connection)
-#endif      
+#endif
       print_connection_list(p, m->m_connections);
     if (m->m_bandwidths)
       print_bandwidths(p, m->m_bandwidths);
@@ -636,10 +636,10 @@ static void print_media(sdp_printer_t *p,
       if (!rm->rm_predef || p->pr_all_rtpmaps)
 	sdp_printf(p, "a=rtpmap:%u %s/%lu%s%s" CRLF,
 		   rm->rm_pt, rm->rm_encoding, rm->rm_rate,
-		   rm->rm_params ? "/" : "", 
+		   rm->rm_params ? "/" : "",
 		   rm->rm_params ? rm->rm_params : "");
       if (rm->rm_fmtp)
-	sdp_printf(p, "a=fmtp:%u %s" CRLF, 
+	sdp_printf(p, "a=fmtp:%u %s" CRLF,
 		   rm->rm_pt, rm->rm_fmtp);
     }
 
@@ -670,7 +670,7 @@ static void print_media(sdp_printer_t *p,
   }
 }
 
-static void print_text_list(sdp_printer_t *p, 
+static void print_text_list(sdp_printer_t *p,
 			    const char *fmt, sdp_list_t const *l)
 {
   for (;l; l = l->l_next) {
@@ -698,11 +698,11 @@ static void sdp_printf(sdp_printer_t *p, const char *fmt, ...)
 
   while (p->pr_ok) {
     int n;
-    
-    va_start(ap, fmt); 
+
+    va_start(ap, fmt);
     n = vsnprintf(p->pr_buffer + p->pr_used, p->pr_bsiz - p->pr_used, fmt, ap);
     va_end(ap);
-    
+
     if (n > -1 && (size_t)n < p->pr_bsiz - p->pr_used) {
       p->pr_used += n;
       break;
@@ -716,7 +716,7 @@ static void sdp_printf(sdp_printer_t *p, const char *fmt, ...)
 	}
 	p->pr_owns_buffer = 0;
       }
-      else if (p->pr_may_realloc) {	
+      else if (p->pr_may_realloc) {
 	char *buffer;
 	size_t size;
 	if (p->pr_bsiz < SDP_BLOCK)

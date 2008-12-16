@@ -22,7 +22,7 @@
  *
  */
 
-/**@internal 
+/**@internal
  * @file su_alloc_test.c
  *
  * Testing functions for su_alloc functions.
@@ -489,7 +489,7 @@ static int test_strlst(void)
 
     TEST_1(su_strlst_append(l, ""));
 
-    TEST_S(su_strlst_join(l, home, "\n"), 
+    TEST_S(su_strlst_join(l, home, "\n"),
 	   "a\n" "b\n" "1: 1\n" "1.0: 1\n");
 
     TEST_VOID(su_strlst_destroy(l));
@@ -698,7 +698,7 @@ static int test_auto(void)
 
   su_home_get_stats(tmphome, 0, hs, sizeof *hs);
 
-  TEST64(hs->hs_allocs.hsa_preload + hs->hs_allocs.hsa_number, 
+  TEST64(hs->hs_allocs.hsa_preload + hs->hs_allocs.hsa_number,
 	  8191 + 8191 + 8191 / 32);
   TEST64(hs->hs_frees.hsf_preload + hs->hs_frees.hsf_number,
 	 8191 + 8191 + 8191 / 32 - 1);

@@ -34,9 +34,9 @@
  * functions within @b su module.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Wed Jan 29 18:18:49 2003 ppessi
- * 
+ *
  */
 
 #include <sofia-sip/su_log.h>

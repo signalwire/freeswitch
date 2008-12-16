@@ -28,7 +28,7 @@
  * @brief Test program for glib and su root event loop integration.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
 
@@ -74,7 +74,7 @@ short opt_verbatim = 0;
 short opt_singlethread = 0;
 GMainLoop *global_gmainloop = NULL;
 
-static su_socket_t udpsocket(void) 
+static su_socket_t udpsocket(void)
 {
   su_socket_t s;
   su_sockaddr_t su = { 0 };
@@ -98,7 +98,7 @@ static su_socket_t udpsocket(void)
 
   if (getsockname(s, &su.su_sa, &sulen) == SOCKET_ERROR) {
     su_perror("udpsocket: getsockname");
-    exit(1); 
+    exit(1);
   }
 
   if (opt_verbatim)
@@ -118,7 +118,7 @@ static char *snow(su_time_t now)
   return buf;
 }
 
-void 
+void
 do_ping(struct pinger *p, su_timer_t *t, void *p0)
 {
   char buf[1024];
@@ -129,7 +129,7 @@ do_ping(struct pinger *p, su_timer_t *t, void *p0)
   p->when = su_now();
 
   snprintf(buf, sizeof(buf), "Ping %d at %s", p->id++, snow(p->when));
-  if (sendto(p->s, buf, strlen(buf), 0, 
+  if (sendto(p->s, buf, strlen(buf), 0,
 	     &p->addr.su_sa, su_sockaddr_size(&p->addr)) == -1) {
     su_perror("do_ping: send");
   }
@@ -189,7 +189,7 @@ do_pong(struct pinger *p, su_timer_t *t, void *p0)
   p->id = 0;
 
   snprintf(buf, sizeof(buf), "Pong at %s", snow(su_now()));
-  if (sendto(p->s, buf, strlen(buf), 0, 
+  if (sendto(p->s, buf, strlen(buf), 0,
 	     &p->addr.su_sa, su_sockaddr_size(&p->addr)) == -1) {
     su_perror("do_pong: send");
   }
@@ -412,7 +412,7 @@ usage(int exitcode)
 /*
  * test su_wait functionality:
  *
- * Create a ponger, waking up do_recv() when data arrives, 
+ * Create a ponger, waking up do_recv() when data arrives,
  *                  then scheduling do_pong() by timer
  *
  * Create a pinger, executed from timer, scheduling do_ping(),
@@ -428,8 +428,8 @@ int main(int argc, char *argv[])
   su_timer_t *t;
   unsigned long sleeppid = 0;
 
-  struct pinger 
-    pinger = { PINGER, "ping", 1 }, 
+  struct pinger
+    pinger = { PINGER, "ping", 1 },
     ponger = { PONGER, "pong", 1 };
 
   char *argv0 = argv[0];
@@ -437,7 +437,7 @@ int main(int argc, char *argv[])
 #if HAVE_OPEN_C
   dup2(1, 2);
 #endif
-  
+
   while (argv[1]) {
     if (strcmp(argv[1], "-v") == 0) {
       opt_verbatim = 1;
@@ -465,9 +465,9 @@ int main(int argc, char *argv[])
 #if HAVE_OPEN_C
   opt_verbatim = 1;
   opt_singlethread = 1;
-  su_log_soft_set_level(su_log_default, 9);  
+  su_log_soft_set_level(su_log_default, 9);
 #endif
-  
+
 #if HAVE_SIGNAL
   signal(SIGTERM, term);
 #endif
@@ -478,20 +478,20 @@ int main(int argc, char *argv[])
 
   global_gmainloop = g_main_loop_new(NULL, FALSE);
   g_assert(global_gmainloop);
-  
-  root = su_glib_root_create(NULL); 
+
+  root = su_glib_root_create(NULL);
 
   if (!root) perror("su_root_glib_create"), exit(1);
-  
-  if (!g_source_attach(su_glib_root_gsource(root), g_main_loop_get_context(global_gmainloop))) 
+
+  if (!g_source_attach(su_glib_root_gsource(root), g_main_loop_get_context(global_gmainloop)))
     perror("g_source_attach"), exit(1);
-  
+
   su_root_threading(root, 0 && !opt_singlethread);
 
   if (su_clone_start(root, ping, &pinger, do_init, do_destroy) != 0)
     perror("su_clone_start"), exit(1);
   if (su_clone_start(root, pong, &ponger, do_init, do_destroy) != 0)
-    perror("su_clone_start"), exit(1); 
+    perror("su_clone_start"), exit(1);
 
   /* Test timer, exiting after 200 milliseconds */
   t = su_timer_create(su_root_task(root), 200L);
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
     su_perror("su_timer_create"), exit(1);
   su_timer_set(t, (su_timer_f)do_exit, NULL);
 
-  su_msg_create(start_msg, su_clone_task(ping), su_clone_task(pong), 
+  su_msg_create(start_msg, su_clone_task(ping), su_clone_task(pong),
 		init_ping, 0);
   su_msg_send(start_msg);
 
@@ -511,7 +511,7 @@ int main(int argc, char *argv[])
   su_timer_destroy(t);
 
   if (pinger.rtt_n) {
-    printf("%s executed %u pings in %g, mean rtt=%g sec\n", name, 
+    printf("%s executed %u pings in %g, mean rtt=%g sec\n", name,
 	   pinger.rtt_n, pinger.rtt_total, pinger.rtt_total / pinger.rtt_n);
   }
   su_root_destroy(root);
@@ -519,7 +519,7 @@ int main(int argc, char *argv[])
   g_main_loop_unref(global_gmainloop), global_gmainloop = NULL;
 
   if (opt_verbatim)
-    printf("%s exiting\n", argv0); 
+    printf("%s exiting\n", argv0);
 
 #ifndef HAVE_WIN32
 #if HAVE_SIGNAL
@@ -531,6 +531,6 @@ int main(int argc, char *argv[])
 #if HAVE_OPEN_C
    sleep(7);
 #endif
-   
+
   return 0;
 }

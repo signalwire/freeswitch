@@ -24,9 +24,9 @@
 
 #ifndef AUTH_MODULE_H
 /** Defined when <sofia-sip/auth_module.h> has been included. */
-#define AUTH_MODULE_H 
+#define AUTH_MODULE_H
 
-/**@file sofia-sip/auth_module.h  
+/**@file sofia-sip/auth_module.h
  * @brief Authentication verification interface.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
@@ -56,7 +56,7 @@ typedef struct auth_mod_t auth_mod_t;
 /** Authentication operation. */
 typedef struct auth_status_t auth_status_t;
 
-#ifdef  AUTH_MAGIC_T 
+#ifdef  AUTH_MAGIC_T
 typedef AUTH_MAGIC_T auth_magic_t;
 #else
 typedef void auth_magic_t;
@@ -81,10 +81,10 @@ typedef void auth_callback_t(auth_magic_t *, auth_status_t *);
  * authentication operation and all the related data. The application
  * verifying the authentication fills the auth_status_t structure, then
  * calls auth_mod_method() (or auth_mod_challenge()). The operation result
- * is stored in the structure. 
+ * is stored in the structure.
  *
  * If the operation is asynchronous, only a preliminary result is stored in
- * the auth_status_t structure when the call to auth_mod_method() returns. 
+ * the auth_status_t structure when the call to auth_mod_method() returns.
  * In that case, the application @b must assign a callback function to the
  * structure. The callback function is invoked when the authentication
  * operation is completed.
@@ -105,7 +105,7 @@ struct auth_status_t
   url_t const    *as_user_uri;	/* Return user's identity [in/out] */
   char const     *as_ident;	/**< Identities [out] */
   unsigned        as_profile;	/**< User profile (group) [out] */
-  
+
   su_addrinfo_t  *as_source;	/**< Source address [in] */
 
   char const   	 *as_realm;	/**< Authentication realm [in] */
@@ -136,7 +136,7 @@ struct auth_status_t
   /** @} */
 
   /** Pointer to extended state, used exclusively by plugin modules. */
-  auth_splugin_t *as_plugin;	
+  auth_splugin_t *as_plugin;
 };
 
 /** Authentication challenge.
@@ -146,7 +146,7 @@ struct auth_status_t
  * with 401 response code and phrase along with header class for
  * @b WWW-Authenticate header in the @a ach structure.
  */
-typedef struct auth_challenger 
+typedef struct auth_challenger
 {
   int           ach_status;	/**< Response status for challenge response */
   char const   *ach_phrase;	/**< Response phrase for challenge response */

@@ -74,7 +74,7 @@ static RETSIGTYPE sig_alarm(int s)
 static char const options_usage[] =
   "   -v | --verbose    be verbose\n"
   "   -q | --quiet      be quiet\n"
-  "   -a | --abort      abort on error\n" 
+  "   -a | --abort      abort on error\n"
   "   -s                use only single thread\n"
   "   -l level          set logging level (0 by default)\n"
   "   -e | --events     print nua events\n"
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 #if HAVE_OPEN_C
   dup2(1, 2);
 #endif
-  
+
   if (getenv("EXPENSIVE_CHECKS"))
     o_expensive = 1;
 
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
   ctx->a.printer = o_events_init ? print_event : NULL;
 
   retval |= test_nua_api_errors(ctx); SINGLE_FAILURE_CHECK();
-  
+
   retval |= test_tag_filter(); SINGLE_FAILURE_CHECK();
 
   retval |= test_nua_params(ctx); SINGLE_FAILURE_CHECK();

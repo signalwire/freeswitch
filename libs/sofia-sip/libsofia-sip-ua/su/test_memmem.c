@@ -78,13 +78,13 @@ static int test_notfound(void)
 
   TEST_P(memmem(haystack, 12, needle, 3), haystack + 2);
   TEST_P(memmem(needle, 3, haystack, 12), NULL);
-  
+
 #if HAVE_MEMMEM
   if (memmem(haystack, 12, "", 0) == NULL) {
     fprintf(stderr, "test_memmem.c: "
 	    "*** WARNING: system memmem() fails with empty needle ***\n");
   }
-  else 
+  else
 #endif
   {
     TEST_P(memmem(haystack, 12, "", 0), haystack);
@@ -151,7 +151,7 @@ int test_strcasestr(void)
   }
 
   {
-    char const hs[] = 
+    char const hs[] =
 "A case-folding string searching test consisting of a Very Long String\n"
 
 "Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Integer felis. "
@@ -194,14 +194,14 @@ int test_strcasestr(void)
 "non, mi. Suspendisse vestibulum nunc eu neque. Sed rutrum felis aliquam "
 "urna. Ut tincidunt orci vitae ipsum. Nullam eros. Quisque augue. Quisque "
 "lacinia. Nunc ligula diam, nonummy a, porta in, tristique quis, leo. "
-"Phasellus nunc nulla, fringilla vel, lacinia et, suscipit a, turpis. " 
+"Phasellus nunc nulla, fringilla vel, lacinia et, suscipit a, turpis. "
 "Integer a est. Curabitur mauris lacus, vehicula sit amet, sodales vel, "
 "iaculis vitae, massa. Nam diam est, ultrices vitae, varius et, tempor a, "
 "leo. Class aptent taciti sociosqu ad litora torquent per conubia nostra, "
 "per inceptos hymenaeos. Fusce felis nibh, ullamcorper non, malesuada eget, "
       "facilisis vel, purus.\n";
 
-char const needle[] = 
+char const needle[] =
 "Proin congue. Curabitur placerat diam id eros. "
 "Pellentesque vitae nulla. Quisque at lorem et dolor auctor consequat. Sed "
 "sed tellus non nibh imperdiet venenatis. Integer ultrices dapibus nisi. "
@@ -209,7 +209,7 @@ char const needle[] =
 "ullamcorper pretium lorem. Vestibulum ante ipsum primis in faucibus orci "
 "luctus et ultrices posuere cubilia Curae;\n";
 
-char const Needle[] = 
+char const Needle[] =
 "PROIN CONGUE. CURABITUR PLACERAT DIAM ID EROS. "
 "PELLENTESQUE VITAE NULLA. QUISQUE AT LOREM ET DOLOR AUCTOR CONSEQUAT. SED "
 "SED TELLUS NON NIBH IMPERDIET VENENATIS. INTEGER ULTRICES DAPIBUS NISI. "

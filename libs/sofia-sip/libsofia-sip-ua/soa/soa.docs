@@ -15,7 +15,7 @@ library. The interface to library is defined in <sofia-sip/soa.h>.
 
 SIP uses SDP and a negotiation procedure known as "SDP
 Offer-Answer Model" to establish the multimedia sessions. The
-SDP Offer-Answer negotiation is specified in 
+SDP Offer-Answer negotiation is specified in
 <a href="http://ietf.org/rfc/rfc3264.txt">RFC 3264</a>.
 
 The soa engine is implemented in object-oriented manner. The default soa
@@ -32,17 +32,17 @@ The basic capabilities provided by Offer/Answer mechanism include
 -# modifying session (section 8)
 -# indicating capabilities (section 9)
 
-The offerer indicates its capabilities in the offer: 
+The offerer indicates its capabilities in the offer:
 - the media streams it wants to establish
-- transport addresses it uses to receive by media streams 
-  (IP addresses, port numbers, transport protocols) 
+- transport addresses it uses to receive by media streams
+  (IP addresses, port numbers, transport protocols)
 - the codecs used by particular streams
 - codec parameters (for instance, codec profile used by H.263)
 
 The answerer indicates which parts of the offer are acceptable to
 it in the answer:
 - the media streams it agrees to establish
-- transport addresses answerer uses to receive by media streams 
+- transport addresses answerer uses to receive by media streams
 - the codecs and codec parameters used by particular streams
 
 Note that the capabilites indicate what the party generating the
@@ -57,24 +57,24 @@ involving two or more offer-answer rounds. For instance, an extension known
 as session <i>preconditions</i> is defined
 <a href="http://ietf.org/rfc/rfc3312.txt">RFC 3312</a>.
 Another example of two-phase negotiation is presented in RFC
-3264 section 10.2, showing how a single codec can be selected. 
+3264 section 10.2, showing how a single codec can be selected.
 
-@section soa_motivation SOA Design 
+@section soa_motivation SOA Design
 
 Why to have simple interface? Is it not simple enough to include SDP offer
 with your INVITE, and act on SDP answer in 200 OK?
 
 Our design goal is to allow application to follow the simple call
 model, regardless of the underlying complications - early
-sessions, preconditions, session timers, 3rd party call control. 
+sessions, preconditions, session timers, 3rd party call control.
 In other words, we would like a have a simple "cooked" interface
 toward naive applications even if the underlying call follows the
 byzantine call model chosen by 3GPP.
 
 @section soa_with_sip Using SDP Offer/Answer with SIP
 
-Using SDP Offer/Answer with SIP is specified in 
-<a href="http://ietf.org/rfc/rfc3261.txt">RFC 3261</a>, 
+Using SDP Offer/Answer with SIP is specified in
+<a href="http://ietf.org/rfc/rfc3261.txt">RFC 3261</a>,
 <a href="http://ietf.org/rfc/rfc3262.txt">RFC 3262 (100rel and PRACK)</a>, and
 <a href="http://ietf.org/rfc/rfc3211.txt">RFC 3311 (UPDATE)</a>.
 
@@ -90,7 +90,7 @@ The rules for sending offers:
 
 PRACK may only be sent when an unacknowledged 100rel (reliable 1XX
 series response) is received. UPDATE may be sent during early or
-established dialog. 
+established dialog.
 
 Only one INVITE request may be pending within a dialog. Only one
 non-INVITE request may be pending within a dialog (in one
@@ -120,13 +120,13 @@ The rules for receiving answer:
 - if offer was sent in INVITE, first session description in any
   non-error response to INVITE is treated as the answer
 - if offer was sent in 2XX response, session description in
-  ACK is answer 
+  ACK is answer
 - if offer was sent in 100rel response, session description in
-  PRACK is answer 
-- if offer was sent in PRACK or UPDATE, session description in 
+  PRACK is answer
+- if offer was sent in PRACK or UPDATE, session description in
   2XX response is answer
 
-Rules for situations when endpoint MUST ignore the SDP: 
+Rules for situations when endpoint MUST ignore the SDP:
 - If offer was sent in INVITE, only the first session description in
   any non-error (1XX or 2XX) response to INVITE is processed, rest
   are ignored
@@ -146,7 +146,7 @@ permission (for adding video).
 
 Rules for resolving glare (both endpoints trying to send offer at the same
 time):
-- if a offer is received while UAS has generated an offer, 
+- if a offer is received while UAS has generated an offer,
   it must be rejected (with SIP 491 response).
 
 @section soa_use_cases SOA and SDP Offer/Answer Scenarios
@@ -154,11 +154,11 @@ time):
 Note that due to limitations in space
 - soa_set_params() is referred as @c set_params
 - soa_set_remote_sdp() is referred as @c set_remote
-- soa_generate_offer() followed by soa_get_session_sdp() 
-  is referred as @c gen_offer  
-- soa_generate_answer() followed by soa_get_session_sdp() 
-  is referred as @c gen_answer 
-- soa_process_answer() is referred as @c proc_answer 
+- soa_generate_offer() followed by soa_get_session_sdp()
+  is referred as @c gen_offer
+- soa_generate_answer() followed by soa_get_session_sdp()
+  is referred as @c gen_answer
+- soa_process_answer() is referred as @c proc_answer
 
 @subsection soa_uc_basic_out Basic Call Out
 
@@ -228,7 +228,7 @@ This is the "basic" inbound call model.
 	|		|		|			|
 </pre>
 
-@subsection soa_uc_basic_3p 3rd Party Call In 
+@subsection soa_uc_basic_3p 3rd Party Call In
 
 The 3rd-party call model just reverses the O/A roles of callee and caller.
 
@@ -442,10 +442,10 @@ media session has been successfully established.
 @page soa_sdp_oa_use_cases Use Cases for SIP and SDP Offer/Answer
 
 This page contains a list of use cases or call scenarios for SIP and SDP
-Offer/Answer. 
+Offer/Answer.
 
 There are a few call scenarios that we expect to see when dealing with more
-telephone-like side of SIP: 
+telephone-like side of SIP:
 - calling to existing PSTN networks (early session)
 - doing resource reservations
 - calling to 3G IMS
@@ -531,9 +531,9 @@ is used when the session should be established before call alerts.
 
 @section soa_use_case_4 Case #4: UPDATE with Offer
 
-This is a call model with two rounds of offer/answer and 100rel. 
+This is a call model with two rounds of offer/answer and 100rel.
 It can be used, for instance, when the endpoints have to make sure
-that there are enough network capacity for the call to succeed. 
+that there are enough network capacity for the call to succeed.
 They can establish a new radio bearer, for instance, before
 progressing with the call. The initial offer would contain SDP
 attribute "inactive", the second "sendrev":
@@ -542,9 +542,9 @@ attribute "inactive", the second "sendrev":
 	A		        B
 	|			|
 	|----INVITE (offer)---->|
-	|			| 
-	|			| 
-	|<----183 (answer)------| 
+	|			|
+	|			|
+	|<----183 (answer)------|
 	|--------PRACK--------->|
 	|<-----200/PRACK--------|
 	|			|
@@ -594,7 +594,7 @@ the second "sendrev":
 </pre>
 
 
-@section soa_use_case_6 Case #6: Callee Making 2nd Offer 
+@section soa_use_case_6 Case #6: Callee Making 2nd Offer
 
 Alternative 2 to above: two rounds of offer/answer and 100rel, but
 now it is B who wants to do two rounds and initiates second
@@ -636,9 +636,9 @@ codecs and transport addresses used during the call:
         	A		        B
         	|			|
         	|----INVITE (offer)---->|
-        	|			| 
-        	|			| 
-        	|<----183 (answer)------| 
+        	|			|
+        	|			|
+        	|<----183 (answer)------|
         	|-----PRACK(offer2)---->|
         	|<--200/PRACK(answer2)--|
         	|			|
@@ -718,7 +718,7 @@ establishes the call:
 
 @section soa_use_case_10 Case #10: Upgrade Session with Re-INVITE
 
-The session is upgraded: a new media is added to the session. 
+The session is upgraded: a new media is added to the session.
 
 <pre>
 	A		        B
@@ -775,7 +775,7 @@ The session upgraded is rejected.
 
 /** @typedef struct soa_session soa_session_t;
 
-@brief "soa" session object. 
+@brief "soa" session object.
 
 The @soa session object is responsible for
 @ref soa_with_sip "SDP offer/answer negotiation"
@@ -796,7 +796,7 @@ void soa_destroy(soa_session_t *);
 @code
 int soa_set_params(soa_session_t *ss,
                    tag_type_t tag, tag_value_t value, ...);
-int soa_get_params(soa_session_t const *ss, 
+int soa_get_params(soa_session_t const *ss,
                    tag_type_t tag, tag_value_t value, ...);
 
 tagi_t *soa_get_paramlist(soa_session_t const *ss,
@@ -805,7 +805,7 @@ tagi_t *soa_get_paramlist(soa_session_t const *ss,
 
 @par Functions used to obtain status information from "soa" session objects:
 @code
-int soa_error_as_sip_response(soa_session_t *soa, 
+int soa_error_as_sip_response(soa_session_t *soa,
                               char const **return_phrase);
 
 char const *soa_error_as_sip_reason(soa_session_t *soa);
@@ -814,9 +814,9 @@ int soa_get_warning(soa_session_t *ss, char const **return_phrase);
 @endcode
 
 
-@par Functions used to store and retrieve SDP descriptions: 
+@par Functions used to store and retrieve SDP descriptions:
 @code
-int soa_set_capability_sdp(soa_session_t *ss, 
+int soa_set_capability_sdp(soa_session_t *ss,
                            struct sdp_session_s const *sdp,
                            char const *str, issize_t len);
 
@@ -825,7 +825,7 @@ int soa_get_capability_sdp(soa_session_t const *ss,
                            char const **return_sdp_str,
                            isize_t *return_len);
 
-int soa_set_remote_sdp(soa_session_t *ss, 
+int soa_set_remote_sdp(soa_session_t *ss,
                        struct sdp_session_s const *sdp,
                        char const *str, issize_t len);
 
@@ -838,7 +838,7 @@ int soa_clear_remote_sdp(soa_session_t *ss);
 
 int soa_get_remote_version(soa_session_t const *ss);
 
-int soa_set_user_sdp(soa_session_t *ss, 
+int soa_set_user_sdp(soa_session_t *ss,
                      struct sdp_session_s const *sdp,
                      char const *str, issize_t len);
 

@@ -25,7 +25,7 @@
 /**@CFILE nta_tag.c
  * @brief Tags for Nokia SIP Transaction API
  *
- * @note This file is used to automatically generate 
+ * @note This file is used to automatically generate
  * nta_tag_ref.c and nta_tag_dll.c
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -51,7 +51,7 @@ tag_typedef_t ntatag_any = NSTAG_TYPEDEF(*);
 
 /**@def NTATAG_MCLASS(x)
  *
- * Message class used by NTA. 
+ * Message class used by NTA.
  *
  * The nta can use a custom or extended parser created with
  * msg_mclass_clone().
@@ -76,15 +76,15 @@ tag_typedef_t ntatag_mclass = PTRTAG_TYPEDEF(mclass);
 
 /**@def NTATAG_BAD_REQ_MASK(x)
  *
- * Mask for bad request messages. 
- * 
+ * Mask for bad request messages.
+ *
  * If an incoming request has erroneous headers matching with the mask, nta
- * automatically returns a 400 Bad Message response to them. 
+ * automatically returns a 400 Bad Message response to them.
  *
  * If mask ~0U (all bits set) is specified, all requests with any bad header
  * are dropped. By default only the requests with bad headers essential for
  * request processing or proxying are dropped.
- * 
+ *
  * @par Used with
  *    nua_create(), nua_set_params(),
  *    nta_agent_create(), nta_agent_set_params()
@@ -104,22 +104,22 @@ tag_typedef_t ntatag_mclass = PTRTAG_TYPEDEF(mclass);
  *   @ContentEncoding, @Supported, @Contact, @Require, @RecordRoute, @RAck,
  *   @RSeq, @Event, @Expires, @SubscriptionState, @SessionExpires,
  *   @MinSE, @SIPETag, and @SIPIfMatch.
- *  
+ *
  * @sa enum #sip_bad_mask, NTATAG_BAD_RESP_MASK()
  */
 tag_typedef_t ntatag_bad_req_mask = UINTTAG_TYPEDEF(bad_req_mask);
 
 /**@def NTATAG_BAD_RESP_MASK(x)
  *
- * Mask for bad response messages. 
- * 
+ * Mask for bad response messages.
+ *
  * If an incoming response has erroneous headers matching with the mask, nta
- * drops the response message. 
+ * drops the response message.
  *
  * If mask ~0U (all bits set) is specified, all responses with any bad header
  * are dropped. By default only the responses with bad headers essential for
  * response processing or proxying are dropped.
- * 
+ *
  * @par Used with
  *    nua_create(), nua_set_params(),
  *    nta_agent_create(), nta_agent_set_params()
@@ -139,7 +139,7 @@ tag_typedef_t ntatag_bad_req_mask = UINTTAG_TYPEDEF(bad_req_mask);
  * - @ref sip_status \"status line\"", @From, @To, @CSeq, @CallID,
  *   @ContentLength, @Via, @ContentType, @ContentDisposition,
  *   @ContentEncoding, @Supported, @Contact, @Require, @RecordRoute, @RAck,
- *   @RSeq, @Event, @Expires, @SubscriptionState, @SessionExpires, 
+ *   @RSeq, @Event, @Expires, @SubscriptionState, @SessionExpires,
  *   @MinSE, @SIPETag, and @SIPIfMatch.
  */
 tag_typedef_t ntatag_bad_resp_mask = UINTTAG_TYPEDEF(bad_resp_mask);
@@ -183,9 +183,9 @@ tag_typedef_t ntatag_contact = SIPHDRTAG_NAMED_TYPEDEF(contact, contact);
  */
 tag_typedef_t ntatag_target = SIPHDRTAG_NAMED_TYPEDEF(target, contact);
 
-/** @def NTATAG_ALIASES(x) 
+/** @def NTATAG_ALIASES(x)
  *
- * Aliases used by NTA. 
+ * Aliases used by NTA.
  * @deprecated
  */
 tag_typedef_t ntatag_aliases = SIPHDRTAG_NAMED_TYPEDEF(aliases, contact);
@@ -208,7 +208,7 @@ tag_typedef_t ntatag_aliases = SIPHDRTAG_NAMED_TYPEDEF(aliases, contact);
  *
  * @par Default Value
  *    - None (i.e., all requests methods match with the leg)
- * 
+ *
  */
 tag_typedef_t ntatag_method = STRTAG_TYPEDEF(method);
 
@@ -230,7 +230,7 @@ tag_typedef_t ntatag_method = STRTAG_TYPEDEF(method);
  *    string
  *
  * @par Value
- * - The "branch" ID to to insert into topmost @Via header of the 
+ * - The "branch" ID to to insert into topmost @Via header of the
  *   request to be sent
  *
  * @par Default Value
@@ -244,7 +244,7 @@ tag_typedef_t ntatag_branch_key = STRTAG_TYPEDEF(branch_key);
 
 /**@def NTATAG_ACK_BRANCH(x)
  *
- * Branch of the transaction to ACK. 
+ * Branch of the transaction to ACK.
  *
  * When creating a ACK transaction, the application should provide the
  * branch parameter from the original transaction to the stack. The ACK
@@ -269,7 +269,7 @@ tag_typedef_t ntatag_ack_branch = STRTAG_TYPEDEF(ack_branch);
 
 /**@def NTATAG_COMP(x)
  *
- * Compression algorithm. 
+ * Compression algorithm.
  *
  * Set compression algorithm for request as described in @RFC3486.
  *
@@ -302,7 +302,7 @@ tag_typedef_t ntatag_comp = CSTRTAG_TYPEDEF(comp);
 
 /**@def NTATAG_MSG(x)
  *
- * Pass a SIP message to treply()/tcreate() functions. 
+ * Pass a SIP message to treply()/tcreate() functions.
  *
  * @par Used with
  *    nta_outgoing_tcreate(), nta_incoming_treply()
@@ -327,7 +327,7 @@ tag_typedef_t ntatag_msg = PTRTAG_TYPEDEF(msg);
  * or response message(s).
  *
  * @par Used with
- *    nta_outgoing_tcreate(), nta_outgoing_mcreate(), nta_outgoing_tcancel(), 
+ *    nta_outgoing_tcreate(), nta_outgoing_mcreate(), nta_outgoing_tcancel(),
  *    nta_incoming_create(), nta_msg_tsend(), nta_msg_mreply()
  *
  * @par Parameter type
@@ -345,9 +345,9 @@ tag_typedef_t ntatag_tport = PTRTAG_TYPEDEF(tport);
 
 /**@def NTATAG_SMIME(x)
  *
- * Provide S/MIME context to NTA. 
+ * Provide S/MIME context to NTA.
  *
- * @todo S/MIME is not implemented. 
+ * @todo S/MIME is not implemented.
  */
 tag_typedef_t ntatag_smime = PTRTAG_TYPEDEF(smime);
 
@@ -367,7 +367,7 @@ tag_typedef_t ntatag_smime = PTRTAG_TYPEDEF(smime);
  *   - uint32_t
  *
  * @par Values
- *    - Remote command sequence number 
+ *    - Remote command sequence number
  *
  * @par Default Value
  *    - Initially 0, then determined by the received requests
@@ -377,7 +377,7 @@ tag_typedef_t ntatag_remote_cseq = UINTTAG_TYPEDEF(remote_cseq);
 
 /**@def NTATAG_MAXSIZE(x)
  *
- * Maximum size of incoming message. 
+ * Maximum size of incoming message.
  *
  * If the size of an incoming request message would exceed the
  * given limit, the stack will automatically respond with <i>413 Request
@@ -388,7 +388,7 @@ tag_typedef_t ntatag_remote_cseq = UINTTAG_TYPEDEF(remote_cseq);
  *    nta_agent_create(), nta_agent_set_params()
  *
  * @par Parameter type
- *    - #usize_t 
+ *    - #usize_t
  *
  * @par Values
  *    - Maximum acceptable size of an incoming request message.
@@ -402,10 +402,10 @@ tag_typedef_t ntatag_maxsize = USIZETAG_TYPEDEF(maxsize);
 
 /**@def NTATAG_MAX_PROCEEDING(x)
  *
- * Maximum size of proceeding queue. 
+ * Maximum size of proceeding queue.
  *
  * If the size of the proceedng message queue would exceed the
- * given limit, the stack will automatically respond with <i>503 
+ * given limit, the stack will automatically respond with <i>503
  * Service Unavailable</i>.
  *
  * @par Used with
@@ -413,7 +413,7 @@ tag_typedef_t ntatag_maxsize = USIZETAG_TYPEDEF(maxsize);
  *    nta_agent_create(), nta_agent_set_params()
  *
  * @par Parameter type
- *    - #usize_t 
+ *    - #usize_t
  *
  * @par Values
  *    - Maximum acceptable size of a queue (size_t).
@@ -423,7 +423,7 @@ tag_typedef_t ntatag_max_proceeding = USIZETAG_TYPEDEF(max_proceeding);
 
 /**@def NTATAG_UDP_MTU(x)
  *
- * Maximum size of outgoing UDP request. 
+ * Maximum size of outgoing UDP request.
  *
  * The maximum UDP request size is used to control use of UDP with overtly
  * large messages. The IETF requires that the SIP requests over 1300 bytes
@@ -450,7 +450,7 @@ tag_typedef_t ntatag_udp_mtu = UINTTAG_TYPEDEF(udp_mtu);
 
 /**@def NTATAG_MAX_FORWARDS(x)
  *
- * Default value for @MaxForwards header. 
+ * Default value for @MaxForwards header.
  *
  * The default value of @MaxForwards header added to the requests. The
  * initial value recommended by @RFC3261 is 70, but usually SIP proxies use
@@ -475,7 +475,7 @@ tag_typedef_t ntatag_max_forwards = UINTTAG_TYPEDEF(max_forwards);
 
 /**@def NTATAG_SIP_T1(x)
  *
- * Initial retransmission interval (in milliseconds) 
+ * Initial retransmission interval (in milliseconds)
  *
  * Set the T1 retransmission interval used by the SIP transaction engine. The
  * T1 is the initial duration used by request retransmission timers A and E
@@ -489,7 +489,7 @@ tag_typedef_t ntatag_max_forwards = UINTTAG_TYPEDEF(max_forwards);
  *    unsigned int
  *
  * @par Values
- *    - Value of SIP T1 in milliseconds 
+ *    - Value of SIP T1 in milliseconds
  *
  * @par Default Value
  *    - #NTA_SIP_T1 or 500 (milliseconds)
@@ -500,13 +500,13 @@ tag_typedef_t ntatag_sip_t1 = UINTTAG_TYPEDEF(sip_t1);
 
 /**@def NTATAG_SIP_T1X64(x)
  *
- * Transaction timeout (defaults to T1 * 64). 
+ * Transaction timeout (defaults to T1 * 64).
  *
  * Set the T1x64  timeout value used by the SIP transaction engine. The T1x64 is
- * duration used for timers B, F, H, and J (UDP) by the SIP transaction engine. 
+ * duration used for timers B, F, H, and J (UDP) by the SIP transaction engine.
  * The timeout value T1x64 can be adjusted separately from the initial
  * retransmission interval T1, which is set with NTATAG_SIP_T1().
- * 
+ *
  * The default value for T1x64 is 64 times value of T1, or 32000 milliseconds.
  *
  * @par Used with
@@ -529,11 +529,11 @@ tag_typedef_t ntatag_sip_t1x64 = UINTTAG_TYPEDEF(sip_t1x64);
 
 /**@def NTATAG_SIP_T2(x)
  *
- * Maximum retransmission interval (in milliseconds) 
+ * Maximum retransmission interval (in milliseconds)
  *
  * Set the maximum retransmission interval used by the SIP transaction
  * engine. The T2 is the maximum duration used for the timers E (UDP) and G
- * by the SIP transaction engine. Note that the timer A is not capped by T2. 
+ * by the SIP transaction engine. Note that the timer A is not capped by T2.
  * Retransmission interval of INVITE requests grows exponentially until the
  * timer B fires.
  *
@@ -545,7 +545,7 @@ tag_typedef_t ntatag_sip_t1x64 = UINTTAG_TYPEDEF(sip_t1x64);
  *    unsigned int
  *
  * @par Values
- *    - Value of SIP T2 in milliseconds 
+ *    - Value of SIP T2 in milliseconds
  *
  * @par Default Value
  *    - #NTA_SIP_T2 or 4000 (milliseconds)
@@ -556,7 +556,7 @@ tag_typedef_t ntatag_sip_t2 = UINTTAG_TYPEDEF(sip_t2);
 
 /**@def NTATAG_SIP_T4(x)
  *
- * Transaction lifetime (in milliseconds) 
+ * Transaction lifetime (in milliseconds)
  *
  * Set the lifetime for completed transactions used by the SIP transaction
  * engine. A completed transaction is kept around for the duration of T4 in
@@ -696,11 +696,11 @@ tag_typedef_t ntatag_blacklist = UINTTAG_TYPEDEF(blacklist);
 
 /**@def NTATAG_DEBUG_DROP_PROB(x)
  *
- * Packet drop probability for debugging. 
+ * Packet drop probability for debugging.
  *
  * The packet drop probability parameter is useful mainly for debugging
  * purposes. The stack drops an incoming message received over an unreliable
- * transport (such as UDP) with the given probability. The range is in 0 .. 
+ * transport (such as UDP) with the given probability. The range is in 0 ..
  * 1000, 500 means p=0.5.
  *
  * @par Used with
@@ -733,7 +733,7 @@ tag_typedef_t ntatag_debug_drop_prob = UINTTAG_TYPEDEF(debug_drop_prob);
  *    nta_agent_add_tport()
  *
  * @par Parameter type
- *    string 
+ *    string
  *
  * @par Values
  *    - semicolon-separated parameter-value pairs, passed to the SigComp plugin
@@ -771,7 +771,7 @@ tag_typedef_t ntatag_sigcomp_close = BOOLTAG_TYPEDEF(sigcomp_close);
 
 /**@def NTATAG_SIGCOMP_AWARE(x)
  *
- * Indicate that the application is SigComp-aware. 
+ * Indicate that the application is SigComp-aware.
  *
  * @note This tag is has no effect without a SigComp plugin.
  *
@@ -794,7 +794,7 @@ tag_typedef_t ntatag_sigcomp_aware = BOOLTAG_TYPEDEF(sigcomp_aware);
 
 /**@def NTATAG_SIGCOMP_ALGORITHM(x)
  *
- * Specify SigComp algorithm.  
+ * Specify SigComp algorithm.
  *
  * @note This tag is has no effect without a SigComp plugin.
  *
@@ -804,7 +804,7 @@ tag_typedef_t ntatag_sigcomp_aware = BOOLTAG_TYPEDEF(sigcomp_aware);
  *    nta_agent_add_tport()
  *
  * @par Parameter type
- *    string 
+ *    string
  *
  * @par Values
  *    - opaque string passed to the SigComp plugin
@@ -827,7 +827,7 @@ tag_typedef_t ntatag_sigcomp_algorithm = STRTAG_TYPEDEF(sigcomp_algorithm);
  * - silently discard duplicate final responses to INVITE
  * - retransmit preliminary responses (101..199) to INVITE request in regular
  *   intervals ("timer N2")
- * - retransmit 2XX response to INVITE request with exponential intervals 
+ * - retransmit 2XX response to INVITE request with exponential intervals
  * - handle ACK sent in 2XX response to an INVITE using the
  *   #nta_ack_cancel_f callback bound to #nta_incoming_t with
  *   nta_incoming_bind()
@@ -844,12 +844,12 @@ tag_typedef_t ntatag_sigcomp_algorithm = STRTAG_TYPEDEF(sigcomp_algorithm);
  *          or false (zero or NULL pointer)
  *
  * @par Values
- *    - true - act as an UA 
- *    - false - act as an proxy 
+ *    - true - act as an UA
+ *    - false - act as an proxy
  *
  * @par Default Value
  *    - 0 (false)
- *    
+ *
  * @sa NTATAG_MERGE_482()
  */
 tag_typedef_t ntatag_ua = BOOLTAG_TYPEDEF(ua);
@@ -964,7 +964,7 @@ tag_typedef_t ntatag_pass_100 = BOOLTAG_TYPEDEF(pass_100);
  * to a request within half of the SIP T2 (the default value for T2 is 4000
  * milliseconds, so the extra <i>100 Trying</i> would be sent after 2 seconds).
  *
- * @par Used with	
+ * @par Used with
  *    nua_create(), nua_set_params(),
  *    nta_agent_create(), nta_agent_set_params()
  *
@@ -985,7 +985,7 @@ tag_typedef_t ntatag_extra_100 = BOOLTAG_TYPEDEF(extra_100);
 
 /**@def NTATAG_TIMEOUT_408(x)
  *
- * Generate "408 Request Timeout" response when request times out. 
+ * Generate "408 Request Timeout" response when request times out.
  *
  * This tag is used to prevent stack from generating extra 408 response
  * messages to non-INVITE requests upon timeout. As per recommended by
@@ -1013,12 +1013,12 @@ tag_typedef_t ntatag_timeout_408 = BOOLTAG_TYPEDEF(timeout_408);
 
 /**@def NTATAG_PASS_408(x)
  *
- * Pass "408 Request Timeout" responses to the client. 
+ * Pass "408 Request Timeout" responses to the client.
  *
  * As per recommended by @RFC4320, the <i>408 Request Timeout</i> responses
  * to non-INVITE transaction are not sent over the network to the client by
  * default. The application can ask stack to pass the 408 responses with
- * NTATAG_PASS_408(1). 
+ * NTATAG_PASS_408(1).
  *
  * Note that unlike NTATAG_PASS_100(), this tags changes the way server side
  * works.
@@ -1032,7 +1032,7 @@ tag_typedef_t ntatag_timeout_408 = BOOLTAG_TYPEDEF(timeout_408);
  *          or false (zero or NULL pointer)
  *
  * @par Values
- *    - true - pass superfluous 408 responses 
+ *    - true - pass superfluous 408 responses
  *    - false - discard superfluous 408 responses
  *
  * @sa @RFC4320, NTATAG_EXTRA_100(), NTATAG_TIMEOUT_408()
@@ -1042,7 +1042,7 @@ tag_typedef_t ntatag_pass_408 = BOOLTAG_TYPEDEF(pass_408);
 
 /**@def NTATAG_MERGE_482(x)
  *
- * Merge requests, send 482 to other requests. 
+ * Merge requests, send 482 to other requests.
  *
  * If an User-Agent receives a duplicate request with same @CallID, @CSeq,
  * @From tag but different topmost @Via header (see @RFC3261 section 8.2.2.2
@@ -1111,7 +1111,7 @@ tag_typedef_t ntatag_cancel_2543 = BOOLTAG_TYPEDEF(cancel_2543);
 
 /**@def NTATAG_CANCEL_408(x)
  *
- * Do not send a CANCEL but just timeout the request. 
+ * Do not send a CANCEL but just timeout the request.
  *
  * Calling nta_outgoing_tcancel() with this tag set marks request as
  * canceled but does not actually send a CANCEL request. If
@@ -1142,7 +1142,7 @@ tag_typedef_t ntatag_cancel_408 = BOOLTAG_TYPEDEF(cancel_408);
  * Terminated</i> response to the client after returning from the
  * #nta_incoming_f callback bound to the transaction with
  * nta_incoming_bind()
- * 
+ *
  * The application can delay sending the response to the original request
  * when NTATAG_CANCEL_408(0) is used. This is useful, for instance, with a
  * proxy that forwards the CANCEL downstream and the forwards the response
@@ -1166,7 +1166,7 @@ tag_typedef_t ntatag_cancel_487 = BOOLTAG_TYPEDEF(cancel_487);
 
 /**@def NTATAG_TAG_3261(x)
  *
- * When responding to requests, use unique tags. 
+ * When responding to requests, use unique tags.
  *
  * If set the UA would generate an unique @From/@To tag for all dialogs. If
  * unset UA would reuse same tag in order to make it easier to re-establish
@@ -1190,7 +1190,7 @@ tag_typedef_t ntatag_tag_3261 = BOOLTAG_TYPEDEF(tag_3261);
 
 /**@def NTATAG_REL100(x)
  *
- * Include rel100 in INVITE requests. 
+ * Include rel100 in INVITE requests.
  *
  * Include feature tag "100rel" in @Supported header of the INVITE requests.
  *
@@ -1217,14 +1217,14 @@ tag_typedef_t ntatag_no_dialog = BOOLTAG_TYPEDEF(no_dialog);
 
 /**@def NTATAG_USE_TIMESTAMP(x)
  *
- * Use @Timestamp header. 
+ * Use @Timestamp header.
  *
  * If set, a @Timestamp header would be added to stateful requests. The
  * header can be used to calculate the roundtrip transport latency between
  * client and server.
  *
  * @par Used with
- *    nua_create(), 
+ *    nua_create(),
  *    nta_agent_create(),
  *    nta_agent_set_params(),
  *    nta_outgoing_mcreate(), nta_outgoing_tcreate(),
@@ -1244,14 +1244,14 @@ tag_typedef_t ntatag_use_timestamp = BOOLTAG_TYPEDEF(use_timestamp);
 
 /**@def NTATAG_SIPFLAGS(x)
  *
- * Set SIP parser flags. 
+ * Set SIP parser flags.
  *
  * The SIP parser flags affect how the messages are parsed and the result
  * presented to the application. They also control encoding of messages.
  * The most important flags are as follows:
- * - MSG_FLG_COMPACT - use compact form 
+ * - MSG_FLG_COMPACT - use compact form
  *                     (single-letter header names, minimum whitespace)
- * - MSG_FLG_EXTRACT_COPY - cache printable copy of headers when parsing. 
+ * - MSG_FLG_EXTRACT_COPY - cache printable copy of headers when parsing.
  *   Using this flag can speed up proxy processing considerably. It is
  *   implied when the parsed messages are logged (because #TPORT_LOG
  *   environment variable is set, or TPTAG_LOG() is used.
@@ -1261,7 +1261,7 @@ tag_typedef_t ntatag_use_timestamp = BOOLTAG_TYPEDEF(use_timestamp);
  *    nta_agent_create(), nta_agent_set_params()
  *
  * @par Parameter type
- *    unsigned int 
+ *    unsigned int
  *
  * @par Values
  *    - Bitwise OR of SIP parser flags (enum #msg_flg_user)
@@ -1272,13 +1272,13 @@ tag_typedef_t ntatag_sipflags = UINTTAG_TYPEDEF(sipflags);
 
 /**@def NTATAG_CLIENT_RPORT(x)
  *
- * Enable client-side "rport". 
+ * Enable client-side "rport".
  *
  * This tag controls @RFC3581 support on client side. The "rport" parameter
  * is used when the response has to be routed symmetrically through a NAT box.
  *
  * The client-side support involves just adding the "rport" parameter to the topmost
- * @Via header before the request is sent. 
+ * @Via header before the request is sent.
  *
  * @note By default, the client "rport" is disabled when nta is used, and
  * enabled when nua is used.
@@ -1340,7 +1340,7 @@ tag_typedef_t ntatag_server_rport = INTTAG_TYPEDEF(server_rport);
 
 /**@def NTATAG_TCP_RPORT(x)
  *
- * Use rport with TCP, too. 
+ * Use rport with TCP, too.
  *
  * @par Used with
  *    nua_create(), nua_set_params(),
@@ -1351,7 +1351,7 @@ tag_typedef_t ntatag_server_rport = INTTAG_TYPEDEF(server_rport);
  *          or false (zero or NULL pointer)
  *
  * @par Values
- *    - true - include rport parameter in the TCP via line on client side 
+ *    - true - include rport parameter in the TCP via line on client side
  *    - false - do not include rport parameter in the TCP via line on client side
  *
  * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_SERVER_RPORT(), @Via
@@ -1360,12 +1360,12 @@ tag_typedef_t ntatag_tcp_rport = BOOLTAG_TYPEDEF(tcp_rport);
 
 /**@def NTATAG_PRELOAD(x)
  *
- * Preload by N bytes. 
+ * Preload by N bytes.
  *
  * When the memory block is allocated for an incoming request by the stack,
  * the stack can allocate some extra memory for the parser in addition to
- * the memory used by the actual message contents. 
- * 
+ * the memory used by the actual message contents.
+ *
  * While wasting some memory, this can speed up parsing considerably.
  * Recommended amount of preloading per packet is 1500 bytes.
  *
@@ -1385,7 +1385,7 @@ tag_typedef_t ntatag_preload = UINTTAG_TYPEDEF(preload);
 
 /**@def NTATAG_USE_NAPTR(x)
  *
- * If true, try to use NAPTR records when resolving. 
+ * If true, try to use NAPTR records when resolving.
  *
  * The application can disable NTA from using NAPTR records when resolving
  * SIP URIs.
@@ -1433,7 +1433,7 @@ tag_typedef_t ntatag_use_srv = BOOLTAG_TYPEDEF(srv);
 
 /**@def NTATAG_RSEQ(x)
  *
- * @RSeq value for nta_outgoing_prack(). 
+ * @RSeq value for nta_outgoing_prack().
  *
  * @par Used with
  *    nta_outgoing_prack()
@@ -1576,7 +1576,7 @@ tag_typedef_t ntatag_s_recv_response =    USIZETAG_TYPEDEF(s_recv_response);
  *
  * Return number of bad SIP messages that has been received.
  *
- * @sa nta_agent_get_stats(), NTATAG_S_RECV_MSG_REF(), 
+ * @sa nta_agent_get_stats(), NTATAG_S_RECV_MSG_REF(),
  * NTATAG_S_BAD_REQUEST_REF(), NTATAG_S_BAD_RESPONSE_REF().
  */
 tag_typedef_t ntatag_s_bad_message =      USIZETAG_TYPEDEF(s_bad_message);
@@ -1612,7 +1612,7 @@ tag_typedef_t ntatag_s_bad_response =     USIZETAG_TYPEDEF(s_bad_response);
  *
  * @sa nta_agent_get_stats(), NTATAG_DEBUG_DROP_PROB(),
  * NTATAG_S_DROP_RESPONSE_REF()
- * 
+ *
  * @note The value was not calculated before @VERSION_1_12_7.
  */
 tag_typedef_t ntatag_s_drop_request =     USIZETAG_TYPEDEF(s_drop_request);
@@ -1626,7 +1626,7 @@ tag_typedef_t ntatag_s_drop_request =     USIZETAG_TYPEDEF(s_drop_request);
  *
  * @sa nta_agent_get_stats(), NTATAG_DEBUG_DROP_PROB(),
  * NTATAG_S_DROP_REQUEST_REF()
- * 
+ *
  * @note The value was not calculated before @VERSION_1_12_7.
  */
 tag_typedef_t ntatag_s_drop_response =    USIZETAG_TYPEDEF(s_drop_response);
@@ -1651,7 +1651,7 @@ tag_typedef_t ntatag_s_client_tr =        USIZETAG_TYPEDEF(s_client_tr);
  *
  * Get number of server transactions created.
  *
- * Return number of server transactions created. 
+ * Return number of server transactions created.
  *
  * @sa nta_agent_get_stats(), NTATAG_S_RECV_RESPONSE_REF(),
  * NTATAG_S_CLIENT_TR_REF(), NTATAG_S_DIALOG_TR_REF(),

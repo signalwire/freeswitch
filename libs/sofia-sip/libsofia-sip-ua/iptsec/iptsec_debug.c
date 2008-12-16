@@ -24,9 +24,9 @@
 
 /**@internal @file iptsec_debug.c
  * @brief Debug log for IPTSEC module.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Dec 19 15:55:30 2002 ppessi
  */
 
@@ -51,7 +51,7 @@
  *
  * The IPTSEC_DEBUG environment variable is used to determine the debug
  * logging level for @iptsec module. The default level is 3.
- * 
+ *
  * @sa <sofia-sip/su_debug.h>, #iptsec_log, #SOFIA_DEBUG
  */
 extern IPTSEC_DEBUG;
@@ -62,7 +62,7 @@ extern IPTSEC_DEBUG;
 #endif
 
 /** Common log for client and server components.
- * 
+ *
  * The iptsec_log is the log object used by @iptsec module. The level of
  * #iptsec_log is set using #IPTSEC_DEBUG environment variable.
  */

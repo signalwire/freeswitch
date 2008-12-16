@@ -24,10 +24,10 @@
 
 #ifndef SIP_STATUS_H
 /** Defined when <sofia-sip/sip_status.h> has been included. */
-#define SIP_STATUS_H 
+#define SIP_STATUS_H
 
 /**@addtogroup sip_status_codes
- * @{ 
+ * @{
  */
 /**@file sofia-sip/sip_status.h
  *

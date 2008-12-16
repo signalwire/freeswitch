@@ -111,7 +111,7 @@ struct eventlist
   struct event *head, **tail;
 };
 
-struct event 
+struct event
 {
   struct event *next, **prev;
   struct call *call;
@@ -267,7 +267,7 @@ int run_a_until(struct context *, nua_event_t, condition_function *);
 int run_b_until(struct context *, nua_event_t, condition_function *);
 int run_c_until(struct context *, nua_event_t, condition_function *);
 
-typedef int operation_f(struct endpoint *ep, struct call *call, 
+typedef int operation_f(struct endpoint *ep, struct call *call,
 			nua_handle_t *nh, tag_type_t tag, tag_value_t value,
 			...);
 

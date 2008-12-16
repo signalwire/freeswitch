@@ -29,12 +29,12 @@ PUBLIC_H = 		sofia-sip/http.h sofia-sip/http_header.h \
 			sofia-sip/http_parser.h sofia-sip/http_tag_class.h \
 			sofia-sip/http_status.h sofia-sip/http_hclasses.h
 
-BUILT_H = 		sofia-sip/http_protos.h sofia-sip/http_tag.h 
+BUILT_H = 		sofia-sip/http_protos.h sofia-sip/http_tag.h
 BUILT_C = 		http_tag.c http_parser_table.c
 
 BUILT_SOURCES = 	$(BUILT_H) $(BUILT_C) http_tag_ref.c
 
-nobase_include_sofia_HEADERS = $(BUILT_H) $(PUBLIC_H) 
+nobase_include_sofia_HEADERS = $(BUILT_H) $(PUBLIC_H)
 
 libhttp_la_SOURCES = 	$(INTERNAL_H) \
 			http_parser.c http_header.c \
@@ -77,7 +77,7 @@ SS_HTTP_H = ${srcdir}/sofia-sip/http.h
 
 ${BUILT_H} ${BUILT_C}: ${srcdir}/sofia-sip/http.h ${MSG_PARSER_AWK}
 
-sofia-sip/http_protos.h: ${srcdir}/sofia-sip/http_protos.h.in 
+sofia-sip/http_protos.h: ${srcdir}/sofia-sip/http_protos.h.in
 	@-mkdir sofia-sip 2>/dev/null || true
 	${AWK_HTTP_AWK} PR=$@ TEMPLATE=${srcdir}/sofia-sip/http_protos.h.in ${SS_HTTP_H}
 

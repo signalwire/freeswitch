@@ -28,7 +28,7 @@
  * Global SU debug log.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Mon May  7 11:08:36 2001 ppessi
  */
 
@@ -45,7 +45,7 @@
  *
  * The SU_DEBUG environment variable is used to determine the debug logging
  * level for @b su module. The default level is 3.
- * 
+ *
  * @sa <sofia-sip/su_debug.h>, su_log_global
  */
 extern char const SU_DEBUG[];
@@ -57,18 +57,18 @@ extern char const SU_DEBUG[];
 #define SU_DEBUG_ 3
 #endif
 
-/**Debug log for @b su module. 
- * 
+/**Debug log for @b su module.
+ *
  * The su_log_global is the log object used by @b su module. The level of
  * #su_log_global is set using #SU_DEBUG environment variable.
  */
-su_log_t su_log_global[1] = {{ 
-  sizeof(su_log_t), 
-  "su", 
-  "SU_DEBUG", 
-  SU_DEBUG_, 
+su_log_t su_log_global[1] = {{
+  sizeof(su_log_t),
+  "su",
+  "SU_DEBUG",
+  SU_DEBUG_,
   SU_LOG_MAX,
   0,
-  NULL, 
+  NULL,
   NULL
 }};

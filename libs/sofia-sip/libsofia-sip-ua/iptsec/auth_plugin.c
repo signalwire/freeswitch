@@ -25,9 +25,9 @@
 /**@internal
  * @file auth_plugin.c
  * @brief Plugin interface for authentication verification modules.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Apr 27 15:23:31 2004 ppessi
  */
 
@@ -69,7 +69,7 @@ static auth_scheme_t *schemes[N] = {
   auth_scheme_delayed
 };
 
-/** Register an authentication plugin. 
+/** Register an authentication plugin.
  *
  * @retval 0 when successful
  * @retval -1 upon an error
@@ -82,17 +82,17 @@ int auth_mod_register_plugin(auth_scheme_t *asch)
     if (i == N)
       return -1;
   }
-  
+
   schemes[i] = asch;
 
   return 0;
 }
 
-/**Create an authentication plugin module. 
+/**Create an authentication plugin module.
  *
  * The function auth_mod_create() creates a module used to authenticate the
  * requests.
- * 
+ *
  * @param root pointer to a su_root_t object
  * @param tag,value,... tagged argument list
  *
@@ -123,7 +123,7 @@ auth_mod_t *auth_mod_create(su_root_t *root,
     size_t len;
 
     base = strrchr(method, '+');
-    if (base) 
+    if (base)
       len = base++ - method;
     else
       len = strlen(method);
@@ -132,7 +132,7 @@ auth_mod_t *auth_mod_create(su_root_t *root,
       ;
     else if (strcasecmp(base, "Basic") == 0)
       bscheme = auth_scheme_basic;
-    else if (strcasecmp(base, "Digest") == 0) 
+    else if (strcasecmp(base, "Digest") == 0)
       bscheme = auth_scheme_digest;
 
     if (base == NULL || bscheme) {
@@ -152,6 +152,6 @@ auth_mod_t *auth_mod_create(su_root_t *root,
   }
 
   ta_end(ta);
-  
+
   return am;
 }

@@ -189,7 +189,7 @@ msg_t *read_message_byte_by_byte(char const buffer[])
   for (i = 0; i < n;) {
     /* This prevent msg_recv_iovec() from allocating extra slack */
     int msg_buf_exact(msg_t *, int);
-    msg_buf_exact(msg, 10 + 1);	
+    msg_buf_exact(msg, 10 + 1);
 
     if (msg_recv_iovec(msg, iovec, msg_n_fragments, 10, 0) < 0) {
       perror("msg_recv_iovec");
@@ -1008,7 +1008,7 @@ static int http_header_test(void)
 			      "CUSTOMER=WILE_E_COYOTE; "
 			      "path=/; "
 			      "expires=Wednesday, 09-Nov-99 23:12:40 GMT");
-    
+
     TEST_1(sc);
     TEST_1(sc->sc_params);
     TEST_S(sc->sc_name, "CUSTOMER=WILE_E_COYOTE");

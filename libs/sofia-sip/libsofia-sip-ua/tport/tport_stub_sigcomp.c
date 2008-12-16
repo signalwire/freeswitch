@@ -140,7 +140,7 @@ int tport_can_send_sigcomp(tport_t const *self)
 int tport_has_compression(tport_t const *self, char const *comp)
 {
   return
-    self && comp && 
+    self && comp &&
     self->tp_name->tpn_comp == tport_canonize_comp(comp);
 }
 
@@ -169,7 +169,7 @@ int tport_sigcomp_option(tport_t const *self,
 }
 
 
-/** Assign a SigComp compartment (to a possibly connected tport). 
+/** Assign a SigComp compartment (to a possibly connected tport).
  *
  * @related tport_s
  */
@@ -180,7 +180,7 @@ int tport_sigcomp_assign(tport_t *self, struct sigcomp_compartment *cc)
   if (!vsc)
     return 0;
 
-  if (tport_is_connection_oriented(self) && 
+  if (tport_is_connection_oriented(self) &&
       tport_is_secondary(self) &&
       self->tp_socket != INVALID_SOCKET) {
     return vsc->vsc_set_compartment(self, self->tp_comp, cc);
@@ -207,7 +207,7 @@ tport_sigcomp_assign_if_needed(tport_t *self,
   }
 
   return vsc->vsc_get_compartment(self, self->tp_comp);
-}			   
+}
 
 
 /** Test if tport has a SigComp compartment assigned to it. */
@@ -217,13 +217,13 @@ int tport_has_sigcomp_assigned(tport_t const *self)
 
   if (vsc && self)
     return vsc->vsc_has_sigcomp_assigned(self->tp_comp);
-    
+
   return 0;
 }
 
-int 
-tport_sigcomp_accept(tport_t *self, 
-		     struct sigcomp_compartment *cc, 
+int
+tport_sigcomp_accept(tport_t *self,
+		     struct sigcomp_compartment *cc,
 		     msg_t *msg)
 {
   tport_comp_vtable_t const *vsc = tport_comp_vtable;
@@ -260,7 +260,7 @@ struct sigcomp_udvm **tport_get_udvm_slot(tport_t *self)
 }
 
 /** Receive data from datagram using SigComp. */
-int tport_recv_comp_dgram(tport_t const *self, 
+int tport_recv_comp_dgram(tport_t const *self,
 			  tport_compressor_t *sc,
 			  msg_t **in_out_msg,
 			  su_sockaddr_t *from,
@@ -273,13 +273,13 @@ int tport_recv_comp_dgram(tport_t const *self,
 
   msg_destroy(*in_out_msg), *in_out_msg = NULL;
 
-  return su_seterrno(EBADMSG);     
+  return su_seterrno(EBADMSG);
 }
 
 
 ssize_t tport_send_comp(tport_t const *self,
-			msg_t *msg, 
-			msg_iovec_t iov[], 
+			msg_t *msg,
+			msg_iovec_t iov[],
 			size_t iovused,
 			struct sigcomp_compartment *cc,
 			tport_compressor_t *comp)

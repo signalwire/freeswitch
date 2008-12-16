@@ -143,14 +143,14 @@ struct agent_t {
 
 
 static int incoming_callback_1(agent_t *ag,
-			       nta_incoming_t *irq, 
+			       nta_incoming_t *irq,
 			       sip_t const *sip)
 {
   return 0;
 }
 
 static int incoming_callback_2(agent_t *ag,
-			       nta_incoming_t *irq, 
+			       nta_incoming_t *irq,
 			       sip_t const *sip)
 {
   return 0;
@@ -173,10 +173,10 @@ int leg_callback(agent_t *ag,
   BEGIN();
   msg_t *msg;
   char const *tag;
-  
+
   if (tstflags & tst_verbatim) {
     printf("%s: %s: %s " URL_PRINT_FORMAT " %s\n",
-	   name, __func__, sip->sip_request->rq_method_name, 
+	   name, __func__, sip->sip_request->rq_method_name,
 	   URL_PRINT_ARGS(sip->sip_request->rq_url),
 	   sip->sip_request->rq_version);
   }
@@ -188,7 +188,7 @@ int leg_callback(agent_t *ag,
   TEST_VOID(nta_incoming_bind(irq, incoming_callback_1, ag));
   TEST_P(nta_incoming_magic(irq, incoming_callback_1), ag);
   TEST_P(nta_incoming_magic(irq, incoming_callback_2), 0);
-  
+
   TEST_1(tag = nta_incoming_tag(irq, "tag=foofaa"));
   TEST_S(nta_incoming_gettag(irq), tag);
   TEST_S(tag, "foofaa");
@@ -199,9 +199,9 @@ int leg_callback(agent_t *ag,
   TEST_S(nta_incoming_method_name(irq), "MESSAGE");
   TEST_1(nta_incoming_url(irq) != NULL);
   TEST_1(nta_incoming_cseq(irq) != 0);
-  
+
   TEST(nta_incoming_set_params(irq, TAG_END()), 0);
-  
+
   TEST_1(msg = nta_incoming_getrequest(irq)); msg_destroy(msg);
   TEST_P(nta_incoming_getrequest_ackcancel(irq), NULL);
   TEST_P(nta_incoming_getresponse(irq), NULL);
@@ -225,9 +225,9 @@ int outgoing_callback(agent_t *ag,
   int status = sip->sip_status->st_status;
 
   if (tstflags & tst_verbatim) {
-    printf("%s: %s: %s %03d %s\n", name, __func__, 
-	   sip->sip_status->st_version, 
-	   sip->sip_status->st_status, 
+    printf("%s: %s: %s %03d %s\n", name, __func__,
+	   sip->sip_status->st_version,
+	   sip->sip_status->st_status,
 	   sip->sip_status->st_phrase);
   }
 
@@ -246,14 +246,14 @@ int outgoing_callback(agent_t *ag,
   TEST_S(nta_outgoing_method_name(orq), "MESSAGE");
   TEST(nta_outgoing_cseq(orq), sip->sip_cseq->cs_seq);
   TEST_1(nta_outgoing_delay(orq) < UINT_MAX);
-  
+
   TEST_1(msg = nta_outgoing_getresponse(orq));
   msg_destroy(msg);
-  
+
   TEST_1(msg = nta_outgoing_getrequest(orq));
   msg_destroy(msg);
 
-  nta_outgoing_destroy(orq);	
+  nta_outgoing_destroy(orq);
   /* Call it twice */
   nta_outgoing_destroy(orq);
 
@@ -262,7 +262,7 @@ int outgoing_callback(agent_t *ag,
   END();
 }
 
-void 
+void
 nta_test_run(agent_t *ag)
 {
   time_t now = time(NULL);
@@ -307,7 +307,7 @@ int api_test_init(agent_t *ag)
 					 NTATAG_PRELOAD(2048),
 					 TAG_END()));
   /* Create a default leg */
-  TEST_1(ag->ag_default_leg = nta_leg_tcreate(ag->ag_agent, 
+  TEST_1(ag->ag_default_leg = nta_leg_tcreate(ag->ag_agent,
 					     leg_callback,
 					     ag,
 					     NTATAG_NO_DIALOG(1),
@@ -352,7 +352,7 @@ int api_test_init(agent_t *ag)
   }
 
   {
-    char const data[] = 
+    char const data[] =
       "v=0\r\n"
       "o=- 425432 423412 IN IP4 127.0.0.1\r\n"
       "s= \r\n"
@@ -366,7 +366,7 @@ int api_test_init(agent_t *ag)
   {
     sip_contact_t *m;
 
-    ag->ag_aliases = 
+    ag->ag_aliases =
       sip_contact_make(ag->ag_home, "sip:127.0.0.1, sip:localhost, sip:[::1]");
     TEST_1(ag->ag_aliases);
     TEST_1(ag->ag_aliases->m_next);
@@ -381,38 +381,38 @@ int api_test_init(agent_t *ag)
     m->m_next = ag->ag_aliases;
     ag->ag_aliases = m;
 
-    TEST(nta_agent_set_params(ag->ag_agent, 
+    TEST(nta_agent_set_params(ag->ag_agent,
 			      NTATAG_ALIASES(ag->ag_aliases),
 			      NTATAG_REL100(1),
-			      NTATAG_UA(1), 
+			      NTATAG_UA(1),
 			      NTATAG_USE_NAPTR(1),
 			      NTATAG_USE_SRV(1),
 			      TAG_END()),
 	 5);
 
-    TEST(nta_agent_set_params(ag->ag_agent, 
+    TEST(nta_agent_set_params(ag->ag_agent,
 			      NTATAG_ALIASES(ag->ag_aliases),
 			      NTATAG_DEFAULT_PROXY("sip:127.0.0.1"),
 			      TAG_END()), 2);
 
-    TEST(nta_agent_set_params(ag->ag_agent, 
+    TEST(nta_agent_set_params(ag->ag_agent,
 			      NTATAG_ALIASES(ag->ag_aliases),
 			      NTATAG_DEFAULT_PROXY(NULL),
 			      TAG_END()), 2);
 
-    TEST(nta_agent_set_params(ag->ag_agent, 
+    TEST(nta_agent_set_params(ag->ag_agent,
 			      NTATAG_DEFAULT_PROXY("tel:+35878008000"),
 			      TAG_END()), -1);
 
   }
-  
+
   {
     url_t url[1];
 
     /* Create the server leg */
     *url = *ag->ag_aliases->m_url;
     url->url_user = "%";
-    TEST_1(ag->ag_server_leg = nta_leg_tcreate(ag->ag_agent, 
+    TEST_1(ag->ag_server_leg = nta_leg_tcreate(ag->ag_agent,
 					       leg_callback,
 					       ag,
 					       NTATAG_NO_DIALOG(1),
@@ -421,7 +421,7 @@ int api_test_init(agent_t *ag)
   }
 
   END();
-}  
+}
 
 int api_test_deinit(agent_t *ag)
 {
@@ -443,7 +443,7 @@ int api_test_deinit(agent_t *ag)
   free(ag->ag_mclass), ag->ag_mclass = NULL;
 
   END();
-}  
+}
 
 static int api_test_destroy(agent_t *ag)
 {
@@ -468,12 +468,12 @@ static int api_test_destroy(agent_t *ag)
 				  NULL,
 				  NULL,
 				  TAG_END()));
-    TEST_1(leg = nta_leg_tcreate(nta, NULL, NULL, 
+    TEST_1(leg = nta_leg_tcreate(nta, NULL, NULL,
 				 NTATAG_NO_DIALOG(1),
 				 TAG_END()));
     /* This creates a delayed response message */
     orq = nta_outgoing_tcreate(leg, outgoing_callback, ag, NULL,
-			       SIP_METHOD_MESSAGE, 
+			       SIP_METHOD_MESSAGE,
 			       URL_STRING_MAKE("sip:foo.bar;transport=none"),
 			       SIPTAG_FROM_STR("<sip:bar.foo>"),
 			       SIPTAG_TO_STR("<sip:foo.bar>"),
@@ -482,7 +482,7 @@ static int api_test_destroy(agent_t *ag)
 
     TEST_VOID(nta_outgoing_destroy(orq));
     TEST_VOID(nta_leg_destroy(leg));
-    TEST_VOID(nta_agent_destroy(nta)); 
+    TEST_VOID(nta_agent_destroy(nta));
   }
 
   TEST_VOID(su_root_destroy(root));
@@ -573,9 +573,9 @@ int api_test_params(agent_t *ag)
 			    NTATAG_USE_NAPTR_REF(use_naptr),
 			    NTATAG_USE_SRV_REF(use_srv),
 			    NTATAG_USE_TIMESTAMP_REF(use_timestamp),
-			    TAG_END()), 
+			    TAG_END()),
        /* Number of parameters */ 33);
-  
+
   TEST_P(mclass, sip_default_mclass());
   TEST_P(aliases, NULL);
   TEST_1(contact != (void *)-1 && contact != NULL);
@@ -611,32 +611,32 @@ int api_test_params(agent_t *ag)
   TEST_1(use_timestamp != -1);
   TEST_1(user_via == 0);
 
-  TEST(nta_agent_set_params(NULL, 
+  TEST(nta_agent_set_params(NULL,
 			    NTATAG_PRELOAD(2048),
 			    TAG_END()), -1);
-  TEST(nta_agent_get_params(NULL, 
+  TEST(nta_agent_get_params(NULL,
 			    NTATAG_PRELOAD_REF(preload),
 			    TAG_END()), -1);
 
-  TEST(nta_agent_set_params(nta, 
+  TEST(nta_agent_set_params(nta,
 			    NTATAG_PRELOAD(2048),
 			    TAG_END()), 1);
-  TEST(nta_agent_get_params(nta, 
+  TEST(nta_agent_get_params(nta,
 			    NTATAG_PRELOAD_REF(preload),
 			    TAG_END()), 1);
   TEST(preload, 2048);
 
-  TEST(nta_agent_set_params(nta, 
+  TEST(nta_agent_set_params(nta,
 			    NTATAG_SIGCOMP_OPTIONS("sip"),
 			    TAG_END()), 1);
-  TEST(nta_agent_set_params(nta, 
+  TEST(nta_agent_set_params(nta,
 			    NTATAG_SIGCOMP_OPTIONS(","),
 			    TAG_END()), -1);
-  TEST(nta_agent_set_params(nta, 
+  TEST(nta_agent_set_params(nta,
 			    NTATAG_SIGCOMP_OPTIONS("sip;dms=16384"),
 			    TAG_END()), 1);
   s = NONE;
-  TEST(nta_agent_get_params(nta, 
+  TEST(nta_agent_get_params(nta,
 			    NTATAG_SIGCOMP_OPTIONS_REF(s),
 			    TAG_END()), 1);
   TEST_S(s, "sip;dms=16384");
@@ -767,7 +767,7 @@ int api_test_tport(agent_t *ag)
   TEST_1(m = nta_agent_contact(agent));
   TEST_S(m->m_url->url_params, "transport=tcp");
 
-  TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, 
+  TEST_1(nta_agent_add_tport(agent, (url_string_t *)url,
 			     TPTAG_SERVER(0), TAG_END()) == 0);
   TEST_1(v = nta_agent_public_via(agent)); TEST_1(!v->v_next);
   TEST(strcasecmp(v->v_protocol, sip_transport_tcp), 0);
@@ -794,9 +794,9 @@ int api_test_tport(agent_t *ag)
 
   TEST_1(agent = nta_agent_create(ag->ag_root, NONE, NULL, NULL, TAG_END()));
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, TAG_END()) == 0);
-  TEST_1(v = nta_agent_via(agent)); 
+  TEST_1(v = nta_agent_via(agent));
   TEST(strcasecmp(v->v_protocol, sip_transport_tcp), 0);
-  TEST_1(v = v->v_next);  
+  TEST_1(v = v->v_next);
   TEST(strcasecmp(v->v_protocol, sip_transport_udp), 0);
   TEST_1(m = nta_agent_contact(agent));
   TEST_1(!m->m_url->url_params);
@@ -806,7 +806,7 @@ int api_test_tport(agent_t *ag)
 
   TEST_1(agent = nta_agent_create(ag->ag_root, NONE, NULL, NULL, TAG_END()));
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, TAG_END()) == 0);
-  TEST_1(v = nta_agent_via(agent)); 
+  TEST_1(v = nta_agent_via(agent));
   TEST(strcasecmp(v->v_protocol, sip_transport_udp), 0);
   TEST_1(v = v->v_next);
   TEST(strcasecmp(v->v_protocol, sip_transport_tcp), 0);
@@ -824,15 +824,15 @@ static int api_test_dialogs(agent_t *ag)
 #if 0
   {
     /* Test 0.1
-     * Send a message from default leg to default leg 
+     * Send a message from default leg to default leg
      */
     char const p_acid[] = "P-Access-Network-Info: IEEE-802.11g\n";
     msg_t *msg;
 
     ag->ag_expect_leg = ag->ag_default_leg;
 
-    TEST_1(ag->ag_orq = 
-	  nta_outgoing_tcreate(ag->ag_default_leg, 
+    TEST_1(ag->ag_orq =
+	  nta_outgoing_tcreate(ag->ag_default_leg,
 			       outgoing_callback, ag,
 			       ag->ag_obp,
 			       SIP_METHOD_MESSAGE,
@@ -887,7 +887,7 @@ int outgoing_default(agent_t *ag,
   TEST_S(nta_outgoing_method_name(orq), "*");
   TEST(nta_outgoing_cseq(orq), 0);
   TEST_1(nta_outgoing_delay(orq) == UINT_MAX);
-  
+
   TEST_1(msg = nta_outgoing_getresponse(orq));
   if (ag->ag_response == NULL)
     ag->ag_response = msg;
@@ -916,7 +916,7 @@ static int api_test_default(agent_t *ag)
   TEST_VOID(nta_incoming_bind(irq, incoming_callback_1, ag));
   TEST_P(nta_incoming_magic(irq, incoming_callback_1), ag);
   TEST_P(nta_incoming_magic(irq, incoming_callback_2), 0);
-  
+
   TEST_P(nta_incoming_tag(irq, NULL), NULL);
   TEST_P(nta_incoming_gettag(irq), NULL);
 
@@ -929,18 +929,18 @@ static int api_test_default(agent_t *ag)
   TEST(nta_incoming_received(irq, &nano), nano / 1000000000);
 
   TEST(nta_incoming_set_params(irq, TAG_END()), 0);
-  
+
   TEST_P(nta_incoming_getrequest(irq), NULL);
   TEST_P(nta_incoming_getrequest_ackcancel(irq), NULL);
   TEST_P(nta_incoming_getresponse(irq), NULL);
-  
+
   TEST(nta_incoming_complete_response(irq, NULL, SIP_200_OK, TAG_END()), -1);
 
   TEST(nta_incoming_treply(irq, SIP_200_OK, TAG_END()), -1);
   TEST(nta_incoming_mreply(irq, NULL), -1);
-  
+
   TEST_VOID(nta_incoming_destroy(irq));
-  
+
   TEST_1(orq = nta_outgoing_default(nta, outgoing_default, ag));
 
   TEST(nta_outgoing_status(orq), 0);
@@ -960,7 +960,7 @@ static int api_test_default(agent_t *ag)
   TEST_P(nta_outgoing_tcancel(orq, NULL, NULL, TAG_END()), NULL);
 
   TEST_VOID(nta_outgoing_destroy(orq));
-  
+
   TEST_1(irq = nta_incoming_default(nta));
   TEST_1(orq = nta_outgoing_default(nta, outgoing_default, ag));
 
@@ -968,7 +968,7 @@ static int api_test_default(agent_t *ag)
   via->v_next = NULL;
 
   TEST_1(nta_incoming_treply
-	 (irq, 
+	 (irq,
 	  SIP_200_OK,
 	  SIPTAG_VIA(via),
 	  SIPTAG_CALL_ID_STR("oishciucnkrcoihciunskcisj"),
@@ -985,7 +985,7 @@ static int api_test_default(agent_t *ag)
 
   TEST_VOID(nta_outgoing_destroy(orq));
   TEST_VOID(nta_incoming_destroy(irq));
-  
+
   END();
 }
 
@@ -1054,7 +1054,7 @@ static int api_test_errors(agent_t *ag)
 
     TEST_1(msg = nta_msg_create(nta, 0));
     TEST(nta_msg_complete(msg), -1);
-    TEST(nta_msg_request_complete(msg, NULL, 
+    TEST(nta_msg_request_complete(msg, NULL,
 				  sip_method_unknown, "FOO", NULL), -1);
     TEST(nta_is_internal_msg(NULL), 0);
     TEST(nta_is_internal_msg(msg), 0);
@@ -1084,7 +1084,7 @@ static int api_test_errors(agent_t *ag)
 
   TEST_VOID(nta_incoming_bind(NULL, NULL, NULL));
   TEST_P(nta_incoming_magic(NULL, NULL), NULL);
-  
+
   TEST_P(nta_incoming_find(NULL, NULL, NULL), NULL);
   TEST_P(nta_incoming_find(nta, NULL, NULL), NULL);
 
@@ -1111,14 +1111,14 @@ static int api_test_errors(agent_t *ag)
   TEST(nta_incoming_mreply(NULL, NULL), -1);
 
   TEST_VOID(nta_incoming_destroy(NULL));
-  
-  TEST_P(nta_outgoing_tcreate(NULL, outgoing_callback, ag, 
+
+  TEST_P(nta_outgoing_tcreate(NULL, outgoing_callback, ag,
 			    URL_STRING_MAKE("sip:localhost"),
 			    SIP_METHOD_MESSAGE,
 			    URL_STRING_MAKE("sip:localhost"),
 			    TAG_END()), NULL);
 
-  TEST_P(nta_outgoing_mcreate(NULL, outgoing_callback, ag, 
+  TEST_P(nta_outgoing_mcreate(NULL, outgoing_callback, ag,
 			    URL_STRING_MAKE("sip:localhost"),
 			    NULL,
 			    TAG_END()), NULL);
@@ -1166,7 +1166,7 @@ static int api_test_errors(agent_t *ag)
   TEST_P(nta_reliable_mreply(NULL, NULL, NULL, NULL), NULL);
   TEST_VOID(nta_reliable_destroy(NULL));
 
-  TEST_VOID(nta_agent_destroy(nta)); 
+  TEST_VOID(nta_agent_destroy(nta));
   TEST_VOID(su_root_destroy(root));
   TEST_VOID(su_home_deinit(home));
 
@@ -1196,17 +1196,17 @@ static int api_test_dialog_matching(agent_t *ag)
 				NULL,
 				TAG_END()));
 
-  TEST_1(dst = nta_leg_tcreate(nta, NULL, NULL, 
+  TEST_1(dst = nta_leg_tcreate(nta, NULL, NULL,
 				NTATAG_NO_DIALOG(1),
 				URLTAG_URL("sip:joe@localhost"),
 				TAG_END()));
 
-  TEST_1(defdst = nta_leg_tcreate(nta, NULL, NULL, 
+  TEST_1(defdst = nta_leg_tcreate(nta, NULL, NULL,
 				  NTATAG_NO_DIALOG(1),
 				  TAG_END()));
 
-  TEST_1(dialog1 = 
-	 nta_leg_tcreate(nta, NULL, NULL, 
+  TEST_1(dialog1 =
+	 nta_leg_tcreate(nta, NULL, NULL,
 			 URLTAG_URL("sip:pc.al.us"),
 			 SIPTAG_CALL_ID_STR("foobarbaz"),
 			 /* local */
@@ -1219,8 +1219,8 @@ static int api_test_dialog_matching(agent_t *ag)
   TEST_1(a2 = sip_from_make(home, "<sip:joe.boy@al.us>;tag=al"));
   TEST_1(i = sip_call_id_make(home, "foobarbaz"));
 
-  TEST_1(dialog2 = 
-	 nta_leg_tcreate(nta, NULL, NULL, 
+  TEST_1(dialog2 =
+	 nta_leg_tcreate(nta, NULL, NULL,
 			 SIPTAG_CALL_ID(i),
 			 /* local */
 			 SIPTAG_FROM(a2),
@@ -1228,81 +1228,81 @@ static int api_test_dialog_matching(agent_t *ag)
 			 SIPTAG_TO(a1),
 			 TAG_END()));
 
-  TEST_1(!nta_leg_by_dialog(nta, NULL, NULL, 
+  TEST_1(!nta_leg_by_dialog(nta, NULL, NULL,
 			    a1->a_tag, a1->a_url, a2->a_tag, a2->a_url));
-  TEST_1(!nta_leg_by_dialog(NULL, NULL, i, 
+  TEST_1(!nta_leg_by_dialog(NULL, NULL, i,
 			    a1->a_tag, a1->a_url, a2->a_tag, a2->a_url));
-  TEST_1(!nta_leg_by_dialog(nta, (void *)"sip:no.such.url", i, 
+  TEST_1(!nta_leg_by_dialog(nta, (void *)"sip:no.such.url", i,
 			    a2->a_tag, a2->a_url, a1->a_tag, a1->a_url));
-  TEST_1(!nta_leg_by_dialog(nta, a2->a_url, i, 
+  TEST_1(!nta_leg_by_dialog(nta, a2->a_url, i,
 			    a2->a_tag, a2->a_url, a1->a_tag, a1->a_url));
 
-  TEST_P(leg = nta_leg_by_dialog(nta, NULL, i, 
-				 /* local */ a1->a_tag, a1->a_url, 
+  TEST_P(leg = nta_leg_by_dialog(nta, NULL, i,
+				 /* local */ a1->a_tag, a1->a_url,
 				 /* remote */ a2->a_tag, a2->a_url),
 	 dialog2);
-  TEST_P(leg = nta_leg_by_dialog(nta, (void *)"sip:no.such.url", i, 
-				 /* local */ a1->a_tag, a1->a_url, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (void *)"sip:no.such.url", i,
+				 /* local */ a1->a_tag, a1->a_url,
 				 /* remote */ a2->a_tag, a2->a_url),
 	 dialog2);
-  TEST_P(leg = nta_leg_by_dialog(nta, a2->a_url, i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, a2->a_url, i,
 				 a1->a_tag, a1->a_url, a2->a_tag, a2->a_url),
 	 dialog2);
 
-  TEST_P(leg = nta_leg_by_dialog(nta, NULL, i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, NULL, i,
 				 a2->a_tag, a2->a_url, a1->a_tag, a1->a_url),
 	 dialog1);
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, a1->a_tag, a1->a_url),
 	 dialog1);
   /* local tag is required because there is tag */
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, "xyzzy", a1->a_url),
 	 NULL);
   /* local URI is ignored because we have tag */
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, a1->a_tag, a2->a_url),
 	 dialog1);
 
   /* remote tag is ignored because there is no tag */
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 "xyzzy", a2->a_url, a1->a_tag, a1->a_url),
 	 dialog1);
 #if nomore
   /* remote url is required */
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a1->a_url, a1->a_tag, a1->a_url),
 	 NULL);
 #endif
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, NULL, a1->a_tag, a1->a_url),
 	 dialog1);
 
   /* local url is used if there is no local tag */ /* XXX - not really */
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, NULL, NULL),
 	 NULL);
 
   nta_leg_tag(dialog1, "al");
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, a1->a_tag, a1->a_url),
 	 dialog1);
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, "xyzzy", a1->a_url),
 	 NULL);
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, a1->a_tag, a1->a_url),
 	 dialog1);
-  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i, 
+  TEST_P(leg = nta_leg_by_dialog(nta, (url_t *)"sip:pc.al.us", i,
 				 a2->a_tag, a2->a_url, NULL, a1->a_url),
 	 NULL);
-		
+
   nta_leg_destroy(defdst);
   nta_leg_destroy(dst);
   nta_leg_destroy(dialog1);
   nta_leg_destroy(dialog2);
-	    
-  TEST_VOID(nta_agent_destroy(nta)); 
+
+  TEST_VOID(nta_agent_destroy(nta));
   TEST_VOID(su_root_destroy(root));
   TEST_VOID(su_home_deinit(home));
 
@@ -1371,7 +1371,7 @@ int main(int argc, char *argv[])
 
       if (rest == NULL || *rest)
 	usage(1);
-      
+
       su_log_set_level(nta_log, level);
       su_log_set_level(tport_log, level);
     }
@@ -1427,7 +1427,7 @@ int main(int argc, char *argv[])
     retval |= api_test_dialogs(ag); SINGLE_FAILURE_CHECK();
     retval |= api_test_default(ag); SINGLE_FAILURE_CHECK();
   }
-  retval |= api_test_deinit(ag); fflush(stdout); 
+  retval |= api_test_deinit(ag); fflush(stdout);
 
   su_home_deinit(ag->ag_home);
 

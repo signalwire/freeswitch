@@ -52,9 +52,9 @@
 
 /**@SIP_HEADER sip_session_expires Session-Expires Header
  *
- * The Session-Expires header is used to convey the lifetime of the session. 
+ * The Session-Expires header is used to convey the lifetime of the session.
  * Its syntax is defined in @RFC4028 as follows:
- * 
+ *
  * @code
  *      Session-Expires  =  ("Session-Expires" | "x") HCOLON delta-seconds
  *                           *(SEMI se-params)
@@ -78,7 +78,7 @@
  *  sip_common_t    x_common[1];
  *  sip_unknown_t  *x_next;
  *  unsigned long   x_delta; //Delta Seconds
- *  msg_param_t    *x_params; 
+ *  msg_param_t    *x_params;
  *  char const     *x_refresher; //Who will send the refresh UAS or UAC
  * } sip_session_expires_t;
  * @endcode
@@ -89,7 +89,7 @@ static msg_dup_f sip_session_expires_dup_one;
 static msg_update_f sip_session_expires_update;
 
 msg_hclass_t sip_session_expires_class[] =
-SIP_HEADER_CLASS(session_expires, "Session-Expires", "x", x_params, single, 
+SIP_HEADER_CLASS(session_expires, "Session-Expires", "x", x_params, single,
 		 session_expires);
 
 issize_t sip_session_expires_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -113,7 +113,7 @@ issize_t sip_session_expires_e(char b[], isize_t bsiz, sip_header_t const *h, in
   sip_session_expires_t const *o = h->sh_session_expires;
 
   n = snprintf(b, bsiz, "%lu", o->x_delta);
-  b += n; 
+  b += n;
   MSG_PARAMS_E(b, end, o->x_params, flags);
 
   return b - b0;
@@ -124,11 +124,11 @@ isize_t sip_session_expires_dup_xtra(sip_header_t const *h, isize_t offset)
   sip_session_expires_t const *o = h->sh_session_expires;
 
   MSG_PARAMS_SIZE(offset, o->x_params);
-   
+
   return offset;
 }
 
-/** Duplicate one #sip_session_expires_t object */ 
+/** Duplicate one #sip_session_expires_t object */
 char *sip_session_expires_dup_one(sip_header_t *dst, sip_header_t const *src,
 				  char *b, isize_t xtra)
 {
@@ -144,7 +144,7 @@ char *sip_session_expires_dup_one(sip_header_t *dst, sip_header_t const *src,
 }
 
 /** Update parameters in @SessionExpires header. */
-static int sip_session_expires_update(msg_common_t *h, 
+static int sip_session_expires_update(msg_common_t *h,
 				      char const *name, isize_t namelen,
 				      char const *value)
 {
@@ -153,7 +153,7 @@ static int sip_session_expires_update(msg_common_t *h,
   if (name == NULL) {
     x->x_refresher = NULL;
   }
-  else if (namelen == strlen("refresher") && 
+  else if (namelen == strlen("refresher") &&
 	   !strncasecmp(name, "refresher", namelen)) {
     x->x_refresher = value;
   }
@@ -167,7 +167,7 @@ static int sip_session_expires_update(msg_common_t *h,
  *
  * The Min-SE header is used to indicate the minimum value for the session
  * interval. Its syntax is defined in @RFC4028 as follows:
- * 
+ *
  * @code
  *      MMin-SE  =  "Min-SE" HCOLON delta-seconds *(SEMI generic-param)
  * @endcode
@@ -221,7 +221,7 @@ issize_t sip_min_se_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
   sip_min_se_t const *o = (sip_min_se_t *)h;
 
   n = snprintf(b, bsiz, "%lu", o->min_delta);
-  b += n; 
+  b += n;
   MSG_PARAMS_E(b, end, o->min_params, flags);
 
   return b - b0;
@@ -232,11 +232,11 @@ isize_t sip_min_se_dup_xtra(sip_header_t const *h, isize_t offset)
   sip_min_se_t const *o = (sip_min_se_t *)h;
 
   MSG_PARAMS_SIZE(offset, o->min_params);
-   
+
   return offset;
 }
 
-/** Duplicate one #sip_min_se_t object */ 
+/** Duplicate one #sip_min_se_t object */
 char *sip_min_se_dup_one(sip_header_t *dst, sip_header_t const *src,
 			char *b, isize_t xtra)
 {

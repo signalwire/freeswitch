@@ -46,7 +46,7 @@
 #define SU_HAVE_STDINT          (0)
 #define SU_HAVE_NT              0
 
-/* note: on Windows 2000 and older (WINVER<=500), IPv6-tech-preview 
+/* note: on Windows 2000 and older (WINVER<=500), IPv6-tech-preview
  * is needed for IPv4 support as well, so SU_HAVE_IN6 must be set */
 #define SU_HAVE_IN6             1
 
@@ -104,7 +104,7 @@
 #define snprintf    _snprintf
 #endif
 #ifndef vsnprintf
-#ifndef _MSC_VER 
+#ifndef _MSC_VER
 #define vsnprintf _vsnprintf
 #endif
 #if _MSC_VER < 1500

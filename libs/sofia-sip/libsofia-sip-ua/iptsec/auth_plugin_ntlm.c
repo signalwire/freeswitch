@@ -24,7 +24,7 @@
 
 /**@CFILE auth_plugin_ntlm.c
  *
- * @brief Plugin for delayed authentication. 
+ * @brief Plugin for delayed authentication.
  *
  * This authentication plugin provides authentication operation that is
  * intentionally delayed. It serves as an example of server-side
@@ -100,14 +100,14 @@ static int auth_init_ntlm(auth_mod_t *am,
   if (auth_init_default(am, NULL, root, ta_tags(ta)) != -1) {
     retval = 0;
   }
-    
+
   ta_end(ta);
 
   return retval;
 }
 
 
-/** Authenticate a request with @b NTLM authentication scheme. 
+/** Authenticate a request with @b NTLM authentication scheme.
  *
  * This function reads user database before authentication, if needed.
  */
@@ -123,7 +123,7 @@ void auth_method_ntlm_x(auth_mod_t *am,
   }
 }
 
-/** Authenticate a request with @b Ntlm authentication scheme. 
+/** Authenticate a request with @b Ntlm authentication scheme.
  */
 void auth_method_ntlm(auth_mod_t *am,
 		      auth_status_t *as,
@@ -144,7 +144,7 @@ void auth_method_ntlm(auth_mod_t *am,
     as->as_status = 0, as->as_phrase = NULL;
     as->as_match = (msg_header_t *)au;
     return;
-  } 
+  }
 
   if (au) {
     auth_response_t ar[1] = {{ sizeof(ar) }};
@@ -161,7 +161,7 @@ void auth_method_ntlm(auth_mod_t *am,
 
 
 /** Find a NTLM credential header with matching realm and opaque. */
-msg_auth_t *auth_ntlm_credentials(msg_auth_t *auth, 
+msg_auth_t *auth_ntlm_credentials(msg_auth_t *auth,
 				  char const *realm,
 				  char const *opaque,
 				  char const *gssapidata,
@@ -216,19 +216,19 @@ void auth_check_ntlm(auth_mod_t *am,
 
 #define PA "Authorization missing "
 
-  if ((!ar->ar_username && (phrase = PA "username")) || 
-      (!ar->ar_nonce && (phrase = PA "nonce")) || 
-      (!ar->ar_uri && (phrase = PA "URI")) || 
-      (!ar->ar_response && (phrase = PA "response")) || 
+  if ((!ar->ar_username && (phrase = PA "username")) ||
+      (!ar->ar_nonce && (phrase = PA "nonce")) ||
+      (!ar->ar_uri && (phrase = PA "URI")) ||
+      (!ar->ar_response && (phrase = PA "response")) ||
       /* (!ar->ar_opaque && (phrase = PA "opaque")) || */
       /* Check for qop */
-      (ar->ar_qop && 
-       ((ar->ar_auth && 
+      (ar->ar_qop &&
+       ((ar->ar_auth &&
 	 strcasecmp(ar->ar_qop, "auth") &&
 	 strcasecmp(ar->ar_qop, "\"auth\"")) ||
-	(ar->ar_auth_int && 
+	(ar->ar_auth_int &&
 	 strcasecmp(ar->ar_qop, "auth-int") &&
-	 strcasecmp(ar->ar_qop, "\"auth-int\""))) 
+	 strcasecmp(ar->ar_qop, "\"auth-int\"")))
        && (phrase = PA "has invalid qop"))) {
     assert(phrase);
     SU_DEBUG_5(("auth_method_ntlm: 400 %s\n", phrase));
@@ -239,10 +239,10 @@ void auth_check_ntlm(auth_mod_t *am,
 
   /* XXX - replace */
 #if 0
-  if (as->as_nonce_issued == 0 /* Already validated nonce */ && 
+  if (as->as_nonce_issued == 0 /* Already validated nonce */ &&
       auth_validate_ntlm_nonce(am, as, ar, now) < 0) {
 #else
-  if (as->as_nonce_issued == 0 /* Already validated nonce */ && 
+  if (as->as_nonce_issued == 0 /* Already validated nonce */ &&
       auth_validate_digest_nonce(am, as, ar, now) < 0) {
 #endif
     as->as_blacklist = am->am_blacklist;
@@ -262,9 +262,9 @@ void auth_check_ntlm(auth_mod_t *am,
     a1 = apw->apw_hash;
   else if (apw && apw->apw_pass)
     auth_ntlm_a1(ar, a1buf, apw->apw_pass), a1 = a1buf;
-  else 
+  else
     auth_ntlm_a1(ar, a1buf, "xyzzy"), a1 = a1buf, apw = NULL;
-  
+
   if (ar->ar_md5sess)
     auth_ntlm_a1sess(ar, a1buf, a1), a1 = a1buf;
 #else
@@ -272,19 +272,19 @@ void auth_check_ntlm(auth_mod_t *am,
     a1 = apw->apw_hash;
   else if (apw && apw->apw_pass)
     auth_digest_a1(ar, a1buf, apw->apw_pass), a1 = a1buf;
-  else 
+  else
     auth_digest_a1(ar, a1buf, "xyzzy"), a1 = a1buf, apw = NULL;
-  
+
   if (ar->ar_md5sess)
     auth_digest_a1sess(ar, a1buf, a1), a1 = a1buf;
 #endif
 
-  /* XXX - replace with auth_ntlm_response */      
+  /* XXX - replace with auth_ntlm_response */
 #if 0
-  auth_ntlm_response(ar, response, a1, 
+  auth_ntlm_response(ar, response, a1,
 		     as->as_method, as->as_body, as->as_bodylen);
 #else
-  auth_digest_response(ar, response, a1, 
+  auth_digest_response(ar, response, a1,
 		       as->as_method, as->as_body, as->as_bodylen);
 #endif
 
@@ -321,7 +321,7 @@ void auth_check_ntlm(auth_mod_t *am,
 }
 
 /** Construct a challenge header for @b Ntlm authentication scheme. */
-void auth_challenge_ntlm(auth_mod_t *am, 
+void auth_challenge_ntlm(auth_mod_t *am,
 			   auth_status_t *as,
 			   auth_challenger_t const *ach)
 {
@@ -337,8 +337,8 @@ void auth_challenge_ntlm(auth_mod_t *am,
   u = as->as_uri;
   d = as->as_pdomain;
 
-  as->as_response = 
-    msg_header_format(as->as_home, ach->ach_header, 
+  as->as_response =
+    msg_header_format(as->as_home, ach->ach_header,
 		      "Ntlm"
 		      " realm=\"%s\","
 		      "%s%s%s"
@@ -346,12 +346,12 @@ void auth_challenge_ntlm(auth_mod_t *am,
 		      " nonce=\"%s\","
 		      "%s%s%s"
 		      "%s"	/* stale */
-		      " algorithm=%s" 
+		      " algorithm=%s"
 		      "%s%s%s",
-		      as->as_realm, 
-		      u ? " uri=\"" : "", u ? u : "", u ? "\"," : "", 
-		      d ? " domain=\"" : "", d ? d : "", d ? "\"," : "", 
-		      nonce, 
+		      as->as_realm,
+		      u ? " uri=\"" : "", u ? u : "", u ? "\"," : "",
+		      d ? " domain=\"" : "", d ? d : "", d ? "\"," : "",
+		      nonce,
 		      am->am_opaque ? " opaque=\"" : "",
 		      am->am_opaque ? am->am_opaque : "",
 		      am->am_opaque ? "\"," : "",
@@ -368,7 +368,7 @@ void auth_challenge_ntlm(auth_mod_t *am,
 }
 
 /** Construct a info header for @b Ntlm authentication scheme. */
-void auth_info_ntlm(auth_mod_t *am, 
+void auth_info_ntlm(auth_mod_t *am,
 		      auth_status_t *as,
 		      auth_challenger_t const *ach)
 {
@@ -385,7 +385,7 @@ void auth_info_ntlm(auth_mod_t *am,
     auth_generate_digest_nonce(am, nonce, sizeof nonce, 1, msg_now());
 #endif
 
-    as->as_info = 
+    as->as_info =
       msg_header_format(as->as_home, ach->ach_info, "nextnonce=\"%s\"", nonce);
   }
 }

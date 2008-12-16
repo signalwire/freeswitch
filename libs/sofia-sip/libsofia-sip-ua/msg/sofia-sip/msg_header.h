@@ -33,7 +33,7 @@
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Mon Aug 27 15:44:27 2001 ppessi
- * 
+ *
  */
 
 #include <stdarg.h>
@@ -203,13 +203,13 @@ SOFIAPUBFUN issize_t msg_headers_prepare(msg_t *,
 
 #ifdef SU_HAVE_INLINE
 /** Clear encoded data from header structure. */
-su_inline void msg_fragment_clear(msg_common_t *h) 
+su_inline void msg_fragment_clear(msg_common_t *h)
 {
   h->h_data = NULL, h->h_len = 0;
 }
 
 /** Pointer to header parameters. */
-su_inline 
+su_inline
 msg_param_t **msg_header_params(msg_common_t const *h)
 {
   if (h && h->h_class->hc_params) {

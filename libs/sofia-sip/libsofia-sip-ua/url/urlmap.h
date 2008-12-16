@@ -28,10 +28,10 @@
 
 /**
  * @file urlmap.h
- * @brief 
- * 
+ * @brief
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Wed Mar 10 17:06:20 2004 ppessi
  */
 

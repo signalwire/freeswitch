@@ -23,11 +23,11 @@
  */
 
 /**@SU_TAG
- * 
- * @CFILE su_tag.c  
+ *
+ * @CFILE su_tag.c
  *
  * Special tags.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Tue Feb 20 20:03:38 2001 ppessi

@@ -6,8 +6,8 @@ Introduction
 ============
 
 This file is a collection of practices and rules for Sofia-SIP
-development. If you have questions, or would like to make 
-changes, raise the issue on sofia-sip-devel (see 
+development. If you have questions, or would like to make
+changes, raise the issue on sofia-sip-devel (see
 http://lists.sourceforge.net/lists/listinfo/sofia-sip-devel ).
 
 
@@ -15,17 +15,17 @@ Important files for developers
 ==============================
 
 AUTHORS
-	List of contributors. When contributing new code, add 
+	List of contributors. When contributing new code, add
 	yourself to AUTHORS, and also remember to update the
 	per source file copyright statements.
 
 COPYRIGHTS
-	List of licenses and related copyright statements. While 
+	List of licenses and related copyright statements. While
 	majority of Sofia-SIP is licensed under LGPL, there are
-	a few files with different, but LGPL compatible, licensing 
+	a few files with different, but LGPL compatible, licensing
 	terms.
-	
-README.developers 
+
+README.developers
 	This file.
 
 TODO
@@ -33,11 +33,11 @@ TODO
 
 <dir>/ChangeLog files
 	All non-trivial changes to the source code should
-	be documented in the ChangeLog files. See also the 
+	be documented in the ChangeLog files. See also the
 	top-level ChangeLog.
 
 
-Version numbering 
+Version numbering
 =================
 
 Package version
@@ -50,8 +50,8 @@ For development releases and snaphots the version is one of:
      vMAJOR.MINOR.REVISION, where minor is odd
      vMAJOR.MINOR.REVISION.YEAR.MONTH.DAY, where minor is odd
 
-For all releases, the version should be changed in configure.ac 
-and committed to Darcs/CVS before making the release package. The person 
+For all releases, the version should be changed in configure.ac
+and committed to Darcs/CVS before making the release package. The person
 doing the release is responsible for updating the version number.
 
 Library interface versions
@@ -64,14 +64,14 @@ Sofia-SIP libraries utilize libtool interface versioning. See
 
 The interface versions are set in top-level 'configure.ac' file.
 Additionally, the SONAME version (CURRENT-AGE) is set in the
-same place. These version numbers are available for use as autoconf 
-variables (see the library 'Makefile.am' files and 
+same place. These version numbers are available for use as autoconf
+variables (see the library 'Makefile.am' files and
 'packages/sofia-sip.spec.in').
 
 All changes to the library versions should be marked to the
 appropriate library 'ChangeLog' file. The library version should
-be changed at the same time as the first interface change is 
-committed since the previous release. The interface version is 
+be changed at the same time as the first interface change is
+committed since the previous release. The interface version is
 frozen (should be marked to the 'ChangeLog' file) at the time
 the next release is tagged (in other words, intra-release changes
 need not be tracked with libtool versions).
@@ -95,7 +95,7 @@ Tagging releases and snapshots
     - CVS tree (only used to track major releases) at:
       http://sourceforge.net/cvs/?group_id=143636
 - tags: rel-sofia-sip-x_y_z
-    - stable and development releases (matches release 
+    - stable and development releases (matches release
       version sofia-sip-x.y.z)
 - tags: snapshot_rel_YEARMMDD
     - snapshot releases at
@@ -113,13 +113,13 @@ Sending patches
 People without Darcs access
 ---------------------------
 
-Send your patches to sofia-sip-devel. Someone from the 
+Send your patches to sofia-sip-devel. Someone from the
 development team (see AUTHORS) will handle the patch.
 
 People with Darcs access
 ------------------------
 
-Trivial changes can be committed without review. For non-trivial 
+Trivial changes can be committed without review. For non-trivial
 changes, you should first send a proposal to sofia-sip-devel and
 wait for comments. There are no strict approval rules so use of
 common sense is recommended. ;)

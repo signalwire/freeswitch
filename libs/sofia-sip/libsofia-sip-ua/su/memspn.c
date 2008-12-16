@@ -23,13 +23,13 @@
  */
 
 /**@internal @file memspn.c
- * 
+ *
  * The memspn() replacement function.
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Sat Apr 12 19:32:33 2003 ppessi
- * 
+ *
  */
 
 #include "config.h"

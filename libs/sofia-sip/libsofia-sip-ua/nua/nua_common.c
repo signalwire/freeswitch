@@ -23,12 +23,12 @@
  */
 
 /**@CFILE nua_common.c
- * @brief Function common to both stack and application side.  
- * 
+ * @brief Function common to both stack and application side.
+ *
  * @author Pekka.Pessi@nokia.com
- * 
+ *
  * @date Created: Tue Apr 26 13:23:17 2005 ppessi
- * 
+ *
  */
 
 #include "config.h"
@@ -76,7 +76,7 @@
 static void nh_destructor(void *arg);
 
 /**@internal
- * Create an operation handle 
+ * Create an operation handle
  *
  * Allocates a new operation handle and associated storage.
  *
@@ -88,7 +88,7 @@ static void nh_destructor(void *arg);
  * @retval NULL    Creation failed
  *
  * @par Related tags:
- *     Creates a copy of the provided tags which will 
+ *     Creates a copy of the provided tags which will
  *     be used with every operation.
  *
  * @par Events:
@@ -120,7 +120,7 @@ nua_handle_t *nh_create_handle(nua_t *nua,
 		  (void *)nua, (void *)nh));
       su_home_unref(nh->nh_home), nh = NULL;
     }
-    
+
     if (nh && su_home_is_threadsafe(nua->nua_home)) {
       if (su_home_threadsafe(nh->nh_home) < 0) {
 	su_home_unref(nh->nh_home);
@@ -128,13 +128,13 @@ nua_handle_t *nh_create_handle(nua_t *nua,
       }
     }
 
-    if (nh && _handle_lifetime) {      
+    if (nh && _handle_lifetime) {
       /* This far, we have nothing real to destruct but
-       * when _NUA_HANDLE_DEBUG is set, we add destructor 
+       * when _NUA_HANDLE_DEBUG is set, we add destructor
        * and get more entertaining debugging output */
       if (_handle_lifetime == 1 && !getenv("_NUA_HANDLE_DEBUG")) {
 	_handle_lifetime = 0;
-      } 
+      }
       else {
 	_handle_lifetime = 2;
 	SU_DEBUG_0(("nh_handle_create(%p)\n", (void *)nh));
@@ -222,7 +222,7 @@ nua_handle_t *nua_handle_ref(nua_handle_t *nh)
   return (nua_handle_t *)su_home_ref(nh->nh_home);
 }
 
-/** Destroy reference to handle. 
+/** Destroy reference to handle.
  *
  * The handles use reference counting for memory management. In addition to
  * the memory management, there is protocol state associated with the
@@ -301,7 +301,7 @@ int nua_event_is_incoming_request(nua_event_t event)
   }
 }
 
-/** Get name for a NUA event. 
+/** Get name for a NUA event.
  *
  * @sa #nua_event_e, #nua_event_t, nua_callstate_name(), nua_substate_name()
  */
@@ -374,7 +374,7 @@ char const *nua_event_name(nua_event_t event)
 }
 
 /** Return name of call state.
- * 
+ *
  * @sa enum #nua_callstate, nua_event_name(), nua_substate_name()
  */
 char const *nua_callstate_name(enum nua_callstate state)
@@ -395,7 +395,7 @@ char const *nua_callstate_name(enum nua_callstate state)
   }
 }
 
-/** Return name of subscription state. @NEW_1_12_5. 
+/** Return name of subscription state. @NEW_1_12_5.
  *
  * @sa enum #nua_substate, nua_event_name(), nua_callstate_name()
  */
@@ -424,7 +424,7 @@ enum nua_substate nua_substate_make(char const *sip_substate)
     return nua_substate_terminated;
   else if (strcasecmp(sip_substate, "pending") == 0)
     return nua_substate_pending;
-  else /* if (strcasecmp(sip_substate, "active") == 0) */ 
+  else /* if (strcasecmp(sip_substate, "active") == 0) */
     return nua_substate_active;
 }
 

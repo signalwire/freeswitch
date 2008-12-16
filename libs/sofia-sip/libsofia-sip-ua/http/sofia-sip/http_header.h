@@ -26,7 +26,7 @@
 /** Defined when <sofia-sip/http_header.h> has been included.*/
 #define HTTP_HEADER_H
 
-/**@file sofia-sip/http_header.h 
+/**@file sofia-sip/http_header.h
  *
  * HTTP library prototypes.
  *
@@ -85,13 +85,13 @@ SOFIAPUBVAR char const http_version_0_9[];
 /** HTTP 1.0 */
 SOFIAPUBVAR char const http_version_1_0[];
 
-/** HTTP 1.1 version. */ 
+/** HTTP 1.1 version. */
 SOFIAPUBVAR char const http_version_1_1[];
 
 #define HTTP_VERSION_CURRENT http_version_1_1
 
 /* ----------------------------------------------------------------------
- * 3) Prototypes 
+ * 3) Prototypes
  */
 
 /** HTTP parser description. */
@@ -123,7 +123,7 @@ SOFIAPUBFUN int http_strip_hostport(url_t *url);
 
 /** Add required headers to the response message */
 SOFIAPUBFUN int http_complete_response(msg_t *msg,
-				       int status, char const *phrase, 
+				       int status, char const *phrase,
 				       http_t const *request);
 
 /** Return string corresponding to the method. */
@@ -139,9 +139,9 @@ SOFIAPUBFUN int http_header_insert(msg_t *msg, http_t *http, http_header_t *h);
 SOFIAPUBFUN int http_header_remove(msg_t *msg, http_t *http, http_header_t *h);
 SOFIAPUBFUN char const *http_header_name(http_header_t const *h, int compact);
 SOFIAPUBFUN void *http_header_data(http_header_t *h);
-SOFIAPUBFUN http_content_length_t *http_content_length_create(su_home_t *home, 
+SOFIAPUBFUN http_content_length_t *http_content_length_create(su_home_t *home,
 							      uint32_t n);
-SOFIAPUBFUN http_payload_t *http_payload_create(su_home_t *home, 
+SOFIAPUBFUN http_payload_t *http_payload_create(su_home_t *home,
 						void const *data, usize_t len);
 SOFIAPUBFUN http_separator_t *http_separator_create(su_home_t *home);
 #endif
@@ -164,7 +164,7 @@ SOFIAPUBFUN http_status_t *http_status_create(su_home_t *home,
 					      char const *version);
 
 /** Create an @b Host header object. */
-SOFIAPUBFUN http_host_t *http_host_create(su_home_t *home, 
+SOFIAPUBFUN http_host_t *http_host_create(su_home_t *home,
 					  char const *host,
 					  char const *port);
 
@@ -184,7 +184,7 @@ SOFIAPUBFUN issize_t http_query_parse(char *query,
 				      ...);
 
 /* ----------------------------------------------------------------------
- * 4) Inlined functions 
+ * 4) Inlined functions
  */
 
 #if SU_HAVE_INLINE
@@ -213,13 +213,13 @@ http_t *http_object(msg_t *msg)
  * @param http HTTP message structure to which header is added
  * @param h   list of header(s) to be added
  */
-su_inline 
+su_inline
 int http_header_insert(msg_t *msg, http_t *http, http_header_t *h)
 {
   return msg_header_insert(msg, (msg_pub_t *)http, (msg_header_t *)h);
 }
 
-/** Remove a header from a HTTP message. */ 
+/** Remove a header from a HTTP message. */
 su_inline
 int http_header_remove(msg_t *msg, http_t *http, http_header_t *h)
 {
@@ -243,19 +243,19 @@ void *http_header_data(http_header_t *h)
   return h && h != HTTP_NONE ? h->sh_class->hc_size + (char *)h : NULL;
 }
 
-su_inline 
+su_inline
 http_content_length_t *http_content_length_create(su_home_t *home, uint32_t n)
 {
   return msg_content_length_create(home, n);
 }
 
-su_inline 
+su_inline
 http_payload_t *http_payload_create(su_home_t *home, void const *data, isize_t len)
 {
   return msg_payload_create(home, data, len);
 }
 
-su_inline 
+su_inline
 http_separator_t *http_separator_create(su_home_t *home)
 {
   return msg_separator_create(home);

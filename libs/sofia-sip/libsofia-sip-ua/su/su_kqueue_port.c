@@ -67,8 +67,8 @@ struct su_kqueue_port_s {
   int              sup_kqueue;
   unsigned         sup_multishot; /**< Multishot operation? */
 
-  unsigned         sup_registers; /** Counter incremented by 
-				      su_port_register() or 
+  unsigned         sup_registers; /** Counter incremented by
+				      su_port_register() or
 				      su_port_unregister()
 				   */
   int              sup_n_registrations;
@@ -80,9 +80,9 @@ struct su_kqueue_port_s {
   /** Structure containing registration data */
   struct su_register {
     struct su_register *ser_next; /* Next in free list */
-    su_wakeup_f     ser_cb; 
-    su_wakeup_arg_t*ser_arg; 
-    su_root_t      *ser_root; 
+    su_wakeup_f     ser_cb;
+    su_wakeup_arg_t*ser_arg;
+    su_root_t      *ser_root;
     int             ser_id; /** registration identifier */
     su_wait_t       ser_wait[1];
   } **sup_indices;
@@ -91,19 +91,19 @@ struct su_kqueue_port_s {
 static void su_kqueue_port_decref(su_port_t *, int blocking, char const *who);
 
 static int su_kqueue_port_register(su_port_t *self,
-				 su_root_t *root, 
-				 su_wait_t *wait, 
+				 su_root_t *root,
+				 su_wait_t *wait,
 				 su_wakeup_f callback,
 				 su_wakeup_arg_t *arg,
 				 int priority);
 static int su_kqueue_port_unregister(su_port_t *port,
-				   su_root_t *root, 
-				   su_wait_t *wait,	
-				   su_wakeup_f callback, 
+				   su_root_t *root,
+				   su_wait_t *wait,
+				   su_wakeup_f callback,
 				   su_wakeup_arg_t *arg);
 static int su_kqueue_port_deregister(su_port_t *self, int i);
 static int su_kqueue_port_unregister_all(su_port_t *self, su_root_t *root);
-static int su_kqueue_port_eventmask(su_port_t *self, 
+static int su_kqueue_port_eventmask(su_port_t *self,
 				  int index,
 				  int socket,
 				  int events);
@@ -171,22 +171,22 @@ static void su_kqueue_port_decref(su_port_t *self, int blocking, char const *who
  *
  *  Please note if identical wait objects are inserted, only first one is
  *  ever signalled.
- * 
+ *
  * @param self	     pointer to port
  * @param root	     pointer to root object
  * @param waits	     pointer to wait object
  * @param callback   callback function pointer
  * @param arg	     argument given to callback function when it is invoked
- * @param priority   relative priority of the wait object 
+ * @param priority   relative priority of the wait object
  *              (0 is normal, 1 important, 2 realtime)
- * 
+ *
  * @return
- *   Positive index of the wait object, 
+ *   Positive index of the wait object,
  *   or -1 upon an error.
  */
 int su_kqueue_port_register(su_port_t *self,
-			    su_root_t *root, 
-			    su_wait_t *wait, 
+			    su_root_t *root,
+			    su_wait_t *wait,
 			    su_wakeup_f callback,
 			    su_wakeup_arg_t *arg,
 			    int priority)
@@ -210,7 +210,7 @@ int su_kqueue_port_register(su_port_t *self,
     su_home_t *h = su_port_home(self);
 
     i = self->sup_max_index, j = i == 0 ? 15 : i + 16;
-    
+
     if (j >= self->sup_size_indices) {
       /* Reallocate index table */
       n = n < 1024 ? 2 * n : n + 1024;
@@ -310,7 +310,7 @@ static int su_kqueue_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
   if (destroy_wait)
     su_wait_destroy(wait);
-  
+
   memset(ser, 0, sizeof *ser);
   ser->ser_id = i;
   ser->ser_next = indices[0], indices[0] = ser;
@@ -323,25 +323,25 @@ static int su_kqueue_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
 
 /** Unregister a su_wait_t object.
- *  
+ *
  *  The function su_kqueue_port_unregister() unregisters a su_wait_t object. The
  *  wait object, a callback function and a argument are removed from the
  *  port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param root     - pointer to root object
  * @param wait     - pointer to wait object
  * @param callback - callback function pointer (may be NULL)
- * @param arg      - argument given to callback function when it is invoked 
+ * @param arg      - argument given to callback function when it is invoked
  *                   (may be NULL)
  *
- * @deprecated Use su_kqueue_port_deregister() instead. 
+ * @deprecated Use su_kqueue_port_deregister() instead.
  *
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
 int su_kqueue_port_unregister(su_port_t *self,
-			      su_root_t *root, 
-			      su_wait_t *wait,	
+			      su_root_t *root,
+			      su_wait_t *wait,
 			      su_wakeup_f callback, /* XXX - ignored */
 			      su_wakeup_arg_t *arg)
 {
@@ -369,14 +369,14 @@ int su_kqueue_port_unregister(su_port_t *self,
 }
 
 /** Deregister a su_wait_t object.
- *  
+ *
  *  Deregisters a registration by index. The wait object, a callback
  *  function and a argument are removed from the port object. The wait
  *  object is destroyed.
- * 
+ *
  * @param self     - pointer to port object
  * @param i        - registration index
- * 
+ *
  * @return Index of the wait object, or -1 upon an error.
  */
 int su_kqueue_port_deregister(su_port_t *self, int i)
@@ -398,13 +398,13 @@ int su_kqueue_port_deregister(su_port_t *self, int i)
  *
  * The function su_kqueue_port_unregister_all() unregisters all su_wait_t objects
  * and destroys all queued timers associated with given root object.
- * 
+ *
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
- * 
+ *
  * @return Number of wait objects removed.
  */
-int su_kqueue_port_unregister_all(su_port_t *self, 
+int su_kqueue_port_unregister_all(su_port_t *self,
 				su_root_t *root)
 {
   int i, I, n;
@@ -490,7 +490,7 @@ int su_kqueue_port_eventmask(su_port_t *self, int index, int socket, int events)
  *
  * @param self      pointer to port object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
- * 
+ *
  * @retval 0 multishot mode is disabled
  * @retval 1 multishot mode is enabled
  * @retval -1 an error occurred
@@ -502,7 +502,7 @@ int su_kqueue_port_multishot(su_port_t *self, int multishot)
     return self->sup_multishot;
   else if (multishot == 0 || multishot == 1)
     return self->sup_multishot = multishot;
-  else 
+  else
     return (errno = EINVAL), -1;
 }
 
@@ -523,7 +523,7 @@ int su_kqueue_port_wait_events(su_port_t *self, su_duration_t tout)
 
   int const M = 4;
   struct kevent ev[M];
-  
+
   struct timespec ts;
 
   ts.tv_sec = tout / 1000;
@@ -534,7 +534,7 @@ int su_kqueue_port_wait_events(su_port_t *self, su_duration_t tout)
 	     tout < SU_DURATION_MAX ? &ts : NULL);
 
   assert(n <= M);
-  
+
   for (j = 0; j < n; j++) {
     struct su_register *ser;
     su_root_magic_t *magic;
@@ -559,7 +559,7 @@ int su_kqueue_port_wait_events(su_port_t *self, su_duration_t tout)
 	/* Callback function used su_register()/su_deregister() */
 	return events;
     }
-  }    
+  }
 
   return n;
 }
@@ -589,7 +589,7 @@ su_port_t *su_kqueue_port_create(void)
 
   self->sup_kqueue = kq, kq = -1;
   self->sup_indices = su_zalloc(su_port_home(self),
-				(sizeof self->sup_indices[0]) * 
+				(sizeof self->sup_indices[0]) *
 				(self->sup_size_indices = 64));
   if (!self->sup_indices)
     goto failed;
@@ -614,7 +614,7 @@ int su_kqueue_clone_start(su_root_t *parent,
 			su_root_init_f init,
 			su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_kqueue_port_create, 
+  return su_pthreaded_port_start(su_kqueue_port_create,
 				 parent, return_clone, magic, init, deinit);
 }
 

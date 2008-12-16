@@ -28,9 +28,9 @@
 
 /**@file sofia-sip/rc4.h
  * @brief Arcfour random number generator.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Sun Jun  9 14:32:58 1996 ppessi
  */
 
@@ -45,21 +45,21 @@ extern "C" {
 /** Byte. */
 typedef uint8_t rc4_u8;
 
-/** RC4 context. 
- * 
+/** RC4 context.
+ *
  * The RC4 context is accessed and modified through rc4_init() and rc4()
  * functions only.
  */
-typedef struct {      
-  uint8_t rc4_i;        
+typedef struct {
+  uint8_t rc4_i;
   uint8_t rc4_j;
-  uint8_t rc4_array[256];       
+  uint8_t rc4_array[256];
 } rc4_t;
 
 /** Key RC4 context. */
 SOFIAPUBFUN void rc4_init(const void *seed, isize_t seed_len, rc4_t *state);
 
-/** Generate RC4 stream. */ 
+/** Generate RC4 stream. */
 SOFIAPUBFUN void rc4(void *buffer, isize_t len, rc4_t *state);
 
 #if defined(__cplusplus)

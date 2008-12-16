@@ -38,27 +38,27 @@
 
 int main(int argc, char *argv[])
 {
-  static ucs4 ucs4test0[] = { 
+  static ucs4 ucs4test0[] = {
     0x41u, 0xC1u, 0x841u, 0x10041u, 0x200041u, 0x4000041u, 0
   };
-  static utf8 ucs4test1[] = 
-    "A" 
+  static utf8 ucs4test1[] =
+    "A"
     "\303\201"
     "\340\241\201"
     "\360\220\201\201"
     "\370\210\200\201\201"
     "\374\204\200\200\201\201";
 
-  static ucs2 ucs2test0[] = { 
+  static ucs2 ucs2test0[] = {
     0x41u, 0xC1u, 0x841u, 0
   };
-  static utf8 ucs2test1[] = 
-    "A" 
+  static utf8 ucs2test1[] =
+    "A"
     "\303\201"
     "\340\241\201";
 
   ucs4 ucs4s[1024] = { 0 };
-  ucs2 ucs2s[1024] = { 0 }; 
+  ucs2 ucs2s[1024] = { 0 };
   utf8 utf8s[1024] = { 0 };
 
   size_t len;
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   else puts("OK");
 
   /* UCS2 */
-  
+
   puts("testing ucs2len(ucs2test0)");
 
   len = ucs2len(ucs2test0);

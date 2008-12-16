@@ -31,8 +31,8 @@
  */
 
 /**@ingroup test_msg
- * 
- * @CFILE test_table.c 
+ *
+ * @CFILE test_table.c
  * @brief Parser table used for testing.
  *
  * #AUTO#

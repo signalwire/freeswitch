@@ -66,7 +66,7 @@
           <--nua_i_state---|                    |
 
    Client transitions:
-   INIT -(C1)-> CALLING -(C2a)-> PROCEEDING -(C3+C4)-> 
+   INIT -(C1)-> CALLING -(C2a)-> PROCEEDING -(C3+C4)->
    TERMINATING -> TERMINATED
    Server transitions:
    INIT -(S1)-> RECEIVED -(S2a)-> EARLY -(S3b)-> COMPLETED -(S4)-> READY
@@ -113,8 +113,8 @@ int test_no_answer_1(struct context *ctx)
 
   /* Client transitions:
      INIT -(C1)-> CALLING: nua_invite(), nua_i_state
-     CALLING -(C3)-> PROCEEDING: nua_r_invite, nua_i_state 
-     PROCEEDING -(C3a+C5)-> TERMINATING: nua_r_invite, nua_i_state 
+     CALLING -(C3)-> PROCEEDING: nua_r_invite, nua_i_state
+     PROCEEDING -(C3a+C5)-> TERMINATING: nua_r_invite, nua_i_state
      TERMINATING -(C12)-> TERMINATED: nua_r_bye, nua_i_state
   */
   TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_i_state);
@@ -198,7 +198,7 @@ int no_media_terminated(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    NUTAG_MEDIA_ENABLE(0),
 	    TAG_END());
     return 0;
@@ -238,7 +238,7 @@ int test_no_answer_2(struct context *ctx)
     "t=0 0\r\n"
     "m=audio 5008 RTP/AVP 8\r\n";
 
-  b_call->sdp = 
+  b_call->sdp =
     "v=0\r\n"
     "o=- 2 1 IN IP4 127.0.0.1\r\n"
     "s=-\r\n"
@@ -246,7 +246,7 @@ int test_no_answer_2(struct context *ctx)
     "t=0 0\r\n"
     "m=audio 5010 RTP/AVP 0 8\r\n";
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call,
 				 SIPTAG_TO_STR("<sip:b@x.org>"),
 				 TAG_END()));
 
@@ -279,7 +279,7 @@ int test_no_answer_2(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip->sip_content_type); 
+  TEST_1(sip->sip_content_type);
   TEST_S(sip->sip_content_type->c_type, "application/sdp");
   TEST_1(sip->sip_payload);	/* there is sdp in 200 OK */
   TEST_1(sip->sip_contact);
@@ -344,7 +344,7 @@ int accept_call_until_terminated(CONDITION_PARAMS)
 
   switch (callstate(tags)) {
   case nua_callstate_received:
-    RESPOND(ep, call, nh, SIP_180_RINGING, 
+    RESPOND(ep, call, nh, SIP_180_RINGING,
 	    TAG_END());
     return 0;
   case nua_callstate_early:
@@ -387,7 +387,7 @@ int test_missing_user_sdp(struct context *ctx)
   nua_set_params(b->nua, NUTAG_MEDIA_ENABLE(0), TAG_END());
   run_b_until(ctx, nua_r_set_params, until_final_response);
 
-  TEST_1(a_call->nh = nua_handle(a->nua, a_call, 
+  TEST_1(a_call->nh = nua_handle(a->nua, a_call,
 				 SIPTAG_TO_STR("<sip:b@x.org>"),
 				 TAG_END()));
 
@@ -456,7 +456,7 @@ int test_missing_user_sdp(struct context *ctx)
   nua_handle_destroy(b_call->nh), b_call->nh = NULL;
 
   nua_set_params(b->nua,
-		 NUTAG_MEDIA_ENABLE(1), 
+		 NUTAG_MEDIA_ENABLE(1),
 		 SOATAG_USER_SDP_STR("m=audio 5006 RTP/AVP 8 0"),
 		 TAG_END());
   run_b_until(ctx, nua_r_set_params, until_final_response);

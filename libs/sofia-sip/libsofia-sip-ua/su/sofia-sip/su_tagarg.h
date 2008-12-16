@@ -26,11 +26,11 @@
 /** Defined when <sofia-sip/su_tagarg.h> has been included. */
 #define SU_TAGARG_H
 
-/**@SU_TAG 
+/**@SU_TAG
  * @file sofia-sip/su_tagarg.h  Tagged argument lists
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Feb 20 19:48:18 2001 ppessi
  */
 
@@ -54,14 +54,14 @@ SOFIA_BEGIN_DECLS
  *
  * Such a function could be called as follows:
  * @code
- *   tag_print(stdout, 
- *             TAG_STRING("a is"), TAG_INT(a), 
+ *   tag_print(stdout,
+ *             TAG_STRING("a is"), TAG_INT(a),
  *             TAG_STRING("b is"), URLTAG_URL(b),
  *             TAG_IF(c, TAG_STRING("and c is true")),
  *             TAG_END());
  * @endcode
  *
- * @note 
+ * @note
  * The tagged argument list @b must be terminated by a TAG_END(),
  * TAG_NULL() or TAG_NEXT().
  */
@@ -180,7 +180,7 @@ typedef struct {
   (ta).tl[0].t_tag, (ta).tl[0].t_value, (ta).tl[1].t_tag, (ta).tl[1].t_value
 
 /**Handle return from function with tagged argument list
- * 
+ *
  * The ta_end() macro handles return from function whose tagged argument
  * list was initialized by ta_start().
  *

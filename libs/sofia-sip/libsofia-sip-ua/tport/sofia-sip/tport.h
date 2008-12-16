@@ -213,7 +213,7 @@ TPORT_DLL int tport_tqueue(tport_t *, msg_t *, tag_type_t, tag_value_t, ...);
 TPORT_DLL isize_t tport_queuelen(tport_t const *self);
 
 /** Send a queued message (and queue another, if required). */
-TPORT_DLL int tport_tqsend(tport_t *, msg_t *, msg_t *, 
+TPORT_DLL int tport_tqsend(tport_t *, msg_t *, msg_t *,
 			   tag_type_t, tag_value_t, ...);
 
 /** Stop reading from socket until tport_continue() is called. */

@@ -26,7 +26,7 @@
 /** Defined when <sofia-sip/sdp_tag.h> has been included. */
 #define SDP_TAG_H
 
-/**@file sofia-sip/sdp_tag.h   
+/**@file sofia-sip/sdp_tag.h
  * @brief SDP tags
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -65,12 +65,12 @@ sdptag_session_ref, sdptag_session_vr(&(x))
 
 #if SU_HAVE_INLINE
 su_inline
-tag_value_t sdptag_session_v(struct sdp_session_s const *v) { 
-  return (tag_value_t)v; 
+tag_value_t sdptag_session_v(struct sdp_session_s const *v) {
+  return (tag_value_t)v;
 }
 su_inline
-tag_value_t sdptag_session_vr(struct sdp_session_s const **vp) { 
-  return (tag_value_t)vp; 
+tag_value_t sdptag_session_vr(struct sdp_session_s const **vp) {
+  return (tag_value_t)vp;
 }
 #else
 #define sdptag_session_v(v)   (tag_value_t)(v)

@@ -135,19 +135,19 @@ int wakeup(root_test_t *rt,
 {
   char buffer[64];
   int n, error;
- 
+
   su_wait_events(w, ep->s);
 
   n = recv(ep->s, buffer, sizeof(buffer), 0);
   error = su_errno();
- 
+
   if (n < 0)
     fprintf(stderr, "%s: %s\n", "recv", su_strerror(error));
 
   TEST_1(n > 0);
 
   rt->rt_received = ep->i;
-	   
+
   return 0;
 }
 
@@ -202,15 +202,15 @@ static int register_test(root_test_t *rt)
   TEST_1((s = su_socket(rt->rt_family, SOCK_DGRAM, 0)) != -1);
 
   for (i = 0; i < 5; i++) {
-    rt->rt_ep[i]->registered = 
-      su_root_register(rt->rt_root, rt->rt_ep[i]->wait, 
+    rt->rt_ep[i]->registered =
+      su_root_register(rt->rt_root, rt->rt_ep[i]->wait,
 		       wakeups[i], rt->rt_ep[i], 0);
     TEST(rt->rt_ep[i]->registered, i + 1 + SU_HAVE_PTHREADS);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
-    TEST(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen), 
+    TEST(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen),
 	 sizeof(msg));
     test_run(rt);
     TEST(rt->rt_received, i);
@@ -218,22 +218,22 @@ static int register_test(root_test_t *rt)
   }
 
   for (i = 0; i < 5; i++) {
-    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait, 
-			    wakeups[i], rt->rt_ep[i]), 
+    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait,
+			    wakeups[i], rt->rt_ep[i]),
 	 rt->rt_ep[i]->registered);
   }
 
 
   for (i = 0; i < 5; i++) {
-    rt->rt_ep[i]->registered = 
-      su_root_register(rt->rt_root, rt->rt_ep[i]->wait, 
+    rt->rt_ep[i]->registered =
+      su_root_register(rt->rt_root, rt->rt_ep[i]->wait,
 		       wakeups[i], rt->rt_ep[i], 1);
     TEST_1(rt->rt_ep[i]->registered > 0);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
-    TEST(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen), 
+    TEST(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen),
 	 sizeof(msg));
     test_run(rt);
     TEST(rt->rt_received, i);
@@ -241,22 +241,22 @@ static int register_test(root_test_t *rt)
   }
 
   for (i = 0; i < 5; i++) {
-    TEST(su_root_deregister(rt->rt_root, rt->rt_ep[i]->registered), 
+    TEST(su_root_deregister(rt->rt_root, rt->rt_ep[i]->registered),
 	 rt->rt_ep[i]->registered);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
     TEST_1(su_wait_create(ep->wait, ep->s, SU_WAIT_IN|SU_WAIT_ERR) != -1);
-    ep->registered = 
-      su_root_register(rt->rt_root, ep->wait, 
+    ep->registered =
+      su_root_register(rt->rt_root, ep->wait,
 		       wakeups[i], ep, 1);
     TEST_1(ep->registered > 0);
   }
 
   for (i = 0; i < 5; i++) {
     test_ep_t *ep = rt->rt_ep[i];
-    TEST(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen), 
+    TEST(su_sendto(s, msg, sizeof(msg), 0, ep->addr, ep->addrlen),
 	 sizeof(msg));
     test_run(rt);
     TEST(rt->rt_received, i);
@@ -264,8 +264,8 @@ static int register_test(root_test_t *rt)
   }
 
   for (i = 0; i < 5; i++) {
-    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait, 
-			    wakeups[i], rt->rt_ep[i]), 
+    TEST(su_root_unregister(rt->rt_root, rt->rt_ep[i]->wait,
+			    wakeups[i], rt->rt_ep[i]),
 	 rt->rt_ep[i]->registered);
   }
 
@@ -322,14 +322,14 @@ static int clone_test(root_test_t rt[1])
   TEST_VOID(su_clone_wait(rt->rt_root, rt->rt_clone));
 
   TEST_1(rt->rt_success_deinit);
-  
+
   END();
 }
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
-	  "usage: %s [-v] [-a]\n", 
+  fprintf(stderr,
+	  "usage: %s [-v] [-a]\n",
 	  name);
   exit(exitcode);
 }

@@ -175,7 +175,7 @@ int test_smooth_sort()
       TEST(array[i], i - n / 2);
     }
   }
-  
+
   END();
 }
 
@@ -472,7 +472,7 @@ int test_triplet()
   BEGIN();
 
   Heap2 heap = { NULL };
-  
+
   unsigned i, N;
   type1 *items;
 
@@ -498,7 +498,7 @@ int test_triplet()
     TEST(e->key, i);
     TEST(e->value, i);
   }
-  
+
   for (i = 1; i <= N; i++) {
     type2 e = heap2_remove(heap, 1);
     TEST(e->key, i);

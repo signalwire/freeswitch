@@ -23,12 +23,12 @@
  */
 
 /**@ingroup su_wait
- * @CFILE su_root.c 
- * OS-independent synchronization interface. 
+ * @CFILE su_root.c
+ * OS-independent synchronization interface.
  * @internal
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Sep 14 15:51:04 1999 ppessi
  */
 
@@ -56,7 +56,7 @@ struct su_root_s;
 #include "sofia-sip/su_alloc.h"
 
 /**@ingroup su_wait
- * 
+ *
  * @page su_root_t Tasks and root objects
  *
  * A task is the basic execution unit for the Sofia event-driven programming
@@ -91,8 +91,8 @@ struct su_root_s;
  * New tasks can be created via su_clone_start() function.
  */
 
-/**@ingroup su_wait 
- * 
+/**@ingroup su_wait
+ *
  * @page su_root_register Registering Wait Objects
  *
  * When application expects I/O events, it can create a wait object and
@@ -111,8 +111,8 @@ struct su_root_s;
  */
 
 /**@ingroup su_wait
- * 
- * Contains hint of number of sockets supported by su_root_t */ 
+ *
+ * Contains hint of number of sockets supported by su_root_t */
 int su_root_size_hint = 64;
 
 /* =========================================================================
@@ -187,7 +187,7 @@ _su_task_r su_task_new(su_task_r task, su_root_t *root, su_port_t *port)
 void su_task_copy(su_task_r dst, su_task_r const src)
 {
   su_port_t *port;
-  
+
   assert(src); assert(dst);
 
   SU_TASK_ZAP(dst, su_task_copy);
@@ -219,10 +219,10 @@ void su_task_move(su_task_r dst, su_task_r src)
 
 /**
  * Compare two tasks with each other.
- * 
+ *
  * @param a  First task
  * @param b  Second task
- * 
+ *
  * @retval negative number, if a < b
  * @retval positive number, if a > b
  * @retval 0, if a == b.
@@ -249,14 +249,14 @@ int su_task_cmp(su_task_r const a, su_task_r const b)
  *
  * @param task  task handle
  *
- * @retval true (nonzero) if task is not stopped, 
+ * @retval true (nonzero) if task is not stopped,
  * @retval zero if it is null or stopped.
  */
 int su_task_is_running(su_task_r const task)
 {
-  return 
-    task && 
-    task->sut_port && 
+  return
+    task &&
+    task->sut_port &&
     task->sut_root;
 }
 
@@ -265,7 +265,7 @@ int su_task_is_running(su_task_r const task)
  *
  * @param self task handle
  * @param root pointer to the root object
- * 
+ *
  * @retval 0 if successful,
  * @retval -1 otherwise.
  */
@@ -275,16 +275,16 @@ int su_task_attach(su_task_r self, su_root_t *root)
     self->sut_root = root;
     return 0;
   }
-  else 
+  else
     return -1;
 }
 
-/** 
+/**
  * Get root pointer attached to a task handle.
  *
  * @param self task handle
  *
- * @return 
+ * @return
  * A pointer to root object attached to the task handle, or NULL if no root
  * object has been attached.
  */
@@ -307,7 +307,7 @@ int su_task_detach(su_task_r self)
 
 /**
  * Return the timer list associated with given task.
- * 
+ *
  * @param task task handle
  *
  * @return A timer list of the task. If there are no timers, it returns
@@ -408,7 +408,7 @@ su_root_t *su_root_create_with_port(su_root_magic_t *magic,
     /* This one creates a new reference to port */
     su_task_new(self->sur_task, self, port);
     /* ... so we zap the old one below */
-  } 
+  }
 
   su_port_decref(port, "su_root_create_with_port");
 
@@ -416,7 +416,7 @@ su_root_t *su_root_create_with_port(su_root_magic_t *magic,
 }
 
 /** Destroy a root object.
- * 
+ *
  *  Stop and free an instance of su_root_t
  *
  * @param self     pointer to a root object.
@@ -541,7 +541,7 @@ struct _GSource *su_root_gsource(su_root_t *self)
   return su_port_gsource(self->sur_port);
 }
 
-/** Register a su_wait_t object. 
+/** Register a su_wait_t object.
  *
  *  The function su_root_register() registers a su_wait_t object. The wait
  *  object, a callback function and a argument are stored to the root
@@ -655,7 +655,7 @@ int su_root_eventmask(su_root_t *self, int index, int socket, int events)
  *
  * @param self      pointer to root object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
- * 
+ *
  * @retval 0 multishot mode is disabled
  * @retval 1 multishot mode is enabled
  * @retval -1 an error occurred
@@ -808,8 +808,8 @@ _su_task_r su_root_parent(su_root_t const *self)
 }
 
 /** Add a pre-poll callback. */
-int su_root_add_prepoll(su_root_t *root, 
-			su_prepoll_f *callback, 
+int su_root_add_prepoll(su_root_t *root,
+			su_prepoll_f *callback,
 			su_prepoll_magic_t *magic)
 {
   if (root == NULL)
@@ -840,7 +840,7 @@ int su_root_release(su_root_t *root)
   return su_port_release(root->sur_port);
 }
 
-/** Obtain the root port from other thread. 
+/** Obtain the root port from other thread.
  *
  * @param root pointer to root object
  *
@@ -848,7 +848,7 @@ int su_root_release(su_root_t *root)
  * @retval -1 upon an error
  *
  * @ERRORS
- * @ERROR EFAULT 
+ * @ERROR EFAULT
  * @NEW_1_12_7
  */
 int su_root_obtain(su_root_t *root)
@@ -858,7 +858,7 @@ int su_root_obtain(su_root_t *root)
   return su_port_obtain(root->sur_port);
 }
 
-/**Check if a thread has obtained the root. 
+/**Check if a thread has obtained the root.
  *
  * @param root a pointer to root object
  *
@@ -883,13 +883,13 @@ int su_root_has_thread(su_root_t *root)
 /**
  * Allocate a su message of given size.
  *
- * Allocate a su message with given data size. 
+ * Allocate a su message with given data size.
  *
  * @param  rmsg   handle to the new message (may be uninitialized prior calling)
  * @param  size   size of the message data
  *
  * @retval  0 if successful,
- * @retval -1 if message allocation fails.  
+ * @retval -1 if message allocation fails.
  *
  * @NEW_1_12_8
  */
@@ -919,7 +919,7 @@ int su_msg_new(su_msg_r rmsg, size_t size)
  * @param  size   size of the message data
  *
  * @retval  0 if successful,
- * @retval -1 if message allocation fails.  
+ * @retval -1 if message allocation fails.
  */
 int su_msg_create(su_msg_r        rmsg,
 		  su_task_r const to,
@@ -932,17 +932,17 @@ int su_msg_create(su_msg_r        rmsg,
     SU_TASK_COPY(rmsg[0]->sum_from, from, su_msg_create);
     rmsg[0]->sum_func = wakeup;
     return 0;
-  } 
+  }
 
   return -1;
 }
 
 /** Add a delivery report function to a message.
- * 
+ *
  * The delivery report funcgtion gets called by the sending task after the
  * message was delivered and the message function was executed. (The
- * su_root_t message delivery loop calls su_msg_delivery_report() 
- * 
+ * su_root_t message delivery loop calls su_msg_delivery_report()
+ *
  */
 int su_msg_report(su_msg_r msg,
 		  su_msg_f report)
@@ -1068,7 +1068,7 @@ void su_msg_destroy(su_msg_r rmsg)
   }
 }
 
-/** Gets a pointer to the message data area. 
+/** Gets a pointer to the message data area.
  *
  * The function @c su_msg_data() returns a pointer to the message data
  * area. If @c rmsg contains a @c NULL handle, or message size is 0, @c NULL
@@ -1076,7 +1076,7 @@ void su_msg_destroy(su_msg_r rmsg)
  *
  * @param rmsg       message handle
  *
- * @return A pointer to the message data area is returned.  
+ * @return A pointer to the message data area is returned.
  */
 su_msg_arg_t *su_msg_data(su_msg_cr rmsg)
 {
@@ -1101,7 +1101,7 @@ isize_t su_msg_size(su_msg_cr rmsg)
  *
  * @param rmsg       message handle
  *
- * @return The task handle of the sender is returned.  
+ * @return The task handle of the sender is returned.
  */
 _su_task_r su_msg_from(su_msg_cr rmsg)
 {
@@ -1118,14 +1118,14 @@ _su_task_r su_msg_from(su_msg_cr rmsg)
  *
  * @param rmsg       message handle
  *
- * @return The task handle of the recipient is returned.  
+ * @return The task handle of the recipient is returned.
  */
 _su_task_r su_msg_to(su_msg_cr rmsg)
 {
   return rmsg[0] ? rmsg[0]->sum_to : NULL;
 }
 
-/** Remove references to 'from' and 'to' tasks from a message. 
+/** Remove references to 'from' and 'to' tasks from a message.
  *
  * @param rmsg       message handle
  */
@@ -1137,7 +1137,7 @@ void su_msg_remove_refs(su_msg_cr rmsg)
   }
 }
 
-/**Send a message. 
+/**Send a message.
  *
  * The function @c su_msg_send() sends the message. The message is added to
  * the recipients message queue, and recipient is waken up. The caller may
@@ -1156,7 +1156,7 @@ int su_msg_send(su_msg_r rmsg)
   if (rmsg[0]) {
     su_msg_t *msg = rmsg[0];
 
-    if (msg->sum_to->sut_port) 
+    if (msg->sum_to->sut_port)
       return su_port_send(msg->sum_to->sut_port, rmsg);
 
     su_msg_destroy(rmsg);
@@ -1164,7 +1164,7 @@ int su_msg_send(su_msg_r rmsg)
     return -1;
   }
 
-  return 0;		
+  return 0;
 }
 
 /** Send message to the @a to_task and mark @a from_task as sender.
@@ -1183,9 +1183,9 @@ SOFIAPUBFUN int su_msg_send_to(su_msg_r rmsg,
     if (wakeup)
       msg->sum_func = wakeup;
 
-    if (msg->sum_to->sut_port && 
+    if (msg->sum_to->sut_port &&
 	msg->sum_to->sut_port != to_task->sut_port) {
-      SU_TASK_ZAP(msg->sum_to, "su_msg_send_to"); 
+      SU_TASK_ZAP(msg->sum_to, "su_msg_send_to");
     }
 
     if (to_task->sut_port != NULL) {

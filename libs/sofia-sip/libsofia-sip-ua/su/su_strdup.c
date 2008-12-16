@@ -27,7 +27,7 @@
  * @CFILE su_strdup.c  Home-based string duplication functions
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Wed Jul 19 10:06:14 2000 ppessi
  */
 
@@ -44,7 +44,7 @@
  *
  * @param home  pointer to memory home
  * @param s     string to be duplicated
- * 
+ *
  * @return The function su_strdup() returns pointer to the newly created
  *         string, or @c NULL upon an error.
  */
@@ -70,7 +70,7 @@ char *su_strdup(su_home_t *home, char const *s)
  * @param home  pointer to memory home
  * @param s1    string to be first string
  * @param s2    string to be first string
- * 
+ *
  * @return Pointer to the newly created string is returned, or @c NULL upon
  * an error.
  */
@@ -104,7 +104,7 @@ char *su_strcat(su_home_t *home, char const *s1, char const *s2)
  *
  * @param home  pointer to memory home
  * @param ...  NULL-terminated list of strings to be concatenated
- * 
+ *
  * @return Pointer to the newly created string is returned, or @c NULL upon
  * an error.
  */
@@ -152,7 +152,7 @@ char *su_strcat_all(su_home_t *home, ...)
  * @param home  pointer to memory home
  * @param s     string to be duplicated
  * @param n     size of the resulting string
- * 
+ *
  * @return The function su_strndup() returns pointer to the newly created
  *         string, or @c NULL upon an error.
  */

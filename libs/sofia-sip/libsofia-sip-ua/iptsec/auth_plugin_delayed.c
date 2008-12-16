@@ -24,7 +24,7 @@
 
 /**@CFILE auth_plugin_delayed.c
  *
- * @brief Plugin for delayed authentication. 
+ * @brief Plugin for delayed authentication.
  *
  * This authentication plugin provides authentication operation that is
  * intentionally delayed. It serves as an example of server-side
@@ -61,7 +61,7 @@ static char const __func__[] = "auth_plugin_delayed";
 #include "sofia-sip/auth_module.h"
 #include "sofia-sip/auth_plugin.h"
 
-struct auth_plugin_t 
+struct auth_plugin_t
 {
   su_root_t      *ap_root;
   auth_scheme_t  *ap_base;
@@ -81,7 +81,7 @@ static void delayed_auth_method(auth_mod_t *am,
 				msg_auth_t *auth,
 				auth_challenger_t const *ach);
 
-static void delayed_auth_challenge(auth_mod_t *am, 
+static void delayed_auth_challenge(auth_mod_t *am,
 				   auth_status_t *as,
 				   auth_challenger_t const *ach);
 
@@ -89,12 +89,12 @@ static void delayed_auth_cancel(auth_mod_t *am, auth_status_t *as);
 
 static void delayed_auth_destroy(auth_mod_t *am);
 
-auth_scheme_t auth_scheme_delayed[1] = 
+auth_scheme_t auth_scheme_delayed[1] =
   {{
       "Delayed",
       sizeof (struct { auth_mod_t mod[1]; auth_plugin_t plug[1]; }),
       delayed_auth_init,
-      delayed_auth_method, 
+      delayed_auth_method,
       delayed_auth_challenge,
       delayed_auth_cancel,
       delayed_auth_destroy
@@ -118,13 +118,13 @@ static int delayed_auth_init(auth_mod_t *am,
 
     retval = 0;
   }
-    
+
   ta_end(ta);
 
   return retval;
 }
 
-struct auth_splugin_t 
+struct auth_splugin_t
 {
   void const      *asp_cookie;
   auth_splugin_t  *asp_next;
@@ -152,7 +152,7 @@ static void delayed_auth_method(auth_mod_t *am,
   su_msg_r mamc = SU_MSG_R_INIT;
   auth_splugin_t *asp;
 
-  if (su_msg_create(mamc, 
+  if (su_msg_create(mamc,
 		    su_root_task(ap->ap_root),
 		    su_root_task(ap->ap_root),
 		    delayed_auth_method_recv,
@@ -202,7 +202,7 @@ static void delayed_auth_method_recv(su_root_magic_t *rm,
     asp->asp_as->as_callback(asp->asp_as->as_magic, asp->asp_as);
 }
 
-static void delayed_auth_challenge(auth_mod_t *am, 
+static void delayed_auth_challenge(auth_mod_t *am,
 				   auth_status_t *as,
 				   auth_challenger_t const *ach)
 {
@@ -217,7 +217,7 @@ static void delayed_auth_cancel(auth_mod_t *am, auth_status_t *as)
   auth_plugin_t *ap = AUTH_PLUGIN(am);
 
   (void)ap;			/* xyzzy */
-  
+
   if (as->as_plugin && as->as_plugin->asp_cookie == delayed_asp_cookie)
     as->as_plugin->asp_canceled = 1;
 

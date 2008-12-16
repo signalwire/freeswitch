@@ -24,13 +24,13 @@
 
 /**@ingroup su_socket
  * @CFILE su.c OS-independent socket functions
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
 
-#include "config.h" 
+#include "config.h"
 
 #if HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
@@ -68,12 +68,12 @@ extern int su_get_local_ip_addr(su_sockaddr_t *su);
 
 /** Create a socket endpoint for communication.
  *
- * @param af addressing family 
- * @param socktype socket type 
+ * @param af addressing family
+ * @param socktype socket type
  * @param proto protocol number specific to the addressing family
  *
  * The newly created socket is nonblocking unless global variable
- * su_socket_blocking is set to true. 
+ * su_socket_blocking is set to true.
  *
  * Also, the newly created socket is closed on exec() if global variable
  * su_socket_close_on_exec is set to true. Note that a multithreaded program
@@ -109,7 +109,7 @@ su_socket_t su_socket(int af, int socktype, int proto)
 
   /* Assign socket to an already active access point (interface) */
   ioctl(s, SIOCSIFNAME, &ifr);
-  ioctl(s, SIOCIFSTART, &ifr);	
+  ioctl(s, SIOCIFSTART, &ifr);
 #endif
 
   return s;
@@ -123,7 +123,7 @@ void *aConnection;
 extern void *su_localinfo_ap_set(su_sockaddr_t *su, int *index);
 extern int su_localinfo_ap_deinit(void *aconn);
 #define NUMIFS 64
-  
+
 int su_localinfo_ap_name_to_index(int ap_index)
 {
   struct ifconf ifc;
@@ -136,7 +136,7 @@ int su_localinfo_ap_name_to_index(int ap_index)
   s= socket(AF_INET, SOCK_STREAM, 0);
   if (s < 0)
     return -1;
-  
+
   ifc.ifc_len = NUMIFS * sizeof (struct ifreq);
 
   memset(buf, 0, ifc.ifc_len);
@@ -179,12 +179,12 @@ return -1;
 #error Unknown index field in struct ifreq
 #endif
 
-    if (ap_index == if_index) 
+    if (ap_index == if_index)
     {
       strncpy(su_global_ap_name, (const char *) if_name, sizeof(su_global_ap_name));
       error = 0;
     };
-  
+
 #else
 #error su_localinfo() cannot map interface name to number
 #endif
@@ -200,8 +200,8 @@ return -1;
 /** Initialize socket implementation.
  *
  * Before using any sofia-sip-ua functions, the application should call
- * su_init() in order to initialize run-time environment including sockets. 
- * This function may prepare plugins if there are any. 
+ * su_init() in order to initialize run-time environment including sockets.
+ * This function may prepare plugins if there are any.
  *
  * @par POSIX Implementation
  * The su_init() initializes debugging logs and ignores the SIGPIPE signal.
@@ -260,7 +260,7 @@ int su_setblocking(su_socket_t s, int blocking)
   if (mode < 0)
      return -1;
 
-  if (blocking) 
+  if (blocking)
     mode &= ~(O_NDELAY | O_NONBLOCK);
   else
     mode |= O_NDELAY | O_NONBLOCK;
@@ -320,7 +320,7 @@ int su_is_blocking(int errcode)
 int su_setblocking(su_socket_t s, int blocking)
 {
   unsigned long nonBlock = !blocking;
-  
+
   return ioctlsocket(s, FIONBIO, &nonBlock);
 }
 
@@ -350,7 +350,7 @@ int su_getsocktype(su_socket_t s)
 
 int su_setreuseaddr(su_socket_t s, int reuse)
 {
-  return setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 
+  return setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
 		    (void *)&reuse, (socklen_t)sizeof(reuse));
 }
 
@@ -442,7 +442,7 @@ ssize_t su_recvfrom(su_socket_t s, void *buffer, size_t length, int flags,
   if (length > INT_MAX)
     length = INT_MAX;
 
-  retval = recvfrom(s, buffer, (int)length, flags, 
+  retval = recvfrom(s, buffer, (int)length, flags,
 		    &from->su_sa, fromlen ? &ilen : NULL);
 
   if (fromlen)
@@ -458,7 +458,7 @@ issize_t su_vsend(su_socket_t s,
 {
   int ret;
   DWORD bytes_sent = (DWORD)su_failure;
-  
+
   ret = WSASendTo(s,
 		  (LPWSABUF)iov,
 		  (DWORD)iovlen,
@@ -552,13 +552,13 @@ int su_cmp_sockaddr(su_sockaddr_t const *a, su_sockaddr_t const *b)
 
   if ((rv = a->su_family - b->su_family))
     return rv;
-  
+
   if (a->su_family == AF_INET)
-    rv = memcmp(&a->su_sin.sin_addr, &b->su_sin.sin_addr, 
+    rv = memcmp(&a->su_sin.sin_addr, &b->su_sin.sin_addr,
 		sizeof(struct in_addr));
 #if SU_HAVE_IN6
   else if (a->su_family == AF_INET6)
-    rv = memcmp(&a->su_sin6.sin6_addr, &b->su_sin6.sin6_addr, 
+    rv = memcmp(&a->su_sin6.sin6_addr, &b->su_sin6.sin6_addr,
 		sizeof(struct in6_addr));
 #endif
   else
@@ -566,7 +566,7 @@ int su_cmp_sockaddr(su_sockaddr_t const *a, su_sockaddr_t const *b)
 
   if (rv)
     return rv;
-  
+
   return a->su_port - b->su_port;
 }
 
@@ -592,7 +592,7 @@ int su_match_sockaddr(su_sockaddr_t const *a, su_sockaddr_t const *b)
   if (a->su_family == 0 || SU_SOCKADDR_INADDR_ANY(a))
     ;
   else if (a->su_family == AF_INET) {
-    if (memcmp(&a->su_sin.sin_addr, &b->su_sin.sin_addr, 
+    if (memcmp(&a->su_sin.sin_addr, &b->su_sin.sin_addr,
 	       sizeof(struct in_addr)))
       return 0;
   }
@@ -600,7 +600,7 @@ int su_match_sockaddr(su_sockaddr_t const *a, su_sockaddr_t const *b)
   else if (a->su_family == AF_INET6) {
     if (a->su_scope_id != 0 && a->su_scope_id != b->su_scope_id)
       return 0;
-    if (memcmp(&a->su_sin6.sin6_addr, &b->su_sin6.sin6_addr, 
+    if (memcmp(&a->su_sin6.sin6_addr, &b->su_sin6.sin6_addr,
 	       sizeof(struct in6_addr)))
       return 0;
   }
@@ -610,7 +610,7 @@ int su_match_sockaddr(su_sockaddr_t const *a, su_sockaddr_t const *b)
 
   if (a->su_port == 0)
     return 1;
-  
+
   return a->su_port == b->su_port;
 }
 
@@ -624,10 +624,10 @@ void su_canonize_sockaddr(su_sockaddr_t *su)
   if (!IN6_IS_ADDR_V4MAPPED(&su->su_sin6.sin6_addr) &&
       !IN6_IS_ADDR_V4COMPAT(&su->su_sin6.sin6_addr))
     return;
-  
+
   su->su_family = AF_INET;
   su->su_array32[1] = su->su_array32[5];
-  su->su_array32[2] = 0; 
+  su->su_array32[2] = 0;
   su->su_array32[3] = 0;
 #endif
 }

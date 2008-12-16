@@ -24,7 +24,7 @@
 
 #ifndef MSG_MCLASS_HASH_H
 /** Defined when <sofia-sip/msg_mclass_hash.h> has been included. */
-#define MSG_MCLASS_HASH_H 
+#define MSG_MCLASS_HASH_H
 
 /**@ingroup msg_parser
  * @file sofia-sip/msg_mclass_hash.h
@@ -34,7 +34,7 @@
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Tue Aug 21 16:03:45 2001 ppessi
- * 
+ *
  */
 
 #include <sofia-sip/su_config.h>
@@ -49,7 +49,7 @@ SOFIA_BEGIN_DECLS
 #define MC_HASH(s, n)     (msg_header_name_hash(s, NULL) % (unsigned)(n))
 
 /** Hash header name */
-su_inline 
+su_inline
 unsigned short msg_header_name_hash(char const *s, isize_t *llen)
 {
   unsigned short hash = 0;

@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -13,7 +13,7 @@
  * 3. Neither the name of the project nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -83,7 +83,7 @@ static const char in6_addrany[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 };
-static const char in_loopback[] = { 127, 0, 0, 1 }; 
+static const char in_loopback[] = { 127, 0, 0, 1 };
 static const char in6_loopback[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
 };
@@ -100,7 +100,7 @@ static struct gai_afd {
 	int a_socklen;
 	int a_off;
 	const char *a_addrany;
-	const char *a_loopback;	
+	const char *a_loopback;
 } gai_afdl [] = {
 #if SU_HAVE_IN6
 #define N_INET6 0
@@ -142,7 +142,7 @@ static int get_name(const char *, struct gai_afd *,
 static int get_addr(const char *, int, struct addrinfo **,
 		    struct addrinfo *, int);
 static int str_isnumber(const char *);
-	
+
 #define GET_CANONNAME(ai, str) \
 if (pai->ai_flags & AI_CANONNAME) {\
 	if (((ai)->ai_canonname = (char *)malloc(strlen(str) + 1)) != NULL) {\
@@ -243,7 +243,7 @@ getaddrinfo(hostname, servname, hints, res)
 	pai->ai_addr = NULL;
 	pai->ai_next = NULL;
 	port = GAI_ANY;
-	
+
 	if (hostname == NULL && servname == NULL)
 		return EAI_NONAME;
 	if (hints) {
@@ -373,7 +373,7 @@ getaddrinfo(hostname, servname, hints, res)
 			}
 		}
 	}
-	
+
 	/*
 	 * hostname == NULL.
 	 * passive socket -> anyaddr (0.0.0.0 or ::)
@@ -408,7 +408,7 @@ getaddrinfo(hostname, servname, hints, res)
 		else
 			ERR(EAI_FAMILY);
 	}
-	
+
 	/* hostname as numeric name */
 	for (i = 0; gai_afdl[i].a_af; i++) {
 		if (su_inet_pton(gai_afdl[i].a_af, hostname, pton)) {
@@ -432,7 +432,7 @@ getaddrinfo(hostname, servname, hints, res)
 				break;
 #endif
 			}
-			
+
 			if (pai->ai_family == gai_afdl[i].a_af ||
 			    pai->ai_family == PF_UNSPEC) {
 				if (! (pai->ai_flags & AI_CANONNAME)) {
@@ -450,7 +450,7 @@ getaddrinfo(hostname, servname, hints, res)
 				 */
 				get_name(pton, &gai_afdl[i], &top, pton, pai, port);
 				goto good;
-			} else 
+			} else
 				ERR(EAI_FAMILY);	/*xxx*/
 		}
 	}
@@ -489,7 +489,7 @@ get_name(addr, gai_afd, res, numaddr, pai, port0)
 	struct hostent *hp;
 	struct addrinfo *cur;
 	int error = 0, h_error;
-	
+
 #if SU_HAVE_IN6
 	hp = getipnodebyaddr(addr, gai_afd->a_addrlen, gai_afd->a_af, &h_error);
 #else
@@ -500,7 +500,7 @@ get_name(addr, gai_afd, res, numaddr, pai, port0)
 		GET_CANONNAME(cur, hp->h_name);
 	} else
 		GET_AI(cur, gai_afd, numaddr, port);
-	
+
 #if SU_HAVE_IN6
 	if (hp)
 		freehostent(hp);
@@ -568,7 +568,7 @@ get_addr(hostname, af, res, pai, port0)
 	if ((hp->h_name == NULL) || (hp->h_name[0] == 0) ||
 	    (hp->h_addr_list[0] == NULL))
 		ERR(EAI_FAIL);
-	
+
 	for (i = 0; (ap = hp->h_addr_list[i]) != NULL; i++) {
 		switch (af) {
 #if SU_HAVE_IN6
@@ -700,7 +700,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 #else
 	len = salen;
 #endif
-	
+
 	family = sa->sa_family;
 	for (i = 0; gni_afdl[i].a_af; i++)
 		if (gni_afdl[i].a_af == family) {
@@ -708,10 +708,10 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 			goto found;
 		}
 	return ENI_FAMILY;
-	
+
  found:
 	if (len != gni_afd->a_socklen) return ENI_SALEN;
-	
+
 	port = ((struct gni_sockinet *)sa)->si_port; /* network byte order */
 	addr = (char *)sa + gni_afd->a_off;
 
@@ -739,7 +739,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 			flags |= NI_NUMERICHOST;
 		v4a >>= IN_CLASSA_NSHIFT;
 		if (v4a == 0 || v4a == IN_LOOPBACKNET)
-			flags |= NI_NUMERICHOST;			
+			flags |= NI_NUMERICHOST;
 		break;
 #if SU_HAVE_IN6
 	case AF_INET6:
@@ -799,7 +799,7 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 #endif	/* !HAVE_GETNAMEINFO */
 
 #if !HAVE_FREEADDRINFO
-static 
+static
 void
 freeaddrinfo(ai)
 	struct addrinfo *ai;
@@ -820,13 +820,13 @@ freeaddrinfo(ai)
 #endif
 
 #if !HAVE_GAI_STRERROR
-static 
+static
 char *
 gai_strerror(ecode)
 	int ecode;
 {
   switch (ecode) {
-  case 0: 
+  case 0:
     return "success.";
 #if defined(EAI_ADDRFAMILY)
   case EAI_ADDRFAMILY:
@@ -908,7 +908,7 @@ int su_getaddrinfo(char const *node, char const *service,
     int socktype;
 
     socktype = hints->ai_socktype;
-    
+
     if (!(socktype == 0 ||
 	  socktype == SOCK_SEQPACKET ||
 	  socktype == SOCK_STREAM ||
@@ -950,7 +950,7 @@ int su_getaddrinfo(char const *node, char const *service,
 	continue;
       }
 
-      if (ai->ai_family != AF_INET 
+      if (ai->ai_family != AF_INET
 #if SU_HAVE_IN6
 	  && ai->ai_family != AF_INET6
 #endif
@@ -992,7 +992,7 @@ su_getnameinfo(const su_sockaddr_t *su, size_t sulen,
 	       int flags)
 {
   return getnameinfo(&su->su_sa, (socklen_t)sulen,
-		     return_host, (socklen_t)hostlen, 
-		     return_serv, (socklen_t)servlen, 
+		     return_host, (socklen_t)hostlen,
+		     return_serv, (socklen_t)servlen,
 		     flags);
 }

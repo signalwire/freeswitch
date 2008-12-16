@@ -24,7 +24,7 @@
 
 #ifndef AUTH_CLIENT_H
 /** Defined when <sofia-sip/auth_client.h> has been included. */
-#define AUTH_CLIENT_H 
+#define AUTH_CLIENT_H
 
 /**@file sofia-sip/auth_client.h
  *
@@ -49,7 +49,7 @@ SOFIA_BEGIN_DECLS
 typedef struct auth_client_s auth_client_t;
 
 SOFIAPUBFUN
-int auc_challenge(auth_client_t **auc, su_home_t *home, 
+int auc_challenge(auth_client_t **auc, su_home_t *home,
 		  msg_auth_t const *auth,
 		  msg_hclass_t *crcl);
 
@@ -62,14 +62,14 @@ int auc_info(auth_client_t **auc_list,
 	     msg_hclass_t *credential_class);
 
 SOFIAPUBFUN
-int auc_all_credentials(auth_client_t **auc_list, 
+int auc_all_credentials(auth_client_t **auc_list,
 			char const *scheme,
-			char const *realm, 
+			char const *realm,
 			char const *user,
 			char const *pass);
 
 SOFIAPUBFUN
-int auc_clear_credentials(auth_client_t **auc_list, 
+int auc_clear_credentials(auth_client_t **auc_list,
 			  char const *scheme,
 			  char const *realm);
 
@@ -81,15 +81,15 @@ int auc_has_authorization(auth_client_t **auc_list);
 
 SOFIAPUBFUN
 int auc_authorization(auth_client_t **auc_list, msg_t *msg, msg_pub_t *pub,
-		      char const *method, 
-		      url_t const *url, 
+		      char const *method,
+		      url_t const *url,
 		      msg_payload_t const *body);
 
 SOFIAPUBFUN
-int auc_authorization_headers(auth_client_t **auc_list, 
+int auc_authorization_headers(auth_client_t **auc_list,
 			      su_home_t *home,
-			      char const *method, 
-			      url_t const *url, 
+			      char const *method,
+			      url_t const *url,
 			      msg_payload_t const *body,
 			      msg_header_t **return_headers);
 
@@ -105,4 +105,4 @@ int auc_register_plugin(auth_client_plugin_t const *plugin);
 
 SOFIA_END_DECLS
 
-#endif 
+#endif

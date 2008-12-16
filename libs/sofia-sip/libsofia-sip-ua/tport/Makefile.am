@@ -21,7 +21,7 @@ INCLUDES = 		-I$(srcdir)/../bnf -I../bnf \
 
 noinst_LTLIBRARIES = 	libtport.la
 
-bin_PROGRAMS = 		
+bin_PROGRAMS =
 
 check_PROGRAMS =	test_tport
 

@@ -88,7 +88,7 @@ int http_request_complete(msg_t *msg)
       msg_fragment_clear(http->http_content_length->l_common);
     }
   }
-  
+
   if (!http->http_separator)
     http->http_separator = http_separator_create(home);
 
@@ -118,13 +118,13 @@ int http_strip_hostport(url_t *url)
 
 /** Add a Content-Length and separator to a message */
 int http_message_complete(msg_t *msg, http_t *http)
-{ 
+{
 #if 1
   if (!http->http_content_length) {
     http_content_length_t *l;
     http_payload_t *pl;
     size_t len = 0;
-    
+
     for (pl = http->http_payload; pl; pl = pl->pl_next)
       len += pl->pl_len;
 
@@ -148,8 +148,8 @@ int http_message_complete(msg_t *msg, http_t *http)
 }
 
 /** Add headers from the request to the response message. */
-int http_complete_response(msg_t *msg, 
-			   int status, char const *phrase, 
+int http_complete_response(msg_t *msg,
+			   int status, char const *phrase,
 			   http_t const *request)
 {
   su_home_t *home = msg_home(msg);
@@ -210,7 +210,7 @@ int http_header_field_e(char b[], int bsiz, http_header_t const *h, int flags)
   return h->sh_class->hc_print(b, bsiz, h, flags);
 }
 
-http_header_t *http_header_format(su_home_t *home, 
+http_header_t *http_header_format(su_home_t *home,
 				  msg_hclass_t *hc,
 				  char const *fmt,
 				  ...)

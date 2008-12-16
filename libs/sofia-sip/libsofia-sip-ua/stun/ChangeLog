@@ -11,14 +11,14 @@
 2006-05-07  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* sofia-sip/stun.h: Added new NAT types stun_nattype_t. The
-	naming is now compliant with the terms used by IETF BEHAVE 
+	naming is now compliant with the terms used by IETF BEHAVE
 	documents.
 
 2006-05-06  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
 	* sofia-sip/stun.h (stun_nattype_str): Added a new function to the
 	public API.
-	
+
 	* sofia-sip/stun.h (stun_nattype): Modified the function signature.
 
 	* sofia-sip/stun.h (stun_state_t): Moved all request-specific states
@@ -54,7 +54,7 @@
 
 2006-02-09  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* stun_tag.h: Added STUN_DOMAIN() and STUN_REQUIRE_INTEGRITY(). 
+	* stun_tag.h: Added STUN_DOMAIN() and STUN_REQUIRE_INTEGRITY().
 	Deprecated STUN_INTEGRITY.
 
 	* stun.c: Mark wait entries as deregistered after
@@ -95,7 +95,7 @@
 	* stun_internal.h: included stun_common.h
 
 	* torture_stun.c: updated get_localinfo() to get_address()
-	
+
 2006-01-13  Martti Mela  <martti.mela@nokia.com>
 
 	* stun.c: actions are now very separate from each other. Bug fixes.
@@ -111,7 +111,7 @@
 	glueing into TPORT.
 
 	* stunc.c: Removed unnecessary su_root_break()s.
-	
+
 2006-01-10  Martti Mela  <martti.mela@nokia.com>
 
 	* stun.c: First working version of get_lifetime functionality. All
@@ -165,7 +165,7 @@
 	stun_handle functionality.
 
 	* stunc.c, torture_stun.c: modified in accordance to stun.h.
-	
+
 2005-12-16  Martti Mela  <martti.mela@nokia.com>
 
 	* stun.h: changed stun_engine_t to stun_handle_t.
@@ -175,7 +175,7 @@
 	representation, too.
 
 	* stunc.c, torture_stun.c: behave now in conformance to stun.h
-	
+
 2005-12-15  Martti Mela  <martti.mela@nokia.com>
 
 	* STUN updated to work asynchronously.
@@ -189,7 +189,7 @@
 
 2005-11-19  Kai Vehmanen  <kaiv@.devtag.AUTHORS>
 
-	* stun.h (stun_set_uname_pwd): Changed from unsigned to signed 
+	* stun.h (stun_set_uname_pwd): Changed from unsigned to signed
 	char pointers for passing username and password.
 
 2005-11-18  Kai Vehmanen  <kai.vehmanen@nokia.com>
@@ -207,7 +207,7 @@
 
 2005-10-24  Kai Vehmanen  <kai.vehmanen@nokia.com>
 
-	* stun.c: Fixed stun_bind() behaviour when STUN 
+	* stun.c: Fixed stun_bind() behaviour when STUN
 	discovery fails. Added enum for tracking client
 	state.
 

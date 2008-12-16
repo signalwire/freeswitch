@@ -14,7 +14,7 @@
 
 noinst_LTLIBRARIES = 	libsu.la
 
-bin_PROGRAMS = 		addrinfo localinfo 
+bin_PROGRAMS = 		addrinfo localinfo
 
 check_PROGRAMS = 	torture_su torture_su_port \
 			torture_su_alloc torture_su_time torture_su_tag \

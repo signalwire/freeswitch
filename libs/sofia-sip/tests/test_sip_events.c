@@ -72,7 +72,7 @@ int save_until_notified_and_responded(CONDITION_PARAMS)
 		   NUTAG_AUTH("Digest:\"test-proxy\":charlie:secret"),
 		   TAG_END());
     }
-    else if (status >= 300) 
+    else if (status >= 300)
       return 1;
     else if (status >= 200)
       ep->flags.bit1 = 1;

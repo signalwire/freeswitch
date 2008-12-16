@@ -24,14 +24,14 @@
 
 #ifndef SU_TAG_CLASS_H
 /** Defined when <sofia-sip/su_tag_class.h> has been included. */
-#define SU_TAG_CLASS_H 
+#define SU_TAG_CLASS_H
 
 /**@SU_TAG
  * @file  su_tag_class.h
- * @brief Tag class interface for object-oriented tags 
+ * @brief Tag class interface for object-oriented tags
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Wed Feb 21 00:49:41 2001 ppessi
  */
 

@@ -24,7 +24,7 @@
 
 #ifndef MSG_TAG_CLASS_H
 /** Defined when <sofia-sip/msg_tag_class.h> has been included */
-#define MSG_TAG_CLASS_H 
+#define MSG_TAG_CLASS_H
 
 /**@file sofia-sip/msg_tag_class.h
  * @brief Functions for constructing per-protocol tag classes.
@@ -44,15 +44,15 @@ SOFIAPUBFUN int msghdrtag_snprintf(tagi_t const *t, char b[], size_t size);
 SOFIAPUBFUN size_t msghdrtag_xtra(tagi_t const *t, size_t offset);
 SOFIAPUBFUN tagi_t *msghdrtag_dup(tagi_t *dst, tagi_t const *src,
 				  void **inout_buffer);
-SOFIAPUBFUN int msghdrtag_scan(tag_type_t tt, su_home_t *home, 
-			       char const *s, 
+SOFIAPUBFUN int msghdrtag_scan(tag_type_t tt, su_home_t *home,
+			       char const *s,
 			       tag_value_t *return_value);
-SOFIAPUBFUN tagi_t *msghdrtag_filter(tagi_t *dst, tagi_t const f[], 
-				     tagi_t const *src, 
+SOFIAPUBFUN tagi_t *msghdrtag_filter(tagi_t *dst, tagi_t const f[],
+				     tagi_t const *src,
 				     void **inout_buffer);
 
 SOFIAPUBFUN tagi_t *msgstrtag_filter(tagi_t *dst, tagi_t const f[],
-				     tagi_t const *src, 
+				     tagi_t const *src,
 				     void **inout_buffer);
 
 SOFIAPUBFUN int msgobjtag_snprintf(tagi_t const *t, char b[], size_t size);

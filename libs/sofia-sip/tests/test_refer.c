@@ -239,7 +239,7 @@ int test_refer0(struct context *ctx, char const *tests,
     printf("TEST %s.2: B refers A to C\n", tests);
 
   if (b_refer != b_call)
-    TEST_1(b_refer->nh = 
+    TEST_1(b_refer->nh =
 	   nua_handle(b->nua, b_refer, SIPTAG_TO(a->to), TAG_END()));
 
   *sip_refer_to_init(r0)->r_url = *c->contact->m_url;
@@ -356,7 +356,7 @@ int test_refer0(struct context *ctx, char const *tests,
     Events in A:
     nua_i_subscribe, nua_r_notify
   */
-  TEST_1(e = a->events->head); 
+  TEST_1(e = a->events->head);
   if (e->data->e_event == nua_r_notify)
     TEST_1(e = e->next);
   TEST_E(e->data->e_event, nua_i_subscribe);
@@ -371,7 +371,7 @@ int test_refer0(struct context *ctx, char const *tests,
      Events in B after nua_subscribe():
      nua_r_subscribe, nua_i_notify
   */
-  TEST_1(e = b->events->head); 
+  TEST_1(e = b->events->head);
   if (e->data->e_event == nua_i_notify) {
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
@@ -575,7 +575,7 @@ int test_refer0(struct context *ctx, char const *tests,
   TEST(callstate(e->data->e_tags), nua_callstate_terminated); /* TERMINATED */
   TEST_1(!e->next);
   free_events_in_list(ctx, a->events);
-  
+
   /* Transitions of B:
      READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state
   */
@@ -685,7 +685,7 @@ int notify_until_terminated(CONDITION_PARAMS)
 
     assert(nua_handle_has_events(r_call->nh));
 
-    pl = sip_payload_format(NULL, "SIP/2.0 %u %s\r\n", 
+    pl = sip_payload_format(NULL, "SIP/2.0 %u %s\r\n",
 			    st->st_status, st->st_phrase);
 
     NOTIFY(ep, r_call, r_call->nh,
@@ -761,7 +761,7 @@ int test_challenge_refer(struct context *ctx)
   TEST_1(sip->sip_refer_to);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
   TEST(e->data->e_status, 200);
-  TEST_1(!e->next); 
+  TEST_1(!e->next);
   /*
      Events in C after nua_refer():
      nua_r_refer
@@ -780,7 +780,7 @@ int test_challenge_refer(struct context *ctx)
   TEST(e->data->e_status, 480);
 
   TEST_1(!e->next);
-  
+
   free_events_in_list(ctx, a->events);
   free_events_in_list(ctx, c->events);
 

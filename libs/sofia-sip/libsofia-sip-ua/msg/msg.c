@@ -95,7 +95,7 @@ msg_t *msg_create(msg_mclass_t const *mc, int flags)
  * destroyed.
  *
  * @param msg   message of which a reference is created
- * 
+ *
  * @return
  * A pointer to a message.
  */
@@ -137,7 +137,7 @@ void msg_set_parent(msg_t *kid, msg_t *dad)
  * @relatesalso msg_s
  *
  * @param ref pointer to msg object
- * 
+ *
  * @deprecated Use msg_destroy() instead.
  */
 void msg_ref_destroy(msg_t *ref)
@@ -154,7 +154,7 @@ void msg_ref_destroy(msg_t *ref)
 void msg_destroy(msg_t *msg)
 {
   msg_t *parent;
-  
+
   for (; msg; msg = parent) {
     int refs;
     su_home_mutex_lock(msg->m_home);
@@ -174,9 +174,9 @@ void msg_destroy(msg_t *msg)
 /**Retrieve public message structure.
  *
  * Get a pointer to the public message structure.
- * 
+ *
  * @param msg pointer to msg object
- * 
+ *
  * @returns
  * A pointer to the public message structure, or NULL if none.
  */
@@ -194,10 +194,10 @@ msg_pub_t *msg_object(msg_t const *msg)
  *
  * Get a pointer to the public message structure of the
  * given protocol.
- * 
+ *
  * @param msg pointer to msg object
  * @param tag tag of public message structure
- * 
+ *
  * @returns
  * A pointer to the public message structure, or NULL if there is none or
  * the message is not for desired protocol.
@@ -216,9 +216,9 @@ msg_pub_t *msg_public(msg_t const *msg, void *tag)
  *
  * Get a pointer to the message class object
  * (factory object for the message).
- * 
+ *
  * @param msg pointer to msg object
- * 
+ *
  * @returns
  * A pointer to the message class, or NULL if none.
  */
@@ -239,7 +239,7 @@ msg_mclass_t const *msg_mclass(msg_t const *msg)
  * Zero the address and addressinfo structures associated with the message.
  *
  * @sa msg_addrinfo(), msg_set_address(), msg_get_address(), msg_addr_copy().
- */ 
+ */
 void msg_addr_zero(msg_t *msg)
 {
   memset(&msg->m_addr, 0, sizeof(&msg->m_addr));
@@ -249,7 +249,7 @@ void msg_addr_zero(msg_t *msg)
   msg->m_addrinfo.ai_addr = &msg->m_addr->su_sa;
 }
 
-/** Get pointer to socket address structure. 
+/** Get pointer to socket address structure.
  *
  * @relatesalso msg_s
  *
@@ -269,7 +269,7 @@ su_sockaddr_t *msg_addr(msg_t *msg)
  *
  * @param msg pointer to msg object
  * @param su pointer to socket address structure
- * @param return_len return parameter value for length 
+ * @param return_len return parameter value for length
  *                    of socket address structure
  *
  * @sa msg_addrinfo(), msg_set_address(), msg_addr_zero(), msg_addr_copy().
@@ -287,13 +287,13 @@ int msg_get_address(msg_t *msg, su_sockaddr_t *su, socklen_t *return_len)
   return -1;
 }
 
-/** Set message address. 
+/** Set message address.
  *
  * @relatesalso msg_s
  *
  * Copy the supplied socket address to the socket address structure
  * associated with the message.
- * 
+ *
  * @param msg pointer to msg object
  * @param su pointer to socket address structure
  * @param sulen length of socket address structure
@@ -337,7 +337,7 @@ su_addrinfo_t *msg_addrinfo(msg_t *msg)
  * Copy the addrinfo and socket address structures from @a src to the @a dst
  * message object.
  *
- * @param dst pointer to destination message object 
+ * @param dst pointer to destination message object
  * @param src pointer to source message object
  *
  * @sa msg_addrinfo(), msg_get_address(), msg_set_address(), msg_addr_zero().
@@ -347,10 +347,10 @@ void msg_addr_copy(msg_t *dst, msg_t const *src)
   dst->m_addrinfo = src->m_addrinfo;
   dst->m_addrinfo.ai_next = NULL;
   dst->m_addrinfo.ai_canonname = NULL;
-  memcpy(dst->m_addrinfo.ai_addr = &dst->m_addr->su_sa, 
+  memcpy(dst->m_addrinfo.ai_addr = &dst->m_addr->su_sa,
 	 src->m_addr, src->m_addrinfo.ai_addrlen);
   if (dst->m_addrinfo.ai_addrlen < sizeof(dst->m_addr))
-    memset((char *)dst->m_addr + dst->m_addrinfo.ai_addrlen, 0, 
+    memset((char *)dst->m_addr + dst->m_addrinfo.ai_addrlen, 0,
 	   sizeof(dst->m_addr) - dst->m_addrinfo.ai_addrlen);
 }
 
@@ -361,9 +361,9 @@ void msg_addr_copy(msg_t *dst, msg_t const *src)
  *
  * If the message parser fails to parse certain headers in the message, it
  * sets the corresponding extract error flags. The flags corresponding to
- * each header are stored in the message parser (msg_mclass_t) structure. 
- * They are set when the header is added to the parser table. 
- * 
+ * each header are stored in the message parser (msg_mclass_t) structure.
+ * They are set when the header is added to the parser table.
+ *
  * The SIP flags are defined in <sofia-sip/sip_headers.h>. For well-known
  * SIP headers, the flags for each header are listed in a separate text file
  * (sip_bad_mask) read by msg_parser.awk.

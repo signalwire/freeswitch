@@ -23,8 +23,8 @@
  */
 
 /**@ingroup msg_headers
- * @CFILE msg_header_copy.c 
- * 
+ * @CFILE msg_header_copy.c
+ *
  * Copying and duplicating headers structures.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -65,7 +65,7 @@ size_t msg_params_copy_xtra(msg_param_t const pp[], size_t offset)
 /** Copy a vector of parameters */
 su_inline
 char *msg_params_copy(char *b, size_t size,
-		      msg_param_t **dst, 
+		      msg_param_t **dst,
 		      msg_param_t const src[])
 {
   size_t n = msg_params_count(src);
@@ -90,11 +90,11 @@ char *msg_params_copy(char *b, size_t size,
  * @param hc   header class for the copied header
  * @param src  pointer to a header object
  *
- * @return 
+ * @return
  * The function @c msg_header_copy_as() returns a pointer to the the shallow copy
  * of the header object, or @c NULL upon an error.
  */
-static msg_header_t *msg_header_copy_one_as(su_home_t *home, 
+static msg_header_t *msg_header_copy_one_as(su_home_t *home,
 					    msg_hclass_t *hc,
 					    msg_header_t const *src)
 {
@@ -145,7 +145,7 @@ static msg_header_t *msg_header_copy_one_as(su_home_t *home,
  * @return The function @c msg_header_copy_as() returns a pointer to the
  * first of the copied msg header object(s), or @c NULL upon an error.
  */
-msg_header_t *msg_header_copy_as(su_home_t *home, 
+msg_header_t *msg_header_copy_as(su_home_t *home,
 				 msg_hclass_t *hc,
 				 msg_header_t const *src)
 {
@@ -161,7 +161,7 @@ msg_header_t *msg_header_copy_as(su_home_t *home,
     if (!(h = msg_header_copy_one_as(home, hc, src)))
       break;
 
-    if (!rv) 
+    if (!rv)
       rv = h;
     else
       prev->sh_next = h;
@@ -210,7 +210,7 @@ msg_header_t *msg_header_copy(su_home_t *home, msg_header_t const *src)
  * @return Return a pointer to the
  * the duplicated msg header object(s), or @c NULL upon an error.
  */
-msg_header_t *msg_header_dup_one(su_home_t *home, 
+msg_header_t *msg_header_dup_one(su_home_t *home,
 				 msg_header_t const *src)
 {
   msg_hclass_t *hc;
@@ -277,7 +277,7 @@ msg_header_t *msg_header_dup_as(su_home_t *home, msg_hclass_t *hc,
     if (!(h = msg_header_alloc(home, hc, (isize_t)xtra)))
       break;			/* error */
 
-    if (!rv) 
+    if (!rv)
       rv = h;
 
     if (!(end = hc->hc_dup_one(h, src, (char *)h + size, xtra)))
@@ -343,7 +343,7 @@ isize_t msg_default_dup_xtra(msg_header_t const *header, isize_t offset)
  */
 char *msg_default_dup_one(msg_header_t *h,
 			  msg_header_t const *src,
-			  char *b, 
+			  char *b,
 			  isize_t xtra)
 {
   memcpy(&h->sh_header_next[1],
@@ -357,9 +357,9 @@ char *msg_default_dup_one(msg_header_t *h,
 /* Copying or duplicating all headers in a message */
 
 static int msg_copy_chain(msg_t *msg, msg_t const *copied);
-static int msg_dup_or_copy_all(msg_t *msg, 
+static int msg_dup_or_copy_all(msg_t *msg,
 			       msg_t const *original,
-			       msg_header_t *(*copy_one)(su_home_t *h, 
+			       msg_header_t *(*copy_one)(su_home_t *h,
 							 msg_header_t const *));
 
 
@@ -383,8 +383,8 @@ msg_t *msg_copy(msg_t *original)
     msg_t *copy = msg_create(original->m_class, original->m_object->msg_flags);
 
     if (copy) {
-      if (original->m_chain 
-	  ? msg_copy_chain(copy, original) < 0 
+      if (original->m_chain
+	  ? msg_copy_chain(copy, original) < 0
 	  : msg_dup_or_copy_all(copy, original, msg_header_copy_one) < 0) {
 	msg_destroy(copy), copy = NULL;
       }
@@ -412,18 +412,18 @@ int msg_copy_chain(msg_t *msg, msg_t const *original)
   msg_header_t *dh;
   msg_header_t const *sh;
   msg_header_t **hh;
-  
+
   tail = msg->m_tail;
-  
+
   for (sh = original->m_chain; sh; sh = (msg_header_t const *)sh->sh_succ) {
     hh = msg_hclass_offset(msg->m_class, dst, sh->sh_class);
     if (!hh)
       break;
     while (*hh)
       hh = &(*hh)->sh_next;
-      
+
     dh = msg_header_copy_one(home, sh);
-    if (!dh) 
+    if (!dh)
       break;
 
     dh->sh_prev = tail, *tail = dh, tail = &dh->sh_succ;
@@ -468,15 +468,15 @@ msg_t *msg_dup(msg_t const *original)
   return NULL;
 }
 
-/** Copy a complete message, not keeping the header chain structure. 
+/** Copy a complete message, not keeping the header chain structure.
  *
  * @retval 0 when successful
  * @retval -1 upon an error
  */
 static
-int msg_dup_or_copy_all(msg_t *msg, 
+int msg_dup_or_copy_all(msg_t *msg,
 			msg_t const *original,
-			msg_header_t *(*copy_one)(su_home_t *h, 
+			msg_header_t *(*copy_one)(su_home_t *h,
 						  msg_header_t const *))
 {
   su_home_t *home = msg_home(msg);
@@ -493,7 +493,7 @@ int msg_dup_or_copy_all(msg_t *msg,
   assert(copy_one);
 
   end = (msg_header_t**)((char *)src + src->msg_size);
-  
+
   for (ssh = &src->msg_request; ssh < end; ssh++) {
     sh = *ssh;
     if (!sh)

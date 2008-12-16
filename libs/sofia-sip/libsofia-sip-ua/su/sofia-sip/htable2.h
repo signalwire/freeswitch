@@ -24,7 +24,7 @@
 
 #ifndef HTABLE2_H
 /** Defined when <sofia-sip/htable2.h> has been included. */
-#define HTABLE2_H 
+#define HTABLE2_H
 
 /**@file sofia-sip/htable2.h
  *
@@ -33,7 +33,7 @@
  * Note: this version stores the given element types as entries (instead of
  * always storing a pointer to element). It can be used without
  * <sofia-sip/su_alloc.h>.
- * 
+ *
  * This file contain a hash table template for C. The hash tables are
  * resizeable, and they usually contain pointers to entries. The declaration
  * for template datatypes is instantiated with macro HTABLE2_DECLARE2(). The
@@ -51,9 +51,9 @@
  * When a entry with new identical key is added to the table, it can be
  * either @e inserted (before any other entry with same key value) or @e
  * appended.
- * 
+ *
  * Example code can be found from <htable_test.c>.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *
  * @date Created: Tue Sep 25 17:42:40 2001 ppessi
@@ -65,7 +65,7 @@ typedef unsigned long hash_value_t;
 #define HTABLE2_MIN_SIZE 31
 
 /** Declare hash table structure type.
- * 
+ *
  * The macro HTABLE2_DECLARE2() expands to a declaration for hash table
  * structure. The its typedef will be @a type, the field names start with @a
  * pr. The entry type is @a entrytype.
@@ -127,8 +127,8 @@ HTABLE2_SCOPE int prefix##_remove(type *, entrytype const)
  * hash value of each entry is given as @a hfun.
  *
  * @param type      hash table type
- * @param prefix    function prefix for hash table 
- * @param pr        field prefix for hash table 
+ * @param prefix    function prefix for hash table
+ * @param pr        field prefix for hash table
  * @param entrytype type of entry element
  * @param sizetype  size_t type
  * @param hfun      function or macro returning hash value of entry
@@ -297,7 +297,7 @@ extern int const prefix##_dummy
 #define HTABLE2_BODIES(type, prefix, pr, entrytype, \
 		        hfun, is_used, reclaim, is_equal, halloc) \
   HTABLE2_BODIES2(type, prefix, pr, entrytype, unsigned, \
-		        hfun, is_used, reclaim, is_equal, halloc) 
+		        hfun, is_used, reclaim, is_equal, halloc)
 
 
 #endif /** !defined(HTABLE2_H) */

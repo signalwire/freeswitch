@@ -38,7 +38,7 @@
 #include <stdlib.h>
 
 /* Globals used by <sofia-sip/tstdef.h> */
-int tstflags;			
+int tstflags;
 char const name[] = "check_sofia";
 
 int main(int argc, char *argv[])

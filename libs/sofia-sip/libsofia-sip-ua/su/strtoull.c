@@ -1,4 +1,4 @@
-/* 
+/*
  * strtoull.c --
  *
  *	Source code for the "strtoull" library procedure.
@@ -8,7 +8,7 @@
  *
 The following license.terms for information on usage and redistribution
 of this individual file, and for a DISCLAIMER OF ALL WARRANTIES.
- 
+
 This software is copyrighted by the Regents of the University of
 California, Sun Microsystems, Inc., Scriptics Corporation, ActiveState
 Corporation and other parties.  The following terms apply to all files
@@ -40,7 +40,7 @@ MODIFICATIONS.
 
 GOVERNMENT USE: If you are acquiring this software on behalf of the
 U.S. government, the Government shall have only "Restricted Rights"
-in the software and related documentation as defined in the Federal 
+in the software and related documentation as defined in the Federal
 Acquisition Regulations (FARs) in Clause 52.227.19 (c) (2).  If you
 are acquiring the software on behalf of the Department of Defense, the
 software shall be classified as "Commercial Computer Software" and the
@@ -48,7 +48,7 @@ Government shall have only "Restricted Rights" as defined in Clause
 252.227-7013 (c) (1) of DFARs.  Notwithstanding the foregoing, the
 authors grant the U.S. Government and others acting in its behalf
 permission to use and distribute the software in accordance with the
-terms specified in this license. 
+terms specified in this license.
  */
 
 #include "config.h"
@@ -132,7 +132,7 @@ strtoull(const char *string, char **endPtr, int base)
      * If no base was provided, pick one from the leading characters
      * of the string.
      */
-    
+
     if (base == 0) {
 	if (*p == '0') {
 	    p += 1;

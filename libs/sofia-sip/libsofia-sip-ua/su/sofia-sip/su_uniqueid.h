@@ -24,7 +24,7 @@
 
 #ifndef SU_UNIQUEID_H
 /** Defined when <sofia-sip/su_uniqueid.h> has been included. */
-#define SU_UNIQUEID_H 
+#define SU_UNIQUEID_H
 
 
 /**@ingroup su_uniqueid
@@ -33,7 +33,7 @@
  * Functions to handle GloballyUniqueIDs.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Apr 15 06:31:41 1997 pessi
  *
  */
@@ -45,8 +45,8 @@
 SOFIA_BEGIN_DECLS
 
 /** Globally unique identifier type. */
-typedef union GloballyUniqueIdentifier { 
-  unsigned char id[16]; 
+typedef union GloballyUniqueIdentifier {
+  unsigned char id[16];
   struct {
     uint32_t  time_low;
     uint16_t  time_mid;
@@ -60,8 +60,8 @@ typedef union GloballyUniqueIdentifier {
 /** Return node identifier */
 SOFIAPUBFUN size_t su_node_identifier(void *address, size_t addrlen);
 
-/** Generate a GUID 
- * 
+/** Generate a GUID
+ *
  * The function guid_generate() generates a new globally unique identifier
  * for an IP telephony call.  The guid follows the structure specified in
  * the ITU-T recommendation H.225.0 v2.  The guid is usable also in SIP
@@ -78,19 +78,19 @@ SOFIAPUBFUN void su_guid_generate(su_guid_t *guid);
  * H.225.0 v2.  The printed identifier can be used as a SIP @b Call-ID if
  * the colons in IEEE MAC address are replaced with '-', '+' or other
  * character allowed in SIP @e token.
- * 
+ *
  * @param buf  [out] buffer to store the formatted globally unique identifier
  * @param len  [in] size of buffer @a buf (should be at least guid_strlen bytes)
  * @param guid [in] pointer to structure containing globally unique identifier
- * 
- * @retval 
+ *
+ * @retval
  * The function guid_sprintf() returns length of the formatted
  * globally unique identifier excluding the final NUL.
  */
 SOFIAPUBFUN isize_t su_guid_sprintf(char* buf, size_t len, su_guid_t const *guid);
 
-enum { 
-  /** Length of guid in hex format */ 
+enum {
+  /** Length of guid in hex format */
   su_guid_strlen = 8 + 5 + 5 + 5 + 13
 };
 
@@ -102,7 +102,7 @@ enum {
  * @param lb [in] lower bound
  * @param ub [in] upper bound
  *
- * @return 
+ * @return
 * The function randint() returns a pseudo-random integer.
  */
 SOFIAPUBFUN int su_randint(int lb, int ub);

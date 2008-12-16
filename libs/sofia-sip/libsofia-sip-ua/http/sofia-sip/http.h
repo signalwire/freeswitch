@@ -26,10 +26,10 @@
 /** Defined when <sofia-sip/http.h> has been included. */
 #define HTTP_H
 
-/**@file sofia-sip/http.h 
- * 
+/**@file sofia-sip/http.h
+ *
  * HTTP message, methods, headers.
- * 
+ *
  * @sa <a href="http://www.ietf.org/rfc/rfc2616.txt">RFC 2616</a>
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
@@ -50,7 +50,7 @@
 SOFIA_BEGIN_DECLS
 
 /* ----------------------------------------------------------------------
- * 1) Constants 
+ * 1) Constants
  */
 
 #define HTTP_NONE ((http_header_t *)MSG_HEADER_NONE)
@@ -161,9 +161,9 @@ typedef struct http_cookie_s        http_cookie_t;
 typedef msg_error_t                 http_error_t;
 /** Unknown header. */
 typedef msg_generic_t               http_unknown_t;
-/** Separator line between headers and message contents */ 
+/** Separator line between headers and message contents */
 typedef msg_separator_t             http_separator_t;
-/** Entity-body */ 
+/** Entity-body */
 typedef msg_payload_t               http_payload_t;
 /** Time in seconds since 01-Jan-1900. */
 typedef unsigned long               http_time_t;
@@ -327,7 +327,7 @@ struct http_s {
   unsigned                   http_size;	         /**< Size of this structure */
   int                        http_flags;                          /**< Flags */
   http_error_t              *http_error;              /**< Erroneous headers */
-  
+
   http_request_t            *http_request;                /**< Request line  */
   http_status_t             *http_status;                   /**< Status line */
 
@@ -389,19 +389,19 @@ struct http_s {
 
   /* === Headers end here */
   http_header_t             *http_unknown;             /**< Unknown headers. */
-  http_separator_t          *http_separator;     
+  http_separator_t          *http_separator;
 				  /**< Separator between message and payload */
   http_payload_t            *http_payload;	    /**< Message entity-body */
 };
 
 /**Union representing any HTTP header.
- * 
+ *
  * Each different header is an array of size 1.
- * 
+ *
  * @deprecated
  */
 union http_header_u {
-  msg_common_t                sh_common[1]; 
+  msg_common_t                sh_common[1];
   struct {
     msg_common_t              shn_common;
     http_header_t            *shn_next;

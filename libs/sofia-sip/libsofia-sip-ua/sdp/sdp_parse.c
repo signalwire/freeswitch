@@ -23,7 +23,7 @@
  */
 
 /**@ingroup sdp_parser
- * @CFILE sdp_parse.c 
+ * @CFILE sdp_parse.c
  * @brief Simple SDP parser interface.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -46,7 +46,7 @@
 #include <limits.h>
 #include <assert.h>
 
-/** @typedef struct sdp_parser_s sdp_parser_t; 
+/** @typedef struct sdp_parser_s sdp_parser_t;
  *
  * SDP parser handle.
  *
@@ -105,7 +105,7 @@ static int parsing_error(sdp_parser_t *p, char const *fmt, ...);
  * The function sdp_parse() parses an SDP message @a msg of size @a
  * msgsize. Parsing is done according to the given @a flags. The SDP message
  * may not contain a NUL.
- * 
+ *
  * The parsing result is stored to an #sdp_session_t structure.
  *
  * @param home    memory home
@@ -115,7 +115,7 @@ static int parsing_error(sdp_parser_t *p, char const *fmt, ...);
  *
  * The following flags are used by parser:
  *
- * @li #sdp_f_strict Parser should accept only messages conforming strictly 
+ * @li #sdp_f_strict Parser should accept only messages conforming strictly
  *                   to the specification.
  * @li #sdp_f_anynet Parser accepts unknown network or address types.
  * @li #sdp_f_insane Do not run sanity check.
@@ -139,7 +139,7 @@ sdp_parse(su_home_t *home, char const msg[], issize_t msgsize, int flags)
 
   if (msgsize == -1 || msg == NULL) {
     p = su_home_clone(home, sizeof(*p));
-    if (p) 
+    if (p)
       parsing_error(p, "invalid input message");
     else
       p = (sdp_parser_t*)&no_mem_error;
@@ -172,7 +172,7 @@ sdp_parse(su_home_t *home, char const msg[], issize_t msgsize, int flags)
     p->pr_session_mode = sdp_sendrecv;
 
     parse_message(p);
-    
+
     return p;
   }
 
@@ -216,7 +216,7 @@ sdp_session(sdp_parser_t *p)
  *
  * @param p SDP parser
  *
- * @return 
+ * @return
  * The function sdp_parsing_error() returns a C string describing parsing
  * error, or NULL if no error occurred.
  */
@@ -230,7 +230,7 @@ char const *sdp_parsing_error(sdp_parser_t *p)
  * The function sdp_parser_free() frees an SDP parser object along with
  * the memory blocks associated with it.
  *
- * @param p pointer to the SDP parser to be freed 
+ * @param p pointer to the SDP parser to be freed
  */
 void sdp_parser_free(sdp_parser_t *p)
 {
@@ -271,7 +271,7 @@ static void parse_key(sdp_parser_t *p, char *r, sdp_key_t **result);
 static void parse_session_attr(sdp_parser_t *p, char *r, sdp_attribute_t **result);
 static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result);
 static void parse_payload(sdp_parser_t *p, char *r, sdp_rtpmap_t **result);
-static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m, 
+static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
 			     sdp_attribute_t **result);
 static int parse_rtpmap(sdp_parser_t *p, char *r, sdp_media_t *m);
 static int parse_fmtp(sdp_parser_t *p, char *r, sdp_media_t *m);
@@ -279,13 +279,13 @@ static void parse_text_list(sdp_parser_t *p, char *r, sdp_list_t **result);
 
 static void parse_descs(sdp_parser_t *p, char *r, char *m, sdp_media_t **result);
 
-static int parse_ul(sdp_parser_t *p, char **r, unsigned long *result, 
+static int parse_ul(sdp_parser_t *p, char **r, unsigned long *result,
 		    unsigned long max_value);
-static int parse_ull(sdp_parser_t *p, char **r, uint64_t *result, 
+static int parse_ull(sdp_parser_t *p, char **r, uint64_t *result,
 		     uint64_t max_value);
 static void parse_alloc_error(sdp_parser_t *p, const char *typename);
 static char *next(char **message, const char *sep, const char *strip);
-static char *token(char **message, const char *sep, const char *legal, 
+static char *token(char **message, const char *sep, const char *legal,
 		   const char *strip);
 #if 0
 static void check_mandatory(sdp_parser_t *p, sdp_session_t *sdp);
@@ -301,7 +301,7 @@ static void check_mandatory(sdp_parser_t *p, sdp_session_t *sdp);
  */
 #define PARSE_ALLOC(p, t, v) \
  t *v = su_salloc(p->pr_home, sizeof(*v)); \
- if (!v && (parse_alloc_error(p, #t), 1)) return; 
+ if (!v && (parse_alloc_error(p, #t), 1)) return;
 
 /* -------------------------------------------------------------------------
  * Macro PARSE_CHECK_REST
@@ -314,10 +314,10 @@ static void check_mandatory(sdp_parser_t *p, sdp_session_t *sdp);
     return
 
 /* -------------------------------------------------------------------------
- * Function parse_message() - parse an SDP message 
+ * Function parse_message() - parse an SDP message
  *
  * Description:
- *   This function parses an SDP message, which is copied into the 
+ *   This function parses an SDP message, which is copied into the
  *   p->pr_message. The p->pr_message is modified during the parsing,
  *   and parts of it are returned in p->pr_session.
  *
@@ -384,7 +384,7 @@ static void parse_message(sdp_parser_t *p)
   for (;
        record && p->pr_ok;
        record = next(&message, CRLF, strip)) {
-    field = record[0]; 
+    field = record[0];
 
     rest = record + 2; rest += strspn(rest, strip);
 
@@ -476,9 +476,9 @@ static void parse_message(sdp_parser_t *p)
 
 int sdp_connection_is_inaddr_any(sdp_connection_t const *c)
 {
-  return 
-    c && 
-    c->c_nettype == sdp_net_in && 
+  return
+    c &&
+    c->c_nettype == sdp_net_in &&
     ((c->c_addrtype == sdp_addr_ip4 && strcmp(c->c_address, "0.0.0.0")) ||
      (c->c_addrtype == sdp_addr_ip6 && strcmp(c->c_address, "::")));
 }
@@ -506,7 +506,7 @@ static void post_session(sdp_parser_t *p, sdp_session_t *sdp)
       parsing_error(p, "Incorrect version");
     return;
   }
-  
+
   /* Go through all media and set mode */
   for (m = sdp->sdp_media; m; m = m->m_next) {
     if (m->m_port == 0) {
@@ -534,13 +534,13 @@ static void post_session(sdp_parser_t *p, sdp_session_t *sdp)
     return;
 }
 
-/** Validates that all mandatory fields exist 
+/** Validates that all mandatory fields exist
  *
  * Checks that all necessary fields (v=, o=) exists in the parsed sdp. If
- * strict, check that all mandatory fields (c=, o=, s=, t=) are present. 
+ * strict, check that all mandatory fields (c=, o=, s=, t=) are present.
  * This function also goes through all media, marks rejected media as such,
  * and updates the mode accordingly.
- * 
+ *
  * @retval 0 if parsed SDP description is valid
  * @retval -1 if some SDP line is missing
  * @retval -2 if c= line is missing
@@ -626,7 +626,7 @@ static void parse_origin(sdp_parser_t *p, char *r, sdp_origin_t **result)
    sess-version =        1*(DIGIT)
                          ;0 is a new session
 
-			 
+
    */
   PARSE_ALLOC(p, sdp_origin_t, o);
 
@@ -873,7 +873,7 @@ static void parse_connection(sdp_parser_t *p, char *r, sdp_connection_t **result
     c->c_ttl = 0;
     c->c_groups = 1;
   }
-  else 
+  else
     parsing_error(p, "invalid address");
 }
 
@@ -916,7 +916,7 @@ static void parse_bandwidth(sdp_parser_t *p, char *r, sdp_bandwidth_t **result)
 
   if (STRICT(p))
     PARSE_CHECK_REST(p, r, "b");
-  
+
   {
     PARSE_ALLOC(p, sdp_bandwidth_t, b);
     *result = b;
@@ -974,7 +974,7 @@ static void parse_time(sdp_parser_t *p, char *r, sdp_time_t **result)
  * @param p      pointer to SDP parser object
  * @param r      pointer to record data
  * @param result pointer to which parsed record is assigned
- * 
+ *
  */
 static void parse_repeat(sdp_parser_t *p, char *d, sdp_repeat_t **result)
 {
@@ -1013,7 +1013,7 @@ static void parse_repeat(sdp_parser_t *p, char *d, sdp_repeat_t **result)
     return;
   }
   if (!(r = su_salloc(p->pr_home, offsetof(sdp_repeat_t, r_offsets[N - 1])))) {
-    parse_alloc_error(p, "sdp_repeat_t"); 
+    parse_alloc_error(p, "sdp_repeat_t");
     return;
   }
 
@@ -1035,7 +1035,7 @@ static void parse_repeat(sdp_parser_t *p, char *d, sdp_repeat_t **result)
 
     while (is_space(*d))
       d++;
-  } 
+  }
 
   *result = r;
 }
@@ -1090,7 +1090,7 @@ static void parse_zone(sdp_parser_t *p, char *r, sdp_zone_t **result)
     return;
   }
   if (!(z = su_salloc(p->pr_home, offsetof(sdp_zone_t, z_adjustments[N])))) {
-    parse_alloc_error(p, "sdp_zone_t"); 
+    parse_alloc_error(p, "sdp_zone_t");
     return;
   }
 
@@ -1109,7 +1109,7 @@ static void parse_zone(sdp_parser_t *p, char *r, sdp_zone_t **result)
 
     z->z_adjustments[n].z_at = at;
     z->z_adjustments[n].z_offset = offset;
-  } 
+  }
 
   *result = z;
 }
@@ -1205,7 +1205,7 @@ static void parse_session_attr(sdp_parser_t *p, char *r, sdp_attribute_t **resul
 
   if (*r)
     value = r;
-  else 
+  else
     PARSE_CHECK_REST(p, r, "a");
 
   if (strcasecmp(name, "charset") == 0) {
@@ -1213,7 +1213,7 @@ static void parse_session_attr(sdp_parser_t *p, char *r, sdp_attribute_t **resul
     return;
   }
 
-  if (p->pr_mode_manual) 
+  if (p->pr_mode_manual)
     ;
   else if (strcasecmp(name, "inactive") == 0)
     p->pr_session_mode = sdp_inactive;
@@ -1316,10 +1316,10 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
     parsing_error(p, "m= missing protocol");
     return;
   }
-  
+
   if (!STRICT(p) && strcasecmp(s, "RTP") == 0)
     m->m_proto = sdp_proto_rtp, m->m_proto_name = "RTP/AVP";
-  else 
+  else
     sdp_media_transport(m, s);
 
   /* RTP format list */
@@ -1331,7 +1331,7 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
   /* "normal" format list */
   if (*r) {
     sdp_list_t **fmt = &m->m_format;
-    
+
     while (r && *r) {
       PARSE_ALLOC(p, sdp_list_t, l);
       *fmt = l;
@@ -1382,7 +1382,7 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
     m->m_proto = sdp_proto_tcp, m->m_proto_name = "TCP";
   else if (strcasecmp(s, "TLS") == 0)
     m->m_proto = sdp_proto_tls, m->m_proto_name = "TLS";
-  else 
+  else
     m->m_proto = sdp_proto_x, m->m_proto_name = s;
 }
 
@@ -1560,10 +1560,10 @@ static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
 
   if (*r)
     value = r;
-  else 
+  else
     PARSE_CHECK_REST(p, r, "a");
 
-  if (p->pr_mode_manual) 
+  if (p->pr_mode_manual)
     ;
   else if (strcasecmp(name, "inactive") == 0) {
     m->m_mode = sdp_inactive;
@@ -1637,11 +1637,11 @@ static int parse_rtpmap(sdp_parser_t *p, char *r, sdp_media_t *m)
     return -2;
   }
 
-  if (*r == '/') 
+  if (*r == '/')
     params = ++r;
   else
     params = 0;
-    
+
   rm->rm_predef = 0;
   rm->rm_encoding = encoding;
   rm->rm_rate = rate;
@@ -1690,12 +1690,12 @@ static int parse_fmtp(sdp_parser_t *p, char *r, sdp_media_t *m)
  * Parameters:
  *   p      - pointer to SDP parser object
  *   record - pointer to first media field
- *   message - pointer to rest 
+ *   message - pointer to rest
  *   medias - pointer to which parsed media structures are assigned
  */
-static void parse_descs(sdp_parser_t *p, 
-			char *record, 
-			char *message, 
+static void parse_descs(sdp_parser_t *p,
+			char *record,
+			char *message,
 			sdp_media_t **medias)
 {
   char *rest;
@@ -1709,7 +1709,7 @@ static void parse_descs(sdp_parser_t *p,
     strip = SPACE TAB;		/* skip initial whitespace */
   else
     strip = "";
-  
+
   for (;
        record && p->pr_ok;
        record = next(&message, CRLF, strip)) {
@@ -1767,10 +1767,10 @@ static void parse_text_list(sdp_parser_t *p, char *r, sdp_list_t **result)
 /*
  * parse_ul: parse an unsigned long
  */
-static int parse_ul(sdp_parser_t *p, char **r, 
+static int parse_ul(sdp_parser_t *p, char **r,
 		    unsigned long *result, unsigned long max)
 {
-  char *ul = *r; 
+  char *ul = *r;
 
   ul += strspn(ul, SPACE TAB);
 
@@ -1790,12 +1790,12 @@ unsigned longlong strtoull(char const *string, char **return_end, int base);
 /*
  * parse_ull: parse an unsigned long long
  */
-static int parse_ull(sdp_parser_t *p, char **r, 
+static int parse_ull(sdp_parser_t *p, char **r,
 		     uint64_t *result, uint64_t max)
 {
   unsigned longlong ull;
 
-  char *s = *r; 
+  char *s = *r;
 
   s += strspn(s, SPACE TAB);
 
@@ -1810,9 +1810,9 @@ static int parse_ull(sdp_parser_t *p, char **r,
   return -1;
 }
 
-static char *token(char **message, 
-		   const char *sep, 
-		   const char *legal, 
+static char *token(char **message,
+		   const char *sep,
+		   const char *legal,
 		   const char *strip)
 {
   size_t n;
@@ -1823,7 +1823,7 @@ static char *token(char **message,
 
   if (legal)
     n = strspn(retval, legal);
-  else 
+  else
     n = strcspn(retval, sep);
 
   if (n == 0)
@@ -1872,8 +1872,8 @@ static int parsing_error(sdp_parser_t *p, char const *fmt, ...)
 {
   int n;
   va_list ap;
-  va_start(ap, fmt); 
-  
+  va_start(ap, fmt);
+
   memset(p->pr_error, 0, sizeof(p->pr_error));
   n = vsnprintf(p->pr_error, sizeof(p->pr_error), fmt, ap);
   va_end(ap);
@@ -1885,6 +1885,6 @@ static int parsing_error(sdp_parser_t *p, char const *fmt, ...)
 
 static void parse_alloc_error(sdp_parser_t *p, const char *typename)
 {
-  parsing_error(p, "memory exhausted (while allocating memory for %s)", 
+  parsing_error(p, "memory exhausted (while allocating memory for %s)",
 		typename);
 }

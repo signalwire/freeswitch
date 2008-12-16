@@ -69,10 +69,10 @@ struct event_usage
 };
 
 static char const *nua_subscribe_usage_name(nua_dialog_usage_t const *du);
-static int nua_subscribe_usage_add(nua_handle_t *nh, 
+static int nua_subscribe_usage_add(nua_handle_t *nh,
 				   nua_dialog_state_t *ds,
 				   nua_dialog_usage_t *du);
-static void nua_subscribe_usage_remove(nua_handle_t *nh, 
+static void nua_subscribe_usage_remove(nua_handle_t *nh,
 				       nua_dialog_state_t *ds,
 				       nua_dialog_usage_t *du,
 				       nua_client_request_t *cr,
@@ -102,8 +102,8 @@ static char const *nua_subscribe_usage_name(nua_dialog_usage_t const *du)
   return "subscribe";
 }
 
-static 
-int nua_subscribe_usage_add(nua_handle_t *nh, 
+static
+int nua_subscribe_usage_add(nua_handle_t *nh,
 			   nua_dialog_state_t *ds,
 			   nua_dialog_usage_t *du)
 {
@@ -113,15 +113,15 @@ int nua_subscribe_usage_add(nua_handle_t *nh,
   return 0;
 }
 
-static 
-void nua_subscribe_usage_remove(nua_handle_t *nh, 
+static
+void nua_subscribe_usage_remove(nua_handle_t *nh,
 			       nua_dialog_state_t *ds,
 			       nua_dialog_usage_t *du,
 				nua_client_request_t *cr,
 				nua_server_request_t *sr)
 {
-  ds->ds_has_events--;	
-  ds->ds_has_subscribes--;	
+  ds->ds_has_events--;
+  ds->ds_has_subscribes--;
 }
 
 /* ====================================================================== */
@@ -129,17 +129,17 @@ void nua_subscribe_usage_remove(nua_handle_t *nh,
 
 /**@fn void nua_subscribe(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *
- *  Subscribe to a SIP event. 
+ *  Subscribe to a SIP event.
  *
- * Subscribe a SIP event using the SIP SUBSCRIBE request. If the 
- * SUBSCRBE is successful a subscription state is established and 
+ * Subscribe a SIP event using the SIP SUBSCRIBE request. If the
+ * SUBSCRBE is successful a subscription state is established and
  * the subscription is refreshed regularly. The refresh requests will
  * generate #nua_r_subscribe events.
  *
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
- * @return 
+ * @return
  *    nothing
  *
  * @par Related Tags:
@@ -155,17 +155,17 @@ void nua_subscribe_usage_remove(nua_handle_t *nh,
 
 /**@fn void nua_unsubscribe(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *
- * Unsubscribe an event. 
+ * Unsubscribe an event.
  *
- * Unsubscribe an active or pending subscription with SUBSCRIBE request 
- * containing Expires: header with value 0. The dialog associated with 
- * subscription will be destroyed if there is no other subscriptions or 
+ * Unsubscribe an active or pending subscription with SUBSCRIBE request
+ * containing Expires: header with value 0. The dialog associated with
+ * subscription will be destroyed if there is no other subscriptions or
  * call using this dialog.
  *
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
- * @return 
+ * @return
  *    nothing
  *
  * @par Related Tags:
@@ -173,12 +173,12 @@ void nua_subscribe_usage_remove(nua_handle_t *nh,
  *    Header tags defined in <sofia-sip/sip_tag.h> except SIPTAG_EXPIRES() or SIPTAG_EXPIRES_STR()
  *
  * @par Events:
- *    #nua_r_unsubscribe 
+ *    #nua_r_unsubscribe
  *
  * @sa NUTAG_SUBSTATE(), @RFC3265
  */
 
-static int nua_subscribe_client_init(nua_client_request_t *cr, 
+static int nua_subscribe_client_init(nua_client_request_t *cr,
 				     msg_t *, sip_t *,
 				     tagi_t const *tags);
 static int nua_subscribe_client_request(nua_client_request_t *cr,
@@ -231,7 +231,7 @@ static int nua_subscribe_client_init(nua_client_request_t *cr,
       /* Add Event header */
       sip_add_dup(msg, sip, (sip_header_t *)du->du_event);
   }
-  else if (cr->cr_event == nua_r_subscribe) {	
+  else if (cr->cr_event == nua_r_subscribe) {
     /* Create dialog usage */
     du = nua_dialog_usage_add(nh, nh->nh_ds, nua_subscribe_usage, o);
     /* Note that we allow SUBSCRIBE without event */
@@ -246,7 +246,7 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
 					msg_t *msg, sip_t *sip,
 					tagi_t const *tags)
 {
-  nua_dialog_usage_t *du = cr->cr_usage; 
+  nua_dialog_usage_t *du = cr->cr_usage;
   sip_time_t expires = 0;
 
   if (cr->cr_event == nua_r_destroy || !du || du->du_shutdown)
@@ -275,7 +275,7 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
 #endif
 
     nua_dialog_usage_reset_refresh(du); /* during SUBSCRIBE transaction */
-    
+
     if (cr->cr_terminating || cr->cr_event != nua_r_subscribe)
       expires = eu->eu_delta = 0;
     else if (sip->sip_expires)
@@ -318,7 +318,7 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
  * @param nh     operation handle associated with the subscription
  * @param hmagic application context associated with the handle
  * @param sip    response to SUBSCRIBE request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive message in @a phrase parameters)
  * @param tags   NUTAG_SUBSTATE()
  *
@@ -339,7 +339,7 @@ static int nua_subscribe_client_request(nua_client_request_t *cr,
  * @param nh     operation handle associated with the subscription
  * @param hmagic application context associated with the handle
  * @param sip    response to SUBSCRIBE request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive message in @a phrase parameters)
  * @param tags   NUTAG_SUBSTATE()
  *
@@ -368,9 +368,9 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
     du->du_ready = 1;
 
     if (eu->eu_substate != nua_substate_terminated)
-      /* If there is no @Expires header, 
+      /* If there is no @Expires header,
 	 use default value stored in eu_delta */
-      delta = sip_contact_expires(NULL, sip->sip_expires, sip->sip_date, 
+      delta = sip_contact_expires(NULL, sip->sip_expires, sip->sip_date,
 				  eu->eu_delta, now);
     else
       delta = 0;
@@ -379,14 +379,14 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
       delta = eu->eu_delta;
 
     if (win_messenger_enable && !nua_dialog_is_established(nh->nh_ds)) {
-      /* Notify from messanger does not match with dialog tag */ 
+      /* Notify from messanger does not match with dialog tag */
       nh->nh_ds->ds_remote_tag = su_strdup(nh->nh_home, "");
     }
 
     if (delta > 0) {
       nua_dialog_usage_set_refresh(du, delta);
       eu->eu_expires = du->du_refquested + delta;
-    } 
+    }
     else {
       if (eu->eu_substate == nua_substate_terminated) {
 	if (!eu->eu_notified)
@@ -396,7 +396,7 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
       if (eu->eu_substate != nua_substate_terminated) {
 	/* Wait 32 seconds for NOTIFY. */
 	delta = 64 * NTA_SIP_T1 / 1000;
-	
+
 	eu->eu_final_wait = 1;
 
 	if (!eu->eu_notified && win_messenger_enable)
@@ -405,7 +405,7 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
 	nua_dialog_usage_set_refresh_range(du, delta, delta);
       }
       else {
-	nua_dialog_usage_reset_refresh(du); 
+	nua_dialog_usage_reset_refresh(du);
       }
 
       eu->eu_expires = du->du_refquested;
@@ -418,7 +418,7 @@ static int nua_subscribe_client_response(nua_client_request_t *cr,
       cr->cr_terminated = 1;
   }
 
-  return nua_base_client_tresponse(cr, status, phrase, sip, 
+  return nua_base_client_tresponse(cr, status, phrase, sip,
 				   NUTAG_SUBSTATE(substate),
 				   SIPTAG_EVENT(du ? du->du_event : NULL),
 				   TAG_END());
@@ -432,9 +432,9 @@ static void nua_subscribe_usage_refresh(nua_handle_t *nh,
 {
   nua_client_request_t *cr = du->du_cr;
   struct event_usage *eu = nua_dialog_usage_private(du);
-  
+
   assert(eu);
-  
+
   if (eu->eu_final_wait) {
     /* Did not receive NOTIFY for fetch */
     sip_event_t const *o = du->du_event;
@@ -445,7 +445,7 @@ static void nua_subscribe_usage_refresh(nua_handle_t *nh,
 		id ? "; id=" : "", id ? id : ""));
 
     nua_stack_tevent(nh->nh_nua, nh,  NULL,
-		     nua_i_notify, 408, "Fetch Timeouts without NOTIFY", 
+		     nua_i_notify, 408, "Fetch Timeouts without NOTIFY",
 		     NUTAG_SUBSTATE(nua_substate_terminated),
 		     SIPTAG_EVENT(du->du_event),
 		     TAG_END());
@@ -494,7 +494,7 @@ static int nua_subscribe_usage_shutdown(nua_handle_t *nh,
     if (nua_client_resend_request(cr, 1) >= 0)
       return 0;
   }
-  
+
   nua_dialog_usage_remove(nh, ds, du, NULL, NULL);
   return 200;
 }
@@ -514,7 +514,7 @@ static int nua_subscribe_usage_shutdown(nua_handle_t *nh,
  * @param tags   NUTAG_SUBSTATE() indicating the subscription state
  *
  * @sa nua_subscribe(), nua_unsubscribe(), @RFC3265, #nua_i_subscribe
- * 
+ *
  * @END_NUA_EVENT
  */
 
@@ -522,11 +522,11 @@ int nua_notify_server_init(nua_server_request_t *sr);
 int nua_notify_server_preprocess(nua_server_request_t *sr);
 int nua_notify_server_report(nua_server_request_t *, tagi_t const *);
 
-nua_server_methods_t const nua_notify_server_methods = 
+nua_server_methods_t const nua_notify_server_methods =
   {
     SIP_METHOD_NOTIFY,
     nua_i_notify,		/* Event */
-    { 
+    {
       /* create_dialog: */ 1,	/* Do create dialog */
       /* in_dialog: */ 0,	/* Not always in-dialog request */
       /* target_refresh: */ 1,	/* Target refresh request  */
@@ -546,15 +546,15 @@ int nua_notify_server_init(nua_server_request_t *sr)
     nua_dialog_state_t *ds = sr->sr_owner->nh_ds;
 
     /* Check for forked subscription. */
-    if (ds->ds_remote_tag && ds->ds_remote_tag[0] && 
+    if (ds->ds_remote_tag && ds->ds_remote_tag[0] &&
 	str0cmp(ds->ds_remote_tag, sr->sr_request.sip->sip_from->a_tag)) {
       sip_contact_t const *m = NULL;
 
       m = nua_stack_get_contact(sr->sr_owner->nh_nua->nua_registrations);
-      
+
       if (m) {
 	sip_warning_t w[1];
-	
+
 	sip_warning_init(w)->w_code = 399;
 	w->w_host = m->m_url->url_host;
 	w->w_port = m->m_url->url_port;
@@ -593,17 +593,17 @@ int nua_notify_server_preprocess(nua_server_request_t *sr)
     if (!du)
       return SR_STATUS1(sr, SIP_500_INTERNAL_SERVER_ERROR);
   }
-  
+
   sr->sr_usage = du;
   eu = nua_dialog_usage_private(du); assert(eu);
   eu->eu_notified++;
-  if (!o || !o->o_id) 
+  if (!o || !o->o_id)
     eu->eu_no_id = 1;
 
   if (subs == NULL) {
     /* Compatibility */
     unsigned long delta = eu->eu_delta;
-    if (sip->sip_expires) 
+    if (sip->sip_expires)
       delta = sip->sip_expires->ex_delta;
 
     if (delta == 0)
@@ -616,7 +616,7 @@ int nua_notify_server_preprocess(nua_server_request_t *sr)
     reason = subs->ss_reason;
 
     if (str0casecmp(reason, "deactivated") == 0 ||
-	str0casecmp(reason, "probation") == 0) 
+	str0casecmp(reason, "probation") == 0)
       substate = nua_substate_embryonic;
   }
   else if (strcasecmp(subs->ss_substate, what = "pending") == 0) {
@@ -632,7 +632,7 @@ int nua_notify_server_preprocess(nua_server_request_t *sr)
   if (!solicited)
     eu->eu_unsolicited = 1;
 
-  SU_DEBUG_5(("nua(%p): %s: %s (%s)\n", 
+  SU_DEBUG_5(("nua(%p): %s: %s (%s)\n",
 	      (void *)sr->sr_owner, "nua_notify_server_preprocess",
 	      what, reason ? reason : ""));
 
@@ -672,7 +672,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
       if (subs && subs->ss_reason) {
 	if (str0casecmp(subs->ss_reason, "deactivated") == 0) {
 	  retry = 0;		/* retry immediately */
-	} 
+	}
 	else if (str0casecmp(subs->ss_reason, "probation") == 0) {
 	  retry = 30;
 	  if (subs->ss_retry_after)
@@ -686,11 +686,11 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
       sr->sr_terminating = 1;
     }
   }
-  
+
   retval = nua_base_server_treport(sr, /* can destroy sr */
 				   NUTAG_SUBSTATE(substate),
 				   SIPTAG_EVENT(o),
-				   TAG_NEXT(tags)); 
+				   TAG_NEXT(tags));
 
   if (retval != 1 || du == NULL)
     return retval;
@@ -719,9 +719,9 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
 
 /**@fn void nua_refer(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *
- * Transfer a call. 
- * 
- * Send a REFER request asking the recipient to transfer the call. 
+ * Transfer a call.
+ *
+ * Send a REFER request asking the recipient to transfer the call.
  *
  * The REFER request also establishes an implied subscription to the "refer"
  * event. The "refer" event can have an "id" parameter, which has the value
@@ -745,7 +745,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
- * @return 
+ * @return
  *    nothing
  *
  * @par Related Tags:
@@ -776,7 +776,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * @param nh     operation handle associated with the REFER request
  * @param hmagic application context associated with the handle
  * @param sip    response to REFER request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive message in @a phrase parameters)
  * @param tags    NUTAG_REFER_EVENT() \n
  *                NUTAG_SUBSTATE()
@@ -787,7 +787,7 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
  * @END_NUA_EVENT
  */
 
-static int nua_refer_client_init(nua_client_request_t *cr, 
+static int nua_refer_client_init(nua_client_request_t *cr,
 				 msg_t *, sip_t *,
 				 tagi_t const *tags);
 static int nua_refer_client_request(nua_client_request_t *cr,
@@ -901,15 +901,15 @@ static int nua_refer_client_response(nua_client_request_t *cr,
 				     int status, char const *phrase,
 				     sip_t const *sip)
 {
-  nua_dialog_usage_t *du = cr->cr_usage; 
+  nua_dialog_usage_t *du = cr->cr_usage;
   enum nua_substate substate = nua_substate_terminated;
 
   if (du) {
     struct event_usage *eu = nua_dialog_usage_private(du);
 
     if (status < 200) {
-      substate = eu->eu_substate;      
-    } 
+      substate = eu->eu_substate;
+    }
     else if (status < 300) {
       sip_refer_sub_t const *rs = sip_refer_sub(sip);
 
@@ -920,8 +920,8 @@ static int nua_refer_client_response(nua_client_request_t *cr,
 	substate = eu->eu_substate;
     }
   }
-  
-  return nua_base_client_tresponse(cr, status, phrase, sip, 
+
+  return nua_base_client_tresponse(cr, status, phrase, sip,
 				   NUTAG_SUBSTATE(substate),
 				   SIPTAG_EVENT(du ? du->du_event : NULL),
 				   TAG_END());

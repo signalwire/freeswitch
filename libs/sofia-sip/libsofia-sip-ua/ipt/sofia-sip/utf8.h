@@ -32,7 +32,7 @@
  *
  * @date Created: Tue Apr 21 15:32:38 1998 pessi
 
- * @sa <a href="ftp://ftp.ietf.org/rfc/rfc2279.txt">RFC 2279</a>, 
+ * @sa <a href="ftp://ftp.ietf.org/rfc/rfc2279.txt">RFC 2279</a>,
  * <i>"UTF-8, a transformation format of ISO 10646"</i>,
  * F. Yergeau. January 1998.
  *
@@ -83,7 +83,7 @@ int ucs4cmp(ucs4 const *s1, ucs4 const *s2);
 int ucs4ncmp(ucs4 const *s1, ucs4 const *s2, size_t n);
 
 /*
- * IS_UCS4_n tests whether UCS4 character should be represented 
+ * IS_UCS4_n tests whether UCS4 character should be represented
  * with 'n' byte utf8 string
  */
 #define IS_UCS4_1(x) ((ucs4)(x) <= 0x7fu)
@@ -172,7 +172,7 @@ int ucs4ncmp(ucs4 const *s1, ucs4 const *s2, size_t n);
 		      (s)[3]=((c>>12)&63)|128,\
 		      (s)[4]=((c>>6)&63)|128,\
 		      (s)[5]=((c)&63)|128)
-     
+
 SOFIA_END_DECLS
 
 #endif /* UTF8_H */

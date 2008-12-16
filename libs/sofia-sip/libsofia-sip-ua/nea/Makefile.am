@@ -22,7 +22,7 @@ INCLUDES = 	-I$(srcdir)/../ipt -I../ipt \
 
 noinst_LTLIBRARIES = 	libnea.la
 
-TESTS = 
+TESTS =
 
 # ----------------------------------------------------------------------
 # Rules for building the targets
@@ -49,7 +49,7 @@ LDADD = 		libnea.la \
 			../msg/libmsg.la \
 			../url/liburl.la \
 			../bnf/libbnf.la \
-			../su/libsu.la 
+			../su/libsu.la
 
 # ----------------------------------------------------------------------
 # Install and distribution rules

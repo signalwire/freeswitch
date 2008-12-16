@@ -25,11 +25,11 @@
 /**@internal @file memmem.c
  *
  * @brief Backup implementation of memmem()
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Sat Apr 12 19:32:33 2003 ppessi
- * 
+ *
  */
 
 #include "config.h"

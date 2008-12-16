@@ -24,9 +24,9 @@
 
 /**@internal @file nth_server.c
  * @brief HTTP server.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Sat Oct 19 01:37:36 2002 ppessi
  */
 
@@ -55,7 +55,7 @@ typedef struct server_s server_t;
 /* We are customer of tport_t */
 #define TP_STACK_T   server_t
 #define TP_MAGIC_T   void
-                                     
+
 #include <sofia-sip/tport.h>
 #include <sofia-sip/htable.h>
 
@@ -78,7 +78,7 @@ enum { SERVER_TICK = 1000 };
 
 HTABLE_DECLARE(hc_htable, hct, nth_client_t);
 
-struct server_s 
+struct server_s
 {
   su_home_t          srv_home[1];
   su_root_t         *srv_root;
@@ -109,7 +109,7 @@ struct server_s
   http_server_t     *srv_server;      /**< Server header */
 };
 
-struct nth_site_s 
+struct nth_site_s
 {
   nth_site_t          *site_next, **site_prev;
 
@@ -143,7 +143,7 @@ struct nth_request_s
   char const           *req_method_name;
   url_t const          *req_url;         /**< RequestURI  */
   char const           *req_version;
-  
+
   tport_t              *req_tport;
   msg_t		       *req_request;
   msg_t                *req_response;
@@ -171,7 +171,7 @@ struct nth_request_s
  *
  * The NTH_DEBUG environment variable is used to determine the debug
  * logging level for @b nth module. The default level is 1.
- * 
+ *
  * @sa <sofia-sip/su_debug.h>, nth_server_log, SOFIA_DEBUG
  */
 extern char const NTH_DEBUG[];
@@ -180,8 +180,8 @@ extern char const NTH_DEBUG[];
 #define SU_DEBUG 1
 #endif
 
-/**Debug log for @b nth module. 
- * 
+/**Debug log for @b nth module.
+ *
  * The nth_server_log is the log object used by @b nth module. The level of
  * #nth_server_log is set using #NTH_DEBUG environment variable.
  */
@@ -211,11 +211,11 @@ static nth_site_t **site_get_rslot(nth_site_t *parent, char *path,
 static nth_site_t *site_get_subdir(nth_site_t *parent, char const *path, char const **res);
 static void server_tport_error(server_t *srv, tport_t *tport,
 			       int errcode, char const *remote);
-static msg_t *server_msg_create(server_t *srv, int flags, 
+static msg_t *server_msg_create(server_t *srv, int flags,
 				char const data[], usize_t dlen,
 				tport_t const *tp, tp_client_t *tpc);
 
-static void server_reply(server_t *srv, tport_t *tport, 
+static void server_reply(server_t *srv, tport_t *tport,
 			 msg_t *request, msg_t *response,
 			 int status, char const *phrase);
 
@@ -232,13 +232,13 @@ void nth_site_request(server_t *srv,
  * 5) Site functions
  */
 
-/** Create a http site object. 
+/** Create a http site object.
  *
  * The function nth_site_create() allocates and initializes a web site
- * object. A web site object can be either 
+ * object. A web site object can be either
  * - a primary http server (@a parent is NULL),
- * - a virtual http server (@a address contains hostpart), or 
- * - a site within a server 
+ * - a virtual http server (@a address contains hostpart), or
+ * - a site within a server
  *   (@a address does not have hostpart, only path part).
  *
  * @param parent pointer to parent site
@@ -259,7 +259,7 @@ void nth_site_request(server_t *srv,
  *
  * @since Support for multiple sites was added to @VERSION_1_12_4
  */
-nth_site_t *nth_site_create(nth_site_t *parent,  
+nth_site_t *nth_site_create(nth_site_t *parent,
 			    nth_request_f *callback,
 			    nth_site_magic_t *magic,
 			    url_string_t const *address,
@@ -307,7 +307,7 @@ nth_site_t *nth_site_create(nth_site_t *parent,
 
   if (!url || !callback)
     return NULL;
-  
+
   is_host = url->url_host != NULL;
   is_path = url->url_path != NULL;
 
@@ -329,7 +329,7 @@ nth_site_t *nth_site_create(nth_site_t *parent,
       errno = EINVAL;
       goto error;
     }
-      
+
     srv = parent->site_server; assert(srv);
     if (is_host) {
       prev = site_get_host(&srv->srv_sites, url->url_host, url->url_port);
@@ -340,7 +340,7 @@ nth_site_t *nth_site_create(nth_site_t *parent,
 	errno = EEXIST;
 	goto error;
       }
-    } 
+    }
     else {
       size_t i, j;
 
@@ -370,7 +370,7 @@ nth_site_t *nth_site_create(nth_site_t *parent,
       prev = site_get_rslot(parent, path, &path);
 
       if (!prev || path[0] == '\0') {
-	SU_DEBUG_3(("nth_site_create(): directory \"%s\" already exists\n", 
+	SU_DEBUG_3(("nth_site_create(): directory \"%s\" already exists\n",
 		    url->url_path));
 	errno = EEXIST;
 	goto error;
@@ -396,7 +396,7 @@ nth_site_t *nth_site_create(nth_site_t *parent,
 
   if (srv && (site = su_zalloc(srv->srv_home, (sizeof *site) + usize))) {
     site->site_url = (url_t *)(site + 1);
-    url_dup((void *)(site->site_url + 1), usize - sizeof(*url), 
+    url_dup((void *)(site->site_url + 1), usize - sizeof(*url),
 	    site->site_url, url);
 
     assert(prev);
@@ -423,7 +423,7 @@ nth_site_t *nth_site_create(nth_site_t *parent,
     site->site_wildcard = wildcard;
     site->site_callback = callback;
     site->site_magic = magic;
-    
+
     if (parent)
       site->site_auth = parent->site_auth;
 
@@ -457,8 +457,8 @@ nth_site_magic_t *nth_site_magic(nth_site_t const *site)
 }
 
 
-void nth_site_bind(nth_site_t *site, 
-		   nth_request_f *callback, 
+void nth_site_bind(nth_site_t *site,
+		   nth_request_f *callback,
 		   nth_site_magic_t *magic)
 {
   if (site) {
@@ -517,7 +517,7 @@ int nth_site_set_params(nth_site_t *site,
 	      TAG_IF(master, NTHTAG_MFLAGS_REF(mflags)),
 	      NTHTAG_AUTH_MODULE_REF(am),
 	      TAG_END());
-  
+
   if (n > 0) {
     if (mclass)
       server->srv_mclass = mclass;
@@ -558,13 +558,13 @@ int nth_site_get_params(nth_site_t const *site,
 	       TAG_IF(master, NTHTAG_MCLASS(mclass)),
 	       TAG_IF(master, NTHTAG_MFLAGS(server->srv_mflags)),
 	       TAG_END());
-  
+
   ta_end(ta);
 
   return n;
 }
 
-int nth_site_get_stats(nth_site_t const *site, 
+int nth_site_get_stats(nth_site_t const *site,
 		       tag_type_t tag, tag_value_t value, ...)
 {
   int n;
@@ -577,7 +577,7 @@ int nth_site_get_stats(nth_site_t const *site,
 
   n = tl_tgets(ta_args(ta),
 	       TAG_END());
-  
+
   ta_end(ta);
 
   return n;
@@ -606,7 +606,7 @@ nth_site_t **site_get_host(nth_site_t **list, char const *host, char const *port
  * When a resource
  */
 static
-nth_site_t **site_get_rslot(nth_site_t *parent, char *path, 
+nth_site_t **site_get_rslot(nth_site_t *parent, char *path,
 			    char **return_rest)
 {
   nth_site_t *site, **prev;
@@ -626,7 +626,7 @@ nth_site_t **site_get_rslot(nth_site_t *parent, char *path,
       continue;
     if (path[len] == '\0') {
       if (site->site_isdir)
-	return *return_rest = path, prev; 
+	return *return_rest = path, prev;
       return errno = EEXIST, NULL;
     }
     if (path[len] != '/' || site->site_path[len] != '/')
@@ -662,7 +662,7 @@ nth_site_t *site_get_subdir(nth_site_t *parent,
 
   if (path[0] == '\0')
     return *return_rest = path, parent;
-  
+
   for (site = parent->site_kids; site; site = site->site_next) {
     cmp = strncmp(path, site->site_path, len = site->site_path_len);
     if (cmp > 0)
@@ -711,7 +711,7 @@ server_t *server_create(url_t const *url,
   ta_list ta;
 
   ta_start(ta, tag, value);
-  tl_gets(ta_args(ta), 
+  tl_gets(ta_args(ta),
 	  NTHTAG_ROOT_REF(root),
 	  NTHTAG_MCLASS_REF(mclass),
 	  TPTAG_REUSE_REF(persistent),
@@ -719,7 +719,7 @@ server_t *server_create(url_t const *url,
 	  HTTPTAG_SERVER_STR_REF(server_str),
 	  TAG_END());
 
-  if (!root || !url || 
+  if (!root || !url ||
       (url->url_type != url_http && url->url_type != url_https)
       || !(srv = su_home_new(sizeof(*srv)))) {
     ta_end(ta);
@@ -731,7 +731,7 @@ server_t *server_create(url_t const *url,
   tpn->tpn_host =  url->url_host;
   tpn->tpn_port = url_port(url);
 
-  srv->srv_tports = tport_tcreate(srv, nth_server_class, root, 
+  srv->srv_tports = tport_tcreate(srv, nth_server_class, root,
 				  TPTAG_IDLE(600000),
 				  TPTAG_TIMEOUT(300000),
 				  ta_tags(ta));
@@ -757,9 +757,9 @@ server_t *server_create(url_t const *url,
 		     TAG_END());
   }
   else {
-    SU_DEBUG_1(("nth_server_create: cannot bind transports " 
+    SU_DEBUG_1(("nth_server_create: cannot bind transports "
 		URL_FORMAT_STRING "\n",
-		URL_PRINT_ARGS(url))); 
+		URL_PRINT_ARGS(url)));
     server_destroy(srv), srv = NULL;
   }
 
@@ -843,7 +843,7 @@ void server_request(server_t *srv,
   } else if (http && http->http_flags & MSG_FLG_TOOLARGE) {
     server_reply(srv, tport, request, response, HTTP_413_ENTITY_TOO_LARGE);
     return;
-  } else if (!http || !http->http_request || 
+  } else if (!http || !http->http_request ||
 	     (http->http_flags & MSG_FLG_ERROR)) {
     server_reply(srv, tport, request, response, HTTP_400_BAD_REQUEST);
     return;
@@ -933,7 +933,7 @@ static void server_tport_error(server_t *srv,
 }
 
 /** Respond without creating a request structure */
-static void server_reply(server_t *srv, tport_t *tport, 
+static void server_reply(server_t *srv, tport_t *tport,
 			 msg_t *request, msg_t *response,
 			 int status, char const *phrase)
 {
@@ -947,23 +947,23 @@ static void server_reply(server_t *srv, tport_t *tport,
     status = 500, phrase = http_500_internal_server;
 
   http = http_object(request);
-  
+
   if (http && http->http_request)
     req_version = http->http_request->rq_version;
 
-  close = status >= 200 && 
+  close = status >= 200 &&
     (!srv->srv_persistent
      || status == 400
-     || (http && http->http_request && 
+     || (http && http->http_request &&
 	 http->http_request->rq_version != http_version_1_1)
-     || (http && http->http_connection && 
+     || (http && http->http_connection &&
 	 msg_params_find(http->http_connection->k_items, "close")));
 
   msg_destroy(request);
 
   http = http_object(response);
 
-  pl = http_payload_format(msg_home(response), 
+  pl = http_payload_format(msg_home(response),
 			   "<html>\n"
 			   "<head><title>%u %s</title></head>\n"
 			   "<body><h2>%u %s</h2></body>\n"
@@ -976,7 +976,7 @@ static void server_reply(server_t *srv, tport_t *tport,
     st->st_version = http_version_1_1;
     st->st_status = status;
     st->st_phrase = phrase;
-    
+
     http_add_tl(response, http,
 		HTTPTAG_STATUS(st),
 		HTTPTAG_SERVER(srv->srv_server),
@@ -992,8 +992,8 @@ static void server_reply(server_t *srv, tport_t *tport,
     close = 1;
   }
 
-  if (tport_tqsend(tport, response, NULL, 
-		   TPTAG_CLOSE_AFTER(close), 
+  if (tport_tqsend(tport, response, NULL,
+		   TPTAG_CLOSE_AFTER(close),
 		   TAG_END()) == -1) {
     SU_DEBUG_3(("server_reply(): cannot queue response\n"));
     tport_shutdown(tport, 2);
@@ -1004,7 +1004,7 @@ static void server_reply(server_t *srv, tport_t *tport,
 
 /** Create a new message for transport */
 static
-msg_t *server_msg_create(server_t *srv, int flags, 
+msg_t *server_msg_create(server_t *srv, int flags,
 			 char const data[], usize_t dlen,
 			 tport_t const *tp, tp_client_t *tpc)
 {
@@ -1014,7 +1014,7 @@ msg_t *server_msg_create(server_t *srv, int flags,
 }
 
 /* ----------------------------------------------------------------------
- * 6) Server transactions 
+ * 6) Server transactions
  */
 
 struct auth_info
@@ -1044,12 +1044,12 @@ void nth_site_request(server_t *srv,
   int status;
 
   req = su_zalloc(srv->srv_home, size);
-  
+
   if (req == NULL) {
     server_reply(srv, tport, request, response, HTTP_500_INTERNAL_SERVER);
     return;
   }
-  
+
   if (am)
     as = auth_status_init(req + 1, sizeof *as), ai = (void *)(as + 1);
   else
@@ -1066,27 +1066,27 @@ void nth_site_request(server_t *srv,
   req->req_response = response;
 
   req->req_status = 100;
-  req->req_close = 
+  req->req_close =
     !srv->srv_persistent
     || http->http_request->rq_version != http_version_1_1
-    || (http->http_connection && 
+    || (http->http_connection &&
 	msg_params_find(http->http_connection->k_items, "close"));
 
   if (am) {
-    static auth_challenger_t const http_server_challenger[] = 
+    static auth_challenger_t const http_server_challenger[] =
       {{ HTTP_401_UNAUTHORIZED, http_www_authenticate_class }};
 
     req->req_as = as;
 
     as->as_method = http->http_request->rq_method_name;
     as->as_uri = path;
-    
+
     if (http->http_payload) {
       as->as_body = http->http_payload->pl_data;
       as->as_bodylen = http->http_payload->pl_len;
     }
 
-    auth_mod_check_client(am, as, 
+    auth_mod_check_client(am, as,
 			  http->http_authorization,
 			  http_server_challenger);
 
@@ -1143,13 +1143,13 @@ static void nth_authentication_result(void *ai0, auth_status_t *as)
 
   if (as->as_status != 0) {
     assert(as->as_status >= 300);
-    nth_request_treply(req, status = as->as_status, as->as_phrase, 
-		       HTTPTAG_HEADER((http_header_t *)as->as_response), 
+    nth_request_treply(req, status = as->as_status, as->as_phrase,
+		       HTTPTAG_HEADER((http_header_t *)as->as_response),
 		       TAG_END());
   }
   else {
     req->req_in_callback = 1;
-    status = ai->site->site_callback(ai->site->site_magic, 
+    status = ai->site->site_callback(ai->site->site_magic,
 				     ai->site,
 				     ai->req,
 				     ai->http,
@@ -1178,7 +1178,7 @@ void nth_request_destroy(nth_request_t *req)
 
   req->req_destroyed = 1;
 
-  if (req->req_in_callback) 
+  if (req->req_in_callback)
     return;
 
   if (req->req_as)
@@ -1193,7 +1193,7 @@ void nth_request_destroy(nth_request_t *req)
 /** Return request authentication status.
  *
  * @param req pointer to HTTP request object
- * 
+ *
  * @retval Status code
  *
  * @since New in @VERSION_1_12_4
@@ -1206,7 +1206,7 @@ int nth_request_status(nth_request_t const *req)
 /** Return request authentication status.
  *
  * @param req pointer to HTTP request object
- * 
+ *
  * @retval Pointer to authentication status struct
  *
  * @note The authentication status struct is freed when the #nth_request_t
@@ -1236,8 +1236,8 @@ msg_t *nth_request_message(nth_request_t *req)
   return retval;
 }
 
-int nth_request_treply(nth_request_t *req, 
-		       int status, char const *phrase, 
+int nth_request_treply(nth_request_t *req,
+		       int status, char const *phrase,
 		       tag_type_t tag, tag_value_t value, ...)
 {
   msg_t *response, *next = NULL;
@@ -1261,14 +1261,14 @@ int nth_request_treply(nth_request_t *req,
 
   http_add_tl(response, http,
 	      HTTPTAG_SERVER(req->req_server->srv_server),
-	      HTTPTAG_HEADER(as_info), 
+	      HTTPTAG_HEADER(as_info),
 	      ta_tags(ta));
 
   if (http->http_payload && !http->http_content_length) {
     http_content_length_t *l;
     http_payload_t *pl;
     size_t len = 0;
-    
+
     for (pl = http->http_payload; pl; pl = pl->pl_next)
       len += pl->pl_len;
 
@@ -1282,12 +1282,12 @@ int nth_request_treply(nth_request_t *req,
 
   if (req->req_method == http_method_head && http->http_payload) {
     http_payload_t *pl;
-    
+
     for (pl = http->http_payload; pl; pl = pl->pl_next)
       msg_header_remove(response, (msg_pub_t *)http, (msg_header_t *)pl);
   }
 
-  http_complete_response(response, status, phrase, 
+  http_complete_response(response, status, phrase,
 			 http_object(req->req_request));
 
   if (!http->http_date) {
@@ -1303,9 +1303,9 @@ int nth_request_treply(nth_request_t *req,
   else {
     req_close = req->req_close;
 
-    close = (http->http_connection && 
+    close = (http->http_connection &&
 	     msg_params_find(http->http_connection->k_items, "close"));
-    
+
     if (req_close && !close && status >= 200) {
       close = 1;
       http_add_tl(response, http, HTTPTAG_CONNECTION_STR("close"), TAG_END());
@@ -1314,13 +1314,13 @@ int nth_request_treply(nth_request_t *req,
 
   msg_serialize(response, (msg_pub_t *)http);
 
-  retval = tport_tqsend(req->req_tport, response, next, 
+  retval = tport_tqsend(req->req_tport, response, next,
 			TAG_IF(close, TPTAG_CLOSE_AFTER(1)),
 			ta_tags(ta));
 
  fail:
   ta_end(ta);
-  
+
   if (retval == 0)
     req->req_status = status;
 

@@ -24,7 +24,7 @@
 
 /**@ingroup su_wait
  *
- * @CFILE su_wait.c  
+ * @CFILE su_wait.c
  * Implementation of OS-independent socket synchronization interface.
  *
  * This looks like nth reincarnation of "reactor".  It implements the
@@ -121,13 +121,13 @@ void su_wait_init(su_wait_t dst[1])
  *
  * As a side-effect the socket is put into non-blocking mode when wait
  * object is created.
- * 
+ *
  * @param newwait  the newly created wait object (output)
  * @param socket   socket
  * @param events   mask for events that can signal this wait object
- * 
+ *
  * @retval 0 if the call was successful,
- * @retval -1 upon an error.  
+ * @retval -1 upon an error.
 */
 int su_wait_create(su_wait_t *newwait, su_socket_t socket, int events)
 {
@@ -164,7 +164,7 @@ int su_wait_create(su_wait_t *newwait, su_socket_t socket, int events)
   mode |= O_NDELAY | O_NONBLOCK;
   if (fcntl(socket, F_SETFL, mode) < 0)
     return -1;
-  
+
   newwait->fd = socket;
   newwait->events = events;
   newwait->revents = 0;
@@ -177,7 +177,7 @@ int su_wait_create(su_wait_t *newwait, su_socket_t socket, int events)
  *
  * The function su_wait_destroy() destroys a su_wait_t object.
  *
- * @param waitobj  pointer to wait object   
+ * @param waitobj  pointer to wait object
  *
  * @retval 0 when successful,
  * @retval -1 upon an error.
@@ -206,11 +206,11 @@ int su_wait_destroy(su_wait_t *waitobj)
  * The function su_wait() blocks until an event specified by wait objects in
  * @a wait array.  If @a timeout is not SU_WAIT_FOREVER, a timeout occurs
  * after @a timeout milliseconds.
- * 
+ *
  * In Unix, this is @c poll() or @c select().
- * 
+ *
  * In Windows, this is @c WSAWaitForMultipleEvents().
- * 
+ *
  * @param waits    array of wait objects
  * @param n        number of wait objects in array waits
  * @param timeout  timeout in milliseconds
@@ -250,20 +250,20 @@ int su_wait(su_wait_t waits[], unsigned n, su_duration_t timeout)
 	  return j;
       }
     }
-  
+
     if (errno == EINTR)
       continue;
 
     return -1;
-  }  
+  }
 #endif
 }
 
 /** Get events.
- * 
+ *
  *   The function su_wait_events() returns an mask describing events occurred.
  *
- * @param waitobj  pointer to wait object   
+ * @param waitobj  pointer to wait object
  * @param s        socket
  *
  * @return Binary mask describing the events.
@@ -285,15 +285,15 @@ int su_wait_events(su_wait_t *waitobj, su_socket_t s)
 }
 
 /** Set event mask.
- * 
+ *
  *   The function su_wait_mask() sets the mask describing events that can
  *   signal the wait object.
  *
- * @param waitobj  pointer to wait object   
+ * @param waitobj  pointer to wait object
  * @param s        socket
  * @param events   new event mask
  *
- * @retval  0 when successful, 
+ * @retval  0 when successful,
  * @retval -1 upon an error.
  */
 int su_wait_mask(su_wait_t *waitobj, su_socket_t s, int events)

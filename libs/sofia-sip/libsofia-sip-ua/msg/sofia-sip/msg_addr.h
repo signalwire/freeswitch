@@ -24,10 +24,10 @@
 
 #ifndef MSG_ADDR_H
 /** Defined when <sofia-sip/msg_addr.h> has been included. */
-#define MSG_ADDR_H 
+#define MSG_ADDR_H
 
 
-/**@file sofia-sip/msg_addr.h 
+/**@file sofia-sip/msg_addr.h
  * @brief Addressing and I/O interface for messages.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -66,8 +66,8 @@ enum {
   msg_n_fragments = 8
 };
 
-/** I/O vector type. 
- * @sa msg_recv_iovec(), msg_iovec(), #su_iovec_s, su_vsend(), su_vrecv(). 
+/** I/O vector type.
+ * @sa msg_recv_iovec(), msg_iovec(), #su_iovec_s, su_vsend(), su_vrecv().
  */
 typedef struct su_iovec_s msg_iovec_t;
 #define mv_base siv_base
@@ -88,8 +88,8 @@ SOFIAPUBFUN int msg_set_next(msg_t *msg, msg_t *next);
 
 SOFIAPUBFUN void msg_clear_committed(msg_t *msg);
 
-SOFIAPUBFUN issize_t msg_buf_external(msg_t *msg, 
-				      usize_t N, 
+SOFIAPUBFUN issize_t msg_buf_external(msg_t *msg,
+				      usize_t N,
 				      usize_t blocksize);
 
 SOFIA_END_DECLS

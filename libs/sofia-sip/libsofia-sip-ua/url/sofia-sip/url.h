@@ -34,7 +34,7 @@
 #ifndef URL_H_TYPES
 #define URL_H_TYPES
 
-/** Recognized URL schemes (value of url_t.url_type). 
+/** Recognized URL schemes (value of url_t.url_type).
  *
  * @sa &lt;<a href="http://www.iana.org/assignments/uri-schemes.html">http://www.iana.org/assignments/uri-schemes.html</a>&gt;
  */
@@ -63,12 +63,12 @@ enum url_type_e {
   _url_none
 };
 
-/** URL structure. 
- * 
+/** URL structure.
+ *
  * This structure is used to present a parsed URL.
  */
 typedef struct {
-  char                url_pad[sizeof(void *) - 2];   
+  char                url_pad[sizeof(void *) - 2];
 				    /**< Zero pad for URL_STRING_P(). */
   signed char         url_type;	    /**< URL type (url_type_e). */
   char                url_root;	    /**< Nonzero if root "//" */
@@ -83,13 +83,13 @@ typedef struct {
   char const         *url_fragment; /**< Fragment (separated by #) */
 } url_t;
 
-enum { 
+enum {
   /** Maximum size of a URL. */
   URL_MAXLEN = 65536
 };
 
 /** Type to present either a parsed URL or string.
- * 
+ *
  * The union type url_string_t is used to pass a parsed URL or string as a
  * parameter. The URL_STRING_P() checks if a passed pointer points to a
  * string or a parsed URL. Testing requires that the first character of the
@@ -113,7 +113,7 @@ typedef union {
 
 SOFIA_BEGIN_DECLS
 
-/** Convert a string to a url struct. */ 
+/** Convert a string to a url struct. */
 SOFIAPUBFUN url_t *url_make(su_home_t *h, char const *str);
 
 /** Convert a string formatting result to a url struct. */
@@ -122,7 +122,7 @@ SOFIAPUBFUN url_t *url_format(su_home_t *h, char const *fmt, ...);
 /** Convert #url_t to a string allocated from @a home */
 SOFIAPUBFUN char *url_as_string(su_home_t *home, url_t const *url);
 
-/** Duplicate the url to memory allocated via home */ 
+/** Duplicate the url to memory allocated via home */
 SOFIAPUBFUN url_t *url_hdup(su_home_t *h, url_t const *src);
 
 /** Sanitize a URL. */
@@ -169,7 +169,7 @@ SOFIAPUBFUN int url_have_transport(url_t const *u);
 /* Query handling */
 
 /** Convert a URL query to a header string. */
-SOFIAPUBFUN char *url_query_as_header_string(su_home_t *home, 
+SOFIAPUBFUN char *url_query_as_header_string(su_home_t *home,
 					     char const *query);
 
 /* ---------------------------------------------------------------------- */
@@ -195,8 +195,8 @@ SOFIAPUBFUN char *url_unescape(char *d, char const *s);
 /* ---------------------------------------------------------------------- */
 /* Initializing */
 
-/** Initializer for an #url_t structure. @HI 
- * 
+/** Initializer for an #url_t structure. @HI
+ *
  * The macro URL_INIT_AS() is used to initialize a #url_t structure with a
  * known url type:
  * @code
@@ -229,11 +229,11 @@ SOFIAPUBFUN char const *url_port(url_t const *u);
 /* ---------------------------------------------------------------------- */
 /* url_string_t handling */
 
-/** Test if a pointer to #url_string_t is a string 
+/** Test if a pointer to #url_string_t is a string
  * (not a pointer to a #url_t structure). */
 #define URL_STRING_P(u) ((u) && *((url_string_t*)(u))->us_str != 0)
 
-/** Test if a pointer to #url_string_t is a string 
+/** Test if a pointer to #url_string_t is a string
  * (not a pointer to a #url_t structure). */
 #define URL_IS_STRING(u) ((u) && *((url_string_t*)(u))->us_str != 0)
 
@@ -306,10 +306,10 @@ SOFIAPUBFUN issize_t url_e(char buffer[], isize_t n, url_t const *url);
 /** Calculate the size of srings attached to the url. */
 SOFIAPUBFUN isize_t url_xtra(url_t const * url);
 
-/** Duplicate the url in the provided memory area. */ 
+/** Duplicate the url in the provided memory area. */
 SOFIAPUBFUN issize_t url_dup(char *, isize_t , url_t *dst, url_t const *src);
 
-/** Duplicate the url: use @a buf up to @a end. @HI */ 
+/** Duplicate the url: use @a buf up to @a end. @HI */
 #define URL_DUP(buf, end, dst, src) \
   (buf) += url_dup((buf), (isize_t)((buf) < (end) ? (end) - (buf) : 0), (dst), (src))
 

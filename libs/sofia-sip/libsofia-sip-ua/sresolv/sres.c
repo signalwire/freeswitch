@@ -25,13 +25,13 @@
 
 /**@CFILE sres.c
  * @brief Sofia DNS Resolver implementation.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Teemu Jalava <Teemu.Jalava@nokia.com>
  * @author Mikko Haataja
- * @author Kai Vehmanen <kai.vehmanen@nokia.com> 
- *         (work on the win32 nameserver discovery) 
- * @author Dimitri E. Prado 
+ * @author Kai Vehmanen <kai.vehmanen@nokia.com>
+ *         (work on the win32 nameserver discovery)
+ * @author Dimitri E. Prado
  *         (initial version of win32 nameserver discovery)
  *
  * @todo The resolver should allow handling arbitrary records, too.
@@ -105,7 +105,7 @@ typedef int socklen_t;
 
 #if HAVE_WINSOCK2_H
 /* Posix send() */
-su_inline 
+su_inline
 ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
 {
   if (length > INT_MAX)
@@ -114,7 +114,7 @@ ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
 }
 
 /* Posix recvfrom() */
-su_inline 
+su_inline
 ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
 		      struct sockaddr *from, socklen_t *fromlen)
 {
@@ -126,7 +126,7 @@ ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
   if (length > INT_MAX)
     length = INT_MAX;
 
-  retval = recvfrom(s, buffer, (int)length, flags, 
+  retval = recvfrom(s, buffer, (int)length, flags,
 		    (void *)from, fromlen ? &ilen : NULL);
 
   if (fromlen)
@@ -202,7 +202,7 @@ typedef struct sres_nameserver sres_nameserver_t;
 static char const sres_conf_file_path[] = "/etc/resolv.conf";
 
 /** EDNS0 support. @internal */
-enum edns { 
+enum edns {
   edns_not_tried = -1,
   edns_not_supported = 0,
   edns0_configured = 1,
@@ -220,7 +220,7 @@ struct sres_server {
 
   /** ICMP/temporary error received, zero when successful. */
   time_t                  dns_icmp;
-  /** Persistent error, zero when successful or timeout. 
+  /** Persistent error, zero when successful or timeout.
    *
    * Never selected if dns_error is SRES_TIME_MAX.
    */
@@ -251,7 +251,7 @@ struct sres_resolver_s {
   short               res_update_all;
 
   uint16_t            res_id;
-  short               res_i_server;  /**< Current server to try 
+  short               res_i_server;  /**< Current server to try
 					(when doing round-robin) */
   short               res_n_servers; /**< Number of servers */
   sres_server_t     **res_servers;
@@ -338,7 +338,7 @@ struct sres_message {
 #define m_qdcount m_packet.mp_header.mh_qdcount
 #define m_ancount m_packet.mp_header.mh_ancount
 #define m_nscount m_packet.mp_header.mh_nscount
-#define m_arcount m_packet.mp_header.mh_arcount 
+#define m_arcount m_packet.mp_header.mh_arcount
 #define m_data    m_packet.mp_data
 };
 
@@ -385,7 +385,7 @@ HTABLE_PROTOS_WITH(sres_qtable, qt, sres_query_t, unsigned, size_t);
    (void *)&((struct sockaddr *)ss)->sa_data)
 #endif
 
-static int sres_config_changed_servers(sres_config_t const *new_c, 
+static int sres_config_changed_servers(sres_config_t const *new_c,
 				       sres_config_t const *old_c);
 static sres_server_t **sres_servers_new(sres_resolver_t *res,
 					sres_config_t const *c);
@@ -398,8 +398,8 @@ sres_new_id(sres_resolver_t *res)
 }
 
 /** Return true if we have a search list or a local domain name. */
-static int 
-sres_has_search_domain(sres_resolver_t *res) 
+static int
+sres_has_search_domain(sres_resolver_t *res)
 {
   return res->res_config->c_search[0] != NULL;
 }
@@ -409,7 +409,7 @@ static void sres_resolver_destructor(void *);
 sres_resolver_t *
 sres_resolver_new_with_cache_va(char const *conf_file_path,
 				sres_cache_t *cache,
-				char const *options, 
+				char const *options,
 				va_list va);
 static
 sres_resolver_t *
@@ -434,25 +434,25 @@ static sres_query_t * sres_query_alloc(sres_resolver_t *res,
 
 static void sres_free_query(sres_resolver_t *res, sres_query_t *q);
 
-static 
-int sres_sockaddr2string(sres_resolver_t *, 
-			 char name[], size_t namelen, 
+static
+int sres_sockaddr2string(sres_resolver_t *,
+			 char name[], size_t namelen,
 			 struct sockaddr const *);
 
-static 
+static
 sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
 				      char const **options);
 
 static
-sres_server_t *sres_next_server(sres_resolver_t *res, 
+sres_server_t *sres_next_server(sres_resolver_t *res,
 				uint8_t *in_out_i,
 				int always);
 
 static
 int sres_send_dns_query(sres_resolver_t *res, sres_query_t *q);
 
-static 
-void sres_answer_subquery(sres_context_t *context, 
+static
+void sres_answer_subquery(sres_context_t *context,
 			  sres_query_t *query,
 			  sres_record_t **answers);
 
@@ -468,26 +468,26 @@ void sres_query_report_error(sres_query_t *q,
 static void
 sres_resend_dns_query(sres_resolver_t *res, sres_query_t *q, int timeout);
 
-static 
+static
 sres_server_t *sres_server_by_socket(sres_resolver_t const *ts,
 				     sres_socket_t socket);
 
 static
-int sres_resolver_report_error(sres_resolver_t *res, 
+int sres_resolver_report_error(sres_resolver_t *res,
 			       sres_socket_t socket,
 			       int errcode,
 			       struct sockaddr_storage *remote,
-			       socklen_t remotelen, 
+			       socklen_t remotelen,
 			       char const *info);
 
 static
-void sres_log_response(sres_resolver_t const *res, 
+void sres_log_response(sres_resolver_t const *res,
 		       sres_message_t const *m,
 		       struct sockaddr_storage const *from,
 		       sres_query_t const *query,
 		       sres_record_t * const *reply);
 
-static int sres_decode_msg(sres_resolver_t *res, 
+static int sres_decode_msg(sres_resolver_t *res,
 			   sres_message_t *m,
 			   sres_query_t **,
 			   sres_record_t ***aanswers);
@@ -531,9 +531,9 @@ static sres_record_t *sres_create_error_rr(sres_cache_t *cache,
 static void m_put_uint16(sres_message_t *m, uint16_t h);
 static void m_put_uint32(sres_message_t *m, uint32_t w);
 
-static uint16_t m_put_domain(sres_message_t *m, 
-                             char const *domain, 
-                             uint16_t top, 
+static uint16_t m_put_domain(sres_message_t *m,
+                             char const *domain,
+                             uint16_t top,
                              char const *topdomain);
 
 static uint32_t m_get_uint32(sres_message_t *m);
@@ -560,7 +560,7 @@ static int m_get_domain(char *d, int n, sres_message_t *m, uint16_t offset);
  *
  * The SRESOLV_DEBUG environment variable is used to determine the debug
  * logging level for @b sresolv module. The default level is 3.
- * 
+ *
  * @sa <sofia-sip/su_debug.h>, sresolv_log, SOFIA_DEBUG
  */
 #ifdef DOXYGEN
@@ -571,8 +571,8 @@ extern char const SRESOLV_DEBUG[]; /* dummy declaration for Doxygen */
 #define SU_DEBUG 3
 #endif
 
-/**Debug log for @b sresolv module. 
- * 
+/**Debug log for @b sresolv module.
+ *
  * The sresolv_log is the log object used by @b sresolv module. The level of
  * #sresolv_log is set using #SRESOLV_DEBUG environment variable.
  */
@@ -593,7 +593,7 @@ enum {
  * file can be overriden by giving the name of the configuration file as @a
  * conf_file_path.
  *
- * @param conf_file_path name of the resolv.conf configuration file 
+ * @param conf_file_path name of the resolv.conf configuration file
  *
  * @return A pointer to a newly created sres resolver object, or NULL upon
  * an error.
@@ -638,9 +638,9 @@ sres_resolver_t *sres_resolver_copy(sres_resolver_t *res)
  * It is also possible to override the values in the resolv.conf and
  * RES_OPTIONS by giving the directives in the NULL-terminated list.
  *
- * @param conf_file_path name of the resolv.conf configuration file 
+ * @param conf_file_path name of the resolv.conf configuration file
  * @param cache          optional pointer to a resolver cache (may be NULL)
- * @param option, ...    list of resolv.conf options directives 
+ * @param option, ...    list of resolv.conf options directives
  *                       (overriding options in conf_file)
  *
  * @par Environment Variables
@@ -667,7 +667,7 @@ sres_resolver_new_with_cache(char const *conf_file_path,
 
 /**Create a resolver.
  *
- * Allocate and initialize a new sres resolver object. 
+ * Allocate and initialize a new sres resolver object.
  *
  * This is a stdarg version of sres_resolver_new_with_cache().
  */
@@ -683,7 +683,7 @@ sres_resolver_new_with_cache_va(char const *conf_file_path,
   sres_resolver_t *res;
 
   va_copy(va0, va);
-  
+
   for (i = 0, o = option; o; o = va_arg(va0, char const *)) {
     if (i < 16)
       olist[i] = o;
@@ -716,7 +716,7 @@ sres_resolver_new_internal(sres_cache_t *cache,
   sres_resolver_t *res;
   size_t i, n, len;
   char **array, *o, *end;
- 
+
   for (n = 0, len = 0; options && options[n]; n++)
     len += strlen(options[n]) + 1;
 
@@ -785,7 +785,7 @@ sres_resolver_ref(sres_resolver_t *res)
 {
   return su_home_ref(res->res_home);
 }
-		     
+
 /** Decrease the reference count on a resolver object.  */
 void
 sres_resolver_unref(sres_resolver_t *res)
@@ -796,12 +796,12 @@ sres_resolver_unref(sres_resolver_t *res)
 /** Set userdata pointer.
  *
  * @return New userdata pointer.
- * 
+ *
  * @ERRORS
  * @ERROR EFAULT @a res points outside the address space
  */
 void *
-sres_resolver_set_userdata(sres_resolver_t *res, 
+sres_resolver_set_userdata(sres_resolver_t *res,
 			   void *userdata)
 {
   void *old;
@@ -817,7 +817,7 @@ sres_resolver_set_userdata(sres_resolver_t *res,
 /**Get userdata pointer.
  *
  * @return Userdata pointer.
- * 
+ *
  * @ERRORS
  * @ERROR EFAULT @a res points outside the address space
  */
@@ -833,7 +833,7 @@ sres_resolver_get_userdata(sres_resolver_t const *res)
 /** Set async object.
  *
  * @return Set async object.
- * 
+ *
  * @ERRORS
  * @ERROR EFAULT @a res points outside the address space
  * @ERROR EALREADY different async callback already set
@@ -841,7 +841,7 @@ sres_resolver_get_userdata(sres_resolver_t const *res)
 sres_async_t *
 sres_resolver_set_async(sres_resolver_t *res,
 			sres_update_f *callback,
-			sres_async_t *async, 
+			sres_async_t *async,
 			int update_all)
 {
   if (!res)
@@ -849,7 +849,7 @@ sres_resolver_set_async(sres_resolver_t *res,
 
   if (res->res_updcb && res->res_updcb != callback)
     return su_seterrno(EALREADY), (void *)NULL;
-    
+
   res->res_async = async;
   res->res_updcb = callback;
   res->res_update_all = callback && update_all != 0;
@@ -906,12 +906,12 @@ int sres_resolver_set_timer_cb(sres_resolver_t *res,
  * Query types also indicate the record type of the result.
  * Any record can be queried with #sres_qtype_any.
  * Well-known query types understood and decoded by @b sres include
- * #sres_type_a, 
+ * #sres_type_a,
  * #sres_type_aaaa,
  * #sres_type_cname,
- * #sres_type_ptr 
- * #sres_type_soa, 
- * #sres_type_aaaa, 
+ * #sres_type_ptr
+ * #sres_type_soa,
+ * #sres_type_aaaa,
  * #sres_type_srv, and
  * #sres_type_naptr.
  *
@@ -939,7 +939,7 @@ sres_query(sres_resolver_t *res,
 {
   sres_query_t *query = NULL;
   size_t dlen;
-  
+
   char b[8];
   SU_DEBUG_9(("sres_query(%p, %p, %s, \"%s\") called\n",
 			  (void *)res, (void *)context, sres_record_type(type, b), domain));
@@ -970,12 +970,12 @@ sres_query(sres_resolver_t *res,
 
 /**Search DNS.
  *
- * Sends DNS queries with specified @a type and @a name to the DNS server. 
+ * Sends DNS queries with specified @a type and @a name to the DNS server.
  * If the @a name does not contain enought dots, the search domains are
  * appended to the name and resulting domain name are also queried. When
  * answer to all the search domains is received, the @a callback function
  * is called with @a context and combined records from answers as arguments.
- * 
+ *
  * The sres resolver takes care of retransmitting the queries if a root
  * object is associate with the resolver or if sres_resolver_timer() is
  * called in regular intervals. It generates an error record with nonzero
@@ -1031,7 +1031,7 @@ sres_search(sres_resolver_t *res,
     dots = res->res_config->c_opt.ndots;
   else if (sres_has_search_domain(res))
     for (dots = 0, dot = strchr(domain, '.');
-	 dots < res->res_config->c_opt.ndots && dot; 
+	 dots < res->res_config->c_opt.ndots && dot;
 	 dots++, dot = strchr(dot + 1, '.'))
       ;
   else
@@ -1057,7 +1057,7 @@ sres_search(sres_resolver_t *res,
       for (i = 0, subs = 0; i <= SRES_MAX_SEARCH; i++) {
 	if (domains[i]) {
 	  len = strlen(domains[i]);
-	  
+
 	  if (dlen + len + 1 > SRES_MAXDNAME)
 	    continue;
 
@@ -1106,7 +1106,7 @@ sres_search(sres_resolver_t *res,
  * @param context pointer given as an extra argument to @a callback function
  * @param type record type to query (or sres_qtype_any for any record)
  * @param addr socket address structure
- * 
+ *
  * The @a type should be #sres_type_ptr. The @a addr should contain either
  * IPv4 (AF_INET) or IPv6 (AF_INET6) address.
  *
@@ -1132,7 +1132,7 @@ sres_query_sockaddr(sres_resolver_t *res,
 		    uint16_t type,
 		    struct sockaddr const *addr)
 {
-  char name[80]; 
+  char name[80];
 
   if (!res || !addr)
     return su_seterrno(EFAULT), (void *)NULL;
@@ -1171,7 +1171,7 @@ sres_query_make_sockaddr(sres_resolver_t *res,
 			 uint16_t type,
 			 struct sockaddr const *addr)
 {
-  char name[80]; 
+  char name[80];
 
   if (!res || !addr)
     return su_seterrno(EFAULT), (void *)NULL;
@@ -1226,7 +1226,7 @@ sres_cached_answers(sres_resolver_t *res,
 
   if (!domain)
     return NULL;
-  
+
   if (!sres_cache_get(res->res_cache, type, domain, &result))
     return su_seterrno(ENOENT), (void *)NULL;
 
@@ -1267,7 +1267,7 @@ sres_search_cached_answers(sres_resolver_t *res,
 
   if (sres_has_search_domain(res))
     for (dots = 0, dot = strchr(domain, '.');
-	 dots < res->res_config->c_opt.ndots && dot; 
+	 dots < res->res_config->c_opt.ndots && dot;
 	 dots++, dot = strchr(dot + 1, '.'))
       ;
   else
@@ -1315,7 +1315,7 @@ sres_search_cached_answers(sres_resolver_t *res,
  * @param res pointer to resolver
  * @param type record type to query (or sres_qtype_any for any record)
  * @param addr socket address structure
- * 
+ *
  * The @a type should be #sres_type_ptr. The @a addr should contain either
  * IPv4 (AF_INET) or IPv6 (AF_INET6) address.
  *
@@ -1324,7 +1324,7 @@ sres_search_cached_answers(sres_resolver_t *res,
  * "ip6-dotint", the IPv6 addresses are resolved using suffix ".ip6.int"
  * instead of default ".ip6.arpa".
  *
- * @retval 
+ * @retval
  * pointer to an array of pointers to cached records, or
  * NULL if no entry was found.
  *
@@ -1363,13 +1363,13 @@ sres_cached_answers_sockaddr(sres_resolver_t *res,
  * @param res      pointer to resolver
  * @param domain   domain name of the SRV record(s) to modify
  * @param target   SRV target of the SRV record(s) to modify
- * @param port     port number of SRV record(s) to modify 
- *                 (in host byte order) 
+ * @param port     port number of SRV record(s) to modify
+ *                 (in host byte order)
  * @param ttl      new ttl for SRV records of the domain
  * @param priority new priority value (0=highest, 65535=lowest)
  *
  * @sa sres_cache_set_srv_priority()
- * 
+ *
  * @NEW_1_12_8
  */
 int sres_set_cached_srv_priority(sres_resolver_t *res,
@@ -1389,8 +1389,8 @@ int sres_set_cached_srv_priority(sres_resolver_t *res,
   if (!domain)
     return -1;
 
-  return sres_cache_set_srv_priority(res->res_cache, 
-				     domain, target, port, 
+  return sres_cache_set_srv_priority(res->res_cache,
+				     domain, target, port,
 				     ttl, priority);
 }
 
@@ -1409,7 +1409,7 @@ sres_sort_answers(sres_resolver_t *res, sres_record_t **answers)
 
   /* Simple insertion sorting */
   /*
-   * We do not use qsort because we want later extend this to sort 
+   * We do not use qsort because we want later extend this to sort
    * local A records first etc.
    */
   for (i = 1; answers[i]; i++) {
@@ -1431,10 +1431,10 @@ sres_sort_answers(sres_resolver_t *res, sres_record_t **answers)
 
 /** Sort and filter query results */
 int
-sres_filter_answers(sres_resolver_t *res, 
-		    sres_record_t **answers, 
+sres_filter_answers(sres_resolver_t *res,
+		    sres_record_t **answers,
 		    uint16_t type)
-{		    
+{
   int i, n;
 
   if (res == NULL || answers == NULL)
@@ -1465,11 +1465,11 @@ void sres_free_answer(sres_resolver_t *res, sres_record_t *answer)
 }
 
 /** Free and zero an array of records.
- * 
- * The array of records can be returned by sres_cached_answers() or 
+ *
+ * The array of records can be returned by sres_cached_answers() or
  * given by callback function.
  */
-void 
+void
 sres_free_answers(sres_resolver_t *res,
 		  sres_record_t **answers)
 {
@@ -1528,7 +1528,7 @@ char const *sres_record_type(int type, char buffer[8])
   case sres_qtype_mailb: return "MAILB";
   case sres_qtype_maila: return "MAILA";
   case sres_qtype_any: return "ANY";
-    
+
   default:
     sprintf(buffer, "%u?", type & 65535);
     return buffer;
@@ -1553,7 +1553,7 @@ char const *sres_record_class(int rclass, char buffer[8])
 }
 
 /** Compare two records. */
-int 
+int
 sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
 {
   int D;
@@ -1565,9 +1565,9 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
 
   if (a->r_status)
     return 0;
-  
+
   switch (a->r_type) {
-  case sres_type_soa: 
+  case sres_type_soa:
     {
       sres_soa_record_t const *A = aa->sr_soa, *B = bb->sr_soa;
       D = A->soa_serial - B->soa_serial; if (D) return D;
@@ -1588,7 +1588,7 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
     {
       sres_a6_record_t const *A = aa->sr_a6, *B = bb->sr_a6;
       D = A->a6_prelen - B->a6_prelen; if (D) return D;
-      D = !A->a6_prename - !B->a6_prename; 
+      D = !A->a6_prename - !B->a6_prename;
       if (D == 0 && A->a6_prename && B->a6_prename)
 	D = strcasecmp(A->a6_prename, B->a6_prename); if (D) return D;
       return memcmp(&A->a6_suffix, &B->a6_suffix, sizeof A->a6_suffix);
@@ -1596,7 +1596,7 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
   case sres_type_aaaa:
     {
       sres_aaaa_record_t const *A = aa->sr_aaaa, *B = bb->sr_aaaa;
-      return memcmp(&A->aaaa_addr, &B->aaaa_addr, sizeof A->aaaa_addr);      
+      return memcmp(&A->aaaa_addr, &B->aaaa_addr, sizeof A->aaaa_addr);
     }
   case sres_type_cname:
     {
@@ -1625,7 +1625,7 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
       D = strcmp(A->na_flags, B->na_flags); if (D) return D;
       D = strcmp(A->na_services, B->na_services); if (D) return D;
       D = strcmp(A->na_regexp, B->na_regexp); if (D) return D;
-      return strcmp(A->na_replace, B->na_replace); 
+      return strcmp(A->na_replace, B->na_replace);
     }
   default:
     return 0;
@@ -1636,14 +1636,14 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
 /* Private functions */
 
 /** Destruct */
-static 
-void 
+static
+void
 sres_resolver_destructor(void *arg)
 {
   sres_resolver_t *res = arg;
 
   assert(res);
-  sres_cache_unref(res->res_cache); 
+  sres_cache_unref(res->res_cache);
   res->res_cache = NULL;
 
   sres_servers_close(res, res->res_servers);
@@ -1656,7 +1656,7 @@ sres_resolver_destructor(void *arg)
 }
 
 /*
- * 3571 is a prime => 
+ * 3571 is a prime =>
  * we hash successive id values to different parts of hash tables
  */
 #define Q_PRIME 3571
@@ -1697,18 +1697,18 @@ sres_query_alloc(sres_resolver_t *res,
     query->q_i_server = res->res_i_server;
     query->q_n_servers = res->res_n_servers;
     query->q_hash = query->q_id * Q_PRIME /* + query->q_i_server */;
-    
+
     sres_qtable_append(res->res_queries, query);
 
     if (res->res_schedulecb && res->res_queries->qt_used == 1)
-      res->res_schedulecb(res->res_async, 2 * SRES_RETRANSMIT_INTERVAL); 
+      res->res_schedulecb(res->res_async, 2 * SRES_RETRANSMIT_INTERVAL);
   }
 
   return query;
 }
 
 su_inline
-void 
+void
 sres_remove_query(sres_resolver_t *res, sres_query_t *q, int all)
 {
   int i;
@@ -1749,7 +1749,7 @@ void sres_free_query(sres_resolver_t *res, sres_query_t *q)
       sres_cache_free_answers(res->res_cache, q->q_subanswers[i]);
     q->q_subanswers[i] = NULL;
   }
- 
+
   su_free(res->res_home, q);
 }
 
@@ -1767,7 +1767,7 @@ sres_combine_results(sres_resolver_t *res,
       for (j = 0; search_results[i][j]; j++)
 	found++;
 
-  combined_result = su_alloc((su_home_t *)res->res_cache, 
+  combined_result = su_alloc((su_home_t *)res->res_cache,
 			     (found + 1) * (sizeof combined_result[0]));
   if (combined_result) {
     for (i = 0, found = 0; i <= SRES_MAX_SEARCH; i++)
@@ -1832,7 +1832,7 @@ sres_sockaddr2string(sres_resolver_t *res,
       name[4 * i + 2] = hex > 9 ? hex + 'a' - 10 : hex + '0';
       name[4 * i + 3] = '.';
     }
-    
+
     strcpy(name + 4 * i, postfix);
 
     return (int)required;
@@ -1840,7 +1840,7 @@ sres_sockaddr2string(sres_resolver_t *res,
 #endif /* HAVE_SIN6 */
   else {
     su_seterrno(EAFNOSUPPORT);
-    SU_DEBUG_3(("%s: %s\n", "sres_sockaddr2string", 
+    SU_DEBUG_3(("%s: %s\n", "sres_sockaddr2string",
                 su_strerror(EAFNOSUPPORT)));
     return 0;
   }
@@ -1848,8 +1848,8 @@ sres_sockaddr2string(sres_resolver_t *res,
 
 /** Make a domain name a top level domain name.
  *
- * The function sres_toplevel() returns a copies string @a domain and 
- * terminates it with a dot if it is not already terminated. 
+ * The function sres_toplevel() returns a copies string @a domain and
+ * terminates it with a dot if it is not already terminated.
  */
 static
 char const *
@@ -1926,7 +1926,7 @@ int sres_resolver_update(sres_resolver_t *res, int always)
  * @retval 0 when otherwise successful
  * @retval -1 upon an error
  */
-static 
+static
 int sres_update_config(sres_resolver_t *res, int always, time_t now)
 {
   sres_config_t *c = NULL;
@@ -1938,9 +1938,9 @@ int sres_update_config(sres_resolver_t *res, int always, time_t now)
   if (!always && previous && now < res->res_checked)
     return 0;
   /* Try avoid checking for changes too often. */
-  res->res_checked = now + SRES_UPDATE_INTERVAL_SECS; 
-  
-  if (!always && previous && 
+  res->res_checked = now + SRES_UPDATE_INTERVAL_SECS;
+
+  if (!always && previous &&
       sres_config_timestamp(previous) == previous->c_modified)
     return 0;
 
@@ -1999,7 +1999,7 @@ static int sres_parse_win32_ip(sres_config_t *c)
  * name server IP addresses.
  *
  * @return number of server addresses added
- */ 
+ */
 static int sres_parse_win32_reg_parse_dnsserver(sres_config_t *c, HKEY key, LPCTSTR lpValueName)
 {
   su_home_t *home = c->c_home;
@@ -2009,10 +2009,10 @@ static int sres_parse_win32_reg_parse_dnsserver(sres_config_t *c, HKEY key, LPCT
   int ret, servers_added = 0;
 
   /* get name servers and ... */
-  while((ret = RegQueryValueEx(key, 
-			       lpValueName, 
-			       NULL, NULL, 
-			       name_servers, 
+  while((ret = RegQueryValueEx(key,
+			       lpValueName,
+			       NULL, NULL,
+			       name_servers,
 			       &name_servers_length)) == ERROR_MORE_DATA) {
     name_servers_length += QUERY_DATALEN;
 
@@ -2033,14 +2033,14 @@ static int sres_parse_win32_reg_parse_dnsserver(sres_config_t *c, HKEY key, LPCT
 
       /* add to list */
       reg_dns_list = su_strlst_split(home, (char *)name_servers, " ");
-	    
+
       for(i = 0 ; i < su_strlst_len(reg_dns_list); i++) {
 	const char *item = su_strlst_item(reg_dns_list, i);
 	SU_DEBUG_3(("Adding nameserver: %s (key=%s)\n", item, (char*)lpValueName));
 	sres_parse_nameserver(c, item);
 	++servers_added;
       }
-	    
+
       su_strlst_destroy(reg_dns_list);
 
     }
@@ -2069,9 +2069,9 @@ static int sres_parse_win32_reg(sres_config_t *c)
 #define MAX_VALUE_NAME_LEN    16383
 
   su_home_t *home = c->c_home;
-  HKEY key_handle;  
+  HKEY key_handle;
 #if 0
-  HKEY interface_key_handle;  
+  HKEY interface_key_handle;
   FILETIME ftime;
   int index, i;
 #endif
@@ -2085,13 +2085,13 @@ static int sres_parse_win32_reg(sres_config_t *c)
   int guid_size = MAX_VALUE_NAME_LEN;
 #endif
 
-  /* step: find interface specific nameservers 
+  /* step: find interface specific nameservers
    * - this is currently disabled 2006/Jun (the current check might insert
-   *   multiple unnecessary nameservers to the search list) 
+   *   multiple unnecessary nameservers to the search list)
    */
   /* open the 'Interfaces' registry Key */
-  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-		   "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces", 
+  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+		   "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces",
 		   0, KEY_READ, &key_handle)) {
     SU_DEBUG_2(("RegOpenKeyEx failed\n"));
   } else {
@@ -2101,12 +2101,12 @@ static int sres_parse_win32_reg(sres_config_t *c)
 			interface_guid, &guid_size,
 			NULL,NULL,0,&ftime) == ERROR_SUCCESS){
       if (RegOpenKeyEx(key_handle, interface_guid,
-		       0, KEY_READ, 
+		       0, KEY_READ,
 		       &interface_key_handle) == ERROR_SUCCESS) {
 
 	/* note: 'NameServer' is preferred over 'DhcpNameServer' */
 	found += sres_parse_win32_reg_parse_dnsserver(c, interface_key_handle, "NameServer");
-	if (found == 0) 
+	if (found == 0)
 	  found += sres_parse_win32_reg_parse_dnsserver(c, interface_key_handle, "DhcpNameServer");
 
 	RegCloseKey(interface_key_handle);
@@ -2120,16 +2120,16 @@ static int sres_parse_win32_reg(sres_config_t *c)
   }
 #endif /* #if 0: interface-specific nameservers */
 
-  /* step: if no interface-specific nameservers are found, 
+  /* step: if no interface-specific nameservers are found,
    *       check for system-wide nameservers */
   if (found == 0) {
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-		     "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", 
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+		     "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
 		     0, KEY_READ, &key_handle)) {
       SU_DEBUG_2(("RegOpenKeyEx failed (2)\n"));
     } else {
       found += sres_parse_win32_reg_parse_dnsserver(c, key_handle, "NameServer");
-      if (found == 0) 
+      if (found == 0)
 	found += sres_parse_win32_reg_parse_dnsserver(c, key_handle, "DhcpNameServer");
       RegCloseKey(key_handle);
     }
@@ -2149,13 +2149,13 @@ static int sres_parse_win32_reg(sres_config_t *c)
 
 /** Parse /etc/resolv.conf file.
  *
- * @retval #sres_config_t structure when successful 
+ * @retval #sres_config_t structure when successful
  * @retval NULL upon an error
  *
- * @todo The resolv.conf directives @b sortlist and most of the options 
+ * @todo The resolv.conf directives @b sortlist and most of the options
  *       are currently ignored.
  */
-static 
+static
 sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
 				      char const **options)
 {
@@ -2164,7 +2164,7 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
   if (c) {
     FILE *f;
     int i;
-    
+
     f = fopen(c->c_filename = res->res_cnffile, "r");
 
     sres_parse_config(c, f);
@@ -2172,7 +2172,7 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
     if (f)
       fclose(f);
 
-#if HAVE_WIN32    
+#if HAVE_WIN32
     /* note: no 127.0.0.1 on win32 systems */
     /* on win32, query the registry for nameservers */
     if (sres_parse_win32_ip(c) == 0 || sres_parse_win32_reg(c) == 0)
@@ -2184,14 +2184,14 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
     if (c->c_nameservers[0] == NULL)
       sres_parse_nameserver(c, "127.0.0.1");
 #endif
-      
+
     for (i = 0; c->c_nameservers[i] && i < SRES_MAX_NAMESERVERS; i++) {
       struct sockaddr_in *sin = (void *)c->c_nameservers[i]->ns_addr;
       sin->sin_port = htons(c->c_port);
     }
 
     sres_parse_options(c, getenv("RES_OPTIONS"));
-    
+
     if (options)
       for (i = 0; options[i]; i++)
 	sres_parse_options(c, options[i]);
@@ -2206,7 +2206,7 @@ sres_config_t *sres_parse_resolv_conf(sres_resolver_t *res,
 
 uint16_t _sres_default_port = 53;
 
-/** Parse config file. 
+/** Parse config file.
  *
  * @return Number of search domains, if successful.
  * @retval -1 upon an error (never happens).
@@ -2230,7 +2230,7 @@ int sres_parse_config(sres_config_t *c, FILE *f)
   c->c_opt.attempts = SRES_MAX_RETRY_COUNT;
   c->c_port = _sres_default_port;
 
-  if (f != NULL) {  
+  if (f != NULL) {
     for (line = 1; fgets(buf, sizeof(buf), f); line++) {
       size_t len;
       char *value, *b;
@@ -2320,7 +2320,7 @@ int sres_parse_config(sres_config_t *c, FILE *f)
  * - @b attempts:<i>n</i> fail after <i>n</i> retries
  * - @b rotate          use round robin selection of nameservers
  * - @b no-check-names  do not check names for invalid characters
- * - @b inet6           (no effect) 
+ * - @b inet6           (no effect)
  * - @b ip6-dotint      IPv6 addresses are resolved using suffix ".ip6.int"
  *                      instead of the standard ".ip6.arpa" suffix
  * - @b ip6-bytestring  (no effect)
@@ -2358,7 +2358,7 @@ extern LOCALDOMAIN;
 #endif
 
 /* Parse options line or #SRES_OPTIONS or #RES_OPTIONS environment variable. */
-static int 
+static int
 sres_parse_options(sres_config_t *c, char const *value)
 {
   if (!value)
@@ -2440,8 +2440,8 @@ int sres_parse_nameserver(sres_config_t *c, char const *server)
     struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)sa;
     memset(sa, 0, ns->ns_addrlen = sizeof *sin6);
     err = su_inet_pton(sa->sa_family = AF_INET6, server, &sin6->sin6_addr);
-  } 
-  else 
+  }
+  else
 #endif
     {
       struct sockaddr_in *sin = (struct sockaddr_in *)sa;
@@ -2486,8 +2486,8 @@ time_t sres_config_timestamp(sres_config_t const *c)
 /* ---------------------------------------------------------------------- */
 
 /** Check if the new configuration has different servers than the old */
-static 
-int sres_config_changed_servers(sres_config_t const *new_c, 
+static
+int sres_config_changed_servers(sres_config_t const *new_c,
 				sres_config_t const *old_c)
 {
   int i;
@@ -2534,7 +2534,7 @@ sres_server_t **sres_servers_new(sres_resolver_t *res,
     dns->dns_socket = INVALID_SOCKET;
     ns = c->c_nameservers[i];
     memcpy(dns->dns_addr, ns->ns_addr, dns->dns_addrlen = ns->ns_addrlen);
-    su_inet_ntop(dns->dns_addr->ss_family, SS_ADDR(dns->dns_addr), 
+    su_inet_ntop(dns->dns_addr->ss_family, SS_ADDR(dns->dns_addr),
 	      dns->dns_name, sizeof dns->dns_name);
     dns->dns_edns = c->c_opt.edns;
     servers[i] = dns++;
@@ -2575,7 +2575,7 @@ int sres_servers_count(sres_server_t *const *servers)
   for (i = 0; i < SRES_MAX_NAMESERVERS; i++) {
     if (!servers[i])
       break;
-  }  
+  }
 
   return i;
 }
@@ -2637,7 +2637,7 @@ sres_socket_t sres_server_socket(sres_resolver_t *res, sres_server_t *dns)
     sres_close(s);
     return INVALID_SOCKET;
   }
-  
+
   if (res->res_updcb) {
     if (res->res_updcb(res->res_async, s, INVALID_SOCKET) < 0) {
       SU_DEBUG_1(("%s: %s: %s\n", "sres_server_socket", "update callback",
@@ -2648,18 +2648,18 @@ sres_socket_t sres_server_socket(sres_resolver_t *res, sres_server_t *dns)
   }
 
   dns->dns_socket = s;
-  
+
   return s;
 }
 
 /* ---------------------------------------------------------------------- */
 
 /** Send a query packet */
-static 
-int 
-sres_send_dns_query(sres_resolver_t *res, 
+static
+int
+sres_send_dns_query(sres_resolver_t *res,
 		    sres_query_t *q)
-{                        
+{
   sres_message_t m[1];
   uint8_t i, i0, N = res->res_n_servers;
   sres_socket_t s;
@@ -2680,7 +2680,7 @@ sres_send_dns_query(sres_resolver_t *res,
     return -1;
   if (servers == NULL)
     return -1;
-  if (N == 0) 
+  if (N == 0)
     return -1;
 
   memset(m, 0, offsetof(sres_message_t, m_data[sizeof m->m_packet.mp_header]));
@@ -2689,16 +2689,16 @@ sres_send_dns_query(sres_resolver_t *res,
   size = sizeof(m->m_packet.mp_header);
   m->m_size = (uint16_t)sizeof(m->m_data);
   m->m_offset = (uint16_t)size;
-  
+
   m->m_id = id;
   m->m_flags = htons(SRES_HDR_QUERY | SRES_HDR_RD);
-  
+
   /* Query record */
   m->m_qdcount = htons(1);
   m_put_domain(m, domain, 0, NULL);
   m_put_uint16(m, type);
   m_put_uint16(m, sres_class_in);
-  
+
   no_edns_size = m->m_offset;
 
   /* EDNS0 record (optional) */
@@ -2707,7 +2707,7 @@ sres_send_dns_query(sres_resolver_t *res,
   m_put_uint16(m, sizeof(m->m_packet)); /* Class: our UDP payload size */
   m_put_uint32(m, 0);		/* TTL: extended RCODE & flags */
   m_put_uint16(m, 0);
-  
+
   edns_size = m->m_offset;
 
   if (m->m_error) {
@@ -2727,9 +2727,9 @@ sres_send_dns_query(sres_resolver_t *res,
     /* If server supports EDNS, include EDNS0 record */
     q->q_edns = dns->dns_edns;
     /* 0 (no EDNS) or 1 (EDNS supported) additional data records */
-    m->m_arcount = htons(q->q_edns != 0); 
+    m->m_arcount = htons(q->q_edns != 0);
     /* Size with or without EDNS record */
-    size = q->q_edns ? edns_size : no_edns_size; 
+    size = q->q_edns ? edns_size : no_edns_size;
 
     s = sres_server_socket(res, dns);
 
@@ -2757,10 +2757,10 @@ sres_send_dns_query(sres_resolver_t *res,
 
   q->q_i_server = i;
 
-  SU_DEBUG_5(("%s(%p, %p) id=%u %s %s (to [%s]:%u)\n", 
+  SU_DEBUG_5(("%s(%p, %p) id=%u %s %s (to [%s]:%u)\n",
 	      "sres_send_dns_query",
-	      (void *)res, (void *)q, id, sres_record_type(type, b), domain, 
-	      dns->dns_name, 
+	      (void *)res, (void *)q, id, sres_record_type(type, b), domain,
+	      dns->dns_name,
 	      htons(((struct sockaddr_in *)dns->dns_addr)->sin_port)));
 
   return 0;
@@ -2779,7 +2779,7 @@ sres_send_dns_query(sres_resolver_t *res,
  * @param always return always a server
  */
 static
-sres_server_t *sres_next_server(sres_resolver_t *res, 
+sres_server_t *sres_next_server(sres_resolver_t *res,
 				uint8_t *in_out_i,
 				int always)
 {
@@ -2801,7 +2801,7 @@ sres_server_t *sres_next_server(sres_resolver_t *res,
 	dns->dns_error != SRES_TIME_MAX)
       dns->dns_error = 0;
   }
-  
+
   /* Retry using another server? */
   for (j = (i + 1) % N; (j != i); j = (j + 1) % N) {
     dns = servers[j]; if (!dns) continue;
@@ -2820,7 +2820,7 @@ sres_server_t *sres_next_server(sres_resolver_t *res,
   if (!always)
     return NULL;
 
-  dns = servers[i]; 
+  dns = servers[i];
   if (dns && dns->dns_error < now && dns->dns_error != SRES_TIME_MAX)
     return dns;
 
@@ -2829,7 +2829,7 @@ sres_server_t *sres_next_server(sres_resolver_t *res,
     if (dns->dns_error < now && dns->dns_error != SRES_TIME_MAX)
       return *in_out_i = j, dns;
   }
-  
+
   return NULL;
 }
 
@@ -2837,7 +2837,7 @@ sres_server_t *sres_next_server(sres_resolver_t *res,
  * Callback function for subqueries
  */
 static
-void sres_answer_subquery(sres_context_t *context, 
+void sres_answer_subquery(sres_context_t *context,
 			  sres_query_t *query,
 			  sres_record_t **answers)
 {
@@ -2908,7 +2908,7 @@ sres_query_report_error(sres_query_t *q,
 
     SU_DEBUG_5(("sres(q=%p): reporting errors for %u %s\n",
 		(void *)q, q->q_type, q->q_name));
- 
+
     sres_remove_query(q->q_res, q, 1);
     (q->q_callback)(q->q_context, q, answers);
   }
@@ -2922,7 +2922,7 @@ sres_query_report_error(sres_query_t *q,
  * recommend calling it in 500 ms intervals.
  *
  * @param res pointer to resolver object
- * @param dummy argument for compatibility 
+ * @param dummy argument for compatibility
  */
 void sres_resolver_timer(sres_resolver_t *res, int dummy)
 {
@@ -2943,16 +2943,16 @@ void sres_resolver_timer(sres_resolver_t *res, int dummy)
      */
     for (i = 0; i < res->res_queries->qt_size; i++) {
       q = res->res_queries->qt_table[i];
-      
+
       if (!q)
 	continue;
-      
+
       /* Exponential backoff */
       retry_time = q->q_timestamp + ((time_t)1 << q->q_retry_count);
-      
+
       if (now < retry_time)
 	continue;
-      
+
       sres_resend_dns_query(res, q, 1);
 
       if (q != res->res_queries->qt_table[i])
@@ -2960,14 +2960,14 @@ void sres_resolver_timer(sres_resolver_t *res, int dummy)
     }
 
     if (res->res_schedulecb && res->res_queries->qt_used)
-      res->res_schedulecb(res->res_async, SRES_RETRANSMIT_INTERVAL); 
+      res->res_schedulecb(res->res_async, SRES_RETRANSMIT_INTERVAL);
   }
 
   sres_cache_clean(res->res_cache, res->res_now);
 }
 
 /** Resend DNS query, report error if cannot resend any more.
- * 
+ *
  * @param res  resolver object
  * @param q    query object
  * @param timeout  true if resent because of timeout
@@ -2978,10 +2978,10 @@ sres_resend_dns_query(sres_resolver_t *res, sres_query_t *q, int timeout)
 {
   uint8_t i, N;
   sres_server_t *dns;
-  
+
   SU_DEBUG_9(("sres_resend_dns_query(%p, %p, %s) called\n",
 	      (void *)res, (void *)q, timeout ? "timeout" : "error"));
-  
+
   N = res->res_n_servers;
 
   if (N > 0 && q->q_retry_count < SRES_MAX_RETRY_COUNT) {
@@ -2994,12 +2994,12 @@ sres_resend_dns_query(sres_resolver_t *res, sres_query_t *q, int timeout)
       if (q->q_retry_count > res->res_n_servers + 1 &&
 	  dns->dns_edns == edns_not_tried)
 	q->q_edns = edns_not_supported;
-      
+
       sres_send_dns_query(res, q);
 
       if (timeout)
 	q->q_retry_count++;
-      
+
       return;
     }
   }
@@ -3015,7 +3015,7 @@ sres_resend_dns_query(sres_resolver_t *res, sres_query_t *q, int timeout)
 
 
 /** Get a server by socket */
-static 
+static
 sres_server_t *
 sres_server_by_socket(sres_resolver_t const *res, sres_socket_t socket)
 {
@@ -3045,7 +3045,7 @@ sres_canonize_sockaddr(struct sockaddr_storage *from, socklen_t *fromlen)
 
   if (from->ss_family == AF_INET6) {
     struct in6_addr const *ip6 = &sin6->sin6_addr;
-  
+
     if (IN6_IS_ADDR_V4MAPPED(ip6) || IN6_IS_ADDR_V4COMPAT(ip6)) {
       /* Convert to a IPv4 address */
       struct sockaddr_in *sin = (struct sockaddr_in *)from;
@@ -3086,7 +3086,7 @@ int sres_no_update(sres_async_t *async,
 /** Create connected sockets for resolver.
  */
 int sres_resolver_sockets(sres_resolver_t *res,
-			  sres_socket_t *return_sockets, 
+			  sres_socket_t *return_sockets,
 			  int n)
 {
   sres_socket_t s = INVALID_SOCKET;
@@ -3108,7 +3108,7 @@ int sres_resolver_sockets(sres_resolver_t *res,
 
     if (s == INVALID_SOCKET) {	/* Mark as a bad destination */
       dns->dns_icmp = SRES_TIME_MAX;
-      dns->dns_error = SRES_TIME_MAX;	
+      dns->dns_error = SRES_TIME_MAX;
     }
 
     return_sockets[i++] = s;
@@ -3121,18 +3121,18 @@ int sres_resolver_sockets(sres_resolver_t *res,
 /** Get a server by socket address */
 static
 sres_server_t *
-sres_server_by_sockaddr(sres_resolver_t const *res, 
+sres_server_by_sockaddr(sres_resolver_t const *res,
 			void const *from, socklen_t fromlen)
 {
   int i;
 
   for (i = 0; i < res->res_n_servers; i++) {
     sres_server_t *dns = res->res_servers[i];
-    if (dns->dns_addrlen == fromlen && 
+    if (dns->dns_addrlen == fromlen &&
 	memcmp(dns->dns_addr, from, fromlen) == 0)
       return dns;
   }
-  
+
   return NULL;
 }
 #endif
@@ -3206,11 +3206,11 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
 	strcpy(info, origin = "local");
 	break;
       case SO_EE_ORIGIN_ICMP:
-	snprintf(info, sizeof(info), "%s type=%u code=%u", 
+	snprintf(info, sizeof(info), "%s type=%u code=%u",
 		 origin = "icmp", ee->ee_type, ee->ee_code);
 	break;
       case SO_EE_ORIGIN_ICMP6:
-	snprintf(info, sizeof(info), "%s type=%u code=%u", 
+	snprintf(info, sizeof(info), "%s type=%u code=%u",
 		 origin = "icmp6", ee->ee_type, ee->ee_code);
 	break;
       case SO_EE_ORIGIN_NONE:
@@ -3222,7 +3222,7 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
       }
 
       if (ee->ee_info)
-	snprintf(info + strlen(info), sizeof(info) - strlen(info), 
+	snprintf(info + strlen(info), sizeof(info) - strlen(info),
 		 " info=%08x", ee->ee_info);
       errcode = ee->ee_errno;
 
@@ -3231,9 +3231,9 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
 
 	sres_canonize_sockaddr(from, &fromlen);
 
-	snprintf(info + strlen(info), sizeof(info) - strlen(info), 
+	snprintf(info + strlen(info), sizeof(info) - strlen(info),
 		 " reported by ");
-	su_inet_ntop(from->ss_family, SS_ADDR(from), 
+	su_inet_ntop(from->ss_family, SS_ADDR(from),
 		  info + strlen(info), sizeof(info) - strlen(info));
       }
 
@@ -3246,8 +3246,8 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
 	/* Get error, if any */
 	getsockopt(socket, SOL_SOCKET, SO_ERROR, (void *)&error, &errorlen);
       }
-      
-      if (sres_resolver_report_error(res, socket, errcode, 
+
+      if (sres_resolver_report_error(res, socket, errcode,
 				     msg->msg_name, msg->msg_namelen,
 				     info))
 	return errcode;
@@ -3279,12 +3279,12 @@ int sres_resolver_error(sres_resolver_t *res, int socket)
 
 /** Report error */
 static
-int 
+int
 sres_resolver_report_error(sres_resolver_t *res,
 			   sres_socket_t socket,
 			   int errcode,
 			   struct sockaddr_storage *remote,
-			   socklen_t remotelen, 
+			   socklen_t remotelen,
 			   char const *info)
 {
   char buf[80];
@@ -3298,7 +3298,7 @@ sres_resolver_report_error(sres_resolver_t *res,
       struct sockaddr_in const *sin = (struct sockaddr_in *)remote;
       uint8_t const *in_addr = (uint8_t*)&sin->sin_addr;
       su_inet_ntop(AF_INET, in_addr, buf, sizeof(buf));
-    } 
+    }
 #if HAVE_SIN6
     else if (remote->ss_family == AF_INET6) {
       struct sockaddr_in6 const *sin6 = (struct sockaddr_in6 *)remote;
@@ -3308,9 +3308,9 @@ sres_resolver_report_error(sres_resolver_t *res,
 #endif
   }
 
-  SU_DEBUG_5(("sres: network error %u (%s)%s%s%s%s\n", 
+  SU_DEBUG_5(("sres: network error %u (%s)%s%s%s%s\n",
 	      errcode, su_strerror(errcode),
-	      buf[0] ? " from " : "", buf, 
+	      buf[0] ? " from " : "", buf,
 	      info ? " by " : "",
 	      info ? info : ""));
 
@@ -3328,7 +3328,7 @@ sres_resolver_report_error(sres_resolver_t *res,
 
       for (i = 0; i < res->res_queries->qt_size; i++) {
 	q = res->res_queries->qt_table[i];
-      
+
 	if (!q || dns != res->res_servers[q->q_i_server])
 	  continue;
 
@@ -3340,13 +3340,13 @@ sres_resolver_report_error(sres_resolver_t *res,
       }
     }
   }
-  
+
   return 1;
 }
 
 
 /** Receive a response packet from socket. */
-int 
+int
 sres_resolver_receive(sres_resolver_t *res, int socket)
 {
   ssize_t num_bytes;
@@ -3363,8 +3363,8 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
   SU_DEBUG_9(("%s(%p, %u) called\n", "sres_resolver_receive",
 	      (void *)res, socket));
 
-  memset(m, 0, offsetof(sres_message_t, m_data)); 
-  
+  memset(m, 0, offsetof(sres_message_t, m_data));
+
   num_bytes = sres_recvfrom(socket, m->m_data, sizeof (m->m_data), 0,
 			    (void *)from, &fromlen);
 
@@ -3398,12 +3398,12 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
     sres_qtable_append(res->res_queries, query);
     sres_send_dns_query(res, query);
     query->q_retry_count++;
-  } 
+  }
   else if (!error && reply) {
     /* Remove the query from the pending list and notify the listener */
     sres_remove_query(res, query, 1);
     if (query->q_callback != NULL)
-      (query->q_callback)(query->q_context, query, reply); 
+      (query->q_callback)(query->q_context, query, reply);
     sres_free_query(res, query);
   }
   else {
@@ -3414,7 +3414,7 @@ sres_resolver_receive(sres_resolver_t *res, int socket)
 }
 
 static
-void sres_log_response(sres_resolver_t const *res, 
+void sres_log_response(sres_resolver_t const *res,
 		       sres_message_t const *m,
 		       struct sockaddr_storage const *from,
 		       sres_query_t const *query,
@@ -3433,7 +3433,7 @@ void sres_log_response(sres_resolver_t const *res,
       struct sockaddr_in const *sin = (void *)from;
       su_inet_ntop(AF_INET, &sin->sin_addr, host, sizeof host);
       port = sin->sin_port;
-    } 
+    }
 #if HAVE_SIN6
     else if (from->ss_family == AF_INET6) {
       struct sockaddr_in6 const *sin6 = (void *)from;
@@ -3442,8 +3442,8 @@ void sres_log_response(sres_resolver_t const *res,
     }
 #endif
 
-    SU_DEBUG_5(("sres_resolver_receive(%p, %p) id=%u (from [%s]:%u)\n", 
-		(void *)res, (void *)query, m->m_id, 
+    SU_DEBUG_5(("sres_resolver_receive(%p, %p) id=%u (from [%s]:%u)\n",
+		(void *)res, (void *)query, m->m_id,
 		host, ntohs(port)));
   }
 }
@@ -3457,7 +3457,7 @@ void sres_log_response(sres_resolver_t const *res,
  */
 static
 int
-sres_decode_msg(sres_resolver_t *res, 
+sres_decode_msg(sres_resolver_t *res,
 		sres_message_t *m,
 		sres_query_t **qq,
 		sres_record_t ***return_answers)
@@ -3486,9 +3486,9 @@ sres_decode_msg(sres_resolver_t *res,
 
   m->m_flags   = ntohs(m->m_flags);
   m->m_qdcount = ntohs(m->m_qdcount);
-  m->m_ancount = ntohs(m->m_ancount); 
-  m->m_nscount = ntohs(m->m_nscount); 
-  m->m_arcount = ntohs(m->m_arcount); 
+  m->m_ancount = ntohs(m->m_ancount);
+  m->m_nscount = ntohs(m->m_nscount);
+  m->m_arcount = ntohs(m->m_arcount);
 
   hash = Q_PRIME * m->m_id;
 
@@ -3530,8 +3530,8 @@ sres_decode_msg(sres_resolver_t *res,
   if (m->m_ancount == 0 && err == 0)
     err = SRES_RECORD_ERR;
 
-  if (err == SRES_RECORD_ERR || 
-      err == SRES_NAME_ERR || 
+  if (err == SRES_RECORD_ERR ||
+      err == SRES_NAME_ERR ||
       err == SRES_UNIMPL_ERR)
     errorcount = 1;
 
@@ -3547,7 +3547,7 @@ sres_decode_msg(sres_resolver_t *res,
       rr = error = sres_create_error_rr(res->res_cache, query, err);
     else
       rr = sres_create_record(res, m);
- 
+
     if (!rr) {
       SU_DEBUG_5(("sres_create_record: %s\n", m->m_error));
       break;
@@ -3577,7 +3577,7 @@ sres_decode_msg(sres_resolver_t *res,
       rr->sr_refcount++;
     else
       /* Do not pass extra records to user */
-      answers[i] = NULL;	
+      answers[i] = NULL;
 
     sres_cache_store(res->res_cache, rr, res->res_now);
   }
@@ -3585,7 +3585,7 @@ sres_decode_msg(sres_resolver_t *res,
   *return_answers = answers;
 
   return err;
-}  
+}
 
 static
 sres_record_t *
@@ -3600,13 +3600,13 @@ sres_create_record(sres_resolver_t *res, sres_message_t *m)
   char btype[8], bclass[8];
 
   sr = memset(sr0, 0, sizeof sr0);
-  
+
   len = m_get_domain(sr->sr_name = name, sizeof(name) - 1, m, 0); /* Name */
   sr->sr_type = m_get_uint16(m);  /* Type */
   sr->sr_class = m_get_uint16(m); /* Class */
   sr->sr_ttl = m_get_uint32(m);   /* TTL */
   sr->sr_rdlen = m_get_uint16(m); /* rdlength */
-  sr->sr_parsed = 1;		
+  sr->sr_parsed = 1;
   if (m->m_error)
     goto error;
 
@@ -3672,7 +3672,7 @@ sres_create_record(sres_resolver_t *res, sres_message_t *m)
 
   return sr;
 
- error:  
+ error:
   if (sr && sr != sr0)
     sres_cache_free_record(cache, sr);
   SU_DEBUG_5(("%s: %s\n", "sres_create_record", m->m_error));
@@ -3697,7 +3697,7 @@ static sres_record_t *sres_init_rr_soa(sres_cache_t *cache,
   soa->soa_retry = m_get_uint32(m);
   soa->soa_expire = m_get_uint32(m);
   soa->soa_minimum = m_get_uint32(m);
-  
+
   if (m->m_error)
     return NULL;
 
@@ -3849,7 +3849,7 @@ static sres_record_t *sres_init_rr_srv(sres_cache_t *cache,
   offset = m->m_offset, dlen = m_get_domain(NULL, 0, m, 0) + 1;
   if (m->m_error)
     return NULL;
-  
+
   srv = (void *)sres_cache_alloc_record(cache, (void *)srv, dlen);
   if (srv)
     m_get_domain(srv->srv_target = (char *)(srv + 1), dlen, m, offset);
@@ -3942,7 +3942,7 @@ sres_record_t *sres_create_error_rr(sres_cache_t *cache,
 
 static
 void
-m_put_uint16(sres_message_t *m, 
+m_put_uint16(sres_message_t *m,
 	     uint16_t h)
 {
   uint8_t *p;
@@ -3962,8 +3962,8 @@ m_put_uint16(sres_message_t *m,
 }
 
 static
-void 
-m_put_uint32(sres_message_t *m, 
+void
+m_put_uint32(sres_message_t *m,
 	     uint32_t w)
 {
   uint8_t *p;
@@ -3988,7 +3988,7 @@ m_put_uint32(sres_message_t *m,
 static
 uint16_t
 m_put_domain(sres_message_t *m,
-	     char const *domain, 
+	     char const *domain,
 	     uint16_t top,
 	     char const *topdomain)
 {
@@ -4065,7 +4065,7 @@ m_get_uint32(sres_message_t *m)
 }
 
 static
-uint16_t 
+uint16_t
 m_get_uint16(sres_message_t *m)
 {
   uint8_t const *p = m->m_data + m->m_offset;
@@ -4084,7 +4084,7 @@ m_get_uint16(sres_message_t *m)
 }
 
 static
-uint8_t 
+uint8_t
 m_get_uint8(sres_message_t *m)
 {
   uint8_t const *p = m->m_data + m->m_offset;
@@ -4105,7 +4105,7 @@ m_get_uint8(sres_message_t *m)
 /**
  * Get a string.
  */
-static int m_get_string(char *d, 
+static int m_get_string(char *d,
 			int n,
 			sres_message_t *m,
 			uint16_t offset)
@@ -4123,7 +4123,7 @@ static int m_get_string(char *d,
     save_offset = 0;
 
   size = p[offset++];
-  
+
   if (size + offset >= m->m_size) {
     m->m_error = "truncated message";
     return size;
@@ -4150,7 +4150,7 @@ static int m_get_string(char *d,
  *
  * @param offset start uncompression from this point in message
  */
-static int m_get_domain(char *d, 
+static int m_get_domain(char *d,
 			int n,
 			sres_message_t *m,
 			uint16_t offset)
@@ -4164,7 +4164,7 @@ static int m_get_domain(char *d,
   if (m->m_error)
     return 0;
 
-  if (d == NULL) 
+  if (d == NULL)
     n = 0;
 
   if (offset == 0)
@@ -4191,7 +4191,7 @@ static int m_get_domain(char *d,
 
       offset = new_offset;
       save_offset = 0;
-    } 
+    }
     else {
       if (offset + cnt >= m->m_size) {
         m->m_error = "truncated message";
@@ -4204,13 +4204,13 @@ static int m_get_domain(char *d,
 
       i += cnt + 1;
       offset += cnt;
-    }  
+    }
   }
 
-  if (i == 0) { 
-    if (i < n) 
+  if (i == 0) {
+    if (i < n)
       d[i] = '.';
-    i++; 
+    i++;
   }
 
   if (i < n)

@@ -83,8 +83,8 @@ struct su_select_port_s {
   int              sup_epoll;
   unsigned         sup_multishot; /**< Multishot operation? */
 
-  unsigned         sup_registers; /** Counter incremented by 
-				      su_port_register() or 
+  unsigned         sup_registers; /** Counter incremented by
+				      su_port_register() or
 				      su_port_unregister()
 				   */
   int              sup_n_registrations;
@@ -94,15 +94,15 @@ struct su_select_port_s {
   /** Structure containing registration data */
   struct su_select_register {
     struct su_select_register *ser_next; /* Next in free list */
-    su_wakeup_f     ser_cb; 
-    su_wakeup_arg_t*ser_arg; 
-    su_root_t      *ser_root; 
+    su_wakeup_f     ser_cb;
+    su_wakeup_arg_t*ser_arg;
+    su_root_t      *ser_root;
     int             ser_id; /** registration identifier */
     su_wait_t       ser_wait[1];
   } **sup_indices;
 
   int               sup_maxfd, sup_allocfd;
-  
+
   fd_set           *sup_readfds, *sup_readfds2;
   fd_set           *sup_writefds, *sup_writefds2;
 };
@@ -111,19 +111,19 @@ static void su_select_port_decref(su_port_t *self,
 				 int blocking,
 				 char const *who);
 static int su_select_port_register(su_port_t *self,
-				  su_root_t *root, 
-				  su_wait_t *wait, 
+				  su_root_t *root,
+				  su_wait_t *wait,
 				  su_wakeup_f callback,
 				  su_wakeup_arg_t *arg,
 				  int priority);
 static int su_select_port_unregister(su_port_t *port,
-				    su_root_t *root, 
-				    su_wait_t *wait,	
-				    su_wakeup_f callback, 
+				    su_root_t *root,
+				    su_wait_t *wait,
+				    su_wakeup_f callback,
 				    su_wakeup_arg_t *arg);
 static int su_select_port_deregister(su_port_t *self, int i);
 static int su_select_port_unregister_all(su_port_t *self, su_root_t *root);
-static int su_select_port_eventmask(su_port_t *self, 
+static int su_select_port_eventmask(su_port_t *self,
 				   int index,
 				   int socket,
 				   int events);
@@ -189,22 +189,22 @@ static void su_select_port_deinit(void *arg)
  *
  *  Please note if identical wait objects are inserted, only first one is
  *  ever signalled.
- * 
+ *
  * @param self	     pointer to port
  * @param root	     pointer to root object
  * @param waits	     pointer to wait object
  * @param callback   callback function pointer
  * @param arg	     argument given to callback function when it is invoked
- * @param priority   relative priority of the wait object 
+ * @param priority   relative priority of the wait object
  *              (0 is normal, 1 important, 2 realtime)
- * 
+ *
  * @return
- *   Positive index of the wait object, 
+ *   Positive index of the wait object,
  *   or -1 upon an error.
  */
 int su_select_port_register(su_port_t *self,
-			   su_root_t *root, 
-			   su_wait_t *wait, 
+			   su_root_t *root,
+			   su_wait_t *wait,
 			   su_wakeup_f callback,
 			   su_wakeup_arg_t *arg,
 			   int priority)
@@ -225,7 +225,7 @@ int su_select_port_register(su_port_t *self,
 
   self->sup_registers++;
 
-  if (wait->fd >= allocfd) 
+  if (wait->fd >= allocfd)
     allocfd += __NFDBITS;		/* long at a time */
 
   if (allocfd >= self->sup_allocfd) {
@@ -259,7 +259,7 @@ int su_select_port_register(su_port_t *self,
     su_home_t *h = su_port_home(self);
 
     i = self->sup_max_index, j = i == 0 ? 15 : i + 16;
-    
+
     if (j >= self->sup_size_indices) {
       /* Reallocate index table */
       n = n < 1024 ? 2 * n : n + 1024;
@@ -291,7 +291,7 @@ int su_select_port_register(su_port_t *self,
   i = ser->ser_id;
 
   indices[0] = ser->ser_next;
-  
+
   ser->ser_next = NULL;
   *ser->ser_wait = *wait;
   ser->ser_cb = callback;
@@ -358,25 +358,25 @@ static int su_select_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
 
 /** Unregister a su_wait_t object.
- *  
- * The function su_select_port_unregister() unregisters a su_wait_t object. 
+ *
+ * The function su_select_port_unregister() unregisters a su_wait_t object.
  * The registration defined by the wait object, the callback function and
  * the argument pointer are removed from the port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param root     - pointer to root object
  * @param wait     - pointer to wait object
  * @param callback - callback function pointer (may be NULL)
- * @param arg      - argument given to callback function when it is invoked 
+ * @param arg      - argument given to callback function when it is invoked
  *                   (may be NULL)
  *
- * @deprecated Use su_select_port_deregister() instead. 
+ * @deprecated Use su_select_port_deregister() instead.
  *
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
 int su_select_port_unregister(su_port_t *self,
-			     su_root_t *root, 
-			     su_wait_t *wait,	
+			     su_root_t *root,
+			     su_wait_t *wait,
 			     su_wakeup_f callback, /* XXX - ignored */
 			     su_wakeup_arg_t *arg)
 {
@@ -404,14 +404,14 @@ int su_select_port_unregister(su_port_t *self,
 }
 
 /** Deregister a su_wait_t object.
- *  
+ *
  *  Deregisters a registration by index. The wait object, a callback
  *  function and a argument are removed from the port object. The wait
  *  object is destroyed.
- * 
+ *
  * @param self     - pointer to port object
  * @param i        - registration index
- * 
+ *
  * @return Index of the wait object, or -1 upon an error.
  */
 int su_select_port_deregister(su_port_t *self, int i)
@@ -434,10 +434,10 @@ int su_select_port_deregister(su_port_t *self, int i)
  *
  * The function su_select_port_unregister_all() unregisters all su_wait_t
  * objects associated with given root object.
- * 
+ *
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
- * 
+ *
  * @return Number of wait objects removed.
  */
 int su_select_port_unregister_all(su_port_t *self, su_root_t *root)
@@ -498,7 +498,7 @@ int su_select_port_eventmask(su_port_t *self,
     return -1;
 
   assert(socket < self->sup_maxfd);
-  
+
   if (events & SU_WAIT_IN)
     FD_SET(socket, self->sup_readfds);
   else
@@ -521,7 +521,7 @@ int su_select_port_eventmask(su_port_t *self,
  *
  * @param self      pointer to port object
  * @param multishot multishot mode (0 => disables, 1 => enables, -1 => query)
- * 
+ *
  * @retval 0 multishot mode is disabled
  * @retval 1 multishot mode is enabled
  * @retval -1 an error occurred
@@ -533,7 +533,7 @@ int su_select_port_multishot(su_port_t *self, int multishot)
     return self->sup_multishot;
   else if (multishot == 0 || multishot == 1)
     return self->sup_multishot = multishot;
-  else 
+  else
     return (errno = EINVAL), -1;
 }
 
@@ -563,7 +563,7 @@ int su_select_port_wait_events(su_port_t *self, su_duration_t tout)
   if (bytes) {
     rset = memcpy(self->sup_readfds2, self->sup_readfds, bytes);
     wset = memcpy(self->sup_writefds2, self->sup_writefds, bytes);
-  }  
+  }
 
   tv.tv_sec = tout / 1000;
   tv.tv_usec = (tout % 1000) * 1000;
@@ -609,7 +609,7 @@ int su_select_port_wait_events(su_port_t *self, su_duration_t tout)
 
     if (n == 0)
       break;
-  }    
+  }
 
   assert(n == 0);
 
@@ -627,9 +627,9 @@ su_port_t *su_select_port_create(void)
     return NULL;
 
   if (su_home_destructor(su_port_home(self), su_select_port_deinit) < 0 ||
-      !(self->sup_indices = 
+      !(self->sup_indices =
 	su_zalloc(su_port_home(self),
-		  (sizeof self->sup_indices[0]) * 
+		  (sizeof self->sup_indices[0]) *
 		  (self->sup_size_indices = __NFDBITS)))) {
     su_home_unref(su_port_home(self));
     return NULL;
@@ -649,7 +649,7 @@ int su_select_clone_start(su_root_t *parent,
 			 su_root_init_f init,
 			 su_root_deinit_f deinit)
 {
-  return su_pthreaded_port_start(su_select_port_create, 
+  return su_pthreaded_port_start(su_select_port_create,
 				 parent, return_clone, magic, init, deinit);
 }
 

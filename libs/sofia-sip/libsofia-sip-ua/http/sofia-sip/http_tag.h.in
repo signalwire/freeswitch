@@ -105,7 +105,7 @@ SOFIAPUBVAR tag_typedef_t httptag_http_ref;
 #if SU_INLINE_TAG_CAST
 su_inline
 tag_value_t httptag_http_v(http_t const *v) { return (tag_value_t)v; }
-su_inline 
+su_inline
 tag_value_t httptag_http_vr(http_t const **vp) { return (tag_value_t)vp; }
 #else
 #define httptag_http_v(v)   (tag_value_t)(v)
@@ -131,8 +131,8 @@ extern tag_typedef_t httptag_version_ref;
 /**Tag list item for header string.
  *
  * The HTTPTAG_HEADER() macro is used to include a tag item containing an
- * unknown HTTP header in the tag list, e.g., 
- * @code 
+ * unknown HTTP header in the tag list, e.g.,
+ * @code
  * http_header_t *hdr;
  *
  * HTTPTAG_HEADER(hdr).
@@ -199,7 +199,7 @@ SOFIAPUBVAR tag_typedef_t httptag_#xxxxxx#;
  *
  * Tag list item for string with #xxxxxxx_xxxxxxx# value.
  *
- * The HTTPTAG_#XXXXXX#_STR() macro is used to include a tag item with a 
+ * The HTTPTAG_#XXXXXX#_STR() macro is used to include a tag item with a
  * string containing value of a http_#xxxxxx#_t header in a tag list.
  *
  * @param s pointer to a string containing http_#xxxxxx#_t value, or NULL.

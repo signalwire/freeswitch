@@ -24,7 +24,7 @@
 
 #ifndef NTA_INTERNAL_H
 /** Defined when <nta_internal.h> has been included. */
-#define NTA_INTERNAL_H 
+#define NTA_INTERNAL_H
 
 /**@internal @file nta_internal.h
  *
@@ -562,13 +562,13 @@ typedef struct
   int ncv_size;
   char const *ncv_name;
 
-  nta_compressor_t *(*ncv_init_agent)(nta_agent_t *sa, 
+  nta_compressor_t *(*ncv_init_agent)(nta_agent_t *sa,
 				     char const * const *options);
 
   void (*ncv_deinit_agent)(nta_agent_t *sa, nta_compressor_t *);
 
   struct sigcomp_compartment *(*ncv_compartment)(nta_agent_t *sa,
-						 tport_t *tport, 
+						 tport_t *tport,
 						 nta_compressor_t *msc,
 						 tp_name_t const *tpn,
 						 char const * const *options,
@@ -589,7 +589,7 @@ typedef struct
     (struct sigcomp_compartment *);
 
   void (*ncv_compartment_unref)(struct sigcomp_compartment *);
- 
+
 } nta_compressor_vtable_t;
 
 extern nta_compressor_vtable_t *nta_compressor_vtable;

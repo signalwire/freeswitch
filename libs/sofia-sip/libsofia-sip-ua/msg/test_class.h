@@ -24,7 +24,7 @@
 
 #ifndef TEST_CLASS_H
 /** Defined when <test_class.h> has been included. */
-#define TEST_CLASS_H 
+#define TEST_CLASS_H
 
 /**@ingroup test_msg
  * @file test_class.h
@@ -65,16 +65,16 @@ typedef struct msg_request_s msg_request_t;
 typedef struct msg_status_s  msg_status_t;
 
 /** Request line. */
-struct msg_request_s { 
+struct msg_request_s {
   msg_common_t     rq_common[1];   /**< Common fragment info */
   msg_header_t    *rq_next;	   /**< Link to next header */
   char const      *rq_method_name; /**< Method name */
   url_t            rq_url[1];	   /**< RequestURI */
   char const      *rq_version;     /**< Protocol version */
-}; 
+};
 
 /** Status line. */
-struct msg_status_s { 
+struct msg_status_s {
   msg_common_t   st_common[1];	/**< Common fragment info */
   msg_header_t *st_next;	/**< Link to next (dummy) */
   char const    *st_version;	/**< Protocol version */
@@ -107,7 +107,7 @@ typedef struct msg_test_s {
   msg_accept_language_t  *msg_accept_language;	/**< Accept-Language */
   msg_mime_version_t     *msg_mime_version;	/**< MIME-Version */
   msg_content_md5_t      *msg_content_md5;	/**< Content-MD5 */
-  msg_content_encoding_t *msg_content_encoding; 
+  msg_content_encoding_t *msg_content_encoding;
 						/**< Content-Encoding */
   msg_content_length_t   *msg_content_length;	/**< Content-Length */
 
@@ -140,7 +140,7 @@ union msg_test_u
   msg_content_id_t          sh_content_id[1];
   msg_content_md5_t         sh_content_md5[1];
   msg_content_language_t    sh_content_language[1];
-  msg_content_length_t      sh_content_length[1]; 
+  msg_content_length_t      sh_content_length[1];
   msg_content_location_t    sh_content_location[1];
   msg_content_type_t        sh_content_type[1];
   msg_mime_version_t        sh_mime_version[1];

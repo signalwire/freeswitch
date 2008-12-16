@@ -25,7 +25,7 @@
 /**@internal
  *
  * @CFILE torture_sresolv.c Torture tests for Sofia resolver.
- * 
+ *
  * @author Mikko Haataja
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  */
@@ -96,7 +96,7 @@ static void test_answer(sres_context_t *ctx,
 {
 }
 
-static char name2048[2049] = 
+static char name2048[2049] =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
   "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
@@ -151,7 +151,7 @@ int test_api_errors(void)
 
   template = su_sprintf(ctx->home, ".torture_sresolv_api.conf.XXXXXX");
   TEST_1(template);
-  
+
   TEST_1(res = sres_resolver_new(NULL));
   TEST(su_home_threadsafe((su_home_t *)res), 0);
   TEST_VOID(sres_resolver_unref(res));
@@ -160,7 +160,7 @@ int test_api_errors(void)
   fd = mkstemp(template); TEST_1(fd != -1);
 #else
   fd = open(template, O_WRONLY); TEST_1(fd != -1);
-#endif  
+#endif
 
   f = fdopen(fd, "w"); TEST_1(f);
   fprintf(f, "domain example.com\n");
@@ -173,9 +173,9 @@ int test_api_errors(void)
   TEST(su_home_threadsafe((su_home_t *)res), 0);
 
   unlink(template);
-  
+
   s = sockets[0];
-  
+
   TEST_P(sres_resolver_ref(NULL), NULL);
   TEST(errno, EFAULT);
   sres_resolver_unref(NULL);
@@ -188,7 +188,7 @@ int test_api_errors(void)
   TEST_P(sres_resolver_get_userdata(res), NULL);
   TEST_P(sres_resolver_set_userdata(res, sa), NULL);
   TEST_P(sres_resolver_get_userdata(res), sa);
-  TEST_P(sres_resolver_set_userdata(res, NULL), sa); 
+  TEST_P(sres_resolver_set_userdata(res, NULL), sa);
   TEST_P(sres_resolver_get_userdata(res), NULL);
 
   errno = 0;
@@ -218,7 +218,7 @@ int test_api_errors(void)
   sres_sort_answers(NULL, NULL);
 
   sres_resolver_unref(res);
-  
+
   END();
 }
 
@@ -232,7 +232,7 @@ static
 int test_cache(void)
 {
   BEGIN();
- 
+
   sres_a_record_t *a, a0[1], **all;
   char host[128];
   sres_cache_t *cache;
@@ -285,7 +285,7 @@ int test_cache(void)
     t2.tv_sec = t1.tv_sec - t0.tv_sec, t2.tv_nsec = t1.tv_nsec - t0.tv_nsec;
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
-    printf("sres_cache: stored %u entries: %lu.%09lu sec\n", 
+    printf("sres_cache: stored %u entries: %lu.%09lu sec\n",
 	   (unsigned)N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
@@ -302,7 +302,7 @@ int test_cache(void)
     t2.tv_sec = t1.tv_sec - t0.tv_sec, t2.tv_nsec = t1.tv_nsec - t0.tv_nsec;
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
-    printf("sres_cache: cleaned %u entries: %lu.%09lu sec\n", 
+    printf("sres_cache: cleaned %u entries: %lu.%09lu sec\n",
 	   (unsigned)N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
@@ -324,7 +324,7 @@ int test_cache(void)
     t2.tv_sec = t1.tv_sec - t0.tv_sec, t2.tv_nsec = t1.tv_nsec - t0.tv_nsec;
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
-    printf("sres_cache: stored %u entries: %lu.%09lu sec\n", 
+    printf("sres_cache: stored %u entries: %lu.%09lu sec\n",
 	   (unsigned)N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
@@ -337,12 +337,12 @@ int test_cache(void)
     sres_cache_clean(cache, now + 3600);
 
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t1);
-  
+
   if (o_timing) {
     t2.tv_sec = t1.tv_sec - t0.tv_sec, t2.tv_nsec = t1.tv_nsec - t0.tv_nsec;
     if (t1.tv_nsec < t0.tv_nsec)
       t2.tv_sec--, t2.tv_nsec += 1000000000;
-    printf("sres_cache: cleaned %u entries: %lu.%09lu sec\n", 
+    printf("sres_cache: cleaned %u entries: %lu.%09lu sec\n",
 	   (unsigned)N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
 
@@ -369,7 +369,7 @@ static RETSIGTYPE sig_alarm(int s)
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
+  fprintf(stderr,
 	  "usage: %s OPTIONS [-]\n"
 	  "\twhere OPTIONS are\n"
 	  "\t    -v be verbose\n"
@@ -419,7 +419,7 @@ int main(int argc, char **argv)
 
       if (rest == NULL || *rest)
 	usage(1);
-      
+
       su_log_set_level(sresolv_log, level);
     }
     else
@@ -429,7 +429,7 @@ int main(int argc, char **argv)
 #if HAVE_ALARM
   if (o_alarm) {
     alarm(60);
-    signal(SIGALRM, sig_alarm); 
+    signal(SIGALRM, sig_alarm);
   }
 #endif
 

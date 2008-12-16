@@ -26,14 +26,14 @@
 /** Defined when <su_port.h> has been included. */
 #define SU_PORT_H
 
-/**@internal @file su_port.h 
+/**@internal @file su_port.h
  *
  * @brief Internal OS-independent syncronization interface.
  *
  * This looks like the "reactor" pattern.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Fri May 12 14:13:34 2000 ppessi
  */
 
@@ -91,7 +91,7 @@ enum su_port_thread_op {
   su_port_thread_op_release,
   su_port_thread_op_obtain
 };
-  
+
 /** @internal Virtual function table for port */
 typedef struct su_port_vtable {
   unsigned su_vtable_size;
@@ -102,15 +102,15 @@ typedef struct su_port_vtable {
   struct _GSource *(*su_port_gsource)(su_port_t *port);
   int (*su_port_send)(su_port_t *self, su_msg_r rmsg);
   int (*su_port_register)(su_port_t *self,
-			  su_root_t *root, 
-			  su_wait_t *wait, 
+			  su_root_t *root,
+			  su_wait_t *wait,
 			  su_wakeup_f callback,
 			  su_wakeup_arg_t *arg,
 			  int priority);
   int (*su_port_unregister)(su_port_t *port,
-			    su_root_t *root, 
-			    su_wait_t *wait,	
-			    su_wakeup_f callback, 
+			    su_root_t *root,
+			    su_wait_t *wait,
+			    su_wakeup_f callback,
 			    su_wakeup_arg_t *arg);
   int (*su_port_deregister)(su_port_t *self, int i);
   int (*su_port_unregister_all)(su_port_t *self,
@@ -119,15 +119,15 @@ typedef struct su_port_vtable {
   void (*su_port_run)(su_port_t *self);
   void (*su_port_break)(su_port_t *self);
   su_duration_t (*su_port_step)(su_port_t *self, su_duration_t tout);
-  
+
   /* Reused slot */
   int (*su_port_thread)(su_port_t *port, enum su_port_thread_op op);
-  
+
   int (*su_port_add_prepoll)(su_port_t *port,
-			     su_root_t *root, 
-			     su_prepoll_f *, 
+			     su_root_t *root,
+			     su_prepoll_f *,
 			     su_prepoll_magic_t *);
-  
+
   int (*su_port_remove_prepoll)(su_port_t *port,
 				su_root_t *root);
 
@@ -149,7 +149,7 @@ typedef struct su_port_vtable {
   void (*su_port_wait)(su_clone_r rclone);
   int (*su_port_execute)(su_task_r const task,
 			 int (*function)(void *), void *arg,
-			 int *return_value);  
+			 int *return_value);
 } su_port_vtable_t;
 
 SOFIAPUBFUN su_port_t *su_port_create(void)
@@ -170,7 +170,7 @@ SOFIAPUBFUN char const *su_port_name(su_port_t const *port);
 
 /* ---------------------------------------------------------------------- */
 
-/* React to multiple events per one poll() to make sure 
+/* React to multiple events per one poll() to make sure
  * that high-priority events can never completely mask other events.
  * Enabled by default on all platforms except WIN32 */
 #if !defined(WIN32)
@@ -245,8 +245,8 @@ int su_port_send(su_port_t *self, su_msg_r rmsg)
 
 su_inline
 int su_port_register(su_port_t *self,
-		     su_root_t *root, 
-		     su_wait_t *wait, 
+		     su_root_t *root,
+		     su_wait_t *wait,
 		     su_wakeup_f callback,
 		     su_wakeup_arg_t *arg,
 		     int priority)
@@ -258,9 +258,9 @@ int su_port_register(su_port_t *self,
 
 su_inline
 int su_port_unregister(su_port_t *self,
-		       su_root_t *root, 
-		       su_wait_t *wait,	
-		       su_wakeup_f callback, 
+		       su_root_t *root,
+		       su_wait_t *wait,
+		       su_wakeup_f callback,
 		       su_wakeup_arg_t *arg)
 {
   su_virtual_port_t *base = (su_virtual_port_t *)self;
@@ -353,8 +353,8 @@ su_inline int su_port_obtain(su_port_t *self)
 
 su_inline
 int su_port_add_prepoll(su_port_t *self,
-			su_root_t *root, 
-			su_prepoll_f *prepoll, 
+			su_root_t *root,
+			su_prepoll_f *prepoll,
 			su_prepoll_magic_t *magic)
 {
   su_virtual_port_t *base = (su_virtual_port_t *)self;
@@ -415,9 +415,9 @@ typedef struct su_base_port_s {
   su_port_vtable_t const *sup_vtable;
 
   /* Implementation may vary stuff below, too. */
-  
+
   /* Pre-poll callback */
-  su_prepoll_f    *sup_prepoll; 
+  su_prepoll_f    *sup_prepoll;
   su_prepoll_magic_t *sup_pp_magic;
   su_root_t       *sup_pp_root;
 
@@ -460,8 +460,8 @@ SOFIAPUBFUN su_duration_t su_base_port_step(su_port_t *self,
 					    su_duration_t tout);
 
 SOFIAPUBFUN int su_base_port_add_prepoll(su_port_t *self,
-					 su_root_t *root, 
-					 su_prepoll_f *, 
+					 su_root_t *root,
+					 su_prepoll_f *,
 					 su_prepoll_magic_t *);
 
 SOFIAPUBFUN int su_base_port_remove_prepoll(su_port_t *self, su_root_t *root);
@@ -483,10 +483,10 @@ SOFIAPUBFUN void su_base_port_wait(su_clone_r rclone);
 
 #include <pthread.h>
 
-/** @internal Pthread port object */ 
+/** @internal Pthread port object */
 typedef struct su_pthread_port_s {
   su_base_port_t   sup_base[1];
-  struct su_pthread_port_waiting_parent 
+  struct su_pthread_port_waiting_parent
                   *sup_waiting_parent;
   pthread_t        sup_tid;
   pthread_mutex_t  sup_obtained[1];
@@ -564,7 +564,7 @@ typedef struct su_socket_port_s {
   su_socket_t       sup_mbox[SU_MBOX_SIZE];
 } su_socket_port_t;
 
-SOFIAPUBFUN int su_socket_port_init(su_socket_port_t *, 
+SOFIAPUBFUN int su_socket_port_init(su_socket_port_t *,
 				    su_port_vtable_t const *);
 SOFIAPUBFUN void su_socket_port_deinit(su_socket_port_t *self);
 SOFIAPUBFUN int su_socket_port_send(su_port_t *self, su_msg_r rmsg);

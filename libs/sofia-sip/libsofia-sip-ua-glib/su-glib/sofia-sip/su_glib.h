@@ -27,7 +27,7 @@
 
 /**
  * @file su_glib.h
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Kai Vehmanen <first.surname@nokia.com>
  */

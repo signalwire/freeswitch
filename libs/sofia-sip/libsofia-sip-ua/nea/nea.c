@@ -66,7 +66,7 @@ struct nea_s {
   sip_to_t         *nea_to;		/**< The other end of subscription :) */
   nea_notify_f      nea_callback;	/**< Notify callback  */
   nea_magic_t      *nea_context;	/**< Application context */
-   
+
   sip_contact_t    *nea_contact;	/**< */
   sip_expires_t    *nea_expires;	/**< Proposed expiration time */
 
@@ -84,12 +84,12 @@ int details = 0;
 
 static int process_nea_request(nea_t *nea,
 			       nta_leg_t *leg,
-			       nta_incoming_t *ireq, 
+			       nta_incoming_t *ireq,
 			       sip_t const *sip);
 
-static int handle_notify(nta_leg_magic_t *lmagic, 
+static int handle_notify(nta_leg_magic_t *lmagic,
 			 nta_leg_t *leg,
-			 nta_incoming_t *ireq, 
+			 nta_incoming_t *ireq,
 			 sip_t const *sip);
 
 static int response_to_subscribe(nea_t *nea,
@@ -126,13 +126,13 @@ nea_t *nea_create(nta_agent_t *agent,
 
   ta_start(ta, tag, value);
 
-  have_to = 
+  have_to =
     tl_find(ta_args(ta), siptag_to) || tl_find(ta_args(ta), siptag_to_str);
-  have_from = 
+  have_from =
     tl_find(ta_args(ta), siptag_from) || tl_find(ta_args(ta), siptag_from_str);
   have_contact =
-    tl_find(ta_args(ta), siptag_contact) || 
-    tl_find(ta_args(ta), siptag_contact_str);    
+    tl_find(ta_args(ta), siptag_contact) ||
+    tl_find(ta_args(ta), siptag_contact_str);
 
   if (have_to && (nea = su_home_new(sizeof(nea_t)))) {
     su_home_t      *home = nea->nea_home;
@@ -145,7 +145,7 @@ nea_t *nea_create(nta_agent_t *agent,
     nea->nea_callback = no_callback;
     nea->nea_context = context;
 
-    if (!have_from) 
+    if (!have_from)
       from = sip_from_create(home, (url_string_t*)m->m_url);
     else
       from = NULL;
@@ -155,7 +155,7 @@ nea_t *nea_create(nta_agent_t *agent,
 			     ta_tags(ta));
 
     /* Get and remove Expires header from tag list */
-    tl_gets(nea->nea_args, 
+    tl_gets(nea->nea_args,
 	    SIPTAG_EXPIRES_REF(expires),
 	    SIPTAG_EXPIRES_STR_REF(expires_str),
 	    SIPTAG_TO_REF(to),
@@ -175,8 +175,8 @@ nea_t *nea_create(nta_agent_t *agent,
     else
       nea->nea_expires = sip_expires_create(home, EXPIRES_DEFAULT);
 
-    tl_tremove(nea->nea_args, 
-	       SIPTAG_EXPIRES(0), 
+    tl_tremove(nea->nea_args,
+	       SIPTAG_EXPIRES(0),
 	       SIPTAG_EXPIRES_STR(0),
 	       TAG_END());
 
@@ -189,7 +189,7 @@ nea_t *nea_create(nta_agent_t *agent,
 
     if (nea->nea_timer) {
       /* Create leg for NOTIFY requests */
-      nea->nea_leg = nta_leg_tcreate(nea->nea_agent, 
+      nea->nea_leg = nta_leg_tcreate(nea->nea_agent,
 				     process_nea_request, nea,
 				     TAG_IF(!have_from, SIPTAG_FROM(from)),
 				     TAG_NEXT(nea->nea_args));
@@ -208,7 +208,7 @@ nea_t *nea_create(nta_agent_t *agent,
 
     if (!nea->nea_leg ||
 	!nea->nea_oreq ||
-	!nea->nea_timer) 
+	!nea->nea_timer)
       nea_destroy(nea), nea = NULL;
   }
 
@@ -217,7 +217,7 @@ nea_t *nea_create(nta_agent_t *agent,
 }
 
 
-int nea_update(nea_t *nea, 
+int nea_update(nea_t *nea,
 	       tag_type_t tag,
 	       tag_value_t value,
 	       ...)
@@ -234,22 +234,22 @@ int nea_update(nea_t *nea,
   /* XXX - hack, previous request still waiting for response */
   if (!nea->nea_leg || nea->nea_oreq)
     return -1;
-    
+
   ta_start(ta, tag, value);
-  
+
   tl_gets(ta_args(ta),
 	  SIPTAG_CONTENT_TYPE_REF(ct),
 	  SIPTAG_CONTENT_TYPE_STR_REF(cts),
 	  SIPTAG_PAYLOAD_REF(pl),
 	  SIPTAG_EXPIRES_REF(expires),
 	  TAG_NULL());
-  
+
   if (!pl || (!ct && !cts)) {
     ta_end(ta);
     return -1;
   }
 
-  tl_tremove(nea->nea_args, 
+  tl_tremove(nea->nea_args,
 	     SIPTAG_CONTENT_TYPE(0),
 	     SIPTAG_CONTENT_TYPE_STR(0),
 	     SIPTAG_PAYLOAD(0),
@@ -268,17 +268,17 @@ int nea_update(nea_t *nea,
 				       response_to_subscribe, nea,
 				       NULL,
 				       SIP_METHOD_SUBSCRIBE,
-				       NULL, 
+				       NULL,
 				       SIPTAG_TO(nea->nea_to),
 				       SIPTAG_PAYLOAD(pl),
-				       TAG_IF(ct, SIPTAG_CONTENT_TYPE(ct)), 
+				       TAG_IF(ct, SIPTAG_CONTENT_TYPE(ct)),
 				       TAG_IF(cts, SIPTAG_CONTENT_TYPE_STR(cts)),
 				       SIPTAG_EXPIRES(nea->nea_expires),
 				       TAG_NEXT(nea->nea_args));
 
   ta_end(ta);
 
-  if (!nea->nea_oreq) 
+  if (!nea->nea_oreq)
     return -1;
 
   return 0;
@@ -329,16 +329,16 @@ void nea_destroy(nea_t *nea)
 
 
 /* Function called by NTA to handle incoming requests belonging to the leg */
-int process_nea_request(nea_t *nea, 
+int process_nea_request(nea_t *nea,
 			nta_leg_t *leg,
-			nta_incoming_t *ireq, 
+			nta_incoming_t *ireq,
 			sip_t const *sip)
 {
 
   switch (sip->sip_request->rq_method) {
   case sip_method_notify:
     return handle_notify(nea, leg, ireq, sip);
-  case sip_method_ack:  
+  case sip_method_ack:
     return 400;
   default:
     nta_incoming_treply(ireq, SIP_405_METHOD_NOT_ALLOWED,
@@ -370,12 +370,12 @@ int response_to_subscribe(nea_t *nea,
     sip_time_t now = sip_now();
     if (!nea->nea_notify_received) {
       nea->nea_deadline = now +
-	sip_contact_expires(NULL, sip->sip_expires, sip->sip_date, 
+	sip_contact_expires(NULL, sip->sip_expires, sip->sip_date,
 			    EXPIRES_DEFAULT, now);
       if (sip->sip_to->a_tag && !nea->nea_dialog) {
 	nea->nea_dialog = 1;
 	nta_leg_rtag(nea->nea_leg, sip->sip_to->a_tag);
-	nta_leg_client_route(nea->nea_leg, 
+	nta_leg_client_route(nea->nea_leg,
 			     sip->sip_record_route, sip->sip_contact);
       }
     }
@@ -432,14 +432,14 @@ int response_to_subscribe(nea_t *nea,
   if (nea->nea_oreq || !error) {
     su_time_t now = su_now();
     now.tv_sec = nea->nea_deadline;
-    su_timer_set_at(nea->nea_timer, 
-		    nea_expires_renew, 
+    su_timer_set_at(nea->nea_timer,
+		    nea_expires_renew,
 		    nea,
 		    now);
   }
   else
     nea->nea_callback(nea, nea->nea_context, NULL);
-    
+
   return 0;
 }
 
@@ -454,16 +454,16 @@ int response_to_unsubscribe(nea_t *nea,
 
   if (status >= 200)
     nta_outgoing_destroy(orq), nea->nea_oreq = NULL;
-  if (status >= 300) 
+  if (status >= 300)
     nea->nea_callback(nea, nea->nea_context, NULL);
 
   return 0;
 }
 
 /** handle notifications */
-int handle_notify(nea_t *nea, 
+int handle_notify(nea_t *nea,
 		  nta_leg_t *leg,
-		  nta_incoming_t *irq, 
+		  nta_incoming_t *irq,
 		  sip_t const *sip)
 {
   sip_subscription_state_t *ss = sip->sip_subscription_state;
@@ -475,9 +475,9 @@ int handle_notify(nea_t *nea,
 
     if (ss == NULL)
       phrase = "NOTIFY Has No Subscription-State Header";
-    else if (sip->sip_event == NULL) 
+    else if (sip->sip_event == NULL)
       phrase = "Event Header Missing";
-      
+
     if (phrase) {
       nta_incoming_treply(irq, 400, phrase, TAG_END());
       nta_incoming_destroy(irq);
@@ -511,7 +511,7 @@ int handle_notify(nea_t *nea,
   if (!nea->nea_dialog) {
     nea->nea_dialog = 1;
     nta_leg_rtag(nea->nea_leg, sip->sip_from->a_tag);
-    nta_leg_server_route(nea->nea_leg, 
+    nta_leg_server_route(nea->nea_leg,
 			 sip->sip_record_route, sip->sip_contact);
   }
 
@@ -541,9 +541,9 @@ int handle_notify(nea_t *nea,
       return 200;
     }
   }
-  else if (strcasecmp(ss->ss_substate, "pending") == 0) 
+  else if (strcasecmp(ss->ss_substate, "pending") == 0)
     nea->nea_state = nea_pending;
-  else if (strcasecmp(ss->ss_substate, "active") == 0) 
+  else if (strcasecmp(ss->ss_substate, "active") == 0)
     nea->nea_state = nea_active;
   else
     nea->nea_state = nea_extended;
@@ -557,8 +557,8 @@ int handle_notify(nea_t *nea,
   {
     su_time_t now = su_now();
     now.tv_sec = nea->nea_deadline;
-    su_timer_set_at(nea->nea_timer, 
-		    nea_expires_renew, 
+    su_timer_set_at(nea->nea_timer,
+		    nea_expires_renew,
 		    nea,
 		    now);
   }
@@ -574,7 +574,7 @@ void nea_expires_renew(su_root_magic_t *magic,
 
   /* re-subscribe if expires soon */
   if (nea->nea_state == nea_terminated ||
-      nea->nea_deadline == 0 || 
+      nea->nea_deadline == 0 ||
       nea->nea_deadline > now + NEA_TIMER_DELTA)
     return;
 
@@ -592,6 +592,6 @@ void nea_expires_renew(su_root_magic_t *magic,
 			 NULL,
 			 SIPTAG_EXPIRES(nea->nea_expires),
 			 TAG_NEXT(nea->nea_args));
-    
+
   return;
 }

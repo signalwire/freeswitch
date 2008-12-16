@@ -1,7 +1,7 @@
 PROJECT_NAME         = "http"
 OUTPUT_DIRECTORY     = ../docs/html/http
 
-INPUT 		     = @srcdir@/http.docs @srcdir@/sofia-sip sofia-sip @srcdir@ . 
+INPUT 		     = @srcdir@/http.docs @srcdir@/sofia-sip sofia-sip @srcdir@ .
 
 @INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf

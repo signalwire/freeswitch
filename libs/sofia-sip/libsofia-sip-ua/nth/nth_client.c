@@ -24,16 +24,16 @@
 
 /**@CFILE nth_client.c
  * @brief HTTP Client implementhtion
- * 
+ *
  * Copyright (c) 2002 Nokia Research Center.  All rights reserved.
- * 
+ *
  * This source file has been divided into following sections:
  * 1) engine
  * 2) tport handling
  * 3) client transactions
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Tue Jun 13 02:57:51 2000 ppessi
  */
 
@@ -141,7 +141,7 @@ struct nth_client_s {
   /* Attributes */
   unsigned hc_streaming:1;		/**< Enable streaming */
   unsigned hc_error_msg:1;
-  unsigned /* pad */:0;				
+  unsigned /* pad */:0;
 
   url_string_t const *hc_route_url;
   tp_name_t hc_tpn[1];			/**< Where to send requests */
@@ -531,7 +531,7 @@ void he_recv_message(nth_engine_t * he,
   if (msg_size(msg))
     SU_DEBUG_3(("nth client: received extra data ("MOD_ZU" bytes) "
 		"from %s/%s:%s\n",
-		(size_t)msg_size(msg), 
+		(size_t)msg_size(msg),
 		tpn->tpn_proto, tpn->tpn_host, tpn->tpn_port));
   else
     SU_DEBUG_3(("nth client: received extra data from %s/%s:%s\n",
@@ -649,7 +649,7 @@ nth_client_t *nth_client_tcreate(nth_engine_t * engine,
 	    NTHTAG_AUTHENTICATION_REF(auc),
 	    NTHTAG_MESSAGE_REF(msg),
 	    NTHTAG_EXPIRES_REF(expires),
-	    HTTPTAG_VERSION_REF(version), 
+	    HTTPTAG_VERSION_REF(version),
 	    TAG_END());
 
     if (msg == none) {

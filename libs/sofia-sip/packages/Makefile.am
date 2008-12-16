@@ -10,7 +10,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = sofia-sip-ua.pc
 
 if HAVE_GLIB
-# We should probably have something here telling 
+# We should probably have something here telling
 # if we have gobject support or not
 pkgconfig_DATA += sofia-sip-ua-glib.pc
 endif

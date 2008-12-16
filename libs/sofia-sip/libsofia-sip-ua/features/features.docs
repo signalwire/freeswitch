@@ -22,8 +22,8 @@ The #sofia_sip_name_version contains the name and release of currently
 installed @a libsofia-sip-ua.so library. The macro #SOFIA_SIP_NAME_VERSION
 contains the name and release of currently available include files.
 
-The Sofia SIP binary API hides some protocols used under the SIP stack. 
-While the binary API stays the same, the features are not necessarily there. 
+The Sofia SIP binary API hides some protocols used under the SIP stack.
+While the binary API stays the same, the features are not necessarily there.
 These features are mainly related to encryption, compression and underlying
 transports.
 

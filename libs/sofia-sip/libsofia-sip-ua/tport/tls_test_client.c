@@ -40,7 +40,7 @@ int tls_setblocking(int s, int blocking)
   if (mode < 0)
      return -1;
 
-  if (blocking) 
+  if (blocking)
     mode &= ~(O_NDELAY | O_NONBLOCK);
   else
     mode |= O_NDELAY | O_NONBLOCK;
@@ -66,7 +66,7 @@ void tls_write_buffer(TLS_CONTEXT ctx, unsigned char *buf, int size)
       pos += ret;
       printf("%d bytes written\n", ret);
       break;
-    
+
     case SSL_ERROR_WANT_WRITE:
       printf("want write\n");
       break;
@@ -103,7 +103,7 @@ int main (int argc, char *argv[])
     perror("fopen");
     exit(1);
   }
-  
+
   if (fstat(fileno(fp), &stats) < 0) {
     perror("fstat");
     exit(1);
@@ -140,7 +140,7 @@ void write_file(FILE *fp, int size)
 
     while (posBuffer < sizeof(buf)) {
       int bytes;
-      
+
       bytes = read(fileno(fp), buf + posBuffer, sizeof(buf));
 
       if (bytes == 0)
@@ -149,7 +149,7 @@ void write_file(FILE *fp, int size)
       if (bytes < 0) {
         perror("read");
       }
-      
+
       else {
         printf("writing %d buffer\n", bytes);
         tls_write_buffer(ctx, buf, bytes);

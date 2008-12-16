@@ -76,9 +76,9 @@ static size_t msg_auth_item_scan(char *start)
 
 /* ====================================================================== */
 /*
- * auth           = ("Authorization" | "Encryption" | 
+ * auth           = ("Authorization" | "Encryption" |
  *                   "Proxy-Authenticate" | "Proxy-Authorization" |
- *                   "Response-Key" | "WWW-Authenticate") ":" 
+ *                   "Response-Key" | "WWW-Authenticate") ":"
  *                    scheme 1*SP #auth-param
  * scheme         = token
  * auth-param     = token | token "=" token | token "=" quoted-string
@@ -93,12 +93,12 @@ issize_t msg_auth_d(su_home_t *home,
   msg_auth_t *au = (msg_auth_t *)h;
 
   au->au_scheme = s;
-  
+
   skip_token(&s);
   if (!IS_LWS(*s)) return -1;
   *s++ = '\0';			/* NUL-terminate scheme */
 
-  return msg_commalist_d(home, &s, (msg_param_t **)&au->au_params, 
+  return msg_commalist_d(home, &s, (msg_param_t **)&au->au_params,
 			 NULL /* msg_auth_item_scan */);
 }
 
@@ -114,11 +114,11 @@ issize_t msg_auth_e(char b[], isize_t bsiz, msg_header_t const *h, int f)
     MSG_COMMALIST_E(b, end, au->au_params, compact);
   }
   MSG_TERM_E(b, end);
-  
+
   return b - b0;
 }
 
-/**@internal 
+/**@internal
  * Extra size of a msg_auth_t object.
  *
  * This function calculates extra size required by a msg_auth_t object.
@@ -134,7 +134,7 @@ isize_t msg_auth_dup_xtra(msg_header_t const *h, isize_t offset)
 
   MSG_PARAMS_SIZE(offset, au->au_params);
   offset += MSG_STRING_SIZE(au->au_scheme);
-    
+
   return offset;
 }
 
@@ -150,7 +150,7 @@ char *msg_auth_dup_one(msg_header_t *dst,
 
   b = msg_params_dup(&au->au_params, o->au_params, b, xtra);
   MSG_STRING_DUP(b, au->au_scheme, o->au_scheme);
-    
+
   assert(b <= end); (void)end;
 
   return b;

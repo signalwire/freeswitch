@@ -60,7 +60,7 @@ int tls_setblocking(int s, int blocking)
   if (mode < 0)
      return -1;
 
-  if (blocking) 
+  if (blocking)
     mode &= ~(O_NDELAY | O_NONBLOCK);
   else
     mode |= O_NDELAY | O_NONBLOCK;
@@ -82,7 +82,7 @@ void regi_sock (int sock, TLS_CONTEXT ctx, IO_HANDLER handler)
 
   tls_setblocking(sock, 0);
 
-  printf("socket %d registered, ctx = %p, mngr_size = %d, width = %d\n", 
+  printf("socket %d registered, ctx = %p, mngr_size = %d, width = %d\n",
          sock, ctx, mngr_size, width);
 }
 
@@ -119,7 +119,7 @@ int tls_read_buffer(TLS_MNGR mngr, char *buf, int size)
       printf("ssl error want read\n");
       return bytes;
       break;
-      
+
     case SSL_ERROR_WANT_WRITE:
       break;
 
@@ -127,7 +127,7 @@ int tls_read_buffer(TLS_MNGR mngr, char *buf, int size)
       printf("shutdown\n");
       tls_shutdown(ctx);
       return bytes;
-      
+
     case SSL_ERROR_SYSCALL:
       perror("tls_syscall");
       tls_shutdown(ctx);
@@ -138,7 +138,7 @@ int tls_read_buffer(TLS_MNGR mngr, char *buf, int size)
       printf("TLS error code %d\n", err);
       return bytes;
     }
-    
+
     if (tls_pending(ctx)) {
       printf("read pending\n");
     }
@@ -162,7 +162,7 @@ int tls_slave_handler(int i)
   if (bytes > 0) {
     sprintf(fname, "%s%02d.txt", file_prefix, i);
     fp = fopen(fname, "a");
-  
+
     if (fp == NULL)
       perror("tls_slave_handler fopen");
 
@@ -175,7 +175,7 @@ int tls_slave_handler(int i)
       fclose(fp);
     }
   }
-  
+
   return 0;
 }
 
@@ -190,7 +190,7 @@ int tls_master_handler(int i)
   tls_issues.master_socket = master_socket;
 
   sock = init_tls_slave(tls_issues, tls_mngr[i].ctx, &ctx_slave);
-  
+
   if (sock < 0) {
     perror("init_tls_slave");
     return -1;
@@ -245,13 +245,13 @@ int main (int argc, char *argv[])
 
   init_event_mngr();
 
-  if (init_tls_master(&master_socket, 
+  if (init_tls_master(&master_socket,
                       tls_issues,
                       &ctx) < 0) {
     printf("init_tls_master failed\n");
     exit (1);
   }
-  
+
   regi_sock(master_socket, ctx, tls_master_handler);
 
   for (;;) {

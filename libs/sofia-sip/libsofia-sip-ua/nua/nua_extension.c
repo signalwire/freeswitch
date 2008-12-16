@@ -45,7 +45,7 @@
 
 #include "nua_stack.h"
 
-/**Send a request message with an extension method. 
+/**Send a request message with an extension method.
  *
  * Send a request message with the request method specified with
  * NUTAG_METHOD().
@@ -53,7 +53,7 @@
  * @param nh              Pointer to operation handle
  * @param tag, value, ... List of tagged parameters
  *
- * @return 
+ * @return
  *    nothing
  *
  * Note that it is possible to send a request with any method (except
@@ -91,9 +91,9 @@ static nua_client_methods_t const nua_method_client_methods = {
   NULL,				/* crm_complete */
 };
 
-int 
+int
 nua_stack_method(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *tags)
-{ 
+{
   return nua_client_create(nh, e, &nua_method_client_methods, tags);
 }
 
@@ -109,7 +109,7 @@ nua_stack_method(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *tags
  * @param nh     operation handle associated with the method
  * @param hmagic application context associated with the handle
  * @param sip    response to the extension request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive method in @a phrase parameters)
  * @param tags   empty
  *
@@ -148,11 +148,11 @@ nua_stack_method(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *tags
  * @END_NUA_EVENT
  */
 
-nua_server_methods_t const nua_extension_server_methods = 
+nua_server_methods_t const nua_extension_server_methods =
   {
     SIP_METHOD_UNKNOWN,
     nua_i_method,		/* Event */
-    { 
+    {
       1,			/* Do create dialog */
       0,			/* Can be an initial request */
       1,			/* Perhaps a target refresh request? */

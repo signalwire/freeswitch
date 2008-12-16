@@ -48,7 +48,7 @@ int save_events(CONDITION_PARAMS)
 }
 
 int until_final_response(CONDITION_PARAMS)
-{ 
+{
   return status >= 200;
 }
 
@@ -115,7 +115,7 @@ int is_offer_answer_done(tagi_t const *tags)
 {
   tagi_t const *ti;
 
-  return 
+  return
     ((ti = tl_find(tags, nutag_answer_recv)) && ti->t_value) ||
     ((ti = tl_find(tags, nutag_offer_sent)) && ti->t_value) ||
     ((ti = tl_find(tags, nutag_offer_recv)) && ti->t_value) ||
@@ -182,7 +182,7 @@ void print_event(nua_event_t event,
 	    ep->name, (void *)nh, nua_event_name(event), phrase,
 	    nua_substate_name(t ? t->t_value : 0));
   }
-  else if ((int)event >= nua_i_bye || 
+  else if ((int)event >= nua_i_bye ||
 	   event == nua_i_invite || event == nua_i_cancel ||
 	   event == nua_i_ack) {
     fprintf(stderr, "%s %s.nua(%p): event %s %03d %s\n", timestamp,
@@ -208,7 +208,7 @@ void print_event(nua_event_t event,
 	      ep->name, (void *)nh, operation);
   }
 
-  if (tags && 
+  if (tags &&
       ((tstflags & tst_verbatim) || ctx->print_tags || ep->print_tags))
     tl_print(stderr, "", tags);
 }
@@ -516,7 +516,7 @@ void free_event_in_list(struct context *ctx,
     if (list->head == NULL)
       list->tail = &list->head;
   }
-}			      
+}
 
 struct event *event_by_type(struct event *e, nua_event_t etype)
 {

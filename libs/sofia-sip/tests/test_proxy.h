@@ -49,17 +49,17 @@ struct domain *test_proxy_add_domain(struct proxy *,
 void test_proxy_set_logging(struct proxy *, int logging);
 
 void test_proxy_domain_set_expiration(struct domain *,
-				      sip_time_t min_expires, 
-				      sip_time_t expires, 
+				      sip_time_t min_expires,
+				      sip_time_t expires,
 				      sip_time_t max_expires);
 
 void test_proxy_domain_get_expiration(struct domain *,
-				      sip_time_t *return_min_expires, 
-				      sip_time_t *return_expires, 
+				      sip_time_t *return_min_expires,
+				      sip_time_t *return_expires,
 				      sip_time_t *return_max_expires);
 
 void test_proxy_set_session_timer(struct proxy *p,
-				  sip_time_t session_expires, 
+				  sip_time_t session_expires,
 				  sip_time_t min_se);
 
 void test_proxy_get_session_timer(struct proxy *p,

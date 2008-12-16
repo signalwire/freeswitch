@@ -31,7 +31,7 @@
  */
 
 /**@internal
- * @CFILE http_parser_table.c 
+ * @CFILE http_parser_table.c
  * @brief HTTP parser table
  *
  * #AUTO#

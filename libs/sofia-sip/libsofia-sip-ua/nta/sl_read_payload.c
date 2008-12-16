@@ -22,13 +22,13 @@
  *
  */
 
-/**@ingroup sl_utils 
+/**@ingroup sl_utils
  * @CFILE sl_read_payload.c
  *
  * @brief Functions for reading SIP message payload from a file.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Thu Sep  5 00:44:34 2002 ppessi
  */
 
@@ -112,10 +112,10 @@ sip_payload_t *sl_fread_payload(su_home_t *home, FILE *f)
 
   if (buf == NULL) {
     perror(who);
-    su_free(home, pl); 
+    su_free(home, pl);
     return NULL;
   }
-  
+
   if (used < size)
     buf[used] = '\0';
 

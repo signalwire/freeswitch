@@ -338,7 +338,7 @@ The following sections will present code examples from a simple application
 that uses services of NUA. The example is not complete but should present
 all relevant details of the basic use of NUA.
 
-On sourceforge.net there is available an example application 
+On sourceforge.net there is available an example application
 <a href="http://sourceforge.net/project/showfiles.php?group_id=143636&package_id=179933">
 sofisip_cli.c</a> that can be studied for more complete example.
 
@@ -591,7 +591,7 @@ void app_i_state(int           status,
           NUTAG_CALLSTATE_REF(state),
           NUTAG__REF(state),
 
-  
+
     state = (nua_callstate_t)t->t_value;
 
   printf("call %s\n", nua_callstate_name(state));
@@ -935,7 +935,7 @@ NUTAG_OFFER_RECV() or NUTAG_ANSWER_RECV(). SOATAG_ACTIVE_AUDIO() and
 SOATAG_ACTIVE_VIDEO() are informational tags used to indicate what is the
 status of these media.
 
-The #nua_i_state event is not sent, however, if the change is invoked by 
+The #nua_i_state event is not sent, however, if the change is invoked by
 application calling API functions like nua_bye() and there is no change in
 SDP offer/answer status.
 
@@ -2089,7 +2089,7 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * #nua_r_unregister  \n
  * #nua_r_unsubscribe \n
  * #nua_r_update
- * 
+ *
  * @sa nua_event_is_incoming_request(), nua_event_name()
  */
 
@@ -2175,7 +2175,7 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * @param tags   empty
  *
  * @since Experimental in @VERSION_1_12_2.
- * 
+ *
  * @END_NUA_EVENT
  */
 
@@ -2276,7 +2276,7 @@ NUTAG_AUTOANSWER(0) on B side, NUTAG_AUTOACK(0) on A side.
  * @param hmagic operation magic associated with the notifier
  * @param sip    NULL
  * @param tags   empty
- * 
+ *
  * @sa nua_terminate(), nua_handle_destroy()
  *
  * @END_NUA_EVENT

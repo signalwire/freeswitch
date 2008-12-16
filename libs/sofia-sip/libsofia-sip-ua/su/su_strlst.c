@@ -55,22 +55,22 @@
  * @code
  * usize_t i, n;
  * su_strlst_t *l;
- * 
+ *
  * l = su_strlst_split(NULL, buf, "\n");
- * 
+ *
  * nonempty = 0;
- * 
+ *
  * for (i = 0; i < su_strlst_len(l); i++) {
  *   n = strcspn(su_strlst_item(l, i), " \t");
  *   if (su_strlst_item(l, i)[n])
  *     nonempty++;
  * }
- * 
+ *
  * su_strlst_destroy(l);
  * @endcode
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Fri May  3 09:22:59 2002 ppessi
  */
 
@@ -250,8 +250,8 @@ su_strlst_t *su_strlst_vcreate_with_dup(su_home_t *home,
 
 /** Copy a string list */
 static
-su_strlst_t *su_strlst_copy_by(su_home_t *home, 
-			       su_strlst_t const *orig, 
+su_strlst_t *su_strlst_copy_by(su_home_t *home,
+			       su_strlst_t const *orig,
 			       int deeply)
 {
   su_strlst_t *self;
@@ -330,7 +330,7 @@ static int su_strlst_increase(su_strlst_t *self)
       if (list)
 	memcpy(list, self->sl_list, self->sl_len * sizeof(*self->sl_list));
     }
-    
+
     if (!list)
       return 0;
 
@@ -341,7 +341,7 @@ static int su_strlst_increase(su_strlst_t *self)
   return 1;
 }
 
-/**Duplicate and append a string to list. 
+/**Duplicate and append a string to list.
  *
  * @param self  pointer to a string list object
  * @param str   string to be duplicated and appended
@@ -448,7 +448,7 @@ char const *su_slvprintf(su_strlst_t *self, char const *fmt, va_list ap)
 
 /**Returns a numbered item from the list of strings. The numbering starts from
  * 0.
- * 
+ *
  * @param self  pointer to a string list object
  * @param i     string index
  *
@@ -464,10 +464,10 @@ char const *su_strlst_item(su_strlst_t const *self, usize_t i)
     return NULL;
 }
 
-/**Sets a item to the list of strings. 
+/**Sets a item to the list of strings.
  *
  * Note that the item numbering starts from 0.
- * 
+ *
  * @param self  pointer to a string list object
  * @param i     string index
  * @param s     string to be set as item @a i
@@ -499,7 +499,7 @@ char const *su_strlst_set_item(su_strlst_t *self, usize_t i, char const *s)
 
 /**Removes a numbered item from the list of strings. The numbering starts from
  * 0. The caller is responsible of reclaiming memory used by the removed string.
- * 
+ *
  * @param self  pointer to a string list object
  * @param i     string index
  *
@@ -512,7 +512,7 @@ SU_DLL char const *su_strlst_remove(su_strlst_t *self, usize_t i)
   if (self && i < self->sl_len) {
     char const *s = self->sl_list[i];
 
-    memmove(&self->sl_list[i], &self->sl_list[i + 1], 
+    memmove(&self->sl_list[i], &self->sl_list[i + 1],
 	    &self->sl_list[self->sl_len] - &self->sl_list[i]);
 
     self->sl_len--;
@@ -539,7 +539,7 @@ SU_DLL char const *su_strlst_remove(su_strlst_t *self, usize_t i)
  * @param home  home pointer
  * @param sep   separator (may be NULL)
  *
- * @return 
+ * @return
  *
  * The function su_strlst_join() returns a concatenation of the strings in
  * list, or NULL upon an error.
@@ -599,7 +599,7 @@ su_strlst_split0(su_strlst_t *l, char *str, char const *sep)
   return l;
 }
 
-/**Split a string. 
+/**Split a string.
  *
  * Splits a string to substrings. It returns a string list object. The
  * string to be split is not copied but instead modified in place. Use
@@ -626,7 +626,7 @@ su_strlst_split(su_home_t *home, char *str, char const *sep)
   return NULL;
 }
 
-/**Duplicate and split a string. 
+/**Duplicate and split a string.
  *
  * Duplicates a string and splits the result to substrings. It returns a
  * string list object. The string to be splitted is not modified.
@@ -638,8 +638,8 @@ su_strlst_split(su_home_t *home, char *str, char const *sep)
  * @return
  * Pointer to list of strings, if successful, or NULL upon an error.
  */
-su_strlst_t *su_strlst_dup_split(su_home_t *home, 
-				 char const *cstr, 
+su_strlst_t *su_strlst_dup_split(su_home_t *home,
+				 char const *cstr,
 				 char const *sep)
 {
   if (cstr) {
@@ -657,23 +657,23 @@ su_strlst_t *su_strlst_dup_split(su_home_t *home,
   return NULL;
 }
 
-/** Get number of items in list. 
+/** Get number of items in list.
  *
- * The function su_strlst_len() returns the number of items in the 
+ * The function su_strlst_len() returns the number of items in the
  * string list.
- * 
+ *
  */
 usize_t su_strlst_len(su_strlst_t const *l)
 {
   return l ? l->sl_len : 0;
 }
 
-/**Get a string array from list. 
+/**Get a string array from list.
  *
  * The function su_strlst_get_array() returns an array of strings. The
  * length of the array is always one longer than the length of the string
  * list, and the last string in the returned array is always NULL.
- * 
+ *
  * @param self pointer to a string list object
  *
  * @return
@@ -686,7 +686,7 @@ char const **su_strlst_get_array(su_strlst_t *self)
     size_t size = sizeof(retval[0]) * (self->sl_len + 1);
 
     retval = su_alloc(self->sl_home, size);
-    
+
     if (retval) {
       memcpy(retval, self->sl_list, sizeof(retval[0]) * self->sl_len);
       retval[self->sl_len] = NULL;
@@ -697,11 +697,11 @@ char const **su_strlst_get_array(su_strlst_t *self)
   return NULL;
 }
 
-/**Free a string array. 
+/**Free a string array.
  *
  * The function su_strlst_free_array() discards a string array allocated
  * with su_strlst_get_array().
- * 
+ *
  * @param self  pointer to a string list object
  * @param array  string array to be freed
  *

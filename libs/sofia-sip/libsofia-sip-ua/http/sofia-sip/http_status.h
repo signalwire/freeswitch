@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef HTTP_STATUS_H 
-#define HTTP_STATUS_H 
+#ifndef HTTP_STATUS_H
+#define HTTP_STATUS_H
 
-/**@file sofia-sip/http_status.h 
+/**@file sofia-sip/http_status.h
  *
  * HTTP status codes.
  *

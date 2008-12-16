@@ -34,7 +34,7 @@
 
 #include "config.h"
 
-#undef HAVE_SIGCOMP 
+#undef HAVE_SIGCOMP
 
 #define SU_ROOT_MAGIC_T         struct tport_threadpool
 #define SU_WAKEUP_ARG_T         struct tport_s
@@ -93,7 +93,7 @@ struct threadpool
   int        thrp_yield;
 };
 
-typedef struct 
+typedef struct
 {
   threadpool_t *tpd_thrp;
   int  tpd_errorcode;
@@ -114,16 +114,16 @@ union tport_su_msg_arg
   thrp_udp_deliver_t thrp_udp_deliver[1];
 };
 
-int tport_threadpool_init_primary(tport_primary_t *, 
-				  tp_name_t tpn[1], 
-				  su_addrinfo_t *, 
+int tport_threadpool_init_primary(tport_primary_t *,
+				  tp_name_t tpn[1],
+				  su_addrinfo_t *,
 				  tagi_t const *,
 				  char const **return_culprit);
 static void tport_threadpool_deinit_primary(tport_primary_t *pri);
 
 static int tport_thread_send(tport_t *tp,
 			     msg_t *msg,
-			     tp_name_t const *tpn, 
+			     tp_name_t const *tpn,
 			     struct sigcomp_compartment *cc,
 			     unsigned mtu);
 
@@ -149,16 +149,16 @@ tport_vtable_t const tport_threadpool_vtable =
 
 static int thrp_udp_init(su_root_t *, threadpool_t *);
 static void thrp_udp_deinit(su_root_t *, threadpool_t *);
-static int thrp_udp_event(threadpool_t *thrp, 
-			    su_wait_t *w, 
+static int thrp_udp_event(threadpool_t *thrp,
+			    su_wait_t *w,
 			    tport_t *_tp);
-static int thrp_udp_recv_deliver(threadpool_t *thrp, 
-				 tport_t const *tp, 
+static int thrp_udp_recv_deliver(threadpool_t *thrp,
+				 tport_t const *tp,
 				 thrp_udp_deliver_t *tpd,
 				 int events);
 static int thrp_udp_recv(threadpool_t *thrp, thrp_udp_deliver_t *tpd);
 #if HAVE_SIGCOMP
-static int thrp_udvm_decompress(threadpool_t *thrp, 
+static int thrp_udvm_decompress(threadpool_t *thrp,
 				thrp_udp_deliver_t *tpd);
 #endif
 static void thrp_udp_deliver(threadpool_t *thrp,
@@ -176,8 +176,8 @@ static void thrp_udp_send_report(threadpool_t *thrp,
 
 
 /** Launch threads in the tport pool. */
-int tport_threadpool_init_primary(tport_primary_t *pri, 
-				  tp_name_t tpn[1], 
+int tport_threadpool_init_primary(tport_primary_t *pri,
+				  tp_name_t tpn[1],
 				  su_addrinfo_t *ai,
 				  tagi_t const *tags,
 				  char const **return_culprit)
@@ -210,7 +210,7 @@ int tport_threadpool_init_primary(tport_primary_t *pri,
       thrp[i].thrp_compartment = tport_primary_compartment(tp->tp_master);
 #endif
     thrp[i].thrp_tport = tptp;
-    if (su_clone_start(pri->pri_master->mr_root, 
+    if (su_clone_start(pri->pri_master->mr_root,
 		       thrp[i].thrp_clone,
 		       thrp + i,
 		       thrp_udp_init,
@@ -219,7 +219,7 @@ int tport_threadpool_init_primary(tport_primary_t *pri,
   }
 
   tp->tp_events = 0;
-  
+
   return 0;
 
  error:
@@ -231,7 +231,7 @@ int tport_threadpool_init_primary(tport_primary_t *pri,
  *
  * @note Executed by stack thread only.
  */
-static 
+static
 void tport_threadpool_deinit_primary(tport_primary_t *pri)
 {
   tport_threadpool_t *tptp = (tport_threadpool_t *)pri;
@@ -246,7 +246,7 @@ void tport_threadpool_deinit_primary(tport_primary_t *pri)
     thrp[i].thrp_killing = 1;
 
   /* Stop every task in the threadpool. */
-  for (i = 0; i < N; i++) 
+  for (i = 0; i < N; i++)
     su_clone_wait(pri->pri_master->mr_root, thrp[i].thrp_clone);
 
   su_free(pri->pri_home, tptp), tptp->tptp_pool = NULL;
@@ -299,8 +299,8 @@ thrp_gain(threadpool_t *thrp)
   thrp->thrp_yield = 0;
 }
 
-static int thrp_udp_event(threadpool_t *thrp, 
-			  su_wait_t *w, 
+static int thrp_udp_event(threadpool_t *thrp,
+			  su_wait_t *w,
 			  tport_t *tp)
 {
 #if HAVE_POLL
@@ -317,7 +317,7 @@ static int thrp_udp_event(threadpool_t *thrp,
 			su_root_task(thrp->thrp_root),
 			thrp_udp_deliver,
 			sizeof (*tpd)) == -1) {
-	SU_DEBUG_1(("thrp_udp_event(%p): su_msg_create(): %s\n", thrp, 
+	SU_DEBUG_1(("thrp_udp_event(%p): su_msg_create(): %s\n", thrp,
 		    strerror(errno)));
 	return 0;
       }
@@ -337,7 +337,7 @@ static int thrp_udp_event(threadpool_t *thrp,
       tpd = su_msg_data(thrp->thrp_rmsg)->thrp_udp_deliver;
       memset(tpd, 0, sizeof *tpd);
       return 0;
-    } 
+    }
 
     if (thrp->thrp_yield || (thrp->thrp_s_sent - thrp->thrp_s_recv) > 0)
       return 0;
@@ -346,8 +346,8 @@ static int thrp_udp_event(threadpool_t *thrp,
   }
 }
 
-static int thrp_udp_recv_deliver(threadpool_t *thrp, 
-				 tport_t const *tp, 
+static int thrp_udp_recv_deliver(threadpool_t *thrp,
+				 tport_t const *tp,
 				 thrp_udp_deliver_t *tpd,
 				 int events)
 {
@@ -378,10 +378,10 @@ static int thrp_udp_recv_deliver(threadpool_t *thrp,
       assert(tpd->tpd_errorcode);
       if (su_is_blocking(tpd->tpd_errorcode))
 	return 0;
-    } 
+    }
     else if (tpd->tpd_msg) {
       int n = msg_extract(tpd->tpd_msg); (void)n;
-      
+
       thrp->thrp_rcvd_msgs++;
       thrp->thrp_rcvd_bytes += msg_size(tpd->tpd_msg);
     }
@@ -395,7 +395,7 @@ static int thrp_udp_recv_deliver(threadpool_t *thrp,
 
     if (tpd->tpd_msg || tpd->tpd_errorcode) {
       if (qlen >= tp->tp_params->tpp_thrprqsize) {
-	SU_DEBUG_7(("tport recv queue %i: %u\n", 
+	SU_DEBUG_7(("tport recv queue %i: %u\n",
 		    (int)(thrp - tp->tp_pri->tptp_pool), qlen));
 	thrp_yield(thrp);
       }
@@ -429,7 +429,7 @@ int thrp_udp_recv(threadpool_t *thrp, thrp_udp_deliver_t *tpd)
   pthread_mutex_lock(mutex);
 
   /* Simulate packet loss */
-  if (tp->tp_params->tpp_drop && 
+  if (tp->tp_params->tpp_drop &&
       su_randint(0, 1000) < tp->tp_params->tpp_drop) {
     recv(s, sample, 1, 0);
     pthread_mutex_unlock(mutex);
@@ -462,7 +462,7 @@ int thrp_udp_recv(threadpool_t *thrp, thrp_udp_deliver_t *tpd)
       void *data;
       int dlen;
 
-      tpd->tpd_udvm = 
+      tpd->tpd_udvm =
 	sigcomp_udvm_create_for_compartment(thrp->thrp_compartment);
       input = sigcomp_udvm_input_buffer(tpd->tpd_udvm, N); assert(input);
 
@@ -473,23 +473,23 @@ int thrp_udp_recv(threadpool_t *thrp, thrp_udp_deliver_t *tpd)
 	dlen = 0;
 
       tpd->tpd_namelen = sizeof(tpd->tpd_name);
-    
-      dlen = recvfrom(tp->tp_socket, data, dlen, 0, 
+
+      dlen = recvfrom(tp->tp_socket, data, dlen, 0,
 		      &tpd->tpd_name->su_sa, &tpd->tpd_namelen);
 
       SU_CANONIZE_SOCKADDR(tpd->tpd_name);
-      
+
       if (dlen < N) {
 	su_seterrno(EMSGSIZE);		/* Protocol error */
 	N = -1;
-      } else if (dlen == -1) 
+      } else if (dlen == -1)
 	N = -1;
       else {
-	input->b_avail += dlen; 
+	input->b_avail += dlen;
 	input->b_complete = 1;
-	
+
 	pthread_mutex_unlock(mutex);
-      
+
 	N = thrp_udvm_decompress(thrp, tpd);
 
 	if (N == -1)
@@ -511,8 +511,8 @@ int thrp_udp_recv(threadpool_t *thrp, thrp_udp_deliver_t *tpd)
   else {
     /* receive as usual */
     N = tport_recv_dgram_r(tp, &tpd->tpd_msg, N);
-  } 
-  
+  }
+
   pthread_mutex_unlock(mutex);
 
   return N;
@@ -533,22 +533,22 @@ int thrp_udvm_decompress(threadpool_t *thrp, thrp_udp_deliver_t *tpd)
   ssize_t veclen;
 
   output = sigcomp_udvm_output_buffer(udvm, -1);
-  
+
   if (sigcomp_udvm_decompress(udvm, output, NULL) < 0) {
     int error = sigcomp_udvm_errno(udvm);
     SU_DEBUG_3(("%s: UDVM error %d: %s\n", __func__,
 		error, sigcomp_udvm_strerror(udvm)));
     su_seterrno(EREMOTEIO);
     return -1;
-  } 
+  }
 
   data = output->b_data + output->b_used;
   dlen = output->b_avail - output->b_used;
   /* XXX - if a message is larger than default output size... */
   eos = output->b_complete; assert(output->b_complete);
-    
+
   veclen = tport_recv_iovec(tp, &tpd->tpd_msg, iovec, dlen, eos);
-    
+
   if (veclen <= 0) {
     n = -1;
   } else {
@@ -560,7 +560,7 @@ int thrp_udvm_decompress(threadpool_t *thrp, thrp_udp_deliver_t *tpd)
     assert(dlen == n);
 
     msg_recv_commit(tpd->tpd_msg, dlen, eos);    /* Mark buffer as used */
-    
+
     /* Message address */
     ai = msg_addrinfo(tpd->tpd_msg);
     ai->ai_flags |= TP_AI_COMPRESSED;
@@ -580,7 +580,7 @@ int thrp_udvm_decompress(threadpool_t *thrp, thrp_udp_deliver_t *tpd)
  *
  * @note Executed by stack thread only.
  */
-static 
+static
 void thrp_udp_deliver(su_root_magic_t *magic,
 		      su_msg_r m,
 		      union tport_su_msg_arg *arg)
@@ -602,7 +602,7 @@ void thrp_udp_deliver(su_root_magic_t *magic,
     return;
   }
 
-  SU_DEBUG_7(("thrp_udp_deliver(%p): got %p delay %f\n", 
+  SU_DEBUG_7(("thrp_udp_deliver(%p): got %p delay %f\n",
 	      thrp, tpd, 1000 * su_time_diff(now, tpd->tpd_when)));
 
   if (tpd->tpd_errorcode)
@@ -612,14 +612,14 @@ void thrp_udp_deliver(su_root_magic_t *magic,
     tp->tp_rlogged = NULL;
   }
 
-#if HAVE_SIGCOMP 
+#if HAVE_SIGCOMP
   if (tpd->tpd_udvm) {
     sigcomp_udvm_free(tpd->tpd_udvm), tpd->tpd_udvm = NULL;
   }
 #endif
 }
 
-static 
+static
 void thrp_udp_deliver_report(threadpool_t *thrp,
 			     su_msg_r m,
 			     union tport_su_msg_arg *arg)
@@ -639,11 +639,11 @@ void thrp_udp_deliver_report(threadpool_t *thrp,
 static
 int tport_thread_send(tport_t *tp,
 		      msg_t *msg,
-		      tp_name_t const *tpn, 
+		      tp_name_t const *tpn,
 		      struct sigcomp_compartment *cc,
 		      unsigned mtu)
 {
-  
+
   threadpool_t *thrp = tp->tp_pri->tptp_pool;
   thrp_udp_deliver_t *tpd;
   int i, N = tp->tp_pri->tptp_poolsize;
@@ -661,12 +661,12 @@ int tport_thread_send(tport_t *tp,
 
   qlen = totalqlen = thrp->thrp_s_sent - thrp->thrp_s_recv;
 
-  /* Select thread with shortest queue */ 
+  /* Select thread with shortest queue */
   for (i = 1; i < N; i++) {
     threadpool_t *other = tp->tp_pri->tptp_pool + i;
     unsigned len = other->thrp_s_sent - other->thrp_s_recv;
 
-    if (len < qlen || 
+    if (len < qlen ||
 	(len == qlen && (other->thrp_s_sent - thrp->thrp_s_sent) < 0))
       thrp = other, qlen = len;
 
@@ -681,7 +681,7 @@ int tport_thread_send(tport_t *tp,
 		    su_root_task(tp->tp_master->mr_root),
 		    thrp_udp_send,
 		    sizeof (*tpd)) != su_success) {
-    SU_DEBUG_1(("thrp_udp_event(%p): su_msg_create(): %s\n", thrp, 
+    SU_DEBUG_1(("thrp_udp_event(%p): su_msg_create(): %s\n", thrp,
 		strerror(errno)));
     return -1;
   }
@@ -708,7 +708,7 @@ int tport_thread_send(tport_t *tp,
 }
 
 /** thrp_udp_send() is run by threadpool to send the message. */
-static 
+static
 void thrp_udp_send(threadpool_t *thrp,
 		   su_msg_r m,
 		   union tport_su_msg_arg *arg)
@@ -723,7 +723,7 @@ void thrp_udp_send(threadpool_t *thrp,
 
   thrp->thrp_s_recv++;
 
-  { 
+  {
     double delay = 1000 * su_time_diff(su_now(), tpd->tpd_when);
     if (delay > 100)
       SU_DEBUG_3(("thrp_udp_deliver(%p): got %p delay %f\n", thrp, tpd, delay));
@@ -753,7 +753,7 @@ void thrp_udp_send(threadpool_t *thrp,
   /* Get a iovec for message contents */
   for (;;) {
     iovused = msg_iovec(msg, iov, iovlen);
-    if (iovused <= iovlen) 
+    if (iovused <= iovlen)
       break;
 
     iov = iov0 = realloc(iov0, sizeof(*iov) * iovused);
@@ -776,9 +776,9 @@ void thrp_udp_send(threadpool_t *thrp,
     tport_sigcomp_t sc[1] = {{ NULL }};
 
     n = tport_sigcomp_vsend(tp, msg, iov, iovused, tpd->tpd_cc, sc);
-  } 
+  }
 #endif
-  else 
+  else
     n = tport_send_dgram(tp, msg, iov, iovused);
 
   if (n == -1)
@@ -788,7 +788,7 @@ void thrp_udp_send(threadpool_t *thrp,
     free(iov0);
 }
 
-static 
+static
 void thrp_udp_send_report(su_root_magic_t *magic,
 			  su_msg_r msg,
 			  union tport_su_msg_arg *arg)
@@ -799,7 +799,7 @@ void thrp_udp_send_report(su_root_magic_t *magic,
 
   assert(magic != thrp);
 
-  SU_DEBUG_7(("thrp_udp_send_report(%p): got %p delay %f\n", 
+  SU_DEBUG_7(("thrp_udp_send_report(%p): got %p delay %f\n",
 	      thrp, tpd, 1000 * su_time_diff(su_now(), tpd->tpd_when)));
 
   if (tp->tp_master->mr_log)

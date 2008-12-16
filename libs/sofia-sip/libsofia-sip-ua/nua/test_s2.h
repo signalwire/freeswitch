@@ -22,7 +22,7 @@
  */
 
 #ifndef S2TESTER_H
-#define S2TESTER_H 
+#define S2TESTER_H
 
 #define TP_STACK_T struct tester
 #define SU_ROOT_MAGIC_T struct tester

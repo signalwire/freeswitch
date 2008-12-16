@@ -93,7 +93,7 @@
 
 2005-08-17  Pekka Pessi  <Pekka.Pessi@nokia.com>
 
-	* Added su_strlst_dup() and su_strlst_copy(). 
+	* Added su_strlst_dup() and su_strlst_copy().
 
 	* Added { to BEGIN() and } to END() in <tstdef.h>
 

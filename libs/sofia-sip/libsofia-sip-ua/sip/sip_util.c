@@ -23,7 +23,7 @@
  */
 
 /**@CFILE sip_util.c
- * 
+ *
  * SIP utility functions.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
@@ -59,7 +59,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-/** 
+/**
  * Compare two SIP addresses ( @From or @To headers).
  *
  * @retval nonzero if matching.
@@ -68,12 +68,12 @@
 int sip_addr_match(sip_addr_t const *a, sip_addr_t const *b)
 {
   return
-    (a->a_tag == NULL || b->a_tag == NULL || 
+    (a->a_tag == NULL || b->a_tag == NULL ||
      strcmp(a->a_tag, b->a_tag) == 0)
     &&
-    str0casecmp(a->a_host, b->a_host) == 0 
+    str0casecmp(a->a_host, b->a_host) == 0
     &&
-    str0cmp(a->a_user, b->a_user) == 0 
+    str0cmp(a->a_user, b->a_user) == 0
     &&
     str0cmp(a->a_url->url_scheme, b->a_url->url_scheme);
 }
@@ -142,14 +142,14 @@ sip_contact_t * sip_contact_create(su_home_t *home,
  * parameter is included in the URI unless the transport protocol is UDP.
  *
  * @param home      memory home
- * @param v         @Via header field structure 
+ * @param v         @Via header field structure
  *                  (with <sent-protocol> and <sent-by> parameters)
  * @param user      username for @Contact URI (may be NULL)
  *
  * @retval contact header structure
  * @retval NULL upon an error
  *
- * @sa sip_contact_create_from_via_with_transport(), 
+ * @sa sip_contact_create_from_via_with_transport(),
  *     sip_contact_string_from_via()
  */
 sip_contact_t *
@@ -297,12 +297,12 @@ int sip_transport_has_tls(char const *transport_name)
 }
 
 /**Perform sanity check on a SIP message
- * 
- * Check that the SIP message has all the mandatory fields. 
+ *
+ * Check that the SIP message has all the mandatory fields.
  *
  * @param sip SIP message to be checked
  *
- * @return 
+ * @return
  * When the SIP message fulfills the minimum requirements, return zero,
  * otherwise a negative status code.
  */
@@ -331,7 +331,7 @@ sip_sanity_check(sip_t const *sip)
 	return -1;
       break;
 
-    case url_tel: 
+    case url_tel:
       if (!ruri->url_user || strlen(ruri->url_user) == 0)
 	return -1;
       break;
@@ -354,7 +354,7 @@ sip_sanity_check(sip_t const *sip)
  * string is modified when parsing. The home is used to allocate extra
  * memory required when parsing, e.g., for parameter list or when there
  * string contains multiple header fields.
- * 
+ *
  * @deprecated
  * Use msg_header_make() or header-specific make functions, e.g.,
  * sip_via_make().
@@ -370,9 +370,9 @@ issize_t sip_header_field_d(su_home_t *home, sip_header_t *h, char *s, isize_t s
 
     for (n = slen; n >= 1 && IS_LWS(s[n - 1]); n--)
       ;
-    
+
     s[n] = '\0';
-    
+
     assert(SIP_HDR_TEST(h));
 
     return h->sh_class->hc_parse(home, h, s, slen);
@@ -416,9 +416,9 @@ char *sip_header_as_string(su_home_t *home, sip_header_t const *h)
     if (n > -1 && n + 1 <= len)
       break;
     if (n > -1)			/* glibc >2.1 */
-      len = n + 1;		
+      len = n + 1;
     else			/* glibc 2.0 */
-      len *= 2;			
+      len *= 2;
   }
 
   return rv;
@@ -434,7 +434,7 @@ isize_t sip_header_size(sip_header_t const *h)
     return h->sh_class->hc_dxtra(h, h->sh_class->hc_size);
 }
 
-/** Duplicate a url or make a url out of string. 
+/** Duplicate a url or make a url out of string.
  * @deprecated Use url_hdup() instead.
  */
 url_t *sip_url_dup(su_home_t *home, url_t const *o)
@@ -443,13 +443,13 @@ url_t *sip_url_dup(su_home_t *home, url_t const *o)
 }
 
 /**Calculate Q value.
- * 
+ *
  * Convert q-value string @a q to numeric value
  * in range (0..1000).  Q values are used, for instance, to describe
  * relative priorities of registered contacts.
  *
  * @param q q-value string <code>("1" | "." 1,3DIGIT)</code>
- * 
+ *
  * @return An integer in range 0 .. 1000.
  */
 unsigned sip_q_value(char const *q)
@@ -466,7 +466,7 @@ unsigned sip_q_value(char const *q)
     return 1000;
   if (q[0] == '\0')
     return 0;
-  if (q[0] != '.')      
+  if (q[0] != '.')
     return 500;    /* Garbage... */
 
   if (q[1] >= '0' && q[1] <= '9') {
@@ -478,7 +478,7 @@ unsigned sip_q_value(char const *q)
 	if (q[4] > '5' && q[4] <= '9')
 	  /* Round upwards */
 	  value += 1;
-	else if (q[4] == '5') 
+	else if (q[4] == '5')
 	  value += value & 1; /* Round to even */
       }
     }
@@ -490,7 +490,7 @@ unsigned sip_q_value(char const *q)
 
 /**@ingroup sip_route
  *
- * Get first route header and remove it from its fragment chain. 
+ * Get first route header and remove it from its fragment chain.
  *
  */
 sip_route_t *sip_route_remove(msg_t *msg, sip_t *sip)
@@ -505,14 +505,14 @@ sip_route_t *sip_route_remove(msg_t *msg, sip_t *sip)
 
 /**@ingroup sip_route
  *
- * Get last route header and remove it from its fragment chain. 
+ * Get last route header and remove it from its fragment chain.
  *
  */
 sip_route_t *sip_route_pop(msg_t *msg, sip_t *sip)
 {
   sip_route_t *r;
 
-  for (r = sip->sip_route; r; r = r->r_next) 
+  for (r = sip->sip_route; r; r = r->r_next)
     if (r->r_next == NULL) {
       msg_header_remove(msg, (msg_pub_t *)sip, (msg_header_t *)r);
       return r;
@@ -524,13 +524,13 @@ sip_route_t *sip_route_pop(msg_t *msg, sip_t *sip)
 
 /**@ingroup sip_route
  *
- * Get first route header and rewrite the RequestURI. 
+ * Get first route header and rewrite the RequestURI.
  */
 sip_route_t *sip_route_follow(msg_t *msg, sip_t *sip)
 {
   if (sip->sip_route) {
-    /* XXX - in case of outbound proxy, route may contain our address */ 
-      
+    /* XXX - in case of outbound proxy, route may contain our address */
+
     sip_route_t *r = sip_route_remove(msg, sip);
     sip_request_t *rq = sip->sip_request;
 
@@ -546,12 +546,12 @@ sip_route_t *sip_route_follow(msg_t *msg, sip_t *sip)
 }
 
 /**@ingroup sip_route
- * 
+ *
  * Check if route header has lr param.
  *
  * "lr" param can be either URL or header parameter.
  */
-int 
+int
 sip_route_is_loose(sip_route_t const *r)
 {
   if (!r)
@@ -566,7 +566,7 @@ sip_route_is_loose(sip_route_t const *r)
  *
  * Reverse a route header (@Route, @RecordRoute, @Path, @ServiceRoute).
  */
-sip_route_t *sip_route_reverse_as(su_home_t *home, 
+sip_route_t *sip_route_reverse_as(su_home_t *home,
 				  msg_hclass_t *hc,
 				  sip_route_t const *route)
 {
@@ -580,8 +580,8 @@ sip_route_t *sip_route_reverse_as(su_home_t *home,
     *r->r_url = *route->r_url;
     /* Fix broken (Record-)Routes without <> */
     if (r->r_url->url_params == NULL
-	&& r->r_params 
-	&& r->r_params[0] 
+	&& r->r_params
+	&& r->r_params[0]
 	&& (r->r_params[0][0] == 'l' || r->r_params[0][0] == 'L')
 	&& (r->r_params[0][1] == 'r' || r->r_params[0][1] == 'R')
 	&& (r->r_params[0][2] == '=' || r->r_params[0][2] == 0))
@@ -590,7 +590,7 @@ sip_route_t *sip_route_reverse_as(su_home_t *home,
     else
       r->r_params = route->r_params;
     tmp = (sip_route_t *)msg_header_dup_as(home, hc, (msg_header_t *)r);
-    if (!tmp) 
+    if (!tmp)
       goto error;
     tmp->r_next = reverse;
     reverse = tmp;
@@ -606,7 +606,7 @@ sip_route_t *sip_route_reverse_as(su_home_t *home,
 
 /**@ingroup sip_route
  *
- * Reverse a @Route header. 
+ * Reverse a @Route header.
  *
  * Reverse A route header like @RecordRoute or @Path.
  */
@@ -634,8 +634,8 @@ sip_route_t *sip_route_fixdup_as(su_home_t *home,
     *r->r_url = *route->r_url;
     /* Fix broken (Record-)Routes without <> */
     if (r->r_url->url_params == NULL
-	&& r->r_params 
-	&& r->r_params[0] 
+	&& r->r_params
+	&& r->r_params[0]
 	&& (r->r_params[0][0] == 'l' || r->r_params[0][0] == 'L')
 	&& (r->r_params[0][1] == 'r' || r->r_params[0][1] == 'R')
 	&& (r->r_params[0][2] == '=' || r->r_params[0][2] == 0))
@@ -658,7 +658,7 @@ sip_route_t *sip_route_fixdup_as(su_home_t *home,
 
 /**@ingroup sip_route
  *
- * Fix and duplicate a @Route header. 
+ * Fix and duplicate a @Route header.
  *
  * Copy a route header like @RecordRoute or @Path as @Route.
  *
@@ -698,14 +698,14 @@ sip_route_t *sip_route_fix(sip_route_t *route)
 
   for (r = route; r; r = r->r_next) {
     /* Keep track of first header structure on this header line */
-    if (!h 
+    if (!h
 	|| (char *)h->sh_data + h->sh_len != r->r_common->h_data
 	|| r->r_common->h_len)
       h = (sip_header_t *)r;
 
     if (r->r_url->url_params == NULL
-	&& r->r_params 
-	&& r->r_params[0] 
+	&& r->r_params
+	&& r->r_params[0]
 	&& (r->r_params[0][0] == 'l' || r->r_params[0][0] == 'L')
 	&& (r->r_params[0][1] == 'r' || r->r_params[0][1] == 'R')
 	&& (r->r_params[0][2] == '=' || r->r_params[0][2] == 0)) {
@@ -723,7 +723,7 @@ sip_route_t *sip_route_fix(sip_route_t *route)
 
 /**@ingroup sip_via
  *
- * Get first via header and remove it from its fragment chain. 
+ * Get first via header and remove it from its fragment chain.
  */
 sip_via_t *sip_via_remove(msg_t *msg, sip_t *sip)
 {
@@ -731,7 +731,7 @@ sip_via_t *sip_via_remove(msg_t *msg, sip_t *sip)
 
   if (sip == NULL)
     return NULL;
-  
+
   for (v = sip->sip_via; v; v = v->v_next) {
     sip_fragment_clear(v->v_common);
 
@@ -762,12 +762,12 @@ unsigned long sip_payload_serialize(msg_t *msg, sip_payload_t *pl)
   return total;
 }
 
-/** 
+/**
  * Remove extra parameters from an AOR URL.
  *
  * The extra parameters listed in the @RFC3261 table 1 include port number,
  * method, maddr, ttl, transport, lr and headers.
- * 
+ *
  * @note The funtion modifies the @a url and the strings attached to it.
  *
  * @retval 0 when successful
@@ -783,9 +783,9 @@ int sip_aor_strip(url_t *url)
 
   if (url->url_params)
     url_strip_transport(url);
-    
+
   if (url->url_params)
-    url->url_params = 
+    url->url_params =
       url_strip_param_string((char *)url->url_params, "lr");
 
   return 0;
@@ -809,7 +809,7 @@ int sip_security_verify_compare(sip_security_server_t const *s,
   for (;;s = s->sa_next, v = v->sa_next) {
     if (s == NULL || v == NULL)
       return (s == NULL) - (v == NULL);
-    
+
     if ((retval = str0cmp(s->sa_mec, v->sa_mec)))
       return retval;
 
@@ -827,7 +827,7 @@ int sip_security_verify_compare(sip_security_server_t const *s,
     }
 
     for (i = 0, j = 0;; i++, j++) {
-      if (digest && v_params[j] && 
+      if (digest && v_params[j] &&
 	  strncasecmp(v_params[j], "d-ver=", 6) == 0) {
 	if (return_d_ver)
 	  *return_d_ver = v_params[j] + strlen("d-ver=");
@@ -835,8 +835,8 @@ int sip_security_verify_compare(sip_security_server_t const *s,
       }
 
       retval = str0cmp(s_params[i], v_params[j]);
-      
-      if (retval || s_params[i] == NULL || v_params[j] == NULL) 
+
+      if (retval || s_params[i] == NULL || v_params[j] == NULL)
 	break;
     }
 
@@ -845,7 +845,7 @@ int sip_security_verify_compare(sip_security_server_t const *s,
   }
 }
 
-/** Select best mechanism from @SecurityClient header. 
+/** Select best mechanism from @SecurityClient header.
  *
  * @note We assume that @SecurityServer header in @a s is sorted by
  * preference.
@@ -871,11 +871,11 @@ sip_security_client_select(sip_security_client_t const *client,
 
 /**Checks if the response with given response code terminates dialog or
  * dialog usage.
- * 
+ *
  * @return -1 if the response with given code terminates whole dialog.
  * @return 1 if the response terminates the dialog usage.
  * @return 0 if the response does not terminate dialog or dialog usage.
- * 
+ *
  * @return
  * The @a *return_graceful_terminate_usage is set to 1, if application
  * should gracefully terminate its dialog usage. It is set to 0, if no
@@ -892,25 +892,25 @@ int sip_response_terminates_dialog(int response_code,
   enum { no_effect, terminate_usage = 1, terminate_dialog = -1 };
   int dummy;
 
-  if (!return_graceful_terminate_usage) 
+  if (!return_graceful_terminate_usage)
     return_graceful_terminate_usage = &dummy;
 
   if (response_code < 300)
     return *return_graceful_terminate_usage = 0;
 
-  /*  
+  /*
       3xx responses: Redirection mid-dialog is not well understood in SIP,
       but whatever effect it has impacts the entire dialog and all of
       its usages equally.  In our example scenario, both the
       subscription and the invite usage would be redirected by this
       single response.
   */
-  if (response_code < 400) 
+  if (response_code < 400)
     return *return_graceful_terminate_usage = 0;
 
   if (response_code < 500) switch (response_code) {
   default:
-  case 400: /** @par 400 and unrecognized 4xx responses 
+  case 400: /** @par 400 and unrecognized 4xx responses
 
       These responses affect only the NOTIFY transaction, not the
       subscription, the dialog it resides in (beyond affecting the local
@@ -921,16 +921,16 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 401: 
+  case 401:
   case 407: /** @par 401 Unauthorized and 407 Proxy Authentication Required
 
       This request, not the subscription or dialog, is being challenged. The
       usages and dialog are not terminated.
-    */ 
+    */
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 402: /** @par 402 Payment Required 
+  case 402: /** @par 402 Payment Required
 
       This is a reserved response code. If encountered, it should be
       treated as an unrecognized 4xx.
@@ -938,7 +938,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 403: /** @par 403 Forbidden 
+  case 403: /** @par 403 Forbidden
 
       This response terminates the subscription, but has no effect on
       any other usages of the dialog. In our example scenario, the
@@ -948,8 +948,8 @@ int sip_response_terminates_dialog(int response_code,
     */
     *return_graceful_terminate_usage = 0;
     return 0;
-    
-  case 404: /** @par 404 Not Found 
+
+  case 404: /** @par 404 Not Found
 
       This response destroys the dialog and all usages sharing it. The
       Request-URI that is being 404ed is the remote target set by the
@@ -958,7 +958,7 @@ int sip_response_terminates_dialog(int response_code,
     */
     return terminate_dialog;
 
-  case 405: /** @par 405 Method Not Allowed 
+  case 405: /** @par 405 Method Not Allowed
 
       In our example scenario, this response destroys the subscription,
       but not the invite usage or the dialog. It's an aberrant case for
@@ -977,9 +977,9 @@ int sip_response_terminates_dialog(int response_code,
       return 0;
     }
 
-  case 406: /** @par 406 Not Acceptable 
+  case 406: /** @par 406 Not Acceptable
 
-      These responses concern details of the message in the transaction. 
+      These responses concern details of the message in the transaction.
       Subsequent requests in this same usage may succeed. Neither the
       usage nor dialog is terminated, other usages sharing this dialog
       are unaffected.
@@ -987,7 +987,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 408: /** @par 408 Request Timeout 
+  case 408: /** @par 408 Request Timeout
 
       Receiving a 408 will have the same effect on
       usages and dialogs as a real transaction timeout as described in
@@ -995,7 +995,7 @@ int sip_response_terminates_dialog(int response_code,
     */
     return terminate_usage;
 
-  case 410: /** @par 410 Gone 
+  case 410: /** @par 410 Gone
 
       This response destroys the dialog and all usages sharing
       it.  The Request-URI that is being rejected is the remote target
@@ -1007,13 +1007,13 @@ int sip_response_terminates_dialog(int response_code,
     */
     return terminate_dialog;
 
-  case 412: /* Conditional Request Failed: */ 
+  case 412: /* Conditional Request Failed: */
   case 413: /* Request Entity Too Large: */
   case 414: /* Request-URI Too Long: */
   case 415: /* Unsupported Media Type: */
-    /** @par 412, 413, 414 and 415 
+    /** @par 412, 413, 414 and 415
 
-      These responses concern details of the message in the transaction. 
+      These responses concern details of the message in the transaction.
       Subsequent requests in this same usage may succeed. Neither the usage
       nor dialog is terminated, other usages sharing this dialog are
       unaffected.
@@ -1021,7 +1021,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 416: /** @par 416 Unsupported URI Scheme 
+  case 416: /** @par 416 Unsupported URI Scheme
 
       Similar to 404 and 410, this response
       came to a request whose Request-URI was provided by the peer in a
@@ -1038,7 +1038,7 @@ int sip_response_terminates_dialog(int response_code,
       @CSeq.  No other usages of the dialog are affected.
     */
 
-  case 420: /* Bad Extension */ 
+  case 420: /* Bad Extension */
   case 421: /* Extension Required */
 
     /** @par 420 Bad Extension and 421 Extension Required
@@ -1060,7 +1060,7 @@ int sip_response_terminates_dialog(int response_code,
       usages are unaffected.
     */
 
-  case 423: /** @par 423 Interval Too Brief 
+  case 423: /** @par 423 Interval Too Brief
 
       This response won't happen in our example
       scenario, but if it came in response to a re-SUBSCRIBE, the
@@ -1075,11 +1075,11 @@ int sip_response_terminates_dialog(int response_code,
       affected by a change in its local @CSeq.  No other usages of the
       dialog are affected. */
 
-  case 429: /** @par 429 Provide Referrer Identity 
+  case 429: /** @par 429 Provide Referrer Identity
 
       This response won't be returned to a NOTIFY as in our example
       scenario, but when it is returned to a REFER, it is objecting to
-      the REFER request itself, not any usage the REFER occurs within. 
+      the REFER request itself, not any usage the REFER occurs within.
       The usage is unaffected. Any other usages sharing this dialog are
       unaffected. The dialog is only affected by a change in its local
       @CSeq.
@@ -1087,7 +1087,7 @@ int sip_response_terminates_dialog(int response_code,
 
   case 436: case 437: case 438:
     /** @par 436 Bad Identity-Info, 437 Unsupported Certificate, 438 Invalid \
-     *  Identity Header 
+     *  Identity Header
      *
      * These responses object to the request, not the usage.
      * The usage is not affected.  The dialog is only affected by a
@@ -1110,7 +1110,7 @@ int sip_response_terminates_dialog(int response_code,
     return terminate_usage;
 
 
-  case 481: /** @par 481 Call/Transaction Does Not Exist 
+  case 481: /** @par 481 Call/Transaction Does Not Exist
 
       This response indicates that the peer has lost its copy of the dialog
       state. The dialog and any usages sharing it are destroyed.
@@ -1136,7 +1136,7 @@ int sip_response_terminates_dialog(int response_code,
     return terminate_usage;
 
 
-  case 482: /** @par 482 Loop Detected 
+  case 482: /** @par 482 Loop Detected
 
       This response is aberrant mid-dialog.  It will
       only occur if the @RecordRoute header field was improperly
@@ -1144,12 +1144,12 @@ int sip_response_terminates_dialog(int response_code,
       initial usage, or if a mid-dialog request forks and merges (which
       should never happen).  Future requests using this dialog state
       will also fail.  The dialog and any usages sharing it are
-      destroyed.  
+      destroyed.
     */
     return terminate_dialog;
 
 
-  case 483: /** @par 483 Too Many Hops 
+  case 483: /** @par 483 Too Many Hops
 
       Similar to 482, receiving this mid-dialog is
       aberrant.  Unlike 482, recovery may be possible by increasing
@@ -1158,7 +1158,7 @@ int sip_response_terminates_dialog(int response_code,
       than it used for an initial request).  If the request isn't tried
       with an increased @MaxForwards, then the agent should attempt to
       gracefully terminate this usage and all other usages that share
-      its dialog.  
+      its dialog.
     */
     *return_graceful_terminate_usage = 1;
     return 0;
@@ -1174,7 +1174,7 @@ int sip_response_terminates_dialog(int response_code,
     */
     return terminate_dialog;
 
-  case 486: /** @par 486 Busy Here 
+  case 486: /** @par 486 Busy Here
 
       This response is non-sensical in our example scenario,
       or in any scenario where this response comes inside an established
@@ -1190,7 +1190,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 487: /** @par 487 Request Terminated 
+  case 487: /** @par 487 Request Terminated
 
       This response speaks to the disposition of a
       particular request (transaction).  The usage in which that request
@@ -1201,7 +1201,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 488: /** @par 488 Not Acceptable Here 
+  case 488: /** @par 488 Not Acceptable Here
 
       This response is objecting to the request,
       not the usage.  The usage is not affected.  The dialog is only
@@ -1211,7 +1211,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 489: /** @par 489 Bad Event 
+  case 489: /** @par 489 Bad Event
 
       In our example scenario, @RFC3265 declares that the
       subscription usage in which the NOTIFY is sent is terminated.  The
@@ -1224,7 +1224,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return method == sip_method_notify ? terminate_usage : no_effect;
 
-  case 491: /** @par 491 Request Pending 
+  case 491: /** @par 491 Request Pending
 
       This response addresses in-dialog request glare.
       Its affect is scoped to the request.  The usage in which the
@@ -1235,7 +1235,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 493: /** @par 493 Undecipherable 
+  case 493: /** @par 493 Undecipherable
 
       This response objects to the request, not the
       usage.  The usage is not affected.  The dialog is only affected by
@@ -1245,7 +1245,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 494: /** @par 494 Security Agreement Required 
+  case 494: /** @par 494 Security Agreement Required
 
       This response is objecting to the
       request, not the usage.  The usage is not affected.  The dialog is
@@ -1278,7 +1278,7 @@ int sip_response_terminates_dialog(int response_code,
     /* Do not change *return_graceful_terminate_usage */
     return 0;
 
-  case 501: /** @par 501 Not Implemented 
+  case 501: /** @par 501 Not Implemented
 
       This would be a degenerate response in our
       example scenario since the NOTIFY is being sent as part of an
@@ -1294,7 +1294,7 @@ int sip_response_terminates_dialog(int response_code,
     /* Do not change *return_graceful_terminate_usage */
     return 0;
 
-  case 502: /** @par 502 Bad Gateway 
+  case 502: /** @par 502 Bad Gateway
 
       This response is aberrant mid-dialog. It will only occur if the
       @RecordRoute header field was improperly constructed by the
@@ -1304,7 +1304,7 @@ int sip_response_terminates_dialog(int response_code,
     */
     return terminate_dialog;
 
-  case 503: /** @par 503 Service Unavailable 
+  case 503: /** @par 503 Service Unavailable
 
       As per @RFC3263, the logic handling locating SIP servers for
       transactions may handle 503 requests (effectively sequentially
@@ -1321,7 +1321,7 @@ int sip_response_terminates_dialog(int response_code,
     /* Do not change *return_graceful_terminate_usage */
     return 0;
 
-  case 504: /** @par 504 Server Time-out 
+  case 504: /** @par 504 Server Time-out
 
       It is not obvious under what circumstances this
       response would be returned to a request in an existing dialog.  If
@@ -1342,7 +1342,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 580: /** @par 580 Precondition Failure 
+  case 580: /** @par 580 Precondition Failure
 
       This response is objecting to the request,
       not the usage.  The usage is not affected.  The dialog is only
@@ -1360,7 +1360,7 @@ int sip_response_terminates_dialog(int response_code,
 
       Unlike 400 Bad Request, a 600 response code says something about
       the recipient user, not the request that was made. This end user
-      is stating an unwillingness to communicate. 
+      is stating an unwillingness to communicate.
 
       If the response contains a @RetryAfter header field value, the
       user is indicating willingness to communicate later and the
@@ -1378,7 +1378,7 @@ int sip_response_terminates_dialog(int response_code,
     /* Do not change graceful_terminate */
     return 0;
 
-  case 603: /** @par 603 Decline 
+  case 603: /** @par 603 Decline
 
       This response declines the action indicated by the
       associated request.  It can be used, for example, to decline a
@@ -1389,7 +1389,7 @@ int sip_response_terminates_dialog(int response_code,
     *return_graceful_terminate_usage = 0;
     return 0;
 
-  case 604: /** @par 604 Does Not Exist Anywhere 
+  case 604: /** @par 604 Does Not Exist Anywhere
 
       Like 404, this response destroys the
       dialog and all usages sharing it.  The Request-URI that is being
@@ -1399,7 +1399,7 @@ int sip_response_terminates_dialog(int response_code,
     */
     return terminate_dialog;
 
-  case 606: /** @par 606 Not Acceptable 
+  case 606: /** @par 606 Not Acceptable
 
       This response is objecting to aspects of the
       associated request, not the usage the request appears in.  The

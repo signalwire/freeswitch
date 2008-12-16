@@ -168,7 +168,7 @@ void nua_publish_usage_remove(nua_handle_t *nh,
  * @param nh     operation handle associated with the publication
  * @param hmagic application context associated with the handle
  * @param sip    response to PUBLISH request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive message in @a phrase parameters)
  * @param tags   empty
  *
@@ -206,8 +206,8 @@ void nua_unpublish(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  *
  * @par Events:
  *    #nua_r_unpublish
- * 
- * @sa #nua_r_unpublish, @RFC3903, @SIPIfMatch, 
+ *
+ * @sa #nua_r_unpublish, @RFC3903, @SIPIfMatch,
  * #nua_i_publish, nua_publish(), #nua_r_publish
  */
 
@@ -223,7 +223,7 @@ void nua_unpublish(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...);
  * @param nh     operation handle associated with the publication
  * @param hmagic application context associated with the handle
  * @param sip    response to PUBLISH request or NULL upon an error
- *               (status code is in @a status and 
+ *               (status code is in @a status and
  *                descriptive message in @a phrase parameters)
  * @param tags   empty
  *
@@ -369,7 +369,7 @@ static int nua_publish_client_check_restart(nua_client_request_t *cr,
     ;
   else if (status == 412)
     restarting = phrase;
-  else if (200 <= status && status < 300 && 
+  else if (200 <= status && status < 300 &&
 	   sip->sip_expires && sip->sip_expires->ex_delta == 0)
     restarting = "Immediate re-PUBLISH";
 
@@ -473,7 +473,7 @@ static int nua_publish_usage_shutdown(nua_handle_t *nh,
  *
  * In order to receive #nua_i_publish events, the application must enable
  * both the PUBLISH method with NUTAG_ALLOW() tag and the acceptable SIP
- * events with nua_set_params() tag NUTAG_ALLOW_EVENTS(). 
+ * events with nua_set_params() tag NUTAG_ALLOW_EVENTS().
  *
  * The nua_response() call responding to a PUBLISH request must have
  * NUTAG_WITH() (or NUTAG_WITH_THIS()/NUTAG_WITH_SAVED()) tag. Note that
@@ -495,8 +495,8 @@ static int nua_publish_usage_shutdown(nua_handle_t *nh,
  * @param tags   empty
  *
  * @sa @RFC3903, nua_respond(),
- * @Expires, @SIPETag, @SIPIfMatch, @Event, 
- * nua_subscribe(), #nua_i_subscribe, 
+ * @Expires, @SIPETag, @SIPIfMatch, @Event,
+ * nua_subscribe(), #nua_i_subscribe,
  * nua_notifier(), #nua_i_subscription,
  *
  * @since First used in @VERSION_1_12_4
@@ -506,11 +506,11 @@ static int nua_publish_usage_shutdown(nua_handle_t *nh,
 
 int nua_publish_server_init(nua_server_request_t *sr);
 
-nua_server_methods_t const nua_publish_server_methods = 
+nua_server_methods_t const nua_publish_server_methods =
   {
     SIP_METHOD_PUBLISH,
     nua_i_publish,		/* Event */
-    { 
+    {
       0,			/* Do not create dialog */
       0,			/* Initial request */
       0,			/* Not a target refresh request  */
@@ -528,7 +528,7 @@ int nua_publish_server_init(nua_server_request_t *sr)
   sip_allow_events_t *allow_events = NH_PGET(sr->sr_owner, allow_events);
   sip_event_t *o = sr->sr_request.sip->sip_event;
   char const *event = o ? o->o_type : NULL;
-  
+
   if (!allow_events)
     return SR_STATUS1(sr, SIP_501_NOT_IMPLEMENTED);
   else if (!event || !msg_header_find_param(allow_events->k_common, event))

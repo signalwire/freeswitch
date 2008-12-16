@@ -23,7 +23,7 @@
  */
 
 /**@CFILE sip_pref_util.c
- * 
+ *
  * SIP callercaps and callerprefs utility functions.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
@@ -48,8 +48,8 @@
 static double parse_number(char const *str, char **return_end);
 
 /** Parse a single preference */
-int sip_prefs_parse(union sip_pref *sp, 
-		    char const **in_out_s, 
+int sip_prefs_parse(union sip_pref *sp,
+		    char const **in_out_s,
 		    int *return_negation)
 {
   char const *s;
@@ -66,7 +66,7 @@ int sip_prefs_parse(union sip_pref *sp,
     return 0;
 
   if (old_type == sp_init) {
-    if (s[0] == '\0' || 
+    if (s[0] == '\0' ||
 	strcasecmp(s, "TRUE") == 0 ||
 	strcasecmp(s, "\"TRUE\"") == 0) {
       /* Boolean */
@@ -76,7 +76,7 @@ int sip_prefs_parse(union sip_pref *sp,
       *return_negation = 0;
       *in_out_s = s + strlen(s);
       return 1;
-    } else if (strcasecmp(s, "FALSE") == 0 || 
+    } else if (strcasecmp(s, "FALSE") == 0 ||
 	       strcasecmp(s, "\"FALSE\"") == 0) {
       /* Boolean */
       sp->sp_type = sp_literal;
@@ -88,7 +88,7 @@ int sip_prefs_parse(union sip_pref *sp,
     } else if (s[0] == '"' && s[1] != '\0') {
       for (s++; IS_LWS(s[0]); s++);
     } else
-      old_type = sp_error;      
+      old_type = sp_error;
   } else if (!s[0]) {
     sp->sp_type = sp_init;
     return 0;
@@ -106,7 +106,7 @@ int sip_prefs_parse(union sip_pref *sp,
     char s0, *e;
 
     for (s++; IS_LWS(s[0]); s++);
-    
+
     s0 = s[0];
 
     if (s0 == '=')
@@ -150,9 +150,9 @@ int sip_prefs_parse(union sip_pref *sp,
   else
     old_type = sp_error;
 
-  if (old_type != sp_init && old_type != sp->sp_type) 
+  if (old_type != sp_init && old_type != sp->sp_type)
     sp->sp_type = sp_error;
-    
+
   *in_out_s = s;
 
   return sp->sp_type != sp_error;
@@ -199,7 +199,7 @@ static double parse_number(char const *str, char **return_end)
 
 
 /** Return true if preferences match */
-int sip_prefs_match(union sip_pref const *a, 
+int sip_prefs_match(union sip_pref const *a,
 		    union sip_pref const *b)
 {
   if (!a || !b)
@@ -208,20 +208,20 @@ int sip_prefs_match(union sip_pref const *a,
     return 0;
   switch (a->sp_type) {
   default:
-  case sp_error: 
+  case sp_error:
     return 0;
   case sp_literal:
-    return 
+    return
       a->sp_literal.spl_length == b->sp_literal.spl_length &&
       strncasecmp(a->sp_literal.spl_value, b->sp_literal.spl_value,
 		  a->sp_literal.spl_length) == 0;
   case sp_string:
-    return 
+    return
       a->sp_string.sps_length == b->sp_string.sps_length &&
       strncmp(a->sp_string.sps_value, b->sp_string.sps_value,
 	      a->sp_string.sps_length) == 0;
   case sp_range:
-    return 
+    return
       a->sp_range.spr_lower <= b->sp_range.spr_upper &&
       a->sp_range.spr_upper >= b->sp_range.spr_lower;
   }
@@ -260,7 +260,7 @@ int sip_prefs_matching(char const *pvalue,
 
   memset(np, 0, sizeof np);
 
-  /* Usually nvalue is from Accept/Reject-Contact, 
+  /* Usually nvalue is from Accept/Reject-Contact,
      pvalue is from Contact */
   while (sip_prefs_parse(np, &nvalue, &n_negated)) {
     memset(pp, 0, sizeof pp);
@@ -291,7 +291,7 @@ int sip_prefs_matching(char const *pvalue,
   return 0;
 }
 
-/** Check if the parameter is a valid feature tag. 
+/** Check if the parameter is a valid feature tag.
  *
  * A feature tag is a parameter starting with a single plus, or a well-known
  * feature tag listed in @RFC3841: "audio", "automata", "application",
@@ -377,7 +377,7 @@ int sip_contact_is_immune(sip_contact_t const *m)
 }
 
 /**Check if @Contact matches by @AcceptContact.
- * 
+ *
  * Matching @AcceptContact and @Contact headers is done as explained in
  * @RFC3841 section 7.2.4. The caller score can be calculated from the
  * returned S and N values.
@@ -393,9 +393,9 @@ int sip_contact_is_immune(sip_contact_t const *m)
  *
  * @param m   pointer to @Contact header structure
  * @param cp   pointer to @AcceptContact header structure
- * @param return_N   return-value parameter for number of 
+ * @param return_N   return-value parameter for number of
  *                   feature tags in @AcceptContact
- * @param return_S   return-value parameter for number of 
+ * @param return_S   return-value parameter for number of
  *                   matching feature tags
  * @param return_error   return-value parameter for parsing error
  *
@@ -428,7 +428,7 @@ int sip_contact_is_immune(sip_contact_t const *m)
  * sip_contact_is_immune(), sip_contact_immunize(), sip_is_callerpref(),
  * sip_prefs_matching().
  */
-int sip_contact_accept(sip_contact_t const *m, 
+int sip_contact_accept(sip_contact_t const *m,
 		       sip_accept_contact_t const *cp,
 		       unsigned *return_S,
 		       unsigned *return_N,
@@ -459,9 +459,9 @@ int sip_contact_accept(sip_contact_t const *m,
       eq = strcspn(acc, "=");
       acc += eq + (acc[eq] == '=');
 
-      if (!sip_prefs_matching(cap, acc, return_error)) 
+      if (!sip_prefs_matching(cap, acc, return_error))
 	return 0;
-      
+
       S++;
     }
   }
@@ -469,7 +469,7 @@ int sip_contact_accept(sip_contact_t const *m,
   *return_S = S; /* Matched feature tags */
   *return_N = N; /* Number of feature tags in @AcceptContact */
 
-  return 1; 
+  return 1;
 }
 
 
@@ -484,7 +484,7 @@ int sip_contact_accept(sip_contact_t const *m,
  * @sa sip_contact_score(), sip_contact_accept(), sip_contact_immunize(),
  * sip_contact_is_immune(), @RFC3841, @RejectContact, @Contact
  */
-int sip_contact_reject(sip_contact_t const *m, 
+int sip_contact_reject(sip_contact_t const *m,
 		       sip_reject_contact_t const *reject)
 {
   unsigned S, N;
@@ -506,7 +506,7 @@ int sip_contact_reject(sip_contact_t const *m,
  *
  * @retval pointer to immunized copy if successful
  * @retval NULL upon an error
- * 
+ *
  * @sa @RFC3841, sip_is_callerpref(), sip_contact_score(),
  * sip_contact_accept(), sip_contact_reject(), @Contact
  */
@@ -541,7 +541,7 @@ sip_contact_t *sip_contact_immunize(su_home_t *home, sip_contact_t const *m)
 /** Calculate score for contact.
  *
  * The caller preference score is an integer in range of 0 to 1000.
- * 
+ *
  * @retval -1 if the contact is rejected
  * @retval 1000 if contact is immune to caller preferences
  * @retval 0..1000 reflecting @RFC3841 score in 0.000 - 1.000.
@@ -563,14 +563,14 @@ int sip_contact_score(sip_contact_t const *m,
     return 1000;		/* Immune */
 
   for (; rc; rc = rc->cp_next)
-    if (sip_contact_reject(m, rc)) 
+    if (sip_contact_reject(m, rc))
       break;
   if (rc)
     return -1;			/* Rejected */
 
   for (; ac; ac = ac->cp_next) {
     unsigned S, N;
-	
+
     if (!sip_contact_accept(m, ac, &S, &N, &error)) {
       if (ac->cp_require)
 	return 0;		/* Discarded */
@@ -586,11 +586,11 @@ int sip_contact_score(sip_contact_t const *m,
 	return 0;		/* Dropped */
     }
 
-    if (S > 0 && N > 0) 
+    if (S > 0 && N > 0)
       S_total += sip_q_value(ac->cp_q) * (scale * S / N + (2 * S >= N));
   }
 
-  if (!M) 
+  if (!M)
     return 0;
 
   S_total /= M;

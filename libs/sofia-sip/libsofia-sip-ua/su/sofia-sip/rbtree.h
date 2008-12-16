@@ -24,14 +24,14 @@
 
 #ifndef RBTREE_H
 /** Defined when <sofia-sip/rbtree.h> has been included. */
-#define RBTREE_H 
+#define RBTREE_H
 
 /**@file sofia-sip/rbtree.h
  *
  * Red-black tree.
  *
  * This file contain a red-black-tree template for C. The red-black-tree is
- * a balanced binary tree containing structures as nodes. 
+ * a balanced binary tree containing structures as nodes.
  *
  * The prototypes for red-black-tree functions are declared with macro
  * RBTREE_PROTOS(). The implementation is instantiated with macro
@@ -40,9 +40,9 @@
  * When a entry with new identical key is added to the tree, it can be
  * either @e inserted (replacing other node with same key value) or @e
  * appended.
- * 
+ *
  * Example code can be found from <rbtree_test.c>.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *
  * @date Created: Tue Sep  7 19:45:11 EEST 2004 ppessi
@@ -80,7 +80,7 @@ void prefix ## _left_rotate(Type **top, Type *x)   \
   left(c) = x;					   \
   parent(x) = c;				   \
 } \
-extern int const prefix##_dummy 
+extern int const prefix##_dummy
 
   /*               x                c
    *              / \              / \
@@ -259,11 +259,11 @@ extern int const prefix##_dummy
  *
  * @param tree pointer to the root of the tree
  * @param node pointer to node to be inserted
- * @param return_old return value parameter for matching node 
+ * @param return_old return value parameter for matching node
  *                   already in the @a tree
  *
  * @retval 0 if node was inserted
- * @retval -1 if there already was an matching node 
+ * @retval -1 if there already was an matching node
  *            and return_old is NULL.
  */
 int rbtree_insert(Type **tree, Type *node, Type **return_old);
@@ -387,7 +387,7 @@ extern int const prefix##_dummy
  * @param tree pointer to the root of the tree
  * @param node pointer to node to be appended
  */
-void rbtree_remove(Type **tree, Type *node);				
+void rbtree_remove(Type **tree, Type *node);
 #endif
 
 #define RBTREE_REMOVE(SCOPE, prefix, Type, left, right, parent,		\
@@ -584,7 +584,7 @@ SCOPE int prefix##_height(Type const *node)			\
 } \
 extern int const prefix##_dummy
 
-/** Define prototypes for red-black tree functions. @HIDE 
+/** Define prototypes for red-black tree functions. @HIDE
  *
  * @param SCOPE function scope (e.g., su_inline)
  * @param prefix function prefix (e.g., rbtree)
@@ -605,12 +605,12 @@ extern int const prefix##_dummy
   SCOPE Type *prefix ## _last(Type const *);				\
   SCOPE int prefix ## _height(Type const *)
 
-/** Define bodies for red-black tree functions. @HIDE 
+/** Define bodies for red-black tree functions. @HIDE
  *
  * @param SCOPE function scope (e.g., su_inline)
  * @param prefix function prefix (e.g., rbtree)
  * @param Type node type
- * @param left accessor of left node 
+ * @param left accessor of left node
  * @param right accessor of right node
  * @param parent accessor of parent node
  * @param IS_RED predicate testing if node is red
@@ -621,7 +621,7 @@ extern int const prefix##_dummy
  * @param CMP method comparing two nodes
  * @param INSERT setter marking node as inserted to the tree
  * @param REMOVE method marking node as removed and possibly deleting node
- * 
+ *
  * @par Example
  *
  * @code
@@ -637,7 +637,7 @@ extern int const prefix##_dummy
  * #define INSERT(node) ((node)->inserted = 1)
  * #define REMOVE(node) ((node)->left = (node)->right = (node)->parent = NULL, \
  *                       (node)->inserted = 0)
- * 
+ *
  * RBTREE_BODIES(su_inline, rbtree, struct node,
  *               LEFT, RIGHT, PARENT,
  *               IS_RED, SET_RED, IS_BLACK, SET_BLACK, COPY_COLOR,

@@ -148,7 +148,7 @@ int test_message(struct context *ctx)
   TEST_1(e = a->events->head); TEST_E(e->data->e_event, nua_r_message);
   TEST(e->data->e_status, 202);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(sip_user_agent(sip)); 
+  TEST_1(sip_user_agent(sip));
   TEST_S(sip_user_agent(sip)->g_value, "007");
   TEST_1(!e->next);
 
@@ -229,7 +229,7 @@ int test_message(struct context *ctx)
 int accept_request(CONDITION_PARAMS)
 {
   msg_t *with = nua_current_request(nua);
-  
+
   if (!(check_handle(ep, call, nh, SIP_500_INTERNAL_SERVER_ERROR)))
     return 0;
 
@@ -265,7 +265,7 @@ int respond_with_etag(CONDITION_PARAMS)
       RESPOND(ep, call, nh, SIP_412_PRECONDITION_FAILED,
 	      NUTAG_WITH(with),
 	      TAG_END());
-    } 
+    }
     else {
       RESPOND(ep, call, nh, SIP_200_OK,
 	      NUTAG_WITH(with),
@@ -433,7 +433,7 @@ int test_publish(struct context *ctx)
   if (!ctx->expensive && 0)
     goto skip_republish;
 
-  run_ab_until(ctx, -1, save_until_final_response, -1, respond_with_etag); 
+  run_ab_until(ctx, -1, save_until_final_response, -1, respond_with_etag);
 
   /* Client events: nua_r_publish
   */
@@ -445,7 +445,7 @@ int test_publish(struct context *ctx)
   TEST_1(!e->next);
 
   free_events_in_list(ctx, a->events);
- 
+
   /*
    Server events:
    nua_i_publish
@@ -492,7 +492,7 @@ int test_publish(struct context *ctx)
 
   TEST_1(a_call->nh = nua_handle(a->nua, a_call, SIPTAG_TO(b->to), TAG_END()));
 
-  /* Let server close handle without responding to PUBLISH */ 
+  /* Let server close handle without responding to PUBLISH */
   PUBLISH(a, a_call, a_call->nh,
 	  TAG_IF(!ctx->proxy_tests, NUTAG_URL(b->contact->m_url)),
 	  SIPTAG_EVENT_STR("presence"),
@@ -579,7 +579,7 @@ int accept_and_notify_twice(CONDITION_PARAMS)
   switch (event) {
   case nua_i_subscribe:
     if (status < 200) {
-      NOTIFY(ep, call, nh, 
+      NOTIFY(ep, call, nh,
 	     SIPTAG_EVENT(sip->sip_event),
 	     SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
@@ -647,7 +647,7 @@ int accept_and_notify(CONDITION_PARAMS)
 	      SIPTAG_EXPIRES(sip->sip_expires),
 	      TAG_END());
 
-      NOTIFY(ep, call, nh, 
+      NOTIFY(ep, call, nh,
 	     SIPTAG_EVENT(sip->sip_event),
 	     SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
@@ -673,7 +673,7 @@ int save_and_notify(CONDITION_PARAMS)
 
   switch (event) {
   case nua_i_subscribe:
-    NOTIFY(ep, call, nh, 
+    NOTIFY(ep, call, nh,
 	   SIPTAG_EVENT(sip->sip_event),
 	   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
 	   SIPTAG_PAYLOAD_STR(presence_closed),
@@ -970,7 +970,7 @@ int test_subscribe_notify(struct context *ctx)
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(tl_find(e->data->e_tags, nutag_substate));
-  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, 
+  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value,
        nua_substate_terminated);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
   TEST_1(e->data->e_status >= 200);
@@ -1089,7 +1089,7 @@ int test_subscribe_notify_graceful(struct context *ctx)
 
   SUBSCRIBE(a, a_call, a_call->nh, TAG_END());
 
-  run_ab_until(ctx, -1, save_until_notified_and_responded_twice, 
+  run_ab_until(ctx, -1, save_until_notified_and_responded_twice,
 	       -1, accept_subscription_until_terminated);
 
 #if 0
@@ -1128,7 +1128,7 @@ int test_subscribe_notify_graceful(struct context *ctx)
   TEST(e->data->e_status, 200);
   TEST_1(sip = sip_object(e->data->e_msg));
   TEST_1(tl_find(e->data->e_tags, nutag_substate));
-  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value, 
+  TEST(tl_find(e->data->e_tags, nutag_substate)->t_value,
        nua_substate_terminated);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_notify);
   TEST_1(e->data->e_status >= 200);
@@ -1500,7 +1500,7 @@ int test_newsub_notify(struct context *ctx)
   TEST_1(!e->next);
 
   free_events_in_list(ctx, a->events);
-  
+
   /* 2nd NOTIFY using same dialog */
   /* Check that server really discards the dialog */
 
@@ -1633,7 +1633,7 @@ int test_newsub_notify(struct context *ctx)
   a->state.n = 4;
   b->state.n = 4;
 
-  run_ab_until(ctx, -1, save_until_nth_final_response, 
+  run_ab_until(ctx, -1, save_until_nth_final_response,
 	       -1, accept_n_notifys);
 
   /* Notifier events: nua_r_notify nua_r_notify */
@@ -1743,7 +1743,7 @@ int test_newsub_notify(struct context *ctx)
   a->state.n = 3;
   b->state.n = 3;
 
-  run_ab_until(ctx, -1, save_until_nth_final_response, 
+  run_ab_until(ctx, -1, save_until_nth_final_response,
 	       -1, accept_n_notifys);
 
   /* Notifier events: nua_r_notify nua_r_notify */
@@ -1876,14 +1876,14 @@ int test_newsub_notify(struct context *ctx)
   END();
 }
 
-/**Terminate when received notify. 
+/**Terminate when received notify.
  * Respond to NOTIFY with 200 OK if it has not been responded.
  * Save events (except nua_i_active or terminated).
  */
 int accept_notify(CONDITION_PARAMS)
 {
   if (event == nua_i_notify && status < 200)
-    RESPOND(ep, call, nh, SIP_200_OK, 
+    RESPOND(ep, call, nh, SIP_200_OK,
 	    NUTAG_WITH_THIS(ep->nua),
 	    TAG_END());
 
@@ -1898,7 +1898,7 @@ int save_until_nth_final_response(CONDITION_PARAMS)
 
   if (nua_r_set_params <= event && event < nua_i_network_changed
       && status >= 200) {
-    if (ep->state.n > 0) 
+    if (ep->state.n > 0)
       ep->state.n--;
     return ep->state.n == 0;
   }
@@ -1911,7 +1911,7 @@ int accept_n_notifys(CONDITION_PARAMS)
   tagi_t const *substate = tl_find(tags, nutag_substate);
 
   if (event == nua_i_notify && status < 200)
-    RESPOND(ep, call, nh, SIP_200_OK, 
+    RESPOND(ep, call, nh, SIP_200_OK,
 	    NUTAG_WITH_THIS(ep->nua),
 	    TAG_END());
 
@@ -1920,10 +1920,10 @@ int accept_n_notifys(CONDITION_PARAMS)
   if (event != nua_i_notify)
     return 0;
 
-  if (ep->state.n > 0) 
+  if (ep->state.n > 0)
     ep->state.n--;
 
-  if (ep->state.n == 0) 
+  if (ep->state.n == 0)
     return 1;
 
   if (substate && substate->t_value == nua_substate_terminated) {
@@ -2068,7 +2068,7 @@ int accept_subscription_until_terminated(CONDITION_PARAMS)
 	    NUTAG_WITH(with),
 	    SIPTAG_EXPIRES_STR("360"),
 	    TAG_END());
-    NOTIFY(ep, call, nh, 
+    NOTIFY(ep, call, nh,
 	   SIPTAG_EVENT(sip->sip_event),
 	   SIPTAG_CONTENT_TYPE_STR("application/pidf+xml"),
 	   SIPTAG_PAYLOAD_STR(presence_closed),

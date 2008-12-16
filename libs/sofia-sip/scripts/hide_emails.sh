@@ -31,7 +31,7 @@
 
 echo "Postprocessing HTML in ${1:-.}: hiding email addresses, fixing links"
 
-find ${1:-.} -name '*.html' -print0 | 
+find ${1:-.} -name '*.html' -print0 |
 xargs -0 \
 sed -r -i '
 # Hide e-mail addresses

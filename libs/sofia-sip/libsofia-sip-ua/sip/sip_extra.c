@@ -24,13 +24,13 @@
 
 /**@CFILE sip_extra.c
  * @brief Non-critical SIP headers
- * 
+ *
  * This file contains implementation of @CallInfo, @ErrorInfo,
  * @Organization, @Priority, @RetryAfter, @Server, @Subject,
  * @Timestamp, and @UserAgent headers.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
- * 
+ *
  * @date Created: Tue Jun 13 02:57:51 2000 ppessi
  */
 
@@ -66,17 +66,17 @@ static char *sip_info_dup_one(sip_header_t *dst,
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_call_info Call-Info Header
- * 
+ *
  * The Call-Info header provides additional information about the caller or
  * callee. Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Call-Info   =  "Call-Info" HCOLON info *(COMMA info)
  *    info        =  LAQUOT absoluteURI RAQUOT *( SEMI info-param)
  *    info-param  =  ( "purpose" EQUAL ( "icon" / "info"
  *                   / "card" / token ) ) / generic-param
  * @endcode
- * 
+ *
  *
  * The parsed Call-Info header is stored in #sip_call_info_t structure.
  */
@@ -84,7 +84,7 @@ static char *sip_info_dup_one(sip_header_t *dst,
 /**@ingroup sip_call_info
  * @typedef struct sip_call_info_s sip_call_info_t;
  *
- * The structure #sip_call_info_t contains representation of an 
+ * The structure #sip_call_info_t contains representation of an
  * @CallInfo header.
  *
  * The #sip_call_info_t is defined as follows:
@@ -130,10 +130,10 @@ issize_t sip_call_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 
 /** @internal
  * Update parameter in a @CallInfo object.
- * 
+ *
  */
 static
-int sip_call_info_update(msg_common_t *h, 
+int sip_call_info_update(msg_common_t *h,
 			  char const *name, isize_t namelen,
 			  char const *value)
 {
@@ -142,7 +142,7 @@ int sip_call_info_update(msg_common_t *h,
   if (name == NULL) {
     ci->ci_purpose = NULL;
   }
-  else if (namelen == strlen("purpose") && 
+  else if (namelen == strlen("purpose") &&
 	   !strncasecmp(name, "purpose", namelen)) {
     ci->ci_purpose = value;
   }
@@ -153,15 +153,15 @@ int sip_call_info_update(msg_common_t *h,
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_error_info Error-Info Header
- * 
+ *
  * The Error-Info header provides a pointer to additional information about
  * the error status response. Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Error-Info  =  "Error-Info" HCOLON error-uri *(COMMA error-uri)
  *    error-uri   =  LAQUOT absoluteURI RAQUOT *( SEMI generic-param )
  * @endcode
- * 
+ *
  *
  * The parsed Error-Info header is stored in #sip_error_info_t structure.
  */
@@ -169,7 +169,7 @@ int sip_call_info_update(msg_common_t *h,
 /**@ingroup sip_error_info
  * @typedef struct sip_error_info_s sip_error_info_t;
  *
- * The structure #sip_error_info_t contains representation of an 
+ * The structure #sip_error_info_t contains representation of an
  * @ErrorInfo header.
  *
  * The #sip_error_info_t is defined as follows:
@@ -184,7 +184,7 @@ int sip_call_info_update(msg_common_t *h,
  * @endcode
  */
 
-msg_hclass_t sip_error_info_class[] = 
+msg_hclass_t sip_error_info_class[] =
 SIP_HEADER_CLASS(error_info, "Error-Info", "",
 		 ei_params, append, info);
 
@@ -377,11 +377,11 @@ static char *sip_reply_to_dup_one(sip_header_t *dst, sip_header_t const *src,
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_in_reply_to In-Reply-To Header
- * 
- * The @b In-Reply-To request header field enumerates the 
+ *
+ * The @b In-Reply-To request header field enumerates the
  * @ref sip_call_id "Call-IDs" that this call references or returns.
  * Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    In-Reply-To  =  "In-Reply-To" HCOLON callid *(COMMA callid)
  * @endcode
@@ -392,8 +392,8 @@ static char *sip_reply_to_dup_one(sip_header_t *dst, sip_header_t const *src,
 /**@ingroup sip_in_reply_to
  * @typedef struct msg_list_s sip_in_reply_to_t;
  *
- * The structure #sip_in_reply_to_t contains representation of SIP 
- * @InReplyTo header. 
+ * The structure #sip_in_reply_to_t contains representation of SIP
+ * @InReplyTo header.
  *
  * The #sip_in_reply_to_t is defined as follows:
  * @code
@@ -406,7 +406,7 @@ static char *sip_reply_to_dup_one(sip_header_t *dst, sip_header_t const *src,
  * @endcode
  */
 
-msg_hclass_t sip_in_reply_to_class[] = 
+msg_hclass_t sip_in_reply_to_class[] =
 SIP_HEADER_CLASS_LIST(in_reply_to, "In-Reply-To", "", list);
 
 issize_t sip_in_reply_to_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -423,23 +423,23 @@ issize_t sip_in_reply_to_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_organization Organization Header
- * 
+ *
  * The Organization header field conveys the name of the organization to
  * which the entity issuing the request or response belongs. Its syntax is
  * defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Organization  =  "Organization" HCOLON [TEXT-UTF8-TRIM]
  * @endcode
- * 
+ *
  *
  * The parsed Organization header is stored in #sip_organization_t structure.
  */
 
 /**@ingroup sip_organization
- * @typedef struct msg_generic_s sip_organization_t; 
+ * @typedef struct msg_generic_s sip_organization_t;
  *
- * The structure #sip_organization_t contains representation of a SIP 
+ * The structure #sip_organization_t contains representation of a SIP
  * @Organization header.
  *
  * The #sip_organization_t is defined as follows:
@@ -453,7 +453,7 @@ issize_t sip_in_reply_to_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * @endcode
  */
 
-msg_hclass_t sip_organization_class[] = 
+msg_hclass_t sip_organization_class[] =
 SIP_HEADER_CLASS_G(organization, "Organization", "", single);
 
 issize_t sip_organization_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -470,25 +470,25 @@ issize_t sip_organization_e(char b[], isize_t bsiz, sip_header_t const *h, int f
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_priority Priority Header
- * 
+ *
  * The Priority request-header field indicates the urgency of the request as
  * perceived by the client. Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Priority        =  "Priority" HCOLON priority-value
  *    priority-value  =  "emergency" / "urgent" / "normal"
  *                       / "non-urgent" / other-priority
  *    other-priority  =  token
  * @endcode
- * 
+ *
  *
  * The parsed Priority header is stored in #sip_priority_t structure.
  */
 
 /**@ingroup sip_priority
- * @typedef struct msg_generic_s sip_priority_t; 
+ * @typedef struct msg_generic_s sip_priority_t;
  *
- * The structure #sip_priority_t contains representation of a SIP 
+ * The structure #sip_priority_t contains representation of a SIP
  * @Priority header.
  *
  * The #sip_priority_t is defined as follows:
@@ -502,13 +502,13 @@ issize_t sip_organization_e(char b[], isize_t bsiz, sip_header_t const *h, int f
  * @endcode
  */
 
-msg_hclass_t sip_priority_class[] = 
+msg_hclass_t sip_priority_class[] =
 SIP_HEADER_CLASS_G(priority, "Priority", "", single);
 
 issize_t sip_priority_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
   sip_priority_t *priority = (sip_priority_t *)h;
-  
+
   if (msg_token_d(&s, &priority->g_string) < 0)
     return -1;
 
@@ -527,11 +527,11 @@ issize_t sip_priority_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_server Server Header
- * 
+ *
  * The Server response-header field contains information about the software
  * used by the user agent server to handle the request. Its syntax is
  * defined in @RFC2616 section 14.38 and @RFC3261 as follows:
- * 
+ *
  * @code
  *    Server           =  "Server" HCOLON server-val *(LWS server-val)
  *    server-val       =  product / comment
@@ -543,9 +543,9 @@ issize_t sip_priority_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  */
 
 /**@ingroup sip_server
- * @typedef struct msg_generic_s sip_server_t; 
+ * @typedef struct msg_generic_s sip_server_t;
  *
- * The structure #sip_server_t contains representation of a SIP 
+ * The structure #sip_server_t contains representation of a SIP
  * @Server header.
  *
  * The #sip_server_t is defined as follows:
@@ -559,7 +559,7 @@ issize_t sip_priority_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * @endcode
  */
 
-msg_hclass_t sip_server_class[] = 
+msg_hclass_t sip_server_class[] =
 SIP_HEADER_CLASS_G(server, "Server", "", single);
 
 issize_t sip_server_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -576,21 +576,21 @@ issize_t sip_server_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_subject Subject Header
- * 
+ *
  * The Subject header provides a summary or indicates the nature of the
  * request. Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Subject  =  ( "Subject" / "s" ) HCOLON [TEXT-UTF8-TRIM]
  * @endcode
- * 
+ *
  * The parsed Subject header is stored in #sip_subject_t structure.
  */
 
 /**@ingroup sip_subject
- * @typedef struct msg_generic_s sip_subject_t; 
+ * @typedef struct msg_generic_s sip_subject_t;
  *
- * The structure #sip_subject_t contains representation of a SIP 
+ * The structure #sip_subject_t contains representation of a SIP
  * @Subject header.
  *
  * The #sip_subject_t is defined as follows:
@@ -604,7 +604,7 @@ issize_t sip_server_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * @endcode
  */
 
-msg_hclass_t sip_subject_class[] = 
+msg_hclass_t sip_subject_class[] =
 SIP_HEADER_CLASS_G(subject, "Subject", "s", single);
 
 issize_t sip_subject_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -621,24 +621,24 @@ issize_t sip_subject_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_timestamp Timestamp Header
- * 
+ *
  * The @b Timestamp header describes when the client sent the request to the
  * server, and it is used by the client to adjust its retransmission
  * intervals. Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Timestamp  =  "Timestamp" HCOLON 1*(DIGIT)
  *                   [ "." *(DIGIT) ] [ LWS delay ]
  *    delay      =  *(DIGIT) [ "." *(DIGIT) ]
  * @endcode
- * 
+ *
  * The parsed Timestamp header is stored in #sip_timestamp_t structure.
  */
 
 /**@ingroup sip_timestamp
- * @typedef struct sip_timestamp_s sip_timestamp_t; 
+ * @typedef struct sip_timestamp_s sip_timestamp_t;
  *
- * The structure #sip_timestamp_t contains representation of a SIP 
+ * The structure #sip_timestamp_t contains representation of a SIP
  * @Timestamp header.
  *
  * The #sip_timestamp_t is defined as follows:
@@ -660,7 +660,7 @@ static char *sip_timestamp_dup_one(sip_header_t *dst,
 				   isize_t xtra);
 #define sip_timestamp_update NULL
 
-msg_hclass_t sip_timestamp_class[] = 
+msg_hclass_t sip_timestamp_class[] =
 SIP_HEADER_CLASS(timestamp, "Timestamp", "", ts_common, single,
 		 timestamp);
 
@@ -669,7 +669,7 @@ issize_t sip_timestamp_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen
   sip_timestamp_t *ts = (sip_timestamp_t*)h;
 
   ts->ts_stamp = s;
-  s += span_digit(s); 
+  s += span_digit(s);
   if (s == ts->ts_stamp)
     return -1;
   if (*s == '.') { s += span_digit(s + 1) + 1; }
@@ -685,7 +685,7 @@ issize_t sip_timestamp_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen
     *s++ = '\0';
   else
     return -1;
-  
+
   return 0;
 }
 
@@ -703,7 +703,7 @@ issize_t sip_timestamp_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
   }
 
   MSG_TERM_E(b, end);
-    
+
   return b - b0;
 }
 
@@ -739,25 +739,25 @@ char *sip_timestamp_dup_one(sip_header_t *dst,
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_user_agent User-Agent Header
- * 
+ *
  * The User-Agent header contains information about the client user agent
  * originating the request. Its syntax is defined in [H14.43, S10.45] as
  * follows:
- * 
+ *
  * @code
  *    User-Agent       =  "User-Agent" HCOLON server-val *(LWS server-val)
  *    server-val       =  product / comment
  *    product          =  token [SLASH product-version]
  *    product-version  =  token
  * @endcode
- * 
+ *
  * The parsed User-Agent header is stored in #sip_user_agent_t structure.
  */
 
 /**@ingroup sip_user_agent
- * @typedef struct msg_generic_s sip_user_agent_t; 
+ * @typedef struct msg_generic_s sip_user_agent_t;
  *
- * The structure #sip_user_agent_t contains representation of a SIP 
+ * The structure #sip_user_agent_t contains representation of a SIP
  * @UserAgent header.
  *
  * The #sip_user_agent_t is defined as follows:
@@ -771,7 +771,7 @@ char *sip_timestamp_dup_one(sip_header_t *dst,
  * @endcode
  */
 
-msg_hclass_t sip_user_agent_class[] = 
+msg_hclass_t sip_user_agent_class[] =
 SIP_HEADER_CLASS_G(user_agent, "User-Agent", "", single);
 
 issize_t sip_user_agent_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -788,10 +788,10 @@ issize_t sip_user_agent_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_etag SIP-ETag Header
- * 
+ *
  * The @b SIP-ETag header field identifies the published event state. Its
  * syntax is defined in @RFC3903 as follows:
- * 
+ *
  * @code
  *      SIP-ETag           = "SIP-ETag" HCOLON entity-tag
  *      entity-tag         = token
@@ -801,9 +801,9 @@ issize_t sip_user_agent_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  */
 
 /**@ingroup sip_etag
- * @typedef struct msg_generic_s sip_etag_t; 
+ * @typedef struct msg_generic_s sip_etag_t;
  *
- * The structure #sip_etag_t contains representation of a SIP 
+ * The structure #sip_etag_t contains representation of a SIP
  * @SIPETag header.
  *
  * The #sip_etag_t is defined as follows:
@@ -817,7 +817,7 @@ issize_t sip_user_agent_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * @endcode
  */
 
-msg_hclass_t sip_etag_class[] = 
+msg_hclass_t sip_etag_class[] =
 SIP_HEADER_CLASS_G(etag, "SIP-ETag", "", single);
 
 issize_t sip_etag_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -835,11 +835,11 @@ issize_t sip_etag_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_if_match SIP-If-Match Header
- * 
+ *
  * The @b SIP-If-Match header field identifies the specific entity of event
  * state that the request is refreshing, modifying or removing. Its syntax
  * is defined in @RFC3903 as follows:
- * 
+ *
  * @code
  *      SIP-If-Match       = "SIP-If-Match" HCOLON entity-tag
  *      entity-tag         = token
@@ -849,9 +849,9 @@ issize_t sip_etag_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  */
 
 /**@ingroup sip_if_match
- * @typedef struct msg_generic_s sip_if_match_t; 
+ * @typedef struct msg_generic_s sip_if_match_t;
  *
- * The structure #sip_if_match_t contains representation of a SIP 
+ * The structure #sip_if_match_t contains representation of a SIP
  * @SIPIfMatch header.
  *
  * The #sip_if_match_t is defined as follows:
@@ -865,7 +865,7 @@ issize_t sip_etag_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * @endcode
  */
 
-msg_hclass_t sip_if_match_class[] = 
+msg_hclass_t sip_if_match_class[] =
 SIP_HEADER_CLASS_G(if_match, "SIP-If-Match", "", single);
 
 issize_t sip_if_match_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -943,11 +943,11 @@ char *sip_info_dup_one(sip_header_t *dst,
  *
  * @sa @RFC3265, draft-niemi-sip-subnot-etags-01.txt
  *
- * @EXP_1_12_5. 
- * In order to use @b Suppress-Body-If-Match header, 
+ * @EXP_1_12_5.
+ * In order to use @b Suppress-Body-If-Match header,
  * initialize the SIP parser with, e.g.,
  * sip_update_default_mclass(sip_extend_mclass(NULL)).
- * 
+ *
  * @note
  * The #sip_t structure does not contain a @a
  * sip_suppress_body_if_match field, but sip_suppress_body_if_match()
@@ -1015,11 +1015,11 @@ issize_t sip_suppress_body_if_match_e(char b[], isize_t bsiz,
  *
  * @sa @RFC3265, draft-niemi-sip-subnot-etag-01
  *
- * @EXP_1_12_5. 
- * In order to use @b Suppress-Notify-If-Match header, 
+ * @EXP_1_12_5.
+ * In order to use @b Suppress-Notify-If-Match header,
  * initialize the SIP parser with, e.g.,
  * sip_update_default_mclass(sip_extend_mclass(NULL)).
- * 
+ *
  * @note
  * The #sip_t struct does not contain @a sip_suppress_notify_if_match field,
  * but sip_suppress_notify_if_match() function should be used for accessing
@@ -1175,12 +1175,12 @@ issize_t sip_remote_party_id_e(char b[], isize_t bsiz,
 }
 
 /** Calculate size of extra data required for duplicating one
- *  sip_remote_party_id_t header. 
+ *  sip_remote_party_id_t header.
  */
 isize_t sip_remote_party_id_dup_xtra(sip_header_t const *h, isize_t offset)
 {
   sip_remote_party_id_t const *rpid = (sip_remote_party_id_t *)h;
-  return sip_name_addr_xtra(rpid->rpid_display, 
+  return sip_name_addr_xtra(rpid->rpid_display,
 			    rpid->rpid_url,
 			    rpid->rpid_params,
 			    offset);
@@ -1200,7 +1200,7 @@ char *sip_remote_party_id_dup_one(sip_header_t *dst,
 			   b, xtra);
 }
 
-static int sip_remote_party_id_update(msg_common_t *h, 
+static int sip_remote_party_id_update(msg_common_t *h,
 				      char const *name, isize_t namelen,
 				      char const *value)
 {
@@ -1248,7 +1248,7 @@ static int sip_remote_party_id_update(msg_common_t *h,
  *
  * @sa @RFC3325, @PPreferredIdentity
  *
- * @NEW_1_12_7. In order to use @b P-Asserted-Identity header, 
+ * @NEW_1_12_7. In order to use @b P-Asserted-Identity header,
  * initialize the SIP parser before calling nta_agent_create() or
  * nua_create() with, e.g.,
  * sip_update_default_mclass(sip_extend_mclass(NULL)).
@@ -1318,7 +1318,7 @@ isize_t sip_p_asserted_identity_dup_xtra(sip_header_t const *h, isize_t offset)
 {
   sip_p_asserted_identity_t const *paid = (sip_p_asserted_identity_t *)h;
 
-  return sip_name_addr_xtra(paid->paid_display, 
+  return sip_name_addr_xtra(paid->paid_display,
 			    paid->paid_url,
 			    NULL,
 			    offset);
@@ -1402,4 +1402,4 @@ issize_t sip_p_preferred_identity_e(char b[], isize_t bsiz,
   return sip_p_asserted_identity_e(b, bsiz, h, f);
 }
 
-#endif 
+#endif

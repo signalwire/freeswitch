@@ -73,8 +73,8 @@ Code-tree layout
 ================
 
 Most of the code resides in the libsofia-sip-ua directory.
-The main library, libsofia-sip-ua.so, is created by 
-collecting object files (for example bnf/bnf_objs.o) from 
+The main library, libsofia-sip-ua.so, is created by
+collecting object files (for example bnf/bnf_objs.o) from
 individual modules.
 
 There are some portability issues with the way the
@@ -89,13 +89,13 @@ See sofia-sip/docs/release_management.txt
 Developer documentation
 =======================
 
-Generating reference documentation from source code 
+Generating reference documentation from source code
 ---------------------------------------------------
 
 The libsofia-sip-ua library has a top-level make target
 "doxygen" for generating the HTML reference documentation.
-The pages will be created to libsofia-sip-ua/docs 
-subdirectory. 
+The pages will be created to libsofia-sip-ua/docs
+subdirectory.
 
 This special target is primarily meant for use by
 the Sofia-SIP website admins, but can be used by anyone

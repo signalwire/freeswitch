@@ -55,7 +55,7 @@
  * The RAck header indicates the sequence number of the provisional response
  * which is being acknowledged.  Its syntax is defined in
  * @RFC3262 section 10 as follows:
- * 
+ *
  * @code
  *    RAck          =  "RAck" HCOLON response-num LWS CSeq-num LWS Method
  *    response-num  =  1*DIGIT
@@ -91,7 +91,7 @@ static msg_xtra_f sip_rack_dup_xtra;
 static msg_dup_f sip_rack_dup_one;
 #define sip_rack_update NULL
 
-msg_hclass_t sip_rack_class[] = 
+msg_hclass_t sip_rack_class[] =
 SIP_HEADER_CLASS(rack, "RAck", "", ra_common, single, rack);
 
 issize_t sip_rack_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -121,7 +121,7 @@ issize_t sip_rack_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 
   assert(sip_is_rack(h));
 
-  return snprintf(b, bsiz, "%u %u %s", 
+  return snprintf(b, bsiz, "%u %u %s",
 		  ra->ra_response, ra->ra_cseq, ra->ra_method_name);
 }
 
@@ -135,7 +135,7 @@ isize_t sip_rack_dup_xtra(sip_header_t const *h, isize_t offset)
     return offset;
 }
 
-/** Duplicate one #sip_rack_t object */ 
+/** Duplicate one #sip_rack_t object */
 char *sip_rack_dup_one(sip_header_t *dst, sip_header_t const *src,
 			char *b, isize_t xtra)
 {
@@ -162,9 +162,9 @@ char *sip_rack_dup_one(sip_header_t *dst, sip_header_t const *src,
 
 /**@SIP_HEADER sip_rseq RSeq Header
  *
- * The RSeq header identifies provisional responses within a transaction. 
+ * The RSeq header identifies provisional responses within a transaction.
  * Its syntax is defined in @RFC3262 section 10 as follows:
- * 
+ *
  * @code
  *    RSeq          =  "RSeq" HCOLON response-num
  *    response-num  =  1*DIGIT
@@ -189,7 +189,7 @@ char *sip_rack_dup_one(sip_header_t *dst, sip_header_t const *src,
  * @endcode
  */
 
-msg_hclass_t sip_rseq_class[] = 
+msg_hclass_t sip_rseq_class[] =
 SIP_HEADER_CLASS(rseq, "RSeq", "", rs_common, single, any);
 
 issize_t sip_rseq_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)

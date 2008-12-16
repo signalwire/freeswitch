@@ -19,7 +19,7 @@ if test -n "${with_sigcomp}" && test "${with_sigcomp}" != no ; then
 
 	AC_CHECK_FUNC(sigcomp_library_2_5,
             [AC_DEFINE([HAVE_SIGCOMP], 1, [Define to 1 if you have Sofia sigcomp >= 2.5])
-             AC_DEFINE([HAVE_SOFIA_SIGCOMP], 1, [Define to 1 if you have Sofia sigcomp >= 2.5])], 
+             AC_DEFINE([HAVE_SOFIA_SIGCOMP], 1, [Define to 1 if you have Sofia sigcomp >= 2.5])],
              AC_MSG_ERROR(Sofia SigComp API >= 2.5 was not found))
 fi
 

@@ -81,7 +81,7 @@ SRESPUBFUN int sres_cache_get(sres_cache_t *cache,
 
 /** Free answers not matching with type */
 SRESPUBFUN int sres_cache_filter(sres_cache_t *cache,
-				 sres_record_t **answers, 
+				 sres_record_t **answers,
 				 uint16_t type);
 
 /** Free the list records. */
@@ -103,7 +103,7 @@ SRESPUBFUN void sres_cache_free_record(sres_cache_t *cache, void *rr);
 SRESPUBFUN void sres_cache_store(sres_cache_t *, sres_record_t *, time_t now);
 
 /** Modify the priority in the specified SRV record */
-SRESPUBFUN int sres_cache_set_srv_priority(sres_cache_t *, 
+SRESPUBFUN int sres_cache_set_srv_priority(sres_cache_t *,
 					   char const *domain,
 					   char const *target,
 					   uint16_t port,

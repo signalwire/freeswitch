@@ -58,9 +58,9 @@ int msghdrtag_snprintf(tagi_t const *t, char b[], size_t size)
 
   assert(t);
 
-  if (!t) { 
-    if (size) b[0] = 0; 
-    return 0; 
+  if (!t) {
+    if (size) b[0] = 0;
+    return 0;
   }
 
   h = (msg_header_t const *)t->t_value;
@@ -103,7 +103,7 @@ tagi_t *msghdrtag_dup(tagi_t *dst, tagi_t const *src, void **bb)
   char *b;
   size_t size;
 
-  assert(src); assert(*bb); 
+  assert(src); assert(*bb);
 
   dst->t_tag = src->t_tag;
   dst->t_value = 0L;
@@ -149,8 +149,8 @@ tagi_t *msghdrtag_dup(tagi_t *dst, tagi_t const *src, void **bb)
 
 
 /** Convert a string to a header structure based on to the tag. */
-int msghdrtag_scan(tag_type_t tt, su_home_t *home, 
-		   char const *s, 
+int msghdrtag_scan(tag_type_t tt, su_home_t *home,
+		   char const *s,
 		   tag_value_t *return_value)
 {
   msg_hclass_t *hc = (msg_hclass_t *)tt->tt_magic;
@@ -158,19 +158,19 @@ int msghdrtag_scan(tag_type_t tt, su_home_t *home,
   int retval;
 
   h = msg_header_make(home, hc, s);
-  
+
   if (h)
     *return_value = (tag_value_t)h, retval = 1;
   else
     *return_value = (tag_value_t)NULL, retval = -1;
-  
+
   return retval;
 }
 
 
 tagi_t *msgstrtag_filter(tagi_t *dst,
 			 tagi_t const f[],
-			 tagi_t const *src, 
+			 tagi_t const *src,
 			 void **bb);
 
 int msgobjtag_snprintf(tagi_t const *t, char b[], size_t size)
@@ -179,9 +179,9 @@ int msgobjtag_snprintf(tagi_t const *t, char b[], size_t size)
 
   assert(t);
 
-  if (!t || !t->t_value) { 
-    if (size) b[0] = 0; 
-    return 0; 
+  if (!t || !t->t_value) {
+    if (size) b[0] = 0;
+    return 0;
   }
 
   mo = (msg_pub_t *)t->t_value;
@@ -230,7 +230,7 @@ tagi_t *msgobjtag_dup(tagi_t *dst, tagi_t const *src, void **bb)
   msg_header_t const *o;
   char *b;
 
-  assert(src); assert(*bb); 
+  assert(src); assert(*bb);
 
   omo = (msg_pub_t const *)src->t_value;
 
@@ -320,7 +320,7 @@ tagi_t *msgtag_multipart_dup(tagi_t *dst, tagi_t const *src, void **bb)
   msg_header_t const *o;
   char *b;
 
-  assert(src); assert(*bb); 
+  assert(src); assert(*bb);
 
   omo = (msg_pub_t const *)src->t_value;
 

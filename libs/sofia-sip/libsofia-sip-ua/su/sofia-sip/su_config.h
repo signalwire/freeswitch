@@ -24,14 +24,14 @@
 #ifndef SU_CONFIG_H
 /** Defined when <sofia-sip/su_config.h> has been included. */
 #define SU_CONFIG_H
-/**@file sofia-sip/su_config.h 
- * 
+/**@file sofia-sip/su_config.h
+ *
  * @b su library configuration
- * 
+ *
  * This file includes an appropriate <sofia-sip/su_configure*.h> include file.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
 
@@ -45,7 +45,7 @@
 #define __malloc__		/* avoid spurious warnigns */
 #endif
 #elif !defined(__attribute__)
-#  define __attribute__(x) 
+#  define __attribute__(x)
 #endif
 
 /* C++ linkage needs to know that types and declarations are C, not C++.  */

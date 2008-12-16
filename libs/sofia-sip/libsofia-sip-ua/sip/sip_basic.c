@@ -64,7 +64,7 @@
  *
  * The request line is first line in a SIP request message.  Its syntax defined
  * in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Request-Line   =  Method SP Request-URI SP SIP-Version CRLF
  *    Request-URI    =  SIP-URI / SIPS-URI / absoluteURI
@@ -117,7 +117,7 @@ static msg_xtra_f sip_request_dup_xtra;
 static msg_dup_f sip_request_dup_one;
 #define sip_request_update NULL
 
-msg_hclass_t sip_request_class[] = 
+msg_hclass_t sip_request_class[] =
 SIP_HEADER_CLASS(request, NULL, "", rq_common, single_critical, request);
 
 /**Parse @ref sip_request "request line" from a a SIP message. */
@@ -181,7 +181,7 @@ char *sip_request_dup_one(sip_header_t *dst, sip_header_t const *src,
 
 /**@ingroup sip_request
  *
- * Create a @ref sip_request "request line" object. 
+ * Create a @ref sip_request "request line" object.
  *
  * Create a request line object with
  * method enum @a method, method name @a name, request URI @a uri, and
@@ -201,7 +201,7 @@ char *sip_request_dup_one(sip_header_t *dst, sip_header_t const *src,
  *   rq = sip_request_create(home, SIP_METHOD_OPTIONS, requestURI, NULL);
  * @endcode
 
- * @note 
+ * @note
  * If you provide an non-NULL @a version string, it is not copied. The
  * version string @b MUST remain constant.
  */
@@ -210,7 +210,7 @@ sip_request_t *sip_request_create(su_home_t *home,
 				  url_string_t const *uri,
 				  char const *version)
 {
-  size_t xtra; 
+  size_t xtra;
   sip_request_t *rq;
 
   if (method)
@@ -231,7 +231,7 @@ sip_request_t *sip_request_create(su_home_t *home,
 
     rq->rq_method      = method;
     rq->rq_method_name = name;
-    if (!method) 
+    if (!method)
       MSG_STRING_DUP(b, rq->rq_method_name, name);
 
     URL_DUP(b, end, rq->rq_url, uri->us_url);
@@ -249,7 +249,7 @@ sip_request_t *sip_request_create(su_home_t *home,
  *
  * The status line is first line in a response message.  It is defined in
  * @RFC3261 as follows:
- * 
+ *
  * @code
  *    Status-Line     =  SIP-Version SP Status-Code SP Reason-Phrase CRLF
  *    Status-Code     =  Informational
@@ -270,7 +270,7 @@ sip_request_t *sip_request_create(su_home_t *home,
 /**@ingroup sip_status
  * @typedef typedef struct sip_status_s sip_status_t;
  *
- * The structure #sip_status_t contains representation of SIP 
+ * The structure #sip_status_t contains representation of SIP
  * @ref sip_status "status line".
  *
  * The #sip_status_t is defined as follows:
@@ -292,7 +292,7 @@ static msg_dup_f sip_status_dup_one;
 #define sip_status_insert msg_status_insert
 #define sip_status_update NULL
 
-msg_hclass_t sip_status_class[] = 
+msg_hclass_t sip_status_class[] =
 SIP_HEADER_CLASS(status, NULL, "", st_common, single_critical, status);
 
 /** Parse status line */
@@ -366,7 +366,7 @@ char *sip_status_dup_one(sip_header_t *dst, sip_header_t const *src,
  * @param phrase  status phrase (may be NULL)
  * @param version version string (defaults to "SIP/2.0" if NULL)
  *
- * @note 
+ * @note
  * If you provide an non-NULL @a version string, it is not copied. The
  * string @b MUST remain constant.
  *
@@ -426,29 +426,29 @@ sip_status_t *sip_status_create(su_home_t *home,
 
 #define sip_payload_d 	     msg_payload_d
 #define sip_payload_e 	     msg_payload_e
-#define sip_payload_dup_xtra msg_payload_dup_xtra 
+#define sip_payload_dup_xtra msg_payload_dup_xtra
 #define sip_payload_dup_one  msg_payload_dup_one
 #define sip_payload_update   NULL
 
-msg_hclass_t sip_payload_class[] = 
+msg_hclass_t sip_payload_class[] =
 SIP_HEADER_CLASS(payload, NULL, "", pl_common, single, payload);
 
 /**@ingroup sip_payload
  *
- * Create a @ref sip_payload "SIP payload" structure. 
+ * Create a @ref sip_payload "SIP payload" structure.
  *
  * Create a new SIP payload structure. it
  * copies the given data to the the payload data, and NUL terminates it (it
  * allocates one extra byte for NUL).  If a NULL pointer is given as @a data,
  * sip_payload_create() allocates and zeroes a data buffer of @a len bytes.
  *
- * @param home memory home 
- * @param data payload data 
+ * @param home memory home
+ * @param data payload data
  * @param len  payload length
  *
  * @return A pointer to newly created
  * payload structure, if successful, and NULL upon an error.
- */ 
+ */
 sip_payload_t *sip_payload_create(su_home_t *home, void const *data, isize_t len)
 {
   msg_hclass_t *hc = sip_payload_class;
@@ -504,11 +504,11 @@ sip_payload_t *sip_payload_create(su_home_t *home, void const *data, isize_t len
 #define sip_separator_e msg_separator_e
 #define sip_separator_insert msg_separator_insert
 
-msg_hclass_t sip_separator_class[] = 
+msg_hclass_t sip_separator_class[] =
 SIP_HEADER_CLASS(separator, NULL, "", sep_common, single, any);
 
 /**@ingroup sip_separator
- * 
+ *
  * Create a @ref sip_separator "SIP separator line" structure.
  */
 sip_separator_t *sip_separator_create(su_home_t *home)
@@ -529,7 +529,7 @@ sip_separator_t *sip_separator_create(su_home_t *home)
  * The unknown headers are handled with #sip_unknown_t structure. The
  * unknown header name is stored in @a un_name field and the header field
  * following the colon is stored in @a un_value field.
- * 
+ *
  * @note It is possible to speed up parsing process by creating a parser
  * which does understand only a minimum number of headers. If such a parser
  * is used, some well-known headers are regarded as unknown and put into
@@ -544,19 +544,19 @@ sip_separator_t *sip_separator_create(su_home_t *home)
  * The #sip_unknown_t is defined as follows:
  * @code
  * typedef struct msg_unknown_s {
- *   msg_common_t    un_common[1];  // Common fragment info 
- *   msg_unknown_t  *un_next;       // Link to next unknown header 
- *   char const     *un_name;       // Header name 
- *   char const     *un_value;      // Header field value 
+ *   msg_common_t    un_common[1];  // Common fragment info
+ *   msg_unknown_t  *un_next;       // Link to next unknown header
+ *   char const     *un_name;       // Header name
+ *   char const     *un_value;      // Header field value
  * } sip_unknown_t;
  * @endcode
  */
 
-#define sip_unknown_dup_xtra msg_unknown_dup_xtra 
+#define sip_unknown_dup_xtra msg_unknown_dup_xtra
 #define sip_unknown_dup_one  msg_unknown_dup_one
 #define sip_unknown_update NULL
 
-msg_hclass_t sip_unknown_class[] = 
+msg_hclass_t sip_unknown_class[] =
 SIP_HEADER_CLASS(unknown, "", "", un_common, append, unknown);
 
 issize_t sip_unknown_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -574,7 +574,7 @@ issize_t sip_unknown_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
 /**@SIP_HEADER sip_error Erroneous Headers
  *
  * The erroneous headers are stored in #sip_error_t structure.
- * 
+ *
  * @note Other headers (like duplicate @ContentLength headers) may be put
  * into the list of erroneous headers (@c sip->sip_error). If the list of
  * erroneous headers is processed, the header type must be validated first
@@ -588,8 +588,8 @@ issize_t sip_unknown_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
  * The #sip_error_t is defined as follows:
  * @code
  * typedef struct msg_error_s {
- *   msg_common_t    er_common[1];  // Common fragment info 
- *   msg_error_t    *er_next;       // Link to next header 
+ *   msg_common_t    er_common[1];  // Common fragment info
+ *   msg_error_t    *er_next;       // Link to next header
  *   char const     *er_name;       // Name of bad header (if any)
  * } sip_error_t;
  * @endcode
@@ -611,7 +611,7 @@ issize_t sip_error_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 
 /* ====================================================================== */
 /*
- * addr           = ("To" | "t" | "From" | "f") ":" 
+ * addr           = ("To" | "t" | "From" | "f") ":"
  *                  ( name-addr | addr-spec ) *( ";" addr-params )
  * name-addr      = [ display-name ] "<" addr-spec ">"
  * addr-spec      = SIP-URL | URI
@@ -631,7 +631,7 @@ issize_t sip_error_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
  * @param inout_s        pointer to pointer to string to be parsed
  * @param return_display value-result parameter for @e display-name
  * @param return_url     value-result parameter for @e addr-spec
- * @param return_params  value-result paramater for @e parameters 
+ * @param return_params  value-result paramater for @e parameters
  * @param return_comment value-result parameter for @e comment
  *
  * @note After succesful call to the function @c sip_name_addr_d(), *ss
@@ -658,7 +658,7 @@ issize_t sip_name_addr_d(su_home_t *home,
 
   if (*s == '\0')		/* Empty string */
     return -1;
-  
+
   if (return_display && *s == '"') {
     /* Quoted string */
     if (msg_quoted_d(&s, &display) == -1)
@@ -669,24 +669,24 @@ issize_t sip_name_addr_d(su_home_t *home,
       return -1;
     s++[0] = '\0';		/* NUL terminate quoted string... */
     n = strcspn(s, ">");
-    addr_spec = s; s += n; 
+    addr_spec = s; s += n;
     if (*s) *s++ = '\0'; else return -1;
-  } 
+  }
   else {
-    if (return_display) 
+    if (return_display)
       n = span_token_lws(s);
     else
       n = 0;
 
     if (s[n] == '<') {
       /* OK, we got a display name */
-      display = s; s += n + 1; 
+      display = s; s += n + 1;
       /* NUL terminate display name */
       while (n > 0 && IS_LWS(display[n - 1]))
 	n--;
       if (n > 0)
 	display[n] = '\0';
-      else 
+      else
 	display = "";
 
       n = strcspn(s, ">");
@@ -696,7 +696,7 @@ issize_t sip_name_addr_d(su_home_t *home,
       /* addr-spec only */
       addr_spec = s;
       /**@sa
-       * Discussion about comma, semicolon and question mark in 
+       * Discussion about comma, semicolon and question mark in
        * @RFC3261 section 20.10.
        */
       if (return_params)
@@ -714,8 +714,8 @@ issize_t sip_name_addr_d(su_home_t *home,
 
   if (return_display)
     *return_display = display;
-  
-  /* Now, url may still not be NUL terminated, e.g., if 
+
+  /* Now, url may still not be NUL terminated, e.g., if
    * it is like "Contact: url:foo,sip:bar,sip:zunk"
    */
   c = *s; *s = '\0';		/* terminate temporarily */
@@ -753,7 +753,7 @@ issize_t sip_name_addr_d(su_home_t *home,
  * @param params   pointer to parameter list (may be NULL)
  * @param comment  comment string encoded after others (may be NULL)
  *
- * @return 
+ * @return
  * Returns number of characters in encoding, excluding the
  * final NUL.
  *
@@ -761,9 +761,9 @@ issize_t sip_name_addr_d(su_home_t *home,
  * The encoding result may be incomplete if the buffer size is not large
  * enough to store the whole encoding result.
  */
-issize_t sip_name_addr_e(char b[], isize_t bsiz, 
-			 int flags, 
-			 char const *display, 
+issize_t sip_name_addr_e(char b[], isize_t bsiz,
+			 int flags,
+			 char const *display,
 			 int brackets, url_t const url[],
 			 msg_param_t const params[],
 			 char const *comment)
@@ -772,8 +772,8 @@ issize_t sip_name_addr_e(char b[], isize_t bsiz,
   char const *u;
   char *b0 = b, *end = b + bsiz;
 
-  brackets = brackets || display || 
-    (url && (url->url_params || 
+  brackets = brackets || display ||
+    (url && (url->url_params ||
 	     url->url_headers ||
 	     ((u = url->url_user) && u[strcspn(u, ";,?")]) ||
 	     ((u = url->url_password) && u[strcspn(u, ",")])));
@@ -798,7 +798,7 @@ issize_t sip_name_addr_e(char b[], isize_t bsiz,
   }
 
   MSG_TERM_E(b, end);
-    
+
   return b - b0;
 }
 
@@ -867,12 +867,12 @@ static issize_t sip_addr_d(su_home_t *home,
 {
   sip_addr_t *a = (sip_addr_t *)h;
   char const *comment = NULL;
-  if (sip_name_addr_d(home, 
-		      &s, 
-		      &a->a_display, 
-		      a->a_url, 
+  if (sip_name_addr_d(home,
+		      &s,
+		      &a->a_display,
+		      a->a_url,
 		      &a->a_params,
-		      &comment) == -1 
+		      &comment) == -1
       || *s /* XXX - something extra? */)
     return -1;
 
@@ -887,7 +887,7 @@ static int sip_addr_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
 
   return sip_name_addr_e(b, bsiz,
 			 flags,
-			 a->a_display, 
+			 a->a_display,
 			 MSG_IS_CANONIC(flags), a->a_url,
 			 a->a_params,
 			 NULL);
@@ -909,7 +909,7 @@ isize_t sip_addr_dup_xtra(sip_header_t const *h, isize_t offset)
 {
   sip_addr_t const *a = (sip_addr_t const *)h;
 
-  return sip_name_addr_xtra(a->a_display, 
+  return sip_name_addr_xtra(a->a_display,
 			    a->a_url,
 			    a->a_params,
 			    offset);
@@ -955,7 +955,7 @@ sip_addr_make_url(su_home_t *home, msg_hclass_t *hc, url_string_t const *us)
   sip_header_t *h;
 
   n = url_xtra(us->us_url);
-  h = sip_header_alloc(home, hc, n);    
+  h = sip_header_alloc(home, hc, n);
 
   if (h) {
     sip_addr_t *a = (sip_to_t *)h;
@@ -1009,7 +1009,7 @@ int sip_addr_tag(su_home_t *home, sip_addr_t *a, char const *tag)
  * The @b Call-ID header uniquely identifies a particular invitation or all
  * registrations of a particular client. It is defined in @RFC3261 as
  * follows:
- * 
+ *
  * @code
  *    Call-ID  =  ( "Call-ID" / "i" ) HCOLON callid
  *    callid   =  word [ "@" word ]
@@ -1042,16 +1042,16 @@ static msg_xtra_f sip_call_id_dup_xtra;
 static msg_dup_f sip_call_id_dup_one;
 #define sip_call_id_update NULL
 
-msg_hclass_t sip_call_id_class[] = 
+msg_hclass_t sip_call_id_class[] =
 SIP_HEADER_CLASS(call_id, "Call-ID", "i", i_common, single, call_id);
 
 issize_t sip_call_id_d(su_home_t *home,
 		       sip_header_t *h,
-		       char *s, 
+		       char *s,
 		       isize_t slen)
 {
   sip_call_id_t *i = (sip_call_id_t *)h;
-  
+
   i->i_id = s; /* XXX - why not sip_word_at_word_d(&s); */
   i->i_hash = msg_hash_string(s);
 
@@ -1106,7 +1106,7 @@ char *sip_call_id_dup_one(sip_header_t *dst, sip_header_t const *src,
 
 /**@ingroup sip_call_id
  *
- * Create a @CallID header object. 
+ * Create a @CallID header object.
  *
  * Create a Call-ID header object with a new unique value. It uses
  * su_guid_generate() function to generate the value. If the local host name
@@ -1127,7 +1127,7 @@ sip_call_id_t *sip_call_id_create(su_home_t *home, char const *domain)
   size_t xtra = su_guid_strlen + 1 + (domain ? strlen(domain) + 1 : 0);
 
   i = (sip_call_id_t *)sip_header_alloc(home, sip_call_id_class, xtra);
-  
+
   if (i) {
     char *b;
     su_guid_t guid[1];
@@ -1158,11 +1158,11 @@ sip_call_id_t *sip_call_id_create(su_home_t *home, char const *domain)
 
 /* ====================================================================== */
 
-/**@SIP_HEADER sip_cseq CSeq Header 
+/**@SIP_HEADER sip_cseq CSeq Header
  *
  * The CSeq header (command sequence) uniquely identifies transactions
  * within a dialog.  It is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    CSeq              =  "CSeq" HCOLON 1*DIGIT LWS Method
  *    Method            =  INVITEm / ACKm / OPTIONSm / BYEm
@@ -1195,7 +1195,7 @@ static msg_xtra_f sip_cseq_dup_xtra;
 static msg_dup_f sip_cseq_dup_one;
 #define sip_cseq_update NULL
 
-msg_hclass_t sip_cseq_class[] = 
+msg_hclass_t sip_cseq_class[] =
 SIP_HEADER_CLASS(cseq, "CSeq", "", cs_common, single, cseq);
 
 issize_t sip_cseq_d(su_home_t *home,
@@ -1253,9 +1253,9 @@ char *sip_cseq_dup_one(sip_header_t *dst, sip_header_t const *src,
   return b;
 }
 
-/**@ingroup sip_cseq 
+/**@ingroup sip_cseq
  *
- * Create a @CSeq header object. 
+ * Create a @CSeq header object.
  *
  * Create a @CSeq header object with the
  * sequence number @a seq, method enum @a method and method name @a
@@ -1295,7 +1295,7 @@ sip_cseq_t *sip_cseq_create(su_home_t *home,
   xtra = (method ? 0 : (strlen(method_name) + 1));
 
   cs = (sip_cseq_t *)sip_header_alloc(home, sip_cseq_class, xtra);
-  
+
   if (cs) {
     cs->cs_seq = seq;
     cs->cs_method = method;
@@ -1312,7 +1312,7 @@ sip_cseq_t *sip_cseq_create(su_home_t *home,
  *
  * The Contact header contain a list of URLs used to redirect future
  * requests.  Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Contact            =  ("Contact" / "m" ) HCOLON
  *                          ( STAR / (contact-param *(COMMA contact-param)))
@@ -1351,10 +1351,10 @@ sip_cseq_t *sip_cseq_create(su_home_t *home,
  *   char const         *m_comment;     // Comment
  *
  *   char const         *m_q;           // Priority
- *   char const         *m_expires;     // Expiration time 
+ *   char const         *m_expires;     // Expiration time
  * } sip_contact_t;
  * @endcode
- * 
+ *
  * @note The <comment> field @ref sip_contact_s::m_comment "m_comment" is
  * deprecated: it is parsed but not included in encoding.
  */
@@ -1398,7 +1398,7 @@ issize_t sip_contact_d(su_home_t *home,
   while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
     *s = '\0', s += span_lws(s + 1) + 1;
 
-  if (sip_name_addr_d(home, &s, &m->m_display, m->m_url, 
+  if (sip_name_addr_d(home, &s, &m->m_display, m->m_url,
 		      &m->m_params, &m->m_comment) == -1)
     return -1;
 
@@ -1414,7 +1414,7 @@ issize_t sip_contact_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
   assert(sip_is_contact(h));
 
   return sip_name_addr_e(b, bsiz, flags,
-			 m->m_display, always_lt_gt, m->m_url, 
+			 m->m_display, always_lt_gt, m->m_url,
 			 m->m_params,
 			 NULL /* m->m_comment */);
 }
@@ -1446,7 +1446,7 @@ char *sip_contact_dup_one(sip_header_t *dst, sip_header_t const *src,
 }
 
 /** Update parameter in #sip_contact_t */
-static int sip_contact_update(msg_common_t *h, 
+static int sip_contact_update(msg_common_t *h,
 			      char const *name, isize_t namelen,
 			      char const *value)
 {
@@ -1460,7 +1460,7 @@ static int sip_contact_update(msg_common_t *h,
     /* XXX - check for invalid value? */
     m->m_q = value;
   }
-  else if (namelen == strlen("expires") && 
+  else if (namelen == strlen("expires") &&
 	   !strncasecmp(name, "expires", namelen)) {
     m->m_expires = value;
   }
@@ -1468,7 +1468,7 @@ static int sip_contact_update(msg_common_t *h,
   return 0;
 }
 
-/**@ingroup sip_contact 
+/**@ingroup sip_contact
  *
  * Add a parameter to a @Contact header object
  *
@@ -1524,8 +1524,8 @@ int sip_contact_add_param(su_home_t *home,
  * @endcode
  */
 
-msg_hclass_t sip_content_length_class[] = 
-SIP_HEADER_CLASS(content_length, "Content-Length", "l", l_common, 
+msg_hclass_t sip_content_length_class[] =
+SIP_HEADER_CLASS(content_length, "Content-Length", "l", l_common,
 		 single_critical, any);
 
 issize_t sip_content_length_d(su_home_t *home,
@@ -1547,9 +1547,9 @@ issize_t sip_content_length_e(char b[], isize_t bsiz, sip_header_t const *h, int
   return snprintf(b, bsiz, "%lu", (unsigned long)l->l_length);
 }
 
-/**@ingroup sip_content_length 
+/**@ingroup sip_content_length
  *
- * Create a @ContentLength header object. 
+ * Create a @ContentLength header object.
  *
  * Create a @ContentLength
  * header object with the value @a n.  The memory for the header is
@@ -1566,7 +1566,7 @@ sip_content_length_t *sip_content_length_create(su_home_t *home, uint32_t n)
 {
   sip_content_length_t *l = (sip_content_length_t *)
     sip_header_alloc(home, sip_content_length_class, 0);
-  
+
   if (l)
     l->l_length = n;
 
@@ -1580,7 +1580,7 @@ sip_content_length_t *sip_content_length_create(su_home_t *home, uint32_t n)
  * The Date header field reflects the time when the request or response was
  * first sent.  Its syntax is defined in @RFC3261 and @RFC2616 section 14.18 as
  * follows:
- * 
+ *
  * @code
  *    Date          =  "Date" HCOLON SIP-date
  *    SIP-date      =  rfc1123-date
@@ -1614,7 +1614,7 @@ sip_content_length_t *sip_content_length_create(su_home_t *home, uint32_t n)
  * @endcode
  */
 
-msg_hclass_t sip_date_class[] = 
+msg_hclass_t sip_date_class[] =
 SIP_HEADER_CLASS(date, "Date", "", d_common, single, any);
 
 issize_t sip_date_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -1635,7 +1635,7 @@ issize_t sip_date_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 }
 
 /**@ingroup sip_date
- * @brief Create an @Date header object. 
+ * @brief Create an @Date header object.
  *
  * Create a @Date header object with
  * the date @a date.  If @date is 0, current time (as returned by sip_now())
@@ -1651,7 +1651,7 @@ issize_t sip_date_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 sip_date_t *sip_date_create(su_home_t *home, sip_time_t date)
 {
   sip_date_t *d = (sip_date_t *)sip_header_alloc(home, sip_date_class, 0);
-  
+
   if (d) {
     if (date == 0)
       date = sip_now();
@@ -1667,11 +1667,11 @@ sip_date_t *sip_date_create(su_home_t *home, sip_time_t date)
  *
  * The Expires header field gives the date and time after which the message
  * content expires.  Its syntax is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Expires     =  "Expires" HCOLON delta-seconds
  * @endcode
- * 
+ *
  * Note that the first SIP revision (@RFC2543) also allowed absolute time in
  * Expires.
  *
@@ -1695,15 +1695,15 @@ sip_date_t *sip_date_create(su_home_t *home, sip_time_t date)
  * @endcode
  */
 
-msg_hclass_t sip_expires_class[] = 
+msg_hclass_t sip_expires_class[] =
 SIP_HEADER_CLASS(expires, "Expires", "", ex_common, single, any);
 
 issize_t sip_expires_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
 {
   sip_expires_t *expires = (sip_expires_t *)h;
 
-  if (msg_date_delta_d((char const **)&s, 
-		       &expires->ex_date, 
+  if (msg_date_delta_d((char const **)&s,
+		       &expires->ex_date,
 		       &expires->ex_delta) < 0 || *s)
     return -1;
   else
@@ -1721,7 +1721,7 @@ issize_t sip_expires_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 }
 
 /**@ingroup sip_expires
- * @brief Create an @Expires header object. 
+ * @brief Create an @Expires header object.
  *
  * Create an @Expires header object with the expiration time @a delta.
  *
@@ -1749,7 +1749,7 @@ sip_expires_t *sip_expires_create(su_home_t *home, sip_time_t delta)
  *
  * The From header indicates the initiator of the request.  It is defined in
  * @RFC3261 as follows:
- * 
+ *
  * @code
  *    From        =  ( "From" / "f" ) HCOLON from-spec
  *    from-spec   =  ( name-addr / addr-spec )
@@ -1776,13 +1776,13 @@ sip_expires_t *sip_expires_create(su_home_t *home, sip_time_t delta)
  *   url_t              a_url[1];       // URL
  *   msg_param_t const *a_params;       // List of from-param
  *   char const        *a_comment;      // Comment
- *   char const        *a_tag;          // Tag parameter 
+ *   char const        *a_tag;          // Tag parameter
  * } sip_from_t;
  * @endcode
  *
  */
 
-msg_hclass_t sip_from_class[] = 
+msg_hclass_t sip_from_class[] =
 SIP_HEADER_CLASS(from, "From", "f", a_params, single, addr);
 
 issize_t sip_from_d(su_home_t *home,
@@ -1844,10 +1844,10 @@ int sip_from_add_param(su_home_t *home,
  * be provided either as a single token ("deadbeer") or as in parameter form
  * ("tag=deadbeer"). In both cases the tag is duplicated using the memory
  * home @a home.
- * 
- * @param home memory home used to allocate new tag 
+ *
+ * @param home memory home used to allocate new tag
  * @param from @From header to modify
- * @param tag  tag token or parameter to be added 
+ * @param tag  tag token or parameter to be added
  *
  * @retval 0 when successful
  * @retval -1 upon an error.
@@ -1870,7 +1870,7 @@ int sip_to_tag(su_home_t *home, sip_to_t *to, char const *tag)
  * The Max-Forwards header is used to limit the number of proxies or
  * gateways that can forward the request.  The Max-Forwards syntax is
  * defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Max-Forwards  =  "Max-Forwards" HCOLON 1*DIGIT
  * @endcode
@@ -1895,8 +1895,8 @@ int sip_to_tag(su_home_t *home, sip_to_t *to, char const *tag)
  * @endcode
  */
 
-msg_hclass_t sip_max_forwards_class[] = 
-SIP_HEADER_CLASS(max_forwards, "Max-Forwards", "", mf_common, 
+msg_hclass_t sip_max_forwards_class[] =
+SIP_HEADER_CLASS(max_forwards, "Max-Forwards", "", mf_common,
 		 single, any);
 
 issize_t sip_max_forwards_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -1917,7 +1917,7 @@ issize_t sip_max_forwards_e(char b[], isize_t bsiz, sip_header_t const *h, int f
  * The Min-Expires header is used to limit the number of proxies or
  * gateways that can forward the request.  The Min-Expires syntax is
  * defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Min-Expires  =  "Min-Expires" HCOLON delta-seconds
  * @endcode
@@ -1941,8 +1941,8 @@ issize_t sip_max_forwards_e(char b[], isize_t bsiz, sip_header_t const *h, int f
  * @endcode
  */
 
-msg_hclass_t sip_min_expires_class[] = 
-SIP_HEADER_CLASS(min_expires, "Min-Expires", "", me_common, 
+msg_hclass_t sip_min_expires_class[] =
+SIP_HEADER_CLASS(min_expires, "Min-Expires", "", me_common,
 		 single, any);
 
 issize_t sip_min_expires_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -1960,12 +1960,12 @@ issize_t sip_min_expires_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 /* ====================================================================== */
 
 /**@SIP_HEADER sip_retry_after Retry-After Header
- * 
+ *
  * The Retry-After response-header field @RFC3261 section 20.33 can be used to
  * indicate how long the service is expected to be unavailable or when the
  * called party anticipates being available again. Its syntax is defined in
  * @RFC3261 as follows:
- * 
+ *
  * @code
  *      Retry-After  =  "Retry-After" HCOLON delta-seconds
  *                      [ comment ] *( SEMI retry-param )
@@ -1977,9 +1977,9 @@ issize_t sip_min_expires_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  */
 
 /**@ingroup sip_retry_after
- * @typedef struct sip_retry_after_s sip_retry_after_t; 
+ * @typedef struct sip_retry_after_s sip_retry_after_t;
  *
- * The structure #sip_retry_after_t contains representation of an 
+ * The structure #sip_retry_after_t contains representation of an
  * @RetryAfter header.
  *
  * The #sip_retry_after_t is defined as follows:
@@ -1999,7 +1999,7 @@ static msg_xtra_f sip_retry_after_dup_xtra;
 static msg_dup_f sip_retry_after_dup_one;
 static msg_update_f sip_retry_after_update;
 
-msg_hclass_t sip_retry_after_class[] = 
+msg_hclass_t sip_retry_after_class[] =
 SIP_HEADER_CLASS(retry_after, "Retry-After", "", af_params, single,
 		 retry_after);
 
@@ -2031,7 +2031,7 @@ issize_t sip_retry_after_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
   b += snprintf(b, bsiz, "%lu", af->af_delta);
 
   if (af->af_comment) {
-    if (!compact) 
+    if (!compact)
       MSG_CHAR_E(b, end, ' ');
     MSG_CHAR_E(b, end, '(');
     MSG_STRING_E(b, end, af->af_comment);
@@ -2042,9 +2042,9 @@ issize_t sip_retry_after_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
 
   if (af->af_params)
     MSG_PARAMS_E(b, end, af->af_params, f);
-    
+
   MSG_TERM_E(b, end);
-    
+
   return b - b0;
 }
 
@@ -2098,7 +2098,7 @@ static int sip_retry_after_update(msg_common_t *h,
 
 /**Parse a @Route or a @RecordRoute header.
  *
- * @retval 0 when successful, 
+ * @retval 0 when successful,
  * @retval -1 upon an error.
  */
 issize_t sip_any_route_d(su_home_t *home,
@@ -2113,7 +2113,7 @@ issize_t sip_any_route_d(su_home_t *home,
   while (*s == ',')   /* Ignore empty entries (comma-whitespace) */
     *s = '\0', s += span_lws(s + 1) + 1;
 
-  if (sip_name_addr_d(home, &s, &r->r_display, 
+  if (sip_name_addr_d(home, &s, &r->r_display,
 		      r->r_url, &r->r_params, NULL) < 0)
     return -1;
 
@@ -2124,14 +2124,14 @@ issize_t sip_any_route_e(char b[], isize_t bsiz, sip_header_t const *h, int flag
 {
   sip_route_t const *r = (sip_route_t *)h;
 
-  return sip_name_addr_e(b, bsiz, flags, 
+  return sip_name_addr_e(b, bsiz, flags,
 			 r->r_display, 1, r->r_url, r->r_params, NULL);
 }
 
 isize_t sip_any_route_dup_xtra(sip_header_t const *h, isize_t offset)
 {
   sip_route_t const *r = (sip_route_t *)h;
-  return sip_name_addr_xtra(r->r_display, 
+  return sip_name_addr_xtra(r->r_display,
 			    r->r_url,
 			    r->r_params,
 			    offset);
@@ -2152,7 +2152,7 @@ char *sip_any_route_dup_one(sip_header_t *dst, sip_header_t const *src,
 #define sip_any_route_update NULL
 
 
-/** Create a route. 
+/** Create a route.
  *
  * Create a route or record-route entry
  * from two URLs; first one provides the URL, second maddr parameter and
@@ -2170,8 +2170,8 @@ sip_route_t *sip_any_route_create(su_home_t *home,
 {
   sip_header_t *h;
   sip_route_t *rr;
-  url_t url[1]; 
-  size_t xtra, n, n_url, n_params, n_addr; 
+  url_t url[1];
+  size_t xtra, n, n_url, n_params, n_addr;
   char *b, *param;
 
   *url = *rq_url;
@@ -2183,10 +2183,10 @@ sip_route_t *sip_any_route_create(su_home_t *home,
 
   n_params = maddr && maddr->url_params ? strlen(maddr->url_params) : 0;
 
-  if (maddr && (!maddr->url_params || 
+  if (maddr && (!maddr->url_params ||
 		!url_param(maddr->url_params, "maddr", NULL, 0)))
     n_addr = (n_params != 0) + strlen("maddr=") + strlen(maddr->url_host);
-  else 
+  else
     n_addr = 0;
 
   xtra = n_url + n_params + n_addr + (n_params || n_addr);
@@ -2220,9 +2220,9 @@ sip_route_t *sip_any_route_create(su_home_t *home,
 
 /**@SIP_HEADER sip_route Route Header
  *
- * The Route headers is used to store the route set of a transaction.  
+ * The Route headers is used to store the route set of a transaction.
  * The Route header is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    Route        =  "Route" HCOLON route-param *(COMMA route-param)
  *    route-param  =  name-addr *( SEMI rr-param )
@@ -2248,7 +2248,7 @@ sip_route_t *sip_any_route_create(su_home_t *home,
  * @endcode
  */
 
-msg_hclass_t sip_route_class[] = 
+msg_hclass_t sip_route_class[] =
 SIP_HEADER_CLASS(route, "Route", "", r_params, append, any_route);
 
 issize_t sip_route_d(su_home_t *home,
@@ -2265,7 +2265,7 @@ issize_t sip_route_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
   return sip_any_route_e(b, bsiz, h, flags);
 }
 
-/**@ingroup sip_route 
+/**@ingroup sip_route
  * @brief Create a @Route header object.
  *
  * Creates a route entry from two URLs; first one provides the URL, second
@@ -2279,11 +2279,11 @@ issize_t sip_route_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
  * Returns a pointer to newly created @Route header object when successful,
  * or NULL upon an error.
  */
-sip_route_t *sip_route_create(su_home_t *home, 
-			      url_t const *url, 
+sip_route_t *sip_route_create(su_home_t *home,
+			      url_t const *url,
 			      url_t const *maddr)
 {
-  return sip_any_route_create(home, sip_route_class, url, maddr);  
+  return sip_any_route_create(home, sip_route_class, url, maddr);
 }
 
 /* ====================================================================== */
@@ -2292,8 +2292,8 @@ sip_route_t *sip_route_create(su_home_t *home,
  *
  * The Record-Route headers are used to establish a route for transactions
  * belonging to a session.  The Record-Route header is defined in @RFC3261
- * as follows: 
- * 
+ * as follows:
+ *
  * @code
  *    Record-Route  =  "Record-Route" HCOLON rec-route *(COMMA rec-route)
  *    rec-route     =  name-addr *( SEMI rr-param )
@@ -2321,7 +2321,7 @@ sip_route_t *sip_route_create(su_home_t *home,
  * @endcode
  */
 
-msg_hclass_t sip_record_route_class[] = 
+msg_hclass_t sip_record_route_class[] =
 SIP_HEADER_CLASS(record_route, "Record-Route", "",
 		 r_params, prepend, any_route);
 
@@ -2339,9 +2339,9 @@ issize_t sip_record_route_e(char b[], isize_t bsiz, sip_header_t const *h, int f
   return sip_any_route_e(b, bsiz, h, flags);
 }
 
-/** @ingroup sip_record_route 
+/** @ingroup sip_record_route
  *
- * Create a record-route. 
+ * Create a record-route.
  *
  * Create a record-route entry from two URLs; first one provides the URL,
  * second maddr parameter and port.
@@ -2367,7 +2367,7 @@ sip_record_route_t *sip_record_route_create(su_home_t *home,
  *
  * The To header field specifies the "logical" recipient of the
  * request.  It is defined in @RFC3261 as follows:
- * 
+ *
  * @code
  *    To        =  ( "To" / "t" ) HCOLON ( name-addr
  *                 / addr-spec ) *( SEMI to-param )
@@ -2391,13 +2391,13 @@ sip_record_route_t *sip_record_route_create(su_home_t *home,
  *   url_t              a_url[1];       // URL
  *   msg_param_t const *a_params;       // List of to-params
  *   char const        *a_comment;      // Comment
- *   char const        *a_tag;          // Tag parameter 
+ *   char const        *a_tag;          // Tag parameter
  * } sip_to_t;
  * @endcode
  *
  */
 
-msg_hclass_t sip_to_class[] = 
+msg_hclass_t sip_to_class[] =
 SIP_HEADER_CLASS(to, "To", "t", a_params, single, addr);
 
 issize_t sip_to_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -2458,7 +2458,7 @@ int sip_to_add_param(su_home_t *home,
  * headers can be used to prevent request looping and ensure replies take
  * the same path as the requests.  The Via syntax is defined in @RFC3261
  * as follows:
- * 
+ *
  * @code
  *    Via               =  ( "Via" / "v" ) HCOLON via-parm *(COMMA via-parm)
  *    via-parm          =  sent-protocol LWS sent-by *( SEMI via-params )
@@ -2514,7 +2514,7 @@ int sip_to_add_param(su_home_t *home,
  *   char const         *v_port;        // Port number
  *   msg_param_t const  *v_params;      // List of via-params
  *   char const         *v_comment;     // Comment
- * 
+ *
  *   char const         *v_ttl;         // "ttl" parameter
  *   char const         *v_maddr;       // "maddr" parameter
  *   char const         *v_received;    // "received" parameter
@@ -2529,7 +2529,7 @@ static msg_xtra_f sip_via_dup_xtra;
 static msg_dup_f sip_via_dup_one;
 static msg_update_f sip_via_update;
 
-msg_hclass_t sip_via_class[] = 
+msg_hclass_t sip_via_class[] =
 SIP_HEADER_CLASS(via, "Via", "v", v_params, prepend, via);
 
 issize_t sip_via_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -2570,14 +2570,14 @@ issize_t sip_via_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
   MSG_CHAR_E(b, end, ' ');
   MSG_STRING_E(b, end, v->v_host);
   if (v->v_port) {
-    MSG_CHAR_E(b, end, ':');	
+    MSG_CHAR_E(b, end, ':');
     MSG_STRING_E(b, end, v->v_port);
   }
   MSG_PARAMS_E(b, end, v->v_params, flags);
 #if 0
   /* Comment is deprecated in @RFC3265 - accept it, but do not send */
   if (v->v_comment) {
-    if (!MSG_IS_COMPACT(flags)) 
+    if (!MSG_IS_COMPACT(flags))
       MSG_CHAR_E(b, end, ' ');
     MSG_CHAR_E(b, end, '(');
     MSG_STRING_E(b, end, v->v_comment);
@@ -2585,7 +2585,7 @@ issize_t sip_via_e(char b[], isize_t bsiz, sip_header_t const *h, int flags)
   }
 #endif
   MSG_TERM_E(b, end);
-    
+
   return b - b0;
 }
 
@@ -2602,7 +2602,7 @@ isize_t sip_via_dup_xtra(sip_header_t const *h, isize_t offset)
   return offset;
 }
 
-/** Duplicate one #sip_via_t object */ 
+/** Duplicate one #sip_via_t object */
 char *sip_via_dup_one(sip_header_t *dst, sip_header_t const *src,
 		      char *b, isize_t xtra)
 {
@@ -2621,7 +2621,7 @@ char *sip_via_dup_one(sip_header_t *dst, sip_header_t const *src,
   return b;
 }
 
-static int sip_via_update(msg_common_t *h, 
+static int sip_via_update(msg_common_t *h,
 			  char const *name, isize_t namelen,
 			  char const *value)
 {
@@ -2685,7 +2685,7 @@ int sip_via_add_param(su_home_t *home,
 
 /**@ingroup sip_via
  *
- * Create a @Via object. 
+ * Create a @Via object.
  *
  * Create a new @Via header object with
  * given parameters.  If @a transport is NULL, the default transport
@@ -2701,10 +2701,10 @@ int sip_via_add_param(su_home_t *home,
  * @return
  * A pointer to newly created
  * @Via header object when successful or NULL upon an error.
- */ 
+ */
 sip_via_t *sip_via_create(su_home_t *home,
                           char const *host,
-                          char const *port, 
+                          char const *port,
                           char const *transport,
                           /* char const *params */
                           ...)
@@ -2728,8 +2728,8 @@ sip_via_t *sip_via_create(su_home_t *home,
     char const *param;
     va_start(params, transport);
 
-    for (param = va_arg(params, char const *); 
-         param; 
+    for (param = va_arg(params, char const *);
+         param;
          param = va_arg(params, char const *)) {
       if ((param = su_strdup(home, param))) {
 	if (msg_header_replace_param(home, v->v_common, param) < 0)
@@ -2746,7 +2746,7 @@ sip_via_t *sip_via_create(su_home_t *home,
 /**@ingroup sip_via
  *
  * Get port number corresponding to a @Via line.
- * 
+ *
  * If @a using_rport is non-null, try rport.
  * If *using_rport is non-zero, try rport even if <protocol> is not UDP.
  * If <protocol> is UDP, set *using_rport to zero.
@@ -2760,7 +2760,7 @@ char const *sip_via_port(sip_via_t const *v, int *using_rport)
     char const *port;
 
     if (v->v_rport && !v->v_maddr /* multicast */) {
-      if (v->v_protocol == sip_transport_udp || 
+      if (v->v_protocol == sip_transport_udp ||
 	  strcasecmp(v->v_protocol, sip_transport_udp) == 0)
 	port = v->v_rport, *using_rport = 0;
       else if (*using_rport)

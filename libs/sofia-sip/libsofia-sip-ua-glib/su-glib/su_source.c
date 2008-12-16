@@ -25,15 +25,15 @@
 /**
  * @file su_source.c
  * @brief Wrapper for glib GSource.
- *  
- * Refs: 
+ *
+ * Refs:
  *  - http://sofia-sip.sourceforge.net/refdocs/su/group__su__wait.html
  *  - http://developer.gnome.org/doc/API/glib/glib-the-main-event-loop.html
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
- * 
+ *
  * @date Created: Thu Mar  4 15:15:15 2004 ppessi
- * 
+ *
  */
 
 #include "config.h"
@@ -100,28 +100,28 @@ static struct _GSource *su_source_gsource(su_port_t *port);
 static int su_source_send(su_port_t *self, su_msg_r rmsg);
 
 static int su_source_register(su_port_t *self,
-			    su_root_t *root, 
-			    su_wait_t *wait, 
+			    su_root_t *root,
+			    su_wait_t *wait,
 			    su_wakeup_f callback,
 			    su_wakeup_arg_t *arg,
 			    int priority);
 static int su_source_unregister(su_port_t *port,
-			      su_root_t *root, 
-			      su_wait_t *wait,	
-			      su_wakeup_f callback, 
+			      su_root_t *root,
+			      su_wait_t *wait,
+			      su_wakeup_f callback,
 			      su_wakeup_arg_t *arg);
 static int su_source_deregister(su_port_t *self, int i);
 static int su_source_unregister_all(su_port_t *self,
 				  su_root_t *root);
-static int su_source_eventmask(su_port_t *self, 
+static int su_source_eventmask(su_port_t *self,
 			     int index, int socket, int events);
 static void su_source_run(su_port_t *self);
 static void su_source_break(su_port_t *self);
 static su_duration_t su_source_step(su_port_t *self, su_duration_t tout);
 static int su_source_thread(su_port_t *self, enum su_port_thread_op op);
 static int su_source_add_prepoll(su_port_t *port,
-				 su_root_t *root, 
-				 su_prepoll_f *, 
+				 su_root_t *root,
+				 su_prepoll_f *,
 				 su_prepoll_magic_t *);
 static int su_source_remove_prepoll(su_port_t *port,
 				  su_root_t *root);
@@ -129,7 +129,7 @@ static int su_source_multishot(su_port_t *self, int multishot);
 
 static char const *su_source_name(su_port_t const *self);
 
-static 
+static
 su_port_vtable_t const su_source_port_vtable[1] =
   {{
       /* su_vtable_size: */ sizeof su_source_port_vtable,
@@ -169,14 +169,14 @@ static char const *su_source_name(su_port_t const *self)
   return "GSource";
 }
 
-/** 
- * Port is a per-thread reactor.  
+/**
+ * Port is a per-thread reactor.
  *
- * Multiple root objects executed by single thread share a su_port_t object. 
+ * Multiple root objects executed by single thread share a su_port_t object.
  */
 struct su_source_s {
   su_base_port_t   sup_base[1];
-  
+
   GThread         *sup_tid;
   GStaticMutex     sup_obtained[1];
 
@@ -184,20 +184,20 @@ struct su_source_s {
 
   GSource         *sup_source;	/**< Backpointer to source */
   GMainLoop       *sup_main_loop; /**< Reference to mainloop while running */
-  
+
   /* Waits */
-  unsigned         sup_registers; /** Counter incremented by 
-				      su_port_register() or 
+  unsigned         sup_registers; /** Counter incremented by
+				      su_port_register() or
 				      su_port_unregister()
 				  */
-  unsigned         sup_n_waits; 
-  unsigned         sup_size_waits; 
+  unsigned         sup_n_waits;
+  unsigned         sup_size_waits;
   unsigned         sup_max_index;
-  unsigned        *sup_indices; 
-  su_wait_t       *sup_waits; 
-  su_wakeup_f     *sup_wait_cbs; 
-  su_wakeup_arg_t**sup_wait_args; 
-  su_root_t      **sup_wait_roots; 
+  unsigned        *sup_indices;
+  su_wait_t       *sup_waits;
+  su_wakeup_f     *sup_wait_cbs;
+  su_wakeup_arg_t**sup_wait_args;
+  su_root_t      **sup_wait_roots;
 };
 
 typedef struct _SuSource
@@ -243,13 +243,13 @@ su_root_t *su_root_source_create(su_root_magic_t *magic)
   return su_glib_root_create(magic);
 }
 
-/** 
- * Returns a GSource object for the root 
+/**
+ * Returns a GSource object for the root
  *
- * Note that you need to unref the GSource with g_source_unref() 
+ * Note that you need to unref the GSource with g_source_unref()
  * before destroying the root object.
  *
- * @return NULL on error (for instance if root was not created with 
+ * @return NULL on error (for instance if root was not created with
  *         su_glib_root_create())
  */
 GSource *su_glib_root_gsource(su_root_t *root)
@@ -299,7 +299,7 @@ static void su_source_port_deinit(su_port_t *self)
 
 
 /** @internal Destroy a port. */
-static 
+static
 void su_source_finalize(GSource *gs)
 {
   SuSource *ss = (SuSource *)gs;
@@ -315,7 +315,7 @@ void su_source_port_lock(su_port_t *self, char const *who)
 
   g_static_mutex_lock(self->sup_mutex);
 
-  PORT_LOCK_DEBUG((" ...%p at %s locked(%p)...", 
+  PORT_LOCK_DEBUG((" ...%p at %s locked(%p)...",
 		   (void *)g_thread_self(), who, self));
 }
 
@@ -323,7 +323,7 @@ void su_source_port_unlock(su_port_t *self, char const *who)
 {
   g_static_mutex_unlock(self->sup_mutex);
 
-  PORT_LOCK_DEBUG((" ...%p at %s unlocked(%p)\n", 
+  PORT_LOCK_DEBUG((" ...%p at %s unlocked(%p)\n",
 		   (void *)g_thread_self(), who, self));
 }
 
@@ -351,7 +351,7 @@ int su_source_send(su_port_t *self, su_msg_r rmsg)
  * Change or query ownership of the port object.
  *
  * @param self pointer to a port object
- * @param op operation 
+ * @param op operation
  *
  * @ERRORS
  * @ERROR EALREADY port already has an owner (or has no owner)
@@ -392,7 +392,7 @@ static int su_source_thread(su_port_t *self, enum su_port_thread_op op)
 /* -- Registering and unregistering ------------------------------------- */
 
 /* Seconds from 1.1.1900 to 1.1.1970 */
-#define NTP_EPOCH 2208988800UL 
+#define NTP_EPOCH 2208988800UL
 
 /** Prepare to wait - calculate time to next timer */
 static
@@ -402,7 +402,7 @@ gboolean su_source_prepare(GSource *gs, gint *return_tout)
   su_port_t *self = ss->ss_port;
 
   enter;
-  
+
   if (self->sup_base->sup_head) {
     *return_tout = 0;
     return TRUE;
@@ -450,7 +450,7 @@ gboolean su_source_check(GSource *gs)
   return su_source_prepare(gs, &tout);
 }
 
-static 
+static
 gboolean su_source_dispatch(GSource *gs,
 			    GSourceFunc callback,
 			    gpointer user_data)
@@ -489,8 +489,8 @@ gboolean su_source_dispatch(GSource *gs,
     for (i = 0; i < n; i++) {
       if (waits[i].revents) {
 	root = self->sup_wait_roots[i];
-	self->sup_wait_cbs[i](root ? su_root_magic(root) : NULL, 
-			      &waits[i], 
+	self->sup_wait_cbs[i](root ? su_root_magic(root) : NULL,
+			      &waits[i],
 			      self->sup_wait_args[i]);
 	/* Callback used su_register()/su_unregister() */
 	if (version != self->sup_registers)
@@ -512,7 +512,7 @@ static void su_source_lock(su_port_t *self, char const *who)
 		   (void *)g_thread_self(), who, self));
   g_static_mutex_lock(self->sup_mutex);
 
-  PORT_LOCK_DEBUG((" ...%p at %s locked(%p)...", 
+  PORT_LOCK_DEBUG((" ...%p at %s locked(%p)...",
 		   (void *)g_thread_self(), who, self));
 }
 
@@ -520,7 +520,7 @@ static void su_source_unlock(su_port_t *self, char const *who)
 {
   g_static_mutex_unlock(self->sup_mutex);
 
-  PORT_LOCK_DEBUG((" ...%p at %s unlocked(%p)\n", 
+  PORT_LOCK_DEBUG((" ...%p at %s unlocked(%p)\n",
 		   (void *)g_thread_self(), who, self));
 }
 
@@ -548,21 +548,21 @@ GSource *su_source_gsource(su_port_t *self)
  *
  *  Please note if identical wait objects are inserted, only first one is
  *  ever signalled.
- * 
+ *
  * @param self	     pointer to port
  * @param root	     pointer to root object
  * @param waits	     pointer to wait object
  * @param callback   callback function pointer
  * @param arg	     argument given to callback function when it is invoked
- * @param priority   relative priority of the wait object 
+ * @param priority   relative priority of the wait object
  *              (0 is normal, 1 important, 2 realtime)
- * 
+ *
  * @return
- *   The function @su_source_register returns nonzero index of the wait object, 
+ *   The function @su_source_register returns nonzero index of the wait object,
  *   or -1 upon an error.  */
 int su_source_register(su_port_t *self,
-		       su_root_t *root, 
-		       su_wait_t *wait, 
+		       su_root_t *root,
+		       su_wait_t *wait,
 		       su_wakeup_f callback,
 		       su_wakeup_arg_t *arg,
 		       int priority)
@@ -571,7 +571,7 @@ int su_source_register(su_port_t *self,
   unsigned n;
 
   enter;
-  
+
   assert(SU_SOURCE_OWN_THREAD(self));
 
   n = self->sup_n_waits;
@@ -587,7 +587,7 @@ int su_source_register(su_port_t *self,
 
     if (self->sup_size_waits == 0)
       size = SU_WAIT_MIN;
-    else 
+    else
       size = 2 * self->sup_size_waits;
 
     indices = realloc(self->sup_indices, size * sizeof(*indices));
@@ -600,14 +600,14 @@ int su_source_register(su_port_t *self,
 
     for (i = 0; i < self->sup_n_waits; i++)
       g_source_remove_poll(self->sup_source, (GPollFD*)&self->sup_waits[i]);
-      
+
     waits = realloc(self->sup_waits, size * sizeof(*waits));
     if (waits)
       self->sup_waits = waits;
 
     for (i = 0; i < self->sup_n_waits; i++)
       g_source_add_poll(self->sup_source, (GPollFD*)&waits[i]);
-      
+
     wait_cbs = realloc(self->sup_wait_cbs, size * sizeof(*wait_cbs));
     if (wait_cbs)
       self->sup_wait_cbs = wait_cbs;
@@ -618,7 +618,7 @@ int su_source_register(su_port_t *self,
 
     /* Add sup_wait_roots array, if needed */
     wait_tasks = realloc(self->sup_wait_roots, size * sizeof(*wait_tasks));
-    if (wait_tasks) 
+    if (wait_tasks)
       self->sup_wait_roots = wait_tasks;
 
     if (!(indices && waits && wait_cbs && wait_args && wait_tasks)) {
@@ -638,7 +638,7 @@ int su_source_register(su_port_t *self,
       g_source_add_poll(self->sup_source, (GPollFD*)&self->sup_waits[n]);
       self->sup_wait_cbs[n] = self->sup_wait_cbs[n-1];
       self->sup_wait_args[n] = self->sup_wait_args[n-1];
-      self->sup_wait_roots[n] = self->sup_wait_roots[n-1];	
+      self->sup_wait_roots[n] = self->sup_wait_roots[n-1];
     }
   }
   else {
@@ -653,13 +653,13 @@ int su_source_register(su_port_t *self,
 
   I = self->sup_max_index;
 
-  for (i = 0; i < I; i++)  
+  for (i = 0; i < I; i++)
     if (self->sup_indices[i] == UINT_MAX)
       break;
     else if (self->sup_indices[i] >= n)
       self->sup_indices[i]++;
 
-  if (i == I) 
+  if (i == I)
     self->sup_max_index++;
 
   if (n + 1 < self->sup_n_waits)
@@ -676,23 +676,23 @@ int su_source_register(su_port_t *self,
 }
 
 /** Unregister a su_wait_t object.
- *  
+ *
  *  The function su_source_unregister() unregisters a su_wait_t object. The
  *  wait object, a callback function and a argument are removed from the
  *  port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param root     - pointer to root object
  * @param wait     - pointer to wait object
  * @param callback - callback function pointer (may be NULL)
- * @param arg      - argument given to callback function when it is invoked 
+ * @param arg      - argument given to callback function when it is invoked
  *                   (may be NULL)
- * 
+ *
  * @return Nonzero index of the wait object, or -1 upon an error.
  */
 int su_source_unregister(su_port_t *self,
-			 su_root_t *root, 
-			 su_wait_t *wait,	
+			 su_root_t *root,
+			 su_wait_t *wait,
 			 su_wakeup_f callback, /* XXX - ignored */
 			 su_wakeup_arg_t *arg)
 {
@@ -700,7 +700,7 @@ int su_source_unregister(su_port_t *self,
   unsigned i, I, j, *indices;
 
   enter;
-  
+
   assert(self);
   assert(SU_SOURCE_OWN_THREAD(self));
 
@@ -733,14 +733,14 @@ int su_source_unregister(su_port_t *self,
 	if (self->sup_indices[j] != UINT_MAX &&
 	    self->sup_indices[j] > n)
 	  self->sup_indices[j]--;
-    
+
     for (; n < N; n++) {
       g_source_remove_poll(self->sup_source, (GPollFD*)&self->sup_waits[n+1]);
       self->sup_waits[n] = self->sup_waits[n+1];
       g_source_add_poll(self->sup_source, (GPollFD*)&self->sup_waits[n]);
       self->sup_wait_cbs[n] = self->sup_wait_cbs[n+1];
       self->sup_wait_args[n] = self->sup_wait_args[n+1];
-      self->sup_wait_roots[n] = self->sup_wait_roots[n+1];	  
+      self->sup_wait_roots[n] = self->sup_wait_roots[n+1];
     }
 
     i += 1;	/* 0 is failure */
@@ -757,14 +757,14 @@ int su_source_unregister(su_port_t *self,
 }
 
 /** Deregister a su_wait_t object.
- *  
- *  The function su_source_deregister() deregisters a su_wait_t registrattion. 
+ *
+ *  The function su_source_deregister() deregisters a su_wait_t registrattion.
  *  The wait object, a callback function and a argument are removed from the
  *  port object.
- * 
+ *
  * @param self     - pointer to port object
  * @param i        - registration index
- * 
+ *
  * @return Index of the wait object, or -1 upon an error.
  */
 int su_source_deregister(su_port_t *self, int i)
@@ -774,7 +774,7 @@ int su_source_deregister(su_port_t *self, int i)
   su_wait_t wait[1];
 
   enter;
-  
+
   assert(self);
   assert(SU_SOURCE_OWN_THREAD(self));
 
@@ -810,7 +810,7 @@ int su_source_deregister(su_port_t *self, int i)
     g_source_add_poll(self->sup_source, (GPollFD*)&self->sup_waits[n]);
     self->sup_wait_cbs[n] = self->sup_wait_cbs[n+1];
     self->sup_wait_args[n] = self->sup_wait_args[n+1];
-    self->sup_wait_roots[n] = self->sup_wait_roots[n+1];	  
+    self->sup_wait_roots[n] = self->sup_wait_roots[n+1];
   }
 
   indices[i - 1] = UINT_MAX;
@@ -830,13 +830,13 @@ int su_source_deregister(su_port_t *self, int i)
  *
  * The function su_source_unregister_all() unregisters all su_wait_t objects
  * associated with given root object destroys all queued timers.
- * 
+ *
  * @param  self     - pointer to port object
  * @param  root     - pointer to root object
- * 
+ *
  * @return Number of wait objects removed.
  */
-int su_source_unregister_all(su_port_t *self, 
+int su_source_unregister_all(su_port_t *self,
 			   su_root_t *root)
 {
   unsigned i, j;
@@ -847,15 +847,15 @@ int su_source_unregister_all(su_port_t *self,
   su_root_t      **wait_roots;
 
   enter;
-  
+
   assert(SU_SOURCE_OWN_THREAD(self));
 
   n_waits    = self->sup_n_waits;
-  waits      = self->sup_waits; 
-  wait_cbs   = self->sup_wait_cbs; 
+  waits      = self->sup_waits;
+  wait_cbs   = self->sup_wait_cbs;
   wait_args  = self->sup_wait_args;
-  wait_roots = self->sup_wait_roots; 
-  
+  wait_roots = self->sup_wait_roots;
+
   for (i = j = 0; (unsigned)i < n_waits; i++) {
     if (wait_roots[i] == root) {
       /* XXX - we should free all resources associated with this */
@@ -872,7 +872,7 @@ int su_source_unregister_all(su_port_t *self,
     }
     j++;
   }
-  
+
   self->sup_n_waits = j;
   self->sup_registers++;
 
@@ -898,7 +898,7 @@ int su_source_eventmask(su_port_t *self, int index, int socket, int events)
   int retval;
 
   enter;
-  
+
   assert(self);
   assert(SU_SOURCE_OWN_THREAD(self));
   assert(0 < index && (unsigned)index <= self->sup_max_index);
@@ -927,18 +927,18 @@ int su_source_multishot(su_port_t *self, int multishot)
     return 1;
   else if (multishot == 0 || multishot == 1)
     return 1;			/* Always enabled */
-  else 
+  else
     return (errno = EINVAL), -1;
 }
 
 
 /** @internal Main loop.
- * 
+ *
  * The function @c su_source_run() runs the main loop
- * 
+ *
  * The function @c su_source_run() runs until @c su_source_break() is called
  * from a callback.
- * 
+ *
  * @param self     pointer to root object
  * */
 void su_source_run(su_port_t *self)
@@ -947,7 +947,7 @@ void su_source_run(su_port_t *self)
   GMainLoop *gml;
 
   enter;
-  
+
   gmc = g_source_get_context(self->sup_source);
   if (gmc && g_main_context_acquire(gmc)) {
     gml = g_main_loop_new(gmc, TRUE);
@@ -962,30 +962,30 @@ void su_source_run(su_port_t *self)
 /** @internal
  * The function @c su_source_break() is used to terminate execution of @c
  * su_source_run(). It can be called from a callback function.
- * 
+ *
  * @param self     pointer to port
- * 
+ *
  */
 void su_source_break(su_port_t *self)
 {
   enter;
-  
+
   if (self->sup_main_loop)
     g_main_loop_quit(self->sup_main_loop);
 }
 
 /** @internal Block until wait object is signaled or timeout.
  *
- * This function waits for wait objects and the timers associated with 
+ * This function waits for wait objects and the timers associated with
  * the root object.  When any wait object is signaled or timer is
- * expired, it invokes the callbacks. 
- * 
+ * expired, it invokes the callbacks.
+ *
  *   This function returns when a callback has been invoked or @c tout
- *   milliseconds is elapsed. 
+ *   milliseconds is elapsed.
  *
  * @param self     pointer to port
  * @param tout     timeout in milliseconds
- * 
+ *
  * @Return
  *   Milliseconds to the next invocation of timer, or @c SU_WAIT_FOREVER if
  *   there are no active timers.
@@ -995,7 +995,7 @@ su_duration_t su_source_step(su_port_t *self, su_duration_t tout)
   GMainContext *gmc;
 
   enter;
-  
+
   gmc = g_source_get_context(self->sup_source);
 
   if (gmc && g_main_context_acquire(gmc)) {
@@ -1030,8 +1030,8 @@ su_duration_t su_source_step(su_port_t *self, su_duration_t tout)
 }
 
 static int su_source_add_prepoll(su_port_t *port,
-				 su_root_t *root, 
-				 su_prepoll_f *prepoll, 
+				 su_root_t *root,
+				 su_prepoll_f *prepoll,
 				 su_prepoll_magic_t *magic)
 {
   /* We could call prepoll in su_source_prepare()?? */
@@ -1066,7 +1066,7 @@ void su_source_dump(su_port_t const *self, FILE *f)
   fprintf(f, "\tport tid %p\n", (void *)self->sup_tid);
   fprintf(f, "\t%d wait objects\n", self->sup_n_waits);
   for (i = 0; i < self->sup_n_waits; i++) {
-    
+
   }
 }
 
@@ -1078,7 +1078,7 @@ void su_source_dump(su_port_t const *self, FILE *f)
  *
  * @return
  *   If successful a pointer to the new message port is returned, otherwise
- *   NULL is returned.  
+ *   NULL is returned.
  */
 static su_port_t *su_source_port_create(void)
 {

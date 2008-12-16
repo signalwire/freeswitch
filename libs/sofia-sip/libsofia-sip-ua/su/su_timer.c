@@ -63,7 +63,7 @@
  *   - su_timer_set_interval(),
  *   - su_timer_set_at(),
  *   - su_timer_set(),
- *   - su_timer_set_for_ever(), 
+ *   - su_timer_set_for_ever(),
  *   - su_timer_run(),
  *   - su_timer_reset(), and
  *   - su_timer_root().
@@ -90,7 +90,7 @@
  * The default duration is given in milliseconds.
  *
  * Usually, timer wakeup function should be called at regular intervals. In
- * such case, the timer is activated using function su_timer_set_for_ever(). 
+ * such case, the timer is activated using function su_timer_set_for_ever().
  * When the timer is activated it is given the wakeup function and pointer to
  * context data:
  * @code
@@ -158,7 +158,7 @@ struct su_timer_s {
   unsigned char   sut_set;	/**< Timer is set (inserted in tree) */
 };
 
-/** Timer running status */ 
+/** Timer running status */
 enum sut_running {
   reset = 0,		/**< Timer is not running */
   run_at_intervals = 1, /**< Compensate missed wakeup calls */
@@ -195,7 +195,7 @@ RBTREE_BODIES(su_inline, timers, su_timer_t,
 	      IS_RED, SET_RED, IS_BLACK, SET_BLACK, COPY_COLOR,
 	      CMP, INSERT, REMOVE);
 
-/**@internal Set the timer. 
+/**@internal Set the timer.
  *
  * @retval 0 when successful (always)
  */
@@ -217,7 +217,7 @@ su_timer_set0(su_timer_queue_t *timers,
   return timers_append(timers, t);
 }
 
-/**@internal Reset the timer. 
+/**@internal Reset the timer.
  *
  * @retval 0 when successful (always)
  */
@@ -238,7 +238,7 @@ su_timer_reset0(su_timer_queue_t *timers,
 }
 
 /**@internal Validate timer @a t and return pointer to per-port timer tree.
- * 
+ *
  * @retval pointer to pointer to timer tree when successful
  * @retval NULL upon an error
  */
@@ -263,7 +263,7 @@ su_timer_queue_t *su_timer_tree(su_timer_t const *t,
 
   if (use_sut_duration && t->sut_duration == 0) {
     assert(t->sut_duration > 0);
-    SU_DEBUG_1(("%s(%p): %s\n", caller, (void *)t, 
+    SU_DEBUG_1(("%s(%p): %s\n", caller, (void *)t,
 		"timer without default duration"));
     return NULL;
   }

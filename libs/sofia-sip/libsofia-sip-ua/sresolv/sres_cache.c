@@ -24,7 +24,7 @@
 
 /**@CFILE sres_cache.c
  * @brief Cache for Sofia DNS Resolver.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Teemu Jalava <Teemu.Jalava@nokia.com>
  * @author Mikko Haataja
@@ -38,7 +38,7 @@
 #include <stdint.h>
 #elif HAVE_INTTYPES_H
 #include <inttypes.h>
-#else 
+#else
 #if defined(_WIN32)
 typedef unsigned _int8 uint8_t;
 typedef unsigned _int16 uint16_t;
@@ -200,8 +200,8 @@ int sres_cache_get(sres_cache_t *cache,
   rr_iter2 = sres_htable_hash(cache->cache_hash, hash);
 
   /* Find the domain records from the hash table */
-  for (rr_iter = rr_iter2; 
-       rr_iter && *rr_iter; 
+  for (rr_iter = rr_iter2;
+       rr_iter && *rr_iter;
        rr_iter = sres_htable_next(cache->cache_hash, rr_iter)) {
     rr = (*rr_iter)->rr;
 
@@ -209,7 +209,7 @@ int sres_cache_get(sres_cache_t *cache,
 	now <= (*rr_iter)->rr_expires &&
         (type == sres_qtype_any || rr->sr_type == type) &&
         rr->sr_name != NULL &&
-        strcasecmp(rr->sr_name, domain) == 0) 
+        strcasecmp(rr->sr_name, domain) == 0)
       rr_count++;
   }
 
@@ -227,8 +227,8 @@ int sres_cache_get(sres_cache_t *cache,
 
   /* Second pass: add the rr pointers to the allocated array */
 
-  for (rr_iter = rr_iter2, rr_count = 0; 
-       rr_iter && *rr_iter; 
+  for (rr_iter = rr_iter2, rr_count = 0;
+       rr_iter && *rr_iter;
        rr_iter = sres_htable_next(cache->cache_hash, rr_iter)) {
     rr = (*rr_iter)->rr;
 
@@ -237,7 +237,7 @@ int sres_cache_get(sres_cache_t *cache,
         (type == sres_qtype_any || rr->sr_type == type) &&
         rr->sr_name != NULL &&
         strcasecmp(rr->sr_name, domain) == 0) {
-      SU_DEBUG_9(("rr found in cache: %s %02d\n", 
+      SU_DEBUG_9(("rr found in cache: %s %02d\n",
 		  rr->sr_name, rr->sr_type));
 
       result[rr_count++] = rr;
@@ -249,7 +249,7 @@ int sres_cache_get(sres_cache_t *cache,
 
   UNLOCK(cache);
 
-  SU_DEBUG_9(("%s(%p, %s, \"%s\") returned %d entries\n", "sres_cache_get", 
+  SU_DEBUG_9(("%s(%p, %s, \"%s\") returned %d entries\n", "sres_cache_get",
 	      (void *)cache, sres_record_type(type, b), domain, rr_count));
 
   *return_cached = result;
@@ -282,7 +282,7 @@ sres_cache_alloc_record(sres_cache_t *cache,
     memcpy(&sr->sr_status, &template->sr_status,
 	   size - offsetof(sres_common_t, r_status));
   }
-    
+
   return sr;
 }
 
@@ -298,7 +298,7 @@ void sres_cache_free_record(sres_cache_t *cache, void *_sr)
 }
 
 /** Store record to cache */
-void 
+void
 sres_cache_store(sres_cache_t *cache, sres_record_t *rr, time_t now)
 {
   sres_rr_hash_entry_t **rr_iter, *rr_hash_entry;
@@ -322,7 +322,7 @@ sres_cache_store(sres_cache_t *cache, sres_record_t *rr, time_t now)
     }
 
   for (rr_iter = sres_htable_hash(cache->cache_hash, hash);
-       (rr_hash_entry = *rr_iter); 
+       (rr_hash_entry = *rr_iter);
        rr_iter = sres_htable_next(cache->cache_hash, rr_iter)) {
     sres_record_t *or = rr_hash_entry->rr;
 
@@ -334,13 +334,13 @@ sres_cache_store(sres_cache_t *cache, sres_record_t *rr, time_t now)
       continue;
     if (!!or->sr_name != !!rr->sr_name)
       continue;
-    if (or->sr_name != rr->sr_name && 
+    if (or->sr_name != rr->sr_name &&
 	strcasecmp(or->sr_name, rr->sr_name) != 0)
       continue;
     if (rr->sr_type != sres_type_soa /* There can be only one */
 	&& sres_record_compare(or, rr))
       continue;
-    
+
     /* There was an old entry in the cache.. Zap it, replace this with it */
     sres_heap_remove(cache->cache_heap, rr_hash_entry->rr_heap_index);
     rr_hash_entry->rr_expires = now + rr->sr_ttl;
@@ -354,7 +354,7 @@ sres_cache_store(sres_cache_t *cache, sres_record_t *rr, time_t now)
 
     return;
   }
-  
+
   rr_hash_entry = su_zalloc(cache->cache_home, sizeof(*rr_hash_entry));
 
   if (rr_hash_entry) {
@@ -402,7 +402,7 @@ void _sres_cache_free_answers(sres_cache_t *cache, sres_record_t **answers)
   for (i = 0; answers[i] != NULL; i++) {
     if (answers[i]->sr_refcount <= 1)
       su_free(cache->cache_home, answers[i]);
-    else 
+    else
       answers[i]->sr_refcount--;
     answers[i] = NULL;
   }
@@ -416,7 +416,7 @@ void _sres_cache_free_one(sres_cache_t *cache, sres_record_t *answer)
   if (answer) {
     if (answer->sr_refcount <= 1)
       su_free(cache->cache_home, answer);
-    else 
+    else
       answer->sr_refcount--;
   }
 }
@@ -427,7 +427,7 @@ unsigned
 sres_hash_key(const char *string)
 {
   unsigned int result = 0;
-  
+
   while (string && *string)
     result = result * 797 + (unsigned char) * (string++);
 
@@ -460,7 +460,7 @@ void sres_cache_clean(sres_cache_t *cache, time_t now)
 	UNLOCK(cache);
 	return;
       }
-      
+
       sres_heap_remove(cache->cache_heap, 1);
       sres_htable_remove(cache->cache_hash, e);
       _sres_cache_free_one(cache, e->rr);
@@ -478,16 +478,16 @@ void sres_cache_clean(sres_cache_t *cache, time_t now)
  * greylisting of SIP servers.
  *
  * @param cache    pointer to DNS cache object
- * @param domain   domain name of the SRV record(s) to modify 
+ * @param domain   domain name of the SRV record(s) to modify
  *                 (including final dot)
  * @param target   SRV target of the SRV record(s) to modify
- * @param port     port number of SRV record(s) to modify 
- *                 (in host byte order) 
+ * @param port     port number of SRV record(s) to modify
+ *                 (in host byte order)
  * @param ttl      new ttl
  * @param priority new priority value (0=highest, 65535=lowest)
  *
  * @sa sres_set_cached_srv_priority()
- * 
+ *
  * @NEW_1_12_8
  */
 int sres_cache_set_srv_priority(sres_cache_t *cache,
@@ -501,7 +501,7 @@ int sres_cache_set_srv_priority(sres_cache_t *cache,
   unsigned hash;
   sres_rr_hash_entry_t **iter;
   time_t expires;
-  
+
   if (cache == NULL || domain == NULL || target == NULL)
     return -1;
 
@@ -517,13 +517,13 @@ int sres_cache_set_srv_priority(sres_cache_t *cache,
        iter && *iter;
        iter = sres_htable_next(cache->cache_hash, iter)) {
     sres_record_t *rr = (*iter)->rr;
-    
+
     if (rr && rr->sr_name &&
 	sres_type_srv == rr->sr_type &&
 	strcasecmp(rr->sr_name, domain) == 0) {
 
       (*iter)->rr_expires = expires;
-      
+
       if ((port == 0 || rr->sr_srv->srv_port == port) &&
 	  rr->sr_srv->srv_target &&
 	  strcasecmp(rr->sr_srv->srv_target, target) == 0) {
@@ -552,12 +552,12 @@ int sres_heap_earlier_entry(sres_rr_hash_entry_t const *a,
 
 static inline
 void sres_heap_set_entry(sres_rr_hash_entry_t **heap,
-			 size_t index, 
+			 size_t index,
 			 sres_rr_hash_entry_t *entry)
 {
   entry->rr_heap_index = index;
   heap[index] = entry;
-}  
+}
 
 HEAP_BODIES(static inline,
 	    sres_heap_t,

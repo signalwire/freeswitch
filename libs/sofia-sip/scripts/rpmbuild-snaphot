@@ -27,7 +27,7 @@
 
 function usage
 {
-  echo "usage: snapshot.sh [-bc|-bb] [-c|--configure] [rpmbuild options]" 
+  echo "usage: snapshot.sh [-bc|-bb] [-c|--configure] [rpmbuild options]"
   exit $@
 }
 
@@ -36,10 +36,10 @@ configure=0
 
 case "$1" in -b? ) bb=$1 ; shift ;; esac
 
-while true ; do 
-  case "$1" in 
+while true ; do
+  case "$1" in
   -c | --configure | --co ) configure=1; shift; ;;
-  '-?' | --help | -h ) usage 0 ;; 
+  '-?' | --help | -h ) usage 0 ;;
   *) break ;;
   esac
 done
@@ -89,24 +89,24 @@ awk '
 /@VERSION@/ { sub(/@VERSION@/, version); }
 /@PACKAGE@/ { sub(/@PACKAGE@/, package); }
 /@PACKAGE_NAME@/ { sub(/@PACKAGE_NAME@/, package_name); }
-/@LIBVER_SOFIA_SIP_UA_GLIB_SOVER@/ { 
+/@LIBVER_SOFIA_SIP_UA_GLIB_SOVER@/ {
   sub(/@LIBVER_SOFIA_SIP_UA_GLIB_SOVER@/, glib_sover);
 }
-/^Release:/ { 
+/^Release:/ {
   print "Release: " release "%{?dist}\n";
   print "Prefix: " prefix "\n";
   next;
 }
 /^Source0:/ { print "Source0:" dummy "\n"; next; }
-/disable-dependency-tracking/ { 
+/disable-dependency-tracking/ {
   sub(/--disable-dependency-tracking/, "");
 }
-/^%configure/ { 
+/^%configure/ {
  print "cd " "\"" pwd "\"";
  if (!configure) { $1="echo skipping configure"; }
  $1=$1 "-C --enable-maintainer-mode";
- print $0; 
- next; 
+ print $0;
+ next;
 }
 # Do not make documentation
 /^make doc/ { print "echo skipping " $0; next; }

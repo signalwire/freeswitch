@@ -36,7 +36,7 @@
 #include "utf8internal.h"
 
 /*
- * Decode utf8 string into ucs2 string, 
+ * Decode utf8 string into ucs2 string,
  * return number of ucs2 characters decoded
  */
 size_t ucs2decode(ucs2 *dst, size_t dst_size, const utf8 *s)
@@ -70,9 +70,9 @@ size_t ucs2decode(ucs2 *dst, size_t dst_size, const utf8 *s)
  * Encode ucs2 string into utf8 string,
  * return number of utf8 bytes encoded including final zero
  *
- * 'quote' may contain an optional quoting table containing 
+ * 'quote' may contain an optional quoting table containing
  * non-zero for all ASCII characters to quote
- * 
+ *
  */
 size_t ucs2encode(utf8 *dst, const ucs2 *s, size_t n, const char quote[128])
 {
@@ -131,7 +131,7 @@ size_t ucs2enclen(const ucs2 *s, size_t n, const char quote[128])
 {
   size_t len = 1;
   ucs2 c;
-  
+
   while (n-- > 0) {
     c = *s++;
     if (c < 0x80u)
@@ -157,7 +157,7 @@ size_t ucs2len(ucs2 const *s)
 {
   size_t len = 0;
 
-  if (s) while (*s++) 
+  if (s) while (*s++)
     len++;
 
   return len;
@@ -170,7 +170,7 @@ int ucs2cmp(ucs2 const *s1, ucs2 const *s2)
 {
   int retval = s1 - s2;
 
-  if (s1 && s2) 
+  if (s1 && s2)
     while ((retval = (*s1 - *s2)) && (*s1++) && (*s2++))
       ;
 
@@ -184,7 +184,7 @@ int ucs2ncmp(ucs2 const *s1, ucs2 const *s2, size_t n)
 {
   int retval = 0;
 
-  if (s1 && s2) 
+  if (s1 && s2)
     while (n-- > 0 && (retval = (*s1 - *s2)) && (*s1++) && (*s2++))
       ;
 

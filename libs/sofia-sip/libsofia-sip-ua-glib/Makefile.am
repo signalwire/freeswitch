@@ -17,7 +17,7 @@ if HAVE_GLIB
 lib_LTLIBRARIES += libsofia-sip-ua-glib.la
 endif
 
-libsofia_sip_ua_glib_la_SOURCES = 
+libsofia_sip_ua_glib_la_SOURCES =
 libsofia_sip_ua_glib_la_LIBADD = $(GLIB_TARGETS) $(GLIB_LIBS)
 
 # set the libtool version info version:revision:age for libsofia-sip-ua-glib
@@ -42,7 +42,7 @@ doxygen: built-sources
 	done
 	${top_srcdir}/scripts/hide_emails.sh docs/html
 
-PHONY = doxygen 
+PHONY = doxygen
 
 include $(top_srcdir)/rules/recursive.am
 

@@ -25,11 +25,11 @@
 /**@internal
  * @file sdp_tag.c
  * @brief SDP Tags
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- *  
+ *
  * @date Created: Mon May 12 12:11:30 2003 ppessi
- * 
+ *
  */
 
 #include "config.h"
@@ -43,5 +43,5 @@
 tag_typedef_t sdptag_any = NSTAG_TYPEDEF(*);
 
 tag_typedef_t sdptag_session = {{
-  TAG_NAMESPACE, "session", sdptag_session_class 
+  TAG_NAMESPACE, "session", sdptag_session_class
 }};

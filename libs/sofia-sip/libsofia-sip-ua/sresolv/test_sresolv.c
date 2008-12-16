@@ -25,7 +25,7 @@
 /**@internal
  *
  * @CFILE test_sresolv.c Test module for sresolv
- * 
+ *
  * @author Mikko Haataja
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *
@@ -103,7 +103,7 @@ struct sres_context_s
   sres_socket_t    sink;
   int              sinkidx;
   char const      *sinkconf;
-  
+
   int              ready;
   int              n_sockets;
   sres_socket_t    sockets[SRES_MAX_NAMESERVERS];
@@ -122,7 +122,7 @@ static int tstflags = 0;
 #if HAVE_WINSOCK2_H
 
 /* Posix send() */
-su_inline 
+su_inline
 ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
 {
   if (length > INT_MAX)
@@ -130,7 +130,7 @@ ssize_t sres_send(sres_socket_t s, void *b, size_t length, int flags)
   return (ssize_t)send(s, b, (int)length, flags);
 }
 
-su_inline 
+su_inline
 ssize_t sres_sendto(sres_socket_t s, void *b, size_t length, int flags,
 		    struct sockaddr const *sa, socklen_t salen)
 {
@@ -140,7 +140,7 @@ ssize_t sres_sendto(sres_socket_t s, void *b, size_t length, int flags,
 }
 
 /* Posix recvfrom() */
-su_inline 
+su_inline
 ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
 		      struct sockaddr *from, socklen_t *fromlen)
 {
@@ -152,7 +152,7 @@ ssize_t sres_recvfrom(sres_socket_t s, void *buffer, size_t length, int flags,
   if (length > INT_MAX)
     length = INT_MAX;
 
-  retval = recvfrom(s, buffer, (int)length, flags, 
+  retval = recvfrom(s, buffer, (int)length, flags,
 		    (void *)from, fromlen ? &ilen : NULL);
 
   if (fromlen)
@@ -218,7 +218,7 @@ int setblocking(sres_socket_t s, int blocking)
   if (mode < 0)
      return -1;
 
-  if (blocking) 
+  if (blocking)
     mode &= ~(O_NDELAY | O_NONBLOCK);
   else
     mode |= O_NDELAY | O_NONBLOCK;
@@ -255,7 +255,7 @@ int test_socket(sres_context_t *ctx)
     TEST_1(setblocking(s2, 0) == 0);
     TEST_1(setblocking(s3, 0) == 0);
     TEST_1(setblocking(s4, 0) == 0);
-    
+
     memset(a, 0, sizeof a);
     memset(a1, 0, sizeof a1);
     memset(a2, 0, sizeof a2);
@@ -280,10 +280,10 @@ int test_socket(sres_context_t *ctx)
 
     TEST(bind(s3, (struct sockaddr *)a3, a3len), 0);
     TEST(bind(s4, (struct sockaddr *)a4, a4len), 0);
-    
+
     alen = sizeof a;
     TEST(getsockname(s3, (struct sockaddr *)a, &alen), 0);
-    sin3->sin_port = sin->sin_port; 
+    sin3->sin_port = sin->sin_port;
     memset(sin->sin_zero, 0, sizeof sin->sin_zero);
     TEST(alen, a3len); TEST_M(a, a3, a3len);
 
@@ -329,7 +329,7 @@ int poll_sockets(sres_context_t *ctx)
   n = ctx->n_sockets;
 
   events = poll(ctx->fds, ctx->n_sockets, ctx->timeout ? 50 : 500);
-      
+
   if (!events)
     return events;
 
@@ -339,7 +339,7 @@ int poll_sockets(sres_context_t *ctx)
     if (ctx->fds[i].revents & POLLIN)
       sres_resolver_receive(ctx->resolver, ctx->fds[i].fd);
   }
-  
+
   return events;
 }
 
@@ -353,9 +353,9 @@ static void run(sres_context_t *ctx)
       ctx->timeout <<= 1;
       offset += ctx->timeout;
     }
-    
+
     /* No harm is done (except wasted CPU) if timer is called more often */
-    sres_resolver_timer(ctx->resolver, -1); 
+    sres_resolver_timer(ctx->resolver, -1);
   }
 }
 
@@ -376,7 +376,7 @@ int test_soa(sres_context_t *ctx)
   TEST_RUN(ctx);
 
   TEST_1(result = sres_cached_answers(res, sres_type_soa, domain));
-  
+
   TEST_1(result != NULL);
   TEST_1(result[0] != NULL);
 
@@ -415,7 +415,7 @@ int test_naptr(sres_context_t *ctx)
 
   for (i = 0; result[i] != NULL; i++) {
     rr = (sres_naptr_record_t *) result[i]->sr_naptr;
-                                        
+
     switch(rr->na_order) {
     case 20:
       TEST(rr->na_record->r_type, sres_type_naptr);
@@ -475,7 +475,7 @@ int test_naptr(sres_context_t *ctx)
   END();
 }
 
-char const longname[1026] = 
+char const longname[1026] =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -484,7 +484,7 @@ char const longname[1026] =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
-  
+
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -493,7 +493,7 @@ char const longname[1026] =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
-  
+
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -502,7 +502,7 @@ char const longname[1026] =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
-  
+
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -512,7 +512,7 @@ char const longname[1026] =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.";
 
-char name2048[2049] = 
+char name2048[2049] =
   "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
   "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
@@ -556,16 +556,7 @@ int test_a(sres_context_t *ctx)
   sres_record_t **result;
   const sres_a_record_t *rr_a;
   char const *domain = "sip00.example.com";
-  char name1025[1026] = 
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  
+  char name1025[1026] =
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -583,7 +574,7 @@ int test_a(sres_context_t *ctx)
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  
+
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -592,7 +583,16 @@ int test_a(sres_context_t *ctx)
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-		  
+
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+		  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
 		  ".";
 
   BEGIN();
@@ -612,7 +612,7 @@ int test_a(sres_context_t *ctx)
   query = sres_query(res, test_answer, ctx, sres_type_a, longname);
   TEST_1(query);
   sres_query_bind(query, NULL, NULL);
-  
+
   TEST_1(sres_query(res, test_answer, ctx, sres_type_a, domain));
 
   TEST_RUN(ctx);
@@ -660,7 +660,7 @@ int test_a(sres_context_t *ctx)
   sres_free_answers(res, ctx->result), ctx->result = NULL;
 
   /* Try missing domain */
-  TEST_1(sres_query(res, test_answer, ctx, sres_type_a, 
+  TEST_1(sres_query(res, test_answer, ctx, sres_type_a,
 			 "no-sip.example.com"));
 
   TEST_RUN(ctx);
@@ -675,9 +675,9 @@ int test_a(sres_context_t *ctx)
 
   sres_free_answers(res, ctx->result), ctx->result = NULL;
 
-  /* Try domain without A record => 
+  /* Try domain without A record =>
      we should get a record with SRES_RECORD_ERR */
-  TEST_1(sres_query(res, test_answer, ctx, sres_type_a, 
+  TEST_1(sres_query(res, test_answer, ctx, sres_type_a,
 			 "aaaa.example.com"));
 
   TEST_RUN(ctx);
@@ -736,7 +736,7 @@ int test_a6(sres_context_t *ctx)
 
   TEST_1(result = ctx->result);
   TEST_1(result[0]);
-  
+
   rr_a6 = result[0]->sr_a6;
   TEST(rr_a6->a6_record->r_type, sres_type_a6);
   TEST(rr_a6->a6_record->r_class, sres_class_in);
@@ -807,7 +807,7 @@ int test_a6_prefix(sres_context_t *ctx)
   TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)),
 	 "3ff0:12:3012:c006:a08:20ff:fe7d:e7ac");
   TEST_P(rr_a6->a6_prename, NULL);
- 
+
   sres_free_answers(res, ctx->result), ctx->result = NULL;
 
   /* Check parsing of special case: no suffix */
@@ -822,7 +822,7 @@ int test_a6_prefix(sres_context_t *ctx)
   TEST(rr_a6->a6_prelen, 128);
   TEST_S(su_inet_ntop(AF_INET6, &rr_a6->a6_suffix, buf, sizeof(buf)), "::");
   TEST_S(rr_a6->a6_prename, "a6.example.com.");
- 
+
   sres_free_answers(res, ctx->result), ctx->result = NULL;
 
   TEST_1(result = sres_cached_answers(res, sres_type_a6, domain));
@@ -868,7 +868,7 @@ int test_aaaa(sres_context_t *ctx)
   sres_free_answers(res, ctx->result), ctx->result = NULL;
 
   TEST_1(result = sres_cached_answers(res, sres_type_aaaa, domain));
-  
+
   TEST_1(rr_aaaa = result[0]->sr_aaaa);
   TEST(rr_aaaa->aaaa_record->r_type, sres_type_aaaa);
   TEST(rr_aaaa->aaaa_record->r_class, sres_class_in);
@@ -900,7 +900,7 @@ int test_srv(sres_context_t *ctx)
 
   for (i = 0; result[i] != NULL; i++) {
     TEST_1(rr = (sres_srv_record_t *) result[i]->sr_srv);
-    
+
     switch(rr->srv_priority) {
     case 3:
       TEST(rr->srv_record->r_type, sres_type_srv);
@@ -940,7 +940,7 @@ int test_srv(sres_context_t *ctx)
 
   for (i = 0; result[i] != NULL; i++) {
     TEST_1(rr = (sres_srv_record_t *) result[i]->sr_srv);
-    
+
     switch(rr->srv_priority) {
     case 3:
       TEST(rr->srv_record->r_type, sres_type_srv);
@@ -1035,7 +1035,7 @@ int test_ptr_ipv4_sockaddr(sres_context_t *ctx)
   sres_query_t *query;
   const sres_ptr_record_t *rr;
   struct sockaddr_in sin = {0};
-  
+
   su_inet_pton(AF_INET, "127.0.0.1", &sin.sin_addr);
   sin.sin_family = AF_INET;
 
@@ -1048,7 +1048,7 @@ int test_ptr_ipv4_sockaddr(sres_context_t *ctx)
   TEST_RUN(ctx);
 
   result = ctx->result;
-  
+
   TEST_1(result != NULL);
   TEST_1(result[0] != NULL);
 
@@ -1067,7 +1067,7 @@ int test_ptr_ipv6(sres_context_t *ctx)
   sres_resolver_t *res = ctx->resolver;
   sres_record_t **result;
   const sres_ptr_record_t *rr;
-  char const *domain = 
+  char const *domain =
     "c.a.7.e.d.7.e.f.f.f.0.2.8.0.a.0.0.0.0.c.2.1.0.3.0.0.2.1.e.f.f.3.ip6.int";
 
   BEGIN();
@@ -1076,7 +1076,7 @@ int test_ptr_ipv6(sres_context_t *ctx)
   TEST_RUN(ctx);
 
   result = ctx->result;
-  
+
   TEST_1(result != NULL);
   TEST_1(result[0] != NULL);
 
@@ -1098,12 +1098,12 @@ int test_ptr_ipv6_sockaddr(sres_context_t *ctx)
 
   BEGIN();
 
-  su_inet_pton(AF_INET6, "3ffe:1200:3012:c000:0a08:20ff:fe7d:e7ac", 
+  su_inet_pton(AF_INET6, "3ffe:1200:3012:c000:0a08:20ff:fe7d:e7ac",
 	       &sin6.sin6_addr);
 
   sin6.sin6_family = AF_INET6;
 
-  ctx->query = 
+  ctx->query =
     sres_query_sockaddr(res, test_answer, ctx,
 			     sres_type_ptr, (struct sockaddr*)&sin6);
   TEST_1(ctx->query != NULL);
@@ -1111,7 +1111,7 @@ int test_ptr_ipv6_sockaddr(sres_context_t *ctx)
   TEST_RUN(ctx);
 
   result = ctx->result;
-  
+
   TEST_1(result != NULL);
   TEST_1(result[0] != NULL);
 
@@ -1153,7 +1153,7 @@ int test_cache(sres_context_t *ctx)
   sres_query(res, test_answer_multi, ctx,
 		  sres_qtype_any, "_sips._tcp.example.com");
 
-  sres_query(res, test_answer_multi, ctx, 
+  sres_query(res, test_answer_multi, ctx,
 		  sres_qtype_any, "sip.example.com");
 
   sres_query(res, test_answer_multi, ctx,
@@ -1179,11 +1179,11 @@ int test_cache(sres_context_t *ctx)
 
   /* For a chance, a fully qualified domain name with final "." */
   domain = "example.com.";
-  
-  result = sres_cached_answers(res, 
+
+  result = sres_cached_answers(res,
 			       sres_qtype_any,
 			       domain);
-  
+
   TEST_1(result != NULL);
 
   for (i = 0; result[i] != NULL; i++) {
@@ -1227,7 +1227,7 @@ int test_cache(sres_context_t *ctx)
         TEST_S(rr_naptr->na_flags, "u");
         TEST_S(rr_naptr->na_services, "TEST+D2U");
 
-        TEST_S(rr_naptr->na_regexp, 
+        TEST_S(rr_naptr->na_regexp,
 	       "/(tst:([^@]+@))?example.com$/\\1operator.com/i");
 
         TEST_S(rr_naptr->na_replace, ".");
@@ -1251,7 +1251,7 @@ int test_cache(sres_context_t *ctx)
       }
     }
   }
-  
+
   TEST(ok, 7);
 
   /* Reverse order before sorting */
@@ -1269,8 +1269,8 @@ int test_cache(sres_context_t *ctx)
     sort_array[0] = result[i], sort_array[1] = result[i], sort_array[2] = NULL;
     sres_sort_answers(res, sort_array);
   }
-  
-  /* Test free */ 
+
+  /* Test free */
   for (i = 0; result[i]; i++) {
     sres_free_answer(res, result[i]);
     result[i] = NULL;
@@ -1279,10 +1279,10 @@ int test_cache(sres_context_t *ctx)
   /* Test sres_free_answers() */
   sres_free_answers(res, result);
 
-  result = sres_cached_answers(res, 
+  result = sres_cached_answers(res,
 			       sres_qtype_any,
 			       "_sips._tcp.example.com");
-  
+
   TEST_1(result != NULL);
 
   ok = 0;
@@ -1340,7 +1340,7 @@ int test_cache(sres_context_t *ctx)
   sres_free_answers(res, result);
 
   domain = "sip.example.com";
-  result = sres_cached_answers(res, 
+  result = sres_cached_answers(res,
 			       sres_qtype_any,
 			       domain);
 
@@ -1357,7 +1357,7 @@ int test_cache(sres_context_t *ctx)
 
 #if HAVE_SIN6
   domain = "subnet.example.com";
-  result = sres_cached_answers(res, 
+  result = sres_cached_answers(res,
 			       sres_qtype_any,
 			       domain);
 
@@ -1386,10 +1386,10 @@ int test_cache(sres_context_t *ctx)
 	 "3ffe:1200:3012:c000:206:5bff:fe55:462f");
   sres_free_answers(res, result);
 
-  result = sres_cached_answers_sockaddr(res, 
+  result = sres_cached_answers_sockaddr(res,
                                         sres_type_ptr,
                                         (struct sockaddr *)&sin6);
-  
+
   TEST_1(result != NULL);
 
   rr_ptr = result[0]->sr_ptr;
@@ -1397,7 +1397,7 @@ int test_cache(sres_context_t *ctx)
 
   TEST(rr_ptr->ptr_record->r_type, sres_type_ptr);
   TEST(rr_ptr->ptr_record->r_class, sres_class_in);
-  TEST_S(rr_ptr->ptr_domain, "sip01.example.com.");    
+  TEST_S(rr_ptr->ptr_domain, "sip01.example.com.");
 
   sres_free_answers(res, result);
 #endif /* HAVE_SIN6 */
@@ -1412,7 +1412,7 @@ int test_query_one_type(sres_context_t *ctx)
   sres_record_t **result;
   const sres_aaaa_record_t *rr_aaaa;
   char buf[50] = {0};
-  
+
   BEGIN();
 
   TEST_1(sres_query(res, test_answer, ctx,
@@ -1447,7 +1447,7 @@ int sink_make(sres_context_t *ctx)
   struct sockaddr_in sin[1];
   socklen_t sinsize = sizeof sin;
   FILE *f;
-  
+
   BEGIN();
 
   sink = socket(AF_INET, SOCK_DGRAM, 0); TEST_1(sink != INVALID_SOCKET);
@@ -1458,21 +1458,21 @@ int sink_make(sres_context_t *ctx)
 
   ctx->sink = sink;
 
-  template = su_sprintf(ctx->home, "%s/test_sresolv.XXXXXX", 
+  template = su_sprintf(ctx->home, "%s/test_sresolv.XXXXXX",
 			tmpdir ? tmpdir : "/tmp");
   TEST_1(template);
 
-#ifndef _WIN32  
+#ifndef _WIN32
   fd = mkstemp(template); TEST_1(fd != -1);
 #else
   fd = open(template, O_WRONLY); TEST_1(fd != -1);
-#endif  
+#endif
 
   f = fdopen(fd, "w"); TEST_1(f);
-  fprintf(f, 
+  fprintf(f,
 	  "domain example.com\n"
 	  "search foo.bar.com\n"
-	  "port %u\n", 
+	  "port %u\n",
 	  ntohs(sin->sin_port));
   fclose(f);
 
@@ -1563,7 +1563,7 @@ static void test_answer(sres_context_t *ctx,
   ctx->query = q;
   if (ctx->result)
     sres_free_answers(ctx->resolver, ctx->result);
-  ctx->result = answer; 
+  ctx->result = answer;
   BREAK(ctx);
 }
 
@@ -1720,9 +1720,9 @@ int test_net(sres_context_t *ctx)
   TEST_1(ctx->sink != INVALID_SOCKET && ctx->sink != (sres_socket_t)0);
 
   /* Prepare for test_answer() callback */
-  sres_free_answers(ctx->resolver, ctx->result); 
+  sres_free_answers(ctx->resolver, ctx->result);
   ctx->result = NULL;
-  ctx->query = NULL; 
+  ctx->query = NULL;
 
   /* Get canned response */
   TEST_1(bin = hex2bin(__func__, hextest, NULL, &binlen));
@@ -1795,12 +1795,12 @@ int test_init(sres_context_t *ctx, char const *conf_file)
   ctx->n_sockets = n;
   TEST_1(n < SRES_MAX_NAMESERVERS);
   TEST(sres_resolver_sockets(res, ctx->sockets, n), n);
-  
+
   for (i = 0; i < n; i++) {
     ctx->fds[i].fd = ctx->sockets[i];
     ctx->fds[i].events = POLLIN | POLLERR;
   }
-  
+
   TEST_P(sres_resolver_ref(ctx->resolver), ctx->resolver);
   sres_resolver_unref(ctx->resolver);
 
@@ -1823,7 +1823,7 @@ int test_deinit(sres_context_t *ctx)
   offset = 0;
   memset(ctx, 0, sizeof ctx);
   ctx->home->suh_size = sizeof ctx;
-  
+
   return 0;
 }
 
@@ -1839,7 +1839,7 @@ int test_conf_errors(sres_context_t *ctx, char const *conf_file)
   TEST_1(res = sres_resolver_new(conf_file));
   n = sres_resolver_sockets(res, NULL, 0);
   TEST_1(n > 0);
-    
+
   TEST(sres_resolver_sockets(res, &socket, 1), n);
 
 #if !__linux
@@ -1852,12 +1852,12 @@ search example.com
 port $port
 -->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8-->8--
   */
-  printf("%s:%u: %s test should be updated\n", 
+  printf("%s:%u: %s test should be updated\n",
 	 __FILE__, __LINE__, __func__);
 #else
   TEST_P(sres_query(res, test_answer, ctx, sres_type_a, "example.com"), NULL);
 #endif
-    
+
   sres_resolver_unref(res);
 
   END();
@@ -1882,7 +1882,7 @@ static RETSIGTYPE sig_alarm(int s)
 
 void usage(int exitcode)
 {
-  fprintf(stderr, 
+  fprintf(stderr,
 	  "usage: %s OPTIONS [-] [conf-file] [error-conf-file]\n"
 	  "\twhere OPTIONS are\n"
 	  "\t    -v be verbose\n"
@@ -1932,7 +1932,7 @@ int main(int argc, char **argv)
 
       if (rest == NULL || *rest)
 	usage(1);
-      
+
       su_log_set_level(sresolv_log, level);
     } else
       usage(1);
@@ -1949,7 +1949,7 @@ int main(int argc, char **argv)
 #if HAVE_ALARM
   else if (o_alarm) {
     alarm(60);
-    signal(SIGALRM, sig_alarm); 
+    signal(SIGALRM, sig_alarm);
   }
 #endif
 
@@ -1975,7 +1975,7 @@ int main(int argc, char **argv)
     /* These tests are run with (local) nameserver,
      */
     int initerror = test_init(ctx, argv[i]);
-    if (!initerror) { 
+    if (!initerror) {
       error |= test_a(ctx);
       error |= test_soa(ctx);
       error |= test_naptr(ctx);

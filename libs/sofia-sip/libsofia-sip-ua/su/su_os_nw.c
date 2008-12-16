@@ -24,7 +24,7 @@
 
 /**@ingroup su_os_nw
  *
- * @CFILE su_os_nw.c  
+ * @CFILE su_os_nw.c
  * Implementation of OS-specific network events interface.
  *
  * @author Martti Mela <Martti.Mela@nokia.com>
@@ -97,8 +97,8 @@ static void su_nw_changed_msg_recv(su_root_magic_t *rm,
 }
 
 
-void nw_changed_cb(SCDynamicStoreRef store, 
-		   CFArrayRef changedKeys, 
+void nw_changed_cb(SCDynamicStoreRef store,
+		   CFArrayRef changedKeys,
 		   void *info)
 {
   su_network_changed_t *snc = (su_network_changed_t *) info;

@@ -24,7 +24,7 @@
 
 /**@ingroup sl_utils
  *
- * @CFILE sl_utils_print.c  
+ * @CFILE sl_utils_print.c
  * @brief Implementation of SIP library utility print functions.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -42,7 +42,7 @@
 #include <sofia-sip/sip_header.h>
 #include "sofia-sip/sl_utils.h"
 
-/**Print a SIP message. 
+/**Print a SIP message.
  *
  * The function sl_message_log() prints shorthand information identifying
  * the SIP message to the given output @a stream.  The shorthand information
@@ -54,7 +54,7 @@
  * @param sip      message to be logged.
  * @param details  flag specifying if detailed output is desired.
  */
-void sl_message_log(FILE *stream, 
+void sl_message_log(FILE *stream,
 		    char const *prefix, sip_t const *sip, int details)
 {
   sip_cseq_t const *cs = sip->sip_cseq;
@@ -63,7 +63,7 @@ void sl_message_log(FILE *stream,
     stream = stdout;
 
   assert(cs);
-  
+
   if (sip->sip_request) {
     fprintf(stream,
 	    "%s%s "URL_FORMAT_STRING" (CSeq %d %s)\n",
@@ -100,18 +100,18 @@ void sl_message_log(FILE *stream,
     sl_to_print(stream, "\tTo: %s\n", sip->sip_to);
 }
 
-/** Print @From header. 
+/** Print @From header.
  *
  * The function sl_from_print() prints the contents of @a from header to
  * the output @a stream.  The @a fmt specifies the output format, where %s
  * is replaced with header contents. If @a fmt is @c NULL, only the header
  * contents are printed.
- * 
+ *
  * @param stream   output stream
- * @param fmt      output format 
+ * @param fmt      output format
  * @param from     header object
- * 
- * @return 
+ *
+ * @return
  * The function sl_from_print() returns number of bytes printed,
  * or -1 upon an error.
  */
@@ -125,7 +125,7 @@ issize_t sl_from_print(FILE *stream, char const *fmt, sip_from_t const *from)
   memcpy(a, from, sizeof a);
   a->a_params = NULL;
   if (!a->a_display) a->a_display = "";
-    
+
   return sl_header_print(stream, fmt, (sip_header_t *)a);
 }
 
@@ -135,12 +135,12 @@ issize_t sl_from_print(FILE *stream, char const *fmt, sip_from_t const *from)
  * the output @a stream.  The @a fmt specifies the output format, where %s
  * is replaced with header contents. If @a fmt is @c NULL, only the header
  * contents are printed.
- * 
+ *
  * @param stream   output stream
- * @param fmt      output format 
+ * @param fmt      output format
  * @param to       header object
- * 
- * @return 
+ *
+ * @return
  * The function sl_to_print() returns number of bytes printed,
  * or -1 upon an error.
  */
@@ -149,18 +149,18 @@ issize_t sl_to_print(FILE *stream, char const *fmt, sip_to_t const *to)
   return sl_from_print(stream, fmt, (sip_from_t const *)to);
 }
 
-/** Print @Contact header. 
+/** Print @Contact header.
  *
  * The function sl_contact_print() prints the contents of @a contact
  * header to the output @a stream.  The @a fmt specifies the output format,
  * where %s is replaced with header contents. If @a fmt is @c NULL, only the
  * header contents are printed.
- * 
+ *
  * @param stream   output stream
- * @param fmt      output format 
+ * @param fmt      output format
  * @param contact  header object
- * 
- * @return 
+ *
+ * @return
  * The function sl_contact_print() returns number of bytes printed,
  * or -1 upon an error.
 */
@@ -170,18 +170,18 @@ issize_t sl_contact_print(FILE *stream, char const *fmt,
   return sl_from_print(stream, fmt, (sip_from_t const *)m);
 }
 
-/** Print @Allow header(s). 
+/** Print @Allow header(s).
  *
  * The function sl_allow_print() prints the contents of @a allow header to
  * the output @a stream.  The @a fmt specifies the output format, where %s
  * is replaced with header contents. If @a fmt is @c NULL, only the header
  * contents are printed.
- * 
+ *
  * @param stream   output stream
- * @param fmt      output format 
+ * @param fmt      output format
  * @param allow    header object
- * 
- * @return 
+ *
+ * @return
  * The function sl_allow_print() returns number of bytes printed,
  * or -1 upon an error.
 */
@@ -193,25 +193,25 @@ issize_t sl_allow_print(FILE *stream,
 }
 
 
-/** Print message payload. 
+/** Print message payload.
  *
  * The function sl_payload_print() prints the contents of @a payload
  * object to the output @a stream.  The @a fmt specifies the output format,
  * where %s is replaced with header contents. If @a fmt is @c NULL, only the
  * header contents are printed.
- * 
+ *
  * @param stream   output stream
- * @param prefix   prefix appended to each payload line 
+ * @param prefix   prefix appended to each payload line
  * @param pl       payload object
- * 
- * @return 
+ *
+ * @return
  * The function sl_payload_print() returns number of bytes printed,
  * or -1 upon an error.
 */
 issize_t sl_payload_print(FILE *stream, char const *prefix, sip_payload_t const *pl)
 {
   char *s = pl->pl_data, *end = pl->pl_data + pl->pl_len;
-  size_t n, total = 0, crlf = 1; 
+  size_t n, total = 0, crlf = 1;
 
   while (s < end && *s != '\0') {
     n = strncspn(s, end - s, "\r\n");
@@ -228,18 +228,18 @@ issize_t sl_payload_print(FILE *stream, char const *prefix, sip_payload_t const 
   return (issize_t)total;
 }
 
-/** Print @Via header. 
+/** Print @Via header.
  *
  * The function sl_via_print() prints the contents of @a via header to
  * the output @a stream.  The @a fmt specifies the output format, where %s
  * is replaced with header contents. If @a fmt is @c NULL, only the header
  * contents are printed.
- * 
+ *
  * @param stream   output stream
- * @param fmt      output format 
+ * @param fmt      output format
  * @param v        header object
- * 
- * @return 
+ *
+ * @return
  * The function sl_via_print() returns number of bytes printed,
  * or -1 upon an error.
  */
@@ -257,17 +257,17 @@ issize_t sl_via_print(FILE *stream, char const *fmt, sip_via_t const *v)
   return -1;
 }
 
-/** Print a header. 
+/** Print a header.
  *
  * Prints the contents of an header to the output @a stream. The @a fmt
- * specifies the output format, where %s is replaced with header contents. 
+ * specifies the output format, where %s is replaced with header contents.
  * If @a fmt is @c NULL, only the header contents are printed.
- * 
+ *
  * @param stream   output stream
- * @param fmt      output format 
+ * @param fmt      output format
  * @param v        header object
- * 
- * @return 
+ *
+ * @return
  * Number of bytes logged, or -1 upon an error.
  */
 issize_t sl_header_print(FILE *stream, char const *fmt, sip_header_t const *h)
@@ -282,7 +282,7 @@ issize_t sl_header_print(FILE *stream, char const *fmt, sip_header_t const *h)
   if ((size_t)len >= sizeof b) {
     s = malloc(len + 1); if (!s) return -1;
     sip_header_field_e(s, len + 1, h, 0);
-  }    
+  }
   s[len] = '\0';
 
   if (fmt != NULL && strcmp(fmt, "%s") != 0)
@@ -292,6 +292,6 @@ issize_t sl_header_print(FILE *stream, char const *fmt, sip_header_t const *h)
 
   if (s != b)
     free(s);
-  
+
   return len;
 }

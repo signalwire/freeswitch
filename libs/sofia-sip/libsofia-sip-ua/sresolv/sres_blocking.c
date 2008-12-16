@@ -24,7 +24,7 @@
 
 /**@CFILE sres_blocking.c
  * @brief Blocking interface for Sofia DNS Resolver implementation.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @date Created: Fri Mar 24 15:23:08 EET 2006 ppessi
  */
@@ -94,7 +94,7 @@ struct _pollfd {
   short revents;    /* returned events */
 } fds[SRES_MAX_NAMESERVERS];
 #endif
-  sres_record_t ***return_records;  
+  sres_record_t ***return_records;
 };
 
 struct sres_blocking_context_s
@@ -103,7 +103,7 @@ struct sres_blocking_context_s
   sres_resolver_t *resolver;
   sres_blocking_t *block;
   sres_query_t *query;
-  sres_record_t ***return_records;  
+  sres_record_t ***return_records;
 };
 
 static
@@ -143,7 +143,7 @@ int sres_blocking_update(sres_blocking_t *b,
 
     b->n_sockets = N;
   }
-  
+
   if (new_socket != INVALID_SOCKET) {
     if (N == SRES_MAX_NAMESERVERS)
       return -1;
@@ -194,7 +194,7 @@ int sres_blocking_complete(sres_blocking_context_t *c)
     }
 
     n = select(n, readfds, NULL, errorfds, timeval);
-  
+
     if (n <= 0)
       sres_resolver_timer(c->resolver, -1);
     else for (i = 0; n > 0 && i < c->block->n_sockets; i++) {
@@ -213,7 +213,7 @@ int sres_blocking_complete(sres_blocking_context_t *c)
 }
 
 static
-void sres_blocking_callback(sres_blocking_context_t *c, 
+void sres_blocking_callback(sres_blocking_context_t *c,
 			    sres_query_t *query,
 			    sres_record_t **answers)
 {
@@ -221,13 +221,13 @@ void sres_blocking_callback(sres_blocking_context_t *c,
   *c->return_records = answers;
 }
 
-static 
+static
 sres_blocking_t *sres_set_blocking(sres_resolver_t *res)
 {
   sres_blocking_t *b;
   int i;
 
-  b = sres_resolver_get_async(res, sres_blocking_update); 
+  b = sres_resolver_get_async(res, sres_blocking_update);
   if (b)
     return b;
 
@@ -241,7 +241,7 @@ sres_blocking_t *sres_set_blocking(sres_resolver_t *res)
   if (b) {
     for (i = 0; i < SRES_MAX_NAMESERVERS; i++)
       b->fds[i].fd = INVALID_SOCKET;
-  
+
     if (!sres_resolver_set_async(res, sres_blocking_update, b, 0)) {
       free(b), b = NULL;
     }
@@ -261,7 +261,7 @@ int sres_is_blocking(sres_resolver_t *res)
 /**Send a DNS query, wait for response, return results.
  *
  * Sends a DNS query with specified @a type and @a domain to the DNS server,
- * if @a ignore_cache is not given or no records are found from cache. 
+ * if @a ignore_cache is not given or no records are found from cache.
  * Function returns an error record with nonzero status if no response is
  * received from DNS server.
  *
@@ -280,7 +280,7 @@ int sres_is_blocking(sres_resolver_t *res)
  * @ERROR ENAMETOOLONG @a domain is longer than SRES_MAXDNAME
  * @ERROR ENETDOWN no DNS servers configured
  * @ERROR ENOMEM memory exhausted
- * @ERROR EOPNOTSUPP  resolver @a res is in asynchronous mode 
+ * @ERROR EOPNOTSUPP  resolver @a res is in asynchronous mode
  *
  * @sa sres_query(), sres_blocking_search()
  *
@@ -305,7 +305,7 @@ int sres_blocking_query(sres_resolver_t *res,
 
   c->block = sres_set_blocking(res);
   if (c->block == NULL)
-    return su_seterrno(EOPNOTSUPP); /* Resolver in asynchronous mode */ 
+    return su_seterrno(EOPNOTSUPP); /* Resolver in asynchronous mode */
 
   if (!ignore_cache) {
     cached = sres_cached_answers(res, type, domain);
@@ -325,7 +325,7 @@ int sres_blocking_query(sres_resolver_t *res,
 
 /** Search DNS, return results.
  *
- * Search for @a name with specified @a type and @a name from the DNS server. 
+ * Search for @a name with specified @a type and @a name from the DNS server.
  * If the @a name does not contain enought dots, the search domains are
  * appended to the name and resulting domain name are also queried.
  *
@@ -344,7 +344,7 @@ int sres_blocking_query(sres_resolver_t *res,
  * @ERROR ENAMETOOLONG @a domain is longer than SRES_MAXDNAME
  * @ERROR ENETDOWN no DNS servers configured
  * @ERROR ENOMEM memory exhausted
- * @ERROR EOPNOTSUPP  resolver @a res is in asynchronous mode 
+ * @ERROR EOPNOTSUPP  resolver @a res is in asynchronous mode
  *
  * @sa sres_blocking_query(), sres_search()
  *
@@ -369,7 +369,7 @@ int sres_blocking_search(sres_resolver_t *res,
 
   c->block = sres_set_blocking(res);
   if (c->block == NULL)
-    return su_seterrno(EOPNOTSUPP); /* Resolver in asynchronous mode */ 
+    return su_seterrno(EOPNOTSUPP); /* Resolver in asynchronous mode */
 
   if (!ignore_cache) {
     cached = sres_search_cached_answers(res, type, name);
@@ -402,7 +402,7 @@ int sres_blocking_search(sres_resolver_t *res,
  * @ERROR EFAULT @a res or @a addr point outside the address space
  * @ERROR ENOMEM memory exhausted
  * @ERROR ENETDOWN no DNS servers configured
- * @ERROR EOPNOTSUPP  resolver @a res is in asynchronous mode 
+ * @ERROR EOPNOTSUPP  resolver @a res is in asynchronous mode
  *
  * @sa sres_blocking_query(), sres_query_sockaddr(), sres_cached_answers_sockaddr()
  *
@@ -427,7 +427,7 @@ int sres_blocking_query_sockaddr(sres_resolver_t *res,
 
   c->block = sres_set_blocking(res);
   if (c->block == NULL)
-    return su_seterrno(EOPNOTSUPP); /* Resolver in asynchronous mode */ 
+    return su_seterrno(EOPNOTSUPP); /* Resolver in asynchronous mode */
 
   if (!ignore_cache) {
     cached = sres_cached_answers_sockaddr(res, type, addr);

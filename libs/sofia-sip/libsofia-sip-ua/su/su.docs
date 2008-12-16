@@ -6,11 +6,11 @@
  *
  * The @b su module contains a simple, portable socket/timing/synchronizing
  * library developed for Sofia communications software.
- * 
+ *
  * @CONTACT Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @STATUS @SofiaSIP Core library
- * 
+ *
  * @LICENSE LGPL
  *
  * @section su_overview Overview
@@ -19,9 +19,9 @@
  *
  * - <sofia-sip/su_types.h> - integral types
  * - <sofia-sip/su_alloc.h> - @ref su_alloc memory management
- * - <sofia-sip/su.h> - @ref su_socket 
+ * - <sofia-sip/su.h> - @ref su_socket
  *   - <sofia-sip/su_localinfo.h> - get list of local IP addresses
- * - <sofia-sip/su_wait.h> - @ref su_wait 
+ * - <sofia-sip/su_wait.h> - @ref su_wait
  * - <sofia-sip/su_time.h> - @ref su_time
  * - <sofia-sip/su_log.h> - @ref su_log
  * - <sofia-sip/su_tag.h> - @ref su_tag
@@ -62,19 +62,19 @@
  * - <a href=group_su_alloc.html>su_alloc</a> - memory management functions
  * - <a href=group_su_log.html>su_log</a> - generic logging functions
  * - <a href=group_su_tag.html>su_tag</a> - tag list function
- * - <a href=group_su_md5.html>su_md5</a> - MD5 hashing 
+ * - <a href=group_su_md5.html>su_md5</a> - MD5 hashing
  */
 
 /**@defgroup su_programs Shell Programs
- * 
+ *
  * The @b su module provides few shell utilities:
  * - @ref localinfo (localinfo.c)
- * - @ref addrinfo (addrinfo.c) 
+ * - @ref addrinfo (addrinfo.c)
  */
 
 /**@defgroup su_socket Socket Functions
  *
- *  @brief The <sofia-sip/su.h> contains the portable socket functions. 
+ *  @brief The <sofia-sip/su.h> contains the portable socket functions.
  *
  *  The <sofia-sip/su.h> contains following functions, macros, and types:
  *    - su_init(): initializes sockets
@@ -84,7 +84,7 @@
  *    - su_ioctl(): ioctl to a socket
  *    - su_setreuseaddr(): set/reset reusing the addresses/ports for a socket
  *    - su_setblocking(): enables/disables blocking
- *    - su_is_blocking(): checks if the previous call failed because it 
+ *    - su_is_blocking(): checks if the previous call failed because it
  *  	would have blocked
  *    - su_errno(): the latest socket error
  *    - su_perror(): prints the latest socket error message to stderr

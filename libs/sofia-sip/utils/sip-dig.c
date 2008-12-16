@@ -31,7 +31,7 @@
  */
 
 /**@page sip-dig Resolve SIP URIs.
- * 
+ *
  * @section sip_dig_synopsis Synopsis
  * <tt>sip-dig [OPTIONS] uri...</tt>
  *
@@ -45,7 +45,7 @@
  * otherwise indicated by NAPTR or SRV records, the sip-dig uses UDP and TCP
  * as transports for SIP and TLS for SIPS URIs.
  *
- * The results are printed intended, with a preference followed by weight, 
+ * The results are printed intended, with a preference followed by weight,
  * then protocol name, port number and IP address in numeric format.
  *
  * @section sip_dig_options Command Line Options
@@ -73,7 +73,7 @@
  * <dd>Use TLS over SCTP transport protocol.
  * </dd>
  * <dt>--no-sctp</dt>
- * <dd>Ignore SCTP or TLS-SCTP records in the list of default transports. 
+ * <dd>Ignore SCTP or TLS-SCTP records in the list of default transports.
  * This option has no effect if transport protocols has been explicitly
  * listed.
  * </dd>
@@ -117,7 +117,7 @@
  *
  * @section sip_dig_environment Environment
  * #SRESOLV_DEBUG, SRESOLV_CONF
- * 
+ *
  * @section sip_dig_bugs Reporting Bugs
  * Report bugs to <sofia-sip-devel@lists.sourceforge.net>.
  *
@@ -171,11 +171,11 @@ int dig_srv(struct dig *dig, char const *tport, char const *host,
 	    double weight);
 
 int dig_srv_at(struct dig *dig,
-	       char const *tport, sres_record_t **answers, 
+	       char const *tport, sres_record_t **answers,
 	       double weight, int pweight,
 	       int priority);
 
-int dig_addr(struct dig *dig, 
+int dig_addr(struct dig *dig,
 	     char const *tport, char const *host, char const *port,
 	     double weight);
 
@@ -192,7 +192,7 @@ void print_result(char const *addr, char const *port, char const *tport,
 int prepare_transport(struct dig *dig, char const *tport);
 
 int count_transports(struct dig *dig,
-		     char const *tp1, 
+		     char const *tp1,
 		     char const *tp2);
 
 void usage(int exitcode)
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 
   struct dig dig[1] = {{ NULL }};
 
-  if (su_init() != 0) 
+  if (su_init() != 0)
     return -1;
 
   while (argv[1] && argv[1][0] == '-') {
@@ -444,7 +444,7 @@ count_transports(struct dig *dig,
 		 char const *tport,
 		 char const *tport2)
 {
-  
+
   int i, tcount = 0;
   struct transport const *tports = dig->tports;
 
@@ -545,7 +545,7 @@ int dig_naptr(struct dig *dig,
     else if (strcasecmp(na->na_flags, "a") == 0) {
       scount = dig_addr(dig, tp->name, na->na_replace, NULL, weight / nacount);
     }
-    else 
+    else
       scount = 0;
 
     count += scount;
@@ -604,7 +604,7 @@ int dig_all_srvs(struct dig *dig,
 	continue;
       if (srv->srv_record->r_status != 0)
 	continue;
-      
+
       if (srv->srv_priority != priority && pweight != 0) {
 	scount = dig_srv_at(dig, tport, answers, weight / n, pweight,
 			    priority);

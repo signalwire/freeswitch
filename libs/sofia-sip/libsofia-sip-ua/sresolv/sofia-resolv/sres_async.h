@@ -27,7 +27,7 @@
 #define SOFIA_RESOLV_SRES_ASYNC_H
 
 /**
- * @file sofia-resolv/sres_async.h 
+ * @file sofia-resolv/sres_async.h
  *
  * Asynchronous interface for Sofia DNS Resolver.
  *
@@ -50,7 +50,7 @@
 extern "C" {
 #endif
 
-#ifndef SRES_ASYNC_T 
+#ifndef SRES_ASYNC_T
 #define SRES_ASYNC_T struct sres_async_s
 #endif
 /** Application-defined type for context used by asynchronous operation. */
@@ -59,7 +59,7 @@ typedef SRES_ASYNC_T sres_async_t;
 /** Prototype for update function.
  *
  * This kind of function is called when the nameserver configuration has
- * been updated. 
+ * been updated.
  *
  * If the old_socket is not -1, it indicates that old_socket will be closed
  * and it should be removed from poll() or select() set.
@@ -75,7 +75,7 @@ typedef int sres_update_f(sres_async_t *async,
 
 /** Set asynchronous operation data. */
 SRESPUBFUN
-sres_async_t *sres_resolver_set_async(sres_resolver_t *res, 
+sres_async_t *sres_resolver_set_async(sres_resolver_t *res,
 				      sres_update_f *update,
 				      sres_async_t *async,
 				      int update_all);
@@ -86,7 +86,7 @@ sres_async_t *sres_resolver_get_async(sres_resolver_t const *res,
 				      sres_update_f *update);
 
 /** Create sockets for resolver. */
-SRESPUBFUN int sres_resolver_sockets(sres_resolver_t *, 
+SRESPUBFUN int sres_resolver_sockets(sres_resolver_t *,
 				     sres_socket_t *sockets,
 				     int n);
 

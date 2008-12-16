@@ -64,11 +64,11 @@ struct tport_comp {
   struct sigcomp_compartment   *sc_cc;
   struct sigcomp_compressor    *sc_compressor;
   struct sigcomp_buffer        *sc_output;
-  unsigned                      sc_compressed; 
+  unsigned                      sc_compressed;
 
   struct sigcomp_buffer        *sc_input;
   unsigned                      sc_copied;
-  
+
   enum {
     format_is_unknown,
     format_is_sigcomp,
@@ -95,7 +95,7 @@ tport_compressor_t *vsc_master_init_sigcomp(tport_t *mr,
   sh = sigcomp_state_handler_create();
 
   if (sh == NULL) {
-    SU_DEBUG_1(("tport: initializing SigComp state handler: %s\n", 
+    SU_DEBUG_1(("tport: initializing SigComp state handler: %s\n",
 		strerror(errno)));
     vsc_master_deinit_sigcomp(mr, retval), retval = NULL;
     return retval;
@@ -106,7 +106,7 @@ tport_compressor_t *vsc_master_init_sigcomp(tport_t *mr,
   cc = sigcomp_compartment_create(a, sh, 0, "", 0, NULL, 0);
 
   if (cc == NULL) {
-    SU_DEBUG_1(("tport: initializing SigComp master compartment: %s\n", 
+    SU_DEBUG_1(("tport: initializing SigComp master compartment: %s\n",
 		strerror(errno)));
     vsc_master_deinit_sigcomp(mr, retval), retval = NULL;
     return retval;
@@ -146,7 +146,7 @@ char const *vsc_comp_name(tport_sigcomp_t const *master_sc,
 {
   if (master_sc == NULL ||
       master_sc->sc_cc == NULL ||
-      compression == NULL || 
+      compression == NULL ||
       strcasecmp(compression, tport_sigcomp_name))
     return NULL;
 
@@ -166,7 +166,7 @@ int vsc_can_send_sigcomp(tport_sigcomp_t const *sc)
 }
 
 /** Set/reset compression */
-int vsc_set_compression(tport_t *self, 
+int vsc_set_compression(tport_t *self,
 			tport_sigcomp_t *sc,
 			char const *comp)
 {
@@ -186,7 +186,7 @@ int vsc_set_compression(tport_t *self,
       return 0;
     }
   }
-  
+
   return -1;
 }
 
@@ -194,7 +194,7 @@ int vsc_set_compression(tport_t *self,
 /** Assign a SigComp compartment (to a possibly connected tport). */
 int tport_sigcomp_assign(tport_t *self, struct sigcomp_compartment *cc)
 {
-  if (tport_is_connection_oriented(self) && 
+  if (tport_is_connection_oriented(self) &&
       tport_is_secondary(self) &&
       self->tp_socket != INVALID_SOCKET) {
 
@@ -205,7 +205,7 @@ int tport_sigcomp_assign(tport_t *self, struct sigcomp_compartment *cc)
       /* Remove old assignment */
       sigcomp_compartment_unref(self->tp_sigcomp->sc_cc);
     }
-    
+
     self->tp_sigcomp->sc_cc = sigcomp_compartment_ref(cc);
 
     return 0;
@@ -223,7 +223,7 @@ void vsc_sigcomp_shutdown(tport_t *self, int how)
   if (how >= 2 && self->tp_sigcomp->sc_cc) {
     sigcomp_compartment_unref(self->tp_sigcomp->sc_cc);
     self->tp_sigcomp->sc_cc = NULL;
-  }  
+  }
 }
 
 static int vsc_recv_sigcomp_r(tport_t*, msg_t**, struct sigcomp_udvm*, int);
@@ -369,50 +369,50 @@ static int tport_recv_sigcomp_r(tport_t *self,
 
     data = input->b_data + input->b_avail;
     dlen = input->b_size - input->b_avail;
-    
+
     if (tport_is_stream(self)) {
       n = recv(self->tp_socket, data, dlen, 0);
-    } 
+    }
     else if (dlen >= N) {
       n = recvfrom(self->tp_socket, data, dlen, 0, &su->su_sa, &su_size);
       SU_CANONIZE_SOCKADDR(su);
-    } 
+    }
     else {
       recvfrom(self->tp_socket, data, dlen, 0, &su->su_sa, &su_size);
       SU_CANONIZE_SOCKADDR(su);
       su_seterrno(EMSGSIZE);		/* Protocol error */
       return -1;
     }
-  
+
     if (n == (unsigned)-1) {
       char const *pn = self->tp_protoname;
       int err = su_errno();
-    
+
       if (su_is_blocking(err)) {
 	SU_DEBUG_7(("%s(%p): recv from %s: EAGAIN\n", __func__, self, pn));
 	return 1;
       }
-    
+
       SU_DEBUG_1(("%s(%p): recv from %s: %s (%d)\n", __func__, self, pn,
 		  su_strerror(err), err));
       return -1;
     }
-  
+
     /* XXX - in case of stream, use message buffers for output? */
-    
+
     input->b_avail += n;
     input->b_complete = (n == 0) || !tport_is_stream(self);
   }
 
   for (complete = eos = 0; !complete;) {
     output = sigcomp_udvm_output_buffer(udvm, 16384);
-    
+
     if (sigcomp_udvm_decompress(udvm, output, input) < 0) {
       int error = sigcomp_udvm_errno(udvm);
-      
+
       SU_DEBUG_3(("%s: UDVM error %d: %s\n", __func__,
 		  error, sigcomp_udvm_strerror(udvm)));
-      
+
       su_seterrno(EREMOTEIO);
 
       return -1;
@@ -424,7 +424,7 @@ static int tport_recv_sigcomp_r(tport_t *self,
     eos = complete && input->b_complete;
 
     veclen = tport_recv_iovec(self, mmsg, iovec, dlen, eos);
-    
+
     if (dlen ? veclen <= 0 : veclen < 0) {
       return -1;
     }
@@ -437,27 +437,27 @@ static int tport_recv_sigcomp_r(tport_t *self,
     assert(dlen == n);
 
     msg = *mmsg;
-    
+
     if (msg) {
       /* Message address */
       if (self->tp_addrinfo->ai_socktype == SOCK_STREAM)
 	msg_set_address(msg, self->tp_addr, self->tp_addrlen);
       else
 	msg_set_address(msg, su, su_size);
-      
-      SU_DEBUG_5(("%s(%p): sigcomp recv = %u => %u %s\n", __func__, self, 
+
+      SU_DEBUG_5(("%s(%p): sigcomp recv = %u => %u %s\n", __func__, self,
 		  N, dlen, eos ? " (complete)" : ""));
 
       msg_mark_as_compressed(msg);
-      
+
       /* Write the received data to the message dump file */
       if (self->tp_master->mr_dump_file && !self->tp_pri->pri_threadpool)
 	tport_dump_iovec(self, msg, n, iovec, veclen, "recv", "from");
-      
+
       msg_recv_commit(msg, dlen, eos);    /* Mark buffer as used */
     }
     else {
-      SU_DEBUG_5(("%s(%p): sigcomp recv = %u => %u %s\n", __func__, self, 
+      SU_DEBUG_5(("%s(%p): sigcomp recv = %u => %u %s\n", __func__, self,
 		  N, dlen, eos ? " (complete)" : ""));
       if (complete || !tport_is_stream(self)) {
 	sigcomp_udvm_reject(udvm); /* Reject empty message */
@@ -467,7 +467,7 @@ static int tport_recv_sigcomp_r(tport_t *self,
     if (self->tp_addrinfo->ai_socktype == SOCK_STREAM) {
       if (eos)
 	return 0;
-    
+
       if (output->b_complete)
 	return n < N || sigcomp_udvm_has_pending_data(udvm) ? 2 : 1;
 
@@ -481,8 +481,8 @@ static int tport_recv_sigcomp_r(tport_t *self,
 
 static
 int vsc_send_sigcomp(tport_t const *self,
-		     msg_t *msg, 
-		     msg_iovec_t iov[], 
+		     msg_t *msg,
+		     msg_iovec_t iov[],
 		     int iovused,
 		     struct sigcomp_compartment *cc,
 		     tport_sigcomp_t *sc)
@@ -511,7 +511,7 @@ int vsc_send_sigcomp(tport_t const *self,
     sc->sc_outfmt = format_is_sigcomp;
 
   assert(cc);
-  
+
   if (c == NULL) {
     assert(input == NULL);
     if (stream)
@@ -519,7 +519,7 @@ int vsc_send_sigcomp(tport_t const *self,
     else
       c = sigcomp_compressor_create(cc);
     sc->sc_compressor = c;
-  } 
+  }
 
   ccname = sigcomp_compartment_name(cc, &ccnamelen);
 
@@ -539,7 +539,7 @@ int vsc_send_sigcomp(tport_t const *self,
     sc->sc_input = input = sigcomp_compressor_input_buffer(c, input_size);
 
     assert(input->b_avail == 0 && input->b_used == 0);
-  } 
+  }
   else if (!input->b_complete) {
     int input_size = 0;
 
@@ -552,15 +552,15 @@ int vsc_send_sigcomp(tport_t const *self,
 
   if (output == NULL)
     sc->sc_output = output = sigcomp_compressor_output_buffer(c, NULL);
-    
+
   if (!c || !input || !output) {
-    SU_DEBUG_3(("%s(%p): %s (%u)%s%s%s\n", 
+    SU_DEBUG_3(("%s(%p): %s (%u)%s%s%s\n",
 		__func__, self, strerror(errno), errno,
 		c ? "" : " (comp)",
 		input ? "" : " (input)",
 		output ? "" : " (output)"));
     sigcomp_compressor_free(c);
-    sc->sc_compressor = NULL; 
+    sc->sc_compressor = NULL;
     sc->sc_output = NULL; sc->sc_input = NULL;
     sc->sc_compressed = 0; sc->sc_copied = 0;
     return -1;
@@ -598,17 +598,17 @@ int vsc_send_sigcomp(tport_t const *self,
       input->b_complete = i == iovused;
       assert(stream || input->b_complete); (void)stream;
     }
-    
+
     m = output->b_avail - output->b_used;
 
     n = sigcomp_compressor_compress(c, output, input);
-    
+
     if (n < 0) {
       SU_DEBUG_3(("%s(%p): %s (%u)\n", __func__, self,
-		  sigcomp_compressor_strerror(c), 
+		  sigcomp_compressor_strerror(c),
 		  sigcomp_compressor_errno(c)));
       sigcomp_compressor_free(c);
-      sc->sc_compressor = NULL; 
+      sc->sc_compressor = NULL;
       sc->sc_output = NULL; sc->sc_input = NULL;
       sc->sc_compressed = 0;
       return -1;
@@ -616,15 +616,15 @@ int vsc_send_sigcomp(tport_t const *self,
 
     assert(input->b_complete || sc->sc_copied - k > 0);
 
-    SU_DEBUG_5(("%s: input %u (%u new) compressed %u to %u with '%.*s'\n", 
-		__func__, sc->sc_copied, k, n, 
-		(output->b_avail - output->b_used) - m, 
+    SU_DEBUG_5(("%s: input %u (%u new) compressed %u to %u with '%.*s'\n",
+		__func__, sc->sc_copied, k, n,
+		(output->b_avail - output->b_used) - m,
 		ccnamelen, ccname));
 
     sc->sc_compressed = n;
 
     assert(stream || output->b_complete);
-  } 
+  }
   else {
     assert(tport_is_connection_oriented(self));
     n = sc->sc_compressed;
@@ -636,7 +636,7 @@ int vsc_send_sigcomp(tport_t const *self,
   ciov->siv_len = output->b_avail - output->b_used;
 
   m = self->tp_pri->pri_vtable->vtp_send(self, msg, ciov, 1);
-  
+
   if (m == -1) {
     int error = su_errno();
 
@@ -650,9 +650,9 @@ int vsc_send_sigcomp(tport_t const *self,
 
     return -1;
   }
-  
+
   output->b_used += m;
-  
+
   if (output->b_used < output->b_avail)
     return 0;
 
@@ -668,7 +668,7 @@ int vsc_send_sigcomp(tport_t const *self,
     sc->sc_compressor = NULL;
   }
 
-  assert(sc->sc_compressed >= n); assert(sc->sc_copied >= n); 
+  assert(sc->sc_compressed >= n); assert(sc->sc_copied >= n);
 
   sc->sc_compressed -= n;
   sc->sc_copied -= n;
@@ -677,7 +677,7 @@ int vsc_send_sigcomp(tport_t const *self,
 }
 
 /** Initialize UDVM */
-static 
+static
 struct sigcomp_udvm *tport_init_udvm(tport_t *self)
 {
   struct sigcomp_compartment *cc;
@@ -701,7 +701,7 @@ struct sigcomp_udvm *tport_init_udvm(tport_t *self)
 
 
 /** Get primary compartment */
-static 
+static
 struct sigcomp_compartment *
 tport_primary_compartment(tport_master_t *mr)
 {
@@ -721,14 +721,14 @@ void vsc_try_accept_sigcomp(tport_t *self, msg_t *msg)
 
   udvm = self->tp_sigcomp->sc_udvm;
   if (udvm && sigcomp_udvm_is_complete(udvm)) {
-    if (self->tp_master->mr_tpac->tpac_sigcomp_accept && 
+    if (self->tp_master->mr_tpac->tpac_sigcomp_accept &&
 	self->tp_sigcomp->sc_cc == NULL) {
       tport_t *ref;
       struct tport_delivery *d;
 
       d = self->tp_master->mr_delivery;
 
-      d->d_tport = self; 
+      d->d_tport = self;
       d->d_msg = msg;
       d->d_udvm = &self->tp_sigcomp->sc_udvm;
       *d->d_from = *self->tp_name;
@@ -744,11 +744,11 @@ void vsc_try_accept_sigcomp(tport_t *self, msg_t *msg)
     }
     else {
       if (tport_log->log_level >= 5) {
-	char const *name; 
+	char const *name;
 	int namelen;
-      
+
 	name = sigcomp_compartment_name(self->tp_sigcomp->sc_cc, &namelen);
-	SU_DEBUG_5(("tport(%p): msg %p SigComp implicit accept '%.*s'\n", 
+	SU_DEBUG_5(("tport(%p): msg %p SigComp implicit accept '%.*s'\n",
 		    self, msg, namelen, name));
       }
       sigcomp_udvm_accept(udvm, self->tp_sigcomp->sc_cc);
@@ -758,9 +758,9 @@ void vsc_try_accept_sigcomp(tport_t *self, msg_t *msg)
 
 
 /** Accept a SigComp message */
-int 
-tport_sigcomp_accept(tport_t *self, 
-		     struct sigcomp_compartment *cc, 
+int
+tport_sigcomp_accept(tport_t *self,
+		     struct sigcomp_compartment *cc,
 		     msg_t *msg)
 {
   struct sigcomp_udvm *udvm;
@@ -775,12 +775,12 @@ tport_sigcomp_accept(tport_t *self,
 
   if (udvm) {
     if (tport_log->log_level >= 5) {
-      char const *name; 
+      char const *name;
       int namelen;
-   
+
       if (cc) {
 	name = sigcomp_compartment_name(cc, &namelen);
-	SU_DEBUG_5(("tport(%p): msg %p SigComp accept '%.*s'\n", 
+	SU_DEBUG_5(("tport(%p): msg %p SigComp accept '%.*s'\n",
 		    self, msg, namelen, name));
       }
       else {
@@ -814,7 +814,7 @@ tport_sigcomp_deliver(tport_t *self, msg_t *msg, su_time_t now)
 su_inline
 int msg_is_compressed(msg_t *msg)
 {
-  return msg && 
+  return msg &&
     (msg_addrinfo(msg)->ai_flags & TP_AI_COMPRESSED) == TP_AI_COMPRESSED;
 }
 
@@ -852,11 +852,11 @@ tport_sigcomp_assign_if_needed(tport_t *self,
       /* Use default compartment */
       cc = self->tp_master->mr_compartment;
   }
-  else 
+  else
     cc = NULL;
-  
+
   return cc;
-}			   
+}
 
 /** Receive data from datagram using SigComp. */
 int tport_recv_sigcomp_dgram(tport_t *self, int N)
@@ -881,5 +881,5 @@ int tport_recv_sigcomp_dgram(tport_t *self, int N)
 #endif
   recv(self->tp_socket, dummy, 1, 0); /* remove msg from socket */
   /* XXX - send NACK ? */
-  return su_seterrno(error);     
+  return su_seterrno(error);
 }

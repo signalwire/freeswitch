@@ -99,37 +99,37 @@ typedef void *dup_f(char **bb, void const *src);
 static size_t list_xtra_all(xtra_f *xtra, void const *v);
 static void *list_dup_all(dup_f *dup, char **bb, void const *vsrc);
 
-static size_t session_xtra(sdp_session_t const *o); 
+static size_t session_xtra(sdp_session_t const *o);
 static sdp_session_t *session_dup(char **pp, sdp_session_t const *o);
 
-static size_t origin_xtra(sdp_origin_t const *o); 
+static size_t origin_xtra(sdp_origin_t const *o);
 static sdp_origin_t *origin_dup(char **pp, sdp_origin_t const *o);
 
-static size_t connection_xtra(sdp_connection_t const *o); 
+static size_t connection_xtra(sdp_connection_t const *o);
 static sdp_connection_t *connection_dup(char **pp, sdp_connection_t const *o);
 
-static size_t bandwidth_xtra(sdp_bandwidth_t const *o); 
+static size_t bandwidth_xtra(sdp_bandwidth_t const *o);
 static sdp_bandwidth_t *bandwidth_dup(char **pp, sdp_bandwidth_t const *o);
 
-static size_t time_xtra(sdp_time_t const *o); 
+static size_t time_xtra(sdp_time_t const *o);
 static sdp_time_t *time_dup(char **pp, sdp_time_t const *o);
 
-static size_t repeat_xtra(sdp_repeat_t const *o); 
+static size_t repeat_xtra(sdp_repeat_t const *o);
 static sdp_repeat_t *repeat_dup(char **pp, sdp_repeat_t const *o);
 
-static size_t zone_xtra(sdp_zone_t const *o); 
+static size_t zone_xtra(sdp_zone_t const *o);
 static sdp_zone_t *zone_dup(char **pp, sdp_zone_t const *o);
 
-static size_t key_xtra(sdp_key_t const *o); 
+static size_t key_xtra(sdp_key_t const *o);
 static sdp_key_t *key_dup(char **pp, sdp_key_t const *o);
 
-static size_t attribute_xtra(sdp_attribute_t const *o); 
+static size_t attribute_xtra(sdp_attribute_t const *o);
 static sdp_attribute_t *attribute_dup(char **pp, sdp_attribute_t const *o);
 
-static size_t list_xtra(sdp_list_t const *o); 
+static size_t list_xtra(sdp_list_t const *o);
 static sdp_list_t *list_dup(char **pp, sdp_list_t const *o);
 
-static size_t rtpmap_xtra(sdp_rtpmap_t const *o); 
+static size_t rtpmap_xtra(sdp_rtpmap_t const *o);
 static sdp_rtpmap_t *rtpmap_dup(char **pp, sdp_rtpmap_t const *o);
 
 static size_t media_xtra(sdp_media_t const *o);
@@ -182,12 +182,12 @@ static sdp_media_t *media_dup_all(char **pp,
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_origin_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_origin_t *sdp_origin_dup(su_home_t *h, sdp_origin_t const *o)
-{ 
+{
   SDP_DUP(origin, o);
 }
 
@@ -202,12 +202,12 @@ sdp_origin_t *sdp_origin_dup(su_home_t *h, sdp_origin_t const *o)
  * @note The duplicated list is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_connection_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_connection_t *sdp_connection_dup(su_home_t *h, sdp_connection_t const *c)
-{ 
+{
   SDP_LIST_DUP(connection, c);
 }
 
@@ -222,12 +222,12 @@ sdp_connection_t *sdp_connection_dup(su_home_t *h, sdp_connection_t const *c)
  * @note The duplicated list is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_bandwidth_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_bandwidth_t *sdp_bandwidth_dup(su_home_t *h, sdp_bandwidth_t const *b)
-{ 
+{
   SDP_LIST_DUP(bandwidth, b);
 }
 
@@ -242,12 +242,12 @@ sdp_bandwidth_t *sdp_bandwidth_dup(su_home_t *h, sdp_bandwidth_t const *b)
  * @note The duplicated list is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_time_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_time_t *sdp_time_dup(su_home_t *h, sdp_time_t const *t)
-{ 
+{
   SDP_LIST_DUP(time, t);
 }
 
@@ -262,12 +262,12 @@ sdp_time_t *sdp_time_dup(su_home_t *h, sdp_time_t const *t)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_repeat_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_repeat_t *sdp_repeat_dup(su_home_t *h, sdp_repeat_t const *r)
-{ 
+{
   SDP_DUP(repeat, r);
 }
 
@@ -282,12 +282,12 @@ sdp_repeat_t *sdp_repeat_dup(su_home_t *h, sdp_repeat_t const *r)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_zone_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_zone_t *sdp_zone_dup(su_home_t *h, sdp_zone_t const *z)
-{ 
+{
   SDP_DUP(zone, z);
 }
 
@@ -302,12 +302,12 @@ sdp_zone_t *sdp_zone_dup(su_home_t *h, sdp_zone_t const *z)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_key_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_key_t *sdp_key_dup(su_home_t *h, sdp_key_t const *k)
-{ 
+{
   SDP_DUP(key, k);
 }
 
@@ -322,12 +322,12 @@ sdp_key_t *sdp_key_dup(su_home_t *h, sdp_key_t const *k)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_attribute_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_attribute_t *sdp_attribute_dup(su_home_t *h, sdp_attribute_t const *a)
-{ 
+{
   SDP_LIST_DUP(attribute, a);
 }
 
@@ -342,12 +342,12 @@ sdp_attribute_t *sdp_attribute_dup(su_home_t *h, sdp_attribute_t const *a)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_list_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_list_t *sdp_list_dup(su_home_t *h, sdp_list_t const *l)
-{ 
+{
   SDP_LIST_DUP(list, l);
 }
 
@@ -362,12 +362,12 @@ sdp_list_t *sdp_list_dup(su_home_t *h, sdp_list_t const *l)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_rtpmap_t structure is
  * returned, otherwise NULL is returned.
  */
 sdp_rtpmap_t *sdp_rtpmap_dup(su_home_t *h, sdp_rtpmap_t const *rm)
-{ 
+{
   SDP_LIST_DUP(rtpmap, rm);
 }
 
@@ -384,11 +384,11 @@ sdp_rtpmap_t *sdp_rtpmap_dup(su_home_t *h, sdp_rtpmap_t const *rm)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_media_t structure is
  * returned, otherwise NULL is returned.
  */
-sdp_media_t *sdp_media_dup(su_home_t *h, sdp_media_t const *m, 
+sdp_media_t *sdp_media_dup(su_home_t *h, sdp_media_t const *m,
 			   sdp_session_t *sdp)
 {
   sdp_media_t *rv; size_t size; char *p, *end;
@@ -412,11 +412,11 @@ sdp_media_t *sdp_media_dup(su_home_t *h, sdp_media_t const *m,
  * @note The duplicated list is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to a newly allocated list of sdp_media_t
  * structures is returned, otherwise NULL is returned.
  */
-sdp_media_t *sdp_media_dup_all(su_home_t *h, sdp_media_t const *m, 
+sdp_media_t *sdp_media_dup_all(su_home_t *h, sdp_media_t const *m,
 			       sdp_session_t *sdp)
 {
   sdp_media_t *rv; size_t size; char *p, *end;
@@ -441,14 +441,14 @@ sdp_media_t *sdp_media_dup_all(su_home_t *h, sdp_media_t const *m,
  * @param dst_c Connection description used instead of duplicate of @a src_c.
  * @param src_c Connection description not to be duplicated
 
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_media_t structure is
  * returned, otherwise NULL is returned.
  *
  * @deprecated
  * This function is deprecated. Use sdp_media_dup() instead.
  */
-sdp_media_t *sdp_media_dup_ex(su_home_t *home, 
+sdp_media_t *sdp_media_dup_ex(su_home_t *home,
 			      sdp_media_t const *src,
 			      sdp_session_t *sdp,
 			      sdp_connection_t *dst_c,
@@ -479,7 +479,7 @@ sdp_origin_t *origin_dup(char **pp, sdp_origin_t const *src)
   char *p;
   sdp_origin_t *o;
 
-  p = *pp; 
+  p = *pp;
   STRUCT_DUP(p, o, src);
   STR_DUP(p, o, src, o_username);
   PTR_DUP(p, o, src, o_address, connection_dup);
@@ -502,8 +502,8 @@ sdp_connection_t *connection_dup(char **pp, sdp_connection_t const *src)
   char *p;
   sdp_connection_t *c;
 
-  p = *pp; 
-  STRUCT_DUP(p, c, src); 
+  p = *pp;
+  STRUCT_DUP(p, c, src);
   c->c_next = NULL;
   STR_DUP(p, c, src, c_address);
 
@@ -666,12 +666,12 @@ static size_t media_xtra(sdp_media_t const *m)
   LST_XTRA(rv, m->m_bandwidths, bandwidth_xtra);
   PTR_XTRA(rv, m->m_key, key_xtra);
   LST_XTRA(rv, m->m_attributes, attribute_xtra);
-  
+
   return rv;
 }
 
 static
-sdp_media_t *media_dup(char **pp, 
+sdp_media_t *media_dup(char **pp,
 		       sdp_media_t const *src,
 		       sdp_session_t *sdp)
 {
@@ -692,11 +692,11 @@ sdp_media_t *media_dup(char **pp,
   PTR_DUP(p, m, src, m_key, key_dup);
   LST_DUP(p, m, src, m_attributes, attribute_dup);
 
-  /* note! we must not implicitly use 'src->m_session' as it 
+  /* note! we must not implicitly use 'src->m_session' as it
            might point to a temporary session */
   m->m_session = sdp;
-    
-  m->m_rejected = src->m_rejected; 
+
+  m->m_rejected = src->m_rejected;
   m->m_mode = src->m_mode;
 
   assert((size_t)(p - *pp) == media_xtra(src));
@@ -730,7 +730,7 @@ int media_xtra_ex(sdp_media_t const *m, sdp_connection_t const *c)
 }
 
 static
-sdp_media_t *media_dup_ex(char **pp, 
+sdp_media_t *media_dup_ex(char **pp,
 			  sdp_media_t const *src,
 			  sdp_session_t *sdp,
 			  sdp_connection_t *dst_c,
@@ -759,12 +759,12 @@ sdp_media_t *media_dup_ex(char **pp,
     LST_DUP(p, m, src, m_bandwidths, bandwidth_dup);
     PTR_DUP(p, m, src, m_key, key_dup);
     LST_DUP(p, m, src, m_attributes, attribute_dup);
-    
-    /* note! we must not implicitly use 'src->m_session' as it 
+
+    /* note! we must not implicitly use 'src->m_session' as it
        might point to a temporary session */
     m->m_session = sdp;
-    
-    m->m_rejected = src->m_rejected; 
+
+    m->m_rejected = src->m_rejected;
     m->m_mode = src->m_mode;
 
     assert(m);
@@ -793,7 +793,7 @@ static size_t media_xtra_all(sdp_media_t const *m)
 }
 
 static
-sdp_media_t *media_dup_all(char **pp, 
+sdp_media_t *media_dup_all(char **pp,
 			   sdp_media_t const *src,
 			   sdp_session_t *sdp)
 {
@@ -827,7 +827,7 @@ sdp_list_t *list_dup(char **pp, sdp_list_t const *src)
   char *p;
   sdp_list_t *l;
 
-  p = *pp; 
+  p = *pp;
   STRUCT_DUP(p, l, src);
   l->l_next = NULL;
   STR_DUP(p, l, src, l_text);
@@ -853,7 +853,7 @@ sdp_rtpmap_t *rtpmap_dup(char **pp, sdp_rtpmap_t const *src)
   char *p;
   sdp_rtpmap_t *rm;
 
-  p = *pp; 
+  p = *pp;
   STRUCT_DUP(p, rm, src);
   rm->rm_next = NULL;
   STR_DUP(p, rm, src, rm_encoding);
@@ -954,7 +954,7 @@ sdp_session_t *session_dup(char **pp, sdp_session_t const *src)
   char *p;
   sdp_session_t *sdp;
 
-  p = *pp; 
+  p = *pp;
   STRUCT_DUP(p, sdp, src);
   sdp->sdp_next = NULL;
 
@@ -988,13 +988,13 @@ sdp_session_t *session_dup(char **pp, sdp_session_t const *src)
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_session_t structure is
  * returned, otherwise NULL is returned.
  */
 
 sdp_session_t *sdp_session_dup(su_home_t *h, sdp_session_t const *sdp)
-{ 
+{
   SDP_DUP(session, sdp);
 }
 
@@ -1026,7 +1026,7 @@ sdp_session_t *session_without_media_dup(char **pp, sdp_session_t const *src)
   char *p;
   sdp_session_t *sdp;
 
-  p = *pp; 
+  p = *pp;
   STRUCT_DUP(p, sdp, src);
   sdp->sdp_next = NULL;
 
@@ -1044,7 +1044,7 @@ sdp_session_t *session_without_media_dup(char **pp, sdp_session_t const *src)
   STR_DUP(p, sdp, src, sdp_charset);
 
   sdp->sdp_media = NULL;
-  
+
   assert((size_t)(p - *pp) == session_without_media_xtra(src));
   *pp = p;
   return sdp;
@@ -1065,14 +1065,14 @@ typedef sdp_session_t sdp_session_without_media_t;
  * @note The duplicated structure is allocated using a single call to
  * su_alloc() and it can be freed with su_free().
  *
- * @return 
+ * @return
  * If successful, a pointer to newly allocated sdp_session_t structure is
  * returned, otherwise NULL is returned.
  */
 
-sdp_session_t *sdp_session_dup_without_media(su_home_t *h, 
+sdp_session_t *sdp_session_dup_without_media(su_home_t *h,
 					     sdp_session_t const *sdp)
-{ 
+{
   SDP_DUP(session_without_media, sdp);
 }
 
@@ -1085,7 +1085,7 @@ size_t sdptag_session_xtra(tagi_t const *t, size_t offset)
 {
   sdp_session_t const *sdp = (sdp_session_t *)t->t_value;
 
-  if (sdp) 
+  if (sdp)
     return STRUCT_ALIGN(offset) + session_xtra(sdp);
   else
     return 0;
@@ -1097,7 +1097,7 @@ tagi_t *sdptag_session_dup(tagi_t *dst, tagi_t const *src, void **bb)
   sdp_session_t const *srcsdp;
   char *b;
 
-  assert(src); assert(*bb); 
+  assert(src); assert(*bb);
 
   b = *bb;
   b += STRUCT_ALIGN(b);
@@ -1121,9 +1121,9 @@ int sdptag_session_snprintf(tagi_t const *t, char b[], size_t size)
 
   assert(t);
 
-  if (!t || !t->t_value) { 
-    if (size && b) b[0] = 0; 
-    return 0; 
+  if (!t || !t->t_value) {
+    if (size && b) b[0] = 0;
+    return 0;
   }
 
   sdp = (sdp_session_t const *)t->t_value;
@@ -1131,14 +1131,14 @@ int sdptag_session_snprintf(tagi_t const *t, char b[], size_t size)
   print = sdp_print(NULL, sdp, b, size, 0);
 
   retval = sdp_message_size(print);
-  
+
   sdp_printer_free(print);
 
   return (int)retval;
 }
 
 /** Tag class for SDP tags. @HIDE */
-tag_class_t sdptag_session_class[1] = 
+tag_class_t sdptag_session_class[1] =
   {{
     sizeof(sdptag_session_class),
     /* tc_next */     NULL,
@@ -1157,7 +1157,7 @@ tag_class_t sdptag_session_class[1] =
 /* ---------------------------------------------------------------------- */
 
 /* Compare two string pointers */
-su_inline 
+su_inline
 int str0cmp(char const *a, char const *b)
 {
   if (a == NULL) a = "";
@@ -1166,7 +1166,7 @@ int str0cmp(char const *a, char const *b)
 }
 
 /* Compare two string pointers ignoring case. */
-su_inline 
+su_inline
 int str0casecmp(char const *a, char const *b)
 {
   if (a == NULL) a = "";
@@ -1174,16 +1174,16 @@ int str0casecmp(char const *a, char const *b)
   return strcasecmp(a, b);
 }
 
-/** Compare two session descriptions 
+/** Compare two session descriptions
  */
 int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
 {
-  int rv; 
+  int rv;
   sdp_bandwidth_t const *ab, *bb;
   sdp_attribute_t const *aa, *ba;
   sdp_media_t const *am, *bm;
- 
-  if ((rv = (a != NULL) - (b != NULL))) 
+
+  if ((rv = (a != NULL) - (b != NULL)))
     return rv;
   if (a == b)
     return 0;
@@ -1204,8 +1204,8 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
   if ((rv = sdp_connection_cmp(a->sdp_connection, b->sdp_connection)))
     return rv;
 
-  for (ab = a->sdp_bandwidths, bb = b->sdp_bandwidths; 
-       ab || bb; 
+  for (ab = a->sdp_bandwidths, bb = b->sdp_bandwidths;
+       ab || bb;
        ab = ab->b_next, bb = bb->b_next)
     if ((rv = sdp_bandwidth_cmp(a->sdp_bandwidths, b->sdp_bandwidths)))
       return rv;
@@ -1215,14 +1215,14 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
   if ((rv = sdp_key_cmp(a->sdp_key, b->sdp_key)))
     return rv;
 
-  for (aa = a->sdp_attributes, ba = b->sdp_attributes; 
-       aa || bb; 
+  for (aa = a->sdp_attributes, ba = b->sdp_attributes;
+       aa || bb;
        aa = aa->a_next, ba = ba->a_next)
     if ((rv = sdp_attribute_cmp(aa, ba)))
       return rv;
 
-  for (am = a->sdp_media, bm = b->sdp_media; 
-       am || bm; 
+  for (am = a->sdp_media, bm = b->sdp_media;
+       am || bm;
        am = am->m_next, bm = bm->m_next)
     if ((rv = sdp_media_cmp(am, bm)))
       return rv;
@@ -1230,13 +1230,13 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
   return 0;
 }
 
-/** Compare two origin fields 
+/** Compare two origin fields
  */
 int sdp_origin_cmp(sdp_origin_t const *a, sdp_origin_t const *b)
 {
   int rv;
 
-  if ((rv = (a != NULL) - (b != NULL))) 
+  if ((rv = (a != NULL) - (b != NULL)))
     return rv;
   if (a == b)
     return 0;
@@ -1252,7 +1252,7 @@ int sdp_origin_cmp(sdp_origin_t const *a, sdp_origin_t const *b)
   return 0;
 }
 
-/** Compare two connection fields 
+/** Compare two connection fields
  */
 int sdp_connection_cmp(sdp_connection_t const *a, sdp_connection_t const *b)
 {
@@ -1285,7 +1285,7 @@ int sdp_bandwidth_cmp(sdp_bandwidth_t const *a, sdp_bandwidth_t const *b)
 
   if (a->b_modifier != b->b_modifier)
     return a->b_modifier < b->b_modifier ? -1 : 1;
-  if (a->b_modifier == sdp_bw_x && 
+  if (a->b_modifier == sdp_bw_x &&
       (rv = strcmp(a->b_modifier_name, b->b_modifier_name)))
     return rv;
 
@@ -1298,9 +1298,9 @@ int sdp_bandwidth_cmp(sdp_bandwidth_t const *a, sdp_bandwidth_t const *b)
 /** Compare two time fields */
 int sdp_time_cmp(sdp_time_t const *a, sdp_time_t const *b)
 {
-  int rv; 
+  int rv;
 
-  if ((rv = (a != NULL) - (b != NULL))) 
+  if ((rv = (a != NULL) - (b != NULL)))
     return rv;
   if (a == b)
     return 0;
@@ -1319,7 +1319,7 @@ int sdp_time_cmp(sdp_time_t const *a, sdp_time_t const *b)
 int sdp_repeat_cmp(sdp_repeat_t const *a, sdp_repeat_t const *b)
 {
   int i, n;
-  
+
   if (a == b)
     return 0;
   if ((a != NULL) != (b != NULL))
@@ -1329,12 +1329,12 @@ int sdp_repeat_cmp(sdp_repeat_t const *a, sdp_repeat_t const *b)
     return a->r_interval < b->r_interval ? -1 : 1;
   if (a->r_duration != b->r_duration)
     return a->r_duration < b->r_duration ? -1 : 1;
-  n = a->r_number_of_offsets < b->r_number_of_offsets 
+  n = a->r_number_of_offsets < b->r_number_of_offsets
     ? a->r_number_of_offsets : b->r_number_of_offsets;
   for (i = 0; i < n; i++)
     if (a->r_offsets[i] != b->r_offsets[i])
       return a->r_offsets[i] < b->r_offsets[i] ? -1 : 1;
-  
+
   if (a->r_number_of_offsets != b->r_number_of_offsets)
     return a->r_number_of_offsets < b->r_number_of_offsets ? -1 : 1;
 
@@ -1345,7 +1345,7 @@ int sdp_repeat_cmp(sdp_repeat_t const *a, sdp_repeat_t const *b)
 int sdp_zone_cmp(sdp_zone_t const *a, sdp_zone_t const *b)
 {
   int i, n;
-  
+
   if (a == b)
     return 0;
   if ((a != NULL) != (b != NULL))
@@ -1379,7 +1379,7 @@ int sdp_key_cmp(sdp_key_t const *a, sdp_key_t const *b)
 
   if (a->k_method != b->k_method)
     return a->k_method < b->k_method ? -1 : 1;
-  if (a->k_method == sdp_key_x && 
+  if (a->k_method == sdp_key_x &&
       (rv = str0cmp(a->k_method_name, b->k_method_name)))
     return rv;
   return str0cmp(a->k_material, b->k_material);
@@ -1427,7 +1427,7 @@ int sdp_rtpmap_cmp(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
       a_param = a->rm_params;
     if (b->rm_params)
       b_param = b->rm_params;
-    
+
     rv = strcasecmp(a_param, b_param);
 
     if (rv)
@@ -1457,7 +1457,7 @@ int sdp_list_cmp(sdp_list_t const *a, sdp_list_t const *b)
 /** Compare two media (m=) fields */
 int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
 {
-  int rv; 
+  int rv;
 
   sdp_connection_t const *ac, *bc;
   sdp_bandwidth_t const *ab, *bb;
@@ -1466,7 +1466,7 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
 
   if (a == b)
     return 0;
-  if ((rv = (a != NULL) - (b != NULL))) 
+  if ((rv = (a != NULL) - (b != NULL)))
     return rv;
 
   if (a->m_type != b->m_type)
@@ -1493,8 +1493,8 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   if (a->m_mode != b->m_mode)
     return a->m_mode < b->m_mode ? -1 : 1;
 
-  for (arm = a->m_rtpmaps, brm = b->m_rtpmaps; 
-       arm || brm; 
+  for (arm = a->m_rtpmaps, brm = b->m_rtpmaps;
+       arm || brm;
        arm = arm->rm_next, brm = brm->rm_next)
     if ((rv = sdp_rtpmap_cmp(arm, brm)))
       return rv;
@@ -1505,14 +1505,14 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   if ((rv = str0cmp(a->m_information, b->m_information)))
     return rv;
 
-  for (ac = a->m_connections, bc = b->m_connections; 
-       ac || bc; 
+  for (ac = a->m_connections, bc = b->m_connections;
+       ac || bc;
        ac = ac->c_next, bc = bc->c_next)
   if ((rv = sdp_connection_cmp(ac, bc)))
     return rv;
 
-  for (ab = a->m_bandwidths, bb = b->m_bandwidths; 
-       ab || bb; 
+  for (ab = a->m_bandwidths, bb = b->m_bandwidths;
+       ab || bb;
        ab = ab->b_next, bb = bb->b_next)
     if ((rv = sdp_bandwidth_cmp(a->m_bandwidths, b->m_bandwidths)))
       return rv;
@@ -1520,8 +1520,8 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   if ((rv = sdp_key_cmp(a->m_key, b->m_key)))
     return rv;
 
-  for (aa = a->m_attributes, ba = b->m_attributes; 
-       aa || bb; 
+  for (aa = a->m_attributes, ba = b->m_attributes;
+       aa || bb;
        aa = aa->a_next, ba = ba->a_next)
     if ((rv = sdp_attribute_cmp(aa, ba)))
       return rv;
@@ -1556,8 +1556,8 @@ sdp_attribute_t *sdp_attribute_find(sdp_attribute_t const *a, char const *name)
 }
 
 /** Find named attribute from given lists (a or a2). */
-sdp_attribute_t *sdp_attribute_find2(sdp_attribute_t const *a, 
-				     sdp_attribute_t const *a2, 
+sdp_attribute_t *sdp_attribute_find2(sdp_attribute_t const *a,
+				     sdp_attribute_t const *a2,
 				     char const *name)
 {
   for (; a; a = a->a_next) {
@@ -1607,7 +1607,7 @@ sdp_attribute_t *sdp_attribute_by_mode(su_home_t *home, sdp_mode_t mode)
     name = "sendrecv";
   else
     return NULL;
-  
+
   a = su_salloc(home, sizeof(*a));
   if (a)
     a->a_name = name;
@@ -1615,7 +1615,7 @@ sdp_attribute_t *sdp_attribute_by_mode(su_home_t *home, sdp_mode_t mode)
   return a;
 }
 
-/** Find a mapped attribute. 
+/** Find a mapped attribute.
  *
  * A mapped attribute has form 'a=<name>:<pt> <value>' where pt is a RTP
  * payload type, integer in range 0..127. For example, "a=atmmap" [@RFC3108]
@@ -1627,7 +1627,7 @@ sdp_attribute_t *sdp_attribute_by_mode(su_home_t *home, sdp_mode_t mode)
  * @param pt payload type number (must be 0..127)
  * @param return_result return value parameter for mapped attribute value
  *
- * @return Pointer to a matching attribute structure, or NULL. 
+ * @return Pointer to a matching attribute structure, or NULL.
  *
  * If a matching attribute is found, @a return_result will point to part of
  * the attribute after the payload type and whitespace.
@@ -1670,7 +1670,7 @@ sdp_attribute_t *sdp_attribute_mapped_find(sdp_attribute_t const *a,
 }
 
 /** Append a (list of) attribute(s) to a list of attributes. */
-void sdp_attribute_append(sdp_attribute_t **list, 
+void sdp_attribute_append(sdp_attribute_t **list,
 			  sdp_attribute_t const *a)
 {
   assert(list);
@@ -1684,13 +1684,13 @@ void sdp_attribute_append(sdp_attribute_t **list,
   *list = (sdp_attribute_t *)a;
 }
 
-/**Replace or append a attribute within a list of attributes. 
+/**Replace or append a attribute within a list of attributes.
  *
  * @retval 1 if replaced existing attribute
  * @retval 0 if attribute was appended
  * @retval -1 upon an error
  */
-int sdp_attribute_replace(sdp_attribute_t **list, 
+int sdp_attribute_replace(sdp_attribute_t **list,
 			  sdp_attribute_t *a,
 			  sdp_attribute_t **return_replaced)
 {
@@ -1712,7 +1712,7 @@ int sdp_attribute_replace(sdp_attribute_t **list,
   }
 
   replaced = *list, *list = a;
-  
+
   if (replaced) {
     a->a_next = replaced->a_next;
     replaced->a_next = NULL;
@@ -1727,7 +1727,7 @@ int sdp_attribute_replace(sdp_attribute_t **list,
 }
 
 /** Remove a named attribute from a list of attributes. */
-sdp_attribute_t *sdp_attribute_remove(sdp_attribute_t **list, 
+sdp_attribute_t *sdp_attribute_remove(sdp_attribute_t **list,
 				      char const *name)
 {
   sdp_attribute_t *a;
@@ -1876,7 +1876,7 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
     return 1;
 
   if (!aparam) aparam = "1"; if (!bparam) bparam = "1";
-  
+
   if (strcasecmp(aparam, bparam))
     return 0;
 

@@ -23,13 +23,13 @@
  */
 
 /**@page addrinfo Resolve network services
- * 
+ *
  * @section synopsis Synopsis
  *
  * <tt>addrinfo [-pcn46] service-name host</tt>
  *
  * @section description Description
- * 
+ *
  * The @em addrinfo utility will use su_getaddrinfo() to resolve the network
  * services and print resolved names. See sect 6.1 of RFC3493 and the getaddrinfo(3)
  * manual page of POSIX 1003.1g, for more information.

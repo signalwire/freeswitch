@@ -25,7 +25,7 @@
 #ifndef TPORT_TLS_H
 /** Defined when <tport_tls.h> has been included. */
 #define TPORT_TLS_H
-/**@internal 
+/**@internal
  * @file tport_tls.h
  * @brief Internal TLS interface
  *
@@ -58,7 +58,7 @@ typedef struct tls_issues_s {
   char *cipher;         /* Should be one of the above defined ciphers *
 			 * or NULL (default: "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH
                          */
-  int   version;	/* For tls1, version is 1. When ssl3/ssl2 is 
+  int   version;	/* For tls1, version is 1. When ssl3/ssl2 is
 			 * used, it is 0. */
 } tls_issues_t;
 

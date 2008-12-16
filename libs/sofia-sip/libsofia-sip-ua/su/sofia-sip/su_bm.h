@@ -29,9 +29,9 @@
 /**
  * @file sofia-sip/su_bm.h
  * @brief Boyer-Moore search algorithm
- *  
+ *
  * @author Pekka.Pessi@nokia.com
- * 
+ *
  * @date Created: Mon Apr 11 17:03:13 2005 ppessi
  */
 

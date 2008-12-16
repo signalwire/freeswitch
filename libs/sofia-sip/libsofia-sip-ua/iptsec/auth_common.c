@@ -54,7 +54,7 @@ su_inline int has_token(char const *qstring, char const *token);
  * The function auth_get_params() searches for the authentication parameters
  * in @a params. The parameter list @a params is seached for each parameter
  * given in in vararg section, and if it is found, its value is assigned to
- * the given address. 
+ * the given address.
  *
  * @note The field name should contain the equal ("=") sign.
  *

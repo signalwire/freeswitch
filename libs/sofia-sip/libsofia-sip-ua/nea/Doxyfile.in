@@ -1,7 +1,7 @@
 PROJECT_NAME         = "nea"
 OUTPUT_DIRECTORY     = ../docs/html/nea
 
-INPUT 		     = @srcdir@/nea.docs @srcdir@/sofia-sip @srcdir@ . 
+INPUT 		     = @srcdir@/nea.docs @srcdir@/sofia-sip @srcdir@ .
 
 @INCLUDE_PATH = . @srcdir@
 @INCLUDE = ../docs/Doxyfile.conf

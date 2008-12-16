@@ -24,7 +24,7 @@
 
 #ifndef HTTP_TAG_CLASS_H
 /**Defined when http_tag_class.h have been included*/
-#define HTTP_TAG_CLASS_H 
+#define HTTP_TAG_CLASS_H
 
 /**@file sofia-sip/http_tag_class.h
  * @brief Tag classes for HTTP headers.
@@ -62,9 +62,9 @@ SOFIA_BEGIN_DECLS
   {{ TAG_NAMESPACE, #t, httpmsgtag_class, \
      (tag_value_t)HTTP_PROTOCOL_TAG }}
 
-/**@internal Filter HTTP header tag items. */ 
+/**@internal Filter HTTP header tag items. */
 SOFIAPUBFUN tagi_t *httptag_filter(tagi_t *dst, tagi_t const f[],
-				   tagi_t const *src, 
+				   tagi_t const *src,
 				   void **bb);
 
 SOFIA_END_DECLS

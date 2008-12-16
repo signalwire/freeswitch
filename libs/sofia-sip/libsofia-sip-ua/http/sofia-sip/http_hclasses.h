@@ -28,9 +28,9 @@
 
 /**@file sofia-sip/http_hclasses.h
  * @brief HTTP header classes.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  */
 
 #ifndef MSG_TYPES_H

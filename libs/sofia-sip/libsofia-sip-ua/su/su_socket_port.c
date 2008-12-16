@@ -84,7 +84,7 @@ int su_socket_port_init(su_port_t *self, su_port_vtable_t const *vtable)
   su_wait_t wait[1] = { SU_WAIT_INIT };
   char const *why;
 
-  SU_DEBUG_9(("su_socket_port_init(%p, %p) called\n", 
+  SU_DEBUG_9(("su_socket_port_init(%p, %p) called\n",
 	      (void *)self, (void *)vtable));
 
   if (su_pthread_port_init(self, vtable) != 0)
@@ -109,17 +109,17 @@ int su_socket_port_init(su_port_t *self, su_port_vtable_t const *vtable)
     struct sockaddr_in sin = { sizeof(struct sockaddr_in), 0 };
     socklen_t sinsize = sizeof sin;
     struct sockaddr *sa = (struct sockaddr *)&sin;
-    
+
     af = PF_INET;
-      
+
     self->sup_mbox[0] = mb = su_socket(af, SOCK_DGRAM, IPPROTO_UDP);
     if (mb == INVALID_SOCKET) {
       why = "socket"; goto error;
     }
-    
+
     sin.sin_family = AF_INET;
     sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK); /* 127.1 */
-      
+
     /* Get a port for us */
     if (bind(mb, sa, sizeof sin) == -1) {
       why = "bind"; goto error;
@@ -128,20 +128,20 @@ int su_socket_port_init(su_port_t *self, su_port_vtable_t const *vtable)
     if (getsockname(mb, sa, &sinsize) == -1) {
       why = "getsockname"; goto error;
     }
-    
+
     if (connect(mb, sa, sinsize) == -1) {
       why = "connect"; goto error;
     }
   }
-#endif    
+#endif
 
   if (su_wait_create(wait, mb, SU_WAIT_IN) == -1) {
     why = "su_wait_create";
     goto error;
   }
 
-  self->sup_mbox_index = su_port_register(self, NULL, wait, 
-					  su_mbox_port_wakeup, 
+  self->sup_mbox_index = su_port_register(self, NULL, wait,
+					  su_mbox_port_wakeup,
 					  (void *)self->sup_mbox, 0);
 
   if (self->sup_mbox_index <= 0) {
@@ -151,9 +151,9 @@ int su_socket_port_init(su_port_t *self, su_port_vtable_t const *vtable)
   }
 
   return 0;
-  
+
   error:
-    su_log("%s: %s: %s\n", "su_socket_port_init", 
+    su_log("%s: %s: %s\n", "su_socket_port_init",
 	   why, su_strerror(su_errno()));
 
   return retval;

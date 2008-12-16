@@ -38,9 +38,9 @@ contains description of the functionality required when an existing parser
 is extended by a new header or a parser is created for a completely new
 protocol. It is possible to add new headers to the parser or extend the
 definition of existing ones. The header files used for constructing these
-parsers are as follows: 
-- <sofia-sip/msg_parser.h> parsing functions, macros 
-- <sofia-sip/msg_mclass.h> message factory object definition 
+parsers are as follows:
+- <sofia-sip/msg_parser.h> parsing functions, macros
+- <sofia-sip/msg_mclass.h> message factory object definition
 - <sofia-sip/msg_mclass_hash.h> hashing of header names
 
 @section msg_overview Parsers, Messages and Headers
@@ -54,7 +54,7 @@ The C structure corresponding to each header is defined either in a
 protocol-specific header files include <sofia-sip/sip.h>, <sofia-sip/http.h>, and
 <sofia-sip/msg_mime.h>. For each header, there is defined a @em header @em class
 structure, some standard functions, and tags for including them in tag
-lists. 
+lists.
 
 As a convention, all the identifiers for SIP headers start with prefix @c
 sip and all the macros with @c SIP. Same thing holds for HTTP, too: it
@@ -73,18 +73,18 @@ For header @e X of protocol @e NS, there are types, functions, macros and
 header class as follows:
 
  - @c ns_X_t is the structure used to store parsed header,
- - @c ns_hclass_t @c ns_X_class[] contains the @em header @em class 
+ - @c ns_hclass_t @c ns_X_class[] contains the @em header @em class
    for header X,
  - @c NS_X_INIT() initializes a static instance of @c ns_X_t,
  - @c ns_X_init() initializes a dynamic instance of @c ns_X_t,
  - @c ns_is_X() tests if header object is instance of header X,
  - @c ns_X_make() creates a header X object by decoding given string,
- - @c ns_X_format() creates a header X object by decoding given 
+ - @c ns_X_format() creates a header X object by decoding given
    @c printf() list,
- - @c ns_X_dup() duplicates (deeply copies) the header X, 
- - @c ns_X_copy() copies the header X, 
+ - @c ns_X_dup() duplicates (deeply copies) the header X,
+ - @c ns_X_copy() copies the header X,
  - @c NSTAG_X() is used include instance of @c ns_X_t in a tag list, and
- - @c NSTAG_X_STR() is used to include string containing value header 
+ - @c NSTAG_X_STR() is used to include string containing value header
       in a tag list.
 
 The declarations of header tags and the prototypes for these functions can
@@ -111,7 +111,7 @@ header. As there is no low-layer framing between the RFC822-style messages,
 the parser considers any received data, be it a UDP datagram or a TCP
 stream, as a @em byte @em stream. The protocol-specific parsers controls how
 a byte stream is split into separate messages or if it consists of a single
-message only. 
+message only.
 
 The parser engine works by separating stream into fragments, then passing
 the fragment to a suitable parser. A fragment is a piece of message that is
@@ -120,7 +120,7 @@ between headers and message body, the message body. (In case of HTTP, the
 message body can consists of multiple fragments known as chunks.)
 
 The parser starts by separating the first line (e.g., request or status
-line) from the byte stream, then passing the line to the suitable parser. 
+line) from the byte stream, then passing the line to the suitable parser.
 After first line comes the message headers. The parser continues parsing
 process by extracting headers, each on their own line, from the stream and
 passing contents of each header to its parser. The message structure is
@@ -195,7 +195,7 @@ typedef struct msg_accept_s
   char const         *ac_subtype;   //< Points after first slash in type
   msg_param_t const  *ac_params;    //< List of parameters
   msg_param_t         ac_q;	    //< Value of q parameter
-} 
+}
 msg_accept_t;
 @endcode
 
@@ -205,8 +205,8 @@ list of @e accept-params (together with media-specific-parameters) is put in
 the @c ac_params array. If there is a @e q parameter present, a pointer to
 the @c qvalue is assigned to @c ac_q field.
 
-In the beginning of the header structure there are two boilerplate members. 
-The @c ac_common[1] contains information common to all message fragments. 
+In the beginning of the header structure there are two boilerplate members.
+The @c ac_common[1] contains information common to all message fragments.
 The @c ac_next is a pointer to next header field with the same name, in case
 a message contains multiple @b Accept headers or multiple comma-separated
 header fields are located in a single line.
@@ -217,7 +217,7 @@ It is not enough to represent a message as a list of headers following each
 other. The programmer also needs a convenient way to access certain headers
 at the message level, for example, accessing directly the @b Accept header
 instead of going through all headers and examining their name. The
-structured view to the message is provided via a message-specific C struct. 
+structured view to the message is provided via a message-specific C struct.
 In general, its type is msg_pub_t (it provides public view to message). The
 protocol-specific type is #sip_t, #http_t or #msg_multipart_t for
 SIP, HTTP and MIME, respectively.
@@ -283,7 +283,7 @@ CSeq: 2
 
 The figure below shows the layout of the BYE message above after parsing:
 
-@image html sip-parser2.gif BYE message and its representation in C 
+@image html sip-parser2.gif BYE message and its representation in C
 @image latex sip-parser2.eps BYE message and its representation in C
 
 The leftmost box represents the message of type #msg_t.  Next box from
@@ -446,7 +446,7 @@ encountered.
 
 /**@typedef typedef struct msg_s msg_t;
  *
- * Message object. 
+ * Message object.
  *
  * The @a msg_t is the type of a message object used by Sofia signaling
  * protocols and parsers. Its contents are not directly accessible.
@@ -454,7 +454,7 @@ encountered.
 
 /**@typedef typedef struct msg_common_s msg_common_t;
  *
- * Common part of header. 
+ * Common part of header.
  *
  * The @a msg_common_t is the base type of a message headers used by
  * protocol parsers. Instead of #msg_common_t, most interfaces use

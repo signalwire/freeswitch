@@ -24,17 +24,17 @@
 
 #ifndef AUTH_CLIENT_PLUGIN_H
 /** Defined when <sofia-sip/auth_client_plugin.h> has been included. */
-#define AUTH_CLIENT_PLUGIN_H 
+#define AUTH_CLIENT_PLUGIN_H
 
 /**@file sofia-sip/auth_client_plugin.h
  * @brief Client-side plugin interface for authentication
- * 
- * @note For extensions in 1.12.6 or later, 
+ *
+ * @note For extensions in 1.12.6 or later,
  * you have to define SOFIA_EXTEND_AUTH_CLIENT to 1
  * before including this file.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Fri May 19 16:18:21 EEST 2006
  */
 
@@ -74,16 +74,16 @@ struct auth_client_plugin
   int auc_size;			/* Size of the client structure */
 
   char const *auc_name;		/* Name of the autentication scheme */
-  
+
   /** Store challenge */
-  int (*auc_challenge)(auth_client_t *ca, 
+  int (*auc_challenge)(auth_client_t *ca,
 		       msg_auth_t const *ch);
 
   /** Authorize request. */
-  int (*auc_authorize)(auth_client_t *ca, 
+  int (*auc_authorize)(auth_client_t *ca,
 		       su_home_t *h,
-		       char const *method, 
-		       url_t const *url, 
+		       char const *method,
+		       url_t const *url,
 		       msg_payload_t const *body,
 		       msg_header_t **return_headers);
 

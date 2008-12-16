@@ -1,5 +1,5 @@
 #
-# Template for Doxyfile. 
+# Template for Doxyfile.
 # @configure_input@
 #
 # Copyright (C) 2006 Nokia Corporation
@@ -27,13 +27,13 @@ GENERATE_TAGFILE     = ../libsofia-sip-ua/docs/utils.doxytags
 @INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.aliases
 @INCLUDE = ../libsofia-sip-ua/docs/Doxyfile.rfc
 
-FILE_PATTERNS        = *.h *.c 
+FILE_PATTERNS        = *.h *.c
 
 EXCLUDE_PATTERNS     = acconfig.h config.h confdefs.h \
 			test*.h test*.c torture*.c *test.c *torture.c \
 			*_tag_dll.c *_tag_ref.c
 
-TAGFILES             = 
+TAGFILES             =
 
 OUTPUT_LANGUAGE      = English
 

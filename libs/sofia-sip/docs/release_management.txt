@@ -27,8 +27,8 @@ The release notes should contain the following sections:
     - maintained in sofia-sip/RELEASE
     - see diff between cvs/darcs between previous and
       this version
-    - written in freshmeat.net "Changes:" style 
-- notes on API/ABI interface changes 
+    - written in freshmeat.net "Changes:" style
+- notes on API/ABI interface changes
     - maintained in sofia-sip/RELEASE
     - all changes in public interfaces, plus other
       notes that developers should be aware of
@@ -41,7 +41,7 @@ The release notes should contain the following sections:
 See the RELEASE.template file for a full list of release note
 sections.
 
-Making the release tarball 
+Making the release tarball
 ==========================
 
 - basics: check system clock of the build host ;)
@@ -71,15 +71,15 @@ Creating the release notes and updating the website
 
 - combine the sofia-sip/RELEASE contents with
   the template found from sfnet_www/templates/relnotes.txt
-- store the resulting release notes to 
+- store the resulting release notes to
   sfnet_www/relnotes/relnotes-sofia-sip-x.y.z.txt
-- add explicit link to the release notes to 
+- add explicit link to the release notes to
   sfnet_www/download.html (three most recent releases,
   see guidelines in the html comments)
 - update sfnet_www/index.html to mention the latest
   release
-- commit the change to sf.net website CVS, and run the 
-  sfnet_www/put_online.sh script 
+- commit the change to sf.net website CVS, and run the
+  sfnet_www/put_online.sh script
 
 Uploading the release to sourceforge.net
 ========================================
@@ -104,8 +104,8 @@ After release
 
 - replace the RELEASE file with RELEASE.template, and
   commit it to master source repository (see sofia-sip/README.developers)
-- change version in configure.ac from "X.Y.Z" to 
-  "X.Y.Zdevel" (as it is in many cases unknown what the 
+- change version in configure.ac from "X.Y.Z" to
+  "X.Y.Zdevel" (as it is in many cases unknown what the
   next version will be)
 - make a "tree open for development" commit
 
@@ -122,15 +122,15 @@ tree.
 
 - Always tag the src-tree with "syncuser-fromvcs-to-tovcs-yearmmdd".
 
-- Add a top-level ChangeLog entry that documents all the 
+- Add a top-level ChangeLog entry that documents all the
   changes made outside the target tree (what, who and when -
-  for example produced with the "darcs changes --summary" 
+  for example produced with the "darcs changes --summary"
   command).
 
 Checking API/ABI compatibility
 ==============================
 
-- Use a unit test binary built against an old library, 
+- Use a unit test binary built against an old library,
   to verify a new library version (forwards-compatibility).
 - Use the 'icheck' tool (in Debian) to make comparison
   between two released versions.

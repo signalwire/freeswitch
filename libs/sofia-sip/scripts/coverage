@@ -28,14 +28,14 @@ done
 
 {
 for f in *.bb
-do 
+do
     test "$f" = "*.bb" && { echo "run 'make check' first"; exit 1; }
     gcov $gcovflags "$f" 2>/dev/null
-done 
+done
 for f in $@
-do 
+do
     gcov $gcovflags "$f" 2>/dev/null
-done 
+done
 } |
 awk '
 BEGIN {
@@ -51,10 +51,10 @@ BEGIN {
     else
 	file = "";
 }
-file ~ /\.[hc]$/ && /Lines executed/ { 
-	sub(/Lines executed:/, ""); 
+file ~ /\.[hc]$/ && /Lines executed/ {
+	sub(/Lines executed:/, "");
 	covered = int($3*$1/100 + 0.5);
-	
+
 #	printf "%-5u %-5u %-5u %-7s %s\n", $3, covered, $3 - covered, $1, file;
 	if ($3 == 0) {
 		/* skip */
@@ -69,11 +69,11 @@ file ~ /\.[hc]$/ && /Lines executed/ {
         }
 }
 
-/torture/ { next; } 
+/torture/ { next; }
 /test/ { next; }
 /\/usr\/include/ { next; }
 
-/(source )?lines executed in file (.*\/)?[-A-Za-z_0-9]+\.[ch]/ { 
+/(source )?lines executed in file (.*\/)?[-A-Za-z_0-9]+\.[ch]/ {
         file = $0;
 	sub(/.* in file /, "", file);
 	sub(/.*\//, "", file);
@@ -98,7 +98,7 @@ END {
 	l = lines[file]; c = coverage[file];
 	covered = int(c + 0.5);
         total += l; total_coverage += c;
-	printf "%-5u %-5u %-5u %6.2f%%  %s\n", 
+	printf "%-5u %-5u %-5u %6.2f%%  %s\n",
 		l, covered, l - covered, 100.0 * c / l, file;
     }
     if (total) {

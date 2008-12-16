@@ -1,4 +1,4 @@
-# 
+#
 # Generate lcov output
 #
 
@@ -37,7 +37,7 @@ lcov-report:
 	rm -rf $$odir ; mkdir -p $$odir && \
 	${LCOV_REPORT} ${GENHTML_OPTIONS} \
           --title "${PACKAGE_NAME}-${PACKAGE_VERSION}$$sub" \
-	  --srcdir=${srcdir} -o $$odir 
+	  --srcdir=${srcdir} -o $$odir
 
 # Rerun checks before generating report
 lcov-rerun: clean-lcov

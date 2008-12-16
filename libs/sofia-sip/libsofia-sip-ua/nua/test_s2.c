@@ -62,8 +62,8 @@ struct tp_magic_s
 /* -- Module prototypes ------------------------------------------------- */
 
 static msg_t *s2_msg(int flags);
-static int s2_complete_response(msg_t *response, 
-				int status, char const *phrase, 
+static int s2_complete_response(msg_t *response,
+				int status, char const *phrase,
 				msg_t *request);
 static char *s2_generate_tag(su_home_t *home);
 
@@ -132,7 +132,7 @@ struct event *s2_remove_event(struct event *e)
 
   e->prev = NULL, e->next = NULL;
 
-  return e; 
+  return e;
 }
 
 void s2_free_event(struct event *e)
@@ -163,7 +163,7 @@ struct event *s2_next_event(void)
 
     su_root_step(s2->root, 100);
   }
-} 
+}
 
 struct event *s2_wait_for_event(nua_event_t event, int status)
 {
@@ -180,7 +180,7 @@ struct event *s2_wait_for_event(nua_event_t event, int status)
 
     su_root_step(s2->root, 100);
   }
-} 
+}
 
 int s2_check_event(nua_event_t event, int status)
 {
@@ -206,7 +206,7 @@ int s2_check_callstate(enum nua_callstate state)
   return retval;
 }
 
-static void 
+static void
 s2_nua_callback(nua_event_t event,
 		int status, char const *phrase,
 		nua_t *nua, nua_magic_t *_t,
@@ -218,7 +218,7 @@ s2_nua_callback(nua_event_t event,
 
   if (event == nua_i_active || event == nua_i_terminated)
     return;
-  
+
   e = calloc(1, sizeof *e);
   nua_save_event(nua, e->event);
   e->nh = nua_handle_ref(nh);
@@ -241,7 +241,7 @@ s2_remove_message(struct message *m)
 
   m->prev = NULL, m->next = NULL;
 
-  return m; 
+  return m;
 }
 
 void
@@ -294,10 +294,10 @@ s2_wait_for_response(int status, sip_method_t method, char const *name)
 
       if (method == sip_method_unknown && name == NULL)
 	break;
-      
+
       if (m->sip->sip_cseq == NULL)
 	continue;
-      
+
       if (m->sip->sip_cseq->cs_method != method)
 	continue;
       if (name == NULL)
@@ -311,7 +311,7 @@ s2_wait_for_response(int status, sip_method_t method, char const *name)
 
     su_root_step(s2->root, 100);
   }
-} 
+}
 
 int
 s2_check_response(int status, sip_method_t method, char const *name)
@@ -335,9 +335,9 @@ s2_next_request(void)
 
     su_root_step(s2->root, 100);
   }
-  
+
   return NULL;
-} 
+}
 
 struct message *
 s2_wait_for_request(sip_method_t method, char const *name)
@@ -358,9 +358,9 @@ s2_wait_for_request(sip_method_t method, char const *name)
 
     su_root_step(s2->root, 100);
   }
-  
+
   return NULL;
-} 
+}
 
 int
 s2_check_request(sip_method_t method, char const *name)
@@ -425,7 +425,7 @@ s2_respond_to(struct message *m, struct dialog *d,
 
   *tpn = *tport_name(m->tport);
 
-  rport = su_sprintf(home, "rport=%u", 
+  rport = su_sprintf(home, "rport=%u",
 		     ntohs(((su_sockaddr_t *)
 			    msg_addrinfo(m->msg)->ai_addr)->su_port));
 
@@ -433,7 +433,7 @@ s2_respond_to(struct message *m, struct dialog *d,
       sip->sip_via->v_rport &&
       sip->sip_via->v_rport[0] == '\0') {
     msg_header_add_param(home, sip->sip_via->v_common, rport);
-  }    
+  }
 
   tpn->tpn_port = rport + strlen("rport=");
 
@@ -446,9 +446,9 @@ s2_respond_to(struct message *m, struct dialog *d,
 }
 
 /** Add headers from the request to the response message. */
-static int 
-s2_complete_response(msg_t *response, 
-		     int status, char const *phrase, 
+static int
+s2_complete_response(msg_t *response,
+		     int status, char const *phrase,
 		     msg_t *request)
 {
   su_home_t *home = msg_home(response);
@@ -469,7 +469,7 @@ s2_complete_response(msg_t *response,
   if (!response_sip->sip_to)
     response_sip->sip_to = sip_to_dup(home, request_sip->sip_to);
   if (!response_sip->sip_call_id)
-    response_sip->sip_call_id = 
+    response_sip->sip_call_id =
       sip_call_id_dup(home, request_sip->sip_call_id);
   if (!response_sip->sip_cseq)
     response_sip->sip_cseq = sip_cseq_dup(home, request_sip->sip_cseq);
@@ -496,11 +496,11 @@ s2_complete_response(msg_t *response,
   return 0;
 }
 
-/* Send request (updating dialog). 
+/* Send request (updating dialog).
  *
  * Return zero upon success, nonzero upon failure.
  */
-int 
+int
 s2_request_to(struct dialog *d,
 	      sip_method_t method, char const *name,
 	      tport_t *tport,
@@ -546,7 +546,7 @@ s2_request_to(struct dialog *d,
 
   if (!d->local && sip->sip_from)
     d->local = sip_from_dup(d->home, sip->sip_from);
-  if (!d->contact && sip->sip_contact) 
+  if (!d->contact && sip->sip_contact)
     d->contact = sip_contact_dup(d->home, sip->sip_contact);
   if (!d->remote && sip->sip_to)
     d->remote = sip_to_dup(d->home, sip->sip_to);
@@ -558,7 +558,7 @@ s2_request_to(struct dialog *d,
     d->call_id = sip_call_id_dup(d->home, sip->sip_call_id);
   if (!d->lseq && sip->sip_cseq)
     d->lseq = sip->sip_cseq->cs_seq;
-  
+
   if (!d->local)
     d->local = sip_from_dup(d->home, s2->local);
   if (!d->contact)
@@ -643,7 +643,7 @@ s2_request_to(struct dialog *d,
     }
   }
 
-  sip_add_tl(msg, sip, 
+  sip_add_tl(msg, sip,
 	     TAG_IF(!sip->sip_from, SIPTAG_FROM(d->local)),
 	     TAG_IF(!sip->sip_contact, SIPTAG_CONTACT(d->contact)),
 	     TAG_IF(!sip->sip_to, SIPTAG_TO(d->remote)),
@@ -670,7 +670,7 @@ s2_request_to(struct dialog *d,
   }
 
   return tport ? 0 : -1;
-  
+
  error:
   ta_end(ta);
   return -1;
@@ -809,7 +809,7 @@ void s2_case(char const *number,
 
 /* ---------------------------------------------------------------------- */
 /* tport interface */
-static void 
+static void
 s2_stack_recv(struct tester *s2,
 	      tport_t *tp,
 	      msg_t *msg,
@@ -844,16 +844,16 @@ s2_stack_error(struct tester *s2,
 	       int errcode,
 	       char const *remote)
 {
-  fprintf(stderr, "%s(%p): error %d (%s) from %s\n", 
+  fprintf(stderr, "%s(%p): error %d (%s) from %s\n",
 	  "nua_tester_error",
-	  (void *)tp, errcode, su_strerror(errcode), 
+	  (void *)tp, errcode, su_strerror(errcode),
 	  remote ? remote : "<unknown destination>");
 }
 
 static msg_t *
 s2_stack_alloc(struct tester *s2, int flags,
 	       char const data[], usize_t size,
-	       tport_t const *tport, 
+	       tport_t const *tport,
 	       tp_client_t *tpc)
 {
   return msg_create(s2->mclass, flags | s2->flags);
@@ -890,7 +890,7 @@ void s2_setup_base(char const *hostname)
 
   s2->local = sip_from_format(s2->home, "Bob <sip:bob@%s>",
 			     hostname ? hostname : "example.net");
-  
+
   if (hostname == NULL)
     hostname = "127.0.0.1";
 
@@ -952,8 +952,8 @@ s2_setup_tport(char const * const *protocols,
 
   if (protocols == NULL)
     protocols = default_protocols;
-  
-  bound = tport_tbind(s2->master, tpn, protocols, 
+
+  bound = tport_tbind(s2->master, tpn, protocols,
 		      TPTAG_SERVER(1),
 		      ta_tags(ta));
   assert(bound != -1);
@@ -979,7 +979,7 @@ s2_setup_tport(char const * const *protocols,
 
     v = sip_via_format(s2->home, "SIP/2.0/%s %s:%s",
 		       tpn->tpn_proto,
-		       tpn->tpn_host, 
+		       tpn->tpn_host,
 		       tpn->tpn_port);
     assert(v != NULL);
     if (strncasecmp(tpn->tpn_proto, "tls", 3)) {
@@ -988,11 +988,11 @@ s2_setup_tport(char const * const *protocols,
 			     tpn->tpn_port,
 			     tpn->tpn_proto);
       if (s2->udp.contact == NULL && strcasecmp(tpn->tpn_proto, "udp") == 0) {
-	s2->udp.tport = tport_ref(tp); 
+	s2->udp.tport = tport_ref(tp);
 	s2->udp.contact = m;
       }
       if (s2->tcp.contact == NULL && strcasecmp(tpn->tpn_proto, "tcp") == 0) {
-	s2->tcp.tport = tport_ref(tp); 
+	s2->tcp.tport = tport_ref(tp);
 	s2->tcp.contact = m;
       }
     }
@@ -1007,7 +1007,7 @@ s2_setup_tport(char const * const *protocols,
 			     tpn->tpn_host,
 			     tpn->tpn_port);
       if (s2->tls.contact == NULL) {
-	s2->tls.tport = tport_ref(tp); 
+	s2->tls.tport = tport_ref(tp);
 	s2->tls.contact = m;
       }
     }
@@ -1519,7 +1519,7 @@ nua_t *s2_nua_setup(tag_type_t tag, tag_value_t value, ...)
 		NULL);
 
   ta_start(ta, tag, value);
-  s2->nua = 
+  s2->nua =
     nua_create(s2->root,
 	       s2_nua_callback,
 	       s2,
@@ -1534,7 +1534,7 @@ nua_t *s2_nua_setup(tag_type_t tag, tag_value_t value, ...)
 #endif
 	       ta_tags(ta));
   ta_end(ta);
-  
+
   return s2->nua;
 }
 
@@ -1600,7 +1600,7 @@ void s2_register_teardown(void)
     struct message *m;
 
     nua_unregister(nh, TAG_END());
-    
+
     m = s2_wait_for_request(SIP_METHOD_REGISTER); assert(m);
     s2_save_register(m);
     s2_respond_to(m, NULL,

@@ -26,9 +26,9 @@
 /** Defined when <sofia-sip/su_time.h> has been included. */
 #define SU_TIME_H
 /**@ingroup su_time
- * @file sofia-sip/su_time.h 
+ * @file sofia-sip/su_time.h
  * @brief Time types and functions.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  *
@@ -40,35 +40,35 @@
 
 SOFIA_BEGIN_DECLS
 
-/** Time in seconds and microsecondcs. 
+/** Time in seconds and microsecondcs.
  *
  * The structure su_time_t contains time in seconds and microseconds since
  * epoch (January 1, 1900).
  */
-struct su_time_s { 
+struct su_time_s {
   unsigned long tv_sec;		/**< Seconds */
   unsigned long tv_usec;	/**< Microseconds  */
 };
 /** Time in seconds and microsecondcs. */
 typedef struct su_time_s su_time_t;
 
-/** Time difference in microseconds. 
- * 
+/** Time difference in microseconds.
+ *
  * The type su_duration_t is used to present small time differences (24
  * days), usually calculated between two su_time_t timestamps.  Note that
  * the su_duration_t is signed.
  */
 typedef long su_duration_t;
 
-enum { 
+enum {
   /** Maximum duration in milliseconds. */
-  SU_DURATION_MAX = 0x7fffffffL 
+  SU_DURATION_MAX = 0x7fffffffL
 };
 #define SU_DURATION_MAX SU_DURATION_MAX
 
-/** NTP timestamp. 
- * 
- * NTP timestamp is defined as microseconds since epoch (1-Jan-1900) 
+/** NTP timestamp.
+ *
+ * NTP timestamp is defined as microseconds since epoch (1-Jan-1900)
  * with 64-bit resolution.
  */
 typedef uint64_t su_ntp_t;
@@ -79,11 +79,11 @@ typedef uint64_t su_ntp_t;
 #define SU_TIME_CMP(t1, t2) su_time_cmp(t1, t2)
 
 /** Seconds from 1.1.1900 to 1.1.1970. @NEW_1_12_4. */
-#define SU_TIME_EPOCH 2208988800UL 
+#define SU_TIME_EPOCH 2208988800UL
 
 typedef uint64_t su_nanotime_t;
 
-#define SU_E9 (1000000000U) 
+#define SU_E9 (1000000000U)
 
 SOFIAPUBFUN su_nanotime_t su_nanotime(su_nanotime_t *return_time);
 SOFIAPUBFUN su_nanotime_t su_monotime(su_nanotime_t *return_time);
@@ -116,7 +116,7 @@ su_inline uint32_t su_ntp_fraq(su_time_t t)
 {
   /*
    * Multiply usec by 0.065536 (ie. 2**16 / 1E6)
-   * 
+   *
    * Utilize fact that 0.065536 == 1024 / 15625
    */
   return (t.tv_sec << 16) + (1024 * t.tv_usec + 7812) / 15625;

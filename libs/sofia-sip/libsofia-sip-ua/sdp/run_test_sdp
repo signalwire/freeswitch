@@ -12,12 +12,12 @@ tests="${2:-${sdp_path}/tests}"
 if test -r $tests/message-1.sdp ; then
 
 for n in 1 2 3 4 5 6 7 8 9 10 11;
-do 
+do
     echo -n "$n: "
     "$test_sdp" < "$tests/message-$n.sdp" && echo OK
 done
 
-else 
+else
     echo "sdp run-tests: no tests found in $tests, skipping."
     exit 77
 fi

@@ -85,7 +85,7 @@ static
 Node *node_new(su_home_t *home, int value)
 {
   Node *n = su_zalloc(home, sizeof (*n));
-  
+
   n->value = value;
 
   return n;
@@ -100,9 +100,9 @@ unsigned log2ceil(unsigned k)
   if (k > (1 << 32))
     result += 32, k = (k >> 32) + ((k & ((1 << 32) - 1)) != 0);
 #endif
-  if (k > (1 << 16)) 
+  if (k > (1 << 16))
     result += 16, k = (k >> 16) + ((k & ((1 << 16) - 1)) != 0);
-  if (k > (1 << 8)) 
+  if (k > (1 << 8))
     result += 8, k = (k >> 8) + ((k & ((1 << 8) - 1)) != 0);
   if (k > (1 << 4))
     result += 4, k = (k >> 4) + ((k & 15) != 0);
@@ -112,7 +112,7 @@ unsigned log2ceil(unsigned k)
     result += 1, k = (k >> 1) + (k & 1);
   if (k > 1)
     result += 1;
-  
+
   return result;
 }
 
@@ -127,7 +127,7 @@ Node *node_find(Node *tree, int value)
     else
       tree = tree->left;
   }
-   
+
   return tree;
 }
 
@@ -163,7 +163,7 @@ int test_insert(void)
   six = node_new(home, 6);
   seven = node_new(home, 7);
 
-  TEST_1(one); 
+  TEST_1(one);
   TEST_1(three);
   TEST_1(five);
   TEST_1(six);
@@ -175,16 +175,16 @@ int test_insert(void)
   TEST_P(five->left, NULL); TEST_P(five->right, NULL);
   TEST_P(five->parent, NULL); TEST(five->black, 1);
 
-  /* Check after another node: 
+  /* Check after another node:
    *
    *         5b
-   *        / 
+   *        /
    *       3r
    */
   TEST(redblack_insert(&tree, three, &o), 0); TEST_P(o, NULL);
   TEST_P(tree->left, three); TEST(tree->black, 1);
   TEST_P(three->left, NULL); TEST_P(three->right, NULL);
-  TEST_P(three->parent, tree); TEST(three->black, 0); 
+  TEST_P(three->parent, tree); TEST(three->black, 0);
 
   /* Check third node
    *         5b
@@ -194,21 +194,21 @@ int test_insert(void)
   TEST(redblack_insert(&tree, seven, &o), 0); TEST_P(o, NULL);
   TEST_P(tree->right, seven); TEST(tree->black, 1);
   TEST_P(seven->left, NULL); TEST_P(seven->right, NULL);
-  TEST_P(seven->parent, tree); TEST(seven->black, 0); 
+  TEST_P(seven->parent, tree); TEST(seven->black, 0);
 
   /* Check after fourth node:
    *         5b
    *        / \
    *       3b  7b
    *      /
-   *     1r  
+   *     1r
    */
   TEST(redblack_insert(&tree, one, &o), 0); TEST_P(o, NULL);
-  TEST_P(tree->left->left, one); 
-  TEST(tree->black, 1); 
+  TEST_P(tree->left->left, one);
+  TEST(tree->black, 1);
   TEST(tree->left->black, 1); TEST(tree->right->black, 1);
   TEST_P(one->left, NULL); TEST_P(one->right, NULL);
-  TEST_P(one->parent, tree->left); TEST(one->black, 0); 
+  TEST_P(one->parent, tree->left); TEST(one->black, 0);
 
   /* Checks that we got after fifth node:
    *         5b
@@ -256,7 +256,7 @@ int test_rotate(void)
   y = node_new(home, 2);
 
   TEST_1(x);
-  TEST_1(y); 
+  TEST_1(y);
 
   /*
    *              x                   y               x
@@ -298,8 +298,8 @@ int test_simple(void)
   um497 = node_new(home, 497); TEST_1(um497);
   um995 = node_new(home, 995); TEST_1(um995);
 
-  o = (void *)-1; TEST(redblack_insert(&tree, um995, &o), 0); TEST_P(o, NULL); 
-  o = (void *)-1; TEST(redblack_insert(&tree, um497, &o), 0); TEST_P(o, NULL); 
+  o = (void *)-1; TEST(redblack_insert(&tree, um995, &o), 0); TEST_P(o, NULL);
+  o = (void *)-1; TEST(redblack_insert(&tree, um497, &o), 0); TEST_P(o, NULL);
   o = (void *)-1; TEST(redblack_insert(&tree, um103, &o), 0); TEST_P(o, NULL);
 
   um = node_find(tree, 103); TEST_P(um, um103);
@@ -338,9 +338,9 @@ int test_balance(void)
 
   for (i = 0; i < N; i++) {
     node = node_find(tree, i);
-    TEST_1(node); 
+    TEST_1(node);
     TEST(node->value, i);
-    TEST_P(nodes[i], node); 
+    TEST_P(nodes[i], node);
   }
 
   node = node_find(tree, 0);
@@ -360,9 +360,9 @@ int test_balance(void)
     node = node_find(tree, i);
     TEST_1(node); TEST(node->value, i);
     redblack_remove(&tree, node);
-    TEST_1(node->parent == NULL && 
-	   node->left == NULL && 
-	   node->right == NULL); 
+    TEST_1(node->parent == NULL &&
+	   node->left == NULL &&
+	   node->right == NULL);
     TEST_1(redblack_height(tree) <= 2 * (int)log2ceil(N - i + 1));
     TEST_1(redblack_check(tree));
   }
@@ -371,7 +371,7 @@ int test_balance(void)
 
   for (i = N - 1; i >= 0; i--) {
     o = (void *)-1;
-    TEST(redblack_insert(&tree, nodes[i], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[i], &o), 0);
     TEST_P(o, NULL);
     TEST_1(redblack_height(tree) <= 2 * (int)log2ceil(N - i + 1));
     TEST_1(redblack_check(tree));
@@ -394,7 +394,7 @@ int test_balance(void)
     int sn = (i * 57) % N;
     o = (void *)-1;
     TEST(nodes[sn]->inserted, 0);
-    TEST(redblack_insert(&tree, nodes[sn], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[sn], &o), 0);
     nodes[sn]->inserted = 1;
     TEST_P(o, NULL);
     TEST_1(redblack_height(tree) <= 2 * (int)log2ceil(i + 1 + 1));
@@ -422,7 +422,7 @@ int test_balance(void)
     int sn = (i * 517) % N;	/* relative prime to N */
     o = (void *)-1;
     TEST(nodes[sn]->inserted, 0);
-    TEST(redblack_insert(&tree, nodes[sn], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[sn], &o), 0);
     nodes[sn]->inserted = 1;
     TEST_P(o, NULL);
     TEST_1(redblack_height(tree) <= 2 * (int)log2ceil(i + 1 + 1));
@@ -450,7 +450,7 @@ int test_balance(void)
     int sn = (i * 1957) % N;	/* relative prime to N */
     o = (void *)-1;
     TEST(nodes[sn]->inserted, 0);
-    TEST(redblack_insert(&tree, nodes[sn], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[sn], &o), 0);
     nodes[sn]->inserted = 1;
     TEST_P(o, NULL);
     TEST_1(redblack_height(tree) <= 2 * (int)log2ceil(i + 1 + 1));
@@ -480,13 +480,13 @@ int test_balance(void)
     int sn = N - i - 1;
     TEST(nodes[i]->inserted, 0);
     o = (void *)-1;
-    TEST(redblack_insert(&tree, nodes[i], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[i], &o), 0);
     TEST_P(o, NULL);
     nodes[i]->inserted = 1;
 
     TEST(nodes[sn]->inserted, 0);
     o = (void *)-1;
-    TEST(redblack_insert(&tree, nodes[sn], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[sn], &o), 0);
     TEST_P(o, NULL);
     nodes[sn]->inserted = 1;
   }
@@ -516,13 +516,13 @@ int test_balance(void)
     int sn = N - i - 1;
     TEST(nodes[i]->inserted, 0);
     o = (void *)-1;
-    TEST(redblack_insert(&tree, nodes[i], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[i], &o), 0);
     TEST_P(o, NULL);
     nodes[i]->inserted = 1;
 
     TEST(nodes[sn]->inserted, 0);
     o = (void *)-1;
-    TEST(redblack_insert(&tree, nodes[sn], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[sn], &o), 0);
     TEST_P(o, NULL);
     nodes[sn]->inserted = 1;
   }
@@ -552,13 +552,13 @@ int test_balance(void)
     int sn = N / 2 + i;
     TEST(nodes[i]->inserted, 0);
     o = (void *)-1;
-    TEST(redblack_insert(&tree, nodes[i], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[i], &o), 0);
     TEST_P(o, NULL);
     nodes[i]->inserted = 1;
 
     TEST(nodes[sn]->inserted, 0);
     o = (void *)-1;
-    TEST(redblack_insert(&tree, nodes[sn], &o), 0); 
+    TEST(redblack_insert(&tree, nodes[sn], &o), 0);
     TEST_P(o, NULL);
     nodes[sn]->inserted = 1;
   }
@@ -583,13 +583,13 @@ int test_balance(void)
   TEST_P(tree, NULL);
 
   /* Insert in perfect order ... */
-  
+
   for (j = N / 2; j > 0; j /= 2) {
     for (i = N - j; i >= 0; i -= j) {
       if (nodes[i]->inserted)
 	continue;
       o = (void *)-1;
-      TEST(redblack_insert(&tree, nodes[i], &o), 0); 
+      TEST(redblack_insert(&tree, nodes[i], &o), 0);
       TEST_P(o, NULL);
       nodes[i]->inserted = 1;
     }

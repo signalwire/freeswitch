@@ -24,7 +24,7 @@
 
 /**@CFILE sresolv.c
  * @brief Sofia DNS Resolver interface using su_root_t.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @author Teemu Jalava <Teemu.Jalava@nokia.com>
  * @author Mikko Haataja
@@ -78,17 +78,17 @@ struct sres_sofia_s {
   sres_sofia_register_t srs_reg[SRES_MAX_NAMESERVERS];
 };
 
-static int sres_sofia_update(sres_sofia_t *, 
+static int sres_sofia_update(sres_sofia_t *,
 			     su_socket_t new_socket,
 			     su_socket_t old_socket);
 
-static void sres_sofia_timer(su_root_magic_t *magic, 
+static void sres_sofia_timer(su_root_magic_t *magic,
 			     su_timer_t *t,
 			     sres_sofia_t *arg);
 
 static int sres_sofia_set_timer(sres_sofia_t *srs, unsigned long interval);
 
-static int sres_sofia_poll(su_root_magic_t *, su_wait_t *, 
+static int sres_sofia_poll(su_root_magic_t *, su_wait_t *,
 			   sres_sofia_register_t *);
 
 /**Create a resolver.
@@ -97,7 +97,7 @@ static int sres_sofia_poll(su_root_magic_t *, su_wait_t *,
  * the resolver object using the Sofia asynchronous reactor #su_root_t.
  */
 sres_resolver_t *
-sres_resolver_create(su_root_t *root, 
+sres_resolver_create(su_root_t *root,
 		     char const *conf_file_path,
 		     tag_type_t tag, tag_value_t value, ...)
 {
@@ -127,7 +127,7 @@ sres_resolver_create(su_root_t *root,
     srs->srs_socket = INVALID_SOCKET;
 
     sres_resolver_set_async(res, sres_sofia_update, srs, 0);
-    
+
     t = su_timer_create(su_root_task(root), SRES_RETRANSMIT_INTERVAL);
     srs->srs_timer = t;
 
@@ -150,7 +150,7 @@ sres_resolver_create(su_root_t *root,
 }
 
 /** Destroy a resolver object. */
-int 
+int
 sres_resolver_destroy(sres_resolver_t *res)
 {
   sres_sofia_t *srs;
@@ -163,9 +163,9 @@ sres_resolver_destroy(sres_resolver_t *res)
     return su_seterrno(EINVAL);
 
   /* Remove sockets from too, zap timers. */
-  sres_sofia_update(srs, INVALID_SOCKET, INVALID_SOCKET); 
+  sres_sofia_update(srs, INVALID_SOCKET, INVALID_SOCKET);
 
-  sres_resolver_unref(res); 
+  sres_resolver_unref(res);
 
   return 0;
 }
@@ -229,7 +229,7 @@ static int sres_sofia_update(sres_sofia_t *srs,
 
       reg = srs->srs_reg + i;
     }
-    else 
+    else
       reg = old_reg;
   }
 
@@ -271,7 +271,7 @@ static int sres_sofia_update(sres_sofia_t *srs,
 
   SU_DEBUG_3(("sres: %s: %s\n", what, su_strerror(error)));
 
-  return su_seterrno(error);			
+  return su_seterrno(error);
 }
 
 
@@ -317,20 +317,20 @@ su_socket_t sres_resolver_root_socket(sres_resolver_t *res)
       return INVALID_SOCKET;
   }
 
-  return srs->srs_socket; 
+  return srs->srs_socket;
 }
 
 
 /** Sofia timer wrapper. */
-static 
-void 
+static
+void
 sres_sofia_timer(su_root_magic_t *magic, su_timer_t *t, sres_sofia_t *srs)
 {
   sres_resolver_timer(srs->srs_resolver, -1);
 }
 
 /** Sofia timer set wrapper. */
-static 
+static
 int
 sres_sofia_set_timer(sres_sofia_t *srs, unsigned long interval)
 {
@@ -342,10 +342,10 @@ sres_sofia_set_timer(sres_sofia_t *srs, unsigned long interval)
 
 
 /** Sofia poll/select wrapper, called by su_root_t object */
-static 
-int 
-sres_sofia_poll(su_root_magic_t *magic, 
-		su_wait_t *w, 
+static
+int
+sres_sofia_poll(su_root_magic_t *magic,
+		su_wait_t *w,
 		sres_sofia_register_t *reg)
 {
   sres_sofia_t *srs = reg->reg_ptr;

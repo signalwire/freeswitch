@@ -22,7 +22,7 @@
  *
  */
 
-/**@CFILE sip_time.c 
+/**@CFILE sip_time.c
  * @brief SIP time handling
  *
  * Functions for handling time and dates in SIP.
@@ -53,7 +53,7 @@ sip_time_t sip_now(void)
 
 /**@ingroup sip_expires
  *
- * Calculate the expiration time for a SIP @Contact. 
+ * Calculate the expiration time for a SIP @Contact.
  *
  * @param m     @Contact header
  * @param ex    @Expires header
@@ -66,8 +66,8 @@ sip_time_t sip_now(void)
  *
  * @note If @a now is 0, the function gets the current time using sip_now().
  *
- * @return 
- *   The expiration time in seconds. 
+ * @return
+ *   The expiration time in seconds.
  */
 sip_time_t sip_contact_expires(sip_contact_t const *m,
 			       sip_expires_t const *ex,
@@ -92,7 +92,7 @@ sip_time_t sip_contact_expires(sip_contact_t const *m,
   }
 
   if (time) {
-    if (date) 
+    if (date)
       now = date->d_time;
     else if (now == 0)
       now = sip_now();

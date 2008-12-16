@@ -69,7 +69,7 @@ send them to network, and then free the message:
    show_critical_error(sdp_printing_error(printer));
  }
  sdp_printer_free(printer);
-@endcode 
+@endcode
 
 @section sdp_example Example
 
@@ -79,7 +79,7 @@ version number in the origin line, and encodes the SDP description again to
 @a buf.
 
 @code
-size_t increment_sdp_version(char buf[], size_t bsize, 
+size_t increment_sdp_version(char buf[], size_t bsize,
                              char const *original, size_t osize)
 {
   su_home_t home[1] = { SU_HOME_INIT(home) };
@@ -89,7 +89,7 @@ size_t increment_sdp_version(char buf[], size_t bsize,
 
   if (sdp_session(parser)) {
     sdp_session_t *sdp = sdp_session(parser);
-    
+
     sdp->sdp_origin->o_version++;
 
     printer = sdp_print(home, sdp, buf, bsize, 0);
@@ -98,19 +98,19 @@ size_t increment_sdp_version(char buf[], size_t bsize,
       retval = sdp_message_size(printer);
     }
     else {
-      fprintf(stderr, "increment_sdp_version: %s\n", 
+      fprintf(stderr, "increment_sdp_version: %s\n",
               sdp_printing_error(printer));
     }
 
     sdp_printer_free(printer);
   }
   else {
-    fprintf(stderr, "increment_sdp_version: %s\n", 
+    fprintf(stderr, "increment_sdp_version: %s\n",
             sdp_parsing_error(parser));
   }
 
   sdp_parser_free(parser);
-      
+
   su_home_deinit(home);
 
   return retval;

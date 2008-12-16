@@ -1,33 +1,33 @@
 /*!
 
 @page docguide Documentation Guidelines
- 
+
 @section doxygen Using Doxygen
 
 Doxygen is a document generation program, used by many C/C++ projects. Its
-home page is at <a href="http://www.doxygen.org">http://www.doxygen.org</a>. 
+home page is at <a href="http://www.doxygen.org">http://www.doxygen.org</a>.
 The Sofia documentation is written using Doxygen.
 
 Doxygen works by extracting the documentation data both from the actual
-C/C++ source code and from the specially formatted comments. 
-The comments can contain some Javadoc-like 
-@ref doxycommands "special commands". 
+C/C++ source code and from the specially formatted comments.
+The comments can contain some Javadoc-like
+@ref doxycommands "special commands".
 
 In general the the style of the comments and documentation should follow the
 <a href="http://java.sun.com/j2se/javadoc/writingdoccomments/">
 javadoc style guide</a>.
 
 A Doxygen comment must either contain reference about the entity
-it is describing, e.g., command 
+it is describing, e.g., command
 \@file when describing files:
 @verbatim
 /**
- * @file foo.c 
- * 
+ * @file foo.c
+ *
  * Implementation of foo. The foo takes care of grokking xyzzy.
- * 
+ *
  * @author Jaska Jokunen <jaska.jokunen@company.com> \n
- * 
+ *
  * @date Created: Wed Oct 20 15:06:51 EEST 2004 jasjoku
  */
 @endverbatim
@@ -40,7 +40,7 @@ comment. For example, documenting a function happens like this:
 /**
  * Orches a candometer. If orching candometer is not possible, it
  * tries to schadule hearping.
- * 
+ *
  * @param[in]  k        pointer to a candometer
  * @param[in]  level    orching level
  * @param[out] return_hearping return value for schaduled hearping
@@ -59,15 +59,15 @@ int orch(cando_t *k, int level, hearping_t *return_hearping)
 @subsection doxyfile Doxyfile and Doxyfile.conf
 
 The doxygen options are specified through a configuration file,
-<i>Doxyfile</i>. As a convention, a module-specific Doxyfile includes 
-a common file libsofia-sip-ua/docs/Doxyfile.conf. This makes it possible 
+<i>Doxyfile</i>. As a convention, a module-specific Doxyfile includes
+a common file libsofia-sip-ua/docs/Doxyfile.conf. This makes it possible
 to keep the module-specific Doxyfiles as clean as possible:
 
 @code
 PROJECT_NAME         = "ipt"
 OUTPUT_DIRECTORY     = ../docs/ipt
 
-INPUT 		     = ipt.docs . 
+INPUT 		     = ipt.docs .
 
 @INCLUDE = ../Doxyfile.conf
 
@@ -80,7 +80,7 @@ From the file above, you can observe some conventions. The
 Doxygen-generated HTML documentation is collected in @b docs
 subdirectory at top level. A separate output directory is created for
 each submodule under it. Doxytags for the module are generated in the @e
-doxytags file in the output directory. 
+doxytags file in the output directory.
 
 @subsection module_docs Module documentation in \<module\>.docs
 
@@ -105,7 +105,7 @@ Utility library for IP Telephony applications.
 
 @section ipt_overview Overview
 
-This module contain some routines useful for IPT applications, like 
+This module contain some routines useful for IPT applications, like
 - ...
 - ...
 */
@@ -115,7 +115,7 @@ This module contain some routines useful for IPT applications, like
 
 In this section we go through the most common Doxygen commands. All
 the commands are explained in the manual.
-The commands include 
+The commands include
 - @ref doxystyle "style commands (@@a, @@b, @@c, @@e, @@em, @@p)"
 - @ref doxyfuncs "function parameters and return values (@@param, @@return, @@retval)"
 
@@ -123,17 +123,17 @@ The commands include
 
 The text style can be changed with @@b @b (bold), @@c @c (code), or
 @@e @e (italic) commands. Function argument names use style command
-@@a. 
+@@a.
 
 For example, a sentence "The @b Content-Type header @a ct specifies the @e
 media-type of the message body, e.g., @c audio/amr would be AMR-encoded
 audio." is produced with commands like
 @code
-The @b Content-Type header @a ct specifies the @e media-type of 
+The @b Content-Type header @a ct specifies the @e media-type of
 the message body, e.g., @c audio/amr would be AMR-encoded audio.
-@endcode 
+@endcode
 
-The style commands have synonyms, e.g., @@em and @@e mean same, as 
+The style commands have synonyms, e.g., @@em and @@e mean same, as
 well as @@c and @@p.
 
 @subsection doxyfuncs Function Parameters and Return Values - @param, @return, @retval
@@ -150,11 +150,11 @@ values, e.g., enumeration or success/failure indication.
 
 @verbatim
 /**Schadule hearping.
- * 
+ *
  * The function schadule() schadules a hearping.
- * 
+ *
  * @param[in] h pointer to hearping
- * 
+ *
  * @retval 0  hearping was successful
  * @retval -1 an error occurred
  */
@@ -170,12 +170,12 @@ An example code fragment can be included using @@code and @@endcode
 commands.
 @verbatim
 /**Destroy a hearping.
- * 
+ *
  * The function hearping_destroy() deinitializes a hearping and
- * reclaims the memory allocated for it. 
- * 
+ * reclaims the memory allocated for it.
+ *
  * @param[in,out] h pointer to pointer to hearping
- * 
+ *
  * The function clears the pointer to hearping, so it must be called
  * with a pointer to pointer:
  * @code
@@ -204,7 +204,7 @@ usually at top after the LGPL reference, containing @@file command or alias
 When the structure of the documentation does not follow directory or file
 structure, it is possible to use grouping commands @@defgroup and @@ingroup.
 The command @@defgroup creates a group, and @@ingroup adds an entry to an
-group. 
+group.
 
 @subsection doclinking Creating Links
 
@@ -215,7 +215,7 @@ pair of parenthesis (), Doxygen creates a link to it. If a type name or
 variable is prefixed with hash @#, Doxygen creates a link to it.
 
 It is also possible to create links with freely selected link to
-documentation entries with @@link and @@endlink commands. 
+documentation entries with @@link and @@endlink commands.
 
 When the link target is a named page, section, or subsection, it is possible
 to use the @@ref command.

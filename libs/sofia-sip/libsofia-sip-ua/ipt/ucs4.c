@@ -35,7 +35,7 @@
 #include "utf8internal.h"
 
 /*
- * Decode utf8 string into ucs4 string, 
+ * Decode utf8 string into ucs4 string,
  * return number of ucs4 characters decoded
  */
 size_t ucs4decode(ucs4 *dst, size_t dst_size, const utf8 *s)
@@ -75,9 +75,9 @@ size_t ucs4decode(ucs4 *dst, size_t dst_size, const utf8 *s)
  * Encode ucs4 string into utf8 string,
  * return number of utf8 bytes encoded including final zero
  *
- * 'quote' may contain an optional quoting table containing 
+ * 'quote' may contain an optional quoting table containing
  * non-zero for all ASCII characters to quote
- * 
+ *
  */
 size_t ucs4encode(utf8 *dst, const ucs4 *s, size_t n, const char quote[128])
 {
@@ -151,7 +151,7 @@ size_t ucs4enclen(const ucs4 *s, size_t n, const char quote[128])
 {
   size_t len = 1;
   ucs4 c;
-  
+
   while (n-- > 0) {
     c = *s++;
     if (c < 0x80u)
@@ -183,7 +183,7 @@ size_t ucs4len(ucs4 const *s)
 {
   size_t len = 0;
 
-  if (s) while (*s++) 
+  if (s) while (*s++)
     len++;
 
   return len;
@@ -203,7 +203,7 @@ int ucs4cmp(ucs4 const *s1, ucs4 const *s2)
 }
 
 /*
- * Compare UCS4 string prefix 
+ * Compare UCS4 string prefix
  */
 int ucs4ncmp(ucs4 const *s1, ucs4 const *s2, size_t n)
 {

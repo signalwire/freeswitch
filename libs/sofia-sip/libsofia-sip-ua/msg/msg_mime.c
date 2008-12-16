@@ -132,7 +132,7 @@ char const msg_mime_version_1_0[] = "MIME/1.0";
  *                 part. Note that the semantics of a part differ from the
  *                 semantics of a message, as described in the text.>
  *
- *   encapsulation := delimiter transport-padding CRLF 
+ *   encapsulation := delimiter transport-padding CRLF
  *                    body-part
  *
  *   close-delimiter := delimiter "--"
@@ -144,26 +144,26 @@ char const msg_mime_version_1_0[] = "MIME/1.0";
  * @endcode
  *
  * @par Parsing a Multipart Message
- * 
+ *
  * When a message body contains a multipart entity (in other words, it has a
  * MIME media type of "multipart"), the application can split the multipart
  * entity into body parts
  *
  * The parsing is relatively simple, the application just gives a memory
- * home object, a Content-Type header object and message body object as an 
+ * home object, a Content-Type header object and message body object as an
  * argument to msg_multipart_parse() function:
  * @code
- *    if (sip->sip_content_type && 
+ *    if (sip->sip_content_type &&
  *        strncasecmp(sip->sip_content_type, "multipart/", 10) == 0) {
  *      msg_multipart_t *mp;
  *
  *      if (sip->sip_multipart)
  *        mp = sip->sip_multipart;
  *      else
- *        mp = msg_multipart_parse(msg_home(msg), 
+ *        mp = msg_multipart_parse(msg_home(msg),
  *                                 sip->sip_content_type,
  *                                 (sip_payload_t *)sip->sip_payload);
- * 
+ *
  *      if (mp)
  *        ... processing multipart ...
  *      else
@@ -194,12 +194,12 @@ char const msg_mime_version_1_0[] = "MIME/1.0";
  *   msg_header_t *h = NULL;
  *   char *b;
  *   size_t len, offset;
- * 
+ *
  *   mp = msg_multipart_create(home, "text/html;level=3", html, strlen(html));
  *   mp->mp_next = msg_multipart_create(home, "image/gif", gif, giflen);
  *
  *   c = sip_content_type_make(home, "multipart/mixed");
- * 
+ *
  *   // Add delimiters to multipart, and boundary parameter to content-type
  *   if (msg_multipart_complete(home, c, mp) < 0)
  *     return -1;		// Error
@@ -209,14 +209,14 @@ char const msg_mime_version_1_0[] = "MIME/1.0";
  *   if (msg_multipart_serialize(&h, mp) < 0)
  *     return -1;		// Error
  *
- *   // Encode all multipart components 
+ *   // Encode all multipart components
  *   len = msg_multipart_prepare(msg, mp, 0);
  *   if (len < 0)
  *     return -1;		// Error
  *
  *   pl = sip_payload_create(home, NULL, len);
  *
- *   // Copy each element from multipart to pl_data 
+ *   // Copy each element from multipart to pl_data
  *   b = pl->pl_data;
  *   for (offset = 0, h = mp; offset < len; h = h->sh_succ) {
  *     memcpy(b + offset, h->sh_data, h->sh_len);
@@ -292,7 +292,7 @@ msg_multipart_boundary(su_home_t *home, char const *b)
 
 
 /** Boundary chars. */
-static char const bchars[] = 
+static char const bchars[] =
 "'()+_,-./:=?"
 "0123456789"
 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -331,7 +331,7 @@ msg_multipart_search_boundary(su_home_t *home, char const *p, size_t len)
       }
       return boundary;
     }
-  } 
+  }
 
   /* Look for LF -- */
   for (;(p = memmem(p, end - p, LF "--", 3)); p += 3) {
@@ -362,9 +362,9 @@ msg_multipart_search_boundary(su_home_t *home, char const *p, size_t len)
  * The function msg_multipart_parse() parses a MIME multipart message. The
  * common syntax of multiparts is described in @RFC2046 (section 7).
  *
- * @param[in,out] home home for allocating structures 
- * @param[in]     c    content-type header for multipart 
- * @param[in]     pl   payload structure for multipart 
+ * @param[in,out] home home for allocating structures
+ * @param[in]     c    content-type header for multipart
+ * @param[in]     pl   payload structure for multipart
  *
  * After parsing, the @a pl will contain the plain-text preamble (if any).
  *
@@ -418,7 +418,7 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
 
   /* Split multipart into parts */
   for (;;) {
-    while (p[0] == ' ') 
+    while (p[0] == ' ')
       p++;
 
     p += p[0] == '\r' ? 1 + (p[1] == '\n') : (p[0] == '\n');
@@ -464,7 +464,7 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
       break;
     }
 
-    b = next; p = next + m; 
+    b = next; p = next + m;
   }
 
   if (!mp || !mp->mp_close_delim) {
@@ -516,7 +516,7 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
   blen = strlen(boundary);
 
   for (mp = all; mp; mp = mp->mp_next) {
-    mp->mp_data = boundary; 
+    mp->mp_data = boundary;
     mp->mp_len = blen;
 
     assert(mp->mp_payload || mp->mp_separator);
@@ -546,19 +546,19 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
 }
 
 /**Add all missing parts to the multipart.
- * 
+ *
  * Add missing components such as boundaries between body parts, separators
  * between body-part headers and data, and close-delimiter after last
  * body-part to the multipart message.
- * 
- * @param[in,out] home home for allocating structures 
- * @param[in,out] c    content-type header for multipart 
- * @param[in,out] mp   pointer to first multipart structure 
+ *
+ * @param[in,out] home home for allocating structures
+ * @param[in,out] c    content-type header for multipart
+ * @param[in,out] mp   pointer to first multipart structure
  *
  * @retval 0 when successful
  * @retval -1 upon an error
  *
- * @ERRORS 
+ * @ERRORS
  * @ERROR EBADMSG
  * The @b Content-Type header @a c is malformed, or multipart message
  * contains a malformed @b Content-Type header.
@@ -635,7 +635,7 @@ int msg_multipart_complete(su_home_t *home,
 
     if (mp->mp_next == NULL) {
       if (!mp->mp_close_delim)
-	mp->mp_close_delim = msg_payload_format(home, "%.*s--" CR LF, 
+	mp->mp_close_delim = msg_payload_format(home, "%.*s--" CR LF,
 						(int)m, boundary);
       if (!mp->mp_close_delim)
 	return -1;
@@ -813,7 +813,7 @@ issize_t msg_multipart_prepare(msg_t *msg, msg_multipart_t *mp, int flags)
   if (!mp || !mp->mp_data)
     return -1;
 
-  if (!mp->mp_common->h_data || 
+  if (!mp->mp_common->h_data ||
       mp->mp_common->h_len != mp->mp_len - 2 ||
       memcmp(mp->mp_common->h_data, mp->mp_data + 2, mp->mp_len - 2)) {
     mp->mp_common->h_data = mp->mp_data + 2;
@@ -833,10 +833,10 @@ issize_t msg_multipart_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen
   assert(h && msg_is_multipart(h));
 
   msg_payload_init(pl);
-  
+
   result = (msg_multipart_t *)h;
 
-  pl->pl_data = s; 
+  pl->pl_data = s;
   pl->pl_len = slen;
 
   mp = msg_multipart_parse(tmphome, NULL, pl);
@@ -845,14 +845,14 @@ issize_t msg_multipart_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen
     *result = *mp;
 
     if (result->mp_common->h_succ->sh_prev)
-      result->mp_common->h_succ->sh_prev = 
+      result->mp_common->h_succ->sh_prev =
 	&result->mp_common->h_succ;
 
     su_free(tmphome, mp);
-    
+
     su_home_move(home, tmphome);
   }
-   
+
   su_home_deinit(tmphome);
 
   return mp ? 0 : -1;
@@ -877,7 +877,7 @@ isize_t msg_multipart_dup_xtra(msg_header_t const *h, isize_t offset)
   offset = msg_payload_dup_xtra(h, offset);
 
   for (hh = (msg_header_t const **)&((msg_pub_t *)mp)->msg_request;
-       (char *)hh <= (char *)&mp->mp_close_delim; 
+       (char *)hh <= (char *)&mp->mp_close_delim;
        hh++) {
     for (h = *hh; h; h = h->sh_next) {
       MSG_STRUCT_SIZE_ALIGN(offset);
@@ -899,7 +899,7 @@ char *msg_multipart_dup_one(msg_header_t *dst, msg_header_t const *src,
   b = msg_payload_dup_one(dst, src, b, xtra);
 
   for (hh = &((msg_pub_t*)mp)->msg_request;
-       (char *)hh <= (char *)&mp->mp_close_delim; 
+       (char *)hh <= (char *)&mp->mp_close_delim;
        hh++) {
     for (h = *hh; h; h = h->sh_next) {
       MSG_STRUCT_ALIGN(b);
@@ -972,8 +972,8 @@ unsigned msg_q_value(char const *q)
  *
  * The function msg_mediatype_d() parses a mediatype string.
  *
- * @param[in,out] ss    string to be parsed 
- * @param[out]    type  value result for media type 
+ * @param[in,out] ss    string to be parsed
+ * @param[out]    type  value result for media type
  *
  * @retval 0 when successful,
  * @retval -1 upon an error.
@@ -1059,7 +1059,7 @@ issize_t msg_mediatype_d(char **ss, char const **type)
  */
 
 msg_hclass_t msg_accept_class[] =
-MSG_HEADER_CLASS(msg_, accept, "Accept", "", ac_params, apndlist, 
+MSG_HEADER_CLASS(msg_, accept, "Accept", "", ac_params, apndlist,
 		 msg_accept, msg_accept);
 
 issize_t msg_accept_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
@@ -1136,8 +1136,8 @@ char *msg_accept_dup_one(msg_header_t *dst, msg_header_t const *src,
   return b;
 }
 
-/** Update parameter(s) for Accept header. */ 
-int msg_accept_update(msg_common_t *h, 
+/** Update parameter(s) for Accept header. */
+int msg_accept_update(msg_common_t *h,
 		      char const *name, isize_t namelen,
 		      char const *value)
 {
@@ -1223,8 +1223,8 @@ char *msg_accept_any_dup_one(msg_header_t *dst, msg_header_t const *src,
   return b;
 }
 
-/** Update parameter(s) for Accept-* header. */ 
-int msg_accept_any_update(msg_common_t *h, 
+/** Update parameter(s) for Accept-* header. */
+int msg_accept_any_update(msg_common_t *h,
 			  char const *name, isize_t namelen,
 			  char const *value)
 {
@@ -1431,7 +1431,7 @@ issize_t msg_accept_language_e(char b[], isize_t bsiz, msg_header_t const *h, in
  */
 
 /**@ingroup msg_content_disposition
- * @typedef struct msg_content_disposition_s msg_content_disposition_t; 
+ * @typedef struct msg_content_disposition_s msg_content_disposition_t;
  *
  * The structure msg_content_disposition_t contains representation of an @b
  * Content-Disposition header.
@@ -1548,7 +1548,7 @@ int msg_content_disposition_update(msg_common_t *h,
  */
 
 /**@ingroup msg_content_encoding
- * @typedef struct msg_list_s msg_content_encoding_t; 
+ * @typedef struct msg_list_s msg_content_encoding_t;
  *
  * The structure msg_content_encoding_t contains representation of an @b
  * Content-Encoding header.
@@ -1715,7 +1715,7 @@ msg_content_length_t *msg_content_length_create(su_home_t *home, uint32_t n)
  */
 
 /**@ingroup msg_content_md5
- * @typedef struct msg_generic_s msg_content_md5_t; 
+ * @typedef struct msg_generic_s msg_content_md5_t;
  *
  * The structure msg_content_md5_t contains representation of an @b
  * Content-MD5 header.
@@ -1896,7 +1896,7 @@ char *msg_content_type_dup_one(msg_header_t *dst, msg_header_t const *src,
  */
 
 /**@ingroup msg_mime_version
- * @typedef struct msg_generic_s msg_mime_version_t; 
+ * @typedef struct msg_generic_s msg_mime_version_t;
  *
  * The structure msg_mime_version_t contains representation of an @b
  * MIME-Version header.
@@ -1935,7 +1935,7 @@ issize_t msg_mime_version_e(char b[], isize_t bsiz, msg_header_t const *h, int f
  */
 
 /**@ingroup msg_content_location
- * @typedef struct msg_generic_s msg_content_location_t; 
+ * @typedef struct msg_generic_s msg_content_location_t;
  *
  * The structure msg_content_location_t contains representation of an @b
  * Content-Location header.
@@ -2000,7 +2000,7 @@ MSG_HEADER_CLASS_G(content_base, "Content-Base", "", single);
  */
 
 /**@ingroup msg_content_transfer_encoding
- * @typedef struct msg_generic_s msg_content_transfer_encoding_t; 
+ * @typedef struct msg_generic_s msg_content_transfer_encoding_t;
  *
  * The structure msg_content_transfer_encoding_t contains representation of
  * an @b Content-Transfer-Encoding header.
@@ -2027,11 +2027,11 @@ MSG_HEADER_CLASS_G(content_transfer_encoding, "Content-Transfer-Encoding",
 
 /**@ingroup msg_mime
  * @defgroup msg_warning Warning Header
- * 
+ *
  * The Warning response-header field is used to carry additional information
  * about the status of a response. Its syntax is defined in [S20.43]
  * as follows:
- * 
+ *
  * @code
  *    Warning        =  "Warning" HCOLON warning-value *(COMMA warning-value)
  *    warning-value  =  warn-code SP warn-agent SP warn-text
@@ -2045,7 +2045,7 @@ MSG_HEADER_CLASS_G(content_transfer_encoding, "Content-Transfer-Encoding",
  */
 
 /**@ingroup msg_warning
- * @typedef struct msg_warning_s msg_warning_t; 
+ * @typedef struct msg_warning_s msg_warning_t;
  *
  * The structure msg_warning_t contains representation of an @b
  * Warning header.
@@ -2073,7 +2073,7 @@ issize_t msg_warning_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
     *s = '\0', s += span_lws(s + 1) + 1;
 
   /* Parse protocol */
-  if (!IS_DIGIT(*s))	
+  if (!IS_DIGIT(*s))
     return -1;
   w->w_code = strtoul(s, &s, 10);
   skip_lws(&s);
@@ -2098,7 +2098,7 @@ issize_t msg_warning_e(char b[], isize_t bsiz, msg_header_t const *h, int f)
   int n;
   size_t m;
 
-  n = snprintf(b, bsiz, "%03u %s%s%s ", 
+  n = snprintf(b, bsiz, "%03u %s%s%s ",
 	       w->w_code, w->w_host, port ? ":" : "", port ? port : "");
   if (n < 0)
     return n;
@@ -2122,9 +2122,9 @@ isize_t msg_warning_dup_xtra(msg_header_t const *h, isize_t offset)
   return offset;
 }
 
-char *msg_warning_dup_one(msg_header_t *dst, 
-			  msg_header_t const *src, 
-			  char *b, 
+char *msg_warning_dup_one(msg_header_t *dst,
+			  msg_header_t const *src,
+			  char *b,
 			  isize_t xtra)
 {
   msg_warning_t *w = (msg_warning_t *)dst;
@@ -2143,6 +2143,6 @@ char *msg_warning_dup_one(msg_header_t *dst,
 
 #define msg_warning_update NULL
 
-msg_hclass_t msg_warning_class[] = 
-  MSG_HEADER_CLASS(msg_, warning, "Warning", "", w_common, append, 
+msg_hclass_t msg_warning_class[] =
+  MSG_HEADER_CLASS(msg_, warning, "Warning", "", w_common, append,
 		   msg_warning, msg_warning);

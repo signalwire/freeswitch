@@ -24,9 +24,9 @@
 
 #ifndef NTA_STATELESS_H
 /** Defined when <sofia-sip/nta_stateless.h> has been included. */
-#define NTA_STATELESS_H 
+#define NTA_STATELESS_H
 
-/**@file sofia-sip/nta_stateless.h   
+/**@file sofia-sip/nta_stateless.h
  * @brief NTA functions for stateless SIP processing.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -46,18 +46,18 @@ SOFIA_BEGIN_DECLS
  *			      sip_t *sip);
  *
  * Callback for incoming messages.
- * 
+ *
  * The typedef nta_message_f() defines prototype for the callback functions
  * invoked by NTA when it has received an incoming message that will be
  * processed statelessly.
- * 
+ *
  * The application can either discard the message by calling
  * nta_msg_discard(), forward it by calling nta_msg_tsend() or reply to the
  * message by calling nta_msg_treply(). When application wants to process a
  * request statefully, it passes the message to a leg with the function
  * nta_leg_stateful(). A new leg can be created by calling the function
  * nta_leg_tcreate().
- * 
+ *
  * @par Prototype
  * @code
  * int message_callback(nta_agent_magic_t *context,
@@ -65,7 +65,7 @@ SOFIA_BEGIN_DECLS
  *                      msg_t *msg,
  *                      sip_t *sip);
  * @endcode
- * 
+ *
  * @param context agent context
  * @param agent   agent handle
  * @param msg     received message
@@ -90,7 +90,7 @@ int nta_msg_mreply(nta_agent_t *agent,
 
 /** Reply to a request message. */
 SOFIAPUBFUN
-int nta_msg_treply(nta_agent_t *self, 
+int nta_msg_treply(nta_agent_t *self,
 		   msg_t *msg,
 		   int status, char const *phrase,
 		   tag_type_t tag, tag_value_t value, ...);

@@ -1,12 +1,12 @@
 #! /bin/sed -f
-# 
+#
 # Run this script like
 #
 # fix-include-sofia-sip -i.bak source.h source.c
 #
 # or
 #
-# find . -name '*.[hc]' -print0 | xargs -0 fix-include-sofia-sip -i.bak 
+# find . -name '*.[hc]' -print0 | xargs -0 fix-include-sofia-sip -i.bak
 #
 /^ *# *include/ {
 # Not using features.h...

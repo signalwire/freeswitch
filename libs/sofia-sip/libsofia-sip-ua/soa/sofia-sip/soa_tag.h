@@ -48,7 +48,7 @@ SOFIAPUBVAR tagi_t soa_tag_list[];
 SOFIAPUBVAR tag_typedef_t soatag_any;
 
 /**
- * Media states 
+ * Media states
  */
 enum {
   SOA_ACTIVE_REJECTED = -8, /**< Media rejected in negotiation */
@@ -164,7 +164,7 @@ SOFIAPUBVAR tag_typedef_t soatag_rtp_select;
 SOFIAPUBVAR tag_typedef_t soatag_rtp_select_ref;
 
 /** Parameter type for SOATAG_RTP_SELECT() */
-enum { 
+enum {
   SOA_RTP_SELECT_SINGLE,	/**< Select the best common codec */
   SOA_RTP_SELECT_COMMON,	/**< Select all common codecs */
   SOA_RTP_SELECT_ALL		/**< Select all local codecs */
@@ -183,7 +183,7 @@ SOFIAPUBVAR tag_typedef_t soatag_rtp_sort_ref;
 /** Parameter type for SOATAG_RTP_SORT() */
 enum {
   SOA_RTP_SORT_DEFAULT,		/**< Select codecs by local preference
-				 *  when media is recvonly, 
+				 *  when media is recvonly,
 				 * remote preference othewise.
 				 */
   SOA_RTP_SORT_LOCAL,		/**< Select codecs by local preference. */

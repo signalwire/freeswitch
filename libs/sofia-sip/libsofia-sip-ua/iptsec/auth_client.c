@@ -57,14 +57,14 @@
 
 #include <assert.h>
 
-static auth_client_t *ca_create(su_home_t *home, 
+static auth_client_t *ca_create(su_home_t *home,
 				char const *scheme,
 				char const *realm);
 
 static void ca_destroy(su_home_t *home, auth_client_t *ca);
 
 static int ca_challenge(auth_client_t *ca,
-			msg_auth_t const *auth, 
+			msg_auth_t const *auth,
 			msg_hclass_t *credential_class,
 			char const *scheme,
 			char const *realm);
@@ -73,9 +73,9 @@ static int ca_info(auth_client_t *ca,
 		   msg_auth_info_t const *ai,
 		   msg_hclass_t *credential_class);
 
-static int ca_credentials(auth_client_t *ca, 
+static int ca_credentials(auth_client_t *ca,
 			  char const *scheme,
-			  char const *realm, 
+			  char const *realm,
 			  char const *user,
 			  char const *pass);
 
@@ -85,19 +85,19 @@ static int ca_clear_credentials(auth_client_t *ca);
 /** Initialize authenticators.
  *
  * The function auc_challenge() merges the challenge @a ch to the list of
- * authenticators @a auc_list.  
+ * authenticators @a auc_list.
  *
  * @param[in,out] auc_list  list of authenticators to be updated
  * @param[in,out] home      memory home used for allocating authenticators
  * @param[in] ch        challenge to be processed
  * @param[in] crcl      credential class
- * 
+ *
  * @retval 1 when challenge was updated
  * @retval 0 when there was no new challenges
  * @retval -1 upon an error
  */
 int auc_challenge(auth_client_t **auc_list,
-		  su_home_t *home, 
+		  su_home_t *home,
 		  msg_auth_t const *ch,
 		  msg_hclass_t *crcl)
 {
@@ -139,7 +139,7 @@ int auc_challenge(auth_client_t **auc_list,
   return retval;
 }
 
-/** Update authentication client. 
+/** Update authentication client.
  *
  * @retval -1 upon an error
  * @retval 0 when challenge did not match
@@ -147,10 +147,10 @@ int auc_challenge(auth_client_t **auc_list,
  * @retval 2 when challenge did match and updated client
  */
 static
-int ca_challenge(auth_client_t *ca, 
+int ca_challenge(auth_client_t *ca,
 		 msg_auth_t const *ch,
 		 msg_hclass_t *credential_class,
-		 char const *scheme, 
+		 char const *scheme,
 		 char const *realm)
 {
   int stale = 0;
@@ -165,7 +165,7 @@ int ca_challenge(auth_client_t *ca,
   if (strcmp(ca->ca_realm, realm))
     return 0;
 
-  if (ca->ca_credential_class && 
+  if (ca->ca_credential_class &&
       ca->ca_credential_class != credential_class)
     return 0;
 
@@ -205,7 +205,7 @@ int ca_challenge(auth_client_t *ca,
  * processed.
  *
  * @bug
- * In principle, SIP allows more than one challenge for a single request. 
+ * In principle, SIP allows more than one challenge for a single request.
  * For example, there can be multiple proxies that each challenge the
  * client. The result of storing authentication info can be quite unexpected
  * if there are more than one authenticator with the given type (specified
@@ -238,7 +238,7 @@ int auc_info(auth_client_t **auc_list,
   return retval;
 }
 
-/** Update authentication client with authentication info. 
+/** Update authentication client with authentication info.
  *
  * @retval -1 upon an error
  * @retval 0 when challenge did not match
@@ -246,7 +246,7 @@ int auc_info(auth_client_t **auc_list,
  * @retval 2 when challenge did match and updated client
  */
 static
-int ca_info(auth_client_t *ca, 
+int ca_info(auth_client_t *ca,
 	    msg_auth_info_t const *info,
 	    msg_hclass_t *credential_class)
 {
@@ -262,7 +262,7 @@ int ca_info(auth_client_t *ca,
     return 0;
 
   if (!ca->ca_auc
-      || (size_t)ca->ca_auc->auc_plugin_size <= 
+      || (size_t)ca->ca_auc->auc_plugin_size <=
          offsetof(auth_client_plugin_t, auc_info)
       || !ca->ca_auc->auc_info)
     return 0;
@@ -283,14 +283,14 @@ int ca_info(auth_client_t *ca,
  *
  * @todo The authentication data format sucks.
  *
- * @param[in,out] auc_list  list of authenticators 
+ * @param[in,out] auc_list  list of authenticators
  * @param[in,out] home      memory home used for allocations
  * @param[in] data          colon-separated authentication data
- * 
+ *
  * @retval 0 when successful
  * @retval -1 upon an error
  */
-int auc_credentials(auth_client_t **auc_list, su_home_t *home, 
+int auc_credentials(auth_client_t **auc_list, su_home_t *home,
 		    char const *data)
 {
   int retval = 0, match;
@@ -317,7 +317,7 @@ int auc_credentials(auth_client_t **auc_list, su_home_t *home,
 	retval = -1;
 	break;
       }
-      if (match) 
+      if (match)
 	retval++;
     }
   }
@@ -330,25 +330,25 @@ int auc_credentials(auth_client_t **auc_list, su_home_t *home,
 /**Feed authentication data to the authenticator.
  *
  * The function auc_credentials() is used to provide the authenticators in
- * with authentication tuple (scheme, realm, user name, secret).  
+ * with authentication tuple (scheme, realm, user name, secret).
  *
  * scheme:"realm":user:pass
  *
  * @todo The authentication data format sucks.
  *
- * @param[in,out] auc_list  list of authenticators 
+ * @param[in,out] auc_list  list of authenticators
  * @param[in] scheme        scheme to use (NULL, if any)
  * @param[in] realm         realm to use (NULL, if any)
- * @param[in] user          username 
+ * @param[in] user          username
  * @param[in] pass          password
- * 
+ *
  * @retval number of updated clients
  * @retval 0 when no client was updated
  * @retval -1 upon an error
  */
-int auc_all_credentials(auth_client_t **auc_list, 
+int auc_all_credentials(auth_client_t **auc_list,
 			char const *scheme,
-			char const *realm, 
+			char const *realm,
 			char const *user,
 			char const *pass)
 {
@@ -363,7 +363,7 @@ int auc_all_credentials(auth_client_t **auc_list,
       match = ca_credentials(*auc_list, scheme, realm, user, pass);
       if (match < 0)
 	return -1;
-      if (match) 
+      if (match)
 	retval++;
     }
   }
@@ -371,9 +371,9 @@ int auc_all_credentials(auth_client_t **auc_list,
   return retval;
 }
 
-int ca_credentials(auth_client_t *ca, 
+int ca_credentials(auth_client_t *ca,
 		   char const *scheme,
-		   char const *realm, 
+		   char const *realm,
 		   char const *user,
 		   char const *pass)
 {
@@ -465,21 +465,21 @@ int auc_copy_credentials(auth_client_t **dst,
 
   return retval;
 }
-      	      
+
 
 /**Clear authentication data from the authenticator.
  *
  * The function auc_clear_credentials() is used to remove the credentials
  * from the authenticators.
  *
- * @param[in,out] auc_list  list of authenticators 
- * @param[in] scheme    scheme (if non-null, remove only matching credentials) 
+ * @param[in,out] auc_list  list of authenticators
+ * @param[in] scheme    scheme (if non-null, remove only matching credentials)
  * @param[in] realm     realm (if non-null, remove only matching credentials)
  *
  * @retval 0 when successful
  * @retval -1 upon an error
  */
-int auc_clear_credentials(auth_client_t **auc_list, 
+int auc_clear_credentials(auth_client_t **auc_list,
 			  char const *scheme,
 			  char const *realm)
 {
@@ -502,7 +502,7 @@ int auc_clear_credentials(auth_client_t **auc_list,
       retval = -1;
       break;
     }
-    if (match) 
+    if (match)
       retval++;
   }
 
@@ -523,7 +523,7 @@ int ca_clear_credentials(auth_client_t *ca)
 }
 
 /** Check if we have all required credentials.
- * 
+ *
  * @retval 1 when authorization can proceed
  * @retval 0 when there is not enough credentials
  *
@@ -553,20 +553,20 @@ int auc_has_authorization(auth_client_t **auc_list)
  * headers to a request. The authentication headers will contain the
  * credentials generated by the list of authenticators.
  *
- * @param[in,out] auc_list  list of authenticators 
+ * @param[in,out] auc_list  list of authenticators
  * @param[out] msg          message to be authenticated
  * @param[out] pub          headers of the message
  * @param[in] method        request method
  * @param[in] url           request URI
  * @param[in] body          message body (NULL if empty)
- * 
+ *
  * @retval 1 when successful
  * @retval 0 when there is not enough credentials
  * @retval -1 upon an error
  */
 int auc_authorization(auth_client_t **auc_list, msg_t *msg, msg_pub_t *pub,
-		      char const *method, 
-		      url_t const *url, 
+		      char const *method,
+		      url_t const *url,
 		      msg_payload_t const *body)
 {
   auth_client_t *ca;
@@ -616,21 +616,21 @@ int auc_authorization(auth_client_t **auc_list, msg_t *msg, msg_pub_t *pub,
  * authentication headers for a request. The list of authentication headers
  * will contain the credentials generated by the list of authenticators.
  *
- * @param[in] auc_list      list of authenticators 
+ * @param[in] auc_list      list of authenticators
  * @param[in] home          memory home used to allocate headers
  * @param[in] method        request method
  * @param[in] url           request URI
  * @param[in] body          message body (NULL if empty)
  * @param[out] return_headers  authorization headers return value
- * 
+ *
  * @retval 1 when successful
  * @retval 0 when there is not enough credentials
  * @retval -1 upon an error
  */
-int auc_authorization_headers(auth_client_t **auc_list, 
+int auc_authorization_headers(auth_client_t **auc_list,
 			      su_home_t *home,
-			      char const *method, 
-			      url_t const *url, 
+			      char const *method,
+			      url_t const *url,
 			      msg_payload_t const *body,
 			      msg_header_t **return_headers)
 {
@@ -666,13 +666,13 @@ int auc_authorization_headers(auth_client_t **auc_list,
 
 static int auc_basic_authorization(auth_client_t *ca,
 				   su_home_t *h,
-				   char const *method, 
-				   url_t const *url, 
+				   char const *method,
+				   url_t const *url,
 				   msg_payload_t const *body,
 				   msg_header_t **);
 
-static const auth_client_plugin_t ca_basic_plugin = 
-{ 
+static const auth_client_plugin_t ca_basic_plugin =
+{
   /* auc_plugin_size: */ sizeof ca_basic_plugin,
   /* auc_size: */        sizeof (auth_client_t),
   /* auc_name: */       "Basic",
@@ -694,15 +694,15 @@ static const auth_client_plugin_t ca_basic_plugin =
  * @param hc   header class for the header to be created
  * @param user user name
  * @param pass password
- * 
+ *
  * @return
- * The function auc_basic_authorization() returns a pointer to newly created 
+ * The function auc_basic_authorization() returns a pointer to newly created
  * authorization header, or NULL upon an error.
  */
-int auc_basic_authorization(auth_client_t *ca, 
+int auc_basic_authorization(auth_client_t *ca,
 			    su_home_t *home,
-			    char const *method, 
-			    url_t const *url, 
+			    char const *method,
+			    url_t const *url,
 			    msg_payload_t const *body,
 			    msg_header_t **return_headers)
 {
@@ -742,7 +742,7 @@ int auc_basic_authorization(auth_client_t *ca,
   userpass[ulen] = ':';
   memcpy(userpass + ulen + 1, pass, plen);
   userpass[uplen] = '\0';
-  
+
   base64_e(base64, b64len + 1, userpass, uplen);
 
   base64[b64len] = '\0';
@@ -767,22 +767,22 @@ typedef struct auth_digest_client_s
   auth_challenge_t cda_ac[1];
 } auth_digest_client_t;
 
-static int auc_digest_challenge(auth_client_t *ca, 
+static int auc_digest_challenge(auth_client_t *ca,
 				msg_auth_t const *ch);
-static int auc_digest_authorization(auth_client_t *ca, 
+static int auc_digest_authorization(auth_client_t *ca,
 				    su_home_t *h,
-				    char const *method, 
-				    url_t const *url, 
+				    char const *method,
+				    url_t const *url,
 				    msg_payload_t const *body,
 				    msg_header_t **);
-static int auc_digest_info(auth_client_t *ca, 
+static int auc_digest_info(auth_client_t *ca,
 			   msg_auth_info_t const *info);
 
-static const auth_client_plugin_t ca_digest_plugin = 
-{ 
+static const auth_client_plugin_t ca_digest_plugin =
+{
   /* auc_plugin_size: */ sizeof ca_digest_plugin,
   /* auc_size: */        sizeof (auth_digest_client_t),
-  /* auc_name: */       "Digest", 
+  /* auc_name: */       "Digest",
   /* auc_challenge: */   auc_digest_challenge,
   /* auc_authorize: */   auc_digest_authorization,
   /* auc_info: */        auc_digest_info,
@@ -866,15 +866,15 @@ static int auc_digest_info(auth_client_t *ca,
  * sip_authorization_class or sip_proxy_authorization_class, as well as
  * http_authorization_class or http_proxy_authorization_class.
  *
- * @retval 1 when authorization headers has been created  
+ * @retval 1 when authorization headers has been created
  * @retval 0 when there is no credentials
  * @retval -1 upon an error
  */
 static
-int auc_digest_authorization(auth_client_t *ca, 
+int auc_digest_authorization(auth_client_t *ca,
 			     su_home_t *home,
-			     char const *method, 
-			     url_t const *url, 
+			     char const *method,
+			     url_t const *url,
 			     msg_payload_t const *body,
 			     msg_header_t **return_headers)
 {
@@ -923,7 +923,7 @@ int auc_digest_authorization(auth_client_t *ca,
   auth_digest_sessionkey(ar, sessionkey, pass);
   auth_digest_response(ar, response, sessionkey, method, data, dlen);
 
-  h = msg_header_format(home, hc, 
+  h = msg_header_format(home, hc,
 			"Digest "
 			"username=\"%s\", "
 			"realm=\"%s\", "
@@ -935,21 +935,21 @@ int auc_digest_authorization(auth_client_t *ca,
 			"response=\"%s\""
 			"%s%s"
 			"%s%s",
-			ar->ar_username, 
+			ar->ar_username,
 			ar->ar_realm,
 			ar->ar_nonce,
-			cnonce ? "\",  cnonce=\"" : "", 
+			cnonce ? "\",  cnonce=\"" : "",
 			cnonce ? cnonce : "",
-			ar->ar_opaque ? "\",  opaque=\"" : "", 
+			ar->ar_opaque ? "\",  opaque=\"" : "",
 			ar->ar_opaque ? ar->ar_opaque : "",
 			ar->ar_algorithm ? "\", algorithm=" : "",
 			ar->ar_algorithm ? ar->ar_algorithm : "",
 			ar->ar_uri,
 			response,
-			ar->ar_auth || ar->ar_auth_int ? ", qop=" : "", 
-			ar->ar_auth_int ? "auth-int" : 
+			ar->ar_auth || ar->ar_auth_int ? ", qop=" : "",
+			ar->ar_auth_int ? "auth-int" :
 			(ar->ar_auth ? "auth" : ""),
-			cnonce ? ", nc=" : "", 
+			cnonce ? ", nc=" : "",
 			cnonce ? ncount : "");
 
   su_free(home, uri);
@@ -965,7 +965,7 @@ int auc_digest_authorization(auth_client_t *ca,
 
 #define MAX_AUC 20
 
-static auth_client_plugin_t const *ca_plugins[MAX_AUC] = 
+static auth_client_plugin_t const *ca_plugins[MAX_AUC] =
 {
   &ca_digest_plugin, &ca_basic_plugin, NULL
 };
@@ -984,7 +984,7 @@ int auc_register_plugin(auth_client_plugin_t const *plugin)
     return errno = EINVAL, -1;
 
   for (i = 0; i < MAX_AUC; i++) {
-    if (ca_plugins[i] == NULL || 
+    if (ca_plugins[i] == NULL ||
 	strcmp(plugin->auc_name, ca_plugins[i]->auc_name) == 0) {
       ca_plugins[i] = plugin;
       return 0;
@@ -1051,10 +1051,10 @@ void ca_destroy(su_home_t *home, auth_client_t *ca)
  * headers to a SIP request. The authentication headers will contain the
  * credentials generated by the list of authenticators.
  *
- * @param[in,out] auc_list  list of authenticators 
+ * @param[in,out] auc_list  list of authenticators
  * @param[in,out] msg       message to be authenticated
  * @param[in,out] sip       sip headers of the message
- * 
+ *
  * @retval 1 when successful
  * @retval 0 when there is not enough credentials
  * @retval -1 upon an error
@@ -1066,14 +1066,14 @@ int auc_authorize(auth_client_t **auc_list, msg_t *msg, sip_t *sip)
   if (!rq)
     return 0;
 
-  return auc_authorization(auc_list, msg, (msg_pub_t *)sip, 
-			   rq->rq_method_name, 
+  return auc_authorization(auc_list, msg, (msg_pub_t *)sip,
+			   rq->rq_method_name,
 			   /*
 			     RFC 3261 defines the protection domain based
 			     only on realm, so we do not bother get a
 			     correct URI to auth module.
 			   */
-			   rq->rq_url, 
+			   rq->rq_url,
 			   sip->sip_payload);
 }
 #endif

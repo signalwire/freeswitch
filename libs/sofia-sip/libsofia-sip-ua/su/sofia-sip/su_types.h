@@ -28,7 +28,7 @@
 /**@file sofia-sip/su_types.h Basic integer types for @b su library.
  *
  * This include file provides <stdint.h> or <inttypes.h> types.
- *  
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  * @date Created: Thu Mar 18 19:40:51 1999 pessi
  */
@@ -79,21 +79,21 @@ typedef SU_INTPTR_T intptr_t;
 typedef unsigned SU_INTPTR_T uintptr_t;
 #endif
 
-/** 64-bit unsigned integer */ 
+/** 64-bit unsigned integer */
 typedef SU_U64_T uint64_t;
-/** 64-bit signed integer */   
+/** 64-bit signed integer */
 typedef SU_S64_T int64_t;
-/** 32-bit unsigned integer */ 
+/** 32-bit unsigned integer */
 typedef SU_U32_T uint32_t;
-/** 32-bit signed integer */   
+/** 32-bit signed integer */
 typedef SU_S32_T int32_t;
-/** 16-bit unsigned integer */ 
+/** 16-bit unsigned integer */
 typedef SU_U16_T uint16_t;
-/** 16-bit signed integer */   
+/** 16-bit signed integer */
 typedef SU_S16_T int16_t;
-/** 8-bit unsigned integer */  
+/** 8-bit unsigned integer */
 typedef SU_U8_T  uint8_t;
-/** 8-bit signed integer */    
+/** 8-bit signed integer */
 typedef SU_S8_T  int8_t;
 
 /** At least 64-bit integer */
@@ -119,9 +119,9 @@ typedef SOFIA_SSIZE_T ssize_t;
 #endif
 
 #ifdef SOFIA_ISIZE_T
-/** Compatibility type. 
+/** Compatibility type.
  *
- * sofia-sip <= 1.12.1 often used int for count of bytes. 
+ * sofia-sip <= 1.12.1 often used int for count of bytes.
  * When configured for compatibility with sofia-sip 1.12.0, this is defined
  * as int, otherwise as size_t. Note that int is signed and size_t is
  * unsigned.
@@ -134,9 +134,9 @@ typedef size_t isize_t;
 #endif
 
 #ifdef SOFIA_ISSIZE_T
-/**Compatibility type. 
+/**Compatibility type.
  *
- * sofia-sip <= 1.12.1 used int for count of bytes. 
+ * sofia-sip <= 1.12.1 used int for count of bytes.
  * When configured for compatibility with sofia-sip 1.12.0, this is defined
  * as int, otherwise as ssize_t. (-1 is used for error indication).
  *
@@ -148,9 +148,9 @@ typedef ssize_t issize_t;
 #endif
 
 #ifdef SOFIA_USIZE_T
-/**Compatibility type. 
+/**Compatibility type.
  *
- * sofia-sip <= 1.12.1 sometimes used unsigned int for count of bytes. 
+ * sofia-sip <= 1.12.1 sometimes used unsigned int for count of bytes.
  * When configured for compatibility with sofia-sip 1.12.0, this is defined
  * as unsigned int, otherwise as size_t.
  *

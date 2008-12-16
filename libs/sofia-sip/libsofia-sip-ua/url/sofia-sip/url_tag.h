@@ -59,9 +59,9 @@ SOFIAPUBVAR tag_typedef_t urltag_url_ref;
 #define URLTAG_URL_REF(u)  urltag_url_ref, urltag_url_vr(&(u))
 
 #if SU_HAVE_INLINE
-su_inline 
+su_inline
 tag_value_t urltag_url_v(void const *v) { return (tag_value_t)v; }
-su_inline 
+su_inline
 tag_value_t urltag_url_vr(url_string_t const **vp) { return(tag_value_t)vp; }
 #else
 #define urltag_url_v(v)   (tag_value_t)(v)

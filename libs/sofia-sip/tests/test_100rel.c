@@ -106,7 +106,7 @@ int accept_pracked2(CONDITION_PARAMS)
     RESPOND(ep, call, nh, SIP_180_RINGING,
 	    TAG_IF(call->sdp, SOATAG_USER_SDP_STR(call->sdp)),
 	    TAG_END());
-    RESPOND(ep, call, nh, SIP_200_OK, 
+    RESPOND(ep, call, nh, SIP_200_OK,
 	    NUTAG_INCLUDE_EXTRA_SDP(1),
 	    TAG_END());
     return 0;
@@ -283,7 +283,7 @@ int test_180rel(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-10.1.2: PASSED\n");
-  
+
   END();
 }
 
@@ -395,7 +395,7 @@ int test_prack_auth(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_invite);
   TEST(e->data->e_status, 407);
   TEST_1(sip = sip_object(e->data->e_msg));
-  TEST_1(au = sip->sip_proxy_authenticate); 
+  TEST_1(au = sip->sip_proxy_authenticate);
 
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_calling); /* CALLING */
@@ -499,7 +499,7 @@ int test_prack_auth(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-10.1.4: PASSED\n");
-  
+
   END();
 }
 
@@ -607,12 +607,12 @@ int test_183rel(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_proceeding);
   TEST_1(!is_offer_answer_done(e->data->e_tags));
-  
+
   if (!ep) {
     TEST_1(e = e->next); TEST_E(e->data->e_event, nua_r_prack);
     TEST(e->data->e_status, 200);
   }
-    
+
   ei = event_by_type(e->next, nua_r_invite);
   ep = event_by_type(e->next, nua_r_prack);
   if (!ep) {
@@ -696,7 +696,7 @@ int test_183rel(struct context *ctx)
 
   /* Client transitions:
      INIT -(C1)-> CALLING: nua_invite(), nua_i_state
-     CALLING -(C2)-> TERMINATING: nua_r_invite, nua_i_state, 
+     CALLING -(C2)-> TERMINATING: nua_r_invite, nua_i_state,
                                   nua_r_prack, nua_i_state
      TERMINATING -(T1)-> TERMINATED: nua_r_invite, nua_i_state
   */
@@ -722,7 +722,7 @@ int test_183rel(struct context *ctx)
     int bye = 1, cancel = 1, invite = 1, state = 1;
 
     while (bye || cancel || invite || state) {
-      TEST_1(e = e->next); 
+      TEST_1(e = e->next);
       if (e->data->e_event == nua_r_bye) {
 	TEST_E(e->data->e_event, nua_r_bye);
 	TEST(e->data->e_status, 200);
@@ -778,9 +778,9 @@ int test_183rel(struct context *ctx)
   /* 183 is PRACKed, PRACK is responded with 483 */
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_prack);
 
-  /* Client terminates the call 
-     - we may (it is received before BYE) or may not (received after BYE) 
-       get CANCEL request 
+  /* Client terminates the call
+     - we may (it is received before BYE) or may not (received after BYE)
+       get CANCEL request
   */
   TEST_1(e = e->next);
   if (e->data->e_event == nua_i_cancel) {
@@ -1116,7 +1116,7 @@ int test_preconditions(struct context *ctx)
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_update);
   TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
   TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
-  TEST_1(!is_offer_sent(e->data->e_tags)); 
+  TEST_1(!is_offer_sent(e->data->e_tags));
   TEST_1(is_offer_recv(e->data->e_tags));
   TEST_1(is_answer_sent(e->data->e_tags));
   TEST_1(!is_answer_recv(e->data->e_tags));
@@ -1281,9 +1281,9 @@ int test_preconditions2(struct context *ctx)
    |-------200 OK-------|
    |			|
 
-   Note that the boxed responses above can be re-ordered 
+   Note that the boxed responses above can be re-ordered
    (180 or 200 OK to INVITE is received before 200 OK to UPDATE).
-   ACK, however, is sent only after 200 OK to both UPDATE and INVITE. 
+   ACK, however, is sent only after 200 OK to both UPDATE and INVITE.
 */
 
   a_call->sdp = "m=audio 5008 RTP/AVP 8";
@@ -1513,7 +1513,7 @@ int ringing_updated2(CONDITION_PARAMS)
     return 0;
   case nua_r_update:
     if (200 <= status && status < 300) {
-      RESPOND(ep, call, nh, SIP_180_RINGING, 
+      RESPOND(ep, call, nh, SIP_180_RINGING,
 	      SIPTAG_REQUIRE_STR("100rel"),
 	      TAG_END());
       ep->next_condition = accept_pracked;
@@ -1741,7 +1741,7 @@ int test_update_by_uas(struct context *ctx)
   do {
     TEST_1(e = e->next); TEST_E(e->data->e_event, nua_i_state);
     TEST(callstate(e->data->e_tags), nua_callstate_early); /* EARLY */
-    TEST_1(is_offer_sent(e->data->e_tags)); 
+    TEST_1(is_offer_sent(e->data->e_tags));
     TEST_1(!is_offer_recv(e->data->e_tags));
     TEST_1(!is_answer_sent(e->data->e_tags));
     TEST_1(!is_answer_recv(e->data->e_tags));
@@ -2035,7 +2035,7 @@ int test_update_failure(struct context *ctx)
 #endif
   END();
 }
- 
+
 int cancel_when_pracked(CONDITION_PARAMS);
 int alert_call(CONDITION_PARAMS);
 
@@ -2129,7 +2129,7 @@ int test_180rel_cancel1(struct context *ctx)
    Option B:
    EARLY -(S3b)-> COMPLETED: nua_respond(), nua_i_state
    COMPLETED -(S4)-> READY: nua_i_ack, nua_i_state
-   READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state   
+   READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state
   */
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
   TEST(e->data->e_status, 100);
@@ -2157,7 +2157,7 @@ int test_180rel_cancel1(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-10.6: PASSED\n");
-  
+
   END();
 }
 
@@ -2298,7 +2298,7 @@ int test_180rel_cancel2(struct context *ctx)
    Option B:
    EARLY -(S3b)-> COMPLETED: nua_respond(), nua_i_state
    COMPLETED -(S4)-> READY: nua_i_ack, nua_i_state
-   READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state   
+   READY -(T1)-> TERMINATED: nua_i_bye, nua_i_state
   */
   TEST_1(e = b->events->head); TEST_E(e->data->e_event, nua_i_invite);
   TEST(e->data->e_status, 100);
@@ -2343,7 +2343,7 @@ int test_180rel_cancel2(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-10.7: PASSED\n");
-  
+
   END();
 }
 
@@ -2561,7 +2561,7 @@ int test_180rel_redirected(struct context *ctx)
 
   if (print_headings)
     printf("TEST NUA-10.8.2: PASSED\n");
-  
+
   END();
 }
 
@@ -2575,7 +2575,7 @@ int redirect_pracked(CONDITION_PARAMS)
   if (event == nua_i_prack) {
     if (!ep->flags.bit0) {
       sip_contact_t m[1];
-      
+
       ep->flags.bit0 = 1;
 
       *m = *ep->contact;

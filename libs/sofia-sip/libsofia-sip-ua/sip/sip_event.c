@@ -56,7 +56,7 @@
  * The Event header is used to indicate the which event or class of events
  * the message contains or subscribes. Its syntax is defined in @RFC3265 as
  * follows:
- * 
+ *
  * @code
  *   Event             =  ( "Event" / "o" ) HCOLON event-type
  *                         *( SEMI event-param )
@@ -72,7 +72,7 @@
  */
 
 /**@ingroup sip_event
- * @typedef struct sip_event_s sip_event_t; 
+ * @typedef struct sip_event_s sip_event_t;
  *
  * The structure #sip_event_t contains representation of an @Event header.
  *
@@ -93,7 +93,7 @@ static msg_xtra_f sip_event_dup_xtra;
 static msg_dup_f sip_event_dup_one;
 static msg_update_f sip_event_update;
 
-msg_hclass_t sip_event_class[] = 
+msg_hclass_t sip_event_class[] =
 SIP_HEADER_CLASS(event, "Event", "o", o_params, single, event);
 
 issize_t sip_event_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -134,7 +134,7 @@ isize_t sip_event_dup_xtra(sip_header_t const *h, isize_t offset)
   return offset;
 }
 
-/** Duplicate one #sip_event_t object */ 
+/** Duplicate one #sip_event_t object */
 char *sip_event_dup_one(sip_header_t *dst, sip_header_t const *src,
 			char *b, isize_t xtra)
 {
@@ -150,7 +150,7 @@ char *sip_event_dup_one(sip_header_t *dst, sip_header_t const *src,
 }
 
 /** Update parameters in @Event header. */
-static int sip_event_update(msg_common_t *h, 
+static int sip_event_update(msg_common_t *h,
 			   char const *name, isize_t namelen,
 			   char const *value)
 {
@@ -173,9 +173,9 @@ static int sip_event_update(msg_common_t *h,
  * The Allow-Events header is used to indicate which events or classes of
  * events the notifier supports. Its syntax is defined in @RFC3265 as
  * follows:
- * 
+ *
  * @code
- *    Allow-Events = ( "Allow-Events" / "u" ) HCOLON event-type 
+ *    Allow-Events = ( "Allow-Events" / "u" ) HCOLON event-type
  *                                           *(COMMA event-type)
  * @endcode
  *
@@ -190,9 +190,9 @@ static int sip_event_update(msg_common_t *h,
  */
 
 /**@ingroup sip_allow_events
- * @typedef struct msg_list_s sip_allow_events_t; 
+ * @typedef struct msg_list_s sip_allow_events_t;
  *
- * The structure #sip_allow_events_t contains representation of an 
+ * The structure #sip_allow_events_t contains representation of an
  * @AllowEvents header.
  *
  * The #sip_allow_events_t is defined as follows:
@@ -206,7 +206,7 @@ static int sip_event_update(msg_common_t *h,
  * @endcode
  */
 
-msg_hclass_t sip_allow_events_class[] = 
+msg_hclass_t sip_allow_events_class[] =
 SIP_HEADER_CLASS_LIST(allow_events, "Allow-Events", "u", list);
 
 issize_t sip_allow_events_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -220,14 +220,14 @@ issize_t sip_allow_events_e(char b[], isize_t bsiz, sip_header_t const *h, int f
   return msg_list_e(b, bsiz, h, f);
 }
 
-/** Append an event to a @AllowEvents header. 
+/** Append an event to a @AllowEvents header.
  *
  * @note This function @b does @b duplicate @p event.
  *
  * @deprecated Use msg_header_replace_item() directly.
  */
-int sip_allow_events_add(su_home_t *home, 
-			 sip_allow_events_t *ae, 
+int sip_allow_events_add(su_home_t *home,
+			 sip_allow_events_t *ae,
 			 char const *event)
 {
   event = su_strdup(home, event);
@@ -243,7 +243,7 @@ int sip_allow_events_add(su_home_t *home,
  * The Subscription-State header is used to indicate in which state a
  * subscription is. Its syntax is defined in @RFC3265 section 4.2.4 as
  * follows:
- * 
+ *
  * @code
  *    Subscription-State   = "Subscription-State" HCOLON substate-value
  *                           *( SEMI subexp-params )
@@ -271,7 +271,7 @@ int sip_allow_events_add(su_home_t *home,
 /**@ingroup sip_subscription_state
  * @typedef struct sip_subscription_state_s sip_subscription_state_t;
  *
- * The structure #sip_subscription_state_t contains representation of an 
+ * The structure #sip_subscription_state_t contains representation of an
  * @SubscriptionState header.
  *
  * The #sip_subscription_state_t is defined as follows:
@@ -281,9 +281,9 @@ int sip_allow_events_add(su_home_t *home,
  *   sip_common_t       ss_common[1];
  *   sip_unknown_t     *ss_next;
  *   // Subscription state: "pending", "active" or "terminated"
- *   char const        *ss_substate;        
+ *   char const        *ss_substate;
  *   msg_param_t const *ss_params;      // List of parameters
- *   char const        *ss_reason;      // Reason of terminating 
+ *   char const        *ss_reason;      // Reason of terminating
  *   char const        *ss_expires;     // Subscription lifetime in seconds
  *   char const        *ss_retry_after; // Value of retry-after parameter
  * } sip_subscription_state_t;
@@ -294,24 +294,24 @@ static msg_xtra_f sip_subscription_state_dup_xtra;
 static msg_dup_f sip_subscription_state_dup_one;
 static msg_update_f sip_subscription_state_update;
 
-msg_hclass_t sip_subscription_state_class[] = 
-SIP_HEADER_CLASS(subscription_state, "Subscription-State", "", 
-		 ss_params, single, 
+msg_hclass_t sip_subscription_state_class[] =
+SIP_HEADER_CLASS(subscription_state, "Subscription-State", "",
+		 ss_params, single,
 		 subscription_state);
 
-issize_t sip_subscription_state_d(su_home_t *home, sip_header_t *h, 
+issize_t sip_subscription_state_d(su_home_t *home, sip_header_t *h,
 				  char *s, isize_t slen)
 {
    sip_subscription_state_t *ss = h->sh_subscription_state;
    ss->ss_substate = s;
-   
+
    s += span_token(s); /* forwards the pointer to the end of substate-value */
    if (s == ss->ss_substate)
      return -1;
-   if (IS_LWS(*s)) { 
+   if (IS_LWS(*s)) {
      *s = '\0'; s += span_lws(s + 1) + 1;
    }
-   
+
    /* check if parameters are present and if so parse them */
    if (*s  == ';') {
      if ( msg_params_d(home, &s, &ss->ss_params) < 0)
@@ -327,34 +327,34 @@ issize_t sip_subscription_state_e(char b[], isize_t bsiz, sip_header_t const *h,
 {
   char *end = b + bsiz, *b0 = b;
   sip_subscription_state_t const *ss = h->sh_subscription_state;
-   
-  assert(sip_is_subscription_state(h));
-   
-  MSG_STRING_E(b, end, ss->ss_substate);
-  MSG_PARAMS_E(b, end, ss->ss_params, flags);   
 
-  return b - b0;   
+  assert(sip_is_subscription_state(h));
+
+  MSG_STRING_E(b, end, ss->ss_substate);
+  MSG_PARAMS_E(b, end, ss->ss_params, flags);
+
+  return b - b0;
 }
 
 isize_t sip_subscription_state_dup_xtra(sip_header_t const *h, isize_t offset)
 {
    sip_subscription_state_t const *ss = h->sh_subscription_state;
-   
+
    /* Calculates memory size occupied */
    MSG_PARAMS_SIZE(offset, ss->ss_params);
    offset += MSG_STRING_SIZE(ss->ss_substate);
-   
-   return offset;   
+
+   return offset;
 }
 
-/** Duplicate one #sip_subscription_state_t object */ 
+/** Duplicate one #sip_subscription_state_t object */
 char *sip_subscription_state_dup_one(sip_header_t *dst, sip_header_t const *src,
 				     char *b, isize_t xtra)
 {
   sip_subscription_state_t *ss_dst = dst->sh_subscription_state;
   sip_subscription_state_t const *ss_src = src->sh_subscription_state;
   char *end = b + xtra;
-   
+
   b = msg_params_dup(&ss_dst->ss_params, ss_src->ss_params, b, xtra);
   MSG_STRING_DUP(b, ss_dst->ss_substate, ss_src->ss_substate);
   assert(b <= end); (void)end;
@@ -362,7 +362,7 @@ char *sip_subscription_state_dup_one(sip_header_t *dst, sip_header_t const *src,
   return b;
 }
 
-static int sip_subscription_state_update(msg_common_t *h, 
+static int sip_subscription_state_update(msg_common_t *h,
 					 char const *name, isize_t namelen,
 					 char const *value)
 {
@@ -399,7 +399,7 @@ static int sip_subscription_state_update(msg_common_t *h,
  * The Publication header is used to indicate the which publication or class
  * of publications the message contains. Its syntax is defined
  * in (draft-niemi-simple-publish-00.txt) as follows:
- * 
+ *
  * @code
  *   Publication          =  ( "Publication") HCOLON publish-package
  *                         *( SEMI publish-param )
@@ -418,7 +418,7 @@ static int sip_subscription_state_update(msg_common_t *h,
 /**@ingroup sip_publication
  * @brief Structure for Publication header.
  */
-struct sip_publication_s 
+struct sip_publication_s
 {
   sip_common_t        pub_common;	    /**< Common fragment info */
   sip_error_t        *pub_next;	            /**< Link to next (dummy) */
@@ -431,8 +431,8 @@ struct sip_publication_s
 static msg_xtra_f sip_publication_dup_xtra;
 static msg_dup_f sip_publication_dup_one;
 
-msg_hclass_t sip_publication_class[] = 
-SIP_HEADER_CLASS(publication, "Publication", "", pub_params, single, 
+msg_hclass_t sip_publication_class[] =
+SIP_HEADER_CLASS(publication, "Publication", "", pub_params, single,
 		 publication);
 
 su_inline void sip_publication_update(sip_publication_t *pub);
@@ -475,7 +475,7 @@ isize_t sip_publication_dup_xtra(sip_header_t const *h, isize_t offset)
   return offset;
 }
 
-/** Duplicate one #sip_publication_t object */ 
+/** Duplicate one #sip_publication_t object */
 char *sip_publication_dup_one(sip_header_t *dst, sip_header_t const *src,
 			char *b, isize_t xtra)
 {
@@ -512,9 +512,9 @@ su_inline void sip_publication_update(sip_publication_t *pub)
  * The Allow-Publication header is used to indicate which publications or classes of
  * publications the server supports.  Its syntax is defined in [niemi]
  * (draft-niemi-simple-publish-00.txt) as follows:
- * 
+ *
  * @code
- *   Allow-Publications   = "Allow-Publications" HCOLON publish-type 
+ *   Allow-Publications   = "Allow-Publications" HCOLON publish-type
  *                          * ( COMMA publish-type )
  * @endcode
  *
@@ -523,7 +523,7 @@ su_inline void sip_publication_update(sip_publication_t *pub)
  * is stored in #sip_allow_publications_t structure.
  */
 
-msg_hclass_t sip_allow_publications_class[] = 
+msg_hclass_t sip_allow_publications_class[] =
 SIP_HEADER_CLASS_LIST(allow_publications, "Allow-Publications", "", list);
 
 issize_t sip_allow_publications_d(su_home_t *home, sip_header_t *h, char *s, isize_t slen)
@@ -538,8 +538,8 @@ issize_t sip_allow_publications_e(char b[], isize_t bsiz, sip_header_t const *h,
 }
 
 /** Append an publication to a Allow-Publications header. */
-int sip_allow_publications_add(su_home_t *home, 
-			       sip_allow_publications_t *ae, 
+int sip_allow_publications_add(su_home_t *home,
+			       sip_allow_publications_t *ae,
 			       char const *e)
 {
   e = su_strdup(home, e);

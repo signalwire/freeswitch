@@ -1,6 +1,6 @@
 # Sofia SIP UA Library
 
-Summary: Sofia SIP User-Agent library 
+Summary: Sofia SIP User-Agent library
 Name: sofia-sip
 Version: @VERSION@
 Release: 1%{?dist}
@@ -15,7 +15,7 @@ BuildRequires: pkgconfig
 %define opt_with() %{expand:%%global with_%{1} %%{?_with_%{1}:1}%%{?!_with_%{1}:0}}
 %define opt_without() %{expand:%%global with_%{1} %%{!?_without_%{1}:1}%%{?_without_%{1}:0}}
 
-# Options: 
+# Options:
 %opt_with doxygen	- Generate documents using doxygen and dot
 %opt_with check		- Run tests
 %opt_with openssl	- Always use OpenSSL (TLS)
@@ -94,7 +94,7 @@ rm -rf $RPM_BUILD_ROOT
 # note: soname in pkgname allows install of multiple library versions
 # The glib interface is still a bit unstable
 %package	glib@LIBVER_SOFIA_SIP_UA_GLIB_SOVER@
-Summary:	GLIB bindings for Sofia-SIP 
+Summary:	GLIB bindings for Sofia-SIP
 Group:		System Environment/Libraries
 Requires:	sofia-sip
 Obsoletes:	sofia-sip-glib < %{version}-%{release}
@@ -123,11 +123,11 @@ Provides:	sofia-devel = %{version}-%{release}
 Requires:	pkgconfig
 
 %description	devel
-Development package for Sofia SIP UA library. This package includes 
+Development package for Sofia SIP UA library. This package includes
 static libraries and include files.
 
 %if !%{with_doxygen}
-The reference documentation for Sofia SIP UA library is available at 
+The reference documentation for Sofia SIP UA library is available at
 <http://sofia-sip.sourceforge.net/development.html>
 %endif
 
@@ -209,7 +209,7 @@ Command line utilities for Sofia SIP UA library.
 - Bumped version. rpmlinted.
 
 * Tue Dec  5 2006 Kai Vehmanen <first.lastname at nokia.com>
-- The 'nua-glib' module, and the related dependency to gobject, has been 
+- The 'nua-glib' module, and the related dependency to gobject, has been
   removed from the sofia-sip package
 
 * Fri Oct  6 2006 Pekka Pessi <ppessi at gmail.com> - 1.12.3

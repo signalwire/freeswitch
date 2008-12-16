@@ -29,9 +29,9 @@
 /**@internal
  * @file iptsec_debug.h
  * @brief Debug log for IPTSEC module.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Dec 19 15:56:35 2002 ppessi
  */
 

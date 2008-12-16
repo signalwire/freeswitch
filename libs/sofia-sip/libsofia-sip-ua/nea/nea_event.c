@@ -25,7 +25,7 @@
 /**@internal
  * @file nea_event.c
  * @brief Default MIME type for certain events.
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Thu Dec 11 20:28:46 2003 ppessi

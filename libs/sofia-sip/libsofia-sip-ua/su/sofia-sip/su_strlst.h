@@ -28,7 +28,7 @@
  * @file sofia-sip/su_strlst.h String lists
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Fri May  3 09:13:22 2002 ppessi
  */
 
@@ -58,7 +58,7 @@ SU_DLL su_strlst_t *su_strlst_vcreate_with(su_home_t *,
      __attribute__((__malloc__));
 
 SU_DLL su_strlst_t *su_strlst_vcreate_with_dup(su_home_t *,
-					       char const *, 
+					       char const *,
 					       va_list va)
      __attribute__((__malloc__));
 
@@ -84,14 +84,14 @@ SU_DLL char const *su_slvprintf(su_strlst_t *self, char const *fmt, va_list ap);
 SU_DLL char const *su_strlst_item(su_strlst_t const *, usize_t i);
 
 /** Set a numbered item to list */
-SU_DLL char const *su_strlst_set_item(su_strlst_t *self, usize_t i, 
+SU_DLL char const *su_strlst_set_item(su_strlst_t *self, usize_t i,
 				      char const *s);
 
 /** Remove a numbered item from list. */
 SU_DLL char const *su_strlst_remove(su_strlst_t *, usize_t i);
 
 /** Concatenate list of strings to one string. */
-SU_DLL char *su_strlst_join(su_strlst_t *s, su_home_t *home, 
+SU_DLL char *su_strlst_join(su_strlst_t *s, su_home_t *home,
 			     char const *sep)
      __attribute__((__malloc__));
 
@@ -100,7 +100,7 @@ SU_DLL su_strlst_t *su_strlst_split(su_home_t *, char *s, char const *sep)
      __attribute__((__malloc__));
 
 /** Duplicate and split a string. */
-SU_DLL su_strlst_t *su_strlst_dup_split(su_home_t *, char const *s, 
+SU_DLL su_strlst_t *su_strlst_dup_split(su_home_t *, char const *s,
 					char const *sep)
      __attribute__((__malloc__));
 

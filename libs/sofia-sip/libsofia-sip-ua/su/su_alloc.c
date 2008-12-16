@@ -43,7 +43,7 @@
  *   ...
  * }
  * @endcode
- * 
+ *
  * A new home memory pool can be created with su_home_new():
  * @code
  * struct context *ctx = su_home_new(sizeof (struct context));
@@ -58,7 +58,7 @@
  *
  * Note that the tophome has a reference to @a ctx structure; whenever
  * tophome is freed, the @a ctx is also freed.
- * 
+ *
  * You can also create an independent home object by passing NULL as @a
  * tophome argument. This is identical to the call to su_home_new().
  *
@@ -92,7 +92,7 @@
  * @code
  *    su_free(tophome, ctx);
  * @endcode
- * 
+ *
  * @note
  *
  * The su_home_destroy() function is deprecated as it does not free the home
@@ -122,13 +122,13 @@
  * and one wants to keep the allocations, the allocations can be combined
  * into an existing home with su_home_move(). For example,
  * @code
- * int example(su_home_t *home, ...) 
+ * int example(su_home_t *home, ...)
  * {
  *   su_home_t temphome[1] = { SU_HOME_INIT(temphome) };
- *   
+ *
  *   ... do lot of allocations with temphome ...
- *  
- *   if (success) 
+ *
+ *   if (success)
  *     su_home_move(home, temphome);
  *   su_home_deinit(temphome);
  *
@@ -156,7 +156,7 @@
  * allocator is used. The overhead caused by the large number of small
  * allocations can be reduced by using su_home_preload(): it allocates or
  * preloads some a memory to home to be used as a kind of private heap. The
- * preloaded memory area is then used to satisfy small enough allocations. 
+ * preloaded memory area is then used to satisfy small enough allocations.
  * For instance, the SIP parser typically preloads some 2K of memory when it
  * starts to parse the message.
  *
@@ -177,7 +177,7 @@
  * @CFILE su_alloc.c  Home-based memory management.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
- * 
+ *
  * @date Created: Thu Aug 19 01:12:25 1999 ppessi
  */
 
@@ -224,13 +224,13 @@ su_inline void safefree(void *b) { b ? free(b) : (void)0; }
 #define MEMCHECK_EXTRA sizeof (size_t)
 #endif
 
-enum { 
+enum {
   SUB_N = 31,			/**< Initial size */
   SUB_N_AUTO = 7,		/**< Initial size for autohome */
   SUB_P = 29			/**< Secondary probe.
-				 * Secondary probe must be relative prime 
+				 * Secondary probe must be relative prime
 				 * with all sub_n values */
-};		
+};
 
 #define ALIGNMENT (8)
 #define ALIGN(n) (size_t)(((n) + (ALIGNMENT - 1)) & (size_t)~(ALIGNMENT - 1))
@@ -279,7 +279,7 @@ static void _su_home_deinit(su_home_t *home);
 size_t count_su_block_find, count_su_block_find_loop;
 size_t size_su_block_find, used_su_block_find;
 size_t max_size_su_block_find, max_used_su_block_find;
-size_t su_block_find_collision, su_block_find_collision_used, 
+size_t su_block_find_collision, su_block_find_collision_used,
   su_block_find_collision_size;
 #endif
 
@@ -287,7 +287,7 @@ su_inline su_alloc_t *su_block_find(su_block_t const *b, void const *p)
 {
   size_t h, h0, probe;
 
-#if SU_ALLOC_STATS  
+#if SU_ALLOC_STATS
   size_t collision = 0;
 
   count_su_block_find++;
@@ -315,7 +315,7 @@ su_inline su_alloc_t *su_block_find(su_block_t const *b, void const *p)
       h -= b->sub_n;
 #if SU_ALLOC_STATS
     if (++collision > su_block_find_collision)
-      su_block_find_collision = collision, 
+      su_block_find_collision = collision,
 	su_block_find_collision_used = b->sub_used,
 	su_block_find_collision_size = b->sub_n;
     count_su_block_find_loop++;
@@ -350,8 +350,8 @@ su_inline su_alloc_t *su_block_add(su_block_t *b, void *p)
 su_inline int su_is_preloaded(su_block_t const *sub, char *data)
 {
   return
-    sub->sub_preload && 
-    sub->sub_preload <= data && 
+    sub->sub_preload &&
+    sub->sub_preload <= data &&
     sub->sub_preload + sub->sub_prsize > data;
 }
 
@@ -414,14 +414,14 @@ enum sub_zero { do_malloc, do_calloc, do_clone };
  *             if > 1, allocate a subhome
  *
  */
-static 
-void *sub_alloc(su_home_t *home, 
+static
+void *sub_alloc(su_home_t *home,
 		su_block_t *sub,
 		size_t size,
 		enum sub_zero zero)
 {
   void *data, *preload = NULL;
-  
+
   assert (size < (((size_t)1) << SIZEBITS));
 
   if (size >= ((size_t)1) << SIZEBITS)
@@ -472,7 +472,7 @@ void *sub_alloc(su_home_t *home,
   if (size && sub && zero < do_clone &&
       sub->sub_preload && size <= sub->sub_prsize) {
     /* Use preloaded memory */
-    size_t prused = sub->sub_prused + size + MEMCHECK_EXTRA; 
+    size_t prused = sub->sub_prused + size + MEMCHECK_EXTRA;
     prused = ALIGN(prused);
     if (prused <= sub->sub_prsize) {
       preload = (char *)sub->sub_preload + sub->sub_prused;
@@ -501,13 +501,13 @@ void *sub_alloc(su_home_t *home,
       sub->sub_auto_all = 0;
 
     if (zero >= do_clone) {
-      /* Prepare cloned home */ 
+      /* Prepare cloned home */
       su_home_t *subhome = data;
 
       assert(preload == 0);
 
       subhome->suh_blocks = su_hash_alloc(SUB_N);
-      if (!subhome->suh_blocks) 
+      if (!subhome->suh_blocks)
 	return (void)safefree(data), NULL;
 
       subhome->suh_size = (unsigned)size;
@@ -532,7 +532,7 @@ void *sub_alloc(su_home_t *home,
  *
  * Create a home object used to collect multiple memory allocations under
  * one handle. The memory allocations made using this home object is freed
- * either when this home is destroyed. 
+ * either when this home is destroyed.
  *
  * The maximum @a size of a home object is INT_MAX (2 gigabytes).
  *
@@ -580,7 +580,7 @@ void *su_home_ref(su_home_t const *home)
       UNLOCK(home);
       return NULL;
     }
-    
+
     if (sub->sub_ref != REF_MAX)
       sub->sub_ref++;
     UNLOCK(home);
@@ -746,7 +746,7 @@ void *su_home_clone(su_home_t *parent, isize_t size)
 /** Return true if home is a clone. */
 int su_home_has_parent(su_home_t const *home)
 {
-  return home && !home->suh_lock && 
+  return home && !home->suh_lock &&
     home->suh_blocks && home->suh_blocks->sub_parent;
 }
 
@@ -905,8 +905,8 @@ void su_home_check_blocks(su_block_t const *b)
  * Creates a home object. A home object is used to collect multiple memory
  * allocations, so that they all can be freed by calling su_home_unref().
  *
- * @return This function returns a pointer to an #su_home_t object, or 
- * NULL upon an error. 
+ * @return This function returns a pointer to an #su_home_t object, or
+ * NULL upon an error.
  */
 su_home_t *su_home_create(void)
 {
@@ -950,7 +950,7 @@ void su_home_destroy(su_home_t *home)
  *
  * @sa SU_HOME_INIT(), su_home_deinit(), su_home_new(), su_home_clone()
  *
- * @bug 
+ * @bug
  * Prior to @VERSION_1_12_8 the su_home_t structure should have been
  * initialized with SU_HOME_INIT() or otherwise zeroed before calling
  * su_home_init().
@@ -958,7 +958,7 @@ void su_home_destroy(su_home_t *home)
 int su_home_init(su_home_t *home)
 {
   su_block_t *sub;
-    
+
   if (home == NULL)
     return -1;
 
@@ -1089,7 +1089,7 @@ int su_home_move(su_home_t *dst, su_home_t *src)
 	destructor(src);
       }
 
-      if (d) 
+      if (d)
 	used = s->sub_used + d->sub_used;
       else
 	used = s->sub_used;
@@ -1109,7 +1109,7 @@ int su_home_move(su_home_t *dst, su_home_t *src)
 	dst->suh_blocks = d2;
 
       	for (i = 0; i < n; i++)
-	  if (d->sub_nodes[i].sua_data) 
+	  if (d->sub_nodes[i].sua_data)
 	    su_block_add(d2, d->sub_nodes[i].sua_data)[0] = d->sub_nodes[i];
 
 	if (d) {
@@ -1149,7 +1149,7 @@ int su_home_move(su_home_t *dst, su_home_t *src)
     UNLOCK(dst); UNLOCK(src);
   }
   else {
-    s = MEMLOCK(src); 
+    s = MEMLOCK(src);
 
     if (s && s->sub_used) {
       s->sub_used = 0;
@@ -1173,7 +1173,7 @@ void su_home_preload(su_home_t *home, isize_t n, isize_t isize)
   if (home == NULL)
     return;
 
-  if (home->suh_blocks == NULL) 
+  if (home->suh_blocks == NULL)
     su_home_init(home);
 
   sub = MEMLOCK(home);
@@ -1249,7 +1249,7 @@ su_home_t *su_home_auto(void *area, isize_t size)
  *   @param home  pointer to memory pool object
  *   @param data  pointer to old memory block
  *   @param size  size of the memory block to be allocated
- *   
+ *
  * @return
  *   A pointer to the allocated memory block or
  *   NULL if an error occurred.
@@ -1262,7 +1262,7 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
   size_t p;
   size_t term = 0 - size;
 
-  if (!home) 
+  if (!home)
     return realloc(data, size);
 
   if (size == 0) {
@@ -1282,11 +1282,11 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
 
   if (!su_alloc_check(sub, sua))
     return UNLOCK(home);
-  
+
   assert(!sua->sua_home);
   if (sua->sua_home)
     return UNLOCK(home);
-  
+
   if (!su_is_preloaded(sub, data)) {
     ndata = realloc(data, size + MEMCHECK_EXTRA);
     if (ndata) {
@@ -1356,7 +1356,7 @@ void *su_realloc(su_home_t *home, void *data, isize_t size)
       if (sub->sub_stats)
 	su_home_stats_free(sub, data, data, sua->sua_size);
     }
-    
+
     memcpy(ndata, data,
 	   (size_t)sua->sua_size < size
 	   ? (size_t)sua->sua_size
@@ -1409,7 +1409,7 @@ int su_in_home(su_home_t *home, void const *memory)
 
     UNLOCK(home);
   }
-  
+
   return retval;
 }
 
@@ -1450,7 +1450,7 @@ void *su_zalloc(su_home_t *home, isize_t size)
  *
  * Allocates a structure with a given size, zeros
  * it, and initializes the size field to the given size.  The size field
- * is an int at the beginning of the structure. Note that it has type of int. 
+ * is an int at the beginning of the structure. Note that it has type of int.
  *
  * @param home  pointer to memory pool object
  * @param size  size of the structure
@@ -1463,12 +1463,12 @@ void *su_zalloc(su_home_t *home, isize_t size)
  *     char *tst_name;
  *     void *tst_ptr[3];
  *   };
- * 
+ *
  *   struct test *t;
  *   ...
- *   t = su_salloc(home, sizeof (*t)); 
+ *   t = su_salloc(home, sizeof (*t));
  *   assert(t && t->t_size == sizeof (*t));
- *   
+ *
  * @endcode
  * After calling su_salloc() we get a pointer t to a struct test,
  * initialized to zero except the tst_size field, which is initialized to
@@ -1505,13 +1505,13 @@ int su_home_is_threadsafe(su_home_t const *home)
   return home && home->suh_lock;
 }
 
-/** Increase refcount and obtain exclusive lock on home. 
+/** Increase refcount and obtain exclusive lock on home.
  *
  * @note The #su_home_t structure must be created with su_home_new() or
  * su_home_clone(), or initialized with su_home_init() before using this
- * function. 
+ * function.
  *
- * In order to enable actual locking, use su_home_threadsafe(), too. 
+ * In order to enable actual locking, use su_home_threadsafe(), too.
  * Otherwise the su_home_mutex_lock() will just increase the reference
  * count.
  */
@@ -1559,7 +1559,7 @@ int su_home_mutex_unlock(su_home_t *home)
 }
 
 
-/** Obtain exclusive lock on home without increasing refcount. 
+/** Obtain exclusive lock on home without increasing refcount.
  *
  * Unless su_home_threadsafe() has been used to intialize locking on home
  * object the function just returns -1.
@@ -1582,9 +1582,9 @@ int su_home_lock(su_home_t *home)
 }
 
 
-/** Try to obtain exclusive lock on home without increasing refcount. 
+/** Try to obtain exclusive lock on home without increasing refcount.
  *
- * @return 0 if successful, -1 if not threadsafe, 
+ * @return 0 if successful, -1 if not threadsafe,
  * EBUSY if already locked, error code otherwise.
  *
  * @sa su_home_lock(), su_home_unlock().
@@ -1649,7 +1649,7 @@ void su_home_init_stats(su_home_t *home)
   }
   else
     size = sub->sub_stats->hs_size;
-  
+
   memset(sub->sub_stats, 0, size);
   sub->sub_stats->hs_size = (int)size;
   sub->sub_stats->hs_blocksize = sub->sub_n;
@@ -1657,7 +1657,7 @@ void su_home_init_stats(su_home_t *home)
 
 /** Retrieve statistics from memory home.
  */
-void su_home_get_stats(su_home_t *home, int include_clones, 
+void su_home_get_stats(su_home_t *home, int include_clones,
 		       su_home_stat_t *hs,
 		       isize_t size)
 {
@@ -1683,7 +1683,7 @@ void su_home_get_stats(su_home_t *home, int include_clones,
   UNLOCK(home);
 }
 
-static 
+static
 void su_home_stats_alloc(su_block_t *sub, void *p, void *preload,
 			 size_t size, int zero)
 {
@@ -1706,13 +1706,13 @@ void su_home_stats_alloc(su_block_t *sub, void *p, void *preload,
   hs->hs_allocs.hsa_rbytes += rsize;
   if (hs->hs_allocs.hsa_rbytes > hs->hs_allocs.hsa_maxrbytes)
     hs->hs_allocs.hsa_maxrbytes = hs->hs_allocs.hsa_rbytes;
-  
+
   hs->hs_blocks.hsb_number++;
   hs->hs_blocks.hsb_bytes += size;
   hs->hs_blocks.hsb_rbytes += rsize;
 }
 
-static 
+static
 void su_home_stats_free(su_block_t *sub, void *p, void *preload,
 			unsigned size)
 {

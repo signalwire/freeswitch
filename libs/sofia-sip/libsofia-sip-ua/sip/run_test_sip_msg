@@ -41,20 +41,20 @@ fi
 test=./test_sip_msg
 
 # These are messages that the parser should pass
-good="-t test1.txt test2.txt test3.txt test4.txt 
-      -u test5.txt -t test6.txt test7.txt -u test8.txt -t test9.txt 
-      test14.txt test20.txt test23.txt test24.txt test31.txt 
+good="-t test1.txt test2.txt test3.txt test4.txt
+      -u test5.txt -t test6.txt test7.txt -u test8.txt -t test9.txt
+      test14.txt test20.txt test23.txt test24.txt test31.txt
       own1.txt own2.txt own3.txt own4.txt own5.txt own6.txt"
 # These are messages that the parser should fail
-bad="test10.txt test11.txt test12.txt test13.txt test15.txt 
-     test16.txt test17.txt test18.txt test19.txt 
-     test21.txt test22.txt 
+bad="test10.txt test11.txt test12.txt test13.txt test15.txt
+     test16.txt test17.txt test18.txt test19.txt
+     test21.txt test22.txt
      test26.txt test29.txt test33.txt
-     test35.txt 
+     test35.txt
      test40.txt"
 # These are ugly messages that parser should pass
-ugly="-t test25.txt -u test27.txt test28.txt -t test30.txt 
-      -u test32.txt test34.txt -t test36.txt -u test37.txt 
+ugly="-t test25.txt -u test27.txt test28.txt -t test30.txt
+      -u test32.txt test34.txt -t test36.txt -u test37.txt
       test38.txt test39.txt test41.txt test42.txt"
 
 # These are messages that parser should pass, but it does not
@@ -64,12 +64,12 @@ baddish=""
 
 flag=-t
 for n in $good $ugly;
-do 
+do
     if test $n = -t ; then
 	flag=$n
     elif test $n = -u ; then
 	flag=
-    elif "$test" $flag < "$srcdir/tests/$n" > /dev/null ; then 
+    elif "$test" $flag < "$srcdir/tests/$n" > /dev/null ; then
 	echo "PASS: $n"
     else
 	echo "ERROR: $n"; rc=1
@@ -77,8 +77,8 @@ do
 done
 
 for n in $bad;
-do 
-    if "$test" -t < "$srcdir/tests/$n" > /dev/null 2>/dev/null ; then 
+do
+    if "$test" -t < "$srcdir/tests/$n" > /dev/null 2>/dev/null ; then
 	echo "ERROR: $n (no error detected)"; rc=1
     else
 	echo "PASS: $n"

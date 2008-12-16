@@ -24,9 +24,9 @@
 
 /**@ingroup test_msg
  * @CFILE msg_name_hash.c
- * 
- * Calculate hash for given header name. 
- * 
+ *
+ * Calculate hash for given header name.
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Tue Aug 20 16:27:01 EEST 2002 ppessi

@@ -24,14 +24,14 @@
 
 #ifndef SU_LOCALINFO_H
 /** Defined when <sofia-sip/su_localinfo.h> has been included. */
-#define SU_LOCALINFO_H 
+#define SU_LOCALINFO_H
 
 
 /**@ingroup su_socket
  * @file sofia-sip/su_localinfo.h  Interface for obtaining local addresses.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
- * 
+ *
  * @date Created: Thu Aug 10 18:58:01 2000 ppessi
  */
 
@@ -46,8 +46,8 @@ typedef struct su_localinfo_s su_localinfo_t;
 
 /** Local address info structure. */
 struct su_localinfo_s {
-  /**Bitwise or of flags: 
-   * #LI_V4MAPPED, #LI_CANONNAME, #LI_NAMEREQD, 
+  /**Bitwise or of flags:
+   * #LI_V4MAPPED, #LI_CANONNAME, #LI_NAMEREQD,
    * #LI_NUMERIC, #LI_DOWN, #LI_IFNAME */
   int li_flags;
   int li_family;		/**< Address family. */

@@ -30,14 +30,14 @@
 
 #ifndef SIP_PROTOS_H
 /** Defined when <sofia-sip/sip_protos.h> has been included. */
-#define SIP_PROTOS_H 
-  
+#define SIP_PROTOS_H
+
 /**@file sofia-sip/sip_protos.h
- * 
+ *
  * SIP prototypes and macros for each header.
- * 
+ *
  * #AUTO#
- * 
+ *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>.
  *
  */
@@ -86,7 +86,7 @@ int sip_header_insert(msg_t *msg, sip_t *sip, sip_header_t *h)
   return msg_header_insert(msg, (msg_pub_t *)sip, (msg_header_t *)h);
 }
 
-/** Remove a header from a SIP message. */ 
+/** Remove a header from a SIP message. */
 su_inline
 int sip_header_remove(msg_t *msg, sip_t *sip, sip_header_t *h)
 {
@@ -131,22 +131,22 @@ SOFIAPUBFUN issize_t sip_#xxxxxx#_e(char b[], isize_t bsiz,
 
 /**Access a SIP @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#"
  * structure #sip_#xxxxxx#_t from #sip_t.
- * 
+ *
  * @since New in #version#.
  */
 #define sip_#xxxxxx#(sip) \
   ((sip_#xxxxxx#_t *)msg_header_access((msg_pub_t*)(sip), sip_#xxxxxx#_class))
 
 /**Initializer for structure #sip_#xxxxxx#_t.
- * 
+ *
  * A static #sip_#xxxxxx#_t structure for
  * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" must be initialized with
- * the SIP_#XXXXXX#_INIT() macro. 
+ * the SIP_#XXXXXX#_INIT() macro.
  * For instance,
- * @code 
- * 
+ * @code
+ *
  *  sip_#xxxxxx#_t sip_#xxxxxx# = SIP_#XXXXXX#_INIT;
- * 
+ *
  * @endcode
  * @HI
  *
@@ -155,16 +155,16 @@ SOFIAPUBFUN issize_t sip_#xxxxxx#_e(char b[], isize_t bsiz,
 #define SIP_#XXXXXX#_INIT() SIP_HDR_INIT(#xxxxxx#)
 
 /**Initialize a structure #sip_#xxxxxx#_t.
- * 
+ *
  * An #sip_#xxxxxx#_t structure for
  * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" can be initialized with the
  * sip_#xxxxxx#_init() function/macro. For instance,
  * @code
- * 
+ *
  *  sip_#xxxxxx#_t sip_#xxxxxx#;
- * 
+ *
  *  sip_#xxxxxx#_init(&sip_#xxxxxx#);
- * 
+ *
  * @endcode
  * @HI
  *
@@ -181,14 +181,14 @@ su_inline sip_#xxxxxx#_t *sip_#xxxxxx#_init(sip_#xxxxxx#_t x[1])
 #endif
 
 /**Test if header object is instance of #sip_#xxxxxx#_t.
- * 
+ *
  * Check if the header class is an instance of
  * @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" object and return true (nonzero),
  * otherwise return false (zero).
- * 
+ *
  * @param header pointer to the header structure to be tested
- * 
- * @retval 1 (true) if the @a header is an instance of header #xxxxxx# 
+ *
+ * @retval 1 (true) if the @a header is an instance of header #xxxxxx#
  * @retval 0 (false) otherwise
  *
  * @since New in #version#.
@@ -206,27 +206,27 @@ int sip_is_#xxxxxx#(sip_header_t const *header);
 
 
 /**Duplicate a list of @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" header structures #sip_#xxxxxx#_t.
- * 
+ *
  * Duplicate a header
  * structure @a hdr.  If the header structure @a hdr
  * contains a reference (@c hdr->x_next) to a list of
  * headers, all the headers in the list are duplicated, too.
- * 
+ *
  * @param home  memory home used to allocate new structure
  * @param hdr   header structure to be duplicated
- * 
+ *
  * When duplicating, all parameter lists and non-constant
  * strings attached to the header are copied, too.  The
  * function uses given memory @a home to allocate all the
  * memory areas used to copy the header.
- * 
+ *
  * @par Example
  * @code
- * 
+ *
  *   #xxxxxx# = sip_#xxxxxx#_dup(home, sip->sip_#xxxxxx#);
- * 
+ *
  * @endcode
- * 
+ *
  * @return
  * A pointer to the
  * newly duplicated #sip_#xxxxxx#_t header structure, or NULL
@@ -237,42 +237,42 @@ int sip_is_#xxxxxx#(sip_header_t const *header);
 #if SU_HAVE_INLINE
 su_inline
 #endif
-sip_#xxxxxx#_t *sip_#xxxxxx#_dup(su_home_t *home, sip_#xxxxxx#_t const *hdr) 
+sip_#xxxxxx#_t *sip_#xxxxxx#_dup(su_home_t *home, sip_#xxxxxx#_t const *hdr)
      __attribute__((__malloc__));
 
 #if SU_HAVE_INLINE
 su_inline
 sip_#xxxxxx#_t *sip_#xxxxxx#_dup(su_home_t *home, sip_#xxxxxx#_t const *hdr)
-{ 
+{
   return (sip_#xxxxxx#_t *)
     msg_header_dup_as(home, sip_#xxxxxx#_class, (msg_header_t const *)hdr);
 }
 #endif
 
 /**Copy a list of @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" header structures #sip_#xxxxxx#_t.
- * 
+ *
  * The function sip_#xxxxxx#_copy() copies a header structure @a
  * hdr.  If the header structure @a hdr contains a reference (@c
  * hdr->h_next) to a list of headers, all the headers in that
  * list are copied, too. The function uses given memory @a home
  * to allocate all the memory areas used to copy the list of header
  * structure @a hdr.
- * 
+ *
  * @param home    memory home used to allocate new structure
  * @param hdr     pointer to the header structure to be copied
- * 
+ *
  * When copying, only the header structure and parameter lists attached to
  * it are duplicated. The new header structure retains all the references to
  * the strings within the old @a hdr header, including the encoding of the
  * old header, if present.
- * 
+ *
  * @par Example
  * @code
- * 
+ *
  *   #xxxxxx# = sip_#xxxxxx#_copy(home, sip->sip_#xxxxxx#);
- * 
+ *
  * @endcode
- * 
+ *
  * @return
  * A pointer to newly copied header structure, or NULL upon an error.
  *
@@ -281,28 +281,28 @@ sip_#xxxxxx#_t *sip_#xxxxxx#_dup(su_home_t *home, sip_#xxxxxx#_t const *hdr)
 #if SU_HAVE_INLINE
 su_inline
 #endif
-sip_#xxxxxx#_t *sip_#xxxxxx#_copy(su_home_t *home, sip_#xxxxxx#_t const *hdr) 
+sip_#xxxxxx#_t *sip_#xxxxxx#_copy(su_home_t *home, sip_#xxxxxx#_t const *hdr)
      __attribute__((__malloc__));
 
 #if SU_HAVE_INLINE
 su_inline
-sip_#xxxxxx#_t *sip_#xxxxxx#_copy(su_home_t *home, sip_#xxxxxx#_t const *hdr) 
-{ 
+sip_#xxxxxx#_t *sip_#xxxxxx#_copy(su_home_t *home, sip_#xxxxxx#_t const *hdr)
+{
   return (sip_#xxxxxx#_t *)
-    msg_header_copy_as(home, sip_#xxxxxx#_class, (msg_header_t const *)hdr); 
+    msg_header_copy_as(home, sip_#xxxxxx#_class, (msg_header_t const *)hdr);
 }
 #endif
 
 /**Make a @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" structure #sip_#xxxxxx#_t.
- * 
+ *
  * The function sip_#xxxxxx#_make() makes a new
  * #sip_#xxxxxx#_t header structure.  It allocates a new
  * header structure, and decodes the string @a s as the
  * value of the structure.
- * 
+ *
  * @param home memory home used to allocate new header structure.
  * @param s    string to be decoded as value of the new header structure
- * 
+ *
  * @return
  * A pointer to newly maked #sip_#xxxxxx#_t header structure, or NULL upon an
  * error.
@@ -310,7 +310,7 @@ sip_#xxxxxx#_t *sip_#xxxxxx#_copy(su_home_t *home, sip_#xxxxxx#_t const *hdr)
  * @since New in #version#.
  */
 #if SU_HAVE_INLINE
-su_inline 
+su_inline
 #endif
 sip_#xxxxxx#_t *sip_#xxxxxx#_make(su_home_t *home, char const *s)
      __attribute__((__malloc__));
@@ -323,20 +323,20 @@ su_inline sip_#xxxxxx#_t *sip_#xxxxxx#_make(su_home_t *home, char const *s)
 #endif
 
 /**Make a @ref sip_#xxxxxx# "#xxxxxxx_xxxxxxx#" from formatting result.
- * 
- * Make a new #sip_#xxxxxx#_t object using formatting result as its value. 
+ *
+ * Make a new #sip_#xxxxxx#_t object using formatting result as its value.
  * The function first prints the arguments according to the format @a fmt
  * specified. Then it allocates a new header structure, and parses the
  * formatting result to the structure #sip_#xxxxxx#_t.
- * 
+ *
  * @param home   memory home used to allocate new header structure.
  * @param fmt    string used as a printf()-style format
  * @param ...    argument list for format
- * 
+ *
  * @return
  * A pointer to newly
  * makes header structure, or NULL upon an error.
- * 
+ *
  * @HIDE
  *
  * @since New in #version#.
@@ -352,11 +352,11 @@ su_inline sip_#xxxxxx#_t *sip_#xxxxxx#_format(su_home_t *home, char const *fmt, 
 {
   sip_header_t *h;
   va_list ap;
-  
+
   va_start(ap, fmt);
   h = sip_header_vformat(home, sip_#xxxxxx#_class, fmt, ap);
   va_end(ap);
- 
+
   return (sip_#xxxxxx#_t *)h;
 }
 #endif

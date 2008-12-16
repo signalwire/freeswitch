@@ -26,7 +26,7 @@
 /** Defined when <nua_types.h> has been included. */
 #define NUA_TYPES_H
 
-/**@internal @file nua_types.h 
+/**@internal @file nua_types.h
  * @brief Internal types for nua.
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -42,8 +42,8 @@ typedef NUA_OWNER_T nua_owner_t;
 
 typedef struct nua_dialog_state nua_dialog_state_t;
 typedef struct nua_dialog_usage nua_dialog_usage_t;
-typedef struct nua_server_request nua_server_request_t; 
-typedef struct nua_client_request nua_client_request_t; 
+typedef struct nua_server_request nua_server_request_t;
+typedef struct nua_client_request nua_client_request_t;
 typedef struct nua_dialog_peer_info nua_dialog_peer_info_t;
 
 #ifndef NUA_SAVED_SIGNAL_T

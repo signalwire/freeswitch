@@ -7,7 +7,7 @@ $TTL     60
 	     36000000   ; EXPIRE
 	     120        ; MINIMUM
 	     )
-	       	
+
 	    NS	 ns.example.com.
 
 133	    PTR  sip00.example.com.

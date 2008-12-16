@@ -105,18 +105,18 @@ HEADER {
   print "" > REF;
 }
 
-/^#define TAG_NAMESPACE/ { 
-  print "#undef TAG_NAMESPACE" > REF; 
-  print $0 > REF; 
+/^#define TAG_NAMESPACE/ {
+  print "#undef TAG_NAMESPACE" > REF;
+  print $0 > REF;
   print "" > REF;
-  print "#undef TAG_NAMESPACE" > DLL; 
-  print $0 > DLL; 
+  print "#undef TAG_NAMESPACE" > DLL;
+  print $0 > DLL;
   print "" > DLL;
 }
 
-/SU_HAVE_EXPERIMENTAL/ { 
-  print $0 > REF; 
-  print $0 > DLL; 
+/SU_HAVE_EXPERIMENTAL/ {
+  print $0 > REF;
+  print $0 > DLL;
 }
 
 !DEFS && /^tag_typedef_t/ { DEFS = 1; }
@@ -139,7 +139,7 @@ DEFS && /tag_typedef_t/ {
 END {
   if (LIST) {
     print "\nEXPORT tag_type_t " LIST "[] =\n{" > REF;
-    print "\nEXPORT tag_type_t " LIST "[] =\n{" > DLL; 
+    print "\nEXPORT tag_type_t " LIST "[] =\n{" > DLL;
     for (tag in typedefs) {
       if (typedefs[tag] !~ /NSTAG_TYPEDEF/) {
         print "  " tag "," > REF;
