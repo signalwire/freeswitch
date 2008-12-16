@@ -157,11 +157,6 @@
 	<!-- enable-3pcc can be set to either 'true' or 'proxy', true accepts the call right away, proxy waits until the call has been answered then sends accepts -->
     <!--<param name="enable-3pcc" value="true"/>-->
 	
-    <!-- use stun when specified (default is true) -->
-    <!--<param name="stun-enabled" value="true"/>-->
-    <!-- use stun when specified (default is true) -->
-    <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
-    <!--<param name="stun-auto-disable" value="true"/>-->
     <!-- use at your own risk or if you know what this does.-->
     <!--<param name="NDLB-force-rport" value="true"/>-->
     <!--
