@@ -147,7 +147,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_siren_load)
 	SWITCH_ADD_CODEC(codec_interface, "Polycom(R) G722.1/G722.1C");
 
 	spf = 320, bpf = 640;
-	for (count = 4; count > 0; count--) {
+	for (count = 3; count > 0; count--) {
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -169,7 +169,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_siren_load)
 											 switch_siren_destroy);		/* deinitalize a codec handle using this implementation */
 	}
 	spf = 640, bpf = 1280;
-	for (count = 4; count > 0; count--) {
+	for (count = 3; count > 0; count--) {
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
