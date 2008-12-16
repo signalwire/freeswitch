@@ -1020,17 +1020,15 @@ void _su_home_deinit(su_home_t *home)
     home->suh_blocks = NULL;
 
     if (home->suh_lock) {
-#ifdef WIN32
-      UNLOCK(home); /* we must unlock here or windows leaks handles on the next call because the mutex is locked */
-#endif
-/* "In the LinuxThreads implementation, no resources are associated with mutex objects,
-   thus pthread_mutex_destroy actually does nothing except checking that the mutex is unlocked. "
-   In the Windows pthread implementation we must free the handles that are allocated */
-      _su_home_destroy_mutexes(home->suh_lock);
+		void *suh_lock = home->suh_lock;
+
+		home->suh_lock = NULL;
+
+		/* Unlock, or risk assert() or leak handles on Windows */
+		_su_home_unlocker(suh_lock);
+		_su_home_destroy_mutexes(suh_lock);
     }
   }
-
-  home->suh_lock = NULL;
 }
 
 /** Free memory blocks allocated through home.
