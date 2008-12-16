@@ -117,7 +117,7 @@ SOFIAPUBFUN int su_randint(int lb, int ub);
 SOFIAPUBFUN void *su_randmem(void *mem, size_t siz);
 
 /** Generate a random 32-bit integer. */
-SOFIAPUBFUN uint32_t su_random();
+SOFIAPUBFUN uint32_t su_random(void);
 
 SOFIA_END_DECLS
 
