@@ -15,7 +15,7 @@ LOCAL_LIBADD=$(LDAPLA) $(LIBLBERLA)
 include $(switch_srcdir)/build/modmake.rules
 
 $(LDAP_DIR):
-	$(GETLIB) $(LDAP).tgz
+	$(GETLIB) $(LDAP).tar.gz
 	cd $(LDAP_DIR) && ./configure $(DEFAULT_ARGS) --disable-bdb --disable-hdb --disable-slapd
 
 $(LDAPLA) $(LIBLBERLA): $(LDAP_DIR)
