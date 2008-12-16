@@ -110,7 +110,7 @@ char const help[] =
 int getopt(int argc, char * const argv[], char const *opstring);
 extern int optind;
 
-void usage(int returncode)
+static void usage(int returncode)
 {
   fputs(help, stderr);
   exit(returncode);

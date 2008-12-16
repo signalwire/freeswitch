@@ -84,7 +84,7 @@ char const help[] =
 int getopt(int argc, char * const argv[], char const *opstring);
 extern int optind;
 
-void usage(void)
+static void usage(void)
 {
   fputs(help, stderr);
   exit(1);
