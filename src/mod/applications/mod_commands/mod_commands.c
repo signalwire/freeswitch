@@ -457,10 +457,6 @@ SWITCH_STANDARD_API(reload_acl_function)
 	const char *err;
 	switch_xml_t xml_root;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (cmd && !strcmp(cmd, "reloadxml")) {
 		if ((xml_root = switch_xml_open_root(1, &err))) {
 			switch_xml_free(xml_root);
@@ -696,10 +692,6 @@ SWITCH_STANDARD_API(status_function)
 	int sps = 0, last_sps = 0;
 	const char *var;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	switch_core_measure_time(switch_core_uptime(), &duration);
 
 	if (stream->param_event) {
@@ -877,10 +869,6 @@ SWITCH_STANDARD_API(load_function)
 {
 	const char *err;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", LOAD_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
@@ -901,10 +889,6 @@ SWITCH_STANDARD_API(unload_function)
 	const char *err;
 	switch_bool_t force = SWITCH_FALSE;
 	const char *p = cmd;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
@@ -949,10 +933,6 @@ SWITCH_STANDARD_API(reload_function)
 	const char *err;
 	switch_bool_t force = SWITCH_FALSE;
 	const char *p = cmd;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", UNLOAD_SYNTAX);
@@ -1003,10 +983,6 @@ SWITCH_STANDARD_API(reload_xml_function)
 	const char *err;
 	switch_xml_t xml_root;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if ((xml_root = switch_xml_open_root(1, &err))) {
 		switch_xml_free(xml_root);
 	}
@@ -1022,10 +998,6 @@ SWITCH_STANDARD_API(kill_function)
 	switch_core_session_t *ksession = NULL;
 	char *mycmd = NULL, *kcause = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", KILL_SYNTAX);
@@ -1057,10 +1029,6 @@ SWITCH_STANDARD_API(park_function)
 {
 	switch_core_session_t *ksession = NULL;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (!cmd) {
 		stream->write_function(stream, "-USAGE: %s\n", PARK_SYNTAX);
 	} else if ((ksession = switch_core_session_locate(cmd))) {
@@ -1081,10 +1049,6 @@ SWITCH_STANDARD_API(transfer_function)
 	char *mycmd = NULL, *argv[5] = { 0 };
 	int argc = 0;
 	char *tuuid, *dest, *dp, *context, *arg = NULL;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
 		stream->write_function(stream, "-USAGE: %s\n", TRANSFER_SYNTAX);
@@ -1303,10 +1267,6 @@ SWITCH_STANDARD_API(sched_transfer_function)
 	char *mycmd = NULL, *argv[6] = { 0 };
 	int argc = 0;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -1345,10 +1305,6 @@ SWITCH_STANDARD_API(sched_hangup_function)
 	switch_core_session_t *hsession = NULL;
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1392,10 +1348,6 @@ SWITCH_STANDARD_API(uuid_media_function)
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (session) {
-		return status;
-	}
-
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -1426,10 +1378,6 @@ SWITCH_STANDARD_API(uuid_broadcast_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	if (session) {
-		return status;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1466,10 +1414,6 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	if (session) {
-		return status;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1514,10 +1458,6 @@ SWITCH_STANDARD_API(uuid_hold_function)
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (session) {
-		return status;
-	}
-
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
@@ -1548,10 +1488,6 @@ SWITCH_STANDARD_API(uuid_display_function)
 	char *mycmd = NULL, *argv[2] = { 0 };
 	int argc = 0;
 	switch_status_t status = SWITCH_STATUS_FALSE;
-
-	if (session) {
-		return status;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1588,10 +1524,6 @@ SWITCH_STANDARD_API(uuid_bridge_function)
 {
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -1632,10 +1564,6 @@ SWITCH_STANDARD_API(session_record_function)
 	char *uuid = NULL, *action = NULL, *path = NULL;
 	int argc = 0;
 	uint32_t limit = 0;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (switch_strlen_zero(cmd)) {
 		goto usage;
@@ -1704,10 +1632,6 @@ SWITCH_STANDARD_API(session_displace_function)
 	uint32_t limit = 0;
 	char *flags = NULL;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (switch_strlen_zero(cmd) || !(mycmd = strdup(cmd))) {
 		goto usage;
 	}
@@ -1769,10 +1693,6 @@ SWITCH_STANDARD_API(break_function)
 	char *mycmd, *flag;
 	switch_channel_t *channel = NULL;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", BREAK_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
@@ -1811,10 +1731,6 @@ SWITCH_STANDARD_API(pause_function)
 	switch_core_session_t *psession = NULL;
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
@@ -2368,10 +2284,6 @@ SWITCH_STANDARD_API(show_function)
 	switch_core_flag_t cflags = switch_core_flags();
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	db = switch_core_db_handle();
 	
 	holder.justcount = 0;
@@ -2657,10 +2569,6 @@ SWITCH_STANDARD_API(uuid_setvar_function)
 	char *mycmd = NULL, *argv[3] = { 0 };
 	int argc = 0;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		if ((argc == 2 || argc == 3) && !switch_strlen_zero(argv[0])) {
@@ -2708,10 +2616,6 @@ SWITCH_STANDARD_API(uuid_setvar_multi_function)
 	char *mycmd = NULL, *vars, *argv[64] = { 0 };
 	int argc = 0;
 	char *var_name, *var_value = NULL;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		char *uuid = mycmd;
@@ -2763,10 +2667,6 @@ SWITCH_STANDARD_API(uuid_getvar_function)
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 		if (argc >= 2 && !switch_strlen_zero(argv[0])) {
@@ -2814,10 +2714,6 @@ SWITCH_STANDARD_API(uuid_send_dtmf_function)
 	char *uuid = NULL, *dtmf_data = NULL;
 	int argc = 0;
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (switch_strlen_zero(cmd)) {
 		goto usage;
 	}
@@ -2863,10 +2759,6 @@ SWITCH_STANDARD_API(uuid_dump_function)
 	switch_core_session_t *psession = NULL;
 	char *mycmd = NULL, *argv[4] = { 0 };
 	int argc = 0;
-
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
 		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
