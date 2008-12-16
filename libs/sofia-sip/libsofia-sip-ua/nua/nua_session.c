@@ -4412,7 +4412,7 @@ session_timer_set(nua_session_usage_t *ss)
        interval is RECOMMENDED. */
     unsigned interval = t->interval;
 
-    interval -= 32 > interval / 6 ? interval / 3 : 32 + interval / 3;
+    interval -= 32 > interval / 3 ? interval / 3 : 32;
 
     nua_dialog_usage_set_refresh_range(du, interval, interval);
     t->timer_set = 1;
