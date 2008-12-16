@@ -1,6 +1,6 @@
 switch_srcdir=../../../..
 
-LDAP=openldap-2.3.19
+LDAP=openldap-2.4.11
 LDAP_DIR=$(switch_srcdir)/libs/$(LDAP)
 
 LDAPLA=$(LDAP_DIR)/libraries/libldap_r/libldap_r.la
