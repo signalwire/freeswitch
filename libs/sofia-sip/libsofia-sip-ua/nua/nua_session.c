@@ -173,7 +173,7 @@ typedef struct nua_session_usage
   char const     *ss_oa_recv, *ss_oa_sent;
 
   /**< Version of user SDP from latest successful O/A */
-  unsigned ss_sdp_version;
+  int ss_sdp_version;
 } nua_session_usage_t;
 
 static char const Offer[] = "offer", Answer[] = "answer";
