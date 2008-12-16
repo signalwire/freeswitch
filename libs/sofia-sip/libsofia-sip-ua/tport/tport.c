@@ -3490,10 +3490,10 @@ ssize_t tport_vsend(tport_t *self,
 
     if (tpn == NULL || tport_is_connection_oriented(self))
       tpn = self->tp_name;
-    
-    SU_DEBUG_7(("%s(%p): "MOD_ZU" bytes of "MOD_ZU" to %s/%s:%s%s\n", 
-		"tport_vsend", (void *)self, n, m, tpn->tpn_proto, tpn->tpn_host, 
-		tpn->tpn_port, 
+
+    SU_DEBUG_7(("%s(%p): "MOD_ZU" bytes of "MOD_ZU" to %s/%s:%s%s\n",
+		"tport_vsend", (void *)self, n, m,
+		self->tp_name->tpn_proto, tpn->tpn_host, tpn->tpn_port,
 		(ai->ai_flags & TP_AI_COMPRESSED) ? ";comp=sigcomp" : ""));
   }
 
