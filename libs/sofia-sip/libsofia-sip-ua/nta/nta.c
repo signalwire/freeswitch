@@ -361,6 +361,7 @@ su_log_t nta_log[] = { SU_LOG_INIT("nta", "NTA_DEBUG", SU_DEBUG) };
  * NTATAG_SIP_T1X64(), NTATAG_SIP_T1(), NTATAG_SIP_T2(), NTATAG_SIP_T4(),
  * NTATAG_STATELESS(),
  * NTATAG_TAG_3261(), NTATAG_TCP_RPORT(), NTATAG_TIMEOUT_408(),
+ * NTATAG_TLS_RPORT(),
  * NTATAG_TIMER_C(), NTATAG_MAX_PROCEEDING(),
  * NTATAG_UA(), NTATAG_UDP_MTU(), NTATAG_USER_VIA(),
  * NTATAG_USE_NAPTR(), NTATAG_USE_SRV() and NTATAG_USE_TIMESTAMP().
@@ -935,6 +936,7 @@ void agent_kill_terminator(nta_agent_t *agent)
  * NTATAG_SIP_T1X64(), NTATAG_SIP_T1(), NTATAG_SIP_T2(), NTATAG_SIP_T4(),
  * NTATAG_STATELESS(),
  * NTATAG_TAG_3261(), NTATAG_TCP_RPORT(), NTATAG_TIMEOUT_408(),
+ * NTATAG_TLS_RPORT(),
  * NTATAG_TIMER_C(), NTATAG_MAX_PROCEEDING(),
  * NTATAG_UA(), NTATAG_UDP_MTU(), NTATAG_USER_VIA(),
  * NTATAG_USE_NAPTR(), NTATAG_USE_SRV() and NTATAG_USE_TIMESTAMP().
@@ -999,6 +1001,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   int rport           = agent->sa_rport;
   int server_rport    = agent->sa_server_rport;
   int tcp_rport       = agent->sa_tcp_rport;
+  int tls_rport       = agent->sa_tls_rport;
   unsigned preload         = agent->sa_preload;
   unsigned threadpool      = agent->sa_tport_threadpool;
   char const *sigcomp = agent->sa_sigcomp_options;
@@ -1045,6 +1048,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 #endif
 	      NTATAG_STATELESS_REF(stateless),
 	      NTATAG_TCP_RPORT_REF(tcp_rport),
+	      NTATAG_TLS_RPORT_REF(tls_rport),
 	      NTATAG_TIMEOUT_408_REF(timeout_408),
 	      NTATAG_UA_REF(ua),
 	      NTATAG_UDP_MTU_REF(udp_mtu),
@@ -1214,6 +1218,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   agent->sa_flags = flags & MSG_FLG_USERMASK;
   agent->sa_rport = rport != 0;
   agent->sa_tcp_rport = tcp_rport != 0;
+  agent->sa_tls_rport = tls_rport != 0;
   agent->sa_preload = preload;
   agent->sa_tport_threadpool = threadpool;
 
@@ -2064,7 +2069,8 @@ int outgoing_insert_via(nta_outgoing_t *orq,
 
   if (!v->v_rport &&
       ((self->sa_rport && v->v_protocol == sip_transport_udp) ||
-       (self->sa_tcp_rport && v->v_protocol == sip_transport_tcp)))
+       (self->sa_tcp_rport && v->v_protocol == sip_transport_tcp) ||
+       (self->sa_tls_rport && v->v_protocol == sip_transport_tls)))
     msg_header_add_param(msg_home(msg), v->v_common, "rport");
 
   if (!orq->orq_tpn->tpn_comp)

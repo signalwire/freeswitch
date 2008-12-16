@@ -1298,7 +1298,7 @@ tag_typedef_t ntatag_sipflags = UINTTAG_TYPEDEF(sipflags);
  *
  * @note The NTATAG_RPORT() is a synonym for this.
  *
- * @sa @RFC3581, NTATAG_SERVER_RPORT(), NTATAG_TCP_RPORT(), @Via
+ * @sa @RFC3581, NTATAG_SERVER_RPORT(), NTATAG_TCP_RPORT(), NTATAG_TLS_RPORT(), @Via
  */
 tag_typedef_t ntatag_client_rport = BOOLTAG_TYPEDEF(client_rport);
 
@@ -1333,7 +1333,7 @@ tag_typedef_t ntatag_client_rport = BOOLTAG_TYPEDEF(client_rport);
  *    - 1 - use "rport" parameter (default)
  *    - 0 - do not use "rport" parameter
  *
- * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_TCP_RPORT(), @Via
+ * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_TCP_RPORT(), NTATAG_TLS_RPORT(), @Via
  */
 tag_typedef_t ntatag_server_rport = INTTAG_TYPEDEF(server_rport);
 
@@ -1357,6 +1357,27 @@ tag_typedef_t ntatag_server_rport = INTTAG_TYPEDEF(server_rport);
  * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_SERVER_RPORT(), @Via
  */
 tag_typedef_t ntatag_tcp_rport = BOOLTAG_TYPEDEF(tcp_rport);
+
+/**@def NTATAG_TLS_RPORT(x)
+ *
+ * Use rport with TLS, too.
+ *
+ * @par Used with
+ *    nua_create(), nua_set_params(),
+ *    nta_agent_create(), nta_agent_set_params()
+ *
+ * @par Parameter type
+ *    boolean: true (non-zero or non-NULL pointer)
+ *          or false (zero or NULL pointer)
+ *
+ * @par Values
+ *    - true - include rport parameter in the TLS via line on client side
+ *    - false - do not include rport parameter in the TLS via line
+ *      on client side
+ *
+ * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_SERVER_RPORT(), @Via
+ */
+tag_typedef_t ntatag_tls_rport = BOOLTAG_TYPEDEF(tls_rport);
 
 /**@def NTATAG_PRELOAD(x)
  *

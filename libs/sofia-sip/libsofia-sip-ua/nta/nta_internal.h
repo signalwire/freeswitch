@@ -229,6 +229,8 @@ struct nta_agent_s
   unsigned              sa_server_rport:2;
   /** If true, use rport with tcp, too */
   unsigned              sa_tcp_rport:1;
+  /** If true, use rport with tls, too */
+  unsigned              sa_tls_rport:1;
 
   /** If true, automatically create compartments */
   unsigned              sa_auto_comp:1;

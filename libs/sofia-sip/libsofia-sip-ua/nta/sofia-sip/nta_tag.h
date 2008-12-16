@@ -369,6 +369,12 @@ NTA_DLL extern tag_typedef_t ntatag_tcp_rport;
 NTA_DLL extern tag_typedef_t ntatag_tcp_rport_ref;
 #define NTATAG_TCP_RPORT_REF(x) ntatag_tcp_rport_ref, tag_bool_vr(&(x))
 
+NTA_DLL extern tag_typedef_t ntatag_tls_rport;
+#define NTATAG_TLS_RPORT(x) ntatag_tls_rport, tag_bool_v((x))
+
+NTA_DLL extern tag_typedef_t ntatag_tls_rport_ref;
+#define NTATAG_TLS_RPORT_REF(x) ntatag_tls_rport_ref, tag_bool_vr(&(x))
+
 NTA_DLL extern tag_typedef_t ntatag_preload;
 #define NTATAG_PRELOAD(x) ntatag_preload, tag_uint_v((x))
 
