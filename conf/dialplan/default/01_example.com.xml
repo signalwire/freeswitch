@@ -20,7 +20,7 @@
 
   <extension name="international.example.com">
     <condition field="${toll_allow}" expression="international"/>
-    <condition field="destination_number" expression="^(011\d{10+})$">
+    <condition field="destination_number" expression="^(011\d+)$">
       <action application="set" data="effective_caller_id_number=${outbound_caller_id_number}"/>
       <action application="set" data="effective_caller_id_name=${outbound_caller_id_name}"/>
       <action application="bridge" data="sofia/gateway/${default_gateway}/$1"/>
