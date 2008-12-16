@@ -301,6 +301,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *   NUTAG_PROXY() (aka NTATAG_DEFAULT_PROXY()) \n
  *   NUTAG_REFER_EXPIRES() \n
  *   NUTAG_REFER_WITH_ID() \n
+ *   NUTAG_REFRESH_WITHOUT_SDP() \n
  *   NUTAG_REGISTRAR() \n
  *   NUTAG_RETRY_COUNT() \n
  *   NUTAG_SERVICE_ROUTE_ENABLE() \n
@@ -422,6 +423,7 @@ int nua_stack_init_instance(nua_handle_t *nh, tagi_t const *tags)
  *   NUTAG_PROXY() (aka NTATAG_DEFAULT_PROXY()) \n
  *   NUTAG_REFER_EXPIRES() \n
  *   NUTAG_REFER_WITH_ID() \n
+ *   NUTAG_REFRESH_WITHOUT_SDP() \n
  *   NUTAG_REGISTRAR() \n
  *   NUTAG_RETRY_COUNT() \n
  *   NUTAG_SERVICE_ROUTE_ENABLE() \n
@@ -769,6 +771,10 @@ static int nhp_set_tags(su_home_t *home,
     /* NUTAG_UPDATE_REFRESH(update_refresh) */
     else if (tag == nutag_update_refresh) {
       NHP_SET(nhp, update_refresh, value != 0);
+    }
+    /* NUTAG_REFRESH_WITHOUT_SDP(refresh_without_sdp) */
+    else if (tag == nutag_refresh_without_sdp) {
+      NHP_SET(nhp, refresh_without_sdp, value != 0);
     }
     /* NUTAG_ENABLEMESSAGE(message_enable) */
     else if (tag == nutag_enablemessage) {
@@ -1478,6 +1484,7 @@ int nua_stack_set_smime_params(nua_t *nua, tagi_t const *tags)
  *   NUTAG_PATH_ENABLE() \n
  *   NUTAG_REFER_EXPIRES() \n
  *   NUTAG_REFER_WITH_ID() \n
+ *   NUTAG_REFRESH_WITHOUT_SDP() \n
  *   NUTAG_REGISTRAR() \n
  *   NUTAG_RETRY_COUNT() \n
  *   NUTAG_SERVICE_ROUTE_ENABLE() \n
@@ -1639,6 +1646,7 @@ int nua_stack_get_params(nua_t *nua, nua_handle_t *nh, nua_event_t e,
      TIF(NUTAG_MIN_SE, min_se),
      TIFD(NUTAG_SESSION_REFRESHER, refresher),
      TIF(NUTAG_UPDATE_REFRESH, update_refresh),
+     TIF(NUTAG_REFRESH_WITHOUT_SDP, refresh_without_sdp),
 
      TIF(NUTAG_ENABLEMESSAGE, message_enable),
      TIF(NUTAG_ENABLEMESSENGER, win_messenger_enable),

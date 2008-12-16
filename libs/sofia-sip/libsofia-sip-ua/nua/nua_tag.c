@@ -182,7 +182,8 @@
  * UPDATE requests.
  * Settings:
  * - NUTAG_MIN_SE(), NUTAG_SESSION_REFRESHER(),
- *   NUTAG_SESSION_TIMER(), NUTAG_UPDATE_REFRESH()
+ *   NUTAG_SESSION_TIMER(), NUTAG_UPDATE_REFRESH(),
+ *   NUTAG_REFRESH_WITHOUT_SDP(),
  * - "timer" in NUTAG_SUPPORTED()/SIPTAG_SUPPORTED()
  * Specifications:
  * - @RFC4028
@@ -954,6 +955,11 @@ tag_typedef_t nutag_invite_timer = UINTTAG_TYPEDEF(invite_timer);
  * @SessionExpires header sends a re-INVITE requests (or an UPDATE
  * request if NUTAG_UPDATE_REFRESH(1) parameter tag has been set).
  *
+ * Some SIP user-agents use INVITE without SDP offer to refresh session.
+ * By default, NUA sends an offer in 200 OK to such an INVITE and expects
+ * an answer back in ACK. If NUTAG_REFRESH_WITHOUT_SDP(1) tag is used,
+ * no SDP offer is sent in 200 OK if re-INVITE was received without SDP.
+ *
  * @par When to Use NUTAG_SESSION_TIMER()?
  *
  * The session time extension is enabled ("timer" feature tag is included in
@@ -1106,12 +1112,51 @@ tag_typedef_t nutag_session_refresher = INTTAG_TYPEDEF(session_refresher);
  * Corresponding tag taking reference parameter is NUTAG_UPDATE_REFRESH_REF().
  *
  * @sa #nua_r_update, NUTAG_SESSION_TIMER(), NUTAG_MIN_SE_REF(),
- * NUTAG_UPDATE_REFRESH(), @RFC4028, @SessionExpires, @MinSE
+ * NUTAG_SESSION_REFRESHER(), @RFC4028, @SessionExpires, @MinSE
  */
 tag_typedef_t nutag_update_refresh = BOOLTAG_TYPEDEF(update_refresh);
 
 /**@def NUTAG_UPDATE_REFRESH_REF(x)
  * Reference tag for NUTAG_UPDATE_REFRESH().
+ */
+
+
+/**@def NUTAG_REFRESH_WITHOUT_SDP(x)
+ *
+ * Do not send offer in response if re-INVITE was received without SDP.
+ *
+ * Some SIP user-agents use INVITE without SDP offer to refresh session.
+ * By default, NUA sends an offer in 200 OK to such an INVITE and expects
+ * an answer back in ACK.
+ *
+ * If NUTAG_REFRESH_WITHOUT_SDP(1) tag is used, no SDP offer is sent in 200
+ * OK if re-INVITE was received without SDP.
+ *
+ * @par Used with
+ *    nua_handle(), nua_invite(), nua_update(), nua_respond() \n
+ *    nua_set_params() or nua_set_hparams() \n
+ *    nua_get_params() or nua_get_hparams()
+ *
+ * See nua_set_hparams() for a complete list of all the nua operations that
+ * accept this tag.
+ *
+ * @par Parameter type
+ *    int (boolean: nonzero is true, zero is false)
+ *
+ * @par Values
+ *    - 1 (true, do not try to send offer in response to re-INVITE)
+ *    - 0 (false, always use SDP offer-answer in re-INVITEs)
+ *
+ * Corresponding tag taking reference parameter is NUTAG_REFRESH_WITHOUT_SDP_REF().
+ *
+ * @sa #nua_r_update, NUTAG_SESSION_TIMER(), NUTAG_MIN_SE_REF(),
+ * NUTAG_SESSION_REFRESHER(), NUTAG_UPDATE_REFRESH(), @RFC4028,
+ * @SessionExpires, @MinSE
+ */
+tag_typedef_t nutag_refresh_without_sdp = BOOLTAG_TYPEDEF(refresh_without_sdp);
+
+/**@def NUTAG_REFRESH_WITHOUT_SDP_REF(x)
+ * Reference tag for NUTAG_REFRESH_WITHOUT_SDP_REF().
  */
 
 

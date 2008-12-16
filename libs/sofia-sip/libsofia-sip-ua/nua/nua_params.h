@@ -82,6 +82,9 @@ struct nua_handle_preferences
   /** no (preference), local or remote */
   enum nua_session_refresher nhp_refresher; 
   unsigned         nhp_update_refresh:1; /**< Use UPDATE to refresh */
+
+  /**< Accept refreshes without SDP */
+  unsigned         nhp_refresh_without_sdp:1;
   
   /* Messaging preferences */
   unsigned     	   nhp_message_enable : 1;
@@ -164,6 +167,7 @@ struct nua_handle_preferences
     unsigned nhb_min_se:1;
     unsigned nhb_refresher:1; 
     unsigned nhb_update_refresh:1;
+    unsigned nhb_refresh_without_sdp:1;
     unsigned nhb_message_enable:1;
     unsigned nhb_win_messenger_enable:1;
     unsigned nhb_message_auto_respond:1;
@@ -179,9 +183,9 @@ struct nua_handle_preferences
     unsigned nhb_keepalive:1;
     unsigned nhb_keepalive_stream:1;
     unsigned nhb_registrar:1;
+    unsigned :0;		/* at most 32 bits before this point */
 
     unsigned nhb_allow:1;
-    unsigned :0;		/* at most 32 bits before this point */
     unsigned nhb_supported:1;
 
     unsigned nhb_allow_events:1;

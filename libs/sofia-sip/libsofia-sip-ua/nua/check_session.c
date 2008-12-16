@@ -1077,6 +1077,71 @@ START_TEST(call_2_3_2)
 }
 END_TEST
 
+START_TEST(call_2_3_3)
+{
+  nua_handle_t *nh;
+  struct message *response;
+
+  s2_case("2.3.3", "Handling re-INVITE without SDP gracefully",
+	  "NUA receives INVITE, "
+	  "re-INVITE without SDP (w/o NUTAG_REFRESH_WITHOUT_SDP(), "
+	  "re-INVITE without SDP (using NUTAG_REFRESH_WITHOUT_SDP(), "
+	  "sends BYE.");
+
+  nh = invite_to_nua(
+    TAG_END());
+
+  s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
+		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
+		TAG_END());
+  
+  nua_respond(nh, SIP_200_OK, TAG_END());
+
+  fail_unless(s2_check_callstate(nua_callstate_completed));
+
+  response = s2_wait_for_response(200, SIP_METHOD_INVITE);
+
+  fail_if(!response);
+  s2_update_dialog(dialog, response);
+  fail_if(!response->sip->sip_content_type);
+  s2_free_message(response);
+
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
+
+  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  s2_fast_forward(10);
+
+  nua_set_hparams(nh, NUTAG_REFRESH_WITHOUT_SDP(1), TAG_END());
+  fail_unless(s2_check_event(nua_r_set_params, 200));
+
+  s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
+		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
+		TAG_END());
+  
+  nua_respond(nh, SIP_200_OK, TAG_END());
+
+  fail_unless(s2_check_callstate(nua_callstate_completed));
+
+  response = s2_wait_for_response(200, SIP_METHOD_INVITE);
+
+  fail_if(!response);
+  s2_update_dialog(dialog, response);
+  fail_if(response->sip->sip_content_type);
+  s2_free_message(response);
+
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
+
+  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
 
 TCase *session_timer_tcase(void)
 {
@@ -1085,6 +1150,7 @@ TCase *session_timer_tcase(void)
   {
     tcase_add_test(tc, call_2_3_1);
     tcase_add_test(tc, call_2_3_2);
+    tcase_add_test(tc, call_2_3_3);
   }
   return tc;
 }

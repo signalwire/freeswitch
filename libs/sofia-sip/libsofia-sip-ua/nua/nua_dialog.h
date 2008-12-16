@@ -116,6 +116,7 @@ struct nua_server_request {
 
   unsigned sr_offer_sent:2;	/**< We have offered SDP (reliably, if >1) */
   unsigned sr_answer_recv:1;	/**< We have received SDP answer */
+
   unsigned :0;
 
   char const *sr_sdp;		/**< SDP received from client */

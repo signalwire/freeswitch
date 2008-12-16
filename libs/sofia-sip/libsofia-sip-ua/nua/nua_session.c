@@ -171,6 +171,9 @@ typedef struct nua_session_usage
 
   /* Offer-Answer status */
   char const     *ss_oa_recv, *ss_oa_sent;
+
+  /**< Version of user SDP from latest successful O/A */
+  unsigned ss_sdp_version;
 } nua_session_usage_t;
 
 static char const Offer[] = "offer", Answer[] = "answer";
@@ -964,11 +967,14 @@ static int nua_session_client_response(nua_client_request_t *cr,
       /* XXX */
       sdp = NULL;
     }
-    else if (soa_activate(nh->nh_soa, NULL) < 0)
+    else if (soa_activate(nh->nh_soa, NULL) < 0) {
       /* XXX - what about errors? */
       LOG3("error activating media after");
-    else
+    }
+    else {
+      ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
       LOG5("processed SDP");
+    }
   }
   else if (cr->cr_method != sip_method_invite) {
     /* If non-invite request did not have offer, ignore SDP in response */
@@ -1309,7 +1315,8 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
       ;
     else if (nh->nh_soa && soa_is_complete(nh->nh_soa)) {
       /* signal SOA that O/A round(s) is (are) complete */
-	soa_activate(nh->nh_soa, NULL);
+      if (soa_activate(nh->nh_soa, NULL) >= 0)
+	ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
     }
     else if (nh->nh_soa == NULL
 	     /* NUA does not necessarily know dirty details */
@@ -1741,7 +1748,8 @@ static int nua_prack_client_request(nua_client_request_t *cr,
     }
     else {
       answer_sent = 1;
-      soa_activate(nh->nh_soa, NULL);
+      if (soa_activate(nh->nh_soa, NULL) >= 0)
+	ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
     }
   }
   else if (nh->nh_soa == NULL) {
@@ -1967,6 +1975,8 @@ static int
   process_ack_or_cancel(nua_server_request_t *, nta_incoming_t *, 
 			sip_t const *),
   process_ack(nua_server_request_t *, nta_incoming_t *, sip_t const *),
+  process_ack_error(nua_server_request_t *sr, msg_t *ackmsg,
+		    int status, char const *phrase, char const *reason),
   process_cancel(nua_server_request_t *, nta_incoming_t *, sip_t const *),
   process_timeout(nua_server_request_t *, nta_incoming_t *),
   process_prack(nua_server_request_t *,
@@ -2207,7 +2217,7 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
   msg_t *msg = sr->sr_response.msg; 
   sip_t *sip = sr->sr_response.sip; 
 
-  int reliable = 0, offer = 0, answer = 0, early_answer = 0, extra = 0;
+  int reliable = 0, maybe_answer = 0, offer = 0, answer = 0, extra = 0;
 
   enter;
 
@@ -2217,8 +2227,11 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     return nua_base_server_respond(sr, tags);
   }
 
-  if (nua_invite_server_is_100rel(sr, tags)) {
-    reliable = 1, early_answer = 1;
+  if (200 <= sr->sr_status && sr->sr_status < 300) {
+    reliable = 1, maybe_answer = 1;
+  }
+  else if (nua_invite_server_is_100rel(sr, tags)) {
+    reliable = 1, maybe_answer = 1;
   }
   else if (!nh->nh_soa || sr->sr_status >= 300) {
     if (sr->sr_neutral)
@@ -2234,10 +2247,10 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 	    SOATAG_USER_SDP_STR_REF(user_sdp_str),
 	    TAG_END());
 
-    early_answer = user_sdp || user_sdp_str;
+    maybe_answer = user_sdp || user_sdp_str;
   }
   else {
-    early_answer = NH_PGET(nh, early_answer);
+    maybe_answer = NH_PGET(nh, early_answer);
   }
 
   if (!nh->nh_soa) {
@@ -2259,11 +2272,12 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     tagi_t const *t = tl_find_last(tags, nutag_include_extra_sdp);
     extra = t && t->t_value;
   }
-  else if (sr->sr_offer_recv && !sr->sr_answer_sent && early_answer) {
+  else if (sr->sr_offer_recv && !sr->sr_answer_sent && maybe_answer) {
     /* Generate answer */ 
     if (soa_generate_answer(nh->nh_soa, NULL) >= 0 &&
 	soa_activate(nh->nh_soa, NULL) >= 0) {
       answer = 1;      /* signal that O/A answer sent (answer to invite) */
+      /* ss_sdp_version is updated only after answer is sent reliably */
     }
     /* We have an error! */
     else if (sr->sr_status >= 200) {
@@ -2288,12 +2302,16 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       /* 1xx - we don't have to send answer */
     }
   }
-  else if (sr->sr_offer_recv && sr->sr_answer_sent == 1 && early_answer) {
+  else if (sr->sr_offer_recv && sr->sr_answer_sent == 1 && maybe_answer) {
     /* The answer was sent unreliably, keep sending it */
     answer = 1;
   }
   else if (!sr->sr_offer_recv && !sr->sr_offer_sent && reliable) {
-    /* Generate offer */
+    if (200 <= sr->sr_status && nua_callstate_ready <= ss->ss_state &&
+	NH_PGET(nh, refresh_without_sdp))
+      /* This is a re-INVITE without SDP - do not try to send offer in 200 */;
+    else
+      /* Generate offer */
     if (soa_generate_offer(nh->nh_soa, 0, NULL) < 0)
       sr->sr_status = soa_error_as_sip_response(nh->nh_soa, &sr->sr_phrase);
     else
@@ -2307,6 +2325,9 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
       sr->sr_offer_sent = 1 + reliable, ss->ss_oa_sent = Offer;
     else if (answer)
       sr->sr_answer_sent = 1 + reliable, ss->ss_oa_sent = Answer;
+
+    if (answer && reliable)
+      ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
   }
 
   if (reliable && sr->sr_status < 200) {
@@ -2340,16 +2361,15 @@ static
 int nua_invite_server_is_100rel(nua_server_request_t *sr, tagi_t const *tags)
 {
   nua_handle_t *nh = sr->sr_owner;
-  sip_t const *sip = sr->sr_response.sip;
   sip_require_t *require = sr->sr_request.sip->sip_require;
   sip_supported_t *supported = sr->sr_request.sip->sip_supported;
 
   if (sr->sr_status >= 200)
-    return 1;
+    return 0;
   else if (sr->sr_status == 100)
     return 0;
 
-  if (sip_has_feature(sip->sip_require, "100rel"))
+  if (sip_has_feature(sr->sr_response.sip->sip_require, "100rel"))
     return 1;
 
   if (require == NULL && supported == NULL)
@@ -2473,7 +2493,7 @@ int process_ack_or_cancel(nua_server_request_t *sr,
  * 
  * @END_NUA_EVENT
  */
-
+static
 int process_ack(nua_server_request_t *sr,
 		nta_incoming_t *irq,
 		sip_t const *sip)
@@ -2489,7 +2509,6 @@ int process_ack(nua_server_request_t *sr,
   if (sr->sr_offer_sent && !sr->sr_answer_recv) {
     char const *sdp;
     size_t len;
-    int error;
 
     if (session_get_description(sip, &sdp, &len))
       recv = Answer;
@@ -2499,32 +2518,45 @@ int process_ack(nua_server_request_t *sr,
       ss->ss_oa_recv = recv;
     }
 
-    if (nh->nh_soa == NULL)
+    if (nh->nh_soa == NULL) 
       ;
-    else if (recv == NULL ||
-	     soa_set_remote_sdp(nh->nh_soa, NULL, sdp, len) < 0 ||
-	     soa_process_answer(nh->nh_soa, NULL) < 0 ||
-	     soa_activate(nh->nh_soa, NULL) < 0) {
+    else if (recv == NULL ) {
+      if (ss->ss_state >= nua_callstate_ready &&
+	  soa_get_user_version(nh->nh_soa) == ss->ss_sdp_version &&
+	  soa_process_reject(nh->nh_soa, NULL) >= 0) {
+	url_t const *m;
+
+	/* The re-INVITE was a refresh and re-INVITEr ignored our offer */
+	ss->ss_oa_sent = NULL; 
+
+	if (sr->sr_request.sip->sip_contact)
+	  m = sr->sr_request.sip->sip_contact->m_url;
+	else
+	  m = sr->sr_request.sip->sip_from->a_url;
+
+	SU_DEBUG_3(("nua(%p): re-INVITEr ignored offer in our %u response "
+		    "(Contact: <" URL_PRINT_FORMAT  ">)\n", 
+		    (void *)nh, sr->sr_status, URL_PRINT_ARGS(m)));
+	if (sr->sr_request.sip->sip_user_agent)
+	  SU_DEBUG_3(("nua(%p): re-INVITE: \"User-Agent: %s\"\n", (void *)nh,
+		      sr->sr_request.sip->sip_user_agent->g_string));
+      }      
+      else 
+	return process_ack_error(sr, msg, 488, "Offer-Answer error", 
+				 "SIP;cause=488;text=\"No answer to offer\"");
+    }
+    else if (soa_set_remote_sdp(nh->nh_soa, NULL, sdp, len) >= 0 &&
+	     soa_process_answer(nh->nh_soa, NULL) >= 0 &&
+	     soa_activate(nh->nh_soa, NULL) >= 0) {
+      ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);      
+    }
+    else {
       int status; char const *phrase, *reason;
 
       status = soa_error_as_sip_response(nh->nh_soa, &phrase);
       reason = soa_error_as_sip_reason(nh->nh_soa);
 
-      nua_stack_event(nh->nh_nua, nh, msg,
-		      nua_i_ack, status, phrase, NULL);
-      nua_stack_event(nh->nh_nua, nh, NULL,
-		      nua_i_media_error, status, phrase, NULL);
-
-      ss->ss_reporting = 1;	/* We report terminated state here if BYE fails */
-      error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
-      ss->ss_reporting = 0;
-
-      signal_call_state_change(nh, ss, 488, "Offer-Answer Error",
-			       error
-			       ? nua_callstate_terminated
-			       : nua_callstate_terminating);
-
-      return 0;
+      return process_ack_error(sr, msg, status, phrase, reason);
     }
   }
 
@@ -2539,6 +2571,38 @@ int process_ack(nua_server_request_t *sr,
 
   return 0;
 }
+
+static int 
+process_ack_error(nua_server_request_t *sr,
+		  msg_t *ackmsg,
+		  int status,
+		  char const *phrase,
+		  char const *reason)
+{
+  nua_handle_t *nh = sr->sr_owner;
+  nua_session_usage_t *ss = nua_dialog_usage_private(sr->sr_usage);
+  int error;
+  
+  nua_stack_event(nh->nh_nua, nh, ackmsg,
+		  nua_i_ack, status, phrase, NULL);
+  nua_stack_event(nh->nh_nua, nh, NULL,
+		  nua_i_media_error, status, phrase, NULL);
+
+  if (reason) ss->ss_reason = reason;
+  ss->ss_reporting = 1;	
+  error = nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL);
+  ss->ss_reporting = 0;
+
+  signal_call_state_change(nh, ss,
+			   488, "Offer-Answer Error",
+			   /* We report terminated state if BYE failed */
+			   error
+			   ? nua_callstate_terminated
+			   : nua_callstate_terminating);
+
+  return 0;
+}
+
 
 /** @NUA_EVENT nua_i_cancel
  *
@@ -2809,8 +2873,10 @@ int nua_prack_server_report(nua_server_request_t *sr, tagi_t const *tags)
     signal_call_state_change(nh, ss,
 			     status, phrase, 
 			     ss->ss_state);
-    if (nh->nh_soa)
+    if (nh->nh_soa) {
       soa_activate(nh->nh_soa, NULL);
+      ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);      
+    }
   }
 
   if (status < 200 || 300 <= status)
@@ -3469,6 +3535,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     }
     else {
       sr->sr_answer_sent = 1, ss->ss_oa_sent = Answer;
+      ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);      
     }
   }
 

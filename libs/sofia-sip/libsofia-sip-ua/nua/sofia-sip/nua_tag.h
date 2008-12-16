@@ -183,6 +183,12 @@ SOFIAPUBVAR tag_typedef_t nutag_update_refresh;
 #define NUTAG_UPDATE_REFRESH_REF(x) nutag_update_refresh_ref, tag_bool_vr((&(x)))
 SOFIAPUBVAR tag_typedef_t nutag_update_refresh_ref;
 
+#define NUTAG_REFRESH_WITHOUT_SDP(x) nutag_refresh_without_sdp, tag_bool_v((x))
+SOFIAPUBVAR tag_typedef_t nutag_refresh_without_sdp;
+#define NUTAG_REFRESH_WITHOUT_SDP_REF(x) \
+  nutag_refresh_without_sdp_ref, tag_bool_vr((&(x)))
+SOFIAPUBVAR tag_typedef_t nutag_refresh_without_sdp_ref;
+
 #define NUTAG_AUTOALERT(x)      nutag_autoalert, tag_bool_v(x)
 SOFIAPUBVAR tag_typedef_t nutag_autoalert;
 #define NUTAG_AUTOALERT_REF(x)  nutag_autoalert_ref, tag_bool_vr(&(x))
