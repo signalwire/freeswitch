@@ -280,6 +280,20 @@ tag_typedef_t tptag_compartment = PTRTAG_TYPEDEF(compartment);
  */
 tag_typedef_t tptag_tls_version = UINTTAG_TYPEDEF(tls_version);
 
+/**@def TPTAG_TLS_VERIFY_PEER(x)
+ *
+ * The verification of certificates can be controlled:
+ * 0: no verify certificates;
+ * 1: on server mode, the certificate returned by client is checked
+ *    if fail the TLS/SSL handshake is immediately terminated;
+ * 1: on client mode, the server certificate is verified
+ *    if fail the TLS/SSL handshake is immediately terminated;
+ *
+ * Use with tport_tbind(), nua_create(), nta_agent_create(),
+ * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
+ */
+tag_typedef_t tptag_tls_verify_peer = UINTTAG_TYPEDEF(tls_verify_peer);
+
 /**@def TPTAG_QUEUESIZE(x)
  *
  * Specify the number of messages that can be queued per connection.

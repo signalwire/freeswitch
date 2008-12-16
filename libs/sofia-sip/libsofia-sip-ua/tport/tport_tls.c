@@ -166,7 +166,7 @@ int tls_verify_cb(int ok, X509_STORE_CTX *store)
     SU_DEBUG_1(("  err %i:%s\n", err, X509_verify_cert_error_string(err)));
   }
 
-  return 1;			/* Always return "ok" */
+  return ok;
 }
 
 static
@@ -265,8 +265,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
   SSL_CTX_set_verify_depth(tls->ctx, ti->verify_depth);
 
   SSL_CTX_set_verify(tls->ctx,
-		     getenv("SSL_VERIFY_PEER") ? SSL_VERIFY_PEER : SSL_VERIFY_NONE
-		     /* SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT */,
+		     ti->verify_peer == 1 ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
                      tls_verify_cb);
 
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {

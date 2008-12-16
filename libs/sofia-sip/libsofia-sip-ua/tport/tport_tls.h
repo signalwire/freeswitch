@@ -48,7 +48,9 @@ typedef struct tls_s tls_t;
 extern char const tls_version[];
 
 typedef struct tls_issues_s {
-  int  verify_depth;    /* if 0, then do nothing                      */
+  int   verify_peer;    /* 0: no verify certificate, *
+                         * 1: if fail the TLS/SSL handshake is terminated. */
+  int   verify_depth;   /* if 0, then do nothing                      */
   int   configured;	/* If non-zero, complain about certificate errors */
   char *cert;		/* CERT file name. File format is PEM         */
   char *key;		/* Private key file. PEM format               */

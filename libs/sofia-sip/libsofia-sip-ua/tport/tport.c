@@ -1448,7 +1448,7 @@ int tport_bind_set(tport_master_t *mr,
  *
  * @TAGS
  * TPTAG_SERVER(), TPTAG_PUBLIC(), TPTAG_IDENT(), TPTAG_HTTP_CONNECT(),
- * TPTAG_CERTIFICATE(), TPTAG_TLS_VERSION(), and tags used with
+ * TPTAG_CERTIFICATE(), TPTAG_TLS_VERSION(), TPTAG_TLS_VERIFY_PEER, and tags used with
  * tport_set_params(), especially TPTAG_QUEUESIZE().
  */
 int tport_tbind(tport_t *self,
