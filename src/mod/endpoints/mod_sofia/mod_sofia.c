@@ -373,6 +373,8 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_safe_free(stream.data);
 	}
 
+	switch_clear_flag(tech_pvt, TFLAG_IO);
+
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 	}
@@ -385,7 +387,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	switch_core_session_unset_write_codec(session);
 
 	switch_mutex_lock(tech_pvt->profile->flag_mutex);
-	switch_clear_flag(tech_pvt, TFLAG_IO);
 	tech_pvt->profile->inuse--;
 	switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 
@@ -656,6 +657,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	tech_pvt->read_frame.datalen = 0;
 	switch_set_flag_locked(tech_pvt, TFLAG_READING);
 
+	if (switch_test_flag(tech_pvt, TFLAG_HUP) || switch_test_flag(tech_pvt, TFLAG_BYE) || !tech_pvt->read_codec.implementation) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_test_flag(tech_pvt, TFLAG_IO)) {
 		switch_status_t status;
 
@@ -665,7 +670,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 
 		switch_assert(tech_pvt->rtp_session != NULL);
 		tech_pvt->read_frame.datalen = 0;
-
+		
 		while (switch_test_flag(tech_pvt, TFLAG_IO) && tech_pvt->read_frame.datalen == 0) {
 			tech_pvt->read_frame.flags = SFF_NONE;
 
@@ -843,6 +848,10 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 
 	if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
 		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_BYE) || !tech_pvt->read_codec.implementation) {
+		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
