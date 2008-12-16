@@ -1374,8 +1374,9 @@ void sdp_media_transport(sdp_media_t *m, char const *s)
     m->m_proto = sdp_proto_rtp, m->m_proto_name = "RTP/AVP";
   else if (strcasecmp(s, "RTP/SAVP") == 0)
     m->m_proto = sdp_proto_srtp, m->m_proto_name = "RTP/SAVP";
-  else if (strcasecmp(s, "UDPTL") == 0)
-    m->m_proto = sdp_proto_udptl, m->m_proto_name = "UDPTL";
+  else if (strcasecmp(s, "udptl") == 0)
+    /* Lower case - be compatible with people living by T.38 examples */
+    m->m_proto = sdp_proto_udptl, m->m_proto_name = "udptl";
   else if (strcasecmp(s, "UDP") == 0)
     m->m_proto = sdp_proto_udp, m->m_proto_name = "UDP";
   else if (strcasecmp(s, "TCP") == 0)
