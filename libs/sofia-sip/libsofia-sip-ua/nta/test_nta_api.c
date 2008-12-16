@@ -865,6 +865,90 @@ static int api_test_dialogs(agent_t *ag)
 }
 
 
+/* Test that NULL host and/or port fields of user supplied Via header are
+   filled in automaticaly */
+int api_test_user_via_fillin(agent_t *ag)
+{
+  su_home_t home[1];
+  su_root_t *root;
+  nta_agent_t *nta;
+  nta_leg_t *leg;
+  nta_outgoing_t *orq0, *orq1;
+  msg_t *msg0, *msg1;
+  sip_t *sip0, *sip1;
+  sip_via_t *via0, *via1;
+  sip_via_t via[1];
+  static char *via_params[] = { "param1=value1", "param2=value2" };
+  int i;
+
+  BEGIN();
+
+  memset(home, 0, sizeof home);
+  su_home_init(home);
+
+  TEST_1(root = su_root_create(NULL));
+
+  TEST_1(nta = nta_agent_create(root,
+  			  (url_string_t *)"sip:*:*",
+  			  NULL,
+  			  NULL,
+  			  TAG_END()));
+  TEST_1(leg = nta_leg_tcreate(nta, NULL, NULL, 
+  			 NTATAG_NO_DIALOG(1),
+  			 TAG_END()));
+
+  /* This creates a delayed response message */
+  orq0 = nta_outgoing_tcreate(leg, outgoing_callback, ag, NULL,
+  		       SIP_METHOD_MESSAGE, 
+  		       URL_STRING_MAKE("sip:foo.bar;transport=none"),
+  		       SIPTAG_FROM_STR("<sip:bar.foo>"),
+  		       SIPTAG_TO_STR("<sip:foo.bar>"),
+  		       TAG_END());
+  TEST_1(orq0);
+  TEST_1(msg0 = nta_outgoing_getrequest(orq0));
+  TEST_1(sip0 = sip_object(msg0));
+  TEST_1(via0 = sip0->sip_via);
+
+  /* create user Via template to be filled in by NTA */
+  sip_via_init(via);
+  via->v_protocol = "*";
+  for (i = 0; i < sizeof(via_params)/sizeof(via_params[0]); i++)
+      sip_via_add_param(home,via,via_params[i]); /* add param to the template */
+
+  /* This creates a delayed response message */
+  orq1 = nta_outgoing_tcreate(leg, outgoing_callback, ag, NULL,
+  		       SIP_METHOD_MESSAGE, 
+  		       URL_STRING_MAKE("sip:foo.bar;transport=none"),
+  		       SIPTAG_FROM_STR("<sip:bar.foo>"),
+  		       SIPTAG_TO_STR("<sip:foo.bar>"),
+               NTATAG_USER_VIA(1),
+               SIPTAG_VIA(via),
+  		       TAG_END());
+  TEST_1(orq1);
+  TEST_1(msg1 = nta_outgoing_getrequest(orq1));
+  TEST_1(sip1 = sip_object(msg1));
+  TEST_1(via1 = sip1->sip_via);
+
+  /* check that template has been filled correctly */
+  TEST_S(via0->v_protocol,via1->v_protocol);
+  TEST_S(via0->v_host,via1->v_host);
+  TEST_S(via0->v_port,via1->v_port);
+  /* check that the parameter has been preserved */
+  for (i = 0; i < sizeof(via_params)/sizeof(via_params[0]); i++)
+    TEST_S(via1->v_params[i],via_params[i]);
+
+  TEST_VOID(nta_outgoing_destroy(orq0));
+  TEST_VOID(nta_outgoing_destroy(orq1));
+  TEST_VOID(nta_leg_destroy(leg));
+  TEST_VOID(nta_agent_destroy(nta)); 
+
+  TEST_VOID(su_root_destroy(root));
+  TEST_VOID(su_home_deinit(home));
+
+  END();
+}
+
+
 int outgoing_default(agent_t *ag,
 		     nta_outgoing_t *orq,
 		     sip_t const *sip)
@@ -1426,6 +1510,7 @@ int main(int argc, char *argv[])
     retval |= api_test_tport(ag); SINGLE_FAILURE_CHECK();
     retval |= api_test_dialogs(ag); SINGLE_FAILURE_CHECK();
     retval |= api_test_default(ag); SINGLE_FAILURE_CHECK();
+    retval |= api_test_user_via_fillin(ag); SINGLE_FAILURE_CHECK();
   }
   retval |= api_test_deinit(ag); fflush(stdout);
 
