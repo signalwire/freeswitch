@@ -19,7 +19,7 @@ else
 	[HAVE_OPENSSL=0])
   fi
 
-  if test $HAVE_OPENSSL = 1 ; then
+  if test x$HAVE_OPENSSL = x1 ; then
      AC_DEFINE([HAVE_LIBCRYPTO], 1, [Define to 1 if you have the `crypto' library (-lcrypto).])
      AC_DEFINE([HAVE_LIBSSL], 1, [Define to 1 if you have the `ssl' library (-lssl).])
   else
