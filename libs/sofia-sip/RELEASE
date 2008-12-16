@@ -1,30 +1,24 @@
-==============================================
-Release notes for current version of Sofia-SIP
-==============================================
+======================================
+Release notes for Sofia-SIP 1.12.10rc2
+======================================
 
-Changes since last release
---------------------------
+Changes since release 1.12.9
+----------------------------
 
-<changes since last written in freshmeat.net "Changes:" style;
- and in less than 10 lines, written in 3rd person English, with
- complete sentences />
-
-Bugs in blaa and foo have been fixed. The stack now supports
-use of foobar...
+Numerous bugs has been fixed. The SDP parser has been updated to accept
+syntax according to RFC 4566. The TLS certificate verfication can now be
+controlled through offical API.
 
 API/ABI changes and versioning
 ------------------------------
 
-<see previous release notes at
- http://sofia-sip.sourceforge.net/relnotes/ for examples ;
- - should include all changes to public headers, and
-   other important information to developers;
- - and should be updated _continuously_! />
-
-**template**: New features in API are marked with Doxytag macro @VERSION_1_XX_X.
-
 libsofia-sip-ua:
-- **template**: Added foobar() function (sofia-sip/foobar.h).
+  New tags added:
+  - TPTAG_TLS_VERIFY_PEER()
+  - NUTAG_REFRESH_WITHOUT_SDP()
+  Tag behavour updated:
+  - NTATAG_SERVER_RPORT(2) now includes and uses rport even if client does not
+
 - This release is ABI/API compatible with applications linked against
   any 1.12.x release. However, applications built against this release won't
   work against an older library. The ABI has been tested with the nua module
@@ -38,36 +32,40 @@ libsofia-sip-ua-glib:
 Contributors to this release
 ----------------------------
 
-<list of people who contributed to _this_ release
- - update as people's patches are added, or when you commit stuff
- - current development team members (see AUTHORS) may be omitted,
-   or listed at the end of the contribur list (depending on the scope
-   of the work done since the last release)
- - name of the contributor should be enough (email addresses in AUTHORS),
-   plus a _brief_ description of what was contributed
- - roughly sorted by number of patches accepted
-/>
-
-- **template**: First Surname (patch to nua/soa/msg)
+Tiago Katcipis <katcipis AT inf DOT ufcs DOT br>
+Mikhail Zabaluev
+Paulo Pizarro <paulo -dot pizarro -at gmail -dot com>
+Filippo Della Betta
+Jarod Neuner <janeuner@networkharbor.com>
+Fabio Ferrari <fabioferrari AT gmail DOT com>
+Jeff Lenk <jlenk at frontiernet dot net>
+Brian Czapiga <rys at evool dot com>
+Stefano Sabatini
+Fabio Margarido <fabiomargarido AT gmail DOT com>
 
 See the AUTHORS file in the distribution package.
 
-Notes on new features
----------------------
-
-<information about major new features
- - new/changed/removed functionality
- - links to further documentation
- - section may be omitted for minor releases
-/>
 
 Bugs fixed in this release
 --------------------------
 
-< notable bugs fixed in this release
- - check the sf.net bug tracker; see closed bugs,
-   sorted by closing date
- - other bugs as fixed in CVS/darcs
-/>
-
-- **template**: #9499652 sf.net bug item title
+- Configure script options --enable-ndebug and enable-expensive-checks fixed.
+  Patch by Fabio Margarido
+- When using session-timers, expire session only at the end of negotiated
+  expiration time.
+- Fixed #1930055: Unregister when a new public binding is detected.
+  Patch by Mikhail Zabaluev.
+- Use SIPS scheme in Contact URI if registering with SIPS. Patch by Jarod
+  Neuner.
+- Using lower-case "udptl" transport name in SDP. Be bug-compatible.
+  Report by Timo Bruhn.
+- Fixed mutex handle leak on Windows. Patch by Jeff Lenk.
+- Accept requests with invalid Supported header. Patch by Brian Czapiga.
+- When doing event fetch (SUBSCRIBE with Expires: 0) Wait until NOTIFY is
+  received.
+- Fixed memory leak when destroying incomplete INVITE transactions in nua.
+- Not using OPTIONS keepalive on TCP.
+- Fixed bug with To-tags in response to CANCEL.
+- Fixed #2041747: crash when using SIPTAG_ORGANIZATION_TAG_STR
+- Fixed #1904805: build with Vista PlatformSDK
+- Fixed #2037585: crash when call terminated
