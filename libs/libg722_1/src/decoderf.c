@@ -451,7 +451,7 @@ static void decode_vector_quantized_mlt_indices(g722_1_decode_state_t *s,
 
         if (category == NUM_CATEGORIES - 1)
         {
-            noifillpos = standard_deviation*0.70711;
+            noifillpos = standard_deviation*0.70711f;
             noifillneg = -noifillpos;
 
             /* This assumes region_size = 20 */
