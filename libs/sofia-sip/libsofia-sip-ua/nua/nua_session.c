@@ -1315,8 +1315,9 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
       ;
     else if (nh->nh_soa && soa_is_complete(nh->nh_soa)) {
       /* signal SOA that O/A round(s) is (are) complete */
-      if (soa_activate(nh->nh_soa, NULL) >= 0)
+      if (soa_activate(nh->nh_soa, NULL) >= 0) {
 	ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
+      }
     }
     else if (nh->nh_soa == NULL
 	     /* NUA does not necessarily know dirty details */
@@ -1748,8 +1749,9 @@ static int nua_prack_client_request(nua_client_request_t *cr,
     }
     else {
       answer_sent = 1;
-      if (soa_activate(nh->nh_soa, NULL) >= 0)
+      if (soa_activate(nh->nh_soa, NULL) >= 0) {
 	ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
+      }
     }
   }
   else if (nh->nh_soa == NULL) {
@@ -2326,8 +2328,9 @@ int nua_invite_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     else if (answer)
       sr->sr_answer_sent = 1 + reliable, ss->ss_oa_sent = Answer;
 
-    if (answer && reliable)
+    if (answer && reliable && nh->nh_soa) {
       ss->ss_sdp_version = soa_get_user_version(nh->nh_soa);
+    }
   }
 
   if (reliable && sr->sr_status < 200) {
