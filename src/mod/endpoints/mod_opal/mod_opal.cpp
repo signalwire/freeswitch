@@ -162,7 +162,7 @@ static switch_call_cause_t create_outgoing_channel(switch_core_session_t *sessio
     char name[256] = "opal/";
     switch_copy_string(name + 5, outbound_profile->destination_number, sizeof(name)-5);
     switch_channel_set_name(channel, name);
-
+    switch_channel_set_flag(channel, CF_OUTBOUND);
     switch_channel_set_caller_profile(channel, caller_profile);
     switch_channel_set_state(channel, CS_INIT);
 
