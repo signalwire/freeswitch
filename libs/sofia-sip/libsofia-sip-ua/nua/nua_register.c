@@ -2011,6 +2011,7 @@ sip_contact_t *nua_handle_contact_by_via(nua_handle_t *nh,
   if (sip_transport_has_tls(v->v_protocol) ||
       sip_transport_has_tls(transport)) {
     url.url_type = url_sips;
+    url.url_scheme = url_scheme(url_sips);
     if (port && strcmp(port, SIPS_DEFAULT_SERV) == 0)
       port = NULL;
     if (port || host_is_ip_address(host))
