@@ -326,7 +326,7 @@ bye_by_nua(nua_handle_t *nh,
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 }
 
-static void 
+static void
 bye_by_nua_challenged(nua_handle_t *nh,
 		      tag_type_t tag, tag_value_t value, ...)
 {
@@ -358,7 +358,7 @@ bye_by_nua_challenged(nua_handle_t *nh,
 }
 
 
-static void 
+static void
 cancel_by_nua(nua_handle_t *nh,
 	      struct message *invite,
 	      struct dialog *dialog,
@@ -383,7 +383,7 @@ cancel_by_nua(nua_handle_t *nh,
   fail_unless(s2_check_event(nua_r_invite, 487));
 }
 
-static void 
+static void
 bye_to_nua(nua_handle_t *nh,
 	   tag_type_t tag, tag_value_t value, ...)
 {
@@ -1094,7 +1094,7 @@ START_TEST(call_2_3_3)
   s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
 		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
 		TAG_END());
-  
+
   nua_respond(nh, SIP_200_OK, TAG_END());
 
   fail_unless(s2_check_callstate(nua_callstate_completed));
@@ -1119,7 +1119,7 @@ START_TEST(call_2_3_3)
   s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
 		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
 		TAG_END());
-  
+
   nua_respond(nh, SIP_200_OK, TAG_END());
 
   fail_unless(s2_check_callstate(nua_callstate_completed));
@@ -1564,7 +1564,7 @@ START_TEST(call_2_6_2)
 
   invite = s2_wait_for_request(SIP_METHOD_INVITE);
   fail_if(!invite);
-  respond_with_sdp(invite, dialog, SIP_500_INTERNAL_SERVER_ERROR, 
+  respond_with_sdp(invite, dialog, SIP_500_INTERNAL_SERVER_ERROR,
 		   SIPTAG_RETRY_AFTER_STR("8"),
 		   TAG_END());
   s2_free_message(invite);

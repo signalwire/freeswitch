@@ -26,7 +26,7 @@
 /** Defined when <nua_params.h> has been included. */
 #define NUA_PARAMS_H
 
-/**@internal @file nua_params.h 
+/**@internal @file nua_params.h
  * @brief Parameters and their handling
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
@@ -37,7 +37,7 @@
 
 #include <nua_types.h>
 
-/**@internal @brief NUA preferences. 
+/**@internal @brief NUA preferences.
  *
  * This structure contains values for various preferences and a separate
  * bitmap (nhp_set) for each preference. Preferences are set using
@@ -69,7 +69,7 @@ struct nua_handle_preferences
   unsigned         nhp_auto_ack:1; /**< Automatically ACK a final response */
   unsigned         :0;
 
-  /** INVITE timeout. 
+  /** INVITE timeout.
    *
    * If no response is received in nhp_invite_timeout seconds,
    * INVITE client transaction times out
@@ -80,12 +80,12 @@ struct nua_handle_preferences
   /** Default Min-SE Delta value */
   unsigned         nhp_min_se;
   /** no (preference), local or remote */
-  enum nua_session_refresher nhp_refresher; 
+  enum nua_session_refresher nhp_refresher;
   unsigned         nhp_update_refresh:1; /**< Use UPDATE to refresh */
 
   /**< Accept refreshes without SDP */
   unsigned         nhp_refresh_without_sdp:1;
-  
+
   /* Messaging preferences */
   unsigned     	   nhp_message_enable : 1;
   /** Be bug-compatible with Windows Messenger */
@@ -131,8 +131,8 @@ struct nua_handle_preferences
   char const         *nhp_instance;
 
   /** Outbound OPTIONS */
-  char const         *nhp_outbound; 
-  
+  char const         *nhp_outbound;
+
   sip_allow_t        *nhp_appl_method;
 
   /** Initial route set */
@@ -143,11 +143,11 @@ struct nua_handle_preferences
 
   union { struct {
     /* A bit for each feature set by application */
-    /* NOTE: 
+    /* NOTE:
        Some compilers behave weird if there are bitfields
-       together with width > 32 
-       So there should be a padding field (unsigned:0;) 
-       every 32 bits. 
+       together with width > 32
+       So there should be a padding field (unsigned:0;)
+       every 32 bits.
     */
     unsigned nhb_retry_count:1;
     unsigned nhb_max_subscriptions:1;
@@ -165,7 +165,7 @@ struct nua_handle_preferences
 
     unsigned nhb_session_timer:1;
     unsigned nhb_min_se:1;
-    unsigned nhb_refresher:1; 
+    unsigned nhb_refresher:1;
     unsigned nhb_update_refresh:1;
     unsigned nhb_refresh_without_sdp:1;
     unsigned nhb_message_enable:1;
@@ -202,7 +202,7 @@ struct nua_handle_preferences
     unsigned nhb_initial_route:1;
     unsigned nhb_proxy:1;
     unsigned :0;
-  } set_bits; 
+  } set_bits;
     unsigned set_unsigned[2];
   } nhp_set_;
 };
@@ -222,7 +222,7 @@ struct nua_global_preferences {
     unsigned ngp_detect_network_updates:1;
     unsigned ngp_shutdown_events:1;
     unsigned :0;
-  } set_bits; 
+  } set_bits;
     unsigned set_unsigned[2];
   } ngp_set_;
 };
@@ -250,7 +250,7 @@ struct nua_global_preferences {
 #define NH_PGET(nh, pref)						\
   NHP_GET((nh)->nh_prefs, (nh)->nh_dprefs, pref)
 
-/* Get preference from handle, if exists and set, 
+/* Get preference from handle, if exists and set,
    otherwise from default handle */
 #define NUA_PGET(nua, nh, pref)						\
   NHP_GET((nh) ? (nh)->nh_prefs : (nua)->nua_dhandle->nh_prefs,		\
