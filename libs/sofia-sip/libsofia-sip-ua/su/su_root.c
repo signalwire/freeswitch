@@ -115,6 +115,14 @@ struct su_root_s;
  * Contains hint of number of sockets supported by su_root_t */
 int su_root_size_hint = 64;
 
+/* ====================================================================== */
+
+_su_task_r su_task_new(su_task_r task, su_root_t *root, su_port_t *port);
+int su_task_attach(su_task_r self, su_root_t *root);
+int su_task_detach(su_task_r self);
+
+int su_timer_reset_all(su_timer_t **t0, su_task_r);
+
 /* =========================================================================
  * Tasks
  */
@@ -347,12 +355,6 @@ int su_task_execute(su_task_r const task,
     return 0;
   }
 }
-
-_su_task_r su_task_new(su_task_r task, su_root_t *root, su_port_t *port);
-int su_task_attach(su_task_r self, su_root_t *root);
-int su_task_detach(su_task_r self);
-
-int su_timer_reset_all(su_timer_t **t0, su_task_r);
 
 /* Note that is *not* necessary same as su_root_t,
  * as su_root_t can be extended */

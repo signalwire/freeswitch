@@ -111,6 +111,19 @@ SOFIAPUBFUN uint32_t su_ntp_mw(su_ntp_t ntp);
 SOFIAPUBFUN uint32_t su_ntp_fraq(su_time_t t);
 SOFIAPUBFUN uint32_t su_time_ms(su_time_t t);
 #else
+su_inline uint32_t su_ntp_fraq(su_time_t t);
+su_inline uint32_t su_time_ms(su_time_t t);
+#endif
+
+SOFIAPUBFUN su_ntp_t su_ntp_hilo(uint32_t hi, uint32_t lo);
+
+SOFIAPUBFUN uint64_t su_counter(void);
+
+SOFIAPUBFUN uint64_t su_nanocounter(void);
+
+SOFIAPUBFUN uint32_t su_random(void);
+
+#if SU_HAVE_INLINE
 /** Middle 32 bit of NTP timestamp. */
 su_inline uint32_t su_ntp_fraq(su_time_t t)
 {
@@ -128,14 +141,6 @@ su_inline uint32_t su_time_ms(su_time_t t)
   return t.tv_sec * 1000 + (t.tv_usec + 500) / 1000;
 }
 #endif
-
-SOFIAPUBFUN su_ntp_t su_ntp_hilo(uint32_t hi, uint32_t lo);
-
-SOFIAPUBFUN uint64_t su_counter(void);
-
-SOFIAPUBFUN uint64_t su_nanocounter(void);
-
-SOFIAPUBFUN uint32_t su_random();
 
 SOFIA_END_DECLS
 

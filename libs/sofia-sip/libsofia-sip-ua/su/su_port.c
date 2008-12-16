@@ -106,6 +106,7 @@ void su_port_prefer(su_port_create_f *create,
   if (start) preferred_su_clone_start = start;
 }
 
+static
 void su_port_set_system_preferences(char const *name)
 {
   su_port_create_f *create = preferred_su_port_create;

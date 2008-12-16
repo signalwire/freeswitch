@@ -57,7 +57,7 @@ static int mutex_locker(void *_mutex)
   return pthread_mutex_lock(mutex + 1);
 }
 
-int mutex_trylocker(void *_mutex)
+static int mutex_trylocker(void *_mutex)
 {
   pthread_mutex_t *mutex = _mutex;
   return pthread_mutex_trylock(mutex + 1);

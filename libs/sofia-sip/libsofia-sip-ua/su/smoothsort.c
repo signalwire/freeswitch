@@ -37,6 +37,8 @@
 
 #include "config.h"
 
+#include <sofia-sip/heap.h>
+
 #include <assert.h>
 #include <stdio.h>
 #include <sys/types.h>

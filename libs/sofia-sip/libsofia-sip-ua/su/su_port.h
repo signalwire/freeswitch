@@ -168,6 +168,8 @@ SOFIAPUBFUN su_root_t *su_root_create_with_port(su_root_magic_t *magic,
 
 SOFIAPUBFUN char const *su_port_name(su_port_t const *port);
 
+SOFIAPUBFUN int su_timer_reset_all(su_timer_queue_t *, su_task_r );
+
 /* ---------------------------------------------------------------------- */
 
 /* React to multiple events per one poll() to make sure

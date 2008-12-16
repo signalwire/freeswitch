@@ -202,6 +202,8 @@ su_duration_t su_duration(su_time_t const t1, su_time_t const t2)
 
 typedef uint64_t su_t64_t;	/* time with 64 bits */
 
+static su_time_t su_t64_to_time(su_t64_t const us);
+
 const uint32_t su_res32 = 1000000UL;
 const su_t64_t su_res64 = (su_t64_t)1000000UL;
 
@@ -307,6 +309,7 @@ uint32_t su_ntp_mw(su_ntp_t ntp)
   return (uint32_t) (ntp >> 16) & 0xffffffffLU;
 }
 
+static
 su_time_t su_t64_to_time(su_t64_t const us)
 {
   su_time_t tv;
