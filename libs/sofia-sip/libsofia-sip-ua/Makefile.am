@@ -80,24 +80,22 @@ doxygen: built-sources
           fi ; \
 	done
 	for d in $(DIST_SUBDIRS); do \
-	  test -r $$d/Doxyfile \
-	  && pushd $$d > /dev/null \
-	  && echo running ${DOXYGEN} first time in $$d \
-          && ${DOXYGEN} 2>&1 \
-	  | egrep -v -i -e 'Warning: (unsupported (xml/)?html tag|unable to resolve reference|explicit link.*could not be resolved)' \
-          ; popd > /dev/null ; \
-	  test -r docs/$$d.doxytags && \
+	  ( test -r $$d/Doxyfile && \
+	  cd $$d > /dev/null && \
+	  echo running ${DOXYGEN} first time in $$d && \
+          ${DOXYGEN} 2>&1 ) | \
+	  egrep -v -i -e 'Warning: (unsupported (xml/)?html tag|unable to resolve reference|explicit link.*could not be resolved)' ; \
+          test -r docs/$$d.doxytags && \
 	  sed '2,10s!<name>index</name>!<name>'$$d'_index</name>!' \
 	    docs/$$d.doxytags > docs/$$d.doxytags.tmp && \
 	  mv -f docs/$$d.doxytags.tmp docs/$$d.doxytags ; \
 	done
 	for d in $(DIST_SUBDIRS); do \
-	  test -r $$d/Doxyfile \
-	  && pushd $$d > /dev/null \
-	  && echo running ${DOXYGEN} second time in $$d \
-          && ${DOXYGEN} 2>&1 \
-	   | egrep -v -i -e 'Warning: Unsupported (xml/)?html tag' \
-          ; popd > /dev/null ; \
+	  ( test -r $$d/Doxyfile && \
+	    cd $$d > /dev/null \
+	    echo running ${DOXYGEN} second time in $$d && \
+            ${DOXYGEN} 2>&1 ) | \
+	    egrep -v -i -e 'Warning: Unsupported (xml/)?html tag' ; \
 	  test -r docs/$$d.doxytags && \
 	  sed '2,10s!<name>index</name>!<name>'$$d'_index</name>!' \
 	    docs/$$d.doxytags > docs/$$d.doxytags.tmp && \
