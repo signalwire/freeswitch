@@ -40,11 +40,15 @@
        cause security exposures.
     */
 
+#if !defined(_FILE_OFFSET_BITS)
 #define _FILE_OFFSET_BITS 64
+#endif
     /* Tell GNU libc to make off_t 64 bits and all the POSIX file functions
        the versions that handle 64 bit file offsets.
     */
+#if !defined(_LARGE_FILES)
 #define _LARGE_FILES
+#endif
     /* Same as above, but for AIX */
 
 #include <string.h>
