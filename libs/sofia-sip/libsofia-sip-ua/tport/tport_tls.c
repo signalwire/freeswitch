@@ -36,6 +36,10 @@
 
 #define OPENSSL_NO_KRB5 oh-no
 
+#include <sofia-sip/su_types.h>
+#include <sofia-sip/su.h>
+#include <sofia-sip/su_wait.h>
+
 #include <openssl/lhash.h>
 #include <openssl/bn.h>
 #include <openssl/x509.h>
@@ -46,10 +50,6 @@
 #include <openssl/rand.h>
 #include <openssl/bio.h>
 #include <openssl/opensslv.h>
-
-#include <sofia-sip/su_types.h>
-#include <sofia-sip/su.h>
-#include <sofia-sip/su_wait.h>
 
 #include <assert.h>
 #include <stdio.h>
