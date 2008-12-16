@@ -156,7 +156,8 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 	}
 
 	if(channel) {
-		if(switch_true(switch_channel_get_variable(channel, "disable_radius_start"))) {
+		const char *disable_flag = switch_channel_get_variable(channel, "disable_radius_start");
+		if(switch_true(disable_flag)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Not Sending RADIUS Start\n");
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -393,12 +394,13 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 	}
 
 
-        if(channel) {
-                if(switch_true(switch_channel_get_variable(channel, "disable_radius_stop"))) {
-                        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Not Sending RADIUS Stop\n");
-                        return SWITCH_STATUS_SUCCESS;
-                }
-        }
+	if(channel) {
+		const char *disable_flag = switch_channel_get_variable(channel, "disable_radius_stop");
+		if(switch_true(disable_flag)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Not Sending RADIUS Stop\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
 
 	switch_thread_rwlock_rdlock(globals.rwlock);
 
