@@ -239,6 +239,18 @@ static switch_status_t do_config()
 			switch_core_db_test_reactive(db, "select * from limit_data", NULL, limit_sql);
 			switch_core_db_test_reactive(db, "select * from db_data", NULL, db_sql);
 			switch_core_db_test_reactive(db, "select * from group_data", NULL, group_sql);
+			
+			switch_core_db_exec(db, "create index if not exists ld_hostname on limit_data (hostname)", NULL, NULL, NULL);
+			switch_core_db_exec(db, "create index if not exists ld_uuid on limit_data (uuid)", NULL, NULL, NULL);
+			switch_core_db_exec(db, "create index if not exists ld_realm on limit_data (realm)", NULL, NULL, NULL);
+			switch_core_db_exec(db, "create index if not exists ld_id on limit_data (id)", NULL, NULL, NULL);
+
+			switch_core_db_exec(db, "create index if not exists dd_realm on db_data (realm)", NULL, NULL, NULL);
+			switch_core_db_exec(db, "create index if not exists dd_data_key on db_data (data_key)", NULL, NULL, NULL);
+
+			switch_core_db_exec(db, "create index if not exists gd_groupname on group_data (groupname)", NULL, NULL, NULL);
+			switch_core_db_exec(db, "create index if not exists gd_url on group_data (url)", NULL, NULL, NULL);
+
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 			status = SWITCH_STATUS_FALSE;
