@@ -320,8 +320,24 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_amr_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "AMR");
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 96, "AMR", "octet-align=0", 8000, 8000, 12200, 20000, 160, 320, 0, 1, 1, 
-										 switch_amr_init, switch_amr_encode, switch_amr_decode, switch_amr_destroy);
+										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 96,						/* the IANA code number */
+										 "AMR",						/* the IANA code name */
+										 "octet-align=0",			/* default fmtp to send (can be overridden by the init function) */
+										 8000,						/* samples transferred per second */
+										 8000,						/* actual samples transferred per second */
+										 12200,						/* bits transferred per second */
+										 20000,						/* number of microseconds per frame */
+										 160,						/* number of samples per frame */
+										 320,						/* number of bytes per frame decompressed */
+										 0,							/* number of bytes per frame compressed */
+										 1,							/* number of channels represented */
+										 1, 						/* number of frames per network packet */
+										 switch_amr_init,			/* function to initialize a codec handle using this implementation */
+										 switch_amr_encode,			/* function to encode raw data into encoded data */
+										 switch_amr_decode,			/* function to decode encoded data into raw data */
+										 switch_amr_destroy);		/* deinitalize a codec handle using this implementation */
+
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
 }
