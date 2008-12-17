@@ -330,15 +330,44 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "PROXY VIDEO PASS-THROUGH");
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_VIDEO, 31, "PROXY-VID", NULL, 90000, 90000, 0,
-										 0, 0, 0, 0, 1, 1, switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
+										 SWITCH_CODEC_TYPE_VIDEO,	/* enumeration defining the type of the codec */
+										 31,						/* the IANA code number */
+										 "PROXY-VID",				/* the IANA code name */
+										 NULL,						/* default fmtp to send (can be overridden by the init function) */
+										 90000,						/* samples transferred per second */
+										 90000,						/* actual samples transferred per second */
+										 0,							/* bits transferred per second */ 
+										 0,							/* number of microseconds per frame */
+										 0,							/* number of samples per frame */
+										 0,							/* number of bytes per frame decompressed */
+										 0,							/* number of bytes per frame compressed */
+										 1,							/* number of channels represented */ 
+										 1,							/* number of frames per network packet */
+										 switch_proxy_init,			/* function to initialize a codec handle using this implementation */
+										 switch_proxy_encode,		/* function to encode raw data into encoded data */
+										 switch_proxy_decode,		/* function to encode raw data into encoded data */
+										 switch_proxy_destroy);		/* deinitalize a codec handle using this implementation */
 
 
 	SWITCH_ADD_CODEC(codec_interface, "PROXY PASS-THROUGH");
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 0, "PROXY", NULL, 8000, 8000, 0,
-										 20000, 160, 320, 320, 1, 1,
-										 switch_proxy_init, switch_proxy_encode, switch_proxy_decode, switch_proxy_destroy);
+										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 0,							/* the IANA code number */
+										 "PROXY",					/* the IANA code name */
+										 NULL,						/* default fmtp to send (can be overridden by the init function) */
+										 8000,						/* samples transferred per second */
+										 8000,						/* actual samples transferred per second */
+										 0,							/* bits transferred per second */
+										 20000,						/* number of microseconds per frame */
+										 160,						/* number of samples per frame */
+										 320,						/* number of bytes per frame decompressed */
+										 320,						/* number of bytes per frame compressed */
+										 1,							/* number of channels represented */
+										 1,							/* number of frames per network packet */
+										 switch_proxy_init,			/* function to initialize a codec handle using this implementation */
+										 switch_proxy_encode,		/* function to encode raw data into encoded data */
+										 switch_proxy_decode,		/* function to decode encoded data into raw data */
+										 switch_proxy_destroy);		/* deinitalize a codec handle using this implementation */
 
 	SWITCH_ADD_CODEC(codec_interface, "RAW Signed Linear (16 bit)");
 
