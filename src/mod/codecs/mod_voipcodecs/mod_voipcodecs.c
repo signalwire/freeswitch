@@ -881,8 +881,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 #if SWITCH_MAX_INTERVAL >= 90
 	SWITCH_ADD_CODEC(codec_interface, "LPC-10");
 	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 7, "LPC", NULL, 8000, 8000, 2400,
-										 90000, 720, 1440, 28, 1, 4, switch_lpc10_init, switch_lpc10_encode, switch_lpc10_decode, switch_lpc10_destroy);
+										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 7,							/* the IANA code number */
+										 "LPC",						/* the IANA code name */
+										 NULL,						/* default fmtp to send (can be overridden by the init function) */
+										 8000,						/* samples transferred per second */
+										 8000,						/* actual samples transferred per second */
+										 2400,						/* bits transferred per second */
+										 90000,						/* number of microseconds per frame */
+										 720,						/* number of samples per frame */
+										 1440,						/* number of bytes per frame decompressed */
+										 28,						/* number of bytes per frame compressed */
+										 1,							/* number of channels represented */
+										 4,							/* number of frames per network packet */
+										 switch_lpc10_init,			/* function to initialize a codec handle using this implementation */
+										 switch_lpc10_encode,		/* function to encode raw data into encoded data */
+										 switch_lpc10_decode,		/* function to decode encoded data into raw data */
+										 switch_lpc10_destroy);		/* deinitalize a codec handle using this implementation */
 #endif
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
