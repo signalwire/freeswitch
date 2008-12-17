@@ -3729,10 +3729,6 @@ SWITCH_STANDARD_API(conf_api_main)
 		cmd = "help";
 	}
 
-	if (session) {
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (stream->param_event) {
 		http = switch_event_get_header(stream->param_event, "http-host");
 	}
