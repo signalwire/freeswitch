@@ -86,7 +86,7 @@ SWITCH_DECLARE(int) switch_core_db_exec(switch_core_db_t *db, const char *sql, s
 		if (ret == SQLITE_BUSY || ret == SQLITE_LOCKED) {
 			if (sane > 1) {
 				switch_safe_free(err);
-				switch_yield(20000);
+				switch_cond_next();
 				continue;
 			}
 		} else {
