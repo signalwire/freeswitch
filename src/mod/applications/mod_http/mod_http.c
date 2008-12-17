@@ -1,37 +1,3 @@
-/* 
- * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2008, Eric des Courtis <eric.des.courtis@benbria.com>
- *
- * Version: MPL 1.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * Eric des Courtis <eric.des.courtis@benbria.com>
- * Copyright (C) Benbria. All Rights Reserved.
- *
- * Contributor(s):
- * 
- * Eric des Courtis <eric.des.courtis@benbria.com>
- *
- *
- * mod_http.c -- HTTP client implementation for FreeSWITCH
- * 
- * The purpose is to provide laguages like LUA with a _fast_ HTTP
- * client implementation.
- *
- * Support for SSL will be provided in future versions.
- * Initial release does not include win32 support.
- *
- */
-
 #include <switch.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -174,6 +140,12 @@ SWITCH_STANDARD_API(http_api_main)
     GARBAGE_ADD(request.url);
     strcpy(request.url, url); 
     json_http_headers = json_tokener_parse(headers_str);
+    if(is_error(json_http_headers)){
+	switch_safe_free(ccmd);
+	stream->write_function(stream, "-ERR\n");
+	GARBAGE_CLEANUP();
+	return SWITCH_STATUS_SUCCESS;
+    }
 
     i = 0;
     json_object_object_foreach(json_http_headers, key, val){ 
