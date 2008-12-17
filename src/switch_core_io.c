@@ -598,7 +598,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (switch_test_flag(frame, SFF_PROXY_PACKET) || pass_cng) {
 		/* Fast PASS! */
-		return perform_write(session, frame, flag, stream_id);
+		switch_mutex_lock(session->codec_write_mutex);
+		status = perform_write(session, frame, flag, stream_id);
+		switch_mutex_unlock(session->codec_write_mutex);
+		return status;
 	}
 
 	switch_assert(frame->codec != NULL);
