@@ -3516,7 +3516,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					int tmp;
 					/* move signal_ptr where we need it (right past Signal=) */
 					signal_ptr = signal_ptr + 7;
-					if (*signal_ptr && strlen(signal_ptr) == 1 && is_dtmf(*signal_ptr)) {
+					if (*signal_ptr && (*signal_ptr == '*' || *signal_ptr == '#' || *signal_ptr == 'A' || *signal_ptr == 'B' || *signal_ptr == 'C' || *signal_ptr == 'D')) {
 						dtmf.digit = *signal_ptr;
 					} else {
 						tmp = atoi(signal_ptr);
