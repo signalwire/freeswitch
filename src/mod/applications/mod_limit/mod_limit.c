@@ -439,6 +439,9 @@ SWITCH_STANDARD_APP(db_function)
 						   argv[3]);
 	} else if (!strcasecmp(argv[0], "delete")) {
 		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: db %s\n", DB_USAGE);
+		return;
 	}
 
 	switch_assert(sql);
