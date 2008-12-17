@@ -28,6 +28,7 @@ codecs/mod_voipcodecs
 codecs/mod_ilbc
 codecs/mod_speex
 #codecs/mod_siren
+#codecs/mod_celt
 #dialplans/mod_dialplan_directory
 dialplans/mod_dialplan_xml
 dialplans/mod_dialplan_asterisk
