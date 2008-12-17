@@ -44,7 +44,9 @@
 #endif
 
 #define MAX_TICK UINT32_MAX - 1024
-#define MS_PER_TICK 10
+
+static int MS_PER_TICK = 10;
+
 static switch_memory_pool_t *module_pool = NULL;
 
 static struct {
@@ -252,6 +254,11 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->start = private_info->reference = TIMER_MATRIX[timer->interval].tick;
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
+
+		if (timer->interval < MS_PER_TICK) {
+			MS_PER_TICK = timer->interval;
+		}
+
 		return SWITCH_STATUS_SUCCESS;
 	}
 
@@ -319,7 +326,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 #endif
 
 	timer_step(timer);
-	
+
 	while (globals.RUNNING == 1 && private_info->ready && TIMER_MATRIX[timer->interval].tick < private_info->reference) {
 		check_roll();
 		if (globals.use_cond_yield == 1) {
@@ -506,6 +513,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 		}
 #endif
 
+
 		if ((current_ms % MS_PER_TICK) == 0) {
 			for (x = MS_PER_TICK; x <= MAX_ELEMENTS; x += MS_PER_TICK) {
 				if ((current_ms % x) == 0) {
@@ -525,6 +533,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 				}
 			}
 		}
+
 		if (current_ms == MAX_ELEMENTS) {
 			current_ms = 0;
 		}

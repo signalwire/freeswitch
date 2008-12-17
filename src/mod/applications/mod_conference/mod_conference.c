@@ -4893,7 +4893,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
 		if (!strcasecmp(var, "rate") && !switch_strlen_zero(val)) {
 			uint32_t tmp = atoi(val);
-			if (tmp == 8000 || tmp == 16000 || tmp == 32000) {
+			if (tmp == 8000 || tmp == 16000 || tmp == 32000 || tmp == 48000) {
 				rate = tmp;
 			}
 		} else if (!strcasecmp(var, "domain") && !switch_strlen_zero(val)) {

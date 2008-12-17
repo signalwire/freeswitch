@@ -588,7 +588,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 											 switch_adpcm_destroy);		/* deinitalize a codec handle using this implementation */
 	}
 	mpf = 10000, spf = 160, bpf = 320, ebpf = 160;
-	for (count = 12; count > 0; count--) {
+	for (count = 6; count > 0; count--) {
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -781,7 +781,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 	/* G722 */
 	mpf = 10000, spf = 80, bpf = 320, ebpf = 80;
 	SWITCH_ADD_CODEC(codec_interface, "G.722");
-	for (count = 12; count > 0; count--) {
+	for (count = 6; count > 0; count--) {
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
