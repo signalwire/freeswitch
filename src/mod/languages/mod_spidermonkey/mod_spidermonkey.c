@@ -1778,6 +1778,8 @@ static JSBool session_set_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 
+	METHOD_SANITY_CHECK();
+
 	channel = switch_core_session_get_channel(jss->session);
 
 	if (argc > 1) {
@@ -1799,10 +1801,7 @@ static JSBool session_get_variable(JSContext * cx, JSObject * obj, uintN argc, j
 	struct js_session *jss = JS_GetPrivate(cx, obj);
 	switch_channel_t *channel;
 
-	if (!jss || !jss->session) {
-		*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
-		return JS_TRUE;
-	}
+	METHOD_SANITY_CHECK();
 
 	channel = switch_core_session_get_channel(jss->session);
 
