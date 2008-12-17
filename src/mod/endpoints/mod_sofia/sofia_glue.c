@@ -2986,7 +2986,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_sip_user on sip_registrations (sip_user)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_sip_host on sip_registrations (sip_host)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_profile_name on sip_registrations (profile_name)", NULL, NULL, NULL);
-		switch_core_db_exec(profile->master_db, "create index if not exists sr_presence_host on sip_registrations (presence_host)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_presence_hosts on sip_registrations (presence_hosts)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_contact on sip_registrations (contact)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_expires on sip_registrations (expires)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_hostname on sip_registrations (hostname)", NULL, NULL, NULL);
@@ -2996,7 +2996,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_hostname on sip_subscriptions (hostname)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_sip_user on sip_subscriptions (sip_user)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_sip_host on sip_subscriptions (sip_host)", NULL, NULL, NULL);
-		switch_core_db_exec(profile->master_db, "create index if not exists ss_presence_host on sip_subscriptions (presence_host)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_presence_hosts on sip_subscriptions (presence_hosts)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_event on sip_subscriptions (event)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_proto on sip_subscriptions (proto)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_sub_to_user on sip_subscriptions (sub_to_user)", NULL, NULL, NULL);
