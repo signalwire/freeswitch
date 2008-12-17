@@ -2981,6 +2981,34 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_authentication", auth_sql);
 		free(test_sql);
+
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_call_id on sip_registrations (call_id)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_sip_user on sip_registrations (sip_user)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_sip_host on sip_registrations (sip_host)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_profile_name on sip_registrations (profile_name)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_presence_host on sip_registrations (presence_host)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_contact on sip_registrations (contact)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_expires on sip_registrations (expires)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_hostname on sip_registrations (hostname)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_status on sip_registrations (status)", NULL, NULL, NULL);
+
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_call_id on sip_subscriptions (call_id)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_hostname on sip_subscriptions (hostname)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_sip_user on sip_subscriptions (sip_user)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_sip_host on sip_subscriptions (sip_host)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_presence_host on sip_subscriptions (presence_host)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_event on sip_subscriptions (event)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_proto on sip_subscriptions (proto)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_sub_to_user on sip_subscriptions (sub_to_user)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ss_sub_to_host on sip_subscriptions (sub_to_host)", NULL, NULL, NULL);
+
+		switch_core_db_exec(profile->master_db, "create index if not exists sd_uuid on sip_dialogs (uuid)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sd_hostname on sip_dialogs (hostname)", NULL, NULL, NULL);
+
+		switch_core_db_exec(profile->master_db, "create index if not exists sp_hostname on sip_presence (hostname)", NULL, NULL, NULL);
+
+		switch_core_db_exec(profile->master_db, "create index if not exists sa_nonce on sip_authentication (nonce)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sa_hostname on sip_authentication (hostname)", NULL, NULL, NULL);
 	}
 
 #ifdef SWITCH_HAVE_ODBC
