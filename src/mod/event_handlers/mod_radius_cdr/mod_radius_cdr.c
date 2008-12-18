@@ -554,7 +554,8 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 					goto end;
 				}
 			}
-			if (profile->caller_extension && profile->caller_extension->last_application->application_name) {
+			if (profile->caller_extension && profile->caller_extension->last_application && 
+			    profile->caller_extension->last_application->application_name) {
 				if (rc_avpair_add(rad_config, &send, PW_FS_LASTAPP,
 								  (void *) profile->caller_extension->last_application->application_name, -1, PW_FS_PEC) == NULL) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed adding Freeswitch-Lastapp: %s\n", profile->source);
