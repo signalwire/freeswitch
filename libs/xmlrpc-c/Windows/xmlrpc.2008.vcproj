@@ -54,7 +54,7 @@
 				ProgramDataBaseFileName=".\Debug\xmlrpc/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -1115,11 +1115,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\lib\abyss\src\server.h"
+				RelativePath="..\include\xmlrpc-c\server.h"
 				>
 			</File>
 			<File
-				RelativePath="..\include\xmlrpc-c\server.h"
+				RelativePath="..\lib\abyss\src\server.h"
 				>
 			</File>
 			<File
