@@ -1210,7 +1210,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		unsigned delta = (unsigned) (exptime * -1);
 		switch_snprintf(sstr, sizeof(sstr), "active;expires=%u", delta);
 		switch_snprintf(expires_str, sizeof(expires_str), "%u", delta);
-		nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, delta, delta);
+		if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
+			nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, delta, delta);
+		}
 	}
 
 	nua_notify(nh, 
@@ -1661,9 +1663,9 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			}
 
 			
-
-			nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP);
-			
+			if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
+				nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP);
+			}
 
 			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(contact_str), NUTAG_WITH_THIS(nua), 
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
