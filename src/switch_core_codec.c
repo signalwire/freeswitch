@@ -58,6 +58,26 @@ SWITCH_DECLARE(void) switch_core_session_unset_read_codec(switch_core_session_t 
 	switch_mutex_unlock(session->codec_read_mutex);
 }
 
+SWITCH_DECLARE(void) switch_core_session_lock_codec_write(switch_core_session_t *session)
+{
+	switch_mutex_lock(session->codec_write_mutex);
+}
+
+SWITCH_DECLARE(void) switch_core_session_unlock_codec_write(switch_core_session_t *session)
+{
+	switch_mutex_unlock(session->codec_write_mutex);
+}
+
+SWITCH_DECLARE(void) switch_core_session_lock_codec_read(switch_core_session_t *session)
+{
+	switch_mutex_lock(session->codec_read_mutex);
+}
+
+SWITCH_DECLARE(void) switch_core_session_unlock_codec_read(switch_core_session_t *session)
+{
+	switch_mutex_unlock(session->codec_read_mutex);
+}
+
 SWITCH_DECLARE(void) switch_core_session_unset_write_codec(switch_core_session_t *session)
 {	
 	switch_mutex_t *mutex = NULL;
@@ -550,12 +570,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 {
 	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
-
+	int free_pool = 0;
+	
 	switch_assert(codec != NULL);	
 	
 	if (!codec->implementation) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initialized!\n");
 		return SWITCH_STATUS_NOT_INITALIZED;
+	}
+
+	if (switch_test_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL)) {
+		free_pool = 1;
 	}
 
 	pool = codec->memory_pool;
@@ -571,7 +596,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	
 	if (mutex) switch_mutex_unlock(mutex);
 
-	if (switch_test_flag(codec, SWITCH_CODEC_FLAG_FREE_POOL)) {
+	if (free_pool) {
 		switch_core_destroy_memory_pool(&pool);
 	}
 
