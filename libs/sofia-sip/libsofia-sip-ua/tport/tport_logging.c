@@ -232,7 +232,7 @@ void tport_log_msg(tport_t *self, msg_t *msg,
     n += iov[i].mv_len;
 
   tport_stamp(self, msg, stamp, what, n, via, now);
-  su_log(stamp);
+  su_log("%s", stamp);
   su_log("   " MSG_SEPARATOR);
 
   for (i = 0; truncated == 0 && i < iovlen && i < 80; i++) {

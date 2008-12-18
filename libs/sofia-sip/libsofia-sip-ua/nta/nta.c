@@ -1593,7 +1593,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   if (maxsize > UINT32_MAX) maxsize = UINT32_MAX;
   agent->sa_maxsize = maxsize;
 
-  if (max_proceeding == 0) max_proceeding = SIZE_MAX;
+  if (max_proceeding == 0) max_proceeding = UINT32_MAX;
   agent->sa_max_proceeding = max_proceeding;
 
   if (max_forwards == 0) max_forwards = 70; /* Default value */
