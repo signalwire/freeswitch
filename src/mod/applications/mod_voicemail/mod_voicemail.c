@@ -452,7 +452,7 @@ static switch_status_t load_config(void)
 				play_saved_messages_key = val;
 			} else if (!strcasecmp(var, "main-menu-key") && !switch_strlen_zero(val)) {
 				main_menu_key = val;
-			} else if (!strcasecmp(var, "skip-greet-key") && val && is_dtmf(*val)) {
+			} else if (!strcasecmp(var, "skip-greet-key") && val && (!*val || is_dtmf(*val))) {
 				skip_greet_key = val;
 			} else if (!strcasecmp(var, "config-menu-key") && !switch_strlen_zero(val)) {
 				config_menu_key = val;
