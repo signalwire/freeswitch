@@ -308,29 +308,6 @@ int http_parse_response(char *buf, ssize_t buf_len, http_response_t *response)
     sm.buf = buf;
     sm.buf_len = buf_len;
 
-    fprintf(
-	stderr, 
-	"ERRORS\n"
-	"VERSION      = %d\n"
-	"STATUS_CODE  = %d\n"
-	"PHRASE       = %d\n"
-	"HEADER       = %d\n"
-	"NEWLINE      = %d\n"
-	"SYNTAX_ERROR = %d\n",
-	VERSION,
-	STATUS_CODE,
-	PHRASE,
-	HEADER,
-	NEWLINE,
-	SYNTAX_ERROR
-    );
-
-    fprintf(
-	stderr,
-	"buf = \"%s\"\n",
-	buf
-    );
-
     pos = sm.pos;
     token = get_next_token(&sm);
     if(token != VERSION){
@@ -402,12 +379,6 @@ int http_parse_response(char *buf, ssize_t buf_len, http_response_t *response)
     
         if(token != HEADER && token != PHRASE && token != STATUS_CODE) break;
     }while(token != SYNTAX_ERROR);
-
-    fprintf(
-	stderr,
-	"HEADERS = %d\n",
-	nt
-    ); 
 
     if(nt != 0){ 
         response->headers = (http_header_t *)malloc(sizeof(http_header_t)*nt);
