@@ -267,12 +267,20 @@
       <prompt phrase="To speak with an operator" filename="ivr-to_speak_with_an_operator.wav"/>
       <prompt phrase="Welcome to FreeSWITCH, the future of telephony" filename="ivr-welcome_to_freeswitch.wav"/>
       <prompt phrase="You may exit at any time by simply hanging up" filename="ivr-you_may_exit_by_hanging_up.wav"/>
-      <!-- Suggested additions
-       <prompt phrase="or" filename ="ivr-or.wav"/>
-       <prompt phrase="not" filename ="ivr-not.wav"/>
-       <prompt phrase="call" filename ="ivr-call.wav"/>
-       <prompt phrase="You may" filename ="ivr-you_may.wav"/>
-       -->
+      <prompt phrase="or" filename ="ivr-or.wav"/>
+      <prompt phrase="not" filename ="ivr-not.wav"/>
+      <prompt phrase="call" filename ="ivr-call.wav"/>
+      <prompt phrase="You may" filename ="ivr-you_may.wav"/>
+      <prompt phrase="hello" filename="ivr-hello.wav"/>
+      <prompt phrase="Using your telephone keypad..." filename="ivr-use_telephone_keypad.wav"/>
+      <prompt phrase="please spell the name of the person you are trying to reach." filename="ivr-spell_name.wav"/>
+      <prompt phrase="Last name first" filename="ivr-last_name_first.wav"/>
+      <prompt phrase="First name first" filename="ivr-first_name_first.wav"/>
+      <prompt phrase="Press 1 for Q or Z." filename="ivr-press_one_q_or_z.wav"/>
+      <prompt phrase="Sales" filename="ivr-sales.wav"/>
+      <prompt phrase="Customer service" filename="ivr-customer_service.wav"/>
+      <prompt phrase="Technical support" filename="ivr-technical_support.wav"/>
+      <prompt phrase="Operator" filename="ivr-operator.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
