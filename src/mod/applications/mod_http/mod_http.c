@@ -106,6 +106,7 @@ SWITCH_STANDARD_API(http_api_main)
     struct json_object *json_http_headers;
     char *key;
     struct json_object *val;
+    enum json_type jsontype;
     struct lh_entry *entry;
     int i;
     int j;
@@ -133,7 +134,7 @@ SWITCH_STANDARD_API(http_api_main)
 
     if(argc != HTTP_PARAMS && argc != (HTTP_PARAMS - 1)){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n1\n");
+        stream->write_function(stream, "-ERR\n");
         return SWITCH_STATUS_SUCCESS;
     }
     
@@ -154,7 +155,7 @@ SWITCH_STANDARD_API(http_api_main)
         body = (char *)malloc(1 * sizeof(char));
 	if(body == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n2\n");
+            stream->write_function(stream, "-ERR\n");
             return SWITCH_STATUS_SUCCESS;
 	}
 	body[0] = '\0';
@@ -164,7 +165,7 @@ SWITCH_STANDARD_API(http_api_main)
     buf = (char *)malloc(HTTP_BUFFER_SIZE * sizeof(char));
     if(buf == NULL){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n3\n");
+        stream->write_function(stream, "-ERR\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     }
@@ -176,7 +177,7 @@ SWITCH_STANDARD_API(http_api_main)
     request.url = (char *)malloc((l + 1) * sizeof(char));
     if(request.url == NULL){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n4\n");
+        stream->write_function(stream, "-ERR\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     } 
@@ -193,12 +194,19 @@ SWITCH_STANDARD_API(http_api_main)
     json_http_headers = json_tokener_parse(headers_dec);
     if(is_error(json_http_headers)){
 	switch_safe_free(ccmd);
-	stream->write_function(stream, "-ERR\n5\n");
+	stream->write_function(stream, "-ERR\n");
 	GARBAGE_CLEANUP();
 	return SWITCH_STATUS_SUCCESS;
     }
 
-    
+    jsontype = json_object_get_type(json_http_headers);
+    if(jsontype != json_type_object){
+	switch_safe_free(ccmd);
+	stream->write_function(stream, "-ERR\n");
+	GARBAGE_CLEANUP();
+	return SWITCH_STATUS_SUCCESS;
+    } 
+
     i = 0;
     json_object_object_foreach(json_http_headers, key, val){ 
         i++; 
@@ -216,7 +224,7 @@ SWITCH_STANDARD_API(http_api_main)
         request.headers[i].field_name = (char *)malloc((l + 1) * sizeof(char));
         if(request.headers[i].field_name == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n6\n");
+            stream->write_function(stream, "-ERR\n");
             GARBAGE_CLEANUP();
             return SWITCH_STATUS_SUCCESS;
         }
@@ -226,13 +234,21 @@ SWITCH_STANDARD_API(http_api_main)
         strcpy(request.headers[i].field_name, key);
         a += strlen(key);
 
+	jsontype = json_object_get_type(val);
+	if(jsontype != json_type_string){
+	    switch_safe_free(ccmd);
+	    stream->write_function(stream, "-ERR\n");
+	    GARBAGE_CLEANUP();
+	    return SWITCH_STATUS_SUCCESS;
+	}
+
 	value = json_object_get_string(val);
         /* value = json_object_to_json_string(val); */
         l = strlen(value);
         request.headers[i].value = (char *)malloc((l + 1) * sizeof(char));
         if(request.headers[i].value == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n7\n");
+            stream->write_function(stream, "-ERR\n");
             GARBAGE_CLEANUP();
             return SWITCH_STATUS_SUCCESS;
         }
@@ -265,7 +281,7 @@ SWITCH_STANDARD_API(http_api_main)
     
     if(ret == ERROR){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n8\n");
+        stream->write_function(stream, "-ERR\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     }
@@ -285,7 +301,7 @@ SWITCH_STANDARD_API(http_api_main)
     json_response = (char *)malloc(l * sizeof(char));
     if(json_response == NULL){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n9\n");
+        stream->write_function(stream, "-ERR\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     }
@@ -295,7 +311,7 @@ SWITCH_STANDARD_API(http_api_main)
         t = (char *)malloc((response.body_len + 1) * sizeof(char));
         if(t == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n10\n");
+            stream->write_function(stream, "-ERR\n");
             GARBAGE_CLEANUP();
             return SWITCH_STATUS_SUCCESS;
         }
