@@ -30,6 +30,7 @@
       <param name="restart-key" value="1"/>
       <param name="ff-key" value="6"/>
       <param name="rew-key" value="4"/>
+      <param name="skip-greet-key" value="#"/>
       <param name="record-silence-threshold" value="200"/>
       <param name="record-silence-hits" value="2"/>
       <param name="web-template-file" value="web-vm.tpl"/>

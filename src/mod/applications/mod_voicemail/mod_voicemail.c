@@ -74,6 +74,7 @@ struct vm_profile {
 	char play_saved_messages_key[2];
 
 	char main_menu_key[2];
+	char skip_greet_key[2];
 	char config_menu_key[2];
 	char record_greeting_key[2];
 	char choose_greeting_key[2];
@@ -270,6 +271,7 @@ static switch_status_t load_config(void)
 		char *play_saved_messages_key = "2";
 
 		char *main_menu_key = "0";
+		char *skip_greet_key = "#";
 		char *config_menu_key = "5";
 		char *record_greeting_key = "1";
 		char *choose_greeting_key = "2";
@@ -450,6 +452,8 @@ static switch_status_t load_config(void)
 				play_saved_messages_key = val;
 			} else if (!strcasecmp(var, "main-menu-key") && !switch_strlen_zero(val)) {
 				main_menu_key = val;
+			} else if (!strcasecmp(var, "skip-greet-key") && val && is_dtmf(*val)) {
+				skip_greet_key = val;
 			} else if (!strcasecmp(var, "config-menu-key") && !switch_strlen_zero(val)) {
 				config_menu_key = val;
 			} else if (!strcasecmp(var, "record-greeting-key") && !switch_strlen_zero(val)) {
@@ -717,6 +721,7 @@ static switch_status_t load_config(void)
 			*profile->play_new_messages_key = *play_new_messages_key;
 			*profile->play_saved_messages_key = *play_saved_messages_key;
 			*profile->main_menu_key = *main_menu_key;
+			*profile->skip_greet_key = *skip_greet_key;
 			*profile->config_menu_key = *config_menu_key;
 			*profile->record_greeting_key = *record_greeting_key;
 			*profile->choose_greeting_key = *choose_greeting_key;
@@ -1048,7 +1053,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	  record_file:
 		*message_len = 0;
 
-		TRY_CODE(switch_ivr_phrase_macro(session, macro_name, NULL, NULL, NULL));
+		if (macro_name) TRY_CODE(switch_ivr_phrase_macro(session, macro_name, NULL, NULL, NULL));
 		TRY_CODE(switch_ivr_gentones(session, profile->tone_spec, 0, NULL));
 
 		memset(&fh, 0, sizeof(fh));
@@ -2639,6 +2644,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_time_t ts = switch_timestamp_now();
 	char *dbuf = NULL;
 	char *vm_storage_dir = NULL;
+	char *record_macro = VM_RECORD_MESSAGE_MACRO;
 	int send_main = 0;
 	int send_notify = 0;
 	int insert_db = 1;
@@ -2830,6 +2836,8 @@ greet_key_press:
 					goto end;
 				}
 			}
+		} else if (*profile->skip_greet_key && !strcasecmp(buf, profile->skip_greet_key)) {
+			record_macro = NULL;
 		} else {
 			goto greet;
 		}
@@ -2858,7 +2866,7 @@ greet_key_press:
 	switch_snprintf(key_buf, sizeof(key_buf), "%s:%s", profile->operator_key, profile->vmain_key);
 	memset(buf, 0, sizeof(buf));
 
-	status = create_file(session, profile, VM_RECORD_MESSAGE_MACRO, file_path, &message_len, SWITCH_TRUE, key_buf, buf);
+	status = create_file(session, profile, record_macro, file_path, &message_len, SWITCH_TRUE, key_buf, buf);
 
 	if ((status == SWITCH_STATUS_NOTFOUND)) {
 		goto end;
