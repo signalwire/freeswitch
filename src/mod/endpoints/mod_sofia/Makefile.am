@@ -44,7 +44,7 @@ BUILT_SOURCES = $(SOFIALA)
 $(mod_sofia_la_SOURCES) : $(BUILT_SOURCES)
 
 $(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
-	cd $(SOFIA_DIR) && $(MAKE)
+	cd $(SOFIA_DIR) && $(MAKE) SOFIA_CFLAGS="$(AM_CFLAGS)"
 	$(TOUCH_TARGET)
 
 ../../../../libs/sofia-sip/libsofia-sip-ua/nua/sofia-sip/nua_tag.h: $(SOFIALA)
