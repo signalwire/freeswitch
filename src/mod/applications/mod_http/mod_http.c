@@ -96,6 +96,7 @@ SWITCH_STANDARD_API(http_api_main)
     char *buf;
     char *method;
     char *url;
+    char *headers_dec;
     char *headers_str;
     char *value;
     char *body;
@@ -132,11 +133,19 @@ SWITCH_STANDARD_API(http_api_main)
 
     if(argc != HTTP_PARAMS && argc != (HTTP_PARAMS - 1)){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
+        stream->write_function(stream, "-ERR\n1\n");
         return SWITCH_STATUS_SUCCESS;
     }
     
     method = argv[0];
+    if(strcasecmp(     "GET",    method) == 0) request.method = GET;
+    else if(strcasecmp("POST",   method) == 0) request.method = POST;
+    else if(strcasecmp("HEAD",   method) == 0) request.method = HEAD;
+    else if(strcasecmp("DELETE", method) == 0) request.method = DELETE;
+    else if(strcasecmp("PUT",    method) == 0) request.method = PUT;
+
+
+
     url = argv[1];
     headers_str = argv[2];
     if(argc == HTTP_PARAMS){
@@ -145,7 +154,7 @@ SWITCH_STANDARD_API(http_api_main)
         body = (char *)malloc(1 * sizeof(char));
 	if(body == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
+            stream->write_function(stream, "-ERR\n2\n");
             return SWITCH_STATUS_SUCCESS;
 	}
 	body[0] = '\0';
@@ -155,7 +164,7 @@ SWITCH_STANDARD_API(http_api_main)
     buf = (char *)malloc(HTTP_BUFFER_SIZE * sizeof(char));
     if(buf == NULL){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
+        stream->write_function(stream, "-ERR\n3\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     }
@@ -167,50 +176,63 @@ SWITCH_STANDARD_API(http_api_main)
     request.url = (char *)malloc((l + 1) * sizeof(char));
     if(request.url == NULL){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
+        stream->write_function(stream, "-ERR\n4\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     } 
        
     GARBAGE_ADD(request.url);
     strcpy(request.url, url); 
-    json_http_headers = json_tokener_parse(headers_str);
+    
+    
+    l = strlen(headers_str); 
+    
+    headers_dec = url_decode(headers_str, l);
+    GARBAGE_ADD(headers_dec);
+
+    json_http_headers = json_tokener_parse(headers_dec);
     if(is_error(json_http_headers)){
 	switch_safe_free(ccmd);
-	stream->write_function(stream, "-ERR\n");
+	stream->write_function(stream, "-ERR\n5\n");
 	GARBAGE_CLEANUP();
 	return SWITCH_STATUS_SUCCESS;
     }
 
+    
     i = 0;
     json_object_object_foreach(json_http_headers, key, val){ 
         i++; 
     }
     
     request.header_len = i;
-    headers = (http_header_t *)malloc(i * sizeof(http_header_t));
+    headers = (http_header_t *)malloc(i  * sizeof(http_header_t));
+    request.headers = headers;
     GARBAGE_ADD(headers);
 
     i = 0;
     json_object_object_foreach(json_http_headers, key, val){
         l = strlen(key);
+
         request.headers[i].field_name = (char *)malloc((l + 1) * sizeof(char));
         if(request.headers[i].field_name == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
+            stream->write_function(stream, "-ERR\n6\n");
             GARBAGE_CLEANUP();
             return SWITCH_STATUS_SUCCESS;
         }
+	
         GARBAGE_ADD(request.headers[i].field_name);
+
         strcpy(request.headers[i].field_name, key);
         a += strlen(key);
 
-        value = json_object_to_json_string(val);
+	value = json_object_get_string(val);
+        /* value = json_object_to_json_string(val); */
         l = strlen(value);
         request.headers[i].value = (char *)malloc((l + 1) * sizeof(char));
         if(request.headers[i].value == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
+            stream->write_function(stream, "-ERR\n7\n");
             GARBAGE_CLEANUP();
             return SWITCH_STATUS_SUCCESS;
         }
@@ -230,6 +252,7 @@ SWITCH_STANDARD_API(http_api_main)
     }else request.body_len = 0;
 
     ret = http_req(&request, &response);
+
     if(response.version != NULL) GARBAGE_ADD(response.version);
     if(response.phrase  != NULL) GARBAGE_ADD(response.phrase);
     if(response.headers != NULL) GARBAGE_ADD(response.headers);
@@ -242,7 +265,7 @@ SWITCH_STANDARD_API(http_api_main)
     
     if(ret == ERROR){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
+        stream->write_function(stream, "-ERR\n8\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     }
@@ -262,7 +285,7 @@ SWITCH_STANDARD_API(http_api_main)
     json_response = (char *)malloc(l * sizeof(char));
     if(json_response == NULL){
         switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
+        stream->write_function(stream, "-ERR\n9\n");
         GARBAGE_CLEANUP();
         return SWITCH_STATUS_SUCCESS;
     }
@@ -272,7 +295,7 @@ SWITCH_STANDARD_API(http_api_main)
         t = (char *)malloc((response.body_len + 1) * sizeof(char));
         if(t == NULL){
             switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
+            stream->write_function(stream, "-ERR\n10\n");
             GARBAGE_CLEANUP();
             return SWITCH_STATUS_SUCCESS;
         }
