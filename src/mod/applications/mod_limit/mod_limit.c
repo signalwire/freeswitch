@@ -816,14 +816,11 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	/* Did we already run on this channel before? */
 	if ((channel_hash = switch_channel_get_private(channel, "limit_hash")))
 	{
-		/* Yes, but check if we did that realm+id */
-		if (!switch_core_hash_find(channel_hash, hashkey)) {
-			/* No, add it to our table so the state handler can take care of it */
-			switch_core_hash_insert(channel_hash, hashkey, item);
-		} else {
-			/* Yes, dont touch total counter */
-			increment = 0;
-		}
+		/* Yes, but check if we did that realm+id
+		   If we didnt, allow incrementing the counter.
+		   If we did, dont touch it but do the validation anyways
+		 */
+		increment = !!!switch_core_hash_find(channel_hash, hashkey);
 	} else {
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
 		new_channel = 1;
@@ -851,6 +848,10 @@ SWITCH_STANDARD_APP(limit_hash_function)
 
 	if (increment) {
 		item->total_usage++;
+		
+		if (!new_channel)  {
+			switch_core_hash_insert(channel_hash, hashkey, item);
+		}
 		
 		if (interval == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);	
