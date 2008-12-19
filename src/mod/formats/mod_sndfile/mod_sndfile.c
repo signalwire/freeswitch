@@ -116,17 +116,13 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 16000;
 	} else if (!strcmp(ext, "r24")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_24;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 24000;
 	} else if (!strcmp(ext, "r32")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
+		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_32;
 		context->sfinfo.channels = 1;
 		context->sfinfo.samplerate = 32000;
-	} else if (!strcmp(ext, "r48")) {
-		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16;
-		context->sfinfo.channels = 1;
-		context->sfinfo.samplerate = 48000;
 	} else if (!strcmp(ext, "gsm")) {
 		context->sfinfo.format = SF_FORMAT_RAW | SF_FORMAT_GSM610;
 		context->sfinfo.channels = 1;
@@ -299,7 +295,7 @@ static switch_status_t setup_formats(void)
 	char buffer[128];
 	int format, major_count, subtype_count, m, s;
 	int len, x, skip;
-	char *extras[] = { "r8", "r16", "r24", "r32", "r48", "gsm", "ul", "al", NULL };
+	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "al", NULL };
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer[0] = 0;
 
