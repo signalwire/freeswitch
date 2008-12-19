@@ -26,7 +26,8 @@
  * Anthony Minessale II <anthmct@yahoo.com>
  * Ken Rice <krice at suspicious dot org
  * Mathieu Rene <mathieu.rene@gmail.com>
- * 
+ * Bret McDanel <trixter AT 0xdecafbad.com>
+ *
  * mod_limit.c -- Resource Limit Module
  *
  */
@@ -750,6 +751,45 @@ SWITCH_STANDARD_APP(limit_function)
 	switch_mutex_unlock(globals.mutex);
 }
 
+
+#define LIMIT_USAGE_USAGE "<realm> <id>"
+SWITCH_STANDARD_API(limit_usage_function)
+{
+	int argc = 0;
+	char *argv[6] = { 0 };
+	char *mydata = NULL;
+	char *sql = NULL;
+	char *realm = NULL;
+	char *id = NULL;
+	char buf[80] = "";
+	callback_t cbt = { 0 };
+
+
+    if (!switch_strlen_zero(cmd)) {
+        mydata = strdup(cmd);
+        switch_assert(mydata);
+        argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+    }
+
+    if (argc < 2) {
+        stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
+		return SWITCH_STATUS_SUCCESS;
+    }
+
+
+	realm = argv[0];
+	id = argv[1];
+
+	cbt.buf = buf;
+	cbt.len = sizeof(buf);
+	sql = switch_mprintf("select count(hostname) from limit_data where realm='%q' and id like '%q'", realm, id);
+	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+	switch_safe_free(sql);
+
+    stream->write_function(stream, "%s\n", buf);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define LIMITHASH_USAGE "<realm> <id> <max>[/interval] [number [dialplan [context]]]"
 #define LIMITHASH_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
 SWITCH_STANDARD_APP(limit_hash_function)
@@ -941,6 +981,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	SWITCH_ADD_APP(app_interface, "group", "Manage a group", GROUP_DESC, group_function, GROUP_USAGE, SAF_SUPPORT_NOMEDIA);
 
 	SWITCH_ADD_API(commands_api_interface, "limit_hash_usage", "Gets the usage count of a limited resource", limit_hash_usage_function,  LIMIT_HASH_USAGE_USAGE);
+	SWITCH_ADD_API(commands_api_interface, "limit_usage", "Gets the usage count of a limited resource", limit_usage_function, "<realm> <id>");
 	SWITCH_ADD_API(commands_api_interface, "db", "db get/set", db_api_function, "[insert|delete|select]/<realm>/<key>/<value>");
 	switch_console_set_complete("add db insert");
 	switch_console_set_complete("add db delete");
