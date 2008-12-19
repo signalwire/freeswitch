@@ -73,7 +73,7 @@ sub readhash($;$) {
       while(length($h->{body}) < $h->{'content-length'}) {
 	my $buf;
 	recv $s, $buf, $h->{'content-length'} - length($h->{body}), 0;
-	if (!$buf) {
+	if ($buf eq '') {
 	  $h->{socketerror} = "yes";
 	  return $h;	  
 	}
@@ -152,9 +152,9 @@ sub command($$) {
 
   my $r = $self->sendmsg({ 'command' => "api " . shift });
 
-  if ($r->{body}) {
+  if ($r->{body} ne '') {
     $reply = $r->{body};
-  } elsif ($r->{'reply-text'}) {
+  } elsif ($r->{'reply-text'} ne '') {
     $reply = $r->{'reply-text'};
   } else {
     $reply = "socketerror";
