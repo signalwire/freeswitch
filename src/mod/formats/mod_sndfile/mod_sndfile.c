@@ -299,7 +299,7 @@ static switch_status_t setup_formats(void)
 	char buffer[128];
 	int format, major_count, subtype_count, m, s;
 	int len, x, skip;
-	char *extras[] = { "r8", "r16", "r24", "r32", "gsm", "ul", "al", NULL };
+	char *extras[] = { "r8", "r16", "r24", "r32", "r48", "gsm", "ul", "al", NULL };
 	int exlen = (sizeof(extras) / sizeof(extras[0]));
 	buffer[0] = 0;
 
