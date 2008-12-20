@@ -773,7 +773,7 @@ SWITCH_STANDARD_API(limit_usage_function)
 
     if (argc < 2) {
         stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
     }
 
 
@@ -786,7 +786,10 @@ SWITCH_STANDARD_API(limit_usage_function)
 	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);
 
-    stream->write_function(stream, "%s\n", buf);
+    stream->write_function(stream, "%s", buf);
+
+end:
+	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 }
 
