@@ -46,7 +46,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 	while(thread_running && handle->connected) {
 		fd_set rfds, efds;
-		struct timeval tv = { 0, 50 * 1000 };
+		struct timeval tv = { 0, 10 * 1000 };
 		int max, activity, i = 0;
 		
 		esl_mutex_lock(global_mutex);
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, handle_SIGINT);
 	gethostname(hostname, sizeof(hostname));
 
-	handle.debug = 1;
+	handle.debug = 0;
 
 	
 	if (esl_config_open_file(&cfg, cfile)) {
