@@ -134,29 +134,32 @@ static void launch_listener_thread(listener_t *listener);
 static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_level_t level)
 {
 	listener_t *l;
-
+	
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
-			char *data = strdup(node->data);
-			if (data) {
-				if (switch_queue_trypush(l->log_queue, data) == SWITCH_STATUS_SUCCESS) {
-					if (l->lost_logs) {
-						int ll = l->lost_logs;
-						switch_event_t *event;
-						l->lost_logs = 0;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
-						if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "info", "lost %d log lines", ll);
-							switch_event_fire(&event);
-						}
+			switch_log_node_t *dnode = malloc(sizeof(*node));
+
+			switch_assert(dnode);
+			*dnode = *node;
+			dnode->data = strdup(node->data);
+			switch_assert(dnode->data);
+			
+			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
+				if (l->lost_logs) {
+					int ll = l->lost_logs;
+					switch_event_t *event;
+					l->lost_logs = 0;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
+					if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "info", "lost %d log lines", ll);
+						switch_event_fire(&event);
 					}
-				} else {
-					switch_safe_free(data);
-					l->lost_logs++;
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+				switch_safe_free(dnode->data);
+				switch_safe_free(dnode);
+				l->lost_logs++;
 			}
 		}
 	}
@@ -171,7 +174,11 @@ static void flush_listener(listener_t *listener, switch_bool_t flush_log, switch
 
 	if (listener->log_queue) {
 		while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-			if (pop) free(pop);
+			switch_log_node_t *dnode = (switch_log_node_t *) pop;
+			if (dnode) {
+				free(dnode->data);
+				free(dnode);
+			}
 		}
 	}
 
@@ -981,17 +988,32 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		if (!*mbuf) {
 			if (switch_test_flag(listener, LFLAG_LOG)) {
 				if (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-					char *data = (char *) pop;
-
-
-					if (data) {
-						switch_snprintf(buf, sizeof(buf), "Content-Type: log/data\nContent-Length: %" SWITCH_SSIZE_T_FMT "\n\n", strlen(data));
+					switch_log_node_t *dnode = (switch_log_node_t *) pop;
+					
+					if (dnode->data) {
+						switch_snprintf(buf, sizeof(buf), 
+										"Content-Type: log/data\n"
+										"Content-Length: %" SWITCH_SSIZE_T_FMT "\n"
+										"Log-Level: %d\n"
+										"Text-Channel: %d\n"
+										"Log-File: %s\n"
+										"Log-Func: %s\n"
+										"Log->Line: %d\n"
+										"\n",
+										strlen(dnode->data),
+										dnode->level,
+										dnode->channel,
+										dnode->file,
+										dnode->func,
+										dnode->line
+										);
 						len = strlen(buf);
 						switch_socket_send(listener->sock, buf, &len);
-						len = strlen(data);
-						switch_socket_send(listener->sock, data, &len);
+						len = strlen(dnode->data);
+						switch_socket_send(listener->sock, dnode->data, &len);
 
-						free(data);
+						free(dnode->data);
+						free(dnode);
 					}
 					do_sleep = 0;
 				}

@@ -71,30 +71,34 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 			if (handle->last_event) {
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
-				if (!strcasecmp(type, "log/data")) {
-					int level = 0;
-					if (strstr(handle->last_event->body, "[CONSOLE]")) {
-						level = 0;
-					} else if (strstr(handle->last_event->body, "[ALERT]")) {
-						level = 1;
-					} else if (strstr(handle->last_event->body, "[CRIT]")) {
-						level = 2;
-					} else if (strstr(handle->last_event->body, "[ERROR]")) {
-						level = 3;
-					} else if (strstr(handle->last_event->body, "[WARNING]")) {
-						level = 4;
-					} else if (strstr(handle->last_event->body, "[NOTICE]")) {
-						level = 5;
-					} else if (strstr(handle->last_event->body, "[INFO]")) {
-						level = 6;
-					} else if (strstr(handle->last_event->body, "[DEBUG]")) {
-						level = 7;
-					}
+				int known = 0;
 
-					printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
-				} else if (0 && !strcasecmp(type, "text/disconnect-notice")) {
-					running = thread_running = 0;
-				} else {
+				if (!esl_strlen_zero(type)) {
+					if (!strcasecmp(type, "log/data")) {
+						int level = 0, tchannel = 0;
+						const char *lname = esl_event_get_header(handle->last_event, "log-level");
+						const char *channel = esl_event_get_header(handle->last_event, "text-channel");
+						const char *file = esl_event_get_header(handle->last_event, "log-file");
+					
+						if (channel) {
+							tchannel = atoi(channel);
+						}
+
+						if (lname) {
+							level = atoi(lname);
+						}
+
+						if (tchannel == 0 || (file && !strcmp(file, "switch_console.c"))) {
+							printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+						}
+						known++;
+					} else if (!strcasecmp(type, "text/disconnect-notice")) {
+						running = thread_running = 0;
+						known++;
+					}
+				}
+				
+				if (!known) {
 					printf("INCOMING DATA [%s]\n%s", type, handle->last_event->body);
 				}
 			}
@@ -108,6 +112,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
  done:
 
 	thread_running = 0;
+	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
 
 	return NULL;
 }
@@ -181,7 +186,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, handle_SIGINT);
 	gethostname(hostname, sizeof(hostname));
 
-	handle.debug = 0;
+	handle.debug = 1;
 
 	
 	if (esl_config_open_file(&cfg, cfile)) {

@@ -352,7 +352,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 			node = malloc(sizeof(*node));
 			switch_assert(node);
 		}
-
+		
 		node->data = data;
 		data = NULL;
 		switch_set_string(node->file, filep);
@@ -361,7 +361,7 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 		node->level = level;
 		node->content = content;
 		node->timestamp = now;
-
+		node->channel = channel;
 
 		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			free(node->data);

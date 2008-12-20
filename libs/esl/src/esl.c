@@ -446,7 +446,6 @@ esl_status_t esl_recv(esl_handle_t *handle)
 		rrval = recv(handle->sock, c, 1, 0);
 
 		if (rrval == 0) {
-
 			if (++zc >= 100) {
 				esl_disconnect(handle);
 				return ESL_FAIL;
@@ -587,6 +586,27 @@ esl_status_t esl_recv(esl_handle_t *handle)
 			}
 
 			free(body);
+
+			if ((cl = esl_event_get_header(handle->last_ievent, "content-length"))) {
+				esl_ssize_t sofar = 0;
+		
+				len = atol(cl);
+				body = malloc(len+1);
+				esl_assert(body);
+				*(body + len) = '\0';
+				
+				do {
+					esl_ssize_t r;
+					if ((r = recv(handle->sock, body + sofar, len - sofar, 0)) < 0) {
+						strerror_r(handle->errno, handle->err, sizeof(handle->err));	
+						goto fail;
+					}
+					sofar += r;
+				} while (sofar < len);
+				
+				handle->last_ievent->body = body;
+			}
+
 
 			if (handle->debug) {
 				char *foo;
