@@ -61,14 +61,18 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 			esl_mutex_unlock(global_mutex);
 			goto done;
 		}
-
-
 		if (activity && FD_ISSET(handle->sock, &rfds)) {
-			esl_recv(handle);
+			if (esl_recv(handle)) {
+				running = thread_running = 0;
+				esl_mutex_unlock(global_mutex);
+				esl_log(ESL_LOG_WARNING, "Disconnected.\n");
+				goto done;
+			}
+
 			if (handle->last_event) {
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
 				if (!strcasecmp(type, "log/data")) {
-					int level;
+					int level = 0;
 					if (strstr(handle->last_event->body, "[CONSOLE]")) {
 						level = 0;
 					} else if (strstr(handle->last_event->body, "[ALERT]")) {
@@ -88,6 +92,10 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					}
 
 					printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+				} else if (0 && !strcasecmp(type, "text/disconnect-notice")) {
+					running = thread_running = 0;
+				} else {
+					printf("INCOMING DATA [%s]\n%s", type, handle->last_event->body);
 				}
 			}
 
@@ -106,28 +114,29 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 static int process_command(esl_handle_t *handle, const char *cmd) 
 {
-	if (!strcasecmp(cmd, "exit")) {
+	if (
+		!strcasecmp(cmd, "exit") ||
+		!strcasecmp(cmd, "quit") ||
+		!strcasecmp(cmd, "bye")
+		) {
 		return -1;
 	}
 
-	if (!strncasecmp(cmd, "loglevel", 8)) {
-		const char *level = cmd + 8;
-		
-		while(*level == ' ') level++;
-		if (!esl_strlen_zero(level)) {
-			char cb[128] = "";
-			
-			snprintf(cb, sizeof(cb), "log %s\n\n", level);
-			esl_mutex_lock(global_mutex);
-			esl_send_recv(handle, cb);			
-			printf("%s\n", handle->last_reply);
-			esl_mutex_unlock(global_mutex);
-		}
-
+	if (
+		!strncasecmp(cmd, "event", 5) || 
+		!strncasecmp(cmd, "noevent", 7) ||
+		!strncasecmp(cmd, "nixevent", 8) ||
+		!strncasecmp(cmd, "log", 3) || 
+		!strncasecmp(cmd, "nolog", 5) || 
+		!strncasecmp(cmd, "filter", 6)
+		) {
+		esl_mutex_lock(global_mutex);
+		esl_send_recv(handle, cmd);			
+		printf("%s\n", handle->last_reply);
+		esl_mutex_unlock(global_mutex);
 		goto end;
 	}
-
-
+	
 	printf("Unknown command [%s]\n", cmd);
 
  end:
@@ -136,17 +145,35 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 
 }
 
-int main(void)
+typedef struct {
+	char host[128];
+	char pass[128];
+	esl_port_t port;
+} cli_profile_t;
+
+static cli_profile_t profiles[128] = { 0 };
+static int pcount;
+
+int main(int argc, char *argv[])
 {
 	esl_handle_t handle = {0};
 	int count;
 	const char *line;
 	char cmd_str[1024] = "";
 	char hfile[512] = "/tmp/fs_cli_history";
+	char cfile[512] = "/tmp/fs_cli_config";
 	char *home = getenv("HOME");
-
+	esl_config_t cfg;
+	cli_profile_t *profile = &profiles[0];
+	
+	strncpy(profiles[0].host, "localhost", sizeof(profiles[0].host));
+	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
+	profiles[0].port = 8021;
+	pcount = 1;
+	
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
+		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_config", home);
 	}
 	
 	esl_mutex_create(&global_mutex);
@@ -155,15 +182,27 @@ int main(void)
 	gethostname(hostname, sizeof(hostname));
 
 	handle.debug = 0;
+
 	
-
-	// um ya add some command line parsing for host port and pass 
-
-	if (esl_connect(&handle, "localhost", 8021, "ClueCon")) {
-		printf("Error Connecting [%s]\n", handle.err);
-		goto done;
+	if (esl_config_open_file(&cfg, cfile)) {
+		char *var, *val;
+		while (esl_config_next_pair(&cfg, &var, &val)) {
+			
+		}
+		esl_config_close_file(&cfg);
 	}
+
 	
+	if (esl_connect(&handle, profile->host, profile->port, profile->pass)) {
+		printf("Error Connecting [%s]\n", handle.err);
+		return -1;
+	}
+
+
+	if (handle.debug) {
+		esl_global_set_default_logger(7);
+	}
+		
 	esl_thread_create_detached(msg_thread_run, &handle);
 	
 	el = el_init(__FILE__, stdout, stdout, stdout);

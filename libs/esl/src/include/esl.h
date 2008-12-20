@@ -34,6 +34,9 @@
 #ifndef _ESL_H_
 #define _ESL_H_
 
+#define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
+#define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
+
 typedef struct esl_event_header esl_event_header_t;
 typedef struct esl_event esl_event_t;
 
@@ -204,6 +207,8 @@ typedef struct {
 	char header_buf[4196];
 	char last_reply[1024];
 	esl_event_t *last_event;
+	esl_event_t *last_ievent;
+	esl_event_t *info_event;
 	int debug;
 	int connected;
 } esl_handle_t;
@@ -213,19 +218,50 @@ typedef enum {
 	ESL_FALSE = 0
 } esl_bool_t;
 
+#ifndef __FUNCTION__
+#define __FUNCTION__ (const char *)__func__
+#endif
+
+#define ESL_PRE __FILE__, __FUNCTION__, __LINE__
+#define ESL_LOG_LEVEL_DEBUG 7
+#define ESL_LOG_LEVEL_INFO 6
+#define ESL_LOG_LEVEL_NOTICE 5
+#define ESL_LOG_LEVEL_WARNING 4
+#define ESL_LOG_LEVEL_ERROR 3
+#define ESL_LOG_LEVEL_CRIT 2
+#define ESL_LOG_LEVEL_ALERT 1
+#define ESL_LOG_LEVEL_EMERG 0
+
+#define ESL_LOG_DEBUG ESL_PRE, ESL_LOG_LEVEL_DEBUG
+#define ESL_LOG_INFO ESL_PRE, ESL_LOG_LEVEL_INFO
+#define ESL_LOG_NOTICE ESL_PRE, ESL_LOG_LEVEL_NOTICE
+#define ESL_LOG_WARNING ESL_PRE, ESL_LOG_LEVEL_WARNING
+#define ESL_LOG_ERROR ESL_PRE, ESL_LOG_LEVEL_ERROR
+#define ESL_LOG_CRIT ESL_PRE, ESL_LOG_LEVEL_CRIT
+#define ESL_LOG_ALERT ESL_PRE, ESL_LOG_LEVEL_ALERT
+#define ESL_LOG_EMERG ESL_PRE, ESL_LOG_LEVEL_EMERG
+typedef void (*esl_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
+
+extern esl_logger_t esl_log;
+
+void esl_global_set_logger(esl_logger_t logger);
+void esl_global_set_default_logger(int level);
 
 #include "esl_event.h"
 #include "esl_threadmutex.h"
+#include "esl_config.h"
 
 size_t esl_url_encode(const char *url, char *buf, size_t len);
 char *esl_url_decode(char *s);
+int esl_toupper(int c);
+int esl_tolower(int c);
+
 
 esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
 esl_status_t esl_disconnect(esl_handle_t *handle);
 esl_status_t esl_send(esl_handle_t *handle, const char *cmd);
 esl_status_t esl_recv(esl_handle_t *handle);
 esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd);
-
 
 #endif
 

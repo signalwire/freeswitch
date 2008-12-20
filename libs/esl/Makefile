@@ -4,7 +4,7 @@ LIBEDIT_DIR=../../libs/libedit
 CFLAGS=$(INCS) -g -ggdb -I$(LIBEDIT_DIR)/src/
 MYLIB=libesl.a
 
-OBJS=src/esl.o src/esl_event.o src/esl_threadmutex.o
+OBJS=src/esl.o src/esl_event.o src/esl_threadmutex.o src/esl_config.o
 
 all: $(MYLIB) fs_cli
 
