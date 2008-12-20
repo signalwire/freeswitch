@@ -415,6 +415,8 @@ zap_status_t zap_span_load_tones(zap_span_t *span, const char *mapname)
 			}
 		}
 	}
+
+	zap_config_close_file(&cfg);
 	
 	if (!x) {
 		snprintf(span->last_error, sizeof(span->last_error), "error loading tones.");
