@@ -1,6 +1,6 @@
 BASE=../../../..
 
-CELT=celt-0.5.0
+CELT=celt-0.5.1
 
 CELT_DIR=$(BASE)/libs/$(CELT)
 LOCAL_CFLAGS=-I$(CELT_DIR)/libcelt
