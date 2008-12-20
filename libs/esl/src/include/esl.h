@@ -256,6 +256,9 @@ char *esl_url_decode(char *s);
 int esl_toupper(int c);
 int esl_tolower(int c);
 
+typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in addr);
+
+esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback);
 
 esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
 esl_status_t esl_disconnect(esl_handle_t *handle);

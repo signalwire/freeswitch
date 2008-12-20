@@ -323,6 +323,59 @@ char *esl_url_decode(char *s)
 }
 
 
+esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
+{
+	esl_socket_t server_sock = ESL_SOCK_INVALID;
+	int reuse_addr = 1;
+	struct sockaddr_in addr;
+	esl_status_t status = ESL_SUCCESS;
+	
+	if ((server_sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
+		return ESL_FAIL;
+	}
+
+	setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+			   
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons(port);
+	
+    if (bind(server_sock, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
+		status = ESL_FAIL;
+		goto end;
+	}
+
+    if (listen(server_sock, 10000) < 0) {
+		status = ESL_FAIL;
+		goto end;
+	}
+
+	for (;;) {
+		int client_sock;                    
+		struct sockaddr_in echoClntAddr; 
+		unsigned int clntLen;            
+
+		clntLen = sizeof(echoClntAddr);
+    
+		if ((client_sock = accept(server_sock, (struct sockaddr *) &echoClntAddr, &clntLen)) == ESL_SOCK_INVALID) {
+			status = ESL_FAIL;
+			goto end;
+		}
+
+		callback(server_sock, client_sock, echoClntAddr);
+	}
+
+ end:
+
+	if (server_sock != ESL_SOCK_INVALID) {
+		close(server_sock);
+		server_sock = ESL_SOCK_INVALID;
+	}
+
+	return status;
+
+}
 
 esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password)
 {
