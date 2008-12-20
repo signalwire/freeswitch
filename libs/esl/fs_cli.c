@@ -25,7 +25,7 @@ static HistEvent ev;
 static char *hfile = NULL;
 static int running = 1;
 static int thread_running = 0;
-static esl_mutex_t *global_mutex;
+
 
 static void handle_SIGINT(int sig)
 {
@@ -45,30 +45,12 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 	thread_running = 1;
 
 	while(thread_running && handle->connected) {
-		fd_set rfds, efds;
-		struct timeval tv = { 0, 10 * 1000 };
-		int max, activity, i = 0;
+		esl_status_t status = esl_recv_timed(handle, 10);
 		
-		esl_mutex_lock(global_mutex);
-		FD_ZERO(&rfds);
-		FD_ZERO(&efds);
-		FD_SET(handle->sock, &rfds);
-		FD_SET(handle->sock, &efds);
-	
-		max = handle->sock + 1;
-		
-		if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
-			esl_mutex_unlock(global_mutex);
-			goto done;
-		}
-		if (activity && FD_ISSET(handle->sock, &rfds)) {
-			if (esl_recv(handle)) {
-				running = thread_running = 0;
-				esl_mutex_unlock(global_mutex);
-				esl_log(ESL_LOG_WARNING, "Disconnected.\n");
-				goto done;
-			}
-
+		if (status == ESL_FAIL) {
+			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
+			running = thread_running = 0;
+		} else if (status == ESL_SUCCESS) {
 			if (handle->last_event) {
 				const char *type = esl_event_get_header(handle->last_event, "content-type");
 				int known = 0;
@@ -102,10 +84,8 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					printf("INCOMING DATA [%s]\n%s", type, handle->last_event->body);
 				}
 			}
-
 		}
 
-		esl_mutex_unlock(global_mutex);
 		usleep(1000);
 	}
 
@@ -135,10 +115,10 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		!strncasecmp(cmd, "nolog", 5) || 
 		!strncasecmp(cmd, "filter", 6)
 		) {
-		esl_mutex_lock(global_mutex);
+
 		esl_send_recv(handle, cmd);			
-		printf("%s\n", handle->last_reply);
-		esl_mutex_unlock(global_mutex);
+		printf("%s\n", handle->last_sr_reply);
+
 		goto end;
 	}
 	
@@ -181,8 +161,6 @@ int main(int argc, char *argv[])
 		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_config", home);
 	}
 	
-	esl_mutex_create(&global_mutex);
-
 	signal(SIGINT, handle_SIGINT);
 	gethostname(hostname, sizeof(hostname));
 
@@ -226,9 +204,7 @@ int main(int argc, char *argv[])
 	
 
 	snprintf(cmd_str, sizeof(cmd_str), "log info\n\n");
-	esl_mutex_lock(global_mutex);
 	esl_send_recv(&handle, cmd_str);
-	esl_mutex_unlock(global_mutex);
 
 	while (running) {
 
@@ -254,10 +230,10 @@ int main(int argc, char *argv[])
 					}
 				} else {
 					snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", cmd);
-					esl_mutex_lock(global_mutex);
 					esl_send_recv(&handle, cmd_str);
-					printf("%s\n", handle.last_event->body);
-					esl_mutex_unlock(global_mutex);
+					if (handle.last_sr_event) {
+						printf("%s\n", handle.last_sr_event->body);
+					}
 				}
 
 				el_deletestr(el, strlen(foo) + 1);
@@ -282,8 +258,6 @@ int main(int argc, char *argv[])
 	esl_disconnect(&handle);
 	
 	thread_running = 0;
-
-	esl_mutex_destroy(&global_mutex);
 
 	return 0;
 }

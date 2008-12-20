@@ -322,6 +322,76 @@ char *esl_url_decode(char *s)
 	return s;
 }
 
+esl_status_t esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr)
+{
+	handle->sock = socket;
+	handle->addr = addr;
+
+	if (handle->sock == ESL_SOCK_INVALID) {
+		return ESL_FAIL;
+	}
+	
+	
+	if (!handle->mutex) {
+		esl_mutex_create(&handle->mutex);
+	}
+
+	handle->connected = 1;
+
+	esl_send_recv(handle, "connect\n\n");
+	
+
+	if (handle->last_sr_event) {
+		handle->info_event = handle->last_sr_event;
+		handle->last_sr_event = NULL;
+		return ESL_SUCCESS;
+	}
+	
+	handle->connected = 0;
+
+	return ESL_FAIL;
+}
+
+esl_status_t esl_sendevent(esl_handle_t *handle, esl_event_t *event)
+{
+	char *txt;
+
+	esl_event_serialize(handle->last_ievent, &txt, ESL_TRUE);
+
+	if (handle->debug) {
+		esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
+	}
+	
+	send(handle->sock, "sendevent\n", 10, 0);
+	send(handle->sock, txt, strlen(txt), 0);
+	send(handle->sock, "\n\n", 2, 0);
+
+	free(txt);
+}
+
+esl_status_t esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid)
+{
+	char cmd_buf[128] = "sendmsg";
+	char app_buf[512] = "";
+	char arg_buf[512] = "";
+	char send_buf[1292] = "";
+	
+	if (uuid) {
+		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s", uuid);
+	}
+	
+	if (app) {
+		snprintf(app_buf, sizeof(app_buf), "execute-app-name: %s\n", app);
+	}
+
+	if (arg) {
+		snprintf(arg_buf, sizeof(arg_buf), "execute-app-arg: %s\n", arg);
+	}
+
+	snprintf(send_buf, sizeof(send_buf), "%s\ncall-command: execute\n%s%s\n", cmd_buf, app_buf, arg_buf);
+
+	esl_send_recv(handle, send_buf);
+}
 
 esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
 {
@@ -386,6 +456,10 @@ esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port
 	int rval;
 	const char *hval;
 
+	if (!handle->mutex) {
+		esl_mutex_create(&handle->mutex);
+	}
+	
 	handle->sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	
 	if (handle->sock == ESL_SOCK_INVALID) {
@@ -450,20 +524,26 @@ esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port
 		snprintf(handle->err, sizeof(handle->err), "Connection Error");
 		goto fail;
 	}
-	
+
 	return ESL_SUCCESS;
 
  fail:
 	
 	esl_disconnect(handle);
+
 	return ESL_FAIL;
 }
 
 esl_status_t esl_disconnect(esl_handle_t *handle)
 {
 	esl_event_safe_destroy(&handle->last_event);
+	esl_event_safe_destroy(&handle->last_sr_event);
 	esl_event_safe_destroy(&handle->last_ievent);
 	esl_event_safe_destroy(&handle->info_event);
+
+	if (handle->mutex) {
+		esl_mutex_destroy(&handle->mutex);
+	}
 
 	if (handle->sock != ESL_SOCK_INVALID) {
 		close(handle->sock);
@@ -476,7 +556,45 @@ esl_status_t esl_disconnect(esl_handle_t *handle)
 	return ESL_FAIL;
 }
 
-esl_status_t esl_recv(esl_handle_t *handle)
+esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event)
+{
+	fd_set rfds, efds;
+	struct timeval tv = { 0, ms * 1000 };
+	int max, activity, i = 0;
+	esl_status_t status = ESL_SUCCESS;
+
+	esl_mutex_lock(handle->mutex);
+	FD_ZERO(&rfds);
+	FD_ZERO(&efds);
+	FD_SET(handle->sock, &rfds);
+	FD_SET(handle->sock, &efds);
+	
+	max = handle->sock + 1;
+	
+	if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
+		status = ESL_FAIL;
+		goto done;
+	}
+
+	if (activity && FD_ISSET(handle->sock, &rfds)) {
+		if (esl_recv_event(handle, save_event)) {
+			status = ESL_FAIL;
+			goto done;
+		}
+	} else {
+		status = ESL_BREAK;
+	}
+
+ done:
+
+	esl_mutex_unlock(handle->mutex);
+
+	return status;
+
+}
+
+
+esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 {
 	char *c;
 	esl_ssize_t rrval;
@@ -489,6 +607,8 @@ esl_status_t esl_recv(esl_handle_t *handle)
 	ssize_t len;
 	int zc = 0;
 	
+	esl_mutex_lock(handle->mutex);
+
 	esl_event_safe_destroy(&handle->last_event);
 	memset(handle->header_buf, 0, sizeof(handle->header_buf));
 
@@ -501,6 +621,7 @@ esl_status_t esl_recv(esl_handle_t *handle)
 		if (rrval == 0) {
 			if (++zc >= 100) {
 				esl_disconnect(handle);
+				esl_mutex_unlock(handle->mutex);
 				return ESL_FAIL;
 			}
 		} else if (rrval < 0) {
@@ -530,6 +651,7 @@ esl_status_t esl_recv(esl_handle_t *handle)
 				*c = '\0';
 				
 				if (hname && hval) {
+					esl_url_decode(hval);
 					if (handle->debug > 1) {
 						esl_log(ESL_LOG_DEBUG, "RECV HEADER [%s] = [%s]\n", hname, hval);
 					}
@@ -572,23 +694,25 @@ esl_status_t esl_recv(esl_handle_t *handle)
 		revent->body = body;
 	}
 
-
-
-	handle->last_event = revent;
+	if (save_event) {
+		*save_event = revent;
+	} else {
+		handle->last_event = revent;
+	}
 	
-	if (handle->last_event) {
-		const char *hval = esl_event_get_header(handle->last_event, "reply-text");
+	if (revent) {
+		const char *hval = esl_event_get_header(revent, "reply-text");
 
 		if (!esl_strlen_zero(hval)) {
 			strncpy(handle->last_reply, hval, sizeof(handle->last_reply));
 		}
 
-		hval = esl_event_get_header(handle->last_event, "content-type");
+		hval = esl_event_get_header(revent, "content-type");
 
-		if (!esl_strlen_zero(hval) && !strcasecmp(hval, "text/event-plain") && handle->last_event->body) {
+		if (!esl_strlen_zero(hval) && !strcasecmp(hval, "text/event-plain") && revent->body) {
 			const char *en;
 			esl_event_types_t et = ESL_EVENT_COMMAND;
-			char *body = strdup(handle->last_event->body);
+			char *body = strdup(revent->body);
 			char *beg;
 			char *hname, *hval;
 			char *col;
@@ -669,15 +793,15 @@ esl_status_t esl_recv(esl_handle_t *handle)
 			}
 		}
 		
+		if (handle->debug) {
+			char *foo;
+			esl_event_serialize(revent, &foo, ESL_FALSE);
+			esl_log(ESL_LOG_DEBUG, "RECV MESSAGE\n%s\n", foo);
+			free(foo);
+		}
 	}
 
-
-	if (handle->debug) {
-		char *foo;
-		esl_event_serialize(handle->last_event, &foo, ESL_FALSE);
-		esl_log(ESL_LOG_DEBUG, "RECV MESSAGE\n%s\n", foo);
-		free(foo);
-	}
+	esl_mutex_unlock(handle->mutex);
 
 	return ESL_SUCCESS;
 
@@ -706,8 +830,21 @@ esl_status_t esl_send(esl_handle_t *handle, const char *cmd)
 
 esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd)
 {
+	const char *hval;
+
+	esl_mutex_lock(handle->mutex);
 	esl_send(handle, cmd);
-	esl_recv(handle);
+	esl_recv_event(handle, &handle->last_sr_event);
+	
+	if (handle->last_sr_event) {
+		hval = esl_event_get_header(handle->last_sr_event, "reply-text");
+
+		if (!esl_strlen_zero(hval)) {
+			strncpy(handle->last_sr_reply, hval, sizeof(handle->last_sr_reply));
+		}
+	}
+	
+	esl_mutex_unlock(handle->mutex);
 }
 
 

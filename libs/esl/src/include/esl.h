@@ -34,6 +34,7 @@
 #ifndef _ESL_H_
 #define _ESL_H_
 
+
 #define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
 #define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
 
@@ -193,9 +194,12 @@ typedef int16_t esl_port_t;
 
 typedef enum {
 	ESL_SUCCESS,
-	ESL_FAIL
+	ESL_FAIL,
+	ESL_BREAK
 } esl_status_t;
 
+
+#include <esl_threadmutex.h>
 
 typedef struct {
 	struct sockaddr_in sockaddr;
@@ -206,11 +210,15 @@ typedef struct {
 	int errno;
 	char header_buf[4196];
 	char last_reply[1024];
+	char last_sr_reply[1024];
 	esl_event_t *last_event;
+	esl_event_t *last_sr_event;
 	esl_event_t *last_ievent;
 	esl_event_t *info_event;
 	int debug;
 	int connected;
+	struct sockaddr_in addr;
+	esl_mutex_t *mutex;
 } esl_handle_t;
 
 typedef enum {
@@ -258,13 +266,19 @@ int esl_tolower(int c);
 
 typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in addr);
 
+esl_status_t esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr);
 esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback);
+esl_status_t esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid);
+esl_status_t esl_sendevent(esl_handle_t *handle, esl_event_t *event);
 
 esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
 esl_status_t esl_disconnect(esl_handle_t *handle);
 esl_status_t esl_send(esl_handle_t *handle, const char *cmd);
-esl_status_t esl_recv(esl_handle_t *handle);
+esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event);
+esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event);
 esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd);
+#define esl_recv(_h) esl_recv_event(_h, NULL)
+#define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, NULL)
 
 #endif
 
