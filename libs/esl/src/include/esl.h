@@ -1,0 +1,233 @@
+/*
+ * Copyright (c) 2007, Anthony Minessale II
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of the original author; nor the names of any contributors
+ * may be used to endorse or promote products derived from this software
+ * without specific prior written permission.
+ * 
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER
+ * OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef _ESL_H_
+#define _ESL_H_
+
+typedef struct esl_event_header esl_event_header_t;
+typedef struct esl_event esl_event_t;
+
+
+#define ESL_SEQ_ESC "\033["
+/* Ansi Control character suffixes */
+#define ESL_SEQ_HOME_CHAR 'H'
+#define ESL_SEQ_HOME_CHAR_STR "H"
+#define ESL_SEQ_CLEARLINE_CHAR '1'
+#define ESL_SEQ_CLEARLINE_CHAR_STR "1"
+#define ESL_SEQ_CLEARLINEEND_CHAR "K"
+#define ESL_SEQ_CLEARSCR_CHAR0 '2'
+#define ESL_SEQ_CLEARSCR_CHAR1 'J'
+#define ESL_SEQ_CLEARSCR_CHAR "2J"
+#define ESL_SEQ_DEFAULT_COLOR ESL_SEQ_ESC ESL_SEQ_END_COLOR	/* Reset to Default fg/bg color */
+#define ESL_SEQ_AND_COLOR ";"	/* To add multiple color definitions */
+#define ESL_SEQ_END_COLOR "m"	/* To end color definitions */
+/* Foreground colors values */
+#define ESL_SEQ_F_BLACK "30"
+#define ESL_SEQ_F_RED "31"
+#define ESL_SEQ_F_GREEN "32"
+#define ESL_SEQ_F_YELLOW "33"
+#define ESL_SEQ_F_BLUE "34"
+#define ESL_SEQ_F_MAGEN "35"
+#define ESL_SEQ_F_CYAN "36"
+#define ESL_SEQ_F_WHITE "37"
+/* Background colors values */
+#define ESL_SEQ_B_BLACK "40"
+#define ESL_SEQ_B_RED "41"
+#define ESL_SEQ_B_GREEN "42"
+#define ESL_SEQ_B_YELLOW "43"
+#define ESL_SEQ_B_BLUE "44"
+#define ESL_SEQ_B_MAGEN "45"
+#define ESL_SEQ_B_CYAN "46"
+#define ESL_SEQ_B_WHITE "47"
+/* Preset escape sequences - Change foreground colors only */
+#define ESL_SEQ_FBLACK ESL_SEQ_ESC ESL_SEQ_F_BLACK ESL_SEQ_END_COLOR
+#define ESL_SEQ_FRED ESL_SEQ_ESC ESL_SEQ_F_RED ESL_SEQ_END_COLOR
+#define ESL_SEQ_FGREEN ESL_SEQ_ESC ESL_SEQ_F_GREEN ESL_SEQ_END_COLOR
+#define ESL_SEQ_FYELLOW ESL_SEQ_ESC ESL_SEQ_F_YELLOW ESL_SEQ_END_COLOR
+#define ESL_SEQ_FBLUE ESL_SEQ_ESC ESL_SEQ_F_BLUE ESL_SEQ_END_COLOR
+#define ESL_SEQ_FMAGEN ESL_SEQ_ESC ESL_SEQ_F_MAGEN ESL_SEQ_END_COLOR
+#define ESL_SEQ_FCYAN ESL_SEQ_ESC ESL_SEQ_F_CYAN ESL_SEQ_END_COLOR
+#define ESL_SEQ_FWHITE ESL_SEQ_ESC ESL_SEQ_F_WHITE ESL_SEQ_END_COLOR
+#define ESL_SEQ_BBLACK ESL_SEQ_ESC ESL_SEQ_B_BLACK ESL_SEQ_END_COLOR
+#define ESL_SEQ_BRED ESL_SEQ_ESC ESL_SEQ_B_RED ESL_SEQ_END_COLOR
+#define ESL_SEQ_BGREEN ESL_SEQ_ESC ESL_SEQ_B_GREEN ESL_SEQ_END_COLOR
+#define ESL_SEQ_BYELLOW ESL_SEQ_ESC ESL_SEQ_B_YELLOW ESL_SEQ_END_COLOR
+#define ESL_SEQ_BBLUE ESL_SEQ_ESC ESL_SEQ_B_BLUE ESL_SEQ_END_COLOR
+#define ESL_SEQ_BMAGEN ESL_SEQ_ESC ESL_SEQ_B_MAGEN ESL_SEQ_END_COLOR
+#define ESL_SEQ_BCYAN ESL_SEQ_ESC ESL_SEQ_B_CYAN ESL_SEQ_END_COLOR
+#define ESL_SEQ_BWHITE ESL_SEQ_ESC ESL_SEQ_B_WHITE ESL_SEQ_END_COLOR
+/* Preset escape sequences */
+#define ESL_SEQ_HOME ESL_SEQ_ESC ESL_SEQ_HOME_CHAR_STR
+#define ESL_SEQ_CLEARLINE ESL_SEQ_ESC ESL_SEQ_CLEARLINE_CHAR_STR
+#define ESL_SEQ_CLEARLINEEND ESL_SEQ_ESC ESL_SEQ_CLEARLINEEND_CHAR
+#define ESL_SEQ_CLEARSCR ESL_SEQ_ESC ESL_SEQ_CLEARSCR_CHAR ESL_SEQ_HOME
+
+#if !defined(_XOPEN_SOURCE) && !defined(__FreeBSD__) && !defined(__NetBSD__)
+#define _XOPEN_SOURCE 600
+#endif
+
+#ifndef HAVE_STRINGS_H
+#define HAVE_STRINGS_H 1
+#endif
+#ifndef HAVE_SYS_SOCKET_H
+#define HAVE_SYS_SOCKET_H 1
+#endif
+
+#ifndef __WINDOWS__
+#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
+#define __WINDOWS__
+#endif
+#endif
+
+#ifdef _MSC_VER
+#ifndef __inline__
+#define __inline__ __inline
+#endif
+#if (_MSC_VER >= 1400)			/* VC8+ */
+#ifndef _CRT_SECURE_NO_DEPRECATE
+#define _CRT_SECURE_NO_DEPRECATE
+#endif
+#ifndef _CRT_NONSTDC_NO_DEPRECATE
+#define _CRT_NONSTDC_NO_DEPRECATE
+#endif
+#endif
+#ifndef strcasecmp
+#define strcasecmp(s1, s2) _stricmp(s1, s2)
+#endif
+#ifndef strncasecmp
+#define strncasecmp(s1, s2, n) _strnicmp(s1, s2, n)
+#endif
+#ifndef snprintf
+#define snprintf _snprintf
+#endif
+#ifndef S_IRUSR
+#define S_IRUSR _S_IREAD
+#endif
+#ifndef S_IWUSR
+#define S_IWUSR _S_IWRITE
+#endif
+#undef HAVE_STRINGS_H
+#undef HAVE_SYS_SOCKET_H
+#endif
+
+#include <time.h>
+#ifndef WIN32
+#include <sys/time.h>
+#endif
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
+#include <assert.h>
+
+
+#define esl_assert(_x) assert(_x)
+#define esl_safe_free(_x) if (_x) free(_x); _x = NULL
+#define esl_strlen_zero(s) (!s || *(s) == '\0')
+#define esl_strlen_zero_buf(s) (*(s) == '\0')
+
+#ifdef WIN32
+#include <windows.h>
+typedef HANDLE esl_socket_t;
+typedef unsigned __int64 uint64_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int8 uint8_t;
+typedef __int64 int64_t;
+typedef __int32 int32_t;
+typedef __int16 int16_t;
+typedef __int8 int8_t;
+typedef intptr_t esl_ssize_t;
+typedef int esl_filehandle_t;
+#else
+#include <stdint.h>
+#include <sys/types.h>
+#include <sys/ioctl.h>
+#include <stdarg.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#define ESL_SOCK_INVALID -1
+typedef int esl_socket_t;
+typedef ssize_t esl_ssize_t;
+typedef int esl_filehandle_t;
+#endif
+
+typedef int16_t esl_port_t;
+
+typedef enum {
+	ESL_SUCCESS,
+	ESL_FAIL
+} esl_status_t;
+
+
+typedef struct {
+	struct sockaddr_in sockaddr;
+	struct hostent hostent;
+	char hostbuf[256];
+	esl_socket_t sock;
+	char err[256];
+	int errno;
+	char header_buf[4196];
+	char last_reply[1024];
+	esl_event_t *last_event;
+	int debug;
+	int connected;
+} esl_handle_t;
+
+typedef enum {
+	ESL_TRUE = 1,
+	ESL_FALSE = 0
+} esl_bool_t;
+
+
+#include "esl_event.h"
+#include "esl_threadmutex.h"
+
+size_t esl_url_encode(const char *url, char *buf, size_t len);
+char *esl_url_decode(char *s);
+
+esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
+esl_status_t esl_disconnect(esl_handle_t *handle);
+esl_status_t esl_send(esl_handle_t *handle, const char *cmd);
+esl_status_t esl_recv(esl_handle_t *handle);
+esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd);
+
+
+#endif
+
+
+
