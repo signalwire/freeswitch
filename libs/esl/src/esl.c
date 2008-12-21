@@ -824,13 +824,13 @@ esl_status_t esl_send(esl_handle_t *handle, const char *cmd)
 	}
 	
 	if (send(handle->sock, cmd, strlen(cmd), 0)) {
-		strerror_r(handle->errno, handle->err, sizeof(handle->err));
+		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 		return ESL_FAIL;
 	}
 
 	if (!(*e == '\n' && *(e-1) == '\n')) {
 		if (send(handle->sock, "\n\n", 2, 0)) {
-			strerror_r(handle->errno, handle->err, sizeof(handle->err));
+			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 			return ESL_FAIL;
 		}
 	}
