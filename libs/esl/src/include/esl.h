@@ -35,6 +35,10 @@
 #define _ESL_H_
 
 
+#include <stdarg.h>
+int vasprintf(char **ret, const char *format, va_list ap);
+
+
 #define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
 #define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
 

@@ -36,14 +36,6 @@
 #define closesocket(x) close(x)
 #endif
 
-#ifndef HAVE_GETHOSTBYNAME_R
-extern int gethostbyname_r (const char *__name,
-                            struct hostent *__result_buf,
-                            char *__buf, size_t __buflen,
-                            struct hostent **__result,
-                            int *__h_errnump);
-#endif
-
 
 
 /* Written by Marc Espie, public domain */
@@ -456,7 +448,7 @@ esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port
 
 	struct hostent *result;
 	char sendbuf[256];
-	int rval;
+	int rval = 0;
 	const char *hval;
 
 	if (!handle->mutex) {
@@ -476,19 +468,18 @@ esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port
 
     memset(&handle->hostent, 0, sizeof(handle->hostent));
 
-#ifdef HAVE_GETHOSTBYNAME_R_FIVE
-	rval = gethostbyname_r(host, &handle->hostent, handle->hostbuf, sizeof(handle->hostbuf), &handle->errnum);
-	result = handle->hostent;
-#else
-	rval = gethostbyname_r(host, &handle->hostent, handle->hostbuf, sizeof(handle->hostbuf), &result, &handle->errnum);
-#endif
+	if ((result = gethostbyname(host))) {
+		handle->hostent = *result;
+	} else {
+		rval = -1;
+	}
 	
 	if (rval) {
 		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 		goto fail;
 	}
 
-	memcpy(&handle->sockaddr.sin_addr, result->h_addr, result->h_length);
+	memcpy(&handle->sockaddr.sin_addr, result->h_addr_list[0], result->h_length);
 	
 	rval = connect(handle->sock, (struct sockaddr *) &handle->sockaddr, sizeof(handle->sockaddr));
 	
