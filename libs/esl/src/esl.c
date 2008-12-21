@@ -32,7 +32,6 @@
  */
 
 #include <esl.h>
-#include <sys/signal.h>
 
 #ifndef HAVE_GETHOSTBYNAME_R
 extern int gethostbyname_r (const char *__name,
@@ -367,6 +366,8 @@ esl_status_t esl_sendevent(esl_handle_t *handle, esl_event_t *event)
 	send(handle->sock, "\n\n", 2, 0);
 
 	free(txt);
+
+	return ESL_SUCCESS;
 }
 
 esl_status_t esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid)
@@ -390,7 +391,7 @@ esl_status_t esl_execute(esl_handle_t *handle, const char *app, const char *arg,
 
 	snprintf(send_buf, sizeof(send_buf), "%s\ncall-command: execute\n%s%s\n", cmd_buf, app_buf, arg_buf);
 
-	esl_send_recv(handle, send_buf);
+	return esl_send_recv(handle, send_buf);
 }
 
 esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
@@ -452,7 +453,6 @@ esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port
 
 	struct hostent *result;
 	char sendbuf[256];
-	char recvbuf[256];
 	int rval;
 	const char *hval;
 
@@ -560,7 +560,7 @@ esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t
 {
 	fd_set rfds, efds;
 	struct timeval tv = { 0, ms * 1000 };
-	int max, activity, i = 0;
+	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
 
 	esl_mutex_lock(handle->mutex);
@@ -820,21 +820,31 @@ esl_status_t esl_send(esl_handle_t *handle, const char *cmd)
 		esl_log(ESL_LOG_DEBUG, "SEND\n%s\n", cmd);
 	}
 	
-	send(handle->sock, cmd, strlen(cmd), 0);
+	if (send(handle->sock, cmd, strlen(cmd), 0)) {
+		strerror_r(handle->errno, handle->err, sizeof(handle->err));
+		return ESL_FAIL;
+	}
 
 	if (!(*e == '\n' && *(e-1) == '\n')) {
-		send(handle->sock, "\n\n", 2, 0);
+		if (send(handle->sock, "\n\n", 2, 0)) {
+			strerror_r(handle->errno, handle->err, sizeof(handle->err));
+			return ESL_FAIL;
+		}
 	}
+	
+	return ESL_SUCCESS;
+
 }
 
 
 esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd)
 {
 	const char *hval;
-
+	esl_status_t status;
+	
 	esl_mutex_lock(handle->mutex);
 	esl_send(handle, cmd);
-	esl_recv_event(handle, &handle->last_sr_event);
+	status = esl_recv_event(handle, &handle->last_sr_event);
 	
 	if (handle->last_sr_event) {
 		hval = esl_event_get_header(handle->last_sr_event, "reply-text");
@@ -845,6 +855,8 @@ esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd)
 	}
 	
 	esl_mutex_unlock(handle->mutex);
+
+	return status;
 }
 
 

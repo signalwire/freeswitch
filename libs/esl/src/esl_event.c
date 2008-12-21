@@ -31,6 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
 #include <esl.h>
 #include <esl_event.h>
 
@@ -56,7 +57,7 @@ static char *my_dup(const char *s)
 /* make sure this is synced with the esl_event_types_t enum in esl_types.h
    also never put any new ones before EVENT_ALL
 */
-static char *EVENT_NAMES[] = {
+static const char *EVENT_NAMES[] = {
 	"CUSTOM",
 	"CHANNEL_CREATE",
 	"CHANNEL_DESTROY",
@@ -277,7 +278,7 @@ esl_status_t esl_event_del_header(esl_event_t *event, const char *header_name)
 	return status;
 }
 
-esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t stack, const char *header_name, char *data)
+static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t stack, const char *header_name, char *data)
 {
 	esl_event_header_t *header;
 	esl_ssize_t hlen = -1;

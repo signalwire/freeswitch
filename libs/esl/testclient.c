@@ -5,7 +5,7 @@
 
 int main(void)
 {
-	esl_handle_t handle = {0};
+	esl_handle_t handle = {{0}};
 
 	handle.debug = 1;
 	

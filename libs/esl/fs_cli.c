@@ -5,27 +5,20 @@
 #include <sys/select.h>
 
 #include <histedit.h>
+
 static char prompt_str[512] = "";
 static char hostname[512] = "";
 
-char *prompt(EditLine * e)
+static char *prompt(EditLine * e)
 {
-	if (*prompt_str == '\0') {
-        gethostname(hostname, sizeof(hostname));
-        snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", hostname);
-    }
-
     return prompt_str;
-
 }
 
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
-static char *hfile = NULL;
 static int running = 1;
 static int thread_running = 0;
-
 
 static void handle_SIGINT(int sig)
 {
@@ -89,8 +82,6 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 		usleep(1000);
 	}
 
- done:
-
 	thread_running = 0;
 	esl_log(ESL_LOG_DEBUG, "Thread Done\n");
 
@@ -131,17 +122,33 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 }
 
 typedef struct {
+	char name[128];
 	char host[128];
-	char pass[128];
 	esl_port_t port;
+	char pass[128];
 } cli_profile_t;
 
-static cli_profile_t profiles[128] = { 0 };
+static cli_profile_t profiles[128] = {{{0}}};
 static int pcount;
+
+
+static int get_profile(const char *name, cli_profile_t **profile)
+{
+	int x;
+
+	for (x = 0; x < pcount; x++) {
+		if (!strcmp(profiles[x].name, name)) {
+			*profile = &profiles[x];
+			return 0;
+		}
+	}
+
+	return -1;
+}
 
 int main(int argc, char *argv[])
 {
-	esl_handle_t handle = {0};
+	esl_handle_t handle = {{0}};
 	int count;
 	const char *line;
 	char cmd_str[1024] = "";
@@ -150,11 +157,13 @@ int main(int argc, char *argv[])
 	char *home = getenv("HOME");
 	esl_config_t cfg;
 	cli_profile_t *profile = &profiles[0];
+	int cur = 0;
 	
 	strncpy(profiles[0].host, "localhost", sizeof(profiles[0].host));
 	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
+	strncpy(profiles[0].name, "default", sizeof(profiles[0].name));
 	profiles[0].port = 8021;
-	pcount = 1;
+	pcount++;
 	
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
@@ -165,27 +174,58 @@ int main(int argc, char *argv[])
 	gethostname(hostname, sizeof(hostname));
 
 	handle.debug = 0;
-
+	esl_global_set_default_logger(7);
 	
 	if (esl_config_open_file(&cfg, cfile)) {
 		char *var, *val;
+		char cur_cat[128] = "";
+
 		while (esl_config_next_pair(&cfg, &var, &val)) {
+			if (strcmp(cur_cat, cfg.category)) {
+				cur++;
+				esl_set_string(cur_cat, cfg.category);
+				esl_set_string(profiles[cur].name, cur_cat);
+				esl_set_string(profiles[cur].host, "localhost");
+				esl_set_string(profiles[cur].pass, "ClueCon");
+				profiles[cur].port = 8021;
+				esl_log(ESL_LOG_INFO, "Found Profile [%s]\n", profiles[cur].name);
+				pcount++;
+			}
 			
+			if (!strcasecmp(var, "host")) {
+				esl_set_string(profiles[cur].host, val);
+			} else if (!strcasecmp(var, "password")) {
+				esl_set_string(profiles[cur].pass, val);
+			} else if (!strcasecmp(var, "port")) {
+				int pt = atoi(val);
+				if (pt > 0) {
+					profiles[cur].port = pt;
+				}
+			}
 		}
 		esl_config_close_file(&cfg);
 	}
 
+	if (argv[1]) {
+		if (get_profile(argv[1], &profile)) {
+			esl_log(ESL_LOG_INFO, "Chosen profile %s does not exist using builtin default\n", argv[1]);
+			profile = &profiles[0];
+		} else {
+			esl_log(ESL_LOG_INFO, "Chosen profile %s\n", profile->name);
+		}
+	}
+
+	esl_log(ESL_LOG_INFO, "Using profile %s\n", profile->name);
+		
+	gethostname(hostname, sizeof(hostname));
+	snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
+
 	
 	if (esl_connect(&handle, profile->host, profile->port, profile->pass)) {
-		printf("Error Connecting [%s]\n", handle.err);
+		esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 		return -1;
 	}
-
-
-	if (handle.debug) {
-		esl_global_set_default_logger(7);
-	}
-		
+	
 	esl_thread_create_detached(msg_thread_run, &handle);
 	
 	el = el_init(__FILE__, stdout, stdout, stdout);
@@ -194,7 +234,7 @@ int main(int argc, char *argv[])
 	myhistory = history_init();
 
 	if (myhistory == 0) {
-		fprintf(stderr, "history could not be initialized\n");
+		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");
 		goto done;
 	}
 
@@ -202,9 +242,10 @@ int main(int argc, char *argv[])
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
 	
-
 	snprintf(cmd_str, sizeof(cmd_str), "log info\n\n");
 	esl_send_recv(&handle, cmd_str);
+
+	esl_log(ESL_LOG_INFO, "FS CLI Ready.\n");
 
 	while (running) {
 

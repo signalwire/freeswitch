@@ -149,14 +149,18 @@ typedef struct esl_event esl_event_t;
 #include <sys/time.h>
 #endif
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/signal.h>
+#include <unistd.h>
+#include <ctype.h>
+
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 #include <assert.h>
-
 
 #define esl_assert(_x) assert(_x)
 #define esl_safe_free(_x) if (_x) free(_x); _x = NULL
@@ -261,6 +265,7 @@ void esl_global_set_default_logger(int level);
 
 size_t esl_url_encode(const char *url, char *buf, size_t len);
 char *esl_url_decode(char *s);
+const char *esl_stristr(const char *instr, const char *str);
 int esl_toupper(int c);
 int esl_tolower(int c);
 
