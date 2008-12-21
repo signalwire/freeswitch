@@ -562,9 +562,11 @@ esl_status_t esl_disconnect(esl_handle_t *handle)
 esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event)
 {
 	fd_set rfds, efds;
-	struct timeval tv = { 0, ms * 1000 };
+	struct timeval tv = { 0 };
 	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
+
+	tv.tv_usec = ms * 1000;
 
 	esl_mutex_lock(handle->mutex);
 	FD_ZERO(&rfds);
