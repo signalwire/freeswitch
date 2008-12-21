@@ -214,19 +214,24 @@ int esl_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 	char cas_bits[5];
 	unsigned char bit = 0x8;
 	char *double_colon = strchr(strvalue, ':');
+	int x = 0;
+
 	if (!double_colon) {
 		esl_log(ESL_LOG_ERROR, "No CAS bits specified: %s, :xxxx definition expected, where x is 1 or 0\n", double_colon);
 		return -1;
 	}
+
 	double_colon++;
 	*outbits = 0;
 	cas_bits[4] = 0;
+
 	if (sscanf(double_colon, "%c%c%c%c", &cas_bits[0], &cas_bits[1], &cas_bits[2], &cas_bits[3]) != 4) {
 		esl_log(ESL_LOG_ERROR, "Invalid CAS bits specified: %s, :xxxx definition expected, where x is 1 or 0\n", double_colon);
 		return -1;
 	}
+
 	esl_log(ESL_LOG_DEBUG, "CAS bits specification found: %s\n", cas_bits);
-	int x = 0;
+
 	for (; cas_bits[x]; x++) {
 		if ('1' == cas_bits[x]) {
 			*outbits |= bit;

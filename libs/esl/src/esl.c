@@ -32,13 +32,16 @@
  */
 
 #include <esl.h>
+#ifndef WIN32
+#define closesocket(x) close(x)
+#endif
 
 #ifndef HAVE_GETHOSTBYNAME_R
 extern int gethostbyname_r (const char *__name,
                             struct hostent *__result_buf,
                             char *__buf, size_t __buflen,
                             struct hostent **__result,
-                            int *__h_errnop);
+                            int *__h_errnump);
 #endif
 
 
@@ -440,7 +443,7 @@ esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t
  end:
 
 	if (server_sock != ESL_SOCK_INVALID) {
-		close(server_sock);
+		closesocket(server_sock);
 		server_sock = ESL_SOCK_INVALID;
 	}
 
@@ -474,14 +477,14 @@ esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port
     memset(&handle->hostent, 0, sizeof(handle->hostent));
 
 #ifdef HAVE_GETHOSTBYNAME_R_FIVE
-	rval = gethostbyname_r(host, &handle->hostent, handle->hostbuf, sizeof(handle->hostbuf), &handle->errno);
+	rval = gethostbyname_r(host, &handle->hostent, handle->hostbuf, sizeof(handle->hostbuf), &handle->errnum);
 	result = handle->hostent;
 #else
-	rval = gethostbyname_r(host, &handle->hostent, handle->hostbuf, sizeof(handle->hostbuf), &result, &handle->errno);
+	rval = gethostbyname_r(host, &handle->hostent, handle->hostbuf, sizeof(handle->hostbuf), &result, &handle->errnum);
 #endif
 	
 	if (rval) {
-		strerror_r(handle->errno, handle->err, sizeof(handle->err));
+		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 		goto fail;
 	}
 
@@ -546,7 +549,7 @@ esl_status_t esl_disconnect(esl_handle_t *handle)
 	}
 
 	if (handle->sock != ESL_SOCK_INVALID) {
-		close(handle->sock);
+		closesocket(handle->sock);
 		handle->sock = ESL_SOCK_INVALID;
 		return ESL_SUCCESS;
 	}
@@ -604,7 +607,7 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 	char *hname, *hval;
 	char *col;
 	char *cl;
-	ssize_t len;
+	esl_ssize_t len;
 	int zc = 0;
 	
 	esl_mutex_lock(handle->mutex);
@@ -625,7 +628,7 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 				return ESL_FAIL;
 			}
 		} else if (rrval < 0) {
-			strerror_r(handle->errno, handle->err, sizeof(handle->err));
+			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 			goto fail;
 		} else {
 			zc = 0;
@@ -685,7 +688,7 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 		do {
 			esl_ssize_t r;
 			if ((r = recv(handle->sock, body + sofar, len - sofar, 0)) < 0) {
-				strerror_r(handle->errno, handle->err, sizeof(handle->err));	
+				strerror_r(handle->errnum, handle->err, sizeof(handle->err));	
 				goto fail;
 			}
 			sofar += r;
@@ -717,7 +720,7 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 			char *hname, *hval;
 			char *col;
 			char *cl;
-			ssize_t len;
+			esl_ssize_t len;
 			char *c;
 			
 			esl_event_safe_destroy(&handle->last_ievent);
@@ -775,7 +778,7 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 				do {
 					esl_ssize_t r;
 					if ((r = recv(handle->sock, body + sofar, len - sofar, 0)) < 0) {
-						strerror_r(handle->errno, handle->err, sizeof(handle->err));	
+						strerror_r(handle->errnum, handle->err, sizeof(handle->err));	
 						goto fail;
 					}
 					sofar += r;

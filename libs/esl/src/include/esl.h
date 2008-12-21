@@ -153,9 +153,11 @@ typedef struct esl_event esl_event_t;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifndef WIN32
 #include <sys/signal.h>
 #include <unistd.h>
 #include <ctype.h>
+#endif
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
@@ -168,8 +170,9 @@ typedef struct esl_event esl_event_t;
 #define esl_strlen_zero_buf(s) (*(s) == '\0')
 
 #ifdef WIN32
+#include <winsock2.h>
 #include <windows.h>
-typedef HANDLE esl_socket_t;
+typedef SOCKET esl_socket_t;
 typedef unsigned __int64 uint64_t;
 typedef unsigned __int32 uint32_t;
 typedef unsigned __int16 uint16_t;
@@ -180,6 +183,7 @@ typedef __int16 int16_t;
 typedef __int8 int8_t;
 typedef intptr_t esl_ssize_t;
 typedef int esl_filehandle_t;
+#define ESL_SOCK_INVALID INVALID_SOCKET
 #else
 #include <stdint.h>
 #include <sys/types.h>
@@ -211,7 +215,7 @@ typedef struct {
 	char hostbuf[256];
 	esl_socket_t sock;
 	char err[256];
-	int errno;
+	int errnum;
 	char header_buf[4196];
 	char last_reply[1024];
 	char last_sr_reply[1024];
