@@ -738,7 +738,7 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 	}
 	
 	if (revent) {
-		const char *hval = esl_event_get_header(revent, "reply-text");
+		hval = esl_event_get_header(revent, "reply-text");
 
 		if (!esl_strlen_zero(hval)) {
 			strncpy(handle->last_reply, hval, sizeof(handle->last_reply));
@@ -750,12 +750,6 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 			const char *en;
 			esl_event_types_t et = ESL_EVENT_COMMAND;
 			char *body = strdup(revent->body);
-			char *beg;
-			char *hname, *hval;
-			char *col;
-			char *cl;
-			esl_ssize_t len;
-			char *c;
 			
 			esl_event_safe_destroy(&handle->last_ievent);
 
