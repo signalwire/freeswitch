@@ -34,7 +34,7 @@
 #include "esl.h"
 #include "esl_config.h"
 
-int esl_config_open_file(esl_config_t *cfg, const char *file_path)
+ESL_DECLARE(int) esl_config_open_file(esl_config_t *cfg, const char *file_path)
 {
 	FILE *f;
 	const char *path = NULL;
@@ -91,7 +91,7 @@ int esl_config_open_file(esl_config_t *cfg, const char *file_path)
 	}
 }
 
-void esl_config_close_file(esl_config_t *cfg)
+ESL_DECLARE(void) esl_config_close_file(esl_config_t *cfg)
 {
 
 	if (cfg->file) {
@@ -103,7 +103,7 @@ void esl_config_close_file(esl_config_t *cfg)
 
 
 
-int esl_config_next_pair(esl_config_t *cfg, char **var, char **val)
+ESL_DECLARE(int) esl_config_next_pair(esl_config_t *cfg, char **var, char **val)
 {
 	int ret = 0;
 	char *p, *end;
@@ -209,7 +209,7 @@ int esl_config_next_pair(esl_config_t *cfg, char **var, char **val)
 
 }
 
-int esl_config_get_cas_bits(char *strvalue, unsigned char *outbits)
+ESL_DECLARE(int) esl_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 {
 	char cas_bits[5];
 	unsigned char bit = 0x8;

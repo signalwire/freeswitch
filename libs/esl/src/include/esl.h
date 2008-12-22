@@ -34,17 +34,13 @@
 #ifndef _ESL_H_
 #define _ESL_H_
 
-
 #include <stdarg.h>
-int vasprintf(char **ret, const char *format, va_list ap);
-
 
 #define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
 #define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
 
 typedef struct esl_event_header esl_event_header_t;
 typedef struct esl_event esl_event_t;
-
 
 #define ESL_SEQ_ESC "\033["
 /* Ansi Control character suffixes */
@@ -196,7 +192,23 @@ typedef intptr_t esl_ssize_t;
 typedef int esl_filehandle_t;
 #define ESL_SOCK_INVALID INVALID_SOCKET
 #define strerror_r(num, buf, size) strerror_s(buf, size, num)
+#if defined(ESL_DECLARE_STATIC)
+#define ESL_DECLARE(type)			type __stdcall
+#define ESL_DECLARE_NONSTD(type)		type __cdecl
+#define ESL_DECLARE_DATA
+#elif defined(ESL_EXPORTS)
+#define ESL_DECLARE(type)			__declspec(dllexport) type __stdcall
+#define ESL_DECLARE_NONSTD(type)		__declspec(dllexport) type __cdecl
+#define ESL_DECLARE_DATA				__declspec(dllexport)
 #else
+#define ESL_DECLARE(type)			__declspec(dllimport) type __stdcall
+#define ESL_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
+#define ESL_DECLARE_DATA				__declspec(dllimport)
+#endif
+#else
+#define ESL_DECLARE(type) type
+#define ESL_DECLARE_NONSTD(type) type
+#define ESL_DECLARE_DATA
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
@@ -217,7 +229,6 @@ typedef enum {
 	ESL_FAIL,
 	ESL_BREAK
 } esl_status_t;
-
 
 #include <esl_threadmutex.h>
 
@@ -279,27 +290,27 @@ void esl_global_set_default_logger(int level);
 #include "esl_threadmutex.h"
 #include "esl_config.h"
 
-size_t esl_url_encode(const char *url, char *buf, size_t len);
-char *esl_url_decode(char *s);
-const char *esl_stristr(const char *instr, const char *str);
-int esl_toupper(int c);
-int esl_tolower(int c);
-int esl_snprintf(char *buffer, size_t count, const char *fmt, ...);
+ESL_DECLARE(size_t) esl_url_encode(const char *url, char *buf, size_t len);
+ESL_DECLARE(char *)esl_url_decode(char *s);
+ESL_DECLARE(const char *)esl_stristr(const char *instr, const char *str);
+ESL_DECLARE(int) esl_toupper(int c);
+ESL_DECLARE(int) esl_tolower(int c);
+ESL_DECLARE(int) esl_snprintf(char *buffer, size_t count, const char *fmt, ...);
 
 
 typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in addr);
 
-esl_status_t esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr);
-esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback);
-esl_status_t esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid);
-esl_status_t esl_sendevent(esl_handle_t *handle, esl_event_t *event);
+ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr);
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback);
+ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid);
+ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event);
 
-esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
-esl_status_t esl_disconnect(esl_handle_t *handle);
-esl_status_t esl_send(esl_handle_t *handle, const char *cmd);
-esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event);
-esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event);
-esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd);
+ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
+ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle);
+ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd);
+ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **save_event);
+ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event);
+ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd);
 #define esl_recv(_h) esl_recv_event(_h, NULL)
 #define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, NULL)
 

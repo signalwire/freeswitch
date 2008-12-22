@@ -79,7 +79,7 @@ const short _esl_C_toupper_[1 + ESL_CTYPE_NUM_CHARS] = {
 
 const short *_esl_toupper_tab_ = _esl_C_toupper_;
 
-int esl_toupper(int c)
+ESL_DECLARE(int) esl_toupper(int c)
 {
 	if ((unsigned int)c > 255)
 		return(c);
@@ -126,7 +126,7 @@ const short _esl_C_tolower_[1 + ESL_CTYPE_NUM_CHARS] = {
 
 const short *_esl_tolower_tab_ = _esl_C_tolower_;
 
-int esl_tolower(int c)
+ESL_DECLARE(int) esl_tolower(int c)
 {
 	if ((unsigned int)c > 255)
 		return(c);
@@ -135,7 +135,7 @@ int esl_tolower(int c)
 	return((_esl_tolower_tab_ + 1)[c]);
 }
 
-const char *esl_stristr(const char *instr, const char *str)
+ESL_DECLARE(const char *)esl_stristr(const char *instr, const char *str)
 {
 /*
 ** Rev History:  16/07/97  Greg Thayer		Optimized
@@ -181,7 +181,7 @@ const char *esl_stristr(const char *instr, const char *str)
 #endif
 #endif
 
-int esl_snprintf(char *buffer, size_t count, const char *fmt, ...)
+ESL_DECLARE(int) esl_snprintf(char *buffer, size_t count, const char *fmt, ...)
 {
 	va_list ap;
 	int ret;
@@ -280,7 +280,7 @@ void esl_global_set_default_logger(int level)
 	esl_log_level = level;
 }
 
-size_t esl_url_encode(const char *url, char *buf, size_t len)
+ESL_DECLARE(size_t) esl_url_encode(const char *url, char *buf, size_t len)
 {
 	const char *p;
 	size_t x = 0;
@@ -317,7 +317,7 @@ size_t esl_url_encode(const char *url, char *buf, size_t len)
 	return x;
 }
 
-char *esl_url_decode(char *s)
+ESL_DECLARE(char *)esl_url_decode(char *s)
 {
 	char *o;
 	unsigned int tmp;
@@ -334,7 +334,7 @@ char *esl_url_decode(char *s)
 	return s;
 }
 
-esl_status_t esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr)
+ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr)
 {
 	handle->sock = socket;
 	handle->addr = addr;
@@ -364,7 +364,7 @@ esl_status_t esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct
 	return ESL_FAIL;
 }
 
-esl_status_t esl_sendevent(esl_handle_t *handle, esl_event_t *event)
+ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event)
 {
 	char *txt;
 
@@ -383,7 +383,7 @@ esl_status_t esl_sendevent(esl_handle_t *handle, esl_event_t *event)
 	return ESL_SUCCESS;
 }
 
-esl_status_t esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid)
+ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid)
 {
 	char cmd_buf[128] = "sendmsg";
 	char app_buf[512] = "";
@@ -418,7 +418,7 @@ static int esl_socket_reuseaddr(esl_socket_t socket)
 #endif
 }
 
-esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
+ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
 {
 	esl_socket_t server_sock = ESL_SOCK_INVALID;
 	struct sockaddr_in addr;
@@ -475,7 +475,7 @@ esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t
 
 }
 
-esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password)
+ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password)
 {
 
 	struct hostent *result;
@@ -560,7 +560,7 @@ esl_status_t esl_connect(esl_handle_t *handle, const char *host, esl_port_t port
 	return ESL_FAIL;
 }
 
-esl_status_t esl_disconnect(esl_handle_t *handle)
+ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 {
 	esl_event_safe_destroy(&handle->last_event);
 	esl_event_safe_destroy(&handle->last_sr_event);
@@ -582,7 +582,7 @@ esl_status_t esl_disconnect(esl_handle_t *handle)
 	return ESL_FAIL;
 }
 
-esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event)
+ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event)
 {
 	fd_set rfds, efds;
 	struct timeval tv = { 0 };
@@ -631,7 +631,7 @@ esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t
 }
 
 
-esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
+ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 {
 	char *c;
 	esl_ssize_t rrval;
@@ -843,7 +843,7 @@ esl_status_t esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
 
 }
 
-esl_status_t esl_send(esl_handle_t *handle, const char *cmd)
+ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 {
 	const char *e = cmd + strlen(cmd) -1;
 	
@@ -868,7 +868,7 @@ esl_status_t esl_send(esl_handle_t *handle, const char *cmd)
 }
 
 
-esl_status_t esl_send_recv(esl_handle_t *handle, const char *cmd)
+ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 {
 	const char *hval;
 	esl_status_t status;

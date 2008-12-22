@@ -121,12 +121,12 @@ static const char *EVENT_NAMES[] = {
 	"ALL"
 };
 
-const char *esl_event_name(esl_event_types_t event)
+ESL_DECLARE(const char *)esl_event_name(esl_event_types_t event)
 {
 	return EVENT_NAMES[event];
 }
 
-esl_status_t esl_name_event(const char *name, esl_event_types_t *type)
+ESL_DECLARE(esl_status_t) esl_name_event(const char *name, esl_event_types_t *type)
 {
 	esl_event_types_t x;
 
@@ -141,7 +141,7 @@ esl_status_t esl_name_event(const char *name, esl_event_types_t *type)
 }
 
 
-esl_status_t esl_event_create_subclass(esl_event_t **event, esl_event_types_t event_id, const char *subclass_name)
+ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_event_types_t event_id, const char *subclass_name)
 {
 	*event = NULL;
 
@@ -166,7 +166,7 @@ esl_status_t esl_event_create_subclass(esl_event_t **event, esl_event_types_t ev
 }
 
 
-const char *esl_priority_name(esl_priority_t priority)
+ESL_DECLARE(const char *)esl_priority_name(esl_priority_t priority)
 {
 	switch (priority) {			/*lol */
 	case ESL_PRIORITY_NORMAL:
@@ -180,7 +180,7 @@ const char *esl_priority_name(esl_priority_t priority)
 	}
 }
 
-esl_status_t esl_event_set_priority(esl_event_t *event, esl_priority_t priority)
+ESL_DECLARE(esl_status_t) esl_event_set_priority(esl_event_t *event, esl_priority_t priority)
 {
 	event->priority = priority;
 	esl_event_add_header_string(event, ESL_STACK_TOP, "priority", esl_priority_name(priority));
@@ -213,7 +213,7 @@ static unsigned int esl_ci_hashfunc_default(const char *char_key, esl_ssize_t *k
 }
 
 
-char *esl_event_get_header(esl_event_t *event, const char *header_name)
+ESL_DECLARE(char *)esl_event_get_header(esl_event_t *event, const char *header_name)
 {
 	esl_event_header_t *hp;
 	esl_ssize_t hlen = -1;
@@ -233,12 +233,12 @@ char *esl_event_get_header(esl_event_t *event, const char *header_name)
 	return NULL;
 }
 
-char *esl_event_get_body(esl_event_t *event)
+ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event)
 {
 	return (event ? event->body : NULL);
 }
 
-esl_status_t esl_event_del_header(esl_event_t *event, const char *header_name)
+ESL_DECLARE(esl_status_t) esl_event_del_header(esl_event_t *event, const char *header_name)
 {
 	esl_event_header_t *hp, *lp = NULL, *tp;
 	esl_status_t status = ESL_FAIL;
@@ -311,6 +311,8 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 	return ESL_SUCCESS;
 }
 
+int vasprintf(char **ret, const char *format, va_list ap);
+
 static int esl_vasprintf(char **ret, const char *fmt, va_list ap)
 {
 #ifndef WIN32
@@ -348,7 +350,7 @@ static int esl_vasprintf(char **ret, const char *fmt, va_list ap)
 }
 
 
-esl_status_t esl_event_add_header(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *fmt, ...)
+ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *fmt, ...)
 {
 	int ret = 0;
 	char *data;
@@ -365,7 +367,7 @@ esl_status_t esl_event_add_header(esl_event_t *event, esl_stack_t stack, const c
 	return esl_event_base_add_header(event, stack, header_name, data);
 }
 
-esl_status_t esl_event_add_header_string(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *data)
+ESL_DECLARE(esl_status_t) esl_event_add_header_string(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *data)
 {
 	if (data) {
 		return esl_event_base_add_header(event, stack, header_name, DUP(data));
@@ -373,7 +375,7 @@ esl_status_t esl_event_add_header_string(esl_event_t *event, esl_stack_t stack, 
 	return ESL_FAIL;
 }
 
-esl_status_t esl_event_add_body(esl_event_t *event, const char *fmt, ...)
+ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt, ...)
 {
 	int ret = 0;
 	char *data;
@@ -396,7 +398,7 @@ esl_status_t esl_event_add_body(esl_event_t *event, const char *fmt, ...)
 	}
 }
 
-void esl_event_destroy(esl_event_t **event)
+ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 {
 	esl_event_t *ep = *event;
 	esl_event_header_t *hp, *this;
@@ -420,7 +422,7 @@ void esl_event_destroy(esl_event_t **event)
 
 
 
-esl_status_t esl_event_dup(esl_event_t **event, esl_event_t *todup)
+ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 {
 	esl_event_header_t *header, *hp, *hp2, *last = NULL;
 
@@ -463,7 +465,7 @@ esl_status_t esl_event_dup(esl_event_t **event, esl_event_t *todup)
 	return ESL_SUCCESS;
 }
 
-esl_status_t esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode)
+ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode)
 {
 	size_t len = 0;
 	esl_event_header_t *hp;

@@ -159,7 +159,7 @@ struct esl_event {
   \param subclass_name the subclass name for custom event (only valid when event_id is ESL_EVENT_CUSTOM)
   \return ESL_STATUS_SUCCESS on success
 */
-esl_status_t esl_event_create_subclass(esl_event_t **event, esl_event_types_t event_id, const char *subclass_name);
+ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_event_types_t event_id, const char *subclass_name);
 
 /*!
   \brief Set the priority of an event
@@ -167,7 +167,7 @@ esl_status_t esl_event_create_subclass(esl_event_t **event, esl_event_types_t ev
   \param priority the event priority
   \return ESL_STATUS_SUCCESS
 */
-esl_status_t esl_event_set_priority(esl_event_t *event, esl_priority_t priority);
+ESL_DECLARE(esl_status_t) esl_event_set_priority(esl_event_t *event, esl_priority_t priority);
 
 /*!
   \brief Retrieve a header value from an event
@@ -175,14 +175,14 @@ esl_status_t esl_event_set_priority(esl_event_t *event, esl_priority_t priority)
   \param header_name the name of the header to read
   \return the value of the requested header
 */
-char *esl_event_get_header(esl_event_t *event, const char *header_name);
+ESL_DECLARE(char *)esl_event_get_header(esl_event_t *event, const char *header_name);
 
 /*!
   \brief Retrieve the body value from an event
   \param event the event to read the body from
   \return the value of the body or NULL
 */
-char *esl_event_get_body(esl_event_t *event);
+ESL_DECLARE(char *)esl_event_get_body(esl_event_t *event);
 
 /*!
   \brief Add a header to an event
@@ -192,7 +192,7 @@ char *esl_event_get_body(esl_event_t *event);
   \param fmt the value of the header (varargs see standard sprintf family)
   \return ESL_STATUS_SUCCESS if the header was added
 */
-esl_status_t esl_event_add_header(esl_event_t *event, esl_stack_t stack,
+ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t stack,
 											   const char *header_name, const char *fmt, ...); //PRINTF_FUNCTION(4, 5);
 
 /*!
@@ -203,15 +203,15 @@ esl_status_t esl_event_add_header(esl_event_t *event, esl_stack_t stack,
   \param data the value of the header
   \return ESL_STATUS_SUCCESS if the header was added
 */
-esl_status_t esl_event_add_header_string(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *data);
+ESL_DECLARE(esl_status_t) esl_event_add_header_string(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *data);
 
-esl_status_t esl_event_del_header(esl_event_t *event, const char *header_name);
+ESL_DECLARE(esl_status_t) esl_event_del_header(esl_event_t *event, const char *header_name);
 
 /*!
   \brief Destroy an event
   \param event pointer to the pointer to event to destroy
 */
-void esl_event_destroy(esl_event_t **event);
+ESL_DECLARE(void) esl_event_destroy(esl_event_t **event);
 #define esl_event_safe_destroy(_event) if (_event) esl_event_destroy(_event)
 
 /*!
@@ -220,14 +220,14 @@ void esl_event_destroy(esl_event_t **event);
   \param todup an event to duplicate
   \return ESL_STATUS_SUCCESS if the event was duplicated
 */
-esl_status_t esl_event_dup(esl_event_t **event, esl_event_t *todup);
+ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup);
 
 /*!
   \brief Render the name of an event id enumeration
   \param event the event id to render the name of
   \return the rendered name
 */
-const char *esl_event_name(esl_event_types_t event);
+ESL_DECLARE(const char *)esl_event_name(esl_event_types_t event);
 
 /*!
   \brief return the event id that matches a given event name
@@ -235,7 +235,7 @@ const char *esl_event_name(esl_event_types_t event);
   \param type the event id to return
   \return ESL_STATUS_SUCCESS if there was a match
 */
-esl_status_t esl_name_event(const char *name, esl_event_types_t *type);
+ESL_DECLARE(esl_status_t) esl_name_event(const char *name, esl_event_types_t *type);
 
 /*!
   \brief Render a string representation of an event sutable for printing or network transport 
@@ -245,7 +245,7 @@ esl_status_t esl_name_event(const char *name, esl_event_types_t *type);
   \return ESL_STATUS_SUCCESS if the operation was successful
   \note you must free the resulting string when you are finished with it
 */
-esl_status_t esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode);
+ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, esl_bool_t encode);
 
 /*!
   \brief Add a body to an event
@@ -254,7 +254,7 @@ esl_status_t esl_event_serialize(esl_event_t *event, char **str, esl_bool_t enco
   \return ESL_STATUS_SUCCESS if the body was added to the event
   \note the body parameter can be shadowed by the esl_event_reserve_subclass_detailed function
 */
-esl_status_t esl_event_add_body(esl_event_t *event, const char *fmt, ...);
+ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt, ...);
 
 /*!
   \brief Create a new event assuming it will not be custom event and therefore hiding the unused parameters
@@ -264,7 +264,7 @@ esl_status_t esl_event_add_body(esl_event_t *event, const char *fmt, ...);
 */
 #define esl_event_create(event, id) esl_event_create_subclass(event, id, ESL_EVENT_SUBCLASS_ANY)
 
-const char *esl_priority_name(esl_priority_t priority);
+ESL_DECLARE(const char *)esl_priority_name(esl_priority_t priority);
 
 ///\}
 

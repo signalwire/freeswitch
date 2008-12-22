@@ -80,7 +80,7 @@ static void * ESL_THREAD_CALLING_CONVENTION thread_launch(void *args)
 	return exit_val;
 }
 
-esl_status_t esl_thread_create_detached(esl_thread_function_t func, void *data)
+ESL_DECLARE(esl_status_t) esl_thread_create_detached(esl_thread_function_t func, void *data)
 {
 	return esl_thread_create_detached_ex(func, data, thread_default_stacksize);
 }
@@ -132,7 +132,7 @@ esl_status_t esl_thread_create_detached_ex(esl_thread_function_t func, void *dat
 }
 
 
-esl_status_t esl_mutex_create(esl_mutex_t **mutex)
+ESL_DECLARE(esl_status_t) esl_mutex_create(esl_mutex_t **mutex)
 {
 	esl_status_t status = ESL_FAIL;
 #ifndef WIN32
@@ -170,7 +170,7 @@ esl_status_t esl_mutex_create(esl_mutex_t **mutex)
 	return status;
 }
 
-esl_status_t esl_mutex_destroy(esl_mutex_t **mutex)
+ESL_DECLARE(esl_status_t) esl_mutex_destroy(esl_mutex_t **mutex)
 {
 	esl_mutex_t *mp = *mutex;
 	*mutex = NULL;
@@ -187,7 +187,7 @@ esl_status_t esl_mutex_destroy(esl_mutex_t **mutex)
 	return ESL_SUCCESS;
 }
 
-esl_status_t esl_mutex_lock(esl_mutex_t *mutex)
+ESL_DECLARE(esl_status_t) esl_mutex_lock(esl_mutex_t *mutex)
 {
 #ifdef WIN32
 	EnterCriticalSection(&mutex->mutex);
@@ -198,7 +198,7 @@ esl_status_t esl_mutex_lock(esl_mutex_t *mutex)
 	return ESL_SUCCESS;
 }
 
-esl_status_t esl_mutex_trylock(esl_mutex_t *mutex)
+ESL_DECLARE(esl_status_t) esl_mutex_trylock(esl_mutex_t *mutex)
 {
 #ifdef WIN32
 	if (!TryEnterCriticalSection(&mutex->mutex))
@@ -210,7 +210,7 @@ esl_status_t esl_mutex_trylock(esl_mutex_t *mutex)
 	return ESL_SUCCESS;
 }
 
-esl_status_t esl_mutex_unlock(esl_mutex_t *mutex)
+ESL_DECLARE(esl_status_t) esl_mutex_unlock(esl_mutex_t *mutex)
 {
 #ifdef WIN32
 	LeaveCriticalSection(&mutex->mutex);

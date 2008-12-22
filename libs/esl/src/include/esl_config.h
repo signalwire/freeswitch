@@ -100,13 +100,13 @@ struct esl_config {
   \param file_path path to the file
   \return 1 (true) on success 0 (false) on failure
 */
-int esl_config_open_file(esl_config_t * cfg, const char *file_path);
+ESL_DECLARE(int) esl_config_open_file(esl_config_t * cfg, const char *file_path);
 
 /*!
   \brief Close a previously opened configuration file
   \param cfg (esl_config_t *) config handle to use
 */
-void esl_config_close_file(esl_config_t * cfg);
+ESL_DECLARE(void) esl_config_close_file(esl_config_t * cfg);
 
 /*!
   \brief Retrieve next name/value pair from configuration file
@@ -114,14 +114,14 @@ void esl_config_close_file(esl_config_t * cfg);
   \param var pointer to aim at the new variable name
   \param val pointer to aim at the new value
 */
-int esl_config_next_pair(esl_config_t * cfg, char **var, char **val);
+ESL_DECLARE(int) esl_config_next_pair(esl_config_t * cfg, char **var, char **val);
 
 /*!
   \brief Retrieve the CAS bits from a configuration string value
   \param strvalue pointer to the configuration string value (expected to be in format whatever:xxxx)
   \param outbits pointer to aim at the CAS bits
 */
-int esl_config_get_cas_bits(char *strvalue, unsigned char *outbits);
+ESL_DECLARE(int) esl_config_get_cas_bits(char *strvalue, unsigned char *outbits);
 
 
 /** @} */
