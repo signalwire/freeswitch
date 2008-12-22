@@ -422,11 +422,11 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 	}
 
 
-	samples_per_frame = 8;
-	bytes_per_frame = 16;
+	samples_per_frame = 16;
+	bytes_per_frame = 32;
 	ms_per_frame = 2000;
 
-	for (x = 0; x < 5; x++) {
+	for (x = 0; x < 4; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 10, 						/* the IANA code number */
@@ -446,19 +446,19 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_decode,			/* function to decode encoded data into raw data */
 											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
 		
-		samples_per_frame += 8;
-		bytes_per_frame += 16;
+		samples_per_frame += 16;
+		bytes_per_frame += 32;
 		ms_per_frame += 2000;
 		
 	}
 
 
 
-	samples_per_frame = 16;
-	bytes_per_frame = 32;
+	samples_per_frame = 32;
+	bytes_per_frame = 64;
 	ms_per_frame = 2000;
 
-	for (x = 0; x < 5; x++) {
+	for (x = 0; x < 4; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 10, 						/* the IANA code number */
@@ -478,18 +478,18 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_decode,			/* function to decode encoded data into raw data */
 											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
 		
-		samples_per_frame += 16;
-		bytes_per_frame += 32;
+		samples_per_frame += 32;
+		bytes_per_frame += 64;
 		ms_per_frame += 2000;
 		
 	}
 
 
-	samples_per_frame = 32;
-	bytes_per_frame = 64;
+	samples_per_frame = 64;
+	bytes_per_frame = 128;
 	ms_per_frame = 2000;
 	
-	for (x = 0; x < 5; x++) {
+	for (x = 0; x < 4; x++) {
 		switch_core_codec_add_implementation(pool, codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
 											 10, 						/* the IANA code number */
@@ -509,8 +509,8 @@ SWITCH_MODULE_LOAD_FUNCTION(core_pcm_load)
 											 switch_raw_decode,			/* function to decode encoded data into raw data */
 											 switch_raw_destroy);		/* deinitalize a codec handle using this implementation */
 		
-		samples_per_frame += 32;
-		bytes_per_frame += 64;
+		samples_per_frame += 64;
+		bytes_per_frame += 128;
 		ms_per_frame += 2000;
 		
 	}
