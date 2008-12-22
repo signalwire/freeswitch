@@ -481,7 +481,7 @@ esl_status_t esl_event_serialize(esl_event_t *event, char **str, esl_bool_t enco
 		if (encode) {
 			esl_url_encode(hp->value, encode_buf, encode_len);
 		} else {
-			snprintf(encode_buf, encode_len, "[%s]", hp->value);
+			esl_snprintf(encode_buf, encode_len, "[%s]", hp->value);
 		}
 
 		llen = strlen(hp->name) + strlen(encode_buf) + 8;

@@ -43,7 +43,7 @@ int esl_config_open_file(esl_config_t *cfg, const char *file_path)
 	if (file_path[0] == '/') {
 		path = file_path;
 	} else {
-		snprintf(path_buf, sizeof(path_buf), "%s%s%s", ESL_CONFIG_DIR, ESL_PATH_SEPARATOR, file_path);
+		esl_snprintf(path_buf, sizeof(path_buf), "%s%s%s", ESL_CONFIG_DIR, ESL_PATH_SEPARATOR, file_path);
 		path = path_buf;
 	}
 
@@ -61,7 +61,7 @@ int esl_config_open_file(esl_config_t *cfg, const char *file_path)
 			int last = -1;
 			char *var, *val;
 
-			snprintf(path_buf, sizeof(path_buf), "%s%sopenesl.conf", ESL_CONFIG_DIR, ESL_PATH_SEPARATOR);
+			esl_snprintf(path_buf, sizeof(path_buf), "%s%sopenesl.conf", ESL_CONFIG_DIR, ESL_PATH_SEPARATOR);
 			path = path_buf;
 
 			if ((f = fopen(path, "r")) == 0) {

@@ -175,6 +175,24 @@ const char *esl_stristr(const char *instr, const char *str)
 	return NULL;
 }
 
+#ifdef WIN32
+#ifndef vsnprintf
+#define vsnprintf _vsnprintf
+#endif
+#endif
+
+int esl_snprintf(char *buffer, size_t count, const char *fmt, ...)
+{
+	va_list ap;
+	int ret;
+
+	va_start(ap, fmt);
+	ret = vsnprintf(buffer, count-1, fmt, ap);
+	if (ret < 0)
+		buffer[count-1] = '\0';
+	va_end(ap);
+	return ret;
+}
 
 static void null_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {

@@ -284,6 +284,8 @@ char *esl_url_decode(char *s);
 const char *esl_stristr(const char *instr, const char *str);
 int esl_toupper(int c);
 int esl_tolower(int c);
+int esl_snprintf(char *buffer, size_t count, const char *fmt, ...);
+
 
 typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in addr);
 
