@@ -389,10 +389,20 @@ esl_status_t esl_execute(esl_handle_t *handle, const char *app, const char *arg,
 	return esl_send_recv(handle, send_buf);
 }
 
+static int esl_socket_reuseaddr(esl_socket_t socket) 
+{
+#ifdef WIN32
+	BOOL reuse_addr = TRUE;
+	return setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse_addr, sizeof(reuse_addr));
+#else
+	int reuse_addr = 1;
+	return setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
+#endif
+}
+
 esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback)
 {
 	esl_socket_t server_sock = ESL_SOCK_INVALID;
-	int reuse_addr = 1;
 	struct sockaddr_in addr;
 	esl_status_t status = ESL_SUCCESS;
 	
@@ -400,8 +410,8 @@ esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t
 		return ESL_FAIL;
 	}
 
-	setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr, sizeof(reuse_addr));
-			   
+	esl_socket_reuseaddr(server_sock);
+		   
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
