@@ -255,7 +255,7 @@ esl_status_t esl_event_del_header(esl_event_t *event, const char *header_name)
 		esl_assert(x < 1000);
 		hash = esl_ci_hashfunc_default(header_name, &hlen);
 
-		if ((!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name)) {
+		if (hp->name && (!hp->hash || hash == hp->hash) && !strcasecmp(header_name, hp->name)) {
 			if (lp) {
 				lp->next = hp->next;
 			} else {

@@ -429,8 +429,12 @@ esl_status_t esl_listen(const char *host, esl_port_t port, esl_listen_callback_t
 
 	for (;;) {
 		int client_sock;                    
-		struct sockaddr_in echoClntAddr; 
-		unsigned int clntLen;            
+		struct sockaddr_in echoClntAddr;
+#ifdef WIN32
+		int clntLen;
+#else
+		unsigned int clntLen;
+#endif
 
 		clntLen = sizeof(echoClntAddr);
     
@@ -572,9 +576,18 @@ esl_status_t esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t
 	esl_mutex_lock(handle->mutex);
 	FD_ZERO(&rfds);
 	FD_ZERO(&efds);
+
+#ifdef WIN32
+#pragma warning( push )
+#pragma warning( disable : 4127 )
 	FD_SET(handle->sock, &rfds);
 	FD_SET(handle->sock, &efds);
-	
+#pragma warning( pop ) 
+#else
+	FD_SET(handle->sock, &rfds);
+	FD_SET(handle->sock, &efds);
+#endif
+
 	max = handle->sock + 1;
 	
 	if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {

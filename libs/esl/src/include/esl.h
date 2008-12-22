@@ -168,7 +168,14 @@ typedef struct esl_event esl_event_t;
 #endif
 #include <assert.h>
 
+#if (_MSC_VER >= 1400)			// VC8+
+#define esl_assert(expr) assert(expr);__analysis_assume( expr )
+#endif
+
+#ifndef esl_assert
 #define esl_assert(_x) assert(_x)
+#endif
+
 #define esl_safe_free(_x) if (_x) free(_x); _x = NULL
 #define esl_strlen_zero(s) (!s || *(s) == '\0')
 #define esl_strlen_zero_buf(s) (*(s) == '\0')
@@ -188,6 +195,7 @@ typedef __int8 int8_t;
 typedef intptr_t esl_ssize_t;
 typedef int esl_filehandle_t;
 #define ESL_SOCK_INVALID INVALID_SOCKET
+#define strerror_r(num, buf, size) strerror_s(buf, size, num)
 #else
 #include <stdint.h>
 #include <sys/types.h>
