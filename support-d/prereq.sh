@@ -1,7 +1,7 @@
 UNAME=`uname`
 
 
-NEEDED_PACKAGES_YUM='automake autoconf libtool screen gdb gcc-c++ compat-gcc-32 compat-gcc-32-c++ subversion ncurses-devel unixODBC-devel'
+NEEDED_PACKAGES_YUM='automake autoconf libtool screen gdb gcc-c++ compat-gcc-32 compat-gcc-32-c++ subversion ncurses-devel unixODBC-devel make wget'
 NEEDED_PACAKGES_APT='automake autoconf libtool screen gdb libncurses5-dev unixodbc-dev subversion emacs22-nox gcc g++ '
 NEEDED_PACKAGES_PKG_ADD=''
 

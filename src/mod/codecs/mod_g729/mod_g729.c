@@ -38,7 +38,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load);
 SWITCH_MODULE_DEFINITION(mod_g729, mod_g729_load, NULL, NULL);
 
 #ifndef G729_PASSTHROUGH
-#include "g729/g729.h"
+#include "g729.h"
 
 struct g729_context {
 	struct dec_state decoder_object;
