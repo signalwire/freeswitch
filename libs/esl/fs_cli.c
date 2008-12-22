@@ -2,13 +2,20 @@
 #include <stdlib.h>
 #include <esl.h>
 #include <signal.h>
-#include <sys/select.h>
 
+#ifdef WIN32
+#define strdup(src) _strdup(src)
+#define usleep(time) Sleep(time/1000)
+#else
+#include <sys/select.h>
 #include <histedit.h>
+#define HAVE_EDITLINE
+#endif
 
 static char prompt_str[512] = "";
 static char hostname[512] = "";
 
+#ifdef HAVE_EDITLINE
 static char *prompt(EditLine * e)
 {
     return prompt_str;
@@ -17,6 +24,8 @@ static char *prompt(EditLine * e)
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
+#endif
+
 static int running = 1;
 static int thread_running = 0;
 
@@ -149,8 +158,8 @@ static int get_profile(const char *name, cli_profile_t **profile)
 int main(int argc, char *argv[])
 {
 	esl_handle_t handle = {{0}};
-	int count;
-	const char *line;
+	int count = 0;
+	const char *line = NULL;
 	char cmd_str[1024] = "";
 	char hfile[512] = "/tmp/fs_cli_history";
 	char cfile[512] = "/tmp/fs_cli_config";
@@ -199,7 +208,7 @@ int main(int argc, char *argv[])
 			} else if (!strcasecmp(var, "port")) {
 				int pt = atoi(val);
 				if (pt > 0) {
-					profiles[cur].port = pt;
+					profiles[cur].port = (esl_port_t)pt;
 				}
 			}
 		}
@@ -227,7 +236,8 @@ int main(int argc, char *argv[])
 	}
 	
 	esl_thread_create_detached(msg_thread_run, &handle);
-	
+
+#ifdef HAVE_EDITLINE
 	el = el_init(__FILE__, stdout, stdout, stdout);
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
@@ -241,7 +251,8 @@ int main(int argc, char *argv[])
 	history(myhistory, &ev, H_SETSIZE, 800);
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
-	
+#endif
+
 	snprintf(cmd_str, sizeof(cmd_str), "log info\n\n");
 	esl_send_recv(&handle, cmd_str);
 
@@ -249,19 +260,28 @@ int main(int argc, char *argv[])
 
 	while (running) {
 
+#ifdef HAVE_EDITLINE
 		line = el_gets(el, &count);
-		
+#endif
+
 		if (count > 1) {
 			if (!esl_strlen_zero(line)) {
 				char *cmd = strdup(line);
 				char *p;
+
+#ifdef HAVE_EDITLINE
 				const LineInfo *lf = el_line(el);
 				char *foo = (char *) lf->buffer;
+#endif
+
 				if ((p = strrchr(cmd, '\r')) || (p = strrchr(cmd, '\n'))) {
 					*p = '\0';
 				}
 				assert(cmd != NULL);
+
+#ifdef HAVE_EDITLINE
 				history(myhistory, &ev, H_ENTER, line);
+#endif
 
 				if (!strncasecmp(cmd, "...", 3)) {
 					goto done;
@@ -277,8 +297,10 @@ int main(int argc, char *argv[])
 					}
 				}
 
+#ifdef HAVE_EDITLINE
 				el_deletestr(el, strlen(foo) + 1);
 				memset(foo, 0, strlen(foo));
+#endif
 				free(cmd);
 			}
 		}
@@ -290,11 +312,13 @@ int main(int argc, char *argv[])
 
  done:
 	
+#ifdef HAVE_EDITLINE
 	history(myhistory, &ev, H_SAVE, hfile);
 
 	/* Clean up our memory */
 	history_end(myhistory);
 	el_end(el);
+#endif
 
 	esl_disconnect(&handle);
 	

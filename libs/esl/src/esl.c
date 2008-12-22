@@ -261,7 +261,7 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 esl_logger_t esl_log = null_logger;
 
-void esl_global_set_logger(esl_logger_t logger)
+ESL_DECLARE(void) esl_global_set_logger(esl_logger_t logger)
 {
 	if (logger) {
 		esl_log = logger;
@@ -270,7 +270,7 @@ void esl_global_set_logger(esl_logger_t logger)
 	}
 }
 
-void esl_global_set_default_logger(int level)
+ESL_DECLARE(void) esl_global_set_default_logger(int level)
 {
 	if (level < 0 || level > 7) {
 		level = 7;

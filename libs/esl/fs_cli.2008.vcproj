@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="esl"
-	ProjectGUID="{CF405366-9558-4AE8-90EF-5E21B51CCB4E}"
-	RootNamespace="esl"
+	Name="fs_cli"
+	ProjectGUID="{D2FB8043-D208-4AEE-8F18-3B5857C871B9}"
+	RootNamespace="fs_cli"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -18,10 +18,12 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)Debug"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			CharacterSet="1"
+			ConfigurationType="1"
+			InheritedPropertySheets="..\..\w32\winlibs.vsprops"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -41,16 +43,16 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="src/include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ESL_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)\src\include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				WarnAsError="true"
-				DebugInformationFormat="4"
-				DisableSpecificWarnings="4706;4100"
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="4100;6053;4706"
 				EnablePREfast="true"
 			/>
 			<Tool
@@ -64,13 +66,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib"
-				ModuleDefinitionFile=""
-				OptimizeReferences="1"
-				EnableCOMDATFolding="1"
+				OutputFile="$(SolutionDir)$(ConfigurationName)/fs_cli.exe"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(OutDir)"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/fs_cli.pdb"
+				SubSystem="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(IntDir)/$(TargetName).lib"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -96,11 +100,12 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)Release"
+			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="2"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
+			ConfigurationType="1"
+			InheritedPropertySheets="..\..\w32\winlibs.vsprops"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -119,15 +124,14 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="src/include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;ESL_EXPORTS"
+				AdditionalIncludeDirectories="&quot;$(InputDir)\src\include&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				WarnAsError="true"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4706;4100"
-				EnablePREfast="true"
+				DisableSpecificWarnings="4100;6053;4706"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -140,11 +144,17 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Ws2_32.lib"
-				ModuleDefinitionFile=""
+				OutputFile="$(SolutionDir)$(ConfigurationName)/fs_cli.exe"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="$(OutDir)"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/fs_cli.pdb"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary="$(IntDir)/$(TargetName).lib"
+				TargetMachine="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -174,23 +184,11 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\esl.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\esl_config.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\esl_event.c"
-				>
-			</File>
-			<File
-				RelativePath=".\src\esl_threadmutex.c"
+				RelativePath="fs_cli.c"
 				>
 			</File>
 		</Filter>
@@ -200,21 +198,59 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\src\include\esl.h"
+				RelativePath="..\..\src\include\switch.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\include\esl_config.h"
+				RelativePath="..\..\src\include\switch_buffer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\include\esl_event.h"
+				RelativePath="..\..\src\include\switch_caller.h"
 				>
 			</File>
 			<File
-				RelativePath=".\src\include\esl_threadmutex.h"
+				RelativePath="..\..\src\include\switch_channel.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\src\include\switch_config.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_console.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_core.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_frame.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_loadable_module.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_module_interfaces.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_types.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_utils.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			>
 		</Filter>
 	</Files>
 	<Globals>

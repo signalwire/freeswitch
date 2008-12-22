@@ -281,10 +281,10 @@ typedef enum {
 #define ESL_LOG_EMERG ESL_PRE, ESL_LOG_LEVEL_EMERG
 typedef void (*esl_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
 
-extern esl_logger_t esl_log;
+ESL_DECLARE_DATA extern esl_logger_t esl_log;
 
-void esl_global_set_logger(esl_logger_t logger);
-void esl_global_set_default_logger(int level);
+ESL_DECLARE(void) esl_global_set_logger(esl_logger_t logger);
+ESL_DECLARE(void) esl_global_set_default_logger(int level);
 
 #include "esl_event.h"
 #include "esl_threadmutex.h"
