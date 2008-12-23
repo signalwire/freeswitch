@@ -1689,6 +1689,10 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	*user = NULL;
 	*domain = NULL;
 
+	if (ingroup) {
+		*ingroup = NULL;
+	}
+
 	if (!params) {
 		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(my_params);

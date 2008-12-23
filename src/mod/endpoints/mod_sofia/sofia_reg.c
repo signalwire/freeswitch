@@ -1394,7 +1394,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	const char *a1_hash = NULL;
 	char *sql;
 	char *mailbox = NULL;
-	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group, gparams = NULL;
+	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
