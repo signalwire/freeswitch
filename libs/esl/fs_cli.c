@@ -207,9 +207,9 @@ int main(int argc, char *argv[])
 	char cfile[512] = "/tmp/fs_cli_config";
 	char *home = getenv("HOME");
 #else
-	char hfile[512] = "c:\\fs_cli_history";
-	char cfile[512] = "c:\\fs_cli_config";
-	char *home = getenv("HOME");
+	char hfile[512] = ".\\fs_cli_history";
+	char cfile[512] = ".\\fs_cli_config";
+	char *home = ""; //getenv("HOME");
 #endif
 	
 	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));

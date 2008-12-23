@@ -482,6 +482,16 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 	char sendbuf[256];
 	int rval = 0;
 	const char *hval;
+#ifdef WIN32
+	WORD wVersionRequested = MAKEWORD(2, 0);
+	WSADATA wsaData;
+	int err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) {
+		snprintf(handle->err, sizeof(handle->err), "WSAStartup Error");
+		return ESL_FAIL;
+	}
+
+#endif
 
 	if (!handle->mutex) {
 		esl_mutex_create(&handle->mutex);
