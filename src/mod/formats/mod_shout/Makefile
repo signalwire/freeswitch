@@ -41,7 +41,7 @@ $(LAME_DIR):
 	$(GETLIB) $(LAME).tar.gz
 
 $(LAME_DIR)/Makefile: $(LAME_DIR)
-	cd $(LAME_DIR) && ./configure $(DEFAULT_ARGS) --disable-decoder
+	cd $(LAME_DIR) && ./configure $(DEFAULT_ARGS) --disable-decoder CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(LAMELA): $(LAME_DIR)/Makefile
