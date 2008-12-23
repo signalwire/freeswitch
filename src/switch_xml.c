@@ -307,7 +307,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, cons
 	const char *vals[256] = {0};
 	int x, i = 0;
 	va_list ap;
-	const char *attrname, *value;
+	const char *attrname, *value = NULL;
 
 	va_start(ap, childname);
 	
