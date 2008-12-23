@@ -40,6 +40,11 @@
 
       <group name="sales">
 	<users>
+	  <!--
+	      type="pointer" is a pointer so you can have the 
+	      same user in multiple groups.  It basically means
+	      to keep searching for the user in the directory.
+	  -->
 	  <user id="1000" type="pointer"/>
 	  <user id="1001" type="pointer"/>
 	  <user id="1002" type="pointer"/>
