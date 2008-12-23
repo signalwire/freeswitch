@@ -155,6 +155,39 @@ static int get_profile(const char *name, cli_profile_t **profile)
 	return -1;
 }
 
+#ifndef HAVE_EDITLINE
+static char command_buf[2048] = "";
+
+static const char *basic_gets(int *cnt)
+{
+	int x = 0;
+
+	printf("%s", prompt_str);
+
+	memset(&command_buf, 0, sizeof(command_buf));
+	for (x = 0; x < (sizeof(command_buf) - 1); x++) {
+		int c = getchar();
+		if (c < 0) {
+			int y = read(fileno(stdin), command_buf, sizeof(command_buf) - 1);
+			command_buf[y - 1] = '\0';
+			break;
+		}
+		
+		command_buf[x] = (char) c;
+		
+		if (command_buf[x] == '\n') {
+			command_buf[x] = '\0';
+			break;
+		}
+	}
+
+	*cnt = x;
+
+	return command_buf;
+
+}
+#endif
+
 int main(int argc, char *argv[])
 {
 	esl_handle_t handle = {{0}};
@@ -287,6 +320,8 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_EDITLINE
 		line = el_gets(el, &count);
+#else
+		line = basic_gets(&count);
 #endif
 
 		if (count > 1) {
