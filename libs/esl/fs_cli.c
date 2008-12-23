@@ -35,9 +35,9 @@ static void handle_SIGINT(int sig)
 	return;
 }
 
+
 static const char* COLORS[] = { ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, 
 								ESL_SEQ_FRED, ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW };
-
 
 static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
@@ -167,6 +167,7 @@ int main(int argc, char *argv[])
 	esl_config_t cfg;
 	cli_profile_t *profile = &profiles[0];
 	int cur = 0;
+	int opt;
 	
 	strncpy(profiles[0].host, "localhost", sizeof(profiles[0].host));
 	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
@@ -215,15 +216,41 @@ int main(int argc, char *argv[])
 		esl_config_close_file(&cfg);
 	}
 
-	if (argv[1]) {
-		if (get_profile(argv[1], &profile)) {
-			esl_log(ESL_LOG_INFO, "Chosen profile %s does not exist using builtin default\n", argv[1]);
+	while ((opt = getopt (argc, argv, "H:U:P:S:p:h?")) != -1){
+		switch (opt)
+		{
+			case 'H':
+				printf("Host: %s\n", optarg);
+				esl_set_string(profile[0].host, optarg);
+				break;
+			case 'P':
+				printf("Port: %s\n", optarg);
+				profile[0].port= (esl_port_t)atoi(optarg);
+				break;
+			case 'p':
+				printf("password: %s\n", optarg);
+				esl_set_string(profile[0].pass, optarg);
+				break;
+				printf("profile: %s\n", optarg);
+				break;
+			case 'h':
+			case '?':
+				printf("%s [-H <host>] [-P <port>] [-s <secret>] [-p <port>]\n", argv[0]);
+				return 0;
+			default:
+				opt = 0;
+		}
+	}
+	
+	if (optind < argc) {
+		if (get_profile(argv[optind], &profile)) {
+			esl_log(ESL_LOG_INFO, "Chosen profile %s does not exist using builtin default\n", argv[optind]);
 			profile = &profiles[0];
 		} else {
 			esl_log(ESL_LOG_INFO, "Chosen profile %s\n", profile->name);
 		}
 	}
-
+	
 	esl_log(ESL_LOG_INFO, "Using profile %s\n", profile->name);
 		
 	gethostname(hostname, sizeof(hostname));
