@@ -31,7 +31,43 @@
       <variable name="transfer_fallback_extension" value="operator"/>
     </variables>
 
-    <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
+    <groups>
+      <group name="default">
+	<users>
+	  <X-PRE-PROCESS cmd="include" data="default/*.xml"/>
+	</users>
+      </group>
+
+      <group name="sales">
+	<users>
+	  <user id="1000" type="pointer"/>
+	  <user id="1001" type="pointer"/>
+	  <user id="1002" type="pointer"/>
+	  <user id="1003" type="pointer"/>
+	  <user id="1004" type="pointer"/>
+	</users>
+      </group>
+
+      <group name="billing">
+	<users>
+	  <user id="1005" type="pointer"/>
+	  <user id="1006" type="pointer"/>
+	  <user id="1007" type="pointer"/>
+	  <user id="1008" type="pointer"/>
+	  <user id="1009" type="pointer"/>
+	</users>
+      </group>
+
+      <group name="support">
+	<users>
+	  <user id="1010" type="pointer"/>
+	  <user id="1011" type="pointer"/>
+	  <user id="1012" type="pointer"/>
+	  <user id="1013" type="pointer"/>
+	  <user id="1014" type="pointer"/>
+	</users>
+      </group>
+    </groups>
 
   </domain>
 </include>

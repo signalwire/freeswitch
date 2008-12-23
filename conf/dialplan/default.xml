@@ -240,6 +240,24 @@
       </condition>
     </extension>
 
+    <extension name="group_dial_sales">
+      <condition field="destination_number" expression="^2000$">
+	<action application="bridge" data="group/sales@${domain_name}"/>
+      </condition>
+    </extension>
+
+    <extension name="group_dial_support">
+      <condition field="destination_number" expression="^2001$">
+	<action application="bridge" data="group/support@${domain_name}"/>
+      </condition>
+    </extension>
+
+    <extension name="group_dial_billing">
+      <condition field="destination_number" expression="^2002$">
+	<action application="bridge" data="group/billing@${domain_name}"/>
+      </condition>
+    </extension>
+
     <!-- voicemail operator extension -->
     <extension name="operator">
       <condition field="destination_number" expression="^operator$|^0$">
