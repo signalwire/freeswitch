@@ -242,7 +242,7 @@
 
     <extension name="group_dial_sales">
       <condition field="destination_number" expression="^2000$">
-	<action application="bridge" data="group/sales@${domain_name}"/>
+	<action application="bridge" data="${group_call(sales@${domain_name})}"/>
       </condition>
     </extension>
 
