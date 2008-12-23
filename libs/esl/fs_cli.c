@@ -231,8 +231,6 @@ int main(int argc, char *argv[])
 				printf("password: %s\n", optarg);
 				esl_set_string(profile[0].pass, optarg);
 				break;
-				printf("profile: %s\n", optarg);
-				break;
 			case 'h':
 			case '?':
 				printf("%s [-H <host>] [-P <port>] [-s <secret>] [-p <port>]\n", argv[0]);
