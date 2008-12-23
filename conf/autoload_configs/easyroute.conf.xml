@@ -1,0 +1,14 @@
+<configuration name="easyroute.conf" description="EasyRoute Module">
+  <settings>
+    <!-- These are kind Obvious -->
+    <param name="db-username" value="root"/>
+    <param name="db-password" value="password"/>
+    <param name="db-dsn" value="easyroute"/>
+
+    <!-- Default Technology and profile -->
+    <param name="default-techprofile" value="sofia/default"/>
+    
+    <!-- IP or Hostname of Default Route -->
+    <param name="default-gateway" value="192.168.66.6"/>
+  </settings>
+</configuration>
