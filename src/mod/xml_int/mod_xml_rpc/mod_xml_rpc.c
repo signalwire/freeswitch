@@ -95,10 +95,12 @@ static switch_status_t do_config(void)
 	if (!globals.port) {
 		globals.port = 8080;
 	}
-	if (user && pass && realm) {
+	if (realm) {
 		set_global_realm(realm);
-		set_global_user(user);
-		set_global_pass(pass);
+		if (user && pass) {
+			set_global_user(user);
+			set_global_pass(pass);
+		}
 	}
 	switch_xml_free(xml);
 
@@ -194,12 +196,14 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 					goto fail;
 				}
 
-				switch_snprintf(z, sizeof(z), "%s:%s", globals.user, globals.pass);
-				Base64Encode(z, t);
+				if (!switch_strlen_zero(globals.user)) {
+					switch_snprintf(z, sizeof(z), "%s:%s", globals.user, globals.pass);
+					Base64Encode(z, t);
 
-				if (!strcmp(p, t)) {
-					r->requestInfo.user = strdup(user);
-					goto authed;
+					if (!strcmp(p, t)) {
+						r->requestInfo.user = strdup(user);
+						goto authed;
+					}
 				}
 
 				switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
@@ -496,7 +500,7 @@ abyss_bool handler_hook(TSession * r)
 		}
 	}
 
-	if (!fs_user || !strcmp(fs_user, globals.user)) {
+	if (!fs_user || (!switch_strlen_zero(globals.user) && !strcmp(fs_user, globals.user))) {
 		auth = 1;
 	} else {
 		if (!j) {
