@@ -2002,6 +2002,108 @@ static switch_call_cause_t error_outgoing_channel(switch_core_session_t *session
 	return cause;
 }
 
+
+/* fake chan_group */
+switch_endpoint_interface_t *group_endpoint_interface;
+static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session,
+												 switch_event_t *var_event,
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags);
+switch_io_routines_t group_io_routines = {
+	/*.outgoing_channel */ group_outgoing_channel
+};
+
+static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session,
+												 switch_event_t *var_event,
+												 switch_caller_profile_t *outbound_profile,
+												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
+{
+	char *group;
+	switch_call_cause_t cause;
+	char *template = NULL, *dest = NULL;
+	switch_originate_flag_t myflags = SOF_NONE;
+	char *cid_name_override = NULL;
+	char *cid_num_override = NULL;
+	const char *var;
+	unsigned int timelimit = 60;
+	char *domain = NULL;
+	switch_channel_t *new_channel = NULL;
+
+	group = strdup(outbound_profile->destination_number);
+
+	if (!group) goto done;
+	
+	if ((domain = strchr(group, '@'))) {
+		*domain++ = '\0';
+	} else {
+		domain = switch_core_get_variable("domain");
+	}
+	
+	if (!domain) {
+		goto done;
+	}
+
+	template = switch_mprintf("${group_call(%s@%s)}", group, domain);
+	
+	if (session) {
+		switch_channel_t *channel = switch_core_session_get_channel(session);
+		dest = switch_channel_expand_variables(channel, template);
+		if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+			timelimit = atoi(var);
+		}
+	} else if (var_event) {
+		dest = switch_event_expand_headers(var_event, template);
+	}
+	if (!dest) {
+		goto done;
+	}
+	
+	if (var_event) {
+		cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
+		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
+		if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+			timelimit = atoi(var);
+		}
+	}
+	
+	if ((flags & SOF_FORKED_DIAL)) {
+		myflags |= SOF_NOBLOCK;
+	}
+	
+	
+	if (switch_ivr_originate(session, new_session, &cause, dest, timelimit, NULL, 
+							 cid_name_override, cid_num_override, NULL, var_event, myflags) == SWITCH_STATUS_SUCCESS) {
+		const char *context;
+		switch_caller_profile_t *cp;
+		
+		new_channel = switch_core_session_get_channel(*new_session);
+		
+		if ((context = switch_channel_get_variable(new_channel, "group_context"))) {
+			if ((cp = switch_channel_get_caller_profile(new_channel))) {
+				cp->context = switch_core_strdup(cp->pool, context);
+			}
+		}
+		switch_core_session_rwunlock(*new_session);
+	}
+
+
+ done:
+
+	if (dest && dest != template) {
+		switch_safe_free(dest);
+	}
+	
+	switch_safe_free(template);	
+
+	if (cause == SWITCH_CAUSE_NONE) {
+		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+
+	return cause;
+}
+
+
+
 /* fake chan_user */
 switch_endpoint_interface_t *user_endpoint_interface;
 static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
@@ -2017,7 +2119,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 												 switch_caller_profile_t *outbound_profile,
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
-	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_param, x_params;
+	switch_xml_t x_domain = NULL, xml = NULL, x_user = NULL, x_group = NULL, x_param, x_params;
 	char *user = NULL, *domain = NULL;
 	const char *dest = NULL;
 	static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
@@ -2030,26 +2132,42 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	user = strdup(outbound_profile->destination_number);
 
-	if (!user)
-		goto done;
+	if (!user) goto done;
 
-	if (!(domain = strchr(user, '@'))) {
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+	} else {
+		domain = switch_core_get_variable("domain");
+	}
+	
+	if (!domain) {
 		goto done;
 	}
-
-	*domain++ = '\0';
+	
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "as_channel", "true");
 
-	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", user, domain);
 		cause = SWITCH_CAUSE_SUBSCRIBER_ABSENT;
 		goto done;
 	}
 
 	if ((x_params = switch_xml_child(x_domain, "params"))) {
+		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+
+			if (!strcasecmp(var, "dial-string")) {
+				dest = val;
+				break;
+			}
+		}
+	}
+
+	if ((x_params = switch_xml_child(x_group, "params"))) {
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
@@ -2107,6 +2225,9 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				switch_event_dup(&event, var_event);
 				switch_event_del_header(event, "dialer_user");
 				switch_event_del_header(event, "dialer_domain");
+				if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+					timelimit = atoi(var);
+				}
 			} else {
 				switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(event);
@@ -2317,6 +2438,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	error_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	error_endpoint_interface->interface_name = "error";
 	error_endpoint_interface->io_routines = &error_io_routines;
+
+	group_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
+	group_endpoint_interface->interface_name = "group";
+	group_endpoint_interface->io_routines = &group_io_routines;
 
 	user_endpoint_interface = switch_loadable_module_create_interface(*module_interface, SWITCH_ENDPOINT_INTERFACE);
 	user_endpoint_interface->interface_name = "user";

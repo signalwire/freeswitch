@@ -206,7 +206,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 				switch_assert(params);
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", "check");
 
-				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
 					switch_event_destroy(&params);
 					goto fail;
 				}

@@ -77,6 +77,245 @@ SWITCH_STANDARD_API(time_test_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(group_call_function)
+{
+	char *domain;
+	char *group_name = NULL;
+	char *flags;
+	int ok = 0;
+	switch_channel_t *channel = NULL;
+	char *fp = NULL;
+	const char *call_delim = ",";
+
+	if (switch_strlen_zero(cmd)) {
+		goto end;
+	}
+
+	if (session) {
+		channel = switch_core_session_get_channel(session);
+	}
+
+	group_name = strdup(cmd);
+	switch_assert(group_name);
+
+	if ((flags = strchr(group_name, '+'))) {
+		*flags++ = '\0';
+		for (fp = flags; fp && *fp; fp++) {
+			switch(*fp) {
+			case 'F':
+				call_delim = "|";
+				break;
+			case 'A':
+				call_delim = ",";
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	
+	domain = strchr(group_name, '@');
+	
+	if (domain) {
+		*domain++ = '\0';
+	} else {
+		domain = switch_core_get_variable("domain");
+	}
+	
+	if (!switch_strlen_zero(domain)) {
+		switch_xml_t xml, x_domain, x_group;
+		switch_event_t *params;
+		switch_stream_handle_t dstream = { 0 };
+
+		SWITCH_STANDARD_STREAM(dstream);
+
+		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "group", group_name);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", "group_call");
+		
+		if (switch_xml_locate_group(group_name, domain, &xml, &x_domain, &x_group, params) == SWITCH_STATUS_SUCCESS) {
+			switch_xml_t x_user, x_users, x_param, x_params;
+			
+			if ((x_users = switch_xml_child(x_group, "users"))) {
+				ok++;
+				
+				for(x_user = switch_xml_child(x_users, "user"); x_user; x_user = x_user->next) {
+					const char *id = switch_xml_attr_soft(x_user, "id");
+					const char *dest = NULL;
+					char *d_dest = NULL;
+					
+					if ((x_params = switch_xml_child(x_domain, "params"))) {
+						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+							const char *var = switch_xml_attr(x_param, "name");
+							const char *val = switch_xml_attr(x_param, "value");
+
+							if (!strcasecmp(var, "group-dial-string")) {
+								dest = val;
+								break;
+							}
+
+							if (!strcasecmp(var, "dial-string")) {
+								dest = val;
+							}
+						}
+					}
+
+					if ((x_params = switch_xml_child(x_group, "params"))) {
+						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+							const char *var = switch_xml_attr(x_param, "name");
+							const char *val = switch_xml_attr(x_param, "value");
+
+							if (!strcasecmp(var, "group-dial-string")) {
+								dest = val;
+								break;
+							}
+
+							if (!strcasecmp(var, "dial-string")) {
+								dest = val;
+							}
+						}
+					}
+
+					if ((x_params = switch_xml_child(x_user, "params"))) {
+						for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+							const char *var = switch_xml_attr(x_param, "name");
+							const char *val = switch_xml_attr(x_param, "value");
+							
+							if (!strcasecmp(var, "group-dial-string")) {
+								dest = val;
+								break;
+							}
+
+							if (!strcasecmp(var, "dial-string")) {
+								dest = val;
+							}
+						}
+					}
+					
+					if (dest) {
+						if (channel) {
+							switch_channel_set_variable(channel, "dialed_group", group_name);
+							switch_channel_set_variable(channel, "dialed_user", id);
+							switch_channel_set_variable(channel, "dialed_domain", domain);
+							d_dest = switch_channel_expand_variables(channel, dest);
+						} else {
+							switch_event_del_header(params, "dialed_user");
+							switch_event_del_header(params, "dialed_group");
+							switch_event_del_header(params, "dialed_domain");
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "dialed_user", id);
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "dialed_group", group_name);
+							switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+							d_dest = switch_event_expand_headers(params, dest);
+						}
+					} else {
+						d_dest = switch_mprintf("user/%s@%s", id, domain);
+					}
+					
+					if (d_dest) {
+						if (!switch_stristr("error/", d_dest)) {
+							dstream.write_function(&dstream, "%s%s", d_dest, call_delim);
+						}
+					
+						if (d_dest != dest) {
+							free(d_dest);
+						}
+					}
+				}
+
+				if (ok && dstream.data) {
+					char *data = (char *) dstream.data;
+					char c = end_of(data);
+					char *p;
+
+					if (c == ',' || c == '|') {
+						end_of(data) = '\0';
+					}
+					
+					for (p = data; p && *p; p++) {
+						if (*p == '{') {
+							*p = '[';
+						} else if (*p == '}') {
+							*p = ']';
+						}
+					}
+
+
+					stream->write_function(stream, "%s", data);
+					free(dstream.data);
+				} else {
+					ok = 0;
+				}
+				
+			}
+			switch_xml_free(xml);
+		}
+		switch_event_destroy(&params);
+	}
+
+ end:
+
+	switch_safe_free(group_name);
+	
+	if (!ok) {
+		stream->write_function(stream, "error/NO_ROUTE_DESTINATION");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_STANDARD_API(in_group_function)
+{
+	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_group;
+	int argc;
+	char *mydata = NULL, *argv[2], *user, *domain;
+	char delim = ',';
+	switch_event_t *params = NULL;
+	const char *rval = "false";
+	char *group;
+	
+	if (switch_strlen_zero(cmd) || !(mydata = strdup(cmd))) {
+		goto end;
+	}
+
+	if ((argc = switch_separate_string(mydata, delim, argv, (sizeof(argv) / sizeof(argv[0])))) < 2) {
+		goto end;
+	}
+
+	user = argv[0];
+	group = argv[1];
+
+	if ((domain = strchr(user, '@'))) {
+		*domain++ = '\0';
+	} else {
+		domain = switch_core_get_variable("domain");
+	}
+
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
+
+	if (switch_xml_locate_group(group, domain, &xml, &x_domain, &x_group, params) == SWITCH_STATUS_SUCCESS) {
+		switch_xml_t x_users;
+		if ((x_users = switch_xml_child(x_group, "users"))) {
+			if ((x_user = switch_xml_find_child(x_users, "user", "id", user))) {
+				rval = "true";
+			}
+		}
+	}
+
+  end:
+	
+	stream->write_function(stream, "%s", rval);
+	
+	switch_xml_free(xml);
+	free(mydata);
+	switch_event_destroy(&params);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_STANDARD_API(user_data_function)
 {
 	switch_xml_t x_domain, xml = NULL, x_user = NULL, x_param, x_params;
@@ -111,7 +350,7 @@ SWITCH_STANDARD_API(user_data_function)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
 
-	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, params) == SWITCH_STATUS_SUCCESS) {
+	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
 		if (!strcmp(type, "attr")) {
 			const char *attr = switch_xml_attr_soft(x_user, key);
 			stream->write_function(stream, "%s", attr);
@@ -201,7 +440,7 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 		goto end;
 	}
 
-	if (switch_xml_locate_user(key, user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user(key, user, domain, NULL, &xml, &x_domain, &x_user, NULL, NULL) != SWITCH_STATUS_SUCCESS) {
 		err = "can't find user";
 		goto end;
 	}
@@ -2939,6 +3178,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	SWITCH_ADD_API(commands_api_interface, "group_call", "Generate a dial string to call a group", group_call_function, "<group>[@<domain>]");
+	SWITCH_ADD_API(commands_api_interface, "in_group", "determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");
 
 	SWITCH_ADD_API(commands_api_interface, "uuid_flush_dtmf", "Flush dtmf on a given uuid", uuid_flush_dtmf_function, "<uuid>");
 	SWITCH_ADD_API(commands_api_interface, "md5", "md5", md5_function, "<data>");

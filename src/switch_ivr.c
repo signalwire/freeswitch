@@ -1920,7 +1920,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data)
 {
-	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params;
+	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params, x_group = NULL;
 	char *user, *mailbox, *domain;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1937,7 +1937,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 	*domain++ = '\0';
 
-	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, NULL) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, &x_group, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "can't find user [%s@%s]\n", user, domain);
 		goto done;
 	}
@@ -1949,6 +1949,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 	}
 
 	if ((x_params = switch_xml_child(x_domain, "variables"))) {
+		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
+			const char *var = switch_xml_attr(x_param, "name");
+			const char *val = switch_xml_attr(x_param, "value");
+
+			if (var && val) {
+				switch_channel_set_variable(channel, var, val);
+			}
+		}
+	}
+
+	if (x_group && (x_params = switch_xml_child(x_group, "variables"))) {
 		for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
 			const char *var = switch_xml_attr(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");

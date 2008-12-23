@@ -300,6 +300,62 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char
 	return p;
 }
 
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, const char *childname, ...)
+{
+	switch_xml_t p = NULL;
+	const char *names[256] = {0};
+	const char *vals[256] = {0};
+	int x, i = 0;
+	va_list ap;
+	const char *attrname, *value;
+
+	va_start(ap, childname);
+	
+	while(i < 255) {
+		if ((attrname = va_arg(ap, const char *))) {
+			value = va_arg(ap, const char *);
+		}
+		if (attrname && value) {
+			names[i] = attrname;
+			vals[i] = value;
+		} else {
+			break;
+		}
+		i++;
+	}
+
+	va_end(ap);
+
+	if (!(childname && i)) {
+		return node;
+	}
+	
+	for (p = switch_xml_child(node, childname); p; p = p->next) {
+		for (x = 0; x < i; x++) {
+			if (names[x] && vals[x]) {
+				const char *aname = switch_xml_attr(p, names[x]);
+
+				if (aname) {
+					if (*vals[x] == '!') {
+						const char *sval = vals[x] + 1;
+						if (sval && strcasecmp(aname, sval)) {
+							goto done;
+						}
+					} else {
+						if (!strcasecmp(aname, vals[x])) {
+							goto done;
+						}
+					}
+				}
+			}
+		}
+	}
+
+ done:
+
+	return p;
+}
+
 // returns the first child tag with the given name or NULL if not found
 SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name)
 {
@@ -1528,6 +1584,93 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 	return status;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
+														const char *domain_name, 
+														switch_xml_t *root,
+														switch_xml_t *domain,
+														switch_xml_t *group,
+														switch_event_t *params)
+{
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_event_t *my_params = NULL;
+	switch_xml_t groups = NULL;
+
+	*root = NULL;
+	*group = NULL;
+	*domain = NULL;
+
+	if (!params) {
+		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_assert(my_params);
+		params = my_params;
+	}
+
+	if (group_name) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "group_name", group_name);
+	}
+
+	if (domain_name) {
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain_name);
+	}
+
+	if ((status = switch_xml_locate_domain(domain_name, params, root, domain)) != SWITCH_STATUS_SUCCESS) {
+		goto end;
+	}
+	
+	status = SWITCH_STATUS_FALSE;
+
+	if ((groups = switch_xml_child(*domain, "groups"))) {
+		if ((*group = switch_xml_find_child(groups, "group", "name", group_name))) {
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+ end:
+
+	if (my_params) {
+		switch_event_destroy(&my_params);
+	}
+
+	return status;
+}
+
+
+static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const char *user_name, const char *key, switch_event_t *params, switch_xml_t *user)
+{
+	const char *type = "!pointer";
+	const char *val;
+
+	if (params && (val = switch_event_get_header(params, "user_type"))) {
+		if (!strcasecmp(val, "any")) {
+			type = NULL;
+		} else {
+			type = val;
+		}
+	}
+
+	if (ip) {
+		if ((*user = switch_xml_find_child_multi(tag, "user", "ip", ip, "type", type, NULL))) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	} 
+
+	if (user_name) {
+		if (params && switch_event_get_header(params, (char *) "mailbox")) {
+			if ((*user = switch_xml_find_child_multi(tag, "user", "mailbox", user_name, "type", type, NULL))) {
+				return SWITCH_STATUS_SUCCESS;
+			}
+		}
+
+		if ((*user = switch_xml_find_child_multi(tag, "user", key, user_name, "type", type, NULL))) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	
+	return SWITCH_STATUS_FALSE;
+	
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   const char *user_name,
 													   const char *domain_name, 
@@ -1535,11 +1678,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   switch_xml_t *root,
 													   switch_xml_t *domain,
 													   switch_xml_t *user,
+													   switch_xml_t *ingroup,
 													   switch_event_t *params)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
-	switch_event_t *my_params = NULL;
-
+	switch_event_t *my_params = NULL, *search_params = NULL;
+	switch_xml_t group = NULL, groups = NULL, users = NULL;
+	
 	*root = NULL;
 	*user = NULL;
 	*domain = NULL;
@@ -1570,26 +1715,27 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 	
 	status = SWITCH_STATUS_FALSE;
 
-	if (ip) {
-		if ((*user = switch_xml_find_child(*domain, "user", "ip", ip))) {
-			status = SWITCH_STATUS_SUCCESS;
-			goto end;
-		}
-	} 
+	if (params != my_params) {
+		search_params = params;
+	}
 
-	if (user_name) {
-		if (params != my_params && switch_event_get_header(params, (char *) "mailbox")) {
-			if ((*user = switch_xml_find_child(*domain, "user", "mailbox", user_name))) {
-				status = SWITCH_STATUS_SUCCESS;
-				goto end;
+	if ((groups = switch_xml_child(*domain, "groups"))) {
+		for (group = switch_xml_child(groups, "group"); group; group = group->next) {
+			if ((users = switch_xml_child(group, "users"))) {
+				if ((status = find_user_in_tag(users, ip, user_name, key, params, user)) == SWITCH_STATUS_SUCCESS) {
+					if (ingroup) {
+						*ingroup = group;
+					}
+					break;
+				}
 			}
 		}
-
-		if ((*user = switch_xml_find_child(*domain, "user", key, user_name))) {
-			status = SWITCH_STATUS_SUCCESS;
-			goto end;
-		}
 	}
+
+	if (status != SWITCH_STATUS_SUCCESS) {
+		status = find_user_in_tag(*domain, ip, user_name, key, params, user);
+	}
+	
 
  end:
 

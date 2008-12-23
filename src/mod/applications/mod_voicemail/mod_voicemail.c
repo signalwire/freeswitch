@@ -1888,7 +1888,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					switch_channel_event_set_data(channel, params);
 					
 					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
-											   &xx_domain_root, &xx_domain, &xx_user, params) == SWITCH_STATUS_SUCCESS) {
+											   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
 						switch_xml_free(xx_domain_root);
 					}
 
@@ -1981,7 +1981,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					
 					
 					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
-											   &x_domain_root, &x_domain, &x_user, params) != SWITCH_STATUS_SUCCESS) {
+											   &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
 					}
@@ -2679,7 +2679,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", id);
 
 		if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
-								   &x_domain_root, &x_domain, &x_user, params) == SWITCH_STATUS_SUCCESS) {
+								   &x_domain_root, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
 			if ((x_params = switch_xml_child(x_user, "params"))) {
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");

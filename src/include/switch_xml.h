@@ -142,6 +142,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name
 ///\param value the value
 ///\return an xml node or NULL
 SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(switch_xml_t node, const char *childname, const char *attrname, const char *value);
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, const char *childname, ...);
 
 ///\brief returns the next tag of the same name in the same section and depth or NULL
 ///\ if not found
@@ -334,11 +335,20 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  switch_event_t *params);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params, switch_xml_t *root, switch_xml_t *domain);
+
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
+														const char *domain_name, 
+														switch_xml_t *root,
+														switch_xml_t *domain,
+														switch_xml_t *group,
+														switch_event_t *params);
+
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   const char *user_name,
 													   const char *domain_name,
 													   const char *ip,
-													   switch_xml_t *root, switch_xml_t *domain, switch_xml_t *user, switch_event_t *params);
+													   switch_xml_t *root, switch_xml_t *domain, switch_xml_t *user, switch_xml_t *ingroup, 
+													   switch_event_t *params);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf

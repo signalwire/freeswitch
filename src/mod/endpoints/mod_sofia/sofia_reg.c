@@ -1394,7 +1394,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	const char *a1_hash = NULL;
 	char *sql;
 	char *mailbox = NULL;
-	switch_xml_t domain, xml = NULL, user, param, uparams, dparams;
+	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group, gparams = NULL;
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *domain_name = NULL;
 	switch_event_t *params = NULL;
@@ -1529,7 +1529,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	}
 
 	if (switch_xml_locate_user("id", switch_strlen_zero(username) ? "nobody" : username, 
-							   domain_name, ip, &xml, &domain, &user, params) != SWITCH_STATUS_SUCCESS) {
+							   domain_name, ip, &xml, &domain, &user, &group, params) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n"
 						  "You must define a domain called '%s' in your directory and add a user with the id=\"%s\" attribute\n"
 						  "and you must configure your device to use the proper domain in it's authentication credentials.\n"
@@ -1545,6 +1545,9 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 	dparams = switch_xml_child(domain, "params");
 	uparams = switch_xml_child(user, "params");
+	if (group) {
+		gparams = switch_xml_child(group, "params");
+	}
 
 	if (!(dparams || uparams)) {
 		ret = AUTH_OK;
@@ -1553,6 +1556,30 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 	if (dparams) {
 		for (param = switch_xml_child(dparams, "param"); param; param = param->next) {
+			const char *var = switch_xml_attr_soft(param, "name");
+			const char *val = switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "sip-forbid-register") && switch_true(val)) {
+				ret = AUTH_FORBIDDEN;
+				goto end;
+			}
+
+			if (!strcasecmp(var, "password")) {
+				passwd = val;
+			}
+
+			if (!strcasecmp(var, "auth-acl")) {
+				auth_acl = val;
+			}
+
+			if (!strcasecmp(var, "a1-hash")) {
+				a1_hash = val;
+			}
+		}
+	}
+
+	if (gparams) {
+		for (param = switch_xml_child(gparams, "param"); param; param = param->next) {
 			const char *var = switch_xml_attr_soft(param, "name");
 			const char *val = switch_xml_attr_soft(param, "value");
 
@@ -1670,7 +1697,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			switch_event_create(v_event, SWITCH_EVENT_REQUEST_PARAMS);
 		}
 		if (v_event && *v_event) {
-			switch_xml_t xparams[2];
+			switch_xml_t xparams[3];
 			int i = 0;
 
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_mailbox", mailbox);
@@ -1684,11 +1711,15 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 				xparams[i++] = dparams;
 			}
 
+			if (group && (gparams = switch_xml_child(group, "variables"))) {
+				xparams[i++] = gparams;
+			}
+
 			if ((uparams = switch_xml_child(user, "variables"))) {
 				xparams[i++] = uparams;
 			}
 
-			if (dparams || uparams) {
+			if (i <= 3) {
 				int j = 0;
 
 				for (j = 0; j < i; j++) {
