@@ -150,7 +150,7 @@
       <!--<param name="tts-engine" value="flite"/>-->
       <!--<param name="tts-voice" value="kal16"/>-->
     </profile>
-    <!--
+
     <profile name="cdquality">
       <param name="domain" value="$${domain}"/>
       <param name="rate" value="48000"/>
@@ -173,6 +173,6 @@
       <param name="caller-id-number" value="$${outbound_caller_id}"/>
       <param name="comfort-noise" value="true"/>
     </profile>
-    -->
+
   </profiles>
 </configuration>

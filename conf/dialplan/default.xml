@@ -305,10 +305,17 @@
 	<action application="conference" data="$1-${domain_name}@ultrawideband"/>
       </condition>
     </extension>
+    <!-- MONO 48kHz conferences -->
+    <extension name="cdquality_conferences">
+      <condition field="destination_number" expression="^(33\d{2})$">
+	<action application="answer"/>
+	<action application="conference" data="$1-${domain_name}@cdquality"/>
+      </condition>
+    </extension>
     
     <!-- dial the freeswitch conference via SIP-->
     <extension name="freeswitch_public_conf_via_sip">
-      <condition field="destination_number" expression="^9(888|1616)$">
+      <condition field="destination_number" expression="^9(888|1616|3232)$">
 	<action application="bridge" data="sofia/${use_profile}/$1@conference.freeswitch.org"/>
       </condition>
     </extension>
