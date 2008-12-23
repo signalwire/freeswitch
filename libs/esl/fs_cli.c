@@ -6,6 +6,10 @@
 #ifdef WIN32
 #define strdup(src) _strdup(src)
 #define usleep(time) Sleep(time/1000)
+#define fileno _fileno
+#define read _read
+#include <io.h>
+#include <getopt.h>
 #else
 #include <sys/select.h>
 #include <histedit.h>
@@ -194,15 +198,21 @@ int main(int argc, char *argv[])
 	int count = 0;
 	const char *line = NULL;
 	char cmd_str[1024] = "";
-	char hfile[512] = "/tmp/fs_cli_history";
-	char cfile[512] = "/tmp/fs_cli_config";
-	char *home = getenv("HOME");
 	esl_config_t cfg;
 	cli_profile_t *profile = &profiles[0];
 	int cur = 0;
 	int opt;
+#ifndef WIN32
+	char hfile[512] = "/tmp/fs_cli_history";
+	char cfile[512] = "/tmp/fs_cli_config";
+	char *home = getenv("HOME");
+#else
+	char hfile[512] = "c:\\fs_cli_history";
+	char cfile[512] = "c:\\fs_cli_config";
+	char *home = getenv("HOME");
+#endif
 	
-	strncpy(profiles[0].host, "localhost", sizeof(profiles[0].host));
+	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));
 	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
 	strncpy(profiles[0].name, "default", sizeof(profiles[0].name));
 	profiles[0].port = 8021;

@@ -21,7 +21,6 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="..\..\w32\winlibs.vsprops"
 			CharacterSet="2"
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
@@ -43,8 +42,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)\src\include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)getopt&quot;;&quot;$(ProjectDir)src/include&quot;"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -66,6 +65,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/fs_cli.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"
@@ -103,7 +103,6 @@
 			OutputDirectory="$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			InheritedPropertySheets="..\..\w32\winlibs.vsprops"
 			CharacterSet="2"
 			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
@@ -124,8 +123,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="&quot;$(InputDir)\src\include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)getopt&quot;;&quot;$(ProjectDir)src/include&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
@@ -144,6 +143,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib"
 				OutputFile="$(SolutionDir)$(ConfigurationName)/fs_cli.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="$(OutDir)"
@@ -191,6 +191,10 @@
 				RelativePath="fs_cli.c"
 				>
 			</File>
+			<File
+				RelativePath=".\getopt\getopt_long.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -198,51 +202,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\src\include\switch.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_buffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_caller.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_channel.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_config.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_console.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_core.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_frame.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_loadable_module.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_module_interfaces.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_types.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\src\include\switch_utils.h"
+				RelativePath=".\getopt\getopt.h"
 				>
 			</File>
 		</Filter>
