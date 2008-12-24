@@ -9,12 +9,13 @@
 #define fileno _fileno
 #define read _read
 #include <io.h>
-#include <getopt.h>
 #else
 #include <sys/select.h>
 #include <histedit.h>
 #define HAVE_EDITLINE
 #endif
+
+#include <getopt.h>
 
 static char prompt_str[512] = "";
 static char hostname[512] = "";
@@ -218,7 +219,6 @@ int main(int argc, char *argv[])
 	esl_config_t cfg;
 	cli_profile_t *profile = &profiles[0];
 	int cur = 0;
-	int opt;
 #ifndef WIN32
 	char hfile[512] = "/tmp/fs_cli_history";
 	char cfile[512] = "/tmp/fs_cli_config";
@@ -234,6 +234,17 @@ int main(int argc, char *argv[])
 	strncpy(profiles[0].name, "default", sizeof(profiles[0].name));
 	profiles[0].port = 8021;
 	pcount++;
+
+	/* Vars for optargs */
+	int opt;
+	static struct option options[] = {
+		{"help", 0, 0, 'h'},
+		{"host", 1, 0, 'H'},
+		{"port", 1, 0, 'P'},
+		{"password", 1, 0, 'p'},
+		{0, 0, 0, 0}
+	};
+	
 	
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
@@ -276,7 +287,10 @@ int main(int argc, char *argv[])
 		esl_config_close_file(&cfg);
 	}
 
-	while ((opt = getopt (argc, argv, "H:U:P:S:p:h?")) != -1){
+	while (1){
+		int option_index = 0;
+		opt = getopt_long(argc, argv, "H:U:P:S:p:h?", options, &option_index);
+		if (opt == -1) break;
 		switch (opt)
 		{
 			case 'H':
@@ -293,7 +307,12 @@ int main(int argc, char *argv[])
 				break;
 			case 'h':
 			case '?':
-				printf("%s [-H <host>] [-P <port>] [-s <secret>] [-p <port>]\n", argv[0]);
+				printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [profile]\n\n", argv[0]);
+				printf("  -?,-h --help                    Usage Information\n");
+				printf("  -H, --host=hostname             Host to connect\n");
+				printf("  -P, --port=port                 Port to connect\n");
+				printf("  -p, --password=FILENAME         Password\n\n");
+				
 				return 0;
 			default:
 				opt = 0;
