@@ -40,8 +40,17 @@ static void handle_SIGINT(int sig)
 }
 
 
-static const char* COLORS[] = { ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, 
-								ESL_SEQ_FRED, ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW };
+#ifdef WIN32
+static HANDLE hStdout;
+static WORD wOldColorAttrs;
+static CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+
+static WORD 
+#else
+static const char*
+#endif
+COLORS[] = { ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, 
+			ESL_SEQ_FRED, ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW };
 
 static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
@@ -77,7 +86,15 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 						}
 
 						if (tchannel == 0 || (file && !strcmp(file, "switch_console.c"))) {
+#ifdef WIN32
+							DWORD len = (DWORD) strlen(handle->last_event->body);
+							DWORD outbytes = 0;
+							SetConsoleTextAttribute(hStdout, COLORS[level]);
+							WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
+							SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+#else
 							printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+#endif
 						}
 						known++;
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
@@ -319,6 +336,12 @@ int main(int argc, char *argv[])
 	history(myhistory, &ev, H_SETSIZE, 800);
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
+#endif
+#ifdef WIN32
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hStdout != INVALID_HANDLE_VALUE && GetConsoleScreenBufferInfo(hStdout, &csbiInfo)) {
+		wOldColorAttrs = csbiInfo.wAttributes;
+	}
 #endif
 
 	snprintf(cmd_str, sizeof(cmd_str), "log info\n\n");
