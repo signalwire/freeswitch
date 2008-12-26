@@ -30,7 +30,7 @@ $(MPG123_DIR):
 	$(GETLIB) $(MPG123).tar.gz
 
 $(MPG123_DIR)/Makefile: $(MPG123_DIR)
-	cd $(MPG123_DIR) && CFLAGS=$(AM_CFLAGS) ./configure --disable-shared --with-pic
+	cd $(MPG123_DIR) && CFLAGS=$(AM_CFLAGS) ./configure --disable-shared --with-pic CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(MPG123LA): $(MPG123_DIR)/Makefile
@@ -52,7 +52,7 @@ $(SHOUT_DIR):
 	$(GETLIB) $(SHOUT).tar.gz
 
 $(SHOUT_DIR)/Makefile: $(SHOUT_DIR)
-	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --without-speex --without-vorbis --without-ogg
+	cd $(SHOUT_DIR) && ./configure $(DEFAULT_ARGS) --without-speex --without-vorbis --without-ogg CPPFLAGS= LDFLAGS=
 	$(TOUCH_TARGET)
 
 $(SHOUTLA): $(SHOUT_DIR)/Makefile
