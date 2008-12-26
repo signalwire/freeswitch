@@ -121,6 +121,8 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 static int process_command(esl_handle_t *handle, const char *cmd) 
 {
+	char cmd_str[1024];
+
 	if (
 		!strcasecmp(cmd, "exit") ||
 		!strcasecmp(cmd, "quit") ||
@@ -138,7 +140,9 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		!strncasecmp(cmd, "filter", 6)
 		) {
 
-		esl_send_recv(handle, cmd);			
+		snprintf(cmd_str, sizeof(cmd_str), "%s\n\n", cmd);
+		esl_send_recv(handle, cmd_str);	
+
 		printf("%s\n", handle->last_sr_reply);
 
 		goto end;
