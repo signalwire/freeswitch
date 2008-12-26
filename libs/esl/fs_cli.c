@@ -260,6 +260,9 @@ int main(int argc, char *argv[])
 	int argv_port = 0;
 	int temp_log = 0;
 	int argv_error = 0;
+	int argv_exec = 0;
+	char argv_command[256] = "";
+	
 
 	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));
 	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
@@ -276,7 +279,7 @@ int main(int argc, char *argv[])
 	gethostname(hostname, sizeof(hostname));
 
 	handle.debug = 0;
-	esl_global_set_default_logger(7);
+	esl_global_set_default_logger(0); /* default debug level to 0 */
 	
 	for(;;) {
 		int option_index = 0;
@@ -311,8 +314,9 @@ int main(int argc, char *argv[])
 				}
 				break;
 			case 'x':
-				printf("Executing commands from the CLI is not complete.\n");
-				return 0;
+				argv_exec = 1;
+				esl_set_string(argv_command, optarg);
+				break;
 
 			case 'h':
 			case '?':
@@ -387,7 +391,18 @@ int main(int argc, char *argv[])
 		esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 		return -1;
 	}
-	
+
+
+	if (argv_exec){
+		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", argv_command);
+		esl_send_recv(&handle, cmd_str);
+		if (handle.last_sr_event && handle.last_sr_event->body) {
+			printf("%s\n", handle.last_sr_event->body);
+		}
+		esl_disconnect(&handle);
+		return 0;
+	} 
+
 	esl_thread_create_detached(msg_thread_run, &handle);
 
 #ifdef HAVE_EDITLINE
