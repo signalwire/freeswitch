@@ -228,13 +228,6 @@ int main(int argc, char *argv[])
 	char cfile[512] = ".\\fs_cli_config";
 	char *home = ""; //getenv("HOME");
 #endif
-	
-	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));
-	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
-	strncpy(profiles[0].name, "default", sizeof(profiles[0].name));
-	profiles[0].port = 8021;
-	pcount++;
-
 	/* Vars for optargs */
 	int opt;
 	static struct option options[] = {
@@ -244,7 +237,12 @@ int main(int argc, char *argv[])
 		{"password", 1, 0, 'p'},
 		{0, 0, 0, 0}
 	};
-	
+
+	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));
+	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
+	strncpy(profiles[0].name, "default", sizeof(profiles[0].name));
+	profiles[0].port = 8021;
+	pcount++;	
 	
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
@@ -287,7 +285,7 @@ int main(int argc, char *argv[])
 		esl_config_close_file(&cfg);
 	}
 
-	while (1){
+	for(;;) {
 		int option_index = 0;
 		opt = getopt_long(argc, argv, "H:U:P:S:p:h?", options, &option_index);
 		if (opt == -1) break;

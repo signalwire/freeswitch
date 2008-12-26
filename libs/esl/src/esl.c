@@ -861,7 +861,7 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 		esl_log(ESL_LOG_DEBUG, "SEND\n%s\n", cmd);
 	}
 	
-	if (send(handle->sock, cmd, strlen(cmd), 0) != strlen(cmd)) {
+	if (send(handle->sock, cmd, strlen(cmd), 0) != (int)strlen(cmd)) {
 		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 		return ESL_FAIL;
 	}
