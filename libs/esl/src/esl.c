@@ -861,11 +861,11 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 		esl_log(ESL_LOG_DEBUG, "SEND\n%s\n", cmd);
 	}
 	
-	if (send(handle->sock, cmd, strlen(cmd), 0)) {
+	if (send(handle->sock, cmd, strlen(cmd), 0) != strlen(cmd)) {
 		strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 		return ESL_FAIL;
 	}
-
+	
 	if (!(*e == '\n' && *(e-1) == '\n')) {
 		if (send(handle->sock, "\n\n", 2, 0)) {
 			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
@@ -884,7 +884,11 @@ ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 	esl_status_t status;
 	
 	esl_mutex_lock(handle->mutex);
-	esl_send(handle, cmd);
+
+	if ((status = esl_send(handle, cmd))) {
+		return status;
+	}
+
 	status = esl_recv_event(handle, &handle->last_sr_event);
 	
 	if (handle->last_sr_event) {
