@@ -18,7 +18,6 @@
 #include <getopt.h>
 
 static char prompt_str[512] = "";
-static char hostname[512] = "";
 
 #ifdef HAVE_EDITLINE
 static char *prompt(EditLine * e)
@@ -236,9 +235,9 @@ int main(int argc, char *argv[])
 	char cfile[512] = "/tmp/fs_cli_config";
 	char *home = getenv("HOME");
 #else
-	char hfile[512] = ".\\fs_cli_history";
-	char cfile[512] = ".\\fs_cli_config";
-	char *home = ""; //getenv("HOME");
+	char hfile[512] = "fs_cli_history";
+	char cfile[512] = "fs_cli_config";
+	char *home = getenv("HOME");
 #endif
 	/* Vars for optargs */
 	int opt;
@@ -276,7 +275,6 @@ int main(int argc, char *argv[])
 	}
 	
 	signal(SIGINT, handle_SIGINT);
-	gethostname(hostname, sizeof(hostname));
 
 	handle.debug = 0;
 	esl_global_set_default_logger(0); /* default debug level to 0 */
@@ -381,12 +379,14 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	esl_log(ESL_LOG_INFO, "Using profile %s\n", profile->name);
-		
-	gethostname(hostname, sizeof(hostname));
-	snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
-
+	esl_log(ESL_LOG_INFO, "Using profile %s [%s]\n", profile->name, profile->host);
 	
+	if (argv_host) {
+		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->host);
+	} else {
+		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
+	}
+
 	if (esl_connect(&handle, profile->host, profile->port, profile->pass)) {
 		esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 		return -1;
