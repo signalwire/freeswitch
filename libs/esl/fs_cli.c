@@ -365,16 +365,6 @@ int main(int argc, char *argv[])
 		}
 		esl_config_close_file(&cfg);
 	}
-
-	if (argv_host) {
-		esl_set_string(profiles[cur].host, temp_host);
-	}
-	if (argv_port) {
-		profiles[cur].port = (esl_port_t)temp_port;
-	}
-	if (argv_pass) {
-		esl_set_string(profiles[cur].pass, temp_pass);
-	}
 	
 	if (optind < argc) {
 		if (get_profile(argv[optind], &profile)) {
@@ -388,10 +378,20 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+	if (argv_host) {
+		esl_set_string(profile->host, temp_host);
+	}
+	if (argv_port) {
+		profile->port = (esl_port_t)temp_port;
+	}
+	if (argv_pass) {
+		esl_set_string(profile->pass, temp_pass);
+	}
+
 	esl_log(ESL_LOG_INFO, "Using profile %s [%s]\n", profile->name, profile->host);
 	
 	if (argv_host) {
-		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->host);
+		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
 	} else {
 		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
 	}
