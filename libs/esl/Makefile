@@ -1,5 +1,4 @@
-PWD=$(shell pwd)
-INCS=-I$(PWD)/src/include
+INCS=-Isrc/include
 LIBEDIT_DIR=../../libs/libedit
 DEBUG=-g -ggdb
 PICKY=-O2 -ffast-math -Wall -Werror -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes
@@ -16,6 +15,10 @@ all: $(MYLIB) fs_cli testclient testserver
 $(MYLIB): $(OBJS) $(HEADERS) $(SRC)
 	ar rcs $(MYLIB) $(OBJS)
 	ranlib $(MYLIB)
+
+$(OBJS): $(SRC) 
+	$(CC) $(CC_CFLAGS) $(CFLAGS) -c $< -o $@
+
 
 testserver: $(MYLIB) testserver.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) testserver.c -o testserver $(LDFLAGS) $(LIBS)
