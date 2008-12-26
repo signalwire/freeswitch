@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	
-	if(argv_error){
+	if (argv_error){
 		printf("\n");
 		return usage(argv[0]);
 	}
