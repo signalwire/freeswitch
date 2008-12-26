@@ -325,8 +325,7 @@ int main(int argc, char *argv[])
 	
 	if(argv_error){
 		printf("\n");
-		usage(argv[0]);
-		return 0;
+		return usage(argv[0]);
 	}
 
 	if (esl_config_open_file(&cfg, cfile)) {
