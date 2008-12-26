@@ -236,8 +236,17 @@ int main(int argc, char *argv[])
 		{"host", 1, 0, 'H'},
 		{"port", 1, 0, 'P'},
 		{"password", 1, 0, 'p'},
+		{"debug", 1, 0, 'd'},
+		{"execute", 1, 0, 'x'},
 		{0, 0, 0, 0}
 	};
+
+	char temp_host[128];
+	int argv_host = 0;
+	char temp_pass[128];
+	int argv_pass = 0 ;
+	esl_port_t temp_port = 0;
+	int argv_port = 0;
 
 	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));
 	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
@@ -256,6 +265,46 @@ int main(int argc, char *argv[])
 	handle.debug = 0;
 	esl_global_set_default_logger(7);
 	
+	for(;;) {
+		int option_index = 0;
+		opt = getopt_long(argc, argv, "H:U:P:S:p:d:x:h?", options, &option_index);
+		if (opt == -1) break;
+		switch (opt)
+		{
+			case 'H':
+				esl_set_string(temp_host, optarg);
+				argv_host = 1;
+				break;
+			case 'P':
+				temp_port= (esl_port_t)atoi(optarg);
+				argv_port = 1;
+				break;
+			case 'p':
+				esl_set_string(temp_pass, optarg);
+				argv_pass = 1;
+				break;
+			case 'd':
+				esl_global_set_default_logger(atoi(optarg));
+				break;
+			case 'x':
+				printf("Executing commands from the CLI is not complete.\n");
+				return 0;
+
+			case 'h':
+			case '?':
+				printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [profile]\n\n", argv[0]);
+				printf("  -?,-h --help                    Usage Information\n");
+				printf("  -H, --host=hostname             Host to connect\n");
+				printf("  -P, --port=port                 Port to connect\n");
+				printf("  -p, --password=FILENAME         Password\n");
+				printf("  -x, --execute=command           Execute Command and exit (Work In Progress)\n");
+				printf("  -d, --debug=level               Debug Level 0 - 7\n\n");
+				return 0;
+			default:
+				opt = 0;
+		}
+	}
+
 	if (esl_config_open_file(&cfg, cfile)) {
 		char *var, *val;
 		char cur_cat[128] = "";
@@ -286,36 +335,14 @@ int main(int argc, char *argv[])
 		esl_config_close_file(&cfg);
 	}
 
-	for(;;) {
-		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:p:h?", options, &option_index);
-		if (opt == -1) break;
-		switch (opt)
-		{
-			case 'H':
-				printf("Host: %s\n", optarg);
-				esl_set_string(profile[0].host, optarg);
-				break;
-			case 'P':
-				printf("Port: %s\n", optarg);
-				profile[0].port= (esl_port_t)atoi(optarg);
-				break;
-			case 'p':
-				printf("password: %s\n", optarg);
-				esl_set_string(profile[0].pass, optarg);
-				break;
-			case 'h':
-			case '?':
-				printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [profile]\n\n", argv[0]);
-				printf("  -?,-h --help                    Usage Information\n");
-				printf("  -H, --host=hostname             Host to connect\n");
-				printf("  -P, --port=port                 Port to connect\n");
-				printf("  -p, --password=FILENAME         Password\n\n");
-				
-				return 0;
-			default:
-				opt = 0;
-		}
+	if (argv_host) {
+		esl_set_string(profiles[cur].host, temp_host);
+	}
+	if (argv_port) {
+		profiles[cur].port = temp_port;
+	}
+	if (argv_pass) {
+		esl_set_string(profiles[cur].pass, temp_pass);
 	}
 	
 	if (optind < argc) {
