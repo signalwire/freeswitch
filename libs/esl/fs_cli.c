@@ -59,7 +59,7 @@ static int usage(char *name){
 	printf("  -H, --host=hostname             Host to connect\n");
 	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
 	printf("  -p, --password=FILENAME         Password\n");
-	printf("  -x, --execute=command           Execute Command and exit (Work In Progress)\n");
+	printf("  -x, --execute=command           Execute Command and Exit\n");
 	printf("  -d, --debug=level               Debug Level (0 - 7)\n\n");
 	return 1;
 }
