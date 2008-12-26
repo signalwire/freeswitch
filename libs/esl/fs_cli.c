@@ -402,7 +402,7 @@ int main(int argc, char *argv[])
 				} else {
 					snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", cmd);
 					esl_send_recv(&handle, cmd_str);
-					if (handle.last_sr_event) {
+					if (handle.last_sr_event && handle.last_sr_event->body) {
 						printf("%s\n", handle.last_sr_event->body);
 					}
 				}
