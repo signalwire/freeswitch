@@ -391,7 +391,11 @@ int main(int argc, char *argv[])
 	esl_log(ESL_LOG_INFO, "Using profile %s [%s]\n", profile->name, profile->host);
 	
 	if (argv_host) {
-		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
+		if (argv_port && profile->port != 8021) {
+			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s:%u@%s> ", profile->host, profile->port, profile->name);
+		} else {
+			snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s@%s> ", profile->host, profile->name);
+		}
 	} else {
 		snprintf(prompt_str, sizeof(prompt_str), "freeswitch@%s> ", profile->name);
 	}
