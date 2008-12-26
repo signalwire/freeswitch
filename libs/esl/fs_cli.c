@@ -168,6 +168,7 @@ typedef struct {
 	char host[128];
 	esl_port_t port;
 	char pass[128];
+	int debug;
 } cli_profile_t;
 
 static cli_profile_t profiles[128] = {{{0}}};
@@ -257,7 +258,7 @@ int main(int argc, char *argv[])
 	int argv_pass = 0 ;
 	int temp_port = 0;
 	int argv_port = 0;
-	int temp_log = 0;
+	int temp_log = -1;
 	int argv_error = 0;
 	int argv_exec = 0;
 	char argv_command[256] = "";
@@ -355,7 +356,12 @@ int main(int argc, char *argv[])
 				if (pt > 0) {
 					profiles[cur].port = (esl_port_t)pt;
 				}
-			}
+			} else if (!strcasecmp(var, "debug")) {
+				int dt = atoi(val);
+				if (dt > -1 && dt < 8){
+					 profiles[cur].debug = dt;
+				}	
+			} 
 		}
 		esl_config_close_file(&cfg);
 	}
@@ -376,6 +382,9 @@ int main(int argc, char *argv[])
 			profile = &profiles[0];
 		} else {
 			esl_log(ESL_LOG_INFO, "Chosen profile %s\n", profile->name);
+			if (temp_log < 0 ) {
+				esl_global_set_default_logger(profile->debug);
+			}
 		}
 	}
 	
