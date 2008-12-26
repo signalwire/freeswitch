@@ -867,7 +867,7 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 	}
 	
 	if (!(*e == '\n' && *(e-1) == '\n')) {
-		if (send(handle->sock, "\n\n", 2, 0)) {
+		if (send(handle->sock, "\n\n", 2, 0) != 2) {
 			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
 			return ESL_FAIL;
 		}
