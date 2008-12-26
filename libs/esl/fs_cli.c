@@ -57,10 +57,10 @@ static int usage(char *name){
 	printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [profile]\n\n", name);
 	printf("  -?,-h --help                    Usage Information\n");
 	printf("  -H, --host=hostname             Host to connect\n");
-	printf("  -P, --port=port                 Port to connect\n");
+	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
 	printf("  -p, --password=FILENAME         Password\n");
 	printf("  -x, --execute=command           Execute Command and exit (Work In Progress)\n");
-	printf("  -d, --debug=level               Debug Level 0 - 7\n\n");
+	printf("  -d, --debug=level               Debug Level (0 - 7)\n\n");
 	return 1;
 }
 
