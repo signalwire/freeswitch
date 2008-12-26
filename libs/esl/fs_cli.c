@@ -53,6 +53,17 @@ static const char*
 COLORS[] = { ESL_SEQ_DEFAULT_COLOR, ESL_SEQ_FRED, ESL_SEQ_FRED, 
 			ESL_SEQ_FRED, ESL_SEQ_FMAGEN, ESL_SEQ_FCYAN, ESL_SEQ_FGREEN, ESL_SEQ_FYELLOW };
 
+static int usage(char *name){
+	printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [profile]\n\n", name);
+	printf("  -?,-h --help                    Usage Information\n");
+	printf("  -H, --host=hostname             Host to connect\n");
+	printf("  -P, --port=port                 Port to connect\n");
+	printf("  -p, --password=FILENAME         Password\n");
+	printf("  -x, --execute=command           Execute Command and exit (Work In Progress)\n");
+	printf("  -d, --debug=level               Debug Level 0 - 7\n\n");
+	return 1;
+}
+
 static void *msg_thread_run(esl_thread_t *me, void *obj)
 {
 
@@ -245,8 +256,10 @@ int main(int argc, char *argv[])
 	int argv_host = 0;
 	char temp_pass[128];
 	int argv_pass = 0 ;
-	esl_port_t temp_port = 0;
+	int temp_port = 0;
 	int argv_port = 0;
+	int temp_log = 0;
+	int argv_error = 0;
 
 	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));
 	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
@@ -276,15 +289,26 @@ int main(int argc, char *argv[])
 				argv_host = 1;
 				break;
 			case 'P':
-				temp_port= (esl_port_t)atoi(optarg);
-				argv_port = 1;
+				temp_port= atoi(optarg);
+				if (temp_port > 0 && temp_port < 65536){
+					argv_port = 1;
+				} else {
+					printf("ERROR: Port must be in range 1 - 65535\n");
+					argv_error = 1;
+				}
 				break;
 			case 'p':
 				esl_set_string(temp_pass, optarg);
 				argv_pass = 1;
 				break;
 			case 'd':
-				esl_global_set_default_logger(atoi(optarg));
+				temp_log=atoi(optarg);
+				if (temp_log < 0 || temp_log > 7){
+					printf("ERROR: Debug level should be 0 - 7.\n");
+					argv_error = 1;
+				} else {
+					esl_global_set_default_logger(temp_log);
+				}
 				break;
 			case 'x':
 				printf("Executing commands from the CLI is not complete.\n");
@@ -292,17 +316,17 @@ int main(int argc, char *argv[])
 
 			case 'h':
 			case '?':
-				printf("Usage: %s [-H <host>] [-P <port>] [-p <secret>] [-d <level>] [-x command] [profile]\n\n", argv[0]);
-				printf("  -?,-h --help                    Usage Information\n");
-				printf("  -H, --host=hostname             Host to connect\n");
-				printf("  -P, --port=port                 Port to connect\n");
-				printf("  -p, --password=FILENAME         Password\n");
-				printf("  -x, --execute=command           Execute Command and exit (Work In Progress)\n");
-				printf("  -d, --debug=level               Debug Level 0 - 7\n\n");
+				usage(argv[0]);
 				return 0;
 			default:
 				opt = 0;
 		}
+	}
+	
+	if(argv_error){
+		printf("\n");
+		usage(argv[0]);
+		return 0;
 	}
 
 	if (esl_config_open_file(&cfg, cfile)) {
@@ -339,7 +363,7 @@ int main(int argc, char *argv[])
 		esl_set_string(profiles[cur].host, temp_host);
 	}
 	if (argv_port) {
-		profiles[cur].port = temp_port;
+		profiles[cur].port = (esl_port_t)temp_port;
 	}
 	if (argv_pass) {
 		esl_set_string(profiles[cur].pass, temp_pass);
