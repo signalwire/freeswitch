@@ -1184,12 +1184,18 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 							  dname, profile->name);
 		}
 	}
-
+	
 	if (switch_true(parse)) {
-		switch_xml_t ut, gateways_tag;
-		for (ut = switch_xml_child(x_domain_tag, "user"); ut; ut = ut->next) {
-			if (((gateways_tag = switch_xml_child(ut, "gateways")))) {
-				parse_gateways(profile, gateways_tag);
+		switch_xml_t gts, gt, uts, ut, gateways_tag;
+		for (gts = switch_xml_child(x_domain_tag, "groups"); gts; gts = gts->next) {
+			for (gt = switch_xml_child(gts, "group"); gt; gt = gt->next) {
+				for (uts = switch_xml_child(gt, "users"); uts; uts = uts->next) {
+					for (ut = switch_xml_child(uts, "user"); ut; ut = ut->next) {
+						if (((gateways_tag = switch_xml_child(ut, "gateways")))) {
+							parse_gateways(profile, gateways_tag);
+						}
+					}
+				}
 			}
 		}
 	}
