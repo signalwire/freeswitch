@@ -80,6 +80,12 @@
   -->
   <X-PRE-PROCESS cmd="set" data="bind_server_ip=auto"/>
 
+  <!-- NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE
+       
+       If you're going to load test FreeSWITCH please input real IP addresses
+       for external_rtp_ip and external_sip_ip
+  -->
+
   <!-- external_rtp_ip
        Used as the public IP address for SDP.
        Can be an ip address or a string like "stun:stun.server.com" 
