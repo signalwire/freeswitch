@@ -881,7 +881,7 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 					if (domain) {
 						switch_event_t *my_params = NULL;
 						switch_xml_t x_domain, xml_root;
-						switch_xml_t ut;
+						switch_xml_t gt, gts, ut, uts;
 
 						switch_event_create(&my_params, SWITCH_EVENT_GENERAL);
 						switch_assert(my_params);
@@ -914,6 +914,32 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 								free(token);
 							}
 						}
+
+						for (gts = switch_xml_child(x_domain, "groups"); gts; gts = gts->next) {
+							for (gt = switch_xml_child(gts, "group"); gt; gt = gt->next) {
+								for (uts = switch_xml_child(gt, "users"); uts; uts = uts->next) {
+									for (ut = switch_xml_child(uts, "user"); ut; ut = ut->next) {
+										const char *user_cidr = switch_xml_attr(ut, "cidr");
+										const char *id = switch_xml_attr(ut, "id");
+										
+										if (id && user_cidr) {
+											char *token = switch_mprintf("%s@%s", id, domain);
+											switch_assert(token);
+											
+											if (switch_network_list_add_cidr_token(list, user_cidr, ok, token) == SWITCH_STATUS_SUCCESS) {
+												switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Adding %s (%s) [%s] to list %s\n", 
+																  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
+											} else {
+												switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Adding %s (%s) [%s] to list %s\n",
+																  user_cidr, ok ? "allow" : "deny", switch_str_nil(token), name);
+											}
+											free(token);
+										}
+									}
+								}
+							}
+						}
+
 						switch_xml_free(xml_root);
 					} else if (cidr) {
 						if (switch_network_list_add_cidr(list, cidr, ok) == SWITCH_STATUS_SUCCESS) {
