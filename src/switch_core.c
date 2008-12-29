@@ -168,7 +168,7 @@ SWITCH_DECLARE(FILE *) switch_core_data_channel(switch_text_channel_t channel)
 
 SWITCH_DECLARE(void) switch_core_remove_state_handler(const switch_state_handler_table_t *state_handler)
 {
-	int index, total = 0;
+	int index, tmp_index = 0;
 	const switch_state_handler_table_t *tmp[SWITCH_MAX_STATE_HANDLERS+1] = { 0 };
 	
 	switch_mutex_lock(runtime.global_mutex);
@@ -179,13 +179,12 @@ SWITCH_DECLARE(void) switch_core_remove_state_handler(const switch_state_handler
 		if (cur == state_handler) {
 			continue;
 		}
-		tmp[index] = runtime.state_handlers[index];
-		total++;
+		tmp[tmp_index++] = cur;
 	}
 
 	runtime.state_handler_index = 0;
 
-	for (index = 0; index < total; index++) {
+	for (index = 0; index < tmp_index; index++) {
 		runtime.state_handlers[runtime.state_handler_index++] = tmp[index];
 	}
 	switch_mutex_unlock(runtime.global_mutex);
