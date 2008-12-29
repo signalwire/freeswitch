@@ -332,7 +332,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_multicast_runtime)
 			}
 
 			if (var && strlen(var) > 1) {
-				switch_event_add_body(local_event, var);
+				switch_event_add_body(local_event, "%s", var);
 			}
 
 			switch_event_fire(&local_event);
