@@ -208,7 +208,7 @@ typedef enum {
 	TFLAG_NOHUP = (1 << 18),
 	TFLAG_NOSDP_REINVITE = (1 << 19),
 	TFLAG_NAT = (1 << 20),
-	TFLAG_BUGGY_2833 = (1 << 21),
+	TFLAG_USEME = (1 << 21),
 	TFLAG_SIP_HOLD = (1 << 22),
 	TFLAG_INB_NOMEDIA = (1 << 23),
 	TFLAG_LATE_NEGOTIATION = (1 << 24),
@@ -552,6 +552,7 @@ struct private_object {
 	uint32_t mismatch_count;
 	uint32_t last_codec_ms;
 	nua_event_t want_event;
+	switch_rtp_bug_flag_t rtp_bugs;
 };
 
 struct callback_t {

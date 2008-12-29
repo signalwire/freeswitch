@@ -199,6 +199,7 @@ struct switch_rtp {
 	switch_port_t stun_port;
 	int from_auto;
 	uint32_t cng_count;
+	switch_rtp_bug_flag_t rtp_bugs;
 };
 
 static int global_init = 0;
@@ -484,6 +485,11 @@ SWITCH_DECLARE(switch_port_t) switch_rtp_request_port(const char *ip)
 
 	switch_mutex_unlock(port_lock);
 	return port;
+}
+
+SWITCH_DECLARE(void) switch_rtp_intentional_bugs(switch_rtp_t *rtp_session, switch_rtp_bug_flag_t bugs)
+{
+	rtp_session->rtp_bugs = bugs;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_session, const char *host, switch_port_t port, const char **err)
@@ -1204,7 +1210,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 							  rtp_session->dtmf_data.timestamp_dtmf,
 							  rtp_session->dtmf_data.out_digit_sofar,
 							  rtp_session->dtmf_data.out_digit_sub_sofar, rtp_session->dtmf_data.out_digit_dur, rtp_session->seq);
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833)) {
+			if (rtp_session->rtp_bugs & RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833) {
 				rtp_session->dtmf_data.timestamp_dtmf = rtp_session->last_write_ts + samples;
 			}
 		}
@@ -1257,7 +1263,7 @@ static void do_2833(switch_rtp_t *rtp_session)
 			switch_rtp_write_manual(rtp_session,
 									rtp_session->dtmf_data.out_digit_packet,
 									4,
-									switch_test_flag(rtp_session, SWITCH_RTP_FLAG_BUGGY_2833) ? 0 : 1,
+									rtp_session->rtp_bugs & RTP_BUG_CISCO_SKIP_MARK_BIT_2833 ? 0 : 1,
 									rtp_session->te, rtp_session->dtmf_data.timestamp_dtmf, &flags);
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send start packet for [%c] ts=%u dur=%d/%d/%d seq=%d\n",

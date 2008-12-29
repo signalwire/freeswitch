@@ -460,6 +460,38 @@ typedef enum {
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
 
+typedef enum {
+	RTP_BUG_NONE = 0, /* won't be using this one much ;) */
+
+	RTP_BUG_CISCO_SKIP_MARK_BIT_2833 = (1 << 0),
+	/* Some Cisco devices get mad when you send the mark bit on new 2833 because it makes
+	   them flush their jitterbuffer and the dtmf along with it.
+
+	   This flag will disable the sending of the mark bit on the first DTMF packet.
+	*/
+
+
+	RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833 = (1 << 1)
+	/*
+	  Sonus wrongly expects that, when sending a multi-packet 2833 DTMF event, The sender
+	  should increment the RTP timestamp in each packet when, in reality, the sender should
+	  send the same exact timestamp and increment the duration field in the 2833 payload.
+	  This allows a reconstruction of the duration if any of the packets are lost.
+
+	  final_duration - initial_timestamp = total_samples
+
+	  However, if the duration value exceeds the space allocated (16 bits), The sender should increment
+	  the timestamp one unit and reset the duration to 0. 
+	  
+	  Always sending a duration of 0 with a new timestamp should be tolerated but is rarely intentional
+	  and is mistakenly done by many devices.  
+	  The issue is that the Sonus expects everyone to do it this way instead of tolerating eiher way.
+	  Sonus will actually ignore every packet with the same timestamp before concluding if it's DTMF.
+	  
+	  This flag will cause each packet to have a new timestamp.
+	*/
+
+} switch_rtp_bug_flag_t;
 
 #ifdef _MSC_VER
 #pragma pack(push, r1, 1)

@@ -1775,10 +1775,6 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags = (switch_rtp_flag_t) (SWITCH_RTP_FLAG_DATAWAIT);
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_BUGGY_2833)) {
-		flags |= SWITCH_RTP_FLAG_BUGGY_2833;
-	}
-
 	if ((val = switch_channel_get_variable(tech_pvt->channel, "dtmf_type"))) {
 		if (!strcasecmp(val, "rfc2833")) {
 			tech_pvt->dtmf_type = DTMF_2833;
@@ -1923,7 +1919,9 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
 		switch_set_flag(tech_pvt, TFLAG_RTP);
 		switch_set_flag(tech_pvt, TFLAG_IO);
-
+		
+		switch_rtp_intentional_bugs(tech_pvt->rtp_session, tech_pvt->rtp_bugs);
+		
 		if ((vad_in && inb) || (vad_out && !inb)) {
 			switch_rtp_enable_vad(tech_pvt->rtp_session, tech_pvt->session, &tech_pvt->read_codec, SWITCH_VAD_FLAG_TALKING);
 			switch_set_flag(tech_pvt, TFLAG_VAD);
@@ -2205,12 +2203,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 
 	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
 		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
-			switch_set_flag_locked(tech_pvt, TFLAG_BUGGY_2833);
+			tech_pvt->rtp_bugs |= RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Buggy RFC2833 Mode!\n");
 		}
 
 		if (strstr(tech_pvt->origin, "Sonus_UAC")) {
-			switch_set_flag_locked(tech_pvt, TFLAG_BUGGY_2833);
+			tech_pvt->rtp_bugs |= RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 							  "Hello,\nI see you have a Sonus!\n"
 							  "FYI, Sonus cannot follow the RFC on the proper way to send DTMF.\n"
