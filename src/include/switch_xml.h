@@ -350,6 +350,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   switch_xml_t *root, switch_xml_t *domain, switch_xml_t *user, switch_xml_t *ingroup, 
 													   switch_event_t *params);
 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *user_name, switch_xml_t domain, switch_xml_t *user, switch_xml_t *ingroup);
+
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
 ///\param node a pointer to point to the node if it is found

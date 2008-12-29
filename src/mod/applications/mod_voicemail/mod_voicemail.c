@@ -2261,7 +2261,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		}
 		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send mail is %d, var is %s\n", send_mail, var);*/
 	}
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send mail is %d and that's my final answer\n", send_mail);
+
+    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deliver VM to %s@%s\n", myid, domain_name);
+
 	if (!switch_strlen_zero(vm_storage_dir)) {
 		dir_path = switch_mprintf("%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
 	} else if (!switch_strlen_zero(profile->storage_dir)) {
@@ -2507,7 +2509,7 @@ static switch_status_t voicemail_inject(const char *data)
 	vm_profile_t *profile;
 	char *dup = NULL, *user = NULL, *domain = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	int istag = 0, isall = 0;
+	int isgroup = 0, isall = 0;
 	int argc = 0;
 	char *argv[4];
 	char *box, *path, *cid_num, *cid_name;
@@ -2540,9 +2542,9 @@ static switch_status_t voicemail_inject(const char *data)
 		domain = user;
 	}
 
-	if (switch_stristr("tag=", user)) {
-		user += 4;
-		istag++;
+	if (switch_stristr("group=", user)) {
+		user += 6;
+		isgroup++;
 	} else if (user == domain) {
 		isall++;
 	}
@@ -2567,6 +2569,17 @@ static switch_status_t voicemail_inject(const char *data)
 
 		switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(my_params);
+
+		if (isgroup) {
+			switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "group", user);
+		} else {
+			if (isall) {
+				switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "user", "_all_");
+			} else {
+				switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "user", user);
+			}
+		}
+
 		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "domain", domain);
 		switch_event_add_header_string(my_params, SWITCH_STACK_BOTTOM, "purpose", "publish-vm");
 		
@@ -2581,23 +2594,65 @@ static switch_status_t voicemail_inject(const char *data)
 
 		switch_core_new_memory_pool(&pool);
 		
-		if (!isall && !istag) {
-			if ((ut = switch_xml_find_child(x_domain, "user", "id", user))) {
+		
+		if (isgroup) {
+			switch_xml_t group = NULL, groups = NULL, users = NULL;
+			if ((groups = switch_xml_child(x_domain, "groups"))) {
+				if ((group = switch_xml_find_child_multi(groups, "group", "name", user, NULL))) {
+					if ((users = switch_xml_child(group, "users"))) {
+						for (ut = switch_xml_child(users, "user"); ut; ut = ut->next) {
+							const char *type = switch_xml_attr_soft(ut, "type");
+							
+							if (!strcasecmp(type, "pointer")) {
+								const char *uname = switch_xml_attr_soft(ut, "id");
+								switch_xml_t ux;
+
+								if (switch_xml_locate_user_in_domain(uname, x_domain, &ux, NULL) == SWITCH_STATUS_SUCCESS) {
+									switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+									status = deliver_vm(profile, ux, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
+									switch_event_destroy(&my_params);
+								}
+								continue;
+							}
+							
+							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
+							switch_event_destroy(&my_params);
+						}
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot locate group %s\n", user);
+				}
+			}
+		} else if (isall) {
+			switch_xml_t group = NULL, groups = NULL, users = NULL;
+			if ((groups = switch_xml_child(x_domain, "groups"))) {
+				for (group = switch_xml_child(groups, "group"); group; group = group->next) {
+					if ((users = switch_xml_child(group, "users"))) {
+						for (ut = switch_xml_child(users, "user"); ut; ut = ut->next) {
+							const char *type = switch_xml_attr_soft(ut, "type");
+							
+							if (!strcasecmp(type, "pointer")) {
+								continue;
+							}
+
+							switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
+							status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
+							switch_event_destroy(&my_params);
+						}
+					}
+				}
+			}
+			
+		} else {
+			switch_xml_t x_group = NULL;
+
+			if ((status = switch_xml_locate_user_in_domain(user, x_domain, &ut, &x_group)) == SWITCH_STATUS_SUCCESS) {
 				switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
 				status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
 				switch_event_destroy(&my_params);
 			} else {
 				status = SWITCH_STATUS_FALSE;
-			}
-		} else {
-			for (ut = switch_xml_child(x_domain, "user"); ut; ut = ut->next) {
-				const char *tag;
-
-				if (isall || (istag && (tag=switch_xml_attr(ut, "vm-tag")) && !strcasecmp(tag, user))) {
-					switch_event_create(&my_params, SWITCH_EVENT_REQUEST_PARAMS);
-					status = deliver_vm(profile, ut, domain, path, 0, "B", my_params, pool, cid_name, cid_num, SWITCH_TRUE);
-					switch_event_destroy(&my_params);
-				}
 			}
 		}
 		
@@ -3562,7 +3617,7 @@ static void do_web(vm_profile_t *profile, char *user, char *domain, char *host, 
 	}
 }
 
-#define VM_INJECT_USAGE "[tag=]<box> <sound_file> [<cid_num>] [<cid_name>]"
+#define VM_INJECT_USAGE "[group=]<box> <sound_file> [<cid_num>] [<cid_name>]"
 SWITCH_STANDARD_API(voicemail_inject_api_function)
 {
 	if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {

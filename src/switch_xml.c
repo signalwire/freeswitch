@@ -1634,7 +1634,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
 	return status;
 }
 
-
 static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const char *user_name, const char *key, switch_event_t *params, switch_xml_t *user)
 {
 	const char *type = "!pointer";
@@ -1670,6 +1669,26 @@ static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const 
 	
 }
 
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *user_name, switch_xml_t domain, switch_xml_t *user, switch_xml_t *ingroup)
+{
+	switch_xml_t group = NULL, groups = NULL, users = NULL;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
+	if ((groups = switch_xml_child(domain, "groups"))) {
+		for (group = switch_xml_child(groups, "group"); group; group = group->next) {
+			if ((users = switch_xml_child(group, "users"))) {
+				if ((status = find_user_in_tag(users, NULL, user_name, "id", NULL, user)) == SWITCH_STATUS_SUCCESS) {
+					if (ingroup) {
+						*ingroup = group;
+					}
+					break;
+				}
+			}
+		}
+	}
+
+	return status;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 													   const char *user_name,
