@@ -1,3 +1,296 @@
+freeswitch (1.0.2-1) unstable; urgency=low
+
+   * all: don't add module interfaces before returning from error conditions in module load functions (MDXMLINT-36)
+   * all: fixed multiple memory leaks
+   * all: improved module unloading/reloading support
+   * build: add support for --switchconfdir (FSBUILD-84)
+   * build: fixed netbsd build
+   * build: make freeswitch stop graceflly with /etc/init.d/freeswitch stop on debian add working dir to start-stop-dir so freeswitch dumps core in workdir
+   * build: multiple packaging fixes
+   * build: user freeswitch not added to audio group on deb install (FSBUILD-95)
+   * Configuration: many updates to default configuration
+   * core: Add ability to choose uuid from originate string, originate_uuid var (use at your own risk) 
+   * core: add bridge_generate_comfort_noise option for bridge to generate comfort noise to the A leg when there is no audio on the B leg
+   * core: add chan vars to param event during hangup hook
+   * core: add exec directive to xml preprocessor (not available on windows)
+   * core: add force_transfer_dialplan and force_transfer_context variables
+   * core: add hashing to event header lookup 
+   * core: add hits to tone_detect
+   * core: add last_dtmf_duration variable
+   * core: add msleep function to swigged languages
+   * core: add park_after_bridge variable
+   * core: add per leg timeouts and specific cause codes in reject_on_single_fail
+   * core: add runtime selection of the module dir (FSCORE-198)
+   * core: add scheduler support for heartbeat
+   * core: add session heartbeat feature
+   * core: add session.destroy psuedo method to sort of destroy a session at least for the sake of FS
+   * core: add session.unsetInputCallback
+   * core: add strftime format string validation for user supplied values
+   * core: add vars param to switch_ivr_originate for recursion (MODAPP-175)
+   * core: added a "group" concept to the user directory
+   * core: added ability to do dns lookup to find ip with host: like stun: (FSCORE-219)
+   * core: added better locking for codec changes during a call
+   * core: added current_application and current_application_data variables
+   * core: added error/ magic endpoint so modules can return error causes in situations like sofia_contact
+   * core: added read_result channel variable
+   * core: added support for "F" to indicate flash in dtmf (FSCORE-213)
+   * core: allow calls to be stolen from originate
+   * core: allow you to get the privacy bits in the caller_profile
+   * core: change dso code to load symbols local
+   * core: changes core flags to be array based so we have more
+   * core: eavesdrop causes the people being eavesdropped on to not hear ach other (MODAPP-140)
+   * core: expose time table to variable interface via caller field lookup 
+   * core: fix 100% cpu when sending parked call to moh (FSCORE-234)
+   * core: fix bridge app to make sure both channels are ready for media when one is only in ringing state
+   * core: fix buffer overflow (FSCORE-188)
+   * core: fix conference dial by allowing multiple braces in originate, fix bad pointer op (FSCORE-208)
+   * core: fix double detection of DTMF in IVR (FSCORE-221)
+   * core: fix hangup_after_bridge is false on a bridge started with the intercept app
+   * core: fix issue where pid file is accidentally truncated
+   * core: fix ivr timeout (FSCORE-181)
+   * core: fix memory leak in alias tab completion code
+   * core: fix min digits in read app
+   * core: fix out-of-bounds pointer in variable expansion (FSCORE-171)
+   * core: fix segfault in media bugs when in bypass media (FSCORE-193)
+   * core: fix segfault on gtalk to sip calls (FSCORE-212)
+   * core: fix segfault on reloadxml (FSCORE-176)
+   * core: fix segfault on trasfering eavesdopping party (FSCORE-210)
+   * core: fix segfault using switch_system function (FSCORE-196)
+   * core: fix session.bridge
+   * core: fix setting effective_caller_id_name / effective_caller_id_number on bridge dialstring (MODAPP-122)
+   * core: fix stream_raw_write (MODAPP-145)
+   * core: fix using resampling on ringback file
+   * core: fixed performance bottleneck in sqlite db's
+   * core: fixed race in reloadxml
+   * core: increment app before execute in case it returns to execute it will go to the next item in the list and not the same
+   * core: ivr menu max_failures and max_timeouts now default to 3 if not specified or invalid (less than 1) values are specified (FSCORE-244)
+   * core: ivr_menu max-timeouts option, result in ivr_menu_status var (FSCORE-183)
+   * core: let b legs use park_after_bridge too
+   * core: make events less verbose unless verbose_events is set
+   * core: parse private events during originate
+   * core: pass pdd data to a leg on oubound calls using bridge
+   * core: prevent crash in crazy situation with xml interface lookup failures (FSCORE-169)
+   * core: reduce cpu requirement for generated comfort noise
+   * core: remove interface names from core db on unload
+   * core: reworked timing resulting in significant performance increase and better rtp timing
+   * core: rewrite switch_play_and_get_digits (MODAPP-166)
+   * core: session.recordFile never terminates (MODLANG-79)
+   * core: session.transfer make dialplan and context optional
+   * core: set_user app now sets domain vars as well as user vars
+   * core: tone_detect not triggering app after tone detection (MODAPP-182)
+   * core: unprivileged user setting bigger stack for switch_system thread failure (FSCORE-197)
+   * core: user_exists returns false when fetching a user from XML Curl or other xml interfaces
+   * libesl: added c event socket library and fs_cli
+   * libsndfile: fix autoconf 2.62 support (LBSNDF-5)
+   * mod commands: add "all" modifier to "break" command
+   * mod_celt: added new module
+   * mod_commands: Add support for more than 2 variables to uuid_setvar_multi (MODAPP-171)
+   * mod_commands: Add support for passing the cause of hangup to the uuid_kill command (FSCORE-217)
+   * mod_commands: add attr lookup to user_data
+   * mod_commands: add domain_exists fsapi command
+   * mod_commands: add eval fsapi command
+   * mod_commands: add flush_dtmf app and uuid_flush_dtmf api command
+   * mod_commands: add fsctl send_sighup, fsctl shutdown asap, unsched_api commands
+   * mod_commands: add fsctl shutdown [elegant|restart|cancel]
+   * mod_commands: add new syntax to uuid_setvar to allow you to unset a var. <uuid> <var> [value]   (MODAPP-167)
+   * mod_commands: add reload fsapi command to reload a module
+   * mod_commands: add system fsapi and application (MODAPP-138)
+   * mod_commands: added hupall fsapi command
+   * mod_commands: added strftime_tz api command
+   * mod_commands: break all now stops broadcast too
+   * mod_commands: fix api command sent through sched_api was getting the last char lopped off
+   * mod_commands: fix race on transfer with -both
+   * mod_commands: fix system dialplan app problems (MODAPP-86)
+   * mod_commands: only send content-type on status when it really is http.
+   * mod_conference: add fsapi to stop async playback too
+   * mod_conference: add video caps to mod_conference with video follow audio
+   * mod_conference: better sound prefix handling when using say: and allow say: on kick sounds.
+   * mod_conference: fix race in record
+   * mod_conference: fix runaway thread when floor holder has no video and other people do have video
+   * mod_conference: fix seg when kicking many members quickly (MODAPP-129)
+   * mod_conference: fix segfault on invalid chat event
+   * mod_conference: perpetual sound does not auto-mute, you can do that yourself if you want it 
+   * mod_dialplan_xml: add Hunt- vars in dialplan lookup after transfer
+   * mod_dialplan_xml: fail call on extensions with nested conditions
+   * mod_dingaling: (LBDING-7) fix segfault on os x
+   * mod_dingaling: end call on ice timeout
+   * mod_dingaling: fix presence on jabber to be less protocol ambiguous
+   * mod_dingaling: fix segfault (LBDING-10)
+   * mod_dingaling: update to support latest client from google
+   * mod_dptools: add a mechanism to tell if a file played from sendmsg over event socket
+   * mod_dptools: add playback_terminator support to phrase and say app
+   * mod_dptools: add playback_terminator_used variable (MODAPP-132)
+   * mod_dptools: add presence application
+   * mod_dptools: fix originate api not parsing users properly (FSCORE-246)
+   * mod_dptools: fix record and record_session to create directory if it does not exist (FSCORE-250)
+   * mod_dptools: fixed limit and + parsing bug in record_session app (MODAPP-148)
+   * mod_dptools: remove_bugs added to remove all media bugs on a session
+   * mod_erlang_event: add new module
+   * mod_event_socket:  missing : after Content-Length in event socket (MODEVENT-33)
+   * mod_event_socket: add event socket listener filters
+   * mod_event_socket: add stateful listener fsapi commands for ajax-y type event interface over http
+   * mod_event_socket: fix arg parsing errors (MODEVENT-34)
+   * mod_event_socket: fix shutdown segfault race (MODEVENT-32)
+   * mod_event_socket: inbound connection to event_socket can now take over an existing channel with 'myevents <uuid>' to take on the behaviour of an outbound socket
+   * mod_event_socket: let any channel get messages
+   * mod_event_socket: make event socket wait for hangup on outbound mode and send disconnect message
+   * mod_expr: fix endless loop
+   * mod_fax: new module
+   * mod_fifo: add fifo_consumer_wrapup_time var (MODAPP-117)
+   * mod_fifo: added callback agents
+   * mod_fifo: honor keyword silence (MODAPP-118)
+   * mod_flite: added windows build
+   * mod_fsv: fix in a windows enviroment opening the record file in text mode. (MODAPP-169)
+   * mod_http: added new module
+   * mod_java: updated to new module api to support read/write locks on interface
+   * mod_limit: accept dialplan context for transfer (MODAPP-161)
+   * mod_limit: added hashtable based limit functions
+   * mod_limit: prevent empty error log message (MODAPP-134)
+   * mod_local_stream: add start_local_stream and stop_local_stream fsapi commands to start/stop dynamically (MODFORM-13)
+   * mod_local_stream: fix leak and improve error checking
+   * mod_local_stream: fix seg when no timer name specified in config file. (MODFORM-16)
+   * mod_loopback: add new module
+   * mod_lua: add local scripts directory support (MODLANG-86)
+   * mod_lua: don't eval blank string
+   * mod_lua: fix originate
+   * mod_lua: fix segfault (MODLANG-77)
+   * mod_lua: update to lua 5.1.4 (MODLANG-87)
+   * mod_lumenvox: removed
+   * mod_managed: new module replaces mod_mono now supports native .net runtime on windows as well
+   * mod_opal: added to trunk (still very beta)
+   * mod_perl: fix segfault (MODLANG-77)
+   * mod_pocketsphinx: fix rpm build
+   * mod_portaudio: fix cpu race on inbound call to pa when no ring file is set
+   * mod_radius_cdr: dictionary update for cause code changes (MODEVENT-27)
+   * mod_radius_cdr: fix unload (MODEVENT-29)
+   * mod_shout: add stereo recording broadcast support
+   * mod_shout: added windows build
+   * mod_shout: fix segfault when recording mp3's (MODFORM-12)
+   * mod_shout: improved stability of mp3 decoding
+   * mod_siren: added new module
+   * mod_sndfile added support to record 16bit for the various rates including 48kHz
+   * mod_sofia: Add filter to "sofia status profile XXX" (MODENDP-138)
+   * mod_sofia: Add force-register-db-domain which works in conjunction with force-register-domain. 
+   * mod_sofia: Add optional <variables> and <params> tag to <gateway> tag.
+   * mod_sofia: Challenge the right realm when to_host is outside the users domain. (MODENDP-136)
+   * mod_sofia: Improve notify messages through a proxy (MODENDP-147)
+   * mod_sofia: MWI for multiple domains (MODAPP-126)
+   * mod_sofia: Move "a=sendrecv" from session to media section of SDP (MODENDP-148)
+   * mod_sofia: add 200 OK re-invite without sdp
+   * mod_sofia: add custom sofia::gateway_state event (MODENDP-112)
+   * mod_sofia: add fire events for the refer SIP NOTIFY event package (MODENDP-152)
+   * mod_sofia: add more params for xml_curl directory lookup
+   * mod_sofia: add new auto vals for challenge-realm param <param name="challenge-realm" value="auto_from|auto_to|<hardcoded_val>"/>
+   * mod_sofia: add option to turn of auto_restart of sofia profiles on ip change
+   * mod_sofia: add params to use sip callid as uuid on inbound calls and uuid as sip callid on outbound calls
+   * mod_sofia: add parsing of Privacy header for privacy info (MODENDP-133)
+   * mod_sofia: add proto_specific_hangup_cause to both legs
+   * mod_sofia: add proxy 3pcc mode
+   * mod_sofia: add redirect variable to channel as well as partner channe (MODENDP-135)
+   * mod_sofia: add sip-forbid-register to user params to refuse to let a certian user register
+   * mod_sofia: add sip: into register-proxy when it's not specified
+   * mod_sofia: add sip_history_info var for inbound invites.
+   * mod_sofia: add sip_via_protocol variable
+   * mod_sofia: add sofia xmlstatus (MODENDP-156)
+   * mod_sofia: add support for params other than Replaces in Refer-To (MODENDP-143)
+   * mod_sofia: add support for profiles sharing databases so that you can have a domain that uses multiple profiles for split dns type setups
+   * mod_sofia: add support for refer transfer involving multiple machines 
+   * mod_sofia: add support to send a notify in the invite dialog by specifying the uuid of the call. (SFSIP-92)
+   * mod_sofia: add suppress_from_cidname var to not have display name in from header (MODENDP-153)
+   * mod_sofia: added sip_hangup_disposition variable
+   * mod_sofia: allow send_message and notify events to send a message/notify without a body if needed.
+   * mod_sofia: append -1 .. -N postfix after any X-headers as vars that have the same name
+   * mod_sofia: cache auth_gateway_name in sofia for challenged bye
+   * mod_sofia: cancel proxy or no-media mode if you purposely answer or pre_answer
+   * mod_sofia: correct result code mapping for Unallocated Number (MODENDP-124)
+   * mod_sofia: disable 100rel by default
+   * mod_sofia: don't accept crypto in the RTP/AVP (MODENDP-126)
+   * mod_sofia: don't put CN in sdp answer if it was not in the offer.
+   * mod_sofia: fix Incorrect IP address shows up in SDP "o" field when multiple external IPs available and FS not bound to first (MODENDP-132)
+   * mod_sofia: fix Wrong RTP media port destination after reinvite/UNHOLD (SFSIP-82)
+   * mod_sofia: fix bug on linksys where they lie about the ptime and handle linksys transfer problem
+   * mod_sofia: fix chat (send an IM) assumes that the user's profile is the same as their domain, which isn't necessarily so (SFSIP-83)
+   * mod_sofia: fix dtmf handling of broken info dtmf endpoints
+   * mod_sofia: fix eyebeam presence to be RFC compliant (MODENDP-144)
+   * mod_sofia: fix ip change detection when in proxy mode
+   * mod_sofia: fix register_proxy ignoring the paramaters (MODENDP-121)
+   * mod_sofia: fix remote session refresh triggers request glare (MODENDP-131)
+   * mod_sofia: fix rtp auto adjust running when it should not
+   * mod_sofia: fix rtp sent to wrong port after some re-INVITE scenarios (MODENDP-141)
+   * mod_sofia: fix sending of cn packets across bridge when we shouldn't
+   * mod_sofia: fix sqlite issue with select of the sip contact
+   * mod_sofia: fixed segfault on invalid presence payload
+   * mod_sofia: gateway ping needs to look for 501 (SFSIP-78)
+   * mod_sofia: handle multi contact register responses and register timeout better
+   * mod_sofia: improve gateway resilience
+   * mod_sofia: log ip and port you get reply to invite from
+   * mod_sofia: make multiple-registations=true use the contact method and call-id option to do it the old way
+   * mod_sofia: make proxy mode pull the port from m=image as well
+   * mod_sofia: make register-proxy preserve the url composed from proxy but target the packets to desired address (MODENDP-121)
+   * mod_sofia: many fixes for sonus rtp issues silence_when_idle=400 chanvar to send generated silence duing sleeps etc
+   * mod_sofia: many fixes in presence handling
+   * mod_sofia: passthrough t.38 fixes
+   * mod_sofia: pick ipv4 or ipv6 based on sipip instead of having mixed in sdp
+   * mod_sofia: send NOTIFY on TCP/UDP depending on the SUBSCRIBE (SFSIP-104)
+   * mod_sofia: setting profile option multiple-registrations=contact key multi reg off the contact string
+   * mod_sofia: wait for a reply on refer
+   * mod_soundtouch: fixes and improvements, many options changed (MODAPP-149)
+   * mod_soundtouch: updated to new module api
+   * mod_spidermonkey: Segmentation fault in check_hangup_hook at mod_spidermonkey.c:1589 (MODLANG-74)
+   * mod_spidermonkey: fix bug in apiExecute
+   * mod_spidermonkey: fix memory pool handling and leaks
+   * mod_spidermonkey: limit recursion busting through the stack (FSCORE-202)
+   * mod_spidermonkey: make session.getVariable return blank string not the word false 
+   * mod_spidermonkey_curl: add optional content-type arg
+   * mod_spidermonkey_odbc: fix numRows and add numCols
+   * mod_spidermonkey_odbc: fix segfault (MODLANG-75)
+   * mod_stress: new module for voice stress analysis
+   * mod_syslog: don't log blank lines (FSCORE-163)
+   * mod_tone_stream: let silence_stream://0 indicate perpetual silence
+   * mod_vmd: add new module to detect voicemail "beep"
+   * mod_voicemail: Add vm_alternate_greet_id param to directory entry (MODAPP-174)
+   * mod_voicemail: Patch to add voicemail preference controlling date announcement new param 'play-date-announcement' to values 'first' 'last' or 'never'  defaults to first to retain previous behavior (MODAPP-121)
+   * mod_voicemail: Update mwi light after delete vm via web. (MODAPP-124)
+   * mod_voicemail: add ability to get to options without listening to every saved message (MODAPP-115)
+   * mod_voicemail: add ability to skip greeting when leaving a voicemail. (MODAPP-181)
+   * mod_voicemail: add change-pass-key config file option
+   * mod_voicemail: add forwarding support
+   * mod_voicemail: add local dtmf driven alternat vm pass
+   * mod_voicemail: add proper notification of a vm message being too short
+   * mod_voicemail: add support for auth via a1-hash
+   * mod_voicemail: add the "storage-dir" parameter to be set on a per-user basis (MODAPP-133)
+   * mod_voicemail: add voicemail_greeting_path variable
+   * mod_voicemail: added voicemail_alternate_greet_id variable
+   * mod_voicemail: allow changing of password from voicemail to update user directory if using non-static config (MODAPP-156)
+   * mod_voicemail: created email date (int overflow)  (MODAPP-125)
+   * mod_voicemail: don't try to deliver vm when no file was recorded. (MODAPP-133)
+   * mod_voicemail: fix MWI with xml_curl used for directory (MODAPP-176)
+   * mod_voicemail: fix Voicemail messages occasionally lost / stranded (MODAPP-178)
+   * mod_voicemail: fix invalid event after message deleted (MODAPP-170)
+   * mod_voicemail: fix mwi for phones with multiple registrations problem (MODAPP-153)
+   * mod_voicemail: fix voicemail segfault on incorrect password (FSCORE-187)
+   * mod_voicemail: fix voicemail_inject error handling (MODAPP-133)
+   * mod_voicemail: fix voicemail_inject usage api call
+   * mod_voicemail: improve error checking (MODAPP-142)
+   * mod_voicemail: localize notification emails (MODAPP-139)
+   * mod_voicemail: make more multi-domain friendly (MODAPP-162)
+   * mod_voicemail: make playback created file macros optional (MODAPP-150)
+   * mod_voicemail: recognize operator key in more places (MODAPP-159)
+   * mod_voicemail: web interface displays incorrect created / last heard dates (MODAPP-123)
+   * mod_wanpipe: removed
+   * mod_xml_cdr: add https support
+   * mod_xml_cdr: add optional a-leg prefix to xml cdr filenames (MDXMLINT-39)
+   * mod_xml_cdr: add support for fallback webserver for cdr posting (FSCORE-238)
+   * mod_xml_curl: Allow specification of HTTP method, and dynamic expansion of variables in URI. (MDXMLINT-41)
+   * mod_xml_curl: added redirect following (max 10)
+   * mod_xml_ldap: almost a complete rewrite of this module
+   * mod_xml_rpc: allow setting of global realm without a global user (MDXMLINT-45)
+   * mod_xml_rpc: fix multiple segfaults
+   * mod_xml_rpc: fix segfault on originate via http
+   * sofia-sip: updated to 1.12.10 (plus a few patches)
+
+ -- Mike Jerris <mike@jerris.com>  Mon, 29 Dec 2008 14:46:00 -0500
+
 freeswitch (1.0.1-1) unstable; urgency=low
 
    * FIX: prevent intercept race condition that can also be solved with continue_on_fail=originator_cancel
@@ -295,7 +588,7 @@ freeswitch (1.0~rc2-1) unstable; urgency=low
      Fixed mod_iax race conditions
      Fixed ptime negotiation issues when re-packetizing
      Added ip based acl lists
-	
+   * 
  -- Michael Jerris <mike@jerris.com>  Wed, 9 Apr 2008 12:58:22 -0400
     
 freeswitch (1.0~rc1-1) unstable; urgency=low
