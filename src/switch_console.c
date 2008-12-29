@@ -249,10 +249,18 @@ static int switch_console_process(char *cmd, int rec)
 
 	SWITCH_STANDARD_STREAM(stream);
 	if (stream.data) {
+		FILE *handle = switch_core_get_console();
+
 		if (switch_api_execute(cmd, arg, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", (char *) stream.data);
+			if (handle) {
+				fprintf(handle, "API CALL [%s(%s)] output:\n%s\n", cmd, arg ? arg : "", (char *) stream.data);
+				fflush(handle);
+			}
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Unknown Command: %s\n", cmd);
+			if (handle) {
+				fprintf(handle, "Unknown Command: %s\n", cmd);
+				fflush(handle);
+			}
 		}
 		free(stream.data);
 	} else {
