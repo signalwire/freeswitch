@@ -734,7 +734,8 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									const char *val;
 									int rtp_timeout_sec = 0;
 									int rtp_hold_timeout_sec = 0;
-									
+								
+									tech_pvt->read_frame.datalen = 0;
 									tech_pvt->codec_ms = codec_ms;
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 													  "Changing codec ptime to %d. I bet you have a linksys/sipura =D\n", tech_pvt->codec_ms);
@@ -809,6 +810,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						frames = (tech_pvt->read_frame.datalen / bytes);
 					}
 					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_packet);
+
+					if (tech_pvt->read_frame.datalen == 0) {
+						continue;
+					}
 				}
 				break;
 			}
