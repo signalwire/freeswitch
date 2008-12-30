@@ -481,7 +481,7 @@ int main(int argc, char *argv[])
 
 	print_banner(stdout);
 
-	esl_log(ESL_LOG_INFO, "FS CLI Ready.\n");
+	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
 
 	while (running) {
 
