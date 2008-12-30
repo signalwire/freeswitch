@@ -127,11 +127,28 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 static int process_command(esl_handle_t *handle, const char *cmd) 
 {
+
+	if (!strcasecmp(cmd, "help")) {
+		printf(
+			   "Command                    \tDescription\n"
+			   "-----------------------------------------------\n"
+			   "/help                      \tHelp\n"
+			   "/exit, /quit, /bye, ...    \tExit the program.\n"
+			   "/event, /noevent, /nixevent\tEvent commands.\n"
+			   "/log, /nolog               \tLog commands.\n"
+			   "/filter                    \tFilter commands.\n"
+			   "\n"
+			   );
+
+		goto end;
+	}
+
 	if (
 		!strcasecmp(cmd, "exit") ||
 		!strcasecmp(cmd, "quit") ||
 		!strcasecmp(cmd, "bye")
 		) {
+		esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com\n");
 		return -1;
 	}
 
@@ -218,6 +235,29 @@ static const char *basic_gets(int *cnt)
 }
 #endif
 
+
+static void print_banner(FILE *stream)
+{
+	fprintf(stream,
+			
+
+			"           _____ ____     ____ _     ___            \n"
+			"          |  ___/ ___|   / ___| |   |_ _|           \n"
+			"          | |_  \\___ \\  | |   | |    | |            \n"
+			"          |  _|  ___) | | |___| |___ | |            \n"
+			"          |_|   |____/   \\____|_____|___|           \n"
+			"\n"
+			"****************************************************\n"
+			"* Anthony Minessale II, Ken Rice, Michael Jerris   *\n"
+			"* FreeSWITCH (http://www.freeswitch.org)           *\n"
+			"* Brought to you by ClueCon http://www.cluecon.com *\n"
+			"****************************************************\n"
+			"\n\n"
+			);
+}
+
+
+
 int main(int argc, char *argv[])
 {
 	esl_handle_t handle = {{0}};
@@ -274,7 +314,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, handle_SIGINT);
 
 	handle.debug = 0;
-	esl_global_set_default_logger(3); /* default debug level to 3 (error) */
+	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	
 	for(;;) {
 		int option_index = 0;
@@ -339,7 +379,7 @@ int main(int argc, char *argv[])
 				esl_set_string(profiles[cur].host, "localhost");
 				esl_set_string(profiles[cur].pass, "ClueCon");
 				profiles[cur].port = 8021;
-				esl_log(ESL_LOG_INFO, "Found Profile [%s]\n", profiles[cur].name);
+				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[cur].name);
 				pcount++;
 			}
 			
@@ -364,10 +404,10 @@ int main(int argc, char *argv[])
 	
 	if (optind < argc) {
 		if (get_profile(argv[optind], &profile)) {
-			esl_log(ESL_LOG_INFO, "Chosen profile %s does not exist using builtin default\n", argv[optind]);
+			esl_log(ESL_LOG_DEBUG, "Chosen profile %s does not exist using builtin default\n", argv[optind]);
 			profile = &profiles[0];
 		} else {
-			esl_log(ESL_LOG_INFO, "Chosen profile %s\n", profile->name);
+			esl_log(ESL_LOG_DEBUG, "Chosen profile %s\n", profile->name);
 			if (temp_log < 0 ) {
 				esl_global_set_default_logger(profile->debug);
 			}
@@ -384,7 +424,7 @@ int main(int argc, char *argv[])
 		esl_set_string(profile->pass, temp_pass);
 	}
 
-	esl_log(ESL_LOG_INFO, "Using profile %s [%s]\n", profile->name, profile->host);
+	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
 	
 	if (argv_host) {
 		if (argv_port && profile->port != 8021) {
@@ -439,6 +479,8 @@ int main(int argc, char *argv[])
 	snprintf(cmd_str, sizeof(cmd_str), "log info\n\n");
 	esl_send_recv(&handle, cmd_str);
 
+	print_banner(stdout);
+
 	esl_log(ESL_LOG_INFO, "FS CLI Ready.\n");
 
 	while (running) {
@@ -469,8 +511,10 @@ int main(int argc, char *argv[])
 #endif
 
 				if (!strncasecmp(cmd, "...", 3)) {
-					goto done;
-				} else if (*cmd == '/') {
+					if (process_command(&handle, "exit")) {
+                        running = 0;
+                    }
+				} else if (*cmd == '/' || !strncasecmp(cmd, "...", 3)) {
 					if (process_command(&handle, cmd + 1)) {
 						running = 0;
 					}
