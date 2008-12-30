@@ -645,6 +645,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	if (!need_codec) {
 		do_write = TRUE;
+		write_frame = frame;
 		goto done;
 	}
 
@@ -987,8 +988,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							switch_mutex_unlock(session->resample_mutex);
 
 						}
+
 						if (flag & SFF_CNG) {
 							switch_set_flag(write_frame, SFF_CNG);
+						}
+						
+						if (ptime_mismatch) {
+							write_frame->timestamp = 0;
 						}
 
 						if ((status = perform_write(session, write_frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
@@ -1003,8 +1009,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	
  done:
 
+	if (ptime_mismatch) {
+		write_frame->timestamp = 0;
+	}
+
 	if (do_write) {
-		status = perform_write(session, frame, flags, stream_id);
+		status = perform_write(session, write_frame, flags, stream_id);
 	}
 	
  error:
