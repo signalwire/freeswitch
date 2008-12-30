@@ -285,6 +285,8 @@ static switch_status_t db_state_handler(switch_core_session_t *session)
 		limit_execute_sql(sql, globals.mutex);
 		switch_safe_free(sql);
 		switch_core_event_hook_remove_state_change(session, db_state_handler);
+		/* Remove limit_realm variable so we register another hook if limit is called again */
+		switch_channel_set_variable(channel, "limit_realm", "");
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
