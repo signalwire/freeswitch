@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, handle_SIGINT);
 
 	handle.debug = 0;
-	esl_global_set_default_logger(0); /* default debug level to 0 */
+	esl_global_set_default_logger(2); /* default debug level to 2 */
 	
 	for(;;) {
 		int option_index = 0;
