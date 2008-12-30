@@ -399,6 +399,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					
 					STATE_MACRO(hangup, "HANGUP");
 					
+					switch_core_media_bug_remove_all(session);
+
 					hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE);
 					if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {
 						use_session = session;
