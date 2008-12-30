@@ -83,30 +83,26 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 				if (!esl_strlen_zero(type)) {
 					if (!strcasecmp(type, "log/data")) {
-						int level = 0, tchannel = 0;
+						int level = 0;
 						const char *lname = esl_event_get_header(handle->last_event, "log-level");
-						const char *channel = esl_event_get_header(handle->last_event, "text-channel");
-						//const char *file = esl_event_get_header(handle->last_event, "log-file");
-					
-						if (channel) {
-							tchannel = atoi(channel);
-						}
-						
+#ifdef WIN32
+						DWORD len = (DWORD) strlen(handle->last_event->body);
+						DWORD outbytes = 0;
+#endif			
 						if (lname) {
 							level = atoi(lname);
 						}
 						
-						if (tchannel == 0) {
+						
 #ifdef WIN32
-							DWORD len = (DWORD) strlen(handle->last_event->body);
-							DWORD outbytes = 0;
-							SetConsoleTextAttribute(hStdout, COLORS[level]);
-							WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
-							SetConsoleTextAttribute(hStdout, wOldColorAttrs);
+						
+						SetConsoleTextAttribute(hStdout, COLORS[level]);
+						WriteFile(hStdout, handle->last_event->body, len, &outbytes, NULL);
+						SetConsoleTextAttribute(hStdout, wOldColorAttrs);
 #else
-							printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
+						printf("%s%s%s", COLORS[level], handle->last_event->body, ESL_SEQ_DEFAULT_COLOR);
 #endif
-						}
+							
 						known++;
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
 						running = thread_running = 0;
