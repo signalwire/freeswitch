@@ -496,6 +496,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+	switch_clear_flag_locked(tech_pvt, TFLAG_CODEC);
 
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -1079,17 +1080,16 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 			case IAX_EVENT_VOICE:
 				if (tech_pvt && (tech_pvt->read_frame.datalen = iaxevent->datalen) != 0) {
 					if (channel && switch_channel_get_state(channel) <= CS_HANGUP) {
-						int bytes, frames;
+						int bytes = 0, frames = 1;
 
-						if (!switch_test_flag(tech_pvt, TFLAG_CODEC)) {
+						if (!switch_test_flag(tech_pvt, TFLAG_CODEC) || !tech_pvt->read_codec.implementation) {
+							switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 							break;
 						}
-
+						
 						if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
 							bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
 							frames = (int) (tech_pvt->read_frame.datalen / bytes);
-						} else {
-							frames = 1;
 						}
 
 						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_packet;
