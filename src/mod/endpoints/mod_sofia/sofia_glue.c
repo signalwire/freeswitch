@@ -35,6 +35,75 @@
 #include "mod_sofia.h"
 #include <switch_stun.h>
 
+void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options)
+{
+	char buf[2048];
+	const char *ip = t38_options->ip;
+	uint32_t port = t38_options->port;
+	const char *family = "IP4";
+
+	if (!ip) {
+		if (!(ip = tech_pvt->adv_sdp_audio_ip)) {
+			ip = tech_pvt->proxy_sdp_audio_ip;
+		}
+	}
+
+	if (!port) {
+		if (!(port = tech_pvt->adv_sdp_audio_port)) {
+			port = tech_pvt->proxy_sdp_audio_port;
+		}
+	}
+
+	if (!tech_pvt->owner_id) {
+		tech_pvt->owner_id = (uint32_t) switch_timestamp(NULL) - port;
+	}
+
+	if (!tech_pvt->session_id) {
+		tech_pvt->session_id = tech_pvt->owner_id;
+	}
+
+	tech_pvt->session_id++;
+
+	family = strchr(ip, ':') ? "IP6" : "IP4";
+	switch_snprintf(buf, sizeof(buf),
+					"v=0\n"
+					"o=FreeSWITCH %010u %010u IN %s %s\n"
+					"s=FreeSWITCH\n"
+					"c=IN %s %s\n" 
+					"t=0 0\n"
+					"m=image %d udptl t38\n", 
+					"a=T38MaxBitRate:%d\n"
+					"%s"
+					"%s"
+					"%s"
+					"a=T38FaxRateManagement:%s\n"
+					"a=T38FaxMaxBuffer:%d\n"
+					"a=T38FaxMaxDatagram:%d\n"
+					"a=T38FaxUdpEC:%s\n"
+					"a=T38VendorInfo:%s\n",
+					
+					tech_pvt->owner_id, 
+					tech_pvt->session_id,
+					family,
+					ip,
+					family,
+					ip,
+					port,
+					
+					t38_options->T38MaxBitRate,
+					t38_options->T38FaxFillBitRemoval ? "a=T38FaxFillBitRemoval\n" : "",
+					t38_options->T38FaxTranscodingMMR ? "a=T38FaxTranscodingMMR\n" : "",
+					t38_options->T38FaxTranscodingJBIG ? "a=T38FaxTranscodingJBIG\n" : "",
+					t38_options->T38FaxRateManagement,
+					t38_options->T38FaxMaxBuffer,
+					t38_options->T38FaxMaxDatagram,
+					t38_options->T38FaxUdpEC,
+					t38_options->T38VendorInfo
+					);
+	
+	
+	tech_pvt->local_sdp_str = switch_core_session_strdup(tech_pvt->session, buf);
+}
 
 void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32_t port, const char *sr, int force)
 {
@@ -2189,7 +2258,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	const char *val;
 	const char *crypto = NULL;
-	int got_crypto = 0, got_audio = 0, got_avp = 0, got_savp = 0;
+	int got_crypto = 0, got_audio = 0, got_avp = 0, got_savp = 0, got_udptl = 0;
 
 	switch_assert(tech_pvt != NULL);
 
@@ -2250,9 +2319,42 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			got_savp++;
 		} else if (m->m_proto == sdp_proto_rtp) {
 			got_avp++;
+		} else if (m->m_proto == sdp_proto_udptl) {
+			got_udptl++;
 		}
 
-		if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
+		if (got_udptl && m->m_type == sdp_media_image && m->m_port) {
+			switch_t38_options_t *t38_options = switch_core_session_alloc(tech_pvt->session, sizeof(switch_t38_options_t));
+			
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (!strcasecmp(attr->a_name, "T38MaxBitRate") && attr->a_value) { 
+					t38_options->T38MaxBitRate = (uint32_t) atoi(attr->a_value);
+				} else  if (!strcasecmp(attr->a_name, "T38FaxFillBitRemoval")) {
+					t38_options->T38FaxFillBitRemoval = SWITCH_TRUE;
+				} else  if (!strcasecmp(attr->a_name, "T38FaxTranscodingMMR")) {
+					t38_options->T38FaxTranscodingMMR = SWITCH_TRUE;
+				} else  if (!strcasecmp(attr->a_name, "T38FaxTranscodingJBIG")) {
+					t38_options->T38FaxTranscodingJBIG = SWITCH_TRUE;
+				} else  if (!strcasecmp(attr->a_name, "T38FaxRateManagement") && attr->a_value) {
+					t38_options->T38FaxRateManagement = switch_core_session_strdup(tech_pvt->session, attr->a_value);
+				} else  if (!strcasecmp(attr->a_name, "T38FaxMaxBuffer") && attr->a_value) {
+					t38_options->T38FaxMaxBuffer = (uint32_t) atoi(attr->a_value);
+				} else  if (!strcasecmp(attr->a_name, "T38FaxMaxDatagram") && attr->a_value) {
+					t38_options->T38FaxMaxDatagram = (uint32_t) atoi(attr->a_value);
+				} else  if (!strcasecmp(attr->a_name, "T38FaxUdpEC") && attr->a_value) {
+					t38_options->T38FaxUdpEC = switch_core_session_strdup(tech_pvt->session, attr->a_value);
+				} else  if (!strcasecmp(attr->a_name, "T38VendorInfo") && attr->a_value) {
+					t38_options->T38VendorInfo = switch_core_session_strdup(tech_pvt->session, attr->a_value);
+				}
+			}
+
+			switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
+			switch_channel_set_private(tech_pvt->channel, "t38_options", t38_options);
+
+			switch_channel_set_flag(tech_pvt->channel, CF_PROXY_MEDIA);
+			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+
+		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
 
 			for (attr = m->m_attributes; attr; attr = attr->a_next) {

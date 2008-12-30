@@ -1054,8 +1054,25 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 
 	case SWITCH_MESSAGE_INDICATE_MEDIA_REDIRECT:
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending media re-direct:\n%s\n", msg->string_arg);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Sending media re-direct:\n%s\n", 
+							  switch_channel_get_name(channel), msg->string_arg);
 			tech_pvt->local_sdp_str = switch_core_session_strdup(session, msg->string_arg);
+			switch_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
+			sofia_glue_do_invite(session);
+		}
+		break;
+
+
+	case SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA:
+		{
+			switch_t38_options_t *t38_options = (switch_t38_options_t *) msg->pointer_arg;
+
+			sofia_glue_set_image_sdp(tech_pvt, t38_options);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Sending request for image media. %s\n", 
+							  switch_channel_get_name(channel), tech_pvt->local_sdp_str);
+							  
+			
 			switch_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 			sofia_glue_do_invite(session);
 		}

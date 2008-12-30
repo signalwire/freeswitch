@@ -606,9 +606,23 @@ typedef enum {
 	SWITCH_MESSAGE_INDICATE_DISPLAY,
 	SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY,
 	SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
+	SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA,
 	SWITCH_MESSAGE_INVALID
 } switch_core_session_message_types_t;
 
+typedef struct {
+	uint32_t T38MaxBitRate;
+	switch_bool_t T38FaxFillBitRemoval;
+	switch_bool_t T38FaxTranscodingMMR;
+	switch_bool_t T38FaxTranscodingJBIG;
+	const char *T38FaxRateManagement;
+	uint32_t T38FaxMaxBuffer;
+	uint32_t T38FaxMaxDatagram;
+	const char *T38FaxUdpEC;
+	const char *T38VendorInfo;
+	const char *ip;
+	uint32_t port;
+} switch_t38_options_t;
 
 /*!
   \enum switch_stack_t
