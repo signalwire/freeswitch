@@ -19,6 +19,28 @@
 
 static char prompt_str[512] = "";
 
+typedef struct {
+	char name[128];
+	char host[128];
+	esl_port_t port;
+	char pass[128];
+	int debug;
+	char *console_fnkeys[12];
+} cli_profile_t;
+
+static cli_profile_t profiles[128] = {{{0}}};
+static cli_profile_t internal_profile = {{ 0 }};
+static int pcount = 0;
+
+static esl_handle_t *global_handle;
+static cli_profile_t *global_profile;
+
+static int process_command(esl_handle_t *handle, const char *cmd);
+
+static int running = 1;
+static int thread_running = 0;
+
+
 #ifdef HAVE_EDITLINE
 static char *prompt(EditLine * e)
 {
@@ -28,10 +50,85 @@ static char *prompt(EditLine * e)
 static EditLine *el;
 static History *myhistory;
 static HistEvent ev;
-#endif
 
-static int running = 1;
-static int thread_running = 0;
+
+
+/*
+ * If a fnkey is configured then process the command
+ */
+static unsigned char console_fnkey_pressed(int i)
+{
+	char *c;
+
+	assert((i > 0) && (i <= 12));
+
+	c = global_profile->console_fnkeys[i - 1];
+
+	/* This new line is necessary to avoid output to begin after the ">" of the CLI's prompt */
+	printf("\n");
+	
+	if (c == NULL) {
+		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
+		return CC_REDISPLAY;
+	}
+
+	if (process_command(global_handle, c)) {
+		running = thread_running = 0;
+	}
+
+	return CC_REDISPLAY;
+}
+
+static unsigned char console_f1key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(1);
+}
+static unsigned char console_f2key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(2);
+}
+static unsigned char console_f3key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(3);
+}
+static unsigned char console_f4key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(4);
+}
+static unsigned char console_f5key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(5);
+}
+static unsigned char console_f6key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(6);
+}
+static unsigned char console_f7key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(7);
+}
+static unsigned char console_f8key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(8);
+}
+static unsigned char console_f9key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(9);
+}
+static unsigned char console_f10key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(10);
+}
+static unsigned char console_f11key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(11);
+}
+static unsigned char console_f12key(EditLine * el, int ch)
+{
+	return console_fnkey_pressed(12);
+}
+
+#endif
 
 static void handle_SIGINT(int sig)
 {
@@ -150,50 +247,50 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 		goto end;
 	}
 
-	if (
-		!strcasecmp(cmd, "exit") ||
-		!strcasecmp(cmd, "quit") ||
-		!strcasecmp(cmd, "bye")
-		) {
-		esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com\n");
-		return -1;
-	}
+	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
+		
+		if (
+			!strcasecmp(cmd, "exit") ||
+			!strcasecmp(cmd, "quit") ||
+			!strcasecmp(cmd, "...") ||
+			!strcasecmp(cmd, "bye")
+			) {
+			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com\n");
+			return -1;
+		}
 
-	if (
-		!strncasecmp(cmd, "event", 5) || 
-		!strncasecmp(cmd, "noevent", 7) ||
-		!strncasecmp(cmd, "nixevent", 8) ||
-		!strncasecmp(cmd, "log", 3) || 
-		!strncasecmp(cmd, "nolog", 5) || 
-		!strncasecmp(cmd, "filter", 6)
-		) {
+		if (
+			!strncasecmp(cmd, "event", 5) || 
+			!strncasecmp(cmd, "noevent", 7) ||
+			!strncasecmp(cmd, "nixevent", 8) ||
+			!strncasecmp(cmd, "log", 3) || 
+			!strncasecmp(cmd, "nolog", 5) || 
+			!strncasecmp(cmd, "filter", 6)
+			) {
 
-		esl_send_recv(handle, cmd);	
+			esl_send_recv(handle, cmd);	
 
-		printf("%s\n", handle->last_sr_reply);
+			printf("%s\n", handle->last_sr_reply);
 
-		goto end;
+			goto end;
+		}
+	
+		printf("Unknown command [%s]\n", cmd);
+	} else {
+		char cmd_str[1024] = "";
+
+		snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", cmd);
+		esl_send_recv(handle, cmd_str);
+		if (handle->last_sr_event && handle->last_sr_event->body) {
+			printf("%s\n", handle->last_sr_event->body);
+		}
 	}
 	
-	printf("Unknown command [%s]\n", cmd);
-
  end:
 
 	return 0;
 
 }
-
-typedef struct {
-	char name[128];
-	char host[128];
-	esl_port_t port;
-	char pass[128];
-	int debug;
-} cli_profile_t;
-
-static cli_profile_t profiles[128] = {{{0}}};
-static int pcount;
-
 
 static int get_profile(const char *name, cli_profile_t **profile)
 {
@@ -272,17 +369,19 @@ int main(int argc, char *argv[])
 	const char *line = NULL;
 	char cmd_str[1024] = "";
 	esl_config_t cfg;
-	cli_profile_t *profile = &profiles[0];
-	int cur = 0;
+	cli_profile_t *profile = NULL;
+	int rv = 0;
+
 #ifndef WIN32
-	char hfile[512] = "/tmp/fs_cli_history";
-	char cfile[512] = "/tmp/fs_cli_config";
-	char *home = getenv("HOME");
+	char hfile[512] = "/etc/fs_cli_history";
+	char cfile[512] = "/etc/fs_cli.conf";
+	char dft_cfile[512] = "/etc/fs_cli.conf";
 #else
 	char hfile[512] = "fs_cli_history";
-	char cfile[512] = "fs_cli_config";
-	char *home = getenv("HOME");
+	char cfile[512] = "fs_cli.conf";
+	char dft_cfile[512] = "fs_cli.conf";
 #endif
+	char *home = getenv("HOME");
 	/* Vars for optargs */
 	int opt;
 	static struct option options[] = {
@@ -307,15 +406,13 @@ int main(int argc, char *argv[])
 	char argv_command[256] = "";
 	
 
-	strncpy(profiles[0].host, "127.0.0.1", sizeof(profiles[0].host));
-	strncpy(profiles[0].pass, "ClueCon", sizeof(profiles[0].pass));
-	strncpy(profiles[0].name, "default", sizeof(profiles[0].name));
-	profiles[0].port = 8021;
-	pcount++;	
+	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
+	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
+	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
+	internal_profile.port = 8021;
 	
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
-		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_config", home);
 	}
 	
 	signal(SIGINT, handle_SIGINT);
@@ -373,53 +470,69 @@ int main(int argc, char *argv[])
 		return usage(argv[0]);
 	}
 
-	if (esl_config_open_file(&cfg, cfile)) {
+	if (!(rv = esl_config_open_file(&cfg, cfile))) {
+		rv = esl_config_open_file(&cfg, dft_cfile);
+	}
+
+	if (rv) {
 		char *var, *val;
 		char cur_cat[128] = "";
 
 		while (esl_config_next_pair(&cfg, &var, &val)) {
 			if (strcmp(cur_cat, cfg.category)) {
-				cur++;
 				esl_set_string(cur_cat, cfg.category);
-				esl_set_string(profiles[cur].name, cur_cat);
-				esl_set_string(profiles[cur].host, "localhost");
-				esl_set_string(profiles[cur].pass, "ClueCon");
-				profiles[cur].port = 8021;
-				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[cur].name);
+				esl_set_string(profiles[pcount].name, cur_cat);
+				esl_set_string(profiles[pcount].host, "localhost");
+				esl_set_string(profiles[pcount].pass, "ClueCon");
+				profiles[pcount].port = 8021;
+				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
 				pcount++;
 			}
 			
 			if (!strcasecmp(var, "host")) {
-				esl_set_string(profiles[cur].host, val);
+				esl_set_string(profiles[pcount-1].host, val);
 			} else if (!strcasecmp(var, "password")) {
-				esl_set_string(profiles[cur].pass, val);
+				esl_set_string(profiles[pcount-1].pass, val);
 			} else if (!strcasecmp(var, "port")) {
 				int pt = atoi(val);
 				if (pt > 0) {
-					profiles[cur].port = (esl_port_t)pt;
+					profiles[pcount-1].port = (esl_port_t)pt;
 				}
 			} else if (!strcasecmp(var, "debug")) {
 				int dt = atoi(val);
 				if (dt > -1 && dt < 8){
-					 profiles[cur].debug = dt;
+					 profiles[pcount-1].debug = dt;
 				}	
+			} else if (!strncasecmp(var, "key_F", 5)) {
+				char *key = var + 5;
+
+				if (key) {
+					int i = atoi(key);
+				
+					if (i > 0 && i < 13) {
+						profiles[pcount-1].console_fnkeys[i - 1] = strdup(val);
+					}
+				}
 			} 
 		}
 		esl_config_close_file(&cfg);
 	}
 	
 	if (optind < argc) {
-		if (get_profile(argv[optind], &profile)) {
-			esl_log(ESL_LOG_DEBUG, "Chosen profile %s does not exist using builtin default\n", argv[optind]);
-			profile = &profiles[0];
-		} else {
-			esl_log(ESL_LOG_DEBUG, "Chosen profile %s\n", profile->name);
-			if (temp_log < 0 ) {
-				esl_global_set_default_logger(profile->debug);
-			}
-		}
+		get_profile(argv[optind], &profile);
 	}
 	
+	if (!profile) {
+		if (get_profile("default", &profile)) {
+			esl_log(ESL_LOG_DEBUG, "profile default does not exist using builtin profile\n");
+			profile = &internal_profile;
+		}
+	}
+
+	if (temp_log < 0 ) {
+		esl_global_set_default_logger(profile->debug);
+	}	
+
 	if (argv_host) {
 		esl_set_string(profile->host, temp_host);
 	}
@@ -458,6 +571,9 @@ int main(int argc, char *argv[])
 		return 0;
 	} 
 
+	global_handle = &handle;
+	global_profile = profile;
+
 	esl_thread_create_detached(msg_thread_run, &handle);
 
 #ifdef HAVE_EDITLINE
@@ -465,6 +581,39 @@ int main(int argc, char *argv[])
 	el_set(el, EL_PROMPT, &prompt);
 	el_set(el, EL_EDITOR, "emacs");
 	myhistory = history_init();
+
+	el_set(el, EL_ADDFN, "f1-key", "F1 KEY PRESS", console_f1key);
+	el_set(el, EL_ADDFN, "f2-key", "F2 KEY PRESS", console_f2key);
+	el_set(el, EL_ADDFN, "f3-key", "F3 KEY PRESS", console_f3key);
+	el_set(el, EL_ADDFN, "f4-key", "F4 KEY PRESS", console_f4key);
+	el_set(el, EL_ADDFN, "f5-key", "F5 KEY PRESS", console_f5key);
+	el_set(el, EL_ADDFN, "f6-key", "F6 KEY PRESS", console_f6key);
+	el_set(el, EL_ADDFN, "f7-key", "F7 KEY PRESS", console_f7key);
+	el_set(el, EL_ADDFN, "f8-key", "F8 KEY PRESS", console_f8key);
+	el_set(el, EL_ADDFN, "f9-key", "F9 KEY PRESS", console_f9key);
+	el_set(el, EL_ADDFN, "f10-key", "F10 KEY PRESS", console_f10key);
+	el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key);
+	el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key);
+
+	el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
+	el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
+	el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
+	el_set(el, EL_BIND, "\033OS", "f4-key", NULL);
+
+
+	el_set(el, EL_BIND, "\033[11~", "f1-key", NULL);
+	el_set(el, EL_BIND, "\033[12~", "f2-key", NULL);
+	el_set(el, EL_BIND, "\033[13~", "f3-key", NULL);
+	el_set(el, EL_BIND, "\033[14~", "f4-key", NULL);
+	el_set(el, EL_BIND, "\033[15~", "f5-key", NULL);
+	el_set(el, EL_BIND, "\033[17~", "f6-key", NULL);
+	el_set(el, EL_BIND, "\033[18~", "f7-key", NULL);
+	el_set(el, EL_BIND, "\033[19~", "f8-key", NULL);
+	el_set(el, EL_BIND, "\033[20~", "f9-key", NULL);
+	el_set(el, EL_BIND, "\033[21~", "f10-key", NULL);
+	el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
+	el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
+
 
 	if (myhistory == 0) {
 		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");
@@ -474,6 +623,8 @@ int main(int argc, char *argv[])
 	history(myhistory, &ev, H_SETSIZE, 800);
 	el_set(el, EL_HIST, history, myhistory);
 	history(myhistory, &ev, H_LOAD, hfile);
+
+
 #endif
 #ifdef WIN32
 	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -516,20 +667,8 @@ int main(int argc, char *argv[])
 				history(myhistory, &ev, H_ENTER, line);
 #endif
 
-				if (!strncasecmp(cmd, "...", 3)) {
-					if (process_command(&handle, "exit")) {
-                        running = 0;
-                    }
-				} else if (*cmd == '/' || !strncasecmp(cmd, "...", 3)) {
-					if (process_command(&handle, cmd + 1)) {
-						running = 0;
-					}
-				} else {
-					snprintf(cmd_str, sizeof(cmd_str), "api %s\n\n", cmd);
-					esl_send_recv(&handle, cmd_str);
-					if (handle.last_sr_event && handle.last_sr_event->body) {
-						printf("%s\n", handle.last_sr_event->body);
-					}
+				if (process_command(&handle, cmd)) {
+					running = 0;
 				}
 
 #ifdef HAVE_EDITLINE
