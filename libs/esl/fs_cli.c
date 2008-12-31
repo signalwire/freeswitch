@@ -1,3 +1,7 @@
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 500
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <esl.h>
@@ -11,8 +15,11 @@
 #include <io.h>
 #else
 #include <sys/select.h>
+#include <unistd.h>
 #include <histedit.h>
+#ifndef HAVE_EDITLINE
 #define HAVE_EDITLINE
+#endif
 #endif
 
 #include <getopt.h>

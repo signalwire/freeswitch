@@ -1,5 +1,6 @@
 opt/freeswitch/htdocs/*
 opt/freeswitch/bin/freeswitch
+opt/freeswitch/bin/fs_cli
 opt/freeswitch/bin/scripts/*
 opt/freeswitch/lib/libfreeswitch*.so*
 opt/freeswitch/lib/libopenzap*.so*

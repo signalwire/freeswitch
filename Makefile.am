@@ -158,13 +158,18 @@ MOD_LINK       = $(BASE)/libfreeswitch.la
 CLEANFILES     = src/include/switch_version.h src/include/switch_swigable_cpp.h
 BUILT_SOURCES  = src/include/switch_version.h src/include/switch_swigable_cpp.h
 
-bin_PROGRAMS = freeswitch
+bin_PROGRAMS = freeswitch fs_cli
+fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c
 freeswitch_SOURCES = src/switch.c
-nodist_freeswitch_SOURCES = src/include/switch_version.h 
+nodist_freeswitch_SOURCES = src/include/switch_version.h
+fs_cli_CFLAGS = $(AM_CFLAGS) -Ilibs/esl/src/include 
+fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread
 freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
 if ADD_LIBEDIT
+fs_cli_CFLAGS += -DHAVE_EDITLINE -Ilibs/libedit/src
+fs_cli_LDADD = libs/libedit/src/.libs/libedit.a
 freeswitch_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD      += libs/libedit/src/.libs/libedit.a
 endif
