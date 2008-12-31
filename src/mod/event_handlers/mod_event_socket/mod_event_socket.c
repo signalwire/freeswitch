@@ -473,6 +473,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 	}
 	switch_mutex_unlock(globals.listener_mutex);
 
+	switch_yield(1000000);
 
 
 	return SWITCH_STATUS_SUCCESS;
@@ -820,6 +821,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 	switch_api_interface_t *api_interface;
 
 	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
+
+	memset(&listen_list, 0, sizeof(listen_list));
+	switch_mutex_init(&listen_list.sock_mutex, SWITCH_MUTEX_NESTED, pool);
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -1482,7 +1486,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			ltype = switch_log_str2level(level_s);
 		}
 
-		if (ltype && ltype != SWITCH_LOG_INVALID) {
+		if (ltype != SWITCH_LOG_INVALID) {
 			listener->level = ltype;
 			switch_set_flag(listener, LFLAG_LOG);
 			switch_snprintf(reply, reply_len, "+OK log level %s [%d]", level_s, listener->level);
@@ -1927,17 +1931,12 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	listener_t *listener;
 	uint32_t x = 0;
 
-	memset(&listen_list, 0, sizeof(listen_list));
-	config();
-
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 		return SWITCH_STATUS_TERM;
 	}
 
-
-	switch_mutex_init(&listen_list.sock_mutex, SWITCH_MUTEX_NESTED, pool);
-
+	config();
 
 	for (;;) {
 		rv = switch_sockaddr_info_get(&sa, prefs.ip, SWITCH_INET, prefs.port, 0, pool);

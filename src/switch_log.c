@@ -122,6 +122,7 @@ SWITCH_DECLARE(switch_log_level_t) switch_log_str2level(const char *str)
 		if (!LEVELS[x]) {
 			break;
 		}
+
 		if (!strcasecmp(LEVELS[x], str)) {
 			level = (switch_log_level_t) x;
 			break;
