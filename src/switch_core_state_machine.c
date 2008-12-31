@@ -206,6 +206,7 @@ static void switch_core_standard_on_hibernate(switch_core_session_t *session)
 
 //static switch_hash_t *stack_table = NULL;
 static Hash stack_table;
+static switch_mutex_t *stack_mutex = NULL;
 
 #if defined (__GNUC__) && defined (LINUX) && defined (HAVE_EXECINFO_H)
 #include <execinfo.h>
@@ -244,9 +245,14 @@ static void handle_fatality(int sig)
 	switch_thread_id_t thread_id;
 	jmp_buf *env;
 
-	if (sig && (thread_id = switch_thread_self())
-		&& (env = (jmp_buf *) sqlite3HashFind(&stack_table, &thread_id, sizeof(thread_id)))) {
-		//&& (env = (jmp_buf *) switch_core_hash_find(stack_table, (char *)&thread_id, sizeof(thread_id)))) {
+	if (!sig) return;
+
+	thread_id = switch_thread_self();
+	switch_mutex_lock(stack_mutex);
+	env = (jmp_buf *) sqlite3HashFind(&stack_table, &thread_id, sizeof(thread_id));
+	switch_mutex_unlock(stack_mutex);
+
+	if (thread_id && env) {
 		print_trace();
 		longjmp(*env, sig);
 	} else {
@@ -259,7 +265,10 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 {
 
 	if (switch_test_flag((&runtime), SCF_CRASH_PROT)) {
+		switch_mutex_init(&stack_mutex, SWITCH_MUTEX_NESTED, pool);
+		switch_mutex_lock(stack_mutex);
 		sqlite3HashInit(&stack_table, SQLITE_HASH_BINARY, 0);
+		switch_mutex_unlock(stack_mutex);
 	}
 }
 
@@ -328,8 +337,9 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Thread has crashed for channel %s\n", switch_channel_get_name(session->channel));
 			switch_channel_hangup(session->channel, SWITCH_CAUSE_CRASH);
 		} else {
+			switch_mutex_lock(stack_mutex);
 			sqlite3HashInsert(&stack_table, &thread_id, sizeof(thread_id), (void *) &env);
-			//apr_hash_set(stack_table, &thread_id, sizeof(thread_id), &env);
+			switch_mutex_unlock(stack_mutex);
 		}
 	}
 
