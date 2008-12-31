@@ -322,20 +322,39 @@
     -->
     <extension name="mad_boss_intercom">
       <condition field="destination_number" expression="^0911$">
-	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
+	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss1"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
 	<action application="set" data="conference_auto_outcall_flags=mute"/>
 	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 intercept::${uuid}'}"/>
 	<action application="set" data="sip_exclude_contact=${network_addr}"/>
 	<action application="conference_set_auto_outcall" data="${group_call(sales)}"/>
-	<action application="conference" data="madboss_intercom@default+flags{endconf|deaf}"/>
+	<action application="conference" data="madboss_intercom1@default+flags{endconf|deaf}"/>
+      </condition>
+    </extension>
+
+    <!--
+	This extension will start a conference and invite a few of people.
+	At anytime the participant can dial *2 to bridge directly to the boss. 
+	All other callers are then hung up on.
+    -->
+    <extension name="mad_boss_intercom">
+      <condition field="destination_number" expression="^0911$">
+	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss2"/>
+	<action application="set" data="conference_auto_outcall_caller_id_number=0912"/>
+	<action application="set" data="conference_auto_outcall_timeout=60"/>
+	<action application="set" data="conference_auto_outcall_flags=mute"/>
+	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 intercept::${uuid}'}"/>
+	<action application="set" data="sip_exclude_contact=${network_addr}"/>
+	<action application="conference_set_auto_outcall" data="sofia/gateway/$${default_provider}/19184238080"/>
+	<action application="conference_set_auto_outcall" data="sofia/default/888@conference.freeswitch.org"/>
+	<action application="conference" data="madboss_intercom2@default+flags{endconf|deaf}"/>
       </condition>
     </extension>
 
     <!--This extension will start a conference and invite several people upon entering -->
     <extension name="mad_boss">
-      <condition field="destination_number" expression="^0911$">
+      <condition field="destination_number" expression="^0913$">
 	<!--These params effect the outcalls made once you join-->
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
@@ -345,7 +364,7 @@
 	<!--Add as many of these as you need, These are the people you are going to call-->
 	<action application="conference_set_auto_outcall" data="sofia/gateway/$${default_provider}/19184238080"/>
 	<action application="conference_set_auto_outcall" data="sofia/default/888@conference.freeswitch.org"/>
-	<action application="conference" data="cool@default"/>
+	<action application="conference" data="madboss3@default"/>
       </condition>
     </extension>
 
