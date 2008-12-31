@@ -259,7 +259,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 			!strcasecmp(cmd, "...") ||
 			!strcasecmp(cmd, "bye")
 			) {
-			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com\n");
+			esl_log(ESL_LOG_INFO, "Goodbye!\nSee you at ClueCon http://www.cluecon.com/\n");
 			return -1;
 		}
 
@@ -355,11 +355,11 @@ static void print_banner(FILE *stream)
 			"          |  _|  ___) | | |___| |___ | |            \n"
 			"          |_|   |____/   \\____|_____|___|           \n"
 			"\n"
-			"****************************************************\n"
-			"* Anthony Minessale II, Ken Rice, Michael Jerris   *\n"
-			"* FreeSWITCH (http://www.freeswitch.org)           *\n"
-			"* Brought to you by ClueCon http://www.cluecon.com *\n"
-			"****************************************************\n"
+			"*****************************************************\n"
+			"* Anthony Minessale II, Ken Rice, Michael Jerris    *\n"
+			"* FreeSWITCH (http://www.freeswitch.org)            *\n"
+			"* Brought to you by ClueCon http://www.cluecon.com/ *\n"
+			"*****************************************************\n"
 			"\n\n"
 			);
 }
