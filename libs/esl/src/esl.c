@@ -370,10 +370,8 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 
 	esl_event_serialize(handle->last_ievent, &txt, ESL_TRUE);
 
-	if (handle->debug) {
-		esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
-	}
-	
+	esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
+		
 	send(handle->sock, "sendevent\n", 10, 0);
 	send(handle->sock, txt, strlen(txt), 0);
 	send(handle->sock, "\n\n", 2, 0);
@@ -699,9 +697,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 				
 				if (hname && hval) {
 					esl_url_decode(hval);
-					if (handle->debug > 1) {
-						esl_log(ESL_LOG_DEBUG, "RECV HEADER [%s] = [%s]\n", hname, hval);
-					}
+					esl_log(ESL_LOG_DEBUG, "RECV HEADER [%s] = [%s]\n", hname, hval);
 					esl_event_add_header_string(revent, ESL_STACK_BOTTOM, hname, hval);
 				}
 
@@ -793,10 +789,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 			
 				if (hname && hval) {
 					esl_url_decode(hval);
-
-					if (handle->debug > 1) {
-						esl_log(ESL_LOG_DEBUG, "RECV INNER HEADER [%s] = [%s]\n", hname, hval);
-					}
+					esl_log(ESL_LOG_DEBUG, "RECV INNER HEADER [%s] = [%s]\n", hname, hval);
 					esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
 				}
 				
@@ -825,8 +818,8 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 				handle->last_ievent->body = body;
 			}
 
-
-			if (handle->debug) {
+			
+			if (esl_log_level >= 7) {
 				char *foo;
 				esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
 				esl_log(ESL_LOG_DEBUG, "RECV EVENT\n%s\n", foo);
@@ -834,7 +827,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 			}
 		}
 		
-		if (handle->debug) {
+		if (esl_log_level >= 7) {
 			char *foo;
 			esl_event_serialize(revent, &foo, ESL_FALSE);
 			esl_log(ESL_LOG_DEBUG, "RECV MESSAGE\n%s\n", foo);
@@ -857,9 +850,7 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 {
 	const char *e = cmd + strlen(cmd) -1;
 	
-	if (handle->debug) {
-		esl_log(ESL_LOG_DEBUG, "SEND\n%s\n", cmd);
-	}
+	esl_log(ESL_LOG_DEBUG, "SEND\n%s\n", cmd);
 	
 	if (send(handle->sock, cmd, strlen(cmd), 0) != (int)strlen(cmd)) {
 		strerror_r(handle->errnum, handle->err, sizeof(handle->err));

@@ -13,7 +13,6 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 
 
 	esl_attach_handle(&handle, client_sock, addr);
-	handle.debug = 2;
 
 	printf("Connected! %d\n", handle.sock);
 	

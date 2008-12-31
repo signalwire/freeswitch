@@ -256,7 +256,6 @@ typedef struct {
 	esl_event_t *last_sr_event;
 	esl_event_t *last_ievent;
 	esl_event_t *info_event;
-	int debug;
 	int connected;
 	struct sockaddr_in addr;
 	esl_mutex_t *mutex;

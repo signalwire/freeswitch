@@ -107,6 +107,13 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 					} else if (!strcasecmp(type, "text/disconnect-notice")) {
 						running = thread_running = 0;
 						known++;
+					} else if (!strcasecmp(type, "text/event-plain")) {
+						char *foo;
+						esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
+						printf("RECV EVENT\n%s\n", foo);
+						free(foo);
+
+						known++;
 					}
 				}
 				
@@ -313,7 +320,6 @@ int main(int argc, char *argv[])
 	
 	signal(SIGINT, handle_SIGINT);
 
-	handle.debug = 0;
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	
 	for(;;) {
