@@ -271,6 +271,8 @@ static void remove_binding(listener_t *listener, erlang_pid *pid) {
 static void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event)
 {
 	int i;
+	char *uuid = switch_event_get_header(event, "unique-id");
+
 	switch_event_header_t *hp;
 
 	for (i = 0, hp = event->headers; hp; hp = hp->next, i++);
@@ -278,7 +280,13 @@ static void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *even
 	if (event->body)
 		i++;
 
-	ei_x_encode_list_header(ebuf, i);
+	ei_x_encode_list_header(ebuf, i+1);
+
+	if (uuid) {
+		ei_x_encode_string(ebuf, switch_event_get_header(event, "unique-id"));
+	} else {
+		ei_x_encode_atom(ebuf, "undefined");
+	}
 
 	for (hp = event->headers; hp; hp = hp->next) {
 		ei_x_encode_tuple_header(ebuf, 2);
@@ -983,7 +991,9 @@ sendevent_fail:
 					ei_x_encode_atom(rbuf, "error");
 					ei_x_encode_atom(rbuf, "badmem");
 				}
-				/* switch_core_session_rwunlock(session); */ /* XXX is this needed? */
+
+				/* release the lock returned by switch_core_locate_session */
+				switch_core_session_rwunlock(session);
 				break;
 
 sendmsg_fail:
