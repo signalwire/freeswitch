@@ -339,7 +339,7 @@
 	All other callers are then hung up on.
     -->
     <extension name="mad_boss_intercom">
-      <condition field="destination_number" expression="^0911$">
+      <condition field="destination_number" expression="^0912$">
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss2"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0912"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
