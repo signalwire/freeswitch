@@ -142,25 +142,28 @@ static switch_status_t socket_logger(const switch_log_node_t *node, switch_log_l
 	switch_mutex_lock(globals.listener_mutex);
 	for (l = listen_list.listeners; l; l = l->next) {
 		if (switch_test_flag(l, LFLAG_LOG) && l->level >= node->level) {
-			char *data = strdup(node->data);
-			if (data) {
-				if (switch_queue_trypush(l->log_queue, data) == SWITCH_STATUS_SUCCESS) {
-					if (l->lost_logs) {
-						int ll = l->lost_logs;
-						switch_event_t *event;
-						l->lost_logs = 0;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
-						if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, "info", "lost %d log lines", ll);
-							switch_event_fire(&event);
-						}
+
+			switch_log_node_t *dnode = malloc(sizeof(*node));
+			switch_assert(dnode);
+			*dnode = *node;
+			dnode->data = strdup(node->data);
+			switch_assert(dnode->data);
+
+			if (switch_queue_trypush(l->log_queue, dnode) == SWITCH_STATUS_SUCCESS) {
+				if (l->lost_logs) {
+					int ll = l->lost_logs;
+					switch_event_t *event;
+					l->lost_logs = 0;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Lost %d log lines!\n", ll);
+					if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header(event, SWITCH_STACK_BOTTOM, "info", "lost %d log lines", ll);
+						switch_event_fire(&event);
 					}
-				} else {
-					switch_safe_free(data);
-					l->lost_logs++;
 				}
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+				switch_safe_free(dnode->data);
+				switch_safe_free(dnode);
+				l->lost_logs++;
 			}
 		}
 	}
@@ -936,7 +939,7 @@ sendevent_fail:
 			}
 
 			switch_core_session_t *session;
-			if ((session = switch_core_session_locate(uuid))) {
+			if (!switch_strlen_zero(uuid) && (session = switch_core_session_locate(uuid))) {
 			} else {
 				ei_x_encode_tuple_header(rbuf, 2);
 				ei_x_encode_atom(rbuf, "error");
@@ -980,6 +983,7 @@ sendevent_fail:
 					ei_x_encode_atom(rbuf, "error");
 					ei_x_encode_atom(rbuf, "badmem");
 				}
+				/* switch_core_session_rwunlock(session); */ /* XXX is this needed? */
 				break;
 
 sendmsg_fail:
@@ -1262,20 +1266,48 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		/* send out any pending crap in the log queue */
 		if (switch_test_flag(listener, LFLAG_LOG)) {
 			if (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-				char *data = (char *) pop;
+				switch_log_node_t *dnode = (switch_log_node_t *) pop;
 
-				if (data) {
+				if (dnode->data) {
 					ei_x_buff lbuf;
 					ei_x_new_with_version(&lbuf);
 					ei_x_encode_tuple_header(&lbuf, 2);
 					ei_x_encode_atom(&lbuf, "log");
-					ei_x_encode_string(&lbuf, data);
+					ei_x_encode_list_header(&lbuf, 6);
+
+					ei_x_encode_tuple_header(&lbuf, 2);
+					ei_x_encode_atom(&lbuf, "level");
+					ei_x_encode_char(&lbuf, (unsigned char)dnode->level);
+
+					ei_x_encode_tuple_header(&lbuf, 2);
+					ei_x_encode_atom(&lbuf, "text_channel");
+					ei_x_encode_char(&lbuf, (unsigned char)dnode->level);
+
+					ei_x_encode_tuple_header(&lbuf, 2);
+					ei_x_encode_atom(&lbuf, "file");
+					ei_x_encode_string(&lbuf, dnode->file);
+	
+					ei_x_encode_tuple_header(&lbuf, 2);
+					ei_x_encode_atom(&lbuf, "func");
+					ei_x_encode_string(&lbuf, dnode->func);
+
+					ei_x_encode_tuple_header(&lbuf, 2);
+					ei_x_encode_atom(&lbuf, "line");
+					ei_x_encode_ulong(&lbuf, (unsigned long)dnode->line);
+
+					ei_x_encode_tuple_header(&lbuf, 2);
+					ei_x_encode_atom(&lbuf, "data");
+					ei_x_encode_string(&lbuf, dnode->data);
+
+					ei_x_encode_empty_list(&lbuf);
 
 					switch_mutex_lock(listener->sock_mutex);
 					ei_send(listener->sockfd, &listener->log_pid, lbuf.buff, lbuf.index);
 					switch_mutex_unlock(listener->sock_mutex);
 
 					ei_x_free(&lbuf);
+					free(dnode->data);
+					free(dnode);
 				}
 			}
 		}
