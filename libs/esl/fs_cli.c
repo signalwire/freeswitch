@@ -16,13 +16,13 @@
 #else
 #include <sys/select.h>
 #include <unistd.h>
-#include <histedit.h>
-#ifndef HAVE_EDITLINE
-#define HAVE_EDITLINE
-#endif
 #endif
 
 #include <getopt.h>
+
+#ifdef HAVE_EDITLINE
+#include <histedit.h>
+#endif
 
 static char prompt_str[512] = "";
 
