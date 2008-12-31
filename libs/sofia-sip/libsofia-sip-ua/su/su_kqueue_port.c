@@ -242,21 +242,21 @@ int su_kqueue_port_register(su_port_t *self,
   i = ser->ser_id;
 
   flags = (wait->events & SU_WAIT_IN) ? EV_ADD : EV_ADD | EV_DISABLE;
-  EV_SET(ev, wait->fd, EVFILT_READ, flags, 0, 0, (void *)i);
+  EV_SET(ev, wait->fd, EVFILT_READ, flags, 0, 0, (void *)(intptr_t)i);
   if (kevent(self->sup_kqueue, ev, 1, NULL, 0, NULL) == -1) {
     SU_DEBUG_0(("kevent((%u, %s, %u, %p)) failed: %s\n",
-		wait->fd, "EVFILT_READ", flags, (void *)i, strerror(errno)));
+				wait->fd, "EVFILT_READ", flags, (void *)(intptr_t)i, strerror(errno)));
     return -1;
   }
 
   flags = (wait->events & SU_WAIT_OUT) ? EV_ADD : EV_ADD | EV_DISABLE;
-  EV_SET(ev, wait->fd, EVFILT_WRITE, flags, 0, 0, (void *)i);
+  EV_SET(ev, wait->fd, EVFILT_WRITE, flags, 0, 0, (void *)(intptr_t)i);
   if (kevent(self->sup_kqueue, ev, 1, NULL, 0, NULL) == -1) {
     int error = errno;
     SU_DEBUG_0(("kevent((%u, %s, %u, %p)) failed: %s\n",
-		wait->fd, "EVFILT_WRITE", flags, (void *)i, strerror(error)));
+				wait->fd, "EVFILT_WRITE", flags, (void *)(intptr_t)i, strerror(error)));
 
-    EV_SET(ev, wait->fd, EVFILT_READ, EV_DELETE, 0, 0, (void *)i);
+    EV_SET(ev, wait->fd, EVFILT_READ, EV_DELETE, 0, 0, (void *)(intptr_t)i);
     kevent(self->sup_kqueue, ev, 1, NULL, 0, NULL);
 
     errno = error;
@@ -294,17 +294,17 @@ static int su_kqueue_port_deregister0(su_port_t *self, int i, int destroy_wait)
 
   wait = ser->ser_wait;
 
-  EV_SET(ev, wait->fd, EVFILT_READ, EV_DELETE, 0, 0, (void *)i);
+  EV_SET(ev, wait->fd, EVFILT_READ, EV_DELETE, 0, 0, (void *)(intptr_t)i);
   if (kevent(self->sup_kqueue, ev, 1, NULL, 0, NULL) == -1) {
     SU_DEBUG_0(("remove kevent((%u, %s, %s, %p)) failed: %s\n",
-		wait->fd, "EVFILT_READ", "EV_DELETE", (void *)i,
+				wait->fd, "EVFILT_READ", "EV_DELETE", (void *)(intptr_t)i,
 		strerror(errno)));
   }
 
-  EV_SET(ev, wait->fd, EVFILT_WRITE, EV_DELETE, 0, 0, (void *)i);
+  EV_SET(ev, wait->fd, EVFILT_WRITE, EV_DELETE, 0, 0, (void *)(intptr_t)i);
   if (kevent(self->sup_kqueue, ev, 1, NULL, 0, NULL) == -1) {
     SU_DEBUG_0(("remove kevent((%u, %s, %s, %p)) failed: %s\n",
-		wait->fd, "EVFILT_WRITE", "EV_DELETE", (void *)i,
+				wait->fd, "EVFILT_WRITE", "EV_DELETE", (void *)(intptr_t)i,
 		strerror(errno)));
   }
 
@@ -461,21 +461,21 @@ int su_kqueue_port_eventmask(su_port_t *self, int index, int socket, int events)
   wait->events = events;
 
   flags = (wait->events & SU_WAIT_IN) ? EV_ADD | EV_ENABLE : EV_ADD | EV_DISABLE;
-  EV_SET(ev, wait->fd, EVFILT_READ, flags, 0, 0, (void *)index);
+  EV_SET(ev, wait->fd, EVFILT_READ, flags, 0, 0, (void *)(intptr_t)index);
   if (kevent(self->sup_kqueue, ev, 1, NULL, 0, NULL) == -1) {
     SU_DEBUG_0(("modify kevent((%u, %s, %s, %p)) failed: %s\n",
 		wait->fd, "EVFILT_READ",
 		(events & SU_WAIT_IN) ? "EV_ENABLE" : "EV_DISABLE",
-		(void *)index, strerror(errno)));
+				(void *)(intptr_t)index, strerror(errno)));
   }
 
   flags = (wait->events & SU_WAIT_OUT) ? EV_ADD | EV_ENABLE : EV_ADD | EV_DISABLE;
-  EV_SET(ev, wait->fd, EVFILT_WRITE, flags, 0, 0, (void *)index);
+  EV_SET(ev, wait->fd, EVFILT_WRITE, flags, 0, 0, (void *)(intptr_t)index);
   if (kevent(self->sup_kqueue, ev, 1, NULL, 0, NULL) == -1) {
     SU_DEBUG_0(("modify kevent((%u, %s, %s, %p)) failed: %s\n",
 		wait->fd, "EVFILT_WRITE",
 		(events & SU_WAIT_OUT) ? "EV_ENABLE" : "EV_DISABLE",
-		(void *)index, strerror(errno)));
+				(void *)(intptr_t)index, strerror(errno)));
   }
 
   return 0;
@@ -539,7 +539,7 @@ int su_kqueue_port_wait_events(su_port_t *self, su_duration_t tout)
     struct su_register *ser;
     su_root_magic_t *magic;
 
-    index = (int)ev[j].udata;
+    index = (int)(intptr_t)ev[j].udata;
     if (index <= 0 || self->sup_max_index < index)
       continue;
     ser = self->sup_indices[index];
