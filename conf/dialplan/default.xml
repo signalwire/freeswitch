@@ -188,13 +188,8 @@
     </extension>
 
     <extension name="extension-intercom">
-      <!-- <condition field="${sip_to_params}" expression="intercom\=true"/> -->
       <condition field="destination_number" expression="^8(10[01][0-9])$">
 	<action application="set" data="dialed_extension=$1"/>
-	<!-- This Alert-Info seems to be a case for Intercom for Polycom which sip_auto_answer=true covers already. -->
-	<!--<action application="export"><![CDATA[alert_info=<sip:${domain_name}>;Ring;Answer]]></action>-->
-	<action application="export"><![CDATA[sip_h_Call-Info=<sip:${domain_name}>;answer-after=0]]></action>
-	<action application="export" data="sip_invite_params=intercom=true"/>
 	<action application="export" data="sip_auto_answer=true"/>
 	<action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
       </condition>
@@ -320,21 +315,36 @@
       </condition>
     </extension>
 
+    <!--
+	This extension will start a conference and invite a group.
+	At anytime the participant can dial *2 to bridge directly to the boss. 
+	All other callers are then hung up on.
+    -->
+    <extension name="mad_boss_intercom">
+      <condition field="destination_number" expression="^0911$">
+	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
+	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
+	<action application="set" data="conference_auto_outcall_timeout=60"/>
+	<action application="set" data="conference_auto_outcall_flags=mute"/>
+	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 intercept::${uuid}'}"/>
+	<action application="set" data="sip_exclude_contact=${network_addr}"/>
+	<action application="conference_set_auto_outcall" data="${group_call(sales)}"/>
+	<action application="conference" data="madboss_intercom@default+flags{endconf|deaf}"/>
+      </condition>
+    </extension>
+
     <!--This extension will start a conference and invite several people upon entering -->
     <extension name="mad_boss">
       <condition field="destination_number" expression="^0911$">
-
 	<!--These params effect the outcalls made once you join-->
 	<action application="set" data="conference_auto_outcall_caller_id_name=Mad Boss"/>
 	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
 	<action application="set" data="conference_auto_outcall_flags=none"/>
 	<!--<action application="set" data="conference_auto_outcall_announce=say:You have been called into an emergency conference"/>-->
-
 	<!--Add as many of these as you need, These are the people you are going to call-->
 	<action application="conference_set_auto_outcall" data="sofia/gateway/$${default_provider}/19184238080"/>
 	<action application="conference_set_auto_outcall" data="sofia/default/888@conference.freeswitch.org"/>
-
 	<action application="conference" data="cool@default"/>
       </condition>
     </extension>
