@@ -3278,8 +3278,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_unbind_dtmf_meta_session(SWIGTYPE_p_switch_core_session session) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_unbind_dtmf_meta_session(SWIGTYPE_p_switch_core_session.getCPtr(session));
+  public static switch_status_t switch_ivr_unbind_dtmf_meta_session(SWIGTYPE_p_switch_core_session session, uint key) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_unbind_dtmf_meta_session(SWIGTYPE_p_switch_core_session.getCPtr(session), key);
     return ret;
   }
 
@@ -3540,6 +3540,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_rtp_intentional_bugs(SWIGTYPE_p_switch_rtp rtp_session, switch_rtp_bug_flag_t bugs) {
+    freeswitchPINVOKE.switch_rtp_intentional_bugs(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), (int)bugs);
+  }
+
   public static switch_status_t switch_log_init(SWIGTYPE_p_apr_pool_t pool, switch_bool_t colorize) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_log_init(SWIGTYPE_p_apr_pool_t.getCPtr(pool), (int)colorize);
     return ret;
@@ -3747,6 +3751,11 @@ public class freeswitch {
 
   public static switch_status_t switch_xml_locate_user(string key, string user_name, string domain_name, string ip, SWIGTYPE_p_p_switch_xml root, SWIGTYPE_p_p_switch_xml domain, SWIGTYPE_p_p_switch_xml user, SWIGTYPE_p_p_switch_xml ingroup, switch_event arg8) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_locate_user(key, user_name, domain_name, ip, SWIGTYPE_p_p_switch_xml.getCPtr(root), SWIGTYPE_p_p_switch_xml.getCPtr(domain), SWIGTYPE_p_p_switch_xml.getCPtr(user), SWIGTYPE_p_p_switch_xml.getCPtr(ingroup), switch_event.getCPtr(arg8));
+    return ret;
+  }
+
+  public static switch_status_t switch_xml_locate_user_in_domain(string user_name, switch_xml domain, SWIGTYPE_p_p_switch_xml user, SWIGTYPE_p_p_switch_xml ingroup) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_locate_user_in_domain(user_name, switch_xml.getCPtr(domain), SWIGTYPE_p_p_switch_xml.getCPtr(user), SWIGTYPE_p_p_switch_xml.getCPtr(ingroup));
     return ret;
   }
 
@@ -4953,6 +4962,78 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtp_hdr_t")]
   public static extern void delete_switch_rtp_hdr_t(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38MaxBitRate_set")]
+  public static extern void switch_t38_options_t_T38MaxBitRate_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38MaxBitRate_get")]
+  public static extern uint switch_t38_options_t_T38MaxBitRate_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxFillBitRemoval_set")]
+  public static extern void switch_t38_options_t_T38FaxFillBitRemoval_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxFillBitRemoval_get")]
+  public static extern int switch_t38_options_t_T38FaxFillBitRemoval_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxTranscodingMMR_set")]
+  public static extern void switch_t38_options_t_T38FaxTranscodingMMR_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxTranscodingMMR_get")]
+  public static extern int switch_t38_options_t_T38FaxTranscodingMMR_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxTranscodingJBIG_set")]
+  public static extern void switch_t38_options_t_T38FaxTranscodingJBIG_set(HandleRef jarg1, int jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxTranscodingJBIG_get")]
+  public static extern int switch_t38_options_t_T38FaxTranscodingJBIG_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxRateManagement_set")]
+  public static extern void switch_t38_options_t_T38FaxRateManagement_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxRateManagement_get")]
+  public static extern string switch_t38_options_t_T38FaxRateManagement_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxMaxBuffer_set")]
+  public static extern void switch_t38_options_t_T38FaxMaxBuffer_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxMaxBuffer_get")]
+  public static extern uint switch_t38_options_t_T38FaxMaxBuffer_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxMaxDatagram_set")]
+  public static extern void switch_t38_options_t_T38FaxMaxDatagram_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxMaxDatagram_get")]
+  public static extern uint switch_t38_options_t_T38FaxMaxDatagram_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxUdpEC_set")]
+  public static extern void switch_t38_options_t_T38FaxUdpEC_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38FaxUdpEC_get")]
+  public static extern string switch_t38_options_t_T38FaxUdpEC_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38VendorInfo_set")]
+  public static extern void switch_t38_options_t_T38VendorInfo_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_T38VendorInfo_get")]
+  public static extern string switch_t38_options_t_T38VendorInfo_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_ip_set")]
+  public static extern void switch_t38_options_t_ip_set(HandleRef jarg1, string jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_ip_get")]
+  public static extern string switch_t38_options_t_ip_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_port_set")]
+  public static extern void switch_t38_options_t_port_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_t38_options_t_port_get")]
+  public static extern uint switch_t38_options_t_port_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_new_switch_t38_options_t")]
+  public static extern IntPtr new_switch_t38_options_t();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_t38_options_t")]
+  public static extern void delete_switch_t38_options_t(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_input_args_t_input_callback_set")]
   public static extern void switch_input_args_t_input_callback_set(HandleRef jarg1, HandleRef jarg2);
@@ -9359,7 +9440,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_bind_dtmf_meta_session(HandleRef jarg1, uint jarg2, uint jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_unbind_dtmf_meta_session")]
-  public static extern int switch_ivr_unbind_dtmf_meta_session(HandleRef jarg1);
+  public static extern int switch_ivr_unbind_dtmf_meta_session(HandleRef jarg1, uint jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_soft_hold")]
   public static extern int switch_ivr_soft_hold(HandleRef jarg1, string jarg2, string jarg3, string jarg4);
@@ -9573,6 +9654,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_activate_stun_ping")]
   public static extern int switch_rtp_activate_stun_ping(HandleRef jarg1, string jarg2, ushort jarg3, uint jarg4, int jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_intentional_bugs")]
+  public static extern void switch_rtp_intentional_bugs(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_log_node_t_data_set")]
   public static extern void switch_log_node_t_data_set(HandleRef jarg1, string jarg2);
@@ -9822,6 +9906,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_user")]
   public static extern int switch_xml_locate_user(string jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5, HandleRef jarg6, HandleRef jarg7, HandleRef jarg8, HandleRef jarg9);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_user_in_domain")]
+  public static extern int switch_xml_locate_user_in_domain(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_open_cfg")]
   public static extern IntPtr switch_xml_open_cfg(string jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -16113,7 +16200,8 @@ namespace FreeSWITCH.Native {
   SBF_DIAL_BLEG = (1 << 2),
   SBF_EXEC_BLEG = (1 << 3),
   SBF_EXEC_OPPOSITE = (1 << 4),
-  SBF_EXEC_SAME = (1 << 5)
+  SBF_EXEC_SAME = (1 << 5),
+  SBF_ONCE = (1 << 6)
 }
 
 }
@@ -18513,6 +18601,7 @@ public enum switch_core_session_message_types_t {
   SWITCH_MESSAGE_INDICATE_DISPLAY,
   SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY,
   SWITCH_MESSAGE_INDICATE_AUDIO_SYNC,
+  SWITCH_MESSAGE_INDICATE_REQUEST_IMAGE_MEDIA,
   SWITCH_MESSAGE_INVALID
 }
 
@@ -22622,6 +22711,23 @@ public enum switch_priority_t {
 
 namespace FreeSWITCH.Native {
 
+public enum switch_rtp_bug_flag_t {
+  RTP_BUG_NONE = 0,
+  RTP_BUG_CISCO_SKIP_MARK_BIT_2833 = (1 << 0),
+  RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833 = (1 << 1)
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
 public enum switch_rtp_crypto_direction_t {
   SWITCH_RTP_CRYPTO_SEND,
   SWITCH_RTP_CRYPTO_RECV,
@@ -24032,6 +24138,163 @@ public class switch_stream_handle : IDisposable {
   }
 
   public switch_stream_handle() : this(freeswitchPINVOKE.new_switch_stream_handle(), true) {
+  }
+
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+using System;
+using System.Runtime.InteropServices;
+
+public class switch_t38_options_t : IDisposable {
+  private HandleRef swigCPtr;
+  protected bool swigCMemOwn;
+
+  internal switch_t38_options_t(IntPtr cPtr, bool cMemoryOwn) {
+    swigCMemOwn = cMemoryOwn;
+    swigCPtr = new HandleRef(this, cPtr);
+  }
+
+  internal static HandleRef getCPtr(switch_t38_options_t obj) {
+    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
+  }
+
+  ~switch_t38_options_t() {
+    Dispose();
+  }
+
+  public virtual void Dispose() {
+    lock(this) {
+      if(swigCPtr.Handle != IntPtr.Zero && swigCMemOwn) {
+        swigCMemOwn = false;
+        freeswitchPINVOKE.delete_switch_t38_options_t(swigCPtr);
+      }
+      swigCPtr = new HandleRef(null, IntPtr.Zero);
+      GC.SuppressFinalize(this);
+    }
+  }
+
+  public uint T38MaxBitRate {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38MaxBitRate_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_t38_options_t_T38MaxBitRate_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_bool_t T38FaxFillBitRemoval {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxFillBitRemoval_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_t38_options_t_T38FaxFillBitRemoval_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_bool_t T38FaxTranscodingMMR {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxTranscodingMMR_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_t38_options_t_T38FaxTranscodingMMR_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_bool_t T38FaxTranscodingJBIG {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxTranscodingJBIG_set(swigCPtr, (int)value);
+    } 
+    get {
+      switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_t38_options_t_T38FaxTranscodingJBIG_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string T38FaxRateManagement {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxRateManagement_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_t38_options_t_T38FaxRateManagement_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint T38FaxMaxBuffer {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxMaxBuffer_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_t38_options_t_T38FaxMaxBuffer_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint T38FaxMaxDatagram {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxMaxDatagram_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_t38_options_t_T38FaxMaxDatagram_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string T38FaxUdpEC {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38FaxUdpEC_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_t38_options_t_T38FaxUdpEC_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string T38VendorInfo {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_T38VendorInfo_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_t38_options_t_T38VendorInfo_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public string ip {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_ip_set(swigCPtr, value);
+    } 
+    get {
+      string ret = freeswitchPINVOKE.switch_t38_options_t_ip_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint port {
+    set {
+      freeswitchPINVOKE.switch_t38_options_t_port_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_t38_options_t_port_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public switch_t38_options_t() : this(freeswitchPINVOKE.new_switch_t38_options_t(), true) {
   }
 
 }

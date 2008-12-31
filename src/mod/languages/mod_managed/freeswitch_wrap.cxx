@@ -2600,6 +2600,302 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtp_hdr_t(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38MaxBitRate_set(void * jarg1, unsigned long jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->T38MaxBitRate = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_t38_options_t_T38MaxBitRate_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (uint32_t) ((arg1)->T38MaxBitRate);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxFillBitRemoval_set(void * jarg1, int jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  switch_bool_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  if (arg1) (arg1)->T38FaxFillBitRemoval = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxFillBitRemoval_get(void * jarg1) {
+  int jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (switch_bool_t) ((arg1)->T38FaxFillBitRemoval);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxTranscodingMMR_set(void * jarg1, int jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  switch_bool_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  if (arg1) (arg1)->T38FaxTranscodingMMR = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxTranscodingMMR_get(void * jarg1) {
+  int jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (switch_bool_t) ((arg1)->T38FaxTranscodingMMR);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxTranscodingJBIG_set(void * jarg1, int jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  switch_bool_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  if (arg1) (arg1)->T38FaxTranscodingJBIG = arg2;
+  
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxTranscodingJBIG_get(void * jarg1) {
+  int jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  switch_bool_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (switch_bool_t) ((arg1)->T38FaxTranscodingJBIG);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxRateManagement_set(void * jarg1, char * jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->T38FaxRateManagement = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->T38FaxRateManagement, (const char *)arg2);
+    } else {
+      arg1->T38FaxRateManagement = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxRateManagement_get(void * jarg1) {
+  char * jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (char *) ((arg1)->T38FaxRateManagement);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxMaxBuffer_set(void * jarg1, unsigned long jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->T38FaxMaxBuffer = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxMaxBuffer_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (uint32_t) ((arg1)->T38FaxMaxBuffer);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxMaxDatagram_set(void * jarg1, unsigned long jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->T38FaxMaxDatagram = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxMaxDatagram_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (uint32_t) ((arg1)->T38FaxMaxDatagram);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxUdpEC_set(void * jarg1, char * jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->T38FaxUdpEC = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->T38FaxUdpEC, (const char *)arg2);
+    } else {
+      arg1->T38FaxUdpEC = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_t38_options_t_T38FaxUdpEC_get(void * jarg1) {
+  char * jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (char *) ((arg1)->T38FaxUdpEC);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_T38VendorInfo_set(void * jarg1, char * jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->T38VendorInfo = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->T38VendorInfo, (const char *)arg2);
+    } else {
+      arg1->T38VendorInfo = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_t38_options_t_T38VendorInfo_get(void * jarg1) {
+  char * jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (char *) ((arg1)->T38VendorInfo);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_ip_set(void * jarg1, char * jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *arg2 = (char *) 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (char *)jarg2; 
+  {
+    if (arg2) {
+      arg1->ip = (char const *) (new char[strlen((const char *)arg2)+1]);
+      strcpy((char *)arg1->ip, (const char *)arg2);
+    } else {
+      arg1->ip = 0;
+    }
+  }
+}
+
+
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_t38_options_t_ip_get(void * jarg1) {
+  char * jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  char *result = 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (char *) ((arg1)->ip);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_t38_options_t_port_set(void * jarg1, unsigned long jarg2) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->port = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_t38_options_t_port_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  result = (uint32_t) ((arg1)->port);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_t38_options_t() {
+  void * jresult ;
+  switch_t38_options_t *result = 0 ;
+  
+  result = (switch_t38_options_t *)new switch_t38_options_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_t38_options_t(void * jarg1) {
+  switch_t38_options_t *arg1 = (switch_t38_options_t *) 0 ;
+  
+  arg1 = (switch_t38_options_t *)jarg1; 
+  delete arg1;
+  
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_input_args_t_input_callback_set(void * jarg1, void * jarg2) {
   switch_input_args_t *arg1 = (switch_input_args_t *) 0 ;
   switch_input_callback_function_t arg2 = (switch_input_callback_function_t) 0 ;
@@ -21449,13 +21745,15 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_bind_dtmf_meta_session(void * jarg1
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_unbind_dtmf_meta_session(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_unbind_dtmf_meta_session(void * jarg1, unsigned long jarg2) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  uint32_t arg2 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
-  result = (switch_status_t)switch_ivr_unbind_dtmf_meta_session(arg1);
+  arg2 = (uint32_t)jarg2; 
+  result = (switch_status_t)switch_ivr_unbind_dtmf_meta_session(arg1,arg2);
   jresult = result; 
   return jresult;
 }
@@ -22407,6 +22705,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_activate_stun_ping(void * jarg1, ch
   result = (switch_status_t)switch_rtp_activate_stun_ping(arg1,(char const *)arg2,arg3,arg4,arg5);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_intentional_bugs(void * jarg1, int jarg2) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_rtp_bug_flag_t arg2 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (switch_rtp_bug_flag_t)jarg2; 
+  switch_rtp_intentional_bugs(arg1,arg2);
 }
 
 
@@ -23543,6 +23851,24 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate_user(char * jarg1, char * ja
   arg8 = (switch_xml_t *)jarg8; 
   arg9 = (switch_event_t *)jarg9; 
   result = (switch_status_t)switch_xml_locate_user((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,arg7,arg8,arg9);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate_user_in_domain(char * jarg1, void * jarg2, void * jarg3, void * jarg4) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_xml_t arg2 = (switch_xml_t) 0 ;
+  switch_xml_t *arg3 = (switch_xml_t *) 0 ;
+  switch_xml_t *arg4 = (switch_xml_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_xml_t)jarg2; 
+  arg3 = (switch_xml_t *)jarg3; 
+  arg4 = (switch_xml_t *)jarg4; 
+  result = (switch_status_t)switch_xml_locate_user_in_domain((char const *)arg1,arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
