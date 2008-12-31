@@ -930,13 +930,20 @@ SWITCH_DECLARE(switch_status_t) switch_event_serialize(switch_event_t *event, ch
 
 static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, int offset)
 {
-	switch_xml_t header = switch_xml_add_child_d(xml, "header", offset);
-
+	switch_xml_t header = switch_xml_add_child_d(xml, name, offset);
+	
 	if (header) {
-		switch_xml_set_attr_d(header, "name", name);
-		switch_xml_set_attr_d(header, "value", value);
+		int encode_len = (strlen(value) * 3) + 1;
+		char *encode_buf = malloc(encode_len);
+		
+		switch_assert(encode_buf);
+ 
+		memset(encode_buf, 0, encode_len);
+		switch_url_encode((char *) value, encode_buf, encode_len);
+		switch_xml_set_txt_d(header, encode_buf);
+		free(encode_buf);
 	}
-
+	
 	return header;
 }
 
@@ -948,6 +955,7 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 	switch_xml_t xml = NULL;
 	uint32_t off = 0;
 	va_list ap;
+	switch_xml_t xheaders = NULL;
 
 	if (!(xml = switch_xml_new("event"))) {
 		return xml;
@@ -972,8 +980,11 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 		}
 	}
 
-	for (hp = event->headers; hp; hp = hp->next) {
-		add_xml_header(xml, hp->name, hp->value, off++);
+	if ((xheaders = switch_xml_add_child_d(xml, "headers", off++))) {
+		int hoff = 0;
+		for (hp = event->headers; hp; hp = hp->next) {
+			add_xml_header(xheaders, hp->name, hp->value, hoff++);
+		}
 	}
 
 	if (!switch_strlen_zero(data)) {
@@ -1032,7 +1043,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
 	switch_rfc822_date(date, ts);
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-timestamp", "%" SWITCH_UINT64_T_FMT, (uint64_t) ts);
+	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-Timestamp", "%" SWITCH_UINT64_T_FMT, (uint64_t) ts);
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
 	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);

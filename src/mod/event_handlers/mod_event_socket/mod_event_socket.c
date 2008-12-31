@@ -628,15 +628,67 @@ SWITCH_STANDARD_API(event_sink_function)
 
 		switch_mutex_unlock(listener->filter_mutex);
 
+	} else if (!strcasecmp(wcmd, "stop-logging")) {
+		char *id = switch_event_get_header(stream->param_event, "listen-id");
+		uint32_t idl = 0;
+
+		if (id) {
+			idl = (uint32_t) atol(id);
+		}
+
+		if (!(listener = find_listener(idl))) {
+			stream->write_function(stream, "<data><reply type=\"error\">Invalid Listen-ID</reply></data>\n");
+            goto end;
+		}
+
+		if (switch_test_flag(listener, LFLAG_LOG)) {
+			switch_clear_flag_locked(listener, LFLAG_LOG);
+			stream->write_function(stream, "<data><reply type=\"success\">Not Logging</reply></data>\n");
+		} else {
+			stream->write_function(stream, "<data><reply type=\"error\">Not Logging</reply></data>\n");
+		}
+
+		goto end;
+
+	} else if (!strcasecmp(wcmd, "set-loglevel")) {
+		char *loglevel = switch_event_get_header(stream->param_event, "loglevel");
+		char *id = switch_event_get_header(stream->param_event, "listen-id");
+		uint32_t idl = 0;
+
+		if (id) {
+			idl = (uint32_t) atol(id);
+		}
+
+		if (!(listener = find_listener(idl))) {
+			stream->write_function(stream, "<data><reply type=\"error\">Invalid Listen-ID</reply></data>\n");
+            goto end;
+		}
+
+		if (loglevel) {
+			switch_log_level_t ltype = switch_log_str2level(loglevel);
+			if (ltype != SWITCH_LOG_INVALID) {
+				listener->level = ltype;
+				switch_set_flag(listener, LFLAG_LOG);
+				stream->write_function(stream, "<data><reply type=\"success\">Log Level %s</reply></data>\n", loglevel);
+			} else {
+				stream->write_function(stream, "<data><reply type=\"error\">Invalid Level</reply></data>\n");
+			}
+		} else {
+			stream->write_function(stream, "<data><reply type=\"error\">Invalid Syntax</reply></data>\n");
+		}
+
+		goto end;
+
 	} else if (!strcasecmp(wcmd, "create-listener")) {
 		char *events = switch_event_get_header(stream->param_event, "events");
+		char *loglevel = switch_event_get_header(stream->param_event, "loglevel");
 		switch_memory_pool_t *pool;
 		char *next, *cur;
 		uint32_t count = 0, key_count = 0;
 		uint8_t custom = 0;
 		char *edup;
 		
-		if (switch_strlen_zero(events)) {
+		if (switch_strlen_zero(events) && switch_strlen_zero(loglevel)) {
 			stream->write_function(stream, "<data><reply type=\"error\">Missing parameter!</reply></data>\n");
 			goto end;
 		}
@@ -652,57 +704,68 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_set_flag(listener, LFLAG_AUTHED);
 		switch_set_flag(listener, LFLAG_STATEFUL);
 		switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, listener->pool);
+		switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, listener->pool);
+
+		if (loglevel) {
+			switch_log_level_t ltype = switch_log_str2level(loglevel);
+			if (ltype != SWITCH_LOG_INVALID) {
+				listener->level = ltype;
+				switch_set_flag(listener, LFLAG_LOG);
+			}
+		}
 		switch_thread_rwlock_create(&listener->rwlock, listener->pool);
 		listener->id = next_id();
 		listener->timeout = 60;
 		listener->last_flush = switch_timestamp(NULL);
 		
-		if (switch_stristr("xml", format)) {
-			listener->format = EVENT_FORMAT_XML;
-		} else {
-			listener->format = EVENT_FORMAT_PLAIN;
-		}
+		if (events) {
 
-		edup = strdup(events);
-		
-		for (cur = edup; cur; count++) {
-			switch_event_types_t type;
-
-			if ((next = strchr(cur, ' '))) {
-				*next++ = '\0';
+			if (switch_stristr("xml", format)) {
+				listener->format = EVENT_FORMAT_XML;
+			} else {
+				listener->format = EVENT_FORMAT_PLAIN;
 			}
+			
+			edup = strdup(events);
+			
+			for (cur = edup; cur; count++) {
+				switch_event_types_t type;
+				
+				if ((next = strchr(cur, ' '))) {
+					*next++ = '\0';
+				}
 
-			if (custom) {
-				switch_core_hash_insert(listener->event_hash, cur, MARKER);
-			} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
-				key_count++;
-				if (type == SWITCH_EVENT_ALL) {
-					uint32_t x = 0;
-					for (x = 0; x < SWITCH_EVENT_ALL; x++) {
-						listener->event_list[x] = 1;
+				if (custom) {
+					switch_core_hash_insert(listener->event_hash, cur, MARKER);
+				} else if (switch_name_event(cur, &type) == SWITCH_STATUS_SUCCESS) {
+					key_count++;
+					if (type == SWITCH_EVENT_ALL) {
+						uint32_t x = 0;
+						for (x = 0; x < SWITCH_EVENT_ALL; x++) {
+							listener->event_list[x] = 1;
+						}
+					}
+					if (type <= SWITCH_EVENT_ALL) {
+						listener->event_list[type] = 1;
+					}
+					if (type == SWITCH_EVENT_CUSTOM) {
+						custom++;
 					}
 				}
-				if (type <= SWITCH_EVENT_ALL) {
-					listener->event_list[type] = 1;
-				}
-				if (type == SWITCH_EVENT_CUSTOM) {
-					custom++;
-				}
+				
+				cur = next;
 			}
-
-			cur = next;
-		}
 		
 
-		switch_safe_free(edup);
+			switch_safe_free(edup);
 
-		if (!key_count) {
-			switch_core_hash_destroy(&listener->event_hash);
-			switch_core_destroy_memory_pool(&listener->pool);
-			stream->write_function(stream, "<data><reply type=\"error\">No keywords supplied</reply></data>\n");
-			goto end;
+			if (!key_count) {
+				switch_core_hash_destroy(&listener->event_hash);
+				switch_core_destroy_memory_pool(&listener->pool);
+				stream->write_function(stream, "<data><reply type=\"error\">No keywords supplied</reply></data>\n");
+				goto end;
+			}
 		}
-
 
 		switch_set_flag_locked(listener, LFLAG_EVENTS);
 		add_listener(listener);
@@ -750,7 +813,38 @@ SWITCH_STANDARD_API(event_sink_function)
 		listener->last_flush = switch_timestamp(NULL);
 		stream->write_function(stream, "<data>\n <reply type=\"success\">Current Events Follow</reply>\n");			
 		xmlize_listener(listener, stream);
-		stream->write_function(stream, "<events>\n");			
+
+		if (switch_test_flag(listener, LFLAG_LOG)) {
+			stream->write_function(stream, "<log_data>\n");
+
+			while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				switch_log_node_t *dnode = (switch_log_node_t *) pop;
+				int encode_len = (strlen(dnode->data) * 3) + 1;
+				char *encode_buf = malloc(encode_len);
+				
+				switch_assert(encode_buf);
+				
+				memset(encode_buf, 0, encode_len);
+				switch_url_encode((char *) dnode->data, encode_buf, encode_len);
+				
+
+				stream->write_function(stream, "<log log-level=\"%d\" text-channel=\"%d\" log-file=\"%s\" log-func=\"%s\" log-line=\"%d\">%s</log>\n",
+									   dnode->level,
+									   dnode->channel,
+									   dnode->file,
+									   dnode->func,
+									   dnode->line,
+									   encode_buf
+									   );
+				free(encode_buf);
+				free(dnode->data);
+				free(dnode);
+			}
+
+			stream->write_function(stream, "</log_data>\n");
+		}
+
+		stream->write_function(stream, "<events>\n");
 
 		while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			char *etype;
