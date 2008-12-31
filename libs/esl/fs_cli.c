@@ -26,6 +26,8 @@ typedef struct {
 	char pass[128];
 	int debug;
 	char *console_fnkeys[12];
+	char loglevel[128];
+	int quiet;
 } cli_profile_t;
 
 static cli_profile_t profiles[128] = {{{0}}};
@@ -156,6 +158,8 @@ static int usage(char *name){
 	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
 	printf("  -p, --password=FILENAME         Password\n");
 	printf("  -x, --execute=command           Execute Command and Exit\n");
+	printf("  -l, --loglevel=command          Log Level\n");
+	printf("  -q, --quiet			          Disable logging\n");
 	printf("  -d, --debug=level               Debug Level (0 - 7)\n\n");
 	return 1;
 }
@@ -391,6 +395,8 @@ int main(int argc, char *argv[])
 		{"password", 1, 0, 'p'},
 		{"debug", 1, 0, 'd'},
 		{"execute", 1, 0, 'x'},
+		{"loglevel", 1, 0, 'l'},
+		{"quiet", 0, 0, 'q'},
 		{0, 0, 0, 0}
 	};
 
@@ -404,6 +410,8 @@ int main(int argc, char *argv[])
 	int argv_error = 0;
 	int argv_exec = 0;
 	char argv_command[256] = "";
+	char argv_loglevel[128] = "";
+	int argv_quiet = 0;
 	
 
 	strncpy(internal_profile.host, "127.0.0.1", sizeof(internal_profile.host));
@@ -413,6 +421,7 @@ int main(int argc, char *argv[])
 	
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
+		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_conf", home);
 	}
 	
 	signal(SIGINT, handle_SIGINT);
@@ -421,7 +430,7 @@ int main(int argc, char *argv[])
 	
 	for(;;) {
 		int option_index = 0;
-		opt = getopt_long(argc, argv, "H:U:P:S:p:d:x:h?", options, &option_index);
+		opt = getopt_long(argc, argv, "H:U:P:S:p:d:x:l:qh?", options, &option_index);
 		if (opt == -1) break;
 		switch (opt)
 		{
@@ -455,7 +464,13 @@ int main(int argc, char *argv[])
 				argv_exec = 1;
 				esl_set_string(argv_command, optarg);
 				break;
-
+			case 'l':
+				esl_set_string(argv_loglevel, optarg);
+				break;
+			case 'q':
+				argv_quiet = 1;
+				break;
+				
 			case 'h':
 			case '?':
 				usage(argv[0]);
@@ -503,6 +518,10 @@ int main(int argc, char *argv[])
 				if (dt > -1 && dt < 8){
 					 profiles[pcount-1].debug = dt;
 				}	
+ 			} else if(!strcasecmp(var, "loglevel")) {
+ 				esl_set_string(profiles[pcount-1].loglevel, val);
+ 			} else if(!strcasecmp(var, "quiet")) {
+ 				profiles[pcount-1].quiet = esl_true(val);
 			} else if (!strncasecmp(var, "key_F", 5)) {
 				char *key = var + 5;
 
@@ -541,6 +560,11 @@ int main(int argc, char *argv[])
 	}
 	if (argv_pass) {
 		esl_set_string(profile->pass, temp_pass);
+	}
+	
+	if (*argv_loglevel) {
+		esl_set_string(profile->loglevel, argv_loglevel);
+		profile->quiet = 0;
 	}
 
 	esl_log(ESL_LOG_DEBUG, "Using profile %s [%s]\n", profile->name, profile->host);
@@ -633,8 +657,10 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	snprintf(cmd_str, sizeof(cmd_str), "log info\n\n");
-	esl_send_recv(&handle, cmd_str);
+	if (!argv_quiet && !profile->quiet) {
+		snprintf(cmd_str, sizeof(cmd_str), "log %s\n\n", profile->loglevel);	
+		esl_send_recv(&handle, cmd_str);
+	}
 
 	print_banner(stdout);
 

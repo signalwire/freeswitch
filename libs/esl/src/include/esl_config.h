@@ -70,6 +70,34 @@
 #define esl_is_file_path(file) ((*file == '/') || strstr(file, SWITCH_URL_SEPARATOR))
 #endif
 
+/*!
+  \brief Evaluate the truthfullness of a string expression
+  \param expr a string expression
+  \return true or false 
+*/
+#define esl_true(expr)\
+(expr && ( !strcasecmp(expr, "yes") ||\
+!strcasecmp(expr, "on") ||\
+!strcasecmp(expr, "true") ||\
+!strcasecmp(expr, "enabled") ||\
+!strcasecmp(expr, "active") ||\
+!strcasecmp(expr, "allow") ||\
+atoi(expr))) ? 1 : 0
+
+/*!
+  \brief Evaluate the falsefullness of a string expression
+  \param expr a string expression
+  \return true or false 
+*/
+#define esl_false(expr)\
+(expr && ( !strcasecmp(expr, "no") ||\
+!strcasecmp(expr, "off") ||\
+!strcasecmp(expr, "false") ||\
+!strcasecmp(expr, "disabled") ||\
+!strcasecmp(expr, "inactive") ||\
+!strcasecmp(expr, "disallow") ||\
+!atoi(expr))) ? 1 : 0
+
 typedef struct esl_config esl_config_t;
 
 /*! \brief A simple file handle representing an open configuration file **/
