@@ -25,7 +25,7 @@ typedef struct {
 	esl_port_t port;
 	char pass[128];
 	int debug;
-	char *console_fnkeys[12];
+	const char *console_fnkeys[12];
 	char loglevel[128];
 	int quiet;
 } cli_profile_t;
@@ -60,7 +60,7 @@ static HistEvent ev;
  */
 static unsigned char console_fnkey_pressed(int i)
 {
-	char *c;
+	const char *c;
 
 	assert((i > 0) && (i <= 12));
 
@@ -74,7 +74,6 @@ static unsigned char console_fnkey_pressed(int i)
 		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
 		return CC_REDISPLAY;
 	}
-
 
 	if (process_command(global_handle, c)) {
 		running = thread_running = 0;
@@ -367,6 +366,22 @@ static void print_banner(FILE *stream)
 }
 
 
+static void set_fn_keys(cli_profile_t *profile)
+{
+	profile->console_fnkeys[0] = "help";
+	profile->console_fnkeys[1] = "status";
+	profile->console_fnkeys[2] = "show channels";
+	profile->console_fnkeys[3] = "show calls";
+	profile->console_fnkeys[4] = "sofia status";
+	profile->console_fnkeys[5] = "reloadxml";
+	profile->console_fnkeys[6] = "/log console";
+	profile->console_fnkeys[7] = "/log debug";
+	profile->console_fnkeys[8] = "sofia status profile internal";
+	profile->console_fnkeys[9] = "fsctl pause";
+	profile->console_fnkeys[10] = "fsctl resume";
+	profile->console_fnkeys[11] = "version";
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -420,7 +435,9 @@ int main(int argc, char *argv[])
 	strncpy(internal_profile.pass, "ClueCon", sizeof(internal_profile.pass));
 	strncpy(internal_profile.name, "internal", sizeof(internal_profile.name));
 	internal_profile.port = 8021;
-	
+	set_fn_keys(&internal_profile);
+
+
 	if (home) {
 		snprintf(hfile, sizeof(hfile), "%s/.fs_cli_history", home);
 		snprintf(cfile, sizeof(cfile), "%s/.fs_cli_conf", home);
@@ -503,6 +520,7 @@ int main(int argc, char *argv[])
 				esl_set_string(profiles[pcount].host, "localhost");
 				esl_set_string(profiles[pcount].pass, "ClueCon");
 				profiles[pcount].port = 8021;
+				set_fn_keys(&profiles[pcount]);
 				esl_log(ESL_LOG_DEBUG, "Found Profile [%s]\n", profiles[pcount].name);
 				pcount++;
 			}
