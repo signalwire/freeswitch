@@ -1790,8 +1790,9 @@ static void conference_loop_output(conference_member_t *member)
 		const char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
 		const char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
 		const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
+		const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
 		int to = 60;
-
+		
 		if (ann) {
 			member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
 		}
@@ -1806,7 +1807,20 @@ static void conference_loop_output(conference_member_t *member)
 		}
 
 		for (cp = call_list; cp; cp = cp->next) {
-			conference_outcall_bg(member->conference, NULL, NULL, cp->string, to, switch_str_nil(flags), cid_name, cid_num);
+			int argc;
+			char *argv[512] = { 0 };
+			char *cpstr = strdup(cp->string);
+			int x = 0;
+
+			switch_assert(cpstr);
+			argc = switch_separate_string(cpstr, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+			for (x = 0; x < argc; x++) {
+				char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
+				switch_assert(dial_str);
+				conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num);
+				switch_safe_free(dial_str);
+			}
+			switch_safe_free(cpstr);
 		}
 	}
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
@@ -3881,7 +3895,7 @@ static switch_status_t conference_outcall(conference_obj_t *conference,
 			goto done;
 		}
 		/* add them to the conference */
-		if (flags && !strcasecmp(flags, "none")) {
+		if (flags && strcasecmp(flags, "none")) {
 			switch_snprintf(appdata, sizeof(appdata), "%s+flags{%s}", conference_name, flags);
 			switch_caller_extension_add_application(peer_session, extension, (char *) global_app_name, appdata);
 		} else {
@@ -4059,15 +4073,20 @@ static void set_mflags(char *flags, member_flag_t *f)
 	if (flags) {
 		if (strstr(flags, "mute")) {
 			*f &= ~MFLAG_CAN_SPEAK;
-		} else if (strstr(flags, "deaf")) {
+		}
+
+		if (strstr(flags, "deaf")) {
 			*f &= ~MFLAG_CAN_HEAR;
-		} else if (strstr(flags, "waste")) {
+		}
+
+		if (strstr(flags, "waste")) {
 			*f |= MFLAG_WASTE_BANDWIDTH;
-		} else if (strstr(flags, "endconf")) {
+		}
+
+		if (strstr(flags, "endconf")) {
 			*f |= MFLAG_ENDCONF;
 		}
 	}
-
 }
 
 static void clear_eflags(char *events, uint32_t *f)

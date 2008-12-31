@@ -148,7 +148,21 @@ SWITCH_STANDARD_APP(soft_hold_function)
 	}
 }
 
-#define BIND_SYNTAX "<key> [a|b|ab] [a|b|o|s] <app>"
+#define UNBIND_SYNTAX "[<key>]"
+SWITCH_STANDARD_APP(dtmf_unbind_function)
+{
+	char *key = (char *) data;
+	int kval = 0;
+
+	if (key) {
+		kval = atoi(key);
+	}
+
+	switch_ivr_unbind_dtmf_meta_session(session, kval);
+
+}
+
+#define BIND_SYNTAX "<key> [a|b|ab] [a|b|o|s|1] <app>"
 SWITCH_STANDARD_APP(dtmf_bind_function)
 {
 	char *argv[4] = { 0 };
@@ -208,6 +222,10 @@ SWITCH_STANDARD_APP(dtmf_bind_function)
 			}
 		}
 
+		if (strchr(argv[2], '1')) {
+			bind_flags |= SBF_ONCE;
+		}
+		
 		if (switch_ivr_bind_dtmf_meta_session(session, kval, bind_flags, argv[3]) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Bind Error!\n");
 		}
@@ -2514,6 +2532,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 				   SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "bind_meta_app", "Bind a key to an application", "Bind a key to an application", dtmf_bind_function, BIND_SYNTAX,
 				   SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "unbind_meta_app", "Unbind a key from an application", "Unbind a key from an application", dtmf_unbind_function, 
+				   UNBIND_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "intercept", "intercept", "intercept", intercept_function, INTERCEPT_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "eavesdrop", "eavesdrop on a uuid", "eavesdrop on a uuid", eavesdrop_function, eavesdrop_SYNTAX, SAF_NONE);
 	SWITCH_ADD_APP(app_interface, "three_way", "three way call with a uuid", "three way call with a uuid", three_way_function, threeway_SYNTAX, SAF_NONE);

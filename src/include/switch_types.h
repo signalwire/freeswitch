@@ -179,7 +179,8 @@ typedef enum {
 	SBF_DIAL_BLEG = (1 << 2),
 	SBF_EXEC_BLEG = (1 << 3),
 	SBF_EXEC_OPPOSITE = (1 << 4),
-	SBF_EXEC_SAME = (1 << 5)
+	SBF_EXEC_SAME = (1 << 5),
+	SBF_ONCE = (1 << 6)
 } switch_bind_flag_enum_t;
 typedef uint32_t switch_bind_flag_t;
 

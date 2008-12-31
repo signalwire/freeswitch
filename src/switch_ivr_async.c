@@ -1521,6 +1521,13 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Processing meta digit '%c' [%s]\n",
 								  switch_channel_get_name(channel), dtmf->digit, md->sr[direction].map[dval].app);
 				switch_ivr_broadcast(switch_core_session_get_uuid(session), md->sr[direction].map[dval].app, flags);
+
+				if ((md->sr[direction].map[dval].bind_flags & SBF_ONCE)) {
+					memset(&md->sr[direction].map[dval], 0, sizeof(md->sr[direction].map[dval]));
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Unbinding meta digit '%c'\n",
+									  switch_channel_get_name(channel), dtmf->digit);
+				}
+
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Ignoring meta digit '%c' not mapped\n",
 								  switch_channel_get_name(channel), dtmf->digit);
@@ -1534,10 +1541,26 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_session_t *session)
+SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_session_t *session, uint32_t key)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_channel_set_private(channel, SWITCH_META_VAR_KEY, NULL);
+	
+	if (key) {
+		dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
+		
+		if (!md || key > 9) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid key %u\n", key);
+			return SWITCH_STATUS_FALSE;
+		}
+		
+		memset(&md->sr[SWITCH_DTMF_RECV].map[key], 0, sizeof(md->sr[SWITCH_DTMF_RECV].map[key]));
+		memset(&md->sr[SWITCH_DTMF_SEND].map[key], 0, sizeof(md->sr[SWITCH_DTMF_SEND].map[key]));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "UnBound A-Leg: %d\n", key);
+
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "UnBound A-Leg: ALL\n");
+		switch_channel_set_private(channel, SWITCH_META_VAR_KEY, NULL);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }

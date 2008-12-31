@@ -2316,6 +2316,7 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *nchannel;
 	char *host = NULL, *dest_to = NULL;
+	const char *hval = NULL;
 
 	*new_session = NULL;
 
@@ -2519,6 +2520,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 	tech_pvt->caller_profile = caller_profile;
 	*new_session = nsession;
 	cause = SWITCH_CAUSE_SUCCESS;
+
+	if ((hval = switch_event_get_header(var_event, "sip_auto_answer")) && switch_true(hval)) {
+		switch_channel_set_variable_printf(nchannel, "sip_h_Call-Info", "<sip:%s>;answer-after=0", profile->sipip);
+		switch_channel_set_variable(nchannel, "sip_invite_params", "intercom=true");
+	}
 
 	if (session) {
 		switch_channel_t *o_channel = switch_core_session_get_channel(session);

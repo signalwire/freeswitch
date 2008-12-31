@@ -571,7 +571,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
-	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0, pass_cng = 0;
+	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0, pass_cng = 0, resample = 0;
 	
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
@@ -675,6 +675,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 		switch (status) {
 		case SWITCH_STATUS_RESAMPLE:
+			resample++;
 			write_frame = &session->raw_write_frame;
 			if (!session->write_resampler) {
 				switch_mutex_lock(session->resample_mutex);
@@ -843,6 +844,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
+				resample++;
 				/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fixme 2\n"); */
 			case SWITCH_STATUS_SUCCESS:
 				session->enc_write_frame.codec = session->write_codec;
@@ -917,6 +919,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 														  &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
 						switch (status) {
 						case SWITCH_STATUS_RESAMPLE:
+							resample++;
 							session->enc_write_frame.codec = session->write_codec;
 							session->enc_write_frame.samples = enc_frame->datalen / sizeof(int16_t);
 							session->enc_write_frame.m = frame->m;
@@ -993,7 +996,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							switch_set_flag(write_frame, SFF_CNG);
 						}
 						
-						if (ptime_mismatch) {
+						if (ptime_mismatch || resample) {
 							write_frame->timestamp = 0;
 						}
 
@@ -1009,7 +1012,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	
  done:
 
-	if (ptime_mismatch) {
+	if (ptime_mismatch || resample) {
 		write_frame->timestamp = 0;
 	}
 
