@@ -473,6 +473,7 @@ int main(int argc, char *argv[])
 				
 			case 'h':
 			case '?':
+				print_banner(stdout);
 				usage(argv[0]);
 				return 0;
 			default:
