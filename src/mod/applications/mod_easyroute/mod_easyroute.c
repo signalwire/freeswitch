@@ -136,7 +136,7 @@ done:
 		set_global_db_username("root");
 	}
 	if (!globals.db_password) {
-		set_global_db_password("land99rover");
+		set_global_db_password("password");
 	}
 	if (!globals.db_dsn) {
 		set_global_db_dsn("easyroute");
