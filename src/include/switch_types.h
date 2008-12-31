@@ -486,7 +486,7 @@ typedef enum {
 	  
 	  Always sending a duration of 0 with a new timestamp should be tolerated but is rarely intentional
 	  and is mistakenly done by many devices.  
-	  The issue is that the Sonus expects everyone to do it this way instead of tolerating eiher way.
+	  The issue is that the Sonus expects everyone to do it this way instead of tolerating either way.
 	  Sonus will actually ignore every packet with the same timestamp before concluding if it's DTMF.
 	  
 	  This flag will cause each packet to have a new timestamp.
