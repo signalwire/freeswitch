@@ -67,12 +67,14 @@ static unsigned char console_fnkey_pressed(int i)
 	c = global_profile->console_fnkeys[i - 1];
 
 	/* This new line is necessary to avoid output to begin after the ">" of the CLI's prompt */
+	printf("%s\n", c);
 	printf("\n");
 	
 	if (c == NULL) {
 		esl_log(ESL_LOG_ERROR, "FUNCTION KEY F%d IS NOT BOUND, please edit your config.\n", i);
 		return CC_REDISPLAY;
 	}
+
 
 	if (process_command(global_handle, c)) {
 		running = thread_running = 0;
@@ -693,7 +695,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_EDITLINE
 				history(myhistory, &ev, H_ENTER, line);
 #endif
-
+				
 				if (process_command(&handle, cmd)) {
 					running = 0;
 				}
