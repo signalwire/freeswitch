@@ -1824,7 +1824,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_unlock(listener->filter_mutex);
 	if (listener->sock) {
 		char disco_buf[512] = "";
-		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com!\n";
+		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com/ !!!\n";
 		int mlen = strlen(message);
 		
 		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
