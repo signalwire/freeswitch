@@ -1064,6 +1064,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	if (regtype == REG_REGISTER) {
 		char exp_param[128] = "";
+		char date[80] = "";
+
 		s_event = NULL;
 
 		if (exptime) {
@@ -1086,7 +1088,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 		
-		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact), TAG_IF(path_val, SIPTAG_PATH_STR(path_val)), NUTAG_WITH_THIS(nua), TAG_END());
+		switch_rfc822_date(date, switch_timestamp_now());
+		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact),
+					TAG_IF(path_val, SIPTAG_PATH_STR(path_val)),
+					NUTAG_WITH_THIS(nua),
+					SIPTAG_DATE_STR(date),
+					TAG_END());
 
 		if (s_event) {
 			switch_event_fire(&s_event);
