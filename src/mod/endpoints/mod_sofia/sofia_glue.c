@@ -71,7 +71,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 					"s=FreeSWITCH\n"
 					"c=IN %s %s\n" 
 					"t=0 0\n"
-					"m=image %d udptl t38\n", 
+					"m=image %d udptl t38\n"
 					"a=T38MaxBitRate:%d\n"
 					"%s"
 					"%s"

@@ -2037,7 +2037,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 	char *group;
-	switch_call_cause_t cause;
+	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	char *template = NULL, *dest = NULL;
 	switch_originate_flag_t myflags = SOF_NONE;
 	char *cid_name_override = NULL;
