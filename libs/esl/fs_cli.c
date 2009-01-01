@@ -243,24 +243,23 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 
 static int process_command(esl_handle_t *handle, const char *cmd) 
 {
-
-	if (!strcasecmp(cmd, "help")) {
-		printf(
-			   "Command                    \tDescription\n"
-			   "-----------------------------------------------\n"
-			   "/help                      \tHelp\n"
-			   "/exit, /quit, /bye, ...    \tExit the program.\n"
-			   "/event, /noevent, /nixevent\tEvent commands.\n"
-			   "/log, /nolog               \tLog commands.\n"
-			   "/filter                    \tFilter commands.\n"
-			   "\n"
-			   );
-
-		goto end;
-	}
-
 	if ((*cmd == '/' && cmd++) || !strncasecmp(cmd, "...", 3)) {
 		
+		if (!strcasecmp(cmd, "help")) {
+			printf(
+				   "Command                    \tDescription\n"
+				   "-----------------------------------------------\n"
+				   "/help                      \tHelp\n"
+				   "/exit, /quit, /bye, ...    \tExit the program.\n"
+				   "/event, /noevent, /nixevent\tEvent commands.\n"
+				   "/log, /nolog               \tLog commands.\n"
+				   "/filter                    \tFilter commands.\n"
+				   "\n"
+				   );
+
+			goto end;
+		}
+
 		if (
 			!strcasecmp(cmd, "exit") ||
 			!strcasecmp(cmd, "quit") ||
@@ -737,10 +736,8 @@ int main(int argc, char *argv[])
 
 	}
 
-
- done:
-	
 #ifdef HAVE_EDITLINE
+ done:
 	history(myhistory, &ev, H_SAVE, hfile);
 
 	/* Clean up our memory */
