@@ -75,7 +75,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 16khzsound."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.2.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.2.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.7.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.7.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sounds\en\us\callie\voicemail\16000"
 				/>
 			</FileConfiguration>
@@ -85,7 +85,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 16khzsound."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.2.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.2.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.7.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\16000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.7.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sounds\en\us\callie\voicemail\16000"
 				/>
 			</FileConfiguration>
