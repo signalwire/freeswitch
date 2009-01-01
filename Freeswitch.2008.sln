@@ -831,6 +831,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_voipcodecs", "src\mod\c
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aprtoolkit", "libs\openmrcp\aprtoolkit\aprtoolkit.2008.vcproj", "{13DEECA0-BDD4-4744-A1A2-8EB0A44DF3D2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F057DA7F-79E5-4B00-845C-EF446EF055E3} = {F057DA7F-79E5-4B00-845C-EF446EF055E3}
+		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_fsv", "src\mod\applications\mod_fsv\mod_fsv.2008.vcproj", "{E3246D17-E29B-4AB5-962A-C69B0C5837BB}"
 	ProjectSection(ProjectDependencies) = postProject
