@@ -1252,8 +1252,8 @@ void sofia_reg_handle_sip_r_register(int status,
 			break;
 		default:
 			sofia_private->gateway->state = REG_STATE_FAILED;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Registration Failed with status %d. failure #%d\n", 
-							  sofia_private->gateway->name, status, ++sofia_private->gateway->failures);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Registration Failed with status %s [%d]. failure #%d\n", 
+							  sofia_private->gateway->name, switch_str_nil(phrase), status, ++sofia_private->gateway->failures);
 			break;
 		}
 		if (ostate != sofia_private->gateway->state) {
