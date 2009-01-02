@@ -68,6 +68,7 @@ static struct {
 	char *default_techprofile;
 	char *default_gateway;
 	switch_mutex_t *mutex;
+	char *custom_query;
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_t *master_odbc;
 #else   
@@ -84,6 +85,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_db_password, globals.db_password);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_db_dsn, globals.db_dsn);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_default_techprofile, globals.default_techprofile);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_default_gateway, globals.default_gateway);
+SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_custom_query, globals.custom_query);
 
 static int route_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
@@ -117,28 +119,30 @@ static switch_status_t load_config(void)
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-			if (!strcasecmp(var, "db_username")) {
+			if (!strcasecmp(var, "db-username")) {
 				set_global_db_username(val);
-			} else if (!strcasecmp(var, "db_password")) {
+			} else if (!strcasecmp(var, "db-password")) {
 				set_global_db_password(val);
-			} else if (!strcasecmp(var, "db_dsn")) {
+			} else if (!strcasecmp(var, "db-dsn")) {
 				set_global_db_dsn(val);
 			} else if (!strcasecmp(var, "default-techprofile")) {
 				set_global_default_techprofile(val);
 			} else if (!strcasecmp(var, "default-gateway")) {
 				set_global_default_gateway(val);
+			} else if (!strcasecmp(var, "custom-query")) {
+				set_global_custom_query(val);
 			}
 		}
 	}
 	
 done:
-	if (!globals.db_username) {
+	if (switch_strlen_zero(globals.db_username)) {
 		set_global_db_username("root");
 	}
-	if (!globals.db_password) {
+	if (switch_strlen_zero(globals.db_password)) {
 		set_global_db_password("password");
 	}
-	if (!globals.db_dsn) {
+	if (switch_strlen_zero(globals.db_dsn)) {
 		set_global_db_dsn("easyroute");
 	}
 
@@ -196,8 +200,13 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
 	route_callback_t pdata;
 
 	memset(&pdata, 0, sizeof(pdata));
-
-	snprintf(sql, 1025, SQL_LOOKUP, dn);
+	if (!globals.custom_query){
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing static Query\n[%s]\n", SQL_LOOKUP);
+		snprintf(sql, 1024, SQL_LOOKUP, dn);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing custom Query\n[%s]\n", globals.custom_query);
+		snprintf(sql, 1024, globals.custom_query, dn);
+	}
 
 	if (globals.mutex){
 		switch_mutex_lock(globals.mutex);
@@ -207,7 +216,7 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
 	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, route_callback, &pdata) == SWITCH_ODBC_SUCCESS){
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "SQL Query\n[%s]\n", sql);
 		char tmp_profile[129];
-		char tmp_gateway[16];
+		char tmp_gateway[129];
 
 		if (switch_strlen_zero(pdata.limit)) {
 			switch_set_string(results->limit, "9999" );
@@ -234,7 +243,7 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
 		}
 
 		switch_snprintf(results->dialstring, 256, "%s/%s@%s", tmp_profile , results->translated, tmp_gateway);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "THE ROUTE [%s]", results->dialstring);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "THE ROUTE [%s]\n", results->dialstring);
 
 		if (switch_strlen_zero(pdata.group)){
 			switch_set_string(results->group, "");
