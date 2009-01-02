@@ -185,7 +185,8 @@ static int KSFilterPinPropertyIdentifiersInclude(
 int PaWin_WDMKS_QueryFilterMaximumChannelCount( void *wcharDevicePath, int isInput )
 {
     HANDLE deviceHandle;
-    int pinCount, pinId, i;
+    int pinCount, pinId;
+	ULONG i;
     int result = 0;
     KSPIN_DATAFLOW requiredDataflowDirection = (isInput ? KSPIN_DATAFLOW_OUT : KSPIN_DATAFLOW_IN );
     

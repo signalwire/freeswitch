@@ -59,7 +59,7 @@
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -145,7 +145,7 @@
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
@@ -278,11 +278,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\pocketsphinx-0.5.99\include\pocketsphinx.h"
+				RelativePath="..\..\..\include\pocketsphinx.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\include\pocketsphinx.h"
+				RelativePath="..\..\pocketsphinx-0.5.99\include\pocketsphinx.h"
 				>
 			</File>
 			<File

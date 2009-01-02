@@ -59,7 +59,7 @@
 				AssemblerListingLocation=".\Release/"
 				ObjectFile=".\Release/"
 				ProgramDataBaseFileName=".\Release/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -146,7 +146,7 @@
 				AssemblerListingLocation=".\Debug/"
 				ObjectFile=".\Debug/"
 				ProgramDataBaseFileName=".\Debug/"
-				WarningLevel="3"
+				WarningLevel="0"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="4"
 			/>
@@ -474,7 +474,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_interface.c"
@@ -497,8 +496,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_sigproc.c"
@@ -521,7 +518,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp.c"
@@ -544,7 +540,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_affine.c"
@@ -567,7 +562,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_inverse_linear.c"
@@ -590,7 +584,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fe_warp_piecewise_linear.c"
@@ -613,7 +606,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\feat\feat.c"
@@ -636,7 +628,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\filename.c"
@@ -659,7 +650,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\fixlog.c"
@@ -682,7 +672,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\fsg_model.c"
@@ -709,7 +698,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\glist.c"
@@ -732,7 +720,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\hash_table.c"
@@ -755,7 +742,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\heap.c"
@@ -778,7 +764,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\info.c"
@@ -801,7 +786,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\lm\jsgf.c"
@@ -836,7 +820,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\listelem_alloc.c"
@@ -871,7 +854,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\mmio.c"
@@ -918,7 +900,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxad\play_win32.c"
@@ -941,7 +922,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\profile.c"
@@ -964,7 +944,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxad\rec_win32.c"
@@ -987,7 +966,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\sbthread.c"
@@ -1014,7 +992,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\slapack_lite.c"
@@ -1037,7 +1014,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\strfuncs.c"
@@ -1060,7 +1036,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\util\unlimit.c"
@@ -1083,7 +1058,6 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
-
 			</File>
 			<File
 				RelativePath="..\..\sphinxbase-0.4.99\src\libsphinxbase\fe\yin.c"
