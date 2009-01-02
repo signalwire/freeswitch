@@ -778,6 +778,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		stream->write_function(stream, " <reply type=\"success\">Listener %u Created</reply>\n", listener->id);
 		xmlize_listener(listener, stream);
 		stream->write_function(stream, "</data>\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating event-sink listener [%u]\n", listener->id);
 
 		goto end;
 	} else if (!strcasecmp(wcmd, "destroy-listener")) {		
@@ -789,6 +790,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		}
 
 		if ((listener = find_listener(idl))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying event-sink listener [%u]\n", idl);
 			remove_listener(listener);
 			stream->write_function(stream, "<data>\n <reply type=\"success\">listener %u destroyed</reply>\n", listener->id);
 			xmlize_listener(listener, stream);
@@ -796,6 +798,7 @@ SWITCH_STANDARD_API(event_sink_function)
 			expire_listener(&listener);
 			goto end;
 		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Request to destroy unknown event-sink listener [%u]\n", idl);
 			stream->write_function(stream, "<data><reply type=\"error\">Can't find listener</reply></data>\n");
 			goto end;
 		}
