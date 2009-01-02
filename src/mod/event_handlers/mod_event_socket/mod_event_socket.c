@@ -719,6 +719,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		listener->last_flush = switch_timestamp(NULL);
 		
 		if (events) {
+			char delim = ',';
 
 			if (switch_stristr("xml", format)) {
 				listener->format = EVENT_FORMAT_XML;
@@ -727,11 +728,15 @@ SWITCH_STANDARD_API(event_sink_function)
 			}
 			
 			edup = strdup(events);
-			
+
+			if (strchr(edup, ' ')) {
+				delim = ' ';
+			}
+
 			for (cur = edup; cur; count++) {
 				switch_event_types_t type;
 				
-				if ((next = strchr(cur, ' '))) {
+				if ((next = strchr(cur, delim))) {
 					*next++ = '\0';
 				}
 
