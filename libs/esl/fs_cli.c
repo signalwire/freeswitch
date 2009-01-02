@@ -285,6 +285,17 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 
 			goto end;
 		}
+		
+		if (!strncasecmp(cmd, "debug", 5)){
+			int tmp_debug = atoi(cmd+6);
+			if (tmp_debug > -1 && tmp_debug < 8){
+				esl_global_set_default_logger(tmp_debug);
+				printf("fs_cli debug level set to %d\n", tmp_debug);
+			} else {
+				printf("fs_cli debug level must be 0 - 7\n");
+			}
+			goto end;
+		}
 	
 		printf("Unknown command [%s]\n", cmd);
 	} else {
