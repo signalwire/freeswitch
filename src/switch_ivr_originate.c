@@ -330,7 +330,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	}
 
 	if ((switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
-		return SWITCH_STATUS_SUCCESS;
+		goto end;
 	}
 
 	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -551,7 +551,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	switch_safe_free(write_frame.data);
 
-	return status;
+ end:
+
+	return (!caller_channel || switch_channel_ready(caller_channel)) ? status : SWITCH_STATUS_FALSE;
 }
 
 static void process_import(switch_core_session_t *session, switch_channel_t *peer_channel)
