@@ -3038,6 +3038,142 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 	return ret_status;
 }
 
+
+static void add_x_tag(switch_xml_t x_member, const char *name, const char *value, int off)
+{
+	switch_size_t dlen = strlen(value) * 3;
+	char *data;
+	switch_xml_t x_tag;
+
+	x_tag = switch_xml_add_child_d(x_member, name, off);
+	switch_assert(x_tag);
+	
+	switch_zmalloc(data, dlen);
+
+	switch_url_encode(value, data, dlen);
+	switch_xml_set_txt_d(x_tag, data);
+	free(data);
+}
+
+static void conference_xlist(conference_obj_t *conference, switch_xml_t x_conference, int off)
+{
+	conference_member_t *member = NULL;
+	switch_xml_t x_member = NULL, x_members = NULL, x_flags;
+	int moff = 0;
+	char i[30] = "";
+	
+	switch_assert(conference != NULL);
+	switch_assert(x_conference != NULL);
+	
+	switch_xml_set_attr_d(x_conference, "name", conference->name);
+
+
+	switch_snprintf(i, sizeof(i), "%d", conference->count);
+	switch_xml_set_attr_d(x_conference, "member-count", i);
+
+	if (switch_test_flag(conference, CFLAG_LOCKED)) {
+		switch_xml_set_attr_d(x_conference, "locked", "true");
+	}
+
+	x_members = switch_xml_add_child_d(x_conference, "members", 0);
+	switch_assert(x_members);
+	
+	switch_mutex_lock(conference->member_mutex);
+
+	for (member = conference->members; member; member = member->next) {
+		switch_channel_t *channel;
+		switch_caller_profile_t *profile;
+		char *uuid;
+		char *name;
+		uint32_t count = 0;
+		switch_xml_t x_tag;
+		int toff = 0;
+		
+		if (switch_test_flag(member, MFLAG_NOCHANNEL)) {
+			continue;
+		}
+
+		uuid = switch_core_session_get_uuid(member->session);
+		channel = switch_core_session_get_channel(member->session);
+		profile = switch_channel_get_caller_profile(channel);
+		name = switch_channel_get_name(channel);
+
+		
+		x_member = switch_xml_add_child_d(x_members, "member", moff++);
+		switch_assert(x_member);
+
+		switch_snprintf(i, sizeof(i), "%d", member->id);
+
+		add_x_tag(x_member, "id", i, toff++);
+		add_x_tag(x_member, "uuid", uuid, toff++);
+		add_x_tag(x_member, "caller_id_name", profile->caller_id_name, toff++);
+		add_x_tag(x_member, "caller_id_number", profile->caller_id_number, toff++);
+		
+
+		x_flags = switch_xml_add_child_d(x_member, "flags", count++);
+		switch_assert(x_flags);
+
+		x_tag = switch_xml_add_child_d(x_flags, "can_hear", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_CAN_HEAR) ? "true" : "false");
+
+		x_tag = switch_xml_add_child_d(x_flags, "can_speak", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_CAN_SPEAK) ? "true" : "false");
+
+		x_tag = switch_xml_add_child_d(x_flags, "talking", count++);
+		switch_xml_set_txt_d(x_tag, switch_test_flag(member, MFLAG_TALKING) ? "true" : "false");
+
+		x_tag = switch_xml_add_child_d(x_flags, "has_video", count++);
+		switch_xml_set_txt_d(x_tag, switch_channel_test_flag(switch_core_session_get_channel(member->session), CF_VIDEO) ? "true" : "false");
+		
+		x_tag = switch_xml_add_child_d(x_flags, "has_floor", count++);
+		switch_xml_set_txt_d(x_tag, (member == member->conference->floor_holder) ? "true" : "false");
+		
+	}
+
+	switch_mutex_unlock(conference->member_mutex);
+}
+static switch_status_t conf_api_sub_xml_list(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
+{
+	int count = 0;
+	switch_hash_index_t *hi;
+	void *val;
+	switch_xml_t x_conference, x_conferences;
+	int off = 0;
+	char *ebuf;
+
+	x_conferences = switch_xml_new("conferences");
+	switch_assert(x_conferences);
+	
+	if (conference == NULL) {
+		for (hi = switch_hash_first(NULL, globals.conference_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, NULL, NULL, &val);
+			conference = (conference_obj_t *) val;
+			
+			x_conference = switch_xml_add_child_d(x_conferences, "conference", off++);
+			switch_assert(conference);
+
+			count++;
+			conference_xlist(conference, x_conference, off);
+
+		}
+	} else {
+		x_conference = switch_xml_add_child_d(x_conferences, "conference", off++);
+		switch_assert(conference);
+		count++;
+		conference_xlist(conference, x_conference, off);
+	}
+
+
+	ebuf = switch_xml_toxml(x_conferences, SWITCH_TRUE);
+
+	stream->write_function(stream, "%s", ebuf);
+
+	switch_xml_free(x_conferences);
+	free(ebuf);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t conf_api_sub_play(conference_obj_t *conference, switch_stream_handle_t *stream, int argc, char **argv)
 {
 	int ret_status = SWITCH_STATUS_GENERR;
@@ -3578,6 +3714,7 @@ typedef enum {
 /* Entries in this list should be kept in sync with the enum above */
 static api_command_t conf_api_sub_commands[] = {
 	{"list", (void_fn_t) &conf_api_sub_list, CONF_API_SUB_ARGS_SPLIT, "<confname> list [delim <string>]"},
+	{"xml_list", (void_fn_t) &conf_api_sub_xml_list, CONF_API_SUB_ARGS_SPLIT, "<confname> xml_list"},
 	{"energy", (void_fn_t) &conf_api_sub_energy, CONF_API_SUB_MEMBER_TARGET,
 	 "<confname> energy <member_id|all|last> [<newval>]"},
 	{"volume_in", (void_fn_t) &conf_api_sub_volume_in, CONF_API_SUB_MEMBER_TARGET,
@@ -3778,6 +3915,8 @@ SWITCH_STANDARD_API(conf_api_main)
 			/* special case the list command, because it doesn't require a conference argument */
 			if (strcasecmp(argv[0], "list") == 0) {
 				conf_api_sub_list(NULL, stream, argc, argv);
+			} else if (strcasecmp(argv[0], "xml_list") == 0) {
+				conf_api_sub_xml_list(NULL, stream, argc, argv);
 			} else if (strcasecmp(argv[0], "help") == 0 || strcasecmp(argv[0], "commands") == 0) {
 				stream->write_function(stream, "%s\n", api_syntax);
 			} else if (argv[1] && strcasecmp(argv[1], "dial") == 0) {
