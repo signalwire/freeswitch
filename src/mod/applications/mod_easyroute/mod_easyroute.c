@@ -32,7 +32,7 @@
  * Take Incoming DIDs and Lookup where to send them as well as retrieve
  * the number of channels they are allowed you use
  *
- * Big Thanks to CP,  for funding this work.
+ * Big Thanks to CP and Joseph Watson (Powercode Systems, LLC) for funding this work.
  *
  */
 
