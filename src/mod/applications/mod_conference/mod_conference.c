@@ -3061,15 +3061,13 @@ static void conference_xlist(conference_obj_t *conference, switch_xml_t x_confer
 	switch_xml_t x_member = NULL, x_members = NULL, x_flags;
 	int moff = 0;
 	char i[30] = "";
-	
+	char *ival = i;
 	switch_assert(conference != NULL);
 	switch_assert(x_conference != NULL);
 	
 	switch_xml_set_attr_d(x_conference, "name", conference->name);
-
-
 	switch_snprintf(i, sizeof(i), "%d", conference->count);
-	switch_xml_set_attr_d(x_conference, "member-count", i);
+	switch_xml_set_attr_d(x_conference, "member-count", ival);
 
 	if (switch_test_flag(conference, CFLAG_LOCKED)) {
 		switch_xml_set_attr_d(x_conference, "locked", "true");
