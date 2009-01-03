@@ -178,6 +178,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 				if ((dp = strchr(user, '@'))) {
 					*dp++ = '\0';
 					domain_name = dp;
+					at++;
 				}
 				
 				if (!domain_name) {
