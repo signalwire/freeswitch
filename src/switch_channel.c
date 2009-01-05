@@ -1140,13 +1140,12 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	return channel->state;
 }
 
-SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event)
+SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *channel, switch_event_t *event)
 {
 	switch_caller_profile_t *caller_profile, *originator_caller_profile = NULL, *originatee_caller_profile = NULL;
-	switch_event_header_t *hi;
 	switch_codec_t *codec;
 	char state_num[25];
-	int x;
+
 	switch_mutex_lock(channel->profile_mutex);
 
 	if ((caller_profile = switch_channel_get_caller_profile(channel))) {
@@ -1178,7 +1177,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", switch_str_nil(codec->implementation->iananame));
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->actual_samples_per_second);
 	}
-	
+
 	/* Index Caller's Profile */
 	if (caller_profile) {
 		switch_caller_profile_event_set_data(caller_profile, "Caller", event);
@@ -1199,7 +1198,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 		}
 	}
 
+}
 
+SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *channel, switch_event_t *event)
+{
+	switch_event_header_t *hi;
+	int x;
+
+	switch_channel_event_set_basic_data(channel, event);
+	
 	if (switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) || 
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_UUID ||
@@ -1234,6 +1241,15 @@ SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, sw
 
 	switch_mutex_unlock(channel->profile_mutex);
 }
+
+
+SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event)
+{
+	switch_channel_event_set_basic_data(channel, event);
+	switch_channel_event_set_extended_data(channel, event);
+}
+
+
 
 SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
