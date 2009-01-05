@@ -405,9 +405,15 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 	if (member->conference) {
 		status = conference_add_event_data(member->conference, event);
 
-		if (member->conference->verbose_events && member->session) {
+		if (member->session) {
 			switch_channel_t *channel = switch_core_session_get_channel(member->session);
-			switch_channel_event_set_data(channel, event);
+
+			if (member->conference->verbose_events) {
+				switch_channel_event_set_data(channel, event);
+			} else {
+				switch_channel_event_set_basic_data(channel, event);
+			}
+
 		}
 	}
 
