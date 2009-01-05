@@ -309,6 +309,7 @@ struct conference_member {
 	switch_ivr_digit_stream_t *digit_stream;
 	switch_speech_handle_t lsh;
 	switch_speech_handle_t *sh;
+	uint32_t verbose_events;
 	struct conference_member *next;
 };
 
@@ -404,17 +405,17 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 
 	if (member->conference) {
 		status = conference_add_event_data(member->conference, event);
+	}
 
-		if (member->session) {
-			switch_channel_t *channel = switch_core_session_get_channel(member->session);
-
-			if (member->conference->verbose_events) {
-				switch_channel_event_set_data(channel, event);
-			} else {
-				switch_channel_event_set_basic_data(channel, event);
-			}
-
+	if (member->session) {
+		switch_channel_t *channel = switch_core_session_get_channel(member->session);
+		
+		if (member->verbose_events) {
+			switch_channel_event_set_data(channel, event);
+		} else {
+			switch_channel_event_set_basic_data(channel, event);
 		}
+		
 	}
 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
@@ -579,6 +580,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 	member->conference = conference;
 	member->next = conference->members;
 	member->energy_level = conference->energy_level;
+	member->verbose_events = conference->verbose_events;
 	conference->members = member;
 	switch_set_flag(member, MFLAG_INTREE);
 	switch_mutex_unlock(conference->member_mutex);
