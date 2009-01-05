@@ -264,6 +264,7 @@ typedef struct conference_obj {
 	int comfort_noise_level;
 	int video_running;
 	uint32_t eflags;
+	uint32_t verbose_events;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -401,13 +402,13 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 	if (!member)
 		return status;
 
-	if (member->session) {
-		switch_channel_t *channel = switch_core_session_get_channel(member->session);
-		switch_channel_event_set_data(channel, event);
-	}
-
 	if (member->conference) {
 		status = conference_add_event_data(member->conference, event);
+
+		if (member->conference->verbose_events && member->session) {
+			switch_channel_t *channel = switch_core_session_get_channel(member->session);
+			switch_channel_event_set_data(channel, event);
+		}
 	}
 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
@@ -5018,6 +5019,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	switch_status_t status;
 	int comfort_noise_level = 0;
 	char *suppress_events = NULL;
+	char *verbose_events = NULL;
 	char *auto_record = NULL;
 
 	/* Validate the conference name */
@@ -5137,6 +5139,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			}
 		} else if (!strcasecmp(var, "suppress-events") && !switch_strlen_zero(val)) {
 			suppress_events = val;
+		} else if (!strcasecmp(var, "verbose-events") && !switch_strlen_zero(val)) {
+			verbose_events = val;
 		} else if (!strcasecmp(var, "auto-record") && !switch_strlen_zero(val)) {
 			auto_record = val;
 		}
@@ -5295,6 +5299,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
 	if (!switch_strlen_zero(auto_record)) {
 		conference->auto_record = switch_core_strdup(conference->pool, auto_record);
+	}
+
+	if (!switch_strlen_zero(verbose_events) && switch_true(verbose_events)) {
+		conference->verbose_events = 1;
 	}
 	
 	/* caller control configuration chores */
