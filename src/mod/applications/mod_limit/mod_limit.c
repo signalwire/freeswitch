@@ -319,7 +319,7 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)key, item->total_usage);	
 		}
 		switch_core_event_hook_remove_state_change(session, hash_state_handler);
-		switch_mutex_unlock(globals.mutex);
+		switch_mutex_unlock(globals.limit_hash_mutex);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
