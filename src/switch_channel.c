@@ -1198,6 +1198,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		}
 	}
 
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *channel, switch_event_t *event)
@@ -1205,7 +1206,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 	switch_event_header_t *hi;
 	int x;
 
-	switch_channel_event_set_basic_data(channel, event);
+	switch_mutex_lock(channel->profile_mutex);
 	
 	if (switch_channel_test_flag(channel, CF_VERBOSE_EVENTS) || 
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
@@ -1245,8 +1246,10 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 
 SWITCH_DECLARE(void) switch_channel_event_set_data(switch_channel_t *channel, switch_event_t *event)
 {
+	switch_mutex_lock(channel->profile_mutex);
 	switch_channel_event_set_basic_data(channel, event);
 	switch_channel_event_set_extended_data(channel, event);
+	switch_mutex_unlock(channel->profile_mutex);
 }
 
 
