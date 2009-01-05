@@ -315,7 +315,7 @@ int vasprintf(char **ret, const char *format, va_list ap);
 
 static int esl_vasprintf(char **ret, const char *fmt, va_list ap)
 {
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__sun)
 	return vasprintf(ret, fmt, ap);
 #else
 	char *buf;
