@@ -41,6 +41,7 @@
 SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms, switch_bool_t sync, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	int media_ready = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_time_t start = switch_timestamp_now(), now, done = switch_timestamp_now() + (ms * 1000);
 	switch_frame_t *read_frame, cng_frame = { 0 };
@@ -53,10 +54,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	switch_codec_t codec = { 0 };
 	int sval = 0;
 	const char *var;
+
+	if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
+		if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot establish media.\n");
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	media_ready = (switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE));
 	
-	if (switch_channel_media_ready(channel) && 
-		(var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && 
-		(sval = atoi(var)) && sval >= 1000) {
+
+	if (media_ready && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var)) && sval >= 100) {
 		switch_core_session_get_read_impl(session, &imp);
 		
 		if (switch_core_codec_init(&codec,
@@ -83,12 +92,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		write_frame.datalen = imp.decoded_bytes_per_packet;
 		write_frame.samples = write_frame.datalen / sizeof(int16_t);
 
-		if (!switch_channel_media_ready(channel)) {
-			if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot establish media.\n");
-				return SWITCH_STATUS_FALSE;
-			}
-		}
 	}
 
 	cng_frame.data = data;
@@ -96,7 +99,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	cng_frame.buflen = 2;
 	switch_set_flag((&cng_frame), SFF_CNG);
 
-	if (sync && !switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+	if (sync && media_ready) {
 		switch_channel_audio_sync(channel);
 	}
 	
@@ -163,19 +166,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			}
 		}
 
-		if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+		if (!media_ready) {
 			switch_cond_next();
 			continue;
 		}
 
-		if (switch_channel_test_flag(channel, CF_SERVICE) ||
-			(!switch_channel_test_flag(channel, CF_ANSWERED) && !switch_channel_test_flag(channel, CF_EARLY_MEDIA))) {
-			switch_cond_next();
-		} else {
-			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				break;
-			}
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
 		}
 
 		if (sval) {
@@ -185,7 +184,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			switch_core_session_write_frame(session, &cng_frame, SWITCH_IO_FLAG_NONE, 0);
 		}
 	}
-
+	
 	if (write_frame.codec) {
 		switch_core_codec_destroy(&codec);
 	}
