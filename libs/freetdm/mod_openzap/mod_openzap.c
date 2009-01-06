@@ -1822,6 +1822,8 @@ static switch_status_t load_config(void)
 			uint32_t opts = 0;
 			int q921loglevel = -1;
 			int q931loglevel = -1;
+			// quick debug
+			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ID: '%s', Name:'%s'\n",id,name);
 
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2119,6 +2121,39 @@ SWITCH_STANDARD_API(oz_function)
 									   );
 			}
 		}
+	} else if (!strcasecmp(argv[0], "bounce")) {
+		/* MSC testing "oz bounce" command */
+		if (argc < 2) {
+			stream->write_function(stream, "-ERR Usage: oz dump <span_id> [<chan_id>]\n");
+			goto end;
+		} else {
+			int32_t span_id, chan_id = 0;
+			zap_span_t *span;
+
+			span_id = atoi(argv[1]);
+
+			if (argc > 2) {
+				chan_id = atoi(argv[2]);
+			}
+			
+			if (!(span_id && (span = SPAN_CONFIG[span_id].span))) {
+				stream->write_function(stream, "-ERR invalid span\n");
+			} else {
+				if (chan_id) {
+					//dump_chan(span, chan_id, stream);
+					zap_log(ZAP_LOG_INFO,"Bounce span: %d, chan: %d\n", span_id, chan_id);
+				} else {
+					int j;
+					
+					stream->write_function(stream, "+OK\n");
+					for(j = 1; j <= span->chan_count; j++) {
+						//dump_chan(span, j, stream);
+						zap_log(ZAP_LOG_INFO,"Bounce span: %d, chan: %d\n", span_id, j);
+					}
+
+				}
+			}
+		}	
 	} else {
 		stream->write_function(stream, "-ERR Usage: oz list || dump <span_id> [<chan_id>]\n");
 	}
