@@ -64,8 +64,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 
 	media_ready = (switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE));
 	
-
-	if (media_ready && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var)) && sval >= 100) {
+	if (ms > 100 && media_ready && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
 		switch_core_session_get_read_impl(session, &imp);
 		
 		if (switch_core_codec_init(&codec,
@@ -92,6 +91,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 		write_frame.datalen = imp.decoded_bytes_per_packet;
 		write_frame.samples = write_frame.datalen / sizeof(int16_t);
 
+	}
+
+	if (!write_frame.datalen) {
+		sval = 0;
 	}
 
 	cng_frame.data = data;
@@ -177,7 +180,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			break;
 		}
 
-		if (sval) {
+		if (sval && write_frame.datalen) {
 			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, sval);
 			switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
 		} else {

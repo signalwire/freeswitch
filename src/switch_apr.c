@@ -761,9 +761,9 @@ SWITCH_DECLARE(switch_status_t) switch_socket_atmark(switch_socket_t *sock, int 
 
 SWITCH_DECLARE(switch_status_t) switch_socket_recvfrom(switch_sockaddr_t *from, switch_socket_t *sock, int32_t flags, char *buf, size_t *len)
 {
-	apr_status_t r;
+	apr_status_t r = SWITCH_STATUS_GENERR;
 
-	if ((r = apr_socket_recvfrom(from, sock, flags, buf, len)) == APR_SUCCESS) {
+	if (from && sock && (r = apr_socket_recvfrom(from, sock, flags, buf, len)) == APR_SUCCESS) {
 		from->port = ntohs(from->sa.sin.sin_port);
 		/* from->ipaddr_ptr = &(from->sa.sin.sin_addr);
 		 * from->ipaddr_ptr = inet_ntoa(from->sa.sin.sin_addr);

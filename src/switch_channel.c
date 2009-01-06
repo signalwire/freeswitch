@@ -1647,8 +1647,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_pre_answer(switch_channel
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_PROGRESS;
 	msg.from = channel->name;
-	status = switch_core_session_receive_message(channel->session, &msg);
-
+	status = switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
+	
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_channel_perform_mark_pre_answered(channel, file, func, line);
 	} else {
@@ -1679,7 +1679,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_ring_ready(switch_channel
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_RINGING;
 	msg.from = channel->name;
-	status = switch_core_session_receive_message(channel->session, &msg);
+	status = switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Ring Ready %s!\n", channel->name);
@@ -1784,7 +1784,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_answer(switch_channel_t *
 
 	msg.message_id = SWITCH_MESSAGE_INDICATE_ANSWER;
 	msg.from = channel->name;
-	status = switch_core_session_receive_message(channel->session, &msg);
+	status = switch_core_session_perform_receive_message(channel->session, &msg, file, func, line);
 
 	if (status == SWITCH_STATUS_SUCCESS) {
 		switch_channel_perform_mark_answered(channel, file, func, line);
