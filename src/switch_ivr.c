@@ -54,8 +54,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	int sval = 0;
 	const char *var;
 	
-	if (switch_channel_media_ready(channel) && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
-		switch_channel_pre_answer(channel);
+	if (switch_channel_media_ready(channel) && 
+		(var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && 
+		(sval = atoi(var)) && sval >= 1000) {
 		switch_core_session_get_read_impl(session, &imp);
 		
 		if (switch_core_codec_init(&codec,
