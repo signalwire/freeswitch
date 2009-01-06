@@ -368,6 +368,10 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 {
 	char *txt;
 
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
+
 	esl_event_serialize(handle->last_ievent, &txt, ESL_TRUE);
 
 	esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
@@ -388,6 +392,10 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 	char arg_buf[512] = "";
 	char send_buf[1292] = "";
 	
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
+
 	if (uuid) {
 		snprintf(cmd_buf, sizeof(cmd_buf), "sendmsg %s", uuid);
 	}
@@ -571,7 +579,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 {
 	esl_mutex_t *mutex = handle->mutex;
-	esl_status_t status = ESL_SUCCESS;
+	esl_status_t status = ESL_FAIL;
 	
 	if (mutex) {
 		esl_mutex_lock(mutex);
@@ -585,6 +593,7 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 	if (handle->sock != ESL_SOCK_INVALID) {
 		closesocket(handle->sock);
 		handle->sock = ESL_SOCK_INVALID;
+		status = ESL_SUCCESS;
 	}
 	
 	handle->connected = 0;
@@ -604,6 +613,10 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	struct timeval tv = { 0 };
 	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
+
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
 
 	tv.tv_usec = ms * 1000;
 
@@ -660,6 +673,11 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 	esl_ssize_t len;
 	int zc = 0;
 	
+
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
+
 	esl_mutex_lock(handle->mutex);
 
 	esl_event_safe_destroy(&handle->last_event);
@@ -858,6 +876,10 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd)
 {
 	const char *e = cmd + strlen(cmd) -1;
 	
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
+
 	esl_log(ESL_LOG_DEBUG, "SEND\n%s\n", cmd);
 	
 	if (send(handle->sock, cmd, strlen(cmd), 0) != (int)strlen(cmd)) {
@@ -882,6 +904,10 @@ ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 	const char *hval;
 	esl_status_t status;
 	
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
+
 	esl_mutex_lock(handle->mutex);
 
 	if ((status = esl_send(handle, cmd))) {
