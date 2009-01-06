@@ -3562,6 +3562,22 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 				/* print debug info */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "INFO DTMF(%c)\n", dtmf.digit);
+				
+				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+					const char *uuid;
+					switch_core_session_t *session_b;
+					
+					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE)) && (session_b = switch_core_session_locate(uuid))) {
+						while (switch_channel_has_dtmf(channel)) {
+							switch_dtmf_t idtmf = { 0, 0 };
+							if (switch_channel_dequeue_dtmf(channel, &idtmf) == SWITCH_STATUS_SUCCESS) {
+								switch_core_session_send_dtmf(session_b, &idtmf);
+							}
+						}
+
+						switch_core_session_rwunlock(session_b);
+					}
+				}
 
 				/* Send 200 OK response */
 				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());

@@ -539,10 +539,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_mutex_unlock(session->read_codec->mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 
-	if (switch_core_session_private_event_count(session)) {
-		switch_ivr_parse_all_events(session);
-	}
-
 	return status;
 }
 

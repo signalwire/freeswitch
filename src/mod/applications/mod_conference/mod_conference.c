@@ -1552,6 +1552,13 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	   and mux it with any audio from other channels. */
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_channel_ready(channel)) {
+
+		if (switch_channel_test_flag(channel, CF_SERVICE)) {
+			switch_yield(100000);
+			continue;
+		}
+
+
 		/* Read a frame. */
 		status = switch_core_session_read_frame(member->session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
@@ -2037,9 +2044,18 @@ static void conference_loop_output(conference_member_t *member)
 			}
 			switch_clear_flag_locked(member, MFLAG_FLUSH_BUFFER);
 		}
-
+		
 		switch_mutex_unlock(member->flag_mutex);
 
+
+		if (switch_core_session_private_event_count(member->session)) {
+			switch_channel_set_flag(channel, CF_SERVICE);
+			switch_ivr_parse_all_events(member->session);
+			switch_channel_clear_flag(channel, CF_SERVICE);
+			switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
+			switch_core_session_set_read_codec(member->session, &member->read_codec);
+		}
+		
 		if (use_timer) {
 			switch_core_timer_next(&timer);
 		} else {

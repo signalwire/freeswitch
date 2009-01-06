@@ -1445,6 +1445,44 @@ typedef struct {
 
 #define SWITCH_META_VAR_KEY "__dtmf_meta"
 
+typedef struct {
+	switch_core_session_t *session;
+	const char *app;
+	int flags;
+} bch_t;
+
+static void *SWITCH_THREAD_FUNC bcast_thread(switch_thread_t *thread, void *obj)
+{
+	bch_t *bch = (bch_t *) obj;
+
+	switch_ivr_broadcast(switch_core_session_get_uuid(bch->session), bch->app, bch->flags);
+
+	return NULL;
+
+}
+static void broadcast_in_thread(switch_core_session_t *session, const char *app, int flags)
+{
+	switch_thread_t *thread;
+	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool;
+	bch_t *bch;
+	
+	switch_assert(session);
+
+	pool = switch_core_session_get_pool(session);
+	
+	bch = switch_core_session_alloc(session, sizeof(*bch));
+	bch->session = session;
+	bch->app = app;
+	bch->flags = flags;
+	
+	
+	switch_threadattr_create(&thd_attr, pool);
+	switch_threadattr_detach_set(thd_attr, 1);
+	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
+	switch_thread_create(&thread, thd_attr, bcast_thread, bch, pool);
+}
+
 static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf, switch_dtmf_direction_t direction)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1497,7 +1535,7 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 
 			if (ok && md->sr[direction].map[dval].app) {
 				uint32_t flags = md->sr[direction].map[dval].flags;
-
+				
 				if ((md->sr[direction].map[dval].bind_flags & SBF_EXEC_OPPOSITE)) {
 					if (direction == SWITCH_DTMF_SEND) {
 						flags |= SMF_ECHO_ALEG;
@@ -1520,7 +1558,12 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Processing meta digit '%c' [%s]\n",
 								  switch_channel_get_name(channel), dtmf->digit, md->sr[direction].map[dval].app);
-				switch_ivr_broadcast(switch_core_session_get_uuid(session), md->sr[direction].map[dval].app, flags);
+
+				if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+					broadcast_in_thread(session, md->sr[direction].map[dval].app, flags | SMF_REBRIDGE);
+				} else {
+					switch_ivr_broadcast(switch_core_session_get_uuid(session), md->sr[direction].map[dval].app, flags);
+				}
 
 				if ((md->sr[direction].map[dval].bind_flags & SBF_ONCE)) {
 					memset(&md->sr[direction].map[dval], 0, sizeof(md->sr[direction].map[dval]));
@@ -1589,7 +1632,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_se
 			md->sr[SWITCH_DTMF_RECV].map[key].app = switch_core_session_strdup(session, app);
 			md->sr[SWITCH_DTMF_RECV].map[key].flags |= SMF_HOLD_BLEG;
 			md->sr[SWITCH_DTMF_RECV].map[key].bind_flags = bind_flags;
-
+			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Bound A-Leg: %d %s\n", key, app);
 		}
 		if ((bind_flags & SBF_DIAL_BLEG)) {
@@ -2155,6 +2198,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_broadcast(const char *uuid, const cha
 		switch_core_session_rwunlock(other_session);
 		master = other_session;
 		other_session = NULL;
+	}
+
+	if (switch_stristr("record", app)) {
+		nomedia = 0;
 	}
 
 	if ((flags & SMF_ECHO_ALEG)) {
