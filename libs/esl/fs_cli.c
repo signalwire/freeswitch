@@ -618,6 +618,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (esl_connect(&handle, profile->host, profile->port, profile->pass)) {
+		esl_global_set_default_logger(3);
 		esl_log(ESL_LOG_ERROR, "Error Connecting [%s]\n", handle.err);
 		return -1;
 	}

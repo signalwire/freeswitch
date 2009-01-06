@@ -570,24 +570,32 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 
 ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 {
+	esl_mutex_t *mutex = handle->mutex;
+	esl_status_t status = ESL_SUCCESS;
+	
+	if (mutex) {
+		esl_mutex_lock(mutex);
+	}
+
 	esl_event_safe_destroy(&handle->last_event);
 	esl_event_safe_destroy(&handle->last_sr_event);
 	esl_event_safe_destroy(&handle->last_ievent);
 	esl_event_safe_destroy(&handle->info_event);
 
-	if (handle->mutex) {
-		esl_mutex_destroy(&handle->mutex);
-	}
-
 	if (handle->sock != ESL_SOCK_INVALID) {
 		closesocket(handle->sock);
 		handle->sock = ESL_SOCK_INVALID;
-		return ESL_SUCCESS;
 	}
 	
 	handle->connected = 0;
 
-	return ESL_FAIL;
+	if (mutex) {
+		esl_mutex_unlock(mutex);
+		esl_mutex_destroy(&mutex);
+	}
+
+
+	return status;
 }
 
 ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event)
