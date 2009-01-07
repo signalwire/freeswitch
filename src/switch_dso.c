@@ -24,14 +24,14 @@
 
 #ifdef WIN32
 
-void switch_dso_destroy(switch_dso_lib_t *lib) {
+SWITCH_DECLARE(void) switch_dso_destroy(switch_dso_lib_t *lib) {
 	if (lib && *lib) {
 		FreeLibrary(*lib);
 		*lib = NULL;
 	}
 }
 
-switch_dso_lib_t switch_dso_open(const char *path, int global, char **err) {
+SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, char **err) {
     HINSTANCE lib;
 	
 	lib = LoadLibraryEx(path, NULL, 0);
@@ -48,7 +48,7 @@ switch_dso_lib_t switch_dso_open(const char *path, int global, char **err) {
 	return lib;
 }
 
-switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+SWITCH_DECLARE(switch_dso_func_t) switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err) {
 	FARPROC func = GetProcAddress(lib, sym);
 	if (!func) {
 		DWORD error = GetLastError();
@@ -57,7 +57,7 @@ switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, cha
 	return (switch_dso_func_t)func;
 }
 
-void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err) {
+SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err) {
 	FARPROC addr = GetProcAddress(lib, sym);
 	if (!addr) {
 		DWORD error = GetLastError();

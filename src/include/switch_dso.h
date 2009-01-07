@@ -30,10 +30,10 @@ typedef void * switch_dso_lib_t;
 
 typedef void * switch_dso_data_t;
 
-void switch_dso_destroy(switch_dso_lib_t *lib);
-switch_dso_lib_t switch_dso_open(const char *path, int global, char **err);
-switch_dso_func_t switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err);
-void *switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err);
+SWITCH_DECLARE(void) switch_dso_destroy(switch_dso_lib_t *lib);
+SWITCH_DECLARE(switch_dso_lib_t) switch_dso_open(const char *path, int global, char **err);
+SWITCH_DECLARE(switch_dso_func_t) switch_dso_func_sym(switch_dso_lib_t lib, const char *sym, char **err);
+SWITCH_DECLARE(void *) switch_dso_data_sym(switch_dso_lib_t lib, const char *sym, char **err);
 
 
 #endif

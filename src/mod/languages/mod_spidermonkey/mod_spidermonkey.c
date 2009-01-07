@@ -927,8 +927,8 @@ static switch_status_t sm_load_file(char *filename)
 
  err:
 
-	if (err) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", filename, err);
+	if (err || !module) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", filename, switch_str_nil(err));
 		switch_safe_free(derr);
 		return SWITCH_STATUS_GENERR;
 	}
