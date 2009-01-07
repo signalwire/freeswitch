@@ -2754,7 +2754,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 									SIPTAG_CONTACT_STR(tech_pvt->profile->url),
 									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 									SOATAG_REUSE_REJECTED(1),
-									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
+									TAG_IF((profile->pflags & PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 					} else if(profile->pflags & PFLAG_3PCC_PROXY){
 						//3PCC proxy mode delays the 200 OK until the call is answered
 						switch_channel_set_variable(channel, SWITCH_ENDPOINT_DISPOSITION_VARIABLE, "RECEIVED_NOSDP");
@@ -2839,7 +2840,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 										SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 										SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 										SOATAG_REUSE_REJECTED(1),
-										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+										SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
+										TAG_IF((profile->pflags & PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 							launch_media_on_hold(session);
 
 							switch_core_session_rwunlock(other_session);
@@ -2905,7 +2907,8 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 								SOATAG_REUSE_REJECTED(1),
-								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), 
+								TAG_IF((profile->pflags & PFLAG_DISABLE_100REL), NUTAG_INCLUDE_EXTRA_SDP(1)), TAG_END());
 				} else {
 					nua_respond(tech_pvt->nh, SIP_488_NOT_ACCEPTABLE, TAG_END());
 				}
