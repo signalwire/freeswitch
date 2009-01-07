@@ -42,7 +42,7 @@ static jsval check_hangup_hook(struct js_session *jss, jsval *rp);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown);
-SWITCH_MODULE_DEFINITION(mod_spidermonkey, mod_spidermonkey_load, mod_spidermonkey_shutdown, NULL);
+SWITCH_MODULE_DEFINITION_EX(mod_spidermonkey, mod_spidermonkey_load, mod_spidermonkey_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
 
 #define METHOD_SANITY_CHECK()  if (!jss || !jss->session) {				\
 		eval_some_js("~throw new Error(\"You must call the session.originate method before calling this method!\");", cx, obj, rval); \
@@ -882,50 +882,54 @@ static void js_error(JSContext * cx, const char *message, JSErrorReport * report
 static switch_status_t sm_load_file(char *filename)
 {
 	sm_loadable_module_t *module = NULL;
-	switch_dso_handle_t *dso = NULL;
+	switch_dso_lib_t dso = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	switch_dso_handle_sym_t function_handle = NULL;
+	switch_loadable_module_function_table_t *function_handle = NULL;
 	spidermonkey_init_t spidermonkey_init = NULL;
 	const sm_module_interface_t *module_interface = NULL, *mp;
-
-	int loading = 1;
+	char *derr = NULL;
 	const char *err = NULL;
-	char derr[512] = "";
 
 	switch_assert(filename != NULL);
 
-	status = switch_dso_load(&dso, filename, module_manager.pool);
-
-	while (loading) {
-		if (status != SWITCH_STATUS_SUCCESS) {
-			switch_dso_error(dso, derr, sizeof(derr));
-			err = derr;
-			break;
-		}
-
-		status = switch_dso_sym(&function_handle, dso, "spidermonkey_init");
-		spidermonkey_init = (spidermonkey_init_t) (intptr_t) function_handle;
-
-		if (spidermonkey_init == NULL) {
-			err = "Cannot Load";
-			break;
-		}
-
-		if (spidermonkey_init(&module_interface) != SWITCH_STATUS_SUCCESS) {
-			err = "Module load routine returned an error";
-			break;
-		}
-
-		if (!(module = (sm_loadable_module_t *) switch_core_permanent_alloc(sizeof(*module)))) {
-			err = "Could not allocate memory\n";
-			break;
-		}
-
-		loading = 0;
+	if (!(dso = switch_dso_open(filename, 1, &derr))) {
+		status = SWITCH_STATUS_FALSE;
 	}
+
+	if (derr || status != SWITCH_STATUS_SUCCESS) {
+		err = derr;
+		goto err;
+	}
+
+	function_handle = switch_dso_data_sym(dso, "spidermonkey_init", &derr);
+
+	if (!function_handle || derr) {
+		status = SWITCH_STATUS_FALSE;
+		err = derr;
+		goto err;
+	}
+
+	spidermonkey_init = (spidermonkey_init_t) (intptr_t) function_handle;
+
+	if (spidermonkey_init == NULL) {
+		err = "Cannot Load";
+		goto err;
+	}
+
+	if (spidermonkey_init(&module_interface) != SWITCH_STATUS_SUCCESS) {
+		err = "Module load routine returned an error";
+		goto err;
+	}
+
+	if (!(module = (sm_loadable_module_t *) switch_core_permanent_alloc(sizeof(*module)))) {
+		err = "Could not allocate memory\n";
+	}
+
+ err:
 
 	if (err) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Loading module %s\n**%s**\n", filename, err);
+		switch_safe_free(derr);
 		return SWITCH_STATUS_GENERR;
 	}
 
