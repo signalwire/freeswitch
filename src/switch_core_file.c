@@ -125,21 +125,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, void *data, switch_size_t *len)
 {
 	switch_status_t status;
-	switch_size_t orig_len = *len;
+	switch_size_t want, got, orig_len = *len;
 
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
-	if (fh->buffer && switch_buffer_inuse(fh->buffer)) {
+	if (fh->buffer && switch_buffer_inuse(fh->buffer) >= *len * 2) {
 		*len = switch_buffer_read(fh->buffer, data, orig_len * 2) / 2;
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if ((status = fh->file_interface->file_read(fh, data, len)) != SWITCH_STATUS_SUCCESS) {
+	want = *len;
+
+ more:
+	
+	if ((status = fh->file_interface->file_read(fh, data, len)) != SWITCH_STATUS_SUCCESS || !*len) {
 		*len = 0;
 		goto done;
 	}
 
+	got = *len;
+	
 	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
 		if (!fh->resampler) {
 			if (switch_resample_create(&fh->resampler,
@@ -153,9 +159,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		fh->resampler->to_len =
 			switch_resample_process(fh->resampler, fh->resampler->from, fh->resampler->from_len, fh->resampler->to, fh->resampler->to_size, 0);
 
-		if (fh->resampler->to_len > orig_len) {
+		if (fh->resampler->to_len < want || fh->resampler->to_len > orig_len) {
 			if (!fh->buffer) {
-				switch_buffer_create_dynamic(&fh->buffer, fh->resampler->to_len * 2, fh->resampler->to_len * 4, fh->resampler->to_len * 8);
+				switch_buffer_create_dynamic(&fh->buffer, fh->resampler->to_len * 4, fh->resampler->to_len * 8, fh->resampler->to_len * 32);
 				switch_assert(fh->buffer);
 			}
 			if (!fh->dbuf) {
@@ -163,17 +169,23 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
 			}
 			switch_assert(fh->resampler->to_len <= fh->dbuflen);
-
+			
 			switch_float_to_short(fh->resampler->to, (int16_t *) fh->dbuf, fh->resampler->to_len);
 			switch_buffer_write(fh->buffer, fh->dbuf, fh->resampler->to_len * 2);
+
+			if (switch_buffer_inuse(fh->buffer) < want * 2) {
+				*len = want - fh->resampler->to_len;
+				goto more;
+			}
 			*len = switch_buffer_read(fh->buffer, data, orig_len * 2) / 2;
 		} else {
 			switch_float_to_short(fh->resampler->to, data, fh->resampler->to_len);
 			*len = fh->resampler->to_len;
 		}
+		
 
 	}
-
+	
   done:
 
 	return status;
