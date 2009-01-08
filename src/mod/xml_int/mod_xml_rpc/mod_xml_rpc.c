@@ -449,7 +449,7 @@ abyss_bool handler_hook(TSession * r)
 	char *fs_user = NULL, *fs_domain = NULL;
 	char *path_info = NULL;
 	abyss_bool ret = TRUE;
-	int html = 0, text = 0;
+	int html = 0, text = 0, xml = 0;
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
@@ -467,6 +467,9 @@ abyss_bool handler_hook(TSession * r)
 	} else if ((command = strstr(r->requestInfo.uri, "/txtapi/"))) {
 		command += 8;
 		text++;
+	} else if ((command = strstr(r->requestInfo.uri, "/xmlapi/"))) {
+		command += 8;
+		xml++;
 	} else {
 		return FALSE;
 	}
@@ -529,6 +532,8 @@ abyss_bool handler_hook(TSession * r)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/html");
 		else if (text)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/plain");
+		else if (xml)
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "Content-type", "text/xml");
 		if (fs_user)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-User", fs_user);
 		if (fs_domain)

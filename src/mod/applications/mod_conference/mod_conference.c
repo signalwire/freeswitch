@@ -3895,7 +3895,7 @@ SWITCH_STANDARD_API(conf_api_main)
 {
 	char *lbuf = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *http = NULL;
+	char *http = NULL, *type = NULL;
 	int argc;
 	char *argv[25] = { 0 };
 
@@ -3905,11 +3905,14 @@ SWITCH_STANDARD_API(conf_api_main)
 
 	if (stream->param_event) {
 		http = switch_event_get_header(stream->param_event, "http-host");
+		type = switch_event_get_header(stream->param_event, "content-type");
 	}
 
 	if (http) {
 		/* Output must be to a web browser */
-		stream->write_function(stream, "<pre>\n");
+		if (type && !strcasecmp(type, "text/html")) {
+			stream->write_function(stream, "<pre>\n");
+		}
 	}
 
 	if (!(lbuf = strdup(cmd))) {
