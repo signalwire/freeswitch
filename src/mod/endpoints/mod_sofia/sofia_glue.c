@@ -2351,8 +2351,8 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 			switch_channel_set_variable(tech_pvt->channel, "has_t38", "true");
 			switch_channel_set_private(tech_pvt->channel, "t38_options", t38_options);
 
-			switch_channel_set_flag(tech_pvt->channel, CF_PROXY_MEDIA);
-			switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
+			//switch_channel_set_flag(tech_pvt->channel, CF_PROXY_MEDIA);
+			//switch_rtp_set_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA);
 
 		} else if (m->m_type == sdp_media_audio && m->m_port && !got_audio) {
 			sdp_rtpmap_t *map;
