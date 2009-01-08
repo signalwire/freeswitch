@@ -1212,6 +1212,8 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CHANNEL_ORIGINATE ||
 		event->event_id == SWITCH_EVENT_CHANNEL_UUID ||
 		event->event_id == SWITCH_EVENT_CHANNEL_ANSWER ||
+		event->event_id == SWITCH_EVENT_CHANNEL_PARK ||
+		event->event_id == SWITCH_EVENT_CHANNEL_UNPARK ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
