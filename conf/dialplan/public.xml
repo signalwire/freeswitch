@@ -31,7 +31,7 @@
     </extension>
 
     <extension name="call_debug" continue="true">
-      <condition field="$${call_debug}" expression="^true$" break="never">
+      <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>
     </extension>
