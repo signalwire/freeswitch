@@ -165,7 +165,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				switch_assert(fh->buffer);
 			}
 			if (!fh->dbuf) {
-				fh->dbuflen = fh->resampler->to_len * 8;
+				fh->dbuflen = fh->resampler->to_len * 10;
 				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
 			}
 			switch_assert(fh->resampler->to_len <= fh->dbuflen);
