@@ -430,7 +430,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 
   end:
 
-	switch_core_session_reset(session_a, SWITCH_TRUE);
+	switch_core_session_reset(session_a, SWITCH_TRUE, SWITCH_TRUE);
 	switch_channel_set_variable(chan_a, SWITCH_BRIDGE_VARIABLE, NULL);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BRIDGE THREAD DONE [%s]\n", switch_channel_get_name(chan_a));
 	if (!inner_bridge) {
@@ -451,7 +451,7 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		switch_channel_set_private(channel, "_bridge_", NULL);
 		if (bd->session == session && *bd->b_uuid) {
 			audio_bridge_thread(NULL, (void *) bd);
-			switch_core_session_reset(session, SWITCH_TRUE);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		} else {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		}
@@ -581,7 +581,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 		switch_channel_wait_for_state(channel, other_channel, CS_SOFT_EXECUTE);
 
-		switch_core_session_reset(session, SWITCH_TRUE);
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 
 		ready_a = switch_channel_ready(channel);

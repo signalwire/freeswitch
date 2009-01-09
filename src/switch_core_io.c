@@ -805,7 +805,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (session->write_codec) {
-		if (write_frame->datalen == session->write_codec->implementation->decoded_bytes_per_packet) {
+		if (write_frame->codec->implementation->decoded_bytes_per_packet == session->write_codec->implementation->decoded_bytes_per_packet) {
 			perfect = TRUE;
 		} else {
 			if (!session->raw_write_buffer) {
@@ -828,6 +828,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 
 		if (perfect) {
+
+			if (write_frame->datalen < session->write_codec->implementation->decoded_bytes_per_packet) {
+				memset(write_frame->data, 255, session->write_codec->implementation->decoded_bytes_per_packet - write_frame->datalen);
+				write_frame->datalen = session->write_codec->implementation->decoded_bytes_per_packet;
+			}
+
 			enc_frame = write_frame;
 			session->enc_write_frame.datalen = session->enc_write_frame.buflen;
 

@@ -166,7 +166,9 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SPEECH_KEY "speech"
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
-	typedef uint8_t switch_byte_t;
+#define SWITCH_DEFAULT_FILE_BUFFER_LEN 65536
+
+typedef uint8_t switch_byte_t;
 
 typedef struct {
 	char digit;
@@ -1061,7 +1063,9 @@ typedef enum {
 	SWITCH_FILE_NATIVE = (1 << 9),
 	SWITCH_FILE_SEEK = (1 << 10),
 	SWITCH_FILE_OPEN = (1 << 11),
-	SWITCH_FILE_CALLBACK = (1 << 12)
+	SWITCH_FILE_CALLBACK = (1 << 12),
+	SWITCH_FILE_DONE = (1 << 13),
+	SWITCH_FILE_BUFFER_DONE = (1 << 14)
 } switch_file_flag_enum_t;
 typedef uint32_t switch_file_flag_t;
 

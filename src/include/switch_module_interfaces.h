@@ -320,6 +320,9 @@ struct switch_file_handle {
 	switch_buffer_t *buffer;
 	switch_byte_t *dbuf;
 	switch_size_t dbuflen;
+	switch_buffer_t *pre_buffer;
+	unsigned char *pre_buffer_data;
+	switch_size_t pre_buffer_datalen;
 	const char *file;
 	const char *func;
 	int line;

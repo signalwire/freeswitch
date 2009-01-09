@@ -402,7 +402,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_core_session_reset(session, SWITCH_TRUE);
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -460,7 +460,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 						  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
 						  fh->channels, read_codec->implementation->microseconds_per_packet / 1000);
 		switch_core_file_close(fh);
-		switch_core_session_reset(session, SWITCH_TRUE);
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -580,7 +580,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	switch_core_file_close(fh);
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	return status;
 }
 
@@ -853,7 +853,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 							  read_codec->implementation->number_of_channels,
 							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_core_session_reset(session, SWITCH_TRUE);
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		status = SWITCH_STATUS_NOTFOUND;
 		goto end;
 	}
@@ -910,7 +910,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setup buffer failed\n");
 
 			switch_core_file_close(fh);
-			switch_core_session_reset(session, SWITCH_TRUE);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 			status = SWITCH_STATUS_GENERR;
 			goto end;
@@ -937,7 +937,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
 			switch_core_file_close(fh);
-			switch_core_session_reset(session, SWITCH_TRUE);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			status = SWITCH_STATUS_GENERR;
 			goto end;
 		}
@@ -953,7 +953,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setup timer failed!\n");
 			switch_core_codec_destroy(&codec);
 			switch_core_file_close(fh);
-			switch_core_session_reset(session, SWITCH_TRUE);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			status = SWITCH_STATUS_GENERR;
 			goto end;
 		}
@@ -1238,7 +1238,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
   end:
 	switch_safe_free(abuf);
 
-	switch_core_session_reset(session, SWITCH_FALSE);
+	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
 	return status;
 }
 
@@ -1275,7 +1275,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 								  read_codec->implementation->number_of_channels,
 								  read_codec->implementation->actual_samples_per_second,
 								  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-			switch_core_session_reset(session, SWITCH_TRUE);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			return SWITCH_STATUS_NOTFOUND;
 		}
 		switch_zmalloc(abuf, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -1362,7 +1362,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_silence(switch_core_session_
 		}
 	}
 
-	switch_core_session_reset(session, SWITCH_FALSE);
+	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
 	switch_core_codec_destroy(&raw_codec);
 
  end:
@@ -1835,7 +1835,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
-	switch_core_session_reset(session, SWITCH_FALSE);
+	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
 	read_codec = switch_core_session_get_read_codec(session);
 
 	rate = read_codec->implementation->actual_samples_per_second;
@@ -1846,7 +1846,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		if (switch_core_speech_open(sh, tts_name, voice_name, (uint32_t) rate, interval,
 									&flags, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module!\n");
-			switch_core_session_reset(session, SWITCH_TRUE);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			if (cache_obj) {
 				switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
 			}
@@ -1872,7 +1872,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed %s@%uhz 1 channel %dms\n", codec_name, rate, interval);
 			flags = 0;
 			switch_core_speech_close(sh, &flags);
-			switch_core_session_reset(session, SWITCH_TRUE);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 			if (cache_obj) {
 				switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
 			}
@@ -1889,7 +1889,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 				switch_core_codec_destroy(write_frame.codec);
 				flags = 0;
 				switch_core_speech_close(sh, &flags);
-				switch_core_session_reset(session, SWITCH_TRUE);
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 				if (cache_obj) {
 					switch_channel_set_private(channel, SWITCH_CACHE_SPEECH_HANDLES_OBJ_NAME, NULL);
 				}
@@ -1918,7 +1918,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
 		}
 	}
 
-	switch_core_session_reset(session, SWITCH_FALSE);
+	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
 	return status;
 }
 

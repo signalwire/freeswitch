@@ -371,7 +371,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 							  read_codec->implementation->actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_core_session_reset(session, SWITCH_TRUE);
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -794,7 +794,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_core_session_rwunlock(tsession);
 		status = SWITCH_STATUS_SUCCESS;
 
-		switch_core_session_reset(session, SWITCH_TRUE);
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	}
 
 	return status;
@@ -842,6 +842,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 
 	fh->channels = channels;
 	fh->samplerate = read_codec->implementation->actual_samples_per_second;
+	fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	if (switch_core_file_open(fh,
 							  file,
@@ -850,7 +851,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening %s\n", file);
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		switch_core_session_reset(session, SWITCH_TRUE);
+		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -1678,7 +1679,11 @@ static void *SWITCH_THREAD_FUNC speech_thread(switch_thread_t *thread, void *obj
 	switch_thread_cond_create(&sth->cond, sth->pool);
 	switch_mutex_init(&sth->mutex, SWITCH_MUTEX_NESTED, sth->pool);
 
-	switch_core_session_read_lock(sth->session);
+	if (switch_core_session_read_lock(sth->session) != SWITCH_STATUS_SUCCESS) {
+		sth->ready = 0;
+		return NULL;
+	}
+
 	switch_mutex_lock(sth->mutex);
 
 	sth->ready = 1;

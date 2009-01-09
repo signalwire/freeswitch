@@ -330,7 +330,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_read_lock_hangup(_In
   \return success if it is safe to read from the session
 */
 #ifdef SWITCH_DEBUG_RWLOCKS
-#define switch_core_session_read_lock(session) switch_core_session_perform_read_lock_hangup(session, __FILE__, __SWITCH_FUNC__, __LINE__)
+#define switch_core_session_read_lock_hangup(session) switch_core_session_perform_read_lock_hangup(session, __FILE__, __SWITCH_FUNC__, __LINE__)
 #else
 SWITCH_DECLARE(switch_status_t) switch_core_session_read_lock_hangup(_In_ switch_core_session_t *session);
 #endif
@@ -901,7 +901,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(_In_ switc
   \param session the session to reset
   \param flush_dtmf flush all queued dtmf events too
 */
-SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf);
+SWITCH_DECLARE(void) switch_core_session_reset(_In_ switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec);
 
 /*! 
   \brief Write a frame to a session

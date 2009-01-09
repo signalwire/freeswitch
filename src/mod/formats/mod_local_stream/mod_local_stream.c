@@ -183,6 +183,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			fname = path_buf;
 			fh.prebuf = source->prebuf;
+			fh.pre_buffer_datalen = 65536;
 
 			if (switch_core_file_open(&fh,
 									  (char *) fname,

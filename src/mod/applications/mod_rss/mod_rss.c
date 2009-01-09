@@ -619,7 +619,7 @@ SWITCH_STANDARD_APP(rss_function)
 	}
 
 	switch_xml_free(xml);
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 }
 
 

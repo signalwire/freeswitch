@@ -277,7 +277,10 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 	switch_assert(thread != NULL);
 	switch_assert(session != NULL);
 
-	switch_core_session_read_lock(session);
+	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+		return NULL;
+	}
+
 	channel = switch_core_session_get_channel(session);
 
 	switch_channel_set_flag(channel, CF_SERVICE);

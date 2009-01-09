@@ -1202,7 +1202,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	if ((session = listener->session)) {
 		channel = switch_core_session_get_channel(session);
-		switch_core_session_read_lock(session);
+		if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
+			goto done;
+		}
 	}
 
 	if (switch_strlen_zero(listener->remote_ip)) {

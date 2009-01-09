@@ -1623,7 +1623,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 			resetting = 1;
 			switch_core_codec_destroy(&tech_pvt->read_codec);
 			switch_core_codec_destroy(&tech_pvt->write_codec);
-			switch_core_session_reset(tech_pvt->session, SWITCH_TRUE);
+			switch_core_session_reset(tech_pvt->session, SWITCH_TRUE, SWITCH_TRUE);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Already using %s\n", tech_pvt->read_codec.implementation->iananame);
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);

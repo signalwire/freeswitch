@@ -110,11 +110,12 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 		switch_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
-			switch_core_session_read_lock(session);
-			if (session->endpoint_interface == endpoint_interface) {
-				switch_channel_hangup(switch_core_session_get_channel(session), cause);
+			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+				if (session->endpoint_interface == endpoint_interface) {
+					switch_channel_hangup(switch_core_session_get_channel(session), cause);
+				}
+				switch_core_session_rwunlock(session);
 			}
-			switch_core_session_rwunlock(session);
 		}
 	}
 	switch_mutex_unlock(runtime.throttle_mutex);
@@ -132,9 +133,10 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 		switch_hash_this(hi, NULL, NULL, &val);
 		if (val) {
 			session = (switch_core_session_t *) val;
-			switch_core_session_read_lock(session);
-			switch_channel_hangup(switch_core_session_get_channel(session), cause);
-			switch_core_session_rwunlock(session);
+			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(switch_core_session_get_channel(session), cause);
+				switch_core_session_rwunlock(session);
+			}
 		}
 	}
 	switch_mutex_unlock(runtime.throttle_mutex);
@@ -744,13 +746,14 @@ SWITCH_DECLARE(uint32_t) switch_core_session_flush_private_events(switch_core_se
 	return x;
 }
 
-SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf)
+SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, switch_bool_t flush_dtmf, switch_bool_t reset_read_codec)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_size_t has;
 
-
-	switch_core_session_set_read_codec(session, NULL);
+	if (reset_read_codec) {
+		switch_core_session_set_read_codec(session, NULL);
+	}
 
 	/* clear resamplers */
 	switch_mutex_lock(session->resample_mutex);
@@ -824,7 +827,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 					  switch_channel_get_name((*session)->channel), switch_channel_state_name(switch_channel_get_state((*session)->channel)));
 
 
-	switch_core_session_reset(*session, TRUE);
+	switch_core_session_reset(*session, TRUE, SWITCH_TRUE);
 	
 	switch_core_media_bug_remove_all(*session);
 	switch_ivr_deactivate_unicast(*session);

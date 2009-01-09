@@ -501,9 +501,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				}
 
 				olen = mlen;
-				if (ringback.fh->resampler && ringback.fh->resampler->rfactor > 1) {
-					olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
-				}
+				//if (ringback.fh->resampler && ringback.fh->resampler->rfactor > 1) {
+				//olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
+				//}
 				switch_core_file_read(ringback.fh, write_frame.data, &olen);
 
 				if (olen == 0) {
@@ -547,7 +547,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		switch_buffer_destroy(&ringback.audio_buffer);
 	}
 
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 	if (write_codec.implementation) {
 		switch_core_codec_destroy(&write_codec);
@@ -1128,7 +1128,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					continue;
 				}
 
-				switch_core_session_read_lock(new_session);
+				if (switch_core_session_read_lock(new_session) != SWITCH_STATUS_SUCCESS) {
+					status = SWITCH_STATUS_FALSE;
+					goto done;
+				}
 				pool = NULL;
 
 				caller_profiles[i] = new_profile;
@@ -1473,9 +1476,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 
 							olen = mlen;
-							if (ringback.fh->resampler && ringback.fh->resampler->rfactor > 1) {
-								olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
-							}
+							
+							//if (ringback.fh->resampler && ringback.fh->resampler->rfactor > 1) {
+							//olen = (switch_size_t) (olen * ringback.fh->resampler->rfactor);
+							//}
 							
 							switch_core_file_read(ringback.fh, write_frame.data, &olen);
 
@@ -1527,7 +1531,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			if (session && (ringback_data || !(switch_channel_test_flag(caller_channel, CF_PROXY_MODE) &&
 											   switch_channel_test_flag(caller_channel, CF_PROXY_MEDIA)))) {
-				switch_core_session_reset(session, SWITCH_FALSE);
+				switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
 			}
 
 			for (i = 0; i < and_argc; i++) {
@@ -1716,7 +1720,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			if (session) {
-				switch_core_session_reset(session, SWITCH_FALSE);
+				switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
 			}
 
 			if (write_codec.implementation) {

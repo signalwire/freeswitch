@@ -1,4 +1,4 @@
-/* 
+/*
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
  *
@@ -139,7 +139,8 @@ typedef enum {
 	MFLAG_FLUSH_BUFFER = (1 << 8),
 	MFLAG_ENDCONF = (1 << 9),
 	MFLAG_HAS_AUDIO = (1 << 10),
-	MFLAG_TALKING = (1 << 11)
+	MFLAG_TALKING = (1 << 11),
+	MFLAG_RESTART = (1 << 12)
 } member_flag_t;
 
 typedef enum {
@@ -337,6 +338,7 @@ typedef struct api_command {
 } api_command_t;
 
 /* Function Prototypes */
+static int setup_media(conference_member_t *member, conference_obj_t *conference);
 static uint32_t next_member_id(void);
 static conference_relationship_t *member_get_relationship(conference_member_t *member, conference_member_t *other_member);
 static conference_member_t *conference_member_get(conference_obj_t *conference, uint32_t id);
@@ -1758,18 +1760,43 @@ static caller_control_fn_table_t ccfntbl[] = {
 /* NB. this starts the input thread after some initial setup for the call leg */
 static void conference_loop_output(conference_member_t *member)
 {
-	switch_channel_t *channel = switch_core_session_get_channel(member->session);
+	switch_channel_t *channel;
 	switch_frame_t write_frame = { 0 };
-	uint8_t *data;
+	uint8_t *data = NULL;
 	switch_timer_t timer = { 0 };
-	switch_codec_t *read_codec = switch_core_session_get_read_codec(member->session);
-	uint32_t interval = read_codec->implementation->microseconds_per_packet / 1000;
-	uint32_t samples = switch_samples_per_packet(member->conference->rate, interval);
-	uint32_t csamples = samples;
-	uint32_t tsamples = member->orig_read_codec->implementation->samples_per_packet;
-	uint32_t flush_len = 0;
-	uint32_t low_count = 0, bytes = samples * 2;
-	call_list_t *call_list = NULL, *cp = NULL;
+	switch_codec_t *read_codec;
+	uint32_t interval;
+	uint32_t samples;
+	uint32_t csamples;
+	uint32_t tsamples;
+	uint32_t flush_len;
+	uint32_t low_count, bytes;
+	call_list_t *call_list, *cp;
+	int restarting = -1;
+
+ top:
+
+	restarting++;
+	
+	if (switch_test_flag(member, MFLAG_RESTART)) {
+		switch_clear_flag(member, MFLAG_RESTART);
+		switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
+		switch_core_timer_destroy(&timer);
+	}
+
+	channel = switch_core_session_get_channel(member->session);
+	read_codec = switch_core_session_get_read_codec(member->session);
+	interval = read_codec->implementation->microseconds_per_packet / 1000;
+	samples = switch_samples_per_packet(member->conference->rate, interval);
+	csamples = samples;
+	tsamples = member->orig_read_codec->implementation->samples_per_packet;
+	flush_len = 0;
+	low_count = 0;
+	bytes = samples * 2;
+	call_list = NULL;
+	cp = NULL;
+
+
 
 	switch_assert(member->conference != NULL);
 
@@ -1783,62 +1810,72 @@ static void conference_loop_output(conference_member_t *member)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer %s success interval: %u  samples: %u\n",
 					  member->conference->timer_name, interval, tsamples);
 
-	write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
-	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+	if (!restarting) {
+		write_frame.data = data = switch_core_session_alloc(member->session, SWITCH_RECOMMENDED_BUFFER_SIZE);
+		write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+	}
+
 	write_frame.codec = &member->write_codec;
 
 	if (!switch_test_flag(member->conference, CFLAG_ANSWERED)) {
 		switch_channel_answer(channel);
 	}
 
-	/* Start the input thread */
-	launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
-
-	/* build a digit stream object */
-	if (member->conference->dtmf_parser != NULL
-		&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Danger Will Robinson, there is no digit parser stream object\n");
-	}
-
-	if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
-		const char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
-		const char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
-		const char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
-		const char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
-		const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
-		const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
-		int to = 60;
+	if (!restarting) {
+		/* Start the input thread */
+		launch_conference_loop_input(member, switch_core_session_get_pool(member->session));
 		
-		if (ann) {
-			member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
+		/* build a digit stream object */
+		if (member->conference->dtmf_parser != NULL
+			&& switch_ivr_digit_stream_new(member->conference->dtmf_parser, &member->digit_stream) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Danger Will Robinson, there is no digit parser stream object\n");
 		}
 
-		switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
-
-		if (toval) {
-			to = atoi(toval);
-			if (to < 10 || to > 500) {
-				to = 60;
+		if ((call_list = switch_channel_get_private(channel, "_conference_autocall_list_"))) {
+			const char *cid_name = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_name");
+			const char *cid_num = switch_channel_get_variable(channel, "conference_auto_outcall_caller_id_number");
+			const char *toval = switch_channel_get_variable(channel, "conference_auto_outcall_timeout");
+			const char *flags = switch_channel_get_variable(channel, "conference_auto_outcall_flags");
+			const char *ann = switch_channel_get_variable(channel, "conference_auto_outcall_announce");
+			const char *prefix = switch_channel_get_variable(channel, "conference_auto_outcall_prefix");
+			int to = 60;
+		
+			if (ann) {
+				member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
 			}
-		}
 
-		for (cp = call_list; cp; cp = cp->next) {
-			int argc;
-			char *argv[512] = { 0 };
-			char *cpstr = strdup(cp->string);
-			int x = 0;
+			switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
 
-			switch_assert(cpstr);
-			argc = switch_separate_string(cpstr, ',', argv, (sizeof(argv) / sizeof(argv[0])));
-			for (x = 0; x < argc; x++) {
-				char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
-				switch_assert(dial_str);
-				conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num);
-				switch_safe_free(dial_str);
+			if (toval) {
+				to = atoi(toval);
+				if (to < 10 || to > 500) {
+					to = 60;
+				}
 			}
-			switch_safe_free(cpstr);
+
+			for (cp = call_list; cp; cp = cp->next) {
+				int argc;
+				char *argv[512] = { 0 };
+				char *cpstr = strdup(cp->string);
+				int x = 0;
+
+				switch_assert(cpstr);
+				argc = switch_separate_string(cpstr, ',', argv, (sizeof(argv) / sizeof(argv[0])));
+				for (x = 0; x < argc; x++) {
+					char *dial_str = switch_mprintf("%s%s", switch_str_nil(prefix), argv[x]);
+					switch_assert(dial_str);
+					conference_outcall_bg(member->conference, NULL, NULL, dial_str, to, switch_str_nil(flags), cid_name, cid_num);
+					switch_safe_free(dial_str);
+				}
+				switch_safe_free(cpstr);
+			}
 		}
 	}
+
+	if (restarting) {
+		switch_channel_clear_flag(channel, CF_SERVICE);
+	}
+
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
 	/* you better not block this thread loop for more than the duration of member->conference->timer_name!  */
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_test_flag(member, MFLAG_ITHREAD)
@@ -1851,6 +1888,10 @@ static void conference_loop_output(conference_member_t *member)
 		int use_timer = 0;
 		switch_size_t file_sample_len = csamples;
 		switch_size_t file_data_len = file_sample_len * 2;
+
+		if (switch_test_flag(member, MFLAG_RESTART)) {
+			goto top;
+		}
 
 		switch_mutex_lock(member->flag_mutex);
 
@@ -2145,6 +2186,8 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Joining Conference\n");
 		goto end;
 	}
+	
+	fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	if (switch_core_file_open(&fh,
 							  rec->path, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT,
@@ -2371,6 +2414,7 @@ static switch_status_t conference_play_file(conference_obj_t *conference, char *
 	fnode->leadin = leadin;
 
 	/* Open the file */
+	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	if (switch_core_file_open(&fnode->fh, file, (uint8_t) 1, conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, pool) !=
 		SWITCH_STATUS_SUCCESS) {
 		switch_core_destroy_memory_pool(&pool);
@@ -2465,6 +2509,7 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 	fnode->type = NODE_TYPE_FILE;
 	fnode->leadin = leadin;
 	/* Open the file */
+	fnode->fh.pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	if (switch_core_file_open(&fnode->fh,
 							  file, (uint8_t) 1, member->conference->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT,
 							  pool) != SWITCH_STATUS_SUCCESS) {
@@ -3631,9 +3676,21 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 			switch_mutex_lock(member->flag_mutex);
 			conference_del_member(conference, member);
 			conference_add_member(new_conference, member);
+
+			if (conference->rate != new_conference->rate) {
+				if(setup_media(member, new_conference)) {
+					switch_clear_flag_locked(member, MFLAG_RUNNING);
+				} else {
+					switch_channel_set_flag(channel, CF_SERVICE);
+					switch_set_flag(member, MFLAG_RESTART);
+				}
+			}
+
 			switch_mutex_unlock(new_conference->mutex);
 			switch_mutex_unlock(member->flag_mutex);
-			stream->write_function(stream, "OK Members sent to conference %s.\n", argv[2]);
+
+			
+			stream->write_function(stream, "OK Member '%d' sent to conference %s.\n", member->id, argv[2]);
 
 			/* tell them what happened */
 			if (test_eflag(conference, EFLAG_TRANSFER) &&
@@ -4349,6 +4406,111 @@ SWITCH_STANDARD_APP(conference_auto_function)
 	switch_channel_set_private(channel, "_conference_autocall_list_", call_list);
 }
 
+
+static int setup_media(conference_member_t *member, conference_obj_t *conference)
+{
+	switch_codec_t *read_codec;
+
+	
+	switch_core_session_reset(member->session, SWITCH_TRUE, SWITCH_FALSE);
+
+	if (member->read_codec.implementation) {
+		switch_core_codec_destroy(&member->read_codec);
+	}
+
+	if (member->read_resampler) {
+		switch_resample_destroy(&member->read_resampler);
+	}
+
+	read_codec = switch_core_session_get_read_codec(member->session);
+	member->orig_read_codec = read_codec;
+	member->native_rate = read_codec->implementation->samples_per_second;
+
+	/* Setup a Signed Linear codec for reading audio. */
+	if (switch_core_codec_init(&member->read_codec,
+							   "L16",
+							   NULL, read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
+						  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
+
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
+						  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
+
+		goto done;
+	}
+
+	if (!member->frame_size) {
+		member->frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
+		member->frame = switch_core_alloc(member->pool, member->frame_size);
+		member->mux_frame = switch_core_alloc(member->pool, member->frame_size);
+	}
+
+	if (read_codec->implementation->actual_samples_per_second != conference->rate) {
+		if (switch_resample_create(&member->read_resampler,
+								   read_codec->implementation->actual_samples_per_second,
+								   member->frame_size, conference->rate, member->frame_size, member->pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
+			goto done;
+		}
+
+
+		member->resample_out = switch_core_alloc(member->pool, member->frame_size);
+		member->resample_out_len = member->frame_size;
+
+		/* Setup an audio buffer for the resampled audio */
+		if (switch_buffer_create_dynamic(&member->resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX)
+			!= SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+			goto done;
+		}
+	}
+
+
+	/* Setup a Signed Linear codec for writing audio. */
+	if (switch_core_codec_init(&member->write_codec,
+							   "L16",
+							   NULL,
+							   conference->rate,
+							   read_codec->implementation->microseconds_per_packet / 1000,
+							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member->pool) == SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
+						  conference->rate, read_codec->implementation->microseconds_per_packet / 1000);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
+						  conference->rate, read_codec->implementation->microseconds_per_packet / 1000);
+		goto codec_done2;
+	}
+
+	/* Setup an audio buffer for the incoming audio */
+	if (switch_buffer_create_dynamic(&member->audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+		goto codec_done1;
+	}
+
+	/* Setup an audio buffer for the outgoing audio */
+	if (switch_buffer_create_dynamic(&member->mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
+		goto codec_done1;
+	}
+
+	return 0;
+
+ codec_done1:
+	switch_core_codec_destroy(&member->read_codec);
+ codec_done2:
+	switch_core_codec_destroy(&member->write_codec);
+ done:
+
+	return -1;
+	
+
+}
+
+
 /* Application interface function that is called from the dialplan to join the channel to a conference */
 SWITCH_STANDARD_APP(conference_function)
 {
@@ -4632,84 +4794,16 @@ SWITCH_STANDARD_APP(conference_function)
 			switch_set_flag(conference, CFLAG_ANSWERED);
 	}
 
-	member.orig_read_codec = read_codec;
-	member.native_rate = read_codec->implementation->samples_per_second;
+	member.session = session;
 	member.pool = switch_core_session_get_pool(session);
 
-	/* Setup a Signed Linear codec for reading audio. */
-	if (switch_core_codec_init(&member.read_codec,
-							   "L16",
-							   NULL, read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member.pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
-
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  read_codec->implementation->actual_samples_per_second, read_codec->implementation->microseconds_per_packet / 1000);
-
+	if (setup_media(&member, conference)) {
 		flags = 0;
 		goto done;
 	}
 
-	member.frame_size = SWITCH_RECOMMENDED_BUFFER_SIZE;
-	member.frame = switch_core_alloc(member.pool, member.frame_size);
-	member.mux_frame = switch_core_alloc(member.pool, member.frame_size);
-
-	if (read_codec->implementation->actual_samples_per_second != conference->rate) {
-		if (switch_resample_create(&member.read_resampler,
-								   read_codec->implementation->actual_samples_per_second,
-								   member.frame_size, conference->rate, member.frame_size, member.pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
-			goto done;
-		}
-
-
-		member.resample_out = switch_core_alloc(member.pool, member.frame_size);
-		member.resample_out_len = member.frame_size;
-
-		/* Setup an audio buffer for the resampled audio */
-		if (switch_buffer_create_dynamic(&member.resample_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX)
-			!= SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
-			goto done;
-		}
-	}
-
-
-	/* Setup a Signed Linear codec for writing audio. */
-	if (switch_core_codec_init(&member.write_codec,
-							   "L16",
-							   NULL,
-							   conference->rate,
-							   read_codec->implementation->microseconds_per_packet / 1000,
-							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, member.pool) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-						  "Raw Codec Activation Success L16@%uhz 1 channel %dms\n",
-						  conference->rate, read_codec->implementation->microseconds_per_packet / 1000);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activation Failed L16@%uhz 1 channel %dms\n",
-						  conference->rate, read_codec->implementation->microseconds_per_packet / 1000);
-		flags = 0;
-		goto codec_done2;
-	}
-
-	/* Setup an audio buffer for the incoming audio */
-	if (switch_buffer_create_dynamic(&member.audio_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
-		goto codec_done1;
-	}
-
-	/* Setup an audio buffer for the outgoing audio */
-	if (switch_buffer_create_dynamic(&member.mux_buffer, CONF_DBLOCK_SIZE, CONF_DBUFFER_SIZE, CONF_DBUFFER_MAX) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error Creating Audio Buffer!\n");
-		goto codec_done1;
-	}
-
 	/* Prepare MUTEXS */
 	member.id = next_member_id();
-	member.session = session;
 	switch_mutex_init(&member.flag_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_in_mutex, SWITCH_MUTEX_NESTED, member.pool);
 	switch_mutex_init(&member.audio_out_mutex, SWITCH_MUTEX_NESTED, member.pool);
@@ -4724,7 +4818,8 @@ SWITCH_STANDARD_APP(conference_function)
 
 	/* Add the caller to the conference */
 	if (conference_add_member(conference, &member) != SWITCH_STATUS_SUCCESS) {
-		goto codec_done1;
+		switch_core_codec_destroy(&member.read_codec);
+		goto done;
 	}
 
 	msg.from = __FILE__;
@@ -4747,12 +4842,14 @@ SWITCH_STANDARD_APP(conference_function)
 	/* Put the original codec back */
 	switch_core_session_set_read_codec(member.session, NULL);
 
-	/* Clean Up.  codec_done(X): is for error situations after the codecs were setup and done: is for situations before */
-  codec_done1:
-	switch_core_codec_destroy(&member.read_codec);
-  codec_done2:
-	switch_core_codec_destroy(&member.write_codec);
+	/* Clean Up. */
+
   done:
+
+	if (member.read_resampler) {
+		switch_resample_destroy(&member.read_resampler);
+	}
+
 	switch_event_destroy(&params);
 	switch_buffer_destroy(&member.resample_buffer);
 	switch_buffer_destroy(&member.audio_buffer);
@@ -4796,7 +4893,7 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 	}
 
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
 	/* release the readlock */
 	if (rl) {

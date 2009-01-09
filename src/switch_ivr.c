@@ -1163,7 +1163,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_session_transfer(switch_core_session_
 	max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
 	switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 
-	switch_core_session_reset(session, SWITCH_TRUE);
+	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	switch_channel_clear_flag(channel, CF_ORIGINATING);
 
 	/* clear all state handlers */
