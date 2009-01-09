@@ -2675,12 +2675,12 @@ static void general_event_handler(switch_event_t *event)
 
 				if (call_id) {
 					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
-										 "from sip_registrations where call_id='%q'", ct, es, body, call_id
+										 "from sip_registrations where call_id='%q'", ct, es, switch_str_nil(body), call_id
 										 );
 				} else {
 					sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q','%q','%q' "
 										 "from sip_registrations where sip_user='%s' and sip_host='%q'",
-										 ct, es, body, user, host
+										 ct, es, switch_str_nil(body), switch_str_nil(user), switch_str_nil(host)
 										 );
 				}
 				
