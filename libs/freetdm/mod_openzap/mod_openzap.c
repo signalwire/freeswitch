@@ -1897,7 +1897,7 @@ static switch_status_t load_config(void)
 								   "q921loglevel", q921loglevel,
 								   "q931loglevel", q931loglevel,
 								   TAG_END) != ZAP_SUCCESS) {
-				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %d dialect: %d error: %s\n", span_id, mode, dialect, span->last_error);
+				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d mode: %s dialect: %s error: %s\n", span_id, mode, dialect, span->last_error);
 				continue;
 			}
 

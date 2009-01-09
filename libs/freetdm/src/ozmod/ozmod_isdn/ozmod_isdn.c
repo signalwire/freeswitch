@@ -1703,8 +1703,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	}
 
 	if (span->trunk_type >= ZAP_TRUNK_NONE) {
-		snprintf(span->last_error, sizeof(span->last_error), "Unknown trunk type!");
-		return ZAP_FAIL;
+		zap_log(ZAP_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", zap_trunk_type2str(span->trunk_type));
+		span->trunk_type = ZAP_TRUNK_T1;
 	}
 	
 	for(i = 1; i <= span->chan_count; i++) {
@@ -1784,6 +1784,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 			return ZAP_FAIL;
 		}
 	}
+
 
 	if (!digit_timeout) {
 		digit_timeout = DEFAULT_DIGIT_TIMEOUT;

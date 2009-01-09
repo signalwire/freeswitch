@@ -2482,6 +2482,7 @@ zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_c
 		va_end(ap);
 	} else {
 		zap_log(ZAP_LOG_ERROR, "can't find '%s'\n", type);
+		status = ZAP_FAIL;
 	}
 
 	return status;
