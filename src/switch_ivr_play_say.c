@@ -431,6 +431,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		return SWITCH_STATUS_GENERR;
 	}
 
+	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
+		asis = 1;
+	}
+
 	switch_channel_pre_answer(channel);
 
 	if ((p = switch_channel_get_variable(channel, "RECORD_TITLE"))) {
