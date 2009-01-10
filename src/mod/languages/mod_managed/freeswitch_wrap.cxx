@@ -1510,6 +1510,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_BITS_PER_BYTE_get() {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_DEFAULT_FILE_BUFFER_LEN_get() {
+  int jresult ;
+  int result;
+  
+  result = (int) 65536;
+  
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_dtmf_t_digit_set(void * jarg1, char jarg2) {
   switch_dtmf_t *arg1 = (switch_dtmf_t *) 0 ;
   char arg2 ;
@@ -6143,13 +6154,15 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_session_write_video_frame(void * j
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_reset(void * jarg1, int jarg2) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_reset(void * jarg1, int jarg2, int jarg3) {
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   switch_bool_t arg2 ;
+  switch_bool_t arg3 ;
   
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (switch_bool_t)jarg2; 
-  switch_core_session_reset(arg1,arg2);
+  arg3 = (switch_bool_t)jarg3; 
+  switch_core_session_reset(arg1,arg2,arg3);
 }
 
 
@@ -13093,6 +13106,81 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_dbuflen_get(void * jarg1
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_pre_buffer_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_buffer_t *arg2 = (switch_buffer_t *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (switch_buffer_t *)jarg2; 
+  if (arg1) (arg1)->pre_buffer = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_pre_buffer_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_buffer_t *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (switch_buffer_t *) ((arg1)->pre_buffer);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_pre_buffer_data_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  unsigned char *arg2 = (unsigned char *) 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  arg2 = (unsigned char *)jarg2; 
+  if (arg1) (arg1)->pre_buffer_data = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_pre_buffer_data_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  unsigned char *result = 0 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result = (unsigned char *) ((arg1)->pre_buffer_data);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_pre_buffer_datalen_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->pre_buffer_datalen = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_pre_buffer_datalen_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result =  ((arg1)->pre_buffer_datalen);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_file_set(void * jarg1, char * jarg2) {
   switch_file_handle *arg1 = (switch_file_handle *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -18374,6 +18462,26 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_event_set_data(void * jarg1, v
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_event_t *)jarg2; 
   switch_channel_event_set_data(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_event_set_basic_data(void * jarg1, void * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_event_t *arg2 = (switch_event_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_event_t *)jarg2; 
+  switch_channel_event_set_basic_data(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_event_set_extended_data(void * jarg1, void * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_event_t *arg2 = (switch_event_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_event_t *)jarg2; 
+  switch_channel_event_set_extended_data(arg1,arg2);
 }
 
 
