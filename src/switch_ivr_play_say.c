@@ -384,6 +384,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	const char *vval;
 	time_t start = 0;
 	uint32_t org_silence_hits = 0;
+	int asis = 0;
 
 	switch_assert(read_codec != NULL);
 
@@ -395,6 +396,30 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 	fh->channels = read_codec->implementation->number_of_channels;
 	fh->native_rate = read_codec->implementation->actual_samples_per_second;
+
+
+
+	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
+		char *ext;
+		const char *prefix;
+
+		prefix = switch_channel_get_variable(channel, "sound_prefix");
+		if (!prefix) {
+			prefix = SWITCH_GLOBAL_dirs.base_dir;
+		}
+		
+		if (!switch_is_file_path(file)) {
+			file = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
+		}
+		if ((ext = strrchr(file, '.'))) {
+			ext++;
+		} else {
+			ext = read_codec->implementation->iananame;
+			file = switch_core_session_sprintf(session, "%s.%s", file, ext);
+			asis = 1;
+		}
+	}
+
 
 	if (switch_core_file_open(fh,
 							  file,
@@ -444,37 +469,43 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		switch_channel_set_variable(channel, "RECORD_DATE", NULL);
 	}
 
-	codec_name = "L16";
-	if (switch_core_codec_init(&codec,
-							   codec_name,
-							   NULL,
-							   read_codec->implementation->actual_samples_per_second,
-							   read_codec->implementation->microseconds_per_packet / 1000,
-							   read_codec->implementation->number_of_channels,
-							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
-							   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
-		switch_core_session_set_read_codec(session, &codec);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
-						  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
-						  fh->channels, read_codec->implementation->microseconds_per_packet / 1000);
-		switch_core_file_close(fh);
-		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-		return SWITCH_STATUS_GENERR;
+	if (!asis) {
+		codec_name = "L16";
+		if (switch_core_codec_init(&codec,
+								   codec_name,
+								   NULL,
+								   read_codec->implementation->actual_samples_per_second,
+								   read_codec->implementation->microseconds_per_packet / 1000,
+								   read_codec->implementation->number_of_channels,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
+			switch_core_session_set_read_codec(session, &codec);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate,
+							  fh->channels, read_codec->implementation->microseconds_per_packet / 1000);
+			switch_core_file_close(fh);
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+			return SWITCH_STATUS_GENERR;
+		}
 	}
 
 	if (limit) {
 		start = switch_timestamp(NULL);
 	}
-
+	
 	if (fh->thresh) {
-		if (fh->silence_hits) {
-			fh->silence_hits = fh->samplerate * fh->silence_hits / read_codec->implementation->samples_per_packet;
+		if (asis) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't detect silence on a native recording.\n");
 		} else {
-			fh->silence_hits = fh->samplerate * 3 / read_codec->implementation->samples_per_packet;
+			if (fh->silence_hits) {
+				fh->silence_hits = fh->samplerate * fh->silence_hits / read_codec->implementation->samples_per_packet;
+			} else {
+				fh->silence_hits = fh->samplerate * 3 / read_codec->implementation->samples_per_packet;
+			}
+			org_silence_hits = fh->silence_hits;
 		}
-		org_silence_hits = fh->silence_hits;
 	}
 
 	for (;;) {
@@ -543,7 +574,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 			}
 		}
 
-		if (fh->thresh) {
+		if (!asis && fh->thresh) {
 			int16_t *fdata = (int16_t *) read_frame->data;
 			uint32_t samples = read_frame->datalen / sizeof(*fdata);
 			uint32_t score, count = 0, j = 0;
@@ -571,8 +602,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		if (!switch_test_flag(fh, SWITCH_FILE_PAUSE) && !switch_test_flag(read_frame, SFF_CNG)) {
 			int16_t *data = read_frame->data;
-			len = (switch_size_t) read_frame->datalen / 2;
-
+			len = (switch_size_t) asis ? read_frame->datalen : read_frame->datalen / 2;
+			
 			if (switch_core_file_write(fh, data, &len) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}

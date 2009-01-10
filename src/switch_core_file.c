@@ -132,7 +132,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_size_t want, got, orig_len = *len;
-
+	
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
@@ -155,19 +155,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	
 	if (fh->pre_buffer) {
 		switch_size_t rlen;
+		int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
+
 		if (!switch_test_flag(fh, SWITCH_FILE_BUFFER_DONE)) {
 			if (!switch_buffer_inuse(fh->pre_buffer)) {
-				rlen = fh->pre_buffer_datalen / 2;
+				rlen = asis ? fh->pre_buffer_datalen : fh->pre_buffer_datalen / 2;
 				if ((status = fh->file_interface->file_read(fh, fh->pre_buffer_data, &rlen)) != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
-					switch_buffer_write(fh->pre_buffer, fh->pre_buffer_data, rlen * 2);
+					switch_buffer_write(fh->pre_buffer, fh->pre_buffer_data, asis ? rlen : rlen * 2);
 				}
 			}
 		}
 
-		rlen = switch_buffer_read(fh->pre_buffer, data, *len * 2);
-		*len = rlen / 2;
+		rlen = switch_buffer_read(fh->pre_buffer, data, asis ? *len : *len * 2);
+		*len = asis ? rlen : rlen / 2;
 		
 		if (*len == 0) {
 			switch_set_flag(fh, SWITCH_FILE_DONE);
@@ -277,13 +279,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 	if (fh->pre_buffer) {
 		switch_size_t rlen, blen;
 		switch_status_t status = SWITCH_STATUS_SUCCESS;
+		int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
-		switch_buffer_write(fh->pre_buffer, data, *len * 2);
+		switch_buffer_write(fh->pre_buffer, data, asis ? *len : *len * 2);
 
 		rlen = switch_buffer_inuse(fh->pre_buffer);
 		if (rlen >= fh->pre_buffer_datalen) {
 			blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen);
-			blen /= 2;
+			if (!asis) blen /= 2;
 			if ((status = fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen)) != SWITCH_STATUS_SUCCESS) {
 				*len = 0;
 			}
@@ -345,6 +348,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	switch_clear_flag(fh, SWITCH_FILE_OPEN);
 	status = fh->file_interface->file_close(fh);
 
@@ -355,9 +362,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	if (fh->pre_buffer) {
 		if (switch_test_flag(fh, SWITCH_FILE_FLAG_WRITE)) {
 			switch_size_t rlen, blen;
+			int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
+
 			while((rlen = switch_buffer_inuse(fh->pre_buffer))) {
 				blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen);
-				blen /= 2;
+				if (asis) blen /= 2;
 				if (fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen) != SWITCH_STATUS_SUCCESS) {
 					break;
 				}
