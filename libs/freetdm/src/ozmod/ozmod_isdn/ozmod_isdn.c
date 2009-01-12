@@ -1009,7 +1009,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			 * CallingNum IE
 			 */ 
 			Q931InitIECallingNum(&CallingNum);
-			CallingNum.TypNum    = Q931_TON_UNKNOWN;
+			CallingNum.TypNum    = zchan->caller_data.ani.type;
 			CallingNum.NumPlanID = Q931_NUMPLAN_E164;
 			CallingNum.PresInd   = Q931_PRES_ALLOWED;
 			CallingNum.ScreenInd = Q931_SCREEN_USER_NOT_SCREENED;
