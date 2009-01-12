@@ -901,7 +901,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	char *argv[3];
 	int argc = 0;
 	const char *var;
-	
+	switch_channel_t *channel = NULL;
+
+
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -969,7 +971,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		zap_set_string(caller_data.ani.digits, dest);
 	}
 	
-	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton"))) {
+	channel = switch_core_session_get_channel(*new_session);
+
+	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton")) || (var = switch_channel_get_variable(channel, "openzap_outbound_ton"))) {
 		if (!strcasecmp(var, "national")) {
 			caller_data.ani.type = Q931_TON_NATIONAL;
 		}
@@ -1011,12 +1015,10 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	
 	if ((*new_session = switch_core_session_request(openzap_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
-		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
 
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
-			channel = switch_core_session_get_channel(*new_session);
 			tech_init(tech_pvt, *new_session, zchan);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
