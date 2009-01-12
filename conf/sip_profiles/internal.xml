@@ -180,6 +180,17 @@
     <!--<param name="inbound-use-callid-as-uuid" value="true"/>-->
     <!-- on outbound calls set the callid to match the uuid of the session -->
     <!--<param name="outbound-use-uuid-as-callid" value="true"/>-->
+
+    <!-- clear clears them all or supply the name to add or the name prefixed with ~ to remove
+	 valid values:
+
+	 clear
+	 CISCO_SKIP_MARK_BIT_2833
+	 SONUS_SEND_INVALID_TIMESTAMP_2833
+
+    -->
+    <!--<param name="auto-rtp-bugs" data="clear"/>-->
+    
   </settings>
 </profile>
 
