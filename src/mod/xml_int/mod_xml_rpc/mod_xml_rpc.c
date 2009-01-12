@@ -540,7 +540,7 @@ abyss_bool handler_hook(TSession * r)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Domain", fs_domain);
 		if (path_info)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-Path-Info", path_info);
-		switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", r->requestInfo.uri);
+			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-URI", r->requestInfo.uri);
 		if (r->requestInfo.query)
 			switch_event_add_header_string(stream.param_event, SWITCH_STACK_BOTTOM, "HTTP-QUERY", r->requestInfo.query);
 		if (r->requestInfo.host)
@@ -659,6 +659,8 @@ abyss_bool handler_hook(TSession * r)
 		ResponseAddField(r, "Content-Type", "text/html");
 	} else if (text) {
 		ResponseAddField(r, "Content-Type", "text/plain");
+	} else if (xml) {
+		ResponseAddField(r, "Content-Type", "text/xml");
 	}
 
 	for (i = 0; i < r->response_headers.size; i++) {
