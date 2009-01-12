@@ -901,8 +901,6 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	char *argv[3];
 	int argc = 0;
 	const char *var;
-	switch_channel_t *channel = NULL;
-
 
 
 	if (!outbound_profile) {
@@ -971,17 +969,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		zap_set_string(caller_data.ani.digits, dest);
 	}
 	
-	channel = switch_core_session_get_channel(*new_session);
-
-	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton")) || (var = switch_channel_get_variable(channel, "openzap_outbound_ton"))) {
+	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton")) || (var = switch_core_get_variable("openzap_outbound_ton"))) {
 		if (!strcasecmp(var, "national")) {
 			caller_data.ani.type = Q931_TON_NATIONAL;
 		}
 	} else {
 		caller_data.ani.type = outbound_profile->destination_number_ton;
 	}
-
+	
 	caller_data.ani.plan = outbound_profile->destination_number_numplan;
+
 
 #if 0
 	if (!switch_strlen_zero(outbound_profile->rdnis)) {
@@ -1016,7 +1013,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((*new_session = switch_core_session_request(openzap_endpoint_interface, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_caller_profile_t *caller_profile;
-
+		switch_channel_t *channel = switch_core_session_get_channel(*new_session);
+		
 		switch_core_session_add_stream(*new_session, NULL);
 		if ((tech_pvt = (private_t *) switch_core_session_alloc(*new_session, sizeof(private_t))) != 0) {
 			tech_init(tech_pvt, *new_session, zchan);
