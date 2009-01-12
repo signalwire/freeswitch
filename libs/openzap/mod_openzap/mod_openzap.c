@@ -900,6 +900,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	switch_event_header_t *h;
 	char *argv[3];
 	int argc = 0;
+	const char *var;
+	
 
 	if (!outbound_profile) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing caller profile\n");
@@ -966,6 +968,16 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if (!switch_strlen_zero(dest)) {
 		zap_set_string(caller_data.ani.digits, dest);
 	}
+	
+	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton"))) {
+		if (!strcasecmp(var, "national")) {
+			caller_data.ani.type = Q931_TON_NATIONAL;
+		}
+	} else {
+		caller_data.ani.type = outbound_profile->destination_number_ton;
+	}
+
+	caller_data.ani.plan = outbound_profile->destination_number_numplan;
 
 #if 0
 	if (!switch_strlen_zero(outbound_profile->rdnis)) {
