@@ -805,7 +805,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (session->write_codec) {
-		if (write_frame->codec->implementation->decoded_bytes_per_packet == session->write_codec->implementation->decoded_bytes_per_packet) {
+		if (!ptime_mismatch && 
+			write_frame->codec->implementation->decoded_bytes_per_packet == session->write_codec->implementation->decoded_bytes_per_packet) {
 			perfect = TRUE;
 		} else {
 			if (!session->raw_write_buffer) {
