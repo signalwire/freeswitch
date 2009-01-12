@@ -158,8 +158,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 		int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
 		if (!switch_test_flag(fh, SWITCH_FILE_BUFFER_DONE)) {
-			if (!switch_buffer_inuse(fh->pre_buffer)) {
-				rlen = asis ? fh->pre_buffer_datalen : fh->pre_buffer_datalen / 2;
+			rlen = asis ? fh->pre_buffer_datalen : fh->pre_buffer_datalen / 2;
+
+			if (switch_buffer_inuse(fh->pre_buffer) < rlen * 2) {
 				if ((status = fh->file_interface->file_read(fh, fh->pre_buffer_data, &rlen)) != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
