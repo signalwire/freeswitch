@@ -674,7 +674,7 @@ abyss_bool handler_hook(TSession * r)
 	switch_snprintf(buf, sizeof(buf), "Connection: close\r\n");
 	ConnWrite(r->conn, buf, (uint32_t) strlen(buf));
 
-	if (html || text) {
+	if (html || text || xml) {
 		ConnWrite(r->conn, "\r\n", 2);
 	}
 
