@@ -1208,6 +1208,31 @@ static void parse_domain_tag(sofia_profile_t *profile, switch_xml_t x_domain_tag
 	}
 }
 
+static void parse_rtp_bugs(sofia_profile_t *profile, const char *str)
+{
+	if (switch_stristr("clear", str)) {
+		profile->auto_rtp_bugs = 0;
+	}
+
+	if (switch_stristr("CISCO_SKIP_MARK_BIT_2833", str)) {
+		profile->auto_rtp_bugs |= RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
+	}
+
+	if (switch_stristr("~CISCO_SKIP_MARK_BIT_2833", str)) {
+		profile->auto_rtp_bugs &= ~RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
+	}
+	
+	if (switch_stristr("SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
+		profile->auto_rtp_bugs |= RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+	}
+
+	if (switch_stristr("~SONUS_SEND_INVALID_TIMESTAMP_2833", str)) {
+		profile->auto_rtp_bugs &= ~RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+	}
+
+
+}
+
 switch_status_t reconfig_sofia(sofia_profile_t *profile)
 {
 	switch_xml_t cfg, xml = NULL, xprofile, profiles, gateways_tag, domain_tag, domains_tag, aliases_tag, alias_tag, settings, param;
@@ -1250,6 +1275,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					char *val = (char *) switch_xml_attr_soft(param, "value");
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
+						parse_rtp_bugs(profile, val);
 					} else if (!strcasecmp(var, "user-agent-string")) { 
 						profile->user_agent = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "dtmf-type")) {
@@ -1639,6 +1666,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					goto done;
 				}
 
+				profile->auto_rtp_bugs = RTP_BUG_CISCO_SKIP_MARK_BIT_2833 | RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+
 				profile->pool = pool;
 				profile->user_agent = SOFIA_USER_AGENT;
 
@@ -1694,6 +1723,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->rport_level = 2;
 						}
+					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
+						parse_rtp_bugs(profile, val);
 					} else if (!strcasecmp(var, "dbname")) {
 						profile->dbname = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "presence-hosts")) {

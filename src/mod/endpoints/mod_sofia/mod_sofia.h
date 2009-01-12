@@ -433,6 +433,7 @@ struct sofia_profile {
 	sofia_presence_type_t pres_type;
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
+	switch_rtp_bug_flag_t auto_rtp_bugs;
 };
 
 struct private_object {

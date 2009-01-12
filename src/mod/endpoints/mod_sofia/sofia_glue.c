@@ -2275,19 +2275,25 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	}
 
 	if ((tech_pvt->origin = switch_core_session_strdup(session, (char *) sdp->sdp_origin->o_username))) {
-		if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
-			tech_pvt->rtp_bugs |= RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Buggy RFC2833 Mode!\n");
-		}
 
-		if (strstr(tech_pvt->origin, "Sonus_UAC")) {
-			tech_pvt->rtp_bugs |= RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-							  "Hello,\nI see you have a Sonus!\n"
-							  "FYI, Sonus cannot follow the RFC on the proper way to send DTMF.\n"
-							  "Sadly, my creator had to spend several hours figuring this out so I thought you'd like to know that!\n"
-							  "Don't worry, DTMF will work but you may want to ask them to fix it......\n"
-							  );
+		if (tech_pvt->profile->auto_rtp_bugs & RTP_BUG_CISCO_SKIP_MARK_BIT_2833) {
+
+			if (strstr(tech_pvt->origin, "CiscoSystemsSIP-GW-UserAgent")) {
+				tech_pvt->rtp_bugs |= RTP_BUG_CISCO_SKIP_MARK_BIT_2833;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Activate Buggy RFC2833 Mode!\n");
+			}
+		}
+		
+		if (tech_pvt->profile->auto_rtp_bugs & RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833) {
+			if (strstr(tech_pvt->origin, "Sonus_UAC")) {
+				tech_pvt->rtp_bugs |= RTP_BUG_SONUS_SEND_INVALID_TIMESTAMP_2833;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+								  "Hello,\nI see you have a Sonus!\n"
+								  "FYI, Sonus cannot follow the RFC on the proper way to send DTMF.\n"
+								  "Sadly, my creator had to spend several hours figuring this out so I thought you'd like to know that!\n"
+								  "Don't worry, DTMF will work but you may want to ask them to fix it......\n"
+								  );
+			}
 		}
 	}
 
