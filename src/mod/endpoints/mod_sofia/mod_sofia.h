@@ -553,6 +553,8 @@ struct private_object {
 	uint32_t last_codec_ms;
 	nua_event_t want_event;
 	switch_rtp_bug_flag_t rtp_bugs;
+	switch_codec_implementation_t read_impl;
+	switch_codec_implementation_t write_impl;
 };
 
 struct callback_t {

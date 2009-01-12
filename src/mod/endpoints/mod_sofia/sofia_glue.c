@@ -1654,9 +1654,13 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
+	tech_pvt->read_impl = *tech_pvt->read_codec.implementation;
+	tech_pvt->write_impl = *tech_pvt->write_codec.implementation;
+
+
 	if (switch_rtp_ready(tech_pvt->rtp_session)) {
 		switch_assert(tech_pvt->read_codec.implementation);
-		switch_rtp_set_default_samples_per_interval(tech_pvt->rtp_session, tech_pvt->read_codec.implementation->samples_per_packet);
+		switch_rtp_set_default_samples_per_interval(tech_pvt->rtp_session, tech_pvt->read_impl.samples_per_packet);
 	}
 
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
@@ -1669,7 +1673,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Set Codec %s %s/%ld %d ms %d samples\n",
 					  switch_channel_get_name(tech_pvt->channel), tech_pvt->iananame, tech_pvt->rm_rate, tech_pvt->codec_ms,
-					  tech_pvt->read_codec.implementation->samples_per_packet);
+					  tech_pvt->read_impl.samples_per_packet);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 
 	tech_pvt->write_codec.agreed_pt = tech_pvt->agreed_pt;
@@ -1832,8 +1836,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		goto end;
 	}
 
-	bw = tech_pvt->read_codec.implementation->bits_per_second;
-	ms = tech_pvt->read_codec.implementation->microseconds_per_packet;
+	bw = tech_pvt->read_impl.bits_per_second;
+	ms = tech_pvt->read_impl.microseconds_per_packet;
 
 	if (myflags) {
 		flags = myflags;
@@ -1892,7 +1896,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
-						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
+						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
 	}
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", tech_pvt->local_sdp_audio_port);
@@ -1934,7 +1938,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 						  tech_pvt->local_sdp_audio_ip,
 						  tech_pvt->local_sdp_audio_port,
 						  tech_pvt->remote_sdp_audio_ip,
-						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
+						  tech_pvt->remote_sdp_audio_port, tech_pvt->agreed_pt, tech_pvt->read_impl.microseconds_per_packet / 1000);
 
 	} else {
 		timer_name = tech_pvt->profile->timer_name;
@@ -1949,7 +1953,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 										   tech_pvt->remote_sdp_audio_ip,
 										   tech_pvt->remote_sdp_audio_port,
 										   tech_pvt->agreed_pt,
-										   tech_pvt->read_codec.implementation->samples_per_packet,
+										   tech_pvt->read_impl.samples_per_packet,
 										   tech_pvt->codec_ms * 1000,
 										   (switch_rtp_flag_t) flags, timer_name, &err, switch_core_session_get_pool(tech_pvt->session));
 
@@ -1982,7 +1986,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 				}
 			}
 
-			stun_ping = (ival * tech_pvt->read_codec.implementation->samples_per_second) / tech_pvt->read_codec.implementation->samples_per_packet;
+			stun_ping = (ival * tech_pvt->read_impl.samples_per_second) / tech_pvt->read_impl.samples_per_packet;
 		}
 
 		tech_pvt->ssrc = switch_rtp_get_ssrc(tech_pvt->rtp_session);
@@ -2012,7 +2016,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 			} else {
 				int qlen;
 
-				qlen = len / (tech_pvt->read_codec.implementation->microseconds_per_packet / 1000);
+				qlen = len / (tech_pvt->read_impl.microseconds_per_packet / 1000);
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting Jitterbuffer to %dms (%d frames)\n", len, qlen);
 				switch_rtp_activate_jitter_buffer(tech_pvt->rtp_session, qlen);
@@ -2034,8 +2038,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		}
 
 		if (rtp_timeout_sec) {
-			tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) /
-				tech_pvt->read_codec.implementation->samples_per_packet;
+			tech_pvt->max_missed_packets = (tech_pvt->read_impl.samples_per_second * rtp_timeout_sec) /
+				tech_pvt->read_impl.samples_per_packet;
 
 			switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			if (!rtp_hold_timeout_sec) {
@@ -2044,8 +2048,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		}
 
 		if (rtp_hold_timeout_sec) {
-			tech_pvt->max_missed_hold_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_hold_timeout_sec) /
-				tech_pvt->read_codec.implementation->samples_per_packet;
+			tech_pvt->max_missed_hold_packets = (tech_pvt->read_impl.samples_per_second * rtp_hold_timeout_sec) /
+				tech_pvt->read_impl.samples_per_packet;
 		}
 
 		if (tech_pvt->te) {

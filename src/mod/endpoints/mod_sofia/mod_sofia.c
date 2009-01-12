@@ -709,14 +709,14 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					}
 					
 					if (tech_pvt->check_frames++ < MAX_CODEC_CHECK_FRAMES) {
-						if (!tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
+						if (!tech_pvt->read_impl.encoded_bytes_per_packet) {
 							tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 							goto skip;
 						}
 
-						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
+						if (tech_pvt->last_ts && tech_pvt->read_frame.datalen != tech_pvt->read_impl.encoded_bytes_per_packet) {
 							switch_size_t codec_ms = (int)(tech_pvt->read_frame.timestamp - 
-														   tech_pvt->last_ts) / (tech_pvt->read_codec.implementation->samples_per_second / 1000);
+														   tech_pvt->last_ts) / (tech_pvt->read_impl.samples_per_second / 1000);
 
 							if ((codec_ms % 10) != 0) {
 								tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
@@ -768,8 +768,8 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 									
 									if (rtp_timeout_sec) {
-										tech_pvt->max_missed_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_timeout_sec) /
-											tech_pvt->read_codec.implementation->samples_per_packet;
+										tech_pvt->max_missed_packets = (tech_pvt->read_impl.samples_per_second * rtp_timeout_sec) /
+											tech_pvt->read_impl.samples_per_packet;
 										
 										switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 										if (!rtp_hold_timeout_sec) {
@@ -778,13 +778,13 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 									
 									if (rtp_hold_timeout_sec) {
-										tech_pvt->max_missed_hold_packets = (tech_pvt->read_codec.implementation->samples_per_second * rtp_hold_timeout_sec) /
-											tech_pvt->read_codec.implementation->samples_per_packet;
+										tech_pvt->max_missed_hold_packets = (tech_pvt->read_impl.samples_per_second * rtp_hold_timeout_sec) /
+											tech_pvt->read_impl.samples_per_packet;
 									}
 									
 									if (switch_rtp_change_interval(tech_pvt->rtp_session, 
 																   tech_pvt->codec_ms * 1000,
-																   tech_pvt->read_codec.implementation->samples_per_packet
+																   tech_pvt->read_impl.samples_per_packet
 																   ) != SWITCH_STATUS_SUCCESS) {
 										switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 										
@@ -806,10 +806,10 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 					}
 				skip:
 					
-					if ((bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet)) {
+					if ((bytes = tech_pvt->read_impl.encoded_bytes_per_packet)) {
 						frames = (tech_pvt->read_frame.datalen / bytes);
 					}
-					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_codec.implementation->samples_per_packet);
+					tech_pvt->read_frame.samples = (int) (frames * tech_pvt->read_impl.samples_per_packet);
 
 					if (tech_pvt->read_frame.datalen == 0) {
 						continue;
@@ -872,13 +872,13 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 	switch_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
 	if (!switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
-		if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
-			bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
+		if (tech_pvt->read_impl.encoded_bytes_per_packet) {
+			bytes = tech_pvt->read_impl.encoded_bytes_per_packet;
 			frames = ((int) frame->datalen / bytes);
 		} else
 			frames = 1;
 
-		samples = frames * tech_pvt->read_codec.implementation->samples_per_packet;
+		samples = frames * tech_pvt->read_impl.samples_per_packet;
 	}
 
 	tech_pvt->timestamp_send += samples;
