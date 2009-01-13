@@ -89,7 +89,7 @@ struct pvt_s {
 
 	/* UNUSED AT THE MOMENT
 	   int          enable_t38_reinvite;
-    */
+	*/
 
 };
 
@@ -131,7 +131,7 @@ static void spanfax_log_message(int level, const char *msg)
 
 	if (!switch_strlen_zero(msg)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, fs_log_level, "%s", msg);
-    }
+	}
 }
 
 /*
@@ -149,7 +149,7 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 
 	pvt = (pvt_t *) user_data;
 	switch_assert(pvt);
-    
+	
 	session = pvt->session;
 	switch_assert(session);
 
@@ -166,11 +166,11 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 
 		if (pvt->app_mode == FUNCTION_TX) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully sent.\n");
-        } else if (pvt->app_mode == FUNCTION_RX) {
+		} else if (pvt->app_mode == FUNCTION_RX) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully received.\n");
-        } else {
+		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax successfully managed. How ?\n");
-        }
+		}
 		switch_channel_set_variable(channel, "fax_success", "1");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Fax processing not successful - result (%d) %s.\n", result,
@@ -193,8 +193,8 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "==============================================================================\n");
 
 	/*
-      Set our channel variables
-    */
+	Set our channel variables
+	*/
 
 	tmp = switch_mprintf("%i", result);
 	if (tmp) {
@@ -244,11 +244,11 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 		switch_safe_free(tmp);
 	}
 
-    switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 
 	/*
-      TODO Fire events
-    */
+	TODO Fire events
+	*/
 }
 
 static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
@@ -272,10 +272,10 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 			pvt->fax_state = (fax_state_t *) switch_core_session_alloc(pvt->session, sizeof(fax_state_t));
 		} else {
 			return SWITCH_STATUS_FALSE;
-        }
+		}
 
 		fax = pvt->fax_state;
-        t30 = fax_get_t30_state(fax);
+		t30 = fax_get_t30_state(fax);
 
 		memset(fax, 0, sizeof(fax_state_t));
 		if (fax_init(fax, pvt->caller) == NULL) {
@@ -335,7 +335,7 @@ static switch_status_t spanfax_init(pvt_t * pvt, transport_mode_t trans_mode)
 		   Here goes the T.38 SpanDSP initializing functions 
 		   T.38 will require a big effort as it needs a different approach
 		   but the pieces are already in place
-        */
+		*/
 	default:
 		assert(0);				/* Whaaat ? */
 		break;
@@ -352,14 +352,14 @@ static switch_status_t spanfax_destroy(pvt_t * pvt)
 	if (pvt->fax_state) {
 		if (pvt->t38_state) {
 			terminate = 0;
-        } else {
+		} else {
 			terminate = 1;
-        }
+		}
 
-        t30 = fax_get_t30_state(pvt->fax_state);
+		t30 = fax_get_t30_state(pvt->fax_state);
 		if (terminate && t30) {
 			t30_terminate(t30);
-        }
+		}
 
 		fax_release(pvt->fax_state);
 	}
@@ -367,14 +367,14 @@ static switch_status_t spanfax_destroy(pvt_t * pvt)
 	if (pvt->t38_state) {
 		if (pvt->t38_state) {
 			terminate = 1;
-        } else {
+		} else {
 			terminate = 0;
-        }
+		}
 
-        t30 = t38_terminal_get_t30_state(pvt->t38_state);
+		t30 = t38_terminal_get_t30_state(pvt->t38_state);
 		if (terminate && t30) {
 			t30_terminate(t30);
-        }
+		}
 
 		t38_terminal_release(pvt->t38_state);
 	}
@@ -405,10 +405,10 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
 
-    if (!switch_channel_media_ready(channel)) {
-        switch_channel_answer(channel);
-    }
-    
+	if (!switch_channel_media_ready(channel)) {
+		switch_channel_answer(channel);
+	}
+	
 	/* Allocate our structs */
 	pvt = switch_core_session_alloc(session, sizeof(pvt_t));
 
@@ -428,11 +428,11 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 
 		if (pvt->app_mode == FUNCTION_TX) {
 			pvt->caller = 1;
-        } else if (pvt->app_mode == FUNCTION_RX) {
+		} else if (pvt->app_mode == FUNCTION_RX) {
 			pvt->caller = 0;
-        } else {
+		} else {
 			assert(0);			/* UH ? */
-        }
+		}
 	}
 
 
@@ -542,12 +542,12 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	}
 
 	/*
-   *** Initialize the SpanDSP elements ***
+	*** Initialize the SpanDSP elements ***
 
-   Note: we could analyze if a fax was already detected in previous stages
-   and if so, when T.38 will be supported, send a reinvite in T38_MODE,
-   bypassing AUDIO_MODE.
-    */
+	Note: we could analyze if a fax was already detected in previous stages
+	and if so, when T.38 will be supported, send a reinvite in T38_MODE,
+	bypassing AUDIO_MODE.
+	*/
 
 	if ((spanfax_init(pvt, AUDIO_MODE) != SWITCH_STATUS_SUCCESS)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot initialize Fax engine\n");
@@ -557,14 +557,14 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	/* 
 	   Note: Disable echocan on the channel, remember to call app "disable_ec" in the dialplan
 	   before invoking fax applications
-    */
+	*/
 
 	/*
-      Note: we are disabling the Jitterbuffer, here, before we answer.
-      If you have set it to something else and the channel is pre-answered,
-      it will have no effect. Make sure that if you want more reliable
-      faxes, it is disabled.
-    */
+	Note: we are disabling the Jitterbuffer, here, before we answer.
+	If you have set it to something else and the channel is pre-answered,
+	it will have no effect. Make sure that if you want more reliable
+	faxes, it is disabled.
+	*/
 	switch_channel_set_variable(channel, "jitterbuffer_msec", "0");
 
 
@@ -608,8 +608,8 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		goto done;
 	}
 
-    switch_ivr_sleep(session, 250, SWITCH_TRUE, NULL);
-    
+	switch_ivr_sleep(session, 250, SWITCH_TRUE, NULL);
+	
 	while (switch_channel_ready(channel)) {
 		int tx = 0;
 		switch_status_t status;
@@ -623,7 +623,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		   - call t38_terminal_send_timeout(), sleep for a while
 
 		   The T.38 stuff can be placed here (and the audio stuff can be skipped)
-        */
+		*/
 
 		/* read new audio frame from the channel */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
@@ -635,12 +635,12 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 
 		/* Skip CNG frames (auto-generated by FreeSWITCH, usually) */
 		if (!switch_test_flag(read_frame, SFF_CNG)) {
-            /* pass the new incoming audio frame to the fax_rx function */
-            if (fax_rx(pvt->fax_state, (int16_t *) read_frame->data, read_frame->samples)) {
-                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax_rx reported an error\n");
-                goto done;
-            }
-        }
+		/* pass the new incoming audio frame to the fax_rx function */
+			if (fax_rx(pvt->fax_state, (int16_t *) read_frame->data, read_frame->samples)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax_rx reported an error\n");
+				goto done;
+			}
+		}
 
 		if ((tx = fax_tx(pvt->fax_state, buf, write_codec.implementation->samples_per_packet)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "fax_tx reported an error\n");
