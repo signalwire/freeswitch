@@ -767,16 +767,16 @@ SWITCH_STANDARD_API(limit_usage_function)
 	callback_t cbt = { 0 };
 
 
-    if (!switch_strlen_zero(cmd)) {
-        mydata = strdup(cmd);
-        switch_assert(mydata);
-        argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-    }
+	if (!switch_strlen_zero(cmd)) {
+		mydata = strdup(cmd);
+		switch_assert(mydata);
+		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
 
-    if (argc < 2) {
-        stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
+	if (argc < 2) {
+		stream->write_function(stream, "USAGE: limit_usage %s\n", LIMIT_USAGE_USAGE);
 		goto end;
-    }
+	}
 
 
 	realm = argv[0];
@@ -788,7 +788,7 @@ SWITCH_STANDARD_API(limit_usage_function)
 	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
 	switch_safe_free(sql);
 
-    stream->write_function(stream, "%s", buf);
+	stream->write_function(stream, "%s", buf);
 
 end:
 	switch_safe_free(mydata);
