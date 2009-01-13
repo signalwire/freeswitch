@@ -801,6 +801,7 @@ static switch_status_t load_config(void)
 	}
 
 	globals.indev = globals.outdev = globals.ringdev = -1;
+	globals.sample_rate = 8000;
 
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
@@ -821,7 +822,7 @@ static switch_status_t load_config(void)
 				globals.sample_rate = atoi(val);
 			} else if (!strcmp(var, "codec-ms")) {
 				int tmp = atoi(val);
-				if (SWITCH_ACCEPTABLE_INTERVAL(tmp)) {
+				if (switch_check_interval(globals.sample_rate, tmp)) {
 					globals.codec_ms = tmp;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,

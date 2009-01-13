@@ -1007,6 +1007,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_activate_ice(switch_rtp_t *rtp_sessio
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static void ping_socket(switch_rtp_t *rtp_session)
+{
+	uint32_t o = UINT_MAX;
+	switch_size_t len = sizeof(o);
+	switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
+}
+
 SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 {
 	if (!switch_rtp_ready(rtp_session)) {
@@ -1023,9 +1030,7 @@ SWITCH_DECLARE(void) switch_rtp_break(switch_rtp_t *rtp_session)
 	}
 
 	if (rtp_session->sock_input) {
-		uint32_t o = UINT_MAX;
-		switch_size_t len = sizeof(o);
-		switch_socket_sendto(rtp_session->sock_input, rtp_session->local_addr, 0, (void *) &o, &len);
+		ping_socket(rtp_session);
 	}
 	switch_mutex_unlock(rtp_session->flag_mutex);
 }
@@ -1037,6 +1042,7 @@ SWITCH_DECLARE(void) switch_rtp_kill_socket(switch_rtp_t *rtp_session)
 	if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_IO)) {
 		switch_clear_flag(rtp_session, SWITCH_RTP_FLAG_IO);
 		if (rtp_session->sock_input) {
+			ping_socket(rtp_session);
 			switch_socket_shutdown(rtp_session->sock_input, SWITCH_SHUTDOWN_READWRITE);
 		}
 		if (rtp_session->sock_output && rtp_session->sock_output != rtp_session->sock_input) {
