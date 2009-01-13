@@ -204,13 +204,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 			switch_resample_process(fh->resampler, fh->resampler->from, fh->resampler->from_len, fh->resampler->to, fh->resampler->to_size, 0);
 
 		if (fh->resampler->to_len < want || fh->resampler->to_len > orig_len) {
+			int factor = fh->resampler->to_len * fh->samplerate / 1000;
 			if (!fh->buffer) {
-				int factor = fh->resampler->to_len * fh->samplerate / 1000;
 				switch_buffer_create_dynamic(&fh->buffer, factor, factor, 0);
 				switch_assert(fh->buffer);
 			}
 			if (!fh->dbuf) {
-				fh->dbuflen = want * 2;
+				fh->dbuflen = want * factor;
 				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
 			}
 			switch_assert(fh->resampler->to_len <= fh->dbuflen);
