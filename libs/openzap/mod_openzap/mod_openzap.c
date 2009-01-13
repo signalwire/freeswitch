@@ -127,6 +127,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 static switch_status_t channel_read_frame(switch_core_session_t *session, switch_frame_t **frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_write_frame(switch_core_session_t *session, switch_frame_t *frame, switch_io_flag_t flags, int stream_id);
 static switch_status_t channel_kill_channel(switch_core_session_t *session, int sig);
+zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t **sp);
+void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream);
 
 
 static switch_core_session_t *zap_channel_get_session(zap_channel_t *channel, int32_t id)
@@ -271,7 +273,7 @@ static void cycle_foreground(zap_channel_t *zchan, int flash, const char *bcast)
 
 static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *session, zap_channel_t *zchan)
 {
-	char *dname = NULL;
+	const char *dname = NULL;
 	uint32_t interval = 0, srate = 8000;
 	zap_codec_t codec;
 
@@ -888,7 +890,8 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_originate_flag_t flags)
 {
 
-	char *dest = NULL, *data = NULL;
+	const char *dest = NULL;
+	char *data = NULL;
 	int span_id = 0, chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -1554,7 +1557,7 @@ static uint32_t enable_analog_option(const char *str, uint32_t current_options)
 
 static switch_status_t load_config(void)
 {
-	char *cf = "openzap.conf";
+	const char *cf = "openzap.conf";
 	switch_xml_t cfg, xml, settings, param, spans, myspan;
 
 	memset(&globals, 0, sizeof(globals));
@@ -1584,16 +1587,16 @@ static switch_status_t load_config(void)
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			zap_status_t zstatus = ZAP_FAIL;
-			char *context = "default";
-			char *dialplan = "XML";
-			char *tonegroup = NULL;
+			const char *context = "default";
+			const char *dialplan = "XML";
+			const char *tonegroup = NULL;
 			char *digit_timeout = NULL;
 			char *max_digits = NULL;
 			char *hotline = NULL;
 			char *dial_regex = NULL;
 			char *hold_music = NULL;
 			char *fail_dial_regex = NULL;
-			char *enable_callerid = "true";
+			const char *enable_callerid = "true";
 
 			uint32_t span_id = 0, to = 0, max = 0;
 			zap_span_t *span = NULL;
@@ -1706,9 +1709,9 @@ static switch_status_t load_config(void)
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			zap_status_t zstatus = ZAP_FAIL;
-			char *context = "default";
-			char *dialplan = "XML";
-			char *tonegroup = NULL;
+			const char *context = "default";
+			const char *dialplan = "XML";
+			const char *tonegroup = NULL;
 			char *digit_timeout = NULL;
 			char *max_digits = NULL;
 			char *dial_regex = NULL;
@@ -1820,15 +1823,15 @@ static switch_status_t load_config(void)
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			zap_status_t zstatus = ZAP_FAIL;
-			char *context = "default";
-			char *dialplan = "XML";
+			const char *context = "default";
+			const char *dialplan = "XML";
 			//Q921NetUser_t mode = Q931_TE;
 			//Q931Dialect_t dialect = Q931_Dialect_National;
 			char *mode = NULL;
 			char *dialect = NULL;
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
-			char *tonegroup = NULL;
+			const char *tonegroup = NULL;
 			char *digit_timeout = NULL;
 			uint32_t to = 0;
 			uint32_t opts = 0;
@@ -1927,11 +1930,11 @@ static switch_status_t load_config(void)
 			char *id = (char *) switch_xml_attr(myspan, "id");
 			char *name = (char *) switch_xml_attr(myspan, "name");
 			zap_status_t zstatus = ZAP_FAIL;
-			char *context = "default";
-			char *dialplan = "XML";
+			const char *context = "default";
+			const char *dialplan = "XML";
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
-			char *tonegroup = NULL;
+			const char *tonegroup = NULL;
 			char *local_ip = NULL;
 			int local_port = 0;
 			char *remote_ip = NULL;
@@ -2101,7 +2104,7 @@ SWITCH_STANDARD_API(oz_function)
 		int j;
 		for (j = 0 ; j < ZAP_MAX_SPANS_INTERFACE; j++) {
 			if (SPAN_CONFIG[j].span) {
-				char *flags = "none";
+				const char *flags = "none";
 
 				if (SPAN_CONFIG[j].analog_options & ANALOG_OPTION_3WAY) {
 					flags = "3way";
