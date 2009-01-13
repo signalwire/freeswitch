@@ -183,7 +183,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 
 			fname = path_buf;
 			fh.prebuf = source->prebuf;
-			fh.pre_buffer_datalen = 65536;
+			fh.pre_buffer_datalen = source->prebuf;
 
 			if (switch_core_file_open(&fh,
 									  (char *) fname,
@@ -206,16 +206,23 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			while (RUNNING) {
 				switch_core_timer_next(&timer);
 				olen = source->samples;
+				int is_open = switch_test_flag((&fh), SWITCH_FILE_OPEN);
 
-				if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
-					switch_core_file_close(&fh);
+				if (is_open) {
+					if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
+						switch_core_file_close(&fh);
+					}
+
+					switch_buffer_write(audio_buffer, abuf, olen * 2);
+				}
+
+				used = switch_buffer_inuse(audio_buffer);
+
+				if (!used && !is_open) {
 					break;
 				}
 
-				switch_buffer_write(audio_buffer, abuf, olen * 2);
-				used = switch_buffer_inuse(audio_buffer);
-
-				if (used >= source->prebuf || (source->total && used > source->samples * 2)) {
+				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2)) {
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2);
 					if (source->total) {
 
@@ -284,6 +291,9 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	local_stream_source_t *source;
 	char *alt_path = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	/* already buffering a step back, so always disable it */
+	handle->pre_buffer_datalen = 0;
 
 	if (switch_test_flag(handle, SWITCH_FILE_FLAG_WRITE)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This format does not support writing!\n");
