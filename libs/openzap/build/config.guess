@@ -3,7 +3,7 @@
 #   Copyright (C) 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999,
 #   2000, 2001, 2002, 2003 Free Software Foundation, Inc.
 
-timestamp='2003-06-17'
+timestamp='2003-07-02'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -135,13 +135,6 @@ UNAME_MACHINE=`(uname -m) 2>/dev/null` || UNAME_MACHINE=unknown
 UNAME_RELEASE=`(uname -r) 2>/dev/null` || UNAME_RELEASE=unknown
 UNAME_SYSTEM=`(uname -s) 2>/dev/null`  || UNAME_SYSTEM=unknown
 UNAME_VERSION=`(uname -v) 2>/dev/null` || UNAME_VERSION=unknown
-
-## for Red Hat Linux
-if test -f /etc/redhat-release ; then
-    VENDOR=redhat ;
-else
-    VENDOR= ;
-fi
 
 # Note: order is significant - the case branches are not exclusive.
 
@@ -770,7 +763,10 @@ EOF
 	#endif
 EOF
 	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep ^LIBC=`
-	echo ${UNAME_MACHINE}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`${LIBC:+-$LIBC}
+	# GNU/FreeBSD systems have a "k" prefix to indicate we are using
+	# FreeBSD's kernel, but not the complete OS.
+	case ${LIBC} in gnu) kernel_only='k' ;; esac
+	echo ${UNAME_MACHINE}-unknown-${kernel_only}freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`${LIBC:+-$LIBC}
 	exit 0 ;;
     i*:CYGWIN*:*)
 	echo ${UNAME_MACHINE}-pc-cygwin
@@ -815,7 +811,7 @@ EOF
 	echo cris-axis-linux-gnu
 	exit 0 ;;
     ia64:Linux:*:*)
-	echo ${UNAME_MACHINE}-${VENDOR:-unknown}-linux-gnu
+	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit 0 ;;
     m68*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
@@ -859,10 +855,10 @@ EOF
 	test x"${CPU}" != x && echo "${CPU}-unknown-linux-gnu" && exit 0
 	;;
     ppc:Linux:*:*)
-	echo powerpc-${VENDOR:-unknown}-linux-gnu
+	echo powerpc-unknown-linux-gnu
 	exit 0 ;;
     ppc64:Linux:*:*)
-	echo powerpc64-${VENDOR:-unknown}-linux-gnu
+	echo powerpc64-unknown-linux-gnu
 	exit 0 ;;
     alpha:Linux:*:*)
 	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
@@ -890,7 +886,7 @@ EOF
 	echo hppa64-unknown-linux-gnu
 	exit 0 ;;
     s390:Linux:*:* | s390x:Linux:*:*)
-	echo ${UNAME_MACHINE}-${VENDOR:-ibm}-linux-gnu
+	echo ${UNAME_MACHINE}-ibm-linux
 	exit 0 ;;
     sh64*:Linux:*:*)
     	echo ${UNAME_MACHINE}-unknown-linux-gnu
@@ -902,7 +898,7 @@ EOF
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit 0 ;;
     x86_64:Linux:*:*)
-	echo x86_64-${VENDOR:-unknown}-linux-gnu
+	echo x86_64-unknown-linux-gnu
 	exit 0 ;;
     i*86:Linux:*:*)
 	# The BFD linker knows what the default object file format is, so
@@ -954,7 +950,7 @@ EOF
 	#endif
 EOF
 	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep ^LIBC=`
-	test x"${LIBC}" != x && echo "${UNAME_MACHINE}-${VENDOR:-pc}-linux-${LIBC}" && exit 0
+	test x"${LIBC}" != x && echo "${UNAME_MACHINE}-pc-linux-${LIBC}" && exit 0
 	test x"${TENTATIVE}" != x && echo "${TENTATIVE}" && exit 0
 	;;
     i*86:DYNIX/ptx:4*:*)

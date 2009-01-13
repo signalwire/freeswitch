@@ -726,7 +726,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				break;
 			default:
 				{
-					zap_log(ZAP_LOG_WARNING, "Unhandled event %d\n", zt_event_id);
+					zap_log(ZAP_LOG_WARNING, "Unhandled event %d for %d:%d\n", zt_event_id, span->span_id, i);
 					event_id = ZAP_OOB_INVALID;
 				}
 				break;
