@@ -603,14 +603,14 @@ SWITCH_STANDARD_APP(answer_function)
 SWITCH_STANDARD_APP(presence_function)
 {
 	char *argv[6] = { 0 };
-    int argc;
-    char *mydata = NULL;
+	int argc;
+	char *mydata = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (switch_strlen_zero(data) || !(mydata = switch_core_session_strdup(session, data))) {
-        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
-        return;
-    }
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
+		return;
+	}
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, sizeof(argv) / sizeof(argv[0]))) < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID ARGS!\n");
@@ -2105,7 +2105,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	}
 
 
- done:
+  done:
 
 	if (dest && dest != template) {
 		switch_safe_free(dest);
