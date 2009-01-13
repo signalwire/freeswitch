@@ -389,16 +389,16 @@ static int node_idle_consumers(fifo_node_t *node)
 {
 	switch_hash_index_t *hi;
 	void *val;
-    const void *var;
+	const void *var;
 	switch_core_session_t *session;
-    switch_channel_t *channel;
+	switch_channel_t *channel;
 	int total = 0;
 
 	switch_mutex_lock(node->mutex);
 	for (hi = switch_hash_first(NULL, node->consumer_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &var, NULL, &val);
 		session = (switch_core_session_t *) val;
-        channel = switch_core_session_get_channel(session);
+		channel = switch_core_session_get_channel(session);
 		if (!switch_channel_test_flag(channel, CF_BRIDGED)) {
 			total++;
 		}
@@ -469,7 +469,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_channel_set_state(channel, CS_EXECUTE);
 	switch_core_session_rwunlock(session);
 
- end:
+  end:
 
 	switch_core_destroy_memory_pool(&h->pool);
 
@@ -1607,7 +1607,7 @@ SWITCH_STANDARD_API(fifo_api_function)
 		stream->write_function(stream, "-ERR Usage: %s\n", FIFO_API_SYNTAX);
 	}
 
- done:
+  done:
 
 	switch_mutex_unlock(globals.mutex);
 	return SWITCH_STATUS_SUCCESS;
@@ -1814,7 +1814,7 @@ static switch_status_t load_config(int reload, int del_all)
 	}
 	switch_xml_free(xml);
 
- done:
+  done:
 
 	if (reload) {
 		switch_hash_index_t *hi;
@@ -1863,8 +1863,8 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 	
 	sql = switch_mprintf("delete from fifo_outbound where fifo_name='%q' and uuid = '%q'", fifo_name, digest);
 	switch_assert(sql);
-    fifo_execute_sql(sql, globals.sql_mutex);
-    free(sql);
+	fifo_execute_sql(sql, globals.sql_mutex);
+	free(sql);
 	
 	
 	switch_mutex_lock(globals.mutex);
@@ -1895,8 +1895,8 @@ static void fifo_member_del(char *fifo_name, char *originate_string)
 	
 	sql = switch_mprintf("delete from fifo_outbound where fifo_name='%q' and uuid = '%q' and hostname='%q'", fifo_name, digest, globals.hostname);
 	switch_assert(sql);
-    fifo_execute_sql(sql, globals.sql_mutex);
-    free(sql);
+	fifo_execute_sql(sql, globals.sql_mutex);
+	free(sql);
 }
 
 #define FIFO_MEMBER_API_SYNTAX "[add <fifo_name> <originate_string> [<simo_count>] [<timeout>] [<lag>] | del <fifo_name> <originate_string>]"
@@ -1956,10 +1956,10 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 		stream->write_function(stream, "%s", "+OK\n");
 	} else {
 		stream->write_function(stream, "%s", "-ERR Invalid!\n");
-        goto done;
+		goto done;
 	}
 
- done:
+  done:
 
 	free(mydata);
 
