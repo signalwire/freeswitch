@@ -44,11 +44,11 @@
 
 typedef struct easyroute_results{
 	char	limit[16];
-        char	destnum[16];
-        char	dialstring[256];
-        char	group[16];
+	char	destnum[16];
+	char	dialstring[256];
+	char	group[16];
 	char	acctcode[17];
-        char	translated[17];
+	char	translated[17];
 } easyroute_results_t;
 
 
@@ -170,7 +170,7 @@ done:
 		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from gateways", NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the gateways table\?\?)\n");
 		}
-    	} else {
+	} else {
 #endif
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Connection (did you enable it?!)\n");
 #ifdef SWITCH_HAVE_ODBC
@@ -257,7 +257,7 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
 			switch_set_string(results->acctcode, pdata.acctcode);
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "DB Error Setting Default Route!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DB Error Setting Default Route!\n");
 		switch_set_string(results->limit, "9999");
 		switch_snprintf(results->dialstring, 256, "%s/%s@%s", globals.default_techprofile, dn, globals.default_gateway);
 		switch_set_string(results->group, "");
@@ -290,7 +290,7 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		destnum = argv[0];
 		route_lookup(destnum, &results);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "EASY ROUTE DEST: [%s]\n", results.dialstring);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EASY ROUTE DEST: [%s]\n", results.dialstring);
 		switch_channel_set_variable(channel, "easy_destnum", results.destnum);
 		switch_channel_set_variable(channel, "easy_dialstring", results.dialstring);
 		switch_channel_set_variable(channel, "easy_group", results.group);
@@ -319,14 +319,34 @@ SWITCH_STANDARD_API(easyroute_function)
 	
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		destnum = argv[0];
+		if (argc < 1 || argc > 2){
+			stream->write_function(stream, "Invalid Input!\n");
+			return SWITCH_STATUS_SUCCESS;
+		} 
 		
 		if (!route_lookup(destnum, &results) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
 			return SWITCH_STATUS_SUCCESS;
 		}
-		
-		stream->write_function(stream, "Number    \tLimit     \tGroup    \tAcctCode  \tDialstring\n");
-		stream->write_function(stream, "%-10s\t%-10s\t%-10s\t%-10s\t%s\n", destnum, results.limit, results.group, results.acctcode, results.dialstring);
+		if (argc != 2){
+			stream->write_function(stream, "Number    \tLimit     \tGroup    \tAcctCode  \tDialstring\n");
+			stream->write_function(stream, "%-10s\t%-10s\t%-10s\t%-10s\t%s\n", destnum, results.limit, results.group, results.acctcode, results.dialstring);
+		} else {
+			if (!strncasecmp(argv[1], "dialstring", 10)) {
+				stream->write_function(stream, "%s", results.dialstring);
+			} else if (!strncasecmp(argv[1], "translated", 10)) {
+				stream->write_function(stream, "%s", results.translated);
+			} else if (!strncasecmp(argv[1], "limit", 5)) {
+				stream->write_function(stream, "%s", results.limit);
+			} else if (!strncasecmp(argv[1], "group", 5)) {
+				stream->write_function(stream, "%s", results.group);
+			} else if (!strncasecmp(argv[1], "acctcode", 8)) {
+				stream->write_function(stream, "%s", results.acctcode);
+			} else {
+				stream->write_function(stream, "Invalid Input!\n");
+				return SWITCH_STATUS_SUCCESS;
+			}
+		} 
 	} else {
 		stream->write_function(stream, "Invalid Input!\n");
 	}
@@ -354,7 +374,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_easyroute_shutdown)
 {	
-	switch_odbc_handle_connect(globals.master_odbc);
+	switch_odbc_handle_disconnect(globals.master_odbc);
 	return SWITCH_STATUS_UNLOAD;
 }
 
