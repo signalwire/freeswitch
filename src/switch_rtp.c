@@ -608,6 +608,11 @@ SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session
 	rtp_session->max_missed_packets = max;
 }
 
+SWITCH_DECLARE(void) switch_rtp_reset_media_timer(switch_rtp_t *rtp_session)
+{
+	rtp_session->missed_count = 0;
+}
+
 SWITCH_DECLARE(char *) switch_rtp_get_remote_host(switch_rtp_t *rtp_session)
 {
 	return switch_strlen_zero(rtp_session->remote_host_str) ? "0.0.0.0" : rtp_session->remote_host_str;

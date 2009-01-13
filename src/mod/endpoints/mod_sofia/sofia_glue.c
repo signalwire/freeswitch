@@ -1817,6 +1817,10 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 	switch_assert(tech_pvt != NULL);
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
+	if (switch_rtp_ready(tech_pvt->rtp_session)) {
+		switch_rtp_reset_media_timer(tech_pvt->rtp_session);
+	}
+
 	if ((var = switch_channel_get_variable(tech_pvt->channel, SOFIA_SECURE_MEDIA_VARIABLE)) && switch_true(var)) {
 		switch_set_flag_locked(tech_pvt, TFLAG_SECURE);
 	}
