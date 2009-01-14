@@ -20,7 +20,6 @@ applications/mod_fsv
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_cepstral
-#asr_tts/mod_openmrcp
 codecs/mod_g723_1
 codecs/mod_amr
 codecs/mod_g729
