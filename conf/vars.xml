@@ -73,7 +73,7 @@
   <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_server_profile=xmpps"/>
   <!-- 
-       THIS IS ONLY USED FOR DINALING
+       THIS IS ONLY USED FOR DINGALING
 
        bind_server_ip
 
