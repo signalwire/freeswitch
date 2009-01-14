@@ -116,6 +116,12 @@ struct shout_context {
 	int lame_ready;
 	int eof;
 	int channels;
+	int16_t *l;
+	switch_size_t llen;
+	int16_t *r;
+	switch_size_t rlen;
+	unsigned char *mp3buf;
+	switch_size_t mp3buflen;
 };
 
 typedef struct shout_context shout_context_t;
@@ -903,8 +909,7 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data, size_t *len)
 {
 	shout_context_t *context;
-	unsigned char mp3buf[8192] = "";
-	int rlen;
+	int rlen = 0;
 	int16_t *audio = data;
 	int nsamples = *len;
 
@@ -954,23 +959,32 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 		context->lame_ready = 1;
 	}
 
+	if (context->mp3buflen < nsamples * 4) {
+		context->mp3buflen = nsamples * 4;
+		context->mp3buf = switch_core_alloc(context->memory_pool, context->mp3buflen);
+	}
+
 	if (handle->channels == 2) {
-		int16_t l[4096] = { 0 };
-		int16_t r[4096] = { 0 };
 		int i, j = 0;
-
-		for (i = 0; i < nsamples; i++) {
-			l[i] = audio[j++];
-			r[i] = audio[j++];
+		
+		if (context->llen < nsamples) {
+			context->l = switch_core_alloc(context->memory_pool, nsamples * 2);
+			context->r = switch_core_alloc(context->memory_pool, nsamples * 2);
+			context->llen = context->rlen = nsamples;
 		}
-
-		if ((rlen = lame_encode_buffer(context->gfp, l, r, nsamples, mp3buf, sizeof(mp3buf))) < 0) {
+		
+		for (i = 0; i < nsamples; i++) {
+			context->l[i] = audio[j++];
+			context->r[i] = audio[j++];
+		}
+		
+		if ((rlen = lame_encode_buffer(context->gfp, context->l, context->r, nsamples, context->mp3buf, context->mp3buflen)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			return SWITCH_STATUS_FALSE;
 		}
 
 	} else if (handle->channels == 1) {
-		if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, nsamples, mp3buf, sizeof(mp3buf))) < 0) {
+		if ((rlen = lame_encode_buffer(context->gfp, audio, NULL, nsamples, context->mp3buf, context->mp3buflen)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "MP3 encode error %d!\n", rlen);
 			return SWITCH_STATUS_FALSE;
 		}
@@ -979,7 +993,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	}
 
 	if (rlen) {
-		int ret = fwrite(mp3buf, 1, rlen, context->fp);
+		int ret = fwrite(context->mp3buf, 1, rlen, context->fp);
 		if (ret < 0) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1445,7 +1459,7 @@ static switch_status_t load_config(void)
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
 			char *val = (char *) switch_xml_attr_soft(param, "value");
-
+			
 			if (!strcmp(var, "decoder")) {
 				switch_set_string(globals.decoder, val);
 			} else if (!strcmp(var, "volume")) {

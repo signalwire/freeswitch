@@ -420,6 +420,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
+	fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 
 	if (switch_core_file_open(fh,
 							  file,
