@@ -1310,7 +1310,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 	}
 	ret = tmp_path;
 	
- end:
+  end:
 
 	if (fh) {
 		switch_core_file_close(fh);
@@ -2262,7 +2262,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send mail is %d, var is %s\n", send_mail, var);*/
 	}
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deliver VM to %s@%s\n", myid, domain_name);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deliver VM to %s@%s\n", myid, domain_name);
 
 	if (!switch_strlen_zero(vm_storage_dir)) {
 		dir_path = switch_mprintf("%s%s%s", vm_storage_dir, SWITCH_PATH_SEPARATOR, myid);
@@ -2490,7 +2490,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		}
 	}
 
- failed:
+  failed:
 
 	switch_event_destroy(&local_event);
 
@@ -2661,7 +2661,7 @@ static switch_status_t voicemail_inject(const char *data)
 		switch_xml_free(xml_root);
 	}
 
- end:
+  end:
 
 	switch_safe_free(dup);
 
@@ -2860,7 +2860,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	}
 
 	if (*buf != '\0') {
-greet_key_press:
+  greet_key_press:
 		if (!strcasecmp(buf, profile->main_menu_key)) {
 			voicemail_check_main(session, profile_name, domain_name, id, 0);
 		} else if (!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
@@ -2964,7 +2964,7 @@ greet_key_press:
 		TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 	}
 
- end:
+  end:
 
 	if (x_domain_root) {
 		switch_xml_free(x_domain_root);
