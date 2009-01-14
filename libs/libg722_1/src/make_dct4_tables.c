@@ -44,7 +44,7 @@ static void set_up_one_table(int length)
     for (index = 0;  index < length - 1;  index++)
     {
         angle = scale*((double) index + 0.5);
-        printf("    {%.15e, %.15e},\n", cos(angle), -sin(angle));
+        printf("    {%.15ef, %.15ef},\n", cos(angle), -sin(angle));
     }
     angle = scale*((double) index + 0.5);
     printf("    {%.15e, %.15e}\n", cos(angle), -sin(angle));
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     {
         for (i = 0;  i < 10;  ++i)
         {
-            printf("    %22.15e%s\n",
+            printf("    %22.15ef%s\n",
                    cos(PI*(k + 0.5) * (i + 0.5)/10.0)*scale,
                    (k == 9  &&  i == 9)  ?  ""  :  ",");
         }
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     {
         for (i = 0;  i < 10;  ++i)
         {
-            printf("    %22.15e%s\n",
+            printf("    %22.15ef%s\n",
                    cos(PI*(k + 0.5) * (i + 0.5)/10.0)*scale,
                    (k == 9  &&  i == 9)  ?  ""  :  ",");
         }
