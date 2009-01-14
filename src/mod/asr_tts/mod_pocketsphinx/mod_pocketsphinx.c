@@ -46,7 +46,7 @@ static struct {
 	char *model8k;
 	char *model16k;
 	uint32_t thresh;
-    uint32_t silence_hits;
+	uint32_t silence_hits;
 	uint32_t listen_hits;
 	int auto_reload;
 	switch_memory_pool_t *pool;
@@ -65,7 +65,7 @@ typedef struct {
 	switch_mutex_t *flag_mutex;
 	uint32_t org_silence_hits;
 	uint32_t thresh;
-    uint32_t silence_hits;
+	uint32_t silence_hits;
 	uint32_t listen_hits;
 	uint32_t listening;
 	uint32_t countdown;
@@ -391,7 +391,7 @@ static switch_status_t pocketsphinx_asr_get_results(switch_asr_handle_t *ah, cha
 								 "  <input>%s</input>\n"
 								 "</interpretation>",
 								 ps->grammar, ps->confidence,
- 								 "match", 
+								"match", 
 								 ps->hyp, 
 								 ps->hyp
 								 );
