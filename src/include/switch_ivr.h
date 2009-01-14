@@ -354,10 +354,10 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   uint32_t max_digits,
 														   uint32_t max_tries,
 														   uint32_t timeout,
-														   char *valid_terminators,
-														   char *audio_file,
-														   char *bad_input_audio_file, char *digit_buffer, uint32_t digit_buffer_length,
-														   char *digits_regex);
+														   const char *valid_terminators,
+														   const char *audio_file,
+														   const char *bad_input_audio_file, char *digit_buffer, uint32_t digit_buffer_length,
+														   const char *digits_regex);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
 															 switch_speech_handle_t *sh,
