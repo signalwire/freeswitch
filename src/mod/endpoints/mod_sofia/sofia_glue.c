@@ -1654,6 +1654,9 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
+	switch_assert(tech_pvt->read_codec.implementation);
+	switch_assert(tech_pvt->write_codec.implementation);
+
 	tech_pvt->read_impl = *tech_pvt->read_codec.implementation;
 	tech_pvt->write_impl = *tech_pvt->write_codec.implementation;
 
