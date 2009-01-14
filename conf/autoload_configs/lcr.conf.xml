@@ -1,0 +1,20 @@
+<configuration name="lcr.conf" description="LCR Configuration">
+  <settings>
+    <param name="odbc-dsn" value="freeswitch-mysql:freeswitch:Fr33Sw1tch"/>
+<!--    <param name="odbc-dsn" value="freeswitch-pgsql:freeswitch:Fr33Sw1tch"/> -->
+  </settings>
+  <profiles>
+    <profile name="default">
+      <param name="id" value="0"/>
+      <param name="order_by" value="rate,quality,reliability"/>
+    </profile>
+    <profile name="qual_rel">
+      <param name="id" value="1"/>
+      <param name="order_by" value="quality,reliability"/>
+    </profile>
+    <profile name="rel_qual">
+      <param name="id" value="2"/>
+      <param name="order_by" value="reliability,quality"/>
+    </profile>
+  </profiles>
+</configuration>
