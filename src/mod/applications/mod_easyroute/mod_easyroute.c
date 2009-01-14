@@ -191,7 +191,7 @@ reallydone:
 	return status;
 }
 
-static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = \"%s\" and numbers.gateway_id = gateways.gateway_id limit 1;";
+static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = '%s' and numbers.gateway_id = gateways.gateway_id limit 1;";
 
 static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
 {	
