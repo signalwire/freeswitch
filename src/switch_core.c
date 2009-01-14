@@ -1265,7 +1265,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init_and_modload(switch_core_flag_t 
 	signal(SIGUSR1, handle_SIGHUP);
 #endif
 	signal(SIGHUP, handle_SIGHUP);
-
+	printf("WTF\n");
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Bringing up environment.\n");
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Loading Modules.\n");

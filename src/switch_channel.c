@@ -2270,16 +2270,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		tt_progress = (time_t) (caller_profile->times->progress / 1000000);
 		mtt_progress = (time_t) (caller_profile->times->progress / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress);
-		switch_channel_set_variable(channel, "answer_epoch", tmp);
+		switch_channel_set_variable(channel, "progress_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress);
-		switch_channel_set_variable(channel, "answer_uepoch", tmp);
+		switch_channel_set_variable(channel, "progress_uepoch", tmp);
 
 		tt_progress_media = (time_t) (caller_profile->times->progress_media / 1000000);
 		mtt_progress_media = (time_t) (caller_profile->times->progress_media / 1000);
 		switch_snprintf(tmp, sizeof(tmp), "%" TIME_T_FMT, tt_progress_media);
-		switch_channel_set_variable(channel, "answer_epoch", tmp);
+		switch_channel_set_variable(channel, "progress_media_epoch", tmp);
 		switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, caller_profile->times->progress_media);
-		switch_channel_set_variable(channel, "answer_uepoch", tmp);
+		switch_channel_set_variable(channel, "progress_media_uepoch", tmp);
 
 
 		tt_hungup = (time_t) (caller_profile->times->hungup / 1000000);
