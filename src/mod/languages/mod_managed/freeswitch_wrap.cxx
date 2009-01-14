@@ -22358,6 +22358,14 @@ SWIGEXPORT unsigned short SWIGSTDCALL CSharp_switch_rtp_get_remote_port(void * j
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_reset_media_timer(void * jarg1) {
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  switch_rtp_reset_media_timer(arg1);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_set_max_missed_packets(void * jarg1, unsigned long jarg2) {
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
   uint32_t arg2 ;

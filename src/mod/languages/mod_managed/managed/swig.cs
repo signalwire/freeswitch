@@ -3384,6 +3384,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_rtp_reset_media_timer(SWIGTYPE_p_switch_rtp rtp_session) {
+    freeswitchPINVOKE.switch_rtp_reset_media_timer(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session));
+  }
+
   public static void switch_rtp_set_max_missed_packets(SWIGTYPE_p_switch_rtp rtp_session, uint max) {
     freeswitchPINVOKE.switch_rtp_set_max_missed_packets(SWIGTYPE_p_switch_rtp.getCPtr(rtp_session), max);
   }
@@ -9585,6 +9589,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_get_remote_port")]
   public static extern ushort switch_rtp_get_remote_port(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_reset_media_timer")]
+  public static extern void switch_rtp_reset_media_timer(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_set_max_missed_packets")]
   public static extern void switch_rtp_set_max_missed_packets(HandleRef jarg1, uint jarg2);
