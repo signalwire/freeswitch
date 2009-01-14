@@ -11,11 +11,12 @@
   -->
   <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
-  <!-- xmpp_client_profile and xmpp_server_profile
-       xmpp_client_profile can be any string. 
-       xmpp_server_profile is appended to "dingaling_" to form the database name
-       containing the "subscriptions" table.
-       used by: dingaling.conf.xml enum.conf.xml 
+  <!--
+      xmpp_client_profile and xmpp_server_profile
+      xmpp_client_profile can be any string. 
+      xmpp_server_profile is appended to "dingaling_" to form the database name
+      containing the "subscriptions" table.
+      used by: dingaling.conf.xml enum.conf.xml 
   --> 
   <!-- 
        Examples of codec options: (module must be compiled and loaded)
