@@ -310,7 +310,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_soundtouch_load)
 {
-    switch_application_interface_t *app_interface;
+	switch_application_interface_t *app_interface;
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname); 
