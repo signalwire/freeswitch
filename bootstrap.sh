@@ -224,11 +224,6 @@ echo "Entering directory ${LIBDIR}/apr-util"
 cd ${LIBDIR}/apr-util
 ./buildconf
 
-echo "Entering directory ${LIBDIR}/openmrcp"
-cd ${LIBDIR}/openmrcp
-./bootstrap
-
-
 for i in ${SUBDIRS}
 do
   echo "Entering directory ${LIBDIR}/${i}"
