@@ -21077,7 +21077,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsig
   arg9 = (char *)jarg9; 
   arg10 = (uint32_t)jarg10; 
   arg11 = (char *)jarg11; 
-  result = (switch_status_t)switch_play_and_get_digits(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11);
+  result = (switch_status_t)switch_play_and_get_digits(arg1,arg2,arg3,arg4,arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,(char const *)arg11);
   jresult = result; 
   return jresult;
 }
