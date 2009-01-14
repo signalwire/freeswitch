@@ -365,7 +365,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 		}
 	}
 
- end:
+  end:
 	
 	used = switch_buffer_inuse(context->audio_buffer);
 
@@ -378,7 +378,7 @@ static size_t decode_fd(shout_context_t *context, void *data, size_t bytes)
 
 	return 0;
 
- error:
+  error:
 	switch_mutex_lock(context->audio_mutex);
 	context->err++;
 	switch_mutex_unlock(context->audio_mutex);
