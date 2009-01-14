@@ -572,7 +572,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (!switch_channel_ready(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -605,14 +605,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 
 	switch_mutex_lock(session->codec_write_mutex);	
 
-	if (!(session->write_codec && session->write_codec->mutex && frame->codec)) {
+	if (!(session->write_codec && session->write_codec->mutex && frame->codec) || 
+		!switch_channel_ready(session->channel) || !switch_channel_media_ready(session->channel)) {
 		switch_mutex_unlock(session->codec_write_mutex);	
 		return SWITCH_STATUS_FALSE;
 	}
 
 	switch_mutex_lock(session->write_codec->mutex);
 	switch_mutex_lock(frame->codec->mutex);
-
+	
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		if (session->write_codec->implementation->codec_id == frame->codec->implementation->codec_id) {
