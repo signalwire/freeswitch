@@ -204,9 +204,10 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			}
 
 			while (RUNNING) {
+				int is_open;
 				switch_core_timer_next(&timer);
 				olen = source->samples;
-				int is_open = switch_test_flag((&fh), SWITCH_FILE_OPEN);
+				is_open = switch_test_flag((&fh), SWITCH_FILE_OPEN);
 
 				if (is_open) {
 					if (switch_core_file_read(&fh, abuf, &olen) != SWITCH_STATUS_SUCCESS || !olen) {
