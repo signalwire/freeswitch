@@ -47,7 +47,7 @@ static void set_up_one_table(int length)
         printf("    {%.15ef, %.15ef},\n", cos(angle), -sin(angle));
     }
     angle = scale*((double) index + 0.5);
-    printf("    {%.15e, %.15e}\n", cos(angle), -sin(angle));
+    printf("    {%.15ef, %.15ef}\n", cos(angle), -sin(angle));
     printf("};\n\n");
 }
 /*- End of function --------------------------------------------------------*/
