@@ -72,7 +72,11 @@
   <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU,PCMA,GSM"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_server_profile=xmpps"/>
-  <!-- bind_server_ip
+  <!-- 
+       THIS IS ONLY USED FOR DINALING
+
+       bind_server_ip
+
        Can be an ip address, a dns name, or "auto". 
        This determines an ip address available on this host to bind.
        If you are separating RTP and SIP traffic, you will want to have
