@@ -808,6 +808,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fax_shutdown)
 {
 	switch_memory_pool_t *pool = globals.pool;
 
+	switch_event_unbind(&NODE);
+
 	switch_core_destroy_memory_pool(&pool);
 	memset(&globals, 0, sizeof(globals));
 
