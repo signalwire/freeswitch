@@ -64,7 +64,7 @@ struct limit_hash_item  {
 };
 typedef struct limit_hash_item limit_hash_item_t;
 
-
+ 
 static char limit_sql[] =
 	"CREATE TABLE limit_data (\n"
 	"   hostname   VARCHAR(255),\n" "   realm      VARCHAR(255),\n" "   id         VARCHAR(255),\n" "   uuid       VARCHAR(255)\n" ");\n";
