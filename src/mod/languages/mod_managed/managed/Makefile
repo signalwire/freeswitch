@@ -1,14 +1,14 @@
-all: mod_managed_lib.dll
+all: FreeSWITCH.Managed.dll
 
 clean:
-	rm -fr mod_managed_lib.dll
+	rm -fr FreeSWITCH.Managed.dll
 
-mod_managed_lib.dll: Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
-	gmcs -target:library -out:mod_managed_lib.dll -d:DEBUG Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
+FreeSWITCH.Managed.dll: Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
+	gmcs -target:library -out:FreeSWITCH.Managed.dll -d:DEBUG Loader.cs ManagedSession.cs ApiFunction.cs AppFunction.cs Extensions.cs Log.cs Demo.cs swig.cs
 
-install: mod_managed_lib.dll
-	$(INSTALL) mod_managed_lib.dll $(DESTDIR)$(MODINSTDIR)
+install: FreeSWITCH.Managed.dll
+	$(INSTALL) FreeSWITCH.Managed.dll $(DESTDIR)$(MODINSTDIR)
 
 uninstall:
-	$(UNINSTALL) $(MODINSTDIR)/mod_managed_lib.dll
+	$(UNINSTALL) $(MODINSTDIR)/FreeSWITCH.Managed.dll
 
