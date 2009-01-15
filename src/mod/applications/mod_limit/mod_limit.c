@@ -795,7 +795,7 @@ end:
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define LIMITHASH_USAGE "<realm> <id> <max>[/interval] [number [dialplan [context]]]"
+#define LIMITHASH_USAGE "<realm> <id> [<max>[/interval]] [number [dialplan [context]]]"
 #define LIMITHASH_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
 SWITCH_STANDARD_APP(limit_hash_function)
 {
@@ -829,22 +829,26 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	
 	realm = argv[0];
 	id = argv[1];
-	if ((szinterval = strchr(argv[2], '/')))
-	{
-		*szinterval++ = '\0';
-		interval = atoi(szinterval);
-	}
 	
-	max = atoi(argv[2]);
+	/* If max is omitted, only act as a counter and skip maximum checks */
+	if (argc > 2) {
+		if ((szinterval = strchr(argv[2], '/')))
+		{
+			*szinterval++ = '\0';
+			interval = atoi(szinterval);
+		}
+		
+		max = atoi(argv[2]);
+		
+		if (max < 0) {
+			max = 0;
+		}
+	}
 
-	if (argc >= 4) {
+	if (argc > 3) {
 		xfer_exten = argv[3];
 	} else {
 		xfer_exten = limit_def_xfer_exten;
-	}
-
-	if (max < 0) {
-		max = 0;
 	}
 	
 	hashkey = switch_core_session_sprintf(session, "%s_%s", realm, id);
@@ -865,7 +869,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 		   If we didnt, allow incrementing the counter.
 		   If we did, dont touch it but do the validation anyways
 		 */
-		increment = !!!switch_core_hash_find(channel_hash, hashkey);
+		increment = !switch_core_hash_find(channel_hash, hashkey);
 	} else {
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
 		new_channel = 1;
@@ -879,13 +883,13 @@ SWITCH_STANDARD_APP(limit_hash_function)
 			/* Always increment rate when its checked as it doesnt depend on the channel */
 			item->rate_usage++;
 			
-			if (item->rate_usage > (uint32_t)max) {
+			if ((max >= 0) && (item->rate_usage > (uint32_t)max)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
 				switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 				goto end;
 			}
 		}
-	} else if (item->total_usage + increment > (uint32_t)max) {
+	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t)max)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
 		switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 		goto end;
@@ -898,14 +902,19 @@ SWITCH_STANDARD_APP(limit_hash_function)
 			switch_core_hash_insert(channel_hash, hashkey, item);
 		}
 		
-		if (interval == 0) {
+		if (max == -1) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
+		} else if (interval == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d\n", hashkey, item->total_usage, max);	
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, item->rate_usage, max, interval);
 		}
 	}
-
 	
+	/* Save current usage & rate into channel variables so it can be used later in the dialplan, or added to CDR records */
+	switch_channel_set_variable(channel, "limit_usage", switch_core_session_sprintf(session, "%d", item->total_usage));
+	switch_channel_set_variable(channel, "limit_rate", switch_core_session_sprintf(session, "%d", item->rate_usage));
+
 	if (new_channel) {
 		switch_core_hash_init(&channel_hash, switch_core_session_get_pool(session));
 		switch_core_hash_insert(channel_hash, hashkey, item);
