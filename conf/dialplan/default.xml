@@ -311,6 +311,7 @@
     <!-- dial the freeswitch conference via SIP-->
     <extension name="freeswitch_public_conf_via_sip">
       <condition field="destination_number" expression="^9(888|1616|3232)$">
+	<action application="export" data="hold_music=silence"/>
 	<action application="bridge" data="sofia/${use_profile}/$1@conference.freeswitch.org"/>
       </condition>
     </extension>
