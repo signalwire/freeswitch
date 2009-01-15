@@ -14,7 +14,7 @@ export APPLICATIONS_MODULES=applications/mod_commands applications/mod_conferenc
 			    applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit \
 			    applications/mod_rss applications/mod_voicemail applications/mod_fsv \
 			    applications/mod_fax
-export ASR_TTS_MODULES=asr_tts/mod_openmrcp
+export ASR_TTS_MODULES=
 export CODECS_MODULES=codecs/mod_ilbc codecs/mod_h26x codecs/mod_speex codecs/mod_voipcodecs
 export DIALPLANS_MODULES=dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml
 export DIRECTORIES_MODULES=

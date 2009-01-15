@@ -58,7 +58,6 @@
 /opt/freeswitch/conf/autoload_configs/local_stream.conf.xml
 /opt/freeswitch/conf/autoload_configs/conference.conf.xml
 /opt/freeswitch/conf/autoload_configs/event_socket.conf.xml
-/opt/freeswitch/conf/autoload_configs/openmrcp.conf.xml
 /opt/freeswitch/conf/autoload_configs/modules.conf.xml
 /opt/freeswitch/conf/autoload_configs/dingaling.conf.xml
 /opt/freeswitch/conf/autoload_configs/iax.conf.xml
@@ -72,5 +71,3 @@
 /opt/freeswitch/conf/autoload_configs/fax.conf.xml
 /opt/freeswitch/conf/jingle_profiles/server.xml
 /opt/freeswitch/conf/jingle_profiles/client.xml
-/opt/freeswitch/conf/mrcp_profiles/openmrcp-v2.xml
-/opt/freeswitch/conf/mrcp_profiles/openmrcp-v1.xml

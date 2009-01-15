@@ -6,7 +6,6 @@ opt/freeswitch/conf/sip_profiles/outbound
 opt/freeswitch/conf/directory/default
 opt/freeswitch/conf/autoload_configs
 opt/freeswitch/conf/jingle_profiles
-opt/freeswitch/conf/mrcp_profiles
 opt/freeswitch/log
 opt/freeswitch/db
 opt/freeswitch/bin/scripts
