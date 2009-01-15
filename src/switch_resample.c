@@ -244,6 +244,27 @@ SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16
 	return x;
 }
 
+SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, uint32_t samples, uint32_t channels)
+{
+	int16_t *buf;
+	switch_size_t len = samples * sizeof(int16_t);
+	uint32_t i = 0, j = 0, k = 0;
+
+	switch_zmalloc(buf, len);
+	
+	for(i = 0; i < samples; i++) {
+		for (j = 0; j < channels; j++) {
+			int32_t z = buf[i] + data[k++];
+			switch_normalize_to_16bit(z);
+			buf[i] = (int16_t) z;
+		}
+	}
+
+	memcpy(data, buf, len);
+	free(buf);
+
+}
+
 SWITCH_DECLARE(void) switch_change_sln_volume(int16_t *data, uint32_t samples, int32_t vol)
 {
 	double newrate = 0;

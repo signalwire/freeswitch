@@ -120,7 +120,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	if (fh->pre_buffer_datalen) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Prebuffering %d bytes\n", (int)fh->pre_buffer_datalen);
 		switch_buffer_create_dynamic(&fh->pre_buffer, fh->pre_buffer_datalen * fh->channels, fh->pre_buffer_datalen * fh->channels / 2, 0);
-		fh->pre_buffer_data = switch_core_alloc(fh->memory_pool, fh->pre_buffer_datalen);
+		fh->pre_buffer_data = switch_core_alloc(fh->memory_pool, fh->pre_buffer_datalen * fh->channels);
+	}
+
+	if (fh->channels > 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to mono will occur.\n", fh->channels);
 	}
 
 	switch_set_flag(fh, SWITCH_FILE_OPEN);
@@ -164,6 +168,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				if ((status = fh->file_interface->file_read(fh, fh->pre_buffer_data, &rlen)) != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
+					if (fh->channels > 1) {
+						switch_mux_channels((int16_t *)fh->pre_buffer_data, rlen, fh->channels);
+					}
 					switch_buffer_write(fh->pre_buffer, fh->pre_buffer_data, asis ? rlen : rlen * 2);
 				}
 			}
@@ -185,6 +192,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 			switch_set_flag(fh, SWITCH_FILE_DONE);
 			goto top;
 		}
+
+		if (fh->channels > 1) {
+			switch_mux_channels((int16_t *)data, *len, fh->channels);
+		}
+
 	}
 
 
