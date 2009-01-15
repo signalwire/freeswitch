@@ -131,7 +131,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_lcr, mod_lcr_load, mod_lcr_shutdown, NULL);
 
-static char *get_bridge_data(const char *dialed_number, lcr_route cur_route) {
+static char *get_bridge_data(const char *dialed_number, lcr_route cur_route)
+{
 	size_t lstrip;
 	size_t  tstrip;
 	char *data = NULL;
@@ -158,7 +159,8 @@ static char *get_bridge_data(const char *dialed_number, lcr_route cur_route) {
 	return data;
 }
 
-void init_max_lens(max_len maxes) {
+void init_max_lens(max_len maxes)
+{
 	maxes->digit_str = (headers[LCR_DIGITS_PLACE] == NULL ? 0 : strlen(headers[LCR_DIGITS_PLACE]));
 	maxes->carrier_name = (headers[LCR_CARRIER_PLACE] == NULL ? 0 : strlen(headers[LCR_CARRIER_PLACE]));
 	maxes->dialstring = (headers[LCR_DIALSTRING_PLACE] == NULL ? 0 : strlen(headers[LCR_DIALSTRING_PLACE]));
@@ -166,7 +168,8 @@ void init_max_lens(max_len maxes) {
 	maxes->rate = 8;
 }
 
-switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *destination_number) {
+switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *destination_number)
+{
 	lcr_route current = NULL;
 
 	if (routes == NULL) {
@@ -211,7 +214,8 @@ switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *de
 }
 
 /* try each type of random until we suceed */
-static switch_bool_t set_db_random() {
+static switch_bool_t set_db_random()
+{
 	char *sql = NULL;
 	if (globals.odbc_dsn) {
 		sql = "SELECT * FROM lcr ORDER BY rand() LIMIT 1";
@@ -231,7 +235,8 @@ static switch_bool_t set_db_random() {
 }
 
 /* make a new string with digits only */
-static char* string_digitsonly(const char *str) {
+static char *string_digitsonly(const char *str) 
+{
 	char *p, *np, *newstr;
 	size_t len;
 
@@ -253,7 +258,8 @@ static char* string_digitsonly(const char *str) {
 	return newstr;
 }
 
-static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata) {
+static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
+{
 	if (globals.odbc_dsn) {
 		if(switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata)
 				== SWITCH_ODBC_FAIL) {
@@ -265,7 +271,8 @@ static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback
 	return SWITCH_FALSE;
 }
 
-int route_add_callback(void *pArg, int argc, char **argv, char **columnNames) {
+int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
+{
 	lcr_route additional = NULL;
 	lcr_route current = NULL;
 	callback_t *cbt = (callback_t *) pArg;
@@ -325,7 +332,8 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile_name) {
+switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile_name)
+{
 	/* instantiate the object/struct we defined earlier */
 	switch_stream_handle_t sql_stream = { 0 };
 	size_t n, digit_len = strlen(digits);
@@ -380,7 +388,8 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 	}
 }
 
-static switch_status_t lcr_load_config() {
+static switch_status_t lcr_load_config()
+{
 	char *cf = "lcr.conf";
 	switch_xml_t cfg, xml, settings, param, x_profile, x_profiles;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -513,7 +522,8 @@ static switch_status_t lcr_load_config() {
 	return status;
 }
 
-static void destroy_list(lcr_route *head) {
+static void destroy_list(lcr_route *head)
+{
 	lcr_route cur = NULL, top = *head;
 
 	while (top) {
@@ -531,7 +541,8 @@ static void destroy_list(lcr_route *head) {
 	*head = NULL;
 }
 
-SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt) {
+SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
+{
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	callback_t routes = { 0 };
@@ -569,7 +580,8 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt) {
 	return extension;
 }
 
-void str_repeat(size_t how_many, char *what, switch_stream_handle_t *str_stream) {
+void str_repeat(size_t how_many, char *what, switch_stream_handle_t *str_stream)
+{
 	size_t i;
 
 	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "repeating %d of '%s'\n", how_many, what);
@@ -629,7 +641,8 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	}
 }
 
-SWITCH_STANDARD_API(dialplan_lcr_function) {
+SWITCH_STANDARD_API(dialplan_lcr_function)
+{
 	char *argv[4] = { 0 };
 	int argc;
 	char *mydata = NULL;
@@ -731,7 +744,8 @@ SWITCH_STANDARD_API(dialplan_lcr_function) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load) {
+SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
+{
 	switch_api_interface_t *dialplan_lcr_api_interface;
 	switch_application_interface_t *app_interface;
 	switch_dialplan_interface_t *dp_interface;
@@ -770,7 +784,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load) {
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown) {
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown)
+{
 	return SWITCH_STATUS_SUCCESS;
 }
 
