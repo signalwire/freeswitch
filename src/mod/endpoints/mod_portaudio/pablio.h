@@ -59,7 +59,8 @@ extern "C" {
 	typedef struct {
 		PaUtilRingBuffer inFIFO;
 		PaUtilRingBuffer outFIFO;
-		PaStream *stream;
+		PaStream *istream;
+		PaStream *ostream;
 		int bytesPerFrame;
 	} PABLIO_Stream;
 
