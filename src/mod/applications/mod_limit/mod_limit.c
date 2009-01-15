@@ -822,7 +822,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 	
-	if (argc < 3) {
+	if (argc < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit_hash %s\n", LIMITHASH_USAGE);
 		return;
 	}
