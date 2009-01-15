@@ -331,7 +331,8 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	SQLLEN m = 0, t = 0;
 	char *err_str = NULL;
 	int result;
-
+	int err = 0;
+	
 	switch_assert(callback != NULL);
 
 	if (!db_is_up(handle)) {
@@ -366,6 +367,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		int done = 0;
 
 		if (!(result = SQLFetch(stmt)) == SQL_SUCCESS) {
+			err++;
 			break;
 		}
 
@@ -407,9 +409,11 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	
 	SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 
-	return SWITCH_ODBC_SUCCESS;
+	if (!err) {
+		return SWITCH_ODBC_SUCCESS;
+	}
 
-  error:
+ error:
 
 	/* err_str is already defined  for some error cases */
 	if (err_str != NULL) {
