@@ -453,7 +453,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_event(switch_core_session_t *se
 						switch_time_t b4, aftr;
 
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Command Execute %s(%s)\n",
-										  switch_channel_get_name(channel), app_name, app_arg);
+										  switch_channel_get_name(channel), app_name, switch_str_nil(app_arg));
 						b4 = switch_timestamp_now();
 						switch_core_session_exec(session, application_interface, app_arg);
 						aftr = switch_timestamp_now();

@@ -311,45 +311,6 @@ static esl_status_t esl_event_base_add_header(esl_event_t *event, esl_stack_t st
 	return ESL_SUCCESS;
 }
 
-int vasprintf(char **ret, const char *format, va_list ap);
-
-static int esl_vasprintf(char **ret, const char *fmt, va_list ap)
-{
-#if !defined(WIN32) && !defined(__sun)
-	return vasprintf(ret, fmt, ap);
-#else
-	char *buf;
-	int len;
-	size_t buflen;
-	va_list ap2;
-	char *tmp = NULL;
-
-#ifdef _MSC_VER
-#if _MSC_VER >= 1500
-	/* hack for incorrect assumption in msvc header files for code analysis */
-	__analysis_assume(tmp);
-#endif
-	ap2 = ap;
-#else
-	va_copy(ap2, ap);
-#endif
-
-	len = vsnprintf(tmp, 0, fmt, ap2);
-
-	if (len > 0 && (buf = malloc((buflen = (size_t) (len + 1)))) != NULL) {
-		len = vsnprintf(buf, buflen, fmt, ap);
-		*ret = buf;
-	} else {
-		*ret = NULL;
-		len = -1;
-	}
-
-	va_end(ap2);
-	return len;
-#endif
-}
-
-
 ESL_DECLARE(esl_status_t) esl_event_add_header(esl_event_t *event, esl_stack_t stack, const char *header_name, const char *fmt, ...)
 {
 	int ret = 0;
@@ -496,6 +457,8 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 		 * the memory, allocate and only reallocate if we need more.  This avoids an alloc, free CPU
 		 * destroying loop.
 		 */
+
+		
 		new_len = (strlen(hp->value) * 3) + 1;
 
 		if (encode_len < new_len) {
@@ -574,6 +537,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 	} else {
 		snprintf(buf + len, dlen - len, "\n");
 	}
+
 
 	*str = buf;
 

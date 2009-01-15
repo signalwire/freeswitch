@@ -37,7 +37,6 @@
 #endif
 
 
-
 /* Written by Marc Espie, public domain */
 #define ESL_CTYPE_NUM_CHARS       256
 
@@ -181,6 +180,48 @@ ESL_DECLARE(const char *)esl_stristr(const char *instr, const char *str)
 #endif
 #endif
 
+
+int vasprintf(char **ret, const char *format, va_list ap);
+
+ESL_DECLARE(int) esl_vasprintf(char **ret, const char *fmt, va_list ap)
+{
+#if !defined(WIN32) && !defined(__sun)
+	return vasprintf(ret, fmt, ap);
+#else
+	char *buf;
+	int len;
+	size_t buflen;
+	va_list ap2;
+	char *tmp = NULL;
+
+#ifdef _MSC_VER
+#if _MSC_VER >= 1500
+	/* hack for incorrect assumption in msvc header files for code analysis */
+	__analysis_assume(tmp);
+#endif
+	ap2 = ap;
+#else
+	va_copy(ap2, ap);
+#endif
+
+	len = vsnprintf(tmp, 0, fmt, ap2);
+
+	if (len > 0 && (buf = malloc((buflen = (size_t) (len + 1)))) != NULL) {
+		len = vsnprintf(buf, buflen, fmt, ap);
+		*ret = buf;
+	} else {
+		*ret = NULL;
+		len = -1;
+	}
+
+	va_end(ap2);
+	return len;
+#endif
+}
+
+
+
+
 ESL_DECLARE(int) esl_snprintf(char *buffer, size_t count, const char *fmt, ...)
 {
 	va_list ap;
@@ -236,9 +277,10 @@ static const char *cut_path(const char *in)
 static void default_logger(const char *file, const char *func, int line, int level, const char *fmt, ...)
 {
 	const char *fp;
-	char data[1024];
+	char *data;
 	va_list ap;
-
+	int ret;
+	
 	if (level < 0 || level > 7) {
 		level = 7;
 	}
@@ -250,10 +292,12 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 	va_start(ap, fmt);
 
-	vsnprintf(data, sizeof(data), fmt, ap);
+	ret = esl_vasprintf(&data, fmt, ap);
 
-
-	fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+	if (ret != -1) {
+		fprintf(stderr, "[%s] %s:%d %s() %s", LEVEL_NAMES[level], file, line, func, data);
+		free(data);
+	}
 
 	va_end(ap);
 
@@ -334,6 +378,14 @@ ESL_DECLARE(char *)esl_url_decode(char *s)
 	return s;
 }
 
+static void sock_setup(esl_handle_t *handle)
+{
+	int x = 1;
+
+	setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, &x, sizeof(x));
+
+}
+
 ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr)
 {
 	handle->sock = socket;
@@ -350,9 +402,11 @@ ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t s
 
 	handle->connected = 1;
 
+	sock_setup(handle);
+
 	esl_send_recv(handle, "connect\n\n");
 	
-
+	
 	if (handle->last_sr_event) {
 		handle->info_event = handle->last_sr_event;
 		handle->last_sr_event = NULL;
@@ -410,6 +464,39 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 
 	snprintf(send_buf, sizeof(send_buf), "%s\ncall-command: execute\n%s%s\n", cmd_buf, app_buf, arg_buf);
 
+	return esl_send_recv(handle, send_buf);
+}
+
+
+ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, const char *value)
+{
+	char send_buf[1024] = "";
+	
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
+
+	snprintf(send_buf, sizeof(send_buf), "filter %s %s\n\n", header, value);
+
+	return esl_send_recv(handle, send_buf);
+}
+
+
+ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etype, const char *value)
+{
+	char send_buf[1024] = "";
+	const char *type = "plain";
+
+	if (!handle->connected) {
+		return ESL_FAIL;
+	}
+
+	if (etype == ESL_EVENT_TYPE_XML) {
+		type = "xml";
+	}
+
+	snprintf(send_buf, sizeof(send_buf), "event %s %s\n\n", type, value);
+	
 	return esl_send_recv(handle, send_buf);
 }
 
@@ -535,6 +622,8 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 		snprintf(handle->err, sizeof(handle->err), "Socket Connection Error");
 		goto fail;
 	}
+
+	sock_setup(handle);
 
 	handle->connected = 1;
 

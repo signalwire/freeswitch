@@ -42,6 +42,12 @@
 typedef struct esl_event_header esl_event_header_t;
 typedef struct esl_event esl_event_t;
 
+
+typedef enum {
+	ESL_EVENT_TYPE_PLAIN,
+	ESL_EVENT_TYPE_XML
+} esl_event_type_t;
+
 #ifdef WIN32
 #define ESL_SEQ_FWHITE FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY
 #define ESL_SEQ_FRED FOREGROUND_RED | FOREGROUND_INTENSITY
@@ -164,6 +170,7 @@ typedef struct esl_event esl_event_t;
 #include <stdlib.h>
 #include <string.h>
 #ifndef WIN32
+#include <netinet/tcp.h>
 #include <sys/signal.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -290,6 +297,9 @@ typedef enum {
 #define ESL_LOG_EMERG ESL_PRE, ESL_LOG_LEVEL_EMERG
 typedef void (*esl_logger_t)(const char *file, const char *func, int line, int level, const char *fmt, ...);
 
+
+ESL_DECLARE(int) esl_vasprintf(char **ret, const char *fmt, va_list ap);
+
 ESL_DECLARE_DATA extern esl_logger_t esl_log;
 
 ESL_DECLARE(void) esl_global_set_logger(esl_logger_t logger);
@@ -320,6 +330,9 @@ ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd);
 ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **save_event);
 ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event);
 ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd);
+ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, const char *value);
+ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etype, const char *value);
+
 #define esl_recv(_h) esl_recv_event(_h, NULL)
 #define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, NULL)
 

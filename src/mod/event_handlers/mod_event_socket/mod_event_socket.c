@@ -74,7 +74,6 @@ struct listener {
 	switch_core_session_t *session;
 	int lost_events;
 	int lost_logs;
-	int hup;
 	time_t last_flush;
 	uint32_t timeout;
 	uint32_t id;
@@ -385,6 +384,7 @@ SWITCH_STANDARD_APP(socket_function)
 	}
 
 	switch_socket_opt_set(new_sock, SWITCH_SO_KEEPALIVE, 1);
+	switch_socket_opt_set(new_sock, SWITCH_SO_TCP_NODELAY, 1);
 
 	if (switch_socket_connect(new_sock, sa) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error!\n");
@@ -978,17 +978,6 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (switch_test_flag(listener, LFLAG_MYEVENTS) && !listener->hup && channel && !switch_channel_ready(channel)) {
-			listener->hup = 1;
-		}
-
-		if (listener->hup == 2 || 
-			((!switch_test_flag(listener, LFLAG_MYEVENTS) && !switch_test_flag(listener, LFLAG_EVENTS)) && 
-			 channel && !switch_channel_ready(channel)) ) {
-			status = SWITCH_STATUS_FALSE;
-            break;
-		}
-
 		if (mlen) {
 			bytes += mlen;
 			do_sleep = 0;
@@ -1124,9 +1113,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 					do_sleep = 0;
 				}
 			}
-
+			
 			if (switch_test_flag(listener, LFLAG_EVENTS)) {
-				if (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 					char hbuf[512];
 					switch_event_t *pevent = (switch_event_t *) pop;
 					char *etype;
@@ -1148,11 +1137,8 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 						}
 					}
 
-					if (!listener->ebuf) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No event data (allocation error?)\n");
-						goto endloop;
-					}
-
+					switch_assert(listener->ebuf);
+					
 					len = strlen(listener->ebuf);
 
 					switch_snprintf(hbuf, sizeof(hbuf), "Content-Length: %" SWITCH_SSIZE_T_FMT "\n" "Content-Type: text/event-%s\n" "\n", len, etype);
@@ -1162,22 +1148,21 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 
 					len = strlen(listener->ebuf);
 					switch_socket_send(listener->sock, listener->ebuf, &len);
-
+					
 					switch_safe_free(listener->ebuf);
 
-				  endloop:
+				endloop:
 
-					if (listener->hup == 1 && pevent->event_id == SWITCH_EVENT_CHANNEL_HANGUP) {
-						char *uuid = switch_event_get_header(pevent, "unique-id");
-						if (!strcmp(uuid, switch_core_session_get_uuid(listener->session))) {
-							listener->hup = 2;
-						}
-					}
-					
 					switch_event_destroy(&pevent);
 				}
 			}
 		}
+
+		if (channel && !switch_channel_ready(channel)) {
+			status = SWITCH_STATUS_FALSE;
+            break;
+		}
+		
 		if (do_sleep) {
 			switch_cond_next();
 		}
@@ -1775,6 +1760,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 	}
 
+	switch_socket_opt_set(listener->sock, SWITCH_SO_TCP_NODELAY, TRUE);
+	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
+
 	if (prefs.acl_count && listener->sa && !switch_strlen_zero(listener->remote_ip)) {
 		uint32_t x = 0;
 
@@ -1932,10 +1920,18 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_unlock(listener->filter_mutex);
 	if (listener->sock) {
 		char disco_buf[512] = "";
-		const char message[] = "Disconnected, goodbye!\nSee you at ClueCon http://www.cluecon.com/ !!!\n";
+		const char message[] = "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n";
 		int mlen = strlen(message);
 		
-		switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
+		if (listener->session) {
+			switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
+							"Controlled-Session-UUID: %s\n"
+							"Content-Length: %d\n\n", 
+							switch_core_session_get_uuid(listener->session), mlen);
+		} else {
+			switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\nContent-Length: %d\n\n", mlen);
+		}
+
 		len = strlen(disco_buf);
 		switch_socket_send(listener->sock, disco_buf, &len);
 		len = mlen;
