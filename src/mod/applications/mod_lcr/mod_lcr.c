@@ -567,7 +567,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 
 		for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
-			//bridge_data = get_bridge_data(caller_profile->destination_number, cur_route);
+			/*bridge_data = get_bridge_data(caller_profile->destination_number, cur_route);*/
 			switch_caller_extension_add_application(session, extension, "bridge", cur_route->dialstring);
 			switch_safe_free(bridge_data);
 		}
@@ -584,7 +584,7 @@ void str_repeat(size_t how_many, char *what, switch_stream_handle_t *str_stream)
 {
 	size_t i;
 
-	//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "repeating %d of '%s'\n", how_many, what);
+	/*//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "repeating %d of '%s'\n", how_many, what);*/
 
 	for (i=0; i<how_many; i++) {
 		str_stream->write_function(str_stream, "%s", what);
@@ -653,7 +653,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	max_obj_t maximum_lengths = { 0 };
 	callback_t cb_struct = { 0 };
 	switch_status_t lookup_status = SWITCH_STATUS_SUCCESS;
-	//switch_malloc(maximum_lengths, sizeof(max_obj_t));
+	/*//switch_malloc(maximum_lengths, sizeof(max_obj_t)); */
 
 	if (switch_strlen_zero(cmd)) {
 		goto usage;
