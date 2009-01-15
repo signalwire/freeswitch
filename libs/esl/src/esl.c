@@ -380,10 +380,14 @@ ESL_DECLARE(char *)esl_url_decode(char *s)
 
 static void sock_setup(esl_handle_t *handle)
 {
+#ifdef WIN32
+	BOOL bOptVal = TRUE;
+	int bOptLen = sizeof(BOOL);
+	setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, (const char *)&bOptVal, bOptLen);
+#else
 	int x = 1;
-
 	setsockopt(handle->sock, IPPROTO_TCP, TCP_NODELAY, &x, sizeof(x));
-
+#endif
 }
 
 ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr)
