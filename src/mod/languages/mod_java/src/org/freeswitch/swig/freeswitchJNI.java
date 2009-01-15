@@ -133,7 +133,7 @@ class freeswitchJNI {
   public final static native int CoreSession_transfer__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2, String jarg3);
   public final static native int CoreSession_transfer__SWIG_2(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native String CoreSession_read(long jarg1, CoreSession jarg1_, int jarg2, int jarg3, String jarg4, int jarg5, String jarg6);
-  public final static native String CoreSession_playAndGetDigits(long jarg1, CoreSession jarg1_, int jarg2, int jarg3, int jarg4, int jarg5, String jarg6, String jarg7, String jarg8, String jarg9);
+  public final static native String CoreSession_playAndGetDigits(long jarg1, CoreSession jarg1_, int jarg2, int jarg3, int jarg4, int jarg5, String jarg6, String jarg7, String jarg8, String jarg9, String jarg10);
   public final static native int CoreSession_streamFile__SWIG_0(long jarg1, CoreSession jarg1_, String jarg2, int jarg3);
   public final static native int CoreSession_streamFile__SWIG_1(long jarg1, CoreSession jarg1_, String jarg2);
   public final static native int CoreSession_sleep__SWIG_0(long jarg1, CoreSession jarg1_, int jarg2, int jarg3);

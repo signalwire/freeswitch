@@ -7869,6 +7869,7 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     char *arg7 = (char *) 0 ;
     char *arg8 = (char *) 0 ;
     char *arg9 = (char *) 0 ;
+    char *arg10 = (char *) 0 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -7892,11 +7893,14 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     int res9 ;
     char *buf9 = 0 ;
     int alloc9 = 0 ;
+    int res10 ;
+    char *buf10 = 0 ;
+    int alloc10 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 9) || (items > 9)) {
-      SWIG_croak("Usage: CoreSession_playAndGetDigits(self,min_digits,max_digits,max_tries,timeout,terminators,audio_files,bad_input_audio_files,digits_regex);");
+    if ((items < 10) || (items > 10)) {
+      SWIG_croak("Usage: CoreSession_playAndGetDigits(self,min_digits,max_digits,max_tries,timeout,terminators,audio_files,bad_input_audio_files,var_name,digits_regex);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -7943,7 +7947,12 @@ XS(_wrap_CoreSession_playAndGetDigits) {
       SWIG_exception_fail(SWIG_ArgError(res9), "in method '" "CoreSession_playAndGetDigits" "', argument " "9"" of type '" "char *""'");
     }
     arg9 = reinterpret_cast< char * >(buf9);
-    result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+    res10 = SWIG_AsCharPtrAndSize(ST(9), &buf10, NULL, &alloc10);
+    if (!SWIG_IsOK(res10)) {
+      SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "CoreSession_playAndGetDigits" "', argument " "10"" of type '" "char *""'");
+    }
+    arg10 = reinterpret_cast< char * >(buf10);
+    result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     
@@ -7954,6 +7963,7 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
+    if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     XSRETURN(argvi);
   fail:
     
@@ -7965,6 +7975,7 @@ XS(_wrap_CoreSession_playAndGetDigits) {
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
     if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
+    if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     SWIG_croak_null();
   }
 }

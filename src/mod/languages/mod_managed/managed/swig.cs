@@ -282,8 +282,8 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public string PlayAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, string terminators, string audio_files, string bad_input_audio_files, string digits_regex) {
-    string ret = freeswitchPINVOKE.CoreSession_PlayAndGetDigits(swigCPtr, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex);
+  public string PlayAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, string terminators, string audio_files, string bad_input_audio_files, string var_name, string digits_regex) {
+    string ret = freeswitchPINVOKE.CoreSession_PlayAndGetDigits(swigCPtr, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, var_name, digits_regex);
     return ret;
   }
 
@@ -3054,8 +3054,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_play_and_get_digits(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, uint max_tries, uint timeout, string valid_terminators, string audio_file, string bad_input_audio_file, string digit_buffer, uint digit_buffer_length, string digits_regex) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_play_and_get_digits(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, max_tries, timeout, valid_terminators, audio_file, bad_input_audio_file, digit_buffer, digit_buffer_length, digits_regex);
+  public static switch_status_t switch_play_and_get_digits(SWIGTYPE_p_switch_core_session session, uint min_digits, uint max_digits, uint max_tries, uint timeout, string valid_terminators, string audio_file, string bad_input_audio_file, string var_name, string digit_buffer, uint digit_buffer_length, string digits_regex) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_play_and_get_digits(SWIGTYPE_p_switch_core_session.getCPtr(session), min_digits, max_digits, max_tries, timeout, valid_terminators, audio_file, bad_input_audio_file, var_name, digit_buffer, digit_buffer_length, digits_regex);
     return ret;
   }
 
@@ -9342,7 +9342,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_record_file(HandleRef jarg1, HandleRef jarg2, string jarg3, HandleRef jarg4, uint jarg5);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_play_and_get_digits")]
-  public static extern int switch_play_and_get_digits(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, string jarg9, uint jarg10, string jarg11);
+  public static extern int switch_play_and_get_digits(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, uint jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, uint jarg11, string jarg12);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_speak_text_handle")]
   public static extern int switch_ivr_speak_text_handle(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, string jarg5, HandleRef jarg6);
@@ -10782,7 +10782,7 @@ class freeswitchPINVOKE {
   public static extern string CoreSession_read(HandleRef jarg1, int jarg2, int jarg3, string jarg4, int jarg5, string jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_PlayAndGetDigits")]
-  public static extern string CoreSession_PlayAndGetDigits(HandleRef jarg1, int jarg2, int jarg3, int jarg4, int jarg5, string jarg6, string jarg7, string jarg8, string jarg9);
+  public static extern string CoreSession_PlayAndGetDigits(HandleRef jarg1, int jarg2, int jarg3, int jarg4, int jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10);
 
   [DllImport("mod_managed", EntryPoint="CSharp_CoreSession_StreamFile")]
   public static extern int CoreSession_StreamFile(HandleRef jarg1, string jarg2, int jarg3);

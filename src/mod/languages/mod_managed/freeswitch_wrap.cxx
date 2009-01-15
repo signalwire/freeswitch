@@ -21051,7 +21051,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_record_file(void * jarg1, void * ja
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, unsigned long jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, unsigned long jarg10, char * jarg11) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, unsigned long jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, char * jarg10, unsigned long jarg11, char * jarg12) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   uint32_t arg2 ;
@@ -21062,8 +21062,9 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsig
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
-  uint32_t arg10 ;
-  char *arg11 = (char *) 0 ;
+  char *arg10 = (char *) 0 ;
+  uint32_t arg11 ;
+  char *arg12 = (char *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_core_session_t *)jarg1; 
@@ -21075,9 +21076,10 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_play_and_get_digits(void * jarg1, unsig
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
   arg9 = (char *)jarg9; 
-  arg10 = (uint32_t)jarg10; 
-  arg11 = (char *)jarg11; 
-  result = (switch_status_t)switch_play_and_get_digits(arg1,arg2,arg3,arg4,arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,(char const *)arg11);
+  arg10 = (char *)jarg10; 
+  arg11 = (uint32_t)jarg11; 
+  arg12 = (char *)jarg12; 
+  result = (switch_status_t)switch_play_and_get_digits(arg1,arg2,arg3,arg4,arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,arg10,arg11,(char const *)arg12);
   jresult = result; 
   return jresult;
 }
@@ -27355,7 +27357,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_read(void * jarg1, int jarg2, i
 }
 
 
-SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_PlayAndGetDigits(void * jarg1, int jarg2, int jarg3, int jarg4, int jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9) {
+SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_PlayAndGetDigits(void * jarg1, int jarg2, int jarg3, int jarg4, int jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, char * jarg10) {
   char * jresult ;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -27366,6 +27368,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_PlayAndGetDigits(void * jarg1, 
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
+  char *arg10 = (char *) 0 ;
   char *result = 0 ;
   
   arg1 = (CoreSession *)jarg1; 
@@ -27377,7 +27380,8 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_PlayAndGetDigits(void * jarg1, 
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
   arg9 = (char *)jarg9; 
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+  arg10 = (char *)jarg10; 
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }

@@ -748,7 +748,8 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 													 int timeout, 
 													 char *terminators, 
 													 char *audio_files, 
-													 char *bad_input_audio_files, 
+													 char *bad_input_audio_files,
+													 char *var_name,
 													 char *digits_regex)
 {
     switch_status_t status;
@@ -763,7 +764,8 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 										 (uint32_t) timeout, 
 										 terminators, 
 										 audio_files, 
-										 bad_input_audio_files, 
+										 bad_input_audio_files,
+										 var_name,
 										 dtmf_buf, 
 										 sizeof(dtmf_buf), 
 										 digits_regex);

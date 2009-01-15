@@ -343,6 +343,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(_In_ switch_core_session_
   \param valid_terminators for input that can include # or * (useful for variable length prompts)
   \param audio_file file to play
   \param bad_input_audio_file file to play if the input from the user was invalid
+  \param var_name variable name to put results in
   \param digit_buffer variable digits captured will be put back into (empty if capture failed)
   \param digit_buffer_length length of the buffer for digits (should be the same or larger than max_digits)
   \param digits_regex the qualifying regex
@@ -356,7 +357,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 														   uint32_t timeout,
 														   const char *valid_terminators,
 														   const char *audio_file,
-														   const char *bad_input_audio_file, char *digit_buffer, uint32_t digit_buffer_length,
+														   const char *bad_input_audio_file,
+														   const char *var_name, char *digit_buffer, uint32_t digit_buffer_length,
 														   const char *digits_regex);
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session_t *session,
