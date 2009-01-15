@@ -175,6 +175,7 @@ static switch_bool_t stress_callback(switch_media_bug_t *bug, void *user_data, s
                 if (switch_event_create(&event, SWITCH_EVENT_DETECTED_SPEECH) == SWITCH_STATUS_SUCCESS) {
                     switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Speech-Type", "stress-level");
                     switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Stress-Level", "%0.2f", sth->stress);
+		    switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(sth->session));
                     if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
                         switch_event_fire(&dup);
                     }
