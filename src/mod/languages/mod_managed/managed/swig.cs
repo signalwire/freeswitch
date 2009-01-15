@@ -282,8 +282,8 @@ public class CoreSession : IDisposable {
     return ret;
   }
 
-  public string PlayAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, string terminators, string audio_files, string bad_input_audio_files, string var_name, string digits_regex) {
-    string ret = freeswitchPINVOKE.CoreSession_PlayAndGetDigits(swigCPtr, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, var_name, digits_regex);
+  public string PlayAndGetDigits(int min_digits, int max_digits, int max_tries, int timeout, string terminators, string audio_files, string bad_input_audio_files, string digits_regex, string var_name) {
+    string ret = freeswitchPINVOKE.CoreSession_PlayAndGetDigits(swigCPtr, min_digits, max_digits, max_tries, timeout, terminators, audio_files, bad_input_audio_files, digits_regex, var_name);
     return ret;
   }
 

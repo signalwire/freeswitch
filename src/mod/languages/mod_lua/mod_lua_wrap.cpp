@@ -5913,7 +5913,7 @@ fail:
 }
 
 
-static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
+static int _wrap_CoreSession_playAndGetDigits__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -5937,7 +5937,7 @@ static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   if(!lua_isstring(L,7)) SWIG_fail_arg("playAndGetDigits",7,"char *");
   if(!lua_isstring(L,8)) SWIG_fail_arg("playAndGetDigits",8,"char *");
   if(!lua_isstring(L,9)) SWIG_fail_arg("playAndGetDigits",9,"char *");
-  if(!lua_isstring(L,10)) SWIG_fail_arg("playAndGetDigits",10,"char *");
+  if(!lua_isstring(L,10)) SWIG_fail_arg("playAndGetDigits",10,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_playAndGetDigits",1,SWIGTYPE_p_CoreSession);
@@ -5952,7 +5952,7 @@ static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
   arg8 = (char *)lua_tostring(L, 8);
   arg9 = (char *)lua_tostring(L, 9);
   arg10 = (char *)lua_tostring(L, 10);
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
@@ -5962,6 +5962,181 @@ static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_playAndGetDigits__SWIG_1(lua_State* L) {
+  int SWIG_arg = -1;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  int arg4 ;
+  int arg5 ;
+  char *arg6 = (char *) 0 ;
+  char *arg7 = (char *) 0 ;
+  char *arg8 = (char *) 0 ;
+  char *arg9 = (char *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("playAndGetDigits",9,9)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("playAndGetDigits",1,"CoreSession *");
+  if(!lua_isnumber(L,2)) SWIG_fail_arg("playAndGetDigits",2,"int");
+  if(!lua_isnumber(L,3)) SWIG_fail_arg("playAndGetDigits",3,"int");
+  if(!lua_isnumber(L,4)) SWIG_fail_arg("playAndGetDigits",4,"int");
+  if(!lua_isnumber(L,5)) SWIG_fail_arg("playAndGetDigits",5,"int");
+  if(!lua_isstring(L,6)) SWIG_fail_arg("playAndGetDigits",6,"char *");
+  if(!lua_isstring(L,7)) SWIG_fail_arg("playAndGetDigits",7,"char *");
+  if(!lua_isstring(L,8)) SWIG_fail_arg("playAndGetDigits",8,"char *");
+  if(!lua_isstring(L,9)) SWIG_fail_arg("playAndGetDigits",9,"char *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
+    SWIG_fail_ptr("CoreSession_playAndGetDigits",1,SWIGTYPE_p_CoreSession);
+  }
+  
+  arg2 = (int)lua_tonumber(L, 2);
+  arg3 = (int)lua_tonumber(L, 3);
+  arg4 = (int)lua_tonumber(L, 4);
+  arg5 = (int)lua_tonumber(L, 5);
+  arg6 = (char *)lua_tostring(L, 6);
+  arg7 = (char *)lua_tostring(L, 7);
+  arg8 = (char *)lua_tostring(L, 8);
+  arg9 = (char *)lua_tostring(L, 9);
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_CoreSession_playAndGetDigits(lua_State* L) {
+  int argc;
+  int argv[11]={
+    1,2,3,4,5,6,7,8,9,10,11
+  };
+  
+  argc = lua_gettop(L);
+  if (argc == 9) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isnumber(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isnumber(L,argv[3]);
+          }
+          if (_v) {
+            {
+              _v = lua_isnumber(L,argv[4]);
+            }
+            if (_v) {
+              {
+                _v = lua_isstring(L,argv[5]);
+              }
+              if (_v) {
+                {
+                  _v = lua_isstring(L,argv[6]);
+                }
+                if (_v) {
+                  {
+                    _v = lua_isstring(L,argv[7]);
+                  }
+                  if (_v) {
+                    {
+                      _v = lua_isstring(L,argv[8]);
+                    }
+                    if (_v) {
+                      return _wrap_CoreSession_playAndGetDigits__SWIG_1(L);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 10) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_CoreSession, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        {
+          _v = lua_isnumber(L,argv[2]);
+        }
+        if (_v) {
+          {
+            _v = lua_isnumber(L,argv[3]);
+          }
+          if (_v) {
+            {
+              _v = lua_isnumber(L,argv[4]);
+            }
+            if (_v) {
+              {
+                _v = lua_isstring(L,argv[5]);
+              }
+              if (_v) {
+                {
+                  _v = lua_isstring(L,argv[6]);
+                }
+                if (_v) {
+                  {
+                    _v = lua_isstring(L,argv[7]);
+                  }
+                  if (_v) {
+                    {
+                      _v = lua_isstring(L,argv[8]);
+                    }
+                    if (_v) {
+                      {
+                        _v = lua_isstring(L,argv[9]);
+                      }
+                      if (_v) {
+                        return _wrap_CoreSession_playAndGetDigits__SWIG_0(L);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  lua_pushstring(L,"No matching function for overloaded 'CoreSession_playAndGetDigits'");
+  lua_error(L);return 0;
 }
 
 

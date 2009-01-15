@@ -7783,7 +7783,7 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   CoreSession *arg1 = (CoreSession *) 0 ;
   int arg2 ;
@@ -7880,10 +7880,10 @@ SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *SWIGUNUSEDPARM
   arg9 = reinterpret_cast< char * >(buf9);
   res10 = SWIG_AsCharPtrAndSize(obj9, &buf10, NULL, &alloc10);
   if (!SWIG_IsOK(res10)) {
-    SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "CoreSession_playAndGetDigits" "', argument " "10"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "CoreSession_playAndGetDigits" "', argument " "10"" of type '" "char const *""'");
   }
   arg10 = reinterpret_cast< char * >(buf10);
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10);
   resultobj = SWIG_FromCharPtr((const char *)result);
   if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
@@ -7897,6 +7897,234 @@ fail:
   if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
   if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
   if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  CoreSession *arg1 = (CoreSession *) 0 ;
+  int arg2 ;
+  int arg3 ;
+  int arg4 ;
+  int arg5 ;
+  char *arg6 = (char *) 0 ;
+  char *arg7 = (char *) 0 ;
+  char *arg8 = (char *) 0 ;
+  char *arg9 = (char *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  int val3 ;
+  int ecode3 = 0 ;
+  int val4 ;
+  int ecode4 = 0 ;
+  int val5 ;
+  int ecode5 = 0 ;
+  int res6 ;
+  char *buf6 = 0 ;
+  int alloc6 = 0 ;
+  int res7 ;
+  char *buf7 = 0 ;
+  int alloc7 = 0 ;
+  int res8 ;
+  char *buf8 = 0 ;
+  int alloc8 = 0 ;
+  int res9 ;
+  char *buf9 = 0 ;
+  int alloc9 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  PyObject * obj4 = 0 ;
+  PyObject * obj5 = 0 ;
+  PyObject * obj6 = 0 ;
+  PyObject * obj7 = 0 ;
+  PyObject * obj8 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOO:CoreSession_playAndGetDigits",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_CoreSession, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "CoreSession_playAndGetDigits" "', argument " "1"" of type '" "CoreSession *""'"); 
+  }
+  arg1 = reinterpret_cast< CoreSession * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "CoreSession_playAndGetDigits" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "CoreSession_playAndGetDigits" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  ecode4 = SWIG_AsVal_int(obj3, &val4);
+  if (!SWIG_IsOK(ecode4)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "CoreSession_playAndGetDigits" "', argument " "4"" of type '" "int""'");
+  } 
+  arg4 = static_cast< int >(val4);
+  ecode5 = SWIG_AsVal_int(obj4, &val5);
+  if (!SWIG_IsOK(ecode5)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "CoreSession_playAndGetDigits" "', argument " "5"" of type '" "int""'");
+  } 
+  arg5 = static_cast< int >(val5);
+  res6 = SWIG_AsCharPtrAndSize(obj5, &buf6, NULL, &alloc6);
+  if (!SWIG_IsOK(res6)) {
+    SWIG_exception_fail(SWIG_ArgError(res6), "in method '" "CoreSession_playAndGetDigits" "', argument " "6"" of type '" "char *""'");
+  }
+  arg6 = reinterpret_cast< char * >(buf6);
+  res7 = SWIG_AsCharPtrAndSize(obj6, &buf7, NULL, &alloc7);
+  if (!SWIG_IsOK(res7)) {
+    SWIG_exception_fail(SWIG_ArgError(res7), "in method '" "CoreSession_playAndGetDigits" "', argument " "7"" of type '" "char *""'");
+  }
+  arg7 = reinterpret_cast< char * >(buf7);
+  res8 = SWIG_AsCharPtrAndSize(obj7, &buf8, NULL, &alloc8);
+  if (!SWIG_IsOK(res8)) {
+    SWIG_exception_fail(SWIG_ArgError(res8), "in method '" "CoreSession_playAndGetDigits" "', argument " "8"" of type '" "char *""'");
+  }
+  arg8 = reinterpret_cast< char * >(buf8);
+  res9 = SWIG_AsCharPtrAndSize(obj8, &buf9, NULL, &alloc9);
+  if (!SWIG_IsOK(res9)) {
+    SWIG_exception_fail(SWIG_ArgError(res9), "in method '" "CoreSession_playAndGetDigits" "', argument " "9"" of type '" "char *""'");
+  }
+  arg9 = reinterpret_cast< char * >(buf9);
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9);
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+  if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
+  if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+  if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
+  return resultobj;
+fail:
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+  if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
+  if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+  if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_CoreSession_playAndGetDigits(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[11];
+  int ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 10); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 9) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_CoreSession, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            int res = SWIG_AsVal_int(argv[3], NULL);
+            _v = SWIG_CheckState(res);
+          }
+          if (_v) {
+            {
+              int res = SWIG_AsVal_int(argv[4], NULL);
+              _v = SWIG_CheckState(res);
+            }
+            if (_v) {
+              int res = SWIG_AsCharPtrAndSize(argv[5], 0, NULL, 0);
+              _v = SWIG_CheckState(res);
+              if (_v) {
+                int res = SWIG_AsCharPtrAndSize(argv[6], 0, NULL, 0);
+                _v = SWIG_CheckState(res);
+                if (_v) {
+                  int res = SWIG_AsCharPtrAndSize(argv[7], 0, NULL, 0);
+                  _v = SWIG_CheckState(res);
+                  if (_v) {
+                    int res = SWIG_AsCharPtrAndSize(argv[8], 0, NULL, 0);
+                    _v = SWIG_CheckState(res);
+                    if (_v) {
+                      return _wrap_CoreSession_playAndGetDigits__SWIG_1(self, args);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if (argc == 10) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_CoreSession, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        {
+          int res = SWIG_AsVal_int(argv[2], NULL);
+          _v = SWIG_CheckState(res);
+        }
+        if (_v) {
+          {
+            int res = SWIG_AsVal_int(argv[3], NULL);
+            _v = SWIG_CheckState(res);
+          }
+          if (_v) {
+            {
+              int res = SWIG_AsVal_int(argv[4], NULL);
+              _v = SWIG_CheckState(res);
+            }
+            if (_v) {
+              int res = SWIG_AsCharPtrAndSize(argv[5], 0, NULL, 0);
+              _v = SWIG_CheckState(res);
+              if (_v) {
+                int res = SWIG_AsCharPtrAndSize(argv[6], 0, NULL, 0);
+                _v = SWIG_CheckState(res);
+                if (_v) {
+                  int res = SWIG_AsCharPtrAndSize(argv[7], 0, NULL, 0);
+                  _v = SWIG_CheckState(res);
+                  if (_v) {
+                    int res = SWIG_AsCharPtrAndSize(argv[8], 0, NULL, 0);
+                    _v = SWIG_CheckState(res);
+                    if (_v) {
+                      int res = SWIG_AsCharPtrAndSize(argv[9], 0, NULL, 0);
+                      _v = SWIG_CheckState(res);
+                      if (_v) {
+                        return _wrap_CoreSession_playAndGetDigits__SWIG_0(self, args);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'CoreSession_playAndGetDigits'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    playAndGetDigits(CoreSession *,int,int,int,int,char *,char *,char *,char *,char const *)\n"
+    "    playAndGetDigits(CoreSession *,int,int,int,int,char *,char *,char *,char *)\n");
   return NULL;
 }
 

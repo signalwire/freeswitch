@@ -27368,7 +27368,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_PlayAndGetDigits(void * jarg1, 
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
-  char *arg10 = (char *) 0 ;
+  char *arg10 = (char *) NULL ;
   char *result = 0 ;
   
   arg1 = (CoreSession *)jarg1; 
@@ -27381,7 +27381,7 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_CoreSession_PlayAndGetDigits(void * jarg1, 
   arg8 = (char *)jarg8; 
   arg9 = (char *)jarg9; 
   arg10 = (char *)jarg10; 
-  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10);
+  result = (char *)(arg1)->playAndGetDigits(arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,(char const *)arg10);
   jresult = SWIG_csharp_string_callback((const char *)result); 
   return jresult;
 }

@@ -303,7 +303,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 												 int max_digits,
 												 int max_tries,
 												 int timeout, char *terminators, char *audio_files, char *bad_input_audio_files,
-												 char *var_name, char *digits_regex);
+												 char *digits_regex, const char *var_name = NULL);
 
 	/** \brief Play a file that resides on disk into the channel
 	 *

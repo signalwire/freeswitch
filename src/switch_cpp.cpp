@@ -749,8 +749,8 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 													 char *terminators, 
 													 char *audio_files, 
 													 char *bad_input_audio_files,
-													 char *var_name,
-													 char *digits_regex)
+													 char *digits_regex,
+													 const char *var_name)
 {
     switch_status_t status;
 	sanity_check((char *)"");
