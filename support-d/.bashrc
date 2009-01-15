@@ -26,4 +26,5 @@ alias tcommit='svn commit --no-auth-cache --username=anthm'
 alias mcommit='svn commit --no-auth-cache --username=mikej'
 alias dp='emacs /usr/local/freeswitch/conf/dialplan/default.xml'
 alias fstop='top -p `cat /usr/local/freeswitch/log/freeswitch.pid`'
+alias fsgdb='gdb /usr/local/freeswitch/bin/freeswitch `cat /usr/local/freeswitch/log/freeswitch.pid`'
 # End of file
