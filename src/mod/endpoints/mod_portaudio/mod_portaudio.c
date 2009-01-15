@@ -1769,13 +1769,12 @@ SWITCH_STANDARD_API(pa_cmd)
 			globals.ringdev = devval;
 		}
 	} else if ((argv[1] && !strcasecmp(argv[0], "play")) || !strcasecmp(argv[0], "ringtest")) {
+		switch_file_handle_t fh = { 0 };
+		char *playfile = NULL;
 		if (globals.audio_stream) {
 			switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "ERROR: Cannot use this command this while a call is in progress\n");
 			goto done;
 		}
-
-		switch_file_handle_t fh = { 0 };
-		char *playfile = NULL;
 
 		if (!strcasecmp(argv[0], "ringtest")) {
 			playfile = globals.ring_file;
@@ -1816,7 +1815,8 @@ SWITCH_STANDARD_API(pa_cmd)
 		if (engage_device(globals.sample_rate, globals.codec_ms) == SWITCH_STATUS_SUCCESS) {
 			int samples = 0;
 			int success = 0;
-			for(int i = 0; i < 400; i++) {
+			int i;
+			for(i = 0; i < 400; i++) {
 				if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data,
 						globals.read_codec.implementation->samples_per_packet, &globals.timer))) {
 					WriteAudioStream(globals.audio_stream, globals.read_frame.data, (long) samples, &globals.timer);
