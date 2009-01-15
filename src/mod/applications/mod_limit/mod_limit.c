@@ -806,7 +806,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	char *id = NULL;
 	char *hashkey = NULL;
 	char *xfer_exten = NULL;
-	int max = 0;
+	int max = -1;
 	int interval = 0;
 	char *szinterval = NULL;
 	limit_hash_item_t *item = NULL;
