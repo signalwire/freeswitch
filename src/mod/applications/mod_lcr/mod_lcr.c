@@ -230,6 +230,29 @@ static switch_bool_t set_db_random() {
 	return SWITCH_FALSE;
 }
 
+/* make a new string with digits only */
+static char* string_digitsonly(const char *str) {
+	char *p, *np, *newstr;
+	size_t len;
+
+	p = (char *)str;
+
+	len = strlen(str);
+	switch_zmalloc(newstr, len+1); /* worst case, same string */
+	np = newstr;
+	
+	while(*p) {
+		if(switch_isdigit(*p)) {
+			*np = *p;
+			np++;
+		}
+		p++;
+	}
+	*np = '\0';
+
+	return newstr;
+}
+
 static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata) {
 	if (globals.odbc_dsn) {
 		if(switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata)
@@ -322,8 +345,6 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 		return SWITCH_STATUS_FALSE;
 	}
 
-   	digits_copy = strdup(digits);
-
 	SWITCH_STANDARD_STREAM(sql_stream);
 
 	/* set up the query to be executed */
@@ -331,10 +352,12 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 							  "SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
 							  );
 	sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
+	digits_copy = string_digitsonly(digits);
 	for (n = digit_len; n > 0; n--) {
 		digits_copy[n] = '\0';
 		sql_stream.write_function(&sql_stream, "%s%s", (n==digit_len ? "" : ", "), digits_copy);
 	}
+	switch_safe_free(digits_copy);
 	sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
 	if(profile->id > 0) {
 		sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
