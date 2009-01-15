@@ -166,6 +166,7 @@ void init_max_lens(max_len maxes)
 	maxes->dialstring = (headers[LCR_DIALSTRING_PLACE] == NULL ? 0 : strlen(headers[LCR_DIALSTRING_PLACE]));
 	maxes->digit_str = (headers[LCR_DIGITS_PLACE] == NULL ? 0 : strlen(headers[LCR_DIGITS_PLACE]));
 	maxes->rate = 8;
+	printf("WTF\n");
 }
 
 switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *destination_number)
