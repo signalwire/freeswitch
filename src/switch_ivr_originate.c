@@ -212,7 +212,8 @@ static int check_per_channel_timeouts(switch_channel_t **peer_channels,
 	return x;
 }
 
-static uint8_t check_channel_status(switch_channel_t **peer_channels,
+static uint8_t check_channel_status(switch_core_session_t *session,
+									switch_channel_t **peer_channels,
 									switch_core_session_t **peer_sessions,
 									uint32_t len, int32_t *idx, uint32_t *hups, char *file, char *key, uint8_t early_ok, 
 									uint8_t *ring_ready, uint8_t *progress,
@@ -222,6 +223,14 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 	uint32_t i;
 	*hups = 0;
 	*idx = IDX_NADA;
+	int rval = 0;
+	switch_channel_t *caller_channel = NULL;
+	int pindex = -1;
+
+	if (session) {
+		caller_channel = switch_core_session_get_channel(session);
+	}
+		
 
 	for (i = 0; i < len; i++) {
 		switch_channel_state_t state;
@@ -233,6 +242,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 		}
 		if (!*ring_ready && switch_channel_test_flag(peer_channels[i], CF_EARLY_MEDIA)) {
 			*progress = 1;
+			pindex = i;
 		}
 
 		if (switch_core_session_private_event_count(peer_sessions[i])) {
@@ -252,7 +262,7 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 				   )
 				   && !switch_channel_test_flag(peer_channels[i], CF_TAGGED)
 			) {
-
+			
 			if (!switch_strlen_zero(key)) {
 				struct key_collect *collect;
 
@@ -268,20 +278,46 @@ static uint8_t check_channel_status(switch_channel_t **peer_channels,
 				}
 			} else {
 				*idx = i;
-				return 0;
+				pindex = (uint32_t) i;
+				rval = 0;
+				goto end;
 
 			}
 		} else if (switch_channel_test_flag(peer_channels[i], CF_WINNER)) {
 			*idx = i;
-			return 0;
+			rval = 0;
+			pindex = (uint32_t) i;
+			goto end;
 		}
 	}
 
 	if (*hups == len) {
-		return 0;
+		rval = 0;
 	} else {
-		return 1;
+		rval = 1;
 	}
+
+ end:
+
+	if (pindex > -1 && caller_channel && switch_channel_ready(caller_channel) && !switch_channel_media_ready(caller_channel)) {
+		const char *var = switch_channel_get_variable(caller_channel, "inherit_codec");
+		if (switch_true(var)) {
+			switch_codec_implementation_t impl;
+			char tmp[128] = "";
+
+			
+			switch_core_session_get_read_impl(peer_sessions[pindex], &impl);
+			switch_snprintf(tmp, sizeof(tmp), "%s@%uk@%ui", impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
+			switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n", switch_channel_get_name(caller_channel), tmp);
+
+
+		}
+	}
+	
+
+	return rval;
+
 }
 
 struct ringback {
@@ -1383,7 +1419,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			while ((!caller_channel || switch_channel_ready(caller_channel)) &&
-				   check_channel_status(peer_channels, peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready, &progress, return_ring_ready)) {
+				   check_channel_status(session,
+										peer_channels, 
+										peer_sessions, and_argc, &idx, &hups, file, key, early_ok, &ring_ready, &progress, return_ring_ready)) {
 				time_t elapsed = switch_timestamp(NULL) - start;
 				if (caller_channel && !sent_ring && ring_ready && !return_ring_ready) {
 					switch_channel_ring_ready(caller_channel);
