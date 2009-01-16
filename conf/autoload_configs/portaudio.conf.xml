@@ -17,7 +17,7 @@
     <!--<param name="ring-interval" value="5"/>-->
 
     <!--file to play when calls are on hold-->
-    <!--<param name="hold-file" value="/sounds/holdmusic.wav"/>-->
+    <param name="hold-file" value="$${hold_music}"/>
     <!--Timer to use for hold music (i'd leave this one commented)-->
     <!--<param name="timer-name" value="soft"/>-->
 
