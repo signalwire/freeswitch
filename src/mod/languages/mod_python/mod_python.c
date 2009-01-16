@@ -198,7 +198,10 @@ static void eval_some_python(const char *funcname, char *args, switch_core_sessi
 	}
 	
 	if (tstate) {
+		// thread state must be cleared explicitly or we'll get memory leaks
+		PyThreadState_Clear(tstate);
 		PyEval_ReleaseThread(tstate);
+		PyThreadState_Delete(tstate);
 	}
 	
  done:
