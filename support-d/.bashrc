@@ -15,7 +15,7 @@ fi
 export LESSCHARSET="latin1"
 export LESS="-R"
 export CHARSET="ISO-8859-1"
-export PS1='\n\[\033[01;31m\]\u@\h\[\033[01;36m\] [\d \@] \[\033[01;33m\] \w\n\[\033[00m\]<\#>:'
+export PS1='\n\[\033[01;31m\]\u@\h\[\033[01;36m\] [\d \@] \[\033[01;33m\] \w\n\[\033[00m\]<\#>: '
 export PS2="\[\033[1m\]> \[\033[0m\]"
 export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
 export VISUAL=emacs
