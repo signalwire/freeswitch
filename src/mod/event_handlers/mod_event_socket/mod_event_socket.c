@@ -49,7 +49,9 @@ typedef enum {
 	LFLAG_SESSION = (1 << 6),
 	LFLAG_ASYNC = (1 << 7),
 	LFLAG_STATEFUL = (1 << 8),
-	LFLAG_OUTBOUND = (1 << 9)
+	LFLAG_OUTBOUND = (1 << 9),
+	LFLAG_LINGER = (1 << 10),
+	LFLAG_HANDLE_DISCO = (1 << 11)
 } event_flag_t;
 
 typedef enum {
@@ -1045,22 +1047,21 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 											if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
 												return SWITCH_STATUS_FALSE;
 											}
-				
+											
+											/*
 											if (channel && !switch_channel_ready(channel)) {
 												status = SWITCH_STATUS_FALSE;
 												break;
 											}
+											*/
 
 											clen -= (int) mlen;
 											p += mlen;
 										}
-
+										
 										switch_event_add_body(*event, "%s", body);
 										free(body);
 									}
-
-
-
 								}
 							}
 						}
@@ -1158,9 +1159,32 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 
-		if (channel && !switch_channel_ready(channel)) {
-			status = SWITCH_STATUS_FALSE;
-            break;
+		if (channel && !switch_channel_ready(channel) && !switch_test_flag(listener, LFLAG_HANDLE_DISCO)) {
+			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
+			if (switch_test_flag(listener, LFLAG_LINGER)) {
+				char message[128] = "";
+				int mlen;
+				switch_size_t len;
+				char disco_buf[512] = "";
+
+				switch_snprintf(message, sizeof(message), 
+								"Channel %s has disconnected, lingering by request from remote.\n", switch_channel_get_name(channel));
+				mlen = strlen(message);
+
+				switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
+								"Controlled-Session-UUID: %s\n"
+								"Content-Disposition: linger\n"
+								"Content-Length: %d\n\n", 
+								switch_core_session_get_uuid(listener->session), mlen);
+
+				len = strlen(disco_buf);
+				switch_socket_send(listener->sock, disco_buf, &len);
+				len = mlen;
+				switch_socket_send(listener->sock, message, &len);
+			} else {
+				status = SWITCH_STATUS_FALSE;
+				break;
+			}
 		}
 		
 		if (do_sleep) {
@@ -1580,6 +1604,20 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		} else {
 			switch_snprintf(reply, reply_len, "-ERR invalid log level");
 		}
+	} else if (!strncasecmp(cmd, "linger", 6)) {
+		if (listener->session) {
+			switch_set_flag_locked(listener, LFLAG_LINGER);
+			switch_snprintf(reply, reply_len, "+OK will linger");
+		} else {
+			switch_snprintf(reply, reply_len, "-ERR not controlling a session");
+		}
+	} else if (!strncasecmp(cmd, "nolinger", 6)) {
+		if (listener->session) {
+			switch_clear_flag_locked(listener, LFLAG_LINGER);
+			switch_snprintf(reply, reply_len, "+OK will not linger");
+		} else {
+			switch_snprintf(reply, reply_len, "-ERR not controlling a session");
+		}
 	} else if (!strncasecmp(cmd, "nolog", 5)) {
 		flush_listener(listener, SWITCH_TRUE, SWITCH_FALSE);
 		if (switch_test_flag(listener, LFLAG_LOG)) {
@@ -1926,6 +1964,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		if (listener->session) {
 			switch_snprintf(disco_buf, sizeof(disco_buf), "Content-Type: text/disconnect-notice\n"
 							"Controlled-Session-UUID: %s\n"
+							"Content-Disposition: disconnect\n"
 							"Content-Length: %d\n\n", 
 							switch_core_session_get_uuid(listener->session), mlen);
 		} else {
