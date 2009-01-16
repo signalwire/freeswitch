@@ -54,7 +54,6 @@
     <param name="hold-music" value="$${hold_music}"/>
     <param name="apply-nat-acl" value="rfc1918"/>
     <!--<param name="aggressive-nat-detection" value="true"/>-->
-    <!--<param name="enable-timer" value="false"/>-->
     <!--<param name="enable-100rel" value="true"/>-->
     <!--<param name="minimum-session-expires" value="120"/>-->
     <param name="apply-inbound-acl" value="domains"/>
