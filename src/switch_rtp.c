@@ -30,7 +30,7 @@
  * switch_rtp.c -- RTP
  *
  */
-
+//#define DEBUG_2833
 #include <switch.h>
 #include <switch_stun.h>
 #undef PACKAGE_NAME
@@ -1374,6 +1374,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
+#ifdef DEBUG_2833
+		if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
+			printf("sanity %d\n", rtp_session->dtmf_data.in_digit_sanity);
+		}
+#endif
+
 		if (rtp_session->dtmf_data.in_digit_sanity && !--rtp_session->dtmf_data.in_digit_sanity) {
 			rtp_session->dtmf_data.last_digit = 0;
 			rtp_session->dtmf_data.in_digit_ts = 0;
@@ -1394,7 +1400,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 			uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
 
-			rtp_session->dtmf_data.in_digit_sanity = 2000;
+			
 
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
 
@@ -1402,8 +1408,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 #ifdef DEBUG_2833
 				
-				printf("read: %c %u %u %u %u %d %d\n", 
-					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
+				printf("read: %c %u %u %u %u %d %d %s\n", 
+					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, 
+					   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
 #endif
 
 				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
@@ -1443,12 +1450,14 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				} else if (!rtp_session->dtmf_data.in_digit_ts) {
 					rtp_session->dtmf_data.in_digit_ts = ts;
 					rtp_session->dtmf_data.first_digit = key;
+					rtp_session->dtmf_data.in_digit_sanity = 2000;
 				}
 
 				rtp_session->dtmf_data.last_duration = duration;
 #ifdef DEBUG_2833
 			} else {
-				printf("drop: %c %u %u %u %u %d %d\n", key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, m, end);
+				printf("drop: %c %u %u %u %u %d %d\n", 
+					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
 #endif
 			}
 		}
