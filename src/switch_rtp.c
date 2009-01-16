@@ -1400,7 +1400,11 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 			uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
 
-			
+			if (in_digit_seq < rtp_session->dtmf_data.in_digit_seq) {
+				if (rtp_session->dtmf_data.in_digit_seq - in_digit_seq > 100) {
+					rtp_session->dtmf_data.in_digit_seq = 0;
+				}
+			}
 
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
 
