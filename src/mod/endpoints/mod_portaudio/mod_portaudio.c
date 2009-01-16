@@ -1037,34 +1037,51 @@ static switch_status_t devlist(char **argv, int argc, switch_stream_handle_t *st
 	if (numDevices < 0) {
 		return SWITCH_STATUS_SUCCESS;
 	}
-	for (i = 0; i < numDevices; i++) {
-		deviceInfo = Pa_GetDeviceInfo(i);
-		stream->write_function(stream, "%d;%s;%d;%d;", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
 
-		prev = 0;
-		if (globals.ringdev == i) {
-			stream->write_function(stream, "r");
-			prev = 1;
+	if (argv[0] && !strcasecmp(argv[0], "xml")) {
+		stream->write_function(stream, "<xml>\n\t<devices>\n");
+
+		for (i = 0; i < numDevices; i++) {
+			deviceInfo = Pa_GetDeviceInfo(i);
+			stream->write_function(stream, "\t\t<device id=\"%d\" name=\"%s\" inputs=\"%d\" outputs=\"%d\" />\n", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
 		}
 
-		if (globals.indev == i) {
-			if (prev) {
-				stream->write_function(stream, ",");
+		stream->write_function(stream, "\t</devices>\n\t<bindings>\n"
+				"\t\t<ring device=\"%d\" />\n"
+				"\t\t<input device=\"%d\" />\n"
+				"\t\t<output device=\"%d\" />\n"
+				"\t</bindings>\n</xml>\n", globals.ringdev, globals.indev, globals.outdev);
+	} else {
+
+		for (i = 0; i < numDevices; i++) {
+			deviceInfo = Pa_GetDeviceInfo(i);
+			stream->write_function(stream, "%d;%s;%d;%d;", i, deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->maxOutputChannels);
+
+			prev = 0;
+			if (globals.ringdev == i) {
+				stream->write_function(stream, "r");
+				prev = 1;
 			}
-			stream->write_function(stream, "i");
-			prev = 1;
-		}
 
-		if (globals.outdev == i) {
-			if (prev) {
-				stream->write_function(stream, ",");
+			if (globals.indev == i) {
+				if (prev) {
+					stream->write_function(stream, ",");
+				}
+				stream->write_function(stream, "i");
+				prev = 1;
 			}
-			stream->write_function(stream, "o");
-			prev = 1;
+
+			if (globals.outdev == i) {
+				if (prev) {
+					stream->write_function(stream, ",");
+				}
+				stream->write_function(stream, "o");
+				prev = 1;
+			}
+
+			stream->write_function(stream, "\n");
+
 		}
-
-		stream->write_function(stream, "\n");
-
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -1670,7 +1687,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa switch [<call_id>|none]\n"
 		"pa dtmf <digit string>\n"
 		"pa flags [on|off] [ear] [mouth]\n"
-		"pa devlist\n"
+		"pa devlist [xml]\n"
 		"pa indev #<num>|<partial name>\n"
 		"pa outdev #<num>|<partial name>\n"
 		"pa ringdev #<num>|<partial name>\n"
