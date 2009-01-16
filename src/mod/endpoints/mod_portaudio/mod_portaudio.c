@@ -124,6 +124,7 @@ static struct {
 	GFLAGS flags;
 	switch_timer_t timer;
 	switch_timer_t hold_timer;
+	int dual_streams;
 } globals;
 
 
@@ -738,6 +739,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	memset(&globals, 0, sizeof(globals));
 
+	globals.dual_streams = 1;
+
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -1287,7 +1290,7 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 		//globals.read_codec.implementation->samples_per_packet);
 
 		err = OpenAudioStream(&globals.audio_stream, &inputParameters, &outputParameters, sample_rate, paClipOff,
-							  globals.read_codec.implementation->samples_per_packet);
+							  globals.read_codec.implementation->samples_per_packet, globals.dual_streams);
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
 
@@ -1324,7 +1327,8 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 			outputParameters.sampleFormat = SAMPLE_TYPE;
 			outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
 			outputParameters.hostApiSpecificStreamInfo = NULL;
-			err = OpenAudioStream(&globals.ring_stream, NULL, &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_packet);
+			err = OpenAudioStream(&globals.ring_stream, NULL, 
+								  &outputParameters, sample_rate, paClipOff, globals.read_codec.implementation->samples_per_packet, globals.dual_streams);
 
 			/* UNLOCKED ************************************************************************************************* */
 			switch_mutex_unlock(globals.device_lock);

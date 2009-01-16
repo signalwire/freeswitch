@@ -61,7 +61,11 @@ extern "C" {
 		PaUtilRingBuffer outFIFO;
 		PaStream *istream;
 		PaStream *ostream;
+		PaStream *iostream;
 		int bytesPerFrame;
+		int do_dual;
+		int has_in;
+		int has_out;
 	} PABLIO_Stream;
 
 /* Values for flags for OpenAudioStream(). */
@@ -105,7 +109,8 @@ extern "C" {
  */
 	PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 							const PaStreamParameters * inputParameters,
-							const PaStreamParameters * outputParameters, double sampleRate, PaStreamCallbackFlags statusFlags, long samples_per_packet);
+							const PaStreamParameters * outputParameters, 
+							double sampleRate, PaStreamCallbackFlags statusFlags, long samples_per_packet, int do_dual);
 
 	PaError CloseAudioStream(PABLIO_Stream * aStream);
 

@@ -59,6 +59,10 @@ static int iblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
 static int oblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
+
+static int ioblockingIOCallback(const void *inputBuffer, void *outputBuffer,
+								unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData);
+
 static PaError PABLIO_InitFIFO(PaUtilRingBuffer * rbuf, long numFrames, long bytesPerFrame);
 static PaError PABLIO_TermFIFO(PaUtilRingBuffer * rbuf);
 
@@ -101,6 +105,14 @@ static int oblockingIOCallback(const void *inputBuffer, void *outputBuffer,
 		}
 	}
 
+	return 0;
+}
+
+static int ioblockingIOCallback(const void *inputBuffer, void *outputBuffer,
+							  unsigned long framesPerBuffer, const PaStreamCallbackTimeInfo * timeInfo, PaStreamCallbackFlags statusFlags, void *userData)
+{
+	iblockingIOCallback(inputBuffer, outputBuffer, framesPerBuffer, timeInfo, statusFlags, userData);
+	oblockingIOCallback(inputBuffer, outputBuffer, framesPerBuffer, timeInfo, statusFlags, userData);
 	return 0;
 }
 
@@ -230,7 +242,10 @@ static unsigned long RoundUpToNextPowerOf2(unsigned long n)
  */
 PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 						const PaStreamParameters * inputParameters,
-						const PaStreamParameters * outputParameters, double sampleRate, PaStreamFlags streamFlags, long samples_per_packet)
+						const PaStreamParameters * outputParameters, 
+						double sampleRate, PaStreamFlags streamFlags, 
+						long samples_per_packet,
+						int do_dual)
 {
 	long bytesPerSample = 2;
 	PaError err;
@@ -239,12 +254,16 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	//long numBytes;
 	int channels = 1;
 
+	if (!(inputParameters || outputParameters)) {
+		return -1;
+	}
+
 	/* Allocate PABLIO_Stream structure for caller. */
 	aStream = (PABLIO_Stream *) malloc(sizeof(PABLIO_Stream));
 	if (aStream == NULL)
 		return paInsufficientMemory;
 	memset(aStream, 0, sizeof(PABLIO_Stream));
-
+	
 	/* Initialize PortAudio  */
 	err = Pa_Initialize();
 	if (err != paNoError)
@@ -265,12 +284,17 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		err = PABLIO_InitFIFO(&aStream->inFIFO, numFrames, aStream->bytesPerFrame);
 		if (err != paNoError)
 			goto error;
+
+		aStream-> has_in = 1;
+
 	}
 
 	if (outputParameters) {
 		err = PABLIO_InitFIFO(&aStream->outFIFO, numFrames, aStream->bytesPerFrame);
 		if (err != paNoError)
 			goto error;
+
+		aStream-> has_out = 1;
 	}
 
 	/* Make Write FIFO appear full initially. */
@@ -280,18 +304,51 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 
 	/* Open a PortAudio stream that we will use to communicate with the underlying
 	 * audio drivers. */
-	err = Pa_OpenStream(&aStream->istream, inputParameters, NULL, sampleRate, samples_per_packet, streamFlags, iblockingIOCallback, aStream);
-	err = Pa_OpenStream(&aStream->ostream, NULL, outputParameters, sampleRate, samples_per_packet, streamFlags, oblockingIOCallback, aStream);
+
+	aStream->do_dual = do_dual;
+	
+
+
+	if (aStream->do_dual) {
+		err = Pa_OpenStream(&aStream->istream, inputParameters, NULL, sampleRate, samples_per_packet, streamFlags, iblockingIOCallback, aStream);
+		if (err != paNoError) {
+			goto error;
+		}
+		err = Pa_OpenStream(&aStream->ostream, NULL, outputParameters, sampleRate, samples_per_packet, streamFlags, oblockingIOCallback, aStream);
+		if (err != paNoError) {
+			goto error;
+		}
+	} else {
+		err = Pa_OpenStream(&aStream->iostream, inputParameters, outputParameters, sampleRate, samples_per_packet, streamFlags, ioblockingIOCallback, aStream);
+	}
 
 	if (err != paNoError)
 		goto error;
+	
+	if (aStream->do_dual) {
+		err = Pa_StartStream(aStream->istream);
+		
+		if (err != paNoError) {
+			goto error;
+		}
 
-	err = Pa_StartStream(aStream->istream);
-	err = Pa_StartStream(aStream->ostream);
+		err = Pa_StartStream(aStream->ostream);
 
-	if (err != paNoError)
+		if (err != paNoError) {
+			goto error;
+		}
+
+
+	} else {
+		err = Pa_StartStream(aStream->iostream);
+	}
+
+	if (err != paNoError) {
 		goto error;
+	}
+
 	*rwblPtr = aStream;
+
 	return paNoError;
 
   error:
@@ -315,14 +372,34 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 		}
 	}
 
-	if (Pa_IsStreamActive(aStream->istream)) {
-		Pa_StopStream(aStream->istream);
-		Pa_CloseStream(aStream->istream);
-	}
+	if (aStream->do_dual) {
+		if (aStream->has_in && aStream->istream) {
+			if (Pa_IsStreamActive(aStream->istream)) {
+				Pa_StopStream(aStream->istream);
+			}
 
-	if (Pa_IsStreamActive(aStream->ostream)) {
-		Pa_StopStream(aStream->ostream);
-		Pa_CloseStream(aStream->ostream);
+			Pa_CloseStream(aStream->istream);
+			aStream->istream = NULL;
+		}
+		
+		if (aStream->has_out && aStream->ostream) {
+			if (Pa_IsStreamActive(aStream->ostream)) {
+				Pa_StopStream(aStream->ostream);
+			}
+
+			Pa_CloseStream(aStream->ostream);
+			aStream->ostream = NULL;
+		}
+		
+	} else {
+		if (aStream->iostream) {
+			if (Pa_IsStreamActive(aStream->iostream)) {
+				Pa_StopStream(aStream->iostream);
+			}
+
+			Pa_CloseStream(aStream->iostream);
+			aStream->iostream = NULL;
+		}
 	}
 
 	PABLIO_TermFIFO(&aStream->inFIFO);
