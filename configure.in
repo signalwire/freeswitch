@@ -684,7 +684,6 @@ AC_CONFIG_SUBDIRS(libs/libsndfile)
 AC_CONFIG_SUBDIRS(libs/sofia-sip)
 AC_CONFIG_SUBDIRS(libs/speex)
 AC_CONFIG_SUBDIRS(libs/portaudio)
-AC_CONFIG_SUBDIRS(libs/openmrcp)
 AC_CONFIG_SUBDIRS(libs/openzap)
 AC_CHECK_LIB([tiff], [TIFFOpen], AC_CONFIG_SUBDIRS(libs/spandsp), , -lm)
 
