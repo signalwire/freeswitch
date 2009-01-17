@@ -1447,6 +1447,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 						rtp_session->dtmf_data.in_digit_sanity = 0;
 						do_cng = 1;
 					} else {
+						if (!switch_rtp_ready(rtp_session)) {
+							goto end;
+						}
 						switch_cond_next();
 						goto recvfrom;
 					}
@@ -1467,6 +1470,9 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 		
 		if (rtp_session->dtmf_data.in_digit_ts) {
+			if (!switch_rtp_ready(rtp_session)) {
+				goto end;
+			}
 			switch_cond_next();
 			goto recvfrom;
 		}
