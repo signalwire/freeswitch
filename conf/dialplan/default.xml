@@ -489,6 +489,22 @@
       </condition>
     </extension>
     
+    <extension name="fax_receive">
+      <condition field="destination_number" expression="^9978$">
+	<action application="answer" />
+	<action application="playback" data="silence_stream://2000"/>
+	<action application="rxfax" data="/tmp/rxfax.tif"/>
+	<action application="hangup"/>
+      </condition>
+    </extension>
+
+    <extension name="fax_transmit">
+      <condition field="destination_number" expression="^9979$">
+	<action application="txfax" data="/tmp/txfax.tif"/>
+	<action application="hangup"/>
+      </condition>
+    </extension>
+
     <!-- Send a 180 and let the far end generate ringback. -->
     <extension name="ringback_180">
       <condition field="destination_number" expression="^9980$">
