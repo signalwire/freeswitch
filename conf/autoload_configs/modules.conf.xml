@@ -35,6 +35,7 @@
     <load module="mod_loopback"/>
     <!-- <load module="mod_woomera"/> -->
     <!-- <load module="mod_openzap"/> -->
+    <!-- <load module="mod_unicall"/> -->
 
     <!-- Applications -->
     <load module="mod_commands"/>
@@ -43,6 +44,7 @@
     <load module="mod_expr"/>
     <load module="mod_fifo"/>
     <load module="mod_voicemail"/>
+    <!--<load module="mod_fax"/>-->
     <!--<load module="mod_lcr"/>-->
     <load module="mod_limit"/>
     <load module="mod_esf"/>
