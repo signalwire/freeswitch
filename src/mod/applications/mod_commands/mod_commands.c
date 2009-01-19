@@ -1405,7 +1405,7 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 		}
 	}
 
-	switch_ivr_tone_detect_session(rsession, argv[1], argv[2], argv[3], to, hits, argv[5], argv[6]);
+	switch_ivr_tone_detect_session(rsession, argv[1], argv[2], argv[3], to, hits, argv[5], argv[6], NULL);
 	stream->write_function(stream, "+OK Enabling tone detection '%s' '%s' '%s'\n", argv[1], argv[2], argv[3]);
 
   done:

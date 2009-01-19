@@ -1178,7 +1178,7 @@ SWITCH_STANDARD_APP(stop_dtmf_session_generate_function)
 
 SWITCH_STANDARD_APP(fax_detect_session_function)
 {
-	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, 1, NULL, NULL);
+	switch_ivr_tone_detect_session(session, "fax", "1100.0", "r", 0, 1, NULL, NULL, NULL);
 }
 
 SWITCH_STANDARD_APP(system_session_function)
@@ -1234,7 +1234,7 @@ SWITCH_STANDARD_APP(tone_detect_session_function)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Enabling tone detection '%s' '%s'\n", argv[0], argv[1]);
 
-	switch_ivr_tone_detect_session(session, argv[0], argv[1], argv[2], to, hits, argv[4], argv[5]);
+	switch_ivr_tone_detect_session(session, argv[0], argv[1], argv[2], to, hits, argv[4], argv[5], NULL);
 }
 
 SWITCH_STANDARD_APP(stop_fax_detect_session_function)

@@ -1197,6 +1197,8 @@ typedef struct {
 	int hits;
 	int sleep;
 	int expires;
+	int once;
+	switch_tone_detect_callback_t callback;
 } switch_tone_detect_t;
 
 typedef struct {
@@ -1211,6 +1213,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	switch_tone_container_t *cont = (switch_tone_container_t *) user_data;
 	switch_frame_t *frame = NULL;
 	int i = 0;
+	switch_bool_t rval = SWITCH_TRUE;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
@@ -1264,8 +1267,13 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					if (cont->list[i].hits >= cont->list[i].total_hits) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
 						cont->list[i].up = 0;
-					
-						if (cont->list[i].app) {
+						if (cont->list[i].once) {
+							rval = SWITCH_FALSE;
+						}
+
+						if (cont->list[i].callback) {
+							rval = cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data);
+						} else if (cont->list[i].app) {
 							if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
 								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "execute-app-name", cont->list[i].app);
@@ -1278,7 +1286,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 						if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 							switch_event_t *dup;
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", cont->list[i].key);
-
+							
 							if (switch_event_dup(&dup, event) == SWITCH_STATUS_SUCCESS) {
 								switch_event_fire(&dup);
 							}
@@ -1298,7 +1306,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	default:
 		break;
 	}
-	return SWITCH_TRUE;
+	return rval;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_session_t *session)
@@ -1316,7 +1324,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_
 
 SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_session_t *session,
 															   const char *key, const char *tone_spec,
-															   const char *flags, time_t timeout, int hits, const char *app, const char *data)
+															   const char *flags, time_t timeout, 
+															   int hits, const char *app, const char *data, 
+															   switch_tone_detect_callback_t callback)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
@@ -1395,6 +1405,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		cont->list[cont->index].data = switch_core_session_strdup(session, data);
 	}
 
+	cont->list[cont->index].callback = callback;
+
 	if (!hits) hits = 1;
 
 	cont->list[cont->index].hits = 0;
@@ -1410,6 +1422,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	if (switch_strlen_zero(flags)) {
 		bflags = SMBF_READ_REPLACE;
 	} else {
+		if (strchr(flags, 'o')) {
+			cont->list[cont->index].once = 1;
+		}
+
 		if (strchr(flags, 'r')) {
 			bflags |= SMBF_READ_REPLACE;
 		} else if (strchr(flags, 'w')) {
