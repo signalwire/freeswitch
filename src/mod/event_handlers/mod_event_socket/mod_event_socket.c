@@ -1163,8 +1163,6 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
 			if (switch_test_flag(listener, LFLAG_LINGER)) {
 				char message[128] = "";
-				int mlen;
-				switch_size_t len;
 				char disco_buf[512] = "";
 
 				switch_snprintf(message, sizeof(message), 
@@ -1175,7 +1173,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 								"Controlled-Session-UUID: %s\n"
 								"Content-Disposition: linger\n"
 								"Content-Length: %d\n\n", 
-								switch_core_session_get_uuid(listener->session), mlen);
+								switch_core_session_get_uuid(listener->session), (int)mlen);
 
 				len = strlen(disco_buf);
 				switch_socket_send(listener->sock, disco_buf, &len);
