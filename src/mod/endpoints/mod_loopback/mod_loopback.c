@@ -248,7 +248,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		switch_set_flag_locked(tech_pvt, TFLAG_LINKED);
 		switch_set_flag_locked(b_tech_pvt, TFLAG_LINKED);
 		switch_set_flag_locked(b_tech_pvt, TFLAG_OUTBOUND);
-	
+		
 		switch_channel_set_flag(channel, CF_ACCEPT_CNG);	
 		//switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
 		switch_ivr_transfer_variable(session, tech_pvt->other_session, NULL);
@@ -610,14 +610,14 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
 		if (tech_pvt->other_channel) {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-				switch_channel_answer(tech_pvt->other_channel);
+				switch_channel_mark_answered(tech_pvt->other_channel);
 			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
 		if (tech_pvt->other_channel) {
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-				switch_channel_pre_answer(tech_pvt->other_channel);
+				switch_channel_mark_pre_answered(tech_pvt->other_channel);
 			}
 		}
 		break;
