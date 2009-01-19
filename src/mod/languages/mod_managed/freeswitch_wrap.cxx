@@ -20087,6 +20087,18 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_merge_sln(void * jarg1, unsig
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_mux_channels(void * jarg1, unsigned long jarg2, unsigned long jarg3) {
+  int16_t *arg1 = (int16_t *) 0 ;
+  uint32_t arg2 ;
+  uint32_t arg3 ;
+  
+  arg1 = (int16_t *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  arg3 = (uint32_t)jarg3; 
+  switch_mux_channels(arg1,arg2,arg3);
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_unicast_conninfo_session_set(void * jarg1, void * jarg2) {
   switch_unicast_conninfo *arg1 = (switch_unicast_conninfo *) 0 ;
   switch_core_session_t *arg2 = (switch_core_session_t *) 0 ;

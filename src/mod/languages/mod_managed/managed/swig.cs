@@ -2883,6 +2883,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_mux_channels(SWIGTYPE_p_short data, uint samples, uint channels) {
+    freeswitchPINVOKE.switch_mux_channels(SWIGTYPE_p_short.getCPtr(data), samples, channels);
+  }
+
   public static switch_status_t switch_ivr_deactivate_unicast(SWIGTYPE_p_switch_core_session session) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_deactivate_unicast(SWIGTYPE_p_switch_core_session.getCPtr(session));
     return ret;
@@ -9136,6 +9140,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_merge_sln")]
   public static extern uint switch_merge_sln(HandleRef jarg1, uint jarg2, HandleRef jarg3, uint jarg4);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_mux_channels")]
+  public static extern void switch_mux_channels(HandleRef jarg1, uint jarg2, uint jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_unicast_conninfo_session_set")]
   public static extern void switch_unicast_conninfo_session_set(HandleRef jarg1, HandleRef jarg2);
