@@ -221,11 +221,11 @@ static uint8_t check_channel_status(switch_core_session_t *session,
 {
 
 	uint32_t i;
-	*hups = 0;
-	*idx = IDX_NADA;
-	int rval = 0;
+	uint8_t rval = 0;
 	switch_channel_t *caller_channel = NULL;
 	int pindex = -1;
+	*hups = 0;
+	*idx = IDX_NADA;
 
 	if (session) {
 		caller_channel = switch_core_session_get_channel(session);
