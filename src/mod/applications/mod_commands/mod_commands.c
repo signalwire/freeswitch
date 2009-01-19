@@ -3255,7 +3255,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "sched_hangup", "Schedule a running call to hangup", sched_hangup_function, SCHED_HANGUP_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_broadcast", "Schedule a broadcast event to a running call", sched_broadcast_function,
 				   SCHED_BROADCAST_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "sched_transfer", "Schedule a broadcast event to a running call", sched_transfer_function,
+	SWITCH_ADD_API(commands_api_interface, "sched_transfer", "Schedule a transfer for a running call", sched_transfer_function,
 				   SCHED_TRANSFER_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "create_uuid", "Create a uuid", uuid_function, UUID_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "sched_api", "Schedule an api command", sched_api_function, SCHED_SYNTAX);
