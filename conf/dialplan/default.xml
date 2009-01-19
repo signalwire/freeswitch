@@ -94,6 +94,15 @@
       <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>
+      <!--
+	  This is an example of how to auto detect if telephone-event is missing and activate inband detection 
+      -->
+      <!--
+      <condition field="${switch_r_sdp}" expression="a=rtpmap:(\d+)\stelephone-event/8000" break="never">
+	<action application="set" data="rtp_payload_number=$1"/>
+	<anti-action application="start_dtmf"/>
+      </condition>
+      -->
       <condition field="${sip_has_crypto}" expression="^(AES_CM_128_HMAC_SHA1_32|AES_CM_128_HMAC_SHA1_80)$" break="never">
 	<action application="set" data="sip_secure_media=true"/>
 	<!-- Offer SRTP on outbound legs if we have it on inbound. -->
