@@ -1590,7 +1590,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
 
 				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
-
+				rtp_session->dtmf_data.in_digit_sanity = 2000;
 #ifdef DEBUG_2833
 				
 				printf("read: %c %u %u %u %u %d %d %s\n", 
