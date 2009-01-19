@@ -1536,10 +1536,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 	switch_channel_t *channel;
 	switch_status_t status;
 	switch_frame_t *read_frame = NULL;
-
-	switch_codec_t *read_codec;
 	uint32_t hangover = 40, hangunder = 15, hangover_hits = 0, hangunder_hits = 0, energy_level = 0, diff_level = 400;
-
+	switch_codec_implementation_t read_impl = {0};
 
 	switch_assert(member != NULL);
 
@@ -1547,8 +1545,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 	channel = switch_core_session_get_channel(member->session);
 
-	read_codec = switch_core_session_get_read_codec(member->session);
-	switch_assert(read_codec != NULL);
+	switch_core_session_get_read_impl(member->session, &read_impl);
 
 	/* As long as we have a valid read, feed that data into an input buffer where the conference thread will take it 
 	   and mux it with any audio from other channels. */
@@ -1601,7 +1598,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 			data = read_frame->data;
 
-			if (!(divisor = read_codec->implementation->actual_samples_per_second / 8000)) {
+			if (!(divisor = read_impl.actual_samples_per_second / 8000)) {
 				divisor = 1;
 			}
 
@@ -1610,7 +1607,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 			if ((samples = read_frame->datalen / sizeof(*data))) {
 				for (i = 0; i < samples; i++) {
 					energy += abs(data[j]);
-					j += read_codec->implementation->number_of_channels;
+					j += read_impl.number_of_channels;
 				}
 				member->score = energy / (samples / divisor);
 			}
