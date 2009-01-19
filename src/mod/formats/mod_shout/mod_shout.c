@@ -911,7 +911,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	shout_context_t *context;
 	int rlen = 0;
 	int16_t *audio = data;
-	int nsamples = *len;
+	size_t nsamples = *len;
 
 	if (!handle) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error no handle\n");
@@ -965,7 +965,7 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 	}
 
 	if (handle->channels == 2) {
-		int i, j = 0;
+		switch_size_t i, j = 0;
 		
 		if (context->llen < nsamples) {
 			context->l = switch_core_alloc(context->memory_pool, nsamples * 2);
