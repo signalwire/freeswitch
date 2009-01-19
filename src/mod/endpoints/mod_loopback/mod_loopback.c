@@ -50,7 +50,8 @@ typedef enum {
 	TFLAG_WRITE = (1 << 2),
 	TFLAG_CNG = (1 << 3),
 	TFLAG_BRIDGE = (1 << 4),
-	TFLAG_BOWOUT = (1 << 5)
+	TFLAG_BOWOUT = (1 << 5),
+	TFLAG_BLEG = (1 << 6)
 } TFLAGS;
 
 struct private_object {
@@ -210,8 +211,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
-
-	if (!switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+	
+	if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND) && !switch_test_flag(tech_pvt, TFLAG_BLEG)) {
 		
 		if (!(b_session = switch_core_session_request(loopback_endpoint_interface, NULL))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failure.\n");
@@ -247,7 +248,8 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		
 		switch_set_flag_locked(tech_pvt, TFLAG_LINKED);
 		switch_set_flag_locked(b_tech_pvt, TFLAG_LINKED);
-		switch_set_flag_locked(b_tech_pvt, TFLAG_OUTBOUND);
+		switch_set_flag_locked(b_tech_pvt, TFLAG_BLEG);
+
 		
 		switch_channel_set_flag(channel, CF_ACCEPT_CNG);	
 		//switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
@@ -608,17 +610,13 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_ANSWER:
-		if (tech_pvt->other_channel) {
-			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-				switch_channel_mark_answered(tech_pvt->other_channel);
-			}
+		if (tech_pvt->other_channel && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			switch_channel_mark_answered(tech_pvt->other_channel);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_PROGRESS:
-		if (tech_pvt->other_channel) {
-			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
-				switch_channel_mark_pre_answered(tech_pvt->other_channel);
-			}
+		if (tech_pvt->other_channel && !switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			switch_channel_mark_pre_answered(tech_pvt->other_channel);
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
@@ -703,7 +701,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_snprintf(name, sizeof(name), "loopback/%s-a", caller_profile->destination_number);
 			switch_channel_set_name(channel, name);
 			switch_channel_set_flag(channel, CF_OUTBOUND);
-
+			switch_set_flag_locked(tech_pvt, TFLAG_OUTBOUND);
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 		} else {

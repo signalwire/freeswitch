@@ -560,7 +560,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 				message = NULL;
 			}
 		}
-
+		
 		if (switch_channel_media_ready(caller_channel)) {
 			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -569,8 +569,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 		} else {
 			read_frame = NULL;
 		}
-
+		
 		if (read_frame && !pass) {
+
 			if (ringback.fh) {
 				switch_size_t mlen, olen;
 				unsigned int pos = 0;
@@ -711,7 +712,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	switch_event_t *var_event = NULL;
 	uint8_t fail_on_single_reject = 0;
 	char *fail_on_single_reject_var = NULL;
-	uint8_t ring_ready = 0;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
 	uint32_t per_channel_timelimit_sec[MAX_PEERS] = { 0 };
@@ -941,7 +941,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "ring_ready")) && switch_true(var_val)) {
-		ring_ready = 1;
+		oglobals.ring_ready = 1;
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "originate_timeout"))) {
@@ -1471,7 +1471,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			while ((!caller_channel || switch_channel_ready(caller_channel)) && check_channel_status(&oglobals, originate_status, and_argc)) {
 				time_t elapsed = switch_timestamp(NULL) - start;
-				if (caller_channel && !oglobals.sent_ring && ring_ready && !oglobals.return_ring_ready) {
+				if (caller_channel && !oglobals.sent_ring && oglobals.ring_ready && !oglobals.return_ring_ready) {
 					switch_channel_ring_ready(caller_channel);
 					oglobals.sent_ring = 1;
 				}
@@ -1519,7 +1519,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 				if (originate_status[0].peer_session
 					&& switch_core_session_dequeue_message(originate_status[0].peer_session, &message) == SWITCH_STATUS_SUCCESS) {
-					if (oglobals.session && !ringback_data && or_argc == 1 && and_argc == 1) {	/* when there is only 1 channel to call and bridge and no ringback */
+					if (oglobals.session && !ringback_data && or_argc == 1 && and_argc == 1) {	
+						/* when there is only 1 channel to call and bridge and no ringback */
 						switch_core_session_receive_message(oglobals.session, message);
 					}
 
@@ -1542,15 +1543,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					if (switch_channel_media_ready(caller_channel)) {
 						tstatus = switch_core_session_read_frame(oglobals.session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
 						if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
 							break;
 						}
 					} else {
 						read_frame = NULL;
 					}
-
-					if (ring_ready && read_frame && !pass) {
+					
+					if (oglobals.ring_ready && read_frame && !pass) {
 						if (ringback.fh) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
