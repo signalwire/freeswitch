@@ -41,7 +41,6 @@
 SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms, switch_bool_t sync, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	int media_ready = 0;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_time_t start = switch_timestamp_now(), now, done = switch_timestamp_now() + (ms * 1000);
 	switch_frame_t *read_frame, cng_frame = { 0 };
@@ -55,16 +54,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	int sval = 0;
 	const char *var;
 
-	if (!switch_channel_test_flag(channel, CF_PROXY_MODE) && !switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
+	if (!switch_channel_test_flag(channel, CF_OUTBOUND) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+		!switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
 		if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot establish media.\n");
 			return SWITCH_STATUS_FALSE;
 		}
 	}
 
-	media_ready = (switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE));
-	
-	if (ms > 100 && media_ready && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
+	if (!switch_channel_media_ready(channel)) {
+		switch_yield(ms * 1000);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (ms > 100 && (var = switch_channel_get_variable(channel, SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE)) && (sval = atoi(var))) {
 		switch_core_session_get_read_impl(session, &imp);
 		
 		if (switch_core_codec_init(&codec,
@@ -102,7 +105,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	cng_frame.buflen = 2;
 	switch_set_flag((&cng_frame), SFF_CNG);
 
-	if (sync && media_ready) {
+	if (sync) {
 		switch_channel_audio_sync(channel);
 	}
 	
@@ -167,11 +170,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			if (status != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
-		}
-
-		if (!media_ready) {
-			switch_cond_next();
-			continue;
 		}
 
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
