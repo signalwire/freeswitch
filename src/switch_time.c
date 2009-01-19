@@ -238,7 +238,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		}
 	}
 
-	if (globals.RUNNING != 1 || !globals.mutex) {
+	if (globals.RUNNING != 1 || !globals.mutex || timer->interval < 1) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -255,7 +255,7 @@ static switch_status_t timer_init(switch_timer_t *timer)
 		private_info->roll = TIMER_MATRIX[timer->interval].roll;
 		private_info->ready = 1;
 
-		if (timer->interval < MS_PER_TICK) {
+		if (timer->interval > 0 && timer->interval < MS_PER_TICK) {
 			MS_PER_TICK = timer->interval;
 		}
 
