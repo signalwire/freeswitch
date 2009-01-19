@@ -20953,7 +20953,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_stop_tone_detect_session(void * jar
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_tone_detect_session(void * jarg1, char * jarg2, char * jarg3, char * jarg4, void * jarg5, int jarg6, char * jarg7, char * jarg8) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_tone_detect_session(void * jarg1, char * jarg2, char * jarg3, char * jarg4, void * jarg5, int jarg6, char * jarg7, char * jarg8, void * jarg9) {
   int jresult ;
   switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -20963,6 +20963,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_tone_detect_session(void * jarg1, c
   int arg6 ;
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
+  switch_tone_detect_callback_t arg9 = (switch_tone_detect_callback_t) 0 ;
   switch_status_t result;
   time_t *argp5 ;
   
@@ -20979,7 +20980,8 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_tone_detect_session(void * jarg1, c
   arg6 = (int)jarg6; 
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
-  result = (switch_status_t)switch_ivr_tone_detect_session(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,(char const *)arg7,(char const *)arg8);
+  arg9 = (switch_tone_detect_callback_t)jarg9; 
+  result = (switch_status_t)switch_ivr_tone_detect_session(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,(char const *)arg7,(char const *)arg8,arg9);
   jresult = result; 
   return jresult;
 }
