@@ -1374,110 +1374,6 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			goto end;
 		}
 
-#ifdef DEBUG_2833
-		if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
-			printf("sanity %d\n", rtp_session->dtmf_data.in_digit_sanity);
-		}
-#endif
-
-		if (rtp_session->dtmf_data.in_digit_sanity && !--rtp_session->dtmf_data.in_digit_sanity) {
-			rtp_session->dtmf_data.last_digit = 0;
-			rtp_session->dtmf_data.in_digit_ts = 0;
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF sanity check.\n");
-		}
-
-		/* RFC2833 ... like all RFC RE: VoIP, guaranteed to drive you to insanity! 
-		   We know the real rules here, but if we enforce them, it's an interop nightmare so,
-		   we put up with as much as we can so we don't have to deal with being punished for
-		   doing it right. Nice guys finish last!
-		 */
-		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
-			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
-			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
-			int end = packet[1] & 0x80 ? 1 : 0;
-			uint16_t duration = (packet[2] << 8) + packet[3];
-			char key = switch_rfc2833_to_char(packet[0]);
-			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
-			uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
-
-			if (in_digit_seq < rtp_session->dtmf_data.in_digit_seq) {
-				if (rtp_session->dtmf_data.in_digit_seq - in_digit_seq > 100) {
-					rtp_session->dtmf_data.in_digit_seq = 0;
-				}
-			}
-
-			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
-
-				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
-
-#ifdef DEBUG_2833
-				
-				printf("read: %c %u %u %u %u %d %d %s\n", 
-					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, 
-					   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
-#endif
-
-				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
-					rtp_session->dtmf_data.flip++;
-				}
-				
-				if (end) {
-					if (rtp_session->dtmf_data.in_digit_ts) {
-						switch_dtmf_t dtmf = { key, duration };
-
-						if (ts > rtp_session->dtmf_data.in_digit_ts) {
-							dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);
-						}
-						if (rtp_session->dtmf_data.flip) {
-							dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
-							rtp_session->dtmf_data.flip = 0;
-#ifdef DEBUG_2833
-							printf("you're welcome!\n");
-#endif
-						}
-
-#ifdef DEBUG_2833
-						printf("done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n", 
-							   dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
-#endif
-						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
-						rtp_session->dtmf_data.last_digit = rtp_session->dtmf_data.first_digit;
-
-						rtp_session->dtmf_data.in_digit_ts = 0;
-						rtp_session->dtmf_data.in_digit_sanity = 0;
-						do_cng = 1;
-					} else {
-						if (!switch_rtp_ready(rtp_session)) {
-							goto end;
-						}
-						switch_cond_next();
-						goto recvfrom;
-					}
-
-				} else if (!rtp_session->dtmf_data.in_digit_ts) {
-					rtp_session->dtmf_data.in_digit_ts = ts;
-					rtp_session->dtmf_data.first_digit = key;
-					rtp_session->dtmf_data.in_digit_sanity = 2000;
-				}
-
-				rtp_session->dtmf_data.last_duration = duration;
-#ifdef DEBUG_2833
-			} else {
-				printf("drop: %c %u %u %u %u %d %d\n", 
-					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
-#endif
-			}
-		}
-		
-		if (rtp_session->dtmf_data.in_digit_ts) {
-			if (!switch_rtp_ready(rtp_session)) {
-				goto end;
-			}
-			switch_cond_next();
-			goto recvfrom;
-		}
-
-
 		if (rtp_session->max_missed_packets) {
 			if (bytes) {
 				rtp_session->missed_count = 0;
@@ -1658,6 +1554,109 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			bytes = sbytes;
 		}
 
+
+#ifdef DEBUG_2833
+		if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
+			printf("sanity %d\n", rtp_session->dtmf_data.in_digit_sanity);
+		}
+#endif
+
+		if (rtp_session->dtmf_data.in_digit_sanity && !--rtp_session->dtmf_data.in_digit_sanity) {
+			rtp_session->dtmf_data.last_digit = 0;
+			rtp_session->dtmf_data.in_digit_ts = 0;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed DTMF sanity check.\n");
+		}
+
+		/* RFC2833 ... like all RFC RE: VoIP, guaranteed to drive you to insanity! 
+		   We know the real rules here, but if we enforce them, it's an interop nightmare so,
+		   we put up with as much as we can so we don't have to deal with being punished for
+		   doing it right. Nice guys finish last!
+		 */
+		if (bytes && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA) && 
+			!switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833) && rtp_session->recv_msg.header.pt == rtp_session->te) {
+			unsigned char *packet = (unsigned char *) rtp_session->recv_msg.body;
+			int end = packet[1] & 0x80 ? 1 : 0;
+			uint16_t duration = (packet[2] << 8) + packet[3];
+			char key = switch_rfc2833_to_char(packet[0]);
+			uint16_t in_digit_seq = ntohs((uint16_t) rtp_session->recv_msg.header.seq);
+			uint32_t ts = htonl(rtp_session->recv_msg.header.ts);
+
+			if (in_digit_seq < rtp_session->dtmf_data.in_digit_seq) {
+				if (rtp_session->dtmf_data.in_digit_seq - in_digit_seq > 100) {
+					rtp_session->dtmf_data.in_digit_seq = 0;
+				}
+			}
+
+			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
+
+				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
+
+#ifdef DEBUG_2833
+				
+				printf("read: %c %u %u %u %u %d %d %s\n", 
+					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, 
+					   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
+#endif
+
+				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
+					rtp_session->dtmf_data.flip++;
+				}
+				
+				if (end) {
+					if (rtp_session->dtmf_data.in_digit_ts) {
+						switch_dtmf_t dtmf = { key, duration };
+
+						if (ts > rtp_session->dtmf_data.in_digit_ts) {
+							dtmf.duration += (ts - rtp_session->dtmf_data.in_digit_ts);
+						}
+						if (rtp_session->dtmf_data.flip) {
+							dtmf.duration += rtp_session->dtmf_data.flip * 0xFFFF;
+							rtp_session->dtmf_data.flip = 0;
+#ifdef DEBUG_2833
+							printf("you're welcome!\n");
+#endif
+						}
+
+#ifdef DEBUG_2833
+						printf("done digit=%c ts=%u start_ts=%u dur=%u ddur=%u\n", 
+							   dtmf.digit, ts, rtp_session->dtmf_data.in_digit_ts, duration, dtmf.duration);
+#endif
+						switch_rtp_queue_rfc2833_in(rtp_session, &dtmf);
+						rtp_session->dtmf_data.last_digit = rtp_session->dtmf_data.first_digit;
+
+						rtp_session->dtmf_data.in_digit_ts = 0;
+						rtp_session->dtmf_data.in_digit_sanity = 0;
+						do_cng = 1;
+					} else {
+						if (!switch_rtp_ready(rtp_session)) {
+							goto end;
+						}
+						switch_cond_next();
+						goto recvfrom;
+					}
+
+				} else if (!rtp_session->dtmf_data.in_digit_ts) {
+					rtp_session->dtmf_data.in_digit_ts = ts;
+					rtp_session->dtmf_data.first_digit = key;
+					rtp_session->dtmf_data.in_digit_sanity = 2000;
+				}
+
+				rtp_session->dtmf_data.last_duration = duration;
+#ifdef DEBUG_2833
+			} else {
+				printf("drop: %c %u %u %u %u %d %d\n", 
+					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
+#endif
+			}
+		}
+		
+		if (rtp_session->dtmf_data.in_digit_ts) {
+			if (!switch_rtp_ready(rtp_session)) {
+				goto end;
+			}
+			switch_cond_next();
+			goto recvfrom;
+		}
 
 	timer_check:
 
