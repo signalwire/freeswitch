@@ -252,6 +252,15 @@ static switch_bool_t monitor_callback(switch_core_session_t *session, const char
 
 			if (oglobals) {
 				switch_channel_set_private(channel, "_oglobals_", NULL);
+				
+				if (!oglobals->progress) {
+					oglobals->progress = 1;
+				}
+			
+				if (!oglobals->ring_ready) {
+					oglobals->ring_ready = 1;
+				}
+
 				oglobals->early_ok = 1;
 			}
 		}
@@ -409,12 +418,15 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				}
 			}
 
-			if (!oglobals->progress) {
-				oglobals->progress = 1;
-			}
+			if (!oglobals->monitor_early_media_ring) {
+
+				if (!oglobals->progress) {
+					oglobals->progress = 1;
+				}
 			
-			if (!oglobals->ring_ready) {
-				oglobals->ring_ready = 1;
+				if (!oglobals->ring_ready) {
+					oglobals->ring_ready = 1;
+				}
 			}
 		}
 		
