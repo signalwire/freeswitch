@@ -239,15 +239,15 @@ static int check_per_channel_timeouts(originate_status_t *originate_status,
 	return x;
 }
 
-static uint8_t check_channel_status(originate_global_t *oglobals, originate_status_t *originate_status, int len)
+static uint8_t check_channel_status(originate_global_t *oglobals, originate_status_t *originate_status, uint32_t len)
 {
 
 	uint32_t i;
-	oglobals->hups = 0;
-	oglobals->idx = IDX_NADA;
-	int rval = 0;
+	uint8_t rval = 0;
 	switch_channel_t *caller_channel = NULL;
 	int pindex = -1;
+	oglobals->hups = 0;
+	oglobals->idx = IDX_NADA;
 
 	if (oglobals->session) {
 		caller_channel = switch_core_session_get_channel(oglobals->session);
@@ -1024,9 +1024,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 
 		for (r = 0; r < or_argc; r++) {
-			oglobals.hups = 0;
 			char *p, *end = NULL;
 			const char *var_begin, *var_end;
+			oglobals.hups = 0;
 			
 			reason = SWITCH_CAUSE_NONE;
 			memset(peer_names, 0, sizeof(peer_names));
