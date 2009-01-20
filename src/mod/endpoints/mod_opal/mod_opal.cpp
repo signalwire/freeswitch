@@ -1212,6 +1212,8 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
 
 switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_io_flag_t flags)
 {
+    RTP_DataFrame rtp;
+
     if (!switch_channel_ready(m_fsChannel)) {
         return SWITCH_STATUS_FALSE;
     }
@@ -1221,21 +1223,40 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
         m_callOnStart = false;
     }
 
+    if ((frame->flags & SFF_CNG)) {
+        return SWITCH_STATUS_SUCCESS;
+    }
+
     if ((frame->flags & SFF_RAW_RTP) != 0) {
         RTP_DataFrame rtp((const BYTE *) frame->packet, frame->packetlen, false);
-        if (GetPatch()->PushFrame(rtp))
+        if (GetPatch()->PushFrame(rtp)) {
             return SWITCH_STATUS_SUCCESS;
-    } else if (frame->flags == 0) {
-        RTP_DataFrame rtp;
-        rtp.SetPayloadType(mediaFormat.GetPayloadType());
-        rtp.SetPayloadSize(frame->datalen);
-        rtp.SetTimestamp(frame->timestamp);
-        rtp.SetSyncSource(frame->ssrc);
-        rtp.SetMarker(frame->m);
-        memcpy(rtp.GetPayloadPtr(), frame->data, frame->datalen);
-        if (GetPatch()->PushFrame(rtp))
-            return SWITCH_STATUS_SUCCESS;
+        }
+    } 
+    
+    /* If we reach this code it means a call to an ivr or something else that does not generate timestamps
+       Its possible that frame->timestamp is set but not guarenteed and is best ignored for the time being.
+       We are probably relying on the rtp stack to generate the timestamp and ssrc for us at this point.
+       As a quick hack I am going to keep a sample counter and increment it by frame->samples but it would be 
+       better if we could engage whatever it is in opal that makes it generate the timestamp.
+     */
+
+    rtp.SetPayloadType(mediaFormat.GetPayloadType());
+    rtp.SetPayloadSize(frame->datalen);
+
+    m_timeStamp += frame->samples;
+    rtp.SetTimestamp(m_timeStamp);
+    
+    //rtp.SetTimestamp(frame->timestamp);
+    //rtp.SetSyncSource(frame->ssrc);
+    //rtp.SetMarker(frame->m);
+
+    memcpy(rtp.GetPayloadPtr(), frame->data, frame->datalen);
+
+    if (GetPatch()->PushFrame(rtp)) {
+        return SWITCH_STATUS_SUCCESS;
     }
+
 
     return SWITCH_STATUS_FALSE;
 }

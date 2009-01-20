@@ -216,6 +216,7 @@ class FSMediaStream:public OpalMediaStream {
     switch_frame_t m_readFrame;
     RTP_DataFrame m_readRTP;
     bool m_callOnStart;
+    uint32_t m_timeStamp;
 };
 
 
