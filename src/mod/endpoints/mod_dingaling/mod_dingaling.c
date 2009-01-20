@@ -507,7 +507,7 @@ static void pres_event_handler(switch_event_t *event)
 }
 
 static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject,
-                                 const char *body, const char *type, const char *hint);
+                                 const char *body, const char *type, const char *hint)
 {
 	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
 	mdl_profile_t *profile = NULL;
