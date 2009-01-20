@@ -153,7 +153,7 @@ CORE_LIBS     += libs/srtp/libsrtp.la $(RESAMPLE_LIB)
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
-libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
+libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_DEPLIBS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
 nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
