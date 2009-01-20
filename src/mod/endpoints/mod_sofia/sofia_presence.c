@@ -123,7 +123,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		}
 
 		if (switch_strlen_zero(p)) {
-			p=profile->domain_name;
+			p = profile->domain_name;
 			if (switch_strlen_zero(p)) {
 				p = host;
 			}
