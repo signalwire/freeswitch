@@ -1170,7 +1170,7 @@ static int dump_info(int verbose)
 		inputParameters.device = i;
 		inputParameters.channelCount = deviceInfo->maxInputChannels;
 		inputParameters.sampleFormat = paInt16;
-		inputParameters.suggestedLatency = deviceInfo->defaultLowOutputLatency;	/* ignored by Pa_IsFormatSupported() */
+		inputParameters.suggestedLatency = deviceInfo->defaultLowInputLatency;	/* ignored by Pa_IsFormatSupported() */
 		inputParameters.hostApiSpecificStreamInfo = NULL;
 		
 		outputParameters.device = i;
