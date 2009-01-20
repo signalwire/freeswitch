@@ -83,6 +83,8 @@ typedef struct {
 	uint8_t early_media;
 	uint8_t answered;
 	uint8_t dead;
+	uint32_t per_channel_timelimit_sec;
+	uint32_t per_channel_progress_timelimit_sec;
 } originate_status_t;
 
 
@@ -211,8 +213,6 @@ static void launch_collect_thread(struct key_collect *collect)
 }
 
 static int check_per_channel_timeouts(originate_status_t *originate_status, 
-									  uint32_t *per_channel_timelimit_sec, 
-									  uint32_t *per_channel_progress_timelimit_sec,
 									  int max,
 									  time_t start)
 {
@@ -221,7 +221,7 @@ static int check_per_channel_timeouts(originate_status_t *originate_status,
 
 	for (i = 0; i < max; i++) {
 		if (originate_status[i].peer_channel && switch_channel_get_state(originate_status[i].peer_channel) < CS_HANGUP) {
-			if (per_channel_progress_timelimit_sec[i] && elapsed > per_channel_progress_timelimit_sec[i] &&
+			if (originate_status[i].per_channel_progress_timelimit_sec && elapsed > originate_status[i].per_channel_progress_timelimit_sec &&
 				!(
 				  switch_channel_test_flag(originate_status[i].peer_channel, CF_RING_READY) ||
 				  switch_channel_test_flag(originate_status[i].peer_channel, CF_ANSWERED) ||
@@ -231,7 +231,7 @@ static int check_per_channel_timeouts(originate_status_t *originate_status,
 				switch_channel_hangup(originate_status[i].peer_channel, SWITCH_CAUSE_PROGRESS_TIMEOUT);
 				x++;
 			}
-			if (per_channel_timelimit_sec[i] && elapsed > per_channel_timelimit_sec[i]) {
+			if (originate_status[i].per_channel_timelimit_sec && elapsed > originate_status[i].per_channel_timelimit_sec) {
 				switch_channel_hangup(originate_status[i].peer_channel, SWITCH_CAUSE_ALLOTTED_TIMEOUT);
 				x++;
 			}
@@ -857,8 +857,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	char *fail_on_single_reject_var = NULL;
 	char *loop_data = NULL;
 	uint32_t progress_timelimit_sec = 0;
-	uint32_t per_channel_timelimit_sec[MAX_PEERS] = { 0 };
-	uint32_t per_channel_progress_timelimit_sec[MAX_PEERS] = { 0 };
 	const char *cid_tmp;
 	originate_global_t oglobals = { 0 };
 
@@ -1422,7 +1420,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						if (val > 0) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting leg timeout to %d\n", 
 											  switch_channel_get_name(originate_status[0].peer_channel), val);
-							per_channel_timelimit_sec[i] = (uint32_t) val;
+							originate_status[i].per_channel_timelimit_sec = (uint32_t) val;
 						}
 					}
 					
@@ -1431,7 +1429,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						if (val > 0) {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting leg progress timeout to %d\n", 
 											  switch_channel_get_name(originate_status[0].peer_channel), val);
-							per_channel_progress_timelimit_sec[i] = (uint32_t) val;
+							originate_status[i].per_channel_progress_timelimit_sec = (uint32_t) val;
 						}
 					}
 				}
@@ -1506,7 +1504,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_yield(100000);
 				}
 
-				check_per_channel_timeouts(originate_status, per_channel_timelimit_sec, per_channel_progress_timelimit_sec, and_argc, start);
+				check_per_channel_timeouts(originate_status, and_argc, start);
 
 
 				if (valid_channels == 0) {
@@ -1634,7 +1632,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				/* When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail. */
 				
-				check_per_channel_timeouts(originate_status, per_channel_timelimit_sec, per_channel_progress_timelimit_sec, and_argc, start);
+				check_per_channel_timeouts(originate_status, and_argc, start);
 
 				if (oglobals.session && switch_core_session_private_event_count(oglobals.session)) {
 					switch_ivr_parse_all_events(oglobals.session);
