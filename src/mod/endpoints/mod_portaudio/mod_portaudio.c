@@ -739,7 +739,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 
 	memset(&globals, 0, sizeof(globals));
 
+	/* dual streams makes portaudio on solaris choke */
+#if defined(sun) || defined(__sun)
+	globals.dual_streams = 0;
+#else
 	globals.dual_streams = 1;
+#endif
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
