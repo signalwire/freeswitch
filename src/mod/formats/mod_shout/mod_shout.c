@@ -38,7 +38,7 @@
 
 #define OUTSCALE 8192 * 2
 #define MP3_SCACHE 16384 * 2
-#define MP3_DCACHE 8192 *2
+#define MP3_DCACHE 8192 * 2
 #define MP3_TOOSMALL -1234
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_shout_load);
@@ -692,7 +692,7 @@ static switch_status_t shout_file_open(switch_file_handle_t *handle, const char 
 
 		}
 		context->channels = handle->channels;
-		lame_set_brate(context->gfp, 24 * (handle->samplerate / 8000) * handle->channels);
+		lame_set_brate(context->gfp, 16 * (handle->samplerate / 8000) * handle->channels);
 		lame_set_num_channels(context->gfp, handle->channels);
 		lame_set_in_samplerate(context->gfp, handle->samplerate);
 		lame_set_out_samplerate(context->gfp, handle->samplerate);
@@ -1188,7 +1188,7 @@ void do_telecast(switch_stream_handle_t *stream)
 
 		lame_set_num_channels(gfp, read_codec->implementation->number_of_channels);
 		lame_set_in_samplerate(gfp, read_codec->implementation->actual_samples_per_second);
-		lame_set_brate(gfp, 24);
+		lame_set_brate(gfp, 16 * (read_codec->implementation->actual_samples_per_second / 8000) * read_codec->implementation->number_of_channels);
 		lame_set_mode(gfp, 3);
 		lame_set_quality(gfp, 2);
 		lame_set_errorf(gfp, log_error);
@@ -1300,7 +1300,7 @@ void do_broadcast(switch_stream_handle_t *stream)
 
 	lame_set_num_channels(gfp, fh.channels);
 	lame_set_in_samplerate(gfp, fh.samplerate);
-	lame_set_brate(gfp, 24);
+	lame_set_brate(gfp, 16 * (fh.samplerate / 8000) * fh.channels);
 	lame_set_mode(gfp, 3);
 	lame_set_quality(gfp, 2);
 	lame_set_errorf(gfp, log_error);
