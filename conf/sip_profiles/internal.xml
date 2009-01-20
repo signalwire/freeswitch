@@ -158,7 +158,10 @@
     <!--<param name="disable-transfer" value="true"/>-->
     <!--<param name="disable-register" value="true"/>-->
 
-	<!-- enable-3pcc can be set to either 'true' or 'proxy', true accepts the call right away, proxy waits until the call has been answered then sends accepts -->
+    <!-- 
+	 enable-3pcc can be set to either 'true' or 'proxy', true accepts the call
+	 right away, proxy waits until the call has been answered then sends accepts
+    -->
     <!--<param name="enable-3pcc" value="true"/>-->
 	
     <!-- use at your own risk or if you know what this does.-->
