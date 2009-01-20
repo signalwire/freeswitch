@@ -12,7 +12,6 @@
 		AdditionalIncludeDirectories="&quot;$(SolutionDir)\src\include&quot;"
 		PreprocessorDefinitions="WIN32;_WINDOWS;_USRDLL;MOD_EXPORTS"
 		WarningLevel="4"
-		WarnAsError="true"
 	/>
 	<Tool
 		Name="VCLinkerTool"
