@@ -49,7 +49,7 @@ using namespace System::Runtime::InteropServices;
 SWITCH_BEGIN_EXTERN_C 
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load);
-SWITCH_MODULE_DEFINITION(mod_managed, mod_managed_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION_EX(mod_managed, mod_managed_load, NULL, NULL, SMODF_GLOBAL_SYMBOLS);
 
 SWITCH_STANDARD_API(managedrun_api_function);	/* ExecuteBackground */
 SWITCH_STANDARD_API(managed_api_function);	/* Execute */
@@ -185,6 +185,11 @@ switch_status_t loadRuntime()
 	if (setMonoDirs() != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
+
+#ifndef WIN32 	
+	// So linux can find the .so
+	mono_config_parse_memory("<configuration><dllmap dll=\"mod_managed\" target=\"mod_managed.so\"/></configuration>");
+#endif
 
 	switch_snprintf(filename, 256, "%s%s%s", SWITCH_GLOBAL_dirs.mod_dir, SWITCH_PATH_SEPARATOR, MOD_MANAGED_DLL);
 	globals.domain = mono_jit_init(filename);
@@ -336,13 +341,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_managed_load)
 	/* Run loader */ 
 	MonoObject * exception = NULL;
 	MonoObject * objResult = mono_runtime_invoke(globals.loadMethod, NULL, NULL, &exception);
-	success = *(int *) mono_object_unbox(objResult);
-
 	if (exception) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Load threw an exception.\n");
 		mono_print_unhandled_exception(exception);
 		return SWITCH_STATUS_FALSE;
 	}
+	success = *(int *) mono_object_unbox(objResult);
 #endif
 	if (success) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Load completed successfully.\n");
