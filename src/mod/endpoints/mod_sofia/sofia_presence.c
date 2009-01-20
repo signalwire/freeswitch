@@ -62,13 +62,13 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *ct = "text/html";
 
-	if (subject && strchr(subject, '/')) {
-		ct = subject;
-	}
-
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
 		goto end;
+	}
+
+	if (!switch_strlen_zero(type)) {
+		ct = type;
 	}
 
 	dup = strdup(to);
@@ -88,13 +88,19 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		if (!prof) prof = host;
 	}
 
-	if (!host || !(profile = sofia_glue_find_profile(prof))) {
+	if (!prof || !(profile = sofia_glue_find_profile(prof))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
 						  "Chat proto [%s]\nfrom [%s]\nto [%s]\n%s\nInvalid Profile %s\n", proto, from, to,
 						  body ? body : "[no body]", prof ? prof : "NULL");
 		goto end;
 	}
 
+	if (switch_strlen_zero(host)) {
+		host = profile->domain_name;
+		if (switch_strlen_zero(host)) {
+			host=prof;
+		}
+	}
 	if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find user. [%s][%s]\n", user, host);
 		goto end;
@@ -103,22 +109,29 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	if (!strcasecmp(proto, SOFIA_CHAT_PROTO)) {
 		from = hint;
 	} else {
-		char *fp, *p, *fu = NULL;
+		char *fp, *p = NULL;
+
 		fp = strdup(from);
+
 		if (!fp) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto end;
 		}
 
 		if ((p = strchr(fp, '@'))) {
-			*p = '\0';
-			fu = strdup(fp);
-			*p = '+';
+			*p++ = '\0';
 		}
 
-		ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fu, proto, fp, profile->domain_name);
+		if (switch_strlen_zero(p)) {
+			p=profile->domain_name;
+			if (switch_strlen_zero(p)) {
+				p=host;
+			}
+		}
+
+		ffrom = switch_mprintf("\"%s\" <sip:%s+%s@%s>", fp, proto, fp, p);
+
 		from = ffrom;
-		switch_safe_free(fu);
 		switch_safe_free(fp);
 	}
 

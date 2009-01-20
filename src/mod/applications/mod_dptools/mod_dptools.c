@@ -1064,13 +1064,14 @@ SWITCH_STANDARD_API(presence_api_function)
 
 SWITCH_STANDARD_API(chat_api_function)
 {
-	char *lbuf, *argv[4];
+	char *lbuf, *argv[5];
 	int argc = 0;
 
 	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
-		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
-		
-		if (switch_core_chat_send(argv[0], "dp", argv[1], argv[2], "", argv[3], NULL, "") == SWITCH_STATUS_SUCCESS) {
+		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) >= 4) {
+
+		if (switch_core_chat_send(argv[0], "dp", argv[1], argv[2], "", argv[3],
+								  !switch_strlen_zero(argv[4]) ? argv[4] : NULL , "") == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "Sent");
 		} else {
 			stream->write_function(stream, "Error! Message Not Sent");
@@ -2487,7 +2488,8 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 		switch_api_execute(cmd, arg, NULL, &stream);
 
 		if (proto) {
-			switch_core_chat_send(proto, "api", to, hint && strchr(hint, '/') ? hint : from, "text/plain", (char *) stream.data, NULL, NULL);
+			switch_core_chat_send(proto, "api", to, hint && strchr(hint, '/') ? hint : from, 
+								  !switch_strlen_zero(type) ? type : NULL, (char *) stream.data, NULL, NULL);
 		}
 
 		switch_safe_free(stream.data);
@@ -2540,7 +2542,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_CHAT(chat_interface, "api", api_chat_send);
 	
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
-	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>");
+	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>|[<content-type>]");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
 	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, "<user> <rpid> <message>");
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",
