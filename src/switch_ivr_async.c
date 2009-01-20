@@ -1197,6 +1197,8 @@ typedef struct {
 	int hits;
 	int sleep;
 	int expires;
+	int default_sleep;
+	int default_expires;
 	int once;
 	switch_tone_detect_callback_t callback;
 } switch_tone_detect_t;
@@ -1261,8 +1263,8 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s HIT %d/%d\n", 
 									  cont->list[i].key, cont->list[i].hits, cont->list[i].total_hits);
-					cont->list[i].sleep = 50;
-					cont->list[i].expires = 250;
+					cont->list[i].sleep = cont->list[i].default_sleep;
+					cont->list[i].expires = cont->list[i].default_expires;
 					
 					if (cont->list[i].hits >= cont->list[i].total_hits) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
@@ -1335,6 +1337,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	char *p, *next;
 	int i = 0, ok = 0;
 	switch_media_bug_flag_t bflags = 0;
+	const char *var;
 
 	switch_assert(read_codec != NULL);
 
@@ -1418,6 +1421,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	cont->session = session;
 
 	switch_channel_pre_answer(channel);
+
+	cont->list[cont->index].default_sleep = 25;
+	cont->list[cont->index].default_expires = 250;
+
+	if ((var = switch_channel_get_variable(channel, "tone_detect_sleep"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			cont->list[cont->index].default_sleep = tmp;
+		}
+	}
+
+	if ((var = switch_channel_get_variable(channel, "tone_detect_expires"))) {
+		int tmp = atoi(var);
+		if (tmp > 0) {
+			cont->list[cont->index].default_expires = tmp;
+		}
+	}
+
 
 	if (switch_strlen_zero(flags)) {
 		bflags = SMBF_READ_REPLACE;

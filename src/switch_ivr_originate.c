@@ -82,7 +82,6 @@ typedef struct {
 	uint8_t ring_ready;
 	uint8_t early_media;
 	uint8_t answered;
-	uint8_t dead;
 	uint32_t per_channel_timelimit_sec;
 	uint32_t per_channel_progress_timelimit_sec;
 } originate_status_t;
@@ -101,6 +100,9 @@ typedef struct {
 	uint8_t return_ring_ready;
 	uint8_t monitor_early_media_ring;
 	uint8_t monitor_early_media_fail;
+	uint8_t gen_ringback;
+	uint8_t ignore_early_media;
+	uint8_t ignore_ring_ready;
 } originate_global_t;
 
 
@@ -257,11 +259,13 @@ static switch_bool_t monitor_callback(switch_core_session_t *session, const char
 					oglobals->progress = 1;
 				}
 			
-				if (!oglobals->ring_ready) {
+				if (!oglobals->ring_ready && !oglobals->ignore_ring_ready) {
 					oglobals->ring_ready = 1;
 				}
-
-				oglobals->early_ok = 1;
+				
+				if (!oglobals->ignore_early_media && !oglobals->early_ok) {
+					oglobals->early_ok = 1;
+				}
 			}
 		}
 	}
@@ -417,14 +421,14 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 					}
 				}
 			}
-
+			
 			if (!oglobals->monitor_early_media_ring) {
 
 				if (!oglobals->progress) {
 					oglobals->progress = 1;
 				}
 			
-				if (!oglobals->ring_ready) {
+				if (!oglobals->ring_ready && !oglobals->ignore_ring_ready) {
 					oglobals->ring_ready = 1;
 				}
 			}
@@ -965,6 +969,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "ignore_early_media")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "ignore_ring_ready")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "monitor_early_media_ring")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "monitor_early_media_fail")) {
@@ -1079,6 +1085,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if ((var_val = switch_event_get_header(var_event, "ignore_early_media")) && switch_true(var_val)) {
 		oglobals.early_ok = 0;
+		oglobals.ignore_early_media = 1;
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "ignore_ring_ready")) && switch_true(var_val)) {
+		oglobals.ignore_ring_ready = 1;
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "monitor_early_media_ring"))) {
@@ -1553,7 +1564,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						if (ringback_data) {
 							char *tmp_data = NULL;
 
-							
+							oglobals.gen_ringback = 1;
+
 							if (switch_is_file_path(ringback_data)) {
 								char *ext;
 
