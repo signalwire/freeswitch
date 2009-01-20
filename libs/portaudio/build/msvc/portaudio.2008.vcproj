@@ -1555,6 +1555,7 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Debug DirectSound|Win32"
+							ExcludedFromBuild="true"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -1573,6 +1574,7 @@
 						</FileConfiguration>
 						<FileConfiguration
 							Name="Release DirectSound|Win32"
+							ExcludedFromBuild="true"
 							>
 							<Tool
 								Name="VCCLCompilerTool"
@@ -1636,6 +1638,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Debug DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1654,6 +1657,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1714,6 +1718,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Debug DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1732,6 +1737,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1792,6 +1798,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Debug DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1810,6 +1817,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1870,6 +1878,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Debug DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1888,6 +1897,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1948,6 +1958,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Debug DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -1966,6 +1977,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -2026,6 +2038,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Debug DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -2044,6 +2057,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -2104,6 +2118,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Debug DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
@@ -2122,6 +2137,7 @@
 							</FileConfiguration>
 							<FileConfiguration
 								Name="Release DirectSound|Win32"
+								ExcludedFromBuild="true"
 								>
 								<Tool
 									Name="VCCLCompilerTool"
