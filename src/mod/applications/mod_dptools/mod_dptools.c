@@ -1069,16 +1069,11 @@ SWITCH_STANDARD_API(chat_api_function)
 
 	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
 		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) == 4) {
-		switch_chat_interface_t *ci;
-
-		if ((ci = switch_loadable_module_get_chat_interface(argv[0]))) {
-			if (ci->chat_send("dp", argv[1], argv[2], "", argv[3], "") == SWITCH_STATUS_SUCCESS) {
-				stream->write_function(stream, "Sent");
-			} else {
-				stream->write_function(stream, "Error! Message Not Sent");
-			}
+		
+		if (switch_core_chat_send(argv[0], "dp", argv[1], argv[2], "", argv[3], NULL, "") == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "Sent");
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", argv[0]);
+			stream->write_function(stream, "Error! Message Not Sent");
 		}
 	} else {
 		stream->write_function(stream, "Invalid");
@@ -2438,7 +2433,8 @@ SWITCH_STANDARD_APP(wait_for_silence_function)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", WAIT_FOR_SILENCE_SYNTAX);
 }
 
-static switch_status_t event_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+static switch_status_t event_chat_send(const char *proto, const char *from, const char *to, const char *subject,
+									   const char *body, const char *type, const char *hint)
 {
 	switch_event_t *event;
 
@@ -2466,14 +2462,14 @@ static switch_status_t event_chat_send(char *proto, char *from, char *to, char *
 	return SWITCH_STATUS_MEMERR;
 }
 
-static switch_status_t api_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+static switch_status_t api_chat_send(const char *proto, const char *from, const char *to, const char *subject,
+									 const char *body, const char *type, const char *hint)
 {
 	if (to) { 
 		const char *v;
 		switch_stream_handle_t stream = { 0 };
 		char *cmd, *arg;
-		switch_chat_interface_t *ci;
-
+		
 		if (!(v = switch_core_get_variable(to))) {
 			v = to;
 		}
@@ -2490,8 +2486,8 @@ static switch_status_t api_chat_send(char *proto, char *from, char *to, char *su
 		SWITCH_STANDARD_STREAM(stream);
 		switch_api_execute(cmd, arg, NULL, &stream);
 
-		if (proto && (ci = switch_loadable_module_get_chat_interface(proto))) {
-			ci->chat_send("api", to, hint && strchr(hint, '/') ? hint : from, "text/plain", (char *) stream.data, NULL);
+		if (proto) {
+			switch_core_chat_send(proto, "api", to, hint && strchr(hint, '/') ? hint : from, "text/plain", (char *) stream.data, NULL, NULL);
 		}
 
 		switch_safe_free(stream.data);

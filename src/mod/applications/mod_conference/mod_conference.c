@@ -372,7 +372,9 @@ static switch_status_t conference_member_play_file(conference_member_t *member, 
 static switch_status_t conference_member_say(conference_member_t *member, char *text, uint32_t leadin);
 static uint32_t conference_member_stop_file(conference_member_t *member, file_stop_t stop);
 static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t *pool);
-static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
+static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject, 
+								 const char *body, const char *type, const char *hint);
+
 static void launch_conference_record_thread(conference_obj_t *conference, char *path);
 
 typedef switch_status_t (*conf_api_args_cmd_t) (conference_obj_t *, switch_stream_handle_t *, int, char **);
@@ -1907,7 +1909,7 @@ static void conference_loop_output(conference_member_t *member)
 						freeme = switch_mprintf("%s+%s@%s", CONF_CHAT_PROTO, member->conference->name, member->conference->domain);
 						to = freeme;
 					}
-					chat_send(proto, from, to, subject, body, hint);
+					chat_send(proto, from, to, subject, body, NULL, hint);
 					switch_safe_free(freeme);
 				}
 			}
@@ -4957,10 +4959,10 @@ static void launch_conference_record_thread(conference_obj_t *conference, char *
 	switch_thread_create(&thread, thd_attr, conference_record_thread_run, rec, rec->pool);
 }
 
-static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject,
+								 const char *body, const char *type, const char *hint)
 {
 	char name[512] = "", *p, *lbuf = NULL;
-	switch_chat_interface_t *ci;
 	conference_obj_t *conference = NULL;
 	switch_stream_handle_t stream = { 0 };
 
@@ -4972,12 +4974,6 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!(ci = switch_loadable_module_get_chat_interface(proto))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
-		return SWITCH_STATUS_FALSE;
-	}
-
-
 	if ((p = strchr(to, '@'))) {
 		switch_copy_string(name, to, ++p - to);
 	} else {
@@ -4986,7 +4982,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 
 
 	if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, name))) {
-		ci->chat_send(CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL);
+		switch_core_chat_send(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL);
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -5014,7 +5010,7 @@ static switch_status_t chat_send(char *proto, char *from, char *to, char *subjec
 
 	switch_safe_free(lbuf);
 	
-	ci->chat_send(CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL);
+	switch_core_chat_send(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", stream.data, NULL, NULL);
 	switch_safe_free(stream.data);
 
 	return SWITCH_STATUS_SUCCESS;

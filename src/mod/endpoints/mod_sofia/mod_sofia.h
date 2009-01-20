@@ -624,7 +624,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 void launch_sofia_profile_thread(sofia_profile_t *profile);
 
-switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint);
+switch_status_t sofia_presence_chat_send(const char *proto, const char *from, const char *to, const char *subject,
+						  const char *body, const char *type, const char *hint);
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
 switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp);
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len);

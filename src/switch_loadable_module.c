@@ -1353,12 +1353,8 @@ HASH_FUNC(file)
 HASH_FUNC(speech)
 HASH_FUNC(asr)
 HASH_FUNC(directory)
+HASH_FUNC(chat)
 
-
-SWITCH_DECLARE(switch_chat_interface_t *) switch_loadable_module_get_chat_interface(const char *name)
-{
-    return switch_core_hash_find_locked(loadable_modules.chat_hash, name, loadable_modules.mutex);
-}
 
 SWITCH_DECLARE(switch_say_interface_t *) switch_loadable_module_get_say_interface(const char *name)
 {

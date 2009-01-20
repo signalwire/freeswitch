@@ -49,7 +49,8 @@ struct presence_helper {
 	char last_uuid[512];
 };
 
-switch_status_t sofia_presence_chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+switch_status_t sofia_presence_chat_send(const char *proto, const char *from, const char *to, const char *subject,
+										 const char *body, const char *type, const char *hint)
 {
 	char buf[256];
 	char *prof = NULL, *user = NULL, *host = NULL;
@@ -2003,12 +2004,7 @@ void sofia_presence_handle_sip_i_message(int status,
 					}
 				}
 			} else {
-				switch_chat_interface_t *ci;
-				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
-					ci->chat_send(SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, full_from);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
-				}
+				switch_core_chat_send(proto, SOFIA_CHAT_PROTO, from_addr, to_addr, "", msg, NULL, full_from);
 			}
 			switch_safe_free(to_addr);
 			switch_safe_free(from_addr);

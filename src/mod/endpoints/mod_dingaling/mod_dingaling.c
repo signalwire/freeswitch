@@ -506,7 +506,8 @@ static void pres_event_handler(switch_event_t *event)
 	switch_safe_free(sql);
 }
 
-static switch_status_t chat_send(char *proto, char *from, char *to, char *subject, char *body, char *hint)
+static switch_status_t chat_send(const char *proto, const char *from, const char *to, const char *subject,
+                                 const char *body, const char *type, const char *hint);
 {
 	char *user, *host, *f_user = NULL, *ffrom = NULL, *f_host = NULL, *f_resource = NULL;
 	mdl_profile_t *profile = NULL;
@@ -2459,10 +2460,9 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 		switch (dl_signal) {
 		case LDL_SIGNAL_MSG:{
-				switch_chat_interface_t *ci;
-				char *proto = MDL_CHAT_PROTO;
-				char *pproto = NULL, *ffrom = NULL;
-				char *hint;
+			char *proto = MDL_CHAT_PROTO;
+			char *pproto = NULL, *ffrom = NULL;
+			char *hint;
 #ifdef AUTO_REPLY
 				if (profile->auto_reply) {
 					ldl_handle_send_msg(handle,
@@ -2489,11 +2489,8 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					from = ffrom;
 				}
 
-				if ((ci = switch_loadable_module_get_chat_interface(proto))) {
-					ci->chat_send(MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), hint);
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Chat Interface [%s]!\n", proto);
-				}
+
+				switch_core_chat_send(proto, MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), NULL, hint);
 
 				switch_safe_free(pproto);
 				switch_safe_free(ffrom);
