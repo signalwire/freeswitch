@@ -1166,6 +1166,9 @@ static int dump_info(int verbose)
 
 		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Default rate: %8.2f\n", deviceInfo->defaultSampleRate);
 
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Default input latency: %.3f | ", deviceInfo->defaultLowInputLatency);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "Default output latency: %.3f\n", deviceInfo->defaultLowOutputLatency);
+
 		/* poll for standard sample rates */
 		inputParameters.device = i;
 		inputParameters.channelCount = deviceInfo->maxInputChannels;
