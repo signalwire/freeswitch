@@ -98,7 +98,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	if (switch_strlen_zero(host)) {
 		host = profile->domain_name;
 		if (switch_strlen_zero(host)) {
-			host=prof;
+			host = prof;
 		}
 	}
 	if (!sofia_reg_find_reg_url(profile, user, host, buf, sizeof(buf))) {
@@ -125,7 +125,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		if (switch_strlen_zero(p)) {
 			p=profile->domain_name;
 			if (switch_strlen_zero(p)) {
-				p=host;
+				p = host;
 			}
 		}
 
