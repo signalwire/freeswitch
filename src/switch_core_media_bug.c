@@ -235,7 +235,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->flags = flags;
 
 	bug->stop_time = stop_time;
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bytes = session->read_codec->implementation->decoded_bytes_per_packet;
 
 	if (!bug->flags) {
@@ -258,19 +257,22 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		bug->thread_id = switch_thread_self();
 	}
 
+	if (bug->callback) {
+		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
+		if (result == SWITCH_FALSE) {
+			switch_core_media_bug_remove(session, new_bug);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error attaching BUG to %s\n", switch_channel_get_name(session->channel));
+			return SWITCH_STATUS_GENERR;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attaching BUG to %s\n", switch_channel_get_name(session->channel));
 	bug->ready = 1;
 	switch_thread_rwlock_wrlock(session->bug_rwlock);
 	bug->next = session->bugs;
 	session->bugs = bug;
 	switch_thread_rwlock_unlock(session->bug_rwlock);
 	*new_bug = bug;
-
-	if (bug->callback) {
-		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
-		if (result == SWITCH_FALSE) {
-			return switch_core_media_bug_remove(session, new_bug);
-		}
-	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
