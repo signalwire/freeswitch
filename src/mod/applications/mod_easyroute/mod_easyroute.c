@@ -87,6 +87,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_default_techprofile, globals.defaul
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_default_gateway, globals.default_gateway);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_custom_query, globals.custom_query);
 
+#ifdef SWITCH_HAVE_ODBC
 static int route_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	route_callback_t *cbt = (route_callback_t *) pArg;
@@ -100,8 +101,7 @@ static int route_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 	return 0;
 }
-
-
+#endif
 
 static switch_status_t load_config(void)
 {
@@ -175,10 +175,10 @@ done:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Connection (did you enable it?!)\n");
 #ifdef SWITCH_HAVE_ODBC
 	}
-#endif
 
 reallydone:
 
+#endif
 	if (xml) {
 		switch_xml_free(xml);
 	}
@@ -193,7 +193,7 @@ reallydone:
 
 static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = '%s' and numbers.gateway_id = gateways.gateway_id limit 1;";
 
-static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
+static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int noat, char *seperator)
 {	
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
 	char sql[1024] = "";
@@ -241,8 +241,13 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
 		} else {
 			switch_set_string(results->translated, pdata.translated);
 		}
-
-		switch_snprintf(results->dialstring, 256, "%s/%s@%s", tmp_profile , results->translated, tmp_gateway);
+		if (noat) {
+			switch_snprintf(results->dialstring, 256, "%s/%s%s", tmp_profile , results->translated, tmp_gateway);
+		} else if (seperator) {
+			switch_snprintf(results->dialstring, 256, "%s/%s%s%s", tmp_profile , results->translated, seperator, tmp_gateway);
+		} else {
+			switch_snprintf(results->dialstring, 256, "%s/%s@%s", tmp_profile , results->translated, tmp_gateway);
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "THE ROUTE [%s]\n", results->dialstring);
 
 		if (switch_strlen_zero(pdata.group)){
@@ -259,10 +264,19 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results)
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DB Error Setting Default Route!\n");
 		switch_set_string(results->limit, "9999");
-		switch_snprintf(results->dialstring, 256, "%s/%s@%s", globals.default_techprofile, dn, globals.default_gateway);
+		if (noat){
+			switch_snprintf(results->dialstring, 256, "%s/%s%s", globals.default_techprofile, dn, globals.default_gateway);
+		} else if (seperator){
+			switch_snprintf(results->dialstring, 256, "%s/%s%s%s", globals.default_techprofile, dn, seperator, globals.default_gateway);
+		} else { 
+			switch_snprintf(results->dialstring, 256, "%s/%s@%s", globals.default_techprofile, dn, globals.default_gateway);
+		}
 		switch_set_string(results->group, "");
 		switch_set_string(results->acctcode, "");
 	}
+
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_easyroute requires core ODBC support. Please refer to the documentation on how to enable this\n");
 #endif
 	if (globals.mutex){
 		switch_mutex_unlock(globals.mutex);
@@ -276,6 +290,10 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *destnum = NULL; 
+
+	int noat = 0;
+	char *seperator = NULL;
+
 	easyroute_results_t results;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
@@ -289,7 +307,16 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 	
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		destnum = argv[0];
-		route_lookup(destnum, &results);
+		if (argc == 2) {
+			if (!strcasecmp(argv[1], "noat")) {
+				noat = 1;
+                        } else if (!strcasecmp(argv[1], "seperator")) {
+                                if (argc == 3){
+					switch_set_string(seperator, argv[2]);
+				}
+			}
+		}
+		route_lookup(destnum, &results, noat, seperator);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EASY ROUTE DEST: [%s]\n", results.dialstring);
 		switch_channel_set_variable(channel, "easy_destnum", results.destnum);
 		switch_channel_set_variable(channel, "easy_dialstring", results.dialstring);
@@ -305,12 +332,19 @@ SWITCH_STANDARD_API(easyroute_function)
 	char *argv[4] = { 0 };
 	char *mydata = NULL;
 	char *destnum = NULL;
+	char *seperator = NULL;
+	int noat = 0;
 	easyroute_results_t results;
 	
 	if (session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function cannot be called from the dialplan.\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
+#ifdef SWITCH_HAVE_ODBC
+	stream->write_function(stream, "mod_easyroute requires you enable core odbc support\n");
+	return SWITCH_STATUS_SUCCESS;
+#endif
 	
 	if (!cmd || !(mydata = strdup(cmd))) {
 		stream->write_function(stream, "Usage: easyroute <number>\n");
@@ -319,12 +353,21 @@ SWITCH_STANDARD_API(easyroute_function)
 	
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		destnum = argv[0];
-		if (argc < 1 || argc > 2){
+		if (argc < 1 || argc > 3){
 			stream->write_function(stream, "Invalid Input!\n");
 			return SWITCH_STATUS_SUCCESS;
 		} 
+		if (argc == 2) {
+			if (!strcasecmp(argv[1], "noat")) {
+				noat = 1;
+                        } else if (!strcasecmp(argv[1], "seperator")) {
+                                if (argc == 3){
+					switch_set_string(seperator, argv[2]);
+				}
+			}
+		}
 		
-		if (!route_lookup(destnum, &results) == SWITCH_STATUS_SUCCESS) {
+		if (!route_lookup(destnum, &results, noat, seperator) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -374,7 +417,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_easyroute_shutdown)
 {	
+#ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_disconnect(globals.master_odbc);
+#endif
 	return SWITCH_STATUS_UNLOAD;
 }
 
