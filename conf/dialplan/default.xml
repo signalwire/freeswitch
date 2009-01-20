@@ -336,7 +336,7 @@
 	<action application="set" data="conference_auto_outcall_caller_id_number=0911"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
 	<action application="set" data="conference_auto_outcall_flags=mute"/>
-	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 intercept::${uuid}'}"/>
+	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 transfer::intercept:${uuid} inline'}"/>
 	<action application="set" data="sip_exclude_contact=${network_addr}"/>
 	<action application="conference_set_auto_outcall" data="${group_call(sales)}"/>
 	<action application="conference" data="madboss_intercom1@default+flags{endconf|deaf}"/>
@@ -354,7 +354,7 @@
 	<action application="set" data="conference_auto_outcall_caller_id_number=0912"/>
 	<action application="set" data="conference_auto_outcall_timeout=60"/>
 	<action application="set" data="conference_auto_outcall_flags=mute"/>
-	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 intercept::${uuid}'}"/>
+	<action application="set" data="conference_auto_outcall_prefix={sip_auto_answer=true,execute_on_answer='bind_meta_app 2 a s1 transfer::intercept:${uuid} inline'}"/>
 	<action application="set" data="sip_exclude_contact=${network_addr}"/>
 	<action application="conference_set_auto_outcall" data="loopback/9999"/>
 	<action application="conference" data="madboss_intercom2@default+flags{endconf|deaf}"/>
