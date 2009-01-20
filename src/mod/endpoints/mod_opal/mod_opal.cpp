@@ -1229,6 +1229,9 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
         RTP_DataFrame rtp;
         rtp.SetPayloadType(mediaFormat.GetPayloadType());
         rtp.SetPayloadSize(frame->datalen);
+        rtp.SetTimestamp(frame->timestamp);
+        rtp.SetSyncSource(frame->ssrc);
+        rtp.SetMarker(frame->m);
         memcpy(rtp.GetPayloadPtr(), frame->data, frame->datalen);
         if (GetPatch()->PushFrame(rtp))
             return SWITCH_STATUS_SUCCESS;
