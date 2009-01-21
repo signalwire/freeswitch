@@ -28,10 +28,10 @@ void lh_abort(const char *msg, ...)
 	exit(1);
 }
 
-unsigned long lh_ptr_hash(void *k)
+uint32_t lh_ptr_hash(void *k)
 {
 	/* CAW: refactored to be 64bit nice */
-	return (unsigned long)((((ptrdiff_t)k * LH_PRIME) >> 4) & ULONG_MAX);
+	return (uint32_t)((((ptrdiff_t)k * LH_PRIME) >> 4) & ULONG_MAX);
 }
 
 int lh_ptr_equal(void *k1, void *k2)
@@ -39,7 +39,7 @@ int lh_ptr_equal(void *k1, void *k2)
 	return (k1 == k2);
 }
 
-unsigned long lh_char_hash(void *k)
+uint32_t lh_char_hash(void *k)
 {
 	unsigned int h = 0;
 	const char* data = k;
@@ -123,7 +123,7 @@ void lh_table_free(struct lh_table *t)
 
 int lh_table_insert(struct lh_table *t, void *k, void *v)
 {
-	unsigned long h, n;
+	uint32_t h, n;
 
 	t->inserts++;
 	if(t->count > t->size * 0.66) lh_table_resize(t, t->size * 2);
@@ -157,8 +157,8 @@ int lh_table_insert(struct lh_table *t, void *k, void *v)
 
 struct lh_entry* lh_table_lookup_entry(struct lh_table *t, void *k)
 {
-	unsigned long h = t->hash_fn(k);
-	unsigned long n = h % t->size;
+	uint32_t h = t->hash_fn(k);
+	uint32_t n = h % t->size;
 
 	t->lookups++;
 	while( 1 ) {

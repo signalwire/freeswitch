@@ -244,7 +244,7 @@ int http_req(http_request_t *req, http_response_t *res)
         dprintf(s, "Host: %s:%d\r\n", hostname, port);   
     else dprintf(s, "Host: %s\r\n", hostname);   
     dprintf(s, "Connection: close\r\n");
-    dprintf(s, "Content-Length: %d\r\n", req->body_len); 
+    dprintf(s, "Content-Length: %ld\r\n", req->body_len); 
 
     for(i = 0; i < req->header_len; i++){
         dprintf(

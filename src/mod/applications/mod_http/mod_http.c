@@ -359,7 +359,7 @@ SWITCH_STANDARD_API(http_api_main)
     switch_log_printf(
         SWITCH_CHANNEL_LOG,
         SWITCH_LOG_NOTICE,
-        "RESERVED %d BYTES, USED %d BYTES, HTTP Response as JSON: %s\n",
+        "RESERVED %ld BYTES, USED %ld BYTES, HTTP Response as JSON: %s\n",
         l, 
         m,
         json_response

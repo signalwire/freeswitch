@@ -11,6 +11,7 @@
  
 #ifndef _linkhash_h_
 #define _linkhash_h_
+#include <inttypes.h>
 
 /**
  * golden prime used in hash functions
@@ -36,7 +37,7 @@ typedef void (lh_entry_free_fn) (struct lh_entry *e);
 /**
  * callback function prototypes
  */
-typedef unsigned long (lh_hash_fn) (void *k);
+typedef uint32_t (lh_hash_fn) (void *k);
 /**
  * callback function prototypes
  */
@@ -132,10 +133,10 @@ struct lh_table {
 /**
  * Pre-defined hash and equality functions
  */
-extern unsigned long lh_ptr_hash(void *k);
+extern uint32_t lh_ptr_hash(void *k);
 extern int lh_ptr_equal(void *k1, void *k2);
 
-extern unsigned long lh_char_hash(void *k);
+extern uint32_t lh_char_hash(void *k);
 extern int lh_char_equal(void *k1, void *k2);
 
 

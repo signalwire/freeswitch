@@ -11,7 +11,7 @@
 
 #ifndef _bits_h_
 #define _bits_h_
-
+#include <inttypes.h>
 #ifndef min
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #endif
@@ -21,7 +21,7 @@
 #endif
 
 #define hexdigit(x) (((x) <= '9') ? (x) - '0' : ((x) & 7) + 9)
-#define error_ptr(error) ((void*)error)
-#define is_error(ptr) ((unsigned long)ptr > (unsigned long)-4000L)
+#define error_ptr(error) ((void*)(intptr_t)error)
+#define is_error(ptr) ((uint32_t)(intptr_t)ptr > (uint32_t)-4000L)
 
 #endif
