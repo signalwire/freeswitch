@@ -15,24 +15,19 @@
 #undef PRINTBUF_DEBUG
 
 struct printbuf {
-  char *buf;
-  int bpos;
-  int size;
+	char *buf;
+	int bpos;
+	int size;
 };
 
-extern struct printbuf*
-printbuf_new();
+extern struct printbuf *printbuf_new();
 
-extern int
-printbuf_memappend(struct printbuf *p, char *buf, int size);
+extern int printbuf_memappend(struct printbuf *p, char *buf, int size);
 
-extern int
-sprintbuf(struct printbuf *p, const char *msg, ...);
+extern int sprintbuf(struct printbuf *p, const char *msg, ...);
 
-extern void
-printbuf_reset(struct printbuf *p);
+extern void printbuf_reset(struct printbuf *p);
 
-extern void
-printbuf_free(struct printbuf *p);
+extern void printbuf_free(struct printbuf *p);
 
 #endif

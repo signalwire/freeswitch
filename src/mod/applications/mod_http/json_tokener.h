@@ -15,75 +15,72 @@
 #include "json_object.h"
 
 enum json_tokener_error {
-  json_tokener_success,
-  json_tokener_continue,
-  json_tokener_error_depth,
-  json_tokener_error_parse_eof,
-  json_tokener_error_parse_unexpected,
-  json_tokener_error_parse_null,
-  json_tokener_error_parse_boolean,
-  json_tokener_error_parse_number,
-  json_tokener_error_parse_array,
-  json_tokener_error_parse_object_key_name,
-  json_tokener_error_parse_object_key_sep,
-  json_tokener_error_parse_object_value_sep,
-  json_tokener_error_parse_string,
-  json_tokener_error_parse_comment
+	json_tokener_success,
+	json_tokener_continue,
+	json_tokener_error_depth,
+	json_tokener_error_parse_eof,
+	json_tokener_error_parse_unexpected,
+	json_tokener_error_parse_null,
+	json_tokener_error_parse_boolean,
+	json_tokener_error_parse_number,
+	json_tokener_error_parse_array,
+	json_tokener_error_parse_object_key_name,
+	json_tokener_error_parse_object_key_sep,
+	json_tokener_error_parse_object_value_sep,
+	json_tokener_error_parse_string,
+	json_tokener_error_parse_comment
 };
 
 enum json_tokener_state {
-  json_tokener_state_eatws,
-  json_tokener_state_start,
-  json_tokener_state_finish,
-  json_tokener_state_null,
-  json_tokener_state_comment_start,
-  json_tokener_state_comment,
-  json_tokener_state_comment_eol,
-  json_tokener_state_comment_end,
-  json_tokener_state_string,
-  json_tokener_state_string_escape,
-  json_tokener_state_escape_unicode,
-  json_tokener_state_boolean,
-  json_tokener_state_number,
-  json_tokener_state_array,
-  json_tokener_state_array_add,
-  json_tokener_state_array_sep,
-  json_tokener_state_object_field_start,
-  json_tokener_state_object_field,
-  json_tokener_state_object_field_end,
-  json_tokener_state_object_value,
-  json_tokener_state_object_value_add,
-  json_tokener_state_object_sep
+	json_tokener_state_eatws,
+	json_tokener_state_start,
+	json_tokener_state_finish,
+	json_tokener_state_null,
+	json_tokener_state_comment_start,
+	json_tokener_state_comment,
+	json_tokener_state_comment_eol,
+	json_tokener_state_comment_end,
+	json_tokener_state_string,
+	json_tokener_state_string_escape,
+	json_tokener_state_escape_unicode,
+	json_tokener_state_boolean,
+	json_tokener_state_number,
+	json_tokener_state_array,
+	json_tokener_state_array_add,
+	json_tokener_state_array_sep,
+	json_tokener_state_object_field_start,
+	json_tokener_state_object_field,
+	json_tokener_state_object_field_end,
+	json_tokener_state_object_value,
+	json_tokener_state_object_value_add,
+	json_tokener_state_object_sep
 };
 
-struct json_tokener_srec
-{
-  enum json_tokener_state state, saved_state;
-  struct json_object *obj;
-  struct json_object *current;
-  char *obj_field_name;
+struct json_tokener_srec {
+	enum json_tokener_state state, saved_state;
+	struct json_object *obj;
+	struct json_object *current;
+	char *obj_field_name;
 };
 
 #define JSON_TOKENER_MAX_DEPTH 32
 
-struct json_tokener
-{
-  char *str;
-  struct printbuf *pb;
-  int depth, is_double, st_pos, char_offset;
-  enum json_tokener_error err;
-  unsigned int ucs_char;
-  char quote_char;
-  struct json_tokener_srec stack[JSON_TOKENER_MAX_DEPTH];
+struct json_tokener {
+	char *str;
+	struct printbuf *pb;
+	int depth, is_double, st_pos, char_offset;
+	enum json_tokener_error err;
+	unsigned int ucs_char;
+	char quote_char;
+	struct json_tokener_srec stack[JSON_TOKENER_MAX_DEPTH];
 };
 
-extern const char* json_tokener_errors[];
+extern const char *json_tokener_errors[];
 
-extern struct json_tokener* json_tokener_new();
+extern struct json_tokener *json_tokener_new();
 extern void json_tokener_free(struct json_tokener *tok);
 extern void json_tokener_reset(struct json_tokener *tok);
-extern struct json_object* json_tokener_parse(char *str);
-extern struct json_object* json_tokener_parse_ex(struct json_tokener *tok,
-						 char *str, int len);
+extern struct json_object *json_tokener_parse(char *str);
+extern struct json_object *json_tokener_parse_ex(struct json_tokener *tok, char *str, int len);
 
 #endif

@@ -30,96 +30,97 @@
 #ifdef DEBUG
 int main(int argc, char *argv[])
 {
-    char *buf1;
-    char *buf2;
-    
+	char *buf1;
+	char *buf2;
 
-    buf1 = url_encode("This is a test #$ ");
-    buf2 = url_decode(buf1);
 
-    printf("%s\n", buf2);
-    
-    free(buf1);
-    free(buf2);
-    return EXIT_FAILURE;
+	buf1 = url_encode("This is a test #$ ");
+	buf2 = url_decode(buf1);
+
+	printf("%s\n", buf2);
+
+	free(buf1);
+	free(buf2);
+	return EXIT_FAILURE;
 }
 
 #endif
 
 char *url_encode(char *url, size_t l)
 {
-    int i;
-    int j;
-    char *buf;
-    unsigned char c;
+	int i;
+	int j;
+	char *buf;
+	unsigned char c;
 
-    buf = (char *)malloc((l * 3) + 1);
-    if(buf == NULL){
-        perror("Could not allocate memory url encoding");
-        return NULL;
-    }
+	buf = (char *) malloc((l * 3) + 1);
+	if (buf == NULL) {
+		perror("Could not allocate memory url encoding");
+		return NULL;
+	}
 
-    for(i = 0, j = 0; i < l; i++){
-        c = (unsigned char)url[i];
-        if(c <= 31 || c >= 127 
-            || c == '$' || c == '&' || c == '+' || c == ',' || c == '/' 
-            || c == ':' || c == ';' || c == '=' || c == '?' || c == '@'
-            || c == ' ' || c == '"' || c == '<' || c == '>' || c == '#'
-            || c == '%' || c == '{' || c == '}' || c == '|' || c == '\\'
-            || c == '^' || c == '~' || c == '[' || c == ']' || c == '`'){
-            
-            (void)sprintf(buf + j, "%%%X%X", c >> 4, c & 0x0F);
-            j += 3;
-        }else{
-            buf[j] = url[i];
-            j++;
-        }
-    }
-    
-    buf[j] = '\0';
+	for (i = 0, j = 0; i < l; i++) {
+		c = (unsigned char) url[i];
+		if (c <= 31 || c >= 127
+			|| c == '$' || c == '&' || c == '+' || c == ',' || c == '/'
+			|| c == ':' || c == ';' || c == '=' || c == '?' || c == '@'
+			|| c == ' ' || c == '"' || c == '<' || c == '>' || c == '#'
+			|| c == '%' || c == '{' || c == '}' || c == '|' || c == '\\' || c == '^' || c == '~' || c == '[' || c == ']' || c == '`') {
 
-    return buf;
+			(void) sprintf(buf + j, "%%%X%X", c >> 4, c & 0x0F);
+			j += 3;
+		} else {
+			buf[j] = url[i];
+			j++;
+		}
+	}
+
+	buf[j] = '\0';
+
+	return buf;
 }
 
 char *url_decode(char *url, size_t l)
 {
-    int i;
-    int j;
-    char *buf;
-    char c;
-    char d0;
-    char d1;
+	int i;
+	int j;
+	char *buf;
+	char c;
+	char d0;
+	char d1;
 
-    buf = (char *)malloc((l + 1) * sizeof(char));
-    if(buf == NULL){
-        perror("Could not allocate memory for decoding");
-        return NULL;
-    }
+	buf = (char *) malloc((l + 1) * sizeof(char));
+	if (buf == NULL) {
+		perror("Could not allocate memory for decoding");
+		return NULL;
+	}
 
-    for(i = 0, j = 0; i < l; j++){
-        c = url[i];
-        if(c == '%'){
-            d0 = url[i + 2];
-            d1 = url[i + 1];
-            d0 = toupper(d0);
-            d1 = toupper(d1);
+	for (i = 0, j = 0; i < l; j++) {
+		c = url[i];
+		if (c == '%') {
+			d0 = url[i + 2];
+			d1 = url[i + 1];
+			d0 = toupper(d0);
+			d1 = toupper(d1);
 
-            if(d0 >= 'A' && d0 <= 'F') d0 = d0 - 'A' + 10;
-            else if(d0 >= '0' && d0 <= '9') d0 = d0 - '0';
-            if(d1 >= 'A' && d1 <= 'F') d1 = d1 - 'A' + 10;
-            else if(d1 >= '0' && d1 <= '9') d1 = d1 - '0';
+			if (d0 >= 'A' && d0 <= 'F')
+				d0 = d0 - 'A' + 10;
+			else if (d0 >= '0' && d0 <= '9')
+				d0 = d0 - '0';
+			if (d1 >= 'A' && d1 <= 'F')
+				d1 = d1 - 'A' + 10;
+			else if (d1 >= '0' && d1 <= '9')
+				d1 = d1 - '0';
 
-            buf[j] = (d1 << 4) + d0;
-            i += 3;
-        }else{
-            buf[j] = url[i];
-            i++;
-        }
-    }
+			buf[j] = (d1 << 4) + d0;
+			i += 3;
+		} else {
+			buf[j] = url[i];
+			i++;
+		}
+	}
 
-    buf[j] = '\0';
+	buf[j] = '\0';
 
-    return buf;
+	return buf;
 }
-
-

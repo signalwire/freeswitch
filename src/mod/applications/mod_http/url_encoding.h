@@ -39,4 +39,3 @@ char *url_encode(char *url, size_t l);
 char *url_decode(char *url, size_t l);
 
 #endif
-

@@ -8,7 +8,7 @@
  * it under the terms of the MIT license. See COPYING for details.
  *
  */
- 
+
 #ifndef _linkhash_h_
 #define _linkhash_h_
 #include <inttypes.h>
@@ -33,11 +33,11 @@ struct lh_entry;
 /**
  * callback function prototypes
  */
-typedef void (lh_entry_free_fn) (struct lh_entry *e);
+typedef void (lh_entry_free_fn) (struct lh_entry * e);
 /**
  * callback function prototypes
  */
-typedef uint32_t (lh_hash_fn) (void *k);
+typedef uint32_t(lh_hash_fn) (void *k);
 /**
  * callback function prototypes
  */
@@ -171,10 +171,7 @@ for(entry = table->head; entry && ((tmp = entry->next) || 1); entry = tmp)
  * and C strings respectively.
  * @return a pointer onto the linkhash table.
  */
-extern struct lh_table* lh_table_new(int size, char *name,
-				     lh_entry_free_fn *free_fn,
-				     lh_hash_fn *hash_fn,
-				     lh_equal_fn *equal_fn);
+extern struct lh_table *lh_table_new(int size, char *name, lh_entry_free_fn * free_fn, lh_hash_fn * hash_fn, lh_equal_fn * equal_fn);
 
 /**
  * Convenience function to create a new linkhash
@@ -184,8 +181,7 @@ extern struct lh_table* lh_table_new(int size, char *name,
  * @param free_fn callback function used to free memory for entries.
  * @return a pointer onto the linkhash table.
  */
-extern struct lh_table* lh_kchar_table_new(int size, char *name,
-					   lh_entry_free_fn *free_fn);
+extern struct lh_table *lh_kchar_table_new(int size, char *name, lh_entry_free_fn * free_fn);
 
 
 /**
@@ -196,8 +192,7 @@ extern struct lh_table* lh_kchar_table_new(int size, char *name,
  * @param free_fn callback function used to free memory for entries.
  * @return a pointer onto the linkhash table.
  */
-extern struct lh_table* lh_kptr_table_new(int size, char *name,
-					  lh_entry_free_fn *free_fn);
+extern struct lh_table *lh_kptr_table_new(int size, char *name, lh_entry_free_fn * free_fn);
 
 
 /**
@@ -224,7 +219,7 @@ extern int lh_table_insert(struct lh_table *t, void *k, void *v);
  * @param k a pointer to the key to lookup
  * @return a pointer to the record structure of the value or NULL if it does not exist.
  */
-extern struct lh_entry* lh_table_lookup_entry(struct lh_table *t, void *k);
+extern struct lh_entry *lh_table_lookup_entry(struct lh_table *t, void *k);
 
 /**
  * Lookup a record into the table
@@ -232,7 +227,7 @@ extern struct lh_entry* lh_table_lookup_entry(struct lh_table *t, void *k);
  * @param k a pointer to the key to lookup
  * @return a pointer to the found value or NULL if it does not exist.
  */
-extern void* lh_table_lookup(struct lh_table *t, void *k);
+extern void *lh_table_lookup(struct lh_table *t, void *k);
 
 
 /**

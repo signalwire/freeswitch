@@ -74,65 +74,65 @@ do {\
 #define STATUS_CODE_LEN 4
 
 typedef enum tokens {
-    VERSION,
-    STATUS_CODE,
-    PHRASE,
-    HEADER,
-    NEWLINE,
-    SYNTAX_ERROR
+	VERSION,
+	STATUS_CODE,
+	PHRASE,
+	HEADER,
+	NEWLINE,
+	SYNTAX_ERROR
 } token_t;
 
 typedef enum accept_states {
-    ASWR,
-    ASNR,
-    NOAS
+	ASWR,
+	ASNR,
+	NOAS
 } accept_state_t;
 
 typedef struct state_machines {
-    accept_state_t (*state)(char, struct state_machines *);
-    int pos;
-    char *buf;
-    ssize_t buf_len;
-    int stop;
-    token_t token;
+	accept_state_t(*state) (char, struct state_machines *);
+	int pos;
+	char *buf;
+	ssize_t buf_len;
+	int stop;
+	token_t token;
 } state_machine_t;
 
 typedef enum http_methods {
-    GET,
-    HEAD,
-    POST,
-    DELETE,
-    PUT
+	GET,
+	HEAD,
+	POST,
+	DELETE,
+	PUT
 } http_method_t;
 
 typedef struct http_headers {
-    char *field_name;
-    char *value;
+	char *field_name;
+	char *value;
 } http_header_t;
 
 typedef struct http_requests {
-    http_method_t method;
-    char *version;
-    char *url;
-    http_header_t *headers;
-    ssize_t header_len;
-    char *body;
-    ssize_t body_len;
+	http_method_t method;
+	char *version;
+	char *url;
+	http_header_t *headers;
+	ssize_t header_len;
+	char *body;
+	ssize_t body_len;
 } http_request_t;
 
 typedef struct http_responses {
-    char *version;
-    int status_code;
-    char *phrase;
-    http_header_t *headers;
-    ssize_t header_len;
-    char *body;
-    int body_len;
+	char *version;
+	int status_code;
+	char *phrase;
+	http_header_t *headers;
+	ssize_t header_len;
+	char *body;
+	int body_len;
 } http_response_t;
 
-token_t get_next_token(state_machine_t *sm);
-int http_parse_response(char *buf, ssize_t buf_len, http_response_t *response);
-int http_req(http_request_t *req, http_response_t *res);
-void free_http_response(http_response_t *response);
+token_t get_next_token(state_machine_t * sm);
+int http_parse_response(char *buf, ssize_t buf_len, http_response_t * response);
+int http_req(http_request_t * req, http_response_t * res);
+void free_http_response(http_response_t * response);
 
 #endif

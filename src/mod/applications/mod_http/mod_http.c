@@ -90,287 +90,279 @@ GARBAGE_TYPES_INIT();
 
 SWITCH_STANDARD_API(http_api_main)
 {
-    char *ccmd;
-    int argc;
-    char *argv[HTTP_PARAMS];
-    char *buf;
-    char *method;
-    char *url;
-    char *headers_dec;
-    char *headers_str;
-    char *value;
-    char *body;
-    char *body_dec;
-    char *t;
-    char *json_response;
-    struct json_object *json_http_headers;
-    char *key;
-    struct json_object *val;
-    enum json_type jsontype;
-    struct lh_entry *entry;
-    int i;
-    int j;
-    int f;
-    size_t l;
-    size_t m;
-    size_t a = 0;
-    int ret;
+	char *ccmd;
+	int argc;
+	char *argv[HTTP_PARAMS];
+	char *buf;
+	char *method;
+	char *url;
+	char *headers_dec;
+	char *headers_str;
+	char *value;
+	char *body;
+	char *body_dec;
+	char *t;
+	char *json_response;
+	struct json_object *json_http_headers;
+	char *key;
+	struct json_object *val;
+	enum json_type jsontype;
+	struct lh_entry *entry;
+	int i;
+	int j;
+	int f;
+	size_t l;
+	size_t m;
+	size_t a = 0;
+	int ret;
 
-    http_header_t *headers;
-    http_request_t request;
-    http_response_t response;
+	http_header_t *headers;
+	http_request_t request;
+	http_response_t response;
 
-    GARBAGE_INIT();
-    
-    (void)memset(&response, 0, sizeof(response));
+	GARBAGE_INIT();
 
-    if(cmd == NULL){
-        stream->write_function(stream, "-USAGE: %s\n", HTTP_SYNTAX);
-        return SWITCH_STATUS_SUCCESS;
-    }
+	(void) memset(&response, 0, sizeof(response));
 
-    ccmd = strdup(cmd);
-    argc = switch_separate_string(ccmd, ' ', argv, HTTP_PARAMS);
-
-    if(argc != HTTP_PARAMS && argc != (HTTP_PARAMS - 1)){
-        switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
-        return SWITCH_STATUS_SUCCESS;
-    }
-    
-    method = argv[0];
-    if(strcasecmp(     "GET",    method) == 0) request.method = GET;
-    else if(strcasecmp("POST",   method) == 0) request.method = POST;
-    else if(strcasecmp("HEAD",   method) == 0) request.method = HEAD;
-    else if(strcasecmp("DELETE", method) == 0) request.method = DELETE;
-    else if(strcasecmp("PUT",    method) == 0) request.method = PUT;
-
-
-
-    url = argv[1];
-    headers_str = argv[2];
-    if(argc == HTTP_PARAMS){
-        body = argv[3];
-    }else{
-        body = (char *)malloc(1 * sizeof(char));
-	if(body == NULL){
-            switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
-            return SWITCH_STATUS_SUCCESS;
-	}
-	body[0] = '\0';
-        GARBAGE_ADD(body);
-    }
-
-    buf = (char *)malloc(HTTP_BUFFER_SIZE * sizeof(char));
-    if(buf == NULL){
-        switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
-        GARBAGE_CLEANUP();
-        return SWITCH_STATUS_SUCCESS;
-    }
-    
-    GARBAGE_ADD(buf);   
- 
-    request.version = DEFAULT_HTTP_VERSION;
-    l = strlen(url);
-    request.url = (char *)malloc((l + 1) * sizeof(char));
-    if(request.url == NULL){
-        switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
-        GARBAGE_CLEANUP();
-        return SWITCH_STATUS_SUCCESS;
-    } 
-       
-    GARBAGE_ADD(request.url);
-    strcpy(request.url, url); 
-    
-    
-    l = strlen(headers_str); 
-    
-    headers_dec = url_decode(headers_str, l);
-    GARBAGE_ADD(headers_dec);
-
-    json_http_headers = json_tokener_parse(headers_dec);
-    if(is_error(json_http_headers)){
-	switch_safe_free(ccmd);
-	stream->write_function(stream, "-ERR\n");
-	GARBAGE_CLEANUP();
-	return SWITCH_STATUS_SUCCESS;
-    }
-
-    jsontype = json_object_get_type(json_http_headers);
-    if(jsontype != json_type_object){
-	switch_safe_free(ccmd);
-	stream->write_function(stream, "-ERR\n");
-	GARBAGE_CLEANUP();
-	return SWITCH_STATUS_SUCCESS;
-    } 
-
-    i = 0;
-    json_object_object_foreach(json_http_headers, key, val){ 
-        i++; 
-    }
-    
-    request.header_len = i;
-    headers = (http_header_t *)malloc(i  * sizeof(http_header_t));
-    request.headers = headers;
-    GARBAGE_ADD(headers);
-
-    i = 0;
-    json_object_object_foreach(json_http_headers, key, val){
-        l = strlen(key);
-
-        request.headers[i].field_name = (char *)malloc((l + 1) * sizeof(char));
-        if(request.headers[i].field_name == NULL){
-            switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
-            GARBAGE_CLEANUP();
-            return SWITCH_STATUS_SUCCESS;
-        }
-	
-        GARBAGE_ADD(request.headers[i].field_name);
-
-        strcpy(request.headers[i].field_name, key);
-        a += strlen(key);
-
-	jsontype = json_object_get_type(val);
-	if(jsontype != json_type_string){
-	    switch_safe_free(ccmd);
-	    stream->write_function(stream, "-ERR\n");
-	    GARBAGE_CLEANUP();
-	    return SWITCH_STATUS_SUCCESS;
+	if (cmd == NULL) {
+		stream->write_function(stream, "-USAGE: %s\n", HTTP_SYNTAX);
+		return SWITCH_STATUS_SUCCESS;
 	}
 
-	value = json_object_get_string(val);
-        /* value = json_object_to_json_string(val); */
-        l = strlen(value);
-        request.headers[i].value = (char *)malloc((l + 1) * sizeof(char));
-        if(request.headers[i].value == NULL){
-            switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
-            GARBAGE_CLEANUP();
-            return SWITCH_STATUS_SUCCESS;
-        }
-        GARBAGE_ADD(request.headers[i].value);
-        strcpy(request.headers[i].value, value);
-        a += strlen(value);
-        i++;
-    }
+	ccmd = strdup(cmd);
+	argc = switch_separate_string(ccmd, ' ', argv, HTTP_PARAMS);
 
-    if(argc == HTTP_PARAMS){
-        l = strlen(body);
-        body_dec = url_decode(body, l);
-        GARBAGE_ADD(body_dec);
-        l = strlen(body_dec);
-        request.body_len = l;
-        request.body = body_dec;
-    }else request.body_len = 0;
+	if (argc != HTTP_PARAMS && argc != (HTTP_PARAMS - 1)) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-ERR\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-    ret = http_req(&request, &response);
-
-    if(response.version != NULL) GARBAGE_ADD(response.version);
-    if(response.phrase  != NULL) GARBAGE_ADD(response.phrase);
-    if(response.headers != NULL) GARBAGE_ADD(response.headers);
-    if(response.body    != NULL) GARBAGE_ADD(response.body);
-    for(i = 0; i < response.header_len; i++){
-        GARBAGE_ADD(response.headers[i].field_name);
-        GARBAGE_ADD(response.headers[i].value);
-    }
-    
-    
-    if(ret == ERROR){
-        switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
-        GARBAGE_CLEANUP();
-        return SWITCH_STATUS_SUCCESS;
-    }
-
-    /* This is evil and should be changed in the future */
-    l = 128 + (256 * response.header_len) + (a * 2)
-        + strlen("version") + strlen(response.version)
-        + strlen("status_code") + 3
-        + strlen("phrase") + strlen(response.phrase) 
-        + strlen("body") + (response.body_len * 3) + 1
-	+ strlen("headers")
-        + 1;
-
-    /* to be safe */
-    l <<= 2;
-    
-    json_response = (char *)malloc(l * sizeof(char));
-    if(json_response == NULL){
-        switch_safe_free(ccmd);
-        stream->write_function(stream, "-ERR\n");
-        GARBAGE_CLEANUP();
-        return SWITCH_STATUS_SUCCESS;
-    }
-    GARBAGE_ADD(json_response);
-    
-    if(response.body_len != 0){
-        t = (char *)malloc((response.body_len + 1) * sizeof(char));
-        if(t == NULL){
-            switch_safe_free(ccmd);
-            stream->write_function(stream, "-ERR\n");
-            GARBAGE_CLEANUP();
-            return SWITCH_STATUS_SUCCESS;
-        }
-        GARBAGE_ADD(t);
-        (void)memcpy(t, response.body, response.body_len);
-        t[response.body_len] = '\0';
-        response.body = url_encode(t, response.body_len);
-        GARBAGE_ADD(response.body);
-    }
-    
-
-    m = snprintf(json_response, l,
-        "{"
-        "\"version\": \"%s\","
-        "\"status_code\": \"%3d\","
-        "\"phrase\": \"%s\","
-        "\"body\": \"%s\","
-        "\"headers\": [",
-        response.version,
-        response.status_code,
-        response.phrase,
-        ((response.body_len <= 0)? "":response.body)
-    );
+	method = argv[0];
+	if (strcasecmp("GET", method) == 0)
+		request.method = GET;
+	else if (strcasecmp("POST", method) == 0)
+		request.method = POST;
+	else if (strcasecmp("HEAD", method) == 0)
+		request.method = HEAD;
+	else if (strcasecmp("DELETE", method) == 0)
+		request.method = DELETE;
+	else if (strcasecmp("PUT", method) == 0)
+		request.method = PUT;
 
 
-    for(f = HTTP_FALSE, j = 0; j < response.header_len; j++){
-        if(f != HTTP_FALSE){
-            m += snprintf(json_response + m, l - m,
-                ","
-            );
-        }else f = HTTP_TRUE;
 
-        m += snprintf(json_response + m, l - m, 
-            "{\"key\": \"%s\",\"value\": \"%s\"}",
-            response.headers[j].field_name,
-            response.headers[j].value
-        );
-    }
+	url = argv[1];
+	headers_str = argv[2];
+	if (argc == HTTP_PARAMS) {
+		body = argv[3];
+	} else {
+		body = (char *) malloc(1 * sizeof(char));
+		if (body == NULL) {
+			switch_safe_free(ccmd);
+			stream->write_function(stream, "-ERR\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
+		body[0] = '\0';
+		GARBAGE_ADD(body);
+	}
+
+	buf = (char *) malloc(HTTP_BUFFER_SIZE * sizeof(char));
+	if (buf == NULL) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-ERR\n");
+		GARBAGE_CLEANUP();
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	GARBAGE_ADD(buf);
+
+	request.version = DEFAULT_HTTP_VERSION;
+	l = strlen(url);
+	request.url = (char *) malloc((l + 1) * sizeof(char));
+	if (request.url == NULL) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-ERR\n");
+		GARBAGE_CLEANUP();
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	GARBAGE_ADD(request.url);
+	strcpy(request.url, url);
 
 
-    m += snprintf(json_response + m, l - m, "]}");
-    json_response[m] = '\0';
+	l = strlen(headers_str);
+
+	headers_dec = url_decode(headers_str, l);
+	GARBAGE_ADD(headers_dec);
+
+	json_http_headers = json_tokener_parse(headers_dec);
+	if (is_error(json_http_headers)) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-ERR\n");
+		GARBAGE_CLEANUP();
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	jsontype = json_object_get_type(json_http_headers);
+	if (jsontype != json_type_object) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-ERR\n");
+		GARBAGE_CLEANUP();
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	i = 0;
+	json_object_object_foreach(json_http_headers, key, val) {
+		i++;
+	}
+
+	request.header_len = i;
+	headers = (http_header_t *) malloc(i * sizeof(http_header_t));
+	request.headers = headers;
+	GARBAGE_ADD(headers);
+
+	i = 0;
+	json_object_object_foreach(json_http_headers, key, val) {
+		l = strlen(key);
+
+		request.headers[i].field_name = (char *) malloc((l + 1) * sizeof(char));
+		if (request.headers[i].field_name == NULL) {
+			switch_safe_free(ccmd);
+			stream->write_function(stream, "-ERR\n");
+			GARBAGE_CLEANUP();
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		GARBAGE_ADD(request.headers[i].field_name);
+
+		strcpy(request.headers[i].field_name, key);
+		a += strlen(key);
+
+		jsontype = json_object_get_type(val);
+		if (jsontype != json_type_string) {
+			switch_safe_free(ccmd);
+			stream->write_function(stream, "-ERR\n");
+			GARBAGE_CLEANUP();
+			return SWITCH_STATUS_SUCCESS;
+		}
+
+		value = json_object_get_string(val);
+		/* value = json_object_to_json_string(val); */
+		l = strlen(value);
+		request.headers[i].value = (char *) malloc((l + 1) * sizeof(char));
+		if (request.headers[i].value == NULL) {
+			switch_safe_free(ccmd);
+			stream->write_function(stream, "-ERR\n");
+			GARBAGE_CLEANUP();
+			return SWITCH_STATUS_SUCCESS;
+		}
+		GARBAGE_ADD(request.headers[i].value);
+		strcpy(request.headers[i].value, value);
+		a += strlen(value);
+		i++;
+	}
+
+	if (argc == HTTP_PARAMS) {
+		l = strlen(body);
+		body_dec = url_decode(body, l);
+		GARBAGE_ADD(body_dec);
+		l = strlen(body_dec);
+		request.body_len = l;
+		request.body = body_dec;
+	} else
+		request.body_len = 0;
+
+	ret = http_req(&request, &response);
+
+	if (response.version != NULL)
+		GARBAGE_ADD(response.version);
+	if (response.phrase != NULL)
+		GARBAGE_ADD(response.phrase);
+	if (response.headers != NULL)
+		GARBAGE_ADD(response.headers);
+	if (response.body != NULL)
+		GARBAGE_ADD(response.body);
+	for (i = 0; i < response.header_len; i++) {
+		GARBAGE_ADD(response.headers[i].field_name);
+		GARBAGE_ADD(response.headers[i].value);
+	}
 
 
-    switch_log_printf(
-        SWITCH_CHANNEL_LOG,
-        SWITCH_LOG_NOTICE,
-        "RESERVED %ld BYTES, USED %ld BYTES, HTTP Response as JSON: %s\n",
-        l, 
-        m,
-        json_response
-    );
+	if (ret == ERROR) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-ERR\n");
+		GARBAGE_CLEANUP();
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	/* This is evil and should be changed in the future */
+	l = 128 + (256 * response.header_len) + (a * 2)
+		+ strlen("version") + strlen(response.version)
+		+ strlen("status_code") + 3 + strlen("phrase") + strlen(response.phrase)
+		+ strlen("body") + (response.body_len * 3) + 1 + strlen("headers")
+		+ 1;
+
+	/* to be safe */
+	l <<= 2;
+
+	json_response = (char *) malloc(l * sizeof(char));
+	if (json_response == NULL) {
+		switch_safe_free(ccmd);
+		stream->write_function(stream, "-ERR\n");
+		GARBAGE_CLEANUP();
+		return SWITCH_STATUS_SUCCESS;
+	}
+	GARBAGE_ADD(json_response);
+
+	if (response.body_len != 0) {
+		t = (char *) malloc((response.body_len + 1) * sizeof(char));
+		if (t == NULL) {
+			switch_safe_free(ccmd);
+			stream->write_function(stream, "-ERR\n");
+			GARBAGE_CLEANUP();
+			return SWITCH_STATUS_SUCCESS;
+		}
+		GARBAGE_ADD(t);
+		(void) memcpy(t, response.body, response.body_len);
+		t[response.body_len] = '\0';
+		response.body = url_encode(t, response.body_len);
+		GARBAGE_ADD(response.body);
+	}
 
 
-    stream->write_function(stream, "%s\n", json_response);
+	m = snprintf(json_response, l,
+				 "{"
+				 "\"version\": \"%s\","
+				 "\"status_code\": \"%3d\","
+				 "\"phrase\": \"%s\","
+				 "\"body\": \"%s\","
+				 "\"headers\": [", response.version, response.status_code, response.phrase, ((response.body_len <= 0) ? "" : response.body)
+		);
 
-    switch_safe_free(ccmd);
-    GARBAGE_CLEANUP();
-    return SWITCH_STATUS_SUCCESS;
+
+	for (f = HTTP_FALSE, j = 0; j < response.header_len; j++) {
+		if (f != HTTP_FALSE) {
+			m += snprintf(json_response + m, l - m, ",");
+		} else
+			f = HTTP_TRUE;
+
+		m += snprintf(json_response + m, l - m, "{\"key\": \"%s\",\"value\": \"%s\"}", response.headers[j].field_name, response.headers[j].value);
+	}
+
+
+	m += snprintf(json_response + m, l - m, "]}");
+	json_response[m] = '\0';
+
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "RESERVED %ld BYTES, USED %ld BYTES, HTTP Response as JSON: %s\n", l, m, json_response);
+
+
+	stream->write_function(stream, "%s\n", json_response);
+
+	switch_safe_free(ccmd);
+	GARBAGE_CLEANUP();
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_http_load);
@@ -378,25 +370,13 @@ SWITCH_MODULE_DEFINITION(mod_http, mod_http_load, NULL, NULL);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_http_load)
 {
-    switch_api_interface_t *api_interface;
+	switch_api_interface_t *api_interface;
 
-    *module_interface =
-        switch_loadable_module_create_module_interface(pool, modname);
+	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-    switch_log_printf(
-        SWITCH_CHANNEL_LOG,
-        SWITCH_LOG_NOTICE,
-        "HTTP request mod enabled\n"
-    );
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "HTTP request mod enabled\n");
 
-    SWITCH_ADD_API(
-        api_interface, 
-        "http", 
-        "Make HTTP requests",
-        http_api_main,
-        HTTP_SYNTAX
-    );
+	SWITCH_ADD_API(api_interface, "http", "Make HTTP requests", http_api_main, HTTP_SYNTAX);
 
-    return SWITCH_STATUS_SUCCESS;
+	return SWITCH_STATUS_SUCCESS;
 }
-
