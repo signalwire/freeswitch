@@ -2094,6 +2094,11 @@ public class freeswitch {
     return ret;
   }
 
+  public static switch_bool_t switch_string_var_check(string s, switch_bool_t disable) {
+    switch_bool_t ret = (switch_bool_t)freeswitchPINVOKE.switch_string_var_check(s, (int)disable);
+    return ret;
+  }
+
   public static string switch_clean_string(string s) {
     string ret = freeswitchPINVOKE.switch_clean_string(s);
     return ret;
@@ -2394,8 +2399,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_channel_set_variable(SWIGTYPE_p_switch_channel channel, string varname, string value) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_set_variable(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, value);
+  public static switch_status_t switch_channel_set_variable_var_check(SWIGTYPE_p_switch_channel channel, string varname, string value, switch_bool_t var_check) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_set_variable_var_check(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, value, (int)var_check);
     return ret;
   }
 
@@ -2404,8 +2409,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_channel_set_variable_partner(SWIGTYPE_p_switch_channel channel, string varname, string value) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_set_variable_partner(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, value);
+  public static switch_status_t switch_channel_set_variable_partner_var_check(SWIGTYPE_p_switch_channel channel, string varname, string value, switch_bool_t var_check) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_set_variable_partner_var_check(SWIGTYPE_p_switch_channel.getCPtr(channel), varname, value, (int)var_check);
     return ret;
   }
 
@@ -6284,6 +6289,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_char_to_rfc2833")]
   public static extern byte switch_char_to_rfc2833(char jarg1);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_string_var_check")]
+  public static extern int switch_string_var_check(string jarg1, int jarg2);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_clean_string")]
   public static extern string switch_clean_string(string jarg1);
 
@@ -8672,14 +8680,14 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_uuid")]
   public static extern string switch_channel_get_uuid(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_variable")]
-  public static extern int switch_channel_set_variable(HandleRef jarg1, string jarg2, string jarg3);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_variable_var_check")]
+  public static extern int switch_channel_set_variable_var_check(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_variable_printf")]
   public static extern int switch_channel_set_variable_printf(HandleRef jarg1, string jarg2, string jarg3);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_variable_partner")]
-  public static extern int switch_channel_set_variable_partner(HandleRef jarg1, string jarg2, string jarg3);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_variable_partner_var_check")]
+  public static extern int switch_channel_set_variable_partner_var_check(HandleRef jarg1, string jarg2, string jarg3, int jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_get_variable_partner")]
   public static extern string switch_channel_get_variable_partner(HandleRef jarg1, string jarg2);

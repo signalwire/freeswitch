@@ -8301,6 +8301,20 @@ SWIGEXPORT unsigned char SWIGSTDCALL CSharp_switch_char_to_rfc2833(char jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_string_var_check(char * jarg1, int jarg2) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  switch_bool_t arg2 ;
+  switch_bool_t result;
+  
+  arg1 = (char *)jarg1; 
+  arg2 = (switch_bool_t)jarg2; 
+  result = (switch_bool_t)switch_string_var_check(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_switch_clean_string(char * jarg1) {
   char * jresult ;
   char *arg1 = (char *) 0 ;
@@ -17946,17 +17960,19 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_channel_get_uuid(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable(void * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable_var_check(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
+  switch_bool_t arg4 ;
   switch_status_t result;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (switch_status_t)switch_channel_set_variable(arg1,(char const *)arg2,(char const *)arg3);
+  arg4 = (switch_bool_t)jarg4; 
+  result = (switch_status_t)switch_channel_set_variable_var_check(arg1,(char const *)arg2,(char const *)arg3,arg4);
   jresult = result; 
   return jresult;
 }
@@ -17979,17 +17995,19 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable_printf(void * jarg
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable_partner(void * jarg1, char * jarg2, char * jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_set_variable_partner_var_check(void * jarg1, char * jarg2, char * jarg3, int jarg4) {
   int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
+  switch_bool_t arg4 ;
   switch_status_t result;
   
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  result = (switch_status_t)switch_channel_set_variable_partner(arg1,(char const *)arg2,(char const *)arg3);
+  arg4 = (switch_bool_t)jarg4; 
+  result = (switch_status_t)switch_channel_set_variable_partner_var_check(arg1,(char const *)arg2,(char const *)arg3,arg4);
   jresult = result; 
   return jresult;
 }
