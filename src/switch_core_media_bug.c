@@ -260,7 +260,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	if (bug->callback) {
 		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
 		if (result == SWITCH_FALSE) {
-			switch_core_media_bug_remove(session, new_bug);
+			switch_core_media_bug_remove(session, &bug);
+			*new_bug = NULL;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error attaching BUG to %s\n", switch_channel_get_name(session->channel));
 			return SWITCH_STATUS_GENERR;
 		}

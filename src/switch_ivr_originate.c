@@ -388,6 +388,11 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 							int hits = 2;
 							char *p = ring_array[fx], *q;
 						
+							if (!p) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error\n");
+								continue;
+							}
+
 							if (!(hits = atoi(p))) {
 								hits = 2;
 							}
