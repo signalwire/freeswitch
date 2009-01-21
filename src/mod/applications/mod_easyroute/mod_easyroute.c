@@ -154,21 +154,23 @@ done:
 			status = SWITCH_STATUS_FALSE;
 			goto reallydone;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Opened ODBC Database!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opened ODBC Database!\n");
 		}
 		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 			status = SWITCH_STATUS_FALSE;
 			goto reallydone;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Opened ODBC Database!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Opened ODBC Database!\n");
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", globals.db_dsn);
-		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from numbers", NULL) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the numbers table\?\?)\n");
-		}
-		if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from gateways", NULL) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the gateways table\?\?)\n");
+		if (!globals.custom_query){
+			if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from numbers", NULL) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the numbers table\?\?)\n");
+			}
+			if (switch_odbc_handle_exec(globals.master_odbc, "select count(*) from gateways", NULL) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot find  SQL Database! (Where\'s the gateways table\?\?)\n");
+			}
 		}
 	} else {
 #endif
@@ -191,30 +193,29 @@ reallydone:
 	return status;
 }
 
-static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = '%s' and numbers.gateway_id = gateways.gateway_id limit 1;";
+static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = '%q' and numbers.gateway_id = gateways.gateway_id limit 1;";
 
 static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int noat, char *seperator)
 {	
+#ifdef SWITCH_HAVE_ODBC
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
-	char sql[1024] = "";
+	char *sql = NULL;
 	route_callback_t pdata;
 
 	memset(&pdata, 0, sizeof(pdata));
 	if (!globals.custom_query){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing static Query\n[%s]\n", SQL_LOOKUP);
-		snprintf(sql, 1024, SQL_LOOKUP, dn);
+		sql = switch_mprintf(SQL_LOOKUP, dn);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing static Query\n[%s]\n", sql);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing custom Query\n[%s]\n", globals.custom_query);
-		snprintf(sql, 1024, globals.custom_query, dn);
+		sql = switch_mprintf(globals.custom_query, dn);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing custom Query\n[%s]\n", sql);
 	}
 
 	if (globals.mutex){
 		switch_mutex_lock(globals.mutex);
 	}
 	/* Do the Query */
-#ifdef SWITCH_HAVE_ODBC
 	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, route_callback, &pdata) == SWITCH_ODBC_SUCCESS){
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "SQL Query\n[%s]\n", sql);
 		char tmp_profile[129];
 		char tmp_gateway[129];
 
@@ -341,7 +342,7 @@ SWITCH_STANDARD_API(easyroute_function)
 		return SWITCH_STATUS_FALSE;
 	}
 
-#ifdef SWITCH_HAVE_ODBC
+#ifndef SWITCH_HAVE_ODBC
 	stream->write_function(stream, "mod_easyroute requires you enable core odbc support\n");
 	return SWITCH_STATUS_SUCCESS;
 #endif
@@ -359,6 +360,7 @@ SWITCH_STANDARD_API(easyroute_function)
 		} 
 		if (argc == 2) {
 			if (!strcasecmp(argv[1], "noat")) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Entering noat.\n");
 				noat = 1;
                         } else if (!strcasecmp(argv[1], "seperator")) {
                                 if (argc == 3){
