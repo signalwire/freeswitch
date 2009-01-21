@@ -69,7 +69,8 @@ typedef enum {
 	TFLAG_LINEAR = (1 << 6),
 	TFLAG_ANSWER = (1 << 7),
 	TFLAG_HUP = (1 << 8),
-	TFLAG_MASTER = (1 << 9)
+	TFLAG_MASTER = (1 << 9),
+	TFLAG_AUTO_ANSWER = (1 << 10)
 } TFLAGS;
 
 struct private_object {
@@ -233,8 +234,18 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			}
 		}
 
-		switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
-		switch_channel_mark_ring_ready(channel);
+
+		if (switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
+			switch_mutex_lock(globals.pvt_lock);
+			add_pvt(tech_pvt, PA_MASTER);
+			switch_channel_mark_answered(channel);
+			switch_set_flag(tech_pvt, TFLAG_ANSWER);
+			switch_mutex_unlock(globals.pvt_lock);
+		} else {
+			switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
+			switch_channel_mark_ring_ready(channel);
+		}
+
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_size_t olen = globals.timer.samples;
@@ -704,7 +715,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 			switch_channel_set_caller_profile(channel, caller_profile);
 			tech_pvt->caller_profile = caller_profile;
 			if (outbound_profile->destination_number && !strcasecmp(outbound_profile->destination_number, "auto_answer")) {
-				switch_set_flag(tech_pvt, TFLAG_ANSWER);
+				switch_set_flag(tech_pvt, TFLAG_AUTO_ANSWER);
 			}
 
 		} else {
@@ -1460,8 +1471,8 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 			} else {
 				switch_channel_t *channel = switch_core_session_get_channel(tp->session);
 				switch_set_flag_locked(tp, TFLAG_ANSWER);
-				switch_channel_mark_answered(channel);
 				add_pvt(tp, PA_MASTER);
+				switch_channel_mark_answered(channel);
 			}
 		} else {
 			stream->write_function(stream, "NO SUCH CALL\n");
@@ -1474,8 +1485,8 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 		if (!switch_test_flag(tp, TFLAG_ANSWER)) {
 			switch_channel_t *channel = switch_core_session_get_channel(tp->session);
 			switch_set_flag_locked(tp, TFLAG_ANSWER);
-			switch_channel_mark_answered(channel);
 			add_pvt(tp, PA_MASTER);
+			switch_channel_mark_answered(channel);
 			x++;
 			break;
 		}
