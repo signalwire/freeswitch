@@ -1590,13 +1590,16 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if (in_digit_seq > rtp_session->dtmf_data.in_digit_seq) {
 
 				rtp_session->dtmf_data.in_digit_seq = in_digit_seq;
-				rtp_session->dtmf_data.in_digit_sanity = 2000;
 #ifdef DEBUG_2833
 				
 				printf("read: %c %u %u %u %u %d %d %s\n", 
 					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, 
 					   ts, duration, rtp_session->recv_msg.header.m, end, end && !rtp_session->dtmf_data.in_digit_ts ? "ignored" : "");
 #endif
+				/* only set sanity if we do NOT ignore the packet */
+				if (rtp_session->dtmf_data.in_digit_ts) {
+					rtp_session->dtmf_data.in_digit_sanity = 2000;
+				}
 
 				if (rtp_session->dtmf_data.last_duration > duration && ts == rtp_session->dtmf_data.in_digit_ts) {
 					rtp_session->dtmf_data.flip++;
