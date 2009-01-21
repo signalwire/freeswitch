@@ -1712,7 +1712,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_realm", realm);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mailbox", mailbox);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "user_name", username);
-			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "domain_name", realm);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "domain_name", domain_name);
 
 			if ((dparams = switch_xml_child(domain, "variables"))) {
 				xparams[i++] = dparams;
