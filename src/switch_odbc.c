@@ -32,6 +32,10 @@
 #include <switch.h>
 #include <switch_odbc.h>
 
+#if (ODBCVER < 0x0300)
+#define SQL_NO_DATA SQL_SUCCESS
+#endif 
+
 struct switch_odbc_handle {
 	char *dsn;
 	char *username;
@@ -222,6 +226,10 @@ static int db_is_up(switch_odbc_handle_t *handle)
 
 	result = SQLExecute(stmt);
 
+	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO) {
+		goto error;
+	}
+
 	SQLRowCount (stmt, &m);
 	rc = SQLNumResultCols (stmt, &nresultcols);
 	if (rc != SQL_SUCCESS){
@@ -351,7 +359,7 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 
 	result = SQLExecute(stmt);
 
-	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO) {
+	if (result != SQL_SUCCESS && result != SQL_SUCCESS_WITH_INFO && result != SQL_NO_DATA) {
 		goto error;
 	}
 
@@ -366,8 +374,12 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 		int y = 0;
 		int done = 0;
 
-		if (!(result = SQLFetch(stmt)) == SQL_SUCCESS) {
-			err++;
+		result = SQLFetch(stmt);
+
+		if (result != SQL_SUCCESS) {
+			if (result != SQL_NO_DATA){
+				err++;
+			}
 			break;
 		}
 
