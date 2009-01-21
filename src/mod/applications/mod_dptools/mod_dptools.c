@@ -697,7 +697,7 @@ SWITCH_STANDARD_APP(set_function)
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SET [%s]=[%s]\n", switch_channel_get_name(channel), var, expanded ? expanded : "UNDEF");
-		switch_channel_set_variable(channel, var, expanded);
+		switch_channel_set_variable_var_check(channel, var, expanded, SWITCH_FALSE);
 
 		if (expanded && expanded != val) {
 			switch_safe_free(expanded);

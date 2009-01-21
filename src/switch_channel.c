@@ -574,7 +574,8 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 	return (!switch_strlen_zero(channel->name)) ? channel->name : "N/A";
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value)
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel, 
+																	  const char *varname, const char *value, switch_bool_t var_check)
 {
 	switch_assert(channel != NULL);
 
@@ -582,7 +583,16 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *ch
 		switch_mutex_lock(channel->profile_mutex);
 		switch_event_del_header(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
-			switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
+			int ok = 1;
+
+			if (var_check) {
+				ok = !switch_string_var_check((char *)value, SWITCH_FALSE);
+			}
+			if (ok) {
+				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid data (contains a variable)\n");
+			}
 		}
 		switch_mutex_unlock(channel->profile_mutex);
 		return SWITCH_STATUS_SUCCESS;
@@ -623,7 +633,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channe
 }
 
 
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_channel_t *channel, const char *varname, const char *value)
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner_var_check(switch_channel_t *channel, 
+																			  const char *varname, const char *value, switch_bool_t var_check)
 {
 	const char *uuid;
 	switch_assert(channel != NULL);
@@ -633,7 +644,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_chann
 			switch_core_session_t *session;
 			if ((session = switch_core_session_locate(uuid))) {
 				switch_channel_t *tchannel = switch_core_session_get_channel(session);
-				switch_channel_set_variable(tchannel, varname, value);
+				switch_channel_set_variable_var_check(tchannel, varname, value, var_check);
 				switch_core_session_rwunlock(session);
 			}
 			return SWITCH_STATUS_SUCCESS;
@@ -1820,7 +1831,6 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 	char *p, *c = NULL;
 	char *data, *indup, *endof_indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
-	const char *q;
 	char *cloned_sub_val = NULL, *sub_val = NULL;
 	char *func_val = NULL;
 	int nv = 0;
@@ -1829,20 +1839,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		return (char *) in;
 	}
 
-	q = in;
-	while (q && *q) {
-		if (!(p = strchr(q, '$'))) {
-			break;
-		}
-
-		if (*(p + 1) != '{') {
-			q = p + 1;
-			continue;
-		}
-
-		nv = 1;
-		break;
-	}
+	nv = switch_string_var_check((char *)in, SWITCH_FALSE);
 
 	if (!nv) {
 		return (char *) in;

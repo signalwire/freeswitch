@@ -219,11 +219,18 @@ SWITCH_DECLARE(char *) switch_channel_get_uuid(switch_channel_t *channel);
   \param value the vaule of the variable
   \returns SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable(switch_channel_t *channel, const char *varname, const char *value);
+
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel, 
+																	  const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channel_t *channel, const char *varname,  const char *fmt, ...);
 
-SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner(switch_channel_t *channel, const char *varname, const char *value);
+SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_partner_var_check(switch_channel_t *channel, 
+																			  const char *varname, const char *value, switch_bool_t var_check);
 SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_t *channel, const char *varname);
+
+
+#define switch_channel_set_variable(_channel, _var, _val) switch_channel_set_variable_var_check(_channel, _var, _val, SWITCH_TRUE)
+#define switch_channel_set_variable_partner(_channel, _var, _val) switch_channel_set_variable_partner_var_check(_channel, _var, _val, SWITCH_TRUE)
 
 /*!
   \brief Retrieve a variable from a given channel

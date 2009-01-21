@@ -34,7 +34,7 @@
 #include <switch_caller.h>
 
 #define profile_dup(a,b,p) if (!switch_strlen_zero(a)) { b = switch_core_strdup(p, a); } else { b = SWITCH_BLANK_STRING; }
-#define profile_dup_clean(a,b,p) if (!switch_strlen_zero(a)) { b = switch_clean_string(switch_core_strdup(p, a)); } else { b = SWITCH_BLANK_STRING; }
+#define profile_dup_clean(a,b,p) if (!switch_strlen_zero(a)) { b = switch_clean_string(switch_core_strdup(p, a)); switch_string_var_check( (char *) b , SWITCH_TRUE);} else { b = SWITCH_BLANK_STRING; }
 
 SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memory_pool_t *pool,
 																	const char *username,

@@ -254,7 +254,9 @@ SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *v
 			free(val);
 		}
 		if (value) {
-			switch_core_hash_insert(runtime.global_vars, varname, strdup(value));
+			char *v = strdup(value);
+			switch_string_var_check(v, SWITCH_TRUE);
+			switch_core_hash_insert(runtime.global_vars, varname, v);
 		} else {
 			switch_core_hash_delete(runtime.global_vars, varname);
 		}

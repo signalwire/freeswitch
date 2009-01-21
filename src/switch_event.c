@@ -1246,25 +1246,12 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	char *p, *c = NULL;
 	char *data, *indup, *endof_indup;
 	size_t sp = 0, len = 0, olen = 0, vtype = 0, br = 0, cpos, block = 128;
-	const char *q, *sub_val = NULL;
+	const char *sub_val = NULL;
 	char *cloned_sub_val = NULL;
 	char *func_val = NULL;
 	int nv = 0;
 
-	q = in;
-	while (q && *q) {
-		if (!(p = strchr(q, '$'))) {
-			break;
-		}
-
-		if (*(p + 1) != '{') {
-			q = p + 1;
-			continue;
-		}
-
-		nv = 1;
-		break;
-	}
+	nv = switch_string_var_check((char *)in, SWITCH_FALSE);
 
 	if (!nv) {
 		return (char *) in;

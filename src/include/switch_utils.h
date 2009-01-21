@@ -280,7 +280,32 @@ switch_mutex_unlock(obj->flag_mutex);
 
 #define switch_set_string(_dst, _src) switch_copy_string(_dst, _src, sizeof(_dst))
 
-	 static inline char *switch_clean_string(char *s)
+static inline switch_bool_t switch_string_var_check(char *s, switch_bool_t disable)
+{
+    char *p;
+	char *dol = NULL;
+
+    for (p = s; p && *p; p++) {
+        if (*p == '$') {
+            dol = p;
+        } else if (dol) {
+            if (*p == '{') {
+				if (disable) {
+					*dol = '%';
+					dol = NULL;
+				} else {
+					return SWITCH_TRUE;
+				}
+            } else if (*p != '\\') {
+                dol = NULL;
+            }
+        }
+    }
+    return SWITCH_FALSE;
+}
+
+
+static inline char *switch_clean_string(char *s)
 {
 	char *p;
 	for (p = s; p && *p; p++) {
