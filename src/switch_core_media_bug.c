@@ -37,8 +37,13 @@
 
 static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 {
-	switch_buffer_destroy(&bug->raw_read_buffer);
-	switch_buffer_destroy(&bug->raw_write_buffer);
+	if (bug->raw_read_buffer) {
+		switch_buffer_destroy(&bug->raw_read_buffer);
+	}
+
+	if (bug->raw_write_buffer) {
+		switch_buffer_destroy(&bug->raw_write_buffer);
+	}
 }
 
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(switch_media_bug_t *bug, uint32_t flag)
@@ -197,8 +202,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	switch_media_bug_t *bug;	//, *bp;
 	switch_size_t bytes;
 
-	if (flags & SMBF_WRITE_REPLACE) {
+	*new_bug = NULL;
+
 #if 0
+	if (flags & SMBF_WRITE_REPLACE) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_test_flag(bp, SMBF_WRITE_REPLACE)) {
@@ -208,11 +215,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 			}
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
-#endif
 	}
 
 	if (flags & SMBF_READ_REPLACE) {
-#if 0
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			if (switch_test_flag(bp, SMBF_READ_REPLACE)) {
@@ -222,8 +227,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 			}
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
-#endif
 	}
+#endif
 
 	if (!(bug = switch_core_session_alloc(session, sizeof(*bug)))) {
 		return SWITCH_STATUS_MEMERR;
@@ -260,8 +265,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	if (bug->callback) {
 		switch_bool_t result = bug->callback(bug, bug->user_data, SWITCH_ABC_TYPE_INIT);
 		if (result == SWITCH_FALSE) {
-			switch_core_media_bug_remove(session, &bug);
-			*new_bug = NULL;
+			switch_core_media_bug_destroy(bug);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error attaching BUG to %s\n", switch_channel_get_name(session->channel));
 			return SWITCH_STATUS_GENERR;
 		}
@@ -377,7 +381,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 			last = bp;
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
-		status = switch_core_media_bug_close(&bp);
+		if (bp) {
+			status = switch_core_media_bug_close(&bp);
+		}
 	}
 	
 	if (!session->bugs && session->bug_codec.implementation) {
