@@ -36,6 +36,10 @@
 
 #include <esl.h>
 
+#ifdef _cplusplus
+extern "C" {
+#endif /* defined(_cplusplus) */
+
 typedef enum {
 	ESL_STACK_BOTTOM,
 	ESL_STACK_TOP
@@ -268,8 +272,11 @@ ESL_DECLARE(const char *)esl_priority_name(esl_priority_t priority);
 
 ///\}
 
+#ifdef _cplusplus
+}
+#endif /* defined(_cplusplus) */
 
-#endif
+#endif /* defined(ESL_EVENT_H) */
 
 /* For Emacs:
  * Local Variables:

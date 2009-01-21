@@ -36,6 +36,10 @@
 
 #include <stdarg.h>
 
+#ifdef _cplusplus
+extern "C" {
+#endif /* defined(_cplusplus) */
+
 #define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
 #define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
 
@@ -336,7 +340,21 @@ ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etyp
 #define esl_recv(_h) esl_recv_event(_h, NULL)
 #define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, NULL)
 
-#endif
+
+#ifdef _cplusplus
+}
+#endif /* defined(_cplusplus) */
 
 
+#endif /* defined(_ESL_H_) */
 
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ */

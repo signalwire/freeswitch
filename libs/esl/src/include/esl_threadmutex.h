@@ -23,6 +23,10 @@
 
 #include "esl.h"
 
+#ifdef _cplusplus
+extern "C" {
+#endif /* defined(_cplusplus) */
+
 typedef struct esl_mutex esl_mutex_t;
 typedef struct esl_thread esl_thread_t;
 typedef void *(*esl_thread_function_t) (esl_thread_t *, void *);
@@ -36,7 +40,11 @@ ESL_DECLARE(esl_status_t) esl_mutex_lock(esl_mutex_t *mutex);
 ESL_DECLARE(esl_status_t) esl_mutex_trylock(esl_mutex_t *mutex);
 ESL_DECLARE(esl_status_t) esl_mutex_unlock(esl_mutex_t *mutex);
 
-#endif
+#ifdef _cplusplus
+}
+#endif /* defined(_cplusplus) */
+
+#endif /* defined(_ESL_THREADMUTEX_H) */
 
 /* For Emacs:
  * Local Variables:

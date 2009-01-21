@@ -53,6 +53,12 @@
 #define ESL_CONFIG_H
 
 #include "esl.h"
+
+#ifdef _cplusplus
+extern "C" {
+#endif /* defined(_cplusplus) */
+
+
 #define ESL_URL_SEPARATOR "://"
 
 
@@ -153,7 +159,13 @@ ESL_DECLARE(int) esl_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 
 
 /** @} */
-#endif
+
+#ifdef _cplusplus
+}
+#endif /* defined(_cplusplus) */
+
+#endif /* defined(ESL_CONFIG_H) */
+
 /* For Emacs:
  * Local Variables:
  * mode:c
