@@ -878,6 +878,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 
 			if ((serviced_uuid = switch_channel_get_variable(channel, "fifo_serviced_uuid"))) {
+				switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 				break;
 			}
 
