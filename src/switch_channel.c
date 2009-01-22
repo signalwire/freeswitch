@@ -118,6 +118,7 @@ struct switch_channel {
 	uint8_t flags[CF_FLAG_MAX];
 	uint8_t state_flags[CF_FLAG_MAX];
 	uint32_t private_flags;
+	uint32_t app_flags;
 	switch_caller_profile_t *caller_profile;
 	const switch_state_handler_table_t *state_handlers[SWITCH_MAX_STATE_HANDLERS];
 	int state_handler_index;
@@ -787,6 +788,32 @@ SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, 
 {
 	switch_assert(channel != NULL);
 	return (channel->private_flags & flags);
+}
+
+SWITCH_DECLARE(void) switch_channel_set_app_flag(switch_channel_t *channel, uint32_t flags)
+{
+	switch_assert(channel != NULL);
+	switch_mutex_lock(channel->flag_mutex);
+	channel->app_flags |= flags;
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
+SWITCH_DECLARE(void) switch_channel_clear_app_flag(switch_channel_t *channel, uint32_t flags)
+{
+	switch_assert(channel != NULL);
+	switch_mutex_lock(channel->flag_mutex);
+	if (!flags) {
+		channel->app_flags = 0;
+	} else {
+		channel->app_flags &= ~flags;
+	}
+	switch_mutex_unlock(channel->flag_mutex);
+}
+
+SWITCH_DECLARE(int) switch_channel_test_app_flag(switch_channel_t *channel, uint32_t flags)
+{
+	switch_assert(channel != NULL);
+	return (channel->app_flags & flags);
 }
 
 SWITCH_DECLARE(void) switch_channel_set_state_flag(switch_channel_t *channel, switch_channel_flag_t flag)

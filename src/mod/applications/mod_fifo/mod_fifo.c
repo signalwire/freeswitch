@@ -42,7 +42,6 @@ SWITCH_MODULE_DEFINITION(mod_fifo, mod_fifo_load, mod_fifo_shutdown, NULL);
 static switch_status_t load_config(int reload, int del_all);
 #define MAX_PRI 10
 
-
 struct fifo_node {
 	char *name;
 	switch_mutex_t *mutex;
@@ -847,8 +846,9 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		switch_channel_set_variable(channel, "fifo_status", "WAITING");
 		switch_channel_set_variable(channel, "fifo_timestamp", date);
+		switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 
-		switch_channel_set_flag(channel, CF_TAGGED);
+		switch_channel_set_app_flag(channel, CF_APP_TAGGED);
 
 		if (chime_list) {
 			char *list_dup = switch_core_session_strdup(session, chime_list);
@@ -878,7 +878,6 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 
 			if ((serviced_uuid = switch_channel_get_variable(channel, "fifo_serviced_uuid"))) {
-				switch_channel_set_variable(channel, "fifo_serviced_uuid", NULL);
 				break;
 			}
 
@@ -921,7 +920,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 
-		switch_channel_clear_flag(channel, CF_TAGGED);
+		switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
 
 	  abort:
 
@@ -1176,7 +1175,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_channel_set_flag(other_channel, CF_BREAK);
 
-				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_flag(other_channel, CF_TAGGED)) {
+				while (switch_channel_ready(channel) && switch_channel_ready(other_channel) && switch_channel_test_app_flag(other_channel, CF_APP_TAGGED)) {
 					status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 					if (!SWITCH_READ_ACCEPTABLE(status)) {
 						break;

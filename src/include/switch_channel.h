@@ -504,6 +504,10 @@ SWITCH_DECLARE(void) switch_channel_set_private_flag(switch_channel_t *channel, 
 SWITCH_DECLARE(void) switch_channel_clear_private_flag(switch_channel_t *channel, uint32_t flags);
 SWITCH_DECLARE(int) switch_channel_test_private_flag(switch_channel_t *channel, uint32_t flags);
 
+SWITCH_DECLARE(void) switch_channel_set_app_flag(switch_channel_t *channel, uint32_t flags);
+SWITCH_DECLARE(void) switch_channel_clear_app_flag(switch_channel_t *channel, uint32_t flags);
+SWITCH_DECLARE(int) switch_channel_test_app_flag(switch_channel_t *channel, uint32_t flags);
+
 /** @} */
 
 SWITCH_END_EXTERN_C

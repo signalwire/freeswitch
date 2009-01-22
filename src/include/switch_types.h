@@ -846,6 +846,12 @@ typedef enum {
 	CF_FLAG_MAX
 } switch_channel_flag_t;
 
+
+typedef enum {
+	CF_APP_TAGGED = (1 << 0)
+} switch_channel_app_flag_t;
+
+
 /*!
   \enum switch_frame_flag_t
   \brief Frame Flags
