@@ -254,6 +254,7 @@ static int process_command(esl_handle_t *handle, const char *cmd)
 				   "/event, /noevent, /nixevent\tEvent commands.\n"
 				   "/log, /nolog               \tLog commands.\n"
 				   "/filter                    \tFilter commands.\n"
+                                   "/debug [0-7]               \tSet debug level.\n"
 				   "\n"
 				   );
 
