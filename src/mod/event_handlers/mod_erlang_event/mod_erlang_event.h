@@ -38,12 +38,23 @@ typedef enum {
 	LFLAG_SESSION_ALIVE
 } session_flag_t;
 
+typedef enum {
+	ERLANG_PID = 0,
+	ERLANG_REG_PROCESS
+} process_type;
+
+struct erlang_process {
+	process_type type;
+	char *reg_name;
+	erlang_pid pid;
+};
+
 struct session_elem {
 	switch_core_session_t *session;
 	switch_mutex_t *flag_mutex;
 	uint32_t flags;
 	/* registered process name that will receive call notifications from this session */
-	char* reg_name;
+	struct erlang_process process;
 	switch_queue_t *event_queue;
 	struct session_elem *next;
 };
@@ -68,8 +79,8 @@ typedef enum {
 struct listener {
 	int sockfd;
 	struct ei_cnode_s *ec;
-	erlang_pid log_pid;
-	erlang_pid event_pid;
+	struct erlang_process log_process;
+	struct erlang_process event_process;
 	char *peer_nodename;
 	switch_queue_t *event_queue;
 	switch_queue_t *log_queue;
@@ -99,8 +110,7 @@ typedef struct listener listener_t;
 
 struct erlang_binding {
 	switch_xml_section_t section;
-	erlang_pid pid;
-	char *registered_process; /* TODO */
+	struct erlang_process process;
 	listener_t *listener;
 	struct erlang_binding *next;
 };

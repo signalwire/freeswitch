@@ -488,7 +488,8 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg *msg, ei
 		}
 		else {
 			binding->section = section;
-			binding->pid = msg->from;
+			binding->process.type = ERLANG_PID;
+			binding->process.pid = msg->from;
 			binding->listener = listener;
 
 			switch_core_hash_init(&listener->fetch_reply_hash, listener->pool);
@@ -530,7 +531,7 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, int arity, ei
 	} else {
 		switch_core_session_t *session;
 		if (!switch_strlen_zero(uuid_str) && (session = switch_core_session_locate(uuid_str))) {
-			/* create a new sesion list element and attach it to this listener */
+			/* create a new session list element and attach it to this listener */
 			if (attach_call_to_listener(listener,reg_name,session)) {
 				ei_x_encode_atom(rbuf, "ok");
 			} else {
@@ -606,13 +607,15 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 		ei_x_encode_atom(rbuf, "ok");
 	} else if (!strncmp(atom, "register_log_handler", MAXATOMLEN)) {
 		ei_link(listener, ei_self(listener->ec), &msg->from);
-		listener->log_pid = msg->from;
+		listener->log_process.type = ERLANG_PID;
+		listener->log_process.pid = msg->from;
 		listener->level = SWITCH_LOG_DEBUG;
 		switch_set_flag(listener, LFLAG_LOG);
 		ei_x_encode_atom(rbuf, "ok");
 	} else if (!strncmp(atom, "register_event_handler", MAXATOMLEN)) {
 		ei_link(listener, ei_self(listener->ec), &msg->from);
-		listener->event_pid = msg->from;
+		listener->event_process.type = ERLANG_PID;
+		listener->event_process.pid = msg->from;
 		if (!switch_test_flag(listener, LFLAG_EVENTS)) {
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
