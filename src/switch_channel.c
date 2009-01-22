@@ -1839,7 +1839,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		return (char *) in;
 	}
 
-	nv = switch_string_var_check((char *)in, SWITCH_FALSE);
+	nv = switch_string_var_check_const(in);
 
 	if (!nv) {
 		return (char *) in;
