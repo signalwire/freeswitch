@@ -221,8 +221,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				switch_buffer_create_dynamic(&fh->buffer, factor, factor, 0);
 				switch_assert(fh->buffer);
 			}
-			if (!fh->dbuf) {
-				fh->dbuflen = want * 8;
+			if (!fh->dbuf || fh->dbuflen < fh->resampler->to_len * 2) {
+				fh->dbuflen = fh->resampler->to_len * 2;
 				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
 			}
 			switch_assert(fh->resampler->to_len <= fh->dbuflen);
