@@ -584,9 +584,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 		switch_event_del_header(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
 			int ok = 1;
-
+			
 			if (var_check) {
-				ok = !switch_string_var_check((char *)value, SWITCH_FALSE);
+				ok = !switch_string_var_check_const(value);
 			}
 			if (ok) {
 				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);

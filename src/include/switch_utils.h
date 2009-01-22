@@ -305,6 +305,31 @@ static inline switch_bool_t switch_string_var_check(char *s, switch_bool_t disab
 }
 
 
+static inline switch_bool_t switch_string_var_check_const(const char *s)
+{
+    const char *p;
+	int dol = 0;
+
+    for (p = s; p && *p; p++) {
+        if (*p == '$') {
+            dol = 1;
+        } else if (dol) {
+            if (*p == '{') {
+					return SWITCH_TRUE;
+            } else if (*p != '\\') {
+                dol = 0;
+            }
+        }
+    }
+    return SWITCH_FALSE;
+}
+
+static inline char *switch_var_clean_string(char *s)
+{
+	switch_string_var_check(s, SWITCH_TRUE);
+	return s;
+}
+
 static inline char *switch_clean_string(char *s)
 {
 	char *p;
