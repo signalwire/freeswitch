@@ -248,11 +248,22 @@ static switch_bool_t monitor_callback(switch_core_session_t *session, const char
 	if (app) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		if (!strcmp(app, "fail")) {
+			const char *bd = switch_channel_get_variable(channel, "monitor_fail_dispo");
+			if (!bd) {
+				bd = "monitor_early_media_fail";
+			}
+			switch_channel_set_variable(channel, "originate_disposition", bd);
 			switch_channel_hangup(channel, data ? switch_channel_str2cause(data) : SWITCH_CAUSE_USER_BUSY);
 		} else if (!strcmp(app, "ring")) {
 			originate_global_t *oglobals = (originate_global_t *) switch_channel_get_private(channel, "_oglobals_");
+			const char *bd = switch_channel_get_variable(channel, "monitor_ring_dispo");
+			if (!bd) {
+				bd = "monitor_early_media_ring";
+			}
+			switch_channel_set_variable(channel, "originate_disposition", bd);
 
 			if (oglobals) {
+
 				switch_channel_set_private(channel, "_oglobals_", NULL);
 				
 				if (!oglobals->progress) {
