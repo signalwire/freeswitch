@@ -85,6 +85,8 @@ static char main_ip6[256] = "";
 static void check_ip(void) {
 	char guess_ip4[256] = "";
 	char guess_ip6[256] = "";
+	char old_ip4[256] = "";
+	char old_ip6[256] = "";
 	int ok4 = 1, ok6 = 1;
 	
 	switch_find_local_ip(guess_ip4, sizeof(guess_ip4), AF_INET);
@@ -94,6 +96,7 @@ static void check_ip(void) {
 		switch_set_string(main_ip4, guess_ip4);
 	} else {
 		if (!(ok4 = !strcmp(main_ip4, guess_ip4))) {
+			switch_set_string(old_ip4, main_ip4);
 			switch_set_string(main_ip4, guess_ip4);
 			switch_core_set_variable("local_ip_v4", guess_ip4);
 		}
@@ -103,6 +106,7 @@ static void check_ip(void) {
 		switch_set_string(main_ip6, guess_ip6);
 	} else {
 		if (!(ok6 = !strcmp(main_ip6, guess_ip6))) {
+			switch_set_string(old_ip6, main_ip6);
 			switch_set_string(main_ip6, guess_ip6);
 			switch_core_set_variable("local_ip_v6", guess_ip6);
 		}
@@ -114,9 +118,11 @@ static void check_ip(void) {
 		if (switch_event_create(&event, SWITCH_EVENT_TRAP) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "condition", "network-address-change");
 			if (!ok4) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-previous-v4", old_ip4);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v4", main_ip4);
 			}
 			if (!ok6) {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-previous-v6", old_ip6);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "network-address-change-v6", main_ip6);
 			}
 			switch_event_fire(&event);

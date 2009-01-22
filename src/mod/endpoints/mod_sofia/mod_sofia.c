@@ -2756,6 +2756,48 @@ static void general_event_handler(switch_event_t *event)
 			const char *cond = switch_event_get_header(event, "condition");
 
 			if (cond && !strcmp(cond, "network-address-change") && mod_sofia_globals.auto_restart) {
+				const char *old_ip4 = switch_event_get_header_nil(event, "network-address-previous-v4");
+				const char *new_ip4 = switch_event_get_header_nil(event, "network-address-change-v4");
+				const char *old_ip6 = switch_event_get_header_nil(event, "network-address-previous-v6");
+				const char *new_ip6 = switch_event_get_header_nil(event, "network-address-change-v6");
+				switch_hash_index_t *hi;
+				const void *var;
+				void *val;
+				sofia_profile_t *profile;
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "IP change detected [%s]->[%s] [%s]->[%s]\n", old_ip4, new_ip4, old_ip6, new_ip6);
+
+				switch_mutex_lock(mod_sofia_globals.hash_mutex);
+				if (mod_sofia_globals.profile_hash) {
+					for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+						int rb = 0;
+						switch_hash_this(hi, &var, NULL, &val);
+						if ((profile = (sofia_profile_t *) val) && profile->auto_restart) {
+							if (!strcmp(profile->sipip, old_ip4)) {
+								profile->sipip = switch_core_strdup(profile->pool, new_ip4);
+								rb++;
+							}
+							if (!strcmp(profile->rtpip, old_ip4)) {
+								profile->rtpip = switch_core_strdup(profile->pool, new_ip4);
+								rb++;
+							}
+							if (!strcmp(profile->sipip, old_ip6)) {
+								profile->sipip = switch_core_strdup(profile->pool, new_ip6);
+								rb++;
+							}
+							if (!strcmp(profile->rtpip, old_ip6)) {
+								profile->rtpip = switch_core_strdup(profile->pool, new_ip6);
+								rb++;
+							}
+
+							if (rb) {
+								sofia_set_pflag_locked(profile, PFLAG_RESPAWN);
+								sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
+							}
+						}
+					}
+				}
+
 				sofia_glue_restart_all_profiles();
 			}
 			

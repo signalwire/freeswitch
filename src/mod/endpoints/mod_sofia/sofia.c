@@ -1279,6 +1279,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						parse_rtp_bugs(profile, val);
 					} else if (!strcasecmp(var, "user-agent-string")) { 
 						profile->user_agent = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "auto-restart")) {
+						profile->auto_restart = switch_true(val);
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
 							profile->dtmf_type = DTMF_2833;
@@ -1688,7 +1690,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->rport_level = 1;
 				profile->pflags |= PFLAG_STUN_ENABLED;
 				profile->pflags |= PFLAG_DISABLE_100REL;
-				
+				profile->auto_restart = 1;
+
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
 					char *val = (char *) switch_xml_attr_soft(param, "value");
@@ -1711,6 +1714,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 #endif
 					} else if (!strcasecmp(var, "user-agent-string")) {
 						profile->user_agent = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "auto-restart")) {
+						profile->auto_restart = switch_true(val);
 					} else if (!strcasecmp(var, "dtmf-type")) {
 						if (!strcasecmp(val, "rfc2833")) {
 							profile->dtmf_type = DTMF_2833;

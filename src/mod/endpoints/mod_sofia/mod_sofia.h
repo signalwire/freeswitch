@@ -384,6 +384,7 @@ struct sofia_profile {
 	char *presence_hosts;
 	char *challenge_realm;
 	sofia_dtmf_t dtmf_type;
+	int auto_restart;
 	int sip_port;
 	int tls_sip_port;
 	int tls_version;
