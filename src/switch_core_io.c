@@ -616,7 +616,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
-		if (session->write_impl.codec_id != frame->codec->implementation->codec_id) {
+		if (session->write_impl.microseconds_per_packet != frame->codec->implementation->microseconds_per_packet) {
 			ptime_mismatch = TRUE;
 			if (switch_test_flag(frame->codec, SWITCH_CODEC_FLAG_PASSTHROUGH) || switch_test_flag(session->read_codec, SWITCH_CODEC_FLAG_PASSTHROUGH)) {
 				status = perform_write(session, frame, flags, stream_id);
