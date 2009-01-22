@@ -42,7 +42,8 @@
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown);
-SWITCH_MODULE_DEFINITION(mod_portaudio, mod_portaudio_load, mod_portaudio_shutdown, NULL);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_portaudio_runtime);
+SWITCH_MODULE_DEFINITION(mod_portaudio, mod_portaudio_load, mod_portaudio_shutdown, mod_portaudio_runtime);
 
 static switch_memory_pool_t *module_pool = NULL;
 switch_endpoint_interface_t *portaudio_endpoint_interface;
@@ -126,6 +127,8 @@ static struct {
 	switch_timer_t timer;
 	switch_timer_t hold_timer;
 	int dual_streams;
+	int monitor_running;
+	int deactivate_timer;
 } globals;
 
 
@@ -234,7 +237,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			}
 		}
 
-
 		if (switch_test_flag(tech_pvt, TFLAG_AUTO_ANSWER)) {
 			switch_mutex_lock(globals.pvt_lock);
 			add_pvt(tech_pvt, PA_MASTER);
@@ -245,7 +247,6 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			switch_core_session_queue_indication(session, SWITCH_MESSAGE_INDICATE_RINGING);
 			switch_channel_mark_ring_ready(channel);
 		}
-
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_size_t olen = globals.timer.samples;
@@ -321,6 +322,10 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 
 static void deactivate_audio_device(void)
 {
+	if (!globals.audio_stream) {
+		return;
+	}
+
 	switch_mutex_lock(globals.device_lock);
 	/* LOCKED ************************************************************************************************** */
 
@@ -352,6 +357,10 @@ static void deactivate_audio_device(void)
 
 static void deactivate_ring_device(void)
 {
+	if (!globals.ring_stream) {
+		return;
+	}
+
 	switch_mutex_lock(globals.device_lock);
 	if (globals.ringdev != globals.outdev && globals.ring_stream) {
 		CloseAudioStream(globals.ring_stream);
@@ -427,8 +436,7 @@ static void remove_pvt(private_t *tech_pvt)
 	if (globals.call_list) {
 		switch_set_flag_locked(globals.call_list, TFLAG_MASTER);
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No more channels, deactivating audio\n");
-		deactivate_audio_device();
+		globals.deactivate_timer = 5;
 	}
 
 	switch_mutex_unlock(globals.pvt_lock);
@@ -935,7 +943,16 @@ static switch_status_t load_config(void)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 {
-	
+	if (globals.monitor_running == 1) {
+		int sanity = 20;
+		globals.monitor_running = -1;
+		while(globals.monitor_running) {
+			switch_yield(1000000);
+			if (!--sanity) {
+				break;
+			}
+		}
+	}
 
 	if (globals.read_codec.implementation) {
 		switch_core_codec_destroy(&globals.read_codec);
@@ -945,6 +962,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 		switch_core_codec_destroy(&globals.write_codec);
 	}
 
+	deactivate_audio_device();
+	deactivate_ring_device();
 
 	switch_core_timer_destroy(&globals.timer);
 	switch_core_timer_destroy(&globals.hold_timer);
@@ -956,6 +975,21 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_portaudio_runtime)
+{
+	globals.monitor_running = 1;
+	while(globals.monitor_running == 1) {
+		if (!globals.call_list && globals.deactivate_timer > 0) {
+			if (!--globals.deactivate_timer) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No more channels, deactivating audio\n");
+				deactivate_audio_device();
+			}
+		}
+		switch_yield(1000000);
+	}
+	globals.monitor_running = 0;
+	return SWITCH_STATUS_TERM;
+}
 
 static int get_dev_by_number(char *numstr, int in)
 {
@@ -1312,7 +1346,7 @@ static switch_status_t engage_device(int sample_rate, int codec_ms)
 							  globals.read_codec.implementation->samples_per_packet, globals.dual_streams);
 		/* UNLOCKED ************************************************************************************************* */
 		switch_mutex_unlock(globals.device_lock);
-
+		
 		if (err != paNoError) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device!\n");
 			switch_core_codec_destroy(&globals.read_codec);
@@ -1358,6 +1392,8 @@ static switch_status_t engage_ring_device(int sample_rate, int channels)
 			}
 		}
 	}
+
+	switch_yield(10000);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Engage ring device! rate: %d channels %d\n", sample_rate, channels);
 	return SWITCH_STATUS_SUCCESS;

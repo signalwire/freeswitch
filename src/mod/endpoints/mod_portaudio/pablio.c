@@ -348,6 +348,8 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	}
 
 	*rwblPtr = aStream;
+	
+	switch_yield(500000);
 
 	return paNoError;
 
@@ -405,6 +407,8 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 	PABLIO_TermFIFO(&aStream->inFIFO);
 	PABLIO_TermFIFO(&aStream->outFIFO);
 	free(aStream);
+
+	switch_yield(500000);
 
 	return paNoError;
 }
