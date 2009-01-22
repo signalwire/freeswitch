@@ -260,15 +260,9 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 
 	/* Allocate PABLIO_Stream structure for caller. */
 	aStream = (PABLIO_Stream *) malloc(sizeof(PABLIO_Stream));
-	if (aStream == NULL)
-		return paInsufficientMemory;
+	switch_assert(aStream);
 	memset(aStream, 0, sizeof(PABLIO_Stream));
 	
-	/* Initialize PortAudio  */
-	err = Pa_Initialize();
-	if (err != paNoError)
-		goto error;
-
 	if (inputParameters) {
 		channels = inputParameters->channelCount;
 	} else if (outputParameters) {
@@ -282,32 +276,24 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 
 	if (inputParameters) {
 		err = PABLIO_InitFIFO(&aStream->inFIFO, numFrames, aStream->bytesPerFrame);
-		if (err != paNoError)
+		if (err != paNoError) {
 			goto error;
-
+		}
 		aStream-> has_in = 1;
-
 	}
 
 	if (outputParameters) {
 		err = PABLIO_InitFIFO(&aStream->outFIFO, numFrames, aStream->bytesPerFrame);
-		if (err != paNoError)
+		if (err != paNoError) {
 			goto error;
-
+		}
 		aStream-> has_out = 1;
 	}
-
-	/* Make Write FIFO appear full initially. */
-	//numBytes = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
-	//PaUtil_AdvanceRingBufferWriteIndex(&aStream->outFIFO, numBytes);
-
 
 	/* Open a PortAudio stream that we will use to communicate with the underlying
 	 * audio drivers. */
 
-	aStream->do_dual = do_dual;
-	
-
+	aStream->do_dual = do_dual;	
 
 	if (aStream->do_dual) {
 		err = Pa_OpenStream(&aStream->istream, inputParameters, NULL, sampleRate, samples_per_packet, streamFlags, iblockingIOCallback, aStream);
@@ -322,8 +308,9 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 		err = Pa_OpenStream(&aStream->iostream, inputParameters, outputParameters, sampleRate, samples_per_packet, streamFlags, ioblockingIOCallback, aStream);
 	}
 
-	if (err != paNoError)
+	if (err != paNoError) {
 		goto error;
+	}
 	
 	if (aStream->do_dual) {
 		err = Pa_StartStream(aStream->istream);
@@ -338,7 +325,6 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 			goto error;
 		}
 
-
 	} else {
 		err = Pa_StartStream(aStream->iostream);
 	}
@@ -348,13 +334,15 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 	}
 
 	*rwblPtr = aStream;
-	
-	switch_yield(500000);
 
+	switch_yield(500000);
+	
 	return paNoError;
 
   error:
+
 	CloseAudioStream(aStream);
+
 	*rwblPtr = NULL;
 	return err;
 }
@@ -363,14 +351,19 @@ PaError OpenAudioStream(PABLIO_Stream ** rwblPtr,
 PaError CloseAudioStream(PABLIO_Stream * aStream)
 {
 	int bytesEmpty;
-	int byteSize = aStream->outFIFO.bufferSize;
+	int byteSize;
 
-	/* If we are writing data, make sure we play everything written. */
-	if (byteSize > 0) {
-		bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
-		while (bytesEmpty < byteSize) {
-			Pa_Sleep(10);
+	
+	byteSize = aStream->outFIFO.bufferSize;
+
+	if (aStream->has_out) {
+		/* If we are writing data, make sure we play everything written. */
+		if (byteSize > 0) {
 			bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
+			while (bytesEmpty < byteSize) {
+				Pa_Sleep(10);
+				bytesEmpty = PaUtil_GetRingBufferWriteAvailable(&aStream->outFIFO);
+			}
 		}
 	}
 
@@ -404,10 +397,15 @@ PaError CloseAudioStream(PABLIO_Stream * aStream)
 		}
 	}
 
-	PABLIO_TermFIFO(&aStream->inFIFO);
-	PABLIO_TermFIFO(&aStream->outFIFO);
-	free(aStream);
+	if (aStream->has_in) {	
+		PABLIO_TermFIFO(&aStream->inFIFO);
+	}
+	
+	if (aStream->has_out) {
+		PABLIO_TermFIFO(&aStream->outFIFO);
+	}
 
+	free(aStream);
 	switch_yield(500000);
 
 	return paNoError;
