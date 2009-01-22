@@ -1338,8 +1338,8 @@ PaError Pa_CloseStream( PaStream* stream )
         else if( result == 0 )
             result = interface->Abort( stream );
 
-        if( result == paNoError )                 /** @todo REVIEW: shouldn't we close anyway? */
-            result = interface->Close( stream );
+        //if( result == paNoError )                 /** @todo REVIEW: shouldn't we close anyway? (probably!)*/
+		result = interface->Close( stream );
     }
 
     PA_LOGAPI_EXIT_PAERROR( "Pa_CloseStream", result );
