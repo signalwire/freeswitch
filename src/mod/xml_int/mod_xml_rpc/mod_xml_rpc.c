@@ -148,7 +148,7 @@ static switch_status_t http_stream_write(switch_stream_handle_t *handle, const c
 	return ret ? SWITCH_STATUS_FALSE : SWITCH_STATUS_SUCCESS;
 }
 
-static abyss_bool http_directory_auth(TSession * r, char *domain_name)
+static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 {
 	char *p;
 	char *x;
@@ -210,7 +210,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 				switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(params);
 				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", "check");
-
+				
 				if (switch_xml_locate_user("id", user, domain_name, NULL, &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
 					switch_event_destroy(&params);
 					goto fail;
@@ -218,17 +218,20 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 
 				switch_event_destroy(&params);
 				box = switch_xml_attr_soft(x_user, "mailbox");
-				
-				for (x_param = switch_xml_child(x_domain, "param"); x_param; x_param = x_param->next) {
-					const char *var = switch_xml_attr_soft(x_param, "name");
-					const char *val = switch_xml_attr_soft(x_param, "value");
 
-					if (!strcasecmp(var, "password")) {
-						mypass1 = val;
-					} else if (!strcasecmp(var, "vm-password")) {
-						mypass2 = val;
-					} else if (!strncasecmp(var, "http-", 5)) {
-						ResponseAddField(r, (char *) var, (char *) val);
+				if ((x_params = switch_xml_child(x_domain, "params"))) {
+				
+					for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
+						const char *var = switch_xml_attr_soft(x_param, "name");
+						const char *val = switch_xml_attr_soft(x_param, "value");
+						
+						if (!strcasecmp(var, "password")) {
+							mypass1 = val;
+						} else if (!strcasecmp(var, "vm-password")) {
+							mypass2 = val;
+						} else if (!strncasecmp(var, "http-", 5)) {
+							ResponseAddField(r, (char *) var, (char *) val);
+						}
 					}
 				}
 
@@ -240,7 +243,7 @@ static abyss_bool http_directory_auth(TSession * r, char *domain_name)
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
 					const char *val = switch_xml_attr_soft(x_param, "value");
-
+					
 					if (!strcasecmp(var, "password")) {
 						mypass1 = val;
 					} else if (!strcasecmp(var, "vm-password")) {
