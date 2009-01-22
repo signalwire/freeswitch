@@ -313,6 +313,8 @@ endif
 core:
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
 
+distclean: clean
+
 core-clean: clean_core
 
 core-install: core_install
