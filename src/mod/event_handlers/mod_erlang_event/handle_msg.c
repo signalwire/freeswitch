@@ -523,28 +523,25 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, int arity, ei
 
 	if (arity != 3 ||
 		ei_decode_string(buf->buff, &buf->index, uuid_str) ||
-		ei_decode_string(buf->buff, &buf->index, reg_name)) {
+		ei_decode_atom(buf->buff, &buf->index, reg_name)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		switch_core_session_t *session;
 		if (!switch_strlen_zero(uuid_str) && (session = switch_core_session_locate(uuid_str))) {
 			/* create a new sesion list element and attach it to this listener */
 			if (attach_call_to_listener(listener,reg_name,session)) {
 				ei_x_encode_atom(rbuf, "ok");
-			}
-			else {
+			} else {
 				ei_x_encode_tuple_header(rbuf, 2);
 				ei_x_encode_atom(rbuf, "error");
 				ei_x_encode_atom(rbuf, "badsession");
 			}
-		}
-		else {
+		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
-			ei_x_encode_atom(rbuf, "badarg");
+			ei_x_encode_atom(rbuf, "baduuid");
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;

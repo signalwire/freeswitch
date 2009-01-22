@@ -167,7 +167,7 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ei initialized at %s\n", thisnodename);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ei initialized node at %s\n", thisnodename);
 	return SWITCH_STATUS_SUCCESS;
 }
 
