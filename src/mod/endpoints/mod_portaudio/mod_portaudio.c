@@ -919,6 +919,10 @@ static switch_status_t load_config(void)
 		globals.codec_ms = 20;
 	}
 
+	if (!globals.dual_streams) {
+		globals.dual_streams = 0;
+	}
+
 	if (!globals.ring_interval) {
 		globals.ring_interval = 5;
 	}
