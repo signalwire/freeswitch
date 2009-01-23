@@ -2044,7 +2044,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		switch_ivr_sleep(*bleg, 0, SWITCH_TRUE, NULL);
 	}
 
-	if (oglobals.session) {
+	if (oglobals.session && status == SWITCH_STATUS_SUCCESS) {
 		switch_ivr_sleep(oglobals.session, 0, SWITCH_TRUE, NULL);
 	}
 
