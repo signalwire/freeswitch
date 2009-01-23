@@ -841,7 +841,7 @@ typedef enum {
 	CF_INNER_BRIDGE,
 	CF_REQ_MEDIA,
 	CF_VERBOSE_EVENTS,
-
+	CF_PAUSE_BUGS,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;

@@ -46,6 +46,16 @@ static void switch_core_media_bug_destroy(switch_media_bug_t *bug)
 	}
 }
 
+SWITCH_DECLARE(void) switch_core_media_bug_pause(switch_core_session_t *session)
+{
+	switch_channel_set_flag(session->channel, CF_PAUSE_BUGS);
+}
+
+SWITCH_DECLARE(void) switch_core_media_bug_resume(switch_core_session_t *session)
+{
+	switch_channel_clear_flag(session->channel, CF_PAUSE_BUGS);
+}
+
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(switch_media_bug_t *bug, uint32_t flag)
 {
 	return switch_test_flag(bug, flag);

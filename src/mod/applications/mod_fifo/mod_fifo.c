@@ -767,6 +767,8 @@ SWITCH_STANDARD_APP(fifo_function)
 	check_string(moh);
 	switch_assert(node);
 
+	switch_core_media_bug_pause(session);
+
 	if (!consumer) {
 		switch_core_session_t *other_session;
 		switch_channel_t *other_channel;
@@ -926,7 +928,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		if (!aborted && switch_channel_ready(channel)) {
 			switch_channel_set_state(channel, CS_HIBERNATE);
-			return;
+			goto done;
 		} else {
 			ts = switch_timestamp_now();
 			switch_time_exp_lt(&tm, ts);
@@ -956,7 +958,8 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_ivr_session_transfer(session, cd.orbit_exten, NULL, NULL);
 		}
 
-		return;
+		goto done;
+
 	} else {					/* consumer */
 		void *pop = NULL;
 		switch_frame_t *read_frame;
@@ -987,7 +990,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				strat = STRAT_WAITING_LONGER;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid strategy\n");
-				return;
+				goto done;
 			}
 		}
 
@@ -996,7 +999,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				do_wait = 0;
 			} else if (strcasecmp(argv[2], "wait")) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "USAGE %s\n", FIFO_USAGE);
-				return;
+				goto done;
 			}
 		}
 
@@ -1235,8 +1238,12 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_ivr_record_session(session, expanded, 0, NULL);
 				}
 
+				switch_core_media_bug_resume(session);
+				switch_core_media_bug_resume(other_session);
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
-
+				switch_core_media_bug_pause(session);
+				switch_core_media_bug_pause(other_session);
+				
 				if (record_template) {
 					switch_ivr_stop_record_session(session, expanded);
 					if (expanded != record_template) {
@@ -1299,7 +1306,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				if (!switch_strlen_zero(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
 					while(switch_channel_ready(channel)) {
 						char terminator = 0;
-
+						
 						if (fifo_consumer_wrapup_time) {
 							wrapup_time_elapsed = (switch_timestamp_now() - wrapup_time_started) / 1000;
 							if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
@@ -1362,6 +1369,11 @@ SWITCH_STANDARD_APP(fifo_function)
 			}
 		}
 	}
+
+ done:
+
+	switch_core_media_bug_resume(session);
+
 }
 
 struct xml_helper {

@@ -143,6 +143,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(_In_ switch_core_sessi
 														  _In_ switch_media_bug_callback_t callback,
 														  _In_opt_ void *user_data,
 														  _In_ time_t stop_time, _In_ switch_media_bug_flag_t flags, _Out_ switch_media_bug_t **new_bug);
+
+SWITCH_DECLARE(void) switch_core_media_bug_pause(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_media_bug_resume(switch_core_session_t *session);
+
 /*!
   \brief Obtain private data from a media bug
   \param bug the bug to get the data from
