@@ -953,7 +953,7 @@ static void parse_gateway_subscriptions(sofia_profile_t *profile, sofia_gateway_
 
 static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 {
-	switch_xml_t gateway_tag, param, gw_subs_tag;
+	switch_xml_t gateway_tag, param = NULL, x_params, gw_subs_tag;
 	sofia_gateway_t *gp;
 
 	for (gateway_tag = switch_xml_child(gateways_tag, "gateway"); gateway_tag; gateway_tag = gateway_tag->next) {
@@ -1001,8 +1001,55 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->next = NULL;
 			gateway->ping = 0;
 			gateway->ping_freq = 0;
+			
+			
+			if ((x_params = switch_xml_child(gateway_tag, "variables"))) {
+				param = switch_xml_child(x_params, "variable");
+			} else {
+				param = switch_xml_child(gateway_tag, "variable");
+			}
+			
+			
+			for (; param; param = param->next) {
+				const char *var = switch_xml_attr(param, "name");
+				const char *val = switch_xml_attr(param, "value");
+				const char *direction = switch_xml_attr(param, "direction");
+				int in = 0, out = 0;
+				
+				if (var && val) {
+					if (direction) {
+						if (!strcasecmp(direction, "inbound")) {
+							in = 1;
+						} else if (!strcasecmp(direction, "outbound")) {
+							out = 1;
+						}
+					} else {
+						in = out = 1;
+					}
 
-			for (param = switch_xml_child(gateway_tag, "param"); param; param = param->next) {
+					if (in) {
+						if (!gateway->ib_vars) {
+							switch_event_create(&gateway->ib_vars, SWITCH_EVENT_GENERAL);
+						}
+						switch_event_add_header_string(gateway->ib_vars, SWITCH_STACK_BOTTOM, var, val);
+					}
+
+					if (out) {
+						if (!gateway->ob_vars) {
+							switch_event_create(&gateway->ob_vars, SWITCH_EVENT_GENERAL);
+						}
+						switch_event_add_header_string(gateway->ob_vars, SWITCH_STACK_BOTTOM, var, val);
+					}
+				}
+			}
+
+			if ((x_params = switch_xml_child(gateway_tag, "params"))) {
+				param = switch_xml_child(x_params, "param");
+			} else {
+				param = switch_xml_child(gateway_tag, "param");
+			}
+			
+			for (; param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
 				char *val = (char *) switch_xml_attr_soft(param, "value");
 				
@@ -1144,12 +1191,13 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 
 			sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
-			format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
-			gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
+			format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
+			gateway->extension = switch_core_strdup(gateway->pool, extension);
+			gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
 															sipip,
-															sofia_glue_transport_has_tls(gateway->register_transport) ? profile->tls_sip_port : profile->
-															sip_port, params);
-
+															sofia_glue_transport_has_tls(gateway->register_transport) ?
+															profile->tls_sip_port : profile->sip_port, params);
+			
 			if (!strncasecmp(proxy, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
 				gateway->register_to = switch_core_sprintf(gateway->pool, "sip:%s@%s", username, proxy + 4);
@@ -4024,6 +4072,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		check_decode(destination_number, session);
 	}
 
+
 	if (sip->sip_to && sip->sip_to->a_url) {
 		const char *host, *user;
 		int port;
@@ -4174,20 +4223,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
 	}
 
-	if (sip->sip_request->rq_url) {
-		sofia_gateway_t *gateway;
-		char *from_key;
-		char *user = (char *) sip->sip_request->rq_url->url_user;
-		check_decode(user, session);
-		from_key = switch_core_session_sprintf(session, "sip:%s@%s", user, sip->sip_request->rq_url->url_host);
-
-		if ((gateway = sofia_reg_find_gateway(from_key))) {
-			context = gateway->register_context;
-			switch_channel_set_variable(channel, "sip_gateway", gateway->name);
-			sofia_reg_release_gateway(gateway);
-		}
-	}
-
 	if (!context) {
 		context = switch_channel_get_variable(channel, "user_context");
 	}
@@ -4219,6 +4254,35 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		switch_channel_set_variable(channel, "presence_id", tmp);
 		free(tmp);
 	}
+
+
+	if (strstr(destination_number, "gw+")) {
+		const char *gw_name = destination_number + 3;
+		sofia_gateway_t *gateway;
+		if (gw_name && (gateway = sofia_reg_find_gateway(gw_name))) {
+			context = switch_core_session_strdup(session, gateway->register_context);
+			switch_channel_set_variable(channel, "sip_gateway", gateway->name);
+
+			if (gateway->extension) {
+				destination_number = switch_core_session_strdup(session, gateway->extension);
+			}
+
+			gateway->ib_calls++;
+
+			if (gateway->ib_vars) {
+				switch_event_header_t *hp;
+				for(hp = gateway->ib_vars->headers; hp; hp = hp->next) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
+									  switch_channel_get_name(channel), hp->name, hp->value);
+					switch_channel_set_variable(channel, hp->name, hp->value);
+				}
+			}
+
+			sofia_reg_release_gateway(gateway);
+		}
+	}
+
+
 
 	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),

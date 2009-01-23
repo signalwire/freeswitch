@@ -1503,22 +1503,25 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 				switch_assert(gp->state < REG_STATE_LAST);
 
 				stream->write_function(stream, "%s\n", line);
-				stream->write_function(stream, "Name    \t\t%s\n", switch_str_nil(gp->name));
-				stream->write_function(stream, "Scheme  \t\t%s\n", switch_str_nil(gp->register_scheme));
-				stream->write_function(stream, "Realm   \t\t%s\n", switch_str_nil(gp->register_realm));
-				stream->write_function(stream, "Username\t\t%s\n", switch_str_nil(gp->register_username));
-				stream->write_function(stream, "Password\t\t%s\n", switch_strlen_zero(gp->register_password) ? "no" : "yes");
-				stream->write_function(stream, "From    \t\t%s\n", switch_str_nil(gp->register_from));
-				stream->write_function(stream, "Contact \t\t%s\n", switch_str_nil(gp->register_contact));
-				stream->write_function(stream, "To      \t\t%s\n", switch_str_nil(gp->register_to));
-				stream->write_function(stream, "Proxy   \t\t%s\n", switch_str_nil(gp->register_proxy));
-				stream->write_function(stream, "Context \t\t%s\n", switch_str_nil(gp->register_context));
-				stream->write_function(stream, "Expires \t\t%s\n", switch_str_nil(gp->expires_str));
-				stream->write_function(stream, "Freq    \t\t%d\n", gp->freq);
-				stream->write_function(stream, "Ping    \t\t%d\n", gp->ping);
-				stream->write_function(stream, "PingFreq\t\t%d\n", gp->ping_freq);
-				stream->write_function(stream, "State   \t\t%s\n", sofia_state_names[gp->state]);
-				stream->write_function(stream, "Status  \t\t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+				stream->write_function(stream, "Name    \t%s\n", switch_str_nil(gp->name));
+				stream->write_function(stream, "Scheme  \t%s\n", switch_str_nil(gp->register_scheme));
+				stream->write_function(stream, "Realm   \t%s\n", switch_str_nil(gp->register_realm));
+				stream->write_function(stream, "Username\t%s\n", switch_str_nil(gp->register_username));
+				stream->write_function(stream, "Password\t%s\n", switch_strlen_zero(gp->register_password) ? "no" : "yes");
+				stream->write_function(stream, "From    \t%s\n", switch_str_nil(gp->register_from));
+				stream->write_function(stream, "Contact \t%s\n", switch_str_nil(gp->register_contact));
+				stream->write_function(stream, "Exten   \t%s\n", switch_str_nil(gp->extension));
+				stream->write_function(stream, "To      \t%s\n", switch_str_nil(gp->register_to));
+				stream->write_function(stream, "Proxy   \t%s\n", switch_str_nil(gp->register_proxy));
+				stream->write_function(stream, "Context \t%s\n", switch_str_nil(gp->register_context));
+				stream->write_function(stream, "Expires \t%s\n", switch_str_nil(gp->expires_str));
+				stream->write_function(stream, "Freq    \t%d\n", gp->freq);
+				stream->write_function(stream, "Ping    \t%d\n", gp->ping);
+				stream->write_function(stream, "PingFreq\t%d\n", gp->ping_freq);
+				stream->write_function(stream, "State   \t%s\n", sofia_state_names[gp->state]);
+				stream->write_function(stream, "Status  \t%s%s\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+				stream->write_function(stream, "CallsIN \t%d\n", gp->ib_calls);
+				stream->write_function(stream, "CallsOUT\t%d\n", gp->ob_calls);
 				stream->write_function(stream, "%s\n", line);
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -1531,51 +1534,51 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				if (!argv[2] || strcasecmp(argv[2], "reg")) {
 					stream->write_function(stream, "%s\n", line);
-					stream->write_function(stream, "Name          \t\t%s\n", switch_str_nil(argv[1]));
-					stream->write_function(stream, "Domain Name   \t\t%s\n", profile->domain_name ? profile->domain_name : "N/A");
+					stream->write_function(stream, "Name             \t%s\n", switch_str_nil(argv[1]));
+					stream->write_function(stream, "Domain Name      \t%s\n", profile->domain_name ? profile->domain_name : "N/A");
 					if (strcasecmp(argv[1], profile->name)) {
-						stream->write_function(stream, "Alias Of      \t\t%s\n", switch_str_nil(profile->name));
+					stream->write_function(stream, "Alias Of         \t%s\n", switch_str_nil(profile->name));
 					}
-					stream->write_function(stream, "DBName        \t\t%s\n", switch_str_nil(profile->dbname));
-					stream->write_function(stream, "Pres Hosts    \t\t%s\n", switch_str_nil(profile->presence_hosts));
-					stream->write_function(stream, "Dialplan      \t\t%s\n", switch_str_nil(profile->dialplan));
-					stream->write_function(stream, "Context       \t\t%s\n", switch_str_nil(profile->context));
-					stream->write_function(stream, "Challenge Realm\t\t%s\n", 
+					stream->write_function(stream, "DBName           \t%s\n", switch_str_nil(profile->dbname));
+					stream->write_function(stream, "Pres Hosts       \t%s\n", switch_str_nil(profile->presence_hosts));
+					stream->write_function(stream, "Dialplan         \t%s\n", switch_str_nil(profile->dialplan));
+					stream->write_function(stream, "Context          \t%s\n", switch_str_nil(profile->context));
+					stream->write_function(stream, "Challenge Realm  \t%s\n", 
 										   switch_strlen_zero(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
-					stream->write_function(stream, "RTP-IP        \t\t%s\n", switch_str_nil(profile->rtpip));
+					stream->write_function(stream, "RTP-IP           \t%s\n", switch_str_nil(profile->rtpip));
 					if (profile->extrtpip) {
-						stream->write_function(stream, "Ext-RTP-IP    \t\t%s\n", profile->extrtpip);
+					stream->write_function(stream, "Ext-RTP-IP       \t%s\n", profile->extrtpip);
 					}
 
-					stream->write_function(stream, "SIP-IP        \t\t%s\n", switch_str_nil(profile->sipip));
+					stream->write_function(stream, "SIP-IP           \t%s\n", switch_str_nil(profile->sipip));
 					if (profile->extsipip) {
-						stream->write_function(stream, "Ext-SIP-IP    \t\t%s\n", profile->extsipip);
+					stream->write_function(stream, "Ext-SIP-IP       \t%s\n", profile->extsipip);
 					}
-					stream->write_function(stream, "URL           \t\t%s\n", switch_str_nil(profile->url));
-					stream->write_function(stream, "BIND-URL      \t\t%s\n", switch_str_nil(profile->bindurl));
+					stream->write_function(stream, "URL              \t%s\n", switch_str_nil(profile->url));
+					stream->write_function(stream, "BIND-URL         \t%s\n", switch_str_nil(profile->bindurl));
 					if (sofia_test_pflag(profile, PFLAG_TLS)) {
-						stream->write_function(stream, "TLS-URL      \t\t%s\n", switch_str_nil(profile->tls_url));
-						stream->write_function(stream, "TLS-BIND-URL      \t%s\n", switch_str_nil(profile->tls_bindurl));
+					stream->write_function(stream, "TLS-URL          \t%s\n", switch_str_nil(profile->tls_url));
+					stream->write_function(stream, "TLS-BIND-URL     \t%s\n", switch_str_nil(profile->tls_bindurl));
 					}
-					stream->write_function(stream, "HOLD-MUSIC    \t\t%s\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
-					stream->write_function(stream, "CODECS        \t\t%s\n", switch_str_nil(profile->codec_string));
-					stream->write_function(stream, "TEL-EVENT     \t\t%d\n", profile->te);
+					stream->write_function(stream, "HOLD-MUSIC       \t%s\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
+					stream->write_function(stream, "CODECS           \t%s\n", switch_str_nil(profile->codec_string));
+					stream->write_function(stream, "TEL-EVENT        \t%d\n", profile->te);
 					if (profile->dtmf_type == DTMF_2833) {
-						stream->write_function(stream, "DTMF-MODE     \t\trfc2833\n");
+					stream->write_function(stream, "DTMF-MODE        \trfc2833\n");
 					} else if (profile->dtmf_type == DTMF_INFO) {
-						stream->write_function(stream, "DTMF-MODE     \t\tinfo\n");
+					stream->write_function(stream, "DTMF-MODE        \tinfo\n");
 					} else {
-						stream->write_function(stream, "DTMF-MODE     \t\tnone\n");
+					stream->write_function(stream, "DTMF-MODE        \tnone\n");
 					}
-					stream->write_function(stream, "CNG           \t\t%d\n", profile->cng_pt);
-					stream->write_function(stream, "SESSION-TO    \t\t%d\n", profile->session_timeout);
-					stream->write_function(stream, "MAX-DIALOG    \t\t%d\n", profile->max_proceeding);
-					stream->write_function(stream, "NOMEDIA       \t\t%s\n", switch_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
-					stream->write_function(stream, "LATE-NEG      \t\t%s\n", switch_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
-					stream->write_function(stream, "PROXY-MEDIA   \t\t%s\n", switch_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
-					stream->write_function(stream, "AGGRESSIVENAT \t\t%s\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
-					stream->write_function(stream, "STUN_ENABLED \t\t%s\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
-					stream->write_function(stream, "STUN_AUTO_DISABLE \t%s\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+					stream->write_function(stream, "CNG              \t%d\n", profile->cng_pt);
+					stream->write_function(stream, "SESSION-TO       \t%d\n", profile->session_timeout);
+					stream->write_function(stream, "MAX-DIALOG       \t%d\n", profile->max_proceeding);
+					stream->write_function(stream, "NOMEDIA          \t%s\n", switch_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
+					stream->write_function(stream, "LATE-NEG         \t%s\n", switch_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
+					stream->write_function(stream, "PROXY-MEDIA      \t%s\n", switch_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
+					stream->write_function(stream, "AGGRESSIVENAT    \t%s\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
+					stream->write_function(stream, "STUN_ENABLED     \t%s\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
+					stream->write_function(stream, "STUN_AUTO_DISABLE\t%s\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
 				}
 				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
@@ -1695,6 +1698,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				stream->write_function(stream, "<Password>%s</Password>\n", switch_strlen_zero(gp->register_password) ? "no" : "yes");
 				stream->write_function(stream, "<From>%s</From>\n", switch_amp_encode(switch_str_nil(gp->register_from),xmlbuf,buflen));
 				stream->write_function(stream, "<Contact>%s</Contact>\n", switch_amp_encode(switch_str_nil(gp->register_contact),xmlbuf,buflen));
+				stream->write_function(stream, "<Exten>%s</Exten>\n", switch_amp_encode(switch_str_nil(gp->extension),xmlbuf,buflen));
 				stream->write_function(stream, "<To>%s</To>\n", switch_str_nil(gp->register_to));
 				stream->write_function(stream, "<Proxy>%s</Proxy>\n", switch_str_nil(gp->register_proxy));
 				stream->write_function(stream, "<Context>%s</Context>\n", switch_str_nil(gp->register_context));
@@ -1704,6 +1708,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				stream->write_function(stream, "<PingFreq>%d</PingFreq>\n", gp->ping_freq);
 				stream->write_function(stream, "<State>%s</State>\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "<Status>%s%s</Status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+				stream->write_function(stream, "<CallsIN>%d</CallsIN>\n", gp->ib_calls);
+				stream->write_function(stream, "<CallsOUT>%d</CallsOUT>\n", gp->ob_calls);
 				stream->write_function(stream, "</Gateway>\n");
 				sofia_reg_release_gateway(gp);
 			} else {
@@ -2424,10 +2430,12 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		} else {
 			tech_pvt->invite_contact = switch_core_session_strdup(nsession, gateway_ptr->register_contact);
 		}
+		
+		gateway_ptr->ob_calls++;
 
-		if (gateway_ptr->vars) {
+		if (gateway_ptr->ob_vars) {
 			switch_event_header_t *hp;
-			for(hp = gateway_ptr->vars->headers; hp; hp = hp->next) {
+			for(hp = gateway_ptr->ob_vars->headers; hp; hp = hp->next) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s setting variable [%s]=[%s]\n",
 								  switch_channel_get_name(nchannel), hp->name, hp->value);
 				switch_channel_set_variable(nchannel, hp->name, hp->value);

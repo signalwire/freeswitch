@@ -315,6 +315,7 @@ struct sofia_gateway {
 	char *register_password;
 	char *register_from;
 	char *register_contact;
+	char *extension;
 	char *register_to;
 	char *register_proxy;
 	char *register_sticky_proxy;
@@ -334,7 +335,10 @@ struct sofia_gateway {
 	reg_state_t state;
 	switch_memory_pool_t *pool;
 	int deleted;
-	switch_event_t *vars;
+	switch_event_t *ib_vars;
+	switch_event_t *ob_vars;
+	uint32_t ib_calls;
+	uint32_t ob_calls;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int failures;
 	struct sofia_gateway *next;
