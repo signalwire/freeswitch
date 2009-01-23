@@ -845,6 +845,8 @@ static switch_status_t load_config(void)
 		return SWITCH_STATUS_TERM;
 	}
 
+	globals.dual_streams = 0;
+
 	globals.indev = globals.outdev = globals.ringdev = -1;
 	globals.sample_rate = 8000;
 
@@ -917,10 +919,6 @@ static switch_status_t load_config(void)
 
 	if (!globals.codec_ms) {
 		globals.codec_ms = 20;
-	}
-
-	if (!globals.dual_streams) {
-		globals.dual_streams = 0;
 	}
 
 	if (!globals.ring_interval) {
