@@ -122,6 +122,80 @@ void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *ta
 }
 
 
+/* function to spawn a process on a remote node */
+int ei_spawn(struct ei_cnode_s *ec, int sockfd, char *module, char *function, int argc, char **argv)
+{
+	ei_x_buff buf;
+	ei_x_new_with_version(&buf);
+	erlang_ref ref;
+	int i;
+
+	ei_x_encode_tuple_header(&buf, 3);
+	ei_x_encode_atom(&buf, "$gen_call");
+	ei_x_encode_tuple_header(&buf, 2);
+	ei_x_encode_pid(&buf, ei_self(ec)); 
+	/* TODO - use this reference to determine the response */
+	ei_init_ref(ec, &ref);
+	ei_x_encode_ref(&buf, &ref);
+	ei_x_encode_tuple_header(&buf, 5);
+	ei_x_encode_atom(&buf, "spawn");
+	ei_x_encode_atom(&buf, module);
+	ei_x_encode_atom(&buf, function);
+
+	/* argument list */
+	ei_x_encode_list_header(&buf, argc);
+	for(i = 0; i < argc && argv[i]; i++) {
+		ei_x_encode_atom(&buf, argv[i]);
+	}
+
+	ei_x_encode_empty_list(&buf);
+
+	/*if (i != argc - 1) {*/
+		/* horked argument list */
+	/*}*/
+
+	ei_x_encode_pid(&buf, ei_self(ec)); /* should really be a valid group leader */
+
+	char *pbuf = 0;
+	i = 1;
+	ei_s_print_term(&pbuf, buf.buff, &i);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "spawn returning %s\n", pbuf);
+
+	return ei_reg_send(ec, sockfd, "net_kernel", buf.buff, buf.index);
+}
+
+
+/* stolen from erts/emulator/beam/erl_term.h */
+#define _REF_NUM_SIZE    18
+#define MAX_REFERENCE    (1 << _REF_NUM_SIZE)
+
+/* function to fill in an erlang reference struct */
+void ei_init_ref(ei_cnode *ec, erlang_ref *ref)
+{
+	memset(ref, 0, sizeof(*ref)); /* zero out the struct */
+	snprintf(ref->node, MAXATOMLEN, ec->thisnodename);
+	
+	switch_mutex_lock(globals.ref_mutex);
+	globals.reference0++;
+	if (globals.reference0 >= MAX_REFERENCE) {
+		globals.reference0 = 0;
+		globals.reference1++;
+		if (globals.reference1 == 0) {
+			globals.reference2++;
+		}
+	}
+
+	ref->n[0] = globals.reference0;
+	ref->n[1] = globals.reference1;
+	ref->n[2] = globals.reference2;
+
+	switch_mutex_unlock(globals.ref_mutex);
+
+	ref->creation = 1; /* why is this 1 */
+	ref->len = 3; /* why is this 3 */
+}
+
+
 switch_status_t initialise_ei(struct ei_cnode_s *ec)
 {
 	switch_status_t rv;
@@ -167,7 +241,6 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 		return SWITCH_STATUS_FALSE;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "ei initialized node at %s\n", thisnodename);
 	return SWITCH_STATUS_SUCCESS;
 }
 

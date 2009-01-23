@@ -592,6 +592,8 @@ static void check_event_queue(listener_t *listener)
 static void listener_main_loop(listener_t *listener) 
 {
 	int status = 1;
+	/*int i = 1;*/
+	/*char *pbuf = 0;*/
 
 	while ((status >= 0 || erl_errno == ETIMEDOUT || erl_errno == EAGAIN) && !prefs.done) {
 		erlang_msg msg;
@@ -613,12 +615,20 @@ static void listener_main_loop(listener_t *listener)
 				switch(msg.msgtype) {
 					case ERL_SEND :
 						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_send\n");*/
+						/*i = 1;*/
+						/*ei_s_print_term(&pbuf, buf.buff, &i);*/
+						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_send was message %s\n", pbuf);*/
+
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
 							return;
 						}
 						break;
 					case ERL_REG_SEND :
-						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send\n");*/
+						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send to %s\n", msg.toname);*/
+						/*i = 1;*/
+						/*ei_s_print_term(&pbuf, buf.buff, &i);*/
+						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send was message %s\n", pbuf);*/
+
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
 						    return;
 						}
@@ -980,6 +990,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	switch_application_interface_t *app_interface;
 
 	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
+	
+	/* intialize the unique reference stuff */
+	switch_mutex_init(&globals.ref_mutex, SWITCH_MUTEX_NESTED, pool);
+	globals.reference0 = 0;
+	globals.reference1 = 0;
+	globals.reference2 = 0;
 
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_ALL, SWITCH_EVENT_SUBCLASS_ANY, event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
@@ -1099,7 +1115,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected and published erlang cnode\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected and published erlang cnode at %s\n", ec.thisnodename);
 
 	listen_list.ready = 1;
 

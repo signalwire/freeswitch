@@ -128,6 +128,10 @@ struct api_command_struct {
 struct globals_struct {
 	switch_mutex_t *listener_mutex;
 	switch_event_node_t *node;
+	unsigned int reference0;
+	unsigned int reference1;
+	unsigned int reference2;
+	switch_mutex_t *ref_mutex;
 };
 typedef struct globals_struct globals_t;
 
@@ -182,6 +186,8 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to);
 void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event);
 void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *tag);
+int ei_spawn(struct ei_cnode_s *ec, int sockfd, char *module, char *function, int argc, char **argv);
+void ei_init_ref(struct ei_cnode_s *ec, erlang_ref *ref);
 switch_status_t initialise_ei(struct ei_cnode_s *ec);
 #define ei_encode_switch_event(_b, _e) ei_encode_switch_event_tag(_b, _e, "event")
 
