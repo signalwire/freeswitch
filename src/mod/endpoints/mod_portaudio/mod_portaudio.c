@@ -782,8 +782,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_portaudio_load)
 	/* dual streams makes portaudio on solaris choke */
 #if defined(sun) || defined(__sun)
 	globals.dual_streams = 0;
-#else
-	globals.dual_streams = 1;
 #endif
 	
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
@@ -863,6 +861,12 @@ static switch_status_t load_config(void)
 				set_global_ring_file(val);
 			} else if (!strcmp(var, "hold-file")) {
 				set_global_hold_file(val);
+			} else if (!strcmp(var, "dual-streams")) {
+				if (switch_true(val)) {
+					globals.dual_streams = 1;
+				} else {
+					globals.dual_streams = 0;
+				}
 			} else if (!strcmp(var, "timer-name")) {
 				set_global_timer_name(val);
 			} else if (!strcmp(var, "sample-rate")) {
