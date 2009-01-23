@@ -1777,7 +1777,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		"pa help\n"
 		"pa dump\n"
 		"pa rescan\n"
-		"pa call <dest> [<dialplan> <cid_name> <cid_num> <rate>]\n"
+		"pa call <dest> [<dialplan> <cid_name> <cid_num>]\n"
 		"pa answer [<call_id>]\n"
 		"pa hangup [<call_id>]\n"
 		"pa list\n"
