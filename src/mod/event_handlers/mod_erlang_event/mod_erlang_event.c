@@ -864,10 +864,11 @@ static listener_t* new_listener(struct ei_cnode_s *ec, int clientfd)
 	switch_queue_create(&listener->event_queue, SWITCH_CORE_QUEUE_LEN, listener_pool);
 	switch_queue_create(&listener->log_queue, SWITCH_CORE_QUEUE_LEN, listener_pool);
 		
-	listener->ec = ec;
 	listener->sockfd = clientfd;
 	listener->pool = listener_pool;
 	listener_pool = NULL;
+	listener->ec = switch_core_alloc(listener->pool, sizeof(ei_cnode));
+	memcpy(listener->ec, ec, sizeof(ei_cnode));
 	listener->level = SWITCH_LOG_DEBUG;
 	switch_mutex_init(&listener->flag_mutex, SWITCH_MUTEX_NESTED, listener->pool);
 	switch_mutex_init(&listener->sock_mutex, SWITCH_MUTEX_NESTED, listener->pool);
@@ -945,6 +946,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			while (!(pid = (erlang_pid *) switch_core_hash_find(listener->spawn_pid_hash, hash))) {
 				if (i > 50) { /* half a second timeout */
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "timed out!\n");
+					switch_core_session_rwunlock(session);
 					return NULL;
 				}
 				i++;
@@ -1013,7 +1015,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		return;
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "enter erlang_outbound_function %s %s\n",reg_name, node);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "enter erlang_outbound_function %s %s\n",argv[0], node);
 
 	/* first work out if there is a listener already talking to the node we want to talk to */
 	listener = find_listener(node);
@@ -1022,6 +1024,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new listener for session\n");
 		new_session = SWITCH_TRUE;
 		listener = new_outbound_listener(node);
+		add_listener(listener);
 	}
 	else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using existing listener for session\n");
