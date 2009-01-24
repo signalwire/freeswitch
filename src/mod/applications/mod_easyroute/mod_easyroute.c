@@ -197,8 +197,8 @@ static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways
 
 static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int noat, char *seperator)
 {	
-#ifdef SWITCH_HAVE_ODBC
 	switch_status_t sstatus = SWITCH_STATUS_SUCCESS;
+#ifdef SWITCH_HAVE_ODBC
 	char *sql = NULL;
 	route_callback_t pdata;
 
