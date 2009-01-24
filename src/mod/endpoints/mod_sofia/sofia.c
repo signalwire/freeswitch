@@ -4474,8 +4474,8 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 		switch_channel_t *channel = switch_core_session_get_channel(bleg);
 		const char *ua = switch_channel_get_variable(channel, "sip_user_agent");
 		
-		if (ua && switch_stristr("cisco", ua)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "If you were using some other phone besides a Cisco, we would have updated the caller id display on your phone for you!\n");
+		if (ua && !switch_stristr("snom", ua)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "If you were using a Snom phone, we would have updated the caller id display on your phone for you!\n");
 			return;
 		}
 
@@ -4494,6 +4494,7 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 		}
 	}
 }
+
 /*
  * This subroutine will take the a_params of a sip_addr_s structure and spin through them.
  * Each param will be used to create a channel variable.
