@@ -49,7 +49,7 @@
 #define M_PI (3.14159265)
 #endif
 
-#define SAMPLE_RATE (8000)
+#define SAMPLE_RATE (44100)
 
 typedef struct
 {
