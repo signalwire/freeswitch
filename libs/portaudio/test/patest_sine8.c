@@ -45,15 +45,15 @@
 #include <math.h>
 #include "portaudio.h"
 
-#define NUM_SECONDS   (8)
+#define NUM_SECONDS   (1)
 #define SAMPLE_RATE   (44100)
 #define TABLE_SIZE    (200)
 #define TEST_UNSIGNED (0)
 
 #if TEST_UNSIGNED
-#define TEST_FORMAT   paUInt8
+#define TEST_FORMAT   paUInt16
 #else
-#define TEST_FORMAT   paInt8
+#define TEST_FORMAT   paInt16
 #endif
 
 #ifndef M_PI

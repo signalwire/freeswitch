@@ -43,10 +43,11 @@
 #include <stdio.h>
 #include <math.h>
 #include "portaudio.h"
+#include <fcntl.h>
 
-#define NUM_SECONDS        (10)
-#define SAMPLE_RATE        (44100)
-#define FRAMES_PER_BUFFER  (512)
+#define NUM_SECONDS        (20)
+#define SAMPLE_RATE        (8000)
+#define FRAMES_PER_BUFFER  (80)
 #define LEFT_FREQ          (SAMPLE_RATE/256.0)  /* So we hit 1.0 */
 #define RIGHT_FREQ         (500.0)
 #define AMPLITUDE          (1.0)
@@ -91,6 +92,8 @@ typedef float               SAMPLE_t;
 #endif
 
 
+static int fd = 0;
+
 typedef struct
 {
     double left_phase;
@@ -120,14 +123,26 @@ static int patestCallback( const void *inputBuffer,
     {
         framesToCalc = data->framesToGo;
         data->framesToGo = 0;
-        finished = 1;
+        //finished = 1;
     }
     else
     {
         framesToCalc = framesPerBuffer;
         data->framesToGo -= framesPerBuffer;
     }
+	
 
+	if (!fd) {
+        fd = open("/root/sr8k.raw", O_RDONLY, 0);
+    }
+	
+	printf("WTF %d\n", framesToCalc);
+
+	i = read(fd, outputBuffer, framesToCalc * 2);
+	
+	if (!i) finished = 1;
+
+	/*
     for( i=0; i<framesToCalc; i++ )
     {
         data->left_phase += (LEFT_FREQ / SAMPLE_RATE);
@@ -138,12 +153,16 @@ static int patestCallback( const void *inputBuffer,
         if( data->right_phase > 1.0) data->right_phase -= 1.0;
         *out++ = DOUBLE_TO_SAMPLE( AMPLITUDE * sin( (data->right_phase * M_PI * 2. )));
     }
+	*/
+
     /* zero remainder of final buffer */
+#if 0
     for( ; i<(int)framesPerBuffer; i++ )
     {
         *out++ = SAMPLE_ZERO; /* left */
         *out++ = SAMPLE_ZERO; /* right */
     }
+#endif
     return finished;
 }
 /*******************************************************************/
@@ -165,7 +184,7 @@ int main(void)
 
 
     outputParameters.device           = Pa_GetDefaultOutputDevice(); /* Default output device. */
-    outputParameters.channelCount     = 2;                           /* Stereo output */
+    outputParameters.channelCount     = 1;                           /* Stereo output */
     outputParameters.sampleFormat     = TEST_FORMAT;                 /* Selected above. */
     outputParameters.suggestedLatency = Pa_GetDeviceInfo(outputParameters.device)->defaultLowOutputLatency;
     outputParameters.hostApiSpecificStreamInfo = NULL;
