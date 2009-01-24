@@ -544,6 +544,12 @@ static void *SWITCH_THREAD_FUNC write_stream_thread(switch_thread_t *thread, voi
 {
 	shout_context_t *context = (shout_context_t *) obj;
 
+	if (context->thread_running) {
+		context->thread_running++;
+	} else {
+		return NULL;
+	}
+
 	if (!context->lame_ready) {
 		lame_init_params(context->gfp);
 		lame_print_config(context->gfp);
@@ -620,6 +626,7 @@ static void launch_write_stream_thread(shout_context_t *context)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	int sanity = 10;
 
 	if (context->err) {
 		return;
@@ -630,6 +637,11 @@ static void launch_write_stream_thread(shout_context_t *context)
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, write_stream_thread, context, context->memory_pool);
+
+	while (context->thread_running && context->thread_running != 2) {
+		switch_yield(100000);
+		if (!--sanity) break;
+	}
 }
 
 #define TC_BUFFER_SIZE 1024 * 32
