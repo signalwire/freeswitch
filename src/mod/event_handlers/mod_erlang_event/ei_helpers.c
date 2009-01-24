@@ -123,29 +123,29 @@ void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *ta
 
 
 /* function to spawn a process on a remote node */
-int ei_spawn(struct ei_cnode_s *ec, int sockfd, char *module, char *function, int argc, char **argv)
+int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function, int argc, char **argv)
 {
 	ei_x_buff buf;
 	ei_x_new_with_version(&buf);
-	erlang_ref ref;
 	int i;
 
 	ei_x_encode_tuple_header(&buf, 3);
 	ei_x_encode_atom(&buf, "$gen_call");
 	ei_x_encode_tuple_header(&buf, 2);
 	ei_x_encode_pid(&buf, ei_self(ec)); 
-	/* TODO - use this reference to determine the response */
-	ei_init_ref(ec, &ref);
-	ei_x_encode_ref(&buf, &ref);
+	ei_init_ref(ec, ref);
+	ei_x_encode_ref(&buf, ref);
 	ei_x_encode_tuple_header(&buf, 5);
 	ei_x_encode_atom(&buf, "spawn");
 	ei_x_encode_atom(&buf, module);
 	ei_x_encode_atom(&buf, function);
 
 	/* argument list */
-	ei_x_encode_list_header(&buf, argc);
-	for(i = 0; i < argc && argv[i]; i++) {
-		ei_x_encode_atom(&buf, argv[i]);
+	if (argc < 0) {
+		ei_x_encode_list_header(&buf, argc);
+		for(i = 0; i < argc && argv[i]; i++) {
+			ei_x_encode_atom(&buf, argv[i]);
+		}
 	}
 
 	ei_x_encode_empty_list(&buf);
@@ -156,12 +156,11 @@ int ei_spawn(struct ei_cnode_s *ec, int sockfd, char *module, char *function, in
 
 	ei_x_encode_pid(&buf, ei_self(ec)); /* should really be a valid group leader */
 
-	char *pbuf = 0;
-	i = 1;
-	ei_s_print_term(&pbuf, buf.buff, &i);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "spawn returning %s\n", pbuf);
-
+#ifdef EI_DEBUG
+	ei_x_print_reg_msg(&buf, "net_kernel", 1);
+#endif
 	return ei_reg_send(ec, sockfd, "net_kernel", buf.buff, buf.index);
+
 }
 
 
@@ -193,6 +192,69 @@ void ei_init_ref(ei_cnode *ec, erlang_ref *ref)
 
 	ref->creation = 1; /* why is this 1 */
 	ref->len = 3; /* why is this 3 */
+}
+
+
+void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send)
+{
+	char *mbuf = NULL;
+	int i = 1;
+
+	ei_s_print_term(&mbuf, buf->buff, &i);
+
+	if (send) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending %s to %s\n", mbuf, dest);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received %s from %s\n", mbuf, dest);
+	}
+	free(mbuf);
+}
+
+
+void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send)
+{
+	char *pbuf = NULL;
+	int i = 0;
+	ei_x_buff pidbuf;
+
+	ei_x_new(&pidbuf);
+	ei_x_encode_pid(&pidbuf, pid);
+	
+	ei_s_print_term(&pbuf, pidbuf.buff, &i);
+
+	ei_x_print_reg_msg(buf, pbuf, send);
+	free(pbuf);
+}
+
+
+int ei_sendto(ei_cnode *ec, int fd, struct erlang_process *process, ei_x_buff *buf)
+{
+	int ret;
+	if (process->type == ERLANG_PID) {
+		ret = ei_send(fd, &process->pid, buf->buff, buf->index);
+#ifdef EI_DEBUG
+		ei_x_print_msg(buf, &process->pid, 1);
+#endif
+	} else if (process->type == ERLANG_REG_PROCESS) {
+		ret = ei_reg_send(ec, fd, process->reg_name, buf->buff, buf->index);
+#ifdef EI_DEBUG
+		ei_x_print_reg_msg(buf, process->reg_name, 1);
+#endif
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid process type!\n");
+		/* wuh-oh */
+		ret = -1;
+	}
+
+	return ret;
+}
+
+
+/* convert an erlang reference to some kind of hashed string so we can store it as a hash key */
+void ei_hash_ref(erlang_ref *ref, char *output)
+{
+	/* very lazy */
+	sprintf(output, "%d.%d.%d@%s", ref->n[0], ref->n[1], ref->n[2], ref->node);
 }
 
 

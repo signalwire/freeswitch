@@ -107,6 +107,9 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 			switch_mutex_lock(acs->listener->sock_mutex);
 			ei_send(acs->listener->sockfd, &acs->pid, ebuf.buff, ebuf.index);
 			switch_mutex_unlock(acs->listener->sock_mutex);
+#ifdef EI_DEBUG
+			ei_x_print_msg(&ebuf, &acs->pid, 1);
+#endif
 
 			ei_x_free(&ebuf);
 		}
@@ -132,6 +135,9 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		switch_mutex_lock(acs->listener->sock_mutex);
 		ei_send(acs->listener->sockfd, &acs->pid, rbuf.buff, rbuf.index);
 		switch_mutex_unlock(acs->listener->sock_mutex);
+#ifdef EI_DEBUG
+		ei_x_print_msg(&rbuf, &acs->pid, 1);
+#endif
 
 		ei_x_free(&rbuf);
 	}
@@ -492,8 +498,6 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg *msg, ei
 			binding->process.pid = msg->from;
 			binding->listener = listener;
 
-			switch_core_hash_init(&listener->fetch_reply_hash, listener->pool);
-
 			switch_mutex_lock(globals.listener_mutex);
 
 			for (ptr = bindings.head; ptr && ptr->next; ptr = ptr->next);
@@ -532,7 +536,7 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, int arity, ei
 		switch_core_session_t *session;
 		if (!switch_strlen_zero(uuid_str) && (session = switch_core_session_locate(uuid_str))) {
 			/* create a new session list element and attach it to this listener */
-			if (attach_call_to_listener(listener,reg_name,session)) {
+			if (attach_call_to_registered_process(listener, reg_name, session)) {
 				ei_x_encode_atom(rbuf, "ok");
 			} else {
 				ei_x_encode_tuple_header(rbuf, 2);
@@ -660,9 +664,48 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 	return ret;
 }
 
+
+static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+{
+	erlang_ref ref;
+	erlang_pid *pid2, *pid = switch_core_alloc(listener->pool, sizeof(erlang_pid));
+	char hash[100];
+	int arity;
+
+	ei_decode_tuple_header(buf->buff, &buf->index, &arity);
+
+	if (ei_decode_ref(buf->buff, &buf->index, &ref)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid reference\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (ei_decode_pid(buf->buff, &buf->index, pid)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid pid in a reference/pid tuple\n");
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	ei_hash_ref(&ref, hash);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hashed ref to %s\n", hash);
+	
+	if ((pid2 = (erlang_pid *) switch_core_hash_find(listener->spawn_pid_hash, hash))) {
+		if (pid2 == NULL) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found unfilled slot for %s\n", hash);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", hash);
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No slot for %s\n", hash);
+		switch_core_hash_insert(listener->spawn_pid_hash, hash, pid);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
 {
-	int type, size, version;
+	int type, type2, size, version, arity, tmpindex;
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
 
 	buf->index = 0;
@@ -672,7 +715,27 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 	switch(type) {
 	case ERL_SMALL_TUPLE_EXT :
 	case ERL_LARGE_TUPLE_EXT :
-		ret = handle_msg_tuple(listener,msg,buf,rbuf);
+		tmpindex = buf->index;
+		ei_decode_tuple_header(buf->buff, &tmpindex, &arity);
+		ei_get_type(buf->buff, &tmpindex, &type2, &size);
+
+		switch(type2) {
+			case ERL_ATOM_EXT:
+				ret = handle_msg_tuple(listener,msg,buf,rbuf);
+				break;
+			case ERL_REFERENCE_EXT :
+			case ERL_NEW_REFERENCE_EXT :
+				handle_ref_tuple(listener, msg, buf, rbuf);
+				return 0;
+			default :
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d\n", type);
+				/* some other kind of erlang term */
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "undef");
+				break;
+		}
+		
 		break;
 						 
 	case ERL_ATOM_EXT :
@@ -687,17 +750,23 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 		break;
 	}
 
-	if (SWITCH_STATUS_FALSE==ret)
+	if (SWITCH_STATUS_FALSE==ret) {
 		return 0;
-	else {
+	} else if (rbuf->index > 1) {
 		switch_mutex_lock(listener->sock_mutex);
 		ei_send(listener->sockfd, &msg->from, rbuf->buff, rbuf->index);
 		switch_mutex_unlock(listener->sock_mutex);
+#ifdef EI_DEBUG
+		ei_x_print_msg(rbuf, &msg->from, 1);
+#endif
 
 		if (SWITCH_STATUS_SUCCESS==ret)
 			return 0;
 		else /* SWITCH_STATUS_TERM */
 			return 1;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Empty reply, supressing\n");
+		return 0;
 	}
 }
 

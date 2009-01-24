@@ -346,7 +346,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	/*switch_core_hash_insert(ptr->reply_hash, uuid_str, );*/
 
 	switch_mutex_lock(ptr->listener->sock_mutex);
-	ei_send(ptr->listener->sockfd, &ptr->process.pid, buf.buff, buf.index);
+	ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
 	switch_mutex_unlock(ptr->listener->sock_mutex);
 
 	int i = 0;
@@ -418,16 +418,13 @@ static switch_status_t notify_new_session(listener_t *listener, switch_core_sess
 	ei_encode_switch_event(&lbuf, call_event);
 	switch_mutex_lock(listener->sock_mutex);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending initial call event\n");
-	if (process.type == ERLANG_PID) {
-		result = ei_send(listener->sockfd, &process.pid, lbuf.buff, lbuf.index);
-	} else {
-		result = ei_reg_send(listener->ec, listener->sockfd, process.reg_name, lbuf.buff, lbuf.index);
-	}
+	result = ei_sendto(listener->ec, listener->sockfd, &process, &lbuf);
+
+	switch_mutex_unlock(listener->sock_mutex);
 
 	if (result) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to send call event\n");
 	}
-	switch_mutex_unlock(listener->sock_mutex);
 	
 	ei_x_free(&lbuf);
 	return SWITCH_STATUS_SUCCESS;
@@ -467,11 +464,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			ei_encode_switch_event(&ebuf, pevent);
 			
 			switch_mutex_lock(listener->sock_mutex);
-			if (sp->process.type == ERLANG_PID) {
-				ei_send(listener->sockfd, &sp->process.pid, ebuf.buff, ebuf.index);
-			} else {
-				ei_reg_send(listener->ec, listener->sockfd, sp->process.reg_name, ebuf.buff, ebuf.index);
-			}
+			ei_sendto(listener->ec, listener->sockfd, &sp->process, &ebuf);
 			switch_mutex_unlock(listener->sock_mutex);
 
 			/* event is a hangup, so this session can be removed */
@@ -484,8 +477,11 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 				else
 					listener->session_list = sp->next;
 					
+
+				switch_channel_clear_flag(switch_core_session_get_channel(sp->session), CF_CONTROLLED);
 				/* this allows the application threads to exit */
-				switch_clear_flag_locked(sp, LFLAG_SESSION_ALIVE);				
+				switch_clear_flag_locked(sp, LFLAG_SESSION_ALIVE);
+				switch_core_session_rwunlock(sp->session);
 
 				/* TODO
 				   if this listener was created outbound, and the last session has been detached
@@ -546,11 +542,7 @@ static void check_log_queue(listener_t *listener)
 				ei_x_encode_empty_list(&lbuf);
 				
 				switch_mutex_lock(listener->sock_mutex);
-				if (listener->log_process.type == ERLANG_PID) {
-					ei_send(listener->sockfd, &listener->log_process.pid, lbuf.buff, lbuf.index);
-				} else {
-					ei_reg_send(listener->ec, listener->sockfd, listener->log_process.reg_name, lbuf.buff, lbuf.index);
-				}
+				ei_sendto(listener->ec, listener->sockfd, &listener->log_process, &lbuf);
 				switch_mutex_unlock(listener->sock_mutex);
 				
 				ei_x_free(&lbuf);
@@ -576,11 +568,7 @@ static void check_event_queue(listener_t *listener)
 			ei_encode_switch_event(&ebuf, pevent);
 			
 			switch_mutex_lock(listener->sock_mutex);
-			if (listener->log_process.type == ERLANG_PID) {
-				ei_send(listener->sockfd, &listener->log_process.pid, ebuf.buff, ebuf.index);
-			} else {
-				ei_reg_send(listener->ec, listener->sockfd, listener->log_process.reg_name, ebuf.buff, ebuf.index);
-			}
+			ei_sendto(listener->ec, listener->sockfd, &listener->log_process, &ebuf);
 			switch_mutex_unlock(listener->sock_mutex);
 
 			ei_x_free(&ebuf);
@@ -592,8 +580,6 @@ static void check_event_queue(listener_t *listener)
 static void listener_main_loop(listener_t *listener) 
 {
 	int status = 1;
-	/*int i = 1;*/
-	/*char *pbuf = 0;*/
 
 	while ((status >= 0 || erl_errno == ETIMEDOUT || erl_errno == EAGAIN) && !prefs.done) {
 		erlang_msg msg;
@@ -614,20 +600,27 @@ static void listener_main_loop(listener_t *listener)
 			case ERL_MSG :
 				switch(msg.msgtype) {
 					case ERL_SEND :
-						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_send\n");*/
-						/*i = 1;*/
+#ifdef EI_DEBUG
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_send\n");
+
+						ei_x_print_msg(&buf, &msg.from, 0);
 						/*ei_s_print_term(&pbuf, buf.buff, &i);*/
 						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_send was message %s\n", pbuf);*/
+#endif
 
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
 							return;
 						}
 						break;
 					case ERL_REG_SEND :
-						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send to %s\n", msg.toname);*/
+#ifdef EI_DEBUG
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send to %s\n", msg.toname);
+
+						ei_x_print_reg_msg(&buf, msg.toname, 0);
 						/*i = 1;*/
 						/*ei_s_print_term(&pbuf, buf.buff, &i);*/
 						/*switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_reg_send was message %s\n", pbuf);*/
+#endif
 
 						if (handle_msg(listener, &msg, &buf, &rbuf)) {
 						    return;
@@ -695,6 +688,9 @@ static switch_bool_t check_inbound_acl(listener_t* listener)
 					ei_x_encode_atom(&rbuf, "acldeny");
 
 					ei_send(listener->sockfd, &msg.from, rbuf.buff, rbuf.index);
+#ifdef EI_DEBUG
+					ei_x_print_msg(&rbuf, &msg.from, 1);
+#endif
 
 					ei_x_free(&rbuf);
 				}
@@ -717,6 +713,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads++;
 	switch_mutex_unlock(globals.listener_mutex);
+
+	switch_core_hash_init(&listener->fetch_reply_hash, listener->pool);
+	switch_core_hash_init(&listener->spawn_pid_hash, listener->pool);
 
 	switch_assert(listener != NULL);
 
@@ -896,7 +895,7 @@ static listener_t* new_outbound_listener(char* node)
 	return listener;
 }
 
-session_elem_t* attach_call_to_listener(listener_t* listener, char* reg_name, switch_core_session_t *session)
+session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session)
 {
 	/* create a session list element */
 	session_elem_t* session_element=NULL;
@@ -922,32 +921,92 @@ session_elem_t* attach_call_to_listener(listener_t* listener, char* reg_name, sw
 	return session_element;
 }
 
+session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *module, char *function, switch_core_session_t *session)
+{
+	/* create a session list element */
+	session_elem_t* session_element=NULL;
+	if (!(session_element = switch_core_alloc(switch_core_session_get_pool(session), sizeof(*session_element)))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to allocate session element\n");
+	}
+	else {
+		if (SWITCH_STATUS_SUCCESS != switch_core_session_read_lock(session)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get session read lock\n");
+		}
+		else {
+			char *argv[1], hash[100];
+			int i = 0;
+			session_element->session = session;
+			erlang_pid *pid;
+			erlang_ref ref;
+			
+			ei_spawn(listener->ec, listener->sockfd, &ref, module, function, 0, argv);
+			ei_hash_ref(&ref, hash);
+
+			while (!(pid = (erlang_pid *) switch_core_hash_find(listener->spawn_pid_hash, hash))) {
+				if (i > 50) { /* half a second timeout */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "timed out!\n");
+					return NULL;
+				}
+				i++;
+				switch_yield(10000); /* 10ms */
+			}
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got pid!\n");
+
+			session_element->process.type = ERLANG_PID;
+			memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
+			switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
+			switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
+			switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
+			switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			/* attach the session to the listener */
+			add_session_elem_to_listener(listener,session_element);
+		}
+	}
+	return session_element;
+}
+
+
 /* Module Hooks */
 
 /* Entry point for outbound mode */
 SWITCH_STANDARD_APP(erlang_outbound_function)
 {
-	char *reg_name, *node;
+	char *reg_name = NULL, *node, *module = NULL, *function = NULL;
 	listener_t *listener;
-	int argc = 0;
-	char *argv[80] = { 0 };
-	char *mydata;
+	int argc = 0, argc2=0;
+	char *argv[80] = { 0 }, *argv2[80] = { 0 };
+	char *mydata, *myarg;
 	switch_bool_t new_session = SWITCH_FALSE;
 	session_elem_t* session_element=NULL;
 
 	/* process app arguments */
 	if (data && (mydata = switch_core_session_strdup(session, data))) {
 		argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
-	}
+	} /* XXX else? */
 	if (argc < 2) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error - need registered name and node!\n");
 		return;
 	}
-	reg_name = argv[0];
-	if (switch_strlen_zero(reg_name)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing registered name!\n");
+	if (switch_strlen_zero(argv[0])) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing registered name or module:function!\n");
 		return;
 	}
+
+	if ((myarg = switch_core_session_strdup(session, argv[0]))) {
+		argc2 = switch_separate_string(myarg, ':', argv2, (sizeof(argv2) / sizeof(argv2[0])));
+	}
+
+	if (argc2 == 2) {
+		/* mod:fun style */
+		module = argv2[0];
+		function = argv2[1];
+	} else {
+		/* registered name style */
+		reg_name = argv[0];
+	}
+
+
 	node = argv[1];
 	if (switch_strlen_zero(node)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing node name!\n");
@@ -967,17 +1026,27 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 	else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using existing listener for session\n");
 	}
-	if (listener &&
-		(session_element=attach_call_to_listener(listener,reg_name,session)) != NULL) {
-		
-		if (new_session)
-			launch_listener_thread(listener);
-		switch_ivr_park(session, NULL);
 
-		/* keep app thread running for lifetime of session */
-		if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
-			while (switch_test_flag(session_element, LFLAG_SESSION_ALIVE)) {
-				switch_yield(100000);
+	if (listener) {
+		if (module && function) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
+			session_element=attach_call_to_spawned_process(listener, module, function, session);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new registered session for listener\n");
+			session_element=attach_call_to_registered_process(listener, reg_name, session);
+		}
+
+		if (session_element) {
+
+			if (new_session)
+				launch_listener_thread(listener);
+			switch_ivr_park(session, NULL);
+
+			/* keep app thread running for lifetime of session */
+			if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+				while (switch_test_flag(session_element, LFLAG_SESSION_ALIVE)) {
+					switch_yield(100000);
+				}
 			}
 		}
 	}

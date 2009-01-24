@@ -32,6 +32,7 @@
  *
  */
 
+#define EI_DEBUG
 
 typedef enum {
 	LFLAG_OUTBOUND_INIT = (1 << 0), /* Erlang peer has been notified of this session */
@@ -93,6 +94,7 @@ struct listener {
 	uint8_t event_list[SWITCH_EVENT_ALL + 1];
 	switch_hash_t *event_hash;
 	switch_hash_t *fetch_reply_hash;
+	switch_hash_t *spawn_pid_hash;
 	switch_thread_rwlock_t *rwlock;
 	switch_mutex_t *session_mutex;
 	session_elem_t *session_list;
@@ -186,13 +188,18 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to);
 void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event);
 void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *tag);
-int ei_spawn(struct ei_cnode_s *ec, int sockfd, char *module, char *function, int argc, char **argv);
+int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function, int argc, char **argv);
 void ei_init_ref(struct ei_cnode_s *ec, erlang_ref *ref);
+void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send);
+void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send);
+int ei_sendto(ei_cnode *ec, int fd, struct erlang_process *process, ei_x_buff *buf);
+void ei_hash_ref(erlang_ref *ref, char *output);
 switch_status_t initialise_ei(struct ei_cnode_s *ec);
 #define ei_encode_switch_event(_b, _e) ei_encode_switch_event_tag(_b, _e, "event")
 
 /* mod_erlang_event.c */
-session_elem_t* attach_call_to_listener(listener_t* listener, char* reg_name, switch_core_session_t *session);
+session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session);
+session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *module, char *function, switch_core_session_t *session);
 
 /* For Emacs:
  * Local Variables:
