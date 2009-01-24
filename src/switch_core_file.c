@@ -45,6 +45,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 	char stream_name[128] = "";
 	char *rhs = NULL;
 
+	if (switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Handle already open\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_strlen_zero(file_path)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Filename\n");
 		return SWITCH_STATUS_FALSE;
@@ -139,6 +144,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
  top:
 
@@ -252,6 +261,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!fh->file_interface->file_write) {
 		return SWITCH_STATUS_FALSE;

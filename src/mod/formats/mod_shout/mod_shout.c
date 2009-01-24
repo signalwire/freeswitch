@@ -876,6 +876,10 @@ static switch_status_t shout_file_read(switch_file_handle_t *handle, void *data,
 
 	*len = 0;
 
+	if (!context || context->err) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (context->fd) {
 		rb = decode_fd(context, data, bytes);
 	} else {
@@ -923,7 +927,16 @@ static switch_status_t shout_file_write(switch_file_handle_t *handle, void *data
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (context->err) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (context->shout && !context->shout_init) {
+
+		if (!context->gfp) {
+			return SWITCH_STATUS_FALSE;
+		}
+
 		context->shout_init++;
 		if (shout_open(context->shout) != SHOUTERR_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error opening stream: %s\n", shout_get_error(context->shout));
