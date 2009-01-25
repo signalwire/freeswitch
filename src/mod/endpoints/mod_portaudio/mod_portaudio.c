@@ -127,8 +127,7 @@ static struct {
 	switch_timer_t timer;
 	switch_timer_t hold_timer;
 	int dual_streams;
-	int monitor_running;
-	int deactivate_timer;
+	time_t deactivate_timer;
 } globals;
 
 
@@ -290,7 +289,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	}
 
 	if (ring_file) {
-		//deactivate_ring_device();
+		deactivate_ring_device();
 		switch_core_file_close(&fh);
 	}
 
@@ -326,6 +325,8 @@ static void deactivate_audio_device(void)
 	if (!globals.audio_stream) {
 		return;
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stop audio device.\n");
 
 	switch_mutex_lock(globals.device_lock);
 	/* LOCKED ************************************************************************************************** */
@@ -372,6 +373,7 @@ static void deactivate_ring_device(void)
 		return;
 	}
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stop ring device.\n");
 	switch_mutex_lock(globals.device_lock);
 	if (globals.ring_stream && globals.ring_stream != globals.audio_stream) {
 		CloseAudioStream(globals.ring_stream);
@@ -424,8 +426,6 @@ static void add_pvt(private_t *tech_pvt, int master)
 		}
 	}
 
-	globals.deactivate_timer = 0;
-
 	switch_mutex_unlock(globals.pvt_lock);
 }
 
@@ -449,7 +449,8 @@ static void remove_pvt(private_t *tech_pvt)
 	if (globals.call_list) {
 		switch_set_flag_locked(globals.call_list, TFLAG_MASTER);
 	} else {
-		globals.deactivate_timer = 5;
+		globals.deactivate_timer = switch_timestamp(NULL) + 2;
+		deactivate_audio_device();
 	}
 
 	switch_mutex_unlock(globals.pvt_lock);
@@ -963,18 +964,6 @@ static switch_status_t load_config(void)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 {
-#if 0
-	if (globals.monitor_running == 1) {
-		int sanity = 20;
-		globals.monitor_running = -1;
-		while(globals.monitor_running) {
-			switch_yield(1000000);
-			if (!--sanity) {
-				break;
-			}
-		}
-	}
-#endif
 
 	deactivate_audio_device();
 	deactivate_ring_device();
@@ -987,26 +976,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
-#if 0
-SWITCH_MODULE_RUNTIME_FUNCTION(mod_portaudio_runtime)
-{
-	globals.monitor_running = 1;
-	while(globals.monitor_running == 1) {
-		switch_mutex_lock(globals.pvt_lock);
-		if (!globals.call_list && globals.deactivate_timer > 0) {
-			if (!--globals.deactivate_timer) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No more channels, deactivating audio\n");
-				deactivate_audio_device();
-			}
-		}
-		switch_mutex_unlock(globals.pvt_lock);
-		switch_yield(1000000);
-	}
-	globals.monitor_running = 0;
-	return SWITCH_STATUS_TERM;
-}
-#endif
 
 static int get_dev_by_number(char *numstr, int in)
 {
@@ -1289,6 +1258,12 @@ static switch_status_t engage_device(int restart)
 	int sample_rate = globals.sample_rate;
 	int codec_ms = globals.codec_ms;
 
+	switch_mutex_lock(globals.device_lock);
+	while (globals.deactivate_timer > switch_timestamp(NULL)) {
+		switch_yield(1000000);
+	}
+	switch_mutex_unlock(globals.device_lock);
+
 
 	if (restart) {
 		deactivate_audio_device();
@@ -1552,6 +1527,7 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 				switch_channel_t *channel = switch_core_session_get_channel(tp->session);
 				switch_set_flag_locked(tp, TFLAG_ANSWER);
 				add_pvt(tp, PA_MASTER);
+				deactivate_ring_device();
 				switch_channel_mark_answered(channel);
 			}
 		} else {
@@ -1566,6 +1542,7 @@ static switch_status_t answer_call(char **argv, int argc, switch_stream_handle_t
 			switch_channel_t *channel = switch_core_session_get_channel(tp->session);
 			switch_set_flag_locked(tp, TFLAG_ANSWER);
 			add_pvt(tp, PA_MASTER);
+			deactivate_ring_device();
 			switch_channel_mark_answered(channel);
 			x++;
 			break;
@@ -1747,6 +1724,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 		tech_pvt->session = session;
 		if ((status = engage_device(0)) == SWITCH_STATUS_SUCCESS) {
 			switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
+			deactivate_ring_device();
 			switch_channel_mark_answered(channel);
 			switch_channel_set_state(channel, CS_INIT);
 			if (switch_core_session_thread_launch(tech_pvt->session) != SWITCH_STATUS_SUCCESS) {
@@ -1903,7 +1881,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		devname = "indev";
 		if (devval > -1) {
 			globals.indev = devval;
-			engage_device(1);
+			//engage_device(1);
 		}
 	} else if (argv[1] && !strcmp(argv[0], "outdev")) {
 
@@ -1920,7 +1898,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		devname = "outdev";
 		if (devval > -1) {
 			globals.outdev = devval;
-			engage_device(1);
+			//engage_device(1);
 		}
 	} else if (argv[1] && !strcmp(argv[0], "ringdev")) {
 
@@ -1937,7 +1915,7 @@ SWITCH_STANDARD_API(pa_cmd)
 		devname = "ringdev";
 		if (devval > -1) {
 			globals.ringdev = devval;
-			engage_device(1);
+			//engage_device(1);
 		}
 	} else if ((argv[1] && !strcasecmp(argv[0], "play"))) {
 		switch_file_handle_t fh = { 0 };
@@ -1988,6 +1966,7 @@ SWITCH_STANDARD_API(pa_cmd)
 				} 
 
 				switch_core_file_close(&fh);
+				deactivate_audio_device();
 			} else {
 				stream->write_function(stream, "Cannot play requested file %s\n", argv[1]);
 			}
@@ -2016,6 +1995,7 @@ SWITCH_STANDARD_API(pa_cmd)
 			if (!success) {
 				stream->write_function(stream, "Failed to read any bytes from indev\n");
 			}
+			deactivate_audio_device();
 		} else {
 			stream->write_function(stream, "Failed to engage audio device\n");
 		}
