@@ -206,7 +206,7 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 	int16_t x;
 	uint32_t i;
 	int sum_rnd = 0;
-	int16_t rnd2 = (int16_t) switch_timestamp_now();
+	int16_t rnd2 = (int16_t) switch_micro_time_now();
 
 	assert(divisor);
 

@@ -228,7 +228,7 @@ static switch_status_t do_stun_ping(switch_rtp_t *rtp_session)
 
 #if 0
 	if (rtp_session->last_stun) {
-		elapsed = (unsigned int) ((switch_timestamp_now() - rtp_session->last_stun) / 1000);
+		elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 		
 		if (elapsed > 30000) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No stun for a long time (PUNT!)\n");
@@ -282,7 +282,7 @@ static switch_status_t ice_out(switch_rtp_t *rtp_session)
 	}
 
 	if (rtp_session->last_stun) {
-		elapsed = (unsigned int) ((switch_timestamp_now() - rtp_session->last_stun) / 1000);
+		elapsed = (unsigned int) ((switch_micro_time_now() - rtp_session->last_stun) / 1000);
 
 		if (elapsed > 30000) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No stun for a long time (PUNT!)\n");
@@ -310,7 +310,7 @@ static void handle_stun_ping_reply(switch_rtp_t *rtp_session, void *data, switch
 		return;
 	}
 
-	rtp_session->last_stun = switch_timestamp_now();
+	rtp_session->last_stun = switch_micro_time_now();
 }
 
 static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
@@ -346,7 +346,7 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	}
 	end_buf = buf + ((sizeof(buf) > packet->header.length) ? packet->header.length : sizeof(buf));
 
-	rtp_session->last_stun = switch_timestamp_now();
+	rtp_session->last_stun = switch_micro_time_now();
 
 	switch_stun_packet_first_attribute(packet, attr);
 
@@ -830,7 +830,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 
 	rtp_session->seq = (uint16_t) rand();
-	rtp_session->ssrc = (uint32_t) ((intptr_t) &rtp_session + (uint32_t) switch_timestamp(NULL));
+	rtp_session->ssrc = (uint32_t) ((intptr_t) &rtp_session + (uint32_t) switch_epoch_time_now(NULL));
 	rtp_session->send_msg.header.ssrc = htonl(rtp_session->ssrc);
 	rtp_session->send_msg.header.ts = 0;
 	rtp_session->send_msg.header.m = 0;
@@ -1967,7 +1967,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 
 		if (!rtp_session->timer.interval && 
-			((unsigned)((switch_timestamp_now() - rtp_session->last_write_timestamp))) > (rtp_session->ms_per_packet *2)) {
+			((unsigned)((switch_micro_time_now() - rtp_session->last_write_timestamp))) > (rtp_session->ms_per_packet *2)) {
 			m++;
 		}
 
@@ -1995,7 +1995,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		uint32_t rate = 0;
 		uint32_t codec_flags = 0;
 		uint32_t len = sizeof(decoded);
-		time_t now = switch_timestamp(NULL);
+		time_t now = switch_epoch_time_now(NULL);
 		send = 0;
 
 		if (rtp_session->vad_data.scan_freq && rtp_session->vad_data.next_scan <= now) {
@@ -2132,7 +2132,7 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		if (rtp_session->timer.interval) {
 			rtp_session->last_write_samplecount = rtp_session->timer.samplecount;
 		} else {
-			rtp_session->last_write_timestamp = (uint32_t) switch_timestamp_now();
+			rtp_session->last_write_timestamp = (uint32_t) switch_micro_time_now();
 		}
 
 		rtp_session->last_write_ts = this_ts;
@@ -2209,7 +2209,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_enable_vad(switch_rtp_t *rtp_session,
 	rtp_session->vad_data.cng_freq = 50;
 	rtp_session->vad_data.ts = 1;
 	rtp_session->vad_data.start = 0;
-	rtp_session->vad_data.next_scan = switch_timestamp(NULL);
+	rtp_session->vad_data.next_scan = switch_epoch_time_now(NULL);
 	rtp_session->vad_data.scan_freq = 0;
 	switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_VAD);
 	switch_set_flag(&rtp_session->vad_data, SWITCH_VAD_FLAG_CNG);

@@ -284,11 +284,11 @@ void sofia_handle_sip_r_message(int status, sofia_profile_t *profile, nua_handle
 
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout)
 {
-	time_t exp = switch_timestamp(NULL) + timeout;
+	time_t exp = switch_epoch_time_now(NULL) + timeout;
 	
 	tech_pvt->want_event = event;
 
-	while(switch_channel_ready(tech_pvt->channel) && tech_pvt->want_event && switch_timestamp(NULL) < exp) {
+	while(switch_channel_ready(tech_pvt->channel) && tech_pvt->want_event && switch_epoch_time_now(NULL) < exp) {
 		switch_yield(100000);
 	}
 	
@@ -522,7 +522,7 @@ void event_handler(switch_event_t *event)
 		char *rpid = switch_event_get_header(event, "orig-rpid");
 		char *call_id = switch_event_get_header(event, "orig-call-id");
 		char *user_agent = switch_event_get_header(event, "user-agent");
-		long expires = (long) switch_timestamp(NULL);
+		long expires = (long) switch_epoch_time_now(NULL);
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		char *to_user = switch_event_get_header(event, "orig-to-user");
 		char *presence_hosts = switch_event_get_header(event, "presence-hosts");
@@ -601,12 +601,12 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 		if (++loops >= 100) {
 			if (++ireg_loops >= IREG_SECONDS) {
-				sofia_reg_check_expire(profile, switch_timestamp(NULL), 0);
+				sofia_reg_check_expire(profile, switch_epoch_time_now(NULL), 0);
 				ireg_loops = 0;
 			}
 
 			if (++gateway_loops >= GATEWAY_SECONDS) {
-				sofia_reg_check_gateway(profile, switch_timestamp(NULL));
+				sofia_reg_check_gateway(profile, switch_epoch_time_now(NULL));
 				gateway_loops = 0;
 			}
 			sofia_sub_check_gateway(profile, time(NULL));
@@ -778,7 +778,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Starting thread for %s\n", profile->name);
 
-	profile->started = switch_timestamp(NULL);
+	profile->started = switch_epoch_time_now(NULL);
 
 	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
 	launch_sofia_worker_thread(profile);
@@ -1104,7 +1104,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (ping_freq) {
 				if (ping_freq >= 5) {
 					gateway->ping_freq = ping_freq;
-					gateway->ping = switch_timestamp(NULL) + ping_freq;
+					gateway->ping = switch_epoch_time_now(NULL) + ping_freq;
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ERROR: invalid ping!\n");
 				}
@@ -2350,12 +2350,12 @@ static void sofia_handle_sip_r_options(switch_core_session_t *session, int statu
 				gateway->state = REG_STATE_FAILED;
 			}
 		}
-		gateway->ping = switch_timestamp(NULL) + gateway->ping_freq;
+		gateway->ping = switch_epoch_time_now(NULL) + gateway->ping_freq;
 		sofia_reg_release_gateway(gateway);
 		gateway->pinging = 0;
 	} else if ((profile->pflags & PFLAG_UNREG_OPTIONS_FAIL) && status != 200 && sip && sip->sip_to) {
 		char *sql;
-		time_t now = switch_timestamp(NULL);
+		time_t now = switch_epoch_time_now(NULL);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Expire registration '%s@%s' due to options failure\n",
 						  sip->sip_to->a_url->url_user, sip->sip_to->a_url->url_host);
 

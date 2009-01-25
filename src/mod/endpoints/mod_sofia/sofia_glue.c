@@ -55,7 +55,7 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
 	}
 
 	if (!tech_pvt->owner_id) {
-		tech_pvt->owner_id = (uint32_t) switch_timestamp(NULL) - port;
+		tech_pvt->owner_id = (uint32_t) switch_epoch_time_now(NULL) - port;
 	}
 
 	if (!tech_pvt->session_id) {
@@ -145,7 +145,7 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	}
 
 	if (!tech_pvt->owner_id) {
-		tech_pvt->owner_id = (uint32_t) switch_timestamp(NULL) - port;
+		tech_pvt->owner_id = (uint32_t) switch_epoch_time_now(NULL) - port;
 	}
 
 	if (!tech_pvt->session_id) {
@@ -2902,7 +2902,7 @@ void sofia_glue_restart_all_profiles(void)
 			switch_hash_this(hi, &var, NULL, &val);
             if ((pptr = (sofia_profile_t *) val)) {
 				int rsec = 10;
-				int diff = (int) (switch_timestamp(NULL) - pptr->started);
+				int diff = (int) (switch_epoch_time_now(NULL) - pptr->started);
 				int remain = rsec - diff;
 				if (sofia_test_pflag(pptr, PFLAG_RESPAWN) || !sofia_test_pflag(pptr, PFLAG_RUNNING)) {
 					continue;

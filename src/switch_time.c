@@ -111,15 +111,15 @@ static void do_sleep(switch_interval_time_t t)
 
 }
 
-SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void)
+SWITCH_DECLARE(switch_time_t) switch_micro_time_now(void)
 {
 	return runtime.timestamp ? runtime.timestamp : switch_time_now();
 }
 
 
-SWITCH_DECLARE(time_t) switch_timestamp(time_t *t)
+SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t)
 {
-	time_t now = switch_timestamp_now() / APR_USEC_PER_SEC;
+	time_t now = switch_micro_time_now() / APR_USEC_PER_SEC;
 	if (t) {
 		*t = now;
 	}
@@ -671,7 +671,7 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_t
 	time_t timep;
 	
 	if (!thetime) {
-        thetime = switch_timestamp_now();
+        thetime = switch_micro_time_now();
     }
 
 	timep =  (thetime) / (int64_t) (1000000);
@@ -707,7 +707,7 @@ SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *f
 	switch_time_exp_t stm;
 
 	if (!thetime) {
-		thetime = switch_timestamp_now();
+		thetime = switch_micro_time_now();
 	}
 
 	timep =  (thetime) / (int64_t) (1000000);

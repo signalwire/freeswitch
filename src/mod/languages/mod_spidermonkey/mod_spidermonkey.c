@@ -2118,7 +2118,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	channel = switch_core_session_get_channel(jss->session);
 	CHANNEL_MEDIA_SANITY_CHECK();
 
-	started = switch_timestamp_now();
+	started = switch_micro_time_now();
 
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &timeout);
@@ -2132,7 +2132,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	}
 	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
-		if (((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > (switch_time_t) timeout)
+		if (((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > (switch_time_t) timeout)
 			|| switch_channel_get_state(channel) >= CS_HANGUP) {
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 			break;
@@ -2165,7 +2165,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	METHOD_SANITY_CHECK();
 	channel = switch_core_session_get_channel(jss->session);
 
-	started = switch_timestamp_now();
+	started = switch_micro_time_now();
 
 	if (argc > 0) {
 		JS_ValueToInt32(cx, argv[0], &timeout);
@@ -2180,7 +2180,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 
 	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
-		if (((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > (switch_time_t) timeout)
+		if (((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > (switch_time_t) timeout)
 			|| switch_channel_get_state(channel) >= CS_HANGUP) {
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 			break;

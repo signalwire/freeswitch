@@ -367,7 +367,7 @@ static switch_status_t zh_say_time(switch_core_session_t *session,
 			}
 		} else {
 			if ((seconds = atoi(tosay)) <= 0) {
-				seconds = (int64_t) switch_timestamp(NULL);
+				seconds = (int64_t) switch_epoch_time_now(NULL);
 			}
 
 			if (seconds >= 60) {
@@ -425,7 +425,7 @@ static switch_status_t zh_say_time(switch_core_session_t *session,
 	if ((t = atoi(tosay)) > 0)
 		target = switch_time_make(t, 0);
 	else
-		target = switch_timestamp_now();
+		target = switch_micro_time_now();
 	switch_time_exp_lt(&tm, target);
 
 	switch (type) {
@@ -455,7 +455,7 @@ static switch_status_t zh_say_time(switch_core_session_t *session,
 #if 0
         tm = *localtime(&then);
 
-        this_morning = switch_timestamp_now();
+        this_morning = switch_micro_time_now();
     	switch_time_exp_lt(&tm2, this_morning);
         tm2->tm_hour = 0;
         tm2->tm_min = 0;

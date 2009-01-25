@@ -1019,7 +1019,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
-	switch_time_t ts = switch_timestamp_now();
+	switch_time_t ts = switch_micro_time_now();
 
 	switch_assert(BLOCK != NULL);
 	switch_assert(RUNTIME_POOL != NULL);

@@ -105,7 +105,7 @@ SWITCH_DECLARE(void) switch_stun_random_string(char *buf, uint16_t len, char *se
 
 	max = (int) strlen(set);
 
-	srand((unsigned int) switch_timestamp_now());
+	srand((unsigned int) switch_micro_time_now());
 
 	for (x = 0; x < len; x++) {
 		int j = (int) (max * 1.0 * rand() / (RAND_MAX + 1.0));
@@ -510,7 +510,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 	}
 	
 	switch_socket_sendto(sock, remote_addr, 0, (void *) packet, &bytes);
-	started = switch_timestamp_now();
+	started = switch_micro_time_now();
 
 	*ip = NULL;
 	*port = 0;
@@ -522,7 +522,7 @@ SWITCH_DECLARE(switch_status_t) switch_stun_lookup(char **ip,
 			break;
 		}
 
-		if ((elapsed = (unsigned int) ((switch_timestamp_now() - started) / 1000)) > 5000) {
+		if ((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > 5000) {
 			*err = "Timeout";
 			switch_socket_shutdown(sock, SWITCH_SHUTDOWN_READWRITE);
 			switch_socket_close(sock);

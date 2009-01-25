@@ -874,7 +874,7 @@ SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
 		switch_event_fire(&event);
 
 		/* reschedule this task */
-		task->runtime = switch_timestamp(NULL) + session->track_duration;
+		task->runtime = switch_epoch_time_now(NULL) + session->track_duration;
 
 		switch_core_session_rwunlock(session);
 	}
@@ -892,7 +892,7 @@ SWITCH_DECLARE(void) switch_core_session_sched_heartbeat(switch_core_session_t *
 {
 
 	switch_core_session_unsched_heartbeat(session);
-	session->track_id = switch_scheduler_add_task(switch_timestamp(NULL), sch_heartbeat_callback, (char *) __SWITCH_FUNC__, 
+	session->track_id = switch_scheduler_add_task(switch_epoch_time_now(NULL), sch_heartbeat_callback, (char *) __SWITCH_FUNC__, 
 												  switch_core_session_get_uuid(session), 0, strdup(switch_core_session_get_uuid(session)), SSHF_FREE_ARG);
 }
 

@@ -294,7 +294,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 			}
 		} else {
 			if ((seconds = atol(tosay)) <= 0) {
-				seconds = (int64_t) switch_timestamp(NULL);
+				seconds = (int64_t) switch_epoch_time_now(NULL);
 			}
 
 			if (seconds >= 60) {
@@ -352,7 +352,7 @@ static switch_status_t en_say_time(switch_core_session_t *session, char *tosay, 
 	if ((t = atol(tosay)) > 0) {
 		target = switch_time_make(t, 0);
 	} else {
-		target = switch_timestamp_now();
+		target = switch_micro_time_now();
 	}
 	
 	if (tz) {

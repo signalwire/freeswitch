@@ -612,7 +612,7 @@ void sofia_reg_auth_challenge(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 	switch_uuid_format(uuid_str, &uuid);
 
 	sql = switch_mprintf("insert into sip_authentication (nonce,expires,profile_name,hostname) "
-						 "values('%q', %ld, '%q', '%q')", uuid_str, switch_timestamp(NULL) + profile->nonce_ttl, profile->name, mod_sofia_globals.hostname);
+						 "values('%q', %ld, '%q', '%q')", uuid_str, switch_epoch_time_now(NULL) + profile->nonce_ttl, profile->name, mod_sofia_globals.hostname);
 	switch_assert(sql != NULL);
 	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, profile->ireg_mutex);
 	switch_safe_free(sql);
@@ -940,7 +940,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name,hostname) "
 							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q')", 
 							 call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : reg_host, 
-							 contact_str, reg_desc, rpid, (long) switch_timestamp(NULL) + (long) exptime * 2, 
+							 contact_str, reg_desc, rpid, (long) switch_epoch_time_now(NULL) + (long) exptime * 2, 
 							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname);
 							 
 		if (sql) {
@@ -1091,7 +1091,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 		
-		switch_rfc822_date(date, switch_timestamp_now());
+		switch_rfc822_date(date, switch_micro_time_now());
 		nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact),
 					TAG_IF(path_val, SIPTAG_PATH_STR(path_val)),
 					NUTAG_WITH_THIS(nua),

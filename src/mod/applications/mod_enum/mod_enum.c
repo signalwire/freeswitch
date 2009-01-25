@@ -531,7 +531,7 @@ static switch_status_t enum_lookup(char *root, char *in, enum_record_t **results
 		tv.tv_sec = i;
 		tv.tv_usec = 0;
 		i = select((int) (fd + 1), &fds, 0, 0, &tv);
-		now = switch_timestamp(NULL);
+		now = switch_epoch_time_now(NULL);
 		if (i > 0) {
 			dns_ioevent(nctx, now);
 		}

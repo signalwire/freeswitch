@@ -1384,13 +1384,13 @@ SWITCH_STANDARD_API(tone_detect_session_function)
 		uint32_t mto;
 		if (*argv[4] == '+') {
 			if ((mto = atoi(argv[4] + 1)) > 0) {
-				to = switch_timestamp(NULL) + mto;
+				to = switch_epoch_time_now(NULL) + mto;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				goto done;
 			}
 		} else {
-			if ((to = atoi(argv[4])) < switch_timestamp(NULL)) {
+			if ((to = atoi(argv[4])) < switch_epoch_time_now(NULL)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID Timeout!\n");
 				to = 0;
 				goto done;
@@ -1520,7 +1520,7 @@ SWITCH_STANDARD_API(sched_transfer_function)
 		time_t when;
 
 		if (*argv[0] == '+') {
-			when = switch_timestamp(NULL) + atol(argv[0] + 1);
+			when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
 		} else {
 			when = atol(argv[0]);
 		}
@@ -1558,7 +1558,7 @@ SWITCH_STANDARD_API(sched_hangup_function)
 		switch_call_cause_t cause = SWITCH_CAUSE_ALLOTTED_TIMEOUT;
 
 		if (*argv[0] == '+') {
-			when = switch_timestamp(NULL) + atol(argv[0] + 1);
+			when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
 		} else {
 			when = atol(argv[0]);
 		}
@@ -1665,7 +1665,7 @@ SWITCH_STANDARD_API(sched_broadcast_function)
 		time_t when;
 
 		if (*argv[0] == '+') {
-			when = switch_timestamp(NULL) + atol(argv[0] + 1);
+			when = switch_epoch_time_now(NULL) + atol(argv[0] + 1);
 		} else {
 			when = atol(argv[0]);
 		}
@@ -2205,7 +2205,7 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 	switch_safe_free(cmd);
 
 	if (api_task->recur) {
-		task->runtime = switch_timestamp(NULL) + api_task->recur;
+		task->runtime = switch_epoch_time_now(NULL) + api_task->recur;
 	}
 
 
@@ -2252,10 +2252,10 @@ SWITCH_STANDARD_API(sched_api_function)
 
 
 			if (*tm == '+') {
-				when = switch_timestamp(NULL) + atol(tm + 1);
+				when = switch_epoch_time_now(NULL) + atol(tm + 1);
 			} else if (*tm == '@') {
 				recur = (uint32_t) atol(tm + 1);
-				when = switch_timestamp(NULL) + recur;
+				when = switch_epoch_time_now(NULL) + recur;
 			} else {
 				when = atol(tm);
 			}

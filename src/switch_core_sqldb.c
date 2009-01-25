@@ -278,7 +278,7 @@ static void core_event_handler(switch_event_t *event)
 		sql = switch_mprintf("insert into channels (uuid,created,created_epoch, name,state,dialplan,context) values('%q','%q','%ld','%q','%q','%q','%q')",
 							 switch_event_get_header_nil(event, "unique-id"),
 							 switch_event_get_header_nil(event, "event-date-local"),
-							 (long)switch_timestamp(NULL),							 
+							 (long)switch_epoch_time_now(NULL),							 
 							 switch_event_get_header_nil(event, "channel-name"),
 							 switch_event_get_header_nil(event, "channel-state"),
 							 switch_event_get_header_nil(event, "caller-dialplan"),
@@ -339,7 +339,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_BRIDGE:
 		sql = switch_mprintf("insert into calls values ('%s', '%ld', '%s','%q','%q','%q','%q','%s','%q','%q','%q','%q','%s')",
 							 switch_event_get_header_nil(event, "event-date-local"),
-							 (long)switch_timestamp(NULL),
+							 (long)switch_epoch_time_now(NULL),
 							 switch_event_get_header_nil(event, "event-calling-function"),
 							 switch_event_get_header_nil(event, "caller-caller-id-name"),
 							 switch_event_get_header_nil(event, "caller-caller-id-number"),

@@ -182,7 +182,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 
 	switch_assert(tech_pvt != NULL);
 
-	last = switch_timestamp_now() - waitsec;
+	last = switch_micro_time_now() - waitsec;
 
 	if ((val = switch_channel_get_variable(channel, "pa_hold_file"))) {
 		hold_file = val;
@@ -251,7 +251,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
 			switch_size_t olen = globals.timer.samples;
 
-			if (switch_timestamp_now() - last >= waitsec) {
+			if (switch_micro_time_now() - last >= waitsec) {
 				char buf[512];
 				switch_event_t *event;
 
@@ -264,7 +264,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 					switch_event_fire(&event);
 				}
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", buf);
-				last = switch_timestamp_now();
+				last = switch_micro_time_now();
 			}
 
 			if (ring_file) {
@@ -449,7 +449,7 @@ static void remove_pvt(private_t *tech_pvt)
 	if (globals.call_list) {
 		switch_set_flag_locked(globals.call_list, TFLAG_MASTER);
 	} else {
-		globals.deactivate_timer = switch_timestamp(NULL) + 2;
+		globals.deactivate_timer = switch_epoch_time_now(NULL) + 2;
 		deactivate_audio_device();
 	}
 
@@ -1259,7 +1259,7 @@ static switch_status_t engage_device(int restart)
 	int codec_ms = globals.codec_ms;
 
 	switch_mutex_lock(globals.device_lock);
-	while (globals.deactivate_timer > switch_timestamp(NULL)) {
+	while (globals.deactivate_timer > switch_epoch_time_now(NULL)) {
 		switch_yield(1000000);
 	}
 	switch_mutex_unlock(globals.device_lock);

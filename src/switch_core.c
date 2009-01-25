@@ -136,7 +136,7 @@ SWITCH_STANDARD_SCHED_FUNC(heartbeat_callback)
 	check_ip();
 
 	/* reschedule this task */
-	task->runtime = switch_timestamp(NULL) + 20;
+	task->runtime = switch_epoch_time_now(NULL) + 20;
 }
 
 
@@ -1088,7 +1088,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_scheduler_task_thread_start();
 	runtime.initiated = switch_time_now();
 
-	switch_scheduler_add_task(switch_timestamp(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
+	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(runtime.uuid_str, &uuid);
@@ -1323,7 +1323,7 @@ SWITCH_DECLARE(void) switch_core_measure_time(switch_time_t total_ms, switch_cor
 
 SWITCH_DECLARE(switch_time_t) switch_core_uptime(void)
 {
-	return switch_timestamp_now() - runtime.initiated;
+	return switch_micro_time_now() - runtime.initiated;
 }
 
 SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_t *val)

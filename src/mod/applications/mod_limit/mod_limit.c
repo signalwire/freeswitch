@@ -811,7 +811,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	char *szinterval = NULL;
 	limit_hash_item_t *item = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	time_t now = switch_timestamp(NULL);
+	time_t now = switch_epoch_time_now(NULL);
 	switch_hash_t *channel_hash = NULL;
 	uint8_t increment = 1;
 	uint8_t new_channel = 0;

@@ -378,7 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	switch_channel_pre_answer(channel);
 
 	if (limit) {
-		to = switch_timestamp(NULL) + limit;
+		to = switch_epoch_time_now(NULL) + limit;
 	}
 
 	if (flags && strchr(flags, 'm')) {
@@ -892,7 +892,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	}
 
 	if (limit) {
-		to = switch_timestamp(NULL) + limit;
+		to = switch_epoch_time_now(NULL) + limit;
 	}
 
 	if ((status = switch_core_media_bug_add(session, record_callback, fh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
@@ -1525,7 +1525,7 @@ static switch_status_t meta_on_dtmf(switch_core_session_t *session, const switch
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	dtmf_meta_data_t *md = switch_channel_get_private(channel, SWITCH_META_VAR_KEY);
-	time_t now = switch_timestamp(NULL);
+	time_t now = switch_epoch_time_now(NULL);
 	char digit[2] = "";
 	int dval;
 

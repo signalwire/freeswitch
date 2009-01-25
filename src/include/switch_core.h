@@ -1690,14 +1690,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, cons
 
 SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_create_module_interface(switch_memory_pool_t *pool, const char *name);
 SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname);
-SWITCH_DECLARE(switch_time_t) switch_timestamp_now(void);
+SWITCH_DECLARE(switch_time_t) switch_micro_time_now(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
 SWITCH_DECLARE(void) switch_core_setrlimits(void);
 SWITCH_DECLARE(void) switch_time_sync(void);
-SWITCH_DECLARE(time_t) switch_timestamp(time_t *t);
+SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t);
 SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *format, char *date, size_t len, switch_time_t thetime);
 SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_time_exp_t *tm, switch_time_t thetime);
 SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload);

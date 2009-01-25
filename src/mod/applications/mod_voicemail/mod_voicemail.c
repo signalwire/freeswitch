@@ -1767,7 +1767,7 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					}
 				}
 				switch_snprintf(sql, sizeof(sql), "update voicemail_msgs set read_epoch=%ld where username='%s' and domain='%s' and flags='save'",
-								(long) switch_timestamp(NULL), myid, domain_name);
+								(long) switch_epoch_time_now(NULL), myid, domain_name);
 				vm_execute_sql(profile, sql, profile->mutex);
 				switch_snprintf(sql, sizeof(sql), "select file_path from voicemail_msgs where username='%s' and domain='%s' and flags='delete'", myid,
 								domain_name);
@@ -2309,11 +2309,11 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Flags", read_flags);
 		switch_event_add_header_string(message_event, SWITCH_STACK_BOTTOM, "VM-Folder", myfolder);
 		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Message-Len", "%u", message_len);
-		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_timestamp(NULL));
+		switch_event_add_header(message_event, SWITCH_STACK_BOTTOM, "VM-Timestamp", "%lu", (unsigned long) switch_epoch_time_now(NULL));
 
 		switch_event_fire(&message_event);
 
-		usql = switch_mprintf("insert into voicemail_msgs values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_timestamp(NULL),
+		usql = switch_mprintf("insert into voicemail_msgs values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_epoch_time_now(NULL),
 							  myid, domain_name, uuid_str, caller_id_name, caller_id_number,
 							  myfolder, file_path, message_len, read_flags);
 
@@ -2346,7 +2346,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 					  &total_new_urgent_messages, &total_saved_urgent_messages);
 
 		if (switch_strlen_zero(vm_timezone) || (switch_strftime_tz(vm_timezone, profile->date_fmt, date, sizeof(date), 0) != SWITCH_STATUS_SUCCESS)) {
-			switch_time_exp_lt(&tm, switch_timestamp_now());
+			switch_time_exp_lt(&tm, switch_micro_time_now());
 			switch_strftime(date, &retsize, sizeof(date), profile->date_fmt, &tm);
 		}
 
@@ -2696,7 +2696,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
-	switch_time_t ts = switch_timestamp_now();
+	switch_time_t ts = switch_micro_time_now();
 	char *dbuf = NULL;
 	char *vm_storage_dir = NULL;
 	char *record_macro = VM_RECORD_MESSAGE_MACRO;
@@ -3271,7 +3271,7 @@ static void do_play(vm_profile_t *profile, char *user, char *domain, char *file,
 	struct holder holder;
 
 	sql = switch_mprintf("update voicemail_msgs set read_epoch=%ld where username='%s' and domain='%s' and file_path like '%%%s'",
-						 (long) switch_timestamp(NULL), user, domain, file);
+						 (long) switch_epoch_time_now(NULL), user, domain, file);
 
 	vm_execute_sql(profile, sql, profile->mutex);
 	free(sql);

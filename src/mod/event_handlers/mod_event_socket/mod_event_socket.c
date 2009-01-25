@@ -231,7 +231,7 @@ static void event_handler(switch_event_t *event)
 			continue;
 		}
 		
-		if (switch_test_flag(l, LFLAG_STATEFUL) && l->timeout && switch_timestamp(NULL) - l->last_flush > l->timeout) {
+		if (switch_test_flag(l, LFLAG_STATEFUL) && l->timeout && switch_epoch_time_now(NULL) - l->last_flush > l->timeout) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Stateful Listener %u has expired\n", l->id);
 			remove_listener(l);
 			expire_listener(&l);
@@ -718,7 +718,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_thread_rwlock_create(&listener->rwlock, listener->pool);
 		listener->id = next_id();
 		listener->timeout = 60;
-		listener->last_flush = switch_timestamp(NULL);
+		listener->last_flush = switch_epoch_time_now(NULL);
 		
 		if (events) {
 			char delim = ',';
@@ -820,7 +820,7 @@ SWITCH_STANDARD_API(event_sink_function)
 			goto end;
 		}
 
-		listener->last_flush = switch_timestamp(NULL);
+		listener->last_flush = switch_epoch_time_now(NULL);
 		stream->write_function(stream, "<data>\n <reply type=\"success\">Current Events Follow</reply>\n");			
 		xmlize_listener(listener, stream);
 
@@ -963,7 +963,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 	int clen = 0;
 	
 	*event = NULL;
-	start = switch_timestamp(NULL);
+	start = switch_epoch_time_now(NULL);
 	ptr = mbuf;
 
 
@@ -1074,7 +1074,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		}
 		
 		if (timeout) {
-			elapsed = (uint32_t) (switch_timestamp(NULL) - start);
+			elapsed = (uint32_t) (switch_epoch_time_now(NULL) - start);
 			if (elapsed >= timeout) {
 				switch_clear_flag_locked(listener, LFLAG_RUNNING);
 				return SWITCH_STATUS_FALSE;

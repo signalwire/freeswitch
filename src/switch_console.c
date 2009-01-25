@@ -296,7 +296,7 @@ SWITCH_DECLARE(void) switch_console_printf(switch_text_channel_t channel, const 
 		goto done;
 	}
 
-	switch_time_exp_lt(&tm, switch_timestamp_now());
+	switch_time_exp_lt(&tm, switch_micro_time_now());
 	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 
 	if (channel == SWITCH_CHANNEL_ID_LOG) {

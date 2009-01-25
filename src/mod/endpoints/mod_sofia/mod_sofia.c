@@ -1650,7 +1650,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					switch_assert(gp->state < REG_STATE_LAST);
 					stream->write_function(stream, "%25s\t%s\t  %32s\t%s", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
 					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
-						time_t now = switch_timestamp(NULL);
+						time_t now = switch_epoch_time_now(NULL);
 						if (gp->retry > now) {
 							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
 						} else {
@@ -1842,7 +1842,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					switch_assert(gp->state < REG_STATE_LAST);
 					stream->write_function(stream, "<gateway>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s</State>\n</gateway>\n", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
 					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
-						time_t now = switch_timestamp(NULL);
+						time_t now = switch_epoch_time_now(NULL);
 						if (gp->retry > now) {
 							stream->write_function(stream, " (retry: %ds)", gp->retry - now);
 						} else {
@@ -2042,7 +2042,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 	if (!strcasecmp(argv[1], "stop") || !strcasecmp(argv[1], "restart")) {
 		int rsec = 10;
-		int diff = (int) (switch_timestamp(NULL) - profile->started);
+		int diff = (int) (switch_epoch_time_now(NULL) - profile->started);
 		int remain = rsec - diff;
 		if (diff < rsec) {
 			stream->write_function(stream, "Profile %s must be up for at least %d seconds to stop/restart.\nPlease wait %d second%s\n",

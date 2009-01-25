@@ -195,7 +195,7 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (cd->total && switch_timestamp(NULL) >= cd->next) {
+	if (cd->total && switch_epoch_time_now(NULL) >= cd->next) {
 		if (cd->index == MAX_CHIME || cd->index == cd->total || !cd->list[cd->index]) {
 			cd->index = 0;
 		}
@@ -213,10 +213,10 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 				cd->abort = 1;
 				return SWITCH_STATUS_FALSE;
 			}
-			cd->next = switch_timestamp(NULL) + cd->freq;
+			cd->next = switch_epoch_time_now(NULL) + cd->freq;
 			cd->index++;
 		}
-	} else if (cd->orbit_timeout && switch_timestamp(NULL) >= cd->orbit_timeout) {
+	} else if (cd->orbit_timeout && switch_epoch_time_now(NULL) >= cd->orbit_timeout) {
 		cd->do_orbit = 1;
 		return SWITCH_STATUS_FALSE;
 	}
@@ -418,7 +418,7 @@ static switch_status_t hanguphook(switch_core_session_t *session)
 	if (state == CS_HANGUP || state == CS_ROUTING) {
 		if ((uuid = switch_channel_get_variable(channel, "fifo_outbound_uuid"))) {
 			switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count-1, outbound_call_count=outbound_call_count+1, next_avail=%ld + lag where uuid='%s'", 
-							(long)switch_timestamp(NULL), uuid);
+							(long)switch_epoch_time_now(NULL), uuid);
 							
 			fifo_execute_sql(sql, globals.sql_mutex);
 		}
@@ -451,7 +451,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	
 	if (switch_ivr_originate(NULL, &session, &cause, h->originate_string, h->timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE) != SWITCH_STATUS_SUCCESS) {
 		switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count-1, outbound_fail_count=outbound_fail_count+1, next_avail=%ld + lag where uuid='%s'", 
-						(long)switch_timestamp(NULL), h->uuid);
+						(long)switch_epoch_time_now(NULL), h->uuid);
 		fifo_execute_sql(sql, globals.sql_mutex);
 		goto end;
 	}
@@ -512,7 +512,7 @@ static void find_consumers(fifo_node_t *node)
 	sql = switch_mprintf("select uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
 						 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname "
 						 "from fifo_outbound where (use_count < simo_count) and (next_avail = 0 or next_avail <= %ld) order by outbound_call_count", 
-						 (long) switch_timestamp(NULL));
+						 (long) switch_epoch_time_now(NULL));
 	switch_assert(sql);
 	fifo_execute_sql_callback(globals.sql_mutex, sql, place_call_callback, &need);
 	free(sql);
@@ -668,7 +668,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	switch_event_t *event = NULL;
 	char date[80] = "";
 	switch_time_exp_t tm;
-	switch_time_t ts = switch_timestamp_now();
+	switch_time_t ts = switch_micro_time_now();
 	switch_size_t retsize;
 	char *list_string;
 	int nlist_count;
@@ -796,7 +796,7 @@ SWITCH_STANDARD_APP(fifo_function)
 						to = 60;
 					}
 				}
-				cd.orbit_timeout = switch_timestamp(NULL) + to;
+				cd.orbit_timeout = switch_epoch_time_now(NULL) + to;
 			}
 		}
 
@@ -823,7 +823,7 @@ SWITCH_STANDARD_APP(fifo_function)
 		}
 
 		if (!node_consumer_wait_count(node)) {
-			node->start_waiting = switch_timestamp_now();
+			node->start_waiting = switch_micro_time_now();
 		}
 
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
@@ -843,7 +843,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		switch_mutex_unlock(node->mutex);
 
-		ts = switch_timestamp_now();
+		ts = switch_micro_time_now();
 		switch_time_exp_lt(&tm, ts);
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		switch_channel_set_variable(channel, "fifo_status", "WAITING");
@@ -856,7 +856,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			char *list_dup = switch_core_session_strdup(session, chime_list);
 			cd.total = switch_separate_string(list_dup, ',', cd.list, (sizeof(cd.list) / sizeof(cd.list[0])));
 			cd.freq = freq;
-			cd.next = switch_timestamp(NULL) + cd.freq;
+			cd.next = switch_epoch_time_now(NULL) + cd.freq;
 		}
 
 		send_presence(node);
@@ -930,7 +930,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_channel_set_state(channel, CS_HIBERNATE);
 			goto done;
 		} else {
-			ts = switch_timestamp_now();
+			ts = switch_micro_time_now();
 			switch_time_exp_lt(&tm, ts);
 			switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 			switch_channel_set_variable(channel, "fifo_status", cd.do_orbit ? "TIMEOUT" : "ABORTED");
@@ -1027,7 +1027,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_event_fire(&event);
 		}
 
-		ts = switch_timestamp_now();
+		ts = switch_micro_time_now();
 		switch_time_exp_lt(&tm, ts);
 		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 		switch_channel_set_variable(channel, "fifo_status", "WAITING");
@@ -1220,7 +1220,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_assert(cloned_profile->next == NULL);
 				switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 
-				ts = switch_timestamp_now();
+				ts = switch_micro_time_now();
 				switch_time_exp_lt(&tm, ts);
 				switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 				switch_channel_set_variable(channel, "fifo_status", "TALKING");
@@ -1251,7 +1251,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					}
 				}
 
-				ts = switch_timestamp_now();
+				ts = switch_micro_time_now();
 				switch_time_exp_lt(&tm, ts);
 				switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
 				switch_channel_set_variable(channel, "fifo_status", "WAITING");
@@ -1300,7 +1300,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 				
 				if (fifo_consumer_wrapup_time) {
-					wrapup_time_started = switch_timestamp_now();
+					wrapup_time_started = switch_micro_time_now();
 				}
 
 				if (!switch_strlen_zero(fifo_consumer_wrapup_key) && strcmp(buf, fifo_consumer_wrapup_key)) {
@@ -1308,7 +1308,7 @@ SWITCH_STANDARD_APP(fifo_function)
 						char terminator = 0;
 						
 						if (fifo_consumer_wrapup_time) {
-							wrapup_time_elapsed = (switch_timestamp_now() - wrapup_time_started) / 1000;
+							wrapup_time_elapsed = (switch_micro_time_now() - wrapup_time_started) / 1000;
 							if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
 								break;
 							} else {
@@ -1324,7 +1324,7 @@ SWITCH_STANDARD_APP(fifo_function)
 					}
 				} else if (fifo_consumer_wrapup_time && (switch_strlen_zero(fifo_consumer_wrapup_key) || !strcmp(buf, fifo_consumer_wrapup_key))) {
 					while(switch_channel_ready(channel)) {
-						wrapup_time_elapsed = (switch_timestamp_now() - wrapup_time_started) / 1000;
+						wrapup_time_elapsed = (switch_micro_time_now() - wrapup_time_started) / 1000;
 						if (wrapup_time_elapsed > fifo_consumer_wrapup_time) {
 							break;
 						}
@@ -1949,7 +1949,7 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 			lag = atoi(argv[5]);
 		}
 		if (argc > 6) {
-			expires = switch_timestamp(NULL) + atoi(argv[6]);
+			expires = switch_epoch_time_now(NULL) + atoi(argv[6]);
 		}
 		if (simo_count < 0) {
 			simo_count = 1;

@@ -946,7 +946,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	char *open;
 	char *prpid;
 	const char *ct = "no/idea";
-	time_t exptime = switch_timestamp(NULL) + 3600;
+	time_t exptime = switch_epoch_time_now(NULL) + 3600;
 	int is_dialog = 0;
 	sofia_profile_t *ext_profile = NULL, *profile = helper->profile;
 	char sstr[128] = "";
@@ -990,7 +990,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 	if (expires) {
 		long tmp = atol(expires);
 		if (tmp > 0) {
-			exptime = tmp - switch_timestamp(NULL) - SUB_OVERLAP;
+			exptime = tmp - switch_epoch_time_now(NULL) - SUB_OVERLAP;
 		} else {
 			exptime = tmp;
 		}
@@ -1281,7 +1281,7 @@ static int sofia_presence_mwi_callback(void *pArg, int argc, char **argv, char *
 	}
 
 	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
-	expire_sec = (int) (expire_sec - switch_timestamp(NULL));
+	expire_sec = (int) (expire_sec - switch_epoch_time_now(NULL));
 	if (expire_sec < 0) {
 		expire_sec = 3600;
 	}
@@ -1585,7 +1585,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		exp_delta = profile->force_subscription_expires ? profile->force_subscription_expires : (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
 		
 		if (exp_delta) {
-			exp_abs = (long) switch_timestamp(NULL) + exp_delta;
+			exp_abs = (long) switch_epoch_time_now(NULL) + exp_delta;
 		} else {
 			exp_abs = 0;
 			sub_state = nua_substate_terminated;
@@ -1859,7 +1859,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 				}
 
 				exp_delta = (sip->sip_expires ? sip->sip_expires->ex_delta : 3600);
-				exp = (long) switch_timestamp(NULL) + exp_delta;
+				exp = (long) switch_epoch_time_now(NULL) + exp_delta;
 
 				if ((sql =
 					 switch_mprintf("delete from sip_presence where sip_user='%q' and sip_host='%q' "

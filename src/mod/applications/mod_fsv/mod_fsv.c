@@ -140,7 +140,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		vid_codec = switch_core_session_get_video_read_codec(session);
 
 		h.version = VERSION;
-		h.created = switch_timestamp_now();
+		h.created = switch_micro_time_now();
 		switch_set_string(h.video_codec_name, vid_codec->implementation->iananame);
 		if (vid_codec->fmtp_in) {
 			switch_set_string(h.video_fmtp, vid_codec->fmtp_in);

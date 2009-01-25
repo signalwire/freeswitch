@@ -353,7 +353,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					}
 				}
 				
-				if (bp->stop_time && bp->stop_time <= switch_timestamp(NULL)) {
+				if (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) {
 					ok = SWITCH_FALSE;
 				}
 
@@ -502,7 +502,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_lock(bp->read_mutex);
 					if (bp->callback) {
 						if (bp->callback(bp, bp->user_data, SWITCH_ABC_TYPE_READ_PING) == SWITCH_FALSE
-							|| (bp->stop_time && bp->stop_time <= switch_timestamp(NULL))) {
+							|| (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL))) {
 							ok = SWITCH_FALSE;
 						}
 					}
@@ -775,7 +775,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				}
 			}
 
-			if (bp->stop_time && bp->stop_time <= switch_timestamp(NULL)) {
+			if (bp->stop_time && bp->stop_time <= switch_epoch_time_now(NULL)) {
 				ok = SWITCH_FALSE;
 			}
 

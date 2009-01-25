@@ -219,7 +219,7 @@ static int check_per_channel_timeouts(originate_status_t *originate_status,
 									  time_t start)
 {
 	int x = 0,i;
-	time_t elapsed = switch_timestamp(NULL) - start;
+	time_t elapsed = switch_epoch_time_now(NULL) - start;
 
 	for (i = 0; i < max; i++) {
 		if (originate_status[i].peer_channel && switch_channel_get_state(originate_status[i].peer_channel) < CS_HANGUP) {
@@ -592,7 +592,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	}
 
 	timelimit *= 1000000;
-	start = switch_timestamp_now();
+	start = switch_micro_time_now();
 
 	if (caller_channel) {
 		if (switch_channel_test_flag(caller_channel, CF_ANSWERED)) {
@@ -708,7 +708,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	while (switch_channel_ready(peer_channel)
 		   && !(switch_channel_test_flag(peer_channel, CF_ANSWERED) || switch_channel_test_flag(peer_channel, CF_EARLY_MEDIA))) {
-		int diff = (int) (switch_timestamp_now() - start);
+		int diff = (int) (switch_micro_time_now() - start);
 
 		if (diff > timelimit) {
 			status = SWITCH_STATUS_TIMEOUT;
@@ -1486,7 +1486,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 			}
 
-			switch_timestamp(&start);
+			switch_epoch_time_now(&start);
 
 			for (;;) {
 				uint32_t valid_channels = 0;
@@ -1514,7 +1514,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 					
-					elapsed = switch_timestamp(NULL) - start;
+					elapsed = switch_epoch_time_now(NULL) - start;
 				
 					if (elapsed > (time_t) timelimit_sec) {
 						to++;
@@ -1653,7 +1653,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 			}
 
 			while ((!caller_channel || switch_channel_ready(caller_channel)) && check_channel_status(&oglobals, originate_status, and_argc)) {
-				time_t elapsed = switch_timestamp(NULL) - start;
+				time_t elapsed = switch_epoch_time_now(NULL) - start;
 				if (caller_channel && !oglobals.sent_ring && oglobals.ring_ready && !oglobals.return_ring_ready) {
 					switch_channel_ring_ready(caller_channel);
 					oglobals.sent_ring = 1;

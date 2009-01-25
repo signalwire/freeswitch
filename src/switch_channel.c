@@ -1328,7 +1328,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 	}
 
 	caller_profile->times = (switch_channel_timetable_t *) switch_core_session_alloc(channel->session, sizeof(*caller_profile->times));
-	caller_profile->times->profile_created = switch_timestamp_now();
+	caller_profile->times->profile_created = switch_micro_time_now();
 
 	if (channel->caller_profile && channel->caller_profile->times) {
 		channel->caller_profile->times->transferred = caller_profile->times->profile_created;
@@ -1341,7 +1341,7 @@ SWITCH_DECLARE(void) switch_channel_set_caller_profile(switch_channel_t *channel
 			switch_caller_extension_clone(&caller_profile->caller_extension, channel->caller_profile->caller_extension, caller_profile->pool);
 		}
 	} else {
-		caller_profile->times->created = switch_timestamp_now();
+		caller_profile->times->created = switch_micro_time_now();
 	}
 
 	caller_profile->next = channel->caller_profile;
@@ -1534,7 +1534,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
 		switch_mutex_lock(channel->profile_mutex);
-		channel->caller_profile->times->hungup = switch_timestamp_now();
+		channel->caller_profile->times->hungup = switch_micro_time_now();
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
@@ -1580,7 +1580,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_ring_ready(switch_ch
 		switch_channel_set_flag(channel, CF_RING_READY);
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
-			channel->caller_profile->times->progress = switch_timestamp_now();
+			channel->caller_profile->times->progress = switch_micro_time_now();
 			if (channel->caller_profile->originator_caller_profile) {
 				switch_core_session_t *other_session;
 				if ((other_session = switch_core_session_locate(channel->caller_profile->originator_caller_profile->uuid))) {
@@ -1638,7 +1638,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 		
 		if (channel->caller_profile && channel->caller_profile->times) {
 			switch_mutex_lock(channel->profile_mutex);
-			channel->caller_profile->times->progress_media = switch_timestamp_now();
+			channel->caller_profile->times->progress_media = switch_micro_time_now();
 			if (channel->caller_profile->originator_caller_profile) {
 				switch_core_session_t *osession;
 				if ((osession = switch_core_session_locate(channel->caller_profile->originator_caller_profile->uuid))) {
@@ -1756,7 +1756,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 
 	if (channel->caller_profile && channel->caller_profile->times) {
 		switch_mutex_lock(channel->profile_mutex);
-		channel->caller_profile->times->answered = switch_timestamp_now();
+		channel->caller_profile->times->answered = switch_micro_time_now();
 		switch_mutex_unlock(channel->profile_mutex);
 	}
 
