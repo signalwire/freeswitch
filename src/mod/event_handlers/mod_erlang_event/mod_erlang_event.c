@@ -886,7 +886,7 @@ static listener_t* new_outbound_listener(char* node)
 
 	if (SWITCH_STATUS_SUCCESS==initialise_ei(&ec)) {
 		errno = 0;
-		if ((clientfd=ei_connect(&ec,node)) == ERL_ERROR) {
+		if ((clientfd=ei_connect(&ec,node)) < 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error connecting to node %s (erl_errno=%d, errno=%d)!\n",node,erl_errno,errno);
 			return NULL;
 		}
@@ -899,7 +899,7 @@ static listener_t* new_outbound_listener(char* node)
 session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session)
 {
 	/* create a session list element */
-	session_elem_t* session_element=NULL;
+	session_elem_t* session_element = NULL;
 	if (!(session_element = switch_core_alloc(switch_core_session_get_pool(session), sizeof(*session_element)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to allocate session element\n");
 	}
@@ -969,6 +969,25 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 }
 
 
+int count_listener_sessions(listener_t *listener) {
+	session_elem_t *last,*sp;
+	int count = 0;
+
+	switch_mutex_lock(listener->session_mutex);
+	sp = listener->session_list;
+	last = NULL;
+	while(sp) {
+		count++;
+		last = sp;
+		sp = sp->next;
+	}
+
+	switch_mutex_unlock(listener->session_mutex);
+
+	return count;
+}
+
+
 /* Module Hooks */
 
 /* Entry point for outbound mode */
@@ -1024,13 +1043,17 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new listener for session\n");
 		new_session = SWITCH_TRUE;
 		listener = new_outbound_listener(node);
-		add_listener(listener);
 	}
 	else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Using existing listener for session\n");
 	}
 
 	if (listener) {
+		if (new_session == SWITCH_TRUE) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Launching new listener\n");
+			launch_listener_thread(listener);
+		}
+
 		if (module && function) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
 			session_element=attach_call_to_spawned_process(listener, module, function, session);
@@ -1041,8 +1064,6 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 
 		if (session_element) {
 
-			if (new_session)
-				launch_listener_thread(listener);
 			switch_ivr_park(session, NULL);
 
 			/* keep app thread running for lifetime of session */
@@ -1057,9 +1078,57 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 }
 
 
+/* 'erlang' console stuff */
+SWITCH_STANDARD_API(erlang_cmd)
+{
+	char *argv[1024] = { 0 };
+	int argc = 0;
+	char *mycmd = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	const char *usage_string = "Supply some arguments, maybe?";
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+
+	if (!(mycmd = strdup(cmd))) {
+		status = SWITCH_STATUS_MEMERR;
+		goto done;
+	}
+
+	if (!(argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		stream->write_function(stream, "%s", usage_string);
+		goto done;
+	}
+
+	if (!strcasecmp(argv[0], "listeners")) {
+
+		listener_t *l;
+		switch_mutex_lock(globals.listener_mutex);
+
+		for (l = listen_list.listeners; l; l = l->next) {
+			stream->write_function(stream, "Listener to %s with %d outbound sessions\n", l->peer_nodename, count_listener_sessions(l));
+		}
+
+		switch_mutex_unlock(globals.listener_mutex);
+	} else {
+		stream->write_function(stream, "I don't care for those arguments at all, sorry");
+		goto done;
+	}
+
+done:
+	switch_safe_free(mycmd);
+	return status;
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 {
 	switch_application_interface_t *app_interface;
+	switch_api_interface_t *api_interface;
 
 	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
 	
@@ -1091,6 +1160,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	SWITCH_ADD_APP(app_interface, "erlang", "Connect to an erlang node", "Connect to erlang", erlang_outbound_function, "<registered name> <node@host>", SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_API(api_interface, "erlang", "PortAudio", erlang_cmd, "<command> [<args>]");
+	switch_console_set_complete("add erlang listeners");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
