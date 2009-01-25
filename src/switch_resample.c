@@ -137,9 +137,9 @@ SWITCH_DECLARE(switch_size_t) switch_float_to_short(float *f, short *s, switch_s
 			s[i] = (short) (ft - 0.5);
 		}
 		if ((float) s[i] > MAXSAMPLE)
-			s[i] = (short) MAXSAMPLE;
+			s[i] = (short) MAXSAMPLE / 2;
 		if (s[i] < (short) -MAXSAMPLE)
-			s[i] = (short) -MAXSAMPLE;
+			s[i] = (short) -MAXSAMPLE / 2;
 	}
 	return len;
 }
