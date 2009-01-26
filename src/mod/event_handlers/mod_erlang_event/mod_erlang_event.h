@@ -54,7 +54,6 @@ struct session_elem {
 	switch_core_session_t *session;
 	switch_mutex_t *flag_mutex;
 	uint32_t flags;
-	/* registered process name that will receive call notifications from this session */
 	struct erlang_process process;
 	switch_queue_t *event_queue;
 	struct session_elem *next;
@@ -194,6 +193,7 @@ void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send);
 void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send);
 int ei_sendto(ei_cnode *ec, int fd, struct erlang_process *process, ei_x_buff *buf);
 void ei_hash_ref(erlang_ref *ref, char *output);
+int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2);
 switch_status_t initialise_ei(struct ei_cnode_s *ec);
 #define ei_encode_switch_event(_b, _e) ei_encode_switch_event_tag(_b, _e, "event")
 

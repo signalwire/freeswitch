@@ -114,7 +114,7 @@ static void remove_binding(listener_t *listener, erlang_pid *pid) {
 
 	for (ptr = bindings.head; ptr; lst = ptr, ptr = ptr->next) {
 		if ((listener && ptr->listener == listener) ||
-			(pid && (&ptr->process.type == ERLANG_PID) && (!strcmp(pid->node, ptr->process.pid.node)) && pid->creation == ptr->process.pid.creation && pid->num == ptr->process.pid.num && pid->serial == ptr->process.pid.serial))  {
+			(pid && (ptr->process.type == ERLANG_PID) && !ei_compare_pids(&ptr->process.pid, pid)))  {
 			if (bindings.head == ptr) {
 				if (ptr->next) {
 					bindings.head = ptr->next;
@@ -300,6 +300,49 @@ static void add_session_elem_to_listener(listener_t *listener, session_elem_t *s
 	listener->session_list = session_element;
 	switch_mutex_unlock(listener->session_mutex);
 }
+
+static void remove_session_elem_from_listener(listener_t *listener, session_elem_t *session)
+{
+	session_elem_t *s, *last = NULL;
+	
+	if(!session)
+		return;
+
+	switch_mutex_lock(listener->session_mutex);
+	for(s = listener->session_list; s; s = s->next) {
+		if (s == session) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Removing session\n");
+			if (last) {
+				last->next = s->next;
+			} else {
+				listener->session_list = s->next;
+			}
+			switch_channel_clear_flag(switch_core_session_get_channel(s->session), CF_CONTROLLED);
+			/* this allows the application threads to exit */
+			switch_clear_flag_locked(s, LFLAG_SESSION_ALIVE);
+			switch_core_session_rwunlock(s->session);
+		}
+		last = s;
+	}
+	switch_mutex_unlock(listener->session_mutex);
+}
+
+
+session_elem_t * find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
+{
+	session_elem_t *s = NULL;
+
+	switch_mutex_lock(listener->session_mutex);
+	for (s = listener->session_list; s; s = s->next) {
+		if (s->process.type == ERLANG_PID && ei_compare_pids(pid, &s->process.pid)) {
+			break;
+		}
+	}
+	switch_mutex_unlock(listener->session_mutex);
+
+	return s;
+}
+
 
 static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, const char *key_name, const char *key_value,
 								switch_event_t *params, void *user_data)
@@ -635,6 +678,8 @@ static void listener_main_loop(listener_t *listener)
 					case ERL_EXIT :
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "erl_exit from %s <%d.%d.%d>\n", msg.from.node, msg.from.creation, msg.from.num, msg.from.serial);
 						remove_binding(NULL, &msg.from);
+						/* TODO - if a spawned process that was handling an outbound call fails.. what do we do with the call? */
+						remove_session_elem_from_listener(listener, find_session_elem_by_pid(listener, &msg.from));
 						/* TODO - check if this linked pid is any of the log/event handler processes and cleanup if it is. */
 						break;
 					default :
@@ -954,6 +999,8 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			}
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got pid!\n");
+
+			ei_link(listener, pid, ei_self(listener->ec));
 
 			session_element->process.type = ERLANG_PID;
 			memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));

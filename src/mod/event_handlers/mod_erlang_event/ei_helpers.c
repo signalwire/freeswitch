@@ -258,6 +258,19 @@ void ei_hash_ref(erlang_ref *ref, char *output)
 }
 
 
+int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2)
+{
+	if ((!strcmp(pid1->node, pid2->node)) &&
+			pid1->creation == pid2->creation &&
+			pid1->num == pid2->num &&
+			pid1->serial == pid2->serial) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
+
 switch_status_t initialise_ei(struct ei_cnode_s *ec)
 {
 	switch_status_t rv;
