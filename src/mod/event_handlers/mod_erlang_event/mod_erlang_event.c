@@ -380,10 +380,10 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	ei_x_encode_tuple_header(&buf, 7);
 	ei_x_encode_atom(&buf, "fetch");
 	ei_x_encode_atom(&buf, sectionstr);
-	ei_x_encode_string(&buf, tag_name ? tag_name : "undefined");
-	ei_x_encode_string(&buf, key_name ? key_name : "undefined");
-	ei_x_encode_string(&buf, key_value ? key_value : "undefined");
-	ei_x_encode_string(&buf, uuid_str);
+	_ei_x_encode_string(&buf, tag_name ? tag_name : "undefined");
+	_ei_x_encode_string(&buf, key_name ? key_name : "undefined");
+	_ei_x_encode_string(&buf, key_value ? key_value : "undefined");
+	_ei_x_encode_string(&buf, uuid_str);
 	ei_encode_switch_event_headers(&buf, params);
 
 	/*switch_core_hash_insert(ptr->reply_hash, uuid_str, );*/
@@ -840,6 +840,7 @@ static int config(void)
 	memset(&prefs, 0, sizeof(prefs));
 
 	prefs.shortname = SWITCH_TRUE;
+	prefs.encoding = ERLANG_STRING;
 
 	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
@@ -859,6 +860,14 @@ static int config(void)
 					set_pref_nodename(val);
 				} else if (!strcmp(var, "shortname")) {
 						prefs.shortname = switch_true(val);
+				} else if (!strcmp(var, "encoding")) {
+					if (!strcasecmp(val, "string")) {
+						prefs.encoding = ERLANG_STRING;
+					} else if (!strcasecmp(val, "binary")) {
+						prefs.encoding = ERLANG_BINARY;
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid encoding strategy '%s' specified\n", val);
+					}
 				} else if (!strcasecmp(var, "apply-inbound-acl")) {
 					if (prefs.acl_count < MAX_ACL) {
 						prefs.acl[prefs.acl_count++] = strdup(val);

@@ -101,8 +101,8 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 			else
 				ei_x_encode_atom(&ebuf, "bgerror");
 
-			ei_x_encode_string(&ebuf, acs->uuid_str);
-			ei_x_encode_string(&ebuf, reply);
+			_ei_x_encode_string(&ebuf, acs->uuid_str);
+			_ei_x_encode_string(&ebuf, reply);
 
 			switch_mutex_lock(acs->listener->sock_mutex);
 			ei_send(acs->listener->sockfd, &acs->pid, ebuf.buff, ebuf.index);
@@ -129,7 +129,7 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 			ei_x_encode_atom(&rbuf, "error");
 		}
 		
-		ei_x_encode_string(&rbuf, reply);
+		_ei_x_encode_string(&rbuf, reply);
 
 
 		switch_mutex_lock(acs->listener->sock_mutex);
@@ -360,7 +360,7 @@ static switch_status_t handle_msg_bgapi(listener_t *listener, erlang_msg *msg, i
 		
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "ok");
-		ei_x_encode_string(rbuf, acs->uuid_str);
+		_ei_x_encode_string(rbuf, acs->uuid_str);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }

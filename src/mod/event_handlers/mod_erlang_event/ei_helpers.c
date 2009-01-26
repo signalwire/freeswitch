@@ -41,17 +41,18 @@
  * */
 
 #define put8(s,n) do { \
-	  (s)[0] = (char)((n) & 0xff); \
-	  (s) += 1; \
+	(s)[0] = (char)((n) & 0xff); \
+	(s) += 1; \
 } while (0)
 
 #define put32be(s,n) do {  \
-	  (s)[0] = ((n) >>  24) & 0xff; \
-	  (s)[1] = ((n) >>  16) & 0xff; \
-	  (s)[2] = ((n) >>  8) & 0xff;  \
-	  (s)[3] = (n) & 0xff; \
-	  (s) += 4; \
+	(s)[0] = ((n) >>  24) & 0xff; \
+	(s)[1] = ((n) >>  16) & 0xff; \
+	(s)[2] = ((n) >>  8) & 0xff;  \
+	(s)[3] = (n) & 0xff; \
+	(s) += 4; \
 } while (0)
+
 
 void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to) {
 	char msgbuf[2048];
@@ -92,21 +93,21 @@ void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event)
 	ei_x_encode_list_header(ebuf, i+1);
 
 	if (uuid) {
-		ei_x_encode_string(ebuf, switch_event_get_header(event, "unique-id"));
+		_ei_x_encode_string(ebuf, switch_event_get_header(event, "unique-id"));
 	} else {
 		ei_x_encode_atom(ebuf, "undefined");
 	}
 
 	for (hp = event->headers; hp; hp = hp->next) {
 		ei_x_encode_tuple_header(ebuf, 2);
-		ei_x_encode_string(ebuf, hp->name);
-		ei_x_encode_string(ebuf, hp->value);
+		_ei_x_encode_string(ebuf, hp->name);
+		_ei_x_encode_string(ebuf, hp->value);
 	}
 
 	if (event->body) {
 		ei_x_encode_tuple_header(ebuf, 2);
-		ei_x_encode_string(ebuf, "body");
-		ei_x_encode_string(ebuf, event->body);
+		_ei_x_encode_string(ebuf, "body");
+		_ei_x_encode_string(ebuf, event->body);
 	}
 
 	ei_x_encode_empty_list(ebuf);

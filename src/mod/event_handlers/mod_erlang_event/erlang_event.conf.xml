@@ -3,7 +3,10 @@
     <param name="listen-ip" value="127.0.0.1"/>
     <param name="listen-port" value="8031"/>
     <param name="cookie" value="ClueCon"/>
-    <param name="shortname" value="true"/>
-    <!--<param name="apply-inbound-acl" value="lan"/>-->
+		<param name="shortname" value="true"/>
+		<!-- in additon to cookie, optionally restrict by ACL -->
+		<!--<param name="apply-inbound-acl" value="lan"/>-->
+		<!-- alternative is "binary" -->
+		<!--<param name="encoding" value="string"/>--> 
   </settings>
 </configuration>

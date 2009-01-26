@@ -44,6 +44,11 @@ typedef enum {
 	ERLANG_REG_PROCESS
 } process_type;
 
+typedef enum {
+	ERLANG_STRING = 0,
+	ERLANG_BINARY
+} erlang_encoding_t;
+
 struct erlang_process {
 	process_type type;
 	char *reg_name;
@@ -163,6 +168,7 @@ struct prefs_struct {
 	char *acl[MAX_ACL];
 	uint32_t acl_count;
 	uint32_t id;
+	erlang_encoding_t encoding;
 };
 typedef struct prefs_struct prefs_t;
 
@@ -196,6 +202,16 @@ void ei_hash_ref(erlang_ref *ref, char *output);
 int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2);
 switch_status_t initialise_ei(struct ei_cnode_s *ec);
 #define ei_encode_switch_event(_b, _e) ei_encode_switch_event_tag(_b, _e, "event")
+
+/* crazy macro for toggling encoding type */
+#define _ei_x_encode_string(buf, string) switch (prefs.encoding) { \
+	case ERLANG_BINARY: \
+		ei_x_encode_binary(buf, string, strlen(string)); \
+		break; \
+	default: \
+		ei_x_encode_string(buf, string); \
+		break; \
+}
 
 /* mod_erlang_event.c */
 session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session);
