@@ -648,7 +648,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 
 	
 	if (esl_recv(handle)) {
-		snprintf(handle->err, sizeof(handle->err), "Connection Error");
+		snprintf(handle->err, sizeof(handle->err), "Authentication Error");
 		goto fail;
 	}
 	
@@ -656,7 +656,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 	hval = esl_event_get_header(handle->last_event, "reply-text");
 
 	if (strcasecmp(hval, "+OK accepted")) {
-		snprintf(handle->err, sizeof(handle->err), "Connection Error");
+		snprintf(handle->err, sizeof(handle->err), "Authentication Error");
 		goto fail;
 	}
 
