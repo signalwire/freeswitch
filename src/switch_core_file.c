@@ -395,7 +395,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 
 			while((rlen = switch_buffer_inuse(fh->pre_buffer))) {
 				blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen);
-				if (asis) blen /= 2;
+				if (!asis) blen /= 2;
 				if (fh->channels) blen /= fh->channels;
 				if (fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen) != SWITCH_STATUS_SUCCESS) {
 					break;
