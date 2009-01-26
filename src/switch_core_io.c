@@ -328,7 +328,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			}
 		}
 
-		if (session->bugs) {
+		if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
 			switch_media_bug_t *bp, *dp, *last = NULL;
 			switch_bool_t ok = SWITCH_TRUE;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
@@ -493,7 +493,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		if (flag & SFF_CNG) {
 			switch_set_flag((*frame), SFF_CNG);
 		}
-		if (session->bugs) {
+		if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
 			switch_media_bug_t *bp, *dp, *last = NULL;
 			switch_bool_t ok = SWITCH_TRUE;
 			switch_thread_rwlock_rdlock(session->bug_rwlock);
@@ -745,7 +745,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		switch_mutex_unlock(session->resample_mutex);
 	}
 
-	if (session->bugs) {
+	if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
 		switch_media_bug_t *bp, *dp, *last = NULL;
 
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
