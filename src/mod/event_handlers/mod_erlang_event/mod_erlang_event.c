@@ -334,7 +334,7 @@ session_elem_t * find_session_elem_by_pid(listener_t *listener, erlang_pid *pid)
 
 	switch_mutex_lock(listener->session_mutex);
 	for (s = listener->session_list; s; s = s->next) {
-		if (s->process.type == ERLANG_PID && ei_compare_pids(pid, &s->process.pid)) {
+		if (s->process.type == ERLANG_PID && !ei_compare_pids(pid, &s->process.pid)) {
 			break;
 		}
 	}
@@ -1000,7 +1000,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got pid!\n");
 
-			ei_link(listener, pid, ei_self(listener->ec));
+			ei_link(listener, ei_self(listener->ec), pid);
 
 			session_element->process.type = ERLANG_PID;
 			memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
