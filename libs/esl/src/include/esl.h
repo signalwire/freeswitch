@@ -36,9 +36,9 @@
 
 #include <stdarg.h>
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 #define esl_copy_string(_x, _y, _z) strncpy(_x, _y, _z - 1)
 #define esl_set_string(_x, _y) esl_copy_string(_x, _y, sizeof(_x))
@@ -341,9 +341,9 @@ ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etyp
 #define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, NULL)
 
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 
 #endif /* defined(_ESL_H_) */

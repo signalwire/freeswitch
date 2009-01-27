@@ -23,9 +23,9 @@
 
 #include "esl.h"
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 typedef struct esl_mutex esl_mutex_t;
 typedef struct esl_thread esl_thread_t;
@@ -40,9 +40,9 @@ ESL_DECLARE(esl_status_t) esl_mutex_lock(esl_mutex_t *mutex);
 ESL_DECLARE(esl_status_t) esl_mutex_trylock(esl_mutex_t *mutex);
 ESL_DECLARE(esl_status_t) esl_mutex_unlock(esl_mutex_t *mutex);
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 #endif /* defined(_ESL_THREADMUTEX_H) */
 

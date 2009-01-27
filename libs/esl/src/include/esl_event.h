@@ -36,9 +36,9 @@
 
 #include <esl.h>
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 typedef enum {
 	ESL_STACK_BOTTOM,
@@ -272,9 +272,9 @@ ESL_DECLARE(const char *)esl_priority_name(esl_priority_t priority);
 
 ///\}
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 #endif /* defined(ESL_EVENT_H) */
 

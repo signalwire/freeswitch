@@ -54,9 +54,9 @@
 
 #include "esl.h"
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 
 #define ESL_URL_SEPARATOR "://"
@@ -160,9 +160,9 @@ ESL_DECLARE(int) esl_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 
 /** @} */
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 }
-#endif /* defined(_cplusplus) */
+#endif /* defined(__cplusplus) */
 
 #endif /* defined(ESL_CONFIG_H) */
 
