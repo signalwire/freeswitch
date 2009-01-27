@@ -41,7 +41,7 @@ AC_DEFUN(APR_CHECK_WORKING_GETADDRINFO,[
 #include <sys/socket.h>
 #endif
 
-void main(void) {
+int main(void) {
     struct addrinfo hints, *ai;
     int error;
 
@@ -129,7 +129,7 @@ AC_DEFUN(APR_CHECK_WORKING_GETNAMEINFO,[
 #include <netinet/in.h>
 #endif
 
-void main(void) {
+int main(void) {
     struct sockaddr_in sa;
     char hbuf[256];
     int error;
@@ -172,7 +172,7 @@ AC_DEFUN(APR_CHECK_NEGATIVE_EAI,[
 #include <netdb.h>
 #endif
 
-void main(void) {
+int main(void) {
     if (EAI_ADDRFAMILY < 0) {
         exit(0);
     }

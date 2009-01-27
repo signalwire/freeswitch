@@ -100,7 +100,7 @@ void *thread_routine(void *data) {
     return data;
 }
 
-int main() {
+int main(void) {
     pthread_t thd;
     pthread_mutexattr_t mattr;
     pthread_once_t once_init = PTHREAD_ONCE_INIT;
@@ -228,7 +228,7 @@ AC_DEFUN([APR_CHECK_PTHREAD_RECURSIVE_MUTEX], [
 #include <pthread.h>
 #include <stdlib.h>
 
-int main() {
+int main(void) {
     pthread_mutexattr_t attr;
     pthread_mutex_t m;
 

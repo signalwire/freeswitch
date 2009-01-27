@@ -461,7 +461,9 @@ AC_MSG_CHECKING(size of $2)
 AC_CACHE_VAL(AC_CV_NAME,
 [AC_TRY_RUN([#include <stdio.h>
 $1
-main()
+#include <stdlib.h>
+
+int main(void)
 {
   FILE *f=fopen("conftestval","w");
   if (!f) exit(1);
@@ -517,7 +519,7 @@ AC_TRY_RUN([
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
-main()
+int main(void)
 {
   char buf[1024];
   if (strerror_r(ERANGE, buf, sizeof buf) < 1) {
@@ -942,7 +944,7 @@ else
 dnl <sys/types.h> should be available everywhere!
   cat > conftest.c <<EOF
 #include <sys/types.h>
-  int main() { return 0; }
+  int main(void) { return 0; }
 EOF
   MKDEP="true"
   for i in "$CC -MM" "$CC -M" "$CPP -MM" "$CPP -M" "cpp -M"; do

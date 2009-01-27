@@ -455,7 +455,7 @@ if test "$apr_lfs_choice" = "yes"; then
 #include <stdio.h>
 #include <unistd.h>
 
-void main(void)
+int main(void)
 {
     int fd, ret = 0;
     struct stat64 st;
