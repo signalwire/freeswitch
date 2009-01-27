@@ -4076,12 +4076,13 @@ JS_EvaluateScript(JSContext *cx, JSObject *obj,
 {
     jschar *chars;
     JSBool ok;
+	size_t slength = length;
 
     CHECK_REQUEST(cx);
-    chars = js_InflateString(cx, bytes, &length);
+    chars = js_InflateString(cx, bytes, &slength);
     if (!chars)
         return JS_FALSE;
-    ok = JS_EvaluateUCScript(cx, obj, chars, length, filename, lineno, rval);
+    ok = JS_EvaluateUCScript(cx, obj, chars, slength, filename, lineno, rval);
     JS_free(cx, chars);
     return ok;
 }
@@ -4095,12 +4096,13 @@ JS_EvaluateScriptForPrincipals(JSContext *cx, JSObject *obj,
 {
     jschar *chars;
     JSBool ok;
+	size_t slength = length;
 
     CHECK_REQUEST(cx);
-    chars = js_InflateString(cx, bytes, &length);
+    chars = js_InflateString(cx, bytes, &slength);
     if (!chars)
         return JS_FALSE;
-    ok = JS_EvaluateUCScriptForPrincipals(cx, obj, principals, chars, length,
+    ok = JS_EvaluateUCScriptForPrincipals(cx, obj, principals, chars, slength,
                                           filename, lineno, rval);
     JS_free(cx, chars);
     return ok;
