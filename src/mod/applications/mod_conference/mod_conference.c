@@ -140,7 +140,8 @@ typedef enum {
 	MFLAG_ENDCONF = (1 << 9),
 	MFLAG_HAS_AUDIO = (1 << 10),
 	MFLAG_TALKING = (1 << 11),
-	MFLAG_RESTART = (1 << 12)
+	MFLAG_RESTART = (1 << 12),
+	MFLAG_MINTWO = (1 << 13)
 } member_flag_t;
 
 typedef enum {
@@ -4307,6 +4308,10 @@ static void set_mflags(char *flags, member_flag_t *f)
 		if (strstr(flags, "endconf")) {
 			*f |= MFLAG_ENDCONF;
 		}
+
+		if (strstr(flags, "mintwo")) {
+			*f |= MFLAG_MINTWO;
+		}
 	}
 }
 
@@ -4815,6 +4820,10 @@ SWITCH_STANDARD_APP(conference_function)
 	set_mflags(flags_str, &mflags);
 	switch_set_flag_locked((&member), MFLAG_RUNNING | mflags);
 
+	if (mflags & MFLAG_MINTWO) {
+		conference->min = 2;
+	}
+	
 	/* Add the caller to the conference */
 	if (conference_add_member(conference, &member) != SWITCH_STATUS_SUCCESS) {
 		switch_core_codec_destroy(&member.read_codec);
