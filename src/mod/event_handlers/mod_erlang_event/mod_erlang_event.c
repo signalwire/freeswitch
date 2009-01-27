@@ -487,6 +487,10 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	sp = listener->session_list;
 	last = NULL;
 	while(sp) {
+		if (switch_test_flag(sp, LFLAG_WAITING_FOR_PID)) {
+			break;
+		}
+
 		if (!switch_test_flag(sp, LFLAG_OUTBOUND_INIT)) {
 			status = notify_new_session(listener, sp->session, sp->process);
 			if (status != SWITCH_STATUS_SUCCESS)
@@ -494,7 +498,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			switch_set_flag(sp, LFLAG_OUTBOUND_INIT);
 		}
 		/* check event queue for this session */
-		if (switch_queue_trypop(sp->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {			   
+		if (switch_queue_trypop(sp->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 			switch_event_t *pevent = (switch_event_t *) pop;
 			
 			/* events from attached sessions are wrapped in a {call_event,<EVT>} tuple 
@@ -997,6 +1001,12 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			erlang_pid *pid;
 			erlang_ref ref;
 
+			switch_set_flag(session_element, LFLAG_WAITING_FOR_PID);
+			switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
+			switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			/* attach the session to the listener */
+			add_session_elem_to_listener(listener,session_element);
+
 			if (!strcmp(function, "!")) {
 				/* send a message to request a pid */
 				ei_x_buff rbuf;
@@ -1022,6 +1032,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 				if (i > 50) { /* half a second timeout */
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "timed out!\n");
 					switch_core_session_rwunlock(session);
+					remove_session_elem_from_listener(listener,session_element);
 					return NULL;
 				}
 				i++;
@@ -1030,16 +1041,13 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got pid!\n");
 
-			ei_link(listener, ei_self(listener->ec), pid);
-
 			session_element->process.type = ERLANG_PID;
 			memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
 			switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 			switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
-			switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
-			switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
-			/* attach the session to the listener */
-			add_session_elem_to_listener(listener,session_element);
+			switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
+
+			ei_link(listener, ei_self(listener->ec), pid);
 		}
 	}
 	return session_element;
