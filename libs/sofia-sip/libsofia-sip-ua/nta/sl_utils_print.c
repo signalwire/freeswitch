@@ -211,17 +211,18 @@ issize_t sl_allow_print(FILE *stream,
 issize_t sl_payload_print(FILE *stream, char const *prefix, sip_payload_t const *pl)
 {
   char *s = pl->pl_data, *end = pl->pl_data + pl->pl_len;
-  size_t n, total = 0, crlf = 1;
+  size_t n, total = 0, crlf = 1, actual;
 
   while (s < end && *s != '\0') {
     n = strncspn(s, end - s, "\r\n");
     crlf = strnspn(s + n, end - s - n, "\r\n");
     if (prefix)
       fputs(prefix, stream), total += strlen(prefix);
-	if (fwrite(s, 1, n + crlf, stream) < 0)
-		return -1;
-    s += n + crlf;
-    total += n + crlf;
+    actual = fwrite(s, 1, n + crlf, stream) ;
+    if (actual == 0)
+       return -1;
+    s += actual;
+    total += actual;
   }
   if (crlf == 0)
     fputs("\n", stream), total++;
