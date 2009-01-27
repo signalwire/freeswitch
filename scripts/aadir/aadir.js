@@ -57,7 +57,7 @@ function load_directory ()
 
   re = /[^A-Z0-9\s]/gi;
 
-  for each (var variables in xdir.user.variables) {
+  for each (var variables in xdir.groups.group.users.user.variables) {
     name = "";
     number = "";
 
