@@ -4282,54 +4282,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
-	if (sip->sip_replaces) {
-		nua_handle_t *bnh;
-		if ((bnh = nua_handle_by_replaces(nua, sip->sip_replaces))) {
-			sofia_private_t *b_private = NULL;
-			if ((b_private = nua_handle_magic(bnh))) {
-				switch_core_session_t *b_session = NULL;
-				if ((b_session = switch_core_session_locate(b_private->uuid))) {
-					switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
-					const char *uuid;
-					int one_leg = 1;
 
-					if ((uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-						one_leg = 0;
-					} else {
-						uuid = switch_core_session_get_uuid(b_session);
-					}
-					
-					if (uuid) {
-						switch_core_session_t *c_session = NULL;
-						int do_conf = 0;					
-					
-						if ((c_session = switch_core_session_locate(uuid))) {
-							switch_channel_t *c_channel = switch_core_session_get_channel(c_session);
-							if (!one_leg && !switch_channel_test_flag(b_channel, CF_HOLD)) {
-								char *ext = switch_core_session_sprintf(b_session, "conference:%s", uuid);
-								switch_channel_set_flag(c_channel, CF_REDIRECT);
-								switch_ivr_session_transfer(b_session, ext, "inline", NULL);
-								switch_ivr_session_transfer(c_session, ext, "inline", NULL);
-								switch_channel_clear_flag(c_channel, CF_REDIRECT);
-								do_conf = 1;
-							}
-							switch_core_session_rwunlock(c_session);
-						}
-
-						if (do_conf) {
-							destination_number = switch_core_session_sprintf(b_session, "answer,conference:%s", uuid);
-						} else {
-							destination_number = switch_core_session_sprintf(b_session, "answer,intercept:%s", uuid);
-						}
-
-						dialplan = "inline";
-					}
-					switch_core_session_rwunlock(b_session);
-				}
-			}
-			nua_handle_unref(bnh);
-		}
-	}
 
 	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
