@@ -272,6 +272,28 @@ int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2)
 }
 
 
+int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst) {
+	int type, size, res;
+	long len;
+
+	ei_get_type(buf, index, &type, &size);
+
+	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) {
+		return -1; 
+	} else if (size > maxlen) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested decoding of %s with size %d into a buffer of size %d\n", type == ERL_BINARY_EXT ? "binary" : "string", size, maxlen);
+		return -1;
+	} else if (type == ERL_BINARY_EXT) {
+		res = ei_decode_binary(buf, index, dst, &len);
+		dst[len] = '\0'; /* binaries aren't null terminated */
+	} else {
+		res = ei_decode_string(buf, index, dst);
+	}
+
+	return res;
+}
+
+
 switch_status_t initialise_ei(struct ei_cnode_s *ec)
 {
 	switch_status_t rv;

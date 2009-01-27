@@ -200,6 +200,7 @@ void ei_x_print_msg(ei_x_buff *buf, erlang_pid *pid, int send);
 int ei_sendto(ei_cnode *ec, int fd, struct erlang_process *process, ei_x_buff *buf);
 void ei_hash_ref(erlang_ref *ref, char *output);
 int ei_compare_pids(erlang_pid *pid1, erlang_pid *pid2);
+int ei_decode_string_or_binary(char *buf, int *index, int maxlen, char *dst);
 switch_status_t initialise_ei(struct ei_cnode_s *ec);
 #define ei_encode_switch_event(_b, _e) ei_encode_switch_event_tag(_b, _e, "event")
 

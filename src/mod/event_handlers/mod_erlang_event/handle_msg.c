@@ -164,12 +164,11 @@ static switch_status_t  handle_msg_fetch_reply(listener_t *listener, ei_x_buff *
 {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
-	if (ei_decode_string(buf->buff, &buf->index, uuid_str)) {
+	if (ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid_str)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
-	}
-	else {
+	} else {
 		ei_x_buff *nbuf = switch_core_alloc(listener->pool, sizeof(nbuf));
 		nbuf->buff = switch_core_alloc(listener->pool, buf->buffsz);
 		memcpy(nbuf->buff, buf->buff, buf->buffsz);
@@ -414,10 +413,10 @@ static switch_status_t handle_msg_sendevent(listener_t *listener, int arity, ei_
 
 static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
 {
-	char uuid[37];
+	char uuid[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	int headerlength;
 			
-	if (ei_decode_string(buf->buff, &buf->index, uuid) ||
+	if (ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid) ||
 		ei_decode_list_header(buf->buff, &buf->index, &headerlength)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
@@ -527,7 +526,7 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, int arity, ei
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
 	if (arity != 3 ||
-		ei_decode_string(buf->buff, &buf->index, uuid_str) ||
+		ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid_str) ||
 		ei_decode_atom(buf->buff, &buf->index, reg_name)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");

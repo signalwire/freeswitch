@@ -408,12 +408,12 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	ei_get_type(rep->buff, &rep->index, &type, &size);
 
-	if (type != ERL_STRING_EXT) /* XXX no unicode or character codes > 255 */
+	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) /* XXX no unicode or character codes > 255 */
 		return NULL;
 
 	char *xmlstr = switch_core_alloc(ptr->listener->pool, size + 1);
 
-	ei_decode_string(rep->buff, &rep->index, xmlstr);
+	ei_decode_string_or_binary(rep->buff, &rep->index, size, xmlstr);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got data %s after %d milliseconds!\n", xmlstr, i*10);
 
