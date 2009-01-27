@@ -899,6 +899,7 @@ static int config(void)
 	return 0;
 }
 
+
 static listener_t* new_listener(struct ei_cnode_s *ec, int clientfd)
 {
 	switch_memory_pool_t *listener_pool = NULL;
@@ -950,6 +951,7 @@ static listener_t* new_outbound_listener(char* node)
 	return listener;
 }
 
+
 session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session)
 {
 	/* create a session list element */
@@ -976,6 +978,7 @@ session_elem_t* attach_call_to_registered_process(listener_t* listener, char* re
 	return session_element;
 }
 
+
 session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *module, char *function, switch_core_session_t *session)
 {
 	/* create a session list element */
@@ -993,8 +996,26 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			session_element->session = session;
 			erlang_pid *pid;
 			erlang_ref ref;
-			
-			ei_spawn(listener->ec, listener->sockfd, &ref, module, function, 0, argv);
+
+			if (!strcmp(function, "!")) {
+				/* send a message to request a pid */
+				ei_x_buff rbuf;
+				ei_x_new_with_version(&rbuf);
+
+				ei_init_ref(listener->ec, &ref);
+				ei_x_encode_tuple_header(&rbuf, 3);
+				ei_x_encode_atom(&rbuf, "new_pid");
+				ei_x_encode_ref(&rbuf, &ref);
+				ei_x_encode_pid(&rbuf, ei_self(listener->ec));
+				ei_reg_send(listener->ec, listener->sockfd, module, rbuf.buff, rbuf.index);
+#ifdef EI_DEBUG
+				ei_x_print_reg_msg(&rbuf, module, 1);
+#endif
+				ei_x_free(&rbuf);
+			} else {
+				ei_spawn(listener->ec, listener->sockfd, &ref, module, function, 0, argv);
+			}
+
 			ei_hash_ref(&ref, hash);
 
 			while (!(pid = (erlang_pid *) switch_core_hash_find(listener->spawn_pid_hash, hash))) {
