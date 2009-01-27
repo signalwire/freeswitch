@@ -4574,12 +4574,13 @@ JS_NewRegExpObject(JSContext *cx, char *bytes, size_t length, uintN flags)
 #if JS_HAS_REGEXPS
     jschar *chars;
     JSObject *obj;
+	size_t slength = length;
 
     CHECK_REQUEST(cx);
-    chars = js_InflateString(cx, bytes, &length);
+    chars = js_InflateString(cx, bytes, &slength);
     if (!chars)
         return NULL;
-    obj = js_NewRegExpObject(cx, NULL, chars, length, flags);
+    obj = js_NewRegExpObject(cx, NULL, chars, slength, flags);
     JS_free(cx, chars);
     return obj;
 #else
