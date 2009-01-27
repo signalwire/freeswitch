@@ -605,20 +605,23 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 	}
 	else if (!strncmp(atom, "nolog", MAXATOMLEN)) {
 		if (switch_test_flag(listener, LFLAG_LOG)) {
+			void *pop;
+			/*purge the log queue */
+			while (switch_queue_trypop(listener->log_queue, &pop) == SWITCH_STATUS_SUCCESS);
 			switch_clear_flag_locked(listener, LFLAG_LOG);
 		}
 		ei_x_encode_atom(rbuf, "ok");
 	} else if (!strncmp(atom, "register_log_handler", MAXATOMLEN)) {
 		ei_link(listener, ei_self(listener->ec), &msg->from);
 		listener->log_process.type = ERLANG_PID;
-		listener->log_process.pid = msg->from;
+		memcpy(&listener->log_process.pid, &msg->from, sizeof(erlang_pid));
 		listener->level = SWITCH_LOG_DEBUG;
 		switch_set_flag(listener, LFLAG_LOG);
 		ei_x_encode_atom(rbuf, "ok");
 	} else if (!strncmp(atom, "register_event_handler", MAXATOMLEN)) {
 		ei_link(listener, ei_self(listener->ec), &msg->from);
 		listener->event_process.type = ERLANG_PID;
-		listener->event_process.pid = msg->from;
+		memcpy(&listener->event_process.pid, &msg->from, sizeof(erlang_pid));
 		if (!switch_test_flag(listener, LFLAG_EVENTS)) {
 			switch_set_flag_locked(listener, LFLAG_EVENTS);
 		}
