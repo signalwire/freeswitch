@@ -281,7 +281,6 @@ userdel freeswitch
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/directory/default
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang
-%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/mrcp_profiles
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/sip_profiles
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan/default
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/dialplan/public
@@ -342,7 +341,6 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/public/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/directory/default/*
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/mrcp_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
