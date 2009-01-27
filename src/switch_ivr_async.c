@@ -2147,7 +2147,7 @@ SWITCH_STANDARD_SCHED_FUNC(sch_broadcast_callback)
 	switch_ivr_broadcast(helper->uuid_str, helper->path, helper->flags);
 }
 
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path, switch_media_flag_t flags)
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const char *uuid, const char *path, switch_media_flag_t flags)
 {
 	struct broadcast_helper *helper;
 	size_t len = sizeof(*helper) + strlen(path) + 1;

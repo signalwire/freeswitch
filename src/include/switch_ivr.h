@@ -107,6 +107,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_parse_next_event(switch_core_session_
   \brief Wait for time to pass for a specified number of milliseconds
   \param session the session to wait for.
   \param ms the number of milliseconds
+  \param sync synchronize the channel's audio before waiting
   \param args arguements to pass for callbacks etc
   \return SWITCH_STATUS_SUCCESS if the channel is still up
 */
@@ -389,6 +390,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text(switch_core_session_t *ses
   \param cid_name_override override the caller id name
   \param cid_num_override override the caller id number
   \param caller_profile_override override the entire calling caller profile
+  \param ovars variables to be set on the outgoing channel
   \param flags flags to pass
   \return SWITCH_STATUS_SUCCESS if bleg is a running session.
   \note bleg will be read locked which must be unlocked with switch_core_session_rwunlock() before losing scope
@@ -524,7 +526,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_unhold(switch_core_session_t *session
   \param flags flags to send to the request (SMF_ECHO_BRIDGED to send the broadcast to both sides of the call)
   \return the id of the task
 */
-SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, char *uuid, char *path, switch_media_flag_t flags);
+SWITCH_DECLARE(uint32_t) switch_ivr_schedule_broadcast(time_t runtime, const char *uuid, const char *path, switch_media_flag_t flags);
 
 /*!
   \brief Signal the session to broadcast audio
