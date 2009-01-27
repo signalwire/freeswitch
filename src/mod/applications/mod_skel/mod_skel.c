@@ -32,12 +32,17 @@
  */
 #include <switch.h>
 
+/* Prototypes */
 //SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown);
 //SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime);
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load);
+
+/* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
+ * Defines a switch_loadable_module_function_table_t and a static const char[] modname
+ */
 SWITCH_MODULE_DEFINITION(mod_skel, mod_skel_load, NULL, NULL);
 
+/* Macro expands to: switch_status_t mod_skel_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 {
 	/* connect my internal structure to the blank pointer passed to me */
@@ -51,6 +56,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 
 /*
   Called when the system shuts down
+  Macro expands to: switch_status_t mod_skel_shutdown()
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown)
 {
 	return SWITCH_STATUS_SUCCESS;
@@ -60,6 +66,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown)
 /*
   If it exists, this is called in it's own thread when the module-load completes
   If it returns anything but SWITCH_STATUS_TERM it will be called again automatically
+  Macro expands to: switch_status_t mod_skel_runtime()
 SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime)
 {
 	while(looping)
