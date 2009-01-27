@@ -98,15 +98,15 @@ aes_icm_alloc_ismacryp(cipher_t **c, int key_len, int forIsmacryp) {
   uint8_t *pointer;
   int tmp;
 
-  debug_print(mod_aes_icm, 
-            "allocating cipher with key length %d", key_len);
+  debug_print(mod_aes_icm, "allocating cipher with key length %d", key_len);
 
-  // Ismacryp, for example, uses 16 byte key + 8 byte 
-  // salt  so this function is called with key_len = 24.
-  // The check for key_len = 30 does not apply. Our usage
-  // of aes functions with key_len = values other than 30
-  // has not broken anything. Don't know what would be the
-  // effect of skipping this check for srtp in general.
+  /* Ismacryp, for example, uses 16 byte key + 8 byte 
+	 salt  so this function is called with key_len = 24.
+	 The check for key_len = 30 does not apply. Our usage
+	 of aes functions with key_len = values other than 30
+	 has not broken anything. Don't know what would be the
+	 effect of skipping this check for srtp in general.
+  */
   if (!forIsmacryp && key_len != 30)
     return err_status_bad_param;
 
@@ -300,7 +300,7 @@ aes_icm_advance_ismacryp(aes_icm_ctx_t *c, uint8_t forIsmacryp) {
 
   if (forIsmacryp) {
     uint32_t temp;    
-    //alex's clock counter forward
+    /* alex's clock counter forward */
     temp = ntohl(c->counter.v32[3]);
     c->counter.v32[3] = htonl(++temp);
   } else {
