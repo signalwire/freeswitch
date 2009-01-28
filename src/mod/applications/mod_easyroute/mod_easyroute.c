@@ -193,7 +193,9 @@ reallydone:
 	return status;
 }
 
+#ifdef SWITCH_HAVE_ODBC
 static char SQL_LOOKUP[] = "SELECT gateways.gateway_ip, gateways.group, gateways.limit, gateways.techprofile, numbers.acctcode, numbers.translated from gateways, numbers where numbers.number = '%q' and numbers.gateway_id = gateways.gateway_id limit 1;";
+#endif
 
 static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int noat, char *seperator)
 {	
