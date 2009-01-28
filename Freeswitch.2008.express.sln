@@ -565,6 +565,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fs_cli", "libs\esl\fs_cli.2
 		{CF405366-9558-4AE8-90EF-5E21B51CCB4E} = {CF405366-9558-4AE8-90EF-5E21B51CCB4E}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_easyroute", "src\mod\applications\mod_easyroute\mod_easyroute.2008.vcproj", "{329FD5B0-EF28-4606-86D0-F6EA21CF8E36}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_lcr", "src\mod\applications\mod_lcr\mod_lcr.2008.vcproj", "{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1268,6 +1278,18 @@ Global
 		{D2FB8043-D208-4AEE-8F18-3B5857C871B9}.Release|Win32.ActiveCfg = Release|Win32
 		{D2FB8043-D208-4AEE-8F18-3B5857C871B9}.Release|Win32.Build.0 = Release|Win32
 		{D2FB8043-D208-4AEE-8F18-3B5857C871B9}.Release|x64.ActiveCfg = Release|Win32
+		{329FD5B0-EF28-4606-86D0-F6EA21CF8E36}.Debug|Win32.ActiveCfg = Debug|Win32
+		{329FD5B0-EF28-4606-86D0-F6EA21CF8E36}.Debug|Win32.Build.0 = Debug|Win32
+		{329FD5B0-EF28-4606-86D0-F6EA21CF8E36}.Debug|x64.ActiveCfg = Debug|Win32
+		{329FD5B0-EF28-4606-86D0-F6EA21CF8E36}.Release|Win32.ActiveCfg = Release|Win32
+		{329FD5B0-EF28-4606-86D0-F6EA21CF8E36}.Release|Win32.Build.0 = Release|Win32
+		{329FD5B0-EF28-4606-86D0-F6EA21CF8E36}.Release|x64.ActiveCfg = Release|Win32
+		{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}.Debug|Win32.Build.0 = Debug|Win32
+		{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}.Debug|x64.ActiveCfg = Debug|Win32
+		{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}.Release|Win32.ActiveCfg = Release|Win32
+		{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}.Release|Win32.Build.0 = Release|Win32
+		{1A3793D1-05D1-4B57-9B0F-5AF3E79DC439}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
