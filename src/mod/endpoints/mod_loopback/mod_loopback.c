@@ -276,7 +276,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		goto end;
 	}
 
-	switch_channel_set_variable(channel, "loopback_leg", switch_test_flag(tech_pvt, TFLAG_OUTBOUND) ? "B" : "A");
+	switch_channel_set_variable(channel, "loopback_leg", switch_test_flag(tech_pvt, TFLAG_BLEG) ? "B" : "A");
 	switch_channel_set_state(channel, CS_ROUTING);
 
  end:
