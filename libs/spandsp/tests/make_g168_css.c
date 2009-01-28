@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_g168_css.c,v 1.15 2008/08/29 09:28:13 steveu Exp $
+ * $Id: make_g168_css.c,v 1.16 2008/11/30 12:38:27 steveu Exp $
  */
 
 /*! \page makecss_page CSS construction for G.168 testing
@@ -52,6 +52,10 @@
 #if defined(HAVE_MATH_H)
 #define GEN_CONST
 #endif
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp/g168models.h"

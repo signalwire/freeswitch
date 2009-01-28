@@ -22,26 +22,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.144 2008/09/18 14:59:30 steveu Exp $
+ * $Id: v29rx.c,v 1.150 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -57,6 +57,9 @@
 #include "spandsp/complex_filters.h"
 
 #include "spandsp/v29rx.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v29rx.h"
 
 #include "v29tx_constellation_maps.h"
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -511,7 +514,11 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     s->symbol_sync_dc_filter[0] = v;
     /* A little integration will now filter away much of the noise */
     s->baud_phase -= p;
+#if 0
     if (fabsf(s->baud_phase) > 100.0f)
+#else
+    if (fabsf(s->baud_phase) > 30.0f)
+#endif
     {
         if (s->baud_phase > 0.0f)
             i = (s->baud_phase > 1000.0f)  ?  5  :  1;
@@ -731,7 +738,7 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         if (++s->training_count >= V29_TRAINING_SEG_3_LEN)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Constellation mismatch %f\n", s->training_error);
-            if (s->training_error < 100.0f)
+            if (s->training_error < 48.0f*2.0f)
             {
                 s->training_count = 0;
                 s->training_error = 0.0f;
@@ -772,10 +779,10 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
 #endif
         if (++s->training_count >= V29_TRAINING_SEG_4_LEN)
         {
-            if (s->training_error < 50.0f)
+            if (s->training_error < 48.0f)
             {
                 /* We are up and running */
-                span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded (constellation mismatch %f)\n", s->training_error);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded at %dbps (constellation mismatch %f)\n", s->bit_rate, s->training_error);
                 report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
                 /* Apply some lag to the carrier off condition, to ensure the last few bits get pushed through
                    the processing. */
@@ -1002,6 +1009,12 @@ void v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_tx_status_func_t h
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+logging_state_t *v29_rx_get_logging_state(v29_rx_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -22,13 +22,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.c,v 1.13 2008/05/13 13:17:22 steveu Exp $
+ * $Id: bitstream.c,v 1.16 2009/01/05 13:48:31 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
@@ -39,7 +39,9 @@
 #include "spandsp/telephony.h"
 #include "spandsp/bitstream.h"
 
-void bitstream_put(bitstream_state_t *s, uint8_t **c, unsigned int value, int bits)
+#include "spandsp/private/bitstream.h"
+
+void bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 {
     value &= ((1 << bits) - 1);
     if (s->residue + bits <= 32)
@@ -56,7 +58,7 @@ void bitstream_put(bitstream_state_t *s, uint8_t **c, unsigned int value, int bi
 }
 /*- End of function --------------------------------------------------------*/
 
-void bitstream_put2(bitstream_state_t *s, uint8_t **c, unsigned int value, int bits)
+void bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 {
     value &= ((1 << bits) - 1);
     if (s->residue + bits <= 32)
@@ -72,14 +74,13 @@ void bitstream_put2(bitstream_state_t *s, uint8_t **c, unsigned int value, int b
 }
 /*- End of function --------------------------------------------------------*/
 
-unsigned int bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
+uint32_t bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
 {
-    unsigned int x;
+    uint32_t x;
 
-    while (s->residue < (unsigned int) bits)
+    while (s->residue < bits)
     {
-        x = (unsigned int) *(*c)++;
-        s->bitstream |= (x << s->residue);
+        s->bitstream |= (((uint32_t) *(*c)++) << s->residue);
         s->residue += 8;
     }
     s->residue -= bits;
@@ -89,14 +90,13 @@ unsigned int bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-unsigned int bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits)
+uint32_t bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits)
 {
-    unsigned int x;
+    uint32_t x;
 
-    while (s->residue < (unsigned int) bits)
+    while (s->residue < bits)
     {
-        x = (unsigned int) *(*c)++;
-        s->bitstream = (s->bitstream << 8) | x;
+        s->bitstream = (s->bitstream << 8) | ((uint32_t) *(*c)++);
         s->residue += 8;
     }
     s->residue -= bits;

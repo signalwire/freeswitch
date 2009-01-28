@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711_tests.c,v 1.14 2008/08/16 15:24:15 steveu Exp $
+ * $Id: g711_tests.c,v 1.15 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \page g711_tests_page A-law and u-law conversion tests
@@ -40,6 +40,10 @@
 #include <fcntl.h>
 #include <string.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"

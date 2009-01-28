@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: oki_adpcm.h,v 1.20 2008/04/17 14:27:00 steveu Exp $
+ * $Id: oki_adpcm.h,v 1.21 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -49,25 +49,7 @@ by Bob Edgar. pg 272-276. */
     a single working instance of the Oki ADPCM converter. This is used for
     either linear to ADPCM or ADPCM to linear conversion.
 */
-typedef struct
-{
-    /*! \brief The bit rate - 24000 or 32000. */
-    int bit_rate;
-    /*! \brief The last state of the ADPCM algorithm. */
-    int16_t last;
-    /*! \brief Current index into the step size table. */
-    int16_t step_index;
-    /*! \brief The compressed data byte in progress. */
-    uint8_t oki_byte;
-    /*! \brief The signal history for the sample rate converter. */
-    int16_t history[32];
-    /*! \brief Pointer into the history buffer. */
-    int ptr;
-    /*! \brief Odd/even sample counter. */
-    int mark;
-    /*! \brief Phase accumulator for the sample rate converter. */
-    int phase;
-} oki_adpcm_state_t;
+typedef struct oki_adpcm_state_s oki_adpcm_state_t;
 
 #if defined(__cplusplus)
 extern "C"

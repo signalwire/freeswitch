@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g1050_tests.c,v 1.16 2008/05/13 13:17:25 steveu Exp $
+ * $Id: g1050_tests.c,v 1.17 2008/11/30 10:17:31 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -43,6 +43,10 @@
 #if defined(HAVE_MATH_H)
 #define GEN_CONST
 #endif
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"

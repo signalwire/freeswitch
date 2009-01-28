@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax.h,v 1.35 2008/08/13 00:11:30 steveu Exp $
+ * $Id: fax.h,v 1.36 2008/10/13 13:14:00 steveu Exp $
  */
 
 /*! \file */
@@ -38,22 +38,6 @@
 */
 
 typedef struct fax_state_s fax_state_t;
-
-/*!
-    Analogue line T.30 FAX channel descriptor. This defines the state of a single working
-    instance of an analogue line soft-FAX machine.
-*/
-struct fax_state_s
-{
-    /*! \brief The T.30 back-end */
-    t30_state_t t30;
-    
-    /*! \brief The analogue modem front-end */
-    fax_modems_state_t modems;
-
-    /*! \brief Error and flow logging control */
-    logging_state_t logging;
-};
 
 #if defined(__cplusplus)
 extern "C"
@@ -102,6 +86,13 @@ void fax_set_tep_mode(fax_state_t *s, int use_tep);
     \return A pointer to the T.30 context, or NULL.
 */
 t30_state_t *fax_get_t30_state(fax_state_t *s);
+
+/*! Get a pointer to the logging context associated with a FAX context.
+    \brief Get a pointer to the logging context associated with a FAX context.
+    \param s The FAX context.
+    \return A pointer to the logging context, or NULL.
+*/
+logging_state_t *fax_get_logging_state(fax_state_t *s);
 
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.

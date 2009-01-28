@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.h,v 1.17 2008/09/09 16:25:51 steveu Exp $
+ * $Id: queue.h,v 1.18 2008/11/30 13:08:42 steveu Exp $
  */
 
 /*! \file */
@@ -53,21 +53,7 @@ to avoid conflicts between the multiple threads acting on one end of the queue.
     Queue descriptor. This defines the working state for a single instance of
     a byte stream or message oriented queue.
 */
-typedef struct
-{
-    /*! \brief Flags indicating the mode of the queue. */
-    int flags;
-    /*! \brief The length of the data buffer. */
-    int len;
-    /*! \brief The buffer input pointer. */
-    volatile int iptr;
-    /*! \brief The buffer output pointer. */
-    volatile int optr;
-#if defined(FULLY_DEFINE_QUEUE_STATE_T)
-    /*! \brief The data buffer, sized at the time the structure is created. */
-    uint8_t data[];
-#endif
-} queue_state_t;
+typedef struct queue_state_s queue_state_t;
 
 #define QUEUE_STATE_T_SIZE(len) (sizeof(queue_state_t) + len + 1)
 

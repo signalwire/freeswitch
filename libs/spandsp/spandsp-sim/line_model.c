@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.c,v 1.6 2008/07/02 14:48:25 steveu Exp $
+ * $Id: line_model.c,v 1.7 2008/11/30 10:17:30 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -46,6 +46,7 @@
 #include <math.h>
 #endif
 
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include "spandsp.h"
 #include "spandsp-sim.h"
 #include "spandsp/g168models.h"

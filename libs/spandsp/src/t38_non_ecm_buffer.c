@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.c,v 1.3 2008/09/07 12:45:17 steveu Exp $
+ * $Id: t38_non_ecm_buffer.c,v 1.5 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
@@ -38,13 +38,13 @@
 #include <fcntl.h>
 #include <time.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <assert.h>
 #if defined(LOG_FAX_AUDIO)
 #include <unistd.h>
@@ -56,8 +56,9 @@
 #include "spandsp/dc_restore.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
-
 #include "spandsp/t38_non_ecm_buffer.h"
+
+#include "spandsp/private/t38_non_ecm_buffer.h"
 
 static void restart_buffer(t38_non_ecm_buffer_state_t *s)
 {

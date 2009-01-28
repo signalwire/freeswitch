@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30_api.h,v 1.6 2008/08/14 14:06:05 steveu Exp $
+ * $Id: t30_api.h,v 1.7 2008/10/13 13:14:00 steveu Exp $
  */
 
 /*! \file */
@@ -551,6 +551,13 @@ void t30_set_document_handler(t30_state_t *s, t30_document_handler_t *handler, v
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
 void t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t *handler, void *user_data);
+
+/*! Get a pointer to the logging context associated with a T.30 context.
+    \brief Get a pointer to the logging context associated with a T.30 context.
+    \param s The T.30 context.
+    \return A pointer to the logging context, or NULL.
+*/
+logging_state_t *t30_get_logging_state(t30_state_t *s);
 
 #if defined(__cplusplus)
 }

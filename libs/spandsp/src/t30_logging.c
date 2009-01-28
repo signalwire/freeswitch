@@ -22,13 +22,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30_logging.c,v 1.6 2008/08/01 17:59:46 steveu Exp $
+ * $Id: t30_logging.c,v 1.10 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -37,13 +37,13 @@
 #include <string.h>
 #include <fcntl.h>
 #include <time.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
@@ -65,6 +65,10 @@
 #include "spandsp/t35.h"
 #include "spandsp/t30.h"
 #include "spandsp/t30_logging.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/t4.h"
+#include "spandsp/private/t30.h"
 
 #include "t30_local.h"
 

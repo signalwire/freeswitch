@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_mf_tx_tests.c,v 1.12 2008/08/16 15:24:15 steveu Exp $
+ * $Id: bell_mf_tx_tests.c,v 1.14 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -46,6 +46,10 @@
 #include <time.h>
 #include <audiofile.h>
 
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
+
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -53,7 +57,7 @@
 
 int main(int argc, char *argv[])
 {
-    bell_mf_tx_state_t gen;
+    bell_mf_tx_state_t *gen;
     int16_t amp[16384];
     int len;
     AFfilehandle outhandle;
@@ -66,40 +70,40 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    bell_mf_tx_init(&gen);
-    len = bell_mf_tx(&gen, amp, 16384);
+    gen = bell_mf_tx_init(NULL);
+    len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "123", -1))
+    if (bell_mf_tx_put(gen, "123", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 16384);
+    len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "456", -1))
+    if (bell_mf_tx_put(gen, "456", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 160);
+    len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "789", -1))
+    if (bell_mf_tx_put(gen, "789", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 160);
+    len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "*#", -1))
+    if (bell_mf_tx_put(gen, "*#", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 160);
+    len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
@@ -108,7 +112,7 @@ int main(int argc, char *argv[])
     add_digits = 1;
     do
     {
-        len = bell_mf_tx(&gen, amp, 160);
+        len = bell_mf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
         {
@@ -119,7 +123,7 @@ int main(int argc, char *argv[])
         }
         if (add_digits)
         {
-            if (bell_mf_tx_put(&gen, "1234567890", -1))
+            if (bell_mf_tx_put(gen, "1234567890", -1))
             {
                 printf("Digit buffer full\n");
                 add_digits = 0;
@@ -128,48 +132,48 @@ int main(int argc, char *argv[])
     }
     while (len > 0);
 
-    bell_mf_tx_init(&gen);
-    len = bell_mf_tx(&gen, amp, 16384);
+    bell_mf_tx_init(gen);
+    len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "123", -1))
+    if (bell_mf_tx_put(gen, "123", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 16384);
+    len = bell_mf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "456", -1))
+    if (bell_mf_tx_put(gen, "456", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 160);
+    len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "789", -1))
+    if (bell_mf_tx_put(gen, "789", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 160);
+    len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "0*#", -1))
+    if (bell_mf_tx_put(gen, "0*#", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 160);
+    len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
                               amp,
                               len);
-    if (bell_mf_tx_put(&gen, "ABC", -1))
+    if (bell_mf_tx_put(gen, "ABC", -1))
         printf("Ooops\n");
-    len = bell_mf_tx(&gen, amp, 160);
+    len = bell_mf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle,
                               AF_DEFAULT_TRACK,
@@ -178,7 +182,7 @@ int main(int argc, char *argv[])
     add_digits = 1;
     do
     {
-        len = bell_mf_tx(&gen, amp, 160);
+        len = bell_mf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
         {
@@ -189,7 +193,7 @@ int main(int argc, char *argv[])
         }
         if (add_digits)
         {
-            if (bell_mf_tx_put(&gen, "1234567890", -1))
+            if (bell_mf_tx_put(gen, "1234567890", -1))
             {
                 printf("Digit buffer full\n");
                 add_digits = 0;

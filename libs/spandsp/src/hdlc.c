@@ -22,13 +22,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.61 2008/09/07 12:45:16 steveu Exp $
+ * $Id: hdlc.c,v 1.64 2009/01/05 13:48:31 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -41,6 +41,7 @@
 #include "spandsp/crc.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/hdlc.h"
+#include "spandsp/private/hdlc.h"
 
 static void rx_special_condition(hdlc_rx_state_t *s, int condition)
 {
@@ -120,7 +121,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
         /* If we have not yet seen enough flags, restart the count. If we
            are beyond that point, just back off one step, so we need to see
            another flag before proceeding to collect frame octets. */
-        if (s->flags_seen < s->framing_ok_threshold)
+        if (s->flags_seen < s->framing_ok_threshold - 1)
             s->flags_seen = 0;
         else
             s->flags_seen = s->framing_ok_threshold - 1;
@@ -181,7 +182,16 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                greatly reduces the chances of false preamble detection, and anything
                which doesn't send them back-to-back is badly broken. */
             if (s->num_bits != 7)
-                s->flags_seen = 0;
+            {
+                /* Don't set the flags seen indicator back to zero too aggressively.
+                   We want to pick up with the minimum of discarded data when there
+                   is a bit error in the stream, and a bit error could emulate a
+                   misaligned flag. */
+                if (s->flags_seen < s->framing_ok_threshold - 1)
+                    s->flags_seen = 0;
+                else
+                    s->flags_seen = s->framing_ok_threshold - 1;
+            }
             if (++s->flags_seen >= s->framing_ok_threshold  &&  !s->framing_ok_announced)
             {
                 s->frame_handler(s->user_data, NULL, SIG_STATUS_FRAMING_OK, TRUE);

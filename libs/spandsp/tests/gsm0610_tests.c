@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: gsm0610_tests.c,v 1.19 2008/08/29 09:28:13 steveu Exp $
+ * $Id: gsm0610_tests.c,v 1.23 2009/01/12 17:20:59 steveu Exp $
  */
 
 /*! \file */
@@ -34,9 +34,6 @@ Two sets of tests are performed:
       the specification.
     - A generally audio quality test, consisting of compressing and decompressing a speeech
       file for audible comparison.
-
-The speech file should be recorded at 16 bits/sample, 8000 samples/second, and named
-"pre_gsm0610.wav".
 
 \section gsm0610_tests_page_sec_2 How is it used?
 To perform the tests in the GSM 06.10 specification you need to obtain the test data files from the
@@ -127,6 +124,10 @@ will be compressed to GSM 06.10 data, decompressed, and the resulting audio stor
 #include <string.h>
 #include <ctype.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -521,31 +522,32 @@ int main(int argc, char *argv[])
     AFfilehandle outhandle;
     int frames;
     int outframes;
+    int bytes;
     int16_t pre_amp[HIST_LEN];
     int16_t post_amp[HIST_LEN];
     uint8_t gsm0610_data[HIST_LEN];
     gsm0610_state_t *gsm0610_enc_state;
     gsm0610_state_t *gsm0610_dec_state;
+    int opt;
     int etsitests;
     int packing;
-    int i;
 
     etsitests = TRUE;
     packing = GSM0610_PACKING_NONE;
-    for (i = 1;  i < argc;  i++)
+    while ((opt = getopt(argc, argv, "lp:")) != -1)
     {
-        if (strcmp(argv[i], "-l") == 0)
+        switch (opt)
         {
+        case 'l':
             etsitests = FALSE;
-            continue;
+            break;
+        case 'p':
+            packing = atoi(optarg);
+            break;
+        default:
+            //usage();
+            exit(2);
         }
-        if (strcmp(argv[i], "-p") == 0)
-        {
-            packing = atoi(argv[++i]);
-            continue;
-        }
-        fprintf(stderr, "Unknown parameter %s specified.\n", argv[i]);
-        exit(2);
     }
 
     if (etsitests)
@@ -597,8 +599,8 @@ int main(int argc, char *argv[])
 
         while ((frames = afReadFrames(inhandle, AF_DEFAULT_TRACK, pre_amp, 2*BLOCK_LEN)))
         {
-            gsm0610_encode(gsm0610_enc_state, gsm0610_data, pre_amp, (packing == GSM0610_PACKING_WAV49)  ?  BLOCK_LEN  :  2*BLOCK_LEN);
-            gsm0610_decode(gsm0610_dec_state, post_amp, gsm0610_data, (packing == GSM0610_PACKING_WAV49)  ?  33  :  65);
+            bytes = gsm0610_encode(gsm0610_enc_state, gsm0610_data, pre_amp, frames);
+            gsm0610_decode(gsm0610_dec_state, post_amp, gsm0610_data, bytes);
             outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, post_amp, frames);
         }
     

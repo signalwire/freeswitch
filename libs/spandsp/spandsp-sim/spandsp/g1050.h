@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g1050.h,v 1.8 2008/09/09 16:13:12 steveu Exp $
+ * $Id: g1050.h,v 1.9 2009/01/16 15:13:16 steveu Exp $
  */
 
 /*! \file */
@@ -39,7 +39,7 @@ model is based on a path having 5 segments:
  - a distant LAN (wired or wireless)
 The impairments typical of these segments at various service levels are modelled.
 8 standard service level behaviours are defined, covering lightly loaded to heavily
-congested levels. 133 standard sets of link speeds are defined, covering typical
+congested levels. 168 standard sets of link speeds are defined, covering typical
 wired and wireless LAN, broadband access link, and backbone characteristics.
 
 The G.1050 model is suitable for testing the behaviour of RTP, UDPTL and other streaming
@@ -261,7 +261,7 @@ typedef struct
 } g1050_state_t;
 
 extern g1050_constants_t g1050_constants[1];
-extern g1050_channel_speeds_t g1050_speed_patterns[133];
+extern g1050_channel_speeds_t g1050_speed_patterns[168];
 extern g1050_model_t g1050_standard_models[9];
 
 #ifdef  __cplusplus

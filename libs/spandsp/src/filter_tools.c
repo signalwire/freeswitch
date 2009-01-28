@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: filter_tools.c,v 1.8 2008/08/29 09:28:13 steveu Exp $
+ * $Id: filter_tools.c,v 1.9 2009/01/28 03:41:26 steveu Exp $
  */
  
 #if defined(HAVE_CONFIG_H)
@@ -35,13 +35,13 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <string.h>
 #include <stdio.h>
 #include <time.h>

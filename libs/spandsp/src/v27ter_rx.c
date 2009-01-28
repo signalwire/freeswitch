@@ -22,26 +22,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.c,v 1.107 2008/09/18 14:59:30 steveu Exp $
+ * $Id: v27ter_rx.c,v 1.113 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -58,6 +58,9 @@
 
 #include "spandsp/v29rx.h"
 #include "spandsp/v27ter_rx.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v27ter_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #include "v27ter_rx_4800_fixed_rrc.h"
@@ -685,12 +688,14 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
 #endif
         if (++s->training_count >= V27TER_TRAINING_SEG_6_LEN)
         {
-            if ((s->bit_rate == 4800  &&  s->training_error < 0.5f)
+            /* At 4800bps the symbols are 1.08238 (Euclidian) apart.
+               At 2400bps the symbols are 2.0 (Euclidian) apart. */
+            if ((s->bit_rate == 4800  &&  s->training_error < V27TER_TRAINING_SEG_6_LEN*0.25f)
                 ||
-                (s->bit_rate == 2400  &&  s->training_error < 1.0f))
+                (s->bit_rate == 2400  &&  s->training_error < V27TER_TRAINING_SEG_6_LEN*0.5f))
             {
                 /* We are up and running */
-                span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded (constellation mismatch %f)\n", s->training_error);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded at %dbps (constellation mismatch %f)\n", s->bit_rate, s->training_error);
                 report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
                 /* Apply some lag to the carrier off condition, to ensure the last few bits get pushed through
                    the processing. */
@@ -1013,6 +1018,12 @@ void v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_tx_status_fu
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+logging_state_t *v27ter_rx_get_logging_state(v27ter_rx_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

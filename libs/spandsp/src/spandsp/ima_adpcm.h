@@ -1,8 +1,8 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * imaadpcm.c - Conversion routines between linear 16 bit PCM data and
- *		        IMA/DVI/Intel ADPCM format.
+ * ima_adpcm.c - Conversion routines between linear 16 bit PCM data and
+ *		         IMA/DVI/Intel ADPCM format.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -26,7 +26,7 @@
  * Based on a bit from here, a bit from there, eye of toad,
  * ear of bat, etc - plus, of course, my own 2 cents.
  *
- * $Id: ima_adpcm.h,v 1.20 2008/04/17 14:27:00 steveu Exp $
+ * $Id: ima_adpcm.h,v 1.21 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -59,19 +59,7 @@ enum
     a single working instance of the IMA ADPCM converter. This is used for
     either linear to ADPCM or ADPCM to linear conversion.
 */
-typedef struct
-{
-    int variant;
-    /*! \brief The size of a chunk, in samples. */
-    int chunk_size;
-    /*! \brief The last state of the ADPCM algorithm. */
-    int last;
-    /*! \brief Current index into the step size table. */
-    int step_index;
-    /*! \brief The current IMA code byte in progress. */
-    uint16_t ima_byte;
-    int bits;
-} ima_adpcm_state_t;
+typedef struct ima_adpcm_state_s ima_adpcm_state_t;
 
 #if defined(__cplusplus)
 extern "C"

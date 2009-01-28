@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_mf_rx_tests.c,v 1.12 2008/05/13 13:17:25 steveu Exp $
+ * $Id: bell_mf_rx_tests.c,v 1.14 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -49,6 +49,10 @@ a fair test of performance in a real PSTN channel.
 #include <string.h>
 #include <time.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 
@@ -225,11 +229,11 @@ int main(int argc, char *argv[])
     float rrb;
     float rcfo;
     time_t now;
-    bell_mf_rx_state_t mf_state;
+    bell_mf_rx_state_t *mf_state;
     awgn_state_t noise_source;
 
     time(&now);
-    bell_mf_rx_init(&mf_state, NULL, NULL);
+    mf_state = bell_mf_rx_init(NULL, NULL, NULL);
 
     /* Test 1: Mitel's test 1 isn't really a test. Its a calibration step,
        which has no meaning here. */
@@ -251,8 +255,8 @@ int main(int argc, char *argv[])
         {
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            actual = bell_mf_rx_get(&mf_state, buf, 128);
+            bell_mf_rx(mf_state, amp, len);
+            actual = bell_mf_rx_get(mf_state, buf, 128);
             if (actual != 1  ||  buf[0] != digit[0])
             {
                 printf ("    Sent     '%s'\n", digit);
@@ -304,16 +308,16 @@ int main(int argc, char *argv[])
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            nplus += bell_mf_rx_get(&mf_state, buf, 128);
+            bell_mf_rx(mf_state, amp, len);
+            nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_mf_gen_init((float) i/1000.0, -17, 0.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            nminus += bell_mf_rx_get(&mf_state, buf, 128);
+            bell_mf_rx(mf_state, amp, len);
+            nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
@@ -335,16 +339,16 @@ int main(int argc, char *argv[])
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            nplus += bell_mf_rx_get(&mf_state, buf, 128);
+            bell_mf_rx(mf_state, amp, len);
+            nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
         for (nminus = 0, i = -1;  i >= -60;  i--)
         {
             my_mf_gen_init(0.0, -17, (float) i/1000.0, -17, 68, 68);
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            nminus += bell_mf_rx_get(&mf_state, buf, 128);
+            bell_mf_rx(mf_state, amp, len);
+            nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
         rrb = (float) (nplus + nminus)/10.0;
         rcfo = (float) (nplus - nminus)/10.0;
@@ -380,8 +384,8 @@ int main(int argc, char *argv[])
 
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            nplus += bell_mf_rx_get(&mf_state, buf, 128);
+            bell_mf_rx(mf_state, amp, len);
+            nplus += bell_mf_rx_get(mf_state, buf, 128);
         }
         printf("    %c normal twist  = %.2fdB\n", digit[0], (float) nplus/10.0);
         if (nplus < 60)
@@ -395,8 +399,8 @@ int main(int argc, char *argv[])
 
             len = my_mf_generate(amp, digit);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            nminus += bell_mf_rx_get(&mf_state, buf, 128);
+            bell_mf_rx(mf_state, amp, len);
+            nminus += bell_mf_rx_get(mf_state, buf, 128);
         }
         printf("    %c reverse twist = %.2fdB\n", digit[0], (float) nminus/10.0);
         if (nminus < 60)
@@ -421,8 +425,8 @@ int main(int argc, char *argv[])
         {
             len = my_mf_generate(amp, ALL_POSSIBLE_DIGITS);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-            if (bell_mf_rx_get(&mf_state, buf, 128) != 15)
+            bell_mf_rx(mf_state, amp, len);
+            if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
             if (strcmp(buf, ALL_POSSIBLE_DIGITS) != 0)
                 break;
@@ -462,9 +466,8 @@ int main(int argc, char *argv[])
         {
             len = my_mf_generate(amp, ALL_POSSIBLE_DIGITS);
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-
-            if (bell_mf_rx_get(&mf_state, buf, 128) != 15)
+            bell_mf_rx(mf_state, amp, len);
+            if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
             if (strcmp(buf, ALL_POSSIBLE_DIGITS) != 0)
                 break;
@@ -495,9 +498,8 @@ int main(int argc, char *argv[])
             for (sample = 0;  sample < len;  sample++)
                 amp[sample] = saturate(amp[sample] + awgn(&noise_source));
             codec_munge(amp, len);
-            bell_mf_rx(&mf_state, amp, len);
-
-            if (bell_mf_rx_get(&mf_state, buf, 128) != 15)
+            bell_mf_rx(mf_state, amp, len);
+            if (bell_mf_rx_get(mf_state, buf, 128) != 15)
                 break;
             if (strcmp(buf, ALL_POSSIBLE_DIGITS) != 0)
                 break;
@@ -523,14 +525,14 @@ int main(int argc, char *argv[])
     printf("Test: Callback digit delivery mode.\n");
     callback_ok = FALSE;
     callback_roll = 0;
-    bell_mf_rx_init(&mf_state, digit_delivery, (void *) 0x12345678);
+    mf_state = bell_mf_rx_init(NULL, digit_delivery, (void *) 0x12345678);
     my_mf_gen_init(0.0, -10, 0.0, -10, 68, 68);
     for (i = 1;  i < 10;  i++)
     {
         len = 0;
         for (j = 0;  j < i;  j++)
             len += my_mf_generate(amp + len, ALL_POSSIBLE_DIGITS);
-        bell_mf_rx(&mf_state, amp, len);
+        bell_mf_rx(mf_state, amp, len);
         if (!callback_ok)
             break;
     }

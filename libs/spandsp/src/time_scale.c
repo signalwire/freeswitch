@@ -22,13 +22,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: time_scale.c,v 1.24 2008/09/19 14:02:05 steveu Exp $
+ * $Id: time_scale.c,v 1.27 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -38,17 +38,19 @@
 #include <fcntl.h>
 #include <time.h>
 #include <limits.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/time_scale.h"
 #include "spandsp/saturated.h"
+
+#include "spandsp/private/time_scale.h"
 
 /*
     Time scaling for speech, based on the Pointer Interval Controlled

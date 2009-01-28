@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.105 2008/09/30 18:12:42 steveu Exp $
+## $Id: Makefile.am,v 1.116 2008/12/12 13:18:21 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -37,7 +37,8 @@ EXTRA_DIST = floating_fudge.h \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
              msvc/vc8proj.head \
-             msvc/vc8proj.foot
+             msvc/vc8proj.foot \
+             spandsp/private/README
 
 INCLUDES = -I$(top_builddir)
 
@@ -120,7 +121,7 @@ libspandsp_la_SOURCES = adsi.c \
                         vector_float.c \
                         vector_int.c
 
-libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@
+libspandsp_la_LDFLAGS = -version-info @SPANDSP_LT_CURRENT@:@SPANDSP_LT_REVISION@:@SPANDSP_LT_AGE@ $(COMP_VENDOR_FLAGS)
 
 nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/async.h \
@@ -196,7 +197,55 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/v8.h \
                          spandsp/vector_float.h \
                          spandsp/vector_int.h \
-                         spandsp/version.h
+                         spandsp/version.h \
+                         spandsp/private/adsi.h \
+                         spandsp/private/async.h \
+                         spandsp/private/at_interpreter.h \
+                         spandsp/private/awgn.h \
+                         spandsp/private/bell_r2_mf.h \
+                         spandsp/private/bert.h \
+                         spandsp/private/bitstream.h \
+                         spandsp/private/dtmf.h \
+                         spandsp/private/fax.h \
+                         spandsp/private/fax_modems.h \
+                         spandsp/private/fsk.h \
+                         spandsp/private/g711.h \
+                         spandsp/private/g722.h \
+                         spandsp/private/g726.h \
+                         spandsp/private/gsm0610.h \
+                         spandsp/private/hdlc.h \
+                         spandsp/private/ima_adpcm.h \
+                         spandsp/private/logging.h \
+                         spandsp/private/lpc10.h \
+                         spandsp/private/modem_connect_tones.h \
+                         spandsp/private/noise.h \
+                         spandsp/private/oki_adpcm.h \
+                         spandsp/private/queue.h \
+                         spandsp/private/schedule.h \
+                         spandsp/private/sig_tone.h \
+                         spandsp/private/super_tone_rx.h \
+                         spandsp/private/super_tone_tx.h \
+                         spandsp/private/t30.h \
+                         spandsp/private/t31.h \
+                         spandsp/private/t38_core.h \
+                         spandsp/private/t38_gateway.h \
+                         spandsp/private/t38_non_ecm_buffer.h \
+                         spandsp/private/t38_terminal.h \
+                         spandsp/private/t4.h \
+                         spandsp/private/time_scale.h \
+                         spandsp/private/tone_detect.h \
+                         spandsp/private/tone_generate.h \
+                         spandsp/private/v17rx.h \
+                         spandsp/private/v17tx.h \
+                         spandsp/private/v22bis.h \
+                         spandsp/private/v27ter_rx.h \
+                         spandsp/private/v27ter_tx.h \
+                         spandsp/private/v29rx.h \
+                         spandsp/private/v29tx.h \
+                         spandsp/private/v42.h \
+                         spandsp/private/v42bis.h \
+                         spandsp/private/v8.h \
+                         spandsp/expose.h
 
 nodist_include_HEADERS = spandsp.h
 

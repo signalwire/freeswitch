@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.31 2008/09/04 14:40:05 steveu Exp $
+ * $Id: fsk.h,v 1.32 2008/10/13 13:14:00 steveu Exp $
  */
 
 /*! \file */
@@ -120,27 +120,7 @@ extern const fsk_spec_t preset_fsk_specs[];
     FSK modem transmit descriptor. This defines the state of a single working
     instance of an FSK modem transmitter.
 */
-typedef struct
-{
-    int baud_rate;
-    /*! \brief The callback function used to get the next bit to be transmitted. */
-    get_bit_func_t get_bit;
-    /*! \brief A user specified opaque pointer passed to the get_bit function. */
-    void *get_bit_user_data;
-
-    /*! \brief The callback function used to report modem status changes. */
-    modem_tx_status_func_t status_handler;
-    /*! \brief A user specified opaque pointer passed to the status function. */
-    void *status_user_data;
-
-    int32_t phase_rates[2];
-    int scaling;
-    int32_t current_phase_rate;
-    uint32_t phase_acc;
-    int baud_frac;
-    int baud_inc;
-    int shutdown;
-} fsk_tx_state_t;
+typedef struct fsk_tx_state_s fsk_tx_state_t;
 
 /* The longest window will probably be 106 for 75 baud */
 #define FSK_MAX_WINDOW_LEN 128
@@ -149,42 +129,7 @@ typedef struct
     FSK modem receive descriptor. This defines the state of a single working
     instance of an FSK modem receiver.
 */
-typedef struct
-{
-    int baud_rate;
-    int sync_mode;
-    /*! \brief The callback function used to put each bit received. */
-    put_bit_func_t put_bit;
-    /*! \brief A user specified opaque pointer passed to the put_bit routine. */
-    void *put_bit_user_data;
-
-    /*! \brief The callback function used to report modem status changes. */
-    modem_tx_status_func_t status_handler;
-    /*! \brief A user specified opaque pointer passed to the status function. */
-    void *status_user_data;
-
-    int32_t carrier_on_power;
-    int32_t carrier_off_power;
-    power_meter_t power;
-    /*! \brief The value of the last signal sample, using the a simple HPF for signal power estimation. */
-    int16_t last_sample;
-    /*! \brief >0 if a signal above the minimum is present. It may or may not be a V.29 signal. */
-    int signal_present;
-
-    int32_t phase_rate[2];
-    uint32_t phase_acc[2];
-
-    int correlation_span;
-
-    complexi32_t window[2][FSK_MAX_WINDOW_LEN];
-    complexi32_t dot[2];
-    int buf_ptr;
-
-    int baud_inc;
-    int baud_pll;
-    int lastbit;
-    int scaling_shift;
-} fsk_rx_state_t;
+typedef struct fsk_rx_state_s fsk_rx_state_t;
 
 #if defined(__cplusplus)
 extern "C"

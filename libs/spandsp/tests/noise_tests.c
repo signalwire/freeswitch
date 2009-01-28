@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: noise_tests.c,v 1.16 2008/08/17 14:21:26 steveu Exp $
+ * $Id: noise_tests.c,v 1.17 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \page noise_tests_page Noise generator tests
@@ -37,6 +37,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"

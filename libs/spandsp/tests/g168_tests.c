@@ -24,7 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g168_tests.c,v 1.18 2008/09/04 14:40:05 steveu Exp $
+ * $Id: g168_tests.c,v 1.19 2008/11/30 10:17:31 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -35,6 +35,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp/g168models.h"

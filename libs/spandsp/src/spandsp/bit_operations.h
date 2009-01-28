@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bit_operations.h,v 1.22 2008/07/10 13:43:40 steveu Exp $
+ * $Id: bit_operations.h,v 1.23 2008/10/13 23:41:40 steveu Exp $
  */
 
 /*! \file */
@@ -40,9 +40,9 @@ extern "C"
     \return The bit number of the highest set bit, or -1 if the word is zero. */
 static __inline__ int top_bit(unsigned int bits)
 {
+#if defined(__i386__)  ||  defined(__x86_64__)
     int res;
 
-#if defined(__i386__)  ||  defined(__x86_64__)
     __asm__ (" xorl %[res],%[res];\n"
              " decl %[res];\n"
              " bsrl %[bits],%[res]\n"
@@ -50,11 +50,22 @@ static __inline__ int top_bit(unsigned int bits)
              : [bits] "rm" (bits));
     return res;
 #elif defined(__ppc__)  ||   defined(__powerpc__)
+    int res;
+
     __asm__ ("cntlzw %[res],%[bits];\n"
              : [res] "=&r" (res)
              : [bits] "r" (bits));
     return 31 - res;
+#elif defined(_M_IX86) // Visual Studio x86
+    __asm
+    {
+        xor eax, eax
+        dec eax
+        bsr eax, bits
+    }
 #else
+    int res;
+
     if (bits == 0)
         return -1;
     res = 0;

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_vector_float_tests.c,v 1.1 2008/09/18 12:05:35 steveu Exp $
+ * $Id: complex_vector_float_tests.c,v 1.2 2008/10/09 13:25:19 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -36,6 +36,55 @@
 #include <audiofile.h>
 
 #include "spandsp.h"
+
+static void cvec_mulf_dumb(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
+{
+    int i;
+
+    for (i = 0;  i < n;  i++)
+    {
+        z[i].re = x[i].re*y[i].re - x[i].im*y[i].im;
+        z[i].im = x[i].re*y[i].im + x[i].im*y[i].re;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+static int test_cvec_mulf(void)
+{
+    int i;
+    complexf_t x[100];
+    complexf_t y[100];
+    complexf_t za[100];
+    complexf_t zb[100];
+    complexf_t ratio;
+
+    for (i = 0;  i < 99;  i++)
+    {
+        x[i].re = rand();
+        x[i].im = rand();
+        y[i].re = rand();
+        y[i].im = rand();
+    }
+    cvec_mulf(za, x, y, 99);
+    cvec_mulf_dumb(zb, x, y, 99);
+    for (i = 0;  i < 99;  i++)
+        printf("(%f,%f) (%f,%f) (%f,%f)\n", za[i].re, za[i].im, x[i].re, x[i].im, y[i].re, y[i].im);
+    for (i = 0;  i < 99;  i++)
+    {
+        ratio.re = za[i].re/zb[i].re;
+        ratio.im = za[i].im/zb[i].im;
+        if ((ratio.re < 0.9999  ||  ratio.re > 1.0001)
+            ||
+            (ratio.im < 0.9999  ||  ratio.im > 1.0001))
+        {
+            printf("cvec_mulf() - (%f,%f) (%f,%f)\n", za[i].re, za[i].im, zb[i].re, zb[i].im);
+            printf("Tests failed\n");
+            exit(2);
+        }
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
 
 static complexf_t cvec_dot_prodf_dumb(const complexf_t x[], const complexf_t y[], int n)
 {
@@ -79,7 +128,7 @@ static int test_cvec_dot_prodf(void)
             ||
             (ratio.im < 0.9999  ||  ratio.im > 1.0001))
         {
-            printf("vec_dot_prod() - (%f,%f) (%f,%f)\n", zsa.re, zsa.im, zsb.re, zsb.im);
+            printf("cvec_dot_prodf() - (%f,%f) (%f,%f)\n", zsa.re, zsa.im, zsb.re, zsb.im);
             printf("Tests failed\n");
             exit(2);
         }
@@ -90,6 +139,7 @@ static int test_cvec_dot_prodf(void)
 
 int main(int argc, char *argv[])
 {
+    test_cvec_mulf();
     test_cvec_dot_prodf();
 
     printf("Tests passed.\n");

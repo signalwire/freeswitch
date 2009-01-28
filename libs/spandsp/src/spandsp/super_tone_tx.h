@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx.h,v 1.13 2008/04/17 14:27:00 steveu Exp $
+ * $Id: super_tone_tx.h,v 1.14 2008/11/30 10:17:31 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SUPER_TONE_TX_H_)
@@ -43,25 +43,7 @@ complex cadence patterns.
 
 typedef struct super_tone_tx_step_s super_tone_tx_step_t;
 
-struct super_tone_tx_step_s
-{
-    tone_gen_tone_descriptor_t tone[4];
-    int tone_on;
-    int length;
-    int cycles;
-    super_tone_tx_step_t *next;
-    super_tone_tx_step_t *nest;
-};
-
-typedef struct
-{
-    tone_gen_tone_descriptor_t tone[4];
-    uint32_t phase[4];
-    int current_position;
-    int level;
-    super_tone_tx_step_t *levels[4];
-    int cycles[4];
-} super_tone_tx_state_t;
+typedef struct super_tone_tx_state_s super_tone_tx_state_t;
 
 #if defined(__cplusplus)
 extern "C"

@@ -25,24 +25,24 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_long_term.c,v 1.17 2008/09/19 14:02:05 steveu Exp $
+ * $Id: gsm0610_long_term.c,v 1.20 2009/01/28 03:41:26 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <assert.h>
 #include <inttypes.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <stdlib.h>
 
 #include "spandsp/telephony.h"
@@ -66,12 +66,82 @@ static const int16_t gsm_QLB[4] =
 
 /* 4.2.11 .. 4.2.12 LONG TERM PREDICTOR (LTP) SECTION */
 
-#if defined(__GNUC__)  &&  defined(__i386__)
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
 int32_t gsm0610_max_cross_corr(const int16_t *wt, const int16_t *dp, int16_t *Nc_out)
 {
     int32_t lmax;
     int32_t out;
 
+#if defined(__x86_64__)
+    __asm__ __volatile__(
+        " emms;\n"
+        " pushq %%rbx;\n"
+        " movl $0,%%edx;\n"             /* Will be maximum inner-product */
+        " movl $40,%%ebx;\n"
+        " movl %%ebx,%%ecx;\n"          /* Will be index of max inner-product */
+        " subq $80,%%rsi;\n"
+        " .p2align 2;\n"
+        "1:\n"
+        " movq (%%rdi),%%mm0;\n"
+        " movq (%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm0;\n"
+        " movq 8(%%rdi),%%mm1;\n"
+        " movq 8(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 16(%%rdi),%%mm1;\n"
+        " movq 16(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 24(%%rdi),%%mm1;\n"
+        " movq 24(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 32(%%rdi),%%mm1;\n"
+        " movq 32(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 40(%%rdi),%%mm1;\n"
+        " movq 40(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 48(%%rdi),%%mm1;\n"
+        " movq 48(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 56(%%rdi),%%mm1;\n"
+        " movq 56(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 64(%%rdi),%%mm1;\n"
+        " movq 64(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 72(%%rdi),%%mm1;\n"
+        " movq 72(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq %%mm0,%%mm1;\n"
+        " punpckhdq %%mm0,%%mm1;\n"        /* mm1 has high int32 of mm0 dup'd */
+        " paddd %%mm1,%%mm0;\n"
+        " movd %%mm0,%%eax;\n"                /* eax has result */
+        " cmpl %%edx,%%eax;\n"
+        " jle 2f;\n"
+        " movl %%eax,%%edx;\n"
+        " movl %%ebx,%%ecx;\n"
+        " .p2align 2;\n"
+        "2:\n"
+        " subq $2,%%rsi;\n"
+        " incl %%ebx;\n"
+        " cmpq $120,%%rbx;\n"
+        " jle 1b;\n"
+        " popq %%rbx;\n"
+        " emms;\n"
+        : "=d" (lmax), "=c" (out)
+        : "D" (wt), "S" (dp)
+        : "eax"
+    );
+#else
     __asm__ __volatile__(
         " emms;\n"
         " pushl %%ebx;\n"
@@ -140,6 +210,7 @@ int32_t gsm0610_max_cross_corr(const int16_t *wt, const int16_t *dp, int16_t *Nc
         : "D" (wt), "S" (dp)
         : "eax"
     );
+#endif
     *Nc_out = out;
     return  lmax;
 }
@@ -176,7 +247,7 @@ static int16_t evaluate_ltp_parameters(int16_t d[40],
     int16_t scale;
     int16_t temp;
     int32_t L_temp;
-#if !(defined(__GNUC__)  &&  defined(__i386__))
+#if !(defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX))
     int16_t lambda;
 #endif
 
@@ -216,7 +287,7 @@ static int16_t evaluate_ltp_parameters(int16_t d[40],
     /*endfor*/
 
     /* Search for the maximum cross-correlation and coding of the LTP lag */
-#if defined(__GNUC__)  &&  defined(__i386__)
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
     L_max = gsm0610_max_cross_corr(wt, dp, &Nc);
 #else
     L_max = 0;

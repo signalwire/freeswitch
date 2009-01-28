@@ -22,27 +22,52 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_vector_int.c,v 1.3 2008/09/18 13:54:32 steveu Exp $
+ * $Id: complex_vector_int.c,v 1.6 2009/01/28 03:41:26 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <assert.h>
+
+#if defined(SPANDSP_USE_MMX)
+#include <mmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE)
+#include <xmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE2)
+#include <emmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE3)
+#include <pmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_1)
+#include <smmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_2)
+#include <nmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4A)
+#include <ammintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE5)
+#include <bmmintrin.h>
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"

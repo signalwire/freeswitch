@@ -1,3 +1,76 @@
+Building and installing spandsp
+===============================
+
+A number of distributions include spandsp, but they usually use older versions
+of the library, which lack a lot of the features of the current version. Before
+installing spandsp, make sure there are no older versions already on your
+machine. Make sure libtiff is installed on your machine. Versions 3.5.7,
+3.6.0, 3.7.1 and 3.8.2 seem to work OK. There have been several bugs related
+to FAX document handling in some versions of libtiff. Also, some people have
+had trouble using spandsp because they had more than one version of libtiff
+on their machine. Take care with this. If you are using an RPM based system,
+such as RedHat or Fedora, you will need the libtiff and libtiff-devel RPMs
+installed to be able to build spandsp.
+
+You can use the usual:
+
+    ./configure
+    make
+    make install
+
+process to build the spandsp library. Note that if you use configure in this
+way, the software will be installed in /usr/local. In this case make sure your
+/etc/ld.so.conf file has an entry for /usr/local/lib. If you wish the software
+to be installed in /usr, you should build it with the commands.
+
+    ./configure --prefix=/usr
+    make
+    make install
+
+
+Building the programming documentation
+======================================
+
+If you wish to build the programming documentation for spandsp, configure
+spandsp with:
+
+    ./configure --enable-doc
+
+You need doxygen installed on your machine.
+
+
+Building the test suite
+=======================
+
+Most sections of the spandsp library have an accompanying test program in the
+test directory. If you wish to build these test programs, configure spandsp
+with:
+
+    ./configure --enable-tests
+
+To build these tests you will need libaudiofile installed on your machine. To
+build the modem tests, with the GUI monitoring feature you will need Fltk 1.1.4
+or later, an audio meter module and a cartesian plotting module. Fltk may be
+obtained from http://www.fltk.org. The audio meter module may be obtained from
+http://www.soft-switch.org/downloads/Fl_Audio_Meter.tgz . The cartesian plotting
+module may be obtained from http://134.226.68.29/fltk. However, there is no
+suitable makefile supplied with that. You can find a version at
+http://www.soft-switch.org/downloads/Fl_Cartesian.tgz which will build as a
+Linux library. The actual code in both these versions is identical.
+You need to have Fltk 1.1.4 or later installed before building the plotting
+library.
+
+
+Applications
+============
+
+Applications support for spandsp is built into packages such as Callweaver,
+FreeSwitch and iaxmodem. Code to add spandsp based FAX support to Asterisk may
+be found at http://sourceforge.net/projects/agx-ast-addons.
+
+
+
+
 Basic Installation
 ==================
 

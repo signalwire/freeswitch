@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert.c,v 1.28 2008/09/07 12:45:16 steveu Exp $
+ * $Id: bert.c,v 1.30 2008/11/30 13:44:35 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -40,6 +40,9 @@
 #include "spandsp/logging.h"
 #include "spandsp/async.h"
 #include "spandsp/bert.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/bert.h"
 
 static const char *qbf = "VoyeZ Le BricK GeanT QuE J'ExaminE PreS Du WharF 123 456 7890 + - * : = $ % ( )"
                          "ThE QuicK BrowN FoX JumpS OveR ThE LazY DoG 123 456 7890 + - * : = $ % ( )";

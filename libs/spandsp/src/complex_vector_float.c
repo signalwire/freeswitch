@@ -22,33 +22,131 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_vector_float.c,v 1.10 2008/09/18 13:16:49 steveu Exp $
+ * $Id: complex_vector_float.c,v 1.14 2009/01/28 03:41:26 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <assert.h>
+
+#if defined(SPANDSP_USE_MMX)
+#include <mmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE)
+#include <xmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE2)
+#include <emmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE3)
+#include <pmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_1)
+#include <smmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_2)
+#include <nmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4A)
+#include <ammintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE5)
+#include <bmmintrin.h>
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
+
+#if defined(__GNUC__)  &&  defined(SPANDSP_USE_SSE3)
+void cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
+{
+    int i;
+    __m128 n0;
+    __m128 n1;
+    __m128 n2;
+    __m128 n3;
+
+    if ((i = n & ~1))
+    {
+        i <<= 1;
+        for (i -= 4;  i >= 0;  i -= 4)
+        {
+            n3 = _mm_loadu_ps((float *) x + i);
+            n0 = _mm_moveldup_ps(n3);
+            n1 = _mm_loadu_ps((float *) y + i);
+            n0 = _mm_mul_ps(n0, n1);
+            n1 = _mm_shuffle_ps(n1, n1, 0xB1);
+            n2 = _mm_movehdup_ps(n3);
+            n2 = _mm_mul_ps(n2, n1);
+            n0 = _mm_addsub_ps(n0, n2);
+            _mm_storeu_ps((float *) z + i, n0);
+        }
+    }
+    /* Now deal with the last element, which doesn't fill an SSE2 register */
+    switch (n & 1)
+    {
+    case 1:
+        z[n - 1].re = x[n - 1].re*y[n - 1].re - x[n - 1].im*y[n - 1].im;
+        z[n - 1].im = x[n - 1].re*y[n - 1].im + x[n - 1].im*y[n - 1].re;
+    }
+}
+#else
+void cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
+{
+    int i;
+
+    for (i = 0;  i < n;  i++)
+    {
+        z[i].re = x[i].re*y[i].re - x[i].im*y[i].im;
+        z[i].im = x[i].re*y[i].im + x[i].im*y[i].re;
+    }
+}
+#endif
+/*- End of function --------------------------------------------------------*/
+
+void cvec_mul(complex_t z[], const complex_t x[], const complex_t y[], int n)
+{
+    int i;
+
+    for (i = 0;  i < n;  i++)
+    {
+        z[i].re = x[i].re*y[i].re - x[i].im*y[i].im;
+        z[i].im = x[i].re*y[i].im + x[i].im*y[i].re;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+
+#if defined(HAVE_LONG_DOUBLE)
+void cvec_mull(complexl_t z[], const complexl_t x[], const complexl_t y[], int n)
+{
+    int i;
+
+    for (i = 0;  i < n;  i++)
+    {
+        z[i].re = x[i].re*y[i].re - x[i].im*y[i].im;
+        z[i].im = x[i].re*y[i].im + x[i].im*y[i].re;
+    }
+}
+/*- End of function --------------------------------------------------------*/
+#endif
 
 complexf_t cvec_dot_prodf(const complexf_t x[], const complexf_t y[], int n)
 {
@@ -109,17 +207,17 @@ complexf_t cvec_circular_dot_prodf(const complexf_t x[], const complexf_t y[], i
 }
 /*- End of function --------------------------------------------------------*/
 
+#define LMS_LEAK_RATE   0.9999f
+
 void cvec_lmsf(const complexf_t x[], complexf_t y[], int n, const complexf_t *error)
 {
     int i;
 
     for (i = 0;  i < n;  i++)
     {
-        y[i].re += (x[i].im*error->im + x[i].re*error->re);
-        y[i].im += (x[i].re*error->im - x[i].im*error->re);
         /* Leak a little to tame uncontrolled wandering */
-        y[i].re *= 0.9999f;
-        y[i].im *= 0.9999f;
+        y[i].re = y[i].re*LMS_LEAK_RATE + (x[i].im*error->im + x[i].re*error->re);
+        y[i].im = y[i].im*LMS_LEAK_RATE + (x[i].re*error->im - x[i].im*error->re);
     }
 }
 /*- End of function --------------------------------------------------------*/

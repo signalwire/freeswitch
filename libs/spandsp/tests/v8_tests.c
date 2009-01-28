@@ -22,12 +22,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8_tests.c,v 1.28 2008/08/29 09:28:13 steveu Exp $
+ * $Id: v8_tests.c,v 1.31 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \page v8_tests_page V.8 tests
 \section v8_tests_page_sec_1 What does it do?
 */
+
+/* Enable the following definition to enable direct probing into the FAX structures */
+//#define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
@@ -39,6 +42,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -84,8 +91,8 @@ int main(int argc, char *argv[])
     int i;
     int16_t amp[SAMPLES_PER_CHUNK];
     int16_t out_amp[2*SAMPLES_PER_CHUNK];
-    v8_state_t v8_caller;
-    v8_state_t v8_answerer;
+    v8_state_t *v8_caller;
+    v8_state_t *v8_answerer;
     int outframes;
     int samples;
     int remnant;
@@ -95,7 +102,8 @@ int main(int argc, char *argv[])
     AFfilehandle outhandle;
     int opt;
     char *decode_test_file;
-    
+    logging_state_t *logging;
+
     decode_test_file = NULL;
     while ((opt = getopt(argc, argv, "d:")) != -1)
     {
@@ -148,31 +156,33 @@ int main(int argc, char *argv[])
             exit(2);
         }
     
-        v8_init(&v8_caller, TRUE, caller_available_modulations, handler, (void *) "caller");
-        v8_init(&v8_answerer, FALSE, answerer_available_modulations, handler, (void *) "answerer");
-        span_log_set_level(&v8_caller.logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&v8_caller.logging, "caller");
-        span_log_set_level(&v8_answerer.logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&v8_answerer.logging, "answerer");
+        v8_caller = v8_init(NULL, TRUE, caller_available_modulations, handler, (void *) "caller");
+        v8_answerer = v8_init(NULL, FALSE, answerer_available_modulations, handler, (void *) "answerer");
+        logging = v8_get_logging_state(v8_caller);
+        span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(logging, "caller");
+        logging = v8_get_logging_state(v8_answerer);
+        span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(logging, "answerer");
         for (i = 0;  i < 1000;  i++)
         {
-            samples = v8_tx(&v8_caller, amp, SAMPLES_PER_CHUNK);
+            samples = v8_tx(v8_caller, amp, SAMPLES_PER_CHUNK);
             if (samples < SAMPLES_PER_CHUNK)
             {
                 memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
                 samples = SAMPLES_PER_CHUNK;
             }
-            remnant = v8_rx(&v8_answerer, amp, samples);
+            remnant = v8_rx(v8_answerer, amp, samples);
             for (i = 0;  i < samples;  i++)
                 out_amp[2*i] = amp[i];
             
-            samples = v8_tx(&v8_answerer, amp, SAMPLES_PER_CHUNK);
+            samples = v8_tx(v8_answerer, amp, SAMPLES_PER_CHUNK);
             if (samples < SAMPLES_PER_CHUNK)
             {
                 memset(amp + samples, 0, sizeof(int16_t)*(SAMPLES_PER_CHUNK - samples));
                 samples = SAMPLES_PER_CHUNK;
             }
-            if (v8_rx(&v8_caller, amp, samples)  &&  remnant)
+            if (v8_rx(v8_caller, amp, samples)  &&  remnant)
                 break;
             for (i = 0;  i < samples;  i++)
                 out_amp[2*i + 1] = amp[i];
@@ -193,8 +203,8 @@ int main(int argc, char *argv[])
             exit(2);
         }
         
-        v8_release(&v8_caller);
-        v8_release(&v8_answerer);
+        v8_free(v8_caller);
+        v8_free(v8_answerer);
         
         if (negotiations_ok != 2)
         {
@@ -206,9 +216,10 @@ int main(int argc, char *argv[])
     else
     {
         printf("Decode file '%s'\n", decode_test_file);
-        v8_init(&v8_answerer, FALSE, answerer_available_modulations, handler, (void *) "answerer");
-        span_log_set_level(&v8_answerer.logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
-        span_log_set_tag(&v8_answerer.logging, "decoder");
+        v8_answerer = v8_init(NULL, FALSE, answerer_available_modulations, handler, (void *) "answerer");
+        logging = v8_get_logging_state(v8_answerer);
+        span_log_set_level(logging, SPAN_LOG_FLOW | SPAN_LOG_SHOW_TAG);
+        span_log_set_tag(logging, "decoder");
         if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
         {
             fprintf(stderr, "    Cannot open speech file '%s'\n", decode_test_file);
@@ -218,11 +229,11 @@ int main(int argc, char *argv[])
 
         while ((samples = afReadFrames(inhandle, AF_DEFAULT_TRACK, amp, SAMPLES_PER_CHUNK)))
         {
-            remnant = v8_rx(&v8_answerer, amp, samples);
+            remnant = v8_rx(v8_answerer, amp, samples);
         }
         /*endwhile*/
 
-        v8_release(&v8_answerer);
+        v8_free(v8_answerer);
         if (afCloseFile(inhandle) != 0)
         {
             fprintf(stderr, "    Cannot close speech file '%s'\n", decode_test_file);

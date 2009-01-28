@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726.h,v 1.21 2008/04/17 14:27:00 steveu Exp $
+ * $Id: g726.h,v 1.22 2008/10/13 13:14:00 steveu Exp $
  */
 
 /*! \file */
@@ -59,66 +59,11 @@ enum
     G726_PACKING_RIGHT = 2
 };
 
-struct g726_state_s;
+typedef struct g726_state_s g726_state_t;
 
-typedef int16_t (*g726_decoder_func_t)(struct g726_state_s *s, uint8_t code);
+typedef int16_t (*g726_decoder_func_t)(g726_state_t *s, uint8_t code);
 
-typedef uint8_t (*g726_encoder_func_t)(struct g726_state_s *s, int16_t amp);
-
-/*!
- * The following is the definition of the state structure
- * used by the G.726 encoder and decoder to preserve their internal
- * state between successive calls.  The meanings of the majority
- * of the state structure fields are explained in detail in the
- * CCITT Recommendation G.721.  The field names are essentially indentical
- * to variable names in the bit level description of the coding algorithm
- * included in this Recommendation.
- */
-typedef struct g726_state_s
-{
-    /*! The bit rate */
-    int rate;
-    /*! The external coding, for tandem operation */
-    int ext_coding;
-    /*! The number of bits per sample */
-    unsigned int bits_per_sample;
-    /*! One of the G.726_PACKING_xxx options */
-    int packing;
-
-    /*! Locked or steady state step size multiplier. */
-    int32_t yl;
-    /*! Unlocked or non-steady state step size multiplier. */
-    int16_t yu;
-    /*! int16_t term energy estimate. */
-    int16_t dms;
-    /*! Long term energy estimate. */
-    int16_t dml;
-    /*! Linear weighting coefficient of 'yl' and 'yu'. */
-    int16_t ap;
-    
-    /*! Coefficients of pole portion of prediction filter. */
-    int16_t a[2];
-    /*! Coefficients of zero portion of prediction filter. */
-    int16_t b[6];
-    /*! Signs of previous two samples of a partially reconstructed signal. */
-    int16_t pk[2];
-    /*! Previous 6 samples of the quantized difference signal represented in
-        an internal floating point format. */
-    int16_t dq[6];
-    /*! Previous 2 samples of the quantized difference signal represented in an
-        internal floating point format. */
-    int16_t sr[2];
-    /*! Delayed tone detect */
-    int td;
-    
-    /*! \brief The bit stream processing context. */
-    bitstream_state_t bs;
-
-    /*! \brief The current encoder function. */
-    g726_encoder_func_t enc_func;
-    /*! \brief The current decoder function. */
-    g726_decoder_func_t dec_func;
-} g726_state_t;
+typedef uint8_t (*g726_encoder_func_t)(g726_state_t *s, int16_t amp);
 
 #if defined(__cplusplus)
 extern "C"

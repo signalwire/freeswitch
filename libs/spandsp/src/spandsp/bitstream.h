@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.h,v 1.10 2008/04/17 14:27:00 steveu Exp $
+ * $Id: bitstream.h,v 1.12 2008/11/30 12:45:09 steveu Exp $
  */
 
 /*! \file */
@@ -37,13 +37,7 @@
 */
 
 /*! Bitstream handler state */
-typedef struct
-{
-    /*! The bit stream. */
-    unsigned int bitstream;
-    /*! The residual bits in bitstream. */
-    unsigned int residue;
-} bitstream_state_t;
+typedef struct bitstream_state_s bitstream_state_t;
 
 
 #if defined(__cplusplus)
@@ -55,19 +49,19 @@ extern "C"
     \param s A pointer to the bitstream context.
     \param c A pointer to the bitstream output buffer.
     \param value The value to be pushed into the output buffer.
-    \param bits The number of bits of value to be pushed. 1 to 25 bit is valid. */
-void bitstream_put(bitstream_state_t *s, uint8_t **c, unsigned int value, int bits);
+    \param bits The number of bits of value to be pushed. 1 to 25 bits is valid. */
+void bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits);
 
-void bitstream_put2(bitstream_state_t *s, uint8_t **c, unsigned int value, int bits);
+void bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits);
 
 /*! \brief Get a chunk of bits from the input buffer.
     \param s A pointer to the bitstream context.
     \param c A pointer to the bitstream input buffer.
-    \param bits The number of bits of value to be grabbed. 1 to 25 bit is valid.
+    \param bits The number of bits of value to be grabbed. 1 to 25 bits is valid.
     \return The value retrieved from the input buffer. */
-unsigned int bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits);
+uint32_t bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits);
 
-unsigned int bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits);
+uint32_t bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits);
 
 /*! \brief Flush any residual bit to the output buffer.
     \param s A pointer to the bitstream context.

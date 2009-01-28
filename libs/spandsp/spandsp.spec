@@ -1,12 +1,12 @@
 Summary:    A DSP library for telephony.
 Name:       spandsp
-Version:    0.0.5
+Version:    0.0.6
 Release:    1
 License:    LGPL
 Group:      System Environment/Libraries
 URL:        http://www.soft-switch.org/spandsp
 BuildRoot:  %{_tmppath}/%{name}-%{version}-root
-Source:     http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.5.tar.gz
+Source:     http://www.soft-switch.org/downloads/spandsp/spandsp-0.0.6.tar.gz
 BuildRoot:  %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtiff-devel
@@ -62,6 +62,7 @@ rm -rf %{buildroot}
 %{_includedir}/spandsp.h
 %{_includedir}/spandsp
 %{_libdir}/libspandsp.so
+%{_libdir}/pkgconfig/spandsp.pc
 
 %post -p /sbin/ldconfig
 
@@ -72,7 +73,7 @@ rm -rf %{buildroot}
 - Preparing for 0.0.5pre4 release
 - License: LGPL
 
-* Mon 23 Jun 2008 Steve Underwood <steveu@coppice.org> 0.0.5-1
+* Mon Jun 23 2008 Steve Underwood <steveu@coppice.org> 0.0.5-1
 - Cleared out the dependency on libxml2
 
 * Sun Dec 31 2006 Steve Underwood <steveu@coppice.org> 0.0.3-1

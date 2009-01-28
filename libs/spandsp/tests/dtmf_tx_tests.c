@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dtmf_tx_tests.c,v 1.20 2008/08/16 15:24:15 steveu Exp $
+ * $Id: dtmf_tx_tests.c,v 1.22 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -46,6 +46,10 @@
 #include <time.h>
 #include <audiofile.h>
 
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
+
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -53,7 +57,7 @@
 
 int main(int argc, char *argv[])
 {
-    dtmf_tx_state_t gen;
+    dtmf_tx_state_t *gen;
     int16_t amp[16384];
     int len;
     AFfilehandle outhandle;
@@ -66,34 +70,34 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    dtmf_tx_init(&gen);
-    len = dtmf_tx(&gen, amp, 16384);
+    gen = dtmf_tx_init(NULL);
+    len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "123", -1))
+    if (dtmf_tx_put(gen, "123", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 16384);
+    len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "456", -1))
+    if (dtmf_tx_put(gen, "456", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 160);
+    len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "789", -1))
+    if (dtmf_tx_put(gen, "789", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 160);
+    len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "*#", -1))
+    if (dtmf_tx_put(gen, "*#", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 160);
+    len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
     add_digits = 1;
     do
     {
-        len = dtmf_tx(&gen, amp, 160);
+        len = dtmf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
         {
@@ -101,7 +105,7 @@ int main(int argc, char *argv[])
         }
         if (add_digits)
         {
-            if (dtmf_tx_put(&gen, "1234567890", -1))
+            if (dtmf_tx_put(gen, "1234567890", -1))
             {
                 printf("Digit buffer full\n");
                 add_digits = 0;
@@ -110,60 +114,60 @@ int main(int argc, char *argv[])
     }
     while (len > 0);
 
-    dtmf_tx_init(&gen);
-    len = dtmf_tx(&gen, amp, 16384);
+    dtmf_tx_init(gen);
+    len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "123", -1))
+    if (dtmf_tx_put(gen, "123", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 16384);
+    len = dtmf_tx(gen, amp, 16384);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "456", -1))
+    if (dtmf_tx_put(gen, "456", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 160);
+    len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "789", -1))
+    if (dtmf_tx_put(gen, "789", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 160);
+    len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "0*#", -1))
+    if (dtmf_tx_put(gen, "0*#", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 160);
+    len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
-    if (dtmf_tx_put(&gen, "ABCD", -1))
+    if (dtmf_tx_put(gen, "ABCD", -1))
         printf("Ooops\n");
-    len = dtmf_tx(&gen, amp, 160);
+    len = dtmf_tx(gen, amp, 160);
     printf("Generated %d samples\n", len);
     outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
 
     /* Try modifying the level and length of the digits */
     printf("Try different levels and timing\n");
-    dtmf_tx_set_level(&gen, -20, 5);
-    dtmf_tx_set_timing(&gen, 100, 200);
-    if (dtmf_tx_put(&gen, "123", -1))
+    dtmf_tx_set_level(gen, -20, 5);
+    dtmf_tx_set_timing(gen, 100, 200);
+    if (dtmf_tx_put(gen, "123", -1))
         printf("Ooops\n");
     do
     {
-        len = dtmf_tx(&gen, amp, 160);
+        len = dtmf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
             outframes = afWriteFrames(outhandle, AF_DEFAULT_TRACK, amp, len);
     }
     while (len > 0);
     printf("Restore normal levels and timing\n");
-    dtmf_tx_set_level(&gen, -10, 0);
-    dtmf_tx_set_timing(&gen, 50, 55);
-    if (dtmf_tx_put(&gen, "A", -1))
+    dtmf_tx_set_level(gen, -10, 0);
+    dtmf_tx_set_timing(gen, 50, 55);
+    if (dtmf_tx_put(gen, "A", -1))
         printf("Ooops\n");
 
     add_digits = TRUE;
     do
     {
-        len = dtmf_tx(&gen, amp, 160);
+        len = dtmf_tx(gen, amp, 160);
         printf("Generated %d samples\n", len);
         if (len > 0)
         {
@@ -171,7 +175,7 @@ int main(int argc, char *argv[])
         }
         if (add_digits)
         {
-            if (dtmf_tx_put(&gen, "1234567890", -1))
+            if (dtmf_tx_put(gen, "1234567890", -1))
             {
                 printf("Digit buffer full\n");
                 add_digits = FALSE;

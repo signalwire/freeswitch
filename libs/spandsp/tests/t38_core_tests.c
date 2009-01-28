@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core_tests.c,v 1.13 2008/05/13 13:17:26 steveu Exp $
+ * $Id: t38_core_tests.c,v 1.14 2008/11/30 13:44:35 steveu Exp $
  */
 
 /*! \file */
@@ -52,6 +52,10 @@ These tests exercise the T.38 core ASN.1 processing code.
 #include <sys/select.h>
 #include <sys/time.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 

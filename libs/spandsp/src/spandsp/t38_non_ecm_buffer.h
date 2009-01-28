@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.h,v 1.2 2008/09/02 13:56:10 steveu Exp $
+ * $Id: t38_non_ecm_buffer.h,v 1.3 2008/10/13 13:14:01 steveu Exp $
  */
 
 /*! \file */
@@ -47,55 +47,7 @@ FAX image data being gatewayed from a T.38 linke to an analogue FAX modem link.
 /*! \brief A flow controlled non-ECM image data buffer, for buffering T.38 to analogue
            modem data.
 */
-typedef struct
-{
-    /*! \brief Minimum number of bits per row, used when fill bits are being deleted on the
-               link, and restored at the emitting gateway. */
-    int min_row_bits;
-
-    /*! \brief non-ECM modem transmit data buffer. */
-    uint8_t data[T38_NON_ECM_TX_BUF_LEN];
-    /*! \brief The current write point in the buffer. */
-    int in_ptr;
-    /*! \brief The current read point in the buffer. */
-    int out_ptr;
-    /*! \brief The location of the most recent EOL marker in the buffer. */
-    int latest_eol_ptr;
-    /*! \brief The number of bits to date in the current row, used when min_row_bits is
-               to be applied. */
-    int row_bits;
-
-    /*! \brief The bit stream entering the buffer, used to detect EOLs */
-    unsigned int bit_stream;
-    /*! \brief The non-ECM flow control fill octet (0xFF before the first data, and 0x00
-               once data has started). */
-    uint8_t flow_control_fill_octet;
-    /*! \brief TRUE if we are in the initial all ones part of non-ECM transmission. */
-    int at_initial_all_ones;
-    /*! \brief TRUE is the end of non-ECM data indication has been received. */
-    int data_finished;
-    /*! \brief The current octet being transmitted from the buffer. */
-    unsigned int octet;
-    /*! \brief The current bit number in the current non-ECM octet. */
-    int bit_no;
-    /*! \brief TRUE if in image data mode, as opposed to TCF mode. */
-    int image_data_mode;
-
-    /*! \brief The number of octets input to the buffer. */
-    int in_octets;
-    /*! \brief The number of rows input to the buffer. */
-    int in_rows;
-    /*! \brief The number of non-ECM fill octets generated for minimum row bits
-               purposes. */
-    int min_row_bits_fill_octets;
-    /*! \brief The number of octets output from the buffer. */
-    int out_octets;
-    /*! \brief The number of rows output from the buffer. */
-    int out_rows;
-    /*! \brief The number of non-ECM fill octets generated for flow control
-               purposes. */
-    int flow_control_fill_octets;
-} t38_non_ecm_buffer_state_t;
+typedef struct t38_non_ecm_buffer_state_s t38_non_ecm_buffer_state_t;
 
 #if defined(__cplusplus)
 extern "C"

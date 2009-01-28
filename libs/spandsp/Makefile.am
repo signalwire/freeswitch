@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.44 2008/09/28 14:36:25 steveu Exp $
+## $Id: Makefile.am,v 1.45 2008/11/28 12:41:25 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -28,6 +28,7 @@ MAINTAINERCLEANFILES = Makefile.in
 EXTRA_DIST = autogen.sh \
              DueDiligence \
              README.testdata \
+             spandsp.pc \
              spandsp.spec \
              wrapper.xsl \
              unpack_g722_data.sh \
@@ -59,6 +60,9 @@ endif
 SUBDIRS = src $(MAYBE_DOC) $(MAYBE_TESTS) $(MAYBE_TESTDATA)
 
 DIST_SUBDIRS = src doc spandsp-sim tests test-data
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = spandsp.pc
 
 faq: faq.xml
 	cd faq ; xsltproc ../wrapper.xsl ../faq.xml

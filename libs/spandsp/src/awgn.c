@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: awgn.c,v 1.17 2008/09/19 14:02:05 steveu Exp $
+ * $Id: awgn.c,v 1.20 2009/01/28 03:41:26 steveu Exp $
  */
 
 /*! \file */
@@ -43,22 +43,24 @@
    to ever be optimised. */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
 #include <inttypes.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/saturated.h"
 #include "spandsp/awgn.h"
+
+#include "spandsp/private/awgn.h"
 
 /* Gaussian noise generator constants */
 #define M1 259200

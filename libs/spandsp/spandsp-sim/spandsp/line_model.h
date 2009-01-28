@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.h,v 1.3 2008/04/17 18:03:23 steveu Exp $
+ * $Id: line_model.h,v 1.4 2009/01/07 13:28:10 steveu Exp $
  */
 
 /*! \file */
@@ -55,6 +55,9 @@ The path being modelled is:
 
 #if !defined(_SPANDSP_LINE_MODEL_H_)
 #define _SPANDSP_LINE_MODEL_H_
+
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+#include <spandsp.h>
 
 #define LINE_FILTER_SIZE 129
 

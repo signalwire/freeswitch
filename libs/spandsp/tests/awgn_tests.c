@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: awgn_tests.c,v 1.17 2008/05/13 13:17:25 steveu Exp $
+ * $Id: awgn_tests.c,v 1.18 2008/11/30 12:38:27 steveu Exp $
  */
 
 /*! \page awgn_tests_page AWGN tests
@@ -36,6 +36,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 

@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.113 2008/09/07 12:45:17 steveu Exp $
+ * $Id: t4.c,v 1.119 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*
@@ -60,7 +60,7 @@
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -72,13 +72,13 @@
 #include <time.h>
 #include <memory.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
@@ -87,7 +87,17 @@
 #include "spandsp/async.h"
 #include "spandsp/t4.h"
 
-#define CM_PER_INCH     2.54f
+#include "spandsp/private/logging.h"
+#include "spandsp/private/t4.h"
+
+#define CM_PER_INCH                 2.54f
+
+#define EOLS_TO_END_T4_TX_PAGE      6
+#define EOLS_TO_END_T6_TX_PAGE      2
+
+#define EOLS_TO_END_ANY_RX_PAGE     6
+#define EOLS_TO_END_T4_RX_PAGE      5
+#define EOLS_TO_END_T6_RX_PAGE      2
 
 /* Finite state machine state codes */
 enum
@@ -780,7 +790,7 @@ int t4_rx_end_page(t4_state_t *s)
     s->rx_bits = 0;
     s->rx_skip_bits = 0;
     s->rx_bitstream = 0;
-    s->consecutive_eols = 5;
+    s->consecutive_eols = EOLS_TO_END_ANY_RX_PAGE;
 
     s->image_size = 0;
     return 0;
@@ -824,18 +834,23 @@ static int rx_put_bits(t4_state_t *s, uint32_t bit_string, int quantity)
         return FALSE;
     if (s->consecutive_eols)
     {
-        /* Check if the image has already terminated */
-        if (s->consecutive_eols >= 5)
+        /* Check if the image has already terminated. */
+        if (s->consecutive_eols >= EOLS_TO_END_ANY_RX_PAGE)
             return TRUE;
+        /* Check if the image hasn't even started. */
         if (s->consecutive_eols < 0)
         {
             /* We are waiting for the very first EOL (1D or 2D only). */
+            /* We need to take this bit by bit, as the EOL could be anywhere,
+               and any junk could preceed it. */
             while ((s->rx_bitstream & 0xFFF) != 0x800)
             {
                 s->rx_bitstream >>= 1;
                 if (--s->rx_bits < 13)
                     return FALSE;
             }
+            /* We have an EOL, so now the page begins and we can proceed to
+               process the bit stream as image data. */
             s->consecutive_eols = 0;
             if (s->line_encoding == T4_COMPRESSION_ITU_T4_1D)
             {
@@ -847,7 +862,6 @@ static int rx_put_bits(t4_state_t *s, uint32_t bit_string, int quantity)
                 s->row_is_2d = !(s->rx_bitstream & 0x1000);
                 force_drop_rx_bits(s, 13);
             }
-            /* We can proceed to processing the bit stream as an image now */
         }
     }
 
@@ -864,11 +878,39 @@ static int rx_put_bits(t4_state_t *s, uint32_t bit_string, int quantity)
             STATE_TRACE("EOL\n");
             if (s->row_len == 0)
             {
-                if (++s->consecutive_eols >= 5)
-                    return TRUE;
+                /* A zero length row - i.e. 2 consecutive EOLs - is distinctly
+                   the end of page condition. That's all we actually get on a
+                   T.6 page. However, there are a minimum of 6 EOLs at the end of
+                   any T.4 page. We can look for more than 2 EOLs in case bit
+                   errors simulate the end of page condition at the wrong point.
+                   Such robust checking is irrelevant for a T.6 page, as it should
+                   be error free. */
+                /* Note that for a T.6 page we should get here on the very first
+                   EOL, as the row length should be zero at that point. Therefore
+                   we should count up both EOLs, unless there is some bogus partial
+                   row ahead of them. */
+                s->consecutive_eols++;
+                if (s->line_encoding == T4_COMPRESSION_ITU_T6)
+                {
+                    if (s->consecutive_eols >= EOLS_TO_END_T6_RX_PAGE)
+                    {
+                        s->consecutive_eols = EOLS_TO_END_ANY_RX_PAGE;
+                        return TRUE;
+                    }
+                }
+                else
+                {
+                    if (s->consecutive_eols >= EOLS_TO_END_T4_RX_PAGE)
+                    {
+                        s->consecutive_eols = EOLS_TO_END_ANY_RX_PAGE;
+                        return TRUE;
+                    }
+                }
             }
             else
             {
+                /* The EOLs are not back-to-back, so they are not part of the
+                   end of page condition. */
                 if (s->run_length > 0)
                     add_run_to_row(s);
                 s->consecutive_eols = 0;
@@ -876,14 +918,14 @@ static int rx_put_bits(t4_state_t *s, uint32_t bit_string, int quantity)
                     return TRUE;
                 update_row_bit_info(s);
             }
-            if (s->line_encoding == T4_COMPRESSION_ITU_T4_1D)
-            {
-                force_drop_rx_bits(s, 12);
-            }
-            else
+            if (s->line_encoding == T4_COMPRESSION_ITU_T4_2D)
             {
                 s->row_is_2d = !(s->rx_bitstream & 0x1000);
                 force_drop_rx_bits(s, 13);
+            }
+            else
+            {
+                force_drop_rx_bits(s, 12);
             }
             s->its_black = FALSE;
             s->black_white = 0;
@@ -1206,7 +1248,7 @@ int t4_rx_start_page(t4_state_t *s)
 
     s->row_is_2d = (s->line_encoding == T4_COMPRESSION_ITU_T6);
     /* We start at -1 EOLs for 1D and 2D decoding, as an indication we are waiting for the
-       first EOL. */
+       first EOL. T.6 coding starts without any preamble. */
     s->consecutive_eols = (s->line_encoding == T4_COMPRESSION_ITU_T6)  ?  0  :  -1;
 
     s->bad_rows = 0;
@@ -1456,8 +1498,8 @@ static void encode_2d_row(t4_state_t *s)
                         a0                  a1                      a2
 
 
-        a)	Pass mode
-	        This mode is identified when the position of b2 lies to the left of a1. When this mode
+        a)  Pass mode
+            This mode is identified when the position of b2 lies to the left of a1. When this mode
             has been coded, a0 is set on the element of the coding line below b2 in preparation for
             the next coding (i.e. on a0').
             
@@ -1478,16 +1520,16 @@ static void encode_2d_row(t4_state_t *s)
                                 Not pass mode
 
 
-        b)	Vertical mode
-	        When this mode is identified, the position of a1 is coded relative to the position of b1.
+        b)  Vertical mode
+            When this mode is identified, the position of a1 is coded relative to the position of b1.
             The relative distance a1b1 can take on one of seven values V(0), VR(1), VR(2), VR(3),
             VL(1), VL(2) and VL(3), each of which is represented by a separate code word. The
             subscripts R and L indicate that a1 is to the right or left respectively of b1, and the
             number in brackets indicates the value of the distance a1b1. After vertical mode coding
             has occurred, the position of a0 is set on a1 (see figure below).
 
-        c)	Horizontal mode
-	        When this mode is identified, both the run-lengths a0a1 and a1a2 are coded using the code
+        c)  Horizontal mode
+            When this mode is identified, both the run-lengths a0a1 and a1a2 are coded using the code
             words H + M(a0a1) + M(a1a2). H is the flag code word 001 taken from the two-dimensional
             code table. M(a0a1) and M(a1a2) are code words which represent the length and "colour"
             of the runs a0a1 and a1a2 respectively and are taken from the appropriate white or black
@@ -1901,14 +1943,14 @@ int t4_tx_start_page(t4_state_t *s)
     if (s->line_encoding == T4_COMPRESSION_ITU_T6)
     {
         /* Attach an EOFB (end of facsimile block) to the end of the page */
-        encode_eol(s);
-        encode_eol(s);
+        for (i = 0;  i < EOLS_TO_END_T6_TX_PAGE;  i++)
+            encode_eol(s);
     }
     else
     {
         /* Attach a return to control (RTC == 6 x EOLs) to the end of the page */
         s->row_is_2d = FALSE;
-        for (i = 0;  i < 6;  i++)
+        for (i = 0;  i < EOLS_TO_END_T4_TX_PAGE;  i++)
             encode_eol(s);
     }
 
@@ -2079,7 +2121,7 @@ int t4_tx_get_pages_in_file(t4_state_t *s)
        more reliable. */
     max = 0;
     while (TIFFSetDirectory(s->tiff_file, (tdir_t) max))
-    	max++;
+        max++;
     s->pages_in_file = max;
     /* Back to the previous page */
     if (!TIFFSetDirectory(s->tiff_file, (tdir_t) s->pages_transferred))

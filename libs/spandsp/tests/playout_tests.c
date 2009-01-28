@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: playout_tests.c,v 1.26 2008/07/28 15:14:30 steveu Exp $
+ * $Id: playout_tests.c,v 1.27 2008/11/15 14:27:29 steveu Exp $
  */
 
 /*! \page playout_tests_page Playout (jitter buffering) tests
@@ -41,6 +41,8 @@ how well the playout module copes.
 #include <audiofile.h>
 
 #include "spandsp.h"
+
+#include "spandsp/private/time_scale.h"
 
 #define INPUT_FILE_NAME     "playout_in.wav"
 #define OUTPUT_FILE_NAME    "playout_out.wav"

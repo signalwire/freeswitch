@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42bis.c,v 1.32 2008/05/13 13:17:25 steveu Exp $
+ * $Id: v42bis.c,v 1.35 2009/01/05 13:48:32 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. 
@@ -32,7 +32,7 @@
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
@@ -48,6 +48,9 @@
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/v42bis.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v42bis.h"
 
 /* Fixed parameters from the spec. */
 #define V42BIS_N3               8   /* Character size (bits) */

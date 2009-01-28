@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: awgn.h,v 1.14 2008/04/17 14:26:59 steveu Exp $
+ * $Id: awgn.h,v 1.15 2008/11/30 12:38:27 steveu Exp $
  */
 
 /*! \file */
@@ -71,16 +71,7 @@ optimised.
 /*!
     AWGN generator descriptor. This contains all the state information for an AWGN generator.
  */
-typedef struct
-{
-    double rms;
-    long int ix1;
-    long int ix2;
-    long int ix3;
-    double r[98];
-    double gset;
-    int iset;
-} awgn_state_t;
+typedef struct awgn_state_s awgn_state_t;
 
 #if defined(__cplusplus)
 extern "C"

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_r2_mf.h,v 1.19 2008/05/30 13:51:28 steveu Exp $
+ * $Id: bell_r2_mf.h,v 1.21 2008/10/13 14:19:18 steveu Exp $
  */
 
 /*! \file */
@@ -108,73 +108,22 @@ Note: Above -3dBm the signal starts to clip. We can detect with a little clippin
     Bell MF generator state descriptor. This defines the state of a single
     working instance of a Bell MF generator.
 */
-typedef struct
-{
-    /*! The tone generator. */
-    tone_gen_state_t tones;
-    int current_sample;
-    union
-    {
-        queue_state_t queue;
-        uint8_t buf[QUEUE_STATE_T_SIZE(MAX_BELL_MF_DIGITS)];
-    } queue;
-} bell_mf_tx_state_t;
+typedef struct bell_mf_tx_state_s bell_mf_tx_state_t;
 
 /*!
     Bell MF digit detector descriptor.
 */
-typedef struct
-{
-    /*! Optional callback funcion to deliver received digits. */
-    digits_rx_callback_t digits_callback;
-    /*! An opaque pointer passed to the callback function. */
-    void *digits_callback_data;
-    /*! Tone detector working states */
-    goertzel_state_t out[6];
-    /*! Short term history of results from the tone detection, using in persistence checking */
-    uint8_t hits[5];
-    /*! The current sample number within a processing block. */
-    int current_sample;
-
-    /*! The number of digits which have been lost due to buffer overflows. */
-    int lost_digits;
-    /*! The number of digits currently in the digit buffer. */
-    int current_digits;
-    /*! The received digits buffer. This is a NULL terminated string. */
-    char digits[MAX_BELL_MF_DIGITS + 1];
-} bell_mf_rx_state_t;
+typedef struct bell_mf_rx_state_s bell_mf_rx_state_t;
 
 /*!
     MFC/R2 tone detector descriptor.
 */
-typedef struct
-{
-    /*! The tone generator. */
-    tone_gen_state_t tone;
-    /*! TRUE if generating forward tones, otherwise generating reverse tones. */
-    int fwd;
-    /*! The current digit being generated. */
-    int digit;
-} r2_mf_tx_state_t;
+typedef struct r2_mf_tx_state_s r2_mf_tx_state_t;
 
 /*!
     MFC/R2 tone detector descriptor.
 */
-typedef struct
-{
-    /*! Optional callback funcion to deliver received digits. */
-    tone_report_func_t callback;
-    /*! An opaque pointer passed to the callback function. */
-    void *callback_data;
-    /*! TRUE is we are detecting forward tones. FALSE if we are detecting backward tones */
-    int fwd;
-    /*! Tone detector working states */
-    goertzel_state_t out[6];
-    /*! The current sample number within a processing block. */
-    int current_sample;
-    /*! The currently detected digit. */
-    int current_digit;
-} r2_mf_rx_state_t;
+typedef struct r2_mf_rx_state_s r2_mf_rx_state_t;
 
 #if defined(__cplusplus)
 extern "C"

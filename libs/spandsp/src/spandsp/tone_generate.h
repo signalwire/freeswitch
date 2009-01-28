@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate.h,v 1.34 2008/09/11 15:13:42 steveu Exp $
+ * $Id: tone_generate.h,v 1.35 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -45,41 +45,18 @@ use an exhaustive test to prove the oscillator is stable under all the
 conditions in which we will use it. 
 */
 
-typedef struct
-{
-    int32_t phase_rate;
-#if defined(SPANDSP_USE_FIXED_POINT)
-    int16_t gain;
-#else
-    float gain;
-#endif
-} tone_gen_tone_descriptor_t;
+typedef struct tone_gen_tone_descriptor_s tone_gen_tone_descriptor_t;
 
 /*!
-    Cadenced dual tone generator descriptor.
+    Cadenced multi-tone generator descriptor.
 */
-typedef struct
-{
-    tone_gen_tone_descriptor_t tone[4];
-    int duration[4];
-    int repeat;
-} tone_gen_descriptor_t;
+typedef struct tone_gen_descriptor_s tone_gen_descriptor_t;
 
 /*!
-    Cadenced dual tone generator state descriptor. This defines the state of
+    Cadenced multi-tone generator state descriptor. This defines the state of
     a single working instance of a generator.
 */
-typedef struct
-{
-    tone_gen_tone_descriptor_t tone[4];
-
-    uint32_t phase[4];
-    int duration[4];
-    int repeat;
-
-    int current_section;
-    int current_position;
-} tone_gen_state_t;
+typedef struct tone_gen_state_s tone_gen_state_t;
 
 #if defined(__cplusplus)
 extern "C"

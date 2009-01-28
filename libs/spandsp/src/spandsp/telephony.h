@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: telephony.h,v 1.12 2008/04/17 14:27:01 steveu Exp $
+ * $Id: telephony.h,v 1.13 2009/01/19 17:14:10 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TELEPHONY_H_)
@@ -47,6 +47,7 @@ typedef int (span_mod_handler_t)(void *s, int16_t amp[], int len);
 typedef int (span_tx_handler_t)(void *s, int16_t amp[], int max_len);
 
 #define ms_to_samples(t)    (((t)*SAMPLE_RATE)/1000)
+#define us_to_samples(t)    (((t)*SAMPLE_RATE)/1000000)
 
 #if !defined(FALSE)
 #define FALSE 0

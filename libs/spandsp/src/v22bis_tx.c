@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tx.c,v 1.44 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v22bis_tx.c,v 1.49 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
@@ -30,20 +30,20 @@
 /* THIS IS A WORK IN PROGRESS - NOT YET FUNCTIONAL! */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -56,6 +56,9 @@
 
 #include "spandsp/v29rx.h"
 #include "spandsp/v22bis.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v22bis.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #include "v22bis_tx_fixed_rrc.h"
@@ -600,6 +603,12 @@ void v22bis_set_put_bit(v22bis_state_t *s, put_bit_func_t put_bit, void *user_da
 {
     s->put_bit = put_bit;
     s->user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+logging_state_t *v22bis_get_logging_state(v22bis_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

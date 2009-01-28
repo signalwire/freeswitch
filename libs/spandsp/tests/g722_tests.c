@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g722_tests.c,v 1.27 2008/09/19 14:02:05 steveu Exp $
+ * $Id: g722_tests.c,v 1.29 2009/01/12 17:20:59 steveu Exp $
  */
 
 /*! \file */
@@ -56,6 +56,9 @@ The file ../test-data/local/short_wb_voice.wav will be compressed to the specifi
 and the resulting audio stored in post_g722.wav.
 */
 
+/* Enable the following definition to enable direct probing into the FAX structures */
+//#define WITH_SPANDSP_INTERNALS
+
 #if defined(HAVE_CONFIG_H)
 #include <config.h>
 #endif
@@ -69,6 +72,10 @@ and the resulting audio stored in post_g722.wav.
 #include <audiofile.h>
 
 #include "spandsp.h"
+
+#if 1 //defined(WITH_SPANDSP_INTERNALS)
+#include "spandsp/private/g722.h"
+#endif
 
 #define G722_SAMPLE_RATE    16000
 
@@ -230,6 +237,7 @@ int main(int argc, char *argv[])
     int outframes;
     int samples;
     int mode;
+    int opt;
     int itutests;
     int bit_rate;
     int eight_k_in;
@@ -239,58 +247,43 @@ int main(int argc, char *argv[])
     int16_t outdata[BLOCK_LEN];
     uint8_t adpcmdata[BLOCK_LEN];
 
-    i = 1;
     bit_rate = 64000;
     eight_k_in = FALSE;
     eight_k_out = FALSE;
     itutests = TRUE;
-    while (argc > i)
+    while ((opt = getopt(argc, argv, "b:i:o:")) != -1)
     {
-        if (strcmp(argv[i], "-48") == 0)
+        switch (opt)
         {
-            bit_rate = 48000;
+        case 'b':
+            bit_rate = atoi(optarg);
+            if (bit_rate != 48000  &&  bit_rate != 56000  &&  bit_rate != 64000)
+            {
+                fprintf(stderr, "Invalid bit rate selected. Only 48000, 56000 and 64000 are valid.\n");
+                exit(2);
+            }
             itutests = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-56") == 0)
-        {
-            bit_rate = 56000;
-            itutests = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-64") == 0)
-        {
-            bit_rate = 64000;
-            itutests = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-8k8k") == 0)
-        {
-            eight_k_in = TRUE;
-            eight_k_out = TRUE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-8k16k") == 0)
-        {
-            eight_k_in = TRUE;
-            eight_k_out = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-16k8k") == 0)
-        {
-            eight_k_in = FALSE;
-            eight_k_out = TRUE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-16k16k") == 0)
-        {
-            eight_k_in = FALSE;
-            eight_k_out = FALSE;
-            i++;
-        }
-        else
-        {
-            fprintf(stderr, "Unknown parameter %s specified.\n", argv[i]);
+            break;
+        case 'i':
+            i = atoi(optarg);
+            if (i != 8000  &&  i != 16000)
+            {
+                fprintf(stderr, "Invalid incoming sample rate. Only 8000 and 16000 are valid.\n");
+                exit(2);
+            }
+            eight_k_in = (i == 8000);            
+            break;
+        case 'o':
+            i = atoi(optarg);
+            if (i != 8000  &&  i != 16000)
+            {
+                fprintf(stderr, "Invalid incoming sample rate. Only 8000 and 16000 are valid.\n");
+                exit(2);
+            }
+            eight_k_out = (i == 8000);            
+            break;
+        default:
+            //usage();
             exit(2);
         }
     }

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: lpc10_tests.c,v 1.21 2008/08/29 09:28:13 steveu Exp $
+ * $Id: lpc10_tests.c,v 1.23 2009/01/12 17:20:59 steveu Exp $
  */
 
 /*! \file */
@@ -47,6 +47,10 @@ will be compressed to LPC10 data, decompressed, and the resulting audio stored i
 #include <assert.h>
 #include <ctype.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -89,6 +93,7 @@ int main(int argc, char *argv[])
     int compress_file;
     int decompress_file;
     int len;
+    int opt;
     int enc_len;
     int dec_len;
 
@@ -96,27 +101,25 @@ int main(int argc, char *argv[])
     decompress = FALSE;
     log_error = TRUE;
     in_file_name = IN_FILE_NAME;
-    for (i = 1;  i < argc;  i++)
+    while ((opt = getopt(argc, argv, "cdi:l")) != -1)
     {
-        if (strcmp(argv[i], "-c") == 0)
+        switch (opt)
         {
+        case 'c':
             compress = TRUE;
-            continue;
-        }
-        if (strcmp(argv[i], "-d") == 0)
-        {
+            break;
+        case 'd':
             decompress = TRUE;
-            continue;
-        }
-        if (strcmp(argv[i], "-i") == 0)
-        {
-            in_file_name = argv[++i];
-            continue;
-        }
-        if (strcmp(argv[i], "-l") == 0)
-        {
+            break;
+        case 'i':
+            in_file_name = optarg;
+            break;
+        case 'l':
             log_error = FALSE;
-            continue;
+            break;
+        default:
+            //usage();
+            exit(2);
         }
     }
 

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_rx.c,v 1.29 2008/07/25 13:56:54 steveu Exp $
+ * $Id: super_tone_rx.c,v 1.31 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
@@ -38,13 +38,13 @@
 #include <ctype.h>
 #include <time.h>
 #include <inttypes.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/complex.h"
@@ -53,6 +53,8 @@
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
 #include "spandsp/super_tone_rx.h"
+
+#include "spandsp/private/super_tone_rx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define DETECTION_THRESHOLD         16439           /* -42dBm0 */

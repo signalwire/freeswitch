@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model_tests.c,v 1.24 2008/05/13 13:17:26 steveu Exp $
+ * $Id: line_model_tests.c,v 1.26 2009/01/12 17:20:59 steveu Exp $
  */
 
 /*! \page line_model_tests_page Telephony line model tests
@@ -44,6 +44,10 @@
 #include <string.h>
 #include <time.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -339,38 +343,35 @@ int main(int argc, char *argv[])
     int line_model_no;
     int speech_test;
     int log_audio;
-    int i;
+    int opt;
 
-    line_model_no = 0;
-    speech_test = FALSE;
-    log_audio = FALSE;
     channel_codec = MUNGE_CODEC_NONE;
-    for (i = 1;  i < argc;  i++)
+    log_audio = FALSE;
+    line_model_no = 0;
+    rbs_pattern = 0;
+    speech_test = FALSE;
+    while ((opt = getopt(argc, argv, "c:lm:r:s:")) != -1)
     {
-        if (strcmp(argv[i], "-c") == 0)
+        switch (opt)
         {
-            channel_codec = atoi(argv[++i]);
-            continue;
-        }
-        if (strcmp(argv[i], "-l") == 0)
-        {
+        case 'c':
+            channel_codec = atoi(optarg);
+            break;
+        case 'l':
             log_audio = TRUE;
-            continue;
-        }
-        if (strcmp(argv[i], "-m") == 0)
-        {
-            line_model_no = atoi(argv[++i]);
-            continue;
-        }
-        if (strcmp(argv[i], "-r") == 0)
-        {
-            rbs_pattern = atoi(argv[++i]);
-            continue;
-        }
-        if (strcmp(argv[i], "-s") == 0)
-        {
-            speech_test = TRUE;
-            continue;
+            break;
+        case 'm':
+            line_model_no = atoi(optarg);
+            break;
+        case 'r':
+            rbs_pattern = atoi(optarg);
+            break;
+        case 's':
+            speech_test = atoi(optarg);
+            break;
+        default:
+            //usage();
+            exit(2);
         }
     }
     complexify_tests();

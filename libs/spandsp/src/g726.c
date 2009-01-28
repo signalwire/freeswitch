@@ -48,25 +48,25 @@
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  *
- * $Id: g726.c,v 1.22 2008/07/02 14:48:25 steveu Exp $
+ * $Id: g726.c,v 1.26 2009/01/28 03:41:26 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
 #include <memory.h>
 #include <stdlib.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/dc_restore.h"
@@ -74,6 +74,9 @@
 #include "spandsp/bit_operations.h"
 #include "spandsp/g711.h"
 #include "spandsp/g726.h"
+
+#include "spandsp/private/bitstream.h"
+#include "spandsp/private/g726.h"
 
 /*
  * Maps G.726_16 code word to reconstructed scale factor normalized log

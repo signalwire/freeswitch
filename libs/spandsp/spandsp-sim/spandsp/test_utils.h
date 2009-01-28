@@ -22,13 +22,15 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: test_utils.h,v 1.5 2008/08/29 09:28:13 steveu Exp $
+ * $Id: test_utils.h,v 1.6 2009/01/07 13:28:10 steveu Exp $
  */
 
 /*! \file */
 
 #if !defined(_TEST_UTILS_H_)
 #define _TEST_UTILS_H_
+
+#include <audiofile.h>
 
 enum
 {

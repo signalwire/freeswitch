@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: logging.h,v 1.16 2008/05/05 11:25:01 steveu Exp $
+ * $Id: logging.h,v 1.17 2008/11/30 13:44:35 steveu Exp $
  */
 
 /*! \file */
@@ -74,17 +74,7 @@ enum
     Logging descriptor. This defines the working state for a single instance of
     the logging facility for spandsp.
 */
-typedef struct
-{
-    int level;
-    int samples_per_second;
-    int64_t elapsed_samples;
-    const char *tag;
-    const char *protocol;
-
-    message_handler_func_t span_message;
-    error_handler_func_t span_error;
-} logging_state_t;
+typedef struct logging_state_s logging_state_t;
 
 #if defined(__cplusplus)
 extern "C"

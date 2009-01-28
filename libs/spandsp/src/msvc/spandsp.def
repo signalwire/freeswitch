@@ -4,6 +4,7 @@ adsi_rx
 adsi_tx_init
 adsi_next_field
 adsi_add_field
+alaw_to_ulaw
 async_tx_init
 async_rx_init
 awgn
@@ -53,6 +54,11 @@ fsk_rx_signal_cutoff
 fsk_rx_init
 fsk_rx
 fsk_rx_set_put_bit
+g711_init
+g711_release
+g711_encode
+g711_decode
+g711_transcode
 g722_encode_init
 g722_encode_release
 g722_encode
@@ -191,6 +197,7 @@ tone_gen_init
 tone_gen
 dtmf_tx_init
 dtmf_tx
+ulaw_to_alaw
 v17_rx_init
 v17_rx_restart
 v17_rx_set_put_bit

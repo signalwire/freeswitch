@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue_tests.c,v 1.11 2008/08/10 03:42:38 steveu Exp $
+ * $Id: queue_tests.c,v 1.12 2008/11/30 13:08:42 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -42,6 +42,10 @@
 #include <assert.h>
 #include <pthread.h>
 #include <sched.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 

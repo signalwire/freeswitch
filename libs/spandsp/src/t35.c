@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t35.c,v 1.27 2008/05/13 13:17:23 steveu Exp $
+ * $Id: t35.c,v 1.28 2009/01/05 13:48:31 steveu Exp $
  */
 
 /*
@@ -57,7 +57,7 @@
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>

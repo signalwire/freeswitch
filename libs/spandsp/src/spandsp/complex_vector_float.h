@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_vector_float.h,v 1.10 2008/09/18 13:16:49 steveu Exp $
+ * $Id: complex_vector_float.h,v 1.11 2008/10/09 13:25:19 steveu Exp $
  */
 
 #if !defined(_SPANDSP_COMPLEX_VECTOR_FLOAT_H_)
@@ -118,6 +118,14 @@ static __inline__ void cvec_setl(complexl_t z[], complexl_t *x, int n)
         z[i] = *x;
 }
 /*- End of function --------------------------------------------------------*/
+#endif
+
+void cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n);
+
+void cvec_mul(complex_t z[], const complex_t x[], const complex_t y[], int n);
+
+#if defined(HAVE_LONG_DOUBLE)
+void cvec_mull(complexl_t z[], const complexl_t x[], const complexl_t y[], int n);
 #endif
 
 /*! \brief Find the dot product of two complex float vectors.

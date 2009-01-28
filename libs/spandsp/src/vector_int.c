@@ -22,27 +22,52 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.c,v 1.15 2008/09/18 13:54:32 steveu Exp $
+ * $Id: vector_int.c,v 1.23 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <assert.h>
+
+#if defined(SPANDSP_USE_MMX)
+#include <mmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE)
+#include <xmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE2)
+#include <emmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE3)
+#include <pmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_1)
+#include <smmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4_2)
+#include <nmmintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE4A)
+#include <ammintrin.h>
+#endif
+#if defined(SPANDSP_USE_SSE5)
+#include <bmmintrin.h>
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/vector_int.h"
@@ -52,6 +77,105 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
     int32_t z;
 
 #if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
+#if defined(__x86_64__)
+    __asm__ __volatile__(
+        " emms;\n"
+        " pxor %%mm0,%%mm0;\n"
+        " leaq -32(%%rsi,%%rax,2),%%rdx;\n"     /* rdx = top - 32 */
+
+        " cmpq %%rdx,%%rsi;\n"
+        " ja 1f;\n"
+
+        /* Work in blocks of 16 int16_t's until we are near the end */
+        " .p2align 2;\n"
+        "2:\n"
+        " movq (%%rdi),%%mm1;\n"
+        " movq (%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 8(%%rdi),%%mm1;\n"
+        " movq 8(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 16(%%rdi),%%mm1;\n"
+        " movq 16(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        " movq 24(%%rdi),%%mm1;\n"
+        " movq 24(%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+
+        " addq $32,%%rsi;\n"
+        " addq $32,%%rdi;\n"
+        " cmpq %%rdx,%%rsi;\n"
+        " jbe 2b;\n"
+
+        " .p2align 2;\n"
+        "1:\n"
+        " addq $24,%%rdx;\n"                  /* Now edx = top - 8 */
+        " cmpq %%rdx,%%rsi;\n"
+        " ja 3f;\n"
+
+        /* Work in blocks of 4 int16_t's until we are near the end */
+        " .p2align 2;\n"
+        "4:\n"
+        " movq (%%rdi),%%mm1;\n"
+        " movq (%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+
+        " addq $8,%%rsi;\n"
+        " addq $8,%%rdi;\n"
+        " cmpq %%rdx,%%rsi;"
+        " jbe 4b;\n"
+
+        " .p2align 2;\n"
+        "3:\n"
+        " addq $4,%%rdx;\n"                  /* Now edx = top - 4 */
+        " cmpq %%rdx,%%rsi;\n"
+        " ja 5f;\n"
+
+        /* Work in a block of 2 int16_t's */
+        " movd (%%rdi),%%mm1;\n"
+        " movd (%%rsi),%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+
+        " addq $4,%%rsi;\n"
+        " addq $4,%%rdi;\n"
+
+        " .p2align 2;\n"
+        "5:\n"
+        " addq $2,%%rdx;\n"                  /* Now edx = top - 2 */
+        " cmpq %%rdx,%%rsi;\n"
+        " ja 6f;\n"
+
+        /* Deal with the very last int16_t, when n is odd */
+        " movswl (%%rdi),%%eax;\n"
+        " andl $65535,%%eax;\n"
+        " movd %%eax,%%mm1;\n"
+        " movswl (%%rsi),%%eax;\n"
+        " andl $65535,%%eax;\n"
+        " movd %%eax,%%mm2;\n"
+        " pmaddwd %%mm2,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+
+        " .p2align 2;\n"
+        "6:\n"
+        /* Merge the pieces of the answer */
+        " movq %%mm0,%%mm1;\n"
+        " punpckhdq %%mm0,%%mm1;\n"
+        " paddd %%mm1,%%mm0;\n"
+        /* Et voila, eax has the final result */
+        " movd %%mm0,%%eax;\n"
+
+        " emms;\n"
+        : "=a" (z)
+        : "S" (x), "D" (y), "a" (n)
+        : "cc"
+    );
+#else
     __asm__ __volatile__(
         " emms;\n"
         " pxor %%mm0,%%mm0;\n"
@@ -149,6 +273,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
         : "S" (x), "D" (y), "a" (n)
         : "cc"
     );
+#endif
 #else
     int i;
 
@@ -193,6 +318,155 @@ int32_t vec_min_maxi16(const int16_t x[], int n, int16_t out[])
     static const int32_t upper_bound = 0x7FFF7FFF;
     int32_t max;
 
+#if defined(__x86_64__)
+    __asm__ __volatile__(
+        " emms;\n"
+        " pushq %%rdx;\n"
+        " leaq -8(%%rsi,%%rax,2),%%rdx;\n"
+
+        " cmpq %%rdx,%%rsi;\n"
+        " jbe 2f;\n"
+        " movd %[lower],%%mm0;\n"
+        " movd %[upper],%%mm1;\n"
+        " jmp 1f;\n"
+
+        " .p2align 2;\n"
+        "2:\n"
+        " movq (%%rsi),%%mm0;\n"   /* mm0 will be max's */
+        " movq %%mm0,%%mm1;\n"     /* mm1 will be min's */
+        " addq $8,%%rsi;\n"
+        " cmpq %%rdx,%%rsi;\n"
+        " ja 4f;\n"
+
+        "3:\n"
+        " movq (%%rsi),%%mm2;\n"
+
+        " movq %%mm2,%%mm3;\n"
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " movq %%mm3,%%mm4;\n"
+        " pand %%mm2,%%mm3;\n"     /* mm3 is mm2 masked to new max's */
+        " pandn %%mm0,%%mm4;\n"    /* mm4 is mm0 masked to its max's */
+        " por %%mm3,%%mm4;\n"
+        " movq %%mm4,%%mm0;\n"     /* Now mm0 is updated max's */
+        
+        " movq %%mm1,%%mm3;\n"
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
+        " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
+        " por %%mm3,%%mm2;\n"
+        " movq %%mm2,%%mm1;\n"     /* now mm1 is updated min's */
+
+        " addq $8,%%rsi;\n"
+        " cmpq %%rdx,%%rsi;\n"
+        " jbe 3b;\n"
+
+        " .p2align 2;\n"
+        "4:\n"
+        /* Merge down the 4-word max/mins to lower 2 words */
+        " movq %%mm0,%%mm2;\n"
+        " psrlq $32,%%mm2;\n"
+        " movq %%mm2,%%mm3;\n"
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new max's */
+        " pandn %%mm0,%%mm3;\n"    /* mm3 is mm0 masked to its max's */
+        " por %%mm3,%%mm2;\n"
+        " movq %%mm2,%%mm0;\n"     /* now mm0 is updated max's */
+
+        " movq %%mm1,%%mm2;\n"
+        " psrlq $32,%%mm2;\n"
+        " movq %%mm1,%%mm3;\n"
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
+        " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
+        " por %%mm3,%%mm2;\n"
+        " movq %%mm2,%%mm1;\n"     /* now mm1 is updated min's */
+
+        " .p2align 2;\n"
+        "1:\n"
+        " addq $4,%%rdx;\n"        /* now dx = top-4 */
+        " cmpq %%rdx,%%rsi;\n"
+        " ja 5f;\n"
+        /* Here, there are >= 2 words of input remaining */
+        " movd (%%rsi),%%mm2;\n"
+
+        " movq %%mm2,%%mm3;\n"
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " movq %%mm3,%%mm4;\n"
+        " pand %%mm2,%%mm3;\n"     /* mm3 is mm2 masked to new max's */
+        " pandn %%mm0,%%mm4;\n"    /* mm4 is mm0 masked to its max's */
+        " por %%mm3,%%mm4;\n"
+        " movq %%mm4,%%mm0;\n"     /* now mm0 is updated max's */
+
+        " movq %%mm1,%%mm3;\n"
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
+        " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
+        " por %%mm3,%%mm2;\n"
+        " movq %%mm2,%%mm1;\n"     /* now mm1 is updated min's */
+
+        " addq $4,%%rsi;\n"
+
+        " .p2align 2;\n"
+        "5:\n"
+        /* Merge down the 2-word max/mins to 1 word */
+        " movq %%mm0,%%mm2;\n"
+        " psrlq $16,%%mm2;\n"
+        " movq %%mm2,%%mm3;\n"
+        " pcmpgtw %%mm0,%%mm3;\n"  /* mm3 is bitmask for words where mm2 > mm0 */ 
+        " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new max's */
+        " pandn %%mm0,%%mm3;\n"    /* mm3 is mm0 masked to its max's */
+        " por %%mm3,%%mm2;\n"
+        " movd %%mm2,%%ecx;\n"     /* cx is max so far */
+
+        " movq %%mm1,%%mm2;\n"
+        " psrlq $16,%%mm2;\n"
+        " movq %%mm1,%%mm3;\n"
+        " pcmpgtw %%mm2,%%mm3;\n"  /* mm3 is bitmask for words where mm2 < mm1 */ 
+        " pand %%mm3,%%mm2;\n"     /* mm2 is mm2 masked to new min's */
+        " pandn %%mm1,%%mm3;\n"    /* mm3 is mm1 masked to its min's */
+        " por %%mm3,%%mm2;\n"
+        " movd %%mm2,%%eax;\n"     /* ax is min so far */
+        
+        " addq $2,%%rdx;\n"        /* now dx = top-2 */
+        " cmpq %%rdx,%%rsi;\n"
+        " ja 6f;\n"
+
+        /* Here, there is one word of input left */
+        " cmpw (%%rsi),%%cx;\n"
+        " jge 9f;\n"
+        " movw (%%rsi),%%cx;\n"
+        " .p2align 2;\n"
+        "9:\n"
+        " cmpw (%%rsi),%%ax;\n"
+        " jle 6f;\n"
+        " movw (%%rsi),%%ax;\n"
+
+        " .p2align 2;\n"
+        "6:\n"
+        /* (finally!) cx is the max, ax the min */
+        " movswl %%cx,%%ecx;\n"
+        " movswl %%ax,%%eax;\n"
+
+        " popq %%rdx;\n"            /* ptr to output max,min vals */
+        " andq %%rdx,%%rdx;\n"
+        " jz 7f;\n"
+        " movw %%cx,(%%rdx);\n"    /* max */
+        " movw %%ax,2(%%rdx);\n"   /* min */
+        " .p2align 2;\n"
+        "7:\n"
+        /* Now calculate max absolute value */
+        " negl %%eax;\n"
+        " cmpl %%ecx,%%eax;\n"
+        " jge 8f;\n"
+        " movl %%ecx,%%eax;\n"
+        " .p2align 2;\n"
+        "8:\n"
+        " emms;\n"
+        : "=a" (max)
+        : "S" (x), "a" (n), "d" (out), [lower] "m" (lower_bound), [upper] "m" (upper_bound)
+        : "ecx"
+    );
+#else
     __asm__ __volatile__(
         " emms;\n"
         " pushl %%edx;\n"
@@ -341,6 +615,7 @@ int32_t vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         : "S" (x), "a" (n), "d" (out), [lower] "m" (lower_bound), [upper] "m" (upper_bound)
         : "ecx"
     );
+#endif
     return max;
 #else
     int i;
@@ -362,8 +637,11 @@ int32_t vec_min_maxi16(const int16_t x[], int n, int16_t out[])
         /*endif*/
     }
     /*endfor*/
-    out[0] = max;
-    out[1] = min;
+    if (out)
+    {
+        out[0] = max;
+        out[1] = min;
+    }
     z = abs(min);
     if (z > max)
         return z;

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tests.c,v 1.52 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v22bis_tests.c,v 1.54 2009/01/12 17:20:59 steveu Exp $
  */
 
 /*! \page v22bis_tests_page V.22bis modem tests
@@ -52,6 +52,7 @@ display of modem status is maintained.
 #include <string.h>
 #include <audiofile.h>
 
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -232,11 +233,19 @@ int main(int argc, char *argv[])
     signal_level = -13;
     bits_per_test = 50000;
     log_audio = FALSE;
-    while ((opt = getopt(argc, argv, "b:c:glm:n:s:")) != -1)
+    while ((opt = getopt(argc, argv, "b:B:c:glm:n:s:")) != -1)
     {
         switch (opt)
         {
         case 'b':
+            test_bps = atoi(optarg);
+            if (test_bps != 2400  &&  test_bps != 1200)
+            {
+                fprintf(stderr, "Invalid bit rate specified\n");
+                exit(2);
+            }
+            break;
+        case 'B':
             bits_per_test = atoi(optarg);
             break;
         case 'c':
@@ -266,20 +275,6 @@ int main(int argc, char *argv[])
             //usage();
             exit(2);
             break;
-        }
-    }
-    argc -= optind;
-    argv += optind;
-    if (argc > 0)
-    {
-        if (strcmp(argv[0], "2400") == 0)
-            test_bps = 2400;
-        else if (strcmp(argv[0], "1200") == 0)
-            test_bps = 1200;
-        else
-        {
-            fprintf(stderr, "Invalid bit rate\n");
-            exit(2);
         }
     }
     outhandle = AF_NULL_FILEHANDLE;

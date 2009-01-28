@@ -27,13 +27,13 @@
  * The actual OKI ADPCM encode and decode method is derived from freely
  * available code, whose exact origins seem uncertain.
  *
- * $Id: oki_adpcm.c,v 1.27 2008/05/13 13:17:23 steveu Exp $
+ * $Id: oki_adpcm.c,v 1.30 2009/01/05 13:48:31 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
@@ -42,19 +42,21 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/oki_adpcm.h"
+#include "spandsp/private/oki_adpcm.h"
 
 /* Routines to convert 12 bit linear samples to the Oki ADPCM coding format,
    widely used in CTI, because Dialogic use it. */
 
+/* OKI ADPCM step variation table */
 static const int16_t step_size[49] =
 {
-      16,   17,   19,   21,   23,   25,   28,   31,
-      34,   37,   41,   45,   50,   55,   60,   66,
-      73,   80,   88,   97,  107,  118,  130,  143,
-     157,  173,  190,  209,  230,  253,  279,  307,
-     337,  371,  408,  449,  494,  544,  598,  658,
-     724,  796,  876,  963, 1060, 1166, 1282, 1408,
-    1552
+       16,    17,    19,    21,    23,    25,    28,    31,
+       34,    37,    41,    45,    50,    55,    60,    66,
+       73,    80,    88,    97,   107,   118,   130,   143,
+      157,   173,   190,   209,   230,   253,   279,   307,
+      337,   371,   408,   449,   494,   544,   598,   658,
+      724,   796,   876,   963,  1060,  1166,  1282,  1411,
+     1552
 };
 
 static const int16_t step_adjustment[8] =

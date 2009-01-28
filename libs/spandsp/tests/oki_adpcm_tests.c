@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: oki_adpcm_tests.c,v 1.35 2008/09/04 14:40:05 steveu Exp $
+ * $Id: oki_adpcm_tests.c,v 1.36 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -51,6 +51,10 @@ compression may be tested.
 #include <string.h>
 #include <time.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"

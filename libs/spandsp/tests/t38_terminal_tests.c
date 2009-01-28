@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal_tests.c,v 1.61 2008/08/16 14:59:50 steveu Exp $
+ * $Id: t38_terminal_tests.c,v 1.64 2009/01/07 12:50:53 steveu Exp $
  */
 
 /*! \file */
@@ -33,6 +33,9 @@ These tests exercise the path
 
     T.38 termination <-> T.38 termination
 */
+
+/* Enable the following definition to enable direct probing into the FAX structures */
+//#define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
 #include <config.h>
@@ -60,6 +63,10 @@ These tests exercise the path
 #include <sys/time.h>
 #include <audiofile.h>
 
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
+
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -72,8 +79,8 @@ These tests exercise the path
 #define INPUT_FILE_NAME         "../test-data/itu/fax/itutests.tif"
 #define OUTPUT_FILE_NAME        "t38.tif"
 
-t38_terminal_state_t t38_state_a;
-t38_terminal_state_t t38_state_b;
+t38_terminal_state_t *t38_state_a;
+t38_terminal_state_t *t38_state_b;
 
 g1050_state_t *path_a_to_b;
 g1050_state_t *path_b_to_a;
@@ -117,7 +124,9 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
         printf("%c: Phase D: local ident '%s'\n", i, u);
     if ((u = t30_get_rx_ident(s)))
         printf("%c: Phase D: remote ident '%s'\n", i, u);
+#if defined(WITH_SPANDSP_INTERNALS)
     printf("%c: Phase D: bits per row - min %d, max %d\n", i, s->t4.min_row_bits, s->t4.max_row_bits);
+#endif
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -229,6 +238,8 @@ int main(int argc, char *argv[])
     int supported_modems;
     int opt;
     t30_state_t *t30;
+    t38_core_state_t *t38_core;
+    logging_state_t *logging;
 
     t38_version = 1;
     without_pacing = FALSE;
@@ -302,21 +313,28 @@ int main(int argc, char *argv[])
         exit(2);
     }
 
-    if (t38_terminal_init(&t38_state_a, TRUE, tx_packet_handler_a, &t38_state_b) == NULL)
+    if ((t38_state_a = t38_terminal_init(NULL, TRUE, tx_packet_handler_a, t38_state_b)) == NULL)
     {
         fprintf(stderr, "Cannot start the T.38 channel\n");
         exit(2);
     }
-    t30 = t38_terminal_get_t30_state(&t38_state_a);
-    t38_set_t38_version(&t38_state_a.t38_fe.t38, t38_version);
-    t38_terminal_set_config(&t38_state_a, without_pacing);
-    t38_terminal_set_tep_mode(&t38_state_a, use_tep);
-    span_log_set_level(&t38_state_a.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(&t38_state_a.logging, "T.38-A");
-    span_log_set_level(&t38_state_a.t38_fe.t38.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(&t38_state_a.t38_fe.t38.logging, "T.38-A");
-    span_log_set_level(&t30->logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(&t30->logging, "T.38-A");
+    t30 = t38_terminal_get_t30_state(t38_state_a);
+    t38_core = t38_terminal_get_t38_core_state(t38_state_a);
+    t38_set_t38_version(t38_core, t38_version);
+    t38_terminal_set_config(t38_state_a, without_pacing);
+    t38_terminal_set_tep_mode(t38_state_a, use_tep);
+    
+    logging = t38_terminal_get_logging_state(t38_state_a);
+    span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(logging, "T.38-A");
+
+    logging = t38_core_get_logging_state(t38_core);
+    span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(logging, "T.38-A");
+
+    logging = t30_get_logging_state(t30);
+    span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(logging, "T.38-A");
 
     t30_set_supported_modems(t30, supported_modems);
     t30_set_tx_ident(t30, "11111111");
@@ -329,21 +347,28 @@ int main(int argc, char *argv[])
     if (use_ecm)
         t30_set_supported_compressions(t30, T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION | T30_SUPPORT_T6_COMPRESSION);
 
-    if (t38_terminal_init(&t38_state_b, FALSE, tx_packet_handler_b, &t38_state_a) == NULL)
+    if ((t38_state_b = t38_terminal_init(NULL, FALSE, tx_packet_handler_b, t38_state_a)) == NULL)
     {
         fprintf(stderr, "Cannot start the T.38 channel\n");
         exit(2);
     }
-    t30 = t38_terminal_get_t30_state(&t38_state_b);
-    t38_set_t38_version(&t38_state_b.t38_fe.t38, t38_version);
-    t38_terminal_set_config(&t38_state_b, without_pacing);
-    t38_terminal_set_tep_mode(&t38_state_b, use_tep);
-    span_log_set_level(&t38_state_b.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(&t38_state_b.logging, "T.38-B");
-    span_log_set_level(&t38_state_b.t38_fe.t38.logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(&t38_state_b.t38_fe.t38.logging, "T.38-B");
-    span_log_set_level(&t30->logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
-    span_log_set_tag(&t30->logging, "T.38-B");
+    t30 = t38_terminal_get_t30_state(t38_state_b);
+    t38_core = t38_terminal_get_t38_core_state(t38_state_b);
+    t38_set_t38_version(t38_core, t38_version);
+    t38_terminal_set_config(t38_state_b, without_pacing);
+    t38_terminal_set_tep_mode(t38_state_b, use_tep);
+
+    logging = t38_terminal_get_logging_state(t38_state_b);
+    span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(logging, "T.38-B");
+
+    logging = t38_core_get_logging_state(t38_core);
+    span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(logging, "T.38-B");
+
+    logging = t30_get_logging_state(t30);
+    span_log_set_level(logging, SPAN_LOG_DEBUG | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME);
+    span_log_set_tag(logging, "T.38-B");
 
     t30_set_supported_modems(t30, supported_modems);
     t30_set_tx_ident(t30, "22222222");
@@ -362,17 +387,27 @@ int main(int argc, char *argv[])
 #endif
     for (;;)
     {
-        span_log_bump_samples(&t38_state_a.logging, SAMPLES_PER_CHUNK);
-        span_log_bump_samples(&t38_state_a.t38_fe.t38.logging, SAMPLES_PER_CHUNK);
-        span_log_bump_samples(&t38_state_a.t30.logging, SAMPLES_PER_CHUNK);
-        span_log_bump_samples(&t38_state_b.logging, SAMPLES_PER_CHUNK);
-        span_log_bump_samples(&t38_state_b.t38_fe.t38.logging, SAMPLES_PER_CHUNK);
-        span_log_bump_samples(&t38_state_b.t30.logging, SAMPLES_PER_CHUNK);
+        logging = t38_terminal_get_logging_state(t38_state_a);
+        span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
+        t38_core = t38_terminal_get_t38_core_state(t38_state_a);
+        logging = t38_core_get_logging_state(t38_core);
+        span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
+        t30 = t38_terminal_get_t30_state(t38_state_a);
+        logging = t30_get_logging_state(t30);
+        span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
+        logging = t38_terminal_get_logging_state(t38_state_b);
+        span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
+        t38_core = t38_terminal_get_t38_core_state(t38_state_b);
+        logging = t38_core_get_logging_state(t38_core);
+        span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
+        t30 = t38_terminal_get_t30_state(t38_state_b);
+        logging = t30_get_logging_state(t30);
+        span_log_bump_samples(logging, SAMPLES_PER_CHUNK);
 
-        done[0] = t38_terminal_send_timeout(&t38_state_a, SAMPLES_PER_CHUNK);
-        done[1] = t38_terminal_send_timeout(&t38_state_b, SAMPLES_PER_CHUNK);
+        done[0] = t38_terminal_send_timeout(t38_state_a, SAMPLES_PER_CHUNK);
+        done[1] = t38_terminal_send_timeout(t38_state_b, SAMPLES_PER_CHUNK);
 
-        when += 0.02;
+        when += (float) SAMPLES_PER_CHUNK/(float) SAMPLE_RATE;
 
         while ((msg_len = g1050_get(path_a_to_b, msg, 1024, when, &seq_no, &tx_when, &rx_when)) >= 0)
         {
@@ -380,7 +415,8 @@ int main(int argc, char *argv[])
             if (use_gui)
                 media_monitor_rx(seq_no, tx_when, rx_when);
 #endif
-            t38_core_rx_ifp_packet(&t38_state_b.t38_fe.t38, msg, msg_len, seq_no);
+            t38_core = t38_terminal_get_t38_core_state(t38_state_b);
+            t38_core_rx_ifp_packet(t38_core, msg, msg_len, seq_no);
         }
         while ((msg_len = g1050_get(path_b_to_a, msg, 1024, when, &seq_no, &tx_when, &rx_when)) >= 0)
         {
@@ -388,7 +424,8 @@ int main(int argc, char *argv[])
             if (use_gui)
                 media_monitor_rx(seq_no, tx_when, rx_when);
 #endif
-            t38_core_rx_ifp_packet(&t38_state_a.t38_fe.t38, msg, msg_len, seq_no);
+            t38_core = t38_terminal_get_t38_core_state(t38_state_a);
+            t38_core_rx_ifp_packet(t38_core, msg, msg_len, seq_no);
         }
         if (done[0]  &&  done[1])
             break;
@@ -397,8 +434,8 @@ int main(int argc, char *argv[])
             media_monitor_update_display();
 #endif
     }
-    t38_terminal_release(&t38_state_a);
-    t38_terminal_release(&t38_state_b);
+    t38_terminal_release(t38_state_a);
+    t38_terminal_release(t38_state_b);
     if (!succeeded[0]  ||  !succeeded[1])
     {
         printf("Tests failed\n");

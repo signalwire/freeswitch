@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert_tests.c,v 1.25 2008/09/07 12:45:17 steveu Exp $
+ * $Id: bert_tests.c,v 1.26 2008/11/30 12:38:27 steveu Exp $
  */
 
 /*! \file */
@@ -41,6 +41,10 @@ These tests exercise each of the BERT standards supported by the BERT module.
 #include <string.h>
 #include <assert.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 

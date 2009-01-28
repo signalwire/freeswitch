@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: noise.h,v 1.13 2008/04/17 14:27:00 steveu Exp $
+ * $Id: noise.h,v 1.14 2008/11/30 12:38:27 steveu Exp $
  */
 
 /*! \file */
@@ -91,14 +91,7 @@ enum
     Noise generator descriptor. This contains all the state information for an instance
     of the noise generator.
  */
-typedef struct
-{
-    int class_of_noise;
-    int quality;
-    int32_t rms;
-    uint32_t rndnum;
-    int32_t state;
-} noise_state_t;
+typedef struct noise_state_s noise_state_t;
 
 #if defined(__cplusplus)
 extern "C"

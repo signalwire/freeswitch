@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=$(exec_prefix)/lib64
+includedir=${prefix}/include
+
+Name: spandsp
+Description: A DSP library for telephony.
+Requires:
+Version: 0.0.6
+Libs: -L${libdir} -lspandsp -ltiff -lm
+Cflags: -I${includedir}

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.c,v 1.43 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v42.c,v 1.47 2009/01/05 13:48:32 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -30,7 +30,7 @@
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
@@ -46,6 +46,11 @@
 #include "spandsp/schedule.h"
 #include "spandsp/queue.h"
 #include "spandsp/v42.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/schedule.h"
+#include "spandsp/private/hdlc.h"
+#include "spandsp/private/v42.h"
 
 #if !defined(FALSE)
 #define FALSE   0

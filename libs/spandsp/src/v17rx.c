@@ -22,26 +22,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.123 2008/09/18 15:59:55 steveu Exp $
+ * $Id: v17rx.c,v 1.129 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -59,6 +59,9 @@
 #include "spandsp/v29rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v17rx.h"
 
 #include "v17tx_constellation_maps.h"
 #include "v17rx_constellation_maps.h"
@@ -110,6 +113,24 @@ enum
 #define SYNC_CROSS_CORR_COEFF_A         -0.932131f    /* -alpha^2*sin(freq_diff) */
 #define SYNC_CROSS_CORR_COEFF_B          0.700036f    /* alpha*sin(high_edge) */
 #define SYNC_CROSS_CORR_COEFF_C         -0.449451f    /* -alpha*sin(low_edge) */
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static const int constellation_spacing[4] =
+{
+    ((int)(FP_FACTOR*1.414f),
+    ((int)(FP_FACTOR*2.0f)},
+    ((int)(FP_FACTOR*2.828f)},
+    ((int)(FP_FACTOR*4.0f)},
+};
+#else
+static const float constellation_spacing[4] =
+{
+    1.414f,
+    2.0f,
+    2.828f,
+    4.0f
+};
+#endif
 
 float v17_rx_carrier_frequency(v17_rx_state_t *s)
 {
@@ -777,7 +798,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         else if (s->training_count >= V17_TRAINING_SEG_2_LEN)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Long training error %f\n", s->training_error);
-            if (s->training_error < 40.0f)
+            if (s->training_error < 20.0f*1.414f*constellation_spacing[s->space_map])
             {
                 s->training_count = 0;
                 s->training_error = 0.0f;
@@ -851,10 +872,10 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             span_log(&s->logging, SPAN_LOG_FLOW, "Short training error %f\n", s->training_error);
             s->carrier_track_i = 100.0f;
             s->carrier_track_p = 500000.0f;
-            /* TODO: This was changed from 20.0 to 200.0 after studying real world failures.
+            /* TODO: This was increased by a factor of 10 after studying real world failures.
                      However, it is not clear why this is an improvement, If something gives
-                     a training error way over 20, surely it shouldn't decode too well? */
-            if (s->training_error < 200.0f)
+                     a huge training error, surely it shouldn't decode too well? */
+            if (s->training_error < (V17_TRAINING_SHORT_SEG_2_LEN - 8)*4.0f*constellation_spacing[s->space_map])
             {
                 s->training_count = 0;
                 s->training_stage = TRAINING_STAGE_TCM_WINDUP;
@@ -897,14 +918,10 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         s->training_error += powerf(&zz);
         if (++s->training_count >= V17_TRAINING_SEG_4_LEN)
         {
-#if defined(IAXMODEM_STUFF)
-            if (s->training_error < 80.0f)
-#else
-            if (s->training_error < 30.0f)
-#endif
+            if (s->training_error < V17_TRAINING_SEG_4_LEN*constellation_spacing[s->space_map])
             {
                 /* We are up and running */
-                span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded (constellation mismatch %f)\n", s->training_error);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Training succeeded at %dbps (constellation mismatch %f)\n", s->bit_rate, s->training_error);
                 report_status_change(s, SIG_STATUS_TRAINING_SUCCEEDED);
                 /* Apply some lag to the carrier off condition, to ensure the last few bits get pushed through
                    the processing. */
@@ -1104,6 +1121,12 @@ void v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_tx_status_func_t h
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+logging_state_t *v17_rx_get_logging_state(v17_rx_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

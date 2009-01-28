@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.h,v 1.31 2008/05/05 11:25:01 steveu Exp $
+ * $Id: adsi.h,v 1.33 2008/10/13 14:19:18 steveu Exp $
  */
 
 /*! \file */
@@ -371,58 +371,13 @@ enum
     ADSI transmitter descriptor. This contains all the state information for an ADSI
     (caller ID, CLASS, CLIP, ACLIP) transmit channel.
  */
-typedef struct
-{
-    int standard;
-
-    tone_gen_descriptor_t alert_tone_desc;
-    tone_gen_state_t alert_tone_gen;
-    fsk_tx_state_t fsktx;
-    dtmf_tx_state_t dtmftx;
-    async_tx_state_t asynctx;
-    
-    int tx_signal_on;
-    
-    int byte_no;
-    int bit_pos;
-    int bit_no;
-    uint8_t msg[256];
-    int msg_len;
-    int preamble_len;
-    int preamble_ones_len;
-    int postamble_ones_len;
-    int stop_bits;
-    int baudot_shift;
-    
-    logging_state_t logging;
-} adsi_tx_state_t;
+typedef struct adsi_tx_state_s adsi_tx_state_t;
 
 /*!
     ADSI receiver descriptor. This contains all the state information for an ADSI
     (caller ID, CLASS, CLIP, ACLIP, JCLIP) receive channel.
  */
-typedef struct
-{
-    int standard;
-    put_msg_func_t put_msg;
-    void *user_data;
-
-    fsk_rx_state_t fskrx;
-    dtmf_rx_state_t dtmfrx;
-    async_rx_state_t asyncrx;
-    
-    int consecutive_ones;
-    int bit_pos;
-    int in_progress;
-    uint8_t msg[256];
-    int msg_len;
-    int baudot_shift;
-    
-    /*! A count of the framing errors. */
-    int framing_errors;
-
-    logging_state_t logging;
-} adsi_rx_state_t;
+typedef struct adsi_rx_state_s adsi_rx_state_t;
 
 #if defined(__cplusplus)
 extern "C"
@@ -439,6 +394,8 @@ extern "C"
 */
 adsi_rx_state_t *adsi_rx_init(adsi_rx_state_t *s, int standard, put_msg_func_t put_msg, void *user_data);
 
+int adsi_rx_free(adsi_rx_state_t *s);
+
 /*! \brief Receive a chunk of ADSI audio.
     \param s The ADSI receive context.
     \param amp The audio sample buffer.
@@ -453,6 +410,8 @@ int adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len);
     \return A pointer to the initialised context, or NULL if there was a problem.
 */
 adsi_tx_state_t *adsi_tx_init(adsi_tx_state_t *s, int standard);
+
+int adsi_tx_free(adsi_tx_state_t *s);
 
 /*! \brief Adjust the preamble associated with an ADSI transmit context.
     \param s The ADSI transmit context.

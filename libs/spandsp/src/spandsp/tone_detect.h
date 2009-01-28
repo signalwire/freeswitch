@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_detect.h,v 1.41 2008/06/13 14:46:52 steveu Exp $
+ * $Id: tone_detect.h,v 1.42 2008/11/30 10:17:31 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TONE_DETECT_H_)
@@ -31,7 +31,7 @@
 /*!
     Goertzel filter descriptor.
 */
-typedef struct
+struct goertzel_descriptor_s
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     int16_t fac;
@@ -39,12 +39,12 @@ typedef struct
     float fac;
 #endif
     int samples;
-} goertzel_descriptor_t;
+};
 
 /*!
     Goertzel filter state descriptor.
 */
-typedef struct
+struct goertzel_state_s
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     int16_t v2;
@@ -57,7 +57,17 @@ typedef struct
 #endif
     int samples;
     int current_sample;
-} goertzel_state_t;
+};
+
+/*!
+    Goertzel filter descriptor.
+*/
+typedef struct goertzel_descriptor_s goertzel_descriptor_t;
+
+/*!
+    Goertzel filter state descriptor.
+*/
+typedef struct goertzel_state_s goertzel_state_t;
 
 #if defined(__cplusplus)
 extern "C"

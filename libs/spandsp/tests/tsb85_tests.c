@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tsb85_tests.c,v 1.24 2008/09/12 14:41:55 steveu Exp $
+ * $Id: tsb85_tests.c,v 1.28 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
@@ -36,13 +36,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <assert.h>
 #include <fcntl.h>
 #include <time.h>
@@ -59,8 +59,13 @@
 #include <libxml/xinclude.h>
 #endif
 
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
+
 #include "spandsp.h"
 #include "spandsp-sim.h"
+
 #include "fax_tester.h"
 
 #define OUTPUT_TIFF_FILE_NAME   "tsb85.tif"
@@ -76,7 +81,7 @@ int test_local_interrupt = FALSE;
 
 const char *output_tiff_file_name;
 
-fax_state_t fax;
+fax_state_t *fax;
 faxtester_state_t state;
 
 uint8_t image[1000000];
@@ -391,10 +396,11 @@ static void faxtester_front_end_step_timeout_handler(faxtester_state_t *s, void 
 static void fax_prepare(void)
 {
     t30_state_t *t30;
+    logging_state_t *logging;
 
-    t30 = fax_get_t30_state(&fax);
-    fax_set_transmit_on_idle(&fax, TRUE);
-    fax_set_tep_mode(&fax, TRUE);
+    t30 = fax_get_t30_state(fax);
+    fax_set_transmit_on_idle(fax, TRUE);
+    fax_set_tep_mode(fax, TRUE);
 #if 0
     t30_set_tx_ident(t30, "1234567890");
     t30_set_tx_sub_address(t30, "Sub-address");
@@ -439,16 +445,22 @@ static void fax_prepare(void)
     t30_set_real_time_frame_handler(t30, t30_real_time_frame_handler, (void *) (intptr_t) 1);
     t30_set_document_handler(t30, document_handler, (void *) (intptr_t) 1);
 
-    span_log_set_level(&t30->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
-    span_log_set_tag(&t30->logging, "A");
+    logging = fax_get_logging_state(fax);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+
+    logging = t30_get_logging_state(t30);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "A");
+
+#if 0
     span_log_set_level(&fax.modems.v27ter_rx.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&fax.modems.v27ter_rx.logging, "A");
     span_log_set_level(&fax.modems.v29_rx.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&fax.modems.v29_rx.logging, "A");
     span_log_set_level(&fax.modems.v17_rx.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&fax.modems.v17_rx.logging, "A");
-    span_log_set_level(&fax.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
-    span_log_set_tag(&fax.logging, "A");
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -862,7 +874,7 @@ static int next_step(faxtester_state_t *s)
 
         if (strcasecmp((const char *) type, "SET") == 0)
         {
-            t30 = fax_get_t30_state(&fax);
+            t30 = fax_get_t30_state(fax);
             if (strcasecmp((const char *) tag, "IDENT") == 0)
                 t30_set_tx_ident(t30, (const char *) value);
             else if (strcasecmp((const char *) tag, "SUB") == 0)
@@ -891,10 +903,10 @@ printf("Push '%s'\n", next_tx_file);
         }
         else if (strcasecmp((const char *) type, "CALL") == 0)
         {
-            fax_init(&fax, FALSE);
+            fax = fax_init(NULL, FALSE);
             fax_prepare();
             next_tx_file[0] = '\0';
-            t30 = fax_get_t30_state(&fax);
+            t30 = fax_get_t30_state(fax);
             t30_set_rx_file(t30, output_tiff_file_name, -1);
             /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
             t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T4_1D);
@@ -907,10 +919,10 @@ printf("Push '%s'\n", next_tx_file);
         }
         else if (strcasecmp((const char *) type, "ANSWER") == 0)
         {
-            fax_init(&fax, TRUE);
+            fax = fax_init(NULL, TRUE);
             fax_prepare();
             next_tx_file[0] = '\0';
-            t30 = fax_get_t30_state(&fax);
+            t30 = fax_get_t30_state(fax);
             /* Avoid libtiff 3.8.2 and earlier bug on complex 2D lines. */
             t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T4_1D);
             if (value)
@@ -1071,6 +1083,7 @@ static void exchange(faxtester_state_t *s)
     int i;
     int total_audio_time;
     int log_audio;
+    logging_state_t *logging;
 
     log_audio = TRUE;
     output_tiff_file_name = OUTPUT_TIFF_FILE_NAME;
@@ -1093,7 +1106,7 @@ static void exchange(faxtester_state_t *s)
     faxtester_set_front_end_step_complete_handler(&state, faxtester_front_end_step_complete_handler, NULL);
     faxtester_set_front_end_step_timeout_handler(&state, faxtester_front_end_step_timeout_handler, NULL);
 
-    fax_init(&fax, FALSE);
+    fax = fax_init(NULL, FALSE);
     fax_prepare();
     next_tx_file[0] = '\0';
 
@@ -1102,7 +1115,7 @@ static void exchange(faxtester_state_t *s)
     /*endwhile*/
     for (;;)
     {
-        len = fax_tx(&fax, amp, SAMPLES_PER_CHUNK);
+        len = fax_tx(fax, amp, SAMPLES_PER_CHUNK);
         faxtester_rx(s, amp, len);
         if (log_audio)
         {
@@ -1113,15 +1126,21 @@ static void exchange(faxtester_state_t *s)
         /*endif*/
 
         total_audio_time += SAMPLES_PER_CHUNK;
-        span_log_bump_samples(&fax.t30.logging, len);
+
+        logging = t30_get_logging_state(fax_get_t30_state(fax));
+        span_log_bump_samples(logging, len);
+#if 0
         span_log_bump_samples(&fax.modems.v27ter_rx.logging, len);
         span_log_bump_samples(&fax.modems.v29_rx.logging, len);
         span_log_bump_samples(&fax.modems.v17_rx.logging, len);
-        span_log_bump_samples(&fax.logging, len);
+#endif
+        logging = fax_get_logging_state(fax);
+        span_log_bump_samples(logging, len);
+
         span_log_bump_samples(&s->logging, len);
                 
         len = faxtester_tx(s, amp, 160);
-        if (fax_rx(&fax, amp, len))
+        if (fax_rx(fax, amp, len))
             break;
         /*endif*/
         if (log_audio)

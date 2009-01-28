@@ -28,30 +28,32 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.c,v 1.2 2008/09/19 16:24:25 steveu Exp $
+ * $Id: g722.c,v 1.5 2009/01/28 03:41:26 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
 #include <memory.h>
 #include <stdlib.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/g722.h"
+
+#include "spandsp/private/g722.h"
 
 static const int16_t qmf_coeffs_fwd[12] =
 {

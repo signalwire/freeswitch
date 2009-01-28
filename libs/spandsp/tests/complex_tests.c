@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_tests.c,v 1.1 2008/09/18 12:09:51 steveu Exp $
+ * $Id: complex_tests.c,v 1.2 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \page complex_tests_page Complex arithmetic tests
@@ -39,13 +39,13 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <assert.h>
 
 #include "spandsp.h"

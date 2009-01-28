@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.23 2008/09/04 14:40:05 steveu Exp $
+ * $Id: v8.h,v 1.25 2008/10/13 14:19:18 steveu Exp $
  */
  
 /*! \file */
@@ -100,55 +100,7 @@ enum v8_pcm_modem_availability_e
     V8_PSTN_PCM_MODEM_V91 = 0x80
 };
 
-typedef struct
-{
-    /*! \brief TRUE if we are the calling modem */
-    int caller;
-    /*! \brief The current state of the V8 protocol */
-    int state;
-    int negotiation_timer;
-    int ci_timer;
-    int ci_count;
-    fsk_tx_state_t v21tx;
-    fsk_rx_state_t v21rx;
-    queue_state_t *tx_queue;
-    modem_connect_tones_tx_state_t ansam_tx;
-    modem_connect_tones_rx_state_t ansam_rx;
-
-    v8_result_handler_t *result_handler;
-    void *result_handler_user_data;
-
-    /*! \brief Modulation schemes available at this end. */
-    int available_modulations;
-    int common_modulations;
-    int negotiated_modulation;
-    int far_end_modulations;
-    
-    int call_function;
-    int protocol;
-    int pstn_access;
-    int nsf_seen;
-    int pcm_modem_availability;
-    int t66_seen;
-
-    /* V8 data parsing */
-    unsigned int bit_stream;
-    int bit_cnt;
-    /* Indicates the type of message coming up */
-    int preamble_type;
-    uint8_t rx_data[64];
-    int rx_data_ptr;
-    
-    /*! \brief a reference copy of the last CM or JM message, used when
-               testing for matches. */
-    uint8_t cm_jm_data[64];
-    int cm_jm_count;
-    int got_cm_jm;
-    int got_cj;
-    int zero_byte_count;
-    /*! \brief Error and flow logging control */
-    logging_state_t logging;
-} v8_state_t;
+typedef struct v8_state_s v8_state_t;
 
 struct v8_result_s
 {
@@ -187,6 +139,14 @@ v8_state_t *v8_init(v8_state_t *s,
     \param s The V.8 context.
     \return 0 for OK. */
 int v8_release(v8_state_t *s);
+
+/*! Free a V.8 context.
+    \brief Release a V.8 context.
+    \param s The V.8 context.
+    \return 0 for OK. */
+int v8_free(v8_state_t *s);
+
+logging_state_t *v8_get_logging_state(v8_state_t *s);
 
 /*! Generate a block of V.8 audio samples.
     \brief Generate a block of V.8 audio samples.

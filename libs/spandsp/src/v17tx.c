@@ -22,26 +22,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.c,v 1.64 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v17tx.c,v 1.69 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -53,6 +53,9 @@
 #include "spandsp/power_meter.h"
 
 #include "spandsp/v17tx.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v17tx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define SPANDSP_USE_FIXED_POINTx
@@ -106,6 +109,11 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
     {
         1, 0, 2, 3
     };
+#if defined(SPANDSP_USE_FIXED_POINT)
+    static const complexi16_t zero = {0, 0};
+#else
+    static const complexf_t zero = {0.0f, 0.0f};
+#endif
     int bits;
     int shift;
 
@@ -121,11 +129,7 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
             if (s->training_step <= V17_TRAINING_SEG_1)
             {
                 /* Optional segment: silence (talker echo protection) */
-#if defined(SPANDSP_USE_FIXED_POINT)
-                return complex_seti16(0, 0);
-#else
-                return complex_setf(0.0f, 0.0f);
-#endif
+                return zero;
             }
             /* Segment 1: ABAB... */
             return v17_abcd_constellation[(s->training_step & 1) ^ 1];
@@ -144,7 +148,7 @@ static __inline__ complexf_t training_get(v17_tx_state_t *s)
     }
     /* Segment 3: Bridge... */
     shift = ((s->training_step - V17_TRAINING_SEG_3 - 1) & 0x7) << 1;
-    span_log(&s->logging, SPAN_LOG_FLOW, "Seg 3 shift %d\n", shift);
+    //span_log(&s->logging, SPAN_LOG_FLOW, "Seg 3 shift %d\n", shift);
     bits = scramble(s, V17_BRIDGE_WORD >> shift);
     bits = (bits << 1) | scramble(s, V17_BRIDGE_WORD >> (shift + 1));
     s->constellation_state = (s->constellation_state + dibit_to_step[bits]) & 3;
@@ -329,6 +333,12 @@ void v17_tx_set_modem_status_handler(v17_tx_state_t *s, modem_tx_status_func_t h
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+logging_state_t *v17_tx_get_logging_state(v17_tx_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

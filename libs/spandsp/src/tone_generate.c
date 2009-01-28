@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate.c,v 1.46 2008/09/11 15:13:42 steveu Exp $
+ * $Id: tone_generate.c,v 1.48 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
@@ -37,19 +37,21 @@
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 #include "spandsp/tone_generate.h"
+
+#include "spandsp/private/tone_generate.h"
 
 #if !defined(M_PI)
 /* C99 systems may not define M_PI */

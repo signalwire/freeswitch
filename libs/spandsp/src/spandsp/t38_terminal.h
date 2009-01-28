@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.h,v 1.37 2008/08/14 14:06:05 steveu Exp $
+ * $Id: t38_terminal.h,v 1.39 2008/10/13 13:14:01 steveu Exp $
  */
 
 /*! \file */
@@ -39,91 +39,7 @@
 /* Make sure the HDLC frame buffers are big enough for ECM frames. */
 #define T38_MAX_HDLC_LEN        260
 
-typedef struct
-{
-    /*! \brief Internet Aware FAX mode bit mask. */
-    int iaf;
-    /*! \brief Required time between T.38 transmissions, in ms. */
-    int ms_per_tx_chunk;
-    /*! \brief Bit fields controlling the way data is packed into chunked for transmission. */
-    int chunking_modes;
-
-    /*! \brief Core T.38 IFP support */
-    t38_core_state_t t38;
-
-    /*! \brief The current transmit step being timed */
-    int timed_step;
-
-    /*! \brief TRUE is there has been some T.38 data missed (i.e. lost packets) in the current
-               reception period. */
-    int rx_data_missing;
-
-    /*! \brief The number of octets to send in each image packet (non-ECM or ECM) at the current
-               rate and the current specified packet interval. */
-    int octets_per_data_packet;
-
-    struct
-    {
-        /*! \brief HDLC receive buffer */
-        uint8_t buf[T38_MAX_HDLC_LEN];
-        /*! \brief The length of the contents of the HDLC receive buffer */
-        int len;
-    } hdlc_rx;
-
-    struct
-    {
-        /*! \brief HDLC transmit buffer */
-        uint8_t buf[T38_MAX_HDLC_LEN];
-        /*! \brief The length of the contents of the HDLC transmit buffer */
-        int len;
-        /*! \brief Current pointer within the contents of the HDLC transmit buffer */
-        int ptr;
-        /*! \brief The number of extra bits in a fully stuffed version of the
-                   contents of the HDLC transmit buffer. This is needed to accurately
-                   estimate the playout time for this frame, through an analogue modem. */
-        int extra_bits;
-    } tx;
-
-    /*! \brief Counter for trailing non-ECM bytes, used to flush out the far end's modem. */
-    int non_ecm_trailer_bytes;
-
-    /*! \brief The next T.38 indicator queued for transmission. */
-    int next_tx_indicator;
-    /*! \brief The current T.38 data type being transmitted. */
-    int current_tx_data_type;
-
-    /*! \brief TRUE if a carrier is present. Otherwise FALSE. */
-    int rx_signal_present;
-
-    /*! \brief The current operating mode of the receiver. */
-    int current_rx_type;
-    /*! \brief The current operating mode of the transmitter. */
-    int current_tx_type;
-
-    /*! \brief Current transmission bit rate. */
-    int tx_bit_rate;
-    /*! \brief A "sample" count, used to time events. */
-    int32_t samples;
-    /*! \brief The value for samples at the next transmission point. */
-    int32_t next_tx_samples;
-    /*! \brief The current receive timeout. */
-    int32_t timeout_rx_samples;
-} t38_terminal_front_end_state_t;
-
-/*!
-    T.38 terminal state.
-*/
-typedef struct
-{
-    /*! \brief The T.30 back-end */
-    t30_state_t t30;
-
-    /*! \brief The T.38 front-end */
-    t38_terminal_front_end_state_t t38_fe;
-
-    /*! \brief Error and flow logging control */
-    logging_state_t logging;
-} t38_terminal_state_t;
+typedef struct t38_terminal_state_s t38_terminal_state_t;
 
 #if defined(__cplusplus)
 extern "C"
@@ -154,6 +70,22 @@ void t38_terminal_set_fill_bit_removal(t38_terminal_state_t *s, int remove);
     \return A pointer to the T.30 context, or NULL.
 */
 t30_state_t *t38_terminal_get_t30_state(t38_terminal_state_t *s);
+
+/*! Get a pointer to the T.38 core IFP packet engine associated with a
+    termination mode T.38 context.
+    \brief Get a pointer to the T.38 core IFP packet engine associated
+           with a T.38 context.
+    \param s The T.38 context.
+    \return A pointer to the T.38 core context, or NULL.
+*/
+t38_core_state_t *t38_terminal_get_t38_core_state(t38_terminal_state_t *s);
+
+/*! Get a pointer to the logging context associated with a T.38 context.
+    \brief Get a pointer to the logging context associated with a T.38 context.
+    \param s The T.38 context.
+    \return A pointer to the logging context, or NULL.
+*/
+logging_state_t *t38_terminal_get_logging_state(t38_terminal_state_t *s);
 
 /*! \brief Initialise a termination mode T.38 context.
     \param s The T.38 context.

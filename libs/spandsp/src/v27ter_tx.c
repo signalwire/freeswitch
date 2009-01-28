@@ -22,26 +22,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tx.c,v 1.66 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v27ter_tx.c,v 1.71 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -53,6 +53,9 @@
 #include "spandsp/power_meter.h"
 
 #include "spandsp/v27ter_tx.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v27ter_tx.h"
 
 #if defined(SPANDSP_USE_FIXED_POINT)
 #include "v27ter_tx_4800_fixed_rrc.h"
@@ -148,6 +151,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
         { 0000,   -1414},       /* 270deg */
         { 1000,   -1000}        /* 315deg */
     };
+    static const complexi16_t zero = {0, 0};
 #else
     static const complexf_t constellation[8] =
     {
@@ -160,6 +164,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
         { 0.0f,   -1.414f},     /* 270deg */
         { 1.0f,   -1.0f}        /* 315deg */
     };
+    static const complexf_t zero = {0.0f, 0.0f};
 #endif
     int bits;
 
@@ -178,11 +183,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
                 if (s->training_step <= V27TER_TRAINING_SEG_3)
                 {
                     /* Segment 2: Silence */
-#if defined(SPANDSP_USE_FIXED_POINT)
-                    return complex_seti16(0, 0);
-#else
-                    return complex_setf(0.0f, 0.0f);
-#endif
+                    return zero;
                 }
                 /* Segment 3: Regular reversals... */
                 s->constellation_state = (s->constellation_state + 4) & 7;
@@ -368,6 +369,12 @@ void v27ter_tx_set_modem_status_handler(v27ter_tx_state_t *s, modem_tx_status_fu
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+logging_state_t *v27ter_tx_get_logging_state(v27ter_tx_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

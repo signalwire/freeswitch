@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17_tests.c,v 1.90 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v17_tests.c,v 1.98 2009/01/12 17:20:59 steveu Exp $
  */
 
 /*! \page v17_tests_page V.17 modem tests
@@ -46,6 +46,9 @@ display of modem status is maintained.
 \section v17_tests_page_sec_2 How is it used?
 */
 
+/* Enable the following definition to enable direct probing into the FAX structures */
+#define WITH_SPANDSP_INTERNALS
+
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -60,6 +63,10 @@ display of modem status is maintained.
 #include <unistd.h>
 #include <string.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -96,39 +103,12 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 {
     switch (reason)
     {
-    case BERT_REPORT_SYNCED:
-        printf("BERT report synced\n");
-        break;
-    case BERT_REPORT_UNSYNCED:
-        printf("BERT report unsync'ed\n");
-        break;
     case BERT_REPORT_REGULAR:
         printf("BERT report regular - %d bits, %d bad bits, %d resyncs\n", results->total_bits, results->bad_bits, results->resyncs);
         memcpy(&latest_results, results, sizeof(latest_results));
         break;
-    case BERT_REPORT_GT_10_2:
-        printf("BERT report > 1 in 10^2\n");
-        break;
-    case BERT_REPORT_LT_10_2:
-        printf("BERT report < 1 in 10^2\n");
-        break;
-    case BERT_REPORT_LT_10_3:
-        printf("BERT report < 1 in 10^3\n");
-        break;
-    case BERT_REPORT_LT_10_4:
-        printf("BERT report < 1 in 10^4\n");
-        break;
-    case BERT_REPORT_LT_10_5:
-        printf("BERT report < 1 in 10^5\n");
-        break;
-    case BERT_REPORT_LT_10_6:
-        printf("BERT report < 1 in 10^6\n");
-        break;
-    case BERT_REPORT_LT_10_7:
-        printf("BERT report < 1 in 10^7\n");
-        break;
     default:
-        printf("BERT report reason %d\n", reason);
+        printf("BERT report %s\n", bert_event_to_str(reason));
         break;
     }
 }
@@ -243,8 +223,8 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 
 int main(int argc, char *argv[])
 {
-    v17_rx_state_t rx;
-    v17_tx_state_t tx;
+    v17_rx_state_t *rx;
+    v17_tx_state_t *tx;
     bert_results_t bert_results;
     int16_t gen_amp[BLOCK_LEN];
     int16_t amp[BLOCK_LEN];
@@ -262,6 +242,7 @@ int main(int argc, char *argv[])
     int channel_codec;
     int rbs_pattern;
     int opt;
+    logging_state_t *logging;
 
     channel_codec = MUNGE_CODEC_NONE;
     rbs_pattern = 0;
@@ -274,11 +255,19 @@ int main(int argc, char *argv[])
     signal_level = -13;
     bits_per_test = 50000;
     log_audio = FALSE;
-    while ((opt = getopt(argc, argv, "b:c:d:glm:n:r:s:t")) != -1)
+    while ((opt = getopt(argc, argv, "b:B:c:d:glm:n:r:s:t")) != -1)
     {
         switch (opt)
         {
         case 'b':
+            test_bps = atoi(optarg);
+            if (test_bps != 14400  &&  test_bps != 12000  &&  test_bps != 9600  &&  test_bps != 7200)
+            {
+                fprintf(stderr, "Invalid bit rate specified\n");
+                exit(2);
+            }
+            break;
+        case 'B':
             bits_per_test = atoi(optarg);
             break;
         case 'c':
@@ -319,24 +308,6 @@ int main(int argc, char *argv[])
             break;
         }
     }
-    argc -= optind;
-    argv += optind;
-    if (argc > 0)
-    {
-        if (strcmp(argv[0], "14400") == 0)
-            test_bps = 14400;
-        else if (strcmp(argv[0], "12000") == 0)
-            test_bps = 12000;
-        else if (strcmp(argv[0], "9600") == 0)
-            test_bps = 9600;
-        else if (strcmp(argv[0], "7200") == 0)
-            test_bps = 7200;
-        else
-        {
-            fprintf(stderr, "Invalid bit rate\n");
-            exit(2);
-        }
-    }
     inhandle = NULL;
     outhandle = NULL;
 
@@ -352,6 +323,7 @@ int main(int argc, char *argv[])
     if (decode_test_file)
     {
         /* We will decode the audio from a wave file. */
+        tx = NULL;
         if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
         {
             fprintf(stderr, "    Cannot open wave file '%s'\n", decode_test_file);
@@ -361,12 +333,17 @@ int main(int argc, char *argv[])
     else
     {
         /* We will generate V.17 audio, and add some noise to it. */
-        v17_tx_init(&tx, test_bps, tep, v17getbit, NULL);
-        v17_tx_power(&tx, signal_level);
-        v17_tx_set_modem_status_handler(&tx, v17_tx_status, (void *) &tx);
+        tx = v17_tx_init(NULL, test_bps, tep, v17getbit, NULL);
+        logging = v17_tx_get_logging_state(tx);
+        span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(logging, "V.17 tx");
+        v17_tx_power(tx, signal_level);
+        v17_tx_set_modem_status_handler(tx, v17_tx_status, (void *) tx);
+#if defined(WITH_SPANDSP_INTERNALS)
         /* Move the carrier off a bit */
-        tx.carrier_phase_rate = dds_phase_ratef(1792.0f);
-        tx.carrier_phase = 0x40000000;
+        tx->carrier_phase_rate = dds_phase_ratef(1792.0f);
+        tx->carrier_phase = 0x40000000;
+#endif
 
         bert_init(&bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);
         bert_set_report(&bert, 10000, reporter, NULL);
@@ -382,11 +359,12 @@ int main(int argc, char *argv[])
 #endif
     }
 
-    v17_rx_init(&rx, test_bps, v17putbit, &rx);
-    v17_rx_set_modem_status_handler(&rx, v17_rx_status, (void *) &rx);
-    v17_rx_set_qam_report_handler(&rx, qam_report, (void *) &rx);
-    span_log_set_level(&rx.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(&rx.logging, "V.17 rx");
+    rx = v17_rx_init(NULL, test_bps, v17putbit, NULL);
+    v17_rx_set_modem_status_handler(rx, v17_rx_status, (void *) rx);
+    v17_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
+    logging = v17_rx_get_logging_state(rx);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "V.17 rx");
 
 #if defined(ENABLE_GUI)
     if (use_gui)
@@ -418,7 +396,7 @@ int main(int argc, char *argv[])
         }
         else
         {
-            samples = v17_tx(&tx, gen_amp, BLOCK_LEN);
+            samples = v17_tx(tx, gen_amp, BLOCK_LEN);
 #if defined(ENABLE_GUI)
             if (use_gui)
                 qam_monitor_update_audio_level(qam_monitor, gen_amp, samples);
@@ -429,7 +407,7 @@ int main(int argc, char *argv[])
 
                 /* Push a little silence through, to ensure all the data bits get out of the buffers */
                 memset(amp, 0, BLOCK_LEN*sizeof(int16_t));
-                v17_rx(&rx, amp, BLOCK_LEN);
+                v17_rx(rx, amp, BLOCK_LEN);
 
                 /* Note that we might get a few bad bits as the carrier shuts down. */
                 bert_result(&bert, &bert_results);
@@ -449,12 +427,14 @@ int main(int argc, char *argv[])
                     break;
                 }
                 memset(&latest_results, 0, sizeof(latest_results));
+#if defined(WITH_SPANDSP_INTERNALS)
                 signal_level--;
                 /* Bump the receiver AGC gain by 1dB, to compensate for the above */
-                rx.agc_scaling_save *= 1.122f;
-                v17_tx_restart(&tx, test_bps, tep, TRUE);
-                v17_tx_power(&tx, signal_level);
-                v17_rx_restart(&rx, test_bps, TRUE);
+                rx->agc_scaling_save *= 1.122f;
+#endif
+                v17_tx_restart(tx, test_bps, tep, TRUE);
+                v17_tx_power(tx, signal_level);
+                v17_rx_restart(rx, test_bps, TRUE);
                 //rx.eq_put_step = rand()%(192*10/3);
                 bert_init(&bert, bits_per_test, BERT_PATTERN_ITU_O152_11, test_bps, 20);
                 bert_set_report(&bert, 10000, reporter, NULL);
@@ -469,7 +449,7 @@ int main(int argc, char *argv[])
             {
                 outframes = afWriteFrames(outhandle,
                                           AF_DEFAULT_TRACK,
-                                          amp,
+                                          gen_amp,
                                           samples);
                 if (outframes != samples)
                 {
@@ -483,7 +463,7 @@ int main(int argc, char *argv[])
         if (use_gui  &&  !decode_test_file)
             line_model_monitor_line_spectrum_update(amp, samples);
 #endif
-        v17_rx(&rx, amp, samples);
+        v17_rx(rx, amp, samples);
     }
     if (!decode_test_file)
     {

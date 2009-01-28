@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo_tests.c,v 1.36 2008/09/04 14:40:05 steveu Exp $
+ * $Id: echo_tests.c,v 1.37 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \page echo_can_tests_page Line echo cancellation for voice tests
@@ -58,6 +58,10 @@ all the tests in G.168 are fully implemented at this time.
 
 #define GEN_CONST
 #include <math.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp/g168models.h"

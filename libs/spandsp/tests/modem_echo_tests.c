@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_echo_tests.c,v 1.30 2008/08/29 09:28:13 steveu Exp $
+ * $Id: modem_echo_tests.c,v 1.31 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \page modem_echo_can_tests_page Line echo cancellation for modems tests
@@ -92,9 +92,14 @@ cancellor.
 #define GEN_CONST
 #endif
 
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
+
 #include "spandsp.h"
 #include "spandsp/g168models.h"
 #include "spandsp-sim.h"
+
 #if defined(ENABLE_GUI)
 #include "echo_monitor.h"
 #endif

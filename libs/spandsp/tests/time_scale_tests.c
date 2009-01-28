@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: time_scale_tests.c,v 1.22 2008/07/28 15:14:30 steveu Exp $
+ * $Id: time_scale_tests.c,v 1.23 2008/11/15 14:27:29 steveu Exp $
  */
 
 /*! \page time_scale_tests_page Time scaling tests
@@ -47,6 +47,8 @@ This file also contains 8000 sample/second 16 bits/sample linear audio.
 #include <audiofile.h>
 
 #include "spandsp.h"
+
+#include "spandsp/private/time_scale.h"
 
 #define BLOCK_LEN       160
 

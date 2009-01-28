@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx_tests.c,v 1.23 2008/08/16 15:24:16 steveu Exp $
+ * $Id: super_tone_tx_tests.c,v 1.24 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -55,6 +55,10 @@
 #if defined(HAVE_LIBXML_XINCLUDE_H)
 #include <libxml/xinclude.h>
 #endif
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"

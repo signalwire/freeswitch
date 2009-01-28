@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726_tests.c,v 1.28 2008/09/28 14:36:25 steveu Exp $
+ * $Id: g726_tests.c,v 1.31 2009/01/12 17:20:59 steveu Exp $
  */
 
 /*! \file */
@@ -60,6 +60,9 @@ The test file ../test-data/local/short_nb_voice.wav will be compressed to the sp
 decompressed, and the resulting audio stored in post_g726.wav.
 */
 
+/* Enable the following definition to enable direct probing into the FAX structures */
+//#define WITH_SPANDSP_INTERNALS
+
 #if defined(HAVE_CONFIG_H)
 #include <config.h>
 #endif
@@ -71,6 +74,10 @@ decompressed, and the resulting audio stored in post_g726.wav.
 #include <memory.h>
 #include <ctype.h>
 #include <audiofile.h>
+
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -1078,6 +1085,7 @@ int main(int argc, char *argv[])
     int len3;
     int i;
     int test;
+    int opt;
     int bits_per_code;
     int itutests;
     int bit_rate;
@@ -1097,45 +1105,27 @@ int main(int argc, char *argv[])
     bit_rate = 32000;
     itutests = TRUE;
     packing = G726_PACKING_NONE;
-    while (argc > i)
+    while ((opt = getopt(argc, argv, "b:lr")) != -1)
     {
-        if (strcmp(argv[i], "-16") == 0)
+        switch (opt)
         {
-            bit_rate = 16000;
+        case 'b':
+            bit_rate = atoi(optarg);
+            if (bit_rate != 16000  &&  bit_rate != 24000  &&  bit_rate != 32000  &&  bit_rate != 40000)
+            {
+                fprintf(stderr, "Invalid bit rate selected. Only 16000, 24000, 32000 and 40000 are valid.\n");
+                exit(2);
+            }
             itutests = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-24") == 0)
-        {
-            bit_rate = 24000;
-            itutests = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-32") == 0)
-        {
-            bit_rate = 32000;
-            itutests = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-40") == 0)
-        {
-            bit_rate = 40000;
-            itutests = FALSE;
-            i++;
-        }
-        else if (strcmp(argv[i], "-l") == 0)
-        {
+            break;
+        case 'l':
             packing = G726_PACKING_LEFT;
-            i++;
-        }
-        else if (strcmp(argv[i], "-r") == 0)
-        {
+            break;
+        case 'r':
             packing = G726_PACKING_RIGHT;
-            i++;
-        }
-        else
-        {
-            fprintf(stderr, "Unknown parameter %s specified.\n", argv[i]);
+            break;
+        default:
+            //usage();
             exit(2);
         }
     }

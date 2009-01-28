@@ -25,13 +25,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.30 2008/07/24 13:55:23 steveu Exp $
+ * $Id: at_interpreter.c,v 1.34 2009/01/16 15:13:16 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
@@ -54,6 +54,9 @@
 #include "spandsp/fsk.h"
 
 #include "spandsp/at_interpreter.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/at_interpreter.h"
 
 #define ms_to_samples(t)        (((t)*SAMPLE_RATE)/1000)
 
@@ -180,6 +183,7 @@ void at_put_response_code(at_state_t *s, int code)
 {
     uint8_t buf[20];
 
+    span_log(&s->logging, SPAN_LOG_FLOW, "Sending AT response code %s\n", at_response_codes[code]);
     switch (s->p.result_code_format)
     {
     case ASCII_RESULT_CODES:
@@ -239,7 +243,7 @@ void at_call_event(at_state_t *s, int event)
         }
         break;
     case AT_CALL_EVENT_CONNECTED:
-        span_log(&s->logging, SPAN_LOG_FLOW, "Dial call - connected. fclass=%d\n", s->fclass_mode);
+        span_log(&s->logging, SPAN_LOG_FLOW, "Dial call - connected. FCLASS=%d\n", s->fclass_mode);
         at_modem_control(s, AT_MODEM_CONTROL_RNG, (void *) 0);
         if (s->fclass_mode == 0)
         {
@@ -309,8 +313,8 @@ void at_call_event(at_state_t *s, int event)
 
 void at_reset_call_info(at_state_t *s)
 {
-    struct at_call_id *call_id;
-    struct at_call_id *next;
+    at_call_id_t *call_id;
+    at_call_id_t *next;
  
     for (call_id = s->call_id;  call_id;  call_id = next)
     {
@@ -325,11 +329,11 @@ void at_reset_call_info(at_state_t *s)
 
 void at_set_call_info(at_state_t *s, char const *id, char const *value)
 {
-    struct at_call_id *new_call_id;
-    struct at_call_id *call_id;
+    at_call_id_t *new_call_id;
+    at_call_id_t *call_id;
 
     /* TODO: We should really not merely ignore a failure to malloc */
-    if ((new_call_id = (struct at_call_id *) malloc(sizeof(*new_call_id))) == NULL)
+    if ((new_call_id = (at_call_id_t *) malloc(sizeof(*new_call_id))) == NULL)
         return;
     call_id = s->call_id;
     /* If these strdups fail its pretty harmless. We just appear to not
@@ -354,7 +358,7 @@ void at_set_call_info(at_state_t *s, char const *id, char const *value)
 void at_display_call_info(at_state_t *s)
 {
     char buf[132 + 1];
-    struct at_call_id *call_id = s->call_id;
+    at_call_id_t *call_id = s->call_id;
 
     while (call_id)
     {
@@ -5299,6 +5303,8 @@ at_state_t *at_init(at_state_t *s,
             return NULL;
     }
     memset(s, '\0', sizeof(*s));
+    span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
+    span_log_set_protocol(&s->logging, "AT");
     s->modem_control_handler = modem_control_handler;
     s->modem_control_user_data = modem_control_user_data;
     s->at_tx_handler = at_tx_handler;

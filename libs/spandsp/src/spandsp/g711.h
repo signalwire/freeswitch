@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711.h,v 1.14 2008/05/02 17:57:32 steveu Exp $
+ * $Id: g711.h,v 1.15 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \file */
@@ -62,11 +62,7 @@ enum
     G711_ULAW
 };
 
-typedef struct
-{
-    /*! One of the G.711_xxx options */
-    int mode;
-} g711_state_t;
+typedef struct g711_state_s g711_state_t;
 
 #if defined(__cplusplus)
 extern "C"

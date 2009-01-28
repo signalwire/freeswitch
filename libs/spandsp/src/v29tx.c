@@ -22,26 +22,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.c,v 1.79 2008/09/07 12:45:17 steveu Exp $
+ * $Id: v29tx.c,v 1.84 2009/01/28 03:41:27 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
@@ -53,6 +53,9 @@
 #include "spandsp/power_meter.h"
 
 #include "spandsp/v29tx.h"
+
+#include "spandsp/private/logging.h"
+#include "spandsp/private/v29tx.h"
 
 #include "v29tx_constellation_maps.h"
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -113,6 +116,11 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
     {
         0, 2, 6, 4
     };
+#if defined(SPANDSP_USE_FIXED_POINT)
+    static const complexi16_t zero = {0, 0};
+#else
+    static const complexf_t zero = {0.0f, 0.0f};
+#endif
     int bits;
     int amp;
     int bit;
@@ -132,11 +140,7 @@ static __inline__ complexf_t getbaud(v29_tx_state_t *s)
                 if (s->training_step <= V29_TRAINING_SEG_2)
                 {
                     /* Segment 1: silence */
-#if defined(SPANDSP_USE_FIXED_POINT)
-                    return complex_seti16(0, 0);
-#else
-                    return complex_setf(0.0f, 0.0f);
-#endif
+                    return zero;
                 }
                 /* Segment 2: ABAB... */
                 return v29_abab_constellation[(s->training_step & 1) + s->training_offset];
@@ -307,6 +311,12 @@ void v29_tx_set_modem_status_handler(v29_tx_state_t *s, modem_tx_status_func_t h
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+logging_state_t *v29_tx_get_logging_state(v29_tx_state_t *s)
+{
+    return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 

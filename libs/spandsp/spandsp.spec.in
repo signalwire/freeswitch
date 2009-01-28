@@ -62,6 +62,7 @@ rm -rf %{buildroot}
 %{_includedir}/spandsp.h
 %{_includedir}/spandsp
 %{_libdir}/libspandsp.so
+%{_libdir}/pkgconfig/spandsp.pc
 
 %post -p /sbin/ldconfig
 
@@ -72,7 +73,7 @@ rm -rf %{buildroot}
 - Preparing for 0.0.5pre4 release
 - License: LGPL
 
-* Mon 23 Jun 2008 Steve Underwood <steveu@coppice.org> 0.0.5-1
+* Mon Jun 23 2008 Steve Underwood <steveu@coppice.org> 0.0.5-1
 - Cleared out the dependency on libxml2
 
 * Sun Dec 31 2006 Steve Underwood <steveu@coppice.org> 0.0.3-1

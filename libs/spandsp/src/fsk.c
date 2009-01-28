@@ -22,25 +22,25 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.c,v 1.46 2008/09/07 12:45:16 steveu Exp $
+ * $Id: fsk.c,v 1.49 2009/01/28 03:41:26 steveu Exp $
  */
 
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <assert.h>
 
 #include "spandsp/telephony.h"
@@ -49,6 +49,8 @@
 #include "spandsp/power_meter.h"
 #include "spandsp/async.h"
 #include "spandsp/fsk.h"
+
+#include "spandsp/private/fsk.h"
 
 const fsk_spec_t preset_fsk_specs[] =
 {

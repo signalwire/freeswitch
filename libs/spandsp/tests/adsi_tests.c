@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi_tests.c,v 1.45 2008/08/29 09:28:13 steveu Exp $
+ * $Id: adsi_tests.c,v 1.48 2008/11/30 10:17:31 steveu Exp $
  */
 
 /*! \page adsi_tests_page ADSI tests
@@ -36,6 +36,9 @@ tests, these tests do not include line modelling.
 \section adsi_tests_page_sec_2 How does it work?
 */
 
+/* Enable the following definition to enable direct probing into the FAX structures */
+//#define WITH_SPANDSP_INTERNALS
+
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -48,6 +51,10 @@ tests, these tests do not include line modelling.
 #include <assert.h>
 #include <audiofile.h>
 
+//#if defined(WITH_SPANDSP_INTERNALS)
+#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
+//#endif
+
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -59,8 +66,8 @@ char *decode_test_file = NULL;
 
 int errors = 0;
 
-adsi_rx_state_t rx_adsi;
-adsi_tx_state_t tx_adsi;
+adsi_rx_state_t *rx_adsi;
+adsi_tx_state_t *tx_adsi;
 
 int current_standard = 0;
 int good_message_received;
@@ -232,7 +239,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
     printf("Message breakdown\n");
     do
     {
-        l = adsi_next_field(&rx_adsi, msg, len, l, &field_type, &field_body, &field_len);
+        l = adsi_next_field(rx_adsi, msg, len, l, &field_type, &field_body, &field_len);
         if (l > 0)
         {
             if (field_body)
@@ -626,22 +633,24 @@ int main(int argc, char *argv[])
        the routines visible. */
     /* Check the character encode/decode cycle */
     current_standard = ADSI_STANDARD_TDD;
-    adsi_tx_init(&tx_adsi, ADSI_STANDARD_TDD);
-    adsi_rx_init(&rx_adsi, ADSI_STANDARD_TDD, put_adsi_msg, NULL);
+    tx_adsi = adsi_tx_init(NULL, ADSI_STANDARD_TDD);
+    rx_adsi = adsi_rx_init(NULL, ADSI_STANDARD_TDD, put_adsi_msg, NULL);
     s = "The quick Brown Fox Jumps Over The Lazy dog 0123456789!@#$%^&*()";
     while ((ch = *s++))
     {
-        xx = adsi_encode_baudot(&tx_adsi, ch);
+        xx = adsi_encode_baudot(tx_adsi, ch);
         if ((xx & 0x3E0))
         {
-            yy = adsi_decode_baudot(&rx_adsi, (xx >> 5) & 0x1F);
+            yy = adsi_decode_baudot(rx_adsi, (xx >> 5) & 0x1F);
             if (yy)
                 printf("%c", yy);
         }
-        yy = adsi_decode_baudot(&rx_adsi, xx & 0x1F);
+        yy = adsi_decode_baudot(rx_adsi, xx & 0x1F);
         if (yy)
             printf("%c", yy);
     }
+    adsi_tx_free(tx_adsi);
+    adsi_rx_free(rx_adsi);
     printf("\n");
 #endif
 
@@ -658,9 +667,11 @@ int main(int argc, char *argv[])
         else
             current_standard = test_standard;
 
-        adsi_rx_init(&rx_adsi, current_standard, put_adsi_msg, NULL);
-        span_log_set_level(&rx_adsi.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(&rx_adsi.logging, "ADSI");
+        rx_adsi = adsi_rx_init(NULL, current_standard, put_adsi_msg, NULL);
+#if 0
+        span_log_set_level(rx_adsi.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(rx_adsi.logging, "ADSI");
+#endif
         for (;;)
         {
             len = afReadFrames(inhandle,
@@ -669,13 +680,14 @@ int main(int argc, char *argv[])
                                BLOCK_LEN);
             if (len == 0)
                 break;
-            adsi_rx(&rx_adsi, amp, len);
+            adsi_rx(rx_adsi, amp, len);
         }
         if (afCloseFile(inhandle) != 0)
         {
             fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
             exit(2);
         }
+        adsi_rx_free(rx_adsi);
     }
     else
     {
@@ -702,10 +714,10 @@ int main(int argc, char *argv[])
         for (current_standard = first_standard;  current_standard <= last_standard;  current_standard++)
         {
             printf("Testing %s\n", adsi_standard_to_str(current_standard));
-            adsi_tx_init(&tx_adsi, current_standard);
+            tx_adsi = adsi_tx_init(NULL, current_standard);
             if (short_preamble)
-                adsi_tx_set_preamble(&tx_adsi, 50, 20, 5, -1);
-            adsi_rx_init(&rx_adsi, current_standard, put_adsi_msg, NULL);
+                adsi_tx_set_preamble(tx_adsi, 50, 20, 5, -1);
+            rx_adsi = adsi_rx_init(NULL, current_standard, put_adsi_msg, NULL);
 
             /* Fake an OK condition for the first message test */
             good_message_received = TRUE;
@@ -714,7 +726,7 @@ int main(int argc, char *argv[])
             {
                 if (push == 0)
                 {
-                    if ((len = adsi_tx(&tx_adsi, amp, BLOCK_LEN)) == 0)
+                    if ((len = adsi_tx(tx_adsi, amp, BLOCK_LEN)) == 0)
                         push = 10;
                 }
                 else
@@ -729,8 +741,8 @@ int main(int argc, char *argv[])
                             exit(2);
                         }
                         good_message_received = FALSE;
-                        adsi_msg_len = adsi_create_message(&tx_adsi, adsi_msg);
-                        adsi_msg_len = adsi_tx_put_message(&tx_adsi, adsi_msg, adsi_msg_len);
+                        adsi_msg_len = adsi_create_message(tx_adsi, adsi_msg);
+                        adsi_msg_len = adsi_tx_put_message(tx_adsi, adsi_msg, adsi_msg_len);
                     }
                 }
                 if (len < BLOCK_LEN)
@@ -750,8 +762,10 @@ int main(int argc, char *argv[])
                         exit(2);
                     }
                 }
-                adsi_rx(&rx_adsi, amp, len);
+                adsi_rx(rx_adsi, amp, len);
             }
+            adsi_rx_free(rx_adsi);
+            adsi_tx_free(tx_adsi);
         }
         if (log_audio)
         {

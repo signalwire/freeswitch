@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_detect.c,v 1.47 2008/07/02 14:48:26 steveu Exp $
+ * $Id: tone_detect.c,v 1.49 2009/01/28 03:41:27 steveu Exp $
  */
  
 /*! \file tone_detect.h */
@@ -33,13 +33,13 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
@@ -50,6 +50,8 @@
 #include "spandsp/complex_vector_float.h"
 #include "spandsp/tone_detect.h"
 #include "spandsp/tone_generate.h"
+
+#include "spandsp/private/tone_detect.h"
 
 #if !defined(M_PI)
 /* C99 systems may not define M_PI */
