@@ -760,7 +760,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   pVal->flags |= (pVal->flags & MEM_Blob)>>3;
   if( pVal->flags&MEM_Str ){
     sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
-    if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&(int)pVal->z) ){
+    if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&(int)(intptr_t)pVal->z) ){
       assert( (pVal->flags & (MEM_Ephem|MEM_Static))!=0 );
       if( sqlite3VdbeMemMakeWriteable(pVal)!=SQLITE_OK ){
         return 0;
@@ -770,7 +770,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   }else{
     assert( (pVal->flags&MEM_Blob)==0 );
     sqlite3VdbeMemStringify(pVal, enc);
-    assert( 0==(1&(int)pVal->z) );
+    assert( 0==(1&(int)(intptr_t)pVal->z) );
   }
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || sqlite3MallocFailed() );
   if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){

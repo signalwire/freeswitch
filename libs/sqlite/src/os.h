@@ -64,6 +64,7 @@
 # define SQLITE_TEMPNAME_SIZE (CCHMAXPATHCOMP)
 #else
 # define SQLITE_TEMPNAME_SIZE 200
+# include <unistd.h>
 #endif
 
 /* If the SET_FULLSYNC macro is not defined above, then make it

@@ -15,6 +15,7 @@
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
+#include "os.h"
 
 /*
 ** External API function used to create a new virtual-table module.
@@ -562,7 +563,7 @@ int sqlite3VtabSync(sqlite3 *db, int rc2){
 ** sqlite3.aVTrans array. Then clear the array itself.
 */
 int sqlite3VtabRollback(sqlite3 *db){
-  callFinaliser(db, (int)(&((sqlite3_module *)0)->xRollback));
+  callFinaliser(db, (int)(intptr_t)(&((sqlite3_module *)0)->xRollback));
   return SQLITE_OK;
 }
 
@@ -571,7 +572,7 @@ int sqlite3VtabRollback(sqlite3 *db){
 ** sqlite3.aVTrans array. Then clear the array itself.
 */
 int sqlite3VtabCommit(sqlite3 *db){
-  callFinaliser(db, (int)(&((sqlite3_module *)0)->xCommit));
+  callFinaliser(db, (int)(intptr_t)(&((sqlite3_module *)0)->xCommit));
   return SQLITE_OK;
 }
 
