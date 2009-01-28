@@ -280,6 +280,14 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	
 	cbt->matches++;
 
+	if (switch_strlen_zero(argv[LCR_GW_PREFIX_PLACE]) && switch_strlen_zero(argv[LCR_GW_SUFFIX_PLACE]) ) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
+								"There's no way to dial this Gateway: Carrier: \"%s\" Prefix: \"%s\", Suffix \"%s\"\n",
+								switch_str_nil(argv[LCR_CARRIER_PLACE]),
+								switch_str_nil(argv[LCR_GW_PREFIX_PLACE]), switch_str_nil(argv[LCR_GW_SUFFIX_PLACE]));
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	switch_zmalloc(additional, sizeof(lcr_obj_t));
 
 	additional->digit_len = strlen(argv[LCR_DIGITS_PLACE]);
@@ -304,21 +312,11 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	}
 
 	for (current = cbt->head; current; current = current->next) {
-
-	if (switch_strlen_zero(additional->gw_prefix) && switch_strlen_zero(additional->gw_suffix) ) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING
-							  , "WTF?!? There's no way to dial this Gateway: Carrier: \"%s\" Prefix: \"%s\", Suffix \"%s\"\n"
-							  , additional->carrier_name
-							  , additional->gw_prefix, additional->gw_suffix
-							  );
-			break;
-		}
 			
 		if (!strcmp(current->gw_prefix, additional->gw_prefix) && !strcmp(current->gw_suffix, additional->gw_suffix)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG
-							  , "Ignoring Duplicate route for termination point (%s:%s)\n"
-							  , additional->gw_prefix, additional->gw_suffix
-							  );
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+								"Ignoring Duplicate route for termination point (%s:%s)\n",
+								additional->gw_prefix, additional->gw_suffix);
 			switch_safe_free(additional);
 			break;
 		}
@@ -488,7 +486,7 @@ static switch_status_t lcr_load_config()
 					profile->order_by = ", rate";
 				}
 				if(!switch_strlen_zero(id_s)) {
-					profile->id = atoi(id_s);
+					profile->id = (uint16_t)atoi(id_s);
 				}
 				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
