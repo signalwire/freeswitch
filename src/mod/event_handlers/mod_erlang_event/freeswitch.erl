@@ -17,7 +17,8 @@
 -export([send/2, api/3, bgapi/3, event/2,
 		nixevent/2, noevents/1, close/1,
 		get_event_header/2, get_event_body/1,
-		get_event_name/1, start_fetch_handler/4,
+		get_event_name/1, getpid/1, sendmsg/3,
+		sendevent/3, handlecall/2, start_fetch_handler/4,
 		start_log_handler/3, start_event_handler/3]).
 -define(TIMEOUT, 10000).
 
