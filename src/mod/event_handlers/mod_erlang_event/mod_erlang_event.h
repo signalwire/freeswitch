@@ -192,6 +192,7 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to);
 void ei_encode_switch_event_headers(ei_x_buff *ebuf, switch_event_t *event);
 void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *tag);
+int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function);
 int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function, int argc, char **argv);
 void ei_init_ref(struct ei_cnode_s *ec, erlang_ref *ref);
 void ei_x_print_reg_msg(ei_x_buff *buf, char *dest, int send);
@@ -215,6 +216,7 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec);
 
 /* mod_erlang_event.c */
 session_elem_t* attach_call_to_registered_process(listener_t* listener, char* reg_name, switch_core_session_t *session);
+session_elem_t* attach_call_to_pid(listener_t* listener, erlang_pid* pid, switch_core_session_t *session);
 session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *module, char *function, switch_core_session_t *session);
 
 /* For Emacs:

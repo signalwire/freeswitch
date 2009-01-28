@@ -122,6 +122,24 @@ void ei_encode_switch_event_tag(ei_x_buff *ebuf, switch_event_t *event, char *ta
 	ei_encode_switch_event_headers(ebuf, event);
 }
 
+/* function to make rpc call to remote node to retrieve a pid - 
+   calls module:function(Ref). The response comes back as
+   {rex, {Ref, Pid}}
+ */
+int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function)
+{
+	ei_x_buff buf;
+	ei_x_new(&buf);
+	ei_x_encode_list_header(&buf, 1);
+	ei_init_ref(ec, ref);
+	ei_x_encode_ref(&buf, ref);
+	ei_x_encode_empty_list(&buf);
+
+	ei_rpc_to(ec, sockfd, module, function, buf.buff, buf.index);
+	ei_x_free(&buf);
+
+	return 0;
+}
 
 /* function to spawn a process on a remote node */
 int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, char *function, int argc, char **argv)

@@ -187,8 +187,8 @@ static void event_handler(switch_event_t *event)
 		l = lp;
 		lp = lp->next;
 
-		/* test all of the sessions attached to this event in case
-		   one of them should receive it as well
+		/* test all of the sessions attached to this listener in case
+		   one of them should receive the event as well
 		 */
 
 		send_event_to_attached_sessions(l,event);
@@ -684,9 +684,10 @@ static void listener_main_loop(listener_t *listener)
 		ei_x_buff rbuf;
 		ei_x_new_with_version(&rbuf);
 
-		switch_mutex_lock(listener->sock_mutex);
+		/* do we need the mutex when reading? */
+		/*switch_mutex_lock(listener->sock_mutex);*/
 		status = ei_xreceive_msg_tmo(listener->sockfd, &msg, &buf, 100);
-		switch_mutex_unlock(listener->sock_mutex);
+		/*switch_mutex_unlock(listener->sock_mutex);*/
 
 		switch(status) {
 			case ERL_TICK :
@@ -780,7 +781,9 @@ static switch_bool_t check_inbound_acl(listener_t* listener)
 					ei_x_encode_atom(&rbuf, "error");
 					ei_x_encode_atom(&rbuf, "acldeny");
 
+					switch_mutex_lock(listener->sock_mutex);
 					ei_send(listener->sockfd, &msg.from, rbuf.buff, rbuf.index);
+					switch_mutex_unlock(listener->sock_mutex);
 #ifdef EI_DEBUG
 					ei_x_print_msg(&rbuf, &msg.from, 1);
 #endif
@@ -1026,6 +1029,33 @@ session_elem_t* attach_call_to_registered_process(listener_t* listener, char* re
 	return session_element;
 }
 
+session_elem_t* attach_call_to_pid(listener_t* listener, erlang_pid* pid, switch_core_session_t *session)
+{
+	/* create a session list element */
+	session_elem_t* session_element = NULL;
+	if (!(session_element = switch_core_alloc(switch_core_session_get_pool(session), sizeof(*session_element)))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to allocate session element\n");
+	}
+	else {
+		if (SWITCH_STATUS_SUCCESS != switch_core_session_read_lock(session)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get session read lock\n");
+		}
+		else {
+			session_element->session = session;
+			session_element->process.type = ERLANG_PID;
+			memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
+			switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
+			switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
+			switch_queue_create(&session_element->event_queue, SWITCH_CORE_QUEUE_LEN, switch_core_session_get_pool(session));
+			switch_mutex_init(&session_element->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+			/* attach the session to the listener */
+			add_session_elem_to_listener(listener,session_element);
+
+			ei_link(listener, ei_self(listener->ec), pid);
+		}
+	}
+	return session_element;
+}
 
 session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *module, char *function, switch_core_session_t *session)
 {
@@ -1039,7 +1069,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get session read lock\n");
 		}
 		else {
-			char *argv[1], hash[100];
+			char hash[100];
 			int i = 0;
 			session_element->session = session;
 			erlang_pid *pid;
@@ -1061,13 +1091,20 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 				ei_x_encode_atom(&rbuf, "new_pid");
 				ei_x_encode_ref(&rbuf, &ref);
 				ei_x_encode_pid(&rbuf, ei_self(listener->ec));
+				/* should lock with mutex? */
 				ei_reg_send(listener->ec, listener->sockfd, module, rbuf.buff, rbuf.index);
 #ifdef EI_DEBUG
 				ei_x_print_reg_msg(&rbuf, module, 1);
 #endif
 				ei_x_free(&rbuf);
 			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "rpc call: %s:%s(Ref)\n", module, function);
+				/* should lock with mutex? */
+				ei_pid_from_rpc(listener->ec, listener->sockfd, &ref, module, function);
+				/*
+				char *argv[1];
 				ei_spawn(listener->ec, listener->sockfd, &ref, module, function, 0, argv);
+				*/
 			}
 
 			ei_hash_ref(&ref, hash);
@@ -1091,7 +1128,8 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
 			switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
 
-			ei_link(listener, ei_self(listener->ec), pid);
+			/* this hangs because it can never get hold of the socket mutex */
+			 ei_link(listener, ei_self(listener->ec), pid); 
 		}
 	}
 	return session_element;

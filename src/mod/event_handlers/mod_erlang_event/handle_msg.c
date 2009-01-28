@@ -37,6 +37,8 @@
 
 static char *MARKER = "1";
 
+static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf);
+
 static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 {
 	switch_bool_t r = SWITCH_TRUE;
@@ -519,15 +521,18 @@ static switch_status_t handle_msg_bind(listener_t *listener, erlang_msg *msg, ei
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* {handlecall,<uuid>,<handler process registered name>} */
-static switch_status_t handle_msg_handlecall(listener_t *listener, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+/* {handlecall,<uuid>,<handler process registered name>}
+   or
+   {handlecall,<uuid>} to send messages back to the sender
+ */
+static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
 {
 	char reg_name[MAXATOMLEN];
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 
-	if (arity != 3 ||
-		ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid_str) ||
-		ei_decode_atom(buf->buff, &buf->index, reg_name)) {
+	if (arity < 2 || arity > 3 ||
+		(arity==3 && ei_decode_atom(buf->buff, &buf->index, reg_name)) ||
+		ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid_str)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
@@ -535,7 +540,8 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, int arity, ei
 		switch_core_session_t *session;
 		if (!switch_strlen_zero(uuid_str) && (session = switch_core_session_locate(uuid_str))) {
 			/* create a new session list element and attach it to this listener */
-			if (attach_call_to_registered_process(listener, reg_name, session)) {
+			if ((arity==2 && attach_call_to_pid(listener, &msg->from, session)) ||
+				(arity==3 && attach_call_to_registered_process(listener, reg_name, session))) {
 				ei_x_encode_atom(rbuf, "ok");
 			} else {
 				ei_x_encode_tuple_header(rbuf, 2);
@@ -549,6 +555,28 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, int arity, ei
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
+}
+
+/* catch the response to ei_rpc_to (which comes back as {rex, {Ref, Pid}}
+   The {Ref,Pid} bit can be handled by handle_ref_tuple
+ */
+static switch_status_t handle_msg_rpcresponse(listener_t *listener, erlang_msg *msg, int arity, ei_x_buff *buf, ei_x_buff *rbuf)
+{
+	int type, size, arity2, tmpindex;
+
+	ei_get_type(buf->buff, &buf->index, &type, &size);
+	switch(type) {
+	case ERL_SMALL_TUPLE_EXT :
+	case ERL_LARGE_TUPLE_EXT :
+		tmpindex = buf->index;
+		ei_decode_tuple_header(buf->buff, &tmpindex, &arity2);
+		return handle_ref_tuple(listener,msg,buf,rbuf);
+	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unknown rpc response\n");
+		break;
+	}
+	/* no reply */
+	return SWITCH_STATUS_FALSE;
 }
 
 static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
@@ -583,7 +611,9 @@ static switch_status_t handle_msg_tuple(listener_t *listener, erlang_msg *msg, e
 		} else if (!strncmp(tupletag, "bind", MAXATOMLEN)) {
 			ret = handle_msg_bind(listener,msg,buf,rbuf);
 		} else if (!strncmp(tupletag, "handlecall", MAXATOMLEN)) {
-			ret = handle_msg_handlecall(listener,arity,buf,rbuf);
+			ret = handle_msg_handlecall(listener,msg,arity,buf,rbuf);
+		} else if (!strncmp(tupletag, "rex", MAXATOMLEN)) {
+			ret = handle_msg_rpcresponse(listener,msg,arity,buf,rbuf);
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
@@ -701,7 +731,8 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 		switch_core_hash_insert(listener->spawn_pid_hash, hash, pid);
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	/* no reply */
+	return SWITCH_STATUS_FALSE;
 }
 
 
