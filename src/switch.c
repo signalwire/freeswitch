@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 											 GENERIC_READ | GENERIC_EXECUTE | SERVICE_CHANGE_CONFIG,
 											 SERVICE_WIN32_OWN_PROCESS, SERVICE_AUTO_START, SERVICE_ERROR_IGNORE, 
 											 servicePath, NULL, NULL, NULL,
-											 "NT AUTHORITY\\NetworkService",  /* Service start name */
+											 NULL,  /* Service start name */
 											 NULL);
 					if (!hService) {
 						fprintf(stderr, "Error creating freeswitch service (%d).\n", GetLastError());
