@@ -351,6 +351,21 @@ bool FSManager::Initialise(switch_loadable_module_interface_t *iface)
     AddRouteEntry("iax2:.* = local:<da>");  // config option for direct routing
     AddRouteEntry("local:.* = h323:<da>");  // config option for direct routing
 
+    // Make sure all known codecs are instantiated,
+    // these are ones we know how to translate into H.323 capabilities
+    GetOpalG728();
+    GetOpalG729();
+    GetOpalG729A();
+    GetOpalG729B();
+    GetOpalG729AB();
+    GetOpalG7231_6k3();
+    GetOpalG7231_5k3();
+    GetOpalG7231A_6k3();
+    GetOpalG7231A_5k3();
+    GetOpalGSM0610();
+    GetOpalGSMAMR();
+    GetOpaliLBC();
+
     /* For compatibility with the algorithm in FSConnection::SetCodecs() we need
        to set all audio media formats to be 1 frame per packet */
     OpalMediaFormatList allCodecs = OpalMediaFormat::GetAllRegisteredMediaFormats();
@@ -466,49 +481,6 @@ bool FSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userData)
 {
     return new FSConnection(call, *this);
-}
-
-
-bool FSEndPoint::AddMediaFormat(const switch_codec_implementation_t *codec)
-{
-    OpalMediaType mediaType;
-
-    switch (codec->codec_type) {
-      case SWITCH_CODEC_TYPE_AUDIO:
-        mediaType = OpalMediaType::Audio();
-        break;
-
-      case SWITCH_CODEC_TYPE_VIDEO:
-        mediaType = OpalMediaType::Video();
-        break;
-
-      case SWITCH_CODEC_TYPE_T38:
-        mediaType = OpalMediaType::Fax();
-        break;
-
-      default:
-        return false;
-    }
-
-    OpalMediaFormat * newMediaFormat = new OpalMediaFormat(codec->iananame,
-                                                           mediaType,
-                                                           (RTP_DataFrame::PayloadTypes) codec->ianacode,
-                                                           codec->iananame,
-                                                           codec->codec_type == SWITCH_CODEC_TYPE_AUDIO,
-                                                           codec->bits_per_second,
-                                                           codec->encoded_bytes_per_packet,
-                                                           codec->samples_per_packet,
-                                                           codec->samples_per_second);
-    if (newMediaFormat == NULL || !newMediaFormat->IsValid()) {
-        return false;
-    }
-
-    // Save pointer so will auto delete allocated objects on destruction.
-    m_globalMediaFormats.Append(newMediaFormat);
-
-    PTRACE(2, "mod_opal\tNew OPAL media format created for FS codec: iananame=" << codec->iananame
-           << ", ianacode=" << codec->ianacode << ", rate=" << codec->samples_per_second);
-    return true;
 }
 
 
@@ -680,11 +652,8 @@ void FSConnection::SetCodecs()
             // See if we have a match by name alone
             switchFormat = codec->iananame;
             if (!switchFormat.IsValid()) {
-                // Add the new name to OPAL's global lists
-                if (m_endpoint.AddMediaFormat(codec)) {
-                    // Now we finally have it
-                    switchFormat = codec->iananame;
-                }
+              PTRACE(2, "mod_opal\tCould not match FS codec " << codec->iananame << " to OPAL media format.");
+              continue;
             }
         }
         

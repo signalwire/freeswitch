@@ -114,11 +114,6 @@ class FSEndPoint:public OpalLocalEndPoint {
 
     virtual bool OnIncomingCall(OpalLocalConnection &);
     virtual OpalLocalConnection *CreateConnection(OpalCall &, void *);
-
-    bool AddMediaFormat(const switch_codec_implementation_t *codec);
-
-  private:
-    PList<OpalMediaFormat> m_globalMediaFormats;
 };
 
 
