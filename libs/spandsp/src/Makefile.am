@@ -38,6 +38,7 @@ EXTRA_DIST = floating_fudge.h \
              msvc/msvcproj.foot \
              msvc/vc8proj.head \
              msvc/vc8proj.foot \
+             msvc/config.h \
              spandsp/private/README
 
 INCLUDES = -I$(top_builddir)
