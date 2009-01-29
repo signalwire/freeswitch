@@ -6,7 +6,7 @@
 			>
 		</Filter>
 		<File
-			RelativePath=".\src\msvc\spandsp.def"
+			RelativePath=".\msvc\spandsp.def"
 			>
 		</File>
 	</Files>
