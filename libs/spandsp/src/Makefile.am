@@ -395,7 +395,7 @@ v29tx_floating_rrc.h: make_modem_filter$(EXEEXT)
 DSP = libspandsp.dsp
 VCPROJ = libspandsp.vcproj
 
-WIN32SOURCES = $(libspandsp_la_SOURCES) msvc/gettimeofday.c
+WIN32SOURCES = $(libspandsp_la_SOURCES) .\\msvc\\gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) spandsp.h
 
 DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)
