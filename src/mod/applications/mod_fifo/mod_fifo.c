@@ -208,7 +208,11 @@ static switch_status_t caller_read_frame_callback(switch_core_session_t *session
 			args.input_callback = moh_on_dtmf;
 			args.buf = buf;
 			args.buflen = sizeof(buf);
-			switch_ivr_play_file(session, NULL, cd->list[cd->index], &args);
+
+			if (switch_ivr_play_file(session, NULL, cd->list[cd->index], &args) != SWITCH_STATUS_SUCCESS) {
+                return SWITCH_STATUS_FALSE;
+            }
+
 			if (caller_exit_key && *buf == *caller_exit_key) {
 				cd->abort = 1;
 				return SWITCH_STATUS_FALSE;
