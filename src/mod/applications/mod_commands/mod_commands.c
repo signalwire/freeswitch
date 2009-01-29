@@ -1954,11 +1954,7 @@ SWITCH_STANDARD_API(break_function)
 	}
 
 	channel = switch_core_session_get_channel(psession);
-	if (switch_channel_test_flag(channel, CF_BROADCAST)) {
-		switch_channel_stop_broadcast(channel);
-	} else {
-		switch_channel_set_flag(channel, CF_BREAK);
-	}
+
 	switch_core_session_rwunlock(psession);
 
 	return SWITCH_STATUS_SUCCESS;

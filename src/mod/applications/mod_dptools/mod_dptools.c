@@ -385,7 +385,19 @@ SWITCH_STANDARD_APP(remove_bugs_function)
 
 SWITCH_STANDARD_APP(break_function)
 {
-	switch_channel_set_flag(switch_core_session_get_channel(session), CF_BREAK);
+	switch_channel_t *channel;
+
+	channel = switch_core_session_get_channel(session);
+
+	if (data && strcasecmp(data, "all")) {
+		switch_core_session_flush_private_events(session);
+	}
+
+	if (switch_channel_test_flag(channel, CF_BROADCAST)) {
+		switch_channel_stop_broadcast(channel);
+	} else {
+		switch_channel_set_flag(channel, CF_BREAK);
+	}
 }
 
 SWITCH_STANDARD_APP(queue_dtmf_function)
