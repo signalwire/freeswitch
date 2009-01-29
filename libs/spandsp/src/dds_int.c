@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dds_int.c,v 1.13 2009/01/28 03:41:26 steveu Exp $
+ * $Id: dds_int.c,v 1.14 2009/01/29 01:41:05 steveu Exp $
  */
 
 /*! \file */
@@ -202,15 +202,15 @@ float dds_frequency(int32_t phase_rate)
 }
 /*- End of function --------------------------------------------------------*/
 
-int dds_scaling_dbm0(float level)
+int16_t dds_scaling_dbm0(float level)
 {
-    return (int) (powf(10.0f, (level - DBM0_MAX_SINE_POWER)/20.0f)*32767.0f);
+    return (int16_t) (powf(10.0f, (level - DBM0_MAX_SINE_POWER)/20.0f)*32767.0f);
 }
 /*- End of function --------------------------------------------------------*/
 
-int dds_scaling_dbov(float level)
+int16_t dds_scaling_dbov(float level)
 {
-    return (int) (powf(10.0f, (level - DBOV_MAX_SINE_POWER)/20.0f)*32767.0f);
+    return (int16_t) (powf(10.0f, (level - DBOV_MAX_SINE_POWER)/20.0f)*32767.0f);
 }
 /*- End of function --------------------------------------------------------*/
 

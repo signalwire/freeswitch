@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.278 2009/01/28 03:41:27 steveu Exp $
+ * $Id: t30.c,v 1.279 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -628,7 +628,7 @@ static int get_partial_ecm_page(t30_state_t *s)
             s->ecm_at_page_end = TRUE;
             return i;
         }
-        s->ecm_len[i] = (int16_t) 4 + len;
+        s->ecm_len[i] = (int16_t) (4 + len);
     }
     /* We filled the entire buffer */
     s->ecm_frames = 256;

@@ -42,7 +42,6 @@ echo_can_adaption_mode
 echo_can_update
 fax_rx
 fax_tx
-fax_set_flush_handler
 fax_init
 fax_release
 fsk_tx_init
@@ -119,7 +118,8 @@ queue_read
 queue_write
 queue_read_msg
 queue_write_msg
-sig_tone_init
+sig_tone_rx_init
+sig_tone_tx_init
 sig_tone_rx
 sig_tone_tx
 super_tone_rx_make_descriptor

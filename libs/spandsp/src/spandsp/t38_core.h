@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core.h,v 1.33 2009/01/23 16:07:14 steveu Exp $
+ * $Id: t38_core.h,v 1.34 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -333,7 +333,7 @@ t38_core_state_t *t38_core_init(t38_core_state_t *s,
                                 t38_rx_data_handler_t *rx_data_handler,
                                 t38_rx_missing_handler_t *rx_missing_handler,
                                 void *rx_user_data,
-                                t38_tx_packet_handler_t tx_packet_handler,
+                                t38_tx_packet_handler_t *tx_packet_handler,
                                 void *tx_packet_user_data);
 
 #if defined(__cplusplus)

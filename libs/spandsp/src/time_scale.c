@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: time_scale.c,v 1.27 2009/01/28 03:41:27 steveu Exp $
+ * $Id: time_scale.c,v 1.28 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -274,7 +274,7 @@ int time_scale(time_scale_state_t *s, int16_t out[], int16_t in[], int len)
 
 int time_scale_max_output_len(time_scale_state_t *s, int input_len)
 {
-    return input_len*s->playout_rate + s->min_pitch + 1;
+    return (int) (input_len*s->playout_rate + s->min_pitch + 1);
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.150 2009/01/28 03:41:27 steveu Exp $
+ * $Id: v29rx.c,v 1.151 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -858,7 +858,7 @@ int v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
            We need to measure the power with the DC blocked, but not using
            a slow to respond DC blocker. Use the most elementary HPF. */
         x = amp[i] >> 1;
-        diff = x - s->last_sample;
+        diff = (int32_t) x - s->last_sample;
         power = power_meter_update(&(s->power), diff);
 #if defined(IAXMODEM_STUFF)
         /* Quick power drop fudge */

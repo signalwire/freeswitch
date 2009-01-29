@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.136 2009/01/28 03:41:27 steveu Exp $
+ * $Id: t31.c,v 1.137 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -373,7 +373,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
     t31_state_t *s;
     t31_t38_front_end_state_t *fe;
 #if defined(_MSC_VER)
-    uint8_t *buf2 = (uint8_t *) alloca(len);
+    uint8_t *buf2 = (uint8_t *) _alloca(len);
 #else
     uint8_t buf2[len];
 #endif
@@ -1444,7 +1444,7 @@ static void t31_v21_rx(t31_state_t *s)
     s->hdlc_tx.len = 0;
     s->dled = FALSE;
     fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
-    fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -39.09);
+    fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -39.09f);
     s->at_state.transmit = TRUE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2233,7 +2233,7 @@ static void t31_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_d
     hdlc_rx_init(&s->hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, user_data);
     hdlc_tx_init(&s->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, user_data);
     fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
-    fsk_rx_signal_cutoff(&s->v21_rx, -39.09);
+    fsk_rx_signal_cutoff(&s->v21_rx, -39.09f);
     fsk_tx_init(&s->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &s->hdlc_tx);
     v17_rx_init(&s->v17_rx, 14400, non_ecm_put_bit, user_data);
     v17_tx_init(&s->v17_tx, 14400, s->use_tep, non_ecm_get_bit, user_data);

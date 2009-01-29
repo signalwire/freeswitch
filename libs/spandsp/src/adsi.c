@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.c,v 1.67 2009/01/28 03:41:26 steveu Exp $
+ * $Id: adsi.c,v 1.68 2009/01/29 01:41:05 steveu Exp $
  */
 
 /*! \file */
@@ -1045,7 +1045,7 @@ int adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint8_t field_type
             if (field_type != CLIP_DTMF_HASH_UNSPECIFIED)
                 msg[len++] = field_type;
             memcpy(msg + len, field_body, field_len);
-            msg[len + field_len] = x;
+            msg[len + field_len] = (uint8_t) x;
             len += (field_len + 1);
         }
         break;

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.c,v 1.25 2009/01/05 13:48:31 steveu Exp $
+ * $Id: queue.c,v 1.26 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -351,10 +351,10 @@ int queue_write_msg(queue_state_t *s, const uint8_t *buf, int len)
     if ((real_len = optr - iptr - 1) < 0)
         real_len += s->len;
     /*endif*/
-    if (real_len < len + sizeof(uint16_t))
+    if (real_len < len + (int) sizeof(uint16_t))
         return -1;
     /*endif*/
-    real_len = len + sizeof(uint16_t);
+    real_len = len + (int) sizeof(uint16_t);
 
     to_end = s->len - iptr;
     lenx = (uint16_t) len;

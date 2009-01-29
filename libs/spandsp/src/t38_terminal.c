@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.c,v 1.119 2009/01/28 03:41:27 steveu Exp $
+ * $Id: t38_terminal.c,v 1.120 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -278,7 +278,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
     t38_terminal_state_t *s;
     t38_terminal_front_end_state_t *fe;
 #if defined(_MSC_VER)
-    uint8_t *buf2 = (uint8_t *) alloca(len);
+    uint8_t *buf2 = (uint8_t *) _alloca(len);
 #else
     uint8_t buf2[len];
 #endif

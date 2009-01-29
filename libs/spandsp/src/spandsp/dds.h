@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dds.h,v 1.21 2008/09/11 15:13:42 steveu Exp $
+ * $Id: dds.h,v 1.22 2009/01/29 01:41:06 steveu Exp $
  */
 
 /*! \file */
@@ -51,13 +51,13 @@ float dds_frequency(int32_t phase_rate);
     \param level The desired signal level, in dBm0.
     \return The scaling factor.
 */
-int dds_scaling_dbm0(float level);
+int16_t dds_scaling_dbm0(float level);
 
 /*! \brief Find the scaling factor needed to achieve a specified level in dBmov.
     \param level The desired signal level, in dBmov.
     \return The scaling factor.
 */
-int dds_scaling_dbov(float level);
+int16_t dds_scaling_dbov(float level);
 
 /*! \brief Find the amplitude for a particular phase.
     \param phase The desired phase 32 bit phase.
