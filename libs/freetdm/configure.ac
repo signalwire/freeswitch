@@ -51,7 +51,7 @@ AX_COMPILER_VENDOR
 
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
-    COMP_VENDOR_CFLAGS="-ffast-math -Wall -Werror -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+    COMP_VENDOR_CFLAGS="-ffast-math -Wall -Werror -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -O0"
     ;;
 sun)
     COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -D__FUNCTION__=__func__ -xvpara"
