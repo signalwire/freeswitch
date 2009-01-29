@@ -156,7 +156,14 @@ static int lua_parse_and_execute(lua_State * L, char *input_code)
 				error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 1);
 				switch_safe_free(code);
 			}
+		} else {
+			// Force empty argv table
+			char *code = NULL;
+			code = switch_mprintf("argv = {};");
+			error = luaL_loadbuffer(L, code, strlen(code), "line") || docall(L, 0, 1);
+			switch_safe_free(code);
 		}
+
 		if (!error) {
 			char *file = input_code, *fdup = NULL;
 
