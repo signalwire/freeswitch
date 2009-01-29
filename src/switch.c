@@ -275,6 +275,10 @@ int main(int argc, char *argv[])
 	switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
 
+	if (argv[0] && strstr(argv[0], "freeswitchd")) {
+		nc++;
+	}
+
 	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
 #ifdef WIN32
 		"\t-service [name]  -- start freeswitch as a service, cannot be used if loaded as a console app\n"
