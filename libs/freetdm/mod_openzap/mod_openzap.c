@@ -2174,7 +2174,7 @@ SWITCH_STANDARD_API(oz_function)
 	} else if (!strcasecmp(argv[0], "q931_pcap")) {
 		int32_t span_id = 0;
                 zap_span_t *span;
-		char *pcapfn = NULL;
+		const char *pcapfn = NULL;
 		char *tmp_path = NULL;
 
                 if (argc < 3) {
