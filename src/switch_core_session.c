@@ -1224,7 +1224,6 @@ SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_core_session_t *session, const char *app, const char *arg)
 {
 	switch_application_interface_t *application_interface;
-	char *expanded = NULL;
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
@@ -1252,7 +1251,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 		}
 	}
 
-	switch_core_session_exec(session, application_interface, expanded);
+	switch_core_session_exec(session, application_interface, arg);
 
 	UNPROTECT_INTERFACE(application_interface);
 	
