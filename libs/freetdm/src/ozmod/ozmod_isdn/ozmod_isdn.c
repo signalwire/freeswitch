@@ -52,10 +52,6 @@
 /*-------------------------------------------------------------------------*/
 /*Q931ToPcap functions*/
 #include <pcap.h>
-#include <stdio.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <string.h>
 
 #define SNAPLEN 1522
 #define MAX_ETHER_PAYLOAD_SIZE 1500
