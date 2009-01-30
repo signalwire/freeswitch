@@ -515,8 +515,9 @@ static void find_consumers(fifo_node_t *node)
 
 	sql = switch_mprintf("select uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
 						 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname "
-						 "from fifo_outbound where (use_count < simo_count) and (next_avail = 0 or next_avail <= %ld) order by outbound_call_count", 
-						 (long) switch_epoch_time_now(NULL));
+						 "from fifo_outbound where (fifo_name = '%s') and (use_count < simo_count) and (next_avail = 0 or next_avail <= %ld) "
+						 "order by outbound_call_count", node->name, (long) switch_epoch_time_now(NULL));
+
 	switch_assert(sql);
 	fifo_execute_sql_callback(globals.sql_mutex, sql, place_call_callback, &need);
 	free(sql);
