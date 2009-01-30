@@ -94,8 +94,33 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		goto error;
 	}
 
+	/* the following could be refactored back to the calling event handler here in sofia.c XXX MTK */
+	/* potentially interesting note: for Linksys shared appearance, we'll probably have to set up to get bare notifies
+	 * and pass them inward to the sla handler. we'll have to set NUTAG_APPL_METHOD("NOTIFY") when creating
+	 * nua, and also pick them off special elsewhere here in sofia.c - MTK
+	 * *and* for Linksys, I believe they use "sa" as their magic appearance agent name for those blind notifies, so
+	 * we'll probably have to change to match
+	*/
+	if (profile->manage_shared_appearance) {
+		
+		if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
+			int sub_state;
+			tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
+			
+			sofia_sla_handle_sip_i_notify(nua, profile, nh, sip, tags);
+
+			if (sub_state == nua_substate_terminated) {
+				nua_handle_bind(nh, NULL);
+				nua_handle_destroy(nh);
+			}
+
+			return;
+		}
+	}
+
 	/* Automatically return a 200 OK for Event: keep-alive */
 	if (!strcasecmp(sip->sip_event->o_type, "keep-alive")) {
+		/* XXX MTK - is this right? in this case isn't sofia is already sending a 200 itself also? */
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 		return;
 	}
@@ -305,6 +330,7 @@ void sofia_event_callback(nua_event_t event,
 	switch_channel_t *channel = NULL;
 	sofia_gateway_t *gateway = NULL;
 	int locked = 0;
+	int check_destroy = 1;
 
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		if ((gateway = sofia_private->gateway)) {
@@ -476,8 +502,23 @@ void sofia_event_callback(nua_event_t event,
 
 	switch (event) {
 	case nua_i_subscribe:
+	case nua_r_notify:
+		check_destroy = 0;
+		break;
+
+	case nua_i_notify:
+		
+		if (sip->sip_event && !strcmp(sip->sip_event->o_type, "dialog") && sip->sip_event->o_params && !strcmp(sip->sip_event->o_params[0], "sla")) {
+			check_destroy = 0;
+		}
+
 		break;
 	default:
+		break;
+	}
+
+
+	if (check_destroy) {
 		if (nh && ((sofia_private && sofia_private->destroy_nh) || !nua_handle_magic(nh))) {
 			if (sofia_private) {
 				nua_handle_bind(nh, NULL);
@@ -485,9 +526,8 @@ void sofia_event_callback(nua_event_t event,
 			nua_handle_destroy(nh);
 			nh = NULL;
 		}
-		break;
 	}
-
+	
 	if (sofia_private && sofia_private->destroy_me) {
 		if (nh) {
 			nua_handle_bind(nh, NULL);
@@ -719,9 +759,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("SUBSCRIBE")),
 				   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence")),
-				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("dialog")),
+				   TAG_IF((profile->pres_type || profile->manage_shared_appearance), NUTAG_ALLOW_EVENTS("dialog")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("call-info")),
-				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("sla")),
+				   TAG_IF((profile->pres_type || profile->manage_shared_appearance), NUTAG_ALLOW_EVENTS("sla")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("include-session-description")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("message-summary")),
@@ -738,7 +778,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 
 		nua_set_params(node->nua,
 					   NUTAG_APPL_METHOD("OPTIONS"),
-					   NUTAG_EARLY_MEDIA(1),
 					   NUTAG_AUTOANSWER(0),
 					   NUTAG_AUTOALERT(0),
 					   TAG_IF((profile->mflags & MFLAG_REGISTER), NUTAG_ALLOW("REGISTER")),
@@ -1954,6 +1993,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else if (switch_true(val)) {
 							profile->pres_type = PRES_TYPE_FULL;
 						} 
+					} else if (!strcasecmp(var, "manage-shared-appearance")) {
+						if (switch_true(val)) {
+							profile->manage_shared_appearance = 1;
+							profile->sla_contact = switch_core_sprintf(profile->pool, "sip:sla-agent@%s", profile->sipip);
+						}
 					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
 						if (switch_true(val)) {
 							profile->pflags |= PFLAG_UNREG_OPTIONS_FAIL;
@@ -4282,7 +4326,78 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 	}
 
+	if (sip->sip_replaces) {
+		nua_handle_t *bnh;
+		if ((bnh = nua_handle_by_replaces(nua, sip->sip_replaces))) {
+			sofia_private_t *b_private = NULL;
+			if ((b_private = nua_handle_magic(bnh))) {
+				switch_core_session_t *b_session = NULL;
+				if ((b_session = switch_core_session_locate(b_private->uuid))) {
+					switch_channel_t *b_channel = switch_core_session_get_channel(b_session);
+					const char *uuid;
+					int one_leg = 1;
+					private_object_t *b_tech_pvt = NULL;
+					const char *app = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_VARIABLE);
+					const char *data = switch_channel_get_variable(b_channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE);
+					
+					if (app && data && !strcasecmp(app, "conference")) {
+						destination_number = switch_core_session_sprintf(b_session, "answer,conference:%s", data);
+						dialplan = "inline";
+					} else {
+						if (switch_core_session_check_interface(b_session, sofia_endpoint_interface)) {
+							b_tech_pvt = switch_core_session_get_private(b_session);
+						}
 
+						if ((uuid = switch_channel_get_variable(b_channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+							one_leg = 0;
+						} else {
+							uuid = switch_core_session_get_uuid(b_session);
+						}
+					
+						if (uuid) {
+							switch_core_session_t *c_session = NULL;
+							int do_conf = 0;					
+						
+							uuid = switch_core_session_strdup(b_session, uuid);
+
+							if ((c_session = switch_core_session_locate(uuid))) {
+								switch_channel_t *c_channel = switch_core_session_get_channel(c_session);
+								private_object_t *c_tech_pvt = NULL;
+					
+								if (switch_core_session_check_interface(c_session, sofia_endpoint_interface)) {
+									c_tech_pvt = switch_core_session_get_private(c_session);
+								}
+								
+
+								if (!one_leg && 
+									(!b_tech_pvt || !switch_test_flag(b_tech_pvt, TFLAG_SIP_HOLD)) && 
+									(!c_tech_pvt || !switch_test_flag(c_tech_pvt, TFLAG_SIP_HOLD))) {
+									char *ext = switch_core_session_sprintf(b_session, "conference:%s@sla+flags{mintwo}", uuid);
+								
+									switch_channel_set_flag(c_channel, CF_REDIRECT);
+									switch_ivr_session_transfer(b_session, ext, "inline", NULL);
+									switch_ivr_session_transfer(c_session, ext, "inline", NULL);
+									switch_channel_clear_flag(c_channel, CF_REDIRECT);
+									do_conf = 1;
+								}
+								switch_core_session_rwunlock(c_session);
+							}
+						
+							if (do_conf) {
+								destination_number = switch_core_session_sprintf(b_session, "answer,conference:%s@sla+flags{mintwo}", uuid);
+							} else {
+								destination_number = switch_core_session_sprintf(b_session, "answer,intercept:%s", uuid);
+							}
+
+							dialplan = "inline";
+						}
+					}
+					switch_core_session_rwunlock(b_session);
+				}
+			}
+			nua_handle_unref(bnh);
+		}
+	}
 
 	check_decode(displayname, session);
 	tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),

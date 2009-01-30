@@ -17,7 +17,7 @@ SOFIAUA_DIR=$(SOFIA_DIR)/libsofia-sip-ua
 SOFIALA=$(SOFIAUA_DIR)/libsofia-sip-ua.la
 
 mod_LTLIBRARIES = mod_sofia.la
-mod_sofia_la_SOURCES = mod_sofia.c sofia.c sofia_glue.c sofia_presence.c sofia_reg.c  mod_sofia.h
+mod_sofia_la_SOURCES = mod_sofia.c sofia.c sofia_glue.c sofia_presence.c sofia_reg.c sofia_sla.c  mod_sofia.h
 mod_sofia_la_CFLAGS  = $(AM_CFLAGS) 
 mod_sofia_la_CFLAGS += -I. -I$(SOFIAUA_DIR)/bnf  -I$(SOFIAUA_DIR)/features
 mod_sofia_la_CFLAGS += -I$(SOFIAUA_DIR)/http -I$(SOFIAUA_DIR)/ipt

@@ -1102,6 +1102,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_fire(&s_event);
 		}
 
+		if (profile->manage_shared_appearance) {
+			sofia_sla_handle_register(nua, profile, sip);
+		}
+
 		return 1;
 	}
 

@@ -3040,6 +3040,16 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   hostname        VARCHAR(255)\n"
 		");\n";
 
+	/* should we move this glue to sofia_sla or keep it here where all db init happens? XXX MTK */
+	char shared_appearance_sql[] = 
+		"CREATE TABLE sip_shared_appearance_subscriptions (\n"
+		"   subscriber        VARCHAR(255),\n"
+		"   call_id           VARCHAR(255),\n"
+		"   aor               VARCHAR(255),\n"
+		"   profile_name      VARCHAR(255),\n"
+		"   hostname          VARCHAR(255)\n"
+		");\n";
+
 	if (profile->odbc_dsn) {
 #ifdef SWITCH_HAVE_ODBC
 		if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
@@ -3094,6 +3104,15 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 		free(test_sql);
 
+		if (profile->manage_shared_appearance) {
+			test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
+			if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+				switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_shared_appearance_subscriptions", NULL);
+				switch_odbc_handle_exec(profile->master_odbc, shared_appearance_sql, NULL);
+			}
+			free(test_sql);
+		}
+
 #else
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
@@ -3124,6 +3143,16 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		test_sql = switch_mprintf("delete from sip_authentication where hostname='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_authentication", auth_sql);
 		free(test_sql);
+
+		if(profile->manage_shared_appearance) {
+			test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
+			switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_shared_appearance_subscriptions", shared_appearance_sql);
+			free(test_sql);
+
+			switch_core_db_exec(profile->master_db, "create index if not exists ssa_hostname on sip_shared_appearance_subscriptions (hostname)", NULL, NULL, NULL);
+			/* XXX MTK create additional index for shared_appearance if necessary */
+		}
+
 
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_call_id on sip_registrations (call_id)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_sip_user on sip_registrations (sip_user)", NULL, NULL, NULL);

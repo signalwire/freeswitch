@@ -375,6 +375,7 @@ struct sofia_profile {
 	char *tls_bindurl;
 	char *tcp_contact;
 	char *tls_contact;
+	char *sla_contact;
 	char *sipdomain;
 	char *timer_name;
 	char *hold_music;
@@ -439,6 +440,7 @@ struct sofia_profile {
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
+	char manage_shared_appearance;  /* pflags was all full up - MTK */
 };
 
 struct private_object {
@@ -474,7 +476,6 @@ struct private_object {
 	char *from_address;
 	char *to_address;
 	char *callid;
-	char *far_end_contact;
 	char *contact_url;
 	char *from_str;
 	char *rpid;
@@ -771,3 +772,14 @@ const char * sofia_state_string(int state);
 switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force);
 void sofia_wait_for_reply(struct private_object *tech_pvt, nua_event_t event, uint32_t timeout);
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options);
+
+/*
+ * SLA (shared line appearance) entrypoints
+ */
+
+void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip);
+void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
+void sofia_sla_handle_sip_i_subscribe(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
+void sofia_sla_handle_sip_r_subscribe(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
+void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
+

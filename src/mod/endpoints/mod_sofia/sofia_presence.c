@@ -1423,6 +1423,17 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			return;
 		}
 
+		/* the following could be refactored back to the calling event handler in sofia.c XXX MTK */
+		if (profile->manage_shared_appearance) {
+			if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
+				/* only fire this on <200 to try to avoid resubscribes. probably better ways to do this? */
+				if (status < 200) {
+					sofia_sla_handle_sip_i_subscribe(nua, profile, nh, sip, tags);
+				}
+				return;
+			}
+		}
+
 		get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
 		network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
 
@@ -1767,6 +1778,14 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 		return;
 	}
 
+	/* the following could possibly be refactored back towards the calling event handler in sofia.c XXX MTK */
+	if (profile->manage_shared_appearance) {
+		if (!strcasecmp(o->o_type, "dialog") && msg_params_find(o->o_params, "sla")) {
+			sofia_sla_handle_sip_r_subscribe(nua, profile, nh, sip, tags);
+			return;
+		}
+	}
+
 	if (!sofia_private || !sofia_private->gateway) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Gateway information missing\n");
 		return;
@@ -1809,6 +1828,15 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		char *rpid = "unknown";
 		sip_payload_t *payload = sip->sip_payload;
 		char *event_type;
+
+		/* the following could instead be refactored back to the calling event handler in sofia.c XXX MTK */
+		if (profile->manage_shared_appearance) {
+			/* also it probably is unsafe to dereference so many things in a row without testing XXX MTK */
+			if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
+				sofia_sla_handle_sip_i_publish(nua, profile, nh, sip, tags);
+				return;
+			}
+		}
 
 		if (from) {
 			from_user = (char *) from->a_url->url_user;
