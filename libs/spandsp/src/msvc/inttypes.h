@@ -55,9 +55,15 @@ typedef __int64		int64_t;
 
 #pragma comment(lib, "ws2_32.lib")
 
+#ifndef strncasecmp
 #define strncasecmp _strnicmp
+#endif
+#ifndef strcasecmp
 #define strcasecmp _stricmp
+#endif
+#ifndef snprintf
 #define snprintf _snprintf
+#endif
 
 #if !defined(INFINITY)
 #define INFINITY 0x7fffffff

@@ -274,4 +274,23 @@ v8_release
 v8_tx
 v8_rx
 v8_log_supported_modulations
+t30_set_ecm_capability
+t30_set_supported_compressions
+t30_set_supported_modems
+t30_set_supported_resolutions
+t30_set_supported_image_sizes
+t30_set_tx_page_header_info
+t30_set_tx_ident
+span_log_set_level
+span_log_set_message_handler
+fax_set_transmit_on_idle
+fax_get_t30_state
+t30_get_rx_model
+t30_get_rx_vendor
+t30_get_rx_country
+t30_get_rx_ident
+t30_get_tx_ident
+t38_terminal_release
+t38_terminal_get_t30_state
+t30_terminate
 

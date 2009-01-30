@@ -34,6 +34,26 @@
 
 #include <switch.h>
 
+#ifdef WIN32
+   __inline float rintf(float flt)
+    {
+    	_asm
+    	{	fld flt
+    		frndint
+    	}
+    }
+
+    __inline double rint(double dbl)
+    {
+        __asm 
+    	{
+            fld dbl
+            frndint
+        }
+    }
+
+#endif
+
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
 #include <spandsp.h>
 #include <spandsp/version.h>

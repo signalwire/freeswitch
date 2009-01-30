@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="libspandsp"
-	ProjectGUID="{CF70F278-3364-4395-A2E1-23501C9B8AD2}"
+	ProjectGUID="{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
 	RootNamespace="libspandsp"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff\libtiff;.\generated"
+				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;.\generated"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -118,7 +118,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff\libtiff;.\generated"
+				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;.\generated"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
