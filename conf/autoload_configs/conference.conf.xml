@@ -174,5 +174,15 @@
       <param name="comfort-noise" value="true"/>
     </profile>
 
+    <profile name="sla">
+      <param name="domain" value="$${domain}"/>
+      <param name="rate" value="16000"/>
+      <param name="interval" value="20"/>
+      <param name="caller-controls" value="none"/>
+      <param name="energy-level" value="200"/>
+      <param name="moh-sound" value="silence"/>
+      <param name="comfort-noise" value="true"/>
+    </profile>
+
   </profiles>
 </configuration>
