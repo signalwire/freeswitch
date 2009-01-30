@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.c,v 1.114 2009/01/29 01:41:06 steveu Exp $
+ * $Id: v27ter_rx.c,v 1.115 2009/01/30 10:22:23 steveu Exp $
  */
 
 /*! \file */
@@ -746,7 +746,7 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
     int i;
     int step;
     int16_t x;
-    int32_t diff;
+    int16_t diff;
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t z;
     complexi16_t zz;
@@ -772,7 +772,8 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                We need to measure the power with the DC blocked, but not using
                a slow to respond DC blocker. Use the most elementary HPF. */
             x = amp[i] >> 1;
-            diff = (int32_t) x - s->last_sample;
+            /* There could be oveflow here, but it isn't a problem in practice */
+            diff = x - s->last_sample;
             power = power_meter_update(&(s->power), diff);
 #if defined(IAXMODEM_STUFF)
             /* Quick power drop fudge */
@@ -893,6 +894,7 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                We need to measure the power with the DC blocked, but not using
                a slow to respond DC blocker. Use the most elementary HPF. */
             x = amp[i] >> 1;
+            /* There could be oveflow here, but it isn't a problem in practice */
             diff = x - s->last_sample;
             power = power_meter_update(&(s->power), diff);
 #if defined(IAXMODEM_STUFF)

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.32 2008/10/13 13:14:00 steveu Exp $
+ * $Id: fsk.h,v 1.33 2009/01/29 18:30:14 steveu Exp $
  */
 
 /*! \file */
@@ -170,7 +170,7 @@ void fsk_tx_set_modem_status_handler(fsk_tx_state_t *s, modem_tx_status_func_t h
     \param len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-int fsk_tx(fsk_tx_state_t *s, int16_t *amp, int len);
+int fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len);
 
 /*! Get the current received signal power.
     \param s The modem context.

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.c,v 1.49 2009/01/28 03:41:26 steveu Exp $
+ * $Id: fsk.c,v 1.50 2009/01/29 18:30:14 steveu Exp $
  */
 
 /*! \file */
@@ -149,7 +149,7 @@ fsk_tx_state_t *fsk_tx_init(fsk_tx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int fsk_tx(fsk_tx_state_t *s, int16_t *amp, int len)
+int fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
 {
     int sample;
     int bit;

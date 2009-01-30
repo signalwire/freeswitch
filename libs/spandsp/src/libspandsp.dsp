@@ -397,7 +397,7 @@ SOURCE=.\vector_int.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\msvc/gettimeofday.c
+SOURCE=.\.\msvc\gettimeofday.c
 # End Source File
 # End Group
 # Begin Group "Header Files"

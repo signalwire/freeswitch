@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.279 2009/01/29 01:41:06 steveu Exp $
+ * $Id: t30.c,v 1.280 2009/01/29 18:30:14 steveu Exp $
  */
 
 /*! \file */
@@ -568,7 +568,7 @@ static void release_resources(t30_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int check_next_tx_step(t30_state_t *s)
+static uint8_t check_next_tx_step(t30_state_t *s)
 {
     int more;
 
@@ -3107,7 +3107,7 @@ static void process_state_f_post_doc_non_ecm(t30_state_t *s, const uint8_t *msg,
 
 static void process_state_f_doc_ecm(t30_state_t *s, const uint8_t *msg, int len)
 {
-    int fcf2;
+    uint8_t fcf2;
     
     /* This actually handles 2 states - _DOC_ECM and _POST_DOC_ECM - as they are very similar */
     switch (msg[2] & 0xFE)

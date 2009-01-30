@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.2 2009/01/03 13:02:31 steveu Exp $
+ * $Id: t30.h,v 1.3 2009/01/29 18:30:14 steveu Exp $
  */
 
 /*! \file */
@@ -236,7 +236,8 @@ struct t30_state_s
         partial pages still to come. */
     int ecm_at_page_end;
     int next_tx_step;
-    int next_rx_step;
+    /* The FCF for the next receive step */
+    uint8_t next_rx_step;
     /*! \brief Image file name for image reception. */
     char rx_file[256];
     /*! \brief The last page we are prepared accept for a received image file. -1 means no restriction. */
@@ -264,7 +265,7 @@ struct t30_state_s
     int ecm_allowed;
     
     /*! \brief the FCF2 field of the last PPS message we received. */
-    int last_pps_fcf2;
+    uint8_t last_pps_fcf2;
     /*! \brief The number of the first ECM frame which we do not currently received correctly. For
         a partial page received correctly, this will be one greater than the number of frames it
         contains. */

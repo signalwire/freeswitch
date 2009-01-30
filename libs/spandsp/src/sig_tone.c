@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.c,v 1.28 2009/01/28 03:41:27 steveu Exp $
+ * $Id: sig_tone.c,v 1.29 2009/01/30 07:19:25 steveu Exp $
  */
 
 /*! \file */
@@ -457,7 +457,7 @@ int sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
                this isn't used in low tone detect mode, but we must keep notch_zl
                rolling along. */
             s->tone[j].notch_zl = ((s->tone[j].notch_zl*s->desc->notch_slugi) >> 15)
-                                + ((abs(notched_signal)*s->desc->notch_slugp) >> 15);
+                                + ((abs((int) notched_signal)*s->desc->notch_slugp) >> 15);
             /* Mow the grass to weed out the noise! */
             mown_notch[j] = s->tone[0].notch_zl & s->desc->notch_threshold;
         }
@@ -505,7 +505,7 @@ int sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
 #endif            
             /* Leaky integrate the bandpassed data */
             s->broad_zl = ((s->broad_zl*s->desc->broad_slugi) >> 15)
-                        + ((abs(bandpass_signal)*s->desc->broad_slugp) >> 15);
+                        + ((abs((int) bandpass_signal)*s->desc->broad_slugp) >> 15);
     
             /* For the broad band receiver we use a simple linear threshold! */
             if (s->tone_present)
@@ -557,7 +557,7 @@ int sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len)
 
             /* Modulus and leaky integrate the data */
             s->broad_zl = ((s->broad_zl*s->desc->unfiltered_slugi) >> 15)
-                        + ((abs(amp[i])*s->desc->unfiltered_slugp) >> 15);
+                        + ((abs((int) amp[i])*s->desc->unfiltered_slugp) >> 15);
      
             /* Mow the grass to weed out the noise! */
             mown_bandpass = s->broad_zl & s->desc->unfiltered_threshold;

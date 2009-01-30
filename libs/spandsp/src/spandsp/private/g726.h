@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726.h,v 1.2 2008/11/16 12:20:57 steveu Exp $
+ * $Id: g726.h,v 1.3 2009/01/29 18:30:14 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_G726_H_)
@@ -44,7 +44,7 @@ struct g726_state_s
     /*! The external coding, for tandem operation */
     int ext_coding;
     /*! The number of bits per sample */
-    unsigned int bits_per_sample;
+    int bits_per_sample;
     /*! One of the G.726_PACKING_xxx options */
     int packing;
 

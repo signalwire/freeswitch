@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.64 2009/01/05 13:48:31 steveu Exp $
+ * $Id: hdlc.c,v 1.66 2009/01/30 07:19:25 steveu Exp $
  */
 
 /*! \file */
@@ -527,16 +527,16 @@ int hdlc_tx_get_bit(hdlc_tx_state_t *s)
 
 int hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
-    int i;
+    size_t i;
     int x;
 
     for (i = 0;  i < max_len;  i++)
     {
         if ((x = hdlc_tx_get_byte(s)) == SIG_STATUS_END_OF_DATA)
             return i;
-        buf[i] = x;
+        buf[i] = (uint8_t) x;
     }
-    return i;
+    return (int) i;
 }
 /*- End of function --------------------------------------------------------*/
 

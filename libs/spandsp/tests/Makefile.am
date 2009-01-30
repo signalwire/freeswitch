@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.108 2008/11/30 10:17:31 steveu Exp $
+## $Id: Makefile.am,v 1.109 2009/01/30 05:35:18 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -64,9 +64,9 @@ noinst_PROGRAMS =   adsi_tests \
                     line_model_tests \
                     logging_tests \
                     lpc10_tests \
+                    make_g168_css \
                     modem_connect_tones_tests \
                     modem_echo_tests \
-                    make_g168_css \
                     noise_tests \
                     oki_adpcm_tests \
                     playout_tests \

@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.c,v 1.5 2009/01/28 03:41:26 steveu Exp $
+ * $Id: g722.c,v 1.6 2009/01/29 18:30:14 steveu Exp $
  */
 
 /*! \file */
@@ -204,9 +204,9 @@ static void block4(g722_band_t *s, int16_t dx)
     wd32 = ((p ^ s->p[0]) & 0x8000)  ?  wd1  :  -wd1;
     if (wd32 > 32767)
         wd32 = 32767;
-    wd3 = (((p ^ s->p[1]) & 0x8000)  ?  -128  :  128)
-        + (wd32 >> 7)
-        + (((int32_t) s->a[1]*(int32_t) 32512) >> 15);
+    wd3 = (int16_t) ((((p ^ s->p[1]) & 0x8000)  ?  -128  :  128)
+                     + (wd32 >> 7)
+                     + (((int32_t) s->a[1]*(int32_t) 32512) >> 15));
     if (abs(wd3) > 12288)
         wd3 = (wd3 < 0)  ?  -12288  :  12288;
     ap[1] = wd3;
@@ -351,7 +351,7 @@ int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[]
 
         /* Block 2L, INVQAL */
         wd2 = qm4[wd1];
-        dlow = ((int32_t) s->band[0].det*(int32_t) wd2) >> 15;
+        dlow = (int16_t) (((int32_t) s->band[0].det*(int32_t) wd2) >> 15);
 
         /* Block 3L, LOGSCL */
         wd2 = rl42[wd1];
@@ -361,13 +361,13 @@ int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[]
             wd1 = 0;
         else if (wd1 > 18432)
             wd1 = 18432;
-        s->band[0].nb = wd1;
+        s->band[0].nb = (int16_t) wd1;
             
         /* Block 3L, SCALEL */
         wd1 = (s->band[0].nb >> 6) & 31;
         wd2 = 8 - (s->band[0].nb >> 11);
         wd3 = (wd2 < 0)  ?  (ilb[wd1] << -wd2)  :  (ilb[wd1] >> wd2);
-        s->band[0].det = wd3 << 2;
+        s->band[0].det = (int16_t) (wd3 << 2);
 
         block4(&s->band[0], dlow);
         
@@ -375,7 +375,7 @@ int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[]
         {
             /* Block 2H, INVQAH */
             wd2 = qm2[ihigh];
-            dhigh = ((int32_t) s->band[1].det*(int32_t) wd2) >> 15;
+            dhigh = (int16_t) (((int32_t) s->band[1].det*(int32_t) wd2) >> 15);
             /* Block 5H, RECONS */
             /* Block 6H, LIMIT */
             rhigh = saturate15(dhigh + s->band[1].s);
@@ -388,13 +388,13 @@ int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[]
                 wd1 = 0;
             else if (wd1 > 22528)
                 wd1 = 22528;
-            s->band[1].nb = wd1;
+            s->band[1].nb = (int16_t) wd1;
             
             /* Block 3H, SCALEH */
             wd1 = (s->band[1].nb >> 6) & 31;
             wd2 = 10 - (s->band[1].nb >> 11);
             wd3 = (wd2 < 0)  ?  (ilb[wd1] << -wd2)  :  (ilb[wd1] >> wd2);
-            s->band[1].det = wd3 << 2;
+            s->band[1].det = (int16_t) (wd3 << 2);
 
             block4(&s->band[1], dhigh);
         }
@@ -413,8 +413,8 @@ int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[]
             else
             {
                 /* Apply the QMF to build the final signal */
-                s->x[s->ptr] = rlow + rhigh;
-                s->y[s->ptr] = rlow - rhigh;
+                s->x[s->ptr] = (int16_t) (rlow + rhigh);
+                s->y[s->ptr] = (int16_t) (rlow - rhigh);
                 if (++s->ptr >= 12)
                     s->ptr = 0;
                 amp[outlen++] = (int16_t) (vec_circular_dot_prodi16(s->y, qmf_coeffs_rev, 12, s->ptr) >> 12);
@@ -509,8 +509,8 @@ int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[]
                     s->ptr = 0;
                 sumodd = vec_circular_dot_prodi16(s->x, qmf_coeffs_fwd, 12, s->ptr);
                 sumeven = vec_circular_dot_prodi16(s->y, qmf_coeffs_rev, 12, s->ptr);
-                xlow = (sumeven + sumodd) >> 13;
-                xhigh = (sumeven - sumodd) >> 13;
+                xlow = (int16_t) ((sumeven + sumodd) >> 13);
+                xhigh = (int16_t) ((sumeven - sumodd) >> 13);
             }
         }
         /* Block 1L, SUBTRA */
@@ -530,12 +530,12 @@ int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[]
         /* Block 2L, INVQAL */
         ril = ilow >> 2;
         wd2 = qm4[ril];
-        dlow = ((int32_t) s->band[0].det*(int32_t) wd2) >> 15;
+        dlow = (int16_t) (((int32_t) s->band[0].det*(int32_t) wd2) >> 15);
 
         /* Block 3L, LOGSCL */
         il4 = rl42[ril];
         wd = ((int32_t) s->band[0].nb*(int32_t) 127) >> 7;
-        s->band[0].nb = wd + wl[il4];
+        s->band[0].nb = (int16_t) (wd + wl[il4]);
         if (s->band[0].nb < 0)
             s->band[0].nb = 0;
         else if (s->band[0].nb > 18432)
@@ -545,7 +545,7 @@ int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[]
         wd1 = (s->band[0].nb >> 6) & 31;
         wd2 = 8 - (s->band[0].nb >> 11);
         wd3 = (wd2 < 0)  ?  (ilb[wd1] << -wd2)  :  (ilb[wd1] >> wd2);
-        s->band[0].det = wd3 << 2;
+        s->band[0].det = (int16_t) (wd3 << 2);
 
         block4(&s->band[0], dlow);
         
@@ -567,12 +567,12 @@ int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[]
 
             /* Block 2H, INVQAH */
             wd2 = qm2[ihigh];
-            dhigh = ((int32_t) s->band[1].det*(int32_t) wd2) >> 15;
+            dhigh = (int16_t) (((int32_t) s->band[1].det*(int32_t) wd2) >> 15);
 
             /* Block 3H, LOGSCH */
             ih2 = rh2[ihigh];
             wd = ((int32_t) s->band[1].nb*(int32_t) 127) >> 7;
-            s->band[1].nb = wd + wh[ih2];
+            s->band[1].nb = (int16_t) (wd + wh[ih2]);
             if (s->band[1].nb < 0)
                 s->band[1].nb = 0;
             else if (s->band[1].nb > 22528)
@@ -582,7 +582,7 @@ int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[]
             wd1 = (s->band[1].nb >> 6) & 31;
             wd2 = 10 - (s->band[1].nb >> 11);
             wd3 = (wd2 < 0)  ?  (ilb[wd1] << -wd2)  :  (ilb[wd1] >> wd2);
-            s->band[1].det = wd3 << 2;
+            s->band[1].det = (int16_t) (wd3 << 2);
 
             block4(&s->band[1], dhigh);
             code = ((ihigh << 6) | ilow) >> (8 - s->bits_per_sample);

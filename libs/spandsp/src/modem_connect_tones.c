@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.c,v 1.31 2009/01/28 03:41:27 steveu Exp $
+ * $Id: modem_connect_tones.c,v 1.32 2009/01/29 18:30:14 steveu Exp $
  */
  
 /*! \file */
@@ -90,7 +90,7 @@ int modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
                            int16_t amp[],
                            int len)
 {
-    int mod;
+    int16_t mod;
     int i;
     int xlen;
 
@@ -165,7 +165,7 @@ int modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
         }
         for (  ;  i < len;  i++)
         {
-            mod = s->level + dds_mod(&s->mod_phase, s->mod_phase_rate, s->mod_level, 0);
+            mod = (int16_t) (s->level + dds_mod(&s->mod_phase, s->mod_phase_rate, s->mod_level, 0));
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, mod, 0);
         }
         s->duration_timer -= len;
@@ -186,7 +186,7 @@ int modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
                 s->hop_timer = ms_to_samples(450);
                 s->tone_phase += 0x80000000;
             }
-            mod = s->level + dds_mod(&s->mod_phase, s->mod_phase_rate, s->mod_level, 0);
+            mod = (int16_t) (s->level + dds_mod(&s->mod_phase, s->mod_phase_rate, s->mod_level, 0));
             amp[i] = dds_mod(&s->tone_phase, s->tone_phase_rate, mod, 0);
         }
         s->duration_timer -= len;

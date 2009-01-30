@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.c,v 1.151 2009/01/28 03:41:27 steveu Exp $
+ * $Id: t38_gateway.c,v 1.152 2009/01/29 18:30:14 steveu Exp $
  */
 
 /*! \file */
@@ -1605,7 +1605,7 @@ static void non_ecm_push_residue(t38_gateway_state_t *t)
     if (s->bit_no)
     {
         /* There is a fractional octet in progress. We might as well send every last bit we can. */
-        s->data[s->data_ptr++] = s->bit_stream << (8 - s->bit_no);
+        s->data[s->data_ptr++] = (uint8_t) (s->bit_stream << (8 - s->bit_no));
     }
     t38_core_send_data(&t->t38x.t38, t->t38x.current_tx_data_type, T38_FIELD_T4_NON_ECM_SIG_END, s->data, s->data_ptr, t->t38x.t38.data_end_tx_count);
     s->out_octets += s->data_ptr;

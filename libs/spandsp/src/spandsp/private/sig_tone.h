@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.h,v 1.1 2008/11/30 13:08:42 steveu Exp $
+ * $Id: sig_tone.h,v 1.2 2009/01/30 07:19:25 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_SIG_TONE_H_)
@@ -121,7 +121,7 @@ struct sig_tone_tx_state_s
     sig_tone_descriptor_t *desc;
 
     /*! The scaling values for the high and low level tones */
-    int32_t tone_scaling[2];
+    int16_t tone_scaling[2];
     /*! The sample timer, used to switch between the high and low level tones. */
     int high_low_timer;
 

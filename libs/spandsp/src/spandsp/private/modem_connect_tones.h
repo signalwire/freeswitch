@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: modem_connect_tones.h,v 1.2 2009/01/29 18:30:14 steveu Exp $
  */
  
 /*! \file */
@@ -42,14 +42,14 @@ struct modem_connect_tones_tx_state_s
 
     int32_t tone_phase_rate;
     uint32_t tone_phase;
-    int level;
+    int16_t level;
     /*! \brief Countdown to the next phase hop */
     int hop_timer;
     /*! \brief Maximum duration timer */
     int duration_timer;
     uint32_t mod_phase;
     int32_t mod_phase_rate;
-    int mod_level;
+    int16_t mod_level;
 };
 
 /*!

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: fsk.h,v 1.2 2009/01/29 18:30:14 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_FSK_H_)
@@ -46,7 +46,7 @@ struct fsk_tx_state_s
     void *status_user_data;
 
     int32_t phase_rates[2];
-    int scaling;
+    int16_t scaling;
     int32_t current_phase_rate;
     uint32_t phase_acc;
     int baud_frac;

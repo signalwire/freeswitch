@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.130 2009/01/29 01:41:06 steveu Exp $
+ * $Id: v17rx.c,v 1.131 2009/01/30 10:22:23 steveu Exp $
  */
 
 /*! \file */
@@ -960,7 +960,7 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
     int i;
     int step;
     int16_t x;
-    int32_t diff;
+    int16_t diff;
     complexf_t z;
     complexf_t zz;
     complexf_t sample;
@@ -984,7 +984,8 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
            We need to measure the power with the DC blocked, but not using
            a slow to respond DC blocker. Use the most elementary HPF. */
         x = amp[i] >> 1;
-        diff = (int32_t) x - s->last_sample;
+        /* There could be oveflow here, but it isn't a problem in practice */
+        diff = x - s->last_sample;
         power = power_meter_update(&(s->power), diff);
 #if defined(IAXMODEM_STUFF)
         /* Quick power drop fudge */

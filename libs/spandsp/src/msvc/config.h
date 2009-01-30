@@ -10,10 +10,11 @@
  *
  * This file is released in the public domain.
  *
+ * $Id: config.h,v 1.1 2009/01/29 18:30:14 steveu Exp $
  */
 
-#if !defined(_SPANDSP_CONFIG_H_)
-#define _SPANDSP_CONFIG_H_
+#if !defined(_MSVC_CONFIG_H_)
+#define _MSVC_CONFIG_H_
 
 #define HAVE_SINF
 #define HAVE_COSF

@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.116 2008/12/12 13:18:21 steveu Exp $
+## $Id: Makefile.am,v 1.118 2009/01/30 05:35:18 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -28,6 +28,7 @@ EXTRA_DIST = floating_fudge.h \
              libspandsp.dsp \
              libspandsp.sln \
              libspandsp.vcproj \
+             msvc/config.h \
              msvc/gettimeofday.c \
              msvc/inttypes.h \
              msvc/tgmath.h \
@@ -38,7 +39,6 @@ EXTRA_DIST = floating_fudge.h \
              msvc/msvcproj.foot \
              msvc/vc8proj.head \
              msvc/vc8proj.foot \
-             msvc/config.h \
              spandsp/private/README
 
 INCLUDES = -I$(top_builddir)
