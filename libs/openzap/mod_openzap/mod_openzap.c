@@ -1682,6 +1682,7 @@ static switch_status_t load_config(void)
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;
 			}
+			zap_log(ZAP_LOG_ERROR, "SPANID = %i\n", span->span_id);
 
 			SPAN_CONFIG[span->span_id].span = span;
 			switch_set_string(SPAN_CONFIG[span->span_id].context, context);
@@ -1838,7 +1839,7 @@ static switch_status_t load_config(void)
 			int q921loglevel = -1;
 			int q931loglevel = -1;
 			// quick debug
-			// switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ID: '%s', Name:'%s'\n",id,name);
+			//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ID: '%s', Name:'%s'\n",id,name);
 
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1895,11 +1896,11 @@ static switch_status_t load_config(void)
 				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
 				continue;
 			}
-			
-			if (!span_id) {
-				span_id = span->span_id;
-			}
-			
+
+                        if (!span_id) {
+                                span_id = span->span_id;
+                        }
+
 			if (!tonegroup) {
 				tonegroup = "us";
 			}
@@ -2055,7 +2056,7 @@ void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *strea
 						   );
 }
 
-#define OZ_SYNTAX "list || dump <span_id> [<chan_id>]"
+#define OZ_SYNTAX "list || dump <span_id> [<chan_id>] || bounce <span_id> [<chan_id>] || q931_pcap <span_id> on|off [pcapfilename without suffix]" 
 SWITCH_STANDARD_API(oz_function)
 {
 	char *mycmd = NULL, *argv[10] = { 0 };
@@ -2139,7 +2140,7 @@ SWITCH_STANDARD_API(oz_function)
 	} else if (!strcasecmp(argv[0], "bounce")) {
 		/* MSC testing "oz bounce" command */
 		if (argc < 2) {
-			stream->write_function(stream, "-ERR Usage: oz dump <span_id> [<chan_id>]\n");
+			stream->write_function(stream, "-ERR Usage: oz bounce <span_id> [<chan_id>]\n");
 			goto end;
 		} else {
 			int32_t span_id, chan_id = 0;
@@ -2169,9 +2170,59 @@ SWITCH_STANDARD_API(oz_function)
 				}
 			}
 		}	
+	/*Q931ToPcap enhancement*/
+	} else if (!strcasecmp(argv[0], "q931_pcap")) {
+		int32_t span_id = 0;
+                zap_span_t *span;
+		char *pcapfn = NULL;
+		char *tmp_path = NULL;
+
+                if (argc < 3) {
+                        stream->write_function(stream, "-ERR Usage: oz q931_pcap <span_id> on|off [pcapfilename without suffix]\n");
+                        goto end;
+                }
+		span_id = atoi(argv[1]);
+		if (!(span_id && (span = SPAN_CONFIG[span_id].span))) {
+                                stream->write_function(stream, "-ERR invalid span\n");
+				goto end;
+                } 
+
+		/*Look for a given file name or use default file name*/
+		if (argc > 3) {
+			if(argv[3]){
+				pcapfn=argv[3];
+			}
+		}
+		else {
+			pcapfn="q931";
+		}
+
+		/*Add log directory path to file name*/
+		tmp_path=switch_mprintf("%s%s%s.pcap", SWITCH_GLOBAL_dirs.log_dir, SWITCH_PATH_SEPARATOR, pcapfn);
+		
+		if(!strcasecmp(argv[2], "on")) {
+			if (zap_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 1, "pcapfilename", tmp_path, TAG_END) != ZAP_SUCCESS) {
+                                zap_log(ZAP_LOG_WARNING, "Error couldn't (re-)enable Q931-To-Pcap!\n");
+				goto end;
+                        } else {
+				stream->write_function(stream, "+OK\n");
+			}
+		} else if(!strcasecmp(argv[2], "off")) {
+			if (zap_configure_span("isdn", span, on_clear_channel_signal, "q931topcap", 0, TAG_END) != ZAP_SUCCESS) {
+                                zap_log(ZAP_LOG_ERROR, "Error couldn't enable Q931-To-Pcap!\n");
+                                goto end;
+			} else {
+                                stream->write_function(stream, "+OK\n");
+                        }
+                } else {
+			stream->write_function(stream, "-ERR Usage: oz q931_pcap on|off [pcapfilename without suffix]\n");
+                        goto end;
+		}
+
 	} else {
-		stream->write_function(stream, "-ERR Usage: oz list || dump <span_id> [<chan_id>]\n");
+		stream->write_function(stream, "-ERR Usage: %s\n", OZ_SYNTAX);
 	}
+	/*Q931ToPcap enhancement done*/
 
  end:
 

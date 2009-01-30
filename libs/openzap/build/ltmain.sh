@@ -113,7 +113,8 @@ esac
 # These must not be set unconditionally because not all systems understand
 # e.g. LANG=C (notably SCO).
 # We save the old values to restore during execute mode.
-for lt_var in LANG LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
+lt_env=
+for lt_var in LANG LANGUAGE LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
 do
   eval "if test \"\${$lt_var+set}\" = set; then
 	  save_$lt_var=\$$lt_var
@@ -121,6 +122,10 @@ do
 	  export $lt_var
 	fi"
 done
+
+if test -n "$lt_env"; then
+  lt_env="env $lt_env"
+fi
 
 # Make sure IFS has a sensible default
 lt_nl='
@@ -817,6 +822,7 @@ if test -z "$show_help"; then
     *.for) xform=for ;;
     *.java) xform=java ;;
     *.obj) xform=obj ;;
+    *.sx) xform=sx ;;
     esac
 
     libobj=`$echo "X$libobj" | $Xsed -e "s/\.$xform$/.lo/"`
@@ -985,7 +991,7 @@ EOF
       $run $rm "$lobj" "$output_obj"
 
       $show "$command"
-      if $run eval "$command"; then :
+      if $run eval $lt_env "$command"; then :
       else
 	test -n "$output_obj" && $run $rm $removelist
 	exit $EXIT_FAILURE
@@ -1057,7 +1063,7 @@ EOF
       command="$command$suppress_output"
       $run $rm "$obj" "$output_obj"
       $show "$command"
-      if $run eval "$command"; then :
+      if $run eval $lt_env "$command"; then :
       else
 	$run $rm $removelist
 	exit $EXIT_FAILURE
@@ -1190,6 +1196,7 @@ EOF
     thread_safe=no
     vinfo=
     vinfo_number=no
+    single_module="${wl}-single_module"
 
     func_infer_tag $base_compile
 
@@ -1676,6 +1683,11 @@ EOF
 	continue
 	;;
 
+      -multi_module)
+	single_module="${wl}-multi_module"
+	continue
+	;;
+
       -module)
 	module=yes
 	continue
@@ -2152,7 +2164,10 @@ EOF
 	case $pass in
 	dlopen) libs="$dlfiles" ;;
 	dlpreopen) libs="$dlprefiles" ;;
-	link) libs="$deplibs %DEPLIBS% $dependency_libs" ;;
+	link)
+	  libs="$deplibs %DEPLIBS%"
+	  test "X$link_all_deplibs" != Xno && libs="$libs $dependency_libs"
+	  ;;
 	esac
       fi
       if test "$pass" = dlopen; then
@@ -2202,7 +2217,12 @@ EOF
 	    continue
 	  fi
 	  name=`$echo "X$deplib" | $Xsed -e 's/^-l//'`
-	  for searchdir in $newlib_search_path $lib_search_path $sys_lib_search_path $shlib_search_path; do
+	  if test "$linkmode" = lib; then
+	    searchdirs="$newlib_search_path $lib_search_path $compiler_lib_search_dirs $sys_lib_search_path $shlib_search_path"
+	  else
+	    searchdirs="$newlib_search_path $lib_search_path $sys_lib_search_path $shlib_search_path"
+	  fi
+	  for searchdir in $searchdirs; do
 	    for search_ext in .la $std_shrext .so .a; do
 	      # Search the libtool library
 	      lib="$searchdir/lib${name}${search_ext}"
@@ -2998,12 +3018,18 @@ EOF
 		  # we do not want to link against static libs,
 		  # but need to link against shared
 		  eval deplibrary_names=`${SED} -n -e 's/^library_names=\(.*\)$/\1/p' $deplib`
+		  eval deplibdir=`${SED} -n -e 's/^libdir=\(.*\)$/\1/p' $deplib`
 		  if test -n "$deplibrary_names" ; then
 		    for tmp in $deplibrary_names ; do
 		      depdepl=$tmp
 		    done
-		    if test -f "$path/$depdepl" ; then
+		    if test -f "$deplibdir/$depdepl" ; then
+		      depdepl="$deplibdir/$depdepl"
+	      	    elif test -f "$path/$depdepl" ; then
 		      depdepl="$path/$depdepl"
+		    else
+		      # Can't find it, oh well...
+		      depdepl=
 		    fi
 		    # do not add paths which are already there
 		    case " $newlib_search_path " in
@@ -3151,9 +3177,10 @@ EOF
 
     case $linkmode in
     oldlib)
-      if test -n "$deplibs"; then
-	$echo "$modename: warning: \`-l' and \`-L' are ignored for archives" 1>&2
-      fi
+      case " $deplibs" in
+      *\ -l* | *\ -L*)
+	$echo "$modename: warning: \`-l' and \`-L' are ignored for archives" 1>&2 ;;
+      esac
 
       if test -n "$dlfiles$dlprefiles" || test "$dlself" != no; then
 	$echo "$modename: warning: \`-dlopen' is ignored for archives" 1>&2
@@ -3296,6 +3323,11 @@ EOF
 	    age="$number_minor"
 	    revision="$number_minor"
 	    lt_irix_increment=no
+	    ;;
+	  *)
+	    $echo "$modename: unknown library version type \`$version_type'" 1>&2
+	    $echo "Fatal configuration error.  See the $PACKAGE docs for more information." 1>&2
+	    exit $EXIT_FAILURE
 	    ;;
 	  esac
 	  ;;
@@ -4290,9 +4322,10 @@ EOF
       ;;
 
     obj)
-      if test -n "$deplibs"; then
-	$echo "$modename: warning: \`-l' and \`-L' are ignored for objects" 1>&2
-      fi
+      case " $deplibs" in
+      *\ -l* | *\ -L*)
+	$echo "$modename: warning: \`-l' and \`-L' are ignored for objects" 1>&2 ;;
+      esac
 
       if test -n "$dlfiles$dlprefiles" || test "$dlself" != no; then
 	$echo "$modename: warning: \`-dlopen' is ignored for objects" 1>&2
@@ -6534,7 +6567,7 @@ relink_command=\"$relink_command\""
       fi
 
       # Restore saved environment variables
-      for lt_var in LANG LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
+      for lt_var in LANG LANGUAGE LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES
       do
 	eval "if test \"\${save_$lt_var+set}\" = set; then
 		$lt_var=\$save_$lt_var; export $lt_var
