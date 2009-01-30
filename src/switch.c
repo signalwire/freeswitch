@@ -660,6 +660,7 @@ int main(int argc, char *argv[])
 		char buf[1024] = "";
 		int i = 0;
 		
+		switch_assert(argv[0]);
 		switch_sleep(1000000);
 		ret = (int)execv(argv[0], argv);
 		fprintf(stderr, "Restart Failed [%s] resorting to plan b\n", strerror(errno));
