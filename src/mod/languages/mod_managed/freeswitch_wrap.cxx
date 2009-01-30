@@ -21517,7 +21517,7 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_ivr_schedule_broadcast(void *
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
   arg4 = (switch_media_flag_t)jarg4; 
-  result = (uint32_t)switch_ivr_schedule_broadcast(arg1,arg2,arg3,arg4);
+  result = (uint32_t)switch_ivr_schedule_broadcast(arg1,(char const *)arg2,(char const *)arg3,arg4);
   jresult = (unsigned long)result; 
   return jresult;
 }
@@ -27643,7 +27643,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_CoreSession_Execute(void * jarg1, char * jarg
   arg1 = (CoreSession *)jarg1; 
   arg2 = (char *)jarg2; 
   arg3 = (char *)jarg3; 
-  (arg1)->execute(arg2,arg3);
+  (arg1)->execute((char const *)arg2,(char const *)arg3);
 }
 
 

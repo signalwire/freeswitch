@@ -6589,8 +6589,8 @@ static int _wrap_CoreSession_execute__SWIG_0(lua_State* L) {
   
   SWIG_check_num_args("execute",3,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_execute",1,SWIGTYPE_p_CoreSession);
@@ -6598,7 +6598,7 @@ static int _wrap_CoreSession_execute__SWIG_0(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
-  (arg1)->execute(arg2,arg3);
+  (arg1)->execute((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
   
   return SWIG_arg;
@@ -6618,14 +6618,14 @@ static int _wrap_CoreSession_execute__SWIG_1(lua_State* L) {
   
   SWIG_check_num_args("execute",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"CoreSession *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_CoreSession,0))){
     SWIG_fail_ptr("CoreSession_execute",1,SWIGTYPE_p_CoreSession);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  (arg1)->execute(arg2);
+  (arg1)->execute((char const *)arg2);
   SWIG_arg=0;
   
   return SWIG_arg;

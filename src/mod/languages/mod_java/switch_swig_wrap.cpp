@@ -2906,7 +2906,7 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1exec
     arg3 = (char *)jenv->GetStringUTFChars(jarg3, 0);
     if (!arg3) return ;
   }
-  (arg1)->execute(arg2,arg3);
+  (arg1)->execute((char const *)arg2,(char const *)arg3);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
   if (arg3) jenv->ReleaseStringUTFChars(jarg3, (const char *)arg3);
 }
@@ -2925,7 +2925,7 @@ SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_CoreSession_1exec
     arg2 = (char *)jenv->GetStringUTFChars(jarg2, 0);
     if (!arg2) return ;
   }
-  (arg1)->execute(arg2);
+  (arg1)->execute((char const *)arg2);
   if (arg2) jenv->ReleaseStringUTFChars(jarg2, (const char *)arg2);
 }
 

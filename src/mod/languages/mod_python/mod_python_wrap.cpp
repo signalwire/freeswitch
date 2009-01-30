@@ -8609,15 +8609,15 @@ SWIGINTERN PyObject *_wrap_CoreSession_execute__SWIG_0(PyObject *SWIGUNUSEDPARM(
   arg1 = reinterpret_cast< CoreSession * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
   res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
   if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_execute" "', argument " "3"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_execute" "', argument " "3"" of type '" "char const *""'");
   }
   arg3 = reinterpret_cast< char * >(buf3);
-  (arg1)->execute(arg2,arg3);
+  (arg1)->execute((char const *)arg2,(char const *)arg3);
   resultobj = SWIG_Py_Void();
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
@@ -8649,10 +8649,10 @@ SWIGINTERN PyObject *_wrap_CoreSession_execute__SWIG_1(PyObject *SWIGUNUSEDPARM(
   arg1 = reinterpret_cast< CoreSession * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  (arg1)->execute(arg2);
+  (arg1)->execute((char const *)arg2);
   resultobj = SWIG_Py_Void();
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return resultobj;
@@ -8706,8 +8706,8 @@ SWIGINTERN PyObject *_wrap_CoreSession_execute(PyObject *self, PyObject *args) {
 fail:
   SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'CoreSession_execute'.\n"
     "  Possible C/C++ prototypes are:\n"
-    "    execute(CoreSession *,char *,char *)\n"
-    "    execute(CoreSession *,char *)\n");
+    "    execute(CoreSession *,char const *,char const *)\n"
+    "    execute(CoreSession *,char const *)\n");
   return NULL;
 }
 

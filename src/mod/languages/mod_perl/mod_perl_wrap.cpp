@@ -8937,15 +8937,15 @@ XS(_wrap_CoreSession_execute__SWIG_0) {
     arg1 = reinterpret_cast< CoreSession * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
     res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
     if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_execute" "', argument " "3"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "CoreSession_execute" "', argument " "3"" of type '" "char const *""'");
     }
     arg3 = reinterpret_cast< char * >(buf3);
-    (arg1)->execute(arg2,arg3);
+    (arg1)->execute((char const *)arg2,(char const *)arg3);
     
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -8982,10 +8982,10 @@ XS(_wrap_CoreSession_execute__SWIG_1) {
     arg1 = reinterpret_cast< CoreSession * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "CoreSession_execute" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
-    (arg1)->execute(arg2);
+    (arg1)->execute((char const *)arg2);
     
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -11483,17 +11483,17 @@ XS(SWIG_init) {
   SWIG_TypeClientData(SWIGTYPE_p_IVRMenu, (void*) "freeswitch::IVRMenu");
   SWIG_TypeClientData(SWIGTYPE_p_API, (void*) "freeswitch::API");
   SWIG_TypeClientData(SWIGTYPE_p_input_callback_state, (void*) "freeswitch::input_callback_state_t");
-  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_HUP", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_HUP)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_FREE", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_FREE)));
     SvREADONLY_on(sv);
   } while(0) /*@SWIG@*/;
-  /*@SWIG:/usr/local/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
+  /*@SWIG:/usr/share/swig/1.3.35/perl5/perltypemaps.swg,64,%set_constant@*/ do {
     SV *sv = get_sv((char*) SWIG_prefix "S_RDLOCK", TRUE | 0x2 | GV_ADDMULTI);
     sv_setsv(sv, SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(S_RDLOCK)));
     SvREADONLY_on(sv);

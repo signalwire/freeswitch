@@ -580,18 +580,15 @@ SWITCH_DECLARE(const char *)CoreSession::getVariable(char *var)
     return switch_channel_get_variable(channel, var);
 }
 
-SWITCH_DECLARE(void) CoreSession::execute(char *app, char *data)
+SWITCH_DECLARE(void) CoreSession::execute(const char *app, const char *data)
 {
 	const switch_application_interface_t *application_interface;
 	this_check_void();
 	sanity_check_noreturn;
 
-    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CoreSession::execute.  app: %s data:%s\n", app, data);
-	if ((application_interface = switch_loadable_module_get_application_interface(app))) {
-		begin_allow_threads();
-		switch_core_session_exec(session, application_interface, data);
-		end_allow_threads();
-	}
+	begin_allow_threads();
+	switch_core_session_execute_application(session, app, data);
+	end_allow_threads();
 }
 
 SWITCH_DECLARE(void) CoreSession::setDTMFCallback(void *cbfunc, char *funcargs) {
