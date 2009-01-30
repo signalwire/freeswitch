@@ -34,6 +34,11 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 DEFS = @DEFS@
 CFLAGS=@CFLAGS@ @COMP_VENDOR_CFLAGS@ @DEFS@
+
+###For libpcap
+CFLAGS+=-D_GNU_SOURCE
+####
+
 LIBS = @LIBS@
 DYNAMIC_LIB_EXTEN = @DYNAMIC_LIB_EXTEN@
 SOLINK = @SOLINK@
@@ -269,6 +274,8 @@ $(ISDN_OBJS): $(ISDN_HEADERS) $(ISDN_SOURCES) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn
 $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o
 	$(LINK) $(SOLINK) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o $(MYLIB) -rpath $(libdir)
 isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN)
+
+$(ISDN_OBJS2): $(ISDN_HEADERS) $(ISDN_SOURCES) $(SRC)/ozmod/ozmod_isdn_libpcap/ozmod_isdn.c
 
 $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o $(MYLIB) -rpath $(libdir)
