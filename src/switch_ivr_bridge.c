@@ -523,6 +523,22 @@ static const switch_state_handler_table_t audio_bridge_peer_state_handlers = {
 	/*.on_consume_media */ audio_bridge_on_consume_media,
 };
 
+static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session);
+static switch_status_t uuid_bridge_on_hibernate(switch_core_session_t *session);
+static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *session);
+
+static const switch_state_handler_table_t uuid_bridge_state_handlers = {
+	/*.on_init */ NULL,
+	/*.on_routing */ NULL,
+	/*.on_execute */ NULL,
+	/*.on_hangup */ NULL,
+	/*.on_exchange_media */ NULL,
+	/*.on_soft_execute */ uuid_bridge_on_soft_execute,
+	/*.on_consume_media */ uuid_bridge_on_hibernate,
+	/*.on_hibernate */ uuid_bridge_on_hibernate,
+	/*.on_reset */ uuid_bridge_on_reset
+};
+
 static switch_status_t uuid_bridge_on_reset(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -551,7 +567,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 	const char *other_uuid = NULL;
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CUSTOM SOFT_EXECUTE\n", switch_channel_get_name(channel));
-	switch_channel_clear_state_handler(channel, NULL);
+	switch_channel_clear_state_handler(channel, &uuid_bridge_state_handlers);
 
 	if (!switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 		return SWITCH_STATUS_SUCCESS;
@@ -636,18 +652,6 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 
 	return SWITCH_STATUS_FALSE;
 }
-
-static const switch_state_handler_table_t uuid_bridge_state_handlers = {
-	/*.on_init */ NULL,
-	/*.on_routing */ NULL,
-	/*.on_execute */ NULL,
-	/*.on_hangup */ NULL,
-	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ uuid_bridge_on_soft_execute,
-	/*.on_consume_media */ uuid_bridge_on_hibernate,
-	/*.on_hibernate */ uuid_bridge_on_hibernate,
-	/*.on_reset */ uuid_bridge_on_reset
-};
 
 static switch_status_t signal_bridge_on_hibernate(switch_core_session_t *session)
 {
