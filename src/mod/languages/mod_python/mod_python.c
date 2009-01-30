@@ -52,7 +52,7 @@ static switch_api_interface_t python_run_interface;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_python_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown);
-SWITCH_MODULE_DEFINITION(mod_python, mod_python_load, mod_python_shutdown, NULL);
+SWITCH_MODULE_DEFINITION_EX(mod_python, mod_python_load, mod_python_shutdown, NULL, SMODF_GLOBAL_SYMBOLS);
 
 static struct {
 	switch_memory_pool_t *pool;
