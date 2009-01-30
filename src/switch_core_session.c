@@ -1225,7 +1225,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 {
 	switch_application_interface_t *application_interface;
 	char *expanded = NULL;
-	const char *var;
 
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
@@ -1253,6 +1252,27 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 		}
 	}
 
+	switch_core_session_exec(session, application_interface, expanded);
+
+	UNPROTECT_INTERFACE(application_interface);
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
+														 const switch_application_interface_t *application_interface, const char *arg)
+{
+	switch_app_log_t *log, *lp;
+	switch_event_t *event;
+	const char *var;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *expanded = NULL;
+	const char *app;
+
+	switch_assert(application_interface);
+
+	app = application_interface->interface_name;
+	
 	if (arg && (expanded = switch_channel_expand_variables(session->channel, arg)) != arg) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Expanded String %s(%s)\n", switch_channel_get_name(session->channel), app, expanded);
 	}
@@ -1271,25 +1291,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 			switch_safe_free(myarg);
 		}
 	}
-
-	switch_core_session_exec(session, application_interface, expanded);
-
-	if (expanded != arg) {
-		switch_safe_free(expanded);
-	}
-
-	UNPROTECT_INTERFACE(application_interface);
-	
-	return SWITCH_STATUS_SUCCESS;
-}
-
-SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
-														 const switch_application_interface_t *application_interface, const char *arg)
-{
-	switch_app_log_t *log, *lp;
-	switch_event_t *event;
-	const char *var;
-	switch_channel_t *channel = switch_core_session_get_channel(session);
 
 	if (!arg) {
 		arg = "";
@@ -1327,7 +1328,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	switch_channel_set_variable(session->channel, SWITCH_CURRENT_APPLICATION_VARIABLE, application_interface->interface_name);
 
-	application_interface->application_function(session, arg);
+	application_interface->application_function(session, expanded);
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 		const char *resp = switch_channel_get_variable(session->channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE);
@@ -1338,6 +1339,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		switch_event_fire(&event);
 	}
 
+	if (expanded != arg) {
+		switch_safe_free(expanded);
+	}
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
