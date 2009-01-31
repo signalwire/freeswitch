@@ -466,6 +466,7 @@ SWITCH_DECLARE(uint32_t) switch_ivr_schedule_hangup(time_t runtime, const char *
   \brief Bridge two existing sessions
   \param originator_uuid the uuid of the originator
   \param originatee_uuid the uuid of the originator
+  \remark Any custom state handlers on both channels will be deleted
   \return SWITCH_STATUS_SUCCESS if all is well 
 */
 SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uuid, const char *originatee_uuid);
