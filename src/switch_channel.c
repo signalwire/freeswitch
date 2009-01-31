@@ -593,7 +593,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 			if (ok) {
 				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
 			} else {
-				abort();
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
 		}
