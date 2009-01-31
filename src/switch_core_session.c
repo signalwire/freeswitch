@@ -1299,7 +1299,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		log = switch_core_session_alloc(session, sizeof(*log));
 
 		log->app = switch_core_session_strdup(session, application_interface->interface_name);
-		log->arg = switch_core_session_strdup(session, arg);
+		log->arg = switch_core_session_strdup(session, expanded);
 
 		for (lp = session->app_log; lp && lp->next; lp = lp->next);
 
@@ -1311,13 +1311,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	}
 	
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_VARIABLE, application_interface->interface_name);
-	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE, arg);
+	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE, expanded);
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, NULL);
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", arg);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
 		switch_event_fire(&event);
 	}
 
@@ -1333,7 +1333,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		const char *resp = switch_channel_get_variable(session->channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE);
 		switch_channel_event_set_data(session->channel, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", application_interface->interface_name);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", arg);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Data", expanded);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application-Response", resp ? resp : "_none_");
 		switch_event_fire(&event);
 	}

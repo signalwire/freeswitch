@@ -1,3 +1,4 @@
+
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
  * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
@@ -592,7 +593,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 			if (ok) {
 				switch_event_add_header_string(channel->variables, SWITCH_STACK_BOTTOM, varname, value);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid data (contains a variable)\n");
+				abort();
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
 		}
 		switch_mutex_unlock(channel->profile_mutex);
