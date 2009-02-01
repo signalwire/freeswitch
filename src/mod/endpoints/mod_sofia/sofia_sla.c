@@ -221,7 +221,7 @@ void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_han
 	contact = switch_mprintf("sip:%s@%s",sip->sip_contact->m_url->url_user, sip->sip_contact->m_url->url_host);
 
 	if(sip->sip_payload && sip->sip_payload->pl_data) {
-		sql = switch_mprintf("select subscriber,call_id,aor,profile_name,hostname,route_uri from sip_shared_appearance_subscriptions where "
+		sql = switch_mprintf("select subscriber,call_id,aor,profile_name,hostname,contact_str from sip_shared_appearance_subscriptions where "
 		"aor='%q' and subscriber<>'%q' and profile_name='%q' and hostname='%q'",
 		aor, contact, profile->name, mod_sofia_globals.hostname); 
 
