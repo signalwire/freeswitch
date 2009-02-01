@@ -1501,7 +1501,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										ipv6 ? "]" : "",
 										new_port,
 										contact->m_url->url_params,
-										is_nat ? ";nat" : "");
+										is_nat ? ";fs_nat" : "");
 		} else {
 			contact_str = switch_mprintf("%s <sip:%s@%s%s%s%s>%s",
 										display,
@@ -1510,7 +1510,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										contact_host,
 										ipv6 ? "]" : "",
 										new_port,
-										is_nat ?  ";nat" : "");
+										is_nat ?  ";fs_nat" : "");
 		}
 
 
