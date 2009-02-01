@@ -129,7 +129,7 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 
 	if (strstr(contact_str, ";fs_nat")) {
 		char *p;
-		route_uri = strdup(contact_str);
+		route_uri = sofia_glue_get_url_from_contact((char *)contact_str, 1);
 		if ((p = strstr(contact_str, ";fs_"))) {
 			*p = '\0';
 		}
@@ -257,7 +257,7 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 
 		if (strstr(contact_str, ";fs_nat")) {
 			char *p;
-			route_uri = strdup(contact_str);
+			route_uri = sofia_glue_get_url_from_contact(contact_str, 1);
 			if ((p = strstr(contact_str, ";fs_"))) {
 				*p = '\0';
 			}
