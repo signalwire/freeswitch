@@ -1423,17 +1423,6 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			return;
 		}
 
-		/* the following could be refactored back to the calling event handler in sofia.c XXX MTK */
-		if (profile->manage_shared_appearance) {
-			if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
-				/* only fire this on <200 to try to avoid resubscribes. probably better ways to do this? */
-				if (status < 200) {
-					sofia_sla_handle_sip_i_subscribe(nua, profile, nh, sip, tags);
-				}
-				return;
-			}
-		}
-
 		get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
 		network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
 
@@ -1523,6 +1512,22 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										new_port,
 										is_nat ?  ";nat" : "");
 		}
+
+
+
+		/* the following could be refactored back to the calling event handler in sofia.c XXX MTK */
+		if (profile->manage_shared_appearance) {
+			if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
+				/* only fire this on <200 to try to avoid resubscribes. probably better ways to do this? */
+				if (status < 200) {
+					sofia_sla_handle_sip_i_subscribe(nua, contact_str, profile, nh, sip, tags);
+				}
+				switch_safe_free(contact_str);
+				return;
+			}
+		}
+
+
 
 		if (to) {
 			to_str = switch_mprintf("sip:%s@%s", to->a_url->url_user, to->a_url->url_host);

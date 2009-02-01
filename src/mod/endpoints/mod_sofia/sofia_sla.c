@@ -78,12 +78,13 @@ void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_ha
 	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 }
 
-void sofia_sla_handle_sip_i_subscribe(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
+void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
 {
 	char *aor = NULL;
 	char *subscriber = NULL;
 	char *sql = NULL;
-
+	char *route_uri = NULL;
+	
 	/*
 	 * XXX MTK FIXME - we don't look at the tag to see if NUTAG_SUBSTATE(nua_substate_terminated) or
 	 * a Subscription-State header with state "terminated" and/or expiration of 0. So we never forget
@@ -119,22 +120,43 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, sofia_profile_t *profile, nua_
 	}
 
 	if ((sql =
-		switch_mprintf("insert into sip_shared_appearance_subscriptions (subscriber, call_id, aor, profile_name, hostname) "
-		               "values ('%q','%q','%q','%q','%q')",
-		                subscriber, sip->sip_call_id->i_id, aor, profile->name, mod_sofia_globals.hostname))) {
+		 switch_mprintf("insert into sip_shared_appearance_subscriptions (subscriber, call_id, aor, profile_name, hostname, contact_str) "
+		               "values ('%q','%q','%q','%q','%q','%q')",
+		                subscriber, sip->sip_call_id->i_id, aor, profile->name, mod_sofia_globals.hostname, contact_str))) {
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 	}
 
 
+	if (strstr(contact_str, ";fs_nat")) {
+		char *p;
+		route_uri = strdup(contact_str);
+		if ((p = strstr(contact_str, ";fs_"))) {
+			*p = '\0';
+		}
+	}
+
+
+	if (route_uri) {
+		char *p;
+
+		while (route_uri && *route_uri && (*route_uri == '<' || *route_uri == ' ')) {
+			route_uri++;
+		}
+		if ((p = strchr(route_uri, '>'))) {
+			*p++ = '\0';
+		}
+	}
 
 	nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(profile->sla_contact), NUTAG_WITH_THIS(nua),
-        SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"), /* you thought the OTHER time was fake... need delta here FIXME XXX MTK */
-        SIPTAG_EXPIRES_STR("300"), /* likewise, totally fake - FIXME XXX MTK */
+				TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
+				SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"), /* you thought the OTHER time was fake... need delta here FIXME XXX MTK */
+				SIPTAG_EXPIRES_STR("300"), /* likewise, totally fake - FIXME XXX MTK */
 	/*  sofia_presence says something about needing TAG_IF(sticky, NUTAG_PROXY(sticky)) for NAT stuff? */
 	 TAG_END());
 
 	switch_safe_free(aor);
 	switch_safe_free(subscriber);
+	switch_safe_free(route_uri);
 	switch_safe_free(sql);
 }
 
@@ -199,7 +221,7 @@ void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_han
 	contact = switch_mprintf("sip:%s@%s",sip->sip_contact->m_url->url_user, sip->sip_contact->m_url->url_host);
 
 	if(sip->sip_payload && sip->sip_payload->pl_data) {
-		sql = switch_mprintf("select subscriber,call_id,aor,profile_name,hostname from sip_shared_appearance_subscriptions where "
+		sql = switch_mprintf("select subscriber,call_id,aor,profile_name,hostname,route_uri from sip_shared_appearance_subscriptions where "
 		"aor='%q' and subscriber<>'%q' and profile_name='%q' and hostname='%q'",
 		aor, contact, profile->name, mod_sofia_globals.hostname); 
 
@@ -224,17 +246,41 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 	/* char *aor = argv[2]; */
 	/* char *profile_name = argv[3]; */
 	/* char *hostname = argv[4]; */
+	char *contact_str = argv[5];
 	nua_handle_t *nh;
+	char *route_uri = NULL;
+
 
 	nh = nua_handle_by_call_id(helper->profile->nua, call_id);  /* that's all you need to find the subscription's nh */
 
-	if(nh)
-	{
+	if(nh) {
+
+		if (strstr(contact_str, ";fs_nat")) {
+			char *p;
+			route_uri = strdup(contact_str);
+			if ((p = strstr(contact_str, ";fs_"))) {
+				*p = '\0';
+			}
+		}
+
+		if (route_uri) {
+			char *p;
+
+			while (route_uri && *route_uri && (*route_uri == '<' || *route_uri == ' ')) {
+				route_uri++;
+			}
+			if ((p = strchr(route_uri, '>'))) {
+				*p++ = '\0';
+			}
+		}
+
 		nua_notify(nh,
-			SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"), /* XXX MTK FIXME - this is totally fake calculation */
-			SIPTAG_CONTENT_TYPE_STR("application/dialog-info+xml"),	/* could've just kept the type from the payload */
-			SIPTAG_PAYLOAD_STR(helper->payload),
-			TAG_END());
+				   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"), /* XXX MTK FIXME - this is totally fake calculation */
+				   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
+				   SIPTAG_CONTENT_TYPE_STR("application/dialog-info+xml"),	/* could've just kept the type from the payload */
+				   SIPTAG_PAYLOAD_STR(helper->payload),
+				   TAG_END());
+		switch_safe_free(route_uri);
 	}
 	return 0;
 }
