@@ -103,7 +103,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	*/
 	if (profile->manage_shared_appearance) {
 		
-		if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
+		if (sip->sip_request->rq_url->url_user && !strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
 			int sub_state;
 			tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
 			
