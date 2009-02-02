@@ -508,7 +508,7 @@ void sofia_event_callback(nua_event_t event,
 
 	case nua_i_notify:
 		
-		if (sip->sip_event && !strcmp(sip->sip_event->o_type, "dialog") && sip->sip_event->o_params && !strcmp(sip->sip_event->o_params[0], "sla")) {
+		if (sip && sip->sip_event && !strcmp(sip->sip_event->o_type, "dialog") && sip->sip_event->o_params && !strcmp(sip->sip_event->o_params[0], "sla")) {
 			check_destroy = 0;
 		}
 
