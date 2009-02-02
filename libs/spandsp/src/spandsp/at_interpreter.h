@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.h,v 1.20 2008/11/30 05:43:37 steveu Exp $
+ * $Id: at_interpreter.h,v 1.21 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -138,32 +138,32 @@ extern "C"
 {
 #endif
 
-void at_set_at_rx_mode(at_state_t *s, int new_mode);
+SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode);
 
-void at_put_response(at_state_t *s, const char *t);
+SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t);
 
-void at_put_numeric_response(at_state_t *s, int val);
+SPAN_DECLARE(void) at_put_numeric_response(at_state_t *s, int val);
 
-void at_put_response_code(at_state_t *s, int code);
+SPAN_DECLARE(void) at_put_response_code(at_state_t *s, int code);
 
-void at_reset_call_info(at_state_t *s);
+SPAN_DECLARE(void) at_reset_call_info(at_state_t *s);
 
 /*! Set the call information for an AT interpreter.
     \brief Set the call information for an AT interpreter.
     \param s The AT interpreter context.
     \param id .
     \param value . */
-void at_set_call_info(at_state_t *s, char const *id, char const *value);
+SPAN_DECLARE(void) at_set_call_info(at_state_t *s, char const *id, char const *value);
 
-void at_display_call_info(at_state_t *s);
+SPAN_DECLARE(void) at_display_call_info(at_state_t *s);
 
-int at_modem_control(at_state_t *s, int op, const char *num);
+SPAN_DECLARE(int) at_modem_control(at_state_t *s, int op, const char *num);
 
-void at_call_event(at_state_t *s, int event);
+SPAN_DECLARE(void) at_call_event(at_state_t *s, int event);
 
-void at_interpreter(at_state_t *s, const char *cmd, int len);
+SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len);
 
-void at_set_class1_handler(at_state_t *s, at_class1_handler_t handler, void *user_data);
+SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t handler, void *user_data);
 
 /*! Initialise an AT interpreter context.
     \brief Initialise an AT interpreter context.
@@ -173,17 +173,17 @@ void at_set_class1_handler(at_state_t *s, at_class1_handler_t handler, void *use
     \param modem_control_handler x.
     \param modem_control_user_data x.
     \return A pointer to the AT context, or NULL if there was a problem. */
-at_state_t *at_init(at_state_t *s,
-                    at_tx_handler_t *at_tx_handler,
-                    void *at_tx_user_data,
-                    at_modem_control_handler_t *modem_control_handler,
-                    void *modem_control_user_data);
+SPAN_DECLARE(at_state_t) *at_init(at_state_t *s,
+                                  at_tx_handler_t *at_tx_handler,
+                                  void *at_tx_user_data,
+                                  at_modem_control_handler_t *modem_control_handler,
+                                  void *modem_control_user_data);
 
 /*! Free an AT interpreter context.
     \brief Free an AT interpreter context.
     \param s The AT context.
     \return 0 for OK */
-int at_free(at_state_t *s);
+SPAN_DECLARE(int) at_free(at_state_t *s);
 
 #if defined(__cplusplus)
 }

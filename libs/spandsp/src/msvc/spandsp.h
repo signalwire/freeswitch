@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: spandsp.h.in,v 1.14 2009/01/07 13:31:53 steveu Exp $
+ * $Id: spandsp.h.in,v 1.15 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*! \file */
@@ -32,6 +32,8 @@
 
 #undef SPANDSP_USE_FIXED_POINT
 #undef SPANDSP_MISALIGNED_ACCESS_FAILS
+
+#define SPANDSP_USE_EXPORT_CAPABILITY 1
 
 #include <stdlib.h>
 #include <inttypes.h>

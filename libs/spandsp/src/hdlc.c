@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.66 2009/01/30 07:19:25 steveu Exp $
+ * $Id: hdlc.c,v 1.68 2009/01/31 09:47:59 steveu Exp $
  */
 
 /*! \file */
@@ -138,7 +138,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
             /* We may have a frame, or we may have back to back flags */
             if (s->len)
             {
-                if (s->num_bits == 7  &&  s->len >= s->crc_bytes  &&  s->len <= s->max_frame_len)
+                if (s->num_bits == 7  &&  s->len >= (size_t) s->crc_bytes  &&  s->len <= s->max_frame_len)
                 {
                     if ((s->crc_bytes == 2  &&  crc_itu16_check(s->buffer, s->len))
                         ||
@@ -166,7 +166,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                     {
                         /* Don't let the length go below zero, or it will be confused
                            with one of the special conditions. */
-                        if (s->len >= s->crc_bytes)
+                        if (s->len >= (size_t) s->crc_bytes)
                             s->len -= s->crc_bytes;
                         else
                             s->len = 0;
@@ -452,7 +452,7 @@ int hdlc_tx_get_byte(hdlc_tx_state_t *s)
                 }
                 s->pos = HDLC_MAXFRAME_LEN;
             }
-            else if (s->pos == HDLC_MAXFRAME_LEN + s->crc_bytes)
+            else if (s->pos == (size_t) (HDLC_MAXFRAME_LEN + s->crc_bytes))
             {
                 /* Finish off the current byte with some flag bits. If we are at the
                    start of a byte we need a at least one whole byte of flag to ensure

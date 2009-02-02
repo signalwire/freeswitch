@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g1050.h,v 1.9 2009/01/16 15:13:16 steveu Exp $
+ * $Id: g1050.h,v 1.10 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*! \file */
@@ -269,26 +269,26 @@ extern "C"
 {
 #endif
 
-g1050_state_t *g1050_init(int model,
-                          int speed_pattern,
-                          int packet_size,
-                          int packet_rate);
+SPAN_DECLARE(g1050_state_t) *g1050_init(int model,
+                                        int speed_pattern,
+                                        int packet_size,
+                                        int packet_rate);
 
 void g1050_dump_parms(int model, int speed_pattern);
 
-int g1050_put(g1050_state_t *s,
-              const uint8_t buf[],
-              int len,
-              int seq_no,
-              double departure_time);
+SPAN_DECLARE(int) g1050_put(g1050_state_t *s,
+                            const uint8_t buf[],
+                            int len,
+                            int seq_no,
+                            double departure_time);
 
-int g1050_get(g1050_state_t *s,
-              uint8_t buf[],
-              int max_len,
-              double current_time,
-              int *seq_no,
-              double *departure_time,
-              double *arrival_time);
+SPAN_DECLARE(int) g1050_get(g1050_state_t *s,
+                            uint8_t buf[],
+                            int max_len,
+                            double current_time,
+                            int *seq_no,
+                            double *departure_time,
+                            double *arrival_time);
 
 void g1050_queue_dump(g1050_state_t *s);
 

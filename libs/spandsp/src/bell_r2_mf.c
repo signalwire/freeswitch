@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_r2_mf.c,v 1.35 2009/01/29 18:30:14 steveu Exp $
+ * $Id: bell_r2_mf.c,v 1.36 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*! \file */
@@ -300,7 +300,7 @@ int bell_mf_tx(bell_mf_tx_state_t *s, int16_t amp[], int max_samples)
 }
 /*- End of function --------------------------------------------------------*/
 
-size_t bell_mf_tx_put(bell_mf_tx_state_t *s, const char *digits, int len)
+int bell_mf_tx_put(bell_mf_tx_state_t *s, const char *digits, int len)
 {
     size_t space;
 
@@ -313,7 +313,7 @@ size_t bell_mf_tx_put(bell_mf_tx_state_t *s, const char *digits, int len)
             return 0;
     }
     if ((space = queue_free_space(&s->queue.queue)) < (size_t) len)
-        return len - space;
+        return len - (int) space;
     if (queue_write(&s->queue.queue, (const uint8_t *) digits, len) >= 0)
         return 0;
     return -1;

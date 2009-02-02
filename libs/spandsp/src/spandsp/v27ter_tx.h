@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tx.h,v 1.37 2008/10/13 13:14:01 steveu Exp $
+ * $Id: v27ter_tx.h,v 1.38 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -81,7 +81,7 @@ extern "C"
     \brief Adjust a V.27ter modem transmit context's output power.
     \param s The modem context.
     \param power The power level, in dBm0 */
-void v27ter_tx_power(v27ter_tx_state_t *s, float power);
+SPAN_DECLARE(void) v27ter_tx_power(v27ter_tx_state_t *s, float power);
 
 /*! Initialise a V.27ter modem transmit context.
     \brief Initialise a V.27ter modem transmit context.
@@ -91,7 +91,7 @@ void v27ter_tx_power(v27ter_tx_state_t *s, float power);
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
-v27ter_tx_state_t *v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(v27ter_tx_state_t) *v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data);
 
 /*! Reinitialise an existing V.27ter modem transmit context, so it may be reused.
     \brief Reinitialise an existing V.27ter modem transmit context.
@@ -99,29 +99,29 @@ v27ter_tx_state_t *v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, g
     \param bit_rate The bit rate of the modem. Valid values are 2400 and 4800.
     \param tep TRUE is the optional TEP tone is to be transmitted.
     \return 0 for OK, -1 for bad parameter */
-int v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, int tep);
+SPAN_DECLARE(int) v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, int tep);
 
 /*! Free a V.27ter modem transmit context.
     \brief Free a V.27ter modem transmit context.
     \param s The modem context.
     \return 0 for OK */
-int v27ter_tx_free(v27ter_tx_state_t *s);
+SPAN_DECLARE(int) v27ter_tx_free(v27ter_tx_state_t *s);
 
-logging_state_t *v27ter_tx_get_logging_state(v27ter_tx_state_t *s);
+SPAN_DECLARE(logging_state_t) *v27ter_tx_get_logging_state(v27ter_tx_state_t *s);
 
 /*! Change the get_bit function associated with a V.27ter modem transmit context.
     \brief Change the get_bit function associated with a V.27ter modem transmit context.
     \param s The modem context.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer. */
-void v27ter_tx_set_get_bit(v27ter_tx_state_t *s, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(void) v27ter_tx_set_get_bit(v27ter_tx_state_t *s, get_bit_func_t get_bit, void *user_data);
 
 /*! Change the modem status report function associated with a V.27ter modem transmit context.
     \brief Change the modem status report function associated with a V.27ter modem transmit context.
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-void v27ter_tx_set_modem_status_handler(v27ter_tx_state_t *s, modem_tx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v27ter_tx_set_modem_status_handler(v27ter_tx_state_t *s, modem_tx_status_func_t handler, void *user_data);
 
 /*! Generate a block of V.27ter modem audio samples.
     \brief Generate a block of V.27ter modem audio samples.
@@ -130,7 +130,7 @@ void v27ter_tx_set_modem_status_handler(v27ter_tx_state_t *s, modem_tx_status_fu
     \param len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-int v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(int) v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len);
 
 #if defined(__cplusplus)
 }

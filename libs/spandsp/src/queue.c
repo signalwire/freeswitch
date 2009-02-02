@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.c,v 1.26 2009/01/29 01:41:06 steveu Exp $
+ * $Id: queue.c,v 1.27 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*! \file */
@@ -39,7 +39,8 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
-#define FULLY_DEFINE_QUEUE_STATE_T
+#define SPANDSP_FULLY_DEFINE_QUEUE_STATE_T
+#include "spandsp/telephony.h"
 #include "spandsp/queue.h"
 
 #include "spandsp/private/queue.h"

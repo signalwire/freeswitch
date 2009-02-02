@@ -26,7 +26,7 @@
  * Based on a bit from here, a bit from there, eye of toad,
  * ear of bat, etc - plus, of course, my own 2 cents.
  *
- * $Id: ima_adpcm.h,v 1.21 2008/11/30 10:17:31 steveu Exp $
+ * $Id: ima_adpcm.h,v 1.22 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -73,12 +73,14 @@ extern "C"
            zero sample samples means treat each encode or decode operation
            as a chunk.
     \return A pointer to the IMA ADPCM context, or NULL for error. */
-ima_adpcm_state_t *ima_adpcm_init(ima_adpcm_state_t *s, int variant, int chunk_size);
+SPAN_DECLARE(ima_adpcm_state_t) *ima_adpcm_init(ima_adpcm_state_t *s,
+                                                int variant,
+                                                int chunk_size);
 
 /*! Free an IMA ADPCM encode or decode context.
     \param s The IMA ADPCM context.
     \return 0 for OK. */
-int ima_adpcm_release(ima_adpcm_state_t *s);
+SPAN_DECLARE(int) ima_adpcm_release(ima_adpcm_state_t *s);
 
 /*! Encode a buffer of linear PCM data to IMA ADPCM.
     \param s The IMA ADPCM context.
@@ -86,10 +88,10 @@ int ima_adpcm_release(ima_adpcm_state_t *s);
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of bytes of IMA ADPCM data produced. */
-int ima_adpcm_encode(ima_adpcm_state_t *s,
-                     uint8_t ima_data[],
-                     const int16_t amp[],
-                     int len);
+SPAN_DECLARE(int) ima_adpcm_encode(ima_adpcm_state_t *s,
+                                   uint8_t ima_data[],
+                                   const int16_t amp[],
+                                   int len);
 
 /*! Decode a buffer of IMA ADPCM data to linear PCM.
     \param s The IMA ADPCM context.
@@ -97,10 +99,10 @@ int ima_adpcm_encode(ima_adpcm_state_t *s,
     \param ima_data
     \param ima_bytes
     \return The number of samples returned. */
-int ima_adpcm_decode(ima_adpcm_state_t *s,
-                     int16_t amp[],
-                     const uint8_t ima_data[],
-                     int ima_bytes);
+SPAN_DECLARE(int) ima_adpcm_decode(ima_adpcm_state_t *s,
+                                   int16_t amp[],
+                                   const uint8_t ima_data[],
+                                   int ima_bytes);
 
 #if defined(__cplusplus)
 }

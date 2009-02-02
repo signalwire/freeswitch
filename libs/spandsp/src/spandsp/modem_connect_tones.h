@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.h,v 1.19 2008/10/13 13:14:00 steveu Exp $
+ * $Id: modem_connect_tones.h,v 1.20 2009/01/31 08:48:11 steveu Exp $
  */
  
 /*! \file */
@@ -104,14 +104,14 @@ extern "C"
 /*! \brief Initialise an instance of the modem connect tones generator.
     \param s The context.
 */
-modem_connect_tones_tx_state_t *modem_connect_tones_tx_init(modem_connect_tones_tx_state_t *s,
-                                                            int tone_type);
+SPAN_DECLARE(modem_connect_tones_tx_state_t) *modem_connect_tones_tx_init(modem_connect_tones_tx_state_t *s,
+                                                                          int tone_type);
 
 /*! \brief Free an instance of the modem connect tones generator.
     \param s The context.
     \return 0 for OK, else -1.
 */
-int modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s);
+SPAN_DECLARE(int) modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s);
 
 /*! \brief Generate a block of modem connect tones samples.
     \param s The context.
@@ -119,9 +119,9 @@ int modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s);
     \param len The number of samples to generate.
     \return The number of samples generated.
 */
-int modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
-                           int16_t amp[],
-                           int len);
+SPAN_DECLARE(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
+                                         int16_t amp[],
+                                         int len);
 
 /*! \brief Process a block of samples through an instance of the modem connect
            tones detector.
@@ -130,15 +130,15 @@ int modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
     \param len The number of samples in the array.
     \return The number of unprocessed samples.
 */
-int modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
-                           const int16_t amp[],
-                           int len);
+SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s,
+                                         const int16_t amp[],
+                                         int len);
                              
 /*! \brief Test if a modem_connect tone has been detected.
     \param s The context.
     \return TRUE if tone is detected, else FALSE.
 */
-int modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s);
+SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s);
 
 /*! \brief Initialise an instance of the modem connect tones detector.
     \param s The context.
@@ -147,17 +147,17 @@ int modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s);
     \param user_data An opaque pointer passed to the callback routine,
     \return A pointer to the context.
 */
-modem_connect_tones_rx_state_t *modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
-                                                            int tone_type,
-                                                            tone_report_func_t tone_callback,
-                                                            void *user_data);
+SPAN_DECLARE(modem_connect_tones_rx_state_t) *modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
+                                                                          int tone_type,
+                                                                          tone_report_func_t tone_callback,
+                                                                          void *user_data);
 
 /*! \brief Free an instance of the modem connect tones detector.
     \param s The context.
     \return 0 for OK, else -1. */
-int modem_connect_tones_rx_free(modem_connect_tones_rx_state_t *s);
+SPAN_DECLARE(int) modem_connect_tones_rx_free(modem_connect_tones_rx_state_t *s);
 
-const char *modem_connect_tone_to_str(int tone);
+SPAN_DECLARE(const char) *modem_connect_tone_to_str(int tone);
 
 #if defined(__cplusplus)
 }

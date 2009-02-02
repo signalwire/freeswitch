@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.h,v 1.15 2008/11/30 13:08:42 steveu Exp $
+ * $Id: sig_tone.h,v 1.16 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -104,7 +104,7 @@ extern "C"
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
-int sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(int) sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len);
 
 /*! Initialise a signaling tone receiver context.
     \brief Initialise a signaling tone context.
@@ -113,7 +113,7 @@ int sig_tone_rx(sig_tone_rx_state_t *s, int16_t amp[], int len);
     \param sig_update Callback function to handle signaling updates.
     \param user_data An opaque pointer.
     \return A pointer to the signalling tone context, or NULL if there was a problem. */
-sig_tone_rx_state_t *sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, sig_tone_func_t sig_update, void *user_data);
+SPAN_DECLARE(sig_tone_rx_state_t) *sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, sig_tone_func_t sig_update, void *user_data);
 
 /*! Generate a block of signaling tone audio samples.
     \brief Generate a block of signaling tone audio samples.
@@ -121,13 +121,13 @@ sig_tone_rx_state_t *sig_tone_rx_init(sig_tone_rx_state_t *s, int tone_type, sig
     \param amp The audio sample buffer.
     \param len The number of samples to be generated.
     \return The number of samples actually generated. */
-int sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(int) sig_tone_tx(sig_tone_tx_state_t *s, int16_t amp[], int len);
 
 /*! Set the tone mode.
     \brief Set the tone mode.
     \param s The signaling tone context.
     \param mode The new mode for the transmitted tones. */
-void sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode);
+SPAN_DECLARE(void) sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode);
 
 /*! Initialise a signaling tone transmitter context.
     \brief Initialise a signaling tone context.
@@ -136,7 +136,7 @@ void sig_tone_tx_set_mode(sig_tone_tx_state_t *s, int mode);
     \param sig_update Callback function to handle signaling updates.
     \param user_data An opaque pointer.
     \return A pointer to the signalling tone context, or NULL if there was a problem. */
-sig_tone_tx_state_t *sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, sig_tone_func_t sig_update, void *user_data);
+SPAN_DECLARE(sig_tone_tx_state_t) *sig_tone_tx_init(sig_tone_tx_state_t *s, int tone_type, sig_tone_func_t sig_update, void *user_data);
 
 #if defined(__cplusplus)
 }

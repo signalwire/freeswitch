@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.120 2009/01/19 17:14:10 steveu Exp $
+ * $Id: t30.h,v 1.121 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -558,62 +558,62 @@ extern "C"
     \param send_hdlc_handler
     \param send_hdlc_user_data
     \return A pointer to the context, or NULL if there was a problem. */
-t30_state_t *t30_init(t30_state_t *s,
-                      int calling_party,
-                      t30_set_handler_t *set_rx_type_handler,
-                      void *set_rx_type_user_data,
-                      t30_set_handler_t *set_tx_type_handler,
-                      void *set_tx_type_user_data,
-                      t30_send_hdlc_handler_t *send_hdlc_handler,
-                      void *send_hdlc_user_data);
+SPAN_DECLARE(t30_state_t) *t30_init(t30_state_t *s,
+                                    int calling_party,
+                                    t30_set_handler_t *set_rx_type_handler,
+                                    void *set_rx_type_user_data,
+                                    t30_set_handler_t *set_tx_type_handler,
+                                    void *set_tx_type_user_data,
+                                    t30_send_hdlc_handler_t *send_hdlc_handler,
+                                    void *send_hdlc_user_data);
 
 /*! Release a T.30 context.
     \brief Release a T.30 context.
     \param s The T.30 context.
     \return 0 for OK, else -1. */
-int t30_release(t30_state_t *s);
+SPAN_DECLARE(int) t30_release(t30_state_t *s);
 
 /*! Free a T.30 context.
     \brief Free a T.30 context.
     \param s The T.30 context.
     \return 0 for OK, else -1. */
-int t30_free(t30_state_t *s);
+SPAN_DECLARE(int) t30_free(t30_state_t *s);
 
 /*! Restart a T.30 context.
     \brief Restart a T.30 context.
     \param s The T.30 context.
     \return 0 for OK, else -1. */
-int t30_restart(t30_state_t *s);
+SPAN_DECLARE(int) t30_restart(t30_state_t *s);
 
 /*! Check if a T.30 call is still active. This may be used to regularly poll
     if the job has finished.
     \brief Check if a T.30 call is still active.
     \param s The T.30 context.
     \return TRUE for call still active, or FALSE for call completed. */
-int t30_call_active(t30_state_t *s);
+SPAN_DECLARE(int) t30_call_active(t30_state_t *s);
 
 /*! Cleanup a T.30 context if the call terminates.
     \brief Cleanup a T.30 context if the call terminates.
     \param s The T.30 context. */
-void t30_terminate(t30_state_t *s);
+SPAN_DECLARE(void) t30_terminate(t30_state_t *s);
 
 /*! Inform the T.30 engine of a status change in the front end (end of tx, rx signal change, etc.).
     \brief Inform the T.30 engine of a status change in the front end (end of tx, rx signal change, etc.).
     \param user_data The T.30 context.
     \param status The type of status change which occured. */
-void t30_front_end_status(void *user_data, int status);
+SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status);
 
 /*! Get a bit of received non-ECM image data.
     \brief Get a bit of received non-ECM image data.
     \param user_data An opaque pointer, which must point to the T.30 context.
     \return The next bit to transmit. */
-int t30_non_ecm_get_bit(void *user_data);
+SPAN_DECLARE(int) t30_non_ecm_get_bit(void *user_data);
 
 /*! Get a byte of received non-ECM image data.
     \brief Get a byte of received non-ECM image data.
     \param user_data An opaque pointer, which must point to the T.30 context.
     \return The next byte to transmit. */
-int t30_non_ecm_get_byte(void *user_data);
+SPAN_DECLARE(int) t30_non_ecm_get_byte(void *user_data);
 
 /*! Get a chunk of received non-ECM image data.
     \brief Get a bit of received non-ECM image data.
@@ -621,26 +621,26 @@ int t30_non_ecm_get_byte(void *user_data);
     \param buf The buffer to contain the data.
     \param max_len The maximum length of the chunk.
     \return The actual length of the chunk. */
-int t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_len);
+SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_len);
 
 /*! Process a bit of received non-ECM image data.
     \brief Process a bit of received non-ECM image data
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param bit The received bit. */
-void t30_non_ecm_put_bit(void *user_data, int bit);
+SPAN_DECLARE(void) t30_non_ecm_put_bit(void *user_data, int bit);
 
 /*! Process a byte of received non-ECM image data.
     \brief Process a byte of received non-ECM image data
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param byte The received byte. */
-void t30_non_ecm_put_byte(void *user_data, int byte);
+SPAN_DECLARE(void) t30_non_ecm_put_byte(void *user_data, int byte);
 
 /*! Process a chunk of received non-ECM image data.
     \brief Process a chunk of received non-ECM image data
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param buf The buffer containing the received data.
     \param len The length of the data in buf. */
-void t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len);
+SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len);
 
 /*! Process a received HDLC frame.
     \brief Process a received HDLC frame.
@@ -648,25 +648,25 @@ void t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], int len);
     \param msg The HDLC message.
     \param len The length of the message, in octets.
     \param ok TRUE if the frame was received without error. */
-void t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
+SPAN_DECLARE(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
 
 /*! Report the passage of time to the T.30 engine.
     \brief Report the passage of time to the T.30 engine.
     \param s The T.30 context.
     \param samples The time change in 1/8000th second steps. */
-void t30_timer_update(t30_state_t *s, int samples);
+SPAN_DECLARE(void) t30_timer_update(t30_state_t *s, int samples);
 
 /*! Get the current transfer statistics for the file being sent or received.
     \brief Get the current transfer statistics.
     \param s The T.30 context.
     \param t A pointer to a buffer for the statistics. */
-void t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t);
+SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t);
 
 /*! Request a local interrupt of FAX exchange.
     \brief Request a local interrupt of FAX exchange.
     \param s The T.30 context.
     \param state TRUE to enable interrupt request, else FALSE. */
-void t30_local_interrupt_request(t30_state_t *s, int state);
+SPAN_DECLARE(void) t30_local_interrupt_request(t30_state_t *s, int state);
 
 #if defined(__cplusplus)
 }

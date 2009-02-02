@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.h,v 1.53 2008/10/13 13:14:01 steveu Exp $
+ * $Id: t4.h,v 1.54 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -213,97 +213,97 @@ extern "C" {
     \param file The name of the file to be received.
     \param output_encoding The output encoding.
     \return A pointer to the context, or NULL if there was a problem. */
-t4_state_t *t4_rx_init(t4_state_t *s, const char *file, int output_encoding);
+SPAN_DECLARE(t4_state_t) *t4_rx_init(t4_state_t *s, const char *file, int output_encoding);
 
 /*! \brief Prepare to receive the next page of the current document.
     \param s The T.4 context.
     \return zero for success, -1 for failure. */
-int t4_rx_start_page(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_start_page(t4_state_t *s);
 
 /*! \brief Put a bit of the current document page.
     \param s The T.4 context.
     \param bit The data bit.
     \return TRUE when the bit ends the document page, otherwise FALSE. */
-int t4_rx_put_bit(t4_state_t *s, int bit);
+SPAN_DECLARE(int) t4_rx_put_bit(t4_state_t *s, int bit);
 
 /*! \brief Put a byte of the current document page.
     \param s The T.4 context.
     \param byte The data byte.
     \return TRUE when the byte ends the document page, otherwise FALSE. */
-int t4_rx_put_byte(t4_state_t *s, uint8_t byte);
+SPAN_DECLARE(int) t4_rx_put_byte(t4_state_t *s, uint8_t byte);
 
 /*! \brief Put a byte of the current document page.
     \param s The T.4 context.
     \param buf The buffer containing the chunk.
     \param len The length of the chunk.
     \return TRUE when the byte ends the document page, otherwise FALSE. */
-int t4_rx_put_chunk(t4_state_t *s, const uint8_t buf[], int len);
+SPAN_DECLARE(int) t4_rx_put_chunk(t4_state_t *s, const uint8_t buf[], int len);
 
 /*! \brief Complete the reception of a page.
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
-int t4_rx_end_page(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_end_page(t4_state_t *s);
 
 /*! \brief End reception of a document. Tidy up, close the file and
            free the context. This should be used to end T.4 reception
            started with t4_rx_init.
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
-int t4_rx_delete(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_delete(t4_state_t *s);
 
 /*! \brief End reception of a document. Tidy up and close the file.
            This should be used to end T.4 reception started with
            t4_rx_init.
     \param s The T.4 context.
     \return 0 for success, otherwise -1. */
-int t4_rx_end(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_end(t4_state_t *s);
 
-int t4_rx_set_row_write_handler(t4_state_t *s, t4_row_write_handler_t handler, void *user_data);
+SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_state_t *s, t4_row_write_handler_t handler, void *user_data);
 
 /*! \brief Set the encoding for the received data.
     \param s The T.4 context.
     \param encoding The encoding. */
-void t4_rx_set_rx_encoding(t4_state_t *s, int encoding);
+SPAN_DECLARE(void) t4_rx_set_rx_encoding(t4_state_t *s, int encoding);
 
 /*! \brief Set the expected width of the received image, in pixel columns.
     \param s The T.4 context.
     \param width The number of pixels across the image. */
-void t4_rx_set_image_width(t4_state_t *s, int width);
+SPAN_DECLARE(void) t4_rx_set_image_width(t4_state_t *s, int width);
 
 /*! \brief Set the row-to-row (y) resolution to expect for a received image.
     \param s The T.4 context.
     \param resolution The resolution, in pixels per metre. */
-void t4_rx_set_y_resolution(t4_state_t *s, int resolution);
+SPAN_DECLARE(void) t4_rx_set_y_resolution(t4_state_t *s, int resolution);
 
 /*! \brief Set the column-to-column (x) resolution to expect for a received image.
     \param s The T.4 context.
     \param resolution The resolution, in pixels per metre. */
-void t4_rx_set_x_resolution(t4_state_t *s, int resolution);
+SPAN_DECLARE(void) t4_rx_set_x_resolution(t4_state_t *s, int resolution);
 
 /*! \brief Set the DCS information of the fax, for inclusion in the file.
     \param s The T.4 context.
     \param dcs The DCS information, formatted as an ASCII string. */
-void t4_rx_set_dcs(t4_state_t *s, const char *dcs);
+SPAN_DECLARE(void) t4_rx_set_dcs(t4_state_t *s, const char *dcs);
 
 /*! \brief Set the sub-address of the fax, for inclusion in the file.
     \param s The T.4 context.
     \param sub_address The sub-address string. */
-void t4_rx_set_sub_address(t4_state_t *s, const char *sub_address);
+SPAN_DECLARE(void) t4_rx_set_sub_address(t4_state_t *s, const char *sub_address);
 
 /*! \brief Set the identity of the remote machine, for inclusion in the file.
     \param s The T.4 context.
     \param ident The identity string. */
-void t4_rx_set_far_ident(t4_state_t *s, const char *ident);
+SPAN_DECLARE(void) t4_rx_set_far_ident(t4_state_t *s, const char *ident);
 
 /*! \brief Set the vendor of the remote machine, for inclusion in the file.
     \param s The T.4 context.
     \param vendor The vendor string, or NULL. */
-void t4_rx_set_vendor(t4_state_t *s, const char *vendor);
+SPAN_DECLARE(void) t4_rx_set_vendor(t4_state_t *s, const char *vendor);
 
 /*! \brief Set the model of the remote machine, for inclusion in the file.
     \param s The T.4 context.
     \param model The model string, or NULL. */
-void t4_rx_set_model(t4_state_t *s, const char *model);
+SPAN_DECLARE(void) t4_rx_set_model(t4_state_t *s, const char *model);
 
 /*! \brief Prepare for transmission of a document.
     \param s The T.4 context.
@@ -311,28 +311,28 @@ void t4_rx_set_model(t4_state_t *s, const char *model);
     \param start_page The first page to send. -1 for no restriction.
     \param stop_page The last page to send. -1 for no restriction.
     \return A pointer to the context, or NULL if there was a problem. */
-t4_state_t *t4_tx_init(t4_state_t *s, const char *file, int start_page, int stop_page);
+SPAN_DECLARE(t4_state_t) *t4_tx_init(t4_state_t *s, const char *file, int start_page, int stop_page);
 
 /*! \brief Prepare to send the next page of the current document.
     \param s The T.4 context.
     \return zero for success, -1 for failure. */
-int t4_tx_start_page(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s);
 
 /*! \brief Prepare the current page for a resend.
     \param s The T.4 context.
     \return zero for success, -1 for failure. */
-int t4_tx_restart_page(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_restart_page(t4_state_t *s);
 
 /*! \brief Check for the existance of the next page. This information can
     be needed before it is determined that the current page is finished with.
     \param s The T.4 context.
     \return zero for next page found, -1 for failure. */
-int t4_tx_more_pages(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_more_pages(t4_state_t *s);
 
 /*! \brief Complete the sending of a page.
     \param s The T.4 context.
     \return zero for success, -1 for failure. */
-int t4_tx_end_page(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_end_page(t4_state_t *s);
 
 /*! \brief Get the next bit of the current document page. The document will
            be padded for the current minimum scan line time. If the
@@ -341,7 +341,7 @@ int t4_tx_end_page(t4_state_t *s);
     \param s The T.4 context.
     \return The next bit (i.e. 0 or 1). For the last bit of data, bit 1 is
             set (i.e. the returned value is 2 or 3). */
-int t4_tx_get_bit(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_get_bit(t4_state_t *s);
 
 /*! \brief Get the next byte of the current document page. The document will
            be padded for the current minimum scan line time. If the
@@ -351,7 +351,7 @@ int t4_tx_get_bit(t4_state_t *s);
     \return The next byte. For the last byte of data, bit 8 is
             set. In this case, one or more bits of the byte may be padded with
             zeros, to complete the byte. */
-int t4_tx_get_byte(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_get_byte(t4_state_t *s);
 
 /*! \brief Get the next chunk of the current document page. The document will
            be padded for the current minimum scan line time. If the
@@ -362,7 +362,7 @@ int t4_tx_get_byte(t4_state_t *s);
     \param max_len The maximum length of the chunk.
     \return The actual length of the chunk. If this is less than max_len it 
             indicates that the end of the document has been reached. */
-int t4_tx_get_chunk(t4_state_t *s, uint8_t buf[], int max_len);
+SPAN_DECLARE(int) t4_tx_get_chunk(t4_state_t *s, uint8_t buf[], int max_len);
 
 /*! \brief Return the next bit of the current document page, without actually
            moving forward in the buffer. The document will be padded for the
@@ -372,37 +372,37 @@ int t4_tx_get_chunk(t4_state_t *s, uint8_t buf[], int max_len);
     \param s The T.4 context.
     \return The next bit (i.e. 0 or 1). For the last bit of data, bit 1 is
             set (i.e. the returned value is 2 or 3). */
-int t4_tx_check_bit(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_check_bit(t4_state_t *s);
 
 /*! \brief End the transmission of a document. Tidy up, close the file and
            free the context. This should be used to end T.4 transmission
            started with t4_tx_init.
     \param s The T.4 context.
     \return 0 for success, otherwise -1. */
-int t4_tx_delete(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_delete(t4_state_t *s);
 
 /*! \brief End the transmission of a document. Tidy up and close the file.
            This should be used to end T.4 transmission started with t4_tx_init.
     \param s The T.4 context.
     \return 0 for success, otherwise -1. */
-int t4_tx_end(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_end(t4_state_t *s);
 
 /*! \brief Set the encoding for the encoded data.
     \param s The T.4 context.
     \param encoding The encoding. */
-void t4_tx_set_tx_encoding(t4_state_t *s, int encoding);
+SPAN_DECLARE(void) t4_tx_set_tx_encoding(t4_state_t *s, int encoding);
 
 /*! \brief Set the minimum number of encoded bits per row. This allows the
            makes the encoding process to be set to comply with the minimum row
            time specified by a remote receiving machine.
     \param s The T.4 context.
     \param bits The minimum number of bits per row. */
-void t4_tx_set_min_row_bits(t4_state_t *s, int bits);
+SPAN_DECLARE(void) t4_tx_set_min_row_bits(t4_state_t *s, int bits);
 
 /*! \brief Set the identity of the local machine, for inclusion in page headers.
     \param s The T.4 context.
     \param ident The identity string. */
-void t4_tx_set_local_ident(t4_state_t *s, const char *ident);
+SPAN_DECLARE(void) t4_tx_set_local_ident(t4_state_t *s, const char *ident);
 
 /*! Set the info field, included in the header line included in each page of an encoded
     FAX. This is a string of up to 50 characters. Other information (date, local ident, etc.)
@@ -411,41 +411,41 @@ void t4_tx_set_local_ident(t4_state_t *s, const char *ident);
     \brief Set the header info.
     \param s The T.4 context.
     \param info A string, of up to 50 bytes, which will form the info field. */
-void t4_tx_set_header_info(t4_state_t *s, const char *info);
+SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info);
 
-int t4_tx_set_row_read_handler(t4_state_t *s, t4_row_read_handler_t handler, void *user_data);
+SPAN_DECLARE(int) t4_tx_set_row_read_handler(t4_state_t *s, t4_row_read_handler_t handler, void *user_data);
 
 /*! \brief Get the row-to-row (y) resolution of the current page.
     \param s The T.4 context.
     \return The resolution, in pixels per metre. */
-int t4_tx_get_y_resolution(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_get_y_resolution(t4_state_t *s);
 
 /*! \brief Get the column-to-column (x) resolution of the current page.
     \param s The T.4 context.
     \return The resolution, in pixels per metre. */
-int t4_tx_get_x_resolution(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_get_x_resolution(t4_state_t *s);
 
 /*! \brief Get the width of the current page, in pixel columns.
     \param s The T.4 context.
     \return The number of columns. */
-int t4_tx_get_image_width(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_get_image_width(t4_state_t *s);
 
 /*! \brief Get the number of pages in the file.
     \param s The T.4 context.
     \return The number of pages, or -1 if there is an error. */
-int t4_tx_get_pages_in_file(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_state_t *s);
 
 /*! Get the current image transfer statistics. 
     \brief Get the current transfer statistics.
     \param s The T.4 context.
     \param t A pointer to a statistics structure. */
-void t4_get_transfer_statistics(t4_state_t *s, t4_stats_t *t);
+SPAN_DECLARE(void) t4_get_transfer_statistics(t4_state_t *s, t4_stats_t *t);
 
 /*! Get the short text name of an encoding format. 
     \brief Get the short text name of an encoding format.
     \param encoding The encoding type.
     \return A pointer to the string. */
-const char *t4_encoding_to_str(int encoding);
+SPAN_DECLARE(const char) *t4_encoding_to_str(int encoding);
 
 #if defined(__cplusplus)
 }

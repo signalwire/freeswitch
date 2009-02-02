@@ -16,7 +16,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.64 2009/01/17 08:16:08 steveu Exp $
+# $Id: configure.ac,v 1.65 2009/01/31 08:48:10 steveu Exp $
 
 # @start 1
 
@@ -27,6 +27,7 @@ m4_include(config/ax_check_real_file.m4)
 m4_include(config/ax_fixed_point_machine.m4)
 m4_include(config/ax_misaligned_access_fails.m4)
 m4_include(config/ax_c99_features.m4)
+m4_include(config/ax_check_export_capability.m4)
 
 SPANDSP_MAJOR_VERSION=0
 SPANDSP_MINOR_VERSION=0
@@ -283,9 +284,14 @@ if test -n "$enable_tests" ; then
     AC_LANG([C])
 fi
 
+AX_CHECK_EXPORT_CAPABILITY([$host],
+    [AC_DEFINE([SPANDSP_USE_EXPORT_CAPABILITY], [1], [Use the library symbol export capability of the compiler])
+    SPANDSP_USE_EXPORT_CAPABILITY="#define SPANDSP_USE_EXPORT_CAPABILITY 1"],
+    [SPANDSP_USE_EXPORT_CAPABILITY="#undef SPANDSP_USE_EXPORT_CAPABILITY"])
+
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
-    COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+    COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
     if test "$enable_sse5" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
     fi
@@ -320,7 +326,7 @@ gnu)
     esac
     ;;
 sun)
-    COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -errwarn=%all -xvpara"
+    COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -errwarn=%all -xvpara $COMP_VENDOR_CFLAGS"
     if test "$enable_sse3" = "yes" ; then
         COMP_VENDOR_CFLAGS="-native -fast $COMP_VENDOR_CFLAGS"
     fi
@@ -336,7 +342,7 @@ sun)
     COMP_VENDOR_LDFLAGS=
     ;;
 *)
-    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
+    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
     COMP_VENDOR_LDFLAGS=
     ;;
 esac
@@ -407,6 +413,7 @@ AC_SUBST(COMP_VENDOR_LDFLAGS)
 AC_SUBST(TESTLIBS)
 AC_SUBST(SPANDSP_USE_FIXED_POINT)
 AC_SUBST(SPANDSP_MISALIGNED_ACCESS_FAILS)
+AC_SUBST(SPANDSP_USE_EXPORT_CAPABILITY)
 AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)

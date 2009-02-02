@@ -254,6 +254,9 @@
 /* Do not expect a misaligned memory access to work correctly */
 #undef SPANDSP_MISALIGNED_ACCESS_FAILS
 
+/* Use the library symbol export capability of the compiler */
+#undef SPANDSP_USE_EXPORT_CAPABILITY
+
 /* Enable fixed point processing, where possible, instead of floating point */
 #undef SPANDSP_USE_FIXED_POINT
 

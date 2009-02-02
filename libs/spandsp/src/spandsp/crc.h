@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: crc.h,v 1.4 2008/04/17 14:27:00 steveu Exp $
+ * $Id: crc.h,v 1.5 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -49,7 +49,7 @@ extern "C"
            the application). It is previous returned CRC value for the continuation of a block.
     \return The CRC value.
 */
-uint32_t crc_itu32_calc(const uint8_t *buf, int len, uint32_t crc);
+SPAN_DECLARE(uint32_t) crc_itu32_calc(const uint8_t *buf, int len, uint32_t crc);
 
 /*! \brief Append an ITU/CCITT CRC-32 value to a frame.
     \param buf The buffer containing the frame. This must be at least 2 bytes longer than
@@ -57,14 +57,14 @@ uint32_t crc_itu32_calc(const uint8_t *buf, int len, uint32_t crc);
     \param len The length of the frame.
     \return The new length of the frame.
 */
-int crc_itu32_append(uint8_t *buf, int len);
+SPAN_DECLARE(int) crc_itu32_append(uint8_t *buf, int len);
 
 /*! \brief Check the ITU/CCITT CRC-32 value in a frame.
     \param buf The buffer containing the frame.
     \param len The length of the frame.
     \return TRUE if the CRC is OK, else FALSE.
 */
-int crc_itu32_check(const uint8_t *buf, int len);
+SPAN_DECLARE(int) crc_itu32_check(const uint8_t *buf, int len);
 
 /*! \brief Calculate the ITU/CCITT CRC-16 value in buffer.
     \param buf The buffer containing the data.
@@ -73,7 +73,7 @@ int crc_itu32_check(const uint8_t *buf, int len);
            the application). It is previous returned CRC value for the continuation of a block.
     \return The CRC value.
 */
-uint16_t crc_itu16_calc(const uint8_t *buf, int len, uint16_t crc);
+SPAN_DECLARE(uint16_t) crc_itu16_calc(const uint8_t *buf, int len, uint16_t crc);
 
 /*! \brief Append an ITU/CCITT CRC-16 value to a frame.
     \param buf The buffer containing the frame. This must be at least 2 bytes longer than
@@ -81,14 +81,14 @@ uint16_t crc_itu16_calc(const uint8_t *buf, int len, uint16_t crc);
     \param len The length of the frame.
     \return The new length of the frame.
 */
-int crc_itu16_append(uint8_t *buf, int len);
+SPAN_DECLARE(int) crc_itu16_append(uint8_t *buf, int len);
 
 /*! \brief Check the ITU/CCITT CRC-16 value in a frame.
     \param buf The buffer containing the frame.
     \param len The length of the frame.
     \return TRUE if the CRC is OK, else FALSE.
 */
-int crc_itu16_check(const uint8_t *buf, int len);
+SPAN_DECLARE(int) crc_itu16_check(const uint8_t *buf, int len);
 
 #if defined(__cplusplus)
 }

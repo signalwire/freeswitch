@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g1050.c,v 1.11 2009/01/16 15:13:16 steveu Exp $
+ * $Id: g1050.c,v 1.12 2009/01/31 08:48:10 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -1070,10 +1070,10 @@ static void g1050_simulate_chunk(g1050_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-g1050_state_t *g1050_init(int model,
-                          int speed_pattern,
-                          int packet_size,
-                          int packet_rate)
+SPAN_DECLARE(g1050_state_t) *g1050_init(int model,
+                                        int speed_pattern,
+                                        int packet_size,
+                                        int packet_rate)
 {
     g1050_state_t *s;
     g1050_constants_t *constants;
@@ -1169,7 +1169,7 @@ g1050_state_t *g1050_init(int model,
 }
 /*- End of function --------------------------------------------------------*/
 
-void g1050_dump_parms(int model, int speed_pattern)
+SPAN_DECLARE(void) g1050_dump_parms(int model, int speed_pattern)
 {
     g1050_channel_speeds_t *sp;
     g1050_model_t *mo;
@@ -1189,7 +1189,7 @@ void g1050_dump_parms(int model, int speed_pattern)
 }
 /*- End of function --------------------------------------------------------*/
 
-int g1050_put(g1050_state_t *s, const uint8_t buf[], int len, int seq_no, double departure_time)
+SPAN_DECLARE(int) g1050_put(g1050_state_t *s, const uint8_t buf[], int len, int seq_no, double departure_time)
 {
     g1050_queue_element_t *element;
     g1050_queue_element_t *e;
@@ -1247,7 +1247,7 @@ int g1050_put(g1050_state_t *s, const uint8_t buf[], int len, int seq_no, double
 }
 /*- End of function --------------------------------------------------------*/
 
-int g1050_get(g1050_state_t *s, uint8_t buf[], int max_len, double current_time, int *seq_no, double *departure_time, double *arrival_time)
+SPAN_DECLARE(int) g1050_get(g1050_state_t *s, uint8_t buf[], int max_len, double current_time, int *seq_no, double *departure_time, double *arrival_time)
 {
     int len;
     g1050_queue_element_t *element;
@@ -1295,7 +1295,7 @@ int g1050_get(g1050_state_t *s, uint8_t buf[], int max_len, double current_time,
 }
 /*- End of function --------------------------------------------------------*/
 
-void g1050_queue_dump(g1050_state_t *s)
+SPAN_DECLARE(void) g1050_queue_dump(g1050_state_t *s)
 {
     g1050_queue_element_t *e;
 

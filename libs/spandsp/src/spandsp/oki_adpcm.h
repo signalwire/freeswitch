@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: oki_adpcm.h,v 1.21 2008/11/30 10:17:31 steveu Exp $
+ * $Id: oki_adpcm.h,v 1.22 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -61,12 +61,13 @@ extern "C"
     \param bit_rate The required bit rate for the ADPCM data.
            The valid rates are 24000 and 32000.
     \return A pointer to the Oki ADPCM context, or NULL for error. */
-oki_adpcm_state_t *oki_adpcm_init(oki_adpcm_state_t *s, int bit_rate);
+SPAN_DECLARE(oki_adpcm_state_t) *oki_adpcm_init(oki_adpcm_state_t *s,
+                                                int bit_rate);
 
 /*! Free an Oki ADPCM encode or decode context.
     \param s The Oki ADPCM context.
     \return 0 for OK. */
-int oki_adpcm_release(oki_adpcm_state_t *s);
+SPAN_DECLARE(int) oki_adpcm_release(oki_adpcm_state_t *s);
 
 /*! Decode a buffer of Oki ADPCM data to linear PCM.
     \param s The Oki ADPCM context.
@@ -74,10 +75,10 @@ int oki_adpcm_release(oki_adpcm_state_t *s);
     \param oki_data
     \param oki_bytes
     \return The number of samples returned. */
-int oki_adpcm_decode(oki_adpcm_state_t *s,
-                     int16_t amp[],
-                     const uint8_t oki_data[],
-                     int oki_bytes);
+SPAN_DECLARE(int) oki_adpcm_decode(oki_adpcm_state_t *s,
+                                   int16_t amp[],
+                                   const uint8_t oki_data[],
+                                   int oki_bytes);
 
 /*! Encode a buffer of linear PCM data to Oki ADPCM.
     \param s The Oki ADPCM context.
@@ -85,10 +86,10 @@ int oki_adpcm_decode(oki_adpcm_state_t *s,
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of bytes of Oki ADPCM data produced. */
-int oki_adpcm_encode(oki_adpcm_state_t *s,
-                     uint8_t oki_data[],
-                     const int16_t amp[],
-                     int len);
+SPAN_DECLARE(int) oki_adpcm_encode(oki_adpcm_state_t *s,
+                                   uint8_t oki_data[],
+                                   const int16_t amp[],
+                                   int len);
 
 #if defined(__cplusplus)
 }

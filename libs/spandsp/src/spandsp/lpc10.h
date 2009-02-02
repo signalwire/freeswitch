@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: lpc10.h,v 1.18 2008/11/30 05:43:37 steveu Exp $
+ * $Id: lpc10.h,v 1.19 2009/01/31 08:48:11 steveu Exp $
  */
 
 #if !defined(_SPANDSP_LPC10_H_)
@@ -74,9 +74,9 @@ extern "C"
     \param s The LPC10e context
     \param error_correction ???
     \return A pointer to the LPC10e context, or NULL for error. */
-lpc10_encode_state_t *lpc10_encode_init(lpc10_encode_state_t *s, int error_correction);
+SPAN_DECLARE(lpc10_encode_state_t) *lpc10_encode_init(lpc10_encode_state_t *s, int error_correction);
 
-int lpc10_encode_release(lpc10_encode_state_t *s);
+SPAN_DECLARE(int) lpc10_encode_release(lpc10_encode_state_t *s);
 
 /*! Encode a buffer of linear PCM data to LPC10e.
     \param s The LPC10e context.
@@ -85,15 +85,15 @@ int lpc10_encode_release(lpc10_encode_state_t *s);
     \param len The number of samples in the buffer. This must be a multiple of 180, as
            this is the number of samples on a frame.
     \return The number of bytes of LPC10e data produced. */
-int lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], int len);
+SPAN_DECLARE(int) lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], int len);
 
 /*! Initialise an LPC10e decode context.
     \param s The LPC10e context
     \param error_correction ???
     \return A pointer to the LPC10e context, or NULL for error. */
-lpc10_decode_state_t *lpc10_decode_init(lpc10_decode_state_t *st, int error_correction);
+SPAN_DECLARE(lpc10_decode_state_t) *lpc10_decode_init(lpc10_decode_state_t *st, int error_correction);
 
-int lpc10_decode_release(lpc10_decode_state_t *s);
+SPAN_DECLARE(int) lpc10_decode_release(lpc10_decode_state_t *s);
 
 /*! Decode a buffer of LPC10e data to linear PCM.
     \param s The LPC10e context.
@@ -102,7 +102,7 @@ int lpc10_decode_release(lpc10_decode_state_t *s);
     \param len The number of bytes of LPC10e data to be decoded. This must be a multiple of 7,
            as each frame is packed into 7 bytes.
     \return The number of samples returned. */
-int lpc10_decode(lpc10_decode_state_t *s, int16_t amp[], const uint8_t code[], int len);
+SPAN_DECLARE(int) lpc10_decode(lpc10_decode_state_t *s, int16_t amp[], const uint8_t code[], int len);
 
 
 #if defined(__cplusplus)

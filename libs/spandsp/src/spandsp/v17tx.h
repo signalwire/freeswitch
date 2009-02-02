@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.h,v 1.37 2008/10/13 13:14:01 steveu Exp $
+ * $Id: v17tx.h,v 1.38 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -98,7 +98,7 @@ extern "C"
     \brief Adjust a V.17 modem transmit context's output power.
     \param s The modem context.
     \param power The power level, in dBm0 */
-void v17_tx_power(v17_tx_state_t *s, float power);
+SPAN_DECLARE(void) v17_tx_power(v17_tx_state_t *s, float power);
 
 /*! Initialise a V.17 modem transmit context. This must be called before the first
     use of the context, to initialise its contents.
@@ -109,7 +109,7 @@ void v17_tx_power(v17_tx_state_t *s, float power);
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
-v17_tx_state_t *v17_tx_init(v17_tx_state_t *s, int rate, int tep, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(v17_tx_state_t) *v17_tx_init(v17_tx_state_t *s, int rate, int tep, get_bit_func_t get_bit, void *user_data);
 
 /*! Reinitialise an existing V.17 modem transmit context, so it may be reused.
     \brief Reinitialise an existing V.17 modem transmit context.
@@ -118,29 +118,29 @@ v17_tx_state_t *v17_tx_init(v17_tx_state_t *s, int rate, int tep, get_bit_func_t
     \param tep TRUE is the optional TEP tone is to be transmitted.
     \param short_train TRUE if the short training sequence should be used.
     \return 0 for OK, -1 for parameter error. */
-int v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int short_train);
+SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int short_train);
 
 /*! Free a V.17 modem transmit context.
     \brief Free a V.17 modem transmit context.
     \param s The modem context.
     \return 0 for OK */
-int v17_tx_free(v17_tx_state_t *s);
+SPAN_DECLARE(int) v17_tx_free(v17_tx_state_t *s);
 
-logging_state_t *v17_tx_get_logging_state(v17_tx_state_t *s);
+SPAN_DECLARE(logging_state_t) *v17_tx_get_logging_state(v17_tx_state_t *s);
 
 /*! Change the get_bit function associated with a V.17 modem transmit context.
     \brief Change the get_bit function associated with a V.17 modem transmit context.
     \param s The modem context.
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer. */
-void v17_tx_set_get_bit(v17_tx_state_t *s, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(void) v17_tx_set_get_bit(v17_tx_state_t *s, get_bit_func_t get_bit, void *user_data);
 
 /*! Change the modem status report function associated with a V.17 modem transmit context.
     \brief Change the modem status report function associated with a V.17 modem transmit context.
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-void v17_tx_set_modem_status_handler(v17_tx_state_t *s, modem_tx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v17_tx_set_modem_status_handler(v17_tx_state_t *s, modem_tx_status_func_t handler, void *user_data);
 
 /*! Generate a block of V.17 modem audio samples.
     \brief Generate a block of V.17 modem audio samples.
@@ -149,7 +149,7 @@ void v17_tx_set_modem_status_handler(v17_tx_state_t *s, modem_tx_status_func_t h
     \param len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-int v17_tx(v17_tx_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(int) v17_tx(v17_tx_state_t *s, int16_t amp[], int len);
 
 #if defined(__cplusplus)
 }

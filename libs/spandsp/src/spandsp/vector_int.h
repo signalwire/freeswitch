@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_int.h,v 1.13 2008/09/18 13:54:32 steveu Exp $
+ * $Id: vector_int.h,v 1.14 2009/01/31 08:48:11 steveu Exp $
  */
 
 #if !defined(_SPANDSP_VECTOR_INT_H_)
@@ -101,7 +101,7 @@ static __inline__ void vec_seti32(int32_t z[], int32_t x, int n)
     \param y The first vector.
     \param n The number of elements in the vectors.
     \return The dot product of the two vectors. */
-int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n);
+SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int n);
 
 /*! \brief Find the dot product of two int16_t vectors, where the first is a circular buffer
            with an offset for the starting position.
@@ -110,11 +110,11 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n);
     \param n The number of elements in the vectors.
     \param pos The starting position in the x vector.
     \return The dot product of the two vectors. */
-int32_t vec_circular_dot_prodi16(const int16_t x[], const int16_t y[], int n, int pos);
+SPAN_DECLARE(int32_t) vec_circular_dot_prodi16(const int16_t x[], const int16_t y[], int n, int pos);
 
-void vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t error);
+SPAN_DECLARE(void) vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t error);
 
-void vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, int pos, int16_t error);
+SPAN_DECLARE(void) vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, int pos, int16_t error);
 
 /*! \brief Find the minimum and maximum values in an int16_t vector.
     \param x The vector to be searched.
@@ -125,7 +125,7 @@ void vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, int pos, int16_t
     \return The absolute maximum value. Since the range of negative numbers
             exceeds the range of positive one, the returned integer is longer
             than the ones being searched. */
-int32_t vec_min_maxi16(const int16_t x[], int n, int16_t out[]);
+SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[]);
 
 static __inline__ int vec_norm2i16(const int16_t *vec, int len)
 {

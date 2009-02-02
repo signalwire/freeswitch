@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: logging.h,v 1.17 2008/11/30 13:44:35 steveu Exp $
+ * $Id: logging.h,v 1.18 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -87,7 +87,7 @@ extern "C"
     \param level The severity level to be tested.
     \return TRUE if logging is enable, else FALSE.
 */
-int span_log_test(logging_state_t *s, int level);
+SPAN_DECLARE(int) span_log_test(logging_state_t *s, int level);
 
 /*! Generate a log entry.
     \brief Generate a log entry.
@@ -96,7 +96,7 @@ int span_log_test(logging_state_t *s, int level);
     \param format ???
     \return 0 if no output generated, else 1.
 */
-int span_log(logging_state_t *s, int level, const char *format, ...);
+SPAN_DECLARE(int) span_log(logging_state_t *s, int level, const char *format, ...);
 
 /*! Generate a log entry displaying the contents of a buffer.
     \brief Generate a log entry displaying the contents of a buffer
@@ -107,27 +107,27 @@ int span_log(logging_state_t *s, int level, const char *format, ...);
     \param len The length of buf.
     \return 0 if no output generated, else 1.
 */
-int span_log_buf(logging_state_t *s, int level, const char *tag, const uint8_t *buf, int len);
+SPAN_DECLARE(int) span_log_buf(logging_state_t *s, int level, const char *tag, const uint8_t *buf, int len);
 
-int span_log_init(logging_state_t *s, int level, const char *tag);
+SPAN_DECLARE(int) span_log_init(logging_state_t *s, int level, const char *tag);
 
-int span_log_set_level(logging_state_t *s, int level);
+SPAN_DECLARE(int) span_log_set_level(logging_state_t *s, int level);
 
-int span_log_set_tag(logging_state_t *s, const char *tag);
+SPAN_DECLARE(int) span_log_set_tag(logging_state_t *s, const char *tag);
 
-int span_log_set_protocol(logging_state_t *s, const char *protocol);
+SPAN_DECLARE(int) span_log_set_protocol(logging_state_t *s, const char *protocol);
 
-int span_log_set_sample_rate(logging_state_t *s, int samples_per_second);
+SPAN_DECLARE(int) span_log_set_sample_rate(logging_state_t *s, int samples_per_second);
 
-int span_log_bump_samples(logging_state_t *s, int samples);
+SPAN_DECLARE(int) span_log_bump_samples(logging_state_t *s, int samples);
 
-void span_log_set_message_handler(logging_state_t *s, message_handler_func_t func);
+SPAN_DECLARE(void) span_log_set_message_handler(logging_state_t *s, message_handler_func_t func);
 
-void span_log_set_error_handler(logging_state_t *s, error_handler_func_t func);
+SPAN_DECLARE(void) span_log_set_error_handler(logging_state_t *s, error_handler_func_t func);
 
-void span_set_message_handler(message_handler_func_t func);
+SPAN_DECLARE(void) span_set_message_handler(message_handler_func_t func);
 
-void span_set_error_handler(error_handler_func_t func);
+SPAN_DECLARE(void) span_set_error_handler(error_handler_func_t func);
 
 #if defined(__cplusplus)
 }

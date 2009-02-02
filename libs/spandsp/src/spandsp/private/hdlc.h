@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.h,v 1.1 2008/11/30 05:43:37 steveu Exp $
+ * $Id: hdlc.h,v 1.2 2009/01/31 08:48:11 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_HDLC_H_)
@@ -119,7 +119,7 @@ struct hdlc_tx_state_s
     /*! \brief The length of the message in the buffer. */
     size_t len;
     /*! \brief The current send position within the buffer. */
-    int pos;
+    size_t pos;
     /*! \brief The running CRC, as data fills the frame buffer. */
     uint32_t crc;
 

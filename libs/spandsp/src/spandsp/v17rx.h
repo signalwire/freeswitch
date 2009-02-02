@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.h,v 1.58 2008/10/13 13:14:01 steveu Exp $
+ * $Id: v17rx.h,v 1.59 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -243,7 +243,7 @@ extern "C"
     \param put_bit The callback routine used to put the received data.
     \param user_data An opaque pointer passed to the put_bit routine.
     \return A pointer to the modem context, or NULL if there was a problem. */
-v17_rx_state_t *v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(v17_rx_state_t) *v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data);
 
 /*! Reinitialise an existing V.17 modem receive context.
     \brief Reinitialise an existing V.17 modem receive context.
@@ -251,29 +251,29 @@ v17_rx_state_t *v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_
     \param bit_rate The bit rate of the modem. Valid values are 7200, 9600, 12000 and 14400.
     \param short_train TRUE if a short training sequence is expected.
     \return 0 for OK, -1 for bad parameter */
-int v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train);
+SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train);
 
 /*! Free a V.17 modem receive context.
     \brief Free a V.17 modem receive context.
     \param s The modem context.
     \return 0 for OK */
-int v17_rx_free(v17_rx_state_t *s);
+SPAN_DECLARE(int) v17_rx_free(v17_rx_state_t *s);
 
-logging_state_t *v17_rx_get_logging_state(v17_rx_state_t *s);
+SPAN_DECLARE(logging_state_t) *v17_rx_get_logging_state(v17_rx_state_t *s);
 
 /*! Change the put_bit function associated with a V.17 modem receive context.
     \brief Change the put_bit function associated with a V.17 modem receive context.
     \param s The modem context.
     \param put_bit The callback routine used to handle received bits.
     \param user_data An opaque pointer. */
-void v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit, void *user_data);
 
 /*! Change the modem status report function associated with a V.17 modem receive context.
     \brief Change the modem status report function associated with a V.17 modem receive context.
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-void v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_rx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_rx_status_func_t handler, void *user_data);
 
 /*! Process a block of received V.17 modem audio samples.
     \brief Process a block of received V.17 modem audio samples.
@@ -282,7 +282,7 @@ void v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_rx_status_func_t h
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed.
 */
-int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len);
+SPAN_DECLARE(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len);
 
 /*! Get a snapshot of the current equalizer coefficients.
     \brief Get a snapshot of the current equalizer coefficients.
@@ -290,36 +290,36 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len);
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
-int v17_rx_equalizer_state(v17_rx_state_t *s, complexi_t **coeffs);
+SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexi_t **coeffs);
 #else
-int v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs);
+SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs);
 #endif
 
 /*! Get the current received carrier frequency.
     \param s The modem context.
     \return The frequency, in Hertz. */
-float v17_rx_carrier_frequency(v17_rx_state_t *s);
+SPAN_DECLARE(float) v17_rx_carrier_frequency(v17_rx_state_t *s);
 
 /*! Get the current symbol timing correction since startup.
     \param s The modem context.
     \return The correction. */
-float v17_rx_symbol_timing_correction(v17_rx_state_t *s);
+SPAN_DECLARE(float) v17_rx_symbol_timing_correction(v17_rx_state_t *s);
 
 /*! Get a current received signal power.
     \param s The modem context.
     \return The signal power, in dBm0. */
-float v17_rx_signal_power(v17_rx_state_t *s);
+SPAN_DECLARE(float) v17_rx_signal_power(v17_rx_state_t *s);
 
 /*! Set the power level at which the carrier detection will cut in
     \param s The modem context.
     \param cutoff The signal cutoff power, in dBm0. */
-void v17_rx_signal_cutoff(v17_rx_state_t *s, float cutoff);
+SPAN_DECLARE(void) v17_rx_signal_cutoff(v17_rx_state_t *s, float cutoff);
 
 /*! Set a handler routine to process QAM status reports
     \param s The modem context.
     \param handler The handler routine.
     \param user_data An opaque pointer passed to the handler routine. */
-void v17_rx_set_qam_report_handler(v17_rx_state_t *s, qam_report_handler_t handler, void *user_data);
+SPAN_DECLARE(void) v17_rx_set_qam_report_handler(v17_rx_state_t *s, qam_report_handler_t handler, void *user_data);
 
 #if defined(__cplusplus)
 }

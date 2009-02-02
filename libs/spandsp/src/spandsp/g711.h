@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711.h,v 1.15 2008/11/30 10:17:31 steveu Exp $
+ * $Id: g711.h,v 1.16 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -251,39 +251,39 @@ static __inline__ int16_t alaw_to_linear(uint8_t alaw)
     \param alaw The A-law sample to transcode.
     \return The best matching u-law value.
 */
-uint8_t alaw_to_ulaw(uint8_t alaw);
+SPAN_DECLARE(uint8_t) alaw_to_ulaw(uint8_t alaw);
 
 /*! \brief Transcode from u-law to A-law, using the procedure defined in G.711.
     \param ulaw The u-law sample to transcode.
     \return The best matching A-law value.
 */
-uint8_t ulaw_to_alaw(uint8_t ulaw);
+SPAN_DECLARE(uint8_t) ulaw_to_alaw(uint8_t ulaw);
 
-int g711_decode(g711_state_t *s,
-                int16_t amp[],
-                const uint8_t g711_data[],
-                int g711_bytes);
+SPAN_DECLARE(int) g711_decode(g711_state_t *s,
+                              int16_t amp[],
+                              const uint8_t g711_data[],
+                              int g711_bytes);
 
-int g711_encode(g711_state_t *s,
-                uint8_t g711_data[],
-                const int16_t amp[],
-                int len);
+SPAN_DECLARE(int) g711_encode(g711_state_t *s,
+                              uint8_t g711_data[],
+                              const int16_t amp[],
+                              int len);
 
-int g711_transcode(g711_state_t *s,
-                   uint8_t g711_out[],
-                   const uint8_t g711_in[],
-                   int g711_bytes);
+SPAN_DECLARE(int) g711_transcode(g711_state_t *s,
+                                 uint8_t g711_out[],
+                                 const uint8_t g711_in[],
+                                 int g711_bytes);
 
 /*! Initialise a G.711 encode or decode context.
     \param s The G.711 context.
     \param mode The G.711 mode.
     \return A pointer to the G.711 context, or NULL for error. */
-g711_state_t *g711_init(g711_state_t *s, int mode);
+SPAN_DECLARE(g711_state_t) *g711_init(g711_state_t *s, int mode);
 
 /*! Free a G.711 encode or decode context.
     \param s The G.711 context.
     \return 0 for OK. */
-int g711_release(g711_state_t *s);
+SPAN_DECLARE(int) g711_release(g711_state_t *s);
 
 #if defined(__cplusplus)
 }

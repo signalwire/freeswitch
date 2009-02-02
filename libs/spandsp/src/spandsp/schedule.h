@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: schedule.h,v 1.17 2008/11/30 05:43:37 steveu Exp $
+ * $Id: schedule.h,v 1.18 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -51,15 +51,15 @@ extern "C"
 {
 #endif
 
-uint64_t span_schedule_next(span_sched_state_t *s);
-uint64_t span_schedule_time(span_sched_state_t *s);
+SPAN_DECLARE(uint64_t) span_schedule_next(span_sched_state_t *s);
+SPAN_DECLARE(uint64_t) span_schedule_time(span_sched_state_t *s);
 
-int span_schedule_event(span_sched_state_t *s, int us, span_sched_callback_func_t function, void *user_data);
-void span_schedule_update(span_sched_state_t *s, int us);
-void span_schedule_del(span_sched_state_t *s, int id);
+SPAN_DECLARE(int) span_schedule_event(span_sched_state_t *s, int us, span_sched_callback_func_t function, void *user_data);
+SPAN_DECLARE(void) span_schedule_update(span_sched_state_t *s, int us);
+SPAN_DECLARE(void) span_schedule_del(span_sched_state_t *s, int id);
 
-span_sched_state_t *span_schedule_init(span_sched_state_t *s);
-int span_schedule_release(span_sched_state_t *s);
+SPAN_DECLARE(span_sched_state_t) *span_schedule_init(span_sched_state_t *s);
+SPAN_DECLARE(int) span_schedule_release(span_sched_state_t *s);
 
 #if defined(__cplusplus)
 }

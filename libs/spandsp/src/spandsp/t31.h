@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.h,v 1.55 2009/01/09 16:09:06 steveu Exp $
+ * $Id: t31.h,v 1.56 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -57,9 +57,9 @@ extern "C"
 {
 #endif
 
-void t31_call_event(t31_state_t *s, int event);
+SPAN_DECLARE(void) t31_call_event(t31_state_t *s, int event);
 
-int t31_at_rx(t31_state_t *s, const char *t, int len);
+SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len);
 
 /*! Process a block of received T.31 modem audio samples.
     \brief Process a block of received T.31 modem audio samples.
@@ -67,7 +67,7 @@ int t31_at_rx(t31_state_t *s, const char *t, int len);
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
-int t31_rx(t31_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(int) t31_rx(t31_state_t *s, int16_t amp[], int len);
 
 /*! Generate a block of T.31 modem audio samples.
     \brief Generate a block of T.31 modem audio samples.
@@ -76,9 +76,9 @@ int t31_rx(t31_state_t *s, int16_t amp[], int len);
     \param max_len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-int t31_tx(t31_state_t *s, int16_t amp[], int max_len);
+SPAN_DECLARE(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len);
 
-int t31_t38_send_timeout(t31_state_t *s, int samples);
+SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples);
 
 /*! Select whether silent audio will be sent when transmit is idle.
     \brief Select whether silent audio will be sent when transmit is idle.
@@ -87,14 +87,14 @@ int t31_t38_send_timeout(t31_state_t *s, int samples);
            idle. FALSE to transmit zero length audio when the transmitter is idle. The default
            behaviour is FALSE.
 */
-void t31_set_transmit_on_idle(t31_state_t *s, int transmit_on_idle);
+SPAN_DECLARE(void) t31_set_transmit_on_idle(t31_state_t *s, int transmit_on_idle);
 
 /*! Select whether TEP mode will be used (or time allowed for it (when transmitting).
     \brief Select whether TEP mode will be used.
     \param s The T.31 modem context.
     \param use_tep TRUE if TEP is to be ised.
 */
-void t31_set_tep_mode(t31_state_t *s, int use_tep);
+SPAN_DECLARE(void) t31_set_tep_mode(t31_state_t *s, int use_tep);
 
 /*! Select whether T.38 data will be paced as it is transmitted.
     \brief Select whether T.38 data will be paced.
@@ -102,18 +102,18 @@ void t31_set_tep_mode(t31_state_t *s, int use_tep);
     \param without_pacing TRUE if data is to be sent as fast as possible. FALSE if it is
            to be paced.
 */
-void t31_set_t38_config(t31_state_t *s, int without_pacing);
+SPAN_DECLARE(void) t31_set_t38_config(t31_state_t *s, int without_pacing);
 
-void t31_set_mode(t31_state_t *s, int t38_mode);
+SPAN_DECLARE(void) t31_set_mode(t31_state_t *s, int t38_mode);
 
 /*! Get a pointer to the logging context associated with a T.31 context.
     \brief Get a pointer to the logging context associated with a T.31 context.
     \param s The T.31 context.
     \return A pointer to the logging context, or NULL.
 */
-logging_state_t *t31_get_logging_state(t31_state_t *s);
+SPAN_DECLARE(logging_state_t) *t31_get_logging_state(t31_state_t *s);
 
-t38_core_state_t *t31_get_t38_core_state(t31_state_t *s);
+SPAN_DECLARE(t38_core_state_t) *t31_get_t38_core_state(t31_state_t *s);
 
 /*! Initialise a T.31 context. This must be called before the first
     use of the context, to initialise its contents.
@@ -126,19 +126,19 @@ t38_core_state_t *t31_get_t38_core_state(t31_state_t *s);
     \param tx_t38_packet_handler ???
     \param tx_t38_packet_user_data ???
     \return A pointer to the T.31 context. */
-t31_state_t *t31_init(t31_state_t *s,
-                      at_tx_handler_t *at_tx_handler,
-                      void *at_tx_user_data,
-                      t31_modem_control_handler_t *modem_control_handler,
-                      void *modem_control_user_data,
-                      t38_tx_packet_handler_t *tx_t38_packet_handler,
-                      void *tx_t38_packet_user_data);
+SPAN_DECLARE(t31_state_t) *t31_init(t31_state_t *s,
+                                    at_tx_handler_t *at_tx_handler,
+                                    void *at_tx_user_data,
+                                    t31_modem_control_handler_t *modem_control_handler,
+                                    void *modem_control_user_data,
+                                    t38_tx_packet_handler_t *tx_t38_packet_handler,
+                                    void *tx_t38_packet_user_data);
 
 /*! Release a T.31 context.
     \brief Release a T.31 context.
     \param s The T.31 context.
     \return 0 for OK */
-int t31_release(t31_state_t *s);
+SPAN_DECLARE(int) t31_release(t31_state_t *s);
 
 #if defined(__cplusplus)
 }

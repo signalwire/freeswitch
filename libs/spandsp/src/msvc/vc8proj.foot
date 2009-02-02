@@ -5,10 +5,6 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
-		<File
-			RelativePath=".\msvc\spandsp.def"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

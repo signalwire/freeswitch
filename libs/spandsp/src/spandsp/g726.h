@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726.h,v 1.22 2008/10/13 13:14:00 steveu Exp $
+ * $Id: g726.h,v 1.23 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -77,12 +77,12 @@ extern "C"
     \param ext_coding The coding used outside G.726.
     \param packing One of the G.726_PACKING_xxx options.
     \return A pointer to the G.726 context, or NULL for error. */
-g726_state_t *g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing);
+SPAN_DECLARE(g726_state_t) *g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing);
 
 /*! Free a G.726 encode or decode context.
     \param s The G.726 context.
     \return 0 for OK. */
-int g726_release(g726_state_t *s);
+SPAN_DECLARE(int) g726_release(g726_state_t *s);
 
 /*! Decode a buffer of G.726 ADPCM data to linear PCM, a-law or u-law.
     \param s The G.726 context.
@@ -90,10 +90,10 @@ int g726_release(g726_state_t *s);
     \param g726_data
     \param g726_bytes
     \return The number of samples returned. */
-int g726_decode(g726_state_t *s,
-                int16_t amp[],
-                const uint8_t g726_data[],
-                int g726_bytes);
+SPAN_DECLARE(int) g726_decode(g726_state_t *s,
+                              int16_t amp[],
+                              const uint8_t g726_data[],
+                              int g726_bytes);
 
 /*! Encode a buffer of linear PCM data to G.726 ADPCM.
     \param s The G.726 context.
@@ -101,10 +101,10 @@ int g726_decode(g726_state_t *s,
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of bytes of G.726 data produced. */
-int g726_encode(g726_state_t *s,
-                uint8_t g726_data[],
-                const int16_t amp[],
-                int len);
+SPAN_DECLARE(int) g726_encode(g726_state_t *s,
+                              uint8_t g726_data[],
+                              const int16_t amp[],
+                              int len);
 
 #if defined(__cplusplus)
 }

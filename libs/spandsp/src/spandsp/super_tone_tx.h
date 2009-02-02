@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx.h,v 1.14 2008/11/30 10:17:31 steveu Exp $
+ * $Id: super_tone_tx.h,v 1.15 2009/01/31 08:48:11 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SUPER_TONE_TX_H_)
@@ -50,22 +50,22 @@ extern "C"
 {
 #endif
 
-super_tone_tx_step_t *super_tone_tx_make_step(super_tone_tx_step_t *s,
-                                              float f1,
-                                              float l1,
-                                              float f2,
-                                              float l2,
-                                              int length,
-                                              int cycles);
+SPAN_DECLARE(super_tone_tx_step_t) *super_tone_tx_make_step(super_tone_tx_step_t *s,
+                                                            float f1,
+                                                            float l1,
+                                                            float f2,
+                                                            float l2,
+                                                            int length,
+                                                            int cycles);
 
-void super_tone_tx_free(super_tone_tx_step_t *s);
+SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s);
 
 /*! Initialise a supervisory tone generator.
     \brief Initialise a supervisory tone generator.
     \param s The supervisory tone generator context.
     \param tree The supervisory tone tree to be generated.
     \return The supervisory tone generator context. */
-super_tone_tx_state_t *super_tone_tx_init(super_tone_tx_state_t *s, super_tone_tx_step_t *tree);
+SPAN_DECLARE(super_tone_tx_state_t) *super_tone_tx_init(super_tone_tx_state_t *s, super_tone_tx_step_t *tree);
 
 /*! Generate a block of audio samples for a supervisory tone pattern.
     \brief Generate a block of audio samples for a supervisory tone pattern.
@@ -73,7 +73,7 @@ super_tone_tx_state_t *super_tone_tx_init(super_tone_tx_state_t *s, super_tone_t
     \param amp The audio sample buffer.
     \param max_samples The maximum number of samples to be generated.
     \return The number of samples generated. */
-int super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max_samples);
+SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max_samples);
 
 #if defined(__cplusplus)
 }

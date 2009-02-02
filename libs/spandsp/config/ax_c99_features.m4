@@ -11,7 +11,7 @@
 # provided "as is" without express or implied warranty.
 
 AC_DEFUN([AX_C99_FLEXIBLE_ARRAY],
-[AC_CACHE_CHECK(C99 struct flexible array support, 
+[AC_CACHE_CHECK(if have C99 struct flexible array support, 
     ac_cv_c99_flexible_array,
 
 # Initialize to unknown

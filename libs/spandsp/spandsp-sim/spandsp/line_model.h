@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: line_model.h,v 1.4 2009/01/07 13:28:10 steveu Exp $
+ * $Id: line_model.h,v 1.5 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*! \file */
@@ -132,38 +132,38 @@ extern "C"
 {
 #endif
 
-void both_ways_line_model(both_ways_line_model_state_t *s, 
-                          int16_t output1[],
-                          const int16_t input1[],
-                          int16_t output2[],
-                          const int16_t input2[],
-                          int samples);
+SPAN_DECLARE(void) both_ways_line_model(both_ways_line_model_state_t *s, 
+                                        int16_t output1[],
+                                        const int16_t input1[],
+                                        int16_t output2[],
+                                        const int16_t input2[],
+                                        int samples);
 
-void both_ways_line_model_set_dc(both_ways_line_model_state_t *s, float dc1, float dc2);
+SPAN_DECLARE(void) both_ways_line_model_set_dc(both_ways_line_model_state_t *s, float dc1, float dc2);
 
-void both_ways_line_model_set_mains_pickup(both_ways_line_model_state_t *s, int f, float level1, float level2);
+SPAN_DECLARE(void) both_ways_line_model_set_mains_pickup(both_ways_line_model_state_t *s, int f, float level1, float level2);
     
-both_ways_line_model_state_t *both_ways_line_model_init(int model1,
-                                                        float noise1,
-                                                        int model2,
-                                                        float noise2,
-                                                        int codec,
-                                                        int rbs_pattern);
+SPAN_DECLARE(both_ways_line_model_state_t) *both_ways_line_model_init(int model1,
+                                                                      float noise1,
+                                                                      int model2,
+                                                                      float noise2,
+                                                                      int codec,
+                                                                      int rbs_pattern);
 
-int both_ways_line_model_release(both_ways_line_model_state_t *s);
+SPAN_DECLARE(int) both_ways_line_model_release(both_ways_line_model_state_t *s);
 
-void one_way_line_model(one_way_line_model_state_t *s, 
-                        int16_t output[],
-                        const int16_t input[],
-                        int samples);
+SPAN_DECLARE(void) one_way_line_model(one_way_line_model_state_t *s, 
+                                      int16_t output[],
+                                      const int16_t input[],
+                                      int samples);
 
-void one_way_line_model_set_dc(one_way_line_model_state_t *s, float dc);
+SPAN_DECLARE(void) one_way_line_model_set_dc(one_way_line_model_state_t *s, float dc);
 
-void one_way_line_model_set_mains_pickup(one_way_line_model_state_t *s, int f, float level);
+SPAN_DECLARE(void) one_way_line_model_set_mains_pickup(one_way_line_model_state_t *s, int f, float level);
 
-one_way_line_model_state_t *one_way_line_model_init(int model, float noise, int codec, int rbs_pattern);
+SPAN_DECLARE(one_way_line_model_state_t) *one_way_line_model_init(int model, float noise, int codec, int rbs_pattern);
 
-int one_way_line_model_release(one_way_line_model_state_t *s);
+SPAN_DECLARE(int) one_way_line_model_release(one_way_line_model_state_t *s);
 
 #ifdef __cplusplus
 }

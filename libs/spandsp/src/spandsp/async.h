@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.h,v 1.19 2008/11/30 10:17:31 steveu Exp $
+ * $Id: async.h,v 1.20 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -138,7 +138,7 @@ extern "C"
     \brief Convert a signal status to a short text description.
     \param status The modem signal status.
     \return A pointer to the description. */
-const char *signal_status_to_str(int status);
+SPAN_DECLARE(const char) *signal_status_to_str(int status);
 
 /*! Initialise an asynchronous data transmit context.
     \brief Initialise an asynchronous data transmit context.
@@ -150,19 +150,19 @@ const char *signal_status_to_str(int status);
     \param get_byte The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the initialised context, or NULL if there was a problem. */
-async_tx_state_t *async_tx_init(async_tx_state_t *s,
-                                int data_bits,
-                                int parity_bits,
-                                int stop_bits,
-                                int use_v14,
-                                get_byte_func_t get_byte,
-                                void *user_data);
+SPAN_DECLARE(async_tx_state_t) *async_tx_init(async_tx_state_t *s,
+                                              int data_bits,
+                                              int parity_bits,
+                                              int stop_bits,
+                                              int use_v14,
+                                              get_byte_func_t get_byte,
+                                              void *user_data);
 
 /*! Get the next bit of a transmitted serial bit stream.
     \brief Get the next bit of a transmitted serial bit stream.
     \param user_data An opaque point which must point to a transmitter context.
     \return the next bit, or PUTBIT_END_OF_DATA to indicate the data stream has ended. */
-int async_tx_get_bit(void *user_data);
+SPAN_DECLARE(int) async_tx_get_bit(void *user_data);
 
 /*! Initialise an asynchronous data receiver context.
     \brief Initialise an asynchronous data receiver context.
@@ -174,13 +174,13 @@ int async_tx_get_bit(void *user_data);
     \param put_byte The callback routine used to put the received data.
     \param user_data An opaque pointer.
     \return A pointer to the initialised context, or NULL if there was a problem. */
-async_rx_state_t *async_rx_init(async_rx_state_t *s,
-                                int data_bits,
-                                int parity_bits,
-                                int stop_bits,
-                                int use_v14,
-                                put_byte_func_t put_byte,
-                                void *user_data);
+SPAN_DECLARE(async_rx_state_t) *async_rx_init(async_rx_state_t *s,
+                                              int data_bits,
+                                              int parity_bits,
+                                              int stop_bits,
+                                              int use_v14,
+                                              put_byte_func_t put_byte,
+                                              void *user_data);
 
 /*! Accept a bit from a received serial bit stream
     \brief Accept a bit from a received serial bit stream
@@ -191,7 +191,7 @@ async_rx_state_t *async_rx_init(async_rx_state_t *s,
         - SIG_STATUS_TRAINING_SUCCEEDED
         - SIG_STATUS_TRAINING_FAILED
         - SIG_STATUS_END_OF_DATA */
-void async_rx_put_bit(void *user_data, int bit);
+SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit);
 
 #if defined(__cplusplus)
 }

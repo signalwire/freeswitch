@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.119 2009/01/28 03:41:27 steveu Exp $
+ * $Id: t4.c,v 1.120 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*
@@ -611,6 +611,7 @@ static int put_decoded_row(t4_state_t *s)
     int fudge;
     int row_starts_at;
     int x;
+    int j;
 
     if (s->run_length)
         add_run_to_row(s);
@@ -659,7 +660,7 @@ static int put_decoded_row(t4_state_t *s)
         for (x = 0, fudge = 0;  x < s->a_cursor;  x++, fudge ^= 0xFF)
         {
             i = s->cur_runs[x];
-            if (i >= s->tx_bits)
+            if ((int) i >= s->tx_bits)
             {
                 s->tx_bitstream = (s->tx_bitstream << s->tx_bits) | (msbmask[s->tx_bits] & fudge);
                 for (i += (8 - s->tx_bits);  i >= 8;  i -= 8)
@@ -681,8 +682,8 @@ static int put_decoded_row(t4_state_t *s)
            row for the next row. Use a copy of the previous good row as the actual current
            row. If the row only fell apart near the end, reusing it might be the best
            solution. */
-        for (i = 0, fudge = 0;  i < s->a_cursor  &&  fudge < s->image_width;  i++)
-            fudge += s->cur_runs[i];
+        for (j = 0, fudge = 0;  j < s->a_cursor  &&  fudge < s->image_width;  j++)
+            fudge += s->cur_runs[j];
         if (fudge < s->image_width)
         {
             /* Try to pad with white, and avoid black, to minimise mess on the image. */
@@ -1613,11 +1614,11 @@ static void encode_2d_row(t4_state_t *s)
             b_cursor |= 1;
         else
             b_cursor &= ~1;
-        if (a0 < s->ref_runs[b_cursor])
+        if (a0 < (int) s->ref_runs[b_cursor])
         {
             for (  ;  b_cursor >= 0;  b_cursor -= 2)
             {
-                if (a0 >= s->ref_runs[b_cursor])
+                if (a0 >= (int) s->ref_runs[b_cursor])
                     break;
             }
             b_cursor += 2;
@@ -1626,7 +1627,7 @@ static void encode_2d_row(t4_state_t *s)
         {
             for (  ;  b_cursor < s->ref_steps;  b_cursor += 2)
             {
-                if (a0 < s->ref_runs[b_cursor])
+                if (a0 < (int) s->ref_runs[b_cursor])
                     break;
             }
             if (b_cursor >= s->ref_steps)

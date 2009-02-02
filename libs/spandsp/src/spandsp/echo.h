@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo.h,v 1.16 2008/09/04 14:40:05 steveu Exp $
+ * $Id: echo.h,v 1.17 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -196,23 +196,23 @@ extern "C"
     \param len The length of the canceller, in samples.
     \return The new canceller context, or NULL if the canceller could not be created.
 */
-echo_can_state_t *echo_can_create(int len, int adaption_mode);
+SPAN_DECLARE(echo_can_state_t) *echo_can_create(int len, int adaption_mode);
 
 /*! Free a voice echo canceller context.
     \param ec The echo canceller context.
 */
-void echo_can_free(echo_can_state_t *ec);
+SPAN_DECLARE(void) echo_can_free(echo_can_state_t *ec);
 
 /*! Flush (reinitialise) a voice echo canceller context.
     \param ec The echo canceller context.
 */
-void echo_can_flush(echo_can_state_t *ec);
+SPAN_DECLARE(void) echo_can_flush(echo_can_state_t *ec);
 
 /*! Set the adaption mode of a voice echo canceller context.
     \param ec The echo canceller context.
     \param adaption_mode The mode.
 */
-void echo_can_adaption_mode(echo_can_state_t *ec, int adaption_mode);
+SPAN_DECLARE(void) echo_can_adaption_mode(echo_can_state_t *ec, int adaption_mode);
 
 /*! Process a sample through a voice echo canceller.
     \param ec The echo canceller context.
@@ -220,16 +220,16 @@ void echo_can_adaption_mode(echo_can_state_t *ec, int adaption_mode);
     \param rx The received audio sample.
     \return The clean (echo cancelled) received sample.
 */
-int16_t echo_can_update(echo_can_state_t *ec, int16_t tx, int16_t rx);
+SPAN_DECLARE(int16_t) echo_can_update(echo_can_state_t *ec, int16_t tx, int16_t rx);
 
 /*! Process to high pass filter the tx signal.
     \param ec The echo canceller context.
     \param tx The transmitted auio sample.
     \return The HP filtered transmit sample, send this to your D/A.
 */
-int16_t echo_can_hpf_tx(echo_can_state_t *ec, int16_t tx);
+SPAN_DECLARE(int16_t) echo_can_hpf_tx(echo_can_state_t *ec, int16_t tx);
 
-void echo_can_snapshot(echo_can_state_t *ec);
+SPAN_DECLARE(void) echo_can_snapshot(echo_can_state_t *ec);
 
 #if defined(__cplusplus)
 }

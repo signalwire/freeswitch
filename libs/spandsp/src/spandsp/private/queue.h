@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.h,v 1.1 2008/11/30 13:08:42 steveu Exp $
+ * $Id: queue.h,v 1.2 2009/01/31 08:48:11 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_QUEUE_H_)
@@ -42,7 +42,7 @@ struct queue_state_s
     volatile int iptr;
     /*! \brief The buffer output pointer. */
     volatile int optr;
-#if defined(FULLY_DEFINE_QUEUE_STATE_T)
+#if defined(SPANDSP_FULLY_DEFINE_QUEUE_STATE_T)
     /*! \brief The data buffer, sized at the time the structure is created. */
     uint8_t data[];
 #endif

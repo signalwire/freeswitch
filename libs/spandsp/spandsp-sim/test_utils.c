@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: test_utils.c,v 1.10 2008/11/30 10:17:30 steveu Exp $
+ * $Id: test_utils.c,v 1.11 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*! \file */
@@ -72,7 +72,7 @@ static int circle_init = FALSE;
 static complex_t icircle[MAX_FFT_LEN/2];
 static int icircle_init = FALSE;
 
-complexify_state_t *complexify_init(void)
+SPAN_DECLARE(complexify_state_t) *complexify_init(void)
 {
     complexify_state_t *s;
     int i;
@@ -87,13 +87,13 @@ complexify_state_t *complexify_init(void)
 }
 /*- End of function --------------------------------------------------------*/
 
-void complexify_release(complexify_state_t *s)
+SPAN_DECLARE(void) complexify_release(complexify_state_t *s)
 {
     free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
-complexf_t complexify(complexify_state_t *s, int16_t amp)
+SPAN_DECLARE(complexf_t) complexify(complexify_state_t *s, int16_t amp)
 {
 #define HILBERT_GAIN    1.569546344
     static const float hilbert_coeffs[] =
@@ -221,7 +221,7 @@ static void ifftx(complex_t data[], complex_t temp[], int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-void fft(complex_t data[], int len)
+SPAN_DECLARE(void) fft(complex_t data[], int len)
 {
     int i;
     double x;
@@ -241,7 +241,7 @@ void fft(complex_t data[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void ifft(complex_t data[], int len)
+SPAN_DECLARE(void) ifft(complex_t data[], int len)
 {
     int i;
     double x;
@@ -261,7 +261,7 @@ void ifft(complex_t data[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-codec_munge_state_t *codec_munge_init(int codec, int info)
+SPAN_DECLARE(codec_munge_state_t) *codec_munge_init(int codec, int info)
 {
     codec_munge_state_t *s;
     
@@ -300,13 +300,13 @@ codec_munge_state_t *codec_munge_init(int codec, int info)
 }
 /*- End of function --------------------------------------------------------*/
 
-void codec_munge_release(codec_munge_state_t *s)
+SPAN_DECLARE(void) codec_munge_release(codec_munge_state_t *s)
 {
     free(s);
 }
 /*- End of function --------------------------------------------------------*/
 
-void codec_munge(codec_munge_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(void) codec_munge(codec_munge_state_t *s, int16_t amp[], int len)
 {
     uint8_t law;
     uint8_t adpcmdata[160];
@@ -351,7 +351,7 @@ void codec_munge(codec_munge_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-AFfilehandle afOpenFile_telephony_read(const char *name, int channels)
+SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_read(const char *name, int channels)
 {
     float x;
     AFfilehandle handle;
@@ -381,7 +381,7 @@ AFfilehandle afOpenFile_telephony_read(const char *name, int channels)
 }
 /*- End of function --------------------------------------------------------*/
 
-AFfilehandle afOpenFile_telephony_write(const char *name, int channels)
+SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_write(const char *name, int channels)
 {
     AFfilesetup setup;
     AFfilehandle handle;

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: noise.h,v 1.14 2008/11/30 12:38:27 steveu Exp $
+ * $Id: noise.h,v 1.15 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -108,16 +108,18 @@ extern "C"
            generation to be adjusted.
     \return A pointer to the noise generator context.
 */
-noise_state_t *noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
+SPAN_DECLARE(noise_state_t) *noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
 
-noise_state_t *noise_init_dbov(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
+SPAN_DECLARE(noise_state_t) *noise_init_dbov(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
+
+SPAN_DECLARE(int) noise_free(noise_state_t *s);
 
 /*! Generate a sample of audio noise.
     \brief Generate a sample of audio noise.
     \param s The noise generator context.
     \return The generated sample.
 */
-int16_t noise(noise_state_t *s);
+SPAN_DECLARE(int16_t) noise(noise_state_t *s);
 
 #if defined(__cplusplus)
 }

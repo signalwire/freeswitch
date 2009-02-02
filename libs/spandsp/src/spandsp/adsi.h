@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.h,v 1.33 2008/10/13 14:19:18 steveu Exp $
+ * $Id: adsi.h,v 1.34 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -392,9 +392,9 @@ extern "C"
     \param user_data An opaque pointer for the callback routine.
     \return A pointer to the initialised context, or NULL if there was a problem.
 */
-adsi_rx_state_t *adsi_rx_init(adsi_rx_state_t *s, int standard, put_msg_func_t put_msg, void *user_data);
+SPAN_DECLARE(adsi_rx_state_t) *adsi_rx_init(adsi_rx_state_t *s, int standard, put_msg_func_t put_msg, void *user_data);
 
-int adsi_rx_free(adsi_rx_state_t *s);
+SPAN_DECLARE(int) adsi_rx_free(adsi_rx_state_t *s);
 
 /*! \brief Receive a chunk of ADSI audio.
     \param s The ADSI receive context.
@@ -402,16 +402,16 @@ int adsi_rx_free(adsi_rx_state_t *s);
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed.
 */
-int adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len);
+SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len);
 
 /*! \brief Initialise an ADSI transmit context.
     \param s The ADSI transmit context.
     \param standard The code for the ADSI standard to be used.
     \return A pointer to the initialised context, or NULL if there was a problem.
 */
-adsi_tx_state_t *adsi_tx_init(adsi_tx_state_t *s, int standard);
+SPAN_DECLARE(adsi_tx_state_t) *adsi_tx_init(adsi_tx_state_t *s, int standard);
 
-int adsi_tx_free(adsi_tx_state_t *s);
+SPAN_DECLARE(int) adsi_tx_free(adsi_tx_state_t *s);
 
 /*! \brief Adjust the preamble associated with an ADSI transmit context.
     \param s The ADSI transmit context.
@@ -420,11 +420,11 @@ int adsi_tx_free(adsi_tx_state_t *s);
     \param postamble_ones_len The number of bits of continuous one after a message.
     \param stop_bits The number of stop bits per character.
 */
-void adsi_tx_set_preamble(adsi_tx_state_t *s,
-                          int preamble_len,
-                          int preamble_ones_len,
-                          int postamble_ones_len,
-                          int stop_bits);
+SPAN_DECLARE(void) adsi_tx_set_preamble(adsi_tx_state_t *s,
+                                        int preamble_len,
+                                        int preamble_ones_len,
+                                        int postamble_ones_len,
+                                        int stop_bits);
 
 /*! \brief Generate a block of ADSI audio samples.
     \param s The ADSI transmit context.
@@ -432,12 +432,12 @@ void adsi_tx_set_preamble(adsi_tx_state_t *s,
     \param max_len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-int adsi_tx(adsi_tx_state_t *s, int16_t *amp, int max_len);
+SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t *amp, int max_len);
 
 /*! \brief Request generation of an ADSI alert tone.
     \param s The ADSI transmit context.
 */
-void adsi_tx_send_alert_tone(adsi_tx_state_t *s);
+SPAN_DECLARE(void) adsi_tx_send_alert_tone(adsi_tx_state_t *s);
 
 /*! \brief Put a message into the input buffer of an ADSI transmit context.
     \param s The ADSI transmit context.
@@ -447,7 +447,7 @@ void adsi_tx_send_alert_tone(adsi_tx_state_t *s);
             in the transmitter, this function will return zero, as it will
             not successfully add the message to the buffer.
 */
-int adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, int len);
+SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, int len);
 
 /*! \brief Get a field from an ADSI message.
     \param s The ADSI receive context.
@@ -458,7 +458,7 @@ int adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, int len);
     \param field_body Pointer to the body of the field.
     \param field_len The length of the field, or -1 for no more fields, or -2 for message structure corrupt.
 */
-int adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int msg_len, int pos, uint8_t *field_type, uint8_t const **field_body, int *field_len);
+SPAN_DECLARE(int) adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int msg_len, int pos, uint8_t *field_type, uint8_t const **field_body, int *field_len);
 
 /*! \brief Insert the header or a field into an ADSI message.
     \param s The ADSI transmit context.
@@ -468,13 +468,13 @@ int adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int msg_len, int pos
     \param field_body Pointer to the body of the new field.
     \param field_len The length of the new field.
 */
-int adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint8_t field_type, uint8_t const *field_body, int field_len);
+SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint8_t field_type, uint8_t const *field_body, int field_len);
 
 /*! \brief Return a short name for an ADSI standard
     \param standard The code for the standard.
     \return A pointer to the name.
 */
-const char *adsi_standard_to_str(int standard);
+SPAN_DECLARE(const char) *adsi_standard_to_str(int standard);
 
 #if defined(__cplusplus)
 }

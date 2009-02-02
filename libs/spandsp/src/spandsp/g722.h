@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h,v 1.22 2008/10/13 13:14:00 steveu Exp $
+ * $Id: g722.h,v 1.23 2009/01/31 08:48:11 steveu Exp $
  */
 
 
@@ -71,9 +71,9 @@ extern "C"
            The valid rates are 64000, 56000 and 48000.
     \param options
     \return A pointer to the G.722 encode context, or NULL for error. */
-g722_encode_state_t *g722_encode_init(g722_encode_state_t *s, int rate, int options);
+SPAN_DECLARE(g722_encode_state_t) *g722_encode_init(g722_encode_state_t *s, int rate, int options);
 
-int g722_encode_release(g722_encode_state_t *s);
+SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s);
 
 /*! Encode a buffer of linear PCM data to G.722
     \param s The G.722 context.
@@ -81,7 +81,7 @@ int g722_encode_release(g722_encode_state_t *s);
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of bytes of G.722 data produced. */
-int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[], int len);
+SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[], int len);
 
 /*! Initialise an G.722 decode context.
     \param s The G.722 decode context.
@@ -89,9 +89,9 @@ int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[]
            The valid rates are 64000, 56000 and 48000.
     \param options
     \return A pointer to the G.722 decode context, or NULL for error. */
-g722_decode_state_t *g722_decode_init(g722_decode_state_t *s, int rate, int options);
+SPAN_DECLARE(g722_decode_state_t) *g722_decode_init(g722_decode_state_t *s, int rate, int options);
 
-int g722_decode_release(g722_decode_state_t *s);
+SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s);
 
 /*! Decode a buffer of G.722 data to linear PCM.
     \param s The G.722 context.
@@ -99,7 +99,7 @@ int g722_decode_release(g722_decode_state_t *s);
     \param g722_data
     \param len
     \return The number of samples returned. */
-int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[], int len);
+SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[], int len);
 
 #if defined(__cplusplus)
 }

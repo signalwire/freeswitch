@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.25 2008/10/13 14:19:18 steveu Exp $
+ * $Id: v8.h,v 1.26 2009/01/31 08:48:11 steveu Exp $
  */
  
 /*! \file */
@@ -128,25 +128,25 @@ extern "C"
     \param result_handler The callback routine used to handle the results of negotiation.
     \param user_data An opaque pointer passed to the result_handler routine.
     \return A pointer to the V.8 context, or NULL if there was a problem. */
-v8_state_t *v8_init(v8_state_t *s,
-                    int caller,
-                    int available_modulations,
-                    v8_result_handler_t *result_handler,
-                    void *user_data);
+SPAN_DECLARE(v8_state_t) *v8_init(v8_state_t *s,
+                                  int caller,
+                                  int available_modulations,
+                                  v8_result_handler_t *result_handler,
+                                  void *user_data);
 
 /*! Release a V.8 context.
     \brief Release a V.8 context.
     \param s The V.8 context.
     \return 0 for OK. */
-int v8_release(v8_state_t *s);
+SPAN_DECLARE(int) v8_release(v8_state_t *s);
 
 /*! Free a V.8 context.
     \brief Release a V.8 context.
     \param s The V.8 context.
     \return 0 for OK. */
-int v8_free(v8_state_t *s);
+SPAN_DECLARE(int) v8_free(v8_state_t *s);
 
-logging_state_t *v8_get_logging_state(v8_state_t *s);
+SPAN_DECLARE(logging_state_t) *v8_get_logging_state(v8_state_t *s);
 
 /*! Generate a block of V.8 audio samples.
     \brief Generate a block of V.8 audio samples.
@@ -155,7 +155,7 @@ logging_state_t *v8_get_logging_state(v8_state_t *s);
     \param max_len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-int v8_tx(v8_state_t *s, int16_t *amp, int max_len);
+SPAN_DECLARE(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len);
 
 /*! Process a block of received V.8 audio samples.
     \brief Process a block of received V.8 audio samples.
@@ -163,19 +163,19 @@ int v8_tx(v8_state_t *s, int16_t *amp, int max_len);
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
 */
-int v8_rx(v8_state_t *s, const int16_t *amp, int len);
+SPAN_DECLARE(int) v8_rx(v8_state_t *s, const int16_t *amp, int len);
 
 /*! Log the list of supported modulations.
     \brief Log the list of supported modulations.
     \param s The V.8 context.
     \param modulation_schemes The list of supported modulations. */
-void v8_log_supported_modulations(v8_state_t *s, int modulation_schemes);
+SPAN_DECLARE(void) v8_log_supported_modulations(v8_state_t *s, int modulation_schemes);
 
-const char *v8_call_function_to_str(int call_function);
-const char *v8_modulation_to_str(int modulation_scheme);
-const char *v8_protocol_to_str(int protocol);
-const char *v8_pstn_access_to_str(int pstn_access);
-const char *v8_pcm_modem_availability_to_str(int pcm_modem_availability);
+SPAN_DECLARE(const char) *v8_call_function_to_str(int call_function);
+SPAN_DECLARE(const char) *v8_modulation_to_str(int modulation_scheme);
+SPAN_DECLARE(const char) *v8_protocol_to_str(int protocol);
+SPAN_DECLARE(const char) *v8_pstn_access_to_str(int pstn_access);
+SPAN_DECLARE(const char) *v8_pcm_modem_availability_to_str(int pcm_modem_availability);
 
 #if defined(__cplusplus)
 }

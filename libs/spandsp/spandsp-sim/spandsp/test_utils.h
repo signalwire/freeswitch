@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: test_utils.h,v 1.6 2009/01/07 13:28:10 steveu Exp $
+ * $Id: test_utils.h,v 1.7 2009/01/31 08:48:10 steveu Exp $
  */
 
 /*! \file */
@@ -51,25 +51,25 @@ typedef struct complexify_state_s complexify_state_t;
 extern "C" {
 #endif
 
-complexify_state_t *complexify_init(void);
+SPAN_DECLARE(complexify_state_t) *complexify_init(void);
 
-void complexify_release(complexify_state_t *s);
+SPAN_DECLARE(void) complexify_release(complexify_state_t *s);
 
-complexf_t complexify(complexify_state_t *s, int16_t amp);
+SPAN_DECLARE(complexf_t) complexify(complexify_state_t *s, int16_t amp);
 
-void fft(complex_t data[], int len);
+SPAN_DECLARE(void) fft(complex_t data[], int len);
 
-void ifft(complex_t data[], int len);
+SPAN_DECLARE(void) ifft(complex_t data[], int len);
 
-codec_munge_state_t *codec_munge_init(int codec, int info);
+SPAN_DECLARE(codec_munge_state_t) *codec_munge_init(int codec, int info);
 
-void codec_munge_release(codec_munge_state_t *s);
+SPAN_DECLARE(void) codec_munge_release(codec_munge_state_t *s);
 
-void codec_munge(codec_munge_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(void) codec_munge(codec_munge_state_t *s, int16_t amp[], int len);
 
-AFfilehandle afOpenFile_telephony_read(const char *name, int channels);
+SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_read(const char *name, int channels);
 
-AFfilehandle afOpenFile_telephony_write(const char *name, int channels);
+SPAN_DECLARE(AFfilehandle) afOpenFile_telephony_write(const char *name, int channels);
 
 #ifdef __cplusplus
 }

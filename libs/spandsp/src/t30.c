@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.280 2009/01/29 18:30:14 steveu Exp $
+ * $Id: t30.c,v 1.282 2009/01/31 09:47:59 steveu Exp $
  */
 
 /*! \file */
@@ -289,7 +289,7 @@ detecting a valid signal, or when T6 times out. */
 
 /* (Annex C - ISDN) Time-out T7 is used to detect loss of command/response synchronization. T7 is 6+-1s.
 The timeout begins when initiating a command search (e.g., the first entrance into the "command received"
-subroutine – see flow diagram in C.5) and is reset upon detecting a valid signal or when T7 times out. */
+subroutine - see flow diagram in C.5) and is reset upon detecting a valid signal or when T7 times out. */
 #define DEFAULT_TIMER_T7                7000
 
 /* (Annex C - ISDN) Time-out T8 defines the amount of time waiting for clearance of the busy condition
@@ -5050,7 +5050,7 @@ void t30_non_ecm_put_byte(void *user_data, int byte)
         break;
     case T30_STATE_F_DOC_NON_ECM:
         /* Document transfer */
-        if (t4_rx_put_byte(&s->t4, byte))
+        if (t4_rx_put_byte(&s->t4, (uint8_t) byte))
         {
             /* That is the end of the document */
             set_state(s, T30_STATE_F_POST_DOC_NON_ECM);

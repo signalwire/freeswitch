@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core.h,v 1.34 2009/01/29 01:41:06 steveu Exp $
+ * $Id: t38_core.h,v 1.35 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -197,47 +197,47 @@ extern "C"
 /*! \brief Convert the code for an indicator to a short text name.
     \param indicator The type of indicator.
     \return A pointer to a short text name for the indicator. */
-const char *t38_indicator_to_str(int indicator);
+SPAN_DECLARE(const char) *t38_indicator_to_str(int indicator);
 
 /*! \brief Convert the code for a type of data to a short text name.
     \param data_type The data type.
     \return A pointer to a short text name for the data type. */
-const char *t38_data_type_to_str(int data_type);
+SPAN_DECLARE(const char) *t38_data_type_to_str(int data_type);
 
 /*! \brief Convert the code for a type of data field to a short text name.
     \param field_type The field type.
     \return A pointer to a short text name for the field type. */
-const char *t38_field_type_to_str(int field_type);
+SPAN_DECLARE(const char) *t38_field_type_to_str(int field_type);
 
 /*! \brief Convert the code for a CM profile code to text description.
     \param profile The profile code from a CM message.
     \return A pointer to a short text description of the profile. */
-const char *t38_cm_profile_to_str(int profile);
+SPAN_DECLARE(const char) *t38_cm_profile_to_str(int profile);
 
 /*! \brief Convert a JM message code to text description.
     \param data The data field of the message.
     \param len The length of the data field.
     \return A pointer to a short text description of the profile. */
-const char *t38_jm_to_str(const uint8_t *data, int len);
+SPAN_DECLARE(const char) *t38_jm_to_str(const uint8_t *data, int len);
 
 /*! \brief Convert a V34rate message to an actual bit rate.
     \param data The data field of the message.
     \param len The length of the data field.
     \return The bit rate, or -1 for a bad message. */
-int t38_v34rate_to_bps(const uint8_t *data, int len);
+SPAN_DECLARE(int) t38_v34rate_to_bps(const uint8_t *data, int len);
 
 /*! \brief Send an indicator packet
     \param s The T.38 context.
     \param indicator The indicator to send.
     \param count The number of copies of the packet to send.
     \return The delay to allow after this indicator is sent. */
-int t38_core_send_indicator(t38_core_state_t *s, int indicator, int count);
+SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator, int count);
 
 /*! \brief Find the delay to allow for HDLC flags after sending an indicator
     \param s The T.38 context.
     \param indicator The indicator to send.
     \return The delay to allow for initial HDLC flags after this indicator is sent. */
-int t38_core_send_flags_delay(t38_core_state_t *s, int indicator);
+SPAN_DECLARE(int) t38_core_send_flags_delay(t38_core_state_t *s, int indicator);
 
 /*! \brief Send a data packet
     \param s The T.38 context.
@@ -247,7 +247,7 @@ int t38_core_send_flags_delay(t38_core_state_t *s, int indicator);
     \param field_len The length of the message data, in bytes.
     \param count The number of copies of the packet to send.
     \return ??? */
-int t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const uint8_t field[], int field_len, int count);
+SPAN_DECLARE(int) t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const uint8_t field[], int field_len, int count);
 
 /*! \brief Send a data packet
     \param s The T.38 context.
@@ -256,7 +256,7 @@ int t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const
     \param fields The number of fields in the list.
     \param count The number of copies of the packet to send.
     \return ??? */
-int t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38_data_field_t field[], int fields, int count);
+SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38_data_field_t field[], int fields, int count);
 
 /*! \brief Process a received T.38 IFP packet.
     \param s The T.38 context.
@@ -264,77 +264,77 @@ int t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38
     \param len The length of the packet contents.
     \param seq_no The packet sequence number.
     \return 0 for OK, else -1. */
-int t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no);
+SPAN_DECLARE(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no);
 
 /*! Set the method to be used for data rate management, as per the T.38 spec.
     \param s The T.38 context.
     \param method 1 for pass TCF across the T.38 link, 2 for handle TCF locally.
 */
-void t38_set_data_rate_management_method(t38_core_state_t *s, int method);
+SPAN_DECLARE(void) t38_set_data_rate_management_method(t38_core_state_t *s, int method);
 
 /*! Set the data transport protocol.
     \param s The T.38 context.
     \param data_transport_protocol UDPTL, RTP or TPKT.
 */
-void t38_set_data_transport_protocol(t38_core_state_t *s, int data_transport_protocol);
+SPAN_DECLARE(void) t38_set_data_transport_protocol(t38_core_state_t *s, int data_transport_protocol);
 
 /*! Set the non-ECM fill bit removal mode.
     \param s The T.38 context.
     \param fill_bit_removal TRUE to remove fill bits across the T.38 link, else FALSE.
 */
-void t38_set_fill_bit_removal(t38_core_state_t *s, int fill_bit_removal);
+SPAN_DECLARE(void) t38_set_fill_bit_removal(t38_core_state_t *s, int fill_bit_removal);
 
 /*! Set the MMR transcoding mode.
     \param s The T.38 context.
     \param mmr_transcoding TRUE to transcode to MMR across the T.38 link, else FALSE.
 */
-void t38_set_mmr_transcoding(t38_core_state_t *s, int mmr_transcoding);
+SPAN_DECLARE(void) t38_set_mmr_transcoding(t38_core_state_t *s, int mmr_transcoding);
 
 /*! Set the JBIG transcoding mode.
     \param s The T.38 context.
     \param jbig_transcoding TRUE to transcode to JBIG across the T.38 link, else FALSE.
 */
-void t38_set_jbig_transcoding(t38_core_state_t *s, int jbig_transcoding);
+SPAN_DECLARE(void) t38_set_jbig_transcoding(t38_core_state_t *s, int jbig_transcoding);
 
-void t38_set_max_buffer_size(t38_core_state_t *s, int max_buffer_size);
+SPAN_DECLARE(void) t38_set_max_buffer_size(t38_core_state_t *s, int max_buffer_size);
 
-void t38_set_max_datagram_size(t38_core_state_t *s, int max_datagram_size);
+SPAN_DECLARE(void) t38_set_max_datagram_size(t38_core_state_t *s, int max_datagram_size);
 
-int t38_get_fastest_image_data_rate(t38_core_state_t *s);
+SPAN_DECLARE(int) t38_get_fastest_image_data_rate(t38_core_state_t *s);
 
 /*! Set the T.38 version to be emulated.
     \param s The T.38 context.
     \param t38_version Version number, as in the T.38 spec.
 */
-void t38_set_t38_version(t38_core_state_t *s, int t38_version);
+SPAN_DECLARE(void) t38_set_t38_version(t38_core_state_t *s, int t38_version);
 
 /*! Set the sequence number handling option.
     \param s The T.38 context.
     \param check TRUE to check sequence numbers, and handle gaps reasonably. FALSE
            for no sequence number processing (e.g. for TPKT over TCP transport).
 */
-void t38_set_sequence_number_handling(t38_core_state_t *s, int check);
+SPAN_DECLARE(void) t38_set_sequence_number_handling(t38_core_state_t *s, int check);
 
 /*! Set the TEP handling option.
     \param s The T.38 context.
     \param allow_for_tep TRUE to allow for TEP playout, else FALSE.
 */
-void t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep);
+SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep);
 
 /*! Get a pointer to the logging context associated with a T.38 context.
     \brief Get a pointer to the logging context associated with a T.38 context.
     \param s The T.38 context.
     \return A pointer to the logging context, or NULL.
 */
-logging_state_t *t38_core_get_logging_state(t38_core_state_t *s);
+SPAN_DECLARE(logging_state_t) *t38_core_get_logging_state(t38_core_state_t *s);
 
-t38_core_state_t *t38_core_init(t38_core_state_t *s,
-                                t38_rx_indicator_handler_t *rx_indicator_handler,
-                                t38_rx_data_handler_t *rx_data_handler,
-                                t38_rx_missing_handler_t *rx_missing_handler,
-                                void *rx_user_data,
-                                t38_tx_packet_handler_t *tx_packet_handler,
-                                void *tx_packet_user_data);
+SPAN_DECLARE(t38_core_state_t) *t38_core_init(t38_core_state_t *s,
+                                              t38_rx_indicator_handler_t *rx_indicator_handler,
+                                              t38_rx_data_handler_t *rx_data_handler,
+                                              t38_rx_missing_handler_t *rx_missing_handler,
+                                              void *rx_user_data,
+                                              t38_tx_packet_handler_t *tx_packet_handler,
+                                              void *tx_packet_user_data);
 
 #if defined(__cplusplus)
 }

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_filters.c,v 1.14 2009/01/05 13:48:31 steveu Exp $
+ * $Id: complex_filters.c,v 1.15 2009/01/31 08:48:10 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#include "spandsp/telephony.h"
 #include "spandsp/complex.h"
 #include "spandsp/complex_filters.h"
 

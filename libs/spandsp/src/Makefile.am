@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.118 2009/01/30 05:35:18 steveu Exp $
+## $Id: Makefile.am,v 1.121 2009/01/31 12:24:11 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -33,8 +33,8 @@ EXTRA_DIST = floating_fudge.h \
              msvc/inttypes.h \
              msvc/tgmath.h \
              msvc/unistd.h \
+             msvc/spandsp.h \
              msvc/sys/time.h \
-             msvc/spandsp.def \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
              msvc/vc8proj.head \
@@ -433,6 +433,15 @@ $(VCPROJ): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
 		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT); \
 	done; \
 	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT) )
+
+$(srcdir)/msvc/spandsp.h: spandsp.h.in
+	echo "creating $(srcdir)/msvc/spandsp.h"
+	@cp $(srcdir)/spandsp.h.in $(srcdir)/msvc/spandsp.h
+	@sed -i -e "s/\@SPANDSP_USE_FIXED_POINT\@/#undef SPANDSP_USE_FIXED_POINT/" $(srcdir)/msvc/spandsp.h
+	@sed -i -e "s/\@SPANDSP_MISALIGNED_ACCESS_FAILS\@/#undef SPANDSP_MISALIGNED_ACCESS_FAILS/" $(srcdir)/msvc/spandsp.h
+	@sed -i -e "s/\@SPANDSP_USE_EXPORT_CAPABILITY\@/#define SPANDSP_USE_EXPORT_CAPABILITY 1/" $(srcdir)/msvc/spandsp.h
+	@sed -i -e "s/\@INSERT_INTTYPES_HEADER\@/#include <inttypes.h>/" $(srcdir)/msvc/spandsp.h
+	@sed -i -e "s/\@INSERT_MATH_HEADER\@/#include <math.h>/" $(srcdir)/msvc/spandsp.h
 
 spandsp/version.h:
 	NOWDATE=`date --utc +"%Y%m%d"` ; \

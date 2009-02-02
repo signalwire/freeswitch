@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bit_operations.h,v 1.23 2008/10/13 23:41:40 steveu Exp $
+ * $Id: bit_operations.h,v 1.24 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -167,45 +167,45 @@ static __inline__ uint8_t bit_reverse8(uint8_t x)
 /*! \brief Bit reverse a 16 bit word.
     \param data The word to be reversed.
     \return The bit reversed version of data. */
-uint16_t bit_reverse16(uint16_t data);
+SPAN_DECLARE(uint16_t) bit_reverse16(uint16_t data);
 
 /*! \brief Bit reverse a 32 bit word.
     \param data The word to be reversed.
     \return The bit reversed version of data. */
-uint32_t bit_reverse32(uint32_t data);
+SPAN_DECLARE(uint32_t) bit_reverse32(uint32_t data);
 
 /*! \brief Bit reverse each of the four bytes in a 32 bit word.
     \param data The word to be reversed.
     \return The bit reversed version of data. */
-uint32_t bit_reverse_4bytes(uint32_t data);
+SPAN_DECLARE(uint32_t) bit_reverse_4bytes(uint32_t data);
 
 #if defined(__x86_64__)
 /*! \brief Bit reverse each of the eight bytes in a 64 bit word.
     \param data The word to be reversed.
     \return The bit reversed version of data. */
-uint64_t bit_reverse_8bytes(uint64_t data);
+SPAN_DECLARE(uint64_t) bit_reverse_8bytes(uint64_t data);
 #endif
 
 /*! \brief Bit reverse each bytes in a buffer.
     \param to The buffer to place the reversed data in.
     \param from The buffer containing the data to be reversed.
     \param len The length of the data in the buffer. */
-void bit_reverse(uint8_t to[], const uint8_t from[], int len);
+SPAN_DECLARE(void) bit_reverse(uint8_t to[], const uint8_t from[], int len);
 
 /*! \brief Find the number of set bits in a 32 bit word.
     \param x The word to be searched.
     \return The number of set bits. */
-int one_bits32(uint32_t x);
+SPAN_DECLARE(int) one_bits32(uint32_t x);
 
 /*! \brief Create a mask as wide as the number in a 32 bit word.
     \param x The word to be searched.
     \return The mask. */
-uint32_t make_mask32(uint32_t x);
+SPAN_DECLARE(uint32_t) make_mask32(uint32_t x);
 
 /*! \brief Create a mask as wide as the number in a 16 bit word.
     \param x The word to be searched.
     \return The mask. */
-uint16_t make_mask16(uint16_t x);
+SPAN_DECLARE(uint16_t) make_mask16(uint16_t x);
 
 /*! \brief Find the least significant one in a word, and return a word
            with just that bit set.

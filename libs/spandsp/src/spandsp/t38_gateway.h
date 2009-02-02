@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.h,v 1.59 2008/10/13 13:14:01 steveu Exp $
+ * $Id: t38_gateway.h,v 1.60 2009/01/31 08:48:11 steveu Exp $
  */
 
 /*! \file */
@@ -82,15 +82,15 @@ extern "C"
     \param tx_packet_handler A callback routine to encapsulate and transmit T.38 packets.
     \param tx_packet_user_data An opaque pointer passed to the tx_packet_handler routine.
     \return A pointer to the termination mode T.38 context, or NULL if there was a problem. */
-t38_gateway_state_t *t38_gateway_init(t38_gateway_state_t *s,
-                                      t38_tx_packet_handler_t *tx_packet_handler,
-                                      void *tx_packet_user_data);
+SPAN_DECLARE(t38_gateway_state_t) *t38_gateway_init(t38_gateway_state_t *s,
+                                                    t38_tx_packet_handler_t *tx_packet_handler,
+                                                    void *tx_packet_user_data);
 
 /*! Free a gateway mode T.38 context.
     \brief Free a T.38 context.
     \param s The T.38 context.
     \return 0 for OK, else -1. */
-int t38_gateway_free(t38_gateway_state_t *s);
+SPAN_DECLARE(int) t38_gateway_free(t38_gateway_state_t *s);
 
 /*! Process a block of received FAX audio samples.
     \brief Process a block of received FAX audio samples.
@@ -98,7 +98,7 @@ int t38_gateway_free(t38_gateway_state_t *s);
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
-int t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len);
+SPAN_DECLARE(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len);
 
 /*! Generate a block of FAX audio samples.
     \brief Generate a block of FAX audio samples.
@@ -107,14 +107,14 @@ int t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len);
     \param max_len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-int t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len);
+SPAN_DECLARE(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len);
 
 /*! Control whether error correcting mode (ECM) is allowed.
     \brief Control whether error correcting mode (ECM) is allowed.
     \param s The T.38 context.
     \param ecm_allowed TRUE is ECM is to be allowed.
 */
-void t38_gateway_set_ecm_capability(t38_gateway_state_t *s, int ecm_allowed);
+SPAN_DECLARE(void) t38_gateway_set_ecm_capability(t38_gateway_state_t *s, int ecm_allowed);
 
 /*! Select whether silent audio will be sent when transmit is idle.
     \brief Select whether silent audio will be sent when transmit is idle.
@@ -123,14 +123,14 @@ void t38_gateway_set_ecm_capability(t38_gateway_state_t *s, int ecm_allowed);
            idle. FALSE to transmit zero length audio when the FAX transmitter is idle. The default
            behaviour is FALSE.
 */
-void t38_gateway_set_transmit_on_idle(t38_gateway_state_t *s, int transmit_on_idle);
+SPAN_DECLARE(void) t38_gateway_set_transmit_on_idle(t38_gateway_state_t *s, int transmit_on_idle);
 
 /*! Specify which modem types are supported by a T.30 context.
     \brief Specify supported modems.
     \param s The T.38 context.
     \param supported_modems Bit field list of the supported modems.
 */
-void t38_gateway_set_supported_modems(t38_gateway_state_t *s, int supported_modems);
+SPAN_DECLARE(void) t38_gateway_set_supported_modems(t38_gateway_state_t *s, int supported_modems);
 
 /*! Select whether NSC, NSF, and NSS should be suppressed. It selected, the contents of
     these messages are forced to zero for all octets beyond the message type. This makes
@@ -144,31 +144,31 @@ void t38_gateway_set_supported_modems(t38_gateway_state_t *s, int supported_mode
            frames passing through the gateway from the modem to T.38.
     \param from_modem_len The length of the overwrite string.
 */
-void t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
-                                     const uint8_t *from_t38,
-                                     int from_t38_len,
-                                     const uint8_t *from_modem,
-                                     int from_modem_len);
+SPAN_DECLARE(void) t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
+                                                   const uint8_t *from_t38,
+                                                   int from_t38_len,
+                                                   const uint8_t *from_modem,
+                                                   int from_modem_len);
 
 /*! Select whether talker echo protection tone will be sent for the image modems.
     \brief Select whether TEP will be sent for the image modems.
     \param s The T.38 context.
     \param use_tep TRUE if TEP should be sent.
 */
-void t38_gateway_set_tep_mode(t38_gateway_state_t *s, int use_tep);
+SPAN_DECLARE(void) t38_gateway_set_tep_mode(t38_gateway_state_t *s, int use_tep);
 
 /*! Select whether non-ECM fill bits are to be removed during transmission.
     \brief Select whether non-ECM fill bits are to be removed during transmission.
     \param s The T.38 context.
     \param remove TRUE if fill bits are to be removed.
 */
-void t38_gateway_set_fill_bit_removal(t38_gateway_state_t *s, int remove);
+SPAN_DECLARE(void) t38_gateway_set_fill_bit_removal(t38_gateway_state_t *s, int remove);
 
 /*! Get the current transfer statistics for the current T.38 session.
     \brief Get the current transfer statistics.
     \param s The T.38 context.
     \param t A pointer to a buffer for the statistics. */
-void t38_gateway_get_transfer_statistics(t38_gateway_state_t *s, t38_stats_t *t);
+SPAN_DECLARE(void) t38_gateway_get_transfer_statistics(t38_gateway_state_t *s, t38_stats_t *t);
 
 /*! Get a pointer to the T.38 core IFP packet engine associated with a
     gateway mode T.38 context.
@@ -177,14 +177,14 @@ void t38_gateway_get_transfer_statistics(t38_gateway_state_t *s, t38_stats_t *t)
     \param s The T.38 context.
     \return A pointer to the T.38 core context, or NULL.
 */
-t38_core_state_t *t38_gateway_get_t38_core_state(t38_gateway_state_t *s);
+SPAN_DECLARE(t38_core_state_t) *t38_gateway_get_t38_core_state(t38_gateway_state_t *s);
 
 /*! Get a pointer to the logging context associated with a T.38 context.
     \brief Get a pointer to the logging context associated with a T.38 context.
     \param s The T.38 context.
     \return A pointer to the logging context, or NULL.
 */
-logging_state_t *t38_gateway_get_logging_state(t38_gateway_state_t *s);
+SPAN_DECLARE(logging_state_t) *t38_gateway_get_logging_state(t38_gateway_state_t *s);
 
 /*! Set a callback function for T.30 frame exchange monitoring. This is called from the heart
     of the signal processing, so don't take too long in the handler routine.
@@ -192,9 +192,9 @@ logging_state_t *t38_gateway_get_logging_state(t38_gateway_state_t *s);
     \param s The T.30 context.
     \param handler The callback function.
     \param user_data An opaque pointer passed to the callback function. */
-void t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *s,
-                                             t38_gateway_real_time_frame_handler_t *handler,
-                                             void *user_data);
+SPAN_DECLARE(void) t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *s,
+                                                           t38_gateway_real_time_frame_handler_t *handler,
+                                                           void *user_data);
 
 #if defined(__cplusplus)
 }
