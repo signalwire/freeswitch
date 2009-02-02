@@ -234,11 +234,11 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 
 	assert(divisor);
 
-	rnd2 = (int16_t) (intptr_t) &data + switch_epoch_time_now(NULL);
+	rnd2 = (int16_t) (intptr_t) (&data + switch_epoch_time_now(NULL));
 
 	for (i = 0; i < samples; i++, sum_rnd = 0) {
 		for (x = 0; x < 10; x++) {
-			rnd += ((x + i) * rnd2);
+			rnd += (int16_t)((x + i) * rnd2);
 			sum_rnd += rnd;
 		}
 		switch_normalize_to_16bit(sum_rnd);
