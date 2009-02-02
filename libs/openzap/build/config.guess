@@ -4,7 +4,7 @@
 #   2000, 2001, 2002, 2003, 2004, 2005, 2006 Free Software Foundation,
 #   Inc.
 
-timestamp='2003-07-02'
+timestamp='2007-07-22'
 
 # This file is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by
@@ -767,7 +767,6 @@ EOF
 	exit ;;
     *:BSD/OS:*:*)
 	echo ${UNAME_MACHINE}-unknown-bsdi${UNAME_RELEASE}
-<<<<<<< .mine
 	exit ;;
     *:FreeBSD:*:*)
 	case ${UNAME_MACHINE} in
@@ -779,26 +778,6 @@ EOF
 		echo ${UNAME_MACHINE}-unknown-freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'` ;;
 	esac
 	exit ;;
-=======
-	exit 0 ;;
-    *:FreeBSD:*:*|*:GNU/FreeBSD:*:*)
-	# Determine whether the default compiler uses glibc.
-	eval $set_cc_for_build
-	sed 's/^	//' << EOF >$dummy.c
-	#include <features.h>
-	#if __GLIBC__ >= 2
-	LIBC=gnu
-	#else
-	LIBC=
-	#endif
-EOF
-	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep ^LIBC=`
-	# GNU/FreeBSD systems have a "k" prefix to indicate we are using
-	# FreeBSD's kernel, but not the complete OS.
-	case ${LIBC} in gnu) kernel_only='k' ;; esac
-	echo ${UNAME_MACHINE}-unknown-${kernel_only}freebsd`echo ${UNAME_RELEASE}|sed -e 's/[-(].*//'`${LIBC:+-$LIBC}
-	exit 0 ;;
->>>>>>> .r627
     i*:CYGWIN*:*)
 	echo ${UNAME_MACHINE}-pc-cygwin
 	exit ;;
@@ -869,16 +848,11 @@ EOF
     	echo frv-unknown-linux-gnu
 	exit ;;
     ia64:Linux:*:*)
-<<<<<<< .mine
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit ;;
     m32r*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit ;;
-=======
-	echo ${UNAME_MACHINE}-unknown-linux-gnu
-	exit 0 ;;
->>>>>>> .r627
     m68*:Linux:*:*)
 	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit ;;
@@ -932,21 +906,11 @@ EOF
 	echo or32-unknown-linux-gnu
 	exit ;;
     ppc:Linux:*:*)
-<<<<<<< .mine
 	echo powerpc-unknown-linux-gnu
 	exit ;;
-=======
-	echo powerpc-unknown-linux-gnu
-	exit 0 ;;
->>>>>>> .r627
     ppc64:Linux:*:*)
-<<<<<<< .mine
 	echo powerpc64-unknown-linux-gnu
 	exit ;;
-=======
-	echo powerpc64-unknown-linux-gnu
-	exit 0 ;;
->>>>>>> .r627
     alpha:Linux:*:*)
 	case `sed -n '/^cpu model/s/^.*: \(.*\)/\1/p' < /proc/cpuinfo` in
 	  EV5)   UNAME_MACHINE=alphaev5 ;;
@@ -973,13 +937,8 @@ EOF
 	echo hppa64-unknown-linux-gnu
 	exit ;;
     s390:Linux:*:* | s390x:Linux:*:*)
-<<<<<<< .mine
 	echo ${UNAME_MACHINE}-ibm-linux
 	exit ;;
-=======
-	echo ${UNAME_MACHINE}-ibm-linux
-	exit 0 ;;
->>>>>>> .r627
     sh64*:Linux:*:*)
     	echo ${UNAME_MACHINE}-unknown-linux-gnu
 	exit ;;
@@ -993,16 +952,11 @@ EOF
 	echo ${UNAME_MACHINE}-dec-linux-gnu
 	exit ;;
     x86_64:Linux:*:*)
-<<<<<<< .mine
 	echo x86_64-unknown-linux-gnu
 	exit ;;
     xtensa:Linux:*:*)
     	echo xtensa-unknown-linux-gnu
 	exit ;;
-=======
-	echo x86_64-unknown-linux-gnu
-	exit 0 ;;
->>>>>>> .r627
     i*86:Linux:*:*)
 	# The BFD linker knows what the default object file format is, so
 	# first see if it will tell us. cd to the root directory to prevent
@@ -1055,7 +1009,6 @@ EOF
 	LIBC=dietlibc
 	#endif
 EOF
-<<<<<<< .mine
 	eval "`$CC_FOR_BUILD -E $dummy.c 2>/dev/null | sed -n '
 	    /^LIBC/{
 		s: ::g
@@ -1066,11 +1019,6 @@ EOF
 		exit
 	}
 	test x"${TENTATIVE}" != x && { echo "${TENTATIVE}"; exit; }
-=======
-	eval `$CC_FOR_BUILD -E $dummy.c 2>/dev/null | grep ^LIBC=`
-	test x"${LIBC}" != x && echo "${UNAME_MACHINE}-pc-linux-${LIBC}" && exit 0
-	test x"${TENTATIVE}" != x && echo "${TENTATIVE}" && exit 0
->>>>>>> .r627
 	;;
     i*86:DYNIX/ptx:4*:*)
 	# ptx 4.0 does uname -s correctly, with DYNIX/ptx in there.

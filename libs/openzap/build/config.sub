@@ -120,7 +120,9 @@ esac
 # Here we must recognize all the valid KERNEL-OS combinations.
 maybe_os=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\2/'`
 case $maybe_os in
-  nto-qnx* | linux-gnu* | kfreebsd*-gnu* | netbsd*-gnu* | storm-chaos* | os2-emx* | rtmk-nova*)
+  nto-qnx* | linux-gnu* | linux-dietlibc | linux-newlib* | linux-uclibc* | \
+  uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | knetbsd*-gnu* | netbsd*-gnu* | \
+  storm-chaos* | os2-emx* | rtmk-nova*)
     os=-$maybe_os
     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
     ;;
@@ -274,21 +276,12 @@ case $basic_machine in
 	| pdp10 | pdp11 | pj | pjl \
 	| powerpc | powerpc64 | powerpc64le | powerpcle | ppcbe \
 	| pyramid \
-<<<<<<< .mine
 	| score \
 	| sh | sh[1234] | sh[24]a | sh[23]e | sh[34]eb | sheb | shbe | shle | sh[1234]le | sh3ele \
-=======
-	| sh | sh[1234] | sh[23]e | sh[34]eb | shbe | shle | sh[1234]le | sh3ele \
->>>>>>> .r627
 	| sh64 | sh64le \
-<<<<<<< .mine
 	| sparc | sparc64 | sparc64b | sparc64v | sparc86x | sparclet | sparclite \
 	| sparcv8 | sparcv9 | sparcv9b | sparcv9v \
 	| spu | strongarm \
-=======
-	| sparc | sparc64 | sparc86x | sparclet | sparclite | sparcv9 | sparcv9b \
-	| strongarm \
->>>>>>> .r627
 	| tahoe | thumb | tic4x | tic80 | tron \
 	| v850 | v850e \
 	| we32k \
@@ -323,7 +316,7 @@ case $basic_machine in
 	| a29k-* \
 	| alpha-* | alphaev[4-8]-* | alphaev56-* | alphaev6[78]-* \
 	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
-	| alphapca5[67]-* | alpha64pca5[67]-* | amd64-* | arc-* \
+	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* \
 	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
 	| avr-* | avr32-* \
 	| bfin-* | bs2000-* \
@@ -365,20 +358,11 @@ case $basic_machine in
 	| powerpc-* | powerpc64-* | powerpc64le-* | powerpcle-* | ppcbe-* \
 	| pyramid-* \
 	| romp-* | rs6000-* \
-<<<<<<< .mine
 	| sh-* | sh[1234]-* | sh[24]a-* | sh[23]e-* | sh[34]eb-* | sheb-* | shbe-* \
-=======
-	| sh-* | sh[1234]-* | sh[23]e-* | sh[34]eb-* | shbe-* \
->>>>>>> .r627
 	| shle-* | sh[1234]le-* | sh3ele-* | sh64-* | sh64le-* \
-<<<<<<< .mine
 	| sparc-* | sparc64-* | sparc64b-* | sparc64v-* | sparc86x-* | sparclet-* \
 	| sparclite-* \
 	| sparcv8-* | sparcv9-* | sparcv9b-* | sparcv9v-* | strongarm-* | sv1-* | sx?-* \
-=======
-	| sparc-* | sparc64-* | sparc86x-* | sparclet-* | sparclite-* \
-	| sparcv9-* | sparcv9b-* | strongarm-* | sv1-* | sx?-* \
->>>>>>> .r627
 	| tahoe-* | thumb-* \
 	| tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
 	| tron-* \
@@ -1153,14 +1137,7 @@ case $basic_machine in
 	sh[1234] | sh[24]a | sh[34]eb | sh[1234]le | sh[23]ele)
 		basic_machine=sh-unknown
 		;;
-<<<<<<< .mine
 	sparc | sparcv8 | sparcv9 | sparcv9b | sparcv9v)
-=======
-	sh64)
-		basic_machine=sh64-unknown
-		;;
-	sparc | sparcv9 | sparcv9b)
->>>>>>> .r627
 		basic_machine=sparc-sun
 		;;
 	cydra)
@@ -1233,15 +1210,10 @@ case $os in
 	      | -aos* \
 	      | -nindy* | -vxsim* | -vxworks* | -ebmon* | -hms* | -mvs* \
 	      | -clix* | -riscos* | -uniplus* | -iris* | -rtu* | -xenix* \
-<<<<<<< .mine
 	      | -hiux* | -386bsd* | -knetbsd* | -mirbsd* | -netbsd* \
 	      | -openbsd* | -solidbsd* \
 	      | -ekkobsd* | -kfreebsd* | -freebsd* | -riscix* | -lynxos* \
 	      | -bosx* | -nextstep* | -cxux* | -aout* | -elf* | -oabi* \
-=======
-	      | -hiux* | -386bsd* | -netbsd* | -openbsd* | -kfreebsd* | -freebsd* | -riscix* \
-	      | -lynxos* | -bosx* | -nextstep* | -cxux* | -aout* | -elf* | -oabi* \
->>>>>>> .r627
 	      | -ptx* | -coff* | -ecoff* | -winnt* | -domain* | -vsta* \
 	      | -udi* | -eabi* | -lites* | -ieee* | -go32* | -aux* \
 	      | -chorusos* | -chorusrdb* \
@@ -1421,15 +1393,9 @@ case $basic_machine in
 	arm*-semi)
 		os=-aout
 		;;
-<<<<<<< .mine
         c4x-* | tic4x-*)
         	os=-coff
 		;;
-=======
-    c4x-* | tic4x-*)
-        os=-coff
-        ;;
->>>>>>> .r627
 	# This must come before the *-dec entry.
 	pdp10-*)
 		os=-tops20

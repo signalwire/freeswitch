@@ -36,10 +36,15 @@ DEFS = @DEFS@
 CFLAGS=@CFLAGS@ @COMP_VENDOR_CFLAGS@ @DEFS@
 
 ###For libpcap
-CFLAGS+=-D_GNU_SOURCE
+CFLAGS+= -D_GNU_SOURCE
 ####
 
 LIBS = @LIBS@
+
+###For libpcap
+LIBS+= -lpcap
+####
+
 DYNAMIC_LIB_EXTEN = @DYNAMIC_LIB_EXTEN@
 SOLINK = @SOLINK@
 OZ_SRCDIR=@oz_srcdir@
