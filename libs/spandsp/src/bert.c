@@ -47,7 +47,7 @@
 static const char *qbf = "VoyeZ Le BricK GeanT QuE J'ExaminE PreS Du WharF 123 456 7890 + - * : = $ % ( )"
                          "ThE QuicK BrowN FoX JumpS OveR ThE LazY DoG 123 456 7890 + - * : = $ % ( )";
 
-const char *bert_event_to_str(int event)
+SPAN_DECLARE(const char *) bert_event_to_str(int event)
 {
     switch (event)
     {
@@ -76,7 +76,7 @@ const char *bert_event_to_str(int event)
 }
 /*- End of function --------------------------------------------------------*/
 
-int bert_get_bit(bert_state_t *s)
+SPAN_DECLARE(int) bert_get_bit(bert_state_t *s)
 {
     int bit;
 
@@ -183,7 +183,7 @@ static void assess_error_rate(bert_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-void bert_put_bit(bert_state_t *s, int bit)
+SPAN_DECLARE(void) bert_put_bit(bert_state_t *s, int bit)
 {
     if (bit < 0)
     {
@@ -324,7 +324,7 @@ void bert_put_bit(bert_state_t *s, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-int bert_result(bert_state_t *s, bert_results_t *results)
+SPAN_DECLARE(int) bert_result(bert_state_t *s, bert_results_t *results)
 {
     results->total_bits = s->results.total_bits;
     results->bad_bits = s->results.bad_bits;
@@ -333,7 +333,7 @@ int bert_result(bert_state_t *s, bert_results_t *results)
 }
 /*- End of function --------------------------------------------------------*/
 
-void bert_set_report(bert_state_t *s, int freq, bert_report_func_t reporter, void *user_data)
+SPAN_DECLARE(void) bert_set_report(bert_state_t *s, int freq, bert_report_func_t reporter, void *user_data)
 {
     s->report_frequency = freq;
     s->reporter = reporter;
@@ -343,7 +343,7 @@ void bert_set_report(bert_state_t *s, int freq, bert_report_func_t reporter, voi
 }
 /*- End of function --------------------------------------------------------*/
 
-bert_state_t *bert_init(bert_state_t *s, int limit, int pattern, int resync_len, int resync_percent)
+SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, int resync_len, int resync_percent)
 {
     int i;
     int j;

@@ -85,19 +85,19 @@ static const uint8_t alaw_to_ulaw_table[256] =
     214, 215, 212, 213, 218, 219, 216, 217, 207, 207, 206, 206, 210, 211, 208, 209
 };
 
-uint8_t alaw_to_ulaw(uint8_t alaw)
+SPAN_DECLARE(uint8_t) alaw_to_ulaw(uint8_t alaw)
 {
     return alaw_to_ulaw_table[alaw];
 }
 /*- End of function --------------------------------------------------------*/
 
-uint8_t ulaw_to_alaw(uint8_t ulaw)
+SPAN_DECLARE(uint8_t) ulaw_to_alaw(uint8_t ulaw)
 {
     return ulaw_to_alaw_table[ulaw];
 }
 /*- End of function --------------------------------------------------------*/
 
-int g711_decode(g711_state_t *s,
+SPAN_DECLARE(int) g711_decode(g711_state_t *s,
                 int16_t amp[],
                 const uint8_t g711_data[],
                 int g711_bytes)
@@ -121,7 +121,7 @@ int g711_decode(g711_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int g711_encode(g711_state_t *s,
+SPAN_DECLARE(int) g711_encode(g711_state_t *s,
                 uint8_t g711_data[],
                 const int16_t amp[],
                 int len)
@@ -145,7 +145,7 @@ int g711_encode(g711_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int g711_transcode(g711_state_t *s,
+SPAN_DECLARE(int) g711_transcode(g711_state_t *s,
                    uint8_t g711_out[],
                    const uint8_t g711_in[],
                    int g711_bytes)
@@ -169,7 +169,7 @@ int g711_transcode(g711_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-g711_state_t *g711_init(g711_state_t *s, int mode)
+SPAN_DECLARE(g711_state_t *) g711_init(g711_state_t *s, int mode)
 {
     if (s == NULL)
     {
@@ -181,7 +181,7 @@ g711_state_t *g711_init(g711_state_t *s, int mode)
 }
 /*- End of function --------------------------------------------------------*/
 
-int g711_release(g711_state_t *s)
+SPAN_DECLARE(int) g711_release(g711_state_t *s)
 {
     free(s);
     return 0;

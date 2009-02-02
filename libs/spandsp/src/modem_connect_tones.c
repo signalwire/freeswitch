@@ -61,7 +61,7 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD       5
 
-const char *modem_connect_tone_to_str(int tone)
+SPAN_DECLARE(const char *) modem_connect_tone_to_str(int tone)
 {
     switch (tone)
     {
@@ -86,7 +86,7 @@ const char *modem_connect_tone_to_str(int tone)
 }
 /*- End of function --------------------------------------------------------*/
 
-int modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
+SPAN_DECLARE(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
                            int16_t amp[],
                            int len)
 {
@@ -196,7 +196,7 @@ int modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-modem_connect_tones_tx_state_t *modem_connect_tones_tx_init(modem_connect_tones_tx_state_t *s,
+SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem_connect_tones_tx_state_t *s,
                                                             int tone_type)
 {
     int alloced;
@@ -252,7 +252,7 @@ modem_connect_tones_tx_state_t *modem_connect_tones_tx_init(modem_connect_tones_
 }
 /*- End of function --------------------------------------------------------*/
 
-int modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s)
+SPAN_DECLARE(int) modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s)
 {
     free(s);
     return 0;
@@ -347,7 +347,7 @@ static void v21_put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-int modem_connect_tones_rx(modem_connect_tones_rx_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int16_t notched;
@@ -489,7 +489,7 @@ int modem_connect_tones_rx(modem_connect_tones_rx_state_t *s, const int16_t amp[
 }
 /*- End of function --------------------------------------------------------*/
 
-int modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s)
+SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s)
 {
     int x;
     
@@ -499,7 +499,7 @@ int modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-modem_connect_tones_rx_state_t *modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
+SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
                                                             int tone_type,
                                                             tone_report_func_t tone_callback,
                                                             void *user_data)
@@ -543,7 +543,7 @@ modem_connect_tones_rx_state_t *modem_connect_tones_rx_init(modem_connect_tones_
 }
 /*- End of function --------------------------------------------------------*/
 
-int modem_connect_tones_rx_free(modem_connect_tones_rx_state_t *s)
+SPAN_DECLARE(int) modem_connect_tones_rx_free(modem_connect_tones_rx_state_t *s)
 {
     free(s);
     return 0;

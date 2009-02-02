@@ -124,25 +124,25 @@ static const uint8_t space_map_v22bis[6][6] =
     {15, 14, 14,  1,  1,  3}
 };
 
-float v22bis_rx_carrier_frequency(v22bis_state_t *s)
+SPAN_DECLARE(float) v22bis_rx_carrier_frequency(v22bis_state_t *s)
 {
     return dds_frequencyf(s->rx.carrier_phase_rate);
 }
 /*- End of function --------------------------------------------------------*/
 
-float v22bis_symbol_timing_correction(v22bis_state_t *s)
+SPAN_DECLARE(float) v22bis_symbol_timing_correction(v22bis_state_t *s)
 {
     return (float) s->rx.total_baud_timing_correction/((float) PULSESHAPER_COEFF_SETS*40.0f/(3.0f*2.0f));
 }
 /*- End of function --------------------------------------------------------*/
 
-float v22bis_rx_signal_power(v22bis_state_t *s)
+SPAN_DECLARE(float) v22bis_rx_signal_power(v22bis_state_t *s)
 {
     return power_meter_current_dbm0(&s->rx.rx_power);
 }
 /*- End of function --------------------------------------------------------*/
 
-int v22bis_equalizer_state(v22bis_state_t *s, complexf_t **coeffs)
+SPAN_DECLARE(int) v22bis_equalizer_state(v22bis_state_t *s, complexf_t **coeffs)
 {
     *coeffs = s->rx.eq_coeff;
     return 2*V22BIS_EQUALIZER_LEN + 1;
@@ -566,7 +566,7 @@ span_log(&s->logging, SPAN_LOG_FLOW, "S11 0x%02x\n", nearest);
 }
 /*- End of function --------------------------------------------------------*/
 
-int v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int j;
@@ -679,7 +679,7 @@ int v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int v22bis_rx_restart(v22bis_state_t *s, int bit_rate)
+SPAN_DECLARE(int) v22bis_rx_restart(v22bis_state_t *s, int bit_rate)
 {
     /* If bit_rate is 2400, the real bit rate is negotiated. If bit_rate
        is 1200, the real bit rate is forced to 1200. */
@@ -715,7 +715,7 @@ int v22bis_rx_restart(v22bis_state_t *s, int bit_rate)
 }
 /*- End of function --------------------------------------------------------*/
 
-void v22bis_set_qam_report_handler(v22bis_state_t *s, qam_report_handler_t handler, void *user_data)
+SPAN_DECLARE(void) v22bis_set_qam_report_handler(v22bis_state_t *s, qam_report_handler_t handler, void *user_data)
 {
     s->rx.qam_report = handler;
     s->rx.qam_user_data = user_data;

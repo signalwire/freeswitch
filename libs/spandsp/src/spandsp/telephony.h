@@ -28,21 +28,24 @@
 #if !defined(_SPANDSP_TELEPHONY_H_)
 #define _SPANDSP_TELEPHONY_H_
 
-#if defined(SPANDSP_USE_EXPORT_CAPABILITY)
-#if defined(__GNUC__) || defined(__SUNCC__)
-#define SPAN_DECLARE(type)          __attribute__((visibility("default"))) type
-#define SPAN_DECLARE_NONSTD(type)   __attribute__((visibility("default"))) type
-#define SPAN_DECLARE_DATA           __attribute__((visibility("default")))
-#endif
 #if defined(WIN32)
-#define SPAN_DECLARE(type)          __declspec(dllexport) type __stdcall
-#define SPAN_DECLARE_NONSTD(type)   __declspec(dllexport) type __cdecl
-#define SPAN_DECLARE_DATA           __declspec(dllexport)
-#endif
+# if defined(LIBSPANDSP_EXPORTS)
+#  define SPAN_DECLARE(type)          __declspec(dllexport) type __stdcall
+#  define SPAN_DECLARE_NONSTD(type)   __declspec(dllexport) type __cdecl
+#  define SPAN_DECLARE_DATA           __declspec(dllexport)
+# else
+#  define SPAN_DECLARE(type)          __declspec(dllimport) type __stdcall
+#  define SPAN_DECLARE_NONSTD(type)   __declspec(dllimport) type __cdecl
+#  define SPAN_DECLARE_DATA           __declspec(dllimport)
+# endif
+#elif defined(SPANDSP_USE_EXPORT_CAPABILITY) && (defined(__GNUC__) || defined(__SUNCC__))
+# define SPAN_DECLARE(type)          __attribute__((visibility("default"))) type
+# define SPAN_DECLARE_NONSTD(type)   __attribute__((visibility("default"))) type
+# define SPAN_DECLARE_DATA           __attribute__((visibility("default")))
 #else
-#define SPAN_DECLARE(type)		    /**/ type
-#define SPAN_DECLARE_NONSTD(type)	/**/ type
-#define SPAN_DECLARE_DATA		    /**/
+# define SPAN_DECLARE(type)		    /**/ type
+# define SPAN_DECLARE_NONSTD(type)	/**/ type
+# define SPAN_DECLARE_DATA		    /**/
 #endif
 
 #define SAMPLE_RATE                 8000

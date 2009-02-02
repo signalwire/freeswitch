@@ -278,7 +278,7 @@ SPAN_DECLARE(int) g711_transcode(g711_state_t *s,
     \param s The G.711 context.
     \param mode The G.711 mode.
     \return A pointer to the G.711 context, or NULL for error. */
-SPAN_DECLARE(g711_state_t) *g711_init(g711_state_t *s, int mode);
+SPAN_DECLARE(g711_state_t *) g711_init(g711_state_t *s, int mode);
 
 /*! Free a G.711 encode or decode context.
     \param s The G.711 context.

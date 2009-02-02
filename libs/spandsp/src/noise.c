@@ -50,7 +50,7 @@
 
 #include "spandsp/private/noise.h"
 
-int16_t noise(noise_state_t *s)
+SPAN_DECLARE(int16_t) noise(noise_state_t *s)
 {
     int32_t val;
     int i;
@@ -79,13 +79,13 @@ int16_t noise(noise_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-noise_state_t *noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality)
+SPAN_DECLARE(noise_state_t *) noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality)
 {
     return noise_init_dbov(s, seed, (level - DBM0_MAX_POWER), class_of_noise, quality);
 }
 /*- End of function --------------------------------------------------------*/
 
-noise_state_t *noise_init_dbov(noise_state_t *s, int seed, float level, int class_of_noise, int quality)
+SPAN_DECLARE(noise_state_t *) noise_init_dbov(noise_state_t *s, int seed, float level, int class_of_noise, int quality)
 {
     float rms;
 
@@ -114,7 +114,7 @@ noise_state_t *noise_init_dbov(noise_state_t *s, int seed, float level, int clas
 }
 /*- End of function --------------------------------------------------------*/
 
-int noise_free(noise_state_t *s)
+SPAN_DECLARE(int) noise_free(noise_state_t *s)
 {
     free(s);
     return 0;

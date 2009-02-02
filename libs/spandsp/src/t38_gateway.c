@@ -2016,7 +2016,7 @@ static int restart_rx_modem(t38_gateway_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
 {
     int i;
 
@@ -2059,7 +2059,7 @@ int t38_gateway_rx(t38_gateway_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len)
+SPAN_DECLARE(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len)
 {
     int len;
 #if defined(LOG_FAX_AUDIO)
@@ -2104,7 +2104,7 @@ int t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_get_transfer_statistics(t38_gateway_state_t *s, t38_stats_t *t)
+SPAN_DECLARE(void) t38_gateway_get_transfer_statistics(t38_gateway_state_t *s, t38_stats_t *t)
 {
     memset(t, 0, sizeof(*t));
     t->bit_rate = s->core.fast_bit_rate;
@@ -2113,31 +2113,31 @@ void t38_gateway_get_transfer_statistics(t38_gateway_state_t *s, t38_stats_t *t)
 }
 /*- End of function --------------------------------------------------------*/
 
-t38_core_state_t *t38_gateway_get_t38_core_state(t38_gateway_state_t *s)
+SPAN_DECLARE(t38_core_state_t *) t38_gateway_get_t38_core_state(t38_gateway_state_t *s)
 {
     return &s->t38x.t38;
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *t38_gateway_get_logging_state(t38_gateway_state_t *s)
+SPAN_DECLARE(logging_state_t *) t38_gateway_get_logging_state(t38_gateway_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_set_ecm_capability(t38_gateway_state_t *s, int ecm_allowed)
+SPAN_DECLARE(void) t38_gateway_set_ecm_capability(t38_gateway_state_t *s, int ecm_allowed)
 {
     s->core.ecm_allowed = ecm_allowed;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_set_transmit_on_idle(t38_gateway_state_t *s, int transmit_on_idle)
+SPAN_DECLARE(void) t38_gateway_set_transmit_on_idle(t38_gateway_state_t *s, int transmit_on_idle)
 {
     s->audio.modems.transmit_on_idle = transmit_on_idle;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_set_supported_modems(t38_gateway_state_t *s, int supported_modems)
+SPAN_DECLARE(void) t38_gateway_set_supported_modems(t38_gateway_state_t *s, int supported_modems)
 {
     s->core.supported_modems = supported_modems;
     if ((s->core.supported_modems & T30_SUPPORT_V17))
@@ -2150,7 +2150,7 @@ void t38_gateway_set_supported_modems(t38_gateway_state_t *s, int supported_mode
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
+SPAN_DECLARE(void) t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
                                      const uint8_t *from_t38,
                                      int from_t38_len,
                                      const uint8_t *from_modem,
@@ -2161,19 +2161,19 @@ void t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_set_tep_mode(t38_gateway_state_t *s, int use_tep)
+SPAN_DECLARE(void) t38_gateway_set_tep_mode(t38_gateway_state_t *s, int use_tep)
 {
     s->audio.modems.use_tep = use_tep;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_set_fill_bit_removal(t38_gateway_state_t *s, int remove)
+SPAN_DECLARE(void) t38_gateway_set_fill_bit_removal(t38_gateway_state_t *s, int remove)
 {
     s->core.to_t38.fill_bit_removal = remove;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *s,
+SPAN_DECLARE(void) t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *s,
                                              t38_gateway_real_time_frame_handler_t *handler,
                                              void *user_data)
 {
@@ -2210,7 +2210,7 @@ static int t38_gateway_t38_init(t38_gateway_state_t *t,
 }
 /*- End of function --------------------------------------------------------*/
 
-t38_gateway_state_t *t38_gateway_init(t38_gateway_state_t *s,
+SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
                                       t38_tx_packet_handler_t *tx_packet_handler,
                                       void *tx_packet_user_data)
 {
@@ -2273,7 +2273,7 @@ t38_gateway_state_t *t38_gateway_init(t38_gateway_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_gateway_free(t38_gateway_state_t *s)
+SPAN_DECLARE(int) t38_gateway_free(t38_gateway_state_t *s)
 {
     free(s);
     return 0;

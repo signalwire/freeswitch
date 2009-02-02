@@ -242,7 +242,7 @@ static uint8_t encode(oki_adpcm_state_t *s, int16_t linear)
 }
 /*- End of function --------------------------------------------------------*/
 
-oki_adpcm_state_t *oki_adpcm_init(oki_adpcm_state_t *s, int bit_rate)
+SPAN_DECLARE(oki_adpcm_state_t *) oki_adpcm_init(oki_adpcm_state_t *s, int bit_rate)
 {
     if (bit_rate != 32000  &&  bit_rate != 24000)
         return NULL;
@@ -258,14 +258,14 @@ oki_adpcm_state_t *oki_adpcm_init(oki_adpcm_state_t *s, int bit_rate)
 }
 /*- End of function --------------------------------------------------------*/
 
-int oki_adpcm_release(oki_adpcm_state_t *s)
+SPAN_DECLARE(int) oki_adpcm_release(oki_adpcm_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int oki_adpcm_decode(oki_adpcm_state_t *s,
+SPAN_DECLARE(int) oki_adpcm_decode(oki_adpcm_state_t *s,
                      int16_t amp[],
                      const uint8_t oki_data[],
                      int oki_bytes)
@@ -318,7 +318,7 @@ int oki_adpcm_decode(oki_adpcm_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int oki_adpcm_encode(oki_adpcm_state_t *s,
+SPAN_DECLARE(int) oki_adpcm_encode(oki_adpcm_state_t *s,
                      uint8_t oki_data[],
                      const int16_t amp[],
                      int len)

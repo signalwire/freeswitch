@@ -144,7 +144,7 @@ SPAN_DECLARE(int) v22bis_restart(v22bis_state_t *s, int bit_rate);
     \param put_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer, passed in calls to the get and put routines.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(v22bis_state_t) *v22bis_init(v22bis_state_t *s,
+SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                           int bit_rate,
                                           int guard,
                                           int caller,
@@ -158,7 +158,7 @@ SPAN_DECLARE(v22bis_state_t) *v22bis_init(v22bis_state_t *s,
     \return 0 for OK */
 SPAN_DECLARE(int) v22bis_free(v22bis_state_t *s);
 
-SPAN_DECLARE(logging_state_t) *v22bis_get_logging_state(v22bis_state_t *s);
+SPAN_DECLARE(logging_state_t *) v22bis_get_logging_state(v22bis_state_t *s);
 
 /*! Change the get_bit function associated with a V.22bis modem context.
     \brief Change the get_bit function associated with a V.22bis modem context.

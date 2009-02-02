@@ -78,9 +78,9 @@ extern "C"
 {
 #endif
 
-SPAN_DECLARE(awgn_state_t) *awgn_init_dbm0(awgn_state_t *s, int idum, float level);
+SPAN_DECLARE(awgn_state_t *) awgn_init_dbm0(awgn_state_t *s, int idum, float level);
 
-SPAN_DECLARE(awgn_state_t) *awgn_init_dbov(awgn_state_t *s, int idum, float level);
+SPAN_DECLARE(awgn_state_t *) awgn_init_dbov(awgn_state_t *s, int idum, float level);
 
 SPAN_DECLARE(int16_t) awgn(awgn_state_t *s);
 

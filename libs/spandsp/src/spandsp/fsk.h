@@ -143,7 +143,7 @@ extern "C"
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(fsk_tx_state_t) *fsk_tx_init(fsk_tx_state_t *s,
+SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
                                           const fsk_spec_t *spec,
                                           get_bit_func_t get_bit,
                                           void *user_data);
@@ -191,7 +191,7 @@ SPAN_DECLARE(void) fsk_rx_signal_cutoff(fsk_rx_state_t *s, float cutoff);
     \param put_bit The callback routine used to put the received data.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(fsk_rx_state_t) *fsk_rx_init(fsk_rx_state_t *s,
+SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
                                           const fsk_spec_t *spec,
                                           int sync_mode,
                                           put_bit_func_t put_bit,

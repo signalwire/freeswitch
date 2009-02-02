@@ -114,7 +114,7 @@ int t38_non_ecm_buffer_get_bit(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_non_ecm_buffer_push(t38_non_ecm_buffer_state_t *s)
+SPAN_DECLARE(void) t38_non_ecm_buffer_push(t38_non_ecm_buffer_state_t *s)
 {
     /* Don't flow control the data any more. Just push out the remainder of the data
        in the buffer as fast as we can, and shut down. */
@@ -123,7 +123,7 @@ void t38_non_ecm_buffer_push(t38_non_ecm_buffer_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, const uint8_t *buf, int len)
+SPAN_DECLARE(void) t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, const uint8_t *buf, int len)
 {
     int i;
     int upper;
@@ -218,7 +218,7 @@ void t38_non_ecm_buffer_inject(t38_non_ecm_buffer_state_t *s, const uint8_t *buf
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_non_ecm_buffer_report_input_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging)
+SPAN_DECLARE(void) t38_non_ecm_buffer_report_input_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging)
 {
     if (s->in_octets  ||  s->min_row_bits_fill_octets)
     {
@@ -235,7 +235,7 @@ void t38_non_ecm_buffer_report_input_status(t38_non_ecm_buffer_state_t *s, loggi
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging)
+SPAN_DECLARE(void) t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_state_t *s, logging_state_t *logging)
 {
     if (s->out_octets  ||  s->flow_control_fill_octets)
     {
@@ -252,14 +252,14 @@ void t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_state_t *s, logg
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
+SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
 {
     s->image_data_mode = mode;
     s->min_row_bits = min_row_bits;
 }
 /*- End of function --------------------------------------------------------*/
 
-t38_non_ecm_buffer_state_t *t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
+SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
 {
     memset(s, 0, sizeof(*s));
     s->octet = 0xFF;

@@ -106,7 +106,7 @@ SPAN_DECLARE(int) v42bis_decompress_flush(v42bis_state_t *s);
     \param data_user_data .
     \param max_data_len The maximum length that should be passed to the data handler.
     \return The V.42bis context. */
-SPAN_DECLARE(v42bis_state_t) *v42bis_init(v42bis_state_t *s,
+SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
                                           int negotiated_p0,
                                           int negotiated_p1,
                                           int negotiated_p2,

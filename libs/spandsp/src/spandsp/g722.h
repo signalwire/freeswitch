@@ -71,7 +71,7 @@ extern "C"
            The valid rates are 64000, 56000 and 48000.
     \param options
     \return A pointer to the G.722 encode context, or NULL for error. */
-SPAN_DECLARE(g722_encode_state_t) *g722_encode_init(g722_encode_state_t *s, int rate, int options);
+SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int rate, int options);
 
 SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s);
 
@@ -89,7 +89,7 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
            The valid rates are 64000, 56000 and 48000.
     \param options
     \return A pointer to the G.722 decode context, or NULL for error. */
-SPAN_DECLARE(g722_decode_state_t) *g722_decode_init(g722_decode_state_t *s, int rate, int options);
+SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int rate, int options);
 
 SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s);
 

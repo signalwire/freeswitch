@@ -266,7 +266,7 @@ static void high_pass_100hz(lpc10_encode_state_t *s, float speech[], int start, 
 }
 /*- End of function --------------------------------------------------------*/
 
-lpc10_encode_state_t *lpc10_encode_init(lpc10_encode_state_t *s, int error_correction)
+SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, int error_correction)
 {
     int i;
     int j;
@@ -363,14 +363,14 @@ lpc10_encode_state_t *lpc10_encode_init(lpc10_encode_state_t *s, int error_corre
 }
 /*- End of function --------------------------------------------------------*/
 
-int lpc10_encode_release(lpc10_encode_state_t *s)
+SPAN_DECLARE(int) lpc10_encode_release(lpc10_encode_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], int len)
+SPAN_DECLARE(int) lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const int16_t amp[], int len)
 {
     int32_t voice[2];
     int32_t pitch;

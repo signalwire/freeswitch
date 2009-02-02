@@ -41,7 +41,7 @@
 
 #include "spandsp/private/async.h"
 
-const char *signal_status_to_str(int status)
+SPAN_DECLARE(const char *) signal_status_to_str(int status)
 {
     switch (status)
     {
@@ -72,7 +72,7 @@ const char *signal_status_to_str(int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-async_rx_state_t *async_rx_init(async_rx_state_t *s,
+SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                 int data_bits,
                                 int parity,
                                 int stop_bits,
@@ -184,7 +184,7 @@ void async_rx_put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-async_tx_state_t *async_tx_init(async_tx_state_t *s,
+SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                 int data_bits,
                                 int parity,
                                 int stop_bits,

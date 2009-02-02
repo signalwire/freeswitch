@@ -94,7 +94,7 @@ extern "C"
     \param user_data An opaque parameter for the callback routine.
     \return A pointer to the HDLC receiver context.
 */
-SPAN_DECLARE(hdlc_rx_state_t) *hdlc_rx_init(hdlc_rx_state_t *s,
+SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
                                             int crc32,
                                             int report_bad_frames,
                                             int framing_ok_threshold,
@@ -150,7 +150,7 @@ SPAN_DECLARE(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
     \param user_data An opaque parameter for the callback routine.
     \return A pointer to the HDLC transmitter context.
 */
-SPAN_DECLARE(hdlc_tx_state_t) *hdlc_tx_init(hdlc_tx_state_t *s,
+SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
                                             int crc32,
                                             int inter_frame_flags,
                                             int progressive,

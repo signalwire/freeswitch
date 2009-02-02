@@ -60,7 +60,7 @@
 
 #define ms_to_samples(t)            (((t)*SAMPLE_RATE)/1000)
 
-void make_tone_gen_descriptor(tone_gen_descriptor_t *s,
+SPAN_DECLARE(void) make_tone_gen_descriptor(tone_gen_descriptor_t *s,
                               int f1,
                               int l1,
                               int f2,
@@ -106,7 +106,7 @@ void make_tone_gen_descriptor(tone_gen_descriptor_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-tone_gen_state_t *tone_gen_init(tone_gen_state_t *s, tone_gen_descriptor_t *t)
+SPAN_DECLARE(tone_gen_state_t *) tone_gen_init(tone_gen_state_t *s, tone_gen_descriptor_t *t)
 {
     int i;
 
@@ -128,7 +128,7 @@ tone_gen_state_t *tone_gen_init(tone_gen_state_t *s, tone_gen_descriptor_t *t)
 }
 /*- End of function --------------------------------------------------------*/
 
-int tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
+SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
 {
     int samples;
     int limit;

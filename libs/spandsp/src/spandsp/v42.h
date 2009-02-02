@@ -82,7 +82,7 @@ extern "C"
 {
 #endif
 
-SPAN_DECLARE(const char) *lapm_status_to_str(int status);
+SPAN_DECLARE(const char *) lapm_status_to_str(int status);
 
 /*! Dump LAP.M frames in a raw and/or decoded forms
     \param frame The frame itself
@@ -94,7 +94,7 @@ SPAN_DECLARE(void) lapm_dump(lapm_state_t *s, const uint8_t *frame, int len, int
 
 /*! Accept an HDLC packet
 */
-SPAN_DECLARE(void) lapm_receive(void *user_data, const uint8_t *buf, int len, int ok);
+void lapm_receive(void *user_data, const uint8_t *buf, int len, int ok);
 
 /*! Transmit a LAP.M frame
 */
@@ -135,7 +135,7 @@ SPAN_DECLARE(int) v42_tx_bit(void *user_data);
     \param user_data An opaque pointer passed to the frame handler routine.
     \return ???
 */
-SPAN_DECLARE(v42_state_t) *v42_init(v42_state_t *s, int caller, int detect, v42_frame_handler_t frame_handler, void *user_data);
+SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s, int caller, int detect, v42_frame_handler_t frame_handler, void *user_data);
 
 /*! Restart a V.42 context.
     \param s The V.42 context.

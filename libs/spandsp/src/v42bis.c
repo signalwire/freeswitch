@@ -111,7 +111,7 @@ static __inline__ void push_compressed_octet(v42bis_compress_state_t *ss, int co
 }
 /*- End of function --------------------------------------------------------*/
 
-int v42bis_compress(v42bis_state_t *s, const uint8_t *buf, int len)
+SPAN_DECLARE(int) v42bis_compress(v42bis_state_t *s, const uint8_t *buf, int len)
 {
     int ptr;
     int i;
@@ -323,7 +323,7 @@ int v42bis_compress(v42bis_state_t *s, const uint8_t *buf, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int v42bis_compress_flush(v42bis_state_t *s)
+SPAN_DECLARE(int) v42bis_compress_flush(v42bis_state_t *s)
 {
     v42bis_compress_state_t *ss;
 
@@ -369,7 +369,7 @@ int v42bis_compress_dump(v42bis_state_t *s)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-int v42bis_decompress(v42bis_state_t *s, const uint8_t *buf, int len)
+SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *s, const uint8_t *buf, int len)
 {
     int ptr;
     int i;
@@ -567,7 +567,7 @@ if (code > 4095) {printf("Code is 0x%" PRIu32 "\n", code); exit(2);}
 }
 /*- End of function --------------------------------------------------------*/
 
-int v42bis_decompress_flush(v42bis_state_t *s)
+SPAN_DECLARE(int) v42bis_decompress_flush(v42bis_state_t *s)
 {
     v42bis_decompress_state_t *ss;
 
@@ -599,7 +599,7 @@ int v42bis_decompress_dump(v42bis_state_t *s)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-void v42bis_compression_control(v42bis_state_t *s, int mode)
+SPAN_DECLARE(void) v42bis_compression_control(v42bis_state_t *s, int mode)
 {
     s->compress.compression_mode = mode;
     switch (mode)
@@ -614,7 +614,7 @@ void v42bis_compression_control(v42bis_state_t *s, int mode)
 }
 /*- End of function --------------------------------------------------------*/
 
-v42bis_state_t *v42bis_init(v42bis_state_t *s,
+SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
                             int negotiated_p0,
                             int negotiated_p1,
                             int negotiated_p2,
@@ -687,7 +687,7 @@ v42bis_state_t *v42bis_init(v42bis_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int v42bis_release(v42bis_state_t *s)
+SPAN_DECLARE(int) v42bis_release(v42bis_state_t *s)
 {
     free(s);
     return 0;

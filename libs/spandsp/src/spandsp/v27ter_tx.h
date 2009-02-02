@@ -91,7 +91,7 @@ SPAN_DECLARE(void) v27ter_tx_power(v27ter_tx_state_t *s, float power);
     \param get_bit The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(v27ter_tx_state_t) *v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data);
+SPAN_DECLARE(v27ter_tx_state_t *) v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data);
 
 /*! Reinitialise an existing V.27ter modem transmit context, so it may be reused.
     \brief Reinitialise an existing V.27ter modem transmit context.
@@ -107,7 +107,7 @@ SPAN_DECLARE(int) v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, int tep)
     \return 0 for OK */
 SPAN_DECLARE(int) v27ter_tx_free(v27ter_tx_state_t *s);
 
-SPAN_DECLARE(logging_state_t) *v27ter_tx_get_logging_state(v27ter_tx_state_t *s);
+SPAN_DECLARE(logging_state_t *) v27ter_tx_get_logging_state(v27ter_tx_state_t *s);
 
 /*! Change the get_bit function associated with a V.27ter modem transmit context.
     \brief Change the get_bit function associated with a V.27ter modem transmit context.

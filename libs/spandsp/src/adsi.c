@@ -392,7 +392,7 @@ static void start_tx(adsi_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len)
+SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len)
 {
     switch (s->standard)
     {
@@ -411,7 +411,7 @@ int adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-adsi_rx_state_t *adsi_rx_init(adsi_rx_state_t *s,
+SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
                               int standard,
                               put_msg_func_t put_msg,
                               void *user_data)
@@ -448,14 +448,14 @@ adsi_rx_state_t *adsi_rx_init(adsi_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int adsi_rx_free(adsi_rx_state_t *s)
+SPAN_DECLARE(int) adsi_rx_free(adsi_rx_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int adsi_tx(adsi_tx_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t *amp, int max_len)
 {
     int len;
     int lenx;
@@ -483,13 +483,13 @@ int adsi_tx(adsi_tx_state_t *s, int16_t *amp, int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void adsi_tx_send_alert_tone(adsi_tx_state_t *s)
+SPAN_DECLARE(void) adsi_tx_send_alert_tone(adsi_tx_state_t *s)
 {
     tone_gen_init(&(s->alert_tone_gen), &(s->alert_tone_desc));
 }
 /*- End of function --------------------------------------------------------*/
 
-void adsi_tx_set_preamble(adsi_tx_state_t *s,
+SPAN_DECLARE(void) adsi_tx_set_preamble(adsi_tx_state_t *s,
                           int preamble_len,
                           int preamble_ones_len,
                           int postamble_ones_len,
@@ -542,7 +542,7 @@ void adsi_tx_set_preamble(adsi_tx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, int len)
+SPAN_DECLARE(int) adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, int len)
 {
     int i;
     int j;
@@ -631,7 +631,7 @@ int adsi_tx_put_message(adsi_tx_state_t *s, const uint8_t *msg, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-adsi_tx_state_t *adsi_tx_init(adsi_tx_state_t *s, int standard)
+SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard)
 {
     if (s == NULL)
     {
@@ -657,7 +657,7 @@ adsi_tx_state_t *adsi_tx_init(adsi_tx_state_t *s, int standard)
 }
 /*- End of function --------------------------------------------------------*/
 
-int adsi_tx_free(adsi_tx_state_t *s)
+SPAN_DECLARE(int) adsi_tx_free(adsi_tx_state_t *s)
 {
     free(s);
     return 0;
@@ -846,7 +846,7 @@ static uint8_t adsi_decode_baudot(adsi_rx_state_t *s, uint8_t ch)
 }
 /*- End of function --------------------------------------------------------*/
 
-int adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int msg_len, int pos, uint8_t *field_type, uint8_t const **field_body, int *field_len)
+SPAN_DECLARE(int) adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int msg_len, int pos, uint8_t *field_type, uint8_t const **field_body, int *field_len)
 {
     int i;
 
@@ -966,7 +966,7 @@ int adsi_next_field(adsi_rx_state_t *s, const uint8_t *msg, int msg_len, int pos
 }
 /*- End of function --------------------------------------------------------*/
 
-int adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint8_t field_type, uint8_t const *field_body, int field_len)
+SPAN_DECLARE(int) adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint8_t field_type, uint8_t const *field_body, int field_len)
 {
     int i;
     int x;
@@ -1068,7 +1068,7 @@ int adsi_add_field(adsi_tx_state_t *s, uint8_t *msg, int len, uint8_t field_type
 }
 /*- End of function --------------------------------------------------------*/
 
-const char *adsi_standard_to_str(int standard)
+SPAN_DECLARE(const char *) adsi_standard_to_str(int standard)
 {
     switch (standard)
     {

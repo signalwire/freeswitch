@@ -61,7 +61,7 @@ extern "C"
     \param bit_rate The required bit rate for the ADPCM data.
            The valid rates are 24000 and 32000.
     \return A pointer to the Oki ADPCM context, or NULL for error. */
-SPAN_DECLARE(oki_adpcm_state_t) *oki_adpcm_init(oki_adpcm_state_t *s,
+SPAN_DECLARE(oki_adpcm_state_t *) oki_adpcm_init(oki_adpcm_state_t *s,
                                                 int bit_rate);
 
 /*! Free an Oki ADPCM encode or decode context.

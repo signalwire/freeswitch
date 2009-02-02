@@ -72,7 +72,7 @@
 #include "spandsp/telephony.h"
 #include "spandsp/vector_int.h"
 
-int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
+SPAN_DECLARE(int32_t) vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 {
     int32_t z;
 
@@ -285,7 +285,7 @@ int32_t vec_dot_prodi16(const int16_t x[], const int16_t y[], int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-int32_t vec_circular_dot_prodi16(const int16_t x[], const int16_t y[], int n, int pos)
+SPAN_DECLARE(int32_t) vec_circular_dot_prodi16(const int16_t x[], const int16_t y[], int n, int pos)
 {
     int32_t z;
 
@@ -295,7 +295,7 @@ int32_t vec_circular_dot_prodi16(const int16_t x[], const int16_t y[], int n, in
 }
 /*- End of function --------------------------------------------------------*/
 
-void vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t error)
+SPAN_DECLARE(void) vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t error)
 {
     int i;
 
@@ -304,14 +304,14 @@ void vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t error)
 }
 /*- End of function --------------------------------------------------------*/
 
-void vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, int pos, int16_t error)
+SPAN_DECLARE(void) vec_circular_lmsi16(const int16_t x[], int16_t y[], int n, int pos, int16_t error)
 {
     vec_lmsi16(&x[pos], &y[0], n - pos, error);
     vec_lmsi16(&x[0], &y[n - pos], pos, error);
 }
 /*- End of function --------------------------------------------------------*/
 
-int32_t vec_min_maxi16(const int16_t x[], int n, int16_t out[])
+SPAN_DECLARE(int32_t) vec_min_maxi16(const int16_t x[], int n, int16_t out[])
 {
 #if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
     static const int32_t lower_bound = 0x80008000;

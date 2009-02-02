@@ -111,9 +111,9 @@ SPAN_DECLARE(void) t31_set_mode(t31_state_t *s, int t38_mode);
     \param s The T.31 context.
     \return A pointer to the logging context, or NULL.
 */
-SPAN_DECLARE(logging_state_t) *t31_get_logging_state(t31_state_t *s);
+SPAN_DECLARE(logging_state_t *) t31_get_logging_state(t31_state_t *s);
 
-SPAN_DECLARE(t38_core_state_t) *t31_get_t38_core_state(t31_state_t *s);
+SPAN_DECLARE(t38_core_state_t *) t31_get_t38_core_state(t31_state_t *s);
 
 /*! Initialise a T.31 context. This must be called before the first
     use of the context, to initialise its contents.
@@ -126,7 +126,7 @@ SPAN_DECLARE(t38_core_state_t) *t31_get_t38_core_state(t31_state_t *s);
     \param tx_t38_packet_handler ???
     \param tx_t38_packet_user_data ???
     \return A pointer to the T.31 context. */
-SPAN_DECLARE(t31_state_t) *t31_init(t31_state_t *s,
+SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
                                     at_tx_handler_t *at_tx_handler,
                                     void *at_tx_user_data,
                                     t31_modem_control_handler_t *modem_control_handler,

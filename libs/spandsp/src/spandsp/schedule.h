@@ -58,7 +58,7 @@ SPAN_DECLARE(int) span_schedule_event(span_sched_state_t *s, int us, span_sched_
 SPAN_DECLARE(void) span_schedule_update(span_sched_state_t *s, int us);
 SPAN_DECLARE(void) span_schedule_del(span_sched_state_t *s, int id);
 
-SPAN_DECLARE(span_sched_state_t) *span_schedule_init(span_sched_state_t *s);
+SPAN_DECLARE(span_sched_state_t *) span_schedule_init(span_sched_state_t *s);
 SPAN_DECLARE(int) span_schedule_release(span_sched_state_t *s);
 
 #if defined(__cplusplus)

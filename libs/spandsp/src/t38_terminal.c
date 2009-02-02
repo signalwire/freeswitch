@@ -825,7 +825,7 @@ static int stream_cng(t38_terminal_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_terminal_send_timeout(t38_terminal_state_t *s, int samples)
+SPAN_DECLARE(int) t38_terminal_send_timeout(t38_terminal_state_t *s, int samples)
 {
     t38_terminal_front_end_state_t *fe;
     int delay;
@@ -1004,7 +1004,7 @@ static void set_tx_type(void *user_data, int type, int bit_rate, int short_train
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_terminal_set_config(t38_terminal_state_t *s, int without_pacing)
+SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int without_pacing)
 {
     if (without_pacing)
     {
@@ -1027,7 +1027,7 @@ void t38_terminal_set_config(t38_terminal_state_t *s, int without_pacing)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_terminal_set_tep_mode(t38_terminal_state_t *s, int use_tep)
+SPAN_DECLARE(void) t38_terminal_set_tep_mode(t38_terminal_state_t *s, int use_tep)
 {
     if (use_tep)
         s->t38_fe.chunking_modes |= T38_CHUNKING_ALLOW_TEP_TIME;
@@ -1037,7 +1037,7 @@ void t38_terminal_set_tep_mode(t38_terminal_state_t *s, int use_tep)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_terminal_set_fill_bit_removal(t38_terminal_state_t *s, int remove)
+SPAN_DECLARE(void) t38_terminal_set_fill_bit_removal(t38_terminal_state_t *s, int remove)
 {
     if (remove)
         s->t38_fe.iaf |= T30_IAF_MODE_NO_FILL_BITS;
@@ -1047,13 +1047,13 @@ void t38_terminal_set_fill_bit_removal(t38_terminal_state_t *s, int remove)
 }
 /*- End of function --------------------------------------------------------*/
 
-t30_state_t *t38_terminal_get_t30_state(t38_terminal_state_t *s)
+SPAN_DECLARE(t30_state_t *) t38_terminal_get_t30_state(t38_terminal_state_t *s)
 {
     return &s->t30;
 }
 /*- End of function --------------------------------------------------------*/
 
-t38_core_state_t *t38_terminal_get_t38_core_state(t38_terminal_state_t *s)
+SPAN_DECLARE(t38_core_state_t *) t38_terminal_get_t38_core_state(t38_terminal_state_t *s)
 {
     return &s->t38_fe.t38;
 }
@@ -1090,13 +1090,13 @@ static int t38_terminal_t38_fe_init(t38_terminal_state_t *t,
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *t38_terminal_get_logging_state(t38_terminal_state_t *s)
+SPAN_DECLARE(logging_state_t *) t38_terminal_get_logging_state(t38_terminal_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-t38_terminal_state_t *t38_terminal_init(t38_terminal_state_t *s,
+SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
                                         int calling_party,
                                         t38_tx_packet_handler_t *tx_packet_handler,
                                         void *tx_packet_user_data)
@@ -1133,14 +1133,14 @@ t38_terminal_state_t *t38_terminal_init(t38_terminal_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_terminal_release(t38_terminal_state_t *s)
+SPAN_DECLARE(int) t38_terminal_release(t38_terminal_state_t *s)
 {
     t30_release(&s->t30);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_terminal_free(t38_terminal_state_t *s)
+SPAN_DECLARE(int) t38_terminal_free(t38_terminal_state_t *s)
 {
     t30_release(&s->t30);
     free(s);

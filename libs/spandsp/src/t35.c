@@ -798,7 +798,7 @@ void nsf_find_station_id(int reverse_order)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-int t35_decode(const uint8_t *msg, int len, const char **country, const char **vendor, const char **model)
+SPAN_DECLARE(int) t35_decode(const uint8_t *msg, int len, const char **country, const char **vendor, const char **model)
 {
     int vendor_decoded;
     const nsf_data_t *p;

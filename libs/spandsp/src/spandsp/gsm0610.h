@@ -83,7 +83,7 @@ extern "C"
     \param s The GSM 06.10 context
     \param packing One of the GSM0610_PACKING_xxx options.
     \return A pointer to the GSM 06.10 context, or NULL for error. */
-SPAN_DECLARE(gsm0610_state_t) *gsm0610_init(gsm0610_state_t *s, int packing);
+SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing);
 
 /*! Release a GSM 06.10 encode or decode context.
     \param s The GSM 06.10 context

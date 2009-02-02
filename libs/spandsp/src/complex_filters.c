@@ -37,7 +37,7 @@
 #include "spandsp/complex.h"
 #include "spandsp/complex_filters.h"
 
-filter_t *filter_create(fspec_t *fs)
+SPAN_DECLARE(filter_t *) filter_create(fspec_t *fs)
 {
     int i;
     filter_t *fi;
@@ -54,18 +54,18 @@ filter_t *filter_create(fspec_t *fs)
     return fi;
 }
 
-void filter_delete(filter_t *fi)
+SPAN_DECLARE(void) filter_delete(filter_t *fi)
 {
     if (fi)
         free(fi);
 }
 
-float filter_step(filter_t *fi, float x)
+SPAN_DECLARE(float) filter_step(filter_t *fi, float x)
 {
     return fi->fs->fsf(fi, x);
 }
 
-cfilter_t *cfilter_create(fspec_t *fs)
+SPAN_DECLARE(cfilter_t *) cfilter_create(fspec_t *fs)
 {
     cfilter_t *cfi;
 
@@ -86,7 +86,7 @@ cfilter_t *cfilter_create(fspec_t *fs)
     return cfi;
 }
 
-void cfilter_delete(cfilter_t *cfi)
+SPAN_DECLARE(void) cfilter_delete(cfilter_t *cfi)
 {
     if (cfi)
     {
@@ -95,7 +95,7 @@ void cfilter_delete(cfilter_t *cfi)
     }
 }
 
-complexf_t cfilter_step(cfilter_t *cfi, const complexf_t *z)
+SPAN_DECLARE(complexf_t) cfilter_step(cfilter_t *cfi, const complexf_t *z)
 {
     complexf_t cc;
     

@@ -71,7 +71,7 @@ extern "C"
     \param sample_rate The sample rate of the signal.
     \param playout_rate The ratio between the output speed and the input speed.
     \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(time_scale_state_t) *time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate);
+SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate);
 
 /*! \brief Free a time scale context.
     \param s The time scale context.

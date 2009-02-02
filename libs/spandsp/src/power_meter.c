@@ -49,7 +49,7 @@
 #include "spandsp/telephony.h"
 #include "spandsp/power_meter.h"
 
-power_meter_t *power_meter_init(power_meter_t *s, int shift)
+SPAN_DECLARE(power_meter_t *) power_meter_init(power_meter_t *s, int shift)
 {
     if (s == NULL)
     {
@@ -62,21 +62,21 @@ power_meter_t *power_meter_init(power_meter_t *s, int shift)
 }
 /*- End of function --------------------------------------------------------*/
 
-power_meter_t *power_meter_damping(power_meter_t *s, int shift)
+SPAN_DECLARE(power_meter_t *) power_meter_damping(power_meter_t *s, int shift)
 {
     s->shift = shift;
     return s;
 }
 /*- End of function --------------------------------------------------------*/
 
-int32_t power_meter_update(power_meter_t *s, int16_t amp)
+SPAN_DECLARE(int32_t) power_meter_update(power_meter_t *s, int16_t amp)
 {
     s->reading += ((amp*amp - s->reading) >> s->shift);
     return s->reading;
 }
 /*- End of function --------------------------------------------------------*/
 
-int32_t power_meter_level_dbm0(float level)
+SPAN_DECLARE(int32_t) power_meter_level_dbm0(float level)
 {
     float l;
 
@@ -88,7 +88,7 @@ int32_t power_meter_level_dbm0(float level)
 }
 /*- End of function --------------------------------------------------------*/
 
-int32_t power_meter_level_dbov(float level)
+SPAN_DECLARE(int32_t) power_meter_level_dbov(float level)
 {
     float l;
 
@@ -99,13 +99,13 @@ int32_t power_meter_level_dbov(float level)
 }
 /*- End of function --------------------------------------------------------*/
 
-int32_t power_meter_current(power_meter_t *s)
+SPAN_DECLARE(int32_t) power_meter_current(power_meter_t *s)
 {
     return s->reading;
 }
 /*- End of function --------------------------------------------------------*/
 
-float power_meter_current_dbm0(power_meter_t *s)
+SPAN_DECLARE(float) power_meter_current_dbm0(power_meter_t *s)
 {
     if (s->reading <= 0)
         return FLT_MIN;
@@ -114,7 +114,7 @@ float power_meter_current_dbm0(power_meter_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-float power_meter_current_dbov(power_meter_t *s)
+SPAN_DECLARE(float) power_meter_current_dbov(power_meter_t *s)
 {
     if (s->reading <= 0)
         return FLT_MIN;

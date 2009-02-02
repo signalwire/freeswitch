@@ -138,7 +138,7 @@ extern "C"
     \brief Convert a signal status to a short text description.
     \param status The modem signal status.
     \return A pointer to the description. */
-SPAN_DECLARE(const char) *signal_status_to_str(int status);
+SPAN_DECLARE(const char *) signal_status_to_str(int status);
 
 /*! Initialise an asynchronous data transmit context.
     \brief Initialise an asynchronous data transmit context.
@@ -150,7 +150,7 @@ SPAN_DECLARE(const char) *signal_status_to_str(int status);
     \param get_byte The callback routine used to get the data to be transmitted.
     \param user_data An opaque pointer.
     \return A pointer to the initialised context, or NULL if there was a problem. */
-SPAN_DECLARE(async_tx_state_t) *async_tx_init(async_tx_state_t *s,
+SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                               int data_bits,
                                               int parity_bits,
                                               int stop_bits,
@@ -162,7 +162,7 @@ SPAN_DECLARE(async_tx_state_t) *async_tx_init(async_tx_state_t *s,
     \brief Get the next bit of a transmitted serial bit stream.
     \param user_data An opaque point which must point to a transmitter context.
     \return the next bit, or PUTBIT_END_OF_DATA to indicate the data stream has ended. */
-SPAN_DECLARE(int) async_tx_get_bit(void *user_data);
+int async_tx_get_bit(void *user_data);
 
 /*! Initialise an asynchronous data receiver context.
     \brief Initialise an asynchronous data receiver context.
@@ -174,7 +174,7 @@ SPAN_DECLARE(int) async_tx_get_bit(void *user_data);
     \param put_byte The callback routine used to put the received data.
     \param user_data An opaque pointer.
     \return A pointer to the initialised context, or NULL if there was a problem. */
-SPAN_DECLARE(async_rx_state_t) *async_rx_init(async_rx_state_t *s,
+SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                               int data_bits,
                                               int parity_bits,
                                               int stop_bits,
@@ -191,7 +191,7 @@ SPAN_DECLARE(async_rx_state_t) *async_rx_init(async_rx_state_t *s,
         - SIG_STATUS_TRAINING_SUCCEEDED
         - SIG_STATUS_TRAINING_FAILED
         - SIG_STATUS_END_OF_DATA */
-SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit);
+void async_rx_put_bit(void *user_data, int bit);
 
 #if defined(__cplusplus)
 }

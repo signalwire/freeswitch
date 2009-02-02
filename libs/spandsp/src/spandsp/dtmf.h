@@ -125,7 +125,7 @@ SPAN_DECLARE(void) dtmf_tx_set_timing(dtmf_tx_state_t *s, int on_time, int off_t
 /*! \brief Initialise a DTMF tone generator context.
     \param s The DTMF generator context.
     \return A pointer to the DTMF generator context. */
-SPAN_DECLARE(dtmf_tx_state_t) *dtmf_tx_init(dtmf_tx_state_t *s);
+SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s);
 
 /*! \brief Free a DTMF tone generator context.
     \param s The DTMF tone generator context.
@@ -191,7 +191,7 @@ SPAN_DECLARE(size_t) dtmf_rx_get(dtmf_rx_state_t *s, char *digits, int max);
     \param user_data An opaque pointer which is associated with the context,
            and supplied in callbacks.
     \return A pointer to the DTMF receiver context. */
-SPAN_DECLARE(dtmf_rx_state_t) *dtmf_rx_init(dtmf_rx_state_t *s,
+SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
                                             digits_rx_callback_t callback,
                                             void *user_data);
 

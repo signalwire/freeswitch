@@ -32,6 +32,8 @@
 #define HAVE_MATH_H
 #define HAVE_TGMATH_H
 
+#define SPANDSP_USE_EXPORT_CAPABILITY 1
+
 #ifdef __cplusplus
 extern "C" {
 #endif

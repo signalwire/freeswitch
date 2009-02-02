@@ -147,7 +147,7 @@ extern "C"
     \param put_bit The callback routine used to put the received data.
     \param user_data An opaque pointer passed to the put_bit routine.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(v29_rx_state_t) *v29_rx_init(v29_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data);
 
 /*! Reinitialise an existing V.29 modem receive context.
     \brief Reinitialise an existing V.29 modem receive context.
@@ -163,7 +163,7 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
     \return 0 for OK */
 SPAN_DECLARE(int) v29_rx_free(v29_rx_state_t *s);
 
-SPAN_DECLARE(logging_state_t) *v29_rx_get_logging_state(v29_rx_state_t *s);
+SPAN_DECLARE(logging_state_t *) v29_rx_get_logging_state(v29_rx_state_t *s);
 
 /*! Change the put_bit function associated with a V.29 modem receive context.
     \brief Change the put_bit function associated with a V.29 modem receive context.

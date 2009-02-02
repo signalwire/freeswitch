@@ -85,14 +85,14 @@ SPAN_DECLARE(void) fax_set_tep_mode(fax_state_t *s, int use_tep);
     \param s The FAX context.
     \return A pointer to the T.30 context, or NULL.
 */
-SPAN_DECLARE(t30_state_t) *fax_get_t30_state(fax_state_t *s);
+SPAN_DECLARE(t30_state_t *) fax_get_t30_state(fax_state_t *s);
 
 /*! Get a pointer to the logging context associated with a FAX context.
     \brief Get a pointer to the logging context associated with a FAX context.
     \param s The FAX context.
     \return A pointer to the logging context, or NULL.
 */
-SPAN_DECLARE(logging_state_t) *fax_get_logging_state(fax_state_t *s);
+SPAN_DECLARE(logging_state_t *) fax_get_logging_state(fax_state_t *s);
 
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.
@@ -101,7 +101,7 @@ SPAN_DECLARE(logging_state_t) *fax_get_logging_state(fax_state_t *s);
            context is for an answering party.
     \return A pointer to the FAX context, or NULL if there was a problem.
 */
-SPAN_DECLARE(fax_state_t) *fax_init(fax_state_t *s, int calling_party);
+SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party);
 
 /*! Release a FAX context.
     \brief Release a FAX context.

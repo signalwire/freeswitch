@@ -59,11 +59,11 @@ extern "C"
 {
 #endif
 
-SPAN_DECLARE(filter_t) *filter_create(fspec_t *fs);
+SPAN_DECLARE(filter_t *) filter_create(fspec_t *fs);
 SPAN_DECLARE(void) filter_delete(filter_t *fi);
 SPAN_DECLARE(float) filter_step(filter_t *fi, float x);
 
-SPAN_DECLARE(cfilter_t) *cfilter_create(fspec_t *fs);
+SPAN_DECLARE(cfilter_t *) cfilter_create(fspec_t *fs);
 SPAN_DECLARE(void) cfilter_delete(cfilter_t *cfi);
 SPAN_DECLARE(complexf_t) cfilter_step(cfilter_t *cfi, const complexf_t *z);
 

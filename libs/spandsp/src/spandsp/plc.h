@@ -153,7 +153,7 @@ SPAN_DECLARE(int) plc_fillin(plc_state_t *s, int16_t amp[], int len);
     \brief Initialise a PLC context.
     \param s The packet loss concealer context.
     \return A pointer to the the packet loss concealer context. */
-SPAN_DECLARE(plc_state_t) *plc_init(plc_state_t *s);
+SPAN_DECLARE(plc_state_t *) plc_init(plc_state_t *s);
 
 /*! Free a packet loss concealer context.
     \param s The packet loss concealer context.

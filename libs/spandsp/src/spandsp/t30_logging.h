@@ -40,7 +40,7 @@ extern "C"
     \param x The frametype octet.
     \return A pointer to the text name for the frame type. If the frame type is
             not value, the string "???" is returned. */
-SPAN_DECLARE(const char) *t30_frametype(uint8_t x);
+SPAN_DECLARE(const char *) t30_frametype(uint8_t x);
 
 /*! Decode a DIS, DTC or DCS frame, and log the contents.
     \brief Decode a DIS, DTC or DCS frame, and log the contents.
@@ -53,7 +53,7 @@ SPAN_DECLARE(void) t30_decode_dis_dtc_dcs(t30_state_t *s, const uint8_t *dis, in
     \brief Convert a phase E completion code to a short text description.
     \param result The result code.
     \return A pointer to the description. */
-SPAN_DECLARE(const char) *t30_completion_code_to_str(int result);
+SPAN_DECLARE(const char *) t30_completion_code_to_str(int result);
 
 #if defined(__cplusplus)
 }

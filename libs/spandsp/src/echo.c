@@ -237,7 +237,7 @@ static __inline__ void lms_adapt(echo_can_state_t *ec, int factor)
 }
 /*- End of function --------------------------------------------------------*/
 
-echo_can_state_t *echo_can_create(int len, int adaption_mode)
+SPAN_DECLARE(echo_can_state_t *) echo_can_create(int len, int adaption_mode)
 {
     echo_can_state_t *ec;
     int i;
@@ -282,7 +282,7 @@ echo_can_state_t *echo_can_create(int len, int adaption_mode)
 }
 /*- End of function --------------------------------------------------------*/
 
-void echo_can_free(echo_can_state_t *ec)
+SPAN_DECLARE(void) echo_can_free(echo_can_state_t *ec)
 {
     int i;
     
@@ -294,13 +294,13 @@ void echo_can_free(echo_can_state_t *ec)
 }
 /*- End of function --------------------------------------------------------*/
 
-void echo_can_adaption_mode(echo_can_state_t *ec, int adaption_mode)
+SPAN_DECLARE(void) echo_can_adaption_mode(echo_can_state_t *ec, int adaption_mode)
 {
     ec->adaption_mode = adaption_mode;
 }
 /*- End of function --------------------------------------------------------*/
 
-void echo_can_flush(echo_can_state_t *ec)
+SPAN_DECLARE(void) echo_can_flush(echo_can_state_t *ec)
 {
     int i;
 
@@ -343,7 +343,7 @@ void echo_can_flush(echo_can_state_t *ec)
 
 int sample_no = 0;
 
-void echo_can_snapshot(echo_can_state_t *ec)
+SPAN_DECLARE(void) echo_can_snapshot(echo_can_state_t *ec)
 {
     memcpy(ec->snapshot, ec->fir_taps16[0], ec->taps*sizeof(int16_t));
 }
@@ -388,7 +388,7 @@ static __inline__ int16_t echo_can_hpf(int32_t coeff[2], int16_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
-int16_t echo_can_update(echo_can_state_t *ec, int16_t tx, int16_t rx)
+SPAN_DECLARE(int16_t) echo_can_update(echo_can_state_t *ec, int16_t tx, int16_t rx)
 {
     int32_t echo_value;
     int clean_rx;
@@ -603,7 +603,7 @@ printf("Narrowband score %4d %5d at %d\n", ec->narrowband_score, score, sample_n
 }
 /*- End of function --------------------------------------------------------*/
 
-int16_t echo_can_hpf_tx(echo_can_state_t *ec, int16_t tx)
+SPAN_DECLARE(int16_t) echo_can_hpf_tx(echo_can_state_t *ec, int16_t tx)
 {
     if (ec->adaption_mode & ECHO_CAN_USE_TX_HPF)
         tx = echo_can_hpf(ec->tx_hpf, tx);

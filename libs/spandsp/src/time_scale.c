@@ -99,7 +99,7 @@ static __inline__ void overlap_add(int16_t amp1[], int16_t amp2[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int time_scale_rate(time_scale_state_t *s, float playout_rate)
+SPAN_DECLARE(int) time_scale_rate(time_scale_state_t *s, float playout_rate)
 {
     if (playout_rate <= 0.0f)
         return -1;
@@ -124,7 +124,7 @@ int time_scale_rate(time_scale_state_t *s, float playout_rate)
 }
 /*- End of function --------------------------------------------------------*/
 
-time_scale_state_t *time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate)
+SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate)
 {
     int alloced;
 
@@ -157,14 +157,14 @@ time_scale_state_t *time_scale_init(time_scale_state_t *s, int sample_rate, floa
 }
 /*- End of function --------------------------------------------------------*/
 
-int time_scale_free(time_scale_state_t *s)
+SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int time_scale(time_scale_state_t *s, int16_t out[], int16_t in[], int len)
+SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[], int len)
 {
     double lcpf;
     int pitch;
@@ -272,7 +272,7 @@ int time_scale(time_scale_state_t *s, int16_t out[], int16_t in[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int time_scale_max_output_len(time_scale_state_t *s, int input_len)
+SPAN_DECLARE(int) time_scale_max_output_len(time_scale_state_t *s, int input_len)
 {
     return (int) (input_len*s->playout_rate + s->min_pitch + 1);
 }

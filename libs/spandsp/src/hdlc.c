@@ -243,7 +243,7 @@ static __inline__ void hdlc_rx_put_bit_core(hdlc_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-void hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
+SPAN_DECLARE(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
 {
     if (new_bit < 0)
     {
@@ -255,7 +255,7 @@ void hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-void hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
+SPAN_DECLARE(void) hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
 {
     int i;
 
@@ -273,7 +273,7 @@ void hdlc_rx_put_byte(hdlc_rx_state_t *s, int new_byte)
 }
 /*- End of function --------------------------------------------------------*/
 
-void hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
+SPAN_DECLARE(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
 {
     int i;
 
@@ -282,20 +282,20 @@ void hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void hdlc_rx_set_max_frame_len(hdlc_rx_state_t *s, size_t max_len)
+SPAN_DECLARE(void) hdlc_rx_set_max_frame_len(hdlc_rx_state_t *s, size_t max_len)
 {
     max_len += s->crc_bytes;
     s->max_frame_len = (max_len <= sizeof(s->buffer))  ?  max_len  :  sizeof(s->buffer);
 }
 /*- End of function --------------------------------------------------------*/
 
-void hdlc_rx_set_octet_counting_report_interval(hdlc_rx_state_t *s, int interval)
+SPAN_DECLARE(void) hdlc_rx_set_octet_counting_report_interval(hdlc_rx_state_t *s, int interval)
 {
     s->octet_count_report_interval = interval;
 }
 /*- End of function --------------------------------------------------------*/
 
-hdlc_rx_state_t *hdlc_rx_init(hdlc_rx_state_t *s,
+SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
                               int crc32,
                               int report_bad_frames,
                               int framing_ok_threshold,
@@ -318,7 +318,7 @@ hdlc_rx_state_t *hdlc_rx_init(hdlc_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_rx_get_stats(hdlc_rx_state_t *s,
+SPAN_DECLARE(int) hdlc_rx_get_stats(hdlc_rx_state_t *s,
                       hdlc_rx_stats_t *t)
 {
     t->bytes = s->rx_bytes;
@@ -330,7 +330,7 @@ int hdlc_rx_get_stats(hdlc_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t len)
+SPAN_DECLARE(int) hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t len)
 {
     if (len <= 0)
     {
@@ -365,7 +365,7 @@ int hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_tx_flags(hdlc_tx_state_t *s, int len)
+SPAN_DECLARE(int) hdlc_tx_flags(hdlc_tx_state_t *s, int len)
 {
     /* Some HDLC applications require the ability to force a period of HDLC
        flag words. */
@@ -381,7 +381,7 @@ int hdlc_tx_flags(hdlc_tx_state_t *s, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_tx_abort(hdlc_tx_state_t *s)
+SPAN_DECLARE(int) hdlc_tx_abort(hdlc_tx_state_t *s)
 {
     /* TODO: This is a really crude way of just fudging an abort out for simple
              test purposes. */
@@ -391,7 +391,7 @@ int hdlc_tx_abort(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_tx_corrupt_frame(hdlc_tx_state_t *s)
+SPAN_DECLARE(int) hdlc_tx_corrupt_frame(hdlc_tx_state_t *s)
 {
     if (s->len <= 0)
         return -1;
@@ -404,7 +404,7 @@ int hdlc_tx_corrupt_frame(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_tx_get_byte(hdlc_tx_state_t *s)
+SPAN_DECLARE(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
 {
     int i;
     int byte_in_progress;
@@ -509,7 +509,7 @@ int hdlc_tx_get_byte(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_tx_get_bit(hdlc_tx_state_t *s)
+SPAN_DECLARE(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
 {
     int txbit;
 
@@ -525,7 +525,7 @@ int hdlc_tx_get_bit(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
+SPAN_DECLARE(int) hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
 {
     size_t i;
     int x;
@@ -540,13 +540,13 @@ int hdlc_tx_get(hdlc_tx_state_t *s, uint8_t buf[], size_t max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void hdlc_tx_set_max_frame_len(hdlc_tx_state_t *s, size_t max_len)
+SPAN_DECLARE(void) hdlc_tx_set_max_frame_len(hdlc_tx_state_t *s, size_t max_len)
 {
     s->max_frame_len = (max_len <= HDLC_MAXFRAME_LEN)  ?  max_len  :  HDLC_MAXFRAME_LEN;
 }
 /*- End of function --------------------------------------------------------*/
 
-hdlc_tx_state_t *hdlc_tx_init(hdlc_tx_state_t *s,
+SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
                               int crc32,
                               int inter_frame_flags,
                               int progressive,

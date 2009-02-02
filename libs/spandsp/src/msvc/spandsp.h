@@ -33,7 +33,6 @@
 #undef SPANDSP_USE_FIXED_POINT
 #undef SPANDSP_MISALIGNED_ACCESS_FAILS
 
-#define SPANDSP_USE_EXPORT_CAPABILITY 1
 
 #include <stdlib.h>
 #include <inttypes.h>

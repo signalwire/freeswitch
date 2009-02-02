@@ -76,7 +76,7 @@
 #include "spandsp/complex_vector_float.h"
 
 #if defined(__GNUC__)  &&  defined(SPANDSP_USE_SSE3)
-void cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
+SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
 {
     int i;
     __m128 n0;
@@ -109,7 +109,7 @@ void cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n
     }
 }
 #else
-void cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
+SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n)
 {
     int i;
 
@@ -122,7 +122,7 @@ void cvec_mulf(complexf_t z[], const complexf_t x[], const complexf_t y[], int n
 #endif
 /*- End of function --------------------------------------------------------*/
 
-void cvec_mul(complex_t z[], const complex_t x[], const complex_t y[], int n)
+SPAN_DECLARE(void) cvec_mul(complex_t z[], const complex_t x[], const complex_t y[], int n)
 {
     int i;
 
@@ -148,7 +148,7 @@ void cvec_mull(complexl_t z[], const complexl_t x[], const complexl_t y[], int n
 /*- End of function --------------------------------------------------------*/
 #endif
 
-complexf_t cvec_dot_prodf(const complexf_t x[], const complexf_t y[], int n)
+SPAN_DECLARE(complexf_t) cvec_dot_prodf(const complexf_t x[], const complexf_t y[], int n)
 {
     int i;
     complexf_t z;
@@ -163,7 +163,7 @@ complexf_t cvec_dot_prodf(const complexf_t x[], const complexf_t y[], int n)
 }
 /*- End of function --------------------------------------------------------*/
 
-complex_t cvec_dot_prod(const complex_t x[], const complex_t y[], int n)
+SPAN_DECLARE(complex_t) cvec_dot_prod(const complex_t x[], const complex_t y[], int n)
 {
     int i;
     complex_t z;
@@ -195,7 +195,7 @@ complexl_t cvec_dot_prodl(const complexl_t x[], const complexl_t y[], int n)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-complexf_t cvec_circular_dot_prodf(const complexf_t x[], const complexf_t y[], int n, int pos)
+SPAN_DECLARE(complexf_t) cvec_circular_dot_prodf(const complexf_t x[], const complexf_t y[], int n, int pos)
 {
     complexf_t z;
     complexf_t z1;
@@ -209,7 +209,7 @@ complexf_t cvec_circular_dot_prodf(const complexf_t x[], const complexf_t y[], i
 
 #define LMS_LEAK_RATE   0.9999f
 
-void cvec_lmsf(const complexf_t x[], complexf_t y[], int n, const complexf_t *error)
+SPAN_DECLARE(void) cvec_lmsf(const complexf_t x[], complexf_t y[], int n, const complexf_t *error)
 {
     int i;
 
@@ -222,7 +222,7 @@ void cvec_lmsf(const complexf_t x[], complexf_t y[], int n, const complexf_t *er
 }
 /*- End of function --------------------------------------------------------*/
 
-void cvec_circular_lmsf(const complexf_t x[], complexf_t y[], int n, int pos, const complexf_t *error)
+SPAN_DECLARE(void) cvec_circular_lmsf(const complexf_t x[], complexf_t y[], int n, int pos, const complexf_t *error)
 {
     cvec_lmsf(&x[pos], &y[0], n - pos, error);
     cvec_lmsf(&x[0], &y[n - pos], pos, error);

@@ -104,7 +104,7 @@ extern "C"
 /*! \brief Initialise an instance of the modem connect tones generator.
     \param s The context.
 */
-SPAN_DECLARE(modem_connect_tones_tx_state_t) *modem_connect_tones_tx_init(modem_connect_tones_tx_state_t *s,
+SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem_connect_tones_tx_state_t *s,
                                                                           int tone_type);
 
 /*! \brief Free an instance of the modem connect tones generator.
@@ -147,7 +147,7 @@ SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s);
     \param user_data An opaque pointer passed to the callback routine,
     \return A pointer to the context.
 */
-SPAN_DECLARE(modem_connect_tones_rx_state_t) *modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
+SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
                                                                           int tone_type,
                                                                           tone_report_func_t tone_callback,
                                                                           void *user_data);
@@ -157,7 +157,7 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t) *modem_connect_tones_rx_init(modem_
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) modem_connect_tones_rx_free(modem_connect_tones_rx_state_t *s);
 
-SPAN_DECLARE(const char) *modem_connect_tone_to_str(int tone);
+SPAN_DECLARE(const char *) modem_connect_tone_to_str(int tone);
 
 #if defined(__cplusplus)
 }

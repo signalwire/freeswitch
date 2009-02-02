@@ -235,7 +235,7 @@ static complexf_t getbaud(v27ter_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi_t x;
@@ -341,7 +341,7 @@ int v27ter_tx(v27ter_tx_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void v27ter_tx_power(v27ter_tx_state_t *s, float power)
+SPAN_DECLARE(void) v27ter_tx_power(v27ter_tx_state_t *s, float power)
 {
     float l;
 
@@ -356,7 +356,7 @@ void v27ter_tx_power(v27ter_tx_state_t *s, float power)
 }
 /*- End of function --------------------------------------------------------*/
 
-void v27ter_tx_set_get_bit(v27ter_tx_state_t *s, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(void) v27ter_tx_set_get_bit(v27ter_tx_state_t *s, get_bit_func_t get_bit, void *user_data)
 {
     if (s->get_bit == s->current_get_bit)
         s->current_get_bit = get_bit;
@@ -365,20 +365,20 @@ void v27ter_tx_set_get_bit(v27ter_tx_state_t *s, get_bit_func_t get_bit, void *u
 }
 /*- End of function --------------------------------------------------------*/
 
-void v27ter_tx_set_modem_status_handler(v27ter_tx_state_t *s, modem_tx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v27ter_tx_set_modem_status_handler(v27ter_tx_state_t *s, modem_tx_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *v27ter_tx_get_logging_state(v27ter_tx_state_t *s)
+SPAN_DECLARE(logging_state_t *) v27ter_tx_get_logging_state(v27ter_tx_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-int v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, int tep)
+SPAN_DECLARE(int) v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, int tep)
 {
     if (bit_rate != 4800  &&  bit_rate != 2400)
         return -1;
@@ -401,7 +401,7 @@ int v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, int tep)
 }
 /*- End of function --------------------------------------------------------*/
 
-v27ter_tx_state_t *v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data)
+SPAN_DECLARE(v27ter_tx_state_t *) v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data)
 {
     if (s == NULL)
     {
@@ -420,7 +420,7 @@ v27ter_tx_state_t *v27ter_tx_init(v27ter_tx_state_t *s, int bit_rate, int tep, g
 }
 /*- End of function --------------------------------------------------------*/
 
-int v27ter_tx_free(v27ter_tx_state_t *s)
+SPAN_DECLARE(int) v27ter_tx_free(v27ter_tx_state_t *s)
 {
     free(s);
     return 0;

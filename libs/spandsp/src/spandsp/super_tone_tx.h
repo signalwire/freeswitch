@@ -50,7 +50,7 @@ extern "C"
 {
 #endif
 
-SPAN_DECLARE(super_tone_tx_step_t) *super_tone_tx_make_step(super_tone_tx_step_t *s,
+SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_t *s,
                                                             float f1,
                                                             float l1,
                                                             float f2,
@@ -65,7 +65,7 @@ SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s);
     \param s The supervisory tone generator context.
     \param tree The supervisory tone tree to be generated.
     \return The supervisory tone generator context. */
-SPAN_DECLARE(super_tone_tx_state_t) *super_tone_tx_init(super_tone_tx_state_t *s, super_tone_tx_step_t *tree);
+SPAN_DECLARE(super_tone_tx_state_t *) super_tone_tx_init(super_tone_tx_state_t *s, super_tone_tx_step_t *tree);
 
 /*! Generate a block of audio samples for a supervisory tone pattern.
     \brief Generate a block of audio samples for a supervisory tone pattern.

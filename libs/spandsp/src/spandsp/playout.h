@@ -168,7 +168,7 @@ SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frame, timest
     all its contents, before the context is freed.
     \param s The play-out context.
     \return The frame, or NULL is the queue is empty. */
-SPAN_DECLARE(playout_frame_t) *playout_get_unconditional(playout_state_t *s);
+SPAN_DECLARE(playout_frame_t *) playout_get_unconditional(playout_state_t *s);
 
 /*! Find the current length of the buffer.
     \param s The play-out context.
@@ -187,7 +187,7 @@ SPAN_DECLARE(timestamp_t) playout_next_due(playout_state_t *s);
     \param max_length Maximum length of the buffer, in samples. If this equals min_length, static
            length buffering is used.
     \return The new context */
-SPAN_DECLARE(playout_state_t) *playout_new(int min_length, int max_length);
+SPAN_DECLARE(playout_state_t *) playout_new(int min_length, int max_length);
 
 /*! Destroy an instance of play-out buffering.
     \param s The play-out context to be destroyed */

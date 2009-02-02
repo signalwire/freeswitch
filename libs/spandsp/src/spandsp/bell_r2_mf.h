@@ -150,7 +150,7 @@ SPAN_DECLARE(int) bell_mf_tx_put(bell_mf_tx_state_t *s, const char *digits, int 
 /*! \brief Initialise a Bell MF generator context.
     \param s The Bell MF generator context.
     \return A pointer to the Bell MF generator context.*/
-SPAN_DECLARE(bell_mf_tx_state_t) *bell_mf_tx_init(bell_mf_tx_state_t *s);
+SPAN_DECLARE(bell_mf_tx_state_t *) bell_mf_tx_init(bell_mf_tx_state_t *s);
 
 /*! \brief Free a Bell MF generator context.
     \param s The Bell MF generator context.
@@ -175,7 +175,7 @@ SPAN_DECLARE(int) r2_mf_tx_put(r2_mf_tx_state_t *s, char digit);
     \param fwd TRUE if the context is for forward signals. FALSE if the
            context is for backward signals.
     \return A pointer to the MFC/R2 generator context.*/
-SPAN_DECLARE(r2_mf_tx_state_t) *r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd);
+SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd);
 
 /*! \brief Free an R2 MF tone generator context.
     \param s The R2 MF tone generator context.
@@ -205,7 +205,7 @@ SPAN_DECLARE(size_t) bell_mf_rx_get(bell_mf_rx_state_t *s, char *buf, int max);
     \param user_data An opaque pointer which is associated with the context,
            and supplied in callbacks.
     \return A pointer to the Bell MF receiver context.*/
-SPAN_DECLARE(bell_mf_rx_state_t) *bell_mf_rx_init(bell_mf_rx_state_t *s,
+SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
                                                   digits_rx_callback_t callback,
                                                   void *user_data);
 
@@ -237,7 +237,7 @@ SPAN_DECLARE(int) r2_mf_rx_get(r2_mf_rx_state_t *s);
     \param user_data An opaque pointer which is associated with the context,
            and supplied in callbacks.
     \return A pointer to the R2 MF receiver context. */
-SPAN_DECLARE(r2_mf_rx_state_t) *r2_mf_rx_init(r2_mf_rx_state_t *s,
+SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
                                               int fwd,
                                               tone_report_func_t callback,
                                               void *user_data);

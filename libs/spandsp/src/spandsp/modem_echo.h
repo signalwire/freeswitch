@@ -110,7 +110,7 @@ extern "C"
     \param len The length of the canceller, in samples.
     eturn The new canceller context, or NULL if the canceller could not be created.
 */
-SPAN_DECLARE(modem_echo_can_state_t) *modem_echo_can_create(int len);
+SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_create(int len);
 
 /*! Free a modem echo canceller context.
     \param ec The echo canceller context.

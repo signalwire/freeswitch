@@ -41,7 +41,7 @@
 #include "spandsp/telephony.h"
 #include "spandsp/bit_operations.h"
 
-uint16_t bit_reverse16(uint16_t x)
+SPAN_DECLARE(uint16_t) bit_reverse16(uint16_t x)
 {
     x = (x >> 8) | (x << 8);
     x = ((x & 0xF0F0) >> 4) | ((x & 0x0F0F) << 4);
@@ -50,7 +50,7 @@ uint16_t bit_reverse16(uint16_t x)
 }
 /*- End of function --------------------------------------------------------*/
 
-uint32_t bit_reverse32(uint32_t x)
+SPAN_DECLARE(uint32_t) bit_reverse32(uint32_t x)
 {
     x = (x >> 16) | (x << 16);
     x = ((x & 0xFF00FF00) >> 8) | ((x & 0x00FF00FF) << 8);
@@ -60,7 +60,7 @@ uint32_t bit_reverse32(uint32_t x)
 }
 /*- End of function --------------------------------------------------------*/
 
-uint32_t bit_reverse_4bytes(uint32_t x)
+SPAN_DECLARE(uint32_t) bit_reverse_4bytes(uint32_t x)
 {
     x = ((x & 0xF0F0F0F0) >> 4) | ((x & 0x0F0F0F0F) << 4);
     x = ((x & 0xCCCCCCCC) >> 2) | ((x & 0x33333333) << 2);
@@ -78,7 +78,7 @@ uint64_t bit_reverse_8bytes(uint64_t x)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-void bit_reverse(uint8_t to[], const uint8_t from[], int len)
+SPAN_DECLARE(void) bit_reverse(uint8_t to[], const uint8_t from[], int len)
 {
 #if defined(SPANDSP_MISALIGNED_ACCESS_FAILS)
     int i;
@@ -138,7 +138,7 @@ void bit_reverse(uint8_t to[], const uint8_t from[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int one_bits32(uint32_t x)
+SPAN_DECLARE(int) one_bits32(uint32_t x)
 {
     x = x - ((x >> 1) & 0x55555555);
     /* We now have 16 2-bit counts */
@@ -158,7 +158,7 @@ int one_bits32(uint32_t x)
 }
 /*- End of function --------------------------------------------------------*/
 
-uint32_t make_mask32(uint32_t x)
+SPAN_DECLARE(uint32_t) make_mask32(uint32_t x)
 {
     x |= (x >> 1);
     x |= (x >> 2);
@@ -169,7 +169,7 @@ uint32_t make_mask32(uint32_t x)
 }
 /*- End of function --------------------------------------------------------*/
 
-uint16_t make_mask16(uint16_t x)
+SPAN_DECLARE(uint16_t) make_mask16(uint16_t x)
 {
     x |= (x >> 1);
     x |= (x >> 2);

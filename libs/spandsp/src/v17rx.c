@@ -132,25 +132,25 @@ static const float constellation_spacing[4] =
 };
 #endif
 
-float v17_rx_carrier_frequency(v17_rx_state_t *s)
+SPAN_DECLARE(float) v17_rx_carrier_frequency(v17_rx_state_t *s)
 {
     return dds_frequencyf(s->carrier_phase_rate);
 }
 /*- End of function --------------------------------------------------------*/
 
-float v17_rx_symbol_timing_correction(v17_rx_state_t *s)
+SPAN_DECLARE(float) v17_rx_symbol_timing_correction(v17_rx_state_t *s)
 {
     return (float) s->total_baud_timing_correction/((float) RX_PULSESHAPER_COEFF_SETS*10.0f/3.0f);
 }
 /*- End of function --------------------------------------------------------*/
 
-float v17_rx_signal_power(v17_rx_state_t *s)
+SPAN_DECLARE(float) v17_rx_signal_power(v17_rx_state_t *s)
 {
     return power_meter_current_dbm0(&s->power);
 }
 /*- End of function --------------------------------------------------------*/
 
-void v17_rx_signal_cutoff(v17_rx_state_t *s, float cutoff)
+SPAN_DECLARE(void) v17_rx_signal_cutoff(v17_rx_state_t *s, float cutoff)
 {
     /* The 0.4 factor allows for the gain of the DC blocker */
     s->carrier_on_power = (int32_t) (power_meter_level_dbm0(cutoff + 2.5f)*0.4f);
@@ -168,9 +168,9 @@ static void report_status_change(v17_rx_state_t *s, int status)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-int v17_rx_equalizer_state(v17_rx_state_t *s, complexi16_t **coeffs)
+SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexi16_t **coeffs)
 #else
-int v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs)
+SPAN_DECLARE(int) v17_rx_equalizer_state(v17_rx_state_t *s, complexf_t **coeffs)
 #endif
 {
     *coeffs = s->eq_coeff;
@@ -955,7 +955,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 }
 /*- End of function --------------------------------------------------------*/
 
-int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int step;
@@ -1111,27 +1111,27 @@ int v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit, void *user_data)
 {
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-void v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *v17_rx_get_logging_state(v17_rx_state_t *s)
+SPAN_DECLARE(logging_state_t *) v17_rx_get_logging_state(v17_rx_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-int v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train)
+SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train)
 {
     int i;
 
@@ -1240,7 +1240,7 @@ int v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_train)
 }
 /*- End of function --------------------------------------------------------*/
 
-v17_rx_state_t *v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data)
 {
     if (s == NULL)
     {
@@ -1263,14 +1263,14 @@ v17_rx_state_t *v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_
 }
 /*- End of function --------------------------------------------------------*/
 
-int v17_rx_free(v17_rx_state_t *s)
+SPAN_DECLARE(int) v17_rx_free(v17_rx_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-void v17_rx_set_qam_report_handler(v17_rx_state_t *s, qam_report_handler_t handler, void *user_data)
+SPAN_DECLARE(void) v17_rx_set_qam_report_handler(v17_rx_state_t *s, qam_report_handler_t handler, void *user_data)
 {
     s->qam_report = handler;
     s->qam_user_data = user_data;

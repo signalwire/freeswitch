@@ -255,7 +255,7 @@ static void fax_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_d
 }
 /*- End of function --------------------------------------------------------*/
 
-int fax_rx(fax_state_t *s, int16_t *amp, int len)
+SPAN_DECLARE(int) fax_rx(fax_state_t *s, int16_t *amp, int len)
 {
     int i;
 
@@ -293,7 +293,7 @@ static int set_next_tx_type(fax_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int fax_tx(fax_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE(int) fax_tx(fax_state_t *s, int16_t *amp, int max_len)
 {
     int len;
 #if defined(LOG_FAX_AUDIO)
@@ -514,31 +514,31 @@ static void fax_set_tx_type(void *user_data, int type, int bit_rate, int short_t
 }
 /*- End of function --------------------------------------------------------*/
 
-void fax_set_transmit_on_idle(fax_state_t *s, int transmit_on_idle)
+SPAN_DECLARE(void) fax_set_transmit_on_idle(fax_state_t *s, int transmit_on_idle)
 {
     s->modems.transmit_on_idle = transmit_on_idle;
 }
 /*- End of function --------------------------------------------------------*/
 
-void fax_set_tep_mode(fax_state_t *s, int use_tep)
+SPAN_DECLARE(void) fax_set_tep_mode(fax_state_t *s, int use_tep)
 {
     s->modems.use_tep = use_tep;
 }
 /*- End of function --------------------------------------------------------*/
 
-t30_state_t *fax_get_t30_state(fax_state_t *s)
+SPAN_DECLARE(t30_state_t *) fax_get_t30_state(fax_state_t *s)
 {
     return &s->t30;
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *fax_get_logging_state(fax_state_t *s)
+SPAN_DECLARE(logging_state_t *) fax_get_logging_state(fax_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-fax_state_t *fax_init(fax_state_t *s, int calling_party)
+SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
 {
     if (s == NULL)
     {
@@ -594,14 +594,14 @@ fax_state_t *fax_init(fax_state_t *s, int calling_party)
 }
 /*- End of function --------------------------------------------------------*/
 
-int fax_release(fax_state_t *s)
+SPAN_DECLARE(int) fax_release(fax_state_t *s)
 {
     t30_release(&s->t30);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int fax_free(fax_state_t *s)
+SPAN_DECLARE(int) fax_free(fax_state_t *s)
 {
     t30_release(&s->t30);
     free(s);

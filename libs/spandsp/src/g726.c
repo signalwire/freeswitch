@@ -997,7 +997,7 @@ static int16_t g726_40_decoder(g726_state_t *s, uint8_t code)
 }
 /*- End of function --------------------------------------------------------*/
 
-g726_state_t *g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing)
+SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing)
 {
     int i;
 
@@ -1057,14 +1057,14 @@ g726_state_t *g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packi
 }
 /*- End of function --------------------------------------------------------*/
 
-int g726_release(g726_state_t *s)
+SPAN_DECLARE(int) g726_release(g726_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int g726_decode(g726_state_t *s,
+SPAN_DECLARE(int) g726_decode(g726_state_t *s,
                 int16_t amp[],
                 const uint8_t g726_data[],
                 int g726_bytes)
@@ -1120,7 +1120,7 @@ int g726_decode(g726_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int g726_encode(g726_state_t *s,
+SPAN_DECLARE(int) g726_encode(g726_state_t *s,
                 uint8_t g726_data[],
                 const int16_t amp[],
                 int len)

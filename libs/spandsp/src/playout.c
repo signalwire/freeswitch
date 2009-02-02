@@ -73,19 +73,19 @@ static playout_frame_t *queue_get(playout_state_t *s, timestamp_t sender_stamp)
 }
 /*- End of function --------------------------------------------------------*/
 
-timestamp_t playout_next_due(playout_state_t *s)
+SPAN_DECLARE(timestamp_t) playout_next_due(playout_state_t *s)
 {
     return s->last_speech_sender_stamp + s->last_speech_sender_len;
 }
 /*- End of function --------------------------------------------------------*/
 
-timestamp_t playout_current_length(playout_state_t *s)
+SPAN_DECLARE(timestamp_t) playout_current_length(playout_state_t *s)
 {
     return s->target_buffer_length;
 }
 /*- End of function --------------------------------------------------------*/
 
-playout_frame_t *playout_get_unconditional(playout_state_t *s)
+SPAN_DECLARE(playout_frame_t *) playout_get_unconditional(playout_state_t *s)
 {
     playout_frame_t *frame;
     
@@ -103,7 +103,7 @@ playout_frame_t *playout_get_unconditional(playout_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int playout_get(playout_state_t *s, playout_frame_t *frameout, timestamp_t now)
+SPAN_DECLARE(int) playout_get(playout_state_t *s, playout_frame_t *frameout, timestamp_t now)
 {
     playout_frame_t *frame;
 
@@ -222,7 +222,7 @@ int playout_get(playout_state_t *s, playout_frame_t *frameout, timestamp_t now)
 }
 /*- End of function --------------------------------------------------------*/
 
-int playout_put(playout_state_t *s, void *data, int type, timestamp_t sender_len, timestamp_t sender_stamp, timestamp_t receiver_stamp)
+SPAN_DECLARE(int) playout_put(playout_state_t *s, void *data, int type, timestamp_t sender_len, timestamp_t sender_stamp, timestamp_t receiver_stamp)
 {
     playout_frame_t *frame;
     playout_frame_t *p;
@@ -305,7 +305,7 @@ int playout_put(playout_state_t *s, void *data, int type, timestamp_t sender_len
 }
 /*- End of function --------------------------------------------------------*/
 
-void playout_restart(playout_state_t *s, int min_length, int max_length)
+SPAN_DECLARE(void) playout_restart(playout_state_t *s, int min_length, int max_length)
 {
     playout_frame_t *frame;
     playout_frame_t *next;
@@ -330,7 +330,7 @@ void playout_restart(playout_state_t *s, int min_length, int max_length)
 }
 /*- End of function --------------------------------------------------------*/
 
-playout_state_t *playout_new(int min_length, int max_length)
+SPAN_DECLARE(playout_state_t *) playout_new(int min_length, int max_length)
 {
     playout_state_t *s;
 
@@ -342,7 +342,7 @@ playout_state_t *playout_new(int min_length, int max_length)
 }
 /*- End of function --------------------------------------------------------*/
 
-void playout_free(playout_state_t *s)
+SPAN_DECLARE(void) playout_free(playout_state_t *s)
 {
     playout_frame_t *frame;
     playout_frame_t *next;

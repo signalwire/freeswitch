@@ -197,28 +197,28 @@ extern "C"
 /*! \brief Convert the code for an indicator to a short text name.
     \param indicator The type of indicator.
     \return A pointer to a short text name for the indicator. */
-SPAN_DECLARE(const char) *t38_indicator_to_str(int indicator);
+SPAN_DECLARE(const char *) t38_indicator_to_str(int indicator);
 
 /*! \brief Convert the code for a type of data to a short text name.
     \param data_type The data type.
     \return A pointer to a short text name for the data type. */
-SPAN_DECLARE(const char) *t38_data_type_to_str(int data_type);
+SPAN_DECLARE(const char *) t38_data_type_to_str(int data_type);
 
 /*! \brief Convert the code for a type of data field to a short text name.
     \param field_type The field type.
     \return A pointer to a short text name for the field type. */
-SPAN_DECLARE(const char) *t38_field_type_to_str(int field_type);
+SPAN_DECLARE(const char *) t38_field_type_to_str(int field_type);
 
 /*! \brief Convert the code for a CM profile code to text description.
     \param profile The profile code from a CM message.
     \return A pointer to a short text description of the profile. */
-SPAN_DECLARE(const char) *t38_cm_profile_to_str(int profile);
+SPAN_DECLARE(const char *) t38_cm_profile_to_str(int profile);
 
 /*! \brief Convert a JM message code to text description.
     \param data The data field of the message.
     \param len The length of the data field.
     \return A pointer to a short text description of the profile. */
-SPAN_DECLARE(const char) *t38_jm_to_str(const uint8_t *data, int len);
+SPAN_DECLARE(const char *) t38_jm_to_str(const uint8_t *data, int len);
 
 /*! \brief Convert a V34rate message to an actual bit rate.
     \param data The data field of the message.
@@ -326,9 +326,9 @@ SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep);
     \param s The T.38 context.
     \return A pointer to the logging context, or NULL.
 */
-SPAN_DECLARE(logging_state_t) *t38_core_get_logging_state(t38_core_state_t *s);
+SPAN_DECLARE(logging_state_t *) t38_core_get_logging_state(t38_core_state_t *s);
 
-SPAN_DECLARE(t38_core_state_t) *t38_core_init(t38_core_state_t *s,
+SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
                                               t38_rx_indicator_handler_t *rx_indicator_handler,
                                               t38_rx_data_handler_t *rx_data_handler,
                                               t38_rx_missing_handler_t *rx_missing_handler,

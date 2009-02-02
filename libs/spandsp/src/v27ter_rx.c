@@ -128,13 +128,13 @@ static const complexf_t v27ter_constellation[8] =
 };
 #endif
 
-float v27ter_rx_carrier_frequency(v27ter_rx_state_t *s)
+SPAN_DECLARE(float) v27ter_rx_carrier_frequency(v27ter_rx_state_t *s)
 {
     return dds_frequencyf(s->carrier_phase_rate);
 }
 /*- End of function --------------------------------------------------------*/
 
-float v27ter_rx_symbol_timing_correction(v27ter_rx_state_t *s)
+SPAN_DECLARE(float) v27ter_rx_symbol_timing_correction(v27ter_rx_state_t *s)
 {
     int steps_per_symbol;
     
@@ -143,13 +143,13 @@ float v27ter_rx_symbol_timing_correction(v27ter_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-float v27ter_rx_signal_power(v27ter_rx_state_t *s)
+SPAN_DECLARE(float) v27ter_rx_signal_power(v27ter_rx_state_t *s)
 {
     return power_meter_current_dbm0(&s->power);
 }
 /*- End of function --------------------------------------------------------*/
 
-void v27ter_rx_signal_cutoff(v27ter_rx_state_t *s, float cutoff)
+SPAN_DECLARE(void) v27ter_rx_signal_cutoff(v27ter_rx_state_t *s, float cutoff)
 {
     /* The 0.4 factor allows for the gain of the DC blocker */
     s->carrier_on_power = (int32_t) (power_meter_level_dbm0(cutoff + 2.5f)*0.4f);
@@ -167,9 +167,9 @@ static void report_status_change(v27ter_rx_state_t *s, int status)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-int v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexi16_t **coeffs)
+SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexi16_t **coeffs)
 #else
-int v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexf_t **coeffs)
+SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexf_t **coeffs)
 #endif
 {
     *coeffs = s->eq_coeff;
@@ -741,7 +741,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
 }
 /*- End of function --------------------------------------------------------*/
 
-int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int step;
@@ -1009,27 +1009,27 @@ int v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void v27ter_rx_set_put_bit(v27ter_rx_state_t *s, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(void) v27ter_rx_set_put_bit(v27ter_rx_state_t *s, put_bit_func_t put_bit, void *user_data)
 {
     s->put_bit = put_bit;
     s->put_bit_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-void v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *v27ter_rx_get_logging_state(v27ter_rx_state_t *s)
+SPAN_DECLARE(logging_state_t *) v27ter_rx_get_logging_state(v27ter_rx_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-int v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train)
+SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Restarting V.27ter\n");
     if (bit_rate != 4800  &&  bit_rate != 2400)
@@ -1096,7 +1096,7 @@ int v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_train)
 }
 /*- End of function --------------------------------------------------------*/
 
-v27ter_rx_state_t *v27ter_rx_init(v27ter_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(v27ter_rx_state_t *) v27ter_rx_init(v27ter_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data)
 {
     if (s == NULL)
     {
@@ -1115,14 +1115,14 @@ v27ter_rx_state_t *v27ter_rx_init(v27ter_rx_state_t *s, int bit_rate, put_bit_fu
 }
 /*- End of function --------------------------------------------------------*/
 
-int v27ter_rx_free(v27ter_rx_state_t *s)
+SPAN_DECLARE(int) v27ter_rx_free(v27ter_rx_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-void v27ter_rx_set_qam_report_handler(v27ter_rx_state_t *s, qam_report_handler_t handler, void *user_data)
+SPAN_DECLARE(void) v27ter_rx_set_qam_report_handler(v27ter_rx_state_t *s, qam_report_handler_t handler, void *user_data)
 {
     s->qam_report = handler;
     s->qam_user_data = user_data;

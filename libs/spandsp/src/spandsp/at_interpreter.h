@@ -173,7 +173,7 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
     \param modem_control_handler x.
     \param modem_control_user_data x.
     \return A pointer to the AT context, or NULL if there was a problem. */
-SPAN_DECLARE(at_state_t) *at_init(at_state_t *s,
+SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
                                   at_tx_handler_t *at_tx_handler,
                                   void *at_tx_user_data,
                                   at_modem_control_handler_t *modem_control_handler,

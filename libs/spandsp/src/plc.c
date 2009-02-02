@@ -115,7 +115,7 @@ static __inline__ int amdf_pitch(int min_pitch, int max_pitch, int16_t amp[], in
 }
 /*- End of function --------------------------------------------------------*/
 
-int plc_rx(plc_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) plc_rx(plc_state_t *s, int16_t amp[], int len)
 {
     int i;
     int pitch_overlap;
@@ -159,7 +159,7 @@ int plc_rx(plc_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int plc_fillin(plc_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) plc_fillin(plc_state_t *s, int16_t amp[], int len)
 {
     int i;
     int pitch_overlap;
@@ -235,7 +235,7 @@ int plc_fillin(plc_state_t *s, int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-plc_state_t *plc_init(plc_state_t *s)
+SPAN_DECLARE(plc_state_t *) plc_init(plc_state_t *s)
 {
     if (s == NULL)
     {
@@ -247,7 +247,7 @@ plc_state_t *plc_init(plc_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int plc_free(plc_state_t *s)
+SPAN_DECLARE(int) plc_free(plc_state_t *s)
 {
     if (s)
         free(s);

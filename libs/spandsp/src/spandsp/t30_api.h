@@ -113,14 +113,14 @@ SPAN_DECLARE(int) t30_set_tx_ident(t30_state_t *s, const char *id);
     \param s The T.30 context.
     \param id A pointer to the identifier.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_tx_ident(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_tx_ident(t30_state_t *s);
 
 /*! Get the transmitted identifier associated with a T.30 context.
     \brief Set the transmitted identifier associated with a T.30 context.
     \param s The T.30 context.
     \param id A pointer to the identifier.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_rx_ident(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_ident(t30_state_t *s);
 
 /*! Set the transmitted sub-address associated with a T.30 context.
     \brief Set the transmitted sub-address associated with a T.30 context.
@@ -134,14 +134,14 @@ SPAN_DECLARE(int) t30_set_tx_sub_address(t30_state_t *s, const char *sub_address
     \param s The T.30 context.
     \param sub_address A pointer to the sub-address.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_tx_sub_address(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_tx_sub_address(t30_state_t *s);
 
 /*! Get the received sub-address associated with a T.30 context.
     \brief Get the received sub-address associated with a T.30 context.
     \param s The T.30 context.
     \param sub_address A pointer to the sub-address.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_rx_sub_address(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_sub_address(t30_state_t *s);
 
 /*! Set the transmitted selective polling address (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -157,7 +157,7 @@ SPAN_DECLARE(int) t30_set_tx_selective_polling_address(t30_state_t *s, const cha
     \param s The T.30 context.
     \param selective_polling_address A pointer to the selective polling address.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_tx_selective_polling_address(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_tx_selective_polling_address(t30_state_t *s);
 
 /*! Get the received selective polling address (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -165,7 +165,7 @@ SPAN_DECLARE(const char) *t30_get_tx_selective_polling_address(t30_state_t *s);
     \param s The T.30 context.
     \param selective_polling_address A pointer to the selective polling address.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_rx_selective_polling_address(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_selective_polling_address(t30_state_t *s);
 
 /*! Set the transmitted polled sub-address (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -181,7 +181,7 @@ SPAN_DECLARE(int) t30_set_tx_polled_sub_address(t30_state_t *s, const char *poll
     \param s The T.30 context.
     \param polled_sub_address A pointer to the polled sub-address.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_tx_polled_sub_address(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_tx_polled_sub_address(t30_state_t *s);
 
 /*! Get the received polled sub-address (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -189,7 +189,7 @@ SPAN_DECLARE(const char) *t30_get_tx_polled_sub_address(t30_state_t *s);
     \param s The T.30 context.
     \param polled_sub_address A pointer to the polled sub-address.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_rx_polled_sub_address(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_polled_sub_address(t30_state_t *s);
 
 /*! Set the transmitted sender ident (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -205,7 +205,7 @@ SPAN_DECLARE(int) t30_set_tx_sender_ident(t30_state_t *s, const char *sender_ide
     \param s The T.30 context.
     \param sender_ident A pointer to the sender ident.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_tx_sender_ident(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_tx_sender_ident(t30_state_t *s);
 
 /*! Get the received sender ident (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -213,7 +213,7 @@ SPAN_DECLARE(const char) *t30_get_tx_sender_ident(t30_state_t *s);
     \param s The T.30 context.
     \param sender_ident A pointer to the sender ident.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_rx_sender_ident(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_sender_ident(t30_state_t *s);
 
 /*! Set the transmitted password (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -229,7 +229,7 @@ SPAN_DECLARE(int) t30_set_tx_password(t30_state_t *s, const char *password);
     \param s The T.30 context.
     \param password A pointer to the password.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_tx_password(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_tx_password(t30_state_t *s);
 
 /*! Get the received password (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -237,7 +237,7 @@ SPAN_DECLARE(const char) *t30_get_tx_password(t30_state_t *s);
     \param s The T.30 context.
     \param password A pointer to the password.
     \return 0 for OK, else -1. */
-SPAN_DECLARE(const char) *t30_get_rx_password(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_password(t30_state_t *s);
 
 /*! Set the transmitted ??? (i.e. the one we will send to the far
     end) associated with a T.30 context.
@@ -406,19 +406,19 @@ SPAN_DECLARE(size_t) t30_get_tx_page_header_info(t30_state_t *s, char *info);
     \brief Get the country of origin of the remote FAX machine associated with a T.30 context.
     \param s The T.30 context.
     \return a pointer to the country name, or NULL if the country is not known. */
-SPAN_DECLARE(const char) *t30_get_rx_country(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_country(t30_state_t *s);
 
 /*! Get the name of the vendor of the remote FAX machine associated with a T.30 context.
     \brief Get the name of the vendor of the remote FAX machine associated with a T.30 context.
     \param s The T.30 context.
     \return a pointer to the vendor name, or NULL if the vendor is not known. */
-SPAN_DECLARE(const char) *t30_get_rx_vendor(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_vendor(t30_state_t *s);
 
 /*! Get the name of the model of the remote FAX machine associated with a T.30 context.
     \brief Get the name of the model of the remote FAX machine associated with a T.30 context.
     \param s The T.30 context.
     \return a pointer to the model name, or NULL if the model is not known. */
-SPAN_DECLARE(const char) *t30_get_rx_model(t30_state_t *s);
+SPAN_DECLARE(const char *) t30_get_rx_model(t30_state_t *s);
 
 /*! Specify the file name of the next TIFF file to be received by a T.30
     context.
@@ -557,7 +557,7 @@ SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time
     \param s The T.30 context.
     \return A pointer to the logging context, or NULL.
 */
-SPAN_DECLARE(logging_state_t) *t30_get_logging_state(t30_state_t *s);
+SPAN_DECLARE(logging_state_t *) t30_get_logging_state(t30_state_t *s);
 
 #if defined(__cplusplus)
 }

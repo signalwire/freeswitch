@@ -158,7 +158,7 @@ SPAN_DECLARE(int) queue_write_msg(queue_state_t *s, const uint8_t *buf, int len)
     \param flags Flags controlling the operation of the queue.
            Valid flags are QUEUE_READ_ATOMIC and QUEUE_WRITE_ATOMIC.
     \return A pointer to the context if OK, else NULL. */
-SPAN_DECLARE(queue_state_t) *queue_init(queue_state_t *s, int len, int flags);
+SPAN_DECLARE(queue_state_t *) queue_init(queue_state_t *s, int len, int flags);
 
 /*! Delete a queue.
     \brief Delete a queue.

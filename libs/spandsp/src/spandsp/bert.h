@@ -116,7 +116,7 @@ extern "C"
 /*! Return a short description of a BERT event.
     \param event The event type.
     \return A pointer to a short text string describing the event. */
-SPAN_DECLARE(const char) *bert_event_to_str(int event);
+SPAN_DECLARE(const char *) bert_event_to_str(int event);
 
 /*! Initialise a BERT context.
     \param s The BERT context.
@@ -125,7 +125,7 @@ SPAN_DECLARE(const char) *bert_event_to_str(int event);
     \param resync_len ???
     \param resync_percent The percentage of bad bits which will cause a resync.
     \return The BERT context. */
-SPAN_DECLARE(bert_state_t) *bert_init(bert_state_t *s, int limit, int pattern, int resync_len, int resync_percent);
+SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, int resync_len, int resync_percent);
 
 /*! Get the next bit of the BERT sequence from the generator.
     \param s The BERT context.

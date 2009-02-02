@@ -213,7 +213,7 @@ extern "C" {
     \param file The name of the file to be received.
     \param output_encoding The output encoding.
     \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(t4_state_t) *t4_rx_init(t4_state_t *s, const char *file, int output_encoding);
+SPAN_DECLARE(t4_state_t *) t4_rx_init(t4_state_t *s, const char *file, int output_encoding);
 
 /*! \brief Prepare to receive the next page of the current document.
     \param s The T.4 context.
@@ -311,7 +311,7 @@ SPAN_DECLARE(void) t4_rx_set_model(t4_state_t *s, const char *model);
     \param start_page The first page to send. -1 for no restriction.
     \param stop_page The last page to send. -1 for no restriction.
     \return A pointer to the context, or NULL if there was a problem. */
-SPAN_DECLARE(t4_state_t) *t4_tx_init(t4_state_t *s, const char *file, int start_page, int stop_page);
+SPAN_DECLARE(t4_state_t *) t4_tx_init(t4_state_t *s, const char *file, int start_page, int stop_page);
 
 /*! \brief Prepare to send the next page of the current document.
     \param s The T.4 context.
@@ -445,7 +445,7 @@ SPAN_DECLARE(void) t4_get_transfer_statistics(t4_state_t *s, t4_stats_t *t);
     \brief Get the short text name of an encoding format.
     \param encoding The encoding type.
     \return A pointer to the string. */
-SPAN_DECLARE(const char) *t4_encoding_to_str(int encoding);
+SPAN_DECLARE(const char *) t4_encoding_to_str(int encoding);
 
 #if defined(__cplusplus)
 }

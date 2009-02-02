@@ -53,7 +53,7 @@
 #include "spandsp/dc_restore.h"
 #include "spandsp/modem_echo.h"
 
-modem_echo_can_state_t *modem_echo_can_create(int len)
+SPAN_DECLARE(modem_echo_can_state_t *) modem_echo_can_create(int len)
 {
     modem_echo_can_state_t *ec;
 
@@ -86,7 +86,7 @@ modem_echo_can_state_t *modem_echo_can_create(int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void modem_echo_can_free(modem_echo_can_state_t *ec)
+SPAN_DECLARE(void) modem_echo_can_free(modem_echo_can_state_t *ec)
 {
     fir16_free(&ec->fir_state);
     free(ec->fir_taps32);
@@ -95,7 +95,7 @@ void modem_echo_can_free(modem_echo_can_state_t *ec)
 }
 /*- End of function --------------------------------------------------------*/
 
-void modem_echo_can_flush(modem_echo_can_state_t *ec)
+SPAN_DECLARE(void) modem_echo_can_flush(modem_echo_can_state_t *ec)
 {
     ec->tx_power = 0;
 
@@ -107,13 +107,13 @@ void modem_echo_can_flush(modem_echo_can_state_t *ec)
 }
 /*- End of function --------------------------------------------------------*/
 
-void modem_echo_can_adaption_mode(modem_echo_can_state_t *ec, int adapt)
+SPAN_DECLARE(void) modem_echo_can_adaption_mode(modem_echo_can_state_t *ec, int adapt)
 {
     ec->adapt = adapt;
 }
 /*- End of function --------------------------------------------------------*/
 
-int16_t modem_echo_can_update(modem_echo_can_state_t *ec, int16_t tx, int16_t rx)
+SPAN_DECLARE(int16_t) modem_echo_can_update(modem_echo_can_state_t *ec, int16_t tx, int16_t rx)
 {
     int32_t echo_value;
     int clean_rx;

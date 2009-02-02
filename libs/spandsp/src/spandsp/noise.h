@@ -108,9 +108,9 @@ extern "C"
            generation to be adjusted.
     \return A pointer to the noise generator context.
 */
-SPAN_DECLARE(noise_state_t) *noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
+SPAN_DECLARE(noise_state_t *) noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
 
-SPAN_DECLARE(noise_state_t) *noise_init_dbov(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
+SPAN_DECLARE(noise_state_t *) noise_init_dbov(noise_state_t *s, int seed, float level, int class_of_noise, int quality);
 
 SPAN_DECLARE(int) noise_free(noise_state_t *s);
 

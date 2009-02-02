@@ -95,13 +95,13 @@ static double ran1(awgn_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-awgn_state_t *awgn_init_dbm0(awgn_state_t *s, int idum, float level)
+SPAN_DECLARE(awgn_state_t *) awgn_init_dbm0(awgn_state_t *s, int idum, float level)
 {
     return awgn_init_dbov(s, idum, level - DBM0_MAX_POWER);
 }
 /*- End of function --------------------------------------------------------*/
 
-awgn_state_t *awgn_init_dbov(awgn_state_t *s, int idum, float level)
+SPAN_DECLARE(awgn_state_t *) awgn_init_dbov(awgn_state_t *s, int idum, float level)
 {
     int j;
 
@@ -133,7 +133,7 @@ awgn_state_t *awgn_init_dbov(awgn_state_t *s, int idum, float level)
 }
 /*- End of function --------------------------------------------------------*/
 
-int16_t awgn(awgn_state_t *s)
+SPAN_DECLARE(int16_t) awgn(awgn_state_t *s)
 {
     double fac;
     double r;

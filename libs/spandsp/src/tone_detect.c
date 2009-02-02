@@ -186,7 +186,7 @@ float goertzel_result(goertzel_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-complexf_t periodogram(const complexf_t coeffs[], const complexf_t amp[], int len)
+SPAN_DECLARE(complexf_t) periodogram(const complexf_t coeffs[], const complexf_t amp[], int len)
 {
     complexf_t sum;
     complexf_t diff;
@@ -205,7 +205,7 @@ complexf_t periodogram(const complexf_t coeffs[], const complexf_t amp[], int le
 }
 /*- End of function --------------------------------------------------------*/
 
-int periodogram_prepare(complexf_t sum[], complexf_t diff[], const complexf_t amp[], int len)
+SPAN_DECLARE(int) periodogram_prepare(complexf_t sum[], complexf_t diff[], const complexf_t amp[], int len)
 {
     int i;
 
@@ -218,7 +218,7 @@ int periodogram_prepare(complexf_t sum[], complexf_t diff[], const complexf_t am
 }
 /*- End of function --------------------------------------------------------*/
 
-complexf_t periodogram_apply(const complexf_t coeffs[], const complexf_t sum[], const complexf_t diff[], int len)
+SPAN_DECLARE(complexf_t) periodogram_apply(const complexf_t coeffs[], const complexf_t sum[], const complexf_t diff[], int len)
 {
     complexf_t x;
     int i;
@@ -233,7 +233,7 @@ complexf_t periodogram_apply(const complexf_t coeffs[], const complexf_t sum[], 
 }
 /*- End of function --------------------------------------------------------*/
 
-int periodogram_generate_coeffs(complexf_t coeffs[], float freq, int sample_rate, int window_len)
+SPAN_DECLARE(int) periodogram_generate_coeffs(complexf_t coeffs[], float freq, int sample_rate, int window_len)
 {
     float window;
     float sum;
@@ -262,7 +262,7 @@ int periodogram_generate_coeffs(complexf_t coeffs[], float freq, int sample_rate
 }
 /*- End of function --------------------------------------------------------*/
 
-float periodogram_generate_phase_offset(complexf_t *offset, float freq, int sample_rate, int interval)
+SPAN_DECLARE(float) periodogram_generate_phase_offset(complexf_t *offset, float freq, int sample_rate, int interval)
 {
     float x;
 
@@ -274,7 +274,7 @@ float periodogram_generate_phase_offset(complexf_t *offset, float freq, int samp
 }
 /*- End of function --------------------------------------------------------*/
 
-float periodogram_freq_error(const complexf_t *phase_offset, float scale, const complexf_t *last_result, const complexf_t *result)
+SPAN_DECLARE(float) periodogram_freq_error(const complexf_t *phase_offset, float scale, const complexf_t *last_result, const complexf_t *result)
 {
     complexf_t prediction;
 

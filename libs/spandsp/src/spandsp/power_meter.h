@@ -66,14 +66,14 @@ extern "C"
     \param s The power meter context.
     \param shift The shift to be used by the IIR filter.
     \return The power meter context. */
-SPAN_DECLARE(power_meter_t) *power_meter_init(power_meter_t *s, int shift);
+SPAN_DECLARE(power_meter_t *) power_meter_init(power_meter_t *s, int shift);
 
 /*! Change the damping factor of a power meter context.
     \brief Change the damping factor of a power meter context.
     \param s The power meter context.
     \param shift The new shift to be used by the IIR filter.
     \return The power meter context. */
-SPAN_DECLARE(power_meter_t) *power_meter_damping(power_meter_t *s, int shift);
+SPAN_DECLARE(power_meter_t *) power_meter_damping(power_meter_t *s, int shift);
 
 /*! Update a power meter.
     \brief Update a power meter.

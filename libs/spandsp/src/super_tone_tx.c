@@ -69,7 +69,7 @@
     two iterations of 50 seconds each.
 */
 
-super_tone_tx_step_t *super_tone_tx_make_step(super_tone_tx_step_t *s,
+SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_t *s,
                                               float f1,
                                               float l1,
                                               float f2,
@@ -111,7 +111,7 @@ super_tone_tx_step_t *super_tone_tx_make_step(super_tone_tx_step_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-void super_tone_tx_free(super_tone_tx_step_t *s)
+SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s)
 {
     super_tone_tx_step_t *t;
 
@@ -127,7 +127,7 @@ void super_tone_tx_free(super_tone_tx_step_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-super_tone_tx_state_t *super_tone_tx_init(super_tone_tx_state_t *s, super_tone_tx_step_t *tree)
+SPAN_DECLARE(super_tone_tx_state_t *) super_tone_tx_init(super_tone_tx_state_t *s, super_tone_tx_step_t *tree)
 {
     if (tree == NULL)
         return NULL;
@@ -146,7 +146,7 @@ super_tone_tx_state_t *super_tone_tx_init(super_tone_tx_state_t *s, super_tone_t
 }
 /*- End of function --------------------------------------------------------*/
 
-int super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max_samples)
+SPAN_DECLARE(int) super_tone_tx(super_tone_tx_state_t *s, int16_t amp[], int max_samples)
 {
     int samples;
     int limit;

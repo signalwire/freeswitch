@@ -92,7 +92,7 @@ static const struct
     { 215000,       0,       0}     /* T38_IND_V33_14400_TRAINING */
 };
 
-const char *t38_indicator_to_str(int indicator)
+SPAN_DECLARE(const char *) t38_indicator_to_str(int indicator)
 {
     switch (indicator)
     {
@@ -147,7 +147,7 @@ const char *t38_indicator_to_str(int indicator)
 }
 /*- End of function --------------------------------------------------------*/
 
-const char *t38_data_type_to_str(int data_type)
+SPAN_DECLARE(const char *) t38_data_type_to_str(int data_type)
 {
     switch (data_type)
     {
@@ -186,7 +186,7 @@ const char *t38_data_type_to_str(int data_type)
 }
 /*- End of function --------------------------------------------------------*/
 
-const char *t38_field_type_to_str(int field_type)
+SPAN_DECLARE(const char *) t38_field_type_to_str(int field_type)
 {
     switch (field_type)
     {
@@ -219,7 +219,7 @@ const char *t38_field_type_to_str(int field_type)
 }
 /*- End of function --------------------------------------------------------*/
 
-const char *t38_cm_profile_to_str(int profile)
+SPAN_DECLARE(const char *) t38_cm_profile_to_str(int profile)
 {
     switch (profile)
     {
@@ -240,7 +240,7 @@ const char *t38_cm_profile_to_str(int profile)
 }
 /*- End of function --------------------------------------------------------*/
 
-const char *t38_jm_to_str(const uint8_t *data, int len)
+SPAN_DECLARE(const char *) t38_jm_to_str(const uint8_t *data, int len)
 {
     if (len < 2)
         return "???";
@@ -271,7 +271,7 @@ const char *t38_jm_to_str(const uint8_t *data, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_v34rate_to_bps(const uint8_t *data, int len)
+SPAN_DECLARE(int) t38_v34rate_to_bps(const uint8_t *data, int len)
 {
     int i;
     int rate;
@@ -327,7 +327,7 @@ static __inline__ int classify_seq_no_offset(int expected, int actual)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no)
+SPAN_DECLARE(int) t38_core_rx_ifp_packet(t38_core_state_t *s, const uint8_t *buf, int len, uint16_t seq_no)
 {
     int i;
     int t30_indicator;
@@ -777,7 +777,7 @@ static int t38_encode_data(t38_core_state_t *s, uint8_t buf[], int data_type, co
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_core_send_indicator(t38_core_state_t *s, int indicator, int count)
+SPAN_DECLARE(int) t38_core_send_indicator(t38_core_state_t *s, int indicator, int count)
 {
     uint8_t buf[100];
     int len;
@@ -809,13 +809,13 @@ int t38_core_send_indicator(t38_core_state_t *s, int indicator, int count)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_core_send_flags_delay(t38_core_state_t *s, int indicator)
+SPAN_DECLARE(int) t38_core_send_flags_delay(t38_core_state_t *s, int indicator)
 {
     return modem_startup_time[indicator].flags;
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const uint8_t field[], int field_len, int count)
+SPAN_DECLARE(int) t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const uint8_t field[], int field_len, int count)
 {
     t38_data_field_t field0;
     uint8_t buf[1000];
@@ -835,7 +835,7 @@ int t38_core_send_data(t38_core_state_t *s, int data_type, int field_type, const
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38_data_field_t field[], int fields, int count)
+SPAN_DECLARE(int) t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38_data_field_t field[], int fields, int count)
 {
     uint8_t buf[1000];
     int len;
@@ -851,79 +851,79 @@ int t38_core_send_data_multi_field(t38_core_state_t *s, int data_type, const t38
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_data_rate_management_method(t38_core_state_t *s, int method)
+SPAN_DECLARE(void) t38_set_data_rate_management_method(t38_core_state_t *s, int method)
 {
     s->data_rate_management_method = method;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_data_transport_protocol(t38_core_state_t *s, int data_transport_protocol)
+SPAN_DECLARE(void) t38_set_data_transport_protocol(t38_core_state_t *s, int data_transport_protocol)
 {
     s->data_transport_protocol = data_transport_protocol;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_fill_bit_removal(t38_core_state_t *s, int fill_bit_removal)
+SPAN_DECLARE(void) t38_set_fill_bit_removal(t38_core_state_t *s, int fill_bit_removal)
 {
     s->fill_bit_removal = fill_bit_removal;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_mmr_transcoding(t38_core_state_t *s, int mmr_transcoding)
+SPAN_DECLARE(void) t38_set_mmr_transcoding(t38_core_state_t *s, int mmr_transcoding)
 {
     s->mmr_transcoding = mmr_transcoding;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_jbig_transcoding(t38_core_state_t *s, int jbig_transcoding)
+SPAN_DECLARE(void) t38_set_jbig_transcoding(t38_core_state_t *s, int jbig_transcoding)
 {
     s->jbig_transcoding = jbig_transcoding;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_max_buffer_size(t38_core_state_t *s, int max_buffer_size)
+SPAN_DECLARE(void) t38_set_max_buffer_size(t38_core_state_t *s, int max_buffer_size)
 {
     s->max_buffer_size = max_buffer_size;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_max_datagram_size(t38_core_state_t *s, int max_datagram_size)
+SPAN_DECLARE(void) t38_set_max_datagram_size(t38_core_state_t *s, int max_datagram_size)
 {
     s->max_datagram_size = max_datagram_size;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_t38_version(t38_core_state_t *s, int t38_version)
+SPAN_DECLARE(void) t38_set_t38_version(t38_core_state_t *s, int t38_version)
 {
     s->t38_version = t38_version;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_sequence_number_handling(t38_core_state_t *s, int check)
+SPAN_DECLARE(void) t38_set_sequence_number_handling(t38_core_state_t *s, int check)
 {
     s->check_sequence_numbers = check;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep)
+SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep)
 {
     s->allow_for_tep = allow_for_tep;
 }
 /*- End of function --------------------------------------------------------*/
 
-int t38_get_fastest_image_data_rate(t38_core_state_t *s)
+SPAN_DECLARE(int) t38_get_fastest_image_data_rate(t38_core_state_t *s)
 {
     return s->fastest_image_data_rate;
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *t38_core_get_logging_state(t38_core_state_t *s)
+SPAN_DECLARE(logging_state_t *) t38_core_get_logging_state(t38_core_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-t38_core_state_t *t38_core_init(t38_core_state_t *s,
+SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
                                 t38_rx_indicator_handler_t *rx_indicator_handler,
                                 t38_rx_data_handler_t *rx_data_handler,
                                 t38_rx_missing_handler_t *rx_missing_handler,

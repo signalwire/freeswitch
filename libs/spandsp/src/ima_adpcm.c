@@ -276,7 +276,7 @@ static uint8_t encode(ima_adpcm_state_t *s, int16_t linear)
 }
 /*- End of function --------------------------------------------------------*/
 
-ima_adpcm_state_t *ima_adpcm_init(ima_adpcm_state_t *s, int variant, int chunk_size)
+SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s, int variant, int chunk_size)
 {
     if (s == NULL)
     {
@@ -291,14 +291,14 @@ ima_adpcm_state_t *ima_adpcm_init(ima_adpcm_state_t *s, int variant, int chunk_s
 }
 /*- End of function --------------------------------------------------------*/
 
-int ima_adpcm_release(ima_adpcm_state_t *s)
+SPAN_DECLARE(int) ima_adpcm_release(ima_adpcm_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int ima_adpcm_decode(ima_adpcm_state_t *s,
+SPAN_DECLARE(int) ima_adpcm_decode(ima_adpcm_state_t *s,
                      int16_t amp[],
                      const uint8_t ima_data[],
                      int ima_bytes)
@@ -414,7 +414,7 @@ int ima_adpcm_decode(ima_adpcm_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int ima_adpcm_encode(ima_adpcm_state_t *s,
+SPAN_DECLARE(int) ima_adpcm_encode(ima_adpcm_state_t *s,
                      uint8_t ima_data[],
                      const int16_t amp[],
                      int len)

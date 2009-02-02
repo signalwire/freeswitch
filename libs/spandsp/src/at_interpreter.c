@@ -138,7 +138,7 @@ static const char *at_response_codes[] =
     "+FRH:3"
 };
 
-void at_set_at_rx_mode(at_state_t *s, int new_mode)
+SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
 {
     /* The use of a DTE timeout is mode dependent. Set the timeout appropriately in
        the modem. */
@@ -156,7 +156,7 @@ void at_set_at_rx_mode(at_state_t *s, int new_mode)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_put_response(at_state_t *s, const char *t)
+SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t)
 {
     uint8_t buf[3];
     
@@ -170,7 +170,7 @@ void at_put_response(at_state_t *s, const char *t)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_put_numeric_response(at_state_t *s, int val)
+SPAN_DECLARE(void) at_put_numeric_response(at_state_t *s, int val)
 {
     char buf[20];
 
@@ -179,7 +179,7 @@ void at_put_numeric_response(at_state_t *s, int val)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_put_response_code(at_state_t *s, int code)
+SPAN_DECLARE(void) at_put_response_code(at_state_t *s, int code)
 {
     uint8_t buf[20];
 
@@ -211,7 +211,7 @@ static int answer_call(at_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_call_event(at_state_t *s, int event)
+SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Call event %d received\n", event);
     switch (event)
@@ -311,7 +311,7 @@ void at_call_event(at_state_t *s, int event)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_reset_call_info(at_state_t *s)
+SPAN_DECLARE(void) at_reset_call_info(at_state_t *s)
 {
     at_call_id_t *call_id;
     at_call_id_t *next;
@@ -327,7 +327,7 @@ void at_reset_call_info(at_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_set_call_info(at_state_t *s, char const *id, char const *value)
+SPAN_DECLARE(void) at_set_call_info(at_state_t *s, char const *id, char const *value)
 {
     at_call_id_t *new_call_id;
     at_call_id_t *call_id;
@@ -355,7 +355,7 @@ void at_set_call_info(at_state_t *s, char const *id, char const *value)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_display_call_info(at_state_t *s)
+SPAN_DECLARE(void) at_display_call_info(at_state_t *s)
 {
     char buf[132 + 1];
     at_call_id_t *call_id = s->call_id;
@@ -5143,7 +5143,7 @@ static int command_search(const char *u, int len, int *matched)
 }
 /*- End of function --------------------------------------------------------*/
 
-int at_modem_control(at_state_t *s, int op, const char *num)
+SPAN_DECLARE(int) at_modem_control(at_state_t *s, int op, const char *num)
 {
     switch (op)
     {
@@ -5177,7 +5177,7 @@ int at_modem_control(at_state_t *s, int op, const char *num)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_interpreter(at_state_t *s, const char *cmd, int len)
+SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
 {
     int i;
     int c;
@@ -5284,14 +5284,14 @@ void at_interpreter(at_state_t *s, const char *cmd, int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void at_set_class1_handler(at_state_t *s, at_class1_handler_t handler, void *user_data)
+SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t handler, void *user_data)
 {
     s->class1_handler = handler;
     s->class1_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-at_state_t *at_init(at_state_t *s,
+SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
                     at_tx_handler_t *at_tx_handler,
                     void *at_tx_user_data,
                     at_modem_control_handler_t *modem_control_handler,
@@ -5318,7 +5318,7 @@ at_state_t *at_init(at_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int at_free(at_state_t *s)
+SPAN_DECLARE(int) at_free(at_state_t *s)
 {
     at_reset_call_info(s);
     if (s->local_id)

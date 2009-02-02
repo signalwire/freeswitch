@@ -930,7 +930,7 @@ static int stream_cng(t31_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t31_t38_send_timeout(t31_state_t *s, int samples)
+SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
 {
     t31_t38_front_end_state_t *fe;
     int delay;
@@ -2039,14 +2039,14 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
 }
 /*- End of function --------------------------------------------------------*/
 
-void t31_call_event(t31_state_t *s, int event)
+SPAN_DECLARE(void) t31_call_event(t31_state_t *s, int event)
 {
     span_log(&s->logging, SPAN_LOG_FLOW, "Call event %d received\n", event);
     at_call_event(&s->at_state, event);
 }
 /*- End of function --------------------------------------------------------*/
 
-int t31_at_rx(t31_state_t *s, const char *t, int len)
+SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
 {
     if (s->dte_data_timeout)
         s->dte_data_timeout = s->call_samples + ms_to_samples(5000);
@@ -2258,7 +2258,7 @@ static void t31_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_d
 }
 /*- End of function --------------------------------------------------------*/
 
-int t31_rx(t31_state_t *s, int16_t amp[], int len)
+SPAN_DECLARE(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
 {
     int i;
     int32_t power;
@@ -2322,7 +2322,7 @@ static int set_next_tx_type(t31_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int t31_tx(t31_state_t *s, int16_t amp[], int max_len)
+SPAN_DECLARE(int) t31_tx(t31_state_t *s, int16_t amp[], int max_len)
 {
     int len;
 
@@ -2347,19 +2347,19 @@ int t31_tx(t31_state_t *s, int16_t amp[], int max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t31_set_transmit_on_idle(t31_state_t *s, int transmit_on_idle)
+SPAN_DECLARE(void) t31_set_transmit_on_idle(t31_state_t *s, int transmit_on_idle)
 {
     s->audio.modems.transmit_on_idle = transmit_on_idle;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t31_set_tep_mode(t31_state_t *s, int use_tep)
+SPAN_DECLARE(void) t31_set_tep_mode(t31_state_t *s, int use_tep)
 {
     s->audio.modems.use_tep = use_tep;
 }
 /*- End of function --------------------------------------------------------*/
 
-void t31_set_t38_config(t31_state_t *s, int without_pacing)
+SPAN_DECLARE(void) t31_set_t38_config(t31_state_t *s, int without_pacing)
 {
     if (without_pacing)
     {
@@ -2382,20 +2382,20 @@ void t31_set_t38_config(t31_state_t *s, int without_pacing)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t31_set_mode(t31_state_t *s, int t38_mode)
+SPAN_DECLARE(void) t31_set_mode(t31_state_t *s, int t38_mode)
 {
     s->t38_mode = t38_mode;
     span_log(&s->logging, SPAN_LOG_FLOW, "Mode set to %d\n", s->t38_mode);
 }
 /*- End of function --------------------------------------------------------*/
 
-logging_state_t *t31_get_logging_state(t31_state_t *s)
+SPAN_DECLARE(logging_state_t *) t31_get_logging_state(t31_state_t *s)
 {
     return &s->logging;
 }
 /*- End of function --------------------------------------------------------*/
 
-t38_core_state_t *t31_get_t38_core_state(t31_state_t *s)
+SPAN_DECLARE(t38_core_state_t *) t31_get_t38_core_state(t31_state_t *s)
 {
     return &s->t38_fe.t38;
 }
@@ -2445,7 +2445,7 @@ static int t31_t38_fe_init(t31_state_t *t,
 }
 /*- End of function --------------------------------------------------------*/
 
-t31_state_t *t31_init(t31_state_t *s,
+SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
                       at_tx_handler_t *at_tx_handler,
                       void *at_tx_user_data,
                       t31_modem_control_handler_t *modem_control_handler,
@@ -2507,7 +2507,7 @@ t31_state_t *t31_init(t31_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int t31_release(t31_state_t *s)
+SPAN_DECLARE(int) t31_release(t31_state_t *s)
 {
     at_reset_call_info(&s->at_state);
     free(s);

@@ -73,7 +73,7 @@ extern "C"
                 descriptor.
     \return The supervisory tone set descriptor.
 */
-SPAN_DECLARE(super_tone_rx_descriptor_t) *super_tone_rx_make_descriptor(super_tone_rx_descriptor_t *desc);
+SPAN_DECLARE(super_tone_rx_descriptor_t *) super_tone_rx_make_descriptor(super_tone_rx_descriptor_t *desc);
 
 /*! Free a supervisory tone detector descriptor.
     \param desc The supervisory tone set desciptor.
@@ -110,7 +110,7 @@ SPAN_DECLARE(int) super_tone_rx_add_element(super_tone_rx_descriptor_t *desc,
     \param user_data An opaque pointer passed when calling the callback routine.
     \return The supervisory tone detector context.
 */
-SPAN_DECLARE(super_tone_rx_state_t) *super_tone_rx_init(super_tone_rx_state_t *s,
+SPAN_DECLARE(super_tone_rx_state_t *) super_tone_rx_init(super_tone_rx_state_t *s,
                                                         super_tone_rx_descriptor_t *desc,
                                                         tone_report_func_t callback,
                                                         void *user_data);

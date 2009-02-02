@@ -73,7 +73,7 @@ extern "C"
            zero sample samples means treat each encode or decode operation
            as a chunk.
     \return A pointer to the IMA ADPCM context, or NULL for error. */
-SPAN_DECLARE(ima_adpcm_state_t) *ima_adpcm_init(ima_adpcm_state_t *s,
+SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s,
                                                 int variant,
                                                 int chunk_size);
 

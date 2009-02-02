@@ -196,7 +196,7 @@ extern "C"
     \param len The length of the canceller, in samples.
     \return The new canceller context, or NULL if the canceller could not be created.
 */
-SPAN_DECLARE(echo_can_state_t) *echo_can_create(int len, int adaption_mode);
+SPAN_DECLARE(echo_can_state_t *) echo_can_create(int len, int adaption_mode);
 
 /*! Free a voice echo canceller context.
     \param ec The echo canceller context.

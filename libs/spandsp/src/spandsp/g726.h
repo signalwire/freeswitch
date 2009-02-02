@@ -77,7 +77,7 @@ extern "C"
     \param ext_coding The coding used outside G.726.
     \param packing One of the G.726_PACKING_xxx options.
     \return A pointer to the G.726 context, or NULL for error. */
-SPAN_DECLARE(g726_state_t) *g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing);
+SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing);
 
 /*! Free a G.726 encode or decode context.
     \param s The G.726 context.

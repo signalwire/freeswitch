@@ -78,7 +78,7 @@ extern "C"
     \param put_bit The callback routine used to put the received data.
     \param user_data An opaque pointer passed to the put_bit routine.
     \return A pointer to the modem context, or NULL if there was a problem. */
-SPAN_DECLARE(v27ter_rx_state_t) *v27ter_rx_init(v27ter_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data);
+SPAN_DECLARE(v27ter_rx_state_t *) v27ter_rx_init(v27ter_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data);
 
 /*! Reinitialise an existing V.27ter modem receive context.
     \brief Reinitialise an existing V.27ter modem receive context.
@@ -94,7 +94,7 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_
     \return 0 for OK */
 SPAN_DECLARE(int) v27ter_rx_free(v27ter_rx_state_t *s);
 
-SPAN_DECLARE(logging_state_t) *v27ter_rx_get_logging_state(v27ter_rx_state_t *s);
+SPAN_DECLARE(logging_state_t *) v27ter_rx_get_logging_state(v27ter_rx_state_t *s);
 
 /*! Change the put_bit function associated with a V.27ter modem receive context.
     \brief Change the put_bit function associated with a V.27ter modem receive context.

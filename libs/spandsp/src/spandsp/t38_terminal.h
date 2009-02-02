@@ -69,7 +69,7 @@ SPAN_DECLARE(void) t38_terminal_set_fill_bit_removal(t38_terminal_state_t *s, in
     \param s The T.38 context.
     \return A pointer to the T.30 context, or NULL.
 */
-SPAN_DECLARE(t30_state_t) *t38_terminal_get_t30_state(t38_terminal_state_t *s);
+SPAN_DECLARE(t30_state_t *) t38_terminal_get_t30_state(t38_terminal_state_t *s);
 
 /*! Get a pointer to the T.38 core IFP packet engine associated with a
     termination mode T.38 context.
@@ -78,14 +78,14 @@ SPAN_DECLARE(t30_state_t) *t38_terminal_get_t30_state(t38_terminal_state_t *s);
     \param s The T.38 context.
     \return A pointer to the T.38 core context, or NULL.
 */
-SPAN_DECLARE(t38_core_state_t) *t38_terminal_get_t38_core_state(t38_terminal_state_t *s);
+SPAN_DECLARE(t38_core_state_t *) t38_terminal_get_t38_core_state(t38_terminal_state_t *s);
 
 /*! Get a pointer to the logging context associated with a T.38 context.
     \brief Get a pointer to the logging context associated with a T.38 context.
     \param s The T.38 context.
     \return A pointer to the logging context, or NULL.
 */
-SPAN_DECLARE(logging_state_t) *t38_terminal_get_logging_state(t38_terminal_state_t *s);
+SPAN_DECLARE(logging_state_t *) t38_terminal_get_logging_state(t38_terminal_state_t *s);
 
 /*! \brief Initialise a termination mode T.38 context.
     \param s The T.38 context.
@@ -94,7 +94,7 @@ SPAN_DECLARE(logging_state_t) *t38_terminal_get_logging_state(t38_terminal_state
     \param tx_packet_handler A callback routine to encapsulate and transmit T.38 packets.
     \param tx_packet_user_data An opaque pointer passed to the tx_packet_handler routine.
     \return A pointer to the termination mode T.38 context, or NULL if there was a problem. */
-SPAN_DECLARE(t38_terminal_state_t) *t38_terminal_init(t38_terminal_state_t *s,
+SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
                                                       int calling_party,
                                                       t38_tx_packet_handler_t *tx_packet_handler,
                                                       void *tx_packet_user_data);

@@ -254,7 +254,7 @@ static void block4(g722_band_t *s, int16_t dx)
 }
 /*- End of function --------------------------------------------------------*/
 
-g722_decode_state_t *g722_decode_init(g722_decode_state_t *s, int rate, int options)
+SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int rate, int options)
 {
     if (s == NULL)
     {
@@ -280,14 +280,14 @@ g722_decode_state_t *g722_decode_init(g722_decode_state_t *s, int rate, int opti
 }
 /*- End of function --------------------------------------------------------*/
 
-int g722_decode_release(g722_decode_state_t *s)
+SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[], int len)
+SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[], int len)
 {
     int rlow;
     int ihigh;
@@ -426,7 +426,7 @@ int g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8_t g722_data[]
 }
 /*- End of function --------------------------------------------------------*/
 
-g722_encode_state_t *g722_encode_init(g722_encode_state_t *s, int rate, int options)
+SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int rate, int options)
 {
     if (s == NULL)
     {
@@ -452,14 +452,14 @@ g722_encode_state_t *g722_encode_init(g722_encode_state_t *s, int rate, int opti
 }
 /*- End of function --------------------------------------------------------*/
 
-int g722_encode_release(g722_encode_state_t *s)
+SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s)
 {
     free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-int g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[], int len)
+SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const int16_t amp[], int len)
 {
     int16_t dlow;
     int16_t dhigh;
