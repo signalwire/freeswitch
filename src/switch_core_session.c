@@ -1299,7 +1299,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 		log = switch_core_session_alloc(session, sizeof(*log));
 
 		log->app = switch_core_session_strdup(session, application_interface->interface_name);
-		log->arg = switch_core_session_strdup(session, expanded);
+		if (expanded) {
+			log->arg = switch_core_session_strdup(session, expanded);
+		}
 
 		for (lp = session->app_log; lp && lp->next; lp = lp->next);
 
