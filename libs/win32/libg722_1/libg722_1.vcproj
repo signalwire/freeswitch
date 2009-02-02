@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\libg722_1\src\msvc\&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\libg722_1\src\msvc\&quot;;&quot;$(InputDir)..\..\libg722_1\src\generated\&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -106,7 +106,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\libg722_1\src\msvc\&quot;"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\libg722_1\src\msvc\&quot;;&quot;$(InputDir)..\..\libg722_1\src\generated\&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBG722_1_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
