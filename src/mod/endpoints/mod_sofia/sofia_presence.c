@@ -1517,7 +1517,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		/* the following could be refactored back to the calling event handler in sofia.c XXX MTK */
 		if (profile->manage_shared_appearance) {
-			if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
+			if (sip->sip_request->rq_url->url_user && !strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
 				/* only fire this on <200 to try to avoid resubscribes. probably better ways to do this? */
 				if (status < 200) {
 					sofia_sla_handle_sip_i_subscribe(nua, contact_str, profile, nh, sip, tags);
@@ -1837,7 +1837,7 @@ void sofia_presence_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, n
 		/* the following could instead be refactored back to the calling event handler in sofia.c XXX MTK */
 		if (profile->manage_shared_appearance) {
 			/* also it probably is unsafe to dereference so many things in a row without testing XXX MTK */
-			if (!strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
+			if (sip->sip_request->rq_url->url_user && !strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
 				sofia_sla_handle_sip_i_publish(nua, profile, nh, sip, tags);
 				return;
 			}
