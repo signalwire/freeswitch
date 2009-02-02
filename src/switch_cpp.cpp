@@ -582,7 +582,6 @@ SWITCH_DECLARE(const char *)CoreSession::getVariable(char *var)
 
 SWITCH_DECLARE(void) CoreSession::execute(const char *app, const char *data)
 {
-	const switch_application_interface_t *application_interface;
 	this_check_void();
 	sanity_check_noreturn;
 
