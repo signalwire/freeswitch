@@ -62,8 +62,12 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	char *ext;
 	struct format_map *map = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char *alt_path = NULL, *next, *last, *ldup = NULL;
+	char *alt_path = NULL, *last, *ldup = NULL;
 	size_t alt_len = 0;
+	int rates[4] = {8000, 16000, 32000, 48000};
+	int i;
+	char ps[2] = {'/', '\\'};
+	int x;
 
 	if ((ext = strrchr(path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -146,26 +150,32 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	switch_zmalloc(alt_path, alt_len);
 
 	switch_copy_string(alt_path, path, alt_len);
-	if ((last = strrchr(alt_path, '/'))) {
-		next = ++last;
-		ldup = strdup(last);
-		switch_assert(ldup);
-		switch_snprintf(next, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
-		if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
-			path = alt_path;
+
+	for (x = 0; x < 2; x++) {
+		if ((last = strrchr(alt_path, ps[x]))) {
+			last++;
+			ldup = strdup(last);
+			switch_assert(ldup);
+			switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
+			if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+				path = alt_path;
+			} else {
+				/* Try to find the file at the highest rate possible if we can't find one that matches the exact rate.
+				   If we don't find any, we will default back to the original file name.
+				*/
+				for (i = 3; i > 0; i--) {
+					switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", rates[i], SWITCH_PATH_SEPARATOR, ldup);
+					if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+						path = alt_path;
+						break;
+					}
+				}
+			}
 		}
-	}
-#ifdef WIN32
-	else if ((last = strrchr(alt_path, '\\'))) {
-		next = ++last;
-		ldup = strdup(last);
-		switch_assert(ldup);
-		switch_snprintf(next, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
-		if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
-			path = alt_path;
-		}
-	}
+#ifndef WIN32
+		break;
 #endif
+	}
 
 	if (!context->handle) {
 		if ((context->handle = sf_open(path, mode, &context->sfinfo)) == 0) {
