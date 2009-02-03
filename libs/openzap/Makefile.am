@@ -79,11 +79,11 @@ $(SRC)/zap_buffer.c \
 $(SRC)/zap_threadmutex.c \
 $(SRC)/zap_dso.c
 
-BOOST_SOURCES=\
+BOOST_SOURCE=\
 $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c \
 $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
 
-ISDN_SOURCES=\
+ISDN_SOURCE=\
 $(SRC)/isdn/EuroISDNStateNT.c \
 $(SRC)/isdn/EuroISDNStateTE.c \
 $(SRC)/isdn/mfifo.c \
@@ -148,7 +148,7 @@ $(SRC)/isdn/5ESSStateTE.o \
 $(SRC)/isdn/Q932mes.o
 
 
-HEADERS= $(SRC)/include/fsk.h \
+HEADER= $(SRC)/include/fsk.h \
 $(SRC)/include/g711.h \
 $(SRC)/include/hashtable.h \
 $(SRC)/include/hashtable_itr.h \
@@ -166,7 +166,7 @@ $(SRC)/include/zap_dso.h \
 $(SRC)/include/zap_types.h 
 
 
-ISDN_HEADERS=\
+ISDN_HEADER=\
 $(SRC)/isdn/include/mfifo.h \
 $(SRC)/isdn/include/national.h \
 $(SRC)/isdn/include/DMS.h \
@@ -193,7 +193,7 @@ PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 
 all: $(MYLIB) analogmod analog_emmod isdnmod boostmod ztmod wpmod
 
-$(MYLIB): $(OBJS) $(HEADERS) $(SOURCES)
+$(MYLIB): $(OBJS) $(HEADER) $(SOURCES)
 	$(LINK) $(SOLINK) -o $(MYLIB) $(OBJS) $(ADD_OBJS) $(LIBS)
 
 testapp: $(SRC)/testapp.o $(MYLIB)
@@ -223,7 +223,7 @@ testanalog: $(SRC)/testanalog.o $(MYLIB)
 $(SRC)/zap_io.o: $(SRC)/zap_io.c
 	$(LTCOMPILE) $(MOD_CFLAGS) -c $< -o $@
 
-%.o: %.c $(HEADERS)
+%.o: %.c $(HEADER)
 	$(LTCOMPILE) -c $< -o $@
 
 dox:
@@ -274,13 +274,13 @@ $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_pika/ozmod_pika.o  $(MYLIB) -rpath $(libdir)
 pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN)
 
-$(ISDN_OBJS): $(ISDN_HEADERS) $(ISDN_SOURCES) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
+$(ISDN_OBJS): $(ISDN_HEADER) $(ISDN_SOURCE) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
 
 $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o
 	$(LINK) $(SOLINK) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o $(MYLIB) -rpath $(libdir)
 isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN)
 
-$(ISDN_OBJS2): $(ISDN_HEADERS) $(ISDN_SOURCES) $(SRC)/ozmod/ozmod_isdn_libpcap/ozmod_isdn.c
+$(ISDN_OBJS2): $(ISDN_HEADER) $(ISDN_SOURCE) $(SRC)/ozmod/ozmod_isdn_libpcap/ozmod_isdn.c
 
 $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o $(MYLIB) -rpath $(libdir)

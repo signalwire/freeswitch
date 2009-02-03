@@ -6,7 +6,7 @@ AC_INIT([openzap],[pre-alpha],[bugs@freeswitch.org])
 AC_CONFIG_SRCDIR([src/zap_io.c])
 
 AC_CONFIG_AUX_DIR(build)
-#AM_INIT_AUTOMAKE(libopenzap,0.1)
+AM_INIT_AUTOMAKE(libopenzap,0.1)
 
 # Checks for programs.
 AC_PROG_CC
