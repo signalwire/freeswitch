@@ -505,6 +505,11 @@ fi
 
 AX_CHECK_JAVA
 
+AX_LIB_ODBC
+if test "$ac_cv_found_odbc" = "yes" ; then
+  enable_core_odbc_support="yes"
+fi
+
 AM_CONDITIONAL([ADD_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([ADD_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
 AM_CONDITIONAL([HAVE_MYSQL],[test "$found_mysql" = "yes"])
