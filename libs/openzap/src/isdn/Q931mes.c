@@ -600,6 +600,9 @@ L3INT Q931Umes_Notify(Q931_TrunkInfo_t *pTrunk, L3UCHAR *IBuf, Q931mes_Generic *
 			if (rc != Q931E_NO_ERROR) 
 				return rc;
 			break;
+		default:
+			return Q931E_ILLEGAL_IE;
+			break;
 		}
 	}
 
