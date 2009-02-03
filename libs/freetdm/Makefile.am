@@ -29,15 +29,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-CFLAGS=@CFLAGS@ @COMP_VENDOR_CFLAGS@ @DEFS@
-
-###For libpcap
-CFLAGS+= -D_GNU_SOURCE
-####
-
-###For libpcap
-LIBS+= -lpcap
-####
+PREFIX=$(prefix)
 
 SRC=src
 top_builddir=@oz_builddir@
@@ -45,14 +37,16 @@ LTINSTALL=$(LIBTOOL) --mode=install $(INSTALL)
 LTUNINSTALL=$(LIBTOOL) --mode=uninstall rm -f 
 CCLD = $(CC)
 INCS=-I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
-CFLAGS+= $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"@prefix@/mod\"
+MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"@prefix@/mod\" @COMP_VENDOR_CFLAGS@ @DEFS@
 
-COMPILE      = $(CC) $(CFLAGS) $(INCS)
+COMPILE      = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
-LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(MY_CFLAGS) $(LDFLAGS) -o $@
 libdir = $(PREFIX)/lib/
 
-SOURCES=\
+library_includedir      = $(PREFIX)/include
+
+libopenzap_la_SOURCES	= \
 $(SRC)/hashtable.c \
 $(SRC)/hashtable_itr.c \
 $(SRC)/zap_io.c \
@@ -66,6 +60,24 @@ $(SRC)/libteletone_generate.c \
 $(SRC)/zap_buffer.c \
 $(SRC)/zap_threadmutex.c \
 $(SRC)/zap_dso.c
+
+library_include_HEADERS = \
+$(SRC)/include/fsk.h \
+$(SRC)/include/g711.h \
+$(SRC)/include/hashtable.h \
+$(SRC)/include/hashtable_itr.h \
+$(SRC)/include/hashtable_private.h \
+$(SRC)/include/libteletone_detect.h \
+$(SRC)/include/libteletone_generate.h \
+$(SRC)/include/libteletone.h \
+$(SRC)/include/openzap.h \
+$(SRC)/include/sangoma_tdm_api.h \
+$(SRC)/include/uart.h \
+$(SRC)/include/zap_buffer.h \
+$(SRC)/include/zap_config.h \
+$(SRC)/include/zap_threadmutex.h \
+$(SRC)/include/zap_dso.h \
+$(SRC)/include/zap_types.h 
 
 BOOST_SOURCE=\
 $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c \
@@ -93,22 +105,6 @@ $(SRC)/isdn/5ESSStateNT.c \
 $(SRC)/isdn/5ESSStateTE.c \
 $(SRC)/isdn/Q932mes.c
 
-
-OBJS=\
-$(SRC)/hashtable.o \
-$(SRC)/hashtable_itr.o \
-$(SRC)/zap_io.o \
-$(SRC)/zap_config.o \
-$(SRC)/zap_callerid.o \
-$(SRC)/fsk.o \
-$(SRC)/uart.o \
-$(SRC)/g711.o \
-$(SRC)/libteletone_detect.o \
-$(SRC)/libteletone_generate.o \
-$(SRC)/zap_buffer.o \
-$(SRC)/zap_threadmutex.o \
-$(SRC)/zap_dso.o
-
 BOOST_OBJS=\
 $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.o \
 $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.o
@@ -135,25 +131,6 @@ $(SRC)/isdn/5ESSStateNT.o \
 $(SRC)/isdn/5ESSStateTE.o \
 $(SRC)/isdn/Q932mes.o
 
-
-HEADER= $(SRC)/include/fsk.h \
-$(SRC)/include/g711.h \
-$(SRC)/include/hashtable.h \
-$(SRC)/include/hashtable_itr.h \
-$(SRC)/include/hashtable_private.h \
-$(SRC)/include/libteletone_detect.h \
-$(SRC)/include/libteletone_generate.h \
-$(SRC)/include/libteletone.h \
-$(SRC)/include/openzap.h \
-$(SRC)/include/sangoma_tdm_api.h \
-$(SRC)/include/uart.h \
-$(SRC)/include/zap_buffer.h \
-$(SRC)/include/zap_config.h \
-$(SRC)/include/zap_threadmutex.h \
-$(SRC)/include/zap_dso.h \
-$(SRC)/include/zap_types.h 
-
-
 ISDN_HEADER=\
 $(SRC)/isdn/include/mfifo.h \
 $(SRC)/isdn/include/national.h \
@@ -164,25 +141,18 @@ $(SRC)/isdn/include/Q931.h \
 $(SRC)/isdn/include/Q931ie.h \
 $(SRC)/isdn/include/Q932.h 
 
+lib_LTLIBRARIES	       = libopenzap.la
+libopenzap_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS)
+libopenzap_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
+libopenzap_la_LIBADD     = $(LIBS)
 
-MYLIB=libopenzap.$(DYNAMIC_LIB_EXTEN)
-PREFIX=@prefix@
+MYLIB=libopenzap.la
 
 PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
 PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 
-#ifneq ($(PIKA_DIR),)
-#ifneq ($(PIKA_LIB),)
-#OBJS += $(SRC)/zap_pika.o
-#CFLAGS += -DZAP_PIKA_SUPPORT -I$(PIKA_DIR)
-#ADD_OBJS = $(PIKA_LIB)
-#endif
-#endif
-
 all: $(MYLIB) analogmod analog_emmod isdnmod boostmod ztmod wpmod
 
-$(MYLIB): $(OBJS) $(HEADER) $(SOURCES)
-	$(LINK) $(SOLINK) -o $(MYLIB) $(OBJS) $(ADD_OBJS) $(LIBS)
 
 testapp: $(SRC)/testapp.o $(MYLIB)
 	$(LINK) $(SRC)/testapp.o ./$(MYLIB) $(LIBS)
@@ -231,18 +201,19 @@ mod_openzap-clean:
 clean: 
 	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf testisdn testboost testanalog src/ozmod/*/*.o src/ozmod/*/*.$(DYNAMIC_LIB_EXTEN)
 
-install: all
-	@mkdir -p $(DESTDIR)$(PREFIX)
-	@[ -d "$(DESTDIR)$(PREFIX)/conf" ] || ( mkdir -p $(DESTDIR)$(PREFIX)/conf)
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)$(PREFIX)
+	$(mkinstalldirs) $(DESTDIR)$(PREFIX)/conf
 	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
-	@mkdir -p $(DESTDIR)$(PREFIX)/lib
-	@$(LTINSTALL) $(MYLIB) $(DESTDIR)$(PREFIX)/lib/
-	@mkdir -p $(DESTDIR)$(PREFIX)/mod
+	$(mkinstalldirs)  $(DESTDIR)$(PREFIX)/lib
+	$(mkinstalldirs)  $(DESTDIR)$(PREFIX)/mod
 	@[ ! -f ozmod_* ] || cp -f ozmod_* $(DESTDIR)$(PREFIX)/mod
 	@cp -f src/ozmod/*/*.$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
 	@echo OpenZAP Installed
 
-uninstall:
+uninstall: oz-uninstall
+
+oz-uninstall: 
 	@rm -fr $(DESTDIR)$(PREFIX)
 
 $(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB)
@@ -262,10 +233,20 @@ $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_pika/ozmod_pika.o  $(MYLIB) -rpath $(libdir)
 pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN)
 
+###For libpcap
+ISDN_CFLAGS = -D_GNU_SOURCE
+####
+
+###For libpcap
+ISDN_LIBS = -lpcap
+####
+
 $(ISDN_OBJS): $(ISDN_HEADER) $(ISDN_SOURCE) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
+$(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
+	$(LTCOMPILE) -c $< -o $@ $(ISDN_CFLAGS)
 
 $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o
-	$(LINK) $(SOLINK) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o $(MYLIB) -rpath $(libdir)
+	$(LINK) $(SOLINK) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o $(MYLIB) $(ISDN_LIBS) -rpath $(libdir)
 isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN)
 
 $(ISDN_OBJS2): $(ISDN_HEADER) $(ISDN_SOURCE) $(SRC)/ozmod/ozmod_isdn_libpcap/ozmod_isdn.c
