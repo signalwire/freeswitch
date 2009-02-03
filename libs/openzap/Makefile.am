@@ -153,33 +153,32 @@ PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 
 all: $(MYLIB) analogmod analog_emmod isdnmod boostmod ztmod wpmod
 
+noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testboost testanalog #testapp testcid
+#testapp_SOURCES = $(SRC)/testapp.c
+#testapp_LDADD = libopenzap.la
+#testapp_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+#testcid_SOURCES = $(SRC)/testcid.c
+#testcid_LDADD = libopenzap.la
+#testcid_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testtones_SOURCES = $(SRC)/testtones.c
+testtones_LDADD = libopenzap.la
+testtones_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+detect_tones_SOURCES = $(SRC)/detect_tones.c
+detect_tones_LDADD = libopenzap.la
+detect_tones_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+detect_dtmf_SOURCES = $(SRC)/detect_dtmf.c
+detect_dtmf_LDADD = libopenzap.la
+detect_dtmf_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testisdn_SOURCES = $(SRC)/testisdn.c
+testisdn_LDADD = libopenzap.la
+testisdn_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testboost_SOURCES = $(SRC)/testboost.c
+testboost_LDADD = libopenzap.la
+testboost_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testanalog_SOURCES = $(SRC)/testanalog.c
+testanalog_LDADD = libopenzap.la
+testanalog_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
 
-testapp: $(SRC)/testapp.o $(MYLIB)
-	$(LINK) $(SRC)/testapp.o ./$(MYLIB) $(LIBS)
-
-testcid: $(SRC)/testcid.o $(MYLIB)
-	$(LINK) $(SRC)/testcid.o ./$(MYLIB) $(LIBS)
-
-testtones: $(SRC)/testtones.o $(MYLIB)
-	$(LINK) $(SRC)/testtones.o ./$(MYLIB) $(LIBS)
-
-detect_tones: $(SRC)/detect_tones.o $(MYLIB)
-	$(LINK) $(SRC)/detect_tones.o ./$(MYLIB) $(LIBS)
-
-detect_dtmf: $(SRC)/detect_dtmf.o $(MYLIB)
-	$(LINK) $(SRC)/detect_dtmf.o ./$(MYLIB) $(LIBS)
-
-testisdn: $(SRC)/testisdn.o $(MYLIB)
-	$(LINK) $(SRC)/testisdn.o ./$(MYLIB) $(LIBS)
-
-testboost: $(SRC)/testboost.o $(MYLIB)
-	$(LINK) $(SRC)/testboost.o ./$(MYLIB) $(LIBS)
-
-testanalog: $(SRC)/testanalog.o $(MYLIB)
-	$(LINK) $(SRC)/testanalog.o ./$(MYLIB) $(LIBS)
-
-$(SRC)/zap_io.o: $(SRC)/zap_io.c
-	$(LTCOMPILE) $(MOD_CFLAGS) -c $< -o $@
 
 %.o: %.c $(HEADER)
 	$(LTCOMPILE) -c $< -o $@
