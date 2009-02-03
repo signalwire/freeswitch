@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.137 2009/01/29 01:41:06 steveu Exp $
+ * $Id: t31.c,v 1.139 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -633,16 +633,16 @@ static __inline__ int bits_to_us(t31_state_t *s, int bits)
 static void set_octets_per_data_packet(t31_state_t *s, int bit_rate)
 {
     s->t38_fe.tx_bit_rate = bit_rate;
-    if (s->t38_fe.ms_per_tx_chunk == 0)
-    {
-        s->t38_fe.octets_per_data_packet = MAX_OCTETS_PER_UNPACED_CHUNK;
-    }
-    else
+    if (s->t38_fe.ms_per_tx_chunk)
     {
         s->t38_fe.octets_per_data_packet = s->t38_fe.ms_per_tx_chunk*bit_rate/(8*1000);
         /* Make sure we have a positive number (i.e. we didn't truncate to zero). */
         if (s->t38_fe.octets_per_data_packet < 1)
             s->t38_fe.octets_per_data_packet = 1;
+    }
+    else
+    {
+        s->t38_fe.octets_per_data_packet = MAX_OCTETS_PER_UNPACED_CHUNK;
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -682,22 +682,34 @@ static int stream_non_ecm(t31_state_t *s)
                 bit_reverse(buf, buf, len);
             if (len < fe->octets_per_data_packet)
             {
-                /* That's the end of the image data. Do a little padding now */
-                memset(buf + len, 0, fe->octets_per_data_packet - len);
-                fe->non_ecm_trailer_bytes = 3*fe->octets_per_data_packet + len;
-                len = fe->octets_per_data_packet;
-                fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_4;
+                /* That's the end of the image data. */
+                if (s->t38_fe.ms_per_tx_chunk)
+                {
+                    /* Pad the end of the data with some zeros. If we just stop abruptly
+                       at the end of the EOLs, some ATAs fail to clean up properly before
+                       shutting down their transmit modem, and the last few rows of the image
+                       are lost or corrupted. Simply delaying the no-signal message does not
+                       help for all implentations. It is usually ignored, which is probably
+                       the right thing to do after receiving a message saying the signal has
+                       ended. */
+                    memset(buf + len, 0, fe->octets_per_data_packet - len);
+                    fe->non_ecm_trailer_bytes = 3*fe->octets_per_data_packet + len;
+                    len = fe->octets_per_data_packet;
+                    fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_4;
+                }
+                else
+                {
+                    /* If we are sending quickly there seems no point in doing any padding */
+                    t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_SIG_END, buf, len, fe->t38.data_end_tx_count);
+                    fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
+                    delay = 0;
+                }
             }
             t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, buf, len, fe->t38.data_tx_count);
             delay = bits_to_us(s, 8*len);
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_4:
-            /* This pads the end of the data with some zeros. If we just stop abruptly
-               at the end of the EOLs, some ATAs fail to clean up properly before
-               shutting down their transmit modem, and the last few rows of the image
-               are corrupted. Simply delaying the no-signal message does not help for
-               all implentations. It is usually ignored, which is probably the right
-               thing to do after receiving a message saying the signal has ended. */
+            /* Send padding */
             len = fe->octets_per_data_packet;
             fe->non_ecm_trailer_bytes -= len;
             if (fe->non_ecm_trailer_bytes <= 0)
@@ -708,7 +720,9 @@ static int stream_non_ecm(t31_state_t *s)
                 fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
                 /* Allow a bit more time than the data will take to play out, to ensure the far ATA does not
                    cut things short. */
-                delay = bits_to_us(s, 8*len) + 60000;
+                delay = bits_to_us(s, 8*len);
+                if (s->t38_fe.ms_per_tx_chunk)
+                    delay += 60000;
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                 break;
             }
@@ -790,7 +804,9 @@ static int stream_hdlc(t31_state_t *s)
                         fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_5;
                         /* We add a bit of extra time here, as with some implementations
                            the carrier falling too abruptly causes data loss. */
-                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits) + 100000;
+                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
+                        if (s->t38_fe.ms_per_tx_chunk)
+                            delay += 100000;
                         at_put_response_code(&s->at_state, AT_RESPONSE_CODE_OK);
                         t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
                     }
@@ -831,7 +847,9 @@ static int stream_hdlc(t31_state_t *s)
                 fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_5;
                 /* We add a bit of extra time here, as with some implementations
                    the carrier falling too abruptly causes data loss. */
-                delay = bits_to_us(s, fe->hdlc_tx.extra_bits) + 100000;
+                delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
+                if (s->t38_fe.ms_per_tx_chunk)
+                    delay += 100000;
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                 break;
             }
@@ -2446,12 +2464,12 @@ static int t31_t38_fe_init(t31_state_t *t,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
-                      at_tx_handler_t *at_tx_handler,
-                      void *at_tx_user_data,
-                      t31_modem_control_handler_t *modem_control_handler,
-                      void *modem_control_user_data,
-                      t38_tx_packet_handler_t *tx_t38_packet_handler,
-                      void *tx_t38_packet_user_data)
+                                     at_tx_handler_t *at_tx_handler,
+                                     void *at_tx_user_data,
+                                     t31_modem_control_handler_t *modem_control_handler,
+                                     void *modem_control_user_data,
+                                     t38_tx_packet_handler_t *tx_t38_packet_handler,
+                                     void *tx_t38_packet_user_data)
 {
     int alloced;
     

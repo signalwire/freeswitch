@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.h,v 1.41 2009/01/31 08:48:11 steveu Exp $
+ * $Id: hdlc.h,v 1.42 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -95,11 +95,11 @@ extern "C"
     \return A pointer to the HDLC receiver context.
 */
 SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
-                                            int crc32,
-                                            int report_bad_frames,
-                                            int framing_ok_threshold,
-                                            hdlc_frame_handler_t handler,
-                                            void *user_data);
+                                             int crc32,
+                                             int report_bad_frames,
+                                             int framing_ok_threshold,
+                                             hdlc_frame_handler_t handler,
+                                             void *user_data);
 
 /*! \brief Set the maximum frame length for an HDLC receiver context.
     \param s A pointer to an HDLC receiver context.
@@ -151,11 +151,11 @@ SPAN_DECLARE(void) hdlc_rx_put(hdlc_rx_state_t *s, const uint8_t buf[], int len)
     \return A pointer to the HDLC transmitter context.
 */
 SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
-                                            int crc32,
-                                            int inter_frame_flags,
-                                            int progressive,
-                                            hdlc_underflow_handler_t handler,
-                                            void *user_data);
+                                             int crc32,
+                                             int inter_frame_flags,
+                                             int progressive,
+                                             hdlc_underflow_handler_t handler,
+                                             void *user_data);
 
 /*! \brief Set the maximum frame length for an HDLC transmitter context.
     \param s A pointer to an HDLC transmitter context.

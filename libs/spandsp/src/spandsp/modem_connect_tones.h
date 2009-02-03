@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.h,v 1.20 2009/01/31 08:48:11 steveu Exp $
+ * $Id: modem_connect_tones.h,v 1.21 2009/02/03 16:28:41 steveu Exp $
  */
  
 /*! \file */
@@ -105,7 +105,7 @@ extern "C"
     \param s The context.
 */
 SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem_connect_tones_tx_state_t *s,
-                                                                          int tone_type);
+                                                                           int tone_type);
 
 /*! \brief Free an instance of the modem connect tones generator.
     \param s The context.
@@ -148,9 +148,9 @@ SPAN_DECLARE(int) modem_connect_tones_rx_get(modem_connect_tones_rx_state_t *s);
     \return A pointer to the context.
 */
 SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem_connect_tones_rx_state_t *s,
-                                                                          int tone_type,
-                                                                          tone_report_func_t tone_callback,
-                                                                          void *user_data);
+                                                                           int tone_type,
+                                                                           tone_report_func_t tone_callback,
+                                                                           void *user_data);
 
 /*! \brief Free an instance of the modem connect tones detector.
     \param s The context.

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.h,v 1.12 2008/11/30 12:45:09 steveu Exp $
+ * $Id: bitstream.h,v 1.13 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -50,30 +50,30 @@ extern "C"
     \param c A pointer to the bitstream output buffer.
     \param value The value to be pushed into the output buffer.
     \param bits The number of bits of value to be pushed. 1 to 25 bits is valid. */
-void bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits);
+SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits);
 
-void bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits);
+SPAN_DECLARE(void) bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits);
 
 /*! \brief Get a chunk of bits from the input buffer.
     \param s A pointer to the bitstream context.
     \param c A pointer to the bitstream input buffer.
     \param bits The number of bits of value to be grabbed. 1 to 25 bits is valid.
     \return The value retrieved from the input buffer. */
-uint32_t bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits);
+SPAN_DECLARE(uint32_t) bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits);
 
-uint32_t bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits);
+SPAN_DECLARE(uint32_t) bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits);
 
 /*! \brief Flush any residual bit to the output buffer.
     \param s A pointer to the bitstream context.
     \param c A pointer to the bitstream output buffer. */
-void bitstream_flush(bitstream_state_t *s, uint8_t **c);
+SPAN_DECLARE(void) bitstream_flush(bitstream_state_t *s, uint8_t **c);
 
-void bitstream_flush2(bitstream_state_t *s, uint8_t **c);
+SPAN_DECLARE(void) bitstream_flush2(bitstream_state_t *s, uint8_t **c);
 
 /*! \brief Initialise a bitstream context.
     \param s A pointer to the bitstream context.
     \return A pointer to the bitstream context. */
-bitstream_state_t *bitstream_init(bitstream_state_t *s);
+SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s);
 
 #if defined(__cplusplus)
 }

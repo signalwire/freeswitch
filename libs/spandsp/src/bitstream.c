@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.c,v 1.16 2009/01/05 13:48:31 steveu Exp $
+ * $Id: bitstream.c,v 1.17 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -41,7 +41,7 @@
 
 #include "spandsp/private/bitstream.h"
 
-void bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
+SPAN_DECLARE(void) bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 {
     value &= ((1 << bits) - 1);
     if (s->residue + bits <= 32)
@@ -58,7 +58,7 @@ void bitstream_put(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-void bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
+SPAN_DECLARE(void) bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 {
     value &= ((1 << bits) - 1);
     if (s->residue + bits <= 32)
@@ -74,7 +74,7 @@ void bitstream_put2(bitstream_state_t *s, uint8_t **c, uint32_t value, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-uint32_t bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
+SPAN_DECLARE(uint32_t) bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
 {
     uint32_t x;
 
@@ -90,7 +90,7 @@ uint32_t bitstream_get(bitstream_state_t *s, const uint8_t **c, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-uint32_t bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits)
+SPAN_DECLARE(uint32_t) bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits)
 {
     uint32_t x;
 
@@ -105,7 +105,7 @@ uint32_t bitstream_get2(bitstream_state_t *s, const uint8_t **c, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-void bitstream_flush(bitstream_state_t *s, uint8_t **c)
+SPAN_DECLARE(void) bitstream_flush(bitstream_state_t *s, uint8_t **c)
 {
     if (s->residue > 0)
     {
@@ -115,7 +115,7 @@ void bitstream_flush(bitstream_state_t *s, uint8_t **c)
 }
 /*- End of function --------------------------------------------------------*/
 
-void bitstream_flush2(bitstream_state_t *s, uint8_t **c)
+SPAN_DECLARE(void) bitstream_flush2(bitstream_state_t *s, uint8_t **c)
 {
     if (s->residue > 0)
     {
@@ -125,7 +125,7 @@ void bitstream_flush2(bitstream_state_t *s, uint8_t **c)
 }
 /*- End of function --------------------------------------------------------*/
 
-bitstream_state_t *bitstream_init(bitstream_state_t *s)
+SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s)
 {
     if (s == NULL)
         return NULL;

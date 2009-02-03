@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711.c,v 1.14 2009/01/28 03:41:26 steveu Exp $
+ * $Id: g711.c,v 1.15 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -98,9 +98,9 @@ SPAN_DECLARE(uint8_t) ulaw_to_alaw(uint8_t ulaw)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g711_decode(g711_state_t *s,
-                int16_t amp[],
-                const uint8_t g711_data[],
-                int g711_bytes)
+                              int16_t amp[],
+                              const uint8_t g711_data[],
+                              int g711_bytes)
 {
     int i;
 
@@ -122,9 +122,9 @@ SPAN_DECLARE(int) g711_decode(g711_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g711_encode(g711_state_t *s,
-                uint8_t g711_data[],
-                const int16_t amp[],
-                int len)
+                              uint8_t g711_data[],
+                              const int16_t amp[],
+                              int len)
 {
     int i;
 
@@ -146,9 +146,9 @@ SPAN_DECLARE(int) g711_encode(g711_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g711_transcode(g711_state_t *s,
-                   uint8_t g711_out[],
-                   const uint8_t g711_in[],
-                   int g711_bytes)
+                                 uint8_t g711_out[],
+                                 const uint8_t g711_in[],
+                                 int g711_bytes)
 {
     int i;
 

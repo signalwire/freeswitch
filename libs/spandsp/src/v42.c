@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.c,v 1.47 2009/01/05 13:48:32 steveu Exp $
+ * $Id: v42.c,v 1.48 2009/02/03 16:28:40 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -89,8 +89,8 @@
 static void t401_expired(span_sched_state_t *s, void *user_data);
 static void t403_expired(span_sched_state_t *s, void *user_data);
 
-void lapm_reset(lapm_state_t *s);
-void lapm_restart(lapm_state_t *s);
+SPAN_DECLARE(void) lapm_reset(lapm_state_t *s);
+SPAN_DECLARE(void) lapm_restart(lapm_state_t *s);
 
 static void lapm_link_down(lapm_state_t *s);
 
@@ -667,7 +667,7 @@ static void lapm_link_down(lapm_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-void lapm_reset(lapm_state_t *s)
+SPAN_DECLARE(void) lapm_reset(lapm_state_t *s)
 {
     lapm_frame_queue_t *f;
     lapm_frame_queue_t *p;
@@ -709,7 +709,7 @@ fprintf(stderr, "Deleting T403 e %d\n", s->t403_timer);
 }
 /*- End of function --------------------------------------------------------*/
 
-void lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
+SPAN_DECLARE(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
 {
     lapm_state_t *s;
     lapm_frame_queue_t *f;
@@ -1068,7 +1068,7 @@ static void lapm_hdlc_underflow(void *user_data)
 }
 /*- End of function --------------------------------------------------------*/
 
-void lapm_restart(lapm_state_t *s)
+SPAN_DECLARE(void) lapm_restart(lapm_state_t *s)
 {
 #if 0
     if (s->state != LAPM_RELEASE)

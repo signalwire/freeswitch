@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: crc.c,v 1.5 2009/01/05 13:48:31 steveu Exp $
+ * $Id: crc.c,v 1.6 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */

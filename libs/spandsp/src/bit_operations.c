@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bit_operations.c,v 1.15 2008/06/28 01:13:08 steveu Exp $
+ * $Id: bit_operations.c,v 1.16 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -69,7 +69,7 @@ SPAN_DECLARE(uint32_t) bit_reverse_4bytes(uint32_t x)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(__x86_64__)
-uint64_t bit_reverse_8bytes(uint64_t x)
+SPAN_DECLARE(uint64_t) bit_reverse_8bytes(uint64_t x)
 {
     x = ((x & 0xF0F0F0F0F0F0F0F0LLU) >> 4) | ((x & 0x0F0F0F0F0F0F0F0FLLU) << 4);
     x = ((x & 0xCCCCCCCCCCCCCCCCLLU) >> 2) | ((x & 0x3333333333333333LLU) << 2);

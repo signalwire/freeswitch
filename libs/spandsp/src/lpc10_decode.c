@@ -26,7 +26,7 @@
  * implementation of the LPC-10 2400 bps Voice Coder. They do not
  * exert copyright claims on their code, and it may be freely used.
  *
- * $Id: lpc10_decode.c,v 1.25 2009/01/28 03:41:27 steveu Exp $
+ * $Id: lpc10_decode.c,v 1.26 2009/02/03 16:28:39 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -46,6 +46,7 @@
 #include <memory.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/lpc10.h"
 #include "spandsp/private/lpc10.h"
@@ -1102,7 +1103,7 @@ SPAN_DECLARE(int) lpc10_decode(lpc10_decode_state_t *s, int16_t amp[], const uin
         synths(s, voice, &pitch, &rms, rc, speech);
         base = i*LPC10_SAMPLES_PER_FRAME;
         for (j = 0;  j < LPC10_SAMPLES_PER_FRAME;  j++)
-            amp[base + j] = (int16_t) lrintf(32768.0f*speech[j]);
+            amp[base + j] = (int16_t) lfastrintf(32768.0f*speech[j]);
     }
 
     return len*LPC10_SAMPLES_PER_FRAME;

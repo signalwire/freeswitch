@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_r2_mf.c,v 1.36 2009/01/31 08:48:10 steveu Exp $
+ * $Id: bell_r2_mf.c,v 1.37 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -45,6 +45,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/complex.h"
@@ -612,8 +613,8 @@ SPAN_DECLARE(size_t) bell_mf_rx_get(bell_mf_rx_state_t *s, char *buf, int max)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
-                                    digits_rx_callback_t callback,
-                                    void *user_data)
+                                                   digits_rx_callback_t callback,
+                                                   void *user_data)
 {
     int i;
     static int initialised = FALSE;
@@ -785,9 +786,9 @@ SPAN_DECLARE(int) r2_mf_rx_get(r2_mf_rx_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
-                                int fwd,
-                                tone_report_func_t callback,
-                                void *user_data)
+                                               int fwd,
+                                               tone_report_func_t callback,
+                                               void *user_data)
 {
     int i;
     static int initialised = FALSE;

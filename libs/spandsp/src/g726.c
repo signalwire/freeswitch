@@ -48,7 +48,7 @@
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  *
- * $Id: g726.c,v 1.26 2009/01/28 03:41:26 steveu Exp $
+ * $Id: g726.c,v 1.27 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -1065,9 +1065,9 @@ SPAN_DECLARE(int) g726_release(g726_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g726_decode(g726_state_t *s,
-                int16_t amp[],
-                const uint8_t g726_data[],
-                int g726_bytes)
+                              int16_t amp[],
+                              const uint8_t g726_data[],
+                              int g726_bytes)
 {
     int i;
     int samples;
@@ -1121,9 +1121,9 @@ SPAN_DECLARE(int) g726_decode(g726_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g726_encode(g726_state_t *s,
-                uint8_t g726_data[],
-                const int16_t amp[],
-                int len)
+                              uint8_t g726_data[],
+                              const int16_t amp[],
+                              int len)
 {
     int i;
     int g726_bytes;

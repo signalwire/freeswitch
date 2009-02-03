@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx.h,v 1.15 2009/01/31 08:48:11 steveu Exp $
+ * $Id: super_tone_tx.h,v 1.16 2009/02/03 16:28:41 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SUPER_TONE_TX_H_)
@@ -51,12 +51,12 @@ extern "C"
 #endif
 
 SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_t *s,
-                                                            float f1,
-                                                            float l1,
-                                                            float f2,
-                                                            float l2,
-                                                            int length,
-                                                            int cycles);
+                                                             float f1,
+                                                             float l1,
+                                                             float f2,
+                                                             float l2,
+                                                             int length,
+                                                             int cycles);
 
 SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s);
 

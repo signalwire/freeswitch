@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.h,v 1.13 2009/01/31 08:48:11 steveu Exp $
+ * $Id: silence_gen.h,v 1.14 2009/02/03 16:28:41 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SILENCE_GEN_H_)
@@ -117,7 +117,7 @@ SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int
     \param len The length of the signal buffer
     \return 0.
 */
-int span_dummy_rx(void *user_data, const int16_t amp[], int len);
+SPAN_DECLARE(int) span_dummy_rx(void *user_data, const int16_t amp[], int len);
 
 /*! A dummy routine to use as a signal modifier callback, when we aren't
     really trying to process the signal. It just returns without affecting

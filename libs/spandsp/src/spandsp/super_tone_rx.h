@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_rx.h,v 1.19 2009/01/31 08:48:11 steveu Exp $
+ * $Id: super_tone_rx.h,v 1.20 2009/02/03 16:28:41 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SUPER_TONE_RX_H_)
@@ -111,9 +111,9 @@ SPAN_DECLARE(int) super_tone_rx_add_element(super_tone_rx_descriptor_t *desc,
     \return The supervisory tone detector context.
 */
 SPAN_DECLARE(super_tone_rx_state_t *) super_tone_rx_init(super_tone_rx_state_t *s,
-                                                        super_tone_rx_descriptor_t *desc,
-                                                        tone_report_func_t callback,
-                                                        void *user_data);
+                                                         super_tone_rx_descriptor_t *desc,
+                                                         tone_report_func_t callback,
+                                                         void *user_data);
 
 /*! Release a supervisory tone detector.
     \param s The supervisory tone context.

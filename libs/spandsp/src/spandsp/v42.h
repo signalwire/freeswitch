@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.h,v 1.27 2009/01/31 08:48:11 steveu Exp $
+ * $Id: v42.h,v 1.28 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \page v42_page V.42 modem error correction
@@ -94,7 +94,7 @@ SPAN_DECLARE(void) lapm_dump(lapm_state_t *s, const uint8_t *frame, int len, int
 
 /*! Accept an HDLC packet
 */
-void lapm_receive(void *user_data, const uint8_t *buf, int len, int ok);
+SPAN_DECLARE(void) lapm_receive(void *user_data, const uint8_t *buf, int len, int ok);
 
 /*! Transmit a LAP.M frame
 */

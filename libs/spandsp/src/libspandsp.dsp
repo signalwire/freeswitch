@@ -479,6 +479,10 @@ SOURCE=.\spandsp/echo.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/fast_convert.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/fax.h
 # End Source File
 # Begin Source File

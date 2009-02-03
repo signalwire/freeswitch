@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: rfc2198_sim.c,v 1.6 2008/07/02 14:48:25 steveu Exp $
+ * $Id: rfc2198_sim.c,v 1.7 2009/02/03 16:28:39 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <audiofile.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
@@ -45,6 +44,7 @@
 #define GEN_CONST
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 
 #include "spandsp.h"
 #include "spandsp/g1050.h"

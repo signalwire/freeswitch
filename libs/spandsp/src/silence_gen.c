@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.c,v 1.17 2009/01/28 03:41:27 steveu Exp $
+ * $Id: silence_gen.c,v 1.18 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -131,7 +131,7 @@ SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int
 /* The following dummy routines, to absorb data, don't really have a proper home,
    so they have been put here. */
 
-int span_dummy_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) span_dummy_rx(void *user_data, const int16_t amp[], int len)
 {
     return 0;
 }

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: logging.c,v 1.29 2009/01/20 04:24:45 steveu Exp $
+ * $Id: logging.c,v 1.30 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -83,7 +83,7 @@ SPAN_DECLARE(int) span_log_test(logging_state_t *s, int level)
 }
 /*- End of function --------------------------------------------------------*/
 
-int span_log(logging_state_t *s, int level, const char *format, ...)
+SPAN_DECLARE(int) span_log(logging_state_t *s, int level, const char *format, ...)
 {
     char msg[1024 + 1];
     va_list arg_ptr;

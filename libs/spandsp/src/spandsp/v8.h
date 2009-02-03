@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8.h,v 1.26 2009/01/31 08:48:11 steveu Exp $
+ * $Id: v8.h,v 1.27 2009/02/03 16:28:41 steveu Exp $
  */
  
 /*! \file */
@@ -129,10 +129,10 @@ extern "C"
     \param user_data An opaque pointer passed to the result_handler routine.
     \return A pointer to the V.8 context, or NULL if there was a problem. */
 SPAN_DECLARE(v8_state_t *) v8_init(v8_state_t *s,
-                                  int caller,
-                                  int available_modulations,
-                                  v8_result_handler_t *result_handler,
-                                  void *user_data);
+                                   int caller,
+                                   int available_modulations,
+                                   v8_result_handler_t *result_handler,
+                                   void *user_data);
 
 /*! Release a V.8 context.
     \brief Release a V.8 context.

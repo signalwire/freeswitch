@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert.c,v 1.30 2008/11/30 13:44:35 steveu Exp $
+ * $Id: bert.c,v 1.31 2009/02/03 16:28:39 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)

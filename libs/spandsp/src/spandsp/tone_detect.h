@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_detect.h,v 1.43 2009/01/31 08:48:11 steveu Exp $
+ * $Id: tone_detect.h,v 1.44 2009/02/03 16:28:41 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TONE_DETECT_H_)
@@ -75,29 +75,29 @@ extern "C"
 #endif
 
 /*! \brief Create a descriptor for use with either a Goertzel transform */
-void make_goertzel_descriptor(goertzel_descriptor_t *t,
-                              float freq,
-                              int samples);
+SPAN_DECLARE(void) make_goertzel_descriptor(goertzel_descriptor_t *t,
+                                            float freq,
+                                            int samples);
 
 /*! \brief Initialise the state of a Goertzel transform.
     \param s The Goertzel context. If NULL, a context is allocated with malloc.
     \param t The Goertzel descriptor.
     \return A pointer to the Goertzel state. */
-goertzel_state_t *goertzel_init(goertzel_state_t *s,
-                                goertzel_descriptor_t *t);
+SPAN_DECLARE(goertzel_state_t *) goertzel_init(goertzel_state_t *s,
+                                               goertzel_descriptor_t *t);
 
 /*! \brief Reset the state of a Goertzel transform.
     \param s The Goertzel context. */
-void goertzel_reset(goertzel_state_t *s);
+SPAN_DECLARE(void) goertzel_reset(goertzel_state_t *s);
 
 /*! \brief Update the state of a Goertzel transform.
     \param s The Goertzel context.
     \param amp The samples to be transformed.
     \param samples The number of samples.
     \return The number of samples unprocessed */
-int goertzel_update(goertzel_state_t *s,
-                    const int16_t amp[],
-                    int samples);
+SPAN_DECLARE(int) goertzel_update(goertzel_state_t *s,
+                                  const int16_t amp[],
+                                  int samples);
 
 /*! \brief Evaluate the final result of a Goertzel transform.
     \param s The Goertzel context.
@@ -106,9 +106,9 @@ int goertzel_update(goertzel_state_t *s,
     [Floating point] ((samples_per_goertzel_block*32768.0/1.4142)*10^((x - DBM0_MAX_SINE_POWER)/20.0))^2
     [Fixed point] ((samples_per_goertzel_block*256.0/1.4142)*10^((x - DBM0_MAX_SINE_POWER)/20.0))^2 */
 #if defined(SPANDSP_USE_FIXED_POINT)
-int32_t goertzel_result(goertzel_state_t *s);
+SPAN_DECLARE(int32_t) goertzel_result(goertzel_state_t *s);
 #else
-float goertzel_result(goertzel_state_t *s);
+SPAN_DECLARE(float) goertzel_result(goertzel_state_t *s);
 #endif
 
 /*! \brief Update the state of a Goertzel transform.

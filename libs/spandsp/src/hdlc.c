@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.68 2009/01/31 09:47:59 steveu Exp $
+ * $Id: hdlc.c,v 1.69 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -296,11 +296,11 @@ SPAN_DECLARE(void) hdlc_rx_set_octet_counting_report_interval(hdlc_rx_state_t *s
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
-                              int crc32,
-                              int report_bad_frames,
-                              int framing_ok_threshold,
-                              hdlc_frame_handler_t handler,
-                              void *user_data)
+                                             int crc32,
+                                             int report_bad_frames,
+                                             int framing_ok_threshold,
+                                             hdlc_frame_handler_t handler,
+                                             void *user_data)
 {
     if (s == NULL)
     {
@@ -319,7 +319,7 @@ SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) hdlc_rx_get_stats(hdlc_rx_state_t *s,
-                      hdlc_rx_stats_t *t)
+                                    hdlc_rx_stats_t *t)
 {
     t->bytes = s->rx_bytes;
     t->good_frames = s->rx_frames;
@@ -547,11 +547,11 @@ SPAN_DECLARE(void) hdlc_tx_set_max_frame_len(hdlc_tx_state_t *s, size_t max_len)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
-                              int crc32,
-                              int inter_frame_flags,
-                              int progressive,
-                              hdlc_underflow_handler_t handler,
-                              void *user_data)
+                                             int crc32,
+                                             int inter_frame_flags,
+                                             int progressive,
+                                             hdlc_underflow_handler_t handler,
+                                             void *user_data)
 {
     if (s == NULL)
     {

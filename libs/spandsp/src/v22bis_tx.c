@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tx.c,v 1.49 2009/01/28 03:41:27 steveu Exp $
+ * $Id: v22bis_tx.c,v 1.50 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -46,6 +46,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
@@ -558,7 +559,7 @@ SPAN_DECLARE(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
             famp += dds_modf(&(s->tx.guard_phase), s->tx.guard_phase_rate, s->tx.guard_level, 0);
         }
         /* Don't bother saturating. We should never clip. */
-        amp[sample] = (int16_t) lrintf(famp);
+        amp[sample] = (int16_t) lfastrintf(famp);
     }
     return sample;
 }
@@ -623,12 +624,12 @@ SPAN_DECLARE(int) v22bis_restart(v22bis_state_t *s, int bit_rate)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
-                            int bit_rate,
-                            int guard,
-                            int caller,
-                            get_bit_func_t get_bit,
-                            put_bit_func_t put_bit,
-                            void *user_data)
+                                           int bit_rate,
+                                           int guard,
+                                           int caller,
+                                           get_bit_func_t get_bit,
+                                           put_bit_func_t put_bit,
+                                           void *user_data)
 {
     if (s == NULL)
     {

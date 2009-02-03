@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.c,v 1.6 2009/01/29 18:30:14 steveu Exp $
+ * $Id: g722.c,v 1.7 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -49,6 +49,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/vector_int.h"
 #include "spandsp/g722.h"

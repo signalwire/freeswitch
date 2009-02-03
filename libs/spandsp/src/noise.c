@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: noise.c,v 1.29 2009/01/31 08:48:10 steveu Exp $
+ * $Id: noise.c,v 1.30 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -45,6 +45,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/noise.h"
 

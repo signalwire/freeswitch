@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.34 2009/01/16 15:13:16 steveu Exp $
+ * $Id: at_interpreter.c,v 1.35 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -5292,10 +5292,10 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
-                    at_tx_handler_t *at_tx_handler,
-                    void *at_tx_user_data,
-                    at_modem_control_handler_t *modem_control_handler,
-                    void *modem_control_user_data)
+                                   at_tx_handler_t *at_tx_handler,
+                                   void *at_tx_user_data,
+                                   at_modem_control_handler_t *modem_control_handler,
+                                   void *modem_control_user_data)
 {
     if (s == NULL)
     {

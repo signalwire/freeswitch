@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate.c,v 1.48 2009/01/28 03:41:27 steveu Exp $
+ * $Id: tone_generate.c,v 1.49 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -46,6 +46,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
@@ -61,15 +62,15 @@
 #define ms_to_samples(t)            (((t)*SAMPLE_RATE)/1000)
 
 SPAN_DECLARE(void) make_tone_gen_descriptor(tone_gen_descriptor_t *s,
-                              int f1,
-                              int l1,
-                              int f2,
-                              int l2,
-                              int d1,
-                              int d2,
-                              int d3,
-                              int d4,
-                              int repeat)
+                                            int f1,
+                                            int l1,
+                                            int f2,
+                                            int l2,
+                                            int d1,
+                                            int d2,
+                                            int d3,
+                                            int d4,
+                                            int repeat)
 {
     memset(s, 0, sizeof(*s));
     if (f1)
@@ -170,7 +171,7 @@ SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
 #else
                     xamp = dds_modf(&s->phase[0], -s->tone[0].phase_rate, s->tone[0].gain, 0)
                          *(1.0f + dds_modf(&s->phase[1], s->tone[1].phase_rate, s->tone[1].gain, 0));
-                    amp[samples] = (int16_t) lrintf(xamp);
+                    amp[samples] = (int16_t) lfastrintf(xamp);
 #endif
                 }
             }
@@ -200,7 +201,7 @@ SPAN_DECLARE(int) tone_gen(tone_gen_state_t *s, int16_t amp[], int max_samples)
 #if defined(SPANDSP_USE_FIXED_POINT)
                     amp[samples] = xamp;
 #else
-                    amp[samples] = (int16_t) lrintf(xamp);
+                    amp[samples] = (int16_t) lfastrintf(xamp);
 #endif
                 }
             }

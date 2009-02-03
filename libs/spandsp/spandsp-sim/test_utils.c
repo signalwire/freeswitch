@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: test_utils.c,v 1.11 2009/01/31 08:48:10 steveu Exp $
+ * $Id: test_utils.c,v 1.12 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -35,13 +35,13 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
-#include "floating_fudge.h"
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#include "floating_fudge.h"
 #include <time.h>
 #include <fcntl.h>
 #include <audiofile.h>

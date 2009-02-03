@@ -1,7 +1,7 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * inttypes.h - a fudge for MSVC, which lacks this header
+ * config.h - a fudge for MSVC, which lacks this header
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
@@ -10,7 +10,7 @@
  *
  * This file is released in the public domain.
  *
- * $Id: config.h,v 1.1 2009/01/29 18:30:14 steveu Exp $
+ * $Id: config.h,v 1.2 2009/02/03 16:39:41 steveu Exp $
  */
 
 #if !defined(_MSVC_CONFIG_H_)
@@ -31,6 +31,8 @@
 #define HAVE_LOG10F
 #define HAVE_MATH_H
 #define HAVE_TGMATH_H
+
+#define HAVE_LONG_DOUBLE
 
 #define SPANDSP_USE_EXPORT_CAPABILITY 1
 

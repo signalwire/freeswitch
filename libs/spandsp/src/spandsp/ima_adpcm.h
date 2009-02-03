@@ -26,7 +26,7 @@
  * Based on a bit from here, a bit from there, eye of toad,
  * ear of bat, etc - plus, of course, my own 2 cents.
  *
- * $Id: ima_adpcm.h,v 1.22 2009/01/31 08:48:11 steveu Exp $
+ * $Id: ima_adpcm.h,v 1.23 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -74,8 +74,8 @@ extern "C"
            as a chunk.
     \return A pointer to the IMA ADPCM context, or NULL for error. */
 SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s,
-                                                int variant,
-                                                int chunk_size);
+                                                 int variant,
+                                                 int chunk_size);
 
 /*! Free an IMA ADPCM encode or decode context.
     \param s The IMA ADPCM context.

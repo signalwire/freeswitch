@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core.c,v 1.50 2009/01/28 03:41:27 steveu Exp $
+ * $Id: t38_core.c,v 1.51 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -924,12 +924,12 @@ SPAN_DECLARE(logging_state_t *) t38_core_get_logging_state(t38_core_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
-                                t38_rx_indicator_handler_t *rx_indicator_handler,
-                                t38_rx_data_handler_t *rx_data_handler,
-                                t38_rx_missing_handler_t *rx_missing_handler,
-                                void *rx_user_data,
-                                t38_tx_packet_handler_t *tx_packet_handler,
-                                void *tx_packet_user_data)
+                                               t38_rx_indicator_handler_t *rx_indicator_handler,
+                                               t38_rx_data_handler_t *rx_data_handler,
+                                               t38_rx_missing_handler_t *rx_missing_handler,
+                                               void *rx_user_data,
+                                               t38_tx_packet_handler_t *tx_packet_handler,
+                                               void *tx_packet_user_data)
 {
     if (s == NULL)
     {

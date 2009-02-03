@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: awgn.c,v 1.20 2009/01/28 03:41:26 steveu Exp $
+ * $Id: awgn.c,v 1.21 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -57,6 +57,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/awgn.h"
 

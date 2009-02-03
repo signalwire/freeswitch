@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dtmf.h,v 1.30 2009/01/31 08:48:11 steveu Exp $
+ * $Id: dtmf.h,v 1.31 2009/02/03 16:28:41 steveu Exp $
  */
 
 #if !defined(_SPANDSP_DTMF_H_)
@@ -192,8 +192,8 @@ SPAN_DECLARE(size_t) dtmf_rx_get(dtmf_rx_state_t *s, char *digits, int max);
            and supplied in callbacks.
     \return A pointer to the DTMF receiver context. */
 SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
-                                            digits_rx_callback_t callback,
-                                            void *user_data);
+                                             digits_rx_callback_t callback,
+                                             void *user_data);
 
 /*! \brief Free a DTMF receiver context.
     \param s The DTMF receiver context.

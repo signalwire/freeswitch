@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.33 2009/01/31 08:48:11 steveu Exp $
+ * $Id: v22bis.h,v 1.34 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -145,12 +145,12 @@ SPAN_DECLARE(int) v22bis_restart(v22bis_state_t *s, int bit_rate);
     \param user_data An opaque pointer, passed in calls to the get and put routines.
     \return A pointer to the modem context, or NULL if there was a problem. */
 SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
-                                          int bit_rate,
-                                          int guard,
-                                          int caller,
-                                          get_bit_func_t get_bit,
-                                          put_bit_func_t put_bit,
-                                          void *user_data);
+                                           int bit_rate,
+                                           int guard,
+                                           int caller,
+                                           get_bit_func_t get_bit,
+                                           put_bit_func_t put_bit,
+                                           void *user_data);
 
 /*! Free a V.22bis modem receive context.
     \brief Free a V.22bis modem receive context.

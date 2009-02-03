@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.c,v 1.50 2009/01/29 18:30:14 steveu Exp $
+ * $Id: fsk.c,v 1.51 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -121,9 +121,9 @@ const fsk_spec_t preset_fsk_specs[] =
 };
 
 SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
-                            const fsk_spec_t *spec,
-                            get_bit_func_t get_bit,
-                            void *user_data)
+                                           const fsk_spec_t *spec,
+                                           get_bit_func_t get_bit,
+                                           void *user_data)
 {
     if (s == NULL)
     {
@@ -231,10 +231,10 @@ SPAN_DECLARE(void) fsk_rx_set_modem_status_handler(fsk_rx_state_t *s, modem_tx_s
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
-                            const fsk_spec_t *spec,
-                            int sync_mode,
-                            put_bit_func_t put_bit,
-                            void *user_data)
+                                           const fsk_spec_t *spec,
+                                           int sync_mode,
+                                           put_bit_func_t put_bit,
+                                           void *user_data)
 {
     int chop;
 

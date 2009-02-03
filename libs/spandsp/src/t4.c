@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.120 2009/01/31 08:48:10 steveu Exp $
+ * $Id: t4.c,v 1.121 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*

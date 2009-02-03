@@ -27,7 +27,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo.c,v 1.30 2009/01/28 03:41:26 steveu Exp $
+ * $Id: echo.c,v 1.31 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -95,6 +95,7 @@
 #include <stdio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
 #include "spandsp/dc_restore.h"

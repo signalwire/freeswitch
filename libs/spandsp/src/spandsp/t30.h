@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.121 2009/01/31 08:48:11 steveu Exp $
+ * $Id: t30.h,v 1.122 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -559,13 +559,13 @@ extern "C"
     \param send_hdlc_user_data
     \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
-                                    int calling_party,
-                                    t30_set_handler_t *set_rx_type_handler,
-                                    void *set_rx_type_user_data,
-                                    t30_set_handler_t *set_tx_type_handler,
-                                    void *set_tx_type_user_data,
-                                    t30_send_hdlc_handler_t *send_hdlc_handler,
-                                    void *send_hdlc_user_data);
+                                     int calling_party,
+                                     t30_set_handler_t *set_rx_type_handler,
+                                     void *set_rx_type_user_data,
+                                     t30_set_handler_t *set_tx_type_handler,
+                                     void *set_tx_type_user_data,
+                                     t30_send_hdlc_handler_t *send_hdlc_handler,
+                                     void *send_hdlc_user_data);
 
 /*! Release a T.30 context.
     \brief Release a T.30 context.
@@ -607,7 +607,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status);
     \brief Get a bit of received non-ECM image data.
     \param user_data An opaque pointer, which must point to the T.30 context.
     \return The next bit to transmit. */
-int t30_non_ecm_get_bit(void *user_data);
+SPAN_DECLARE(int) t30_non_ecm_get_bit(void *user_data);
 
 /*! Get a byte of received non-ECM image data.
     \brief Get a byte of received non-ECM image data.
@@ -627,7 +627,7 @@ SPAN_DECLARE(int) t30_non_ecm_get_chunk(void *user_data, uint8_t buf[], int max_
     \brief Process a bit of received non-ECM image data
     \param user_data An opaque pointer, which must point to the T.30 context.
     \param bit The received bit. */
-void t30_non_ecm_put_bit(void *user_data, int bit);
+SPAN_DECLARE(void) t30_non_ecm_put_bit(void *user_data, int bit);
 
 /*! Process a byte of received non-ECM image data.
     \brief Process a byte of received non-ECM image data
@@ -648,7 +648,7 @@ SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], i
     \param msg The HDLC message.
     \param len The length of the message, in octets.
     \param ok TRUE if the frame was received without error. */
-void t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
+SPAN_DECLARE(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
 
 /*! Report the passage of time to the T.30 engine.
     \brief Report the passage of time to the T.30 engine.

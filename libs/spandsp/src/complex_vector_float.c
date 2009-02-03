@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_vector_float.c,v 1.14 2009/01/28 03:41:26 steveu Exp $
+ * $Id: complex_vector_float.c,v 1.15 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -135,7 +135,7 @@ SPAN_DECLARE(void) cvec_mul(complex_t z[], const complex_t x[], const complex_t 
 /*- End of function --------------------------------------------------------*/
 
 #if defined(HAVE_LONG_DOUBLE)
-void cvec_mull(complexl_t z[], const complexl_t x[], const complexl_t y[], int n)
+SPAN_DECLARE(void) cvec_mull(complexl_t z[], const complexl_t x[], const complexl_t y[], int n)
 {
     int i;
 
@@ -179,7 +179,7 @@ SPAN_DECLARE(complex_t) cvec_dot_prod(const complex_t x[], const complex_t y[], 
 /*- End of function --------------------------------------------------------*/
 
 #if defined(HAVE_LONG_DOUBLE)
-complexl_t cvec_dot_prodl(const complexl_t x[], const complexl_t y[], int n)
+SPAN_DECLARE(complexl_t) cvec_dot_prodl(const complexl_t x[], const complexl_t y[], int n)
 {
     int i;
     complexl_t z;

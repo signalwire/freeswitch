@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: saturated.h,v 1.1 2008/09/19 14:02:05 steveu Exp $
+ * $Id: saturated.h,v 1.3 2009/02/03 17:25:53 steveu Exp $
  */
 
 /*! \file */
@@ -75,7 +75,8 @@ static __inline__ int16_t fsaturatef(float famp)
         return INT16_MAX;
     if (famp < (float) INT16_MIN)
         return INT16_MIN;
-    return (int16_t) rintf(famp);
+    //return (int16_t) lfastrintf(famp);
+    return (int16_t) lrintf(famp);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -85,7 +86,8 @@ static __inline__ int16_t fsaturate(double damp)
         return INT16_MAX;
     if (damp < (double) INT16_MIN)
         return INT16_MIN;
-    return (int16_t) rint(damp);
+    //return (int16_t) lfastrint(damp);
+    return (int16_t) lrint(damp);
 }
 /*- End of function --------------------------------------------------------*/
 

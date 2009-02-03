@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_vector_int.c,v 1.6 2009/01/28 03:41:26 steveu Exp $
+ * $Id: complex_vector_int.c,v 1.7 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_filters.c,v 1.15 2009/01/31 08:48:10 steveu Exp $
+ * $Id: complex_filters.c,v 1.16 2009/02/03 16:28:39 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -53,17 +53,20 @@ SPAN_DECLARE(filter_t *) filter_create(fspec_t *fs)
     }
     return fi;
 }
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) filter_delete(filter_t *fi)
 {
     if (fi)
         free(fi);
 }
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(float) filter_step(filter_t *fi, float x)
 {
     return fi->fs->fsf(fi, x);
 }
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(cfilter_t *) cfilter_create(fspec_t *fs)
 {
@@ -85,6 +88,7 @@ SPAN_DECLARE(cfilter_t *) cfilter_create(fspec_t *fs)
     }
     return cfi;
 }
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) cfilter_delete(cfilter_t *cfi)
 {
@@ -94,6 +98,7 @@ SPAN_DECLARE(void) cfilter_delete(cfilter_t *cfi)
         filter_delete(cfi->imf);
     }
 }
+/*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(complexf_t) cfilter_step(cfilter_t *cfi, const complexf_t *z)
 {
@@ -103,3 +108,5 @@ SPAN_DECLARE(complexf_t) cfilter_step(cfilter_t *cfi, const complexf_t *z)
     cc.im = filter_step(cfi->imf, z->im);
     return cc;
 }
+/*- End of function --------------------------------------------------------*/
+/*- End of file ------------------------------------------------------------*/

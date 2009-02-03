@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.c,v 1.120 2009/01/29 01:41:06 steveu Exp $
+ * $Id: t38_terminal.c,v 1.122 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -585,24 +585,36 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 bit_reverse(buf, buf, len);
             if (len < fe->octets_per_data_packet)
             {
-                /* That's the end of the image data. Do a little padding now */
-                memset(buf + len, 0, fe->octets_per_data_packet - len);
-                fe->non_ecm_trailer_bytes = 3*fe->octets_per_data_packet + len;
-                len = fe->octets_per_data_packet;
-                fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_4;
+                /* That's the end of the image data. */
+                if (s->t38_fe.ms_per_tx_chunk)
+                {
+                    /* Pad the end of the data with some zeros. If we just stop abruptly
+                       at the end of the EOLs, some ATAs fail to clean up properly before
+                       shutting down their transmit modem, and the last few rows of the image
+                       are lost or corrupted. Simply delaying the no-signal message does not
+                       help for all implentations. It is usually ignored, which is probably
+                       the right thing to do after receiving a message saying the signal has
+                       ended. */
+                    memset(buf + len, 0, fe->octets_per_data_packet - len);
+                    fe->non_ecm_trailer_bytes = 3*fe->octets_per_data_packet + len;
+                    len = fe->octets_per_data_packet;
+                    fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_4;
+                }
+                else
+                {
+                    /* If we are sending quickly there seems no point in doing any padding */
+                    t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_SIG_END, buf, len, fe->t38.data_end_tx_count);
+                    fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
+                    delay = 0;
+                }
             }
             t38_core_send_data(&fe->t38, fe->current_tx_data_type, T38_FIELD_T4_NON_ECM_DATA, buf, len, fe->t38.data_tx_count);
             delay = bits_to_us(s, 8*len);
             break;
         case T38_TIMED_STEP_NON_ECM_MODEM_4:
-            /* This pads the end of the data with some zeros. If we just stop abruptly
-               at the end of the EOLs, some ATAs fail to clean up properly before
-               shutting down their transmit modem, and the last few rows of the image
-               are corrupted. Simply delaying the no-signal message does not help for
-               all implentations. It is usually ignored, which is probably the right
-               thing to do after receiving a message saying the signal has ended. */
+            /* Send padding */
             len = fe->octets_per_data_packet;
-            fe->non_ecm_trailer_bytes -= len;
+            fe->non_ecm_trailer_bytes -= fe->octets_per_data_packet;
             if (fe->non_ecm_trailer_bytes <= 0)
             {
                 len += fe->non_ecm_trailer_bytes;
@@ -611,7 +623,9 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_5;
                 /* Allow a bit more time than the data will take to play out, to ensure the far ATA does not
                    cut things short. */
-                delay = bits_to_us(s, 8*len) + 60000;
+                delay = bits_to_us(s, 8*len);
+                if (s->t38_fe.ms_per_tx_chunk)
+                    delay += 60000;
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                 break;
             }
@@ -687,7 +701,9 @@ static int stream_hdlc(t38_terminal_state_t *s)
                         fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_5;
                         /* We add a bit of extra time here, as with some implementations
                            the carrier falling too abruptly causes data loss. */
-                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits) + 100000;
+                        delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
+                        if (s->t38_fe.ms_per_tx_chunk)
+                            delay += 100000;
                         front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                     }
                     else
@@ -726,7 +742,9 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_5;
                 /* We add a bit of extra time here, as with some implementations
                    the carrier falling too abruptly causes data loss. */
-                delay = bits_to_us(s, fe->hdlc_tx.extra_bits) + 100000;
+                delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
+                if (s->t38_fe.ms_per_tx_chunk)
+                    delay += 100000;
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
                 break;
             }
@@ -1097,9 +1115,9 @@ SPAN_DECLARE(logging_state_t *) t38_terminal_get_logging_state(t38_terminal_stat
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
-                                        int calling_party,
-                                        t38_tx_packet_handler_t *tx_packet_handler,
-                                        void *tx_packet_user_data)
+                                                       int calling_party,
+                                                       t38_tx_packet_handler_t *tx_packet_handler,
+                                                       void *tx_packet_user_data)
 {
     if (tx_packet_handler == NULL)
         return NULL;

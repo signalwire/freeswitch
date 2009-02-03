@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.c,v 1.152 2009/01/29 18:30:14 steveu Exp $
+ * $Id: t38_gateway.c,v 1.153 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -2151,10 +2151,10 @@ SPAN_DECLARE(void) t38_gateway_set_supported_modems(t38_gateway_state_t *s, int 
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t38_gateway_set_nsx_suppression(t38_gateway_state_t *s,
-                                     const uint8_t *from_t38,
-                                     int from_t38_len,
-                                     const uint8_t *from_modem,
-                                     int from_modem_len)
+                                                    const uint8_t *from_t38,
+                                                    int from_t38_len,
+                                                    const uint8_t *from_modem,
+                                                    int from_modem_len)
 {
     s->t38x.suppress_nsx_len[0] = (from_t38_len < 0  ||  from_t38_len < MAX_NSX_SUPPRESSION)  ?  (from_t38_len + 3)  :  0;
     s->t38x.suppress_nsx_len[1] = (from_modem_len < 0  ||  from_modem_len < MAX_NSX_SUPPRESSION)  ?  (from_modem_len + 3)  :  0;
@@ -2174,8 +2174,8 @@ SPAN_DECLARE(void) t38_gateway_set_fill_bit_removal(t38_gateway_state_t *s, int 
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *s,
-                                             t38_gateway_real_time_frame_handler_t *handler,
-                                             void *user_data)
+                                                            t38_gateway_real_time_frame_handler_t *handler,
+                                                            void *user_data)
 {
     s->core.real_time_frame_handler = handler;
     s->core.real_time_frame_user_data = user_data;
@@ -2190,8 +2190,8 @@ static int t38_gateway_audio_init(t38_gateway_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 static int t38_gateway_t38_init(t38_gateway_state_t *t,
-                                t38_tx_packet_handler_t *tx_packet_handler,
-                                void *tx_packet_user_data)
+                                 t38_tx_packet_handler_t *tx_packet_handler,
+                                 void *tx_packet_user_data)
 {
     t38_gateway_t38_state_t *s;
 
@@ -2211,8 +2211,8 @@ static int t38_gateway_t38_init(t38_gateway_state_t *t,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
-                                      t38_tx_packet_handler_t *tx_packet_handler,
-                                      void *tx_packet_user_data)
+                                                     t38_tx_packet_handler_t *tx_packet_handler,
+                                                     void *tx_packet_user_data)
 {
     if (tx_packet_handler == NULL)
         return NULL;

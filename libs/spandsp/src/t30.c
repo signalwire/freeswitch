@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.282 2009/01/31 09:47:59 steveu Exp $
+ * $Id: t30.c,v 1.283 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -4986,7 +4986,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t30_non_ecm_put_bit(void *user_data, int bit)
+SPAN_DECLARE(void) t30_non_ecm_put_bit(void *user_data, int bit)
 {
     t30_state_t *s;
 
@@ -5102,7 +5102,7 @@ SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], i
 }
 /*- End of function --------------------------------------------------------*/
 
-int t30_non_ecm_get_bit(void *user_data)
+SPAN_DECLARE(int) t30_non_ecm_get_bit(void *user_data)
 {
     int bit;
     t30_state_t *s;
@@ -5302,7 +5302,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-void t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
+SPAN_DECLARE(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
 {
     t30_state_t *s;
 
@@ -5823,13 +5823,13 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
-                      int calling_party,
-                      t30_set_handler_t *set_rx_type_handler,
-                      void *set_rx_type_user_data,
-                      t30_set_handler_t *set_tx_type_handler,
-                      void *set_tx_type_user_data,
-                      t30_send_hdlc_handler_t *send_hdlc_handler,
-                      void *send_hdlc_user_data)
+                                     int calling_party,
+                                     t30_set_handler_t *set_rx_type_handler,
+                                     void *set_rx_type_user_data,
+                                     t30_set_handler_t *set_tx_type_handler,
+                                     void *set_tx_type_user_data,
+                                     t30_send_hdlc_handler_t *send_hdlc_handler,
+                                     void *send_hdlc_user_data)
 {
     if (s == NULL)
     {

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42bis.h,v 1.24 2009/01/31 08:48:11 steveu Exp $
+ * $Id: v42bis.h,v 1.25 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \page v42bis_page V.42bis modem data compression
@@ -107,15 +107,15 @@ SPAN_DECLARE(int) v42bis_decompress_flush(v42bis_state_t *s);
     \param max_data_len The maximum length that should be passed to the data handler.
     \return The V.42bis context. */
 SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
-                                          int negotiated_p0,
-                                          int negotiated_p1,
-                                          int negotiated_p2,
-                                          v42bis_frame_handler_t frame_handler,
-                                          void *frame_user_data,
-                                          int max_frame_len,
-                                          v42bis_data_handler_t data_handler,
-                                          void *data_user_data,
-                                          int max_data_len);
+                                           int negotiated_p0,
+                                           int negotiated_p1,
+                                           int negotiated_p2,
+                                           v42bis_frame_handler_t frame_handler,
+                                           void *frame_user_data,
+                                           int max_frame_len,
+                                           v42bis_data_handler_t data_handler,
+                                           void *data_user_data,
+                                           int max_data_len);
 
 /*! Set the compression mode.
     \param s The V.42bis context.

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.h,v 1.56 2009/01/31 08:48:11 steveu Exp $
+ * $Id: t31.h,v 1.57 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -127,12 +127,12 @@ SPAN_DECLARE(t38_core_state_t *) t31_get_t38_core_state(t31_state_t *s);
     \param tx_t38_packet_user_data ???
     \return A pointer to the T.31 context. */
 SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
-                                    at_tx_handler_t *at_tx_handler,
-                                    void *at_tx_user_data,
-                                    t31_modem_control_handler_t *modem_control_handler,
-                                    void *modem_control_user_data,
-                                    t38_tx_packet_handler_t *tx_t38_packet_handler,
-                                    void *tx_t38_packet_user_data);
+                                     at_tx_handler_t *at_tx_handler,
+                                     void *at_tx_user_data,
+                                     t31_modem_control_handler_t *modem_control_handler,
+                                     void *modem_control_user_data,
+                                     t38_tx_packet_handler_t *tx_t38_packet_handler,
+                                     void *tx_t38_packet_user_data);
 
 /*! Release a T.31 context.
     \brief Release a T.31 context.

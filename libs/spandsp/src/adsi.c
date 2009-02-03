@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.c,v 1.68 2009/01/29 01:41:05 steveu Exp $
+ * $Id: adsi.c,v 1.69 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -46,6 +46,7 @@
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/complex.h"
@@ -412,9 +413,9 @@ SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
-                              int standard,
-                              put_msg_func_t put_msg,
-                              void *user_data)
+                                             int standard,
+                                             put_msg_func_t put_msg,
+                                             void *user_data)
 {
     if (s == NULL)
     {
@@ -490,10 +491,10 @@ SPAN_DECLARE(void) adsi_tx_send_alert_tone(adsi_tx_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) adsi_tx_set_preamble(adsi_tx_state_t *s,
-                          int preamble_len,
-                          int preamble_ones_len,
-                          int postamble_ones_len,
-                          int stop_bits)
+                                        int preamble_len,
+                                        int preamble_ones_len,
+                                        int postamble_ones_len,
+                                        int stop_bits)
 {
     if (preamble_len < 0)
     {

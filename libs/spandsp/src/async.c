@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.c,v 1.15 2009/01/05 13:48:31 steveu Exp $
+ * $Id: async.c,v 1.16 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -73,12 +73,12 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
-                                int data_bits,
-                                int parity,
-                                int stop_bits,
-                                int use_v14,
-                                put_byte_func_t put_byte,
-                                void *user_data)
+                                               int data_bits,
+                                               int parity,
+                                               int stop_bits,
+                                               int use_v14,
+                                               put_byte_func_t put_byte,
+                                               void *user_data)
 {
     if (s == NULL)
     {
@@ -103,7 +103,7 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-void async_rx_put_bit(void *user_data, int bit)
+SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit)
 {
     async_rx_state_t *s;
 
@@ -185,12 +185,12 @@ void async_rx_put_bit(void *user_data, int bit)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
-                                int data_bits,
-                                int parity,
-                                int stop_bits,
-                                int use_v14,
-                                get_byte_func_t get_byte,
-                                void *user_data)
+                                               int data_bits,
+                                               int parity,
+                                               int stop_bits,
+                                               int use_v14,
+                                               get_byte_func_t get_byte,
+                                               void *user_data)
 {
     if (s == NULL)
     {
@@ -216,7 +216,7 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-int async_tx_get_bit(void *user_data)
+SPAN_DECLARE(int) async_tx_get_bit(void *user_data)
 {
     async_tx_state_t *s;
     int bit;

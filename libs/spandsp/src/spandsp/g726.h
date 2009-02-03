@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726.h,v 1.23 2009/01/31 08:48:11 steveu Exp $
+ * $Id: g726.h,v 1.24 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */

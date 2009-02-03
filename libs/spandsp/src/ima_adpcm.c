@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: ima_adpcm.c,v 1.33 2009/01/28 03:41:27 steveu Exp $
+ * $Id: ima_adpcm.c,v 1.34 2009/02/03 16:28:39 steveu Exp $
  */
 
 /*! \file */
@@ -44,6 +44,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/saturated.h"
 #include "spandsp/ima_adpcm.h"
 #include "spandsp/private/ima_adpcm.h"
@@ -299,9 +300,9 @@ SPAN_DECLARE(int) ima_adpcm_release(ima_adpcm_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) ima_adpcm_decode(ima_adpcm_state_t *s,
-                     int16_t amp[],
-                     const uint8_t ima_data[],
-                     int ima_bytes)
+                                   int16_t amp[],
+                                   const uint8_t ima_data[],
+                                   int ima_bytes)
 {
     int i;
     int j;
@@ -415,9 +416,9 @@ SPAN_DECLARE(int) ima_adpcm_decode(ima_adpcm_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) ima_adpcm_encode(ima_adpcm_state_t *s,
-                     uint8_t ima_data[],
-                     const int16_t amp[],
-                     int len)
+                                   uint8_t ima_data[],
+                                   const int16_t amp[],
+                                   int len)
 {
     int i;
     int bytes;

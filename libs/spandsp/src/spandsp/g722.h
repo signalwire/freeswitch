@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h,v 1.23 2009/01/31 08:48:11 steveu Exp $
+ * $Id: g722.h,v 1.24 2009/02/03 16:28:41 steveu Exp $
  */
 
 

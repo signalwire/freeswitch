@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.34 2009/01/31 08:48:11 steveu Exp $
+ * $Id: fsk.h,v 1.35 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -144,9 +144,9 @@ extern "C"
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
 SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
-                                          const fsk_spec_t *spec,
-                                          get_bit_func_t get_bit,
-                                          void *user_data);
+                                           const fsk_spec_t *spec,
+                                           get_bit_func_t get_bit,
+                                           void *user_data);
 
 /*! Adjust an FSK modem transmit context's power output.
     \brief Adjust an FSK modem transmit context's power output.
@@ -192,10 +192,10 @@ SPAN_DECLARE(void) fsk_rx_signal_cutoff(fsk_rx_state_t *s, float cutoff);
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
 SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
-                                          const fsk_spec_t *spec,
-                                          int sync_mode,
-                                          put_bit_func_t put_bit,
-                                          void *user_data);
+                                           const fsk_spec_t *spec,
+                                           int sync_mode,
+                                           put_bit_func_t put_bit,
+                                           void *user_data);
 
 /*! Process a block of received FSK modem audio samples.
     \brief Process a block of received FSK modem audio samples.

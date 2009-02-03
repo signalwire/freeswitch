@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.h,v 1.21 2009/01/31 08:48:11 steveu Exp $
+ * $Id: at_interpreter.h,v 1.22 2009/02/03 16:28:40 steveu Exp $
  */
 
 /*! \file */
@@ -174,10 +174,10 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
     \param modem_control_user_data x.
     \return A pointer to the AT context, or NULL if there was a problem. */
 SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
-                                  at_tx_handler_t *at_tx_handler,
-                                  void *at_tx_user_data,
-                                  at_modem_control_handler_t *modem_control_handler,
-                                  void *modem_control_user_data);
+                                   at_tx_handler_t *at_tx_handler,
+                                   void *at_tx_user_data,
+                                   at_modem_control_handler_t *modem_control_handler,
+                                   void *modem_control_user_data);
 
 /*! Free an AT interpreter context.
     \brief Free an AT interpreter context.

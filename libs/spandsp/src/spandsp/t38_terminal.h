@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.h,v 1.40 2009/01/31 08:48:11 steveu Exp $
+ * $Id: t38_terminal.h,v 1.41 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -95,9 +95,9 @@ SPAN_DECLARE(logging_state_t *) t38_terminal_get_logging_state(t38_terminal_stat
     \param tx_packet_user_data An opaque pointer passed to the tx_packet_handler routine.
     \return A pointer to the termination mode T.38 context, or NULL if there was a problem. */
 SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
-                                                      int calling_party,
-                                                      t38_tx_packet_handler_t *tx_packet_handler,
-                                                      void *tx_packet_user_data);
+                                                       int calling_party,
+                                                       t38_tx_packet_handler_t *tx_packet_handler,
+                                                       void *tx_packet_user_data);
 
 /*! Release a termination mode T.38 context.
     \brief Release a T.38 context.

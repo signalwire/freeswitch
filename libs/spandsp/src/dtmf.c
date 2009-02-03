@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dtmf.c,v 1.49 2009/01/31 08:48:10 steveu Exp $
+ * $Id: dtmf.c,v 1.50 2009/02/03 16:28:39 steveu Exp $
  */
  
 /*! \file dtmf.h */
@@ -46,6 +46,7 @@
 #include <fcntl.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/fast_convert.h"
 #include "spandsp/queue.h"
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
@@ -251,7 +252,7 @@ SPAN_DECLARE(int) dtmf_rx(dtmf_rx_state_t *s, const int16_t amp[], int samples)
                     /* Avoid reporting multiple no digit conditions on flaky hits */
                     if (s->in_digit  ||  hit)
                     {
-                        i = (s->in_digit  &&  !hit)  ?  -99  :  lrintf(log10f(s->energy)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER);
+                        i = (s->in_digit  &&  !hit)  ?  -99  :  lfastrintf(log10f(s->energy)*10.0f - DTMF_POWER_OFFSET + DBM0_MAX_POWER);
                         s->realtime_callback(s->realtime_callback_data, hit, i, 0);
                     }
                 }
@@ -322,8 +323,8 @@ SPAN_DECLARE(size_t) dtmf_rx_get(dtmf_rx_state_t *s, char *buf, int max)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
-                                   tone_report_func_t callback,
-                                   void *user_data)
+                                                 tone_report_func_t callback,
+                                                 void *user_data)
 {
     s->realtime_callback = callback;
     s->realtime_callback_data = user_data;
@@ -331,10 +332,10 @@ SPAN_DECLARE(void) dtmf_rx_set_realtime_callback(dtmf_rx_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
-                   int filter_dialtone,
-                   int twist,
-                   int reverse_twist,
-                   int threshold)
+                                 int filter_dialtone,
+                                 int twist,
+                                 int reverse_twist,
+                                 int threshold)
 {
     float x;
 
@@ -359,8 +360,8 @@ SPAN_DECLARE(void) dtmf_rx_parms(dtmf_rx_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
-                              digits_rx_callback_t callback,
-                              void *user_data)
+                                             digits_rx_callback_t callback,
+                                             void *user_data)
 {
     int i;
     static int initialised = FALSE;

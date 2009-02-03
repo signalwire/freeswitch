@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_detect.c,v 1.49 2009/01/28 03:41:27 steveu Exp $
+ * $Id: tone_detect.c,v 1.50 2009/02/03 16:28:40 steveu Exp $
  */
  
 /*! \file tone_detect.h */
@@ -58,7 +58,7 @@
 #define M_PI 3.14159265358979323846264338327
 #endif
 
-void make_goertzel_descriptor(goertzel_descriptor_t *t, float freq, int samples)
+SPAN_DECLARE(void) make_goertzel_descriptor(goertzel_descriptor_t *t, float freq, int samples)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     t->fac = 16383.0f*2.0f*cosf(2.0f*M_PI*(freq/(float) SAMPLE_RATE));
@@ -69,8 +69,8 @@ void make_goertzel_descriptor(goertzel_descriptor_t *t, float freq, int samples)
 }
 /*- End of function --------------------------------------------------------*/
 
-goertzel_state_t *goertzel_init(goertzel_state_t *s,
-                                goertzel_descriptor_t *t)
+SPAN_DECLARE(goertzel_state_t *) goertzel_init(goertzel_state_t *s,
+                                               goertzel_descriptor_t *t)
 {
     if (s == NULL)
     {
@@ -91,7 +91,7 @@ goertzel_state_t *goertzel_init(goertzel_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-void goertzel_reset(goertzel_state_t *s)
+SPAN_DECLARE(void) goertzel_reset(goertzel_state_t *s)
 {
 #if defined(SPANDSP_USE_FIXED_POINT)
     s->v2 =
@@ -104,9 +104,9 @@ void goertzel_reset(goertzel_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-int goertzel_update(goertzel_state_t *s,
-                    const int16_t amp[],
-                    int samples)
+SPAN_DECLARE(int) goertzel_update(goertzel_state_t *s,
+                                  const int16_t amp[],
+                                  int samples)
 {
     int i;
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -139,9 +139,9 @@ int goertzel_update(goertzel_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-int32_t goertzel_result(goertzel_state_t *s)
+SPAN_DECLARE(int32_t) goertzel_result(goertzel_state_t *s)
 #else
-float goertzel_result(goertzel_state_t *s)
+SPAN_DECLARE(float) goertzel_result(goertzel_state_t *s)
 #endif
 {
 #if defined(SPANDSP_USE_FIXED_POINT)

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.h,v 1.4 2009/01/31 08:48:11 steveu Exp $
+ * $Id: t38_non_ecm_buffer.h,v 1.5 2009/02/03 16:28:41 steveu Exp $
  */
 
 /*! \file */
@@ -93,7 +93,7 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_report_output_status(t38_non_ecm_buffer_st
 /*! \brief Get the next bit of data from a T.38 rate adapting non-ECM buffer context.
     \param user_data The buffer context, cast to a void pointer.
     \return The next bit, or one of the values indicating a change of modem status. */
-int t38_non_ecm_buffer_get_bit(void *user_data);
+SPAN_DECLARE(int) t38_non_ecm_buffer_get_bit(void *user_data);
 
 #if defined(__cplusplus)
 }
