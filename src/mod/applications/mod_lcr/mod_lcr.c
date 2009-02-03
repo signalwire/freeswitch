@@ -663,6 +663,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	mydata = switch_core_strdup(pool, cmd);
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		switch_assert(argv[0] != NULL);
 		destination_number = switch_core_strdup(pool, argv[0]);
 		if(argc > 1) {
 			lcr_profile = argv[1];
