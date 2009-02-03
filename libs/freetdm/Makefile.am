@@ -166,7 +166,7 @@ ISDN_CFLAGS = -D_GNU_SOURCE
 ####
 
 ###For libpcap
-ISDN_LIBS = -lpcap
+ISDN_LIBS = $(PCAP_LIB_FLAGS)
 ####
 
 ISDN_SOURCE=\
