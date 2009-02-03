@@ -296,16 +296,16 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	additional = switch_core_alloc(pool, sizeof(lcr_obj_t));
 
 	additional->digit_len = strlen(argv[LCR_DIGITS_PLACE]);
-	additional->digit_str = switch_core_strdup(pool, argv[LCR_DIGITS_PLACE]);
-	additional->suffix = switch_core_strdup(pool, argv[LCR_SUFFIX_PLACE]);
-	additional->prefix = switch_core_strdup(pool, argv[LCR_PREFIX_PLACE]);
-	additional->carrier_name = switch_core_strdup(pool, argv[LCR_CARRIER_PLACE]);
-	additional->rate = (float)atof(argv[LCR_RATE_PLACE]);
+	additional->digit_str = switch_core_strdup(pool, switch_str_nil(argv[LCR_DIGITS_PLACE]));
+	additional->suffix = switch_core_strdup(pool, switch_str_nil(argv[LCR_SUFFIX_PLACE]));
+	additional->prefix = switch_core_strdup(pool, switch_str_nil(argv[LCR_PREFIX_PLACE]));
+	additional->carrier_name = switch_core_strdup(pool, switch_str_nil(argv[LCR_CARRIER_PLACE]));
+	additional->rate = (float)atof(switch_str_nil(argv[LCR_RATE_PLACE]));
 	additional->rate_str = switch_core_sprintf(pool, "%0.5f", additional->rate);
-	additional->gw_prefix = switch_core_strdup(pool, argv[LCR_GW_PREFIX_PLACE]);
-	additional->gw_suffix = switch_core_strdup(pool, argv[LCR_GW_SUFFIX_PLACE]);
-	additional->lstrip = atoi(argv[LCR_LSTRIP_PLACE]);
-	additional->tstrip = atoi(argv[LCR_TSTRIP_PLACE]);
+	additional->gw_prefix = switch_core_strdup(pool, switch_str_nil(argv[LCR_GW_PREFIX_PLACE]));
+	additional->gw_suffix = switch_core_strdup(pool, switch_str_nil(argv[LCR_GW_SUFFIX_PLACE]));
+	additional->lstrip = atoi(switch_str_nil(argv[LCR_LSTRIP_PLACE]));
+	additional->tstrip = atoi(switch_str_nil(argv[LCR_TSTRIP_PLACE]));
 	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, additional);
 
 	if (cbt->head == NULL) {
