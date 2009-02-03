@@ -111,6 +111,7 @@ typedef struct profile_obj profile_t;
 struct callback_obj {
 	lcr_route head;
 	int matches;
+	switch_memory_pool_t *pool;
 	char *lookup_number;
 };
 typedef struct callback_obj callback_t;
@@ -132,15 +133,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_lcr, mod_lcr_load, mod_lcr_shutdown, NULL);
 
-static char *get_bridge_data(const char *dialed_number, lcr_route cur_route)
+static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_number, lcr_route cur_route)
 {
 	size_t lstrip;
 	size_t  tstrip;
 	char *data = NULL;
+	char *pooldata = NULL;
 	char *destination_number = NULL;
 	char *orig_destination_number = NULL; 
 
-	orig_destination_number = destination_number = strdup(dialed_number);
+	orig_destination_number = destination_number = switch_core_strdup(pool, dialed_number);
 
 	tstrip = ((cur_route->digit_len - cur_route->tstrip) + 1);
 	lstrip = cur_route->lstrip;
@@ -155,8 +157,12 @@ static char *get_bridge_data(const char *dialed_number, lcr_route cur_route)
 	data = switch_mprintf("%s%s%s%s%s", cur_route->gw_prefix, cur_route->prefix
 						  , destination_number, cur_route->suffix, cur_route->gw_suffix);
 		
+	/* move to a pool and free here */
+	pooldata = switch_core_strdup(pool, data);
+	switch_safe_free(data);
+	data = pooldata;
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
-	switch_safe_free(orig_destination_number); /* don't need to free destination_number */
 	return data;
 }
 
@@ -236,7 +242,7 @@ static switch_bool_t set_db_random()
 }
 
 /* make a new string with digits only */
-static char *string_digitsonly(const char *str) 
+static char *string_digitsonly(switch_memory_pool_t *pool, const char *str) 
 {
 	char *p, *np, *newstr;
 	size_t len;
@@ -244,7 +250,7 @@ static char *string_digitsonly(const char *str)
 	p = (char *)str;
 
 	len = strlen(str);
-	switch_zmalloc(newstr, len+1);
+	newstr = switch_core_alloc(pool, len+1);
 	np = newstr;
 	
 	while(*p) {
@@ -281,7 +287,7 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	lcr_route additional = NULL;
 	lcr_route current = NULL;
 	callback_t *cbt = (callback_t *) pArg;
-	char srate[10];
+	switch_memory_pool_t *pool = cbt->pool;
 	
 	cbt->matches++;
 
@@ -293,21 +299,20 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	switch_zmalloc(additional, sizeof(lcr_obj_t));
+	additional = switch_core_alloc(pool, sizeof(lcr_obj_t));
 
 	additional->digit_len = strlen(argv[LCR_DIGITS_PLACE]);
-	additional->digit_str = switch_safe_strdup(argv[LCR_DIGITS_PLACE]);
-	additional->suffix = switch_safe_strdup(argv[LCR_SUFFIX_PLACE]);
-	additional->prefix = switch_safe_strdup(argv[LCR_PREFIX_PLACE]);
-	additional->carrier_name = switch_safe_strdup(argv[LCR_CARRIER_PLACE]);
+	additional->digit_str = switch_core_strdup(pool, argv[LCR_DIGITS_PLACE]);
+	additional->suffix = switch_core_strdup(pool, argv[LCR_SUFFIX_PLACE]);
+	additional->prefix = switch_core_strdup(pool, argv[LCR_PREFIX_PLACE]);
+	additional->carrier_name = switch_core_strdup(pool, argv[LCR_CARRIER_PLACE]);
 	additional->rate = (float)atof(argv[LCR_RATE_PLACE]);
-	switch_snprintf(srate, sizeof(srate), "%0.5f", additional->rate);
-	additional->rate_str = switch_safe_strdup(srate);
-	additional->gw_prefix = switch_safe_strdup(argv[LCR_GW_PREFIX_PLACE]);
-	additional->gw_suffix = switch_safe_strdup(argv[LCR_GW_SUFFIX_PLACE]);
+	additional->rate_str = switch_core_sprintf(pool, "%0.5f", additional->rate);
+	additional->gw_prefix = switch_core_strdup(pool, argv[LCR_GW_PREFIX_PLACE]);
+	additional->gw_suffix = switch_core_strdup(pool, argv[LCR_GW_SUFFIX_PLACE]);
 	additional->lstrip = atoi(argv[LCR_LSTRIP_PLACE]);
 	additional->tstrip = atoi(argv[LCR_TSTRIP_PLACE]);
-	additional->dialstring = get_bridge_data(cbt->lookup_number, additional);
+	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, additional);
 
 	if (cbt->head == NULL) {
 		additional->next = cbt->head;
@@ -322,7 +327,6 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 								"Ignoring Duplicate route for termination point (%s:%s)\n",
 								additional->gw_prefix, additional->gw_suffix);
-			switch_safe_free(additional);
 			break;
 		}
 			
@@ -356,6 +360,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 		return SWITCH_STATUS_FALSE;
 	}
 
+	/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
 	SWITCH_STANDARD_STREAM(sql_stream);
 
 	/* set up the query to be executed */
@@ -363,12 +368,11 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 							  "SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
 							  );
 	sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
-	digits_copy = string_digitsonly(digits);
+	digits_copy = string_digitsonly(cb_struct->pool, digits);
 	for (n = digit_len; n > 0; n--) {
 		digits_copy[n] = '\0';
 		sql_stream.write_function(&sql_stream, "%s%s", (n==digit_len ? "" : ", "), digits_copy);
 	}
-	switch_safe_free(digits_copy);
 	sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
 	if(profile->id > 0) {
 		sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
@@ -379,7 +383,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 	}
 	sql_stream.write_function(&sql_stream, ";");
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%s\n", (char *)sql_stream.data);    
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", (char *)sql_stream.data);    
 	
 	lookup_status = lcr_execute_sql_callback((char *)sql_stream.data, route_add_callback, cb_struct);
 	switch_safe_free(sql_stream.data);
@@ -485,7 +489,6 @@ static switch_status_t lcr_load_config()
 				
 				if(!switch_strlen_zero((char *)order_by.data)) {
 					profile->order_by = switch_core_strdup(globals.pool, (char *)order_by.data);
-					switch_safe_free(order_by.data);
 				} else {
 					/* default to rate */
 					profile->order_by = ", rate";
@@ -497,6 +500,7 @@ static switch_status_t lcr_load_config()
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded lcr profile %s.\n", profile->name);
 			}
+			switch_safe_free(order_by.data);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No lcr profiles defined.\n");
@@ -525,34 +529,22 @@ static switch_status_t lcr_load_config()
 	return status;
 }
 
-static void destroy_list(lcr_route *head)
-{
-	lcr_route cur = NULL, top = *head;
-
-	while (top) {
-		cur = top;
-		top = top->next;
-		switch_safe_free(cur->digit_str);
-		switch_safe_free(cur->suffix);
-		switch_safe_free(cur->prefix);
-		switch_safe_free(cur->carrier_name);
-		switch_safe_free(cur->gw_prefix);
-		switch_safe_free(cur->gw_suffix);
-		switch_safe_free(cur->rate_str);
-		switch_safe_free(cur);
-	}
-	*head = NULL;
-}
-
 SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
-	char *bridge_data = NULL;
 	char *lcr_profile = NULL;
+	switch_memory_pool_t *pool = NULL;
 
+	if(session) {
+		pool = switch_core_session_get_pool(session);
+	} else {
+		switch_core_new_memory_pool(&pool);
+	}
+	routes.pool = pool;
+	
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
 	}
@@ -562,24 +554,23 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	if (lcr_do_lookup(&routes, caller_profile->destination_number, lcr_profile) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
-			destroy_list(&routes.head);
-			return NULL;
+			goto end;
 		}
 
 		switch_channel_set_variable(channel, SWITCH_CONTINUE_ON_FAILURE_VARIABLE, "true");
 		switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
 
 		for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
-			/*bridge_data = get_bridge_data(caller_profile->destination_number, cur_route);*/
 			switch_caller_extension_add_application(session, extension, "bridge", cur_route->dialstring);
-			switch_safe_free(bridge_data);
 		}
-		destroy_list(&routes.head);
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", caller_profile->destination_number);
 	}
-	switch_safe_free(bridge_data);
 
+end:
+	if(!session) {
+		switch_core_destroy_memory_pool(&pool);
+	}
 	return extension;
 }
 
@@ -610,10 +601,18 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	char *last_delim = "|";
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
+	switch_memory_pool_t *pool;
 
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		return;
 	}
+
+	if(session) {
+		pool = switch_core_session_get_pool(session);
+	} else {
+		switch_core_new_memory_pool(&pool);
+	}
+	routes.pool = pool;
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
@@ -637,10 +636,13 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			switch_channel_set_variable(channel, "lcr_route_count", vbuf);
 			*(rbuf + strlen(rbuf) - 1) = '\0';
 			switch_channel_set_variable(channel, "lcr_auto_route", rbuf);
-			destroy_list(&routes.head);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", dest);
 		}
+	}
+
+	if(!session) {
+		switch_core_destroy_memory_pool(&pool);
 	}
 }
 
@@ -655,21 +657,24 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	lcr_route current = NULL;
 	max_obj_t maximum_lengths = { 0 };
 	callback_t cb_struct = { 0 };
+	switch_memory_pool_t *pool;
 	switch_status_t lookup_status = SWITCH_STATUS_SUCCESS;
-	/*//switch_malloc(maximum_lengths, sizeof(max_obj_t)); */
 
+	switch_core_new_memory_pool(&pool);
+	
 	if (switch_strlen_zero(cmd)) {
 		goto usage;
 	}
 
-	mydata = switch_safe_strdup(cmd);
+	mydata = switch_core_strdup(pool, cmd);
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-		destination_number = strdup(argv[0]);
+		destination_number = switch_core_strdup(pool, argv[0]);
 		if(argc > 1) {
 			lcr_profile = argv[1];
 		}
 		cb_struct.lookup_number = destination_number;
+		cb_struct.pool = pool;
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
 						  , "data passed to lcr is [%s]\n", cmd
@@ -709,7 +714,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 			current = cb_struct.head;
 			while (current) {
 
-				dialstring = get_bridge_data(destination_number, current);
+				dialstring = get_bridge_data(pool, destination_number, current);
 
 				stream->write_function(stream, " | %s", current->digit_str);
 				str_repeat((maximum_lengths.digit_str - current->digit_len), " ", stream);
@@ -725,12 +730,9 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 				
 				stream->write_function(stream, " |\n");
 				
-				switch_safe_free(dialstring);
 				current = current->next;
 			}
 
-			destroy_list(&cb_struct.head);
-			switch_safe_free(dialstring);
 		} else {
 			if(lookup_status == SWITCH_STATUS_SUCCESS) {
 				stream->write_function(stream, "No Routes To Display\n");
@@ -740,7 +742,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		}
 	}
 
-	switch_safe_free(mydata);
+	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
  usage:
 	stream->write_function(stream, "USAGE: %s\n", LCR_SYNTAX);
@@ -792,6 +794,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown)
 {
+	switch_odbc_handle_disconnect(globals.master_odbc);
+	switch_odbc_handle_destroy(&globals.master_odbc);
+	switch_core_destroy_memory_pool(&globals.pool);
+	switch_core_hash_destroy(&globals.profile_hash);
 	return SWITCH_STATUS_SUCCESS;
 }
 
