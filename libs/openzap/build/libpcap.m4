@@ -34,6 +34,18 @@ ac_cv_found_pcap_lib=no)
 LIBS=$saved_LIBS
 ])
 
+AC_DEFUN([TEST_LIBPATH], [
+changequote(<<, >>)
+define(<<AC_CV_FOUND>>, translit(ac_cv_found_$2_lib, <<- *>>, <<__p>>))
+changequote([, ])
+if test "$AC_CV_FOUND" = "yes"; then
+  if test \! -r "$1/lib$2.a" -a \! -r "$1/lib$2.so" -a \! -r "$1/lib$2.sl" -a \! -r "$1/lib$2.dylib"; then
+    AC_CV_FOUND=no
+  fi
+fi
+])
+
+
 AC_DEFUN([PCAP_LIB_WHERE], [
    for i in $1; do
       AC_MSG_CHECKING(for pcap library in $i)
@@ -49,7 +61,29 @@ AC_DEFUN([PCAP_LIB_WHERE], [
     done
 ])
 
-AC_DEFUN([PCAP], [
+AC_DEFUN([FIND_LIB_SUBDIR],
+[dnl
+AC_ARG_WITH([lib-subdir], AC_HELP_STRING([--with-lib-subdir=DIR],[Find libraries in DIR instead of lib]))
+AC_CHECK_SIZEOF(long)
+AC_CACHE_CHECK([what directory libraries are found in], [ac_cv_cmu_lib_subdir],
+[test "X$with_lib_subdir" = "Xyes" && with_lib_subdir=
+test "X$with_lib_subdir" = "Xno" && with_lib_subdir=
+ if test "X$with_lib_subdir" = "X" ; then
+   ac_cv_cmu_lib_subdir=lib
+   if test $ac_cv_sizeof_long -eq 4 ; then
+     test -d /usr/lib32 && ac_cv_cmu_lib_subdir=lib32
+   fi
+   if test $ac_cv_sizeof_long -eq 8 ; then
+     test -d /usr/lib64 && ac_cv_cmu_lib_subdir=lib64
+   fi
+ else
+   ac_cv_cmu_lib_subdir=$with_lib_subdir
+ fi])
+ AC_SUBST(LIB_SUBDIR, $ac_cv_cmu_lib_subdir)
+ ])
+ 
+
+AC_DEFUN([AX_LIB_PCAP], [
 AC_REQUIRE([FIND_LIB_SUBDIR])
 AC_ARG_WITH(pcap,
 	[  --with-pcap=PREFIX      Compile with PCAP support],
@@ -78,7 +112,7 @@ AC_ARG_WITH(pcap-include,
 	  ac_cv_pcap_where_lib=$with_pcap_lib
 	fi
 	if test "X$ac_cv_pcap_where_lib" = "X"; then
-	  PCAP_LIB_WHERE(/usr/lib /usr/local/lib /usr/lib64 /usr/local/lib64)
+	  PCAP_LIB_WHERE(/usr/$LIB_SUBDIR /usr/local/$LIB_SUBDIR)
 	fi
 
 	if test "X$with_pcap_include" != "X"; then

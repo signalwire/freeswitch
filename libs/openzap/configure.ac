@@ -101,6 +101,7 @@ AC_SUBST(DYNAMIC_LIB_EXTEN)
 AC_CHECK_LIB([dl], [dlopen])
 AC_CHECK_LIB([pthread], [pthread_create])
 AC_CHECK_LIB([m], [cos])
+AX_LIB_PCAP
 
 AC_CHECK_HEADERS([netinet/sctp.h netdb.h sys/select.h])
 AC_CHECK_FUNC([gethostbyname_r],
