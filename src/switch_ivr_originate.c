@@ -58,8 +58,10 @@ static switch_status_t originate_on_routing(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	/* put the channel in a passive state until it is answered */
-	switch_channel_set_state(channel, CS_CONSUME_MEDIA);
+	if (switch_channel_get_state(channel) == CS_ROUTING) {
+		/* put the channel in a passive state until it is answered */
+		switch_channel_set_state(channel, CS_CONSUME_MEDIA);
+	}
 
 	return SWITCH_STATUS_FALSE;
 }

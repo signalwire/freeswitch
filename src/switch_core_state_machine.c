@@ -276,12 +276,12 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 		midstate = state;												\
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State %s\n", switch_channel_get_name(session->channel), __STATE_STR);	\
 		if (!driver_state_handler->on_##__STATE || (driver_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
-													&& midstate == switch_channel_get_state(session->channel))) { \
+													)) {				\
 			while (do_extra_handlers && (application_state_handler = switch_channel_get_state_handler(session->channel, index++)) != 0) { \
 				if (!application_state_handler || !application_state_handler->on_##__STATE \
 					|| (application_state_handler->on_##__STATE			\
 						&& application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
-						&& midstate == switch_channel_get_state(session->channel))) { \
+						)) {											\
 					proceed++;											\
 					continue;											\
 				} else {												\
@@ -290,11 +290,13 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 				}														\
 			}															\
 			index = 0;													\
+			if (!proceed) global_proceed = 0;							\
+			proceed = 1;												\
 			while (do_extra_handlers && proceed && (application_state_handler = switch_core_get_state_handler(index++)) != 0) { \
 				if (!application_state_handler || !application_state_handler->on_##__STATE || \
 					(application_state_handler->on_##__STATE &&			\
 					 application_state_handler->on_##__STATE(session) == SWITCH_STATUS_SUCCESS \
-					 && midstate == switch_channel_get_state(session->channel))) { \
+					 )) {												\
 					proceed++;											\
 					continue;											\
 				} else {												\
@@ -302,7 +304,8 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 					break;												\
 				}														\
 			}															\
-			if (proceed) {												\
+			if (!proceed || midstate != switch_channel_get_state(session->channel)) global_proceed = 0; \
+			if (global_proceed) {										\
 				switch_core_standard_on_##__STATE(session);				\
 			}															\
 		}																\
@@ -374,6 +377,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		if (state != switch_channel_get_running_state(session->channel) || state == CS_HANGUP) {
 			int index = 0;
 			int proceed = 1;
+			int global_proceed = 1;
 			int do_extra_handlers = 1;
 
 			switch_channel_set_running_state(session->channel, state);
