@@ -874,6 +874,7 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	if (!(item = (limit_hash_item_t*)switch_core_hash_find(globals.limit_hash, hashkey))) {
 		/* No, create an empty structure and add it, then continue like as if it existed */
 		item = (limit_hash_item_t*)malloc(sizeof(limit_hash_item_t));
+		switch_assert(item);
 		memset(item, 0, sizeof(limit_hash_item_t));
 		switch_core_hash_insert(globals.limit_hash, hashkey, item);
 	}
