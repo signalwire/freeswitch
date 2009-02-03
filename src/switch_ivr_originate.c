@@ -216,7 +216,8 @@ static void launch_collect_thread(struct key_collect *collect)
 	switch_thread_create(&thread, thd_attr, collect_thread_run, collect, switch_core_session_get_pool(collect->session));
 }
 
-static int check_per_channel_timeouts(originate_status_t *originate_status, 
+static int check_per_channel_timeouts(originate_global_t *oglobals,
+									  originate_status_t *originate_status, 
 									  int max,
 									  time_t start)
 {
@@ -229,7 +230,7 @@ static int check_per_channel_timeouts(originate_status_t *originate_status,
 				!(
 				  switch_channel_test_flag(originate_status[i].peer_channel, CF_RING_READY) ||
 				  switch_channel_test_flag(originate_status[i].peer_channel, CF_ANSWERED) ||
-				  switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_MEDIA)
+				  (!oglobals->monitor_early_media_ring && switch_channel_test_flag(originate_status[i].peer_channel, CF_EARLY_MEDIA))
 				  )
 				) {
 				switch_channel_hangup(originate_status[i].peer_channel, SWITCH_CAUSE_PROGRESS_TIMEOUT);
@@ -445,7 +446,7 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 				if (!oglobals->progress) {
 					oglobals->progress = 1;
 				}
-			
+				
 				if (!oglobals->ring_ready && !oglobals->ignore_ring_ready) {
 					oglobals->ring_ready = 1;
 				}
@@ -1533,7 +1534,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					switch_yield(100000);
 				}
 
-				check_per_channel_timeouts(originate_status, and_argc, start);
+				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
 
 
 				if (valid_channels == 0) {
@@ -1662,7 +1663,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				/* When the AND operator is being used, and fail_on_single_reject is set, a hangup indicates that the call should fail. */
 				
-				check_per_channel_timeouts(originate_status, and_argc, start);
+				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
 
 				if (oglobals.session && switch_core_session_private_event_count(oglobals.session)) {
 					switch_ivr_parse_all_events(oglobals.session);

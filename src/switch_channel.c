@@ -1623,8 +1623,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_pre_answered(switch_
 {
 	switch_event_t *event;
 
-	switch_channel_perform_mark_ring_ready(channel, file, func, line);
-
 	if (!switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
 		const char *uuid;
 		switch_core_session_t *other_session;

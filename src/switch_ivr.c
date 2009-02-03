@@ -54,6 +54,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 	int sval = 0;
 	const char *var;
 
+	/*
 	if (!switch_channel_test_flag(channel, CF_OUTBOUND) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
 		!switch_channel_media_ready(channel) && !switch_channel_test_flag(channel, CF_SERVICE)) {
 		if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
@@ -61,6 +62,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session,
 			return SWITCH_STATUS_FALSE;
 		}
 	}
+	*/
 
 	if (!switch_channel_media_ready(channel)) {
 		switch_yield(ms * 1000);
