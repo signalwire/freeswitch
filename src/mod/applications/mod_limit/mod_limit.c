@@ -57,12 +57,16 @@ static struct {
 #endif
 } globals;
 
-struct limit_hash_item  {
+typedef struct  {
 	uint32_t total_usage;
 	uint32_t rate_usage;
 	time_t last_check;
-};
-typedef struct limit_hash_item limit_hash_item_t;
+} limit_hash_item_t;
+
+typedef struct {
+	uint8_t have_state_handler;
+	switch_hash_t *hash;
+	} limit_hash_private_t;
 
  
 static char limit_sql[] =
@@ -295,7 +299,7 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_channel_state_t state = switch_channel_get_state(channel);
-	switch_hash_t *channel_hash = switch_channel_get_private(channel, "limit_hash");
+	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
 	
 	/* The call is either hung up, or is going back into the dialplan, decrement appropriate couters */
 	if (state == CS_HANGUP || state == CS_ROUTING) {	
@@ -303,7 +307,8 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 		switch_mutex_lock(globals.limit_hash_mutex);
 
 		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel */
-		for(hi = switch_hash_first(NULL, channel_hash); hi; hi = switch_hash_next(hi))
+		//for(hi = switch_hash_first(NULL, pvt->hash); hi; hi = switch_hash_next(hi))
+		while((hi = switch_hash_first(NULL, pvt->hash)))
 		{
 			void *val = NULL;
 			const void *key;
@@ -316,9 +321,21 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 			
 			/* We keep the structure even though the count is 0 so we do not allocate too often */
 			item->total_usage--;	
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)key, item->total_usage);	
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", (const char*)key, item->total_usage);
+			
+			if (item->total_usage == 0)  {
+				/* Noone is using this item anymore */
+				switch_core_hash_delete(globals.limit_hash, (const char*)key);
+				free(item);
+			}
+			
+			switch_core_hash_delete(pvt->hash, (const char*)key);
 		}
+		
+		/* Remove handler */
 		switch_core_event_hook_remove_state_change(session, hash_state_handler);
+		pvt->have_state_handler = 0;
+		
 		switch_mutex_unlock(globals.limit_hash_mutex);
 	}
 	
@@ -812,9 +829,8 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	limit_hash_item_t *item = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	time_t now = switch_epoch_time_now(NULL);
-	switch_hash_t *channel_hash = NULL;
+	limit_hash_private_t *pvt = NULL;
 	uint8_t increment = 1;
-	uint8_t new_channel = 0;
 	
 	/* Parse application data  */
 	if (!switch_strlen_zero(data)) {
@@ -857,22 +873,25 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	/* Check if that realm+id has ever been checked */
 	if (!(item = (limit_hash_item_t*)switch_core_hash_find(globals.limit_hash, hashkey))) {
 		/* No, create an empty structure and add it, then continue like as if it existed */
-		item = (limit_hash_item_t*)switch_core_alloc(globals.pool, sizeof(limit_hash_item_t));
+		item = (limit_hash_item_t*)malloc(sizeof(limit_hash_item_t));
 		memset(item, 0, sizeof(limit_hash_item_t));
 		switch_core_hash_insert(globals.limit_hash, hashkey, item);
 	}
 	
 	/* Did we already run on this channel before? */
-	if ((channel_hash = switch_channel_get_private(channel, "limit_hash")))
+	if ((pvt = switch_channel_get_private(channel, "limit_hash")))
 	{
 		/* Yes, but check if we did that realm+id
 		   If we didnt, allow incrementing the counter.
 		   If we did, dont touch it but do the validation anyways
 		 */
-		increment = !switch_core_hash_find(channel_hash, hashkey);
+		increment = !switch_core_hash_find(pvt->hash, hashkey);
 	} else {
 		/* This is the first limit check on this channel, create a hashtable, set our prviate data and add a state handler */
-		new_channel = 1;
+		pvt = (limit_hash_private_t*)switch_core_session_alloc(session, sizeof(limit_hash_private_t));
+		memset(pvt, 0, sizeof(limit_hash_private_t));
+		switch_core_hash_init(&pvt->hash, switch_core_session_get_pool(session));
+		switch_channel_set_private(channel, "limit_hash", pvt);
 	}
 
 	if (interval > 0) {
@@ -885,22 +904,29 @@ SWITCH_STANDARD_APP(limit_hash_function)
 			
 			if ((max >= 0) && (item->rate_usage > (uint32_t)max)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage for %s exceeds maximum rate of %d/%ds, now at %d\n", hashkey, max, interval, item->rate_usage);
-				switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
+				if (*xfer_exten == '!') {
+					switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
+				} else {
+					switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
+				}
 				goto end;
 			}
 		}
 	} else if ((max >= 0) && (item->total_usage + increment > (uint32_t)max)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage for %s is already at max value (%d)\n", hashkey, item->total_usage);
-		switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
+		if (*xfer_exten == '!') {
+			switch_channel_hangup(channel, switch_channel_str2cause(xfer_exten+1));
+		} else {
+			switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
+		}
 		goto end;
 	}
 
 	if (increment) {
 		item->total_usage++;
 		
-		if (!new_channel)  {
-			switch_core_hash_insert(channel_hash, hashkey, item);
-		}
+
+		switch_core_hash_insert(pvt->hash, hashkey, item);
 		
 		if (max == -1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d\n", hashkey, item->total_usage);
@@ -915,11 +941,9 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	switch_channel_set_variable(channel, "limit_usage", switch_core_session_sprintf(session, "%d", item->total_usage));
 	switch_channel_set_variable(channel, "limit_rate", switch_core_session_sprintf(session, "%d", item->rate_usage));
 
-	if (new_channel) {
-		switch_core_hash_init(&channel_hash, switch_core_session_get_pool(session));
-		switch_core_hash_insert(channel_hash, hashkey, item);
-		switch_channel_set_private(channel, "limit_hash", channel_hash);
+	if (!pvt->have_state_handler) {
 		switch_core_event_hook_add_state_change(session, hash_state_handler);
+		pvt->have_state_handler = 1;
 	}
 	
 end:	
