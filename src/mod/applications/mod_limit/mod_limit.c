@@ -938,9 +938,17 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	}
 	
 	/* Save current usage & rate into channel variables so it can be used later in the dialplan, or added to CDR records */
-	switch_channel_set_variable(channel, "limit_usage", switch_core_session_sprintf(session, "%d", item->total_usage));
-	switch_channel_set_variable(channel, "limit_rate", switch_core_session_sprintf(session, "%d", item->rate_usage));
-
+	{
+		const char *susage = switch_core_session_sprintf(session, "%d", item->total_usage);
+		const char *srate = switch_core_session_sprintf(session, "%d", item->rate_usage);
+		
+		switch_channel_set_variable(channel, "limit_usage", susage);
+		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_usage_%s", hashkey), susage);
+		 
+		switch_channel_set_variable(channel, "limit_rate", srate);
+		switch_channel_set_variable(channel, switch_core_session_sprintf(session, "limit_rate_%s", hashkey), srate);
+	}
+	
 	if (!pvt->have_state_handler) {
 		switch_core_event_hook_add_state_change(session, hash_state_handler);
 		pvt->have_state_handler = 1;
