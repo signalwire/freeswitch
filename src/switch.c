@@ -281,29 +281,30 @@ int main(int argc, char *argv[])
 
 	usageDesc = "these are the optional arguments you can pass to freeswitch\n"
 #ifdef WIN32
-		"\t-service [name]  -- start freeswitch as a service, cannot be used if loaded as a console app\n"
-		"\t-install [name]  -- install freeswitch as a service, with optional service name\n"
-		"\t-uninstall       -- remove freeswitch as a service\n"
+		"\t-service [name]        -- start freeswitch as a service, cannot be used if loaded as a console app\n"
+		"\t-install [name]        -- install freeswitch as a service, with optional service name\n"
+		"\t-uninstall             -- remove freeswitch as a service\n"
 #else
-		"\t-nf              -- no forking\n"
-		"\t-u [user]        -- specify user to switch to\n"
-		"\t-g [group]       -- specify group to switch to\n"
+		"\t-nf                    -- no forking\n"
+		"\t-u [user]              -- specify user to switch to\n"
+		"\t-g [group]             -- specify group to switch to\n"
 #endif
-		"\t-help            -- this message\n"
+		"\t-help                  -- this message\n"
 #ifdef HAVE_SETRLIMIT
-		"\t-core            -- dump cores\n"
+		"\t-core                  -- dump cores\n"
 #endif
-		"\t-hp              -- enable high priority settings\n"
-		"\t-vg              -- run under valgrind\n"
-		"\t-nosql           -- disable internal sql scoreboard\n"
-		"\t-stop            -- stop freeswitch\n"
-		"\t-nc              -- do not output to a console and background\n"
-		"\t-c              -- output to a console and stay in the foreground\n"
-		"\t-conf [confdir]  -- specify an alternate config dir\n"
-		"\t-log [logdir]    -- specify an alternate log dir\n"
-		"\t-db [dbdir]      -- specify an alternate db dir\n"
-		"\t-mod [moddir]    -- specify an alternate mod dir\n"
-		"\t-scripts [scriptsdir]      -- specify an alternate scripts dir\n";
+		"\t-hp                    -- enable high priority settings\n"
+		"\t-vg                    -- run under valgrind\n"
+		"\t-nosql                 -- disable internal sql scoreboard\n"
+		"\t-stop                  -- stop freeswitch\n"
+		"\t-nc                    -- do not output to a console and background\n"
+		"\t-c                     -- output to a console and stay in the foreground\n"
+		"\t-conf [confdir]        -- specify an alternate config dir\n"
+		"\t-log [logdir]          -- specify an alternate log dir\n"
+		"\t-db [dbdir]            -- specify an alternate db dir\n"
+		"\t-mod [moddir]          -- specify an alternate mod dir\n"
+		"\t-htdocs [htdocsdir]    -- specify an alternate htdocs dir\n"
+		"\t-scripts [scriptsdir]  -- specify an alternate scripts dir\n";
 
 	for (x = 1; x < argc; x++) {
 		known_opt = 0;
@@ -545,6 +546,22 @@ int main(int argc, char *argv[])
 				strcpy(SWITCH_GLOBAL_dirs.script_dir, argv[x]);
 			} else {
 				fprintf(stderr, "When using -scripts you must specify a scripts directory\n");
+				return 255;
+			}
+			known_opt++;
+		}
+
+		if (argv[x] && !strcmp(argv[x], "-htdocs")) {
+			x++;
+			if (argv[x] && strlen(argv[x])) {
+				SWITCH_GLOBAL_dirs.htdocs_dir = (char *) malloc(strlen(argv[x]) + 1);
+				if (!SWITCH_GLOBAL_dirs.htdocs_dir) {
+					fprintf(stderr, "Allocation error\n");
+					return 255;
+				}
+				strcpy(SWITCH_GLOBAL_dirs.htdocs_dir, argv[x]);
+			} else {
+				fprintf(stderr, "When using -htdocs you must specify a htdocs directory\n");
 				return 255;
 			}
 			known_opt++;
