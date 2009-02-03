@@ -120,6 +120,7 @@ static struct {
 	char *dbname;
 	char *odbc_dsn;
 	switch_mutex_t *mutex;
+	switch_mutex_t *db_mutex;
 	switch_odbc_handle_t *master_odbc;
 	switch_hash_t *profile_hash;
 	profile_t *default_profile;
@@ -155,7 +156,7 @@ static char *get_bridge_data(const char *dialed_number, lcr_route cur_route)
 						  , destination_number, cur_route->suffix, cur_route->gw_suffix);
 		
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
-	switch_safe_free(orig_destination_number);
+	switch_safe_free(orig_destination_number); /* don't need to free destination_number */
 	return data;
 }
 
@@ -243,7 +244,7 @@ static char *string_digitsonly(const char *str)
 	p = (char *)str;
 
 	len = strlen(str);
-	switch_zmalloc(newstr, len+1); /* worst case, same string */
+	switch_zmalloc(newstr, len+1);
 	np = newstr;
 	
 	while(*p) {
@@ -260,15 +261,19 @@ static char *string_digitsonly(const char *str)
 
 static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
+	switch_bool_t retval = SWITCH_FALSE;
+	
+	switch_mutex_lock(globals.db_mutex);
 	if (globals.odbc_dsn) {
 		if(switch_odbc_handle_callback_exec(globals.master_odbc, sql, callback, pdata)
 				== SWITCH_ODBC_FAIL) {
-			return SWITCH_FALSE;
+			retval = SWITCH_FALSE;
 		} else {
-			return SWITCH_TRUE;
+			retval = SWITCH_TRUE;
 		}
 	}
-	return SWITCH_FALSE;
+	switch_mutex_unlock(globals.db_mutex);
+	return retval;
 }
 
 int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -765,6 +770,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	}
 	if (switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize mutex\n");
+	}
+	if (switch_mutex_init(&globals.db_mutex, SWITCH_MUTEX_UNNESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize db_mutex\n");
 	}
 	
 	if(set_db_random() == SWITCH_TRUE) {
