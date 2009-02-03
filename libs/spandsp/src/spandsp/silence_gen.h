@@ -117,7 +117,7 @@ SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int
     \param len The length of the signal buffer
     \return 0.
 */
-SPAN_DECLARE(int) span_dummy_rx(void *user_data, const int16_t amp[], int len);
+SPAN_DECLARE_NONSTD(int) span_dummy_rx(void *user_data, const int16_t amp[], int len);
 
 /*! A dummy routine to use as a signal modifier callback, when we aren't
     really trying to process the signal. It just returns without affecting

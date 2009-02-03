@@ -94,7 +94,7 @@ SPAN_DECLARE(void) lapm_dump(lapm_state_t *s, const uint8_t *frame, int len, int
 
 /*! Accept an HDLC packet
 */
-SPAN_DECLARE(void) lapm_receive(void *user_data, const uint8_t *buf, int len, int ok);
+SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *buf, int len, int ok);
 
 /*! Transmit a LAP.M frame
 */

@@ -709,7 +709,7 @@ fprintf(stderr, "Deleting T403 e %d\n", s->t403_timer);
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
+SPAN_DECLARE_NONSTD(void) lapm_receive(void *user_data, const uint8_t *frame, int len, int ok)
 {
     lapm_state_t *s;
     lapm_frame_queue_t *f;

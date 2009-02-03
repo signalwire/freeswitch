@@ -162,7 +162,7 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
     \brief Get the next bit of a transmitted serial bit stream.
     \param user_data An opaque point which must point to a transmitter context.
     \return the next bit, or PUTBIT_END_OF_DATA to indicate the data stream has ended. */
-SPAN_DECLARE(int) async_tx_get_bit(void *user_data);
+SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data);
 
 /*! Initialise an asynchronous data receiver context.
     \brief Initialise an asynchronous data receiver context.
@@ -191,7 +191,7 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
         - SIG_STATUS_TRAINING_SUCCEEDED
         - SIG_STATUS_TRAINING_FAILED
         - SIG_STATUS_END_OF_DATA */
-SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit);
+SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit);
 
 #if defined(__cplusplus)
 }

@@ -103,7 +103,7 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) async_rx_put_bit(void *user_data, int bit)
+SPAN_DECLARE_NONSTD(void) async_rx_put_bit(void *user_data, int bit)
 {
     async_rx_state_t *s;
 
@@ -216,7 +216,7 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) async_tx_get_bit(void *user_data)
+SPAN_DECLARE_NONSTD(int) async_tx_get_bit(void *user_data)
 {
     async_tx_state_t *s;
     int bit;

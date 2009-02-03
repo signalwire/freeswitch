@@ -131,7 +131,7 @@ SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int
 /* The following dummy routines, to absorb data, don't really have a proper home,
    so they have been put here. */
 
-SPAN_DECLARE(int) span_dummy_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) span_dummy_rx(void *user_data, const int16_t amp[], int len)
 {
     return 0;
 }

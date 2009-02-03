@@ -125,7 +125,7 @@ SPAN_DECLARE(void) cvec_mulf(complexf_t z[], const complexf_t x[], const complex
 SPAN_DECLARE(void) cvec_mul(complex_t z[], const complex_t x[], const complex_t y[], int n);
 
 #if defined(HAVE_LONG_DOUBLE)
-void cvec_mull(complexl_t z[], const complexl_t x[], const complexl_t y[], int n);
+SPAN_DECLARE(void) cvec_mull(complexl_t z[], const complexl_t x[], const complexl_t y[], int n);
 #endif
 
 /*! \brief Find the dot product of two complex float vectors.
