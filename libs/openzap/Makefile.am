@@ -32,18 +32,14 @@
 PREFIX=$(prefix)
 
 SRC=src
-top_builddir=@oz_builddir@
-LTINSTALL=$(LIBTOOL) --mode=install $(INSTALL)
-LTUNINSTALL=$(LIBTOOL) --mode=uninstall rm -f 
-CCLD = $(CC)
+
 INCS=-I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
 MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"@prefix@/mod\" @COMP_VENDOR_CFLAGS@ @DEFS@
-
 COMPILE      = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
-LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(MY_CFLAGS) $(LDFLAGS) -o $@
-libdir = $(PREFIX)/lib/
+LINK = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
 
+libdir = $(PREFIX)/lib/
 library_includedir      = $(PREFIX)/include
 
 libopenzap_la_SOURCES	= \
@@ -79,77 +75,12 @@ $(SRC)/include/zap_threadmutex.h \
 $(SRC)/include/zap_dso.h \
 $(SRC)/include/zap_types.h 
 
-BOOST_SOURCE=\
-$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c \
-$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
-
-ISDN_SOURCE=\
-$(SRC)/isdn/EuroISDNStateNT.c \
-$(SRC)/isdn/EuroISDNStateTE.c \
-$(SRC)/isdn/mfifo.c \
-$(SRC)/isdn/Q921.c \
-$(SRC)/isdn/Q931api.c \
-$(SRC)/isdn/Q931.c \
-$(SRC)/isdn/Q931ie.c \
-$(SRC)/isdn/Q931mes.c \
-$(SRC)/isdn/Q931StateNT.c \
-$(SRC)/isdn/Q931StateTE.c \
-$(SRC)/isdn/nationalmes.c \
-$(SRC)/isdn/nationalStateNT.c \
-$(SRC)/isdn/nationalStateTE.c \
-$(SRC)/isdn/DMSmes.c \
-$(SRC)/isdn/DMSStateNT.c \
-$(SRC)/isdn/DMSStateTE.c \
-$(SRC)/isdn/5ESSmes.c \
-$(SRC)/isdn/5ESSStateNT.c \
-$(SRC)/isdn/5ESSStateTE.c \
-$(SRC)/isdn/Q932mes.c
-
-BOOST_OBJS=\
-$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.o \
-$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.o
-
-ISDN_OBJS=\
-$(SRC)/isdn/EuroISDNStateNT.o \
-$(SRC)/isdn/EuroISDNStateTE.o \
-$(SRC)/isdn/mfifo.o \
-$(SRC)/isdn/Q921.o \
-$(SRC)/isdn/Q931api.o \
-$(SRC)/isdn/Q931.o \
-$(SRC)/isdn/Q931ie.o \
-$(SRC)/isdn/Q931mes.o \
-$(SRC)/isdn/Q931StateNT.o \
-$(SRC)/isdn/Q931StateTE.o \
-$(SRC)/isdn/nationalmes.o \
-$(SRC)/isdn/nationalStateNT.o \
-$(SRC)/isdn/nationalStateTE.o \
-$(SRC)/isdn/DMSmes.o \
-$(SRC)/isdn/DMSStateNT.o \
-$(SRC)/isdn/DMSStateTE.o \
-$(SRC)/isdn/5ESSmes.o \
-$(SRC)/isdn/5ESSStateNT.o \
-$(SRC)/isdn/5ESSStateTE.o \
-$(SRC)/isdn/Q932mes.o
-
-ISDN_HEADER=\
-$(SRC)/isdn/include/mfifo.h \
-$(SRC)/isdn/include/national.h \
-$(SRC)/isdn/include/DMS.h \
-$(SRC)/isdn/include/5ESS.h \
-$(SRC)/isdn/include/Q921.h \
-$(SRC)/isdn/include/Q931.h \
-$(SRC)/isdn/include/Q931ie.h \
-$(SRC)/isdn/include/Q932.h 
-
 lib_LTLIBRARIES	       = libopenzap.la
 libopenzap_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS)
 libopenzap_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
 libopenzap_la_LIBADD     = $(LIBS)
 
 MYLIB=libopenzap.la
-
-PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
-PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 
 all: $(MYLIB) analogmod analog_emmod isdnmod boostmod ztmod wpmod
 
@@ -210,11 +141,6 @@ install-data-local:
 	@cp -f src/ozmod/*/*.$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
 	@echo OpenZAP Installed
 
-uninstall: oz-uninstall
-
-oz-uninstall: 
-	@rm -fr $(DESTDIR)$(PREFIX)
-
 $(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB)
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB) -rpath $(libdir)
 skelmod: $(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN)
@@ -228,6 +154,9 @@ $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmo
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.o $(MYLIB) -rpath $(libdir)
 wpmod: $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN)
 
+PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
+PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
+
 $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika/ozmod_pika.o $(MYLIB)
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_pika/ozmod_pika.o  $(MYLIB) -rpath $(libdir)
 pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN)
@@ -239,6 +168,60 @@ ISDN_CFLAGS = -D_GNU_SOURCE
 ###For libpcap
 ISDN_LIBS = -lpcap
 ####
+
+ISDN_SOURCE=\
+$(SRC)/isdn/EuroISDNStateNT.c \
+$(SRC)/isdn/EuroISDNStateTE.c \
+$(SRC)/isdn/mfifo.c \
+$(SRC)/isdn/Q921.c \
+$(SRC)/isdn/Q931api.c \
+$(SRC)/isdn/Q931.c \
+$(SRC)/isdn/Q931ie.c \
+$(SRC)/isdn/Q931mes.c \
+$(SRC)/isdn/Q931StateNT.c \
+$(SRC)/isdn/Q931StateTE.c \
+$(SRC)/isdn/nationalmes.c \
+$(SRC)/isdn/nationalStateNT.c \
+$(SRC)/isdn/nationalStateTE.c \
+$(SRC)/isdn/DMSmes.c \
+$(SRC)/isdn/DMSStateNT.c \
+$(SRC)/isdn/DMSStateTE.c \
+$(SRC)/isdn/5ESSmes.c \
+$(SRC)/isdn/5ESSStateNT.c \
+$(SRC)/isdn/5ESSStateTE.c \
+$(SRC)/isdn/Q932mes.c
+
+ISDN_OBJS=\
+$(SRC)/isdn/EuroISDNStateNT.o \
+$(SRC)/isdn/EuroISDNStateTE.o \
+$(SRC)/isdn/mfifo.o \
+$(SRC)/isdn/Q921.o \
+$(SRC)/isdn/Q931api.o \
+$(SRC)/isdn/Q931.o \
+$(SRC)/isdn/Q931ie.o \
+$(SRC)/isdn/Q931mes.o \
+$(SRC)/isdn/Q931StateNT.o \
+$(SRC)/isdn/Q931StateTE.o \
+$(SRC)/isdn/nationalmes.o \
+$(SRC)/isdn/nationalStateNT.o \
+$(SRC)/isdn/nationalStateTE.o \
+$(SRC)/isdn/DMSmes.o \
+$(SRC)/isdn/DMSStateNT.o \
+$(SRC)/isdn/DMSStateTE.o \
+$(SRC)/isdn/5ESSmes.o \
+$(SRC)/isdn/5ESSStateNT.o \
+$(SRC)/isdn/5ESSStateTE.o \
+$(SRC)/isdn/Q932mes.o
+
+ISDN_HEADER=\
+$(SRC)/isdn/include/mfifo.h \
+$(SRC)/isdn/include/national.h \
+$(SRC)/isdn/include/DMS.h \
+$(SRC)/isdn/include/5ESS.h \
+$(SRC)/isdn/include/Q921.h \
+$(SRC)/isdn/include/Q931.h \
+$(SRC)/isdn/include/Q931ie.h \
+$(SRC)/isdn/include/Q932.h 
 
 $(ISDN_OBJS): $(ISDN_HEADER) $(ISDN_SOURCE) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
 $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
@@ -257,6 +240,14 @@ analogmod: $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN)
 $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ANALOG_EM_OBJS) $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.o
 	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.o $(MYLIB) -rpath $(libdir)
 analog_emmod: $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.$(DYNAMIC_LIB_EXTEN)
+
+BOOST_OBJS=\
+$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.o \
+$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.o
+
+BOOST_SOURCE=\
+$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c \
+$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
 
 $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(BOOST_OBJS)
 	$(LINK) $(SOLINK) $(BOOST_OBJS) $(MYLIB) -rpath $(libdir)
