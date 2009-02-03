@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 	int fd = -1;
 	int16_t buf[160] = {0};
 	ssize_t len = 0;
-	int type, mlen;
+	size_t type, mlen;
 	char *sp;
 	char str[128] = "";
 	char fbuf[256];
@@ -49,12 +49,12 @@ int main(int argc, char *argv[])
 		zap_fsk_data_init(&fsk_data, databuf, sizeof(databuf));
 #if 1
 		
-		zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, time_str, strlen(time_str));
+		zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, (uint8_t *)time_str, strlen(time_str));
 		//zap_fsk_data_add_mdmf(&fsk_data, MDMF_DATETIME, "06091213", 8);
-		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NUM, "14149361212", 7);
-		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NAME, "Fred Smith", 10);
+		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NUM, (uint8_t *)"14149361212", 7);
+		zap_fsk_data_add_mdmf(&fsk_data, MDMF_PHONE_NAME, (uint8_t *)"Fred Smith", 10);
 		for(x = 0; x < 0; x++)
-			zap_fsk_data_add_mdmf(&fsk_data, MDMF_ALT_ROUTE, url, strlen(url));
+			zap_fsk_data_add_mdmf(&fsk_data, MDMF_ALT_ROUTE, (uint8_t *)url, strlen(url));
 #else
 		zap_fsk_data_add_sdmf(&fsk_data, "06061234", "0");
 		//zap_fsk_data_add_sdmf(&state, "06061234", "5551212");
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 		zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, 8000, &fsk_data, -14, 180, 5, 300, my_write_sample, &foo);
 		zap_fsk_modulator_send_all((&fsk_trans));
 
-		printf("%d %d %d\n", fsk_data.dlen, foo.wrote, fsk_trans.est_bytes);
+		printf("%lu %d %d\n", fsk_data.dlen, foo.wrote, fsk_trans.est_bytes);
 
 		if (fd > -1) {
 			close (fd);
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (zap_fsk_demod_init(&fsk_data, 8000, fbuf, sizeof(fbuf))) {
+	if (zap_fsk_demod_init(&fsk_data, 8000, (uint8_t *)fbuf, sizeof(fbuf))) {
 		printf("wtf\n");
 		return 0;
 	}
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 		zap_copy_string(str, sp, mlen+1);
 		*(str+mlen) = '\0';
 		zap_clean_string(str);
-		printf("TYPE %d (%s) LEN %d VAL [%s]\n", type, zap_mdmf_type2str(type), mlen, str);
+		printf("TYPE %lu (%s) LEN %lu VAL [%s]\n", type, zap_mdmf_type2str(type), mlen, str);
 	}
 
 	zap_fsk_demod_destroy(&fsk_data);

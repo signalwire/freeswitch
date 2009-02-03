@@ -84,13 +84,13 @@ MYLIB=libopenzap.la
 
 all: $(MYLIB) analogmod analog_emmod isdnmod boostmod ztmod wpmod
 
-noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testboost testanalog #testapp testcid
-#testapp_SOURCES = $(SRC)/testapp.c
-#testapp_LDADD = libopenzap.la
-#testapp_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
-#testcid_SOURCES = $(SRC)/testcid.c
-#testcid_LDADD = libopenzap.la
-#testcid_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testboost testanalog testapp testcid
+testapp_SOURCES = $(SRC)/testapp.c
+testapp_LDADD = libopenzap.la
+testapp_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testcid_SOURCES = $(SRC)/testcid.c
+testcid_LDADD = libopenzap.la
+testcid_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
 testtones_SOURCES = $(SRC)/testtones.c
 testtones_LDADD = libopenzap.la
 testtones_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
