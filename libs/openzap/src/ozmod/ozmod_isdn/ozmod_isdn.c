@@ -49,9 +49,11 @@
 #define ZAP_SPAN_IS_NT(x)	(((zap_isdn_data_t *)(x)->signal_data)->mode == Q921_NT)
 
 
+#ifdef HAVE_LIBPCAP
 /*-------------------------------------------------------------------------*/
 /*Q931ToPcap functions*/
 #include <pcap.h>
+#endif
 
 #define SNAPLEN 1522
 #define MAX_ETHER_PAYLOAD_SIZE 1500
@@ -68,6 +70,7 @@
 #define IP_SIZE_OFFSET          SIZE_ETHERNET+2
 #define TCP_SEQ_OFFSET		SIZE_ETHERNET+SIZE_IP+4
 
+#ifdef HAVE_LIBPCAP
 /*Some globals*/
 unsigned long           pcapfilesize = 0;
 unsigned long		tcp_next_seq_no_send = 0;
@@ -139,14 +142,14 @@ static zap_status_t openPcapFile(void)
 
 static zap_status_t closePcapFile(void)
 {
-        if(pcapfile){
+	if (pcapfile) {
 		pcap_dump_close(pcapfile);
-		if(pcaphandle) pcap_close(pcaphandle);
+		if (pcaphandle) pcap_close(pcaphandle);
 
 		zap_log(ZAP_LOG_DEBUG, "Pcap file closed! File size is %lu bytes.\n", pcapfilesize);
 
-        	pcaphdr.ts.tv_sec 	= 0;
-        	pcaphdr.ts.tv_usec 	= 0;
+		pcaphdr.ts.tv_sec 	= 0;
+		pcaphdr.ts.tv_usec 	= 0;
 		pcapfile		= NULL;
 		pcaphandle 		= NULL;
 		pcapfilesize		= 0;
@@ -155,7 +158,7 @@ static zap_status_t closePcapFile(void)
 	}
 
 	/*We have allways success with this? I think so*/
-        return ZAP_SUCCESS;
+	return ZAP_SUCCESS;
 }
 
 static zap_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, L3ULONG span_id, L3USHORT direction)
@@ -236,9 +239,14 @@ static zap_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, L
         return ZAP_SUCCESS;
 }
 
+#endif
 static ZIO_IO_UNLOAD_FUNCTION(close_pcap)
 {
+#ifdef HAVE_LIBPCAP
 	return closePcapFile();
+#else
+	return ZAP_SUCCESS;
+#endif
 }
 
 /*Q931ToPcap functions DONE*/
@@ -965,12 +973,15 @@ static int zap_isdn_921_23(void *pvt, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *msg
 {
 	int ret, offset = (ind == Q921_DL_DATA) ? 4 : 3;
 	char bb[4096] = "";
+#ifdef HAVE_LIBPCAP
 	zap_span_t *span = (zap_span_t *) pvt;  /*To get access to spanid for Q931ToPcap*/
+#endif
 
 	switch(ind) {
 	case Q921_DL_DATA:
 	case Q921_DL_UNIT_DATA:
 		print_hex_bytes(msg + offset, mlen - offset, bb, sizeof(bb));
+#ifdef HAVE_LIBPCAP
 		/*Q931ToPcap*/
                 if(do_q931ToPcap==1){
                         if(writeQ931PacketToPcap(msg + offset, mlen - offset, span->span_id, 1) != ZAP_SUCCESS){
@@ -978,6 +989,7 @@ static int zap_isdn_921_23(void *pvt, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *msg
                         }
                 }
                 /*Q931ToPcap done*/
+#endif
 		zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n\n", (int)mlen - offset, LINE, bb);
 	default:
 		ret = Q931Rx23(pvt, ind, tei, msg, mlen);
@@ -1723,7 +1735,9 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 {
 	int offset = 4;
 	char bb[4096] = "";
+#ifdef HAVE_LIBPCAP
 	zap_span_t *span = (zap_span_t *) pvt;	/*To get access to span_id for Q931ToPcap*/
+#endif
 
 	switch(ind) {
 	case Q921_DL_UNIT_DATA:
@@ -1731,6 +1745,7 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 
 	case Q921_DL_DATA:
 		print_hex_bytes(msg + offset, mlen - offset, bb, sizeof(bb));
+#ifdef HAVE_LIBPCAP
 		/*Q931ToPcap*/
 		if(do_q931ToPcap==1){
 			if(writeQ931PacketToPcap(msg + offset, mlen - offset, span->span_id, 0) != ZAP_SUCCESS){
@@ -1738,6 +1753,7 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 			}
 		}
 		/*Q931ToPcap done*/
+#endif
 		zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)mlen - offset, LINE, bb);
 		break;
 
@@ -1908,29 +1924,31 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	int32_t digit_timeout = 0;
 	int q921loglevel = -1;
 	int q931loglevel = -1;
+#ifdef HAVE_LIBPCAP
 	int q931topcap   = -1; 	/*Q931ToPcap*/
 	int openPcap = 0; 	/*Flag: open Pcap file please*/
+#endif
 
 	if (span->signal_type) {
+#ifdef HAVE_LIBPCAP
 		/*Q931ToPcap: Get the content of the q931topcap and pcapfilename args given by mod_openzap */
 		while((var = va_arg(ap, char *))) {
-                	if (!strcasecmp(var, "q931topcap")) {
-                        	q931topcap = va_arg(ap, int);
-                        	if(q931topcap==1) {
-                                	/*PCAP on*/;
+			if (!strcasecmp(var, "q931topcap")) {
+				q931topcap = va_arg(ap, int);
+				if(q931topcap==1) {
+					/*PCAP on*/;
 					openPcap=1;
-                        	}
-                        	else if(q931topcap==0){
-                                	/*PCAP off*/
-					if(closePcapFile() != ZAP_SUCCESS) return ZAP_FAIL;
+				} else if (q931topcap==0) {
+					/*PCAP off*/
+					if (closePcapFile() != ZAP_SUCCESS) return ZAP_FAIL;
 					do_q931ToPcap=0;
 					return ZAP_SUCCESS;
-                        	}
+				}
 			}
 			if (!strcasecmp(var, "pcapfilename")) {
 				/*Put filename into global var*/
-                                pcapfn = va_arg(ap, char*);
-                        }
+				pcapfn = va_arg(ap, char*);
+			}
 		}
 		/*We know now, that user wants to enable Q931ToPcap and what file name he wants, so open it please*/
 		if(openPcap==1){
@@ -1939,7 +1957,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 			return ZAP_SUCCESS;
 		}
 		/*Q931ToPcap done*/
-
+#endif
 		snprintf(span->last_error, sizeof(span->last_error), "Span is already configured for signalling [%d].", span->signal_type);
 		return ZAP_FAIL;
 	}
