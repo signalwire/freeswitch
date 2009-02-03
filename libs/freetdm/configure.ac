@@ -16,9 +16,9 @@ AC_PREFIX_DEFAULT(/usr/local/openzap)
 
 
 # Absolute source/build directory
-oz_srcdir=`(cd $srcdir && pwd)`
+OZ_SRCDIR=`(cd $srcdir && pwd)`
 oz_builddir=`pwd`
-AC_SUBST(oz_srcdir)
+AC_SUBST(OZ_SRCDIR)
 AC_SUBST(oz_builddir)
 
 #override some default libtool behavior and invoke AC_PROG_LIBTOOL (see http://lists.gnu.org/archive/html/libtool/2007-03/msg00000.html)
