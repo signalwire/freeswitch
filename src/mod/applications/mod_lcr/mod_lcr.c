@@ -138,7 +138,6 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 	size_t lstrip;
 	size_t  tstrip;
 	char *data = NULL;
-	char *pooldata = NULL;
 	char *destination_number = NULL;
 	char *orig_destination_number = NULL; 
 
@@ -154,14 +153,9 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 		destination_number += lstrip;
 	}
 	
-	data = switch_mprintf("%s%s%s%s%s", cur_route->gw_prefix, cur_route->prefix
-						  , destination_number, cur_route->suffix, cur_route->gw_suffix);
-		
-	/* move to a pool and free here */
-	pooldata = switch_core_strdup(pool, data);
-	switch_safe_free(data);
-	data = pooldata;
-	
+	data = switch_core_sprintf(pool, "%s%s%s%s%s", cur_route->gw_prefix, cur_route->prefix
+								, destination_number, cur_route->suffix, cur_route->gw_suffix);
+			
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
 	return data;
 }
