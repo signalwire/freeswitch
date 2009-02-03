@@ -650,7 +650,9 @@ static switch_status_t load_config(void)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Old table voicemail_data found, migrating data!\n");
 					/* XXX: Old table found.. migrating data into new table */
 					if (switch_odbc_handle_exec(profile->master_odbc,
-												"insert into voicemail_msgs select created_epoch, read_epoch, user as username, domain, uuid,"
+												"insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
+													"in_folder, file_path, message_len, flags, read_flags) "
+												"select created_epoch, read_epoch, user, domain, uuid, "
 												"cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags from voicemail_data",
 												NULL) != SWITCH_ODBC_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to migrate old voicemail_data to voicemail_msgs!\n");
@@ -670,7 +672,9 @@ static switch_status_t load_config(void)
 						errmsg = NULL;
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Migrating data from voicemail_data to voicemail_msgs!\n");
-						switch_core_db_exec(db, "insert into voicemail_msgs select created_epoch, read_epoch, user as username, domain, uuid,"
+						switch_core_db_exec(db, "insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
+											"in_folder, file_path, message_len, flags, read_flags) "
+											"select created_epoch, read_epoch, user, domain, uuid, "
 											"cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags from voicemail_data",
 											NULL, NULL, &errmsg);
 						if (errmsg) {
@@ -2313,7 +2317,9 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 
 		switch_event_fire(&message_event);
 
-		usql = switch_mprintf("insert into voicemail_msgs values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_epoch_time_now(NULL),
+		usql = switch_mprintf("insert into voicemail_msgs(created_epoch, read_epoch, username, domain, uuid, cid_name, "
+							  "cid_number, in_folder, file_path, message_len, flags, read_flags) "
+							  "values(%ld,0,'%q','%q','%q','%q','%q','%q','%q','%u','','%q')", (long) switch_epoch_time_now(NULL),
 							  myid, domain_name, uuid_str, caller_id_name, caller_id_number,
 							  myfolder, file_path, message_len, read_flags);
 
