@@ -17,6 +17,8 @@ int main (int argc, char *argv[])
 		"<iq type='result' to='ydobon@jabber.org'><query xmlns='jabber:iq:version'>"
 		"<name>TestClient</name><os>SuxOS 2000</os><version><stable solidity='rock'/>"
 		"1.2.0 patchlevel 2</version></query></iq>";
+	static char xml2[] =
+		"<Ni><C/>lala<br/><A/>Hello World<B/></Ni>";
 	iks *x, *y, *z;
 	char *t;
 
@@ -48,6 +50,25 @@ int main (int argc, char *argv[])
 	if(!t || strcmp(t, xml) != 0) {
 		printf("Result:   %s\n", t);
 		printf("Expected: %s\n", xml);
+		return 1;
+	}
+	iks_delete(x);
+
+
+	x = iks_new ("Ni");
+	y = iks_insert (x, "br");
+	z = iks_prepend_cdata (y, "lala", 4);
+	iks_prepend (z, "C");
+	z = iks_insert_cdata (x, "Hello", 5);
+	y = iks_append (z, "B");
+	iks_prepend (z, "A");
+	iks_append_cdata (z, " ", 1);
+	iks_prepend_cdata (y, "World", 5);
+
+	t = iks_string (iks_stack (x), x);
+	if(!t || strcmp(t, xml2) != 0) {
+		printf("Result:   %s\n", t);
+		printf("Expected: %s\n", xml2);
 		return 1;
 	}
 	iks_delete(x);

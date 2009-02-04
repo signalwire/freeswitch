@@ -11,10 +11,10 @@ static void sha_buffer (iksha *sha, const unsigned char *data, int len);
 static void sha_calculate (iksha *sha);
 
 struct iksha_struct {
-	unsigned long hash[5];
-	unsigned long buf[80];
+	unsigned int hash[5];
+	unsigned int buf[80];
 	int blen;
-	unsigned long lenhi, lenlo;
+	unsigned int lenhi, lenlo;
 };
 
 iksha *
@@ -32,11 +32,11 @@ void
 iks_sha_reset (iksha *sha)
 {
 	memset (sha, 0, sizeof (iksha));
-	sha->hash[0] = 0x67452301L;
-	sha->hash[1] = 0xefcdab89L;
-	sha->hash[2] = 0x98badcfeL;
-	sha->hash[3] = 0x10325476L;
-	sha->hash[4] = 0xc3d2e1f0L;
+	sha->hash[0] = 0x67452301;
+	sha->hash[1] = 0xefcdab89;
+	sha->hash[2] = 0x98badcfe;
+	sha->hash[3] = 0x10325476;
+	sha->hash[4] = 0xc3d2e1f0;
 }
 
 void
@@ -74,7 +74,7 @@ iks_sha_print (iksha *sha, char *hash)
 
 	for (i=0; i<5; i++)
 	{
-		sprintf (hash, "%08lx", sha->hash[i]);
+		sprintf (hash, "%08x", sha->hash[i]);
 		hash += 8;
 	}
 }
@@ -91,7 +91,7 @@ iks_sha (const char *data, char *hash)
 	iksha *sha;
 
 	sha = iks_sha_new ();
-	iks_sha_hash (sha, data, strlen (data), 1);
+	iks_sha_hash (sha, (const unsigned char*)data, strlen (data), 1);
 	iks_sha_print (sha, hash);
 	iks_free (sha);
 }
@@ -103,7 +103,7 @@ sha_buffer (iksha *sha, const unsigned char *data, int len)
 
 	for (i=0; i<len; i++) {
 		sha->buf[sha->blen / 4] <<= 8;
-		sha->buf[sha->blen / 4] |= (unsigned long)data[i];
+		sha->buf[sha->blen / 4] |= (unsigned int)data[i];
 		if ((++sha->blen) % 64 == 0) {
 			sha_calculate (sha);
 			sha->blen = 0;
@@ -128,7 +128,7 @@ static void
 sha_calculate (iksha *sha)
 {
 	int i;
-	unsigned long A, B, C, D, E, TMP;
+	unsigned int A, B, C, D, E, TMP;
 
 	for (i=16; i<80; i++)
 		sha->buf[i] = SRL (sha->buf[i-3] ^ sha->buf[i-8] ^ sha->buf[i-14] ^ sha->buf[i-16], 1);
@@ -139,10 +139,10 @@ sha_calculate (iksha *sha)
 	D = sha->hash[3];
 	E = sha->hash[4];
 
-	SHA (0,  19, ((C^D)&B)^D,     0x5a827999L);
-	SHA (20, 39, B^C^D,           0x6ed9eba1L);
-	SHA (40, 59, (B&C)|(D&(B|C)), 0x8f1bbcdcL);
-	SHA (60, 79, B^C^D,           0xca62c1d6L);
+	SHA (0,  19, ((C^D)&B)^D,     0x5a827999);
+	SHA (20, 39, B^C^D,           0x6ed9eba1);
+	SHA (40, 59, (B&C)|(D&(B|C)), 0x8f1bbcdc);
+	SHA (60, 79, B^C^D,           0xca62c1d6);
 
 	sha->hash[0] += A;
 	sha->hash[1] += B;

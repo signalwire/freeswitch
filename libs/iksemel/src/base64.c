@@ -7,27 +7,30 @@
 #include "common.h"
 #include "iksemel.h"
 
-static char base64_charset[] =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+static const char base64_charset[] =
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 
 char *iks_base64_decode(const char *buf)
 {
-	char *res, *save, *foo, val;
+	char *res, *save;
+	char val;
+        const char *foo; 
 	const char *end;
 	int index;
+	size_t len;
 
 	if (!buf)
 		return NULL;
 
-	index = iks_strlen(buf)*6 / 8 + 1;
-	save = res = iks_malloc(index);
-	memset(res, 0, index);
-	index = 0;
+	len = iks_strlen(buf) * 6 / 8 + 1;
 
+	save = res = iks_malloc(len);
 	if (!save)
 		return NULL;
+	memset(res, 0, len);
 
+	index = 0;
 	end = buf + iks_strlen(buf);
 
 	while (*buf && buf < end) {
@@ -66,6 +69,7 @@ char *iks_base64_encode(const char *buf, int len)
 
 	len = (len > 0) ? (len) : (iks_strlen(buf));
 	save = res = iks_malloc((len*8) / 6 + 4);
+	if (!save) return NULL;
 
 	for (k = 0; k < len/3; ++k) {
 		*res++ = base64_charset[*buf >> 2];
@@ -85,14 +89,15 @@ char *iks_base64_encode(const char *buf, int len)
 			buf++;
 			*res++ = base64_charset[t | (*buf >> 4)];
 			*res++ = base64_charset[((*buf++ & 0x0F) << 2)];
+			*res++ = '=';
 			break;
 		case 1:
 			*res++ = base64_charset[*buf >> 2];
 			*res++ = base64_charset[(*buf++ & 0x03) << 4];
+			*res++ = '=';
+			*res++ = '=';
 			break;
 	}
-	*res++ = '=';
-	*res++ = '=';
 	*res = 0;
 	return save;
 }

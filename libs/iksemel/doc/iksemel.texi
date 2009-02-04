@@ -594,28 +594,30 @@ Node contains an attribute and its value.
 
 @deftypefun char* iks_name (iks* @var{x});
 Returns the name of the tag for nodes with the type @var{IKS_TAG}.
+Returns an attribute's name for nodes of type IKS_ATTRIBUTE.
 @end deftypefun
 
 @deftypefun char* iks_cdata (iks* @var{x});
 Returns a pointer to node's character data if available, NULL otherwise.
+Returns an attribute's value for nodes of type IKS_ATTRIBUTE.
 @end deftypefun
 
-@deftypefun size_t iks_cdata_size (iks* @var{x});
+@deftypefun size_t iks_cdata_size (iks *@var{x});
 Returns the size of the node's character data in bytes.
 @end deftypefun
 
-@deftypefun int iks_has_children (iks* @var{x});
+@deftypefun int iks_has_children (iks *@var{x});
 Returns a non-zero value if node @var{x} has a child node.
 @end deftypefun
 
-@deftypefun int iks_has_attribs (iks* @var{x});
+@deftypefun int iks_has_attribs (iks *@var{x});
 Returns a non-zero value if node @var{x} has attributes.
 @end deftypefun
 
 Last group of the functions simplifies finding and accessing the content
 of a specific node:
 
-@deftypefun iks* iks_find (iks* @var{x}, const char* @var{name});
+@deftypefun iks* iks_find (iks *@var{x}, const char *@var{name});
 Searches a IKS_TAG type of node with @var{name} as tag name in child
 nodes of @var{x}. Returns a pointer to the node if found, NULL otherwise.
 @end deftypefun

@@ -149,7 +149,8 @@ stack_expand (iksparser *prs, int len)
 	if (need < prs->stack_max) {
 		need = prs->stack_max * 2;
 	} else {
-		need = prs->stack_max + (need * 1.2);
+		/* need x 1.2 for integer only archs like ARM */
+		need = prs->stack_max + ( (need * 6) / 5);
 	}
 	tmp = iks_malloc (need);
 	if (!tmp) return 0;

@@ -192,10 +192,11 @@ iks_stack_delete (ikstack **sp)
 	}
 
 	s = *sp;
-	
+
 	if (!s) {
 		return;
 	}
+
 	*sp = NULL;
 	c = s->meta->next;
 	while (c) {
@@ -210,5 +211,4 @@ iks_stack_delete (ikstack **sp)
 		c = tmp;
 	}
 	iks_free (s);
-
 }

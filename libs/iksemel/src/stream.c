@@ -1,5 +1,5 @@
 /* iksemel (XML parser for Jabber)
-** Copyright (C) 2000-2004 Gurer Ozen <madcat@e-kolay.net>
+** Copyright (C) 2000-2007 Gurer Ozen <madcat@e-kolay.net>
 ** This code is free software; you can redistribute it and/or
 ** modify it under the terms of GNU Lesser General Public License.
 */
@@ -122,106 +122,143 @@ insert_attribs (iks *x, char **atts)
 #define CNONCE_LEN 4
 
 static void
-iks_sasl_challenge (struct stream_data *data, iks *challenge)
+parse_digest (char *message, const char *key, char **value_ptr, char **value_end_ptr)
 {
-	char *b;
-	iks *x;
+	char *t;
 
-	b = iks_cdata (iks_child (challenge));
-	if (!b) return;
+	*value_ptr = NULL;
+	*value_end_ptr = NULL;
 
-	b = iks_base64_decode (b);
+	t = strstr(message, key);
+	if (t) {
+		t += strlen(key);
+		*value_ptr = t;
+		while (t[0] != '\0') {
+			if (t[0] != '\\' && t[1] == '"') {
+				++t;
+				*value_end_ptr = t;
+				return;
+			}
+			++t;
+		}
+	}
+}
 
-	if (strstr (b, "rspauth")) {
-		x = iks_new("response");
+static iks *
+make_sasl_response (struct stream_data *data, char *message)
+{
+	iks *x = NULL;
+	char *realm, *realm_end;
+	char *nonce, *nonce_end;
+	char cnonce[CNONCE_LEN*8 + 1];
+	iksmd5 *md5;
+	unsigned char a1_h[16], a1[33], a2[33], response_value[33];
+	char *response, *response_coded;
+	int i;
+
+	parse_digest(message, "realm=\"", &realm, &realm_end);
+	parse_digest(message, "nonce=\"", &nonce, &nonce_end);
+
+	/* nonce is necessary for auth */
+	if (!nonce || !nonce_end) return NULL;
+	*nonce_end = '\0';
+
+	/* if no realm is given use the server hostname */
+	if (realm) {
+		if (!realm_end) return NULL;
+		*realm_end = '\0';
 	} else {
-		char *realm, *nonce, *charset = NULL, *algorithm = NULL;
-		char *realm_end, *nonce_end, cnonce[CNONCE_LEN*8 + 1];
-		unsigned char a1_h[16], a1[33], a2[33], response_value[33];
-		char *response, *response_coded;
-		iksmd5 *md5;
-		int i;
+		realm = (char *) data->server;
+	}
 
-		realm = strstr (b, "realm");
-		if (realm) {
-			realm += 7;
-			do {
-				realm_end = strchr(realm, '"');
-			} while (*(realm_end - 1) == '\\');
-		} else {
-			realm_end = 0;
-			realm = (char *) data->server;
-		}
-		nonce = strstr (b, "nonce");
-		if (nonce) {
-			nonce += 7;
-			do {
-				nonce_end = strchr (nonce, '"');
-			} while (*(nonce - 1) == '\\');
-		} else {
-			iks_free (b);
-			return;
-		}
-		charset = strstr (b, "charset");
-		if (charset) charset += 8;
-		algorithm = strstr (b, "algorithm");
-		if (algorithm) algorithm += 10;
-		if (realm_end) *realm_end = 0;
-		*nonce_end = 0;
+	/* generate random client challenge */
+	for (i = 0; i < CNONCE_LEN; ++i)
+		sprintf (cnonce + i*8, "%08x", rand());
 
-		for (i = 0; i < CNONCE_LEN; ++i)
-			sprintf (cnonce + i*8, "%08x", rand());
+	md5 = iks_md5_new();
+	if (!md5) return NULL;
 
-		md5 = iks_md5_new();
-		iks_md5_hash (md5, data->auth_username, iks_strlen (data->auth_username), 0);
-		iks_md5_hash (md5, ":", 1, 0);
-		iks_md5_hash (md5, realm, iks_strlen (realm), 0);
-		iks_md5_hash (md5, ":", 1, 0);
-		iks_md5_hash (md5, data->auth_pass, iks_strlen (data->auth_pass), 1);
-		iks_md5_digest (md5, a1_h);
-		iks_md5_reset (md5);
-		iks_md5_hash (md5, a1_h, 16, 0);
-		iks_md5_hash (md5, ":", 1, 0);
-		iks_md5_hash (md5, nonce, iks_strlen (nonce), 0);
-		iks_md5_hash (md5, ":", 1, 0);
-		iks_md5_hash (md5, cnonce, iks_strlen (cnonce), 1);
-		iks_md5_print (md5, a1);
-		iks_md5_reset (md5);
-		iks_md5_hash (md5, "AUTHENTICATE:xmpp/", 18, 0);
-		iks_md5_hash (md5, data->server, iks_strlen (data->server), 1);
-		iks_md5_print (md5, a2);
-		iks_md5_reset (md5);
-		iks_md5_hash (md5, a1, 32, 0);
-		iks_md5_hash (md5, ":", 1, 0);
-		iks_md5_hash (md5, nonce, iks_strlen (nonce), 0);
-		iks_md5_hash (md5, ":00000001:", 10, 0);
-		iks_md5_hash (md5, cnonce, iks_strlen (cnonce), 0);
-		iks_md5_hash (md5, ":auth:", 6, 0);
-		iks_md5_hash (md5, a2, 32, 1);
-		iks_md5_print (md5, response_value);
-		iks_md5_delete (md5);
+	iks_md5_hash (md5, (const unsigned char*)data->auth_username, iks_strlen (data->auth_username), 0);
+	iks_md5_hash (md5, (const unsigned char*)":", 1, 0);
+	iks_md5_hash (md5, (const unsigned char*)realm, iks_strlen (realm), 0);
+	iks_md5_hash (md5, (const unsigned char*)":", 1, 0);
+	iks_md5_hash (md5, (const unsigned char*)data->auth_pass, iks_strlen (data->auth_pass), 1);
+	iks_md5_digest (md5, a1_h);
 
-		i = iks_strlen (data->auth_username) + iks_strlen (realm) +
-			iks_strlen (nonce) + iks_strlen (data->server) +
-			CNONCE_LEN*8 + 136;
-		response = iks_malloc (i);
-		sprintf (response, "username=\"%s\",realm=\"%s\",nonce=\"%s\""
-			",cnonce=\"%s\",nc=00000001,qop=auth,digest-uri=\""
-			"xmpp/%s\",response=%s,charset=utf-8",
-			data->auth_username, realm, nonce, cnonce,
-			data->server, response_value);
-		response_coded = iks_base64_encode (response, 0);
+	iks_md5_reset (md5);
+	iks_md5_hash (md5, (const unsigned char*)a1_h, 16, 0);
+	iks_md5_hash (md5, (const unsigned char*)":", 1, 0);
+	iks_md5_hash (md5, (const unsigned char*)nonce, iks_strlen (nonce), 0);
+	iks_md5_hash (md5, (const unsigned char*)":", 1, 0);
+	iks_md5_hash (md5, (const unsigned char*)cnonce, iks_strlen (cnonce), 1);
+	iks_md5_print (md5, (char*)a1);
 
+	iks_md5_reset (md5);
+	iks_md5_hash (md5, (const unsigned char*)"AUTHENTICATE:xmpp/", 18, 0);
+	iks_md5_hash (md5, (const unsigned char*)data->server, iks_strlen (data->server), 1);
+	iks_md5_print (md5, (char*)a2);
+
+	iks_md5_reset (md5);
+	iks_md5_hash (md5, (const unsigned char*)a1, 32, 0);
+	iks_md5_hash (md5, (const unsigned char*)":", 1, 0);
+	iks_md5_hash (md5, (const unsigned char*)nonce, iks_strlen (nonce), 0);
+	iks_md5_hash (md5, (const unsigned char*)":00000001:", 10, 0);
+	iks_md5_hash (md5, (const unsigned char*)cnonce, iks_strlen (cnonce), 0);
+	iks_md5_hash (md5, (const unsigned char*)":auth:", 6, 0);
+	iks_md5_hash (md5, (const unsigned char*)a2, 32, 1);
+	iks_md5_print (md5, (char*)response_value);
+
+	iks_md5_delete (md5);
+
+	i = iks_strlen (data->auth_username) + iks_strlen (realm) +
+		iks_strlen (nonce) + iks_strlen (data->server) +
+		CNONCE_LEN*8 + 136;
+	response = iks_malloc (i);
+	if (!response) return NULL;
+
+	sprintf (response, "username=\"%s\",realm=\"%s\",nonce=\"%s\""
+		",cnonce=\"%s\",nc=00000001,qop=auth,digest-uri=\""
+		"xmpp/%s\",response=%s,charset=utf-8",
+		data->auth_username, realm, nonce, cnonce,
+		data->server, response_value);
+
+	response_coded = iks_base64_encode (response, 0);
+	if (response_coded) {
 		x = iks_new ("response");
 		iks_insert_cdata (x, response_coded, 0);
-
-		iks_free (response);
 		iks_free (response_coded);
 	}
-	iks_insert_attrib (x, "xmlns", IKS_NS_XMPP_SASL);
-	iks_send (data->prs, x);
-	iks_delete (x);
-	iks_free (b);
+	iks_free (response);
+
+	return x;
+}
+
+static void
+iks_sasl_challenge (struct stream_data *data, iks *challenge)
+{
+	char *message;
+	iks *x;
+	char *tmp;
+
+	tmp = iks_cdata (iks_child (challenge));
+	if (!tmp) return;
+
+	/* decode received blob */
+	message = iks_base64_decode (tmp);
+	if (!message) return;
+
+	/* reply the challenge */
+	if (strstr (message, "rspauth")) {
+		x = iks_new ("response");
+	} else {
+		x = make_sasl_response (data, message);
+	}
+	if (x) {
+		iks_insert_attrib (x, "xmlns", IKS_NS_XMPP_SASL);
+		iks_send (data->prs, x);
+		iks_delete (x);
+	}
+	iks_free (message);
 }
 
 static int

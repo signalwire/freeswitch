@@ -24,6 +24,6 @@ libiksemel_la_SOURCES = \
 	md5.c \
 	base64.c
 
-libiksemel_la_LDFLAGS = -version-info 3:0:0 -no-undefined
+libiksemel_la_LDFLAGS = -version-info 4:0:1 -no-undefined
 libiksemel_la_CFLAGS = $(CFLAGS) $(LIBGNUTLS_CFLAGS)
 libiksemel_la_LIBADD = $(LIBGNUTLS_LIBS)

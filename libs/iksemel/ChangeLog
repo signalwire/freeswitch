@@ -1,3 +1,32 @@
+2007-08-02  Gurer
+	* tst-iks.c: test for new append/prepend functions added.
+
+2007-08-01  Gurer
+	* Patch from Benjamin Bennett:
+	  base64.c: fix padding
+	* sha.c: 64bit fix (long -> int)
+	* iks.c: new funcs: iks_append, iks_prepend
+	  iks_append_cdata, iks_prepend_cdata
+	* stream.c: iks_sasl_challenge split into smaller functions
+	  This change also fixes some possible leaks which are detected
+	  by Coverity Inc's excellent Prevent product.
+
+2006-05-19  Gurer
+	* dom.c: fixed (size % FILE_IO_BUFFER_SIZE) problem in iks_load()
+
+2005-08-29  Gurer
+	* Patch from Jakob Schroter:
+	  iksemel.texi: small documentation update
+	* Patch from Darrell Karbott:
+	  sax.c: use fixed instead of floating point (for arm)
+	  mark static const data properly
+	  explicit char* uchar* casts
+
+2004-08-14  Gurer
+	* version bump to 1.3
+	* patch from Roland Hedberg
+	  io-posix.c: io_connect now tries all addrinfo values.
+
 2004-08-05  Gurer
 	* iksemel.h: ikstransport cosmetic cleanup.
 	* iksemel.texi: mingw notice added.
