@@ -186,6 +186,13 @@ fi
 
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
+AC_ARG_ENABLE(core-odbc-support,     
+	[AS_HELP_STRING([--enable-core-odbc-support], [Compile with ODBC Support])],,[enable_core_odbc_support="no"])
+AX_LIB_ODBC
+if test "$ac_cv_found_odbc" = "yes" ; then
+  enable_core_odbc_support="yes"
+fi
+
 ESL_LDFLAGS=
 PLATFORM_CORE_DEPLIBS=
 # tweak platform specific flags
@@ -491,8 +498,6 @@ AC_SUBST(GETSOUNDS)
 LIBCURL_CHECK_CONFIG([yes], [7.13.0], [LIBCURL_DEPS=''], [LIBCURL_DEPS='${switch_srcdir}/libs/curl/lib/libcurl.la';LIBCURL='${switch_srcdir}/libs/curl/lib/libcurl.la';LIBCURL_CPPFLAGS='-I${switch_srcdir}/libs/curl/include'])
 AC_SUBST(LIBCURL_DEPS)
 
-AC_ARG_ENABLE(core-odbc-support,     
-	[AS_HELP_STRING([--enable-core-odbc-support], [Compile with ODBC Support])],,[enable_core_odbc_support="no"])
 
 AC_ARG_ENABLE(core-libedit-support,     
 	[AS_HELP_STRING([--disable-core-libedit-support], [Compile without libedit Support])], [enable_core_libedit_support="$enableval"], [enable_core_libedit_support="yes"])
@@ -505,10 +510,6 @@ fi
 
 AX_CHECK_JAVA
 
-AX_LIB_ODBC
-if test "$ac_cv_found_odbc" = "yes" ; then
-  enable_core_odbc_support="yes"
-fi
 
 AM_CONDITIONAL([ADD_ODBC],[test "x$enable_core_odbc_support" != "xno"])
 AM_CONDITIONAL([ADD_LIBEDIT],[test "x$enable_core_libedit_support" != "xno"])
