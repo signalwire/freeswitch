@@ -654,9 +654,9 @@ static void *zap_analog_channel_run(zap_thread_t *me, void *obj)
 		}
 
 		if ((zchan->dtmf_buffer && zap_buffer_inuse(zchan->dtmf_buffer)) || (zchan->fsk_buffer && zap_buffer_inuse(zchan->fsk_buffer))) {
-			rlen = len;
-			memset(frame, 0, len);
-			zap_channel_write(zchan, frame, sizeof(frame), &rlen);
+			//rlen = len;
+			//memset(frame, 0, len);
+			//zap_channel_write(zchan, frame, sizeof(frame), &rlen);
 			continue;
 		}
 		
