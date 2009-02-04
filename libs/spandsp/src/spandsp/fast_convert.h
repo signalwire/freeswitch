@@ -377,11 +377,12 @@ extern "C"
        the accuracy issues related to changing the rounding scheme are of little concern
        to us. */
 
+#if 0
     #if !defined(__sgi)
         #warning "No usable lrint() and lrintf() functions available."
         #warning "Replacing these functions with a simple C cast."
     #endif
-
+#endif
     static __inline__ long int lfastrint(double x)
     {
         return (long int) (x);
