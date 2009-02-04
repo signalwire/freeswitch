@@ -1,3 +1,3 @@
 #! /bin/sh
-./configure "$@" --with-pic --with-glib=no --disable-shared
+./configure "$@" --with-pic --with-glib=no --disable-shared --without-doxygen
 
