@@ -45,13 +45,13 @@ int main(int argc, char *argv[])
 			zap_wait_flag_t flags = ZAP_READ;
 
 			if (zap_channel_wait(chan, &flags, -1) == ZAP_FAIL) {
-				printf("wait FAIL! %lu [%s]\n", len, chan->last_error);
+				printf("wait FAIL! %u [%s]\n", (unsigned)len, chan->last_error);
 			}
 			if (flags & ZAP_READ) {
 				if (zap_channel_read(chan, buf, &len) == ZAP_SUCCESS) {
-					printf("READ: %lu\n", len); 
+					printf("READ: %u\n", (unsigned)len); 
 				} else {
-					printf("READ FAIL! %lu [%s]\n", len, chan->last_error);
+					printf("READ FAIL! %u [%s]\n", (unsigned)len, chan->last_error);
 					break;
 				}
 			} else {

@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 		zap_copy_string(str, sp, mlen+1);
 		*(str+mlen) = '\0';
 		zap_clean_string(str);
-		printf("TYPE %lu (%s) LEN %lu VAL [%s]\n", type, zap_mdmf_type2str(type), mlen, str);
+		printf("TYPE %u (%s) LEN %u VAL [%s]\n", (unsigned)type, zap_mdmf_type2str(type), (unsigned)mlen, str);
 	}
 
 	zap_fsk_demod_destroy(&fsk_data);
