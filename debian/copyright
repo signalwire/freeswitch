@@ -1,10 +1,13 @@
 This package was debianized by Michal Bielicki 
 <michal.bielicki@voiceworks.pl> on Now 25, 2007.
- The source was downloaded from http://www.freewitch.org.
+
+The current Debian maintainer is Nicholas Amorim <nicholas@montrealconsultoria.com.br>
+
+The source was downloaded from http://www.freewitch.org/
 
 Upstream authors:
 Anthony Minessale II <anthmct@yahoo.com>
-Portions created by the Initial Developer are Copyright (C)
+Portions created by the Initial Developer are Copyright (C) 2006-2009
 the Initial Developer. All Rights Reserved.
 
 The PRIMARY AUTHORS are (and/or have been):
