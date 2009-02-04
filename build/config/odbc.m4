@@ -24,9 +24,18 @@ AC_DEFUN([ODBC_INC_WHERE], [
 
 AC_DEFUN([ODBC_LIB_WHERE1], [
 saved_LIBS=$LIBS
-LIBS="$saved_LIBS -L$1 -lodbc"
-AC_TRY_LINK(,
-[SQLHDBC con;SQLDisconnect(con);],
+case "$host" in
+     *darwin*)
+	LIBS="$saved_LIBS -L$1 -lodbc -framework CoreFoundation"
+     ;;
+     *)
+	LIBS="$saved_LIBS -L$1 -lodbc"
+     ;;
+esac
+AC_TRY_LINK(
+[#include <sql.h>],
+[SQLHDBC con;
+SQLDisconnect(con);],
 [ac_cv_found_odbc_lib=yes],
 ac_cv_found_odbc_lib=no)
 LIBS=$saved_LIBS
@@ -130,7 +139,14 @@ AC_ARG_WITH(odbc-include,
 	  ODBC_INC_DIR=$ac_cv_pcap_where_inc
 	  ODBC_LIB_DIR=$ac_cv_pcap_where_lib
 	  ODBC_INC_FLAGS="-I${ODBC_INC_DIR}"
-	  ODBC_LIB_FLAGS="-L${ODBC_LIB_DIR} -lodbc"
+	  case "$host" in
+     	       *darwin*)
+			ODBC_LIB_FLAGS="-L${ODBC_LIB_DIR} -lodbc -framework CoreFoundation"
+     		;;
+     		*)
+			ODBC_LIB_FLAGS="-L${ODBC_LIB_DIR} -lodbc"
+     		;;
+	  esac
 	  AC_SUBST(ODBC_INC_DIR)
 	  AC_SUBST(ODBC_LIB_DIR)
 	  AC_SUBST(ODBC_INC_FLAGS)

@@ -186,9 +186,9 @@ CORE_LIBS      += libs/libedit/src/.libs/libedit.a
 endif
 
 if ADD_ODBC
-CORE_CFLAGS    += -DSWITCH_HAVE_ODBC
+CORE_CFLAGS    += -DSWITCH_HAVE_ODBC $(ODBC_INC_FLAGS)
 libfreeswitch_la_SOURCES += src/switch_odbc.c
-libfreeswitch_la_LDFLAGS     += -Wl,-lodbc
+libfreeswitch_la_LDFLAGS     += $(ODBC_LIB_FLAGS)
 endif
 
 bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
