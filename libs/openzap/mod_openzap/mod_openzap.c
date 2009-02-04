@@ -2022,6 +2022,11 @@ static switch_status_t load_config(void)
 
 void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
 {
+	if (chan_id > span->chan_count) {
+		stream->write_function(stream, "ERROR\n");
+		return;
+	}
+
 	stream->write_function(stream,
 						   "span_id: %u\n"
 						   "chan_id: %u\n"
