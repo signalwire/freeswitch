@@ -487,6 +487,7 @@ SWITCH_DECLARE_CONSTRUCTOR CoreSession::CoreSession(switch_core_session_t *new_s
 		channel = switch_core_session_get_channel(session);
 		allocated = 1;
 		switch_core_session_read_lock(session);
+		uuid = strdup(switch_core_session_get_uuid(session));
 	}
 }
 

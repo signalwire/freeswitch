@@ -350,7 +350,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	/** \brief Get the uuid of this session	
 	 * \return the uuid of this session
 	 */
-		 char *get_uuid() const {
+		 const char *get_uuid() const {
 			 return uuid ? uuid : (char *) "uninitialized";
 		 };
 
