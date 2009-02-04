@@ -4113,10 +4113,18 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		} else {
 			destination_number = sip->sip_request->rq_url->url_user;
 		}
-		check_decode(destination_number, session);
 	}
 
-
+	if (!destination_number && sip->sip_to && sip->sip_to->a_url) {
+		destination_number = sip->sip_to->a_url->url_user;
+	}
+	
+	if (destination_number) {
+		check_decode(destination_number, session);
+	} else {
+		destination_number = "service";
+	}
+	
 	if (sip->sip_to && sip->sip_to->a_url) {
 		const char *host, *user;
 		int port;
