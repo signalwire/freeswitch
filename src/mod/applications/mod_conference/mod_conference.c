@@ -3060,6 +3060,7 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 	void *val;
 	char *d = ";";
 	int pretty = 0;
+	int summary = 0;
 	int argofs = (argc >= 2 && strcasecmp(argv[1], "list") == 0);	/* detect being called from chat vs. api */
 
 	if (argv[1 + argofs]) {
@@ -3078,6 +3079,8 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 			}
 		} else if (strcasecmp(argv[1 + argofs], "pretty") == 0) {
 			pretty = 1;
+		} else if (strcasecmp(argv[1 + argofs], "summary") == 0) {
+			summary = 1;
 		}
 	}
 
@@ -3090,10 +3093,12 @@ static switch_status_t conf_api_sub_list(conference_obj_t *conference, switch_st
 								   conference->name,
 								   conference->count, conference->count == 1 ? "" : "s", switch_test_flag(conference, CFLAG_LOCKED) ? " locked" : "");
 			count++;
-			if (pretty) {
-				conference_list_pretty(conference, stream);
-			} else {
-				conference_list(conference, stream, d);
+			if (!summary) {
+				if (pretty) {
+					conference_list_pretty(conference, stream);
+				} else {
+					conference_list(conference, stream, d);
+				}
 			}
 		}
 	} else {
