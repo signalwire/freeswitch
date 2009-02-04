@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -23,7 +23,7 @@
  *
  * Contributor(s):
  * Brian K. West <brian@freeswitch.org>
- * Anthony Minessale II <anthmct@yahoo.com>
+ * Anthony Minessale II <anthm@freeswitch.org>
  * Michael Jerris <mike@jerris.com>
  *
  * mod_voipcodecs.c -- VoIP Codecs (G.711, G.722, G.726, GSM-FR, IMA_ADPCM, LPC10)

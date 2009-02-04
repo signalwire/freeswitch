@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005/2006, Anthony Minessale II <anthmct@yahoo.com>
+ * Copyright (C) 2005/2006, Anthony Minessale II <anthm@freeswitch.org>
  *
  * Version: MPL 1.1
  *
@@ -25,7 +25,7 @@
  * Contributor(s):
  * 
  * Brian West <brian@freeswitch.org>
- * Anthony Minessale II <anthmct@yahoo.com>
+ * Anthony Minessale II <anthm@freeswitch.org>
  * Steve Underwood <steveu@coppice.org>
  * Antonio Gallo <agx@linux.it>
  * mod_fax.c -- Fax applications provided by SpanDSP
