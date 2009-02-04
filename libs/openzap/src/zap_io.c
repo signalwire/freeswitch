@@ -2098,7 +2098,12 @@ static zap_status_t load_config(void)
 	}
 	
 	while (zap_config_next_pair(&cfg, &var, &val)) {
-		if (!strncasecmp(cfg.category, "span", 4)) {
+		if (*cfg.category == '#') {
+			if (cfg.catno != catno) {
+				zap_log(ZAP_LOG_DEBUG, "Skipping %s\n", cfg.category);
+				catno = cfg.catno;
+			}
+		} else if (!strncasecmp(cfg.category, "span", 4)) {
 			if (cfg.catno != catno) {
 				char *type = cfg.category + 4;
 				char *name;
