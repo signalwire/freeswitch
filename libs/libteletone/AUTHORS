@@ -1,11 +1,11 @@
 The Initial Developer of the Original Code is
-Anthony Minessale II <anthmct@yahoo.com>
+Anthony Minessale II <anthm@freeswitch.org>
 Portions created by the Initial Developer are Copyright (C)
 the Initial Developer. All Rights Reserved.
 
 The PRIMARY AUTHORS are (and/or have been):
 
- Anthony Minessale II <anthmct@yahoo.com> - Primary developer of all core components
+ Anthony Minessale II <anthm@freeswitch.org> - Primary developer of all core components
  	and many of the included modules.  Much of freeswitch is based on his work.
  
  Michael Jerris <mike@jerris.com> - Windows porter and responsible for the 
