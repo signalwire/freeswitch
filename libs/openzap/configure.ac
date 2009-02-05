@@ -149,6 +149,14 @@ AC_ARG_WITH([modinstdir],
 
 AC_SUBST(modinstdir)
 
+
+# libpri?
+AC_ARG_WITH([libpri],
+ [AS_HELP_STRING([--with-libpri], [Install ozmod_libpri])], [enable_libpri="yes"], [enable_libpri="no"])
+AC_SUBST(enable_libpri)
+
+AM_CONDITIONAL([LIBPRI],[test "${enable_libpri}" = "yes"])
+
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)
 AC_CONFIG_FILES([Makefile
