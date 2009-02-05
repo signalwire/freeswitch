@@ -2023,7 +2023,6 @@ static switch_status_t load_config(void)
 void dump_chan(zap_span_t *span, uint32_t chan_id, switch_stream_handle_t *stream)
 {
 	if (chan_id > span->chan_count) {
-		stream->write_function(stream, "ERROR\n");
 		return;
 	}
 
@@ -2094,12 +2093,16 @@ SWITCH_STANDARD_API(oz_function)
 				stream->write_function(stream, "-ERR invalid span\n");
 			} else {
 				if (chan_id) {
-					dump_chan(span, chan_id, stream);
+					if(chan_id > span->chan_count) {
+						stream->write_function(stream, "-ERR invalid channel\n");
+					} else {
+						dump_chan(span, chan_id, stream);
+					}
 				} else {
 					int j;
 					
 					stream->write_function(stream, "+OK\n");
-					for(j = 1; j <= span->chan_count; j++) {
+					for (j = 1; j <= span->chan_count; j++) {
 						dump_chan(span, j, stream);
 					}
 
@@ -2161,14 +2164,12 @@ SWITCH_STANDARD_API(oz_function)
 				stream->write_function(stream, "-ERR invalid span\n");
 			} else {
 				if (chan_id) {
-					//dump_chan(span, chan_id, stream);
 					zap_log(ZAP_LOG_INFO,"Bounce span: %d, chan: %d\n", span_id, chan_id);
 				} else {
 					int j;
 					
 					stream->write_function(stream, "+OK\n");
-					for(j = 1; j <= span->chan_count; j++) {
-						//dump_chan(span, j, stream);
+					for (j = 1; j <= span->chan_count; j++) {
 						zap_log(ZAP_LOG_INFO,"Bounce span: %d, chan: %d\n", span_id, j);
 					}
 
