@@ -61,7 +61,7 @@ config.status: configure
 	touch modules.conf
 	echo $(MODULES)
 	for i in $(MODULES); do echo $$i >> modules.conf; done
-	./configure --prefix=/opt/freeswitch --with-modinstdir=/usr/lib/freeswitch/modules --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
+	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
 configure:
 	if test ! -f Makefile.in ;  then \
