@@ -142,8 +142,8 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	switch_mutex_unlock(runtime.throttle_mutex);
 
 	while (session_manager.session_count > 0) {
-		switch_yield(100000);
-		if (++loops == 100) {
+		switch_yield(1000000);
+		if (++loops == 30) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up with %d session%s remaining\n",
 							  session_manager.session_count, session_manager.session_count == 1 ? "" : "s");
 			break;

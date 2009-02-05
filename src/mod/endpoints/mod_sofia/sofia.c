@@ -692,7 +692,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
 	const char *supported = NULL;
-	int sanity = 4;
+	int sanity;
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -831,14 +831,22 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
 
 	switch_core_session_hupall_matching_var("sofia_profile_name", profile->name, SWITCH_CAUSE_MANAGER_REQUEST);
+	sanity = 10;
 	while (profile->inuse) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Waiting for %d session(s)\n", profile->inuse);
 		su_root_step(profile->s_root, 1000);
+		if (!--sanity) {
+			break;
+		} else if (sanity == 5) {
+			switch_core_session_hupall_matching_var("sofia_profile_name", profile->name, SWITCH_CAUSE_MANAGER_REQUEST);
+		}
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Write lock %s\n", profile->name);
 	switch_thread_rwlock_wrlock(profile->rwlock);
 	sofia_reg_unregister(profile);
+	nua_shutdown(profile->nua);
+	su_root_run(profile->s_root);
 	nua_shutdown(profile->nua);
 	su_root_run(profile->s_root);
 
@@ -848,16 +856,18 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	while (sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
 		switch_yield(100000);
 	}
-
+	
+	sanity = 4;
 	while (profile->inuse) {
+		switch_core_session_hupall_matching_var("sofia_profile_name", profile->name, SWITCH_CAUSE_MANAGER_REQUEST);
 		switch_yield(5000000);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Waiting for %d session(s)\n", profile->inuse);
-		if (!sanity--) {
+		if (!--sanity) {
 			break;
 		}
 	}
 	nua_destroy(profile->nua);
-
+	
 	switch_mutex_lock(profile->ireg_mutex);
 	switch_mutex_unlock(profile->ireg_mutex);
 
