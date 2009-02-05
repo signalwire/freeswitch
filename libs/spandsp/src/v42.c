@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.c,v 1.48 2009/02/03 16:28:40 steveu Exp $
+ * $Id: v42.c,v 1.49 2009/02/04 13:18:53 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.h,v 1.55 2009/02/03 16:28:41 steveu Exp $
+ * $Id: t4.h,v 1.56 2009/02/05 12:21:36 steveu Exp $
  */
 
 /*! \file */
@@ -249,7 +249,7 @@ SPAN_DECLARE(int) t4_rx_end_page(t4_state_t *s);
            started with t4_rx_init.
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_delete(t4_state_t *s);
+SPAN_DECLARE(int) t4_rx_free(t4_state_t *s);
 
 /*! \brief End reception of a document. Tidy up and close the file.
            This should be used to end T.4 reception started with
@@ -379,7 +379,7 @@ SPAN_DECLARE(int) t4_tx_check_bit(t4_state_t *s);
            started with t4_tx_init.
     \param s The T.4 context.
     \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_tx_delete(t4_state_t *s);
+SPAN_DECLARE(int) t4_tx_free(t4_state_t *s);
 
 /*! \brief End the transmission of a document. Tidy up and close the file.
            This should be used to end T.4 transmission started with t4_tx_init.

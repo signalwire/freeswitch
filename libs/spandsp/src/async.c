@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.c,v 1.16 2009/02/03 16:28:39 steveu Exp $
+ * $Id: async.c,v 1.17 2009/02/04 13:18:53 steveu Exp $
  */
 
 /*! \file */

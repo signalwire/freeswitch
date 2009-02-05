@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: saturated.h,v 1.3 2009/02/03 17:25:53 steveu Exp $
+ * $Id: saturated.h,v 1.4 2009/02/05 12:21:36 steveu Exp $
  */
 
 /*! \file */
@@ -75,7 +75,6 @@ static __inline__ int16_t fsaturatef(float famp)
         return INT16_MAX;
     if (famp < (float) INT16_MIN)
         return INT16_MIN;
-    //return (int16_t) lfastrintf(famp);
     return (int16_t) lrintf(famp);
 }
 /*- End of function --------------------------------------------------------*/
@@ -86,11 +85,33 @@ static __inline__ int16_t fsaturate(double damp)
         return INT16_MAX;
     if (damp < (double) INT16_MIN)
         return INT16_MIN;
-    //return (int16_t) lfastrint(damp);
     return (int16_t) lrint(damp);
 }
 /*- End of function --------------------------------------------------------*/
 
+/* Saturate to a 16 bit integer, using the fastest float to int conversion */
+static __inline__ int16_t ffastsaturatef(float famp)
+{
+    if (famp > (float) INT16_MAX)
+        return INT16_MAX;
+    if (famp < (float) INT16_MIN)
+        return INT16_MIN;
+    return (int16_t) lfastrintf(famp);
+}
+/*- End of function --------------------------------------------------------*/
+
+/* Saturate to a 16 bit integer, using the fastest double to int conversion */
+static __inline__ int16_t ffastsaturate(double damp)
+{
+    if (damp > (double) INT16_MAX)
+        return INT16_MAX;
+    if (damp < (double) INT16_MIN)
+        return INT16_MIN;
+    return (int16_t) lfastrint(damp);
+}
+/*- End of function --------------------------------------------------------*/
+
+/* Saturate to a 16 bit integer, using the closest float to int conversion */
 static __inline__ float ffsaturatef(float famp)
 {
     if (famp > (float) INT16_MAX)
@@ -101,6 +122,7 @@ static __inline__ float ffsaturatef(float famp)
 }
 /*- End of function --------------------------------------------------------*/
 
+/* Saturate to a 16 bit integer, using the closest double to int conversion */
 static __inline__ double ffsaturate(double famp)
 {
     if (famp > (double) INT16_MAX)

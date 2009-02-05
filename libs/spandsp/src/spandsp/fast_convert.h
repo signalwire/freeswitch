@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fast_convert.h,v 1.1 2009/02/03 16:28:41 steveu Exp $
+ * $Id: fast_convert.h,v 1.2 2009/02/05 12:21:36 steveu Exp $
  */
 
 #if !defined(_SPANDSP_FAST_CONVERT_H_)
@@ -90,7 +90,6 @@ extern "C"
      *    These replacement functions (pulled from the Public Domain MinGW
      *    math.h header) replace the native versions.
      */
-#if 0
     static __inline__ long int lrint(double x)
     {
         long int retval;
@@ -119,8 +118,8 @@ extern "C"
         );
         return retval;
     }
-#endif
 
+    /* The fastest way to convert is the equivalent of lrint() */
     static __inline__ long int lfastrint(double x)
     {
         long int retval;
@@ -149,7 +148,7 @@ extern "C"
         );
         return retval;
     }
-#elif defined(HAVE_LRINT)  &&  defined(HAVE_LRINTF)
+#elif defined(__GNUC__)
 
 #if defined(__i386__)
     /* These routines are guaranteed fast on an i386 machine. Using the built in
@@ -235,6 +234,7 @@ extern "C"
      *    Win32 doesn't seem to have the lrint() and lrintf() functions.
      *    Therefore implement inline versions of these functions here.
      */
+
     __inline long int lrint(double x)
     {
         long int i;
@@ -269,7 +269,7 @@ extern "C"
 
     __inline double rint(double dbl)
     {
-        __asm 
+        _asm 
     	{
             fld dbl
             frndint
@@ -300,7 +300,7 @@ extern "C"
         return i;
     }
 #elif defined(WIN64)  ||  defined(_WIN64)
-    /* Win64 machines will do best with a simple assignment. */
+    /* x86_64 machines will do best with a simple assignment. */
 
     __inline long int lfastrint(double x)
     {
@@ -377,12 +377,21 @@ extern "C"
        the accuracy issues related to changing the rounding scheme are of little concern
        to us. */
 
-#if 0
     #if !defined(__sgi)
         #warning "No usable lrint() and lrintf() functions available."
         #warning "Replacing these functions with a simple C cast."
     #endif
-#endif
+
+    static __inline__ long int lrint(double x)
+    {
+        return (long int) (x);
+    }
+
+    static __inline__ long int lrintf(float x)
+    {
+        return (long int) (x);
+    }
+
     static __inline__ long int lfastrint(double x)
     {
         return (long int) (x);
