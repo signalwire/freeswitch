@@ -138,7 +138,7 @@ install-data-local:
 	$(mkinstalldirs)  $(DESTDIR)$(PREFIX)/lib
 	$(mkinstalldirs)  $(DESTDIR)$(PREFIX)/mod
 	@[ ! -f ozmod_* ] || cp -f ozmod_* $(DESTDIR)$(PREFIX)/mod
-	@cp -f src/ozmod/*/*.$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
+	@cp -f src/ozmod/*/.libs/*.$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
 	@echo OpenZAP Installed
 
 $(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB)
