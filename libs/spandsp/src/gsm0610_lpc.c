@@ -135,7 +135,7 @@ static int16_t gsm_div(int16_t num, int16_t denom)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
-void gsm0610_vec_vsraw(const int16_t *p, int n, int bits)
+static void gsm0610_vec_vsraw(const int16_t *p, int n, int bits)
 {
     static const int64_t ones = 0x0001000100010001LL;
 
