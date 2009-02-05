@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
 		zap_fsk_modulator_init(&fsk_trans, FSK_BELL202, 8000, &fsk_data, -14, 180, 5, 300, my_write_sample, &foo);
 		zap_fsk_modulator_send_all((&fsk_trans));
 
-		printf("%lu %d %d\n", fsk_data.dlen, foo.wrote, fsk_trans.est_bytes);
+		printf("%u %d %d\n", (unsigned) fsk_data.dlen, foo.wrote, fsk_trans.est_bytes);
 
 		if (fd > -1) {
 			close (fd);
