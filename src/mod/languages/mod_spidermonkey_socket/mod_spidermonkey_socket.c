@@ -37,6 +37,7 @@ struct js_socket_obj {
 	char *read_buffer;
 	switch_size_t buffer_size;
 	int state;
+	jsrefcount saveDepth;
 };
 typedef struct js_socket_obj js_socket_obj_t;
 
@@ -72,10 +73,13 @@ static void socket_destroy(JSContext * cx, JSObject * obj)
 		return;
 
 	if (socket->socket != 0) {
+		socket->saveDepth = JS_SuspendRequest(cx);
 		switch_socket_shutdown(socket->socket, SWITCH_SHUTDOWN_READWRITE);
 		switch_socket_close(socket->socket);
 		switch_core_destroy_memory_pool(&socket->pool);
+		JS_ResumeRequest(cx, socket->saveDepth);
 	}
+
 }
 
 static JSBool socket_connect(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
@@ -101,7 +105,9 @@ static JSBool socket_connect(JSContext * cx, JSObject * obj, uintN argc, jsval *
 		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Connecting to: %s:%d.\n", host, port);
+		socket->saveDepth = JS_SuspendRequest(cx);
 		ret = switch_socket_connect(socket->socket, addr);
+		JS_ResumeRequest(cx, socket->saveDepth);
 		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_connect failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -122,9 +128,12 @@ static JSBool socket_send(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 	}
 
 	if (argc == 1) {
+		switch_status_t ret;
 		char *buffer = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
 		switch_size_t len = strlen(buffer);
-		switch_status_t ret = switch_socket_send(socket->socket, buffer, &len);
+		socket->saveDepth = JS_SuspendRequest(cx);
+		ret = switch_socket_send(socket->socket, buffer, &len);
+		JS_ResumeRequest(cx, socket->saveDepth);
 		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_send failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -156,7 +165,9 @@ static JSBool socket_read_bytes(JSContext * cx, JSObject * obj, uintN argc, jsva
 			socket->buffer_size = bytes_to_read + 1;
 		}
 
+		socket->saveDepth = JS_SuspendRequest(cx);
 		ret = switch_socket_recv(socket->socket, socket->read_buffer, &len);
+		JS_ResumeRequest(cx, socket->saveDepth);
 		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "switch_socket_send failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -192,6 +203,7 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 		if (socket->read_buffer == 0)
 			socket->read_buffer = switch_core_alloc(socket->pool, socket->buffer_size);
 
+		socket->saveDepth = JS_SuspendRequest(cx);
 		while (can_run == TRUE) {
 			ret = switch_socket_recv(socket->socket, tempbuf, &len);
 			if (ret != SWITCH_STATUS_SUCCESS)
@@ -215,6 +227,8 @@ static JSBool socket_read(JSContext * cx, JSObject * obj, uintN argc, jsval * ar
 				++total_length;
 			}
 		}
+		JS_ResumeRequest(cx, socket->saveDepth);
+
 		if (ret != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "socket receive failed: %d.\n", ret);
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
@@ -235,9 +249,11 @@ static JSBool socket_close(JSContext * cx, JSObject * obj, uintN argc, jsval * a
 		return JS_FALSE;
 	}
 
+	socket->saveDepth = JS_SuspendRequest(cx);
 	switch_socket_shutdown(socket->socket, SWITCH_SHUTDOWN_READWRITE);
 	switch_socket_close(socket->socket);
 	socket->socket = NULL;
+	JS_ResumeRequest(cx, socket->saveDepth);
 	return JS_TRUE;
 }
 
