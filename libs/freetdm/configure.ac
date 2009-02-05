@@ -11,9 +11,13 @@ AM_INIT_AUTOMAKE(libopenzap,0.1)
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_MAKE_SET
+AM_PROG_CC_C_O
 
 AC_PREFIX_DEFAULT(/usr/local/openzap)
-
+# AC_PREFIX_DEFAULT does not get expanded until too late so we need to do this to use prefix in this script                                                     
+if test "x$prefix" = "xNONE" ; then
+    prefix='/usr/local/openzap'
+fi
 
 # Absolute source/build directory
 OZ_SRCDIR=`(cd $srcdir && pwd)`
@@ -139,7 +143,11 @@ if test "${enable_debug}" = "yes"; then
 	fi
 fi
 
+# Where to install the modules
+AC_ARG_WITH([modinstdir],
+ [AS_HELP_STRING([--with-modinstdir=DIR], [Install modules into this location (default: $prefix/mod)])], [modinstdir="$withval"], [modinstdir="${prefix}/mod"])
 
+AC_SUBST(modinstdir)
 
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)

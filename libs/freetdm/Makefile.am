@@ -33,8 +33,10 @@ PREFIX=$(prefix)
 
 SRC=src
 
+moddir=@modinstdir@
+
 INCS=-I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
-MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"@prefix@/mod\" @COMP_VENDOR_CFLAGS@ @DEFS@
+MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
 COMPILE      = $(CC) $(MY_CFLAGS) $(INCS)
 LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
@@ -82,8 +84,6 @@ libopenzap_la_LIBADD     = $(LIBS)
 
 MYLIB=libopenzap.la
 
-all: $(MYLIB) analogmod analog_emmod isdnmod boostmod ztmod wpmod
-
 noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testboost testanalog testapp testcid
 testapp_SOURCES = $(SRC)/testapp.c
 testapp_LDADD = libopenzap.la
@@ -110,10 +110,6 @@ testanalog_SOURCES = $(SRC)/testanalog.c
 testanalog_LDADD = libopenzap.la
 testanalog_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
 
-
-%.o: %.c $(HEADER)
-	$(LTCOMPILE) -c $< -o $@
-
 dox:
 	cd docs && doxygen $(OZ_SRCDIR)/docs/Doxygen.conf
 
@@ -128,48 +124,34 @@ mod_openzap-install: mod_openzap
 mod_openzap-clean:
 	@if [ -f mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN) ] ; then cd mod_openzap && make clean ; fi
 
-clean: 
-	rm -f $(SRC)/*.o $(SRC)/isdn/*.o $(MYLIB) *~ \#* testapp testcid testtones detect_tones detect_dtmf testisdn testboost testanalog src/ozmod/*/*.o src/ozmod/*/*.$(DYNAMIC_LIB_EXTEN)
-
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(PREFIX)
 	$(mkinstalldirs) $(DESTDIR)$(PREFIX)/conf
 	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
-	$(mkinstalldirs)  $(DESTDIR)$(PREFIX)/lib
-	$(mkinstalldirs)  $(DESTDIR)$(PREFIX)/mod
-	@[ ! -f ozmod_* ] || cp -f ozmod_* $(DESTDIR)$(PREFIX)/mod
-	@cp -f src/ozmod/*/.libs/*.$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/mod
 	@echo OpenZAP Installed
 
-$(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB)
-	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_skel/ozmod_skel.o $(MYLIB) -rpath $(libdir)
-skelmod: $(SRC)/ozmod/ozmod_skel/ozmod_skel.$(DYNAMIC_LIB_EXTEN)
+mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_wanpipe.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la
+ozmod_zt_la_SOURCES = $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
+ozmod_zt_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_zt_la_LDFLAGS = -module
+ozmod_zt_la_LIBADD = $(MYLIB)
+ozmod_skel_la_SOURCES = $(SRC)/ozmod/ozmod_skel/ozmod_skel.c
+ozmod_skel_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_skel_la_LDFLAGS = -module
+ozmod_skel_la_LIBADD = $(MYLIB)
+ozmod_wanpipe_la_SOURCES = $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
+ozmod_wanpipe_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_wanpipe_la_LDFLAGS = -module
+ozmod_wanpipe_la_LIBADD = $(MYLIB)
 
+#PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
+#PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
 
-$(SRC)/ozmod/ozmod_zt/ozmod_zt.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_zt/ozmod_zt.o $(MYLIB)
-	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_zt/ozmod_zt.o $(MYLIB) -rpath $(libdir)
-ztmod: $(SRC)/ozmod/ozmod_zt/ozmod_zt.$(DYNAMIC_LIB_EXTEN)
+#$(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika/ozmod_pika.o $(MYLIB)
+#	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_pika/ozmod_pika.o  $(MYLIB) -rpath $(libdir)
+#pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN)
 
-$(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.o $(MYLIB)
-	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.o $(MYLIB) -rpath $(libdir)
-wpmod: $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.$(DYNAMIC_LIB_EXTEN)
-
-PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
-PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
-
-$(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika/ozmod_pika.o $(MYLIB)
-	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_pika/ozmod_pika.o  $(MYLIB) -rpath $(libdir)
-pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN)
-
-###For libpcap
-ISDN_CFLAGS = -D_GNU_SOURCE
-####
-
-###For libpcap
-ISDN_LIBS = $(PCAP_LIB_FLAGS)
-####
-
-ISDN_SOURCE=\
+ozmod_isdn_la_SOURCES = \
 $(SRC)/isdn/EuroISDNStateNT.c \
 $(SRC)/isdn/EuroISDNStateTE.c \
 $(SRC)/isdn/mfifo.c \
@@ -189,68 +171,23 @@ $(SRC)/isdn/DMSStateTE.c \
 $(SRC)/isdn/5ESSmes.c \
 $(SRC)/isdn/5ESSStateNT.c \
 $(SRC)/isdn/5ESSStateTE.c \
-$(SRC)/isdn/Q932mes.c
+$(SRC)/isdn/Q932mes.c \
+$(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
+ozmod_isdn_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
+ozmod_isdn_la_LDFLAGS = $(PCAP_LIB_FLAGS) -module 
+ozmod_isdn_la_LIBADD = $(MYLIB)
 
-ISDN_OBJS=\
-$(SRC)/isdn/EuroISDNStateNT.o \
-$(SRC)/isdn/EuroISDNStateTE.o \
-$(SRC)/isdn/mfifo.o \
-$(SRC)/isdn/Q921.o \
-$(SRC)/isdn/Q931api.o \
-$(SRC)/isdn/Q931.o \
-$(SRC)/isdn/Q931ie.o \
-$(SRC)/isdn/Q931mes.o \
-$(SRC)/isdn/Q931StateNT.o \
-$(SRC)/isdn/Q931StateTE.o \
-$(SRC)/isdn/nationalmes.o \
-$(SRC)/isdn/nationalStateNT.o \
-$(SRC)/isdn/nationalStateTE.o \
-$(SRC)/isdn/DMSmes.o \
-$(SRC)/isdn/DMSStateNT.o \
-$(SRC)/isdn/DMSStateTE.o \
-$(SRC)/isdn/5ESSmes.o \
-$(SRC)/isdn/5ESSStateNT.o \
-$(SRC)/isdn/5ESSStateTE.o \
-$(SRC)/isdn/Q932mes.o
+ozmod_analog_la_SOURCES = $(SRC)/ozmod/ozmod_analog/ozmod_analog.c
+ozmod_analog_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_analog_la_LDFLAGS = -module
+ozmod_analog_la_LIBADD = $(MYLIB)
 
-ISDN_HEADER=\
-$(SRC)/isdn/include/mfifo.h \
-$(SRC)/isdn/include/national.h \
-$(SRC)/isdn/include/DMS.h \
-$(SRC)/isdn/include/5ESS.h \
-$(SRC)/isdn/include/Q921.h \
-$(SRC)/isdn/include/Q931.h \
-$(SRC)/isdn/include/Q931ie.h \
-$(SRC)/isdn/include/Q932.h 
+ozmod_analog_em_la_SOURCES = $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.c
+ozmod_analog_em_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_analog_em_la_LDFLAGS = -module
+ozmod_analog_em_la_LIBADD = $(MYLIB)
 
-$(ISDN_OBJS): $(ISDN_HEADER) $(ISDN_SOURCE) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
-$(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
-	$(LTCOMPILE) -c $< -o $@ $(ISDN_CFLAGS)
-
-$(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o
-	$(LINK) $(SOLINK) $(ISDN_OBJS) $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.o $(MYLIB) $(ISDN_LIBS) -rpath $(libdir)
-isdnmod: $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.$(DYNAMIC_LIB_EXTEN)
-
-$(ISDN_OBJS2): $(ISDN_HEADER) $(ISDN_SOURCE) $(SRC)/ozmod/ozmod_isdn_libpcap/ozmod_isdn.c
-
-$(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o
-	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog/ozmod_analog.o $(MYLIB) -rpath $(libdir)
-analogmod: $(SRC)/ozmod/ozmod_analog/ozmod_analog.$(DYNAMIC_LIB_EXTEN)
-
-$(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(ANALOG_EM_OBJS) $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.o
-	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.o $(MYLIB) -rpath $(libdir)
-analog_emmod: $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.$(DYNAMIC_LIB_EXTEN)
-
-BOOST_OBJS=\
-$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.o \
-$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.o
-
-BOOST_SOURCE=\
-$(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c \
-$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
-
-$(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN): $(MYLIB) $(BOOST_OBJS)
-	$(LINK) $(SOLINK) $(BOOST_OBJS) $(MYLIB) -rpath $(libdir)
-boostmod: $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.$(DYNAMIC_LIB_EXTEN)
-
-
+ozmod_ss7_boost_la_SOURCES = $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
+ozmod_ss7_boost_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_ss7_boost_la_LDFLAGS = -module
+ozmod_ss7_boost_la_LIBADD = $(MYLIB)
