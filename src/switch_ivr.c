@@ -38,6 +38,91 @@
 #include <switch_ivr.h>
 #include "stfu.h"
 
+SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session)
+{
+
+	switch_codec_implementation_t imp = {0};
+	switch_codec_t codec = { 0 };
+	int16_t peak = 0;
+	int16_t *data;
+	switch_frame_t *read_frame = NULL;
+	int i;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	int64_t global_total = 0, global_sum = 0, period_sum = 0;
+	int period_total = 0;
+	int period_avg = 0, global_avg = 0;
+	int avg = 0;
+	int period_len;
+	
+	switch_core_session_get_read_impl(session, &imp);
+	
+	period_len = imp.actual_samples_per_second / imp.samples_per_packet;
+
+	if (switch_core_codec_init(&codec,
+							   "L16",
+							   NULL,
+							   imp.samples_per_second,
+							   imp.microseconds_per_packet / 1000,
+							   imp.number_of_channels, 
+							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, 
+							   switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Error L16@%uhz %u channels %dms\n", 
+						  imp.samples_per_second, imp.number_of_channels, imp.microseconds_per_packet / 1000);
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	while(switch_channel_ready(channel)) {
+		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+	
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		}
+
+		if (switch_test_flag(read_frame, SFF_CNG) || !read_frame->samples) {
+			continue;
+		}
+
+
+		data = (int16_t *) read_frame->data;
+		peak = 0;
+		avg = 0;
+		for (i = 0; i < read_frame->samples; i++) {
+			const int16_t s = abs(data[i]);
+			if (s > peak) {
+				peak = s;
+			}
+			avg += s;
+		}
+		
+		avg /= read_frame->samples;
+
+		period_sum += peak;
+		global_sum += peak;
+		
+		global_total++;
+		period_total++;
+		
+		period_avg = period_sum / period_total;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
+						  "\npacket_avg=%d packet_peak=%d period_avg=%d global_avg=%d\n\n", avg, peak, period_avg, global_avg); 
+		
+		if (period_total >= period_len) {			
+			global_avg = global_sum / global_total;
+			period_total = 0;
+			period_sum = 0;
+		}
+
+	}
+	
+
+	switch_core_codec_destroy(&codec);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 SWITCH_DECLARE(switch_status_t) switch_ivr_sleep(switch_core_session_t *session, uint32_t ms, switch_bool_t sync, switch_input_args_t *args)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
