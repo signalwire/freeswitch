@@ -376,6 +376,12 @@ oz-reconf:
 	cd libs/openzap && sh ./configure.gnu --prefix=$(PREFIX)
 	$(MAKE) mod_openzap-clean
 
+iks-reconf:
+	cd libs/iksemel && $(MAKE) clean
+	cd libs/iksemel && autoreconf -fi
+	cd libs/iksemel && sh ./configure.gnu --prefix=$(PREFIX)
+	$(MAKE) mod_dingaling-clean
+
 sofia-reconf:
 	cd libs/sofia-sip && sh ./autogen.sh
 	cd libs/sofia-sip && $(MAKE) clean
