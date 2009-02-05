@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT
 AC_PREREQ(2.50)
 AC_CONFIG_SRCDIR([configure.ac])
-AM_INIT_AUTOMAKE(iksemel,1.3)
+AM_INIT_AUTOMAKE(iksemel,1.2)
 AM_CONFIG_HEADER(include/config.h)
 
 AC_CANONICAL_HOST
@@ -45,7 +45,7 @@ AC_SEARCH_LIBS(recv,socket)
 AC_CHECK_FUNCS(getopt_long)
 AC_CHECK_FUNCS(getaddrinfo)
 
-AM_PATH_LIBGNUTLS(,AC_DEFINE(HAVE_GNUTLS,,"Use libgnutls"))
+AX_PATH_LIBGNUTLS(,AC_DEFINE(HAVE_GNUTLS,,"Use libgnutls"))
 
 dnl Check -Wall flag of GCC
 if test "x$GCC" = "xyes"; then
