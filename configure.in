@@ -112,7 +112,7 @@ AM_CONDITIONAL([USE_INTREE_RESAMPLE],[test "${enable_resample}" = "yes"])
 # set defaults for use on all platforms
 SWITCH_AM_CFLAGS="-I${switch_srcdir}/src/include -I${switch_srcdir}/libs/libteletone/src"
 SWITCH_AM_CXXFLAGS="-I${switch_srcdir}/src/include -I${switch_srcdir}/libs/libteletone/src"
-SWITCH_AM_LDFLAGS="-lm -L/usr/local/lib"
+SWITCH_AM_LDFLAGS="-lm"
 
 #set SOLINK variable based on compiler and host
 if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
@@ -161,11 +161,15 @@ if test "x${ax_cv_c_compiler_vendor}"  =  "xsun" ; then
         APR_ADDTO(SWITCH_AM_CFLAGS, -m64)
         APR_ADDTO(SWITCH_AM_CXXFLAGS, -m64)
         APR_ADDTO(SWITCH_AM_LDFLAGS, -m64)
+	LIBS="$LIBS -m64"
     fi
 elif test "x${ax_cv_c_compiler_vendor}" = "xgnu" ; then
     APR_ADDTO(SWITCH_AM_CFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CXXFLAGS, -fPIC)
     APR_ADDTO(SWITCH_AM_CFLAGS, -Werror)
+    if test "${enable_64}" = "yes"; then
+	LIBS="$LIBS -m64"
+    fi
 fi
 
 # Enable debugging (default: on)

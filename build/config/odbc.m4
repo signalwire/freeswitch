@@ -119,7 +119,9 @@ AC_ARG_WITH(odbc-include,
 	  ac_cv_odbc_where_lib=$with_odbc_lib
 	fi
 	if test "X$ac_cv_odbc_where_lib" = "X"; then
+	  AC_CHECK_LIB([odbc],[SQLDisconnect],[ac_cv_odbc_where_lib="yes"],[ 
 	  ODBC_LIB_WHERE(/usr/$LIB_SUBDIR /usr/local/$LIB_SUBDIR)
+ 	  ])
 	fi
 
 	if test "X$with_odbc_include" != "X"; then
@@ -138,15 +140,16 @@ AC_ARG_WITH(odbc-include,
 	  AC_MSG_RESULT(yes)
 	  ODBC_INC_DIR=$ac_cv_pcap_where_inc
 	  ODBC_LIB_DIR=$ac_cv_pcap_where_lib
-	  ODBC_INC_FLAGS="-I${ODBC_INC_DIR}"
+	  ODBC_INC_FLAGS="-I$ac_cv_pcap_where_inc"
+	  ODBC_LIB_FLAGS="-Wl,-lodbc"
 	  case "$host" in
      	       *darwin*)
-			ODBC_LIB_FLAGS="-L${ODBC_LIB_DIR} -lodbc -framework CoreFoundation"
-     		;;
-     		*)
-			ODBC_LIB_FLAGS="-L${ODBC_LIB_DIR} -lodbc"
+			ODBC_LIB_FLAGS="$ODBC_LIB_FLAGS -framework CoreFoundation"
      		;;
 	  esac
+	  if test "$ac_cv_odbc_where_lib" != "yes"; then
+	     ODBC_LIB_FLAGS="-L$ac_cv_odbc_where_lib $ODBC_LIB_FLAGS"
+	  fi
 	  AC_SUBST(ODBC_INC_DIR)
 	  AC_SUBST(ODBC_LIB_DIR)
 	  AC_SUBST(ODBC_INC_FLAGS)
