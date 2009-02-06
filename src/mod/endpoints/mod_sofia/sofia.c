@@ -1629,6 +1629,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			status = SWITCH_STATUS_SUCCESS;
 
 			if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
+				switch_event_t *xml_params;
+				switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
+				switch_assert(xml_params);
+				switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "gateways");
+				switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+				
 				for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
 					switch_xml_t droot, x_domain_tag;
 					const char *dname = switch_xml_attr_soft(domain_tag, "name");
@@ -1638,19 +1644,21 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					if (!switch_strlen_zero(dname)) {
 						if (!strcasecmp(dname, "all")) {
 							switch_xml_t xml_root, x_domains;
-							if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, NULL) == SWITCH_STATUS_SUCCESS) {
+							if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params) == SWITCH_STATUS_SUCCESS) {
 								for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
 									dname = switch_xml_attr_soft(x_domain_tag, "name");
 									parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
 								}
 								switch_xml_free(xml_root);
 							}
-						} else if (switch_xml_locate_domain(dname, NULL, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
+						} else if (switch_xml_locate_domain(dname, xml_params, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
 							parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
 							switch_xml_free(droot);
 						}
 					}
 				}
+				
+				switch_event_destroy(&xml_params);
 			}
 
 			if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
@@ -2310,6 +2318,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 				if ((domains_tag = switch_xml_child(xprofile, "domains"))) {
+					switch_event_t *xml_params;
+					switch_event_create(&xml_params, SWITCH_EVENT_REQUEST_PARAMS);
+					switch_assert(xml_params);
+					switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "purpose", "gateways");
+					switch_event_add_header_string(xml_params, SWITCH_STACK_BOTTOM, "profile", profile->name);
+					
 					for (domain_tag = switch_xml_child(domains_tag, "domain"); domain_tag; domain_tag = domain_tag->next) {
 						switch_xml_t droot, x_domain_tag;
 						const char *dname = switch_xml_attr_soft(domain_tag, "name");
@@ -2319,19 +2333,21 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (!switch_strlen_zero(dname)) {
 							if (!strcasecmp(dname, "all")) {
 								switch_xml_t xml_root, x_domains;
-								if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, NULL) == SWITCH_STATUS_SUCCESS) {
+								if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params) == SWITCH_STATUS_SUCCESS) {
 									for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
 										dname = switch_xml_attr_soft(x_domain_tag, "name");
 										parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
 									}
 									switch_xml_free(xml_root);
 								}
-							} else if (switch_xml_locate_domain(dname, NULL, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
+							} else if (switch_xml_locate_domain(dname, xml_params, &droot, &x_domain_tag) == SWITCH_STATUS_SUCCESS) {
 								parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
 								switch_xml_free(droot);
 							}
 						}
 					}
+					
+					switch_event_destroy(&xml_params);
 				}
 
 				if ((aliases_tag = switch_xml_child(xprofile, "aliases"))) {
