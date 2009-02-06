@@ -3,14 +3,14 @@ OZ_CFLAGS=@CFLAGS@ @COMP_VENDOR_CFLAGS@ @DEFS@
 BASE=../../..
 OZ_DIR=..
 VERBOSE=1
-OZSO=$(OZ_DIR)/libopenzap.so
+OZLA=$(OZ_DIR)/libopenzap.la
 LOCAL_CFLAGS=-I$(OZ_DIR)/src/include -I$(OZ_DIR)/src/isdn/include $(OZ_CFLAGS)
 LOCAL_LDFLAGS=-L$(OZ_DIR) -lopenzap 
 include $(BASE)/build/modmake.rules
 
-local_depend: $(OZSO)
+local_depend: $(OZLA)
 
-$(OZSO): $(OZ_DIR)/.update
+$(OZLA): $(OZ_DIR)/.update
 	cd $(OZ_DIR) && $(MAKE)
 
 local_install:
