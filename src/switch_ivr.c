@@ -46,7 +46,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *ses
 	int16_t peak = 0;
 	int16_t *data;
 	switch_frame_t *read_frame = NULL;
-	int i;
+	uint32_t i;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	int64_t global_total = 0, global_sum = 0, period_sum = 0;
@@ -88,7 +88,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *ses
 		peak = 0;
 		avg = 0;
 		for (i = 0; i < read_frame->samples; i++) {
-			const int16_t s = abs(data[i]);
+			const int16_t s = (int16_t)abs(data[i]);
 			if (s > peak) {
 				peak = s;
 			}
@@ -103,13 +103,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *ses
 		global_total++;
 		period_total++;
 		
-		period_avg = period_sum / period_total;
+		period_avg = (int)(period_sum / period_total);
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, 
 						  "\npacket_avg=%d packet_peak=%d period_avg=%d global_avg=%d\n\n", avg, peak, period_avg, global_avg); 
 		
 		if (period_total >= period_len) {			
-			global_avg = global_sum / global_total;
+			global_avg = (int)(global_sum / global_total);
 			period_total = 0;
 			period_sum = 0;
 		}
