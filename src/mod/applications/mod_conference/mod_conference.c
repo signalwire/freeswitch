@@ -2181,6 +2181,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 
 
 	switch_mutex_init(&member->control_mutex, SWITCH_MUTEX_NESTED, rec->pool);
+	switch_mutex_init(&member->flag_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->audio_in_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 	switch_mutex_init(&member->audio_out_mutex, SWITCH_MUTEX_NESTED, rec->pool);
 
