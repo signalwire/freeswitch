@@ -200,8 +200,8 @@ AC_ARG_WITH(libtool, [  --without-libtool       avoid using libtool to link the 
 
 if test "x$use_libtool" = "xyes"; then
       lt_compile='$(LIBTOOL) $(LTFLAGS) --mode=compile $(COMPILE) -o $@ -c $< && touch $@'
-      LT_VERSION="-version-info `$get_version libtool $version_hdr APR`"
-      link="\$(LIBTOOL) \$(LTFLAGS) --mode=link \$(LT_LDFLAGS) \$(COMPILE) ${LT_VERSION} \$(ALL_LDFLAGS) -o \$@"
+      lt_version="-version-info `$get_version libtool $version_hdr APR`"
+      link="\$(LIBTOOL) \$(LTFLAGS) --mode=link \$(LT_LDFLAGS) \$(COMPILE) ${lt_version} \$(ALL_LDFLAGS) -o \$@"
       so_ext='lo'
       lib_target='-rpath $(libdir) $(OBJECTS)'
       export_lib_target='-rpath \$(libdir) \$(OBJECTS)'

@@ -58,6 +58,8 @@ echo "Creating config.h.in ..."
 ${AUTOHEADER:-autoheader} 2>&1 | grep -v "$cross_compile_warning"
 
 echo "Creating configure ..."
+${ACLOCAL:-aclocal}
+
 ### do some work to toss config.cache?
 ${AUTOCONF:-autoconf} 2>&1 | grep -v "$cross_compile_warning"
 
