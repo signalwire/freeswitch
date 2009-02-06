@@ -206,25 +206,26 @@ $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 
 
 yaml-files:
-	@echo `mkdir $(DESTDIR)$(prefix)/conf/yaml 2>/dev/null`
-	$(INSTALL) -m 644 conf/yaml/*.yaml $(DESTDIR)$(prefix)/conf/yaml
+	@echo `mkdir $(DESTDIR)@confdir@/yaml 2>/dev/null`
+	$(INSTALL) -m 644 conf/yaml/*.yaml $(DESTDIR)@confdir@/yaml
 
 vm-sync:
-	test -d $(DESTDIR)$(prefix)/conf || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf
-	test -d $(DESTDIR)$(prefix)/conf/lang || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/lang
-	test -d $(DESTDIR)$(prefix)/conf/lang/en || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/lang/en
-	test -d $(DESTDIR)$(prefix)/conf/lang/en/vm || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf/lang/en/vm
-	$(INSTALL) -m 644 conf/lang/en/vm/* $(DESTDIR)$(prefix)/conf/lang/en/vm
+	test -d $(DESTDIR)@confdir@ || $(mkinstalldirs) $(DESTDIR)@confdir@
+	test -d $(DESTDIR)@confdir@/lang || $(mkinstalldirs) $(DESTDIR)@confdir@/lang
+	test -d $(DESTDIR)@confdir@/lang/en || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en
+	test -d $(DESTDIR)@confdir@/lang/en/vm || $(mkinstalldirs) $(DESTDIR)@confdir@/lang/en/vm
+	$(INSTALL) -m 644 conf/lang/en/vm/* $(DESTDIR)@confdir@/lang/en/vm
 
 samples-conf:
-	test -d $(DESTDIR)$(prefix)/conf || $(mkinstalldirs) $(DESTDIR)$(prefix)/conf
+	test -d $(DESTDIR)@confdir@/ || $(mkinstalldirs) $(DESTDIR)@confdir@
 	for conffile in `find conf -name \*.xml && find conf -name \*.conf && find conf -name \*.tpl  && find conf -name \*.ttml && find conf -name mime.types` ; do \
-		dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
+		src_dir=`echo $$conffile | sed -e 's|/[^/]*$$||'`; \
+		dir=`echo $$src_dir | sed -e 's|conf||'`; \
 		filename=`echo $$conffile | sed -e 's|^.*/||'`; \
-		test -d $(DESTDIR)$(PREFIX)/$$dir || $(mkinstalldirs) $(DESTDIR)$(prefix)/$$dir ; \
-		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename || \
-		test -f $(DESTDIR)$(PREFIX)/$$dir/$$filename.noload || \
-			$(INSTALL) -m 644 $$dir/$$filename $(DESTDIR)$(PREFIX)/$$dir; \
+		test -d $(DESTDIR)@confdir@/$$dir || $(mkinstalldirs) $(DESTDIR)@confdir@/$$dir ; \
+		test -f $(DESTDIR)@confdir@/$$dir/$$filename || \
+		test -f $(DESTDIR)@confdir@/$$dir/$$filename.noload || \
+			$(INSTALL) -m 644 $$src_dir/$$filename $(DESTDIR)@confdir@/$$dir; \
 	done
 
 samples-htdocs: 
@@ -244,7 +245,7 @@ install-data-local:
 		$(mkinstalldirs) $(DESTDIR)$(prefix)/$$x ; \
 	 done
 	$(mkinstalldirs) $(DESTDIR)@modinstdir@
-	test -d $(DESTDIR)$(prefix)/conf || $(MAKE) samples-conf
+	test -d $(DESTDIR)@confdir@ || $(MAKE) samples-conf
 	test -d $(DESTDIR)$(prefix)/htdocs || $(MAKE) samples-htdocs
 
 .version:
@@ -429,7 +430,7 @@ scripts/fsxs: scripts/fsxs.in
 	    -e "s,@LIB_DIR\@,@libdir@," \
 	    -e "s,@BIN_DIR\@,@bindir@," \
 	    -e "s,@INC_DIR\@,@includedir@," \
-	    -e "s,@CFG_DIR\@,$(PREFIX)/conf," \
+	    -e "s,@CFG_DIR\@,@confdir@," \
 	    -e "s,@DB_DIR\@,$(PREFIX)/db," \
 	    -e "s,@PREFIX\@,$(PREFIX)," \
 	    -e "s,@CC\@,$(CC)," \
