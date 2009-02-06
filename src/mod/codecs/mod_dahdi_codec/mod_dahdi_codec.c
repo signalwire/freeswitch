@@ -24,7 +24,7 @@
  * Contributor(s):
  * Moises Silva <moy@sangoma.com>
  *
- * mod_dahdi -- DAHDI Codecs (G729A 8.0kbit, G723.1 5.3kbit)
+ * mod_dahdi_codec -- DAHDI Codecs (G729A 8.0kbit, G723.1 5.3kbit)
  *
  * Thanks to Voiceway for sponsoring this module and Neocenter for providing the DAHDI hardware to test
  *
@@ -53,8 +53,8 @@ static uint32_t total_decoders_usage = 0;
 static const char transcoding_device[] = "/dev/dahdi/transcode";
 static const char transcoder_name[] = "DAHDI";
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_load);
-SWITCH_MODULE_DEFINITION(mod_dahdi, mod_dahdi_load, NULL, NULL);
+SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load);
+SWITCH_MODULE_DEFINITION(mod_dahdi_codec, mod_dahdi_codec_load, NULL, NULL);
 
 struct dahdi_context {
 	int32_t encoding_fd;
@@ -301,7 +301,7 @@ SWITCH_STANDARD_API(dahdi_transcode_usage)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_load)
+SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_codec_interface_t *codec_interface;
