@@ -379,7 +379,8 @@ static void print_banner(FILE *stream)
 			"* FreeSWITCH (http://www.freeswitch.org)            *\n"
 			"* Brought to you by ClueCon http://www.cluecon.com/ *\n"
 			"*****************************************************\n"
-			"\n\n"
+			"\n"
+                        "Type /help <enter> to see a list of commands\n\n\n"
 			);
 }
 
