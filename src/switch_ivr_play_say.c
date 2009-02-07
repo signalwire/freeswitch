@@ -421,7 +421,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	}
 
 	vval = switch_channel_get_variable(channel, "enable_file_write_buffering");
-	if (!vval || !switch_true(vval)) {
+	if (!vval || switch_true(vval)) {
 		fh->pre_buffer_datalen = SWITCH_DEFAULT_FILE_BUFFER_LEN;
 	}
 
