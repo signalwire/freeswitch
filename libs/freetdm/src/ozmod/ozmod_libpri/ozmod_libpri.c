@@ -214,9 +214,11 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			zchan->span_id, zchan->chan_id, zap_channel_state2str(zchan->state));
 
 
+#if 0
 	if (!zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND) && !call) {
 		zap_log(ZAP_LOG_WARNING, "NO CALL!!!!\n");
 	}
+#endif
 
 	
 	memset(&sig, 0, sizeof(sig));
