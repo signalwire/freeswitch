@@ -1199,7 +1199,8 @@ struct api_command_struct {
 	char *arg;
 	listener_t *listener;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
-	uint8_t bg;
+	int bg;
+	int ack;
 	switch_memory_pool_t *pool;
 };
 
@@ -1210,18 +1211,21 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	switch_stream_handle_t stream = { 0 };
 	char *reply, *freply = NULL;
 	switch_status_t status;
-
+	
 	if (!acs) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal error.\n");
 		return NULL;
 	}
 
-	if (!acs->listener || !acs->listener->rwlock || switch_thread_rwlock_tryrdlock(acs->listener->rwlock) != SWITCH_STATUS_SUCCESS) {
+	if (!acs->listener || !switch_test_flag(acs->listener, LFLAG_RUNNING) ||
+		!acs->listener->rwlock || switch_thread_rwlock_tryrdlock(acs->listener->rwlock) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! cannot get read lock.\n");
+		acs->ack = -1;
 		goto done;
 	}
-
-
+	
+	acs->ack = 1;
+	
 	SWITCH_STANDARD_STREAM(stream);
 
 	if ((status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
@@ -1270,12 +1274,23 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	}
 
   done:
+
 	if (acs->bg) {
 		switch_memory_pool_t *pool = acs->pool;
+		if (acs->ack == -1) {
+			int sanity = 2000;
+			while(acs->ack == -1) {
+				switch_cond_next();
+				if (--sanity <= 0) break;
+			}
+		}
+
 		acs = NULL;
 		switch_core_destroy_memory_pool(&pool);
 		pool = NULL;
+			
 	}
+
 	return NULL;
 
 }
@@ -1539,6 +1554,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		switch_thread_t *thread;
 		switch_threadattr_t *thd_attr = NULL;
 		switch_uuid_t uuid;
+		int sanity;
 
 		strip_cr(api_cmd);
 
@@ -1571,6 +1587,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 		switch_snprintf(reply, reply_len, "~Reply-Text: +OK Job-UUID: %s\nJob-UUID: %s\n\n", acs->uuid_str, acs->uuid_str);
 		switch_thread_create(&thread, thd_attr, api_exec, acs, acs->pool);
+		sanity = 2000;
+		while(!acs->ack) {
+			switch_cond_next();
+			if (--sanity <= 0) break;
+		}
+		if (acs->ack == -1) {
+			acs->ack--;
+		}
 
 		status = SWITCH_STATUS_SUCCESS;
 		goto done_noreply;
@@ -1942,7 +1966,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	if (revent) {
 		switch_event_destroy(&revent);
 	}
-
+	
 	remove_listener(listener);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
