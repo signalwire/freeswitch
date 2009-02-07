@@ -287,6 +287,31 @@ typedef enum {
 #define zap_socket_close(it) if (it > -1) { close(it); it = -1;}
 
 
+struct zap_stream_handle {
+	zap_stream_handle_write_function_t write_function;
+	zap_stream_handle_raw_write_function_t raw_write_function;
+	void *data;
+	void *end;
+	zap_size_t data_size;
+	zap_size_t data_len;
+	zap_size_t alloc_len;
+	zap_size_t alloc_chunk;
+};
+
+zap_status_t zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen);
+zap_status_t zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...);
+
+#define ZAP_CMD_CHUNK_LEN 1024
+#define ZAP_STANDARD_STREAM(s) memset(&s, 0, sizeof(s)); s.data = malloc(ZAP_CMD_CHUNK_LEN); \
+	switch_assert(s.data);												\
+	memset(s.data, 0, SWITCH_CMD_CHUNK_LEN);							\
+	s.end = s.data;														\
+	s.data_size = ZAP_CMD_CHUNK_LEN;									\
+	s.write_function = zap_console_stream_write;						\
+	s.raw_write_function = zap_console_stream_raw_write;				\
+	s.alloc_len = ZAP_CMD_CHUNK_LEN;									\
+	s.alloc_chunk = ZAP_CMD_CHUNK_LEN
+
 struct zap_event {
 	zap_event_type_t e_type;
 	uint32_t enum_id;
@@ -444,6 +469,7 @@ struct zap_channel {
 	uint8_t fsk_buf[80];
 	uint32_t ring_count;
 	void *mod_data;
+	void *call_data;
 	struct zap_caller_data caller_data;
 	struct zap_span *span;
 	struct zap_io_interface *zio;
@@ -511,6 +537,7 @@ struct zap_io_interface {
 	zio_write_t write;
 	zio_span_poll_event_t poll_event;
 	zio_span_next_event_t next_event;
+	zio_api_t api;
 };
 
 

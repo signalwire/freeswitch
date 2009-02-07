@@ -31,6 +31,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _GNU_SOURCE
 #ifndef WIN32
 #endif
 #include "openzap.h"
@@ -2766,6 +2767,87 @@ void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t
 	}
 
 }
+
+
+
+zap_status_t zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen)
+{
+	zap_size_t need = handle->data_len + datalen;
+	
+	if (need >= handle->data_size) {
+		void *new_data;
+		need += handle->alloc_chunk;
+
+		if (!(new_data = realloc(handle->data, need))) {
+			return ZAP_MEMERR;
+		}
+
+		handle->data = new_data;
+		handle->data_size = need;
+	}
+
+	memcpy((uint8_t *) (handle->data) + handle->data_len, data, datalen);
+	handle->data_len += datalen;
+	handle->end = (uint8_t *) (handle->data) + handle->data_len;
+	*(uint8_t *)handle->end = '\0';
+
+	return ZAP_SUCCESS;
+}
+
+zap_status_t zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...)
+{
+	va_list ap;
+	char *buf = handle->data;
+	char *end = handle->end;
+	int ret = 0;
+	char *data = NULL;
+
+	if (handle->data_len >= handle->data_size) {
+		return ZAP_FAIL;
+	}
+
+	va_start(ap, fmt);
+	ret = vasprintf(&data, fmt, ap);
+	va_end(ap);
+
+	if (data) {
+		zap_size_t remaining = handle->data_size - handle->data_len;
+		zap_size_t need = strlen(data) + 1;
+
+		if ((remaining < need) && handle->alloc_len) {
+			zap_size_t new_len;
+			void *new_data;
+
+			new_len = handle->data_size + need + handle->alloc_chunk;
+			if ((new_data = realloc(handle->data, new_len))) {
+				handle->data_size = handle->alloc_len = new_len;
+				handle->data = new_data;
+				buf = handle->data;
+				remaining = handle->data_size - handle->data_len;
+				handle->end = (uint8_t *) (handle->data) + handle->data_len;
+				end = handle->end;
+			} else {
+				zap_log(ZAP_LOG_CRIT, "Memory Error!\n");
+				free(data);
+				return ZAP_FAIL;
+			}
+		}
+
+		if (remaining < need) {
+			ret = -1;
+		} else {
+			ret = 0;
+			snprintf(end, remaining, "%s", data);
+			handle->data_len = strlen(buf);
+			handle->end = (uint8_t *) (handle->data) + handle->data_len;
+		}
+		free(data);
+	}
+
+	return ret ? ZAP_FAIL : ZAP_SUCCESS;
+}
+
+
 
 /* For Emacs:
  * Local Variables:

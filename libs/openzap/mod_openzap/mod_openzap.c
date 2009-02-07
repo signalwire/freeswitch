@@ -545,6 +545,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	int total_to;
 	int chunk, do_break = 0;
 
+
 	channel = switch_core_session_get_channel(session);
 	assert(channel != NULL);
 	
@@ -634,11 +635,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			}
 		}
 	}
-
 	return SWITCH_STATUS_SUCCESS;
 
  fail:
-	
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	return SWITCH_STATUS_GENERR;
 	
@@ -1926,6 +1925,101 @@ static switch_status_t load_config(void)
 		}
 	}
 
+
+
+	if ((spans = switch_xml_child(cfg, "libpri_spans"))) {
+		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
+			char *id = (char *) switch_xml_attr(myspan, "id");
+			char *name = (char *) switch_xml_attr(myspan, "name");
+			zap_status_t zstatus = ZAP_FAIL;
+			const char *context = "default";
+			const char *dialplan = "XML";
+			
+			const char *o_node = "cpe";
+			const char *o_switch = "dms100";
+			const char *o_dp = "unknown";
+			const char *o_l1 = "ulaw";
+			const char *o_debug = NULL;
+
+			
+			uint32_t span_id = 0;
+			zap_span_t *span = NULL;
+			uint32_t opts = 0;
+			
+			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
+				char *var = (char *) switch_xml_attr_soft(param, "name");
+				char *val = (char *) switch_xml_attr_soft(param, "value");
+
+				if (!strcasecmp(var, "node")) {
+					o_node = val;
+				} else if (!strcasecmp(var, "switch")) {
+					o_switch = val;
+				} else if (!strcasecmp(var, "dp")) {
+					o_dp = val;
+				} else if (!strcasecmp(var, "l1")) {
+					o_l1 = val;
+				} else if (!strcasecmp(var, "debug")) {
+					o_debug = val;
+				} else if (!strcasecmp(var, "context")) {
+					context = val;
+				} else if (!strcasecmp(var, "suggest-channel") && switch_true(val)) {
+					opts |= 1;
+				} else if (!strcasecmp(var, "dialplan")) {
+					dialplan = val;
+				}
+			}
+	
+			if (!id && !name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "span missing required param 'id'\n");
+				continue;
+			}
+			
+			if (name) {
+				zstatus = zap_span_find_by_name(name, &span);
+			} else {
+				if (switch_is_number(id)) {
+					span_id = atoi(id);
+					zstatus = zap_span_find(span_id, &span);
+				}
+
+				if (zstatus != ZAP_SUCCESS) {
+					zstatus = zap_span_find_by_name(id, &span);
+				}
+			}
+
+			if (zstatus != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error finding OpenZAP span id:%s name:%s\n", switch_str_nil(id), switch_str_nil(name));
+				continue;
+			}
+
+			if (!span_id) {
+				span_id = span->span_id;
+			}
+			
+			
+			if (zap_configure_span("libpri", span, on_clear_channel_signal, 
+								   "node", o_node,
+								   "switch", o_switch,
+								   "dp", o_dp,
+								   "l1", o_l1,
+								   "debug", o_debug,
+								   "opts", opts,
+								   TAG_END) != ZAP_SUCCESS) {
+				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d node: %s switch: %s dp: %s l1: %s debug: %s error: %s\n", 
+						span_id, switch_str_nil(o_node), switch_str_nil(o_switch), switch_str_nil(o_dp), switch_str_nil(o_l1), switch_str_nil(o_debug),
+						span->last_error);
+				continue;
+			}
+
+			SPAN_CONFIG[span->span_id].span = span;
+			switch_copy_string(SPAN_CONFIG[span->span_id].context, context, sizeof(SPAN_CONFIG[span->span_id].context));
+			switch_copy_string(SPAN_CONFIG[span->span_id].dialplan, dialplan, sizeof(SPAN_CONFIG[span->span_id].dialplan));
+			switch_copy_string(SPAN_CONFIG[span->span_id].type, "isdn", sizeof(SPAN_CONFIG[span->span_id].type));
+
+			zap_span_start(span);
+		}
+	}
+
 	if ((spans = switch_xml_child(cfg, "boost_spans"))) {
 		for (myspan = switch_xml_child(spans, "span"); myspan; myspan = myspan->next) {
 			char *id = (char *) switch_xml_attr(myspan, "id");
@@ -2292,7 +2386,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_openzap_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_openzap_shutdown)
 {
 	zap_global_destroy();
-	return SWITCH_STATUS_NOUNLOAD;
+
+	// this breaks pika but they are MIA so *shrug*
+	//return SWITCH_STATUS_NOUNLOAD;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 /* For Emacs:

@@ -130,7 +130,7 @@ install-data-local:
 	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
 	@echo OpenZAP Installed
 
-mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_wanpipe.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la #ozmod_libpri.la
+mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_wanpipe.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la ozmod_libpri.la
 ozmod_zt_la_SOURCES = $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
 ozmod_zt_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_zt_la_LDFLAGS = -module
@@ -193,8 +193,8 @@ ozmod_ss7_boost_la_LDFLAGS = -module
 ozmod_ss7_boost_la_LIBADD = $(MYLIB)
 
 if LIBPRI
-#ozmod_libpri_la_SOURCES = $(SRC)/ozmod/ozmod_libpri/ozmod_libpri.c
-#ozmod_libpri_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
-#ozmod_libpri_la_LDFLAGS = -module -lpri
-#ozmod_libpri_la_LIBADD = $(MYLIB)
+ozmod_libpri_la_SOURCES = $(SRC)/ozmod/ozmod_libpri/ozmod_libpri.c $(SRC)/ozmod/ozmod_libpri/lpwrap_pri.c
+ozmod_libpri_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_libpri_la_LDFLAGS = -module -lpri
+ozmod_libpri_la_LIBADD = $(MYLIB)
 endif
