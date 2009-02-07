@@ -32,15 +32,10 @@
 
 #include <switch.h>
 #include <g711.h>
-#include <dahdi/user.h>
+#include <linux/types.h> /* __u32 */
 #include <sys/ioctl.h>
 
 /*#define DEBUG_DAHDI_CODEC 1*/
-
-#define DAHDI_FORMAT_G723_1  (1 << 0)
-#define DAHDI_FORMAT_ULAW    (1 << 2)
-#define DAHDI_FORMAT_SLINEAR (1 << 6)
-#define DAHDI_FORMAT_G729A   (1 << 8)
 
 #define CODEC_G729_IANA_CODE 18
 #define CODEC_G723_IANA_CODE 4
@@ -50,8 +45,40 @@ static uint32_t total_encoders = 0;
 static uint32_t total_encoders_usage = 0;
 static uint32_t total_decoders = 0;
 static uint32_t total_decoders_usage = 0;
-static const char transcoding_device[] = "/dev/dahdi/transcode";
-static const char transcoder_name[] = "DAHDI";
+
+/* 
+   Zaptel/DAHDI definitions to not require the headers installed
+   Zaptel and DAHDI are binary compatible (at least in the transcoder interface)
+ */
+
+#define DAHDI_TC_CODE                   'T'
+#define DAHDI_TC_ALLOCATE               _IOW(DAHDI_TC_CODE, 1, struct dahdi_transcoder_formats)
+#define DAHDI_TC_GETINFO                _IOWR(DAHDI_TC_CODE, 2, struct dahdi_transcoder_info)
+
+#define DAHDI_FORMAT_G723_1  (1 << 0)
+#define DAHDI_FORMAT_ULAW    (1 << 2)
+#define DAHDI_FORMAT_SLINEAR (1 << 6)
+#define DAHDI_FORMAT_G729A   (1 << 8)
+
+struct dahdi_transcoder_formats {
+	__u32   srcfmt;
+	__u32   dstfmt;
+};
+
+struct dahdi_transcoder_info {
+	__u32 tcnum;
+	char name[80];
+	__u32 numchannels;
+	__u32 dstfmts;
+	__u32 srcfmts;
+};
+
+static const char transcoding_device_dahdi[] = "/dev/dahdi/transcode";
+static const char transcoder_name_dahdi[] = "DAHDI";
+static const char transcoding_device_zap[] = "/dev/zap/transcode";
+static const char transcoder_name_zap[] = "Zap";
+static const char *transcoding_device = NULL;
+static const char *transcoder_name = NULL;
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load);
 SWITCH_MODULE_DEFINITION(mod_dahdi_codec, mod_dahdi_codec_load, NULL, NULL);
@@ -305,6 +332,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 {
 	switch_api_interface_t *api_interface;
 	switch_codec_interface_t *codec_interface;
+	struct stat statbuf;
 	struct dahdi_transcoder_info info = { 0 };
 	int32_t fd, res;
 
@@ -312,6 +340,20 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	total_encoders_usage = 0;
 	total_decoders = 0;
 	total_decoders_usage = 0;
+
+	/* Let's check if DAHDI or Zaptel device should be used */
+	if (!stat(transcoding_device_dahdi, &statbuf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "DAHDI transcoding device found.\n");
+		transcoding_device = transcoding_device_dahdi;
+		transcoder_name = transcoder_name_zap;
+	} else if (!stat(transcoding_device_zap, &statbuf)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Zap transcoding device found.\n");
+		transcoding_device = transcoding_device_zap;
+		transcoder_name = transcoder_name_zap;
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No DAHDI or Zap transcoder device was found in /dev/.\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	fd = open(transcoding_device, O_RDWR);
 	if (fd < 0) {
