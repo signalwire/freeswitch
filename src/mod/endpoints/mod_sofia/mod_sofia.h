@@ -441,6 +441,8 @@ struct sofia_profile {
 	uint32_t force_subscription_expires;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
 	char manage_shared_appearance;  /* pflags was all full up - MTK */
+	char disable_srv;
+	char disable_naptr;
 };
 
 struct private_object {

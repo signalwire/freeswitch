@@ -728,6 +728,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), 
 							  TAG_IF(!strchr(profile->sipip, ':'), NTATAG_UDP_MTU(65535)), 
+ 							  TAG_IF(profile->disable_srv, NTATAG_USE_SRV(0)),
+ 							  TAG_IF(profile->disable_naptr, NTATAG_USE_NAPTR(0)),
 							  NTATAG_SERVER_RPORT(profile->rport_level), 
 							  TAG_IF(tportlog, TPTAG_LOG(1)), 
 							  TAG_END());	/* Last tag should always finish the sequence */
@@ -1798,6 +1800,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->pflags |= PFLAG_STUN_ENABLED;
 				profile->pflags |= PFLAG_DISABLE_100REL;
 				profile->auto_restart = 1;
+				profile->manage_shared_appearance = 0; /* Initialize default */
+				profile->disable_srv = 0;
+				profile->disable_naptr = 0;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2015,6 +2020,14 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							profile->manage_shared_appearance = 1;
 							profile->sla_contact = switch_core_sprintf(profile->pool, "sip:sla-agent@%s", profile->sipip);
+						}
+					} else if (!strcasecmp(var, "disable-srv")) {
+						if (switch_true(val)) {
+							profile->disable_srv = 1;
+						}
+					} else if (!strcasecmp(var, "disable-naptr")) {
+						if (switch_true(val)) {
+							profile->disable_naptr = 1;
 						}
 					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
 						if (switch_true(val)) {
