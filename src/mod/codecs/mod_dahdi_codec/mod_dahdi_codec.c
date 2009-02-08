@@ -364,11 +364,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	for (info.tcnum = 0; !(res = ioctl(fd, DAHDI_TC_GETINFO, &info)); info.tcnum++) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found dahdi transcoder name: %s\n", info.name);
 		if ((info.srcfmts & DAHDI_FORMAT_ULAW) && (info.dstfmts & (DAHDI_FORMAT_G729A | DAHDI_FORMAT_G723_1))) {
-			total_encoders += info.numchannels/2;
+			total_encoders += info.numchannels;
 			continue;
 		}
 		if ((info.dstfmts & DAHDI_FORMAT_ULAW) && (info.srcfmts & (DAHDI_FORMAT_G729A | DAHDI_FORMAT_G723_1))) {
-			total_decoders  += info.numchannels/2;
+			total_decoders  += info.numchannels;
 			continue;
 		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, 
