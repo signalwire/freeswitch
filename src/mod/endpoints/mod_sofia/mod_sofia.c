@@ -441,7 +441,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		}
 	} else {
 		/* This if statement check and handles the 3pcc proxy mode */
-		if ((tech_pvt->profile->pflags & PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
+		if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
 			/* Send the 200 OK */
 			nua_respond(tech_pvt->nh, SIP_200_OK,
 				SIPTAG_CONTACT_STR(tech_pvt->profile->url),
@@ -1926,7 +1926,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 			}
 		}
 
-		stream->write_function(stream, "+OK stun-auto-disable=%s", (profile->pflags & PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+		stream->write_function(stream, "+OK stun-auto-disable=%s", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
 		
 		goto done;
 	}
@@ -1941,7 +1941,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 			}
 		}
 
-		stream->write_function(stream, "+OK stun-enabled=%s", (profile->pflags & PFLAG_STUN_ENABLED) ? "true" : "false");
+		stream->write_function(stream, "+OK stun-enabled=%s", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
 		
 		goto done;
 	}
