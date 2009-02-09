@@ -66,7 +66,11 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	size_t alt_len = 0;
 	int rates[4] = {8000, 16000, 32000, 48000};
 	int i;
+#ifdef WIN32
+	char ps[2] = {'\\', '/'};
+#else
 	char ps[2] = {'/', '\\'};
+#endif
 	int x;
 
 	if ((ext = strrchr(path, '.')) == 0) {
@@ -175,9 +179,6 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 				}
 			}
 		}
-#ifndef WIN32
-		break;
-#endif
 	}
 
 	if (!context->handle) {
