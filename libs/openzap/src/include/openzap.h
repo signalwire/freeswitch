@@ -298,13 +298,14 @@ struct zap_stream_handle {
 	zap_size_t alloc_chunk;
 };
 
+
 zap_status_t zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen);
 zap_status_t zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...);
 
 #define ZAP_CMD_CHUNK_LEN 1024
 #define ZAP_STANDARD_STREAM(s) memset(&s, 0, sizeof(s)); s.data = malloc(ZAP_CMD_CHUNK_LEN); \
-	switch_assert(s.data);												\
-	memset(s.data, 0, SWITCH_CMD_CHUNK_LEN);							\
+	assert(s.data);														\
+	memset(s.data, 0, ZAP_CMD_CHUNK_LEN);								\
 	s.end = s.data;														\
 	s.data_size = ZAP_CMD_CHUNK_LEN;									\
 	s.write_function = zap_console_stream_write;						\
@@ -624,6 +625,7 @@ zap_status_t zap_span_start(zap_span_t *span);
 int zap_load_module(const char *name);
 int zap_load_module_assume(const char *name);
 zap_status_t zap_span_find_by_name(const char *name, zap_span_t **span);
+char *zap_api_execute(const char *type, const char *cmd);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);

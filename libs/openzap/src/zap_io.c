@@ -2081,6 +2081,50 @@ static struct {
 } interfaces;
 
 
+char *zap_api_execute(const char *type, const char *cmd)
+{
+	zap_io_interface_t *zio = NULL;
+	char *dup = NULL, *p;
+	char *rval = NULL;
+
+	if (type && !cmd) {
+		dup = strdup(type);
+		if ((p = strchr(dup, ' '))) {
+			*p++ = '\0';
+			cmd = p;
+		}
+
+		type = dup;
+	}
+	
+	zap_mutex_lock(globals.mutex);
+	if (!(zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
+		zap_load_module_assume(type);
+		if ((zio = (zap_io_interface_t *) hashtable_search(globals.interface_hash, (void *)type))) {
+			zap_log(ZAP_LOG_INFO, "auto-loaded '%s'\n", type);
+		}
+	}
+	zap_mutex_unlock(globals.mutex);
+
+	if (zio && zio->api) {
+		zap_stream_handle_t stream = { 0 };
+		zap_status_t status;
+		ZAP_STANDARD_STREAM(stream);
+		status = zio->api(&stream, cmd);
+		
+		if (status != ZAP_SUCCESS) {
+			zap_safe_free(stream.data);
+		} else {
+			rval = (char *) stream.data;
+		}
+	}
+
+	zap_safe_free(dup);
+	
+	return rval;
+}
+
+
 static zap_status_t load_config(void)
 {
 	char cfg_name[] = "openzap.conf";
@@ -2283,7 +2327,7 @@ static zap_status_t process_module_config(zap_io_interface_t *zio)
 	snprintf(filename, sizeof(filename), "%s.conf", zio->name);
 
 	if (!zio->configure) {
-		zap_log(ZAP_LOG_ERROR, "Module %s does not support configuration.\n", zio->name);	
+		zap_log(ZAP_LOG_DEBUG, "Module %s does not support configuration.\n", zio->name);	
 		return ZAP_FAIL;
 	}
 
@@ -2339,12 +2383,12 @@ int zap_load_module(const char *name)
 	}
 
 	if (mod->io_load) {
-		zap_io_interface_t *interface;
+		zap_io_interface_t *interface = NULL;
 
-		if (mod->io_load(&interface) != ZAP_SUCCESS || !interface) {
+		if (mod->io_load(&interface) != ZAP_SUCCESS || !interface || !interface->name) {
 			zap_log(ZAP_LOG_ERROR, "Error loading %s\n", path);
 		} else {
-			zap_log(ZAP_LOG_INFO, "Loading IO from %s\n", path);
+			zap_log(ZAP_LOG_INFO, "Loading IO from %s [%s]\n", path, interface->name);
 			zap_mutex_lock(globals.mutex);
 			if (hashtable_search(globals.interface_hash, (void *)interface->name)) {
 				zap_log(ZAP_LOG_ERROR, "Interface %s already loaded!\n", interface->name);

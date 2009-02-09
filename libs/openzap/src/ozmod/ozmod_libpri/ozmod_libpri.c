@@ -76,6 +76,121 @@ static void s_pri_message(struct pri *pri, char *s)
 }
 #endif
 
+
+static int parse_debug(const char *in)
+{
+	int flags = 0;
+	
+	if (!in) {
+		return 0;
+	}
+	
+	if (strstr(in, "q921_raw")) {
+		flags |= PRI_DEBUG_Q921_RAW;
+	}
+
+	if (strstr(in, "q921_dump")) {
+		flags |= PRI_DEBUG_Q921_DUMP;
+	}
+
+	if (strstr(in, "q921_state")) {
+		flags |= PRI_DEBUG_Q921_STATE;
+	}
+
+	if (strstr(in, "config")) {
+		flags |= PRI_DEBUG_CONFIG;
+	}
+
+	if (strstr(in, "q931_dump")) {
+		flags |= PRI_DEBUG_Q931_DUMP;
+	}
+
+	if (strstr(in, "q931_state")) {
+		flags |= PRI_DEBUG_Q931_STATE;
+	}
+
+	if (strstr(in, "q931_anomaly")) {
+		flags |= PRI_DEBUG_Q931_ANOMALY;
+	}
+
+	if (strstr(in, "q931_anomaly")) {
+		flags |= PRI_DEBUG_Q931_ANOMALY;
+	}
+
+	if (strstr(in, "apdu")) {
+		flags |= PRI_DEBUG_APDU;
+	}
+
+	if (strstr(in, "aoc")) {
+		flags |= PRI_DEBUG_AOC;
+	}
+
+	if (strstr(in, "all")) {
+		flags |= PRI_DEBUG_ALL;
+	}
+
+	if (strstr(in, "none")) {
+		flags = 0;
+	}
+
+	return flags;
+}
+
+
+
+static ZIO_API_FUNCTION(zap_libpri_api)
+{
+	char *mycmd = NULL, *argv[10] = { 0 };
+    int argc = 0;
+	
+	if (data) {
+		mycmd = strdup(data);
+		argc = zap_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+
+	if (argc > 2) {
+		if (!strcasecmp(argv[0], "debug")) {
+			int span_id = atoi(argv[1]);
+			zap_span_t *span = NULL;
+
+			if (zap_span_find_by_name(argv[1], &span) == ZAP_SUCCESS || zap_span_find(span_id, &span) == ZAP_SUCCESS) {
+				zap_libpri_data_t *isdn_data = span->signal_data;
+				pri_set_debug(isdn_data->spri.pri, parse_debug(argv[2]));				
+				stream->write_function(stream, "%s: +OK debug set.\n", __FILE__);
+				goto done;
+			} else {
+				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				goto done;
+			}
+		}
+	}
+
+	stream->write_function(stream, "%s: -ERR invalid command.\n", __FILE__);
+	
+ done:
+
+	zap_safe_free(mycmd);
+
+	return ZAP_SUCCESS;
+}
+
+
+static zap_io_interface_t zap_libpri_interface;
+
+static ZIO_IO_LOAD_FUNCTION(zap_libpri_io_init)
+{
+	assert(zio != NULL);
+	memset(&zap_libpri_interface, 0, sizeof(zap_libpri_interface));
+
+	zap_libpri_interface.name = "libpri";
+	zap_libpri_interface.api = zap_libpri_api;
+
+	*zio = &zap_libpri_interface;
+
+	return ZAP_SUCCESS;
+}
+
 static ZIO_SIG_LOAD_FUNCTION(zap_libpri_init)
 {
 	pri_set_error(s_pri_error);
@@ -671,8 +786,6 @@ static int str2dp(char *dp)
 	return PRI_UNKNOWN;
 }
 
-
-
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 {
 	uint32_t i, x = 0;
@@ -680,6 +793,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	zap_libpri_data_t *isdn_data;
 	char *var, *val;
 	int32_t opts = 0;
+	char *debug = NULL;
 	
 	if (span->trunk_type >= ZAP_TRUNK_NONE) {
 		zap_log(ZAP_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", zap_trunk_type2str(span->trunk_type));
@@ -741,7 +855,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 			if (!(val = va_arg(ap, char *))) {
 				break;
 			}
-			isdn_data->debug = atoi(val);
+			debug = val;
 		} else {
 			snprintf(span->last_error, sizeof(span->last_error), "Unknown parameter [%s]", var);
 			return ZAP_FAIL;
@@ -755,11 +869,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	isdn_data->dchans[1] = dchans[1];
 	isdn_data->dchan = isdn_data->dchans[0];
 	
-	
-	// force debug rm me later
-	isdn_data->debug = PRI_DEBUG_Q931_DUMP | PRI_DEBUG_Q931_STATE;
-	
-	
+	isdn_data->debug = parse_debug(debug);
+		
 	if (lpwrap_init_pri(&isdn_data->spri,
 						span->span_id,  // span
 						isdn_data->dchan, // dchan
@@ -786,12 +897,14 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 
 zap_module_t zap_module = { 
 	"libpri",
-	NULL,
+	zap_libpri_io_init,
 	zap_libpri_unload,
 	zap_libpri_init,
 	zap_libpri_configure_span,
 	NULL
 };
+
+
 
 
 

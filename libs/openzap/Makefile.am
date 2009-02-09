@@ -84,6 +84,9 @@ libopenzap_la_LIBADD     = $(LIBS)
 
 MYLIB=libopenzap.la
 
+core: libopenzap.la 
+core-install: install-libLTLIBRARIES
+
 noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testboost testanalog testapp testcid
 testapp_SOURCES = $(SRC)/testapp.c
 testapp_LDADD = libopenzap.la
