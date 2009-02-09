@@ -397,10 +397,12 @@ typedef struct zap_sigmsg zap_sigmsg_t;
 typedef struct zap_span zap_span_t;
 typedef struct zap_caller_data zap_caller_data_t;
 typedef struct zap_io_interface zap_io_interface_t;
+
+struct zap_stream_handle;
 typedef struct zap_stream_handle zap_stream_handle_t;
 
-typedef zap_status_t (*zap_stream_handle_write_function_t) (zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen);
-typedef zap_status_t (*zap_stream_handle_raw_write_function_t) (zap_stream_handle_t *handle, const char *fmt, ...);
+typedef zap_status_t (*zap_stream_handle_raw_write_function_t) (zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen);
+typedef zap_status_t (*zap_stream_handle_write_function_t) (zap_stream_handle_t *handle, const char *fmt, ...);
 
 #define ZIO_CHANNEL_REQUEST_ARGS (zap_span_t *span, uint32_t chan_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 #define ZIO_CHANNEL_OUTGOING_CALL_ARGS (zap_channel_t *zchan)
@@ -476,7 +478,7 @@ typedef zap_status_t (*zio_api_t) ZIO_API_ARGS ;
 #define ZIO_SIG_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_SIG_CONFIGURE_ARGS
 #define ZIO_IO_UNLOAD_FUNCTION(name) zap_status_t name ZIO_IO_UNLOAD_ARGS
 #define ZIO_SIG_UNLOAD_FUNCTION(name) zap_status_t name ZIO_SIG_UNLOAD_ARGS
-#define ZIP_API_FUNCTION(name) zap_status_t name ZIO_API_ARGS
+#define ZIO_API_FUNCTION(name) zap_status_t name ZIO_API_ARGS
 
 #include "zap_dso.h"
 

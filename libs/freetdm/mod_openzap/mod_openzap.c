@@ -2320,7 +2320,14 @@ SWITCH_STANDARD_API(oz_function)
 		}
 
 	} else {
-		stream->write_function(stream, "-ERR Usage: %s\n", OZ_SYNTAX);
+		char *rply = zap_api_execute(cmd, NULL);
+		
+		if (rply) {
+			stream->write_function(stream, "%s", rply);
+			free(rply);
+		} else {
+			stream->write_function(stream, "-ERR Usage: %s\n", OZ_SYNTAX);
+		}
 	}
 	/*Q931ToPcap enhancement done*/
 
