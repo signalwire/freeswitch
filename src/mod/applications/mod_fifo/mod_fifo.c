@@ -1929,6 +1929,10 @@ SWITCH_STANDARD_API(fifo_member_api_function)
 	int argc;
 	time_t expires = 0;
 
+	if (!globals.running) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (switch_strlen_zero(cmd)){
 		stream->write_function(stream, "-USAGE: %s\n", FIFO_MEMBER_API_SYNTAX);
 		return SWITCH_STATUS_SUCCESS;
