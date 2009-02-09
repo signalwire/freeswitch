@@ -119,6 +119,10 @@
     <!-- set to true to have the profile determine stun is not useful and turn it off globally-->
     <!--<param name="stun-auto-disable" value="true"/>-->
 
+	 <!-- the following can be used as workaround with bogus SRV/NAPTR records -->
+	 <!--<param name="disable-srv" value="false" />-->
+	 <!--<param name="disable-naptr" value="false" />-->
+
   </settings>
 </profile>
 
