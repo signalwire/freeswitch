@@ -248,8 +248,8 @@ SWITCH_STANDARD_API(group_call_function)
 				}
 				
 			}
-			switch_xml_free(xml);
 		}
+		switch_xml_free(xml);
 		switch_event_destroy(&params);
 	}
 
