@@ -595,6 +595,11 @@ switch_mutex_unlock(obj->flag_mutex);
 #define sofia_clear_pflag(obj, flag) (obj)->pflags &= ~(flag)
 #define sofia_copy_pflags(dest, src, flags) (dest)->pflags &= ~(flags);	(dest)->pflags |= ((src)->pflags & (flags))
 
+#define sofia_set_flag_locked(obj, flag) switch_set_flag_locked(obj, flag)
+#define sofia_set_flag(obj, flag) switch_set_flag(obj, flag)
+#define sofia_clear_flag_locked(obj, flag) switch_clear_flag_locked(obj, flag)
+#define sofia_test_flag(obj, flag) switch_test_flag(obj, flag)
+
 /* Function Prototypes */
 /*************************************************************************************************************************************************************/
 
@@ -785,4 +790,3 @@ void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_ha
 void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
 void sofia_sla_handle_sip_r_subscribe(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
 void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
-

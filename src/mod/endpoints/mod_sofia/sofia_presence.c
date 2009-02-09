@@ -1447,7 +1447,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			display = "\"user\"";
 		}
 
-		if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+		if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
 			if (sip && sip->sip_via) {
 				const char *v_port = sip->sip_via->v_port;
 				const char *v_host = sip->sip_via->v_host;

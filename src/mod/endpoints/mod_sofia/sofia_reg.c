@@ -765,7 +765,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_snprintf(new_port, sizeof(new_port), ":%s", port);
 		}
 
-		if (is_nat && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
+		if (is_nat && sofia_test_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
 			switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
 		}
 
@@ -793,7 +793,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		authorization = sip->sip_proxy_authorization;
 	}
 
-	if (regtype == REG_AUTO_REGISTER || (regtype == REG_REGISTER && (profile->pflags & PFLAG_BLIND_REG))) {
+	if (regtype == REG_AUTO_REGISTER || (regtype == REG_REGISTER && sofia_test_pflag(profile, PFLAG_BLIND_REG))) {
 		regtype = REG_REGISTER;
 		goto reg;
 	}
@@ -826,7 +826,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 
-				if (*received_data && (profile->pflags & PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
+				if (*received_data && sofia_test_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
 					switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
 				}
 
@@ -1141,7 +1141,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 		goto end;
 	}
 
-	if ((profile->pflags & PFLAG_AGGRESSIVE_NAT_DETECTION)) {
+	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
 		if (sip && sip->sip_via) {
 			const char *port = sip->sip_via->v_port;
 			const char *host = sip->sip_via->v_host;
@@ -1192,7 +1192,7 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 			}
 		}
 
-		if (ok && !(profile->pflags & PFLAG_BLIND_REG)) {
+		if (ok && !sofia_test_pflag(profile, PFLAG_BLIND_REG)) {
 			type = REG_AUTO_REGISTER;
 		} else if (!ok) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", network_ip, profile->reg_acl[x]);
@@ -1292,7 +1292,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		private_object_t *tech_pvt;
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 
-		if ((tech_pvt = switch_core_session_get_private(session)) && switch_test_flag(tech_pvt, TFLAG_REFER)) {
+		if ((tech_pvt = switch_core_session_get_private(session)) && sofia_test_flag(tech_pvt, TFLAG_REFER)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received reply from REFER\n");
 			goto end;
 		}
@@ -1462,7 +1462,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	}
 
 	/* Optional check that auth name == SIP username */
-	if ((regtype == REG_REGISTER) && (profile->pflags & PFLAG_CHECKUSER)) {
+	if ((regtype == REG_REGISTER) && sofia_test_pflag(profile, PFLAG_CHECKUSER)) {
 		if (switch_strlen_zero(username) || switch_strlen_zero(to_user) || strcasecmp(to_user, username)) {
 			/* Names don't match, so fail */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SIP username %s does not match auth username\n", switch_str_nil(to_user));
@@ -1837,7 +1837,7 @@ sofia_gateway_t *sofia_reg_find_gateway__(const char *file, const char *func, in
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	if ((gateway = (sofia_gateway_t *) switch_core_hash_find(mod_sofia_globals.gateway_hash, key))) {
-		if (!(gateway->profile->pflags & PFLAG_RUNNING) || gateway->deleted) {
+		if (!sofia_test_pflag(gateway->profile, PFLAG_RUNNING) || gateway->deleted) {
 			gateway = NULL;
 			goto done;
 		}
