@@ -55,12 +55,19 @@ SWITCH_STANDARD_API(time_test_function)
 		stream->write_function(stream, "parameter missing\n");
 		return SWITCH_STATUS_SUCCESS;
 	}
+
 	mss = atol(cmd);
+
+	if (mss > 10000) {
+		mss = 10000;
+	}
 
 	if ((p = strchr(cmd, ' '))) {
 		max = atoi(p+1);
 		if (max < 0) {
-			max = 10;
+			max = 1;
+		} else if (max > 100) {
+			max = 100;
 		}
 	}
 
