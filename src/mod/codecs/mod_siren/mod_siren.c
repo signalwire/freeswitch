@@ -173,7 +173,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_siren_load)
 		switch_core_codec_add_implementation(pool,
 											 codec_interface,
 											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
-											 114,						/* the IANA code number */
+											 115,						/* the IANA code number */
 											 "G7221",					/* the IANA code name */
 											 "bitrate=48000",			/* default fmtp to send (can be overridden by the init function) */
 											 32000,						/* samples transferred per second */
