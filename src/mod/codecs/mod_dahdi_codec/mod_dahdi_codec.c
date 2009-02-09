@@ -345,7 +345,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	if (!stat(transcoding_device_dahdi, &statbuf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "DAHDI transcoding device found.\n");
 		transcoding_device = transcoding_device_dahdi;
-		transcoder_name = transcoder_name_zap;
+		transcoder_name = transcoder_name_dahdi;
 	} else if (!stat(transcoding_device_zap, &statbuf)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Zap transcoding device found.\n");
 		transcoding_device = transcoding_device_zap;
@@ -357,7 +357,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 
 	fd = open(transcoding_device, O_RDWR);
 	if (fd < 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open %s transcoder device.\n", transcoder_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open %s transcoder device: %s.\n", 
+				transcoder_name, strerror(errno));
 		return SWITCH_STATUS_FALSE;
 	}
 
