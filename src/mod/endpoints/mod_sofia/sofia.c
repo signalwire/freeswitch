@@ -730,6 +730,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(!strchr(profile->sipip, ':'), NTATAG_UDP_MTU(65535)), 
  							  TAG_IF(profile->disable_srv, NTATAG_USE_SRV(0)),
  							  TAG_IF(profile->disable_naptr, NTATAG_USE_NAPTR(0)),
+							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 							  NTATAG_SERVER_RPORT(profile->rport_level), 
 							  TAG_IF(tportlog, TPTAG_LOG(1)), 
 							  TAG_END());	/* Last tag should always finish the sequence */
@@ -1587,6 +1588,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						profile->reg_db_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "hold-music")) {
 						profile->hold_music = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "outbound-proxy")) {
+						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "session-timeout")) {
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {
@@ -1979,6 +1982,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->timer_name = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "hold-music")) {
 						profile->hold_music = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "outbound-proxy")) {
+						profile->outbound_proxy = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "session-timeout")) {
 						int v_session_timeout = atoi(val);
 						if (v_session_timeout >= 0) {

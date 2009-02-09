@@ -379,6 +379,7 @@ struct sofia_profile {
 	char *sipdomain;
 	char *timer_name;
 	char *hold_music;
+	char *outbound_proxy;
 	char *bind_params;
 	char *tls_bind_params;
 	char *tls_cert_dir;

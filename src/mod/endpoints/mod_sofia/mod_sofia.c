@@ -1561,6 +1561,7 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "TLS-BIND-URL     \t%s\n", switch_str_nil(profile->tls_bindurl));
 					}
 					stream->write_function(stream, "HOLD-MUSIC       \t%s\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
+					stream->write_function(stream, "OUTBOUND-PROXY   \t%s\n", switch_strlen_zero(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
 					stream->write_function(stream, "CODECS           \t%s\n", switch_str_nil(profile->codec_string));
 					stream->write_function(stream, "TEL-EVENT        \t%d\n", profile->te);
 					if (profile->dtmf_type == DTMF_2833) {
@@ -1751,6 +1752,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 						stream->write_function(stream, "<TLS-BIND-URL>%s</TLS-BIND-URL>\n", switch_str_nil(profile->tls_bindurl));
 					}
 					stream->write_function(stream, "<HOLD-MUSIC>%s</HOLD-MUSIC>\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
+					stream->write_function(stream, "<OUTBOUND-PROXY>%s</OUTBOUND-PROXY>\n", switch_strlen_zero(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
 					stream->write_function(stream, "<CODECS>%s</CODECS>\n", switch_str_nil(profile->codec_string));
 					stream->write_function(stream, "<TEL-EVENT>%d</TEL-EVENT>\n", profile->te);
 					if (profile->dtmf_type == DTMF_2833) {
