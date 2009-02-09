@@ -130,7 +130,10 @@ install-data-local:
 	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
 	@echo OpenZAP Installed
 
-mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_wanpipe.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la ozmod_libpri.la
+mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_wanpipe.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la
+if LIBPRI
+mod_LTLIBRARIES += ozmod_libpri.la
+endif
 ozmod_zt_la_SOURCES = $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
 ozmod_zt_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_zt_la_LDFLAGS = -module
