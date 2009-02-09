@@ -1645,11 +1645,13 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				}
 
 				rtp_session->dtmf_data.last_duration = duration;
-#ifdef DEBUG_2833
 			} else {
+#ifdef DEBUG_2833
 				printf("drop: %c %u %u %u %u %d %d\n", 
 					   key, in_digit_seq, rtp_session->dtmf_data.in_digit_seq, ts, duration, rtp_session->recv_msg.header.m, end);
 #endif
+				switch_cond_next();
+				goto recvfrom;
 			}
 		}
 		
