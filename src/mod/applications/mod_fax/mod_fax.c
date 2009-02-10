@@ -88,6 +88,8 @@ struct pvt_s {
 
 	int tx_page_start;
 	int tx_page_end;
+	
+	int done;
 
 	/* UNUSED AT THE MOMENT
 	   int          enable_t38_reinvite;
@@ -246,7 +248,9 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 		switch_safe_free(tmp);
 	}
 
-switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
+	/* switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING); */
+	
+	pvt->done = 1;
 
 	/*
 	TODO Fire events
@@ -628,7 +632,7 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		/* read new audio frame from the channel */
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
 
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
+		if (!SWITCH_READ_ACCEPTABLE(status) || pvt->done) {
 			/* Our duty is over */
 			goto done;
 		}
