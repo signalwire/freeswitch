@@ -511,6 +511,7 @@ static int on_hangup(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_even
 		call = (q931_call *) zchan->call_data;
 		zap_log(ZAP_LOG_DEBUG, "-- Hangup on channel %d:%d\n", spri->span, pevent->hangup.channel);
 		zchan->caller_data.hangup_cause = pevent->hangup.cause;
+		pri_release(spri->pri, call, 0);
 		pri_destroycall(spri->pri, call);
 		zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_TERMINATING);
 	} else {
