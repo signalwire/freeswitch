@@ -394,13 +394,12 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	const char *tmp;
 
 	switch_channel_t *channel;
-
-	switch_codec_t *orig_read_codec = NULL;
 	switch_codec_t read_codec = { 0 };
 	switch_codec_t write_codec = { 0 };
 	switch_frame_t *read_frame = { 0 };
 	switch_frame_t write_frame = { 0 };
-
+    switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
 	int16_t *buf = NULL;
 
 	/* make sure we have a valid channel when starting the FAX application */
@@ -575,13 +574,12 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	 * used internally by spandsp and FS will do the transcoding
 	 * from G.711 or any other original codec
 	 */
-	orig_read_codec = switch_core_session_get_read_codec(session);
 
 	if (switch_core_codec_init(&read_codec,
 							   "L16",
 							   NULL,
-							   orig_read_codec->implementation->samples_per_second,
-							   orig_read_codec->implementation->microseconds_per_packet / 1000,
+							   read_impl.samples_per_second,
+							   read_impl.microseconds_per_packet / 1000,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
@@ -596,8 +594,8 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 	if (switch_core_codec_init(&write_codec,
 							   "L16",
 							   NULL,
-							   orig_read_codec->implementation->samples_per_second,
-							   orig_read_codec->implementation->microseconds_per_packet / 1000,
+							   read_impl.samples_per_second,
+							   read_impl.microseconds_per_packet / 1000,
 							   1,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
@@ -673,6 +671,8 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 
 	/* restore the original codecs over the channel */
 
+    switch_core_session_set_read_codec(session, NULL);
+
 	if (read_codec.implementation) {
 		switch_core_codec_destroy(&read_codec);
 	}
@@ -681,9 +681,9 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 		switch_core_codec_destroy(&write_codec);
 	}
 
-	if (orig_read_codec) {
-		switch_core_session_set_read_codec(session, orig_read_codec);
-	}
+
+
+
 
 }
 

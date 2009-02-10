@@ -1203,17 +1203,18 @@ void do_telecast(switch_stream_handle_t *stream)
 		switch_mutex_t *mutex;
 		switch_channel_t *channel = switch_core_session_get_channel(tsession);
 		lame_global_flags *gfp = NULL;
-		switch_codec_t *read_codec;
+		switch_codec_implementation_t read_impl = {0};
+		switch_core_session_get_read_impl(tsession, &read_impl);
+
+
 
 		if (!(gfp = lame_init())) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not allocate lame\n");
 			goto end;
 		}
-		read_codec = switch_core_session_get_read_codec(tsession);
-
-		lame_set_num_channels(gfp, read_codec->implementation->number_of_channels);
-		lame_set_in_samplerate(gfp, read_codec->implementation->actual_samples_per_second);
-		lame_set_brate(gfp, 16 * (read_codec->implementation->actual_samples_per_second / 8000) * read_codec->implementation->number_of_channels);
+		lame_set_num_channels(gfp, read_impl.number_of_channels);
+		lame_set_in_samplerate(gfp, read_impl.actual_samples_per_second);
+		lame_set_brate(gfp, 16 * (read_impl.actual_samples_per_second / 8000) * read_impl.number_of_channels);
 		lame_set_mode(gfp, 3);
 		lame_set_quality(gfp, 2);
 		lame_set_errorf(gfp, log_error);

@@ -197,7 +197,7 @@ SWITCH_DECLARE(void *) switch_core_session_get_private(switch_core_session_t *se
 	switch_assert(session != NULL);
 	return session->private_info;
 }
-
+ 
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_private(switch_core_session_t *session, void *private_info)
 {
@@ -341,7 +341,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		
 		if (channel) {
 			const char *export_vars, *val;
-			switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
+			switch_codec_t *vid_read_codec = NULL, *read_codec = switch_core_session_get_read_codec(session);
 			const char *max_forwards = switch_core_session_sprintf(session, "%d", forwardval);
 
 			switch_channel_set_variable(peer_channel, SWITCH_MAX_FORWARDS_VARIABLE, max_forwards);
@@ -353,6 +353,14 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				switch_codec2str(read_codec, tmp, sizeof(tmp));
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
 			}
+			
+			vid_read_codec = switch_core_session_get_video_read_codec(session);
+			if (vid_read_codec && vid_read_codec->implementation) {
+				char tmp[80];
+				switch_codec2str(vid_read_codec, tmp, sizeof(tmp));
+				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE, tmp);
+			}
+			
 
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));

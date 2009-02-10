@@ -163,7 +163,7 @@ SWITCH_STANDARD_APP(rss_function)
 	struct rss_entry entries[TTS_MAX_ENTRIES] = { {0} };
 	uint32_t i = 0;
 	char *title_txt = "", *description_txt = "", *rights_txt = "";
-	switch_codec_t speech_codec, *codec = switch_core_session_get_read_codec(session);
+	switch_codec_t speech_codec;
 	char *engine = TTS_DEFAULT_ENGINE;
 	char *voice = TTS_DEFAULT_VOICE;
 	char *timer_name = NULL;
@@ -184,8 +184,9 @@ SWITCH_STANDARD_APP(rss_function)
 	switch_input_args_t args = { 0 };
 	const char *vcf = NULL;
 	char *chanvars = switch_channel_build_param_string(channel, NULL, NULL);
-	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
-	uint32_t rate, interval = read_codec->implementation->microseconds_per_packet / 1000;
+	switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
+	uint32_t rate, interval = read_impl.microseconds_per_packet / 1000;
 
 	if ((vcf = switch_channel_get_variable(channel, "rss_alt_config"))) {
 		cf = vcf;
@@ -253,8 +254,8 @@ SWITCH_STANDARD_APP(rss_function)
 		return;
 	}
 
-	if (codec) {
-		rate = codec->implementation->actual_samples_per_second;
+	if (switch_channel_media_ready(channel)) {
+		rate = read_impl.actual_samples_per_second;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec Error!\n");
 		return;

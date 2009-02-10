@@ -1042,9 +1042,9 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	char term;
 	char input[10] = "", key_buf[80] = "";
 	cc_t cc = { 0 };
-	switch_codec_t *read_codec;
+	switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
 
-	read_codec = switch_core_session_get_read_codec(session);
 
 	if (exit_keys) {
 		*key_pressed = '\0';
@@ -1072,7 +1072,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
 
-		if (limit && (*message_len = fh.sample_count / read_codec->implementation->actual_samples_per_second) < profile->min_record_len) {
+		if (limit && (*message_len = fh.sample_count / read_impl.actual_samples_per_second) < profile->min_record_len) {
 			if (unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
@@ -1216,7 +1216,6 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
 static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile, const char *announce, const char *orig)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);	
-	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 	switch_file_handle_t lrfh = { 0 }, *rfh = NULL, lfh = { 0 }, *fh = NULL;
 	char *tmp_path;
 	switch_uuid_t uuid;
@@ -1225,19 +1224,21 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 	int16_t *abuf = NULL;
 	switch_size_t olen = 0;
 	int asis = 0;
+    switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
 
-	lfh.channels = read_codec->implementation->number_of_channels;
-	lfh.native_rate = read_codec->implementation->actual_samples_per_second;
+	lfh.channels = read_impl.number_of_channels;
+	lfh.native_rate = read_impl.actual_samples_per_second;
 
 	tmp_path = switch_core_session_sprintf(session, "%s%smsg_%s.%s", SWITCH_GLOBAL_dirs.temp_dir, SWITCH_PATH_SEPARATOR, uuid_str, profile->file_ext);
 
 	if (switch_core_file_open(&lfh,
 							  tmp_path,
 							  lfh.channels,
-							  read_codec->implementation->actual_samples_per_second,
+							  read_impl.actual_samples_per_second,
 							  SWITCH_FILE_FLAG_WRITE | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file %s\n", tmp_path);
 		goto end;
@@ -1249,7 +1250,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 	if (switch_core_file_open(&lrfh,
 							  announce,
 							  lfh.channels,
-							  read_codec->implementation->actual_samples_per_second,
+							  read_impl.actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file %s\n", announce);
 		goto end;
@@ -1286,7 +1287,7 @@ static char *vm_merge_file(switch_core_session_t *session, vm_profile_t *profile
 	if (switch_core_file_open(&lrfh,
 							  orig,
 							  lfh.channels,
-							  read_codec->implementation->actual_samples_per_second,
+							  read_impl.actual_samples_per_second,
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to open file %s\n", orig);
 		goto end;

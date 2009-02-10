@@ -642,12 +642,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	int stream_id = 0;
 	switch_event_t *event;
 	switch_unicast_conninfo_t *conninfo = NULL;
-	switch_codec_t *read_codec;
 	uint32_t rate;
 	uint32_t bpf;
 	const char *to;
 	int timeout = 0;
 	time_t expires = 0;
+
+	switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
+
+
 
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
@@ -666,15 +670,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	read_codec = switch_core_session_get_read_codec(session);
-
-	if (!read_codec || !read_codec->implementation) {
+	if (switch_channel_media_ready(channel)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that have no read codec.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	rate = read_codec->implementation->actual_samples_per_second;
-	bpf = read_codec->implementation->decoded_bytes_per_packet;
+	rate = read_impl.actual_samples_per_second;
+	bpf = read_impl.decoded_bytes_per_packet;
 
 	if ((to = switch_channel_get_variable(channel, "park_timeout"))) {
 		if ((timeout = atoi(to)) < 0) {
@@ -690,7 +692,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		switch_event_fire(&event);
 	}
 
-	while (read_codec && switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
+	while (switch_channel_media_ready(channel) && switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
 
 		if ((status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
@@ -732,11 +734,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 						if (switch_test_flag(conninfo, SUF_NATIVE)) {
 							tstatus = SWITCH_STATUS_NOOP;
 						} else {
+							switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 							tstatus = switch_core_codec_decode(read_codec,
 															   &conninfo->read_codec,
 															   read_frame->data,
 															   read_frame->datalen,
-															   read_codec->implementation->actual_samples_per_second, decoded, &dlen, &rate, &flags);
+															   read_impl.actual_samples_per_second, decoded, &dlen, &rate, &flags);
 						}
 						switch (tstatus) {
 						case SWITCH_STATUS_NOOP:
@@ -1944,28 +1947,29 @@ SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint3
 {
 	stfu_instance_t *jb;
 	int qlen = 0;
-	switch_codec_t *read_codec;
 	stfu_frame_t *jb_frame;
 	switch_frame_t *read_frame, write_frame = { 0 };
 	switch_status_t status;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	uint32_t interval, samples;
 	uint32_t ts = 0;
+    switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
+
 
 	if (delay_ms < 1 || delay_ms > 10000) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid delay [%d] must be between 1 and 10000\n", delay_ms);
 		return;
 	}
 
-	read_codec = switch_core_session_get_read_codec(session);
-	interval = read_codec->implementation->microseconds_per_packet / 1000;
-	samples = switch_samples_per_packet(read_codec->implementation->samples_per_second, interval);
+	interval = read_impl.microseconds_per_packet / 1000;
+	samples = switch_samples_per_packet(read_impl.samples_per_second, interval);
 
 	qlen = delay_ms / (interval);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting delay to %dms (%d frames)\n", delay_ms, qlen);
 	jb = stfu_n_init(qlen);
 
-	write_frame.codec = read_codec;
+	write_frame.codec = switch_core_session_get_read_codec(session);
 
 	while (switch_channel_ready(channel)) {
 		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);

@@ -153,9 +153,10 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 	if ((silence_var = switch_channel_get_variable(chan_a, "bridge_generate_comfort_noise"))) {
-		switch_codec_t *read_codec = NULL;
+		switch_codec_implementation_t read_impl = {0};
+		switch_core_session_get_read_impl(session_a, &read_impl);
 		
-		if (!(read_codec = switch_core_session_get_read_codec(session_a))) {
+		if (!switch_channel_media_ready(chan_a)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Channel has no media!\n");
 			goto end_of_bridge_loop;
 		}
@@ -172,8 +173,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			if (switch_core_codec_init(&silence_codec,
 									   "L16",
 									   NULL, 
-									   read_codec->implementation->actual_samples_per_second, 
-									   read_codec->implementation->microseconds_per_packet / 1000,
+									   read_impl.actual_samples_per_second, 
+									   read_impl.microseconds_per_packet / 1000,
 									   1,
 									   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, 
 									   NULL, 
@@ -185,7 +186,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				silence_frame.codec = &silence_codec;
 				silence_frame.data = silence_data;
 				silence_frame.buflen = sizeof(silence_data);
-				silence_frame.datalen = read_codec->implementation->decoded_bytes_per_packet;
+				silence_frame.datalen = read_impl.decoded_bytes_per_packet;
 				silence_frame.samples = silence_frame.datalen / sizeof(int16_t);
 			}
 		}

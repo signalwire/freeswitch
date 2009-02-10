@@ -74,7 +74,11 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
   \param channel channel to test
   \return true if the channel is ready
 */
-SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel);
+SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_bool_t media);
+
+#define switch_channel_ready(_channel) switch_channel_test_ready(_channel, SWITCH_FALSE)
+#define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE)
+
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
 SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, 
@@ -495,8 +499,6 @@ SWITCH_DECLARE(char *) switch_channel_build_param_string(_In_ switch_channel_t *
 SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(_In_ switch_channel_t *channel);
 
 #define switch_channel_stop_broadcast(_channel)	for(;;) {if (switch_channel_test_flag(_channel, CF_BROADCAST)) {switch_channel_set_flag(_channel, CF_STOP_BROADCAST); switch_channel_set_flag(_channel, CF_BREAK); } break;}
-
-#define switch_channel_media_ready(_channel) ((switch_channel_test_flag(_channel, CF_ANSWERED) || switch_channel_test_flag(_channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(_channel, CF_PROXY_MODE))
 
 SWITCH_DECLARE(void) switch_channel_audio_sync(switch_channel_t *channel);
 

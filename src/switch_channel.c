@@ -864,11 +864,21 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 	return state;
 }
 
-SWITCH_DECLARE(uint8_t) switch_channel_ready(switch_channel_t *channel)
+SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_bool_t media)
 {
-	uint8_t ret = 0;
+	int ret = 0;
 
 	switch_assert(channel != NULL);
+
+	if (media) {
+		ret = ((switch_channel_test_flag(channel, CF_ANSWERED) || 
+				switch_channel_test_flag(channel, CF_EARLY_MEDIA)) && !switch_channel_test_flag(channel, CF_PROXY_MODE) && 
+			   switch_core_session_get_read_codec(channel->session) && switch_core_session_get_write_codec(channel->session));
+
+		if (!ret) return ret;
+	}
+	
+	ret = 0;
 
 	if (!channel->hangup_cause && channel->state > CS_ROUTING && channel->state < CS_HANGUP && channel->state != CS_RESET &&
 		!switch_channel_test_flag(channel, CF_TRANSFER)) {

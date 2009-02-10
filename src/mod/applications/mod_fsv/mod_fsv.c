@@ -106,7 +106,9 @@ SWITCH_STANDARD_APP(record_fsv_function)
 	switch_threadattr_t *thd_attr = NULL;
 	int fd;
 	switch_mutex_t *mutex = NULL;
-	switch_codec_t codec, *read_codec, *vid_codec;
+	switch_codec_t codec, *vid_codec;
+	switch_codec_implementation_t read_impl = {0};
+	switch_core_session_get_read_impl(session, &read_impl);
 
 	switch_channel_answer(channel);
 
@@ -117,13 +119,11 @@ SWITCH_STANDARD_APP(record_fsv_function)
 
 	switch_channel_answer(channel);
 
-	read_codec = switch_core_session_get_read_codec(session);
-
 	if (switch_core_codec_init(&codec,
 							   "L16",
 							   NULL,
-							   read_codec->implementation->samples_per_second,
-							   read_codec->implementation->microseconds_per_packet / 1000,
+							   read_impl.samples_per_second,
+							   read_impl.microseconds_per_packet / 1000,
 							   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 							   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Activation Success\n");
@@ -145,8 +145,8 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		if (vid_codec->fmtp_in) {
 			switch_set_string(h.video_fmtp, vid_codec->fmtp_in);
 		}
-		h.audio_rate = read_codec->implementation->samples_per_second;
-		h.audio_ptime = read_codec->implementation->microseconds_per_packet / 1000;
+		h.audio_rate = read_impl.samples_per_second;
+		h.audio_ptime = read_impl.microseconds_per_packet / 1000;
 
 		if (write(fd, &h, sizeof(h)) != sizeof(h)) {
 			goto end;
@@ -207,7 +207,7 @@ SWITCH_STANDARD_APP(record_fsv_function)
 		}
 	}
 
-	switch_core_session_set_read_codec(session, read_codec);
+	switch_core_session_set_read_codec(session, NULL);
 	switch_core_codec_destroy(&codec);
 
 }
@@ -227,6 +227,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	uint32_t ts = 0, last = 0;
 	switch_timer_t timer = { 0 };
 	switch_payload_t pt = 0;
+    switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
 
 	aud_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	vid_buffer = switch_core_session_alloc(session, SWITCH_RECOMMENDED_BUFFER_SIZE);
@@ -263,10 +265,8 @@ SWITCH_STANDARD_APP(play_fsv_function)
 	vid_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE - 12;
 	switch_set_flag((&vid_frame), SFF_RAW_RTP);
 
-	read_codec = switch_core_session_get_read_codec(session);
-
-	if (switch_core_timer_init(&timer, "soft", read_codec->implementation->microseconds_per_packet / 1000,
-							   read_codec->implementation->samples_per_packet, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
+	if (switch_core_timer_init(&timer, "soft", read_impl.microseconds_per_packet / 1000,
+							   read_impl.samples_per_packet, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Timer Activation Fail\n");
 		goto end;
 	}

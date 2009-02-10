@@ -64,7 +64,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_status_t status;
 	switch_size_t bytes;
 	ls_control_packet_t control_packet;
-	switch_codec_t codec = { 0 }, *read_codec, *orig_codec = NULL;
+	switch_codec_t codec = { 0 };
 	uint32_t flags = 0;
 	const char *err;
 	switch_rtp_t *rtp_session = NULL;
@@ -78,6 +78,9 @@ SWITCH_STANDARD_APP(bcast_function)
 	switch_port_t mcast_control_port = 6061;
 	char *mcast_port_str = "34567";
 	const char *esf_broadcast_ip = NULL, *var;
+	switch_codec_implementation_t read_impl = {0};
+    switch_core_session_get_read_impl(session, &read_impl);
+
 
 	if (!switch_strlen_zero((char *) data)) {
 		mydata = switch_core_session_strdup(session, data);
@@ -120,8 +123,6 @@ SWITCH_STANDARD_APP(bcast_function)
 		switch_channel_answer(channel);
 	}
 
-	read_codec = switch_core_session_get_read_codec(session);
-
 	if (switch_socket_create(&socket, AF_INET, SOCK_DGRAM, 0, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error 1\n");
 		goto fail;
@@ -144,7 +145,7 @@ SWITCH_STANDARD_APP(bcast_function)
 			goto fail;
 		}
 
-		if (read_frame->packet && read_frame->packetlen && read_codec->implementation->ianacode == 0) {
+		if (read_frame->packet && read_frame->packetlen && read_impl.ianacode == 0) {
 			ready = SEND_TYPE_RAW;
 		} else {
 			ready = SEND_TYPE_RTP;
@@ -152,7 +153,7 @@ SWITCH_STANDARD_APP(bcast_function)
 	}
 
 	if (ready == SEND_TYPE_RTP) {
-		if (read_codec->implementation->ianacode != 0) {
+		if (read_impl.ianacode != 0) {
 			if (switch_core_codec_init(&codec,
 									   "PCMU",
 									   NULL,
@@ -160,9 +161,7 @@ SWITCH_STANDARD_APP(bcast_function)
 									   20,
 									   1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 									   NULL, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
-				orig_codec = read_codec;
-				read_codec = &codec;
-				switch_core_session_set_read_codec(session, read_codec);
+				switch_core_session_set_read_codec(session, &codec);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Codec Activation Success\n");
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec Activation Fail\n");
@@ -187,9 +186,9 @@ SWITCH_STANDARD_APP(bcast_function)
 									 rtp_port,
 									 mcast_ip,
 									 mcast_port,
-									 read_codec->implementation->ianacode,
-									 read_codec->implementation->samples_per_packet,
-									 read_codec->implementation->microseconds_per_packet,
+									 read_impl.ianacode,
+									 read_impl.samples_per_packet,
+									 read_impl.microseconds_per_packet,
 									 (switch_rtp_flag_t) flags, "soft", &err, switch_core_session_get_pool(session));
 
 		if (!switch_rtp_ready(rtp_session)) {
@@ -242,8 +241,8 @@ SWITCH_STANDARD_APP(bcast_function)
 
   fail:
 
-	if (orig_codec) {
-		switch_core_session_set_read_codec(session, orig_codec);
+	switch_core_session_set_read_codec(session, NULL);
+	if (codec.implementation) {
 		switch_core_codec_destroy(&codec);
 	}
 

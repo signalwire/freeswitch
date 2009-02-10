@@ -78,9 +78,11 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 	JSObject *session_obj;
 	struct teletone_obj *tto = NULL;
 	struct js_session *jss = NULL;
-	switch_codec_t *read_codec;
 	switch_memory_pool_t *pool;
 	char *timer_name = NULL;
+    switch_codec_implementation_t read_impl = {0};
+
+
 
 	if (argc > 0) {
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
@@ -107,14 +109,14 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 		return JS_FALSE;
 	}
 
-	read_codec = switch_core_session_get_read_codec(jss->session);
+    switch_core_session_get_read_impl(jss->session, &read_impl);
 
 	if (switch_core_codec_init(&tto->codec,
 							   "L16",
 							   NULL,
-							   read_codec->implementation->actual_samples_per_second,
-							   read_codec->implementation->microseconds_per_packet / 1000,
-							   read_codec->implementation->number_of_channels,
+							   read_impl.actual_samples_per_second,
+							   read_impl.microseconds_per_packet / 1000,
+							   read_impl.number_of_channels,
 							   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated\n");
 	} else {
@@ -123,12 +125,12 @@ static JSBool teletone_construct(JSContext * cx, JSObject * obj, uintN argc, jsv
 	}
 
 	if (timer_name) {
-		unsigned int ms = read_codec->implementation->microseconds_per_packet / 1000;
+		unsigned int ms = read_impl.microseconds_per_packet / 1000;
 		if (switch_core_timer_init(&tto->timer_base,
 								   timer_name,
 								   ms,
-								   (read_codec->implementation->samples_per_second / 50) *
-								   read_codec->implementation->number_of_channels, pool) == SWITCH_STATUS_SUCCESS) {
+								   (read_impl.samples_per_second / 50) *
+								   read_impl.number_of_channels, pool) == SWITCH_STATUS_SUCCESS) {
 			tto->timer = &tto->timer_base;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Timer INIT Success %u\n", ms);
 		} else {

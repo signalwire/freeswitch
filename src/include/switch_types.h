@@ -149,6 +149,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_SIGNAL_BOND_VARIABLE "signal_bond"
 #define SWITCH_ORIGINATOR_VARIABLE "originator"
 #define SWITCH_ORIGINATOR_CODEC_VARIABLE "originator_codec"
+#define SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE "originator_video_codec"
 #define SWITCH_LOCAL_MEDIA_IP_VARIABLE "local_media_ip"
 #define SWITCH_LOCAL_MEDIA_PORT_VARIABLE "local_media_port"
 #define SWITCH_REMOTE_MEDIA_IP_VARIABLE "remote_media_ip"
