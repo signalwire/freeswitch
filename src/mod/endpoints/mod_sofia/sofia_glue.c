@@ -523,7 +523,8 @@ switch_status_t sofia_glue_ext_address_lookup(sofia_profile_t *profile, private_
 		char *p;
 
 		if (!sofia_test_pflag(profile, PFLAG_STUN_ENABLED)) {
-			*ip = switch_core_strdup(pool, tech_pvt->profile->rtpip);
+			*ip = switch_core_strdup(pool, profile->rtpip);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Trying to use STUN but its disabled!\n");
 			return SWITCH_STATUS_SUCCESS;
 		}
 		
