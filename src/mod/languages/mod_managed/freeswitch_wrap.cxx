@@ -1323,6 +1323,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_ORIGINATOR_CODEC_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "originator_video_codec";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_LOCAL_MEDIA_IP_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -17712,13 +17723,15 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_get_running_state(void * jarg1)
 }
 
 
-SWIGEXPORT unsigned char SWIGSTDCALL CSharp_switch_channel_ready(void * jarg1) {
-  unsigned char jresult ;
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_test_ready(void * jarg1, int jarg2) {
+  int jresult ;
   switch_channel_t *arg1 = (switch_channel_t *) 0 ;
-  uint8_t result;
+  switch_bool_t arg2 ;
+  int result;
   
   arg1 = (switch_channel_t *)jarg1; 
-  result = (uint8_t)switch_channel_ready(arg1);
+  arg2 = (switch_bool_t)jarg2; 
+  result = (int)switch_channel_test_ready(arg1,arg2);
   jresult = result; 
   return jresult;
 }
@@ -20025,7 +20038,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_audio_resampler_t(void * jarg1)
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_create(void * jarg1, int jarg2, void * jarg3, int jarg4, unsigned long jarg5, void * jarg6) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_perform_create(void * jarg1, int jarg2, void * jarg3, int jarg4, unsigned long jarg5, void * jarg6, char * jarg7, char * jarg8, int jarg9) {
   int jresult ;
   switch_audio_resampler_t **arg1 = (switch_audio_resampler_t **) 0 ;
   int arg2 ;
@@ -20033,6 +20046,9 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_create(void * jarg1, int jarg2
   int arg4 ;
   uint32_t arg5 ;
   switch_memory_pool_t *arg6 = (switch_memory_pool_t *) 0 ;
+  char *arg7 = (char *) 0 ;
+  char *arg8 = (char *) 0 ;
+  int arg9 ;
   switch_status_t result;
   switch_size_t *argp3 ;
   
@@ -20047,7 +20063,10 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_create(void * jarg1, int jarg2
   arg4 = (int)jarg4; 
   arg5 = (uint32_t)jarg5; 
   arg6 = (switch_memory_pool_t *)jarg6; 
-  result = (switch_status_t)switch_resample_create(arg1,arg2,arg3,arg4,arg5,arg6);
+  arg7 = (char *)jarg7; 
+  arg8 = (char *)jarg8; 
+  arg9 = (int)jarg9; 
+  result = (switch_status_t)switch_resample_perform_create(arg1,arg2,arg3,arg4,arg5,arg6,(char const *)arg7,(char const *)arg8,arg9);
   jresult = result; 
   return jresult;
 }
@@ -22074,6 +22093,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_set_user(void * jarg1, char * jarg2
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (char *)jarg2; 
   result = (switch_status_t)switch_ivr_set_user(arg1,(char const *)arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_sound_test(void * jarg1) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  result = (switch_status_t)switch_ivr_sound_test(arg1);
   jresult = result; 
   return jresult;
 }
