@@ -53,8 +53,9 @@
 
 #define resample_buffer(a, b, c) a > b ? ((a / 1000) / 2) * c : ((b / 1000) / 2) * c
 
-SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t **new_resampler,
-													   int from_rate, switch_size_t from_size, int to_rate, uint32_t to_size, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resampler_t **new_resampler,
+															   int from_rate, switch_size_t from_size, int to_rate, 
+															   uint32_t to_size, switch_memory_pool_t *pool, const char *file, const char *func, int line)
 {
 #ifdef DISABLE_RESAMPLE
 	*new_resampler = NULL;
@@ -75,8 +76,8 @@ SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t 
 	resampler->rfactor = (lfrom_rate / lto_rate);
 
 	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Activate Resampler %d->%d %f\n", resampler->from_rate, resampler->to_rate,
-					  resampler->factor);
+	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, 
+					  "Activate Resampler %d->%d %f\n", resampler->from_rate, resampler->to_rate, resampler->factor);
 	resampler->from_size = resample_buffer(to_rate, from_rate, (uint32_t) from_size);
 	resampler->from = (float *) switch_core_alloc(pool, resampler->from_size * sizeof(float));
 	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);;

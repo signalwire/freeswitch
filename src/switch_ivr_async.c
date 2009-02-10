@@ -556,7 +556,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 	switch_core_session_t *tsession;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_codec_t *read_codec = switch_core_session_get_read_codec(session);
 	int codec_initialized = 0;
 
 	if ((tsession = switch_core_session_locate(uuid))) {
@@ -566,11 +565,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		switch_frame_t *read_frame, write_frame = { 0 };
 		switch_codec_t codec = { 0 };
 		int16_t buf[SWITCH_RECOMMENDED_BUFFER_SIZE / 2];
-		switch_codec_t *tread_codec = switch_core_session_get_read_codec(tsession);
 		uint32_t tlen;
 		const char *macro_name = "eavesdrop_announce";
 		const char *id_name = NULL;
+		switch_codec_implementation_t tread_impl = {0}, read_impl = {0};
 
+		
 		if (!switch_channel_media_ready(channel)) {
 			goto end;
 		}
@@ -578,6 +578,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		if (!switch_channel_media_ready(tchannel)) {
 			goto end;
 		}
+
+		switch_core_session_get_read_impl(tsession, &tread_impl);
+		switch_core_session_get_read_impl(session, &read_impl);
 
 		if ((id_name = switch_channel_get_variable(tchannel, "eavesdrop_announce_id"))) {
 			const char *tmp = switch_channel_get_variable(tchannel, "eavesdrop_annnounce_macro");
@@ -622,16 +625,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 
 		ep = switch_core_session_alloc(session, sizeof(*ep));
 
-		tlen = tread_codec->implementation->decoded_bytes_per_packet;
+		tlen = tread_impl.decoded_bytes_per_packet;
 
 		switch_channel_pre_answer(channel);
 
 		if (switch_core_codec_init(&codec,
 								   "L16",
 								   NULL,
-								   tread_codec->implementation->actual_samples_per_second,
-								   tread_codec->implementation->microseconds_per_packet / 1000,
-								   tread_codec->implementation->number_of_channels,
+								   tread_impl.actual_samples_per_second,
+								   tread_impl.microseconds_per_packet / 1000,
+								   tread_impl.number_of_channels,
 								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE,
 								   NULL, switch_core_session_get_pool(session)) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot init codec\n");
@@ -645,7 +648,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 		write_frame.codec = &codec;
 		write_frame.data = buf;
 		write_frame.buflen = sizeof(buf);
-		write_frame.rate = read_codec->implementation->actual_samples_per_second;
+		write_frame.rate = codec.implementation->actual_samples_per_second;
 
 		ep->flags = flags;
 		switch_mutex_init(&ep->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(tsession));
@@ -731,7 +734,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 							switch_buffer_zero(ep->r_buffer);
 							switch_buffer_unlock(ep->r_buffer);
 						}
-
+						
 						if (ep->w_buffer) {
 							switch_buffer_lock(ep->w_buffer);
 							switch_buffer_zero(ep->w_buffer);
@@ -760,6 +763,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				while (switch_buffer_inuse(ep->buffer) >= len) {
 					write_frame.datalen = (uint32_t) switch_buffer_read(ep->buffer, buf, len);
 					write_frame.samples = write_frame.datalen / 2;
+
 					if ((status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0)) != SWITCH_STATUS_SUCCESS) {
 						break;
 					}

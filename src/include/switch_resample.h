@@ -85,8 +85,11 @@ SWITCH_BEGIN_EXTERN_C
   \param pool the memory pool to use for buffer allocation
   \return SWITCH_STATUS_SUCCESS if the handle was created
  */
-SWITCH_DECLARE(switch_status_t) switch_resample_create(switch_audio_resampler_t **new_resampler,
-													   int from_rate, switch_size_t from_size, int to_rate, uint32_t to_size, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resampler_t **new_resampler,
+															   int from_rate, switch_size_t from_size, int to_rate, 
+															   uint32_t to_size, switch_memory_pool_t *pool, const char *file, const char *func, int line);
+
+#define switch_resample_create(_n, _fr, _fs, _tr, _ts, _p) switch_resample_perform_create(_n, _fr, _fs, _tr, _ts, _p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief Destroy an existing resampler handle

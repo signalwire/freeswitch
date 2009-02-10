@@ -568,7 +568,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_frame_t *enc_frame = NULL, *write_frame = frame;
 	unsigned int flag = 0, need_codec = 0, perfect = 0, do_bugs = 0, do_write = 0, do_resample = 0, ptime_mismatch = 0, pass_cng = 0, resample = 0;
-	
+	int did_write_resample = 0;
+
 	switch_assert(session != NULL);
 	switch_assert(frame != NULL);
 
@@ -665,7 +666,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
 
 
-
+		
 
 		if (do_resample && status == SWITCH_STATUS_SUCCESS) {
 			status = SWITCH_STATUS_RESAMPLE;
@@ -675,6 +676,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		case SWITCH_STATUS_RESAMPLE:
 			resample++;
 			write_frame = &session->raw_write_frame;
+			write_frame->rate = frame->codec->implementation->actual_samples_per_second;
 			if (!session->write_resampler) {
 				switch_mutex_lock(session->resample_mutex);
 				status = switch_resample_create(&session->write_resampler,
@@ -729,7 +731,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		short *data = write_frame->data;
 
 		switch_mutex_lock(session->resample_mutex);
-
 		session->write_resampler->from_len = write_frame->datalen / 2;
 		switch_short_to_float(data, session->write_resampler->from, session->write_resampler->from_len);
 
@@ -742,12 +743,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		write_frame->samples = session->write_resampler->to_len;
 		write_frame->datalen = write_frame->samples * 2;
 		write_frame->rate = session->write_resampler->to_rate;
+		did_write_resample = 1;
 		switch_mutex_unlock(session->resample_mutex);
 	}
 
 	if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
 		switch_media_bug_t *bp, *dp, *last = NULL;
-
+		
 		switch_thread_rwlock_rdlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
 			switch_bool_t ok = SWITCH_TRUE;
@@ -813,7 +815,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 		
 		if (perfect) {
-
+			
 			if (write_frame->datalen < session->write_impl.decoded_bytes_per_packet) {
 				memset(write_frame->data, 255, session->write_impl.decoded_bytes_per_packet - write_frame->datalen);
 				write_frame->datalen = session->write_impl.decoded_bytes_per_packet;
@@ -890,7 +892,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 					goto error;
 				}
 			}
-
+			
 			if (!(switch_buffer_write(session->raw_write_buffer, write_frame->data, write_frame->datalen))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Write Buffer %u bytes Failed!\n", write_frame->datalen);
 				status = SWITCH_STATUS_MEMERR; goto error;
@@ -912,20 +914,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 						enc_frame = &session->raw_write_frame;
 						session->raw_write_frame.rate = session->write_impl.actual_samples_per_second;
 						session->enc_write_frame.datalen = session->enc_write_frame.buflen;
+						
 
+						
 						if (frame->codec && frame->codec->implementation) {
 							rate = frame->codec->implementation->actual_samples_per_second;
 						} else {
 							rate = session->write_impl.actual_samples_per_second;
 						}
-
+						
 						status = switch_core_codec_encode(session->write_codec,
 														  frame->codec,
 														  enc_frame->data,
 														  enc_frame->datalen,
 														  rate,
 														  session->enc_write_frame.data,
-														  &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
+														  &session->enc_write_frame.datalen, 
+														  &session->enc_write_frame.rate, &flag);
+
+						
 						switch (status) {
 						case SWITCH_STATUS_RESAMPLE:
 							resample++;
@@ -983,7 +990,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							goto error;
 						}
 
-						if (session->read_resampler) {
+						if (!did_write_resample && session->read_resampler) {
 							short *data = write_frame->data;
 							switch_mutex_lock(session->resample_mutex);
 
