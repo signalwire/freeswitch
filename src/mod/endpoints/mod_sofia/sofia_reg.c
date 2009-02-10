@@ -433,7 +433,7 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 
 	if (argc >= 3) {
 		if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_EXPIRE) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", argv[8]);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile-name", argv[10]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "call-id", argv[0]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "user", argv[1]);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "host", argv[2]);
