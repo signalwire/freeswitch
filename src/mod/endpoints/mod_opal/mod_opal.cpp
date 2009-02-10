@@ -965,6 +965,7 @@ switch_status_t FSConnection::write_frame(const OpalMediaType & mediaType, const
 FSMediaStream::FSMediaStream(FSConnection & conn, const OpalMediaFormat & mediaFormat, unsigned sessionID, bool isSource)
     : OpalMediaStream(conn, mediaFormat, sessionID, isSource)
     , m_fsSession(conn.GetSession())
+    , m_readRTP(0, 512)
     , m_callOnStart(true)
 {
     memset(&m_readFrame, 0, sizeof(m_readFrame));
@@ -1181,8 +1182,6 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
 
 switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_io_flag_t flags)
 {
-    RTP_DataFrame rtp;
-
     if (!switch_channel_ready(m_fsChannel)) {
         return SWITCH_STATUS_FALSE;
     }
@@ -1210,8 +1209,8 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
        better if we could engage whatever it is in opal that makes it generate the timestamp.
      */
 
+    RTP_DataFrame rtp(frame->datalen);
     rtp.SetPayloadType(mediaFormat.GetPayloadType());
-    rtp.SetPayloadSize(frame->datalen);
 
     m_timeStamp += frame->samples;
     rtp.SetTimestamp(m_timeStamp);
