@@ -9,7 +9,9 @@ struct helper {
 zap_status_t my_write_sample(int16_t *buf, zap_size_t buflen, void *user_data)
 {
 	struct helper *foo = (struct helper *) user_data;
-	write(foo->fd, buf, buflen * 2);
+        size_t len;
+	len = write(foo->fd, buf, buflen * 2);
+        if (!len) return ZAP_FAIL;
 	foo->wrote += buflen * 2;
 	return ZAP_SUCCESS;
 }
