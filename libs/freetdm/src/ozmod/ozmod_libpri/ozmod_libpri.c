@@ -443,7 +443,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		break;
 	case ZAP_CHANNEL_STATE_HANGUP:
 		{
-			if (call && !zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
+			if (call) {
 				pri_hangup(isdn_data->spri.pri, call, zchan->caller_data.hangup_cause);
 				pri_destroycall(isdn_data->spri.pri, call);
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_DOWN);
