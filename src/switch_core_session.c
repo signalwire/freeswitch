@@ -348,19 +348,21 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 			profile = switch_channel_get_caller_profile(channel);
 
+			vid_read_codec = switch_core_session_get_video_read_codec(session);
+
 			if (read_codec && read_codec->implementation) {
-				char tmp[80];
-				switch_codec2str(read_codec, tmp, sizeof(tmp));
+				char rc[80] = "", vrc[80] = "", tmp[160] = "";
+				
+				switch_codec2str(read_codec, rc, sizeof(rc));
+				if (vid_read_codec && vid_read_codec->implementation) {
+					vrc[0] = ',';
+					switch_codec2str(read_codec, vrc+1, sizeof(vrc) - 1);
+					switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE, vrc+1);
+				}
+
+				switch_snprintf(tmp, sizeof(tmp), "%s%s", rc, vrc);
 				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_CODEC_VARIABLE, tmp);
 			}
-			
-			vid_read_codec = switch_core_session_get_video_read_codec(session);
-			if (vid_read_codec && vid_read_codec->implementation) {
-				char tmp[80];
-				switch_codec2str(vid_read_codec, tmp, sizeof(tmp));
-				switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VIDEO_CODEC_VARIABLE, tmp);
-			}
-			
 
 			switch_channel_set_variable(peer_channel, SWITCH_ORIGINATOR_VARIABLE, switch_core_session_get_uuid(session));
 			switch_channel_set_variable(peer_channel, SWITCH_SIGNAL_BOND_VARIABLE, switch_core_session_get_uuid(session));
