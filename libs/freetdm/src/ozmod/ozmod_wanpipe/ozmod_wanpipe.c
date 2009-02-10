@@ -586,8 +586,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	case ZAP_COMMAND_OFFHOOK:
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = zchan->span->start_type == ZAP_ANALOG_START_KEWL ? 
-				WP_TDMAPI_EVENT_TXSIG_START : WP_TDMAPI_EVENT_TXSIG_KEWL;
+			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
 			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "OFFHOOK Failed");
@@ -611,8 +610,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	case ZAP_COMMAND_GENERATE_RING_ON:
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
+			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_START;
 			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
 				return ZAP_FAIL;
@@ -625,8 +623,7 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	case ZAP_COMMAND_GENERATE_RING_OFF:
 		{
 			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_DISABLE;
+			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
 			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
 				return ZAP_FAIL;
@@ -793,7 +790,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 			memset(&tdm_api, 0, sizeof(tdm_api));
 			if (zap_test_pflag(zchan, WP_RINGING)) {
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_DISABLE;
 				if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
@@ -803,7 +800,7 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 				zchan->ring_time = zap_current_time_in_ms() + wp_globals.ring_off_ms;
 			} else {
 				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING;
+				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_START;
 				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
 				if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
