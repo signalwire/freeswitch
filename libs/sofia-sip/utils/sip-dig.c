@@ -533,7 +533,7 @@ int dig_naptr(struct dig *dig,
       continue;
     if (!su_casematch(na->na_flags, "s") && !su_casematch(na->na_flags, "a"))
       continue;
-    if (dig->sips && !su_casematch(na->na_services, "SIPS+", 5))
+    if (dig->sips && !su_casenmatch(na->na_services, "SIPS+", 5))
       continue;
 
     tp = transport_by_service(dig->tports, na->na_services);
