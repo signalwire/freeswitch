@@ -371,9 +371,9 @@ static int session_timer_add_headers(struct session_timer *t,
 				     int initial,
 				     msg_t *msg, sip_t *sip);
 
-static void session_timer_negotiate(struct session_timer *t);
+static void session_timer_negotiate(struct session_timer *t, int uas);
 
-static void session_timer_set(nua_session_usage_t *ss);
+static void session_timer_set(nua_session_usage_t *ss, int uas);
 
 static int session_timer_check_restart(nua_client_request_t *cr,
 				       int status, char const *phrase,
@@ -849,6 +849,7 @@ static int nua_invite_client_response(nua_client_request_t *cr,
 {
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  int uas;
 
   if (ss == NULL || sip == NULL) {
     /* Xyzzy */
@@ -859,7 +860,7 @@ static int nua_invite_client_response(nua_client_request_t *cr,
     if (session_timer_is_supported(ss->ss_timer))
       session_timer_store(ss->ss_timer, sip);
 
-    session_timer_set(ss);
+    session_timer_set(ss, uas = 0);
   }
 
   return nua_session_client_response(cr, status, phrase, sip);
@@ -2505,6 +2506,7 @@ int process_ack(nua_server_request_t *sr,
   nua_session_usage_t *ss = nua_dialog_usage_private(sr->sr_usage);
   msg_t *msg = nta_incoming_getrequest_ackcancel(irq);
   char const *recv = NULL;
+  int uas;
 
   if (ss == NULL)
     return 0;
@@ -2568,7 +2570,7 @@ int process_ack(nua_server_request_t *sr,
 
   nua_stack_event(nh->nh_nua, nh, msg, nua_i_ack, SIP_200_OK, NULL);
   signal_call_state_change(nh, ss, 200, "OK", nua_callstate_ready);
-  session_timer_set(ss);
+  session_timer_set(ss, uas = 1);
 
   nua_server_request_destroy(sr);
 
@@ -3331,6 +3333,7 @@ static int nua_update_client_response(nua_client_request_t *cr,
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  int uas;
 
   assert(200 <= status);
 
@@ -3345,7 +3348,7 @@ static int nua_update_client_response(nua_client_request_t *cr,
 
       if (!sr && (!du->du_cr || !du->du_cr->cr_orq)) {
 	session_timer_store(ss->ss_timer, sip);
-	session_timer_set(ss);
+	session_timer_set(ss, uas = 0);
       }
     }
   }
@@ -3553,6 +3556,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 
     if (ss && session_timer_is_supported(ss->ss_timer)) {
       nua_server_request_t *sr0;
+      int uas;
 
       session_timer_add_headers(ss->ss_timer, 0, msg, sip);
 
@@ -3561,7 +3565,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 	  break;
 
       if (!sr0 && (!sr->sr_usage->du_cr || !sr->sr_usage->du_cr->cr_orq))
-	session_timer_set(ss);
+	session_timer_set(ss, uas = 1);
     }
   }
 
@@ -4354,7 +4358,8 @@ void session_timer_store(struct session_timer *t,
 static int
 session_timer_add_headers(struct session_timer *t,
 			  int initial,
-			  msg_t *msg, sip_t *sip)
+			  msg_t *msg,
+			  sip_t *sip)
 {
   unsigned long expires, min;
   sip_min_se_t min_se[1];
@@ -4376,7 +4381,7 @@ session_timer_add_headers(struct session_timer *t,
     min = t->remote.min_se;
 
   if (uas) {
-    session_timer_negotiate(t);
+    session_timer_negotiate(t, uas = 1);
 
     refresher = t->refresher;
     expires = t->interval;
@@ -4417,8 +4422,8 @@ session_timer_add_headers(struct session_timer *t,
   return 1;
 }
 
-static
-void session_timer_negotiate(struct session_timer *t)
+static void
+session_timer_negotiate(struct session_timer *t, int uas)
 {
   if (!t->local.supported)
     t->refresher = nua_no_refresher;
@@ -4428,8 +4433,11 @@ void session_timer_negotiate(struct session_timer *t)
     t->refresher = nua_local_refresher;
   else if (t->remote.refresher == nua_remote_refresher)
     t->refresher = nua_remote_refresher;
+  else if (uas)
+    /* UAS defaults UAC to refreshing */
+    t->refresher = nua_remote_refresher;
   else
-    /* Default to initiate refreshes */
+    /* UAC refreshes by itself */
     t->refresher = nua_local_refresher;
 
   t->interval = t->remote.expires;
@@ -4452,7 +4460,7 @@ void session_timer_negotiate(struct session_timer *t)
 }
 
 static void
-session_timer_set(nua_session_usage_t *ss)
+session_timer_set(nua_session_usage_t *ss, int uas)
 {
   nua_dialog_usage_t *du = nua_dialog_usage_public(ss);
   struct session_timer *t;
@@ -4462,7 +4470,7 @@ session_timer_set(nua_session_usage_t *ss)
 
   t = ss->ss_timer;
 
-  session_timer_negotiate(t);
+  session_timer_negotiate(t, uas);
 
   if (t->refresher == nua_local_refresher) {
     unsigned low = t->interval / 2, high = t->interval / 2;
