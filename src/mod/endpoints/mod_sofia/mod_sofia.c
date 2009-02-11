@@ -736,10 +736,16 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									int rtp_hold_timeout_sec = 0;
 								
 									tech_pvt->read_frame.datalen = 0;
-									tech_pvt->codec_ms = codec_ms;
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-													  "Changing codec ptime to %d. I bet you have a linksys/sipura =D\n", tech_pvt->codec_ms);
-
+													  "We were told to use ptime %d but what they meant to say was %d\n"
+													  "This issue has so far been identified to happen on the following broken platforms/devices:\n" 
+													  "Linksys/Sipura aka Cisco\n"
+													  "ShoreTel\n"
+													  "Sonus/L3\n"
+													  "We will try to fix it but some of the devices on this list are so broken who knows what will happen..\n"
+													  , 
+													  (int)tech_pvt->codec_ms, (int)codec_ms);
+									tech_pvt->codec_ms = codec_ms;
 									switch_core_session_lock_codec_write(session);
 									switch_core_session_lock_codec_read(session);
 
@@ -791,7 +797,8 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									}
 
 									tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
-
+									/* inform them of the codec they are actually sending */
+									sofia_glue_do_invite(session);
 									switch_core_session_unlock_codec_write(session);
 									switch_core_session_unlock_codec_read(session);
 
