@@ -128,7 +128,6 @@ static
 tls_t *tls_create(int type)
 {
   tls_t *tls = su_home_new(sizeof(*tls));
-  memset(((void *)tls) + sizeof(su_home_t), 0, sizeof(*tls) - sizeof(su_home_t));
 
   if (tls)
     tls->type = type == tls_master ? tls_master : tls_slave;
