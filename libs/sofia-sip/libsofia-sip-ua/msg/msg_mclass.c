@@ -47,6 +47,7 @@
 
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 
 #include "msg_internal.h"
 #include "sofia-sip/msg_parser.h"
@@ -351,7 +352,7 @@ msg_href_t const *msg_find_hclass(msg_mclass_t const *mc,
 
     /* long form */
     for (hr = NULL; (hc = mc->mc_hash[i].hr_class); i = (i + 1) % N) {
-      if (m == hc->hc_len && strncasecmp(s, hc->hc_name, m) == 0) {
+      if (m == hc->hc_len && su_casenmatch(s, hc->hc_name, m)) {
 	hr = &mc->mc_hash[i];
 	break;
       }

@@ -38,14 +38,8 @@
 
 #define _GNU_SOURCE 1
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <errno.h>
-#include <assert.h>
-
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 
 #include "msg_internal.h"
 #include "sofia-sip/msg.h"
@@ -54,15 +48,17 @@
 #include <sofia-sip/su_uniqueid.h>
 #include <sofia-sip/su_errno.h>
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <limits.h>
+#include <errno.h>
+#include <assert.h>
+
 #if !HAVE_MEMMEM
 void *memmem(const void *haystack, size_t haystacklen,
 	     const void *needle, size_t needlelen);
 #endif
-
-size_t memspn(const void *mem, size_t memlen,
-	      const void *accept, size_t acceptlen);
-size_t memcspn(const void *mem, size_t memlen,
-	       const void *reject, size_t rejectlen);
 
 /** Protocol version of MIME */
 char const msg_mime_version_1_0[] = "MIME/1.0";
@@ -154,7 +150,7 @@ char const msg_mime_version_1_0[] = "MIME/1.0";
  * argument to msg_multipart_parse() function:
  * @code
  *    if (sip->sip_content_type &&
- *        strncasecmp(sip->sip_content_type, "multipart/", 10) == 0) {
+ *        su_casenmatch(sip->sip_content_type, "multipart/", 10)) {
  *      msg_multipart_t *mp;
  *
  *      if (sip->sip_multipart)
@@ -316,7 +312,7 @@ msg_multipart_search_boundary(su_home_t *home, char const *p, size_t len)
   /* Boundary looks like LF -- string SP* [CR] LF */
   if (memcmp("--", p, 2) == 0) {
     /* We can be at boundary beginning, there is no CR LF */
-    m = 2 + memspn(p + 2, len - 2, bchars, bchars_len);
+    m = 2 + su_memspn(p + 2, len - 2, bchars, bchars_len);
     if (m + 2 >= len)
       return NULL;
     crlf = p[m] == '\r' ? 1 + (p[m + 1] == '\n') : (p[m] == '\n');
@@ -336,7 +332,7 @@ msg_multipart_search_boundary(su_home_t *home, char const *p, size_t len)
   /* Look for LF -- */
   for (;(p = memmem(p, end - p, LF "--", 3)); p += 3) {
     len = end - p;
-    m = 3 + memspn(p + 3, len - 3, bchars, bchars_len);
+    m = 3 + su_memspn(p + 3, len - 3, bchars, bchars_len);
     if (m + 2 >= len)
       return NULL;
     crlf = p[m] == '\r' ? 1 + (p[m + 1] == '\n') : (p[m] == '\n');
@@ -1146,7 +1142,7 @@ int msg_accept_update(msg_common_t *h,
   if (name == NULL) {
     ac->ac_q = NULL;
   }
-  else if (namelen == 1 && strncasecmp(name, "q", 1) == 0) {
+  else if (namelen == 1 && su_casenmatch(name, "q", 1)) {
     /* XXX - check for invalid value? */
     ac->ac_q = value;
   }
@@ -1233,7 +1229,7 @@ int msg_accept_any_update(msg_common_t *h,
   if (name == NULL) {
     aa->aa_q = NULL;
   }
-  else if (namelen == 1 && strncasecmp(name, "q", 1) == 0) {
+  else if (namelen == 1 && su_casenmatch(name, "q", 1)) {
     aa->aa_q = value;
   }
 
@@ -1523,10 +1519,10 @@ int msg_content_disposition_update(msg_common_t *h,
     cd->cd_handling = NULL, cd->cd_required = 0, cd->cd_optional = 0;
   }
   else if (namelen == strlen("handling") &&
-	   strncasecmp(name, "handling", namelen) == 0) {
+	   su_casenmatch(name, "handling", namelen)) {
     cd->cd_handling = value;
-    cd->cd_required = strcasecmp(value, "required") == 0;
-    cd->cd_optional = strcasecmp(value, "optional") == 0;
+    cd->cd_required = su_casematch(value, "required");
+    cd->cd_optional = su_casematch(value, "optional");
   }
 
   return 0;

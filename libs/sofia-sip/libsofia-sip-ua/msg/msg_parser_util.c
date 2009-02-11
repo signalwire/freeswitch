@@ -47,6 +47,7 @@
 
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 
 #include "msg_internal.h"
 #include "sofia-sip/msg_parser.h"
@@ -871,7 +872,7 @@ int msg_header_param_modify(su_home_t *home, msg_common_t *h,
 	}
       }
       else {
-	if (strncasecmp(maybe, param, plen) == 0 &&
+	if (su_casenmatch(maybe, param, plen) &&
 	    (maybe[plen] == '=' || maybe[plen] == 0))
 	  break;
       }
@@ -1212,7 +1213,7 @@ msg_param_t msg_params_find(msg_param_t const params[], msg_param_t token)
 
     for (i = 0; params[i]; i++) {
       msg_param_t param = params[i];
-      if (strncasecmp(param, token, n) == 0) {
+      if (su_casenmatch(param, token, n)) {
 	if (param[n] == '=')
 	  return param + n + 1;
         else if (param[n] == 0)
@@ -1246,7 +1247,7 @@ msg_param_t *msg_params_find_slot(msg_param_t params[], msg_param_t token)
 
     for (i = 0; params[i]; i++) {
       msg_param_t param = params[i];
-      if (strncasecmp(param, token, n) == 0) {
+      if (su_casenmatch(param, token, n)) {
 	if (param[n] == '=')
 	  return params + i;
         else if (param[n] == 0 || token[n - 1] == '=')
@@ -1295,7 +1296,7 @@ int msg_params_replace(su_home_t *home,
     for (i = 0; params[i]; i++) {
       msg_param_t maybe = params[i];
 
-      if (!(strncasecmp(maybe, param, n))) {
+      if (su_casenmatch(maybe, param, n)) {
 	if (maybe[n] == '=' || maybe[n] == 0) {
 	  params[i] = param;
 	  return 1;
@@ -1327,7 +1328,7 @@ int msg_params_remove(msg_param_t *params, msg_param_t param)
   for (i = 0; params[i]; i++) {
     msg_param_t maybe = params[i];
 
-    if (strncasecmp(maybe, param, n) == 0) {
+    if (su_casenmatch(maybe, param, n)) {
       if (maybe[n] == '=' || maybe[n] == 0) {
 	/* Remove */
 	do {
@@ -1415,10 +1416,10 @@ int msg_param_prune(msg_param_t const d[], msg_param_t p, unsigned prune)
 
   for (i = 0; d[i]; i++) {
     if ((prune == 1 &&
-	 strncasecmp(p, d[i], nlen) == 0
+	 su_casenmatch(p, d[i], nlen)
 	 && (d[i][nlen] == '=' || d[i][nlen] == '\0'))
 	||
-	(prune == 2 && strcasecmp(p, d[i]) == 0)
+	(prune == 2 && su_casematch(p, d[i]))
 	||
 	(prune == 3 && strcmp(p, d[i]) == 0))
       return 1;
@@ -1649,7 +1650,7 @@ int msg_params_cmp(char const * const a[], char const * const b[])
     if (*a == NULL || *b == NULL)
       return (*a != NULL) - (*b != NULL);
     nlen = strcspn(*a, "=");
-    if ((c = strncasecmp(*a, *b, nlen)))
+    if ((c = su_strncasecmp(*a, *b, nlen)))
       return c;
     if ((c = strcmp(*a + nlen, *b + nlen)))
       return c;

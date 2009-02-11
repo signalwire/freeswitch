@@ -42,6 +42,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/msg_date.h>
 #include <sofia-sip/bnf.h>
 
@@ -238,7 +239,7 @@ issize_t msg_date_d(char const **ss, msg_time_t *date)
     if (time_d(&s, &hour, &min, &sec) < 0) return -1;
     if (*s) {
       tz = s; skip_token(&s); skip_lws(&s);
-      if (strncasecmp(tz, "GMT", 3) && strncasecmp(tz, "UCT", 3))
+      if (!su_casenmatch(tz, "GMT", 3) && !su_casenmatch(tz, "UCT", 3))
 	return -1;
     }
   }
