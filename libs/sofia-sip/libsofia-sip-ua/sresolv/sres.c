@@ -1536,7 +1536,8 @@ char const *sres_record_type(int type, char buffer[8])
 }
 
 /** Convert class to its name. */
-char const *sres_record_class(int rclass, char buffer[8])
+static char const *
+sres_record_class(int rclass, char buffer[8])
 {
   switch (rclass) {
   case 1: return "IN";
