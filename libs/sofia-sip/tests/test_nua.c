@@ -100,7 +100,7 @@ static char const options_usage[] =
   "   -k                do not exit after first error\n"
   ;
 
-void usage(int exitcode)
+static void usage(int exitcode)
 {
   fprintf(stderr, "usage: %s OPTIONS\n   where OPTIONS are\n%s",
 	    name, options_usage);
