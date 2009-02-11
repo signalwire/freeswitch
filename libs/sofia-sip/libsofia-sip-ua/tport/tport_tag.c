@@ -291,6 +291,8 @@ tag_typedef_t tptag_tls_version = UINTTAG_TYPEDEF(tls_version);
  *
  * Use with tport_tbind(), nua_create(), nta_agent_create(),
  * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
+ *
+ * @NEW_1_12_10.
  */
 tag_typedef_t tptag_tls_verify_peer = UINTTAG_TYPEDEF(tls_verify_peer);
 
