@@ -186,6 +186,7 @@ START_TEST(SIP_CC_OE_CE_V_019)
 {
   nua_handle_t *nh;
   struct message *invite;
+  struct message *bye;
 
   s2_case("6.1.1", "SIP_CC_OE_CE_V_019",
           "Ensure that the IUT when an INVITE client transaction "
@@ -209,9 +210,12 @@ START_TEST(SIP_CC_OE_CE_V_019)
   respond_with_sdp(invite, d2, SIP_200_OK, TAG_END());
   s2_free_message(invite);
 
-  fail_unless(s2_check_event(nua_i_fork, 200));
-  fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  bye = s2_wait_for_request(SIP_METHOD_BYE);
+  fail_if(!bye);
+  s2_respond_to(bye, d2, SIP_200_OK, TAG_END());
+  s2_free_message(bye);
 
   bye_by_nua(d1, nh, TAG_END());
 
@@ -219,18 +223,64 @@ START_TEST(SIP_CC_OE_CE_V_019)
 }
 END_TEST
 
-
 START_TEST(SIP_CC_OE_CE_TI_008)
 {
   nua_handle_t *nh;
   struct message *invite;
 
   s2_case("6.1.2", "SIP_CC_OE_CE_TI_008",
-          "If an unreliable transport is used, ensure that the IUT, "
-          "when an INVITE client transaction is in the Completed state, "
-          "on receipt of final responses that matches the transaction, "
-          "still answer with an ACK request until timer D set to at "
-          "least 32 second expires.");
+          "If an unreliable transport is used, ensure that "
+          "the IUT, when an INVITE client transaction is in "
+          "the Completed state, on receipt of final responses "
+          "that matches the transaction, still answer with an "
+          "ACK request until timer D set to at least 32 second expires.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+
+  invite = invite_sent_by_nua(nh, TAG_END());
+
+  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 404));
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  s2_fast_forward(5);
+
+  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  s2_fast_forward(5);
+
+  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  s2_fast_forward(21);
+
+  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  s2_fast_forward(1);
+
+  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  s2_free_message(invite);
+  fail_if(s2_check_request_timeout(SIP_METHOD_ACK, 500));
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+START_TEST(SIP_CC_OE_CE_TI_011_012)
+{
+  nua_handle_t *nh;
+  struct message *invite;
+
+  s2_case("6.1.2", "SIP_CC_OE_CE_TI_011_012",
+          "Ensure that the IUT, when an INVITE client transaction "
+          "has been in the Terminated state, on receipt of a "
+          "retransmitted Success (200 OK) responses sends an ACK "
+          "request until 64*T1 duration expires, after this, "
+          "on receipt of a retransmitted Success (200 OK) "
+          "responses does not send an ACK request.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
 
@@ -245,12 +295,18 @@ START_TEST(SIP_CC_OE_CE_TI_008)
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
   s2_fast_forward(5);
-
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(32);
+  s2_fast_forward(5);
+  respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
 
+  s2_fast_forward(21);
+  respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  s2_fast_forward(1);
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   s2_free_message(invite);
   fail_if(s2_check_request_timeout(SIP_METHOD_ACK, 500));
@@ -266,8 +322,9 @@ TCase *sip_cc_oe_ce_tcase(void)
   TCase *tc = tcase_create("6.1 - ETSI CC OE - Call Establishment");
   tcase_add_checked_fixture(tc, etsi_setup, etsi_teardown);
   {
+    tcase_add_test(tc, SIP_CC_OE_CE_V_019);
     tcase_add_test(tc, SIP_CC_OE_CE_TI_008);
-    if (XXX) tcase_add_test(tc, SIP_CC_OE_CE_V_019);
+    tcase_add_test(tc, SIP_CC_OE_CE_TI_011_012);
   }
   return tc;
 }
