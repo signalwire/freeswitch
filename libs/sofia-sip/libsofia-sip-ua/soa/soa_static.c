@@ -84,6 +84,11 @@ typedef struct soa_static_session
   /** Mapping from session SDP m= lines to user SDP m= lines */
   int *sss_s2u;
 
+  /** State kept from SDP before current offer */
+  struct {
+    int  *u2s, *s2u;
+  } sss_previous;
+
   /** Our latest offer or answer */
   sdp_session_t *sss_latest;
 }
@@ -886,6 +891,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
   return 0;
 }
 
+static
 int *u2s_alloc(su_home_t *home, int const *u2s)
 {
   if (u2s) {
@@ -1318,6 +1324,8 @@ static int offer_answer_step(soa_session_t *ss,
   }
 
   soa_description_free(ss, ss->ss_previous);
+  su_free(ss->ss_home, sss->sss_previous.u2s), sss->sss_previous.u2s = NULL;
+  su_free(ss->ss_home, sss->sss_previous.s2u), sss->sss_previous.s2u = NULL;
 
   if (u2s) {
     u2s = u2s_alloc(ss->ss_home, u2s);
@@ -1358,10 +1366,18 @@ static int offer_answer_step(soa_session_t *ss,
 
     if (action == generate_offer) {
       /* Keep a copy of previous session state */
+      int *previous_u2s = u2s_alloc(ss->ss_home, sss->sss_u2s);
+      int *previous_s2u = u2s_alloc(ss->ss_home, sss->sss_s2u);
+
+      if ((sss->sss_u2s && !previous_u2s) || (sss->sss_s2u && !previous_s2u))
+	goto internal_error;
+
       *ss->ss_previous = *ss->ss_local;
       memset(ss->ss_local, 0, (sizeof *ss->ss_local));
       ss->ss_previous_user_version = ss->ss_local_user_version;
       ss->ss_previous_remote_version = ss->ss_local_remote_version;
+      sss->sss_previous.u2s = previous_u2s;
+      sss->sss_previous.s2u = previous_s2u;
     }
 
     SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
@@ -1374,6 +1390,8 @@ static int offer_answer_step(soa_session_t *ss,
 	memset(ss->ss_previous, 0, (sizeof *ss->ss_previous));
 	ss->ss_previous_user_version = 0;
 	ss->ss_previous_remote_version = 0;
+	su_free(ss->ss_home, sss->sss_previous.u2s), sss->sss_previous.u2s = NULL;
+	su_free(ss->ss_home, sss->sss_previous.s2u), sss->sss_previous.s2u = NULL;
       }
 
       su_free(ss->ss_home, u2s), su_free(ss->ss_home, s2u);
@@ -1467,21 +1485,26 @@ static int soa_static_process_answer(soa_session_t *ss,
 static int soa_static_process_reject(soa_session_t *ss,
 				     soa_callback_f *completed)
 {
+  soa_static_session_t *sss = (soa_static_session_t *)ss;
   struct soa_description d[1];
 
-  if (ss->ss_previous_user_version) {
-    *d = *ss->ss_local;
-    *ss->ss_local = *ss->ss_previous;
-    ss->ss_local_user_version = ss->ss_previous_user_version;
-    ss->ss_local_remote_version = ss->ss_previous_remote_version;
+  soa_base_process_reject(ss, NULL);
 
-    memset(ss->ss_previous, 0, (sizeof *ss->ss_previous));
-    soa_description_free(ss, d);
-    ss->ss_previous_user_version = 0;
-    ss->ss_previous_remote_version = 0;
-  }
+  *d = *ss->ss_local;
+  *ss->ss_local = *ss->ss_previous;
+  ss->ss_local_user_version = ss->ss_previous_user_version;
+  ss->ss_local_remote_version = ss->ss_previous_remote_version;
 
-  return soa_base_process_reject(ss, NULL);
+  memset(ss->ss_previous, 0, (sizeof *ss->ss_previous));
+  soa_description_free(ss, d);
+  su_free(ss->ss_home, sss->sss_previous.u2s), sss->sss_previous.u2s = NULL;
+  su_free(ss->ss_home, sss->sss_previous.s2u), sss->sss_previous.s2u = NULL;
+  ss->ss_previous_user_version = 0;
+  ss->ss_previous_remote_version = 0;
+
+  su_free(ss->ss_home, sss->sss_latest), sss->sss_latest = NULL;
+
+  return 0;
 }
 
 static int soa_static_activate(soa_session_t *ss, char const *option)
@@ -1496,6 +1519,19 @@ static int soa_static_deactivate(soa_session_t *ss, char const *option)
 
 static void soa_static_terminate(soa_session_t *ss, char const *option)
 {
-  soa_description_free(ss, ss->ss_user);
+  soa_static_session_t *sss = (soa_static_session_t *)ss;
+
+  soa_description_free(ss, ss->ss_local);
+  su_free(ss->ss_home, sss->sss_u2s), sss->sss_u2s = NULL;
+  su_free(ss->ss_home, sss->sss_s2u), sss->sss_s2u = NULL;
+
+  soa_description_free(ss, ss->ss_previous);
+  ss->ss_previous_user_version = 0;
+  ss->ss_previous_remote_version = 0;
+  su_free(ss->ss_home, sss->sss_previous.u2s), sss->sss_previous.u2s = NULL;
+  su_free(ss->ss_home, sss->sss_previous.s2u), sss->sss_previous.s2u = NULL;
+
+  su_free(ss->ss_home, sss->sss_latest), sss->sss_latest = NULL;
+
   soa_base_terminate(ss, option);
 }
