@@ -241,7 +241,7 @@ static switch_bool_t test_lcr_sql(const char *sql)
 {
 	char * tsql;
 	tsql = switch_mprintf(sql, "5555551212");
-	switch_bool_t retval;
+	switch_bool_t retval = SWITCH_FALSE;
 	
 	if (globals.odbc_dsn) {
 		if(switch_odbc_handle_exec(globals.master_odbc, tsql, NULL)
