@@ -94,7 +94,9 @@ static ssize_t tport_tls_send(tport_t const *self, msg_t *msg,
 static int tport_tls_accept(tport_primary_t *pri, int events);
 static tport_t *tport_tls_connect(tport_primary_t *pri, su_addrinfo_t *ai,
                                   tp_name_t const *tpn);
+#if notyet
 static void tport_tls_deliver(tport_t *self, msg_t *msg, su_time_t now);
+#endif
 
 tport_vtable_t const tport_tls_vtable =
 {
