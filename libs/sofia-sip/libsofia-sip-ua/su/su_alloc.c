@@ -842,6 +842,8 @@ void su_free(su_home_t *home, void *data)
  *
  * @param home   pointer to a memory home
  * @param data   pointer to a memory area possibly allocated though home
+ *
+ * @NEW_1_12_9
  */
 int su_home_check_alloc(su_home_t const *home, void const *data)
 {
@@ -1020,13 +1022,13 @@ void _su_home_deinit(su_home_t *home)
     home->suh_blocks = NULL;
 
     if (home->suh_lock) {
-		void *suh_lock = home->suh_lock;
+      void *suh_lock = home->suh_lock;
 
-		home->suh_lock = NULL;
+      home->suh_lock = NULL;
 
-		/* Unlock, or risk assert() or leak handles on Windows */
-		_su_home_unlocker(suh_lock);
-		_su_home_destroy_mutexes(suh_lock);
+      /* Unlock, or risk assert() or leak handles on Windows */
+      _su_home_unlocker(suh_lock);
+      _su_home_destroy_mutexes(suh_lock);
     }
   }
 }
