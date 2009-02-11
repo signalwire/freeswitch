@@ -1663,7 +1663,7 @@ TCase *reinvite_tcase(void)
 START_TEST(call_3_1_1)
 {
   nua_handle_t *nh;
-  struct message *invite;
+  struct message *invite, *ack;
 
   s2_case("3.1.1", "Call failure", "Call fails with 403 response");
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local),
@@ -1676,10 +1676,15 @@ START_TEST(call_3_1_1)
 
   invite = s2_wait_for_request(SIP_METHOD_INVITE);
   fail_if(!invite);
-  s2_respond_to(invite, NULL, SIP_403_FORBIDDEN, TAG_END());
+  s2_respond_to(invite, NULL, SIP_403_FORBIDDEN,
+		SIPTAG_TO_STR("UAS Changed <sip:To@Header.field.invalid>"),
+		TAG_END());
   s2_free_message(invite);
 
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  ack = s2_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  fail_if(strcmp(ack->sip->sip_to->a_display, "UAS Changed"));
+  s2_free_message(ack);
   fail_unless(s2_check_event(nua_r_invite, 403));
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
