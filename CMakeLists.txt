@@ -1,5 +1,5 @@
 # FREESWITCH CMAKE BUILD
-# SHANE BURRELL 2008 (supjigator)
+# Created by SHANE BURRELL 2009 (supjigator)
 
 PROJECT (freeswitch)
 
@@ -70,6 +70,42 @@ check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(pthread.h HAVE_PTHREAD_H)
 
 
+MESSAGE( STATUS "-------------------------------------------------------------------------------" )
+MESSAGE( STATUS )
+MESSAGE( STATUS "-------------------------------------------------------------------------------" )
+MESSAGE( STATUS )
+# the complete system name, e.g. "Linux-2.4.22", "FreeBSD-5.4-RELEASE" or "Windows 5.1"
+MESSAGE( STATUS "CMAKE_SYSTEM: " ${CMAKE_SYSTEM} )
+# the short system name, e.g. "Linux", "FreeBSD" or "Windows"
+MESSAGE( STATUS "CMAKE_SYSTEM_NAME: " ${CMAKE_SYSTEM_NAME} )
+# only the version part of CMAKE_SYSTEM
+MESSAGE( STATUS "CMAKE_SYSTEM_VERSION: " ${CMAKE_SYSTEM_VERSION} )
+# the processor name (e.g. "Intel(R) Pentium(R) M processor 2.00GHz")
+MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR} )
+# is TRUE on all UNIX-like OS's, including Apple OS X and CygWin
+MESSAGE( STATUS "UNIX: " ${UNIX} )
+# is TRUE on Windows, including CygWin
+MESSAGE( STATUS "WIN32: " ${WIN32} )
+# is TRUE on Apple OS X
+MESSAGE( STATUS "APPLE: " ${APPLE} )
+# is TRUE when using the MinGW compiler in Windows
+MESSAGE( STATUS "MINGW: " ${MINGW} )
+# is TRUE on Windows when using the CygWin version of cmake
+MESSAGE( STATUS "CYGWIN: " ${CYGWIN} )
+# is TRUE on Windows when using a Borland compiler
+MESSAGE( STATUS "BORLAND: " ${BORLAND} )
+# Microsoft compiler
+MESSAGE( STATUS "MSVC: " ${MSVC} )
+MESSAGE( STATUS "MSVC_IDE: " ${MSVC_IDE} )
+MESSAGE( STATUS "MSVC60: " ${MSVC60} )
+MESSAGE( STATUS "MSVC70: " ${MSVC70} )
+MESSAGE( STATUS "MSVC71: " ${MSVC71} )
+MESSAGE( STATUS "MSVC80: " ${MSVC80} )
+MESSAGE( STATUS "CMAKE_COMPILER_2005: " ${CMAKE_COMPILER_2005} )
+MESSAGE( STATUS "-------------------------------------------------------------------------------" )
+MESSAGE( STATUS )
+
+# DO THREADS
 FIND_PACKAGE(Threads)
 
 
@@ -92,9 +128,9 @@ LINK_LIBRARIES (${SNDFILE_LIBRARY})
 INCLUDE_DIRECTORIES (${SNDFILE_INCLUDE_DIR})
 
 # DO LIBEDIT
-FIND_PACKAGE (Libedit)
-LINK_LIBRARIES (${PATH_LIB_EDIT})
-INCLUDE_DIRECTORIES (${PATH_INC_EDIT})
+#FIND_PACKAGE (Libedit)
+#LINK_LIBRARIES (${PATH_LIB_EDIT})
+#INCLUDE_DIRECTORIES (${PATH_INC_EDIT})
 
 # DO SRTP
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/srtp/.libs/libcryptomath.a)
@@ -130,13 +166,13 @@ ADD_SUBDIRECTORY(libs/libteletone/)
 #ADD_SUBDIRECTORY(libs/sqlite/)
 ADD_SUBDIRECTORY(libs/pcre/)
 ADD_SUBDIRECTORY(libs/stfu/)
-#ADD_SUBDIRECTORY(libs/libedit/)
+ADD_SUBDIRECTORY(libs/libedit/)
 ADD_SUBDIRECTORY(libs/srtp/)
 
 SET ( freeswitch_SRCS src/switch.c src/include/switch.h)
 ADD_EXECUTABLE(freeswitch ${freeswitch_SRCS})
 
 
-TARGET_LINK_LIBRARIES(freeswitch teletone pcre resample switch_ivr switch_ivr_async switch_core switch_core_asr switch_channel switch_core_io switch_apr switch_utils switch_xml switch_buffer switch_caller switch_buffer switch_config switch_console switch_core_codec switch_core_db switch_core_directory switch_core_event_hook switch_core_file switch_core_hash switch_core_media_bug switch_core_memory switch_core_port_allocator switch_core_rwlock switch_core_session switch_core_speech switch_core_sqldb switch_core_state_machine switch_core_timer switch_dso switch_event switch_ivr_async switch_ivr_bridge switch_ivr_menu switch_ivr_originate switch_ivr_play_say switch_loadable_module switch_log switch_odbc switch_pcm switch_regex switch_resample switch_rtp switch_scheduler switch_stun switch_swig switch_time stfu ${optionalLibs})
+TARGET_LINK_LIBRARIES(freeswitch libedit teletone pcre resample switch_ivr switch_ivr_async switch_core switch_core_asr switch_channel switch_core_io switch_apr switch_utils switch_xml switch_buffer switch_caller switch_buffer switch_config switch_console switch_core_codec switch_core_db switch_core_directory switch_core_event_hook switch_core_file switch_core_hash switch_core_media_bug switch_core_memory switch_core_port_allocator switch_core_rwlock switch_core_session switch_core_speech switch_core_sqldb switch_core_state_machine switch_core_timer switch_dso switch_event switch_ivr_async switch_ivr_bridge switch_ivr_menu switch_ivr_originate switch_ivr_play_say switch_loadable_module switch_log switch_odbc switch_pcm switch_regex switch_resample switch_rtp switch_scheduler switch_stun switch_swig switch_time stfu ${optionalLibs})
 
 
