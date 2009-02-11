@@ -607,7 +607,11 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	memset(&zchan->caller_data, 0, sizeof(zchan->caller_data));
 	
 	zap_set_string(zchan->caller_data.cid_num.digits, (char *)pevent->ring.callingnum);
-	zap_set_string(zchan->caller_data.cid_name, (char *)pevent->ring.callingnum);
+	if (!zap_strlen_zero((char *)pevent->ring.callingname)) {
+		zap_set_string(zchan->caller_data.cid_name, (char *)pevent->ring.callingname);
+	} else {
+		zap_set_string(zchan->caller_data.cid_name, (char *)pevent->ring.callingnum);
+	}
 	zap_set_string(zchan->caller_data.ani.digits, (char *)pevent->ring.callingani);
 	zap_set_string(zchan->caller_data.dnis.digits, (char *)pevent->ring.callednum);
 	
