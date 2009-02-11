@@ -168,6 +168,10 @@ test -r $t/named.pid || {
     echo $0: cannot start named >&2 ;
     if fgrep -i -e SELINUX=enforcing /etc/selinux/config >/dev/null 2>&1 ; then
 	echo $0: perhaps you have to disable SELinux protection for named
+    elif test -d /etc/apparmor.d ; then
+	echo $0: perhaps you have to disable apparmor protection for named
+    else
+	echo $0: perhaps you have to disable apparmor or SELinux
     fi
     exit 77
 }
