@@ -102,12 +102,12 @@ typedef struct {
 	uint8_t progress;
 	uint8_t return_ring_ready;
 	uint8_t monitor_early_media_ring;
-	uint8_t monitor_early_media_ring_total;
-	uint8_t monitor_early_media_ring_count;
 	uint8_t monitor_early_media_fail;
 	uint8_t gen_ringback;
 	uint8_t ignore_early_media;
 	uint8_t ignore_ring_ready;
+	int monitor_early_media_ring_count;
+	int monitor_early_media_ring_total;
 } originate_global_t;
 
 
@@ -302,9 +302,11 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 	uint8_t rval = 0;
 	switch_channel_t *caller_channel = NULL;
 	int pindex = -1;
+	char bug_key[256] = "";
+
 	oglobals->hups = 0;
 	oglobals->idx = IDX_NADA;
-	char bug_key[256] = "";
+
 
 	if (oglobals->session) {
 		caller_channel = switch_core_session_get_channel(oglobals->session);
