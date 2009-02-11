@@ -320,6 +320,11 @@ int host_test(void)
   TEST(host_has_domain_invalid("valid."), 0);
   TEST(host_has_domain_invalid("1-.invalid."), 0);
 
+  TEST(host_is_domain("127.0.0.1"), 0);
+  TEST(host_is_domain("3.com"), 1);
+  TEST(host_is_domain("127.0.0.com"), 1);
+  TEST(host_is_domain("actra.0.1"), 0);
+
   /* Invalid IP4 address (extra leading zeros) */
   TEST_1(!host_cmp("127.0.0.1", "127.0.0.01"));
   /* Invalid reference (extra leading zeros) */
