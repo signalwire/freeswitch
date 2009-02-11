@@ -526,7 +526,7 @@ AC_SEARCH_LIBS(getaddrinfo, xnet socket nsl)
 
 AC_FUNC_ALLOCA
 
-AC_CHECK_FUNCS([gettimeofday strerror random initstate tcsetattr flock \
+AC_CHECK_FUNCS([gettimeofday strerror random tcsetattr flock \
                 socketpair gethostname gethostbyname getipnodebyname \
                 poll epoll_create kqueue select if_nameindex \
 		signal alarm \
