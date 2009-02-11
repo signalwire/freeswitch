@@ -25,6 +25,9 @@ API/ABI changes and versioning
 
 libsofia-sip-ua:
 - **template**: Added foobar() function (sofia-sip/foobar.h).
+- The mp_len type was changed from usize_t to unsigned.
+  The change is binary-incompatible on 64-bit platforms when compiled with
+  the configure opetion --disable-size-compat
 - This release is ABI/API compatible with applications linked against
   any 1.12.x release. However, applications built against this release won't
   work against an older library. The ABI has been tested with the nua module
