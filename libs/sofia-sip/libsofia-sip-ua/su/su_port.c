@@ -139,7 +139,7 @@ void su_port_set_system_preferences(char const *name)
   }
 #endif
 #if HAVE_WIN32
-  else if (strcasecmp(name, "wsaevent") == 0) {
+  else if (su_casematch(name, "wsaevent")) {
     create = su_wsaevent_port_create;
     start = su_wsaevent_clone_start;
   }

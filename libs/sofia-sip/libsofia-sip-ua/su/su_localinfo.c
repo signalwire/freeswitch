@@ -41,6 +41,7 @@
 
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_localinfo.h>
+#include <sofia-sip/su_string.h>
 #include "su_module_debug.h"
 
 #include <stdio.h>
@@ -1600,7 +1601,7 @@ int li_name(su_localinfo_t const *hints,
 	return ELI_RESOLVER;
     }
 
-    if (hints->li_canonname && strcasecmp(name, hints->li_canonname))
+    if (hints->li_canonname && !su_casematch(name, hints->li_canonname))
       return 1;
 
     if (!(flags & LI_CANONNAME))

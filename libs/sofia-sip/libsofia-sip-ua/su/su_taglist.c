@@ -57,6 +57,7 @@
 #include <sofia-sip/su_tag_class.h>
 #include <sofia-sip/su_tag_inline.h>
 #include <sofia-sip/su_tagarg.h>
+#include <sofia-sip/su_string.h>
 
 #ifndef HAVE_STRTOULL
 unsigned longlong strtoull(const char *, char **, int);
@@ -1399,10 +1400,10 @@ int t_bool_scan(tag_type_t tt, su_home_t *home,
   int retval;
   int value = 0;
 
-  if (strncasecmp(s, "true", 4) == 0
+  if (su_casenmatch(s, "true", 4)
       && strlen(s + 4) == strspn(s + 4, " \t\r\n")) {
     value = 1, retval = 1;
-  } else if (strncasecmp(s, "false", 5) == 0
+  } else if (su_casenmatch(s, "false", 5)
 	     && strlen(s + 5) == strspn(s + 5, " \t\r\n")) {
     value = 0, retval = 1;
   } else {
