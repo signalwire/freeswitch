@@ -4134,7 +4134,7 @@ nta_leg_t *nta_leg_tcreate(nta_agent_t *agent,
     leg->leg_remote = sip_from_make(home, to_str);
 
   if (route && route != NONE)
-    leg->leg_route = sip_route_dup(home, route);
+    leg->leg_route = sip_route_dup(home, route), leg->leg_route_set = 1;
 
   if (contact && contact != NONE) {
     sip_contact_t m[1];
