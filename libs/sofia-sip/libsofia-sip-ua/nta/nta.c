@@ -167,8 +167,8 @@ struct nta_agent_s
   url_t   *sa_default_proxy;	/**< Default outbound proxy */
   unsigned sa_bad_req_mask;     /**< Request error mask */
   unsigned sa_bad_resp_mask;	/**< Response error mask */
-  size_t   sa_maxsize;		/**< Maximum size of incoming messages */
-  size_t   sa_max_proceeding;	/**< Maximum size of proceeding queue */
+  usize_t  sa_maxsize;		/**< Maximum size of incoming messages */
+  usize_t  sa_max_proceeding;	/**< Maximum size of proceeding queue */
 
   unsigned sa_udp_mtu;		/**< Maximum size of outgoing UDP requests */
 
@@ -1593,7 +1593,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   if (maxsize > UINT32_MAX) maxsize = UINT32_MAX;
   agent->sa_maxsize = maxsize;
 
-  if (max_proceeding == 0) max_proceeding = UINT32_MAX;
+  if (max_proceeding == 0) max_proceeding = USIZE_MAX;
   agent->sa_max_proceeding = max_proceeding;
 
   if (max_forwards == 0) max_forwards = 70; /* Default value */
