@@ -42,6 +42,7 @@
 #include <stdlib.h>
 
 #include <sofia-sip/su_types.h>
+#include <sofia-sip/su_string.h>
 
 #include <sofia-sip/sdp.h>
 
@@ -913,9 +914,9 @@ int main(int argc, char *argv[])
   int i;
 
   for (i = 1; argv[i]; i++) {
-    if (strcmp(argv[i], "-v") == 0)
+    if (su_strmatch(argv[i], "-v"))
       tstflags |= tst_verbatim;
-    else if (strcmp(argv[i], "-a") == 0)
+    else if (su_strmatch(argv[i], "-a"))
       tstflags |= tst_abort;
     else
       usage(1);

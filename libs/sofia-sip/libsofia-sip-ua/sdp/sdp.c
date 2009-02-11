@@ -41,6 +41,7 @@
 
 #include <sofia-sip/su_alloc.h>
 #include <sofia-sip/su_types.h>
+#include <sofia-sip/su_string.h>
 
 #include "sofia-sip/sdp.h"
 
@@ -1156,24 +1157,6 @@ tag_class_t sdptag_session_class[1] =
 
 /* ---------------------------------------------------------------------- */
 
-/* Compare two string pointers */
-su_inline
-int str0cmp(char const *a, char const *b)
-{
-  if (a == NULL) a = "";
-  if (b == NULL) b = "";
-  return strcmp(a, b);
-}
-
-/* Compare two string pointers ignoring case. */
-su_inline
-int str0casecmp(char const *a, char const *b)
-{
-  if (a == NULL) a = "";
-  if (b == NULL) b = "";
-  return strcasecmp(a, b);
-}
-
 /** Compare two session descriptions
  */
 int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
@@ -1191,11 +1174,11 @@ int sdp_session_cmp(sdp_session_t const *a, sdp_session_t const *b)
     return rv;
   if ((rv = sdp_origin_cmp(a->sdp_origin, b->sdp_origin)))
     return rv;
-  if ((rv = str0cmp(a->sdp_subject, b->sdp_subject)))
+  if ((rv = su_strcmp(a->sdp_subject, b->sdp_subject)))
     return rv;
-  if ((rv = str0cmp(a->sdp_information, b->sdp_information)))
+  if ((rv = su_strcmp(a->sdp_information, b->sdp_information)))
     return rv;
-  if ((rv = str0cmp(a->sdp_uri, b->sdp_uri)))
+  if ((rv = su_strcmp(a->sdp_uri, b->sdp_uri)))
     return rv;
   if ((rv = sdp_list_cmp(a->sdp_emails, b->sdp_emails)))
     return rv;
@@ -1244,9 +1227,9 @@ int sdp_origin_cmp(sdp_origin_t const *a, sdp_origin_t const *b)
     return a->o_version < b->o_version ? -1 : 1;
   if (a->o_id != b->o_id)
     return a->o_id < b->o_id ? -1 : 1;
-  if ((rv = strcasecmp(a->o_username, b->o_username)))
+  if ((rv = su_strcasecmp(a->o_username, b->o_username)))
     return rv;
-  if ((rv = strcasecmp(a->o_address->c_address, b->o_address->c_address)))
+  if ((rv = su_strcasecmp(a->o_address->c_address, b->o_address->c_address)))
     return rv;
 
   return 0;
@@ -1380,9 +1363,9 @@ int sdp_key_cmp(sdp_key_t const *a, sdp_key_t const *b)
   if (a->k_method != b->k_method)
     return a->k_method < b->k_method ? -1 : 1;
   if (a->k_method == sdp_key_x &&
-      (rv = str0cmp(a->k_method_name, b->k_method_name)))
+      (rv = su_strcmp(a->k_method_name, b->k_method_name)))
     return rv;
-  return str0cmp(a->k_material, b->k_material);
+  return su_strcmp(a->k_material, b->k_material);
 }
 
 /** Compare two attribute (a=) fields */
@@ -1395,9 +1378,9 @@ int sdp_attribute_cmp(sdp_attribute_t const *a, sdp_attribute_t const *b)
   if ((a != NULL) != (b != NULL))
     return (a != NULL) < (b != NULL) ? -1 : 1;
 
-  if ((rv = str0cmp(a->a_name, b->a_name)))
+  if ((rv = su_strcmp(a->a_name, b->a_name)))
     return rv;
-  return str0cmp(a->a_value, b->a_value);
+  return su_strcmp(a->a_value, b->a_value);
 }
 
 /** Compare two rtpmap structures. */
@@ -1414,7 +1397,7 @@ int sdp_rtpmap_cmp(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
     return a->rm_pt < b->rm_pt ? -1 : 1;
 
   /* Case insensitive encoding */
-  if ((rv = str0cmp(a->rm_encoding, b->rm_encoding)))
+  if ((rv = su_strcmp(a->rm_encoding, b->rm_encoding)))
     return rv;
   /* Rate */
   if (a->rm_rate != b->rm_rate)
@@ -1428,13 +1411,13 @@ int sdp_rtpmap_cmp(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
     if (b->rm_params)
       b_param = b->rm_params;
 
-    rv = strcasecmp(a_param, b_param);
+    rv = su_strcasecmp(a_param, b_param);
 
     if (rv)
       return rv;
   }
 
-  return str0casecmp(a->rm_fmtp, b->rm_fmtp);
+  return su_strcasecmp(a->rm_fmtp, b->rm_fmtp);
 }
 
 /** Compare two lists. */
@@ -1447,7 +1430,7 @@ int sdp_list_cmp(sdp_list_t const *a, sdp_list_t const *b)
       return 0;
     if ((a != NULL) != (b != NULL))
       return (a != NULL) < (b != NULL) ? -1 : 1;
-    if ((rv = str0cmp(a->l_text, b->l_text)))
+    if ((rv = su_strcmp(a->l_text, b->l_text)))
       return rv;
   }
 
@@ -1472,7 +1455,7 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   if (a->m_type != b->m_type)
     return a->m_type < b->m_type ? -1 : 1;
   if (a->m_type == sdp_media_x)
-    if ((rv = str0cmp(a->m_type_name, b->m_type_name)))
+    if ((rv = su_strcmp(a->m_type_name, b->m_type_name)))
       return rv;
   if (a->m_port != b->m_port)
     return a->m_port < b->m_port ? -1 : 1;
@@ -1487,7 +1470,7 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   if (a->m_proto != b->m_proto)
     return a->m_proto < b->m_proto ? -1 : 1;
   if (a->m_proto == sdp_media_x)
-    if ((rv = str0cmp(a->m_proto_name, b->m_proto_name)))
+    if ((rv = su_strcmp(a->m_proto_name, b->m_proto_name)))
       return rv;
 
   if (a->m_mode != b->m_mode)
@@ -1502,7 +1485,7 @@ int sdp_media_cmp(sdp_media_t const *a, sdp_media_t const *b)
   if ((rv = sdp_list_cmp(a->m_format, b->m_format)))
     return rv;
 
-  if ((rv = str0cmp(a->m_information, b->m_information)))
+  if ((rv = su_strcmp(a->m_information, b->m_information)))
     return rv;
 
   for (ac = a->m_connections, bc = b->m_connections;
@@ -1548,7 +1531,7 @@ sdp_connection_t *sdp_media_connections(sdp_media_t const *m)
 sdp_attribute_t *sdp_attribute_find(sdp_attribute_t const *a, char const *name)
 {
   for (; a; a = a->a_next) {
-    if (strcasecmp(a->a_name, name) == 0)
+    if (su_casematch(a->a_name, name))
       break;
   }
 
@@ -1561,13 +1544,13 @@ sdp_attribute_t *sdp_attribute_find2(sdp_attribute_t const *a,
 				     char const *name)
 {
   for (; a; a = a->a_next) {
-    if (strcasecmp(a->a_name, name) == 0)
+    if (su_casematch(a->a_name, name))
       break;
   }
 
   if (a == 0)
     for (a = a2; a; a = a->a_next) {
-      if (strcasecmp(a->a_name, name) == 0)
+      if (su_casematch(a->a_name, name))
 	break;
     }
 
@@ -1578,13 +1561,13 @@ sdp_attribute_t *sdp_attribute_find2(sdp_attribute_t const *a,
 sdp_mode_t sdp_attribute_mode(sdp_attribute_t const *a, sdp_mode_t defmode)
 {
   for (; a; a = a->a_next) {
-    if (strcasecmp(a->a_name, "sendrecv") == 0)
+    if (su_casematch(a->a_name, "sendrecv"))
       return sdp_sendrecv;
-    if (strcasecmp(a->a_name, "inactive") == 0)
+    if (su_casematch(a->a_name, "inactive"))
       return sdp_inactive;
-    if (strcasecmp(a->a_name, "recvonly") == 0)
+    if (su_casematch(a->a_name, "recvonly"))
       return sdp_recvonly;
-    if (strcasecmp(a->a_name, "sendonly") == 0)
+    if (su_casematch(a->a_name, "sendonly"))
       return sdp_sendonly;
   }
 
@@ -1707,7 +1690,7 @@ int sdp_attribute_replace(sdp_attribute_t **list,
   assert(a->a_name != NULL); assert(a->a_next == NULL);
 
   for (; *list; list = &(*list)->a_next) {
-    if (strcasecmp((*list)->a_name, a->a_name) == 0)
+    if (su_casematch((*list)->a_name, a->a_name))
       break;
   }
 
@@ -1740,7 +1723,7 @@ sdp_attribute_t *sdp_attribute_remove(sdp_attribute_t **list,
     return NULL;
 
   for (a = *list; a; list = &a->a_next, a = *list) {
-    if (strcasecmp(name, a->a_name) == 0)
+    if (su_casematch(name, a->a_name))
       break;
   }
 
@@ -1769,7 +1752,7 @@ unsigned sdp_media_match(sdp_media_t const *m,
     type_name = "";
 
   if (type != m->m_type ||
-      (type == sdp_media_x && strcasecmp(m->m_type_name, type_name)))
+      (type == sdp_media_x && !su_casematch(m->m_type_name, type_name)))
     return 0;
 
   if (proto == sdp_proto_any || m->m_proto == sdp_proto_any)
@@ -1779,7 +1762,7 @@ unsigned sdp_media_match(sdp_media_t const *m,
     proto_name = "";
 
   if (proto != m->m_proto ||
-      (proto == sdp_proto_x && strcasecmp(m->m_proto_name, proto_name)))
+      (proto == sdp_proto_x && !su_casematch(m->m_proto_name, proto_name)))
     return 0;
 
   return 1;
@@ -1796,16 +1779,16 @@ unsigned sdp_media_match_with(sdp_media_t const *a,
     return 1;
 
   if (a->m_type != b->m_type ||
-      (a->m_type == sdp_media_x &&
-       strcasecmp(b->m_type_name, a->m_type_name)))
+      (a->m_type == sdp_media_x
+        && !su_casematch(b->m_type_name, a->m_type_name)))
     return 0;
 
   if (a->m_proto == sdp_proto_any || b->m_proto == sdp_proto_any)
     return 1;
 
   if (a->m_proto != b->m_proto ||
-      (a->m_proto == sdp_proto_x &&
-       strcasecmp(b->m_proto_name, a->m_proto_name)))
+      (a->m_proto == sdp_proto_x
+       && !su_casematch(b->m_proto_name, a->m_proto_name)))
     return 0;
 
   return 1;
@@ -1850,7 +1833,7 @@ int sdp_media_uses_rtp(sdp_media_t const *m)
     (m->m_proto == sdp_proto_rtp ||
      m->m_proto == sdp_proto_srtp ||
      (m->m_proto == sdp_proto_x && m->m_proto_name &&
-      strncasecmp(m->m_proto_name, "RTP/", 4) == 0));
+      su_casenmatch(m->m_proto_name, "RTP/", 4)));
 }
 
 /** Check if payload type, rtp rate and parameters match in rtpmaps*/
@@ -1867,7 +1850,7 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
   if (a->rm_rate != b->rm_rate)
     return 0;
 
-  if (strcasecmp(a->rm_encoding, b->rm_encoding))
+  if (!su_casematch(a->rm_encoding, b->rm_encoding))
     return 0;
 
   aparam = a->rm_params; bparam = b->rm_params;
@@ -1877,7 +1860,7 @@ int sdp_rtpmap_match(sdp_rtpmap_t const *a, sdp_rtpmap_t const *b)
 
   if (!aparam) aparam = "1"; if (!bparam) bparam = "1";
 
-  if (strcasecmp(aparam, bparam))
+  if (!su_casematch(aparam, bparam))
     return 0;
 
   return 1;
@@ -1900,7 +1883,7 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
     if (rm->rm_rate != list->rm_rate)
       continue;
 
-    if (strcasecmp(rm->rm_encoding, list->rm_encoding) != 0)
+    if (!su_casematch(rm->rm_encoding, list->rm_encoding))
       continue;
 
     lparam = rm->rm_params; rparam = list->rm_params;
@@ -1909,7 +1892,7 @@ sdp_rtpmap_t *sdp_rtpmap_find_matching(sdp_rtpmap_t const *list,
       break;
 
     if (!lparam) lparam = "1"; if (!rparam) rparam = "1";
-    if (strcasecmp(lparam, rparam))
+    if (!su_casematch(lparam, rparam))
       continue;
 
     break;

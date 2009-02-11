@@ -34,6 +34,7 @@
 #include "config.h"
 
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 
 #include "sofia-sip/sdp.h"
 
@@ -544,10 +545,10 @@ print_attributes_without_mode(sdp_printer_t *p, sdp_attribute_t const *a)
     char const *name = a->a_name;
     char const *value = a->a_value;
 
-    if (strcasecmp(name, "inactive") == 0 ||
-	strcasecmp(name, "sendonly") == 0 ||
-	strcasecmp(name, "recvonly") == 0 ||
-	strcasecmp(name, "sendrecv") == 0)
+    if (su_casematch(name, "inactive") ||
+	su_casematch(name, "sendonly") ||
+	su_casematch(name, "recvonly") ||
+	su_casematch(name, "sendrecv"))
       continue;
 
     sdp_printf(p, "a=%s%s%s" CRLF, name, value ? ":" : "", value ? value : "");

@@ -30,11 +30,14 @@
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
  *
  * @date  Created: Fri Feb 18 10:25:08 2000 ppessi
+ *
+ * @sa @RFC4566, @RFC2327.
  */
 
 #include "config.h"
 
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 
 #include "sofia-sip/sdp.h"
 
@@ -50,12 +53,13 @@
  *
  * SDP parser handle.
  *
- * The SDP parser handle is returned by sdp_parse(). It contains either
- * successfully parse SDP session #sdp_session_t or an error message.
+ * The SDP parser handle returned by sdp_parse() contains either
+ * a successfully parsed SDP session #sdp_session_t or an error message.
  * If sdp_session() returns non-NULL, parsing was successful.
  *
  * @sa #sdp_session_t, sdp_parse(), sdp_session(), sdp_parsing_error(),
- * sdp_sanity_check(), sdp_parser_home(), sdp_parser_free().
+ * sdp_sanity_check(), sdp_parser_home(), sdp_parser_free(), @RFC4566,
+ * @RFC2327.
  */
 
 struct sdp_parser_s {
@@ -129,6 +133,9 @@ static int parsing_error(sdp_parser_t *p, char const *fmt, ...);
  * Always a valid parser handle.
  *
  * @todo Parser accepts some non-conforming SDP even with #sdp_f_strict.
+ *
+ * @sa sdp_session(), sdp_parsing_error(), sdp_sanity_check(),
+ * sdp_parser_home(), sdp_parser_free(), @RFC4566, @RFC2327.
  */
 sdp_parser_t *
 sdp_parse(su_home_t *home, char const msg[], issize_t msgsize, int flags)
@@ -366,7 +373,7 @@ static void parse_message(sdp_parser_t *p)
   /* Require that version comes first */
   record = next(&message, CRLF, strip);
 
-  if (!record || strcmp(record, "v=0")) {
+  if (!su_strmatch(record, "v=0")) {
     if (!p->pr_config || !record || record[1] != '=') {
       parsing_error(p, "bad SDP message");
       return;
@@ -479,14 +486,14 @@ int sdp_connection_is_inaddr_any(sdp_connection_t const *c)
   return
     c &&
     c->c_nettype == sdp_net_in &&
-    ((c->c_addrtype == sdp_addr_ip4 && strcmp(c->c_address, "0.0.0.0")) ||
-     (c->c_addrtype == sdp_addr_ip6 && strcmp(c->c_address, "::")));
+    ((c->c_addrtype == sdp_addr_ip4 && su_strmatch(c->c_address, "0.0.0.0")) ||
+     (c->c_addrtype == sdp_addr_ip6 && su_strmatch(c->c_address, "::")));
 }
 
 /**Postprocess session description.
  *
- * The function post_session() postprocesses the session description. The
- * postprocessing includes setting the session backpointer for each media.
+ * Postprocessing includes setting the session backpointer for each media,
+ * doing sanity checks and setting rejected and mode flags.
  */
 static void post_session(sdp_parser_t *p, sdp_session_t *sdp)
 {
@@ -517,12 +524,9 @@ static void post_session(sdp_parser_t *p, sdp_session_t *sdp)
 
     c = sdp_media_connections(m);
 
-    if (p->pr_mode_0000 && c) {
-      if (c->c_nettype == sdp_net_in &&
-	  c->c_addrtype == sdp_addr_ip4 &&
-	  strcmp(c->c_address, "0.0.0.0") == 0)
-	/* Reset recvonly flag */
-	m->m_mode &= ~sdp_recvonly;
+    if (p->pr_mode_0000 && sdp_connection_is_inaddr_any(c)) {
+      /* Reset recvonly flag */
+      m->m_mode &= ~sdp_recvonly;
     }
   }
 
@@ -815,7 +819,7 @@ static void parse_connection(sdp_parser_t *p, char *r, sdp_connection_t **result
 
   *result = c;
 
-  if (strncasecmp(r, "IN", 2) == 0) {
+  if (su_casenmatch(r, "IN", 2)) {
     char *s;
 
     /* nettype is internet */
@@ -824,9 +828,9 @@ static void parse_connection(sdp_parser_t *p, char *r, sdp_connection_t **result
 
     /* addrtype */
     s = token(&r, SPACE TAB, NULL, NULL);
-    if (s && strcasecmp(s, "IP4") == 0)
+    if (su_casematch(s, "IP4"))
       c->c_addrtype = sdp_addr_ip4;
-    else if (s && strcasecmp(s, "IP6") == 0)
+    else if (su_casematch(s, "IP6"))
       c->c_addrtype = sdp_addr_ip6;
     else {
       parsing_error(p, "unknown IN address type: %s", s);
@@ -907,9 +911,9 @@ static void parse_bandwidth(sdp_parser_t *p, char *r, sdp_bandwidth_t **result)
     return;
   }
 
-  if (strcmp(name, "CT") == 0)
+  if (su_casematch(name, "CT"))
     modifier = sdp_bw_ct, name = NULL;
-  else if (strcmp(name, "AS") == 0)
+  else if (su_casematch(name, "AS") == 0)
     modifier = sdp_bw_as, name = NULL;
   else
     modifier = sdp_bw_x;
@@ -993,16 +997,17 @@ static void parse_repeat(sdp_parser_t *p, char *d, sdp_repeat_t **result)
   int n, N;
   char *s;
   sdp_repeat_t *r;
+  int strict = STRICT(p);
 
   /** Count number of intervals */
   for (N = 0, s = d; *s; ) {
-    if (!(is_posdigit(*s) || (!STRICT(p) && (*s) == '0')))
+    if (!(is_posdigit(*s) || (!strict && (*s) == '0')))
       break;
     do { s++; } while (is_digit(*s));
-    if (*s && strchr("dhms", *s))
+    if (*s && strchr(strict ? "dhms" : "dhmsDHMS", *s))
       s++;
     N++;
-    if (!(i = STRICT(p) ? is_space(*s) : strspn(s, SPACE TAB)))
+    if (!(i = strict ? is_space(*s) : strspn(s, SPACE TAB)))
       break;
     s += i;
   }
@@ -1024,10 +1029,10 @@ static void parse_repeat(sdp_parser_t *p, char *d, sdp_repeat_t **result)
     tt = strtoul(d, &d, 10);
 
     switch (*d) {
-    case 'd': tt *= 24;
-    case 'h': tt *= 60;
-    case 'm': tt *= 60;
-    case 's': d++;
+    case 'd': case 'D': tt *= 24;
+    case 'h': case 'H': tt *= 60;
+    case 'm': case 'M': tt *= 60;
+    case 's': case 'S': d++;
       break;
     }
 
@@ -1152,7 +1157,7 @@ static void parse_key(sdp_parser_t *p, char *r, sdp_key_t **result)
 
     /* These are defined as key-sensitive in RFC 4566 */
 #define MATCH(s, tok) \
-    (STRICT(p) ? strcmp((s), (tok)) == 0 : strcasecmp((s), (tok)) == 0)
+    (STRICT(p) ? su_strmatch((s), (tok)) : su_casematch((s), (tok)))
 
     if (MATCH(s, "clear"))
       k->k_method = sdp_key_clear, k->k_method_name = "clear";
@@ -1208,20 +1213,20 @@ static void parse_session_attr(sdp_parser_t *p, char *r, sdp_attribute_t **resul
   else
     PARSE_CHECK_REST(p, r, "a");
 
-  if (strcasecmp(name, "charset") == 0) {
+  if (su_casematch(name, "charset")) {
     p->pr_session->sdp_charset = value;
     return;
   }
 
   if (p->pr_mode_manual)
     ;
-  else if (strcasecmp(name, "inactive") == 0)
+  else if (su_casematch(name, "inactive"))
     p->pr_session_mode = sdp_inactive;
-  else if (strcasecmp(name, "sendonly") == 0)
+  else if (su_casematch(name, "sendonly"))
     p->pr_session_mode = sdp_sendonly;
-  else if (strcasecmp(name, "recvonly") == 0)
+  else if (su_casematch(name, "recvonly"))
     p->pr_session_mode = sdp_recvonly;
-  else if (strcasecmp(name, "sendrecv") == 0)
+  else if (su_casematch(name, "sendrecv"))
     p->pr_session_mode = sdp_sendrecv;
 
   {
@@ -1317,7 +1322,7 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
     return;
   }
 
-  if (!STRICT(p) && strcasecmp(s, "RTP") == 0)
+  if (!STRICT(p) && su_casematch(s, "RTP"))
     m->m_proto = sdp_proto_rtp, m->m_proto_name = "RTP/AVP";
   else
     sdp_media_transport(m, s);
@@ -1344,44 +1349,51 @@ static void parse_media(sdp_parser_t *p, char *r, sdp_media_t **result)
 /** Set media type */
 void sdp_media_type(sdp_media_t *m, char const *s)
 {
-  if (strcmp(s, "*") == 0)
+  if (su_strmatch(s, "*"))
     m->m_type = sdp_media_any, m->m_type_name = "*";
-  else if (strcasecmp(s, "audio") == 0)
+  else if (su_casematch(s, "audio"))
     m->m_type = sdp_media_audio, m->m_type_name = "audio";
-  else if (strcasecmp(s, "video") == 0)
+  else if (su_casematch(s, "video"))
     m->m_type = sdp_media_video, m->m_type_name = "video";
-  else if (strcasecmp(s, "application") == 0)
+  else if (su_casematch(s, "application"))
     m->m_type = sdp_media_application, m->m_type_name = "application";
-  else if (strcasecmp(s, "data") == 0)
+  else if (su_casematch(s, "data"))
     m->m_type = sdp_media_data, m->m_type_name = "data";
-  else if (strcasecmp(s, "control") == 0)
+  else if (su_casematch(s, "control"))
     m->m_type = sdp_media_control, m->m_type_name = "control";
-  else if (strcasecmp(s, "message") == 0)
+  else if (su_casematch(s, "message"))
     m->m_type = sdp_media_message, m->m_type_name = "message";
-  else if (strcasecmp(s, "image") == 0)
+  else if (su_casematch(s, "image"))
     m->m_type = sdp_media_image, m->m_type_name = "image";
-  else if (strcasecmp(s, "red") == 0)
+  else if (su_casematch(s, "red"))
     m->m_type = sdp_media_red, m->m_type_name = "red";
   else
     m->m_type = sdp_media_x, m->m_type_name = s;
 }
 
+/** Set transport protocol.
+ *
+ * Set the @m->m_proto to a well-known protocol type as
+ * well as canonize case of @a m_proto_name.
+ */
 void sdp_media_transport(sdp_media_t *m, char const *s)
 {
-  if (strcasecmp(s, "*") == 0)
+  if (m == NULL || s == NULL)
+    ;
+  else if (su_strmatch(s, "*"))
     m->m_proto = sdp_proto_any, m->m_proto_name = "*";
-  else if (strcasecmp(s, "RTP/AVP") == 0)
+  else if (su_casematch(s, "RTP/AVP"))
     m->m_proto = sdp_proto_rtp, m->m_proto_name = "RTP/AVP";
-  else if (strcasecmp(s, "RTP/SAVP") == 0)
+  else if (su_casematch(s, "RTP/SAVP"))
     m->m_proto = sdp_proto_srtp, m->m_proto_name = "RTP/SAVP";
-  else if (strcasecmp(s, "udptl") == 0)
+  else if (su_casematch(s, "udptl"))
     /* Lower case - be compatible with people living by T.38 examples */
     m->m_proto = sdp_proto_udptl, m->m_proto_name = "udptl";
-  else if (strcasecmp(s, "UDP") == 0)
+  else if (su_casematch(s, "UDP"))
     m->m_proto = sdp_proto_udp, m->m_proto_name = "UDP";
-  else if (strcasecmp(s, "TCP") == 0)
+  else if (su_casematch(s, "TCP"))
     m->m_proto = sdp_proto_tcp, m->m_proto_name = "TCP";
-  else if (strcasecmp(s, "TLS") == 0)
+  else if (su_casematch(s, "TLS"))
     m->m_proto = sdp_proto_tls, m->m_proto_name = "TLS";
   else
     m->m_proto = sdp_proto_x, m->m_proto_name = s;
@@ -1566,28 +1578,28 @@ static void parse_media_attr(sdp_parser_t *p, char *r, sdp_media_t *m,
 
   if (p->pr_mode_manual)
     ;
-  else if (strcasecmp(name, "inactive") == 0) {
+  else if (su_casematch(name, "inactive")) {
     m->m_mode = sdp_inactive;
     return;
   }
-  else if (strcasecmp(name, "sendonly") == 0) {
+  else if (su_casematch(name, "sendonly")) {
     m->m_mode = sdp_sendonly;
     return;
   }
-  else if (strcasecmp(name, "recvonly") == 0) {
+  else if (su_casematch(name, "recvonly")) {
     m->m_mode = sdp_recvonly;
     return;
   }
-  else if (strcasecmp(name, "sendrecv") == 0) {
+  else if (su_casematch(name, "sendrecv")) {
     m->m_mode = sdp_sendrecv;
     return;
   }
 
-  if (rtp && strcasecmp(name, "rtpmap") == 0) {
+  if (rtp && su_casematch(name, "rtpmap")) {
     if ((n = parse_rtpmap(p, r, m)) == 0 || n < -1)
       return;
   }
-  else if (rtp && strcasecmp(name, "fmtp") == 0) {
+  else if (rtp && su_casematch(name, "fmtp")) {
     if ((n = parse_fmtp(p, r, m)) == 0 || n < -1)
       return;
   }
