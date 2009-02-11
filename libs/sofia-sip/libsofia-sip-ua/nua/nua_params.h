@@ -37,6 +37,10 @@
 
 #include <nua_types.h>
 
+#ifndef NUA_TAG_H
+#include <sofia-sip/nua_tag.h>
+#endif
+
 /**@internal @brief NUA preferences.
  *
  * This structure contains values for various preferences and a separate

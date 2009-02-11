@@ -77,6 +77,12 @@ SOFIA_BEGIN_DECLS
 
 typedef struct event_s event_t, nua_signal_data_t;
 
+/** Extended event data. */
+typedef struct nua_ee_data {
+  nua_t *ee_nua;
+  nua_event_data_t ee_data[1];
+} nua_ee_data_t;
+
 #define       NONE ((void *)-1)
 
 typedef struct register_usage nua_registration_t;
