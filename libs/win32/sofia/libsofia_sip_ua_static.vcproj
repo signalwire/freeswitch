@@ -275,6 +275,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_string.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\su_strlst.c"
 					>
 				</File>
@@ -1022,6 +1026,10 @@
 				</File>
 				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_source.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\su\sofia-sip\su_string.h"
 					>
 				</File>
 				<File
