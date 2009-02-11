@@ -127,7 +127,7 @@ void test_sort(int *array, size_t r, size_t N)
   su_smoothsort(array, r, N, int_less, int_swap);
 }
 
-int test_smooth_sort()
+int test_smooth_sort(void)
 {
   BEGIN();
 
@@ -179,7 +179,7 @@ int test_smooth_sort()
   END();
 }
 
-int test_value()
+int test_value(void)
 {
   BEGIN();
 
@@ -302,7 +302,7 @@ int test_value()
   END();
 }
 
-int test_ref()
+int test_ref(void)
 {
   BEGIN();
 
@@ -467,7 +467,7 @@ int test_ref()
   END();
 }
 
-int test_triplet()
+int test_triplet(void)
 {
   BEGIN();
 
