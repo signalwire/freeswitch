@@ -437,7 +437,13 @@ sres_hash_key(const char *string)
   return result;
 }
 
-/** Remove entries from cache. */
+/** Remove old records from cache.
+ *
+ * Remove entries older than @a now from the cache.
+ *
+ * @param cache    pointer to DNS cache object
+ * @param now      remove older than this time
+ */
 void sres_cache_clean(sres_cache_t *cache, time_t now)
 {
   size_t i;
