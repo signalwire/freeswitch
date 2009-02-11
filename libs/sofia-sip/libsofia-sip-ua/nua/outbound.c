@@ -216,6 +216,8 @@ outbound_new(outbound_owner_t *owner,
 	su_sprintf(ob->ob_home, "+sip.instance=\"<%s>\"", instance);
     ob->ob_reg_id = 0;
 
+    outbound_peer_info(ob, NULL);
+
     /* Generate a random cookie (used as Call-ID) for us */
     su_md5_init(md5);
     su_guid_generate(guid);
