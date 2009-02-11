@@ -1038,7 +1038,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	case ZAP_CHANNEL_STATE_DOWN:
 		{
 			if (gen->CRV) {
-				if(gen->CRVFlag) {
+				if (zap_test_flag(zchan, ZAP_CHANNEL_OUTBOUND)) {
 					isdn_data->channels_local_crv[gen->CRV] = NULL;
 				} else {
 					isdn_data->channels_remote_crv[gen->CRV] = NULL;
