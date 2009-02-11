@@ -33,18 +33,19 @@
 
 #include "config.h"
 
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <assert.h>
+#include <sofia-sip/su_string.h>
 
 /* Avoid casting http_t to msg_pub_t and http_header_t to msg_header_t  */
 #define MSG_PUB_T struct http_s
 #define MSG_HDR_T union http_header_u
 
 #include "sofia-sip/http_parser.h"
+
+#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <assert.h>
 
 /* ========================================================================== */
 
@@ -348,7 +349,7 @@ static issize_t set_cookie_scanner(char *s)
   char *rest;
 
 #define LOOKING_AT(s, what) \
-  (strncasecmp((s), what, strlen(what)) == 0 && (rest = s + strlen(what)))
+  (su_casenmatch((s), what, strlen(what)) && (rest = s + strlen(what)))
 
   /* Special cases from Netscape spec */
   if (LOOKING_AT(s, "expires=")) {

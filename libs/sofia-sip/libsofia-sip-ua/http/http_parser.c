@@ -38,6 +38,7 @@
 #define MSG_HDR_T union http_header_u
 
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 #include "sofia-sip/http_parser.h"
 #include <sofia-sip/msg_parser.h>
 #include <sofia-sip/http_header.h>
@@ -48,7 +49,6 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
@@ -143,8 +143,7 @@ issize_t http_extract_body(msg_t *msg, http_t *http, char b[], isize_t bsiz, int
 	 */
 	http->http_transfer_encoding->k_items &&
 	http->http_transfer_encoding->k_items[0] &&
-	strcasecmp(http->http_transfer_encoding->k_items[0],
-		   "identity") != 0) {
+	!su_casematch(http->http_transfer_encoding->k_items[0], "identity")) {
       http->http_flags |= MSG_FLG_CHUNKS;
 
       if (http->http_flags & MSG_FLG_STREAMING)
@@ -162,8 +161,7 @@ issize_t http_extract_body(msg_t *msg, http_t *http, char b[], isize_t bsiz, int
     body_len = http->http_content_length->l_length;
   /* We cannot parse multipart/byteranges ... */
   else if (http->http_content_type && http->http_content_type->c_type &&
-	   strcasecmp(http->http_content_type->c_type, "multipart/byteranges")
-	   == 0)
+	   su_casematch(http->http_content_type->c_type, "multipart/byteranges"))
     return -1;
   else if (MSG_IS_MAILBOX(flags)) /* message fragments */
     body_len = 0;
@@ -312,12 +310,12 @@ int http_version_d(char **ss, char const **ver)
   char const *result;
   int const version_size = sizeof(http_version_1_1) - 1;
 
-  if (strncasecmp(s, http_version_1_1, version_size) == 0 &&
+  if (su_casenmatch(s, http_version_1_1, version_size) &&
       !IS_TOKEN(s[version_size])) {
     result = http_version_1_1;
     s += version_size;
   }
-  else if (strncasecmp(s, http_version_1_0, version_size) == 0 &&
+  else if (su_casenmatch(s, http_version_1_0, version_size) &&
 	   !IS_TOKEN(s[version_size])) {
     result = http_version_1_0;
     s += version_size;
@@ -349,9 +347,9 @@ int http_version_d(char **ss, char const **ver)
       s[l1 + 1 + l2] = 0;
 
       /* Compare again with compacted version */
-      if (strcasecmp(s, http_version_1_1) == 0)
+      if (su_casematch(s, http_version_1_1))
 	result = http_version_1_1;
-      else if (strcasecmp(s, http_version_1_0) == 0)
+      else if (su_casematch(s, http_version_1_0))
 	result = http_version_1_0;
     }
 
@@ -452,7 +450,7 @@ http_method_t http_method_d(char **ss, char const **nname)
   int code = http_method_unknown;
   size_t n = 0;
 
-#define MATCH(s, m) (strncasecmp(s, m, n = sizeof(m) - 1) == 0)
+#define MATCH(s, m) (su_casenmatch(s, m, n = sizeof(m) - 1))
 
   if (c >= 'a' && c <= 'z')
     c += 'A' - 'a';

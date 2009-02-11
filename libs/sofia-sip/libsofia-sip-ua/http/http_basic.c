@@ -42,6 +42,7 @@
 #define MSG_HDR_T union http_header_u
 
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 
 #include <sofia-sip/http_parser.h>
 #include <sofia-sip/http_header.h>
@@ -52,7 +53,6 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <limits.h>
@@ -446,7 +446,7 @@ issize_t http_content_range_d(su_home_t *home, http_header_t *h, char *s, isize_
 {
   http_content_range_t *cr = h->sh_content_range;
 
-  if (strncasecmp(s, "bytes", 5))
+  if (!su_casenmatch(s, "bytes", 5))
     return -1;
   s += 5; skip_lws(&s);
   if (s[0] == '*') {
@@ -820,7 +820,7 @@ issize_t http_if_range_d(su_home_t *home, http_header_t *h, char *s, isize_t sle
 {
   http_if_range_t *ifr = (http_if_range_t *)h;
 
-  if (s[0] == '"' || strncasecmp(s, "W/\"", 3) == 0) {
+  if (s[0] == '"' || su_casenmatch(s, "W/\"", 3)) {
     ifr->ifr_tag = s;
     return 0;
   } else {
