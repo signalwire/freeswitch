@@ -4428,10 +4428,9 @@ void session_timer_negotiate(struct session_timer *t)
     t->refresher = nua_local_refresher;
   else if (t->remote.refresher == nua_remote_refresher)
     t->refresher = nua_remote_refresher;
-  else if (t->local.refresher == nua_local_refresher)
-    t->refresher = nua_local_refresher;
   else
-    t->refresher = nua_remote_refresher;
+    /* Default to initiate refreshes */
+    t->refresher = nua_local_refresher;
 
   t->interval = t->remote.expires;
   if (t->interval == 0)
