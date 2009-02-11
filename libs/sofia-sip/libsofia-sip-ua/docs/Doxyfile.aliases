@@ -58,6 +58,8 @@ ALIASES = \
  "NEW_1_12_9=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.9.txt\">1.12.9</a>" \
  "VERSION_1_12_10=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.10.txt\">1.12.10</a>" \
  "NEW_1_12_10=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.10.txt\">1.12.10</a>" \
+ "VERSION_1_12_11=<a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.11.txt\">1.12.11</a>" \
+ "NEW_1_12_11=@since New in <a href=\"http://sofia-sip.sf.net/relnotes/relnotes-sofia-sip-1.12.11.txt\">1.12.11</a>" \
  "VERSION_UNRELEASED=UNRELEASED" \
  "NEW_UNRELEASED=@since Not yet released" \
 
