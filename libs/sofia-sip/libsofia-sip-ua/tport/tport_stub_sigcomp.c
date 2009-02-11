@@ -34,7 +34,7 @@
 #include "tport_internal.h"
 
 #include <string.h>
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 tport_comp_vtable_t const *tport_comp_vtable = NULL;
 
@@ -48,7 +48,7 @@ char const tport_sigcomp_name[] = "sigcomp";
 /** Canonize compression string */
 char const *tport_canonize_comp(char const *comp)
 {
-  if (tport_comp_vtable && comp && strcasecmp(comp, tport_sigcomp_name) == 0)
+  if (tport_comp_vtable && su_casematch(comp, tport_sigcomp_name))
     return tport_sigcomp_name;
   return NULL;
 }

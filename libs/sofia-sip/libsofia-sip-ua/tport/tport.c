@@ -37,7 +37,7 @@
 
 #include "config.h"
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_errno.h>
 #include <sofia-sip/su_alloc.h>
@@ -1404,7 +1404,7 @@ tport_vtable_t const *tport_vtable_by_name(char const *protoname,
       continue;
     if (vtable->vtp_public != public)
       continue;
-    if (strcasecmp(vtable->vtp_name, protoname))
+    if (!su_casematch(protoname, vtable->vtp_name))
       continue;
 
     assert(vtable->vtp_pri_size >= sizeof (tport_primary_t));
@@ -1798,8 +1798,7 @@ int tport_server_addrinfo(tport_master_t *mr,
   for (i = 0, N = 0; transports[i] && N < TPORT_N; i++) {
     su_addrinfo_t *ai = &hints[N];
 
-    if (strcasecmp(transports[i], protocol) != 0 &&
-	strcmp(protocol, tpn_any) != 0)
+    if (!su_casematch(protocol, transports[i]) && !su_strmatch(protocol, "*"))
       continue;
 
     /* Resolve protocol, skip unknown transport protocols. */
@@ -2418,25 +2417,25 @@ int getprotohints(su_addrinfo_t *hints,
   hints->ai_canonname = (char *)proto;
 
 #if HAVE_TLS
-  if (strcasecmp(proto, "tls") == 0)
+  if (su_casematch(proto, "tls"))
     proto = "tcp";
 #endif
 
 #if HAVE_SCTP
-  if (strcasecmp(proto, "sctp") == 0) {
+  if (su_casematch(proto, "sctp")) {
     hints->ai_protocol = IPPROTO_SCTP;
     hints->ai_socktype = SOCK_STREAM;
     return 0;
   }
 #endif
 
-  if (strcasecmp(proto, "udp") == 0) {
+  if (su_casematch(proto, "udp")) {
     hints->ai_protocol = IPPROTO_UDP;
     hints->ai_socktype = SOCK_DGRAM;
     return 0;
   }
 
-  if (strcasecmp(proto, "tcp") == 0) {
+  if (su_casematch(proto, "tcp")) {
     hints->ai_protocol = IPPROTO_TCP;
     hints->ai_socktype = SOCK_STREAM;
     return 0;
@@ -4327,7 +4326,7 @@ tport_t *tport_by_protocol(tport_t const *self, char const *proto)
 {
   if (proto && strcmp(proto, tpn_any) != 0) {
     for (; self; self = tport_next(self))
-      if (strcasecmp(proto, self->tp_protoname) == 0)
+      if (su_casematch(proto, self->tp_protoname))
 	break;
   }
 
@@ -4381,7 +4380,7 @@ tport_t *tport_primary_by_name(tport_t const *tp, tp_name_t const *tpn)
 	continue;
 #endif
     }
-    if (proto && strcasecmp(proto, tp->tp_protoname))
+    if (proto && !su_casematch(proto, tp->tp_protoname))
       continue;
 
     if (comp && comp != tp->tp_name->tpn_comp) {
@@ -4515,9 +4514,10 @@ tport_t *tport_by_name(tport_t const *self, tp_name_t const *tpn)
 	SU_DEBUG_7(("tport(%p): found %p by name " TPN_FORMAT "\n",
 		    (void *)self, (void *)sub, TPN_ARGS(tpn)));
       }
-      else if ((strcasecmp(canon, sub->tp_canon) &&
-		strcasecmp(host, sub->tp_host)) ||
-	       strcmp(port, sub->tp_port))
+      else if (!su_casematch(port, sub->tp_port))
+	continue;
+      else if (!su_casematch(canon, sub->tp_canon) &&
+	       !su_casematch(host, sub->tp_host))
 	continue;
 
       return (tport_t *)sub;
@@ -4635,9 +4635,9 @@ int tport_name_by_url(su_home_t *home,
     for (b = (char *)url->url_params; b[0]; b += n) {
       n = strcspn(b, ";");
 
-      if (n > 10 && strncasecmp(b, "transport=", 10) == 0)
+      if (n > 10 && su_casenmatch(b, "transport=", 10))
 	tpn->tpn_proto = b + 10;
-      else if (n > 6 && strncasecmp(b, "maddr=", 6) == 0)
+      else if (n > 6 && su_casenmatch(b, "maddr=", 6))
 	tpn->tpn_host = b + 6;
 
       if (b[n])

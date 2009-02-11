@@ -36,7 +36,7 @@
 
 #include "tport_internal.h"
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
@@ -245,7 +245,7 @@ void tport_log_msg(tport_t *self, msg_t *msg,
 	break;
       }
 
-      n = strncspn(s, end - s, "\r\n");
+      n = su_strncspn(s, end - s, "\r\n");
 
       if (linelen + n > MAX_LINELEN) {
 	n = MAX_LINELEN - linelen;

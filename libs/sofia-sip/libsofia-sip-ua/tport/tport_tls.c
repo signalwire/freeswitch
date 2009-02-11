@@ -41,6 +41,7 @@
 #include <sofia-sip/su.h>
 #include <sofia-sip/su_alloc.h>
 #include <sofia-sip/su_wait.h>
+#include <sofia-sip/su_string.h>
 
 #include <openssl/lhash.h>
 #include <openssl/bn.h>

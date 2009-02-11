@@ -38,7 +38,7 @@
 
 #include "tport.h"
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <stdlib.h>
 #include <time.h>
 #include <assert.h>
@@ -146,8 +146,7 @@ char const *vsc_comp_name(tport_sigcomp_t const *master_sc,
 {
   if (master_sc == NULL ||
       master_sc->sc_cc == NULL ||
-      compression == NULL ||
-      strcasecmp(compression, tport_sigcomp_name))
+      !su_casematch(compression, tport_sigcomp_name))
     return NULL;
 
   return tport_sigcomp_name;

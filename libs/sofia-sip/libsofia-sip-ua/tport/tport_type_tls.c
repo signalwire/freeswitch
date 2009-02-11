@@ -48,7 +48,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <string.h>
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 #if HAVE_FUNC
 #elif HAVE_FUNCTION
