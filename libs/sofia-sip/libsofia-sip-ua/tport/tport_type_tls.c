@@ -38,6 +38,8 @@
 
 #include "config.h"
 
+#define SU_WAKEUP_ARG_T  struct tport_s
+
 #include "tport_internal.h"
 
 #include <stdlib.h>
@@ -89,19 +91,10 @@ static int tport_tls_events(tport_t *self, int events);
 static int tport_tls_recv(tport_t *self);
 static ssize_t tport_tls_send(tport_t const *self, msg_t *msg,
 			      msg_iovec_t iov[], size_t iovused);
-
-typedef struct
-{
-  tport_primary_t tlspri_pri[1];
-  tls_t *tlspri_master;
-} tport_tls_primary_t;
-
-typedef struct
-{
-  tport_t tlstp_tp[1];
-  tls_t  *tlstp_context;
-  char   *tlstp_buffer;    /**< 2k Buffer  */
-} tport_tls_t;
+static int tport_tls_accept(tport_primary_t *pri, int events);
+static tport_t *tport_tls_connect(tport_primary_t *pri, su_addrinfo_t *ai,
+                                  tp_name_t const *tpn);
+static void tport_tls_deliver(tport_t *self, msg_t *msg, su_time_t now);
 
 tport_vtable_t const tport_tls_vtable =
 {
@@ -109,8 +102,8 @@ tport_vtable_t const tport_tls_vtable =
   sizeof (tport_tls_primary_t),
   tport_tls_init_primary,
   tport_tls_deinit_primary,
-  tport_accept,
-  NULL,
+  tport_tls_accept,
+  tport_tls_connect,
   sizeof (tport_tls_t),
   tport_tls_init_secondary,
   tport_tls_deinit_secondary,
@@ -127,8 +120,8 @@ tport_vtable_t const tport_tls_client_vtable =
   sizeof (tport_tls_primary_t),
   tport_tls_init_client,
   tport_tls_deinit_primary,
-  tport_accept,
-  NULL,
+  tport_tls_accept,
+  tport_tls_connect,
   sizeof (tport_tls_t),
   tport_tls_init_secondary,
   tport_tls_deinit_secondary,
@@ -527,3 +520,149 @@ ssize_t tport_tls_send(tport_t const *self,
 
   return size;
 }
+
+static
+int tport_tls_accept(tport_primary_t *pri, int events)
+{
+  tport_t *self;
+  su_addrinfo_t ai[1];
+  su_sockaddr_t su[1];
+  socklen_t sulen = sizeof su;
+  su_socket_t s = INVALID_SOCKET, l = pri->pri_primary->tp_socket;
+  char const *reason = "accept";
+
+  if (events & SU_WAIT_ERR)
+    tport_error_event(pri->pri_primary);
+
+  if (!(events & SU_WAIT_ACCEPT))
+    return 0;
+
+  memcpy(ai, pri->pri_primary->tp_addrinfo, sizeof ai);
+  ai->ai_canonname = NULL;
+
+  s = accept(l, &su->su_sa, &sulen);
+
+  if (s < 0) {
+    tport_error_report(pri->pri_primary, su_errno(), NULL);
+    return 0;
+  }
+
+  ai->ai_addr = &su->su_sa, ai->ai_addrlen = sulen;
+
+  /* Alloc a new transport object, then register socket events with it */
+  if ((self = tport_alloc_secondary(pri, s, 1, &reason)) == NULL) {
+    SU_DEBUG_3(("%s(%p): incoming secondary on "TPN_FORMAT
+                " failed. reason = %s\n", __func__, pri, 
+                TPN_ARGS(pri->pri_primary->tp_name), reason));
+    return 0;
+  }
+  else {
+    tport_tls_t *tlstp = (tport_tls_t *)self;
+    tport_tls_primary_t *tlspri = (tport_tls_primary_t *)self->tp_pri;
+    int events = SU_WAIT_IN|SU_WAIT_ERR|SU_WAIT_HUP;
+
+    SU_CANONIZE_SOCKADDR(su);
+
+    if (/* Name this transport */
+        tport_setname(self, pri->pri_protoname, ai, NULL) != -1
+	/* Register this secondary */
+	&&
+	tport_register_secondary(self, tls_connect, events) != -1) {
+
+      self->tp_conn_orient = 1;
+      self->tp_is_connected = 0;
+
+      tlstp->tlstp_context = tls_init_slave(tlspri->tlspri_master, s);
+
+      SU_DEBUG_5(("%s(%p): new connection from " TPN_FORMAT "\n",
+		  __func__,  (void *)self, TPN_ARGS(self->tp_name)));
+
+      /* Return succesfully */
+      return 0;
+    }
+
+    /* Failure: shutdown socket,  */
+    tport_close(self);
+    tport_zap_secondary(self);
+    self = NULL;
+  }
+
+  return 0;
+}
+
+static
+tport_t *tport_tls_connect(tport_primary_t *pri,
+                           su_addrinfo_t *ai,
+			   tp_name_t const *tpn)
+{
+  tport_t *self = NULL;
+
+  su_socket_t s, server_socket;
+  int events = SU_WAIT_CONNECT | SU_WAIT_ERR;
+
+  int err;
+  unsigned errlevel = 3;
+  char buf[TPORT_HOSTPORTSIZE];
+  char const *what;
+
+  s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+  if (s == INVALID_SOCKET)
+    goto sys_error;
+
+  what = "tport_alloc_secondary";
+  if ((self = tport_alloc_secondary(pri, s, 0, &what)) == NULL)
+    goto sys_error;
+
+  self->tp_conn_orient = 1;
+
+  if ((server_socket = pri->pri_primary->tp_socket) != INVALID_SOCKET) {
+    su_sockaddr_t susa;
+    socklen_t susalen = sizeof(susa);
+
+    if (getsockname(server_socket, &susa.su_sa, &susalen) < 0) {
+      SU_DEBUG_3(("%s(%p): getsockname(): %s\n", 
+                  __func__, (void *)self, su_strerror(su_errno())));
+    } else {
+      susa.su_port = 0;
+      if (bind(s, &susa.su_sa, susalen) < 0) {
+        SU_DEBUG_3(("%s(%p): bind(local-ip): %s\n", 
+                    __func__, (void *)self, su_strerror(su_errno())));
+      }
+    }
+  }
+
+  if (connect(s, ai->ai_addr, (socklen_t)(ai->ai_addrlen)) == SOCKET_ERROR) {
+    err = su_errno();
+    if (!su_is_blocking(err))
+      goto sys_error;
+  }
+
+  if (tport_setname(self, tpn->tpn_proto, ai, tpn->tpn_canon) != -1
+      &&
+      tport_register_secondary(self, tls_connect, events) != -1) {
+    tport_tls_t *tlstp = (tport_tls_t *)self;
+    tport_tls_primary_t *tlspri = (tport_tls_primary_t *)self->tp_pri;
+    tlstp->tlstp_context = tls_init_client(tlspri->tlspri_master, s);
+  }
+  else
+    goto sys_error;
+
+  SU_DEBUG_5(("%s(%p): connecting to " TPN_FORMAT "\n",
+              __func__, (void *)self, TPN_ARGS(self->tp_name)));
+  
+  tport_set_secondary_timer(self);
+
+  return self;
+
+sys_error:
+  err = errno;
+  if (SU_LOG_LEVEL >= errlevel)
+    su_llog(tport_log, errlevel, "%s(%p): %s (pf=%d %s/%s): %s\n",
+            __func__, (void *)pri, what, ai->ai_family, tpn->tpn_proto, 
+	    tport_hostport(buf, sizeof(buf), (void *)ai->ai_addr, 2),
+	    su_strerror(err));
+  tport_zap_secondary(self);
+  su_seterrno(err);
+  return NULL;
+}
+

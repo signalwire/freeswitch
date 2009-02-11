@@ -39,6 +39,8 @@
 #include <sofia-sip/su_types.h>
 #endif
 
+#include "tport_internal.h"
+
 SOFIA_BEGIN_DECLS
 
 #define TLS_MAX_HOSTS (16)
@@ -64,6 +66,17 @@ typedef struct tls_issues_s {
 			 * used, it is 0. */
 } tls_issues_t;
 
+typedef struct tport_tls_s {
+  tport_t  tlstp_tp[1];
+  tls_t   *tlstp_context;
+  char    *tlstp_buffer;
+} tport_tls_t;
+
+typedef struct tport_tls_primary_s {
+  tport_primary_t tlspri_pri[1];
+  tls_t *tlspri_master;
+} tport_tls_primary_t;
+
 tls_t *tls_init_master(tls_issues_t *tls_issues);
 tls_t *tls_init_slave(tls_t *tls_master, int sock);
 tls_t *tls_init_client(tls_t *tls_master, int sock);
@@ -74,10 +87,9 @@ void *tls_read_buffer(tls_t *tls, size_t N);
 int tls_want_read(tls_t *tls, int events);
 int tls_pending(tls_t const *tls);
 
+int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self);
 ssize_t tls_write(tls_t *tls, void *buf, size_t size);
 int tls_want_write(tls_t *tls, int events);
-
-int tls_check_hosts(tls_t *tls, char const *hosts[TLS_MAX_HOSTS]);
 
 int tls_events(tls_t const *tls, int flags);
 

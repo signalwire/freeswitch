@@ -268,7 +268,12 @@ int tport_has_ip6(tport_t const *self)
 int tport_has_tls(tport_t const *self)
 {
   return self && self->tp_pri->pri_has_tls;
+}
 
+/** Return true if transport certificate verified successfully */
+int tport_is_verified(tport_t const *self)
+{
+  return tport_has_tls(self) && self->tp_verified;
 }
 
 /** Return true if transport is being updated. */
@@ -3038,6 +3043,17 @@ int tport_delivered_from(tport_t *tp, msg_t const *msg, tp_name_t name[1])
     *name = *tp->tp_master->mr_delivery->d_from;
     return 0;
   }
+}
+
+/** Return TLS Subjects provided by the source transport */
+su_strlst_t *tport_delivered_from_subjects(tport_t *tp, msg_t const *msg)
+{
+  if (tp && msg && msg == tp->tp_master->mr_delivery->d_msg) {
+    tport_t *tp_sec = tp->tp_master->mr_delivery->d_tport;
+    return (tp_sec) ? tp_sec->tp_subjects : NULL;
+  }
+  else
+    return NULL;
 }
 
 /** Return UDVM used to decompress the message. */

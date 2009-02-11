@@ -35,9 +35,11 @@
 #include "config.h"
 
 #define OPENSSL_NO_KRB5 oh-no
+#define SU_WAKEUP_ARG_T  struct tport_s
 
 #include <sofia-sip/su_types.h>
 #include <sofia-sip/su.h>
+#include <sofia-sip/su_alloc.h>
 #include <sofia-sip/su_wait.h>
 
 #include <openssl/lhash.h>
@@ -61,18 +63,21 @@
 #endif
 
 #include "tport_tls.h"
-#include "tport_internal.h"
 
 char const tls_version[] = OPENSSL_VERSION_TEXT;
 
-enum  { tls_master, tls_slave };
+enum  { tls_master = 0, tls_slave = 1};
 
 struct tls_s {
+  su_home_t home[1];
   SSL_CTX *ctx;
   SSL *con;
   BIO *bio_con;
-  int type;
-  int verified;
+  unsigned int type:1,
+               accept:1,
+               verify_outgoing:1,
+               verify_incoming:1,
+               verified:1;
 
   /* Receiving */
   int read_events;
@@ -85,7 +90,7 @@ struct tls_s {
   size_t write_buffer_len;
 
   /* Host names */
-  char *hosts[TLS_MAX_HOSTS + 1];
+  su_strlst_t *subject;
 };
 
 enum { tls_buffer_size = 16384 };
@@ -122,10 +127,11 @@ void tls_log_errors(unsigned level, char const *s, unsigned long e)
 static
 tls_t *tls_create(int type)
 {
-  tls_t *tls = calloc(1, sizeof(*tls));
+  tls_t *tls = su_home_new(sizeof(*tls));
+  memset(((void *)tls) + sizeof(su_home_t), 0, sizeof(*tls) - sizeof(su_home_t));
 
   if (tls)
-    tls->type = type;
+    tls->type = type == tls_master ? tls_master : tls_slave;
 
   return tls;
 }
@@ -268,6 +274,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 		     ti->verify_peer == 1 ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
                      tls_verify_cb);
 
+  tls->verify_incoming = tls->verify_outgoing = ti->verify_peer ? 1 : 0;
+
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {
     SU_DEBUG_1(("%s: error setting cipher list\n", "tls_init_context"));
     tls_log_errors(1, "tls_init_context", 0);
@@ -280,13 +288,8 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
 void tls_free(tls_t *tls)
 {
-  int k;
-
   if (!tls)
     return;
-
-  if (tls->read_buffer)
-    free(tls->read_buffer), tls->read_buffer = NULL;
 
   if (tls->con != NULL)
     SSL_shutdown(tls->con);
@@ -297,12 +300,7 @@ void tls_free(tls_t *tls)
   if (tls->bio_con != NULL)
     BIO_free(tls->bio_con);
 
-  for (k = 0; k < TLS_MAX_HOSTS; k++)
-    if (tls->hosts[k]) {
-      free(tls->hosts[k]), tls->hosts[k] = NULL;
-    }
-
-  free(tls);
+  su_home_unref(tls->home);
 }
 
 int tls_get_socket(tls_t *tls)
@@ -369,9 +367,10 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
 
   if (tls) {
     tls->ctx = master->ctx;
+    tls->accept = accept ? 1 : 0;
 
-    if (!(tls->read_buffer = malloc(tls_buffer_size)))
-      free(tls), tls = NULL;
+    if (!(tls->read_buffer = su_alloc(tls->home, tls_buffer_size)))
+      su_home_unref(tls->home), tls = NULL;
   }
   if (!tls)
     return tls;
@@ -389,14 +388,9 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
   }
 
   SSL_set_bio(tls->con, tls->bio_con, tls->bio_con);
-  if (accept)
-    SSL_set_accept_state(tls->con);
-  else
-    SSL_set_connect_state(tls->con);
   SSL_set_mode(tls->con, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
   su_setblocking(sock, 0);
-  tls_read(tls); /* XXX - works only with non-blocking sockets */
 
   return tls;
 }
@@ -413,24 +407,12 @@ tls_t *tls_init_client(tls_t *master, int sock)
   return tls_clone(master, sock, accept = 0);
 }
 
-static char *tls_strdup(char const *s)
-{
-  if (s) {
-    size_t len = strlen(s) + 1;
-    char *d = malloc(len);
-    if (d)
-      memcpy(d, s, len);
-    return d;
-  }
-  return NULL;
-}
-
 static
 int tls_post_connection_check(tls_t *tls)
 {
   X509 *cert;
   int extcount;
-  int k, i, j, error;
+  int i, j, error;
 
   if (!tls) return -1;
 
@@ -440,8 +422,8 @@ int tls_post_connection_check(tls_t *tls)
 
   extcount = X509_get_ext_count(cert);
 
-  for (k = 0; k < TLS_MAX_HOSTS && tls->hosts[k]; k++)
-    ;
+  if (!tls->subject)
+    tls->subject = su_strlst_create(tls->home);
 
   /* Find matching subjectAltName.DNS */
   for (i = 0; i < extcount; i++) {
@@ -464,23 +446,18 @@ int tls_post_connection_check(tls_t *tls)
 
     for (j = 0; j < sk_CONF_VALUE_num(values); j++) {
       value = sk_CONF_VALUE_value(values, j);
-      if (strcmp(value->name, "DNS") == 0) {
-	if (k < TLS_MAX_HOSTS) {
-	  tls->hosts[k] = tls_strdup(value->value);
-	  k += tls->hosts[k] != NULL;
-	}
-      }
+      if (strcmp(value->name, "DNS") == 0)
+        su_strlst_dup_append(tls->subject, value->value);
       else if (strcmp(value->name, "URI") == 0) {
-	char const *uri = strchr(value->value, ':');
-	if (uri ++ && k < TLS_MAX_HOSTS) {
-	  tls->hosts[k] = tls_strdup(uri);
-	  k += tls->hosts[k] != NULL;
-	}
+	char *uri = su_strlst_dup_append(tls->subject, value->value);
+	char const *url = strchr(uri, ':');
+	if (url++)
+	  su_strlst_append(tls->subject, url);
       }
     }
   }
 
-  if (k < TLS_MAX_HOSTS) {
+  {
     X509_NAME *subject;
     char name[256];
 
@@ -490,12 +467,12 @@ int tls_post_connection_check(tls_t *tls)
 				    name, sizeof name) > 0) {
 	name[(sizeof name) - 1] = '\0';
 
-	for (i = 0; tls->hosts[i]; i++)
-	  if (strcasecmp(tls->hosts[i], name) == 0)
+	for (i = 0; i < su_strlst_len(tls->subject); i++)
+	  if (strcasecmp(su_strlst_item(tls->subject, i), name) == 0)
 	    break;
 
-	if (i == k)
-	  tls->hosts[k++] = tls_strdup(name);
+	if (i == su_strlst_len(tls->subject))
+	  su_strlst_dup_append(tls->subject, name);
       }
     }
   }
@@ -507,31 +484,11 @@ int tls_post_connection_check(tls_t *tls)
   if (error == X509_V_OK)
     tls->verified = 1;
 
+  if (tls->accept && !tls->verify_incoming)
+    return X509_V_OK;
+  else if (!tls->accept && !tls->verify_outgoing)
+    return X509_V_OK;
   return error;
-}
-
-int tls_check_hosts(tls_t *tls, char const *hosts[TLS_MAX_HOSTS])
-{
-  int i, j;
-
-  if (tls == NULL) { errno = EINVAL; return -1; }
-  if (!tls->verified) { errno = EAGAIN; return -1; }
-
-  if (!hosts)
-    return 0;
-
-  for (i = 0; hosts[i]; i++) {
-    for (j = 0; tls->hosts[j]; j++) {
-      if (strcasecmp(hosts[i], tls->hosts[j]) == 0)
-	break;
-    }
-    if (tls->hosts[j] == NULL) {
-      errno = EACCES;
-      return -1;
-    }
-  }
-
-  return 0;
 }
 
 static
@@ -589,7 +546,7 @@ ssize_t tls_read(tls_t *tls)
 
   if (0)
     SU_DEBUG_1(("tls_read(%p) called on %s (events %u)\n", (void *)tls,
-	    tls->type == tls_slave ? "server" : "client",
+	    tls->accept ? "server" : "client",
 	    tls->read_events));
 
   if (tls->read_buffer_len)
@@ -600,19 +557,6 @@ ssize_t tls_read(tls_t *tls)
   ret = SSL_read(tls->con, tls->read_buffer, tls_buffer_size);
   if (ret <= 0)
     return tls_error(tls, ret, "tls_read: SSL_read", NULL, 0);
-
-  if (!tls->verified) {
-    int err = tls_post_connection_check(tls);
-
-    if (err != X509_V_OK &&
-	err != SSL_ERROR_SYSCALL &&
-	err != SSL_ERROR_WANT_WRITE &&
-	err != SSL_ERROR_WANT_READ) {
-      SU_DEBUG_1((
-		 "%s: server certificate doesn't verify\n",
-		 "tls_read"));
-    }
-  }
 
   return (ssize_t)(tls->read_buffer_len = ret);
 }
@@ -694,13 +638,6 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
 
   tls->write_events = 0;
 
-  if (!tls->verified) {
-    if (tls_post_connection_check(tls) != X509_V_OK) {
-      SU_DEBUG_1((
-		 "tls_read: server certificate doesn't verify\n"));
-    }
-  }
-
   ret = SSL_write(tls->con, buf, size);
   if (ret < 0)
     return tls_error(tls, ret, "tls_write: SSL_write", buf, size);
@@ -748,3 +685,118 @@ int tls_events(tls_t const *tls, int mask)
     ((mask & SU_WAIT_IN) ? tls->read_events : 0) |
     ((mask & SU_WAIT_OUT) ? tls->write_events : 0);
 }
+
+int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
+{
+  tport_master_t *mr = self->tp_master;
+  tport_tls_t *tlstp = (tport_tls_t *)self;
+  tls_t *tls;
+  int events = su_wait_events(w, self->tp_socket);
+  int error;
+
+  SU_DEBUG_7(("%s(%p): events%s%s%s%s\n", __func__, (void *)self, 
+              events & (SU_WAIT_CONNECT) ? " CONNECTING" : "",
+              events & SU_WAIT_IN  ? " NEGOTIATING" : "",
+              events & SU_WAIT_ERR ? " ERROR" : "",
+              events & SU_WAIT_HUP ? " HANGUP" : ""));
+
+#if HAVE_POLL
+  assert(w->fd == self->tp_socket);
+#endif
+
+  if (events & SU_WAIT_ERR)
+    tport_error_event(self);
+
+  if (events & SU_WAIT_HUP && !self->tp_closed)
+    tport_hup_event(self);
+
+  if (self->tp_closed)
+    return 0;
+
+  error = su_soerror(self->tp_socket);
+  if (error) {
+    tport_error_report(self, error, NULL);
+    return 0;
+  }
+
+  if ((tls = tlstp->tlstp_context) == NULL) {
+    SU_DEBUG_3(("%s(%p): Error: no TLS context data for connected socket.\n", 
+                __func__, tlstp));
+    tport_close(self);
+    tport_set_secondary_timer(self);
+    return 0;
+  }
+
+  if (self->tp_is_connected == 0) {
+    int ret, status;
+
+    ret = tls->accept ? SSL_accept(tls->con) : SSL_connect(tls->con);
+    status = SSL_get_error(tls->con, ret);
+
+    switch (status) {
+      case SSL_ERROR_WANT_READ:
+        /* OpenSSL is waiting for the peer to send handshake data */
+        self->tp_events = SU_WAIT_IN | SU_WAIT_ERR | SU_WAIT_HUP;
+        su_root_eventmask(mr->mr_root, self->tp_index,
+		          self->tp_socket, self->tp_events);
+        return 0;
+
+      case SSL_ERROR_WANT_WRITE:
+        /* OpenSSL is waiting for the peer to receive handshake data */
+        self->tp_events = SU_WAIT_IN | SU_WAIT_ERR | SU_WAIT_HUP | SU_WAIT_OUT;
+        su_root_eventmask(mr->mr_root, self->tp_index, 
+                           self->tp_socket, self->tp_events);
+        return 0;
+
+      case SSL_ERROR_NONE:
+        /* TLS Handshake complete */
+	if ( tls_post_connection_check(tls) == X509_V_OK ) {
+          su_wait_t wait[1] = {SU_WAIT_INIT};
+          tport_master_t *mr = self->tp_master;
+
+          su_root_deregister(mr->mr_root, self->tp_index);
+          self->tp_index = -1;
+          self->tp_events = SU_WAIT_IN | SU_WAIT_ERR | SU_WAIT_HUP;
+
+          if ((su_wait_create(wait, self->tp_socket, self->tp_events) == -1) ||
+             ((self->tp_index = su_root_register(mr->mr_root, wait, tport_wakeup, 
+                                                           self, 0)) == -1)) {
+            tport_close(self);
+            tport_set_secondary_timer(self);
+	    return 0;
+          }
+
+          tls->read_events = SU_WAIT_IN;
+          tls->write_events = 0;
+          self->tp_is_connected = 1;
+	  self->tp_verified = tls->verified;
+	  self->tp_subjects = tls->subject == NULL ? NULL :
+	                      su_strlst_dup(self->tp_home, tls->subject); 
+
+	  if (tport_has_queued(self))
+            tport_send_event(self);
+          else
+            tport_set_secondary_timer(self);
+
+          return 0;
+	}
+	break;
+
+      default:
+        {
+	  char errbuf[64];
+	  ERR_error_string_n(status, errbuf, 64);
+          SU_DEBUG_3(("%s(%p): TLS setup failed (%s)\n", 
+	            __func__, self, errbuf));
+        }
+        break;
+    }
+  }
+
+  /* TLS Handshake Failed or Peer Certificate did not Verify */
+  tport_close(self);
+  tport_set_secondary_timer(self);
+
+  return 0;
+}
+

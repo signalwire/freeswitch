@@ -36,6 +36,9 @@
 #ifndef SU_H
 #include <sofia-sip/su.h>
 #endif
+#ifndef SU_STRLST_H
+#include <sofia-sip/su_strlst.h>
+#endif
 #ifndef SU_WAIT_H
 #include <sofia-sip/su_wait.h>
 #endif
@@ -267,6 +270,9 @@ TPORT_DLL int tport_is_tcp(tport_t const *self);
 /** Test if transport has TLS. */
 TPORT_DLL int tport_has_tls(tport_t const *tport);
 
+/** Test if transport provided a verified certificate chain (TLS only) */
+TPORT_DLL int tport_is_verified(tport_t const *tport);
+
 /** Return true if transport is being updated. */
 TPORT_DLL int tport_is_updating(tport_t const *self);
 
@@ -331,6 +337,9 @@ TPORT_DLL tport_t *tport_delivered_by(tport_t const *tp, msg_t const *msg);
 /** Return source transport name for delivered message */
 TPORT_DLL int tport_delivered_from(tport_t *tp, msg_t const *msg,
 				   tp_name_t name[1]);
+
+/** Return TLS Subjects provided by the source transport */
+TPORT_DLL su_strlst_t *tport_delivered_from_subjects(tport_t *tp, msg_t const *msg);
 
 /** Check if transport named is already resolved */
 TPORT_DLL int tport_name_is_resolved(tp_name_t const *);

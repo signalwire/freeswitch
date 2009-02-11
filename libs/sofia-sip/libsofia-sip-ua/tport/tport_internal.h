@@ -40,6 +40,7 @@
 #endif
 
 #include <sofia-sip/su_uniqueid.h>
+#include <sofia-sip/su_strlst.h>
 
 #ifndef MSG_ADDR_H
 #include <sofia-sip/msg_addr.h>
@@ -155,6 +156,7 @@ struct tport_s {
   unsigned            tp_has_stun_server:1;
   unsigned            tp_trunc:1;
   unsigned            tp_is_connected:1; /**< Connection is established */
+  unsigned            tp_verified:1;     /**< Certificate Chain was verified */
   unsigned:0;
 
   tport_t *tp_left, *tp_right, *tp_dad; /**< Links in tport tree */
@@ -176,6 +178,12 @@ struct tport_s {
 					 * This is either our name (if primary)
 					 * or peer name (if secondary).
 					 */
+
+  su_strlst_t        *tp_subjects;      /**< Transport Subjects.
+                                         *
+                                         * Subject Name(s) provided by the 
+                                         * peer in a TLS connection (if secondary).
+                                         */
 
 #define tp_protoname tp_name->tpn_proto
 #define tp_canon     tp_name->tpn_canon
