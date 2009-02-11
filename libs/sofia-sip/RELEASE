@@ -48,6 +48,8 @@ libsofia-sip-ua-glib:
 Contributors to this release
 ----------------------------
 
+Jarod Neuner <j dot neuner at networkharbor dot com>
+Michael Jerris <mike at jerris dot com>
 <list of people who contributed to _this_ release
  - update as people's patches are added, or when you commit stuff
  - current development team members (see AUTHORS) may be omitted,
@@ -65,11 +67,18 @@ See the AUTHORS file in the distribution package.
 Notes on new features
 ---------------------
 
-<information about major new features
- - new/changed/removed functionality
- - links to further documentation
- - section may be omitted for minor releases
-/>
+Jarod Neuner has improved certificate validation facilities of TLS
+transport. Significant changes include:
+
+1) The TLS handshake is no longer handled via transparent negotiation.
+Certain static methods from tport.c were exposed to make this possible.
+
+2) Certificate subjects are copied out of the peer certificate before
+the first message is sent.  The next patch will include code that allows
+the stack to reject messages sent to a untrusted peer.
+
+3) The tport module can now report whether a secondary has a verified
+certificate chain and the subjects of the peer certificate.
 
 Bugs fixed in this release
 --------------------------
