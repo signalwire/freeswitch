@@ -738,6 +738,14 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_client.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_client.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_common.c"
 					>
 				</File>
@@ -787,6 +795,14 @@
 				</File>
 				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_registrar.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_server.c"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\nua\nua_server.h"
 					>
 				</File>
 				<File
