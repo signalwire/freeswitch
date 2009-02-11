@@ -945,7 +945,7 @@ size_t count_acks(void *arg, void *message, size_t len)
 {
   (void)arg;
 
-  if (strncasecmp(message, "ACK sip:", 8) == 0)
+  if (su_casenmatch(message, "ACK sip:", 8))
     ack_sent++;
 
   return len;

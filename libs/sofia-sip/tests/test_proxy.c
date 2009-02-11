@@ -688,7 +688,7 @@ static sip_contact_t *create_transport_contacts(struct proxy *p)
     char const *proto = v->v_protocol;
 
     if (v->v_next &&
-	strcasecmp(v->v_host, v->v_next->v_host) == 0 &&
+	su_casematch(v->v_host, v->v_next->v_host) &&
 	str0cmp(v->v_port, v->v_next->v_port) == 0 &&
 	((proto == sip_transport_udp &&
 	  v->v_next->v_protocol == sip_transport_tcp) ||
@@ -861,7 +861,7 @@ static int originating_transaction(struct proxy_tr *t)
     return 0;
 
   for (o = t->proxy->domains; o; o = o->next)
-    if (strcasecmp(host, o->uri->url_host) == 0)
+    if (su_casematch(host, o->uri->url_host))
       break;
 
   t->origin = o;
@@ -1286,7 +1286,7 @@ static int check_received_contact(struct proxy_tr *t)
   sip_via_t *v = sip->sip_via;
 
   if (m && v && v->v_received && m->m_url->url_host
-      && strcasecmp(v->v_received, m->m_url->url_host)
+      && !su_casematch(v->v_received, m->m_url->url_host)
       && host_is_ip_address(m->m_url->url_host))
     return respond_transaction(t, 406, "Unacceptable Contact", TAG_END());
 

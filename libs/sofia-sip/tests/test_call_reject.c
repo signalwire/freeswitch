@@ -1254,7 +1254,7 @@ size_t filter_200_OK(void *arg, void *message, size_t len)
 {
   (void)arg;
 
-  if (len >= 11 && strncasecmp(message, "SIP/2.0 200", 11) == 0)
+  if (len >= 11 && su_casenmatch(message, "SIP/2.0 200", 11))
     return 0;
   return len;
 }
@@ -1263,7 +1263,7 @@ size_t filter_ACK(void *arg, void *message, size_t len)
 {
   (void)arg;
 
-  if (len >= 7 && strncasecmp(message, "ACK sip", 7) == 0)
+  if (len >= 7 && su_casenmatch(message, "ACK sip", 7))
     return 0;
   return len;
 }
