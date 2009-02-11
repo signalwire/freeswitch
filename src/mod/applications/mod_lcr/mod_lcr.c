@@ -47,6 +47,7 @@
 #define LCR_PREFIX_PLACE 7
 #define LCR_SUFFIX_PLACE 8
 
+#define LCR_QUERY_COLS 9
 
 #define LCR_DIALSTRING_PLACE 3
 #define LCR_HEADERS_COUNT 4
@@ -105,6 +106,7 @@ struct profile_obj {
 	char *name;
 	uint16_t id;
 	char *order_by;
+	char *custom_sql;
 };
 typedef struct profile_obj profile_t;
 
@@ -235,6 +237,25 @@ static switch_bool_t set_db_random()
 	return SWITCH_FALSE;
 }
 
+static switch_bool_t test_lcr_sql(const char *sql)
+{
+	char * tsql;
+	tsql = switch_mprintf(sql, "5555551212");
+	switch_bool_t retval;
+	
+	if (globals.odbc_dsn) {
+		if(switch_odbc_handle_exec(globals.master_odbc, tsql, NULL)
+				== SWITCH_ODBC_SUCCESS) {
+			retval = SWITCH_TRUE;
+		} else {
+			retval = SWITCH_FALSE;
+		}
+	}
+	
+	switch_safe_free(tsql);
+	return retval;
+}
+
 /* make a new string with digits only */
 static char *string_digitsonly(switch_memory_pool_t *pool, const char *str) 
 {
@@ -284,6 +305,14 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	switch_memory_pool_t *pool = cbt->pool;
 	
 	cbt->matches++;
+	
+	if(argc != LCR_QUERY_COLS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+							"Unexpected number of columns returned for SQL.  Returned columns are: %d. "
+							"If using a custom sql for this profile, verify it is correct.  Otherwise file a bug report.\n",
+							argc);
+		return SWITCH_STATUS_GENERR;
+	}
 
 	if (switch_strlen_zero(argv[LCR_GW_PREFIX_PLACE]) && switch_strlen_zero(argv[LCR_GW_SUFFIX_PLACE]) ) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING,
@@ -342,7 +371,8 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 	profile_t *profile;
 	switch_bool_t lookup_status;
 
-	if (switch_strlen_zero(digits)) {
+	digits_copy = string_digitsonly(cb_struct->pool, digits);
+	if (switch_strlen_zero(digits_copy)) {
 		return SWITCH_FALSE;
 	}
 	
@@ -358,24 +388,30 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 	SWITCH_STANDARD_STREAM(sql_stream);
 
 	/* set up the query to be executed */
-	sql_stream.write_function(&sql_stream, 
-							  "SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
-							  );
-	sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
-	digits_copy = string_digitsonly(cb_struct->pool, digits);
-	for (n = digit_len; n > 0; n--) {
-		digits_copy[n] = '\0';
-		sql_stream.write_function(&sql_stream, "%s%s", (n==digit_len ? "" : ", "), digits_copy);
+	if(switch_strlen_zero(profile->custom_sql)) {
+		sql_stream.write_function(&sql_stream, 
+								  "SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
+								  );
+		sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
+		for (n = digit_len; n > 0; n--) {
+			digits_copy[n] = '\0';
+			sql_stream.write_function(&sql_stream, "%s%s", (n==digit_len ? "" : ", "), digits_copy);
+		}
+		sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
+		if(profile->id > 0) {
+			sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
+		}
+		sql_stream.write_function(&sql_stream, "ORDER BY digits DESC%s", profile->order_by);
+		if(db_random) {
+			sql_stream.write_function(&sql_stream, ", %s", db_random);
+		}
+		sql_stream.write_function(&sql_stream, ";");
+	} else {
+		char *safe_sql;
+		safe_sql = switch_mprintf(profile->custom_sql, digits_copy);
+		sql_stream.write_function(&sql_stream, safe_sql);
+		switch_safe_free(safe_sql);
 	}
-	sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
-	if(profile->id > 0) {
-		sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
-	}
-	sql_stream.write_function(&sql_stream, "ORDER BY digits DESC%s", profile->order_by);
-	if(db_random) {
-		sql_stream.write_function(&sql_stream, ", %s", db_random);
-	}
-	sql_stream.write_function(&sql_stream, ";");
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", (char *)sql_stream.data);    
 	
@@ -422,8 +458,27 @@ static switch_status_t lcr_load_config()
 		}
 	}
 	
+	/* initialize sql here, 'cause we need to verify custom_sql for each profile below */
+	if (globals.odbc_dsn) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
+						  , "dsn is \"%s\", user is \"%s\", and password is \"%s\"\n"
+						  , globals.odbc_dsn, odbc_user, odbc_pass
+						  );
+		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+			status = SWITCH_STATUS_FALSE;
+			goto done;
+		}
+	}
+	
 	/* define default profile  */
 	profile = switch_core_alloc(globals.pool, sizeof(*profile));
+	memset(profile, 0, sizeof(profile_t));
 	profile->name = "global_default";
 	profile->order_by = ", rate";
 	globals.default_profile = profile;
@@ -434,6 +489,7 @@ static switch_status_t lcr_load_config()
 			char *name = (char *) switch_xml_attr_soft(x_profile, "name");
 			switch_stream_handle_t order_by = { 0 };
 			char *id_s = NULL;
+			char *custom_sql = NULL;
 			int argc, x = 0;
 			char *argv[4] = { 0 };
 			
@@ -472,6 +528,8 @@ static switch_status_t lcr_load_config()
 					}
 				} else if (!strcasecmp(var, "id") && !switch_strlen_zero(val)) {
 					id_s = val;
+				} else if (!strcasecmp(var, "custom_sql") && !switch_strlen_zero(val)) {
+					custom_sql = val;
 				}
 			}
 			
@@ -479,6 +537,7 @@ static switch_status_t lcr_load_config()
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No name specified.\n");
 			} else {
 				profile = switch_core_alloc(globals.pool, sizeof(*profile));
+				memset(profile, 0, sizeof(profile_t));
 				profile->name = switch_core_strdup(globals.pool, name);
 				
 				if(!switch_strlen_zero((char *)order_by.data)) {
@@ -491,6 +550,16 @@ static switch_status_t lcr_load_config()
 					profile->id = (uint16_t)atoi(id_s);
 				}
 				
+				if(!switch_strlen_zero(custom_sql)) {
+					if(test_lcr_sql(custom_sql) == SWITCH_TRUE) {
+						profile->custom_sql = switch_core_strdup(globals.pool, (char *)custom_sql);
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using custom lcr sql: %s\n", profile->custom_sql);
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Custom lcr sql invalid: %s\nDisabling profile: %s\n", custom_sql, name);
+						continue;
+					}
+				}
+				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded lcr profile %s.\n", profile->name);
 			}
@@ -500,24 +569,6 @@ static switch_status_t lcr_load_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No lcr profiles defined.\n");
 	}
 	
-
-	
-	if (globals.odbc_dsn) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
-						  , "dsn is \"%s\", user is \"%s\", and password is \"%s\"\n"
-						  , globals.odbc_dsn, odbc_user, odbc_pass
-						  );
-		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-		if (switch_odbc_handle_connect(globals.master_odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			status = SWITCH_STATUS_FALSE;
-			goto done;
-		}
-	}
  done:
 	switch_xml_free(xml);
 	return status;
