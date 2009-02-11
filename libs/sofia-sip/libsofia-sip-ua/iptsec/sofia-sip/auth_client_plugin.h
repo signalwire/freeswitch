@@ -98,7 +98,8 @@ struct auth_client_plugin
 
 /** Check if authentication client has been extended. @NEW_1_12_6. */
 #define AUTH_CLIENT_IS_EXTENDED(ca)					\
-  ((ca)->ca_auc->auc_plugin_size >					\
+  ((ca)->ca_auc &&							\
+   (ca)->ca_auc->auc_plugin_size >					\
    (int)offsetof(auth_client_plugin_t, auc_clear)			\
    && (ca)->ca_auc->auc_clear != NULL)
 

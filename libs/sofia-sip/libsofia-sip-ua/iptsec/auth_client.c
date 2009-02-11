@@ -128,11 +128,17 @@ int auc_challenge(auth_client_t **auc_list,
     if (!matched) {
       /* There was no matching authenticator, create a new one */
       *cca = ca_create(home, scheme, realm);
-      if (ca_challenge((*cca), ch, crcl, scheme, realm) < 0) {
+
+      if (*cca == NULL) {
+	return -1;
+      }
+      else if (ca_challenge((*cca), ch, crcl, scheme, realm) < 0) {
 	ca_destroy(home, *cca), *cca = NULL;
 	return -1;
       }
-      retval = 1;		/* Updated authenticator */
+      /* XXX - case w/ unknown authentication scheme */
+      else
+	retval = 1;		/* Updated authenticator */
     }
   }
 
