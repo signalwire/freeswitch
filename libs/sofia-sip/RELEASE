@@ -90,3 +90,5 @@ Bugs fixed in this release
 />
 
 - **template**: #9499652 sf.net bug item title
+- Accept multiple WWW-Authenticate and Authorization headers.
+  Bug reported by Andrew Rechenberg.
