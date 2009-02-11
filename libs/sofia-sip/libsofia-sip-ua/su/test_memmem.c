@@ -147,6 +147,9 @@ int test_strcasestr(void)
     TEST_1(su_strcasestr("OnG", hs) == NULL);
     TEST_1(su_strcasestr(hs, "Z") == NULL);
     TEST_1(su_strcasestr(hs, "z") == NULL);
+
+    TEST_S(su_strcasestr("foobar", "OB"), "obar");
+    TEST_S(su_strcasestr("FOOBAR", "ob"), "OBAR");
   }
 
   {
