@@ -26,7 +26,7 @@ libbnf_la_SOURCES = 	bnf.c
 
 COVERAGE_INPUT = 	$(libbnf_la_SOURCES) $(include_sofia_HEADERS)
 
-LDADD =			libbnf.la
+LDADD =			libbnf.la ../su/libsu.la
 
 torture_bnf_LDFLAGS = 	-static
 
