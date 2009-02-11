@@ -86,6 +86,8 @@ struct su_root_s;
  *    - su_root_run() [Do not call from cloned task]
  *    - su_root_break() [Do not call from cloned task]
  *    - su_root_step() [Do not call from cloned task]
+ *    - su_root_get_max_defer()
+ *    - su_root_set_max_defer()
  *    - su_root_task()
  *
  * New tasks can be created via su_clone_start() function.
@@ -127,6 +129,7 @@ int su_timer_reset_all(su_timer_t **t0, su_task_r);
  * Tasks
  */
 
+/** NULL task. */
 su_task_r const su_task_null = SU_TASK_R_INIT;
 
 #define SU_TASK_ZAP(t, f) \
@@ -259,13 +262,13 @@ int su_task_cmp(su_task_r const a, su_task_r const b)
  *
  * @retval true (nonzero) if task is not stopped,
  * @retval zero if it is null or stopped.
+ *
+ * @note A task sharing thread with another task is considered stopped when
+ * ever the the main task is stopped.
  */
 int su_task_is_running(su_task_r const task)
 {
-  return
-    task &&
-    task->sut_port &&
-    task->sut_root;
+  return task && task->sut_root && su_port_is_running(task->sut_port);
 }
 
 /** @internal
@@ -318,12 +321,41 @@ int su_task_detach(su_task_r self)
  *
  * @param task task handle
  *
- * @return A timer list of the task. If there are no timers, it returns
- * NULL.
+ * @return A timer list of the task.
  */
 su_timer_queue_t *su_task_timers(su_task_r const task)
 {
   return task->sut_port ? su_port_timers(task->sut_port) : NULL;
+}
+
+/**Return the queue for deferrable timers associated with given task.
+ *
+ * @param task task handle
+ *
+ * @return A timer list of the task.
+ *
+ * @NEW_1_12_11
+ */
+su_timer_queue_t *su_task_deferrable(su_task_r const task)
+{
+  return task ? su_port_deferrable(task->sut_port) : NULL;
+}
+
+/** Wakeup a task.
+ *
+ * Wake up a task. This function is mainly useful when using deferrable
+ * timers executed upon wakeup.
+ *
+ * @param task task handle
+ *
+ * @retval 0 if succesful
+ * @retval -1 upon an error
+ *
+ * @NEW_1_12_11
+ */
+int su_task_wakeup(su_task_r const task)
+{
+  return task ? su_port_wakeup(task->sut_port) : -1;
 }
 
 /** Execute the @a function by @a task thread.
@@ -446,6 +478,10 @@ void su_root_destroy(su_root_t *self)
 
   unregistered = su_port_unregister_all(port, self);
   reset = su_timer_reset_all(su_task_timers(self->sur_task), self->sur_task);
+
+  if (su_task_deferrable(self->sur_task))
+    reset += su_timer_reset_all(su_task_deferrable(self->sur_task),
+				self->sur_task);
 
   if (unregistered || reset)
     SU_DEBUG_1(("su_root_destroy: "
@@ -599,6 +635,56 @@ int su_root_unregister(su_root_t *self,
   assert(self->sur_port);
 
   return su_port_unregister(self->sur_port, self, wait, callback, arg);
+}
+
+/** Set maximum defer time.
+ *
+ * The deferrable timers can be deferred until the task is otherwise
+ * activated, however, they are deferred no longer than the maximum defer
+ * time. The maximum defer time determines also the maximum time during
+ * which task waits for events while running.  The maximum defer time is 15
+ * seconds by default.
+ *
+ * Cloned tasks inherit the maximum defer time.
+ *
+ * @param self pointer to root object
+ * @param max_defer maximum defer time in milliseconds
+ *
+ * @retval 0 when successful
+ * @retval -1 upon an error
+ *
+ * @sa su_timer_deferrable()
+ *
+ * @NEW_1_12_11
+ */
+int su_root_set_max_defer(su_root_t *self, su_duration_t max_defer)
+{
+  if (!self)
+    return -1;
+
+  return su_port_max_defer(self->sur_port, &max_defer, &max_defer);
+}
+
+/** Get maximum defer time.
+ *
+ * The deferrable timers can be deferred until the task is otherwise
+ * activated, however, they are deferred no longer than the maximum defer
+ * time. The maximum defer time is 15 seconds by default.
+ *
+ * @param root pointer to root object
+ *
+ * @return Maximum defer time
+ *
+ * @NEW_1_12_7
+ */
+su_duration_t su_root_get_max_defer(su_root_t const *self)
+{
+  su_duration_t max_defer = SU_WAIT_MAX;
+
+  if (self != NULL)
+    su_port_max_defer(self->sur_port, &max_defer, NULL);
+
+  return max_defer;
 }
 
 /** Remove a su_wait_t registration.

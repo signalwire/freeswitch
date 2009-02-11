@@ -61,6 +61,8 @@ typedef struct test_ep_s   test_ep_t;
 #include <pthread.h>
 #endif
 
+#define ALARM_IN_SECONDS 120
+
 struct test_ep_s {
   test_ep_t     *next, **prev, **list;
   int           i;
@@ -98,6 +100,8 @@ struct root_test_s {
   unsigned   rt_reported_reporter:1;
 
   unsigned   rt_executed:1;
+
+  unsigned   rt_t1:1, rt_t2:1;
 
   unsigned :0;
 
@@ -160,7 +164,6 @@ int test_api(root_test_t *rt)
   rt->rt_root = NULL;
   END();
 }
-
 
 #if SU_HAVE_PTHREADS
 
@@ -589,6 +592,61 @@ void send_a_reporter_msg(root_test_t *rt,
     rt->rt_sent_reporter = 1;
 }
 
+static void expire1(root_test_t *rt, su_timer_t *t, su_timer_arg_t *arg)
+{
+  (void)arg;
+  rt->rt_t1 = 1;
+}
+
+static void expire2(root_test_t *rt, su_timer_t *t, su_timer_arg_t *arg)
+{
+  (void)arg;
+  rt->rt_t2 = 1;
+}
+
+int timer_test(root_test_t rt[1])
+{
+  BEGIN();
+
+  su_timer_t *t1, *t2;
+  su_duration_t defer;
+
+  TEST_1(t1 = su_timer_create(su_root_task(rt->rt_root), 100));
+  TEST_1(t2 = su_timer_create(su_root_task(rt->rt_root), 110));
+
+  rt->rt_t1 = rt->rt_t2 = 0;
+
+  TEST_1(su_root_step(rt->rt_root, 0) == SU_WAIT_FOREVER);
+
+  TEST_1(su_root_set_max_defer(rt->rt_root, 30000) != -1);
+  TEST(su_root_get_max_defer(rt->rt_root), 30000);
+
+  if (su_timer_deferrable(t1, 1) == 0) {
+    /*
+     * If only a deferrable timer is set, su_root_step() should return
+     * about the maximum defer time, which now defaults to 15 seconds
+     */
+    TEST(su_timer_set(t1, expire1, NULL), 0);
+    defer = su_root_step(rt->rt_root, 0);
+    TEST_1(defer > 100);
+  }
+  else {
+    TEST(su_timer_set(t1, expire1, NULL), 0);
+  }
+
+  TEST(su_timer_set(t2, expire2, NULL), 0);
+
+  while (su_root_step(rt->rt_root, 100) != SU_WAIT_FOREVER)
+    ;
+
+  TEST_1(rt->rt_t1 && rt->rt_t2);
+
+  su_timer_destroy(t1);
+  su_timer_destroy(t2);
+
+  END();
+}
+
 static int set_execute_bit_and_return_3(void *void_rt)
 {
   root_test_t *rt = void_rt;
@@ -612,12 +670,33 @@ static void receive_simple_msg(root_test_t *rt,
     su_task_cmp(su_msg_to(msg), su_task_null) == 0;
 }
 
-static int clone_test(root_test_t rt[1])
+static void expire1destroy(root_test_t *rt, su_timer_t *t, su_timer_arg_t *arg)
+{
+  (void)arg;
+  rt->rt_t1 = 1;
+  su_timer_destroy(t);
+}
+
+static int set_deferrable_timer(void *void_rt)
+{
+  root_test_t *rt = void_rt;
+  su_timer_t *t1;
+
+  TEST_1(t1 = su_timer_create(su_clone_task(rt->rt_clone), 100));
+  TEST_1(su_timer_deferrable(t1, 1) == 0);
+  TEST(su_timer_set(t1, expire1destroy, NULL), 0);
+
+  return 0;
+}
+
+static int clone_test(root_test_t rt[1], int multithread)
 {
   BEGIN();
 
   su_msg_r m = SU_MSG_R_INIT;
   int retval;
+
+  su_root_threading(rt->rt_root, multithread);
 
   rt->rt_fail_init = 0;
   rt->rt_fail_deinit = 0;
@@ -635,6 +714,10 @@ static int clone_test(root_test_t rt[1])
   TEST_1(rt->rt_fail_init);
   TEST_1(rt->rt_fail_deinit);
 
+  /* Defer longer than maximum allowed run time   */
+  TEST_1(su_root_set_max_defer(rt->rt_root, ALARM_IN_SECONDS * 1000) != -1);
+  TEST(su_root_get_max_defer(rt->rt_root), ALARM_IN_SECONDS * 1000);
+
   TEST(su_clone_start(rt->rt_root,
 		      rt->rt_clone,
 		      rt,
@@ -643,6 +726,7 @@ static int clone_test(root_test_t rt[1])
   TEST_1(rt->rt_success_init);
   TEST_1(!rt->rt_success_deinit);
 
+  /* Test su_task_execute() */
   retval = -1;
   rt->rt_executed = 0;
   TEST(su_task_execute(su_clone_task(rt->rt_clone),
@@ -665,6 +749,28 @@ static int clone_test(root_test_t rt[1])
     su_root_step(rt->rt_root, 1);
 
   TEST(rt->rt_msg_received, 1);
+
+  if (multithread) {
+    TEST_1(su_task_is_running(su_clone_task(rt->rt_clone)));
+  }
+  else {
+    TEST_1(!su_task_is_running(su_clone_task(rt->rt_clone)));
+  }
+
+  /* Test su_wakeup() */
+  if (multithread) {
+    retval = -1;
+    rt->rt_t1 = 0;
+    TEST(su_task_execute(su_clone_task(rt->rt_clone),
+			 set_deferrable_timer, rt,
+			 &retval), 0);
+    TEST(retval, 0);
+
+    while (rt->rt_t1 == 0) {
+      TEST(su_root_step(rt->rt_root, 100), SU_WAIT_FOREVER);
+      su_task_wakeup(su_clone_task(rt->rt_clone));
+    }
+  }
 
   /* Make sure 3-way handshake is done as expected */
   TEST(su_msg_create(m,
@@ -707,10 +813,21 @@ void usage(int exitcode)
   exit(exitcode);
 }
 
+#if HAVE_ALARM
+#include <signal.h>
+
+static RETSIGTYPE sig_alarm(int s)
+{
+  fprintf(stderr, "%s: FAIL! test timeout!\n", name);
+  exit(1);
+}
+#endif
+
 int main(int argc, char *argv[])
 {
   root_test_t *rt, rt0[1] = {{{ SU_HOME_INIT(rt0) }}}, rt1[1];
   int retval = 0;
+  int no_alarm = 0;
   int i;
 
   struct {
@@ -746,6 +863,8 @@ int main(int argc, char *argv[])
       rt->rt_flags |= tst_verbatim;
     else if (strcmp(argv[i], "-a") == 0)
       rt->rt_flags |= tst_abort;
+    else if (strcmp(argv[i], "--no-alarm") == 0)
+      no_alarm = 1;
 #if SU_HAVE_IN6
     else if (strcmp(argv[i], "-6") == 0)
       rt->rt_family = AF_INET6;
@@ -753,6 +872,13 @@ int main(int argc, char *argv[])
     else
       usage(1);
   }
+
+#if HAVE_ALARM
+  if (!no_alarm) {
+    signal(SIGALRM, sig_alarm);
+    alarm(ALARM_IN_SECONDS);
+  }
+#endif
 
 #if HAVE_OPEN_C
   rt->rt_flags |= tst_verbatim;
@@ -770,10 +896,9 @@ int main(int argc, char *argv[])
     retval |= init_test(rt, prefer[i].name, prefer[i].create, prefer[i].start);
     retval |= register_test(rt);
     retval |= event_test(rt);
-    su_root_threading(rt->rt_root, 1);
-    retval |= clone_test(rt);
-    su_root_threading(rt->rt_root, 0);
-    retval |= clone_test(rt);
+    retval |= timer_test(rt);
+    retval |= clone_test(rt, 1);
+    retval |= clone_test(rt, 0);
     retval |= deinit_test(rt);
   } while (prefer[++i].create);
 

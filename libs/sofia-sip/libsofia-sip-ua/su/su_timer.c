@@ -164,7 +164,9 @@ struct su_timer_s {
   su_timer_arg_t *sut_arg;	/**< Pointer to argument data */
   su_time_t       sut_run;	/**< When this timer was last waken up */
   unsigned        sut_woken;	/**< Timer has waken up this many times */
-  unsigned short  sut_running;	/**< Timer is running */
+
+  unsigned        sut_running:2;/**< Timer is running */
+  unsigned        sut_deferrable:1;/**< Timer can be deferrable */
 };
 
 /** Timer running status */
@@ -246,9 +248,9 @@ su_timer_set0(su_timer_queue_t *timers,
  * @retval NULL upon an error
  */
 static
-su_timer_queue_t *su_timer_tree(su_timer_t const *t,
-				int use_sut_duration,
-				char const *caller)
+su_timer_queue_t *su_timer_queue(su_timer_t const *t,
+				 int use_sut_duration,
+				 char const *caller)
 {
   su_timer_queue_t *timers;
 
@@ -265,7 +267,10 @@ su_timer_queue_t *su_timer_tree(su_timer_t const *t,
     return NULL;
   }
 
-  timers = su_task_timers(t->sut_task);
+  if (t->sut_deferrable)
+    timers = su_task_deferrable(t->sut_task);
+  else
+    timers = su_task_timers(t->sut_task);
 
   if (timers == NULL) {
     SU_DEBUG_1(("%s(%p): %s\n", caller, (void *)t, "invalid timer"));
@@ -285,7 +290,7 @@ su_timer_queue_t *su_timer_tree(su_timer_t const *t,
  * Allocate and initialize an instance of su_timer_t.
  *
  * @param task a task for root object with which the timer will be associated
- * @param msec the default duration of the timer
+ * @param msec the default duration of the timer in milliseconds
  *
  * @return A pointer to allocated timer instance, NULL on error.
  */
@@ -307,6 +312,7 @@ su_timer_t *su_timer_create(su_task_r const task, su_duration_t msec)
   return retval;
 }
 
+
 /** Destroy a timer.
  *
  * Deinitialize and free an instance of su_timer_t.
@@ -321,6 +327,7 @@ void su_timer_destroy(su_timer_t *t)
     su_free(NULL, t);
   }
 }
+
 
 /** Set the timer for the given @a interval.
  *
@@ -338,7 +345,7 @@ int su_timer_set_interval(su_timer_t *t,
 			  su_timer_arg_t *arg,
 			  su_duration_t interval)
 {
-  su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_set_interval");
+  su_timer_queue_t *timers = su_timer_queue(t, 0, "su_timer_set_interval");
 
   return su_timer_set0(timers, t, wakeup, arg, su_now(), interval);
 }
@@ -359,7 +366,7 @@ int su_timer_set(su_timer_t *t,
 		 su_timer_f wakeup,
 		 su_timer_arg_t *arg)
 {
-  su_timer_queue_t *timers = su_timer_tree(t, 1, "su_timer_set");
+  su_timer_queue_t *timers = su_timer_queue(t, 1, "su_timer_set");
 
   return su_timer_set0(timers, t, wakeup, arg, su_now(), t->sut_duration);
 }
@@ -380,7 +387,7 @@ int su_timer_set_at(su_timer_t *t,
 		    su_wakeup_arg_t *arg,
 		    su_time_t when)
 {
-  su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_set_at");
+  su_timer_queue_t *timers = su_timer_queue(t, 0, "su_timer_set_at");
 
   return su_timer_set0(timers, t, wakeup, arg, when, 0);
 }
@@ -407,7 +414,7 @@ int su_timer_run(su_timer_t *t,
 		 su_timer_f wakeup,
 		 su_timer_arg_t *arg)
 {
-  su_timer_queue_t *timers = su_timer_tree(t, 1, "su_timer_run");
+  su_timer_queue_t *timers = su_timer_queue(t, 1, "su_timer_run");
   su_time_t now;
 
   if (timers == NULL)
@@ -440,7 +447,7 @@ int su_timer_set_for_ever(su_timer_t *t,
 			  su_timer_f wakeup,
 			  su_timer_arg_t *arg)
 {
-  su_timer_queue_t *timers = su_timer_tree(t, 1, "su_timer_set_for_ever");
+  su_timer_queue_t *timers = su_timer_queue(t, 1, "su_timer_set_for_ever");
   su_time_t now;
 
   if (timers == NULL)
@@ -463,7 +470,7 @@ int su_timer_set_for_ever(su_timer_t *t,
  */
 int su_timer_reset(su_timer_t *t)
 {
-  su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_reset");
+  su_timer_queue_t *timers = su_timer_queue(t, 0, "su_timer_reset");
 
   if (timers == NULL)
     return -1;
@@ -508,7 +515,7 @@ int su_timer_expire(su_timer_queue_t * const timers,
     if (SU_TIME_CMP(t->sut_when, now) > 0) {
       su_duration_t at = su_duration(t->sut_when, now);
 
-      if (at < *timeout)
+      if (at < *timeout || *timeout < 0)
 	*timeout = at;
 
       break;
@@ -622,3 +629,31 @@ su_root_t *su_timer_root(su_timer_t const *t)
   return t ? su_task_root(t->sut_task) : NULL;
 }
 
+
+/** Change timer as deferrable (or as undeferrable).
+ *
+ * A deferrable timer is executed after the given timeout, however, the task
+ * tries to avoid being woken up only because the timeout. Deferable timers
+ * have their own queue and timers there are ignored when calculating the
+ * timeout for epoll()/select()/whatever unless the timeout would exceed the
+ * maximum defer time. The maximum defer time is 15 seconds by default, but
+ * it can be modified by su_root_set_max_defer().
+ *
+ * @param t pointer to the timer
+ * @param value make timer deferrable if true, undeferrable if false
+ *
+ * @return 0 if succesful, -1 upon an error
+ *
+ * @sa su_root_set_max_defer()
+ *
+ * @NEW_1_12_7
+ */
+int su_timer_deferrable(su_timer_t *t, int value)
+{
+  if (t == NULL || su_task_deferrable(t->sut_task) == NULL)
+    return errno = EINVAL, -1;
+
+  t->sut_deferrable = value != 0;
+ 
+  return 0;
+}

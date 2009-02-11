@@ -122,7 +122,7 @@ su_port_vtable_t const su_epoll_port_vtable[1] =
       su_base_port_incref,
       su_epoll_port_decref,
       su_base_port_gsource,
-      su_socket_port_send,
+      su_base_port_send,
       su_epoll_port_register,
       su_epoll_port_unregister,
       su_epoll_port_deregister,
@@ -143,6 +143,10 @@ su_port_vtable_t const su_epoll_port_vtable[1] =
       su_base_port_start_shared,
       su_pthread_port_wait,
       su_pthread_port_execute,
+      su_base_port_deferrable,
+      su_base_port_max_defer,
+      su_socket_port_wakeup,
+      su_base_port_is_running,
     }};
 
 static char const *su_epoll_port_name(su_port_t const *self)

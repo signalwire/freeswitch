@@ -315,6 +315,9 @@ static void *su_pthread_port_clone_main(void *varg)
 	task->sut_root->sur_magic = arg->magic;
 	task->sut_root->sur_deinit = arg->deinit;
 
+	su_root_set_max_defer(task->sut_root, 
+			      su_root_get_max_defer(arg->parent));
+
 	if (arg->init(task->sut_root, arg->magic) == 0) {
 	  su_pthread_port_return_to_parent(arg, 0), arg = NULL;
 

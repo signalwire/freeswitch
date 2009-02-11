@@ -179,23 +179,17 @@ void su_socket_port_deinit(su_port_t *self)
   su_pthread_port_deinit(self);
 }
 
-/** @internal Send a message to the port. */
-int su_socket_port_send(su_port_t *self, su_msg_r rmsg)
+/** @internal Wake up the port. */
+int su_socket_port_wakeup(su_port_t *self)
 {
-  int wakeup = su_base_port_send(self, rmsg);
+  assert(self->sup_mbox[SU_MBOX_SEND] != INVALID_SOCKET);
 
-  if (wakeup < 0)
-    return -1;
-
-  if (wakeup) {
-    assert(self->sup_mbox[SU_MBOX_SEND] != INVALID_SOCKET);
-
-    if (send(self->sup_mbox[SU_MBOX_SEND], "X", 1, 0) == -1) {
+  if (!su_pthread_port_own_thread(self) &&
+      send(self->sup_mbox[SU_MBOX_SEND], "X", 1, 0) == -1) {
 #if HAVE_SOCKETPAIR
-      if (su_errno() != EWOULDBLOCK)
+    if (su_errno() != EWOULDBLOCK)
 #endif
-	su_perror("su_msg_send: send()");
-    }
+      su_perror("su_msg_send: send()");
   }
 
   return 0;

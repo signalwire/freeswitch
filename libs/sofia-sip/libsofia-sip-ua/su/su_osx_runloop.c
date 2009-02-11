@@ -204,6 +204,10 @@ su_port_vtable_t const su_osx_port_vtable[1] =
       su_base_port_start_shared,
       su_pthread_port_wait,
       su_pthread_port_execute,
+      su_base_port_deferrable,
+      su_base_port_max_defer,
+      su_socket_port_wakeup,
+      su_base_port_is_running,
     }};
 
 /* XXX - mela static void su_osx_port_destroy(su_port_t *self); */
