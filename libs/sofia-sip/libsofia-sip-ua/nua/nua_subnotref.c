@@ -44,7 +44,7 @@
 
 #include <assert.h>
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/sip_protos.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sip_extra.h>
@@ -547,7 +547,8 @@ int nua_notify_server_init(nua_server_request_t *sr)
 
     /* Check for forked subscription. */
     if (ds->ds_remote_tag && ds->ds_remote_tag[0] &&
-	str0cmp(ds->ds_remote_tag, sr->sr_request.sip->sip_from->a_tag)) {
+	su_strcasecmp(ds->ds_remote_tag,
+		      sr->sr_request.sip->sip_from->a_tag)) {
       sip_contact_t const *m = NULL;
 
       m = nua_stack_get_contact(sr->sr_owner->nh_nua->nua_registrations);
@@ -611,18 +612,18 @@ int nua_notify_server_preprocess(nua_server_request_t *sr)
     else
       substate = nua_substate_active, what = "active";
   }
-  else if (strcasecmp(subs->ss_substate, what = "terminated") == 0) {
+  else if (su_casematch(subs->ss_substate, what = "terminated")) {
     substate = nua_substate_terminated;
     reason = subs->ss_reason;
 
-    if (str0casecmp(reason, "deactivated") == 0 ||
-	str0casecmp(reason, "probation") == 0)
+    if (su_casematch(reason, "deactivated") ||
+	su_casematch(reason, "probation"))
       substate = nua_substate_embryonic;
   }
-  else if (strcasecmp(subs->ss_substate, what = "pending") == 0) {
+  else if (su_casematch(subs->ss_substate, what = "pending")) {
     substate = nua_substate_pending;
   }
-  else /* if (strcasecmp(subs->ss_substate, what = "active") == 0) */ {
+  else /* if (su_casematch(subs->ss_substate, what = "active")) */ {
     /* Any extended state is considered as active */
     what = subs->ss_substate;
     substate = nua_substate_active;
@@ -670,10 +671,10 @@ int nua_notify_server_report(nua_server_request_t *sr, tagi_t const *tags)
     }
     else if (substate == nua_substate_embryonic) {
       if (subs && subs->ss_reason) {
-	if (str0casecmp(subs->ss_reason, "deactivated") == 0) {
+	if (su_casematch(subs->ss_reason, "deactivated")) {
 	  retry = 0;		/* retry immediately */
 	}
-	else if (str0casecmp(subs->ss_reason, "probation") == 0) {
+	else if (su_casematch(subs->ss_reason, "probation")) {
 	  retry = 30;
 	  if (subs->ss_retry_after)
 	    retry = strtoul(subs->ss_retry_after, NULL, 10);
@@ -913,7 +914,7 @@ static int nua_refer_client_response(nua_client_request_t *cr,
     else if (status < 300) {
       sip_refer_sub_t const *rs = sip_refer_sub(sip);
 
-      if (rs && strcasecmp("false", rs->rs_value) == 0)
+      if (rs && su_casematch("false", rs->rs_value))
 	cr->cr_terminated = 1;
 
       if (!cr->cr_terminated)

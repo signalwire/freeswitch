@@ -39,7 +39,7 @@
 
 #include <assert.h>
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/sip_protos.h>
 #include <sofia-sip/sip_status.h>
 

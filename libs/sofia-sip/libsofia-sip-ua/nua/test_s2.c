@@ -44,6 +44,7 @@
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/su_tagarg.h>
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -982,21 +983,21 @@ s2_setup_tport(char const * const *protocols,
 		       tpn->tpn_host,
 		       tpn->tpn_port);
     assert(v != NULL);
-    if (strncasecmp(tpn->tpn_proto, "tls", 3)) {
+    if (!su_casenmatch(tpn->tpn_proto, "tls", 3)) {
       m = sip_contact_format(s2->home, "<sip:%s:%s;transport=%s>",
 			     tpn->tpn_host,
 			     tpn->tpn_port,
 			     tpn->tpn_proto);
-      if (s2->udp.contact == NULL && strcasecmp(tpn->tpn_proto, "udp") == 0) {
+      if (s2->udp.contact == NULL && su_casematch(tpn->tpn_proto, "udp")) {
 	s2->udp.tport = tport_ref(tp);
 	s2->udp.contact = m;
       }
-      if (s2->tcp.contact == NULL && strcasecmp(tpn->tpn_proto, "tcp") == 0) {
+      if (s2->tcp.contact == NULL && su_casematch(tpn->tpn_proto, "tcp")) {
 	s2->tcp.tport = tport_ref(tp);
 	s2->tcp.contact = m;
       }
     }
-    else if (strcasecmp(tpn->tpn_proto, "tls")) {
+    else if (!su_casematch(tpn->tpn_proto, "tls")) {
       m = sip_contact_format(s2->home, "<sips:%s:%s;transport=%s>",
 			     tpn->tpn_host,
 			     tpn->tpn_port,

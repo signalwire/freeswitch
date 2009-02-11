@@ -39,7 +39,7 @@
 
 #define TP_CLIENT_T          struct register_usage
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_strlst.h>
 #include <sofia-sip/su_uniqueid.h>
 #include <sofia-sip/su_tagarg.h>
@@ -1163,13 +1163,13 @@ nua_stack_init_transport(nua_t *nua, tagi_t const *tags)
 
   if (contact1 &&
       (url_is_string(contact1)
-       ? strncasecmp(contact1->us_str, "sips:", 5) == 0
+       ? su_casenmatch(contact1->us_str, "sips:", 5)
        : contact1->us_url->url_type == url_sips))
     name1 = "sips";
 
   if (contact2 &&
       (url_is_string(contact2)
-       ? strncasecmp(contact2->us_str, "sips:", 5) == 0
+       ? su_casenmatch(contact2->us_str, "sips:", 5)
        : contact2->us_url->url_type == url_sips))
     name2 = "sips";
 
@@ -1379,11 +1379,11 @@ int nua_registration_from_via(nua_registration_t **list,
     if (protocol) {
       /* Try to pair vias if we have both udp and tcp */
       for (prev = vv; *prev; prev = &(*prev)->v_next) {
-        if (strcasecmp(protocol, (*prev)->v_protocol))
+        if (!su_casematch(protocol, (*prev)->v_protocol))
           continue;
-        if (strcasecmp(v->v_host, (*prev)->v_host))
+        if (!su_casematch(v->v_host, (*prev)->v_host))
           continue;
-        if (str0cmp(v->v_port, (*prev)->v_port))
+        if (!su_strmatch(v->v_port, (*prev)->v_port))
           continue;
         break;
       }
@@ -2023,7 +2023,7 @@ sip_contact_t *nua_handle_contact_by_via(nua_handle_t *nh,
   }
 
   if (transport) {
-    if (strncasecmp(transport, "SIP/2.0/", 8) == 0)
+    if (su_casenmatch(transport, "SIP/2.0/", 8))
       transport += 8;
 
     /* Make transport parameter lowercase */

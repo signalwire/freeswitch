@@ -32,7 +32,7 @@
 
 #include "config.h"
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_strlst.h>
 #include <sofia-sip/token64.h>
 #include <sofia-sip/su_tagarg.h>
@@ -53,10 +53,6 @@
 #include <limits.h>
 
 #include <assert.h>
-
-#if !HAVE_STRCASESTR
-char *strcasestr(char const *haystack, char const *needle);
-#endif
 
 /* ====================================================================== */
 /* Helper macros and functions for handling #nua_handle_preferences_t. */
@@ -113,7 +109,7 @@ static int already_contains_package_name(char const *s)
   char const pn[] = " " PACKAGE_NAME "/";
   size_t pnlen = strlen(pn + 1);
 
-  return strncasecmp(s, pn + 1, pnlen) == 0 || strcasestr(s, pn);
+  return su_casenmatch(s, pn + 1, pnlen) || su_strcasestr(s, pn);
 }
 
 /* ====================================================================== */
@@ -964,7 +960,7 @@ static int nhp_set_tags(su_home_t *home,
     /* NUTAG_REGISTRAR(registrar) */
     else if (tag == nutag_registrar) {
       NHP_SET_STR_BY_URL(nhp, char, registrar, value);
-      if (NHP_ISSET(nhp, registrar) && !str0cmp(nhp->nhp_registrar, "*"))
+      if (NHP_ISSET(nhp, registrar) && su_strmatch(nhp->nhp_registrar, "*"))
 	NHP_SET_STR(nhp, registrar, 0);
     }
     /* NUTAG_INSTANCE(instance) */

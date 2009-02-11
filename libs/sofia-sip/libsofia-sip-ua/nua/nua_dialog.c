@@ -39,7 +39,7 @@
 
 #include <assert.h>
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_uniqueid.h>
 
 #include <sofia-sip/sip_protos.h>
@@ -241,10 +241,10 @@ nua_dialog_usage_at(nua_dialog_state_t const *ds,
       if (event != o) {
 	if (event == NULL || o == NULL)
 	  continue;
-	if (strcmp(event->o_type, o->o_type))
+	if (!su_strmatch(event->o_type, o->o_type))
 	  continue;
-	if (str0casecmp(event->o_id, o->o_id)) {
-	  if (event->o_id || strcmp(event->o_type, "refer"))
+	if (!su_casematch(event->o_id, o->o_id)) {
+	  if (event->o_id || !su_strmatch(event->o_type, "refer"))
 	    continue;
 	}
       }

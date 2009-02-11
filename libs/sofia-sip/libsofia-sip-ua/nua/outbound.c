@@ -263,7 +263,7 @@ int outbound_set_options(outbound_t *ob,
   prefs->interval = interval;
   prefs->stream_interval = stream_interval;
 
-#define MATCH(v) (len == sizeof(#v) - 1 && strncasecmp(#v, s, len) == 0)
+#define MATCH(v) (len == sizeof(#v) - 1 && su_casenmatch(#v, s, len))
 
   if (options) {
     for (s = options; s[0]; s++) if (s[0] == '-') s[0] = '_';
@@ -280,9 +280,9 @@ int outbound_set_options(outbound_t *ob,
     size_t len = span_token(s);
     int value = 1;
 
-    if (len > 3 && strncasecmp(s, "no_", 3) == 0)
+    if (len > 3 && su_casenmatch(s, "no_", 3))
       value = 0, s += 3, len -= 3;
-    else if (len > 4 && strncasecmp(s, "not_", 4) == 0)
+    else if (len > 4 && su_casenmatch(s, "not_", 4))
       value = 0, s += 4, len -= 4;
 
     if (len == 0)
@@ -527,7 +527,7 @@ int outbound_nat_detect(outbound_t *ob,
   nat_port = ob->ob_nat_port;
 
   if (nat_detected && host_cmp(received, nat_detected) == 0) {
-    if (nat_port && strcasecmp(rport, nat_port) == 0)
+    if (nat_port && su_casematch(rport, nat_port))
       return 1;
     if (!v->v_rport || !v->v_rport[0])
       return 1;
@@ -1030,7 +1030,7 @@ int outbound_targeted_request(sip_t const *sip)
     sip->sip_request->rq_method == sip_method_options &&
     sip->sip_accept &&
     sip->sip_accept->ac_type &&
-    strcasecmp(sip->sip_accept->ac_type, outbound_content_type) == 0;
+    su_casematch(sip->sip_accept->ac_type, outbound_content_type);
 }
 
 /** Answer to the connectivity probe OPTIONS */

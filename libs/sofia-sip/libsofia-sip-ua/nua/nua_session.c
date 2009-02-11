@@ -39,7 +39,7 @@
 
 #include <assert.h>
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/sip_protos.h>
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sip_util.h>
@@ -4337,9 +4337,9 @@ void session_timer_store(struct session_timer *t,
     if (x->x_refresher) {
       int uas = sip->sip_request != NULL;
 
-      if (strcasecmp(x->x_refresher, "uac") == 0)
+      if (su_casenmatch(x->x_refresher, "uac", (sizeof "uac")))
 	t->remote.refresher = uas ? nua_remote_refresher : nua_local_refresher;
-      else if (strcasecmp(x->x_refresher, "uas") == 0)
+      else if (su_casenmatch(x->x_refresher, "uas", (sizeof "uas")))
 	t->remote.refresher = uas ? nua_local_refresher : nua_remote_refresher;
     }
     else if (t->remote.require) {
@@ -4533,7 +4533,7 @@ int session_get_description(sip_t const *sip,
   else if (ct->c_type == NULL)
     SU_DEBUG_3(("nua: empty %s, assuming %s\n",
 		"Content-Type", SDP_MIME_TYPE));
-  else if (strcasecmp(ct->c_type, SDP_MIME_TYPE)) {
+  else if (!su_casematch(ct->c_type, SDP_MIME_TYPE)) {
     SU_DEBUG_5(("nua: unknown %s: %s\n", "Content-Type", ct->c_type));
     return 0;
   }
@@ -4545,7 +4545,7 @@ int session_get_description(sip_t const *sip,
 
   if (!matching_content_type) {
     /* Make sure we got SDP */
-    if (pl->pl_len < 3 || strncasecmp(pl->pl_data, "v=0", 3))
+    if (pl->pl_len < 3 || !su_casenmatch(pl->pl_data, "v=0", 3))
       return 0;
   }
 
