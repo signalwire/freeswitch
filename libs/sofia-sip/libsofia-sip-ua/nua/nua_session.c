@@ -4413,6 +4413,10 @@ session_timer_add_headers(struct session_timer *t,
   else if (refresher == nua_local_refresher)
     x->x_params = uas ? x_params_uas : x_params_uac;
 
+  if (expires == 0 && t->remote.min_se == 0)
+    /* Session timer is not used, do not add headers */
+    return 1;
+
   sip_add_tl(msg, sip,
 	     TAG_IF(expires != 0, SIPTAG_SESSION_EXPIRES(x)),
 	     TAG_IF(min != 0
