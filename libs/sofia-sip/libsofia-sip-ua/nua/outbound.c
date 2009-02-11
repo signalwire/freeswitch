@@ -684,9 +684,11 @@ void outbound_start_keepalive(outbound_t *ob,
   if (ob->ob_keepalive.timer)
     su_timer_destroy(ob->ob_keepalive.timer), ob->ob_keepalive.timer = NULL;
 
-  if (interval)
+  if (interval) {
     ob->ob_keepalive.timer =
       su_timer_create(su_root_task(ob->ob_root), interval);
+    su_timer_deferrable(ob->ob_keepalive.timer, 1);
+  }
 
   ob->ob_keepalive.interval = interval;
 
