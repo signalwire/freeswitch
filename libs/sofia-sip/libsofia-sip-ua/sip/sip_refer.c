@@ -289,7 +289,7 @@ static int sip_referred_by_update(msg_common_t *h,
   if (name == NULL) {
     b->b_cid = NULL;
   }
-  else if (namelen == strlen("cid") && !strncasecmp(name, "cid", namelen)) {
+  else if (namelen == strlen("cid") && su_casenmatch(name, "cid", namelen)) {
     b->b_cid = value;
   }
 
@@ -425,7 +425,7 @@ static int sip_replaces_update(msg_common_t *h,
     rp->rp_from_tag = NULL;
     rp->rp_early_only = 0;
   }
-#define MATCH(s) (namelen == strlen(#s) && !strncasecmp(name, #s, strlen(#s)))
+#define MATCH(s) (namelen == strlen(#s) && su_casenmatch(name, #s, strlen(#s)))
 
   else if (MATCH(to-tag)) {
     rp->rp_to_tag = value;
@@ -502,8 +502,8 @@ issize_t sip_refer_sub_d(su_home_t *home,
   if (msg_token_d(&s, &rs->rs_value) < 0)
     return -1;
 
-  if (strcasecmp(rs->rs_value, "false") &&
-      strcasecmp(rs->rs_value, "true"))
+  if (!su_casematch(rs->rs_value, "false") &&
+      !su_casematch(rs->rs_value, "true"))
     return -1;
 
   if (*s)

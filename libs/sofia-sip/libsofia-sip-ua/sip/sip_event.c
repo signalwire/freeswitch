@@ -159,7 +159,7 @@ static int sip_event_update(msg_common_t *h,
   if (name == NULL) {
     o->o_id = NULL;
   }
-  else if (namelen == strlen("id") && !strncasecmp(name, "id", namelen)) {
+  else if (namelen == strlen("id") && su_casenmatch(name, "id", namelen)) {
     o->o_id = value;
   }
 
@@ -373,7 +373,7 @@ static int sip_subscription_state_update(msg_common_t *h,
     ss->ss_retry_after = NULL;
     ss->ss_expires = NULL;
   }
-#define MATCH(s) (namelen == strlen(#s) && !strncasecmp(name, #s, strlen(#s)))
+#define MATCH(s) (namelen == strlen(#s) && su_casenmatch(name, #s, strlen(#s)))
 
   else if (MATCH(reason)) {
     ss->ss_reason = value;
@@ -498,9 +498,9 @@ su_inline void sip_publication_update(sip_publication_t *pub)
 
   if (pub->pub_params)
     for (i = 0; pub->pub_params[i]; i++) {
-      if (strncasecmp(pub->pub_params[i], "stream=", strlen("stream=")) == 0)
+      if (su_casenmatch(pub->pub_params[i], "stream=", strlen("stream=")))
 	pub->pub_stream = pub->pub_params[i] + strlen("stream=");
-      else if (strncasecmp(pub->pub_params[i], "type=", strlen("type=")) == 0)
+      else if (su_casenmatch(pub->pub_params[i], "type=", strlen("type=")))
 	pub->pub_type = pub->pub_params[i] + strlen("type=");
     }
 }

@@ -154,7 +154,7 @@ static int sip_session_expires_update(msg_common_t *h,
     x->x_refresher = NULL;
   }
   else if (namelen == strlen("refresher") &&
-	   !strncasecmp(name, "refresher", namelen)) {
+	   su_casenmatch(name, "refresher", namelen)) {
     x->x_refresher = value;
   }
 

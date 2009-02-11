@@ -450,15 +450,15 @@ tagi_t *sip_url_query_as_taglist(su_home_t *home, char const *query,
     if (n == 0)
       break;
 
-    if (n == 4 && strncasecmp(hnv, "body", 4) == 0)
+    if (n == 4 && su_casenmatch(hnv, "body", 4))
       t = siptag_payload, hc = sip_payload_class;
     else {
       for (j = 0; (t = sip_tag_list[j]); j++) {
 	hc = (msg_hclass_t *)sip_tag_list[j]->tt_magic;
-	if (n == 1 && strncasecmp(hnv, hc->hc_short, 1) == 0)
+	if (n == 1 && su_casenmatch(hnv, hc->hc_short, 1))
 	  break;
 	else if (n == (size_t)hc->hc_len &&
-		 strncasecmp(hnv, hc->hc_name, n) == 0)
+		 su_casenmatch(hnv, hc->hc_name, n))
 	  break;
       }
     }

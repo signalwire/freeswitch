@@ -525,7 +525,7 @@ static int sip_security_agree_update(msg_common_t *h,
     sa->sa_d_qop = NULL;
     sa->sa_d_ver = NULL;
   }
-#define MATCH(s) (namelen == strlen(#s) && !strncasecmp(name, #s, strlen(#s)))
+#define MATCH(s) (namelen == strlen(#s) && su_casenmatch(name, #s, strlen(#s)))
 
   else if (MATCH(q)) {
     sa->sa_q = value;

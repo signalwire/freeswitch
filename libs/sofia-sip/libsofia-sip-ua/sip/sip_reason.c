@@ -160,7 +160,7 @@ static int sip_reason_update(msg_common_t *h,
     re->re_cause = NULL;
     re->re_text = NULL;
   }
-#define MATCH(s) (namelen == strlen(#s) && !strncasecmp(name, #s, strlen(#s)))
+#define MATCH(s) (namelen == strlen(#s) && su_casenmatch(name, #s, strlen(#s)))
 
   else if (MATCH(cause)) {
     re->re_cause = value;

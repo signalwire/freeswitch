@@ -60,6 +60,10 @@
 #include <sofia-sip/sip_header.h>
 #endif
 
+#ifndef SOFIA_SIP_SU_STRING_H
+#include <sofia-sip/su_string.h>
+#endif
+
 SOFIA_BEGIN_DECLS
 
 /* ---------------------------------------------------------------------------

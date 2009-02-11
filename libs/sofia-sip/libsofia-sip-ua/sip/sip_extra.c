@@ -132,10 +132,10 @@ issize_t sip_call_info_e(char b[], isize_t bsiz, sip_header_t const *h, int f)
  * Update parameter in a @CallInfo object.
  *
  */
-static
-int sip_call_info_update(msg_common_t *h,
-			  char const *name, isize_t namelen,
-			  char const *value)
+static int
+sip_call_info_update(msg_common_t *h,
+		     char const *name, isize_t namelen,
+		     char const *value)
 {
   sip_call_info_t *ci = (sip_call_info_t *)h;
 
@@ -143,7 +143,7 @@ int sip_call_info_update(msg_common_t *h,
     ci->ci_purpose = NULL;
   }
   else if (namelen == strlen("purpose") &&
-	   !strncasecmp(name, "purpose", namelen)) {
+	   su_casenmatch(name, "purpose", namelen)) {
     ci->ci_purpose = value;
   }
 
@@ -1213,7 +1213,7 @@ static int sip_remote_party_id_update(msg_common_t *h,
     rpid->rpid_privacy = NULL;
   }
 
-#define MATCH(s) (namelen == strlen(#s) && !strncasecmp(name, #s, strlen(#s)))
+#define MATCH(s) (namelen == strlen(#s) && su_casenmatch(name, #s, strlen(#s)))
 
   else if (MATCH(screen))
     rpid->rpid_screen = value;

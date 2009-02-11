@@ -425,21 +425,21 @@ sip_has_unsupported_any(su_home_t *home,
       msg_param_t feature = require->k_items[i++];
 
       for (j = 0; slist[j]; j++)
-	if (strcasecmp(feature, slist[j]) == 0) {
+	if (su_casematch(feature, slist[j])) {
 	  feature = NULL;
 	  break;
 	}
 
       if (feature)
 	for (j = 0; rlist[j]; j++)
-	  if (strcasecmp(feature, rlist[j]) == 0) {
+	  if (su_casematch(feature, rlist[j])) {
 	    feature = NULL;
 	    break;
 	  }
 
       if (feature)
 	for (j = 0; prlist[j]; j++)
-	  if (strcasecmp(feature, prlist[j]) == 0) {
+	  if (su_casematch(feature, prlist[j])) {
 	    feature = NULL;
 	    break;
 	  }
@@ -478,7 +478,7 @@ int sip_has_feature(msg_list_t const *supported, char const *feature)
   for (; supported; supported = supported->k_next)
     if (supported->k_items)
       for (i = 0; supported->k_items[i]; i++)
-	if (strcasecmp(feature, supported->k_items[i]) == 0)
+	if (su_casematch(feature, supported->k_items[i]))
 	  return 1;
 
   return 0;

@@ -205,7 +205,7 @@ issize_t sip_caller_prefs_d(su_home_t *home, sip_header_t *h,
     *s = '\0', s += span_lws(s + 1) + 1;
 
   /* Kludge: support PoC IS spec with a typo... */
-  if (strncasecmp(s, "*,", 2) == 0)
+  if (su_casenmatch(s, "*,", 2))
     s[1] = ';',  kludge = 0;
   else if (s[0] != '*' && s[0] != '<') {
     /* Kludge: missing URL -  */
@@ -346,7 +346,7 @@ static int sip_accept_contact_update(msg_common_t *h,
     cp->cp_require = 0;
     cp->cp_explicit = 0;
   }
-#define MATCH(s) (namelen == strlen(#s) && !strncasecmp(name, #s, strlen(#s)))
+#define MATCH(s) (namelen == strlen(#s) && su_casenmatch(name, #s, strlen(#s)))
 
 #if nomore
   else if (MATCH(q)) {

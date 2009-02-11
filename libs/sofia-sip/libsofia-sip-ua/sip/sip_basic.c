@@ -41,7 +41,7 @@
 #define MSG_HDR_T       union sip_header_u
 
 #include <sofia-sip/su_alloc.h>
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 #include "sofia-sip/sip_parser.h"
 #include <sofia-sip/sip_util.h>
@@ -940,7 +940,7 @@ static int sip_addr_update(msg_common_t *h,
   if (name == NULL) {
     a->a_tag = NULL;
   }
-  else if (namelen == strlen("tag") && !strncasecmp(name, "tag", namelen)) {
+  else if (namelen == strlen("tag") && su_casenmatch(name, "tag", namelen)) {
     a->a_tag = value;
   }
 
@@ -983,7 +983,7 @@ int sip_addr_tag(su_home_t *home, sip_addr_t *a, char const *tag)
       value = tag;
 
     if (a->a_tag) {
-      if (strcasecmp(a->a_tag, value) == 0)
+      if (su_casematch(a->a_tag, value))
 	return 0;
       else
 	return -1;
@@ -1456,12 +1456,12 @@ static int sip_contact_update(msg_common_t *h,
     m->m_q = NULL;
     m->m_expires = NULL;
   }
-  else if (namelen == 1 && strncasecmp(name, "q", 1) == 0) {
+  else if (namelen == 1 && su_casenmatch(name, "q", 1)) {
     /* XXX - check for invalid value? */
     m->m_q = value;
   }
   else if (namelen == strlen("expires") &&
-	   !strncasecmp(name, "expires", namelen)) {
+	   su_casenmatch(name, "expires", namelen)) {
     m->m_expires = value;
   }
 
@@ -2086,7 +2086,7 @@ static int sip_retry_after_update(msg_common_t *h,
     af->af_duration = NULL;
   }
   else if (namelen == strlen("duration") &&
-	   !strncasecmp(name, "duration", namelen)) {
+	   su_casenmatch(name, "duration", namelen)) {
     af->af_duration = value;
   }
 
@@ -2635,7 +2635,7 @@ static int sip_via_update(msg_common_t *h,
     v->v_rport = NULL;
     v->v_comp = NULL;
   }
-#define MATCH(s) (namelen == strlen(#s) && !strncasecmp(name, #s, strlen(#s)))
+#define MATCH(s) (namelen == strlen(#s) && su_casenmatch(name, #s, strlen(#s)))
 
    else if (MATCH(ttl)) {
      v->v_ttl = value;
@@ -2761,7 +2761,7 @@ char const *sip_via_port(sip_via_t const *v, int *using_rport)
 
     if (v->v_rport && !v->v_maddr /* multicast */) {
       if (v->v_protocol == sip_transport_udp ||
-	  strcasecmp(v->v_protocol, sip_transport_udp) == 0)
+	  su_casematch(v->v_protocol, sip_transport_udp))
 	port = v->v_rport, *using_rport = 0;
       else if (*using_rport)
 	port = v->v_rport;

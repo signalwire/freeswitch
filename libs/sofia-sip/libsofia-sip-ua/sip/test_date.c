@@ -36,7 +36,7 @@
 #include "config.h"
 
 #include <stdio.h>
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -62,7 +62,7 @@ int main(int ac, char *av[])
   t = ((31 + 27) * 24) * 60 * 60;
   delta = (365 * 24 + 6) * 60 * 60;
 
-  if (str0cmp(av[1], "-v") == 0)
+  if (su_strmatch(av[1], "-v"))
     verbatim = 1, av++;
 
   if ((s = av[1])) {

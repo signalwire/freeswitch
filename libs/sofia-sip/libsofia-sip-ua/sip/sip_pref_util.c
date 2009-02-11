@@ -67,8 +67,8 @@ int sip_prefs_parse(union sip_pref *sp,
 
   if (old_type == sp_init) {
     if (s[0] == '\0' ||
-	strcasecmp(s, "TRUE") == 0 ||
-	strcasecmp(s, "\"TRUE\"") == 0) {
+	su_casematch(s, "TRUE") ||
+	su_casematch(s, "\"TRUE\"")) {
       /* Boolean */
       sp->sp_type = sp_literal;
       sp->sp_literal.spl_value = "TRUE";
@@ -76,8 +76,8 @@ int sip_prefs_parse(union sip_pref *sp,
       *return_negation = 0;
       *in_out_s = s + strlen(s);
       return 1;
-    } else if (strcasecmp(s, "FALSE") == 0 ||
-	       strcasecmp(s, "\"FALSE\"") == 0) {
+    } else if (su_casematch(s, "FALSE") ||
+	       su_casematch(s, "\"FALSE\"")) {
       /* Boolean */
       sp->sp_type = sp_literal;
       sp->sp_literal.spl_value = "FALSE";
@@ -213,8 +213,8 @@ int sip_prefs_match(union sip_pref const *a,
   case sp_literal:
     return
       a->sp_literal.spl_length == b->sp_literal.spl_length &&
-      strncasecmp(a->sp_literal.spl_value, b->sp_literal.spl_value,
-		  a->sp_literal.spl_length) == 0;
+      su_casenmatch(a->sp_literal.spl_value, b->sp_literal.spl_value,
+		  a->sp_literal.spl_length);
   case sp_string:
     return
       a->sp_string.sps_length == b->sp_string.sps_length &&
@@ -307,7 +307,7 @@ int sip_prefs_matching(char const *pvalue,
 int sip_is_callerpref(char const *param)
 {
 #define MATCH(s) \
-  (strncasecmp(param + 1, s + 1, strlen(s) - 1) == 0 && \
+  (su_casenmatch(param + 1, s + 1, strlen(s) - 1) && \
    (param[strlen(s)] == '=' || param[strlen(s)] == '\0'))
 
   int xor = 0, base = 0;
