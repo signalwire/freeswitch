@@ -1294,7 +1294,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
     while (sip->sip_supported)
       sip_header_remove(msg, sip, (sip_header_t*)sip->sip_supported);
 
-    if (ss == NULL || ss->ss_state >= nua_callstate_ready)
+    if (ss == NULL || ss->ss_state > nua_callstate_ready)
       ;
     else if (cr->cr_offer_recv && !cr->cr_answer_sent) {
       if (nh->nh_soa == NULL) {
@@ -1312,7 +1312,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
       }
     }
 
-    if (ss == NULL || ss->ss_state >= nua_callstate_ready || reason)
+    if (ss == NULL || ss->ss_state > nua_callstate_ready || reason)
       ;
     else if (nh->nh_soa && soa_is_complete(nh->nh_soa)) {
       /* signal SOA that O/A round(s) is (are) complete */
