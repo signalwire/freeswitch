@@ -244,22 +244,22 @@ START_TEST(SIP_CC_OE_CE_TI_008)
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5);
+  s2_fast_forward(5, s2->root);;
 
   s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5);
+  s2_fast_forward(5, s2->root);;
 
   s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(21);
+  s2_fast_forward(21, s2->root);;
 
   s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(1);
+  s2_fast_forward(1, s2->root);;
 
   s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
   s2_free_message(invite);
@@ -294,19 +294,19 @@ START_TEST(SIP_CC_OE_CE_TI_011_012)
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5);
+  s2_fast_forward(5, s2->root);;
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5);
+  s2_fast_forward(5, s2->root);;
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(21);
+  s2_fast_forward(21, s2->root);;
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(1);
+  s2_fast_forward(1, s2->root);;
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   s2_free_message(invite);
   fail_if(s2_check_request_timeout(SIP_METHOD_ACK, 500));

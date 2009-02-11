@@ -335,7 +335,7 @@ START_TEST(register_1_2_2_2)
   s2_free_message(m);
 
   su_root_step(s2->root, 20); su_root_step(s2->root, 20);
-  s2_fast_forward(120);	  /* Default keepalive interval */
+  s2_fast_forward(120, s2->root);;	  /* Default keepalive interval */
   mark_point();
 
   m = s2_wait_for_request(SIP_METHOD_OPTIONS);
@@ -346,7 +346,7 @@ START_TEST(register_1_2_2_2)
   s2_free_message(m);
 
   su_root_step(s2->root, 20); su_root_step(s2->root, 20);
-  s2_fast_forward(120);	  /* Default keepalive interval */
+  s2_fast_forward(120, s2->root);;	  /* Default keepalive interval */
   mark_point();
 
   receive_natted = "received=4.255.255.10";
@@ -400,7 +400,7 @@ START_TEST(register_1_2_2_3)
 
   receive_natted = "received=4.255.255.10";
 
-  s2_fast_forward(3600);
+  s2_fast_forward(3600, s2->root);;
   mark_point();
 
   m = s2_wait_for_request(SIP_METHOD_REGISTER);
@@ -637,7 +637,7 @@ START_TEST(register_1_3_3_1)
     if (!tport_is_udp(m->tport)) /* Drop UDP */
       break;
     s2_free_message(m);
-    s2_fast_forward(4);
+    s2_fast_forward(4, s2->root);;
   }
 
   tcp = tport_ref(m->tport);
@@ -695,7 +695,7 @@ START_TEST(register_1_3_3_1)
       su_root_step(s2->root, 5);
       su_root_step(s2->root, 5);
       su_root_step(s2->root, 5);
-      s2_fast_forward(5);
+      s2_fast_forward(5, s2->root);;
     }
   }
 

@@ -290,7 +290,7 @@ START_TEST(subscribe_6_1_2)
   s2_free_event(notify);
 
   /* Wait for refresh */
-  s2_fast_forward(600);
+  s2_fast_forward(600, s2->root);;
   subscribe = s2_wait_for_request(SIP_METHOD_SUBSCRIBE);
   s2_respond_to(subscribe, dialog, SIP_200_OK,
 		SIPTAG_EXPIRES_STR("600"),
@@ -377,7 +377,7 @@ START_TEST(subscribe_6_1_4)
 
   su_home_unref((void *)dialog), dialog = su_home_new(sizeof *dialog); fail_if(!dialog);
 
-  s2_fast_forward(5);
+  s2_fast_forward(5, s2->root);;
   /* nua re-establishes the subscription */
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_free_event(notify);
@@ -460,7 +460,7 @@ START_TEST(fetch_6_2_3)
   fail_unless(s2_check_substate(event, nua_substate_embryonic));
   s2_free_event(event);
 
-  s2_fast_forward(600);
+  s2_fast_forward(600, s2->root);;
 
   event = s2_wait_for_event(nua_i_notify, 408); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_terminated));

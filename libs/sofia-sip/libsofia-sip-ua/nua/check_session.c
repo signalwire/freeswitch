@@ -1054,11 +1054,11 @@ START_TEST(call_2_3_1)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300);
+  s2_fast_forward(300, s2->root);;
   ack = invite_timer_round(nh, "300;refresher=uac", rr);
   fail_if(ack->sip->sip_route &&
 	  su_strmatch(ack->sip->sip_route->r_url->url_user, "record"));
-  s2_fast_forward(300);
+  s2_fast_forward(300, s2->root);;
   invite_timer_round(nh, "300;refresher=uac", NULL);
 
   bye_by_nua(nh, TAG_END());
@@ -1082,9 +1082,9 @@ START_TEST(call_2_3_2)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300);
+  s2_fast_forward(300, s2->root);;
   invite_timer_round(nh, "300", NULL);
-  s2_fast_forward(300);
+  s2_fast_forward(300, s2->root);;
   invite_timer_round(nh, "300", NULL);
 
   bye_by_nua(nh, TAG_END());
@@ -1551,7 +1551,7 @@ START_TEST(call_2_6_2)
   /* We get nua_r_invite with 100 trying (and 500 in sip->sip_status) */
   fail_unless(s2_check_event(nua_r_invite, 100));
 
-  s2_fast_forward(10);
+  s2_fast_forward(10, s2->root);;
 
   fail_unless(s2_check_callstate(nua_callstate_calling));
 
@@ -1605,7 +1605,7 @@ START_TEST(call_2_6_3)
   fail_unless(s2_check_event(nua_i_ack, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
-  s2_fast_forward(10);
+  s2_fast_forward(10, s2->root);;
 
   nua_set_hparams(nh, NUTAG_REFRESH_WITHOUT_SDP(1), TAG_END());
   fail_unless(s2_check_event(nua_r_set_params, 200));
@@ -1752,7 +1752,7 @@ START_TEST(call_3_1_2)
     if (i == 3)
       break;
     fail_unless(s2_check_event(nua_r_invite, 100));
-    s2_fast_forward(5);
+    s2_fast_forward(5, s2->root);;
   }
 
   fail_unless(s2_check_event(nua_r_invite, 500));
@@ -1822,7 +1822,7 @@ START_TEST(call_3_2_2)
     if (i == 3)
       break;
     fail_unless(s2_check_event(nua_r_invite, 100));
-    s2_fast_forward(5);
+    s2_fast_forward(5, s2->root);;
   }
 
   fail_unless(s2_check_event(nua_r_invite, 500));
@@ -2344,7 +2344,7 @@ START_TEST(bye_4_2_1)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300);
+  s2_fast_forward(300, s2->root);;
   invite_timer_round(nh, "300", NULL);
 
   nua_bye(nh, TAG_END());
@@ -2357,7 +2357,7 @@ START_TEST(bye_4_2_1)
   s2_free_message(bye);
   fail_unless(s2_check_event(nua_r_bye, 407));
 
-  s2_fast_forward(300);
+  s2_fast_forward(300, s2->root);;
 
   nua_authenticate(nh, NUTAG_AUTH("Digest:\"s2test\":abc:abc"), TAG_END());
   bye = s2_wait_for_request(SIP_METHOD_BYE);
@@ -2388,10 +2388,10 @@ START_TEST(bye_4_2_2)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300);
+  s2_fast_forward(300, s2->root);;
   invite_timer_round(nh, "300", NULL);
 
-  s2_fast_forward(140);
+  s2_fast_forward(140, s2->root);;
 
   nua_bye(nh, TAG_END());
 
@@ -2403,7 +2403,7 @@ START_TEST(bye_4_2_2)
   s2_free_message(bye);
   fail_unless(s2_check_event(nua_r_bye, 407));
 
-  s2_fast_forward(160);
+  s2_fast_forward(160, s2->root);;
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
   bye = s2_wait_for_request(SIP_METHOD_BYE);

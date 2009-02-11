@@ -32,6 +32,8 @@
 #include <sofia-sip/tport.h>
 #include <sofia-sip/nua.h>
 
+#include "s2util.h"
+
 struct tester
 {
   su_home_t home[1];
@@ -118,8 +120,6 @@ extern char const s2_auth3_digest_str[];
 extern char const s2_auth3_credentials[];
 
 extern int s2_nua_thread;
-
-void s2_fast_forward(unsigned long seconds);
 
 void s2_case(char const *tag,
 	    char const *title,

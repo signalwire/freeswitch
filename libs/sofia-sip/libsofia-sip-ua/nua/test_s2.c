@@ -108,27 +108,6 @@ char const s2_auth3_credentials[] = "Digest:\"s2test3\":abc:abc";
 
 int s2_nua_thread = 0;
 
-/* -- Delay scenarios --------------------------------------------------- */
-
-static unsigned long time_offset;
-
-extern void (*_su_time)(su_time_t *tv);
-
-static void _su_time_fast_forwarder(su_time_t *tv)
-{
-  tv->tv_sec += time_offset;
-}
-
-void s2_fast_forward(unsigned long seconds)
-{
-  if (_su_time == NULL)
-    _su_time = _su_time_fast_forwarder;
-
-  time_offset += seconds;
-
-  su_root_step(s2->root, 0);
-}
-
 /* -- NUA events -------------------------------------------------------- */
 
 struct event *s2_remove_event(struct event *e)
