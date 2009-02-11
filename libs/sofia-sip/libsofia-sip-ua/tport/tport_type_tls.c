@@ -31,6 +31,7 @@
  * @author Tat Chan <Tat.Chan@nokia.com>
  * @author Kai Vehmanen <kai.vehmanen@nokia.com>
  * @author Martti Mela <Martti.Mela@nokia.com>
+ * @author Jarod Neuner <janeuner@networkharbor.com>
  *
  * @date Split here: Fri Mar 24 08:45:49 EET 2006 ppessi
  * @date Originally Created: Thu Jul 20 12:54:32 2000 ppessi
@@ -554,7 +555,7 @@ int tport_tls_accept(tport_primary_t *pri, int events)
   /* Alloc a new transport object, then register socket events with it */
   if ((self = tport_alloc_secondary(pri, s, 1, &reason)) == NULL) {
     SU_DEBUG_3(("%s(%p): incoming secondary on "TPN_FORMAT
-                " failed. reason = %s\n", __func__, pri, 
+                " failed. reason = %s\n", __func__, pri,
                 TPN_ARGS(pri->pri_primary->tp_name), reason));
     return 0;
   }
@@ -622,12 +623,12 @@ tport_t *tport_tls_connect(tport_primary_t *pri,
     socklen_t susalen = sizeof(susa);
 
     if (getsockname(server_socket, &susa.su_sa, &susalen) < 0) {
-      SU_DEBUG_3(("%s(%p): getsockname(): %s\n", 
+      SU_DEBUG_3(("%s(%p): getsockname(): %s\n",
                   __func__, (void *)self, su_strerror(su_errno())));
     } else {
       susa.su_port = 0;
       if (bind(s, &susa.su_sa, susalen) < 0) {
-        SU_DEBUG_3(("%s(%p): bind(local-ip): %s\n", 
+        SU_DEBUG_3(("%s(%p): bind(local-ip): %s\n",
                     __func__, (void *)self, su_strerror(su_errno())));
       }
     }
@@ -651,7 +652,7 @@ tport_t *tport_tls_connect(tport_primary_t *pri,
 
   SU_DEBUG_5(("%s(%p): connecting to " TPN_FORMAT "\n",
               __func__, (void *)self, TPN_ARGS(self->tp_name)));
-  
+
   tport_set_secondary_timer(self);
 
   return self;
@@ -660,11 +661,10 @@ sys_error:
   err = errno;
   if (SU_LOG_LEVEL >= errlevel)
     su_llog(tport_log, errlevel, "%s(%p): %s (pf=%d %s/%s): %s\n",
-            __func__, (void *)pri, what, ai->ai_family, tpn->tpn_proto, 
+            __func__, (void *)pri, what, ai->ai_family, tpn->tpn_proto,
 	    tport_hostport(buf, sizeof(buf), (void *)ai->ai_addr, 2),
 	    su_strerror(err));
   tport_zap_secondary(self);
   su_seterrno(err);
   return NULL;
 }
-

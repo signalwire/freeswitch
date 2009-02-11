@@ -27,8 +27,7 @@
  *
  * @author Mikko Haataja <ext-Mikko.A.Haataja@nokia.com>
  * @author Pekka Pessi <ext-Pekka.Pessi@nokia.com>
- *
- * Copyright 2001, 2002 Nokia Research Center.  All rights reserved.
+ * @author Jarod Neuner <janeuner@networkharbor.com>
  *
  */
 
@@ -696,7 +695,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
   int events = su_wait_events(w, self->tp_socket);
   int error;
 
-  SU_DEBUG_7(("%s(%p): events%s%s%s%s\n", __func__, (void *)self, 
+  SU_DEBUG_7(("%s(%p): events%s%s%s%s\n", __func__, (void *)self,
               events & (SU_WAIT_CONNECT) ? " CONNECTING" : "",
               events & SU_WAIT_IN  ? " NEGOTIATING" : "",
               events & SU_WAIT_ERR ? " ERROR" : "",
@@ -722,7 +721,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
   }
 
   if ((tls = tlstp->tlstp_context) == NULL) {
-    SU_DEBUG_3(("%s(%p): Error: no TLS context data for connected socket.\n", 
+    SU_DEBUG_3(("%s(%p): Error: no TLS context data for connected socket.\n",
                 __func__, tlstp));
     tport_close(self);
     tport_set_secondary_timer(self);
@@ -746,7 +745,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
       case SSL_ERROR_WANT_WRITE:
         /* OpenSSL is waiting for the peer to receive handshake data */
         self->tp_events = SU_WAIT_IN | SU_WAIT_ERR | SU_WAIT_HUP | SU_WAIT_OUT;
-        su_root_eventmask(mr->mr_root, self->tp_index, 
+        su_root_eventmask(mr->mr_root, self->tp_index,
                            self->tp_socket, self->tp_events);
         return 0;
 
@@ -761,7 +760,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
           self->tp_events = SU_WAIT_IN | SU_WAIT_ERR | SU_WAIT_HUP;
 
           if ((su_wait_create(wait, self->tp_socket, self->tp_events) == -1) ||
-             ((self->tp_index = su_root_register(mr->mr_root, wait, tport_wakeup, 
+             ((self->tp_index = su_root_register(mr->mr_root, wait, tport_wakeup,
                                                            self, 0)) == -1)) {
             tport_close(self);
             tport_set_secondary_timer(self);
@@ -773,7 +772,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
           self->tp_is_connected = 1;
 	  self->tp_verified = tls->verified;
 	  self->tp_subjects = tls->subject == NULL ? NULL :
-	                      su_strlst_dup(self->tp_home, tls->subject); 
+	                      su_strlst_dup(self->tp_home, tls->subject);
 
 	  if (tport_has_queued(self))
             tport_send_event(self);
@@ -788,7 +787,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
         {
 	  char errbuf[64];
 	  ERR_error_string_n(status, errbuf, 64);
-          SU_DEBUG_3(("%s(%p): TLS setup failed (%s)\n", 
+          SU_DEBUG_3(("%s(%p): TLS setup failed (%s)\n",
 	            __func__, self, errbuf));
         }
         break;
@@ -801,4 +800,3 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 
   return 0;
 }
-
