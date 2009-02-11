@@ -113,6 +113,8 @@
 %CHECK%
 %TAG_AWK% NO_DLL=1 LIST=soa_tag_list %P%/soa/soa_tag.c  < NUL
 %CHECK%
+%TAG_AWK% NO_DLL=1 %P%/su/su_tag.c  < NUL
+%CHECK%
 %TAG_AWK% NO_DLL=1 LIST=stun_tag_list %P%/stun/stun_tag.c  < NUL
 %CHECK%
 %TAG_AWK% NO_DLL=1 %P%/tport/tport_tag.c  < NUL
