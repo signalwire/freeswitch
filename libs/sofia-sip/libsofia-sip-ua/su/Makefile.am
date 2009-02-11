@@ -54,7 +54,7 @@ nobase_include_sofia_HEADERS = \
 			sofia-sip/su_config.h sofia-sip/su_md5.h \
 			sofia-sip/su_uniqueid.h sofia-sip/su_bm.h \
 			sofia-sip/tstdef.h sofia-sip/su_os_nw.h \
-			sofia-sip/string0.h \
+			sofia-sip/su_string.h sofia-sip/string0.h \
 			$(OSXHEADERS)
 
 nobase_nodist_include_sofia_HEADERS = sofia-sip/su_configure.h
@@ -73,11 +73,12 @@ libsu_la_SOURCES = \
 	su_os_nw.c \
 	su_taglist.c su_tag.c su_tag_io.c \
 	su_log.c su_global_log.c su_default_log.c su_module_debug.h \
-	su_md5.c su_uniqueid.c su_bm.c smoothsort.c string0.c $(OSXSOURCES)
+	su_md5.c su_uniqueid.c su_bm.c smoothsort.c su_string.c string0.c \
+	$(OSXSOURCES)
 
 
 EXTRA_libsu_la_SOURCES = \
-			memmem.c strtoull.c strcasestr.c \
+			memmem.c strtoull.c \
 			memspn.c memcspn.c memccpy.c \
 			inet_ntop.c inet_pton.c poll.c getopt.c \
 			su_tag_ref.c
