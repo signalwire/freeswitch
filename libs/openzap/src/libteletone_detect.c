@@ -141,9 +141,15 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 	float theta = 0;
 	int x = 0;
 
+	if (!mt->sample_rate) {
+		mt->sample_rate = 8000;
+	}
+
 	if(!mt->min_samples) {
 		mt->min_samples = 102;
 	}
+
+	mt->min_samples *= (mt->sample_rate / 8000);
 
 	if (!mt->positive_factor) {
 		mt->positive_factor = 2;
@@ -155,10 +161,6 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 
 	if (!mt->hit_factor) {
 		mt->hit_factor = 2;
-	}
-
-	if (!mt->sample_rate) {
-		mt->sample_rate = 8000;
 	}
 
 	for(x = 0; x < TELETONE_MAX_TONES; x++) {
