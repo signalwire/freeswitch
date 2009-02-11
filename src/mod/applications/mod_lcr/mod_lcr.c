@@ -84,6 +84,7 @@ struct lcr_obj {
 	size_t lstrip;
 	size_t tstrip;
 	size_t digit_len;
+	struct lcr_obj *prev;
 	struct lcr_obj *next;
 };
 
@@ -109,6 +110,7 @@ struct profile_obj {
 	char *order_by;
 	char *pre_order;
 	char *custom_sql;
+	switch_bool_t reorder_by_rate;
 };
 typedef struct profile_obj profile_t;
 
@@ -117,6 +119,7 @@ struct callback_obj {
 	int matches;
 	switch_memory_pool_t *pool;
 	char *lookup_number;
+	profile_t *profile;
 };
 typedef struct callback_obj callback_t;
 
@@ -163,6 +166,20 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
 	return data;
 }
+
+profile_t *locate_profile(const char *profile_name)
+{
+	profile_t *profile = NULL;
+	
+	if(switch_strlen_zero(profile_name)) {
+		profile = globals.default_profile;
+	} else if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
+	}
+	
+	return profile;
+}
+
 
 void init_max_lens(max_len maxes)
 {
@@ -304,9 +321,9 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	lcr_route additional = NULL;
 	lcr_route current = NULL;
 	callback_t *cbt = (callback_t *) pArg;
+	
 	switch_memory_pool_t *pool = cbt->pool;
 	
-	cbt->matches++;
 	
 	if(argc != LCR_QUERY_COLS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
@@ -324,6 +341,7 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	cbt->matches++;
 	additional = switch_core_alloc(pool, sizeof(lcr_obj_t));
 
 	additional->digit_len = strlen(argv[LCR_DIGITS_PLACE]);
@@ -342,6 +360,7 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	if (cbt->head == NULL) {
 		additional->next = cbt->head;
 		cbt->head = additional;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %s to head of list\n", additional->carrier_name);
 
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -354,23 +373,50 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 								additional->gw_prefix, additional->gw_suffix);
 			break;
 		}
-			
-		if (current->next == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "adding route to end of list\n");
-			current->next = additional;
-			break;
+
+		if(!cbt->profile->reorder_by_rate) {
+			/* use db order */
+			if (current->next == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %s to end of list\n", additional->carrier_name);
+				current->next = additional;
+				additional->prev = current;
+				break;
+			}
+		} else {
+			if(current->rate > additional->rate) {
+				/* insert myself here */
+				if(current->prev != NULL) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %s before %s\n", 
+										additional->carrier_name, current->carrier_name);
+					current->prev->next = additional;
+				} else {
+					/* put this one at the head */
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Inserting %s to list head before %s\n", 
+										additional->carrier_name, current->carrier_name);
+					cbt->head = additional;
+				}
+				additional->next = current;
+				current->prev = additional;
+				break;
+			} else if(current->next == NULL) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to end of list after %s\n",
+									additional->carrier_name, current->carrier_name);
+				current->next = additional;
+				additional->prev = current;
+				break;
+			}
 		}
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile_name)
+switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 {
 	/* instantiate the object/struct we defined earlier */
 	switch_stream_handle_t sql_stream = { 0 };
 	size_t n, digit_len = strlen(digits);
 	char *digits_copy;
-	profile_t *profile;
+	profile_t *profile = cb_struct->profile;
 	switch_bool_t lookup_status;
 
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
@@ -378,14 +424,6 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits, char* profile
 		return SWITCH_FALSE;
 	}
 	
-	/* locate the profile */
-	if(switch_strlen_zero(profile_name)) {
-		profile = globals.default_profile;
-	} else if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
-		return SWITCH_STATUS_FALSE;
-	}
-
 	/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
 	SWITCH_STANDARD_STREAM(sql_stream);
 
@@ -497,6 +535,7 @@ static switch_status_t lcr_load_config()
 			switch_stream_handle_t order_by = { 0 };
 			switch_stream_handle_t pre_order = { 0 };
 			switch_stream_handle_t *thisorder = NULL;
+			char *reorder_by_rate = SWITCH_FALSE;
 			char *id_s = NULL;
 			char *custom_sql = NULL;
 			int argc, x = 0;
@@ -547,6 +586,8 @@ static switch_status_t lcr_load_config()
 					id_s = val;
 				} else if (!strcasecmp(var, "custom_sql") && !switch_strlen_zero(val)) {
 					custom_sql = val;
+				} else if (!strcasecmp(var, "reorder_by_rate") && !switch_strlen_zero(val)) {
+					reorder_by_rate = val;
 				}
 			}
 			
@@ -567,7 +608,7 @@ static switch_status_t lcr_load_config()
 					profile->pre_order = switch_core_strdup(globals.pool, (char *)pre_order.data);
 				} else {
 					/* default to rate */
-					profile->order_by = ", rate";
+					profile->pre_order = "";
 				}
 
 				if(!switch_strlen_zero(id_s)) {
@@ -582,6 +623,10 @@ static switch_status_t lcr_load_config()
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Custom lcr sql invalid: %s\nDisabling profile: %s\n", custom_sql, name);
 						continue;
 					}
+				}
+				
+				if(!switch_strlen_zero("reorder_by_rate")) {
+					profile->reorder_by_rate = switch_true(reorder_by_rate);
 				}
 				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
@@ -614,6 +659,10 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 		switch_core_new_memory_pool(&pool);
 	}
 	routes.pool = pool;
+	if(!(routes.profile = locate_profile(lcr_profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
+		goto end;
+	}
 	
 	if (!caller_profile) {
 		caller_profile = switch_channel_get_caller_profile(channel);
@@ -621,7 +670,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s\n", caller_profile->destination_number);
 	routes.lookup_number = caller_profile->destination_number;
-	if (lcr_do_lookup(&routes, caller_profile->destination_number, lcr_profile) == SWITCH_STATUS_SUCCESS) {
+	if (lcr_do_lookup(&routes, caller_profile->destination_number) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 			goto end;
@@ -683,6 +732,10 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		switch_core_new_memory_pool(&pool);
 	}
 	routes.pool = pool;
+	if(!(routes.profile = locate_profile(lcr_profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
+		goto end;
+	}
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
@@ -692,7 +745,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s\n", dest);
 		routes.lookup_number = dest;
-		if (lcr_do_lookup(&routes, dest, lcr_profile) == SWITCH_STATUS_SUCCESS) {
+		if (lcr_do_lookup(&routes, dest) == SWITCH_STATUS_SUCCESS) {
 			for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
 				switch_snprintf(vbuf, sizeof(vbuf), "lcr_route_%d", cnt++);
 				switch_channel_set_variable(channel, vbuf, cur_route->dialstring);
@@ -710,7 +763,8 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", dest);
 		}
 	}
-
+	
+end:
 	if(!session) {
 		switch_core_destroy_memory_pool(&pool);
 	}
@@ -746,11 +800,15 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		}
 		cb_struct.lookup_number = destination_number;
 		cb_struct.pool = pool;
+		if(!(cb_struct.profile = locate_profile(lcr_profile))) {
+			stream->write_function(stream, "-ERR Unknown profile: %s\n", lcr_profile);
+			goto end;
+		}
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
 						  , "data passed to lcr is [%s]\n", cmd
 						  );
-		lookup_status = lcr_do_lookup(&cb_struct, destination_number, lcr_profile);
+		lookup_status = lcr_do_lookup(&cb_struct, destination_number);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
 						  , "lcr lookup returned [%d]\n"
 						  , lookup_status
@@ -813,6 +871,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		}
 	}
 
+end:
 	switch_core_destroy_memory_pool(&pool);
 	return SWITCH_STATUS_SUCCESS;
  usage:
@@ -847,14 +906,16 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				
 				stream->write_function(stream, "Name:\t\t%s\n", profile->name);
 				if(switch_strlen_zero(profile->custom_sql)) {
-					stream->write_function(stream, "ID:\t\t%d\n", profile->id);
-					stream->write_function(stream, "order by:\t%s\n", profile->order_by);
+					stream->write_function(stream, " ID:\t\t%d\n", profile->id);
+					stream->write_function(stream, " order by:\t%s\n", profile->order_by);
 					if(!switch_strlen_zero(profile->pre_order)) {
-						stream->write_function(stream, "pre_order:\t%s\n", profile->pre_order);
+						stream->write_function(stream, " pre_order:\t%s\n", profile->pre_order);
 					}
 				} else {
-					stream->write_function(stream, "custom sql:\t%s\n", profile->custom_sql);
+					stream->write_function(stream, " custom sql:\t%s\n", profile->custom_sql);
 				}
+				stream->write_function(stream, " Reorder rate:\t%s\n", 
+										profile->reorder_by_rate ? "enabled" : "disabled");
 				stream->write_function(stream, "\n");
 			}
 		} else {
