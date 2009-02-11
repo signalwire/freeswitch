@@ -1021,13 +1021,14 @@ static int nua_invite_client_report(nua_client_request_t *cr,
   nua_dialog_state_t *ds = nh->nh_ds;
   nua_dialog_usage_t *du = cr->cr_usage;
   nua_session_usage_t *ss = nua_dialog_usage_private(du);
+  msg_t *response = nta_outgoing_getresponse(orq);
   unsigned next_state;
   int error;
 
   nh_referral_respond(nh, status, phrase); /* XXX - restarting after 401/407 */
 
   nua_stack_event(nh->nh_nua, nh,
-		  nta_outgoing_getresponse(orq),
+		  response,
 		  cr->cr_event,
 		  status, phrase,
 		  tags);
@@ -1048,6 +1049,8 @@ static int nua_invite_client_report(nua_client_request_t *cr,
     ss->ss_reporting = 0;
     return 1;
   }
+
+  response = msg_ref_create(response); /* Keep reference to contents of sip */
 
   if (orq != cr->cr_orq && cr->cr_orq) {	/* Being restarted */
     next_state = nua_callstate_calling;
@@ -1143,6 +1146,8 @@ static int nua_invite_client_report(nua_client_request_t *cr,
   ss->ss_reporting = 0;
 
   signal_call_state_change(nh, ss, status, phrase, next_state);
+
+  msg_destroy(response);
 
   return 1;
 }
