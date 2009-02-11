@@ -186,18 +186,59 @@ TPORT_DLL extern tag_typedef_t tptag_tls_version;
 TPORT_DLL extern tag_typedef_t tptag_tls_version_ref;
 #define TPTAG_TLS_VERSION_REF(x) tptag_tls_version_ref, tag_uint_vr(&(x))
 
+enum tport_tls_verify_policy {
+  TPTLS_VERIFY_NONE         = 0x0,
+  TPTLS_VERIFY_INCOMING     = 0x1,
+  TPTLS_VERIFY_IN           = 0x1,
+  TPTLS_VERIFY_OUTGOING     = 0x2,
+  TPTLS_VERIFY_OUT          = 0x2,
+  TPTLS_VERIFY_ALL          = 0x3,
+  TPTLS_VERIFY_SUBJECTS_IN  = 0x5, /* 0x4 | TPTLS_VERIFY_INCOMING */
+  TPTLS_VERIFY_SUBJECTS_OUT = 0xA, /* 0x8 | TPTLS_VERIFY_OUTGOING */
+  TPTLS_VERIFY_SUBJECTS_ALL = 0xF,
+};
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_policy;
+#define TPTAG_TLS_VERIFY_POLICY(x) tptag_tls_verify_policy, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_policy_ref;
+#define TPTAG_TLS_VERIFY_POLICY_REF(x) tptag_tls_verify_policy_ref, tag_uint_vr(&(x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_depth;
+#define TPTAG_TLS_VERIFY_DEPTH(x) tptag_tls_verify_depth, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_depth_ref;
+#define TPTAG_TLS_VERIFY_DEPTH_REF(x) \
+             tptag_tls_verify_depth_ref, tag_uint_vr(&(x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_date;
+#define TPTAG_TLS_VERIFY_DATE(x) tptag_tls_verify_date, tag_uint_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_date_ref;
+#define TPTAG_TLS_VERIFY_DATE_REF(x) \
+             tptag_tls_verify_date_ref, tag_uint_vr(&(x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_subjects;
+#define TPTAG_TLS_VERIFY_SUBJECTS(x) tptag_tls_verify_subjects, tag_cptr_v((x))
+
+TPORT_DLL extern tag_typedef_t tptag_tls_verify_subjects_ref;
+#define TPTAG_TLS_VERIFY_SUBJECTS_REF(x) \
+             tptag_tls_verify_subjects_ref, tag_cptr_vr(&(x), (x))
+
+/* TPTAG_TLS_VERIFY_PEER is depreciated - Use TPTAG_TLS_VERIFY_POLICY */
 TPORT_DLL extern tag_typedef_t tptag_tls_verify_peer;
-#define TPTAG_TLS_VERIFY_PEER(x) tptag_tls_verify_peer, tag_uint_v((x))
+#define TPTAG_TLS_VERIFY_PEER(x) TPTAG_TLS_VERIFY_POLICY( (x) ? \
+           TPTLS_VERIFY_ALL : TPTLS_VERIFY_NONE)
 
 TPORT_DLL extern tag_typedef_t tptag_tls_verify_peer_ref;
 #define TPTAG_TLS_VERIFY_PEER_REF(x) tptag_tls_verify_peer_ref, tag_uint_vr(&(x))
 
 #if 0
-TPORT_DLL extern tag_typedef_t tptag_trusted;
-#define TPTAG_TRUSTED(x) tptag_trusted, tag_bool_v((x))
+TPORT_DLL extern tag_typedef_t tport_x509_subject;
+#define TPTAG_X509_SUBJECT(x) tptag_x509_subject, tag_str_v((x))
 
-TPORT_DLL extern tag_typedef_t tptag_trusted_ref;
-#define TPTAG_TRUSTED_REF(x) tptag_trusted_ref, tag_bool_vr(&(x))
+TPORT_DLL extern tag_typedef_t tptag_x509_subject_ref;
+#define TPTAG_X509_SUBJECT_REF(x) tptag_x509_subject_ref, tag_str_vr(&(x))
 #endif
 
 TPORT_DLL extern tag_typedef_t tptag_debug_drop;

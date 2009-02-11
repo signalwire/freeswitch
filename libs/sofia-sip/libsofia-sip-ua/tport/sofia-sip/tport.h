@@ -339,7 +339,11 @@ TPORT_DLL int tport_delivered_from(tport_t *tp, msg_t const *msg,
 				   tp_name_t name[1]);
 
 /** Return TLS Subjects provided by the source transport */
-TPORT_DLL su_strlst_t *tport_delivered_from_subjects(tport_t *tp, msg_t const *msg);
+TPORT_DLL su_strlst_t const *tport_delivered_from_subjects(tport_t *tp, 
+                                                           msg_t const *msg);
+
+/** Check if the given subject string is found in su_strlst_t */
+TPORT_DLL int tport_subject_search(char const *, su_strlst_t const *);
 
 /** Check if transport named is already resolved */
 TPORT_DLL int tport_name_is_resolved(tp_name_t const *);

@@ -273,7 +273,7 @@ int tport_has_tls(tport_t const *self)
 /** Return true if transport certificate verified successfully */
 int tport_is_verified(tport_t const *self)
 {
-  return tport_has_tls(self) && self->tp_verified;
+  return tport_has_tls(self) && self->tp_is_connected && self->tp_verified;
 }
 
 /** Return true if transport is being updated. */
@@ -1465,8 +1465,8 @@ int tport_bind_set(tport_master_t *mr,
  *
  * @TAGS
  * TPTAG_SERVER(), TPTAG_PUBLIC(), TPTAG_IDENT(), TPTAG_HTTP_CONNECT(),
- * TPTAG_CERTIFICATE(), TPTAG_TLS_VERSION(), TPTAG_TLS_VERIFY_PEER, and tags used with
- * tport_set_params(), especially TPTAG_QUEUESIZE().
+ * TPTAG_CERTIFICATE(), TPTAG_TLS_VERSION(), TPTAG_TLS_VERIFY_POLICY, and 
+ * tags used with tport_set_params(), especially TPTAG_QUEUESIZE().
  */
 int tport_tbind(tport_t *self,
 		tp_name_t const *tpn,
@@ -3045,7 +3045,7 @@ int tport_delivered_from(tport_t *tp, msg_t const *msg, tp_name_t name[1])
 }
 
 /** Return TLS Subjects provided by the source transport */
-su_strlst_t *tport_delivered_from_subjects(tport_t *tp, msg_t const *msg)
+su_strlst_t const *tport_delivered_from_subjects(tport_t *tp, msg_t const *msg)
 {
   if (tp && msg && msg == tp->tp_master->mr_delivery->d_msg) {
     tport_t *tp_sec = tp->tp_master->mr_delivery->d_tport;
@@ -3065,6 +3065,57 @@ tport_delivered_with_comp(tport_t *tp, msg_t const *msg,
 
   if (return_compressor)
     *return_compressor = tp->tp_master->mr_delivery->d_comp;
+
+  return 0;
+}
+
+/** Search for subject in list of TLS Certificate subjects */
+int
+tport_subject_search(char const *subject, su_strlst_t const *lst)
+{
+  int idx, ilen;
+  const char *subjuri;
+
+  if (!subject || su_strmatch(tpn_any, subject))
+    return 1;
+
+  if (!lst)
+    return 0;
+
+  /* Check if subject is a URI */
+  if (su_casenmatch(subject,"sip:",4) || su_casenmatch(subject,"sips:",5))
+    subjuri = subject + su_strncspn(subject,5,":") + 1;
+  else
+    subjuri = NULL;
+
+  ilen = su_strlst_len(lst);
+
+  for (idx = 0; idx < ilen; idx++) {
+    const char *lsturi, *lststr;
+
+    lststr = su_strlst_item(lst, idx);
+
+    /* check if lststr is a URI (sips URI is an unacceptable cert subject) */
+    if (su_casenmatch(lststr,"sip:",4))
+      lsturi = lststr + su_strncspn(lststr,4,":") + 1;
+    else
+      lsturi = NULL;
+
+
+    /* Match two SIP Server Identities */
+    if (host_cmp(subjuri ? subjuri : subject, lsturi ? lsturi : lststr) == 0)
+      return 1;
+#if 0
+    /* XXX - IETF drafts forbid wildcard certs */
+    if (!subjuri && !lsturi && su_strnmatch("*.", lststr, 2)) {
+      size_t urioffset = su_strncspn(subject, 64, ".");
+      if (urioffset) {
+        if (su_casematch(subject + urioffset, lststr+1))
+          return 1;
+      }
+    }
+#endif
+  }
 
   return 0;
 }
@@ -3152,7 +3203,7 @@ int tport_recv_error_report(tport_t *self)
  *
  * @TAGS
  * TPTAG_MTU(), TPTAG_REUSE(), TPTAG_CLOSE_AFTER(), TPTAG_SDWN_AFTER(),
- * TPTAG_FRESH(), TPTAG_COMPARTMENT().
+ * TPTAG_FRESH(), TPTAG_COMPARTMENT(), TPTAG_X509_SUBJECT()
  */
 tport_t *tport_tsend(tport_t *self,
 		     msg_t *msg,
@@ -4580,6 +4631,13 @@ tport_t *tport_by_addrinfo(tport_primary_t const *pri,
       continue;
     if (tport_is_shutdown(sub))
       continue;
+
+    if (tport_has_tls(sub) && !su_casematch(tpn->tpn_canon, sub->tp_name->tpn_canon)) {
+      if (!tport_is_verified(sub))
+        continue;
+      if (!tport_subject_search(tpn->tpn_canon, sub->tp_subjects))
+        continue;
+    }
 
     if (comp != sub->tp_name->tpn_comp)
       continue;

@@ -281,20 +281,137 @@ tag_typedef_t tptag_compartment = PTRTAG_TYPEDEF(compartment);
 tag_typedef_t tptag_tls_version = UINTTAG_TYPEDEF(tls_version);
 
 /**@def TPTAG_TLS_VERIFY_PEER(x)
- *
- * The verification of certificates can be controlled:
- * 0: no verify certificates;
- * 1: on server mode, the certificate returned by client is checked
- *    if fail the TLS/SSL handshake is immediately terminated;
- * 1: on client mode, the server certificate is verified
- *    if fail the TLS/SSL handshake is immediately terminated;
- *
- * Use with tport_tbind(), nua_create(), nta_agent_create(),
- * nta_agent_add_tport(), nth_engine_create(), or initial nth_site_create().
+ * @par Depreciated:
+ *    Alias for TPTAG_TLS_VERIFY_POLICY(TPTLS_VERIFY_IN|TPTLS_VERIFY_OUT)
  *
  * @NEW_1_12_10.
  */
 tag_typedef_t tptag_tls_verify_peer = UINTTAG_TYPEDEF(tls_verify_peer);
+
+/**@def TPTAG_TLS_VERIFY_POLICY(x)
+ *
+ * The verification of certificates can be controlled:
+ * @par Values:
+ *    - #TPTLS_VERIFY_NONE: 
+ *          Do not verify Peer Certificates.
+ *    - #TPTLS_VERIFY_IN: 
+ *          Drop incoming connections which fail signature verification 
+ *          against trusted certificate authorities. Peers must provide a 
+ *          certificate during the initial TLS Handshake.
+ *    - #TPTLS_VERIFY_OUT: 
+ *          Drop outgoing connections which fail signature verification 
+ *          against trusted certificate authorities.
+ *    - #TPTLS_VERIFY_ALL: 
+ *          Alias for (TPTLS_VERIFY_IN|TPTLS_VERIFY_OUT)
+ *    - #TPTLS_VERIFY_SUBJECTS_IN: 
+ *          Match the certificate subject on incoming connections against 
+ *          a provided list.  If no match is found, the connection is 
+ *          rejected. If no list is provided, subject checking is bypassed.
+ *          Note: Implies #TPTLS_VERIFY_IN.
+ *    - #TPTLS_VERIFY_SUBJECTS_OUT: 
+ *          Match the certificate subject on outgoing connections against 
+ *          a provided list.  If no match is found, the connection is 
+ *          rejected.
+ *          Note: Implies #TPTLS_VERIFY_OUT.
+ *    - #TPTLS_VERIFY_SUBJECTS_ALL:
+ *          Alias for (TPTLS_VERIFY_SUBJECTS_IN|TPTLS_VERIFY_SUBJECTS_OUT)
+ *
+ * @par Used with
+ *   tport_tbind(), nua_create(), nta_agent_create(), nta_agent_add_tport(),
+ *   nth_engine_create(), initial nth_site_create(),
+ *   TPTAG_TLS_VERIFY_SUBJECTS(), TPTAG_TLS_VERIFY_DEPTH().
+ *
+ * @NEW_1_12_11.
+ */
+tag_typedef_t tptag_tls_verify_policy = UINTTAG_TYPEDEF(tls_verify_policy);
+
+/**@def TPTAG_TLS_VERIFY_DEPTH(x)
+ *
+ * Define the maximum length of a valid certificate chain.
+ * 
+ * @par Default
+ *   2
+ *
+ * @par Used with
+ *   tport_tbind(), nua_create(), nta_agent_create(), nta_agent_add_tport(), 
+ *   nth_engine_create(), or initial nth_site_create().
+ *
+ * @par Parameter Type:
+ *   unsigned int
+ *
+ * @NEW_1_12_11.
+ */
+tag_typedef_t tptag_tls_verify_depth = UINTTAG_TYPEDEF(tls_verify_depth);
+
+/**@def TPTAG_TLS_VERIFY_DATE(x)
+ *
+ * Enable/Disable verification of notBefore and notAfter parameters of
+ * X.509 Certificates.
+ *
+ * @par Default
+ *   Enabled
+ *
+ * @par Values
+ *   - 0 - Disable date verification.
+ *   - Non-Zero - Enable date verification.
+ *
+ * @par Used with
+ *   tport_tbind(), nua_create(), nta_agent_create(), nta_agent_add_tport(), 
+ *   nth_engine_create(), or initial nth_site_create().
+ *
+ * @par Parameter Type:
+ *   unsigned int
+ *
+ * @par Note
+ *   This tag should be only used on devices which lack accurate timekeeping.
+ *
+ * @NEW_1_12_11.
+ */
+tag_typedef_t tptag_tls_verify_date = UINTTAG_TYPEDEF(tls_verify_date);
+
+/**@def TPTAG_TLS_VERIFY_SUBJECTS(x)
+ *
+ * Incoming TLS connections must provide a trusted X.509 certificate.
+ * The character strings provided with this tag are matched against
+ * the subjects from the trusted certificate.  If a match is not found,
+ * the connection is automatically rejected.
+ *
+ * @par Used with
+ *   tport_tbind(), nua_create(), nta_agent_create(), nta_agent_add_tport(), 
+ *   nth_engine_create(), initial nth_site_create(),
+ *   TPTLS_VERIFY_SUBJECTS_IN
+ *
+ * @par Parameter Type:
+ *   void const * (actually su_strlst_t const *)
+ *
+ * @par Values
+ *   - SIP Identity - sip:example.com or sip:username@example.com
+ *   - DNS - sip.example.com
+ *   - IP Address - Both IPv4 and IPv6 Supported
+ *
+ * @NEW_1_12_11.
+ */
+tag_typedef_t tptag_tls_verify_subjects = PTRTAG_TYPEDEF(tls_verify_subjects);
+
+#if 0
+/**@def TPTAG_X509_SUBJECT(x)
+ *
+ * Requires that a message be sent over a TLS transport with trusted X.509
+ * certificate.  The character string provided must match against a subject 
+ * from the trusted certificate.
+ *
+ * @par Used with
+ *   tport_tsend(), TPTLS_VERIFY_SUBJECTS_OUT
+ *
+ * @par Parameter Type:
+ *   char const *
+ *
+ * @par Values
+ *   - Refer to TPTAG_TLS_VERIFY_SUBJECTS()
+ *
+ * @note Not Implemented.
+ */
+#endif
 
 /**@def TPTAG_QUEUESIZE(x)
  *

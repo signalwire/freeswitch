@@ -181,8 +181,10 @@ struct tport_s {
 
   su_strlst_t        *tp_subjects;      /**< Transport Subjects.
                                          *
-                                         * Subject Name(s) provided by the 
-                                         * peer in a TLS connection (if secondary).
+                                         * Subject Name(s) provided by the peer
+					 * in a TLS connection (if secondary).
+					 * or matched against incoming 
+					 * connections (if primary).
                                          */
 
 #define tp_protoname tp_name->tpn_proto

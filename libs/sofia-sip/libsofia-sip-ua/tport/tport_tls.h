@@ -50,9 +50,9 @@ typedef struct tls_s tls_t;
 extern char const tls_version[];
 
 typedef struct tls_issues_s {
-  int   verify_peer;    /* 0: no verify certificate, *
-                         * 1: if fail the TLS/SSL handshake is terminated. */
-  int   verify_depth;   /* if 0, then do nothing                      */
+  unsigned policy;      /* refer to tport_tag.h, tport_tls_verify_policy */
+  unsigned verify_depth;/* if 0, revert to default (2) */
+  unsigned verify_date; /* if 0, notBefore and notAfter dates are ignored */
   int   configured;	/* If non-zero, complain about certificate errors */
   char *cert;		/* CERT file name. File format is PEM         */
   char *key;		/* Private key file. PEM format               */
@@ -78,8 +78,7 @@ typedef struct tport_tls_primary_s {
 } tport_tls_primary_t;
 
 tls_t *tls_init_master(tls_issues_t *tls_issues);
-tls_t *tls_init_slave(tls_t *tls_master, int sock);
-tls_t *tls_init_client(tls_t *tls_master, int sock);
+tls_t *tls_init_secondary(tls_t *tls_master, int sock, int accept);
 void tls_free(tls_t *tls);
 int tls_get_socket(tls_t *tls);
 ssize_t tls_read(tls_t *tls);

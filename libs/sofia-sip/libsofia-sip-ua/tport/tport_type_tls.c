@@ -95,9 +95,6 @@ static ssize_t tport_tls_send(tport_t const *self, msg_t *msg,
 static int tport_tls_accept(tport_primary_t *pri, int events);
 static tport_t *tport_tls_connect(tport_primary_t *pri, su_addrinfo_t *ai,
                                   tp_name_t const *tpn);
-#if notyet
-static void tport_tls_deliver(tport_t *self, msg_t *msg, su_time_t now);
-#endif
 
 tport_vtable_t const tport_tls_vtable =
 {
@@ -171,6 +168,10 @@ static int tport_tls_init_master(tport_primary_t *pri,
   char const *path = NULL;
   unsigned tls_version = 1;
   unsigned tls_verify = 0;
+  unsigned tls_policy = TPTLS_VERIFY_NONE;
+  unsigned tls_depth = 0;
+  unsigned tls_date = 1;
+  su_strlst_t const *tls_subjects = NULL;
   su_home_t autohome[SU_HOME_AUTO_SIZE(1024)];
   tls_issues_t ti = {0};
 
@@ -183,6 +184,10 @@ static int tport_tls_init_master(tport_primary_t *pri,
 	  TPTAG_CERTIFICATE_REF(path),
 	  TPTAG_TLS_VERSION_REF(tls_version),
 	  TPTAG_TLS_VERIFY_PEER_REF(tls_verify),
+	  TPTAG_TLS_VERIFY_POLICY_REF(tls_policy),
+	  TPTAG_TLS_VERIFY_DEPTH_REF(tls_depth),
+	  TPTAG_TLS_VERIFY_DATE_REF(tls_date),
+	  TPTAG_TLS_VERIFY_SUBJECTS_REF(tls_subjects),
 	  TAG_END());
 
   if (!path) {
@@ -193,8 +198,9 @@ static int tport_tls_init_master(tport_primary_t *pri,
   }
 
   if (path) {
-    ti.verify_peer = tls_verify;
-    ti.verify_depth = 2;
+    ti.policy = tls_policy | (tls_verify ? TPTLS_VERIFY_ALL : 0);
+    ti.verify_depth = tls_depth;
+    ti.verify_date = tls_date;
     ti.configured = path != tbf;
     ti.randFile = su_sprintf(autohome, "%s/%s", path, "tls_seed.dat");
     ti.key = su_sprintf(autohome, "%s/%s", path, "agent.pem");
@@ -225,6 +231,8 @@ static int tport_tls_init_master(tport_primary_t *pri,
     return *return_culprit = "tls_init_master", -1;
   }
 
+  if (tls_subjects)
+    pri->pri_primary->tp_subjects = su_strlst_dup(pri->pri_home, tls_subjects);
   pri->pri_has_tls = 1;
 
   return 0;
@@ -247,11 +255,9 @@ static int tport_tls_init_secondary(tport_t *self, int socket, int accepted,
   if (tport_tcp_init_secondary(self, socket, accepted, return_reason) < 0)
     return -1;
 
-  if (accepted) {
-    tlstp->tlstp_context = tls_init_slave(master, socket);
-    if (!tlstp->tlstp_context)
-      return *return_reason = "tls_init_slave", -1;
-  }
+  tlstp->tlstp_context = tls_init_secondary(master, socket, accepted);
+  if (!tlstp->tlstp_context)
+    return *return_reason = "tls_init_slave", -1;
 
   return 0;
 }
@@ -439,19 +445,11 @@ ssize_t tport_tls_send(tport_t const *self,
 		       msg_iovec_t iov[],
 		       size_t iovlen)
 {
-  tport_tls_primary_t *tlspri = (tport_tls_primary_t *)self->tp_pri;
   tport_tls_t *tlstp = (tport_tls_t *)self;
   enum { TLSBUFSIZE = 2048 };
   size_t i, j, n, m, size = 0;
   ssize_t nerror;
   int oldmask, mask;
-
-  if (tlstp->tlstp_context == NULL) {
-    tls_t *master = tlspri->tlspri_master;
-    tlstp->tlstp_context = tls_init_client(master, self->tp_socket);
-    if (!tlstp->tlstp_context)
-      return -1;
-  }
 
   oldmask = tls_events(tlstp->tlstp_context, self->tp_events);
 
@@ -560,8 +558,6 @@ int tport_tls_accept(tport_primary_t *pri, int events)
     return 0;
   }
   else {
-    tport_tls_t *tlstp = (tport_tls_t *)self;
-    tport_tls_primary_t *tlspri = (tport_tls_primary_t *)self->tp_pri;
     int events = SU_WAIT_IN|SU_WAIT_ERR|SU_WAIT_HUP;
 
     SU_CANONIZE_SOCKADDR(su);
@@ -574,8 +570,6 @@ int tport_tls_accept(tport_primary_t *pri, int events)
 
       self->tp_conn_orient = 1;
       self->tp_is_connected = 0;
-
-      tlstp->tlstp_context = tls_init_slave(tlspri->tlspri_master, s);
 
       SU_DEBUG_5(("%s(%p): new connection from " TPN_FORMAT "\n",
 		  __func__,  (void *)self, TPN_ARGS(self->tp_name)));
@@ -640,14 +634,9 @@ tport_t *tport_tls_connect(tport_primary_t *pri,
       goto sys_error;
   }
 
-  if (tport_setname(self, tpn->tpn_proto, ai, tpn->tpn_canon) != -1
-      &&
-      tport_register_secondary(self, tls_connect, events) != -1) {
-    tport_tls_t *tlstp = (tport_tls_t *)self;
-    tport_tls_primary_t *tlspri = (tport_tls_primary_t *)self->tp_pri;
-    tlstp->tlstp_context = tls_init_client(tlspri->tlspri_master, s);
-  }
-  else
+  if (tport_setname(self, tpn->tpn_proto, ai, tpn->tpn_canon) == -1)
+    goto sys_error;
+  else if (tport_register_secondary(self, tls_connect, events) == -1)
     goto sys_error;
 
   SU_DEBUG_5(("%s(%p): connecting to " TPN_FORMAT "\n",

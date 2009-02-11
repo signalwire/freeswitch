@@ -56,7 +56,6 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #if HAVE_SIGPIPE
 #include <signal.h>
@@ -65,6 +64,7 @@
 #include "tport_tls.h"
 
 char const tls_version[] = OPENSSL_VERSION_TEXT;
+int tls_ex_data_idx = -1; /* see SSL_get_ex_new_index(3ssl) */
 
 enum  { tls_master = 0, tls_slave = 1};
 
@@ -75,9 +75,12 @@ struct tls_s {
   BIO *bio_con;
   unsigned int type:1,
                accept:1,
-               verify_outgoing:1,
                verify_incoming:1,
-               verified:1;
+               verify_outgoing:1,
+	       verify_subj_in:1,
+	       verify_subj_out:1,
+	       verify_date:1,
+               x509_verified:1;
 
   /* Receiving */
   int read_events;
@@ -90,7 +93,7 @@ struct tls_s {
   size_t write_buffer_len;
 
   /* Host names */
-  su_strlst_t *subject;
+  su_strlst_t *subjects;
 };
 
 enum { tls_buffer_size = 16384 };
@@ -162,13 +165,44 @@ int tls_verify_cb(int ok, X509_STORE_CTX *store)
     X509 *cert = X509_STORE_CTX_get_current_cert(store);
     int  depth = X509_STORE_CTX_get_error_depth(store);
     int  err = X509_STORE_CTX_get_error(store);
+    int  sslidx = SSL_get_ex_data_X509_STORE_CTX_idx();
+    SSL  *ssl = X509_STORE_CTX_get_ex_data(store, sslidx);
+    tls_t *tls = SSL_get_ex_data(ssl, tls_ex_data_idx);
 
-    SU_DEBUG_1(("-Error with certificate at depth: %i\n", depth));
-    X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
-    SU_DEBUG_1(("  issuer   = %s\n", data));
-    X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
-    SU_DEBUG_1(("  subject  = %s\n", data));
-    SU_DEBUG_1(("  err %i:%s\n", err, X509_verify_cert_error_string(err)));
+    assert(tls);
+
+#define TLS_VERIFY_CB_CLEAR_ERROR(OK,ERR,STORE) \
+                   do {\
+                     OK = 1;\
+		     ERR = X509_V_OK;\
+		     X509_STORE_CTX_set_error(STORE,ERR);\
+		   } while (0)
+
+    if (tls->accept && !tls->verify_incoming)
+      TLS_VERIFY_CB_CLEAR_ERROR(ok, err, store);
+    else if (!tls->accept && !tls->verify_outgoing)
+      TLS_VERIFY_CB_CLEAR_ERROR(ok, err, store);
+    else switch (err) {
+      case X509_V_ERR_CERT_NOT_YET_VALID:
+      case X509_V_ERR_CERT_HAS_EXPIRED:
+      case X509_V_ERR_CRL_NOT_YET_VALID:
+      case X509_V_ERR_CRL_HAS_EXPIRED:
+        if (!tls->verify_date)
+	  TLS_VERIFY_CB_CLEAR_ERROR(ok, err, store);
+
+      default:
+        break;
+    }
+
+    if (!ok) {
+      SU_DEBUG_3(("-Error with certificate at depth: %i\n", depth));
+      X509_NAME_oneline(X509_get_issuer_name(cert), data, 256);
+      SU_DEBUG_3(("  issuer   = %s\n", data));
+      X509_NAME_oneline(X509_get_subject_name(cert), data, 256);
+      SU_DEBUG_3(("  subject  = %s\n", data));
+      SU_DEBUG_3(("  err %i:%s\n", err, X509_verify_cert_error_string(err)));
+    }
+
   }
 
   return ok;
@@ -178,11 +212,14 @@ static
 int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 {
   static int initialized = 0;
+  int verify;
 
   if (!initialized) {
     initialized = 1;
     SSL_library_init();
     SSL_load_error_strings();
+    tls_ex_data_idx = SSL_get_ex_new_index(0, \
+                      "sofia-sip private data", NULL, NULL, NULL);
 
     if (ti->randFile &&
 	!RAND_load_file(ti->randFile, 1024 * 1024)) {
@@ -267,13 +304,20 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     return -1;
   }
 
+  /* corresponds to (enum tport_tls_verify_policy) */
+  tls->verify_incoming = (ti->policy & 0x1) ? 1 : 0;
+  tls->verify_outgoing = (ti->policy & 0x2) ? 1 : 0;
+  tls->verify_subj_in  = (ti->policy & 0x4) ? tls->verify_incoming : 0;
+  tls->verify_subj_out = (ti->policy & 0x8) ? tls->verify_outgoing : 0;
+  tls->verify_date     = (ti->verify_date)  ? 1 : 0;
+
+  if (tls->verify_incoming)
+    verify = SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT;
+  else
+    verify = SSL_VERIFY_NONE;
+
   SSL_CTX_set_verify_depth(tls->ctx, ti->verify_depth);
-
-  SSL_CTX_set_verify(tls->ctx,
-		     ti->verify_peer == 1 ? SSL_VERIFY_PEER : SSL_VERIFY_NONE,
-                     tls_verify_cb);
-
-  tls->verify_incoming = tls->verify_outgoing = ti->verify_peer ? 1 : 0;
+  SSL_CTX_set_verify(tls->ctx, verify, tls_verify_cb);
 
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {
     SU_DEBUG_1(("%s: error setting cipher list\n", "tls_init_context"));
@@ -360,13 +404,20 @@ tls_t *tls_init_master(tls_issues_t *ti)
   return tls;
 }
 
-tls_t *tls_clone(tls_t *master, int sock, int accept)
+tls_t *tls_init_secondary(tls_t *master, int sock, int accept)
 {
   tls_t *tls = tls_create(tls_slave);
 
   if (tls) {
     tls->ctx = master->ctx;
+    tls->type = master->type;
     tls->accept = accept ? 1 : 0;
+    tls->verify_outgoing = master->verify_outgoing;
+    tls->verify_incoming = master->verify_incoming;
+    tls->verify_subj_out = master->verify_subj_out;
+    tls->verify_subj_in  = master->verify_subj_in;
+    tls->verify_date     = master->verify_date;
+    tls->x509_verified   = master->x509_verified;
 
     if (!(tls->read_buffer = su_alloc(tls->home, tls_buffer_size)))
       su_home_unref(tls->home), tls = NULL;
@@ -380,7 +431,7 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
   tls->con = SSL_new(tls->ctx);
 
   if (tls->con == NULL) {
-    tls_log_errors(1, "tls_clone", 0);
+    tls_log_errors(1, "tls_init_secondary", 0);
     tls_free(tls);
     errno = EIO;
     return NULL;
@@ -388,26 +439,15 @@ tls_t *tls_clone(tls_t *master, int sock, int accept)
 
   SSL_set_bio(tls->con, tls->bio_con, tls->bio_con);
   SSL_set_mode(tls->con, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+  SSL_set_ex_data(tls->con, tls_ex_data_idx, tls);
 
   su_setblocking(sock, 0);
 
   return tls;
 }
 
-tls_t *tls_init_slave(tls_t *master, int sock)
-{
-  int accept;
-  return tls_clone(master, sock, accept = 1);
-}
-
-tls_t *tls_init_client(tls_t *master, int sock)
-{
-  int accept;
-  return tls_clone(master, sock, accept = 0);
-}
-
-static
-int tls_post_connection_check(tls_t *tls)
+su_inline
+int tls_post_connection_check(tport_t *self, tls_t *tls)
 {
   X509 *cert;
   int extcount;
@@ -416,13 +456,22 @@ int tls_post_connection_check(tls_t *tls)
   if (!tls) return -1;
 
   cert = SSL_get_peer_certificate(tls->con);
-  if (!cert)
-    return X509_V_OK;
+  if (!cert) {
+    SU_DEBUG_7(("%s(%p): Peer did not provide X.509 Certificate.\n", 
+                 __func__, self));
+    if (self->tp_accepted && tls->verify_incoming)
+      return X509_V_ERR_CERT_UNTRUSTED;
+    else if (!self->tp_accepted && tls->verify_outgoing)
+      return X509_V_ERR_CERT_UNTRUSTED;
+    else 
+      return X509_V_OK;
+  }
+
+  tls->subjects = su_strlst_create(tls->home);
+  if (!tls->subjects)
+    return X509_V_ERR_OUT_OF_MEM;
 
   extcount = X509_get_ext_count(cert);
-
-  if (!tls->subject)
-    tls->subject = su_strlst_create(tls->home);
 
   /* Find matching subjectAltName.DNS */
   for (i = 0; i < extcount; i++) {
@@ -446,13 +495,11 @@ int tls_post_connection_check(tls_t *tls)
     for (j = 0; j < sk_CONF_VALUE_num(values); j++) {
       value = sk_CONF_VALUE_value(values, j);
       if (strcmp(value->name, "DNS") == 0)
-        su_strlst_dup_append(tls->subject, value->value);
-      else if (strcmp(value->name, "URI") == 0) {
-	char *uri = su_strlst_dup_append(tls->subject, value->value);
-	char const *url = strchr(uri, ':');
-	if (url++)
-	  su_strlst_append(tls->subject, url);
-      }
+        su_strlst_dup_append(tls->subjects, value->value);
+      if (strcmp(value->name, "IP") == 0)
+        su_strlst_dup_append(tls->subjects, value->value);
+      else if (strcmp(value->name, "URI") == 0)
+        su_strlst_dup_append(tls->subjects, value->value);
     }
   }
 
@@ -465,15 +512,15 @@ int tls_post_connection_check(tls_t *tls)
     if (subject) {
       if (X509_NAME_get_text_by_NID(subject, NID_commonName,
 				    name, sizeof name) > 0) {
-	usize_t k, N = su_strlst_len(tls->subject);
+	usize_t k, N = su_strlst_len(tls->subjects);
 	name[(sizeof name) - 1] = '\0';
 
 	for (k = 0; k < N; k++)
-	  if (strcasecmp(su_strlst_item(tls->subject, k), name) == 0)
+	  if (su_casematch(su_strlst_item(tls->subjects, k), name) == 0)
 	    break;
 
-	if (k == N)
-	  su_strlst_dup_append(tls->subject, name);
+	if (k >= N)
+	  su_strlst_dup_append(tls->subjects, name);
       }
     }
   }
@@ -482,13 +529,64 @@ int tls_post_connection_check(tls_t *tls)
 
   error = SSL_get_verify_result(tls->con);
 
-  if (error == X509_V_OK)
-    tls->verified = 1;
+  if (cert && error == X509_V_OK)
+    tls->x509_verified = 1;
 
-  if (tls->accept && !tls->verify_incoming)
-    return X509_V_OK;
-  else if (!tls->accept && !tls->verify_outgoing)
-    return X509_V_OK;
+  if (tport_log->log_level >= 7) {
+    int i, len = su_strlst_len(tls->subjects);
+    for (i=0; i < len; i++)
+      SU_DEBUG_7(("%s(%p): Peer Certificate Subject %i: %s\n", \
+	      __func__, self, i, su_strlst_item(tls->subjects, i)));
+    if (i == 0)
+      SU_DEBUG_7(("%s(%p): Peer Certificate provided no usable subjects.\n",
+                   __func__, self));
+  }
+
+  /* Verify incoming connections */
+  if (self->tp_accepted) {
+    if (!tls->verify_incoming)
+      return X509_V_OK;
+
+    if (!tls->x509_verified)
+      return error;
+
+    if (tls->verify_subj_in) {
+      su_strlst_t const *subjects = self->tp_pri->pri_primary->tp_subjects;
+      int i, items;
+
+      items = subjects ? su_strlst_len(subjects) : 0;
+      if (items == 0)
+        return X509_V_OK;
+
+      for (i=0; i < items; i++) {
+	if (tport_subject_search(su_strlst_item(subjects, i), tls->subjects))
+	  return X509_V_OK;
+      }
+      SU_DEBUG_3(("%s(%p): Peer Subject Mismatch (incoming connection)\n", \
+                   __func__, self));
+
+      return X509_V_ERR_CERT_UNTRUSTED;
+    }
+  }
+  /* Verify outgoing connections */
+  else {
+    char const *subject = self->tp_canon;
+    if (!tls->verify_outgoing)
+      return X509_V_OK;
+
+    if (!tls->x509_verified || !subject)
+      return error;
+
+    if (tls->verify_subj_out) {
+      if (tport_subject_search(subject, tls->subjects))
+        return X509_V_OK; /* Subject match found in verified certificate chain */
+      SU_DEBUG_3(("%s(%p): Peer Subject Mismatch (%s)\n", \
+                   __func__, self, subject));
+
+      return X509_V_ERR_CERT_UNTRUSTED;
+    }
+  }
+
   return error;
 }
 
@@ -547,7 +645,7 @@ ssize_t tls_read(tls_t *tls)
 
   if (0)
     SU_DEBUG_1(("tls_read(%p) called on %s (events %u)\n", (void *)tls,
-	    tls->accept ? "server" : "client",
+	    tls->type ? "master" : "slave",
 	    tls->read_events));
 
   if (tls->read_buffer_len)
@@ -607,7 +705,7 @@ ssize_t tls_write(tls_t *tls, void *buf, size_t size)
   if (0)
     SU_DEBUG_1(("tls_write(%p, %p, "MOD_ZU") called on %s\n",
 	    (void *)tls, buf, size,
-	    tls && tls->type == tls_slave ? "server" : "client"));
+	    tls && tls->type == tls_slave ? "master" : "slave"));
 
   if (tls == NULL || buf == NULL) {
     errno = EINVAL;
@@ -731,7 +829,7 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
   if (self->tp_is_connected == 0) {
     int ret, status;
 
-    ret = tls->accept ? SSL_accept(tls->con) : SSL_connect(tls->con);
+    ret = self->tp_accepted ? SSL_accept(tls->con) : SSL_connect(tls->con);
     status = SSL_get_error(tls->con, ret);
 
     switch (status) {
@@ -751,7 +849,8 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 
       case SSL_ERROR_NONE:
         /* TLS Handshake complete */
-	if ( tls_post_connection_check(tls) == X509_V_OK ) {
+	status = tls_post_connection_check(self, tls);
+        if ( status == X509_V_OK ) {
           su_wait_t wait[1] = {SU_WAIT_INIT};
           tport_master_t *mr = self->tp_master;
 
@@ -770,9 +869,8 @@ int tls_connect(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
           tls->read_events = SU_WAIT_IN;
           tls->write_events = 0;
           self->tp_is_connected = 1;
-	  self->tp_verified = tls->verified;
-	  self->tp_subjects = tls->subject == NULL ? NULL :
-	                      su_strlst_dup(self->tp_home, tls->subject);
+	  self->tp_verified = tls->x509_verified;
+	  self->tp_subjects = tls->subjects;
 
 	  if (tport_has_queued(self))
             tport_send_event(self);
