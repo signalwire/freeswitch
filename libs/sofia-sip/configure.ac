@@ -337,6 +337,7 @@ libsofia-sip-ua/tport/Makefile
 libsofia-sip-ua/url/Doxyfile
 libsofia-sip-ua/url/Makefile
 libsofia-sip-ua/features/sofia-sip/sofia_features.h
+s2check/Makefile
 libsofia-sip-ua-glib/Makefile
 libsofia-sip-ua-glib/su-glib/Makefile
 libsofia-sip-ua-glib/su-glib/Doxyfile
