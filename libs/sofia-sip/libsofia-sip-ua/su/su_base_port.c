@@ -456,6 +456,7 @@ su_duration_t su_base_port_step(su_port_t *self, su_duration_t tout)
   if (self->sup_timers)
     su_timer_expire(&self->sup_timers, &tout, now);
 
+  /* XXX: why isn't the timeout ignored here? */
   if (self->sup_deferrable)
     su_timer_expire(&self->sup_deferrable, &tout, now);
 
