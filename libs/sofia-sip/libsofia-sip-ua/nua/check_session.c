@@ -2391,7 +2391,7 @@ START_TEST(bye_4_2_2)
   s2_fast_forward(300);
   invite_timer_round(nh, "300", NULL);
 
-  s2_fast_forward(300);
+  s2_fast_forward(140);
 
   nua_bye(nh, TAG_END());
 
@@ -2403,7 +2403,7 @@ START_TEST(bye_4_2_2)
   s2_free_message(bye);
   fail_unless(s2_check_event(nua_r_bye, 407));
 
-  s2_fast_forward(300);
+  s2_fast_forward(160);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
   bye = s2_wait_for_request(SIP_METHOD_BYE);

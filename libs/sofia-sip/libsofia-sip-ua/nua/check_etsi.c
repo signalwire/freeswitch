@@ -244,6 +244,8 @@ START_TEST(SIP_CC_OE_CE_TI_008)
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
+  s2_fast_forward(5);
+
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 

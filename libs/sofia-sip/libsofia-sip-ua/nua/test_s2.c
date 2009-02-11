@@ -125,6 +125,8 @@ void s2_fast_forward(unsigned long seconds)
     _su_time = _su_time_fast_forwarder;
 
   time_offset += seconds;
+
+  su_root_step(s2->root, 0);
 }
 
 /* -- NUA events -------------------------------------------------------- */
