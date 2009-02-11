@@ -104,13 +104,16 @@ void nua_dialog_uas_route(nua_owner_t *own,
  * @param ds   dialog state
  * @param sip  SIP message containing response used to update dialog
  * @param rtag if true, set remote tag within the leg
+ * @param initial if true, @a sip is response to initial transaction
  */
 void nua_dialog_uac_route(nua_owner_t *own,
 			  nua_dialog_state_t *ds,
 			  sip_t const *sip,
-			  int rtag)
+			  int rtag,
+			  int initial)
 {
   int established = nua_dialog_is_established(ds);
+  int status = sip->sip_status->st_status;
 
   if (!established && sip->sip_to->a_tag)
     ds->ds_remote_tag = su_strdup(own, sip->sip_to->a_tag);
@@ -118,7 +121,11 @@ void nua_dialog_uac_route(nua_owner_t *own,
   if (ds->ds_leg == NULL)
     return;
 
-  nta_leg_client_route(ds->ds_leg, sip->sip_record_route, sip->sip_contact);
+  if (initial && status >= 200)
+    nta_leg_client_reroute(ds->ds_leg, sip->sip_record_route, sip->sip_contact, 1);
+  else
+    nta_leg_client_reroute(ds->ds_leg, sip->sip_record_route, sip->sip_contact, 0);
+
   ds->ds_route = ds->ds_route || sip->sip_record_route || sip->sip_contact;
 
   if (rtag && !established && sip->sip_to->a_tag)

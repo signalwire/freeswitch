@@ -41,6 +41,7 @@
 #include <sofia-sip/sip_header.h>
 #include <sofia-sip/soa.h>
 #include <sofia-sip/su_tagarg.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_tag_io.h>
 
 #include <stdlib.h>
@@ -1007,8 +1008,10 @@ TCase *cancel_tcase(void)
 /* 2.3 - Session timers */
 
 /* Wait for invite from NUA */
-static void invite_timer_round(nua_handle_t *nh,
-			       char const *session_expires)
+static struct message *
+invite_timer_round(nua_handle_t *nh,
+		   char const *session_expires,
+		   sip_record_route_t *rr)
 {
   struct message *invite, *ack;
 
@@ -1019,17 +1022,27 @@ static void invite_timer_round(nua_handle_t *nh,
     invite, dialog, SIP_200_OK,
     SIPTAG_SESSION_EXPIRES_STR(session_expires),
     SIPTAG_REQUIRE_STR("timer"),
+    SIPTAG_RECORD_ROUTE(rr),
     TAG_END());
   s2_free_message(invite);
   fail_unless(s2_check_event(nua_r_invite, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
   ack = s2_wait_for_request(SIP_METHOD_ACK);
-  s2_free_message(ack);
+  if (rr == NULL)
+    s2_free_message(ack);
+  return ack;
 }
 
 START_TEST(call_2_3_1)
 {
   nua_handle_t *nh;
+  sip_record_route_t rr[1];
+  struct message *ack;
+
+  sip_record_route_init(rr);
+  *rr->r_url = *s2->contact->m_url;
+  rr->r_url->url_user = "record";
+  rr->r_url->url_params = "lr";
 
   s2_case("2.3.1", "Incoming call with call timers",
 	  "NUA receives INVITE, "
@@ -1043,9 +1056,11 @@ START_TEST(call_2_3_1)
     TAG_END());
 
   s2_fast_forward(300);
-  invite_timer_round(nh, "300;refresher=uac");
+  ack = invite_timer_round(nh, "300;refresher=uac", rr);
+  fail_if(ack->sip->sip_route &&
+	  su_strmatch(ack->sip->sip_route->r_url->url_user, "record"));
   s2_fast_forward(300);
-  invite_timer_round(nh, "300;refresher=uac");
+  invite_timer_round(nh, "300;refresher=uac", NULL);
 
   bye_by_nua(nh, TAG_END());
 
@@ -1069,9 +1084,9 @@ START_TEST(call_2_3_2)
     TAG_END());
 
   s2_fast_forward(300);
-  invite_timer_round(nh, "300");
+  invite_timer_round(nh, "300", NULL);
   s2_fast_forward(300);
-  invite_timer_round(nh, "300");
+  invite_timer_round(nh, "300", NULL);
 
   bye_by_nua(nh, TAG_END());
 
@@ -1098,14 +1113,20 @@ TCase *session_timer_tcase(void)
 START_TEST(call_2_4_1)
 {
   nua_handle_t *nh;
-  struct message *invite, *prack;
+  struct message *invite, *prack, *ack;
   int with_sdp;
+  sip_record_route_t rr[1];
 
   s2_case("2.4.1", "Call with 100rel",
 	  "NUA sends INVITE, "
 	  "receives 183, sends PRACK, receives 200 for it, "
 	  "receives 180, sends PRACK, receives 200 for it, "
           "receives 200, send ACK.");
+
+  sip_record_route_init(rr);
+  *rr->r_url = *s2->contact->m_url;
+  rr->r_url->url_user = "record";
+  rr->r_url->url_params = "lr";
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
 
@@ -1116,6 +1137,7 @@ START_TEST(call_2_4_1)
 
   prack = respond_with_100rel(invite, dialog, with_sdp = 1,
 			      SIP_183_SESSION_PROGRESS,
+			      SIPTAG_RECORD_ROUTE(rr),
 			      TAG_END());
   s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_free_message(prack), prack = NULL;
@@ -1125,16 +1147,26 @@ START_TEST(call_2_4_1)
   prack = respond_with_100rel(invite, dialog, with_sdp = 0,
 			      SIP_180_RINGING,
 			      TAG_END());
+  fail_unless(prack->sip->sip_route != NULL);
+  fail_unless(su_strmatch(prack->sip->sip_route->r_url->url_user, "record"));
+
   s2_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
   fail_unless(s2_check_event(nua_r_prack, 200));
 
-  s2_respond_to(invite, dialog, SIP_200_OK, TAG_END());
+  /* Change the record-route */
+  rr->r_url->url_user = "record2";
+  s2_respond_to(invite, dialog, SIP_200_OK,
+		SIPTAG_RECORD_ROUTE(rr),
+		TAG_END());
   s2_free_message(invite);
   fail_unless(s2_check_event(nua_r_invite, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  ack = s2_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  fail_unless(su_strmatch(ack->sip->sip_route->r_url->url_user, "record2"));
+  s2_free_message(ack);
 
   bye_to_nua(nh, TAG_END());
 
@@ -2314,7 +2346,7 @@ START_TEST(bye_4_2_1)
     TAG_END());
 
   s2_fast_forward(300);
-  invite_timer_round(nh, "300");
+  invite_timer_round(nh, "300", NULL);
 
   nua_bye(nh, TAG_END());
 
@@ -2358,7 +2390,7 @@ START_TEST(bye_4_2_2)
     TAG_END());
 
   s2_fast_forward(300);
-  invite_timer_round(nh, "300");
+  invite_timer_round(nh, "300", NULL);
 
   s2_fast_forward(300);
 

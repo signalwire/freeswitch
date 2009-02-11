@@ -2876,7 +2876,7 @@ int nua_client_response(nua_client_request_t *cr,
     else {
       if (sip) {
 	if (cr->cr_contactize)
-	  nua_dialog_uac_route(nh, nh->nh_ds, sip, 1);
+	  nua_dialog_uac_route(nh, nh->nh_ds, sip, 1, cr->cr_initial);
 	nua_dialog_store_peer_info(nh, nh->nh_ds, sip);
       }
 

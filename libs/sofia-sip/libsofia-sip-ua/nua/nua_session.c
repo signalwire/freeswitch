@@ -732,9 +732,12 @@ static int nua_invite_client_init(nua_client_request_t *cr,
       if (sr->sr_usage == du && sr->sr_method == sip_method_invite &&
 	  nua_server_request_is_pending(sr))
 	return nua_client_return(cr, SIP_491_REQUEST_PENDING, msg);
+    cr->cr_initial = 0;
   }
-  else
+  else {
     du = nua_dialog_usage_add(nh, nh->nh_ds, nua_session_usage, NULL);
+    cr->cr_initial = 1;
+  }
 
   if (!du)
     return -1;
@@ -884,7 +887,7 @@ static int nua_invite_client_preliminary(nua_client_request_t *cr,
     if (!nua_dialog_is_established(nh->nh_ds)) {
       nta_outgoing_t *tagged;
 
-      nua_dialog_uac_route(nh, nh->nh_ds, sip, 1);
+      nua_dialog_uac_route(nh, nh->nh_ds, sip, 1, 1);
       nua_dialog_store_peer_info(nh, nh->nh_ds, sip);
 
       /* Tag the INVITE request */
@@ -1188,7 +1191,6 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
   }
 
   nua_client_request_ref(cr);
-
   error = nua_invite_client_ack(cr, tags);
 
   if (error < 0) {
@@ -1237,6 +1239,8 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
 
   assert(cr->cr_orq);
   assert(cr->cr_method == sip_method_invite);
+
+  cr->cr_initial = 0;
 
   if (!ds->ds_leg) {
     /* XXX - fix nua_dialog_usage_remove_at() instead! */

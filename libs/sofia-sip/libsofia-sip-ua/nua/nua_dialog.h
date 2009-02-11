@@ -299,6 +299,7 @@ struct nua_client_request
   unsigned cr_dialog:1;		/**< Request can initiate dialog */
 
   /* Current state */
+  unsigned cr_initial:1;	/**< Initial request of a dialog */
   unsigned cr_acked:1;		/**< Final response to the request has been ACKed */
   unsigned cr_waiting:1;	/**< Request is waiting */
   unsigned cr_challenged:1;	/**< Request was challenged */
@@ -411,7 +412,7 @@ struct nua_dialog_usage {
 };
 
 void nua_dialog_uac_route(nua_owner_t *, nua_dialog_state_t *ds,
-			  sip_t const *sip, int rtag);
+			  sip_t const *sip, int rtag, int initial);
 void nua_dialog_uas_route(nua_owner_t *, nua_dialog_state_t *ds,
 			  sip_t const *sip, int rtag);
 void nua_dialog_store_peer_info(nua_owner_t *, nua_dialog_state_t *ds,
