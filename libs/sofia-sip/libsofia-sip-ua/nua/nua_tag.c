@@ -1152,6 +1152,8 @@ tag_typedef_t nutag_update_refresh = BOOLTAG_TYPEDEF(update_refresh);
  * @sa #nua_r_update, NUTAG_SESSION_TIMER(), NUTAG_MIN_SE_REF(),
  * NUTAG_SESSION_REFRESHER(), NUTAG_UPDATE_REFRESH(), @RFC4028,
  * @SessionExpires, @MinSE
+ *
+ * @NEW_1_12_10
  */
 tag_typedef_t nutag_refresh_without_sdp = BOOLTAG_TYPEDEF(refresh_without_sdp);
 
