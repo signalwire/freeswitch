@@ -530,6 +530,7 @@ AC_CHECK_FUNCS([gettimeofday strerror random initstate tcsetattr flock \
                 socketpair gethostname gethostbyname getipnodebyname \
                 poll epoll_create kqueue select if_nameindex \
 		signal alarm \
+		strnlen \
 	        getaddrinfo getnameinfo freeaddrinfo gai_strerror getifaddrs \
                 getline getdelim getpass])
 # getline getdelim getpass are _GNU_SOURCE stuff
@@ -548,7 +549,7 @@ if test $ac_cv_func_if_nameindex = yes ; then
     [Define to 1 if you have if_nameindex().])
 fi
 
-SAC_REPLACE_FUNCS([memmem memccpy memspn memcspn strcasestr strtoull \
+SAC_REPLACE_FUNCS([memmem memccpy memspn memcspn strtoull \
 		   inet_ntop inet_pton poll])
 
 if test $ac_cv_func_signal = yes ; then
