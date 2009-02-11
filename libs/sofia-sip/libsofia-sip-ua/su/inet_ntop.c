@@ -44,6 +44,22 @@ static const char *inet_ntop6(const unsigned char *src, char *dst, size_t size);
  * author:
  *	Paul Vixie, 1996.
  */
+
+/** inet_ntop() replacement.
+ *
+ * Convert a network format address to presentation format.
+ *
+ * @param af[in] address family
+ * @param src[in] network address to convert
+ * @param dst[out] return-value string
+ * @param size[in] maximum lenght of @a dst string
+ *
+ * @return Pointer to presentation format address (`dst'), or NULL (see errno).
+ *
+ * @author Paul Vixie, 1996.
+ *
+ * @NEW_1_12_9
+ */
 const char *
 su_inet_ntop(int af, void const *src, char *dst, size_t size)
 {

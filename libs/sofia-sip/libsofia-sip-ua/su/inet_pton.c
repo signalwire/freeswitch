@@ -44,6 +44,25 @@ static int	inet_pton6(const char *src, unsigned char *dst);
  * author:
  *	Paul Vixie, 1996.
  */
+
+/** inet_pton() replacement.
+ *
+ * Convert from presentation format in @a src (which usually means ASCII printable)
+ * to network format in @a dst (which is usually some kind of binary format).
+ *
+ * @param af[in] address family
+ * @param src[in] string containing address to convert
+ * @param dst[out] return-value network address
+ *                 (struct in_addr or struct in_addr6)
+ *
+ * @retval 1 if the address was valid for the specified address family
+ * @retval 0 if the address wasn't valid (`dst' is untouched in this case)
+ * @retval -1 if some other error occurred (`dst' is untouched in this case, too)
+ *
+ * @author Paul Vixie, 1996.
+ *
+ * @NEW_1_12_9
+ */
 int
 su_inet_pton(int af, const char * src, void * dst)
 {
