@@ -33,12 +33,15 @@
 #include "config.h"
 
 #include <sys/types.h>
-#include <sofia-sip/heap.h>
+#include "sofia-sip/heap.h"
 
 typedef union {
   void *private;
   /* Use for debugging */
-  struct timers_priv { size_t _size, _used; struct su_timer_s * _heap[2]; } *actual;
+  struct timers_priv {
+    size_t _size, _used;
+    struct su_timer_s * _heap[2];
+  } *actual;
 } su_timer_heap_t;
 
 #define SU_TIMER_QUEUE_T su_timer_heap_t
