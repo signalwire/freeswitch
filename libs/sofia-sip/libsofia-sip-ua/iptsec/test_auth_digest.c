@@ -98,7 +98,7 @@ void offset_time(su_time_t *tv)
   tv->tv_sec += offset;
 }
 
-int test_digest()
+int test_digest(void)
 {
   char challenge[] = "Digest "
     "realm=\"garage.sr.ntc.nokia.com\", "
@@ -476,7 +476,7 @@ void reinit_as(auth_status_t *as)
 }
 
 /* Test digest authentication client and server */
-int test_digest_client()
+int test_digest_client(void)
 {
   BEGIN();
 
@@ -1196,7 +1196,7 @@ char const passwd[] =
   "\n";
 
 /* Test digest authentication client and server */
-int test_module_io()
+int test_module_io(void)
 {
   auth_mod_t *am, am0[1];
   auth_passwd_t *apw, *apw2;
