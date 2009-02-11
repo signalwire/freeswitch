@@ -24,6 +24,7 @@ AC_DEFUN([ODBC_INC_WHERE], [
 
 AC_DEFUN([ODBC_LIB_WHERE1], [
 saved_LIBS=$LIBS
+saved_CFLAGS=$CFLAGS
 case "$host" in
      *darwin*)
 	LIBS="$saved_LIBS -L$1 -lodbc -framework CoreFoundation"
@@ -32,6 +33,7 @@ case "$host" in
 	LIBS="$saved_LIBS -L$1 -lodbc"
      ;;
 esac
+CFLAGS="$saved_CFLAGS -I$ac_cv_odbc_where_inc"
 AC_TRY_LINK(
 [#include <sql.h>],
 [SQLHDBC con;
@@ -39,6 +41,7 @@ SQLDisconnect(con);],
 [ac_cv_found_odbc_lib=yes],
 ac_cv_found_odbc_lib=no)
 LIBS=$saved_LIBS
+CFLAGS=$saved_CFLAGS
 ])
 
 AC_DEFUN([TEST_LIBPATH], [
@@ -115,6 +118,13 @@ AC_ARG_WITH(odbc-include,
 	  fi
 	fi
 
+	if test "X$with_odbc_include" != "X"; then
+	  ac_cv_odbc_where_inc=$with_odbc_include
+	fi
+	if test "X$ac_cv_odbc_where_inc" = "X"; then
+	  ODBC_INC_WHERE(/usr/include /usr/local/include)
+	fi
+
 	if test "X$with_odbc_lib" != "X"; then
 	  ac_cv_odbc_where_lib=$with_odbc_lib
 	fi
@@ -124,13 +134,6 @@ AC_ARG_WITH(odbc-include,
  	  ])
 	fi
 
-	if test "X$with_odbc_include" != "X"; then
-	  ac_cv_odbc_where_inc=$with_odbc_include
-	fi
-	if test "X$ac_cv_odbc_where_inc" = "X"; then
-	  ODBC_INC_WHERE(/usr/include /usr/local/include)
-	fi
-
 	AC_MSG_CHECKING(whether to include odbc)
 	if test "X$ac_cv_odbc_where_lib" = "X" -a "X$ac_cv_odbc_where_inc" = "X"; then
 	  ac_cv_found_odbc=no
@@ -138,9 +141,9 @@ AC_ARG_WITH(odbc-include,
 	else
 	  ac_cv_found_odbc=yes
 	  AC_MSG_RESULT(yes)
-	  ODBC_INC_DIR=$ac_cv_pcap_where_inc
-	  ODBC_LIB_DIR=$ac_cv_pcap_where_lib
-	  ODBC_INC_FLAGS="-I$ac_cv_pcap_where_inc"
+	  ODBC_INC_DIR=$ac_cv_odbc_where_inc
+	  ODBC_LIB_DIR=$ac_cv_odbc_where_lib
+	  ODBC_INC_FLAGS="-I$ac_cv_odbc_where_inc"
 	  ODBC_LIB_FLAGS="-Wl,-lodbc"
 	  case "$host" in
      	       *darwin*)
