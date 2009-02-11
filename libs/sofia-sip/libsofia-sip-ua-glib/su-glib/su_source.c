@@ -377,6 +377,7 @@ gboolean su_source_prepare(GSource *gs, gint *return_tout)
 {
   SuSource *ss = (SuSource *)gs;
   su_port_t *self = ss->ss_port;
+  su_duration_t tout = SU_WAIT_FOREVER;
 
   enter;
 
@@ -388,21 +389,22 @@ gboolean su_source_prepare(GSource *gs, gint *return_tout)
   if (self->sup_base->sup_timers) {
     su_time_t now;
     GTimeVal  gtimeval;
-    su_duration_t tout;
 
     g_source_get_current_time(gs, &gtimeval);
     now.tv_sec = gtimeval.tv_sec + 2208988800UL;
     now.tv_usec = gtimeval.tv_usec;
 
     tout = su_timer_next_expires(&self->sup_base->sup_timers, now);
-
-    *return_tout = (tout < 0 || tout > (su_duration_t)G_MAXINT)?
-	-1 : (gint)tout;
-
-    return (tout == 0);
+  }
+  if (self->sup_base->sup_deferrable) {
+    if (tout > self->sup_base->sup_max_defer)
+      tout = self->sup_base->sup_max_defer;
   }
 
-  return FALSE;
+  *return_tout = (tout >= 0 && tout <= (su_duration_t)G_MAXINT)?
+      (gint)tout : -1;
+
+  return (tout == 0);
 }
 
 static
@@ -440,11 +442,10 @@ gboolean su_source_dispatch(GSource *gs,
   if (self->sup_base->sup_head)
     su_base_port_getmsgs(self);
 
-  if (self->sup_base->sup_timers) {
+  if (self->sup_base->sup_timers || self->sup_base->sup_deferrable) {
     su_time_t now;
     GTimeVal  gtimeval;
     su_duration_t tout;
-    int timers = 0;
 
     tout = SU_DURATION_MAX;
 
@@ -453,7 +454,8 @@ gboolean su_source_dispatch(GSource *gs,
     now.tv_sec = gtimeval.tv_sec + 2208988800UL;
     now.tv_usec = gtimeval.tv_usec;
 
-    timers = su_timer_expire(&self->sup_base->sup_timers, &tout, now);
+    su_timer_expire(&self->sup_base->sup_timers, &tout, now);
+    su_timer_expire(&self->sup_base->sup_deferrable, &tout, now);
   }
 
 #if SU_HAVE_POLL
