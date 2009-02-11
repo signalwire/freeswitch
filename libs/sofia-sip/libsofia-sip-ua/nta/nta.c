@@ -7001,7 +7001,7 @@ static size_t outgoing_timer_c(outgoing_queue_t *q,
 
 static void outgoing_ack(nta_outgoing_t *orq, sip_t *sip);
 static msg_t *outgoing_ackmsg(nta_outgoing_t *, sip_method_t, char const *,
-			      tagi_t const *tags);
+			      tag_type_t tag, tag_value_t value, ...);
 static void outgoing_retransmit(nta_outgoing_t *orq);
 static void outgoing_trying(nta_outgoing_t *orq);
 static void outgoing_timeout(nta_outgoing_t *orq, uint32_t now);
@@ -7307,7 +7307,7 @@ nta_outgoing_t *nta_outgoing_tcancel(nta_outgoing_t *orq,
 	  TAG_END());
 
   if (!cancel_408)
-    msg = outgoing_ackmsg(orq, SIP_METHOD_CANCEL, ta_args(ta));
+    msg = outgoing_ackmsg(orq, SIP_METHOD_CANCEL, ta_tags(ta));
   else
     msg = NULL;
 
@@ -9193,7 +9193,6 @@ void outgoing_ack(nta_outgoing_t *orq, sip_t *sip)
 {
   nta_outgoing_t *ack;
   msg_t *ackmsg;
-  sip_t *acksip;
 
   assert(orq);
 
@@ -9205,13 +9204,9 @@ void outgoing_ack(nta_outgoing_t *orq, sip_t *sip)
   assert(sip->sip_status->st_status >= 300);
   assert(orq->orq_tport);
 
-  ackmsg = outgoing_ackmsg(orq, SIP_METHOD_ACK, NULL);
-  acksip = sip_object(ackmsg);
+  ackmsg = outgoing_ackmsg(orq, SIP_METHOD_ACK, SIPTAG_TO(sip->sip_to), TAG_END());
 
-  if (acksip) {
-    if (sip->sip_to->a_tag && !acksip->sip_to->a_tag)
-      sip_to_tag(msg_home(ackmsg), acksip->sip_to, sip->sip_to->a_tag);
-
+  if (ackmsg) {
     if ((ack = outgoing_create(orq->orq_agent, NULL, NULL,
 			       NULL, orq->orq_tpn, ackmsg,
 			       NTATAG_BRANCH_KEY(sip->sip_via->v_branch),
@@ -9227,7 +9222,7 @@ void outgoing_ack(nta_outgoing_t *orq, sip_t *sip)
 /** Generate messages for hop-by-hop ACK or CANCEL.
  */
 msg_t *outgoing_ackmsg(nta_outgoing_t *orq, sip_method_t m, char const *mname,
-		       tagi_t const *tags)
+		       tag_type_t tag, tag_value_t value, ...)
 {
   msg_t *msg = nta_msg_create(orq->orq_agent, 0);
   su_home_t *home = msg_home(msg);
@@ -9238,8 +9233,12 @@ msg_t *outgoing_ackmsg(nta_outgoing_t *orq, sip_method_t m, char const *mname,
   if (!sip)
     return NULL;
 
-  if (tags) {
-    sip_add_tl(msg, sip, TAG_NEXT(tags));
+  if (tag) {
+    ta_list ta;
+
+    ta_start(ta, tag, value);
+
+    sip_add_tl(msg, sip, ta_tags(ta));
     /* Bug sf.net # 173323:
      * Ensure that request-URI, topmost Via, From, To, Call-ID, CSeq,
      * Max-Forward, Route, Accept-Contact, Reject-Contact and
@@ -9247,7 +9246,7 @@ msg_t *outgoing_ackmsg(nta_outgoing_t *orq, sip_method_t m, char const *mname,
      */
     if (sip->sip_from)
       sip_header_remove(msg, sip, (void *)sip->sip_from);
-    if (sip->sip_to)
+    if (sip->sip_to && m != sip_method_ack)
       sip_header_remove(msg, sip, (void *)sip->sip_to);
     if (sip->sip_call_id)
       sip_header_remove(msg, sip, (void *)sip->sip_call_id);
@@ -9263,12 +9262,15 @@ msg_t *outgoing_ackmsg(nta_outgoing_t *orq, sip_method_t m, char const *mname,
       sip_header_remove(msg, sip, (void *)sip->sip_via);
     if (sip->sip_max_forwards)
       sip_header_remove(msg, sip, (void *)sip->sip_max_forwards);
+
+    ta_end(ta);
   }
 
   sip->sip_request =
     sip_request_create(home, m, mname, (url_string_t *)orq->orq_url, NULL);
 
-  sip_add_dup(msg, sip, (sip_header_t *)old->sip_to);
+  if (sip->sip_to == NULL)
+    sip_add_dup(msg, sip, (sip_header_t *)old->sip_to);
   sip_add_dup(msg, sip, (sip_header_t *)old->sip_from);
   sip_add_dup(msg, sip, (sip_header_t *)old->sip_call_id);
   sip_add_dup(msg, sip, (sip_header_t *)old->sip_route);
