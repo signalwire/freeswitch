@@ -242,8 +242,8 @@ static switch_bool_t set_db_random()
 static switch_bool_t test_lcr_sql(const char *sql)
 {
 	char * tsql;
-	tsql = switch_mprintf(sql, "5555551212");
 	switch_bool_t retval = SWITCH_FALSE;
+	tsql = switch_mprintf(sql, "5555551212");
 	
 	if (globals.odbc_dsn) {
 		if(switch_odbc_handle_exec(globals.master_odbc, tsql, NULL)
@@ -839,6 +839,7 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 		if(argc < 2) {
 			goto usage;
 		}
+		switch_assert(argv[0]);
 		if(!strcasecmp(argv[0], "show") && !strcasecmp(argv[1], "profiles")) {
 			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, NULL, NULL, &val);

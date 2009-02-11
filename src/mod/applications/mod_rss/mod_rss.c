@@ -185,8 +185,9 @@ SWITCH_STANDARD_APP(rss_function)
 	const char *vcf = NULL;
 	char *chanvars = switch_channel_build_param_string(channel, NULL, NULL);
 	switch_codec_implementation_t read_impl = {0};
+	uint32_t rate, interval;
     switch_core_session_get_read_impl(session, &read_impl);
-	uint32_t rate, interval = read_impl.microseconds_per_packet / 1000;
+	interval = read_impl.microseconds_per_packet / 1000;
 
 	if ((vcf = switch_channel_get_variable(channel, "rss_alt_config"))) {
 		cf = vcf;
