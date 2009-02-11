@@ -581,25 +581,22 @@ int su_timer_expire(su_timer_queue_t * const timers,
 
 
 /** Calculate duration in milliseconds until next timer expires. */
-su_duration_t su_timer_next_expires(su_timer_t const * t, su_time_t now)
+su_duration_t su_timer_next_expires(su_timer_queue_t const *timers,
+				    su_time_t now)
 {
-  su_timer_queue_t *timers;
+  su_duration_t next = SU_DURATION_MAX;
 
-  su_duration_t tout;
+  su_timer_t const *t;
 
-  if (!t)
-    return SU_DURATION_MAX;
+  t = timers ? timers_get(timers[0], 1) : NULL;
 
-  timers = su_task_timers(t->sut_task);
+  if (t) {
+    next = su_duration(t->sut_when, now);
+    if (next < 0)
+      next = 0;
+  }
 
-  t =  timers ? timers_get(timers[0], 1) : NULL;
-
-  if (!t)
-    return SU_DURATION_MAX;
-
-  tout = su_duration(t->sut_when, now);
-
-  return tout > 0 ? tout : 0 ;
+  return next;
 }
 
 /**

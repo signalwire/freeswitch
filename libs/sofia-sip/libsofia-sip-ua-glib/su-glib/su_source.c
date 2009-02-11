@@ -394,7 +394,7 @@ gboolean su_source_prepare(GSource *gs, gint *return_tout)
     now.tv_sec = gtimeval.tv_sec + 2208988800UL;
     now.tv_usec = gtimeval.tv_usec;
 
-    tout = su_timer_next_expires(self->sup_base->sup_timers, now);
+    tout = su_timer_next_expires(&self->sup_base->sup_timers, now);
 
     *return_tout = (tout < 0 || tout > (su_duration_t)G_MAXINT)?
 	-1 : (gint)tout;

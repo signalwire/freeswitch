@@ -166,7 +166,7 @@ SOFIAPUBFUN su_port_t *su_port_create(void)
 /* Extension from >= 1.12.5 */
 
 SOFIAPUBFUN void su_msg_delivery_report(su_msg_r msg);
-SOFIAPUBFUN su_duration_t su_timer_next_expires(su_timer_t const * t,
+SOFIAPUBFUN su_duration_t su_timer_next_expires(su_timer_queue_t const *timers,
 						su_time_t now);
 SOFIAPUBFUN su_root_t *su_root_create_with_port(su_root_magic_t *magic,
 						su_port_t *port)
