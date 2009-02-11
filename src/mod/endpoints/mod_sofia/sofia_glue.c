@@ -2337,10 +2337,6 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 		sofia_glue_toggle_hold(tech_pvt, sendonly);
 	}
 
-	if (!dptime) {
-		dptime = 20;
-	}
-
 	for (m = sdp->sdp_media; m; m = m->m_next) {
 		sdp_connection_t *connection;
 
