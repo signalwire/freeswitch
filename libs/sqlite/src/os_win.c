@@ -25,9 +25,9 @@
 /*
 ** Macros used to determine whether or not to use threads.
 */
-#if defined(THREADSAFE) && THREADSAFE
+//#if defined(THREADSAFE) && THREADSAFE
 # define SQLITE_W32_THREADS 1
-#endif
+//#endif
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1616,7 +1616,7 @@ void sqlite3WinEnterMutex(){
   inMutex++;
 }
 void sqlite3WinLeaveMutex(){
-  assert( inMutex );
+	//assert( inMutex );
   inMutex--;
 #ifdef SQLITE_W32_THREADS
   assert( mutexOwner==GetCurrentThreadId() );
