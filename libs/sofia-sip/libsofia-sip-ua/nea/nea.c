@@ -39,6 +39,7 @@
 #include <assert.h>
 
 #include <sofia-sip/su_tagarg.h>
+#include <sofia-sip/su_string.h>
 
 #include <sofia-sip/sip.h>
 #include <sofia-sip/sip_header.h>
@@ -518,14 +519,14 @@ int handle_notify(nea_t *nea,
   nea->nea_notify_received = 1;
   nea->nea_callback(nea, nea->nea_context, sip);
 
-  if (strcasecmp(ss->ss_substate, "terminated") == 0) {
+  if (su_casematch(ss->ss_substate, "terminated")) {
     nta_leg_destroy(nea->nea_leg), nea->nea_leg = NULL;
     nea->nea_state = nea_terminated;
 
-    if (str0casecmp(ss->ss_reason, "deactivated") == 0) {
+    if (su_casematch(ss->ss_reason, "deactivated")) {
       nea->nea_state = nea_embryonic;
       nea->nea_deadline = sip_now();
-    } else if (str0casecmp(ss->ss_reason, "probation") == 0) {
+    } else if (su_casematch(ss->ss_reason, "probation")) {
       sip_time_t retry = sip_now() + NEA_TIMER_DELTA;
 
       if (ss->ss_retry_after)
@@ -541,9 +542,9 @@ int handle_notify(nea_t *nea,
       return 200;
     }
   }
-  else if (strcasecmp(ss->ss_substate, "pending") == 0)
+  else if (su_casematch(ss->ss_substate, "pending"))
     nea->nea_state = nea_pending;
-  else if (strcasecmp(ss->ss_substate, "active") == 0)
+  else if (su_casematch(ss->ss_substate, "active"))
     nea->nea_state = nea_active;
   else
     nea->nea_state = nea_extended;

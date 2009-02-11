@@ -752,7 +752,7 @@ int nea_view_update(nea_server_t *nes,
 
     /* Check if the payload type already exists */
     for (i = 0; (evv = ev->ev_views[i]); i++)
-      if (str0casecmp(cts, evv->evv_content_type->c_type) == 0)
+      if (su_casematch(cts, evv->evv_content_type->c_type))
 	break;
 
     if (private && evv == NULL) /* No private view without primary view. */
@@ -916,7 +916,7 @@ nea_event_view_t *nea_event_view(nea_event_t *ev, char const *content_type)
 
   /* Check if the payload type already exists */
   for (i = 0; ev->ev_views[i]; i++)
-    if (str0casecmp(content_type, ev->ev_views[i]->evv_content_type->c_type) == 0)
+    if (su_casematch(content_type, ev->ev_views[i]->evv_content_type->c_type))
       break;
 
   for (evv = ev->ev_views[i]; evv; evv = evv->evv_next)
@@ -1805,10 +1805,10 @@ int nea_sub_process_subscribe(nea_sub_t *s,
 
 	type = evv->evv_content_type->c_type;
 
-	if ((strcasecmp(ac->ac_type, type) == 0) ||
-	    (strcasecmp(ac->ac_subtype, "*") == 0 &&
-	     strncasecmp(ac->ac_type, type,
-			 ac->ac_subtype - ac->ac_type) == 0)) {
+	if ((su_casematch(ac->ac_type, type)) ||
+	    (su_casematch(ac->ac_subtype, "*") &&
+	     su_casenmatch(ac->ac_type, type,
+			 ac->ac_subtype - ac->ac_type))) {
 	  if (evv_maybe == NULL)
 	    evv_maybe = evv;
 	}
@@ -2290,7 +2290,7 @@ int nea_sub_auth(nea_sub_t *s,
 
   tl_gets(ta_args(ta), NEATAG_REASON_REF(reason), TAG_END());
 
-  rejected = reason && strcasecmp(reason, "rejected") == 0;
+  rejected = su_casematch(reason, "rejected");
 
   if (state == nea_terminated && embryonic && rejected && s->s_irq)
     retval = 0, s->s_rejected = 1;
