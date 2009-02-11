@@ -418,6 +418,7 @@ tag_typedef_t ntatag_maxsize = USIZETAG_TYPEDEF(maxsize);
  * @par Values
  *    - Maximum acceptable size of a queue (size_t).
  *
+ * @NEW_1_12_9
  */
 tag_typedef_t ntatag_max_proceeding = USIZETAG_TYPEDEF(max_proceeding);
 
@@ -665,6 +666,8 @@ tag_typedef_t ntatag_timer_c = UINTTAG_TYPEDEF(timer_c);
  *    - 600 (graylist server for 10 minutes)
  *
  * @sa NTATAG_BLACKLIST(), NTATAG_TIMEOUT_408()
+ *
+ * @NEW_1_12_8
  */
 tag_typedef_t ntatag_graylist = UINTTAG_TYPEDEF(graylist);
 
@@ -1334,6 +1337,8 @@ tag_typedef_t ntatag_client_rport = BOOLTAG_TYPEDEF(client_rport);
  *    - 0 - do not use "rport" parameter
  *
  * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_TCP_RPORT(), NTATAG_TLS_RPORT(), @Via
+ *
+ * @since Tag type and NTATAG_SERVER_RPORT(2) was added in @VERSION_1_12_9.
  */
 tag_typedef_t ntatag_server_rport = INTTAG_TYPEDEF(server_rport);
 
@@ -1376,6 +1381,8 @@ tag_typedef_t ntatag_tcp_rport = BOOLTAG_TYPEDEF(tcp_rport);
  *      on client side
  *
  * @sa @RFC3581, NTATAG_CLIENT_RPORT(), NTATAG_SERVER_RPORT(), @Via
+ *
+ * @NEW_1_12_10
  */
 tag_typedef_t ntatag_tls_rport = BOOLTAG_TYPEDEF(tls_rport);
 
