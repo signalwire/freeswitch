@@ -81,6 +81,8 @@ static int ca_credentials(auth_client_t *ca,
 
 static int ca_clear_credentials(auth_client_t *ca);
 
+static int ca_has_authorization(auth_client_t const *ca);
+
 
 /** Initialize authenticators.
  *
@@ -175,8 +177,10 @@ int ca_challenge(auth_client_t *ca,
       ca->ca_credential_class != credential_class)
     return 0;
 
-  if (!ca->ca_auc)
+  if (!ca->ca_auc) {
+    ca->ca_credential_class = credential_class;
     return 1;
+  }
 
   if (ca->ca_auc->auc_challenge)
     stale = ca->ca_auc->auc_challenge(ca, ch);
@@ -536,20 +540,41 @@ int ca_clear_credentials(auth_client_t *ca)
  */
 int auc_has_authorization(auth_client_t **auc_list)
 {
-  auth_client_t const *ca;
+  auth_client_t const *ca, *other;
 
   if (auc_list == NULL)
     return 0;
 
-  /* Make sure every challenge has credentials */
   for (ca = *auc_list; ca; ca = ca->ca_next) {
-    if (!ca->ca_user || !ca->ca_pass || !ca->ca_credential_class)
-      return 0;
-    if (AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear)
-      return 0;
+    if (!ca_has_authorization(ca)) {
+      /*
+       * Check if we have another challenge with same realm but different
+       * scheme
+       */
+      for (other = *auc_list; other; other = ca->ca_next) {
+	if (ca == other)
+	  continue;
+	if (ca->ca_credential_class == other->ca_credential_class &&
+	    su_strcmp(ca->ca_realm, other->ca_realm) == 0 &&
+	    ca_has_authorization(other))
+	  break;
+      }
+
+      if (!other)
+	return 0;
+    }
   }
 
   return 1;
+}
+
+static int
+ca_has_authorization(auth_client_t const *ca)
+{
+  return ca->ca_credential_class &&
+    ca->ca_auc &&
+    ca->ca_user && ca->ca_pass &&
+    !(AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear);
 }
 
 /**Authorize a request.
@@ -603,6 +628,8 @@ int auc_authorization(auth_client_t **auc_list, msg_t *msg, msg_pub_t *pub,
 
     if (!ca->ca_auc)
       continue;
+    if (!ca_has_authorization(ca))
+      continue;
 
     if (ca->ca_auc->auc_authorize(ca, home, method, url, body, &h) < 0)
       return -1;
@@ -652,6 +679,8 @@ int auc_authorization_headers(auth_client_t **auc_list,
     ca = *auc_list;
 
     if (!ca->ca_auc)
+      continue;
+    if (!ca_has_authorization(ca))
       continue;
 
     if (ca->ca_auc->auc_authorize(ca, home, method, url, body, &h) < 0)

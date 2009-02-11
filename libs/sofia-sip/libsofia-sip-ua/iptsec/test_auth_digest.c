@@ -1093,6 +1093,29 @@ int test_digest_client()
 
     auth_mod_destroy(am); deinit_as(as); aucs = NULL;
 
+    /* Test client with two challenges */
+    au = sip_www_authenticate_make(
+      NULL,
+      "Digest realm=\"test-realm\", "
+      "nonce=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
+      "opaque=\"5ccc069c403ebaf9f0171e9517f40e41\"");
+    au->au_next = sip_www_authenticate_make(
+      NULL,
+      "Not-Digest realm=\"test-realm\", "
+      "zip=\"dcd98b7102dd2f0e8b11d0f600bfb0c093\", "
+      "zap=\"5ccc069c403ebaf9f0171e9517f40e41\"");
+
+    TEST_1(auc_challenge(&aucs, home, (msg_auth_t *)au,
+			 sip_authorization_class) >= 1);
+    TEST_1(auc_all_credentials(&aucs, "Digest", "\"test-realm\"",
+			       "user", "pass"));
+    msg_header_remove(m2, (void *)sip, (void *)sip->sip_authorization);
+    TEST(auc_authorization(&aucs, m2, (msg_pub_t*)sip, rq->rq_method_name,
+			   (url_t *)"sip:surf3@ims3.so.noklab.net",
+			   sip->sip_payload), 1);
+    TEST_1(sip->sip_authorization);
+    aucs = NULL;
+
     /* Test asynchronous operation */
     aucs = NULL;
     TEST_1(am = auth_mod_create(root,
