@@ -1401,7 +1401,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_INB_NOMEDIA);
 						} else {
-							switch_clear_flag(profile, TFLAG_INB_NOMEDIA);
+							sofia_clear_flag(profile, TFLAG_INB_NOMEDIA);
 						}
 					} else if (!strcasecmp(var, "force-subscription-expires")) {
 						int tmp = atoi(val);
@@ -1412,13 +1412,13 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						if (switch_true(val)) {
 							sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
 						} else {
-							switch_clear_flag(profile, TFLAG_LATE_NEGOTIATION);
+							sofia_clear_flag(profile, TFLAG_LATE_NEGOTIATION);
 						}
 					} else if (!strcasecmp(var, "inbound-proxy-media")) {
 						if (switch_true(val)) { 
 							sofia_set_flag(profile, TFLAG_PROXY_MEDIA);
 						} else {
-							switch_clear_flag(profile, TFLAG_PROXY_MEDIA);
+							sofia_clear_flag(profile, TFLAG_PROXY_MEDIA);
 						}
 					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
 						if (switch_true(val)) {
@@ -4472,13 +4472,13 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (rpid) {
 			if (rpid->rpid_privacy) {
 				if (!strcasecmp(rpid->rpid_privacy, "yes")) {
-					sofia_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 				} else if (!strcasecmp(rpid->rpid_privacy, "full")) {
-					sofia_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 				} else if (!strcasecmp(rpid->rpid_privacy, "name")) {
-					sofia_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
 				} else if (!strcasecmp(rpid->rpid_privacy, "number")) {
-					sofia_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
+					switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
 				} else {
 					switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME);
 					switch_clear_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NUMBER);
@@ -4492,7 +4492,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		if ((privacy = sip_privacy(sip))) {
 			if(msg_params_find(privacy->priv_values, "id")) {
-				sofia_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+				switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 			}
 		}
 

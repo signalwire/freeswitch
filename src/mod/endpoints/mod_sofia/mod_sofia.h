@@ -174,6 +174,8 @@ typedef enum {
 	PFLAG_CALLID_AS_UUID,
 	PFLAG_UUID_AS_CALLID,
 	PFLAG_SCROOGE,
+
+	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
 
@@ -189,38 +191,41 @@ typedef enum {
 } STUNFLAGS;
 
 typedef enum {
-	TFLAG_IO = (1 << 0),
-	TFLAG_CHANGE_MEDIA = (1 << 1),
-	TFLAG_OUTBOUND = (1 << 2),
-	TFLAG_READING = (1 << 3),
-	TFLAG_WRITING = (1 << 4),
-	TFLAG_HUP = (1 << 5),
-	TFLAG_RTP = (1 << 6),
-	TFLAG_BYE = (1 << 7),
-	TFLAG_ANS = (1 << 8),
-	TFLAG_EARLY_MEDIA = (1 << 9),
-	TFLAG_SECURE = (1 << 10),
-	TFLAG_VAD_IN = (1 << 11),
-	TFLAG_VAD_OUT = (1 << 12),
-	TFLAG_VAD = (1 << 13),
-	TFLAG_3PCC = (1 << 14),
-	TFLAG_READY = (1 << 15),
-	TFLAG_REINVITE = (1 << 16),
-	TFLAG_REFER = (1 << 17),
-	TFLAG_NOHUP = (1 << 18),
-	TFLAG_NOSDP_REINVITE = (1 << 19),
-	TFLAG_NAT = (1 << 20),
-	TFLAG_USEME = (1 << 21),
-	TFLAG_SIP_HOLD = (1 << 22),
-	TFLAG_INB_NOMEDIA = (1 << 23),
-	TFLAG_LATE_NEGOTIATION = (1 << 24),
-	TFLAG_SDP = (1 << 25),
-	TFLAG_VIDEO = (1 << 26),
-	TFLAG_TPORT_LOG = (1 << 27),
-	TFLAG_SENT_UPDATE = (1 << 28),
-	TFLAG_PROXY_MEDIA = (1 << 29),
-	TFLAG_HOLD_LOCK = (1 << 30),
-	TFLAG_3PCC_HAS_ACK = (1 << 31)
+	TFLAG_IO,
+	TFLAG_CHANGE_MEDIA,
+	TFLAG_OUTBOUND,
+	TFLAG_READING,
+	TFLAG_WRITING,
+	TFLAG_HUP,
+	TFLAG_RTP,
+	TFLAG_BYE,
+	TFLAG_ANS,
+	TFLAG_EARLY_MEDIA,
+	TFLAG_SECURE,
+	TFLAG_VAD_IN,
+	TFLAG_VAD_OUT,
+	TFLAG_VAD,
+	TFLAG_3PCC,
+	TFLAG_READY,
+	TFLAG_REINVITE,
+	TFLAG_REFER,
+	TFLAG_NOHUP,
+	TFLAG_NOSDP_REINVITE,
+	TFLAG_NAT,
+	TFLAG_USEME,
+	TFLAG_SIP_HOLD,
+	TFLAG_INB_NOMEDIA,
+	TFLAG_LATE_NEGOTIATION,
+	TFLAG_SDP,
+	TFLAG_VIDEO,
+	TFLAG_TPORT_LOG,
+	TFLAG_SENT_UPDATE,
+	TFLAG_PROXY_MEDIA,
+	TFLAG_HOLD_LOCK,
+	TFLAG_3PCC_HAS_ACK,
+
+	/* No new flags below this line */
+	TFLAG_MAX
 } TFLAGS;
 
 struct mod_sofia_globals {
@@ -250,8 +255,11 @@ struct mod_sofia_globals {
 extern struct mod_sofia_globals mod_sofia_globals;
 
 typedef enum {
-	REG_FLAG_AUTHED = (1 << 0),
-	REG_FLAG_CALLERID = (1 << 1)
+	REG_FLAG_AUTHED,
+	REG_FLAG_CALLERID,
+
+	/* No new flags below this line */
+	REG_FLAG_MAX
 } reg_flags_t;
 
 typedef enum {
@@ -332,7 +340,7 @@ struct sofia_gateway {
 	int pinging;
 	sofia_gateway_status_t status;
 	uint32_t ping_freq;
-	uint32_t flags;
+	uint8_t flags[REG_FLAG_MAX];
 	int32_t retry_seconds;
 	reg_state_t state;
 	switch_memory_pool_t *pool;
@@ -399,7 +407,7 @@ struct sofia_profile {
 	char *codec_string;
 	int running;
 	int dtmf_duration;
-	unsigned int flags;
+	uint8_t flags[TFLAG_MAX];
 	uint8_t pflags[PFLAG_MAX];
 	unsigned int mflags;
 	unsigned int ndlb;
@@ -450,7 +458,7 @@ struct sofia_profile {
 
 struct private_object {
 	sofia_private_t *sofia_private;
-	uint32_t flags;
+	uint8_t flags[TFLAG_MAX];
 	switch_payload_t agreed_pt;
 	switch_core_session_t *session;
 	switch_channel_t *channel;
@@ -597,10 +605,14 @@ switch_mutex_unlock(obj->flag_mutex);
 #define sofia_clear_pflag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->pflags[flag] = 0; switch_mutex_unlock(obj->flag_mutex);
 #define sofia_clear_pflag(obj, flag) (obj)->pflags[flag] = 0
 
-#define sofia_set_flag_locked(obj, flag) switch_set_flag_locked(obj, flag)
-#define sofia_set_flag(obj, flag) switch_set_flag(obj, flag)
-#define sofia_clear_flag_locked(obj, flag) switch_clear_flag_locked(obj, flag)
-#define sofia_test_flag(obj, flag) switch_test_flag(obj, flag)
+#define sofia_set_flag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
+switch_mutex_lock(obj->flag_mutex);\
+(obj)->flags[flag] = 1;\
+switch_mutex_unlock(obj->flag_mutex);
+#define sofia_set_flag(obj, flag) (obj)->flags[flag] = 1
+#define sofia_clear_flag(obj, flag) (obj)->flags[flag] = 0
+#define sofia_clear_flag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->flags[flag] = 0; switch_mutex_unlock(obj->flag_mutex);
+#define sofia_test_flag(obj, flag) ((obj)->flags[flag] ? 1 : 0)
 
 /* Function Prototypes */
 /*************************************************************************************************************************************************************/

@@ -463,6 +463,7 @@ void sofia_glue_check_video_codecs(private_object_t *tech_pvt)
 void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *profile, private_object_t *tech_pvt, const char *channame)
 {
 	char name[256];
+	unsigned int x;
 
 	switch_assert(session != NULL);
 	switch_assert(profile != NULL);
@@ -472,7 +473,12 @@ void sofia_glue_attach_private(switch_core_session_t *session, sofia_profile_t *
 
 	switch_mutex_lock(tech_pvt->flag_mutex);
 	switch_mutex_lock(profile->flag_mutex);
-	tech_pvt->flags = profile->flags;
+
+	/* copy flags from profile to the sofia private */
+	for(x = 0; x < TFLAG_MAX; x++ ) {
+		tech_pvt->flags[x] = profile->flags[x];
+	}
+
 	tech_pvt->profile = profile;
 	profile->inuse++;
 	switch_mutex_unlock(profile->flag_mutex);
@@ -1289,16 +1295,16 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		}
 
 		/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
-		if (sofia_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 			priv = "name";
-			if (sofia_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
 				priv = "full";
 			}
-		} else if (sofia_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+		} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
 			priv = "full";
 		}
 
-		if (sofia_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
 			screen = "yes";
 		}
 

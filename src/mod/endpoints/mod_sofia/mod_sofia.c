@@ -373,7 +373,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_safe_free(stream.data);
 	}
 
-	switch_clear_flag(tech_pvt, TFLAG_IO);
+	sofia_clear_flag(tech_pvt, TFLAG_IO);
 
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
@@ -622,7 +622,7 @@ static switch_status_t sofia_write_video_frame(switch_core_session_t *session, s
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!sofia_test_flag(frame, SFF_CNG)) {
+	if (!switch_test_flag(frame, SFF_CNG)) {
 		switch_rtp_write_frame(tech_pvt->video_rtp_session, frame);
 	}
 
@@ -684,7 +684,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 			}
 
 			/* Fast PASS! */
-			if (sofia_test_flag((&tech_pvt->read_frame), SFF_PROXY_PACKET)) {
+			if (switch_test_flag((&tech_pvt->read_frame), SFF_PROXY_PACKET)) {
 				sofia_clear_flag_locked(tech_pvt, TFLAG_READING);
 				*frame = &tech_pvt->read_frame;
 				return SWITCH_STATUS_SUCCESS;
@@ -702,7 +702,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				size_t bytes = 0;
 				int frames = 1;
 				
-				if (!sofia_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
+				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
 					if (!tech_pvt->read_codec.implementation) {
 						*frame = NULL;
 						return SWITCH_STATUS_GENERR;
@@ -878,7 +878,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 
 	sofia_set_flag_locked(tech_pvt, TFLAG_WRITING);
 
-	if (!sofia_test_flag(frame, SFF_CNG) && !sofia_test_flag(frame, SFF_PROXY_PACKET)) {
+	if (!switch_test_flag(frame, SFF_CNG) && !switch_test_flag(frame, SFF_PROXY_PACKET)) {
 		if (tech_pvt->read_impl.encoded_bytes_per_packet) {
 			bytes = tech_pvt->read_impl.encoded_bytes_per_packet;
 			frames = ((int) frame->datalen / bytes);
