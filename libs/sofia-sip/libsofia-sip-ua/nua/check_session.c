@@ -48,10 +48,11 @@
 #include <assert.h>
 
 /* define XXX as 1 in order to see all failing test cases */
+#ifndef XXX
 #define XXX (0)
+#endif
 
 /* ====================================================================== */
-/* Call cases */
 
 static nua_t *nua;
 static soa_session_t *soa = NULL;
@@ -1005,6 +1006,7 @@ TCase *cancel_tcase(void)
 /* ---------------------------------------------------------------------- */
 /* 2.3 - Session timers */
 
+/* Wait for invite from NUA */
 static void invite_timer_round(nua_handle_t *nh,
 			       char const *session_expires)
 {
@@ -1077,70 +1079,6 @@ START_TEST(call_2_3_2)
 }
 END_TEST
 
-START_TEST(call_2_3_3)
-{
-  nua_handle_t *nh;
-  struct message *response;
-
-  s2_case("2.3.3", "Handling re-INVITE without SDP gracefully",
-	  "NUA receives INVITE, "
-	  "re-INVITE without SDP (w/o NUTAG_REFRESH_WITHOUT_SDP(), "
-	  "re-INVITE without SDP (using NUTAG_REFRESH_WITHOUT_SDP(), "
-	  "sends BYE.");
-
-  nh = invite_to_nua(
-    TAG_END());
-
-  s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
-		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
-		TAG_END());
-
-  nua_respond(nh, SIP_200_OK, TAG_END());
-
-  fail_unless(s2_check_callstate(nua_callstate_completed));
-
-  response = s2_wait_for_response(200, SIP_METHOD_INVITE);
-
-  fail_if(!response);
-  s2_update_dialog(dialog, response);
-  fail_if(!response->sip->sip_content_type);
-  s2_free_message(response);
-
-  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
-
-  fail_unless(s2_check_event(nua_i_ack, 200));
-  fail_unless(s2_check_callstate(nua_callstate_ready));
-
-  s2_fast_forward(10);
-
-  nua_set_hparams(nh, NUTAG_REFRESH_WITHOUT_SDP(1), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
-
-  s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
-		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
-		TAG_END());
-
-  nua_respond(nh, SIP_200_OK, TAG_END());
-
-  fail_unless(s2_check_callstate(nua_callstate_completed));
-
-  response = s2_wait_for_response(200, SIP_METHOD_INVITE);
-
-  fail_if(!response);
-  s2_update_dialog(dialog, response);
-  fail_if(response->sip->sip_content_type);
-  s2_free_message(response);
-
-  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
-
-  fail_unless(s2_check_event(nua_i_ack, 200));
-  fail_unless(s2_check_callstate(nua_callstate_ready));
-
-  bye_by_nua(nh, TAG_END());
-
-  nua_handle_destroy(nh);
-}
-END_TEST
 
 
 TCase *session_timer_tcase(void)
@@ -1150,7 +1088,6 @@ TCase *session_timer_tcase(void)
   {
     tcase_add_test(tc, call_2_3_1);
     tcase_add_test(tc, call_2_3_2);
-    tcase_add_test(tc, call_2_3_3);
   }
   return tc;
 }
@@ -1603,15 +1540,80 @@ START_TEST(call_2_6_2)
 }
 END_TEST
 
-
-TCase *invite_glare_tcase(void)
+START_TEST(call_2_6_3)
 {
-  TCase *tc = tcase_create("2.6 - INVITE glare");
+  nua_handle_t *nh;
+  struct message *response;
+
+  s2_case("2.6.3", "Handling re-INVITE without SDP gracefully",
+	  "NUA receives INVITE, "
+	  "re-INVITE without SDP (w/o NUTAG_REFRESH_WITHOUT_SDP(), "
+	  "re-INVITE without SDP (using NUTAG_REFRESH_WITHOUT_SDP(), "
+	  "sends BYE.");
+
+  nh = invite_to_nua(
+    TAG_END());
+
+  s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
+		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
+		TAG_END());
+
+  nua_respond(nh, SIP_200_OK, TAG_END());
+
+  fail_unless(s2_check_callstate(nua_callstate_completed));
+
+  response = s2_wait_for_response(200, SIP_METHOD_INVITE);
+
+  fail_if(!response);
+  s2_update_dialog(dialog, response);
+  fail_if(!response->sip->sip_content_type);
+  s2_free_message(response);
+
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
+
+  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  s2_fast_forward(10);
+
+  nua_set_hparams(nh, NUTAG_REFRESH_WITHOUT_SDP(1), TAG_END());
+  fail_unless(s2_check_event(nua_r_set_params, 200));
+
+  s2_request_to(dialog, SIP_METHOD_INVITE, NULL,
+		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
+		TAG_END());
+
+  nua_respond(nh, SIP_200_OK, TAG_END());
+
+  fail_unless(s2_check_callstate(nua_callstate_completed));
+
+  response = s2_wait_for_response(200, SIP_METHOD_INVITE);
+
+  fail_if(!response);
+  s2_update_dialog(dialog, response);
+  fail_if(response->sip->sip_content_type);
+  s2_free_message(response);
+
+  fail_if(s2_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
+
+  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+TCase *reinvite_tcase(void)
+{
+  TCase *tc = tcase_create("2.6 - re-INVITEs");
 
   tcase_add_checked_fixture(tc, call_setup, call_teardown);
   {
     tcase_add_test(tc, call_2_6_1);
     tcase_add_test(tc, call_2_6_2);
+    tcase_add_test(tc, call_2_6_3);
   }
   return tc;
 }
@@ -3040,7 +3042,7 @@ void check_session_cases(Suite *suite)
   suite_add_tcase(suite, session_timer_tcase());
   suite_add_tcase(suite, invite_100rel_tcase());
   suite_add_tcase(suite, invite_precondition_tcase());
-  suite_add_tcase(suite, invite_glare_tcase());
+  suite_add_tcase(suite, reinvite_tcase());
   suite_add_tcase(suite, invite_error_tcase());
   suite_add_tcase(suite, termination_tcase());
   suite_add_tcase(suite, destroy_tcase());
