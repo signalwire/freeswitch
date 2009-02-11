@@ -128,6 +128,7 @@ static int test_identity(void)
 
   sip = sip_object(msg);
 
+  TEST_1(sip);
   TEST_1(!sip_alert_info(sip));
   TEST_1(!sip_reply_to(sip));
   TEST_1(!sip_p_asserted_identity(sip));
@@ -2283,6 +2284,8 @@ static int test_www_authenticate(void)
   sip_www_authenticate_t *www;
   su_home_t *home;
   char const *s;
+  msg_t *msg; sip_t *sip;
+
   BEGIN();
 
   TEST_1(home = su_home_create());
@@ -2300,6 +2303,29 @@ static int test_www_authenticate(void)
   TEST_1(strlen(s) >= 128);
 
   su_home_unref(home);
+
+  TEST_1(
+    msg = read_message(
+      MSG_DO_EXTRACT_COPY,
+      "SIP/2.0 401 Unauthorized" "\r\n"
+      "Date: Wed, 07 Jan 2009 22:24:39 GMT" "\r\n"
+      "WWW-Authenticate: Kerberos realm=\"SIP Communications Service\", targetname=\"sip/OCS1.flux.local\", version=3" "\r\n"
+      "WWW-Authenticate: NTLM realm=\"SIP Communications Service\", targetname=\"OCS1.flux.local\", version=3" "\r\n"
+      "From: <sip:192.168.43.1:5069>;epid=1234567890;tag=48BXgr379e85j" "\r\n"
+      "To: <sip:1234@192.168.43.20:5061>;transport=tls;tag=B57737091022903031FF204696B79CC4" "\r\n"
+      "Call-ID: cf12f708-57ac-122c-ad90-6f23d7babf4f" "\r\n"
+      "CSeq: 109565202 REGISTER" "\r\n"
+      "Via: SIP/2.0/TLS 192.168.43.1:5069;branch=z9hG4bK47ZUrFK0v5eQa;received=192.168.43.1;ms-received-port=54059;ms-received-cid=E500" "\r\n"
+      "Content-Length: 0" "\r\n"));
+  TEST_1(sip = sip_object(msg));
+
+  TEST_1(www = sip->sip_www_authenticate);
+  TEST_S(www->au_scheme, "Kerberos");
+  TEST_1(www = www->au_next);
+  TEST_S(www->au_scheme, "NTLM");
+  
+  msg_destroy(msg);
+
   END();
 }
 
