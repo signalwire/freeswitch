@@ -3166,6 +3166,58 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\libsofia-sip-ua\nua\nua_client.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\nua\nua_client.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\nua\nua_server.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\nua\nua_server.h"
+					>
+				</File>
+				<File
 					RelativePath="..\..\libsofia-sip-ua\nua\nua_subnotref.c"
 					>
 					<FileConfiguration

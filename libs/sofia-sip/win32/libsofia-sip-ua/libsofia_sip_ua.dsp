@@ -713,6 +713,22 @@ SOURCE="..\..\libsofia-sip-ua\nua\nua_stack.h"
 # End Source File
 # Begin Source File
 
+SOURCE="..\..\libsofia-sip-ua\nua\nua_client.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\nua\nua_client.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\nua\nua_server.c"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\nua\nua_server.h"
+# End Source File
+# Begin Source File
+
 SOURCE="..\..\libsofia-sip-ua\nua\nua_subnotref.c"
 # End Source File
 # Begin Source File
