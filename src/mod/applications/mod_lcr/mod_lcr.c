@@ -35,6 +35,7 @@
 
 
 #define LCR_SYNTAX "lcr <digits> [<lcr profile>]"
+#define LCR_ADMIN_SYNTAX "lcr_admin show profiles"
 
 /* SQL Query places */
 #define LCR_DIGITS_PLACE 0
@@ -795,9 +796,55 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(dialplan_lcr_admin_function)
+{
+	char *argv[4] = { 0 };
+	int argc;
+	char *mydata = NULL;
+	switch_hash_index_t *hi;
+	void *val;
+	profile_t *profile;
+
+	if (switch_strlen_zero(cmd)) {
+		goto usage;
+	}
+
+	mydata = strdup(cmd);
+
+	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		if(argc < 2) {
+			goto usage;
+		}
+		if(!strcasecmp(argv[0], "show") && !strcasecmp(argv[1], "profiles")) {
+			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, NULL, NULL, &val);
+				profile = (profile_t *) val;
+				
+				stream->write_function(stream, "Name:\t\t%s\n", profile->name);
+				stream->write_function(stream, "ID:\t\t%d\n", profile->id);
+				stream->write_function(stream, "order by:\t%s\n", profile->order_by);
+				if(!switch_strlen_zero(profile->custom_sql)) {
+					stream->write_function(stream, "custom sql:\t%s\n", profile->custom_sql);
+				}
+				stream->write_function(stream, "\n");
+			}
+		} else {
+			goto usage;
+		}
+	}
+	switch_safe_free(mydata);
+	return SWITCH_STATUS_SUCCESS;
+usage:
+	switch_safe_free(mydata);
+	stream->write_function(stream, "-ERR %s\n", LCR_ADMIN_SYNTAX);
+	return SWITCH_STATUS_SUCCESS;
+		
+}
+	
 SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 {
 	switch_api_interface_t *dialplan_lcr_api_interface;
+	switch_api_interface_t *dialplan_lcr_api_admin_interface;
 	switch_application_interface_t *app_interface;
 	switch_dialplan_interface_t *dp_interface;
 	
@@ -830,6 +877,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	};
 
 	SWITCH_ADD_API(dialplan_lcr_api_interface, "lcr", "Least Cost Routing Module", dialplan_lcr_function, LCR_SYNTAX);
+	SWITCH_ADD_API(dialplan_lcr_api_admin_interface, "lcr_admin", "Least Cost Routing Module Admin", dialplan_lcr_admin_function, LCR_ADMIN_SYNTAX);
 	SWITCH_ADD_APP(app_interface, "lcr", "Perform an LCR lookup", "Perform an LCR lookup",
 				   lcr_app_function, "<number>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_DIALPLAN(dp_interface, "lcr", lcr_dialplan_hunt);
