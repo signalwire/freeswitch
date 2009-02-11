@@ -1,4 +1,4 @@
-/opt/freeswitch/conf/lang/en/en.xml
-/opt/freeswitch/conf/lang/en/demo/demo.xml
-/opt/freeswitch/conf/lang/en/vm/sounds.xml
-/opt/freeswitch/conf/lang/en/vm/tts.xml
+/etc/freeswitch/lang/en/en.xml
+/etc/freeswitch/lang/en/demo/demo.xml
+/etc/freeswitch/lang/en/vm/sounds.xml
+/etc/freeswitch/lang/en/vm/tts.xml
