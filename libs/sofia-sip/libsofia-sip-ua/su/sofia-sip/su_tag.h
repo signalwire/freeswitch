@@ -148,6 +148,7 @@ SOFIAPUBFUN int tl_tremove(tagi_t lst[], tag_type_t, tag_value_t, ...);
 
 /* Low-level taglist manipulation functions */
 SOFIAPUBFUN size_t tl_len(tagi_t const lst[]);
+SOFIAPUBFUN size_t tl_vllen(tag_type_t tag, tag_value_t value, va_list ap);
 SOFIAPUBFUN size_t tl_xtra(tagi_t const lst[], size_t offset);
 SOFIAPUBFUN tagi_t *tl_next(tagi_t const *lst);
 SOFIAPUBFUN tagi_t *tl_move(tagi_t *dst, tagi_t const src[]);
