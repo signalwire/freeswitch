@@ -1605,6 +1605,43 @@ START_TEST(call_2_6_3)
 }
 END_TEST
 
+START_TEST(call_2_6_4)
+{
+  nua_handle_t *nh;
+  struct message *invite, *ack;
+
+  s2_case("2.6.4", "re-INVITEs w/o SDP",
+	  "NUA sends re-INVITE w/o SDP, "
+	  "receives SDP w/ offer, "
+	  "sends ACK w/ answer, "
+	  "sends BYE.");
+
+  /* Bug reported by Liu Yang 2009-01-11 */
+  nh = invite_to_nua(TAG_END());
+
+  nua_invite(nh, SIPTAG_PAYLOAD_STR(""), TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+  invite = s2_wait_for_request(SIP_METHOD_INVITE);
+  fail_if(!invite);
+  fail_if(invite->sip->sip_content_type);
+  soa_generate_offer(soa, 1, NULL);
+  respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(invite);
+
+  ack = s2_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  process_answer(ack);
+  s2_free_message(ack);
+
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
 TCase *reinvite_tcase(void)
 {
   TCase *tc = tcase_create("2.6 - re-INVITEs");
@@ -1614,6 +1651,7 @@ TCase *reinvite_tcase(void)
     tcase_add_test(tc, call_2_6_1);
     tcase_add_test(tc, call_2_6_2);
     tcase_add_test(tc, call_2_6_3);
+    tcase_add_test(tc, call_2_6_4);
   }
   return tc;
 }
