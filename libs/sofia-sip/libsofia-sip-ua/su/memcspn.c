@@ -32,50 +32,13 @@
 
 #include "config.h"
 
-#include <string.h>
-#include <limits.h>
+#include <sofia-sip/su_string.h>
 
-/**Search memory for bytes not in a given set.
- *
- * The memcspn() function calculates the length of the memory area @a mem
- * which consists entirely of bytes not in @a reject.
- *
- * @param mem        pointer to memory area
- * @param memlen     size of @a mem in bytes
- * @param reject     pointer to table containing bytes to reject
- * @param rejectlen  size of @a reject table
- *
- * @return
- * The memspn() function returns the number of bytes in the memory area @a
- * which consists entirely of bytes not in @a reject.
- * @par
- * If @a rejectlen is 0, or @a reject is NULL, it returns @a memlen, size of
- * the memory area.
- */
+size_t memcspn(const void *mem, size_t memlen,
+	       const void *reject, size_t rejectlen);
+
 size_t memcspn(const void *mem, size_t memlen,
 	       const void *reject, size_t rejectlen)
 {
-  size_t i;
-
-  unsigned char const *m = mem, *r = reject;
-
-  char rejected[UCHAR_MAX + 1];
-
-  if (rejectlen == 0 || reject == 0)
-    return memlen;
-
-  if (mem == NULL || memlen == 0)
-    return 0;
-
-  memset(rejected, 0, sizeof rejected);
-
-  for (i = 0; i < rejectlen; i++)
-    rejected[r[i]] = 1;
-
-  for (i = 0; i < memlen; i++)
-    if (rejected[m[i]])
-      break;
-
-  return i;
+  return su_memcspn(mem, memlen, reject, rejectlen);
 }
-

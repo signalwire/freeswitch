@@ -34,43 +34,13 @@
 
 #include "config.h"
 
-#include <string.h>
-#include <limits.h>
+#include <sofia-sip/su_string.h>
 
-/**Scan memory for a set of bytes.
- *
- * The memspn() function calculates the length of the memory area @a mem
- * which consists entirely of bytes in @a accept.
- *
- * @param mem        pointer to memory area
- * @param memlen     size of @a mem in bytes
- * @param accept     pointer to table containing bytes to accept
- * @param acceptlen  size of @a accept table
- *
- * @return
- * The memspn() function returns the number of bbytes in the memory area @a
- * which consists entirely of bytes in @a accept.
- */
+size_t memspn(const void *mem, size_t memlen,
+	      const void *accept, size_t acceptlen);
+
 size_t memspn(const void *mem, size_t memlen,
 	      const void *accept, size_t acceptlen)
 {
-  size_t i;
-
-  unsigned char const *m = mem, *a = accept;
-
-  char accepted[UCHAR_MAX + 1];
-
-  if (mem == NULL || memlen == 0 || acceptlen == 0 || accept == NULL)
-    return 0;
-
-  memset(accepted, 0, sizeof accepted);
-
-  for (i = 0; i < acceptlen; i++)
-    accepted[a[i]] = 1;
-
-  for (i = 0; i < memlen; i++)
-    if (!accepted[m[i]])
-      break;
-
-  return i;
+  return su_memspn(mem, memlen, accept, acceptlen);
 }
