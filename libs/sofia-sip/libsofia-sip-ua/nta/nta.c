@@ -363,6 +363,7 @@ struct nta_leg_s
 #else
   unsigned leg_loose_route : 1; /**< Topmost route in set is LR */
 #endif
+  unsigned leg_route_set : 1;	/**< Route set has been saved */
   unsigned leg_local_is_to : 1; /**< Backwards-compatibility. */
   unsigned leg_tagged : 1;	/**< Tagged after creation.
 				 *
@@ -3970,7 +3971,8 @@ static void leg_insert(nta_agent_t *agent, nta_leg_t *leg);
 static int leg_route(nta_leg_t *leg,
 		     sip_record_route_t const *route,
 		     sip_record_route_t const *reverse,
-		     sip_contact_t const *contact);
+		     sip_contact_t const *contact,
+		     int reroute);
 static int leg_callback_default(nta_leg_magic_t*, nta_leg_t*,
 				nta_incoming_t*, sip_t const *);
 #define HTABLE_HASH_LEG(leg) ((leg)->leg_hash)
@@ -4469,24 +4471,55 @@ uint32_t nta_leg_get_rseq(nta_leg_t const *leg)
 
 /** Save target and route set at UAC side.
  *
- * @sa nta_leg_server_route(), @RFC3261 section 12.1.2
+ * @sa nta_leg_client_reroute(), nta_leg_server_route(), @RFC3261 section 12.1.2
+ *
+ * @bug Allows modifying the route set after initial transaction, if initial
+ * transaction had no @RecordRoute headers.
+ *
+ * @deprecated Use nta_leg_client_reroute() instead.
  */
 int nta_leg_client_route(nta_leg_t *leg,
 			 sip_record_route_t const *route,
 			 sip_contact_t const *contact)
 {
-  return leg_route(leg, NULL, route, contact);
+  return leg_route(leg, NULL, route, contact, 0);
+}
+
+/** Save target and route set at UAC side.
+ *
+ * If @a initial is true, the route set is modified even if it has been set
+ * earlier.
+ *
+ * @param leg pointer to dialog leg
+ * @param route @RecordRoute headers from response
+ * @param contact @Contact header from response
+ * @param initial true if response to initial transaction
+ *
+ * @sa nta_leg_client_route(), nta_leg_server_route(), @RFC3261 section 12.1.2
+ *
+ * @NEW_1_12_11
+ */
+int nta_leg_client_reroute(nta_leg_t *leg,
+			   sip_record_route_t const *route,
+			   sip_contact_t const *contact,
+			   int initial)
+{
+  return leg_route(leg, NULL, route, contact, initial ? 2 : 1);
 }
 
 /** Save target and route set at UAS side.
  *
- * @sa nta_leg_client_route(), @RFC3261 section 12.1.1
+ * @param leg pointer to dialog leg
+ * @param route @RecordRoute headers from request
+ * @param contact @Contact header from request
+ *
+ * @sa nta_leg_client_reroute(), @RFC3261 section 12.1.1
  */
 int nta_leg_server_route(nta_leg_t *leg,
 			 sip_record_route_t const *route,
 			 sip_contact_t const *contact)
 {
-  return leg_route(leg, route, NULL, contact);
+  return leg_route(leg, route, NULL, contact, 1);
 }
 
 /** Return route components. */
@@ -4940,15 +4973,21 @@ nta_leg_t *dst_find(nta_agent_t const *sa,
  *
  * Sets the leg route and contact using the @RecordRoute and @Contact
  * headers.
+ *
+ * @param reroute - allow rerouting
+ * - if 1, follow @RFC3261 semantics
+ * - if 2, response to initial transaction)
  */
 static
 int leg_route(nta_leg_t *leg,
 	      sip_record_route_t const *route,
 	      sip_record_route_t const *reverse,
-	      sip_contact_t const *contact)
+	      sip_contact_t const *contact,
+	      int reroute)
 {
   su_home_t *home = leg->leg_home;
-  sip_route_t *r, r0[1];
+  sip_route_t *r, r0[1], *old;
+  int route_is_set;
 
   if (!leg)
     return -1;
@@ -4958,7 +4997,9 @@ int leg_route(nta_leg_t *leg,
 
   sip_route_init(r0);
 
-  if (leg->leg_route) {
+  route_is_set = reroute ? leg->leg_route_set : leg->leg_route != NULL;
+
+  if (route_is_set && reroute <= 1) {
     r = leg->leg_route;
   }
   else if (route) {
@@ -5023,7 +5064,13 @@ int leg_route(nta_leg_t *leg,
   }
 #endif
 
+  old = leg->leg_route;
   leg->leg_route = r;
+
+  if (old && old != r)
+    msg_header_free(leg->leg_home, (msg_header_t *)old);
+
+  leg->leg_route_set = 1;
 
   return 0;
 }
