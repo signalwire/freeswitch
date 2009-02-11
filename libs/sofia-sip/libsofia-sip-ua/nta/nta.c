@@ -9027,10 +9027,14 @@ int outgoing_recv(nta_outgoing_t *orq,
       if (status < 200) {
 	/* @RFC3261 17.1.2.1:
 	 * retransmissions continue for unreliable transports,
-	 * but at an interval of T2
-	 */
-	if (!orq->orq_reliable)
-	  outgoing_set_timer(orq, sa->sa_t2);
+	 * but at an interval of T2.
+	 *
+         * @RFC4321 1.2:
+         * Note that Timer E is not altered during the transition
+         * to Proceeding.
+         */
+ 	if (!orq->orq_reliable)
+	  orq->orq_interval = sa->sa_t2;
       }
       else if (!outgoing_complete(orq)) {
 	if (orq->orq_sigcomp_zap && orq->orq_tport && orq->orq_cc)
