@@ -461,16 +461,18 @@ int tls_post_connection_check(tls_t *tls)
     char name[256];
 
     subject = X509_get_subject_name(cert);
+
     if (subject) {
       if (X509_NAME_get_text_by_NID(subject, NID_commonName,
 				    name, sizeof name) > 0) {
+	usize_t k, N = su_strlst_len(tls->subject);
 	name[(sizeof name) - 1] = '\0';
 
-	for (i = 0; i < su_strlst_len(tls->subject); i++)
-	  if (strcasecmp(su_strlst_item(tls->subject, i), name) == 0)
+	for (k = 0; k < N; k++)
+	  if (strcasecmp(su_strlst_item(tls->subject, k), name) == 0)
 	    break;
 
-	if (i == su_strlst_len(tls->subject))
+	if (k == N)
 	  su_strlst_dup_append(tls->subject, name);
       }
     }
