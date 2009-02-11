@@ -2271,14 +2271,21 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	const char *val;
 	const char *crypto = NULL;
 	int got_crypto = 0, got_audio = 0, got_avp = 0, got_savp = 0, got_udptl = 0;
+	int scrooge = 0;
 
 	switch_assert(tech_pvt != NULL);
 
 	greedy = !!sofia_test_pflag(tech_pvt->profile, PFLAG_GREEDY);
-
-	if (!greedy) {
-		if ((val = switch_channel_get_variable(channel, "sip_codec_negotiation")) && !strcasecmp(val, "greedy")) {
-			greedy = 1;
+	scrooge = !!sofia_test_pflag(tech_pvt->profile, PFLAG_SCROOGE);
+	
+	if (!greedy || !scrooge) {
+		if ((val = switch_channel_get_variable(channel, "sip_codec_negotiation"))) {
+			if (!strcasecmp(val, "greedy")) {
+				greedy = 1;
+			} else if (!strcasecmp(val, "scrooge")) {
+				scrooge = 1;
+				greedy = 1;
+			}
 		}
 	}
 
@@ -2328,6 +2335,10 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 	if (!tech_pvt->hold_laps) {
 		tech_pvt->hold_laps++;
 		sofia_glue_toggle_hold(tech_pvt, sendonly);
+	}
+
+	if (!dptime) {
+		dptime = 20;
 	}
 
 	for (m = sdp->sdp_media; m; m = m->m_next) {
@@ -2533,8 +2544,9 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						continue;
 					}
 
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u]/[%s:%d:%u]\n",
-									  rm_encoding, map->rm_pt, (int) map->rm_rate, imp->iananame, imp->ianacode, codec_rate);
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Audio Codec Compare [%s:%d:%u:%d]/[%s:%d:%u:%d]\n",
+									  rm_encoding, map->rm_pt, (int) map->rm_rate, ptime,
+									  imp->iananame, imp->ianacode, codec_rate, imp->microseconds_per_packet / 1000);
 					if (map->rm_pt < 96) {
 						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
 					} else {
@@ -2542,12 +2554,18 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					}
 
 					if (match) {
-						if ((ptime && ptime * 1000 != imp->microseconds_per_packet) || 
-							map->rm_rate != codec_rate) {
-							near_rate = map->rm_rate;
-							near_match = imp;
-							match = 0;
-							continue;
+						if (scrooge) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+											  "Bah HUMBUG! Sticking with %s@%uh@%ui\n", 
+											  imp->iananame, imp->samples_per_second, imp->microseconds_per_packet / 1000);
+						} else {
+							if ((ptime && ptime * 1000 != imp->microseconds_per_packet) || 
+								map->rm_rate != codec_rate) {
+								near_rate = map->rm_rate;
+								near_match = imp;
+								match = 0;
+								continue;
+							}
 						}
 						mimp = imp;
 						break;
@@ -2561,18 +2579,18 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					char *prefs[1];
 					char tmp[80];
 					int num;
-
-					switch_snprintf(tmp, sizeof(tmp), "%s@%uk@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second, ptime);
-
+					
+					switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", near_match->iananame, near_rate ? near_rate : near_match->samples_per_second, ptime);
+					
 					prefs[0] = tmp;
 					num = switch_loadable_module_get_codecs_sorted(search, 1, prefs, 1);
-
+					
 					if (num) {
 						mimp = search[0];
 					} else {
 						mimp = near_match;
 					}
-
+					
 					if (!maxptime || mimp->microseconds_per_packet / 1000 <= maxptime) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Substituting codec %s@%ui@%uh\n",
 										  mimp->iananame, mimp->microseconds_per_packet / 1000, mimp->samples_per_second);
@@ -2581,6 +2599,7 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 						mimp = NULL;
 						match = 0;
 					}
+					
 				}
 
 				if (!match && greedy) {

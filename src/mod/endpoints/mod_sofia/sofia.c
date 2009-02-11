@@ -1561,7 +1561,11 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
 						if (!strcasecmp(val, "greedy")) {
 							sofia_set_pflag(profile, PFLAG_GREEDY);
+						} else if (!strcasecmp(val, "scrooge")) {
+							sofia_set_pflag(profile, PFLAG_GREEDY);
+							sofia_set_pflag(profile, PFLAG_SCROOGE);
 						} else {
+							sofia_clear_pflag(profile, PFLAG_SCROOGE);
 							sofia_clear_pflag(profile, PFLAG_GREEDY);
 						}
 					} else if (!strcasecmp(var, "disable-transcoding")) {
@@ -2072,6 +2076,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
 						if (!strcasecmp(val, "greedy")) {
 							sofia_set_pflag(profile, PFLAG_GREEDY);
+						} else if (!strcasecmp(val, "scrooge")) {
+							sofia_set_pflag(profile, PFLAG_GREEDY);
+							sofia_set_pflag(profile, PFLAG_SCROOGE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_SCROOGE);
+							sofia_clear_pflag(profile, PFLAG_GREEDY);
 						}
 					} else if (!strcasecmp(var, "disable-transcoding")) {
 						if (switch_true(val)) {
