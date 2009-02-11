@@ -26,14 +26,19 @@
 
 #if HAVE_CHECK
 
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include <check.h>
+
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
 #endif
 
 static char const * const default_patterns[] = { "*", NULL };
 static char const * const *test_patterns = default_patterns;
-
-#undef tcase_add_test
 
 /** tcase_add_test() replacement.
  *
@@ -50,7 +55,7 @@ void s2_tcase_add_test(TCase *tc, TFun tf, char const *name)
       if (strcmp(*patterns, "*")) {
 	printf("%s: running\n", name);
       }
-      tcase_add_test(tc, tf, name, 0, 0, 1);
+      _tcase_add_test(tc, tf, name, 0, 0, 1);
       return;
     }
   }
@@ -60,7 +65,7 @@ void s2_tcase_add_test(TCase *tc, TFun tf, char const *name)
       if (strcmp(*patterns, "*")) {
 	printf("%s: running\n", name);
       }
-      tcase_add_test(tc, tf, name, 0, 0, 1);
+      _tcase_add_test(tc, tf, name, 0, 0, 1);
       return;
     }
   }

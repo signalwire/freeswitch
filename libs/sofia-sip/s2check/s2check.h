@@ -33,6 +33,10 @@
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  */
 
+#ifndef SU_CONFIG_H
+#include <sofia-sip/su_config.h>
+#endif
+
 #include <check.h>
 
 SOFIA_BEGIN_DECLS
@@ -42,8 +46,6 @@ SOFIA_BEGIN_DECLS
 #define tcase_add_test(tc, tf) s2_tcase_add_test(tc, tf, "" #tf "")
 
 void s2_tcase_add_test(TCase *, TFun, char const *name);
-
-
 
 SOFIA_END_DECLS
 
