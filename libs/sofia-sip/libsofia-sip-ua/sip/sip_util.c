@@ -1164,14 +1164,25 @@ int sip_response_terminates_dialog(int response_code,
     return 0;
 
   case 484: /* Address Incomplete */
-  case 485: /* Ambiguous */
     /** @par 484 Address Incomplete and 485 Ambiguous
 
       Similar to 404 and 410, these
       responses came to a request whose Request-URI was provided by the
       peer in a @Contact header field.  Something has gone fundamentally
       wrong, and the dialog and all of its usages are destroyed.
+
+      Asterisk (v 1.2.7.1) does response with 484 if a client does send a refer
+      with a @ReferTo header to an unknown number.  This is therefore not
+      fundamentally wrong and the dialog should not be destroyed!
     */
+    if (method == sip_method_refer)
+    {
+      *return_graceful_terminate_usage = 0;
+      return 0;
+    }
+
+  case 485: /* Ambiguous */
+
     return terminate_dialog;
 
   case 486: /** @par 486 Busy Here
