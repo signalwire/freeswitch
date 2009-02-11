@@ -97,6 +97,7 @@ typedef struct {
 	char key[80];
 	uint8_t early_ok;
 	uint8_t ring_ready;
+	uint8_t instant_ringback;
 	uint8_t sent_ring;
 	uint8_t progress;
 	uint8_t return_ring_ready;
@@ -1024,6 +1025,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "ring_ready")) {
 					ok = 1;
+				} else if (!strcasecmp((char *) hi->name, "instant_ringback")) {
+					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_retries")) {
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_timeout")) {
@@ -1153,6 +1156,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if ((var_val = switch_event_get_header(var_event, "ring_ready")) && switch_true(var_val)) {
 		oglobals.ring_ready = 1;
+	}
+
+	if ((var_val = switch_event_get_header(var_event, "instant_ringback")) && switch_true(var_val)) {
+		oglobals.instant_ringback = 1;
 	}
 
 	if ((var_val = switch_event_get_header(var_event, "originate_timeout"))) {
@@ -1762,7 +1769,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						read_frame = NULL;
 					}
 					
-					if (oglobals.ring_ready && read_frame && !pass) {
+					if ((oglobals.ring_ready || oglobals.instant_ringback) && read_frame && !pass) {
 						if (ringback.fh) {
 							switch_size_t mlen, olen;
 							unsigned int pos = 0;
