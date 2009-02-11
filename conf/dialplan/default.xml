@@ -641,9 +641,6 @@
     -->
 
     <!--
-	This is an example of how to override the RURI on an outgoing invite to a registered contact.
-    -->
-    <!--
     <extension name="refer">
       <condition field="${sip_refer_to}">
 	<expression><![CDATA[<sip:${destination_number}@${domain_name}>]]></expression>
@@ -656,7 +653,11 @@
 	<action application="bridge" data="sofia/${use_profile}/${refer_user}@${refer_domain}"/>
       </condition>
     </extension>
-
+    -->
+    <!--
+	This is an example of how to override the RURI on an outgoing invite to a registered contact.
+    -->
+    <!--
     <extension name="ruri">
       <condition field="destination_number" expression="^ruri$">
 	<action application="bridge" data="sofia/${ruri_profile}/${ruri_user}${regex(${sofia_contact(${ruri_contact})}|^[^\@]+(.*)|%1)}"/>
