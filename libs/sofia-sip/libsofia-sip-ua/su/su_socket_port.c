@@ -184,7 +184,7 @@ int su_socket_port_wakeup(su_port_t *self)
 {
   assert(self->sup_mbox[SU_MBOX_SEND] != INVALID_SOCKET);
 
-  if (!su_pthread_port_own_thread(self) &&
+  if (!su_port_own_thread(self) &&
       send(self->sup_mbox[SU_MBOX_SEND], "X", 1, 0) == -1) {
 #if HAVE_SOCKETPAIR
     if (su_errno() != EWOULDBLOCK)
