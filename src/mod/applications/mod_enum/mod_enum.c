@@ -802,7 +802,9 @@ SWITCH_STANDARD_API(enum_function)
 static void event_handler(switch_event_t *event)
 {
 	if (globals.auto_reload) {
+		switch_mutex_lock(MUTEX);
 		do_load();
+		switch_mutex_unlock(MUTEX);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "ENUM Reloaded\n");
 	}
 }

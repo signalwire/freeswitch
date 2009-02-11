@@ -658,7 +658,9 @@ void switch_load_timezones(switch_bool_t reload)
 
 static void event_handler(switch_event_t *event)
 {
+	switch_mutex_lock(globals.mutex);
 	switch_load_timezones(1);
+	switch_mutex_unlock(globals.mutex);
 }
 
 static void tztime(const time_t * const timep, const char *tzstring, struct tm * const tmp );
