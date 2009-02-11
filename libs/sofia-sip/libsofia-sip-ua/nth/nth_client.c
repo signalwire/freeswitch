@@ -46,7 +46,7 @@
 #include <assert.h>
 #include <errno.h>
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 /** @internal SU message argument structure type */
 #define SU_MSG_ARG_T   union sm_arg_u
@@ -753,7 +753,7 @@ url_string_t const *hc_request_complete(nth_client_t * hc,
 
   if (host &&
       (host_cmp(host->h_host, u->url_host) ||
-       str0cmp(host->h_port, u->url_port)))
+       su_strcmp(host->h_port, u->url_port)))
     host = NULL;
 
   if (host == NULL && u->url_host) {
@@ -777,7 +777,7 @@ url_string_t const *hc_request_complete(nth_client_t * hc,
     else if (rq && name && strcmp(name, rq->rq_method_name))
       rq = NULL;
 
-    if (rq && version && strcasecmp(version, rq->rq_version))
+    if (rq && version && !su_casematch(version, rq->rq_version))
       rq = NULL;
 
     if (!hc->hc_route_url) {

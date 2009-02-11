@@ -32,7 +32,7 @@
 
 #include "config.h"
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su.h>
 
 typedef struct server_s server_t;
@@ -592,7 +592,7 @@ nth_site_t **site_get_host(nth_site_t **list, char const *host, char const *port
 
   for (; (site = *list); list = &site->site_next) {
     if (host_cmp(host, site->site_url->url_host) == 0 &&
-	str0cmp(port, site->site_url->url_port) == 0) {
+	su_strcmp(port, site->site_url->url_port) == 0) {
       break;
     }
   }
