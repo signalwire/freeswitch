@@ -111,6 +111,7 @@ int main(int argc, char *argv[])
 
   check_register_cases(suite);
   check_session_cases(suite);
+  check_etsi_cases(suite);
 
   runner = srunner_create(suite);
 

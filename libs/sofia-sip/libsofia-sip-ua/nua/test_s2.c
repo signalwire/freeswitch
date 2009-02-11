@@ -359,7 +359,14 @@ s2_next_request(void)
 struct message *
 s2_wait_for_request(sip_method_t method, char const *name)
 {
+  return s2_wait_for_request_timeout(method, name, -1);
+}
+
+struct message *
+s2_wait_for_request_timeout(sip_method_t method, char const *name, int timeout)
+{
   struct message *m;
+  int t = timeout;
 
   for (;;) {
     for (m = s2->received; m; m = m->next) {
@@ -374,6 +381,8 @@ s2_wait_for_request(sip_method_t method, char const *name)
     }
 
     su_root_step(s2->root, 100);
+    if (timeout != -1 && ((t -= 100) <= 0))
+        break;
   }
 
   return NULL;
@@ -383,6 +392,14 @@ int
 s2_check_request(sip_method_t method, char const *name)
 {
   struct message *m = s2_wait_for_request(method, name);
+  s2_free_message(m);
+  return m != NULL;
+}
+
+int
+s2_check_request_timeout(sip_method_t method, char const *name, int timeout)
+{
+  struct message *m = s2_wait_for_request_timeout(method, name, timeout);
   s2_free_message(m);
   return m != NULL;
 }

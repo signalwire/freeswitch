@@ -10,6 +10,7 @@ void check_nua_tcase_add_test(TCase *, TFun, char const *name);
 
 void check_session_cases(Suite *suite);
 void check_register_cases(Suite *suite);
+void check_etsi_cases(Suite *suite);
 void check_simple_cases(Suite *suite);
 
 #endif

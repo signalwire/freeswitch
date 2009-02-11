@@ -144,7 +144,10 @@ int s2_check_response(int status, sip_method_t method, char const *name);
 
 struct message *s2_next_request(void);
 struct message *s2_wait_for_request(sip_method_t method, char const *name);
+struct message *s2_wait_for_request_timeout(sip_method_t, char const *,
+					    int timeout);
 int s2_check_request(sip_method_t method, char const *name);
+int s2_check_request_timeout(sip_method_t method, char const *, int timeout);
 
 int s2_check_substate(struct event *e, enum nua_substate state);
 
