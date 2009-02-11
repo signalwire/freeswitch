@@ -341,7 +341,7 @@ SOURCE="..\..\libsofia-sip-ua\su\memspn.c"
 # End Source File
 # Begin Source File
 
-SOURCE="..\..\libsofia-sip-ua\su\strcasestr.c"
+SOURCE="..\..\libsofia-sip-ua\su\su_string.c"
 # End Source File
 # Begin Source File
 
@@ -862,6 +862,10 @@ SOURCE="..\..\libsofia-sip-ua\su\sofia-sip\rbtree.h"
 # Begin Source File
 
 SOURCE="..\..\libsofia-sip-ua\su\sofia-sip\string0.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\su\sofia-sip\su_string.h"
 # End Source File
 # Begin Source File
 

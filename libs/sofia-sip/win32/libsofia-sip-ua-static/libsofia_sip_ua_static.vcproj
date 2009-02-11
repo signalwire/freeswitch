@@ -1395,7 +1395,7 @@
 					</FileConfiguration>
 				</File>
 				<File
-					RelativePath="..\..\libsofia-sip-ua\su\strcasestr.c"
+					RelativePath="..\..\libsofia-sip-ua\su\su_string.c"
 					>
 					<FileConfiguration
 						Name="Debug|Win32"
@@ -3826,6 +3826,10 @@
 				</File>
 				<File
 					RelativePath="..\..\libsofia-sip-ua\su\sofia-sip\string0.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\su\sofia-sip\su_string.h"
 					>
 				</File>
 				<File
