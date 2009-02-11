@@ -44,8 +44,8 @@
 #define su_port_s su_virtual_port_s
 
 #include "su_port.h"
+#include <sofia-sip/su_string.h>
 
-#include <string.h>
 #include <stdlib.h>
 
 /** Create the default su_port_t implementation. */
@@ -115,25 +115,25 @@ void su_port_set_system_preferences(char const *name)
   if (name == NULL)
       ;
 #if HAVE_EPOLL
-  else if (strcmp(name, "epoll") == 0) {
+  else if (su_casematch(name, "epoll")) {
     create = su_epoll_port_create;
     start = su_epoll_clone_start;
   }
 #endif
 #if HAVE_KQUEUE
-  else if (strcmp(name, "kqueue") == 0) {
+  else if (su_casematch(name, "kqueue")) {
     create = su_kqueue_port_create;
     start = su_kqueue_clone_start;
   }
 #endif
 #if HAVE_SYS_DEVPOLL_H
-  else if (strcmp(name, "devpoll") == 0) {
+  else if (su_casematch(name, "devpoll")) {
     create = su_devpoll_port_create;
     start = su_devpoll_clone_start;
   }
 #endif
 #if HAVE_POLL_PORT
-  else if (strcmp(name, "poll") == 0) {
+  else if (su_casematch(name, "poll")) {
     create = su_poll_port_create;
     start = su_poll_clone_start;
   }
@@ -144,7 +144,7 @@ void su_port_set_system_preferences(char const *name)
     start = su_wsaevent_clone_start;
   }
 #elif HAVE_SELECT
-  else if (strcmp(name, "select") == 0) {
+  else if (su_casematch(name, "select")) {
     create = su_select_port_create;
     start = su_select_clone_start;
   }
