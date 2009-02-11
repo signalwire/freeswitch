@@ -34,6 +34,7 @@ if [ -z $arg ] ; then
 	    $MAKE install_core  2>&1 > /dev/null
 	    mods=`find src/mod -name \*.so | grep .libs`
 	    /bin/cp -fp $mods $prefix/mod
+	    mods=`find $prefix/mod -name \*.so`
 	    echo installed core and $mods
 	    exit;
 	fi

@@ -1228,6 +1228,7 @@ typedef struct {
 	int index;
 	switch_media_bug_t *bug;
 	switch_core_session_t *session;
+	int bug_running;
 } switch_tone_container_t;
 
 static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -1239,6 +1240,9 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
+		if (cont) {
+			cont->bug_running = 1;
+		}
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		break;
@@ -1252,9 +1256,7 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 			} else {
 				frame = switch_core_media_bug_get_write_replace_frame(bug);
 			}
-
-
-
+			
 			for (i = 0; i < cont->index; i++) {
 
 				if (cont->list[i].sleep) {
@@ -1274,9 +1276,9 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 				}
 				
 				if (!cont->list[i].up) skip = 1;
-
-				if (skip) return SWITCH_TRUE;
 				
+				if (skip) return SWITCH_TRUE;
+
 				if (teletone_multi_tone_detect(&cont->list[i].mt, frame->data, frame->samples)) {
 					switch_event_t *event;
 					cont->list[i].hits++;
@@ -1289,12 +1291,15 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 					if (cont->list[i].hits >= cont->list[i].total_hits) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "TONE %s DETECTED\n", cont->list[i].key);
 						cont->list[i].up = 0;
-						if (cont->list[i].once) {
-							rval = SWITCH_FALSE;
-						}
-
+						
 						if (cont->list[i].callback) {
-							rval = cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data);
+							if ((rval = cont->list[i].callback(cont->session, cont->list[i].app, cont->list[i].data)) == SWITCH_TRUE) {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-enabling %s\n", cont->list[i].key);
+								cont->list[i].up = 1;
+								cont->list[i].hits = 0;
+								cont->list[i].sleep = 0;
+								cont->list[i].expires = 0;								
+							}
 						} else if (cont->list[i].app) {
 							if (switch_event_create(&event, SWITCH_EVENT_COMMAND) == SWITCH_STATUS_SUCCESS) {
 								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-command", "execute");
@@ -1305,6 +1310,10 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 							}
 						}
 
+						if (cont->list[i].once) {
+							rval = SWITCH_FALSE;
+						}
+						
 						if (switch_event_create(&event, SWITCH_EVENT_DETECTED_TONE) == SWITCH_STATUS_SUCCESS) {
 							switch_event_t *dup;
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Detected-Tone", cont->list[i].key);
@@ -1328,6 +1337,11 @@ static switch_bool_t tone_detect_callback(switch_media_bug_t *bug, void *user_da
 	default:
 		break;
 	}
+
+	if (rval == SWITCH_FALSE) {
+		cont->bug_running = 0;
+	}
+
 	return rval;
 }
 
@@ -1335,9 +1349,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_tone_container_t *cont = switch_channel_get_private(channel, "_tone_detect_");
+	int i = 0;
 
 	if (cont) {
 		switch_channel_set_private(channel, "_tone_detect_", NULL);
+		for (i = 0; i < cont->index; i++) {
+			cont->list[i].up = 0;
+		}
 		switch_core_media_bug_remove(session, &cont->bug);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -1347,7 +1365,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_tone_detect_session(switch_core_
 SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_session_t *session,
 															   const char *key, const char *tone_spec,
 															   const char *flags, time_t timeout, 
-															   int hits, const char *app, const char *data, 
+															   int hits, 
+															   const char *app, const char *data, 
 															   switch_tone_detect_callback_t callback)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -1360,7 +1379,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	switch_codec_implementation_t read_impl = {0};
     switch_core_session_get_read_impl(session, &read_impl);
 
-
+	
 	if (switch_strlen_zero(key)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Key Specified!\n");
 		return SWITCH_STATUS_FALSE;
@@ -1373,9 +1392,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		}
 
 		for (i = 0; i < cont->index; i++) {
-			if (!switch_strlen_zero(cont->list[cont->index].key) && !strcasecmp(key, cont->list[cont->index].key)) {
+			if (!switch_strlen_zero(cont->list[i].key) && !strcasecmp(key, cont->list[i].key)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Re-enabling %s\n", key);
-				cont->list[cont->index].up = 1;
+				cont->list[i].up = 1;
 				cont->list[i].hits = 0;
 				cont->list[i].sleep = 0;
 				cont->list[i].expires = 0;
@@ -1436,6 +1455,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 	cont->list[cont->index].total_hits = hits;
 
 	cont->list[cont->index].up = 1;
+	memset(&cont->list[cont->index].mt, 0, sizeof(cont->list[cont->index].mt));
 	cont->list[cont->index].mt.sample_rate = read_impl.actual_samples_per_second;
 	teletone_multi_tone_init(&cont->list[cont->index].mt, &cont->list[cont->index].map);
 	cont->session = session;
@@ -1468,7 +1488,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		if (strchr(flags, 'o')) {
 			cont->list[cont->index].once = 1;
 		}
-
+		
 		if (strchr(flags, 'r')) {
 			bflags |= SMBF_READ_REPLACE;
 		} else if (strchr(flags, 'w')) {
@@ -1476,11 +1496,18 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_tone_detect_session(switch_core_sessi
 		}
 	}
 	
-	if ((status = switch_core_media_bug_add(session, tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
-		return status;
+	if (cont->bug_running) {
+		status = SWITCH_STATUS_SUCCESS;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s bug already running\n", switch_channel_get_name(channel));
+	} else {
+		cont->bug_running = 1;
+		if ((status = switch_core_media_bug_add(session, tone_detect_callback, cont, timeout, bflags, &cont->bug)) != SWITCH_STATUS_SUCCESS) {
+			cont->bug_running = 0;
+			return status;
+		}
+		switch_channel_set_private(channel, "_tone_detect_", cont);
 	}
 
-	switch_channel_set_private(channel, "_tone_detect_", cont);
 	cont->index++;
 
 	return SWITCH_STATUS_SUCCESS;
