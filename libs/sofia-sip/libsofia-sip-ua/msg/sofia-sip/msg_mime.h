@@ -163,7 +163,7 @@ struct msg_multipart_s
   msg_multipart_t        *mp_next;      /**< Next part in multipart body */
   /* Preamble for this part */
   char                   *mp_data;	/**< Boundary string. */
-  usize_t                 mp_len;	/**< Length of boundary (mp_data).*/
+  unsigned                mp_len;	/**< Length of boundary (mp_data).*/
   unsigned                mp_flags;
   msg_error_t            *mp_error;
 
