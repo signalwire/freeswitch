@@ -12,7 +12,12 @@ SET( ${PROJECT_NAME}_PATCH_LEVEL 0 )
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 INCLUDE (CheckSymbolExists)
 INCLUDE (CheckIncludeFile)
+INCLUDE (CheckIncludeFiles)
+INCLUDE (CheckSymbolExists)
 INCLUDE (CheckFunctionExists)
+INCLUDE (CheckLibraryExists)
+INCLUDE (CheckTypeSize)
+INCLUDE (CheckCXXSourceCompiles)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
@@ -123,14 +128,16 @@ INCLUDE_DIRECTORIES (${APR_INCLUDES} ${APRUTIL_INCLUDES})
 
 
 # DO SNDFILE
+
 FIND_PACKAGE (Sndfile)
 LINK_LIBRARIES (${SNDFILE_LIBRARY})
 INCLUDE_DIRECTORIES (${SNDFILE_INCLUDE_DIR})
 
+
 # DO LIBEDIT
-#FIND_PACKAGE (Libedit)
-#LINK_LIBRARIES (${PATH_LIB_EDIT})
-#INCLUDE_DIRECTORIES (${PATH_INC_EDIT})
+FIND_PACKAGE (Libedit)
+LINK_LIBRARIES (${PATH_LIB_EDIT})
+INCLUDE_DIRECTORIES (${PATH_INC_EDIT})
 
 # DO SRTP
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/srtp/.libs/libcryptomath.a)
@@ -166,13 +173,13 @@ ADD_SUBDIRECTORY(libs/libteletone/)
 #ADD_SUBDIRECTORY(libs/sqlite/)
 ADD_SUBDIRECTORY(libs/pcre/)
 ADD_SUBDIRECTORY(libs/stfu/)
-ADD_SUBDIRECTORY(libs/libedit/)
+#ADD_SUBDIRECTORY(libs/libedit/)
 ADD_SUBDIRECTORY(libs/srtp/)
 
 SET ( freeswitch_SRCS src/switch.c src/include/switch.h)
 ADD_EXECUTABLE(freeswitch ${freeswitch_SRCS})
 
 
-TARGET_LINK_LIBRARIES(freeswitch libedit teletone pcre resample switch_ivr switch_ivr_async switch_core switch_core_asr switch_channel switch_core_io switch_apr switch_utils switch_xml switch_buffer switch_caller switch_buffer switch_config switch_console switch_core_codec switch_core_db switch_core_directory switch_core_event_hook switch_core_file switch_core_hash switch_core_media_bug switch_core_memory switch_core_port_allocator switch_core_rwlock switch_core_session switch_core_speech switch_core_sqldb switch_core_state_machine switch_core_timer switch_dso switch_event switch_ivr_async switch_ivr_bridge switch_ivr_menu switch_ivr_originate switch_ivr_play_say switch_loadable_module switch_log switch_odbc switch_pcm switch_regex switch_resample switch_rtp switch_scheduler switch_stun switch_swig switch_time stfu ${optionalLibs})
+TARGET_LINK_LIBRARIES(freeswitch teletone pcre resample switch_ivr switch_ivr_async switch_core switch_core_asr switch_channel switch_core_io switch_apr switch_utils switch_xml switch_buffer switch_caller switch_buffer switch_config switch_console switch_core_codec switch_core_db switch_core_directory switch_core_event_hook switch_core_file switch_core_hash switch_core_media_bug switch_core_memory switch_core_port_allocator switch_core_rwlock switch_core_session switch_core_speech switch_core_sqldb switch_core_state_machine switch_core_timer switch_dso switch_event switch_ivr_async switch_ivr_bridge switch_ivr_menu switch_ivr_originate switch_ivr_play_say switch_loadable_module switch_log switch_odbc switch_pcm switch_regex switch_resample switch_rtp switch_scheduler switch_stun switch_swig switch_time stfu ${optionalLibs})
 
 
