@@ -217,7 +217,6 @@
 	<action application="export" data="dialed_extension=$1"/>
       </condition>
       <condition field="${sip_authorized}" expression="^true">
-	<action application="set" data="voicemail_authorized=${sip_authorized}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
 	<action application="voicemail" data="check default ${domain_name} ${dialed_extension}"/>
