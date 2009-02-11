@@ -2736,6 +2736,8 @@ int msg_header_add_make(msg_t *msg,
  *
  * Parse result from printf-formatted params as a given header field and add
  * result to the message.
+ *
+ * @NEW_1_12_10
  */
 int msg_header_add_format(msg_t *msg,
 			  msg_pub_t *pub,
