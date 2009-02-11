@@ -157,12 +157,11 @@ typedef union {
 
 struct su_timer_s {
   su_task_r       sut_task;	/**< Task reference */
-  size_t          sut_heap_index; /**< Timer is set (inserted in heap) */
+  size_t          sut_set;	/**< Timer is set (inserted in heap) */
   su_time_t       sut_when;	/**< When timer should be waken up next time */
   su_duration_t   sut_duration;	/**< Timer duration */
   su_timer_f      sut_wakeup;	/**< Function to call when waken up */
   su_timer_arg_t *sut_arg;	/**< Pointer to argument data */
-  su_time_t       sut_run;	/**< When this timer was last waken up */
   unsigned        sut_woken;	/**< Timer has waken up this many times */
 
   unsigned        sut_running:2;/**< Timer is running */
@@ -176,13 +175,13 @@ enum sut_running {
   run_for_ever = 2	/**< Do not compensate  */
 };
 
-#define SU_TIMER_IS_SET(sut) ((sut)->sut_heap_index != 0)
+#define SU_TIMER_IS_SET(sut) ((sut)->sut_set != 0)
 
 HEAP_DECLARE(su_inline, su_timer_queue_t, timers_, su_timer_t *);
 
 su_inline void timers_set(su_timer_t **array, size_t index, su_timer_t *t)
 {
-  array[t->sut_heap_index = index] = t;
+  array[t->sut_set = index] = t;
 }
 
 su_inline int timers_less(su_timer_t *a, su_timer_t *b)
@@ -224,7 +223,7 @@ su_timer_set0(su_timer_queue_t *timers,
     return -1;
 
   if (SU_TIMER_IS_SET(t))
-    timers_remove(timers[0], t->sut_heap_index);
+    timers_remove(timers[0], t->sut_set);
 
   t->sut_wakeup = wakeup;
   t->sut_arg = arg;
@@ -328,6 +327,37 @@ void su_timer_destroy(su_timer_t *t)
   }
 }
 
+/** Check if the timer has been set.
+ *
+ * @param t pointer to a timer object
+ *
+ * @return Nonzero if set, zero if reset.
+ *
+ * @NEW_1_12_11
+ */
+int su_timer_is_set(su_timer_t const *t)
+{
+  return t && t->sut_set != 0;
+}
+
+/**Return when the timer has been last expired.
+ *
+ * @param t pointer to a timer object
+ *
+ * @return Timestamp (as returned by su_time()).
+ *
+ * @note If the timer is running (set with su_timer_run()), the returned
+ * timestamp not the actual time but it is rather calculated from the
+ * initial timestamp.
+ *
+ * @NEW_1_12_11
+ */
+su_time_t su_timer_latest(su_timer_t const *t)
+{
+  su_time_t tv = { 0, 0 };
+
+  return t ? t->sut_when : tv;
+}
 
 /** Set the timer for the given @a interval.
  *
@@ -415,16 +445,14 @@ int su_timer_run(su_timer_t *t,
 		 su_timer_arg_t *arg)
 {
   su_timer_queue_t *timers = su_timer_queue(t, 1, "su_timer_run");
-  su_time_t now;
 
   if (timers == NULL)
     return -1;
 
   t->sut_running = run_at_intervals;
-  t->sut_run = now = su_now();
   t->sut_woken = 0;
 
-  return su_timer_set0(timers, t, wakeup, arg, now, t->sut_duration);
+  return su_timer_set0(timers, t, wakeup, arg, su_now(), t->sut_duration);
 }
 
 /**Set the timer for regular intervals.
@@ -448,16 +476,14 @@ int su_timer_set_for_ever(su_timer_t *t,
 			  su_timer_arg_t *arg)
 {
   su_timer_queue_t *timers = su_timer_queue(t, 1, "su_timer_set_for_ever");
-  su_time_t now;
 
   if (timers == NULL)
     return -1;
 
   t->sut_running = run_for_ever;
-  t->sut_run = now = su_now();
   t->sut_woken = 0;
 
-  return su_timer_set0(timers, t, wakeup, arg, now, t->sut_duration);
+  return su_timer_set0(timers, t, wakeup, arg, su_now(), t->sut_duration);
 }
 
 /**Reset the timer.
@@ -476,13 +502,11 @@ int su_timer_reset(su_timer_t *t)
     return -1;
 
   if (SU_TIMER_IS_SET(t))
-    timers_remove(timers[0], t->sut_heap_index);
+    timers_remove(timers[0], t->sut_set);
 
   t->sut_wakeup = NULL;
   t->sut_arg = NULL;
   t->sut_running = reset;
-
-  memset(&t->sut_run, 0, sizeof(t->sut_run));
 
   return 0;
 }
@@ -528,12 +552,13 @@ int su_timer_expire(su_timer_queue_t * const timers,
 
     if (t->sut_running == run_at_intervals) {
       while (t->sut_running == run_at_intervals &&
+	     t->sut_set == 0 &&
 	     t->sut_duration > 0) {
 	if (su_time_diff(t->sut_when, now) > 0) {
-	  su_timer_set0(timers, t, f, t->sut_arg, t->sut_run, 0);
+	  su_timer_set0(timers, t, f, t->sut_arg, t->sut_when, 0);
 	  break;
 	}
-	t->sut_when = t->sut_run = su_time_add(t->sut_run, t->sut_duration);
+	t->sut_when = su_time_add(t->sut_when, t->sut_duration);
 	t->sut_woken++;
 	f(su_root_magic(su_task_root(t->sut_task)), t, t->sut_arg), n++;
       }
@@ -542,7 +567,7 @@ int su_timer_expire(su_timer_queue_t * const timers,
       t->sut_woken++;
       t->sut_when = now;
       f(su_root_magic(su_task_root(t->sut_task)), t, t->sut_arg), n++;
-      if (t->sut_running == run_for_ever)
+      if (t->sut_running == run_for_ever && t->sut_set == 0)
 	su_timer_set0(timers, t, f, t->sut_arg, now, t->sut_duration);
     }
     else {
