@@ -50,6 +50,8 @@ if HAVE_LCOV
 include $(top_srcdir)/rules/lcov.am
 endif
 
+include $(top_srcdir)/rules/silent.am
+
 .PHONY = $(PHONY)
 
 CLEANFILES = docs/*.doxytags
