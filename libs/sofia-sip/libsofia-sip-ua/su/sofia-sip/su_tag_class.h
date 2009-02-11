@@ -97,6 +97,13 @@ SOFIAPUBVAR tag_class_t ns_tag_class[];
 
 SOFIAPUBVAR tag_class_t ref_tag_class[];
 
+SOFIAPUBFUN tagi_t *t_filter(tagi_t *, tagi_t const [],
+			     tagi_t const *, void **);
+SOFIAPUBFUN tagi_t *t_null_filter(tagi_t *dst, tagi_t const filter[],
+				  tagi_t const *src, void **bb);
+SOFIAPUBFUN tagi_t *t_end_filter(tagi_t *, tagi_t const [],
+				 tagi_t const *, void **);
+
 SOFIAPUBFUN int t_ptr_snprintf(tagi_t const *t, char b[], size_t size);
 SOFIAPUBFUN int t_ptr_ref_set(tag_type_t tt, void *ref, tagi_t const value[]);
 SOFIAPUBFUN int t_ptr_scan(tag_type_t, su_home_t *, char const *,
@@ -116,6 +123,9 @@ SOFIAPUBFUN int t_uint_snprintf(tagi_t const *t, char b[], size_t size);
 SOFIAPUBFUN int t_uint_ref_set(tag_type_t tt, void *ref, tagi_t const value[]);
 SOFIAPUBFUN int t_uint_scan(tag_type_t, su_home_t *, char const *,
 			    tag_value_t *return_value);
+
+SOFIAPUBFUN int t_socket_snprintf(tagi_t const *t, char b[], size_t size);
+SOFIAPUBFUN int t_socket_ref_set(tag_type_t tt, void *ref, tagi_t const value[]);
 
 SOFIAPUBFUN tagi_t *t_str_dup(tagi_t *dst, tagi_t const *src, void **b);
 SOFIAPUBFUN size_t t_str_xtra(tagi_t const *t, size_t offset);
