@@ -141,6 +141,7 @@
 
 #include "sofia-sip/url.h"
 #include "sofia-sip/su_alloc.h"
+#include "sofia-sip/su_string.h"
 #include "sofia-sip/hostdomain.h"
 
 char const name[] = "sip-dig";
@@ -361,7 +362,7 @@ int main(int argc, char *argv[])
 
 int transport_is_secure(char const *tportname)
 {
-  return tportname && strncasecmp(tportname, "tls", 3) == 0;
+  return su_casenmatch(tportname, "tls", 3);
 }
 
 int prepare_transport(struct dig *dig, char const *tport)
@@ -372,7 +373,7 @@ int prepare_transport(struct dig *dig, char const *tport)
   for (j = 0; j < N_TPORT - 1; j++) {
     if (!tports[j].name)
       break;
-    if (strcasecmp(tports[j].name, tport) == 0)
+    if (su_casematch(tports[j].name, tport))
       return 1;
   }
 
@@ -402,27 +403,27 @@ int prepare_transport(struct dig *dig, char const *tport)
     tports[j].service = service;
     tports[j].srv = srv;
   }
-  else if (strcasecmp(tport, "udp") == 0) {
+  else if (su_casematch(tport, "udp")) {
     tports[j].name = "udp";
     tports[j].service = "SIP+D2U";
     tports[j].srv = "_sip._udp.";
   }
-  else if (strcasecmp(tport, "tcp") == 0) {
+  else if (su_casematch(tport, "tcp")) {
     tports[j].name = "tcp";
     tports[j].service = "SIP+D2T";
     tports[j].srv = "_sip._tcp.";
   }
-  else if (strcasecmp(tport, "tls") == 0) {
+  else if (su_casematch(tport, "tls")) {
     tports[j].name = "tls";
     tports[j].service = "SIPS+D2T";
     tports[j].srv = "_sips._tcp.";
   }
-  else if (strcasecmp(tport, "sctp") == 0) {
+  else if (su_casematch(tport, "sctp")) {
     tports[j].name = "sctp";
     tports[j].service = "SIP+D2S";
     tports[j].srv = "_sip._sctp.";
   }
-  else if (strcasecmp(tport, "tls-sctp") == 0) {
+  else if (su_casematch(tport, "tls-sctp")) {
     tports[j].name = "tls-sctp";
     tports[j].service = "SIPS+D2S";
     tports[j].srv = "_sips._sctp.";
@@ -451,9 +452,9 @@ count_transports(struct dig *dig,
   for (i = 0; tports[i].name; i++) {
     if (dig->sips && !transport_is_secure(tports[i].name))
       continue;
-    if (!tport || strcasecmp(tport, tports[i].name) == 0)
+    if (!tport || su_casematch(tport, tports[i].name))
       tcount++;
-    if (tport2 && strcasecmp(tport2, tports[i].name) == 0)
+    else if (tport2 && su_casematch(tport2, tports[i].name))
       tcount++;
   }
 
@@ -466,7 +467,7 @@ transport_by_service(struct transport const *tports, char const *s)
   int i;
 
   for (i = 0; tports[i].name; i++) {
-    if (strcasecmp(tports[i].service, s) == 0)
+    if (su_casematch(tports[i].service, s))
       return tports + i;
   }
 
@@ -503,13 +504,13 @@ int dig_naptr(struct dig *dig,
 	     na->na_flags, na->na_services,
 	     na->na_regexp, na->na_replace);
 
-    if (strcasecmp(na->na_flags, "s") && strcasecmp(na->na_flags, "a"))
+    if (!su_casematch(na->na_flags, "s") && !su_casematch(na->na_flags, "a"))
       continue;
 
     if (nacount && order != na->na_order)
       continue;
 
-    if (dig->sips && strncasecmp(na->na_services, "SIPS+", 5))
+    if (dig->sips && !su_casenmatch(na->na_services, "SIPS+", 5))
       continue;
 
     if (!transport_by_service(dig->tports, na->na_services))
@@ -530,19 +531,19 @@ int dig_naptr(struct dig *dig,
       continue;
     if (order != na->na_order)
       continue;
-    if (strcasecmp(na->na_flags, "s") && strcasecmp(na->na_flags, "a"))
+    if (!su_casematch(na->na_flags, "s") && !su_casematch(na->na_flags, "a"))
       continue;
-    if (dig->sips && strncasecmp(na->na_services, "SIPS+", 5))
+    if (dig->sips && !su_casematch(na->na_services, "SIPS+", 5))
       continue;
 
     tp = transport_by_service(dig->tports, na->na_services);
     if (!tp)
       continue;
 
-    if (strcasecmp(na->na_flags, "s") == 0) {
+    if (su_casematch(na->na_flags, "s")) {
       scount = dig_srv(dig, tp->name, na->na_replace, weight / nacount);
     }
-    else if (strcasecmp(na->na_flags, "a") == 0) {
+    else if (su_casematch(na->na_flags, "a")) {
       scount = dig_addr(dig, tp->name, na->na_replace, NULL, weight / nacount);
     }
     else
@@ -572,7 +573,7 @@ int dig_all_srvs(struct dig *dig,
     return 0;
 
   for (i = 0, n = 0; dig->tports[i].name; i++) {
-    if (tport && strcasecmp(dig->tports[i].name, tport))
+    if (tport && !su_casematch(dig->tports[i].name, tport))
       continue;
 
     if (dig->sips && !transport_is_secure(dig->tports[i].name))
@@ -799,9 +800,9 @@ print_addr_results(struct transport const *tports,
     su_inet_ntop(af, &answers[i]->sr_a->a_addr, addr, sizeof addr);
 
     for (j = 0; tports[j].name; j++) {
-      if (strcasecmp(tport, tports[j].name) == 0)
+      if (su_casematch(tport, tports[j].name))
 	print_result(addr, port, tport, weight, preference);
-      if (tport2 && strcasecmp(tport2, tports[j].name) == 0)
+      if (su_casematch(tport2, tports[j].name))
 	print_result(addr, port, tport2, weight, preference);
     }
   }
