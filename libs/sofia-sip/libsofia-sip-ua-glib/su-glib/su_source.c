@@ -386,7 +386,7 @@ gboolean su_source_prepare(GSource *gs, gint *return_tout)
     return TRUE;
   }
 
-  if (self->sup_base->sup_timers) {
+  if (self->sup_base->sup_timers || self->sup_base->sup_deferrable) {
     su_time_t now;
     GTimeVal  gtimeval;
 
@@ -395,10 +395,18 @@ gboolean su_source_prepare(GSource *gs, gint *return_tout)
     now.tv_usec = gtimeval.tv_usec;
 
     tout = su_timer_next_expires(&self->sup_base->sup_timers, now);
-  }
-  if (self->sup_base->sup_deferrable) {
-    if (tout > self->sup_base->sup_max_defer)
-      tout = self->sup_base->sup_max_defer;
+
+    if (self->sup_base->sup_deferrable) {
+      su_duration_t tout_defer;
+
+      tout_defer = su_timer_next_expires(&self->sup_base->sup_deferrable, now);
+
+      if (tout_defer < self->sup_base->sup_max_defer)
+        tout_defer = self->sup_base->sup_max_defer;
+
+      if (tout > tout_defer)
+        tout = tout_defer;
+    }
   }
 
   *return_tout = (tout >= 0 && tout <= (su_duration_t)G_MAXINT)?
