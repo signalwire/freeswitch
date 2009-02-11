@@ -409,6 +409,7 @@ tport_t *tport_alloc_secondary(tport_primary_t *pri,
 			       char const **return_reason);
 
 int tport_accept(tport_primary_t *pri, int events);
+int tport_register_secondary(tport_t *self, su_wakeup_f wakeup, int events);
 void tport_zap_secondary(tport_t *self);
 
 int tport_set_secondary_timer(tport_t *self);
@@ -426,6 +427,9 @@ int tport_error_event(tport_t *self);
 void tport_recv_event(tport_t *self);
 void tport_send_event(tport_t *self);
 void tport_hup_event(tport_t *self);
+int tport_setname(tport_t *, char const *, su_addrinfo_t const *, char const *);
+
+int tport_wakeup(su_root_magic_t *magic, su_wait_t *w, tport_t *self);
 
 ssize_t tport_recv_iovec(tport_t const *self,
 			 msg_t **mmsg,

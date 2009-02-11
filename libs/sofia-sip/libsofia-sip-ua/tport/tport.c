@@ -399,9 +399,7 @@ static int
 		    char const * const transports[],  enum tport_via public,
 		    tagi_t *tags),
 
-  tport_setname(tport_t *, char const *, su_addrinfo_t const *, char const *),
   tport_wakeup_pri(su_root_magic_t *m, su_wait_t *w, tport_t *self),
-  tport_wakeup(su_root_magic_t *m, su_wait_t *w, tport_t *self),
   tport_base_wakeup(tport_t *self, int events),
   tport_connected(su_root_magic_t *m, su_wait_t *w, tport_t *self),
   tport_resolve(tport_t *self, msg_t *msg, tp_name_t const *tpn),
@@ -949,13 +947,10 @@ tport_t *tport_base_connect(tport_primary_t *pri,
 			    su_addrinfo_t *real_ai,
 			    tp_name_t const *tpn)
 {
-  tport_master_t *mr = pri->pri_master;
   tport_t *self = NULL;
 
   su_socket_t s, server_socket;
-  su_wait_t wait[1] = { SU_WAIT_INIT };
   su_wakeup_f wakeup = tport_wakeup;
-  int index = 0;
   int events = SU_WAIT_IN | SU_WAIT_ERR;
 
   int err;
@@ -967,7 +962,6 @@ tport_t *tport_base_connect(tport_primary_t *pri,
 #define TPORT_CONNECT_ERROR(errno, what)			     \
   return							     \
     ((void)(err = errno,					     \
-	    su_wait_destroy(wait),				     \
 	    (SU_LOG_LEVEL >= errlevel ?				     \
 	     su_llog(tport_log, errlevel,			     \
 		     "%s(%p): %s(pf=%d %s/%s): %s\n",			\
@@ -1013,7 +1007,7 @@ tport_t *tport_base_connect(tport_primary_t *pri,
     TPORT_CONNECT_ERROR(su_errno(), tport_setname);
 
   /* Try to have a non-blocking connect().
-   * The su_wait_create() below makes the socket non-blocking anyway. */
+   * The tport_register_secondary() below makes the socket non-blocking anyway. */
   su_setblocking(s, 0);
 
   if (connect(s, ai->ai_addr, (socklen_t)(ai->ai_addrlen)) == SOCKET_ERROR) {
@@ -1029,14 +1023,8 @@ tport_t *tport_base_connect(tport_primary_t *pri,
     self->tp_is_connected = 1;
   }
 
-  if (su_wait_create(wait, s, self->tp_events = events) == -1)
-    TPORT_CONNECT_ERROR(su_errno(), su_wait_create);
-
-  /* Register receiving function with events specified above */
-  if ((index = su_root_register(mr->mr_root, wait, wakeup, self, 0)) == -1)
-    TPORT_CONNECT_ERROR(su_errno(), su_root_register);
-
-  self->tp_index = index;
+  if (tport_register_secondary(self, wakeup, events) == -1)
+    TPORT_CONNECT_ERROR(su_errno(), tport_register_secondary);
 
   if (ai == real_ai) {
     SU_DEBUG_5(("%s(%p): %s to " TPN_FORMAT "\n",
@@ -1049,9 +1037,33 @@ tport_t *tport_base_connect(tport_primary_t *pri,
 		TPN_ARGS(self->tp_name)));
   }
 
-  tprb_append(&pri->pri_open, self);
-
   return self;
+}
+
+/** Register a new secondary transport. @internal */
+int tport_register_secondary(tport_t *self, su_wakeup_f wakeup, int events)
+{
+  int i;
+  su_root_t *root = tport_is_secondary(self) ? self->tp_master->mr_root : NULL;
+  su_wait_t wait[1] = { SU_WAIT_INIT };
+
+  if (root != NULL
+      /* Create wait object with appropriate events. */
+      &&
+      su_wait_create(wait, self->tp_socket, events) != -1
+      /* Register socket to root */
+      &&
+      (i = su_root_register(root, wait, wakeup, self, 0)) != -1) {
+
+    self->tp_index = i;
+    self->tp_events = events;
+
+    tprb_append(&self->tp_pri->pri_open, self);
+    return 0;
+  }
+
+  su_wait_destroy(wait);
+  return -1;
 }
 
 /** Destroy a secondary transport. @internal */
@@ -2351,7 +2363,6 @@ int tport_convert_addr(su_home_t *home,
 
 /** Set transport object name. @internal
  */
-static
 int tport_setname(tport_t *self,
 		  char const *protoname,
 		  su_addrinfo_t const *ai,
@@ -2577,47 +2588,37 @@ int tport_accept(tport_primary_t *pri, int events)
   ai->ai_addr = &su->su_sa, ai->ai_addrlen = sulen;
 
   /* Alloc a new transport object, then register socket events with it */
-  self = tport_alloc_secondary(pri, s, 1, &reason);
-
-  if (self) {
-    int i;
-    su_root_t *root = self->tp_master->mr_root;
-    su_wakeup_f wakeup = tport_wakeup;
+  if ((self = tport_alloc_secondary(pri, s, 1, &reason)) == NULL) {
+    SU_DEBUG_3(("%s(%p): incoming secondary on "TPN_FORMAT
+                " failed. reason = %s\n", __func__, pri, 
+                TPN_ARGS(pri->pri_primary->tp_name), reason));
+    return 0;
+  }
+  else {
     int events = SU_WAIT_IN|SU_WAIT_ERR|SU_WAIT_HUP;
-    su_wait_t wait[1] = { SU_WAIT_INIT };
 
     SU_CANONIZE_SOCKADDR(su);
 
-    if (/* Create wait object with appropriate events. */
-	su_wait_create(wait, s, events) != -1
-	/* Register socket to root */
+    if (/* Name this transport */
+        tport_setname(self, pri->pri_protoname, ai, NULL) != -1 
+	/* Register this secondary */ 
 	&&
-	(i = su_root_register(root, wait, wakeup, self, 0)) != -1) {
+	tport_register_secondary(self, tport_wakeup, events) != -1) {
 
-      self->tp_index     = i;
       self->tp_conn_orient = 1;
       self->tp_is_connected = 1;
-      self->tp_events = events;
 
-      if (tport_setname(self, pri->pri_protoname, ai, NULL) != -1) {
-	SU_DEBUG_5(("%s(%p): new connection from " TPN_FORMAT "\n",
-		    __func__,  (void *)self, TPN_ARGS(self->tp_name)));
+      SU_DEBUG_5(("%s(%p): new connection from " TPN_FORMAT "\n",
+                  __func__,  (void *)self, TPN_ARGS(self->tp_name)));
 
-	tprb_append(&pri->pri_open, self);
-
-	/* Return succesfully */
-	return 0;
-      }
+      return 0;
     }
-    else
-      su_wait_destroy(wait);
 
     /* Failure: shutdown socket,  */
     tport_close(self);
     tport_zap_secondary(self);
+    self = NULL;
   }
-
-  /* XXX - report error ? */
 
   return 0;
 }
@@ -2727,7 +2728,7 @@ static int tport_wakeup_pri(su_root_magic_t *m, su_wait_t *w, tport_t *self)
 }
 
 /** Process events for connected socket  */
-static int tport_wakeup(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
+int tport_wakeup(su_root_magic_t *magic, su_wait_t *w, tport_t *self)
 {
   int events = su_wait_events(w, self->tp_socket);
 
