@@ -90,6 +90,10 @@ typedef unsigned _int32 uint32_t;
 #include <signal.h>
 #endif
 
+#include <sofia-sip/su_log.h>
+
+extern su_log_t sresolv_log[];
+
 char const name[] = "test_sresolv";
 
 struct sres_context_s
@@ -982,23 +986,132 @@ int test_srv(sres_context_t *ctx)
 int test_cname(sres_context_t *ctx)
 {
   sres_resolver_t *res = ctx->resolver;
-  sres_record_t **result;
-  const sres_cname_record_t *rr;
+  sres_record_t **result, *sr;
+  const sres_cname_record_t *cn;
   char const *domain = "sip.example.com";
 
   BEGIN();
+
+  TEST_1(sres_query(res, test_answer, ctx, sres_type_naptr, domain));
+  TEST_RUN(ctx);
+
+  TEST_1(result = ctx->result);
+  TEST_1(sr = result[0]);
+  TEST_1(sr->sr_record->r_status == SRES_RECORD_ERR);
+  TEST_1(cn = result[1]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "sip00.example.com.");
+
+  sres_free_answers(res, ctx->result), ctx->result = NULL;
+
+  TEST_1(result = sres_cached_answers(res, sres_type_naptr, domain));
+  TEST_1(sr = result[0]);
+  TEST_1(sr->sr_record->r_status == SRES_RECORD_ERR);
+  TEST_1(cn = result[1]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "sip00.example.com.");
+
+  sres_free_answers(res, result), ctx->result = NULL;
+
+  TEST_1(result = sres_cached_answers(res, sres_qtype_any, domain));
+  TEST_1(cn = result[0]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "sip00.example.com.");
+  /* We might have A record, or then not */
+
+  sres_free_answers(res, result), ctx->result = NULL;
 
   TEST_1(sres_query(res, test_answer, ctx, sres_type_a, domain));
   TEST_RUN(ctx);
 
   TEST_1(result = ctx->result);
-  TEST_1(rr = result[0]->sr_cname);
-  TEST(rr->cn_record->r_class, sres_class_in);
-  TEST(rr->cn_record->r_type, sres_type_cname);
-  TEST(rr->cn_record->r_ttl, 60);
-  TEST_S(rr->cn_cname, "sip00.example.com.");
+  TEST_1(cn = result[0]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "sip00.example.com.");
+  TEST_1(sr = result[1]);
+  TEST(sr->sr_record->r_class, sres_class_in);
+  TEST(sr->sr_record->r_type, sres_type_a);
 
   sres_free_answers(res, ctx->result), ctx->result = NULL;
+
+  TEST_1(result = sres_cached_answers(res, sres_type_a, domain));
+  TEST_1(cn = result[0]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "sip00.example.com.");
+  TEST_1(sr = result[1]);
+  TEST(sr->sr_record->r_class, sres_class_in);
+  TEST(sr->sr_record->r_type, sres_type_a);
+
+  sres_free_answers(res, result);
+
+  domain = "cloop.example.com";
+
+  TEST_1(sres_query(res, test_answer, ctx, sres_type_a, domain));
+  TEST_RUN(ctx);
+
+  TEST_1(result = ctx->result);
+  TEST_1(sr = result[0]);
+  TEST_1(sr->sr_record->r_status == SRES_RECORD_ERR);
+  TEST_1(cn = result[1]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop0.example.com.");
+  TEST_1(cn = result[2]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop1.example.com.");
+  TEST_1(cn = result[3]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop2.example.com.");
+  TEST_1(cn = result[4]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop0.example.com.");
+  TEST_1(result[5] == NULL);
+
+  sres_free_answers(res, ctx->result), ctx->result = NULL;
+
+  TEST_1(result = sres_cached_answers(res, sres_type_a, domain));
+  TEST_1(sr = result[0]);
+  TEST_1(sr->sr_record->r_status == SRES_RECORD_ERR);
+  TEST_1(cn = result[1]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop0.example.com.");
+  TEST_1(cn = result[2]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop1.example.com.");
+  TEST_1(cn = result[3]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop2.example.com.");
+  TEST_1(cn = result[4]->sr_cname);
+  TEST(cn->cn_record->r_class, sres_class_in);
+  TEST(cn->cn_record->r_type, sres_type_cname);
+  TEST(cn->cn_record->r_ttl, 60);
+  TEST_S(cn->cn_cname, "cloop0.example.com.");
+  TEST_1(result[5] == NULL);
+
+  sres_free_answers(res, result);
 
   END();
 }
@@ -1891,10 +2004,6 @@ void usage(int exitcode)
 	  name);
   exit(exitcode);
 }
-
-#include <sofia-sip/su_log.h>
-
-extern su_log_t sresolv_log[];
 
 int main(int argc, char **argv)
 {

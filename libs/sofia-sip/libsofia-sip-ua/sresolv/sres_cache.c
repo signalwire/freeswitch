@@ -169,15 +169,98 @@ void sres_cache_unref(sres_cache_t *cache)
   su_home_unref(cache->cache_home);
 }
 
+struct frame {
+  struct frame *previous;
+  char const *domain;
+};
+
+/** Count or get matching records from cache */
+static int
+sres_cache_get0(sres_htable_t *htable,
+		sres_rr_hash_entry_t **iter,
+		uint16_t type,
+		char const *domain,
+		time_t now,
+		sres_record_t **cached,
+		int len,
+		struct frame *previous)
+{
+  sres_cname_record_t *cname = NULL;
+  int dcount = 0, derrorcount = 0, ccount = 0;
+
+  for (; iter && *iter; iter = sres_htable_next(htable, iter)) {
+    sres_record_t *rr = (*iter)->rr;
+
+    if (rr == NULL)
+      continue;
+    if (now > (*iter)->rr_expires)
+      continue;
+    if (rr->sr_name == NULL)
+      continue;
+    if (!su_casematch(rr->sr_name, domain))
+      continue;
+
+    if (rr->sr_type == type || type == sres_qtype_any) {
+      if (rr->sr_status == SRES_RECORD_ERR && type == sres_qtype_any)
+	continue;
+      if (cached) {
+	if (dcount >= len)
+	  return -1;
+	cached[dcount] = rr, rr->sr_refcount++;
+      }
+      dcount++;
+      if (rr->sr_status)
+	derrorcount++;
+    }
+
+    if (type != sres_type_cname && rr->sr_type == sres_type_cname) {
+      if (rr->sr_status == 0)
+	cname = rr->sr_cname;
+    }
+  }
+
+  if (cname && dcount == derrorcount) {
+    /* Nothing found, trace CNAMEs */
+    struct frame *f, frame = { previous, domain };
+    unsigned hash = sres_hash_key(domain = cname->cn_cname);
+
+    if (cached) {
+      if (dcount >= len)
+	return -1;
+      cached[dcount] = (sres_record_t *)cname;
+      cname->cn_record->r_refcount++;
+    }
+    dcount++;
+
+    /* Check for cname loops */
+    for (f = previous; f; f = f->previous) {
+      if (su_casematch(domain, f->domain))
+	break;
+    }
+
+    if (f == NULL) {
+      ccount = sres_cache_get0(htable, sres_htable_hash(htable, hash),
+			       type, domain, now,
+			       cached ? cached + dcount : NULL,
+			       cached ? len - dcount : 0,
+			       &frame);
+    }
+    if (ccount < 0)
+      return ccount;
+  }
+
+  return dcount + ccount;
+}
+
 /** Get a list of matching records from cache. */
 int sres_cache_get(sres_cache_t *cache,
 		   uint16_t type,
 		   char const *domain,
 		   sres_record_t ***return_cached)
 {
-  sres_record_t **result = NULL, *rr = NULL;
-  sres_rr_hash_entry_t **rr_iter, **rr_iter2;
-  int result_size, rr_count = 0;
+  sres_record_t **result = NULL;
+  sres_rr_hash_entry_t **slot;
+  int result_size, i, j;
   unsigned hash;
   time_t now;
   char b[8];
@@ -198,28 +281,16 @@ int sres_cache_get(sres_cache_t *cache,
   time(&now);
 
   /* First pass: just count the number of rr:s for array allocation */
-  rr_iter2 = sres_htable_hash(cache->cache_hash, hash);
+  slot = sres_htable_hash(cache->cache_hash, hash);
 
-  /* Find the domain records from the hash table */
-  for (rr_iter = rr_iter2;
-       rr_iter && *rr_iter;
-       rr_iter = sres_htable_next(cache->cache_hash, rr_iter)) {
-    rr = (*rr_iter)->rr;
-
-    if (rr != NULL &&
-	now <= (*rr_iter)->rr_expires &&
-        (type == sres_qtype_any || rr->sr_type == type) &&
-        rr->sr_name != NULL &&
-        su_casematch(rr->sr_name, domain))
-      rr_count++;
-  }
-
-  if (rr_count == 0) {
+  i = sres_cache_get0(cache->cache_hash, slot, type, domain, now,
+		      NULL, 0, NULL);
+  if (i <= 0) {
     UNLOCK(cache);
     return 0;
   }
 
-  result_size = (sizeof *result) * (rr_count + 1);
+  result_size = (sizeof *result) * (i + 1);
   result = su_zalloc(cache->cache_home, result_size);
   if (result == NULL) {
     UNLOCK(cache);
@@ -227,35 +298,30 @@ int sres_cache_get(sres_cache_t *cache,
   }
 
   /* Second pass: add the rr pointers to the allocated array */
-
-  for (rr_iter = rr_iter2, rr_count = 0;
-       rr_iter && *rr_iter;
-       rr_iter = sres_htable_next(cache->cache_hash, rr_iter)) {
-    rr = (*rr_iter)->rr;
-
-    if (rr != NULL &&
-	now <= (*rr_iter)->rr_expires &&
-        (type == sres_qtype_any || rr->sr_type == type) &&
-        rr->sr_name != NULL &&
-        su_casematch(rr->sr_name, domain)) {
-      SU_DEBUG_9(("rr found in cache: %s %02d\n",
-		  rr->sr_name, rr->sr_type));
-
-      result[rr_count++] = rr;
-      rr->sr_refcount++;
+  j = sres_cache_get0(cache->cache_hash, slot, type, domain, now,
+		      result, i, NULL);
+  if (i != j) {
+    /* Uh-oh. */
+    SU_DEBUG_9(("%s(%p, %s, \"%s\") got %d != %d\n", "sres_cache_get",
+		(void *)cache, sres_record_type(type, b), domain, i, j));
+    for (i = 0; i < result_size; i++) {
+      if (result[i])
+	result[i]->sr_refcount--;
     }
+    su_free(cache->cache_home, result);
+    return 0;
   }
 
-  result[rr_count] = NULL;
+  result[i] = NULL;
 
   UNLOCK(cache);
 
   SU_DEBUG_9(("%s(%p, %s, \"%s\") returned %d entries\n", "sres_cache_get",
-	      (void *)cache, sres_record_type(type, b), domain, rr_count));
+	      (void *)cache, sres_record_type(type, b), domain, i));
 
   *return_cached = result;
 
-  return rr_count;
+  return i;
 }
 
 sres_record_t *

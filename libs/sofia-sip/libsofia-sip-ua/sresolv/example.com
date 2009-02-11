@@ -42,6 +42,11 @@ _sips._udp	SRV 3 100 5061 sip00
 		SRV 4 50 5051 sip02
 		SRV 5 10 5061 sip01
 
+cloop	CNAME	cloop0
+cloop0	CNAME	cloop1
+cloop1	CNAME	cloop2
+cloop2	CNAME	cloop0
+
 sip	CNAME	sip00
 
 subnet  A6	0 3ff0:0::

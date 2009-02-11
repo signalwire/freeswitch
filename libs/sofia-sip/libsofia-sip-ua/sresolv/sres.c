@@ -495,7 +495,9 @@ static int sres_decode_msg(sres_resolver_t *res,
 
 static char const *sres_toplevel(char buf[], size_t bsize, char const *domain);
 
-static sres_record_t *sres_create_record(sres_resolver_t *, sres_message_t *m);
+static sres_record_t *sres_create_record(sres_resolver_t *,
+					 sres_message_t *m,
+					 int nth);
 
 static sres_record_t *sres_init_rr_soa(sres_cache_t *cache,
 				       sres_soa_record_t *,
@@ -3539,7 +3541,7 @@ sres_decode_msg(sres_resolver_t *res,
 
   total = errorcount + m->m_ancount + m->m_nscount + m->m_arcount;
 
-  answers = su_zalloc(chome, (total + 1) * sizeof answers[0]);
+  answers = su_zalloc(chome, (total + 2) * sizeof answers[0]);
   if (!answers)
     return -1;
 
@@ -3548,7 +3550,7 @@ sres_decode_msg(sres_resolver_t *res,
     if (i < errorcount)
       rr = error = sres_create_error_rr(res->res_cache, query, err);
     else
-      rr = sres_create_record(res, m);
+      rr = sres_create_record(res, m, i - errorcount);
 
     if (!rr) {
       SU_DEBUG_5(("sres_create_record: %s\n", m->m_error));
@@ -3565,10 +3567,29 @@ sres_decode_msg(sres_resolver_t *res,
   }
 
   if (i < total) {
+    SU_DEBUG_5(("sres_decode_msg: %s\n", "less records than promised"));
     for (i = 0; i < total; i++)
       sres_cache_free_record(res->res_cache, answers[i]);
     su_free(chome, answers);
     return -1;
+  }
+
+  if (m->m_ancount > 0 && errorcount == 0 && query->q_type < sres_qtype_tsig) {
+    char b0[8], b1[8];
+    for (i = 0; i < m->m_ancount; i++) {
+      if (query->q_type == answers[i]->sr_type)
+	break;
+    }
+
+    if (i == m->m_ancount) {
+      /* The queried request was not found. CNAME? */
+      SU_DEBUG_5(("sres_decode_msg: sent query %s, got %s\n",
+		  sres_record_type(query->q_type, b0),
+		  sres_record_type(answers[0]->sr_type, b1)));
+      rr = sres_create_error_rr(res->res_cache, query, err = SRES_RECORD_ERR);
+      memmove(answers + 1, answers, (sizeof answers[0]) * total++);
+      answers[errorcount++] = rr;
+    }
   }
 
   for (i = 0; i < total; i++) {
@@ -3591,7 +3612,7 @@ sres_decode_msg(sres_resolver_t *res,
 
 static
 sres_record_t *
-sres_create_record(sres_resolver_t *res, sres_message_t *m)
+sres_create_record(sres_resolver_t *res, sres_message_t *m, int nth)
 {
   sres_cache_t *cache = res->res_cache;
   sres_record_t *sr, sr0[1];
@@ -3614,7 +3635,11 @@ sres_create_record(sres_resolver_t *res, sres_message_t *m)
 
   name[len] = 0;
 
-  SU_DEBUG_9(("RR received %s %s %s %d rdlen=%d\n", name,
+  SU_DEBUG_9(("%s RR received %s %s %s %d rdlen=%d\n",
+	      nth < m->m_ancount ? "ANSWER" :
+	      nth < m->m_ancount + m->m_nscount ? "AUTHORITY" :
+	      "ADDITIONAL",
+	      name,
 	      sres_record_type(sr->sr_type, btype),
 	      sres_record_class(sr->sr_class, bclass),
 	      sr->sr_ttl, sr->sr_rdlen));
