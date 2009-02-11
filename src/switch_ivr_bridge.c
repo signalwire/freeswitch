@@ -579,7 +579,7 @@ static switch_status_t uuid_bridge_on_soft_execute(switch_core_session_t *sessio
 	if ((other_uuid = switch_channel_get_variable(channel, SWITCH_UUID_BRIDGE)) && (other_session = switch_core_session_locate(other_uuid))) {
 		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
 		switch_event_t *event;
-		uint8_t ready_a, ready_b;
+		int ready_a, ready_b;
 		switch_channel_state_t state;
 
 		switch_channel_set_variable(channel, SWITCH_UUID_BRIDGE, NULL);
