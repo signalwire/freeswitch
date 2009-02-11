@@ -3250,14 +3250,6 @@ void agent_recv_response(nta_agent_t *agent,
       && sip->sip_via && !sip->sip_via->v_next
       && agent_has_via(agent, sip->sip_via)) {
     agent->sa_stats->as_trless_200++;
-#if nomore /* sf.net bug #1750691. Let UAS to cope with it. */
-    if (agent->sa_is_a_uas) {
-      /* Orphan 200 Ok to INVITE. ACK and BYE it */
-      SU_DEBUG_5(("nta: %03d %s %s\n", status, phrase, "is ACK&BYE"));
-      if (nta_msg_ackbye(agent, msg) != -1)
-	return;
-    }
-#endif
   }
 
   SU_DEBUG_5(("nta: %03d %s %s\n", status, phrase, "was discarded"));
@@ -3683,7 +3675,6 @@ int complete_response(msg_t *response,
  */
 int nta_msg_ackbye(nta_agent_t *agent, msg_t *msg)
 {
-#if nomore
   sip_t *sip = sip_object(msg);
   msg_t *amsg = nta_msg_create(agent, 0);
   sip_t *asip = sip_object(amsg);
@@ -3772,8 +3763,6 @@ int nta_msg_ackbye(nta_agent_t *agent, msg_t *msg)
  err:
   msg_destroy(amsg);
   msg_destroy(bmsg);
-#endif
-  (void)agent; (void)msg;
   return -1;
 }
 
@@ -8963,6 +8952,7 @@ int outgoing_recv(nta_outgoing_t *orq,
   nta_agent_t *sa = orq->orq_agent;
   short orq_status = orq->orq_status;
   int internal = sip == NULL || (sip->sip_flags & NTA_INTERNAL_MSG) != 0;
+  int uas = sa->sa_is_a_uas;
 
   if (status < 100) status = 100;
 
@@ -9006,8 +8996,15 @@ int outgoing_recv(nta_outgoing_t *orq,
 
   /* The state machines */
   if (orq->orq_method == sip_method_invite) {
-    if (orq->orq_destroyed && status > 100 && status < 300)
+
+    if (uas && orq->orq_destroyed && 200 <= status && status < 300) {
+      if (su_strcasecmp(sip->sip_to->a_tag, orq->orq_tag) != 0) {
+        /* Orphan 200 Ok to INVITE. ACK and BYE it */
+        SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE\n"));
+        return nta_msg_ackbye(sa, msg);
+      }
       return -1;  /* Proxy statelessly (RFC3261 section 16.11) */
+    }
 
     outgoing_reset_timer(orq);
 
@@ -9040,7 +9037,7 @@ int outgoing_recv(nta_outgoing_t *orq,
 	if (outgoing_complete(orq))
 	  return 0;
 
-	if (sip && sa->sa_is_a_uas) {
+	if (sip && uas) {
 	  /*
 	   * We silently discard duplicate final responses to INVITE below
 	   * with outgoing_duplicate()
@@ -9055,10 +9052,14 @@ int outgoing_recv(nta_outgoing_t *orq,
 	if (status >= 300)
 	  return outgoing_duplicate(orq, msg, sip);
 
-	if (sa->sa_is_a_uas) {
+	if (uas) {
 	  if (su_strcasecmp(sip->sip_to->a_tag, orq->orq_tag) == 0)
 	    /* Catch retransmission */
 	    return outgoing_duplicate(orq, msg, sip);
+
+          /* Orphan 200 Ok to INVITE. ACK and BYE it */
+          SU_DEBUG_5(("nta: Orphan 200 Ok send ACK&BYE"));
+          return nta_msg_ackbye(sa, msg);
 	}
       }
 
