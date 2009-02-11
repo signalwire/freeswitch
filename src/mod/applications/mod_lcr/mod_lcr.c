@@ -514,11 +514,9 @@ static switch_status_t lcr_load_config()
 				if ((!strcasecmp(var, "order_by") || !strcasecmp(var, "pre_order"))  && !switch_strlen_zero(val)) {
 					if(!strcasecmp(var, "order_by")) {
 						thisorder = &order_by;
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hit var of order_by\n");
 					} else if(!strcasecmp(var, "pre_order")) {
 						thisorder = &pre_order;
 						comma = ""; /* don't want leading comma */
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hit var of pre_order\n");
 					}
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "param val is %s\n", val);
 					if ((argc = switch_separate_string(val, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
