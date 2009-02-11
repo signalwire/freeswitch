@@ -543,7 +543,7 @@ void nua_dialog_usage_set_refresh_range(nua_dialog_usage_t *du,
 
   du->du_refquested = now;
 
-  nua_dialog_usage_set_refresh_at(du, target);
+  du->du_refresh = target;
 }
 
 /** Set absolute refresh time */
