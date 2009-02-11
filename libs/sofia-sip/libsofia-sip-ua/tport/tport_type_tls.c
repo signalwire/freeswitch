@@ -600,7 +600,7 @@ tport_t *tport_tls_connect(tport_primary_t *pri,
   int err;
   unsigned errlevel = 3;
   char buf[TPORT_HOSTPORTSIZE];
-  char const *what;
+  char const *what="";
 
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
   if (s == INVALID_SOCKET)

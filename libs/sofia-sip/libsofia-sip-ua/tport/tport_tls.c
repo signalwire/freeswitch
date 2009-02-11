@@ -57,6 +57,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if HAVE_FUNC
+#elif HAVE_FUNCTION
+#define __func__ __FUNCTION__
+#else
+static char const __func__[] = "tport_tls";
+#endif
+
 #if HAVE_SIGPIPE
 #include <signal.h>
 #endif
