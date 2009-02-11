@@ -92,7 +92,7 @@ static int ca_clear_credentials(auth_client_t *ca);
  * @param[in] ch        challenge to be processed
  * @param[in] crcl      credential class
  *
- * @retval 1 when challenge was updated
+ * @retval 1 when at least one challenge was updated
  * @retval 0 when there was no new challenges
  * @retval -1 upon an error
  */
@@ -291,9 +291,10 @@ int ca_info(auth_client_t *ca,
  *
  * @param[in,out] auc_list  list of authenticators
  * @param[in,out] home      memory home used for allocations
- * @param[in] data          colon-separated authentication data
+ * @param[in]     data      colon-separated authentication data
  *
- * @retval 0 when successful
+ * @retval >0 when successful
+ * @retval 0 if not authenticator matched with @a data
  * @retval -1 upon an error
  */
 int auc_credentials(auth_client_t **auc_list, su_home_t *home,
@@ -340,15 +341,13 @@ int auc_credentials(auth_client_t **auc_list, su_home_t *home,
  *
  * scheme:"realm":user:pass
  *
- * @todo The authentication data format sucks.
- *
  * @param[in,out] auc_list  list of authenticators
  * @param[in] scheme        scheme to use (NULL, if any)
  * @param[in] realm         realm to use (NULL, if any)
  * @param[in] user          username
  * @param[in] pass          password
  *
- * @retval number of updated clients
+ * @retval >0 or number of updated clients when successful
  * @retval 0 when no client was updated
  * @retval -1 upon an error
  */
@@ -528,7 +527,7 @@ int ca_clear_credentials(auth_client_t *ca)
   return 1;
 }
 
-/** Check if we have all required credentials.
+/** Check if there are credentials for all challenges.
  *
  * @retval 1 when authorization can proceed
  * @retval 0 when there is not enough credentials
@@ -587,7 +586,7 @@ int auc_authorization(auth_client_t **auc_list, msg_t *msg, msg_pub_t *pub,
   if (pub == NULL)
     pub = msg_object(msg);
 
-  /* Remove existing credentials */
+  /* Remove existing credential headers */
   for (ca = *auc_list; ca; ca = ca->ca_next) {
     msg_header_t **hh = msg_hclass_offset(mc, pub, ca->ca_credential_class);
 
@@ -595,7 +594,7 @@ int auc_authorization(auth_client_t **auc_list, msg_t *msg, msg_pub_t *pub,
       msg_header_remove(msg, pub, *hh);
   }
 
-  /* Insert new credentials */
+  /* Insert new credential headers */
   for (; *auc_list; auc_list = &(*auc_list)->ca_next) {
     su_home_t *home = msg_home(msg);
     msg_header_t *h = NULL;
