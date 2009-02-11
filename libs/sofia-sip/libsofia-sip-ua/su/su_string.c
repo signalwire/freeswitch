@@ -56,7 +56,7 @@ su_strcasestr(const char *haystack,
   if ('A' <= lcn && lcn <= 'Z')
     lcn += 'a' - 'A';
   else if ('a' <= ucn && ucn <= 'z')
-    ucn -= 'a' - 'Z';
+    ucn -= 'a' - 'A';
 
   if (lcn == 0)
     return (char *)haystack;
