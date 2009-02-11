@@ -159,6 +159,8 @@ SOURCEPATH 			..\..\libsofia-sip-ua\nua
 SOURCE          nua.c
 SOURCE          nua_common.c
 SOURCE          nua_stack.c
+SOURCE          nua_client.c
+SOURCE          nua_server.c
 SOURCE          nua_extension.c
 SOURCE          nua_dialog.c
 SOURCE          outbound.c
