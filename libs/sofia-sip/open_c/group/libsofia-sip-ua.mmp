@@ -64,7 +64,7 @@ SOURCE          memspn.c
 SOURCE          memcspn.c
 SOURCE          string0.c
 SOURCE          strtoull.c
-SOURCE          strcasestr.c
+SOURCE          su_string.c
 SOURCE          getopt.c
 SOURCE          poll.c
 
