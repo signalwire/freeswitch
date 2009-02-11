@@ -62,7 +62,7 @@ typedef struct client_t client_t;
 #include <sofia-sip/hostdomain.h>
 #include <sofia-sip/tport.h>
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -564,7 +564,7 @@ int test_init(agent_t *ag, char const *resolv_conf)
   TEST_1(ag->ag_mclass);
 
 #if SU_HAVE_IN6
-  if (str0cmp(getenv("ipv6"), "true") == 0) {
+  if (su_strmatch(getenv("ipv6"), "true")) {
     contact = "sip:[::]:*;comp=sigcomp";
     af = AF_INET6, sulen0 = sizeof (struct sockaddr_in6);
   }
@@ -1075,22 +1075,22 @@ int test_tports(agent_t *ag)
   TEST_1(v = nta_agent_via(ag->ag_agent));
 
   for (; v; v = v->v_next) {
-    if (strcasecmp(v->v_protocol, sip_transport_udp) == 0) {
+    if (su_casematch(v->v_protocol, sip_transport_udp)) {
       if (udp)
 	v_udp_only = v;
       udp = 1;
       if (udp_comp == NULL)
 	udp_comp = v->v_comp;
     }
-    else if (strcasecmp(v->v_protocol, sip_transport_tcp) == 0) {
+    else if (su_casematch(v->v_protocol, sip_transport_tcp)) {
       tcp = 1;
       if (tcp_comp == NULL)
 	tcp_comp = v->v_comp;
     }
-    else if (strcasecmp(v->v_protocol, sip_transport_sctp) == 0) {
+    else if (su_casematch(v->v_protocol, sip_transport_sctp)) {
       sctp = 1;
     }
-    else if (strcasecmp(v->v_protocol, sip_transport_tls) == 0) {
+    else if (su_casematch(v->v_protocol, sip_transport_tls)) {
       tls = 1;
     }
   }
@@ -1454,7 +1454,7 @@ int test_tports(agent_t *ag)
     TEST_P(ag->ag_latest_leg, ag->ag_default_leg);
 
     TEST_1(ag->ag_in_via);
-    TEST_1(strcasecmp(ag->ag_in_via->v_protocol, "SIP/2.0/UDP") == 0);
+    TEST_1(su_casematch(ag->ag_in_via->v_protocol, "SIP/2.0/UDP"));
     su_free(ag->ag_home, ag->ag_in_via), ag->ag_in_via = NULL;
   }
 
@@ -1787,13 +1787,13 @@ int test_resolv(agent_t *ag, char const *resolv_conf)
 
   TEST_1(v = nta_agent_via(ag->ag_agent));
   for (; v; v = v->v_next) {
-    if (strcasecmp(v->v_protocol, sip_transport_udp) == 0)
+    if (su_casematch(v->v_protocol, sip_transport_udp))
       udp = 1;
-    else if (strcasecmp(v->v_protocol, sip_transport_tcp) == 0)
+    else if (su_casematch(v->v_protocol, sip_transport_tcp))
       tcp = 1;
-    else if (strcasecmp(v->v_protocol, sip_transport_sctp) == 0)
+    else if (su_casematch(v->v_protocol, sip_transport_sctp))
       sctp = 1;
-    else if (strcasecmp(v->v_protocol, sip_transport_tls) == 0)
+    else if (su_casematch(v->v_protocol, sip_transport_tls))
       tls = 1;
   }
 

@@ -219,14 +219,14 @@ int nta_check_session_content(nta_incoming_t *irq,
   if (sip->sip_payload == NULL)
     return 0;
 
-  if (cd == NULL || strcasecmp(cd->cd_type, "session") == 0) {
+  if (cd == NULL || su_casematch(cd->cd_type, "session")) {
     sip_accept_t const *ab = session_accepts;
     char const *c_type;
 
     if (c)
       c_type = c->c_type;
     else if (sip->sip_payload->pl_len > 3 &&
-	     strncasecmp(sip->sip_payload->pl_data, "v=0", 3) == 0)
+	     su_casenmatch(sip->sip_payload->pl_data, "v=0", 3))
       /* Missing Content-Type, but it looks like SDP  */
       c_type = application_sdp;
     else
@@ -234,7 +234,7 @@ int nta_check_session_content(nta_incoming_t *irq,
       ab = NULL, c_type = NULL;
 
     for (; ab; ab = ab->ac_next) {
-      if (strcasecmp(c_type, ab->ac_type) == 0)
+      if (su_casematch(c_type, ab->ac_type))
 	break;
     }
 
@@ -311,7 +311,7 @@ int nta_check_accept(nta_incoming_t *irq,
 			   method == sip_method_prack ||
 			   method == sip_method_update)) {
     for (ab = acceptable; ab; ab = ab->ac_next)
-      if (strcasecmp(application_sdp, ab->ac_type) == 0) {
+      if (su_casematch(application_sdp, ab->ac_type)) {
 	if (return_acceptable) *return_acceptable = ab;
 	return 0;
       }
@@ -322,7 +322,7 @@ int nta_check_accept(nta_incoming_t *irq,
       continue;
 
     for (ab = acceptable; ab; ab = ab->ac_next)
-      if (strcasecmp(ac->ac_type, ab->ac_type) == 0) {
+      if (su_casematch(ac->ac_type, ab->ac_type)) {
 	if (return_acceptable) *return_acceptable = ab;
 	return 0;
       }

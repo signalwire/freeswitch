@@ -237,8 +237,8 @@ void sl_payload_log(su_log_t *log, int level,
     log = su_log_default;
 
   while (s < end && *s != '\0') {
-    size_t n = strncspn(s, end - s, "\r\n");
-    size_t crlf = strnspn(s + n, end - s - n, "\r\n");
+    size_t n = su_strncspn(s, end - s, "\r\n");
+    size_t crlf = su_strnspn(s + n, end - s - n, "\r\n");
     if (n < 70) {
       memcpy(line, s, n);
       line[n] = '\0';

@@ -38,7 +38,7 @@
 #include <stdio.h>
 
 #ifndef STRING0_H
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #endif
 
 #ifndef SIP_H

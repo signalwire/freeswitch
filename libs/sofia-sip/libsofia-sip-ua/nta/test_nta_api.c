@@ -59,6 +59,7 @@ typedef struct agent_t agent_t;
 #include <sofia-sip/msg_mclass.h>
 #include <sofia-sip/sofia_features.h>
 #include <sofia-sip/hostdomain.h>
+#include <sofia-sip/su_string.h>
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -67,7 +68,6 @@ typedef struct agent_t agent_t;
 #include <stdio.h>
 #include <assert.h>
 #include <time.h>
-#include "sofia-sip/string0.h"
 
 extern su_log_t nta_log[];
 extern su_log_t tport_log[];
@@ -763,14 +763,14 @@ int api_test_tport(agent_t *ag)
 
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, TAG_END()) == 0);
   TEST_1(v = nta_agent_via(agent)); TEST_1(!v->v_next);
-  TEST(strcasecmp(v->v_protocol, sip_transport_tcp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_tcp), 0);
   TEST_1(m = nta_agent_contact(agent));
   TEST_S(m->m_url->url_params, "transport=tcp");
 
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url,
 			     TPTAG_SERVER(0), TAG_END()) == 0);
   TEST_1(v = nta_agent_public_via(agent)); TEST_1(!v->v_next);
-  TEST(strcasecmp(v->v_protocol, sip_transport_tcp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_tcp), 0);
   TEST_1(host_has_domain_invalid(v->v_host));
   TEST_1(m = nta_agent_contact(agent));
   TEST_S(m->m_url->url_params, "transport=tcp");
@@ -778,14 +778,14 @@ int api_test_tport(agent_t *ag)
   url->url_params = "transport=udp";
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, TAG_END()) == 0);
   TEST_1(v = nta_agent_via(agent)); TEST_1(v = v->v_next);
-  TEST(strcasecmp(v->v_protocol, sip_transport_udp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_udp), 0);
 
   TEST_VOID(nta_agent_destroy(agent));
 
   TEST_1(agent = nta_agent_create(ag->ag_root, NONE, NULL, NULL, TAG_END()));
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, TAG_END()) == 0);
   TEST_1(v = nta_agent_via(agent)); TEST_1(!v->v_next);
-  TEST(strcasecmp(v->v_protocol, sip_transport_udp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_udp), 0);
   TEST_1(m = nta_agent_contact(agent));
   TEST_S(m->m_url->url_params, "transport=udp");
   TEST_VOID(nta_agent_destroy(agent));
@@ -795,9 +795,9 @@ int api_test_tport(agent_t *ag)
   TEST_1(agent = nta_agent_create(ag->ag_root, NONE, NULL, NULL, TAG_END()));
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, TAG_END()) == 0);
   TEST_1(v = nta_agent_via(agent));
-  TEST(strcasecmp(v->v_protocol, sip_transport_tcp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_tcp), 0);
   TEST_1(v = v->v_next);
-  TEST(strcasecmp(v->v_protocol, sip_transport_udp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_udp), 0);
   TEST_1(m = nta_agent_contact(agent));
   TEST_1(!m->m_url->url_params);
   TEST_VOID(nta_agent_destroy(agent));
@@ -807,9 +807,9 @@ int api_test_tport(agent_t *ag)
   TEST_1(agent = nta_agent_create(ag->ag_root, NONE, NULL, NULL, TAG_END()));
   TEST_1(nta_agent_add_tport(agent, (url_string_t *)url, TAG_END()) == 0);
   TEST_1(v = nta_agent_via(agent));
-  TEST(strcasecmp(v->v_protocol, sip_transport_udp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_udp), 0);
   TEST_1(v = v->v_next);
-  TEST(strcasecmp(v->v_protocol, sip_transport_tcp), 0);
+  TEST(!su_casematch(v->v_protocol, sip_transport_tcp), 0);
   TEST_1(m = nta_agent_contact(agent));
   TEST_1(!m->m_url->url_params);
   TEST_VOID(nta_agent_destroy(agent));
@@ -866,7 +866,7 @@ static int api_test_dialogs(agent_t *ag)
 
 
 /* Test that NULL host and/or port fields of user supplied Via header are
-   filled in automaticaly */
+   filled in automatically */
 int api_test_user_via_fillin(agent_t *ag)
 {
   su_home_t home[1];
@@ -879,7 +879,7 @@ int api_test_user_via_fillin(agent_t *ag)
   sip_via_t *via0, *via1;
   sip_via_t via[1];
   static char *via_params[] = { "param1=value1", "param2=value2" };
-  int i;
+  size_t i;
 
   BEGIN();
 
@@ -912,30 +912,30 @@ int api_test_user_via_fillin(agent_t *ag)
   /* create user Via template to be filled in by NTA */
   sip_via_init(via);
   via->v_protocol = "*";
-  for (i = 0; i < sizeof(via_params)/sizeof(via_params[0]); i++)
-      sip_via_add_param(home,via,via_params[i]); /* add param to the template */
+  for (i = 0; i < sizeof(via_params) / sizeof(via_params[0]); i++)
+    sip_via_add_param(home, via, via_params[i]); /* add param to the template */
 
   /* This creates a delayed response message */
   orq1 = nta_outgoing_tcreate(leg, outgoing_callback, ag, NULL,
-  		       SIP_METHOD_MESSAGE, 
-  		       URL_STRING_MAKE("sip:foo.bar;transport=none"),
-  		       SIPTAG_FROM_STR("<sip:bar.foo>"),
-  		       SIPTAG_TO_STR("<sip:foo.bar>"),
-               NTATAG_USER_VIA(1),
-               SIPTAG_VIA(via),
-  		       TAG_END());
+			      SIP_METHOD_MESSAGE,
+			      URL_STRING_MAKE("sip:foo.bar;transport=none"),
+			      SIPTAG_FROM_STR("<sip:bar.foo>"),
+			      SIPTAG_TO_STR("<sip:foo.bar>"),
+			      NTATAG_USER_VIA(1),
+			      SIPTAG_VIA(via),
+			      TAG_END());
   TEST_1(orq1);
   TEST_1(msg1 = nta_outgoing_getrequest(orq1));
   TEST_1(sip1 = sip_object(msg1));
   TEST_1(via1 = sip1->sip_via);
 
   /* check that template has been filled correctly */
-  TEST_S(via0->v_protocol,via1->v_protocol);
-  TEST_S(via0->v_host,via1->v_host);
-  TEST_S(via0->v_port,via1->v_port);
+  TEST_S(via0->v_protocol, via1->v_protocol);
+  TEST_S(via0->v_host, via1->v_host);
+  TEST_S(via0->v_port, via1->v_port);
   /* check that the parameter has been preserved */
   for (i = 0; i < sizeof(via_params)/sizeof(via_params[0]); i++)
-    TEST_S(via1->v_params[i],via_params[i]);
+    TEST_S(via1->v_params[i], via_params[i]);
 
   TEST_VOID(nta_outgoing_destroy(orq0));
   TEST_VOID(nta_outgoing_destroy(orq1));

@@ -41,11 +41,14 @@
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
  *
  * @date Created: Tue Jun 13 02:57:51 2000 ppessi
+ *
+ * @sa
+ * @RFC3261, @RFC4320
  */
 
 #include "config.h"
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 /** @internal SU message argument structure type */
 #define SU_MSG_ARG_T   union sm_arg_u
@@ -315,7 +318,7 @@ struct nta_agent_s
     outgoing_queue_t  delayed[1];
     outgoing_queue_t  resolving[1];
 
-    outgoing_queue_t  trying[1];	/* Timer F/E */
+    outgoing_queue_t  trying[1];	/* Timer F / Timer E */
     outgoing_queue_t  completed[1];	/* Timer K */
     outgoing_queue_t  terminated[1];
 
@@ -1126,21 +1129,21 @@ sip_via_t *agent_has_via(nta_agent_t const *agent, sip_via_t const *via)
   sip_via_t const *v;
 
   for (v = agent->sa_public_vias; v; v = v->v_next) {
-    if (strcasecmp(via->v_host, v->v_host))
+    if (!su_casematch(via->v_host, v->v_host))
       continue;
-    if (str0cmp(via->v_port, v->v_port))
+    if (!su_strmatch(via->v_port, v->v_port))
       continue;
-    if (strcasecmp(via->v_protocol, v->v_protocol))
+    if (!su_casematch(via->v_protocol, v->v_protocol))
       continue;
     return (sip_via_t *)v;
   }
 
   for (v = agent->sa_vias; v; v = v->v_next) {
-    if (strcasecmp(via->v_host, v->v_host))
+    if (!su_casematch(via->v_host, v->v_host))
       continue;
-    if (str0cmp(via->v_port, v->v_port))
+    if (!su_strmatch(via->v_port, v->v_port))
       continue;
-    if (strcasecmp(via->v_protocol, v->v_protocol))
+    if (!su_casematch(via->v_protocol, v->v_protocol))
       continue;
     return (sip_via_t *)v;
   }
@@ -1570,7 +1573,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   if (algorithm != NONE)
     agent->sa_algorithm = su_strdup(home, algorithm);
 
-  if (str0cmp(sigcomp, agent->sa_sigcomp_options)) {
+  if (!su_strmatch(sigcomp, agent->sa_sigcomp_options)) {
     msg_param_t const *l = NULL;
     char *s = su_strdup(home, sigcomp);
     char *s1 = su_strdup(home, s), *s2 = s1;
@@ -2181,7 +2184,7 @@ int nta_agent_add_tport(nta_agent_t *self,
 
     if (tpn->tpn_comp &&
 	(nta_compressor_vtable == NULL ||
-	 strcasecmp(tpn->tpn_comp, nta_compressor_vtable->ncv_name) != 0)) {
+	 !su_casematch(tpn->tpn_comp, nta_compressor_vtable->ncv_name))) {
       SU_DEBUG_1(("nta(%p): comp=%s not supported for " URL_PRINT_FORMAT "\n",
 		  (void *)self, tpn->tpn_comp, URL_PRINT_ARGS(url)));
     }
@@ -2308,11 +2311,11 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
     if (tport_has_ip6(tp)) self->sa_tport_ip6 = 1;
 #endif
 
-    if (strcasecmp(tpn->tpn_proto, "udp") == 0)
+    if (su_casematch(tpn->tpn_proto, "udp"))
       self->sa_tport_udp = 1;
-    else if (strcasecmp(tpn->tpn_proto, "tcp") == 0)
+    else if (su_casematch(tpn->tpn_proto, "tcp"))
       self->sa_tport_tcp = 1;
-    else if (strcasecmp(tpn->tpn_proto, "sctp") == 0)
+    else if (su_casematch(tpn->tpn_proto, "sctp"))
       self->sa_tport_sctp = 1;
 
     if (tport_has_tls(tp)) self->sa_tport_tls = 1;
@@ -2330,7 +2333,7 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
 
       if (su) {
 	su_inet_ntop(su->su_family, SU_ADDR(su), host, sizeof host);
-	maddr = use_maddr && strcasecmp(canon, host) != 0;
+	maddr = use_maddr && !su_casematch(canon, host);
 	port = ntohs(su->su_port);
       }
       else {
@@ -2340,9 +2343,9 @@ int agent_init_via(nta_agent_t *self, tport_t *primaries, int use_maddr)
 	port = 0;
       }
 
-      if (strncasecmp(tpn->tpn_proto, "tls", 3)
-	  ? port == SIP_DEFAULT_PORT
-	  : port == SIPS_DEFAULT_PORT)
+      if (su_casenmatch(tpn->tpn_proto, "tls", 3)
+	  ? port == SIPS_DEFAULT_PORT
+	  : port == SIP_DEFAULT_PORT)
 	port = 0;
 
       snprintf(sport, sizeof sport, ":%u", port);
@@ -2471,15 +2474,15 @@ int agent_init_contact(nta_agent_t *self)
   v2 = v1->v_next;
 
   if (v2 &&
-      strcasecmp(v1->v_host, v2->v_host) == 0 &&
-      str0casecmp(v1->v_port, v2->v_port) == 0) {
+      su_casematch(v1->v_host, v2->v_host) &&
+      su_casematch(v1->v_port, v2->v_port)) {
     char const *p1 = v1->v_protocol, *p2 = v2->v_protocol;
 
-    if (strcasecmp(p1, sip_transport_udp))
+    if (!su_casematch(p1, sip_transport_udp))
       p1 = v2->v_protocol, p2 = v1->v_protocol;
 
-    if (strcasecmp(p1, sip_transport_udp) == 0 &&
-	strcasecmp(p2, sip_transport_tcp) == 0)
+    if (su_casematch(p1, sip_transport_udp) &&
+	su_casematch(p2, sip_transport_tcp))
       /* Do not include transport if we have both UDP and TCP */
       tp = NULL;
   }
@@ -2541,26 +2544,23 @@ int outgoing_insert_via(nta_outgoing_t *orq,
   if (branch && branch != v->v_branch) {
     char const *bvalue = branch + strcspn(branch, "=");
     if (*bvalue) bvalue++;
-    if (!v->v_branch || strcasecmp(bvalue, v->v_branch))
+    if (!v->v_branch || !su_casematch(bvalue, v->v_branch))
       msg_header_replace_param(msg_home(msg), v->v_common, branch);
   }
 
-  if (via->v_protocol != v->v_protocol &&
-      strcasecmp(via->v_protocol, v->v_protocol))
+  if (!su_casematch(via->v_protocol, v->v_protocol))
     clear = 1, v->v_protocol = via->v_protocol;
 
   /* XXX - should we do this? */
   if ((!user_via || !v->v_host) &&
-      via->v_host != v->v_host &&
-      str0cmp(via->v_host, v->v_host))
+      !su_strmatch(via->v_host, v->v_host))
     clear = 1, v->v_host = via->v_host;
 
   if ((!user_via || !v->v_port ||
        /* Replace port in user Via only if we use udp and no rport */
        (v->v_protocol == sip_transport_udp && !v->v_rport &&
 	!orq->orq_stateless)) &&
-      via->v_port != v->v_port &&
-      str0cmp(via->v_port, v->v_port))
+      !su_strmatch(via->v_port, v->v_port))
     clear = 1, v->v_port = via->v_port;
 
   if (clear)
@@ -2628,7 +2628,7 @@ int nta_tpn_by_url(su_home_t *home,
   SU_DEBUG_7(("nta: selecting scheme %s\n", url->url_scheme));
 
   *scheme = url->url_scheme;
-  if (strcasecmp(url->url_scheme, "sips") == 0)
+  if (su_casematch(url->url_scheme, "sips"))
     tpn->tpn_proto = "tls";
   else
     tpn->tpn_proto = "*";
@@ -2639,11 +2639,11 @@ int nta_tpn_by_url(su_home_t *home,
     for (b = (char *)url->url_params; b[0]; b += n) {
       n = strcspn(b, ";");
 
-      if (n > 10 && strncasecmp(b, "transport=", 10) == 0)
+      if (n > 10 && su_casenmatch(b, "transport=", 10))
 	tpn->tpn_proto = b + 10;
-      else if (n > 5 && strncasecmp(b, "comp=", 5) == 0)
+      else if (n > 5 && su_casenmatch(b, "comp=", 5))
 	tpn->tpn_comp = b + 5;
-      else if (n > 6 && strncasecmp(b, "maddr=", 6) == 0)
+      else if (n > 6 && su_casenmatch(b, "maddr=", 6))
 	tpn->tpn_host = b + 6;
 
       if (b[n])
@@ -2845,7 +2845,7 @@ void agent_recv_request(nta_agent_t *agent,
     return;
   }
 
-  if (str0casecmp(sip->sip_request->rq_version, sip_version_2_0) != 0) {
+  if (!su_casematch(sip->sip_request->rq_version, sip_version_2_0)) {
     agent->sa_stats->as_bad_request++;
     agent->sa_stats->as_bad_message++;
 
@@ -3008,7 +3008,7 @@ int agent_check_request_via(nta_agent_t *agent,
     return v ? 0 : -1;
   }
 
-  if (str0casecmp(v->v_protocol, tpv->v_protocol)) {
+  if (!su_strmatch(v->v_protocol, tpv->v_protocol)) {
     tport_hostport(hostport, TPORT_HOSTPORTSIZE, from, 1);
     SU_DEBUG_1(("nta: Via check: invalid transport \"%s\" from %s\n",
 		v->v_protocol, hostport));
@@ -3026,7 +3026,7 @@ int agent_check_request_via(nta_agent_t *agent,
   if (!tport_hostport(hostport, TPORT_HOSTPORTSIZE, from, 0))
     return -1;
 
-  if (strcasecmp(hostport, v->v_host)) {
+  if (!su_casematch(hostport, v->v_host)) {
     size_t rlen;
     /* Add the "received" field */
     memcpy(received, "received=", receivedlen);
@@ -3127,9 +3127,9 @@ int agent_aliases(nta_agent_t const *agent, url_t url[], tport_t *tport)
 	url->url_port = lv->v_port;
       return 1;
     }
-    if (url->url_port &&
-	strcmp(url->url_port, url_port_default(url->url_type)) == 0)
-      /* Remove default port */
+    if (su_strmatch(url->url_port, url_port_default(url->url_type)) ||
+	su_strmatch(url->url_port, ""))
+      /* Remove default or empty port */
       url->url_port = NULL;
 
     return 0;
@@ -3196,7 +3196,7 @@ void agent_recv_response(nta_agent_t *agent,
     return;
   }
 
-  if (str0casecmp(sip->sip_status->st_version, sip_version_2_0) != 0) {
+  if (!su_casematch(sip->sip_status->st_version, sip_version_2_0)) {
     agent->sa_stats->as_bad_response++;
     agent->sa_stats->as_bad_message++;
 
@@ -3807,7 +3807,6 @@ int nta_msg_request_complete(msg_t *msg,
   su_home_t *home = msg_home(msg);
   sip_t *sip = sip_object(msg);
   sip_to_t const *to;
-  sip_cseq_t *cseq;
   uint32_t seq;
   url_t reg_url[1];
   url_string_t const *original = request_uri;
@@ -3865,7 +3864,7 @@ int nta_msg_request_complete(msg_t *msg,
     if (!rq
 	|| request_uri != (url_string_t *)rq->rq_url
 	|| method != rq->rq_method
-	|| str0cmp(method_name, rq->rq_method_name))
+	|| !su_strmatch(method_name, rq->rq_method_name))
       rq = NULL;
 
     if (rq == NULL) {
@@ -3905,7 +3904,7 @@ int nta_msg_request_complete(msg_t *msg,
     sip->sip_from = sip_from_dup(home, leg->leg_local);
   else if (leg->leg_local && leg->leg_local->a_tag &&
 	   (!sip->sip_from->a_tag ||
-	    strcasecmp(sip->sip_from->a_tag, leg->leg_local->a_tag)))
+	    !su_casematch(sip->sip_from->a_tag, leg->leg_local->a_tag)))
     sip_from_tag(home, sip->sip_from, leg->leg_local->a_tag);
 
   if (sip->sip_from && !sip->sip_from->a_tag) {
@@ -3952,14 +3951,14 @@ int nta_msg_request_complete(msg_t *msg,
       sip->sip_call_id = sip_call_id_create(home, NULL);
   }
 
-  if ((!sip->sip_cseq ||
-       seq != sip->sip_cseq->cs_seq ||
-       method != sip->sip_cseq->cs_method ||
-       (method == sip_method_unknown &&
-	strcmp(method_name, sip->sip_cseq->cs_method_name) != 0)) &&
-      (!(cseq = sip_cseq_create(home, seq, method, method_name)) ||
-       msg_header_insert(msg, (msg_pub_t *)sip, (msg_header_t *)cseq) < 0))
-    return -1;
+  if (!sip->sip_cseq ||
+      seq != sip->sip_cseq->cs_seq ||
+      method != sip->sip_cseq->cs_method ||
+      !su_strmatch(method_name, sip->sip_cseq->cs_method_name)) {
+    sip_cseq_t *cseq = sip_cseq_create(home, seq, method, method_name);
+    if (msg_header_insert(msg, (msg_pub_t *)sip, (msg_header_t *)cseq) < 0)
+      return -1;
+  }
 
   return 0;
 }
@@ -4391,10 +4390,10 @@ char const *nta_leg_tag(nta_leg_t *leg, char const *tag)
   /* If there already is a tag,
      return NULL if it does not match with new one */
   if (leg->leg_local->a_tag) {
-    if (!tag && str0casecmp(tag, leg->leg_local->a_tag))
-      return NULL;
-    else
+    if (su_casematch(tag, leg->leg_local->a_tag))
       return leg->leg_local->a_tag;
+    else
+      return NULL;
   }
 
   if (tag) {
@@ -4711,9 +4710,9 @@ int addr_cmp(url_t const *a, url_t const *b)
     return 0;
   else
     return
-      host_cmp(a->url_host, b->url_host)
-      || str0cmp(a->url_port, b->url_port)
-      || str0cmp(a->url_user, b->url_user);
+      host_cmp(a->url_host, b->url_host) ||
+      su_strcmp(a->url_port, b->url_port) ||
+      su_strcmp(a->url_user, b->url_user);
 }
 
 /** Get a leg by dialog.
@@ -4836,14 +4835,14 @@ nta_leg_t *leg_find(nta_agent_t const *sa,
     if (!remote_tag != !from_tag && !local_tag != !to_tag)
       continue;
 
-    if (local_tag && to_tag && strcasecmp(local_tag, to_tag) && to_tag[0])
+    if (local_tag && to_tag && !su_casematch(local_tag, to_tag) && to_tag[0])
       continue;
-    if (remote_tag && from_tag && strcasecmp(remote_tag, from_tag) && from_tag[0])
+    if (remote_tag && from_tag && !su_casematch(remote_tag, from_tag) && from_tag[0])
       continue;
 
     if (leg_url && request_uri && url_cmp(leg_url, request_uri))
       continue;
-    if (leg_method && method_name && strcasecmp(method_name, leg_method))
+    if (leg_method && method_name && !su_casematch(method_name, leg_method))
       continue;
 
     /* Perfect match if both local and To have tag
@@ -4916,7 +4915,7 @@ nta_leg_t *dst_find(nta_agent_t const *sa,
 	return leg;
       }
       else if (leg->leg_method) {
-	if (strcasecmp(method_name, leg->leg_method))
+	if (!su_casematch(method_name, leg->leg_method))
 	  continue;
 	return leg;
       }
@@ -5657,7 +5656,7 @@ char const *nta_incoming_tag(nta_incoming_t *irq, char const *tag)
   if (tag && strchr(tag, '='))
     tag = strchr(tag, '=') + 1;
 
-  if (tag && irq->irq_tag && strcasecmp(tag, irq->irq_tag))
+  if (tag && irq->irq_tag && !su_casematch(tag, irq->irq_tag))
     return NULL;
 
   if (!irq->irq_tag) {
@@ -5845,7 +5844,7 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
 
   int is_uas_ack = return_ack && agent->sa_is_a_uas;
 
-  if (v->v_branch && strncasecmp(v->v_branch, "z9hG4bK", 7) == 0)
+  if (v->v_branch && su_casenmatch(v->v_branch, "z9hG4bK", 7))
     magic_branch = v->v_branch + 7;
   else
     magic_branch = NULL;
@@ -5859,13 +5858,13 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
       continue;
     if (irq->irq_cseq->cs_seq != cseq->cs_seq)
       continue;
-    if (str0casecmp(irq->irq_from->a_tag, from->a_tag))
+    if (su_strcasecmp(irq->irq_from->a_tag, from->a_tag))
       continue;
 
     if (is_uas_ack &&
 	irq->irq_method == sip_method_invite &&
 	200 <= irq->irq_status && irq->irq_status < 300 &&
-	str0casecmp(irq->irq_tag, to->a_tag) == 0) {
+	su_casematch(irq->irq_tag, to->a_tag)) {
       *return_ack = irq;
       return NULL;
     }
@@ -5878,11 +5877,10 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
        * transaction, except for ACK, where the method of the request
        * that created the transaction is INVITE.
        */
-
       if (irq->irq_via->v_branch &&
-	  strcasecmp(irq->irq_via->v_branch + 7, magic_branch) == 0 &&
-	  strcasecmp(irq->irq_via->v_host, v->v_host) == 0 &&
-	  str0cmp(irq->irq_via->v_port, v->v_port) == 0) {
+	  su_casematch(irq->irq_via->v_branch + 7, magic_branch) &&
+	  su_casematch(irq->irq_via->v_host, v->v_host) &&
+	  su_strmatch(irq->irq_via->v_port, v->v_port)) {
 	if (irq->irq_method == cseq->cs_method &&
 	    strcmp(irq->irq_cseq->cs_method_name,
 		   cseq->cs_method_name) == 0)
@@ -5903,9 +5901,9 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
       /* From tag, Call-ID, and CSeq number has been matched above */
 
       /* Match top Via header field */
-      if (str0casecmp(irq->irq_via->v_branch, v->v_branch) != 0 ||
-	       strcasecmp(irq->irq_via->v_host, v->v_host) != 0 ||
-	       str0cmp(irq->irq_via->v_port, v->v_port) != 0)
+      if (!su_casematch(irq->irq_via->v_branch, v->v_branch) ||
+	  !su_casematch(irq->irq_via->v_host, v->v_host) ||
+	  !su_strmatch(irq->irq_via->v_port, v->v_port))
 	;
       /* Match Request-URI */
       else if (url_cmp(irq->irq_rq->rq_url, rq->rq_url))
@@ -5913,17 +5911,16 @@ static nta_incoming_t *incoming_find(nta_agent_t const *agent,
       else {
 	/* Match CSeq */
 	if (irq->irq_method == cseq->cs_method &&
-	    strcmp(irq->irq_cseq->cs_method_name,
-		   cseq->cs_method_name) == 0) {
+	    su_strmatch(irq->irq_cseq->cs_method_name, cseq->cs_method_name)) {
 	  /* Match To tag  */
-	  if (!str0casecmp(irq->irq_to->a_tag, to->a_tag))
+	  if (!su_strcasecmp(irq->irq_to->a_tag, to->a_tag))
 	    return irq;		/* found */
 	}
 	else if (
 	  /* Tag set by UAS */
-	  str0casecmp(irq->irq_tag, to->a_tag) &&
+	  su_strcasecmp(irq->irq_tag, to->a_tag) &&
 	  /* Original tag */
-	  str0casecmp(irq->irq_to->a_tag, to->a_tag))
+	  su_strcasecmp(irq->irq_to->a_tag, to->a_tag))
 	  ;
 	else if (return_ack && irq->irq_method == sip_method_invite)
 	  return *return_ack = irq, NULL;
@@ -7684,13 +7681,13 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   if (comp == NULL)
     orq->orq_tpn->tpn_comp = comp;
 
-  if (orq->orq_user_via && str0cmp(orq->orq_tpn->tpn_proto, "*") == 0) {
+  if (orq->orq_user_via && su_strmatch(orq->orq_tpn->tpn_proto, "*")) {
     char const *proto = sip_via_transport(sip->sip_via);
     if (proto) orq->orq_tpn->tpn_proto = proto;
   }
 
   if (branch && branch != NONE) {
-    if (strncasecmp(branch, "branch=", 7) == 0)
+    if (su_casenmatch(branch, "branch=", 7))
       branch = su_strdup(home, branch);
     else
       branch = su_sprintf(home, "branch=%s", branch);
@@ -7708,7 +7705,7 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
   if (orq->orq_method == sip_method_ack) {
     /* Find the original INVITE which we are ACKing */
     if (ack_branch != NULL && ack_branch != NONE) {
-      if (strncasecmp(ack_branch, "branch=", 7) == 0)
+      if (su_casenmatch(ack_branch, "branch=", 7))
 	orq->orq_branch = su_strdup(home, ack_branch);
       else
 	orq->orq_branch = su_sprintf(home, "branch=%s", ack_branch);
@@ -7803,7 +7800,7 @@ outgoing_prepare_send(nta_outgoing_t *orq)
   nta_agent_t *sa = orq->orq_agent;
   tport_t *tp;
   tp_name_t *tpn = orq->orq_tpn;
-  int sips = strcasecmp(orq->orq_scheme, "sips") == 0;
+  int sips = su_casematch(orq->orq_scheme, "sips");
 
   /* Select transport by scheme */
   if (sips && strcmp(tpn->tpn_proto, "*") == 0)
@@ -7968,14 +7965,14 @@ outgoing_send(nta_outgoing_t *orq, int retransmit)
       /* No retries */;
     /* RFC3261, 18.1.1 */
     else if (err == EMSGSIZE && !orq->orq_try_tcp_instead) {
-      if (strcasecmp(tpn->tpn_proto, "udp") == 0 ||
-	  strcasecmp(tpn->tpn_proto, "*") == 0) {
+      if (su_casematch(tpn->tpn_proto, "udp") ||
+	  su_casematch(tpn->tpn_proto, "*")) {
 	outgoing_try_tcp_instead(orq);
 	continue;
       }
     }
     else if (err == ECONNREFUSED && orq->orq_try_tcp_instead) {
-      if (strcasecmp(tpn->tpn_proto, "tcp") == 0 && msg_size(msg) <= 65535) {
+      if (su_casematch(tpn->tpn_proto, "tcp") && msg_size(msg) <= 65535) {
 	outgoing_try_udp_instead(orq);
 	continue;
       }
@@ -8145,7 +8142,7 @@ outgoing_tport_error(nta_agent_t *agent, nta_outgoing_t *orq,
   }
   else if (error == ECONNREFUSED && orq->orq_try_tcp_instead) {
     /* RFC3261, 18.1.1 */
-    if (strcasecmp(tpn->tpn_proto, "tcp") == 0 && msg_size(msg) <= 65535) {
+    if (su_casematch(tpn->tpn_proto, "tcp") && msg_size(msg) <= 65535) {
       outgoing_print_tport_error(orq, 5, "retrying with UDP after ",
 				 tpn, msg, error);
       outgoing_try_udp_instead(orq);
@@ -8723,7 +8720,7 @@ int outgoing_complete(nta_outgoing_t *orq)
 {
   orq->orq_completed = 1;
 
-  outgoing_reset_timer(orq); /* Timer A/E */
+  outgoing_reset_timer(orq); /* Timer A / Timer E */
 
   if (orq->orq_stateless || orq->orq_reliable)
     return outgoing_terminate(orq);
@@ -8890,10 +8887,10 @@ nta_outgoing_t *outgoing_find(nta_agent_t const *sa,
       continue;
     if (orq->orq_method != method && orq->orq_method != method2)
       continue;
-    if (str0casecmp(orq->orq_from->a_tag, sip->sip_from->a_tag))
+    if (su_strcasecmp(orq->orq_from->a_tag, sip->sip_from->a_tag))
       continue;
     if (orq->orq_to->a_tag &&
-	str0casecmp(orq->orq_to->a_tag, sip->sip_to->a_tag))
+	su_strcasecmp(orq->orq_to->a_tag, sip->sip_to->a_tag))
       continue;
 
     if (orq->orq_method == sip_method_ack) {
@@ -8901,7 +8898,7 @@ nta_outgoing_t *outgoing_find(nta_agent_t const *sa,
 	continue;
     }
 
-    if (v && str0casecmp(orq->orq_branch + strlen("branch="), v->v_branch))
+    if (v && !su_casematch(orq->orq_branch + strlen("branch="), v->v_branch))
       continue;
 
     break;			/* match */
@@ -9012,7 +9009,7 @@ int outgoing_recv(nta_outgoing_t *orq,
 	  return outgoing_duplicate(orq, msg, sip);
 
 	if (sa->sa_is_a_uas) {
-	  if (str0cmp(sip->sip_to->a_tag, orq->orq_tag) == 0)
+	  if (su_strcasecmp(sip->sip_to->a_tag, orq->orq_tag) == 0)
 	    /* Catch retransmission */
 	    return outgoing_duplicate(orq, msg, sip);
 	}
@@ -9333,7 +9330,7 @@ int outgoing_reply(nta_outgoing_t *orq, int status, char const *phrase,
   if (orq->orq_destroyed) {
     if (orq->orq_status < 200)
       orq->orq_status = status;
-    outgoing_complete(orq);	/* Timer D/K */
+    outgoing_complete(orq);	/* Timer D / Timer K */
     return 0;
   }
 
@@ -9589,13 +9586,13 @@ outgoing_resolve(nta_outgoing_t *orq)
 	 tport;
 	 tport = tport_next(tport)) {
       tp_name_t const *tpn = tport_name(tport);
-      if (strcmp(tpname, "*") && strcasecmp(tpn->tpn_proto, tpname))
+      if (strcmp(tpname, "*") && !su_casematch(tpn->tpn_proto, tpname))
 	continue;
       if (ident && (tpn->tpn_ident == NULL || strcmp(ident, tpn->tpn_ident)))
 	continue;
 
       for (j = 0; j < SIPDNS_TRANSPORTS; j++)
-	if (strcasecmp(tpn->tpn_proto, sipdns_tports[j].name) == 0)
+	if (su_casematch(tpn->tpn_proto, sipdns_tports[j].name))
 	  break;
 
       assert(j < SIPDNS_TRANSPORTS);
@@ -10021,8 +10018,8 @@ void outgoing_answer_naptr(sres_context_t *orq,
       break;
 
     /* Check if NAPTR matches our target */
-    if (strncasecmp(na->na_services, "SIP+", 4) &&
-	strncasecmp(na->na_services, "SIPS+", 5))
+    if (!su_casenmatch(na->na_services, "SIP+", 4) &&
+	!su_casenmatch(na->na_services, "SIPS+", 5))
       /* Not a SIP/SIPS service */
       continue;
 
@@ -10036,7 +10033,7 @@ void outgoing_answer_naptr(sres_context_t *orq,
        * but comparing the values in the transport list
        * match with those values that make any sense
        */
-      if (strcasecmp(na->na_services, sr->sr_tports[j]->service) != 0)
+      if (!su_casematch(na->na_services, sr->sr_tports[j]->service))
 	continue;
 
       tpn->tpn_proto = sr->sr_tports[j]->name;
@@ -10721,8 +10718,8 @@ nta_reliable_t *reliable_find(nta_agent_t const *agent,
 	irq->irq_method == sip_method_invite &&
 	strcmp(irq->irq_call_id->i_id, i->i_id) == 0 &&
 	(irq->irq_to->a_tag == NULL ||
-	 str0casecmp(irq->irq_to->a_tag, sip->sip_to->a_tag) == 0) &&
-	str0casecmp(irq->irq_from->a_tag, sip->sip_from->a_tag) == 0) {
+	 su_casematch(irq->irq_to->a_tag, sip->sip_to->a_tag)) &&
+	su_casematch(irq->irq_from->a_tag, sip->sip_from->a_tag)) {
 
       nta_reliable_t const *rel;
 
@@ -11146,8 +11143,8 @@ nta_outgoing_t *nta_outgoing_prack(nta_leg_t *leg,
 		  __func__, resp->sip_status->st_status));
       return NULL;
     }
-    if (str0casecmp(resp->sip_to->a_tag, leg->leg_remote->a_tag) ||
-	str0casecmp(resp->sip_to->a_tag, oorq->orq_to->a_tag)) {
+    if (su_strcasecmp(resp->sip_to->a_tag, leg->leg_remote->a_tag) ||
+	su_strcasecmp(resp->sip_to->a_tag, oorq->orq_to->a_tag)) {
       SU_DEBUG_1(("%s: %u response To tag does not agree with dialog tag\n",
 		  __func__, resp->sip_status->st_status));
       return NULL;
