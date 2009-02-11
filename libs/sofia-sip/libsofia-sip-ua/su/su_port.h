@@ -421,7 +421,7 @@ su_timer_queue_t *su_port_deferrable(su_port_t *self)
   su_virtual_port_t *base = (su_virtual_port_t *)self;
 
   if (base == NULL)
-    return (void *)(errno = EFAULT), NULL;
+    return (intptr_t)(errno = EFAULT), NULL;
 
   return base->sup_vtable->su_port_deferrable(self);
 }
