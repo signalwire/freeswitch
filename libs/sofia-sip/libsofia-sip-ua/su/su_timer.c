@@ -156,7 +156,6 @@ typedef union {
  */
 
 struct su_timer_s {
-  /** Pointers within red-black tree */
   su_task_r       sut_task;	/**< Task reference */
   size_t          sut_heap_index; /**< Timer is set (inserted in heap) */
   su_time_t       sut_when;	/**< When timer should be waken up next time */
@@ -218,8 +217,6 @@ su_timer_set0(su_timer_queue_t *timers,
 	      su_duration_t offset)
 {
   int retval;
-
-  assert(timers);
 
   if (timers == NULL)
     return -1;
@@ -343,9 +340,6 @@ int su_timer_set_interval(su_timer_t *t,
 {
   su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_set_interval");
 
-  if (t == NULL)
-    return -1;
-
   return su_timer_set0(timers, t, wakeup, arg, su_now(), interval);
 }
 
@@ -367,9 +361,6 @@ int su_timer_set(su_timer_t *t,
 {
   su_timer_queue_t *timers = su_timer_tree(t, 1, "su_timer_set");
 
-  if (timers == NULL)
-    return -1;
-
   return su_timer_set0(timers, t, wakeup, arg, su_now(), t->sut_duration);
 }
 
@@ -390,9 +381,6 @@ int su_timer_set_at(su_timer_t *t,
 		    su_time_t when)
 {
   su_timer_queue_t *timers = su_timer_tree(t, 0, "su_timer_set_at");
-
-  if (timers == NULL)
-    return -1;
 
   return su_timer_set0(timers, t, wakeup, arg, when, 0);
 }
