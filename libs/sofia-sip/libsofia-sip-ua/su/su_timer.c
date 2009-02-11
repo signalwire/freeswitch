@@ -225,7 +225,7 @@ su_timer_set0(su_timer_queue_t *timers,
     return -1;
 
   if (SU_TIMER_IS_SET(t))
-    timers_remove(timers[0], t->sut_heap_index)->sut_heap_index = 0;
+    timers_remove(timers[0], t->sut_heap_index);
 
   t->sut_wakeup = wakeup;
   t->sut_arg = arg;
@@ -481,7 +481,7 @@ int su_timer_reset(su_timer_t *t)
     return -1;
 
   if (SU_TIMER_IS_SET(t))
-    timers_remove(timers[0], t->sut_heap_index)->sut_heap_index = 0;
+    timers_remove(timers[0], t->sut_heap_index);
 
   t->sut_wakeup = NULL;
   t->sut_arg = NULL;
@@ -526,7 +526,7 @@ int su_timer_expire(su_timer_queue_t * const timers,
       break;
     }
 
-    timers_remove(timers[0], 1)->sut_heap_index = 0;
+    timers_remove(timers[0], 1);
 
     f = t->sut_wakeup; t->sut_wakeup = NULL;
     assert(f);
@@ -609,7 +609,7 @@ int su_timer_reset_all(su_timer_queue_t *timers, su_task_r task)
     if (su_task_cmp(task, t->sut_task))
       continue;
 
-    timers_remove(timers[0], i)->sut_heap_index = 0;
+    timers_remove(timers[0], i);
 
     su_free(NULL, t);
     n++;
