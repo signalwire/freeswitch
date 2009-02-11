@@ -141,38 +141,40 @@ typedef enum {
 } MFLAGS;
 
 typedef enum {
-	PFLAG_AUTH_CALLS = (1 << 0),
-	PFLAG_BLIND_REG = (1 << 1),
-	PFLAG_AUTH_ALL = (1 << 2),
-	PFLAG_FULL_ID = (1 << 3),
-	PFLAG_MULTIREG_CONTACT = (1 << 4),
-	PFLAG_PASS_RFC2833 = (1 << 5),
-	PFLAG_DISABLE_TRANSCODING = (1 << 6),
-	PFLAG_REWRITE_TIMESTAMPS = (1 << 7),
-	PFLAG_RUNNING = (1 << 8),
-	PFLAG_RESPAWN = (1 << 9),
-	PFLAG_GREEDY = (1 << 10),
-	PFLAG_MULTIREG = (1 << 11),
-	PFLAG_SUPPRESS_CNG = (1 << 12),
-	PFLAG_TLS = (1 << 13),
-	PFLAG_CHECKUSER = (1 << 14),
-	PFLAG_SECURE = (1 << 15),
-	PFLAG_BLIND_AUTH = (1 << 16),
-	PFLAG_WORKER_RUNNING = (1 << 17),
-	PFLAG_UNREG_OPTIONS_FAIL = (1 << 18),
-	PFLAG_DISABLE_TIMER = (1 << 19),
-	PFLAG_DISABLE_100REL = (1 << 20),
-	PFLAG_AGGRESSIVE_NAT_DETECTION = (1 << 21),
-	PFLAG_RECIEVED_IN_NAT_REG_CONTACT = (1 << 22),
-	PFLAG_3PCC = (1 << 23),
-	PFLAG_DISABLE_RTP_AUTOADJ = (1 << 24),
-	PFLAG_DISABLE_SRTP_AUTH = (1 << 25),
-	PFLAG_FUNNY_STUN = (1 << 26),
-	PFLAG_STUN_ENABLED = (1 << 27),
-	PFLAG_STUN_AUTO_DISABLE = (1 << 28),
-	PFLAG_3PCC_PROXY = (1 << 29),
-	PFLAG_CALLID_AS_UUID = (1 << 30),
-	PFLAG_UUID_AS_CALLID = (1 << 31)
+	PFLAG_AUTH_CALLS,
+	PFLAG_BLIND_REG,
+	PFLAG_AUTH_ALL,
+	PFLAG_FULL_ID,
+	PFLAG_MULTIREG_CONTACT,
+	PFLAG_PASS_RFC2833,
+	PFLAG_DISABLE_TRANSCODING,
+	PFLAG_REWRITE_TIMESTAMPS,
+	PFLAG_RUNNING,
+	PFLAG_RESPAWN,
+	PFLAG_GREEDY,
+	PFLAG_MULTIREG,
+	PFLAG_SUPPRESS_CNG,
+	PFLAG_TLS,
+	PFLAG_CHECKUSER,
+	PFLAG_SECURE,
+	PFLAG_BLIND_AUTH,
+	PFLAG_WORKER_RUNNING,
+	PFLAG_UNREG_OPTIONS_FAIL,
+	PFLAG_DISABLE_TIMER,
+	PFLAG_DISABLE_100REL,
+	PFLAG_AGGRESSIVE_NAT_DETECTION,
+	PFLAG_RECIEVED_IN_NAT_REG_CONTACT,
+	PFLAG_3PCC,
+	PFLAG_DISABLE_RTP_AUTOADJ,
+	PFLAG_DISABLE_SRTP_AUTH,
+	PFLAG_FUNNY_STUN,
+	PFLAG_STUN_ENABLED,
+	PFLAG_STUN_AUTO_DISABLE,
+	PFLAG_3PCC_PROXY,
+	PFLAG_CALLID_AS_UUID,
+	PFLAG_UUID_AS_CALLID,
+
+	PFLAG_MAX
 } PFLAGS;
 
 typedef enum {
@@ -398,7 +400,7 @@ struct sofia_profile {
 	int running;
 	int dtmf_duration;
 	unsigned int flags;
-	unsigned int pflags;
+	uint8_t pflags[PFLAG_MAX];
 	unsigned int mflags;
 	unsigned int ndlb;
 	uint32_t max_calls;
@@ -585,15 +587,15 @@ typedef enum {
 	AUTH_STALE,
 } auth_res_t;
 
-#define sofia_test_pflag(obj, flag) ((obj)->pflags & flag)
-#define sofia_set_pflag(obj, flag) (obj)->pflags |= (flag)
+
+#define sofia_test_pflag(obj, flag) ((obj)->pflags[flag] ? 1 : 0)
+#define sofia_set_pflag(obj, flag) (obj)->pflags[flag] = 1
 #define sofia_set_pflag_locked(obj, flag) assert(obj->flag_mutex != NULL);\
 switch_mutex_lock(obj->flag_mutex);\
-(obj)->pflags |= (flag);\
+(obj)->pflags[flag] = 1;\
 switch_mutex_unlock(obj->flag_mutex);
-#define sofia_clear_pflag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->pflags &= ~(flag); switch_mutex_unlock(obj->flag_mutex);
-#define sofia_clear_pflag(obj, flag) (obj)->pflags &= ~(flag)
-#define sofia_copy_pflags(dest, src, flags) (dest)->pflags &= ~(flags);	(dest)->pflags |= ((src)->pflags & (flags))
+#define sofia_clear_pflag_locked(obj, flag) switch_mutex_lock(obj->flag_mutex); (obj)->pflags[flag] = 0; switch_mutex_unlock(obj->flag_mutex);
+#define sofia_clear_pflag(obj, flag) (obj)->pflags[flag] = 0
 
 #define sofia_set_flag_locked(obj, flag) switch_set_flag_locked(obj, flag)
 #define sofia_set_flag(obj, flag) switch_set_flag(obj, flag)
