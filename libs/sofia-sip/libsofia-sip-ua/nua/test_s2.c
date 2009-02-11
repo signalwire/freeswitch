@@ -52,6 +52,9 @@
 #include <limits.h>
 #include <time.h>
 
+char const *s2_tester = "s2_tester";
+int s2_start_stop;
+
 /* -- Module types ------------------------------------------------------ */
 
 struct tp_magic_s
@@ -204,6 +207,19 @@ int s2_check_callstate(enum nua_callstate state)
     }
   }
   s2_free_event(e);
+  return retval;
+}
+
+int s2_check_substate(struct event *e, enum nua_substate state)
+{
+  int retval = 0;
+  tagi_t const *tagi;
+
+  tagi = tl_find(e->data->e_tags, nutag_substate);
+  if (tagi) {
+    retval = (tag_value_t)state == tagi->t_value;
+  }
+
   return retval;
 }
 
@@ -371,6 +387,22 @@ s2_check_request(sip_method_t method, char const *name)
   return m != NULL;
 }
 
+void
+s2_save_uas_dialog(struct dialog *d, sip_t *sip)
+{
+  if (d && !d->local) {
+    assert(sip->sip_request);
+    d->local = sip_from_dup(d->home, sip->sip_to);
+    if (d->local->a_tag == NULL)
+      sip_from_tag(d->home, d->local, s2_generate_tag(d->home));
+    d->remote = sip_to_dup(d->home, sip->sip_from);
+    d->call_id = sip_call_id_dup(d->home, sip->sip_call_id);
+    d->rseq = sip->sip_cseq->cs_seq;
+    /* d->route = sip_route_dup(d->home, sip->sip_record_route); */
+    d->target = sip_contact_dup(d->home, sip->sip_contact);
+  }
+}
+
 struct message *
 s2_respond_to(struct message *m, struct dialog *d,
 	      int status, char const *phrase,
@@ -385,6 +417,8 @@ s2_respond_to(struct message *m, struct dialog *d,
 
   assert(m); assert(m->msg); assert(m->tport);
   assert(100 <= status && status < 700);
+
+  s2_save_uas_dialog(d, m->sip);
 
   ta_start(ta, tag, value);
 
@@ -414,13 +448,7 @@ s2_respond_to(struct message *m, struct dialog *d,
     }
   }
 
-  if (d && !d->local) {
-    d->local = sip_from_dup(d->home, sip->sip_to);
-    d->remote = sip_to_dup(d->home, sip->sip_from);
-    d->call_id = sip_call_id_dup(d->home, sip->sip_call_id);
-    d->rseq = sip->sip_cseq->cs_seq;
-    /* d->route = sip_route_dup(d->home, sip->sip_record_route); */
-    d->target = sip_contact_dup(d->home, m->sip->sip_contact);
+  if (d && !d->contact) {
     d->contact = sip_contact_dup(d->home, sip->sip_contact);
   }
 
@@ -806,6 +834,9 @@ void s2_case(char const *number,
 	     char const *description)
 {
   _s2case = number;
+
+  if (s2_start_stop)
+    printf("%s - starting %s %s\n", s2_tester, number, title);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -875,9 +906,13 @@ tp_stack_class_t const s2_stack[1] =
   }};
 
 /** Basic setup for test cases */
-void s2_setup_base(char const *hostname)
+void s2_setup_base(char const *label, char const *hostname)
 {
   assert(s2 == NULL);
+
+  if (s2_start_stop > 1) {
+    printf("%s - setup %s test case\n", s2_tester, label ? label : "next");
+  }
 
   su_init();
 
@@ -897,6 +932,7 @@ void s2_setup_base(char const *hostname)
 
   s2->hostname = hostname;
   s2->tid = (unsigned long)time(NULL) * 510633671UL;
+
 }
 
 SOFIAPUBVAR su_log_t nua_log[];
@@ -1489,22 +1525,43 @@ void s2_dns_domain(char const *domain, int use_naptr,
   va_end(va0);
 }
 
+static char const *s2_teardown_label = NULL;
+
+void
+s2_teardown_started(char const *label)
+{
+  if (!s2_teardown_label) {
+    s2_teardown_label = label;
+    if (s2_start_stop > 1) {
+      printf("%s - tearing down %s test case\n", s2_tester, label);
+    }
+  }
+}
+
 void
 s2_teardown(void)
 {
   s2 = NULL;
   su_deinit();
+
+  if (s2_start_stop > 1) {
+    printf("%s - %s test case tore down\n", s2_tester,
+	   s2_teardown_label ? s2_teardown_label : "previous");
+  }
+
+  s2_teardown_label = NULL;
 }
 
 /* ====================================================================== */
 
 #include <sofia-sip/sresolv.h>
 
-nua_t *s2_nua_setup(tag_type_t tag, tag_value_t value, ...)
+nua_t *s2_nua_setup(char const *label,
+		    tag_type_t tag, tag_value_t value, ...)
 {
   ta_list ta;
 
-  s2_setup_base(NULL);
+  s2_setup_base(label, NULL);
   s2_setup_dns();
 
   s2_setup_logs(0);
@@ -1618,4 +1675,3 @@ void s2_register_teardown(void)
     s2->registration->nh = NULL;
   }
 }
-

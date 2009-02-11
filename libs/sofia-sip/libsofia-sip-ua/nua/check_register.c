@@ -54,12 +54,13 @@ static nua_t *nua;
 
 static void register_setup(void)
 {
-  nua = s2_nua_setup(TAG_END());
+  nua = s2_nua_setup("register", TAG_END());
 }
 
 static void register_pingpong_setup(void)
 {
-  nua = s2_nua_setup(TPTAG_PINGPONG(20000),
+  nua = s2_nua_setup("register with pingpong",
+		     TPTAG_PINGPONG(20000),
 		     TPTAG_KEEPALIVE(10000),
 		     TAG_END());
   tport_set_params(s2->tcp.tport, TPTAG_PONG2PING(1), TAG_END());
@@ -68,6 +69,7 @@ static void register_pingpong_setup(void)
 
 static void register_teardown(void)
 {
+  s2_teardown_started("register");
   nua_shutdown(nua);
   fail_unless(s2_check_event(nua_r_shutdown, 200));
   s2_nua_teardown();

@@ -43,6 +43,8 @@
 #include <fnmatch.h>
 #endif
 
+#include "test_s2.h"
+
 static char const * const default_patterns[] = { "*", NULL };
 static char const * const *test_patterns = default_patterns;
 
@@ -79,6 +81,10 @@ int main(int argc, char *argv[])
 
   Suite *suite = suite_create("Unit tests for Sofia-SIP UA Engine");
   SRunner *runner;
+
+  s2_tester = "check_nua";
+  if (getenv("CHECK_NUA_VERBOSE"))
+    s2_start_stop = strtoul(getenv("CHECK_NUA_VERBOSE"), NULL, 10);
 
   if (getenv("CHECK_NUA_CASES")) {
     size_t i;

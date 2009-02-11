@@ -1973,8 +1973,7 @@ int nua_base_server_report(nua_server_request_t *sr, tagi_t const *tags)
 static void nua_client_request_destroy(nua_client_request_t *cr);
 static int nua_client_init_request0(nua_client_request_t *cr);
 static int nua_client_request_try(nua_client_request_t *cr);
-static int nua_client_request_sendmsg(nua_client_request_t *cr,
-  				      msg_t *msg, sip_t *sip);
+static int nua_client_request_sendmsg(nua_client_request_t *cr);
 static void nua_client_restart_after(su_root_magic_t *magic,
 				     su_timer_t *timer,
 				     nua_client_request_t *cr);
@@ -2416,23 +2415,6 @@ int nua_client_init_request0(nua_client_request_t *cr)
 		     (sip_header_t *)sip->sip_from) < 0) {
       return nua_client_return(cr, NUA_ERROR_AT(__FILE__, __LINE__), msg);
     }
-
-    if (cr->cr_dialog) {
-      ds->ds_leg = nta_leg_tcreate(nua->nua_nta,
-				   nua_stack_process_request, nh,
-				   SIPTAG_CALL_ID(sip->sip_call_id),
-				   SIPTAG_FROM(sip->sip_from),
-				   SIPTAG_TO(sip->sip_to),
-				   SIPTAG_CSEQ(sip->sip_cseq),
-				   TAG_END());
-      if (!ds->ds_leg)
-	return nua_client_return(cr, NUA_ERROR_AT(__FILE__, __LINE__), msg);
-
-      if (!sip->sip_from->a_tag &&
-	  sip_from_tag(msg_home(msg), sip->sip_from,
-		       nta_leg_tag(ds->ds_leg, NULL)) < 0)
-	return nua_client_return(cr, NUA_ERROR_AT(__FILE__, __LINE__), msg);
-    }
   }
   else {
     if (ds->ds_route)
@@ -2540,15 +2522,17 @@ int nua_client_resend_request(nua_client_request_t *cr,
 
     if (nua_client_request_queue(cr))
       return 0;
+
     if (nua_dialog_is_reporting(cr->cr_owner->nh_ds))
       return 0;
+
     return nua_client_request_try(cr);
   }
   return 0;
 }
 
 
-/** Create a request message and send it.
+/** Send a request message.
  *
  * If an error occurs, send error event to the application.
  *
@@ -2558,26 +2542,11 @@ int nua_client_resend_request(nua_client_request_t *cr,
 static
 int nua_client_request_try(nua_client_request_t *cr)
 {
-  int error = -1;
-  msg_t *msg = msg_copy(cr->cr_msg);
-  sip_t *sip = sip_object(msg);
-
-  cr->cr_answer_recv = 0, cr->cr_offer_sent = 0;
-  cr->cr_offer_recv = 0, cr->cr_answer_sent = 0;
-
-  if (msg && sip) {
-    error = nua_client_request_sendmsg(cr, msg, sip);
-    if (!error)
-      return 0;
-
-    if (error == -1)
-      msg_destroy(msg);
-  }
+  int error = nua_client_request_sendmsg(cr);
 
   if (error < 0)
     error = nua_client_response(cr, NUA_ERROR_AT(__FILE__, __LINE__), NULL);
 
-  assert(error > 0);
   return error;
 }
 
@@ -2585,13 +2554,10 @@ int nua_client_request_try(nua_client_request_t *cr)
  *
  * @retval 0 if request is pending
  * @retval >=1 if error event has been sent
- * @retval -1 if error occurred but event has not been sent,
-               and @a msg has not been destroyed
- * @retval -2 if error occurred, event has not been sent,
- *            but @a msg has been destroyed
+ * @retval < 0 if no error event has been sent
  */
 static
-int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
+int nua_client_request_sendmsg(nua_client_request_t *cr)
 {
   nua_handle_t *nh = cr->cr_owner;
   nua_dialog_state_t *ds = nh->nh_ds;
@@ -2599,8 +2565,35 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
   char const *name = cr->cr_method_name;
   url_string_t const *url = (url_string_t *)cr->cr_target;
   nta_leg_t *leg;
+  msg_t *msg;
+  sip_t *sip;
+  int error;
 
   assert(cr->cr_orq == NULL);
+
+  cr->cr_offer_sent = cr->cr_answer_recv = 0;
+  cr->cr_offer_recv = cr->cr_answer_sent = 0;
+
+  if (!ds->ds_leg && cr->cr_dialog) {
+    ds->ds_leg = nta_leg_tcreate(nh->nh_nua->nua_nta,
+				 nua_stack_process_request, nh,
+				 SIPTAG_CALL_ID(cr->cr_sip->sip_call_id),
+				 SIPTAG_FROM(cr->cr_sip->sip_from),
+				 SIPTAG_TO(cr->cr_sip->sip_to),
+				 SIPTAG_CSEQ(cr->cr_sip->sip_cseq),
+				 TAG_END());
+    if (!ds->ds_leg)
+      return -1;
+  }
+
+  if (cr->cr_sip->sip_from && ds->ds_leg) {
+    if (cr->cr_sip->sip_from->a_tag == NULL) {
+      if (sip_from_tag(msg_home(cr->cr_msg), cr->cr_sip->sip_from,
+		       nta_leg_tag(ds->ds_leg, NULL)) < 0) {
+	return -1;
+      }
+    }
+  }
 
   cr->cr_retry_count++;
 
@@ -2608,6 +2601,11 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
     leg = ds->ds_leg;
   else
     leg = nh->nh_nua->nua_dhandle->nh_ds->ds_leg; /* Default leg */
+
+  msg = msg_copy(cr->cr_msg), sip = sip_object(msg);
+
+  if (msg == NULL)
+    return -1;
 
   if (nua_dialog_is_established(ds)) {
     while (sip->sip_route)
@@ -2639,8 +2637,10 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
    * generated based on the dialog information and added to the request.
    * If the dialog has a route, it is added to the request, too.
    */
-  if (nta_msg_request_complete(msg, leg, method, name, url) < 0)
+  if (nta_msg_request_complete(msg, leg, method, name, url) < 0) {
+    msg_destroy(msg);
     return -1;
+  }
 
   /**@MaxForwards header (with default value set by NTATAG_MAX_FORWARDS()) is
    * also added now, if it does not exist.
@@ -2716,16 +2716,23 @@ int nua_client_request_sendmsg(nua_client_request_t *cr, msg_t *msg, sip_t *sip)
 						cr->cr_contactize &&
 						!cr->cr_has_contact &&
 						!ds->ds_ltarget,
-						!ds->ds_route) < 0)
+						!ds->ds_route) < 0) {
+      msg_destroy(msg);
       return -1;
+    }
   }
 
   cr->cr_wait_for_cred = 0;
 
   if (cr->cr_methods->crm_send)
-    return cr->cr_methods->crm_send(cr, msg, sip, NULL);
+    error = cr->cr_methods->crm_send(cr, msg, sip, NULL);
+  else
+    error = nua_base_client_request(cr, msg, sip, NULL);
 
-  return nua_base_client_request(cr, msg, sip, NULL);
+  if (error != 0 && error != -2)
+    msg_destroy(msg);
+
+  return error;
 }
 
 /**Add tags to request message and send it,
@@ -2793,9 +2800,10 @@ int nua_base_client_request(nua_client_request_t *cr, msg_t *msg, sip_t *sip,
 }
 
 /** Callback for nta client transaction */
-int nua_client_orq_response(nua_client_request_t *cr,
-			    nta_outgoing_t *orq,
-			    sip_t const *sip)
+int
+nua_client_orq_response(nua_client_request_t *cr,
+			nta_outgoing_t *orq,
+			sip_t const *sip)
 {
   int status;
   char const *phrase;
@@ -3090,11 +3098,8 @@ int nua_client_restart(nua_client_request_t *cr,
 		       int status, char const *phrase)
 {
   nua_handle_t *nh = cr->cr_owner;
-  nua_dialog_state_t *ds = nh->nh_ds;
   nta_outgoing_t *orq;
   int error = -1, terminated, graceful;
-  msg_t *msg = NULL;
-  sip_t *sip = NULL;
 
   if (cr->cr_retry_count > NH_PGET(nh, retry_count))
     return 0;
@@ -3102,32 +3107,10 @@ int nua_client_restart(nua_client_request_t *cr,
   orq = cr->cr_orq, cr->cr_orq = NULL;  assert(orq);
   terminated = cr->cr_terminated, cr->cr_terminated = 0;
   graceful = cr->cr_graceful, cr->cr_graceful = 0;
-  cr->cr_offer_sent = cr->cr_answer_recv = 0;
-  cr->cr_offer_recv = cr->cr_answer_sent = 0;
 
-  if (!ds->ds_leg && cr->cr_dialog) {
-    sip_t const *sip = cr->cr_sip;
-    ds->ds_leg = nta_leg_tcreate(nh->nh_nua->nua_nta,
-				 nua_stack_process_request, nh,
-				 SIPTAG_CALL_ID(sip->sip_call_id),
-				 SIPTAG_FROM(sip->sip_from),
-				 SIPTAG_TO(sip->sip_to),
-				 SIPTAG_CSEQ(sip->sip_cseq),
-				 TAG_END());
-  }
-
-  if (ds->ds_leg || !cr->cr_dialog) {
-    msg = msg_copy(cr->cr_msg);
-    sip = sip_object(msg);
-  }
-
-  if (msg && sip) {
-    cr->cr_restarting = 1;
-    error = nua_client_request_sendmsg(cr, msg, sip);
-    cr->cr_restarting = 0;
-    if (error !=0 && error != -2)
-      msg_destroy(msg);
-  }
+  cr->cr_restarting = 1;
+  error = nua_client_request_sendmsg(cr);
+  cr->cr_restarting = 0;
 
   if (error) {
     cr->cr_graceful = graceful;

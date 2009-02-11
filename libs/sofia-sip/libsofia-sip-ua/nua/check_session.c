@@ -63,9 +63,8 @@ static struct dialog *dialog = NULL;
 
 static void call_setup(void)
 {
-  s2_case("0.1.1", "Setup for Call Tests", "");
-
-  nua = s2_nua_setup(SIPTAG_ORGANIZATION_STR("Pussy Galore's Flying Circus"),
+  nua = s2_nua_setup("call",
+		     SIPTAG_ORGANIZATION_STR("Pussy Galore's Flying Circus"),
                      NUTAG_OUTBOUND("no-options-keepalive, no-validate"),
 		     TAG_END());
 
@@ -85,7 +84,7 @@ static void call_setup(void)
 
 static void call_teardown(void)
 {
-  s2_case("0.1.2", "Teardown Call Test Setup", "");
+  s2_teardown_started("call");
 
   mark_point();
 
@@ -3078,6 +3077,7 @@ static void options_setup(void)
 
 static void options_teardown(void)
 {
+  s2_teardown_started("options");
   call_teardown();
 }
 

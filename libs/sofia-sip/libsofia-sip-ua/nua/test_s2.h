@@ -102,6 +102,8 @@ struct dialog
   msg_t *invite;		/* latest invite sent */
 };
 
+extern char const *s2_tester;
+extern int s2_start_stop;
 extern struct tester *s2;
 extern tp_stack_class_t const s2_stack[1];
 
@@ -144,7 +146,11 @@ struct message *s2_next_request(void);
 struct message *s2_wait_for_request(sip_method_t method, char const *name);
 int s2_check_request(sip_method_t method, char const *name);
 
+int s2_check_substate(struct event *e, enum nua_substate state);
+
 #define SIP_METHOD_UNKNOWN sip_method_unknown, NULL
+
+void s2_save_uas_dialog(struct dialog *d, sip_t *sip);
 
 struct message *s2_respond_to(struct message *m, struct dialog *d,
 			      int status, char const *phrase,
@@ -161,15 +167,16 @@ int s2_save_register(struct message *m);
 
 void s2_flush_all(void);
 
-void s2_setup_base(char const *hostname);
+void s2_setup_base(char const *label, char const *hostname);
 void s2_setup_logs(int level);
 void s2_setup_tport(char const * const *protocols,
 		    tag_type_t tag, tag_value_t value, ...);
 void s2_teardown(void);
 
-nua_t *s2_nua_setup(tag_type_t tag, tag_value_t value, ...);
-void s2_nua_teardown(void);
+nua_t *s2_nua_setup(char const *label, tag_type_t tag, tag_value_t value, ...);
 
+void s2_teardown_started(char const *label);
+void s2_nua_teardown(void);
 void s2_register_setup(void);
 void s2_register_teardown(void);
 
