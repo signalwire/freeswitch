@@ -30,6 +30,16 @@ libsofia-sip-ua:
   work against an older library. The ABI has been tested with the nua module
   unit test (test_nua) built against original 1.12.0 release.
 
+Removed globals which should have been static in first place:
+  - su_t64_to_time()
+  - mutex_trylocker()
+  - su_port_set_system_preferences()
+  - t_null_next(), t_null_move(), t_null_dup(), t_null_copy(), t_null_find()
+  - t_skip_next(), t_skip_move(), t_skip_len(), t_skip_dup(), t_skip_filter()
+  - t_next_next(), t_next_move(), t_next_len(), t_next_dup(), t_next_filter()
+  - t_filter_with(), t_any_filter()
+  - sres_record_class()
+
 libsofia-sip-ua-glib:
 - No ABI/API changes, compatible with 1.12.0. Note, libsofia-sip-ua-glib
   interface is not considered stable and may change in a future 1.12.x
