@@ -62,7 +62,7 @@ struct soa_static_complete;
 #include <sofia-sip/su_tag_class.h>
 #include <sofia-sip/su_tagarg.h>
 #include <sofia-sip/su_strlst.h>
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/bnf.h>
 
 #include "sofia-sip/soa.h"
@@ -71,10 +71,6 @@ struct soa_static_complete;
 
 #define NONE ((void *)-1)
 #define XXX assert(!"implemented")
-
-#if !HAVE_STRCASESTR
-char *strcasestr(const char *haystack, const char *needle);
-#endif
 
 typedef struct soa_static_session
 {
@@ -175,7 +171,7 @@ static int soa_static_set_params(soa_session_t *ss, tagi_t const *tags)
 	      SOATAG_REUSE_REJECTED_REF(reuse_rejected),
 	      TAG_END());
 
-  if (n > 0 && str0casecmp(audio_aux, sss->sss_audio_aux)) {
+  if (n > 0 && !su_casematch(audio_aux, sss->sss_audio_aux)) {
     char *s = su_strdup(ss->ss_home, audio_aux), *tbf = sss->sss_audio_aux;
     if (s == NULL && audio_aux != NULL)
       return -1;
@@ -358,7 +354,7 @@ int soa_sdp_is_auxiliary_codec(sdp_rtpmap_t const *rm, char const *auxiliary)
     return 0;
 
   for (match = auxiliary;
-       (match = strcasestr(match, codec));
+       (match = su_strcasestr(match, codec));
        match = match + 1) {
     if (IS_ALPHANUM(match[clen]) || match[clen] == '-')
       continue;
@@ -1009,8 +1005,8 @@ int soa_sdp_mode_set(sdp_session_t const *user,
 
   rm = remote ? remote->sdp_media : NULL, rm_next = NULL;
 
-  hold_all = str0cmp(hold, "*") == 0;
-  inactive_all = str0cmp(hold, "#") == 0;
+  hold_all = su_strmatch(hold, "*");
+  inactive_all = su_strmatch(hold, "#");
 
   i = 0;
 
@@ -1051,13 +1047,13 @@ int soa_sdp_mode_set(sdp_session_t const *user,
     else if (hold_all) {
       recv_mode = 0;
     }
-    else if (hold && (hold_media = strcasestr(hold, sm->m_type_name))) {
+    else if (hold && (hold_media = su_strcasestr(hold, sm->m_type_name))) {
       recv_mode = 0;
       hold_media += strlen(sm->m_type_name);
       hold_media += strspn(hold_media, " \t");
       if (hold_media[0] == '=') {
 	hold_media += strspn(hold, " \t");
-	if (strncasecmp(hold_media, "inactive", strlen("inactive")) == 0)
+	if (su_casenmatch(hold_media, "inactive", strlen("inactive")))
 	  recv_mode = send_mode = 0;
       }
     }

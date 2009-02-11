@@ -52,7 +52,7 @@
 #include <sofia-sip/su_localinfo.h>
 #include <sofia-sip/su_uniqueid.h>
 
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_errno.h>
 
 #define NONE ((void *)-1)
@@ -172,7 +172,7 @@ int soa_add(char const *name,
     return su_seterrno(EINVAL);
 
   for (n = soa_namelist; n; n = n->next) {
-    if (strcasecmp(name, n->basename) == 0)
+    if (su_casematch(name, n->basename))
       return 0;
   }
 
@@ -197,7 +197,7 @@ struct soa_session_actions const *soa_find(char const *name)
     size_t baselen = strcspn(name, ":/");
 
     for (n = soa_namelist; n; n = n->next) {
-      if (strncasecmp(name, n->basename, baselen) == 0)
+      if (su_casenmatch(name, n->basename, baselen))
 	break;
     }
 
@@ -230,7 +230,7 @@ soa_session_t *soa_create(char const *name,
     size_t baselen = strcspn(name, ":/");
 
     for (n = soa_namelist; n; n = n->next) {
-      if (strncasecmp(name, n->basename, baselen) == 0)
+      if (su_casenmatch(name, n->basename, baselen))
 	break;
     }
     if (n == NULL)
@@ -553,7 +553,7 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
   ss->ss_srtp_confidentiality = srtp_confidentiality;
   ss->ss_srtp_integrity = srtp_integrity;
 
-  if (str0casecmp(media_address, ss->ss_address)) {
+  if (!su_casematch(media_address, ss->ss_address)) {
     su_free(ss->ss_home, (void *)ss->ss_address);
     ss->ss_address = su_strdup(ss->ss_home, media_address);
     change_session = 1;
@@ -562,7 +562,7 @@ int soa_base_set_params(soa_session_t *ss, tagi_t const *tags)
   if (hold == (char const *)1)
     hold = "*";
 
-  if (str0casecmp(hold, ss->ss_hold)) {
+  if (!su_casematch(hold, ss->ss_hold)) {
     su_free(ss->ss_home, (void *)ss->ss_hold);
     ss->ss_hold = su_strdup(ss->ss_home, hold);
     change_session = 1;
@@ -1924,7 +1924,7 @@ void soa_set_activity(soa_session_t *ss,
       l = &l_video, r = &r_video;
     else if (m->m_type == sdp_media_image)
       l = &l_image, r = &r_image;
-    else if (strcasecmp(m->m_type_name, "message") == 0)
+    else if (su_casematch(m->m_type_name, "message"))
       l = &l_chat, r = &r_chat;
     else
       continue;
@@ -2027,8 +2027,7 @@ int soa_set_sdp(soa_session_t *ss,
   else if (sdp_str) {
     if (str_len == -1)
       str_len = strlen(sdp_str);
-    new_version = !ssd->ssd_unparsed ||
-      str0ncmp(sdp_str, ssd->ssd_unparsed, str_len + 1) != 0;
+    new_version = !su_strnmatch(sdp_str, ssd->ssd_unparsed, str_len + 1);
   }
   else
     return (void)su_seterrno(EINVAL), -1;
@@ -2221,7 +2220,7 @@ su_localinfo_t *li_in_list(su_localinfo_t *li0, char const **llist)
     su_localinfo_t *li;
 
     for (li = li0; li; li = li->li_next) {
-      if (strncasecmp(li->li_canonname, list, n) == 0 &&
+      if (su_casenmatch(li->li_canonname, list, n) &&
 	  li->li_canonname[n] == '\0')
 	break;
     }
