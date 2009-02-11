@@ -83,6 +83,7 @@ typedef int socklen_t;
 
 #include <sofia-sip/su_alloc.h>
 #include <sofia-sip/su_strlst.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_errno.h>
 
 #include "sofia-sip/htable.h"
@@ -1572,8 +1573,8 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
     {
       sres_soa_record_t const *A = aa->sr_soa, *B = bb->sr_soa;
       D = A->soa_serial - B->soa_serial; if (D) return D;
-      D = strcasecmp(A->soa_mname, B->soa_mname); if (D) return D;
-      D = strcasecmp(A->soa_rname, B->soa_rname); if (D) return D;
+      D = su_strcasecmp(A->soa_mname, B->soa_mname); if (D) return D;
+      D = su_strcasecmp(A->soa_rname, B->soa_rname); if (D) return D;
       D = A->soa_refresh - B->soa_refresh; if (D) return D;
       D = A->soa_retry - B->soa_retry; if (D) return D;
       D = A->soa_expire - B->soa_expire; if (D) return D;
@@ -1591,7 +1592,7 @@ sres_record_compare(sres_record_t const *aa, sres_record_t const *bb)
       D = A->a6_prelen - B->a6_prelen; if (D) return D;
       D = !A->a6_prename - !B->a6_prename;
       if (D == 0 && A->a6_prename && B->a6_prename)
-	D = strcasecmp(A->a6_prename, B->a6_prename); if (D) return D;
+	D = su_strcasecmp(A->a6_prename, B->a6_prename); if (D) return D;
       return memcmp(&A->a6_suffix, &B->a6_suffix, sizeof A->a6_suffix);
     }
   case sres_type_aaaa:
@@ -2251,7 +2252,7 @@ int sres_parse_config(sres_config_t *c, FILE *f)
       len = strcspn(b, " \t");
       value = b + len; value += strspn(value, " \t");
 
-#define MATCH(token) (len == strlen(token) && strncasecmp(token, b, len) == 0)
+#define MATCH(token) (len == strlen(token) && su_casenmatch(token, b, len))
 
       if (MATCH("nameserver")) {
 	if (sres_parse_nameserver(c, value) < 0)

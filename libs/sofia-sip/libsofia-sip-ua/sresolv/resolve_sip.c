@@ -41,6 +41,7 @@
 #define SRES_CONTEXT_T struct context
 
 #include "sofia-sip/sresolv.h"
+#include "sofia-sip/su_string.h"
 
 char const name[] = "sip_resolve";
 
@@ -121,7 +122,7 @@ void answer_to_naptr_query(sres_context_t *sr,
 
     switch (na->na_flags[0]) {
     case 's': /* srv */
-      if (strncasecmp("SIP+", na->na_services, 4))
+      if (!su_casenmatch("SIP+", na->na_services, 4))
 	/* Something else but SIP */
 	break;
       query_srv(sr, na->na_replace);
@@ -129,7 +130,7 @@ void answer_to_naptr_query(sres_context_t *sr,
       return;
 
     case 'a':
-      if (strncasecmp("SIP+", na->na_services, 4))
+      if (!su_casenmatch("SIP+", na->na_services, 4))
 	/* Something else but SIP */
 	break;
       query_a(sr, na->na_replace);

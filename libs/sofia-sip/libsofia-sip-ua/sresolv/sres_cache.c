@@ -64,6 +64,7 @@ typedef unsigned _int32 uint32_t;
 
 #include <sofia-sip/su_alloc.h>
 #include <sofia-sip/su_strlst.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/htable.h>
 #include <sofia-sip/heap.h>
 
@@ -209,7 +210,7 @@ int sres_cache_get(sres_cache_t *cache,
 	now <= (*rr_iter)->rr_expires &&
         (type == sres_qtype_any || rr->sr_type == type) &&
         rr->sr_name != NULL &&
-        strcasecmp(rr->sr_name, domain) == 0)
+        su_casematch(rr->sr_name, domain))
       rr_count++;
   }
 
@@ -236,7 +237,7 @@ int sres_cache_get(sres_cache_t *cache,
 	now <= (*rr_iter)->rr_expires &&
         (type == sres_qtype_any || rr->sr_type == type) &&
         rr->sr_name != NULL &&
-        strcasecmp(rr->sr_name, domain) == 0) {
+        su_casematch(rr->sr_name, domain)) {
       SU_DEBUG_9(("rr found in cache: %s %02d\n",
 		  rr->sr_name, rr->sr_type));
 
@@ -335,7 +336,7 @@ sres_cache_store(sres_cache_t *cache, sres_record_t *rr, time_t now)
     if (!!or->sr_name != !!rr->sr_name)
       continue;
     if (or->sr_name != rr->sr_name &&
-	strcasecmp(or->sr_name, rr->sr_name) != 0)
+	!su_casematch(or->sr_name, rr->sr_name))
       continue;
     if (rr->sr_type != sres_type_soa /* There can be only one */
 	&& sres_record_compare(or, rr))
@@ -526,13 +527,13 @@ int sres_cache_set_srv_priority(sres_cache_t *cache,
 
     if (rr && rr->sr_name &&
 	sres_type_srv == rr->sr_type &&
-	strcasecmp(rr->sr_name, domain) == 0) {
+	su_casematch(rr->sr_name, domain)) {
 
       (*iter)->rr_expires = expires;
 
       if ((port == 0 || rr->sr_srv->srv_port == port) &&
 	  rr->sr_srv->srv_target &&
-	  strcasecmp(rr->sr_srv->srv_target, target) == 0) {
+	  su_casematch(rr->sr_srv->srv_target, target)) {
 	/* record found --> change priority of server */
 	rr->sr_srv->srv_priority = priority;
 	ret++;
