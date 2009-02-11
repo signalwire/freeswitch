@@ -47,7 +47,7 @@
 
 #include <sofia-sip/base64.h>
 #include <sofia-sip/su_uniqueid.h>
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 #include <sofia-sip/su_debug.h>
 
@@ -166,9 +166,9 @@ int ca_challenge(auth_client_t *ca,
   if (!ca || !ch)
     return -1;
 
-  if (strcasecmp(ca->ca_scheme, scheme))
+  if (!su_casematch(ca->ca_scheme, scheme))
     return 0;
-  if (strcmp(ca->ca_realm, realm))
+  if (!su_strmatch(ca->ca_realm, realm))
     return 0;
 
   if (ca->ca_credential_class &&
@@ -390,13 +390,13 @@ int ca_credentials(auth_client_t *ca,
   if (!ca || !ca->ca_scheme || !ca->ca_realm)
     return -1;
 
-  if ((scheme != NULL && strcasecmp(scheme, ca->ca_scheme)) ||
-      (realm != NULL && strcmp(realm, ca->ca_realm)))
+  if ((scheme != NULL && !su_casematch(scheme, ca->ca_scheme)) ||
+      (realm != NULL && !su_strmatch(realm, ca->ca_realm)))
     return 0;
 
   old_user = ca->ca_user, old_pass = ca->ca_pass;
 
-  if (str0cmp(user, old_user) == 0 && str0cmp(pass, old_pass) == 0)
+  if (su_strmatch(user, old_user) && su_strmatch(pass, old_pass))
     return 0;
 
   new_user = su_strdup(ca->ca_home, user);
@@ -440,14 +440,14 @@ int auc_copy_credentials(auth_client_t **dst,
 	continue;
       if (AUTH_CLIENT_IS_EXTENDED(ca) && ca->ca_clear)
 	continue;
-      if (!ca->ca_scheme[0] || strcasecmp(ca->ca_scheme, d->ca_scheme))
+      if (!ca->ca_scheme[0] || !su_casematch(ca->ca_scheme, d->ca_scheme))
 	continue;
-      if (!ca->ca_realm[0] || strcmp(ca->ca_realm, d->ca_realm))
+      if (!ca->ca_realm || !su_strmatch(ca->ca_realm, d->ca_realm))
 	continue;
 
       if (!(AUTH_CLIENT_IS_EXTENDED(d) && d->ca_clear) &&
-	  d->ca_user && strcmp(d->ca_user, ca->ca_user) == 0 &&
-	  d->ca_pass && strcmp(d->ca_pass, ca->ca_pass) == 0) {
+	  su_strmatch(d->ca_user, ca->ca_user) &&
+	  su_strmatch(d->ca_pass, ca->ca_pass)) {
 	retval++;
 	break;
       }
@@ -497,8 +497,8 @@ int auc_clear_credentials(auth_client_t **auc_list,
     if (!AUTH_CLIENT_IS_EXTENDED(ca))
       continue;
 
-    if ((scheme != NULL && strcasecmp(scheme, ca->ca_scheme)) ||
-	(realm != NULL && strcmp(realm, ca->ca_realm)))
+    if ((scheme != NULL && !su_casematch(scheme, ca->ca_scheme)) ||
+	(realm != NULL && !su_strmatch(realm, ca->ca_realm)))
       continue;
 
     match = ca->ca_auc->auc_clear(*auc_list);
@@ -990,7 +990,7 @@ int auc_register_plugin(auth_client_plugin_t const *plugin)
 
   for (i = 0; i < MAX_AUC; i++) {
     if (ca_plugins[i] == NULL ||
-	strcmp(plugin->auc_name, ca_plugins[i]->auc_name) == 0) {
+	su_strmatch(plugin->auc_name, ca_plugins[i]->auc_name) == 0) {
       ca_plugins[i] = plugin;
       return 0;
     }
@@ -1018,7 +1018,7 @@ auth_client_t *ca_create(su_home_t *home,
 
   for (i = 0; i < MAX_AUC; i++) {
     auc = ca_plugins[i];
-    if (!auc || strcasecmp(auc->auc_name, scheme) == 0)
+    if (!auc || su_casematch(auc->auc_name, scheme))
       break;
   }
 

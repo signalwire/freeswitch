@@ -61,6 +61,7 @@ static char const __func__[] = "auth_mod";
 
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_tagarg.h>
 
 #include <sofia-sip/base64.h>
@@ -181,7 +182,7 @@ int auth_init_default(auth_mod_t *am,
   am->am_fake = fake;
   am->am_remote = url_hdup(am->am_home, (url_t *)remote);
   am->am_algorithm = algorithm ? su_strdup(am->am_home, algorithm) : "MD5";
-  am->am_nextnonce = !algorithm || strcasecmp(algorithm, "MD5") == 0;
+  am->am_nextnonce = !algorithm || su_casematch(algorithm, "MD5");
   if (next_expires == 0)
     am->am_nextnonce = 0;
   am->am_qop = su_strdup(am->am_home, qop);
@@ -694,11 +695,11 @@ void auth_check_digest(auth_mod_t *am,
       /* Check for qop */
       (ar->ar_qop &&
        ((ar->ar_auth &&
-	 strcasecmp(ar->ar_qop, "auth") &&
-	 strcasecmp(ar->ar_qop, "\"auth\"")) ||
+	 !su_casematch(ar->ar_qop, "auth") &&
+	 !su_casematch(ar->ar_qop, "\"auth\"")) ||
 	(ar->ar_auth_int &&
-	 strcasecmp(ar->ar_qop, "auth-int") &&
-	 strcasecmp(ar->ar_qop, "\"auth-int\"")))
+	 !su_casematch(ar->ar_qop, "auth-int") &&
+	 !su_casematch(ar->ar_qop, "\"auth-int\"")))
        && (phrase = PA "has invalid qop"))) {
     assert(phrase);
     SU_DEBUG_5(("auth_method_digest: 400 %s\n", phrase));
@@ -1249,7 +1250,7 @@ msg_auth_t *auth_mod_credentials(msg_auth_t *auth,
   char const *arealm;
 
   for (;auth; auth = auth->au_next) {
-    if (strcasecmp(auth->au_scheme, scheme))
+    if (!su_casematch(auth->au_scheme, scheme))
       continue;
 
     if (!realm)
@@ -1290,7 +1291,7 @@ msg_auth_t *auth_digest_credentials(msg_auth_t *auth,
   char const *arealm, *aopaque;
 
   for (;auth; auth = auth->au_next) {
-    if (strcasecmp(auth->au_scheme, "Digest"))
+    if (!su_casematch(auth->au_scheme, "Digest"))
       continue;
 
     if (realm) {

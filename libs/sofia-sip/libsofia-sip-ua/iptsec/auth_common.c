@@ -36,15 +36,12 @@
 
 #include "sofia-sip/auth_common.h"
 #include "sofia-sip/msg_header.h"
+#include <sofia-sip/su_string.h>
 
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
-
-#if !HAVE_STRCASESTR
-char *strcasestr(char const *haystack, char const *needle);
-#endif
 
 su_inline int has_token(char const *qstring, char const *token);
 
@@ -92,12 +89,12 @@ issize_t auth_get_params(su_home_t *home,
 	 if expected is found in parameter value,
 	 return non-NULL pointer in *return_value */
       for (j = 0; (p = params[j++]);) {
-	if (strcasecmp(p, fmt) == 0) {
+	if (su_casematch(p, fmt)) {
 	  /* Matched the whole parameter with fmt name=expected */
 	  value = p;
 	  break;
 	}
-	else if (strncasecmp(p, fmt, namelen) ||
+	else if (!su_casenmatch(p, fmt, namelen) ||
 		 p[namelen] != '=')
 	  continue;
 
@@ -109,7 +106,7 @@ issize_t auth_get_params(su_home_t *home,
 	  value = p;
 	  break;
 	}
-	else if (strcasecmp(p, expected) == 0) {
+	else if (su_casematch(p, expected)) {
 	  /* Parameter value matches with extected value
 	   * e.g., qop=auth matches qop=auth */
 	  value = p;
@@ -120,7 +117,7 @@ issize_t auth_get_params(su_home_t *home,
     else {
       /* format is name= , return unquoted parameter value after = */
       for (j = 0; (p = params[j++]);) {
-	if (strncasecmp(p, fmt, len))
+	if (!su_casenmatch(p, fmt, len))
 	  continue;
 
 	if (p[len] == '"')
@@ -169,7 +166,8 @@ su_inline int has_token(char const *qstring, char const *token)
   size_t n = strlen(token);
   char const *q;
 
-  q = strcasestr(qstring, token);
+  q = su_strcasestr(qstring, token);
+
   return (q &&
 	  (q[n] == 0 || strchr("\", \t", q[n])) &&
 	  (q == qstring || strchr("\", \t", q[-1])));

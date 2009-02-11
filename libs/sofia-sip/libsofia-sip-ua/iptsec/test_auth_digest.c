@@ -73,6 +73,7 @@
 #include <sofia-sip/auth_client.h>
 #include <sofia-sip/msg_header.h>
 #include <sofia-sip/su_wait.h>
+#include <sofia-sip/su_string.h>
 
 int tstflags;
 char *argv0;
@@ -349,8 +350,11 @@ Authorization: Digest       username="Mufasa",
     TEST_SIZE(auth_digest_challenge_get(home, ac, pa->au_params), 6);
 
     TEST0(pz = sip_proxy_authorization_make(home, cred));
-    TEST_SIZE(auth_digest_response_get(home, ar, pz->au_params), 8);
 
+    {
+    size_t n = auth_digest_response_get(home, ar, pz->au_params);
+    TEST_SIZE(n, 8);
+    }
     ar->ar_md5 = ac->ac_md5 || ac->ac_algorithm == NULL;
 
     TEST(auth_digest_sessionkey(ar, sessionkey, "test1"), 0);
@@ -702,7 +706,7 @@ int test_digest_client()
 
       if (au->au_params)
 	for (i = 0; au->au_params[i]; i++) {
-	  if (strncasecmp(au->au_params[i], "realm=", 6) == 0)
+	  if (su_casenmatch(au->au_params[i], "realm=", 6))
 	    continue;
 	  equal = strchr(au->au_params[i], '=');
 	  if (equal)

@@ -52,6 +52,7 @@ static char const __func__[] = "auth_plugin";
 
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/su_alloc.h>
+#include <sofia-sip/su_string.h>
 #include <sofia-sip/su_tagarg.h>
 
 #include "sofia-sip/auth_module.h"
@@ -130,16 +131,16 @@ auth_mod_t *auth_mod_create(su_root_t *root,
 
     if (base == NULL)
       ;
-    else if (strcasecmp(base, "Basic") == 0)
+    else if (su_casematch(base, "Basic"))
       bscheme = auth_scheme_basic;
-    else if (strcasecmp(base, "Digest") == 0)
+    else if (su_casematch(base, "Digest"))
       bscheme = auth_scheme_digest;
 
     if (base == NULL || bscheme) {
       int i;
 
       for (i = 0; schemes[i] && i < N; i++) {
-	if (strncasecmp(schemes[i]->asch_method, method, len) == 0 &&
+	if (su_casenmatch(schemes[i]->asch_method, method, len) &&
 	    schemes[i]->asch_method[len] == 0) {
 	  am = auth_mod_alloc(schemes[i], ta_tags(ta));
 	  if (schemes[i]->asch_init(am, bscheme, root, ta_tags(ta)) == -1) {

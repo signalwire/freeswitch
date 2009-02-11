@@ -44,7 +44,7 @@
 
 #include <sofia-sip/base64.h>
 #include <sofia-sip/su_uniqueid.h>
-#include <sofia-sip/string0.h>
+#include <sofia-sip/su_string.h>
 
 #include <sofia-sip/su_debug.h>
 

@@ -170,7 +170,7 @@ msg_auth_t *auth_ntlm_credentials(msg_auth_t *auth,
   char const *agssapidata, *atargetname;
 
   for (;auth; auth = auth_mod_credentials(auth->au_next)) {
-    if (strcasecmp(auth->au_scheme, "NTLM"))
+    if (!su_casematch(auth->au_scheme, "NTLM"))
       continue;
 
     if (gssapidata) {
@@ -224,11 +224,11 @@ void auth_check_ntlm(auth_mod_t *am,
       /* Check for qop */
       (ar->ar_qop &&
        ((ar->ar_auth &&
-	 strcasecmp(ar->ar_qop, "auth") &&
-	 strcasecmp(ar->ar_qop, "\"auth\"")) ||
+	 !su_casematch(ar->ar_qop, "auth") &&
+	 !su_casematch(ar->ar_qop, "\"auth\"")) ||
 	(ar->ar_auth_int &&
-	 strcasecmp(ar->ar_qop, "auth-int") &&
-	 strcasecmp(ar->ar_qop, "\"auth-int\"")))
+	 !su_casematch(ar->ar_qop, "auth-int") &&
+	 !su_casematch(ar->ar_qop, "\"auth-int\"")))
        && (phrase = PA "has invalid qop"))) {
     assert(phrase);
     SU_DEBUG_5(("auth_method_ntlm: 400 %s\n", phrase));

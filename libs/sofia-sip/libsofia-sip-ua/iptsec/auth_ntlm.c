@@ -91,7 +91,7 @@ issize_t auth_ntlm_challenge_get(su_home_t *home,
   if (n < 0)
     return n;
 
-  if (ac->ac_stale && strcasecmp(ac->ac_stale, "true") != 0)
+  if (ac->ac_stale && !su_casematch(ac->ac_stale, "true"))
     ac->ac_stale = NULL;
 
   ac->ac_md5 = md5 != NULL || ac->ac_algorithm == NULL;
