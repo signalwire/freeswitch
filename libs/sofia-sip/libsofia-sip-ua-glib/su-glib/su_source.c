@@ -125,7 +125,7 @@ static int su_source_remove_prepoll(su_port_t *port,
 				  su_root_t *root);
 static int su_source_multishot(su_port_t *self, int multishot);
 static int su_source_wakeup(su_port_t *self);
-static int su_source_is_running(su_port_t *self);
+static int su_source_is_running(su_port_t const *self);
 
 static char const *su_source_name(su_port_t const *self);
 
@@ -944,7 +944,7 @@ void su_source_run(su_port_t *self)
   }
 }
 
-static int su_source_is_running(su_port_t *self)
+static int su_source_is_running(su_port_t const *self)
 {
   return self->sup_main_loop && g_main_loop_is_running(self->sup_main_loop);
 }
