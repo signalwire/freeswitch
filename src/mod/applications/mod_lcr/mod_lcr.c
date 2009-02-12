@@ -1008,8 +1008,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown)
 {
 	switch_odbc_handle_disconnect(globals.master_odbc);
 	switch_odbc_handle_destroy(&globals.master_odbc);
-	switch_core_destroy_memory_pool(&globals.pool);
 	switch_core_hash_destroy(&globals.profile_hash);
+	switch_core_destroy_memory_pool(&globals.pool);
 	return SWITCH_STATUS_SUCCESS;
 }
 
