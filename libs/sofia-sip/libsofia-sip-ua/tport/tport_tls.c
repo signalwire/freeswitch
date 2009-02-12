@@ -271,7 +271,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
     if (ti->configured > 0) {
       SU_DEBUG_1(("%s: invalid local certificate: %s\n",
 		 "tls_init_context", ti->cert));
-      tls_log_errors(1, "tls_init_context", 0);
+      tls_log_errors(3, "tls_init_context", 0);
 #if require_client_certificate
       errno = EIO;
       return -1;
@@ -283,7 +283,9 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
                                    ti->key,
                                    SSL_FILETYPE_PEM)) {
     if (ti->configured > 0) {
-      tls_log_errors(1, "tls_init_context", 0);
+      SU_DEBUG_1(("%s: invalid private key: %s\n",
+		 "tls_init_context", ti->key));
+      tls_log_errors(3, "tls_init_context(key)", 0);
 #if require_client_certificate
       errno = EIO;
       return -1;
@@ -305,8 +307,10 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
   if (!SSL_CTX_load_verify_locations(tls->ctx,
                                      ti->CAfile,
                                      ti->CApath)) {
+    SU_DEBUG_1(("%s: error loading CA list: %s\n",
+		 "tls_init_context", ti->CAfile));
     if (ti->configured > 0)
-      tls_log_errors(1, "tls_init_context", 0);
+      tls_log_errors(3, "tls_init_context(CA)", 0);
     errno = EIO;
     return -1;
   }
@@ -328,7 +332,7 @@ int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 
   if (!SSL_CTX_set_cipher_list(tls->ctx, ti->cipher)) {
     SU_DEBUG_1(("%s: error setting cipher list\n", "tls_init_context"));
-    tls_log_errors(1, "tls_init_context", 0);
+    tls_log_errors(3, "tls_init_context", 0);
     errno = EIO;
     return -1;
   }

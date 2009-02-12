@@ -222,13 +222,21 @@ static int tport_tls_init_master(tport_primary_t *pri,
   su_home_zap(autohome);
 
   if (!tlspri->tlspri_master) {
+    /*
     if (!path || ti.configured) {
       SU_DEBUG_1(("tls_init_master: %s\n", strerror(errno)));
     }
     else {
       SU_DEBUG_5(("tls_init_master: %s\n", strerror(errno)));
     }
+    */
     return *return_culprit = "tls_init_master", -1;
+  } else {
+    char buf[TPORT_HOSTPORTSIZE];
+    su_sockaddr_t *sa = ai ? (void *)(ai->ai_addr) : NULL;
+    if (sa && tport_hostport(buf, sizeof(buf), sa, 2))
+      SU_DEBUG_5(("%s(%p): tls context initialized for %s\n", \
+                  __func__, (void *)pri, buf));
   }
 
   if (tls_subjects)
