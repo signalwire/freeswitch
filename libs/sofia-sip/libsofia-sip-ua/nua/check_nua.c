@@ -45,21 +45,49 @@
 
 #include "test_s2.h"
 
+static void usage(int exitcode)
+{
+  fprintf(exitcode ? stderr : stdout,
+	  "usage: %s [--xml=logfile] case,...\n", s2_tester);
+  exit(exitcode);
+}
+
 int main(int argc, char *argv[])
 {
-  int failed = 0;
+  int i, failed = 0, selected = 0;
   int threading;
-
-  SRunner *runner;
-
+  char const *xml = NULL;
   Suite *suite = suite_create("Unit tests for Sofia-SIP UA Engine");
+  SRunner *runner;
 
   s2_tester = "check_nua";
 
   if (getenv("CHECK_NUA_VERBOSE"))
     s2_start_stop = strtoul(getenv("CHECK_NUA_VERBOSE"), NULL, 10);
 
-  s2_select_tests(getenv("CHECK_NUA_CASES"));
+  for (i = 1; argv[i]; i++) {
+    if (su_strnmatch(argv[i], "--xml=", strlen("--xml="))) {
+      xml = argv[i] + strlen("--xml=");
+    }
+    else if (su_strmatch(argv[i], "--xml")) {
+      if (!(xml = argv[++i]))
+	usage(2);
+    }
+    else if (su_strmatch(argv[i], "-v")) {
+      s2_start_stop = 1;
+    }
+    else if (su_strmatch(argv[i], "-?") ||
+	     su_strmatch(argv[i], "-h") ||
+	     su_strmatch(argv[i], "--help"))
+      usage(0);
+    else {
+      s2_select_tests(argv[i]);
+      selected = 1;
+    }
+  }
+
+  if (!selected)
+    s2_select_tests(getenv("CHECK_NUA_CASES"));
 
   check_register_cases(suite, threading = 0);
   check_simple_cases(suite, threading = 0);
@@ -73,11 +101,10 @@ int main(int argc, char *argv[])
 
   runner = srunner_create(suite);
 
-  if (argv[1]) {
+  if (xml)
     srunner_set_xml(runner, argv[1]);
-  }
-  srunner_run_all(runner, CK_ENV);
 
+  srunner_run_all(runner, CK_ENV);
   failed = srunner_ntests_failed(runner);
   srunner_free(runner);
 
