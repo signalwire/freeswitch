@@ -164,7 +164,8 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 							 NULL);
 	  
 	if (ps->config == NULL) {
-		return SWITCH_STATUS_GENERR;
+		status = SWITCH_STATUS_GENERR;
+		goto end;
 	}
 
 	switch_mutex_lock(ps->flag_mutex);
