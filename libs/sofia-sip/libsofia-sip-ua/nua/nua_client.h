@@ -71,8 +71,8 @@ typedef struct {
    *
    * @retval 1 when request has been responded
    * @retval 0 when request has been sent
-   * @retval -1 upon an error (request message has not been destroyed)
-   * @retval -2 upon an error (request message has been destroyed)
+   * @retval -1 upon an error (but request message has not been destroyed)
+   * @retval -2 upon an error
    */
   int (*crm_send)(nua_client_request_t *,
 		  msg_t *msg, sip_t *sip,
@@ -80,7 +80,7 @@ typedef struct {
 
   /** @a crm_check_restart is called each time when a response is received.
    *
-   * It is used to restart reqquest after responses with method-specific
+   * It is used to restart request after responses with method-specific
    * status code or method-specific way of restarting the request.
    *
    * @retval 1 when request has been restarted

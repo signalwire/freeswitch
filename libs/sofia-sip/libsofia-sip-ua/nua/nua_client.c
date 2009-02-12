@@ -877,7 +877,7 @@ int nua_client_request_sendmsg(nua_client_request_t *cr)
   else
     error = nua_base_client_request(cr, msg, sip, NULL);
 
-  if (error != 0 && error != -2)
+  if (error == -1)
     msg_destroy(msg);
 
   return error;
@@ -906,9 +906,9 @@ int nua_base_client_trequest(nua_client_request_t *cr,
 /** Send request.
  *
  * @retval 0 success
- * @retval -1 if error occurred, but event has not been sent
- * @retval -2 if error occurred, event has not been sent,
- *            and @a msg has been destroyed
+ * @retval -1 if error occurred, but event has not been sent,
+ *            and caller has to destroy request message @ msg
+ * @retval -2 if error occurred, event has not been sent
  * @retval >=1 if error event has been sent
  */
 int nua_base_client_request(nua_client_request_t *cr, msg_t *msg, sip_t *sip,
