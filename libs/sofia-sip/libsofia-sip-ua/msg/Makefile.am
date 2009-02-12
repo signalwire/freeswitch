@@ -121,6 +121,6 @@ sofia-sip/msg_mime_protos.h: ${srcdir}/sofia-sip/msg_mime_protos.h.in
 
 msg_mime_table.c: ${srcdir}/msg_mime_table.c.in
 	$(AWK_MSG_AWK) module=msg_multipart \
-		tprefix=msg prefix=mp MC_HASH_SIZE=127 \
+		tprefix=msg prefix=mp MC_HASH_SIZE=127 MC_SHORT_SIZE=26 \
 		PT=$@ TEMPLATE=${srcdir}/msg_mime_table.c.in \
 		${SS_MIME_H}
