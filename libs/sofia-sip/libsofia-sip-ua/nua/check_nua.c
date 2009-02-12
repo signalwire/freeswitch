@@ -45,36 +45,6 @@
 
 #include "test_s2.h"
 
-static char const * const default_patterns[] = { "*", NULL };
-static char const * const *test_patterns = default_patterns;
-
-void check_nua_tcase_add_test(TCase *tc, TFun tf, char const *name)
-{
-  char const * const *patterns;
-
-#if HAVE_FNMATCH_H
-  for (patterns = test_patterns; *patterns; patterns++) {
-    if (!fnmatch(*patterns, name, 0)) {
-      if (strcmp(*patterns, "*")) {
-	printf("%s: running\n", name);
-      }
-      _tcase_add_test(tc, tf, name, 0, 0, 1);
-      return;
-    }
-  }
-#else
-  for (patterns = test_patterns; *patterns; patterns++) {
-    if (!strcmp(*patterns, name) || !strcmp(*patterns, "*")) {
-      if (strcmp(*patterns, "*")) {
-	printf("%s: running\n", name);
-      }
-      _tcase_add_test(tc, tf, name, 0, 0, 1);
-      return;
-    }
-  }
-#endif
-}
-
 int main(int argc, char *argv[])
 {
   int failed = 0;
@@ -86,28 +56,7 @@ int main(int argc, char *argv[])
   if (getenv("CHECK_NUA_VERBOSE"))
     s2_start_stop = strtoul(getenv("CHECK_NUA_VERBOSE"), NULL, 10);
 
-  if (getenv("CHECK_NUA_CASES")) {
-    size_t i;
-    char *s, **patterns;
-    char *cases = strdup(getenv("CHECK_NUA_CASES"));
-
-    /* Count commas */
-    for (i = 2, s = cases; (s = strchr(s, ',')); s++, i++);
-
-    patterns = calloc(i, sizeof *patterns);
-
-    /* Split by commas */
-    for (i = 0, s = cases;; i++) {
-      patterns[i] = s;
-      if (s == NULL)
-	break;
-      s = strchr(s, ',');
-      if (s)
-	*s++ = '\0';
-    }
-
-    test_patterns = (char const * const *)patterns;
-  }
+  s2_select_tests(getenv("CHECK_NUA_CASES"));
 
   check_register_cases(suite);
   check_session_cases(suite);
