@@ -23,8 +23,8 @@
  *
  * Contributor(s):
  * 
- * Anthony Minessale II <anthmct@yahoo.com>
- * Brian K. West <brian.west@mac.com>
+ * Anthony Minessale II <anthm@freeswitch.org>
+ * Brian K. West <brian@freeswitch.org>
  *
  * The amrwb codec itself is not distributed with this module.
  *
