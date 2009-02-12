@@ -131,6 +131,8 @@ su_inline
 void _sres_cache_free_one(sres_cache_t *cache, sres_record_t *answer);
 su_inline
 void _sres_cache_free_answers(sres_cache_t *cache, sres_record_t **answers);
+su_inline sres_record_t **_sres_cache_copy_answers(
+  sres_cache_t *, sres_record_t **);
 
 static unsigned sres_hash_key(const char *string);
 
@@ -458,6 +460,20 @@ void sres_cache_free_one(sres_cache_t *cache, sres_record_t *answer)
   }
 }
 
+/** Copy the list of records. */
+sres_record_t **
+sres_cache_copy_answers(sres_cache_t *cache, sres_record_t **answers)
+{
+  sres_record_t **copy = NULL;
+
+  if (answers && LOCK(cache)) {
+    copy = _sres_cache_copy_answers(cache, answers);
+    UNLOCK(cache);
+  }
+
+  return copy;
+}
+
 /* ---------------------------------------------------------------------- */
 /* Private functions */
 
@@ -486,6 +502,29 @@ void _sres_cache_free_one(sres_cache_t *cache, sres_record_t *answer)
     else
       answer->sr_refcount--;
   }
+}
+
+su_inline sres_record_t **
+_sres_cache_copy_answers(sres_cache_t *cache, sres_record_t **answers)
+{
+  int i, n;
+  sres_record_t **copy;
+
+  for (n = 0; answers[n] != NULL; n++)
+    ;
+
+  copy = su_alloc(cache->cache_home, (n + 1) * (sizeof *copy));
+  if (copy == NULL)
+    return NULL;
+
+  for (i = 0; i < n; i++) {
+    copy[i] = answers[i];
+    copy[i]->sr_refcount++;
+  }
+
+  copy[i] = NULL;
+
+  return copy;
 }
 
 /** Calculate a hash key for a string */

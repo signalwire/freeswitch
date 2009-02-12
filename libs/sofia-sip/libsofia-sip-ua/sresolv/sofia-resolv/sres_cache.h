@@ -90,6 +90,10 @@ SRESPUBFUN void sres_cache_free_answers(sres_cache_t *, sres_record_t **);
 /** Free and zero one record. */
 SRESPUBFUN void sres_cache_free_one(sres_cache_t *, sres_record_t *answer);
 
+/** Copy list of records */
+SRESPUBFUN
+sres_record_t **sres_cache_copy_answers(sres_cache_t *, sres_record_t **);
+
 /** Remove old records from cache.  */
 SRESPUBFUN void sres_cache_clean(sres_cache_t *cache, time_t now);
 

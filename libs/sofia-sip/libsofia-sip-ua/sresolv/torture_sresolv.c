@@ -234,6 +234,7 @@ int test_cache(void)
   BEGIN();
 
   sres_a_record_t *a, a0[1], **all;
+  sres_record_t **copy;
   char host[128];
   sres_cache_t *cache;
   time_t now, base;
@@ -292,6 +293,11 @@ int test_cache(void)
   for (i = 0, N; i < N; i++)
     TEST(all[i]->a_record->r_refcount, 2);
 
+  TEST_1(copy = sres_cache_copy_answers(cache, (sres_record_t **)all));
+
+  for (i = 0, N; i < N; i++)
+    TEST(all[i]->a_record->r_refcount, 3);
+
   clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &t0);
 
   for (now = base; now <= base + 3660; now += 30)
@@ -305,6 +311,11 @@ int test_cache(void)
     printf("sres_cache: cleaned %u entries: %lu.%09lu sec\n",
 	   (unsigned)N, (long unsigned)t2.tv_sec, t2.tv_nsec);
   }
+
+  for (i = 0, N; i < N; i++)
+    TEST(all[i]->a_record->r_refcount, 2);
+
+  sres_cache_free_answers(cache, copy), copy = NULL;
 
   for (i = 0, N; i < N; i++)
     TEST(all[i]->a_record->r_refcount, 1);
