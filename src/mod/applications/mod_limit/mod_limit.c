@@ -391,13 +391,13 @@ SWITCH_STANDARD_API(db_api_function)
 			goto error;
 		}
 		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
-		assert(sql);
+		switch_assert(sql);
 		limit_execute_sql(sql, NULL);
 		switch_safe_free(sql);
 		sql =
 			switch_mprintf("insert into db_data (hostname, realm, data_key, data) values('%q','%q','%q','%q');", globals.hostname, argv[1], argv[2],
 						   argv[3]);
-		assert(sql);
+		switch_assert(sql);
 		limit_execute_sql(sql, NULL);
 		switch_safe_free(sql);
 		stream->write_function(stream, "+OK");
@@ -407,7 +407,7 @@ SWITCH_STANDARD_API(db_api_function)
 			goto error;
 		}
 		sql = switch_mprintf("delete from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
-		assert(sql);
+		switch_assert(sql);
 		limit_execute_sql(sql, NULL);
 		switch_safe_free(sql);
 		stream->write_function(stream, "+OK");
@@ -609,12 +609,12 @@ SWITCH_STANDARD_API(group_api_function)
 			goto error;
 		}
 		sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
-		assert(sql);
+		switch_assert(sql);
 
 		limit_execute_sql(sql, NULL);
 		switch_safe_free(sql);
 		sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
-		assert(sql);
+		switch_assert(sql);
 		limit_execute_sql(sql, NULL);
 		switch_safe_free(sql);
 		stream->write_function(stream, "+OK");
@@ -628,7 +628,7 @@ SWITCH_STANDARD_API(group_api_function)
 		} else {
 			sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
 		}
-		assert(sql);
+		switch_assert(sql);
 		limit_execute_sql(sql, NULL);
 		switch_safe_free(sql);
 		stream->write_function(stream, "+OK");
@@ -647,7 +647,7 @@ SWITCH_STANDARD_API(group_api_function)
 		}
 
 		sql = switch_mprintf("select url,'%q' from group_data where groupname='%q'", how, argv[1]);
-		assert(sql);
+		switch_assert(sql);
 
 		limit_execute_sql_callback(NULL, sql, group_callback, &cbt);
 		switch_safe_free(sql);
@@ -690,12 +690,12 @@ SWITCH_STANDARD_APP(group_function)
 
 	if (!strcasecmp(argv[0], "insert")) {
 		sql = switch_mprintf("insert into group_data (hostname, groupname, url) values('%q','%q','%q');", globals.hostname, argv[1], argv[2]);
-		assert(sql);
+		switch_assert(sql);
 		limit_execute_sql(sql, globals.mutex);
 		switch_safe_free(sql);
 	} else if (!strcasecmp(argv[0], "delete")) {
 		sql = switch_mprintf("delete from group_data where groupname='%q' and url='%q';", argv[1], argv[2]);
-		assert(sql);
+		switch_assert(sql);
 		limit_execute_sql(sql, globals.mutex);
 		switch_safe_free(sql);
 	}
