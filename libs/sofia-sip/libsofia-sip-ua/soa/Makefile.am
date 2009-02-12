@@ -14,7 +14,8 @@ INCLUDES = 		-I$(srcdir)/../sdp -I../sdp \
 			-I$(srcdir)/../url -I../url \
 			-I$(srcdir)/../ipt -I../ipt \
 			-I$(srcdir)/../bnf -I../bnf \
-			-I$(srcdir)/../su -I../su
+			-I$(srcdir)/../su -I../su \
+			-I$(top_srcdir)/s2check
 
 # ----------------------------------------------------------------------
 # Build targets
@@ -39,7 +40,8 @@ libsoa_la_SOURCES = 	soa.c soa_static.c \
 
 COVERAGE_INPUT = 	$(libsoa_la_SOURCES) $(include_sofia_HEADERS)
 
-LDADD = 		libsoa.la \
+test_soa_LDADD = 	$(top_builddir)/s2check/libs2.a \
+			libsoa.la \
 			../sip/libsip.la \
 			../msg/libmsg.la \
 			../url/liburl.la \

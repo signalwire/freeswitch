@@ -55,6 +55,10 @@ struct context;
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/sip_tag.h>
 
+#include <s2_localinfo.h>
+
+S2_LOCALINFO_STUBS();
+
 extern su_log_t soa_log[];
 
 char const name[] = "test_soa";
@@ -71,6 +75,98 @@ int tstflags = 0;
 #endif
 
 #define NONE ((void*)-1)
+
+static char const *test_ifaces1[] = {
+  "eth0\0" "11.12.13.14\0" "2001:1508:1003::21a:a0ff:fe71:813\0" "fe80::21a:a0ff:fe71:813\0",
+  "eth1\0" "12.13.14.15\0" "2001:1508:1004::21a:a0ff:fe71:814\0" "fe80::21a:a0ff:fe71:814\0",
+  "eth2\0" "192.168.2.15\0" "fec0::21a:a0ff:fe71:815\0" "fe80::21a:a0ff:fe71:815\0",
+  "lo0\0" "127.0.0.1\0" "::1\0",
+  NULL
+};
+
+int test_localinfo_replacement(void)
+{
+  BEGIN();
+  su_localinfo_t *res, *li, hints[1];
+  int error, n;
+  struct results {
+    struct afresult { unsigned global, site, link, host; } ip6[1], ip4[1];
+  } results[1];
+
+  s2_localinfo_ifaces(test_ifaces1);
+
+  error = su_getlocalinfo(NULL, &res);
+  TEST(error, ELI_NOERROR);
+  TEST_1(res != NULL);
+  memset(results, 0, sizeof results);
+  for (li = res, n = 0; li; li = li->li_next) {
+    struct afresult *afr;
+    TEST_1(li->li_family == AF_INET || li->li_family == AF_INET6);
+    if (li->li_family == AF_INET)
+      afr = results->ip4;
+    else
+      afr = results->ip6;
+
+    if (li->li_scope == LI_SCOPE_GLOBAL)
+      afr->global++;
+    else if (li->li_scope == LI_SCOPE_SITE)
+      afr->site++;
+    else if (li->li_scope == LI_SCOPE_LINK)
+      afr->link++;
+    else if (li->li_scope == LI_SCOPE_HOST)
+      afr->host++;
+    n++;
+  }
+  TEST(n, 11);
+  TEST(results->ip4->global, 2);
+  TEST(results->ip4->site, 1);
+  TEST(results->ip4->link, 0);
+  TEST(results->ip4->host, 1);
+#if SU_HAVE_IN6
+  TEST(results->ip6->global, 2);
+  TEST(results->ip6->site, 1);
+  TEST(results->ip6->link, 3);
+  TEST(results->ip6->host, 1);
+#endif
+  su_freelocalinfo(res);
+
+  error = su_getlocalinfo(memset(hints, 0, sizeof hints), &res);
+  TEST(error, ELI_NOERROR);
+  TEST_1(res != NULL);
+  for (li = res, n = 0; li; li = li->li_next)
+    n++;
+  TEST(n, 11);
+  su_freelocalinfo(res);
+
+  hints->li_flags = LI_CANONNAME;
+
+  error = su_getlocalinfo(hints, &res);
+  TEST(error, ELI_NOERROR);
+  TEST_1(res != NULL);
+  for (li = res, n = 0; li; li = li->li_next) {
+    TEST_1(li->li_canonname != NULL);
+    n++;
+  }
+  TEST(n, 11);
+  su_freelocalinfo(res);
+
+  hints->li_flags = LI_IFNAME | LI_CANONNAME;
+  hints->li_ifname = "eth1";
+
+  error = su_getlocalinfo(hints, &res);
+  TEST(error, ELI_NOERROR);
+  TEST_1(res != NULL);
+  for (li = res, n = 0; li; li = li->li_next) {
+    TEST_1(li->li_canonname != NULL);
+    TEST_S(li->li_ifname, "eth1");
+    n++;
+  }
+  TEST(n, 3);
+  su_freelocalinfo(res);
+
+  END();
+}
+/* ========================================================================= */
 
 struct context
 {
@@ -1871,6 +1967,463 @@ int test_asynch_offer_answer(struct context *ctx)
   END();
 }
 
+#define TEST_OC_ADDRESS(s, address, ip)		\
+  TEST(test_address_in_offer(s, address, sdp_addr_ ## ip, address, sdp_addr_ ## ip), 0);
+
+static int
+test_address_in_offer(soa_session_t *ss,
+		      char const *o_address,
+		      int o_addrtype,
+		      char const *c_address,
+		      int c_addrtype)
+{
+  sdp_session_t const *sdp = NULL;
+  sdp_connection_t const *c;
+
+  TEST(soa_get_local_sdp(ss, &sdp, NULL, NULL), 1);
+  TEST_1(sdp != NULL);
+  TEST_1(c = sdp->sdp_connection);
+  TEST(c->c_nettype, sdp_net_in);
+  if (c_addrtype) TEST(c->c_addrtype, c_addrtype);
+  if (c_address) TEST_S(c->c_address, c_address);
+
+  TEST_1(c = sdp->sdp_origin->o_address);
+  TEST(c->c_nettype, sdp_net_in);
+  if (o_addrtype) TEST(c->c_addrtype, o_addrtype);
+  if (o_address) TEST_S(c->c_address, o_address);
+
+  return 0;
+}
+
+/** This tests the IP address selection logic.
+ *
+ * The IP address is selected based on the SOATAG_AF() preference,
+ * SOATAG_ADDRESS(), and locally obtained address list.
+ */
+int test_address_selection(struct context *ctx)
+{
+  BEGIN();
+  int n;
+
+  static char const *ifaces1[] = {
+    "eth2\0" "192.168.2.15\0" "fec0::21a:a0ff:fe71:815\0" "fe80::21a:a0ff:fe71:815\0",
+    "eth0\0" "11.12.13.14\0" "2001:1508:1003::21a:a0ff:fe71:813\0" "fe80::21a:a0ff:fe71:813\0",
+    "eth1\0" "12.13.14.15\0" "2001:1508:1004::21a:a0ff:fe71:814\0" "fe80::21a:a0ff:fe71:814\0",
+    "lo0\0" "127.0.0.1\0" "::1\0",
+    NULL
+  };
+
+  static char const *ifaces_ip6only[] = {
+    "eth2\0" "fec0::21a:a0ff:fe71:815\0" "fe80::21a:a0ff:fe71:815\0",
+    "eth0\0" "2001:1508:1003::21a:a0ff:fe71:813\0" "fe80::21a:a0ff:fe71:813\0",
+    "eth1\0" "2001:1508:1004::21a:a0ff:fe71:814\0" "fe80::21a:a0ff:fe71:814\0",
+    "lo0\0" "127.0.0.1\0" "::1\0",
+    NULL
+  };
+
+  static char const *ifaces_ip4only[] = {
+    "eth2\0" "192.168.2.15\0" "fe80::21a:a0ff:fe71:815\0",
+    "eth0\0" "11.12.13.14\0" "fe80::21a:a0ff:fe71:813\0",
+    "eth1\0" "12.13.14.15\0" "fe80::21a:a0ff:fe71:814\0",
+    "lo0\0" "127.0.0.1\0" "::1\0",
+    NULL
+  };
+
+  soa_session_t *a, *b;
+  sdp_origin_t *o;
+
+  su_home_t home[1] = { SU_HOME_INIT(home) };
+
+  s2_localinfo_ifaces(ifaces1);
+
+  TEST_1(a = soa_clone(ctx->a, ctx->root, ctx));
+
+  /* SOATAG_AF(SOA_AF_IP4_ONLY) => select IP4 address */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_ONLY), TAG_END());
+  n = soa_set_user_sdp(a, 0, "m=audio 5008 RTP/AVP 0 8", -1); TEST(n, 1);
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "11.12.13.14", ip4);
+  /* Should flush the session */
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP6_ONLY) => select IP6 address */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP6_ONLY), TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "2001:1508:1003::21a:a0ff:fe71:813", ip6);
+  TEST_VOID(soa_terminate(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP4_IP6) => select IP4 address */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_IP6), TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "11.12.13.14", ip4);
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP6_IP4) => select IP6 address */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP6_IP4), TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "2001:1508:1003::21a:a0ff:fe71:813", ip6);
+  TEST_VOID(soa_terminate(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP4_IP6) but session mentions IP6 => select IP6  */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_IP6), TAG_END());
+  n = soa_set_user_sdp(a, 0, "c=IN IP6 ::\r\nm=audio 5008 RTP/AVP 0 8", -1); TEST(n, 1);
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "2001:1508:1003::21a:a0ff:fe71:813", ip6);
+  TEST_VOID(soa_terminate(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP4_IP6), o= mentions IP6 => select IP4  */
+  n = soa_set_user_sdp(a, 0, "o=- 1 1 IN IP6 ::\r\n"
+		       "m=audio 5008 RTP/AVP 0 8", -1); TEST(n, 1);
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "11.12.13.14", ip4);
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP4_IP6), c= uses non-local IP6
+     => select local IP6 on o=  */
+  n = soa_set_user_sdp(a, 0,
+		       "c=IN IP6 2001:1508:1004::21a:a0ff:fe71:819\r\n"
+		       "m=audio 5008 RTP/AVP 0 8", -1);
+  TEST(n, 1);
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST(test_address_in_offer(a,
+			     /* o= has local address */
+			     "2001:1508:1003::21a:a0ff:fe71:813", sdp_addr_ip6,
+			     /* c= has sdp-provided address */
+			     "2001:1508:1004::21a:a0ff:fe71:819", sdp_addr_ip6), 0);
+  TEST_VOID(soa_terminate(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP4_ONLY), no IP4 addresses  */
+  s2_localinfo_ifaces(ifaces_ip6only);
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_ONLY), TAG_END());
+  n = soa_set_user_sdp(a, 0, "m=audio 5008 RTP/AVP 0 8", -1);
+  TEST(soa_generate_offer(a, 1, test_completed), -1);
+
+  /* Retry with IP6 enabled */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_IP6), TAG_END());
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+  TEST_OC_ADDRESS(a, "2001:1508:1003::21a:a0ff:fe71:813", ip6);
+  TEST_VOID(soa_terminate(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP6_ONLY), no IP6 addresses  */
+  s2_localinfo_ifaces(ifaces_ip4only);
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP6_ONLY), TAG_END());
+  TEST(soa_generate_offer(a, 1, test_completed), -1); /* should fail */
+  TEST_VOID(soa_terminate(a, NULL));
+
+  /* SOATAG_AF(SOA_AF_IP4_ONLY), no IP4 addresses  */
+  s2_localinfo_ifaces(ifaces_ip6only);
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_ONLY), TAG_END());
+  TEST(soa_generate_offer(a, 1, test_completed), -1); /* should fail */
+  TEST_VOID(soa_terminate(a, NULL));
+
+  /* Select locally available address from the SOATAG_ADDRESS() list */
+  s2_localinfo_ifaces(ifaces1);
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_IP6),
+		     SOATAG_ADDRESS("test.com 17.18.19.20 12.13.14.15"),
+		     TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "12.13.14.15", ip4);
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  /* Select locally available IP6 address from the SOATAG_ADDRESS() list */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP6_IP4),
+		     SOATAG_ADDRESS("test.com 12.13.14.15 fec0::21a:a0ff:fe71:815"),
+		     TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "fec0::21a:a0ff:fe71:815", ip6);
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  /* Select first available address from the SOATAG_ADDRESS() list */
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_ANY),
+		     SOATAG_ADDRESS("test.com 12.13.14.15 fec0::21a:a0ff:fe71:815"),
+		     TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "12.13.14.15", ip4);
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  /* Select preferred address from the SOATAG_ADDRESS() list */
+  s2_localinfo_ifaces(ifaces1);
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP4_IP6),
+		     SOATAG_ADDRESS("test.com fec0::22a:a0ff:fe71:815 19.18.19.20"),
+		     TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "19.18.19.20", ip4);
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  /* Select preferred address from the SOATAG_ADDRESS() list */
+  s2_localinfo_ifaces(ifaces1);
+  n = soa_set_params(a, SOATAG_AF(SOA_AF_IP6_IP4),
+		     SOATAG_ADDRESS("test.com 19.18.19.20 fec0::22a:a0ff:fe71:815 fec0::22a:a0ff:fe71:819"),
+		     TAG_END());
+  n = soa_generate_offer(a, 1, test_completed); TEST(n, 0);
+  TEST_OC_ADDRESS(a, "fec0::22a:a0ff:fe71:815", ip6);
+  TEST_VOID(soa_process_reject(a, NULL));
+
+  TEST_VOID(soa_destroy(a));
+
+  (void)b; (void)o;
+#if 0
+  TEST_1(b = soa_clone(ctx->b, ctx->root, ctx));
+
+  n = soa_set_remote_sdp(b, 0, offer, offerlen); TEST(n, 1);
+
+  n = soa_get_local_sdp(b, NULL, &answer, &answerlen); TEST(n, 0);
+
+  n = soa_set_params(b,
+		     SOATAG_LOCAL_SDP_STR("m=audio 5004 RTP/AVP 8"),
+		     SOATAG_AF(SOA_AF_IP4_ONLY),
+		     SOATAG_ADDRESS("1.2.3.4"),
+		     TAG_END());
+
+  n = soa_generate_answer(b, test_completed); TEST(n, 0);
+
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+
+  n = soa_get_local_sdp(b, NULL, &answer, &answerlen); TEST(n, 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(strstr(answer, "c=IN IP4 1.2.3.4"));
+
+  n = soa_set_remote_sdp(a, 0, answer, -1); TEST(n, 1);
+
+  n = soa_process_answer(a, test_completed); TEST(n, 0);
+
+  TEST_1(soa_is_complete(a));
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_video_active(a), SOA_ACTIVE_DISABLED);
+  TEST(soa_is_image_active(a), SOA_ACTIVE_DISABLED);
+  TEST(soa_is_chat_active(a), SOA_ACTIVE_DISABLED);
+
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_remote_video_active(a), SOA_ACTIVE_DISABLED);
+  TEST(soa_is_remote_image_active(a), SOA_ACTIVE_DISABLED);
+  TEST(soa_is_remote_chat_active(a), SOA_ACTIVE_DISABLED);
+
+  /* 'A' will put call on hold */
+  offer = NONE;
+  TEST(soa_set_params(a, SOATAG_HOLD("*"), TAG_END()), 1);
+
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(a, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(strstr(offer, "a=sendonly"));
+  TEST(soa_set_remote_sdp(b, 0, offer, offerlen), 1);
+  TEST(soa_generate_answer(b, test_completed), 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+  TEST(soa_get_local_sdp(b, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(strstr(answer, "a=recvonly"));
+  TEST(soa_set_remote_sdp(a, 0, answer, -1), 1);
+  TEST(soa_process_answer(a, test_completed), 0);
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDONLY);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDONLY);
+
+  /* 'A' will put call inactive */
+  offer = NONE;
+  TEST(soa_set_params(a, SOATAG_HOLD("#"), TAG_END()), 1);
+
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(a, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(strstr(offer, "a=inactive"));
+  TEST(soa_set_remote_sdp(b, 0, offer, offerlen), 1);
+  TEST(soa_generate_answer(b, test_completed), 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+  TEST(soa_get_local_sdp(b, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(strstr(answer, "a=inactive"));
+  TEST(soa_set_remote_sdp(a, 0, answer, -1), 1);
+  TEST(soa_process_answer(a, test_completed), 0);
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_INACTIVE);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_INACTIVE);
+
+  /* B will send an offer to A, but there is no change in O/A status */
+  TEST(soa_generate_offer(b, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(b, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(!strstr(offer, "a=inactive"));
+  /* printf("offer:\n%s", offer); */
+  TEST(soa_set_remote_sdp(a, 0, offer, offerlen), 1);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_generate_answer(a, test_completed), 0);
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_INACTIVE);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_INACTIVE);
+  TEST_1(soa_is_complete(a));
+  TEST(soa_activate(a, NULL), 0);
+  TEST(soa_get_local_sdp(a, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(strstr(answer, "a=inactive"));
+  /* printf("answer:\n%s", answer); */
+  TEST(soa_set_remote_sdp(b, 0, answer, -1), 1);
+  TEST(soa_process_answer(b, test_completed), 0);
+  TEST(soa_activate(b, NULL), 0);
+
+
+  TEST(soa_is_audio_active(b), SOA_ACTIVE_INACTIVE);
+  TEST(soa_is_remote_audio_active(b), SOA_ACTIVE_INACTIVE);
+
+  /* 'A' will release hold. */
+  TEST(soa_set_params(a, SOATAG_HOLD(NULL), TAG_END()), 1);
+
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(a, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(!strstr(offer, "a=sendonly") && !strstr(offer, "a=inactive"));
+  TEST(soa_set_remote_sdp(b, 0, offer, offerlen), 1);
+  TEST(soa_generate_answer(b, test_completed), 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+  TEST(soa_get_local_sdp(b, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(!strstr(answer, "a=recvonly") && !strstr(answer, "a=inactive"));
+  TEST(soa_set_remote_sdp(a, 0, answer, -1), 1);
+  TEST(soa_process_answer(a, test_completed), 0);
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
+
+  /* 'A' will put B on hold but this time with c=IN IP4 0.0.0.0 */
+  TEST(soa_set_params(a, SOATAG_HOLD("*"), TAG_END()), 1);
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+
+  {
+    sdp_session_t const *o_sdp;
+    sdp_session_t *sdp;
+    sdp_printer_t *p;
+    sdp_connection_t *c;
+
+    TEST(soa_get_local_sdp(a, &o_sdp, NULL, NULL), 1);
+    TEST_1(o_sdp != NULL && o_sdp != NONE);
+    TEST_1(sdp = sdp_session_dup(home, o_sdp));
+
+    /* Remove mode, change c=, encode offer */
+    if (sdp->sdp_media->m_connections)
+      c = sdp->sdp_media->m_connections;
+    else
+      c = sdp->sdp_connection;
+    TEST_1(c);
+    c->c_address = "0.0.0.0";
+
+    TEST_1(p = sdp_print(home, sdp, NULL, 0, sdp_f_realloc));
+    TEST_1(sdp_message(p));
+    offer = sdp_message(p); offerlen = strlen(offer);
+  }
+
+  TEST(soa_set_remote_sdp(b, 0, offer, -1), 1);
+  TEST(soa_generate_answer(b, test_completed), 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+  TEST(soa_get_local_sdp(b, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(strstr(answer, "a=recvonly"));
+  TEST(soa_set_remote_sdp(a, 0, answer, -1), 1);
+  TEST(soa_process_answer(a, test_completed), 0);
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDONLY);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDONLY);
+  TEST(soa_is_audio_active(b), SOA_ACTIVE_RECVONLY);
+  TEST(soa_is_remote_audio_active(b), SOA_ACTIVE_RECVONLY);
+
+  /* 'A' will propose adding video. */
+  /* 'B' will reject. */
+  TEST(soa_set_params(a,
+		      SOATAG_HOLD(NULL),  /* 'A' will release hold. */
+		      SOATAG_USER_SDP_STR("m=audio 5008 RTP/AVP 0 8\r\ni=x\r\n"
+					  "m=video 5006 RTP/AVP 34\r\n"),
+		      TAG_END()), 2);
+
+  TEST(soa_generate_offer(a, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(a, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(!strstr(offer, "a=sendonly"));
+  TEST_1(strstr(offer, "m=video"));
+  TEST(soa_set_remote_sdp(b, 0, offer, offerlen), 1);
+  TEST(soa_generate_answer(b, test_completed), 0);
+  TEST_1(soa_is_complete(b));
+  TEST(soa_activate(b, NULL), 0);
+  TEST(soa_get_local_sdp(b, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(!strstr(answer, "a=recvonly"));
+  TEST_1(strstr(answer, "m=video"));
+  TEST(soa_set_remote_sdp(a, 0, answer, -1), 1);
+  TEST(soa_process_answer(a, test_completed), 0);
+  TEST(soa_activate(a, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_video_active(a), SOA_ACTIVE_REJECTED);
+
+  {
+    /* Test tags */
+    sdp_session_t const *l = NULL, *u = NULL, *r = NULL;
+    sdp_media_t const *m;
+
+    TEST(soa_get_params(b,
+			SOATAG_LOCAL_SDP_REF(l),
+			SOATAG_USER_SDP_REF(u),
+			SOATAG_REMOTE_SDP_REF(r),
+			TAG_END()), 3);
+
+    TEST_1(l); TEST_1(u); TEST_1(r);
+    TEST_1(m = l->sdp_media); TEST(m->m_type, sdp_media_audio);
+    TEST_1(!m->m_rejected);
+    TEST_1(m = m->m_next); TEST(m->m_type, sdp_media_video);
+    TEST_1(m->m_rejected);
+  }
+
+  /* 'B' will now propose adding video. */
+  /* 'A' will accept. */
+  TEST(soa_set_params(b,
+		      SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8\r\n"
+					  "m=video 5006 RTP/AVP 34\r\n"),
+		      TAG_END()), 1);
+
+  TEST(soa_generate_offer(b, 1, test_completed), 0);
+  TEST(soa_get_local_sdp(b, NULL, &offer, &offerlen), 1);
+  TEST_1(offer != NULL && offer != NONE);
+  TEST_1(!strstr(offer, "b=sendonly"));
+  TEST_1(strstr(offer, "m=video"));
+  TEST(soa_set_remote_sdp(a, 0, offer, offerlen), 1);
+  TEST(soa_generate_answer(a, test_completed), 0);
+  TEST_1(soa_is_complete(a));
+  TEST(soa_activate(a, NULL), 0);
+  TEST(soa_get_local_sdp(a, NULL, &answer, &answerlen), 1);
+  TEST_1(answer != NULL && answer != NONE);
+  TEST_1(!strstr(answer, "b=recvonly"));
+  TEST_1(strstr(answer, "m=video"));
+  TEST(soa_set_remote_sdp(b, 0, answer, -1), 1);
+  TEST(soa_process_answer(b, test_completed), 0);
+  TEST(soa_activate(b, NULL), 0);
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_SENDRECV);
+  TEST(soa_is_video_active(a), SOA_ACTIVE_SENDRECV);
+
+  TEST_VOID(soa_terminate(a, NULL));
+
+  TEST(soa_is_audio_active(a), SOA_ACTIVE_DISABLED);
+  TEST(soa_is_remote_audio_active(a), SOA_ACTIVE_DISABLED);
+
+  TEST_VOID(soa_terminate(b, NULL));
+
+  TEST_VOID(soa_destroy(a));
+  TEST_VOID(soa_destroy(b));
+#endif
+  su_home_deinit(home);
+
+  END();
+}
+
 int test_deinit(struct context *ctx)
 {
   BEGIN();
@@ -1974,10 +2527,14 @@ int main(int argc, char *argv[])
     if (retval && quit_on_single_failure) { su_deinit(); return retval; } \
   } while(0)
 
+  retval |= test_localinfo_replacement(); SINGLE_FAILURE_CHECK();
+
   retval |= test_api_errors(ctx); SINGLE_FAILURE_CHECK();
   retval |= test_soa_tags(ctx); SINGLE_FAILURE_CHECK();
   retval |= test_init(ctx, argv + i); SINGLE_FAILURE_CHECK();
+
   if (retval == 0) {
+    retval |= test_address_selection(ctx); SINGLE_FAILURE_CHECK();
 
     retval |= test_params(ctx); SINGLE_FAILURE_CHECK();
     retval |= test_static_offer_answer(ctx); SINGLE_FAILURE_CHECK();

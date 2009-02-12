@@ -238,7 +238,11 @@ SOFIAPUBFUN int soa_has_received_sdp(soa_session_t const *ss);
 SOFIAPUBFUN int soa_set_status(soa_session_t *ss,
 			       int status, char const *phrase);
 
-enum soa_activity { soa_activity_local, soa_activity_remote, soa_activity_session };
+enum soa_activity {
+  soa_activity_local,
+  soa_activity_remote,
+  soa_activity_session
+};
 
 SOFIAPUBFUN void soa_set_activity(soa_session_t *ss,
 				  sdp_media_t const *m,
@@ -259,8 +263,18 @@ SOFIAPUBFUN int soa_description_dup(su_home_t *,
 
 SOFIAPUBFUN int soa_init_sdp_origin(soa_session_t *ss,
 				    sdp_origin_t *o, char buf[64]);
+SOFIAPUBFUN int soa_init_sdp_origin_with_session(soa_session_t *ss,
+						 sdp_origin_t *o,
+						 char buffer[64],
+						 sdp_session_t const *sdp);
+SOFIAPUBFUN int soa_check_sdp_connection(sdp_connection_t const *c);
 SOFIAPUBFUN int soa_init_sdp_connection(soa_session_t *,
 					sdp_connection_t *, char buf[64]);
+SOFIAPUBFUN int soa_init_sdp_connection_with_session(soa_session_t *,
+						     sdp_connection_t *, char buf[64],
+						     sdp_session_t const *sdp);
+
+SOFIAPUBFUN sdp_connection_t *soa_find_local_sdp_connection(sdp_session_t const*);
 
 /* ====================================================================== */
 /* Debug log settings */

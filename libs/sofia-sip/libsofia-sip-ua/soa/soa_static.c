@@ -1092,7 +1092,6 @@ static int offer_answer_step(soa_session_t *ss,
 {
   soa_static_session_t *sss = (soa_static_session_t *)ss;
 
-  char c_address[64];
   sdp_session_t *local = ss->ss_local->ssd_sdp;
   sdp_session_t local0[1];
 
@@ -1102,8 +1101,12 @@ static int offer_answer_step(soa_session_t *ss,
   sdp_session_t *remote = ss->ss_remote->ssd_sdp;
   unsigned remote_version = ss->ss_remote_version;
 
+  int fresh = 0;
+
   sdp_origin_t o[1] = {{ sizeof(o) }};
   sdp_connection_t *c, c0[1] = {{ sizeof(c0) }};
+  char c0_buffer[64];
+
   sdp_time_t t[1] = {{ sizeof(t) }};
 
   int *u2s = NULL, *s2u = NULL, *tbf;
@@ -1150,22 +1153,16 @@ static int offer_answer_step(soa_session_t *ss,
     SU_DEBUG_7(("soa_static(%p, %s): %s\n", (void *)ss, by,
 		"generating local description"));
 
+    fresh = 1;
     local = local0;
     *local = *user, local->sdp_media = NULL;
 
-    if (local->sdp_origin) {
-      o->o_username = local->sdp_origin->o_username;
-      /* o->o_address = local->sdp_origin->o_address; */
-    }
-    if (!o->o_address)
-      o->o_address = c0;
-    local->sdp_origin = o;
+    o->o_username = "-";
+    o->o_address = c0;
+    c0->c_address = c0_buffer;
 
-    if (soa_init_sdp_origin(ss, o, c_address) < 0) {
-      phrase = "Cannot Get IP Address for Media";
-      goto internal_error;
-    }
-
+    if (!local->sdp_origin)
+      local->sdp_origin = o;
     break;
 
   case process_answer:
@@ -1283,28 +1280,46 @@ static int offer_answer_step(soa_session_t *ss,
     break;
   }
 
-  /* Step F: Update c= line */
+  /* Step F0: Initialize o= line */
+  if (fresh) {
+    if (user->sdp_origin)
+      o->o_username = user->sdp_origin->o_username;
+
+    if (soa_init_sdp_origin_with_session(ss, o, c0_buffer, local) < 0) {
+      phrase = "Cannot Get IP Address for Session Description";
+      goto internal_error;
+    }
+
+    local->sdp_origin = o;
+  }
+
+  /* Step F: Update c= line(s) */
   switch (action) {
+    sdp_connection_t *user_c, *local_c;
+
   case generate_offer:
   case generate_answer:
-    /* Upgrade local SDP based of user SDP */
-    if (ss->ss_local_user_version == user_version &&
-	local->sdp_connection)
-      break;
+    user_c = user->sdp_connection;
+    if (!soa_check_sdp_connection(user_c))
+      user_c = NULL;
 
-    if (local->sdp_connection == NULL ||
-	(user->sdp_connection != NULL &&
-	 sdp_connection_cmp(local->sdp_connection, user->sdp_connection))) {
+    local_c = local->sdp_connection;
+    if (!soa_check_sdp_connection(local_c))
+      local_c = NULL;
+
+    if (ss->ss_local_user_version != user_version ||
+	local_c == NULL ||
+	(user_c != NULL && sdp_connection_cmp(local_c, user_c))) {
       sdp_media_t *m;
+
+      if (user_c)
+	c = user_c;
+      else
+	c = local->sdp_origin->o_address;
 
       /* Every m= line (even rejected one) must have a c= line
        * or there must be a c= line at session level
        */
-      if (user->sdp_connection)
-	c = user->sdp_connection;
-      else
-	c = local->sdp_origin->o_address;
-
       for (m = local->sdp_media; m; m = m->m_next)
 	if (m->m_connections == NULL)
 	  break;
