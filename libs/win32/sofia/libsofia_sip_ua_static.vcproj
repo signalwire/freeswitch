@@ -619,6 +619,10 @@
 					>
 				</File>
 				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sres_sip.c"
+					>
+				</File>
+				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sresolv.c"
 					>
 				</File>
@@ -1345,6 +1349,10 @@
 				</File>
 				<File
 					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-resolv\sres_record.h"
+					>
+				</File>
+				<File
+					RelativePath="..\..\sofia-sip\libsofia-sip-ua\sresolv\sofia-sip\sres_sip.h"
 					>
 				</File>
 				<File
