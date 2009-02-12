@@ -3796,8 +3796,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_xml_locate(string section, string tag_name, string key_name, string key_value, SWIGTYPE_p_p_switch_xml root, SWIGTYPE_p_p_switch_xml node, switch_event arg6) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_locate(section, tag_name, key_name, key_value, SWIGTYPE_p_p_switch_xml.getCPtr(root), SWIGTYPE_p_p_switch_xml.getCPtr(node), switch_event.getCPtr(arg6));
+  public static switch_status_t switch_xml_locate(string section, string tag_name, string key_name, string key_value, SWIGTYPE_p_p_switch_xml root, SWIGTYPE_p_p_switch_xml node, switch_event arg6, switch_bool_t clone) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_xml_locate(section, tag_name, key_name, key_value, SWIGTYPE_p_p_switch_xml.getCPtr(root), SWIGTYPE_p_p_switch_xml.getCPtr(node), switch_event.getCPtr(arg6), (int)clone);
     return ret;
   }
 
@@ -10026,7 +10026,7 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_xml_root();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate")]
-  public static extern int switch_xml_locate(string jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5, HandleRef jarg6, HandleRef jarg7);
+  public static extern int switch_xml_locate(string jarg1, string jarg2, string jarg3, string jarg4, HandleRef jarg5, HandleRef jarg6, HandleRef jarg7, int jarg8);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_xml_locate_domain")]
   public static extern int switch_xml_locate_domain(string jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);

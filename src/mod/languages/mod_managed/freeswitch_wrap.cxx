@@ -24045,7 +24045,7 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_xml_root() {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate(char * jarg1, char * jarg2, char * jarg3, char * jarg4, void * jarg5, void * jarg6, void * jarg7) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate(char * jarg1, char * jarg2, char * jarg3, char * jarg4, void * jarg5, void * jarg6, void * jarg7, int jarg8) {
   int jresult ;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -24054,6 +24054,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate(char * jarg1, char * jarg2, 
   switch_xml_t *arg5 = (switch_xml_t *) 0 ;
   switch_xml_t *arg6 = (switch_xml_t *) 0 ;
   switch_event_t *arg7 = (switch_event_t *) 0 ;
+  switch_bool_t arg8 ;
   switch_status_t result;
   
   arg1 = (char *)jarg1; 
@@ -24063,7 +24064,8 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_xml_locate(char * jarg1, char * jarg2, 
   arg5 = (switch_xml_t *)jarg5; 
   arg6 = (switch_xml_t *)jarg6; 
   arg7 = (switch_event_t *)jarg7; 
-  result = (switch_status_t)switch_xml_locate((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,arg7);
+  arg8 = (switch_bool_t)jarg8; 
+  result = (switch_status_t)switch_xml_locate((char const *)arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,arg5,arg6,arg7,arg8);
   jresult = result; 
   return jresult;
 }
