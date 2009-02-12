@@ -34,7 +34,7 @@ endif
 endif
 
 .c.lo:
-	@test ${SOFIA_SILENT} != @ || echo '	 LTCOMPILE $@'
+	@test "${SOFIA_SILENT}" != @ || echo '	 LTCOMPILE $@'
 if am__fastdepCC
 	${SOFIA_SILENT}if $(LTCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
