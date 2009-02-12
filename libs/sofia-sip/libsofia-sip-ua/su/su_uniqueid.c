@@ -136,7 +136,12 @@ static void init(void)
 {
   int i;
 
+#if HAVE_INITSTATE
+  /* Allow libsofia-sip-ua.so to unload. */
+  uint32_t *seed = calloc(32, sizeof *seed);
+#else
   static uint32_t seed[32] = { 0 };
+#endif
   su_time_t now;
 
   initialized = 1;
