@@ -47,6 +47,9 @@ static FSProcess *opal_process = NULL;
 static const char ModuleName[] = "opal";
 
 
+static switch_status_t on_hangup(switch_core_session_t *session);
+
+
 static switch_io_routines_t opalfs_io_routines = {
     /*.outgoing_channel */ create_outgoing_channel,
     /*.read_frame */ FSConnection::read_audio_frame,
@@ -64,7 +67,7 @@ static switch_state_handler_table_t opalfs_event_handlers = {
     /*.on_init */ FSConnection::on_init,
     /*.on_routing */ FSConnection::on_routing,
     /*.on_execute */ FSConnection::on_execute,
-    /*.on_hangup */ FSConnection::on_hangup,
+    /*.on_hangup */ on_hangup,
     /*.on_loopback */ FSConnection::on_loopback,
     /*.on_transmit */ FSConnection::on_transmit
 };
@@ -486,14 +489,19 @@ OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userDat
 
 ///////////////////////////////////////////////////////////////////////
 
+
 FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint)
   : OpalLocalConnection(call, endpoint, NULL)
   , m_endpoint(endpoint)
 {
+    opal_private_t *tech_pvt;
     FSManager & mgr = (FSManager &) endpoint.GetManager();
     m_fsSession = switch_core_session_request(mgr.GetSwitchInterface(), NULL);
     m_fsChannel = switch_core_session_get_channel(m_fsSession);
-    switch_core_session_set_private(m_fsSession, this);
+
+    tech_pvt = (opal_private_t *) switch_core_session_alloc(m_fsSession, sizeof(*tech_pvt));
+    tech_pvt->me = this;
+    switch_core_session_set_private(m_fsSession, tech_pvt);
 }
 
 
@@ -568,11 +576,16 @@ bool FSConnection::OnIncoming()
 
 void FSConnection::OnReleased()
 {
+    opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(m_fsSession);
+    
+    /* so FS on_hangup will not try to deref a landmine */
+    tech_pvt->me = NULL;
+    
     m_rxAudioOpened.Signal();   // Just in case
     m_txAudioOpened.Signal();
     H225_ReleaseCompleteReason dummy;
     switch_channel_hangup(switch_core_session_get_channel(m_fsSession),
-                          (switch_call_cause_t)H323TranslateFromCallEndReason(GetCallEndReason(), dummy));
+                          (switch_call_cause_t)H323TranslateFromCallEndReason(GetCallEndReason(), dummy));    
     OpalLocalConnection::OnReleased();
 }
 
@@ -752,16 +765,49 @@ switch_status_t FSConnection::on_execute()
 }
 
 
-switch_status_t FSConnection::on_hangup()
+/* this function has to be called with the original session beause the FSConnection might already be destroyed and we 
+   will can't have it be a method of a dead object
+ */
+static switch_status_t on_hangup(switch_core_session_t *session)
 {
-    switch_channel_t *channel = switch_core_session_get_channel(m_fsSession);
-    if (channel == NULL) {
-        return SWITCH_STATUS_FALSE;
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session);
+    
+    /* if this is still here it was our idea to hangup not opal's */
+    if (tech_pvt->me) {
+        Q931::CauseValues cause = (Q931::CauseValues)switch_channel_get_cause_q850(channel);
+        tech_pvt->me->SetQ931Cause(cause);
+        tech_pvt->me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
+        tech_pvt->me = NULL;
+    }
+    
+    if (tech_pvt->read_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->read_codec);
     }
 
-    Q931::CauseValues cause = (Q931::CauseValues)switch_channel_get_cause_q850(channel);
-    SetQ931Cause(cause);
-    ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
+    if (tech_pvt->write_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->write_codec);
+    }
+
+    if (tech_pvt->vid_read_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->vid_read_codec);
+    }
+
+    if (tech_pvt->vid_write_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->vid_write_codec);
+    }
+
+    if (tech_pvt->read_timer.timer_interface) {
+        switch_core_timer_destroy(&tech_pvt->read_timer);
+    }
+
+    if (tech_pvt->vid_read_timer.timer_interface) {
+        switch_core_timer_destroy(&tech_pvt->vid_read_timer);
+    }
+
+    switch_core_session_unset_read_codec(session);
+    switch_core_session_unset_write_codec(session);
+
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -808,8 +854,7 @@ switch_status_t FSConnection::send_dtmf(const switch_dtmf_t *dtmf)
 
 switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg)
 {
-    switch_core_session_t *session = GetSession();
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+    switch_channel_t *channel = switch_core_session_get_channel(m_fsSession);
 
 
     /*
@@ -969,13 +1014,15 @@ FSMediaStream::FSMediaStream(FSConnection & conn, const OpalMediaFormat & mediaF
     , m_callOnStart(true)
 {
     memset(&m_readFrame, 0, sizeof(m_readFrame));
-    m_readFrame.codec = &m_switchCodec;
+    m_readFrame.codec = m_switchCodec;
     m_readFrame.flags = SFF_RAW_RTP;
 }
 
 
 PBoolean FSMediaStream::Open()
 {
+    opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(m_fsSession);
+
     if (IsOpen()) {
         return true;
     }
@@ -993,13 +1040,21 @@ PBoolean FSMediaStream::Open()
     
     int ptime = mediaFormat.GetOptionInteger(OpalAudioFormat::TxFramesPerPacketOption()) * mediaFormat.GetFrameTime() / mediaFormat.GetTimeUnits();
 
+
+    if (IsSink()) {
+        m_switchCodec = isAudio ? &tech_pvt->read_codec : &tech_pvt->vid_read_codec;
+        m_switchTimer = isAudio ? &tech_pvt->read_timer : &tech_pvt->vid_read_timer;
+    } else {
+        m_switchCodec = isAudio ? &tech_pvt->write_codec : &tech_pvt->vid_write_codec;
+    }
+
     // The following is performed on two different instances of this object.
-    if (switch_core_codec_init(&m_switchCodec, mediaFormat.GetEncodingName(), NULL, // FMTP
+    if (switch_core_codec_init(m_switchCodec, mediaFormat.GetEncodingName(), NULL, // FMTP
                                mediaFormat.GetClockRate(), ptime, 1,  // Channels
                                SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
                                switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
         // Could not select a codecs using negotiated frames/packet, so try using default.
-        if (switch_core_codec_init(&m_switchCodec, mediaFormat.GetEncodingName(), NULL, // FMTP
+        if (switch_core_codec_init(m_switchCodec, mediaFormat.GetEncodingName(), NULL, // FMTP
                                    mediaFormat.GetClockRate(), 0, 1,  // Channels
                                    SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,   // Settings
                                    switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
@@ -1020,24 +1075,25 @@ PBoolean FSMediaStream::Open()
         m_readFrame.rate = mediaFormat.GetClockRate();
 
         if (isAudio) {
-            switch_core_session_set_read_codec(m_fsSession, &m_switchCodec);
-            if (switch_core_timer_init(&m_switchTimer,
+            switch_core_session_set_read_codec(m_fsSession, m_switchCodec);
+            if (switch_core_timer_init(m_switchTimer,
                                        "soft",
-                                       m_switchCodec.implementation->microseconds_per_packet / 1000,
-                                       m_switchCodec.implementation->samples_per_packet,
+                                       m_switchCodec->implementation->microseconds_per_packet / 1000,
+                                       m_switchCodec->implementation->samples_per_packet,
                                        switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
-                switch_core_codec_destroy(&m_switchCodec);
+                switch_core_codec_destroy(m_switchCodec);
+                m_switchCodec = NULL;
                 return false;
             }
         } else {
-            switch_core_session_set_video_read_codec(m_fsSession, &m_switchCodec);
+            switch_core_session_set_video_read_codec(m_fsSession, m_switchCodec);
             switch_channel_set_flag(m_fsChannel, CF_VIDEO);
         }
     } else {
         if (isAudio) {
-            switch_core_session_set_write_codec(m_fsSession, &m_switchCodec);
+            switch_core_session_set_write_codec(m_fsSession, m_switchCodec);
         } else {
-            switch_core_session_set_video_write_codec(m_fsSession, &m_switchCodec);
+            switch_core_session_set_video_write_codec(m_fsSession, m_switchCodec);
             switch_channel_set_flag(m_fsChannel, CF_VIDEO);
         }
     }
@@ -1053,36 +1109,11 @@ PBoolean FSMediaStream::Close()
 {
     if (!IsOpen())
         return false;
+    
+    /* forget these FS will properly destroy them for us */
 
-    bool isAudio;
-
-    if (mediaFormat.GetMediaType() == OpalMediaType::Audio()) {
-        isAudio = true;
-    } else if (mediaFormat.GetMediaType() == OpalMediaType::Video()) {
-        isAudio = false;
-    } else {
-        return OpalMediaStream::Close();
-    }
-
-    if (IsSink()) {
-        if (isAudio) {
-            switch_core_session_unset_read_codec(m_fsSession);
-            switch_core_timer_destroy(&m_switchTimer);
-        } else {
-            switch_core_session_set_video_read_codec(m_fsSession, NULL);
-        }
-
-        switch_core_codec_destroy(&m_switchCodec);
-    } else {
-        if (isAudio)
-            switch_core_session_unset_write_codec(m_fsSession);
-        else
-            switch_core_session_set_video_write_codec(m_fsSession, NULL);
-        switch_core_codec_destroy(&m_switchCodec);
-    }
-
-    PTRACE(3, "mod_opal\tReset & destroyed " << (IsSink()? "read" : "write")
-           << ' ' << mediaFormat.GetMediaType() << " codec for connection " << *this);
+    m_switchTimer = NULL;
+    m_switchCodec = NULL;
 
     return OpalMediaStream::Close();
 }
@@ -1102,6 +1133,11 @@ PBoolean FSMediaStream::RequiresPatchThread(OpalMediaStream *) const
 
 switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag_t flags)
 {
+
+    if (!m_switchCodec) {
+        return SWITCH_STATUS_FALSE;
+    }
+
     if (m_callOnStart) {
         /*
           There is a race here... sometimes we make it here and GetPatch() is NULL
@@ -1148,11 +1184,11 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         }
     } else {
 
-        if (!GetPatch()->GetSource().ReadPacket(m_readRTP)) {
+        if (!m_switchTimer || !GetPatch()->GetSource().ReadPacket(m_readRTP)) {
             return SWITCH_STATUS_FALSE;
         }
     
-        switch_core_timer_next(&m_switchTimer);
+        switch_core_timer_next(m_switchTimer);
     
         if (!(m_readFrame.datalen = m_readRTP.GetPayloadSize())) {
             m_readFrame.flags = SFF_CNG;
@@ -1174,6 +1210,7 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
     m_readFrame.m = (switch_bool_t) m_readRTP.GetMarker();
     m_readFrame.seq = m_readRTP.GetSequenceNumber();
     m_readFrame.ssrc = m_readRTP.GetSyncSource();
+    m_readFrame.codec = m_switchCodec;
     *frame = &m_readFrame;
 
     return SWITCH_STATUS_SUCCESS;

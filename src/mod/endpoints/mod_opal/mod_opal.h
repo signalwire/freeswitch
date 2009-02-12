@@ -106,6 +106,18 @@ class FSManager : public OpalManager {
     list < FSListener > m_listeners;
 };
 
+class FSConnection;
+typedef struct {
+    switch_timer_t read_timer;
+    switch_codec_t read_codec;
+    switch_codec_t write_codec;
+
+    switch_timer_t vid_read_timer;
+    switch_codec_t vid_read_codec;
+    switch_codec_t vid_write_codec;
+    FSConnection *me;
+} opal_private_t;
+
 
 class FSEndPoint:public OpalLocalEndPoint {
     PCLASSINFO(FSEndPoint, OpalLocalEndPoint);
@@ -117,23 +129,25 @@ class FSEndPoint:public OpalLocalEndPoint {
 };
 
 
-#define DECLARE_CALLBACK0(name)                                         \
+#define DECLARE_CALLBACK0(name)                           \
     static switch_status_t name(switch_core_session_t *session) {       \
-        FSConnection * conn = (FSConnection *)switch_core_session_get_private(session); \
-        return conn != NULL ? conn->name() : SWITCH_STATUS_FALSE; }     \
+        opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session); \
+        return tech_pvt && tech_pvt->me != NULL ? tech_pvt->me->name() : SWITCH_STATUS_FALSE; } \
 switch_status_t name()
 
 #define DECLARE_CALLBACK1(name, type1, name1)                           \
     static switch_status_t name(switch_core_session_t *session, type1 name1) { \
-        FSConnection * conn = (FSConnection *)switch_core_session_get_private(session); \
-        return conn != NULL ? conn->name(name1) : SWITCH_STATUS_FALSE; } \
-    switch_status_t name(type1 name1)
+        opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session); \
+        return tech_pvt && tech_pvt->me != NULL ? tech_pvt->me->name(name1) : SWITCH_STATUS_FALSE; } \
+switch_status_t name(type1 name1)
 
 #define DECLARE_CALLBACK3(name, type1, name1, type2, name2, type3, name3) \
     static switch_status_t name(switch_core_session_t *session, type1 name1, type2 name2, type3 name3) { \
-        FSConnection * conn = (FSConnection *)switch_core_session_get_private(session); \
-        return conn != NULL ? conn->name(name1, name2, name3) : SWITCH_STATUS_FALSE; } \
-    switch_status_t name(type1 name1, type2 name2, type3 name3)
+        opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session); \
+        return tech_pvt && tech_pvt->me != NULL ? tech_pvt->me->name(name1, name2, name3) : SWITCH_STATUS_FALSE; } \
+switch_status_t name(type1 name1, type2 name2, type3 name3)
+
+
 
 
 class FSConnection:public OpalLocalConnection {
@@ -156,7 +170,8 @@ class FSConnection:public OpalLocalConnection {
     DECLARE_CALLBACK0(on_init);
     DECLARE_CALLBACK0(on_routing);
     DECLARE_CALLBACK0(on_execute);
-    DECLARE_CALLBACK0(on_hangup);
+    //DECLARE_CALLBACK0(on_hangup);
+
     DECLARE_CALLBACK0(on_loopback);
     DECLARE_CALLBACK0(on_transmit);
 
@@ -206,8 +221,8 @@ class FSMediaStream:public OpalMediaStream {
  private:
     switch_core_session_t *m_fsSession;
     switch_channel_t *m_fsChannel;
-    switch_timer_t m_switchTimer;
-    switch_codec_t m_switchCodec;
+    switch_timer_t *m_switchTimer;
+    switch_codec_t *m_switchCodec;
     switch_frame_t m_readFrame;
     RTP_DataFrame m_readRTP;
     bool m_callOnStart;
