@@ -104,7 +104,9 @@ SAC_TPORT
 dnl Check is used for testing
 PKG_CHECK_MODULES(CHECK, check >= 0.9.4, have_check="yes", have_check="no")
 AM_CONDITIONAL(HAVE_CHECK, test x"$have_check" = "xyes")
-
+if test x"$have_check" = "xyes"; then
+   AC_DEFINE([HAVE_CHECK], 1, [Define to 1 if check library is available])
+fi
 AC_CHECK_HEADERS([fnmatch.h])
 
 ### internal modules
