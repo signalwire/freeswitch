@@ -2086,7 +2086,7 @@ static tport_stack_class_t nta_agent_class[1] =
  * and how they are preferred. If no protocol is specified, both UDP and TCP
  * are used for SIP URL and TLS for SIPS URL. The preference can be
  * indicated with a comma-separated list of transports, for instance,
- * parameter @code transport=tcp,udp @endocde indicates that TCP is
+ * parameter @code transport=tcp,udp @endcode indicates that TCP is
  * preferred to UDP.
  *
  * The "maddr" parameter determines to which address the stack binds in
@@ -2095,7 +2095,7 @@ static tport_stack_class_t nta_agent_class[1] =
  * are created. [::] means that only IPv6 sockets are created.
  *
  * The "comp" parameter determines the supported compression protocol.
- * Currently only sigcomp is supported (with suitable library.
+ * Currently only sigcomp is supported (with suitable library).
  *
  * @par Examples:
  * @code sip:172.21.40.24;maddr=* @endcode \n
