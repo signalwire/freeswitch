@@ -341,6 +341,9 @@ int test_sip(void)
   u = url_hdup(home, (url_t*)"SIP:test@127.0.0.1:55"); TEST_1(u);
   TEST(u->url_type, url_sip);
 
+  u = url_hdup(home, (url_t*)"SIP:test@127.0.0.1:"); TEST_1(u);
+  TEST(u->url_type, url_sip);
+
   TEST_P(url_hdup(home, (url_t*)"sip:test@127.0.0.1::55"), NULL);
   TEST_P(url_hdup(home, (url_t*)"sip:test@127.0.0.1:55:"), NULL);
   TEST_P(url_hdup(home, (url_t*)"sip:test@127.0.0.1:sip"), NULL);

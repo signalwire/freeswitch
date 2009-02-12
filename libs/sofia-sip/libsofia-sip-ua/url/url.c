@@ -713,8 +713,15 @@ int _url_d(url_t *url, char *s)
 	while (*port >= '0' && *port <= '9')
 	  port++;
 
-	if (port != url->url_port ? port[0] != '\0'
-	    : (port[0] != '*' || port[1] != '\0'))
+	if (port != url->url_port) {
+	  if (port[0] != '\0')
+	    return -1;
+	}
+	else if (port[0] == '\0')
+	  /* empty string */;
+	else if (port[0] == '*' && port[1] == '\0')
+	  /* wildcard */;
+	else
 	  return -1;
       }
       host[n] = 0;
