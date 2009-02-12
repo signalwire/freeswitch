@@ -2347,9 +2347,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 		}
 
 		if (caller_profile->times->progress_media) {
-			progress_mediasec = (int32_t) (tt_progress - tt_created);
-			progress_mediamsec = (int32_t) (mtt_progress - mtt_created);
-			progress_mediausec = caller_profile->times->progress - caller_profile->times->created;
+			progress_mediasec = (int32_t) (tt_progress_media - tt_created);
+			progress_mediamsec = (int32_t) (mtt_progress_media - mtt_created);
+			progress_mediausec = caller_profile->times->progress_media - caller_profile->times->created;
 		}
 
 
