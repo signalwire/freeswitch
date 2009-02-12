@@ -138,6 +138,14 @@ static unsigned char console_f12key(EditLine * el, int ch)
 	return console_fnkey_pressed(12);
 }
 
+static unsigned char console_eofkey(EditLine * el, int ch)
+{
+	printf("/exit\n\n");
+	running = thread_running = 0;
+
+	return CC_EOF;
+}
+
 #endif
 
 static void handle_SIGINT(int sig)
@@ -146,6 +154,11 @@ static void handle_SIGINT(int sig)
 	return;
 }
 
+static void handle_SIGQUIT(int sig)
+{
+	fprintf(stdout, "Caught SIGQUIT\n");
+	return;
+}
 
 #ifdef WIN32
 static HANDLE hStdout;
@@ -463,6 +476,7 @@ int main(int argc, char *argv[])
 	}
 	
 	signal(SIGINT, handle_SIGINT);
+	signal(SIGQUIT, handle_SIGQUIT);
 
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	
@@ -660,6 +674,8 @@ int main(int argc, char *argv[])
 	el_set(el, EL_ADDFN, "f11-key", "F11 KEY PRESS", console_f11key);
 	el_set(el, EL_ADDFN, "f12-key", "F12 KEY PRESS", console_f12key);
 
+	el_set(el, EL_ADDFN, "EOF-key", "EOF (^D) KEY PRESS", console_eofkey);
+
 	el_set(el, EL_BIND, "\033OP", "f1-key", NULL);
 	el_set(el, EL_BIND, "\033OQ", "f2-key", NULL);
 	el_set(el, EL_BIND, "\033OR", "f3-key", NULL);
@@ -679,6 +695,7 @@ int main(int argc, char *argv[])
 	el_set(el, EL_BIND, "\033[23~", "f11-key", NULL);
 	el_set(el, EL_BIND, "\033[24~", "f12-key", NULL);
 
+	el_set(el, EL_BIND, "\004", "EOF-key", NULL);
 
 	if (myhistory == 0) {
 		esl_log(ESL_LOG_ERROR, "history could not be initialized\n");
