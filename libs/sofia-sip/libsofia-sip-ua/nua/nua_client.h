@@ -37,8 +37,6 @@
 
 #include <nua_types.h>
 
-SOFIA_BEGIN_DECLS
-
 /* Methods for client request. @internal */
 typedef struct {
   sip_method_t crm_method;
