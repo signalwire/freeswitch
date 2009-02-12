@@ -9,4 +9,4 @@ gcore -o /usr/local/freeswitch/log/freeswitch.gcore $fspid && \
 	--eval-command='thread apply all bt' \
 	--eval-command='thread apply all bt full' \
 	--eval-command='quit'
-rm /usr/local/freeswitch/log/freeswitch.gcore.$fspid
+#rm /usr/local/freeswitch/log/freeswitch.gcore.$fspid
