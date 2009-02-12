@@ -101,7 +101,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	 * *and* for Linksys, I believe they use "sa" as their magic appearance agent name for those blind notifies, so
 	 * we'll probably have to change to match
 	*/
-	if (profile->manage_shared_appearance) {
+	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		
 		if (sip->sip_request->rq_url->url_user && !strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
 			int sub_state;
@@ -728,8 +728,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_CERTIFICATE_DIR(profile->tls_cert_dir)), 
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), TPTAG_TLS_VERSION(profile->tls_version)), 
 							  TAG_IF(!strchr(profile->sipip, ':'), NTATAG_UDP_MTU(65535)), 
- 							  TAG_IF(profile->disable_srv, NTATAG_USE_SRV(0)),
- 							  TAG_IF(profile->disable_naptr, NTATAG_USE_NAPTR(0)),
+ 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_SRV), NTATAG_USE_SRV(0)),
+ 							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR), NTATAG_USE_NAPTR(0)),
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 							  NTATAG_SERVER_RPORT(profile->rport_level), 
 							  TAG_IF(tportlog, TPTAG_LOG(1)), 
@@ -762,9 +762,9 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW("SUBSCRIBE")),
 				   TAG_IF(profile->pres_type, NUTAG_ENABLEMESSAGE(1)),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence")),
-				   TAG_IF((profile->pres_type || profile->manage_shared_appearance), NUTAG_ALLOW_EVENTS("dialog")),
+				   TAG_IF((profile->pres_type || sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)), NUTAG_ALLOW_EVENTS("dialog")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("call-info")),
-				   TAG_IF((profile->pres_type || profile->manage_shared_appearance), NUTAG_ALLOW_EVENTS("sla")),
+				   TAG_IF((profile->pres_type || sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)), NUTAG_ALLOW_EVENTS("sla")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("include-session-description")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("presence.winfo")),
 				   TAG_IF(profile->pres_type, NUTAG_ALLOW_EVENTS("message-summary")),
@@ -1807,9 +1807,6 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
 				sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 				profile->auto_restart = 1;
-				profile->manage_shared_appearance = 0; /* Initialize default */
-				profile->disable_srv = 0;
-				profile->disable_naptr = 0;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2027,16 +2024,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} 
 					} else if (!strcasecmp(var, "manage-shared-appearance")) {
 						if (switch_true(val)) {
-							profile->manage_shared_appearance = 1;
+							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE);
 							profile->sla_contact = switch_core_sprintf(profile->pool, "sip:sla-agent@%s", profile->sipip);
 						}
 					} else if (!strcasecmp(var, "disable-srv")) {
 						if (switch_true(val)) {
-							profile->disable_srv = 1;
+							sofia_set_pflag(profile, PFLAG_DISABLE_SRV);
 						}
 					} else if (!strcasecmp(var, "disable-naptr")) {
 						if (switch_true(val)) {
-							profile->disable_naptr = 1;
+							sofia_set_pflag(profile, PFLAG_DISABLE_NAPTR);
 						}
 					} else if (!strcasecmp(var, "unregister-on-options-fail")) {
 						if (switch_true(val)) {

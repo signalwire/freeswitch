@@ -174,6 +174,9 @@ typedef enum {
 	PFLAG_CALLID_AS_UUID,
 	PFLAG_UUID_AS_CALLID,
 	PFLAG_SCROOGE,
+	PFLAG_MANAGE_SHARED_APPEARANCE,
+	PFLAG_DISABLE_SRV,
+	PFLAG_DISABLE_NAPTR,
 
 	/* No new flags below this line */
 	PFLAG_MAX
@@ -451,9 +454,6 @@ struct sofia_profile {
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
-	char manage_shared_appearance;  /* pflags was all full up - MTK */
-	char disable_srv;
-	char disable_naptr;
 };
 
 struct private_object {
