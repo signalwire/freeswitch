@@ -60,12 +60,6 @@ struct tester
     su_time_t when;
   } *received;
 
-  struct {
-    su_socket_t socket;
-    su_wait_t wait[1];
-    int reg;
-  } dns;
-
   nua_t *nua;
 
   struct event {
