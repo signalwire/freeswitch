@@ -3734,7 +3734,7 @@ isize_t tport_queuelen(tport_t const *self)
   if (self && self->tp_queue) {
     unsigned short i, N = self->tp_params->tpp_qsize;
 
-    for (i = self->tp_qhead; self->tp_queue[i]; i = (i + 1) % N)
+    for (i = self->tp_qhead; self->tp_queue[i] && retval < N; i = (i + 1) % N)
       retval++;
   }
 
