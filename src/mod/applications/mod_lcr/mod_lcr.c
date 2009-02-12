@@ -161,7 +161,9 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 		destination_number += lstrip;
 	}
 	
-	data = switch_core_sprintf(pool, "%s%s%s%s%s", cur_route->gw_prefix, cur_route->prefix
+	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s]%s%s%s%s%s"
+								, cur_route->carrier_name, cur_route->rate_str
+								, cur_route->gw_prefix, cur_route->prefix
 								, destination_number, cur_route->suffix, cur_route->gw_suffix);
 			
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Returning Dialstring %s\n", data);
@@ -706,6 +708,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 
 		switch_channel_set_variable(channel, SWITCH_CONTINUE_ON_FAILURE_VARIABLE, "true");
 		switch_channel_set_variable(channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE, "true");
+		switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate");
 
 		for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
 			switch_caller_extension_add_application(session, extension, "bridge", cur_route->dialstring);
@@ -787,6 +790,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			switch_channel_set_variable(channel, "lcr_route_count", vbuf);
 			*(rbuf + strlen(rbuf) - 1) = '\0';
 			switch_channel_set_variable(channel, "lcr_auto_route", rbuf);
+			switch_channel_set_variable(channel, "import", "lcr_carrier,lcr_rate");
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "LCR lookup failed for %s\n", dest);
 		}
