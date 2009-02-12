@@ -669,7 +669,7 @@ SWITCH_STANDARD_API(xml_locate_function)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_name", tag_attr_name);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "tag_attr_val", tag_attr_val);
 
-	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate(section, tag, tag_attr_name, tag_attr_val, &xml, &obj, params, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 		stream->write_function(stream, "can't find anything\n");
 		goto end;
 	}

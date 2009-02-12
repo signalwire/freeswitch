@@ -2277,7 +2277,7 @@ static void do_vcard(ldl_handle_t *handle, char *to, char *from, char *id)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "from", from);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "object", "vcard");
 
-	if (switch_xml_locate("directory", "domain", "name", to_host, &xml, &domain, params) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate("directory", "domain", "name", to_host, &xml, &domain, params, SWITCH_FALSE) != SWITCH_STATUS_SUCCESS) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "can't find domain for [%s@%s]\n", to_user, to_host);
 		goto end;
 	}

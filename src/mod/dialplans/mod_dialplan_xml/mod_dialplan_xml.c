@@ -206,8 +206,7 @@ static switch_status_t dialplan_xml_locate(switch_core_session_t *session, switc
 
 	switch_channel_event_set_data(channel, params);
 	switch_caller_profile_event_set_data(caller_profile, "Hunt", params);
-
-	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, params);
+	status = switch_xml_locate("dialplan", NULL, NULL, NULL, root, node, params, SWITCH_FALSE);
 	switch_event_destroy(&params);
 	return status;
 }

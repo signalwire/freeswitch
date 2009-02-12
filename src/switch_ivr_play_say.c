@@ -133,7 +133,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 	}
 	switch_channel_event_set_data(channel, hint_data);
 
-	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate("phrases", NULL, NULL, NULL, &xml, &cfg, hint_data, SWITCH_TRUE) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of phrases failed.\n");
 		goto done;
 	}

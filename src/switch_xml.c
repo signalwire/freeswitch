@@ -1491,8 +1491,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_file(const char *file)
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name, const char *key_value, switch_xml_t * root, switch_xml_t * node,
-												  switch_event_t *params)
+												  const char *key_name, 
+												  const char *key_value, 
+												  switch_xml_t *root, 
+												  switch_xml_t *node,
+												  switch_event_t *params,
+												  switch_bool_t clone)
 {
 	switch_xml_t conf = NULL;
 	switch_xml_t tag = NULL;
@@ -1547,8 +1551,16 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 		}
 
 		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && (tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
-			*node = tag;
-			*root = xml;
+			if (clone) {
+				char *x = switch_xml_toxml(tag, SWITCH_FALSE);
+				switch_assert(x);
+				*root = switch_xml_parse_str(x, strlen(x));
+				*node = *root;
+				switch_xml_free(xml);
+			} else {
+				*node = tag;
+				*root = xml;
+			}
 			return SWITCH_STATUS_SUCCESS;
 		} else {
 			switch_xml_free(xml);
@@ -1577,7 +1589,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name
 		params = my_params;
 	}
 
-	status = switch_xml_locate("directory", "domain", "name", domain_name, root, domain, params);
+	status = switch_xml_locate("directory", "domain", "name", domain_name, root, domain, params, SWITCH_FALSE);
 	if (my_params) {
 		switch_event_destroy(&my_params);
 	}
@@ -1914,7 +1926,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 
 	assert(MAIN_XML_ROOT != NULL);
 
-	if (switch_xml_locate("configuration", "configuration", "name", file_path, &xml, &cfg, params) == SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_locate("configuration", "configuration", "name", file_path, &xml, &cfg, params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		*node = cfg;
 	}
 

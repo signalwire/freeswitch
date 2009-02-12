@@ -331,8 +331,12 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 ///\return SWITCH_STATUS_SUCCESS if successful root and node will be assigned
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 												  const char *tag_name,
-												  const char *key_name, const char *key_value, switch_xml_t *root, switch_xml_t *node,
-												  switch_event_t *params);
+												  const char *key_name, 
+												  const char *key_value, 
+												  switch_xml_t *root, 
+												  switch_xml_t *node,
+												  switch_event_t *params,
+												  switch_bool_t clone);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params, switch_xml_t *root, switch_xml_t *domain);
 

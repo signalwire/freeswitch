@@ -1653,7 +1653,7 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					if (!switch_strlen_zero(dname)) {
 						if (!strcasecmp(dname, "all")) {
 							switch_xml_t xml_root, x_domains;
-							if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params) == SWITCH_STATUS_SUCCESS) {
+							if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 								for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
 									dname = switch_xml_attr_soft(x_domain_tag, "name");
 									parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
@@ -2361,7 +2361,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (!switch_strlen_zero(dname)) {
 							if (!strcasecmp(dname, "all")) {
 								switch_xml_t xml_root, x_domains;
-								if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params) == SWITCH_STATUS_SUCCESS) {
+								if (switch_xml_locate("directory", NULL, NULL, NULL, &xml_root, &x_domains, xml_params, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 									for (x_domain_tag = switch_xml_child(x_domains, "domain"); x_domain_tag; x_domain_tag = x_domain_tag->next) {
 										dname = switch_xml_attr_soft(x_domain_tag, "name");
 										parse_domain_tag(profile, x_domain_tag, dname, parse, alias);
