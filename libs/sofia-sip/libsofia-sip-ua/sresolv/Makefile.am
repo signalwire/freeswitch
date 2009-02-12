@@ -21,12 +21,17 @@ check_PROGRAMS = 	torture_sresolv test_sresolv
 
 TESTS = 		torture_sresolv run_test_sresolv
 
+check_PROGRAMS +=	check_sres_sip
+TESTS +=		check_sres_sip
+check_sres_sip_LDADD = 	$(LDADD) ${top_builddir}/s2check/libs2.a @CHECK_LIBS@
+CFLAGS +=		-I${top_srcdir}/s2check
+
 CLEANFILES =		resolv.conf error.conf named.conf.tmp \
 			.test_sresolv.api.conf.?????? \
 			named.run
 
-LDADD = 		../url/liburl.la ../bnf/libbnf.la \
-			libsresolv.la \
+LDADD =			libsresolv.la \
+	 		../url/liburl.la ../bnf/libbnf.la \
 			../su/libsu.la
 
 test_sresolv_LDFLAGS =	-static
@@ -36,13 +41,15 @@ test_sresolv_LDFLAGS =	-static
 
 nobase_include_sofia_HEADERS = \
 			sofia-sip/sresolv.h \
+			sofia-sip/sres_sip.h \
 			sofia-resolv/sres.h \
 			sofia-resolv/sres_config.h \
 			sofia-resolv/sres_async.h \
 			sofia-resolv/sres_cache.h \
 			sofia-resolv/sres_record.h
 
-libsresolv_la_SOURCES =	sres.c sres_cache.c sres_blocking.c sresolv.c
+libsresolv_la_SOURCES =	sres.c sres_cache.c sres_blocking.c \
+			sresolv.c sres_sip.c
 
 COVERAGE_INPUT = 	$(libsresolv_la_SOURCES) $(include_sofia_HEADERS)
 
