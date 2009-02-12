@@ -95,6 +95,22 @@ void s2_dialog_teardown(void)
   s2_nua_teardown();
 }
 
+static void simple_thread_setup(void)
+{
+  s2_nua_thread = 1;
+  s2_dialog_setup();
+}
+
+static void simple_threadless_setup(void)
+{
+  s2_nua_thread = 0;
+  s2_dialog_setup();
+}
+
+static void simple_teardown(void)
+{
+  s2_dialog_teardown();
+}
 
 static char const presence_open[] =
     "<?xml version='1.0' encoding='UTF-8'?>\n"
@@ -290,7 +306,7 @@ START_TEST(subscribe_6_1_2)
   s2_free_event(notify);
 
   /* Wait for refresh */
-  s2_fast_forward(600, s2->root);;
+  s2_fast_forward(600, s2->root);
   subscribe = s2_wait_for_request(SIP_METHOD_SUBSCRIBE);
   s2_respond_to(subscribe, dialog, SIP_200_OK,
 		SIPTAG_EXPIRES_STR("600"),
@@ -377,7 +393,7 @@ START_TEST(subscribe_6_1_4)
 
   su_home_unref((void *)dialog), dialog = su_home_new(sizeof *dialog); fail_if(!dialog);
 
-  s2_fast_forward(5, s2->root);;
+  s2_fast_forward(5, s2->root);
   /* nua re-establishes the subscription */
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_free_event(notify);
@@ -391,10 +407,14 @@ START_TEST(subscribe_6_1_4)
 }
 END_TEST
 
-TCase *subscribe_tcase(void)
+TCase *subscribe_tcase(int threading)
 {
   TCase *tc = tcase_create("6.1 - Basic SUBSCRIBE_");
-  tcase_add_checked_fixture(tc, s2_dialog_setup, s2_dialog_teardown);
+  void (*simple_setup)(void);
+
+  simple_setup = threading ? simple_thread_setup : simple_threadless_setup;
+  tcase_add_checked_fixture(tc, simple_setup, simple_teardown);
+
   {
     tcase_add_test(tc, subscribe_6_1_1);
     tcase_add_test(tc, subscribe_6_1_2);
@@ -460,7 +480,7 @@ START_TEST(fetch_6_2_3)
   fail_unless(s2_check_substate(event, nua_substate_embryonic));
   s2_free_event(event);
 
-  s2_fast_forward(600, s2->root);;
+  s2_fast_forward(600, s2->root);
 
   event = s2_wait_for_event(nua_i_notify, 408); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_terminated));
@@ -471,10 +491,14 @@ START_TEST(fetch_6_2_3)
 END_TEST
 
 
-TCase *fetch_tcase(void)
+TCase *fetch_tcase(int threading)
 {
   TCase *tc = tcase_create("6.2 - Event fetch");
-  tcase_add_checked_fixture(tc, s2_dialog_setup, s2_dialog_teardown);
+  void (*simple_setup)(void);
+
+  simple_setup = threading ? simple_thread_setup : simple_threadless_setup;
+  tcase_add_checked_fixture(tc, simple_setup, simple_teardown);
+
   {
     tcase_add_test(tc, fetch_6_2_1);
     tcase_add_test(tc, fetch_6_2_2);
@@ -500,10 +524,14 @@ START_TEST(empty)
 
 END_TEST
 
-static TCase *empty_tcase(void)
+static TCase *empty_tcase(int threading)
 {
   TCase *tc = tcase_create("0 - Empty");
-  tcase_add_checked_fixture(tc, s2_dialog_setup, s2_dialog_teardown);
+  void (*simple_setup)(void);
+
+  simple_setup = threading ? simple_thread_setup : simple_threadless_setup;
+  tcase_add_checked_fixture(tc, simple_setup, simple_teardown);
+
   tcase_add_test(tc, empty);
 
   return tc;
@@ -511,12 +539,12 @@ static TCase *empty_tcase(void)
 
 /* ====================================================================== */
 
-void check_simple_cases(Suite *suite)
+void check_simple_cases(Suite *suite, int threading)
 {
-  suite_add_tcase(suite, subscribe_tcase());
-  suite_add_tcase(suite, fetch_tcase());
+  suite_add_tcase(suite, subscribe_tcase(threading));
+  suite_add_tcase(suite, fetch_tcase(threading));
 
   if (0)			/* Template */
-    suite_add_tcase(suite, empty_tcase());
+    suite_add_tcase(suite, empty_tcase(threading));
 }
 

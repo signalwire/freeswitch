@@ -82,6 +82,12 @@ static void call_setup(void)
   s2_register_setup();
 }
 
+static void call_thread_setup(void)
+{
+  s2_nua_thread = 1;
+  call_setup();
+}
+
 static void call_teardown(void)
 {
   s2_teardown_started("call");
@@ -94,6 +100,15 @@ static void call_teardown(void)
   fail_unless(s2_check_event(nua_r_shutdown, 200));
 
   s2_nua_teardown();
+}
+
+static void
+add_call_fixtures(TCase *tc, int threading)
+{
+  if (threading)
+    tcase_add_checked_fixture(tc, call_thread_setup, call_teardown);
+  else
+    tcase_add_checked_fixture(tc, call_setup, call_teardown);
 }
 
 static void save_sdp_to_soa(struct message *message)
@@ -666,10 +681,10 @@ START_TEST(call_2_1_8)
 END_TEST
 
 
-TCase *invite_tcase(void)
+TCase *invite_tcase(int threading)
 {
   TCase *tc = tcase_create("2.1 - Basic INVITE");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
   {
     tcase_add_test(tc, call_2_1_1);
     tcase_add_test(tc, call_2_1_2_1);
@@ -986,10 +1001,10 @@ START_TEST(cancel_2_2_7)
 }
 END_TEST
 
-TCase *cancel_tcase(void)
+TCase *cancel_tcase(int threading)
 {
   TCase *tc = tcase_create("2.2 - CANCEL");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
 
   tcase_add_test(tc, cancel_2_2_1);
   tcase_add_test(tc, cancel_2_2_2);
@@ -1054,11 +1069,11 @@ START_TEST(call_2_3_1)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300, s2->root);;
+  s2_fast_forward(300, s2->root);
   ack = invite_timer_round(nh, "300;refresher=uac", rr);
   fail_if(ack->sip->sip_route &&
 	  su_strmatch(ack->sip->sip_route->r_url->url_user, "record"));
-  s2_fast_forward(300, s2->root);;
+  s2_fast_forward(300, s2->root);
   invite_timer_round(nh, "300;refresher=uac", NULL);
 
   bye_by_nua(nh, TAG_END());
@@ -1082,9 +1097,9 @@ START_TEST(call_2_3_2)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300, s2->root);;
+  s2_fast_forward(300, s2->root);
   invite_timer_round(nh, "300", NULL);
-  s2_fast_forward(300, s2->root);;
+  s2_fast_forward(300, s2->root);
   invite_timer_round(nh, "300", NULL);
 
   bye_by_nua(nh, TAG_END());
@@ -1095,10 +1110,10 @@ END_TEST
 
 
 
-TCase *session_timer_tcase(void)
+TCase *session_timer_tcase(int threading)
 {
   TCase *tc = tcase_create("2.3 - Session timers");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
   {
     tcase_add_test(tc, call_2_3_1);
     tcase_add_test(tc, call_2_3_2);
@@ -1227,10 +1242,10 @@ START_TEST(call_2_4_2)
 }
 END_TEST
 
-TCase *invite_100rel_tcase(void)
+TCase *invite_100rel_tcase(int threading)
 {
   TCase *tc = tcase_create("2.4 - INVITE with 100rel");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
   {
     tcase_add_test(tc, call_2_4_1);
     tcase_add_test(tc, call_2_4_2);
@@ -1459,10 +1474,10 @@ START_TEST(call_2_5_3)
 }
 END_TEST
 
-TCase *invite_precondition_tcase(void)
+TCase *invite_precondition_tcase(int threading)
 {
   TCase *tc = tcase_create("2.5 - Call with preconditions");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
   {
     tcase_add_test(tc, call_2_5_1);
     tcase_add_test(tc, call_2_5_2);
@@ -1551,7 +1566,7 @@ START_TEST(call_2_6_2)
   /* We get nua_r_invite with 100 trying (and 500 in sip->sip_status) */
   fail_unless(s2_check_event(nua_r_invite, 100));
 
-  s2_fast_forward(10, s2->root);;
+  s2_fast_forward(10, s2->root);
 
   fail_unless(s2_check_callstate(nua_callstate_calling));
 
@@ -1605,7 +1620,7 @@ START_TEST(call_2_6_3)
   fail_unless(s2_check_event(nua_i_ack, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
-  s2_fast_forward(10, s2->root);;
+  s2_fast_forward(10, s2->root);
 
   nua_set_hparams(nh, NUTAG_REFRESH_WITHOUT_SDP(1), TAG_END());
   fail_unless(s2_check_event(nua_r_set_params, 200));
@@ -1673,11 +1688,11 @@ START_TEST(call_2_6_4)
 }
 END_TEST
 
-TCase *reinvite_tcase(void)
+TCase *reinvite_tcase(int threading)
 {
   TCase *tc = tcase_create("2.6 - re-INVITEs");
 
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
   {
     tcase_add_test(tc, call_2_6_1);
     tcase_add_test(tc, call_2_6_2);
@@ -1752,7 +1767,7 @@ START_TEST(call_3_1_2)
     if (i == 3)
       break;
     fail_unless(s2_check_event(nua_r_invite, 100));
-    s2_fast_forward(5, s2->root);;
+    s2_fast_forward(5, s2->root);
   }
 
   fail_unless(s2_check_event(nua_r_invite, 500));
@@ -1822,7 +1837,7 @@ START_TEST(call_3_2_2)
     if (i == 3)
       break;
     fail_unless(s2_check_event(nua_r_invite, 100));
-    s2_fast_forward(5, s2->root);;
+    s2_fast_forward(5, s2->root);
   }
 
   fail_unless(s2_check_event(nua_r_invite, 500));
@@ -1869,10 +1884,10 @@ START_TEST(call_3_2_3)
 END_TEST
 
 
-TCase *invite_error_tcase(void)
+TCase *invite_error_tcase(int threading)
 {
   TCase *tc = tcase_create("3 - Call Errors");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
   {
     tcase_add_test(tc, call_3_1_1);
     tcase_add_test(tc, call_3_1_2);
@@ -2344,7 +2359,7 @@ START_TEST(bye_4_2_1)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300, s2->root);;
+  s2_fast_forward(300, s2->root);
   invite_timer_round(nh, "300", NULL);
 
   nua_bye(nh, TAG_END());
@@ -2357,7 +2372,7 @@ START_TEST(bye_4_2_1)
   s2_free_message(bye);
   fail_unless(s2_check_event(nua_r_bye, 407));
 
-  s2_fast_forward(300, s2->root);;
+  s2_fast_forward(300, s2->root);
 
   nua_authenticate(nh, NUTAG_AUTH("Digest:\"s2test\":abc:abc"), TAG_END());
   bye = s2_wait_for_request(SIP_METHOD_BYE);
@@ -2388,10 +2403,10 @@ START_TEST(bye_4_2_2)
     SIPTAG_REQUIRE_STR("timer"),
     TAG_END());
 
-  s2_fast_forward(300, s2->root);;
+  s2_fast_forward(300, s2->root);
   invite_timer_round(nh, "300", NULL);
 
-  s2_fast_forward(140, s2->root);;
+  s2_fast_forward(140, s2->root);
 
   nua_bye(nh, TAG_END());
 
@@ -2403,7 +2418,7 @@ START_TEST(bye_4_2_2)
   s2_free_message(bye);
   fail_unless(s2_check_event(nua_r_bye, 407));
 
-  s2_fast_forward(160, s2->root);;
+  s2_fast_forward(160, s2->root);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
   bye = s2_wait_for_request(SIP_METHOD_BYE);
@@ -2418,10 +2433,10 @@ START_TEST(bye_4_2_2)
 }
 END_TEST
 
-TCase *termination_tcase(void)
+TCase *termination_tcase(int threading)
 {
   TCase *tc = tcase_create("4 - Call Termination");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
   {
     tcase_add_test(tc, bye_4_1_1);
     tcase_add_test(tc, bye_4_1_2);
@@ -2928,11 +2943,11 @@ START_TEST(destroy_4_4_3_2)
 }
 END_TEST
 
-TCase *destroy_tcase(void)
+static TCase *destroy_tcase(int threading)
 {
   TCase *tc = tcase_create("4.3 - Destroying Handle");
 
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+  add_call_fixtures(tc, threading);
 
   {
     tcase_add_test(tc, destroy_4_3_1);
@@ -3056,7 +3071,7 @@ START_TEST(options_5_1_2)
 END_TEST
 #endif
 
-TCase *options_tcase(void)
+TCase *options_tcase(int threading)
 {
   TCase *tc = tcase_create("5 - OPTIONS, etc");
 
@@ -3067,7 +3082,6 @@ TCase *options_tcase(void)
 
   return tc;
 }
-
 
 static void options_setup(void)
 {
@@ -3096,13 +3110,14 @@ START_TEST(empty)
   s2_setup_logs(0);
   tport_set_params(s2->master, TPTAG_LOG(0), TAG_END());
 }
-
 END_TEST
 
-TCase *empty_tcase(void)
+TCase *empty_tcase(int threading)
 {
   TCase *tc = tcase_create("0 - Empty");
-  tcase_add_checked_fixture(tc, call_setup, call_teardown);
+
+  add_call_fixtures(tc, threading);
+
   tcase_add_test(tc, empty);
 
   return tc;
@@ -3110,19 +3125,19 @@ TCase *empty_tcase(void)
 
 /* ====================================================================== */
 
-void check_session_cases(Suite *suite)
+void check_session_cases(Suite *suite, int threading)
 {
-  suite_add_tcase(suite, invite_tcase());
-  suite_add_tcase(suite, cancel_tcase());
-  suite_add_tcase(suite, session_timer_tcase());
-  suite_add_tcase(suite, invite_100rel_tcase());
-  suite_add_tcase(suite, invite_precondition_tcase());
-  suite_add_tcase(suite, reinvite_tcase());
-  suite_add_tcase(suite, invite_error_tcase());
-  suite_add_tcase(suite, termination_tcase());
-  suite_add_tcase(suite, destroy_tcase());
-  suite_add_tcase(suite, options_tcase());
+  suite_add_tcase(suite, invite_tcase(threading));
+  suite_add_tcase(suite, cancel_tcase(threading));
+  suite_add_tcase(suite, session_timer_tcase(threading));
+  suite_add_tcase(suite, invite_100rel_tcase(threading));
+  suite_add_tcase(suite, invite_precondition_tcase(threading));
+  suite_add_tcase(suite, reinvite_tcase(threading));
+  suite_add_tcase(suite, invite_error_tcase(threading));
+  suite_add_tcase(suite, termination_tcase(threading));
+  suite_add_tcase(suite, destroy_tcase(threading));
+  suite_add_tcase(suite, options_tcase(threading));
 
   if (0)			/* Template */
-    suite_add_tcase(suite, empty_tcase());
+    suite_add_tcase(suite, empty_tcase(threading));
 }

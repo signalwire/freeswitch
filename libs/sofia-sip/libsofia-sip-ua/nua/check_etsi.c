@@ -22,11 +22,12 @@
  *
  */
 
-/**@CFILE check_session.c
+/**@CFILE check_etsi.c
  *
- * @brief NUA module tests for SIP session handling
+ * @brief ETSI test cases
  *
  * @author Pekka Pessi <Pekka.Pessi@nokia.com>
+ * @author Paulo Pizarro
  *
  * @copyright (C) 2008 Nokia Corporation.
  */
@@ -81,6 +82,18 @@ static void etsi_setup(void)
 
   d1 = su_home_new(sizeof *d1); fail_if(!d1);
   d2 = su_home_new(sizeof *d2); fail_if(!d2);
+}
+
+static void etsi_thread_setup(void)
+{
+  s2_nua_thread = 1;
+  etsi_setup();
+}
+
+static void etsi_threadless_setup(void)
+{
+  s2_nua_thread = 0;
+  etsi_setup();
 }
 
 static void etsi_teardown(void)
@@ -239,29 +252,33 @@ START_TEST(SIP_CC_OE_CE_TI_008)
 
   invite = invite_sent_by_nua(nh, TAG_END());
 
-  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  s2_respond_to(invite, d1, 404, "First not found", TAG_END());
   fail_unless(s2_check_event(nua_r_invite, 404));
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);;
+  s2_fast_forward(5, s2->root);
 
-  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  s2_respond_to(invite, d1, 404, "Not found after 5 seconds", TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);;
+  s2_fast_forward(5, s2->root);
 
-  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  s2_respond_to(invite, d1, 404, "Not found after 10 seconds", TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(21, s2->root);;
+  s2_fast_forward(21, s2->root);
 
-  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  s2_respond_to(invite, d1, 404, "Not found after 31 seconds", TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(1, s2->root);;
+  s2_fast_forward(5, s2->root);
 
-  s2_respond_to(invite, d1, SIP_404_NOT_FOUND, TAG_END());
+  /* Wake up nua thread and let it time out INVITE transaction */
+  nua_set_params(s2->nua, TAG_END());
+  s2_check_event(nua_r_set_params, 0);
+
+  s2_respond_to(invite, d1, 404, "Not found after 32 seconds", TAG_END());
   s2_free_message(invite);
   fail_if(s2_check_request_timeout(SIP_METHOD_ACK, 500));
 
@@ -294,19 +311,24 @@ START_TEST(SIP_CC_OE_CE_TI_011_012)
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);;
+  s2_fast_forward(5, s2->root);
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);;
+  s2_fast_forward(5, s2->root);
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(21, s2->root);;
+  s2_fast_forward(21, s2->root);
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   fail_unless(s2_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(1, s2->root);;
+  s2_fast_forward(5, s2->root);
+
+  /* Wake up nua thread and let it time out INVITE transaction */
+  nua_set_params(s2->nua, TAG_END());
+  s2_check_event(nua_r_set_params, 0);
+
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
   s2_free_message(invite);
   fail_if(s2_check_request_timeout(SIP_METHOD_ACK, 500));
@@ -317,10 +339,13 @@ START_TEST(SIP_CC_OE_CE_TI_011_012)
 }
 END_TEST
 
-TCase *sip_cc_oe_ce_tcase(void)
+TCase *sip_cc_oe_ce_tcase(int threading)
 {
   TCase *tc = tcase_create("6.1 - ETSI CC OE - Call Establishment");
-  tcase_add_checked_fixture(tc, etsi_setup, etsi_teardown);
+
+  void (*setup)(void) = threading ? etsi_thread_setup : etsi_threadless_setup;
+
+  tcase_add_checked_fixture(tc, setup, etsi_teardown);
   {
     tcase_add_test(tc, SIP_CC_OE_CE_V_019);
     tcase_add_test(tc, SIP_CC_OE_CE_TI_008);
@@ -331,7 +356,7 @@ TCase *sip_cc_oe_ce_tcase(void)
 
 /* ====================================================================== */
 
-void check_etsi_cases(Suite *suite)
+void check_etsi_cases(Suite *suite, int threading)
 {
-  suite_add_tcase(suite, sip_cc_oe_ce_tcase());
+  suite_add_tcase(suite, sip_cc_oe_ce_tcase(threading));
 }

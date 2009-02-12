@@ -57,7 +57,19 @@ static void register_setup(void)
   nua = s2_nua_setup("register", TAG_END());
 }
 
-static void register_pingpong_setup(void)
+static void register_thread_setup(void)
+{
+  s2_nua_thread = 1;
+  register_setup();
+}
+
+static void register_threadless_setup(void)
+{
+  s2_nua_thread = 1;
+  register_setup();
+}
+
+static void pingpong_setup(void)
 {
   nua = s2_nua_setup("register with pingpong",
 		     TPTAG_PINGPONG(20000),
@@ -66,6 +78,17 @@ static void register_pingpong_setup(void)
   tport_set_params(s2->tcp.tport, TPTAG_PONG2PING(1), TAG_END());
 }
 
+static void pingpong_thread_setup(void)
+{
+  s2_nua_thread = 1;
+  pingpong_setup();
+}
+
+static void pingpong_threadless_setup(void)
+{
+  s2_nua_thread = 0;
+  pingpong_setup();
+}
 
 static void register_teardown(void)
 {
@@ -75,6 +98,17 @@ static void register_teardown(void)
   s2_nua_teardown();
 }
 
+static void add_register_fixtures(TCase *tc, int threading, int pingpong)
+{
+  void (*setup)(void);
+
+  if (pingpong)
+    setup = threading ? pingpong_thread_setup : pingpong_threadless_setup;
+  else
+    setup = threading ? register_thread_setup : register_threadless_setup;
+
+  tcase_add_checked_fixture(tc, setup, register_teardown);
+}
 
 /* ---------------------------------------------------------------------- */
 
@@ -335,7 +369,7 @@ START_TEST(register_1_2_2_2)
   s2_free_message(m);
 
   su_root_step(s2->root, 20); su_root_step(s2->root, 20);
-  s2_fast_forward(120, s2->root);;	  /* Default keepalive interval */
+  s2_fast_forward(120, s2->root);	  /* Default keepalive interval */
   mark_point();
 
   m = s2_wait_for_request(SIP_METHOD_OPTIONS);
@@ -346,7 +380,7 @@ START_TEST(register_1_2_2_2)
   s2_free_message(m);
 
   su_root_step(s2->root, 20); su_root_step(s2->root, 20);
-  s2_fast_forward(120, s2->root);;	  /* Default keepalive interval */
+  s2_fast_forward(120, s2->root);	  /* Default keepalive interval */
   mark_point();
 
   receive_natted = "received=4.255.255.10";
@@ -400,7 +434,7 @@ START_TEST(register_1_2_2_3)
 
   receive_natted = "received=4.255.255.10";
 
-  s2_fast_forward(3600, s2->root);;
+  s2_fast_forward(3600, s2->root);
   mark_point();
 
   m = s2_wait_for_request(SIP_METHOD_REGISTER);
@@ -637,7 +671,7 @@ START_TEST(register_1_3_3_1)
     if (!tport_is_udp(m->tport)) /* Drop UDP */
       break;
     s2_free_message(m);
-    s2_fast_forward(4, s2->root);;
+    s2_fast_forward(4, s2->root);
   }
 
   tcp = tport_ref(m->tport);
@@ -695,7 +729,7 @@ START_TEST(register_1_3_3_1)
       su_root_step(s2->root, 5);
       su_root_step(s2->root, 5);
       su_root_step(s2->root, 5);
-      s2_fast_forward(5, s2->root);;
+      s2_fast_forward(5, s2->root);
     }
   }
 
@@ -705,11 +739,12 @@ END_TEST
 
 /* ---------------------------------------------------------------------- */
 
-TCase *register_tcase(void)
+TCase *register_tcase(int threading)
 {
   TCase *tc = tcase_create("1 - REGISTER");
-  /* Each testcase is run in different process */
-  tcase_add_checked_fixture(tc, register_setup, register_teardown);
+
+  add_register_fixtures(tc, threading, 0);
+
   {
     tcase_add_test(tc, register_1_0_1);
     tcase_add_test(tc, register_1_1_1);
@@ -727,21 +762,23 @@ TCase *register_tcase(void)
   return tc;
 }
 
-TCase *pingpong_tcase(void)
+TCase *pingpong_tcase(int threading)
 {
-  TCase *tc = tcase_create("1 - REGISTER with PingPong");
-  /* Each testcase is run in different process */
-  tcase_add_checked_fixture(tc, register_pingpong_setup, register_teardown);
+  TCase *tc = tcase_create("1 - REGISTER (with PingPong)");
+
+  add_register_fixtures(tc, threading, 1);
+
   {
     tcase_add_test(tc, register_1_3_3_1);
   }
+
   tcase_set_timeout(tc, 10);
   return tc;
 }
 
-void check_register_cases(Suite *suite)
+void check_register_cases(Suite *suite, int threading)
 {
-  suite_add_tcase(suite, register_tcase());
-  suite_add_tcase(suite, pingpong_tcase());
+  suite_add_tcase(suite, register_tcase(threading));
+  suite_add_tcase(suite, pingpong_tcase(threading));
 }
 

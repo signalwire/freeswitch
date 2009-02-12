@@ -48,20 +48,28 @@
 int main(int argc, char *argv[])
 {
   int failed = 0;
+  int threading;
 
-  Suite *suite = suite_create("Unit tests for Sofia-SIP UA Engine");
   SRunner *runner;
 
+  Suite *suite = suite_create("Unit tests for Sofia-SIP UA Engine");
+
   s2_tester = "check_nua";
+
   if (getenv("CHECK_NUA_VERBOSE"))
     s2_start_stop = strtoul(getenv("CHECK_NUA_VERBOSE"), NULL, 10);
 
   s2_select_tests(getenv("CHECK_NUA_CASES"));
 
-  check_register_cases(suite);
-  check_session_cases(suite);
-  check_etsi_cases(suite);
-  check_simple_cases(suite);
+  check_register_cases(suite, threading = 0);
+  check_simple_cases(suite, threading = 0);
+  check_session_cases(suite, threading = 0);
+  check_etsi_cases(suite, threading = 0);
+
+  check_register_cases(suite, threading = 1);
+  check_session_cases(suite, threading = 1);
+  check_etsi_cases(suite, threading = 1);
+  check_simple_cases(suite, threading = 1);
 
   runner = srunner_create(suite);
 
