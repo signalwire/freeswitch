@@ -176,7 +176,7 @@ s2_dns_query(su_root_magic_t *magic,
 
 static char const *default_domain;
 
-/* Set default domain */
+/** Set default domain suffix used with s2_dns_record() */
 char const *
 s2_dns_default(char const *domain)
 {
@@ -328,7 +328,7 @@ static void put_cname_record(struct s2_dns_response *m,
   put_uint32(m, s2_dns_ttl);
   start = put_len_at(m);
 
-  put_data(m, (void *)cname, strlen(cname));
+  put_domain(m, cname);
   put_len(m, start);
 }
 
@@ -543,7 +543,16 @@ void s2_dns_domain(char const *domain, int use_naptr,
   va_end(va0);
 }
 
-/** Insert DNS record */
+/** Insert DNS response.
+
+  s2_dns_record("example.com", sres_type_naptr,
+		// order priority flags services regexp target
+		"", sres_type_naptr, 20, 50, "a", "SIP+D2U", "", "sip00",
+		"", sres_type_naptr, 20, 50, "a", "SIP+D2T", "", "sip00",
+		"", sres_type_naptr, 20, 50, "a", "SIPS+D2T", "", "sip00",
+		"sip00", sres_type_a, "12.13.14.15",
+		NULL);
+*/
 void s2_dns_record(
   char const *qdomain, unsigned qtype,
   /* unsigned atype, domain, */
