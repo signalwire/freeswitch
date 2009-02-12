@@ -1267,7 +1267,7 @@ int nua_stack_launch_network_change_detector(nua_t *nua)
   su_network_changed_t *snc = NULL;
 
   snc = su_root_add_network_changed(nua->nua_home,
-				    nua->nua_api_root,
+				    nua->nua_root,
 				    nua_network_changed_cb,
 				    nua);
 
