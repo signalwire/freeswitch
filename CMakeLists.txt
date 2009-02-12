@@ -201,13 +201,13 @@ ADD_SUBDIRECTORY(libs/libteletone/)
 #ADD_SUBDIRECTORY(libs/sqlite/)
 ADD_SUBDIRECTORY(libs/pcre/)
 ADD_SUBDIRECTORY(libs/stfu/)
-#ADD_SUBDIRECTORY(libs/libedit/)
+ADD_SUBDIRECTORY(libs/libedit/)
 ADD_SUBDIRECTORY(libs/srtp/)
 
 SET ( freeswitch_SRCS src/switch.c src/include/switch.h)
 ADD_EXECUTABLE(freeswitch ${freeswitch_SRCS})
 
 
-TARGET_LINK_LIBRARIES(freeswitch teletone pcre resample freeswith_la stfu ${optionalLibs})
+TARGET_LINK_LIBRARIES(freeswitch teletone pcre resample freeswitch_la stfu ${optionalLibs})
 
 
