@@ -731,7 +731,7 @@ tport_primary_t *tport_listen(tport_master_t *mr,
   /* Create a primary transport object for another transport. */
   pri = tport_alloc_primary(mr, vtable, tpn, ai, tags, &culprit);
   if (pri == NULL)
-    return TPORT_LISTEN_ERROR(errno, culprit);
+    return TPORT_LISTEN_ERROR(su_errno(), culprit);
 
   if (pri->pri_primary->tp_socket != INVALID_SOCKET) {
     int index = 0;
