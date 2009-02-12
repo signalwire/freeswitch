@@ -985,7 +985,7 @@ tport_t *tport_base_connect(tport_primary_t *pri,
 
   what = "tport_alloc_secondary";
   if ((self = tport_alloc_secondary(pri, s, 0, &what)) == NULL)
-    TPORT_CONNECT_ERROR(errno, what);
+    TPORT_CONNECT_ERROR(su_errno(), what);
 
   self->tp_conn_orient = 1;
 
@@ -3383,7 +3383,7 @@ int tport_prepare_and_send(tport_t *self, msg_t *msg,
 
   /* Prepare message for sending - i.e., encode it */
   if (msg_prepare(msg) < 0) {
-    msg_set_errno(msg, errno);
+    msg_set_errno(msg, errno);	/* msg parser uses plain errno. Hmph. */
     return -1;
   }
 
