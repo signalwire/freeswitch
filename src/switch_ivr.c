@@ -670,7 +670,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if (switch_channel_media_ready(channel)) {
+	if (!switch_channel_media_ready(channel)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that have no read codec.\n");
 		return SWITCH_STATUS_FALSE;
 	}
