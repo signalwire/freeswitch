@@ -30,6 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include <check.h>
 
@@ -79,7 +80,7 @@ void s2_tcase_add_test(TCase *tc, TFun tf, char const *name)
  */
 void s2_select_tests(char const *pattern)
 {
-  size_t i;
+  size_t i, n;
   char *cases, *s, **patterns;
 
   if (!pattern)
@@ -91,10 +92,22 @@ void s2_select_tests(char const *pattern)
   for (i = 2, s = cases; (s = strchr(s, ',')); s++)
     i++;
 
-  patterns = calloc(i, sizeof *patterns);
+  if (test_patterns != default_patterns) {
+    patterns = (char **)test_patterns;
+    for (n = 0; patterns[n]; n++)
+      ;
+    patterns = realloc(patterns, (n + i) * (sizeof *patterns));
+  }
+  else {
+    n = 0;
+    patterns = malloc(i * (sizeof *patterns));
+  }
+
+  assert(patterns);
+  memset(&patterns[n], 0, i * (sizeof *patterns));
 
   /* Split by commas */
-  for (i = 0, s = cases;; i++) {
+  for (i = n, s = cases;; i++) {
     patterns[i] = s;
     if (s == NULL)
       break;

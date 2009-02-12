@@ -47,6 +47,8 @@ SOFIA_BEGIN_DECLS
 
 void s2_tcase_add_test(TCase *, TFun, char const *name);
 
+void s2_select_tests(char const *pattern);
+
 SOFIA_END_DECLS
 
 #endif /* S2CHECK_H */
