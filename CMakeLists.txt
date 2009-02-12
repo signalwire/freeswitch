@@ -3,11 +3,20 @@
 
 PROJECT (freeswitch)
 
+#GETSVN VERSION
+FIND_PACKAGE(Subversion)
+IF(Subversion_FOUND)
+	Subversion_WC_INFO(${CMAKE_HOME_DIRECTORY} Project)
+	MESSAGE("Current revision is ${Project_WC_REVISION}")
+ENDIF(Subversion_FOUND)
+
+
+
 # project version 
 SET( ${PROJECT_NAME}_MAJOR_VERSION 0 ) 
 SET( ${PROJECT_NAME}_MINOR_VERSION 1 ) 
 SET( ${PROJECT_NAME}_PATCH_LEVEL 0 ) 
-
+SET( ${SWITCH_VERSION_REVISION}$Project_WC_REVISION)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 INCLUDE (CheckSymbolExists)
@@ -93,6 +102,7 @@ MESSAGE( STATUS "UNIX: " ${UNIX} )
 MESSAGE( STATUS "WIN32: " ${WIN32} )
 # is TRUE on Apple OS X
 MESSAGE( STATUS "APPLE: " ${APPLE} )
+
 # is TRUE when using the MinGW compiler in Windows
 MESSAGE( STATUS "MINGW: " ${MINGW} )
 # is TRUE on Windows when using the CygWin version of cmake
@@ -139,6 +149,15 @@ FIND_PACKAGE (Libedit)
 LINK_LIBRARIES (${PATH_LIB_EDIT})
 INCLUDE_DIRECTORIES (${PATH_INC_EDIT})
 
+if( PATH_LIB_EDIT)
+        add_definitions( -DSWITCH_HAVE_LIBEDIT)
+	MESSAGE( STATUS "Found libedit = ${PATH_LIB_EDIT}" )
+endif( PATH_LIB_EDIT)
+
+
+#TESTING SECTION
+add_definitions(-DMACOSX)
+
 # DO SRTP
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/srtp/.libs/libcryptomath.a)
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/srtp/.libs/libsrtp.a)
@@ -158,6 +177,15 @@ IF(POSTGRES_FOUND)
    INCLUDE_DIRECTORIES( ${POSTGRES_INCLUDE_DIRECTORIES} )
    SET(optionalLibs ${optionalLibs} ${POSTGRES_LIBRARIES} )
 ENDIF(POSTGRES_FOUND)
+
+
+
+
+configure_file(src/include/switch_version.h.in src/include/switch_version.h [@ONLY])
+
+
+
+
 
 CHECK_INCLUDE_FILE(netdb.h HAVE_NETDB_H)
 if( HAVE_NETDB_H)
