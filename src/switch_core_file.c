@@ -128,7 +128,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		fh->pre_buffer_data = switch_core_alloc(fh->memory_pool, fh->pre_buffer_datalen * fh->channels);
 	}
 
-	if (fh->channels > 1) {
+	if (fh->channels > 1 && (flags & SWITCH_FILE_FLAG_READ)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "File has %d channels, muxing to mono will occur.\n", fh->channels);
 	}
 
