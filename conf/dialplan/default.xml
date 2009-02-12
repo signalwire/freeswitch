@@ -215,31 +215,26 @@
       <condition field="destination_number" expression="^(10[01][0-9])$">
 	<action application="set" data="dialed_extension=$1"/>
 	<action application="export" data="dialed_extension=$1"/>
-      </condition>
-      <condition field="${sip_authorized}" expression="^true">
+	<!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] <app> -->
+	<action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
+	<action application="bind_meta_app" data="2 b s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
+	<action application="bind_meta_app" data="3 b s execute_extension::cf XML features"/>
+	<action application="set" data="ringback=${us-ring}"/>
+	<action application="set" data="transfer_ringback=$${hold_music}"/>
+	<action application="set" data="call_timeout=30"/>
+	<!-- <action application="set" data="sip_exclude_contact=${network_addr}"/> -->
+	<action application="set" data="hangup_after_bridge=true"/>
+	<!--<action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/> -->
+	<action application="set" data="continue_on_fail=true"/>
+	<action application="db" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
+	<action application="db" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
+	<action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
+	<!--<action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>-->
+	<action application="db" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
+	<action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
-	<action application="voicemail" data="check default ${domain_name} ${dialed_extension}"/>
-	<!-- bind_meta_app can have these args <key> [a|b|ab] [a|b|o|s] <app> -->
-	<anti-action application="bind_meta_app" data="1 b s execute_extension::dx XML features"/>
-	<anti-action application="bind_meta_app" data="2 b s record_session::$${base_dir}/recordings/${caller_id_number}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
-	<anti-action application="bind_meta_app" data="3 b s execute_extension::cf XML features"/>
-	<anti-action application="set" data="ringback=${us-ring}"/>
-	<anti-action application="set" data="transfer_ringback=$${hold_music}"/>
-	<anti-action application="set" data="call_timeout=30"/>
-	<!-- <anti-action application="set" data="sip_exclude_contact=${network_addr}"/> -->
-	<anti-action application="set" data="hangup_after_bridge=true"/>
-	<!--<anti-action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/> -->
-	<anti-action application="set" data="continue_on_fail=true"/>
-	<anti-action application="db" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
-	<anti-action application="db" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
-	<anti-action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
-	<!--<anti-action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>-->
-	<anti-action application="db" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
-	<anti-action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
-	<anti-action application="answer"/>
-	<anti-action application="sleep" data="1000"/>
-	<anti-action application="voicemail" data="default ${domain_name} ${dialed_extension}"/>
+	<action application="voicemail" data="default ${domain_name} ${dialed_extension}"/>
       </condition>
     </extension>
 
@@ -271,7 +266,7 @@
 
     <!-- voicemail main extension -->
     <extension name="vmain">
-      <condition field="destination_number" expression="^vmain|4000$">
+      <condition field="destination_number" expression="^vmain|4000|\*98$">
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
 	<action application="voicemail" data="check default ${domain_name}"/>  
