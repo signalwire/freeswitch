@@ -1557,6 +1557,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 				*root = switch_xml_parse_str(x, strlen(x));
 				*node = *root;
 				switch_xml_free(xml);
+				free(x);
 			} else {
 				*node = tag;
 				*root = xml;
