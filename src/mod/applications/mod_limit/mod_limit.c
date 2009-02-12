@@ -764,7 +764,7 @@ SWITCH_STANDARD_APP(limit_function)
 	switch_safe_free(sql);
 	got = atoi(buf);
 
-	if (max > 0 && got + 1 > max) {
+	if (max >= 0 && got + 1 > max) {
 		switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 		goto done;
 	}
