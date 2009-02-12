@@ -43,6 +43,8 @@
 #include <sofia-sip/su_types.h>
 #endif
 
+#include <netdb.h>
+
 SOFIA_BEGIN_DECLS
 
 #if !SU_HAVE_ADDRINFO
