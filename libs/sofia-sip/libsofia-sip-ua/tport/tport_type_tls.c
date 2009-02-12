@@ -602,6 +602,7 @@ tport_t *tport_tls_connect(tport_primary_t *pri,
   char buf[TPORT_HOSTPORTSIZE];
   char const *what="";
 
+  what = "su_socket";
   s = su_socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
   if (s == INVALID_SOCKET)
     goto sys_error;
@@ -628,15 +629,19 @@ tport_t *tport_tls_connect(tport_primary_t *pri,
     }
   }
 
+  what = "connect";
   if (connect(s, ai->ai_addr, (socklen_t)(ai->ai_addrlen)) == SOCKET_ERROR) {
     err = su_errno();
     if (!su_is_blocking(err))
       goto sys_error;
   }
 
+  what = "tport_setname";
   if (tport_setname(self, tpn->tpn_proto, ai, tpn->tpn_canon) == -1)
     goto sys_error;
-  else if (tport_register_secondary(self, tls_connect, events) == -1)
+
+  what = "tport_register_secondary";
+  if (tport_register_secondary(self, tls_connect, events) == -1)
     goto sys_error;
 
   SU_DEBUG_5(("%s(%p): connecting to " TPN_FORMAT "\n",
