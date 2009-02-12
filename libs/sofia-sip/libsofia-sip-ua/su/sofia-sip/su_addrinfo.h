@@ -43,7 +43,9 @@
 #include <sofia-sip/su_types.h>
 #endif
 
+#if SU_HAVE_BSDSOCK
 #include <netdb.h>
+#endif
 
 SOFIA_BEGIN_DECLS
 
