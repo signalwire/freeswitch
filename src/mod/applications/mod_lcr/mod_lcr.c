@@ -116,6 +116,7 @@ typedef struct profile_obj profile_t;
 
 struct callback_obj {
 	lcr_route head;
+	switch_hash_t *dedup_hash;
 	int matches;
 	switch_memory_pool_t *pool;
 	char *lookup_number;
@@ -321,6 +322,7 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	lcr_route additional = NULL;
 	lcr_route current = NULL;
 	callback_t *cbt = (callback_t *) pArg;
+	char *key = NULL;
 	
 	switch_memory_pool_t *pool = cbt->pool;
 	
@@ -358,19 +360,25 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, additional);
 
 	if (cbt->head == NULL) {
+		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
 		additional->next = cbt->head;
 		cbt->head = additional;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %s to head of list\n", additional->carrier_name);
-
+		if(switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+			return SWITCH_STATUS_GENERR;
+		}
 		return SWITCH_STATUS_SUCCESS;
 	}
 
+	
 	for (current = cbt->head; current; current = current->next) {
-			
-		if (!strcmp(current->gw_prefix, additional->gw_prefix) && !strcmp(current->gw_suffix, additional->gw_suffix)) {
+	
+		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
+		if(switch_core_hash_find(cbt->dedup_hash, key)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-								"Ignoring Duplicate route for termination point (%s:%s)\n",
-								additional->gw_prefix, additional->gw_suffix);
+								"Ignoring Duplicate route for termination point (%s)\n",
+								key);
 			break;
 		}
 
@@ -380,6 +388,10 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Adding %s to end of list\n", additional->carrier_name);
 				current->next = additional;
 				additional->prev = current;
+				if(switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+					return SWITCH_STATUS_GENERR;
+				}
 				break;
 			}
 		} else {
@@ -397,12 +409,20 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 				}
 				additional->next = current;
 				current->prev = additional;
+				if(switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+					return SWITCH_STATUS_GENERR;
+				}
 				break;
 			} else if(current->next == NULL) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "adding %s to end of list after %s\n",
 									additional->carrier_name, current->carrier_name);
 				current->next = additional;
 				additional->prev = current;
+				if(switch_core_hash_insert(cbt->dedup_hash, key, additional) != SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error inserting into dedup hash\n");
+					return SWITCH_STATUS_GENERR;
+				}
 				break;
 			}
 		}
@@ -422,6 +442,12 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
 	if (switch_strlen_zero(digits_copy)) {
 		return SWITCH_FALSE;
+	}
+	
+	/* allocate the dedup hash */
+	if(switch_core_hash_init(&cb_struct->dedup_hash, cb_struct->pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing the dedup hash\n");
+		return SWITCH_STATUS_FALSE;
 	}
 	
 	/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
@@ -459,8 +485,10 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", (char *)sql_stream.data);    
 	
 	lookup_status = lcr_execute_sql_callback((char *)sql_stream.data, route_add_callback, cb_struct);
+
 	switch_safe_free(sql_stream.data);
-	
+	switch_core_hash_destroy(&cb_struct->dedup_hash);
+
 	if(lookup_status) {
 		return SWITCH_STATUS_SUCCESS;
 	} else {
