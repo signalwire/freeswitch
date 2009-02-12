@@ -422,6 +422,7 @@ SWITCH_STANDARD_API(db_api_function)
 		cbt.len = sizeof(buf);
 		sql = switch_mprintf("select data from db_data where realm='%q' and data_key='%q'", argv[1], argv[2]);
 		limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+		switch_safe_free(sql);
 		stream->write_function(stream, "%s", buf);
 		goto done;
 	}
@@ -476,9 +477,10 @@ SWITCH_STANDARD_APP(db_function)
 		return;
 	}
 
-	switch_assert(sql);
-	limit_execute_sql(sql, globals.mutex);
-	switch_safe_free(sql);
+	if (sql) {
+		limit_execute_sql(sql, globals.mutex);
+		switch_safe_free(sql);
+	}
 }
 
 #define HASH_USAGE "[insert|delete]/<realm>/<key>/<val>"
@@ -648,8 +650,11 @@ SWITCH_STANDARD_API(group_api_function)
 		assert(sql);
 
 		limit_execute_sql_callback(NULL, sql, group_callback, &cbt);
+		switch_safe_free(sql);
+		
 		*(buf + (strlen(buf) - 1)) = '\0';
 		stream->write_function(stream, "%s", buf);
+
 		goto done;
 	}
 
@@ -750,6 +755,7 @@ SWITCH_STANDARD_APP(limit_function)
 	cbt.len = sizeof(buf);
 	sql = switch_mprintf("select count(hostname) from limit_data where realm='%q' and id like '%q'", realm, id);
 	limit_execute_sql_callback(NULL, sql, sql2str_callback, &cbt);
+	switch_safe_free(sql);
 	got = atoi(buf);
 
 	if (got + 1 > max) {
