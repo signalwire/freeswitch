@@ -145,18 +145,24 @@ INCLUDE_DIRECTORIES (${SNDFILE_INCLUDE_DIR})
 
 
 # DO LIBEDIT
-FIND_PACKAGE (Libedit)
-LINK_LIBRARIES (${PATH_LIB_EDIT})
-INCLUDE_DIRECTORIES (${PATH_INC_EDIT})
+#FIND_PACKAGE (Libedit)
+#LINK_LIBRARIES ("/Users/shaneburrell/freeswitch-svn-real/libs/libedit/src/.libs/libedit.a")
+#INCLUDE_DIRECTORIES("libs/libedit/src/")
+#LINK_LIBRARIES (${PATH_LIB_EDIT})
+#INCLUDE_DIRECTORIES (${PATH_INC_EDIT})
 
-if( PATH_LIB_EDIT)
-        add_definitions( -DSWITCH_HAVE_LIBEDIT)
-	MESSAGE( STATUS "Found libedit = ${PATH_LIB_EDIT}" )
-endif( PATH_LIB_EDIT)
+#if( PATH_LIB_EDIT)
+#        add_definitions( -DSWITCH_HAVE_LIBEDIT)
+#	add_definitions( -DHAVE_EDITLINE)
+#	MESSAGE( STATUS "Found libedit = ${PATH_LIB_EDIT}" )
+#endif( PATH_LIB_EDIT)
 
 
 #TESTING SECTION
 add_definitions(-DMACOSX)
+#add_definitions("-DSWITCH_PREFIX_DIR=/usr/local/freeswitch")
+
+
 
 # DO SRTP
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/srtp/.libs/libcryptomath.a)
@@ -201,7 +207,7 @@ ADD_SUBDIRECTORY(libs/libteletone/)
 #ADD_SUBDIRECTORY(libs/sqlite/)
 ADD_SUBDIRECTORY(libs/pcre/)
 ADD_SUBDIRECTORY(libs/stfu/)
-ADD_SUBDIRECTORY(libs/libedit/)
+#ADD_SUBDIRECTORY(libs/libedit/src/)
 ADD_SUBDIRECTORY(libs/srtp/)
 
 SET ( freeswitch_SRCS src/switch.c src/include/switch.h)
