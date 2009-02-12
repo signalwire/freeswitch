@@ -1232,7 +1232,9 @@ static
 void nua_network_changed_cb(nua_t *nua, su_root_t *root)
 {
 
-  uint32_t nw_updates = NUA_NW_DETECT_TRY_FULL;
+  uint32_t nw_updates;
+
+  nw_updates = nua->nua_prefs->ngp_detect_network_updates;
 
   switch (nw_updates) {
   case NUA_NW_DETECT_ONLY_INFO:
