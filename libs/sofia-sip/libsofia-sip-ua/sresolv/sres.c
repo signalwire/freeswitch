@@ -1533,7 +1533,8 @@ char const *sres_record_type(int type, char buffer[8])
   case sres_qtype_any: return "ANY";
 
   default:
-    sprintf(buffer, "%u?", type & 65535);
+    if (buffer)
+      sprintf(buffer, "%u?", type & 65535);
     return buffer;
   }
 }
