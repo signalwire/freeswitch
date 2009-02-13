@@ -148,7 +148,7 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
 CORE_CFLAGS    += $(RESAMPLE_CFLAGS)
 
 CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
-CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la
+CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
 CORE_LIBS     += libs/srtp/libsrtp.la $(RESAMPLE_LIB)
 
 lib_LTLIBRARIES	          = libfreeswitch.la
@@ -293,6 +293,10 @@ libs/apr-util/libaprutil-1.la: libs/apr-util libs/apr-util/.update libs/apr/liba
 	@cd libs/apr-util && $(MAKE)
 	@$(TOUCH_TARGET)
 
+libs/speex/libspeex/libspeexdsp.la: libs/speex/.update
+	@cd libs/speex && $(MAKE)
+	@$(TOUCH_TARGET)
+
 libs/sqlite/libsqlite3.la: libs/sqlite libs/sqlite/.update
 	@cd libs/sqlite && $(MAKE) CFLAGS="$(SWITCH_AM_CFLAGS)"
 	@$(TOUCH_TARGET)
@@ -361,6 +365,11 @@ speedy-sure: update-clean
 	$(MAKE) -j core
 	cd libs/sofia-sip && $(MAKE) -j
 	$(MAKE) -j modules
+
+speex-reconf:
+	cd libs/speex && autoreconf
+	cd libs/speex && ./config.status --recheck
+	cd libs/speex && ./config.status
 
 python-reconf:
 	rm -f src/mod/languages/mod_python/Makefile
