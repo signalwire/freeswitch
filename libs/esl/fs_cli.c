@@ -476,8 +476,9 @@ int main(int argc, char *argv[])
 	}
 	
 	signal(SIGINT, handle_SIGINT);
+#ifdef SIGQUIT
 	signal(SIGQUIT, handle_SIGQUIT);
-
+#endif
 	esl_global_set_default_logger(6); /* default debug level to 6 (info) */
 	
 	for(;;) {
