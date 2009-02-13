@@ -136,6 +136,7 @@ spx_word16_t spx_acos(spx_word16_t x)
 #define K3 340
 #define K4 -10
 
+#if 0
 spx_word16_t spx_cos(spx_word16_t x)
 {
    spx_word16_t x2;
@@ -150,7 +151,7 @@ spx_word16_t spx_cos(spx_word16_t x)
       return SUB32(-K1, MULT16_16_P13(x2, ADD32(K2, MULT16_16_P13(x2, ADD32(K3, MULT16_16_P13(K4, x2))))));
    }
 }
-
+#endif
 #else
 
 #ifndef M_PI
@@ -164,6 +165,7 @@ spx_word16_t spx_cos(spx_word16_t x)
 
 
 #define SPX_PI_2 1.5707963268
+#if 0
 spx_word16_t spx_cos(spx_word16_t x)
 {
    if (x<SPX_PI_2)
@@ -177,5 +179,5 @@ spx_word16_t spx_cos(spx_word16_t x)
    }
 }
 
-
+#endif
 #endif

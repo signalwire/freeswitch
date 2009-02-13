@@ -208,33 +208,18 @@ kiss (default fixed point), smallft (default floating point), gpl-fftw3 and prop
 )
 
 FFT_PKGCONFIG=
-AS_CASE([$FFT],
- [kiss], [
-  AC_DEFINE([USE_KISS_FFT], [], [Use KISS Fast Fourier Transform])
- ],
- [smallft], [
-  AC_DEFINE([USE_SMALLFT], [], [Use FFT from OggVorbis])
- ],
- [gpl-fftw3], [
-  AC_DEFINE([USE_GPL_FFTW3], [], [Use FFTW3 for FFT])
-  PKG_CHECK_MODULES(FFT, fftw3f)
- ],
- [proprietary-intel-mkl], [
-  AC_DEFINE([USE_INTEL_MKL], [], [Use Intel Math Kernel Library for FFT])
-  AC_MSG_CHECKING(for valid MKL)
-  AC_LINK_IFELSE([
-   AC_LANG_PROGRAM([[
-#include <mkl.h>
-void func() {
-  DFTI_DESCRIPTOR_HANDLE h;
-  MKL_LONG result=DftiCreateDescriptor(&h, DFTI_SINGLE, DFTI_REAL, 0);
-}]])],
-   [AC_MSG_RESULT(yes)],
-   [AC_MSG_FAILURE([Failed to compile MKL test program. Make sure you set CFLAGS to include the include directory and set LDFLAGS to include the library directory and all necesarry libraries.])]
-  )
- ],
- [AC_MSG_FAILURE([Unknown FFT $FFT specified for --with-fft])]
-)
+
+case $FFT in
+	kiss) 
+		AC_DEFINE([USE_KISS_FFT], [], [Use KISS Fast Fourier Transform]) ;;
+	smallft)
+		AC_DEFINE([USE_SMALLFT], [], [Use FFT from OggVorbis]) ;;
+	*)
+		AC_MSG_FAILURE([Unknown FFT $FFT specified for --with-fft]) ;;
+esac
+
+AC_SUBST(FFT_LIBS)
+AC_SUBST(FFT_CFLAGS)
 AM_CONDITIONAL(BUILD_KISS_FFT, [test "$FFT" = "kiss"])
 AM_CONDITIONAL(BUILD_SMALLFT, [test "$FFT" = "smallft"])
 AC_SUBST(FFT_PKGCONFIG)
@@ -273,7 +258,7 @@ fi
 AC_SUBST(SIZE16)
 AC_SUBST(SIZE32)
 
-AC_OUTPUT([Makefile libspeex/Makefile src/Makefile doc/Makefile Speex.spec
+AC_OUTPUT([Makefile libspeex/Makefile src/Makefile  Speex.spec
            include/Makefile include/speex/Makefile speex.pc speexdsp.pc
            win32/Makefile win32/libspeex/Makefile win32/speexenc/Makefile
            win32/speexdec/Makefile symbian/Makefile 
