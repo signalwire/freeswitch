@@ -703,6 +703,7 @@ SWITCH_STANDARD_APP(group_function)
 
 #define LIMIT_USAGE "<realm> <id> [<max> [number  [dialplan [context]]]]"
 #define LIMIT_DESC "limit access to a resource and transfer to an extension if the limit is exceeded"
+static char *limit_def_xfer_exten = "limit_exceeded";
 
 SWITCH_STANDARD_APP(limit_function)
 {
@@ -747,7 +748,7 @@ SWITCH_STANDARD_APP(limit_function)
 	if (argc >= 4) {
 		xfer_exten = argv[3];
 	} else {
-		xfer_exten = NULL;
+		xfer_exten = limit_def_xfer_exten;
 	}
 
 	
@@ -763,7 +764,7 @@ SWITCH_STANDARD_APP(limit_function)
 	switch_safe_free(sql);
 	got = atoi(buf);
 
-	if (max >= 0 && xfer_exten && got + 1 > max) {
+	if (max >= 0 && got + 1 > max) {
 		switch_ivr_session_transfer(session, xfer_exten, argv[4], argv[5]);
 		goto done;
 	}
