@@ -278,7 +278,7 @@ SWITCH_STANDARD_APP(soundtouch_start_function)
 		for (x = 0; x < argc; x++) {
 			if (!strncasecmp(argv[x], "send_leg", 8)) {
 				sth->send_not_recv = true;
-			}else if(!strncasecmp(argv[x], "hook_dtmf", 9)) {
+			} else if (!strncasecmp(argv[x], "hook_dtmf", 9)) {
 				sth->hook_dtmf = true;
 			} else if (strchr(argv[x], 'p')) {
 				sth->pitch = normalize_soundtouch_value('p',atof(argv[x]));
