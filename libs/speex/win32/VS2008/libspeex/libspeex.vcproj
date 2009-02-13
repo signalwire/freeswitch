@@ -1406,10 +1406,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\buffer.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\cb_search.c"
 				>
 			</File>
@@ -1438,14 +1434,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\fftwrap.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\filterbank.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\filters.c"
 				>
 			</File>
@@ -1470,18 +1458,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\jitter.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fft.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fftr.c"
-				>
-			</File>
-			<File
 				RelativePath=".\libspeex.def"
 				>
 			</File>
@@ -1502,10 +1478,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\mdf.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\modes.c"
 				>
 			</File>
@@ -1518,23 +1490,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\preprocess.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\quant_lsp.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\resample.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\sb_celp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\smallft.c"
 				>
 			</File>
 			<File
