@@ -247,11 +247,11 @@ static switch_bool_t process_data(vmd_session_info_t * vmd_info, switch_frame_t 
     }
 
 /*
-    if(vmd_info->data_len != len){
+    if (vmd_info->data_len != len){
 	vmd_info->data_len = len;
-	if(vmd_info->data != NULL) free(vmd_info->data);
+	if (vmd_info->data != NULL) free(vmd_info->data);
 	vmd_info->data = (int16_t *)malloc(len);
-	if(vmd_info->data == NULL) return SWITCH_FALSE;
+	if (vmd_info->data == NULL) return SWITCH_FALSE;
     } 
 
     (void)memcpy(vmd_info->data, data, len);
