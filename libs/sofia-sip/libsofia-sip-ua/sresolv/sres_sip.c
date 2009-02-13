@@ -1203,7 +1203,7 @@ sres_sip_process_naptr(sres_sip_t *srs,
 		       struct srs_step *step,
 		       sres_record_t *answers[])
 {
-  int i, j, order = -1, found;
+  int i, j, order = -1, found = 0;
 
   assert(answers);
 
