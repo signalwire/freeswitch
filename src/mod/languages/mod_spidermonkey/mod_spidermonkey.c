@@ -2854,7 +2854,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 	jss->cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This method is depricated, please use new Session(\"<dial string>\", a_leg) \n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This method is deprecated, please use new Session(\"<dial string>\", a_leg) \n");
 
 	if (jss->session) {
 		eval_some_js("~throw new Error(\"cannot call this method on an initialized session\");", cx, obj, rval);
