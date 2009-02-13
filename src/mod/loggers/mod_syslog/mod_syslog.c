@@ -1,6 +1,6 @@
 /* 
  * FreeSWITCH Modular Media Switching Software Library / Soft-Switch Application
- * Copyright (C) 2005/2006, James Martelletti <james@nerdc0re.com>
+ * Copyright (C) 2005-2009, James Martelletti <james@nerdc0re.com>
  *
  * Version: MPL 1.1
  *
