@@ -727,7 +727,7 @@ SWITCH_STANDARD_APP(limit_function)
 
 	if (argc < 3) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: limit %s\n", LIMIT_USAGE);
-		goto end;
+		return;
 	}
 
 	switch_mutex_lock(globals.mutex);
@@ -782,8 +782,6 @@ SWITCH_STANDARD_APP(limit_function)
 
   done:
 	switch_mutex_unlock(globals.mutex);
-  end:
-	switch_safe_free(mydata);
 }
 
 
