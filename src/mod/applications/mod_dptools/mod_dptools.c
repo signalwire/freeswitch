@@ -2391,9 +2391,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
   done:
 
-	if (xml) {
-		switch_xml_free(xml);
-	}
+	switch_xml_free(xml);
 
 	if (params) {
 		switch_event_destroy(&params);

@@ -347,9 +347,11 @@ SWITCH_STANDARD_API(user_data_function)
 	if ((domain = strchr(user, '@'))) {
 		*domain++ = '\0';
 	} else {
-		domain = "cluecon.com";
+		if (!(domain = switch_core_get_variable("domain"))) {
+			domain = "cluecon.com";
+		}
 	}
-
+	
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "user", user);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", user);
@@ -465,16 +467,17 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
 			}
 		}
 
-		if (xml && x_user) {
+		if (x_user) {
 			xmlstr = switch_xml_toxml(x_user, SWITCH_FALSE);
 			switch_assert(xmlstr);
 
 			stream->write_function(stream, "%s", xmlstr);
 			free(xmlstr);
-			switch_xml_free(xml);
 		}
 	}
-
+	
+	switch_xml_free(xml);
+			
 	free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -683,18 +686,17 @@ SWITCH_STANDARD_API(xml_locate_function)
 		}
 	}
 
-	if (xml && obj) {
+	if (obj) {
 		xmlstr = switch_xml_toxml(obj, SWITCH_FALSE);
 		switch_assert(xmlstr);
-
 		stream->write_function(stream, "%s", xmlstr);
 		free(xmlstr);
-		switch_xml_free(xml);
-
 	}
 
+	switch_xml_free(xml);
 	switch_event_destroy(&params);
 	free(mydata);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
