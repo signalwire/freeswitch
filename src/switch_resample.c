@@ -38,6 +38,9 @@
 #ifndef DISABLE_RESAMPLE
 #include <libresample.h>
 #endif
+
+#include <speex/speex_resampler.h>
+
 #define NORMFACT (float)0x8000
 #define MAXSAMPLE (float)0x7FFF
 #define MAXSAMPLEC (char)0x7F
@@ -54,62 +57,52 @@
 #define resample_buffer(a, b, c) a > b ? ((a / 1000) / 2) * c : ((b / 1000) / 2) * c
 
 SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resampler_t **new_resampler,
-															   int from_rate, switch_size_t from_size, int to_rate, 
-															   uint32_t to_size, switch_memory_pool_t *pool, const char *file, const char *func, int line)
+															   uint32_t from_rate, uint32_t to_rate, 
+															   uint32_t to_size,
+															   int quality,
+															   const char *file, const char *func, int line)
 {
+
 #ifdef DISABLE_RESAMPLE
 	*new_resampler = NULL;
 	return SWITCH_STATUS_NOTIMPL;
 #else
+	int err = 0;
 	switch_audio_resampler_t *resampler;
 	double lto_rate, lfrom_rate;
 
-	if ((resampler = switch_core_alloc(pool, sizeof(*resampler))) == 0) {
-		return SWITCH_STATUS_MEMERR;
+	switch_zmalloc(resampler, sizeof(*resampler));
+	
+	resampler->resampler = speex_resampler_init(1, from_rate, to_rate, quality, &err);
+
+	if (!resampler->resampler) {
+		free(resampler);
+		return SWITCH_STATUS_GENERR;
 	}
 
-	resampler->from_rate = from_rate;
-	resampler->to_rate = to_rate;
-	lto_rate = (double) resampler->to_rate;
-	lfrom_rate = (double) resampler->from_rate;
-	resampler->factor = (lto_rate / lfrom_rate);
-	resampler->rfactor = (lfrom_rate / lto_rate);
-
-	resampler->resampler = resample_open(QUALITY, resampler->factor, resampler->factor);
-	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, 
-					  "Activate Resampler %d->%d %f\n", resampler->from_rate, resampler->to_rate, resampler->factor);
-	resampler->from_size = resample_buffer(to_rate, from_rate, (uint32_t) from_size);
-	resampler->from = (float *) switch_core_alloc(pool, resampler->from_size * sizeof(float));
-	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);;
-	resampler->to = (float *) switch_core_alloc(pool, resampler->to_size * sizeof(float));
-
 	*new_resampler = resampler;
+	lto_rate = (double) resampler->to_rate;
+    lfrom_rate = (double) resampler->from_rate;
+	resampler->from_rate = from_rate;
+    resampler->to_rate = to_rate;
+    resampler->factor = (lto_rate / lfrom_rate);
+    resampler->rfactor = (lfrom_rate / lto_rate);
+	resampler->to_size = resample_buffer(to_rate, from_rate, (uint32_t) to_size);
+	resampler->to = malloc(resampler->to_size * sizeof(int16_t));
+
 	return SWITCH_STATUS_SUCCESS;
 #endif
 }
 
-SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last)
+
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, int16_t *src, uint32_t srclen)
 {
 #ifdef DISABLE_RESAMPLE
 	return 0;
 #else
-	int o = 0, srcused = 0, srcpos = 0, out = 0;
-
-	for (;;) {
-		int srcBlock = MIN(srclen - srcpos, srclen);
-		int lastFlag = (last && (srcBlock == srclen - srcpos));
-		o = resample_process(resampler->resampler, resampler->factor, &src[srcpos], srcBlock, lastFlag, &srcused, &dst[out], dstlen - out);
-		/* printf("resampling %d/%d (%d) %d %f\n",  srcpos, srclen,  MIN(dstlen-out, dstlen), srcused, factor); */
-
-		srcpos += srcused;
-		if (o >= 0) {
-			out += o;
-		}
-		if (o < 0 || (o == 0 && srcpos == srclen)) {
-			break;
-		}
-	}
-	return out;
+	resampler->to_len = resampler->to_size;
+	speex_resampler_process_int(resampler->resampler, 0, src, &srclen, resampler->to, &resampler->to_len);
+	return resampler->to_len;
 #endif
 }
 
@@ -119,8 +112,10 @@ SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t **resample
 	if (resampler && *resampler) {
 #ifndef DISABLE_RESAMPLE
 		if ((*resampler)->resampler) {
-			resample_close((*resampler)->resampler);
+			speex_resampler_destroy((*resampler)->resampler);
 		}
+		free((*resampler)->to);
+		free(*resampler);
 #endif
 		*resampler = NULL;
 	}

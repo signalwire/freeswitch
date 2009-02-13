@@ -271,9 +271,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 					switch_mutex_lock(session->resample_mutex);
 					status = switch_resample_create(&session->read_resampler,
 													read_frame->codec->implementation->actual_samples_per_second,
-													read_frame->codec->implementation->decoded_bytes_per_packet,
-													session->read_impl.actual_samples_per_second,
-													session->read_impl.decoded_bytes_per_packet, session->pool);
+													session->read_impl.actual_samples_per_second, 
+													session->read_impl.decoded_bytes_per_packet,
+													SWITCH_RESAMPLE_QUALITY);
+					
 					switch_mutex_unlock(session->resample_mutex);
 
 					if (status != SWITCH_STATUS_SUCCESS) {
@@ -385,15 +386,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			if (session->read_resampler) {
 				short *data = read_frame->data;
 				switch_mutex_lock(session->resample_mutex);
-
-				session->read_resampler->from_len = switch_short_to_float(data, session->read_resampler->from, (int) read_frame->datalen / 2);
-				session->read_resampler->to_len =
-					switch_resample_process(session->read_resampler, session->read_resampler->from,
-											session->read_resampler->from_len, session->read_resampler->to, session->read_resampler->to_size, 0);
-				switch_float_to_short(session->read_resampler->to, data, read_frame->datalen);
+				switch_resample_process(session->read_resampler, data, (int)read_frame->datalen / 2);
+				memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2);
 				read_frame->samples = session->read_resampler->to_len;
-				read_frame->datalen = session->read_resampler->to_len * 2;
-				read_frame->rate = session->read_resampler->to_rate;
+                read_frame->datalen = session->read_resampler->to_len * 2;
+                read_frame->rate = session->read_resampler->to_rate;
 				switch_mutex_unlock(session->resample_mutex);
 
 			}
@@ -681,9 +678,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 				switch_mutex_lock(session->resample_mutex);
 				status = switch_resample_create(&session->write_resampler,
 												frame->codec->implementation->actual_samples_per_second,
-												frame->codec->implementation->decoded_bytes_per_packet,
-												session->write_impl.actual_samples_per_second,
-												session->write_impl.decoded_bytes_per_packet, session->pool);
+												session->write_impl.actual_samples_per_second, 
+												session->write_impl.decoded_bytes_per_packet,
+												SWITCH_RESAMPLE_QUALITY);
+												
 				switch_mutex_unlock(session->resample_mutex);
 				if (status != SWITCH_STATUS_SUCCESS) {
 					goto done;
@@ -731,15 +729,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		short *data = write_frame->data;
 
 		switch_mutex_lock(session->resample_mutex);
-		session->write_resampler->from_len = write_frame->datalen / 2;
-		switch_short_to_float(data, session->write_resampler->from, session->write_resampler->from_len);
-
-		session->write_resampler->to_len = (uint32_t)
-			switch_resample_process(session->write_resampler, session->write_resampler->from,
-									session->write_resampler->from_len, session->write_resampler->to, session->write_resampler->to_size, 0);
-
-		switch_float_to_short(session->write_resampler->to, data, session->write_resampler->to_len);
-
+		switch_resample_process(session->write_resampler, data, write_frame->datalen / 2);
+		memcpy(data, session->write_resampler->to, session->write_resampler->to_len * 2);
 		write_frame->samples = session->write_resampler->to_len;
 		write_frame->datalen = write_frame->samples * 2;
 		write_frame->rate = session->write_resampler->to_rate;
@@ -946,9 +937,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 								switch_mutex_lock(session->resample_mutex);
 								status = switch_resample_create(&session->write_resampler,
 																frame->codec->implementation->actual_samples_per_second,
-																frame->codec->implementation->decoded_bytes_per_packet,
-																session->write_impl.actual_samples_per_second,
-																session->write_impl.decoded_bytes_per_packet, session->pool);
+																session->write_impl.actual_samples_per_second, 
+																session->write_impl.decoded_bytes_per_packet,
+																SWITCH_RESAMPLE_QUALITY);
+																
 								switch_mutex_unlock(session->resample_mutex);
 
 								if (status != SWITCH_STATUS_SUCCESS) {
@@ -993,14 +985,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 						if (!did_write_resample && session->read_resampler) {
 							short *data = write_frame->data;
 							switch_mutex_lock(session->resample_mutex);
-
-							session->read_resampler->from_len =
-								switch_short_to_float(data, session->read_resampler->from, (int) write_frame->datalen / 2);
-							session->read_resampler->to_len = (uint32_t)
-								switch_resample_process(session->read_resampler, session->read_resampler->from,
-														session->read_resampler->from_len,
-														session->read_resampler->to, session->read_resampler->to_size, 0);
-							switch_float_to_short(session->read_resampler->to, data, write_frame->datalen * 2);
+							switch_resample_process(session->read_resampler, data, write_frame->datalen / 2);
+							memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2);
 							write_frame->samples = session->read_resampler->to_len;
 							write_frame->datalen = session->read_resampler->to_len * 2;
 							write_frame->rate = session->read_resampler->to_rate;

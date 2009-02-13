@@ -42,7 +42,7 @@
 
 #ifndef SWITCH_RESAMPLE_H
 #define SWITCH_RESAMPLE_H
-
+#define SWITCH_RESAMPLE_QUALITY 0
 #include <switch.h>
 SWITCH_BEGIN_EXTERN_C
 /*!
@@ -51,7 +51,7 @@ SWITCH_BEGIN_EXTERN_C
   \{ 
 */
 /*! \brief An audio resampling handle */
-	typedef struct {
+typedef struct {
 	/*! a pointer to store the resampler object */
 	void *resampler;
 	/*! the rate to resample from in hz */
@@ -61,35 +61,29 @@ SWITCH_BEGIN_EXTERN_C
 	/*! the factor to resample by (from / to) */
 	double factor;
 	double rfactor;
-	/*! a pointer to store a float buffer for data to be resampled */
-	float *from;
-	/*! the size of the from buffer used */
-	int from_len;
-	/*! the total size of the from buffer */
-	switch_size_t from_size;
-	/*! a pointer to store a float buffer for resampled data */
-	float *to;
-	/*! the size of the to buffer used */
-	uint32_t to_len;
-	/*! the total size of the to buffer */
-	uint32_t to_size;
+    int16_t *to;
+    /*! the size of the to buffer used */
+    uint32_t to_len;
+    /*! the total size of the to buffer */
+    uint32_t to_size;
+
 } switch_audio_resampler_t;
 
 /*!
   \brief Prepare a new resampler handle
   \param new_resampler NULL pointer to aim at the new handle
   \param from_rate the rate to transfer from in hz
-  \param from_size the size of the buffer to allocate for the from data
   \param to_rate the rate to transfer to in hz
-  \param to_size the size of the buffer to allocate for the to data
-  \param pool the memory pool to use for buffer allocation
+  \param quality the quality desired
   \return SWITCH_STATUS_SUCCESS if the handle was created
  */
 SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resampler_t **new_resampler,
-															   int from_rate, switch_size_t from_size, int to_rate, 
-															   uint32_t to_size, switch_memory_pool_t *pool, const char *file, const char *func, int line);
+															   uint32_t from_rate, uint32_t to_rate, uint32_t to_size,
+															   int quality,
+															   const char *file, const char *func, int line);
 
-#define switch_resample_create(_n, _fr, _fs, _tr, _ts, _p) switch_resample_perform_create(_n, _fr, _fs, _tr, _ts, _p, __FILE__, __SWITCH_FUNC__, __LINE__)
+
+#define switch_resample_create(_n, _fr, _tr, _ts, _q) switch_resample_perform_create(_n, _fr, _tr, _ts, _q, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 /*!
   \brief Destroy an existing resampler handle
@@ -102,12 +96,10 @@ SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t **resample
   \param resampler the resample handle
   \param src the source data
   \param srclen the length of the source data
-  \param dst the destination data
-  \param dstlen the length of the destination data
-  \param last parameter denoting the last sample is being resampled
   \return the used size of dst
  */
-SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, float *src, int srclen, float *dst, uint32_t dstlen, int last);
+SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, int16_t *src, uint32_t srclen);
+
 
 /*!
   \brief Convert an array of floats to an array of shorts

@@ -214,16 +214,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 	if (!switch_test_flag(fh, SWITCH_FILE_NATIVE) && fh->native_rate != fh->samplerate) {
 		if (!fh->resampler) {
 			if (switch_resample_create(&fh->resampler,
-									   fh->native_rate, orig_len, fh->samplerate, (uint32_t) orig_len, fh->memory_pool) != SWITCH_STATUS_SUCCESS) {
+									   fh->native_rate, fh->samplerate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
 			}
 		}
 
-		fh->resampler->from_len = switch_short_to_float(data, fh->resampler->from, (int) *len);
-		fh->resampler->to_len =
-			switch_resample_process(fh->resampler, fh->resampler->from, fh->resampler->from_len, fh->resampler->to, fh->resampler->to_size, 0);
-
+		switch_resample_process(fh->resampler, data, *len);
+		
 		if (fh->resampler->to_len < want || fh->resampler->to_len > orig_len) {
 			if (!fh->buffer) {
 				int factor = fh->resampler->to_len * fh->samplerate / 1000;
@@ -235,8 +233,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
 			}
 			switch_assert(fh->resampler->to_len <= fh->dbuflen);
-			
-			switch_float_to_short(fh->resampler->to, (int16_t *) fh->dbuf, fh->resampler->to_len);
+		
+			memcpy((int16_t *) fh->dbuf, fh->resampler->to, fh->resampler->to_len * 2);
 			switch_buffer_write(fh->buffer, fh->dbuf, fh->resampler->to_len * 2);
 
 			if (switch_buffer_inuse(fh->buffer) < want * 2) {
@@ -245,7 +243,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 			}
 			*len = switch_buffer_read(fh->buffer, data, orig_len * 2) / 2;
 		} else {
-			switch_float_to_short(fh->resampler->to, data, fh->resampler->to_len);
+			memcpy(data, fh->resampler->to, fh->resampler->to_len * 2);
 			*len = fh->resampler->to_len;
 		}
 		
@@ -274,28 +272,25 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 		if (!fh->resampler) {
 			if (switch_resample_create(&fh->resampler,
 									   fh->native_rate, 
-									   orig_len * fh->channels, 
 									   fh->samplerate, 
 									   (uint32_t) orig_len *fh->channels, 
-									   fh->memory_pool) != SWITCH_STATUS_SUCCESS) {
+									   SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 				return SWITCH_STATUS_GENERR;
 			}
 		}
+		switch_resample_process(fh->resampler, data, *len * fh->channels);
 
-		fh->resampler->from_len = switch_short_to_float(data, fh->resampler->from, (int) *len * fh->channels);
-		fh->resampler->to_len =
-			switch_resample_process(fh->resampler, fh->resampler->from, fh->resampler->from_len, fh->resampler->to, fh->resampler->to_size, 0);
 		if (fh->resampler->to_len > orig_len * fh->channels) {
 			if (!fh->dbuf) {
 				fh->dbuflen = fh->resampler->to_len * 2;
 				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
 			}
 			switch_assert(fh->resampler->to_len <= fh->dbuflen);
-			switch_float_to_short(fh->resampler->to, (int16_t *) fh->dbuf, fh->resampler->to_len);
+			memcpy(fh->dbuf, fh->resampler->to, fh->resampler->to_len);
 			data = fh->dbuf;
 		} else {
-			switch_float_to_short(fh->resampler->to, data, fh->resampler->to_len);
+			memcpy(data, fh->resampler->to, fh->resampler->to_len);
 		}
 
 		*len = fh->resampler->to_len / fh->channels;

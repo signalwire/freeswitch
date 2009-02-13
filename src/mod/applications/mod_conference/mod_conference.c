@@ -1692,12 +1692,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 				int16_t *bptr = (int16_t *) read_frame->data;
 				int len = (int) read_frame->datalen;
 
-				read_resampler->from_len = switch_short_to_float(bptr, read_resampler->from, (int) len / 2);
-				read_resampler->to_len = switch_resample_process(read_resampler,
-																 read_resampler->from,
-																 read_resampler->from_len, read_resampler->to, read_resampler->to_size, 0);
-
-				switch_float_to_short(read_resampler->to, member->resample_out, read_resampler->to_len);
+				switch_resample_process(read_resampler, bptr, len / 2);
+				memcpy(member->resample_out, read_resampler->to, read_resampler->to_len * 2);
 				len = read_resampler->to_len * 2;
 				datalen = len;
 				data = member->resample_out;
@@ -4477,7 +4473,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 	if (read_impl.actual_samples_per_second != conference->rate) {
 		if (switch_resample_create(&member->read_resampler,
 								   read_impl.actual_samples_per_second,
-								   member->frame_size, conference->rate, member->frame_size, member->pool) != SWITCH_STATUS_SUCCESS) {
+								   conference->rate, member->frame_size, SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
 			goto done;
 		}
