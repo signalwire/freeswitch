@@ -933,7 +933,7 @@ static switch_xml_t add_xml_header(switch_xml_t xml, char *name, char *value, in
 	switch_xml_t header = switch_xml_add_child_d(xml, name, offset);
 	
 	if (header) {
-		int encode_len = (strlen(value) * 3) + 1;
+		switch_size_t encode_len = (strlen(value) * 3) + 1;
 		char *encode_buf = malloc(encode_len);
 		
 		switch_assert(encode_buf);

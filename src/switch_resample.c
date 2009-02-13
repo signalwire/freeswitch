@@ -239,7 +239,7 @@ SWITCH_DECLARE(void) switch_generate_sln_silence(int16_t *data, uint32_t samples
 
 	for (i = 0; i < samples; i++, sum_rnd = 0) {
 		for (x = 0; x < 10; x++) {
-			rnd += (int16_t)((x + i) * rnd2);
+			rnd = rnd + (int16_t)((x + i) * rnd2);
 			sum_rnd += rnd;
 		}
 		switch_normalize_to_16bit(sum_rnd);
@@ -271,11 +271,12 @@ SWITCH_DECLARE(uint32_t) switch_merge_sln(int16_t *data, uint32_t samples, int16
 	return x;
 }
 
-SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, uint32_t samples, uint32_t channels)
+SWITCH_DECLARE(void) switch_mux_channels(int16_t *data, switch_size_t samples, uint32_t channels)
 {
 	int16_t *buf;
 	switch_size_t len = samples * sizeof(int16_t);
-	uint32_t i = 0, j = 0, k = 0;
+	switch_size_t i = 0;
+	uint32_t j = 0, k = 0;
 
 	switch_zmalloc(buf, len);
 	
