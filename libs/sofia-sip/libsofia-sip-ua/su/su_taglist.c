@@ -411,7 +411,7 @@ int tl_gets(tagi_t const lst[], tag_type_t tag, tag_value_t value, ...)
 #if !defined(NDEBUG)
     else if (tt->tt_class && tt->tt_class->tc_ref_set) {
       fprintf(stderr, "WARNING: tag %s::%s directly used by tl_gets()\n",
-	      tt->tt_ns, tt->tt_name);
+			  tt->tt_ns ? tt->tt_ns : "", tt->tt_name ? tt->tt_name : "");
       assert(tt->tt_class == ref_tag_class);
     }
 #endif
