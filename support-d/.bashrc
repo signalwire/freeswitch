@@ -24,7 +24,9 @@ umask 022
 alias e='emacs'
 alias tcommit='svn commit --no-auth-cache --username=anthm'
 alias mcommit='svn commit --no-auth-cache --username=mikej'
+alias bcommit='svn commit --no-auth-cache --username=brian'
 alias dp='emacs /usr/local/freeswitch/conf/dialplan/default.xml'
 alias fstop='top -p `cat /usr/local/freeswitch/log/freeswitch.pid`'
 alias fsgdb='gdb /usr/local/freeswitch/bin/freeswitch `cat /usr/local/freeswitch/log/freeswitch.pid`'
+alias fscore='gdb /usr/local/freeswitch/bin/freeswitch `ls -rt core.* | tail -n1`'
 # End of file
