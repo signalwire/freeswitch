@@ -49,9 +49,9 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;HAVE_CONFIG_H"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
+				WarningLevel="0"
 				DebugInformationFormat="4"
 				CompileAs="1"
 			/>
@@ -194,10 +194,10 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;HAVE_CONFIG_H"
 				StringPooling="true"
 				ExceptionHandling="0"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"
-				WarningLevel="4"
+				WarningLevel="0"
 				DebugInformationFormat="3"
 				CompileAs="1"
 				DisableSpecificWarnings="4244;4305;4311;4100;4127"
@@ -1406,6 +1406,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\libspeex\buffer.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\cb_search.c"
 				>
 			</File>
@@ -1519,6 +1523,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\quant_lsp.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\libspeex\resample.c"
 				>
 			</File>
 			<File
