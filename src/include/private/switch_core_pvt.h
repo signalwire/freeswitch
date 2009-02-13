@@ -191,6 +191,7 @@ struct switch_runtime {
 	switch_time_t timestamp;
 	switch_mutex_t *throttle_mutex;
 	switch_mutex_t *global_mutex;
+	switch_mutex_t *global_var_mutex;
 	uint32_t sps_total;
 	int32_t sps;
 	int32_t sps_last;
