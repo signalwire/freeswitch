@@ -287,13 +287,13 @@ static switch_status_t do_config(void)
 				}
 			} else if (!strcmp(var, "module-directory") && !switch_strlen_zero(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending module directory: '%s'\n", val);
-				if(cpath_stream.data_len) {
+				if (cpath_stream.data_len) {
 					cpath_stream.write_function(&cpath_stream, ";");
 				}
 				cpath_stream.write_function(&cpath_stream, "%s", val);
 			} else if (!strcmp(var, "script-directory") && !switch_strlen_zero(val)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "lua: appending script directory: '%s'\n", val);
-				if(path_stream.data_len) {
+				if (path_stream.data_len) {
 					path_stream.write_function(&path_stream, ";");
 				}
 				path_stream.write_function(&path_stream, "%s", val);

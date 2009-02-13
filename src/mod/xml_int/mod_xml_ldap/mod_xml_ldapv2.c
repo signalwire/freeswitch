@@ -186,7 +186,7 @@ static switch_status_t do_config(void) {
 				char *n = (char *) switch_xml_attr_soft(tran, "name");
 				char *m = (char *) switch_xml_attr_soft(tran, "mapfrom");
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, " adding map %s => %s\n", m , n);
-				if(!strncasecmp("id",n,strlen(n))) {
+				if (!strncasecmp("id",n,strlen(n))) {
 					attr_list->type = LDAP_EXTEN_ID;
 					attr_list->len = strlen(m);
 					attr_list->val = strdup(m);
@@ -530,9 +530,9 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
 
 
 
-    if( (ldap_initialize(&ld,binding->url)) != LDAP_SUCCESS ) goto cleanup;
-    if( (ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &desired_version)) != LDAP_SUCCESS ) goto cleanup;
-    if( (ldap_bind_s(ld, binding->binddn, binding->bindpass, auth_method)) != LDAP_SUCCESS ) goto cleanup;
+    if ( (ldap_initialize(&ld,binding->url)) != LDAP_SUCCESS ) goto cleanup;
+    if ( (ldap_set_option(ld, LDAP_OPT_PROTOCOL_VERSION, &desired_version)) != LDAP_SUCCESS ) goto cleanup;
+    if ( (ldap_bind_s(ld, binding->binddn, binding->bindpass, auth_method)) != LDAP_SUCCESS ) goto cleanup;
 
 	switch (binding->bt) {
 		case XML_LDAP_CONFIG:
@@ -564,7 +564,7 @@ static switch_xml_t xml_ldap_search(const char *section, const char *tag_name, c
     printf("providing:\n%s\n", buf);
 	switch_safe_free(buf);
 
-	if(ret != SWITCH_STATUS_SUCCESS) {
+	if (ret != SWITCH_STATUS_SUCCESS) {
 		switch_xml_free(xml);
 		return NULL;
 	}

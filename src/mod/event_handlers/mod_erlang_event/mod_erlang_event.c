@@ -307,7 +307,7 @@ static void remove_session_elem_from_listener(listener_t *listener, session_elem
 {
 	session_elem_t *s, *last = NULL;
 	
-	if(!session)
+	if (!session)
 		return;
 
 	switch_mutex_lock(listener->session_mutex);

@@ -113,7 +113,7 @@ switch_status_t setMonoDirs()
 		}
 	}
 
-	if(!found) 
+	if (!found) 
 	{   // Check registry
 		DWORD size = MAX_PATH;
 		if (ERROR_SUCCESS == RegGetValue(HKEY_LOCAL_MACHINE, "SOFTWARE\\Novell\\Mono\\2.0", "FrameworkAssemblyDirectory", RRF_RT_REG_SZ, NULL, &libPath, &size)) {

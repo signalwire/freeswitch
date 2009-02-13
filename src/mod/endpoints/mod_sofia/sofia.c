@@ -2102,7 +2102,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_3PCC);
 						}
-						else if(!strcasecmp(val, "proxy")){
+						else if (!strcasecmp(val, "proxy")){
 							sofia_set_pflag(profile, PFLAG_3PCC_PROXY);
 						}
 					} else if (!strcasecmp(var, "accept-blind-auth")) {
@@ -4488,7 +4488,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		}
 
 		if ((privacy = sip_privacy(sip))) {
-			if(msg_params_find(privacy->priv_values, "id")) {
+			if (msg_params_find(privacy->priv_values, "id")) {
 				switch_set_flag(tech_pvt->caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 			}
 		}

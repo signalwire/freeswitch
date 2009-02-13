@@ -761,7 +761,7 @@ void sofia_reg_release_gateway__(const char *file, const char *func, int line, s
 			}															\
 		}																\
 																		\
-		if(_session) break;												\
+		if (_session) break;											\
 	} while(!_session)
 
 

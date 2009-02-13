@@ -220,7 +220,7 @@ void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_han
 	 */
 	contact = switch_mprintf("sip:%s@%s",sip->sip_contact->m_url->url_user, sip->sip_contact->m_url->url_host);
 
-	if(sip->sip_payload && sip->sip_payload->pl_data) {
+	if (sip->sip_payload && sip->sip_payload->pl_data) {
 		sql = switch_mprintf("select subscriber,call_id,aor,profile_name,hostname,contact_str from sip_shared_appearance_subscriptions where "
 		"aor='%q' and subscriber<>'%q' and profile_name='%q' and hostname='%q'",
 		aor, contact, profile->name, mod_sofia_globals.hostname); 
@@ -253,7 +253,7 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 
 	nh = nua_handle_by_call_id(helper->profile->nua, call_id);  /* that's all you need to find the subscription's nh */
 
-	if(nh) {
+	if (nh) {
 
 		if (strstr(contact_str, ";fs_nat")) {
 			char *p;
