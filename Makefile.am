@@ -143,6 +143,7 @@ CORE_CFLAGS    += `$(switch_srcdir)/libs/apr-util/apu-1-config --includes`
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/stfu
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/sqlite
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
+CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
 CORE_CFLAGS    += $(RESAMPLE_CFLAGS)
