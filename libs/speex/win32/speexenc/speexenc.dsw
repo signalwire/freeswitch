@@ -15,7 +15,19 @@ Package=<4>
 
 ###############################################################################
 
-Project: "ogg_static"="..\..\..\MYOV-1.0\ogg\win32\ogg_static.dsp" - Package Owner=<4>
+Project: "libspeexdsp"=..\libspeex\libspeexdsp.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "ogg_static"=..\..\..\libogg\win32\ogg_static.dsp - Package Owner=<4>
 
 Package=<5>
 {{{
@@ -40,6 +52,9 @@ Package=<4>
     End Project Dependency
     Begin Project Dependency
     Project_Dep_Name ogg_static
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name libspeexdsp
     End Project Dependency
 }}}
 

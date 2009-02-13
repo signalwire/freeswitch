@@ -509,7 +509,7 @@ void lsp_to_lpc(spx_lsp_t *freq,spx_coef_t *ak,int lpcrdr, char *stack)
       
       /* hard limit ak's to +/- 32767 */
 
-      if (a < -32767) a = 32767;
+      if (a < -32767) a = -32767;
       if (a > 32767) a = 32767;
       ak[j-1] = (short)a;
      

@@ -36,6 +36,10 @@
 
 #ifndef SPEEX_HEADER_H
 #define SPEEX_HEADER_H
+/** @defgroup SpeexHeader SpeexHeader: Makes it easy to write/parse an Ogg/Speex header
+ *  This is the Speex header for the Ogg encapsulation. You don't need that if you just use RTP.
+ *  @{
+ */
 
 #include "speex/speex_types.h"
 
@@ -45,6 +49,7 @@ extern "C" {
 
 struct SpeexMode;
 
+/** Length of the Speex header identifier */
 #define SPEEX_HEADER_STRING_LENGTH 8
 
 /** Maximum number of characters for encoding the Speex version number in the header */
@@ -78,9 +83,12 @@ char *speex_header_to_packet(SpeexHeader *header, int *size);
 /** Creates a SpeexHeader from a packet */
 SpeexHeader *speex_packet_to_header(char *packet, int size);
 
+/** Frees the memory allocated by either speex_header_to_packet() or speex_packet_to_header() */
+void speex_header_free(void *ptr);
+
 #ifdef __cplusplus
 }
 #endif
 
-
+/** @} */
 #endif

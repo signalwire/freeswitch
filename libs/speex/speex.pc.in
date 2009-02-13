@@ -11,4 +11,5 @@ Version: @SPEEX_VERSION@
 Requires:
 Conflicts:
 Libs: -L${libdir} -lspeex
+Libs.private: -lm
 Cflags: -I${includedir}

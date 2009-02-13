@@ -68,19 +68,19 @@ static int lsp_quant(
 "       B0 = %2;\n\t"                          
 
 "       R2.L = W [I0++];\n\t"
-"	LSETUP (lq1, lq2) LC0 = %4;\n\t"
-"lq1:	  R3 = 0;\n\t"                         /* R3: dist           */
-"	  LSETUP (lq3, lq4) LC1 = %5;\n\t"
-"lq3:       R1 = B [P2++] (X);\n\t"            
+"	LSETUP (1f, 2f) LC0 = %4;\n\t"
+"1:	  R3 = 0;\n\t"                         /* R3: dist           */
+"	  LSETUP (3f, 4f) LC1 = %5;\n\t"
+"3:       R1 = B [P2++] (X);\n\t"            
 "	    R1 <<= 5;\n\t"
 "	    R0.L = R2.L - R1.L || R2.L = W [I0++];\n\t"
 "	    R0 = R0.L*R0.L;\n\t"
-"lq4:	    R3 = R3 + R0;\n\t"
+"4:	    R3 = R3 + R0;\n\t"
 
 "	  cc =R3<%0;\n\t"
 "	  if cc %0=R3;\n\t"
 "	  if cc %1=R5;\n\t"
-"lq2:     R5 += 1;\n\t"
+"2:     R5 += 1;\n\t"
 "         L0 = 0;\n\t"
    : "=&d" (best_dist), "=&d" (best_id)
    : "a" (x), "b" (cdbk), "a" (nbVec), "a" (nbDim)
@@ -132,10 +132,10 @@ static int lsp_weight_quant(
 "       B0 = %2;\n\t"                          
 "	B1 = %3;\n\t"                          
 
-"	LSETUP (lwq1, lwq2) LC0 = %5;\n\t"
-"lwq1:	  R3 = 0 (X);\n\t"                     /* R3: dist           */
-"	  LSETUP (lwq3, lwq4) LC1 = %6;\n\t"
-"lwq3:	    R0.L = W [I0++] || R2.L = W [I1++];\n\t"
+"	LSETUP (1f, 2f) LC0 = %5;\n\t"
+"1:	  R3 = 0 (X);\n\t"                     /* R3: dist           */
+"	  LSETUP (3f, 4f) LC1 = %6;\n\t"
+"3:	    R0.L = W [I0++] || R2.L = W [I1++];\n\t"
 "           R1 = B [P2++] (X);\n\t"            
 "	    R1 <<= 5;\n\t"
 "	    R0.L = R0.L - R1.L;\n\t"
@@ -143,12 +143,12 @@ static int lsp_weight_quant(
 "	    A1 = R2.L*R0.L (M,IS);\n\t"
 "	    A1 = A1 >>> 16;\n\t"
 "	    R1 = (A1 += R2.L*R0.H) (IS);\n\t"
-"lwq4:	    R3 = R3 + R1;\n\t"
+"4:	    R3 = R3 + R1;\n\t"
 
 "	  cc =R3<%0;\n\t"
 "	  if cc %0=R3;\n\t"
 "	  if cc %1=R5;\n\t"
-"lwq2:    R5 += 1;\n\t"
+"2:    R5 += 1;\n\t"
 "         L0 = 0;\n\t"
 "         L1 = 0;\n\t"
    : "=&d" (best_dist), "=&d" (best_id)

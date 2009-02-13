@@ -7,7 +7,6 @@
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_builddir) @OGG_CFLAGS@
 
-mandir = $(prefix)/share/man
 man_MANS = speexenc.1 speexdec.1
 
 EXTRA_DIST = $(man_MANS) getopt_win.h getopt.c getopt1.c wave_out.c wave_out.h skeleton.h
@@ -18,9 +17,9 @@ noinst_HEADERS = wav_io.h
 bin_PROGRAMS = speexenc speexdec
 
 speexenc_SOURCES = speexenc.c wav_io.c skeleton.c
-speexenc_LDADD = $(top_builddir)/libspeex/libspeex.la \
-	$(OGG_LIBS)
+speexenc_LDADD = $(top_builddir)/libspeex/libspeex.la $(top_builddir)/libspeex/libspeexdsp.la \
+	$(OGG_LIBS)  @FFT_LIBS@	
 
 speexdec_SOURCES = speexdec.c wav_io.c
 speexdec_LDADD = $(top_builddir)/libspeex/libspeex.la \
-	$(OGG_LIBS)
+	$(OGG_LIBS)  @FFT_LIBS@

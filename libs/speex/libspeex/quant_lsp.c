@@ -35,12 +35,13 @@
 #endif
 
 #include "quant_lsp.h"
+#include "os_support.h"
 #include <math.h>
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-#include "misc.h"
+#include "arch.h"
 
 #ifdef BFIN_ASM
 #include "quant_lsp_bfin.h"
@@ -304,11 +305,11 @@ void lsp_unquant_lbr(spx_lsp_t *lsp, int order, SpeexBits *bits)
 #ifdef DISABLE_WIDEBAND
 void lsp_quant_high(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
 {
-   speex_error("Wideband and Ultra-wideband are disabled");
+   speex_fatal("Wideband and Ultra-wideband are disabled");
 }
 void lsp_unquant_high(spx_lsp_t *lsp, int order, SpeexBits *bits)
 {
-   speex_error("Wideband and Ultra-wideband are disabled");
+   speex_fatal("Wideband and Ultra-wideband are disabled");
 }
 #else
 extern const signed char high_lsp_cdbk[];
@@ -382,66 +383,3 @@ void lsp_unquant_high(spx_lsp_t *lsp, int order, SpeexBits *bits)
 
 #endif
 
-
-#ifdef EPIC_48K
-
-extern const signed char cdbk_lsp_vlbr[5120];
-extern const signed char cdbk_lsp2_vlbr[160];
-
-void lsp_quant_48k(spx_lsp_t *lsp, spx_lsp_t *qlsp, int order, SpeexBits *bits)
-{
-   int i;
-   int id;
-   spx_word16_t quant_weight[10];
-
-   for (i=0;i<order;i++)
-      qlsp[i]=lsp[i];
-
-   compute_quant_weights(qlsp, quant_weight, order);
-
-   for (i=0;i<order;i++)
-      qlsp[i]=SUB16(qlsp[i],LSP_SCALING*(.25*i+.3125));
-#ifndef FIXED_POINT
-   for (i=0;i<order;i++)
-      qlsp[i] = qlsp[i]*LSP_SCALE;
-#endif
-   
-   id = lsp_quant(qlsp, cdbk_lsp_vlbr, 512, order);
-   speex_bits_pack(bits, id, 9);
-
-   for (i=0;i<order;i++)
-      qlsp[i]*=4;
-   
-   id = lsp_weight_quant(qlsp, quant_weight, cdbk_lsp2_vlbr, 16, 10);
-   speex_bits_pack(bits, id, 4);
-
-#ifdef FIXED_POINT
-   for (i=0;i<order;i++)
-      qlsp[i]=PSHR(qlsp[i],2);
-#else
-   for (i=0;i<order;i++)
-      qlsp[i]=qlsp[i]*0.00097655;
-#endif
-
-   for (i=0;i<order;i++)
-      qlsp[i]=lsp[i]-qlsp[i];
-}
-
-void lsp_unquant_48k(spx_lsp_t *lsp, int order, SpeexBits *bits)
-{
-   int i, id;
-   for (i=0;i<order;i++)
-      lsp[i]=LSP_SCALING*(.25*i+.3125);
-
-
-   id=speex_bits_unpack_unsigned(bits, 9);
-   for (i=0;i<10;i++)
-      lsp[i] += LSP_SCALING*0.0039062*cdbk_lsp_vlbr[id*10+i];
-
-   id=speex_bits_unpack_unsigned(bits, 4);
-   for (i=0;i<10;i++)
-      lsp[i] += LSP_SCALING*0.00097655*cdbk_lsp2_vlbr[id*10+i];
-   
-}
-
-#endif

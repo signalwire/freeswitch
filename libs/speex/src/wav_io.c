@@ -37,38 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "speex/speex_types.h"
-
-static spx_uint32_t le_int(spx_uint32_t i)
-{
-   spx_uint32_t ret=i;
-#ifdef WORDS_BIGENDIAN
-   ret =  i>>24;
-   ret += (i>>8)&0x0000ff00;
-   ret += (i<<8)&0x00ff0000;
-   ret += (i<<24);
-#endif
-   return ret;
-}
-
-unsigned short be_short(unsigned short s)
-{
-   unsigned short ret=s;
-#ifndef WORDS_BIGENDIAN
-   ret =  s>>8;
-   ret += s<<8;
-#endif
-   return ret;
-}
-
-unsigned short le_short(unsigned short s)
-{
-   unsigned short ret=s;
-#ifdef WORDS_BIGENDIAN
-   ret =  s>>8;
-   ret += s<<8;
-#endif
-   return ret;
-}
+#include "wav_io.h"
 
 
 int read_wav_header(FILE *file, int *rate, int *channels, int *format, spx_int32_t *size)

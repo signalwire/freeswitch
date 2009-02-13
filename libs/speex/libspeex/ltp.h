@@ -33,7 +33,7 @@
 */
 
 #include <speex/speex_bits.h>
-#include "misc.h"
+#include "arch.h"
 
 /** LTP parameters. */
 typedef struct {

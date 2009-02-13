@@ -35,35 +35,39 @@
 #define FRAME_SIZE 160
 #define DISABLE_WIDEBAND
 
+/* Disable DC block if doing SNR testing */
+#define DISABLE_HIGHPASS 
+
 /* Allow for 2 20ms narrowband blocks per frame, plus a couple of bytes */
 #define MAX_CHARS_PER_FRAME (42/BYTES_PER_CHAR)
 
 /* for debug */
 #undef DECODE_ONLY
+#define VERBOSE_ALLOC
 
 /* EITHER    Allocate from fixed array (C heap not used) */
 /*           Enable VERBOSE_ALLOC to see how much is used */
 #define MANUAL_ALLOC
-#define USER_MISC
-#define VERBOSE_ALLOC
+#define OS_SUPPORT_CUSTOM
+
 /* OR        Use CALLOC (heap size must be increased in linker command file) */
 //#undef MANUAL_ALLOC
-//#undef USER_MISC
+//#undef OS_SUPPORT_CUSTOM
 
 #if defined (CONFIG_TI_C54X) || defined (CONFIG_TI_C55X) 
 //#define PRECISION16
 
 // These values determined by analysis for 8kbps narrowband
-#define SPEEXENC_PERSIST_STACK_SIZE 5000
+#define SPEEXENC_PERSIST_STACK_SIZE 1000
 #define SPEEXENC_SCRATCH_STACK_SIZE 3000
-#define SPEEXDEC_PERSIST_STACK_SIZE 2500
+#define SPEEXDEC_PERSIST_STACK_SIZE 1000
 #define SPEEXDEC_SCRATCH_STACK_SIZE 1000
 #else /* C6X */
 #define NO_LONGLONG
 
-#define SPEEXENC_PERSIST_STACK_SIZE 10000
+#define SPEEXENC_PERSIST_STACK_SIZE 2000
 #define SPEEXENC_SCRATCH_STACK_SIZE 6000
-#define SPEEXDEC_PERSIST_STACK_SIZE 5000
+#define SPEEXDEC_PERSIST_STACK_SIZE 2000
 #define SPEEXDEC_SCRATCH_STACK_SIZE 2000
 #endif
 #define SPEEX_PERSIST_STACK_SIZE (SPEEXENC_PERSIST_STACK_SIZE + SPEEXDEC_PERSIST_STACK_SIZE)

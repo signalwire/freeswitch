@@ -39,7 +39,7 @@
 #define NOISE_COMPAND_LEVELS 40
 
 
-#define todB(x)   ((x)==0?-400.f:log((x)*(x))*4.34294480f)
+#define todB(x)   ((x)>1e-13?log((x)*(x))*4.34294480f:-30)
 #define fromdB(x) (exp((x)*.11512925f))  
 
 /* The bark scale equations are approximations, since the original

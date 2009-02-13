@@ -43,7 +43,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSPEEX_DYNAMIC_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../../include" /I "../" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSPEEX_DYNAMIC_EXPORTS" /D "HAVE_CONFIG_H" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "../../include" /I "../" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "HAVE_CONFIG_H" /FD /c
+# SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -53,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"Release/libspeex.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386 /out:"..\..\bin\libspeex.dll" /implib:"..\..\lib\libspeex.lib"
 
 !ELSEIF  "$(CFG)" == "libspeex_dynamic - Win32 Debug"
 
@@ -69,7 +70,8 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSPEEX_DYNAMIC_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /I "../../include" /I "../" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBSPEEX_DYNAMIC_EXPORTS" /D "HAVE_CONFIG_H" /YX /FD /GZ /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /ZI /Od /I "../../include" /I "../" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "HAVE_CONFIG_H" /FD /GZ /c
+# SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -79,7 +81,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"Debug/libspeex.dll" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"..\..\bin\libspeex.dll" /implib:"..\..\lib\libspeex.lib" /pdbtype:sept
 
 !ENDIF 
 
@@ -89,7 +91,7 @@ LINK32=link.exe
 # Name "libspeex_dynamic - Win32 Debug"
 # Begin Group "Source Files"
 
-# PROP Default_Filter ""
+# PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
 SOURCE=..\..\libspeex\bits.c
@@ -164,23 +166,15 @@ SOURCE=..\..\libspeex\ltp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\math_approx.c
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\misc.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\libspeex\modes.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\nb_celp.c
+SOURCE=..\..\libspeex\modes_wb.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\preprocess.c
+SOURCE=..\..\libspeex\nb_celp.c
 # End Source File
 # Begin Source File
 
@@ -192,15 +186,7 @@ SOURCE=..\..\libspeex\sb_celp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\smallft.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\libspeex\speex.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\speex.def
 # End Source File
 # Begin Source File
 
@@ -222,17 +208,41 @@ SOURCE=..\..\libspeex\vbr.c
 
 SOURCE=..\..\libspeex\vq.c
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\window.c
+# End Source File
 # End Group
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=..\..\libspeex\arch.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\cb_search.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\cb_search_sse.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\filters.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\filters_sse.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\fixed_debug.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\fixed_generic.h
 # End Source File
 # Begin Source File
 
@@ -248,7 +258,11 @@ SOURCE=..\..\libspeex\ltp.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\libspeex\misc.h
+SOURCE=..\..\libspeex\ltp_sse.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\math_approx.h
 # End Source File
 # Begin Source File
 
@@ -260,39 +274,15 @@ SOURCE=..\..\libspeex\nb_celp.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\libspeex\os_support.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\libspeex\quant_lsp.h
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\libspeex\sb_celp.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\smallft.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\speex.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\speex_bits.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\speex_callbacks.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\speex_denoise.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\speex_header.h
-# End Source File
-# Begin Source File
-
-SOURCE=..\..\libspeex\speex_stereo.h
 # End Source File
 # Begin Source File
 
@@ -306,6 +296,46 @@ SOURCE=..\..\libspeex\vbr.h
 
 SOURCE=..\..\libspeex\vq.h
 # End Source File
+# Begin Source File
+
+SOURCE=..\..\libspeex\vq_sse.h
+# End Source File
 # End Group
+# Begin Group "Public Header Files"
+
+# PROP Default_Filter "*.h"
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_bits.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_callbacks.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_header.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_stereo.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\include\speex\speex_types.h
+# End Source File
+# End Group
+# Begin Source File
+
+SOURCE=..\config.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\libspeex.def
+# End Source File
 # End Target
 # End Project

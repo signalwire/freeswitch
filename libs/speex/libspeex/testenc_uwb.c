@@ -36,8 +36,8 @@ int main(int argc, char **argv)
    sigpow = 0;
    errpow = 0;
 
-   st = speex_encoder_init(&speex_uwb_mode);
-   dec = speex_decoder_init(&speex_uwb_mode);
+   st = speex_encoder_init(speex_lib_get_mode(SPEEX_MODEID_UWB));
+   dec = speex_decoder_init(speex_lib_get_mode(SPEEX_MODEID_UWB));
 
    callback.callback_id = SPEEX_INBAND_CHAR;
    callback.func = speex_std_char_handler;
@@ -69,13 +69,13 @@ int main(int argc, char **argv)
       exit(1);
    }
    inFile = argv[1];
-   fin = fopen(inFile, "r");
+   fin = fopen(inFile, "rb");
    outFile = argv[2];
-   fout = fopen(outFile, "w+");
+   fout = fopen(outFile, "wb+");
    if (argc==4)
    {
       bitsFile = argv[3];
-      fbits = fopen(bitsFile, "w");
+      fbits = fopen(bitsFile, "wb");
    }
    speex_bits_init(&bits);
    while (!feof(fin))

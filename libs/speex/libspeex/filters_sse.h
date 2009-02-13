@@ -34,7 +34,7 @@
 
 #include <xmmintrin.h>
 
-void filter_mem2_10(const float *x, const float *_num, const float *_den, float *y, int N, int ord, float *_mem)
+void filter_mem16_10(const float *x, const float *_num, const float *_den, float *y, int N, int ord, float *_mem)
 {
    __m128 num[3], den[3], mem[3];
 
@@ -87,7 +87,7 @@ void filter_mem2_10(const float *x, const float *_num, const float *_den, float 
    _mm_store_ss(_mem+9, mem[2]);
 }
 
-void filter_mem2_8(const float *x, const float *_num, const float *_den, float *y, int N, int ord, float *_mem)
+void filter_mem16_8(const float *x, const float *_num, const float *_den, float *y, int N, int ord, float *_mem)
 {
    __m128 num[2], den[2], mem[2];
 
@@ -130,18 +130,18 @@ void filter_mem2_8(const float *x, const float *_num, const float *_den, float *
 }
 
 
-#define OVERRIDE_FILTER_MEM2
-void filter_mem2(const float *x, const float *_num, const float *_den, float *y, int N, int ord, float *_mem)
+#define OVERRIDE_FILTER_MEM16
+void filter_mem16(const float *x, const float *_num, const float *_den, float *y, int N, int ord, float *_mem, char *stack)
 {
    if(ord==10)
-      filter_mem2_10(x, _num, _den, y, N, ord, _mem);
+      filter_mem16_10(x, _num, _den, y, N, ord, _mem);
    else if (ord==8)
-      filter_mem2_8(x, _num, _den, y, N, ord, _mem);
+      filter_mem16_8(x, _num, _den, y, N, ord, _mem);
 }
 
 
 
-void iir_mem2_10(const float *x, const float *_den, float *y, int N, int ord, float *_mem)
+void iir_mem16_10(const float *x, const float *_den, float *y, int N, int ord, float *_mem)
 {
    __m128 den[3], mem[3];
 
@@ -190,7 +190,7 @@ void iir_mem2_10(const float *x, const float *_den, float *y, int N, int ord, fl
 }
 
 
-void iir_mem2_8(const float *x, const float *_den, float *y, int N, int ord, float *_mem)
+void iir_mem16_8(const float *x, const float *_den, float *y, int N, int ord, float *_mem)
 {
    __m128 den[2], mem[2];
 
@@ -229,17 +229,17 @@ void iir_mem2_8(const float *x, const float *_den, float *y, int N, int ord, flo
    _mm_storeu_ps(_mem+4, mem[1]);
 }
 
-#define OVERRIDE_IIR_MEM2
-void iir_mem2(const float *x, const float *_den, float *y, int N, int ord, float *_mem)
+#define OVERRIDE_IIR_MEM16
+void iir_mem16(const float *x, const float *_den, float *y, int N, int ord, float *_mem, char *stack)
 {
    if(ord==10)
-      iir_mem2_10(x, _den, y, N, ord, _mem);
+      iir_mem16_10(x, _den, y, N, ord, _mem);
    else if (ord==8)
-      iir_mem2_8(x, _den, y, N, ord, _mem);
+      iir_mem16_8(x, _den, y, N, ord, _mem);
 }
 
 
-void fir_mem2_10(const float *x, const float *_num, float *y, int N, int ord, float *_mem)
+void fir_mem16_10(const float *x, const float *_num, float *y, int N, int ord, float *_mem)
 {
    __m128 num[3], mem[3];
 
@@ -287,7 +287,7 @@ void fir_mem2_10(const float *x, const float *_num, float *y, int N, int ord, fl
    _mm_store_ss(_mem+9, mem[2]);
 }
 
-void fir_mem2_8(const float *x, const float *_num, float *y, int N, int ord, float *_mem)
+void fir_mem16_8(const float *x, const float *_num, float *y, int N, int ord, float *_mem)
 {
    __m128 num[2], mem[2];
 
@@ -326,11 +326,11 @@ void fir_mem2_8(const float *x, const float *_num, float *y, int N, int ord, flo
    _mm_storeu_ps(_mem+4, mem[1]);
 }
 
-#define OVERRIDE_FIR_MEM2
-void fir_mem2(const float *x, const float *_num, float *y, int N, int ord, float *_mem)
+#define OVERRIDE_FIR_MEM16
+void fir_mem16(const float *x, const float *_num, float *y, int N, int ord, float *_mem, char *stack)
 {
    if(ord==10)
-      fir_mem2_10(x, _num, y, N, ord, _mem);
+      fir_mem16_10(x, _num, y, N, ord, _mem);
    else if (ord==8)
-      fir_mem2_8(x, _num, y, N, ord, _mem);
+      fir_mem16_8(x, _num, y, N, ord, _mem);
 }

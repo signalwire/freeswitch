@@ -51,7 +51,7 @@ Modified by Jean-Marc Valin
 #ifndef __AK2LSPD__
 #define __AK2LSPD__
 
-#include "misc.h"
+#include "arch.h"
 
 int lpc_to_lsp (spx_coef_t *a, int lpcrdr, spx_lsp_t *freq, int nb, spx_word16_t delta, char *stack);
 void lsp_to_lpc(spx_lsp_t *freq, spx_coef_t *ak, int lpcrdr, char *stack);

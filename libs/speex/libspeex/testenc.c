@@ -19,7 +19,6 @@ int main(int argc, char **argv)
    FILE *fin, *fout, *fbits=NULL;
    short in_short[FRAME_SIZE];
    short out_short[FRAME_SIZE];
-   float sigpow,errpow,snr, seg_snr=0;
    int snr_frames = 0;
    char cbits[200];
    int nbBits;
@@ -32,11 +31,8 @@ int main(int argc, char **argv)
    spx_int32_t skip_group_delay;
    SpeexCallback callback;
 
-   sigpow = 0;
-   errpow = 0;
-
-   st = speex_encoder_init(&speex_nb_mode);
-   dec = speex_decoder_init(&speex_nb_mode);
+   st = speex_encoder_init(speex_lib_get_mode(SPEEX_MODEID_NB));
+   dec = speex_decoder_init(speex_lib_get_mode(SPEEX_MODEID_NB));
 
    /* BEGIN: You probably don't need the following in a real application */
    callback.callback_id = SPEEX_INBAND_CHAR;
@@ -74,13 +70,13 @@ int main(int argc, char **argv)
       exit(1);
    }
    inFile = argv[1];
-   fin = fopen(inFile, "r");
+   fin = fopen(inFile, "rb");
    outFile = argv[2];
-   fout = fopen(outFile, "w+");
+   fout = fopen(outFile, "wb+");
    if (argc==4)
    {
       bitsFile = argv[3];
-      fbits = fopen(bitsFile, "w");
+      fbits = fopen(bitsFile, "wb");
    }
    speex_bits_init(&bits);
    while (!feof(fin))
@@ -109,6 +105,12 @@ int main(int argc, char **argv)
    speex_decoder_destroy(dec);
    speex_bits_destroy(&bits);
 
+#ifndef DISABLE_FLOAT_API
+   {
+   float sigpow,errpow,snr, seg_snr=0;
+   sigpow = 0;
+   errpow = 0;
+
    /* This code just computes SNR, so you don't need it either */
    rewind(fin);
    rewind(fout);
@@ -127,9 +129,6 @@ int main(int argc, char **argv)
 	errpow += e;
 	snr_frames++;
    }
-   fclose(fin);
-   fclose(fout);
-
    snr = 10 * log10( sigpow / errpow );
    seg_snr /= snr_frames;
    fprintf(stderr,"SNR = %f\nsegmental SNR = %f\n",snr, seg_snr);
@@ -137,6 +136,11 @@ int main(int argc, char **argv)
 #ifdef FIXED_DEBUG
    printf ("Total: %f MIPS\n", (float)(1e-6*50*spx_mips/snr_frames));
 #endif
-   
+   }
+#endif
+
+   fclose(fin);
+   fclose(fout);
+
    return 0;
 }

@@ -36,10 +36,10 @@ UID           0
 MACRO         HAVE_CONFIG_H
 SOURCEPATH    ..\libspeex
 SOURCE        bits.c cb_search.c exc_5_64_table.c exc_5_256_table.c exc_8_128_table.c
-SOURCE        exc_10_16_table.c exc_10_32_table.c exc_20_32_table.c filters.c gain_table.c
+SOURCE        exc_10_16_table.c exc_10_32_table.c exc_20_32_table.c fftwrap.c kiss_fft.c kiss_fftr.c filterbank.c filters.c gain_table.c
 SOURCE        gain_table_lbr.c hexc_10_32_table.c hexc_table.c high_lsp_tables.c jitter.c
 SOURCE        lbr_48k_tables.c lpc.c lsp.c lsp_tables_nb.c ltp.c math_approx.c mdf.c misc.c
 SOURCE        modes.c nb_celp.c preprocess.c quant_lsp.c sb_celp.c smallft.c
-SOURCE        speex.c speex_callbacks.c speex_header.c stereo.c vbr.c vq.c
+SOURCE        speex.c speex_callbacks.c speex_header.c stereo.c vbr.c vq.c window.c
 USERINCLUDE   . ..\include\speex
 SYSTEMINCLUDE \epoc32\include \epoc32\include\libc ..\include

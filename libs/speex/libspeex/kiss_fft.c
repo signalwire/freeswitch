@@ -1,5 +1,6 @@
 /*
 Copyright (c) 2003-2004, Mark Borgerding
+Copyright (c) 2005-2007, Jean-Marc Valin
 
 All rights reserved.
 
@@ -18,127 +19,149 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #endif
 
 #include "_kiss_fft_guts.h"
-#include "misc.h"
+#include "arch.h"
+#include "os_support.h"
 
 /* The guts header contains all the multiplication and addition macros that are defined for
  fixed or floating point complex numbers.  It also delares the kf_ internal functions.
  */
 
-static kiss_fft_cpx *scratchbuf=NULL;
-static size_t nscratchbuf=0;
-static kiss_fft_cpx *tmpbuf=NULL;
-static size_t ntmpbuf=0;
-
-#define CHECKBUF(buf,nbuf,n) \
-    do { \
-        if ( nbuf < (size_t)(n) ) {\
-            speex_free(buf); \
-            buf = (kiss_fft_cpx*)KISS_FFT_MALLOC(sizeof(kiss_fft_cpx)*(n)); \
-            nbuf = (size_t)(n); \
-        } \
-   }while(0)
-        
 static void kf_bfly2(
         kiss_fft_cpx * Fout,
         const size_t fstride,
         const kiss_fft_cfg st,
-        int m
+        int m,
+        int N,
+        int mm
         )
 {
     kiss_fft_cpx * Fout2;
-    kiss_fft_cpx * tw1 = st->twiddles;
+    kiss_fft_cpx * tw1;
     kiss_fft_cpx t;
-    Fout2 = Fout + m;
     if (!st->inverse) {
-       int i;
-       kiss_fft_cpx *x=Fout;
-       for (i=0;i<2*m;i++)
+       int i,j;
+       kiss_fft_cpx * Fout_beg = Fout;
+       for (i=0;i<N;i++)
        {
-          x[i].r = SHR(x[i].r,1);
-          x[i].i = SHR(x[i].i,1);
+          Fout = Fout_beg + i*mm;
+          Fout2 = Fout + m;
+          tw1 = st->twiddles;
+          for(j=0;j<m;j++)
+          {
+             /* Almost the same as the code path below, except that we divide the input by two
+              (while keeping the best accuracy possible) */
+             spx_word32_t tr, ti;
+             tr = SHR32(SUB32(MULT16_16(Fout2->r , tw1->r),MULT16_16(Fout2->i , tw1->i)), 1);
+             ti = SHR32(ADD32(MULT16_16(Fout2->i , tw1->r),MULT16_16(Fout2->r , tw1->i)), 1);
+             tw1 += fstride;
+             Fout2->r = PSHR32(SUB32(SHL32(EXTEND32(Fout->r), 14), tr), 15);
+             Fout2->i = PSHR32(SUB32(SHL32(EXTEND32(Fout->i), 14), ti), 15);
+             Fout->r = PSHR32(ADD32(SHL32(EXTEND32(Fout->r), 14), tr), 15);
+             Fout->i = PSHR32(ADD32(SHL32(EXTEND32(Fout->i), 14), ti), 15);
+             ++Fout2;
+             ++Fout;
+          }
+       }
+    } else {
+       int i,j;
+       kiss_fft_cpx * Fout_beg = Fout;
+       for (i=0;i<N;i++)
+       {
+          Fout = Fout_beg + i*mm;
+          Fout2 = Fout + m;
+          tw1 = st->twiddles;
+          for(j=0;j<m;j++)
+          {
+             C_MUL (t,  *Fout2 , *tw1);
+             tw1 += fstride;
+             C_SUB( *Fout2 ,  *Fout , t );
+             C_ADDTO( *Fout ,  t );
+             ++Fout2;
+             ++Fout;
+          }
        }
     }
-
-    do{
-        C_MUL (t,  *Fout2 , *tw1);
-        tw1 += fstride;
-        C_SUB( *Fout2 ,  *Fout , t );
-        C_ADDTO( *Fout ,  t );
-        ++Fout2;
-        ++Fout;
-    }while (--m);
 }
 
 static void kf_bfly4(
         kiss_fft_cpx * Fout,
         const size_t fstride,
         const kiss_fft_cfg st,
-        const size_t m
+        int m,
+        int N,
+        int mm
         )
 {
     kiss_fft_cpx *tw1,*tw2,*tw3;
     kiss_fft_cpx scratch[6];
-    size_t k=m;
     const size_t m2=2*m;
     const size_t m3=3*m;
+    int i, j;
 
-    tw3 = tw2 = tw1 = st->twiddles;
-
-    if (!st->inverse) {
-       int i;
-       kiss_fft_cpx *x=Fout;
-       for (i=0;i<4*m;i++)
-       {
-          x[i].r = PSHR16(x[i].r,2);
-          x[i].i = PSHR16(x[i].i,2);
-       }
-    }
     if (st->inverse)
     {
-       do {
-          C_MUL(scratch[0],Fout[m] , *tw1 );
-          C_MUL(scratch[1],Fout[m2] , *tw2 );
-          C_MUL(scratch[2],Fout[m3] , *tw3 );
-          
-          C_SUB( scratch[5] , *Fout, scratch[1] );
-          C_ADDTO(*Fout, scratch[1]);
-          C_ADD( scratch[3] , scratch[0] , scratch[2] );
-          C_SUB( scratch[4] , scratch[0] , scratch[2] );
-          C_SUB( Fout[m2], *Fout, scratch[3] );
-          tw1 += fstride;
-          tw2 += fstride*2;
-          tw3 += fstride*3;
-          C_ADDTO( *Fout , scratch[3] );
-
-          Fout[m].r = scratch[5].r - scratch[4].i;
-          Fout[m].i = scratch[5].i + scratch[4].r;
-          Fout[m3].r = scratch[5].r + scratch[4].i;
-          Fout[m3].i = scratch[5].i - scratch[4].r;
-          ++Fout;
-       } while(--k);
+       kiss_fft_cpx * Fout_beg = Fout;
+       for (i=0;i<N;i++)
+       {
+          Fout = Fout_beg + i*mm;
+          tw3 = tw2 = tw1 = st->twiddles;
+          for (j=0;j<m;j++)
+          {
+             C_MUL(scratch[0],Fout[m] , *tw1 );
+             C_MUL(scratch[1],Fout[m2] , *tw2 );
+             C_MUL(scratch[2],Fout[m3] , *tw3 );
+             
+             C_SUB( scratch[5] , *Fout, scratch[1] );
+             C_ADDTO(*Fout, scratch[1]);
+             C_ADD( scratch[3] , scratch[0] , scratch[2] );
+             C_SUB( scratch[4] , scratch[0] , scratch[2] );
+             C_SUB( Fout[m2], *Fout, scratch[3] );
+             tw1 += fstride;
+             tw2 += fstride*2;
+             tw3 += fstride*3;
+             C_ADDTO( *Fout , scratch[3] );
+             
+             Fout[m].r = scratch[5].r - scratch[4].i;
+             Fout[m].i = scratch[5].i + scratch[4].r;
+             Fout[m3].r = scratch[5].r + scratch[4].i;
+             Fout[m3].i = scratch[5].i - scratch[4].r;
+             ++Fout;
+          }
+       }
     } else
     {
-       do {
-          C_MUL(scratch[0],Fout[m] , *tw1 );
-          C_MUL(scratch[1],Fout[m2] , *tw2 );
-          C_MUL(scratch[2],Fout[m3] , *tw3 );
-          
-          C_SUB( scratch[5] , *Fout, scratch[1] );
-          C_ADDTO(*Fout, scratch[1]);
-          C_ADD( scratch[3] , scratch[0] , scratch[2] );
-          C_SUB( scratch[4] , scratch[0] , scratch[2] );
-          C_SUB( Fout[m2], *Fout, scratch[3] );
-          tw1 += fstride;
-          tw2 += fstride*2;
-          tw3 += fstride*3;
-          C_ADDTO( *Fout , scratch[3] );
-          
-          Fout[m].r = scratch[5].r + scratch[4].i;
-          Fout[m].i = scratch[5].i - scratch[4].r;
-          Fout[m3].r = scratch[5].r - scratch[4].i;
-          Fout[m3].i = scratch[5].i + scratch[4].r;
-          ++Fout;
-       }while(--k);
+       kiss_fft_cpx * Fout_beg = Fout;
+       for (i=0;i<N;i++)
+       {
+          Fout = Fout_beg + i*mm;
+          tw3 = tw2 = tw1 = st->twiddles;
+          for (j=0;j<m;j++)
+          {
+             C_MUL4(scratch[0],Fout[m] , *tw1 );
+             C_MUL4(scratch[1],Fout[m2] , *tw2 );
+             C_MUL4(scratch[2],Fout[m3] , *tw3 );
+             
+             Fout->r = PSHR16(Fout->r, 2);
+             Fout->i = PSHR16(Fout->i, 2);
+             C_SUB( scratch[5] , *Fout, scratch[1] );
+             C_ADDTO(*Fout, scratch[1]);
+             C_ADD( scratch[3] , scratch[0] , scratch[2] );
+             C_SUB( scratch[4] , scratch[0] , scratch[2] );
+             Fout[m2].r = PSHR16(Fout[m2].r, 2);
+             Fout[m2].i = PSHR16(Fout[m2].i, 2);
+             C_SUB( Fout[m2], *Fout, scratch[3] );
+             tw1 += fstride;
+             tw2 += fstride*2;
+             tw3 += fstride*3;
+             C_ADDTO( *Fout , scratch[3] );
+             
+             Fout[m].r = scratch[5].r + scratch[4].i;
+             Fout[m].i = scratch[5].i - scratch[4].r;
+             Fout[m3].r = scratch[5].r - scratch[4].i;
+             Fout[m3].i = scratch[5].i + scratch[4].r;
+             ++Fout;
+          }
+       }
     }
 }
 
@@ -263,10 +286,13 @@ static void kf_bfly_generic(
     int u,k,q1,q;
     kiss_fft_cpx * twiddles = st->twiddles;
     kiss_fft_cpx t;
+    kiss_fft_cpx scratchbuf[17];
     int Norig = st->nfft;
 
-    CHECKBUF(scratchbuf,nscratchbuf,p);
-
+    /*CHECKBUF(scratchbuf,nscratchbuf,p);*/
+    if (p>17)
+       speex_fatal("KissFFT: max radix supported is 17");
+    
     for ( u=0; u<m; ++u ) {
         k=u;
         for ( q1=0 ; q1<p ; ++q1 ) {
@@ -291,6 +317,39 @@ static void kf_bfly_generic(
         }
     }
 }
+               
+static
+void kf_shuffle(
+         kiss_fft_cpx * Fout,
+         const kiss_fft_cpx * f,
+         const size_t fstride,
+         int in_stride,
+         int * factors,
+         const kiss_fft_cfg st
+            )
+{
+   const int p=*factors++; /* the radix  */
+   const int m=*factors++; /* stage's fft length/p */
+   
+    /*printf ("fft %d %d %d %d %d %d\n", p*m, m, p, s2, fstride*in_stride, N);*/
+   if (m==1)
+   {
+      int j;
+      for (j=0;j<p;j++)
+      {
+         Fout[j] = *f;
+         f += fstride*in_stride;
+      }
+   } else {
+      int j;
+      for (j=0;j<p;j++)
+      {
+         kf_shuffle( Fout , f, fstride*p, in_stride, factors,st);
+         f += fstride*in_stride;
+         Fout += m;
+      }
+   }
+}
 
 static
 void kf_work(
@@ -299,24 +358,34 @@ void kf_work(
         const size_t fstride,
         int in_stride,
         int * factors,
-        const kiss_fft_cfg st
+        const kiss_fft_cfg st,
+        int N,
+        int s2,
+        int m2
         )
 {
+   int i;
     kiss_fft_cpx * Fout_beg=Fout;
     const int p=*factors++; /* the radix  */
     const int m=*factors++; /* stage's fft length/p */
-    const kiss_fft_cpx * Fout_end = Fout + p*m;
-
-    if (m==1) {
-        do{
-            *Fout = *f;
-            f += fstride*in_stride;
-        }while(++Fout != Fout_end );
-    }else{
-        do{
-            kf_work( Fout , f, fstride*p, in_stride, factors,st);
-            f += fstride*in_stride;
-        }while( (Fout += m) != Fout_end );
+#if 0
+    /*printf ("fft %d %d %d %d %d %d\n", p*m, m, p, s2, fstride*in_stride, N);*/
+    if (m==1)
+    {
+    /*   int j;
+       for (j=0;j<p;j++)
+       {
+          Fout[j] = *f;
+          f += fstride*in_stride;
+       }*/
+    } else {
+       int j;
+       for (j=0;j<p;j++)
+       {
+          kf_work( Fout , f, fstride*p, in_stride, factors,st, N*p, fstride*in_stride, m);
+          f += fstride*in_stride;
+          Fout += m;
+       }
     }
 
     Fout=Fout_beg;
@@ -328,6 +397,36 @@ void kf_work(
         case 5: kf_bfly5(Fout,fstride,st,m); break; 
         default: kf_bfly_generic(Fout,fstride,st,m,p); break;
     }
+#else
+    /*printf ("fft %d %d %d %d %d %d %d\n", p*m, m, p, s2, fstride*in_stride, N, m2);*/
+    if (m==1) 
+    {
+       /*for (i=0;i<N;i++)
+       {
+          int j;
+          Fout = Fout_beg+i*m2;
+          const kiss_fft_cpx * f2 = f+i*s2;
+          for (j=0;j<p;j++)
+          {
+             *Fout++ = *f2;
+             f2 += fstride*in_stride;
+          }
+       }*/
+    }else{
+       kf_work( Fout , f, fstride*p, in_stride, factors,st, N*p, fstride*in_stride, m);
+    }
+
+    
+       
+       
+       switch (p) {
+          case 2: kf_bfly2(Fout,fstride,st,m, N, m2); break;
+          case 3: for (i=0;i<N;i++){Fout=Fout_beg+i*m2; kf_bfly3(Fout,fstride,st,m);} break; 
+          case 4: kf_bfly4(Fout,fstride,st,m, N, m2); break;
+          case 5: for (i=0;i<N;i++){Fout=Fout_beg+i*m2; kf_bfly5(Fout,fstride,st,m);} break; 
+          default: for (i=0;i<N;i++){Fout=Fout_beg+i*m2; kf_bfly_generic(Fout,fstride,st,m,p);} break;
+    }    
+#endif
 }
 
 /*  facbuf is populated by p1,m1,p2,m2, ...
@@ -338,8 +437,6 @@ static
 void kf_factor(int n,int * facbuf)
 {
     int p=4;
-    double floor_sqrt;
-    floor_sqrt = floor( sqrt((double)n) );
 
     /*factor out powers of 4, powers of 2, then any remaining primes */
     do {
@@ -349,7 +446,7 @@ void kf_factor(int n,int * facbuf)
                 case 2: p = 3; break;
                 default: p += 2; break;
             }
-            if (p > floor_sqrt)
+            if (p>32000 || (spx_int32_t)p*(spx_int32_t)p > n)
                 p = n;          /* no more factors, skip to end */
         }
         n /= p;
@@ -357,7 +454,6 @@ void kf_factor(int n,int * facbuf)
         *facbuf++ = n;
     } while (n > 1);
 }
-
 /*
  *
  * User-callable function to allocate all necessary storage space for the fft.
@@ -382,15 +478,22 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
         int i;
         st->nfft=nfft;
         st->inverse = inverse_fft;
-
+#ifdef FIXED_POINT
         for (i=0;i<nfft;++i) {
-            const double pi=3.14159265358979323846264338327;
-            double phase = ( -2*pi /nfft ) * i;
-            if (st->inverse)
-                phase *= -1;
-            kf_cexp(st->twiddles+i, phase );
+            spx_word32_t phase = i;
+            if (!st->inverse)
+                phase = -phase;
+            kf_cexp2(st->twiddles+i, DIV32(SHL32(phase,17),nfft));
         }
-
+#else
+        for (i=0;i<nfft;++i) {
+           const double pi=3.14159265358979323846264338327;
+           double phase = ( -2*pi /nfft ) * i;
+           if (st->inverse)
+              phase *= -1;
+           kf_cexp(st->twiddles+i, phase );
+        }
+#endif
         kf_factor(nfft,st->factors);
     }
     return st;
@@ -401,12 +504,15 @@ kiss_fft_cfg kiss_fft_alloc(int nfft,int inverse_fft,void * mem,size_t * lenmem 
     
 void kiss_fft_stride(kiss_fft_cfg st,const kiss_fft_cpx *fin,kiss_fft_cpx *fout,int in_stride)
 {
-    if (fin == fout) {
-        CHECKBUF(tmpbuf,ntmpbuf,st->nfft);
-        kf_work(tmpbuf,fin,1,in_stride, st->factors,st);
-        speex_move(fout,tmpbuf,sizeof(kiss_fft_cpx)*st->nfft);
-    }else{
-        kf_work( fout, fin, 1,in_stride, st->factors,st );
+    if (fin == fout) 
+    {
+       speex_fatal("In-place FFT not supported");
+       /*CHECKBUF(tmpbuf,ntmpbuf,st->nfft);
+       kf_work(tmpbuf,fin,1,in_stride, st->factors,st);
+       SPEEX_MOVE(fout,tmpbuf,st->nfft);*/
+    } else {
+       kf_shuffle( fout, fin, 1,in_stride, st->factors,st);
+       kf_work( fout, fin, 1,in_stride, st->factors,st, 1, in_stride, 1);
     }
 }
 
@@ -415,16 +521,3 @@ void kiss_fft(kiss_fft_cfg cfg,const kiss_fft_cpx *fin,kiss_fft_cpx *fout)
     kiss_fft_stride(cfg,fin,fout,1);
 }
 
-
-/* not really necessary to call, but if someone is doing in-place ffts, they may want to free the 
-   buffers from CHECKBUF
- */ 
-void kiss_fft_cleanup(void)
-{
-    speex_free(scratchbuf);
-    scratchbuf = NULL;
-    nscratchbuf=0;
-    speex_free(tmpbuf);
-    tmpbuf=NULL;
-    ntmpbuf=0;
-}

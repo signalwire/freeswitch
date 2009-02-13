@@ -35,12 +35,11 @@
 #ifndef VQ_H
 #define VQ_H
 
-#include "misc.h"
+#include "arch.h"
 
 int scal_quant(spx_word16_t in, const spx_word16_t *boundary, int entries);
 int scal_quant32(spx_word32_t in, const spx_word32_t *boundary, int entries);
 
-int vq_index(float *in, const float *codebook, int len, int entries);
 #ifdef _USE_SSE
 #include <xmmintrin.h>
 void vq_nbest(spx_word16_t *in, const __m128 *codebook, int len, int entries, __m128 *E, int N, int *nbest, spx_word32_t *best_dist, char *stack);

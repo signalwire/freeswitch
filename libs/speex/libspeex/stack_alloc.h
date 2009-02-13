@@ -36,11 +36,15 @@
 #define STACK_ALLOC_H
 
 #ifdef USE_ALLOCA
-#ifdef WIN32
-#include <malloc.h>
-#else
-#include <alloca.h>
-#endif
+# ifdef WIN32
+#  include <malloc.h>
+# else
+#  ifdef HAVE_ALLOCA_H
+#   include <alloca.h>
+#  else
+#   include <stdlib.h>
+#  endif
+# endif
 #endif
 
 /**
@@ -60,15 +64,6 @@
  * @param stack Stack
  * @param size  Number of elements
  * @param type  Type of element
- */
-
-/**
- * @def PUSHS(stack, type)
- *
- * Allocates a struct stack 
- *
- * @param stack Stack
- * @param type  Struct type
  */
 
 /**
@@ -97,15 +92,11 @@
 
 #define PUSH(stack, size, type) (VALGRIND_MAKE_NOACCESS(stack, 1000),ALIGN((stack),sizeof(type)),VALGRIND_MAKE_WRITABLE(stack, ((size)*sizeof(type))),(stack)+=((size)*sizeof(type)),(type*)((stack)-((size)*sizeof(type))))
 
-#define PUSHS(stack, type) (VALGRIND_MAKE_NOACCESS(stack, 1000),ALIGN((stack),sizeof(long)),VALGRIND_MAKE_WRITABLE(stack, (sizeof(type))),(stack)+=(sizeof(type)),(type*)((stack)-(sizeof(type))))
-
 #else
 
 #define ALIGN(stack, size) ((stack) += ((size) - (long)(stack)) & ((size) - 1))
 
 #define PUSH(stack, size, type) (ALIGN((stack),sizeof(type)),(stack)+=((size)*sizeof(type)),(type*)((stack)-((size)*sizeof(type))))
-
-#define PUSHS(stack, type) (ALIGN((stack),sizeof(long)),(stack)+=(sizeof(type)),(type*)((stack)-(sizeof(type))))
 
 #endif
 

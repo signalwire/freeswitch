@@ -66,7 +66,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -138,7 +138,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -211,7 +211,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -284,7 +284,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -338,6 +338,7 @@
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
+				FloatingPointModel="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="true"
@@ -356,10 +357,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				ModuleDefinitionFile="libspeex.def"
+				OutputFile="..\..\..\bin\libspeex.dll"
+				ModuleDefinitionFile="..\..\libspeex.def"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				OptimizeForWindows98="1"
+				ImportLibrary="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -434,7 +437,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -506,7 +509,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -572,7 +575,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -644,7 +647,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/libspeex.lib"
+				OutputFile="..\..\..\lib\libspeex.lib"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -657,6 +660,94 @@
 			/>
 			<Tool
 				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release_Dynamic_SSE|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			CharacterSet="2"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="..\..\..\include;..\.."
+				PreprocessorDefinitions="_USE_SSE;WIN32;NDEBUG;_LIB;HAVE_CONFIG_H"
+				StringPooling="true"
+				ExceptionHandling="0"
+				RuntimeLibrary="0"
+				BufferSecurityCheck="false"
+				EnableEnhancedInstructionSet="1"
+				FloatingPointModel="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				Detect64BitPortabilityProblems="true"
+				DebugInformationFormat="3"
+				CompileAs="1"
+				DisableSpecificWarnings="4244;4305;4311;4100;4127"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				OutputFile="..\..\..\bin\libspeex.dll"
+				ModuleDefinitionFile="..\..\libspeex.def"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				OptimizeForWindows98="1"
+				ImportLibrary="..\..\..\lib\libspeex.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -1378,7 +1469,7 @@
 	<Files>
 		<Filter
 			Name="Source Files"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			Filter="cpp;c;cxx;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
@@ -1414,10 +1505,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\fftwrap.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\filters.c"
 				>
 			</File>
@@ -1442,22 +1529,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\jitter.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fft.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\kiss_fftr.c"
-				>
-			</File>
-			<File
-				RelativePath=".\libspeex.def"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\lpc.c"
 				>
 			</File>
@@ -1474,31 +1545,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\math_approx.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\mdf.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\medfilter.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\misc.c"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\modes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\nb_celp.c"
+				RelativePath="..\..\..\libspeex\modes_wb.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\preprocess.c"
+				RelativePath="..\..\..\libspeex\nb_celp.c"
 				>
 			</File>
 			<File
@@ -1507,10 +1562,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\sb_celp.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\smallft.c"
 				>
 			</File>
 			<File
@@ -1548,15 +1599,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\libspeex\arch.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\libspeex\cb_search.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\config.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\libspeex\fftwrap.h"
+				RelativePath="..\..\..\libspeex\cb_search_sse.h"
 				>
 			</File>
 			<File
@@ -1568,11 +1619,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\kiss_fft.h"
+				RelativePath="..\..\..\libspeex\fixed_debug.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\kiss_fftr.h"
+				RelativePath="..\..\..\libspeex\fixed_generic.h"
 				>
 			</File>
 			<File
@@ -1596,10 +1647,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\misc.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\libspeex\modes.h"
 				>
 			</File>
@@ -1608,7 +1655,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\libspeex\pseudofloat.h"
+				RelativePath="..\..\..\libspeex\os_support.h"
 				>
 			</File>
 			<File
@@ -1617,46 +1664,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\libspeex\sb_celp.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_bits.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_callbacks.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_echo.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_header.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_jitter.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_noglobals.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_preprocess.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_stereo.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\include\speex\speex_types.h"
 				>
 			</File>
 			<File
@@ -1671,6 +1678,10 @@
 				RelativePath="..\..\..\libspeex\vq.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\libspeex\vq_sse.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
@@ -1678,8 +1689,41 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<Filter
+			Name="Public Header Files"
+			Filter="h"
+			>
+			<File
+				RelativePath="..\..\..\include\speex\speex.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_bits.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_callbacks.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_header.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_stereo.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\include\speex\speex_types.h"
+				>
+			</File>
+		</Filter>
 		<File
-			RelativePath=".\ReadMe.txt"
+			RelativePath="..\..\config.h"
+			>
+		</File>
+		<File
+			RelativePath="..\..\libspeex.def"
 			>
 		</File>
 	</Files>

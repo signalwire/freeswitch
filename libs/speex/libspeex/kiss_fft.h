@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 #include <math.h>
-#include "misc.h"
+#include "arch.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +32,7 @@ extern "C" {
 
 
 #ifdef FIXED_POINT
-#include "misc.h"	
+#include "arch.h"	
 #  define kiss_fft_scalar spx_int16_t
 #else
 # ifndef kiss_fft_scalar

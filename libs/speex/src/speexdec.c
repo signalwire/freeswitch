@@ -36,6 +36,8 @@
 #include <stdio.h>
 #if !defined WIN32 && !defined _WIN32
 #include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
 #ifndef HAVE_GETOPT_LONG
@@ -48,8 +50,6 @@
 #include <ogg/ogg.h>
 
 #if defined WIN32 || defined _WIN32
-#include <windows.h>
-#include "getopt_win.h"
 #include "wave_out.h"
 /* We need the following two to set stdout to binary */
 #include <io.h>
@@ -84,7 +84,6 @@
 #include <speex/speex_header.h>
 #include <speex/speex_stereo.h>
 #include <speex/speex_callbacks.h>
-#include "wav_io.h"
 
 #define MAX_FRAME_SIZE 2000
 
@@ -107,7 +106,7 @@ static void print_comments(char *comments, int length)
    end = c+length;
    len=readint(c, 0);
    c+=4;
-   if (c+len>end)
+   if (len < 0 || c+len>end)
    {
       fprintf (stderr, "Invalid/corrupted comments\n");
       return;
@@ -131,7 +130,7 @@ static void print_comments(char *comments, int length)
       }
       len=readint(c, 0);
       c+=4;
-      if (c+len>end)
+      if (len < 0 || c+len>end)
       {
          fprintf (stderr, "Invalid/corrupted comments\n");
          return;
@@ -232,6 +231,8 @@ FILE *out_file_open(char *outFile, int rate, int *channels)
       {
 #if defined WIN32 || defined _WIN32
          _setmode(_fileno(stdout), _O_BINARY);
+#elif defined OS2
+         _fsetmode(stdout,"b");
 #endif
          fout=stdout;
       }
@@ -289,13 +290,17 @@ void usage()
 
 void version()
 {
-   printf ("speexdec (Speex decoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
+   const char* speex_version;
+   speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
+   printf ("speexdec (Speex decoder) version %s (compiled " __DATE__ ")\n", speex_version);
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
-   printf ("speexdec version " SPEEX_VERSION "\n");
+   const char* speex_version;
+   speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
+   printf ("speexdec version %s\n", speex_version);
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
@@ -317,6 +322,7 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    {
       fprintf (stderr, "Mode number %d does not (yet/any longer) exist in this version\n", 
                header->mode);
+      free(header);
       return NULL;
    }
       
@@ -329,17 +335,20 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    if (header->speex_version_id > 1)
    {
       fprintf (stderr, "This file was encoded with Speex bit-stream version %d, which I don't know how to decode\n", header->speex_version_id);
+      free(header);
       return NULL;
    }
 
    if (mode->bitstream_version < header->mode_bitstream_version)
    {
       fprintf (stderr, "The file was encoded with a newer version of Speex. You need to upgrade in order to play it.\n");
+      free(header);
       return NULL;
    }
    if (mode->bitstream_version > header->mode_bitstream_version) 
    {
       fprintf (stderr, "The file was encoded with an older version of Speex. You would need to downgrade the version in order to play it.\n");
+      free(header);
       return NULL;
    }
    
@@ -347,19 +356,13 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
    if (!st)
    {
       fprintf (stderr, "Decoder initialization failed.\n");
+      free(header);
       return NULL;
    }
    speex_decoder_ctl(st, SPEEX_SET_ENH, &enh_enabled);
    speex_decoder_ctl(st, SPEEX_GET_FRAME_SIZE, frame_size);
    *granule_frame_size = *frame_size;
 
-   if (!(*channels==1))
-   {
-      callback.callback_id = SPEEX_INBAND_STEREO;
-      callback.func = speex_std_stereo_request_handler;
-      callback.data = stereo;
-      speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
-   }
    if (!*rate)
       *rate = header->rate;
    /* Adjust rate if --force-* options are used */
@@ -384,6 +387,15 @@ static void *process_header(ogg_packet *op, spx_int32_t enh_enabled, spx_int32_t
 
    if (*channels==-1)
       *channels = header->nb_channels;
+
+   if (!(*channels==1))
+   {
+      *channels = 2;
+      callback.callback_id = SPEEX_INBAND_STEREO;
+      callback.func = speex_std_stereo_request_handler;
+      callback.data = stereo;
+      speex_decoder_ctl(st, SPEEX_SET_HANDLER, &callback);
+   }
    
    if (!quiet)
    {
@@ -630,7 +642,7 @@ int main(int argc, char **argv)
          packet_no=0;
          while (!eos && ogg_stream_packetout(&os, &op) == 1)
          {
-	    if (!memcmp(op.packet, "Speex", 5)) {
+	    if (op.bytes>=5 && !memcmp(op.packet, "Speex", 5)) {
 	       speex_serialno = os.serialno;
 	    }
 	    if (speex_serialno == -1 || os.serialno != speex_serialno)

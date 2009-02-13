@@ -30,6 +30,20 @@
    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+PRJ_EXPORTS
+
+..\include\speex\speex_bits.h          \epoc32\include\speex\speex_bits.h
+..\include\speex\speex_callbacks.h     \epoc32\include\speex\speex_callbacks.h
+..\include\speex\speex_config_types.h  \epoc32\include\speex\speex_config_types.h
+..\include\speex\speex_echo.h          \epoc32\include\speex\speex_echo.h
+..\include\speex\speex.h               \epoc32\include\speex\speex.h
+..\include\speex\speex_header.h        \epoc32\include\speex\speex_header.h
+..\include\speex\speex_jitter.h        \epoc32\include\speex\speex_jitter.h
+..\include\speex\speex_preprocess.h    \epoc32\include\speex\speex_preprocess.h
+..\include\speex\speex_stereo.h        \epoc32\include\speex\speex_stereo.h
+..\include\speex\speex_types.h         \epoc32\include\speex\speex_types.h
+
+
 PRJ_MMPFILES
 
 speex.mmp

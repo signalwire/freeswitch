@@ -184,10 +184,17 @@ void main()
    tmp=1;  /* Lowest */
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
+#ifdef DISABLE_HIGHPASS
+   /* Turn this off if you want to measure SNR (on by default) */
+   tmp=0;
+   speex_encoder_ctl(st, SPEEX_SET_HIGHPASS, &tmp);
+   speex_decoder_ctl(dec, SPEEX_SET_HIGHPASS, &tmp);
+#endif
+
    speex_encoder_ctl(st, SPEEX_GET_LOOKAHEAD, &skip_group_delay);
    speex_decoder_ctl(dec, SPEEX_GET_LOOKAHEAD, &tmp);
    skip_group_delay += tmp;
-   fprintf (stderr, "decoder lookahead = %d\n", skip_group_delay);
+   fprintf (stderr, "decoder lookahead = %ld\n", skip_group_delay);
 
 #ifdef DECODE_ONLY
    bitsFile = "c:\\speextrunktest\\samples\\malebitsin.dat";

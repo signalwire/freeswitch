@@ -36,6 +36,8 @@
 #include <stdio.h>
 #if !defined WIN32 && !defined _WIN32
 #include <unistd.h>
+#endif
+#ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
 #ifndef HAVE_GETOPT_LONG
@@ -53,7 +55,6 @@
 #include <speex/speex_preprocess.h>
 
 #if defined WIN32 || defined _WIN32
-#include "getopt_win.h"
 /* We need the following two to set stdout to binary */
 #include <io.h>
 #include <fcntl.h>
@@ -182,13 +183,17 @@ void add_fisbone_packet (ogg_stream_state *os, spx_int32_t serialno, SpeexHeader
 
 void version()
 {
-   printf ("speexenc (Speex encoder) version " SPEEX_VERSION " (compiled " __DATE__ ")\n");
+   const char* speex_version;
+   speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
+   printf ("speexenc (Speex encoder) version %s (compiled " __DATE__ ")\n", speex_version);
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
 void version_short()
 {
-   printf ("speexenc version " SPEEX_VERSION "\n");
+   const char* speex_version;
+   speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
+   printf ("speexenc version %s\n", speex_version);
    printf ("Copyright (C) 2002-2006 Jean-Marc Valin\n");
 }
 
@@ -316,7 +321,8 @@ int main(int argc, char **argv)
    SpeexHeader header;
    int nframes=1;
    spx_int32_t complexity=3;
-   char *vendor_string = "Encoded with Speex " SPEEX_VERSION;
+   const char* speex_version;
+   char vendor_string[64];
    char *comments;
    int comments_length;
    int close_in=0, close_out=0;
@@ -329,6 +335,9 @@ int main(int argc, char **argv)
    SpeexPreprocessState *preprocess = NULL;
    int denoise_enabled=0, agc_enabled=0;
    spx_int32_t lookahead = 0;
+
+   speex_lib_ctl(SPEEX_LIB_GET_VERSION_STRING, (void*)&speex_version);
+   snprintf(vendor_string, sizeof(vendor_string), "Encoded with Speex %s", speex_version);
    
    comment_init(&comments, &comments_length, vendor_string);
 
@@ -505,6 +514,8 @@ int main(int argc, char **argv)
    {
 #if defined WIN32 || defined _WIN32
          _setmode(_fileno(stdin), _O_BINARY);
+#elif defined OS2
+         _fsetmode(stdin,"b");
 #endif
       fin=stdin;
    }
@@ -949,6 +960,8 @@ void comment_init(char **comments, int* length, char *vendor_string)
   int len=4+vendor_length+4;
   char *p=(char*)malloc(len);
   if(p==NULL){
+     fprintf (stderr, "malloc failed in comment_init()\n");
+     exit(1);
   }
   writeint(p, 0, vendor_length);
   memcpy(p+4, vendor_string, vendor_length);
@@ -967,6 +980,8 @@ void comment_add(char **comments, int* length, char *tag, char *val)
 
   p=(char*)realloc(p, len);
   if(p==NULL){
+     fprintf (stderr, "realloc failed in comment_add()\n");
+     exit(1);
   }
 
   writeint(p, *length, tag_len+val_len);      /* length of comment */

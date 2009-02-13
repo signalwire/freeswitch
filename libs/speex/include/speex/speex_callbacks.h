@@ -35,6 +35,9 @@
 
 #ifndef SPEEX_CALLBACKS_H
 #define SPEEX_CALLBACKS_H
+/** @defgroup SpeexCallbacks Various definitions for Speex callbacks supported by the decoder.
+ *  @{
+ */
 
 #include "speex.h"
 
@@ -110,13 +113,16 @@ int speex_default_user_handler(SpeexBits *bits, void *state, void *data);
 
 
 
-
+/** Standard handler for low mode request (change low mode, no questions asked) */
 int speex_std_low_mode_request_handler(SpeexBits *bits, void *state, void *data);
 
+/** Standard handler for VBR request (Set VBR, no questions asked) */
 int speex_std_vbr_request_handler(SpeexBits *bits, void *state, void *data);
 
+/** Standard handler for enhancer request (Turn enhancer on/off, no questions asked) */
 int speex_std_enh_request_handler(SpeexBits *bits, void *state, void *data);
 
+/** Standard handler for VBR quality request (Set VBR quality, no questions asked) */
 int speex_std_vbr_quality_request_handler(SpeexBits *bits, void *state, void *data);
 
 
@@ -124,5 +130,5 @@ int speex_std_vbr_quality_request_handler(SpeexBits *bits, void *state, void *da
 }
 #endif
 
-
+/** @} */
 #endif

@@ -1,5 +1,5 @@
 %define name     speex
-%define ver      1.2beta1
+%define ver      1.2rc1
 %define rel      1
 
 Summary: An open-source, patent-free speech codec
@@ -67,4 +67,5 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %{_includedir}/speex/speex*.h
 /usr/share/aclocal/speex.m4
 %{_libdir}/pkgconfig/speex.pc
+%{_libdir}/pkgconfig/speexdsp.pc
 %{_libdir}/libspeex*.a

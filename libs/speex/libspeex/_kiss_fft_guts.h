@@ -20,6 +20,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
    and defines
    typedef struct { kiss_fft_scalar r; kiss_fft_scalar i; }kiss_fft_cpx; */
 #include "kiss_fft.h"
+#include "math_approx.h"
 
 #define MAXFACTORS 32
 /* e.g. an fft of length 128 has 4 factors 
@@ -44,7 +45,7 @@ struct kiss_fft_state{
    C_ADDTO( res , a)    : res += a
  * */
 #ifdef FIXED_POINT
-#include "misc.h"
+#include "arch.h"
 # define FRACBITS 15
 # define SAMPPROD spx_int32_t 
 #define SAMP_MAX 32767
@@ -67,6 +68,10 @@ struct kiss_fft_state{
       do{ (m).r = sround( smul((a).r,(b).r) - smul((a).i,(b).i) ); \
           (m).i = sround( smul((a).r,(b).i) + smul((a).i,(b).r) ); }while(0)
 
+#   define C_MUL4(m,a,b) \
+               do{ (m).r = PSHR32( smul((a).r,(b).r) - smul((a).i,(b).i),17 ); \
+               (m).i = PSHR32( smul((a).r,(b).i) + smul((a).i,(b).r),17 ); }while(0)
+
 #   define DIVSCALAR(x,k) \
 	(x) = sround( smul(  x, SAMP_MAX/k ) )
 
@@ -84,6 +89,9 @@ struct kiss_fft_state{
 #define C_MUL(m,a,b) \
     do{ (m).r = (a).r*(b).r - (a).i*(b).i;\
         (m).i = (a).r*(b).i + (a).i*(b).r; }while(0)
+
+#define C_MUL4(m,a,b) C_MUL(m,a,b)
+
 #   define C_FIXDIV(c,div) /* NOOP */
 #   define C_MULBYSCALAR( c, s ) \
     do{ (c).r *= (s);\
@@ -140,6 +148,11 @@ struct kiss_fft_state{
 		(x)->r = KISS_FFT_COS(phase);\
 		(x)->i = KISS_FFT_SIN(phase);\
 	}while(0)
+#define  kf_cexp2(x,phase) \
+               do{ \
+               (x)->r = spx_cos_norm((phase));\
+               (x)->i = spx_cos_norm((phase)-32768);\
+}while(0)
 
 
 /* a debugging function */

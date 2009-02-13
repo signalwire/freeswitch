@@ -7,7 +7,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include "speex/speex_echo.h"
 #include "speex/speex_preprocess.h"
 
@@ -17,37 +16,38 @@
 
 int main(int argc, char **argv)
 {
-   int echo_fd, ref_fd, e_fd;
-   spx_int32_t noise[NN+1];
+   FILE *echo_fd, *ref_fd, *e_fd;
    short echo_buf[NN], ref_buf[NN], e_buf[NN];
    SpeexEchoState *st;
    SpeexPreprocessState *den;
+   int sampleRate = 8000;
 
    if (argc != 4)
    {
-      fprintf (stderr, "testecho mic_signal.sw speaker_signal.sw output.sw\n");
+      fprintf(stderr, "testecho mic_signal.sw speaker_signal.sw output.sw\n");
       exit(1);
    }
-   echo_fd = open (argv[2], O_RDONLY);
-   ref_fd  = open (argv[1],  O_RDONLY);
-   e_fd    = open (argv[3], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+   echo_fd = fopen(argv[2], "rb");
+   ref_fd  = fopen(argv[1],  "rb");
+   e_fd    = fopen(argv[3], "wb");
 
    st = speex_echo_state_init(NN, TAIL);
-   den = speex_preprocess_state_init(NN, 8000);
-   int tmp = 8000;
-   speex_echo_ctl(st, SPEEX_ECHO_SET_SAMPLING_RATE, &tmp);
+   den = speex_preprocess_state_init(NN, sampleRate);
+   speex_echo_ctl(st, SPEEX_ECHO_SET_SAMPLING_RATE, &sampleRate);
+   speex_preprocess_ctl(den, SPEEX_PREPROCESS_SET_ECHO_STATE, st);
 
-   while (read(ref_fd, ref_buf, NN*2))
+   while (!feof(ref_fd) && !feof(echo_fd))
    {
-      read(echo_fd, echo_buf, NN*2);
-      speex_echo_cancel(st, ref_buf, echo_buf, e_buf, noise);
-      /*speex_preprocess(den, e_buf, noise);*/
-      write(e_fd, e_buf, NN*2);
+      fread(ref_buf, sizeof(short), NN, ref_fd);
+      fread(echo_buf, sizeof(short), NN, echo_fd);
+      speex_echo_cancellation(st, ref_buf, echo_buf, e_buf);
+      speex_preprocess_run(den, e_buf);
+      fwrite(e_buf, sizeof(short), NN, e_fd);
    }
    speex_echo_state_destroy(st);
    speex_preprocess_state_destroy(den);
-   close(e_fd);
-   close(echo_fd);
-   close(ref_fd);
+   fclose(e_fd);
+   fclose(echo_fd);
+   fclose(ref_fd);
    return 0;
 }

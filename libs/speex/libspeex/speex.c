@@ -38,6 +38,7 @@
 
 #include "modes.h"
 #include <math.h>
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0
@@ -47,22 +48,22 @@
 
 
 
-void *speex_encoder_init(const SpeexMode *mode)
+EXPORT void *speex_encoder_init(const SpeexMode *mode)
 {
    return mode->enc_init(mode);
 }
 
-void *speex_decoder_init(const SpeexMode *mode)
+EXPORT void *speex_decoder_init(const SpeexMode *mode)
 {
    return mode->dec_init(mode);
 }
 
-void speex_encoder_destroy(void *state)
+EXPORT void speex_encoder_destroy(void *state)
 {
    (*((SpeexMode**)state))->enc_destroy(state);
 }
 
-void speex_decoder_destroy(void *state)
+EXPORT void speex_decoder_destroy(void *state)
 {
    (*((SpeexMode**)state))->dec_destroy(state);
 }
@@ -83,7 +84,8 @@ int speex_decode_native(void *state, SpeexBits *bits, spx_word16_t *out)
 
 #ifdef FIXED_POINT
 
-int speex_encode(void *state, float *in, SpeexBits *bits)
+#ifndef DISABLE_FLOAT_API
+EXPORT int speex_encode(void *state, float *in, SpeexBits *bits)
 {
    int i;
    spx_int32_t N;
@@ -100,15 +102,17 @@ int speex_encode(void *state, float *in, SpeexBits *bits)
    }
    return (*((SpeexMode**)state))->enc(state, short_in, bits);
 }
+#endif /* #ifndef DISABLE_FLOAT_API */
 
-int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
+EXPORT int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 {
    SpeexMode *mode;
    mode = *(SpeexMode**)state;
    return (mode)->enc(state, in, bits);
 }
 
-int speex_decode(void *state, SpeexBits *bits, float *out)
+#ifndef DISABLE_FLOAT_API
+EXPORT int speex_decode(void *state, SpeexBits *bits, float *out)
 {
    int i, ret;
    spx_int32_t N;
@@ -119,8 +123,9 @@ int speex_decode(void *state, SpeexBits *bits, float *out)
       out[i] = short_out[i];
    return ret;
 }
+#endif /* #ifndef DISABLE_FLOAT_API */
 
-int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
+EXPORT int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 {
    SpeexMode *mode = *(SpeexMode**)state;
    return (mode)->dec(state, bits, out);
@@ -128,12 +133,12 @@ int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 
 #else
 
-int speex_encode(void *state, float *in, SpeexBits *bits)
+EXPORT int speex_encode(void *state, float *in, SpeexBits *bits)
 {
    return (*((SpeexMode**)state))->enc(state, in, bits);
 }
 
-int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
+EXPORT int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
 {
    int i;
    spx_int32_t N;
@@ -144,12 +149,12 @@ int speex_encode_int(void *state, spx_int16_t *in, SpeexBits *bits)
    return (*((SpeexMode**)state))->enc(state, float_in, bits);
 }
 
-int speex_decode(void *state, SpeexBits *bits, float *out)
+EXPORT int speex_decode(void *state, SpeexBits *bits, float *out)
 {
    return (*((SpeexMode**)state))->dec(state, bits, out);
 }
 
-int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
+EXPORT int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 {
    int i;
    spx_int32_t N;
@@ -172,12 +177,12 @@ int speex_decode_int(void *state, SpeexBits *bits, spx_int16_t *out)
 
 
 
-int speex_encoder_ctl(void *state, int request, void *ptr)
+EXPORT int speex_encoder_ctl(void *state, int request, void *ptr)
 {
    return (*((SpeexMode**)state))->enc_ctl(state, request, ptr);
 }
 
-int speex_decoder_ctl(void *state, int request, void *ptr)
+EXPORT int speex_decoder_ctl(void *state, int request, void *ptr)
 {
    return (*((SpeexMode**)state))->dec_ctl(state, request, ptr);
 }
@@ -208,32 +213,9 @@ int nb_mode_query(const void *mode, int request, void *ptr)
    return 0;
 }
 
-int wb_mode_query(const void *mode, int request, void *ptr)
-{
-   const SpeexSBMode *m = (const SpeexSBMode*)mode;
-
-   switch (request)
-   {
-   case SPEEX_MODE_FRAME_SIZE:
-      *((int*)ptr)=2*m->frameSize;
-      break;
-   case SPEEX_SUBMODE_BITS_PER_FRAME:
-      if (*((int*)ptr)==0)
-         *((int*)ptr) = SB_SUBMODE_BITS+1;
-      else if (m->submodes[*((int*)ptr)]==NULL)
-         *((int*)ptr) = -1;
-      else
-         *((int*)ptr) = m->submodes[*((int*)ptr)]->bits_per_frame;
-      break;
-   default:
-      speex_warning_int("Unknown wb_mode_query request: ", request);
-      return -1;
-   }
-   return 0;
-}
 
 
-int speex_lib_ctl(int request, void *ptr)
+EXPORT int speex_lib_ctl(int request, void *ptr)
 {
    switch (request)
    {

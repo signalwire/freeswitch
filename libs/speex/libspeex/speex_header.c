@@ -35,13 +35,30 @@
 #include "config.h"
 #endif
 
-#include "misc.h"
+#include "arch.h"
 #include <speex/speex_header.h>
 #include <speex/speex.h>
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0
 #endif
+
+/** Convert little endian */
+static inline spx_int32_t le_int(spx_int32_t i)
+{
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
+   spx_uint32_t ui, ret;
+   ui = i;
+   ret =  ui>>24;
+   ret |= (ui>>8)&0x0000ff00;
+   ret |= (ui<<8)&0x00ff0000;
+   ret |= (ui<<24);
+   return ret;
+#else
+   return i;
+#endif
+}
 
 #define ENDIAN_SWITCH(x) {x=le_int(x);}
 
@@ -66,7 +83,7 @@ typedef struct SpeexHeader {
 } SpeexHeader;
 */
 
-void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
+EXPORT void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const SpeexMode *m)
 {
    int i;
    const char *h="Speex   ";
@@ -101,12 +118,12 @@ void speex_init_header(SpeexHeader *header, int rate, int nb_channels, const Spe
    header->reserved2 = 0;
 }
 
-char *speex_header_to_packet(SpeexHeader *header, int *size)
+EXPORT char *speex_header_to_packet(SpeexHeader *header, int *size)
 {
    SpeexHeader *le_header;
    le_header = (SpeexHeader*)speex_alloc(sizeof(SpeexHeader));
    
-   speex_move(le_header, header, sizeof(SpeexHeader));
+   SPEEX_COPY(le_header, header, 1);
    
    /*Make sure everything is now little-endian*/
    ENDIAN_SWITCH(le_header->speex_version_id);
@@ -125,7 +142,7 @@ char *speex_header_to_packet(SpeexHeader *header, int *size)
    return (char *)le_header;
 }
 
-SpeexHeader *speex_packet_to_header(char *packet, int size)
+EXPORT SpeexHeader *speex_packet_to_header(char *packet, int size)
 {
    int i;
    SpeexHeader *le_header;
@@ -133,20 +150,20 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    for (i=0;i<8;i++)
       if (packet[i]!=h[i])
       {
-         speex_warning ("This doesn't look like a Speex file");
+         speex_notify("This doesn't look like a Speex file");
          return NULL;
       }
    
    /*FIXME: Do we allow larger headers?*/
    if (size < (int)sizeof(SpeexHeader))
    {
-      speex_warning("Speex header too small");
+      speex_notify("Speex header too small");
       return NULL;
    }
    
    le_header = (SpeexHeader*)speex_alloc(sizeof(SpeexHeader));
    
-   speex_move(le_header, packet, sizeof(SpeexHeader));
+   SPEEX_COPY(le_header, (SpeexHeader*)packet, 1);
    
    /*Make sure everything is converted correctly from little-endian*/
    ENDIAN_SWITCH(le_header->speex_version_id);
@@ -161,6 +178,23 @@ SpeexHeader *speex_packet_to_header(char *packet, int size)
    ENDIAN_SWITCH(le_header->frames_per_packet);
    ENDIAN_SWITCH(le_header->extra_headers);
 
+   if (le_header->mode >= SPEEX_NB_MODES || le_header->mode < 0)
+   {
+      speex_notify("Invalid mode specified in Speex header");
+      speex_free (le_header);
+      return NULL;
+   }
+
+   if (le_header->nb_channels>2)
+      le_header->nb_channels = 2;
+   if (le_header->nb_channels<1)
+      le_header->nb_channels = 1;
+
    return le_header;
 
+}
+
+EXPORT void speex_header_free(void *ptr)
+{
+   speex_free(ptr);
 }

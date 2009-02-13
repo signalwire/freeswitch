@@ -35,9 +35,29 @@
 #include <stdio.h>
 #include "speex/speex_types.h"
 
-unsigned short be_short(unsigned short s);
-unsigned short le_short(unsigned short s);
-spx_uint32_t le_int(spx_uint32_t i);
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
+#define le_short(s) ((short) ((unsigned short) (s) << 8) | ((unsigned short) (s) >> 8))
+#define be_short(s) ((short) (s))
+#else
+#define le_short(s) ((short) (s))
+#define be_short(s) ((short) ((unsigned short) (s) << 8) | ((unsigned short) (s) >> 8))
+#endif 
+
+/** Convert little endian */
+static inline spx_int32_t le_int(spx_int32_t i)
+{
+#if !defined(__LITTLE_ENDIAN__) && ( defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__) )
+   spx_uint32_t ui, ret;
+   ui = i;
+   ret =  ui>>24;
+   ret |= (ui>>8)&0x0000ff00;
+   ret |= (ui<<8)&0x00ff0000;
+   ret |= (ui<<24);
+   return ret;
+#else
+   return i;
+#endif
+}
 
 int read_wav_header(FILE *file, int *rate, int *channels, int *format, spx_int32_t *size);
 

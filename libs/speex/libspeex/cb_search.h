@@ -36,7 +36,7 @@
 #define CB_SEARCH_H
 
 #include <speex/speex_bits.h>
-#include "misc.h"
+#include "arch.h"
 
 /** Split codebook parameters. */
 typedef struct split_cb_params {

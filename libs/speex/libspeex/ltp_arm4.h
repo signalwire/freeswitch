@@ -75,9 +75,10 @@ spx_word32_t inner_prod(const spx_word16_t *x, const spx_word16_t *y, int len)
          "\tadd %2, %2, %7, asr #5\n"
          "\tadd %3, %3, %10, asr #5\n"
          "\tbne .inner_prod_loop%=\n"
-   : "=r" (deadx), "=r" (deady), "=r" (sum1),  "=r" (sum2), "=r" (deadlen),
-   "=r" (dead1), "=r" (dead2), "=r" (dead3), "=r" (dead4), "=r" (dead5), "=r" (dead6)
-   : "0" (x), "1" (y), "2" (sum1), "3" (sum2), "4" (len>>3)
+   : "=r" (deadx), "=r" (deady), "+r" (sum1),  "+r" (sum2),
+     "=r" (deadlen), "=r" (dead1), "=r" (dead2), "=r" (dead3),
+     "=r" (dead4), "=r" (dead5), "=r" (dead6)
+   : "0" (x), "1" (y), "4" (len>>3)
    : "cc"
                         );
    return (sum1+sum2)>>1;
@@ -169,13 +170,11 @@ void pitch_xcorr(const spx_word16_t *_x, const spx_word16_t *_y, spx_word32_t *c
                "\tstr %6, %13 \n"
                "\tstr %7, %14 \n"
 
-            : "=r" (y0), "=r" (y1), "=r" (y2), "=r" (y3),
+            : "+r" (y0), "+r" (y1), "+r" (y2), "+r" (y3),
          "=r" (part1),  "=r" (part2),  "=r" (part3),  "=r" (part4),
-         "=r" (x), "=r" (y), "=r" (x0),
-         "=m" (sum1), "=m" (sum2), "=m" (sum3), "=m" (sum4), "=r" (dead1)
-            : "0" (y0), "1" (y1), "2" (y2), "3" (y3),
-            "8" (x), "9" (y),
-            "11" (sum1), "12" (sum2), "13" (sum3), "14" (sum4)
+              "+r" (x), "+r" (y), "=r" (x0), "+m" (sum1),
+              "+m" (sum2), "+m" (sum3), "+m" (sum4), "=r" (dead1)
+            :
             : "cc", "memory"
                               );
       }

@@ -146,6 +146,13 @@ void main()
    tmp=1;  /* Lowest */
    speex_encoder_ctl(st, SPEEX_SET_COMPLEXITY, &tmp);
 
+#ifdef DISABLE_HIGHPASS
+   /* Turn this off if you want to measure SNR (on by default) */
+   tmp=0;
+   speex_encoder_ctl(st, SPEEX_SET_HIGHPASS, &tmp);
+   speex_decoder_ctl(dec, SPEEX_SET_HIGHPASS, &tmp);
+#endif
+
    speex_encoder_ctl(st, SPEEX_GET_LOOKAHEAD, &skip_group_delay);
    speex_decoder_ctl(dec, SPEEX_GET_LOOKAHEAD, &tmp);
    skip_group_delay += tmp;

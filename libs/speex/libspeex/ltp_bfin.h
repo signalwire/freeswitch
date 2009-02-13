@@ -330,7 +330,6 @@ static int pitch_gain_search_3tap_vq(
 "        %0 = 0;\n\t"                      /* %0: best_sum         */
 "        %1 = 0;\n\t"                      /* %1: best_cbdk        */
 "        P1 = 0;\n\t"                      /* P1: loop counter     */
-"        R5 = 64;\n\t"                     /* R5: pitch_control    */
 
 "        LSETUP (pgs1, pgs2) LC1 = %4;\n\t"
 "pgs1:     R2  = B [P0++] (X);\n\t"        /* R2: g[0]             */
@@ -339,6 +338,7 @@ static int pitch_gain_search_3tap_vq(
 "          R2 += 32;\n\t"
 "          R3 += 32;\n\t"
 "          R4 += 32;\n\t"
+"          R4.H = 64;\n\t"                 /* R4.H: pitch_control    */
 
 "          R0  = B [P0++] (X);\n\t"              
 "          B0  = R0;\n\t"                  /* BO: gain_sum         */
@@ -349,13 +349,13 @@ static int pitch_gain_search_3tap_vq(
 "          A0 = 0;\n\t"
          
 "          R0.L = W[I1++];\n\t"
-"          R1.L = R2.L*R5.L (IS);\n\t"
+"          R1.L = R2.L*R4.H (IS);\n\t"
 "          A0 += R1.L*R0.L (IS) || R0.L = W[I1++];\n\t"
          
-"          R1.L = R3.L*R5.L (IS);\n\t"
+"          R1.L = R3.L*R4.H (IS);\n\t"
 "          A0 += R1.L*R0.L (IS) || R0.L = W[I1++];\n\t"
          
-"          R1.L = R4.L*R5.L (IS);\n\t"
+"          R1.L = R4.L*R4.H (IS);\n\t"
 "          A0 += R1.L*R0.L (IS) || R0.L = W[I1++];\n\t"
          
 "          R1.L = R2.L*R3.L (IS);\n\t"
@@ -406,7 +406,7 @@ static int pitch_gain_search_3tap_vq(
        : "=&d" (best_sum), "=&d" (best_cdbk) 
        : "a" (gain_cdbk), "a" (C16), "a" (gain_cdbk_size), "a" (max_gain),
          "b" (-VERY_LARGE32)
-       : "R0", "R1", "R2", "R3", "R4", "R5", "P0", 
+       : "R0", "R1", "R2", "R3", "R4", "P0", 
          "P1", "I1", "L1", "A0", "B0"
 #if (__GNUC__ == 4)
          , "LC1"

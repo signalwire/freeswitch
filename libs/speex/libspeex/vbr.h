@@ -37,7 +37,7 @@
 #ifndef VBR_H
 #define VBR_H
 
-#include "misc.h"
+#include "arch.h"
 
 #define VBR_MEMORY_SIZE 5
 

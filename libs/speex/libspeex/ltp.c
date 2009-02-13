@@ -40,6 +40,7 @@
 #include "filters.h"
 #include <speex/speex_bits.h>
 #include "math_approx.h"
+#include "os_support.h"
 
 #ifndef NULL
 #define NULL 0
@@ -176,20 +177,56 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
    VARDECL(spx_word32_t *best_ener);
    spx_word32_t e0;
    VARDECL(spx_word32_t *corr);
+#ifdef FIXED_POINT
+   /* In fixed-point, we need only one (temporary) array of 32-bit values and two (corr16, ener16) 
+      arrays for (normalized) 16-bit values */
+   VARDECL(spx_word16_t *corr16);
+   VARDECL(spx_word16_t *ener16);
+   spx_word32_t *energy;
+   int cshift=0, eshift=0;
+   int scaledown = 0;
+   ALLOC(corr16, end-start+1, spx_word16_t);
+   ALLOC(ener16, end-start+1, spx_word16_t);
+   ALLOC(corr, end-start+1, spx_word32_t);
+   energy = corr;
+#else
+   /* In floating-point, we need to float arrays and no normalized copies */
    VARDECL(spx_word32_t *energy);
-
+   spx_word16_t *corr16;
+   spx_word16_t *ener16;
+   ALLOC(energy, end-start+2, spx_word32_t);
+   ALLOC(corr, end-start+1, spx_word32_t);
+   corr16 = corr;
+   ener16 = energy;
+#endif
+   
    ALLOC(best_score, N, spx_word32_t);
    ALLOC(best_ener, N, spx_word32_t);
-   ALLOC(corr, end-start+1, spx_word32_t);
-   ALLOC(energy, end-start+2, spx_word32_t);
-
    for (i=0;i<N;i++)
    {
         best_score[i]=-1;
         best_ener[i]=0;
         pitch[i]=start;
    }
-
+   
+#ifdef FIXED_POINT
+   for (i=-end;i<len;i++)
+   {
+      if (ABS16(sw[i])>16383)
+      {
+         scaledown=1;
+         break;
+      }
+   }
+   /* If the weighted input is close to saturation, then we scale it down */
+   if (scaledown)
+   {
+      for (i=-end;i<len;i++)
+      {
+         sw[i]=SHR16(sw[i],1);
+      }
+   }      
+#endif
    energy[0]=inner_prod(sw-start, sw-start, len);
    e0=inner_prod(sw, sw, len);
    for (i=start;i<end;i++)
@@ -199,59 +236,42 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
       if (energy[i-start+1] < 0)
          energy[i-start+1] = 0;
    }
-
-   pitch_xcorr(sw, sw-end, corr, len, end-start+1, stack);
-
-   /* FIXME: Fixed-point and floating-point code should be merged */
+   
 #ifdef FIXED_POINT
+   eshift = normalize16(energy, ener16, 32766, end-start+1);
+#endif
+   
+   /* In fixed-point, this actually overrites the energy array (aliased to corr) */
+   pitch_xcorr(sw, sw-end, corr, len, end-start+1, stack);
+   
+#ifdef FIXED_POINT
+   /* Normalize to 180 so we can square it and it still fits in 16 bits */
+   cshift = normalize16(corr, corr16, 180, end-start+1);
+   /* If we scaled weighted input down, we need to scale it up again (OK, so we've just lost the LSB, who cares?) */
+   if (scaledown)
    {
-      VARDECL(spx_word16_t *corr16);
-      VARDECL(spx_word16_t *ener16);
-      ALLOC(corr16, end-start+1, spx_word16_t);
-      ALLOC(ener16, end-start+1, spx_word16_t);
-      /* Normalize to 180 so we can square it and it still fits in 16 bits */
-      normalize16(corr, corr16, 180, end-start+1);
-      normalize16(energy, ener16, 180, end-start+1);
-
-      for (i=start;i<=end;i++)
+      for (i=-end;i<len;i++)
       {
-         spx_word16_t tmp = MULT16_16_16(corr16[i-start],corr16[i-start]);
-         /* Instead of dividing the tmp by the energy, we multiply on the other side */
-         if (MULT16_16(tmp,best_ener[N-1])>MULT16_16(best_score[N-1],ADD16(1,ener16[i-start])))
-         {
-            /* We can safely put it last and then check */
-            best_score[N-1]=tmp;
-            best_ener[N-1]=ener16[i-start]+1;
-            pitch[N-1]=i;
-            /* Check if it comes in front of others */
-            for (j=0;j<N-1;j++)
-            {
-               if (MULT16_16(tmp,best_ener[j])>MULT16_16(best_score[j],ADD16(1,ener16[i-start])))
-               {
-                  for (k=N-1;k>j;k--)
-                  {
-                     best_score[k]=best_score[k-1];
-                     best_ener[k]=best_ener[k-1];
-                     pitch[k]=pitch[k-1];
-                  }
-                  best_score[j]=tmp;
-                  best_ener[j]=ener16[i-start]+1;
-                  pitch[j]=i;
-                  break;
-               }
-            }
-         }
+         sw[i]=SHL16(sw[i],1);
       }
-   }
-#else
+   }      
+#endif
+
+   /* Search for the best pitch prediction gain */
    for (i=start;i<=end;i++)
    {
-      float tmp = corr[i-start]*corr[i-start];
-      if (tmp*best_ener[N-1]>best_score[N-1]*(1+energy[i-start]))
+      spx_word16_t tmp = MULT16_16_16(corr16[i-start],corr16[i-start]);
+      /* Instead of dividing the tmp by the energy, we multiply on the other side */
+      if (MULT16_16(tmp,best_ener[N-1])>MULT16_16(best_score[N-1],ADD16(1,ener16[i-start])))
       {
-         for (j=0;j<N;j++)
+         /* We can safely put it last and then check */
+         best_score[N-1]=tmp;
+         best_ener[N-1]=ener16[i-start]+1;
+         pitch[N-1]=i;
+         /* Check if it comes in front of others */
+         for (j=0;j<N-1;j++)
          {
-            if (tmp*best_ener[j]>best_score[j]*(1+energy[i-start]))
+            if (MULT16_16(tmp,best_ener[j])>MULT16_16(best_score[j],ADD16(1,ener16[i-start])))
             {
                for (k=N-1;k>j;k--)
                {
@@ -260,29 +280,30 @@ void open_loop_nbest_pitch(spx_word16_t *sw, int start, int end, int len, int *p
                   pitch[k]=pitch[k-1];
                }
                best_score[j]=tmp;
-               best_ener[j]=energy[i-start]+1;
+               best_ener[j]=ener16[i-start]+1;
                pitch[j]=i;
                break;
             }
          }
       }
    }
-#endif
-
-   /* Compute open-loop gain */
+   
+   /* Compute open-loop gain if necessary */
    if (gain)
    {
-       for (j=0;j<N;j++)
-       {
-          spx_word16_t g;
-          i=pitch[j];
-          g = DIV32(corr[i-start], 10+SHR32(MULT16_16(spx_sqrt(e0),spx_sqrt(energy[i-start])),6));
-          /* FIXME: g = max(g,corr/energy) */
-                   if (g<0)
-                   g = 0;
-             gain[j]=g;
-       }
+      for (j=0;j<N;j++)
+      {
+         spx_word16_t g;
+         i=pitch[j];
+         g = DIV32(SHL32(EXTEND32(corr16[i-start]),cshift), 10+SHR32(MULT16_16(spx_sqrt(e0),spx_sqrt(SHL32(EXTEND32(ener16[i-start]),eshift))),6));
+         /* FIXME: g = max(g,corr/energy) */
+         if (g<0)
+            g = 0;
+         gain[j]=g;
+      }
    }
+
+
 }
 #endif
 
@@ -342,7 +363,8 @@ const spx_word16_t *r,
 spx_word16_t *new_target,
 int  *cdbk_index,
 int plc_tuning,
-spx_word32_t cumul_gain
+spx_word32_t cumul_gain,
+int scaledown
 )
 {
    int i,j;
@@ -366,6 +388,9 @@ spx_word32_t cumul_gain
    x[1]=tmp1+nsf;
    x[2]=tmp1+2*nsf;
    
+   for (j=0;j<nsf;j++)
+      new_target[j] = target[j];
+
    {
       VARDECL(spx_mem_t *mm);
       int pp=pitch-1;
@@ -379,6 +404,16 @@ spx_word32_t cumul_gain
          else
             e[j]=0;
       }
+#ifdef FIXED_POINT
+      /* Scale target and excitation down if needed (avoiding overflow) */
+      if (scaledown)
+      {
+         for (j=0;j<nsf;j++)
+            e[j] = SHR16(e[j],1);
+         for (j=0;j<nsf;j++)
+            new_target[j] = SHR16(new_target[j],1);
+      }
+#endif
       for (j=0;j<p;j++)
          mm[j] = 0;
       iir_mem16(e, ak, e, nsf, p, mm, stack);
@@ -391,13 +426,18 @@ spx_word32_t cumul_gain
    for (i=1;i>=0;i--)
    {
       spx_word16_t e0=exc2[-pitch-1+i];
+#ifdef FIXED_POINT
+      /* Scale excitation down if needed (avoiding overflow) */
+      if (scaledown)
+         e0 = SHR16(e0,1);
+#endif
       x[i][0]=MULT16_16_Q14(r[0], e0);
       for (j=0;j<nsf-1;j++)
          x[i][j+1]=ADD32(x[i+1][j],MULT16_16_P14(r[j+1], e0));
    }
 
    for (i=0;i<3;i++)
-      corr[i]=inner_prod(x[i],target,nsf);
+      corr[i]=inner_prod(x[i],new_target,nsf);
    for (i=0;i<3;i++)
       for (j=0;j<=i;j++)
          A[i][j]=A[j][i]=inner_prod(x[i],x[j],nsf);
@@ -456,8 +496,7 @@ spx_word32_t cumul_gain
       *cdbk_index=best_cdbk;
    }
 
-   for (i=0;i<nsf;i++)
-      exc[i]=0;
+   SPEEX_MEMSET(exc, 0, nsf);
    for (i=0;i<3;i++)
    {
       int j;
@@ -478,7 +517,7 @@ spx_word32_t cumul_gain
    {
       spx_word32_t tmp = ADD32(ADD32(MULT16_16(gain[0],x[2][i]),MULT16_16(gain[1],x[1][i])),
                             MULT16_16(gain[2],x[0][i]));
-      new_target[i] = SUB16(target[i], EXTRACT16(PSHR32(tmp,6)));
+      new_target[i] = SUB16(new_target[i], EXTRACT16(PSHR32(tmp,6)));
    }
    err = inner_prod(new_target, new_target, nsf);
 
@@ -509,7 +548,7 @@ int plc_tuning,
 spx_word32_t *cumul_gain
 )
 {
-   int i,j;
+   int i;
    int cdbk_index, pitch=0, best_gain_index=0;
    VARDECL(spx_sig_t *best_exc);
    VARDECL(spx_word16_t *new_target);
@@ -520,7 +559,8 @@ spx_word32_t *cumul_gain
    const ltp_params *params;
    const signed char *gain_cdbk;
    int   gain_cdbk_size;
-   
+   int scaledown=0;
+         
    VARDECL(int *nbest);
    
    params = (const ltp_params*) par;
@@ -540,11 +580,29 @@ spx_word32_t *cumul_gain
    {
       speex_bits_pack(bits, 0, params->pitch_bits);
       speex_bits_pack(bits, 0, params->gain_bits);
-      for (i=0;i<nsf;i++)
-         exc[i]=0;
+      SPEEX_MEMSET(exc, 0, nsf);
       return start;
    }
    
+#ifdef FIXED_POINT
+   /* Check if we need to scale everything down in the pitch search to avoid overflows */
+   for (i=0;i<nsf;i++)
+   {
+      if (ABS16(target[i])>16383)
+      {
+         scaledown=1;
+         break;
+      }
+   }
+   for (i=-end;i<nsf;i++)
+   {
+      if (ABS16(exc2[i])>16383)
+      {
+         scaledown=1;
+         break;
+      }
+   }
+#endif
    if (N>end-start+1)
       N=end-start+1;
    if (end != start)
@@ -559,16 +617,13 @@ spx_word32_t *cumul_gain
    for (i=0;i<N;i++)
    {
       pitch=nbest[i];
-      for (j=0;j<nsf;j++)
-         exc[j]=0;
+      SPEEX_MEMSET(exc, 0, nsf);
       err=pitch_gain_search_3tap(target, ak, awk1, awk2, exc, gain_cdbk, gain_cdbk_size, pitch, p, nsf,
-                                 bits, stack, exc2, r, new_target, &cdbk_index, plc_tuning, *cumul_gain);
+                                 bits, stack, exc2, r, new_target, &cdbk_index, plc_tuning, *cumul_gain, scaledown);
       if (err<best_err || best_err<0)
       {
-         for (j=0;j<nsf;j++)
-            best_exc[j]=exc[j];
-         for (j=0;j<nsf;j++)
-            best_target[j]=new_target[j];
+         SPEEX_COPY(best_exc, exc, nsf);
+         SPEEX_COPY(best_target, new_target, nsf);
          best_err=err;
          best_pitch=pitch;
          best_gain_index=cdbk_index;
@@ -584,11 +639,16 @@ spx_word32_t *cumul_gain
 #endif
    /*printf ("%f\n", cumul_gain);*/
    /*printf ("encode pitch: %d %d\n", best_pitch, best_gain_index);*/
-   for (i=0;i<nsf;i++)
-      exc[i]=best_exc[i];
-   for (i=0;i<nsf;i++)
-      target[i]=best_target[i];
-
+   SPEEX_COPY(exc, best_exc, nsf);
+   SPEEX_COPY(target, best_target, nsf);
+#ifdef FIXED_POINT
+   /* Scale target back up if needed */
+   if (scaledown)
+   {
+      for (i=0;i<nsf;i++)
+         target[i]=SHL16(target[i],1);
+   }
+#endif
    return pitch;
 }
 
@@ -669,8 +729,7 @@ int cdbk_offset
    gain[0] = SHL16(gain[0],7);
    gain[1] = SHL16(gain[1],7);
    gain[2] = SHL16(gain[2],7);
-   for (i=0;i<nsf;i++)
-      exc_out[i]=0;
+   SPEEX_MEMSET(exc_out, 0, nsf);
    for (i=0;i<3;i++)
    {
       int j;
@@ -717,8 +776,8 @@ spx_word32_t *cumul_gain
 )
 {
    int i;
-   VARDECL(spx_sig_t *res);
-   ALLOC(res, nsf, spx_sig_t);
+   VARDECL(spx_word16_t *res);
+   ALLOC(res, nsf, spx_word16_t);
 #ifdef FIXED_POINT
    if (pitch_coef>63)
       pitch_coef=63;
@@ -734,9 +793,11 @@ spx_word32_t *cumul_gain
    {
       exc[i]=MULT16_32_Q15(SHL16(pitch_coef, 9),exc[i-start]);
    }
-   syn_percep_zero(exc, ak, awk1, awk2, res, nsf, p, stack);
    for (i=0;i<nsf;i++)
-      target[i]=EXTRACT16(SATURATE(SUB32(EXTEND32(target[i]),PSHR32(res[i],SIG_SHIFT-1)),32700));
+      res[i] = EXTRACT16(PSHR32(exc[i], SIG_SHIFT-1));
+   syn_percep_zero16(res, ak, awk1, awk2, res, nsf, p, stack);
+   for (i=0;i<nsf;i++)
+      target[i]=EXTRACT16(SATURATE(SUB32(EXTEND32(target[i]),EXTEND32(res[i])),32700));
    return start;
 }
 
@@ -770,7 +831,7 @@ int cdbk_offset
    for (i=0;i<nsf;i++)
    {
       exc_out[i]=MULT16_16(exc[i-start],SHL16(pitch_coef,7));
-      exc[i] = PSHR(exc_out[i],13);
+      exc[i] = EXTRACT16(PSHR32(exc_out[i],13));
    }
    *pitch_val = start;
    gain_val[0]=gain_val[2]=0;

@@ -37,7 +37,9 @@
 #include "filters.h"
 #include "stack_alloc.h"
 #include "vq.h"
-#include "misc.h"
+#include "arch.h"
+#include "math_approx.h"
+#include "os_support.h"
 
 #ifdef _USE_SSE
 #include "cb_search_sse.h"
@@ -146,8 +148,7 @@ int   update_target
    ALLOC(e, nsf, spx_sig_t);
    
    /* FIXME: Do we still need to copy the target? */
-   for (i=0;i<nsf;i++)
-      t[i]=target[i];
+   SPEEX_COPY(t, target, nsf);
 
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
 
@@ -181,7 +182,7 @@ int   update_target
                t[subvect_size*i+m] = ADD16(t[subvect_size*i+m], res[m]);
 
 #ifdef FIXED_POINT
-         if (sign)
+         if (sign==1)
          {
             for (j=0;j<subvect_size;j++)
                e[subvect_size*i+j]=SHL32(EXTEND32(shape_cb[rind*subvect_size+j]),SIG_SHIFT-5);
@@ -226,11 +227,13 @@ int   update_target
    /* Update target: only update target if necessary */
    if (update_target)
    {
-      VARDECL(spx_sig_t *r2);
-      ALLOC(r2, nsf, spx_sig_t);
-      syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
+      VARDECL(spx_word16_t *r2);
+      ALLOC(r2, nsf, spx_word16_t);
       for (j=0;j<nsf;j++)
-         target[j]=SUB16(target[j],EXTRACT16(PSHR32(r2[j],8)));
+         r2[j] = EXTRACT16(PSHR32(e[j] ,6));
+      syn_percep_zero16(r2, ak, awk1, awk2, r2, nsf,p, stack);
+      for (j=0;j<nsf;j++)
+         target[j]=SUB16(target[j],PSHR16(r2[j],2));
    }
 }
 
@@ -263,7 +266,6 @@ int   update_target
 #endif
    VARDECL(spx_word16_t *t);
    VARDECL(spx_sig_t *e);
-   VARDECL(spx_sig_t *r2);
    VARDECL(spx_word16_t *tmp);
    VARDECL(spx_word32_t *ndist);
    VARDECL(spx_word32_t *odist);
@@ -316,7 +318,6 @@ int   update_target
 #endif
    ALLOC(t, nsf, spx_word16_t);
    ALLOC(e, nsf, spx_sig_t);
-   ALLOC(r2, nsf, spx_sig_t);
    ALLOC(ind, nb_subvect, int);
 
    ALLOC(tmp, 2*N*nsf, spx_word16_t);
@@ -341,11 +342,10 @@ int   update_target
       oind[i]=itmp+(2*i+1)*nb_subvect;
    }
    
-   for (i=0;i<nsf;i++)
-      t[i]=target[i];
+   SPEEX_COPY(t, target, nsf);
 
    for (j=0;j<N;j++)
-      speex_move(&ot[j][0], t, nsf*sizeof(spx_word16_t));
+      SPEEX_COPY(&ot[j][0], t, nsf);
 
    /* Pre-compute codewords response and energy */
    compute_weighted_codebook(shape_cb, r, resp, resp2, E, shape_cb_size, subvect_size, stack);
@@ -359,7 +359,11 @@ int   update_target
       /*"erase" nbest list*/
       for (j=0;j<N;j++)
          ndist[j]=VERY_LARGE32;
-
+      /* This is not strictly necessary, but it provides an additonal safety 
+         to prevent crashes in case something goes wrong in the previous
+         steps (e.g. NaNs) */
+      for (j=0;j<N;j++)
+         best_nind[j] = best_ntarget[j] = 0;
       /*For all n-bests of previous subvector*/
       for (j=0;j<N;j++)
       {
@@ -397,6 +401,7 @@ int   update_target
                         best_nind[n] = best_nind[n-1];
                         best_ntarget[n] = best_ntarget[n-1];
                      }
+                     /* n is equal to m here, so they're interchangeable */
                      ndist[m] = err;
                      best_nind[n] = best_index[k];
                      best_ntarget[n] = j;
@@ -495,9 +500,13 @@ int   update_target
    /* Update target: only update target if necessary */
    if (update_target)
    {
-      syn_percep_zero(e, ak, awk1, awk2, r2, nsf,p, stack);
+      VARDECL(spx_word16_t *r2);
+      ALLOC(r2, nsf, spx_word16_t);
       for (j=0;j<nsf;j++)
-         target[j]=SUB16(target[j],EXTRACT16(PSHR32(r2[j],8)));
+         r2[j] = EXTRACT16(PSHR32(e[j] ,6));
+      syn_percep_zero16(r2, ak, awk1, awk2, r2, nsf,p, stack);
+      for (j=0;j<nsf;j++)
+         target[j]=SUB16(target[j],PSHR16(r2[j],2));
    }
 }
 
@@ -577,16 +586,13 @@ int   update_target
 )
 {
    int i;
-   VARDECL(spx_sig_t *tmp);
-   ALLOC(tmp, nsf, spx_sig_t);
-   for (i=0;i<nsf;i++)
-      tmp[i]=PSHR32(EXTEND32(target[i]),SIG_SHIFT);
-   residue_percep_zero(tmp, ak, awk1, awk2, tmp, nsf, p, stack);
+   VARDECL(spx_word16_t *tmp);
+   ALLOC(tmp, nsf, spx_word16_t);
+   residue_percep_zero16(target, ak, awk1, awk2, tmp, nsf, p, stack);
 
    for (i=0;i<nsf;i++)
-      exc[i]+=tmp[i];
-   for (i=0;i<nsf;i++)
-      target[i]=0;
+      exc[i]+=SHL32(EXTEND32(tmp[i]),8);
+   SPEEX_MEMSET(target, 0, nsf);
 }
 
 

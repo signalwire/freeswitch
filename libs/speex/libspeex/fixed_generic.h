@@ -46,14 +46,15 @@
 #define SHL16(a,shift) ((a) << (shift))
 #define SHR32(a,shift) ((a) >> (shift))
 #define SHL32(a,shift) ((a) << (shift))
-#define PSHR16(a,shift) (SHR16((a)+(1<<((shift)-1)),shift))
-#define PSHR32(a,shift) (SHR32((a)+(1<<((shift)-1)),shift))
+#define PSHR16(a,shift) (SHR16((a)+((1<<((shift))>>1)),shift))
+#define PSHR32(a,shift) (SHR32((a)+((EXTEND32(1)<<((shift))>>1)),shift))
+#define VSHR32(a, shift) (((shift)>0) ? SHR32(a, shift) : SHL32(a, -(shift)))
 #define SATURATE16(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 #define SATURATE32(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 
 #define SHR(a,shift) ((a) >> (shift))
 #define SHL(a,shift) ((spx_word32_t)(a) << (shift))
-#define PSHR(a,shift) (SHR((a)+(1<<((shift)-1)),shift))
+#define PSHR(a,shift) (SHR((a)+((EXTEND32(1)<<((shift))>>1)),shift))
 #define SATURATE(x,a) (((x)>(a) ? (a) : (x)<-(a) ? -(a) : (x)))
 
 
@@ -77,6 +78,7 @@
 #define MULT16_32_Q11(a,b) ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11))
 #define MAC16_32_Q11(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),11)), SHR(MULT16_16((a),((b)&0x000007ff)),11)))
 
+#define MULT16_32_P15(a,b) ADD32(MULT16_16((a),SHR((b),15)), PSHR(MULT16_16((a),((b)&0x00007fff)),15))
 #define MULT16_32_Q15(a,b) ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15))
 #define MAC16_32_Q15(c,a,b) ADD32(c,ADD32(MULT16_16((a),SHR((b),15)), SHR(MULT16_16((a),((b)&0x00007fff)),15)))
 

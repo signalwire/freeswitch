@@ -19,7 +19,6 @@ int main(int argc, char **argv)
    FILE *fin, *fout, *fbits=NULL;
    short in_short[FRAME_SIZE];
    short out_short[FRAME_SIZE];
-   float in_float[FRAME_SIZE];
    float sigpow,errpow,snr, seg_snr=0;
    int snr_frames = 0;
    char cbits[200];
@@ -36,8 +35,8 @@ int main(int argc, char **argv)
    sigpow = 0;
    errpow = 0;
 
-   st = speex_encoder_init(&speex_wb_mode);
-   dec = speex_decoder_init(&speex_wb_mode);
+   st = speex_encoder_init(speex_lib_get_mode(SPEEX_MODEID_WB));
+   dec = speex_decoder_init(speex_lib_get_mode(SPEEX_MODEID_WB));
 
    callback.callback_id = SPEEX_INBAND_CHAR;
    callback.func = speex_std_char_handler;
@@ -74,13 +73,13 @@ int main(int argc, char **argv)
       exit(1);
    }
    inFile = argv[1];
-   fin = fopen(inFile, "r");
+   fin = fopen(inFile, "rb");
    outFile = argv[2];
-   fout = fopen(outFile, "w+");
+   fout = fopen(outFile, "wb+");
    if (argc==4)
    {
       bitsFile = argv[3];
-      fbits = fopen(bitsFile, "w");
+      fbits = fopen(bitsFile, "wb");
    }
    speex_bits_init(&bits);
    while (!feof(fin))
@@ -88,8 +87,6 @@ int main(int argc, char **argv)
       fread(in_short, sizeof(short), FRAME_SIZE, fin);
       if (feof(fin))
          break;
-      for (i=0;i<FRAME_SIZE;i++)
-         in_float[i]=in_short[i];
       speex_bits_reset(&bits);
 
       speex_encode_int(st, in_short, &bits);

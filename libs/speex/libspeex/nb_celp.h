@@ -64,10 +64,6 @@ typedef struct EncState {
    int    ol_voiced;             /**< Open-loop voiced/non-voiced decision */
    int   *pitch;
 
-#ifdef EPIC_48K
-   int    lbr_48k;
-#endif
-
 #ifdef VORBIS_PSYCHO
    VorbisPsy *psy;
    float *psy_window;
@@ -77,7 +73,6 @@ typedef struct EncState {
 
    spx_word16_t  gamma1;         /**< Perceptual filter: A(z/gamma1) */
    spx_word16_t  gamma2;         /**< Perceptual filter: A(z/gamma2) */
-   float  lag_factor;            /**< Lag windowing Gaussian width */
    spx_word16_t  lpc_floor;      /**< Noise floor multiplier for A[0] in LPC analysis*/
    char  *stack;                 /**< Pseudo-stack allocation for temporary memory */
    spx_word16_t *winBuf;         /**< Input buffer (original signal) */
@@ -86,7 +81,7 @@ typedef struct EncState {
    spx_word16_t *swBuf;          /**< Weighted signal buffer */
    spx_word16_t *sw;             /**< Start of weighted signal frame */
    const spx_word16_t *window;   /**< Temporary (Hanning) window */
-   spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
+   const spx_word16_t *lagWindow;      /**< Window applied to auto-correlation */
    spx_lsp_t *old_lsp;           /**< LSPs for previous frame */
    spx_lsp_t *old_qlsp;          /**< Quantized LSPs for previous frame */
    spx_mem_t *mem_sp;            /**< Filter memory for signal synthesis */
@@ -96,8 +91,9 @@ typedef struct EncState {
    spx_mem_t *mem_exc2;          /**< Filter memory for excitation (whole frame) */
    spx_mem_t mem_hp[2];          /**< High-pass filter memory */
    spx_word32_t *pi_gain;        /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_sig_t *innov_save;        /**< If non-NULL, innovation is copied here */
-         
+   spx_word16_t *innov_rms_save; /**< If non-NULL, innovation RMS is copied here */
+
+#ifndef DISABLE_VBR
    VBRState *vbr;                /**< State of the VBR data */
    float  vbr_quality;           /**< Quality setting for VBR encoding */
    float  relative_quality;      /**< Relative quality that will be needed by VBR */
@@ -110,6 +106,8 @@ typedef struct EncState {
    float  abr_drift;
    float  abr_drift2;
    float  abr_count;
+#endif /* #ifndef DISABLE_VBR */
+   
    int    complexity;            /**< Complexity setting (0-10 from least complex to most complex) */
    spx_int32_t sampling_rate;
    int    plc_tuning;
@@ -134,10 +132,6 @@ typedef struct DecState {
    int    max_pitch;            /**< Maximum pitch value allowed */
    spx_int32_t sampling_rate;
 
-#ifdef EPIC_48K
-   int    lbr_48k;
-#endif
-
    spx_word16_t  last_ol_gain;  /**< Open-loop gain for previous frame */
 
    char  *stack;                /**< Pseudo-stack allocation for temporary memory */
@@ -148,7 +142,11 @@ typedef struct DecState {
    spx_mem_t *mem_sp;           /**< Filter memory for synthesis signal */
    spx_mem_t mem_hp[2];         /**< High-pass filter memory */
    spx_word32_t *pi_gain;       /**< Gain of LPC filter at theta=pi (fe/2) */
-   spx_sig_t *innov_save;       /** If non-NULL, innovation is copied here */
+   spx_word16_t *innov_save;    /** If non-NULL, innovation is copied here */
+   
+   spx_word16_t level;
+   spx_word16_t max_level;
+   spx_word16_t min_level;
    
    /* This is used in packet loss concealment */
    int    last_pitch;           /**< Pitch of last correctly decoded frame */
@@ -168,7 +166,7 @@ typedef struct DecState {
    /*Vocoder data*/
    spx_word16_t  voc_m1;
    spx_word32_t  voc_m2;
-   float  voc_mean;
+   spx_word16_t  voc_mean;
    int    voc_offset;
 
    int    dtx_enabled;
