@@ -2853,6 +2853,14 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 	jss = JS_GetPrivate(cx, obj);
 	jss->cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "This method is depricated, please use new Session(\"<dial string>\", a_leg) \n");
+
+	if (jss->session) {
+		eval_some_js("~throw new Error(\"cannot call this method on an initialized session\");", cx, obj, rval);
+		return JS_FALSE;
+	}
+
 	if (argc > 1) {
 		JSObject *session_obj;
 		switch_core_session_t *session = NULL, *peer_session = NULL;
@@ -2876,7 +2884,19 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 		if (JS_ValueToObject(cx, argv[0], &session_obj)) {
 			struct js_session *old_jss = NULL;
-			if (session_obj && (old_jss = JS_GetPrivate(cx, session_obj)) && old_jss->session) {
+			if (session_obj && (old_jss = JS_GetPrivate(cx, session_obj))) {
+				
+				if (old_jss == jss) {
+					eval_some_js("~throw new Error(\"Supplied a_leg session is the same as our session\");", cx, obj, rval);
+					return JS_FALSE;
+					
+				};
+				
+				if (!old_jss->session) {
+					eval_some_js("~throw new Error(\"Supplied a_leg session is not initilaized!\");", cx, obj, rval);
+					return JS_FALSE;
+				}
+				
 				session = old_jss->session;
 				orig_caller_profile = switch_channel_get_caller_profile(switch_core_session_get_channel(session));
 				dialplan = orig_caller_profile->dialplan;
@@ -2888,6 +2908,7 @@ static JSBool session_originate(JSContext * cx, JSObject * obj, uintN argc, jsva
 				context = orig_caller_profile->context;
 				username = orig_caller_profile->username;
 			}
+
 		}
 
 		if (!switch_strlen_zero(jss->dialplan))
