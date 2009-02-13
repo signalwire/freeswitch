@@ -7,7 +7,7 @@
 
 AUTOMAKE_OPTIONS = foreign 1.7
 
-SUBDIRS = s2check libsofia-sip-ua $(GLIB_SUBDIRS) utils packages tests
+SUBDIRS =  libsofia-sip-ua $(GLIB_SUBDIRS) packages # tests s2check utils
 DIST_SUBDIRS = s2check libsofia-sip-ua libsofia-sip-ua-glib utils packages \
 	tests win32 open_c
 
@@ -35,15 +35,16 @@ EXTRA_DIST +=   docs/build_system.txt \
 EXTRA_DIST +=   scripts/lcov-report scripts/uncovered \
 		scripts/hide_emails.sh
 
-dist_man_MANS = man/man1/sip-date.1 man/man1/sip-options.1 \
-		man/man1/localinfo.1 man/man1/addrinfo.1 \
-		man/man1/stunc.1 man/man1/sip-dig.1
+dist_man_MANS = 
+#		man/man1/sip-date.1 man/man1/sip-options.1 \
+#		man/man1/localinfo.1 man/man1/addrinfo.1 \
+#		man/man1/stunc.1 man/man1/sip-dig.1
 
 $(dist_man_MANS): manpages
 
 manpages:
 	-mkdir -p man man/man1 2> /dev/null
-if HAVE_DOXYGEN
+if HAVE_DOXYGEN 
 	$(MAKE) $(AM_MAKEFLAGS) -C libsofia-sip-ua/docs built-sources
 	@echo 'cd utils && $(DOXYGEN)'
 	@cd utils && \
