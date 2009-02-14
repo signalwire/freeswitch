@@ -18,7 +18,7 @@ SET( ${PROJECT_NAME}_MINOR_VERSION 1 )
 SET( ${PROJECT_NAME}_PATCH_LEVEL 0 ) 
 
 
-ADD_DEFINITIONS( "-DSWITCH_VERSION_REVISION=${Project_WC_REVISION}" )
+#ADD_DEFINITIONS( "-DSWITCH_VERSION_REVISION=${Project_WC_REVISION}" )
 
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
@@ -55,17 +55,19 @@ MESSAGE( STATUS )
 # Configuration checks
 check_symbol_exists (strncasecmp "string.h" HAVE_STRNCASECMP)
 check_symbol_exists (strcasecmp "string.h" HAVE_STRCASECMP)
-check_function_exists (strcasestr HAVE_STRCASESTR)
-check_function_exists (strchrnul HAVE_STRCHRNUL)
+check_symbol_exists (iswspace "wctype.h" HAVE_ISWSPACE)
+check_symbol_exists (towlower "wctype.h" HAVE_TOWLOWER)
+
 check_include_file (dirent.h HAVE_DIRENT_H)
+check_include_file (dlfcn.h HAVE_DLFCN_H)
+check_include_file (execinfo.h HAVE_EXECINFO_H)
+check_include_file (memory.h HAVE_MEMORY_H)
+check_include_file (inttypes.h HAVE_INTTYPES_H)
+
 check_include_file (sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_file (sys/utsname.h HAVE_SYS_UTSNAME_H)
 check_include_file (wchar.h HAVE_WCHAR_H)
 check_include_file (wctype.h HAVE_WCTYPE_H)
-check_function_exists (scandir HAVE_SCANDIR)
-check_function_exists (alphasort HAVE_ALPHASORT)
-check_symbol_exists (iswspace "wctype.h" HAVE_ISWSPACE)
-check_symbol_exists (towlower "wctype.h" HAVE_TOWLOWER)
 check_include_file(sys/devpoll.h HAVE_SYS_DEVPOLL_H)
 check_include_file(sys/epoll.h HAVE_SYS_EPOLL_H)
 check_include_file(sys/event.h HAVE_SYS_EVENT_H)
@@ -85,6 +87,34 @@ check_include_file(sys/time.h HAVE_SYS_TIME_H)
 check_include_file(time.h HAVE_TIME_H)
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(pthread.h HAVE_PTHREAD_H)
+
+check_function_exists (scandir HAVE_SCANDIR)
+check_function_exists (alphasort HAVE_ALPHASORT)
+check_function_exists (strcasestr HAVE_STRCASESTR)
+check_function_exists (strchrnul HAVE_STRCHRNUL)
+check_function_exists (setenv HAVE_SETENV)
+check_function_exists (setgroups HAVE_SETGROUPS)
+
+
+check_function_exists (pselect HAVE_PSELECT)
+check_function_exists (mlock HAVE_MLOCK)
+check_function_exists (mlockall HAVE_MLOCKALL)
+check_function_exists (asprintf HAVE_ASPRINTF)
+check_function_exists (gethostname HAVE_GETHOSTNAME)
+check_function_exists (gettimeofday HAVE_GETTIMEOFDAY)
+check_function_exists (gmtime_r HAVE_GMTIME_R)
+check_function_exists (initgroups HAVE_INITGROUPS)
+
+
+# OPTION( VARIABLE "Description" Initial state)
+ OPTION( DEBUG "Debug" OFF )
+ OPTION( DISABLE_RESAMPLE "Disable RESAMPLE" OFF )
+ OPTION( HAVE_ODBC "Enable Core ODBC Support" ON )
+ CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/src/include/switch_private.h.cmake ${CMAKE_SOURCE_DIR}/src/include/switch_private.h )
+
+
+
+
 
 
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
