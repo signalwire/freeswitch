@@ -97,7 +97,13 @@ switch_dso_lib_t switch_dso_open(const char *path, int global, char **err) {
 	}
 
 	if (lib == NULL) {
-		*err = strdup(dlerror());
+		const char *dlerr = dlerror();
+		/* Work around broken uclibc returning NULL on both dlopen() and dlerror() */
+		if (dlerr) {
+			*err = strdup(dlerr);
+		} else {
+			*err = strdup("Unknown error");
+		}
 	}
 	return lib;
 }
