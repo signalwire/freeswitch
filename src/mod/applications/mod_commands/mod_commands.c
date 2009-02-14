@@ -2705,7 +2705,7 @@ SWITCH_STANDARD_API(show_function)
 SWITCH_STANDARD_API(version_function)
 {
 	char version_string[1024];
-	switch_snprintf(version_string, sizeof(version_string) - 1, "FreeSwitch Version %s\n", SWITCH_VERSION_FULL);
+	switch_snprintf(version_string, sizeof(version_string) - 1, "FreeSWITCH Version %s\n", SWITCH_VERSION_FULL);
 
 	stream->write_function(stream, version_string);
 	return SWITCH_STATUS_SUCCESS;
