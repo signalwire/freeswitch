@@ -1526,7 +1526,6 @@ sres_sip_process_numeric(sres_sip_t *srs)
   char const *target = srs->srs_target;
   su_addrinfo_t ai[1];
   su_sockaddr_t su[1];
-  char buffer[64];
   int i;
 
   memset(ai, 0, (sizeof ai));
@@ -1551,6 +1550,7 @@ sres_sip_process_numeric(sres_sip_t *srs)
     }
   }
   else if (host_is_ip6_reference(target)) {
+    char buffer[64];
     size_t len = strlen(target) - 2;
 
     ai->ai_addr = memset(su, 0, (sizeof su->su_sin6));

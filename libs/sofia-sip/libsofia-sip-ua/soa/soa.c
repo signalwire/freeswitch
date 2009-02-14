@@ -2526,9 +2526,9 @@ soa_init_sdp_connection_with_session(soa_session_t *ss,
 	  break;
 	else if (!li6)
 	  li6 = li;		/* Best IP6 address */
-      }
+      } else
 #endif
-      else if (li->li_family == AF_INET) {
+       if (li->li_family == AF_INET) {
 	if (ip4 >= ip6)
 	  break;
 	else if (!li4)

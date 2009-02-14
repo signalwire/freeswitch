@@ -96,7 +96,10 @@ static int localinfo6(su_localinfo_t const *, su_localinfo_t **);
 #endif
 
 static int li_scope4(uint32_t ip4);
+
+#ifdef SU_HAVE_IN6
 static int li_scope6(struct in6_addr const *ip6);
+#endif
 
 #if !SU_LOCALINFO_TEST
 
