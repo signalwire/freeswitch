@@ -74,7 +74,7 @@ struct speex_context {
 	int decoder_mode;
 };
 
-switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
+static switch_status_t switch_speex_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct speex_context *context = NULL;
 	int encoding, decoding;
