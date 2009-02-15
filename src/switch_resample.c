@@ -35,9 +35,7 @@
 #ifndef WIN32
 #include <switch_private.h>
 #endif
-#ifndef DISABLE_RESAMPLE
 #include <speex/speex_resampler.h>
-#endif
 
 #define NORMFACT (float)0x8000
 #define MAXSAMPLE (float)0x7FFF
@@ -60,11 +58,6 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 															   int quality,
 															   const char *file, const char *func, int line)
 {
-
-#ifdef DISABLE_RESAMPLE
-	*new_resampler = NULL;
-	return SWITCH_STATUS_NOTIMPL;
-#else
 	int err = 0;
 	switch_audio_resampler_t *resampler;
 	double lto_rate, lfrom_rate;
@@ -89,32 +82,25 @@ SWITCH_DECLARE(switch_status_t) switch_resample_perform_create(switch_audio_resa
 	resampler->to = malloc(resampler->to_size * sizeof(int16_t));
 
 	return SWITCH_STATUS_SUCCESS;
-#endif
 }
 
 
 SWITCH_DECLARE(uint32_t) switch_resample_process(switch_audio_resampler_t *resampler, int16_t *src, uint32_t srclen)
 {
-#ifdef DISABLE_RESAMPLE
-	return 0;
-#else
 	resampler->to_len = resampler->to_size;
 	speex_resampler_process_int(resampler->resampler, 0, src, &srclen, resampler->to, &resampler->to_len);
 	return resampler->to_len;
-#endif
 }
 
 SWITCH_DECLARE(void) switch_resample_destroy(switch_audio_resampler_t **resampler)
 {
 
 	if (resampler && *resampler) {
-#ifndef DISABLE_RESAMPLE
 		if ((*resampler)->resampler) {
 			speex_resampler_destroy((*resampler)->resampler);
 		}
 		free((*resampler)->to);
 		free(*resampler);
-#endif
 		*resampler = NULL;
 	}
 }
