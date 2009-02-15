@@ -36,10 +36,8 @@
 #include <switch_private.h>
 #endif
 #ifndef DISABLE_RESAMPLE
-#include <libresample.h>
-#endif
-
 #include <speex/speex_resampler.h>
+#endif
 
 #define NORMFACT (float)0x8000
 #define MAXSAMPLE (float)0x7FFF
