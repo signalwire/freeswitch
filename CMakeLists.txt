@@ -63,6 +63,12 @@ check_include_file (dlfcn.h HAVE_DLFCN_H)
 check_include_file (execinfo.h HAVE_EXECINFO_H)
 check_include_file (memory.h HAVE_MEMORY_H)
 check_include_file (inttypes.h HAVE_INTTYPES_H)
+check_include_file (strings.h HAVE_STRINGS_H)
+check_include_file (string.h HAVE_STRING_H)
+check_include_file (sys/filio.h HAVE_SYS_FILIO_H)
+check_include_file (sys/ndir.h HAVE_SYS_NDIR_H)
+CHECK_INCLUDE_FILE(netdb.h HAVE_NETDB_H)
+
 
 check_include_file (sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_file (sys/utsname.h HAVE_SYS_UTSNAME_H)
@@ -110,6 +116,8 @@ check_function_exists (initgroups HAVE_INITGROUPS)
  OPTION( DEBUG "Debug" OFF )
  OPTION( DISABLE_RESAMPLE "Disable RESAMPLE" OFF )
  OPTION( HAVE_ODBC "Enable Core ODBC Support" ON )
+ OPTION( OPTIMZER "Enable Optimization" OFF )
+
  CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/src/include/switch_private.h.cmake ${CMAKE_SOURCE_DIR}/src/include/switch_private.h )
 
 
@@ -158,20 +166,10 @@ FIND_PACKAGE(Threads)
 
 
 # DO APR
-#FIND_PACKAGE (APR)
-#FIND_PACKAGE (APRUtil)
 
-#LINK_LIBRARIES (${APR_LIBS} ${APRUTIL_LIBS})
+INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/apr/include/ ${CMAKE_SOURCE_DIR}/libs/apr-util/include/)
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr/.libs/libapr-1.a)
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr-util/.libs/libaprutil-1.a)
-
-
-
-MESSAGE( STATUS "APR INFO------------------------------------------" )
-MESSAGE( STATUS "APR_LIBS = ${APR_LIBS}" )
-MESSAGE( STATUS "APRUTIL_LIBS = ${APRUTIL_LIBS}" )
-MESSAGE( STATUS "--------------------------------------------------" )
-#INCLUDE_DIRECTORIES (${APR_INCLUDES} ${APRUTIL_INCLUDES})
 
 
 # DO SNDFILE
@@ -214,6 +212,11 @@ INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/sqlite/)
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/voipcodecs/src/.libs/libvoipcodecs.a)
 INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/voipcodecs/src/)
 
+# libspeexdsp
+LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/speex/libspeex/.libs/libspeexdsp.a)
+INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/speex/include/)
+
+
 # DO POSTGRES
 #FIND_PACKAGE(POSTGRES)
 IF(POSTGRES_FOUND)
@@ -230,16 +233,14 @@ configure_file(src/include/switch_version.h.in src/include/switch_version.h [@ON
 
 
 
-CHECK_INCLUDE_FILE(netdb.h HAVE_NETDB_H)
-if( HAVE_NETDB_H)
-	add_definitions( -DHAVE_NETDB_H)
-endif( HAVE_NETDB_H)
+
+
 
 
 INCLUDE_DIRECTORIES(src/include/ libs/libteletone/src/ libs/stfu/ libs/apr/include/ libs/apr-util/include/)
 
 ADD_SUBDIRECTORY(src)
-ADD_SUBDIRECTORY(libs/libresample/)
+#ADD_SUBDIRECTORY(libs/libresample/)
 ADD_SUBDIRECTORY(libs/libteletone/)
 #ADD_SUBDIRECTORY(libs/sqlite/)
 ADD_SUBDIRECTORY(libs/pcre/)
@@ -251,6 +252,6 @@ SET ( freeswitch_SRCS src/switch.c src/include/switch.h)
 ADD_EXECUTABLE(freeswitch ${freeswitch_SRCS})
 
 
-TARGET_LINK_LIBRARIES(freeswitch teletone pcre resample freeswitch_la stfu ${optionalLibs})
+TARGET_LINK_LIBRARIES(freeswitch teletone pcre freeswitch_la stfu ${optionalLibs})
 
 
