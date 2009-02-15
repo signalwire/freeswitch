@@ -2871,9 +2871,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t new_resampler, int from_rate, SWIGTYPE_p_switch_size_t from_size, int to_rate, uint to_size, SWIGTYPE_p_apr_pool_t pool, string file, string func, int line) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t.getCPtr(new_resampler), from_rate, SWIGTYPE_p_switch_size_t.getCPtr(from_size), to_rate, to_size, SWIGTYPE_p_apr_pool_t.getCPtr(pool), file, func, line);
-    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+  public static switch_status_t switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t new_resampler, uint from_rate, uint to_rate, uint to_size, int quality, string file, string func, int line) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_resample_perform_create(SWIGTYPE_p_p_switch_audio_resampler_t.getCPtr(new_resampler), from_rate, to_rate, to_size, quality, file, func, line);
     return ret;
   }
 
@@ -2881,8 +2880,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_resample_destroy(SWIGTYPE_p_p_switch_audio_resampler_t.getCPtr(resampler));
   }
 
-  public static uint switch_resample_process(switch_audio_resampler_t resampler, SWIGTYPE_p_float src, int srclen, SWIGTYPE_p_float dst, uint dstlen, int last) {
-    uint ret = freeswitchPINVOKE.switch_resample_process(switch_audio_resampler_t.getCPtr(resampler), SWIGTYPE_p_float.getCPtr(src), srclen, SWIGTYPE_p_float.getCPtr(dst), dstlen, last);
+  public static uint switch_resample_process(switch_audio_resampler_t resampler, SWIGTYPE_p_short src, uint srclen) {
+    uint ret = freeswitchPINVOKE.switch_resample_process(switch_audio_resampler_t.getCPtr(resampler), SWIGTYPE_p_short.getCPtr(src), srclen);
     return ret;
   }
 
@@ -2924,8 +2923,9 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_mux_channels(SWIGTYPE_p_short data, uint samples, uint channels) {
-    freeswitchPINVOKE.switch_mux_channels(SWIGTYPE_p_short.getCPtr(data), samples, channels);
+  public static void switch_mux_channels(SWIGTYPE_p_short data, SWIGTYPE_p_switch_size_t samples, uint channels) {
+    freeswitchPINVOKE.switch_mux_channels(SWIGTYPE_p_short.getCPtr(data), SWIGTYPE_p_switch_size_t.getCPtr(samples), channels);
+    if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public static switch_status_t switch_ivr_deactivate_unicast(SWIGTYPE_p_switch_core_session session) {
@@ -4222,6 +4222,7 @@ public class freeswitch {
   public static readonly int SWITCH_CMD_CHUNK_LEN = freeswitchPINVOKE.SWITCH_CMD_CHUNK_LEN_get();
   public static readonly int SWITCH_SMAX = freeswitchPINVOKE.SWITCH_SMAX_get();
   public static readonly int SWITCH_SMIN = freeswitchPINVOKE.SWITCH_SMIN_get();
+  public static readonly int SWITCH_RESAMPLE_QUALITY = freeswitchPINVOKE.SWITCH_RESAMPLE_QUALITY_get();
   public static readonly int SWITCH_RTP_MAX_BUF_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_BUF_LEN_get();
   public static readonly int SWITCH_RTP_MAX_CRYPTO_LEN = freeswitchPINVOKE.SWITCH_RTP_MAX_CRYPTO_LEN_get();
   public static readonly int SWITCH_RTP_KEY_LEN = freeswitchPINVOKE.SWITCH_RTP_KEY_LEN_get();
@@ -9113,6 +9114,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_build_param_string")]
   public static extern string switch_event_build_param_string(HandleRef jarg1, string jarg2, HandleRef jarg3);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_RESAMPLE_QUALITY_get")]
+  public static extern int SWITCH_RESAMPLE_QUALITY_get();
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_resampler_set")]
   public static extern void switch_audio_resampler_t_resampler_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -9143,24 +9147,6 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_rfactor_get")]
   public static extern double switch_audio_resampler_t_rfactor_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_from_set")]
-  public static extern void switch_audio_resampler_t_from_set(HandleRef jarg1, HandleRef jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_from_get")]
-  public static extern IntPtr switch_audio_resampler_t_from_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_from_len_set")]
-  public static extern void switch_audio_resampler_t_from_len_set(HandleRef jarg1, int jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_from_len_get")]
-  public static extern int switch_audio_resampler_t_from_len_get(HandleRef jarg1);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_from_size_set")]
-  public static extern void switch_audio_resampler_t_from_size_set(HandleRef jarg1, HandleRef jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_from_size_get")]
-  public static extern IntPtr switch_audio_resampler_t_from_size_get(HandleRef jarg1);
-
   [DllImport("mod_managed", EntryPoint="CSharp_switch_audio_resampler_t_to_set")]
   public static extern void switch_audio_resampler_t_to_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -9186,13 +9172,13 @@ class freeswitchPINVOKE {
   public static extern void delete_switch_audio_resampler_t(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_resample_perform_create")]
-  public static extern int switch_resample_perform_create(HandleRef jarg1, int jarg2, HandleRef jarg3, int jarg4, uint jarg5, HandleRef jarg6, string jarg7, string jarg8, int jarg9);
+  public static extern int switch_resample_perform_create(HandleRef jarg1, uint jarg2, uint jarg3, uint jarg4, int jarg5, string jarg6, string jarg7, int jarg8);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_resample_destroy")]
   public static extern void switch_resample_destroy(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_resample_process")]
-  public static extern uint switch_resample_process(HandleRef jarg1, HandleRef jarg2, int jarg3, HandleRef jarg4, uint jarg5, int jarg6);
+  public static extern uint switch_resample_process(HandleRef jarg1, HandleRef jarg2, uint jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_float_to_short")]
   public static extern IntPtr switch_float_to_short(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -9219,7 +9205,7 @@ class freeswitchPINVOKE {
   public static extern uint switch_merge_sln(HandleRef jarg1, uint jarg2, HandleRef jarg3, uint jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_mux_channels")]
-  public static extern void switch_mux_channels(HandleRef jarg1, uint jarg2, uint jarg3);
+  public static extern void switch_mux_channels(HandleRef jarg1, HandleRef jarg2, uint jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_unicast_conninfo_session_set")]
   public static extern void switch_unicast_conninfo_session_set(HandleRef jarg1, HandleRef jarg2);
@@ -16274,46 +16260,13 @@ public class switch_audio_resampler_t : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_float from {
+  public SWIGTYPE_p_short to {
     set {
-      freeswitchPINVOKE.switch_audio_resampler_t_from_set(swigCPtr, SWIGTYPE_p_float.getCPtr(value));
-    } 
-    get {
-      IntPtr cPtr = freeswitchPINVOKE.switch_audio_resampler_t_from_get(swigCPtr);
-      SWIGTYPE_p_float ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_float(cPtr, false);
-      return ret;
-    } 
-  }
-
-  public int from_len {
-    set {
-      freeswitchPINVOKE.switch_audio_resampler_t_from_len_set(swigCPtr, value);
-    } 
-    get {
-      int ret = freeswitchPINVOKE.switch_audio_resampler_t_from_len_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public SWIGTYPE_p_switch_size_t from_size {
-    set {
-      freeswitchPINVOKE.switch_audio_resampler_t_from_size_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
-      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
-    } 
-    get {
-      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_audio_resampler_t_from_size_get(swigCPtr), true);
-      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
-      return ret;
-    } 
-  }
-
-  public SWIGTYPE_p_float to {
-    set {
-      freeswitchPINVOKE.switch_audio_resampler_t_to_set(swigCPtr, SWIGTYPE_p_float.getCPtr(value));
+      freeswitchPINVOKE.switch_audio_resampler_t_to_set(swigCPtr, SWIGTYPE_p_short.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_audio_resampler_t_to_get(swigCPtr);
-      SWIGTYPE_p_float ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_float(cPtr, false);
+      SWIGTYPE_p_short ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_short(cPtr, false);
       return ret;
     } 
   }

@@ -19760,6 +19760,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_event_build_param_string(void * jarg
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RESAMPLE_QUALITY_get() {
+  int jresult ;
+  int result;
+  
+  result = (int) 0;
+  
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_audio_resampler_t_resampler_set(void * jarg1, void * jarg2) {
   switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
   void *arg2 = (void *) 0 ;
@@ -19875,87 +19886,12 @@ SWIGEXPORT double SWIGSTDCALL CSharp_switch_audio_resampler_t_rfactor_get(void *
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_audio_resampler_t_from_set(void * jarg1, void * jarg2) {
-  switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  float *arg2 = (float *) 0 ;
-  
-  arg1 = (switch_audio_resampler_t *)jarg1; 
-  arg2 = (float *)jarg2; 
-  if (arg1) (arg1)->from = arg2;
-  
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_audio_resampler_t_from_get(void * jarg1) {
-  void * jresult ;
-  switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  float *result = 0 ;
-  
-  arg1 = (switch_audio_resampler_t *)jarg1; 
-  result = (float *) ((arg1)->from);
-  jresult = (void *)result; 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_audio_resampler_t_from_len_set(void * jarg1, int jarg2) {
-  switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  int arg2 ;
-  
-  arg1 = (switch_audio_resampler_t *)jarg1; 
-  arg2 = (int)jarg2; 
-  if (arg1) (arg1)->from_len = arg2;
-  
-}
-
-
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_audio_resampler_t_from_len_get(void * jarg1) {
-  int jresult ;
-  switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  int result;
-  
-  arg1 = (switch_audio_resampler_t *)jarg1; 
-  result = (int) ((arg1)->from_len);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_audio_resampler_t_from_size_set(void * jarg1, void * jarg2) {
-  switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  switch_size_t arg2 ;
-  switch_size_t *argp2 ;
-  
-  arg1 = (switch_audio_resampler_t *)jarg1; 
-  argp2 = (switch_size_t *)jarg2; 
-  if (!argp2) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
-    return ;
-  }
-  arg2 = *argp2; 
-  if (arg1) (arg1)->from_size = arg2;
-  
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_switch_audio_resampler_t_from_size_get(void * jarg1) {
-  void * jresult ;
-  switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  switch_size_t result;
-  
-  arg1 = (switch_audio_resampler_t *)jarg1; 
-  result =  ((arg1)->from_size);
-  jresult = new switch_size_t((switch_size_t &)result); 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_audio_resampler_t_to_set(void * jarg1, void * jarg2) {
   switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  float *arg2 = (float *) 0 ;
+  int16_t *arg2 = (int16_t *) 0 ;
   
   arg1 = (switch_audio_resampler_t *)jarg1; 
-  arg2 = (float *)jarg2; 
+  arg2 = (int16_t *)jarg2; 
   if (arg1) (arg1)->to = arg2;
   
 }
@@ -19964,10 +19900,10 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_audio_resampler_t_to_set(void * jarg1,
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_audio_resampler_t_to_get(void * jarg1) {
   void * jresult ;
   switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  float *result = 0 ;
+  int16_t *result = 0 ;
   
   arg1 = (switch_audio_resampler_t *)jarg1; 
-  result = (float *) ((arg1)->to);
+  result = (int16_t *) ((arg1)->to);
   jresult = (void *)result; 
   return jresult;
 }
@@ -20038,35 +19974,27 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_audio_resampler_t(void * jarg1)
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_perform_create(void * jarg1, int jarg2, void * jarg3, int jarg4, unsigned long jarg5, void * jarg6, char * jarg7, char * jarg8, int jarg9) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_resample_perform_create(void * jarg1, unsigned long jarg2, unsigned long jarg3, unsigned long jarg4, int jarg5, char * jarg6, char * jarg7, int jarg8) {
   int jresult ;
   switch_audio_resampler_t **arg1 = (switch_audio_resampler_t **) 0 ;
-  int arg2 ;
-  switch_size_t arg3 ;
-  int arg4 ;
-  uint32_t arg5 ;
-  switch_memory_pool_t *arg6 = (switch_memory_pool_t *) 0 ;
+  uint32_t arg2 ;
+  uint32_t arg3 ;
+  uint32_t arg4 ;
+  int arg5 ;
+  char *arg6 = (char *) 0 ;
   char *arg7 = (char *) 0 ;
-  char *arg8 = (char *) 0 ;
-  int arg9 ;
+  int arg8 ;
   switch_status_t result;
-  switch_size_t *argp3 ;
   
   arg1 = (switch_audio_resampler_t **)jarg1; 
-  arg2 = (int)jarg2; 
-  argp3 = (switch_size_t *)jarg3; 
-  if (!argp3) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
-    return 0;
-  }
-  arg3 = *argp3; 
-  arg4 = (int)jarg4; 
-  arg5 = (uint32_t)jarg5; 
-  arg6 = (switch_memory_pool_t *)jarg6; 
+  arg2 = (uint32_t)jarg2; 
+  arg3 = (uint32_t)jarg3; 
+  arg4 = (uint32_t)jarg4; 
+  arg5 = (int)jarg5; 
+  arg6 = (char *)jarg6; 
   arg7 = (char *)jarg7; 
-  arg8 = (char *)jarg8; 
-  arg9 = (int)jarg9; 
-  result = (switch_status_t)switch_resample_perform_create(arg1,arg2,arg3,arg4,arg5,arg6,(char const *)arg7,(char const *)arg8,arg9);
+  arg8 = (int)jarg8; 
+  result = (switch_status_t)switch_resample_perform_create(arg1,arg2,arg3,arg4,arg5,(char const *)arg6,(char const *)arg7,arg8);
   jresult = result; 
   return jresult;
 }
@@ -20080,23 +20008,17 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_resample_destroy(void * jarg1) {
 }
 
 
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_resample_process(void * jarg1, void * jarg2, int jarg3, void * jarg4, unsigned long jarg5, int jarg6) {
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_resample_process(void * jarg1, void * jarg2, unsigned long jarg3) {
   unsigned long jresult ;
   switch_audio_resampler_t *arg1 = (switch_audio_resampler_t *) 0 ;
-  float *arg2 = (float *) 0 ;
-  int arg3 ;
-  float *arg4 = (float *) 0 ;
-  uint32_t arg5 ;
-  int arg6 ;
+  int16_t *arg2 = (int16_t *) 0 ;
+  uint32_t arg3 ;
   uint32_t result;
   
   arg1 = (switch_audio_resampler_t *)jarg1; 
-  arg2 = (float *)jarg2; 
-  arg3 = (int)jarg3; 
-  arg4 = (float *)jarg4; 
-  arg5 = (uint32_t)jarg5; 
-  arg6 = (int)jarg6; 
-  result = (uint32_t)switch_resample_process(arg1,arg2,arg3,arg4,arg5,arg6);
+  arg2 = (int16_t *)jarg2; 
+  arg3 = (uint32_t)jarg3; 
+  result = (uint32_t)switch_resample_process(arg1,arg2,arg3);
   jresult = (unsigned long)result; 
   return jresult;
 }
@@ -20224,13 +20146,19 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_merge_sln(void * jarg1, unsig
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_mux_channels(void * jarg1, unsigned long jarg2, unsigned long jarg3) {
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_mux_channels(void * jarg1, void * jarg2, unsigned long jarg3) {
   int16_t *arg1 = (int16_t *) 0 ;
-  uint32_t arg2 ;
+  switch_size_t arg2 ;
   uint32_t arg3 ;
+  switch_size_t *argp2 ;
   
   arg1 = (int16_t *)jarg1; 
-  arg2 = (uint32_t)jarg2; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
   arg3 = (uint32_t)jarg3; 
   switch_mux_channels(arg1,arg2,arg3);
 }
