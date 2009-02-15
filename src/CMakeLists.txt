@@ -4,7 +4,7 @@
 
 cmake_minimum_required(VERSION 2.6)
 
-INCLUDE_DIRECTORIES(include/ ../libs/libresample/include/ ../libs/srtp/crypto/include/ ../libs/srtp/include/) 
+INCLUDE_DIRECTORIES(include/ ../libs/libresample/include/ ../libs/srtp/crypto/include/ ../libs/srtp/include/ ../libs/speex/include/) 
 
 if( HAVE_NETDB_H)
 	add_definitions( -DHAVE_NETDB_H)
