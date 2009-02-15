@@ -565,7 +565,7 @@ static switch_status_t lcr_load_config()
 			switch_stream_handle_t order_by = { 0 };
 			switch_stream_handle_t pre_order = { 0 };
 			switch_stream_handle_t *thisorder = NULL;
-			char *reorder_by_rate = SWITCH_FALSE;
+			char *reorder_by_rate = NULL;
 			char *id_s = NULL;
 			char *custom_sql = NULL;
 			int argc, x = 0;
@@ -655,7 +655,7 @@ static switch_status_t lcr_load_config()
 					}
 				}
 				
-				if (!switch_strlen_zero("reorder_by_rate")) {
+				if (!switch_strlen_zero(reorder_by_rate)) {
 					profile->reorder_by_rate = switch_true(reorder_by_rate);
 				}
 				
