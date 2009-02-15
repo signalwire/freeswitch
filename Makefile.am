@@ -146,11 +146,10 @@ CORE_CFLAGS    += -I$(switch_srcdir)/libs/pcre
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/speex/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/include
 CORE_CFLAGS    += -I$(switch_srcdir)/libs/srtp/crypto/include
-CORE_CFLAGS    += $(RESAMPLE_CFLAGS)
 
 CORE_LIBS      = libs/apr-util/libaprutil-1.la libs/apr/libapr-1.la
 CORE_LIBS     += libs/sqlite/libsqlite3.la libs/pcre/libpcre.la libs/speex/libspeex/libspeexdsp.la
-CORE_LIBS     += libs/srtp/libsrtp.la $(RESAMPLE_LIB)
+CORE_LIBS     += libs/srtp/libsrtp.la
 
 lib_LTLIBRARIES	          = libfreeswitch.la
 libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
@@ -309,12 +308,6 @@ libs/pcre/libpcre.la: libs/pcre libs/pcre/.update
 libs/srtp/libsrtp.la: libs/srtp libs/srtp/.update
 	@cd libs/srtp && $(MAKE)
 	@$(TOUCH_TARGET)
-
-if USE_INTREE_RESAMPLE
-libs/libresample/libresample.la: libs/libresample libs/libresample/.update
-	@cd libs/libresample && $(MAKE)
-	@$(TOUCH_TARGET)
-endif
 
 core:
 	$(MAKE) $(AM_MAKEFLAGS) libfreeswitch.la
