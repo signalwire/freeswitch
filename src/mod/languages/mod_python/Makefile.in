@@ -11,7 +11,7 @@ include ../../../../build/modmake.rules
 LINK=$(CXXLINK)
 
 PYMOD=freeswitch
-PYTHON_SITE_DIR=/usr/lib/python2.4/site-packages
+PYTHON_SITE_DIR=@PYTHON_SITE_DIR@
 
 SWIGCFILE=../../../switch_swig.c
 SWIGIFILE=../../../switch_swig.i
