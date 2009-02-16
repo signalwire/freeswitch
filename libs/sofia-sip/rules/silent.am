@@ -28,7 +28,7 @@ if am__fastdepCC
 else
 if AMDEP
 	${SOFIA_SILENT}source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-	${SOFIA_SILENT}DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	${SOFIA_SILENT}DEPDIR="$(DEPDIR)" $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif
 	${SOFIA_SILENT}$(COMPILE) -c -o $@ $<
 endif
@@ -41,7 +41,7 @@ if am__fastdepCC
 else
 if AMDEP
 	${SOFIA_SILENT}source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-	${SOFIA_SILENT}DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	${SOFIA_SILENT}DEPDIR="$(DEPDIR)" $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 endif
 	${SOFIA_SILENT}$(LTCOMPILE) -c -o $@ $<
 endif
