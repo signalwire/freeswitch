@@ -2021,7 +2021,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				return;
 			}
 			
-			if (continue_on_fail && switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(cause_num, continue_on_fail)) {
+			if (continue_on_fail && (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(cause_num, continue_on_fail))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
 				return;
 			}
