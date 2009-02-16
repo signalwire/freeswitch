@@ -62,6 +62,7 @@ static char *SAY_TYPE_NAMES[] = {
 	"ACCOUNT_NUMBER",
 	"NAME_SPELLED",
 	"NAME_PHONETIC",
+	"SHORT_DATE_TIME",
 	NULL
 };
 

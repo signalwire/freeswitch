@@ -281,7 +281,8 @@ typedef enum {
 	SST_POSTAL_ADDRESS,
 	SST_ACCOUNT_NUMBER,
 	SST_NAME_SPELLED,
-	SST_NAME_PHONETIC
+	SST_NAME_PHONETIC,
+	SST_SHORT_DATE_TIME
 } switch_say_type_t;
 
 typedef enum {
