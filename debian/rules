@@ -61,7 +61,7 @@ config.status: configure
 	touch modules.conf
 	echo $(MODULES)
 	for i in $(MODULES); do echo $$i >> modules.conf; done
-	./configure --sysconfdir=/etc/freeswitch --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
+	./configure --prefix=/opt/freeswitch --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) ${FEATURES}
 
 configure:
 	if test ! -f Makefile.in ;  then \
@@ -123,7 +123,7 @@ binary-arch: build install
 	dh_link
 	dh_strip --dbg-package=freeswitch
 	dh_compress
-	dh_fixperms --exclude /etc/freeswitch
+	dh_fixperms --exclude /opt/freeswitch/conf
 	dh_installdeb
 	dh_shlibdeps --exclude=/opt/freeswitch
 	dh_gencontrol

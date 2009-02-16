@@ -25,10 +25,10 @@ case "$1" in
 			adduser --disabled-password  --quiet --system \
 			--home /opt/freeswitch \
 			--gecos "FreeSwitch Voice Platform" --ingroup daemon \
+			--add_extra_groups audio \
 			freeswitch
 		fi
  
-                usermod -a -G audio freeswitch
 		mkdir -p /opt/freeswitch
 		chown -R freeswitch:daemon /opt/freeswitch
 		chmod -R o-rwx /opt/freeswitch

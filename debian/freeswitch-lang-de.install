@@ -1,4 +1,4 @@
-etc/freeswitch/lang/de/*.xml
-etc/freeswitch/lang/de/demo/*.xml
-etc/freeswitch/lang/de/vm/*.xml
+opt/freeswitch/conf/lang/de/*.xml
+opt/freeswitch/conf/lang/de/demo/*.xml
+opt/freeswitch/conf/lang/de/vm/*.xml
 opt/freeswitch/mod/mod_say_de.so*
