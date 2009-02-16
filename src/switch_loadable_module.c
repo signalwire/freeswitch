@@ -77,7 +77,7 @@ static struct switch_loadable_module_container loadable_modules;
 static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool_t shutdown, switch_bool_t unload, switch_bool_t fail_if_busy, const char **err);
 static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fname, switch_bool_t runtime, switch_bool_t global, const char **err);
 
-static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 {
 
 
@@ -99,7 +99,7 @@ static void *switch_loadable_module_exec(switch_thread_t *thread, void *obj)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Pool for %s\n", module->module_interface->module_name);
 		switch_core_destroy_memory_pool(&pool);
 	}
-	switch_yield(1000000);
+	switch_thread_exit(thread, 0);
 	return NULL;
 }
 

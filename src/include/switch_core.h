@@ -1669,7 +1669,7 @@ SWITCH_DECLARE(FILE *) switch_core_get_console(void);
 /*! 
   \brief Launch a thread
 */
-SWITCH_DECLARE(void) switch_core_launch_thread(void *(*func) (switch_thread_t *, void *), void *obj, switch_memory_pool_t *pool);
+SWITCH_DECLARE(void) switch_core_launch_thread(void *(SWITCH_THREAD_FUNC *func) (switch_thread_t *, void *), void *obj, switch_memory_pool_t *pool);
 
 /*!
   \brief Initiate Globals
