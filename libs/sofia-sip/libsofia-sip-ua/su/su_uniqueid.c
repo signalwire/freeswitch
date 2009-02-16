@@ -138,7 +138,7 @@ static void init(void)
 
 #if HAVE_INITSTATE
   /* Allow libsofia-sip-ua.so to unload. */
-  uint32_t *seed = calloc(32, sizeof *seed);
+  uint32_t *seed = calloc(32, sizeof(uint32_t));
 #else
   static uint32_t seed[32] = { 0 };
 #endif
@@ -171,7 +171,7 @@ static void init(void)
   }
 
 #if HAVE_INITSTATE
-  initstate(seed[0] ^ seed[1], (char *)&seed, sizeof(seed));
+  initstate(seed[0] ^ seed[1], (char *)seed, 32 * sizeof(uint32_t));
 #else
   srand(seed[0] ^ seed[1]);
 #endif
