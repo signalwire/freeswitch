@@ -355,7 +355,7 @@ SWITCH_STANDARD_API(http_api_main)
 	json_response[m] = '\0';
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "RESERVED %ld BYTES, USED %ld BYTES, HTTP Response as JSON: %s\n", l, m, json_response);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "RESERVED %u BYTES, USED %u BYTES, HTTP Response as JSON: %s\n", (unsigned)l, (unsigned) m, json_response);
 
 
 	stream->write_function(stream, "%s\n", json_response);
