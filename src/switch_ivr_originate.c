@@ -1037,10 +1037,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "originate_retry_sleep_ms")) {
 					ok = 1;
-				} else if (!strcasecmp((char *) hi->name, "origination_caller_id_name")) {
-					ok = 1;
-				} else if (!strcasecmp((char *) hi->name, "origination_caller_id_number")) {
-					ok = 1;
 				}
 
 				if (ok) {
