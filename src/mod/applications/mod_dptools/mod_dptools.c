@@ -1959,7 +1959,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	switch_channel_t *caller_channel = switch_core_session_get_channel(session);
 	switch_core_session_t *peer_session = NULL;
 	unsigned int timelimit = 60;
-	const char *var, *continue_on_fail = NULL;
+	const char *var, *continue_on_fail = NULL, *failure_causes = NULL;
 	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
@@ -1972,6 +1972,7 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	}
 
 	continue_on_fail = switch_channel_get_variable(caller_channel, "continue_on_fail");
+	failure_causes = switch_channel_get_variable(caller_channel, "failure_causes");
 
 	if ((var = switch_channel_get_variable(caller_channel, SWITCH_PROXY_MEDIA_VARIABLE)) && switch_true(var)) {
 		switch_channel_set_flag(caller_channel, CF_PROXY_MEDIA);
@@ -2006,19 +2007,24 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		   'true' to continue on all failures.
 		   'false' to not continue.
 		   A list of codes either names or numbers eg "user_busy,normal_temporary_failure,603"
+		   failure_causes acts as the opposite version	
 		 */
-		if (continue_on_fail) {
+		if (continue_on_fail || failure_causes) {
 			const char *cause_str;
 			char cause_num[35] = "";
 
 			cause_str = switch_channel_cause2str(cause);
 			switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
-
-			if (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(cause_num, continue_on_fail)) {
+			
+			if (failure_causes && !(switch_stristr(cause_str, failure_causes) || strstr(cause_num, failure_causes))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failiure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
+				return;
+			}
+			
+			if (continue_on_fail && switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(cause_num, continue_on_fail)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
 				return;
 			}
-
 		}
 		if (!switch_channel_test_flag(caller_channel, CF_TRANSFER) && switch_channel_get_state(caller_channel) != CS_ROUTING) {
 			switch_channel_hangup(caller_channel, cause);
