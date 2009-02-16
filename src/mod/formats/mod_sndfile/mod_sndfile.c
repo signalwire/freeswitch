@@ -67,11 +67,10 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 	int rates[4] = {8000, 16000, 32000, 48000};
 	int i;
 #ifdef WIN32
-	char ps[2] = {'\\', '/'};
+	char ps = '\\';
 #else
-	char ps[2] = {'/', '\\'};
+	char ps = '/';
 #endif
-	int x;
 
 	if ((ext = strrchr(path, '.')) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Format\n");
@@ -158,24 +157,32 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 
 	switch_copy_string(alt_path, path, alt_len);
 
-	for (x = 0; x < 2; x++) {
-		if ((last = strrchr(alt_path, ps[x]))) {
+	/* This block attempts to add the sample rate to the path
+	   if the sample rate is already present in the path it does nothing
+	   and reverts to the original file name.
+	*/
+	if ((last = strrchr(alt_path, ps))) {
+		last++;
+#ifdef WIN32
+		if (strrchr(last, '/')) {
+			last = strrchr(alt_path, '/'); /* do not swallow a forward slash if they are intermixed under windows*/
 			last++;
-			ldup = strdup(last);
-			switch_assert(ldup);
-			switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
-			if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
-				path = alt_path;
-			} else {
-				/* Try to find the file at the highest rate possible if we can't find one that matches the exact rate.
-				   If we don't find any, we will default back to the original file name.
-				*/
-				for (i = 3; i > 0; i--) {
-					switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", rates[i], SWITCH_PATH_SEPARATOR, ldup);
-					if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
-						path = alt_path;
-						break;
-					}
+		}
+#endif
+		ldup = strdup(last);
+		switch_assert(ldup);
+		switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", handle->samplerate, SWITCH_PATH_SEPARATOR, ldup);
+		if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+			path = alt_path;
+		} else {
+			/* Try to find the file at the highest rate possible if we can't find one that matches the exact rate.
+			   If we don't find any, we will default back to the original file name.
+			*/
+			for (i = 3; i > 0; i--) {
+				switch_snprintf(last, alt_len - (last - alt_path), "%d%s%s", rates[i], SWITCH_PATH_SEPARATOR, ldup);
+				if ((context->handle = sf_open(alt_path, mode, &context->sfinfo))) {
+					path = alt_path;
+					break;
 				}
 			}
 		}
