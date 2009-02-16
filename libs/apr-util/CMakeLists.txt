@@ -24,6 +24,8 @@ strmatch/apr_strmatch.c
 xlate/xlate.c 
 )
 
+LINK_LIBRARIES ("-liconv -ldl -lpthread")
+
 ADD_LIBRARY(apr-util STATIC ${apr-util_SRCS})
 
 
