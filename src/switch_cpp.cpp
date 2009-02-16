@@ -270,7 +270,9 @@ SWITCH_DECLARE(const char *)Event::serialize(const char *format)
 		}
 	} else {
 		if (switch_event_serialize(event, &serialized_string, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-			serialized_string = switch_mprintf("'%s'", serialized_string);
+			char *new_serialized_string = switch_mprintf("'%s'", serialized_string);
+			free(serialized_string);
+			serialized_string = new_serialized_string;
 			return serialized_string;
 		}
 	}
