@@ -245,7 +245,7 @@ int http_req(http_request_t * req, http_response_t * res)
 	else
 		dprintf(s, "Host: %s\r\n", hostname);
 	dprintf(s, "Connection: close\r\n");
-	dprintf(s, "Content-Length: %ld\r\n", req->body_len);
+	dprintf(s, "Content-Length: %d\r\n", (int)req->body_len);
 
 	for (i = 0; i < req->header_len; i++) {
 		dprintf(s, "%s: %s\r\n", req->headers[i].field_name, req->headers[i].value);
