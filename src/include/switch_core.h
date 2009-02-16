@@ -1666,10 +1666,13 @@ SWITCH_DECLARE(int32_t) switch_core_session_ctl(switch_session_ctl_t cmd, int32_
   \return the FILE stream
 */
 SWITCH_DECLARE(FILE *) switch_core_get_console(void);
+
+#ifndef SWIG
 /*! 
   \brief Launch a thread
 */
 SWITCH_DECLARE(void) switch_core_launch_thread(void *(SWITCH_THREAD_FUNC *func) (switch_thread_t *, void *), void *obj, switch_memory_pool_t *pool);
+#endif
 
 /*!
   \brief Initiate Globals
