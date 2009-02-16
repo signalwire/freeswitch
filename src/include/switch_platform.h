@@ -162,6 +162,7 @@ typedef int gid_t;
 #define S_IWUSR _S_IWRITE
 #endif
 #define SWITCH_THREAD_FUNC  __stdcall
+#define SWITCH_DECLARE_CLASS
 #else //not win32
 #define O_BINARY 0
 #if (defined(__GNUC__) || defined(__SUNCC__)) && defined(SWITCH_API_VISIBILITY)
@@ -170,12 +171,14 @@ typedef int gid_t;
 #define SWITCH_DECLARE_DATA		__attribute__((visibility("default")))
 #define SWITCH_MOD_DECLARE(type)	__attribute__((visibility("default"))) type
 #define SWITCH_MOD_DECLARE_DATA		__attribute__((visibility("default")))
+#define SWITCH_DECLARE_CLASS		__attribute__((visibility("default")))
 #else
 #define SWITCH_DECLARE(type)		type
 #define SWITCH_DECLARE_NONSTD(type)	type
 #define SWITCH_DECLARE_DATA
 #define SWITCH_MOD_DECLARE(type)	type
 #define SWITCH_MOD_DECLARE_DATA
+#define SWITCH_DECLARE_CLASS
 #endif
 #define SWITCH_THREAD_FUNC
 #endif
