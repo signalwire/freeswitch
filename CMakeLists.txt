@@ -13,13 +13,11 @@ ENDIF(Subversion_FOUND)
 
 
 # project version 
-SET( ${PROJECT_NAME}_MAJOR_VERSION 0 ) 
-SET( ${PROJECT_NAME}_MINOR_VERSION 1 ) 
+SET( ${PROJECT_NAME}_MAJOR_VERSION 1 ) 
+SET( ${PROJECT_NAME}_MINOR_VERSION 0 ) 
 SET( ${PROJECT_NAME}_PATCH_LEVEL 0 ) 
 
-
-#ADD_DEFINITIONS( "-DSWITCH_VERSION_REVISION=${Project_WC_REVISION}" )
-
+configure_file(src/include/switch_version.h.cmake src/include/switch_version.h [@ONLY])
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 INCLUDE (CheckSymbolExists)
@@ -33,10 +31,8 @@ INCLUDE (CheckCXXSourceCompiles)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-# ADD_DEFINITIONS( "-Wall -ansi -pedantic" ) 
-
 MESSAGE( STATUS ) 
-MESSAGE( STATUS "FREESWITCH CMAKE Build - Shane Burrell-----------------------------------------" ) 
+MESSAGE( STATUS "FREESWITCH CMAKE Build-----------------------------------------" ) 
 MESSAGE( STATUS "BUILD_SHARED_LIBS = ${BUILD_SHARED_LIBS}" ) 
 MESSAGE( STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}" ) 
 MESSAGE( STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}" ) 
@@ -45,12 +41,8 @@ MESSAGE( STATUS "${PROJECT_NAME}_DEPENDS = \"${${PROJECT_NAME}_DEPENDS}\"" )
 MESSAGE( STATUS "BUILD_WITH = \"${BUILD_WITH}\"" ) 
 MESSAGE( STATUS "INSTALL_DOC = ${INSTALL_DOC}" ) 
 MESSAGE( STATUS "Change a value with: cmake -D<Variable>=<Value>" ) 
-MESSAGE( STATUS "-------------------------------------------------------------------------------" ) 
+MESSAGE( STATUS "---------------------------------------------------------------" ) 
 MESSAGE( STATUS ) 
-
-
-
-
 
 # Configuration checks
 check_symbol_exists (strncasecmp "string.h" HAVE_STRNCASECMP)
@@ -132,32 +124,7 @@ MESSAGE( STATUS )
 # the complete system name, e.g. "Linux-2.4.22", "FreeBSD-5.4-RELEASE" or "Windows 5.1"
 MESSAGE( STATUS "CMAKE_SYSTEM: " ${CMAKE_SYSTEM} )
 # the short system name, e.g. "Linux", "FreeBSD" or "Windows"
-MESSAGE( STATUS "CMAKE_SYSTEM_NAME: " ${CMAKE_SYSTEM_NAME} )
-# only the version part of CMAKE_SYSTEM
-MESSAGE( STATUS "CMAKE_SYSTEM_VERSION: " ${CMAKE_SYSTEM_VERSION} )
-# the processor name (e.g. "Intel(R) Pentium(R) M processor 2.00GHz")
-MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR: " ${CMAKE_SYSTEM_PROCESSOR} )
-# is TRUE on all UNIX-like OS's, including Apple OS X and CygWin
-MESSAGE( STATUS "UNIX: " ${UNIX} )
-# is TRUE on Windows, including CygWin
-MESSAGE( STATUS "WIN32: " ${WIN32} )
-# is TRUE on Apple OS X
-MESSAGE( STATUS "APPLE: " ${APPLE} )
 
-# is TRUE when using the MinGW compiler in Windows
-MESSAGE( STATUS "MINGW: " ${MINGW} )
-# is TRUE on Windows when using the CygWin version of cmake
-MESSAGE( STATUS "CYGWIN: " ${CYGWIN} )
-# is TRUE on Windows when using a Borland compiler
-MESSAGE( STATUS "BORLAND: " ${BORLAND} )
-# Microsoft compiler
-MESSAGE( STATUS "MSVC: " ${MSVC} )
-MESSAGE( STATUS "MSVC_IDE: " ${MSVC_IDE} )
-MESSAGE( STATUS "MSVC60: " ${MSVC60} )
-MESSAGE( STATUS "MSVC70: " ${MSVC70} )
-MESSAGE( STATUS "MSVC71: " ${MSVC71} )
-MESSAGE( STATUS "MSVC80: " ${MSVC80} )
-MESSAGE( STATUS "CMAKE_COMPILER_2005: " ${CMAKE_COMPILER_2005} )
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 MESSAGE( STATUS )
 
@@ -166,7 +133,6 @@ FIND_PACKAGE(Threads)
 
 
 # DO APR
-
 INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/apr/include/ ${CMAKE_SOURCE_DIR}/libs/apr-util/include/)
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr/.libs/libapr-1.a)
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr-util/.libs/libaprutil-1.a)
@@ -226,8 +192,6 @@ ENDIF(POSTGRES_FOUND)
 
 
 
-
-configure_file(src/include/switch_version.h.in src/include/switch_version.h [@ONLY])
 
 
 
