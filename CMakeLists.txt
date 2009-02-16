@@ -45,10 +45,54 @@ MESSAGE( STATUS "---------------------------------------------------------------
 MESSAGE( STATUS ) 
 
 # Configuration checks
+
+
+
+## Check type sizes --------------------------------------
+    
+    check_type_size ("int"           SIZEOF_INT         )
+    check_type_size ("uint32_t"      HAVE_UINT32_T      )
+    check_type_size ("int64_t"       HAVE_INT64_T     )
+    check_type_size ("float"         SIZEOF_FLOAT       )
+    check_type_size ("double"        SIZEOF_DOUBLE      )
+    check_type_size ("long"          SIZEOF_LONG        )
+    check_type_size ("long long"     SIZEOF_LONG_LONG   )
+    check_type_size ("short"         SIZEOF_SHORT       )
+    check_type_size ("off_t"         SIZEOF_OFF_T       )
+    check_type_size ("pid_t"         SIZEOF_PID_T       )
+    check_type_size ("size_t"        SIZEOF_SIZE_T      )
+    check_type_size ("socklen_t"     SIZEOF_SOCKLEN_T    )
+    check_type_size ("sig_atomic_t"  SIZEOF_SIG_ATOMIC_T )
+    check_type_size ("void *"        SIZEOF_VOID_P       )
+    check_type_size ("uintptr_t"     SIZEOF_UINTPTR_T    )
+    check_type_size ("_Bool"         HAVE__BOOL          )
+    check_type_size ("intptr_t"      SIZEOF_INTPTR_T     )
+    
+    check_type_size ("struct sockaddr_in6"      SIZEOF_STRUCT_SOCKADDR_IN6     )
+    check_type_size ("struct sockaddr_storage"  SIZEOF_STRUCT_SOCKADDR_STORAGE )
+    check_type_size ("struct utimbuf"           SIZEOF_STRUCT_UTIMBUF          )
+
+
+
+
+
+
 check_symbol_exists (strncasecmp "string.h" HAVE_STRNCASECMP)
 check_symbol_exists (strcasecmp "string.h" HAVE_STRCASECMP)
 check_symbol_exists (iswspace "wctype.h" HAVE_ISWSPACE)
 check_symbol_exists (towlower "wctype.h" HAVE_TOWLOWER)
+check_symbol_exists(getpagesize unistd.h HAVE_GETPAGESIZE)
+check_symbol_exists(isinf cmath HAVE_ISINF_IN_CMATH)
+check_symbol_exists(isinf math.h HAVE_ISINF_IN_MATH_H)
+check_symbol_exists(isnan cmath HAVE_ISNAN_IN_CMATH)
+check_symbol_exists(isnan math.h HAVE_ISNAN_IN_MATH_H)
+check_symbol_exists(ceilf math.h HAVE_CEILF)
+check_symbol_exists(floorf math.h HAVE_FLOORF)
+check_symbol_exists(mallinfo malloc.h HAVE_MALLINFO)
+check_symbol_exists(pthread_mutex_lock pthread.h HAVE_PTHREAD_MUTEX_LOCK)
+check_symbol_exists(strtoll stdlib.h HAVE_STRTOLL)
+check_symbol_exists(getrusage sys/resource.h HAVE_GETRUSAGE)
+check_symbol_exists(setrlimit sys/resource.h HAVE_SETRLIMIT)
 
 check_include_file (dirent.h HAVE_DIRENT_H)
 check_include_file (dlfcn.h HAVE_DLFCN_H)
@@ -61,7 +105,7 @@ check_include_file (sys/filio.h HAVE_SYS_FILIO_H)
 check_include_file (sys/ndir.h HAVE_SYS_NDIR_H)
 CHECK_INCLUDE_FILE(netdb.h HAVE_NETDB_H)
 
-
+check_include_file(malloc.h HAVE_MALLOC_H)
 check_include_file (sys/ioctl.h HAVE_SYS_IOCTL_H)
 check_include_file (sys/utsname.h HAVE_SYS_UTSNAME_H)
 check_include_file (wchar.h HAVE_WCHAR_H)
@@ -93,8 +137,9 @@ check_function_exists (strchrnul HAVE_STRCHRNUL)
 check_function_exists (setenv HAVE_SETENV)
 check_function_exists (setgroups HAVE_SETGROUPS)
 
-
+check_function_exists (clock_gettime HAVE_CLOCK_GETTIME)
 check_function_exists (pselect HAVE_PSELECT)
+check_function_exists (malloc HAVE_MALLOC)
 check_function_exists (mlock HAVE_MLOCK)
 check_function_exists (mlockall HAVE_MLOCKALL)
 check_function_exists (asprintf HAVE_ASPRINTF)
@@ -102,6 +147,24 @@ check_function_exists (gethostname HAVE_GETHOSTNAME)
 check_function_exists (gettimeofday HAVE_GETTIMEOFDAY)
 check_function_exists (gmtime_r HAVE_GMTIME_R)
 check_function_exists (initgroups HAVE_INITGROUPS)
+check_function_exists (usleep HAVE_USLEEP)
+check_function_exists (vasprintf HAVE_VASPRINTF)
+
+
+MESSAGE( STATUS "BUILD APR--------------------------------------------------------------------------" )
+
+#execute_process (WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/apr/ COMMAND ./configure --prefix=/usr/local/freeswitch --enable-core-odbc-support --cache-file=/dev/null --srcdir=. --disable-shared --with-pic TIMEOUT 300 ERROR_VARIABLE error_configure ERROR_FILE error.log)
+
+#execute_process (WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/apr/ COMMAND ./make TIMEOUT 300 ERROR_VARIABLE error_configure ERROR_FILE error.log)
+MESSAGE( STATUS "-------------------------------------------------------------------------------" )
+
+MESSAGE( STATUS "BUILD APR-UTIL--------------------------------------------------------------------------" )
+
+#execute_process (WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/apr-util/ COMMAND ./configure --prefix=/usr/local/freeswitch --enable-core-odbc-support --cache-file=/dev/null --srcdir=. --with-apr=../apr --disable-shared --with-pic --without-sqlite2 --without-sqlite3 TIMEOUT 300 ERROR_VARIABLE error_configure ERROR_FILE error.log)
+
+#execute_process (WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/libs/apr-util/ COMMAND ./make TIMEOUT 300 ERROR_VARIABLE error_configure ERROR_FILE error.log)
+
+MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 
 
 # OPTION( VARIABLE "Description" Initial state)
@@ -132,10 +195,18 @@ MESSAGE( STATUS )
 FIND_PACKAGE(Threads)
 
 
+#TESTING SECTION
+add_definitions(-DMACOSX)
+#add_definitions("-DSWITCH_PREFIX_DIR=/usr/local/freeswitch")
+
+
+
+INCLUDE_DIRECTORIES(BEFORE ${CMAKE_SOURCE_DIR}/libs/apr/include/ ${CMAKE_SOURCE_DIR}/libs/apr-util/include/ src/include/ libs/libteletone/src/ libs/stfu/)
+
 # DO APR
-INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/apr/include/ ${CMAKE_SOURCE_DIR}/libs/apr-util/include/)
-LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr/.libs/libapr-1.a)
-LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr-util/.libs/libaprutil-1.a)
+#INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/apr/include/ ${CMAKE_SOURCE_DIR}/libs/apr-util/include/)
+#LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr/.libs/libapr-1.a)
+#LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/apr-util/.libs/libaprutil-1.a)
 
 
 # DO SNDFILE
@@ -159,10 +230,6 @@ INCLUDE_DIRECTORIES (${SNDFILE_INCLUDE_DIR})
 #endif( PATH_LIB_EDIT)
 
 
-#TESTING SECTION
-add_definitions(-DMACOSX)
-#add_definitions("-DSWITCH_PREFIX_DIR=/usr/local/freeswitch")
-
 
 
 # DO SRTP
@@ -180,6 +247,7 @@ INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/voipcodecs/src/)
 
 # libspeexdsp
 LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/speex/libspeex/.libs/libspeexdsp.a)
+LINK_LIBRARIES (${CMAKE_SOURCE_DIR}/libs/speex/libspeex/.libs/libspeex.a)
 INCLUDE_DIRECTORIES ( ${CMAKE_SOURCE_DIR}/libs/speex/include/)
 
 
@@ -201,7 +269,7 @@ ENDIF(POSTGRES_FOUND)
 
 
 
-INCLUDE_DIRECTORIES(src/include/ libs/libteletone/src/ libs/stfu/ libs/apr/include/ libs/apr-util/include/)
+
 
 ADD_SUBDIRECTORY(src)
 #ADD_SUBDIRECTORY(libs/libresample/)
@@ -209,6 +277,8 @@ ADD_SUBDIRECTORY(libs/libteletone/)
 #ADD_SUBDIRECTORY(libs/sqlite/)
 ADD_SUBDIRECTORY(libs/pcre/)
 ADD_SUBDIRECTORY(libs/stfu/)
+ADD_SUBDIRECTORY(libs/apr-util/)
+ADD_SUBDIRECTORY(libs/apr/)
 #ADD_SUBDIRECTORY(libs/libedit/src/)
 ADD_SUBDIRECTORY(libs/srtp/)
 
@@ -216,6 +286,6 @@ SET ( freeswitch_SRCS src/switch.c src/include/switch.h)
 ADD_EXECUTABLE(freeswitch ${freeswitch_SRCS})
 
 
-TARGET_LINK_LIBRARIES(freeswitch teletone pcre freeswitch_la stfu ${optionalLibs})
+TARGET_LINK_LIBRARIES(freeswitch apr apr-util teletone pcre freeswitch_la stfu ${optionalLibs})
 
 
