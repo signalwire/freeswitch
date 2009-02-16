@@ -31,11 +31,8 @@ if [ -z $arg ] ; then
 	done
 	if [ $x = 0 ] ; then
 	    echo Build finished. Making install
-	    $MAKE install_core  2>&1 > /dev/null
-	    mods=`find src/mod -name \*.so | grep .libs`
-	    /bin/cp -fp $mods $prefix/mod
-	    mods=`find $prefix/mod -name \*.so`
-	    echo installed core and $mods
+	    $MAKE -j install  2>&1 > /dev/null
+	    echo done
 	    exit;
 	fi
 	sleep 1
