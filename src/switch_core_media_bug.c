@@ -212,6 +212,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 {
 	switch_media_bug_t *bug;	//, *bp;
 	switch_size_t bytes;
+	switch_codec_implementation_t read_impl = {0};
+	switch_codec_implementation_t write_impl = {0};
+	
+
+	if (!switch_channel_media_ready(session->channel)) {
+		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+	switch_core_session_get_read_impl(session, &read_impl);
+	switch_core_session_get_write_impl(session, &write_impl);
 
 	*new_bug = NULL;
 
@@ -251,7 +263,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 	bug->flags = flags;
 
 	bug->stop_time = stop_time;
-	bytes = session->read_codec->implementation->decoded_bytes_per_packet;
+	bytes = read_impl.decoded_bytes_per_packet;
 
 	if (!bug->flags) {
 		bug->flags = (SMBF_READ_STREAM | SMBF_WRITE_STREAM);
@@ -262,7 +274,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(switch_core_session_t 
 		switch_mutex_init(&bug->read_mutex, SWITCH_MUTEX_NESTED, session->pool);
 	}
 
-	bytes = session->write_codec->implementation->decoded_bytes_per_packet;
+	bytes = write_impl.decoded_bytes_per_packet;
 
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
 		switch_buffer_create_dynamic(&bug->raw_write_buffer, bytes * SWITCH_BUFFER_BLOCK_FRAMES, bytes * SWITCH_BUFFER_START_FRAMES, MAX_BUG_BUFFER);
