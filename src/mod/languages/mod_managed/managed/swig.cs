@@ -1812,10 +1812,6 @@ public class freeswitch {
     return ret;
   }
 
-  public static void switch_core_launch_thread(SWIGTYPE_p_f_p_switch_thread_t_p_void__p_void func, SWIGTYPE_p_void obj, SWIGTYPE_p_apr_pool_t pool) {
-    freeswitchPINVOKE.switch_core_launch_thread(SWIGTYPE_p_f_p_switch_thread_t_p_void__p_void.getCPtr(func), SWIGTYPE_p_void.getCPtr(obj), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
-  }
-
   public static void switch_core_set_globals() {
     freeswitchPINVOKE.switch_core_set_globals();
   }
@@ -6152,9 +6148,6 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_get_console")]
   public static extern IntPtr switch_core_get_console();
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_core_launch_thread")]
-  public static extern void switch_core_launch_thread(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_set_globals")]
   public static extern void switch_core_set_globals();

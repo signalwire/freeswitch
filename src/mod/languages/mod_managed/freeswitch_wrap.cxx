@@ -7522,18 +7522,6 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_core_get_console() {
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_launch_thread(void * jarg1, void * jarg2, void * jarg3) {
-  void *(*arg1)(switch_thread_t *,void *) = (void *(*)(switch_thread_t *,void *)) 0 ;
-  void *arg2 = (void *) 0 ;
-  switch_memory_pool_t *arg3 = (switch_memory_pool_t *) 0 ;
-  
-  arg1 = (void *(*)(switch_thread_t *,void *))jarg1; 
-  arg2 = (void *)jarg2; 
-  arg3 = (switch_memory_pool_t *)jarg3; 
-  switch_core_launch_thread(arg1,arg2,arg3);
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_set_globals() {
   switch_core_set_globals();
 }
