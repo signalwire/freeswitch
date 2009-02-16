@@ -25,8 +25,8 @@ case "$1" in
 			adduser --disabled-password  --quiet --system \
 			--home /opt/freeswitch \
 			--gecos "FreeSwitch Voice Platform" --ingroup daemon \
-			--add_extra_groups audio \
 			freeswitch
+			adduser freeswitch audio
 		fi
  
 		mkdir -p /opt/freeswitch
