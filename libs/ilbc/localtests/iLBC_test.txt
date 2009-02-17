@@ -1,0 +1,11 @@
+
+#Test iLBC executable for 20 and 30 ms frames on a clean channel
+
+./iLBC_test 20 iLBC.INP iLBC_20ms.BIT iLBC_20ms_clean.OUT clean.chn
+./iLBC_test 30 iLBC.INP iLBC_30ms.BIT iLBC_30ms_clean.OUT clean.chn
+
+#Test iLBC executable for 20 and 30 ms frames on a channel with ~5% packet losses
+
+./iLBC_test 20 iLBC.INP tmp.BIT iLBC_20ms_tlm05.OUT tlm05.chn
+./iLBC_test 30 iLBC.INP tmp.BIT iLBC_30ms_tlm05.OUT tlm05.chn
+

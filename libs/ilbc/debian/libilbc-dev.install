@@ -1,0 +1,4 @@
+debian/tmp/usr/include
+debian/tmp/usr/lib/libilbc.so
+debian/tmp/usr/lib/libilbc.la
+debian/tmp/usr/lib/libilbc.a

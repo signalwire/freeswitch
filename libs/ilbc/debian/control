@@ -1,0 +1,35 @@
+Source: ilbc
+Section: libs
+Priority: optional
+Maintainer: Debian VoIP Team <pkg-voip-maintainers@lists.alioth.debian.org>
+Uploaders: Jose Carlos Garcia Sogo <jsogo@debian.org>, Kilian Krause <kilian@debian.org>, Santiago Garcia Mantinan <manty@debian.org>, Mark Purcell <msp@debian.org>, Tzafrir Cohen <tzafrir.cohen@xorcom.com>, Santiago Ruano Rincón <santiago@debian.org>
+Build-Depends: debhelper (>= 4.0.0), dpatch, doxygen, autotools-dev
+Standards-Version: 3.7.2
+XS-Vcs-Svn: svn://svn.debian.org/pkg-voip/
+XS-Vcs-Browser: http://svn.debian.org/wsvn/pkg-voip/
+
+Package: libilbc
+Architecture: any
+Depends: ${shlibs:Depends}
+Conflicts: libilbc0, libilbc1, libilbc2
+Description: Telephony signal processing library
+ This package contains the iLBC low bit rate speech codec.
+ .
+ This package contains the shared library.
+
+Package: libilbc-dev
+Section: libdevel
+Architecture: any
+Depends: libilbc3 (= ${Source-Version})
+Description: Telephony signal processing library
+ This package contains the iLBC low bit rate speech codec.
+ .
+ This package contains the static library and development headers.
+ .
+ Homepage: http://www.soft-switch.org/
+
+Package: libilbc-doc
+Section: doc
+Architecture: all
+Description: Documentation for the ilbc signal processing library
+ This package contains the iLBC low bit rate speech codec.
