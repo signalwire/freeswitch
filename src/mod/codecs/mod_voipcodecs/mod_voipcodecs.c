@@ -681,8 +681,28 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voipcodecs_load)
 											 switch_g726_decode,		/* function to decode encoded data into raw data */
 											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
 	}
+
 	SWITCH_ADD_CODEC(codec_interface, "G.726 24k");
 	for (count = 12; count > 0; count--) {
+		switch_core_codec_add_implementation(pool,
+											 codec_interface,
+											 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+											 123,						/* the IANA code number */
+											 "G726-24",					/* the IANA code name */
+											 NULL,						/* default fmtp to send (can be overridden by the init function) */
+											 8000,						/* samples transferred per second */
+											 8000,						/* actual samples transferred per second */
+											 24000,						/* bits transferred per second */
+											 mpf * count,				/* number of microseconds per frame */
+											 spf * count,				/* number of samples per frame */
+											 bpf * count,				/* number of bytes per frame decompressed */
+											 ebpf * count,				/* number of bytes per frame compressed */
+											 1,							/* number of channels represented */
+											 count * 10,				/* number of frames per network packet */
+											 switch_g726_init,			/* function to initialize a codec handle using this implementation */
+											 switch_g726_encode,		/* function to encode raw data into encoded data */
+											 switch_g726_decode,		/* function to decode encoded data into raw data */
+											 switch_g726_destroy);		/* deinitalize a codec handle using this implementation */
 	}
 	/* Increase encoded bytes per frame by 10 */
 	ebpf = ebpf + 10;
