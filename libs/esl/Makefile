@@ -41,6 +41,7 @@ clean:
 	rm -f *.o src/*.o testclient testserver fs_cli libesl.a *~ src/*~ src/include/*~
 	make -C perl clean
 	make -C php clean
+	make -C lua clean
 
 reswig:	swigclean
 	make -C perl reswig
@@ -48,11 +49,15 @@ reswig:	swigclean
 swigclean: clean
 	make -C perl swigclean
 	make -C php swigclean
+	make -C lua swigclean
 
 perlmod: $(MYLIB)
 	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
 
 phpmod: $(MYLIB)
 	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C php
+
+luamod: $(MYLIB)
+	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C lua
 
 
