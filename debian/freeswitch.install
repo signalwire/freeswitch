@@ -14,6 +14,8 @@ opt/freeswitch/mod/mod_voicemail.so*
 opt/freeswitch/mod/mod_limit.so*
 opt/freeswitch/mod/mod_ilbc.so*
 opt/freeswitch/mod/mod_speex.so*
+opt/freeswitch/mod/mod_siren.so*
+opt/freeswitch/mod/mod_celt.so*
 opt/freeswitch/mod/mod_esf.so*
 opt/freeswitch/mod/mod_logfile.so*
 opt/freeswitch/mod/mod_syslog.so*
