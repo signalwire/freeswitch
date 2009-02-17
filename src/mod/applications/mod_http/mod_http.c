@@ -67,7 +67,7 @@ do{\
 
 #define GARBAGE_ADD(a) \
 do {\
-    if(memloc_i >= MAX_MEMLOCS){\
+    if (memloc_i >= MAX_MEMLOCS){\
 	switch_safe_free(ccmd);\
 	GARBAGE_CLEANUP();\
 	stream->write_function(stream, "-ERR\n");\
