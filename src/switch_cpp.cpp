@@ -1216,6 +1216,29 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
 
 			return SWITCH_STATUS_FALSE;
 
+		} else if (!strncasecmp(result, "volume", 6)) {
+			char *p;
+			
+			if ((p = strchr(result, ':'))) {
+				p++;
+				if (*p == '+' || *p == '-') {
+					int step;
+					if (!(step = atoi(p))) {
+						step = 1;
+					}
+					fhp->vol += step;
+				} else {
+					int vol = atoi(p);
+					fhp->vol = vol;
+				}
+				return SWITCH_STATUS_SUCCESS;
+			}
+			
+			if (fhp->vol) {
+				switch_normalize_volume(fhp->vol);
+			}
+			
+			return SWITCH_STATUS_FALSE;
 		} else if (!strcasecmp(result, "pause")) {
 			if (switch_test_flag(fhp, SWITCH_FILE_PAUSE)) {
 				switch_clear_flag(fhp, SWITCH_FILE_PAUSE);
