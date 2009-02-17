@@ -2452,31 +2452,36 @@ soa_init_sdp_connection_with_session(soa_session_t *ss,
       sdp_connection_t const *mc;
 
       if (m->m_rejected)
-	continue;
+		  continue;
 
-      for (mc = m->m_connections; mc; mc = mc->c_next) {
-	for (li = res; li; li = li->li_next) {
-	  if (!su_casematch(li->li_canonname, sdp->sdp_connection->c_address))
-	    continue;
+	  if (sdp && sdp->sdp_connection && sdp->sdp_connection->c_address) {
+		  for (mc = m->m_connections; mc; mc = mc->c_next) {
+			  for (li = res; li; li = li->li_next) {
+				  if (!li->li_canonname || !su_casematch(li->li_canonname, sdp->sdp_connection->c_address)) {
+					  continue;
+				  }
 #if HAVE_SIN6
-	  if (li->li_family == AF_INET6) {
-	    if (ip6 > ip4)
-	      break;
-	    else if (!li6)
-	      li6 = li;		/* Best IP6 address */
-	  }
+				  if (li->li_family == AF_INET6) {
+					  if (ip6 > ip4)
+					  break;
+					  else if (!li6)
+						  li6 = li;		/* Best IP6 address */
+				  }
 #endif
-	  else if (li->li_family == AF_INET) {
-	    if (ip4 > ip6)
-	      break;
-	    else if (!li4)
-	      li4 = li;		/* Best IP4 address */
+				  else if (li->li_family == AF_INET) {
+					  if (ip4 > ip6) {
+						  break;
+					  } else if (!li4) {
+						  li4 = li;		/* Best IP4 address */
+					  }
+				  }
+			  }
+		  }
 	  }
-	}
-      }
-
-      if (li)
-	break;
+	  
+      if (li) {
+		  break;
+	  }
     }
 
     if (li == NULL && ip4)
