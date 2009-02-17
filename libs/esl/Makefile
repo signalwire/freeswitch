@@ -42,14 +42,19 @@ clean:
 	make -C perl clean
 	make -C php clean
 	make -C lua clean
+	make -C python clean
 
 reswig:	swigclean
 	make -C perl reswig
 	make -C php reswig
+	make -C lua reswig
+	make -C python reswig
+
 swigclean: clean
 	make -C perl swigclean
 	make -C php swigclean
 	make -C lua swigclean
+	make -C python swigclean
 
 perlmod: $(MYLIB)
 	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
@@ -59,5 +64,9 @@ phpmod: $(MYLIB)
 
 luamod: $(MYLIB)
 	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C lua
+
+pymod: $(MYLIB)
+	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C python
+
 
 
