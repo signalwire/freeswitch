@@ -129,7 +129,7 @@
  * Freeswitch has been built on the following platforms:
  *
  *  - Linux (x86 & x86_64)
- *  - Windows (MSVC 2005)
+ *  - Windows (MSVC 2008 & VC++ EE 2008)
  *  - Mac OS X (intel & ppc )
  *  - FreeBSD 6
  *
@@ -140,20 +140,35 @@
  *		- APR (http://apr.apache.org)
  *		- APR-Util (http://apr.apache.org)
  *		- SQLite (http://www.sqlite.org)
- *		- libresample (http://ccrma-www.stanford.edu/~jos/resample/Free_Resampling_Software.html)
  *		- Pcre (http://www.pcre.org/)
  *		- SRTP (http://srtp.sourceforge.net/srtp.html)
  *
- *	Additionally, the experimental external modules make use of several external modules:
+ *	Additionally, the various external modules make use of several external modules:
  *
  *
  *  ASR/TTS
  *	mod_cepstral
  *		- Cepstral (commercial) (http://www.cepstral.com/)
  *
+ *	mod_flite
+ *		- Flite (http://www.speech.cs.cmu.edu/flite/)
+ *
+ *	mod_pocketsphinx
+ *		- PocketSphinx (http://www.speech.cs.cmu.edu/pocketsphinx/)
+ *
  *  Codecs
  *	mod_speex
  *		- libspeex (http://www.speex.org/)
+ *
+ *	mod_celt
+ *		- libcelt (http://www.celt-codec.org/)
+ *
+ *	mod_siren
+ *		- libg722_1 (http://www.polycom.com/company/about_us/technology/siren22/index.html)
+ *
+ * Digital Signal Processing
+ *	mod_fax
+ *		- spandsp (http://www.soft-switch.org/)
  *
  *  Directories
  *	mod_ldap
@@ -166,9 +181,6 @@
  *	mod_portaudio
  *		- portaudio (http://www.portaudio.com/)
  *
- *	mod_woomera
- *		- openh323/woomera (http://www.voxgratia.org/)
- *
  *	mod_dingaling
  *		- libdingaling (internal library distributed with freeswitch which depends on)
  *		- APR (http://apr.apache.org)
@@ -177,16 +189,15 @@
  *	mod_sofia
  *		- sofia-sip (http://opensource.nokia.com/projects/sofia-sip/)
  *
+ *	mod_opal
+ *		- libopal (http://www.opalvoip.org)
+ *
+ *	mod_openzap
+ *		- openzap (http://wiki.freeswitch.org/wiki/OpenZAP)
+ *
  *  Event Hanlders
  *	mod_xmpp_event
  *		- iksemel (http://iksemel.jabberstudio.org/)
- *
- *	mod_zeroconf
- *		- libhowl (No longer available http://www.porchdogsoft.com/products/howl/)
- *
- *	mod_cdr
- *		- Mysql (http://www.mysql.com/)
- *		- unixodbc (*nix only http://www.unixodbc.org/)
  *
  *  Formats
  *	mod_sndfile
@@ -199,9 +210,22 @@
  *	mod_perl
  *		- perl (http://www.perl.org/)
  *
+ *	mod_lua
+ *		- lua (http://www.lua.org)
+ *
  *  XML interfaces
  *	mod_xml_rpc
  *		- xmlrpc-c (http://xmlrpc-c.sourceforge.net/)
+ *
+ *	mod_xml_curl
+ *		- libcurl (http://curl.haxx.se/)
+ *
+ *  Network services
+ *	mod_http
+ *		- Abyss (http://www.aprelium.com/)
+ *
+ *	mod_enum
+ *		- udns (http://www.corpit.ru/mjt/udns.html)
  *
  *
  * \section license Licensing
