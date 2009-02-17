@@ -75,4 +75,4 @@ rubymod: $(MYLIB)
 	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C ruby
 
 
-
+everymod: perlmod phpmod luamod pymod rubymod
