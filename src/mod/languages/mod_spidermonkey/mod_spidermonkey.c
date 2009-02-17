@@ -1180,7 +1180,7 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 
 
 	if ((ret = JS_GetStringBytes(JS_ValueToString(cb_state->cx, cb_state->ret)))) {
-		if (!strncasecmp(ret, "speed", 4)) {
+		if (!strncasecmp(ret, "speed", 5)) {
 			char *p;
 
 			if ((p = strchr(ret, ':'))) {

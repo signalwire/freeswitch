@@ -1196,7 +1196,7 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
     }
 
 	if (fhp) {
-		if (!strncasecmp(result, "speed", 4)) {
+		if (!strncasecmp(result, "speed", 5)) {
 			char *p;
 		
 			if ((p = strchr(result, ':'))) {
