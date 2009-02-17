@@ -877,19 +877,20 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	}
 
 	if (!authorization || stale) {
+		const char *realm = profile->challenge_realm;
+
+		if (switch_strlen_zero(realm) || !strcasecmp(realm, "auto_to")) {
+			realm = to_host;
+		} else if (!strcasecmp(realm, "auto_from")) {
+			realm = from_host;
+		}
+
 		if (regtype == REG_REGISTER) {
-			sofia_reg_auth_challenge(nua, profile, nh, regtype, to_host, stale);
+			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
 			if (profile->debug) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Requesting Registration from: [%s@%s]\n", to_user, to_host);
 			}
 		} else {
-			const char *realm = profile->challenge_realm;
-
-			if (switch_strlen_zero(realm) || !strcasecmp(realm, "auto_to")) {
-				realm = to_host;
-			} else if (!strcasecmp(realm, "auto_from")) {
-				realm = from_host;
-			}
 			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
 		}
 		return 1;
