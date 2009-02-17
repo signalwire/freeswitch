@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <esl.h>
 
-static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in addr)
+static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
 {
 	esl_handle_t handle = {{0}};
 	int done = 0;

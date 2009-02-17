@@ -390,10 +390,12 @@ static void sock_setup(esl_handle_t *handle)
 #endif
 }
 
-ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr)
+ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in *addr)
 {
 	handle->sock = socket;
-	handle->addr = addr;
+	if (addr) {
+		handle->addr = *addr;
+	}
 
 	if (handle->sock == ESL_SOCK_INVALID) {
 		return ESL_FAIL;
@@ -558,7 +560,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 			goto end;
 		}
 
-		callback(server_sock, client_sock, echoClntAddr);
+		callback(server_sock, client_sock, &echoClntAddr);
 	}
 
  end:

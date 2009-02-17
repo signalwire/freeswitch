@@ -321,9 +321,9 @@ ESL_DECLARE(int) esl_tolower(int c);
 ESL_DECLARE(int) esl_snprintf(char *buffer, size_t count, const char *fmt, ...);
 
 
-typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in addr);
+typedef void (*esl_listen_callback_t)(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr);
 
-ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in addr);
+ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t socket, struct sockaddr_in *addr);
 ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_listen_callback_t callback);
 ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, const char *arg, const char *uuid);
 ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event);
