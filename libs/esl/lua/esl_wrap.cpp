@@ -1687,14 +1687,16 @@ fail:
 static int _wrap_new_ESLevent__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   ESLevent *result = 0 ;
   
-  SWIG_check_num_args("ESLevent",2,2)
+  SWIG_check_num_args("ESLevent",1,2)
   if(!lua_isstring(L,1)) SWIG_fail_arg("ESLevent",1,"char const *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("ESLevent",2,"char const *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("ESLevent",2,"char const *");
   arg1 = (char *)lua_tostring(L, 1);
-  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
   result = (ESLevent *)new ESLevent((char const *)arg1,(char const *)arg2);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
@@ -1710,13 +1712,47 @@ fail:
 
 static int _wrap_new_ESLevent__SWIG_1(lua_State* L) {
   int SWIG_arg = -1;
-  char *arg1 = (char *) 0 ;
+  esl_event_t *arg1 = (esl_event_t *) 0 ;
+  int arg2 = (int) 0 ;
+  ESLevent *result = 0 ;
+  
+  SWIG_check_num_args("ESLevent",1,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ESLevent",1,"esl_event_t *");
+  if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("ESLevent",2,"int");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_esl_event_t,0))){
+    SWIG_fail_ptr("new_ESLevent",1,SWIGTYPE_p_esl_event_t);
+  }
+  
+  if(lua_gettop(L)>=2){
+    arg2 = (int)lua_tonumber(L, 2);
+  }
+  result = (ESLevent *)new ESLevent(arg1,arg2);
+  SWIG_arg=0;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_new_ESLevent__SWIG_2(lua_State* L) {
+  int SWIG_arg = -1;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   ESLevent *result = 0 ;
   
   SWIG_check_num_args("ESLevent",1,1)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("ESLevent",1,"char const *");
-  arg1 = (char *)lua_tostring(L, 1);
-  result = (ESLevent *)new ESLevent((char const *)arg1);
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ESLevent",1,"ESLevent *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("new_ESLevent",1,SWIGTYPE_p_ESLevent);
+  }
+  
+  result = (ESLevent *)new ESLevent(arg1);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
@@ -1736,21 +1772,51 @@ static int _wrap_new_ESLevent(lua_State* L) {
   };
   
   argc = lua_gettop(L);
+  if ((argc >= 1) && (argc <= 2)) {
+    int _v;
+    {
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_esl_event_t, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
+    }
+    if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_ESLevent__SWIG_1(L);
+      }
+      {
+        _v = lua_isnumber(L,argv[1]);
+      }
+      if (_v) {
+        return _wrap_new_ESLevent__SWIG_1(L);
+      }
+    }
+  }
   if (argc == 1) {
     int _v;
     {
-      _v = lua_isstring(L,argv[0]);
+      void *ptr;
+      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLevent, 0)) {
+        _v = 0;
+      } else {
+        _v = 1;
+      }
     }
     if (_v) {
-      return _wrap_new_ESLevent__SWIG_1(L);
+      return _wrap_new_ESLevent__SWIG_2(L);
     }
   }
-  if (argc == 2) {
+  if ((argc >= 1) && (argc <= 2)) {
     int _v;
     {
       _v = lua_isstring(L,argv[0]);
     }
     if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_ESLevent__SWIG_0(L);
+      }
       {
         _v = lua_isstring(L,argv[1]);
       }
@@ -1790,21 +1856,23 @@ fail:
 }
 
 
-static int _wrap_ESLevent_serialize__SWIG_0(lua_State* L) {
+static int _wrap_ESLevent_serialize(lua_State* L) {
   int SWIG_arg = -1;
   ESLevent *arg1 = (ESLevent *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   char *result = 0 ;
   
-  SWIG_check_num_args("serialize",2,2)
+  SWIG_check_num_args("serialize",1,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"ESLevent *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("serialize",2,"char const *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("serialize",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
     SWIG_fail_ptr("ESLevent_serialize",1,SWIGTYPE_p_ESLevent);
   }
   
-  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=2){
+    arg2 = (char *)lua_tostring(L, 2);
+  }
   result = (char *)(arg1)->serialize((char const *)arg2);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
@@ -1818,98 +1886,27 @@ fail:
 }
 
 
-static int _wrap_ESLevent_serialize__SWIG_1(lua_State* L) {
+static int _wrap_ESLevent_setPriority(lua_State* L) {
   int SWIG_arg = -1;
   ESLevent *arg1 = (ESLevent *) 0 ;
-  char *result = 0 ;
-  
-  SWIG_check_num_args("serialize",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"ESLevent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
-    SWIG_fail_ptr("ESLevent_serialize",1,SWIGTYPE_p_ESLevent);
-  }
-  
-  result = (char *)(arg1)->serialize();
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_ESLevent_serialize(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLevent, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_ESLevent_serialize__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLevent, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_ESLevent_serialize__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'ESLevent_serialize'");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_ESLevent_setPriority__SWIG_0(lua_State* L) {
-  int SWIG_arg = -1;
-  ESLevent *arg1 = (ESLevent *) 0 ;
-  esl_priority_t arg2 ;
+  esl_priority_t arg2 = (esl_priority_t) ESL_PRIORITY_NORMAL ;
   bool result;
   esl_priority_t *argp2 ;
   
-  SWIG_check_num_args("setPriority",2,2)
+  SWIG_check_num_args("setPriority",1,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPriority",1,"ESLevent *");
-  if(!lua_isuserdata(L,2)) SWIG_fail_arg("setPriority",2,"esl_priority_t");
+  if(lua_gettop(L)>=2 && !lua_isuserdata(L,2)) SWIG_fail_arg("setPriority",2,"esl_priority_t");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
     SWIG_fail_ptr("ESLevent_setPriority",1,SWIGTYPE_p_ESLevent);
   }
   
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_esl_priority_t,0))){
-    SWIG_fail_ptr("ESLevent_setPriority",2,SWIGTYPE_p_esl_priority_t);
+  if(lua_gettop(L)>=2){
+    if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_esl_priority_t,0))){
+      SWIG_fail_ptr("ESLevent_setPriority",2,SWIGTYPE_p_esl_priority_t);
+    }
+    arg2 = *argp2;
   }
-  arg2 = *argp2;
-  
   result = (bool)(arg1)->setPriority(arg2);
   SWIG_arg=0;
   lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
@@ -1920,82 +1917,6 @@ static int _wrap_ESLevent_setPriority__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_ESLevent_setPriority__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  ESLevent *arg1 = (ESLevent *) 0 ;
-  bool result;
-  
-  SWIG_check_num_args("setPriority",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPriority",1,"ESLevent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
-    SWIG_fail_ptr("ESLevent_setPriority",1,SWIGTYPE_p_ESLevent);
-  }
-  
-  result = (bool)(arg1)->setPriority();
-  SWIG_arg=0;
-  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_ESLevent_setPriority(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 1) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLevent, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      return _wrap_ESLevent_setPriority__SWIG_1(L);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLevent, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        void *ptr;
-        if (lua_isuserdata(L,argv[1])==0 || SWIG_ConvertPtr(L,argv[1], (void **) &ptr, SWIGTYPE_p_esl_priority_t, 0)) {
-          _v = 0;
-        } else {
-          _v = 1;
-        }
-      }
-      if (_v) {
-        return _wrap_ESLevent_setPriority__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'ESLevent_setPriority'");
-  lua_error(L);return 0;
 }
 
 
@@ -2568,27 +2489,31 @@ fail:
 }
 
 
-static int _wrap_ESLconnection_execute__SWIG_0(lua_State* L) {
+static int _wrap_ESLconnection_execute(lua_State* L) {
   int SWIG_arg = -1;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   esl_status_t result;
   
-  SWIG_check_num_args("execute",4,4)
+  SWIG_check_num_args("execute",2,4)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
-  if(!lua_isstring(L,4)) SWIG_fail_arg("execute",4,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
+  if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("execute",4,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
     SWIG_fail_ptr("ESLconnection_execute",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  arg4 = (char *)lua_tostring(L, 4);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (char *)lua_tostring(L, 4);
+  }
   result = (arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
   SWIG_arg=0;
   {
@@ -2602,156 +2527,6 @@ static int _wrap_ESLconnection_execute__SWIG_0(lua_State* L) {
 fail:
   lua_error(L);
   return SWIG_arg;
-}
-
-
-static int _wrap_ESLconnection_execute__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
-  ESLconnection *arg1 = (ESLconnection *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  esl_status_t result;
-  
-  SWIG_check_num_args("execute",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"ESLconnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
-    SWIG_fail_ptr("ESLconnection_execute",1,SWIGTYPE_p_ESLconnection);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  result = (arg1)->execute((char const *)arg2,(char const *)arg3);
-  SWIG_arg=0;
-  {
-    esl_status_t * resultptr = new esl_status_t((esl_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_esl_status_t,1); SWIG_arg++;
-  }
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_ESLconnection_execute__SWIG_2(lua_State* L) {
-  int SWIG_arg = -1;
-  ESLconnection *arg1 = (ESLconnection *) 0 ;
-  char *arg2 = (char *) 0 ;
-  esl_status_t result;
-  
-  SWIG_check_num_args("execute",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"ESLconnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
-    SWIG_fail_ptr("ESLconnection_execute",1,SWIGTYPE_p_ESLconnection);
-  }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (arg1)->execute((char const *)arg2);
-  SWIG_arg=0;
-  {
-    esl_status_t * resultptr = new esl_status_t((esl_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_esl_status_t,1); SWIG_arg++;
-  }
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
-fail:
-  lua_error(L);
-  return SWIG_arg;
-}
-
-
-static int _wrap_ESLconnection_execute(lua_State* L) {
-  int argc;
-  int argv[5]={
-    1,2,3,4,5
-  };
-  
-  argc = lua_gettop(L);
-  if (argc == 2) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLconnection, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_ESLconnection_execute__SWIG_2(L);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLconnection, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          return _wrap_ESLconnection_execute__SWIG_1(L);
-        }
-      }
-    }
-  }
-  if (argc == 4) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_ESLconnection, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
-        if (_v) {
-          {
-            _v = lua_isstring(L,argv[3]);
-          }
-          if (_v) {
-            return _wrap_ESLconnection_execute__SWIG_0(L);
-          }
-        }
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'ESLconnection_execute'");
-  lua_error(L);return 0;
 }
 
 

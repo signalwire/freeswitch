@@ -52,10 +52,10 @@ class ESLevent {
 		return null;
 	}
 
-	function __construct($type,$subclass_name=null) {
+	function __construct($type_or_wrap_me_or_me,$subclass_name_or_free_me=null) {
 		switch (func_num_args()) {
-		case 1: $r=new_ESLevent($type); break;
-		default: $r=new_ESLevent($type,$subclass_name);
+		case 1: $r=new_ESLevent($type_or_wrap_me_or_me); break;
+		default: $r=new_ESLevent($type_or_wrap_me_or_me,$subclass_name_or_free_me);
 		}
 		$this->_cPtr=$r;
 	}

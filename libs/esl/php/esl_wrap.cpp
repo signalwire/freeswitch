@@ -1207,14 +1207,16 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_new_ESLevent__SWIG_0) {
   char *arg1 = (char *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   ESLevent *result = 0 ;
   zval **args[2];
+  int arg_count;
   
   SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<1 || arg_count>2 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
   
   
   /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
@@ -1222,12 +1224,13 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLevent__SWIG_0) {
   arg1 = (char *) Z_STRVAL_PP(args[0]);
   /*@SWIG@*/;
   
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[1]);
-  arg2 = (char *) Z_STRVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
+  if(arg_count > 1) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[1]);
+    arg2 = (char *) Z_STRVAL_PP(args[1]);
+    /*@SWIG@*/;
+    
+  }
   result = (ESLevent *)new ESLevent((char const *)arg1,(char const *)arg2);
   {
     SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 1);
@@ -1239,7 +1242,42 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_new_ESLevent__SWIG_1) {
-  char *arg1 = (char *) 0 ;
+  esl_event_t *arg1 = (esl_event_t *) 0 ;
+  int arg2 = (int) 0 ;
+  ESLevent *result = 0 ;
+  zval **args[2];
+  int arg_count;
+  
+  SWIG_ResetError();
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<1 || arg_count>2 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_esl_event_t, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of new_ESLevent. Expected SWIGTYPE_p_esl_event_t");
+    }
+  }
+  if(arg_count > 1) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,7,CONVERT_INT_IN@*/
+    convert_to_long_ex(args[1]);
+    arg2 = (int) Z_LVAL_PP(args[1]);
+    /*@SWIG@*/;
+    
+  }
+  result = (ESLevent *)new ESLevent(arg1,arg2);
+  {
+    SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 1);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_ESLevent__SWIG_2) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   ESLevent *result = 0 ;
   zval **args[1];
   
@@ -1248,13 +1286,12 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLevent__SWIG_1) {
     WRONG_PARAM_COUNT;
   }
   
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[0]);
-  arg1 = (char *) Z_STRVAL_PP(args[0]);
-  /*@SWIG@*/;
-  
-  result = (ESLevent *)new ESLevent((char const *)arg1);
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of new_ESLevent. Expected SWIGTYPE_p_ESLevent");
+    }
+  }
+  result = (ESLevent *)new ESLevent(arg1);
   {
     SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 1);
   }
@@ -1270,17 +1307,39 @@ ZEND_NAMED_FUNCTION(_wrap_new_ESLevent) {
   
   argc = ZEND_NUM_ARGS();
   zend_get_parameters_array_ex(argc,argv);
-  if (argc == 1) {
+  if ((argc >= 1) && (argc <= 2)) {
     int _v;
-    _v = (Z_TYPE_PP(argv[0]) == IS_STRING); 
+    {
+      void *tmp;
+      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_esl_event_t, 0) >= 0);
+    }
     if (_v) {
-      return _wrap_new_ESLevent__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+      if (argc <= 1) {
+        return _wrap_new_ESLevent__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+      }
+      _v = (Z_TYPE_PP(argv[1]) == IS_LONG); 
+      if (_v) {
+        return _wrap_new_ESLevent__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+      }
     }
   }
-  if (argc == 2) {
+  if (argc == 1) {
+    int _v;
+    {
+      void *tmp;
+      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLevent, 0) >= 0);
+    }
+    if (_v) {
+      return _wrap_new_ESLevent__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+    }
+  }
+  if ((argc >= 1) && (argc <= 2)) {
     int _v;
     _v = (Z_TYPE_PP(argv[0]) == IS_STRING); 
     if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_ESLevent__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU);
+      }
       _v = (Z_TYPE_PP(argv[1]) == IS_STRING); 
       if (_v) {
         return _wrap_new_ESLevent__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU);
@@ -1311,16 +1370,18 @@ static void __wrap_delete_ESLevent(zend_rsrc_list_entry *rsrc, const char *type_
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_ESLevent_serialize__SWIG_0) {
+ZEND_NAMED_FUNCTION(_wrap_ESLevent_serialize) {
   ESLevent *arg1 = (ESLevent *) 0 ;
-  char *arg2 = (char *) 0 ;
+  char *arg2 = (char *) NULL ;
   char *result = 0 ;
   zval **args[2];
+  int arg_count;
   
   SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<1 || arg_count>2 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
@@ -1328,12 +1389,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_serialize__SWIG_0) {
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[1]);
-  arg2 = (char *) Z_STRVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
+  if(arg_count > 1) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[1]);
+    arg2 = (char *) Z_STRVAL_PP(args[1]);
+    /*@SWIG@*/;
+    
+  }
   result = (char *)(arg1)->serialize((char const *)arg2);
   {
     if(!result) {
@@ -1348,83 +1410,19 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_ESLevent_serialize__SWIG_1) {
+ZEND_NAMED_FUNCTION(_wrap_ESLevent_setPriority) {
   ESLevent *arg1 = (ESLevent *) 0 ;
-  char *result = 0 ;
-  zval **args[1];
-  
-  SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLevent_serialize. Expected SWIGTYPE_p_ESLevent");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  result = (char *)(arg1)->serialize();
-  {
-    if(!result) {
-      ZVAL_NULL(return_value);
-    } else {
-      ZVAL_STRING(return_value,result, 1);
-    }
-  }
-  return;
-fail:
-  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_ESLevent_serialize) {
-  int argc;
-  zval **argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc,argv);
-  if (argc == 1) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLevent, 0) >= 0);
-    }
-    if (_v) {
-      return _wrap_ESLevent_serialize__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLevent, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_PP(argv[1]) == IS_STRING); 
-      if (_v) {
-        return _wrap_ESLevent_serialize__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'ESLevent_serialize'";
-  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_ESLevent_setPriority__SWIG_0) {
-  ESLevent *arg1 = (ESLevent *) 0 ;
-  esl_priority_t arg2 ;
+  esl_priority_t arg2 = (esl_priority_t) ESL_PRIORITY_NORMAL ;
   bool result;
   esl_priority_t *tmp2 ;
   zval **args[2];
+  int arg_count;
   
   SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<1 || arg_count>2 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
@@ -1432,11 +1430,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_setPriority__SWIG_0) {
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    if(SWIG_ConvertPtr(*args[1], (void **) &tmp2, SWIGTYPE_p_esl_priority_t, 0) < 0 || tmp2 == NULL) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of ESLevent_setPriority. Expected SWIGTYPE_p_esl_priority_t");
+  if(arg_count > 1) {
+    {
+      if(SWIG_ConvertPtr(*args[1], (void **) &tmp2, SWIGTYPE_p_esl_priority_t, 0) < 0 || tmp2 == NULL) {
+        SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of ESLevent_setPriority. Expected SWIGTYPE_p_esl_priority_t");
+      }
+      arg2 = *tmp2;
     }
-    arg2 = *tmp2;
   }
   result = (bool)(arg1)->setPriority(arg2);
   {
@@ -1444,68 +1444,6 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_setPriority__SWIG_0) {
   }
   return;
 fail:
-  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_ESLevent_setPriority__SWIG_1) {
-  ESLevent *arg1 = (ESLevent *) 0 ;
-  bool result;
-  zval **args[1];
-  
-  SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLevent, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLevent_setPriority. Expected SWIGTYPE_p_ESLevent");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  result = (bool)(arg1)->setPriority();
-  {
-    ZVAL_BOOL(return_value,(result)?1:0);
-  }
-  return;
-fail:
-  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_ESLevent_setPriority) {
-  int argc;
-  zval **argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc,argv);
-  if (argc == 1) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLevent, 0) >= 0);
-    }
-    if (_v) {
-      return _wrap_ESLevent_setPriority__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLevent, 0) >= 0);
-    }
-    if (_v) {
-      /* typecheck SWIGTYPE */ 
-      if (_v) {
-        return _wrap_ESLevent_setPriority__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'ESLevent_setPriority'";
   zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
 }
 
@@ -2122,18 +2060,20 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute__SWIG_0) {
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  char *arg4 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
   esl_status_t result;
   zval **args[4];
+  int arg_count;
   
   SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<2 || arg_count>4 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
@@ -2147,18 +2087,20 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute__SWIG_0) {
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[2]);
-  arg3 = (char *) Z_STRVAL_PP(args[2]);
-  /*@SWIG@*/;
-  
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[3]);
-  arg4 = (char *) Z_STRVAL_PP(args[3]);
-  /*@SWIG@*/;
-  
+  if(arg_count > 2) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[2]);
+    arg3 = (char *) Z_STRVAL_PP(args[2]);
+    /*@SWIG@*/;
+    
+  }
+  if(arg_count > 3) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[3]);
+    arg4 = (char *) Z_STRVAL_PP(args[3]);
+    /*@SWIG@*/;
+    
+  }
   result = (arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
   {
     esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
@@ -2166,142 +2108,6 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute__SWIG_0) {
   }
   return;
 fail:
-  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute__SWIG_1) {
-  ESLconnection *arg1 = (ESLconnection *) 0 ;
-  char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
-  esl_status_t result;
-  zval **args[3];
-  
-  SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_execute. Expected SWIGTYPE_p_ESLconnection");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[1]);
-  arg2 = (char *) Z_STRVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[2]);
-  arg3 = (char *) Z_STRVAL_PP(args[2]);
-  /*@SWIG@*/;
-  
-  result = (arg1)->execute((char const *)arg2,(char const *)arg3);
-  {
-    esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_esl_status_t, 1);
-  }
-  return;
-fail:
-  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute__SWIG_2) {
-  ESLconnection *arg1 = (ESLconnection *) 0 ;
-  char *arg2 = (char *) 0 ;
-  esl_status_t result;
-  zval **args[2];
-  
-  SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_execute. Expected SWIGTYPE_p_ESLconnection");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[1]);
-  arg2 = (char *) Z_STRVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  result = (arg1)->execute((char const *)arg2);
-  {
-    esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_esl_status_t, 1);
-  }
-  return;
-fail:
-  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute) {
-  int argc;
-  zval **argv[4];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc,argv);
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLconnection, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_PP(argv[1]) == IS_STRING); 
-      if (_v) {
-        return _wrap_ESLconnection_execute__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLconnection, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_PP(argv[1]) == IS_STRING); 
-      if (_v) {
-        _v = (Z_TYPE_PP(argv[2]) == IS_STRING); 
-        if (_v) {
-          return _wrap_ESLconnection_execute__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-        }
-      }
-    }
-  }
-  if (argc == 4) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr( *argv[0], (void**)&tmp, SWIGTYPE_p_ESLconnection, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_PP(argv[1]) == IS_STRING); 
-      if (_v) {
-        _v = (Z_TYPE_PP(argv[2]) == IS_STRING); 
-        if (_v) {
-          _v = (Z_TYPE_PP(argv[3]) == IS_STRING); 
-          if (_v) {
-            return _wrap_ESLconnection_execute__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU);
-          }
-        }
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'ESLconnection_execute'";
   zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
 }
 

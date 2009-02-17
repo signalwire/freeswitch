@@ -51,6 +51,7 @@ class ESLevent {
 
 	ESLevent(const char *type, const char *subclass_name = NULL);
 	ESLevent(esl_event_t *wrap_me, int free_me = 0);
+	ESLevent(ESLevent *me);
 	virtual ~ESLevent();
 	const char *serialize(const char *format = NULL);
 	bool setPriority(esl_priority_t priority = ESL_PRIORITY_NORMAL);

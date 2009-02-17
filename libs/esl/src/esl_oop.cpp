@@ -1,7 +1,8 @@
 #include <esl.h>
 #include <esl_oop.h>
 
-#define construct_common() memset(&handle, 0, sizeof(handle)); last_event_obj = NULL
+#define connection_construct_common() memset(&handle, 0, sizeof(handle)); last_event_obj = NULL
+#define event_construct_common() event = NULL; serialized_string = NULL; mine = 0
 
 void eslSetLogLevel(int level)
 {
@@ -10,7 +11,7 @@ void eslSetLogLevel(int level)
 
 ESLconnection::ESLconnection(const char *host, const char *port, const char *password)
 {
-	construct_common();
+	connection_construct_common();
 	int x_port = atoi(port);
 
 	esl_connect(&handle, host, x_port, password);
@@ -19,7 +20,7 @@ ESLconnection::ESLconnection(const char *host, const char *port, const char *pas
 
 ESLconnection::ESLconnection(int socket)
 {
-	construct_common();
+	connection_construct_common();
 	memset(&handle, 0, sizeof(handle));
 	esl_attach_handle(&handle, (esl_socket_t)socket, NULL);
 }
@@ -150,6 +151,8 @@ ESLevent::ESLevent(const char *type, const char *subclass_name)
 {
 	esl_event_types_t event_id;
 	
+	event_construct_common();
+
 	if (esl_name_event(type, &event_id) != ESL_SUCCESS) {
 		event_id = ESL_EVENT_MESSAGE;
 	}
@@ -170,14 +173,28 @@ ESLevent::ESLevent(const char *type, const char *subclass_name)
 
 ESLevent::ESLevent(esl_event_t *wrap_me, int free_me)
 {
+	event_construct_common();
 	event = wrap_me;
 	mine = free_me;
 	serialized_string = NULL;
 }
 
+
+ESLevent::ESLevent(ESLevent *me)
+{
+	/* workaround for silly php thing */
+	event = me->event;
+	mine = me->mine;
+	serialized_string = NULL;
+	me->event = NULL;
+	me->mine = 0;
+	esl_safe_free(me->serialized_string);
+	delete me;
+}
+
 ESLevent::~ESLevent()
 {
-
+	
 	if (serialized_string) {
 		free(serialized_string);
 	}
