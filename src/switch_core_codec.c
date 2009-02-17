@@ -442,7 +442,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 		mode += 5;
 		if (mode) {
 			mms = atoi(mode);
-			if (mms > 0 && mms < 120) {
+			if (mms == 20 || mms == 30) {
 				ms = mms;
 			}
 		}
