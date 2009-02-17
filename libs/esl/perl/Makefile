@@ -18,8 +18,8 @@ perlxsi.o: perlxsi.c
 esl_wrap.o: esl_wrap.cpp
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) -c esl_wrap.cpp -o esl_wrap.o
 
-ESL.so: $(MYLIB) esl_wrap.o perlxsi.o
-	$(CXX) $(SOLINK) esl_wrap.o perlxsi.o $(LOCAL_LDFLAGS) -o ESL.so -L. $(LIBS)
+ESL.so: esl_wrap.o perlxsi.o
+	$(CXX) $(SOLINK) esl_wrap.o perlxsi.o $(MYLIB) $(LOCAL_LDFLAGS) -o ESL.so -L. $(LIBS)
 
 clean:
 	rm -f *.o *.so *~

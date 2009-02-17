@@ -47,7 +47,7 @@ reswig:	swigclean
 swigclean: clean
 	make -C perl swigclean
 
-perlmod:
-	make SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
+perlmod: $(MYLIB)
+	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
 
 
