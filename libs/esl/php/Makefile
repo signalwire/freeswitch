@@ -16,7 +16,10 @@ clean:
 	rm -f *.o *.so *~
 
 swigclean:
-	rm -f esl_wrap.* ESL.so php_ESL.*
+	rm -f esl_wrap.* ESL.so php_ESL.* ESL.php
 
 reswig:	swigclean esl_wrap.cpp
 
+install:
+	cp ESL.so $(shell php-config --extension-dir)
+	cp ESL.php $(shell php -r 'phpinfo();' | grep include_path | cut -d: -f2)

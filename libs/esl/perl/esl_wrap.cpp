@@ -1956,7 +1956,7 @@ XS(_wrap_ESLevent_mine_get) {
 XS(_wrap_new_ESLevent__SWIG_0) {
   {
     char *arg1 = (char *) 0 ;
-    char *arg2 = (char *) NULL ;
+    char *arg2 = (char *) 0 ;
     ESLevent *result = 0 ;
     int res1 ;
     char *buf1 = 0 ;
@@ -1967,7 +1967,7 @@ XS(_wrap_new_ESLevent__SWIG_0) {
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 1) || (items > 2)) {
+    if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: new_ESLevent(type,subclass_name);");
     }
     res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
@@ -1975,13 +1975,11 @@ XS(_wrap_new_ESLevent__SWIG_0) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLevent" "', argument " "1"" of type '" "char const *""'");
     }
     arg1 = reinterpret_cast< char * >(buf1);
-    if (items > 1) {
-      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_ESLevent" "', argument " "2"" of type '" "char const *""'");
-      }
-      arg2 = reinterpret_cast< char * >(buf2);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_ESLevent" "', argument " "2"" of type '" "char const *""'");
     }
+    arg2 = reinterpret_cast< char * >(buf2);
     result = (ESLevent *)new ESLevent((char const *)arg1,(char const *)arg2);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
@@ -1997,39 +1995,28 @@ XS(_wrap_new_ESLevent__SWIG_0) {
 
 XS(_wrap_new_ESLevent__SWIG_1) {
   {
-    esl_event_t *arg1 = (esl_event_t *) 0 ;
-    int arg2 = (int) 0 ;
+    char *arg1 = (char *) 0 ;
     ESLevent *result = 0 ;
-    void *argp1 = 0 ;
-    int res1 = 0 ;
-    int val2 ;
-    int ecode2 = 0 ;
+    int res1 ;
+    char *buf1 = 0 ;
+    int alloc1 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 1) || (items > 2)) {
-      SWIG_croak("Usage: new_ESLevent(wrap_me,free_me);");
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: new_ESLevent(type);");
     }
-    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_esl_event_t, 0 |  0 );
+    res1 = SWIG_AsCharPtrAndSize(ST(0), &buf1, NULL, &alloc1);
     if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLevent" "', argument " "1"" of type '" "esl_event_t *""'"); 
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLevent" "', argument " "1"" of type '" "char const *""'");
     }
-    arg1 = reinterpret_cast< esl_event_t * >(argp1);
-    if (items > 1) {
-      ecode2 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), &val2);
-      if (!SWIG_IsOK(ecode2)) {
-        SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_ESLevent" "', argument " "2"" of type '" "int""'");
-      } 
-      arg2 = static_cast< int >(val2);
-    }
-    result = (ESLevent *)new ESLevent(arg1,arg2);
+    arg1 = reinterpret_cast< char * >(buf1);
+    result = (ESLevent *)new ESLevent((char const *)arg1);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
-    
-    
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     XSRETURN(argvi);
   fail:
-    
-    
+    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
     SWIG_croak_null();
   }
 }
@@ -2041,32 +2028,19 @@ XS(_wrap_new_ESLevent) {
   {
     unsigned long _index = 0;
     SWIG_TypeRank _rank = 0; 
-    if ((items >= 1) && (items <= 2)) {
+    if (items == 1) {
       SWIG_TypeRank _ranki = 0;
       SWIG_TypeRank _rankm = 0;
       SWIG_TypeRank _pi = 1;
       int _v = 0;
       {
-        void *vptr = 0;
-        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_esl_event_t, 0);
+        int res = SWIG_AsCharPtrAndSize(ST(0), 0, NULL, 0);
         _v = SWIG_CheckState(res);
       }
       if (!_v) goto check_1;
       _ranki += _v*_pi;
       _rankm += _pi;
       _pi *= SWIG_MAXCASTRANK;
-      if (items > 1) {
-        {
-          {
-            int res = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(1), NULL);
-            _v = SWIG_CheckState(res);
-          }
-        }
-        if (!_v) goto check_1;
-        _ranki += _v*_pi;
-        _rankm += _pi;
-        _pi *= SWIG_MAXCASTRANK;
-      }
       if (!_index || (_ranki < _rank)) {
         _rank = _ranki; _index = 1;
         if (_rank == _rankm) goto dispatch;
@@ -2074,7 +2048,7 @@ XS(_wrap_new_ESLevent) {
     }
   check_1:
     
-    if ((items >= 1) && (items <= 2)) {
+    if (items == 2) {
       SWIG_TypeRank _ranki = 0;
       SWIG_TypeRank _rankm = 0;
       SWIG_TypeRank _pi = 1;
@@ -2087,16 +2061,14 @@ XS(_wrap_new_ESLevent) {
       _ranki += _v*_pi;
       _rankm += _pi;
       _pi *= SWIG_MAXCASTRANK;
-      if (items > 1) {
-        {
-          int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
-          _v = SWIG_CheckState(res);
-        }
-        if (!_v) goto check_2;
-        _ranki += _v*_pi;
-        _rankm += _pi;
-        _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
       }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
       if (!_index || (_ranki < _rank)) {
         _rank = _ranki; _index = 2;
         if (_rank == _rankm) goto dispatch;
@@ -2146,10 +2118,10 @@ XS(_wrap_delete_ESLevent) {
 }
 
 
-XS(_wrap_ESLevent_serialize) {
+XS(_wrap_ESLevent_serialize__SWIG_0) {
   {
     ESLevent *arg1 = (ESLevent *) 0 ;
-    char *arg2 = (char *) NULL ;
+    char *arg2 = (char *) 0 ;
     char *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -2159,7 +2131,7 @@ XS(_wrap_ESLevent_serialize) {
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 1) || (items > 2)) {
+    if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: ESLevent_serialize(self,format);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
@@ -2167,13 +2139,11 @@ XS(_wrap_ESLevent_serialize) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_serialize" "', argument " "1"" of type '" "ESLevent *""'"); 
     }
     arg1 = reinterpret_cast< ESLevent * >(argp1);
-    if (items > 1) {
-      res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
-      if (!SWIG_IsOK(res2)) {
-        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_serialize" "', argument " "2"" of type '" "char const *""'");
-      }
-      arg2 = reinterpret_cast< char * >(buf2);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_serialize" "', argument " "2"" of type '" "char const *""'");
     }
+    arg2 = reinterpret_cast< char * >(buf2);
     result = (char *)(arg1)->serialize((char const *)arg2);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
@@ -2187,10 +2157,108 @@ XS(_wrap_ESLevent_serialize) {
 }
 
 
-XS(_wrap_ESLevent_setPriority) {
+XS(_wrap_ESLevent_serialize__SWIG_1) {
   {
     ESLevent *arg1 = (ESLevent *) 0 ;
-    esl_priority_t arg2 = (esl_priority_t) ESL_PRIORITY_NORMAL ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: ESLevent_serialize(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_serialize" "', argument " "1"" of type '" "ESLevent *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLevent * >(argp1);
+    result = (char *)(arg1)->serialize();
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_ESLevent_serialize) {
+  dXSARGS;
+  
+  {
+    unsigned long _index = 0;
+    SWIG_TypeRank _rank = 0; 
+    if (items == 1) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_ESLevent, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 1;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_1:
+    
+    if (items == 2) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_ESLevent, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 2;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_2:
+    
+  dispatch:
+    switch(_index) {
+    case 1:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_ESLevent_serialize__SWIG_1); return;
+    case 2:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_ESLevent_serialize__SWIG_0); return;
+    }
+  }
+  
+  croak("No matching function for overloaded 'ESLevent_serialize'");
+  XSRETURN(0);
+}
+
+
+XS(_wrap_ESLevent_setPriority__SWIG_0) {
+  {
+    ESLevent *arg1 = (ESLevent *) 0 ;
+    esl_priority_t arg2 ;
     bool result;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -2199,7 +2267,7 @@ XS(_wrap_ESLevent_setPriority) {
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 1) || (items > 2)) {
+    if ((items < 2) || (items > 2)) {
       SWIG_croak("Usage: ESLevent_setPriority(self,priority);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
@@ -2207,17 +2275,15 @@ XS(_wrap_ESLevent_setPriority) {
       SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_setPriority" "', argument " "1"" of type '" "ESLevent *""'"); 
     }
     arg1 = reinterpret_cast< ESLevent * >(argp1);
-    if (items > 1) {
-      {
-        res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_esl_priority_t,  0 );
-        if (!SWIG_IsOK(res2)) {
-          SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_setPriority" "', argument " "2"" of type '" "esl_priority_t""'"); 
-        }  
-        if (!argp2) {
-          SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "ESLevent_setPriority" "', argument " "2"" of type '" "esl_priority_t""'");
-        } else {
-          arg2 = *(reinterpret_cast< esl_priority_t * >(argp2));
-        }
+    {
+      res2 = SWIG_ConvertPtr(ST(1), &argp2, SWIGTYPE_p_esl_priority_t,  0 );
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_setPriority" "', argument " "2"" of type '" "esl_priority_t""'"); 
+      }  
+      if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "ESLevent_setPriority" "', argument " "2"" of type '" "esl_priority_t""'");
+      } else {
+        arg2 = *(reinterpret_cast< esl_priority_t * >(argp2));
       }
     }
     result = (bool)(arg1)->setPriority(arg2);
@@ -2228,6 +2294,105 @@ XS(_wrap_ESLevent_setPriority) {
     
     SWIG_croak_null();
   }
+}
+
+
+XS(_wrap_ESLevent_setPriority__SWIG_1) {
+  {
+    ESLevent *arg1 = (ESLevent *) 0 ;
+    bool result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: ESLevent_setPriority(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_setPriority" "', argument " "1"" of type '" "ESLevent *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLevent * >(argp1);
+    result = (bool)(arg1)->setPriority();
+    ST(argvi) = SWIG_From_bool  SWIG_PERL_CALL_ARGS_1(static_cast< bool >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_ESLevent_setPriority) {
+  dXSARGS;
+  
+  {
+    unsigned long _index = 0;
+    SWIG_TypeRank _rank = 0; 
+    if (items == 1) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_ESLevent, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 1;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_1:
+    
+    if (items == 2) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_ESLevent, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(1), &vptr, SWIGTYPE_p_esl_priority_t, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 2;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_2:
+    
+  dispatch:
+    switch(_index) {
+    case 1:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_ESLevent_setPriority__SWIG_1); return;
+    case 2:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_ESLevent_setPriority__SWIG_0); return;
+    }
+  }
+  
+  croak("No matching function for overloaded 'ESLevent_setPriority'");
+  XSRETURN(0);
 }
 
 
@@ -2977,12 +3142,12 @@ XS(_wrap_ESLconnection_events) {
 }
 
 
-XS(_wrap_ESLconnection_execute) {
+XS(_wrap_ESLconnection_execute__SWIG_0) {
   {
     ESLconnection *arg1 = (ESLconnection *) 0 ;
     char *arg2 = (char *) 0 ;
-    char *arg3 = (char *) NULL ;
-    char *arg4 = (char *) NULL ;
+    char *arg3 = (char *) 0 ;
+    char *arg4 = (char *) 0 ;
     esl_status_t result;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -2998,7 +3163,7 @@ XS(_wrap_ESLconnection_execute) {
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 2) || (items > 4)) {
+    if ((items < 4) || (items > 4)) {
       SWIG_croak("Usage: ESLconnection_execute(self,app,arg,uuid);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
@@ -3011,20 +3176,16 @@ XS(_wrap_ESLconnection_execute) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_execute" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
-    if (items > 2) {
-      res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
-      if (!SWIG_IsOK(res3)) {
-        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_execute" "', argument " "3"" of type '" "char const *""'");
-      }
-      arg3 = reinterpret_cast< char * >(buf3);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_execute" "', argument " "3"" of type '" "char const *""'");
     }
-    if (items > 3) {
-      res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
-      if (!SWIG_IsOK(res4)) {
-        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "ESLconnection_execute" "', argument " "4"" of type '" "char const *""'");
-      }
-      arg4 = reinterpret_cast< char * >(buf4);
+    arg3 = reinterpret_cast< char * >(buf3);
+    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "ESLconnection_execute" "', argument " "4"" of type '" "char const *""'");
     }
+    arg4 = reinterpret_cast< char * >(buf4);
     result = (arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
     ST(argvi) = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN | 0); argvi++ ;
     
@@ -3039,6 +3200,228 @@ XS(_wrap_ESLconnection_execute) {
     if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
     SWIG_croak_null();
   }
+}
+
+
+XS(_wrap_ESLconnection_execute__SWIG_1) {
+  {
+    ESLconnection *arg1 = (ESLconnection *) 0 ;
+    char *arg2 = (char *) 0 ;
+    char *arg3 = (char *) 0 ;
+    esl_status_t result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int res3 ;
+    char *buf3 = 0 ;
+    int alloc3 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 3) || (items > 3)) {
+      SWIG_croak("Usage: ESLconnection_execute(self,app,arg);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_execute" "', argument " "1"" of type '" "ESLconnection *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLconnection * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_execute" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_execute" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+    result = (arg1)->execute((char const *)arg2,(char const *)arg3);
+    ST(argvi) = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN | 0); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_ESLconnection_execute__SWIG_2) {
+  {
+    ESLconnection *arg1 = (ESLconnection *) 0 ;
+    char *arg2 = (char *) 0 ;
+    esl_status_t result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: ESLconnection_execute(self,app);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_execute" "', argument " "1"" of type '" "ESLconnection *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLconnection * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_execute" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (arg1)->execute((char const *)arg2);
+    ST(argvi) = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN | 0); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_ESLconnection_execute) {
+  dXSARGS;
+  
+  {
+    unsigned long _index = 0;
+    SWIG_TypeRank _rank = 0; 
+    if (items == 2) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_ESLconnection, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_1;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 1;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_1:
+    
+    if (items == 3) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_ESLconnection, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(2), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_2;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 2;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_2:
+    
+    if (items == 4) {
+      SWIG_TypeRank _ranki = 0;
+      SWIG_TypeRank _rankm = 0;
+      SWIG_TypeRank _pi = 1;
+      int _v = 0;
+      {
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(ST(0), &vptr, SWIGTYPE_p_ESLconnection, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_3;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(1), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_3;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(2), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_3;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      {
+        int res = SWIG_AsCharPtrAndSize(ST(3), 0, NULL, 0);
+        _v = SWIG_CheckState(res);
+      }
+      if (!_v) goto check_3;
+      _ranki += _v*_pi;
+      _rankm += _pi;
+      _pi *= SWIG_MAXCASTRANK;
+      if (!_index || (_ranki < _rank)) {
+        _rank = _ranki; _index = 3;
+        if (_rank == _rankm) goto dispatch;
+      }
+    }
+  check_3:
+    
+  dispatch:
+    switch(_index) {
+    case 1:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_ESLconnection_execute__SWIG_2); return;
+    case 2:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_ESLconnection_execute__SWIG_1); return;
+    case 3:
+      ++PL_markstack_ptr; SWIG_CALLXS(_wrap_ESLconnection_execute__SWIG_0); return;
+    }
+  }
+  
+  croak("No matching function for overloaded 'ESLconnection_execute'");
+  XSRETURN(0);
 }
 
 

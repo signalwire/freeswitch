@@ -44,7 +44,6 @@ EXTERN_C
 
 
 class ESLevent {
- protected:
  public:
 	esl_event_t *event;
 	char *serialized_string;
