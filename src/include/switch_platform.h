@@ -165,7 +165,7 @@ typedef int gid_t;
 #define SWITCH_DECLARE_CLASS
 #else //not win32
 #define O_BINARY 0
-#if (defined(__GNUC__) || defined(__SUNCC__)) && defined(SWITCH_API_VISIBILITY)
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(SWITCH_API_VISIBILITY)
 #define SWITCH_DECLARE(type)		__attribute__((visibility("default"))) type
 #define SWITCH_DECLARE_NONSTD(type)	__attribute__((visibility("default"))) type
 #define SWITCH_DECLARE_DATA		__attribute__((visibility("default")))

@@ -184,33 +184,31 @@ if test "x${enable_visibility}" != "xno" ; then
 		CFLAGS="${save_CFLAGS}"
 		;;
 
-#	sun)
-#		save_CFLAGS="${CFLAGS}"
-#		CFLAGS="${CFLAGS} -xldscope=hidden"
-#		AC_MSG_CHECKING([whether the compiler supports -xldscope=hidden])
-#		AC_COMPILE_IFELSE(
-#			[AC_LANG_PROGRAM(
-#				[int foo __attribute__ ((visibility("default")));],
-#				[;]
-#			)],
-#
-#			[AC_MSG_RESULT([yes])
-#			 APR_ADDTO([SWITCH_AM_CFLAGS],   [-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1])
-#			 APR_ADDTO([SWITCH_AM_CXXFLAGS], [-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1])
-#			 HAVE_VISIBILITY="yes"],
-#
-#			[AC_MSG_RESULT([no])]
-#		)
-#		CFLAGS="${save_CFLAGS}"
-#		;;
-#
+	sun)
+		save_CFLAGS="${CFLAGS}"
+		CFLAGS="${CFLAGS} -xldscope=hidden"
+		AC_MSG_CHECKING([whether the compiler supports -xldscope=hidden])
+		AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM(
+				[int foo __attribute__ ((visibility("default")));],
+				[;]
+			)],
+
+			[AC_MSG_RESULT([yes])
+			 APR_ADDTO([SWITCH_AM_CFLAGS],   [-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1])
+			 APR_ADDTO([SWITCH_AM_CXXFLAGS], [-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1])
+			 HAVE_VISIBILITY="yes"],
+
+			[AC_MSG_RESULT([no])]
+		)
+		CFLAGS="${save_CFLAGS}"
+		;;
+
 	*)
 		if test "x${enable_visibility}" = "xyes" ; then
-			AC_MSG_ERROR([Non-GNU compilers are currently unsupported])
-#			AC_MSG_ERROR([Non-GNU / SUN compilers are currently unsupported])
+			AC_MSG_ERROR([Non-GNU / SUN compilers are currently unsupported])
 		else
-			AC_MSG_WARN([Non-GNU  compilers are currently unsupported])
-#			AC_MSG_WARN([Non-GNU / SUN compilers are currently unsupported])
+			AC_MSG_WARN([Non-GNU / SUN compilers are currently unsupported])
 		fi
 		;;
 	esac
