@@ -10,10 +10,27 @@ Group:        Productivity/Telephony/Servers
 Version:      1.0.3
 Release:      1
 URL:          http://www.freeswitch.org/
-Packager:     Michal Bielicki
-Vendor:       http://www.voiceworks.pl/
-Source0:      %{name}-%{version}.tar.bz2
-Prefix:       %{prefix}
+Packager:     	Michal Bielicki
+Vendor:       	http://www.halokwadrat.de/
+Source0:      	http://files.freeswitch.org/%{name}-%{version}.tar.bz2
+Source1:	http://svn.freeswitch.org/downloads/libs/celt-0.5.1.tar.gz
+Source2:	http://svn.freeswitch.org/downloads/libs/flite-1.3.99.tar.gz
+Source3:	http://svn.freeswitch.org/downloads/libs/lame-3.97.tar.gz
+Source4:	http://svn.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
+Source5:	http://svn.freeswitch.org/downloads/libs/mpg123.tar.gz
+Source6:	http://svn.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
+Source7:	http://svn.freeswitch.org/downloads/libs/pocketsphinx-0.5.99.tar.gz
+Source8:	http://svn.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
+Source9:	http://svn.freeswitch.org/downloads/libs/sphinxbase-0.4.99.tar.gz
+Source10:	http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.7.tar.gz
+Source11:	http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.7.tar.gz
+Source12:	http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.7.tar.gz
+Source13:	http://files.freeswitch.org/freeswitch-sounds-music-48000-1.0.7.tar.gz
+Source14:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.7.tar.gz
+Source15:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.7.tar.gz
+Source16:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.7.tar.gz
+Source17:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.7.tar.gz
+Prefix:        %{prefix}
 
 #AutoReqProv:  no
 
@@ -38,6 +55,11 @@ BuildRequires: unixODBC-devel
 BuildRequires: gdbm-devel
 BuildRequires: db4-devel
 BuildRequires: python-devel
+BuildRequires: libogg-devel
+BuildRequires: libvorbis-devel
+BuildRequires: libtiff-devel
+#BuildRequires: mono-devel
+BuildRequires: alsa-lib-devel
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
@@ -151,12 +173,27 @@ Requires:       %{name} = %{version}-%{release}
 
 
 %package lang-en
-Summary:	Provides english language dependand modules and sounds for the FreeSwitch Open Source telephone platform.
+Summary:	Provides english language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
 Group:          System/Libraries
 Requires:        %{name} = %{version}-%{release}
 
 %description lang-en
 English language phrases module and directory structure for say module and voicemail
+
+%package lang-fr
+Summary:        Provides french language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
+Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+
+%description lang-fr
+French language phrases module and directory structure for say module and voicemail
+
+%package lang-de
+Summary:        Provides german language dependand modules and speech config for the FreeSwitch Open Source telephone platform.
+Group:          System/LibrariesRequires:        %{name} = %{version}-%{release}
+
+%description lang-de
+German language phrases module and directory structure for say module and voicemail
+
 
 %package openzap
 Summary:	Provides a unified interface to hardware TDM cards and ss7 stacks for freeswitch
@@ -239,7 +276,25 @@ Requires:        %{name} = %{version}-%{release}
 
 
 %prep
-%setup -q
+%setup -b0 -q
+cp %{SOURCE1} libs/
+cp %{SOURCE2} libs/
+cp %{SOURCE3} libs/
+cp %{SOURCE4} libs/
+cp %{SOURCE5} libs/
+cp %{SOURCE6} libs/
+cp %{SOURCE7} libs/
+cp %{SOURCE8} libs/
+cp %{SOURCE9} libs/
+cp %{SOURCE10} .
+cp %{SOURCE11} .
+cp %{SOURCE12} .
+cp %{SOURCE13} .
+cp %{SOURCE14} .
+cp %{SOURCE15} .
+cp %{SOURCE16} .
+cp %{SOURCE17} .
+
 
 %build
 %ifos linux
@@ -253,22 +308,21 @@ export QA_RPATHS=$[ 0x0001|0x0002 ]
 
 PASSTHRU_CODEC_MODULES="codecs/mod_g729 codecs/mod_g723_1 codecs/mod_amr codecs/mod_amrwb"
 SPIDERMONKEY_MODULES="languages/mod_spidermonkey languages/mod_spidermonkey_curl languages/mod_spidermonkey_core_db languages/mod_spidermonkey_odbc languages/mod_spidermonkey_socket languages/mod_spidermonkey_teletone"
-APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_http applications/mod_vm applications/mod_limitd"
+APPLICATIONS_MODULES="applications/mod_commands applications/mod_conference applications/mod_dptools applications/mod_enum applications/mod_esf applications/mod_expr applications/mod_fifo applications/mod_limit applications/mod_rss applications/mod_voicemail applications/mod_fsv applications/mod_lcr applications/mod_easyroute applications/mod_stress applications/mod_http applications/mod_vmd applications/mod_limit applications/mod_soundtouch applications/mod_fax"
 ASR_TTS_MODULES="asr_tts/mod_pocketsphinx asr_tts/mod_flite"
 CODECS_MODULES="codecs/mod_ilbc codecs/mod_h26x codecs/mod_voipcodecs codecs/mod_speex codecs/mod_celt codecs/mod_siren"
 DIALPLANS_MODULES="dialplans/mod_dialplan_asterisk dialplans/mod_dialplan_directory dialplans/mod_dialplan_xml"
-DIRECTORIES_MODULES=
-DOTNET_MODULES=
+DIRECTORIES_MODULES=""
 ENDPOINTS_MODULES="endpoints/mod_dingaling endpoints/mod_iax endpoints/mod_portaudio endpoints/mod_sofia ../../libs/openzap/mod_openzap endpoints/mod_loopback"
 EVENT_HANDLERS_MODULES="event_handlers/mod_event_multicast event_handlers/mod_event_socket event_handlers/mod_cdr_csv"
-FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream"
+FORMATS_MODULES="formats/mod_local_stream formats/mod_native_file formats/mod_sndfile formats/mod_tone_stream formats/mod_shout"
 LANGUAGES_MODULES="languages/mod_perl languages/mod_lua languages/mod_python languages/mod_yaml"
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
-SAY_MODULES="say/mod_say_en"
+SAY_MODULES="say/mod_say_en say/mod_say_de say/mod_say_fr"
 TIMERS_MODULES=
-DISABLED_MODULES="applications/mod_soundtouch directories/mod_ldap languages/mod_java languages/mod_python languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf formats/mod_shout say/mod_say_it say/mod_say_es say/mod_say_nl"
-XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr"
-MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $DOTNET_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
+DISABLED_MODULES="applications/mod_soundtouch languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox directories/mod_ldap event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl"
+XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr xml_int/mod_xml_ldap"
+MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
 export MODULES=$MYMODULES
 test ! -f  modules.conf || rm -f modules.conf
@@ -310,15 +364,14 @@ touch .noversion
 
 %install
 # delete unsupported langugages for now
-rm -rf conf/lang/de
-rm -rf conf/lang/fr
-rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/de
-rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/fr
+#rm -rf conf/lang/de
+#rm -rf conf/lang/fr
+#rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/de
+#rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/fr
 
 %{__make} DESTDIR=$RPM_BUILD_ROOT install
 
 # Install Sound Files
-
 %{__make} DESTDIR=$RPM_BUILD_ROOT  cd-sounds-install
 %{__make} DESTDIR=$RPM_BUILD_ROOT  cd-moh-install
 
@@ -335,7 +388,7 @@ rm -rf $RPM_BUILD_ROOT%{prefix}/conf/lang/fr
 %{__install} -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
 %else
 # On RedHat like
-%{__install} -D -m 744 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -o root -g root -m 0755 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
 %endif
 # On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
 %if 0%{?suse_version} > 100
@@ -373,7 +426,7 @@ userdel freeswitch
 %files
 %defattr(-,freeswitch,daemon)
 %ifos linux
-%dir %attr(0750, freeswitch, daemon) /etc/monit.d
+%dir %attr(0750, root, root) /etc/monit.d
 %endif
 %dir %attr(0750, freeswitch, daemon) %{prefix}/db
 %dir %attr(0750, freeswitch, daemon) %{prefix}/log
@@ -465,7 +518,7 @@ userdel freeswitch
 /usr/sbin/rcfreeswitch
 %endif
 %endif
-%{prefix}/bin/*
+%attr{0755, freeswitch, daemon} %{prefix}/bin/*
 %{prefix}/lib/libfreeswitch*.so*
 %{prefix}/mod/mod_console.so*
 %{prefix}/mod/mod_logfile.so*
@@ -513,6 +566,12 @@ userdel freeswitch
 %{prefix}/mod/mod_siren.so
 %{prefix}/mod/mod_stress.so
 %{prefix}/mod/mod_yaml.so
+%{prefix}/mod/mod_shout.so
+%{prefix}/mod/mod_xml_ldap.so
+%{prefix}/mod/mod_fax.so
+%{prefix}/mod/mod_say_zh.so
+%{prefix}/mod/mod_soundtouch.so
+%{prefix}/mod/mod_vmd.so
 
 %files openzap
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/tones.conf
@@ -581,9 +640,11 @@ userdel freeswitch
 %defattr(-, freeswitch, daemon)
 %{prefix}/lib/*.a
 %{prefix}/lib/*.la
+%{prefix}/lib/pkgconfig/*
 %{prefix}/mod/*.a
 %{prefix}/mod/*.la
 %{prefix}/include/*.h
+%{prefix}/include/spandsp/*
 
 %files lang-en
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/en
@@ -593,6 +654,24 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/demo/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/en/vm/*.xml
 %{prefix}/mod/mod_say_en.so*
+
+%files lang-de
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de/demo
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/de/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/de/vm/*.xml
+%{prefix}/mod/mod_say_de.so*
+
+%files lang-fr
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr/demo
+%dir %attr(0750, freeswitch, daemon) %{prefix}/conf/lang/fr/vm
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/demo/*.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/lang/fr/vm/*.xml
+%{prefix}/mod/mod_say_fr.so*
 
 %files moh
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/8000
@@ -608,7 +687,7 @@ userdel freeswitch
 
 %files cd-moh
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/music/48000
-%{prefix}/sounds/music/48000
+%{prefix}/sounds/music/48000/*
 
 %files sounds-en-callie
 %dir %attr(0750, freeswitch, daemon) %{prefix}/sounds/en/us/callie/ascii/8000
@@ -694,6 +773,29 @@ userdel freeswitch
 
 
 %changelog
+* Mon Feb 17 2009 - michal.bielicki@halokwadrat.de
+- added mod_python
+- added mod_fax
+- added mod_amrwb.so
+- added mod_celt.so
+- added mod_easyroute.so
+- added mod_http.so
+- added mod_lcr.so
+- added mod_loopback.so
+- added mod_siren.so
+- added mod/mod_stress.so
+- added mod_yaml.so
+- added mod_shout.so
+- added mod_xml_ldap.so
+- added rpms or all sounds
+- openzap is now its own rpm
+- added french
+- added german
+- added missing dependencies
+- added soundfiles with separate rpms
+- added definition of all sourcefiles and added them to the SRPM
+- fixes to monit file
+- changes to redhat init file
 * Thu May 22 2008 - michal.bielicki@voiceworks.pl
 - disabled beta class language stuff
 - bumped revision up to rc6

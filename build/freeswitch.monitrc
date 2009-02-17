@@ -12,9 +12,8 @@
    if failed checksum then unmonitor
    if failed permission 755 then unmonitor
    if failed uid freeswitch then unmonitor
-   if failed gid daemon then unmonitor
 
- check file sendmail_rc with path /etc/init.d/freeswitch
+ check file freeswitch_rc with path /etc/init.d/freeswitch
    group voice
    if failed checksum then unmonitor
    if failed permission 755 then unmonitor
