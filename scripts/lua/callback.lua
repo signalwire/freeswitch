@@ -12,39 +12,51 @@ function my_cb(s, type, obj, arg)
    if (type == "dtmf") then
       io.write("digit: [" .. obj['digit'] .. "]\nduration: [" .. obj['duration'] .. "]\n"); 
 
+
       if (obj['digit'] == "1") then
-         return "pause";
-      end
-
-      if (obj['digit'] == "2") then
-         return "seek:+3000";
-      end
-
-      if (obj['digit'] == "3") then
          return "seek:-3000";
       end
 
-      if (obj['digit'] == "4") then
+      if (obj['digit'] == "3") then
          return "seek:+3000";
       end
 
-      if (obj['digit'] == "5") then
+      if (obj['digit'] == "4") then
          return "speed:+1";
       end
-      if (obj['digit'] == "6") then
+
+      if (obj['digit'] == "5") then
          return "speed:0";
       end
-      if (obj['digit'] == "7") then
+
+      if (obj['digit'] == "6") then
          return "speed:-1";
       end
 
+      if (obj['digit'] == "7") then
+         return "volume:+1";
+      end
+
       if (obj['digit'] == "8") then
-         return "stop";
+         return "volume:0";
       end
 
       if (obj['digit'] == "9") then
+         return "volume:-1";
+      end
+
+      if (obj['digit'] == "*") then
+         return "stop";
+      end
+
+      if (obj['digit'] == "0") then
+         return "pause";
+      end
+
+      if (obj['digit'] == "#") then
          return "break";
       end
+
    else
       io.write(obj:serialize("xml"));
 
@@ -54,4 +66,4 @@ end
 blah = "args";
 session:setHangupHook("all_done");
 session:setInputCallback("my_cb", "blah");
-session:streamFile("/tmp/swimp.raw");
+session:streamFile("/ram/swimp.raw");
