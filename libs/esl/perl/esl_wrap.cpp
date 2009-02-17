@@ -2981,8 +2981,8 @@ XS(_wrap_eslConnection_execute) {
   {
     eslConnection *arg1 = (eslConnection *) 0 ;
     char *arg2 = (char *) 0 ;
-    char *arg3 = (char *) 0 ;
-    char *arg4 = (char *) 0 ;
+    char *arg3 = (char *) NULL ;
+    char *arg4 = (char *) NULL ;
     esl_status_t result;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -2998,7 +2998,7 @@ XS(_wrap_eslConnection_execute) {
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 4) || (items > 4)) {
+    if ((items < 2) || (items > 4)) {
       SWIG_croak("Usage: eslConnection_execute(self,app,arg,uuid);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
@@ -3011,16 +3011,20 @@ XS(_wrap_eslConnection_execute) {
       SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "eslConnection_execute" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
-    res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
-    if (!SWIG_IsOK(res3)) {
-      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "eslConnection_execute" "', argument " "3"" of type '" "char const *""'");
+    if (items > 2) {
+      res3 = SWIG_AsCharPtrAndSize(ST(2), &buf3, NULL, &alloc3);
+      if (!SWIG_IsOK(res3)) {
+        SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "eslConnection_execute" "', argument " "3"" of type '" "char const *""'");
+      }
+      arg3 = reinterpret_cast< char * >(buf3);
     }
-    arg3 = reinterpret_cast< char * >(buf3);
-    res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
-    if (!SWIG_IsOK(res4)) {
-      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "eslConnection_execute" "', argument " "4"" of type '" "char const *""'");
+    if (items > 3) {
+      res4 = SWIG_AsCharPtrAndSize(ST(3), &buf4, NULL, &alloc4);
+      if (!SWIG_IsOK(res4)) {
+        SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "eslConnection_execute" "', argument " "4"" of type '" "char const *""'");
+      }
+      arg4 = reinterpret_cast< char * >(buf4);
     }
-    arg4 = reinterpret_cast< char * >(buf4);
     result = (arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
     ST(argvi) = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN | 0); argvi++ ;
     
@@ -3033,6 +3037,84 @@ XS(_wrap_eslConnection_execute) {
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
     if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_eslConnection_setBlockingExecute) {
+  {
+    eslConnection *arg1 = (eslConnection *) 0 ;
+    char *arg2 = (char *) 0 ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: eslConnection_setBlockingExecute(self,val);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "eslConnection_setBlockingExecute" "', argument " "1"" of type '" "eslConnection *""'"); 
+    }
+    arg1 = reinterpret_cast< eslConnection * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "eslConnection_setBlockingExecute" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (int)(arg1)->setBlockingExecute((char const *)arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_eslConnection_setEventLock) {
+  {
+    eslConnection *arg1 = (eslConnection *) 0 ;
+    char *arg2 = (char *) 0 ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int res2 ;
+    char *buf2 = 0 ;
+    int alloc2 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 2) || (items > 2)) {
+      SWIG_croak("Usage: eslConnection_setEventLock(self,val);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "eslConnection_setEventLock" "', argument " "1"" of type '" "eslConnection *""'"); 
+    }
+    arg1 = reinterpret_cast< eslConnection * >(argp1);
+    res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "eslConnection_setEventLock" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+    result = (int)(arg1)->setEventLock((char const *)arg2);
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+    XSRETURN(argvi);
+  fail:
+    
+    if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     SWIG_croak_null();
   }
 }
@@ -3114,6 +3196,8 @@ static swig_command_info swig_commands[] = {
 {"ESLc::eslConnection_filter", _wrap_eslConnection_filter},
 {"ESLc::eslConnection_events", _wrap_eslConnection_events},
 {"ESLc::eslConnection_execute", _wrap_eslConnection_execute},
+{"ESLc::eslConnection_setBlockingExecute", _wrap_eslConnection_setBlockingExecute},
+{"ESLc::eslConnection_setEventLock", _wrap_eslConnection_setEventLock},
 {0,0}
 };
 /* -----------------------------------------------------------------------------

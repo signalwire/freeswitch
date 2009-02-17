@@ -135,6 +135,8 @@ sub DESTROY {
 *filter = *ESLc::eslConnection_filter;
 *events = *ESLc::eslConnection_events;
 *execute = *ESLc::eslConnection_execute;
+*setBlockingExecute = *ESLc::eslConnection_setBlockingExecute;
+*setEventLock = *ESLc::eslConnection_setEventLock;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);

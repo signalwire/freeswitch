@@ -1470,7 +1470,14 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 
 		if (switch_strlen_zero(uuid) && listener->session) {
-			if (switch_test_flag(listener, LFLAG_ASYNC)) {
+			const char *blocking = switch_event_get_header(*event, "blocking");
+			int async = switch_test_flag(listener, LFLAG_ASYNC);
+			
+			if (blocking && switch_true(blocking)) {
+				async = 0;
+			}
+
+			if (async) {
 				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
 				} else {

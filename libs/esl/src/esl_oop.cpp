@@ -60,6 +60,22 @@ eslEvent *eslConnection::getInfo()
 	return NULL;
 }
 
+int eslConnection::setBlockingExecute(const char *val)
+{
+	if (val) {
+		handle.blocking_execute = esl_true(val);
+	}
+	return handle.blocking_execute;
+}
+
+int eslConnection::setEventLock(const char *val)
+{
+	if (val) {
+		handle.event_lock = esl_true(val);
+	}
+	return handle.event_lock;
+}
+
 esl_status_t eslConnection::execute(const char *app, const char *arg, const char *uuid)
 {
 	return esl_execute(&handle, app, arg, uuid);

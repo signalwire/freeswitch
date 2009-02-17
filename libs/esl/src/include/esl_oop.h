@@ -83,7 +83,9 @@ class eslConnection {
 	eslEvent *recvEventTimed(int ms);
 	esl_status_t filter(const char *header, const char *value);
 	esl_status_t events(const char *etype, const char *value);
-	esl_status_t execute(const char *app, const char *arg, const char *uuid);
+	esl_status_t execute(const char *app, const char *arg = NULL, const char *uuid = NULL);
+	int setBlockingExecute(const char *val);
+	int setEventLock(const char *val);
 };
 
 
