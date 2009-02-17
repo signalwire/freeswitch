@@ -7,7 +7,7 @@ my $aleg_cid_num = "0987654321";
 my $bleg_cid_num = "1234567890";
 
 my $q = new CGI; 
-my $c = new ESL::eslConnection("localhost", "8021", "ClueCon");
+my $c = new ESL::ESLconnection("localhost", "8021", "ClueCon");
 print $q->header;
 
 if($q->param()) {
