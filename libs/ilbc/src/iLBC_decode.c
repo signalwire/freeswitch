@@ -40,6 +40,17 @@
 #include "hpOutput.h"
 #include "syntFilter.h"
 
+#if defined(WIN32)  ||  defined(_WIN32)
+    __inline double rint(double dbl)
+    {
+        _asm 
+    	{
+            fld dbl
+            frndint
+        }
+    }
+#endif
+
 /*----------------------------------------------------------------*
  *  Initiation of decoder instance.
  *---------------------------------------------------------------*/

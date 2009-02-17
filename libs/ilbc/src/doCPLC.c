@@ -95,7 +95,7 @@ void doThePLC(float *PLCresidual,                   /* (o) concealed residual */
     float gain;
     float maxcc;
     float use_gain;
-    float gain_comp, maxcc_comp, per, max_per;
+    float gain_comp, maxcc_comp, per, max_per = 0;
     int i;
     int pick;
     int use_lag;

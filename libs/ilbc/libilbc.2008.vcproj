@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="libilbc"
-	ProjectGUID="{7C43DBD8-6893-4CD2-B7C0-D2E51F8B1FD3}"
+	ProjectGUID="{9A5DDF08-C88C-4A35-B7F6-D605228446BD}"
 	RootNamespace="libilbc"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -48,7 +49,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				Detect64BitPortabilityProblems="false"
-				DebugInformationFormat="4"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4127"
 			/>
 			<Tool

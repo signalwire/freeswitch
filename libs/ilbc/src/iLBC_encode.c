@@ -158,7 +158,7 @@ static int ilbc_encode_frame(ilbc_encode_state_t *iLBCenc_inst,     /* (i/o) the
     en2 = 0;
     index = (start - 1)*SUBL+diff;
     for (i = 0;  i < iLBCenc_inst->state_short_len;  i++)
-        en2 += residual[index + i]*residual[index + i];
+        en2 = (int)(en2 + residual[index + i]*residual[index + i]);
 
     if (en1 > en2)
     {

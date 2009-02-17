@@ -100,8 +100,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_cepstral", "src\mod\asr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_ilbc", "src\mod\codecs\mod_ilbc\mod_ilbc.2008.vcproj", "{D3EC0AFF-76FC-4210-A825-9A17410660A3}"
 	ProjectSection(ProjectDependencies) = postProject
+		{9A5DDF08-C88C-4A35-B7F6-D605228446BD} = {9A5DDF08-C88C-4A35-B7F6-D605228446BD}
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
-		{989BB874-7AF1-44CB-8E5C-CC8113D267E8} = {989BB874-7AF1-44CB-8E5C-CC8113D267E8}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_dingaling", "src\mod\endpoints\mod_dingaling\mod_dingaling.2008.vcproj", "{FFAA4C52-3A53-4F99-90C1-D59D1F0427F3}"
@@ -156,8 +156,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_event_socket", "src\mod
 		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
 		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libilbc", "libs\codec\ilbc\libilbc.2008.vcproj", "{989BB874-7AF1-44CB-8E5C-CC8113D267E8}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libdingaling", "libs\libdingaling\libdingaling.2008.vcproj", "{1906D736-08BD-4EE1-924F-B536249B9A54}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -595,6 +593,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspeex", "libs\speex\win3
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspeexdsp", "libs\speex\win32\VS2008\libspeexdsp\libspeexdsp.vcproj", "{03207781-0D1C-4DB3-A71D-45C608F28DBD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libilbc", "libs\ilbc\libilbc.2008.vcproj", "{9A5DDF08-C88C-4A35-B7F6-D605228446BD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -749,12 +749,6 @@ Global
 		{05515420-16DE-4E63-BE73-85BE85BA5142}.Release|Win32.ActiveCfg = Release|Win32
 		{05515420-16DE-4E63-BE73-85BE85BA5142}.Release|Win32.Build.0 = Release|Win32
 		{05515420-16DE-4E63-BE73-85BE85BA5142}.Release|x64.ActiveCfg = Release|Win32
-		{989BB874-7AF1-44CB-8E5C-CC8113D267E8}.Debug|Win32.ActiveCfg = Debug|Win32
-		{989BB874-7AF1-44CB-8E5C-CC8113D267E8}.Debug|Win32.Build.0 = Debug|Win32
-		{989BB874-7AF1-44CB-8E5C-CC8113D267E8}.Debug|x64.ActiveCfg = Debug|Win32
-		{989BB874-7AF1-44CB-8E5C-CC8113D267E8}.Release|Win32.ActiveCfg = Release|Win32
-		{989BB874-7AF1-44CB-8E5C-CC8113D267E8}.Release|Win32.Build.0 = Release|Win32
-		{989BB874-7AF1-44CB-8E5C-CC8113D267E8}.Release|x64.ActiveCfg = Release|Win32
 		{1906D736-08BD-4EE1-924F-B536249B9A54}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1906D736-08BD-4EE1-924F-B536249B9A54}.Debug|Win32.Build.0 = Debug|Win32
 		{1906D736-08BD-4EE1-924F-B536249B9A54}.Debug|x64.ActiveCfg = Debug|Win32
@@ -1334,6 +1328,12 @@ Global
 		{03207781-0D1C-4DB3-A71D-45C608F28DBD}.Release|Win32.ActiveCfg = Release|Win32
 		{03207781-0D1C-4DB3-A71D-45C608F28DBD}.Release|Win32.Build.0 = Release|Win32
 		{03207781-0D1C-4DB3-A71D-45C608F28DBD}.Release|x64.ActiveCfg = Release|Win32
+		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Debug|Win32.Build.0 = Debug|Win32
+		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Debug|x64.ActiveCfg = Debug|Win32
+		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Release|Win32.ActiveCfg = Release|Win32
+		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Release|Win32.Build.0 = Release|Win32
+		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
