@@ -16,7 +16,7 @@ for(;;) {
   my $host = $new_sock->sockhost();
   my $fd = fileno($new_sock);
   
-  my $con = new ESL::eslConnection($fd);
+  my $con = new ESL::ESLconnection($fd);
   my $info = $con->getInfo();
 
   print $info->serialize();

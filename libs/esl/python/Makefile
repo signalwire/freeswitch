@@ -1,10 +1,10 @@
-LOCAL_CFLAGS=
+LOCAL_CFLAGS=-I/usr/include/python2.4
 LOCAL_LDFLAGS=-lpython2.4
 
 all: ESL.so
 
 esl_wrap.cpp:
-	swig -module ESL -python -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig -module ESL -classic -python -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
 esl_wrap.o: esl_wrap.cpp
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) -c esl_wrap.cpp -o esl_wrap.o

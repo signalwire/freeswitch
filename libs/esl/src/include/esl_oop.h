@@ -43,16 +43,16 @@ EXTERN_C
 #define this_check_void() do { if (!this) { esl_log(ESL_LOG_ERROR, "object is not initalized\n"); return;}} while(0)
 
 
-class eslEvent {
+class ESLevent {
  protected:
  public:
 	esl_event_t *event;
 	char *serialized_string;
 	int mine;
 
-	eslEvent(const char *type, const char *subclass_name = NULL);
-	eslEvent(esl_event_t *wrap_me, int free_me = 0);
-	virtual ~eslEvent();
+	ESLevent(const char *type, const char *subclass_name = NULL);
+	ESLevent(esl_event_t *wrap_me, int free_me = 0);
+	virtual ~ESLevent();
 	const char *serialize(const char *format = NULL);
 	bool setPriority(esl_priority_t priority = ESL_PRIORITY_NORMAL);
 	const char *getHeader(char *header_name);
@@ -65,22 +65,21 @@ class eslEvent {
 
 
 
-class eslConnection {
+class ESLconnection {
  private:
 	esl_handle_t handle;
-	esl_event_t *last_event;
-	eslEvent *last_event_obj;
+	ESLevent *last_event_obj;
  public:
-	eslConnection(const char *host, const char *port, const char *password);
-	eslConnection(int socket);
-	virtual ~eslConnection();
+	ESLconnection(const char *host, const char *port, const char *password);
+	ESLconnection(int socket);
+	virtual ~ESLconnection();
 	int connected();
-	eslEvent *getInfo();
+	ESLevent *getInfo();
 	esl_status_t send(const char *cmd);
-	eslEvent *sendRecv(const char *cmd);
-	esl_status_t sendEvent(eslEvent *send_me);
-	eslEvent *recvEvent();
-	eslEvent *recvEventTimed(int ms);
+	ESLevent *sendRecv(const char *cmd);
+	esl_status_t sendEvent(ESLevent *send_me);
+	ESLevent *recvEvent();
+	ESLevent *recvEventTimed(int ms);
 	esl_status_t filter(const char *header, const char *value);
 	esl_status_t events(const char *etype, const char *value);
 	esl_status_t execute(const char *app, const char *arg = NULL, const char *uuid = NULL);
@@ -88,7 +87,7 @@ class eslConnection {
 	int setEventLock(const char *val);
 };
 
-
+void eslSetLogLevel(int level);
 
 
 

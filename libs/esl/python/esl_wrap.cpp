@@ -8,6 +8,9 @@
  * interface file instead. 
  * ----------------------------------------------------------------------------- */
 
+#define SWIGPYTHON
+#define SWIG_PYTHON_DIRECTOR_NO_VTABLE
+#define SWIG_PYTHON_CLASSIC
 
 #ifdef __cplusplus
 template<typename T> class SwigValueWrapper {
@@ -131,6 +134,10 @@ template <typename T> T SwigValueInit() {
 # define _SCL_SECURE_NO_DEPRECATE
 #endif
 
+
+
+/* Python.h has to appear first */
+#include <Python.h>
 
 /* -----------------------------------------------------------------------------
  * swigrun.swg
@@ -702,1918 +709,3394 @@ SWIG_UnpackDataName(const char *c, void *ptr, size_t sz, const char *name) {
 }
 #endif
 
+/*  Errors in SWIG */
+#define  SWIG_UnknownError    	   -1 
+#define  SWIG_IOError        	   -2 
+#define  SWIG_RuntimeError   	   -3 
+#define  SWIG_IndexError     	   -4 
+#define  SWIG_TypeError      	   -5 
+#define  SWIG_DivisionByZero 	   -6 
+#define  SWIG_OverflowError  	   -7 
+#define  SWIG_SyntaxError    	   -8 
+#define  SWIG_ValueError     	   -9 
+#define  SWIG_SystemError    	   -10
+#define  SWIG_AttributeError 	   -11
+#define  SWIG_MemoryError    	   -12 
+#define  SWIG_NullReferenceError   -13
+
+
+
+
+/* Add PyOS_snprintf for old Pythons */
+#if PY_VERSION_HEX < 0x02020000
+# if defined(_MSC_VER) || defined(__BORLANDC__) || defined(_WATCOM)
+#  define PyOS_snprintf _snprintf
+# else
+#  define PyOS_snprintf snprintf
+# endif
+#endif
+
+/* A crude PyString_FromFormat implementation for old Pythons */
+#if PY_VERSION_HEX < 0x02020000
+
+#ifndef SWIG_PYBUFFER_SIZE
+# define SWIG_PYBUFFER_SIZE 1024
+#endif
+
+static PyObject *
+PyString_FromFormat(const char *fmt, ...) {
+  va_list ap;
+  char buf[SWIG_PYBUFFER_SIZE * 2];
+  int res;
+  va_start(ap, fmt);
+  res = vsnprintf(buf, sizeof(buf), fmt, ap);
+  va_end(ap);
+  return (res < 0 || res >= (int)sizeof(buf)) ? 0 : PyString_FromString(buf);
+}
+#endif
+
+/* Add PyObject_Del for old Pythons */
+#if PY_VERSION_HEX < 0x01060000
+# define PyObject_Del(op) PyMem_DEL((op))
+#endif
+#ifndef PyObject_DEL
+# define PyObject_DEL PyObject_Del
+#endif
+
+/* A crude PyExc_StopIteration exception for old Pythons */
+#if PY_VERSION_HEX < 0x02020000
+# ifndef PyExc_StopIteration
+#  define PyExc_StopIteration PyExc_RuntimeError
+# endif
+# ifndef PyObject_GenericGetAttr
+#  define PyObject_GenericGetAttr 0
+# endif
+#endif
+/* Py_NotImplemented is defined in 2.1 and up. */
+#if PY_VERSION_HEX < 0x02010000
+# ifndef Py_NotImplemented
+#  define Py_NotImplemented PyExc_RuntimeError
+# endif
+#endif
+
+
+/* A crude PyString_AsStringAndSize implementation for old Pythons */
+#if PY_VERSION_HEX < 0x02010000
+# ifndef PyString_AsStringAndSize
+#  define PyString_AsStringAndSize(obj, s, len) {*s = PyString_AsString(obj); *len = *s ? strlen(*s) : 0;}
+# endif
+#endif
+
+/* PySequence_Size for old Pythons */
+#if PY_VERSION_HEX < 0x02000000
+# ifndef PySequence_Size
+#  define PySequence_Size PySequence_Length
+# endif
+#endif
+
+
+/* PyBool_FromLong for old Pythons */
+#if PY_VERSION_HEX < 0x02030000
+static
+PyObject *PyBool_FromLong(long ok)
+{
+  PyObject *result = ok ? Py_True : Py_False;
+  Py_INCREF(result);
+  return result;
+}
+#endif
+
+/* Py_ssize_t for old Pythons */
+/* This code is as recommended by: */
+/* http://www.python.org/dev/peps/pep-0353/#conversion-guidelines */
+#if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
+typedef int Py_ssize_t;
+# define PY_SSIZE_T_MAX INT_MAX
+# define PY_SSIZE_T_MIN INT_MIN
+#endif
+
 /* -----------------------------------------------------------------------------
- * See the LICENSE file for information on copyright, usage and redistribution
- * of SWIG, and the README file for authors - http://www.swig.org/release.html.
- *
- * luarun.swg
- *
- * This file contains the runtime support for Lua modules
- * and includes code for managing global variables and pointer
- * type checking.
+ * error manipulation
+ * ----------------------------------------------------------------------------- */
+
+SWIGRUNTIME PyObject*
+SWIG_Python_ErrorType(int code) {
+  PyObject* type = 0;
+  switch(code) {
+  case SWIG_MemoryError:
+    type = PyExc_MemoryError;
+    break;
+  case SWIG_IOError:
+    type = PyExc_IOError;
+    break;
+  case SWIG_RuntimeError:
+    type = PyExc_RuntimeError;
+    break;
+  case SWIG_IndexError:
+    type = PyExc_IndexError;
+    break;
+  case SWIG_TypeError:
+    type = PyExc_TypeError;
+    break;
+  case SWIG_DivisionByZero:
+    type = PyExc_ZeroDivisionError;
+    break;
+  case SWIG_OverflowError:
+    type = PyExc_OverflowError;
+    break;
+  case SWIG_SyntaxError:
+    type = PyExc_SyntaxError;
+    break;
+  case SWIG_ValueError:
+    type = PyExc_ValueError;
+    break;
+  case SWIG_SystemError:
+    type = PyExc_SystemError;
+    break;
+  case SWIG_AttributeError:
+    type = PyExc_AttributeError;
+    break;
+  default:
+    type = PyExc_RuntimeError;
+  }
+  return type;
+}
+
+
+SWIGRUNTIME void
+SWIG_Python_AddErrorMsg(const char* mesg)
+{
+  PyObject *type = 0;
+  PyObject *value = 0;
+  PyObject *traceback = 0;
+
+  if (PyErr_Occurred()) PyErr_Fetch(&type, &value, &traceback);
+  if (value) {
+    PyObject *old_str = PyObject_Str(value);
+    PyErr_Clear();
+    Py_XINCREF(type);
+    PyErr_Format(type, "%s %s", PyString_AsString(old_str), mesg);
+    Py_DECREF(old_str);
+    Py_DECREF(value);
+  } else {
+    PyErr_SetString(PyExc_RuntimeError, mesg);
+  }
+}
+
+
+
+#if defined(SWIG_PYTHON_NO_THREADS)
+#  if defined(SWIG_PYTHON_THREADS)
+#    undef SWIG_PYTHON_THREADS
+#  endif
+#endif
+#if defined(SWIG_PYTHON_THREADS) /* Threading support is enabled */
+#  if !defined(SWIG_PYTHON_USE_GIL) && !defined(SWIG_PYTHON_NO_USE_GIL)
+#    if (PY_VERSION_HEX >= 0x02030000) /* For 2.3 or later, use the PyGILState calls */
+#      define SWIG_PYTHON_USE_GIL
+#    endif
+#  endif
+#  if defined(SWIG_PYTHON_USE_GIL) /* Use PyGILState threads calls */
+#    ifndef SWIG_PYTHON_INITIALIZE_THREADS
+#     define SWIG_PYTHON_INITIALIZE_THREADS  PyEval_InitThreads() 
+#    endif
+#    ifdef __cplusplus /* C++ code */
+       class SWIG_Python_Thread_Block {
+         bool status;
+         PyGILState_STATE state;
+       public:
+         void end() { if (status) { PyGILState_Release(state); status = false;} }
+         SWIG_Python_Thread_Block() : status(true), state(PyGILState_Ensure()) {}
+         ~SWIG_Python_Thread_Block() { end(); }
+       };
+       class SWIG_Python_Thread_Allow {
+         bool status;
+         PyThreadState *save;
+       public:
+         void end() { if (status) { PyEval_RestoreThread(save); status = false; }}
+         SWIG_Python_Thread_Allow() : status(true), save(PyEval_SaveThread()) {}
+         ~SWIG_Python_Thread_Allow() { end(); }
+       };
+#      define SWIG_PYTHON_THREAD_BEGIN_BLOCK   SWIG_Python_Thread_Block _swig_thread_block
+#      define SWIG_PYTHON_THREAD_END_BLOCK     _swig_thread_block.end()
+#      define SWIG_PYTHON_THREAD_BEGIN_ALLOW   SWIG_Python_Thread_Allow _swig_thread_allow
+#      define SWIG_PYTHON_THREAD_END_ALLOW     _swig_thread_allow.end()
+#    else /* C code */
+#      define SWIG_PYTHON_THREAD_BEGIN_BLOCK   PyGILState_STATE _swig_thread_block = PyGILState_Ensure()
+#      define SWIG_PYTHON_THREAD_END_BLOCK     PyGILState_Release(_swig_thread_block)
+#      define SWIG_PYTHON_THREAD_BEGIN_ALLOW   PyThreadState *_swig_thread_allow = PyEval_SaveThread()
+#      define SWIG_PYTHON_THREAD_END_ALLOW     PyEval_RestoreThread(_swig_thread_allow)
+#    endif
+#  else /* Old thread way, not implemented, user must provide it */
+#    if !defined(SWIG_PYTHON_INITIALIZE_THREADS)
+#      define SWIG_PYTHON_INITIALIZE_THREADS
+#    endif
+#    if !defined(SWIG_PYTHON_THREAD_BEGIN_BLOCK)
+#      define SWIG_PYTHON_THREAD_BEGIN_BLOCK
+#    endif
+#    if !defined(SWIG_PYTHON_THREAD_END_BLOCK)
+#      define SWIG_PYTHON_THREAD_END_BLOCK
+#    endif
+#    if !defined(SWIG_PYTHON_THREAD_BEGIN_ALLOW)
+#      define SWIG_PYTHON_THREAD_BEGIN_ALLOW
+#    endif
+#    if !defined(SWIG_PYTHON_THREAD_END_ALLOW)
+#      define SWIG_PYTHON_THREAD_END_ALLOW
+#    endif
+#  endif
+#else /* No thread support */
+#  define SWIG_PYTHON_INITIALIZE_THREADS
+#  define SWIG_PYTHON_THREAD_BEGIN_BLOCK
+#  define SWIG_PYTHON_THREAD_END_BLOCK
+#  define SWIG_PYTHON_THREAD_BEGIN_ALLOW
+#  define SWIG_PYTHON_THREAD_END_ALLOW
+#endif
+
+/* -----------------------------------------------------------------------------
+ * Python API portion that goes into the runtime
  * ----------------------------------------------------------------------------- */
 
 #ifdef __cplusplus
 extern "C" {
+#if 0
+} /* cc-mode */
 #endif
-
-#include "lua.h"
-#include "lauxlib.h"
-#include <stdlib.h>  /* for malloc */
-#include <assert.h>  /* for a few sanity tests */
+#endif
 
 /* -----------------------------------------------------------------------------
- * global swig types
+ * Constant declarations
  * ----------------------------------------------------------------------------- */
-/* Constant table */
-#define SWIG_LUA_INT     1
-#define SWIG_LUA_FLOAT   2
-#define SWIG_LUA_STRING  3
-#define SWIG_LUA_POINTER 4
-#define SWIG_LUA_BINARY  5
-#define SWIG_LUA_CHAR    6
 
-/* Structure for variable linking table */
-typedef struct {
-  const char *name;
-  lua_CFunction get;
-  lua_CFunction set;
-} swig_lua_var_info;
+/* Constant Types */
+#define SWIG_PY_POINTER 4
+#define SWIG_PY_BINARY  5
 
 /* Constant information structure */
-typedef struct {
-    int type;
-    char *name;
-    long lvalue;
-    double dvalue;
-    void   *pvalue;
-    swig_type_info **ptype;
-} swig_lua_const_info;
-
-typedef struct {
-  const char     *name;
-  lua_CFunction   method;
-} swig_lua_method;
-
-typedef struct {
-  const char     *name;
-  lua_CFunction   getmethod;
-  lua_CFunction   setmethod;
-} swig_lua_attribute;
-
-typedef struct swig_lua_class {
-  const char    *name;
-  swig_type_info   **type;
-  lua_CFunction  constructor;
-  void    (*destructor)(void *);
-  swig_lua_method   *methods;
-  swig_lua_attribute     *attributes;
-  struct swig_lua_class **bases;
-  const char **base_names;
-} swig_lua_class;
-
-/* this is the struct for wrappering all pointers in SwigLua
-*/
-typedef struct {
-  swig_type_info   *type;
-  int     own;  /* 1 if owned & must be destroyed */
-  void        *ptr;
-} swig_lua_userdata;
-
-/* this is the struct for wrapping arbitary packed binary data
-(currently it is only used for member function pointers)
-the data ordering is similar to swig_lua_userdata, but it is currently not possible
-to tell the two structures apart within Swig, other than by looking at the type
-*/
-typedef struct {
-  swig_type_info   *type;
-  int     own;  /* 1 if owned & must be destroyed */
-  char data[1];       /* arbitary amount of data */    
-} swig_lua_rawdata;
-
-/* Common SWIG API */
-#define SWIG_NewPointerObj(L, ptr, type, owner)       SWIG_Lua_NewPointerObj(L, (void *)ptr, type, owner)
-#define SWIG_ConvertPtr(L,idx, ptr, type, flags)    SWIG_Lua_ConvertPtr(L,idx,ptr,type,flags)
-#define SWIG_MustGetPtr(L,idx, type,flags, argnum,fnname)  SWIG_Lua_MustGetPtr(L,idx, type,flags, argnum,fnname)
-/* for C++ member pointers, ie, member methods */
-#define SWIG_ConvertMember(L, idx, ptr, sz, ty)       SWIG_Lua_ConvertPacked(L, idx, ptr, sz, ty)
-#define SWIG_NewMemberObj(L, ptr, sz, type)      SWIG_Lua_NewPackedObj(L, ptr, sz, type)
-
-/* Runtime API */
-#define SWIG_GetModule(clientdata) SWIG_Lua_GetModule((lua_State*)(clientdata))
-#define SWIG_SetModule(clientdata, pointer) SWIG_Lua_SetModule((lua_State*) (clientdata), pointer)
-#define SWIG_MODULE_CLIENTDATA_TYPE lua_State*
-
-/* Contract support */
-#define SWIG_contract_assert(expr, msg)  \
-  if (!(expr)) { lua_pushstring(L, (char *) msg); goto fail; } else
-
-/* helper #defines */
-#define SWIG_fail {goto fail;}
-#define SWIG_fail_arg(func_name,argnum,type) \
-  {lua_pushfstring(L,"Error in %s (arg %d), expected '%s' got '%s'",\
-  func_name,argnum,type,SWIG_Lua_typename(L,argnum));\
-  goto fail;}
-#define SWIG_fail_ptr(func_name,argnum,type) \
-  SWIG_fail_arg(func_name,argnum,(type && type->str)?type->str:"void*")
-#define SWIG_check_num_args(func_name,a,b) \
-  if (lua_gettop(L)<a || lua_gettop(L)>b) \
-  {lua_pushfstring(L,"Error in %s expected %d..%d args, got %d",func_name,a,b,lua_gettop(L));\
-  goto fail;}
-
-
-#define SWIG_Lua_get_table(L,n) \
-  (lua_pushstring(L, n), lua_rawget(L,-2))
-
-#define SWIG_Lua_add_function(L,n,f) \
-  (lua_pushstring(L, n), \
-      lua_pushcfunction(L, f), \
-      lua_rawset(L,-3))
-
-/* special helper for allowing 'nil' for usertypes */
-#define SWIG_isptrtype(L,I) (lua_isuserdata(L,I) || lua_isnil(L,I))
+typedef struct swig_const_info {
+  int type;
+  char *name;
+  long lvalue;
+  double dvalue;
+  void   *pvalue;
+  swig_type_info **ptype;
+} swig_const_info;
 
 #ifdef __cplusplus
-/* Special helper for member function pointers 
-it gets the address, casts it, then dereferences it */
-//#define SWIG_mem_fn_as_voidptr(a)  (*((char**)&(a)))
+#if 0
+{ /* cc-mode */
+#endif
+}
 #endif
 
-/* storing/access of swig_module_info */
-SWIGRUNTIME swig_module_info *
-SWIG_Lua_GetModule(lua_State* L) {
-  swig_module_info *ret = 0;
-  lua_pushstring(L,"swig_runtime_data_type_pointer" SWIG_RUNTIME_VERSION SWIG_TYPE_TABLE_NAME);
-  lua_rawget(L,LUA_REGISTRYINDEX);
-  if (lua_islightuserdata(L,-1))
-    ret=(swig_module_info*)lua_touserdata(L,-1);
-  lua_pop(L,1);  /* tidy */
-  return ret;
+
+/* -----------------------------------------------------------------------------
+ * See the LICENSE file for information on copyright, usage and redistribution
+ * of SWIG, and the README file for authors - http://www.swig.org/release.html.
+ *
+ * pyrun.swg
+ *
+ * This file contains the runtime support for Python modules
+ * and includes code for managing global variables and pointer
+ * type checking.
+ *
+ * ----------------------------------------------------------------------------- */
+
+/* Common SWIG API */
+
+/* for raw pointers */
+#define SWIG_Python_ConvertPtr(obj, pptr, type, flags)  SWIG_Python_ConvertPtrAndOwn(obj, pptr, type, flags, 0)
+#define SWIG_ConvertPtr(obj, pptr, type, flags)         SWIG_Python_ConvertPtr(obj, pptr, type, flags)
+#define SWIG_ConvertPtrAndOwn(obj,pptr,type,flags,own)  SWIG_Python_ConvertPtrAndOwn(obj, pptr, type, flags, own)
+#define SWIG_NewPointerObj(ptr, type, flags)            SWIG_Python_NewPointerObj(ptr, type, flags)
+#define SWIG_CheckImplicit(ty)                          SWIG_Python_CheckImplicit(ty) 
+#define SWIG_AcquirePtr(ptr, src)                       SWIG_Python_AcquirePtr(ptr, src)
+#define swig_owntype                                    int
+
+/* for raw packed data */
+#define SWIG_ConvertPacked(obj, ptr, sz, ty)            SWIG_Python_ConvertPacked(obj, ptr, sz, ty)
+#define SWIG_NewPackedObj(ptr, sz, type)                SWIG_Python_NewPackedObj(ptr, sz, type)
+
+/* for class or struct pointers */
+#define SWIG_ConvertInstance(obj, pptr, type, flags)    SWIG_ConvertPtr(obj, pptr, type, flags)
+#define SWIG_NewInstanceObj(ptr, type, flags)           SWIG_NewPointerObj(ptr, type, flags)
+
+/* for C or C++ function pointers */
+#define SWIG_ConvertFunctionPtr(obj, pptr, type)        SWIG_Python_ConvertFunctionPtr(obj, pptr, type)
+#define SWIG_NewFunctionPtrObj(ptr, type)               SWIG_Python_NewPointerObj(ptr, type, 0)
+
+/* for C++ member pointers, ie, member methods */
+#define SWIG_ConvertMember(obj, ptr, sz, ty)            SWIG_Python_ConvertPacked(obj, ptr, sz, ty)
+#define SWIG_NewMemberObj(ptr, sz, type)                SWIG_Python_NewPackedObj(ptr, sz, type)
+
+
+/* Runtime API */
+
+#define SWIG_GetModule(clientdata)                      SWIG_Python_GetModule()
+#define SWIG_SetModule(clientdata, pointer)             SWIG_Python_SetModule(pointer)
+#define SWIG_NewClientData(obj)                         PySwigClientData_New(obj)
+
+#define SWIG_SetErrorObj                                SWIG_Python_SetErrorObj                            
+#define SWIG_SetErrorMsg                        	SWIG_Python_SetErrorMsg				   
+#define SWIG_ErrorType(code)                    	SWIG_Python_ErrorType(code)                        
+#define SWIG_Error(code, msg)            		SWIG_Python_SetErrorMsg(SWIG_ErrorType(code), msg) 
+#define SWIG_fail                        		goto fail					   
+
+
+/* Runtime API implementation */
+
+/* Error manipulation */
+
+SWIGINTERN void 
+SWIG_Python_SetErrorObj(PyObject *errtype, PyObject *obj) {
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK; 
+  PyErr_SetObject(errtype, obj);
+  Py_DECREF(obj);
+  SWIG_PYTHON_THREAD_END_BLOCK;
+}
+
+SWIGINTERN void 
+SWIG_Python_SetErrorMsg(PyObject *errtype, const char *msg) {
+  SWIG_PYTHON_THREAD_BEGIN_BLOCK;
+  PyErr_SetString(errtype, (char *) msg);
+  SWIG_PYTHON_THREAD_END_BLOCK;
+}
+
+#define SWIG_Python_Raise(obj, type, desc)  SWIG_Python_SetErrorObj(SWIG_Python_ExceptionType(desc), obj)
+
+/* Set a constant value */
+
+SWIGINTERN void
+SWIG_Python_SetConstant(PyObject *d, const char *name, PyObject *obj) {   
+  PyDict_SetItemString(d, (char*) name, obj);
+  Py_DECREF(obj);                            
+}
+
+/* Append a value to the result obj */
+
+SWIGINTERN PyObject*
+SWIG_Python_AppendOutput(PyObject* result, PyObject* obj) {
+#if !defined(SWIG_PYTHON_OUTPUT_TUPLE)
+  if (!result) {
+    result = obj;
+  } else if (result == Py_None) {
+    Py_DECREF(result);
+    result = obj;
+  } else {
+    if (!PyList_Check(result)) {
+      PyObject *o2 = result;
+      result = PyList_New(1);
+      PyList_SetItem(result, 0, o2);
+    }
+    PyList_Append(result,obj);
+    Py_DECREF(obj);
+  }
+  return result;
+#else
+  PyObject*   o2;
+  PyObject*   o3;
+  if (!result) {
+    result = obj;
+  } else if (result == Py_None) {
+    Py_DECREF(result);
+    result = obj;
+  } else {
+    if (!PyTuple_Check(result)) {
+      o2 = result;
+      result = PyTuple_New(1);
+      PyTuple_SET_ITEM(result, 0, o2);
+    }
+    o3 = PyTuple_New(1);
+    PyTuple_SET_ITEM(o3, 0, obj);
+    o2 = result;
+    result = PySequence_Concat(o2, o3);
+    Py_DECREF(o2);
+    Py_DECREF(o3);
+  }
+  return result;
+#endif
+}
+
+/* Unpack the argument tuple */
+
+SWIGINTERN int
+SWIG_Python_UnpackTuple(PyObject *args, const char *name, Py_ssize_t min, Py_ssize_t max, PyObject **objs)
+{
+  if (!args) {
+    if (!min && !max) {
+      return 1;
+    } else {
+      PyErr_Format(PyExc_TypeError, "%s expected %s%d arguments, got none", 
+		   name, (min == max ? "" : "at least "), (int)min);
+      return 0;
+    }
+  }  
+  if (!PyTuple_Check(args)) {
+    PyErr_SetString(PyExc_SystemError, "UnpackTuple() argument list is not a tuple");
+    return 0;
+  } else {
+    register Py_ssize_t l = PyTuple_GET_SIZE(args);
+    if (l < min) {
+      PyErr_Format(PyExc_TypeError, "%s expected %s%d arguments, got %d", 
+		   name, (min == max ? "" : "at least "), (int)min, (int)l);
+      return 0;
+    } else if (l > max) {
+      PyErr_Format(PyExc_TypeError, "%s expected %s%d arguments, got %d", 
+		   name, (min == max ? "" : "at most "), (int)max, (int)l);
+      return 0;
+    } else {
+      register int i;
+      for (i = 0; i < l; ++i) {
+	objs[i] = PyTuple_GET_ITEM(args, i);
+      }
+      for (; l < max; ++l) {
+	objs[l] = 0;
+      }
+      return i + 1;
+    }    
+  }
+}
+
+/* A functor is a function object with one single object argument */
+#if PY_VERSION_HEX >= 0x02020000
+#define SWIG_Python_CallFunctor(functor, obj)	        PyObject_CallFunctionObjArgs(functor, obj, NULL);
+#else
+#define SWIG_Python_CallFunctor(functor, obj)	        PyObject_CallFunction(functor, "O", obj);
+#endif
+
+/*
+  Helper for static pointer initialization for both C and C++ code, for example
+  static PyObject *SWIG_STATIC_POINTER(MyVar) = NewSomething(...);
+*/
+#ifdef __cplusplus
+#define SWIG_STATIC_POINTER(var)  var
+#else
+#define SWIG_STATIC_POINTER(var)  var = 0; if (!var) var
+#endif
+
+/* -----------------------------------------------------------------------------
+ * Pointer declarations
+ * ----------------------------------------------------------------------------- */
+
+/* Flags for new pointer objects */
+#define SWIG_POINTER_NOSHADOW       (SWIG_POINTER_OWN      << 1)
+#define SWIG_POINTER_NEW            (SWIG_POINTER_NOSHADOW | SWIG_POINTER_OWN)
+
+#define SWIG_POINTER_IMPLICIT_CONV  (SWIG_POINTER_DISOWN   << 1)
+
+#ifdef __cplusplus
+extern "C" {
+#if 0
+} /* cc-mode */
+#endif
+#endif
+
+/*  How to access Py_None */
+#if defined(_WIN32) || defined(__WIN32__) || defined(__CYGWIN__)
+#  ifndef SWIG_PYTHON_NO_BUILD_NONE
+#    ifndef SWIG_PYTHON_BUILD_NONE
+#      define SWIG_PYTHON_BUILD_NONE
+#    endif
+#  endif
+#endif
+
+#ifdef SWIG_PYTHON_BUILD_NONE
+#  ifdef Py_None
+#   undef Py_None
+#   define Py_None SWIG_Py_None()
+#  endif
+SWIGRUNTIMEINLINE PyObject * 
+_SWIG_Py_None(void)
+{
+  PyObject *none = Py_BuildValue((char*)"");
+  Py_DECREF(none);
+  return none;
+}
+SWIGRUNTIME PyObject * 
+SWIG_Py_None(void)
+{
+  static PyObject *SWIG_STATIC_POINTER(none) = _SWIG_Py_None();
+  return none;
+}
+#endif
+
+/* The python void return value */
+
+SWIGRUNTIMEINLINE PyObject * 
+SWIG_Py_Void(void)
+{
+  PyObject *none = Py_None;
+  Py_INCREF(none);
+  return none;
+}
+
+/* PySwigClientData */
+
+typedef struct {
+  PyObject *klass;
+  PyObject *newraw;
+  PyObject *newargs;
+  PyObject *destroy;
+  int delargs;
+  int implicitconv;
+} PySwigClientData;
+
+SWIGRUNTIMEINLINE int 
+SWIG_Python_CheckImplicit(swig_type_info *ty)
+{
+  PySwigClientData *data = (PySwigClientData *)ty->clientdata;
+  return data ? data->implicitconv : 0;
+}
+
+SWIGRUNTIMEINLINE PyObject *
+SWIG_Python_ExceptionType(swig_type_info *desc) {
+  PySwigClientData *data = desc ? (PySwigClientData *) desc->clientdata : 0;
+  PyObject *klass = data ? data->klass : 0;
+  return (klass ? klass : PyExc_RuntimeError);
+}
+
+
+SWIGRUNTIME PySwigClientData * 
+PySwigClientData_New(PyObject* obj)
+{
+  if (!obj) {
+    return 0;
+  } else {
+    PySwigClientData *data = (PySwigClientData *)malloc(sizeof(PySwigClientData));
+    /* the klass element */
+    data->klass = obj;
+    Py_INCREF(data->klass);
+    /* the newraw method and newargs arguments used to create a new raw instance */
+    if (PyClass_Check(obj)) {
+      data->newraw = 0;
+      data->newargs = obj;
+      Py_INCREF(obj);
+    } else {
+#if (PY_VERSION_HEX < 0x02020000)
+      data->newraw = 0;
+#else
+      data->newraw = PyObject_GetAttrString(data->klass, (char *)"__new__");
+#endif
+      if (data->newraw) {
+	Py_INCREF(data->newraw);
+	data->newargs = PyTuple_New(1);
+	PyTuple_SetItem(data->newargs, 0, obj);
+      } else {
+	data->newargs = obj;
+      }
+      Py_INCREF(data->newargs);
+    }
+    /* the destroy method, aka as the C++ delete method */
+    data->destroy = PyObject_GetAttrString(data->klass, (char *)"__swig_destroy__");
+    if (PyErr_Occurred()) {
+      PyErr_Clear();
+      data->destroy = 0;
+    }
+    if (data->destroy) {
+      int flags;
+      Py_INCREF(data->destroy);
+      flags = PyCFunction_GET_FLAGS(data->destroy);
+#ifdef METH_O
+      data->delargs = !(flags & (METH_O));
+#else
+      data->delargs = 0;
+#endif
+    } else {
+      data->delargs = 0;
+    }
+    data->implicitconv = 0;
+    return data;
+  }
+}
+
+SWIGRUNTIME void 
+PySwigClientData_Del(PySwigClientData* data)
+{
+  Py_XDECREF(data->newraw);
+  Py_XDECREF(data->newargs);
+  Py_XDECREF(data->destroy);
+}
+
+/* =============== PySwigObject =====================*/
+
+typedef struct {
+  PyObject_HEAD
+  void *ptr;
+  swig_type_info *ty;
+  int own;
+  PyObject *next;
+} PySwigObject;
+
+SWIGRUNTIME PyObject *
+PySwigObject_long(PySwigObject *v)
+{
+  return PyLong_FromVoidPtr(v->ptr);
+}
+
+SWIGRUNTIME PyObject *
+PySwigObject_format(const char* fmt, PySwigObject *v)
+{
+  PyObject *res = NULL;
+  PyObject *args = PyTuple_New(1);
+  if (args) {
+    if (PyTuple_SetItem(args, 0, PySwigObject_long(v)) == 0) {
+      PyObject *ofmt = PyString_FromString(fmt);
+      if (ofmt) {
+	res = PyString_Format(ofmt,args);
+	Py_DECREF(ofmt);
+      }
+      Py_DECREF(args);
+    }
+  }
+  return res;
+}
+
+SWIGRUNTIME PyObject *
+PySwigObject_oct(PySwigObject *v)
+{
+  return PySwigObject_format("%o",v);
+}
+
+SWIGRUNTIME PyObject *
+PySwigObject_hex(PySwigObject *v)
+{
+  return PySwigObject_format("%x",v);
+}
+
+SWIGRUNTIME PyObject *
+#ifdef METH_NOARGS
+PySwigObject_repr(PySwigObject *v)
+#else
+PySwigObject_repr(PySwigObject *v, PyObject *args)
+#endif
+{
+  const char *name = SWIG_TypePrettyName(v->ty);
+  PyObject *hex = PySwigObject_hex(v);    
+  PyObject *repr = PyString_FromFormat("<Swig Object of type '%s' at 0x%s>", name, PyString_AsString(hex));
+  Py_DECREF(hex);
+  if (v->next) {
+#ifdef METH_NOARGS
+    PyObject *nrep = PySwigObject_repr((PySwigObject *)v->next);
+#else
+    PyObject *nrep = PySwigObject_repr((PySwigObject *)v->next, args);
+#endif
+    PyString_ConcatAndDel(&repr,nrep);
+  }
+  return repr;  
+}
+
+SWIGRUNTIME int
+PySwigObject_print(PySwigObject *v, FILE *fp, int SWIGUNUSEDPARM(flags))
+{
+#ifdef METH_NOARGS
+  PyObject *repr = PySwigObject_repr(v);
+#else
+  PyObject *repr = PySwigObject_repr(v, NULL);
+#endif
+  if (repr) {
+    fputs(PyString_AsString(repr), fp);
+    Py_DECREF(repr);
+    return 0; 
+  } else {
+    return 1; 
+  }
+}
+
+SWIGRUNTIME PyObject *
+PySwigObject_str(PySwigObject *v)
+{
+  char result[SWIG_BUFFER_SIZE];
+  return SWIG_PackVoidPtr(result, v->ptr, v->ty->name, sizeof(result)) ?
+    PyString_FromString(result) : 0;
+}
+
+SWIGRUNTIME int
+PySwigObject_compare(PySwigObject *v, PySwigObject *w)
+{
+  void *i = v->ptr;
+  void *j = w->ptr;
+  return (i < j) ? -1 : ((i > j) ? 1 : 0);
+}
+
+SWIGRUNTIME PyTypeObject* _PySwigObject_type(void);
+
+SWIGRUNTIME PyTypeObject*
+PySwigObject_type(void) {
+  static PyTypeObject *SWIG_STATIC_POINTER(type) = _PySwigObject_type();
+  return type;
+}
+
+SWIGRUNTIMEINLINE int
+PySwigObject_Check(PyObject *op) {
+  return ((op)->ob_type == PySwigObject_type())
+    || (strcmp((op)->ob_type->tp_name,"PySwigObject") == 0);
+}
+
+SWIGRUNTIME PyObject *
+PySwigObject_New(void *ptr, swig_type_info *ty, int own);
+
+SWIGRUNTIME void
+PySwigObject_dealloc(PyObject *v)
+{
+  PySwigObject *sobj = (PySwigObject *) v;
+  PyObject *next = sobj->next;
+  if (sobj->own == SWIG_POINTER_OWN) {
+    swig_type_info *ty = sobj->ty;
+    PySwigClientData *data = ty ? (PySwigClientData *) ty->clientdata : 0;
+    PyObject *destroy = data ? data->destroy : 0;
+    if (destroy) {
+      /* destroy is always a VARARGS method */
+      PyObject *res;
+      if (data->delargs) {
+	/* we need to create a temporal object to carry the destroy operation */
+	PyObject *tmp = PySwigObject_New(sobj->ptr, ty, 0);
+	res = SWIG_Python_CallFunctor(destroy, tmp);
+	Py_DECREF(tmp);
+      } else {
+	PyCFunction meth = PyCFunction_GET_FUNCTION(destroy);
+	PyObject *mself = PyCFunction_GET_SELF(destroy);
+	res = ((*meth)(mself, v));
+      }
+      Py_XDECREF(res);
+    } 
+#if !defined(SWIG_PYTHON_SILENT_MEMLEAK)
+    else {
+      const char *name = SWIG_TypePrettyName(ty);
+      printf("swig/python detected a memory leak of type '%s', no destructor found.\n", (name ? name : "unknown"));
+    }
+#endif
+  } 
+  Py_XDECREF(next);
+  PyObject_DEL(v);
+}
+
+SWIGRUNTIME PyObject* 
+PySwigObject_append(PyObject* v, PyObject* next)
+{
+  PySwigObject *sobj = (PySwigObject *) v;
+#ifndef METH_O
+  PyObject *tmp = 0;
+  if (!PyArg_ParseTuple(next,(char *)"O:append", &tmp)) return NULL;
+  next = tmp;
+#endif
+  if (!PySwigObject_Check(next)) {
+    return NULL;
+  }
+  sobj->next = next;
+  Py_INCREF(next);
+  return SWIG_Py_Void();
+}
+
+SWIGRUNTIME PyObject* 
+#ifdef METH_NOARGS
+PySwigObject_next(PyObject* v)
+#else
+PySwigObject_next(PyObject* v, PyObject *SWIGUNUSEDPARM(args))
+#endif
+{
+  PySwigObject *sobj = (PySwigObject *) v;
+  if (sobj->next) {    
+    Py_INCREF(sobj->next);
+    return sobj->next;
+  } else {
+    return SWIG_Py_Void();
+  }
+}
+
+SWIGINTERN PyObject*
+#ifdef METH_NOARGS
+PySwigObject_disown(PyObject *v)
+#else
+PySwigObject_disown(PyObject* v, PyObject *SWIGUNUSEDPARM(args))
+#endif
+{
+  PySwigObject *sobj = (PySwigObject *)v;
+  sobj->own = 0;
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject*
+#ifdef METH_NOARGS
+PySwigObject_acquire(PyObject *v)
+#else
+PySwigObject_acquire(PyObject* v, PyObject *SWIGUNUSEDPARM(args))
+#endif
+{
+  PySwigObject *sobj = (PySwigObject *)v;
+  sobj->own = SWIG_POINTER_OWN;
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject*
+PySwigObject_own(PyObject *v, PyObject *args)
+{
+  PyObject *val = 0;
+#if (PY_VERSION_HEX < 0x02020000)
+  if (!PyArg_ParseTuple(args,(char *)"|O:own",&val))
+#else
+  if (!PyArg_UnpackTuple(args, (char *)"own", 0, 1, &val)) 
+#endif
+    {
+      return NULL;
+    } 
+  else
+    {
+      PySwigObject *sobj = (PySwigObject *)v;
+      PyObject *obj = PyBool_FromLong(sobj->own);
+      if (val) {
+#ifdef METH_NOARGS
+	if (PyObject_IsTrue(val)) {
+	  PySwigObject_acquire(v);
+	} else {
+	  PySwigObject_disown(v);
+	}
+#else
+	if (PyObject_IsTrue(val)) {
+	  PySwigObject_acquire(v,args);
+	} else {
+	  PySwigObject_disown(v,args);
+	}
+#endif
+      } 
+      return obj;
+    }
+}
+
+#ifdef METH_O
+static PyMethodDef
+swigobject_methods[] = {
+  {(char *)"disown",  (PyCFunction)PySwigObject_disown,  METH_NOARGS,  (char *)"releases ownership of the pointer"},
+  {(char *)"acquire", (PyCFunction)PySwigObject_acquire, METH_NOARGS,  (char *)"aquires ownership of the pointer"},
+  {(char *)"own",     (PyCFunction)PySwigObject_own,     METH_VARARGS, (char *)"returns/sets ownership of the pointer"},
+  {(char *)"append",  (PyCFunction)PySwigObject_append,  METH_O,       (char *)"appends another 'this' object"},
+  {(char *)"next",    (PyCFunction)PySwigObject_next,    METH_NOARGS,  (char *)"returns the next 'this' object"},
+  {(char *)"__repr__",(PyCFunction)PySwigObject_repr,    METH_NOARGS,  (char *)"returns object representation"},
+  {0, 0, 0, 0}  
+};
+#else
+static PyMethodDef
+swigobject_methods[] = {
+  {(char *)"disown",  (PyCFunction)PySwigObject_disown,  METH_VARARGS,  (char *)"releases ownership of the pointer"},
+  {(char *)"acquire", (PyCFunction)PySwigObject_acquire, METH_VARARGS,  (char *)"aquires ownership of the pointer"},
+  {(char *)"own",     (PyCFunction)PySwigObject_own,     METH_VARARGS,  (char *)"returns/sets ownership of the pointer"},
+  {(char *)"append",  (PyCFunction)PySwigObject_append,  METH_VARARGS,  (char *)"appends another 'this' object"},
+  {(char *)"next",    (PyCFunction)PySwigObject_next,    METH_VARARGS,  (char *)"returns the next 'this' object"},
+  {(char *)"__repr__",(PyCFunction)PySwigObject_repr,   METH_VARARGS,  (char *)"returns object representation"},
+  {0, 0, 0, 0}  
+};
+#endif
+
+#if PY_VERSION_HEX < 0x02020000
+SWIGINTERN PyObject *
+PySwigObject_getattr(PySwigObject *sobj,char *name)
+{
+  return Py_FindMethod(swigobject_methods, (PyObject *)sobj, name);
+}
+#endif
+
+SWIGRUNTIME PyTypeObject*
+_PySwigObject_type(void) {
+  static char swigobject_doc[] = "Swig object carries a C/C++ instance pointer";
+  
+  static PyNumberMethods PySwigObject_as_number = {
+    (binaryfunc)0, /*nb_add*/
+    (binaryfunc)0, /*nb_subtract*/
+    (binaryfunc)0, /*nb_multiply*/
+    (binaryfunc)0, /*nb_divide*/
+    (binaryfunc)0, /*nb_remainder*/
+    (binaryfunc)0, /*nb_divmod*/
+    (ternaryfunc)0,/*nb_power*/
+    (unaryfunc)0,  /*nb_negative*/
+    (unaryfunc)0,  /*nb_positive*/
+    (unaryfunc)0,  /*nb_absolute*/
+    (inquiry)0,    /*nb_nonzero*/
+    0,		   /*nb_invert*/
+    0,		   /*nb_lshift*/
+    0,		   /*nb_rshift*/
+    0,		   /*nb_and*/
+    0,		   /*nb_xor*/
+    0,		   /*nb_or*/
+    (coercion)0,   /*nb_coerce*/
+    (unaryfunc)PySwigObject_long, /*nb_int*/
+    (unaryfunc)PySwigObject_long, /*nb_long*/
+    (unaryfunc)0,                 /*nb_float*/
+    (unaryfunc)PySwigObject_oct,  /*nb_oct*/
+    (unaryfunc)PySwigObject_hex,  /*nb_hex*/
+#if PY_VERSION_HEX >= 0x02050000 /* 2.5.0 */
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 /* nb_inplace_add -> nb_index */
+#elif PY_VERSION_HEX >= 0x02020000 /* 2.2.0 */
+    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 /* nb_inplace_add -> nb_inplace_true_divide */
+#elif PY_VERSION_HEX >= 0x02000000 /* 2.0.0 */
+    0,0,0,0,0,0,0,0,0,0,0 /* nb_inplace_add -> nb_inplace_or */
+#endif
+  };
+
+  static PyTypeObject pyswigobject_type;  
+  static int type_init = 0;
+  if (!type_init) {
+    const PyTypeObject tmp
+      = {
+	PyObject_HEAD_INIT(NULL)
+	0,				    /* ob_size */
+	(char *)"PySwigObject",		    /* tp_name */
+	sizeof(PySwigObject),		    /* tp_basicsize */
+	0,			            /* tp_itemsize */
+	(destructor)PySwigObject_dealloc,   /* tp_dealloc */
+	(printfunc)PySwigObject_print,	    /* tp_print */
+#if PY_VERSION_HEX < 0x02020000
+	(getattrfunc)PySwigObject_getattr,  /* tp_getattr */ 
+#else
+	(getattrfunc)0,			    /* tp_getattr */ 
+#endif
+	(setattrfunc)0,			    /* tp_setattr */ 
+	(cmpfunc)PySwigObject_compare,	    /* tp_compare */ 
+	(reprfunc)PySwigObject_repr,	    /* tp_repr */    
+	&PySwigObject_as_number,	    /* tp_as_number */
+	0,				    /* tp_as_sequence */
+	0,				    /* tp_as_mapping */
+	(hashfunc)0,			    /* tp_hash */
+	(ternaryfunc)0,			    /* tp_call */
+	(reprfunc)PySwigObject_str,	    /* tp_str */
+	PyObject_GenericGetAttr,            /* tp_getattro */
+	0,				    /* tp_setattro */
+	0,		                    /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,	            /* tp_flags */
+	swigobject_doc, 	            /* tp_doc */        
+	0,                                  /* tp_traverse */
+	0,                                  /* tp_clear */
+	0,                                  /* tp_richcompare */
+	0,                                  /* tp_weaklistoffset */
+#if PY_VERSION_HEX >= 0x02020000
+	0,                                  /* tp_iter */
+	0,                                  /* tp_iternext */
+	swigobject_methods,		    /* tp_methods */ 
+	0,			            /* tp_members */
+	0,				    /* tp_getset */	    	
+	0,			            /* tp_base */	        
+	0,				    /* tp_dict */	    	
+	0,				    /* tp_descr_get */  	
+	0,				    /* tp_descr_set */  	
+	0,				    /* tp_dictoffset */ 	
+	0,				    /* tp_init */	    	
+	0,				    /* tp_alloc */	    	
+	0,			            /* tp_new */	    	
+	0,	                            /* tp_free */	   
+        0,                                  /* tp_is_gc */  
+	0,				    /* tp_bases */   
+	0,				    /* tp_mro */
+	0,				    /* tp_cache */   
+ 	0,				    /* tp_subclasses */
+	0,				    /* tp_weaklist */
+#endif
+#if PY_VERSION_HEX >= 0x02030000
+	0,                                  /* tp_del */
+#endif
+#ifdef COUNT_ALLOCS
+	0,0,0,0                             /* tp_alloc -> tp_next */
+#endif
+      };
+    pyswigobject_type = tmp;
+    pyswigobject_type.ob_type = &PyType_Type;
+    type_init = 1;
+  }
+  return &pyswigobject_type;
+}
+
+SWIGRUNTIME PyObject *
+PySwigObject_New(void *ptr, swig_type_info *ty, int own)
+{
+  PySwigObject *sobj = PyObject_NEW(PySwigObject, PySwigObject_type());
+  if (sobj) {
+    sobj->ptr  = ptr;
+    sobj->ty   = ty;
+    sobj->own  = own;
+    sobj->next = 0;
+  }
+  return (PyObject *)sobj;
+}
+
+/* -----------------------------------------------------------------------------
+ * Implements a simple Swig Packed type, and use it instead of string
+ * ----------------------------------------------------------------------------- */
+
+typedef struct {
+  PyObject_HEAD
+  void *pack;
+  swig_type_info *ty;
+  size_t size;
+} PySwigPacked;
+
+SWIGRUNTIME int
+PySwigPacked_print(PySwigPacked *v, FILE *fp, int SWIGUNUSEDPARM(flags))
+{
+  char result[SWIG_BUFFER_SIZE];
+  fputs("<Swig Packed ", fp); 
+  if (SWIG_PackDataName(result, v->pack, v->size, 0, sizeof(result))) {
+    fputs("at ", fp); 
+    fputs(result, fp); 
+  }
+  fputs(v->ty->name,fp); 
+  fputs(">", fp);
+  return 0; 
+}
+  
+SWIGRUNTIME PyObject *
+PySwigPacked_repr(PySwigPacked *v)
+{
+  char result[SWIG_BUFFER_SIZE];
+  if (SWIG_PackDataName(result, v->pack, v->size, 0, sizeof(result))) {
+    return PyString_FromFormat("<Swig Packed at %s%s>", result, v->ty->name);
+  } else {
+    return PyString_FromFormat("<Swig Packed %s>", v->ty->name);
+  }  
+}
+
+SWIGRUNTIME PyObject *
+PySwigPacked_str(PySwigPacked *v)
+{
+  char result[SWIG_BUFFER_SIZE];
+  if (SWIG_PackDataName(result, v->pack, v->size, 0, sizeof(result))){
+    return PyString_FromFormat("%s%s", result, v->ty->name);
+  } else {
+    return PyString_FromString(v->ty->name);
+  }  
+}
+
+SWIGRUNTIME int
+PySwigPacked_compare(PySwigPacked *v, PySwigPacked *w)
+{
+  size_t i = v->size;
+  size_t j = w->size;
+  int s = (i < j) ? -1 : ((i > j) ? 1 : 0);
+  return s ? s : strncmp((char *)v->pack, (char *)w->pack, 2*v->size);
+}
+
+SWIGRUNTIME PyTypeObject* _PySwigPacked_type(void);
+
+SWIGRUNTIME PyTypeObject*
+PySwigPacked_type(void) {
+  static PyTypeObject *SWIG_STATIC_POINTER(type) = _PySwigPacked_type();
+  return type;
+}
+
+SWIGRUNTIMEINLINE int
+PySwigPacked_Check(PyObject *op) {
+  return ((op)->ob_type == _PySwigPacked_type()) 
+    || (strcmp((op)->ob_type->tp_name,"PySwigPacked") == 0);
 }
 
 SWIGRUNTIME void
-SWIG_Lua_SetModule(lua_State* L, swig_module_info *module) {
-  /* add this all into the Lua registry: */
-  lua_pushstring(L,"swig_runtime_data_type_pointer" SWIG_RUNTIME_VERSION SWIG_TYPE_TABLE_NAME);
-  lua_pushlightuserdata(L,(void*)module);
-  lua_rawset(L,LUA_REGISTRYINDEX);
+PySwigPacked_dealloc(PyObject *v)
+{
+  if (PySwigPacked_Check(v)) {
+    PySwigPacked *sobj = (PySwigPacked *) v;
+    free(sobj->pack);
+  }
+  PyObject_DEL(v);
 }
 
-/* -----------------------------------------------------------------------------
- * global variable support code: modules
- * ----------------------------------------------------------------------------- */
-
-/* this function is called when trying to set an immutable.
-default value is to print an error.
-This can removed with a compile flag SWIGLUA_IGNORE_SET_IMMUTABLE */
-SWIGINTERN int SWIG_Lua_set_immutable(lua_State* L)
-{
-/*  there should be 1 param passed in: the new value */
-#ifndef SWIGLUA_IGNORE_SET_IMMUTABLE
-  lua_pop(L,1);  /* remove it */
-  lua_pushstring(L,"This variable is immutable");
-  lua_error(L);
+SWIGRUNTIME PyTypeObject*
+_PySwigPacked_type(void) {
+  static char swigpacked_doc[] = "Swig object carries a C/C++ instance pointer";
+  static PyTypeObject pyswigpacked_type;
+  static int type_init = 0;  
+  if (!type_init) {
+    const PyTypeObject tmp
+      = {
+	PyObject_HEAD_INIT(NULL)
+	0,				    /* ob_size */	
+	(char *)"PySwigPacked",		    /* tp_name */	
+	sizeof(PySwigPacked),		    /* tp_basicsize */	
+	0,				    /* tp_itemsize */	
+	(destructor)PySwigPacked_dealloc,   /* tp_dealloc */	
+	(printfunc)PySwigPacked_print,	    /* tp_print */   	
+	(getattrfunc)0,			    /* tp_getattr */ 	
+	(setattrfunc)0,			    /* tp_setattr */ 	
+	(cmpfunc)PySwigPacked_compare,	    /* tp_compare */ 	
+	(reprfunc)PySwigPacked_repr,	    /* tp_repr */    	
+	0,	                            /* tp_as_number */	
+	0,				    /* tp_as_sequence */
+	0,				    /* tp_as_mapping */	
+	(hashfunc)0,			    /* tp_hash */	
+	(ternaryfunc)0,			    /* tp_call */	
+	(reprfunc)PySwigPacked_str,	    /* tp_str */	
+	PyObject_GenericGetAttr,            /* tp_getattro */
+	0,				    /* tp_setattro */
+	0,		                    /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,	            /* tp_flags */
+	swigpacked_doc, 	            /* tp_doc */
+	0,                                  /* tp_traverse */
+	0,                                  /* tp_clear */
+	0,                                  /* tp_richcompare */
+	0,                                  /* tp_weaklistoffset */
+#if PY_VERSION_HEX >= 0x02020000
+	0,                                  /* tp_iter */
+	0,                                  /* tp_iternext */
+	0,		                    /* tp_methods */ 
+	0,			            /* tp_members */
+	0,				    /* tp_getset */	    	
+	0,			            /* tp_base */	        
+	0,				    /* tp_dict */	    	
+	0,				    /* tp_descr_get */  	
+	0,				    /* tp_descr_set */  	
+	0,				    /* tp_dictoffset */ 	
+	0,				    /* tp_init */	    	
+	0,				    /* tp_alloc */	    	
+	0,			            /* tp_new */	    	
+	0, 	                            /* tp_free */	   
+        0,                                  /* tp_is_gc */  
+	0,				    /* tp_bases */   
+	0,				    /* tp_mro */
+	0,				    /* tp_cache */   
+ 	0,				    /* tp_subclasses */
+	0,				    /* tp_weaklist */
 #endif
-    return 0;   /* should not return anything */
-}
-
-/* the module.get method used for getting linked data */
-SWIGINTERN int SWIG_Lua_module_get(lua_State* L)
-{
-/*  there should be 2 params passed in
-  (1) table (not the meta table)
-  (2) string name of the attribute
-  printf("SWIG_Lua_module_get %p(%s) '%s'\n",
-   lua_topointer(L,1),lua_typename(L,lua_type(L,1)),
-   lua_tostring(L,2));
-*/
-  /* get the metatable */
-  assert(lua_istable(L,1));  /* just in case */
-  lua_getmetatable(L,1);  /* get the metatable */
-  assert(lua_istable(L,-1));  /* just in case */
-  SWIG_Lua_get_table(L,".get");  /* get the .get table */
-  lua_remove(L,3);  /* remove metatable */
-  if (lua_istable(L,-1))
-  {
-    /* look for the key in the .get table */
-    lua_pushvalue(L,2);  /* key */
-    lua_rawget(L,-2);
-    lua_remove(L,3);  /* remove .get */
-    if (lua_iscfunction(L,-1))
-    {  /* found it so call the fn & return its value */
-      lua_call(L,0,1);
-      return 1;
-    }
-    lua_pop(L,1);  /* remove the top */
+#if PY_VERSION_HEX >= 0x02030000
+	0,                                  /* tp_del */
+#endif
+#ifdef COUNT_ALLOCS
+	0,0,0,0                             /* tp_alloc -> tp_next */
+#endif
+      };
+    pyswigpacked_type = tmp;
+    pyswigpacked_type.ob_type = &PyType_Type;
+    type_init = 1;
   }
-  lua_pop(L,1);  /* remove the .get */
-  lua_pushnil(L);  /* return a nil */
-    return 1;
+  return &pyswigpacked_type;
 }
 
-/* the module.set method used for setting linked data */
-SWIGINTERN int SWIG_Lua_module_set(lua_State* L)
+SWIGRUNTIME PyObject *
+PySwigPacked_New(void *ptr, size_t size, swig_type_info *ty)
 {
-/*  there should be 3 params passed in
-  (1) table (not the meta table)
-  (2) string name of the attribute
-  (3) any for the new value
-*/
-  /* get the metatable */
-  assert(lua_istable(L,1));  /* just in case */
-  lua_getmetatable(L,1);  /* get the metatable */
-  assert(lua_istable(L,-1));  /* just in case */
-  SWIG_Lua_get_table(L,".set");  /* get the .set table */
-  lua_remove(L,4);  /* remove metatable */
-  if (lua_istable(L,-1))
-  {
-    /* look for the key in the .set table */
-    lua_pushvalue(L,2);  /* key */
-    lua_rawget(L,-2);
-    lua_remove(L,4);  /* remove .set */
-    if (lua_iscfunction(L,-1))
-    {  /* found it so call the fn & return its value */
-      lua_pushvalue(L,3);  /* value */
-      lua_call(L,1,0);
-      return 0;
+  PySwigPacked *sobj = PyObject_NEW(PySwigPacked, PySwigPacked_type());
+  if (sobj) {
+    void *pack = malloc(size);
+    if (pack) {
+      memcpy(pack, ptr, size);
+      sobj->pack = pack;
+      sobj->ty   = ty;
+      sobj->size = size;
+    } else {
+      PyObject_DEL((PyObject *) sobj);
+      sobj = 0;
     }
   }
-  lua_settop(L,3);  /* reset back to start */
-  /* we now have the table, key & new value, so just set directly */
-  lua_rawset(L,1);  /* add direct */
-  return 0;
+  return (PyObject *) sobj;
 }
 
-/* registering a module in lua */
-SWIGINTERN void  SWIG_Lua_module_begin(lua_State* L,const char* name)
+SWIGRUNTIME swig_type_info *
+PySwigPacked_UnpackData(PyObject *obj, void *ptr, size_t size)
 {
-  assert(lua_istable(L,-1));  /* just in case */
-  lua_pushstring(L,name);
-  lua_newtable(L);   /* the table */
-  /* add meta table */
-  lua_newtable(L);    /* the meta table */
-  SWIG_Lua_add_function(L,"__index",SWIG_Lua_module_get);
-  SWIG_Lua_add_function(L,"__newindex",SWIG_Lua_module_set);
-  lua_pushstring(L,".get");
-  lua_newtable(L);    /* the .get table */
-  lua_rawset(L,-3);  /* add .get into metatable */
-  lua_pushstring(L,".set");
-  lua_newtable(L);    /* the .set table */
-  lua_rawset(L,-3);  /* add .set into metatable */
-  lua_setmetatable(L,-2);  /* sets meta table in module */
-  lua_rawset(L,-3);        /* add module into parent */
-  SWIG_Lua_get_table(L,name);   /* get the table back out */
-}
-
-/* ending the register */
-SWIGINTERN void  SWIG_Lua_module_end(lua_State* L)
-{
-  lua_pop(L,1);       /* tidy stack (remove module) */
-}
-
-/* adding a linked variable to the module */
-SWIGINTERN void SWIG_Lua_module_add_variable(lua_State* L,const char* name,lua_CFunction getFn,lua_CFunction setFn)
-{
-  assert(lua_istable(L,-1));  /* just in case */
-  lua_getmetatable(L,-1);  /* get the metatable */
-  assert(lua_istable(L,-1));  /* just in case */
-  SWIG_Lua_get_table(L,".get"); /* find the .get table */
-  assert(lua_istable(L,-1));  /* should be a table: */
-  SWIG_Lua_add_function(L,name,getFn);
-  lua_pop(L,1);       /* tidy stack (remove table) */
-  if (setFn)  /* if there is a set fn */
-  {
-    SWIG_Lua_get_table(L,".set"); /* find the .set table */
-    assert(lua_istable(L,-1));  /* should be a table: */
-    SWIG_Lua_add_function(L,name,setFn);
-    lua_pop(L,1);       /* tidy stack (remove table) */
+  if (PySwigPacked_Check(obj)) {
+    PySwigPacked *sobj = (PySwigPacked *)obj;
+    if (sobj->size != size) return 0;
+    memcpy(ptr, sobj->pack, size);
+    return sobj->ty;
+  } else {
+    return 0;
   }
-  lua_pop(L,1);       /* tidy stack (remove meta) */
-}
-
-/* adding a function module */
-SWIGINTERN void  SWIG_Lua_module_add_function(lua_State* L,const char* name,lua_CFunction fn)
-{
-  SWIG_Lua_add_function(L,name,fn);
 }
 
 /* -----------------------------------------------------------------------------
- * global variable support code: classes
+ * pointers/data manipulation
  * ----------------------------------------------------------------------------- */
 
-/* the class.get method, performs the lookup of class attributes */
-SWIGINTERN int  SWIG_Lua_class_get(lua_State* L)
+SWIGRUNTIMEINLINE PyObject *
+_SWIG_This(void)
 {
-/*  there should be 2 params passed in
-  (1) userdata (not the meta table)
-  (2) string name of the attribute
-*/
-  assert(lua_isuserdata(L,-2));  /* just in case */
-  lua_getmetatable(L,-2);    /* get the meta table */
-  assert(lua_istable(L,-1));  /* just in case */
-  SWIG_Lua_get_table(L,".get"); /* find the .get table */
-  assert(lua_istable(L,-1));  /* just in case */
-  /* look for the key in the .get table */
-  lua_pushvalue(L,2);  /* key */
-  lua_rawget(L,-2);
-  lua_remove(L,-2); /* stack tidy, remove .get table */
-  if (lua_iscfunction(L,-1))
-  {  /* found it so call the fn & return its value */
-    lua_pushvalue(L,1);  /* the userdata */
-    lua_call(L,1,1);  /* 1 value in (userdata),1 out (result) */
-    lua_remove(L,-2); /* stack tidy, remove metatable */
-    return 1;
-  }
-  lua_pop(L,1);  /* remove whatever was there */
-  /* ok, so try the .fn table */
-  SWIG_Lua_get_table(L,".fn"); /* find the .get table */
-  assert(lua_istable(L,-1));  /* just in case */
-  lua_pushvalue(L,2);  /* key */
-  lua_rawget(L,-2);  /* look for the fn */
-  lua_remove(L,-2); /* stack tidy, remove .fn table */
-  if (lua_isfunction(L,-1)) /* note: if its a C function or lua function */
-  {  /* found it so return the fn & let lua call it */
-    lua_remove(L,-2); /* stack tidy, remove metatable */
-    return 1;
-  }
-  lua_pop(L,1);  /* remove whatever was there */
-  /* NEW: looks for the __getitem() fn
-  this is a user provided get fn */
-  SWIG_Lua_get_table(L,"__getitem"); /* find the __getitem fn */
-  if (lua_iscfunction(L,-1))  /* if its there */
-  {  /* found it so call the fn & return its value */
-    lua_pushvalue(L,1);  /* the userdata */
-    lua_pushvalue(L,2);  /* the parameter */
-    lua_call(L,2,1);  /* 2 value in (userdata),1 out (result) */
-    lua_remove(L,-2); /* stack tidy, remove metatable */
-    return 1;
-  }
-  return 0;  /* sorry not known */
+  return PyString_FromString("this");
 }
 
-/* the class.set method, performs the lookup of class attributes */
-SWIGINTERN int  SWIG_Lua_class_set(lua_State* L)
+SWIGRUNTIME PyObject *
+SWIG_This(void)
 {
-/*  there should be 3 params passed in
-  (1) table (not the meta table)
-  (2) string name of the attribute
-  (3) any for the new value
-printf("SWIG_Lua_class_set %p(%s) '%s' %p(%s)\n",
-      lua_topointer(L,1),lua_typename(L,lua_type(L,1)),
-      lua_tostring(L,2),
-      lua_topointer(L,3),lua_typename(L,lua_type(L,3)));*/
+  static PyObject *SWIG_STATIC_POINTER(swig_this) = _SWIG_This();
+  return swig_this;
+}
 
-  assert(lua_isuserdata(L,1));  /* just in case */
-  lua_getmetatable(L,1);    /* get the meta table */
-  assert(lua_istable(L,-1));  /* just in case */
+/* #define SWIG_PYTHON_SLOW_GETSET_THIS */
 
-  SWIG_Lua_get_table(L,".set"); /* find the .set table */
-  if (lua_istable(L,-1))
-  {
-    /* look for the key in the .set table */
-    lua_pushvalue(L,2);  /* key */
-    lua_rawget(L,-2);
-    if (lua_iscfunction(L,-1))
-    {  /* found it so call the fn & return its value */
-      lua_pushvalue(L,1);  /* userdata */
-      lua_pushvalue(L,3);  /* value */
-      lua_call(L,2,0);
+SWIGRUNTIME PySwigObject *
+SWIG_Python_GetSwigThis(PyObject *pyobj) 
+{
+  if (PySwigObject_Check(pyobj)) {
+    return (PySwigObject *) pyobj;
+  } else {
+    PyObject *obj = 0;
+#if (!defined(SWIG_PYTHON_SLOW_GETSET_THIS) && (PY_VERSION_HEX >= 0x02030000))
+    if (PyInstance_Check(pyobj)) {
+      obj = _PyInstance_Lookup(pyobj, SWIG_This());      
+    } else {
+      PyObject **dictptr = _PyObject_GetDictPtr(pyobj);
+      if (dictptr != NULL) {
+	PyObject *dict = *dictptr;
+	obj = dict ? PyDict_GetItem(dict, SWIG_This()) : 0;
+      } else {
+#ifdef PyWeakref_CheckProxy
+	if (PyWeakref_CheckProxy(pyobj)) {
+	  PyObject *wobj = PyWeakref_GET_OBJECT(pyobj);
+	  return wobj ? SWIG_Python_GetSwigThis(wobj) : 0;
+	}
+#endif
+	obj = PyObject_GetAttr(pyobj,SWIG_This());
+	if (obj) {
+	  Py_DECREF(obj);
+	} else {
+	  if (PyErr_Occurred()) PyErr_Clear();
+	  return 0;
+	}
+      }
+    }
+#else
+    obj = PyObject_GetAttr(pyobj,SWIG_This());
+    if (obj) {
+      Py_DECREF(obj);
+    } else {
+      if (PyErr_Occurred()) PyErr_Clear();
       return 0;
     }
-    lua_pop(L,1);  /* remove the value */
+#endif
+    if (obj && !PySwigObject_Check(obj)) {
+      /* a PyObject is called 'this', try to get the 'real this'
+	 PySwigObject from it */ 
+      return SWIG_Python_GetSwigThis(obj);
+    }
+    return (PySwigObject *)obj;
   }
-  lua_pop(L,1);  /* remove the value .set table */
-  /* NEW: looks for the __setitem() fn
-  this is a user provided set fn */
-  SWIG_Lua_get_table(L,"__setitem"); /* find the fn */
-  if (lua_iscfunction(L,-1))  /* if its there */
-  {  /* found it so call the fn & return its value */
-    lua_pushvalue(L,1);  /* the userdata */
-    lua_pushvalue(L,2);  /* the parameter */
-    lua_pushvalue(L,3);  /* the value */
-    lua_call(L,3,0);  /* 3 values in ,0 out */
-    lua_remove(L,-2); /* stack tidy, remove metatable */
-    return 1;
-  }
-  return 0;
 }
 
-/* the class.destruct method called by the interpreter */
-SWIGINTERN int  SWIG_Lua_class_destruct(lua_State* L)
-{
-/*  there should be 1 params passed in
-  (1) userdata (not the meta table) */
-  swig_lua_userdata* usr;
-  swig_lua_class* clss;
-  assert(lua_isuserdata(L,-1));  /* just in case */
-  usr=(swig_lua_userdata*)lua_touserdata(L,-1);  /* get it */
-  /* if must be destroyed & has a destructor */
-  if (usr->own) /* if must be destroyed */
-  {
-    clss=(swig_lua_class*)usr->type->clientdata;  /* get the class */
-    if (clss && clss->destructor)  /* there is a destroy fn */
-    {
-      clss->destructor(usr->ptr);  /* bye bye */
+/* Acquire a pointer value */
+
+SWIGRUNTIME int
+SWIG_Python_AcquirePtr(PyObject *obj, int own) {
+  if (own == SWIG_POINTER_OWN) {
+    PySwigObject *sobj = SWIG_Python_GetSwigThis(obj);
+    if (sobj) {
+      int oldown = sobj->own;
+      sobj->own = own;
+      return oldown;
     }
   }
   return 0;
 }
 
-/* gets the swig class registry (or creates it) */
-SWIGINTERN void  SWIG_Lua_get_class_registry(lua_State* L)
-{
-  /* add this all into the swig registry: */
-  lua_pushstring(L,"SWIG");
-  lua_rawget(L,LUA_REGISTRYINDEX);  /* get the registry */
-  if (!lua_istable(L,-1))  /* not there */
-  {  /* must be first time, so add it */
-    lua_pop(L,1);  /* remove the result */
-    lua_pushstring(L,"SWIG");
-    lua_newtable(L);
-    lua_rawset(L,LUA_REGISTRYINDEX);
-    /* then get it */
-    lua_pushstring(L,"SWIG");
-    lua_rawget(L,LUA_REGISTRYINDEX);
-  }
-}
+/* Convert a pointer value */
 
-/* helper fn to get the classes metatable from the register */
-SWIGINTERN void  SWIG_Lua_get_class_metatable(lua_State* L,const char* cname)
-{
-  SWIG_Lua_get_class_registry(L);  /* get the registry */
-  lua_pushstring(L,cname);  /* get the name */
-  lua_rawget(L,-2);    /* get it */
-  lua_remove(L,-2);    /* tidy up (remove registry) */
-}
-
-/* helper add a variable to a registered class */
-SWIGINTERN void  SWIG_Lua_add_class_variable(lua_State* L,const char* name,lua_CFunction getFn,lua_CFunction setFn)
-{
-  assert(lua_istable(L,-1));  /* just in case */
-  SWIG_Lua_get_table(L,".get"); /* find the .get table */
-  assert(lua_istable(L,-1));  /* just in case */
-  SWIG_Lua_add_function(L,name,getFn);
-  lua_pop(L,1);       /* tidy stack (remove table) */
-  if (setFn)
-  {
-    SWIG_Lua_get_table(L,".set"); /* find the .set table */
-    assert(lua_istable(L,-1));  /* just in case */
-    SWIG_Lua_add_function(L,name,setFn);
-    lua_pop(L,1);       /* tidy stack (remove table) */
-  }
-}
-
-/* helper to recursively add class details (attributes & operations) */
-SWIGINTERN void  SWIG_Lua_add_class_details(lua_State* L,swig_lua_class* clss)
-{
-  int i;
-  /* call all the base classes first: we can then override these later: */
-  for(i=0;clss->bases[i];i++)
-  {
-    SWIG_Lua_add_class_details(L,clss->bases[i]);
-  }
-  /* add fns */
-  for(i=0;clss->attributes[i].name;i++){
-    SWIG_Lua_add_class_variable(L,clss->attributes[i].name,clss->attributes[i].getmethod,clss->attributes[i].setmethod);
-  }
-  /* add methods to the metatable */
-  SWIG_Lua_get_table(L,".fn"); /* find the .fn table */
-  assert(lua_istable(L,-1));  /* just in case */
-  for(i=0;clss->methods[i].name;i++){
-    SWIG_Lua_add_function(L,clss->methods[i].name,clss->methods[i].method);
-  }
-  lua_pop(L,1);       /* tidy stack (remove table) */
-  /*   add operator overloads
-    these look ANY method which start with "__" and assume they
-    are operator overloads & add them to the metatable
-    (this might mess up is someone defines a method __gc (the destructor)*/
-  for(i=0;clss->methods[i].name;i++){
-    if (clss->methods[i].name[0]=='_' && clss->methods[i].name[1]=='_'){
-      SWIG_Lua_add_function(L,clss->methods[i].name,clss->methods[i].method);
+SWIGRUNTIME int
+SWIG_Python_ConvertPtrAndOwn(PyObject *obj, void **ptr, swig_type_info *ty, int flags, int *own) {
+  if (!obj) return SWIG_ERROR;
+  if (obj == Py_None) {
+    if (ptr) *ptr = 0;
+    return SWIG_OK;
+  } else {
+    PySwigObject *sobj = SWIG_Python_GetSwigThis(obj);
+    if (own)
+      *own = 0;
+    while (sobj) {
+      void *vptr = sobj->ptr;
+      if (ty) {
+	swig_type_info *to = sobj->ty;
+	if (to == ty) {
+	  /* no type cast needed */
+	  if (ptr) *ptr = vptr;
+	  break;
+	} else {
+	  swig_cast_info *tc = SWIG_TypeCheck(to->name,ty);
+	  if (!tc) {
+	    sobj = (PySwigObject *)sobj->next;
+	  } else {
+	    if (ptr) {
+              int newmemory = 0;
+              *ptr = SWIG_TypeCast(tc,vptr,&newmemory);
+              if (newmemory == SWIG_CAST_NEW_MEMORY) {
+                assert(own);
+                if (own)
+                  *own = *own | SWIG_CAST_NEW_MEMORY;
+              }
+            }
+	    break;
+	  }
+	}
+      } else {
+	if (ptr) *ptr = vptr;
+	break;
+      }
+    }
+    if (sobj) {
+      if (own)
+        *own = *own | sobj->own;
+      if (flags & SWIG_POINTER_DISOWN) {
+	sobj->own = 0;
+      }
+      return SWIG_OK;
+    } else {
+      int res = SWIG_ERROR;
+      if (flags & SWIG_POINTER_IMPLICIT_CONV) {
+	PySwigClientData *data = ty ? (PySwigClientData *) ty->clientdata : 0;
+	if (data && !data->implicitconv) {
+	  PyObject *klass = data->klass;
+	  if (klass) {
+	    PyObject *impconv;
+	    data->implicitconv = 1; /* avoid recursion and call 'explicit' constructors*/
+	    impconv = SWIG_Python_CallFunctor(klass, obj);
+	    data->implicitconv = 0;
+	    if (PyErr_Occurred()) {
+	      PyErr_Clear();
+	      impconv = 0;
+	    }
+	    if (impconv) {
+	      PySwigObject *iobj = SWIG_Python_GetSwigThis(impconv);
+	      if (iobj) {
+		void *vptr;
+		res = SWIG_Python_ConvertPtrAndOwn((PyObject*)iobj, &vptr, ty, 0, 0);
+		if (SWIG_IsOK(res)) {
+		  if (ptr) {
+		    *ptr = vptr;
+		    /* transfer the ownership to 'ptr' */
+		    iobj->own = 0;
+		    res = SWIG_AddCast(res);
+		    res = SWIG_AddNewMask(res);
+		  } else {
+		    res = SWIG_AddCast(res);		    
+		  }
+		}
+	      }
+	      Py_DECREF(impconv);
+	    }
+	  }
+	}
+      }
+      return res;
     }
   }
 }
 
-/* set up the base classes pointers.
-Each class structure has a list of pointers to the base class structures.
-This function fills them.
-It cannot be done at compile time, as this will not work with hireachies
-spread over more than one swig file. 
-Therefore it must be done at runtime, querying the SWIG type system.
-*/
-SWIGINTERN void SWIG_Lua_init_base_class(lua_State* L,swig_lua_class* clss)
-{
-  int i=0;
-  swig_module_info* module=SWIG_GetModule(L);
-  for(i=0;clss->base_names[i];i++)
-  {
-    if (clss->bases[i]==0) /* not found yet */
-    {
-      /* lookup and cache the base class */
-      swig_type_info *info = SWIG_TypeQueryModule(module,module,clss->base_names[i]);
-      if (info) clss->bases[i] = (swig_lua_class *) info->clientdata;
+/* Convert a function ptr value */
+
+SWIGRUNTIME int
+SWIG_Python_ConvertFunctionPtr(PyObject *obj, void **ptr, swig_type_info *ty) {
+  if (!PyCFunction_Check(obj)) {
+    return SWIG_ConvertPtr(obj, ptr, ty, 0);
+  } else {
+    void *vptr = 0;
+    
+    /* here we get the method pointer for callbacks */
+    const char *doc = (((PyCFunctionObject *)obj) -> m_ml -> ml_doc);
+    const char *desc = doc ? strstr(doc, "swig_ptr: ") : 0;
+    if (desc) {
+      desc = ty ? SWIG_UnpackVoidPtr(desc + 10, &vptr, ty->name) : 0;
+      if (!desc) return SWIG_ERROR;
     }
-  }	
+    if (ty) {
+      swig_cast_info *tc = SWIG_TypeCheck(desc,ty);
+      if (tc) {
+        int newmemory = 0;
+        *ptr = SWIG_TypeCast(tc,vptr,&newmemory);
+        assert(!newmemory); /* newmemory handling not yet implemented */
+      } else {
+        return SWIG_ERROR;
+      }
+    } else {
+      *ptr = vptr;
+    }
+    return SWIG_OK;
+  }
 }
 
-/* performs the entire class registration process */
-SWIGINTERN void  SWIG_Lua_class_register(lua_State* L,swig_lua_class* clss)
-{
-  /*  add its constructor to module with the name of the class
-  so you can do MyClass(...) as well as new_MyClass(...)
-  BUT only if a constructor is defined
-  (this overcomes the problem of pure virtual classes without constructors)*/
-  if (clss->constructor)
-    SWIG_Lua_add_function(L,clss->name,clss->constructor);
+/* Convert a packed value value */
 
-  SWIG_Lua_get_class_registry(L);  /* get the registry */
-  lua_pushstring(L,clss->name);  /* get the name */
-  lua_newtable(L);    /* create the metatable */
-  /* add string of class name called ".type" */
-  lua_pushstring(L,".type");
-  lua_pushstring(L,clss->name);
-  lua_rawset(L,-3);
-  /* add a table called ".get" */
-  lua_pushstring(L,".get");
-  lua_newtable(L);
-  lua_rawset(L,-3);
-  /* add a table called ".set" */
-  lua_pushstring(L,".set");
-  lua_newtable(L);
-  lua_rawset(L,-3);
-  /* add a table called ".fn" */
-  lua_pushstring(L,".fn");
-  lua_newtable(L);
-  lua_rawset(L,-3);
-  /* add accessor fns for using the .get,.set&.fn */
-  SWIG_Lua_add_function(L,"__index",SWIG_Lua_class_get);
-  SWIG_Lua_add_function(L,"__newindex",SWIG_Lua_class_set);
-  SWIG_Lua_add_function(L,"__gc",SWIG_Lua_class_destruct);
-  /* add it */
-  lua_rawset(L,-3);  /* metatable into registry */
-  lua_pop(L,1);      /* tidy stack (remove registry) */
-
-  SWIG_Lua_get_class_metatable(L,clss->name);
-  SWIG_Lua_add_class_details(L,clss);  /* recursive adding of details (atts & ops) */
-  lua_pop(L,1);      /* tidy stack (remove class metatable) */
-}
+SWIGRUNTIME int
+SWIG_Python_ConvertPacked(PyObject *obj, void *ptr, size_t sz, swig_type_info *ty) {
+  swig_type_info *to = PySwigPacked_UnpackData(obj, ptr, sz);
+  if (!to) return SWIG_ERROR;
+  if (ty) {
+    if (to != ty) {
+      /* check type cast? */
+      swig_cast_info *tc = SWIG_TypeCheck(to->name,ty);
+      if (!tc) return SWIG_ERROR;
+    }
+  }
+  return SWIG_OK;
+}  
 
 /* -----------------------------------------------------------------------------
- * Class/structure conversion fns
+ * Create a new pointer object
  * ----------------------------------------------------------------------------- */
 
-/* helper to add metatable to new lua object */
-SWIGINTERN void _SWIG_Lua_AddMetatable(lua_State* L,swig_type_info *type)
+/*
+  Create a new instance object, whitout calling __init__, and set the
+  'this' attribute.
+*/
+
+SWIGRUNTIME PyObject* 
+SWIG_Python_NewShadowInstance(PySwigClientData *data, PyObject *swig_this)
 {
-  if (type->clientdata)  /* there is clientdata: so add the metatable */
-  {
-    SWIG_Lua_get_class_metatable(L,((swig_lua_class*)(type->clientdata))->name);
-    if (lua_istable(L,-1))
-    {
-      lua_setmetatable(L,-2);
+#if (PY_VERSION_HEX >= 0x02020000)
+  PyObject *inst = 0;
+  PyObject *newraw = data->newraw;
+  if (newraw) {
+    inst = PyObject_Call(newraw, data->newargs, NULL);
+    if (inst) {
+#if !defined(SWIG_PYTHON_SLOW_GETSET_THIS)
+      PyObject **dictptr = _PyObject_GetDictPtr(inst);
+      if (dictptr != NULL) {
+	PyObject *dict = *dictptr;
+	if (dict == NULL) {
+	  dict = PyDict_New();
+	  *dictptr = dict;
+	  PyDict_SetItem(dict, SWIG_This(), swig_this);
+	}
+      }
+#else
+      PyObject *key = SWIG_This();
+      PyObject_SetAttr(inst, key, swig_this);
+#endif
     }
-    else
-    {
-      lua_pop(L,1);
+  } else {
+    PyObject *dict = PyDict_New();
+    PyDict_SetItem(dict, SWIG_This(), swig_this);
+    inst = PyInstance_NewRaw(data->newargs, dict);
+    Py_DECREF(dict);
+  }
+  return inst;
+#else
+#if (PY_VERSION_HEX >= 0x02010000)
+  PyObject *inst;
+  PyObject *dict = PyDict_New();
+  PyDict_SetItem(dict, SWIG_This(), swig_this);
+  inst = PyInstance_NewRaw(data->newargs, dict);
+  Py_DECREF(dict);
+  return (PyObject *) inst;
+#else
+  PyInstanceObject *inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
+  if (inst == NULL) {
+    return NULL;
+  }
+  inst->in_class = (PyClassObject *)data->newargs;
+  Py_INCREF(inst->in_class);
+  inst->in_dict = PyDict_New();
+  if (inst->in_dict == NULL) {
+    Py_DECREF(inst);
+    return NULL;
+  }
+#ifdef Py_TPFLAGS_HAVE_WEAKREFS
+  inst->in_weakreflist = NULL;
+#endif
+#ifdef Py_TPFLAGS_GC
+  PyObject_GC_Init(inst);
+#endif
+  PyDict_SetItem(inst->in_dict, SWIG_This(), swig_this);
+  return (PyObject *) inst;
+#endif
+#endif
+}
+
+SWIGRUNTIME void
+SWIG_Python_SetSwigThis(PyObject *inst, PyObject *swig_this)
+{
+ PyObject *dict;
+#if (PY_VERSION_HEX >= 0x02020000) && !defined(SWIG_PYTHON_SLOW_GETSET_THIS)
+ PyObject **dictptr = _PyObject_GetDictPtr(inst);
+ if (dictptr != NULL) {
+   dict = *dictptr;
+   if (dict == NULL) {
+     dict = PyDict_New();
+     *dictptr = dict;
+   }
+   PyDict_SetItem(dict, SWIG_This(), swig_this);
+   return;
+ }
+#endif
+ dict = PyObject_GetAttrString(inst, (char*)"__dict__");
+ PyDict_SetItem(dict, SWIG_This(), swig_this);
+ Py_DECREF(dict);
+} 
+
+
+SWIGINTERN PyObject *
+SWIG_Python_InitShadowInstance(PyObject *args) {
+  PyObject *obj[2];
+  if (!SWIG_Python_UnpackTuple(args,(char*)"swiginit", 2, 2, obj)) {
+    return NULL;
+  } else {
+    PySwigObject *sthis = SWIG_Python_GetSwigThis(obj[0]);
+    if (sthis) {
+      PySwigObject_append((PyObject*) sthis, obj[1]);
+    } else {
+      SWIG_Python_SetSwigThis(obj[0], obj[1]);
     }
+    return SWIG_Py_Void();
   }
 }
 
-/* pushes a new object into the lua stack */
-SWIGRUNTIME void SWIG_Lua_NewPointerObj(lua_State* L,void* ptr,swig_type_info *type, int own)
-{
-  swig_lua_userdata* usr;
-  if (!ptr){
-    lua_pushnil(L);
-    return;
+/* Create a new pointer object */
+
+SWIGRUNTIME PyObject *
+SWIG_Python_NewPointerObj(void *ptr, swig_type_info *type, int flags) {
+  if (!ptr) {
+    return SWIG_Py_Void();
+  } else {
+    int own = (flags & SWIG_POINTER_OWN) ? SWIG_POINTER_OWN : 0;
+    PyObject *robj = PySwigObject_New(ptr, type, own);
+    PySwigClientData *clientdata = type ? (PySwigClientData *)(type->clientdata) : 0;
+    if (clientdata && !(flags & SWIG_POINTER_NOSHADOW)) {
+      PyObject *inst = SWIG_Python_NewShadowInstance(clientdata, robj);
+      if (inst) {
+	Py_DECREF(robj);
+	robj = inst;
+      }
+    }
+    return robj;
   }
-  usr=(swig_lua_userdata*)lua_newuserdata(L,sizeof(swig_lua_userdata));  /* get data */
-  usr->ptr=ptr;  /* set the ptr */
-  usr->type=type;
-  usr->own=own;
-  _SWIG_Lua_AddMetatable(L,type); /* add metatable */
 }
 
-/* takes a object from the lua stack & converts it into an object of the correct type
- (if possible) */
-SWIGRUNTIME int  SWIG_Lua_ConvertPtr(lua_State* L,int index,void** ptr,swig_type_info *type,int flags)
-{
-  swig_lua_userdata* usr;
-  swig_cast_info *cast;
-  if (lua_isnil(L,index)){*ptr=0; return SWIG_OK;}    /* special case: lua nil => NULL pointer */
-  usr=(swig_lua_userdata*)lua_touserdata(L,index);  /* get data */
-  if (usr)
-  {
-    if (flags & SWIG_POINTER_DISOWN) /* must disown the object */
-    {
-        usr->own=0;
-    }
-    if (!type)            /* special cast void*, no casting fn */
-    {
-      *ptr=usr->ptr;
-      return SWIG_OK; /* ok */
-    }
-    cast=SWIG_TypeCheckStruct(usr->type,type); /* performs normal type checking */
-    if (cast)
-    {
-      int newmemory = 0;
-      *ptr=SWIG_TypeCast(cast,usr->ptr,&newmemory);
-      assert(!newmemory); /* newmemory handling not yet implemented */
-      return SWIG_OK;  /* ok */
-    }
-  }
-  return SWIG_ERROR;  /* error */
+/* Create a new packed object */
+
+SWIGRUNTIMEINLINE PyObject *
+SWIG_Python_NewPackedObj(void *ptr, size_t sz, swig_type_info *type) {
+  return ptr ? PySwigPacked_New((void *) ptr, sz, type) : SWIG_Py_Void();
 }
 
-SWIGRUNTIME void* SWIG_Lua_MustGetPtr(lua_State* L,int index,swig_type_info *type,int flags,
-       int argnum,const char* func_name){
-  void* result;
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,index,&result,type,flags))){
-    lua_pushfstring(L,"Error in %s, expected a %s at argument number %d\n",
-      func_name,(type && type->str)?type->str:"void*",argnum);
-    lua_error(L);
+/* -----------------------------------------------------------------------------*
+ *  Get type list 
+ * -----------------------------------------------------------------------------*/
+
+#ifdef SWIG_LINK_RUNTIME
+void *SWIG_ReturnGlobalTypeList(void *);
+#endif
+
+SWIGRUNTIME swig_module_info *
+SWIG_Python_GetModule(void) {
+  static void *type_pointer = (void *)0;
+  /* first check if module already created */
+  if (!type_pointer) {
+#ifdef SWIG_LINK_RUNTIME
+    type_pointer = SWIG_ReturnGlobalTypeList((void *)0);
+#else
+    type_pointer = PyCObject_Import((char*)"swig_runtime_data" SWIG_RUNTIME_VERSION,
+				    (char*)"type_pointer" SWIG_TYPE_TABLE_NAME);
+    if (PyErr_Occurred()) {
+      PyErr_Clear();
+      type_pointer = (void *)0;
+    }
+#endif
+  }
+  return (swig_module_info *) type_pointer;
+}
+
+#if PY_MAJOR_VERSION < 2
+/* PyModule_AddObject function was introduced in Python 2.0.  The following function
+   is copied out of Python/modsupport.c in python version 2.3.4 */
+SWIGINTERN int
+PyModule_AddObject(PyObject *m, char *name, PyObject *o)
+{
+  PyObject *dict;
+  if (!PyModule_Check(m)) {
+    PyErr_SetString(PyExc_TypeError,
+		    "PyModule_AddObject() needs module as first arg");
+    return SWIG_ERROR;
+  }
+  if (!o) {
+    PyErr_SetString(PyExc_TypeError,
+		    "PyModule_AddObject() needs non-NULL value");
+    return SWIG_ERROR;
+  }
+  
+  dict = PyModule_GetDict(m);
+  if (dict == NULL) {
+    /* Internal error -- modules must have a dict! */
+    PyErr_Format(PyExc_SystemError, "module '%s' has no __dict__",
+		 PyModule_GetName(m));
+    return SWIG_ERROR;
+  }
+  if (PyDict_SetItemString(dict, name, o))
+    return SWIG_ERROR;
+  Py_DECREF(o);
+  return SWIG_OK;
+}
+#endif
+
+SWIGRUNTIME void
+SWIG_Python_DestroyModule(void *vptr)
+{
+  swig_module_info *swig_module = (swig_module_info *) vptr;
+  swig_type_info **types = swig_module->types;
+  size_t i;
+  for (i =0; i < swig_module->size; ++i) {
+    swig_type_info *ty = types[i];
+    if (ty->owndata) {
+      PySwigClientData *data = (PySwigClientData *) ty->clientdata;
+      if (data) PySwigClientData_Del(data);
+    }
+  }
+  Py_DECREF(SWIG_This());
+}
+
+SWIGRUNTIME void
+SWIG_Python_SetModule(swig_module_info *swig_module) {
+  static PyMethodDef swig_empty_runtime_method_table[] = { {NULL, NULL, 0, NULL} };/* Sentinel */
+
+  PyObject *module = Py_InitModule((char*)"swig_runtime_data" SWIG_RUNTIME_VERSION,
+				   swig_empty_runtime_method_table);
+  PyObject *pointer = PyCObject_FromVoidPtr((void *) swig_module, SWIG_Python_DestroyModule);
+  if (pointer && module) {
+    PyModule_AddObject(module, (char*)"type_pointer" SWIG_TYPE_TABLE_NAME, pointer);
+  } else {
+    Py_XDECREF(pointer);
+  }
+}
+
+/* The python cached type query */
+SWIGRUNTIME PyObject *
+SWIG_Python_TypeCache(void) {
+  static PyObject *SWIG_STATIC_POINTER(cache) = PyDict_New();
+  return cache;
+}
+
+SWIGRUNTIME swig_type_info *
+SWIG_Python_TypeQuery(const char *type)
+{
+  PyObject *cache = SWIG_Python_TypeCache();
+  PyObject *key = PyString_FromString(type); 
+  PyObject *obj = PyDict_GetItem(cache, key);
+  swig_type_info *descriptor;
+  if (obj) {
+    descriptor = (swig_type_info *) PyCObject_AsVoidPtr(obj);
+  } else {
+    swig_module_info *swig_module = SWIG_Python_GetModule();
+    descriptor = SWIG_TypeQueryModule(swig_module, swig_module, type);
+    if (descriptor) {
+      obj = PyCObject_FromVoidPtr(descriptor, NULL);
+      PyDict_SetItem(cache, key, obj);
+      Py_DECREF(obj);
+    }
+  }
+  Py_DECREF(key);
+  return descriptor;
+}
+
+/* 
+   For backward compatibility only
+*/
+#define SWIG_POINTER_EXCEPTION  0
+#define SWIG_arg_fail(arg)      SWIG_Python_ArgFail(arg)
+#define SWIG_MustGetPtr(p, type, argnum, flags)  SWIG_Python_MustGetPtr(p, type, argnum, flags)
+
+SWIGRUNTIME int
+SWIG_Python_AddErrMesg(const char* mesg, int infront)
+{
+  if (PyErr_Occurred()) {
+    PyObject *type = 0;
+    PyObject *value = 0;
+    PyObject *traceback = 0;
+    PyErr_Fetch(&type, &value, &traceback);
+    if (value) {
+      PyObject *old_str = PyObject_Str(value);
+      Py_XINCREF(type);
+      PyErr_Clear();
+      if (infront) {
+	PyErr_Format(type, "%s %s", mesg, PyString_AsString(old_str));
+      } else {
+	PyErr_Format(type, "%s %s", PyString_AsString(old_str), mesg);
+      }
+      Py_DECREF(old_str);
+    }
+    return 1;
+  } else {
+    return 0;
+  }
+}
+  
+SWIGRUNTIME int
+SWIG_Python_ArgFail(int argnum)
+{
+  if (PyErr_Occurred()) {
+    /* add information about failing argument */
+    char mesg[256];
+    PyOS_snprintf(mesg, sizeof(mesg), "argument number %d:", argnum);
+    return SWIG_Python_AddErrMesg(mesg, 1);
+  } else {
+    return 0;
+  }
+}
+
+SWIGRUNTIMEINLINE const char *
+PySwigObject_GetDesc(PyObject *self)
+{
+  PySwigObject *v = (PySwigObject *)self;
+  swig_type_info *ty = v ? v->ty : 0;
+  return ty ? ty->str : (char*)"";
+}
+
+SWIGRUNTIME void
+SWIG_Python_TypeError(const char *type, PyObject *obj)
+{
+  if (type) {
+#if defined(SWIG_COBJECT_TYPES)
+    if (obj && PySwigObject_Check(obj)) {
+      const char *otype = (const char *) PySwigObject_GetDesc(obj);
+      if (otype) {
+	PyErr_Format(PyExc_TypeError, "a '%s' is expected, 'PySwigObject(%s)' is received",
+		     type, otype);
+	return;
+      }
+    } else 
+#endif      
+    {
+      const char *otype = (obj ? obj->ob_type->tp_name : 0); 
+      if (otype) {
+	PyObject *str = PyObject_Str(obj);
+	const char *cstr = str ? PyString_AsString(str) : 0;
+	if (cstr) {
+	  PyErr_Format(PyExc_TypeError, "a '%s' is expected, '%s(%s)' is received",
+		       type, otype, cstr);
+	} else {
+	  PyErr_Format(PyExc_TypeError, "a '%s' is expected, '%s' is received",
+		       type, otype);
+	}
+	Py_XDECREF(str);
+	return;
+      }
+    }   
+    PyErr_Format(PyExc_TypeError, "a '%s' is expected", type);
+  } else {
+    PyErr_Format(PyExc_TypeError, "unexpected type is received");
+  }
+}
+
+
+/* Convert a pointer value, signal an exception on a type mismatch */
+SWIGRUNTIME void *
+SWIG_Python_MustGetPtr(PyObject *obj, swig_type_info *ty, int argnum, int flags) {
+  void *result;
+  if (SWIG_Python_ConvertPtr(obj, &result, ty, flags) == -1) {
+    PyErr_Clear();
+    if (flags & SWIG_POINTER_EXCEPTION) {
+      SWIG_Python_TypeError(SWIG_TypePrettyName(ty), obj);
+      SWIG_Python_ArgFail(argnum);
+    }
   }
   return result;
 }
 
-/* pushes a packed userdata. user for member fn pointers only */
-SWIGRUNTIME void SWIG_Lua_NewPackedObj(lua_State* L,void* ptr,size_t size,swig_type_info *type)
-{
-  swig_lua_rawdata* raw;
-  assert(ptr); /* not acceptable to pass in a NULL value */
-  raw=(swig_lua_rawdata*)lua_newuserdata(L,sizeof(swig_lua_rawdata)-1+size);  /* alloc data */
-  raw->type=type;
-  raw->own=0;
-  memcpy(raw->data,ptr,size); /* copy the data */
-  _SWIG_Lua_AddMetatable(L,type); /* add metatable */
-}
-    
-/* converts a packed userdata. user for member fn pointers only */
-SWIGRUNTIME int  SWIG_Lua_ConvertPacked(lua_State* L,int index,void* ptr,size_t size,swig_type_info *type)
-{
-  swig_lua_rawdata* raw;
-  raw=(swig_lua_rawdata*)lua_touserdata(L,index);  /* get data */
-  if (!raw) return SWIG_ERROR;  /* error */
-  if (type==0 || type==raw->type) /* void* or identical type */
-  {
-    memcpy(ptr,raw->data,size); /* copy it */
-    return SWIG_OK; /* ok */
-  }
-  return SWIG_ERROR;  /* error */
-}
-
-/* a function to get the typestring of a piece of data */
-SWIGRUNTIME const char *SWIG_Lua_typename(lua_State *L, int tp)
-{
-  swig_lua_userdata* usr;
-  if (lua_isuserdata(L,tp))
-  {
-    usr=(swig_lua_userdata*)lua_touserdata(L,1);  /* get data */
-    if (usr && usr->type && usr->type->str)
-      return usr->type->str;
-    return "userdata (unknown type)";
-  }
-  return lua_typename(L,lua_type(L,tp));
-}
-
-/* lua callable function to get the userdata's type */
-SWIGRUNTIME int SWIG_Lua_type(lua_State* L)
-{
-  lua_pushstring(L,SWIG_Lua_typename(L,1));
-  return 1;
-}
-
-/* lua callable function to compare userdata's value
-the issue is that two userdata may point to the same thing
-but to lua, they are different objects */
-SWIGRUNTIME int SWIG_Lua_equal(lua_State* L)
-{
-  int result;
-  swig_lua_userdata *usr1,*usr2;
-  if (!lua_isuserdata(L,1) || !lua_isuserdata(L,2))  /* just in case */
-    return 0;  /* nil reply */
-  usr1=(swig_lua_userdata*)lua_touserdata(L,1);  /* get data */
-  usr2=(swig_lua_userdata*)lua_touserdata(L,2);  /* get data */
-  /*result=(usr1->ptr==usr2->ptr && usr1->type==usr2->type); only works if type is the same*/
-  result=(usr1->ptr==usr2->ptr);
-   lua_pushboolean(L,result);
-  return 1;
-}
-
-/* -----------------------------------------------------------------------------
- * global variable support code: class/struct typemap functions
- * ----------------------------------------------------------------------------- */
-
-/* Install Constants */
-SWIGINTERN void
-SWIG_Lua_InstallConstants(lua_State* L, swig_lua_const_info constants[]) {
-  int i;
-  for (i = 0; constants[i].type; i++) {
-    switch(constants[i].type) {
-    case SWIG_LUA_INT:
-      lua_pushstring(L,constants[i].name);
-      lua_pushnumber(L,(lua_Number)constants[i].lvalue);
-      lua_rawset(L,-3);
-      break;
-    case SWIG_LUA_FLOAT:
-      lua_pushstring(L,constants[i].name);
-      lua_pushnumber(L,(lua_Number)constants[i].dvalue);
-      lua_rawset(L,-3);
-      break;
-    case SWIG_LUA_CHAR:
-      lua_pushstring(L,constants[i].name);
-      lua_pushfstring(L,"%c",(char)constants[i].lvalue);
-      lua_rawset(L,-3);
-      break;
-    case SWIG_LUA_STRING:
-      lua_pushstring(L,constants[i].name);
-      lua_pushstring(L,(char *) constants[i].pvalue);
-      lua_rawset(L,-3);
-      break;
-    case SWIG_LUA_POINTER:
-      lua_pushstring(L,constants[i].name);
-      SWIG_NewPointerObj(L,constants[i].pvalue, *(constants[i]).ptype,0);
-      lua_rawset(L,-3);
-      break;
-    case SWIG_LUA_BINARY:
-      lua_pushstring(L,constants[i].name);
-      SWIG_NewMemberObj(L,constants[i].pvalue,constants[i].lvalue,*(constants[i]).ptype);
-      lua_rawset(L,-3);
-      break;
-    default:
-      break;
-    }
-  }
-}
-
-/* -----------------------------------------------------------------------------
- * executing lua code from within the wrapper
- * ----------------------------------------------------------------------------- */
-
-#ifndef SWIG_DOSTRING_FAIL /* Allows redefining of error function */
-#define SWIG_DOSTRING_FAIL(S) fprintf(stderr,"%s\n",S)
-#endif
-/* Executes a C string in Lua a really simple way of calling lua from C
-Unfortunately lua keeps changing its API's, so we need a conditional compile
-In lua 5.0.X its lua_dostring()
-In lua 5.1.X its luaL_dostring()
-*/
-SWIGINTERN int 
-SWIG_Lua_dostring(lua_State *L, const char* str) {
-  int ok,top;
-  if (str==0 || str[0]==0) return 0; /* nothing to do */
-  top=lua_gettop(L); /* save stack */
-#if (defined(LUA_VERSION_NUM) && (LUA_VERSION_NUM>=501))
-  ok=luaL_dostring(L,str);	/* looks like this is lua 5.1.X or later, good */
-#else
-  ok=lua_dostring(L,str);	/* might be lua 5.0.x, using lua_dostring */
-#endif
-  if (ok!=0) {
-    SWIG_DOSTRING_FAIL(lua_tostring(L,-1));
-  }
-  lua_settop(L,top); /* restore the stack */
-  return ok;
-}    
 
 #ifdef __cplusplus
+#if 0
+{ /* cc-mode */
+#endif
 }
 #endif
 
-/* ------------------------------ end luarun.swg  ------------------------------ */
+
+
+#define SWIG_exception_fail(code, msg) do { SWIG_Error(code, msg); SWIG_fail; } while(0) 
+
+#define SWIG_contract_assert(expr, msg) if (!(expr)) { SWIG_Error(SWIG_RuntimeError, msg); SWIG_fail; } else 
+
 
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_eslConnection swig_types[0]
-#define SWIGTYPE_p_eslEvent swig_types[1]
-#define SWIGTYPE_p_esl_event_t swig_types[2]
-#define SWIGTYPE_p_esl_priority_t swig_types[3]
-#define SWIGTYPE_p_esl_status_t swig_types[4]
-static swig_type_info *swig_types[6];
-static swig_module_info swig_module = {swig_types, 5, 0, 0, 0, 0};
+#define SWIGTYPE_p_ESLconnection swig_types[0]
+#define SWIGTYPE_p_ESLevent swig_types[1]
+#define SWIGTYPE_p_char swig_types[2]
+#define SWIGTYPE_p_esl_event_t swig_types[3]
+#define SWIGTYPE_p_esl_priority_t swig_types[4]
+#define SWIGTYPE_p_esl_status_t swig_types[5]
+static swig_type_info *swig_types[7];
+static swig_module_info swig_module = {swig_types, 6, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
 /* -------- TYPES TABLE (END) -------- */
 
-#define SWIG_name      "ESL"
-#define SWIG_init      luaopen_ESL
-#define SWIG_init_user luaopen_ESL_user
+#if (PY_VERSION_HEX <= 0x02000000)
+# if !defined(SWIG_PYTHON_CLASSIC)
+#  error "This python version requires swig to be run with the '-classic' option"
+# endif
+#endif
 
-#define SWIG_LUACODE   luaopen_ESL_luacode
+/*-----------------------------------------------
+              @(target):= _ESL.so
+  ------------------------------------------------*/
+#define SWIG_init    init_ESL
+
+#define SWIG_name    "_ESL"
+
+#define SWIGVERSION 0x010335 
+#define SWIG_VERSION SWIGVERSION
+
+
+#define SWIG_as_voidptr(a) const_cast< void * >(static_cast< const void * >(a)) 
+#define SWIG_as_voidptrptr(a) ((void)SWIG_as_voidptr(*a),reinterpret_cast< void** >(a)) 
+
+
+#include <stdexcept>
 
 
 namespace swig {
-typedef struct{} LANGUAGE_OBJ;
+  class PyObject_ptr {
+  protected:
+    PyObject *_obj;
+
+  public:
+    PyObject_ptr() :_obj(0)
+    {
+    }
+
+    PyObject_ptr(const PyObject_ptr& item) : _obj(item._obj)
+    {
+      Py_XINCREF(_obj);      
+    }
+    
+    PyObject_ptr(PyObject *obj, bool initial_ref = true) :_obj(obj)
+    {
+      if (initial_ref) {
+        Py_XINCREF(_obj);
+      }
+    }
+    
+    PyObject_ptr & operator=(const PyObject_ptr& item) 
+    {
+      Py_XINCREF(item._obj);
+      Py_XDECREF(_obj);
+      _obj = item._obj;
+      return *this;      
+    }
+    
+    ~PyObject_ptr() 
+    {
+      Py_XDECREF(_obj);
+    }
+    
+    operator PyObject *() const
+    {
+      return _obj;
+    }
+
+    PyObject *operator->() const
+    {
+      return _obj;
+    }
+  };
+}
+
+
+namespace swig {
+  struct PyObject_var : PyObject_ptr {
+    PyObject_var(PyObject* obj = 0) : PyObject_ptr(obj, false) { }
+    
+    PyObject_var & operator = (PyObject* obj)
+    {
+      Py_XDECREF(_obj);
+      _obj = obj;
+      return *this;      
+    }
+  };
 }
 
 
 #include "esl.h"
 #include "esl_oop.h"
 
+
+SWIGINTERN swig_type_info*
+SWIG_pchar_descriptor(void)
+{
+  static int init = 0;
+  static swig_type_info* info = 0;
+  if (!init) {
+    info = SWIG_TypeQuery("_p_char");
+    init = 1;
+  }
+  return info;
+}
+
+
+SWIGINTERN int
+SWIG_AsCharPtrAndSize(PyObject *obj, char** cptr, size_t* psize, int *alloc)
+{
+  if (PyString_Check(obj)) {
+    char *cstr; Py_ssize_t len;
+    PyString_AsStringAndSize(obj, &cstr, &len);
+    if (cptr)  {
+      if (alloc) {
+	/* 
+	   In python the user should not be able to modify the inner
+	   string representation. To warranty that, if you define
+	   SWIG_PYTHON_SAFE_CSTRINGS, a new/copy of the python string
+	   buffer is always returned.
+
+	   The default behavior is just to return the pointer value,
+	   so, be careful.
+	*/ 
+#if defined(SWIG_PYTHON_SAFE_CSTRINGS)
+	if (*alloc != SWIG_OLDOBJ) 
+#else
+	if (*alloc == SWIG_NEWOBJ) 
+#endif
+	  {
+	    *cptr = reinterpret_cast< char* >(memcpy((new char[len + 1]), cstr, sizeof(char)*(len + 1)));
+	    *alloc = SWIG_NEWOBJ;
+	  }
+	else {
+	  *cptr = cstr;
+	  *alloc = SWIG_OLDOBJ;
+	}
+      } else {
+	*cptr = PyString_AsString(obj);
+      }
+    }
+    if (psize) *psize = len + 1;
+    return SWIG_OK;
+  } else {
+    swig_type_info* pchar_descriptor = SWIG_pchar_descriptor();
+    if (pchar_descriptor) {
+      void* vptr = 0;
+      if (SWIG_ConvertPtr(obj, &vptr, pchar_descriptor, 0) == SWIG_OK) {
+	if (cptr) *cptr = (char *) vptr;
+	if (psize) *psize = vptr ? (strlen((char *)vptr) + 1) : 0;
+	if (alloc) *alloc = SWIG_OLDOBJ;
+	return SWIG_OK;
+      }
+    }
+  }
+  return SWIG_TypeError;
+}
+
+
+
+
+
+SWIGINTERNINLINE PyObject *
+SWIG_FromCharPtrAndSize(const char* carray, size_t size)
+{
+  if (carray) {
+    if (size > INT_MAX) {
+      swig_type_info* pchar_descriptor = SWIG_pchar_descriptor();
+      return pchar_descriptor ? 
+	SWIG_NewPointerObj(const_cast< char * >(carray), pchar_descriptor, 0) : SWIG_Py_Void();
+    } else {
+      return PyString_FromStringAndSize(carray, static_cast< int >(size));
+    }
+  } else {
+    return SWIG_Py_Void();
+  }
+}
+
+
+SWIGINTERNINLINE PyObject * 
+SWIG_FromCharPtr(const char *cptr)
+{ 
+  return SWIG_FromCharPtrAndSize(cptr, (cptr ? strlen(cptr) : 0));
+}
+
+
+#include <limits.h>
+#if !defined(SWIG_NO_LLONG_MAX)
+# if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
+#   define LLONG_MAX __LONG_LONG_MAX__
+#   define LLONG_MIN (-LLONG_MAX - 1LL)
+#   define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
+# endif
+#endif
+
+
+SWIGINTERN int
+SWIG_AsVal_double (PyObject *obj, double *val)
+{
+  int res = SWIG_TypeError;
+  if (PyFloat_Check(obj)) {
+    if (val) *val = PyFloat_AsDouble(obj);
+    return SWIG_OK;
+  } else if (PyInt_Check(obj)) {
+    if (val) *val = PyInt_AsLong(obj);
+    return SWIG_OK;
+  } else if (PyLong_Check(obj)) {
+    double v = PyLong_AsDouble(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = v;
+      return SWIG_OK;
+    } else {
+      PyErr_Clear();
+    }
+  }
+#ifdef SWIG_PYTHON_CAST_MODE
+  {
+    int dispatch = 0;
+    double d = PyFloat_AsDouble(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = d;
+      return SWIG_AddCast(SWIG_OK);
+    } else {
+      PyErr_Clear();
+    }
+    if (!dispatch) {
+      long v = PyLong_AsLong(obj);
+      if (!PyErr_Occurred()) {
+	if (val) *val = v;
+	return SWIG_AddCast(SWIG_AddCast(SWIG_OK));
+      } else {
+	PyErr_Clear();
+      }
+    }
+  }
+#endif
+  return res;
+}
+
+
+#include <float.h>
+
+
+#include <math.h>
+
+
+SWIGINTERNINLINE int
+SWIG_CanCastAsInteger(double *d, double min, double max) {
+  double x = *d;
+  if ((min <= x && x <= max)) {
+   double fx = floor(x);
+   double cx = ceil(x);
+   double rd =  ((x - fx) < 0.5) ? fx : cx; /* simple rint */
+   if ((errno == EDOM) || (errno == ERANGE)) {
+     errno = 0;
+   } else {
+     double summ, reps, diff;
+     if (rd < x) {
+       diff = x - rd;
+     } else if (rd > x) {
+       diff = rd - x;
+     } else {
+       return 1;
+     }
+     summ = rd + x;
+     reps = diff/summ;
+     if (reps < 8*DBL_EPSILON) {
+       *d = rd;
+       return 1;
+     }
+   }
+  }
+  return 0;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_long (PyObject *obj, long* val)
+{
+  if (PyInt_Check(obj)) {
+    if (val) *val = PyInt_AsLong(obj);
+    return SWIG_OK;
+  } else if (PyLong_Check(obj)) {
+    long v = PyLong_AsLong(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = v;
+      return SWIG_OK;
+    } else {
+      PyErr_Clear();
+    }
+  }
+#ifdef SWIG_PYTHON_CAST_MODE
+  {
+    int dispatch = 0;
+    long v = PyInt_AsLong(obj);
+    if (!PyErr_Occurred()) {
+      if (val) *val = v;
+      return SWIG_AddCast(SWIG_OK);
+    } else {
+      PyErr_Clear();
+    }
+    if (!dispatch) {
+      double d;
+      int res = SWIG_AddCast(SWIG_AsVal_double (obj,&d));
+      if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, LONG_MIN, LONG_MAX)) {
+	if (val) *val = (long)(d);
+	return res;
+      }
+    }
+  }
+#endif
+  return SWIG_TypeError;
+}
+
+
+SWIGINTERN int
+SWIG_AsVal_int (PyObject * obj, int *val)
+{
+  long v;
+  int res = SWIG_AsVal_long (obj, &v);
+  if (SWIG_IsOK(res)) {
+    if ((v < INT_MIN || v > INT_MAX)) {
+      return SWIG_OverflowError;
+    } else {
+      if (val) *val = static_cast< int >(v);
+    }
+  }  
+  return res;
+}
+
+
+  #define SWIG_From_long   PyInt_FromLong 
+
+
+SWIGINTERNINLINE PyObject *
+SWIG_From_int  (int value)
+{    
+  return SWIG_From_long  (value);
+}
+
+
+SWIGINTERNINLINE PyObject*
+  SWIG_From_bool  (bool value)
+{
+  return PyBool_FromLong(value ? 1 : 0);
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-static int _wrap_eslEvent_event_set(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_event_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_event_t *arg2 = (esl_event_t *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("event",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"eslEvent *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("event",2,"esl_event_t *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_event_set",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLevent_event_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_event_set" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_esl_event_t,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("eslEvent_event_set",2,SWIGTYPE_p_esl_event_t);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_esl_event_t, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_event_set" "', argument " "2"" of type '" "esl_event_t *""'"); 
   }
-  
+  arg2 = reinterpret_cast< esl_event_t * >(argp2);
   if (arg1) (arg1)->event = arg2;
   
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_event_get(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_event_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_event_t *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("event",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"eslEvent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_event_get",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLevent_event_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_event_get" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (esl_event_t *) ((arg1)->event);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_esl_event_t,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_esl_event_t, 0 |  0 );
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_serialized_string_set(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_serialized_string_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("serialized_string",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"eslEvent *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("serialized_string",2,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_serialized_string_set",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLevent_serialized_string_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_serialized_string_set" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  {
-    if (arg1->serialized_string) delete [] arg1->serialized_string;
-    if (arg2) {
-      arg1->serialized_string = (char *) (new char[strlen((const char *)arg2)+1]);
-      strcpy((char *)arg1->serialized_string, (const char *)arg2);
-    } else {
-      arg1->serialized_string = 0;
-    }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_serialized_string_set" "', argument " "2"" of type '" "char *""'");
   }
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (arg1->serialized_string) delete[] arg1->serialized_string;
+  if (arg2) {
+    size_t size = strlen(reinterpret_cast< const char * >(arg2)) + 1;
+    arg1->serialized_string = (char *)reinterpret_cast< char* >(memcpy((new char[size]), reinterpret_cast< const char * >(arg2), sizeof(char)*(size)));
+  } else {
+    arg1->serialized_string = 0;
+  }
+  resultobj = SWIG_Py_Void();
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_serialized_string_get(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_serialized_string_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("serialized_string",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"eslEvent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_serialized_string_get",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLevent_serialized_string_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_serialized_string_get" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (char *) ((arg1)->serialized_string);
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_mine_set(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_mine_set(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("mine",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"eslEvent *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("mine",2,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_mine_set",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLevent_mine_set",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_mine_set" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  arg2 = (int)lua_tonumber(L, 2);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "ESLevent_mine_set" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
   if (arg1) (arg1)->mine = arg2;
   
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_mine_get(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_mine_get(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("mine",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"eslEvent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_mine_get",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLevent_mine_get",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_mine_get" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (int) ((arg1)->mine);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_new_eslEvent__SWIG_0(lua_State* L) {
-  int SWIG_arg = -1;
+SWIGINTERN PyObject *_wrap_new_ESLevent__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) NULL ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("eslEvent",1,2)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("eslEvent",1,"char const *");
-  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("eslEvent",2,"char const *");
-  arg1 = (char *)lua_tostring(L, 1);
-  if(lua_gettop(L)>=2){
-    arg2 = (char *)lua_tostring(L, 2);
+  if (!PyArg_ParseTuple(args,(char *)"O|O:new_ESLevent",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLevent" "', argument " "1"" of type '" "char const *""'");
   }
-  result = (eslEvent *)new eslEvent((char const *)arg1,(char const *)arg2);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  arg1 = reinterpret_cast< char * >(buf1);
+  if (obj1) {
+    res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_ESLevent" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
+  }
+  result = (ESLevent *)new ESLevent((char const *)arg1,(char const *)arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_NEW |  0 );
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_new_eslEvent__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
+SWIGINTERN PyObject *_wrap_new_ESLevent__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
   esl_event_t *arg1 = (esl_event_t *) 0 ;
   int arg2 = (int) 0 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("eslEvent",1,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("eslEvent",1,"esl_event_t *");
-  if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("eslEvent",2,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_esl_event_t,0))){
-    SWIG_fail_ptr("new_eslEvent",1,SWIGTYPE_p_esl_event_t);
+  if (!PyArg_ParseTuple(args,(char *)"O|O:new_ESLevent",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_esl_event_t, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLevent" "', argument " "1"" of type '" "esl_event_t *""'"); 
   }
-  
-  if(lua_gettop(L)>=2){
-    arg2 = (int)lua_tonumber(L, 2);
+  arg1 = reinterpret_cast< esl_event_t * >(argp1);
+  if (obj1) {
+    ecode2 = SWIG_AsVal_int(obj1, &val2);
+    if (!SWIG_IsOK(ecode2)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_ESLevent" "', argument " "2"" of type '" "int""'");
+    } 
+    arg2 = static_cast< int >(val2);
   }
-  result = (eslEvent *)new eslEvent(arg1,arg2);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,1); SWIG_arg++; 
-  return SWIG_arg;
+  result = (ESLevent *)new ESLevent(arg1,arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_ESLevent(PyObject *self, PyObject *args) {
+  int argc;
+  PyObject *argv[3];
+  int ii;
   
-  if(0) SWIG_fail;
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 2); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if ((argc >= 1) && (argc <= 2)) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_esl_event_t, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_ESLevent__SWIG_1(self, args);
+      }
+      {
+        int res = SWIG_AsVal_int(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        return _wrap_new_ESLevent__SWIG_1(self, args);
+      }
+    }
+  }
+  if ((argc >= 1) && (argc <= 2)) {
+    int _v;
+    int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      if (argc <= 1) {
+        return _wrap_new_ESLevent__SWIG_0(self, args);
+      }
+      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_new_ESLevent__SWIG_0(self, args);
+      }
+    }
+  }
   
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_ESLevent'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    ESLevent(char const *,char const *)\n"
+    "    ESLevent(esl_event_t *,int)\n");
+  return NULL;
 }
 
 
-static int _wrap_new_eslEvent(lua_State* L) {
-  int argc;
-  int argv[3]={
-    1,2,3
-  };
+SWIGINTERN PyObject *_wrap_delete_ESLevent(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  argc = lua_gettop(L);
-  if ((argc >= 1) && (argc <= 2)) {
-    int _v;
-    {
-      void *ptr;
-      if (SWIG_isptrtype(L,argv[0])==0 || SWIG_ConvertPtr(L,argv[0], (void **) &ptr, SWIGTYPE_p_esl_event_t, 0)) {
-        _v = 0;
-      } else {
-        _v = 1;
-      }
-    }
-    if (_v) {
-      if (argc <= 1) {
-        return _wrap_new_eslEvent__SWIG_1(L);
-      }
-      {
-        _v = lua_isnumber(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_new_eslEvent__SWIG_1(L);
-      }
-    }
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_ESLevent",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_ESLevent" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  if ((argc >= 1) && (argc <= 2)) {
-    int _v;
-    {
-      _v = lua_isstring(L,argv[0]);
-    }
-    if (_v) {
-      if (argc <= 1) {
-        return _wrap_new_eslEvent__SWIG_0(L);
-      }
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
-      if (_v) {
-        return _wrap_new_eslEvent__SWIG_0(L);
-      }
-    }
-  }
-  
-  lua_pushstring(L,"No matching function for overloaded 'new_eslEvent'");
-  lua_error(L);return 0;
-}
-
-
-static int _wrap_delete_eslEvent(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
-  
-  SWIG_check_num_args("eslEvent",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("eslEvent",1,"eslEvent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("delete_eslEvent",1,SWIGTYPE_p_eslEvent);
-  }
-  
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   delete arg1;
   
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_serialize(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_serialize(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) NULL ;
   char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("serialize",1,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"eslEvent *");
-  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("serialize",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_serialize",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"O|O:ESLevent_serialize",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_serialize" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  if(lua_gettop(L)>=2){
-    arg2 = (char *)lua_tostring(L, 2);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  if (obj1) {
+    res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_serialize" "', argument " "2"" of type '" "char const *""'");
+    }
+    arg2 = reinterpret_cast< char * >(buf2);
   }
   result = (char *)(arg1)->serialize((char const *)arg2);
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_setPriority(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_setPriority(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_priority_t arg2 = (esl_priority_t) ESL_PRIORITY_NORMAL ;
   bool result;
-  esl_priority_t *argp2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("setPriority",1,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPriority",1,"eslEvent *");
-  if(lua_gettop(L)>=2 && !lua_isuserdata(L,2)) SWIG_fail_arg("setPriority",2,"esl_priority_t");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_setPriority",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"O|O:ESLevent_setPriority",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_setPriority" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  if(lua_gettop(L)>=2){
-    if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_esl_priority_t,0))){
-      SWIG_fail_ptr("eslEvent_setPriority",2,SWIGTYPE_p_esl_priority_t);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  if (obj1) {
+    {
+      res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_esl_priority_t,  0  | 0);
+      if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_setPriority" "', argument " "2"" of type '" "esl_priority_t""'"); 
+      }  
+      if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "ESLevent_setPriority" "', argument " "2"" of type '" "esl_priority_t""'");
+      } else {
+        esl_priority_t * temp = reinterpret_cast< esl_priority_t * >(argp2);
+        arg2 = *temp;
+        if (SWIG_IsNewObj(res2)) delete temp;
+      }
     }
-    arg2 = *argp2;
   }
   result = (bool)(arg1)->setPriority(arg2);
-  SWIG_arg=0;
-  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_getHeader(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_getHeader(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("getHeader",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getHeader",1,"eslEvent *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("getHeader",2,"char *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_getHeader",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLevent_getHeader",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_getHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
   result = (char *)(arg1)->getHeader(arg2);
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_getBody(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_getBody(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("getBody",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getBody",1,"eslEvent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_getBody",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLevent_getBody",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_getBody" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (char *)(arg1)->getBody();
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_getType(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_getType(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("getType",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getType",1,"eslEvent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_getType",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLevent_getType",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_getType" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (char *)(arg1)->getType();
-  SWIG_arg=0;
-  lua_pushstring(L,(const char*)result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_addBody(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_addBody(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("addBody",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("addBody",1,"eslEvent *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("addBody",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_addBody",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLevent_addBody",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_addBody" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_addBody" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
   result = (bool)(arg1)->addBody((char const *)arg2);
-  SWIG_arg=0;
-  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_addHeader(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_addHeader(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
   
-  SWIG_check_num_args("addHeader",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("addHeader",1,"eslEvent *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("addHeader",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("addHeader",3,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_addHeader",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"OOO:ESLevent_addHeader",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_addHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_addHeader" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLevent_addHeader" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
   result = (bool)(arg1)->addHeader((char const *)arg2,(char const *)arg3);
-  SWIG_arg=0;
-  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return NULL;
 }
 
 
-static int _wrap_eslEvent_delHeader(lua_State* L) {
-  int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLevent_delHeader(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("delHeader",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("delHeader",1,"eslEvent *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("delHeader",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_delHeader",1,SWIGTYPE_p_eslEvent);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLevent_delHeader",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_delHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_delHeader" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
   result = (bool)(arg1)->delHeader((char const *)arg2);
-  SWIG_arg=0;
-  lua_pushboolean(L,(int)(result==true)); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_bool(static_cast< bool >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static void swig_delete_eslEvent(void *obj) {
-eslEvent *arg1 = (eslEvent *) obj;
-delete arg1;
+SWIGINTERN PyObject *ESLevent_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_ESLevent, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
 }
-static swig_lua_method swig_eslEvent_methods[] = {
-    {"serialize", _wrap_eslEvent_serialize}, 
-    {"setPriority", _wrap_eslEvent_setPriority}, 
-    {"getHeader", _wrap_eslEvent_getHeader}, 
-    {"getBody", _wrap_eslEvent_getBody}, 
-    {"getType", _wrap_eslEvent_getType}, 
-    {"addBody", _wrap_eslEvent_addBody}, 
-    {"addHeader", _wrap_eslEvent_addHeader}, 
-    {"delHeader", _wrap_eslEvent_delHeader}, 
-    {0,0}
-};
-static swig_lua_attribute swig_eslEvent_attributes[] = {
-    { "event", _wrap_eslEvent_event_get, _wrap_eslEvent_event_set},
-    { "serialized_string", _wrap_eslEvent_serialized_string_get, _wrap_eslEvent_serialized_string_set},
-    { "mine", _wrap_eslEvent_mine_get, _wrap_eslEvent_mine_set},
-    {0,0,0}
-};
-static swig_lua_class *swig_eslEvent_bases[] = {0};
-static const char *swig_eslEvent_base_names[] = {0};
-static swig_lua_class _wrap_class_eslEvent = { "eslEvent", &SWIGTYPE_p_eslEvent,_wrap_new_eslEvent, swig_delete_eslEvent, swig_eslEvent_methods, swig_eslEvent_attributes, swig_eslEvent_bases, swig_eslEvent_base_names };
 
-static int _wrap_new_eslConnection__SWIG_0(lua_State* L) {
-  int SWIG_arg = -1;
+SWIGINTERN PyObject *_wrap_new_ESLconnection__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  eslConnection *result = 0 ;
+  ESLconnection *result = 0 ;
+  int res1 ;
+  char *buf1 = 0 ;
+  int alloc1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
   
-  SWIG_check_num_args("eslConnection",3,3)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("eslConnection",1,"char const *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("eslConnection",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("eslConnection",3,"char const *");
-  arg1 = (char *)lua_tostring(L, 1);
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
-  result = (eslConnection *)new eslConnection((char const *)arg1,(char const *)arg2,(char const *)arg3);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslConnection,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:new_ESLconnection",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_AsCharPtrAndSize(obj0, &buf1, NULL, &alloc1);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_ESLconnection" "', argument " "1"" of type '" "char const *""'");
+  }
+  arg1 = reinterpret_cast< char * >(buf1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_ESLconnection" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "new_ESLconnection" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,(char const *)arg2,(char const *)arg3);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLconnection, SWIG_POINTER_NEW |  0 );
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return NULL;
 }
 
 
-static int _wrap_new_eslConnection__SWIG_1(lua_State* L) {
-  int SWIG_arg = -1;
+SWIGINTERN PyObject *_wrap_new_ESLconnection__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
   int arg1 ;
-  eslConnection *result = 0 ;
+  ESLconnection *result = 0 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("eslConnection",1,1)
-  if(!lua_isnumber(L,1)) SWIG_fail_arg("eslConnection",1,"int");
-  arg1 = (int)lua_tonumber(L, 1);
-  result = (eslConnection *)new eslConnection(arg1);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslConnection,1); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_ESLconnection",&obj0)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_ESLconnection" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  result = (ESLconnection *)new ESLconnection(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLconnection, SWIG_POINTER_NEW |  0 );
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_new_eslConnection(lua_State* L) {
+SWIGINTERN PyObject *_wrap_new_ESLconnection(PyObject *self, PyObject *args) {
   int argc;
-  int argv[4]={
-    1,2,3,4
-  };
+  PyObject *argv[4];
+  int ii;
   
-  argc = lua_gettop(L);
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = (int)PyObject_Length(args);
+  for (ii = 0; (ii < argc) && (ii < 3); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
   if (argc == 1) {
     int _v;
     {
-      _v = lua_isnumber(L,argv[0]);
+      int res = SWIG_AsVal_int(argv[0], NULL);
+      _v = SWIG_CheckState(res);
     }
     if (_v) {
-      return _wrap_new_eslConnection__SWIG_1(L);
+      return _wrap_new_ESLconnection__SWIG_1(self, args);
     }
   }
   if (argc == 3) {
     int _v;
-    {
-      _v = lua_isstring(L,argv[0]);
-    }
+    int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
+    _v = SWIG_CheckState(res);
     if (_v) {
-      {
-        _v = lua_isstring(L,argv[1]);
-      }
+      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+      _v = SWIG_CheckState(res);
       if (_v) {
-        {
-          _v = lua_isstring(L,argv[2]);
-        }
+        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
+        _v = SWIG_CheckState(res);
         if (_v) {
-          return _wrap_new_eslConnection__SWIG_0(L);
+          return _wrap_new_ESLconnection__SWIG_0(self, args);
         }
       }
     }
   }
   
-  lua_pushstring(L,"No matching function for overloaded 'new_eslConnection'");
-  lua_error(L);return 0;
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number of arguments for overloaded function 'new_ESLconnection'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    ESLconnection(char const *,char const *,char const *)\n"
+    "    ESLconnection(int)\n");
+  return NULL;
 }
 
 
-static int _wrap_delete_eslConnection(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_delete_ESLconnection(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("eslConnection",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("eslConnection",1,"eslConnection *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("delete_eslConnection",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_ESLconnection",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_ESLconnection" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   delete arg1;
   
-  SWIG_arg=0;
-  
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_Py_Void();
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_connected(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_connected(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("connected",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("connected",1,"eslConnection *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_connected",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLconnection_connected",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_connected" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   result = (int)(arg1)->connected();
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_getInfo(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *result = 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_getInfo(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("getInfo",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getInfo",1,"eslConnection *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_getInfo",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLconnection_getInfo",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_getInfo" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  result = (eslEvent *)(arg1)->getInfo();
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (ESLevent *)(arg1)->getInfo();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_send(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_send(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   esl_status_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("send",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("send",1,"eslConnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("send",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_send",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_send",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_send" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_send" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
   result = (arg1)->send((char const *)arg2);
-  SWIG_arg=0;
-  {
-    esl_status_t * resultptr = new esl_status_t((esl_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_esl_status_t,1); SWIG_arg++;
-  }
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_sendRecv(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_sendRecv(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("sendRecv",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendRecv",1,"eslConnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("sendRecv",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_sendRecv",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_sendRecv",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_sendRecv" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  result = (eslEvent *)(arg1)->sendRecv((char const *)arg2);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_sendRecv" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  result = (ESLevent *)(arg1)->sendRecv((char const *)arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_sendEvent(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *arg2 = (eslEvent *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_sendEvent(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
   esl_status_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("sendEvent",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendEvent",1,"eslConnection *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("sendEvent",2,"eslEvent *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_sendEvent",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_sendEvent",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_sendEvent" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslConnection_sendEvent",2,SWIGTYPE_p_eslEvent);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1, &argp2,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_sendEvent" "', argument " "2"" of type '" "ESLevent *""'"); 
   }
-  
+  arg2 = reinterpret_cast< ESLevent * >(argp2);
   result = (arg1)->sendEvent(arg2);
-  SWIG_arg=0;
-  {
-    esl_status_t * resultptr = new esl_status_t((esl_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_esl_status_t,1); SWIG_arg++;
-  }
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_recvEvent(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *result = 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_recvEvent(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
   
-  SWIG_check_num_args("recvEvent",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recvEvent",1,"eslConnection *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_recvEvent",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLconnection_recvEvent",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_recvEvent" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  result = (eslEvent *)(arg1)->recvEvent();
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (ESLevent *)(arg1)->recvEvent();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_recvEventTimed(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_recvEventTimed(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   int arg2 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("recvEventTimed",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recvEventTimed",1,"eslConnection *");
-  if(!lua_isnumber(L,2)) SWIG_fail_arg("recvEventTimed",2,"int");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_recvEventTimed",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_recvEventTimed",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_recvEventTimed" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (int)lua_tonumber(L, 2);
-  result = (eslEvent *)(arg1)->recvEventTimed(arg2);
-  SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "ESLconnection_recvEventTimed" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  result = (ESLevent *)(arg1)->recvEventTimed(arg2);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_filter(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_filter(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   esl_status_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
   
-  SWIG_check_num_args("filter",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("filter",1,"eslConnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("filter",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("filter",3,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_filter",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OOO:ESLconnection_filter",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_filter" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_filter" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_filter" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
   result = (arg1)->filter((char const *)arg2,(char const *)arg3);
-  SWIG_arg=0;
-  {
-    esl_status_t * resultptr = new esl_status_t((esl_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_esl_status_t,1); SWIG_arg++;
-  }
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_events(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_events(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   esl_status_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
   
-  SWIG_check_num_args("events",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("events",1,"eslConnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("events",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("events",3,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_events",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OOO:ESLconnection_events",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_events" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_events" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_events" "', argument " "3"" of type '" "char const *""'");
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
   result = (arg1)->events((char const *)arg2,(char const *)arg3);
-  SWIG_arg=0;
-  {
-    esl_status_t * resultptr = new esl_status_t((esl_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_esl_status_t,1); SWIG_arg++;
-  }
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_execute(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_execute(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
   esl_status_t result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
   
-  SWIG_check_num_args("execute",2,4)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"eslConnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
-  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
-  if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("execute",4,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_execute",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OO|OO:ESLconnection_execute",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_execute" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
-  if(lua_gettop(L)>=3){
-    arg3 = (char *)lua_tostring(L, 3);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_execute" "', argument " "2"" of type '" "char const *""'");
   }
-  if(lua_gettop(L)>=4){
-    arg4 = (char *)lua_tostring(L, 4);
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (obj2) {
+    res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_execute" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+  }
+  if (obj3) {
+    res4 = SWIG_AsCharPtrAndSize(obj3, &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "ESLconnection_execute" "', argument " "4"" of type '" "char const *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
   }
   result = (arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  SWIG_arg=0;
-  {
-    esl_status_t * resultptr = new esl_status_t((esl_status_t &) result);
-    SWIG_NewPointerObj(L,(void *) resultptr,SWIGTYPE_p_esl_status_t,1); SWIG_arg++;
-  }
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_setBlockingExecute(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_setBlockingExecute(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("setBlockingExecute",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setBlockingExecute",1,"eslConnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("setBlockingExecute",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_setBlockingExecute",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_setBlockingExecute",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_setBlockingExecute" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_setBlockingExecute" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
   result = (int)(arg1)->setBlockingExecute((char const *)arg2);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static int _wrap_eslConnection_setEventLock(lua_State* L) {
-  int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+SWIGINTERN PyObject *_wrap_ESLconnection_setEventLock(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
   
-  SWIG_check_num_args("setEventLock",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setEventLock",1,"eslConnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("setEventLock",2,"char const *");
-  
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_setEventLock",1,SWIGTYPE_p_eslConnection);
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_setEventLock",&obj0,&obj1)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_setEventLock" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
-  
-  arg2 = (char *)lua_tostring(L, 2);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_setEventLock" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
   result = (int)(arg1)->setEventLock((char const *)arg2);
-  SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
-  return SWIG_arg;
-  
-  if(0) SWIG_fail;
-  
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return resultobj;
 fail:
-  lua_error(L);
-  return SWIG_arg;
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return NULL;
 }
 
 
-static void swig_delete_eslConnection(void *obj) {
-eslConnection *arg1 = (eslConnection *) obj;
-delete arg1;
+SWIGINTERN PyObject *ESLconnection_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_ESLconnection, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
 }
-static swig_lua_method swig_eslConnection_methods[] = {
-    {"connected", _wrap_eslConnection_connected}, 
-    {"getInfo", _wrap_eslConnection_getInfo}, 
-    {"send", _wrap_eslConnection_send}, 
-    {"sendRecv", _wrap_eslConnection_sendRecv}, 
-    {"sendEvent", _wrap_eslConnection_sendEvent}, 
-    {"recvEvent", _wrap_eslConnection_recvEvent}, 
-    {"recvEventTimed", _wrap_eslConnection_recvEventTimed}, 
-    {"filter", _wrap_eslConnection_filter}, 
-    {"events", _wrap_eslConnection_events}, 
-    {"execute", _wrap_eslConnection_execute}, 
-    {"setBlockingExecute", _wrap_eslConnection_setBlockingExecute}, 
-    {"setEventLock", _wrap_eslConnection_setEventLock}, 
-    {0,0}
-};
-static swig_lua_attribute swig_eslConnection_attributes[] = {
-    {0,0,0}
-};
-static swig_lua_class *swig_eslConnection_bases[] = {0};
-static const char *swig_eslConnection_base_names[] = {0};
-static swig_lua_class _wrap_class_eslConnection = { "eslConnection", &SWIGTYPE_p_eslConnection,_wrap_new_eslConnection, swig_delete_eslConnection, swig_eslConnection_methods, swig_eslConnection_attributes, swig_eslConnection_bases, swig_eslConnection_base_names };
 
-#ifdef __cplusplus
+SWIGINTERN PyObject *_wrap_eslSetLogLevel(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:eslSetLogLevel",&obj0)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "eslSetLogLevel" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  eslSetLogLevel(arg1);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
 }
-#endif
 
-static const struct luaL_reg swig_commands[] = {
-    {0,0}
+
+static PyMethodDef SwigMethods[] = {
+	 { (char *)"ESLevent_event_set", _wrap_ESLevent_event_set, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_event_get", _wrap_ESLevent_event_get, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_serialized_string_set", _wrap_ESLevent_serialized_string_set, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_serialized_string_get", _wrap_ESLevent_serialized_string_get, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_mine_set", _wrap_ESLevent_mine_set, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_mine_get", _wrap_ESLevent_mine_get, METH_VARARGS, NULL},
+	 { (char *)"new_ESLevent", _wrap_new_ESLevent, METH_VARARGS, NULL},
+	 { (char *)"delete_ESLevent", _wrap_delete_ESLevent, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_serialize", _wrap_ESLevent_serialize, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_setPriority", _wrap_ESLevent_setPriority, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_getHeader", _wrap_ESLevent_getHeader, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_getBody", _wrap_ESLevent_getBody, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_getType", _wrap_ESLevent_getType, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_addBody", _wrap_ESLevent_addBody, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_addHeader", _wrap_ESLevent_addHeader, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_delHeader", _wrap_ESLevent_delHeader, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_swigregister", ESLevent_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_ESLconnection", _wrap_new_ESLconnection, METH_VARARGS, NULL},
+	 { (char *)"delete_ESLconnection", _wrap_delete_ESLconnection, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_connected", _wrap_ESLconnection_connected, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_getInfo", _wrap_ESLconnection_getInfo, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_send", _wrap_ESLconnection_send, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_sendRecv", _wrap_ESLconnection_sendRecv, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_sendEvent", _wrap_ESLconnection_sendEvent, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_recvEvent", _wrap_ESLconnection_recvEvent, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_recvEventTimed", _wrap_ESLconnection_recvEventTimed, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_filter", _wrap_ESLconnection_filter, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_events", _wrap_ESLconnection_events, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_execute", _wrap_ESLconnection_execute, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_setBlockingExecute", _wrap_ESLconnection_setBlockingExecute, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_setEventLock", _wrap_ESLconnection_setEventLock, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_swigregister", ESLconnection_swigregister, METH_VARARGS, NULL},
+	 { (char *)"eslSetLogLevel", _wrap_eslSetLogLevel, METH_VARARGS, NULL},
+	 { NULL, NULL, 0, NULL }
 };
 
-static swig_lua_var_info swig_variables[] = {
-    {0,0,0}
-};
-
-static swig_lua_const_info swig_constants[] = {
-    {0,0,0,0,0,0}
-};
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static swig_type_info _swigt__p_eslConnection = {"_p_eslConnection", "eslConnection *", 0, 0, (void*)&_wrap_class_eslConnection, 0};
-static swig_type_info _swigt__p_eslEvent = {"_p_eslEvent", "eslEvent *", 0, 0, (void*)&_wrap_class_eslEvent, 0};
+static swig_type_info _swigt__p_ESLconnection = {"_p_ESLconnection", "ESLconnection *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_ESLevent = {"_p_ESLevent", "ESLevent *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_event_t = {"_p_esl_event_t", "esl_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_priority_t = {"_p_esl_priority_t", "esl_priority_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_status_t = {"_p_esl_status_t", "esl_status_t *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
-  &_swigt__p_eslConnection,
-  &_swigt__p_eslEvent,
+  &_swigt__p_ESLconnection,
+  &_swigt__p_ESLevent,
+  &_swigt__p_char,
   &_swigt__p_esl_event_t,
   &_swigt__p_esl_priority_t,
   &_swigt__p_esl_status_t,
 };
 
-static swig_cast_info _swigc__p_eslConnection[] = {  {&_swigt__p_eslConnection, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_eslEvent[] = {  {&_swigt__p_eslEvent, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_ESLconnection[] = {  {&_swigt__p_ESLconnection, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_ESLevent[] = {  {&_swigt__p_ESLevent, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_event_t[] = {  {&_swigt__p_esl_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_priority_t[] = {  {&_swigt__p_esl_priority_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_status_t[] = {  {&_swigt__p_esl_status_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
-  _swigc__p_eslConnection,
-  _swigc__p_eslEvent,
+  _swigc__p_ESLconnection,
+  _swigc__p_ESLevent,
+  _swigc__p_char,
   _swigc__p_esl_event_t,
   _swigc__p_esl_priority_t,
   _swigc__p_esl_status_t,
@@ -2622,6 +4105,12 @@ static swig_cast_info *swig_cast_initial[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (END) -------- */
 
+static swig_const_info swig_const_table[] = {
+{0, 0, 0, 0.0, 0, 0}};
+
+#ifdef __cplusplus
+}
+#endif
 /* -----------------------------------------------------------------------------
  * Type initialization:
  * This problem is tough by the requirement that no dynamic 
@@ -2680,9 +4169,9 @@ SWIG_InitializeModule(void *clientdata) {
   size_t i;
   swig_module_info *module_head, *iter;
   int found, init;
-
+  
   clientdata = clientdata;
-
+  
   /* check to see if the circular list has been setup, if not, set it up */
   if (swig_module.next==0) {
     /* Initialize the swig_module */
@@ -2693,7 +4182,7 @@ SWIG_InitializeModule(void *clientdata) {
   } else {
     init = 0;
   }
-
+  
   /* Try and load any already created modules */
   module_head = SWIG_GetModule(clientdata);
   if (!module_head) {
@@ -2712,20 +4201,20 @@ SWIG_InitializeModule(void *clientdata) {
       }
       iter=iter->next;
     } while (iter!= module_head);
-
+    
     /* if the is found in the list, then all is done and we may leave */
     if (found) return;
     /* otherwise we must add out module into the list */
     swig_module.next = module_head->next;
     module_head->next = &swig_module;
   }
-
+  
   /* When multiple interpeters are used, a module could have already been initialized in
-     a different interpreter, but not yet have a pointer in this interpreter.
-     In this case, we do not want to continue adding types... everything should be
-     set up already */
+       a different interpreter, but not yet have a pointer in this interpreter.
+       In this case, we do not want to continue adding types... everything should be
+       set up already */
   if (init == 0) return;
-
+  
   /* Now work on filling in swig_module.types */
 #ifdef SWIGRUNTIME_DEBUG
   printf("SWIG_InitializeModule: size %d\n", swig_module.size);
@@ -2734,11 +4223,11 @@ SWIG_InitializeModule(void *clientdata) {
     swig_type_info *type = 0;
     swig_type_info *ret;
     swig_cast_info *cast;
-  
+    
 #ifdef SWIGRUNTIME_DEBUG
     printf("SWIG_InitializeModule: type %d %s\n", i, swig_module.type_initial[i]->name);
 #endif
-
+    
     /* if there is another module already loaded */
     if (swig_module.next != &swig_module) {
       type = SWIG_MangledTypeQueryModule(swig_module.next, &swig_module, swig_module.type_initial[i]->name);
@@ -2749,19 +4238,18 @@ SWIG_InitializeModule(void *clientdata) {
       printf("SWIG_InitializeModule: found type %s\n", type->name);
 #endif
       if (swig_module.type_initial[i]->clientdata) {
-	type->clientdata = swig_module.type_initial[i]->clientdata;
+        type->clientdata = swig_module.type_initial[i]->clientdata;
 #ifdef SWIGRUNTIME_DEBUG
-      printf("SWIG_InitializeModule: found and overwrite type %s \n", type->name);
+        printf("SWIG_InitializeModule: found and overwrite type %s \n", type->name);
 #endif
       }
     } else {
       type = swig_module.type_initial[i];
     }
-
+    
     /* Insert casting types */
     cast = swig_module.cast_initial[i];
     while (cast->type) {
-    
       /* Don't need to add information already in the list */
       ret = 0;
 #ifdef SWIGRUNTIME_DEBUG
@@ -2770,29 +4258,29 @@ SWIG_InitializeModule(void *clientdata) {
       if (swig_module.next != &swig_module) {
         ret = SWIG_MangledTypeQueryModule(swig_module.next, &swig_module, cast->type->name);
 #ifdef SWIGRUNTIME_DEBUG
-	if (ret) printf("SWIG_InitializeModule: found cast %s\n", ret->name);
+        if (ret) printf("SWIG_InitializeModule: found cast %s\n", ret->name);
 #endif
       }
       if (ret) {
-	if (type == swig_module.type_initial[i]) {
+        if (type == swig_module.type_initial[i]) {
 #ifdef SWIGRUNTIME_DEBUG
-	  printf("SWIG_InitializeModule: skip old type %s\n", ret->name);
+          printf("SWIG_InitializeModule: skip old type %s\n", ret->name);
 #endif
-	  cast->type = ret;
-	  ret = 0;
-	} else {
-	  /* Check for casting already in the list */
-	  swig_cast_info *ocast = SWIG_TypeCheck(ret->name, type);
+          cast->type = ret;
+          ret = 0;
+        } else {
+          /* Check for casting already in the list */
+          swig_cast_info *ocast = SWIG_TypeCheck(ret->name, type);
 #ifdef SWIGRUNTIME_DEBUG
-	  if (ocast) printf("SWIG_InitializeModule: skip old cast %s\n", ret->name);
+          if (ocast) printf("SWIG_InitializeModule: skip old cast %s\n", ret->name);
 #endif
-	  if (!ocast) ret = 0;
-	}
+          if (!ocast) ret = 0;
+        }
       }
-
+      
       if (!ret) {
 #ifdef SWIGRUNTIME_DEBUG
-	printf("SWIG_InitializeModule: adding cast %s\n", cast->type->name);
+        printf("SWIG_InitializeModule: adding cast %s\n", cast->type->name);
 #endif
         if (type->cast) {
           type->cast->prev = cast;
@@ -2806,7 +4294,7 @@ SWIG_InitializeModule(void *clientdata) {
     swig_module.types[i] = type;
   }
   swig_module.types[i] = 0;
-
+  
 #ifdef SWIGRUNTIME_DEBUG
   printf("**** SWIG_InitializeModule: Cast List ******\n");
   for (i = 0; i < swig_module.size; ++i) {
@@ -2818,7 +4306,7 @@ SWIG_InitializeModule(void *clientdata) {
       cast++;
       ++j;
     }
-  printf("---- Total casts: %d\n",j);
+    printf("---- Total casts: %d\n",j);
   }
   printf("**** SWIG_InitializeModule: Cast List ******\n");
 #endif
@@ -2834,17 +4322,17 @@ SWIG_PropagateClientData(void) {
   size_t i;
   swig_cast_info *equiv;
   static int init_run = 0;
-
+  
   if (init_run) return;
   init_run = 1;
-
+  
   for (i = 0; i < swig_module.size; i++) {
     if (swig_module.types[i]->clientdata) {
       equiv = swig_module.types[i]->cast;
       while (equiv) {
         if (!equiv->converter) {
           if (equiv->type && !equiv->type->clientdata)
-            SWIG_TypeClientData(equiv->type, swig_module.types[i]->clientdata);
+          SWIG_TypeClientData(equiv->type, swig_module.types[i]->clientdata);
         }
         equiv = equiv->next;
       }
@@ -2854,77 +4342,292 @@ SWIG_PropagateClientData(void) {
 
 #ifdef __cplusplus
 #if 0
-{ /* c-mode */
+{
+  /* c-mode */
 #endif
 }
 #endif
 
 
 
-/* Forward declaration of where the user's %init{} gets inserted */
-void SWIG_init_user(lua_State* L );
-    
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* this is the initialization function
-  added at the very end of the code
-  the function is always called SWIG_init, but an eariler #define will rename it
-*/
-SWIGEXPORT int SWIG_init(lua_State* L)
-{
-  int i;
-  /* start with global table */
-  lua_pushvalue(L,LUA_GLOBALSINDEX);
-  /* SWIG's internal initalisation */
-  SWIG_InitializeModule((void*)L);
-  SWIG_PropagateClientData();
-  /* add a global fn */
-  SWIG_Lua_add_function(L,"swig_type",SWIG_Lua_type);
-  SWIG_Lua_add_function(L,"swig_equals",SWIG_Lua_equal);
-  /* begin the module (its a table with the same name as the module) */
-  SWIG_Lua_module_begin(L,SWIG_name);
-  /* add commands/functions */
-  for (i = 0; swig_commands[i].name; i++){
-    SWIG_Lua_module_add_function(L,swig_commands[i].name,swig_commands[i].func);
+  
+  /* Python-specific SWIG API */
+#define SWIG_newvarlink()                             SWIG_Python_newvarlink()
+#define SWIG_addvarlink(p, name, get_attr, set_attr)  SWIG_Python_addvarlink(p, name, get_attr, set_attr)
+#define SWIG_InstallConstants(d, constants)           SWIG_Python_InstallConstants(d, constants)
+  
+  /* -----------------------------------------------------------------------------
+   * global variable support code.
+   * ----------------------------------------------------------------------------- */
+  
+  typedef struct swig_globalvar {
+    char       *name;                  /* Name of global variable */
+    PyObject *(*get_attr)(void);       /* Return the current value */
+    int       (*set_attr)(PyObject *); /* Set the value */
+    struct swig_globalvar *next;
+  } swig_globalvar;
+  
+  typedef struct swig_varlinkobject {
+    PyObject_HEAD
+    swig_globalvar *vars;
+  } swig_varlinkobject;
+  
+  SWIGINTERN PyObject *
+  swig_varlink_repr(swig_varlinkobject *SWIGUNUSEDPARM(v)) {
+    return PyString_FromString("<Swig global variables>");
   }
-  /* add variables */
-  for (i = 0; swig_variables[i].name; i++){
-    SWIG_Lua_module_add_variable(L,swig_variables[i].name,swig_variables[i].get,swig_variables[i].set);
+  
+  SWIGINTERN PyObject *
+  swig_varlink_str(swig_varlinkobject *v) {
+    PyObject *str = PyString_FromString("(");
+    swig_globalvar  *var;
+    for (var = v->vars; var; var=var->next) {
+      PyString_ConcatAndDel(&str,PyString_FromString(var->name));
+      if (var->next) PyString_ConcatAndDel(&str,PyString_FromString(", "));
+    }
+    PyString_ConcatAndDel(&str,PyString_FromString(")"));
+    return str;
   }
-  /* set up base class pointers (the hierachy) */
-  for (i = 0; swig_types[i]; i++){
-    if (swig_types[i]->clientdata){
-      SWIG_Lua_init_base_class(L,(swig_lua_class*)(swig_types[i]->clientdata));
+  
+  SWIGINTERN int
+  swig_varlink_print(swig_varlinkobject *v, FILE *fp, int SWIGUNUSEDPARM(flags)) {
+    PyObject *str = swig_varlink_str(v);
+    fprintf(fp,"Swig global variables ");
+    fprintf(fp,"%s\n", PyString_AsString(str));
+    Py_DECREF(str);
+    return 0;
+  }
+  
+  SWIGINTERN void
+  swig_varlink_dealloc(swig_varlinkobject *v) {
+    swig_globalvar *var = v->vars;
+    while (var) {
+      swig_globalvar *n = var->next;
+      free(var->name);
+      free(var);
+      var = n;
     }
   }
-  /* additional registration structs & classes in lua */
-  for (i = 0; swig_types[i]; i++){
-    if (swig_types[i]->clientdata){
-      SWIG_Lua_class_register(L,(swig_lua_class*)(swig_types[i]->clientdata));
+  
+  SWIGINTERN PyObject *
+  swig_varlink_getattr(swig_varlinkobject *v, char *n) {
+    PyObject *res = NULL;
+    swig_globalvar *var = v->vars;
+    while (var) {
+      if (strcmp(var->name,n) == 0) {
+        res = (*var->get_attr)();
+        break;
+      }
+      var = var->next;
+    }
+    if (res == NULL && !PyErr_Occurred()) {
+      PyErr_SetString(PyExc_NameError,"Unknown C global variable");
+    }
+    return res;
+  }
+  
+  SWIGINTERN int
+  swig_varlink_setattr(swig_varlinkobject *v, char *n, PyObject *p) {
+    int res = 1;
+    swig_globalvar *var = v->vars;
+    while (var) {
+      if (strcmp(var->name,n) == 0) {
+        res = (*var->set_attr)(p);
+        break;
+      }
+      var = var->next;
+    }
+    if (res == 1 && !PyErr_Occurred()) {
+      PyErr_SetString(PyExc_NameError,"Unknown C global variable");
+    }
+    return res;
+  }
+  
+  SWIGINTERN PyTypeObject*
+  swig_varlink_type(void) {
+    static char varlink__doc__[] = "Swig var link object";
+    static PyTypeObject varlink_type;
+    static int type_init = 0;  
+    if (!type_init) {
+      const PyTypeObject tmp
+      = {
+        PyObject_HEAD_INIT(NULL)
+        0,                                  /* Number of items in variable part (ob_size) */
+        (char *)"swigvarlink",              /* Type name (tp_name) */
+        sizeof(swig_varlinkobject),         /* Basic size (tp_basicsize) */
+        0,                                  /* Itemsize (tp_itemsize) */
+        (destructor) swig_varlink_dealloc,   /* Deallocator (tp_dealloc) */ 
+        (printfunc) swig_varlink_print,     /* Print (tp_print) */
+        (getattrfunc) swig_varlink_getattr, /* get attr (tp_getattr) */
+        (setattrfunc) swig_varlink_setattr, /* Set attr (tp_setattr) */
+        0,                                  /* tp_compare */
+        (reprfunc) swig_varlink_repr,       /* tp_repr */
+        0,                                  /* tp_as_number */
+        0,                                  /* tp_as_sequence */
+        0,                                  /* tp_as_mapping */
+        0,                                  /* tp_hash */
+        0,                                  /* tp_call */
+        (reprfunc)swig_varlink_str,        /* tp_str */
+        0,                                  /* tp_getattro */
+        0,                                  /* tp_setattro */
+        0,                                  /* tp_as_buffer */
+        0,                                  /* tp_flags */
+        varlink__doc__,                     /* tp_doc */
+        0,                                  /* tp_traverse */
+        0,                                  /* tp_clear */
+        0,                                  /* tp_richcompare */
+        0,                                  /* tp_weaklistoffset */
+#if PY_VERSION_HEX >= 0x02020000
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, /* tp_iter -> tp_weaklist */
+#endif
+#if PY_VERSION_HEX >= 0x02030000
+        0,                                  /* tp_del */
+#endif
+#ifdef COUNT_ALLOCS
+        0,0,0,0                             /* tp_alloc -> tp_next */
+#endif
+      };
+      varlink_type = tmp;
+      varlink_type.ob_type = &PyType_Type;
+      type_init = 1;
+    }
+    return &varlink_type;
+  }
+  
+  /* Create a variable linking object for use later */
+  SWIGINTERN PyObject *
+  SWIG_Python_newvarlink(void) {
+    swig_varlinkobject *result = PyObject_NEW(swig_varlinkobject, swig_varlink_type());
+    if (result) {
+      result->vars = 0;
+    }
+    return ((PyObject*) result);
+  }
+  
+  SWIGINTERN void 
+  SWIG_Python_addvarlink(PyObject *p, char *name, PyObject *(*get_attr)(void), int (*set_attr)(PyObject *p)) {
+    swig_varlinkobject *v = (swig_varlinkobject *) p;
+    swig_globalvar *gv = (swig_globalvar *) malloc(sizeof(swig_globalvar));
+    if (gv) {
+      size_t size = strlen(name)+1;
+      gv->name = (char *)malloc(size);
+      if (gv->name) {
+        strncpy(gv->name,name,size);
+        gv->get_attr = get_attr;
+        gv->set_attr = set_attr;
+        gv->next = v->vars;
+      }
+    }
+    v->vars = gv;
+  }
+  
+  SWIGINTERN PyObject *
+  SWIG_globals(void) {
+    static PyObject *_SWIG_globals = 0; 
+    if (!_SWIG_globals) _SWIG_globals = SWIG_newvarlink();  
+    return _SWIG_globals;
+  }
+  
+  /* -----------------------------------------------------------------------------
+   * constants/methods manipulation
+   * ----------------------------------------------------------------------------- */
+  
+  /* Install Constants */
+  SWIGINTERN void
+  SWIG_Python_InstallConstants(PyObject *d, swig_const_info constants[]) {
+    PyObject *obj = 0;
+    size_t i;
+    for (i = 0; constants[i].type; ++i) {
+      switch(constants[i].type) {
+      case SWIG_PY_POINTER:
+        obj = SWIG_NewPointerObj(constants[i].pvalue, *(constants[i]).ptype,0);
+        break;
+      case SWIG_PY_BINARY:
+        obj = SWIG_NewPackedObj(constants[i].pvalue, constants[i].lvalue, *(constants[i].ptype));
+        break;
+      default:
+        obj = 0;
+        break;
+      }
+      if (obj) {
+        PyDict_SetItemString(d, constants[i].name, obj);
+        Py_DECREF(obj);
+      }
     }
   }
-  /* constants */
-  SWIG_Lua_InstallConstants(L,swig_constants);
-  /* invoke user-specific initialization */
-  SWIG_init_user(L);
-  /* end module */
-  lua_pop(L,1);  /* tidy stack (remove module table)*/
-  lua_pop(L,1);  /* tidy stack (remove global table)*/
-  return 1;
-}
-
+  
+  /* -----------------------------------------------------------------------------*/
+  /* Fix SwigMethods to carry the callback ptrs when needed */
+  /* -----------------------------------------------------------------------------*/
+  
+  SWIGINTERN void
+  SWIG_Python_FixMethods(PyMethodDef *methods,
+    swig_const_info *const_table,
+    swig_type_info **types,
+    swig_type_info **types_initial) {
+    size_t i;
+    for (i = 0; methods[i].ml_name; ++i) {
+      const char *c = methods[i].ml_doc;
+      if (c && (c = strstr(c, "swig_ptr: "))) {
+        int j;
+        swig_const_info *ci = 0;
+        const char *name = c + 10;
+        for (j = 0; const_table[j].type; ++j) {
+          if (strncmp(const_table[j].name, name, 
+              strlen(const_table[j].name)) == 0) {
+            ci = &(const_table[j]);
+            break;
+          }
+        }
+        if (ci) {
+          size_t shift = (ci->ptype) - types;
+          swig_type_info *ty = types_initial[shift];
+          size_t ldoc = (c - methods[i].ml_doc);
+          size_t lptr = strlen(ty->name)+2*sizeof(void*)+2;
+          char *ndoc = (char*)malloc(ldoc + lptr + 10);
+          if (ndoc) {
+            char *buff = ndoc;
+            void *ptr = (ci->type == SWIG_PY_POINTER) ? ci->pvalue : 0;
+            if (ptr) {
+              strncpy(buff, methods[i].ml_doc, ldoc);
+              buff += ldoc;
+              strncpy(buff, "swig_ptr: ", 10);
+              buff += 10;
+              SWIG_PackVoidPtr(buff, ptr, ty->name, lptr);
+              methods[i].ml_doc = ndoc;
+            }
+          }
+        }
+      }
+    }
+  } 
+  
 #ifdef __cplusplus
 }
 #endif
 
+/* -----------------------------------------------------------------------------*
+ *  Partial Init method
+ * -----------------------------------------------------------------------------*/
 
-const char* SWIG_LUACODE=
-  "";
-
-void SWIG_init_user(lua_State* L)
-{
-  /* exec Lua code if applicable */
-  SWIG_Lua_dostring(L,SWIG_LUACODE);
+#ifdef __cplusplus
+extern "C"
+#endif
+SWIGEXPORT void SWIG_init(void) {
+  PyObject *m, *d;
+  
+  /* Fix SwigMethods to carry the callback ptrs when needed */
+  SWIG_Python_FixMethods(SwigMethods, swig_const_table, swig_types, swig_type_initial);
+  
+  m = Py_InitModule((char *) SWIG_name, SwigMethods);
+  d = PyModule_GetDict(m);
+  
+  SWIG_InitializeModule(0);
+  SWIG_InstallConstants(d,swig_const_table);
+  
+  
 }
 

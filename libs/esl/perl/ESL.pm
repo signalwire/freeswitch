@@ -49,23 +49,24 @@ sub this {
 
 package ESL;
 
+*eslSetLogLevel = *ESLc::eslSetLogLevel;
 
-############# Class : ESL::eslEvent ##############
+############# Class : ESL::ESLevent ##############
 
-package ESL::eslEvent;
+package ESL::ESLevent;
 use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 @ISA = qw( ESL );
 %OWNER = ();
 %ITERATORS = ();
-*swig_event_get = *ESLc::eslEvent_event_get;
-*swig_event_set = *ESLc::eslEvent_event_set;
-*swig_serialized_string_get = *ESLc::eslEvent_serialized_string_get;
-*swig_serialized_string_set = *ESLc::eslEvent_serialized_string_set;
-*swig_mine_get = *ESLc::eslEvent_mine_get;
-*swig_mine_set = *ESLc::eslEvent_mine_set;
+*swig_event_get = *ESLc::ESLevent_event_get;
+*swig_event_set = *ESLc::ESLevent_event_set;
+*swig_serialized_string_get = *ESLc::ESLevent_serialized_string_get;
+*swig_serialized_string_set = *ESLc::ESLevent_serialized_string_set;
+*swig_mine_get = *ESLc::ESLevent_mine_get;
+*swig_mine_set = *ESLc::ESLevent_mine_set;
 sub new {
     my $pkg = shift;
-    my $self = ESLc::new_eslEvent(@_);
+    my $self = ESLc::new_ESLevent(@_);
     bless $self, $pkg if defined($self);
 }
 
@@ -75,19 +76,19 @@ sub DESTROY {
     return unless defined $self;
     delete $ITERATORS{$self};
     if (exists $OWNER{$self}) {
-        ESLc::delete_eslEvent($self);
+        ESLc::delete_ESLevent($self);
         delete $OWNER{$self};
     }
 }
 
-*serialize = *ESLc::eslEvent_serialize;
-*setPriority = *ESLc::eslEvent_setPriority;
-*getHeader = *ESLc::eslEvent_getHeader;
-*getBody = *ESLc::eslEvent_getBody;
-*getType = *ESLc::eslEvent_getType;
-*addBody = *ESLc::eslEvent_addBody;
-*addHeader = *ESLc::eslEvent_addHeader;
-*delHeader = *ESLc::eslEvent_delHeader;
+*serialize = *ESLc::ESLevent_serialize;
+*setPriority = *ESLc::ESLevent_setPriority;
+*getHeader = *ESLc::ESLevent_getHeader;
+*getBody = *ESLc::ESLevent_getBody;
+*getType = *ESLc::ESLevent_getType;
+*addBody = *ESLc::ESLevent_addBody;
+*addHeader = *ESLc::ESLevent_addHeader;
+*delHeader = *ESLc::ESLevent_delHeader;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
@@ -101,16 +102,16 @@ sub ACQUIRE {
 }
 
 
-############# Class : ESL::eslConnection ##############
+############# Class : ESL::ESLconnection ##############
 
-package ESL::eslConnection;
+package ESL::ESLconnection;
 use vars qw(@ISA %OWNER %ITERATORS %BLESSEDMEMBERS);
 @ISA = qw( ESL );
 %OWNER = ();
 %ITERATORS = ();
 sub new {
     my $pkg = shift;
-    my $self = ESLc::new_eslConnection(@_);
+    my $self = ESLc::new_ESLconnection(@_);
     bless $self, $pkg if defined($self);
 }
 
@@ -120,23 +121,23 @@ sub DESTROY {
     return unless defined $self;
     delete $ITERATORS{$self};
     if (exists $OWNER{$self}) {
-        ESLc::delete_eslConnection($self);
+        ESLc::delete_ESLconnection($self);
         delete $OWNER{$self};
     }
 }
 
-*connected = *ESLc::eslConnection_connected;
-*getInfo = *ESLc::eslConnection_getInfo;
-*send = *ESLc::eslConnection_send;
-*sendRecv = *ESLc::eslConnection_sendRecv;
-*sendEvent = *ESLc::eslConnection_sendEvent;
-*recvEvent = *ESLc::eslConnection_recvEvent;
-*recvEventTimed = *ESLc::eslConnection_recvEventTimed;
-*filter = *ESLc::eslConnection_filter;
-*events = *ESLc::eslConnection_events;
-*execute = *ESLc::eslConnection_execute;
-*setBlockingExecute = *ESLc::eslConnection_setBlockingExecute;
-*setEventLock = *ESLc::eslConnection_setEventLock;
+*connected = *ESLc::ESLconnection_connected;
+*getInfo = *ESLc::ESLconnection_getInfo;
+*send = *ESLc::ESLconnection_send;
+*sendRecv = *ESLc::ESLconnection_sendRecv;
+*sendEvent = *ESLc::ESLconnection_sendEvent;
+*recvEvent = *ESLc::ESLconnection_recvEvent;
+*recvEventTimed = *ESLc::ESLconnection_recvEventTimed;
+*filter = *ESLc::ESLconnection_filter;
+*events = *ESLc::ESLconnection_events;
+*execute = *ESLc::ESLconnection_execute;
+*setBlockingExecute = *ESLc::ESLconnection_setBlockingExecute;
+*setEventLock = *ESLc::ESLconnection_setEventLock;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);

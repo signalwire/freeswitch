@@ -1,9 +1,14 @@
 #include <esl.h>
 #include <esl_oop.h>
 
-#define construct_common() memset(&handle, 0, sizeof(handle)); last_event_obj = NULL; last_event = NULL;
+#define construct_common() memset(&handle, 0, sizeof(handle)); last_event_obj = NULL
 
-eslConnection::eslConnection(const char *host, const char *port, const char *password)
+void eslSetLogLevel(int level)
+{
+	esl_global_set_default_logger(level);
+}
+
+ESLconnection::ESLconnection(const char *host, const char *port, const char *password)
 {
 	construct_common();
 	int x_port = atoi(port);
@@ -12,55 +17,54 @@ eslConnection::eslConnection(const char *host, const char *port, const char *pas
 }
 
 
-eslConnection::eslConnection(int socket)
+ESLconnection::ESLconnection(int socket)
 {
 	construct_common();
 	memset(&handle, 0, sizeof(handle));
 	esl_attach_handle(&handle, (esl_socket_t)socket, NULL);
 }
 
-eslConnection::~eslConnection()
+ESLconnection::~ESLconnection()
 {
 	if (handle.connected) {
 		esl_disconnect(&handle);
 	}
 
-	esl_event_safe_destroy(&last_event);
 }
 
-int eslConnection::connected()
+int ESLconnection::connected()
 {
 	return handle.connected;
 }
 
-esl_status_t eslConnection::send(const char *cmd)
+esl_status_t ESLconnection::send(const char *cmd)
 {
 	return esl_send(&handle, cmd);
 }
 
-eslEvent *eslConnection::sendRecv(const char *cmd)
+ESLevent *ESLconnection::sendRecv(const char *cmd)
 {
 	if (esl_send_recv(&handle, cmd) == ESL_SUCCESS) {
 		esl_event_t *event;
 		esl_event_dup(&event, handle.last_sr_event);
-		return new eslEvent(event, 1);
+		return new ESLevent(event, 1);
 	}
 	
 	return NULL;
 }
 
-eslEvent *eslConnection::getInfo()
+ESLevent *ESLconnection::getInfo()
 {
 	if (handle.connected && handle.info_event) {
 		esl_event_t *event;
 		esl_event_dup(&event, handle.info_event);
-		return new eslEvent(event, 1);
+		return new ESLevent(event, 1);
 	}
 	
 	return NULL;
 }
 
-int eslConnection::setBlockingExecute(const char *val)
+int ESLconnection::setBlockingExecute(const char *val)
 {
 	if (val) {
 		handle.blocking_execute = esl_true(val);
@@ -68,7 +72,7 @@ int eslConnection::setBlockingExecute(const char *val)
 	return handle.blocking_execute;
 }
 
-int eslConnection::setEventLock(const char *val)
+int ESLconnection::setEventLock(const char *val)
 {
 	if (val) {
 		handle.event_lock = esl_true(val);
@@ -76,55 +80,59 @@ int eslConnection::setEventLock(const char *val)
 	return handle.event_lock;
 }
 
-esl_status_t eslConnection::execute(const char *app, const char *arg, const char *uuid)
+esl_status_t ESLconnection::execute(const char *app, const char *arg, const char *uuid)
 {
 	return esl_execute(&handle, app, arg, uuid);
 }
 
-esl_status_t eslConnection::sendEvent(eslEvent *send_me)
+esl_status_t ESLconnection::sendEvent(ESLevent *send_me)
 {
 	return esl_sendevent(&handle, send_me->event);
 }
 
-eslEvent *eslConnection::recvEvent()
+ESLevent *ESLconnection::recvEvent()
 {
 	if (last_event_obj) {
 		delete last_event_obj;
 	}
 	
-	if (esl_recv_event(&handle, &last_event) == ESL_SUCCESS) {
-		esl_event_t *event;
-		esl_event_dup(&event, last_event);
-		last_event_obj = new eslEvent(event, 1);
-		return last_event_obj;
+	if (esl_recv_event(&handle, NULL) == ESL_SUCCESS) {
+		if (handle.last_ievent) {
+			esl_event_t *event;
+			esl_event_dup(&event, handle.last_ievent);
+			last_event_obj = new ESLevent(event, 1);
+			return last_event_obj;
+		}
 	}
 
 	return NULL;
 }
 
-eslEvent *eslConnection::recvEventTimed(int ms)
+ESLevent *ESLconnection::recvEventTimed(int ms)
 {
 	if (last_event_obj) {
 		delete last_event_obj;
 		last_event_obj = NULL;
 	}
 
-	if (esl_recv_event_timed(&handle, ms, &last_event) == ESL_SUCCESS) {
-		esl_event_t *event;
-		esl_event_dup(&event, last_event);
-        last_event_obj = new eslEvent(event, 1);
-        return last_event_obj;
+	if (esl_recv_event_timed(&handle, ms, NULL) == ESL_SUCCESS) {
+		if (handle.last_ievent) {
+			esl_event_t *event;
+			esl_event_dup(&event, handle.last_ievent);
+			last_event_obj = new ESLevent(event, 1);
+			return last_event_obj;
+		}
     }
 	
 	return NULL;
 }
 
-esl_status_t eslConnection::filter(const char *header, const char *value)
+esl_status_t ESLconnection::filter(const char *header, const char *value)
 {
 	return esl_filter(&handle, header, value);
 }
 
-esl_status_t eslConnection::events(const char *etype, const char *value)
+esl_status_t ESLconnection::events(const char *etype, const char *value)
 {
 	esl_event_type_t type_id = ESL_EVENT_TYPE_PLAIN;
 
@@ -135,10 +143,10 @@ esl_status_t eslConnection::events(const char *etype, const char *value)
 	return esl_events(&handle, type_id, value);
 }
 
-// eslEvent
+// ESLevent
 ///////////////////////////////////////////////////////////////////////
 
-eslEvent::eslEvent(const char *type, const char *subclass_name)
+ESLevent::ESLevent(const char *type, const char *subclass_name)
 {
 	esl_event_types_t event_id;
 	
@@ -160,14 +168,14 @@ eslEvent::eslEvent(const char *type, const char *subclass_name)
 	mine = 1;
 }
 
-eslEvent::eslEvent(esl_event_t *wrap_me, int free_me)
+ESLevent::ESLevent(esl_event_t *wrap_me, int free_me)
 {
 	event = wrap_me;
 	mine = free_me;
 	serialized_string = NULL;
 }
 
-eslEvent::~eslEvent()
+ESLevent::~ESLevent()
 {
 
 	if (serialized_string) {
@@ -180,7 +188,7 @@ eslEvent::~eslEvent()
 }
 
 
-const char *eslEvent::serialize(const char *format)
+const char *ESLevent::serialize(const char *format)
 {
 	int isxml = 0;
 
@@ -200,7 +208,7 @@ const char *eslEvent::serialize(const char *format)
 
 }
 
-bool eslEvent::setPriority(esl_priority_t priority)
+bool ESLevent::setPriority(esl_priority_t priority)
 {
 	this_check(false);
 
@@ -213,7 +221,7 @@ bool eslEvent::setPriority(esl_priority_t priority)
 	return false;
 }
 
-const char *eslEvent::getHeader(char *header_name)
+const char *ESLevent::getHeader(char *header_name)
 {
 	this_check("");
 
@@ -225,7 +233,7 @@ const char *eslEvent::getHeader(char *header_name)
 	return NULL;
 }
 
-bool eslEvent::addHeader(const char *header_name, const char *value)
+bool ESLevent::addHeader(const char *header_name, const char *value)
 {
 	this_check(false);
 
@@ -238,7 +246,7 @@ bool eslEvent::addHeader(const char *header_name, const char *value)
 	return false;
 }
 
-bool eslEvent::delHeader(const char *header_name)
+bool ESLevent::delHeader(const char *header_name)
 {
 	this_check(false);
 
@@ -252,7 +260,7 @@ bool eslEvent::delHeader(const char *header_name)
 }
 
 
-bool eslEvent::addBody(const char *value)
+bool ESLevent::addBody(const char *value)
 {
 	this_check(false);
 
@@ -265,7 +273,7 @@ bool eslEvent::addBody(const char *value)
 	return false;
 }
 
-char *eslEvent::getBody(void)
+char *ESLevent::getBody(void)
 {
 	
 	this_check((char *)"");
@@ -279,7 +287,7 @@ char *eslEvent::getBody(void)
 	return NULL;
 }
 
-const char *eslEvent::getType(void)
+const char *ESLevent::getType(void)
 {
 	this_check("");
 

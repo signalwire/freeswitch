@@ -1771,9 +1771,9 @@ int SWIG_Ruby_arity( VALUE proc, int minimal )
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_char swig_types[0]
-#define SWIGTYPE_p_eslConnection swig_types[1]
-#define SWIGTYPE_p_eslEvent swig_types[2]
+#define SWIGTYPE_p_ESLconnection swig_types[0]
+#define SWIGTYPE_p_ESLevent swig_types[1]
+#define SWIGTYPE_p_char swig_types[2]
 #define SWIGTYPE_p_esl_event_t swig_types[3]
 #define SWIGTYPE_p_esl_priority_t swig_types[4]
 #define SWIGTYPE_p_esl_status_t swig_types[5]
@@ -1964,11 +1964,11 @@ SWIG_From_bool  (bool value)
   return value ? Qtrue : Qfalse;
 }
 
-swig_class cEslEvent;
+swig_class cESLevent;
 
 SWIGINTERN VALUE
-_wrap_eslEvent_event_set(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_event_set(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_event_t *arg2 = (esl_event_t *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -1978,11 +1978,11 @@ _wrap_eslEvent_event_set(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","event", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","event", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_ConvertPtr(argv[0], &argp2,SWIGTYPE_p_esl_event_t, SWIG_POINTER_DISOWN |  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "esl_event_t *","event", 2, argv[0] )); 
@@ -1997,8 +1997,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_event_get(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_event_get(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_event_t *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2007,11 +2007,11 @@ _wrap_eslEvent_event_get(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","event", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","event", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (esl_event_t *) ((arg1)->event);
   vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_esl_event_t, 0 |  0 );
   return vresult;
@@ -2021,8 +2021,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_serialized_string_set(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_serialized_string_set(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2033,11 +2033,11 @@ _wrap_eslEvent_serialized_string_set(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","serialized_string", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","serialized_string", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char *","serialized_string", 2, argv[0] ));
@@ -2059,8 +2059,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_serialized_string_get(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_serialized_string_get(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2069,11 +2069,11 @@ _wrap_eslEvent_serialized_string_get(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","serialized_string", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","serialized_string", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (char *) ((arg1)->serialized_string);
   vresult = SWIG_FromCharPtr((const char *)result);
   return vresult;
@@ -2083,8 +2083,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_mine_set(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_mine_set(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   int arg2 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2094,11 +2094,11 @@ _wrap_eslEvent_mine_set(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","mine", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","mine", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   ecode2 = SWIG_AsVal_int(argv[0], &val2);
   if (!SWIG_IsOK(ecode2)) {
     SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "int","mine", 2, argv[0] ));
@@ -2113,8 +2113,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_mine_get(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_mine_get(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   int result;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2123,11 +2123,11 @@ _wrap_eslEvent_mine_get(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","mine", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","mine", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (int) ((arg1)->mine);
   vresult = SWIG_From_int(static_cast< int >(result));
   return vresult;
@@ -2137,10 +2137,10 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_new_eslEvent__SWIG_0(int argc, VALUE *argv, VALUE self) {
+_wrap_new_ESLevent__SWIG_0(int argc, VALUE *argv, VALUE self) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) NULL ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -2153,17 +2153,17 @@ _wrap_new_eslEvent__SWIG_0(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "char const *","eslEvent", 1, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "char const *","ESLevent", 1, argv[0] ));
   }
   arg1 = reinterpret_cast< char * >(buf1);
   if (argc > 1) {
     res2 = SWIG_AsCharPtrAndSize(argv[1], &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","eslEvent", 2, argv[1] ));
+      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","ESLevent", 2, argv[1] ));
     }
     arg2 = reinterpret_cast< char * >(buf2);
   }
-  result = (eslEvent *)new eslEvent((char const *)arg1,(char const *)arg2);DATA_PTR(self) = result;
+  result = (ESLevent *)new ESLevent((char const *)arg1,(char const *)arg2);DATA_PTR(self) = result;
   
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -2177,14 +2177,14 @@ fail:
 
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
 SWIGINTERN VALUE
-_wrap_eslEvent_allocate(VALUE self) {
+_wrap_ESLevent_allocate(VALUE self) {
 #else
   SWIGINTERN VALUE
-  _wrap_eslEvent_allocate(int argc, VALUE *argv, VALUE self) {
+  _wrap_ESLevent_allocate(int argc, VALUE *argv, VALUE self) {
 #endif
     
     
-    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_eslEvent);
+    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_ESLevent);
 #ifndef HAVE_RB_DEFINE_ALLOC_FUNC
     rb_obj_call_init(vresult, argc, argv);
 #endif
@@ -2193,10 +2193,10 @@ _wrap_eslEvent_allocate(VALUE self) {
   
 
 SWIGINTERN VALUE
-_wrap_new_eslEvent__SWIG_1(int argc, VALUE *argv, VALUE self) {
+_wrap_new_ESLevent__SWIG_1(int argc, VALUE *argv, VALUE self) {
   esl_event_t *arg1 = (esl_event_t *) 0 ;
   int arg2 = (int) 0 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int val2 ;
@@ -2207,17 +2207,17 @@ _wrap_new_eslEvent__SWIG_1(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_ConvertPtr(argv[0], &argp1,SWIGTYPE_p_esl_event_t, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "esl_event_t *","eslEvent", 1, argv[0] )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "esl_event_t *","ESLevent", 1, argv[0] )); 
   }
   arg1 = reinterpret_cast< esl_event_t * >(argp1);
   if (argc > 1) {
     ecode2 = SWIG_AsVal_int(argv[1], &val2);
     if (!SWIG_IsOK(ecode2)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "int","eslEvent", 2, argv[1] ));
+      SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "int","ESLevent", 2, argv[1] ));
     } 
     arg2 = static_cast< int >(val2);
   }
-  result = (eslEvent *)new eslEvent(arg1,arg2);DATA_PTR(self) = result;
+  result = (ESLevent *)new ESLevent(arg1,arg2);DATA_PTR(self) = result;
   
   return self;
 fail:
@@ -2225,7 +2225,7 @@ fail:
 }
 
 
-SWIGINTERN VALUE _wrap_new_eslEvent(int nargs, VALUE *args, VALUE self) {
+SWIGINTERN VALUE _wrap_new_ESLevent(int nargs, VALUE *args, VALUE self) {
   int argc;
   VALUE argv[2];
   int ii;
@@ -2242,14 +2242,14 @@ SWIGINTERN VALUE _wrap_new_eslEvent(int nargs, VALUE *args, VALUE self) {
     _v = SWIG_CheckState(res);
     if (_v) {
       if (argc <= 1) {
-        return _wrap_new_eslEvent__SWIG_1(nargs, args, self);
+        return _wrap_new_ESLevent__SWIG_1(nargs, args, self);
       }
       {
         int res = SWIG_AsVal_int(argv[1], NULL);
         _v = SWIG_CheckState(res);
       }
       if (_v) {
-        return _wrap_new_eslEvent__SWIG_1(nargs, args, self);
+        return _wrap_new_ESLevent__SWIG_1(nargs, args, self);
       }
     }
   }
@@ -2259,33 +2259,33 @@ SWIGINTERN VALUE _wrap_new_eslEvent(int nargs, VALUE *args, VALUE self) {
     _v = SWIG_CheckState(res);
     if (_v) {
       if (argc <= 1) {
-        return _wrap_new_eslEvent__SWIG_0(nargs, args, self);
+        return _wrap_new_ESLevent__SWIG_0(nargs, args, self);
       }
       int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
       _v = SWIG_CheckState(res);
       if (_v) {
-        return _wrap_new_eslEvent__SWIG_0(nargs, args, self);
+        return _wrap_new_ESLevent__SWIG_0(nargs, args, self);
       }
     }
   }
   
 fail:
-  Ruby_Format_OverloadedError( argc, 2, "eslEvent.new", 
-    "    eslEvent.new(char const *type, char const *subclass_name)\n"
-    "    eslEvent.new(esl_event_t *wrap_me, int free_me)\n");
+  Ruby_Format_OverloadedError( argc, 2, "ESLevent.new", 
+    "    ESLevent.new(char const *type, char const *subclass_name)\n"
+    "    ESLevent.new(esl_event_t *wrap_me, int free_me)\n");
   
   return Qnil;
 }
 
 
 SWIGINTERN void
-free_eslEvent(eslEvent *arg1) {
+free_ESLevent(ESLevent *arg1) {
     delete arg1;
 }
 
 SWIGINTERN VALUE
-_wrap_eslEvent_serialize(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_serialize(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) NULL ;
   char *result = 0 ;
   void *argp1 = 0 ;
@@ -2298,11 +2298,11 @@ _wrap_eslEvent_serialize(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","serialize", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","serialize", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   if (argc > 0) {
     res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
@@ -2321,8 +2321,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_setPriority(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_setPriority(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_priority_t arg2 = (esl_priority_t) ESL_PRIORITY_NORMAL ;
   bool result;
   void *argp1 = 0 ;
@@ -2334,11 +2334,11 @@ _wrap_eslEvent_setPriority(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","setPriority", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","setPriority", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   if (argc > 0) {
     {
       res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_esl_priority_t,  0 );
@@ -2361,8 +2361,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_getHeader(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_getHeader(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   char *result = 0 ;
   void *argp1 = 0 ;
@@ -2375,11 +2375,11 @@ _wrap_eslEvent_getHeader(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","getHeader", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","getHeader", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char *","getHeader", 2, argv[0] ));
@@ -2396,8 +2396,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_getBody(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_getBody(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2406,11 +2406,11 @@ _wrap_eslEvent_getBody(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","getBody", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","getBody", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (char *)(arg1)->getBody();
   vresult = SWIG_FromCharPtr((const char *)result);
   return vresult;
@@ -2420,8 +2420,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_getType(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_getType(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2430,11 +2430,11 @@ _wrap_eslEvent_getType(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","getType", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","getType", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   result = (char *)(arg1)->getType();
   vresult = SWIG_FromCharPtr((const char *)result);
   return vresult;
@@ -2444,8 +2444,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_addBody(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_addBody(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
   void *argp1 = 0 ;
@@ -2458,11 +2458,11 @@ _wrap_eslEvent_addBody(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","addBody", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","addBody", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","addBody", 2, argv[0] ));
@@ -2479,8 +2479,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_addHeader(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_addHeader(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   bool result;
@@ -2497,11 +2497,11 @@ _wrap_eslEvent_addHeader(int argc, VALUE *argv, VALUE self) {
   if ((argc < 2) || (argc > 2)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","addHeader", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","addHeader", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","addHeader", 2, argv[0] ));
@@ -2525,8 +2525,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslEvent_delHeader(int argc, VALUE *argv, VALUE self) {
-  eslEvent *arg1 = (eslEvent *) 0 ;
+_wrap_ESLevent_delHeader(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
   void *argp1 = 0 ;
@@ -2539,11 +2539,11 @@ _wrap_eslEvent_delHeader(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslEvent, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslEvent *","delHeader", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","delHeader", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslEvent * >(argp1);
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","delHeader", 2, argv[0] ));
@@ -2559,14 +2559,14 @@ fail:
 }
 
 
-swig_class cEslConnection;
+swig_class cESLconnection;
 
 SWIGINTERN VALUE
-_wrap_new_eslConnection__SWIG_0(int argc, VALUE *argv, VALUE self) {
+_wrap_new_ESLconnection__SWIG_0(int argc, VALUE *argv, VALUE self) {
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  eslConnection *result = 0 ;
+  ESLconnection *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -2582,20 +2582,20 @@ _wrap_new_eslConnection__SWIG_0(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "char const *","eslConnection", 1, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "char const *","ESLconnection", 1, argv[0] ));
   }
   arg1 = reinterpret_cast< char * >(buf1);
   res2 = SWIG_AsCharPtrAndSize(argv[1], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","eslConnection", 2, argv[1] ));
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","ESLconnection", 2, argv[1] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
   res3 = SWIG_AsCharPtrAndSize(argv[2], &buf3, NULL, &alloc3);
   if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","eslConnection", 3, argv[2] ));
+    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","ESLconnection", 3, argv[2] ));
   }
   arg3 = reinterpret_cast< char * >(buf3);
-  result = (eslConnection *)new eslConnection((char const *)arg1,(char const *)arg2,(char const *)arg3);DATA_PTR(self) = result;
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,(char const *)arg2,(char const *)arg3);DATA_PTR(self) = result;
   
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -2611,14 +2611,14 @@ fail:
 
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
 SWIGINTERN VALUE
-_wrap_eslConnection_allocate(VALUE self) {
+_wrap_ESLconnection_allocate(VALUE self) {
 #else
   SWIGINTERN VALUE
-  _wrap_eslConnection_allocate(int argc, VALUE *argv, VALUE self) {
+  _wrap_ESLconnection_allocate(int argc, VALUE *argv, VALUE self) {
 #endif
     
     
-    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_eslConnection);
+    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_ESLconnection);
 #ifndef HAVE_RB_DEFINE_ALLOC_FUNC
     rb_obj_call_init(vresult, argc, argv);
 #endif
@@ -2627,9 +2627,9 @@ _wrap_eslConnection_allocate(VALUE self) {
   
 
 SWIGINTERN VALUE
-_wrap_new_eslConnection__SWIG_1(int argc, VALUE *argv, VALUE self) {
+_wrap_new_ESLconnection__SWIG_1(int argc, VALUE *argv, VALUE self) {
   int arg1 ;
-  eslConnection *result = 0 ;
+  ESLconnection *result = 0 ;
   int val1 ;
   int ecode1 = 0 ;
   
@@ -2638,10 +2638,10 @@ _wrap_new_eslConnection__SWIG_1(int argc, VALUE *argv, VALUE self) {
   }
   ecode1 = SWIG_AsVal_int(argv[0], &val1);
   if (!SWIG_IsOK(ecode1)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode1), Ruby_Format_TypeError( "", "int","eslConnection", 1, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(ecode1), Ruby_Format_TypeError( "", "int","ESLconnection", 1, argv[0] ));
   } 
   arg1 = static_cast< int >(val1);
-  result = (eslConnection *)new eslConnection(arg1);DATA_PTR(self) = result;
+  result = (ESLconnection *)new ESLconnection(arg1);DATA_PTR(self) = result;
   
   return self;
 fail:
@@ -2649,7 +2649,7 @@ fail:
 }
 
 
-SWIGINTERN VALUE _wrap_new_eslConnection(int nargs, VALUE *args, VALUE self) {
+SWIGINTERN VALUE _wrap_new_ESLconnection(int nargs, VALUE *args, VALUE self) {
   int argc;
   VALUE argv[3];
   int ii;
@@ -2666,7 +2666,7 @@ SWIGINTERN VALUE _wrap_new_eslConnection(int nargs, VALUE *args, VALUE self) {
       _v = SWIG_CheckState(res);
     }
     if (_v) {
-      return _wrap_new_eslConnection__SWIG_1(nargs, args, self);
+      return _wrap_new_ESLconnection__SWIG_1(nargs, args, self);
     }
   }
   if (argc == 3) {
@@ -2680,29 +2680,29 @@ SWIGINTERN VALUE _wrap_new_eslConnection(int nargs, VALUE *args, VALUE self) {
         int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
         _v = SWIG_CheckState(res);
         if (_v) {
-          return _wrap_new_eslConnection__SWIG_0(nargs, args, self);
+          return _wrap_new_ESLconnection__SWIG_0(nargs, args, self);
         }
       }
     }
   }
   
 fail:
-  Ruby_Format_OverloadedError( argc, 3, "eslConnection.new", 
-    "    eslConnection.new(char const *host, char const *port, char const *password)\n"
-    "    eslConnection.new(int socket)\n");
+  Ruby_Format_OverloadedError( argc, 3, "ESLconnection.new", 
+    "    ESLconnection.new(char const *host, char const *port, char const *password)\n"
+    "    ESLconnection.new(int socket)\n");
   
   return Qnil;
 }
 
 
 SWIGINTERN void
-free_eslConnection(eslConnection *arg1) {
+free_ESLconnection(ESLconnection *arg1) {
     delete arg1;
 }
 
 SWIGINTERN VALUE
-_wrap_eslConnection_connected(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_connected(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   int result;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2711,11 +2711,11 @@ _wrap_eslConnection_connected(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","connected", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","connected", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   result = (int)(arg1)->connected();
   vresult = SWIG_From_int(static_cast< int >(result));
   return vresult;
@@ -2725,9 +2725,9 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_getInfo(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *result = 0 ;
+_wrap_ESLconnection_getInfo(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   VALUE vresult = Qnil;
@@ -2735,13 +2735,13 @@ _wrap_eslConnection_getInfo(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","getInfo", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","getInfo", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
-  result = (eslEvent *)(arg1)->getInfo();
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_eslEvent, 0 |  0 );
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (ESLevent *)(arg1)->getInfo();
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -2749,8 +2749,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_send(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_send(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   esl_status_t result;
   void *argp1 = 0 ;
@@ -2763,11 +2763,11 @@ _wrap_eslConnection_send(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","send", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","send", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","send", 2, argv[0] ));
@@ -2784,10 +2784,10 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_sendRecv(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_sendRecv(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -2798,18 +2798,18 @@ _wrap_eslConnection_sendRecv(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","sendRecv", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","sendRecv", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","sendRecv", 2, argv[0] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  result = (eslEvent *)(arg1)->sendRecv((char const *)arg2);
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_eslEvent, 0 |  0 );
+  result = (ESLevent *)(arg1)->sendRecv((char const *)arg2);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return vresult;
 fail:
@@ -2819,9 +2819,9 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_sendEvent(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *arg2 = (eslEvent *) 0 ;
+_wrap_ESLconnection_sendEvent(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
   esl_status_t result;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -2832,16 +2832,16 @@ _wrap_eslConnection_sendEvent(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","sendEvent", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","sendEvent", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
-  res2 = SWIG_ConvertPtr(argv[0], &argp2,SWIGTYPE_p_eslEvent, 0 |  0 );
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_ConvertPtr(argv[0], &argp2,SWIGTYPE_p_ESLevent, 0 |  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "eslEvent *","sendEvent", 2, argv[0] )); 
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "ESLevent *","sendEvent", 2, argv[0] )); 
   }
-  arg2 = reinterpret_cast< eslEvent * >(argp2);
+  arg2 = reinterpret_cast< ESLevent * >(argp2);
   result = (arg1)->sendEvent(arg2);
   vresult = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
   return vresult;
@@ -2851,9 +2851,9 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_recvEvent(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *result = 0 ;
+_wrap_ESLconnection_recvEvent(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   VALUE vresult = Qnil;
@@ -2861,13 +2861,13 @@ _wrap_eslConnection_recvEvent(int argc, VALUE *argv, VALUE self) {
   if ((argc < 0) || (argc > 0)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","recvEvent", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","recvEvent", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
-  result = (eslEvent *)(arg1)->recvEvent();
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_eslEvent, 0 |  0 );
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (ESLevent *)(arg1)->recvEvent();
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -2875,10 +2875,10 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_recvEventTimed(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_recvEventTimed(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   int arg2 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int val2 ;
@@ -2888,18 +2888,18 @@ _wrap_eslConnection_recvEventTimed(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","recvEventTimed", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","recvEventTimed", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   ecode2 = SWIG_AsVal_int(argv[0], &val2);
   if (!SWIG_IsOK(ecode2)) {
     SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "int","recvEventTimed", 2, argv[0] ));
   } 
   arg2 = static_cast< int >(val2);
-  result = (eslEvent *)(arg1)->recvEventTimed(arg2);
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_eslEvent, 0 |  0 );
+  result = (ESLevent *)(arg1)->recvEventTimed(arg2);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -2907,8 +2907,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_filter(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_filter(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   esl_status_t result;
@@ -2925,11 +2925,11 @@ _wrap_eslConnection_filter(int argc, VALUE *argv, VALUE self) {
   if ((argc < 2) || (argc > 2)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","filter", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","filter", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","filter", 2, argv[0] ));
@@ -2953,8 +2953,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_events(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_events(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   esl_status_t result;
@@ -2971,11 +2971,11 @@ _wrap_eslConnection_events(int argc, VALUE *argv, VALUE self) {
   if ((argc < 2) || (argc > 2)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","events", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","events", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","events", 2, argv[0] ));
@@ -2999,8 +2999,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_execute(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_execute(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
@@ -3021,11 +3021,11 @@ _wrap_eslConnection_execute(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","execute", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","execute", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","execute", 2, argv[0] ));
@@ -3060,8 +3060,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_setBlockingExecute(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_setBlockingExecute(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
   void *argp1 = 0 ;
@@ -3074,11 +3074,11 @@ _wrap_eslConnection_setBlockingExecute(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","setBlockingExecute", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","setBlockingExecute", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","setBlockingExecute", 2, argv[0] ));
@@ -3095,8 +3095,8 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_eslConnection_setEventLock(int argc, VALUE *argv, VALUE self) {
-  eslConnection *arg1 = (eslConnection *) 0 ;
+_wrap_ESLconnection_setEventLock(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
   void *argp1 = 0 ;
@@ -3109,11 +3109,11 @@ _wrap_eslConnection_setEventLock(int argc, VALUE *argv, VALUE self) {
   if ((argc < 1) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_eslConnection, 0 |  0 );
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "eslConnection *","setEventLock", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","setEventLock", 1, self )); 
   }
-  arg1 = reinterpret_cast< eslConnection * >(argp1);
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","setEventLock", 2, argv[0] ));
@@ -3129,36 +3129,57 @@ fail:
 }
 
 
+SWIGINTERN VALUE
+_wrap_eslSetLogLevel(int argc, VALUE *argv, VALUE self) {
+  int arg1 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  ecode1 = SWIG_AsVal_int(argv[0], &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), Ruby_Format_TypeError( "", "int","eslSetLogLevel", 1, argv[0] ));
+  } 
+  arg1 = static_cast< int >(val1);
+  eslSetLogLevel(arg1);
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
+static swig_type_info _swigt__p_ESLconnection = {"_p_ESLconnection", "ESLconnection *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_ESLevent = {"_p_ESLevent", "ESLevent *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_eslConnection = {"_p_eslConnection", "eslConnection *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_eslEvent = {"_p_eslEvent", "eslEvent *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_event_t = {"_p_esl_event_t", "esl_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_priority_t = {"_p_esl_priority_t", "esl_priority_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_status_t = {"_p_esl_status_t", "esl_status_t *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
+  &_swigt__p_ESLconnection,
+  &_swigt__p_ESLevent,
   &_swigt__p_char,
-  &_swigt__p_eslConnection,
-  &_swigt__p_eslEvent,
   &_swigt__p_esl_event_t,
   &_swigt__p_esl_priority_t,
   &_swigt__p_esl_status_t,
 };
 
+static swig_cast_info _swigc__p_ESLconnection[] = {  {&_swigt__p_ESLconnection, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_ESLevent[] = {  {&_swigt__p_ESLevent, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_eslConnection[] = {  {&_swigt__p_eslConnection, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_eslEvent[] = {  {&_swigt__p_eslEvent, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_event_t[] = {  {&_swigt__p_esl_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_priority_t[] = {  {&_swigt__p_esl_priority_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_status_t[] = {  {&_swigt__p_esl_status_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
+  _swigc__p_ESLconnection,
+  _swigc__p_ESLevent,
   _swigc__p_char,
-  _swigc__p_eslConnection,
-  _swigc__p_eslEvent,
   _swigc__p_esl_event_t,
   _swigc__p_esl_priority_t,
   _swigc__p_esl_status_t,
@@ -3423,46 +3444,47 @@ SWIGEXPORT void Init_ESL(void) {
   
   SWIG_RubyInitializeTrackings();
   
-  cEslEvent.klass = rb_define_class_under(mESL, "EslEvent", rb_cObject);
-  SWIG_TypeClientData(SWIGTYPE_p_eslEvent, (void *) &cEslEvent);
-  rb_define_alloc_func(cEslEvent.klass, _wrap_eslEvent_allocate);
-  rb_define_method(cEslEvent.klass, "initialize", VALUEFUNC(_wrap_new_eslEvent), -1);
-  rb_define_method(cEslEvent.klass, "event=", VALUEFUNC(_wrap_eslEvent_event_set), -1);
-  rb_define_method(cEslEvent.klass, "event", VALUEFUNC(_wrap_eslEvent_event_get), -1);
-  rb_define_method(cEslEvent.klass, "serialized_string=", VALUEFUNC(_wrap_eslEvent_serialized_string_set), -1);
-  rb_define_method(cEslEvent.klass, "serialized_string", VALUEFUNC(_wrap_eslEvent_serialized_string_get), -1);
-  rb_define_method(cEslEvent.klass, "mine=", VALUEFUNC(_wrap_eslEvent_mine_set), -1);
-  rb_define_method(cEslEvent.klass, "mine", VALUEFUNC(_wrap_eslEvent_mine_get), -1);
-  rb_define_method(cEslEvent.klass, "serialize", VALUEFUNC(_wrap_eslEvent_serialize), -1);
-  rb_define_method(cEslEvent.klass, "setPriority", VALUEFUNC(_wrap_eslEvent_setPriority), -1);
-  rb_define_method(cEslEvent.klass, "getHeader", VALUEFUNC(_wrap_eslEvent_getHeader), -1);
-  rb_define_method(cEslEvent.klass, "getBody", VALUEFUNC(_wrap_eslEvent_getBody), -1);
-  rb_define_method(cEslEvent.klass, "getType", VALUEFUNC(_wrap_eslEvent_getType), -1);
-  rb_define_method(cEslEvent.klass, "addBody", VALUEFUNC(_wrap_eslEvent_addBody), -1);
-  rb_define_method(cEslEvent.klass, "addHeader", VALUEFUNC(_wrap_eslEvent_addHeader), -1);
-  rb_define_method(cEslEvent.klass, "delHeader", VALUEFUNC(_wrap_eslEvent_delHeader), -1);
-  cEslEvent.mark = 0;
-  cEslEvent.destroy = (void (*)(void *)) free_eslEvent;
-  cEslEvent.trackObjects = 0;
+  cESLevent.klass = rb_define_class_under(mESL, "ESLevent", rb_cObject);
+  SWIG_TypeClientData(SWIGTYPE_p_ESLevent, (void *) &cESLevent);
+  rb_define_alloc_func(cESLevent.klass, _wrap_ESLevent_allocate);
+  rb_define_method(cESLevent.klass, "initialize", VALUEFUNC(_wrap_new_ESLevent), -1);
+  rb_define_method(cESLevent.klass, "event=", VALUEFUNC(_wrap_ESLevent_event_set), -1);
+  rb_define_method(cESLevent.klass, "event", VALUEFUNC(_wrap_ESLevent_event_get), -1);
+  rb_define_method(cESLevent.klass, "serialized_string=", VALUEFUNC(_wrap_ESLevent_serialized_string_set), -1);
+  rb_define_method(cESLevent.klass, "serialized_string", VALUEFUNC(_wrap_ESLevent_serialized_string_get), -1);
+  rb_define_method(cESLevent.klass, "mine=", VALUEFUNC(_wrap_ESLevent_mine_set), -1);
+  rb_define_method(cESLevent.klass, "mine", VALUEFUNC(_wrap_ESLevent_mine_get), -1);
+  rb_define_method(cESLevent.klass, "serialize", VALUEFUNC(_wrap_ESLevent_serialize), -1);
+  rb_define_method(cESLevent.klass, "setPriority", VALUEFUNC(_wrap_ESLevent_setPriority), -1);
+  rb_define_method(cESLevent.klass, "getHeader", VALUEFUNC(_wrap_ESLevent_getHeader), -1);
+  rb_define_method(cESLevent.klass, "getBody", VALUEFUNC(_wrap_ESLevent_getBody), -1);
+  rb_define_method(cESLevent.klass, "getType", VALUEFUNC(_wrap_ESLevent_getType), -1);
+  rb_define_method(cESLevent.klass, "addBody", VALUEFUNC(_wrap_ESLevent_addBody), -1);
+  rb_define_method(cESLevent.klass, "addHeader", VALUEFUNC(_wrap_ESLevent_addHeader), -1);
+  rb_define_method(cESLevent.klass, "delHeader", VALUEFUNC(_wrap_ESLevent_delHeader), -1);
+  cESLevent.mark = 0;
+  cESLevent.destroy = (void (*)(void *)) free_ESLevent;
+  cESLevent.trackObjects = 0;
   
-  cEslConnection.klass = rb_define_class_under(mESL, "EslConnection", rb_cObject);
-  SWIG_TypeClientData(SWIGTYPE_p_eslConnection, (void *) &cEslConnection);
-  rb_define_alloc_func(cEslConnection.klass, _wrap_eslConnection_allocate);
-  rb_define_method(cEslConnection.klass, "initialize", VALUEFUNC(_wrap_new_eslConnection), -1);
-  rb_define_method(cEslConnection.klass, "connected", VALUEFUNC(_wrap_eslConnection_connected), -1);
-  rb_define_method(cEslConnection.klass, "getInfo", VALUEFUNC(_wrap_eslConnection_getInfo), -1);
-  rb_define_method(cEslConnection.klass, "send", VALUEFUNC(_wrap_eslConnection_send), -1);
-  rb_define_method(cEslConnection.klass, "sendRecv", VALUEFUNC(_wrap_eslConnection_sendRecv), -1);
-  rb_define_method(cEslConnection.klass, "sendEvent", VALUEFUNC(_wrap_eslConnection_sendEvent), -1);
-  rb_define_method(cEslConnection.klass, "recvEvent", VALUEFUNC(_wrap_eslConnection_recvEvent), -1);
-  rb_define_method(cEslConnection.klass, "recvEventTimed", VALUEFUNC(_wrap_eslConnection_recvEventTimed), -1);
-  rb_define_method(cEslConnection.klass, "filter", VALUEFUNC(_wrap_eslConnection_filter), -1);
-  rb_define_method(cEslConnection.klass, "events", VALUEFUNC(_wrap_eslConnection_events), -1);
-  rb_define_method(cEslConnection.klass, "execute", VALUEFUNC(_wrap_eslConnection_execute), -1);
-  rb_define_method(cEslConnection.klass, "setBlockingExecute", VALUEFUNC(_wrap_eslConnection_setBlockingExecute), -1);
-  rb_define_method(cEslConnection.klass, "setEventLock", VALUEFUNC(_wrap_eslConnection_setEventLock), -1);
-  cEslConnection.mark = 0;
-  cEslConnection.destroy = (void (*)(void *)) free_eslConnection;
-  cEslConnection.trackObjects = 0;
+  cESLconnection.klass = rb_define_class_under(mESL, "ESLconnection", rb_cObject);
+  SWIG_TypeClientData(SWIGTYPE_p_ESLconnection, (void *) &cESLconnection);
+  rb_define_alloc_func(cESLconnection.klass, _wrap_ESLconnection_allocate);
+  rb_define_method(cESLconnection.klass, "initialize", VALUEFUNC(_wrap_new_ESLconnection), -1);
+  rb_define_method(cESLconnection.klass, "connected", VALUEFUNC(_wrap_ESLconnection_connected), -1);
+  rb_define_method(cESLconnection.klass, "getInfo", VALUEFUNC(_wrap_ESLconnection_getInfo), -1);
+  rb_define_method(cESLconnection.klass, "send", VALUEFUNC(_wrap_ESLconnection_send), -1);
+  rb_define_method(cESLconnection.klass, "sendRecv", VALUEFUNC(_wrap_ESLconnection_sendRecv), -1);
+  rb_define_method(cESLconnection.klass, "sendEvent", VALUEFUNC(_wrap_ESLconnection_sendEvent), -1);
+  rb_define_method(cESLconnection.klass, "recvEvent", VALUEFUNC(_wrap_ESLconnection_recvEvent), -1);
+  rb_define_method(cESLconnection.klass, "recvEventTimed", VALUEFUNC(_wrap_ESLconnection_recvEventTimed), -1);
+  rb_define_method(cESLconnection.klass, "filter", VALUEFUNC(_wrap_ESLconnection_filter), -1);
+  rb_define_method(cESLconnection.klass, "events", VALUEFUNC(_wrap_ESLconnection_events), -1);
+  rb_define_method(cESLconnection.klass, "execute", VALUEFUNC(_wrap_ESLconnection_execute), -1);
+  rb_define_method(cESLconnection.klass, "setBlockingExecute", VALUEFUNC(_wrap_ESLconnection_setBlockingExecute), -1);
+  rb_define_method(cESLconnection.klass, "setEventLock", VALUEFUNC(_wrap_ESLconnection_setEventLock), -1);
+  cESLconnection.mark = 0;
+  cESLconnection.destroy = (void (*)(void *)) free_ESLconnection;
+  cESLconnection.trackObjects = 0;
+  rb_define_module_function(mESL, "eslSetLogLevel", VALUEFUNC(_wrap_eslSetLogLevel), -1);
 }
 

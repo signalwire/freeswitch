@@ -1484,8 +1484,8 @@ SWIG_Lua_dostring(lua_State *L, const char* str) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_eslConnection swig_types[0]
-#define SWIGTYPE_p_eslEvent swig_types[1]
+#define SWIGTYPE_p_ESLconnection swig_types[0]
+#define SWIGTYPE_p_ESLevent swig_types[1]
 #define SWIGTYPE_p_esl_event_t swig_types[2]
 #define SWIGTYPE_p_esl_priority_t swig_types[3]
 #define SWIGTYPE_p_esl_status_t swig_types[4]
@@ -1514,22 +1514,22 @@ typedef struct{} LANGUAGE_OBJ;
 #ifdef __cplusplus
 extern "C" {
 #endif
-static int _wrap_eslEvent_event_set(lua_State* L) {
+static int _wrap_ESLevent_event_set(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_event_t *arg2 = (esl_event_t *) 0 ;
   
   SWIG_check_num_args("event",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"ESLevent *");
   if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("event",2,"esl_event_t *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_event_set",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_event_set",1,SWIGTYPE_p_ESLevent);
   }
   
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_esl_event_t,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("eslEvent_event_set",2,SWIGTYPE_p_esl_event_t);
+    SWIG_fail_ptr("ESLevent_event_set",2,SWIGTYPE_p_esl_event_t);
   }
   
   if (arg1) (arg1)->event = arg2;
@@ -1546,16 +1546,16 @@ fail:
 }
 
 
-static int _wrap_eslEvent_event_get(lua_State* L) {
+static int _wrap_ESLevent_event_get(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_event_t *result = 0 ;
   
   SWIG_check_num_args("event",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("event",1,"ESLevent *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_event_get",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_event_get",1,SWIGTYPE_p_ESLevent);
   }
   
   result = (esl_event_t *) ((arg1)->event);
@@ -1571,17 +1571,17 @@ fail:
 }
 
 
-static int _wrap_eslEvent_serialized_string_set(lua_State* L) {
+static int _wrap_ESLevent_serialized_string_set(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   
   SWIG_check_num_args("serialized_string",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"ESLevent *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("serialized_string",2,"char *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_serialized_string_set",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_serialized_string_set",1,SWIGTYPE_p_ESLevent);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -1606,16 +1606,16 @@ fail:
 }
 
 
-static int _wrap_eslEvent_serialized_string_get(lua_State* L) {
+static int _wrap_ESLevent_serialized_string_get(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
   
   SWIG_check_num_args("serialized_string",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialized_string",1,"ESLevent *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_serialized_string_get",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_serialized_string_get",1,SWIGTYPE_p_ESLevent);
   }
   
   result = (char *) ((arg1)->serialized_string);
@@ -1631,17 +1631,17 @@ fail:
 }
 
 
-static int _wrap_eslEvent_mine_set(lua_State* L) {
+static int _wrap_ESLevent_mine_set(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   int arg2 ;
   
   SWIG_check_num_args("mine",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"ESLevent *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("mine",2,"int");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_mine_set",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_mine_set",1,SWIGTYPE_p_ESLevent);
   }
   
   arg2 = (int)lua_tonumber(L, 2);
@@ -1659,16 +1659,16 @@ fail:
 }
 
 
-static int _wrap_eslEvent_mine_get(lua_State* L) {
+static int _wrap_ESLevent_mine_get(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   int result;
   
   SWIG_check_num_args("mine",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("mine",1,"ESLevent *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_mine_get",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_mine_get",1,SWIGTYPE_p_ESLevent);
   }
   
   result = (int) ((arg1)->mine);
@@ -1684,22 +1684,22 @@ fail:
 }
 
 
-static int _wrap_new_eslEvent__SWIG_0(lua_State* L) {
+static int _wrap_new_ESLevent__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) NULL ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   
-  SWIG_check_num_args("eslEvent",1,2)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("eslEvent",1,"char const *");
-  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("eslEvent",2,"char const *");
+  SWIG_check_num_args("ESLevent",1,2)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("ESLevent",1,"char const *");
+  if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("ESLevent",2,"char const *");
   arg1 = (char *)lua_tostring(L, 1);
   if(lua_gettop(L)>=2){
     arg2 = (char *)lua_tostring(L, 2);
   }
-  result = (eslEvent *)new eslEvent((char const *)arg1,(char const *)arg2);
+  result = (ESLevent *)new ESLevent((char const *)arg1,(char const *)arg2);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -1710,26 +1710,26 @@ fail:
 }
 
 
-static int _wrap_new_eslEvent__SWIG_1(lua_State* L) {
+static int _wrap_new_ESLevent__SWIG_1(lua_State* L) {
   int SWIG_arg = -1;
   esl_event_t *arg1 = (esl_event_t *) 0 ;
   int arg2 = (int) 0 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   
-  SWIG_check_num_args("eslEvent",1,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("eslEvent",1,"esl_event_t *");
-  if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("eslEvent",2,"int");
+  SWIG_check_num_args("ESLevent",1,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ESLevent",1,"esl_event_t *");
+  if(lua_gettop(L)>=2 && !lua_isnumber(L,2)) SWIG_fail_arg("ESLevent",2,"int");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_esl_event_t,0))){
-    SWIG_fail_ptr("new_eslEvent",1,SWIGTYPE_p_esl_event_t);
+    SWIG_fail_ptr("new_ESLevent",1,SWIGTYPE_p_esl_event_t);
   }
   
   if(lua_gettop(L)>=2){
     arg2 = (int)lua_tonumber(L, 2);
   }
-  result = (eslEvent *)new eslEvent(arg1,arg2);
+  result = (ESLevent *)new ESLevent(arg1,arg2);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -1740,7 +1740,7 @@ fail:
 }
 
 
-static int _wrap_new_eslEvent(lua_State* L) {
+static int _wrap_new_ESLevent(lua_State* L) {
   int argc;
   int argv[3]={
     1,2,3
@@ -1759,13 +1759,13 @@ static int _wrap_new_eslEvent(lua_State* L) {
     }
     if (_v) {
       if (argc <= 1) {
-        return _wrap_new_eslEvent__SWIG_1(L);
+        return _wrap_new_ESLevent__SWIG_1(L);
       }
       {
         _v = lua_isnumber(L,argv[1]);
       }
       if (_v) {
-        return _wrap_new_eslEvent__SWIG_1(L);
+        return _wrap_new_ESLevent__SWIG_1(L);
       }
     }
   }
@@ -1776,31 +1776,31 @@ static int _wrap_new_eslEvent(lua_State* L) {
     }
     if (_v) {
       if (argc <= 1) {
-        return _wrap_new_eslEvent__SWIG_0(L);
+        return _wrap_new_ESLevent__SWIG_0(L);
       }
       {
         _v = lua_isstring(L,argv[1]);
       }
       if (_v) {
-        return _wrap_new_eslEvent__SWIG_0(L);
+        return _wrap_new_ESLevent__SWIG_0(L);
       }
     }
   }
   
-  lua_pushstring(L,"No matching function for overloaded 'new_eslEvent'");
+  lua_pushstring(L,"No matching function for overloaded 'new_ESLevent'");
   lua_error(L);return 0;
 }
 
 
-static int _wrap_delete_eslEvent(lua_State* L) {
+static int _wrap_delete_ESLevent(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   
-  SWIG_check_num_args("eslEvent",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("eslEvent",1,"eslEvent *");
+  SWIG_check_num_args("ESLevent",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ESLevent",1,"ESLevent *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("delete_eslEvent",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,SWIG_POINTER_DISOWN))){
+    SWIG_fail_ptr("delete_ESLevent",1,SWIGTYPE_p_ESLevent);
   }
   
   delete arg1;
@@ -1817,18 +1817,18 @@ fail:
 }
 
 
-static int _wrap_eslEvent_serialize(lua_State* L) {
+static int _wrap_ESLevent_serialize(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) NULL ;
   char *result = 0 ;
   
   SWIG_check_num_args("serialize",1,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("serialize",1,"ESLevent *");
   if(lua_gettop(L)>=2 && !lua_isstring(L,2)) SWIG_fail_arg("serialize",2,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_serialize",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_serialize",1,SWIGTYPE_p_ESLevent);
   }
   
   if(lua_gettop(L)>=2){
@@ -1847,24 +1847,24 @@ fail:
 }
 
 
-static int _wrap_eslEvent_setPriority(lua_State* L) {
+static int _wrap_ESLevent_setPriority(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   esl_priority_t arg2 = (esl_priority_t) ESL_PRIORITY_NORMAL ;
   bool result;
   esl_priority_t *argp2 ;
   
   SWIG_check_num_args("setPriority",1,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPriority",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setPriority",1,"ESLevent *");
   if(lua_gettop(L)>=2 && !lua_isuserdata(L,2)) SWIG_fail_arg("setPriority",2,"esl_priority_t");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_setPriority",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_setPriority",1,SWIGTYPE_p_ESLevent);
   }
   
   if(lua_gettop(L)>=2){
     if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&argp2,SWIGTYPE_p_esl_priority_t,0))){
-      SWIG_fail_ptr("eslEvent_setPriority",2,SWIGTYPE_p_esl_priority_t);
+      SWIG_fail_ptr("ESLevent_setPriority",2,SWIGTYPE_p_esl_priority_t);
     }
     arg2 = *argp2;
   }
@@ -1881,18 +1881,18 @@ fail:
 }
 
 
-static int _wrap_eslEvent_getHeader(lua_State* L) {
+static int _wrap_ESLevent_getHeader(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   char *result = 0 ;
   
   SWIG_check_num_args("getHeader",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getHeader",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getHeader",1,"ESLevent *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("getHeader",2,"char *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_getHeader",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_getHeader",1,SWIGTYPE_p_ESLevent);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -1909,16 +1909,16 @@ fail:
 }
 
 
-static int _wrap_eslEvent_getBody(lua_State* L) {
+static int _wrap_ESLevent_getBody(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
   
   SWIG_check_num_args("getBody",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getBody",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getBody",1,"ESLevent *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_getBody",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_getBody",1,SWIGTYPE_p_ESLevent);
   }
   
   result = (char *)(arg1)->getBody();
@@ -1934,16 +1934,16 @@ fail:
 }
 
 
-static int _wrap_eslEvent_getType(lua_State* L) {
+static int _wrap_ESLevent_getType(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *result = 0 ;
   
   SWIG_check_num_args("getType",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getType",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getType",1,"ESLevent *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_getType",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_getType",1,SWIGTYPE_p_ESLevent);
   }
   
   result = (char *)(arg1)->getType();
@@ -1959,18 +1959,18 @@ fail:
 }
 
 
-static int _wrap_eslEvent_addBody(lua_State* L) {
+static int _wrap_ESLevent_addBody(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
   
   SWIG_check_num_args("addBody",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("addBody",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("addBody",1,"ESLevent *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("addBody",2,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_addBody",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_addBody",1,SWIGTYPE_p_ESLevent);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -1987,20 +1987,20 @@ fail:
 }
 
 
-static int _wrap_eslEvent_addHeader(lua_State* L) {
+static int _wrap_ESLevent_addHeader(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   bool result;
   
   SWIG_check_num_args("addHeader",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("addHeader",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("addHeader",1,"ESLevent *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("addHeader",2,"char const *");
   if(!lua_isstring(L,3)) SWIG_fail_arg("addHeader",3,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_addHeader",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_addHeader",1,SWIGTYPE_p_ESLevent);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2018,18 +2018,18 @@ fail:
 }
 
 
-static int _wrap_eslEvent_delHeader(lua_State* L) {
+static int _wrap_ESLevent_delHeader(lua_State* L) {
   int SWIG_arg = -1;
-  eslEvent *arg1 = (eslEvent *) 0 ;
+  ESLevent *arg1 = (ESLevent *) 0 ;
   char *arg2 = (char *) 0 ;
   bool result;
   
   SWIG_check_num_args("delHeader",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("delHeader",1,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("delHeader",1,"ESLevent *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("delHeader",2,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslEvent_delHeader",1,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_delHeader",1,SWIGTYPE_p_ESLevent);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2046,48 +2046,48 @@ fail:
 }
 
 
-static void swig_delete_eslEvent(void *obj) {
-eslEvent *arg1 = (eslEvent *) obj;
+static void swig_delete_ESLevent(void *obj) {
+ESLevent *arg1 = (ESLevent *) obj;
 delete arg1;
 }
-static swig_lua_method swig_eslEvent_methods[] = {
-    {"serialize", _wrap_eslEvent_serialize}, 
-    {"setPriority", _wrap_eslEvent_setPriority}, 
-    {"getHeader", _wrap_eslEvent_getHeader}, 
-    {"getBody", _wrap_eslEvent_getBody}, 
-    {"getType", _wrap_eslEvent_getType}, 
-    {"addBody", _wrap_eslEvent_addBody}, 
-    {"addHeader", _wrap_eslEvent_addHeader}, 
-    {"delHeader", _wrap_eslEvent_delHeader}, 
+static swig_lua_method swig_ESLevent_methods[] = {
+    {"serialize", _wrap_ESLevent_serialize}, 
+    {"setPriority", _wrap_ESLevent_setPriority}, 
+    {"getHeader", _wrap_ESLevent_getHeader}, 
+    {"getBody", _wrap_ESLevent_getBody}, 
+    {"getType", _wrap_ESLevent_getType}, 
+    {"addBody", _wrap_ESLevent_addBody}, 
+    {"addHeader", _wrap_ESLevent_addHeader}, 
+    {"delHeader", _wrap_ESLevent_delHeader}, 
     {0,0}
 };
-static swig_lua_attribute swig_eslEvent_attributes[] = {
-    { "event", _wrap_eslEvent_event_get, _wrap_eslEvent_event_set},
-    { "serialized_string", _wrap_eslEvent_serialized_string_get, _wrap_eslEvent_serialized_string_set},
-    { "mine", _wrap_eslEvent_mine_get, _wrap_eslEvent_mine_set},
+static swig_lua_attribute swig_ESLevent_attributes[] = {
+    { "event", _wrap_ESLevent_event_get, _wrap_ESLevent_event_set},
+    { "serialized_string", _wrap_ESLevent_serialized_string_get, _wrap_ESLevent_serialized_string_set},
+    { "mine", _wrap_ESLevent_mine_get, _wrap_ESLevent_mine_set},
     {0,0,0}
 };
-static swig_lua_class *swig_eslEvent_bases[] = {0};
-static const char *swig_eslEvent_base_names[] = {0};
-static swig_lua_class _wrap_class_eslEvent = { "eslEvent", &SWIGTYPE_p_eslEvent,_wrap_new_eslEvent, swig_delete_eslEvent, swig_eslEvent_methods, swig_eslEvent_attributes, swig_eslEvent_bases, swig_eslEvent_base_names };
+static swig_lua_class *swig_ESLevent_bases[] = {0};
+static const char *swig_ESLevent_base_names[] = {0};
+static swig_lua_class _wrap_class_ESLevent = { "ESLevent", &SWIGTYPE_p_ESLevent,_wrap_new_ESLevent, swig_delete_ESLevent, swig_ESLevent_methods, swig_ESLevent_attributes, swig_ESLevent_bases, swig_ESLevent_base_names };
 
-static int _wrap_new_eslConnection__SWIG_0(lua_State* L) {
+static int _wrap_new_ESLconnection__SWIG_0(lua_State* L) {
   int SWIG_arg = -1;
   char *arg1 = (char *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  eslConnection *result = 0 ;
+  ESLconnection *result = 0 ;
   
-  SWIG_check_num_args("eslConnection",3,3)
-  if(!lua_isstring(L,1)) SWIG_fail_arg("eslConnection",1,"char const *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("eslConnection",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("eslConnection",3,"char const *");
+  SWIG_check_num_args("ESLconnection",3,3)
+  if(!lua_isstring(L,1)) SWIG_fail_arg("ESLconnection",1,"char const *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("ESLconnection",2,"char const *");
+  if(!lua_isstring(L,3)) SWIG_fail_arg("ESLconnection",3,"char const *");
   arg1 = (char *)lua_tostring(L, 1);
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
-  result = (eslConnection *)new eslConnection((char const *)arg1,(char const *)arg2,(char const *)arg3);
+  result = (ESLconnection *)new ESLconnection((char const *)arg1,(char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslConnection,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLconnection,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2098,17 +2098,17 @@ fail:
 }
 
 
-static int _wrap_new_eslConnection__SWIG_1(lua_State* L) {
+static int _wrap_new_ESLconnection__SWIG_1(lua_State* L) {
   int SWIG_arg = -1;
   int arg1 ;
-  eslConnection *result = 0 ;
+  ESLconnection *result = 0 ;
   
-  SWIG_check_num_args("eslConnection",1,1)
-  if(!lua_isnumber(L,1)) SWIG_fail_arg("eslConnection",1,"int");
+  SWIG_check_num_args("ESLconnection",1,1)
+  if(!lua_isnumber(L,1)) SWIG_fail_arg("ESLconnection",1,"int");
   arg1 = (int)lua_tonumber(L, 1);
-  result = (eslConnection *)new eslConnection(arg1);
+  result = (ESLconnection *)new ESLconnection(arg1);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslConnection,1); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLconnection,1); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2119,7 +2119,7 @@ fail:
 }
 
 
-static int _wrap_new_eslConnection(lua_State* L) {
+static int _wrap_new_ESLconnection(lua_State* L) {
   int argc;
   int argv[4]={
     1,2,3,4
@@ -2132,7 +2132,7 @@ static int _wrap_new_eslConnection(lua_State* L) {
       _v = lua_isnumber(L,argv[0]);
     }
     if (_v) {
-      return _wrap_new_eslConnection__SWIG_1(L);
+      return _wrap_new_ESLconnection__SWIG_1(L);
     }
   }
   if (argc == 3) {
@@ -2149,26 +2149,26 @@ static int _wrap_new_eslConnection(lua_State* L) {
           _v = lua_isstring(L,argv[2]);
         }
         if (_v) {
-          return _wrap_new_eslConnection__SWIG_0(L);
+          return _wrap_new_ESLconnection__SWIG_0(L);
         }
       }
     }
   }
   
-  lua_pushstring(L,"No matching function for overloaded 'new_eslConnection'");
+  lua_pushstring(L,"No matching function for overloaded 'new_ESLconnection'");
   lua_error(L);return 0;
 }
 
 
-static int _wrap_delete_eslConnection(lua_State* L) {
+static int _wrap_delete_ESLconnection(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   
-  SWIG_check_num_args("eslConnection",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("eslConnection",1,"eslConnection *");
+  SWIG_check_num_args("ESLconnection",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("ESLconnection",1,"ESLconnection *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,SWIG_POINTER_DISOWN))){
-    SWIG_fail_ptr("delete_eslConnection",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,SWIG_POINTER_DISOWN))){
+    SWIG_fail_ptr("delete_ESLconnection",1,SWIGTYPE_p_ESLconnection);
   }
   
   delete arg1;
@@ -2185,16 +2185,16 @@ fail:
 }
 
 
-static int _wrap_eslConnection_connected(lua_State* L) {
+static int _wrap_ESLconnection_connected(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   int result;
   
   SWIG_check_num_args("connected",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("connected",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("connected",1,"ESLconnection *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_connected",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_connected",1,SWIGTYPE_p_ESLconnection);
   }
   
   result = (int)(arg1)->connected();
@@ -2210,21 +2210,21 @@ fail:
 }
 
 
-static int _wrap_eslConnection_getInfo(lua_State* L) {
+static int _wrap_ESLconnection_getInfo(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *result = 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *result = 0 ;
   
   SWIG_check_num_args("getInfo",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getInfo",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getInfo",1,"ESLconnection *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_getInfo",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_getInfo",1,SWIGTYPE_p_ESLconnection);
   }
   
-  result = (eslEvent *)(arg1)->getInfo();
+  result = (ESLevent *)(arg1)->getInfo();
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2235,18 +2235,18 @@ fail:
 }
 
 
-static int _wrap_eslConnection_send(lua_State* L) {
+static int _wrap_ESLconnection_send(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   esl_status_t result;
   
   SWIG_check_num_args("send",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("send",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("send",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("send",2,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_send",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_send",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2266,24 +2266,24 @@ fail:
 }
 
 
-static int _wrap_eslConnection_sendRecv(lua_State* L) {
+static int _wrap_ESLconnection_sendRecv(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   
   SWIG_check_num_args("sendRecv",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendRecv",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendRecv",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("sendRecv",2,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_sendRecv",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_sendRecv",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  result = (eslEvent *)(arg1)->sendRecv((char const *)arg2);
+  result = (ESLevent *)(arg1)->sendRecv((char const *)arg2);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2294,23 +2294,23 @@ fail:
 }
 
 
-static int _wrap_eslConnection_sendEvent(lua_State* L) {
+static int _wrap_ESLconnection_sendEvent(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *arg2 = (eslEvent *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *arg2 = (ESLevent *) 0 ;
   esl_status_t result;
   
   SWIG_check_num_args("sendEvent",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendEvent",1,"eslConnection *");
-  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("sendEvent",2,"eslEvent *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("sendEvent",1,"ESLconnection *");
+  if(!SWIG_isptrtype(L,2)) SWIG_fail_arg("sendEvent",2,"ESLevent *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_sendEvent",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_sendEvent",1,SWIGTYPE_p_ESLconnection);
   }
   
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_eslEvent,0))){
-    SWIG_fail_ptr("eslConnection_sendEvent",2,SWIGTYPE_p_eslEvent);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,2,(void**)&arg2,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLconnection_sendEvent",2,SWIGTYPE_p_ESLevent);
   }
   
   result = (arg1)->sendEvent(arg2);
@@ -2329,21 +2329,21 @@ fail:
 }
 
 
-static int _wrap_eslConnection_recvEvent(lua_State* L) {
+static int _wrap_ESLconnection_recvEvent(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
-  eslEvent *result = 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  ESLevent *result = 0 ;
   
   SWIG_check_num_args("recvEvent",1,1)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recvEvent",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recvEvent",1,"ESLconnection *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_recvEvent",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_recvEvent",1,SWIGTYPE_p_ESLconnection);
   }
   
-  result = (eslEvent *)(arg1)->recvEvent();
+  result = (ESLevent *)(arg1)->recvEvent();
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2354,24 +2354,24 @@ fail:
 }
 
 
-static int _wrap_eslConnection_recvEventTimed(lua_State* L) {
+static int _wrap_ESLconnection_recvEventTimed(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   int arg2 ;
-  eslEvent *result = 0 ;
+  ESLevent *result = 0 ;
   
   SWIG_check_num_args("recvEventTimed",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recvEventTimed",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("recvEventTimed",1,"ESLconnection *");
   if(!lua_isnumber(L,2)) SWIG_fail_arg("recvEventTimed",2,"int");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_recvEventTimed",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_recvEventTimed",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (int)lua_tonumber(L, 2);
-  result = (eslEvent *)(arg1)->recvEventTimed(arg2);
+  result = (ESLevent *)(arg1)->recvEventTimed(arg2);
   SWIG_arg=0;
-  SWIG_NewPointerObj(L,result,SWIGTYPE_p_eslEvent,0); SWIG_arg++; 
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;
@@ -2382,20 +2382,20 @@ fail:
 }
 
 
-static int _wrap_eslConnection_filter(lua_State* L) {
+static int _wrap_ESLconnection_filter(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   esl_status_t result;
   
   SWIG_check_num_args("filter",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("filter",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("filter",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("filter",2,"char const *");
   if(!lua_isstring(L,3)) SWIG_fail_arg("filter",3,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_filter",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_filter",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2416,20 +2416,20 @@ fail:
 }
 
 
-static int _wrap_eslConnection_events(lua_State* L) {
+static int _wrap_ESLconnection_events(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
   esl_status_t result;
   
   SWIG_check_num_args("events",3,3)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("events",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("events",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("events",2,"char const *");
   if(!lua_isstring(L,3)) SWIG_fail_arg("events",3,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_events",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_events",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2450,22 +2450,22 @@ fail:
 }
 
 
-static int _wrap_eslConnection_execute(lua_State* L) {
+static int _wrap_ESLconnection_execute(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
   esl_status_t result;
   
   SWIG_check_num_args("execute",2,4)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("execute",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("execute",2,"char const *");
   if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("execute",3,"char const *");
   if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("execute",4,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_execute",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_execute",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2491,18 +2491,18 @@ fail:
 }
 
 
-static int _wrap_eslConnection_setBlockingExecute(lua_State* L) {
+static int _wrap_ESLconnection_setBlockingExecute(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
   
   SWIG_check_num_args("setBlockingExecute",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setBlockingExecute",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setBlockingExecute",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("setBlockingExecute",2,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_setBlockingExecute",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_setBlockingExecute",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2519,18 +2519,18 @@ fail:
 }
 
 
-static int _wrap_eslConnection_setEventLock(lua_State* L) {
+static int _wrap_ESLconnection_setEventLock(lua_State* L) {
   int SWIG_arg = -1;
-  eslConnection *arg1 = (eslConnection *) 0 ;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
   
   SWIG_check_num_args("setEventLock",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setEventLock",1,"eslConnection *");
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setEventLock",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("setEventLock",2,"char const *");
   
-  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_eslConnection,0))){
-    SWIG_fail_ptr("eslConnection_setEventLock",1,SWIGTYPE_p_eslConnection);
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_setEventLock",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
@@ -2547,37 +2547,58 @@ fail:
 }
 
 
-static void swig_delete_eslConnection(void *obj) {
-eslConnection *arg1 = (eslConnection *) obj;
+static void swig_delete_ESLconnection(void *obj) {
+ESLconnection *arg1 = (ESLconnection *) obj;
 delete arg1;
 }
-static swig_lua_method swig_eslConnection_methods[] = {
-    {"connected", _wrap_eslConnection_connected}, 
-    {"getInfo", _wrap_eslConnection_getInfo}, 
-    {"send", _wrap_eslConnection_send}, 
-    {"sendRecv", _wrap_eslConnection_sendRecv}, 
-    {"sendEvent", _wrap_eslConnection_sendEvent}, 
-    {"recvEvent", _wrap_eslConnection_recvEvent}, 
-    {"recvEventTimed", _wrap_eslConnection_recvEventTimed}, 
-    {"filter", _wrap_eslConnection_filter}, 
-    {"events", _wrap_eslConnection_events}, 
-    {"execute", _wrap_eslConnection_execute}, 
-    {"setBlockingExecute", _wrap_eslConnection_setBlockingExecute}, 
-    {"setEventLock", _wrap_eslConnection_setEventLock}, 
+static swig_lua_method swig_ESLconnection_methods[] = {
+    {"connected", _wrap_ESLconnection_connected}, 
+    {"getInfo", _wrap_ESLconnection_getInfo}, 
+    {"send", _wrap_ESLconnection_send}, 
+    {"sendRecv", _wrap_ESLconnection_sendRecv}, 
+    {"sendEvent", _wrap_ESLconnection_sendEvent}, 
+    {"recvEvent", _wrap_ESLconnection_recvEvent}, 
+    {"recvEventTimed", _wrap_ESLconnection_recvEventTimed}, 
+    {"filter", _wrap_ESLconnection_filter}, 
+    {"events", _wrap_ESLconnection_events}, 
+    {"execute", _wrap_ESLconnection_execute}, 
+    {"setBlockingExecute", _wrap_ESLconnection_setBlockingExecute}, 
+    {"setEventLock", _wrap_ESLconnection_setEventLock}, 
     {0,0}
 };
-static swig_lua_attribute swig_eslConnection_attributes[] = {
+static swig_lua_attribute swig_ESLconnection_attributes[] = {
     {0,0,0}
 };
-static swig_lua_class *swig_eslConnection_bases[] = {0};
-static const char *swig_eslConnection_base_names[] = {0};
-static swig_lua_class _wrap_class_eslConnection = { "eslConnection", &SWIGTYPE_p_eslConnection,_wrap_new_eslConnection, swig_delete_eslConnection, swig_eslConnection_methods, swig_eslConnection_attributes, swig_eslConnection_bases, swig_eslConnection_base_names };
+static swig_lua_class *swig_ESLconnection_bases[] = {0};
+static const char *swig_ESLconnection_base_names[] = {0};
+static swig_lua_class _wrap_class_ESLconnection = { "ESLconnection", &SWIGTYPE_p_ESLconnection,_wrap_new_ESLconnection, swig_delete_ESLconnection, swig_ESLconnection_methods, swig_ESLconnection_attributes, swig_ESLconnection_bases, swig_ESLconnection_base_names };
+
+static int _wrap_eslSetLogLevel(lua_State* L) {
+  int SWIG_arg = -1;
+  int arg1 ;
+  
+  SWIG_check_num_args("eslSetLogLevel",1,1)
+  if(!lua_isnumber(L,1)) SWIG_fail_arg("eslSetLogLevel",1,"int");
+  arg1 = (int)lua_tonumber(L, 1);
+  eslSetLogLevel(arg1);
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
 
 #ifdef __cplusplus
 }
 #endif
 
 static const struct luaL_reg swig_commands[] = {
+    { "eslSetLogLevel", _wrap_eslSetLogLevel},
     {0,0}
 };
 
@@ -2591,29 +2612,29 @@ static swig_lua_const_info swig_constants[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static swig_type_info _swigt__p_eslConnection = {"_p_eslConnection", "eslConnection *", 0, 0, (void*)&_wrap_class_eslConnection, 0};
-static swig_type_info _swigt__p_eslEvent = {"_p_eslEvent", "eslEvent *", 0, 0, (void*)&_wrap_class_eslEvent, 0};
+static swig_type_info _swigt__p_ESLconnection = {"_p_ESLconnection", "ESLconnection *", 0, 0, (void*)&_wrap_class_ESLconnection, 0};
+static swig_type_info _swigt__p_ESLevent = {"_p_ESLevent", "ESLevent *", 0, 0, (void*)&_wrap_class_ESLevent, 0};
 static swig_type_info _swigt__p_esl_event_t = {"_p_esl_event_t", "esl_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_priority_t = {"_p_esl_priority_t", "esl_priority_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_status_t = {"_p_esl_status_t", "esl_status_t *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
-  &_swigt__p_eslConnection,
-  &_swigt__p_eslEvent,
+  &_swigt__p_ESLconnection,
+  &_swigt__p_ESLevent,
   &_swigt__p_esl_event_t,
   &_swigt__p_esl_priority_t,
   &_swigt__p_esl_status_t,
 };
 
-static swig_cast_info _swigc__p_eslConnection[] = {  {&_swigt__p_eslConnection, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_eslEvent[] = {  {&_swigt__p_eslEvent, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_ESLconnection[] = {  {&_swigt__p_ESLconnection, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_ESLevent[] = {  {&_swigt__p_ESLevent, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_event_t[] = {  {&_swigt__p_esl_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_priority_t[] = {  {&_swigt__p_esl_priority_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_status_t[] = {  {&_swigt__p_esl_status_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
-  _swigc__p_eslConnection,
-  _swigc__p_eslEvent,
+  _swigc__p_ESLconnection,
+  _swigc__p_ESLevent,
   _swigc__p_esl_event_t,
   _swigc__p_esl_priority_t,
   _swigc__p_esl_status_t,
