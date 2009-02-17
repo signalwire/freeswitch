@@ -3173,7 +3173,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			free(test_sql);
 
 			switch_core_db_exec(profile->master_db, "create index if not exists ssa_hostname on sip_shared_appearance_subscriptions (hostname)", NULL, NULL, NULL);
-			/* XXX MTK create additional index for shared_appearance if necessary */
+			switch_core_db_exec(profile->master_db, "create index if not exists ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)", NULL, NULL, NULL);
+			switch_core_db_exec(profile->master_db, "create index if not exists ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)", NULL, NULL, NULL);
+			switch_core_db_exec(profile->master_db, "create index if not exists ssa_aor on sip_shared_appearance_subscriptions (aor)", NULL, NULL, NULL);
 		}
 
 

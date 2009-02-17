@@ -113,7 +113,7 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
  
 
 	if ((sql =
-		switch_mprintf("delete from sip_shared_appearance_subscriptions where subscriber='%q' and profile name='%q' and hostname='%q'",
+		switch_mprintf("delete from sip_shared_appearance_subscriptions where subscriber='%q' and profile_name='%q' and hostname='%q'",
 			subscriber, profile->name, mod_sofia_globals.hostname
 			))) {
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
