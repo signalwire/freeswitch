@@ -56,6 +56,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIMBCTD"
 				AdditionalDependencies="opalsd.lib ptlibsd.lib"
+				LinkIncremental="2"
 				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"

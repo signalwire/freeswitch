@@ -595,6 +595,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libspeexdsp", "libs\speex\w
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libilbc", "libs\ilbc\libilbc.2008.vcproj", "{9A5DDF08-C88C-4A35-B7F6-D605228446BD}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_opal", "src\mod\endpoints\mod_opal\mod_opal_2008.vcproj", "{05C9FB27-480E-4D53-B3B7-6338E2526666}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+		{F6C55D93-B927-4483-BB69-15AEF3DD2DFF} = {F6C55D93-B927-4483-BB69-15AEF3DD2DFF}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -1334,6 +1340,10 @@ Global
 		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Release|Win32.ActiveCfg = Release|Win32
 		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Release|Win32.Build.0 = Release|Win32
 		{9A5DDF08-C88C-4A35-B7F6-D605228446BD}.Release|x64.ActiveCfg = Release|Win32
+		{05C9FB27-480E-4D53-B3B7-6338E2526666}.Debug|Win32.ActiveCfg = Debug|Win32
+		{05C9FB27-480E-4D53-B3B7-6338E2526666}.Debug|x64.ActiveCfg = Debug|Win32
+		{05C9FB27-480E-4D53-B3B7-6338E2526666}.Release|Win32.ActiveCfg = Release|Win32
+		{05C9FB27-480E-4D53-B3B7-6338E2526666}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
