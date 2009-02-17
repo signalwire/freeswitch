@@ -194,7 +194,7 @@ endif
 bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
 
 src/include/switch_swigable_cpp.h: src/include/switch_cpp.h
-	$(CC) -E src/include/switch_cpp.h -DSWITCH_DECLARE\(x\)=x -DSWITCH_DECLARE_CONSTRUCTOR= -DSWITCH_DECLARE_NONSTD\(x\)=x 2>/dev/null | grep -v "^#" > src/include/switch_swigable_cpp.h 
+	$(CC) -E src/include/switch_cpp.h -DSWITCH_DECLARE_CLASS= -DSWITCH_DECLARE\(x\)=x -DSWITCH_DECLARE_CONSTRUCTOR= -DSWITCH_DECLARE_NONSTD\(x\)=x 2>/dev/null | grep -v "^#" > src/include/switch_swigable_cpp.h 
 
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)

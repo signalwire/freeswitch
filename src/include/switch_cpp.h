@@ -78,7 +78,7 @@ Note that the first parameter to the new operator is implicitly handled by c++..
 SWITCH_DECLARE(void) consoleLog(char *level_str, char *msg);
 SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 
-	 class SWITCH_DECLARE_CLASS CoreSession;
+	 class CoreSession;
 
 	 class IVRMenu {
 	   protected:
@@ -185,7 +185,11 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(Event *) pop(int block = 0);
 	 };
 
+#ifdef SWIG
+	 class CoreSession {
+#else
 	 class SWITCH_DECLARE_CLASS CoreSession {
+#endif
 	   protected:
 		 switch_input_args_t args;	// holds ptr to cb function and input_callback_state struct
 		 // which has a language specific callback function
