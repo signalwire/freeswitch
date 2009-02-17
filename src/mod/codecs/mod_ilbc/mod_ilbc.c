@@ -23,66 +23,64 @@
  *
  * Contributor(s):
  * 
- * Anthony Minessale II <anthm@freeswitch.org>
- * Michael Jerris <mike@jerris.com>
+ * Brian K. West <brian@freeswitch.org>
  *
  * mod_ilbc.c -- ilbc Codec Module
  *
  */
 
 #include "switch.h"
-#include "iLBC_encode.h"
-#include "iLBC_decode.h"
-#include "iLBC_define.h"
+#include "ilbc.h"
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load);
 SWITCH_MODULE_DEFINITION(mod_ilbc, mod_ilbc_load, NULL, NULL);
 
 struct ilbc_context {
-	iLBC_Enc_Inst_t encoder;
-	iLBC_Dec_Inst_t decoder;
-	uint8_t ms;
-	uint16_t bytes;
-	uint16_t dbytes;
+	ilbc_encode_state_t encoder_object;
+	ilbc_decode_state_t decoder_object;
 };
 
 static switch_status_t switch_ilbc_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	struct ilbc_context *context;
-	int encoding, decoding;
-	uint8_t ms = (uint8_t) (codec->implementation->microseconds_per_packet / 1000);
-
-	if (ms != 20 && ms != 30) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid speed! (I should never happen)\n");
+	int encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
+	int decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
+	int mode = codec->implementation->microseconds_per_packet / 1000;
+	
+	if (!(encoding || decoding) || (!(context = switch_core_alloc(codec->memory_pool, sizeof(*context))))) {
 		return SWITCH_STATUS_FALSE;
-	}
+	} 
 
-	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
-	decoding = (flags & SWITCH_CODEC_FLAG_DECODE);
-
-	if (!(encoding || decoding)) {
-		return SWITCH_STATUS_FALSE;
-	} else {
-		context = switch_core_alloc(codec->memory_pool, sizeof(*context));
-		context->ms = ms;
-		if (context->ms == 20) {
-			context->bytes = NO_OF_BYTES_20MS;
-			context->dbytes = 320;
-		} else {
-			context->bytes = NO_OF_BYTES_30MS;
-			context->dbytes = 480;
-		}
-
-		if (encoding) {
-			initEncode(&context->encoder, context->ms);
-		}
-		if (decoding) {
-			initDecode(&context->decoder, context->ms, 1);
+	if (codec->fmtp_in) {
+		int x, argc;
+		char *argv[10];
+		argc = switch_separate_string(codec->fmtp_in, ';', argv, (sizeof(argv) / sizeof(argv[0])));
+		for (x = 0; x < argc; x++) {
+			char *data = argv[x];
+			char *arg;
+			switch_assert(data);
+			while (*data == ' ') {
+				data++;
+			}
+			if ((arg = strchr(data, '='))) {
+				*arg++ = '\0';
+				if (!strcasecmp(data, "mode")) {
+					mode = atoi(arg);
+				}
+			}
 		}
 	}
+	
+	codec->fmtp_out = switch_core_sprintf(codec->memory_pool, "mode=%d", mode);
+	
+	if (encoding) {
+		ilbc_encode_init(&context->encoder_object, mode);
+	}
 
-	codec->fmtp_out = switch_core_strdup(codec->memory_pool, codec->implementation->fmtp);
-
+	if (decoding) {
+		ilbc_decode_init(&context->decoder_object, mode, 0);
+	}
+	
 	codec->private_info = context;
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -105,31 +103,9 @@ static switch_status_t switch_ilbc_encode(switch_codec_t *codec,
 	if (!context) {
 		return SWITCH_STATUS_FALSE;
 	}
-	if (decoded_data_len % context->dbytes == 0) {
-		unsigned int new_len = 0;
-		unsigned char *edp = encoded_data;
-		short *ddp = decoded_data;
-		int x;
-		uint16_t y;
-		int loops = (int) decoded_data_len / context->dbytes;
-		float buf[240];
 
-		for (x = 0; x < loops && new_len < *encoded_data_len; x++) {
-			for (y = 0; y < context->dbytes / sizeof(short) && y < 240; y++) {
-				buf[y] = ddp[y];
-			}
-			iLBC_encode(edp, buf, &context->encoder);
-			edp += context->bytes;
-			ddp += context->dbytes;
-			new_len += context->bytes;
-		}
-		if (new_len <= *encoded_data_len) {
-			*encoded_data_len = new_len;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!! %u >= %u\n", new_len, *encoded_data_len);
-			return SWITCH_STATUS_FALSE;
-		}
-	}
+	*encoded_data_len = ilbc_encode(&context->encoder_object, (uint8_t *) encoded_data, (int16_t *) decoded_data, decoded_data_len / 2);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -146,34 +122,8 @@ static switch_status_t switch_ilbc_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (encoded_data_len % context->bytes == 0) {
-		int loops = (int) encoded_data_len / context->bytes;
-		unsigned char *edp = encoded_data;
-		short *ddp = decoded_data;
-		int x;
-		uint16_t y;
-		unsigned int new_len = 0;
-		float buf[240];
+	*decoded_data_len = (2 *ilbc_decode(&context->decoder_object, (int16_t *) decoded_data, (uint8_t *) encoded_data, encoded_data_len));
 
-		for (x = 0; x < loops && new_len < *decoded_data_len; x++) {
-			iLBC_decode(buf, edp, &context->decoder, 1);
-			for (y = 0; y < context->dbytes / sizeof(short) && y < 240; y++) {
-				ddp[y] = (short) buf[y];
-			}
-			ddp += context->dbytes / sizeof(short);
-			edp += context->bytes;
-			new_len += context->dbytes;
-		}
-		if (new_len <= *decoded_data_len) {
-			*decoded_data_len = new_len;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "buffer overflow!!!\n");
-			return SWITCH_STATUS_FALSE;
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "yo this frame is an odd size [%d]\n", encoded_data_len);
-		return SWITCH_STATUS_FALSE;
-	}
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -187,31 +137,45 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_ilbc_load)
 
 	SWITCH_ADD_CODEC(codec_interface, "iLBC");
 
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 97, "iLBC", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1,
-										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1,
-										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC102", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1,
-										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC20ms", "mode=20", 8000, 8000, NO_OF_BYTES_20MS * 8 * 8000 / BLOCKL_20MS,
-										 20000, 160, 320, NO_OF_BYTES_20MS, 1, 1,
-										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-	/* 30ms variants */
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 98, "iLBC", "mode=30", 8000, 8000, NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
-										 30000, 240, 480, NO_OF_BYTES_30MS, 1, 1,
-										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
-	switch_core_codec_add_implementation(pool, codec_interface,
-										 SWITCH_CODEC_TYPE_AUDIO, 102, "iLBC", "mode=30", 8000, 8000, NO_OF_BYTES_30MS * 8 * 8000 / BLOCKL_30MS,
-										 30000, 240, 480, NO_OF_BYTES_30MS, 1, 1,
-										 switch_ilbc_init, switch_ilbc_encode, switch_ilbc_decode, switch_ilbc_destroy);
+	switch_core_codec_add_implementation(pool,
+										 codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 98,						/* the IANA code number */
+										 "iLBC",					/* the IANA code name */
+										 "mode=20",					/* default fmtp to send (can be overridden by the init function) */
+										 8000,						/* samples transferred per second */
+										 8000,						/* actual samples transferred per second */
+										 15200,						/* bits transferred per second */
+										 20000,						/* number of microseconds per frame */
+										 ILBC_BLOCK_LEN_20MS,		/* number of samples per frame */
+										 ILBC_BLOCK_LEN_20MS * 2,	/* number of bytes per frame decompressed */
+										 ILBC_NO_OF_BYTES_20MS,		/* number of bytes per frame compressed */
+										 1,							/* number of channels represented */
+										 1,							/* number of frames per network packet */
+										 switch_ilbc_init,			/* function to initialize a codec handle using this implementation */
+										 switch_ilbc_encode,		/* function to encode raw data into encoded data */
+										 switch_ilbc_decode,		/* function to decode encoded data into raw data */
+										 switch_ilbc_destroy);		/* deinitalize a codec handle using this implementation */
+
+	switch_core_codec_add_implementation(pool,
+										 codec_interface,
+										 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+										 97,						/* the IANA code number */
+										 "iLBC",					/* the IANA code name */
+										 "mode=30",					/* default fmtp to send (can be overridden by the init function) */
+										 8000,						/* samples transferred per second */
+										 8000,						/* actual samples transferred per second */
+										 13300,						/* bits transferred per second */
+										 30000,						/* number of microseconds per frame */
+										 ILBC_BLOCK_LEN_30MS,		/* number of samples per frame */
+										 ILBC_BLOCK_LEN_30MS * 2,	/* number of bytes per frame decompressed */
+										 ILBC_NO_OF_BYTES_30MS,		/* number of bytes per frame compressed */
+										 1,							/* number of channels represented */
+										 1,							/* number of frames per network packet */
+										 switch_ilbc_init,			/* function to initialize a codec handle using this implementation */
+										 switch_ilbc_encode,		/* function to encode raw data into encoded data */
+										 switch_ilbc_decode,		/* function to decode encoded data into raw data */
+										 switch_ilbc_destroy);		/* deinitalize a codec handle using this implementation */
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
