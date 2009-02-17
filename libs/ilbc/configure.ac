@@ -210,6 +210,8 @@ if test -n "$enable_tests" ; then
     AC_CHECK_LIB([fftw], [fftw_create_plan], TESTLIBS="$TESTLIBS -lfftw")
 fi
 
+AC_ARG_ENABLE([enable_64], [AS_HELP_STRING([--enable-64], [Enable 64bit compilation])], [enable_64="$enableval"], [enable_64="no"])
+
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
     COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes"
@@ -218,6 +220,12 @@ gnu)
     fi
     if test "$enable_mmx" = "yes" ; then
         COMP_VENDOR_CFLAGS="-mmmx $COMP_VENDOR_CFLAGS"
+    fi
+    ;;
+sun)
+    COMP_VENDOR_CFLAGS="-xc99=all -mt -xCC -D__FUNCTION__=__func__ -xvpara"
+    if test "$enable_64" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-m64 $COMP_VENDOR_CFLAGS"
     fi
     ;;
 *)
