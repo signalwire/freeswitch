@@ -1586,6 +1586,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTH_CALLS);
 						}
+					} else if(!strcasecmp(var, "context")) {
+						profile->context = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-domain")) {
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-db-domain")) {
