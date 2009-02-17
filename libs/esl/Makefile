@@ -40,14 +40,19 @@ fs_cli: $(MYLIB) fs_cli.c
 clean:
 	rm -f *.o src/*.o testclient testserver fs_cli libesl.a *~ src/*~ src/include/*~
 	make -C perl clean
+	make -C php clean
 
 reswig:	swigclean
 	make -C perl reswig
-
+	make -C php reswig
 swigclean: clean
 	make -C perl swigclean
+	make -C php swigclean
 
 perlmod: $(MYLIB)
 	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
+
+phpmod: $(MYLIB)
+	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C php
 
 
