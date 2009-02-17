@@ -2615,7 +2615,12 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 					tech_pvt->iananame = switch_core_session_strdup(session, (char *) mimp->iananame);
 					tech_pvt->pt = (switch_payload_t) map->rm_pt;
 					tech_pvt->rm_rate = map->rm_rate;
-					tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
+					if (!strcasecmp((char *) mimp->iananame, "ilbc") && switch_strlen_zero((char*)map->rm_fmtp)) {
+						/* default to 30 when no mode is defined for ilbc ONLY */
+						tech_pvt->codec_ms = 30;
+					} else {
+						tech_pvt->codec_ms = mimp->microseconds_per_packet / 1000;
+					}
 					tech_pvt->remote_sdp_audio_ip = switch_core_session_strdup(session, (char *) connection->c_address);
 					tech_pvt->rm_fmtp = switch_core_session_strdup(session, (char *) map->rm_fmtp);
 					tech_pvt->remote_sdp_audio_port = (switch_port_t) m->m_port;

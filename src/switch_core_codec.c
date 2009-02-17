@@ -446,6 +446,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 				ms = mms;
 			}
 		}
+	} else if (!strcasecmp(codec_name, "ilbc")) {
+		ms = 30;
 	}
 
 	/* If no specific codec interval is requested opt for 20ms above all else because lots of stuff assumes it */
