@@ -1026,6 +1026,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
+			switch_uuid_t uuid;
+			uint32_t ping_freq = 0;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -1042,9 +1044,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			if (!context) {
 				context = "default";
 			}
-
-			uint32_t ping_freq = 0;
-			switch_uuid_t uuid;
 			
 			switch_uuid_get(&uuid);
 			switch_uuid_format(gateway->uuid_str, &uuid);
