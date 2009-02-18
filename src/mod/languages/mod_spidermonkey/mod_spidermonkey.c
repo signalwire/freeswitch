@@ -1082,8 +1082,6 @@ JSObject *new_js_dtmf(switch_dtmf_t *dtmf, char *name, JSContext * cx, JSObject 
 			JS_SetPrivate(cx, DTMF, ddtmf);
 			JS_DefineProperties(cx, DTMF, dtmf_props);
 			JS_DefineFunctions(cx, DTMF, dtmf_methods);
-		} else {
-			abort();
 		}
 	}
 	return DTMF;
@@ -1131,11 +1129,14 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	case SWITCH_INPUT_TYPE_DTMF:
 		{
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
-
+			
 			if (dtmf) {
 				if ((Event = new_js_dtmf(dtmf, "_XX_DTMF_XX_", cb_state->cx, cb_state->obj))) {
 					argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
 					argv[argc++] = OBJECT_TO_JSVAL(Event);
+				} else {
+					jss->stack_depth--;
+					return SWITCH_STATUS_FALSE;
 				}
 			}
 		}
