@@ -30,6 +30,7 @@ Source14:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-8000-1.0.7.
 Source15:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-16000-1.0.7.tar.gz
 Source16:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.7.tar.gz
 Source17:	http://files.freeswitch.org/freeswitch-sounds-en-us-callie-48000-1.0.7.tar.gz
+Source18:	http://svn.freeswitch.org/downloads/libs/communicator_semi_6000_20080321.tar.gz
 Prefix:        %{prefix}
 
 #AutoReqProv:  no
@@ -294,6 +295,7 @@ cp %{SOURCE14} .
 cp %{SOURCE15} .
 cp %{SOURCE16} .
 cp %{SOURCE17} .
+cp %{SOURCE18} libs/
 
 
 %build
@@ -518,7 +520,7 @@ userdel freeswitch
 /usr/sbin/rcfreeswitch
 %endif
 %endif
-%attr{0755, freeswitch, daemon} %{prefix}/bin/*
+%attr(0755, freeswitch, daemon) %{prefix}/bin/*
 %{prefix}/lib/libfreeswitch*.so*
 %{prefix}/mod/mod_console.so*
 %{prefix}/mod/mod_logfile.so*
@@ -569,7 +571,6 @@ userdel freeswitch
 %{prefix}/mod/mod_shout.so
 %{prefix}/mod/mod_xml_ldap.so
 %{prefix}/mod/mod_fax.so
-%{prefix}/mod/mod_say_zh.so
 %{prefix}/mod/mod_soundtouch.so
 %{prefix}/mod/mod_vmd.so
 
