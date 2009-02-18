@@ -10,7 +10,7 @@ $groups = array('default'
 );
 
 
-$esl = new ESLconnection('192.168.86.254', '8021', 'ClueCon');
+$esl = new ESLconnection('127.0.0.1', '8021', 'ClueCon');
 if (is_array($_REQUEST) && !empty($_REQUEST['callee'])) {
     $callee = str_replace(array('.', '(', ')', '-', ' '), '', $_REQUEST['callee']);
     $callee = ereg_replace('^(1|\+1)?([2-9][0-9]{2}[2-9][0-9]{6})$', '1\2', $callee);
