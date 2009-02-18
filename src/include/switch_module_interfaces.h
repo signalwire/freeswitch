@@ -420,16 +420,6 @@ struct switch_speech_handle {
 	char *param;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
-	switch_audio_resampler_t *resampler;
-	switch_buffer_t *buffer;
-	switch_byte_t *dbuf;
-	switch_size_t dbuflen;	
-	/*! the current samplerate */
-	uint32_t samplerate;
-	/*! the current native samplerate */
-	uint32_t native_rate;
-	/*! the number of channels */
-
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 };
