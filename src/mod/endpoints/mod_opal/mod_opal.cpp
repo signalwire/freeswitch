@@ -138,7 +138,7 @@ static switch_call_cause_t create_outgoing_channel(switch_core_session_t *sessio
     PString token;
 
     FSManager & manager = opal_process->GetManager();
-    if (!manager.SetUpCall("local:", outbound_profile->destination_number, token)) {
+    if (!manager.SetUpCall("local:", outbound_profile->destination_number, token, outbound_profile)) {
         return SWITCH_CAUSE_INVALID_NUMBER_FORMAT;
     }
 
@@ -155,19 +155,6 @@ static switch_call_cause_t create_outgoing_channel(switch_core_session_t *sessio
     }
 
     *new_session = connection->GetSession();
-
-    connection->SetLocalPartyName(outbound_profile->caller_id_number);
-    connection->SetDisplayName(outbound_profile->caller_id_name);
-
-
-    switch_caller_profile_t *caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
-    switch_channel_t *channel = switch_core_session_get_channel(*new_session);
-    char name[256] = "opal/";
-    switch_copy_string(name + 5, outbound_profile->destination_number, sizeof(name)-5);
-    switch_channel_set_name(channel, name);
-    switch_channel_set_flag(channel, CF_OUTBOUND);
-    switch_channel_set_caller_profile(channel, caller_profile);
-    switch_channel_set_state(channel, CS_INIT);
 
     return SWITCH_CAUSE_SUCCESS;
 }
@@ -483,14 +470,14 @@ bool FSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 
 OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userData)
 {
-    return new FSConnection(call, *this);
+    return new FSConnection(call, *this, (switch_caller_profile_t *)userData);
 }
 
 
 ///////////////////////////////////////////////////////////////////////
 
 
-FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint)
+FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile)
   : OpalLocalConnection(call, endpoint, NULL)
   , m_endpoint(endpoint)
 {
@@ -502,6 +489,21 @@ FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint)
     tech_pvt = (opal_private_t *) switch_core_session_alloc(m_fsSession, sizeof(*tech_pvt));
     tech_pvt->me = this;
     switch_core_session_set_private(m_fsSession, tech_pvt);
+
+    if (outbound_profile != NULL) {
+        SetLocalPartyName(outbound_profile->caller_id_number);
+        SetDisplayName(outbound_profile->caller_id_name);
+
+        switch_caller_profile_t *caller_profile = switch_caller_profile_clone(m_fsSession, outbound_profile);
+        switch_channel_set_caller_profile(m_fsChannel, caller_profile);
+
+        PString name = "opal/";
+        name += outbound_profile->destination_number;
+        switch_channel_set_name(m_fsChannel, name);
+
+        switch_channel_set_flag(m_fsChannel, CF_OUTBOUND);
+        switch_channel_set_state(m_fsChannel, CS_INIT);
+    }
 }
 
 

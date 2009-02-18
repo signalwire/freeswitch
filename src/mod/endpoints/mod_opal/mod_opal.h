@@ -26,19 +26,19 @@
 #ifndef __FREESWITCH_MOD_OPAL__
 #define __FREESWITCH_MOD_OPAL__
 
-#define HAVE_APR
-#include <switch.h>
-#include <switch_version.h>
-#define MODNAME "mod_opal"
-
-#undef strcasecmp
-#undef strncasecmp
-
 #include <ptlib.h>
 #include <opal/manager.h>
 #include <opal/localep.h>
 #include <h323/h323ep.h>
 #include <iax2/iax2ep.h>
+
+#undef strcasecmp
+#undef strncasecmp
+
+#define HAVE_APR
+#include <switch.h>
+#include <switch_version.h>
+#define MODNAME "mod_opal"
 
 
 class FSEndPoint;
@@ -154,7 +154,7 @@ class FSConnection:public OpalLocalConnection {
     PCLASSINFO(FSConnection, OpalLocalConnection)
 
   public:
-    FSConnection(OpalCall & call, FSEndPoint & endpoint);
+    FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile);
 
     virtual bool OnIncoming();
     virtual void OnReleased();
