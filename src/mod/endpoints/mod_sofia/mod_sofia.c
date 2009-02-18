@@ -1907,7 +1907,7 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 
 	if (!strcasecmp(argv[1], "killgw")) {
 		sofia_gateway_t *gateway_ptr;
-		if (argc < 2) {
+		if (argc < 3) {
 			stream->write_function(stream, "-ERR missing gw name\n");
 			goto done;
 		}
