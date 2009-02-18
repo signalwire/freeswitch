@@ -154,13 +154,8 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 							 "-hmm", model,
 							 "-lm", lm, 
 							 "-dict", dic,
-#if 0
-							 "-agc", "noise",
-							 "-beam", "1e-60",
-							 "-wbeam", "1e-40",
-							 "-ci_pbeam", "1e-8",
-							 "-subvqbeam", "1e-2",
-#endif
+							 "-frate", "50",
+							 "-silprob", "0.005",
 							 NULL);
 	  
 	if (ps->config == NULL) {
