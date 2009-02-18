@@ -1432,7 +1432,7 @@ SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *
   \return SWITCH_STATUS_SUCCESS with len adjusted to the bytes written if successful
 */
 SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh,
-															void *data, switch_size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags);
+															void *data, switch_size_t *datalen, switch_speech_flag_t *flags);
 /*! 
   \brief Close an open speech handle
   \param sh the speech handle to close

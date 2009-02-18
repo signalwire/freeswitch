@@ -80,8 +80,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_open(switch_speech_handle_t *
 	sh->rate = rate;
 	sh->name = switch_core_strdup(pool, module_name);
 	sh->samples = switch_samples_per_packet(rate, interval);
+	sh->samplerate = rate;
+	sh->native_rate = rate;
 
-	return sh->speech_interface->speech_open(sh, voice_name, rate, flags);
+	if ((status = sh->speech_interface->speech_open(sh, voice_name, rate, flags)) == SWITCH_STATUS_SUCCESS) {
+		switch_set_flag(sh, SWITCH_SPEECH_FLAG_OPEN);
+	}
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_feed_tts(switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags)
@@ -128,17 +134,93 @@ SWITCH_DECLARE(void) switch_core_speech_float_param_tts(switch_speech_handle_t *
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle_t *sh,
-															void *data, switch_size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags)
+															void *data, switch_size_t *datalen, switch_speech_flag_t *flags)
 {
+	switch_status_t status;
+	switch_size_t want, orig_len = *datalen;
+	
 	switch_assert(sh != NULL);
+	
+	want = *datalen;
 
-	return sh->speech_interface->speech_read_tts(sh, data, datalen, rate, flags);
+ top:
+
+	if (sh->buffer && (switch_buffer_inuse(sh->buffer) >= orig_len || switch_test_flag(sh, SWITCH_SPEECH_FLAG_DONE))) {
+		if ((*datalen = switch_buffer_read(sh->buffer, data, orig_len))) {
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	if (switch_test_flag(sh, SWITCH_SPEECH_FLAG_DONE)) {
+		switch_clear_flag(sh, SWITCH_SPEECH_FLAG_DONE);
+		*datalen = 0;
+		return SWITCH_STATUS_FALSE;
+	}
+
+ more:
+
+	if ((status = sh->speech_interface->speech_read_tts(sh, data, datalen, flags)) != SWITCH_STATUS_SUCCESS) {
+		switch_set_flag(sh, SWITCH_SPEECH_FLAG_DONE);
+		goto top;
+	}
+
+	
+	if (sh->native_rate && sh->samplerate && sh->native_rate != sh->samplerate) {
+		if (!sh->resampler) {
+			if (switch_resample_create(&sh->resampler,
+									   sh->native_rate, sh->samplerate, (uint32_t) orig_len, SWITCH_RESAMPLE_QUALITY) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to create resampler!\n");
+				return SWITCH_STATUS_GENERR;
+			}
+		}
+
+		switch_resample_process(sh->resampler, data, *datalen / 2);
+		if (sh->resampler->to_len < want / 2 || sh->resampler->to_len > orig_len / 2) {
+			if (!sh->buffer) {
+				int factor = sh->resampler->to_len * sh->samplerate / 1000;
+				switch_buffer_create_dynamic(&sh->buffer, factor, factor, 0);
+				switch_assert(sh->buffer);
+			}			
+			if (!sh->dbuf || sh->dbuflen < sh->resampler->to_len * 2) {
+				sh->dbuflen = sh->resampler->to_len * 2;
+				sh->dbuf = switch_core_alloc(sh->memory_pool, sh->dbuflen);
+			}
+			switch_assert(sh->resampler->to_len <= sh->dbuflen);
+		
+			memcpy((int16_t *) sh->dbuf, sh->resampler->to, sh->resampler->to_len * 2);
+			switch_buffer_write(sh->buffer, sh->dbuf, sh->resampler->to_len * 2);
+			
+			if (switch_buffer_inuse(sh->buffer) < want) {
+				*datalen = want;
+				goto more;
+			}
+			*datalen = switch_buffer_read(sh->buffer, data, orig_len);
+			status = SWITCH_STATUS_SUCCESS;
+		} else {
+			memcpy(data, sh->resampler->to, sh->resampler->to_len * 2);
+			*datalen = sh->resampler->to_len * 2;
+			status = SWITCH_STATUS_SUCCESS;
+		}
+	}
+
+	return status;
+
 }
 
 
 SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t *sh, switch_speech_flag_t *flags)
 {
 	switch_status_t status = sh->speech_interface->speech_close(sh, flags);
+	
+	if (!switch_test_flag(sh, SWITCH_SPEECH_FLAG_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (sh->buffer) {
+		switch_buffer_destroy(&sh->buffer);
+	}
+
+	switch_resample_destroy(&sh->resampler);
 
 	UNPROTECT_INTERFACE(sh->speech_interface);
 
@@ -146,6 +228,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_close(switch_speech_handle_t 
 		switch_core_destroy_memory_pool(&sh->memory_pool);
 	}
 
+	switch_clear_flag(sh, SWITCH_SPEECH_FLAG_OPEN);
+	
 	return status;
 }
 

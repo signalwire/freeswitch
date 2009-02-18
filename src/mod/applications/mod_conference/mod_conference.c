@@ -983,9 +983,8 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 				file_sample_len = samples;
 				if (conference->fnode->type == NODE_TYPE_SPEECH) {
 					switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
-					uint32_t rate = conference->rate;
 
-					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &file_data_len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
+					if (switch_core_speech_read_tts(conference->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
 						file_sample_len = file_data_len / 2;
 					} else {
 						file_sample_len = file_data_len = 0;
@@ -1997,9 +1996,8 @@ static void conference_loop_output(conference_member_t *member)
 				} else {		/* send the node frame instead of the conference frame to the call leg */
 					if (member->fnode->type == NODE_TYPE_SPEECH) {
 						switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_BLOCKING;
-						uint32_t rate = member->conference->rate;
-
-						if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &rate, &flags) == SWITCH_STATUS_SUCCESS) {
+						
+						if (switch_core_speech_read_tts(member->fnode->sh, file_frame, &file_data_len, &flags) == SWITCH_STATUS_SUCCESS) {
 							file_sample_len = file_data_len / 2;
 						} else {
 							file_sample_len = file_data_len = 0;

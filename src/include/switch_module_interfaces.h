@@ -389,7 +389,7 @@ struct switch_speech_interface {
 	/*! function to feed audio to the ASR */
 	switch_status_t (*speech_feed_tts) (switch_speech_handle_t *sh, char *text, switch_speech_flag_t *flags);
 	/*! function to read audio from the TTS */
-	switch_status_t (*speech_read_tts) (switch_speech_handle_t *sh, void *data, switch_size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags);
+	switch_status_t (*speech_read_tts) (switch_speech_handle_t *sh, void *data, switch_size_t *datalen, switch_speech_flag_t *flags);
 	void (*speech_flush_tts) (switch_speech_handle_t *sh);
 	void (*speech_text_param_tts) (switch_speech_handle_t *sh, char *param, const char *val);
 	void (*speech_numeric_param_tts) (switch_speech_handle_t *sh, char *param, int val);
@@ -420,6 +420,16 @@ struct switch_speech_handle {
 	char *param;
 	/*! the handle's memory pool */
 	switch_memory_pool_t *memory_pool;
+	switch_audio_resampler_t *resampler;
+	switch_buffer_t *buffer;
+	switch_byte_t *dbuf;
+	switch_size_t dbuflen;	
+	/*! the current samplerate */
+	uint32_t samplerate;
+	/*! the current native samplerate */
+	uint32_t native_rate;
+	/*! the number of channels */
+
 	/*! private data for the format module to store handle specific info */
 	void *private_info;
 };

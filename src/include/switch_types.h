@@ -944,7 +944,9 @@ typedef enum {
 	SWITCH_SPEECH_FLAG_PEEK = (1 << 1),
 	SWITCH_SPEECH_FLAG_FREE_POOL = (1 << 2),
 	SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
-	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4)
+	SWITCH_SPEECH_FLAG_PAUSE = (1 << 4),
+	SWITCH_SPEECH_FLAG_OPEN = (1 << 5),
+	SWITCH_SPEECH_FLAG_DONE = (1 << 6)
 } switch_speech_flag_enum_t;
 typedef uint32_t switch_speech_flag_t;
 

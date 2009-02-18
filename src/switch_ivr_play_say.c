@@ -1582,7 +1582,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 	int lead_in_out = 10;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_speech_flag_t flags = SWITCH_SPEECH_FLAG_NONE;
-	uint32_t rate = 0;
 	switch_size_t extra = 0;
 	char *p, *tmp = NULL;
 	const char *star, *pound;
@@ -1753,7 +1752,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_speak_text_handle(switch_core_session
 		}
 
 		flags = SWITCH_SPEECH_FLAG_BLOCKING;
-		status = switch_core_speech_read_tts(sh, abuf, &ilen, &rate, &flags);
+		status = switch_core_speech_read_tts(sh, abuf, &ilen, &flags);
 
 		if (status != SWITCH_STATUS_SUCCESS) {
 			for (x = 0; !done && x < lead_in_out; x++) {
