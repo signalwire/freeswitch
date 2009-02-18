@@ -348,6 +348,7 @@ update-clean: clean modwipe uninstall libs/openzap/Makefile python-reconf
 	cd libs/sofia-sip && $(MAKE) clean
 	cd libs/openzap && $(MAKE) clean
 	cd libs/portaudio && $(MAKE) clean
+	cd libs/speex && $(MAKE) clean
 
 swigall:
 	@echo reswigging all
