@@ -89,6 +89,7 @@ opt/freeswitch/conf/voicemail.tpl
 opt/freeswitch/conf/freeswitch.xml
 opt/freeswitch/conf/extensions.conf
 opt/freeswitch/conf/autoload_configs/ivr.conf.xml
+opt/freeswitch/conf/autoload_configs/shout.conf.xml
 opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
 opt/freeswitch/conf/autoload_configs/switch.conf.xml
 opt/freeswitch/conf/autoload_configs/syslog.conf.xml
