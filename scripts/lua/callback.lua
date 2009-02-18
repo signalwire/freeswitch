@@ -1,55 +1,65 @@
 function all_done(s, how)
-   io.write("done: " .. how .. "\n");
+   freeswitch.console_log("info", "done: " .. how .. "\n");
 end
 
 function my_cb(s, type, obj, arg)
    if (arg) then
-      io.write("type: " .. type .. "\n" .. "arg: " .. arg .. "\n");
+      freeswitch.console_log("info", "\ntype: " .. type .. "\n" .. "arg: " .. arg .. "\n");
    else
-      io.write("type: " .. type .. "\n");
+      freeswitch.console_log("info", "\ntype: " .. type .. "\n");
    end
 
    if (type == "dtmf") then
-      io.write("digit: [" .. obj['digit'] .. "]\nduration: [" .. obj['duration'] .. "]\n"); 
+      freeswitch.console_log("info", "\ndigit: [" .. obj['digit'] .. "]\nduration: [" .. obj['duration'] .. "]\n"); 
 
 
       if (obj['digit'] == "1") then
-         return "seek:-3000";
+	 --session:speak("seek backwards");
+         return "seek:-9000";
       end
 
       if (obj['digit'] == "3") then
-         return "seek:+3000";
+	 --session:speak("seek forward");
+         return "seek:+9000";
       end
 
       if (obj['digit'] == "4") then
+	 --session:speak("speed faster");
          return "speed:+1";
       end
 
       if (obj['digit'] == "5") then
+	 --session:speak("speed normal");
          return "speed:0";
       end
 
       if (obj['digit'] == "6") then
+	 --session:speak("speed slower");
          return "speed:-1";
       end
 
       if (obj['digit'] == "7") then
+	 --session:speak("volume up");
          return "volume:+1";
       end
 
       if (obj['digit'] == "8") then
+	 --session:speak("volume normal");
          return "volume:0";
       end
 
       if (obj['digit'] == "9") then
+	 --session:speak("volume down");
          return "volume:-1";
       end
 
       if (obj['digit'] == "*") then
+	 --session:speak("stop");
          return "stop";
       end
 
       if (obj['digit'] == "0") then
+	 --session:speak("pause");
          return "pause";
       end
 
@@ -58,12 +68,14 @@ function my_cb(s, type, obj, arg)
       end
 
    else
-      io.write(obj:serialize("xml"));
+      freeswitch.console_log("info", obj:serialize("xml"));
 
    end
 end
 
 blah = "args";
+---session:set_tts_parms("flite", "kal");
 session:setHangupHook("all_done");
 session:setInputCallback("my_cb", "blah");
 session:streamFile("/ram/swimp.raw");
+--session:speak("Thank you, good bye!");
