@@ -1034,11 +1034,15 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*caller_id_in_from = "false",
 				*extension = NULL,
 				*proxy = NULL,
-				*context = "default",
+				*context = profile->context,
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
 				*from_user = "", *from_domain = "", *register_proxy = NULL, *contact_params = NULL, *params = NULL, *register_transport = NULL;
 			
+			if (!context) {
+				context = "default";
+			}
+
 			uint32_t ping_freq = 0;
 			switch_uuid_t uuid;
 			
