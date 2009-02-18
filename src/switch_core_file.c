@@ -220,7 +220,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 			}
 		}
 
-		switch_resample_process(fh->resampler, data, *len);
+		switch_resample_process(fh->resampler, data, (uint32_t)*len);
 		
 		if (fh->resampler->to_len < want || fh->resampler->to_len > orig_len) {
 			if (!fh->buffer) {
@@ -279,7 +279,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 				return SWITCH_STATUS_GENERR;
 			}
 		}
-		switch_resample_process(fh->resampler, data, *len * fh->channels);
+		switch_resample_process(fh->resampler, data, (uint32_t)(*len * fh->channels));
 
 		if (fh->resampler->to_len > orig_len * fh->channels) {
 			if (!fh->dbuf) {
