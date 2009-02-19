@@ -43,6 +43,7 @@ endpoints/mod_sofia
 endpoints/mod_loopback
 #endpoints/mod_alsa
 #endpoints/mod_opal
+#endpoints/mod_skypiax
 #../../libs/openzap/mod_openzap
 #event_handlers/mod_event_multicast
 event_handlers/mod_event_socket
