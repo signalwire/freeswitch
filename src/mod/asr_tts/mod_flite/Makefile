@@ -14,7 +14,7 @@ BASE=../../../..
 include $(BASE)/build/modmake.rules
 
 $(FLITE_DIR):
-	$(GETLIB) $(FLITE).tar.gz
+	$(GETLIB) $(FLITE)-latest.tar.gz
 
 $(FLITE_DIR)/Makefile: $(FLITE_DIR)
 	cd $(FLITE_DIR) && CFLAGS="-fPIC" ./configure
