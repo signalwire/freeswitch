@@ -1,7 +1,11 @@
 FLITE=flite-1.3.99
 FLITE_DIR=$(switch_srcdir)/libs/$(FLITE)
 FLITE_LIBDIR=$(FLITE_DIR)/build/libs
-FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_kal.a $(FLITE_LIBDIR)/libflite_cmu_us_kal16.a $(FLITE_LIBDIR)/libflite_cmulex.a $(FLITE_LIBDIR)/libflite_usenglish.a $(FLITE_LIBDIR)/libflite.a
+FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_awb.a \
+	$(FLITE_LIBDIR)/libflite_cmu_us_kal.a \
+	$(FLITE_LIBDIR)/libflite_cmu_us_rms.a \
+	$(FLITE_LIBDIR)/libflite_cmu_us_slt.a \
+	$(FLITE_LIBDIR)/libflite_cmulex.a $(FLITE_LIBDIR)/libflite_usenglish.a $(FLITE_LIBDIR)/libflite.a -lasound -lm
 
 LOCAL_CFLAGS=-I$(switch_srcdir)/libs/$(FLITE)/include
 LOCAL_LIBADD=$(FLITE_A)

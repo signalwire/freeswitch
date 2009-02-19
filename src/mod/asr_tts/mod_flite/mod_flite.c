@@ -32,19 +32,27 @@
 #include <switch.h>
 #include <flite.h>
 
+cst_voice *register_cmu_us_awb(void);
+void unregister_cmu_us_awb(cst_voice * v);
+
 cst_voice *register_cmu_us_kal(void);
 void unregister_cmu_us_kal(cst_voice * v);
 
-cst_voice *register_cmu_us_kal16(void);
-void unregister_cmu_us_kal16(cst_voice * v);
+cst_voice *register_cmu_us_rms(void);
+void unregister_cmu_us_rms(cst_voice * v);
+
+cst_voice *register_cmu_us_slt(void);
+void unregister_cmu_us_slt(cst_voice * v);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load);
 SWITCH_MODULE_DEFINITION(mod_flite, mod_flite_load, NULL, NULL);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_flite_shutdown);
 
 static struct {
-	cst_voice *v8;
-	cst_voice *v16;
+	cst_voice *awb;
+	cst_voice *kal;
+	cst_voice *rms;
+	cst_voice *slt;
 } globals;
 
 struct flite_data {
@@ -52,6 +60,7 @@ struct flite_data {
 	cst_wave *w;
 	switch_buffer_t *audio_buffer;
 };
+
 typedef struct flite_data flite_t;
 
 #define free_wave(w) if (w) {delete_wave(w) ; w = NULL; }
@@ -60,13 +69,19 @@ typedef struct flite_data flite_t;
 static switch_status_t flite_speech_open(switch_speech_handle_t *sh, const char *voice_name, int rate, switch_speech_flag_t *flags)
 {
 	flite_t *flite = switch_core_alloc(sh->memory_pool, sizeof(*flite));
+
+	sh->native_rate = 16000;
 	
-	if (rate == 8000) {
-		flite->v = globals.v8;
-	} else if (rate == 16000) {
-		flite->v = globals.v16;
+	if (!strcasecmp(voice_name, "awb")) {
+		flite->v = globals.awb;
+	} else if (!strcasecmp(voice_name, "kal")) {
+		flite->v = globals.kal;
+	} else if (!strcasecmp(voice_name, "rms")) {
+		flite->v = globals.rms;
+	} else if (!strcasecmp(voice_name, "slt")) {
+		flite->v = globals.slt;
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "invalid rate %d. Only 8000 and 16000 are supported.\n", rate);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Valid voice names are awb, kal, rms or slt.\n");
 	}
 
 	if (flite->v) {
@@ -109,7 +124,7 @@ static void flite_speech_flush_tts(switch_speech_handle_t *sh)
 	free_wave(flite->w);
 }
 
-static switch_status_t flite_speech_read_tts(switch_speech_handle_t *sh, void *data, switch_size_t *datalen, switch_speech_flag_t *flags)
+static switch_status_t flite_speech_read_tts(switch_speech_handle_t *sh, void *data, size_t *datalen, switch_speech_flag_t *flags)
 {
 	size_t bytes_read;
 	flite_t *flite = (flite_t *) sh->private_info;
@@ -160,8 +175,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load)
 	switch_speech_interface_t *speech_interface;
 
 	flite_init();
-	globals.v8 = register_cmu_us_kal();
-	globals.v16 = register_cmu_us_kal16();
+	globals.awb = register_cmu_us_awb();
+	globals.kal = register_cmu_us_kal();
+	globals.rms = register_cmu_us_rms();
+	globals.slt = register_cmu_us_slt();
 	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -182,12 +199,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_flite_shutdown)
 {
-	unregister_cmu_us_kal(globals.v8);
-	unregister_cmu_us_kal(globals.v16);
+	unregister_cmu_us_awb(globals.awb);
+	unregister_cmu_us_kal(globals.kal);
+	unregister_cmu_us_rms(globals.rms);
+	unregister_cmu_us_slt(globals.slt);
 
 	return SWITCH_STATUS_UNLOAD;
 }
-
 
 /* For Emacs:
  * Local Variables:
