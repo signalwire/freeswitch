@@ -109,7 +109,7 @@ static void flite_speech_flush_tts(switch_speech_handle_t *sh)
 	free_wave(flite->w);
 }
 
-static switch_status_t flite_speech_read_tts(switch_speech_handle_t *sh, void *data, size_t *datalen, uint32_t *rate, switch_speech_flag_t *flags)
+static switch_status_t flite_speech_read_tts(switch_speech_handle_t *sh, void *data, switch_size_t *datalen, switch_speech_flag_t *flags)
 {
 	size_t bytes_read;
 	flite_t *flite = (flite_t *) sh->private_info;
