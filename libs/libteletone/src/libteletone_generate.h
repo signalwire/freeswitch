@@ -137,7 +137,7 @@ typedef struct teletone_dds_state teletone_dds_state_t;
 /* 3.02 represents twice the power */
 #define DBM0_MAX_POWER (3.14f + 3.02f)
 
-extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
+TELETONE_API extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
 
 static __inline__ int32_t teletone_dds_phase_rate(teletone_process_t tone, uint32_t rate)
 {
