@@ -110,7 +110,7 @@ typedef __int16 int16_t;
 #define teletone_assert(expr) assert(expr)
 #endif
 
-#if (defined(__GNUC__) || defined(__SUNCC__)) && defined(HAVE_VISIBILITY)
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
 #define TELETONE_API __attribute__((visibility("default")))
 #else
 #define TELETONE_API
