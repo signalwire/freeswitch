@@ -34,6 +34,7 @@ freeswitch (1.0.3-1) unstable; urgency=low
    * core: fix leak in exposed event class serialize method (r:12068)
    * core: add volume as possible return value from input callback on embedded languages (r:12114)
    * core: add resampler to seech handles (r:12141)
+   * core: add api.getTime to embedded languages (r:12149)
    * freeswitch: allow you to specify -htdocs dir at runtime. (r:11614)
    * fs_cli: add "debug" command to change the esl debug level at runtime (r:11057)
    * iksemel: update to 1.3 (r:11645)
