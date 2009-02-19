@@ -1,0 +1,258 @@
+#########################################################
+#########################################################
+#########################################################
+
+WHAT IS SKYPIAX
+
+This software (Skypiax) uses the Skype API but is not endorsed, 
+     certified or otherwise approved in any way by Skype. 
+
+#########################################################
+#########################################################
+#########################################################
+
+Skypiax is an endpoint (channel driver) that use the Skype client as an interface to the Skype network, and allows incoming and outgoing Skype calls from/to FreeSWITCH (that can be bridged, originated, answered, etc. as in all other endpoints, eg sofia/SIP).
+
+Think at Skypiax as similar to OpenZAP for analog lines: for each channel you need an interface (a Skype client). So, for eg, for two concurrent calls, you will need two channels, two Skype clients running on server.
+
+If your server's Skype client(s) has got the Skype credits, Skypiax works for SkypeOut calls too.
+
+You can use it from the dialplan, eg with the provided modified "default.xml" dialplan, you can call a "skype uri" that's the word 'skype' followed by a slash and a destination: "skype/remote_skypename__OR__skypeout_phonenumber" for calling via the Skype network. Eg "skype/echo123" or "skype/+18007844444".
+
+You can use the "skype uri" of the provided dialplan also directly for a SIP softphone, eg X-Lite. 
+
+With the provided skypiax.conf.xml all incoming Skype calls will be routed to the "5000" extension, the IVR in default FreeSWITCH installation.
+
+On Linux the Skype client uses a lot of CPU. To lower its CPU consumption, you can use the Xvfb "fake" X server and (more important) the snd-dummy ALSA "fake" sound driver. Scripts are provided for this. But for a low number of channels it would works with regular X servers and ALSA drivers.
+
+On a Linux machine with 3GB ram and a quad core intel6600, we got no problem with 20 concurrent calls, and plenty of room for adding more Skypiax channels (100? not tested).
+
+On Windows, no need to do anything special, the Skype client is lighter on CPU. 
+
+
+''Skypiax is now pre-beta, but usable for testing and finding bugs :-).''
+
+
+'''You can download Skypiax source code with subversion with the command:'''
+
+svn co http://svn.freeswitch.org/svn/freeswitch/branches/gmaruzz/src/mod/endpoints/mod_skypiax mod_skypiax
+then, follow the README file in the mod_skypiax directory.
+
+More info on skypiax:   
+http://wiki.freeswitch.org/wiki/Skypiax
+http://www.celliax.org
+
+Skypiax has been contributed to the community by:
+Giovanni Maruzzelli (gmaruzz at gmail dot com)
+
+#########################################################
+#########################################################
+#########################################################
+
+  An example of Skypiax installation on FreeSWITCH Linux
+
+#########################################################
+#########################################################
+#########################################################
+
+Install ubuntu 8.04 LTS server (Released April 2008 and maintained until April 2013) with *only* OpenSSH Server. (we used the 64bit edition)
+
+Login at the real keyboard as the user you choose during install
+
+Check the IP address with ifconfig
+
+Logout
+
+===============================
+Login via ssh as the user you choose during install
+
+maruzz@8-04-srv:~$
+maruzz@8-04-srv:~$ sudo su
+[sudo] password for maruzz:
+root@8-04-srv:/home/maruzz# passwd
+Enter new UNIX password:
+Retype new UNIX password:
+passwd: password updated successfully
+root@8-04-srv:/home/maruzz#
+root@8-04-srv:/home/maruzz# apt-get update && apt-get -y upgrade
+root@8-04-srv:/home/maruzz# apt-get update && apt-get -y dist-upgrade
+root@8-04-srv:/home/maruzz# reboot
+
+===============================
+Login as root via ssh
+
+root@8-04-srv:~# apt-get update && apt-get -y dist-upgrade
+root@8-04-srv:/home/maruzz# reboot
+
+===============================
+
+Now, let's begin the real installation
+
+root@8-04-srv:~# apt-get -y install build-essential subversion automake autoconf wget libtool libncurses5-dev xvfb libx11-dev libasound2-dev
+root@8-04-srv:~# svn co http://svn.freeswitch.org/svn/freeswitch/branches/gmaruzz freeswitch_gmaruzz
+root@8-04-srv:~# cd freeswitch_gmaruzz/
+root@8-04-srv:~/freeswitch_gmaruzz# ./bootstrap.sh
+root@8-04-srv:~/freeswitch_gmaruzz# ./configure
+root@8-04-srv:~/freeswitch_gmaruzz# make && make install && make hd-sounds-install && make hd-moh-install && make samples
+
+*** go to have something to drink-eat-read-whatever
+*** test that FS can be started
+
+root@8-04-srv:~/freeswitch_gmaruzz# /usr/local/freeswitch/bin/freeswitch
+freeswitch@8-04-srv> ...
+
+*** copy the skypiax configuration file
+root@8-04-srv:~/freeswitch_gmaruzz# cp src/mod/endpoints/mod_skypiax/configs/skypiax.conf.xml /usr/local/freeswitch/conf/autoload_configs/
+
+*** optionally, copy the dialplan configuration file that contains the "skypiax" modifications (eg: you can call "sip:skype/remote_skypename__OR__skypeout_phonenumber" for calling via the Skype network from a SIP softphone to remote_skypename or to a phone number via SkypeOut, or you can call the "2908" extension from any phone to be bridged to the Skype Test Call)
+root@8-04-srv:~/freeswitch_gmaruzz# cp src/mod/endpoints/mod_skypiax/configs/default.xml /usr/local/freeswitch/conf/dialplan/
+
+*** now, let's get and install the Skype client
+root@8-04-srv:~/freeswitch_gmaruzz# cd ..
+root@8-04-srv:~#
+root@8-04-srv:~# apt-get -y install ia32-libs lib32asound2 libc6-i386 lib32gcc1 lib32stdc++6 lib32ncurses5 lib32z1 libasound2-plugins
+root@8-04-srv:~# wget -c http://www.skype.com/go/getskype-linux-ubuntu-amd64
+root@8-04-srv:~# dpkg -i skype_ubuntu-2.0.0.72-1_amd64.deb
+
+*** now, let's get the skype configuration directory we prepared on another (desktop) machine
+*** on "How to prepare the configuration directory of Skype clients on Linux", see configs/README.skypiax_auth
+root@8-04-srv:~# cp /mnt/root/configskypenew.tgz ./
+root@8-04-srv:~# tar xzf configskypenew.tgz
+root@8-04-srv:~# chown root.root .Skype
+root@8-04-srv:~#
+
+**** almost ready!
+
+**** let's edit the skypiax config
+root@8-04-srv:~/freeswitch_gmaruzz# vi /usr/local/freeswitch/conf/autoload_configs/skypiax.conf.xml
+
+**** let's edit the startskype script
+**** remember to add the removing of all the installed snd-* modules
+root@8-04-srv:~/freeswitch_gmaruzz# cp src/mod/endpoints/mod_skypiax/configs/startskype.sh ./
+root@8-04-srv:~/freeswitch_gmaruzz# vi startskype.sh
+
+**** let's copy the X servers' auth config file
+root@8-04-srv:~/freeswitch_gmaruzz#cp src/mod/endpoints/mod_skypiax/configs/skypiax.X.conf /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf
+
+**** start the X servers and the Skype clients
+root@8-04-srv:~/freeswitch_gmaruzz# sh ./startskype.sh
+
+**** this is the situation you want after startskype.sh
+root@8-04-srv:~/freeswitch_gmaruzz# lsmod | grep snd
+snd_dummy              22016  0
+snd_pcm                99336  1 snd_dummy
+snd_timer              35080  1 snd_pcm
+snd                    78024  3 snd_dummy,snd_pcm,snd_timer
+snd_page_alloc         20368  1 snd_pcm
+soundcore              17568  1 snd
+root@8-04-srv:~/freeswitch_gmaruzz#
+
+
+**** start FS and the load skypiax!
+root@8-04-srv:~/freeswitch_gmaruzz# /usr/local/freeswitch/bin/freeswitch
+freeswitch@8-04-srv> load mod_skypiax
+
+
+
+=============================================
+20 idle skypiax channels:
+
+top - 18:14:26 up  2:02,  2 users,  load average: 0.03, 0.08, 0.04
+Tasks: 111 total,   1 running, 110 sleeping,   0 stopped,   0 zombie
+Cpu(s):  0.1%us,  0.3%sy,  0.0%ni, 99.6%id,  0.0%wa,  0.0%hi,  0.0%si,  0.0%st
+Mem:   3096688k total,  1835100k used,  1261588k free,   137688k buffers
+Swap:   248968k total,        0k used,   248968k free,  1020888k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+ 8272 root      20   0  320m  30m 4848 S    0  1.0   0:00.56 freeswitch
+ 7905 root      20   0 58520  27m  10m S    0  0.9   0:03.25 skype
+ 7937 root      20   0 59356  26m  10m S    0  0.9   0:03.01 skype
+ 8093 root      20   0 58524  26m  10m S    0  0.9   0:03.03 skype
+ 7981 root      20   0 58376  26m  10m S    0  0.9   0:02.72 skype
+ 8157 root      20   0 59452  26m  10m S    0  0.9   0:02.49 skype
+ 7889 root      20   0 57888  26m  10m S    0  0.9   0:03.03 skype
+ 8189 root      20   0 58544  26m  10m S    0  0.9   0:02.62 skype
+ 7953 root      20   0 58400  26m  10m S    0  0.9   0:03.27 skype
+ 7997 root      20   0 57988  26m  10m S    1  0.9   0:03.00 skype
+ 8029 root      20   0 58456  26m  10m S    0  0.9   0:02.57 skype
+ 8045 root      20   0 58368  26m  10m S    0  0.9   0:02.70 skype
+ 8077 root      20   0 58444  26m  10m S    0  0.9   0:02.69 skype
+ 8109 root      20   0 59564  26m  10m S    0  0.9   0:02.75 skype
+ 8061 root      20   0 57984  26m  10m S    0  0.9   0:02.67 skype
+ 7921 root      20   0 58388  26m  10m S    0  0.9   0:02.92 skype
+ 7873 root      20   0 58492  26m  10m S    1  0.9   0:03.83 skype
+ 8125 root      20   0 58404  26m  10m S    1  0.9   0:02.89 skype
+ 8013 root      20   0 58460  26m  10m S    0  0.9   0:03.88 skype
+ 8173 root      20   0 58468  26m  10m S    0  0.9   0:02.55 skype
+ 8141 root      20   0 58232  26m  10m S    0  0.9   0:02.88 skype
+ 7884 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.33 Xvfb
+ 8024 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.30 Xvfb
+ 8040 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.32 Xvfb
+ 8072 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.29 Xvfb
+ 7900 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.32 Xvfb
+ 7916 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.32 Xvfb
+ 8120 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.31 Xvfb
+ 8152 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.29 Xvfb
+ 8168 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.28 Xvfb
+ 8184 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.28 Xvfb
+ 7868 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.31 Xvfb
+ 7932 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.32 Xvfb
+ 7948 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.32 Xvfb
+ 7964 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.33 Xvfb
+ 7992 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.31 Xvfb
+ 8008 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.31 Xvfb
+ 8056 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.30 Xvfb
+...some more Xvfb
+
+=============================================
+
+20 incoming concurrent skype calls listening to moh at 16khz:
+
+top - 18:40:04 up  2:27,  2 users,  load average: 0.14, 0.13, 0.06
+Tasks: 111 total,   1 running, 110 sleeping,   0 stopped,   0 zombie
+Cpu(s): 18.6%us,  4.5%sy,  0.0%ni, 76.4%id,  0.0%wa,  0.1%hi,  0.4%si,  0.0%st
+Mem:   3096688k total,  1858460k used,  1238228k free,   137692k buffers
+Swap:   248968k total,        0k used,   248968k free,  1023148k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+ 8866 root      20   0  336m  35m 5016 S    9  1.2   0:21.23 freeswitch
+ 8812 root      20   0 84632  28m  10m S    6  0.9   0:14.02 skype
+ 8580 root      20   0 84252  27m  10m S    6  0.9   0:28.19 skype
+ 8713 root      20   0 84716  27m  10m S    6  0.9   0:18.06 skype
+ 8628 root      20   0 84268  27m  10m S    7  0.9   0:24.37 skype
+ 8793 root      20   0 84756  27m  10m S    6  0.9   0:14.24 skype
+ 8664 root      20   0 84140  27m  10m S    6  0.9   0:23.19 skype
+ 8745 root      20   0 84628  27m  10m S    6  0.9   0:16.85 skype
+ 8644 root      20   0 84588  27m  10m S    6  0.9   0:22.81 skype
+ 8697 root      20   0 84516  27m  10m S    6  0.9   0:21.03 skype
+ 8514 root      20   0 83164  27m  10m S    7  0.9   0:29.47 skype
+ 8564 root      20   0 84496  27m  10m S    4  0.9   0:28.65 skype
+ 8681 root      20   0 84632  27m  10m S    6  0.9   0:23.20 skype
+ 8532 root      20   0 83528  27m  10m S    6  0.9   0:28.39 skype
+ 8612 root      20   0 84460  27m  10m S    6  0.9   0:24.70 skype
+ 8729 root      20   0 84368  27m  10m S    8  0.9   0:18.86 skype
+ 8761 root      20   0 84644  27m  10m S    6  0.9   0:16.70 skype
+ 8777 root      20   0 83752  27m  10m S    7  0.9   0:16.19 skype
+ 8596 root      20   0 83692  27m  10m S    7  0.9   0:26.49 skype
+ 8831 root      20   0 83568  27m  10m S    7  0.9   0:13.13 skype
+ 8548 root      20   0 83336  27m  10m S    6  0.9   0:30.67 skype
+ 8575 root      20   0 43636 9.8m 2232 S    0  0.3   0:00.63 Xvfb
+ 8543 root      20   0 43636 9.8m 2232 S    0  0.3   0:00.64 Xvfb
+ 8527 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.65 Xvfb
+ 8591 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.60 Xvfb
+ 8658 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.58 Xvfb
+ 8724 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.64 Xvfb
+ 8740 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.65 Xvfb
+ 8509 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.66 Xvfb
+ 8607 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.61 Xvfb
+ 8623 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.57 Xvfb
+ 8692 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.55 Xvfb
+ 8756 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.55 Xvfb
+ 8772 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.60 Xvfb
+ 8788 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.56 Xvfb
+ 8823 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.59 Xvfb
+ 8639 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.58 Xvfb
+ 8676 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.55 Xvfb
+...some more Xvfb
+
+
