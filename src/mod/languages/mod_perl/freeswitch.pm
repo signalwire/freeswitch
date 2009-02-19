@@ -122,6 +122,7 @@ sub DESTROY {
 
 *execute = *freeswitchc::API_execute;
 *executeString = *freeswitchc::API_executeString;
+*getTime = *freeswitchc::API_getTime;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);

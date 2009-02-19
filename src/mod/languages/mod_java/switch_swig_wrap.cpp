@@ -458,6 +458,21 @@ SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_API_1executeSt
 }
 
 
+SWIGEXPORT jstring JNICALL Java_org_freeswitch_swig_freeswitchJNI_API_1getTime(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_) {
+  jstring jresult = 0 ;
+  API *arg1 = (API *) 0 ;
+  char *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(API **)&jarg1; 
+  result = (char *)(arg1)->getTime();
+  if(result) jresult = jenv->NewStringUTF((const char *)result);
+  return jresult;
+}
+
+
 SWIGEXPORT void JNICALL Java_org_freeswitch_swig_freeswitchJNI_input_1callback_1state_1t_1function_1set(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
   input_callback_state_t *arg1 = (input_callback_state_t *) 0 ;
   void *arg2 = (void *) 0 ;

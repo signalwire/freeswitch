@@ -104,11 +104,13 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 	 class API {
 	   protected:
 		 char *last_data;
+		 char time_buf[64];
 	   public:
 		 SWITCH_DECLARE_CONSTRUCTOR API(void);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ API();
 		 SWITCH_DECLARE(const char *) execute(const char *command, const char *data);
 		 SWITCH_DECLARE(const char *) executeString(const char *command);
+		 SWITCH_DECLARE(char *) getTime(void);
 	 };
 
 
@@ -396,6 +398,7 @@ SWITCH_DECLARE_NONSTD(switch_status_t) hanguphook(switch_core_session_t *session
 
 SWITCH_DECLARE_NONSTD(switch_status_t) dtmf_callback(switch_core_session_t *session,
 													 void *input, switch_input_type_t itype, void *buf, unsigned int buflen);
+
 
 
 #ifdef __cplusplus

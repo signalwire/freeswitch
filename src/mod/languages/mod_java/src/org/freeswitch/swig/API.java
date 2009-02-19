@@ -45,4 +45,8 @@ public class API {
     return freeswitchJNI.API_executeString(swigCPtr, this, command);
   }
 
+  public String getTime() {
+    return freeswitchJNI.API_getTime(swigCPtr, this);
+  }
+
 }

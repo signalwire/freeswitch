@@ -52,6 +52,11 @@ public class Api : IDisposable {
     return ret;
   }
 
+  public string getTime() {
+    string ret = freeswitchPINVOKE.Api_getTime(swigCPtr);
+    return ret;
+  }
+
 }
 
 }
@@ -1670,8 +1675,8 @@ public class freeswitch {
     freeswitchPINVOKE.switch_core_speech_float_param_tts(switch_speech_handle.getCPtr(sh), param, val);
   }
 
-  public static switch_status_t switch_core_speech_read_tts(switch_speech_handle sh, SWIGTYPE_p_void data, SWIGTYPE_p_switch_size_t datalen, SWIGTYPE_p_unsigned_long rate, SWIGTYPE_p_unsigned_long flags) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_read_tts(switch_speech_handle.getCPtr(sh), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_switch_size_t.getCPtr(datalen), SWIGTYPE_p_unsigned_long.getCPtr(rate), SWIGTYPE_p_unsigned_long.getCPtr(flags));
+  public static switch_status_t switch_core_speech_read_tts(switch_speech_handle sh, SWIGTYPE_p_void data, SWIGTYPE_p_switch_size_t datalen, SWIGTYPE_p_unsigned_long flags) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_speech_read_tts(switch_speech_handle.getCPtr(sh), SWIGTYPE_p_void.getCPtr(data), SWIGTYPE_p_switch_size_t.getCPtr(datalen), SWIGTYPE_p_unsigned_long.getCPtr(flags));
     return ret;
   }
 
@@ -6066,7 +6071,7 @@ class freeswitchPINVOKE {
   public static extern void switch_core_speech_float_param_tts(HandleRef jarg1, string jarg2, double jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_speech_read_tts")]
-  public static extern int switch_core_speech_read_tts(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4, HandleRef jarg5);
+  public static extern int switch_core_speech_read_tts(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_speech_close")]
   public static extern int switch_core_speech_close(HandleRef jarg1, HandleRef jarg2);
@@ -7867,6 +7872,42 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_memory_pool_get")]
   public static extern IntPtr switch_speech_handle_memory_pool_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_resampler_set")]
+  public static extern void switch_speech_handle_resampler_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_resampler_get")]
+  public static extern IntPtr switch_speech_handle_resampler_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_buffer_set")]
+  public static extern void switch_speech_handle_buffer_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_buffer_get")]
+  public static extern IntPtr switch_speech_handle_buffer_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_dbuf_set")]
+  public static extern void switch_speech_handle_dbuf_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_dbuf_get")]
+  public static extern IntPtr switch_speech_handle_dbuf_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_dbuflen_set")]
+  public static extern void switch_speech_handle_dbuflen_set(HandleRef jarg1, HandleRef jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_dbuflen_get")]
+  public static extern IntPtr switch_speech_handle_dbuflen_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_samplerate_set")]
+  public static extern void switch_speech_handle_samplerate_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_samplerate_get")]
+  public static extern uint switch_speech_handle_samplerate_get(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_native_rate_set")]
+  public static extern void switch_speech_handle_native_rate_set(HandleRef jarg1, uint jarg2);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_native_rate_get")]
+  public static extern uint switch_speech_handle_native_rate_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_speech_handle_private_info_set")]
   public static extern void switch_speech_handle_private_info_set(HandleRef jarg1, HandleRef jarg2);
@@ -10568,6 +10609,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_Api_ExecuteString")]
   public static extern string Api_ExecuteString(HandleRef jarg1, string jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_Api_getTime")]
+  public static extern string Api_getTime(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_input_callback_state_t_function_set")]
   public static extern void input_callback_state_t_function_set(HandleRef jarg1, HandleRef jarg2);
 
@@ -11237,36 +11281,6 @@ public class SWIGTYPE_p_apr_pool_t {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_apr_pool_t obj) {
-    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
-  }
-}
-
-}
-/* ----------------------------------------------------------------------------
- * This file was automatically generated by SWIG (http://www.swig.org).
- * Version 1.3.35
- *
- * Do not make changes to this file unless you know what you are doing--modify
- * the SWIG interface file instead.
- * ----------------------------------------------------------------------------- */
-
-namespace FreeSWITCH.Native {
-
-using System;
-using System.Runtime.InteropServices;
-
-public class SWIGTYPE_p_CoreSession {
-  private HandleRef swigCPtr;
-
-  internal SWIGTYPE_p_CoreSession(IntPtr cPtr, bool futureUse) {
-    swigCPtr = new HandleRef(this, cPtr);
-  }
-
-  protected SWIGTYPE_p_CoreSession() {
-    swigCPtr = new HandleRef(null, IntPtr.Zero);
-  }
-
-  internal static HandleRef getCPtr(SWIGTYPE_p_CoreSession obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -12935,18 +12949,18 @@ namespace FreeSWITCH.Native {
 using System;
 using System.Runtime.InteropServices;
 
-public class SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t {
+public class SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t {
   private HandleRef swigCPtr;
 
-  internal SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t(IntPtr cPtr, bool futureUse) {
+  internal SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t(IntPtr cPtr, bool futureUse) {
     swigCPtr = new HandleRef(this, cPtr);
   }
 
-  protected SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t() {
+  protected SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t() {
     swigCPtr = new HandleRef(null, IntPtr.Zero);
   }
 
-  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t obj) {
+  internal static HandleRef getCPtr(SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -14417,36 +14431,6 @@ public class SWIGTYPE_p_switch_core_session {
   }
 
   internal static HandleRef getCPtr(SWIGTYPE_p_switch_core_session obj) {
-    return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
-  }
-}
-
-}
-/* ----------------------------------------------------------------------------
- * This file was automatically generated by SWIG (http://www.swig.org).
- * Version 1.3.35
- *
- * Do not make changes to this file unless you know what you are doing--modify
- * the SWIG interface file instead.
- * ----------------------------------------------------------------------------- */
-
-namespace FreeSWITCH.Native {
-
-using System;
-using System.Runtime.InteropServices;
-
-public class SWIGTYPE_p_SWITCH_DECLARE_CLASS {
-  private HandleRef swigCPtr;
-
-  internal SWIGTYPE_p_SWITCH_DECLARE_CLASS(IntPtr cPtr, bool futureUse) {
-    swigCPtr = new HandleRef(this, cPtr);
-  }
-
-  protected SWIGTYPE_p_SWITCH_DECLARE_CLASS() {
-    swigCPtr = new HandleRef(null, IntPtr.Zero);
-  }
-
-  internal static HandleRef getCPtr(SWIGTYPE_p_SWITCH_DECLARE_CLASS obj) {
     return (obj == null) ? new HandleRef(null, IntPtr.Zero) : obj.swigCPtr;
   }
 }
@@ -23607,7 +23591,9 @@ namespace FreeSWITCH.Native {
   SWITCH_SPEECH_FLAG_PEEK = (1 << 1),
   SWITCH_SPEECH_FLAG_FREE_POOL = (1 << 2),
   SWITCH_SPEECH_FLAG_BLOCKING = (1 << 3),
-  SWITCH_SPEECH_FLAG_PAUSE = (1 << 4)
+  SWITCH_SPEECH_FLAG_PAUSE = (1 << 4),
+  SWITCH_SPEECH_FLAG_OPEN = (1 << 5),
+  SWITCH_SPEECH_FLAG_DONE = (1 << 6)
 }
 
 }
@@ -23754,6 +23740,71 @@ public class switch_speech_handle : IDisposable {
     } 
   }
 
+  public switch_audio_resampler_t resampler {
+    set {
+      freeswitchPINVOKE.switch_speech_handle_resampler_set(swigCPtr, switch_audio_resampler_t.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_speech_handle_resampler_get(swigCPtr);
+      switch_audio_resampler_t ret = (cPtr == IntPtr.Zero) ? null : new switch_audio_resampler_t(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_buffer buffer {
+    set {
+      freeswitchPINVOKE.switch_speech_handle_buffer_set(swigCPtr, SWIGTYPE_p_switch_buffer.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_speech_handle_buffer_get(swigCPtr);
+      SWIGTYPE_p_switch_buffer ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_buffer(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_unsigned_char dbuf {
+    set {
+      freeswitchPINVOKE.switch_speech_handle_dbuf_set(swigCPtr, SWIGTYPE_p_unsigned_char.getCPtr(value));
+    } 
+    get {
+      IntPtr cPtr = freeswitchPINVOKE.switch_speech_handle_dbuf_get(swigCPtr);
+      SWIGTYPE_p_unsigned_char ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_unsigned_char(cPtr, false);
+      return ret;
+    } 
+  }
+
+  public SWIGTYPE_p_switch_size_t dbuflen {
+    set {
+      freeswitchPINVOKE.switch_speech_handle_dbuflen_set(swigCPtr, SWIGTYPE_p_switch_size_t.getCPtr(value));
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_switch_size_t ret = new SWIGTYPE_p_switch_size_t(freeswitchPINVOKE.switch_speech_handle_dbuflen_get(swigCPtr), true);
+      if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
+  public uint samplerate {
+    set {
+      freeswitchPINVOKE.switch_speech_handle_samplerate_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_speech_handle_samplerate_get(swigCPtr);
+      return ret;
+    } 
+  }
+
+  public uint native_rate {
+    set {
+      freeswitchPINVOKE.switch_speech_handle_native_rate_set(swigCPtr, value);
+    } 
+    get {
+      uint ret = freeswitchPINVOKE.switch_speech_handle_native_rate_get(swigCPtr);
+      return ret;
+    } 
+  }
+
   public SWIGTYPE_p_void private_info {
     set {
       freeswitchPINVOKE.switch_speech_handle_private_info_set(swigCPtr, SWIGTYPE_p_void.getCPtr(value));
@@ -23855,13 +23906,13 @@ public class switch_speech_interface : IDisposable {
     } 
   }
 
-  public SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t speech_read_tts {
+  public SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t speech_read_tts {
     set {
-      freeswitchPINVOKE.switch_speech_interface_speech_read_tts_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t.getCPtr(value));
+      freeswitchPINVOKE.switch_speech_interface_speech_read_tts_set(swigCPtr, SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t.getCPtr(value));
     } 
     get {
       IntPtr cPtr = freeswitchPINVOKE.switch_speech_interface_speech_read_tts_get(swigCPtr);
-      SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long_p_unsigned_long__switch_status_t(cPtr, false);
+      SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_f_p_switch_speech_handle_p_void_p_switch_size_t_p_unsigned_long__switch_status_t(cPtr, false);
       return ret;
     } 
   }

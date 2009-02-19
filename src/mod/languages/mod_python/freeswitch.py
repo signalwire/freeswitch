@@ -81,6 +81,7 @@ class API(_object):
     __del__ = lambda self : None;
     def execute(*args): return _freeswitch.API_execute(*args)
     def executeString(*args): return _freeswitch.API_executeString(*args)
+    def getTime(*args): return _freeswitch.API_getTime(*args)
 API_swigregister = _freeswitch.API_swigregister
 API_swigregister(API)
 

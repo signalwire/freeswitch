@@ -177,6 +177,17 @@ SWITCH_DECLARE(const char *) API::execute(const char *cmd, const char *arg)
 	return last_data;
 }
 
+
+/* we have to do this as a string because swig and languages can't find an embedded way to pass a big int */
+SWITCH_DECLARE_NONSTD(char *) API::getTime(void)
+{
+	switch_time_t now = switch_micro_time_now() / 1000;
+	snprintf(time_buf, sizeof(time_buf), "%" SWITCH_TIME_T_FMT, now);
+	return time_buf;
+}
+
+
+
 SWITCH_DECLARE(const char *) API::executeString(const char *cmd)
 {
 	char *arg;

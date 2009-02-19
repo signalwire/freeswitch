@@ -3472,6 +3472,28 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_API_getTime(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  API *arg1 = (API *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:API_getTime",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_API, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "API_getTime" "', argument " "1"" of type '" "API *""'"); 
+  }
+  arg1 = reinterpret_cast< API * >(argp1);
+  result = (char *)(arg1)->getTime();
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *API_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
@@ -9936,6 +9958,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"delete_API", _wrap_delete_API, METH_VARARGS, NULL},
 	 { (char *)"API_execute", _wrap_API_execute, METH_VARARGS, NULL},
 	 { (char *)"API_executeString", _wrap_API_executeString, METH_VARARGS, NULL},
+	 { (char *)"API_getTime", _wrap_API_getTime, METH_VARARGS, NULL},
 	 { (char *)"API_swigregister", API_swigregister, METH_VARARGS, NULL},
 	 { (char *)"input_callback_state_t_function_set", _wrap_input_callback_state_t_function_set, METH_VARARGS, NULL},
 	 { (char *)"input_callback_state_t_function_get", _wrap_input_callback_state_t_function_get, METH_VARARGS, NULL},
