@@ -255,7 +255,7 @@ typedef struct teletone_generation_session teletone_generation_session_t;
   \param ... up to TELETONE_MAX_TONES frequencies terminated by 0.0
   \return 0
 */
-int teletone_set_tone(teletone_generation_session_t *ts, int index, ...);
+TELETONE_API int teletone_set_tone(teletone_generation_session_t *ts, int index, ...);
 
 /*! 
   \brief Assign a set of tones to a single tone map
@@ -263,7 +263,7 @@ int teletone_set_tone(teletone_generation_session_t *ts, int index, ...);
   \param ... up to TELETONE_MAX_TONES frequencies terminated by 0.0
   \return 0
 */
-int teletone_set_map(teletone_tone_map_t *map, ...);
+TELETONE_API int teletone_set_map(teletone_tone_map_t *map, ...);
 
 /*! 
   \brief Initilize a tone generation session
@@ -273,14 +273,14 @@ int teletone_set_map(teletone_tone_map_t *map, ...);
   \param user_data optional user data to send
   \return 0
 */
-int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data);
+TELETONE_API int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data);
 
 /*! 
   \brief Free the buffer allocated by a tone generation session
   \param ts the tone generation session to destroy
   \return 0
 */
-int teletone_destroy_session(teletone_generation_session_t *ts);
+TELETONE_API int teletone_destroy_session(teletone_generation_session_t *ts);
 
 /*! 
   \brief Execute a single tone generation instruction
@@ -288,7 +288,7 @@ int teletone_destroy_session(teletone_generation_session_t *ts);
   \param map the tone mapping to use for the frequencies
   \return 0
 */
-int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map);
+TELETONE_API int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map);
 
 /*! 
   \brief Execute a tone generation script and call callbacks after each instruction
@@ -296,7 +296,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
   \param cmd the script to execute
   \return 0
 */
-int teletone_run(teletone_generation_session_t *ts, const char *cmd);
+TELETONE_API int teletone_run(teletone_generation_session_t *ts, const char *cmd);
 
 #ifdef __cplusplus
 }
