@@ -1,59 +1,313 @@
-#########################################################
-#########################################################
-#########################################################
+Skypiax
+From FreeSWITCH Wiki
 
+The original, authoritative, and updated page is at:
+http://wiki.freeswitch.org/wiki/Skypiax 
+go fetch it!
+
+========================================================
+Contents
+    * 1 Breaking News!
+    * 2 WHAT IS SKYPIAX
+    * 3 Skype Contacts, Messages, Buddy List, etc
+    * 4 Dialplan, what to add to default.xml for use with Skypiax
+    * 5 Dialplan, how to use Skypiax
+    * 6 The "ANY" interface, poor man interface grouping
+    * 7 Multiple concurrent incoming calls on the same Skype username
+    * 8 Libraries needed to build Skypiax on Linux
+    * 9 An example of Skypiax and FreeSWITCH installation on CentOS 5.2, from scratch
+    * 10 An example of Skypiax and FreeSWITCH installation on Ubuntu 8.04, from scratch
+    * 11 How to prepare the configuration directory of Skype clients on Linux
+    * 12 Cloning configuration directory on Linux
+    * 13 Skypiax on Windows
+    * 14 Running Skypiax on Windows as a Service
+    * 15 Performance and Resource Usage
+    * 16 TO DO
+    * 17 BUGS and Feature Requests
+
+[edit]
+Breaking News!
+
+Starting with svn 12168, Feb 19 2009, skypiax is part of the mainline FreeSWITCH trunk.
+
+So if you have already downloaded its sources in the past, you'll have to go into the FreeSWITCH svn directory, remove the old skypiax sources, and download the new ones:
+
+cd freeswitch
+rm -rf src/mod/endpoints/mod_skypiax
+svn up
+
+[edit]
 WHAT IS SKYPIAX
 
-This software (Skypiax) uses the Skype API but is not endorsed, 
-     certified or otherwise approved in any way by Skype. 
+This software (Skypiax) uses the Skype API but is not endorsed, certified or otherwise approved in any way by Skype.
 
-#########################################################
-#########################################################
-#########################################################
+Skypiax is an endpoint (channel driver) that uses the Skype client as an interface to the Skype network, and allows incoming and outgoing Skype calls to/from FreeSWITCH (that can be bridged, originated, answered, etc. as in all other endpoints, e.g. sofia/SIP).
 
-Skypiax is an endpoint (channel driver) that use the Skype client as an interface to the Skype network, and allows incoming and outgoing Skype calls from/to FreeSWITCH (that can be bridged, originated, answered, etc. as in all other endpoints, eg sofia/SIP).
+Skypiax works in FreeSWITCH (FS) on both Linux and Windows, at both 8khz and 16khz (Skype client has 16khz audio I/O). Skypiax works on Asterisk too, at 8khz, on Linux and Windows (through CygWin).
 
-Think at Skypiax as similar to OpenZAP for analog lines: for each channel you need an interface (a Skype client). So, for eg, for two concurrent calls, you will need two channels, two Skype clients running on server.
+Think of Skypiax as similar to OpenZAP for analog lines. For each channel you need an interface (a Skype client). So, for example, two concurrent calls would need two channels, and therefor two Skype clients running on your FreeSWITCH server.
 
-If your server's Skype client(s) has got the Skype credits, Skypiax works for SkypeOut calls too.
+If your Skype client(s) have Skype credits, then Skypiax works for SkypeOut calls as well.
 
-You can use it from the dialplan, eg with the provided modified "default.xml" dialplan, you can call a "skype uri" that's the word 'skype' followed by a slash and a destination: "skype/remote_skypename__OR__skypeout_phonenumber" for calling via the Skype network. Eg "skype/echo123" or "skype/+18007844444".
+On Linux the Skype client uses a lot of CPU. To lower its CPU consumption, you can use the Xvfb "fake" X server and (more importantly) the snd-dummy ALSA "fake" sound driver. Scripts are provided for this, though for a low number of channels it should work just fine with normal X servers and ALSA drivers.
 
-You can use the "skype uri" of the provided dialplan also directly for a SIP softphone, eg X-Lite. 
+On a Linux machine with 3GB ram and a quad core intel6600, we had no problem with 20 concurrent calls, and plenty of head room for perhaps 100 more, (not tested).
+
+On Windows, no need to do anything special the Skype client is lighter on the CPU.
+
+Skypiax is now beta, usable for testing and finding bugs :-).
+
+Skypiax has been contributed to the community by: Giovanni Maruzzelli (gmaruzz at gmail dot com)
+
+From the FreeSWITCH mailing list:
+
+Hello FreeSWITCHers,
+
+mod_skypiax is available for testing, feature requests, bug hunting.
+
+I would like to ask the help of you all to make Skypiax robust and
+feature full on FreeSWITCH, and particularly of Massimo Cetra (CtRiX
+on IRC), that has developed mod_airpe (another Skype endpoint).
+
+I've written a first documentation on Skypiax installation and usage
+at: http://wiki.freeswitch.org/wiki/Skypiax
+and there is a Jira module at:
+http://jira.freeswitch.org/browse/MODSKYPIAX
+
+So, please, test the software, edit the wiki page both for style and
+content, file bug reports and feature requests.
+
+FreeSWITCH is now the platform of first development for me, so the
+FreeSWITCH part of Skypiax is more tested (if any) and the code is
+more readable compared to the Asterisk part where lot of legacy from
+my other projects clutter the code.
+
+But Skypiax strive to be available as a Skype compatible endpoint for
+all the opensource telephony community, and in the near time the
+Asterisk part will be cleaned much more, and documented.
+
+As you will see, the code is made by skypiax_protocol.c (the
+interaction with Skype client), mod_skypiax.c (the interaction with
+FreeSWITCH), chan_skypiax.c (the interaction with Asterisk).
+
+Please consider me available for all infos, clarifications, discussions, etc.
+
+I would like to thanks all the peoples that helped me via mail and IRC
+(so bad to have different timezones, isn't?), the *very early
+adopters*, the testers, the patchers, and you all.
+Particularly Anthony Minessale, Michael Jerris, Brian West, Michael
+Collins, Ken Rice, Seven Du, Clif Cox, Hristo Trendev, Rehan Allah
+Wala, Jason Garland and Antonio Gallo.
+
+[edit]
+Skype Contacts, Messages, Buddy List, etc
+
+Skypiax automatically directs the Skype client instance to agree to a request of being added to the Contact List and to make known its "status" (online, offline, etc), and will add the requester to the Contact List of the Skype client instance.
+
+Skypiax automatically directs the Skype client instance to flag as "Seen" all received messages.
+[edit]
+Dialplan, what to add to default.xml for use with Skypiax
+
+ONLY if you have FS svn version before 12064 or before 1.0.3RC2: for having skypiax to work correctly with internal extensions (eg: calling the 1000 ext), you have to add:
+
+    <!-- Set the domain for skypiax -->
+    <extension name="set_domain_skypiax" continue="true">
+      <condition field="${domain_name}" expression="^$"/>
+      <condition field="source" expression="mod_skypiax">
+        <action application="set" data="domain_name=$${domain}"/>
+      </condition>
+    </extension>
+
+to the standard default.xml dialplan, just under "set_domain_openzap" (thx BBHoss)
+[edit]
+Dialplan, how to use Skypiax
+
+Like other endpoints it's easy to build up useful dialplans using Skypiax. There are a few simple examples given in the "default.xml" dialplan located in mod_skypiax/configs/
+
+You can use the standard format with the interface name:
+
+skypiax/skypiax1/echo123
+
+to call "echo123" using the skypiax interface named "skypiax1"
+
+If you modify your dialplan, you'll be able to call "skype uri"s for terminating calls via the Skype network.
+
+A "Skype URI" is composed by the word 'skype' followed by a slash and a destination: "skype/remote_skypename" or "skype/skypeout_phonenumber"
+
+E.g. "skype/echo123" or "skype/+18007844444".
+
+You can use the "skype uri" of the provided dialplan directly from a SIP softphone, e.g. X-Lite.
+
+And you can call the "2909" extension in the provided dialplan from any kind of phone to be bridged to the Skype Test Call.
+
+Dialplan snippet:
+
+    <!-- dial echo123 via skypiax using skypiax1 interface to go out -->
+    <extension name="skypiax">
+      <condition field="destination_number" expression="^2909$">
+        <action application="bridge" data="skypiax/skypiax1/echo123"/>
+      </condition>
+    </extension>
+
+    <!-- dial via SKYPE uri using skypiax1 interface to go out -->
+    <extension name="skype_uri">
+      <condition field="destination_number" expression="^skype/(.*)$">
+        <action application="bridge" data="skypiax/skypiax1/$1"/>
+      </condition>
+    </extension>
 
 With the provided skypiax.conf.xml all incoming Skype calls will be routed to the "5000" extension, the IVR in default FreeSWITCH installation.
+[edit]
+The "ANY" interface, poor man interface grouping
 
-On Linux the Skype client uses a lot of CPU. To lower its CPU consumption, you can use the Xvfb "fake" X server and (more important) the snd-dummy ALSA "fake" sound driver. Scripts are provided for this. But for a low number of channels it would works with regular X servers and ALSA drivers.
+You can also use the "ANY" interface
 
-On a Linux machine with 3GB ram and a quad core intel6600, we got no problem with 20 concurrent calls, and plenty of room for adding more Skypiax channels (100? not tested).
+skypiax/ANY/echo123
 
-On Windows, no need to do anything special, the Skype client is lighter on CPU. 
+to call "echo123" using the first available (idle, not in a call) skypiax interface, automatically selected (thx Seven Du).
+
+It's the same for the "Skype URI". If you use it with the "ANY" interface, the first idle interface will be used to make the call.
+
+Note: Currently it uses a sequential search, perhaps use round robin is more desired. Not sure if their are race conditions on concurrent calls. Anyone want to use that on high traffic?
+
+Dialplan snippets:
+
+    <!-- dial echo123 via skypiax ANY interface -->
+    <extension name="skypiax">
+      <condition field="destination_number" expression="^2908$">
+        <action application="bridge" data="skypiax/ANY/echo123"/>
+      </condition>
+    </extension>
+
+    <!-- dial via SKYPE uri with skypiax ANY interface-->
+    <extension name="skype_uri">
+      <condition field="destination_number" expression="^skype/(.*)$">
+        <action application="bridge" data="skypiax/ANY/$1"/>
+      </condition>
+    </extension>
+
+[edit]
+Multiple concurrent incoming calls on the same Skype username
+
+Let's say you want to be able to serve multiple concurrent incoming calls to the Skype username "skypiax1" (as in: Alice uses Skype to call the Skype user "skypiax1", concurrently Bob uses Skype to call the Skype user "skypiax1", both Alice and Bob are concurrently served by FS).
+
+You setup multiple skypiax interfaces on FS, as many interfaces as the max number of concurrent incoming calls you want to serve.
+
+Each skypiax interface will have its own Skype client running, each one with its own Skype user login.
+
+Let's say you want to serve a max of 3 concurrent incoming calls, you'll setup three skypiax interface (100 concurrent calls, 100 skypiax interfaces). One of those three interfaces will be logged into the Skype network using the Skype username you want to use to answer all the incoming calls.
+
+So, one interface will be logged into Skype network as "skypiax1". Let's say that the other two interfaces will be logged into the Skype network as "skypiax2" and "skypiax3", but they could be logged as any other Skype username, as long as they are all different and different from "skypiax1" (it's not possible to have more than one Skype client instance using the same Skype username on the same machine, at least on Linux).
+
+When the first incoming call to the Skype username "skypiax1" is received, is served as you would expect by the interface logged as "skypiax1".
+
+If another call for "skypiax1" is incoming while that interface is busy into a call (incoming or outbound), the "skypiax1" interface will *transfer* the incoming call to the first other idle skypiax interface it finds (eg: skypiax2 or skypiax3). The calling user will not have to do nothing for this, and this is completely transparent for Windows and Linux users, while MacOSX users will see into their client that the called party is changed from "skypiax1" to, say, "skypiax3", but they too do not have to do nothing.
+
+And so on until all the skypiax interfaces available are busy. At that point, further incoming calls will be rejected until one skypiax interface exit from the call it is into, and will be available to answer.
+
+Basically, you don't have to do anything to be able to answer multiple incoming calls to the
+same Skype username. Just set up enough interfaces for the maximum concurrent calls you want.
+
+[edit]
+Libraries needed to build Skypiax on Linux
+
+If you are on Ubuntu, Debian, or derivative:
+
+apt-get install libX11-dev
+
+if you are on CentOS, RedHat, or derivative:
+
+yum -y install libX11-devel
+
+for other distros, please add here
+[edit]
+An example of Skypiax and FreeSWITCH installation on CentOS 5.2, from scratch
+
+begin with CentOS-5.2-i386-netinstall.iso (or with the first installation disk)
+
+choose language
+choose keyboard
+choose installation method = HTTP
+
+default Tcp-Ip configuration
+
+HTTP setup: 
+insert the name of the mirror = mi.mirror.garr.it
+insert the directory name = mirrors/CentOS/5.2/os/i386
+
+At the package selection:
+
+select nothing from the "additional tasks", nothing for "additional repositories"
+select "customize now" on the bottom
+select "base system" then de-select dialup Networking support, and leave only "base" checked
+
+After the machine installed,
+
+from setup agent:
+FIREWALL
+firewall disabled
+SElinux disabled
 
 
-''Skypiax is now pre-beta, but usable for testing and finding bugs :-).''
+Login to the local console, and reboot it:
 
+shutdown -r now
 
-'''You can download Skypiax source code with subversion with the command:'''
+Login to the local console, and update the entire OS installation:
 
-svn co http://svn.freeswitch.org/svn/freeswitch/branches/gmaruzz/src/mod/endpoints/mod_skypiax mod_skypiax
-then, follow the README file in the mod_skypiax directory.
+yum update -y
+shutdown -r now
 
-More info on skypiax:   
-http://wiki.freeswitch.org/wiki/Skypiax
-http://www.celliax.org
+now login from ssh, the following is cut and paste ready
 
-Skypiax has been contributed to the community by:
-Giovanni Maruzzelli (gmaruzz at gmail dot com)
+yum install -y subversion autoconf automake libtool gcc-c++ ncurses-devel make
+yum install -y libX11-devel
+cd /usr/src
+svn co http://svn.freeswitch.org/svn/freeswitch/trunk freeswitch
+cd freeswitch
+./bootstrap.sh
+./configure
+vi modules.conf
 
-#########################################################
-#########################################################
-#########################################################
+uncomment mod_skypiax in modules.conf, then:
 
-  An example of Skypiax installation on FreeSWITCH Linux
+make && make install && make hd-sounds-install && make hd-moh-install && make samples
+wget -c  http://gd.tuwien.ac.at/infosys/phone/skype/rpm-public-key.asc
+rpm --import rpm-public-key.asc
+yum install -y Xvfb
+yum install -y alsa-utils
+yum install -y xorg-x11-fonts*
+wget http://www.skype.com/go/getskype-linux-centos
+yum localinstall skype-2.0.0.72-centos.i586.rpm
 
-#########################################################
-#########################################################
-#########################################################
+Copy and install the Skype clients configuration directory you previously prepared (see below for how to prepare it):
+
+cd /root
+mount /dev/hda5 /mnt
+cp /mnt/root/skypeconfig2.tgz ./
+tar xzf skypeconfig2.tgz
+chown -R root.root .Skype
+
+Install the skypiax configuration files, edit and execute the script that starts the Skype client instances:
+
+cd /usr/src
+cd freeswitch/src/mod/endpoints/mod_skypiax/
+cd configs/
+cp skypiax.conf.xml /usr/local/freeswitch/conf/autoload_configs/
+vi /usr/local/freeswitch/conf/autoload_configs/skypiax.conf.xml
+cp skypiax.X.conf  /usr/local/freeswitch/conf/autoload_configs/
+cp startskype.sh 2startskype.sh
+vi 2startskype.sh
+sh ./2startskype.sh
+
+start FS and load skypiax!
+
+/usr/local/freeswitch/bin/freeswitch
+load mod_skypiax
+
+thx to Kulwinder Singh (IRC: Daejeo) for how to install Skype client on CentOS!
+[edit]
+An example of Skypiax and FreeSWITCH installation on Ubuntu 8.04, from scratch
 
 Install ubuntu 8.04 LTS server (Released April 2008 and maintained until April 2013) with *only* OpenSSH Server. (we used the 64bit edition)
 
@@ -63,98 +317,268 @@ Check the IP address with ifconfig
 
 Logout
 
-===============================
-Login via ssh as the user you choose during install
+Login via ssh as the user you choose during install, become root with "sudo su", and choose a root password. Then, update the OS installation.
 
-maruzz@8-04-srv:~$
-maruzz@8-04-srv:~$ sudo su
-[sudo] password for maruzz:
-root@8-04-srv:/home/maruzz# passwd
-Enter new UNIX password:
-Retype new UNIX password:
-passwd: password updated successfully
-root@8-04-srv:/home/maruzz#
-root@8-04-srv:/home/maruzz# apt-get update && apt-get -y upgrade
-root@8-04-srv:/home/maruzz# apt-get update && apt-get -y dist-upgrade
-root@8-04-srv:/home/maruzz# reboot
+sudo su
+passwd
 
-===============================
-Login as root via ssh
+apt-get update && apt-get -y upgrade
+apt-get update && apt-get -y dist-upgrade
+reboot
 
-root@8-04-srv:~# apt-get update && apt-get -y dist-upgrade
-root@8-04-srv:/home/maruzz# reboot
 
-===============================
+Login again as root via ssh
 
-Now, let's begin the real installation
+apt-get update && apt-get -y dist-upgrade
+reboot
 
-root@8-04-srv:~# apt-get -y install build-essential subversion automake autoconf wget libtool libncurses5-dev xvfb libx11-dev libasound2-dev
-root@8-04-srv:~# svn co http://svn.freeswitch.org/svn/freeswitch/branches/gmaruzz freeswitch_gmaruzz
-root@8-04-srv:~# cd freeswitch_gmaruzz/
-root@8-04-srv:~/freeswitch_gmaruzz# ./bootstrap.sh
-root@8-04-srv:~/freeswitch_gmaruzz# ./configure
-root@8-04-srv:~/freeswitch_gmaruzz# make && make install && make hd-sounds-install && make hd-moh-install && make samples
 
-*** go to have something to drink-eat-read-whatever
-*** test that FS can be started
+Now, let's begin the real installation. Starting here, following is cut and paste ready:
 
-root@8-04-srv:~/freeswitch_gmaruzz# /usr/local/freeswitch/bin/freeswitch
-freeswitch@8-04-srv> ...
+apt-get -y install build-essential subversion automake autoconf wget \
+libtool libncurses5-dev xvfb libx11-dev libasound2-dev
+svn co http://svn.freeswitch.org/svn/freeswitch/trunk freeswitch
+cd freeswitch
+./bootstrap.sh
+./configure
 
-*** copy the skypiax configuration file
-root@8-04-srv:~/freeswitch_gmaruzz# cp src/mod/endpoints/mod_skypiax/configs/skypiax.conf.xml /usr/local/freeswitch/conf/autoload_configs/
+Uncomment the line "endpoints/mod_skypiax" in modules.conf.
 
-*** optionally, copy the dialplan configuration file that contains the "skypiax" modifications (eg: you can call "sip:skype/remote_skypename__OR__skypeout_phonenumber" for calling via the Skype network from a SIP softphone to remote_skypename or to a phone number via SkypeOut, or you can call the "2908" extension from any phone to be bridged to the Skype Test Call)
-root@8-04-srv:~/freeswitch_gmaruzz# cp src/mod/endpoints/mod_skypiax/configs/default.xml /usr/local/freeswitch/conf/dialplan/
+vi modules.conf
+make && make install && make hd-sounds-install && make hd-moh-install && make samples
 
-*** now, let's get and install the Skype client
-root@8-04-srv:~/freeswitch_gmaruzz# cd ..
-root@8-04-srv:~#
-root@8-04-srv:~# apt-get -y install ia32-libs lib32asound2 libc6-i386 lib32gcc1 lib32stdc++6 lib32ncurses5 lib32z1 libasound2-plugins
-root@8-04-srv:~# wget -c http://www.skype.com/go/getskype-linux-ubuntu-amd64
-root@8-04-srv:~# dpkg -i skype_ubuntu-2.0.0.72-1_amd64.deb
+go to have something to drink-eat-read-whatever, takes time
 
-*** now, let's get the skype configuration directory we prepared on another (desktop) machine
-*** on "How to prepare the configuration directory of Skype clients on Linux", see configs/README.skypiax_auth
-root@8-04-srv:~# cp /mnt/root/configskypenew.tgz ./
-root@8-04-srv:~# tar xzf configskypenew.tgz
-root@8-04-srv:~# chown root.root .Skype
-root@8-04-srv:~#
+then, test that FS can be started
 
-**** almost ready!
+/usr/local/freeswitch/bin/freeswitch
+...
 
-**** let's edit the skypiax config
-root@8-04-srv:~/freeswitch_gmaruzz# vi /usr/local/freeswitch/conf/autoload_configs/skypiax.conf.xml
+copy the skypiax configuration file
 
-**** let's edit the startskype script
-**** remember to add the removing of all the installed snd-* modules
-root@8-04-srv:~/freeswitch_gmaruzz# cp src/mod/endpoints/mod_skypiax/configs/startskype.sh ./
-root@8-04-srv:~/freeswitch_gmaruzz# vi startskype.sh
+cp src/mod/endpoints/mod_skypiax/configs/skypiax.conf.xml /usr/local/freeswitch/conf/autoload_configs/
 
-**** let's copy the X servers' auth config file
-root@8-04-srv:~/freeswitch_gmaruzz#cp src/mod/endpoints/mod_skypiax/configs/skypiax.X.conf /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf
+optionally, copy the dialplan configuration file that contains the "skypiax" modifications (eg: you can call "sip:skype/remote_skypename__OR__skypeout_phonenumber" for calling via the Skype network from a SIP softphone to remote_skypename or to a phone number via SkypeOut, or you can call the "2908" extension from any phone to be bridged to the Skype Test Call)
 
-**** start the X servers and the Skype clients
-root@8-04-srv:~/freeswitch_gmaruzz# sh ./startskype.sh
+cp src/mod/endpoints/mod_skypiax/configs/default.xml /usr/local/freeswitch/conf/dialplan/
 
-**** this is the situation you want after startskype.sh
-root@8-04-srv:~/freeswitch_gmaruzz# lsmod | grep snd
+now, let's get and install the Skype client
+NOTE: Visit this page to find the Linux client for your distro: http://www.skype.com/download/skype/linux/choose/
+
+cd ..
+apt-get -y install ia32-libs lib32asound2 libc6-i386 lib32gcc1 \
+lib32stdc++6 lib32ncurses5 lib32z1 libasound2-plugins
+wget -c http://www.skype.com/go/getskype-linux-ubuntu-amd64
+dpkg -i skype_ubuntu-2.0.0.72-1_amd64.deb
+
+now, let's get the skype configuration directory we prepared on another (desktop) machine
+
+on "How to prepare the configuration directory of Skype clients on Linux", see below
+
+cp /mnt/root/configskypenew.tgz ./
+tar xzf configskypenew.tgz
+chown root.root .Skype
+
+almost ready!
+
+let's edit the skypiax config
+
+vi /usr/local/freeswitch/conf/autoload_configs/skypiax.conf.xml
+
+let's edit the startskype script
+
+remember to add the removing of all the installed snd-* modules
+
+cp freeswitch/src/mod/endpoints/mod_skypiax/configs/startskype.sh ./
+vi startskype.sh
+
+let's copy the Xservers auth config file
+
+cp freeswitch/src/mod/endpoints/mod_skypiax/configs/skypiax.X.conf \ 
+/usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf
+
+start the X servers and the Skype clients
+
+sh ./startskype.sh
+
+this is the situation you want after startskype.sh
+
+root@8-04-srv:~# lsmod | grep snd
 snd_dummy              22016  0
 snd_pcm                99336  1 snd_dummy
 snd_timer              35080  1 snd_pcm
 snd                    78024  3 snd_dummy,snd_pcm,snd_timer
 snd_page_alloc         20368  1 snd_pcm
 soundcore              17568  1 snd
-root@8-04-srv:~/freeswitch_gmaruzz#
+root@8-04-srv:~#
 
 
-**** start FS and the load skypiax!
-root@8-04-srv:~/freeswitch_gmaruzz# /usr/local/freeswitch/bin/freeswitch
-freeswitch@8-04-srv> load mod_skypiax
+start FS and load skypiax!
+
+/usr/local/freeswitch/bin/freeswitch
+load mod_skypiax
+
+[edit]
+How to prepare the configuration directory of Skype clients on Linux
+
+You will use configs/skypiax_auth to force the Skype client to ask you to authorize "skypiax" to connect to it.
+
+Then you copy the .Skype configuration directory of the user that has launched Skype (eg: /home/maruzz/.Skype if you are maruzz) on the home directory of the user that will start Skype on the server (eg: root).
+
+Compile skypiax_auth:
+
+$ gcc -Wall -ggdb skypiax_auth.c -o skypiax_auth -lX11
+
+Then:
+
+1) on a Linux desktop machine, rmmod all the snd* modules
+
+2) on the desktop machine, modprobe snd-dummy
+
+3) on the desktop machine, logout from your autologin username if any, launch the Skype client and login as the username you'll use on server
+
+4) on the desktop machine, set the desktop client to use the "hw:dummy" audio device, to not update, to not make "events", etc etc... Make and receive a couple of test calls. Please note that you (and the remote party) will hear nothing (you're using the snd-dummy "fake" audio driver), that's ok.
+
+3) on the desktop machine, when satisfied of the Skype client setup, use skypiax_auth (that simulates FS-skypiax connecting to the Skype client). The Skype client will ask you to be authorized to let "skypiax" connect.
+
+4) Give the authorization and check the "not ask me again" option.
+
+5) Close (Quit) the Skype client from the tray icon, so it saves its config.
+
+6) Then, relaunch the Skype client and use skypiax_auth again, just to be sure it now succeed.
+
+7) Close (Quit) the Skype client from the tray icon, so it saves its config.
+
+Do the steps 1-7 for all Skype usernames you will want to use on the server (eg: one Skype username per channel). NB: if you use the same password for all Skype usernames, you can setup just one client and then "clone" it. See below for "Cloning configuration directory on Linux".
+
+When finished with all the Skype usernames: Copy or targzip the .Skype directory and all its content on the home directory of the server user that will launch the Skype client(s).
 
 
+first time you use skypiax_auth
 
-=============================================
+$ ./skypiax_auth
+Skype instance found with id #27263062
+RECEIVED==> ERROR 68
+RECEIVED==> OK
+
+Give the auth to the Skype client, and tell him not to ask again Then Ctrl-C to exit from skypiax_auth
+
+Close (Quit) the Skype client from the tray icon, so it saves its config. Then, relaunch the Skype client
+
+
+you use skypiax_auth again
+
+$ ./skypiax_auth
+Skype instance found with id #27263062
+RECEIVED==> OK
+RECEIVED==> PROTOCOL 6
+RECEIVED==> CONNSTATUS ONLINE
+RECEIVED==> CURRENTUSERHANDLE gmaruzz3
+RECEIVED==> USERSTATUS INVISIBLE
+
+[edit]
+Cloning configuration directory on Linux
+
+After you have launched the Skype client and logged yourself into the Skype network as "skypiax1", and you have given the auth to be connected by Skypiax, and you setup all the otions in the client, exit from the client, right click on the icon and choose "Quit". The Skype client has saved its configuration.
+
+You'll find the subdir "skypiax1" underneath the ~/.Skypiax directory in your home.
+
+If you have registered multiple accounts with Skype ***with the same password*** as the "skypiax1" account, you can just clone the skypiax1 directory and give it the names of the other accounts, and end up as (if you just cloned them, the dates will be closer):
+
+ls -l .Skype/
+
+drwxr-xr-x 5 root root  4096 2009-02-12 22:33 skypiax1
+drwxr-xr-x 5 root root  4096 2009-02-08 09:53 skypiax10
+drwxr-xr-x 5 root root  4096 2009-02-08 08:30 skypiax11
+drwxr-xr-x 5 root root  4096 2009-02-08 08:42 skypiax12
+drwxr-xr-x 5 root root  4096 2009-02-08 08:50 skypiax13
+drwxr-xr-x 5 root root  4096 2009-02-08 08:48 skypiax14
+drwxr-xr-x 5 root root  4096 2009-02-08 09:31 skypiax15
+drwxr-xr-x 5 root root  4096 2009-02-08 09:31 skypiax16
+drwxr-xr-x 5 root root  4096 2009-02-08 08:53 skypiax17
+drwxr-xr-x 5 root root  4096 2009-02-08 08:46 skypiax18
+drwxr-xr-x 5 root root  4096 2009-02-08 08:31 skypiax19
+drwxr-xr-x 5 root root  4096 2009-02-12 22:33 skypiax2
+drwxr-xr-x 5 root root  4096 2009-02-08 09:23 skypiax20
+drwxr-xr-x 5 root root  4096 2009-02-12 22:03 skypiax3
+drwxr-xr-x 5 root root  4096 2009-02-12 21:10 skypiax4
+drwxr-xr-x 5 root root  4096 2009-02-12 21:10 skypiax5
+drwxr-xr-x 5 root root  4096 2009-02-12 22:07 skypiax6
+drwxr-xr-x 5 root root  4096 2009-02-08 09:53 skypiax7
+drwxr-xr-x 5 root root  4096 2009-02-08 09:53 skypiax8
+drwxr-xr-x 5 root root  4096 2009-02-08 09:53 skypiax9
+
+Inside each one of the subdirs, you'll find the file "config.xml".
+
+After a while you'll get a grip on the format. Anyway, the most important item are:
+
+<config>
+...
+...
+...
+  <UI>
+...
+...
+...
+    <CaptureDevice>4</CaptureDevice>
+    <RingDevice>4</RingDevice>
+    <SoundDevice>4</SoundDevice>
+  </UI>
+</config>
+
+Those values determine the audio devices used by the Skype client. You want to use the hw:snd-dummy ALSA device, because it will be really light on your CPU.
+
+So, if you edited the startskype.sh script to rmmod all the snd-* modules from kernel, and then modprobe snd-dummy with the params in the same script, you will edit the config.xml inside the directory of the first 8 interfaces, and put the values at "2".
+
+Next 8 interfaces, values at "4".
+
+Next 8 interfaces, values at "6".
+
+That's it. It works.
+[edit]
+Skypiax on Windows
+
+Skypiax has been designed to work well on windows since the beginning, like FS itself.
+
+After having downloaded the FS sources from svn or the packaged FS source release, follow the instruction on how to build FS on Windows. Using Visual C (Express or not):
+
+    * Open Freeswitch.sln
+    * Right click the main solution node at the top of the Solution Explorer
+    * Right click and select Build 
+
+Then, download and install the 16khz sounds, needed by Skypiax:
+
+    * Right click on "Download 16khzsound" and select Build
+    * Right click on "16khz" (just under the top) and select Build 
+
+Test if FS works at all: http://wiki.freeswitch.org/wiki/Installation_Guide#Windows_quick_start
+
+Then, from Visual C (Express or not Express):
+
+    * Open again Freeswitch.sln
+    * Right click the main solution node at the top of the Solution Explorer
+    * Right click and select "Add" => "Existing Project" => "src\mod\endpoints\mod_skypiax" => select the mod_skypiax project
+    * Right click on "mod_skypiax" that you have just added to the "Solution Explorer", eg: scroll down from where you added the project
+    * and select "Build" 
+
+You'll probably build the "Debug" version. So, go and copy src\mod\endpoints\mod_skypiax\configs/skypiax.conf.xml to Debug\conf\autoload_configs. Edit it to reflect your configuration.
+
+Then, go into src\mod\endpoints\mod_skypiax\configs/ and edit startskype.bat to suit your configuration. Remember that startskype.bat needs wait.bat to be in its same directory (wait.bat is in the "configs" dir too).
+
+Eventually, launch the Skype client instances using startskype.bat, then launch FS, and from the FS command line:
+
+load mod_skypiax
+
+The Skype instances will ask you for permission to be connected by Skypiax. Give the auth.
+
+You're all set.
+[edit]
+Running Skypiax on Windows as a Service
+
+Not yet written
+[edit]
+Performance and Resource Usage
+
 20 idle skypiax channels:
 
 top - 18:14:26 up  2:02,  2 users,  load average: 0.03, 0.08, 0.04
@@ -202,9 +626,9 @@ Swap:   248968k total,        0k used,   248968k free,  1020888k cached
  7992 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.31 Xvfb
  8008 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.31 Xvfb
  8056 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.30 Xvfb
-...some more Xvfb
+ ...some more Xvfb
 
-=============================================
+Since this server has 3GB of RAM you can see that each skype process is useing about 30MB, and the Xvfbs are useing about 10MB each.
 
 20 incoming concurrent skype calls listening to moh at 16khz:
 
@@ -255,4 +679,87 @@ Swap:   248968k total,        0k used,   248968k free,  1023148k cached
  8676 root      20   0 43624 9.8m 2232 S    0  0.3   0:00.55 Xvfb
 ...some more Xvfb
 
+Here we see that the Ram usage hasn't changed but now each skype process is useing about 6% CPU. Which amounts to about 1.5% of this quad core system.
 
+
+The one below is another ascii screenshot, but using the current svn revision at Feb 10, 2009 (one month later than the screenshot before), taken after one hour run of 19 channels on music on hold, and 1 channel intermittent usage (for testing). 20 concurrent channels on moh.
+
+top - 11:37:20 up 14:59,  3 users,  load average: 0.04, 0.06, 0.08
+Tasks: 114 total,   1 running, 113 sleeping,   0 stopped,   0 zombie
+Cpu(s): 12.8%us,  3.1%sy,  0.0%ni, 83.5%id,  0.0%wa,  0.0%hi,  0.6%si,  0.0%st
+Mem:   3096688k total,  1568860k used,  1527828k free,   135244k buffers
+Swap:   248968k total,        0k used,   248968k free,   752224k cached
+
+  PID USER      PR  NI  VIRT  RES  SHR S %CPU %MEM    TIME+  COMMAND
+10473 root      20   0  338m  37m 5264 S    6  1.3   2:43.37 freeswitch
+10460 root      20   0 83364  28m  10m S    6  0.9   0:39.05 skype
+10316 root      20   0 82844  28m  10m S    6  0.9   2:33.71 skype
+10444 root      20   0 83276  27m  10m S    7  0.9   2:26.89 skype
+10187 root      20   0 83064  27m  10m S    6  0.9   2:39.78 skype
+10364 root      20   0 83308  27m  10m S    6  0.9   2:33.55 skype
+10284 root      20   0 83620  27m  10m S    6  0.9   2:39.07 skype
+10412 root      20   0 82920  27m  10m S    6  0.9   2:32.86 skype
+10300 root      20   0 82792  27m  10m S    6  0.9   2:35.97 skype
+10268 root      20   0 83308  27m  10m S    6  0.9   2:37.24 skype
+10332 root      20   0 83364  27m  10m S    5  0.9   2:35.97 skype
+10171 root      20   0 83164  27m  10m S    5  0.9   2:40.55 skype
+10236 root      20   0 83104  27m  10m S    6  0.9   2:38.06 skype
+10252 root      20   0 83240  27m  10m S    6  0.9   2:37.91 skype
+10428 root      20   0 83124  27m  10m S    6  0.9   2:27.67 skype
+10155 root      20   0 83260  27m  10m S    6  0.9   2:43.62 skype
+10203 root      20   0 83780  27m  10m S    6  0.9   2:38.93 skype
+10396 root      20   0 83300  27m  10m S    6  0.9   2:30.62 skype
+10220 root      20   0 83176  27m  10m S    7  0.9   2:45.98 skype
+10380 root      20   0 82852  27m  10m S    5  0.9   2:32.23 skype
+10348 root      20   0 83356  27m  10m S    6  0.9   2:31.23 skype
+10182 root      20   0 41536 9404 2212 S    0  0.3   0:03.33 Xvfb
+10166 root      20   0 41536 9392 2200 S    0  0.3   0:03.35 Xvfb
+10455 root      20   0 41500 9392 2200 S    0  0.3   0:02.11 Xvfb
+10311 root      20   0 41524 9388 2212 S    0  0.3   0:03.24 Xvfb
+10231 root      20   0 41512 9376 2212 S    0  0.3   0:03.30 Xvfb
+10279 root      20   0 41524 9376 2200 S    0  0.3   0:03.30 Xvfb
+10373 root      20   0 41512 9376 2212 S    0  0.3   0:03.20 Xvfb
+10343 root      20   0 41512 9372 2200 S    0  0.3   0:03.22 Xvfb
+10215 root      20   0 41512 9368 2200 S    0  0.3   0:03.30 Xvfb
+10439 root      20   0 41512 9368 2200 S    0  0.3   0:03.20 Xvfb
+10295 root      20   0 41512 9364 2200 S    0  0.3   0:03.31 Xvfb
+10150 root      20   0 41500 9360 2200 S    0  0.3   0:03.33 Xvfb
+10247 root      20   0 41500 9356 2200 S    0  0.3   0:03.27 Xvfb
+10263 root      20   0 41500 9356 2200 S    0  0.3   0:03.30 Xvfb
+10327 root      20   0 41500 9356 2200 S    0  0.3   0:03.25 Xvfb
+10359 root      20   0 41500 9356 2200 S    0  0.3   0:03.22 Xvfb
+10407 root      20   0 41500 9356 2200 S    0  0.3   0:03.19 Xvfb
+10391 root      20   0 41500 9352 2200 S    0  0.3   0:03.24 Xvfb
+10423 root      20   0 41500 9352 2200 S    0  0.3   0:03.20 Xvfb
+10198 root      20   0 41464 9320 2200 S    0  0.3   0:03.30 Xvfb
+ 9948 maruzz    20   0 19384 3380 1348 S    0  0.1   0:00.06 bash
+ 4991 klog      20   0  6288 2976  432 S    0  0.1   0:00.09 klogd
+10675 root      20   0 68112 2928 2296 S    0  0.1   0:00.11 sshd
+
+[edit]
+TO DO
+
+Requests, suggestions, ideas (feel free to add here, but best is to add on Jira - see below 'BUGS and Feature Requests'):
+
+    * Interact with the presence system, known Skype users as subscriptions, eg: SIP
+    * Interact with messaging and chat, eg: SIMPLE
+    * Revamp and standardize configuration file structure, names, values, etc
+    * Audio volumes (In and Out) adjustments
+    * Revamp and standardize the debugging output
+    * Add CLI commands to list interfaces, adjust audio volumes, send commands to the Skype client, etc (coming soon on FS, works on *)
+    * Check for sending "early media", so to hear ringing when making outbound calls
+    * Check for changing the Skype Caller ID when doing SkypeOut calls
+    * originate skypiax/wrong_skype_name won't cause core dump
+    * What will happen if a skype client crash? can it automatically disable the channel and reset the channel after the skype client recovered?
+    * Is it possible using Skypiax and add users on the fly? Say we have a box that could support 20 channels, and we have ten active, can we configure and add the 11th channel without having to take down the other active channels? 
+
+[edit]
+BUGS and Feature Requests
+
+You can file bug reports, hints, suggestions, feature requests, improvements, patches, etc to http://jira.freeswitch.org/browse/MODSKYPIAX open an account there if you don't have it (it's free ;-) ).
+
+You can also write to the FS users' and developers' mailing lists: http://lists.freeswitch.org/mailman/listinfo
+
+And you can drop in the IRC channels #freeswitch and #freeswitch-dev on irc.freenode.org to ask questions and discuss issues. The original developer of Skypiax is called "gmaruzz" in the IRC channel.
+
+As a last resort, not the preferred way, you can write email to Giovanni Maruzzelli - gmaruzz @ gmail dot com 
