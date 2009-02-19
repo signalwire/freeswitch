@@ -278,10 +278,11 @@ static switch_status_t route_lookup(char *dn, easyroute_results_t *results, int 
 		switch_set_string(results->acctcode, "");
 	}
 
+	switch_safe_free(sql);
 #else
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "mod_easyroute requires core ODBC support. Please refer to the documentation on how to enable this\n");
 #endif
-	switch_safe_free(sql);
+
 	if (globals.mutex){
 		switch_mutex_unlock(globals.mutex);
 	}
