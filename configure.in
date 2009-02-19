@@ -259,7 +259,7 @@ case "$host" in
     ;;
     *-solaris2*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -DPATH_MAX=2048)
-        APR_ADDTO(ESL_LDFLAGS, -lnsl)
+        APR_ADDTO(ESL_LDFLAGS, -lnsl -lsocket)
     ;;
     *bsd*)
         APR_ADDTO(SWITCH_AM_CFLAGS, -I/usr/local/include)
