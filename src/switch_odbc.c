@@ -366,57 +366,55 @@ SWITCH_DECLARE(switch_odbc_status_t) switch_odbc_handle_callback_exec_detailed(c
 	SQLNumResultCols(stmt, &c);
 	SQLRowCount(stmt, &m);
 
-	if (m > 0) {
-		for (t = 0 ;; t++) {
-			int name_len = 256;
-			char **names;
-			char **vals;
-			int y = 0;
-			int done = 0;
-	
-			result = SQLFetch(stmt);
-	
-			if (result != SQL_SUCCESS) {
-				if (result != SQL_NO_DATA){
-					err++;
-				}
-				break;
-			}
-	
-			names = calloc(c, sizeof(*names));
-			vals = calloc(c, sizeof(*vals));
-	
-			switch_assert(names && vals);
-	
-			for (x = 1; x <= c; x++) {
-				SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
-				SQLULEN ColumnSize;
-				names[y] = malloc(name_len);
-				memset(names[y], 0, name_len);
-	
-				SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT) name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
-				ColumnSize++;
-	
-				vals[y] = malloc(ColumnSize);
-				memset(vals[y], 0, ColumnSize);
-				SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
-				y++;
-			}
+	for (t = 0 ;; t++) {
+		int name_len = 256;
+		char **names;
+		char **vals;
+		int y = 0;
+		int done = 0;
 
-			if (callback(pdata, y, vals, names)) {
-				done = 1;
-			}
-	
-			for (x = 0; x < y; x++) {
-				free(names[x]);
-				free(vals[x]);
-			}
-			free(names);
-			free(vals);
+		result = SQLFetch(stmt);
 
-			if (done) {
+		if (result != SQL_SUCCESS) {
+			if (result != SQL_NO_DATA){
+				err++;
+			}
 			break;
-			}
+		}
+
+		names = calloc(c, sizeof(*names));
+		vals = calloc(c, sizeof(*vals));
+
+		switch_assert(names && vals);
+
+		for (x = 1; x <= c; x++) {
+			SQLSMALLINT NameLength, DataType, DecimalDigits, Nullable;
+			SQLULEN ColumnSize;
+			names[y] = malloc(name_len);
+			memset(names[y], 0, name_len);
+
+			SQLDescribeCol(stmt, x, (SQLCHAR *) names[y], (SQLSMALLINT) name_len, &NameLength, &DataType, &ColumnSize, &DecimalDigits, &Nullable);
+			ColumnSize++;
+
+			vals[y] = malloc(ColumnSize);
+			memset(vals[y], 0, ColumnSize);
+			SQLGetData(stmt, x, SQL_C_CHAR, (SQLCHAR *) vals[y], ColumnSize, NULL);
+			y++;
+		}
+
+		if (callback(pdata, y, vals, names)) {
+			done = 1;
+		}
+
+		for (x = 0; x < y; x++) {
+			free(names[x]);
+			free(vals[x]);
+		}
+		free(names);
+		free(vals);
+
+		if (done) {
+			break;
 		}
 	}
 	
