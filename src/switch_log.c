@@ -195,7 +195,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 
 static switch_thread_t *thread;
 
-static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
+static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 {
 
 	if (!obj) {
