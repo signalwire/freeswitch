@@ -2852,6 +2852,98 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_ESLconnection_api(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  ESLevent *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 2) || (argc > 2)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","api", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","api", 2, argv[0] ));
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","api", 3, argv[1] ));
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  result = (ESLevent *)(arg1)->api((char const *)arg2,(char const *)arg3);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return vresult;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_ESLconnection_bgapi(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) 0 ;
+  ESLevent *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 2) || (argc > 2)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","bgapi", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","bgapi", 2, argv[0] ));
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","bgapi", 3, argv[1] ));
+  }
+  arg3 = reinterpret_cast< char * >(buf3);
+  result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return vresult;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_ESLconnection_sendEvent(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *arg2 = (ESLevent *) 0 ;
@@ -3507,6 +3599,8 @@ SWIGEXPORT void Init_ESL(void) {
   rb_define_method(cESLconnection.klass, "getInfo", VALUEFUNC(_wrap_ESLconnection_getInfo), -1);
   rb_define_method(cESLconnection.klass, "send", VALUEFUNC(_wrap_ESLconnection_send), -1);
   rb_define_method(cESLconnection.klass, "sendRecv", VALUEFUNC(_wrap_ESLconnection_sendRecv), -1);
+  rb_define_method(cESLconnection.klass, "api", VALUEFUNC(_wrap_ESLconnection_api), -1);
+  rb_define_method(cESLconnection.klass, "bgapi", VALUEFUNC(_wrap_ESLconnection_bgapi), -1);
   rb_define_method(cESLconnection.klass, "sendEvent", VALUEFUNC(_wrap_ESLconnection_sendEvent), -1);
   rb_define_method(cESLconnection.klass, "recvEvent", VALUEFUNC(_wrap_ESLconnection_recvEvent), -1);
   rb_define_method(cESLconnection.klass, "recvEventTimed", VALUEFUNC(_wrap_ESLconnection_recvEventTimed), -1);

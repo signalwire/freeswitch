@@ -52,6 +52,8 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_connected);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_getInfo);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_send);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_sendRecv);
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_api);
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_bgapi);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_sendEvent);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_recvEvent);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_recvEventTimed);

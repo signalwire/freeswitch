@@ -131,6 +131,16 @@ class ESLconnection {
 		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
+	function api($cmd,$arg) {
+		$r=ESLconnection_api($this->_cPtr,$cmd,$arg);
+		return is_resource($r) ? new ESLevent($r) : $r;
+	}
+
+	function bgapi($cmd,$arg) {
+		$r=ESLconnection_bgapi($this->_cPtr,$cmd,$arg);
+		return is_resource($r) ? new ESLevent($r) : $r;
+	}
+
 	function sendEvent($send_me) {
 		return ESLconnection_sendEvent($this->_cPtr,$send_me);
 	}

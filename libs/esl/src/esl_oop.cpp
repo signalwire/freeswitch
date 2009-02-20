@@ -54,6 +54,50 @@ ESLevent *ESLconnection::sendRecv(const char *cmd)
 	return NULL;
 }
 
+ESLevent *ESLconnection::api(const char *cmd, const char *arg)
+{
+	size_t len = strlen(cmd) + strlen(arg) + 5;
+	char *cmd_buf;
+	
+	cmd_buf = (char *) malloc(len);
+	assert(cmd_buf);
+
+	snprintf(cmd_buf, len, "api %s %s", cmd, arg);
+	*(cmd_buf + len) = '\0';
+
+	if (esl_send_recv(&handle, cmd_buf) == ESL_SUCCESS) {
+		esl_event_t *event;
+		esl_event_dup(&event, handle.last_sr_event);
+		return new ESLevent(event, 1);
+	}
+	
+	free(cmd_buf);
+
+	return NULL;
+}
+
+ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
+{
+	size_t len = strlen(cmd) + strlen(arg) + 5;
+	char *cmd_buf;
+	
+	cmd_buf = (char *) malloc(len);
+	assert(cmd_buf);
+
+	snprintf(cmd_buf, len, "bgapi %s %s", cmd, arg);
+	*(cmd_buf + len) = '\0';
+
+	if (esl_send_recv(&handle, cmd_buf) == ESL_SUCCESS) {
+		esl_event_t *event;
+		esl_event_dup(&event, handle.last_sr_event);
+		return new ESLevent(event, 1);
+	}
+
+	free(cmd_buf);
+	
+	return NULL;
+}
+
 ESLevent *ESLconnection::getInfo()
 {
 	if (handle.connected && handle.info_event) {
@@ -98,9 +142,10 @@ ESLevent *ESLconnection::recvEvent()
 	}
 	
 	if (esl_recv_event(&handle, NULL) == ESL_SUCCESS) {
-		if (handle.last_ievent) {
+		esl_event_t *e = handle.last_ievent ? handle.last_ievent : handle.last_event;
+		if (e) {
 			esl_event_t *event;
-			esl_event_dup(&event, handle.last_ievent);
+			esl_event_dup(&event, e);
 			last_event_obj = new ESLevent(event, 1);
 			return last_event_obj;
 		}
@@ -117,9 +162,10 @@ ESLevent *ESLconnection::recvEventTimed(int ms)
 	}
 
 	if (esl_recv_event_timed(&handle, ms, NULL) == ESL_SUCCESS) {
-		if (handle.last_ievent) {
+		esl_event_t *e = handle.last_ievent ? handle.last_ievent : handle.last_event;
+		if (e) {
 			esl_event_t *event;
-			esl_event_dup(&event, handle.last_ievent);
+			esl_event_dup(&event, e);
 			last_event_obj = new ESLevent(event, 1);
 			return last_event_obj;
 		}
