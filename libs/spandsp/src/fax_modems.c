@@ -87,7 +87,7 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD               5
 
-int fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -106,7 +106,7 @@ int fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 
@@ -125,7 +125,7 @@ int fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-int fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len)
+SPAN_DECLARE(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
 

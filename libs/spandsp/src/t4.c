@@ -410,7 +410,7 @@ static int test_tiff_directory_info(t4_state_t *s)
         return -1;
     parm = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm);
-    if (s->image_width != parm)
+    if (s->image_width != (int)parm)
     {
 printf("Width changed\n");
         return 1;
@@ -1959,7 +1959,7 @@ SPAN_DECLARE(t4_state_t *) t4_tx_init(t4_state_t *s, const char *file, int start
     s->stop_page = (stop_page >= 0)  ?  stop_page : INT_MAX;
 
     if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
-        return -1;
+        return NULL;
     if (get_tiff_directory_info(s))
     {
         close_tiff_input_file(s);
