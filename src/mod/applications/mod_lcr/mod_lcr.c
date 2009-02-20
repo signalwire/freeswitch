@@ -763,10 +763,6 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		switch_core_new_memory_pool(&pool);
 	}
 	routes.pool = pool;
-	if (!(routes.profile = locate_profile(lcr_profile))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
-		goto end;
-	}
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
@@ -774,8 +770,12 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			lcr_profile = argv[1];
 		}
 		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s\n", dest);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", dest, lcr_profile);
 		routes.lookup_number = dest;
+		if (!(routes.profile = locate_profile(lcr_profile))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
+			goto end;
+		}
 		if (lcr_do_lookup(&routes, dest) == SWITCH_STATUS_SUCCESS) {
 			for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
 				switch_snprintf(vbuf, sizeof(vbuf), "lcr_route_%d", cnt++);
