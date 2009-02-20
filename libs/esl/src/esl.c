@@ -643,7 +643,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 
 	hval = esl_event_get_header(handle->last_event, "content-type");
 
-	if (strcasecmp(hval, "auth/request")) {
+	if (esl_safe_strcasecmp(hval, "auth/request")) {
 		snprintf(handle->err, sizeof(handle->err), "Connection Error");
 		goto fail;
 	}
@@ -660,7 +660,7 @@ ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, es
 
 	hval = esl_event_get_header(handle->last_event, "reply-text");
 
-	if (strcasecmp(hval, "+OK accepted")) {
+	if (esl_safe_strcasecmp(hval, "+OK accepted")) {
 		snprintf(handle->err, sizeof(handle->err), "Authentication Error");
 		goto fail;
 	}
@@ -876,7 +876,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 
 		hval = esl_event_get_header(revent, "content-type");
 
-		if (!esl_strlen_zero(hval) && !strcasecmp(hval, "text/event-plain") && revent->body) {
+		if (!esl_strlen_zero(hval) && !esl_safe_strcasecmp(hval, "text/event-plain") && revent->body) {
 			const char *en;
 			esl_event_types_t et = ESL_EVENT_COMMAND;
 			char *body = strdup(revent->body);

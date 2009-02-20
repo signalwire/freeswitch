@@ -222,13 +222,13 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				if (!used && !is_open) {
 					break;
 				}
-
+				
 				if (!is_open || used >= source->prebuf || (source->total && used > source->samples * 2)) {
 					used = switch_buffer_read(audio_buffer, dist_buf, source->samples * 2);
 					if (source->total) {
 
 						switch_mutex_lock(source->mutex);
-						for (cp = source->context_list; cp; cp = cp->next) {
+						for (cp = source->context_list; cp && RUNNING; cp = cp->next) {
 							if (switch_test_flag(cp->handle, SWITCH_FILE_CALLBACK)) {
 								continue;
 							}

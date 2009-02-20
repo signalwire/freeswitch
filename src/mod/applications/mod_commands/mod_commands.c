@@ -40,7 +40,9 @@
 #include <switch_version.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
-SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
+SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown, NULL);
+
 
 SWITCH_STANDARD_API(time_test_function)
 {
@@ -2289,6 +2291,8 @@ SWITCH_STANDARD_API(sched_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_thread_rwlock_t *bgapi_rwlock = NULL;
+
 struct bg_job {
 	char *cmd;
 	char *arg;
@@ -2308,6 +2312,8 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 
 	if (!job)
 		return NULL;
+
+	switch_thread_rwlock_rdlock(bgapi_rwlock);
 
 	pool = job->pool;
 
@@ -2345,6 +2351,9 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	job = NULL;
 	switch_core_destroy_memory_pool(&pool);
 	pool = NULL;
+
+	switch_thread_rwlock_unlock(bgapi_rwlock);
+
 	return NULL;
 }
 
@@ -3183,10 +3192,36 @@ SWITCH_STANDARD_API(hupall_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
+{
+	int x;
+	
+
+	for (x = 30; x > 0; x--) {
+		if (switch_thread_rwlock_trywrlock(bgapi_rwlock) == SWITCH_STATUS_SUCCESS) {
+			switch_thread_rwlock_unlock(bgapi_rwlock);
+			break;
+		}
+		if (x == 30) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for bgapi threads.\n");
+		}
+		switch_yield(1000000);
+	}
+
+	if (!x) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up waiting for bgapi threads.\n");
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
 	switch_api_interface_t *commands_api_interface;
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	switch_thread_rwlock_create(&bgapi_rwlock, pool);
 
 	SWITCH_ADD_API(commands_api_interface, "group_call", "Generate a dial string to call a group", group_call_function, "<group>[@<domain>]");
 	SWITCH_ADD_API(commands_api_interface, "in_group", "determine if a user is in a group", in_group_function, "<user>[@<domain>] <group_name>");

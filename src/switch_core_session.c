@@ -58,6 +58,9 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 			/* Acquire a read lock on the session */
 #ifdef SWITCH_DEBUG_RWLOCKS
 			if (switch_core_session_perform_read_lock(session, file, func, line) != SWITCH_STATUS_SUCCESS) {
+#if EMACS_CC_MODE_IS_BUGGY
+			}
+#endif
 #else
 			if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 #endif
@@ -127,21 +130,20 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	void *val;
 	switch_core_session_t *session;
 	uint32_t loops = 0;
-
-	switch_mutex_lock(runtime.throttle_mutex);
-	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
-		switch_hash_this(hi, NULL, NULL, &val);
-		if (val) {
-			session = (switch_core_session_t *) val;
-			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-				switch_channel_hangup(switch_core_session_get_channel(session), cause);
-				switch_core_session_rwunlock(session);
+	
+	while (session_manager.session_count > 0) {
+		switch_mutex_lock(runtime.throttle_mutex);
+		for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, NULL, NULL, &val);
+			if (val) {
+				session = (switch_core_session_t *) val;
+				if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_hangup(switch_core_session_get_channel(session), cause);
+					switch_core_session_rwunlock(session);
+				}
 			}
 		}
-	}
-	switch_mutex_unlock(runtime.throttle_mutex);
-
-	while (session_manager.session_count > 0) {
+		switch_mutex_unlock(runtime.throttle_mutex);
 		switch_yield(1000000);
 		if (++loops == 30) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up with %d session%s remaining\n",
@@ -151,6 +153,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	}
 }
 
+ 
 SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(const char *uuid_str, switch_core_session_message_t *message)
 {
 	switch_core_session_t *session = NULL;

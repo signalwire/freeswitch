@@ -345,9 +345,9 @@ SWITCH_DECLARE(void) switch_core_service_session(switch_core_session_t *session)
 
 */
 
-SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void *obj, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_thread_t *) switch_core_launch_thread(switch_thread_start_t func, void *obj, switch_memory_pool_t *pool)
 {
-	switch_thread_t *thread;
+	switch_thread_t *thread = NULL;
 	switch_threadattr_t *thd_attr = NULL;
 	switch_core_thread_session_t *ts;
 	int mypool;
@@ -356,11 +356,10 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 
 	if (!pool && switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory pool\n");
-		return;
+		return NULL;
 	}
 
 	switch_threadattr_create(&thd_attr, pool);
-	switch_threadattr_detach_set(thd_attr, 1);
 
 	if ((ts = switch_core_alloc(pool, sizeof(*ts))) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not allocate memory\n");
@@ -369,10 +368,13 @@ SWITCH_DECLARE(void) switch_core_launch_thread(switch_thread_start_t func, void 
 			ts->pool = pool;
 		}
 		ts->objs[0] = obj;
+		ts->objs[1] = thread;
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_threadattr_priority_increase(thd_attr);
 		switch_thread_create(&thread, thd_attr, func, ts, pool);
 	}
+
+	return thread;
 }
 
 SWITCH_DECLARE(void) switch_core_set_globals(void)
@@ -1457,6 +1459,7 @@ SWITCH_DECLARE(switch_bool_t) switch_core_ready(void)
 SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 {
 	switch_event_t *event;
+
 	if (switch_event_create(&event, SWITCH_EVENT_SHUTDOWN) == SWITCH_STATUS_SUCCESS) {
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Info", "System Shutting Down");
 		switch_event_fire(&event);
@@ -1464,25 +1467,28 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	switch_set_flag((&runtime), SCF_NO_NEW_SESSIONS);
 	switch_set_flag((&runtime), SCF_SHUTTING_DOWN);
-
+	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "End existing sessions\n");
 	switch_core_session_hupall(SWITCH_CAUSE_SYSTEM_SHUTDOWN);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Clean up modules.\n");
-	switch_core_memory_stop();
+
 	switch_loadable_module_shutdown();
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
-	switch_event_shutdown();
-
+	
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_stop();
 	}
 	switch_scheduler_task_thread_stop();
-
+	
 	switch_rtp_shutdown();
 	switch_xml_destroy();
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
+	switch_event_shutdown();
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
+
+	switch_core_memory_stop();
 
 	if (runtime.console && runtime.console != stdout && runtime.console != stderr) {
 		fclose(runtime.console);

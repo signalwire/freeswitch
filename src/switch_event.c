@@ -74,7 +74,9 @@ static switch_mutex_t *POOL_LOCK = NULL;
 static switch_memory_pool_t *RUNTIME_POOL = NULL;
 static switch_memory_pool_t *THRUNTIME_POOL = NULL;
 #define NUMBER_OF_QUEUES 3
+static switch_thread_t *EVENT_QUEUE_THREADS[NUMBER_OF_QUEUES] = { 0 };
 static switch_queue_t *EVENT_QUEUE[NUMBER_OF_QUEUES] = { 0 };
+static switch_thread_t *EVENT_DISPATCH_QUEUE_THREADS[MAX_DISPATCH_VAL] = { 0 };
 static switch_queue_t *EVENT_DISPATCH_QUEUE[MAX_DISPATCH_VAL] = { 0 };
 static int POOL_COUNT_MAX = SWITCH_CORE_QUEUE_LEN;
 static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
@@ -174,15 +176,15 @@ static char *EVENT_NAMES[] = {
 static int switch_events_match(switch_event_t *event, switch_event_node_t *node)
 {
 	int match = 0;
-
+	
 	if (node->event_id == SWITCH_EVENT_ALL) {
 		match++;
-
+		
 		if (!node->subclass) {
 			return match;
 		}
 	}
-
+	
 	if (match || event->event_id == node->event_id) {
 
 		if (event->subclass_name && node->subclass) {
@@ -226,6 +228,10 @@ static void *SWITCH_THREAD_FUNC switch_event_dispatch_thread(switch_thread_t *th
 	for (;;) {
 		void *pop = NULL;
 		switch_event_t *event = NULL;
+
+		if (!SYSTEM_RUNNING) {
+			break;
+		}
 
 		if (switch_queue_pop(queue, &pop) != SWITCH_STATUS_SUCCESS) {
 			break;
@@ -278,6 +284,10 @@ static void *SWITCH_THREAD_FUNC switch_event_thread(switch_thread_t *thread, voi
 			break;
 		}
 
+		if (!SYSTEM_RUNNING) {
+			break;
+		}
+
 		event = (switch_event_t *) pop;
 
 		while (event) {
@@ -313,20 +323,22 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event)
 	switch_event_types_t e;
 	switch_event_node_t *node;
 
-	switch_thread_rwlock_rdlock(RWLOCK);
-	for (e = (*event)->event_id;; e = SWITCH_EVENT_ALL) {
-		for (node = EVENT_NODES[e]; node; node = node->next) {
-			if (switch_events_match(*event, node)) {
-				(*event)->bind_user_data = node->user_data;
-				node->callback(*event);
+	if (SYSTEM_RUNNING) {
+		switch_thread_rwlock_rdlock(RWLOCK);
+		for (e = (*event)->event_id;; e = SWITCH_EVENT_ALL) {
+			for (node = EVENT_NODES[e]; node; node = node->next) {
+				if (switch_events_match(*event, node)) {
+					(*event)->bind_user_data = node->user_data;
+					node->callback(*event);
+				}
+			}
+			
+			if (e == SWITCH_EVENT_ALL) {
+				break;
 			}
 		}
-
-		if (e == SWITCH_EVENT_ALL) {
-			break;
-		}
+		switch_thread_rwlock_unlock(RWLOCK);
 	}
-	switch_thread_rwlock_unlock(RWLOCK);
 
 	switch_event_destroy(event);
 }
@@ -416,10 +428,10 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled event header(s) %d bytes\n",
 					  size, (int) sizeof(switch_event_header_t) * size);
 
-	while (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+	while (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		free(pop);
 	}
-	while (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
+	while (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		free(pop);
 	}
 }
@@ -438,12 +450,14 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 	for (x = 0; x < 3; x++) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping event queue %d\n", x);
-		switch_queue_push(EVENT_QUEUE[x], NULL);
+		switch_queue_trypush(EVENT_QUEUE[x], NULL);
+		switch_queue_interrupt_all(EVENT_QUEUE[x]);
 	}
 
 	for (x = 0; x < SOFT_MAX_DISPATCH; x++) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch queue %d\n", x);
-		switch_queue_push(EVENT_DISPATCH_QUEUE[x], NULL);
+		switch_queue_trypush(EVENT_DISPATCH_QUEUE[x], NULL);
+		switch_queue_interrupt_all(EVENT_DISPATCH_QUEUE[x]);
 	}
 
 	while (x < 10000 && THREAD_COUNT) {
@@ -453,7 +467,35 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 		}
 		last = THREAD_COUNT;
 	}
+	
+	for (x = 0; x < SOFT_MAX_DISPATCH; x++) {
+		void *pop = NULL;
+        switch_event_t *event = NULL;
+		switch_status_t st;
 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping dispatch thread %d\n", x);
+		switch_thread_join(&st, EVENT_DISPATCH_QUEUE_THREADS[x]);
+
+		while (switch_queue_trypop(EVENT_DISPATCH_QUEUE[x], &pop) == SWITCH_STATUS_SUCCESS && pop) {
+			event = (switch_event_t *) pop;
+			switch_event_destroy(&event);
+        }
+	}
+
+	for (x = 0; x < NUMBER_OF_QUEUES; x++) {
+		void *pop = NULL;
+        switch_event_t *event = NULL;
+		switch_status_t st;
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping queue thread %d\n", x);
+		switch_thread_join(&st, EVENT_QUEUE_THREADS[x]);
+
+		while (switch_queue_trypop(EVENT_QUEUE[x], &pop) == SWITCH_STATUS_SUCCESS && pop) {
+			event = (switch_event_t *) pop;
+			switch_event_destroy(&event);
+        }
+	}
+	
 	for (hi = switch_hash_first(NULL, CUSTOM_HASH); hi; hi = switch_hash_next(hi)) {
 		switch_event_subclass_t *subclass;
 		switch_hash_this(hi, &var, NULL, &val);
@@ -472,7 +514,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
 
 static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t *pool)
 {
-	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;
 	uint32_t index = 0;
 
@@ -492,8 +533,7 @@ static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t 
 		switch_threadattr_create(&thd_attr, pool);
 		switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 		switch_threadattr_priority_increase(thd_attr);
-		switch_threadattr_detach_set(thd_attr, 1);
-		switch_thread_create(&thread, thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE[index], pool);
+		switch_thread_create(&EVENT_DISPATCH_QUEUE_THREADS[index], thd_attr, switch_event_dispatch_thread, EVENT_DISPATCH_QUEUE[index], pool);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Create event dispatch thread %d\n", index);
 	}
 
@@ -502,18 +542,26 @@ static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t 
 
 SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 {
-	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 
 	switch_assert(pool != NULL);
+	THRUNTIME_POOL = RUNTIME_POOL = pool;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Eventing Engine.\n");
+	switch_thread_rwlock_create(&RWLOCK, RUNTIME_POOL);
+	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_mutex_init(&EVENT_QUEUE_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
+	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
+
+	switch_mutex_lock(EVENT_QUEUE_MUTEX);
+	SYSTEM_RUNNING = -1;
+	switch_mutex_unlock(EVENT_QUEUE_MUTEX);
 
 	switch_threadattr_create(&thd_attr, pool);
-	switch_threadattr_detach_set(thd_attr, 1);
 	gethostname(hostname, sizeof(hostname));
 	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), AF_INET);
 	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), AF_INET6);
 
-	THRUNTIME_POOL = RUNTIME_POOL = pool;
 
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[1], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
@@ -521,21 +569,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_queue_create(&EVENT_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_HEADER_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
 
-
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Eventing Engine.\n");
-	switch_thread_rwlock_create(&RWLOCK, RUNTIME_POOL);
-	switch_mutex_init(&BLOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
-	switch_mutex_init(&POOL_LOCK, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
-	switch_mutex_init(&EVENT_QUEUE_MUTEX, SWITCH_MUTEX_NESTED, RUNTIME_POOL);
-	switch_core_hash_init(&CUSTOM_HASH, RUNTIME_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_increase(thd_attr);
-	switch_threadattr_detach_set(thd_attr, 1);
 
 	launch_dispatch_threads(1, DISPATCH_QUEUE_LEN, RUNTIME_POOL);
-	switch_thread_create(&thread, thd_attr, switch_event_thread, EVENT_QUEUE[0], RUNTIME_POOL);
-	switch_thread_create(&thread, thd_attr, switch_event_thread, EVENT_QUEUE[1], RUNTIME_POOL);
-	switch_thread_create(&thread, thd_attr, switch_event_thread, EVENT_QUEUE[2], RUNTIME_POOL);
+	switch_thread_create(&EVENT_QUEUE_THREADS[0], thd_attr, switch_event_thread, EVENT_QUEUE[0], RUNTIME_POOL);
+	switch_thread_create(&EVENT_QUEUE_THREADS[1], thd_attr, switch_event_thread, EVENT_QUEUE[1], RUNTIME_POOL);
+	switch_thread_create(&EVENT_QUEUE_THREADS[2], thd_attr, switch_event_thread, EVENT_QUEUE[2], RUNTIME_POOL);
 
 	while (!THREAD_COUNT) {
 		switch_cond_next();
@@ -1029,7 +1069,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 	if (SYSTEM_RUNNING <= 0) {
 		/* sorry we're closed */
 		switch_event_destroy(event);
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_SUCCESS;
 	}
 
 	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name((*event)->event_id));

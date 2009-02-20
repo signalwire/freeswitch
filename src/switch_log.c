@@ -193,6 +193,8 @@ SWITCH_DECLARE(switch_status_t) switch_log_bind_logger(switch_log_function_t fun
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_thread_t *thread;
+
 static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *thread, void *obj)
 {
 
@@ -382,7 +384,6 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, switch_bool_t colorize)
 {
-	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;;
 	
 	switch_assert(pool != NULL);
@@ -397,7 +398,6 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 	switch_queue_create(&LOG_RECYCLE_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
 	switch_mutex_init(&BINDLOCK, SWITCH_MUTEX_NESTED, LOG_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
 
 	while (!THREAD_RUNNING) {
@@ -433,12 +433,16 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 
 SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)
 {
+	switch_status_t st;
 
 	THREAD_RUNNING = -1;
 	switch_queue_push(LOG_QUEUE, NULL);
 	while (THREAD_RUNNING) {
 		switch_cond_next();
 	}
+
+	switch_thread_join(&st, thread);
+
 	switch_core_memory_reclaim_logger();
 
 	return SWITCH_STATUS_SUCCESS;

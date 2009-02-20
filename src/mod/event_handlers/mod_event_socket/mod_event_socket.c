@@ -116,6 +116,7 @@ static struct {
 
 
 static void remove_listener(listener_t *listener);
+static void kill_all_listeners(void);
 
 static uint32_t next_id(void)
 {
@@ -452,31 +453,24 @@ static void close_socket(switch_socket_t **sock)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 {
-	listener_t *l;
 	int sanity = 0;
 
 	prefs.done = 1;
 
+	kill_all_listeners();
 	switch_log_unbind_logger(socket_logger);
 
 	close_socket(&listen_list.sock);
 
 	while (prefs.threads) {
-		switch_yield(10000);
-		if (++sanity == 1000) {
+		switch_yield(100000);
+		kill_all_listeners();
+		if (++sanity >= 200) {
 			break;
 		}
 	}
+
 	switch_event_unbind(&globals.node);
-
-	switch_mutex_lock(globals.listener_mutex);
-	for (l = listen_list.listeners; l; l = l->next) {
-		close_socket(&l->sock);
-	}
-	switch_mutex_unlock(globals.listener_mutex);
-
-	switch_yield(1000000);
-
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -504,6 +498,22 @@ static void remove_listener(listener_t *listener)
 			}
 		}
 		last = l;
+	}
+	switch_mutex_unlock(globals.listener_mutex);
+}
+
+
+static void kill_all_listeners(void)
+{
+	listener_t *l;
+
+	switch_mutex_lock(globals.listener_mutex);
+	for (l = listen_list.listeners; l; l = l->next) {
+		switch_clear_flag(l, LFLAG_RUNNING);
+		if (l->sock) {
+			switch_socket_shutdown(l->sock, SWITCH_SHUTDOWN_READWRITE);
+			switch_socket_close(l->sock);
+		}
 	}
 	switch_mutex_unlock(globals.listener_mutex);
 }
@@ -961,11 +971,15 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 	uint32_t max_len = sizeof(mbuf);
 	switch_channel_t *channel = NULL;
 	int clen = 0;
-	
+
 	*event = NULL;
+
+	if (prefs.done) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	start = switch_epoch_time_now(NULL);
 	ptr = mbuf;
-
 
 	if (listener->session) {
 		channel = switch_core_session_get_channel(listener->session);
@@ -976,7 +990,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 		mlen = 1;
 		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
-		if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
+		if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -1044,7 +1058,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 											
 											status = switch_socket_recv(listener->sock, p, &mlen);
 
-											if (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS) {
+											if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 												return SWITCH_STATUS_FALSE;
 											}
 											
@@ -1211,10 +1225,15 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	switch_stream_handle_t stream = { 0 };
 	char *reply, *freply = NULL;
 	switch_status_t status;
+
+	switch_mutex_lock(globals.listener_mutex);
+	prefs.threads++;
+	switch_mutex_unlock(globals.listener_mutex);
+
 	
 	if (!acs) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Internal error.\n");
-		return NULL;
+		goto cleanup;
 	}
 
 	if (!acs->listener || !switch_test_flag(acs->listener, LFLAG_RUNNING) ||
@@ -1290,6 +1309,11 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 		pool = NULL;
 			
 	}
+
+ cleanup:
+	switch_mutex_lock(globals.listener_mutex);
+	prefs.threads--;
+	switch_mutex_unlock(globals.listener_mutex);
 
 	return NULL;
 
@@ -1934,7 +1958,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 	}
 
-	while (switch_test_flag(listener, LFLAG_RUNNING) && listen_list.ready) {
+	while (!prefs.done && switch_test_flag(listener, LFLAG_RUNNING) && listen_list.ready) {
 		len = sizeof(buf);
 		memset(buf, 0, len);
 		status = read_packet(listener, &revent, 0);
@@ -2106,7 +2130,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 
 	config();
 
-	for (;;) {
+	while(!prefs.done) {
 		rv = switch_sockaddr_info_get(&sa, prefs.ip, SWITCH_INET, prefs.port, 0, pool);
 		if (rv)
 			goto fail;
@@ -2132,7 +2156,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	listen_list.ready = 1;
 
 
-	for (;;) {
+	while(!prefs.done) {
 		if (switch_core_new_memory_pool(&listener_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "OH OH no pool\n");
 			goto fail;

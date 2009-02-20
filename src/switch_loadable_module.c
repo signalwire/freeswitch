@@ -52,6 +52,7 @@ struct switch_loadable_module {
 	switch_module_shutdown_t switch_module_shutdown;
 	switch_memory_pool_t *pool;
 	switch_status_t status;
+	switch_thread_t *thread;
 };
 
 struct switch_loadable_module_container {
@@ -117,7 +118,7 @@ static void switch_loadable_module_runtime(void)
 
 		if (module->switch_module_runtime) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Starting runtime thread for %s\n", module->module_interface->module_name);
-			switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
+			module->thread = switch_core_launch_thread(switch_loadable_module_exec, module, loadable_modules.pool);
 		}
 	}
 	switch_mutex_unlock(loadable_modules.mutex);
@@ -910,7 +911,7 @@ static switch_status_t switch_loadable_module_load_module_ex(char *dir, char *fn
 	} else if ((status = switch_loadable_module_load_file(path, file, global, &new_module)) == SWITCH_STATUS_SUCCESS) {
 		if ((status = switch_loadable_module_process(file, new_module)) == SWITCH_STATUS_SUCCESS && runtime) {
 			if (new_module->switch_module_runtime) {
-				switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
+				new_module->thread = switch_core_launch_thread(switch_loadable_module_exec, new_module, new_module->pool);
 			}
 		} else if (status != SWITCH_STATUS_SUCCESS) {
 			*err = "module load routine returned an error";
@@ -1053,7 +1054,7 @@ SWITCH_DECLARE(switch_status_t) switch_loadable_module_build_dynamic(char *filen
 		module->switch_module_runtime = switch_module_runtime;
 	}
 	if (runtime && module->switch_module_runtime) {
-		switch_core_launch_thread(switch_loadable_module_exec, module, module->pool);
+		module->thread = switch_core_launch_thread(switch_loadable_module_exec, module, module->pool);
 	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Successfully Loaded [%s]\n", module_interface->module_name);
 	return switch_loadable_module_process((char *) module->filename, module);
@@ -1241,6 +1242,13 @@ static switch_status_t do_shutdown(switch_loadable_module_t *module, switch_bool
 
 	if (unload && module->status != SWITCH_STATUS_NOUNLOAD 	&& !(flags & SCF_VG)) {
 		switch_memory_pool_t *pool;
+		switch_status_t st;
+
+		if (module->thread) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s stopping runtime thread.\n", module->module_interface->module_name);
+			switch_thread_join(&st, module->thread);
+		}
+
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "%s unloaded.\n", module->module_interface->module_name);
 		switch_dso_destroy(&module->lib);
 		if ((pool = module->pool)) {

@@ -895,6 +895,11 @@ SWITCH_DECLARE(switch_status_t) switch_queue_trypop(switch_queue_t *queue, void 
 	return apr_queue_trypop(queue, data);
 }
 
+SWITCH_DECLARE(switch_status_t) switch_queue_interrupt_all(switch_queue_t *queue)
+{
+	return apr_queue_interrupt_all(queue);
+}
+
 SWITCH_DECLARE(switch_status_t) switch_queue_trypush(switch_queue_t *queue, void *data)
 {
 	apr_status_t s;
