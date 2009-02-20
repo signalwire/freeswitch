@@ -321,8 +321,8 @@ static char *expand_digits(switch_memory_pool_t *pool, char *digits)
 /* format the custom sql */
 static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, const char *digits)
 {
-	char * tmpSQL;
-	char * newSQL;
+	char * tmpSQL = NULL;
+	char * newSQL = NULL;
 	switch_channel_t *channel;
 	
 	/* first replace %s with digits to maintain backward compat */
@@ -352,7 +352,12 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 	if(tmpSQL != newSQL) {
 		switch_safe_free(tmpSQL);
 	}
-	return newSQL;
+	
+	if(newSQL == NULL) {
+		return (char *) custom_sql;
+	} else {
+		return newSQL;
+	}
 }
 
 static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
