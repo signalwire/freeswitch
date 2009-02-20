@@ -110,6 +110,9 @@ struct profile_obj {
 	char *order_by;
 	char *pre_order;
 	char *custom_sql;
+	switch_bool_t custom_sql_has_percent;
+	switch_bool_t custom_sql_has_vars;
+	
 	switch_bool_t reorder_by_rate;
 };
 typedef struct profile_obj profile_t;
@@ -121,6 +124,7 @@ struct callback_obj {
 	switch_memory_pool_t *pool;
 	char *lookup_number;
 	profile_t *profile;
+	switch_core_session_t *session;
 };
 typedef struct callback_obj callback_t;
 
@@ -259,25 +263,6 @@ static switch_bool_t set_db_random()
 	return SWITCH_FALSE;
 }
 
-static switch_bool_t test_lcr_sql(const char *sql)
-{
-	char * tsql;
-	switch_bool_t retval = SWITCH_FALSE;
-	tsql = switch_mprintf(sql, "5555551212");
-	
-	if (globals.odbc_dsn) {
-		if (switch_odbc_handle_exec(globals.master_odbc, tsql, NULL)
-				== SWITCH_ODBC_SUCCESS) {
-			retval = SWITCH_TRUE;
-		} else {
-			retval = SWITCH_FALSE;
-		}
-	}
-	
-	switch_safe_free(tsql);
-	return retval;
-}
-
 /* make a new string with digits only */
 static char *string_digitsonly(switch_memory_pool_t *pool, const char *str) 
 {
@@ -300,6 +285,74 @@ static char *string_digitsonly(switch_memory_pool_t *pool, const char *str)
 	*np = '\0';
 
 	return newstr;
+}
+
+/* escape sql */
+#ifdef _WAITING_FOR_ESCAPE
+static char *escape_sql(const char *sql)
+{
+	return switch_string_replace(sql, "'", "''");
+}
+#endif
+
+/* expand the digits */
+static char *expand_digits(switch_memory_pool_t *pool, char *digits)
+{
+	switch_stream_handle_t dig_stream = { 0 };
+	char *ret;
+	char *digits_copy;
+	int n;
+	int digit_len;
+	SWITCH_STANDARD_STREAM(dig_stream);
+	
+	digit_len = strlen(digits);
+	digits_copy = switch_core_strdup(pool, digits);
+	
+	for (n = digit_len; n > 0; n--) {
+		digits_copy[n] = '\0';
+		dig_stream.write_function(&dig_stream, "%s%s", (n==digit_len ? "" : ", "), digits_copy);
+	}
+
+	ret = switch_core_strdup(pool, dig_stream.data);
+	switch_safe_free(dig_stream.data);
+	return ret;
+}
+
+/* format the custom sql */
+static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, const char *digits)
+{
+	char * tmpSQL;
+	char * newSQL;
+	switch_channel_t *channel;
+	
+	/* first replace %s with digits to maintain backward compat */
+	if(cb_struct->profile->custom_sql_has_percent == SWITCH_TRUE) {
+		tmpSQL = switch_string_replace(custom_sql, "%q", digits);
+		newSQL = tmpSQL;
+	}
+	
+	/* expand the vars */
+	if(cb_struct->profile->custom_sql_has_vars == SWITCH_TRUE) {
+		if(cb_struct->session) {
+			channel = switch_core_session_get_channel(cb_struct->session);
+			switch_assert(channel);
+			/*
+			newSQL = switch_channel_expand_variables_escape(channel, 
+															tmpSQL ? tmpSQL : custom_sql,
+															escape_sql);
+			*/
+			newSQL = switch_channel_expand_variables(channel, 
+														tmpSQL ? tmpSQL : custom_sql);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
+								"mod_lcr called without a valid session while using a custom_sql that has channel variables.\n");
+		}
+	}
+	
+	if(tmpSQL != newSQL) {
+		switch_safe_free(tmpSQL);
+	}
+	return newSQL;
 }
 
 static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
@@ -438,8 +491,11 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	switch_stream_handle_t sql_stream = { 0 };
 	size_t n, digit_len = strlen(digits);
 	char *digits_copy;
+	char *digits_expanded;
 	profile_t *profile = cb_struct->profile;
 	switch_bool_t lookup_status;
+	switch_channel_t *channel;
+	char *id_str;
 
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
 	if (switch_strlen_zero(digits_copy)) {
@@ -454,6 +510,18 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	
 	/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
 	SWITCH_STANDARD_STREAM(sql_stream);
+	
+	digits_expanded = expand_digits(cb_struct->pool, digits_copy);
+	
+	/* set some channel vars if we have a session */
+	if(cb_struct->session) {
+		if((channel = switch_core_session_get_channel(cb_struct->session))) {
+			switch_channel_set_variable_var_check(channel, "lcr_query_digits", digits_copy, SWITCH_FALSE);
+			id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
+			switch_channel_set_variable_var_check(channel, "lcr_query_profile", id_str, SWITCH_FALSE);
+			switch_channel_set_variable_var_check(channel, "lcr_query_expanded_digits", digits_expanded, SWITCH_FALSE);
+		}
+	}
 
 	/* set up the query to be executed */
 	if (switch_strlen_zero(profile->custom_sql)) {
@@ -479,12 +547,20 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 		sql_stream.write_function(&sql_stream, ";");
 	} else {
 		char *safe_sql;
-		safe_sql = switch_mprintf(profile->custom_sql, digits_copy);
+
+		/* format the custom_sql */
+		safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
+		if(!safe_sql) {
+			return SWITCH_STATUS_GENERR;
+		}
 		sql_stream.write_function(&sql_stream, safe_sql);
-		switch_safe_free(safe_sql);
+		if(safe_sql != profile->custom_sql) {
+			/* channel_expand_variables returned the same string to us, no need to free */
+			switch_safe_free(safe_sql);
+		}
 	}
 	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s\n", (char *)sql_stream.data);    
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", (char *)sql_stream.data);    
 	
 	lookup_status = lcr_execute_sql_callback((char *)sql_stream.data, route_add_callback, cb_struct);
 
@@ -646,13 +722,13 @@ static switch_status_t lcr_load_config()
 				}
 				
 				if (!switch_strlen_zero(custom_sql)) {
-					if (test_lcr_sql(custom_sql) == SWITCH_TRUE) {
-						profile->custom_sql = switch_core_strdup(globals.pool, (char *)custom_sql);
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Using custom lcr sql: %s\n", profile->custom_sql);
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Custom lcr sql invalid: %s\nDisabling profile: %s\n", custom_sql, name);
-						continue;
+					if(switch_string_var_check_const(custom_sql)) {
+						profile->custom_sql_has_vars = SWITCH_TRUE;
 					}
+					if(strstr(custom_sql, "%")) {
+						profile->custom_sql_has_percent = SWITCH_TRUE;
+					}
+					profile->custom_sql = switch_core_strdup(globals.pool, (char *)custom_sql);
 				}
 				
 				if (!switch_strlen_zero(reorder_by_rate)) {
@@ -685,6 +761,7 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
+		routes.session = session;
 	} else {
 		switch_core_new_memory_pool(&pool);
 	}
@@ -759,6 +836,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
+		routes.session = session;
 	} else {
 		switch_core_new_memory_pool(&pool);
 	}
@@ -816,12 +894,18 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	switch_memory_pool_t *pool;
 	switch_status_t lookup_status = SWITCH_STATUS_SUCCESS;
 
-	switch_core_new_memory_pool(&pool);
-	
 	if (switch_strlen_zero(cmd)) {
 		goto usage;
 	}
 
+	if (session) {
+		pool = switch_core_session_get_pool(session);
+		cb_struct.session = session;
+	} else {
+		switch_core_new_memory_pool(&pool);
+	}
+	cb_struct.pool = pool;
+	
 	mydata = switch_core_strdup(pool, cmd);
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
@@ -831,7 +915,6 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 			lcr_profile = argv[1];
 		}
 		cb_struct.lookup_number = destination_number;
-		cb_struct.pool = pool;
 		if (!(cb_struct.profile = locate_profile(lcr_profile))) {
 			stream->write_function(stream, "-ERR Unknown profile: %s\n", lcr_profile);
 			goto end;
@@ -904,7 +987,9 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	}
 
 end:
-	switch_core_destroy_memory_pool(&pool);
+	if (!session) {
+		switch_core_destroy_memory_pool(&pool);
+	}
 	return SWITCH_STATUS_SUCCESS;
  usage:
 	stream->write_function(stream, "USAGE: %s\n", LCR_SYNTAX);
@@ -945,6 +1030,8 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 					}
 				} else {
 					stream->write_function(stream, " custom sql:\t%s\n", profile->custom_sql);
+					stream->write_function(stream, " has %%:\t\t%s\n", profile->custom_sql_has_percent ? "true" : "false");
+					stream->write_function(stream, " has vars:\t%s\n", profile->custom_sql_has_vars ? "true" : "false");
 				}
 				stream->write_function(stream, " Reorder rate:\t%s\n", 
 										profile->reorder_by_rate ? "enabled" : "disabled");
@@ -978,18 +1065,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	return SWITCH_STATUS_FALSE;
 #endif
 
-	switch_core_new_memory_pool(&globals.pool);
+	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create global memory pool\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (lcr_load_config() != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load lcr config file\n");
 		return SWITCH_STATUS_FALSE;
 	}
+
 	if (switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize mutex\n");
 	}
 	if (switch_mutex_init(&globals.db_mutex, SWITCH_MUTEX_UNNESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize db_mutex\n");
 	}
+
 	
 	if (set_db_random() == SWITCH_TRUE) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Database RANDOM function set to %s\n", db_random);
@@ -1009,6 +1101,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown)
 {
+
 	switch_odbc_handle_disconnect(globals.master_odbc);
 	switch_odbc_handle_destroy(&globals.master_odbc);
 	switch_core_hash_destroy(&globals.profile_hash);
