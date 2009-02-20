@@ -38,7 +38,7 @@ int ESLconnection::connected()
 	return handle.connected;
 }
 
-esl_status_t ESLconnection::send(const char *cmd)
+int ESLconnection::send(const char *cmd)
 {
 	return esl_send(&handle, cmd);
 }
@@ -137,12 +137,12 @@ int ESLconnection::setEventLock(const char *val)
 	return handle.event_lock;
 }
 
-esl_status_t ESLconnection::execute(const char *app, const char *arg, const char *uuid)
+int ESLconnection::execute(const char *app, const char *arg, const char *uuid)
 {
 	return esl_execute(&handle, app, arg, uuid);
 }
 
-esl_status_t ESLconnection::sendEvent(ESLevent *send_me)
+int ESLconnection::sendEvent(ESLevent *send_me)
 {
 	return esl_sendevent(&handle, send_me->event);
 }
@@ -186,12 +186,12 @@ ESLevent *ESLconnection::recvEventTimed(int ms)
 	return NULL;
 }
 
-esl_status_t ESLconnection::filter(const char *header, const char *value)
+int ESLconnection::filter(const char *header, const char *value)
 {
 	return esl_filter(&handle, header, value);
 }
 
-esl_status_t ESLconnection::events(const char *etype, const char *value)
+int ESLconnection::events(const char *etype, const char *value)
 {
 	esl_event_type_t type_id = ESL_EVENT_TYPE_PLAIN;
 

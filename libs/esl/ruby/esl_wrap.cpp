@@ -1776,9 +1776,8 @@ int SWIG_Ruby_arity( VALUE proc, int minimal )
 #define SWIGTYPE_p_char swig_types[2]
 #define SWIGTYPE_p_esl_event_t swig_types[3]
 #define SWIGTYPE_p_esl_priority_t swig_types[4]
-#define SWIGTYPE_p_esl_status_t swig_types[5]
-static swig_type_info *swig_types[7];
-static swig_module_info swig_module = {swig_types, 6, 0, 0, 0, 0};
+static swig_type_info *swig_types[6];
+static swig_module_info swig_module = {swig_types, 5, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -2785,7 +2784,7 @@ SWIGINTERN VALUE
 _wrap_ESLconnection_send(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  esl_status_t result;
+  int result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -2806,8 +2805,8 @@ _wrap_ESLconnection_send(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","send", 2, argv[0] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  result = (arg1)->send((char const *)arg2);
-  vresult = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  result = (int)(arg1)->send((char const *)arg2);
+  vresult = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return vresult;
 fail:
@@ -2951,7 +2950,7 @@ SWIGINTERN VALUE
 _wrap_ESLconnection_sendEvent(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *arg2 = (ESLevent *) 0 ;
-  esl_status_t result;
+  int result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -2971,8 +2970,8 @@ _wrap_ESLconnection_sendEvent(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "ESLevent *","sendEvent", 2, argv[0] )); 
   }
   arg2 = reinterpret_cast< ESLevent * >(argp2);
-  result = (arg1)->sendEvent(arg2);
-  vresult = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  result = (int)(arg1)->sendEvent(arg2);
+  vresult = SWIG_From_int(static_cast< int >(result));
   return vresult;
 fail:
   return Qnil;
@@ -3040,7 +3039,7 @@ _wrap_ESLconnection_filter(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  esl_status_t result;
+  int result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -3069,8 +3068,8 @@ _wrap_ESLconnection_filter(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","filter", 3, argv[1] ));
   }
   arg3 = reinterpret_cast< char * >(buf3);
-  result = (arg1)->filter((char const *)arg2,(char const *)arg3);
-  vresult = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  result = (int)(arg1)->filter((char const *)arg2,(char const *)arg3);
+  vresult = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return vresult;
@@ -3086,7 +3085,7 @@ _wrap_ESLconnection_events(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  esl_status_t result;
+  int result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -3115,8 +3114,8 @@ _wrap_ESLconnection_events(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","events", 3, argv[1] ));
   }
   arg3 = reinterpret_cast< char * >(buf3);
-  result = (arg1)->events((char const *)arg2,(char const *)arg3);
-  vresult = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  result = (int)(arg1)->events((char const *)arg2,(char const *)arg3);
+  vresult = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return vresult;
@@ -3133,7 +3132,7 @@ _wrap_ESLconnection_execute(int argc, VALUE *argv, VALUE self) {
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  esl_status_t result;
+  int result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -3174,8 +3173,8 @@ _wrap_ESLconnection_execute(int argc, VALUE *argv, VALUE self) {
     }
     arg4 = reinterpret_cast< char * >(buf4);
   }
-  result = (arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
-  vresult = SWIG_NewPointerObj((new esl_status_t(static_cast< const esl_status_t& >(result))), SWIGTYPE_p_esl_status_t, SWIG_POINTER_OWN |  0 );
+  result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  vresult = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
@@ -3287,7 +3286,6 @@ static swig_type_info _swigt__p_ESLevent = {"_p_ESLevent", "ESLevent *", 0, 0, (
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_event_t = {"_p_esl_event_t", "esl_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_priority_t = {"_p_esl_priority_t", "esl_priority_t *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_esl_status_t = {"_p_esl_status_t", "esl_status_t *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ESLconnection,
@@ -3295,7 +3293,6 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
   &_swigt__p_esl_event_t,
   &_swigt__p_esl_priority_t,
-  &_swigt__p_esl_status_t,
 };
 
 static swig_cast_info _swigc__p_ESLconnection[] = {  {&_swigt__p_ESLconnection, 0, 0, 0},{0, 0, 0, 0}};
@@ -3303,7 +3300,6 @@ static swig_cast_info _swigc__p_ESLevent[] = {  {&_swigt__p_ESLevent, 0, 0, 0},{
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_event_t[] = {  {&_swigt__p_esl_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_priority_t[] = {  {&_swigt__p_esl_priority_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_esl_status_t[] = {  {&_swigt__p_esl_status_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ESLconnection,
@@ -3311,7 +3307,6 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
   _swigc__p_esl_event_t,
   _swigc__p_esl_priority_t,
-  _swigc__p_esl_status_t,
 };
 
 

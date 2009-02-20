@@ -932,9 +932,8 @@ static void SWIG_Php4_SetModule(swig_module_info *pointer) {
 #define SWIGTYPE_p_ESLevent swig_types[1]
 #define SWIGTYPE_p_esl_event_t swig_types[2]
 #define SWIGTYPE_p_esl_priority_t swig_types[3]
-#define SWIGTYPE_p_esl_status_t swig_types[4]
-static swig_type_info *swig_types[6];
-static swig_module_info swig_module = {swig_types, 5, 0, 0, 0, 0};
+static swig_type_info *swig_types[5];
+static swig_module_info swig_module = {swig_types, 4, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -988,28 +987,24 @@ static swig_type_info _swigt__p_ESLconnection = {"_p_ESLconnection", "ESLconnect
 static swig_type_info _swigt__p_ESLevent = {"_p_ESLevent", "ESLevent *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_event_t = {"_p_esl_event_t", "esl_event_t *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_esl_priority_t = {"_p_esl_priority_t", "esl_priority_t *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_esl_status_t = {"_p_esl_status_t", "esl_status_t *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_ESLconnection,
   &_swigt__p_ESLevent,
   &_swigt__p_esl_event_t,
   &_swigt__p_esl_priority_t,
-  &_swigt__p_esl_status_t,
 };
 
 static swig_cast_info _swigc__p_ESLconnection[] = {  {&_swigt__p_ESLconnection, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_ESLevent[] = {  {&_swigt__p_ESLevent, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_event_t[] = {  {&_swigt__p_esl_event_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_esl_priority_t[] = {  {&_swigt__p_esl_priority_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_esl_status_t[] = {  {&_swigt__p_esl_status_t, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_ESLconnection,
   _swigc__p_ESLevent,
   _swigc__p_esl_event_t,
   _swigc__p_esl_priority_t,
-  _swigc__p_esl_status_t,
 };
 
 
@@ -1018,7 +1013,6 @@ static swig_cast_info *swig_cast_initial[] = {
 /* end header section */
 /* vdecl subsection */
 static int le_swig__p_esl_priority_t=0; /* handle for _p_esl_priority_t */
-static int le_swig__p_esl_status_t=0; /* handle for _p_esl_status_t */
 static int le_swig__p_ESLevent=0; /* handle for ESLevent */
 static int le_swig__p_esl_event_t=0; /* handle for _p_esl_event_t */
 static int le_swig__p_ESLconnection=0; /* handle for ESLconnection */
@@ -1822,7 +1816,7 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_send) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  esl_status_t result;
+  int result;
   zval **args[2];
   
   SWIG_ResetError();
@@ -1842,10 +1836,9 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_send) {
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
-  result = (arg1)->send((char const *)arg2);
+  result = (int)(arg1)->send((char const *)arg2);
   {
-    esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_esl_status_t, 1);
+    ZVAL_LONG(return_value,result);
   }
   return;
 fail:
@@ -1975,7 +1968,7 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_sendEvent) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   ESLevent *arg2 = (ESLevent *) 0 ;
-  esl_status_t result;
+  int result;
   zval **args[2];
   
   SWIG_ResetError();
@@ -1994,10 +1987,9 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_sendEvent) {
       SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of ESLconnection_sendEvent. Expected SWIGTYPE_p_ESLevent");
     }
   }
-  result = (arg1)->sendEvent(arg2);
+  result = (int)(arg1)->sendEvent(arg2);
   {
-    esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_esl_status_t, 1);
+    ZVAL_LONG(return_value,result);
   }
   return;
 fail:
@@ -2068,7 +2060,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_filter) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  esl_status_t result;
+  int result;
   zval **args[3];
   
   SWIG_ResetError();
@@ -2094,10 +2086,9 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_filter) {
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
   
-  result = (arg1)->filter((char const *)arg2,(char const *)arg3);
+  result = (int)(arg1)->filter((char const *)arg2,(char const *)arg3);
   {
-    esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_esl_status_t, 1);
+    ZVAL_LONG(return_value,result);
   }
   return;
 fail:
@@ -2109,7 +2100,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_events) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  esl_status_t result;
+  int result;
   zval **args[3];
   
   SWIG_ResetError();
@@ -2135,10 +2126,9 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_events) {
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
   
-  result = (arg1)->events((char const *)arg2,(char const *)arg3);
+  result = (int)(arg1)->events((char const *)arg2,(char const *)arg3);
   {
-    esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_esl_status_t, 1);
+    ZVAL_LONG(return_value,result);
   }
   return;
 fail:
@@ -2151,7 +2141,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute) {
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) NULL ;
   char *arg4 = (char *) NULL ;
-  esl_status_t result;
+  int result;
   zval **args[4];
   int arg_count;
   
@@ -2187,10 +2177,9 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute) {
     /*@SWIG@*/;
     
   }
-  result = (arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  result = (int)(arg1)->execute((char const *)arg2,(char const *)arg3,(char const *)arg4);
   {
-    esl_status_t * resultobj = new esl_status_t((esl_status_t &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_esl_status_t, 1);
+    ZVAL_LONG(return_value,result);
   }
   return;
 fail:
@@ -2290,10 +2279,6 @@ fail:
 /* NEW Destructor style */
 static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_esl_priority_t) {
   /* No destructor for simple type _p_esl_priority_t */
-}
-/* NEW Destructor style */
-static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_esl_status_t) {
-  /* No destructor for simple type _p_esl_status_t */
 }
 /* NEW Destructor style */
 static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_ESLevent) {
@@ -2623,8 +2608,6 @@ ZEND_INIT_MODULE_GLOBALS(ESL, ESL_init_globals, ESL_destroy_globals);
 /* Register resource destructors for pointer types */
 le_swig__p_esl_priority_t=zend_register_list_destructors_ex(_wrap_destroy_p_esl_priority_t,NULL,(char *)(SWIGTYPE_p_esl_priority_t->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_esl_priority_t,&le_swig__p_esl_priority_t);
-le_swig__p_esl_status_t=zend_register_list_destructors_ex(_wrap_destroy_p_esl_status_t,NULL,(char *)(SWIGTYPE_p_esl_status_t->name),module_number);
-SWIG_TypeClientData(SWIGTYPE_p_esl_status_t,&le_swig__p_esl_status_t);
 le_swig__p_ESLevent=zend_register_list_destructors_ex(_wrap_destroy_p_ESLevent,NULL,(char *)(SWIGTYPE_p_ESLevent->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_ESLevent,&le_swig__p_ESLevent);
 le_swig__p_esl_event_t=zend_register_list_destructors_ex(_wrap_destroy_p_esl_event_t,NULL,(char *)(SWIGTYPE_p_esl_event_t->name),module_number);
