@@ -1880,39 +1880,30 @@ int new_inbound_channel(private_t * p)
 #endif
   return 0;
 }
+int remote_party_is_ringing(private_t * p)
+{
+  if (p->owner) {
+    ast_queue_control(p->owner, AST_CONTROL_RINGING);
+  }
+
+  return 0;
+}
+int remote_party_is_early_media(private_t * p)
+{
+  if (p->owner) {
+    ast_queue_control(p->owner, AST_CONTROL_RINGING);
+  }
+
+  return 0;
+}
+
 
 int outbound_channel_answered(private_t * p)
 {
-#ifdef NOTDEF
-  switch_core_session_t *session = NULL;
-  switch_channel_t *channel = NULL;
-
-  if (strlen(tech_pvt->session_uuid_str)) {
-    session = switch_core_session_locate(tech_pvt->session_uuid_str);
-  } else {
-    ERRORA("No session???\n", SKYPIAX_P_LOG);
-  }
-  if (session) {
-    channel = switch_core_session_get_channel(session);
-  } else {
-    ERRORA("No session???\n", SKYPIAX_P_LOG);
-  }
-  if (channel) {
-    switch_channel_mark_answered(channel);
-    //DEBUGA_SKYPE("skype_call: %s, answered\n", SKYPIAX_P_LOG, id);
-  } else {
-    ERRORA("No channel???\n", SKYPIAX_P_LOG);
-  }
-
-  switch_core_session_rwunlock(session);
-
-#endif
 
   if (p->owner) {
     ast_queue_control(p->owner, AST_CONTROL_ANSWER);
   }
-
-  NOTICA("HERE!\n", SKYPIAX_P_LOG);
 
   return 0;
 }

@@ -1169,6 +1169,62 @@ int new_inbound_channel(private_t * tech_pvt)
   return 0;
 }
 
+int remote_party_is_ringing(private_t * tech_pvt)
+{
+  switch_core_session_t *session = NULL;
+  switch_channel_t *channel = NULL;
+
+  if (strlen(tech_pvt->session_uuid_str)) {
+    session = switch_core_session_locate(tech_pvt->session_uuid_str);
+  } else {
+    ERRORA("No session???\n", SKYPIAX_P_LOG);
+  }
+  if (session) {
+    channel = switch_core_session_get_channel(session);
+  } else {
+    ERRORA("No session???\n", SKYPIAX_P_LOG);
+  }
+  if (channel) {
+    switch_channel_mark_ring_ready(channel);
+    DEBUGA_SKYPE("skype_call: REMOTE PARTY RINGING\n", SKYPIAX_P_LOG);
+  } else {
+    ERRORA("No channel???\n", SKYPIAX_P_LOG);
+  }
+
+  switch_core_session_rwunlock(session);
+
+  return 0;
+}
+
+
+int remote_party_is_early_media(private_t * tech_pvt)
+{
+  switch_core_session_t *session = NULL;
+  switch_channel_t *channel = NULL;
+
+  if (strlen(tech_pvt->session_uuid_str)) {
+    session = switch_core_session_locate(tech_pvt->session_uuid_str);
+  } else {
+    ERRORA("No session???\n", SKYPIAX_P_LOG);
+  }
+  if (session) {
+    channel = switch_core_session_get_channel(session);
+    switch_core_session_add_stream(session, NULL);
+  } else {
+    ERRORA("No session???\n", SKYPIAX_P_LOG);
+  }
+  if (channel) {
+    //switch_channel_mark_pre_answered(channel);
+    NOTICA("skype_call: REMOTE PARTY EARLY MEDIA, we will pass you the audio, just the code is not yet written :-)\n", SKYPIAX_P_LOG);
+  } else {
+    ERRORA("No channel???\n", SKYPIAX_P_LOG);
+  }
+
+  switch_core_session_rwunlock(session);
+
+  return 0;
+}
+
 int outbound_channel_answered(private_t * tech_pvt)
 {
   switch_core_session_t *session = NULL;

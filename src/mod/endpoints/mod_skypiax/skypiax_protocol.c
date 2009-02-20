@@ -267,12 +267,14 @@ int skypiax_signaling_read(private_t * tech_pvt)
               strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
               DEBUGA_SKYPE("Our remote party in skype_call %s is RINGING\n",
                            SKYPIAX_P_LOG, id);
+              remote_party_is_ringing(tech_pvt);
             }
           } else if (!strcasecmp(value, "EARLYMEDIA")) {
             tech_pvt->skype_callflow = CALLFLOW_STATUS_EARLYMEDIA;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
-            DEBUGA_SKYPE("Our remote party in skype_call %s is EARLYMEDIA\n",
+            NOTICA("Our remote party in skype_call %s is EARLYMEDIA\n",
                          SKYPIAX_P_LOG, id);
+              remote_party_is_early_media(tech_pvt);
           } else if (!strcasecmp(value, "MISSED")) {
             DEBUGA_SKYPE("We missed skype_call %s\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "FINISHED")) {

@@ -414,6 +414,8 @@ int skypiax_pipe_write(int pipe, short *buf, int howmany);
 #endif /* WIN32 */
 int skypiax_close_socket(unsigned int fd);
 private_t *find_available_skypiax_interface(void);
+int remote_party_is_ringing(private_t * tech_pvt);
+int remote_party_is_early_media(private_t * tech_pvt);
 #define		SKYPIAX_STATE_DOWN		AST_STATE_DOWN
 #define		SKYPIAX_STATE_RING		AST_STATE_RING
 #define		SKYPIAX_STATE_DIALING	AST_STATE_DIALING
