@@ -231,7 +231,7 @@ extern "C"
     }
 #endif
 
-#elif defined(WIN32)  ||  defined(_WIN32)
+#elif (defined(WIN32)  ||  defined(_WIN32)) && !defined(_WIN64) 
     /*
      *    Win32 doesn't seem to have the lrint() and lrintf() functions.
      *    Therefore implement inline versions of these functions here.
@@ -305,6 +305,14 @@ extern "C"
     /* x86_64 machines will do best with a simple assignment. */
 
     __inline long int lfastrint(double x)
+    {
+        return (long int) (x);
+    }
+    __inline__ long int lrint(double x)
+    {
+        return (long int) (x);
+    }
+    __inline__ long int lrintf(float x)
     {
         return (long int) (x);
     }

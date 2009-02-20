@@ -12,6 +12,9 @@
     <Platform
 			Name="Win32"
 		/>
+    <Platform
+			Name="x64"
+		/>
   </Platforms>
   <ToolFiles>
   </ToolFiles>
@@ -77,6 +80,69 @@
 				DataExecutionPrevention="0"
 				ImportLibrary="./Release\spandsp.lib"
 				TargetMachine="1"
+			/>
+    </Configuration>
+    <Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			>
+      <Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;.\generated"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				DebugInformationFormat="3"
+				CompileAs="1"
+				DisableSpecificWarnings="4127"
+			/>
+      <Tool
+				Name="VCLinkerTool"
+				LinkIncremental="2"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(TargetDir)spandsp.lib"
+				TargetMachine="17"
+			/>
+    </Configuration>
+    <Configuration
+			Name="Release|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+      <Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories=".;.\spandsp;.\msvc;..\..\tiff-3.8.2\libtiff;.\generated"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="4"
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="4127"
+			/>
+      <Tool
+				Name="VCLinkerTool"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(TargetDir)spandsp.lib"
+				TargetMachine="17"
 			/>
     </Configuration>
   </Configurations>
