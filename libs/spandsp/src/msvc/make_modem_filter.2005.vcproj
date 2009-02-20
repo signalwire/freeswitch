@@ -6,7 +6,6 @@
 	ProjectGUID="{329A6FA0-0FCC-4435-A950-E670AEFA9838}"
 	RootNamespace="make_modem_filter"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
 		<Platform
@@ -85,6 +84,9 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -159,6 +161,9 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -172,15 +177,15 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\filter_tools.c"
+				>
+			</File>
+			<File
 				RelativePath="getopt.c"
 				>
 			</File>
 			<File
 				RelativePath="..\make_modem_filter.c"
-				>
-			</File>
-			<File
-				RelativePath="..\filter_tools.c"
 				>
 			</File>
 		</Filter>
@@ -191,14 +196,6 @@
 			>
 			<File
 				RelativePath="..\filter_tools.h"
-				>
-			</File>
-			<File
-				RelativePath=".\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\targetver.h"
 				>
 			</File>
 		</Filter>
