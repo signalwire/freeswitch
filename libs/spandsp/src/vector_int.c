@@ -300,7 +300,7 @@ SPAN_DECLARE(void) vec_lmsi16(const int16_t x[], int16_t y[], int n, int16_t err
     int i;
 
     for (i = 0;  i < n;  i++)
-        y[i] += ((int32_t) x[i]*(int32_t) error) >> 15;
+        y[i] = (int16_t) (y[i] + (((int32_t) x[i]*(int32_t) error) >> 15));
 }
 /*- End of function --------------------------------------------------------*/
 

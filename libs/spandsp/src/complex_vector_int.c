@@ -123,8 +123,8 @@ SPAN_DECLARE(void) cvec_lmsi16(const complexi16_t x[], complexi16_t y[], int n, 
 
     for (i = 0;  i < n;  i++)
     {
-        y[i].re += ((int32_t) x[i].im*(int32_t) error->im + (int32_t) x[i].re*(int32_t) error->re) >> 12;
-        y[i].im += ((int32_t) x[i].re*(int32_t) error->im - (int32_t) x[i].im*(int32_t) error->re) >> 12;
+        y[i].re = (int16_t)(y[i].re + (((int32_t) x[i].im*(int32_t) error->im + (int32_t) x[i].re*(int32_t) error->re) >> 12));
+        y[i].im = (int16_t)(y[i].im + (((int32_t) x[i].re*(int32_t) error->im - (int32_t) x[i].im*(int32_t) error->re) >> 12));
     }
 }
 /*- End of function --------------------------------------------------------*/

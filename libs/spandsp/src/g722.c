@@ -214,7 +214,7 @@ static void block4(g722_band_t *s, int16_t dx)
 
     /* UPPOL1 */
     wd1 = ((p ^ s->p[0]) & 0x8000)  ?  -192  :  192;
-    wd2 = ((int32_t) s->a[0]*(int32_t) 32640) >> 15;
+    wd2 = (int16_t)(((int32_t) s->a[0]*(int32_t) 32640) >> 15);
     ap[0] = saturated_add16(wd1, wd2);
 
     wd3 = saturated_sub16(15360, ap[1]);
@@ -223,9 +223,9 @@ static void block4(g722_band_t *s, int16_t dx)
 
     /* FILTEP */
     wd1 = saturated_add16(r, r);
-    wd1 = ((int32_t) ap[0]*(int32_t) wd1) >> 15;
+    wd1 = (int16_t)(((int32_t) ap[0]*(int32_t) wd1) >> 15);
     wd2 = saturated_add16(s->r, s->r);
-    wd2 = ((int32_t) ap[1]*(int32_t) wd2) >> 15;
+    wd2 = (int16_t)(((int32_t) ap[1]*(int32_t) wd2) >> 15);
     sp = saturated_add16(wd1, wd2);
     s->r = r;
     s->a[1] = ap[1];
@@ -242,7 +242,7 @@ static void block4(g722_band_t *s, int16_t dx)
     for (i = 5;  i >= 0;  i--)
     {
         wd2 = ((s->d[i + 1] ^ dx) & 0x8000)  ?  -wd1  :  wd1;
-        wd3 = ((int32_t) s->b[i]*(int32_t) 32640) >> 15;
+        wd3 = (int16_t)(((int32_t) s->b[i]*(int32_t) 32640) >> 15);
         s->b[i] = saturated_add16(wd2, wd3);
         wd3 = saturated_add16(s->d[i], s->d[i]);
         sz += ((int32_t) s->b[i]*(int32_t) wd3) >> 15;

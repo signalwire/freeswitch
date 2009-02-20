@@ -343,8 +343,8 @@ static __inline__ complexi16_t complex_muli16(const complexi16_t *x, const compl
 {
     complexi16_t z;
 
-    z.re = (int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im;
-    z.im = (int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re;
+    z.re = (int16_t)((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im);
+    z.im = (int16_t)((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re);
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -353,8 +353,8 @@ static __inline__ complexi16_t complex_mul_q1_15(const complexi16_t *x, const co
 {
     complexi16_t z;
 
-    z.re = ((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> 15;
-    z.im = ((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> 15;
+    z.re = (int16_t)(((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> 15);
+    z.im = (int16_t)(((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> 15);
     return z;
 }
 /*- End of function --------------------------------------------------------*/
