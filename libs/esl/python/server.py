@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import SocketServer
-import pickle
 from ESL import *
 
 class ESLRequestHandler(SocketServer.BaseRequestHandler ):
