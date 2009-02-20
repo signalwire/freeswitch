@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_r2_mf.h,v 1.23 2009/02/03 16:28:41 steveu Exp $
+ * $Id: bell_r2_mf.h,v 1.24 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -152,6 +152,11 @@ SPAN_DECLARE(int) bell_mf_tx_put(bell_mf_tx_state_t *s, const char *digits, int 
     \return A pointer to the Bell MF generator context.*/
 SPAN_DECLARE(bell_mf_tx_state_t *) bell_mf_tx_init(bell_mf_tx_state_t *s);
 
+/*! \brief Release a Bell MF generator context.
+    \param s The Bell MF generator context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) bell_mf_tx_release(bell_mf_tx_state_t *s);
+
 /*! \brief Free a Bell MF generator context.
     \param s The Bell MF generator context.
     \return 0 for OK, else -1. */
@@ -176,6 +181,11 @@ SPAN_DECLARE(int) r2_mf_tx_put(r2_mf_tx_state_t *s, char digit);
            context is for backward signals.
     \return A pointer to the MFC/R2 generator context.*/
 SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd);
+
+/*! \brief Release an R2 MF tone generator context.
+    \param s The R2 MF tone generator context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) r2_mf_tx_release(r2_mf_tx_state_t *s);
 
 /*! \brief Free an R2 MF tone generator context.
     \param s The R2 MF tone generator context.
@@ -209,6 +219,11 @@ SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
                                                    digits_rx_callback_t callback,
                                                    void *user_data);
 
+/*! \brief Release a Bell MF receiver context.
+    \param s The Bell MF receiver context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) bell_mf_rx_release(bell_mf_rx_state_t *s);
+
 /*! \brief Free a Bell MF receiver context.
     \param s The Bell MF receiver context.
     \return 0 for OK, else -1. */
@@ -241,6 +256,11 @@ SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
                                                int fwd,
                                                tone_report_func_t callback,
                                                void *user_data);
+
+/*! \brief Release an R2 MF receiver context.
+    \param s The R2 MF receiver context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) r2_mf_rx_release(r2_mf_rx_state_t *s);
 
 /*! \brief Free an R2 MF receiver context.
     \param s The R2 MF receiver context.

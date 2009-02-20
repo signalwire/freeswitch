@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_modems.h,v 1.8 2009/02/03 16:28:41 steveu Exp $
+ * $Id: fax_modems.h,v 1.9 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -44,7 +44,12 @@ extern "C"
 SPAN_DECLARE(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], int len);
 SPAN_DECLARE(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len);
 SPAN_DECLARE(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len);
+
 SPAN_DECLARE(fax_modems_state_t *) fax_modems_init(fax_modems_state_t *s, void *user_data);
+
+SPAN_DECLARE(int) fax_modems_release(fax_modems_state_t *s);
+
+SPAN_DECLARE(int) fax_modems_free(fax_modems_state_t *s);
 
 #if defined(__cplusplus)
 }

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax.c,v 1.85 2009/02/03 16:28:39 steveu Exp $
+ * $Id: fax.c,v 1.86 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -545,7 +545,6 @@ SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
         if ((s = (fax_state_t *) malloc(sizeof(*s))) == NULL)
             return NULL;
     }
-
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "FAX");

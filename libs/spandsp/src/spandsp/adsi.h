@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.h,v 1.35 2009/02/03 16:28:40 steveu Exp $
+ * $Id: adsi.h,v 1.36 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -394,6 +394,8 @@ extern "C"
 */
 SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s, int standard, put_msg_func_t put_msg, void *user_data);
 
+SPAN_DECLARE(int) adsi_rx_release(adsi_rx_state_t *s);
+
 SPAN_DECLARE(int) adsi_rx_free(adsi_rx_state_t *s);
 
 /*! \brief Receive a chunk of ADSI audio.
@@ -410,6 +412,8 @@ SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len);
     \return A pointer to the initialised context, or NULL if there was a problem.
 */
 SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard);
+
+SPAN_DECLARE(int) adsi_tx_release(adsi_tx_state_t *s);
 
 SPAN_DECLARE(int) adsi_tx_free(adsi_tx_state_t *s);
 

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: lpc10.h,v 1.20 2009/02/03 16:28:41 steveu Exp $
+ * $Id: lpc10.h,v 1.21 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_LPC10_H_)
@@ -78,6 +78,8 @@ SPAN_DECLARE(lpc10_encode_state_t *) lpc10_encode_init(lpc10_encode_state_t *s, 
 
 SPAN_DECLARE(int) lpc10_encode_release(lpc10_encode_state_t *s);
 
+SPAN_DECLARE(int) lpc10_encode_free(lpc10_encode_state_t *s);
+
 /*! Encode a buffer of linear PCM data to LPC10e.
     \param s The LPC10e context.
     \param ima_data The LPC10e data produced.
@@ -94,6 +96,8 @@ SPAN_DECLARE(int) lpc10_encode(lpc10_encode_state_t *s, uint8_t code[], const in
 SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *st, int error_correction);
 
 SPAN_DECLARE(int) lpc10_decode_release(lpc10_decode_state_t *s);
+
+SPAN_DECLARE(int) lpc10_decode_free(lpc10_decode_state_t *s);
 
 /*! Decode a buffer of LPC10e data to linear PCM.
     \param s The LPC10e context.

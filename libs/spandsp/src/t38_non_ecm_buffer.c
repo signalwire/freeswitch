@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.c,v 1.7 2009/02/04 13:18:53 steveu Exp $
+ * $Id: t38_non_ecm_buffer.c,v 1.8 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -261,6 +261,11 @@ SPAN_DECLARE(void) t38_non_ecm_buffer_set_mode(t38_non_ecm_buffer_state_t *s, in
 
 SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits)
 {
+    if (s == NULL)
+    {
+        if ((s = (t38_non_ecm_buffer_state_t *) malloc(sizeof(*s))) == NULL)
+            return NULL;
+    }
     memset(s, 0, sizeof(*s));
     s->octet = 0xFF;
     s->flow_control_fill_octet = 0xFF;
@@ -269,6 +274,20 @@ SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_b
     s->image_data_mode = mode;
     s->min_row_bits = min_row_bits;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t38_non_ecm_buffer_release(t38_non_ecm_buffer_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t38_non_ecm_buffer_free(t38_non_ecm_buffer_state_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

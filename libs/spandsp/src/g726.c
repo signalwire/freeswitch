@@ -48,7 +48,7 @@
  * 2550 Garcia Avenue
  * Mountain View, California  94043
  *
- * $Id: g726.c,v 1.27 2009/02/03 16:28:39 steveu Exp $
+ * $Id: g726.c,v 1.28 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -1058,6 +1058,12 @@ SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_co
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g726_release(g726_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g726_free(g726_state_t *s)
 {
     free(s);
     return 0;

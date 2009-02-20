@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx.c,v 1.28 2009/02/03 16:28:40 steveu Exp $
+ * $Id: super_tone_tx.c,v 1.29 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -112,7 +112,7 @@ SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s)
+SPAN_DECLARE(int) super_tone_tx_free_tone(super_tone_tx_step_t *s)
 {
     super_tone_tx_step_t *t;
 
@@ -125,6 +125,7 @@ SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s)
         s = s->next;
         free(t);
     }
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -144,6 +145,20 @@ SPAN_DECLARE(super_tone_tx_state_t *) super_tone_tx_init(super_tone_tx_state_t *
 
     s->current_position = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) super_tone_tx_release(super_tone_tx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) super_tone_tx_free(super_tone_tx_state_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

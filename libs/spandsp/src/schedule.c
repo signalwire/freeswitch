@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: schedule.c,v 1.21 2009/02/03 16:28:40 steveu Exp $
+ * $Id: schedule.c,v 1.22 2009/02/10 13:06:46 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -146,6 +146,15 @@ SPAN_DECLARE(int) span_schedule_release(span_sched_state_t *s)
         free(s->sched);
         s->sched = NULL;
     }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) span_schedule_free(span_sched_state_t *s)
+{
+    span_schedule_release(s);
+    if (s)
+        free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.h,v 1.29 2009/02/04 13:18:53 steveu Exp $
+ * $Id: v42.h,v 1.30 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \page v42_page V.42 modem error correction
@@ -146,6 +146,11 @@ SPAN_DECLARE(void) v42_restart(v42_state_t *s);
     \param s The V.42 context.
     \return 0 if OK */
 SPAN_DECLARE(int) v42_release(v42_state_t *s);
+
+/*! Free a V.42 context.
+    \param s The V.42 context.
+    \return 0 if OK */
+SPAN_DECLARE(int) v42_free(v42_state_t *s);
 
 #if defined(__cplusplus)
 }

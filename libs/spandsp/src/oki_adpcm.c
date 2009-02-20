@@ -27,7 +27,7 @@
  * The actual OKI ADPCM encode and decode method is derived from freely
  * available code, whose exact origins seem uncertain.
  *
- * $Id: oki_adpcm.c,v 1.31 2009/02/03 16:28:39 steveu Exp $
+ * $Id: oki_adpcm.c,v 1.32 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -259,6 +259,12 @@ SPAN_DECLARE(oki_adpcm_state_t *) oki_adpcm_init(oki_adpcm_state_t *s, int bit_r
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) oki_adpcm_release(oki_adpcm_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) oki_adpcm_free(oki_adpcm_state_t *s)
 {
     free(s);
     return 0;

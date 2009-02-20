@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: power_meter.c,v 1.27 2009/02/03 16:28:39 steveu Exp $
+ * $Id: power_meter.c,v 1.28 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -59,6 +59,20 @@ SPAN_DECLARE(power_meter_t *) power_meter_init(power_meter_t *s, int shift)
     s->shift = shift;
     s->reading = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) power_meter_release(power_meter_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) power_meter_free(power_meter_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

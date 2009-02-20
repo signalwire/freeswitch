@@ -26,7 +26,7 @@
  * implementation of the LPC-10 2400 bps Voice Coder. They do not
  * exert copyright claims on their code, and it may be freely used.
  *
- * $Id: lpc10_decode.c,v 1.26 2009/02/03 16:28:39 steveu Exp $
+ * $Id: lpc10_decode.c,v 1.27 2009/02/10 13:06:46 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -1076,6 +1076,12 @@ SPAN_DECLARE(lpc10_decode_state_t *) lpc10_decode_init(lpc10_decode_state_t *s, 
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) lpc10_decode_release(lpc10_decode_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) lpc10_decode_free(lpc10_decode_state_t *s)
 {
     free(s);
     return 0;

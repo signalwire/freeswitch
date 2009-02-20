@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert.c,v 1.31 2009/02/03 16:28:39 steveu Exp $
+ * $Id: bert.c,v 1.32 2009/02/10 13:06:46 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -351,7 +351,7 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
     if (s == NULL)
     {
         if ((s = (bert_state_t *) malloc(sizeof(*s))) == NULL)
-            return  NULL;
+            return NULL;
     }
     memset(s, 0, sizeof(*s));
 
@@ -491,6 +491,19 @@ SPAN_DECLARE(bert_state_t *) bert_init(bert_state_t *s, int limit, int pattern, 
     span_log_set_protocol(&s->logging, "BERT");
 
     return  s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) bert_release(bert_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) bert_free(bert_state_t *s)
+{
+    free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711.c,v 1.15 2009/02/03 16:28:39 steveu Exp $
+ * $Id: g711.c,v 1.16 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -182,6 +182,12 @@ SPAN_DECLARE(g711_state_t *) g711_init(g711_state_t *s, int mode)
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g711_release(g711_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g711_free(g711_state_t *s)
 {
     free(s);
     return 0;

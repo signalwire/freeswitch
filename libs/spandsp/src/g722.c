@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.c,v 1.7 2009/02/03 16:28:39 steveu Exp $
+ * $Id: g722.c,v 1.8 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -283,6 +283,12 @@ SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int
 
 SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s)
 {
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g722_decode_free(g722_decode_state_t *s)
+{
     free(s);
     return 0;
 }
@@ -454,6 +460,12 @@ SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) g722_encode_free(g722_encode_state_t *s)
 {
     free(s);
     return 0;

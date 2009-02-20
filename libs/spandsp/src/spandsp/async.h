@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.h,v 1.22 2009/02/04 13:18:53 steveu Exp $
+ * $Id: async.h,v 1.23 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -158,6 +158,10 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
                                                get_byte_func_t get_byte,
                                                void *user_data);
 
+SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s);
+
+SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s);
+
 /*! Get the next bit of a transmitted serial bit stream.
     \brief Get the next bit of a transmitted serial bit stream.
     \param user_data An opaque point which must point to a transmitter context.
@@ -181,6 +185,10 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
                                                int use_v14,
                                                put_byte_func_t put_byte,
                                                void *user_data);
+
+SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s);
+
+SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s);
 
 /*! Accept a bit from a received serial bit stream
     \brief Accept a bit from a received serial bit stream

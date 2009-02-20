@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.c,v 1.17 2009/02/03 16:28:39 steveu Exp $
+ * $Id: bitstream.c,v 1.18 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -128,10 +128,27 @@ SPAN_DECLARE(void) bitstream_flush2(bitstream_state_t *s, uint8_t **c)
 SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s)
 {
     if (s == NULL)
-        return NULL;
+    {
+        if ((s = (bitstream_state_t *) malloc(sizeof(*s))) == NULL)
+            return NULL;
+    }
     s->bitstream = 0;
     s->residue = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) bitstream_release(bitstream_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) bitstream_free(bitstream_state_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

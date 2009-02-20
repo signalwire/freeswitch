@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_at_dictionary.c,v 1.1 2008/07/01 03:27:51 steveu Exp $
+ * $Id: make_at_dictionary.c,v 1.2 2009/02/10 17:16:57 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -541,7 +541,7 @@ static void trie_recursive_build_packed_trie(trie_node_t *t)
 
 static void trie_add(trie_t *s, const char *u, size_t len)
 {
-    int i;
+    size_t i;
     int index;
     trie_node_t *t;
 

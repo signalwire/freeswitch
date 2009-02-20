@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_encode.c,v 1.29 2009/02/03 16:28:39 steveu Exp $
+ * $Id: gsm0610_encode.c,v 1.30 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -106,6 +106,13 @@ static void encode_a_frame(gsm0610_state_t *s, gsm0610_frame_t *f, const int16_t
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) gsm0610_set_packing(gsm0610_state_t *s, int packing)
+{
+    s->packing = packing;
+    return 0;    
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing)
 {
     if (s == NULL)
@@ -122,14 +129,13 @@ SPAN_DECLARE(gsm0610_state_t *) gsm0610_init(gsm0610_state_t *s, int packing)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) gsm0610_set_packing(gsm0610_state_t *s, int packing)
+SPAN_DECLARE(int) gsm0610_release(gsm0610_state_t *s)
 {
-    s->packing = packing;
-    return 0;    
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) gsm0610_release(gsm0610_state_t *s)
+SPAN_DECLARE(int) gsm0610_free(gsm0610_state_t *s)
 {
     if (s)
         free(s);

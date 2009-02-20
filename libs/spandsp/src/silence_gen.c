@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.c,v 1.19 2009/02/04 13:18:53 steveu Exp $
+ * $Id: silence_gen.c,v 1.20 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -125,6 +125,20 @@ SPAN_DECLARE(silence_gen_state_t *) silence_gen_init(silence_gen_state_t *s, int
     memset(s, 0, sizeof(*s));
     s->remaining_samples = silent_samples;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) silence_gen_release(silence_gen_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) silence_gen_free(silence_gen_state_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

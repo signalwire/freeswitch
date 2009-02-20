@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: time_scale.h,v 1.19 2009/02/03 16:28:41 steveu Exp $
+ * $Id: time_scale.h,v 1.20 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TIME_SCALE_H_)
@@ -72,6 +72,11 @@ extern "C"
     \param playout_rate The ratio between the output speed and the input speed.
     \return A pointer to the context, or NULL if there was a problem. */
 SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sample_rate, float playout_rate);
+
+/*! \brief Release a time scale context.
+    \param s The time scale context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s);
 
 /*! \brief Free a time scale context.
     \param s The time scale context.

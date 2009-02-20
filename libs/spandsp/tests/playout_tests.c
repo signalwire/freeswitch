@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: playout_tests.c,v 1.27 2008/11/15 14:27:29 steveu Exp $
+ * $Id: playout_tests.c,v 1.28 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \page playout_tests_page Playout (jitter buffering) tests
@@ -106,7 +106,7 @@ static void dynamic_buffer_tests(void)
     for (i = 0;  i < BLOCK_LEN;  i++)
         fill[i] = 32767;
 
-    if ((s = playout_new(2*BLOCK_LEN, 15*BLOCK_LEN)) == NULL)
+    if ((s = playout_init(2*BLOCK_LEN, 15*BLOCK_LEN)) == NULL)
         return;
     plc_init(&plc);
     time_scale_init(&ts, SAMPLE_RATE, 1.0);
@@ -270,7 +270,7 @@ static void static_buffer_tests(void)
     type = PLAYOUT_TYPE_SPEECH;
     len = BLOCK_LEN;
 
-    if ((s = playout_new(2*BLOCK_LEN, 2*BLOCK_LEN)) == NULL)
+    if ((s = playout_init(2*BLOCK_LEN, 2*BLOCK_LEN)) == NULL)
         return;
     for (i = 0;  i < 1000000;  i++)
     {

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_r2_mf.c,v 1.37 2009/02/03 16:28:39 steveu Exp $
+ * $Id: bell_r2_mf.c,v 1.38 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -340,6 +340,12 @@ SPAN_DECLARE(bell_mf_tx_state_t *) bell_mf_tx_init(bell_mf_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) bell_mf_tx_release(bell_mf_tx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) bell_mf_tx_free(bell_mf_tx_state_t *s)
 {
     free(s);
@@ -434,6 +440,12 @@ SPAN_DECLARE(r2_mf_tx_state_t *) r2_mf_tx_init(r2_mf_tx_state_t *s, int fwd)
     }
     s->fwd = fwd;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) r2_mf_tx_release(r2_mf_tx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -651,6 +663,12 @@ SPAN_DECLARE(bell_mf_rx_state_t *) bell_mf_rx_init(bell_mf_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) bell_mf_rx_release(bell_mf_rx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) bell_mf_rx_free(bell_mf_rx_state_t *s)
 {
     free(s);
@@ -826,6 +844,12 @@ SPAN_DECLARE(r2_mf_rx_state_t *) r2_mf_rx_init(r2_mf_rx_state_t *s,
     s->current_digit = 0;
     s->current_sample = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) r2_mf_rx_release(r2_mf_rx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

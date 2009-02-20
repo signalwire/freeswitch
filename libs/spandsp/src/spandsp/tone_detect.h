@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_detect.h,v 1.44 2009/02/03 16:28:41 steveu Exp $
+ * $Id: tone_detect.h,v 1.45 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TONE_DETECT_H_)
@@ -85,6 +85,10 @@ SPAN_DECLARE(void) make_goertzel_descriptor(goertzel_descriptor_t *t,
     \return A pointer to the Goertzel state. */
 SPAN_DECLARE(goertzel_state_t *) goertzel_init(goertzel_state_t *s,
                                                goertzel_descriptor_t *t);
+
+SPAN_DECLARE(int) goertzel_release(goertzel_state_t *s);
+
+SPAN_DECLARE(int) goertzel_free(goertzel_state_t *s);
 
 /*! \brief Reset the state of a Goertzel transform.
     \param s The Goertzel context. */

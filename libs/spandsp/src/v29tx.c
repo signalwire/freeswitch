@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.c,v 1.85 2009/02/03 16:28:40 steveu Exp $
+ * $Id: v29tx.c,v 1.86 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -374,6 +374,12 @@ SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, int 
     v29_tx_power(s, -14.0f);
     v29_tx_restart(s, bit_rate, tep);
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v29_tx_release(v29_tx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

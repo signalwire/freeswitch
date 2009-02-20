@@ -25,7 +25,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo_tests.c,v 1.37 2008/11/30 10:17:31 steveu Exp $
+ * $Id: echo_tests.c,v 1.38 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \page echo_can_tests_page Line echo cancellation for voice tests
@@ -654,7 +654,7 @@ static int perform_test_sanity(void)
     //int coeff_index;
 
     print_test_title("Performing basic sanity test\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     local_cur = 0;
     far_cur = 0;
@@ -779,7 +779,7 @@ static int perform_test_2a(void)
     /* Test 2 - Convergence and steady state residual and returned echo level test */
     /* Test 2A - Convergence and reconvergence test with NLP enabled */
     print_test_title("Performing test 2A - Convergence and reconvergence test with NLP enabled\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION | ECHO_CAN_USE_NLP);
@@ -828,7 +828,7 @@ static int perform_test_2b(void)
     /* Test 2 - Convergence and steady state residual and returned echo level test */
     /* Test 2B - Convergence and reconverge with NLP disabled */
     print_test_title("Performing test 2B - Convergence and reconverge with NLP disabled\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -882,7 +882,7 @@ static int perform_test_2ca(void)
     /* Test 2 - Convergence and steady state residual and returned echo level test */
     /* Test 2C(a) - Convergence with background noise present */
     print_test_title("Performing test 2C(a) - Convergence with background noise present\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
     awgn_init_dbm0(&far_noise_source, 7162534, -50.0f);
     
     echo_can_flush(ctx);
@@ -918,7 +918,7 @@ static int perform_test_3a(void)
     /* Test 3 - Performance under double talk conditions */
     /* Test 3A - Double talk test with low cancelled-end levels */
     print_test_title("Performing test 3A - Double talk test with low cancelled-end levels\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -956,7 +956,7 @@ static int perform_test_3ba(void)
     /* Test 3 - Performance under double talk conditions */
     /* Test 3B(a) - Double talk stability test with high cancelled-end levels */
     print_test_title("Performing test 3B(b) - Double talk stability test with high cancelled-end levels\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -996,7 +996,7 @@ static int perform_test_3bb(void)
     /* Test 3 - Performance under double talk conditions */
     /* Test 3B(b) - Double talk stability test with low cancelled-end levels */
     print_test_title("Performing test 3B(b) - Double talk stability test with low cancelled-end levels\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -1036,7 +1036,7 @@ static int perform_test_3c(void)
     /* Test 3 - Performance under double talk conditions */
     /* Test 3C - Double talk test with simulated conversation */
     print_test_title("Performing test 3C - Double talk test with simulated conversation\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -1074,7 +1074,7 @@ static int perform_test_4(void)
 
     /* Test 4 - Leak rate test */
     print_test_title("Performing test 4 - Leak rate test\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -1106,7 +1106,7 @@ static int perform_test_5(void)
     
     /* Test 5 - Infinite return loss convergence test */
     print_test_title("Performing test 5 - Infinite return loss convergence test\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -1141,7 +1141,7 @@ static int perform_test_6(void)
 
     /* Test 6 - Non-divergence on narrow-band signals */
     print_test_title("Performing test 6 - Non-divergence on narrow-band signals\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     echo_can_flush(ctx);
     echo_can_adaption_mode(ctx, ECHO_CAN_USE_ADAPTION);
@@ -1210,7 +1210,7 @@ static int perform_test_7(void)
 
     /* Test 7 - Stability */
     print_test_title("Performing test 7 - Stability\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     /* Put tones through an unconverged canceller, and check nothing unpleasant
        happens. */
@@ -1262,7 +1262,7 @@ static int perform_test_8(void)
 
     /* Test 8 - Non-convergence on No 5, 6, and 7 in-band signalling */
     print_test_title("Performing test 8 - Non-convergence on No 5, 6, and 7 in-band signalling\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 8 not yet implemented\n");
 
@@ -1279,7 +1279,7 @@ static int perform_test_9(void)
 
     /* Test 9 - Comfort noise test */
     print_test_title("Performing test 9 - Comfort noise test\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
     awgn_init_dbm0(&far_noise_source, 7162534, -50.0f);
 
     echo_can_flush(ctx);
@@ -1317,7 +1317,7 @@ static int perform_test_10a(void)
     /* Test 10 - FAX test during call establishment phase */
     /* Test 10A - Canceller operation on the calling station side */
     print_test_title("Performing test 10A - Canceller operation on the calling station side\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 10A not yet implemented\n");
 
@@ -1333,7 +1333,7 @@ static int perform_test_10b(void)
     /* Test 10 - FAX test during call establishment phase */
     /* Test 10B - Canceller operation on the called station side */
     print_test_title("Performing test 10B - Canceller operation on the called station side\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 10B not yet implemented\n");
 
@@ -1351,7 +1351,7 @@ static int perform_test_10c(void)
                   transmission and page breaks (for further study) */
     print_test_title("Performing test 10C - Canceller operation on the calling station side during page\n"
                      "transmission and page breaks (for further study)\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 10C not yet implemented\n");
 
@@ -1366,7 +1366,7 @@ static int perform_test_11(void)
 
     /* Test 11 - Tandem echo canceller test (for further study) */
     print_test_title("Performing test 11 - Tandem echo canceller test (for further study)\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 11 not yet implemented\n");
 
@@ -1381,7 +1381,7 @@ static int perform_test_12(void)
 
     /* Test 12 - Residual acoustic echo test (for further study) */
     print_test_title("Performing test 12 - Residual acoustic echo test (for further study)\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 12 not yet implemented\n");
 
@@ -1397,7 +1397,7 @@ static int perform_test_13(void)
     /* Test 13 - Performance with ITU-T low-bit rate coders in echo path
                  (Optional, under study) */
     print_test_title("Performing test 13 - Performance with ITU-T low-bit rate coders in echo path (Optional, under study)\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 13 not yet implemented\n");
 
@@ -1412,7 +1412,7 @@ static int perform_test_14(void)
 
     /* Test 14 - Performance with V-series low-speed data modems */
     print_test_title("Performing test 14 - Performance with V-series low-speed data modems\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 14 not yet implemented\n");
 
@@ -1427,7 +1427,7 @@ static int perform_test_15(void)
 
     /* Test 15 - PCM offset test (Optional) */
     print_test_title("Performing test 15 - PCM offset test (Optional)\n");
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
 
     fprintf(stderr, "Test 15 not yet implemented\n");
 
@@ -1525,7 +1525,7 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
         ecfile = afOpenFile_telephony_write(argv[1], 1);
     }
 
-    ctx = echo_can_create(TEST_EC_TAPS, 0);
+    ctx = echo_can_init(TEST_EC_TAPS, 0);
     echo_can_adaption_mode(ctx, mode);
     samples = 0;
     do

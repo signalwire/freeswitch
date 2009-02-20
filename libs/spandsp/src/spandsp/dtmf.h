@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dtmf.h,v 1.31 2009/02/03 16:28:41 steveu Exp $
+ * $Id: dtmf.h,v 1.32 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_DTMF_H_)
@@ -127,6 +127,11 @@ SPAN_DECLARE(void) dtmf_tx_set_timing(dtmf_tx_state_t *s, int on_time, int off_t
     \return A pointer to the DTMF generator context. */
 SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s);
 
+/*! \brief Release a DTMF tone generator context.
+    \param s The DTMF tone generator context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) dtmf_tx_release(dtmf_tx_state_t *s);
+
 /*! \brief Free a DTMF tone generator context.
     \param s The DTMF tone generator context.
     \return 0 for OK, else -1. */
@@ -194,6 +199,11 @@ SPAN_DECLARE(size_t) dtmf_rx_get(dtmf_rx_state_t *s, char *digits, int max);
 SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
                                              digits_rx_callback_t callback,
                                              void *user_data);
+
+/*! \brief Release a DTMF receiver context.
+    \param s The DTMF receiver context.
+    \return 0 for OK, else -1. */
+SPAN_DECLARE(int) dtmf_rx_release(dtmf_rx_state_t *s);
 
 /*! \brief Free a DTMF receiver context.
     \param s The DTMF receiver context.

@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: filter_tools.c,v 1.9 2009/01/28 03:41:26 steveu Exp $
+ * $Id: filter_tools.c,v 1.10 2009/02/10 17:16:57 steveu Exp $
  */
  
 #if defined(HAVE_CONFIG_H)
@@ -51,8 +51,12 @@
 #include "spandsp/complex.h"
 #include "filter_tools.h"
 
+#if !defined(FALSE)
 #define FALSE 0
+#endif
+#if !defined(TRUE)
 #define TRUE (!FALSE)
+#endif
 
 #define MAXPZ	    8192
 #define SEQ_LEN     8192
@@ -149,7 +153,7 @@ void compute_raised_cosine_filter(double coeffs[],
         if (f <= f1)
             vec[i] = complex_set(1.0, 0.0);
         else if (f <= f2)
-            vec[i] = complex_set(0.5*(1.0 + cos((3.1415926535*tau/beta) * (f - f1))), 0.0);
+            vec[i] = complex_set(0.5*(1.0 + cos((3.1415926535*tau/beta)*(f - f1))), 0.0);
         else
             vec[i] = complex_set(0.0, 0.0);
     }

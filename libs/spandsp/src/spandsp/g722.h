@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h,v 1.24 2009/02/03 16:28:41 steveu Exp $
+ * $Id: g722.h,v 1.25 2009/02/10 13:06:47 steveu Exp $
  */
 
 
@@ -75,6 +75,8 @@ SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int
 
 SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s);
 
+SPAN_DECLARE(int) g722_encode_free(g722_encode_state_t *s);
+
 /*! Encode a buffer of linear PCM data to G.722
     \param s The G.722 context.
     \param g722_data The G.722 data produced.
@@ -92,6 +94,8 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
 SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int rate, int options);
 
 SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s);
+
+SPAN_DECLARE(int) g722_decode_free(g722_decode_state_t *s);
 
 /*! Decode a buffer of G.722 data to linear PCM.
     \param s The G.722 context.

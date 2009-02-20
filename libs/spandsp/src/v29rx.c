@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.153 2009/02/03 16:28:40 steveu Exp $
+ * $Id: v29rx.c,v 1.154 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -1138,6 +1138,12 @@ SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int rate, put_bit_
 
     v29_rx_restart(s, rate, FALSE);
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v29_rx_release(v29_rx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

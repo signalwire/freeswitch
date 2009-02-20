@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.h,v 1.57 2009/02/03 16:28:41 steveu Exp $
+ * $Id: t31.h,v 1.58 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -139,6 +139,12 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     \param s The T.31 context.
     \return 0 for OK */
 SPAN_DECLARE(int) t31_release(t31_state_t *s);
+
+/*! Free a T.31 context.
+    \brief Release a T.31 context.
+    \param s The T.31 context.
+    \return 0 for OK */
+SPAN_DECLARE(int) t31_free(t31_state_t *s);
 
 #if defined(__cplusplus)
 }

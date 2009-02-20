@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: playout.h,v 1.13 2009/02/03 16:28:41 steveu Exp $
+ * $Id: playout.h,v 1.14 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PLAYOUT_H_)
@@ -182,17 +182,6 @@ SPAN_DECLARE(timestamp_t) playout_current_length(playout_state_t *s);
     \return The next timestamp. */
 SPAN_DECLARE(timestamp_t) playout_next_due(playout_state_t *s);
 
-/*! Create a new instance of play-out buffering.
-    \param min_length Minimum length of the buffer, in samples.
-    \param max_length Maximum length of the buffer, in samples. If this equals min_length, static
-           length buffering is used.
-    \return The new context */
-SPAN_DECLARE(playout_state_t *) playout_new(int min_length, int max_length);
-
-/*! Destroy an instance of play-out buffering.
-    \param s The play-out context to be destroyed */
-SPAN_DECLARE(void) playout_free(playout_state_t *s);
-
 /*! Reset an instance of play-out buffering.
     NOTE:  The buffer should be empty before you call this function, otherwise
            you will leak queued frames, and some internal structures
@@ -201,6 +190,23 @@ SPAN_DECLARE(void) playout_free(playout_state_t *s);
     \param max_length Maximum length of the buffer, in samples. If this equals min_length, static
            length buffering is used. */
 SPAN_DECLARE(void) playout_restart(playout_state_t *s, int min_length, int max_length);
+
+/*! Create a new instance of play-out buffering.
+    \param min_length Minimum length of the buffer, in samples.
+    \param max_length Maximum length of the buffer, in samples. If this equals min_length, static
+           length buffering is used.
+    \return The new context */
+SPAN_DECLARE(playout_state_t *) playout_init(int min_length, int max_length);
+
+/*! Release an instance of play-out buffering.
+    \param s The play-out context to be releaased
+    \return 0 if OK, else -1 */
+SPAN_DECLARE(int) playout_release(playout_state_t *s);
+
+/*! Free an instance of play-out buffering.
+    \param s The play-out context to be destroyed
+    \return 0 if OK, else -1 */
+SPAN_DECLARE(int) playout_free(playout_state_t *s);
 
 #if defined(__cplusplus)
 }

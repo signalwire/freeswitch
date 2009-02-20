@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: ima_adpcm.c,v 1.34 2009/02/03 16:28:39 steveu Exp $
+ * $Id: ima_adpcm.c,v 1.35 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -293,6 +293,12 @@ SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s, int varia
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) ima_adpcm_release(ima_adpcm_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) ima_adpcm_free(ima_adpcm_state_t *s)
 {
     free(s);
     return 0;

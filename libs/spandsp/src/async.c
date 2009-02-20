@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.c,v 1.17 2009/02/04 13:18:53 steveu Exp $
+ * $Id: async.c,v 1.18 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -100,6 +100,19 @@ SPAN_DECLARE(async_rx_state_t *) async_rx_init(async_rx_state_t *s,
     s->parity_errors = 0;
     s->framing_errors = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_rx_release(async_rx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_rx_free(async_rx_state_t *s)
+{
+    free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -213,6 +226,19 @@ SPAN_DECLARE(async_tx_state_t *) async_tx_init(async_tx_state_t *s,
     s->bitpos = 0;
     s->parity_bit = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_tx_release(async_tx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) async_tx_free(async_tx_state_t *s)
+{
+    free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

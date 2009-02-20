@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tx.h,v 1.39 2009/02/03 16:28:41 steveu Exp $
+ * $Id: v27ter_tx.h,v 1.40 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -100,6 +100,12 @@ SPAN_DECLARE(v27ter_tx_state_t *) v27ter_tx_init(v27ter_tx_state_t *s, int bit_r
     \param tep TRUE is the optional TEP tone is to be transmitted.
     \return 0 for OK, -1 for bad parameter */
 SPAN_DECLARE(int) v27ter_tx_restart(v27ter_tx_state_t *s, int bit_rate, int tep);
+
+/*! Release a V.27ter modem transmit context.
+    \brief Release a V.27ter modem transmit context.
+    \param s The modem context.
+    \return 0 for OK */
+SPAN_DECLARE(int) v27ter_tx_release(v27ter_tx_state_t *s);
 
 /*! Free a V.27ter modem transmit context.
     \brief Free a V.27ter modem transmit context.

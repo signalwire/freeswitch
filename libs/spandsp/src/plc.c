@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: plc.c,v 1.26 2009/02/03 16:28:39 steveu Exp $
+ * $Id: plc.c,v 1.27 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -245,6 +245,12 @@ SPAN_DECLARE(plc_state_t *) plc_init(plc_state_t *s)
     }
     memset(s, 0, sizeof(*s));
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) plc_release(plc_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_modem_filter.c,v 1.13 2009/01/28 03:41:27 steveu Exp $
+ * $Id: make_modem_filter.c,v 1.14 2009/02/10 17:16:57 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -49,8 +49,12 @@
 #include "spandsp/complex.h"
 #include "filter_tools.h"
 
+#if !defined(FALSE)
 #define FALSE 0
+#endif
+#if !defined(TRUE)
 #define TRUE (!FALSE)
+#endif
 
 //#define SAMPLE_RATE         8000.0
 #define MAX_COEFFS_PER_FILTER   128

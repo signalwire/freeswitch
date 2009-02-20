@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726.h,v 1.24 2009/02/03 16:28:41 steveu Exp $
+ * $Id: g726.h,v 1.25 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -79,10 +79,15 @@ extern "C"
     \return A pointer to the G.726 context, or NULL for error. */
 SPAN_DECLARE(g726_state_t *) g726_init(g726_state_t *s, int bit_rate, int ext_coding, int packing);
 
-/*! Free a G.726 encode or decode context.
+/*! Release a G.726 encode or decode context.
     \param s The G.726 context.
     \return 0 for OK. */
 SPAN_DECLARE(int) g726_release(g726_state_t *s);
+
+/*! Free a G.726 encode or decode context.
+    \param s The G.726 context.
+    \return 0 for OK. */
+SPAN_DECLARE(int) g726_free(g726_state_t *s);
 
 /*! Decode a buffer of G.726 ADPCM data to linear PCM, a-law or u-law.
     \param s The G.726 context.

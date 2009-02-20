@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.h,v 1.42 2009/02/03 16:28:41 steveu Exp $
+ * $Id: hdlc.h,v 1.43 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -101,6 +101,10 @@ SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
                                              hdlc_frame_handler_t handler,
                                              void *user_data);
 
+SPAN_DECLARE(int) hdlc_rx_release(hdlc_rx_state_t *s);
+
+SPAN_DECLARE(int) hdlc_rx_free(hdlc_rx_state_t *s);
+
 /*! \brief Set the maximum frame length for an HDLC receiver context.
     \param s A pointer to an HDLC receiver context.
     \param max_len The maximum permitted length of a frame.
@@ -156,6 +160,10 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
                                              int progressive,
                                              hdlc_underflow_handler_t handler,
                                              void *user_data);
+
+SPAN_DECLARE(int) hdlc_tx_release(hdlc_tx_state_t *s);
+
+SPAN_DECLARE(int) hdlc_tx_free(hdlc_tx_state_t *s);
 
 /*! \brief Set the maximum frame length for an HDLC transmitter context.
     \param s A pointer to an HDLC transmitter context.

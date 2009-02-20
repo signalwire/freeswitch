@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.c,v 1.69 2009/02/03 16:28:39 steveu Exp $
+ * $Id: adsi.c,v 1.70 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -449,6 +449,12 @@ SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) adsi_rx_release(adsi_rx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) adsi_rx_free(adsi_rx_state_t *s)
 {
     free(s);
@@ -655,6 +661,12 @@ SPAN_DECLARE(adsi_tx_state_t *) adsi_tx_init(adsi_tx_state_t *s, int standard)
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     start_tx(s);
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) adsi_tx_release(adsi_tx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

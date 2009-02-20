@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_detect.c,v 1.50 2009/02/03 16:28:40 steveu Exp $
+ * $Id: tone_detect.c,v 1.51 2009/02/10 13:06:47 steveu Exp $
  */
  
 /*! \file tone_detect.h */
@@ -88,6 +88,20 @@ SPAN_DECLARE(goertzel_state_t *) goertzel_init(goertzel_state_t *s,
     s->samples = t->samples;
     s->current_sample = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) goertzel_release(goertzel_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) goertzel_free(goertzel_state_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

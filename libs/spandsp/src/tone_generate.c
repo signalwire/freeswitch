@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tone_generate.c,v 1.49 2009/02/03 16:28:40 steveu Exp $
+ * $Id: tone_generate.c,v 1.50 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -126,6 +126,20 @@ SPAN_DECLARE(tone_gen_state_t *) tone_gen_init(tone_gen_state_t *s, tone_gen_des
     s->current_section = 0;
     s->current_position = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) tone_gen_release(tone_gen_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) tone_gen_free(tone_gen_state_t *s)
+{
+    if (s)
+        free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

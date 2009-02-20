@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx.h,v 1.16 2009/02/03 16:28:41 steveu Exp $
+ * $Id: super_tone_tx.h,v 1.17 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SUPER_TONE_TX_H_)
@@ -58,7 +58,7 @@ SPAN_DECLARE(super_tone_tx_step_t *) super_tone_tx_make_step(super_tone_tx_step_
                                                              int length,
                                                              int cycles);
 
-SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s);
+SPAN_DECLARE(int) super_tone_tx_free_tone(super_tone_tx_step_t *s);
 
 /*! Initialise a supervisory tone generator.
     \brief Initialise a supervisory tone generator.
@@ -66,6 +66,10 @@ SPAN_DECLARE(void) super_tone_tx_free(super_tone_tx_step_t *s);
     \param tree The supervisory tone tree to be generated.
     \return The supervisory tone generator context. */
 SPAN_DECLARE(super_tone_tx_state_t *) super_tone_tx_init(super_tone_tx_state_t *s, super_tone_tx_step_t *tree);
+
+SPAN_DECLARE(int) super_tone_tx_release(super_tone_tx_state_t *s);
+
+SPAN_DECLARE(int) super_tone_tx_free(super_tone_tx_state_t *s);
 
 /*! Generate a block of audio samples for a supervisory tone pattern.
     \brief Generate a block of audio samples for a supervisory tone pattern.

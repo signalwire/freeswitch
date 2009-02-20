@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.h,v 1.37 2009/02/03 16:28:41 steveu Exp $
+ * $Id: v29tx.h,v 1.38 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -131,6 +131,12 @@ SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, int 
     \param tep TRUE is the optional TEP tone is to be transmitted.
     \return 0 for OK, -1 for bad parameter */
 SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep);
+
+/*! Release a V.29 modem transmit context.
+    \brief Release a V.29 modem transmit context.
+    \param s The modem context.
+    \return 0 for OK */
+SPAN_DECLARE(int) v29_tx_release(v29_tx_state_t *s);
 
 /*! Free a V.29 modem transmit context.
     \brief Free a V.29 modem transmit context.

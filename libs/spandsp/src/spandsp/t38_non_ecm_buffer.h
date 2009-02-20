@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_non_ecm_buffer.h,v 1.6 2009/02/04 13:18:53 steveu Exp $
+ * $Id: t38_non_ecm_buffer.h,v 1.7 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -60,6 +60,10 @@ extern "C"
     \param bits The minimum number of bits per FAX image row.
     \return A pointer to the buffer context, or NULL if there was a problem. */
 SPAN_DECLARE(t38_non_ecm_buffer_state_t *) t38_non_ecm_buffer_init(t38_non_ecm_buffer_state_t *s, int mode, int min_row_bits);
+
+SPAN_DECLARE(int) t38_non_ecm_buffer_release(t38_non_ecm_buffer_state_t *s);
+
+SPAN_DECLARE(int) t38_non_ecm_buffer_free(t38_non_ecm_buffer_state_t *s);
 
 /*! \brief Set the mode of a T.38 rate adapting non-ECM buffer context.
     \param s The buffer context.

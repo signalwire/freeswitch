@@ -26,7 +26,7 @@
  * Based on a bit from here, a bit from there, eye of toad,
  * ear of bat, etc - plus, of course, my own 2 cents.
  *
- * $Id: ima_adpcm.h,v 1.23 2009/02/03 16:28:41 steveu Exp $
+ * $Id: ima_adpcm.h,v 1.24 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -77,10 +77,15 @@ SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s,
                                                  int variant,
                                                  int chunk_size);
 
-/*! Free an IMA ADPCM encode or decode context.
+/*! Release an IMA ADPCM encode or decode context.
     \param s The IMA ADPCM context.
     \return 0 for OK. */
 SPAN_DECLARE(int) ima_adpcm_release(ima_adpcm_state_t *s);
+
+/*! Free an IMA ADPCM encode or decode context.
+    \param s The IMA ADPCM context.
+    \return 0 for OK. */
+SPAN_DECLARE(int) ima_adpcm_free(ima_adpcm_state_t *s);
 
 /*! Encode a buffer of linear PCM data to IMA ADPCM.
     \param s The IMA ADPCM context.

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42bis.c,v 1.36 2009/02/03 16:28:40 steveu Exp $
+ * $Id: v42bis.c,v 1.37 2009/02/10 13:06:47 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. 
@@ -688,6 +688,12 @@ SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v42bis_release(v42bis_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v42bis_free(v42bis_state_t *s)
 {
     free(s);
     return 0;

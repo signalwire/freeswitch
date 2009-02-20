@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.h,v 1.67 2009/02/03 16:28:41 steveu Exp $
+ * $Id: v29rx.h,v 1.68 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -156,6 +156,12 @@ SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int bit_rate, put_
     \param old_train TRUE if a previous trained values are to be reused.
     \return 0 for OK, -1 for bad parameter */
 SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train);
+
+/*! Release a V.29 modem receive context.
+    \brief Release a V.29 modem receive context.
+    \param s The modem context.
+    \return 0 for OK */
+SPAN_DECLARE(int) v29_rx_release(v29_rx_state_t *s);
 
 /*! Free a V.29 modem receive context.
     \brief Free a V.29 modem receive context.

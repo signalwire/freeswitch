@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: noise.c,v 1.30 2009/02/03 16:28:39 steveu Exp $
+ * $Id: noise.c,v 1.31 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -80,12 +80,6 @@ SPAN_DECLARE(int16_t) noise(noise_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(noise_state_t *) noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality)
-{
-    return noise_init_dbov(s, seed, (level - DBM0_MAX_POWER), class_of_noise, quality);
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(noise_state_t *) noise_init_dbov(noise_state_t *s, int seed, float level, int class_of_noise, int quality)
 {
     float rms;
@@ -112,6 +106,18 @@ SPAN_DECLARE(noise_state_t *) noise_init_dbov(noise_state_t *s, int seed, float 
     s->rms = (int32_t) (rms*sqrtf(12.0f/s->quality));
     s->class_of_noise = class_of_noise;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(noise_state_t *) noise_init_dbm0(noise_state_t *s, int seed, float level, int class_of_noise, int quality)
+{
+    return noise_init_dbov(s, seed, (level - DBM0_MAX_POWER), class_of_noise, quality);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) noise_release(noise_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

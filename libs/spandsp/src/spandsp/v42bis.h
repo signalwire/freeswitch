@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42bis.h,v 1.25 2009/02/03 16:28:41 steveu Exp $
+ * $Id: v42bis.h,v 1.26 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \page v42bis_page V.42bis modem data compression
@@ -94,6 +94,14 @@ SPAN_DECLARE(int) v42bis_decompress(v42bis_state_t *s, const uint8_t *buf, int l
     \return 0 */
 SPAN_DECLARE(int) v42bis_decompress_flush(v42bis_state_t *s);
 
+/*! Set the compression mode.
+    \param s The V.42bis context.
+    \param mode One of the V.42bis compression modes -
+            V42BIS_COMPRESSION_MODE_DYNAMIC,
+            V42BIS_COMPRESSION_MODE_ALWAYS,
+            V42BIS_COMPRESSION_MODE_NEVER */
+SPAN_DECLARE(void) v42bis_compression_control(v42bis_state_t *s, int mode);
+
 /*! Initialise a V.42bis context.
     \param s The V.42bis context.
     \param negotiated_p0 The negotiated P0 parameter, from the V.42bis spec.
@@ -117,18 +125,15 @@ SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,
                                            void *data_user_data,
                                            int max_data_len);
 
-/*! Set the compression mode.
-    \param s The V.42bis context.
-    \param mode One of the V.42bis compression modes -
-            V42BIS_COMPRESSION_MODE_DYNAMIC,
-            V42BIS_COMPRESSION_MODE_ALWAYS,
-            V42BIS_COMPRESSION_MODE_NEVER */
-SPAN_DECLARE(void) v42bis_compression_control(v42bis_state_t *s, int mode);
-
 /*! Release a V.42bis context.
     \param s The V.42bis context.
     \return 0 if OK */
 SPAN_DECLARE(int) v42bis_release(v42bis_state_t *s);
+
+/*! Free a V.42bis context.
+    \param s The V.42bis context.
+    \return 0 if OK */
+SPAN_DECLARE(int) v42bis_free(v42bis_state_t *s);
 
 #if defined(__cplusplus)
 }

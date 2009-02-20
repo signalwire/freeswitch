@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo.h,v 1.18 2009/02/03 16:28:41 steveu Exp $
+ * $Id: echo.h,v 1.19 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -196,12 +196,19 @@ extern "C"
     \param len The length of the canceller, in samples.
     \return The new canceller context, or NULL if the canceller could not be created.
 */
-SPAN_DECLARE(echo_can_state_t *) echo_can_create(int len, int adaption_mode);
+SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode);
+
+/*! Release a voice echo canceller context.
+    \param ec The echo canceller context.
+    \return 0 for OK, else -1.
+*/
+SPAN_DECLARE(int) echo_can_release(echo_can_state_t *ec);
 
 /*! Free a voice echo canceller context.
     \param ec The echo canceller context.
+    \return 0 for OK, else -1.
 */
-SPAN_DECLARE(void) echo_can_free(echo_can_state_t *ec);
+SPAN_DECLARE(int) echo_can_free(echo_can_state_t *ec);
 
 /*! Flush (reinitialise) a voice echo canceller context.
     \param ec The echo canceller context.

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: time_scale.c,v 1.29 2009/02/03 16:28:40 steveu Exp $
+ * $Id: time_scale.c,v 1.30 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -155,6 +155,12 @@ SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sa
     s->fill = 0;
     s->lcp = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: tsb85_tests.c,v 1.28 2009/01/28 03:41:27 steveu Exp $
+ * $Id: tsb85_tests.c,v 1.29 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -1019,7 +1019,7 @@ printf("Push '%s'\n", next_tx_file);
                 span_log(&s->logging, SPAN_LOG_FLOW, "We need to corrupt the image\n");
                 corrupt_image(s, image, len, (const char *) bad_rows);
             }
-            t4_tx_end(&t4_state);
+            t4_tx_release(&t4_state);
             span_log(&s->logging, SPAN_LOG_FLOW, "Non-ECM image is %d bytes\n", len);
             faxtester_set_non_ecm_image_buffer(s, image, len);
         }
@@ -1059,7 +1059,7 @@ printf("Push '%s'\n", next_tx_file);
                 corrupt_image(s, image, len, (const char *) bad_rows);
             }
             /*endif*/
-            t4_tx_end(&t4_state);
+            t4_tx_release(&t4_state);
             span_log(&s->logging, SPAN_LOG_FLOW, "ECM image is %d bytes\n", len);
             faxtester_set_ecm_image_buffer(s, image, len, ecm_block, ecm_frame_size, i);
         }

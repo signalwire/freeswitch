@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.35 2009/02/03 16:28:39 steveu Exp $
+ * $Id: at_interpreter.c,v 1.36 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -5318,13 +5318,22 @@ SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) at_free(at_state_t *s)
+SPAN_DECLARE(int) at_release(at_state_t *s)
 {
     at_reset_call_info(s);
     if (s->local_id)
         free(s->local_id);
-    free(s);
     return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) at_free(at_state_t *s)
+{
+    int ret;
+
+    ret = at_release(s);
+    free(s);
+    return ret;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

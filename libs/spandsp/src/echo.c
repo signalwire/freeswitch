@@ -27,7 +27,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: echo.c,v 1.31 2009/02/03 16:28:39 steveu Exp $
+ * $Id: echo.c,v 1.32 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -238,7 +238,7 @@ static __inline__ void lms_adapt(echo_can_state_t *ec, int factor)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(echo_can_state_t *) echo_can_create(int len, int adaption_mode)
+SPAN_DECLARE(echo_can_state_t *) echo_can_init(int len, int adaption_mode)
 {
     echo_can_state_t *ec;
     int i;
@@ -279,11 +279,17 @@ SPAN_DECLARE(echo_can_state_t *) echo_can_create(int len, int adaption_mode)
     ec->tap_rotate_counter = 1600;
     ec->cng_level = 1000;
     echo_can_adaption_mode(ec, adaption_mode);
-    return  ec;
+    return ec;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) echo_can_free(echo_can_state_t *ec)
+SPAN_DECLARE(int) echo_can_release(echo_can_state_t *ec)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) echo_can_free(echo_can_state_t *ec)
 {
     int i;
     
@@ -292,6 +298,7 @@ SPAN_DECLARE(void) echo_can_free(echo_can_state_t *ec)
     for (i = 0;  i < 4;  i++)
         free(ec->fir_taps16[i]);
     free(ec);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

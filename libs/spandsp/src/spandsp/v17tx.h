@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.h,v 1.39 2009/02/03 16:28:41 steveu Exp $
+ * $Id: v17tx.h,v 1.40 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -119,6 +119,12 @@ SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int rate, int tep,
     \param short_train TRUE if the short training sequence should be used.
     \return 0 for OK, -1 for parameter error. */
 SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int short_train);
+
+/*! Release a V.17 modem transmit context.
+    \brief Release a V.17 modem transmit context.
+    \param s The modem context.
+    \return 0 for OK */
+SPAN_DECLARE(int) v17_tx_release(v17_tx_state_t *s);
 
 /*! Free a V.17 modem transmit context.
     \brief Free a V.17 modem transmit context.

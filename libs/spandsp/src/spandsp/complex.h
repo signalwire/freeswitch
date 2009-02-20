@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex.h,v 1.18 2008/09/03 13:41:42 steveu Exp $
+ * $Id: complex.h,v 1.19 2009/02/10 17:16:57 steveu Exp $
  */
 
 /*! \file */
@@ -121,7 +121,7 @@ static __inline__ complexf_t complex_setf(float re, float im)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ complex_t complex_set(float re, float im)
+static __inline__ complex_t complex_set(double re, double im)
 {
     complex_t z;
 

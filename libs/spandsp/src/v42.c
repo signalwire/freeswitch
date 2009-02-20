@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42.c,v 1.49 2009/02/04 13:18:53 steveu Exp $
+ * $Id: v42.c,v 1.50 2009/02/10 13:06:47 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -1418,6 +1418,12 @@ SPAN_DECLARE(v42_state_t *) v42_init(v42_state_t *s, int caller, int detect, v42
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(int) v42_release(v42_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v42_free(v42_state_t *s)
 {
     free(s);
     return 0;

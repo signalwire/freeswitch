@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.c,v 1.28 2009/02/03 16:28:40 steveu Exp $
+ * $Id: queue.c,v 1.29 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -407,6 +407,12 @@ SPAN_DECLARE(queue_state_t *) queue_init(queue_state_t *s, int len, int flags)
     s->flags = flags;
     s->len = len + 1;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) queue_release(queue_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

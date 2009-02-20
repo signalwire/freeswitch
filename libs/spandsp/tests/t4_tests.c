@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4_tests.c,v 1.65 2009/01/05 13:48:32 steveu Exp $
+ * $Id: t4_tests.c,v 1.66 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -354,7 +354,7 @@ int main(int argc, char *argv[])
             dump_image_as_xxx(&receive_state);
         t4_rx_end_page(&receive_state);
         display_page_stats(&receive_state);
-        t4_rx_end(&receive_state);
+        t4_rx_release(&receive_state);
     }
     else
     {
@@ -501,8 +501,8 @@ int main(int argc, char *argv[])
             t4_rx_end_page(&receive_state);
             sends++;
         }
-        t4_tx_end(&send_state);
-        t4_rx_end(&receive_state);
+        t4_tx_release(&send_state);
+        t4_rx_release(&receive_state);
         /* And we should now have a matching received TIFF file. Note this will only match
            at the image level. TIFF files allow a lot of ways to express the same thing,
            so bit matching of the files is not the normal case. */
@@ -588,8 +588,8 @@ int main(int argc, char *argv[])
             t4_rx_end_page(&receive_state);
             break;
         }
-        t4_tx_end(&send_state);
-        t4_rx_end(&receive_state);
+        t4_tx_release(&send_state);
+        t4_rx_release(&receive_state);
 #endif
 
         printf("Tests passed\n");

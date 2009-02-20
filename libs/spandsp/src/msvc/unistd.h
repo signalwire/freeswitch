@@ -12,8 +12,8 @@
  *
  */
 
-#if !defined(_INTTYPES_H_)
-#define _INTTYPES_H_
+#if !defined(_UNISTD_H_)
+#define _UNISTD_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,7 +22,9 @@ extern "C" {
 #define open _open
 #define write _write
 
-extern int gethostname (char *name, size_t len);
+extern int getopt(int argc, char *argv[], char *opstring);
+
+extern char *optarg;
 
 #ifdef __cplusplus
 }

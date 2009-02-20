@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_float.c,v 1.20 2009/02/03 16:28:40 steveu Exp $
+ * $Id: vector_float.c,v 1.21 2009/02/05 15:57:27 steveu Exp $
  */
 
 /*! \file */
@@ -132,8 +132,8 @@ SPAN_DECLARE(void) vec_copyl(long double z[], const long double x[], int n)
 SPAN_DECLARE(void) vec_negatef(float z[], const float x[], int n)
 {
     int i;
-    static const uint32_t mask = 0x80000000;
-    static const float *fmask = (float *)&mask;
+	static const uint32_t mask = 0x80000000;
+	static const float *fmask = (float *) &mask;
     __m128 n1;
     __m128 n2;
  

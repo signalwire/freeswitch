@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.c,v 1.153 2009/02/03 16:28:40 steveu Exp $
+ * $Id: t38_gateway.c,v 1.154 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -2270,6 +2270,12 @@ SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
     }
 #endif
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t38_gateway_release(t38_gateway_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

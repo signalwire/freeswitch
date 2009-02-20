@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.35 2009/02/03 16:28:41 steveu Exp $
+ * $Id: fsk.h,v 1.36 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -148,6 +148,10 @@ SPAN_DECLARE(fsk_tx_state_t *) fsk_tx_init(fsk_tx_state_t *s,
                                            get_bit_func_t get_bit,
                                            void *user_data);
 
+SPAN_DECLARE(int) fsk_tx_release(fsk_tx_state_t *s);
+
+SPAN_DECLARE(int) fsk_tx_free(fsk_tx_state_t *s);
+
 /*! Adjust an FSK modem transmit context's power output.
     \brief Adjust an FSK modem transmit context's power output.
     \param s The modem context.
@@ -196,6 +200,10 @@ SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
                                            int sync_mode,
                                            put_bit_func_t put_bit,
                                            void *user_data);
+
+SPAN_DECLARE(int) fsk_rx_release(fsk_rx_state_t *s);
+
+SPAN_DECLARE(int) fsk_rx_free(fsk_rx_state_t *s);
 
 /*! Process a block of received FSK modem audio samples.
     \brief Process a block of received FSK modem audio samples.

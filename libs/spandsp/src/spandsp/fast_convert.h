@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fast_convert.h,v 1.2 2009/02/05 12:21:36 steveu Exp $
+ * $Id: fast_convert.h,v 1.3 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_SPANDSP_FAST_CONVERT_H_)
@@ -82,6 +82,7 @@ extern "C"
  */
 
 #if defined(__CYGWIN__)
+#if !defined(__cplusplus)
     /*
      *    CYGWIN has lrint and lrintf functions, but they are slow and buggy:
      *        http://sourceware.org/ml/cygwin/2005-06/msg00153.html
@@ -118,6 +119,7 @@ extern "C"
         );
         return retval;
     }
+#endif
 
     /* The fastest way to convert is the equivalent of lrint() */
     static __inline__ long int lfastrint(double x)

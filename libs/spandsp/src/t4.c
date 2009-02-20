@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.123 2009/02/05 12:21:36 steveu Exp $
+ * $Id: t4.c,v 1.124 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*
@@ -150,6 +150,7 @@ typedef struct
 
 #include "t4_states.h"
 
+#if defined(HAVE_LIBTIFF)
 static int set_tiff_directory_info(t4_state_t *s)
 {
     time_t now;
@@ -354,6 +355,23 @@ static int get_tiff_directory_info(t4_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+static int get_tiff_total_pages(t4_state_t *s)
+{
+    int max;
+
+    /* Each page *should* contain the total number of pages, but can this be
+       trusted? Some files say 0. Actually searching for the last page is
+       more reliable. */
+    max = 0;
+    while (TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) max))
+        max++;
+    /* Back to the previous page */
+    if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->pages_transferred))
+        return -1;
+    return max;
+}
+/*- End of function --------------------------------------------------------*/
+
 static int open_tiff_input_file(t4_state_t *s, const char *file)
 {
     if ((s->tiff.tiff_file = TIFFOpen(file, "r")) == NULL)
@@ -448,6 +466,57 @@ static int close_tiff_output_file(t4_state_t *s)
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
+
+#else
+
+static int set_tiff_directory_info(t4_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int get_tiff_directory_info(t4_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int open_tiff_input_file(t4_state_t *s, const char *file)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int read_tiff_image(t4_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int close_tiff_input_file(t4_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int open_tiff_output_file(t4_state_t *s, const char *file)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void write_tiff_image(t4_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int close_tiff_output_file(t4_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
 
 static void update_row_bit_info(t4_state_t *s)
 {
@@ -1327,7 +1396,7 @@ SPAN_DECLARE(int) t4_rx_start_page(t4_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_rx_end(t4_state_t *s)
+SPAN_DECLARE(int) t4_rx_release(t4_state_t *s)
 {
     if (!s->rx)
         return -1;
@@ -1340,10 +1409,11 @@ SPAN_DECLARE(int) t4_rx_end(t4_state_t *s)
 
 SPAN_DECLARE(int) t4_rx_free(t4_state_t *s)
 {
-    if (t4_rx_end(s))
-        return -1;
+    int ret;
+
+    ret = t4_rx_release(s);
     free(s);
-    return 0;
+    return ret;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1874,9 +1944,11 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
     this_image_width = 0;
     if (s->row_read_handler == NULL)
     {
+#if defined(HAVE_LIBTIFF)
         if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->pages_transferred))
             return -1;
         TIFFGetField(s->tiff.tiff_file, TIFFTAG_IMAGEWIDTH, &this_image_width);
+#endif
     }
     s->image_size = 0;
     s->tx_bitstream = 0;
@@ -2019,8 +2091,10 @@ SPAN_DECLARE(int) t4_tx_more_pages(t4_state_t *s)
     {
         if (s->row_read_handler == NULL)
         {
+#if defined(HAVE_LIBTIFF)
             if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->pages_transferred + 1))
                 return -1;
+#endif
         }
     }
     return 0;
@@ -2089,7 +2163,7 @@ SPAN_DECLARE(int) t4_tx_check_bit(t4_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_tx_end(t4_state_t *s)
+SPAN_DECLARE(int) t4_tx_release(t4_state_t *s)
 {
     if (s->rx)
         return -1;
@@ -2102,10 +2176,11 @@ SPAN_DECLARE(int) t4_tx_end(t4_state_t *s)
 
 SPAN_DECLARE(int) t4_tx_free(t4_state_t *s)
 {
-    if (t4_tx_end(s))
-        return -1;
+    int ret;
+
+    ret = t4_tx_release(s);
     free(s);
-    return 0;
+    return ret;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2157,19 +2232,11 @@ SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_state_t *s)
 {
     int max;
 
-    /* Each page *should* contain the total number of pages, but can this be
-       trusted? Some files say 0. Actually searching for the last page is
-       more reliable. */
     max = 0;
     if (s->row_write_handler == NULL)
-    {
-        while (TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) max))
-            max++;
-        /* Back to the previous page */
-        if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->pages_transferred))
-            return -1;
-    }
-    s->pages_in_file = max;
+        max = get_tiff_total_pages(s);
+    if (max >= 0)
+        s->pages_in_file = max;
     return max;
 }
 /*- End of function --------------------------------------------------------*/

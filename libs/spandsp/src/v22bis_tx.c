@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tx.c,v 1.50 2009/02/03 16:28:40 steveu Exp $
+ * $Id: v22bis_tx.c,v 1.51 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -670,6 +670,12 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
     v22bis_tx_power(s, -10.0f);
     v22bis_restart(s, s->bit_rate);
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v22bis_release(v22bis_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

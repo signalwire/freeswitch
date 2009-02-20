@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.h,v 1.20 2009/02/03 16:28:41 steveu Exp $
+ * $Id: queue.h,v 1.21 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -160,10 +160,16 @@ SPAN_DECLARE(int) queue_write_msg(queue_state_t *s, const uint8_t *buf, int len)
     \return A pointer to the context if OK, else NULL. */
 SPAN_DECLARE(queue_state_t *) queue_init(queue_state_t *s, int len, int flags);
 
-/*! Delete a queue.
+/*! Release a queue.
+    \brief Release a queue.
+    \param s The queue context.
+    \return 0 if OK, else -1. */
+SPAN_DECLARE(int) queue_release(queue_state_t *s);
+
+/*! Free a queue.
     \brief Delete a queue.
     \param s The queue context.
-    \return 0 if deleted OK, else -1. */
+    \return 0 if OK, else -1. */
 SPAN_DECLARE(int) queue_free(queue_state_t *s);
 
 #if defined(__cplusplus)

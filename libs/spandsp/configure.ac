@@ -16,7 +16,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.65 2009/01/31 08:48:10 steveu Exp $
+# $Id: configure.ac,v 1.66 2009/02/10 17:20:31 steveu Exp $
 
 # @start 1
 
@@ -33,7 +33,7 @@ SPANDSP_MAJOR_VERSION=0
 SPANDSP_MINOR_VERSION=0
 SPANDSP_MICRO_VERSION=6
 
-SPANDSP_LT_CURRENT=1
+SPANDSP_LT_CURRENT=2
 SPANDSP_LT_REVISION=0
 SPANDSP_LT_AGE=0
 

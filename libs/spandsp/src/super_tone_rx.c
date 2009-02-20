@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_rx.c,v 1.32 2009/02/03 16:28:40 steveu Exp $
+ * $Id: super_tone_rx.c,v 1.33 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -264,6 +264,12 @@ SPAN_DECLARE(super_tone_rx_state_t *) super_tone_rx_init(super_tone_rx_state_t *
     for (i = 0;  i < desc->monitored_frequencies;  i++)
         goertzel_init(&s->state[i], &s->desc->desc[i]);
     return  s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) super_tone_rx_release(super_tone_rx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

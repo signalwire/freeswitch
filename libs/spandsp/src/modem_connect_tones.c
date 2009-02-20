@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.c,v 1.33 2009/02/03 16:28:39 steveu Exp $
+ * $Id: modem_connect_tones.c,v 1.34 2009/02/10 13:06:46 steveu Exp $
  */
  
 /*! \file */
@@ -250,6 +250,12 @@ SPAN_DECLARE(modem_connect_tones_tx_state_t *) modem_connect_tones_tx_init(modem
         return NULL;
     }
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) modem_connect_tones_tx_release(modem_connect_tones_tx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -541,6 +547,12 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem
     s->framing_ok_announced = FALSE;
     s->raw_bit_stream = 0;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) modem_connect_tones_rx_release(modem_connect_tones_rx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

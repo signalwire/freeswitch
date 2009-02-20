@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bitstream.h,v 1.13 2009/02/03 16:28:41 steveu Exp $
+ * $Id: bitstream.h,v 1.14 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -74,6 +74,10 @@ SPAN_DECLARE(void) bitstream_flush2(bitstream_state_t *s, uint8_t **c);
     \param s A pointer to the bitstream context.
     \return A pointer to the bitstream context. */
 SPAN_DECLARE(bitstream_state_t *) bitstream_init(bitstream_state_t *s);
+
+SPAN_DECLARE(int) bitstream_release(bitstream_state_t *s);
+
+SPAN_DECLARE(int) bitstream_free(bitstream_state_t *s);
 
 #if defined(__cplusplus)
 }

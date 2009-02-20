@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dtmf.c,v 1.50 2009/02/03 16:28:39 steveu Exp $
+ * $Id: dtmf.c,v 1.51 2009/02/10 13:06:46 steveu Exp $
  */
  
 /*! \file dtmf.h */
@@ -410,6 +410,12 @@ SPAN_DECLARE(dtmf_rx_state_t *) dtmf_rx_init(dtmf_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) dtmf_rx_release(dtmf_rx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) dtmf_rx_free(dtmf_rx_state_t *s)
 {
     free(s);
@@ -523,6 +529,12 @@ SPAN_DECLARE(dtmf_tx_state_t *) dtmf_tx_init(dtmf_tx_state_t *s)
     queue_init(&s->queue.queue, MAX_DTMF_DIGITS, QUEUE_READ_ATOMIC | QUEUE_WRITE_ATOMIC);
     s->tones.current_section = -1;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) dtmf_tx_release(dtmf_tx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

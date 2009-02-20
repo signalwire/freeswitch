@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.69 2009/02/03 16:28:39 steveu Exp $
+ * $Id: hdlc.c,v 1.70 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -318,6 +318,19 @@ SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) hdlc_rx_release(hdlc_rx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) hdlc_rx_free(hdlc_rx_state_t *s)
+{
+    free(s);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) hdlc_rx_get_stats(hdlc_rx_state_t *s,
                                     hdlc_rx_stats_t *t)
 {
@@ -576,6 +589,19 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
     s->progressive = progressive;
     s->max_frame_len = HDLC_MAXFRAME_LEN;
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) hdlc_tx_release(hdlc_tx_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) hdlc_tx_free(hdlc_tx_state_t *s)
+{
+    free(s);
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

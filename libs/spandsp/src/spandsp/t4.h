@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.h,v 1.56 2009/02/05 12:21:36 steveu Exp $
+ * $Id: t4.h,v 1.57 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -244,19 +244,19 @@ SPAN_DECLARE(int) t4_rx_put_chunk(t4_state_t *s, const uint8_t buf[], int len);
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_rx_end_page(t4_state_t *s);
 
+/*! \brief End reception of a document. Tidy up and close the file.
+           This should be used to end T.4 reception started with
+           t4_rx_init.
+    \param s The T.4 receive context.
+    \return 0 for success, otherwise -1. */
+SPAN_DECLARE(int) t4_rx_release(t4_state_t *s);
+
 /*! \brief End reception of a document. Tidy up, close the file and
            free the context. This should be used to end T.4 reception
            started with t4_rx_init.
     \param s The T.4 receive context.
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_rx_free(t4_state_t *s);
-
-/*! \brief End reception of a document. Tidy up and close the file.
-           This should be used to end T.4 reception started with
-           t4_rx_init.
-    \param s The T.4 context.
-    \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_rx_end(t4_state_t *s);
 
 SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_state_t *s, t4_row_write_handler_t handler, void *user_data);
 
@@ -374,18 +374,18 @@ SPAN_DECLARE(int) t4_tx_get_chunk(t4_state_t *s, uint8_t buf[], int max_len);
             set (i.e. the returned value is 2 or 3). */
 SPAN_DECLARE(int) t4_tx_check_bit(t4_state_t *s);
 
+/*! \brief End the transmission of a document. Tidy up and close the file.
+           This should be used to end T.4 transmission started with t4_tx_init.
+    \param s The T.4 context.
+    \return 0 for success, otherwise -1. */
+SPAN_DECLARE(int) t4_tx_release(t4_state_t *s);
+
 /*! \brief End the transmission of a document. Tidy up, close the file and
            free the context. This should be used to end T.4 transmission
            started with t4_tx_init.
     \param s The T.4 context.
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_tx_free(t4_state_t *s);
-
-/*! \brief End the transmission of a document. Tidy up and close the file.
-           This should be used to end T.4 transmission started with t4_tx_init.
-    \param s The T.4 context.
-    \return 0 for success, otherwise -1. */
-SPAN_DECLARE(int) t4_tx_end(t4_state_t *s);
 
 /*! \brief Set the encoding for the encoded data.
     \param s The T.4 context.

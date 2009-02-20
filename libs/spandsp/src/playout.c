@@ -29,7 +29,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: playout.c,v 1.16 2009/02/03 16:28:39 steveu Exp $
+ * $Id: playout.c,v 1.17 2009/02/10 13:06:46 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -330,7 +330,7 @@ SPAN_DECLARE(void) playout_restart(playout_state_t *s, int min_length, int max_l
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(playout_state_t *) playout_new(int min_length, int max_length)
+SPAN_DECLARE(playout_state_t *) playout_init(int min_length, int max_length)
 {
     playout_state_t *s;
 
@@ -342,7 +342,7 @@ SPAN_DECLARE(playout_state_t *) playout_new(int min_length, int max_length)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) playout_free(playout_state_t *s)
+SPAN_DECLARE(int) playout_release(playout_state_t *s)
 {
     playout_frame_t *frame;
     playout_frame_t *next;
@@ -360,8 +360,19 @@ SPAN_DECLARE(void) playout_free(playout_state_t *s)
         next = frame->later;
         free(frame);
     }
-    /* Finally, free ourselves! */ 
-    free(s);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) playout_free(playout_state_t *s)
+{
+    if (s)
+    {
+        playout_release(s);
+        /* Finally, free ourselves! */ 
+        free(s);
+    }
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_decode.c,v 1.53 2009/01/27 05:13:12 steveu Exp $
+ * $Id: fax_decode.c,v 1.54 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \page fax_decode_page FAX decoder
@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
         v29_rx(v29, amp, len);
         //v27ter_rx(v27ter, amp, len);
     }
-    t4_rx_end(&t4_state);
+    t4_rx_release(&t4_state);
 
     if (afCloseFile(inhandle) != 0)
     {

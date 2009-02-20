@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: power_meter.h,v 1.17 2009/02/03 16:28:41 steveu Exp $
+ * $Id: power_meter.h,v 1.18 2009/02/10 13:06:47 steveu Exp $
  */
 
 #if !defined(_POWER_METER_H_)
@@ -67,6 +67,10 @@ extern "C"
     \param shift The shift to be used by the IIR filter.
     \return The power meter context. */
 SPAN_DECLARE(power_meter_t *) power_meter_init(power_meter_t *s, int shift);
+
+SPAN_DECLARE(int) power_meter_release(power_meter_t *s);
+
+SPAN_DECLARE(int) power_meter_free(power_meter_t *s);
 
 /*! Change the damping factor of a power meter context.
     \brief Change the damping factor of a power meter context.

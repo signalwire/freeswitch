@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.c,v 1.116 2009/02/03 16:28:40 steveu Exp $
+ * $Id: v27ter_rx.c,v 1.117 2009/02/10 13:06:47 steveu Exp $
  */
 
 /*! \file */
@@ -1112,6 +1112,12 @@ SPAN_DECLARE(v27ter_rx_state_t *) v27ter_rx_init(v27ter_rx_state_t *s, int bit_r
 
     v27ter_rx_restart(s, bit_rate, FALSE);
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v27ter_rx_release(v27ter_rx_state_t *s)
+{
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

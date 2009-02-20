@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.139 2009/02/03 16:28:40 steveu Exp $
+ * $Id: t31.c,v 1.140 2009/02/10 13:06:46 steveu Exp $
  */
 
 /*! \file */
@@ -2528,6 +2528,13 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
 SPAN_DECLARE(int) t31_release(t31_state_t *s)
 {
     at_reset_call_info(&s->at_state);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) t31_free(t31_state_t *s)
+{
+    t31_release(s);
     free(s);
     return 0;
 }
