@@ -1365,10 +1365,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	rv = inet_pton(AF_INET, prefs.ip, &server_addr.sin_addr.s_addr);
 	if (rv == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not parse invalid ip address: %s\n", prefs.ip);
-		return SWITCH_STATUS_GENERR;
+		goto init_failed;
 	} else if (rv == -1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error when parsing ip address %s : %s\n", prefs.ip, strerror(errno));
-		return SWITCH_STATUS_GENERR;
+		goto init_failed;
 	}
 
 	/* set the address family and port */
@@ -1406,22 +1406,20 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 
 	if (SWITCH_STATUS_SUCCESS!=initialise_ei(&ec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to init ei connection\n");
-		close_socket(&listen_list.sockfd);
-		return SWITCH_STATUS_GENERR;
+		goto init_failed;
 	}
 
 	/* return value is -1 for error, a descriptor pointing to epmd otherwise */
 	if ((epmdfd = ei_publish(&ec, prefs.port)) == -1) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to publish port to empd, trying to start empd manually\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to publish port to empd, trying to start empd via system()\n");
 		if (system("epmd -daemon")) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start empd manually\n");
-			close_socket(&listen_list.sockfd);
-			return SWITCH_STATUS_GENERR;
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to start empd manually! Is epmd in $PATH? If not, start it yourself or run an erl shell with -sname or -name\n");
+			goto init_failed;
 		}
+		switch_yield(100000);
 		if ((epmdfd = ei_publish(&ec, prefs.port)) == -1) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to publish port to empd AGAIN\n");
-			close_socket(&listen_list.sockfd);
-			return SWITCH_STATUS_GENERR;
+			goto init_failed;
 		}
 	}
 
@@ -1470,6 +1468,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 	ei_unpublish(&ec);
 	close(epmdfd);
 
+init_failed:
 	close_socket(&listen_list.sockfd);
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
@@ -1491,7 +1490,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_erlang_event_shutdown)
 	listener_t *l;
 	int sanity = 0;
 
-	prefs.done = 1;
+	if (prefs.done == 0) /* main thread might already have exited */
+		prefs.done = 1;
 
 	switch_log_unbind_logger(socket_logger);
 
