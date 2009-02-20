@@ -978,8 +978,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	return SWITCH_STATUS_FALSE;
 #endif
 
-	globals.pool = pool;
-	
+	switch_core_new_memory_pool(&globals.pool);
 
 	if (lcr_load_config() != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load lcr config file\n");
