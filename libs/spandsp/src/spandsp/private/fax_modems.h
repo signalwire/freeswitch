@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_modems.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: fax_modems.h,v 1.2 2009/02/14 15:21:14 steveu Exp $
  */
 
 /*! \file */
@@ -90,6 +90,8 @@ struct fax_modems_state_s
     int rx_signal_present;
     /*! \brief TRUE if a modem has trained correctly. */
     int rx_trained;
+    /*! \brief TRUE if an HDLC frame has been received correctly. */
+    int rx_frame_received;
 
     /*! The current receive signal handler */
     span_rx_handler_t *rx_handler;

@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.124 2009/02/10 13:06:46 steveu Exp $
+ * $Id: t4.c,v 1.125 2009/02/16 09:57:22 steveu Exp $
  */
 
 /*
@@ -301,6 +301,8 @@ static int get_tiff_directory_info(t4_state_t *s)
         {             -1.00f, -1, -1}
     };
     uint16_t res_unit;
+    uint16_t photo_metric;
+    uint16_t fill_order;
     uint32_t parm;
     float x_resolution;
     float y_resolution;
@@ -325,6 +327,16 @@ static int get_tiff_directory_info(t4_state_t *s)
     TIFFGetField(t->tiff_file, TIFFTAG_YRESOLUTION, &y_resolution);
     res_unit = RESUNIT_INCH;
     TIFFGetField(t->tiff_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
+    photo_metric = PHOTOMETRIC_MINISWHITE;
+    TIFFGetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, &photo_metric);
+    if (photo_metric != PHOTOMETRIC_MINISWHITE)
+        span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->file);
+    t->photo_metric = photo_metric;
+    fill_order = FILLORDER_LSB2MSB;
+    TIFFGetField(t->tiff_file, TIFFTAG_FILLORDER, &fill_order);
+    if (fill_order != FILLORDER_LSB2MSB)
+        span_log(&s->logging, SPAN_LOG_FLOW, "%s: Fill order needs swapping.\n", s->file);
+    t->fill_order = fill_order;
 
     /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
        precise value. The other value should be exact. */
@@ -384,6 +396,7 @@ static int read_tiff_image(t4_state_t *s)
 {
     int row;
     int image_length;
+    int i;
 
     image_length = 0;
     TIFFGetField(s->tiff.tiff_file, TIFFTAG_IMAGELENGTH, &image_length);
@@ -394,6 +407,13 @@ static int read_tiff_image(t4_state_t *s)
             span_log(&s->logging, SPAN_LOG_WARNING, "%s: Read error at row %d.\n", s->file, row);
             break;
         }
+        if (s->tiff.photo_metric != PHOTOMETRIC_MINISWHITE)
+        {
+            for (i = 0;  i < s->bytes_per_row;  i++)
+                s->row_buf[i] = ~s->row_buf[i];
+        }
+        if (s->tiff.fill_order != FILLORDER_LSB2MSB)
+            bit_reverse(s->row_buf, s->row_buf, s->bytes_per_row);
         if (encode_row(s))
             return -1;
     }

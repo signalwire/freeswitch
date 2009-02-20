@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.c,v 1.155 2009/02/12 12:38:39 steveu Exp $
+ * $Id: t38_gateway.c,v 1.157 2009/02/16 09:57:22 steveu Exp $
  */
 
 /*! \file */
@@ -274,42 +274,6 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
     }
     /*endif*/
     return 0;
-}
-/*- End of function --------------------------------------------------------*/
-
-static void t38_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_data)
-{
-    s->use_tep = use_tep;
-
-    hdlc_rx_init(&s->hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, NULL, user_data);
-    hdlc_tx_init(&s->hdlc_tx, FALSE, 2, TRUE, hdlc_underflow_handler, user_data);
-    fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) t38_hdlc_rx_put_bit, &s->hdlc_rx);
-#if 0
-    fsk_rx_signal_cutoff(&s->v21_rx, -45.5);
-#endif
-    fsk_tx_init(&s->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &s->hdlc_tx);
-    v17_rx_init(&s->v17_rx, 14400, non_ecm_put_bit, user_data);
-    v17_tx_init(&s->v17_tx, 14400, s->use_tep, t38_non_ecm_buffer_get_bit, user_data);
-    v29_rx_init(&s->v29_rx, 9600, non_ecm_put_bit, user_data);
-#if 0
-    v29_rx_signal_cutoff(&s->v29_rx, -45.5);
-#endif
-    v29_tx_init(&s->v29_tx, 9600, s->use_tep, t38_non_ecm_buffer_get_bit, user_data);
-    v27ter_rx_init(&s->v27ter_rx, 4800, non_ecm_put_bit, user_data);
-    v27ter_tx_init(&s->v27ter_tx, 4800, s->use_tep, t38_non_ecm_buffer_get_bit, user_data);
-    silence_gen_init(&s->silence_gen, 0);
-    modem_connect_tones_tx_init(&s->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
-    modem_connect_tones_rx_init(&s->connect_rx,
-                                MODEM_CONNECT_TONES_FAX_CNG,
-                                tone_detected,
-                                user_data);
-    dc_restore_init(&s->dc_restore);
-
-    s->rx_signal_present = FALSE;
-    s->rx_handler = (span_rx_handler_t *) &span_dummy_rx;
-    s->rx_user_data = NULL;
-    s->tx_handler = (span_tx_handler_t *) &silence_gen;
-    s->tx_user_data = &s->silence_gen;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1971,7 +1935,7 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     s->t38x.current_tx_data_type = T38_DATA_V21;
     fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) t38_hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
 #if 0
-    fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -45.5);
+    fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -45.5f);
 #endif
     if (s->core.image_data_mode  &&  s->core.ecm_mode)
     {
@@ -2187,7 +2151,22 @@ SPAN_DECLARE(void) t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *
 
 static int t38_gateway_audio_init(t38_gateway_state_t *s)
 {
-    t38_fax_modems_init(&s->audio.modems, FALSE, s);
+    fax_modems_init(&s->audio.modems,
+                    FALSE,
+                    NULL,
+                    hdlc_underflow_handler,
+                    non_ecm_put_bit,
+                    t38_non_ecm_buffer_get_bit,
+                    tone_detected,
+                    s);
+    /* We need to use progressive HDLC transmit, and a special HDLC receiver, which is different
+       from the other uses of FAX modems. */
+    hdlc_tx_init(&s->audio.modems.hdlc_tx, FALSE, 2, TRUE, hdlc_underflow_handler, s);
+    fsk_rx_set_put_bit(&s->audio.modems.v21_rx, (put_bit_func_t) t38_hdlc_rx_put_bit, &s->audio.modems.hdlc_rx);
+    /* TODO: Don't use the very low cutoff levels we would like to. We get some quirks if we do.
+       We need to sort this out. */
+    fsk_rx_signal_cutoff(&s->audio.modems.v21_rx, -30.0f);
+    v29_rx_signal_cutoff(&s->audio.modems.v29_rx, -28.5f);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.142 2009/02/12 14:14:58 steveu Exp $
+ * $Id: t31.c,v 1.144 2009/02/16 09:57:22 steveu Exp $
  */
 
 /*! \file */
@@ -1504,11 +1504,11 @@ static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int 
 
 static void t31_v21_rx(t31_state_t *s)
 {
-    hdlc_rx_init(&(s->audio.modems.hdlc_rx), FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
     s->at_state.ok_is_pending = FALSE;
     s->hdlc_tx.final = FALSE;
     s->hdlc_tx.len = 0;
     s->dled = FALSE;
+    hdlc_rx_init(&(s->audio.modems.hdlc_rx), FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
     fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
     fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -39.09f);
     s->at_state.transmit = TRUE;
@@ -2292,39 +2292,6 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static fax_modems_state_t *t31_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_data)
-{
-    s->use_tep = use_tep;
-
-    hdlc_rx_init(&s->hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, user_data);
-    hdlc_tx_init(&s->hdlc_tx, FALSE, 2, FALSE, hdlc_tx_underflow, user_data);
-    fsk_rx_init(&s->v21_rx, &preset_fsk_specs[FSK_V21CH2], TRUE, (put_bit_func_t) hdlc_rx_put_bit, &s->hdlc_rx);
-    fsk_rx_signal_cutoff(&s->v21_rx, -39.09f);
-    fsk_tx_init(&s->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &s->hdlc_tx);
-    v17_rx_init(&s->v17_rx, 14400, non_ecm_put_bit, user_data);
-    v17_tx_init(&s->v17_tx, 14400, s->use_tep, non_ecm_get_bit, user_data);
-    v29_rx_init(&s->v29_rx, 9600, non_ecm_put_bit, user_data);
-    v29_rx_signal_cutoff(&s->v29_rx, -45.5);
-    v29_tx_init(&s->v29_tx, 9600, s->use_tep, non_ecm_get_bit, user_data);
-    v27ter_rx_init(&s->v27ter_rx, 4800, non_ecm_put_bit, user_data);
-    v27ter_tx_init(&s->v27ter_tx, 4800, s->use_tep, non_ecm_get_bit, user_data);
-    silence_gen_init(&s->silence_gen, 0);
-    modem_connect_tones_tx_init(&s->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
-    modem_connect_tones_rx_init(&s->connect_rx,
-                                MODEM_CONNECT_TONES_FAX_CNG,
-                                tone_detected,
-                                user_data);
-    dc_restore_init(&s->dc_restore);
-
-    s->rx_signal_present = FALSE;
-    s->rx_handler = (span_rx_handler_t *) &span_dummy_rx;
-    s->rx_user_data = NULL;
-    s->tx_handler = (span_tx_handler_t *) &silence_gen;
-    s->tx_user_data = &s->silence_gen;
-    return s;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
 {
     int i;
@@ -2537,7 +2504,14 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
 
     s->modem_control_handler = modem_control_handler;
     s->modem_control_user_data = modem_control_user_data;
-    t31_fax_modems_init(&s->audio.modems, FALSE, s);
+    fax_modems_init(&s->audio.modems,
+                    FALSE,
+                    hdlc_accept_frame,
+                    hdlc_tx_underflow,
+                    non_ecm_put_bit,
+                    non_ecm_get_bit,
+                    tone_detected,
+                    (void *) s);
     power_meter_init(&(s->audio.rx_power), 4);
     s->audio.last_sample = 0;
     s->audio.silence_threshold_power = power_meter_level_dbm0(-36);

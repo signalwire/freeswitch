@@ -105,6 +105,7 @@
 <File RelativePath="dtmf.c"></File>
 <File RelativePath="echo.c"></File>
 <File RelativePath="fax.c"></File>
+<File RelativePath="fax_modems.c"></File>
 <File RelativePath="fsk.c"></File>
 <File RelativePath="g711.c"></File>
 <File RelativePath="g722.c"></File>

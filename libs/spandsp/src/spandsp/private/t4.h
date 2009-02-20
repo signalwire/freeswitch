@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.h,v 1.2 2009/02/05 12:21:36 steveu Exp $
+ * $Id: t4.h,v 1.3 2009/02/16 09:57:22 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_T4_H_)
@@ -40,6 +40,10 @@ typedef struct
     int output_compression;
     /*! \brief The TIFF G3 FAX options. */
     int output_t4_options;
+    /*! \brief The TIFF photometric setting for the current page. */
+    uint16_t photo_metric;
+    /*! \brief The TIFF fill order setting for the current page. */
+    uint16_t fill_order;
 
     /* "Background" information about the FAX, which can be stored in the image file. */
     /*! \brief The vendor of the machine which produced the file. */ 

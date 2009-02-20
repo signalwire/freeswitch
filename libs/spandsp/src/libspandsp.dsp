@@ -161,6 +161,10 @@ SOURCE=.\fax.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\fax_modems.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\fsk.c
 # End Source File
 # Begin Source File

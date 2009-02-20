@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: modem_connect_tones.c,v 1.34 2009/02/10 13:06:46 steveu Exp $
+ * $Id: modem_connect_tones.c,v 1.35 2009/02/16 09:57:22 steveu Exp $
  */
  
 /*! \file */
@@ -522,7 +522,7 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem
     {
     case MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE:
         fsk_rx_init(&(s->v21rx), &preset_fsk_specs[FSK_V21CH2], TRUE, v21_put_bit, s);
-        fsk_rx_signal_cutoff(&(s->v21rx), -45.5);
+        fsk_rx_signal_cutoff(&(s->v21rx), -45.5f);
         break;
     case MODEM_CONNECT_TONES_ANS_PR:
     case MODEM_CONNECT_TONES_ANSAM:

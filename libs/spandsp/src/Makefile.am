@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.123 2009/02/10 17:16:57 steveu Exp $
+## $Id: Makefile.am,v 1.124 2009/02/14 15:21:14 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -65,6 +65,7 @@ libspandsp_la_SOURCES = adsi.c \
                         dtmf.c \
                         echo.c \
                         fax.c \
+                        fax_modems.c \
                         fsk.c \
                         g711.c \
                         g722.c \
