@@ -40,7 +40,6 @@ EXTRA_DIST = floating_fudge.h \
              msvc/unistd.h \
              msvc/spandsp.h \
              msvc/sys/time.h \
-             msvc/make_headers.bat \
              msvc/make_at_dictionary.2008.vcproj \
              msvc/make_modem_filter.2008.vcproj \
              msvc/make_at_dictionary.2005.vcproj \
