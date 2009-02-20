@@ -112,6 +112,7 @@ struct switch_channel {
 	switch_queue_t *dtmf_queue;
 	switch_mutex_t *dtmf_mutex;
 	switch_mutex_t *flag_mutex;
+	switch_mutex_t *state_mutex;
 	switch_mutex_t *profile_mutex;
 	switch_core_session_t *session;
 	switch_channel_state_t state;
@@ -224,6 +225,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
+	switch_mutex_init(&(*channel)->state_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_NONE;
 	(*channel)->name = "";
@@ -845,9 +847,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 	switch_channel_state_t state;
 	switch_assert(channel != NULL);
 
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 	state = channel->state;
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 
 	return state;
 }
@@ -857,9 +859,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 	switch_channel_state_t state;
 	switch_assert(channel != NULL);
 
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 	state = channel->running_state;
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 
 	return state;
 }
@@ -926,7 +928,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 																				const char *file, const char *func, int line)
 {
 	int x;
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) Running State Change %s\n", channel->name, state_names[state]);
 	channel->running_state = state;
 
@@ -972,7 +974,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 		}
 	}
 
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -985,7 +987,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 	switch_assert(channel != NULL);
 	switch_assert(state <= CS_DONE);
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 
 	last_state = channel->state;
 	switch_assert(last_state <= CS_DONE);
@@ -1165,9 +1167,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	if (ok) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) State Change %s -> %s\n",
 						  channel->name, state_names[last_state], state_names[state]);
-		switch_mutex_lock(channel->flag_mutex);
+		switch_mutex_lock(channel->state_mutex);
 		channel->state = state;
-		switch_mutex_unlock(channel->flag_mutex);
+		switch_mutex_unlock(channel->state_mutex);
 
 		if (state == CS_HANGUP && !channel->hangup_cause) {
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -1185,7 +1187,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	}
   done:
 
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 	return channel->state;
 }
 
@@ -1444,7 +1446,7 @@ SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel, 
 	int x, index;
 
 	switch_assert(channel != NULL);
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 	for (x = 0; x < SWITCH_MAX_STATE_HANDLERS; x++) {
 		if (channel->state_handlers[x] == state_handler) {
 			index = x;
@@ -1461,7 +1463,7 @@ SWITCH_DECLARE(int) switch_channel_add_state_handler(switch_channel_t *channel, 
 	channel->state_handlers[index] = state_handler;
 
   end:
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 	return index;
 }
 
@@ -1475,9 +1477,9 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
 		return NULL;
 	}
 
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 	h = channel->state_handlers[index];
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 
 	return h;
 }
@@ -1489,7 +1491,7 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 
 	switch_assert(channel != NULL);
 
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 	channel->state_handler_index = 0;
 
 	if (state_handler) {
@@ -1509,7 +1511,7 @@ SWITCH_DECLARE(void) switch_channel_clear_state_handler(switch_channel_t *channe
 		}
 	}
 
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 }
 
 SWITCH_DECLARE(void) switch_channel_set_caller_extension(switch_channel_t *channel, switch_caller_extension_t *caller_extension)
@@ -1541,7 +1543,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 																	 const char *file, const char *func, int line, switch_call_cause_t hangup_cause)
 {
 	switch_assert(channel != NULL);
-	switch_mutex_lock(channel->flag_mutex);
+	switch_mutex_lock(channel->state_mutex);
 
 	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
 		switch_mutex_lock(channel->profile_mutex);
@@ -1576,7 +1578,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 
 	}
 
-	switch_mutex_unlock(channel->flag_mutex);
+	switch_mutex_unlock(channel->state_mutex);
 	return channel->state;
 }
 
