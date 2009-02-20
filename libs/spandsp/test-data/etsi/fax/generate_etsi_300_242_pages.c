@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: generate_etsi_300_242_pages.c,v 1.2 2008/09/10 16:55:15 steveu Exp $
+ * $Id: generate_etsi_300_242_pages.c,v 1.3 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*! \file */
@@ -177,6 +177,9 @@ struct
     },
 };
 
+int reverse_photo_metric = FALSE;
+int reverse_fill_order = FALSE;
+
 static void clear_row(uint8_t buf[], int width)
 {
     memset(buf, 0, width/8 + 1);
@@ -245,6 +248,7 @@ static int create_stairstep_page(TIFF *tiff_file)
     uint8_t image_buffer[8192];
     int row;
     int start_pixel;
+    int i;
 
     /* TSB-85 STAIRSTEP page. */
     start_pixel = 0;
@@ -252,6 +256,13 @@ static int create_stairstep_page(TIFF *tiff_file)
     {
         clear_row(image_buffer, 1728);
         set_pixel_range(image_buffer, 1, start_pixel, start_pixel + 63);
+        if (reverse_photo_metric)
+        {
+            for (i = 0;  i < 1728/8;  i++)
+                image_buffer[i] = ~image_buffer[i];
+        }
+        if (reverse_fill_order)
+            bit_reverse(image_buffer, image_buffer, 1728/8);
         if (TIFFWriteScanline(tiff_file, image_buffer, row, 0) < 0)
         {
             printf("Write error at row %d.\n", row);
@@ -571,9 +582,14 @@ int main(int argc, char *argv[])
         TIFFSetField(tiff_file, TIFFTAG_SAMPLESPERPIXEL, 1);
         TIFFSetField(tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
         TIFFSetField(tiff_file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-        TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
-        TIFFSetField(tiff_file, TIFFTAG_FILLORDER, FILLORDER_LSB2MSB);
-    
+        if (reverse_photo_metric)
+            TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+        else
+            TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
+        if (reverse_fill_order)
+            TIFFSetField(tiff_file, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
+        else
+            TIFFSetField(tiff_file, TIFFTAG_FILLORDER, FILLORDER_LSB2MSB);
         x_resolution = sequence[i].x_res/100.0f;
         y_resolution = sequence[i].y_res/100.0f;
         TIFFSetField(tiff_file, TIFFTAG_XRESOLUTION, floorf(x_resolution*2.54f + 0.5f));

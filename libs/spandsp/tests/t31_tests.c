@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31_tests.c,v 1.70 2009/02/02 13:05:28 steveu Exp $
+ * $Id: t31_tests.c,v 1.71 2009/02/20 12:38:37 steveu Exp $
  */
 
 /*! \file */
@@ -61,14 +61,18 @@
 #if defined(ENABLE_GUI)
 #include "media_monitor.h"
 #endif
+#include "fax_utils.h"
 
 #define INPUT_FILE_NAME         "../test-data/itu/fax/itu1.tif"
 #define OUTPUT_FILE_NAME        "t31.tif"
 #define OUTPUT_WAVE_FILE_NAME   "t31_tests.wav"
 
-#define DLE 0x10
-#define ETX 0x03
-#define SUB 0x1A
+enum
+{
+    ETX = 0x03,
+    DLE = 0x10,
+    SUB = 0x1A
+};
 
 #define MANUFACTURER            "www.soft-switch.org"
 
@@ -91,6 +95,7 @@ double when = 0.0;
 #define RESPONSE(b) {"", 0, b, sizeof(b) - 1}
 #define FAST_RESPONSE(b) {NULL, -1, b, sizeof(b) - 1}
 #define FAST_SEND(b) {(const char *) 1, -2, b, sizeof(b) - 1}
+#define FAST_SEND_TCF(b) {(const char *) 2, -2, b, sizeof(b) - 1}
 
 static const struct command_response_s fax_send_test_seq[] =
 {
@@ -121,7 +126,7 @@ static const struct command_response_s fax_send_test_seq[] =
     EXCHANGE("AT+FTS=8\r", "\r\nOK\r\n"),
     EXCHANGE("AT+FTM=96\r", "\r\nCONNECT\r\n"),
     //<TCF data pattern>
-    FAST_SEND("\r\nOK\r\n"),
+    FAST_SEND_TCF("\r\nOK\r\n"),
     EXCHANGE("AT+FRH=3\r", "\r\nCONNECT\r\n"),
     //<CFR frame data>
     RESPONSE("\xFF\x13\x84\xEA\x7D\x10\x03"),
@@ -206,9 +211,12 @@ t31_state_t *t31_state;
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
-    
+    char tag[20];
+
     i = (int) (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase B:", i);
     printf("%c: Phase B handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -216,28 +224,14 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
-    t30_stats_t t;
-    const char *u;
+    char tag[20];
 
     i = (int) (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase D:", i);
     printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    t30_get_transfer_statistics(s, &t);
-    printf("%c: Phase D: bit rate %d\n", i, t.bit_rate);
-    printf("%c: Phase D: ECM %s\n", i, (t.error_correcting_mode)  ?  "on"  :  "off");
-    printf("%c: Phase D: pages transferred %d\n", i, t.pages_transferred);
-    printf("%c: Phase D: image size %d x %d\n", i, t.width, t.length);
-    printf("%c: Phase D: image resolution %d x %d\n", i, t.x_resolution, t.y_resolution);
-    printf("%c: Phase D: bad rows %d\n", i, t.bad_rows);
-    printf("%c: Phase D: longest bad row run %d\n", i, t.longest_bad_row_run);
-    printf("%c: Phase D: coding method %s\n", i, t4_encoding_to_str(t.encoding));
-    printf("%c: Phase D: image size %d\n", i, t.image_size);
-    if ((u = t30_get_tx_ident(s)))
-        printf("%c: Phase D: local ident '%s'\n", i, u);
-    if ((u = t30_get_rx_ident(s)))
-        printf("%c: Phase D: remote ident '%s'\n", i, u);
-#if defined(WITH_SPANDSP_INTERNALS)
-    printf("%c: Phase D: bits per row - min %d, max %d\n", i, s->t4.min_row_bits, s->t4.max_row_bits);
-#endif
+    log_transfer_statistics(s, tag);
+    log_tx_parameters(s, tag);
+    log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -245,9 +239,14 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
+    char tag[20];
     
     i = (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase E:", i);
     printf("Phase E handler on channel %c\n", i);
+    log_transfer_statistics(s, tag);
+    log_tx_parameters(s, tag);
+    log_rx_parameters(s, tag);
     //exit(0);
 }
 /*- End of function --------------------------------------------------------*/
@@ -404,6 +403,7 @@ static int t38_tests(int use_gui, int test_sending, int model_no, int speed_patt
 {
     t38_terminal_state_t *t38_state;
     int fast_send;
+    int fast_send_tcf;
     int fast_blocks;
     uint8_t fast_buf[1000];
     int msg_len;
@@ -417,6 +417,7 @@ static int t38_tests(int use_gui, int test_sending, int model_no, int speed_patt
     t30_state_t *t30;
     t38_core_state_t *t38_core;
     logging_state_t *logging;
+    int i;
 
     t38_version = 1;
     without_pacing = FALSE;
@@ -503,6 +504,7 @@ static int t38_tests(int use_gui, int test_sending, int model_no, int speed_patt
     span_log_set_tag(logging, "T.38");
 
     fast_send = FALSE;
+    fast_send_tcf = TRUE;
     fast_blocks = 0;
     kick = TRUE;
 #if defined(ENABLE_GUI)
@@ -535,7 +537,7 @@ static int t38_tests(int use_gui, int test_sending, int model_no, int speed_patt
         if (kick)
         {
             kick = FALSE;
-            if (fax_test_seq[test_seq_ptr].command > (const char *) 1)
+            if (fax_test_seq[test_seq_ptr].command > (const char *) 2)
             {
                 if (fax_test_seq[test_seq_ptr].command[0])
                 {
@@ -545,15 +547,52 @@ static int t38_tests(int use_gui, int test_sending, int model_no, int speed_patt
             }
             else
             {
-                printf("Fast send\n");
-                fast_send = TRUE;
-                fast_blocks = 100;
+                if (fax_test_seq[test_seq_ptr].command == (const char *) 2)
+                {
+                    printf("Fast send TCF\n");
+                    fast_send = TRUE;
+                    fast_send_tcf = TRUE;
+                    fast_blocks = 100;
+                }
+                else
+                {
+                    printf("Fast send image\n");
+                    fast_send = TRUE;
+                    fast_send_tcf = FALSE;
+                    fast_blocks = 100;
+                }
             }
         }
         if (fast_send)
         {
             /* Send fast modem data */
-            memset(fast_buf, 0, 36);
+            if (fast_send_tcf)
+            {
+                memset(fast_buf, 0, 36);
+            }
+            else
+            {
+                if (fast_blocks == 1)
+                {
+                    /* Create the end of page condition */
+                    for (i = 0;  i < 36;  i += 2)
+                    {
+                        fast_buf[i] = 0x00;
+                        fast_buf[i + 1] = 0x80;
+                    }
+                }
+                else
+                {
+                    /* Create a chunk of white page */
+                    for (i = 0;  i < 36;  i += 4)
+                    {
+                        fast_buf[i] = 0x00;
+                        fast_buf[i + 1] = 0x80;
+                        fast_buf[i + 2] = 0xB2;
+                        fast_buf[i + 3] = 0x01;
+                    }
+                }
+            }
             if (fast_blocks == 1)
             {
                 /* Insert EOLs */
@@ -625,10 +664,12 @@ static int t30_tests(int log_audio, int test_sending)
     AFfilehandle wave_handle;
     AFfilehandle in_handle;
     int fast_send;
+    int fast_send_tcf;
     int fast_blocks;
     uint8_t fast_buf[1000];
     t30_state_t *t30;
     logging_state_t *logging;
+    int i;
 
     wave_handle = AF_NULL_FILEHANDLE;
     if (log_audio)
@@ -694,6 +735,7 @@ static int t30_tests(int log_audio, int test_sending)
     span_log_set_tag(logging, "FAX");
 
     fast_send = FALSE;
+    fast_send_tcf = TRUE;
     fast_blocks = 0;
     kick = TRUE;
     while (!done)
@@ -701,7 +743,7 @@ static int t30_tests(int log_audio, int test_sending)
         if (kick)
         {
             kick = FALSE;
-            if (fax_test_seq[test_seq_ptr].command > (const char *) 1)
+            if (fax_test_seq[test_seq_ptr].command > (const char *) 2)
             {
                 if (fax_test_seq[test_seq_ptr].command[0])
                 {
@@ -711,15 +753,52 @@ static int t30_tests(int log_audio, int test_sending)
             }
             else
             {
-                printf("Fast send\n");
-                fast_send = TRUE;
-                fast_blocks = 100;
+                if (fax_test_seq[test_seq_ptr].command == (const char *) 2)
+                {
+                    printf("Fast send TCF\n");
+                    fast_send = TRUE;
+                    fast_send_tcf = TRUE;
+                    fast_blocks = 100;
+                }
+                else
+                {
+                    printf("Fast send image\n");
+                    fast_send = TRUE;
+                    fast_send_tcf = FALSE;
+                    fast_blocks = 100;
+                }
             }
         }
         if (fast_send)
         {
             /* Send fast modem data */
-            memset(fast_buf, 0, 36);
+            if (fast_send_tcf)
+            {
+                memset(fast_buf, 0, 36);
+            }
+            else
+            {
+                if (fast_blocks == 1)
+                {
+                    /* Create the end of page condition */
+                    for (i = 0;  i < 36;  i += 2)
+                    {
+                        fast_buf[i] = 0x00;
+                        fast_buf[i + 1] = 0x80;
+                    }
+                }
+                else
+                {
+                    /* Create a chunk of white page */
+                    for (i = 0;  i < 36;  i += 4)
+                    {
+                        fast_buf[i] = 0x00;
+                        fast_buf[i + 1] = 0x80;
+                        fast_buf[i + 2] = 0xB2;
+                        fast_buf[i + 3] = 0x01;
+                    }
+                }
+            }
             if (fast_blocks == 1)
             {
                 /* Insert EOLs */
@@ -779,6 +858,9 @@ static int t30_tests(int log_audio, int test_sending)
         }
         if (fax_rx(fax_state, t31_amp, SAMPLES_PER_CHUNK))
             break;
+
+        span_log_bump_samples(&fax_state->logging, SAMPLES_PER_CHUNK);
+        span_log_bump_samples(&t30->logging, SAMPLES_PER_CHUNK);
 
         if (log_audio)
         {

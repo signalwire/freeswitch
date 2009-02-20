@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.125 2009/02/16 09:57:22 steveu Exp $
+ * $Id: t4.c,v 1.126 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*
@@ -239,8 +239,8 @@ static int set_tiff_directory_info(t4_state_t *s)
     /* Set the total pages to 1. For any one page document we will get this
        right. For multi-page documents we will need to come back and fill in
        the right answer when we know it. */
-    TIFFSetField(t->tiff_file, TIFFTAG_PAGENUMBER, s->pages_transferred++, 1);
-    s->pages_in_file = s->pages_transferred;
+    TIFFSetField(t->tiff_file, TIFFTAG_PAGENUMBER, s->current_page++, 1);
+    s->pages_in_file = s->current_page;
     if (t->output_compression == COMPRESSION_CCITT_T4)
     {
         if (s->bad_rows)
@@ -301,8 +301,6 @@ static int get_tiff_directory_info(t4_state_t *s)
         {             -1.00f, -1, -1}
     };
     uint16_t res_unit;
-    uint16_t photo_metric;
-    uint16_t fill_order;
     uint32_t parm;
     float x_resolution;
     float y_resolution;
@@ -327,16 +325,14 @@ static int get_tiff_directory_info(t4_state_t *s)
     TIFFGetField(t->tiff_file, TIFFTAG_YRESOLUTION, &y_resolution);
     res_unit = RESUNIT_INCH;
     TIFFGetField(t->tiff_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
-    photo_metric = PHOTOMETRIC_MINISWHITE;
-    TIFFGetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, &photo_metric);
-    if (photo_metric != PHOTOMETRIC_MINISWHITE)
+    t->photo_metric = PHOTOMETRIC_MINISWHITE;
+    TIFFGetField(t->tiff_file, TIFFTAG_PHOTOMETRIC, &t->photo_metric);
+    if (t->photo_metric != PHOTOMETRIC_MINISWHITE)
         span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->file);
-    t->photo_metric = photo_metric;
-    fill_order = FILLORDER_LSB2MSB;
-    TIFFGetField(t->tiff_file, TIFFTAG_FILLORDER, &fill_order);
-    if (fill_order != FILLORDER_LSB2MSB)
+    t->fill_order = FILLORDER_LSB2MSB;
+    TIFFGetField(t->tiff_file, TIFFTAG_FILLORDER, &t->fill_order);
+    if (t->fill_order != FILLORDER_LSB2MSB)
         span_log(&s->logging, SPAN_LOG_FLOW, "%s: Fill order needs swapping.\n", s->file);
-    t->fill_order = fill_order;
 
     /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
        precise value. The other value should be exact. */
@@ -367,6 +363,92 @@ static int get_tiff_directory_info(t4_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+static int test_tiff_directory_info(t4_state_t *s)
+{
+    static const struct
+    {
+        float resolution;
+        int code;
+    } x_res_table[] =
+    {
+        { 102.0f/CM_PER_INCH, T4_X_RESOLUTION_R4},
+        { 204.0f/CM_PER_INCH, T4_X_RESOLUTION_R8},
+        { 300.0f/CM_PER_INCH, T4_X_RESOLUTION_300},
+        { 408.0f/CM_PER_INCH, T4_X_RESOLUTION_R16},
+        { 600.0f/CM_PER_INCH, T4_X_RESOLUTION_600},
+        { 800.0f/CM_PER_INCH, T4_X_RESOLUTION_800},
+        {1200.0f/CM_PER_INCH, T4_X_RESOLUTION_1200},
+        {             -1.00f, -1}
+    };
+    static const struct
+    {
+        float resolution;
+        int code;
+        int max_rows_to_next_1d_row;
+    } y_res_table[] =
+    {
+        {             38.50f, T4_Y_RESOLUTION_STANDARD, 2},
+        {             77.00f, T4_Y_RESOLUTION_FINE, 4},
+        { 300.0f/CM_PER_INCH, T4_Y_RESOLUTION_300, 6},
+        {            154.00f, T4_Y_RESOLUTION_SUPERFINE, 8},
+        { 600.0f/CM_PER_INCH, T4_Y_RESOLUTION_600, 12},
+        { 800.0f/CM_PER_INCH, T4_Y_RESOLUTION_800, 16},
+        {1200.0f/CM_PER_INCH, T4_Y_RESOLUTION_1200, 24},
+        {             -1.00f, -1, -1}
+    };
+    uint16_t res_unit;
+    uint32_t parm;
+    float x_resolution;
+    float y_resolution;
+    int i;
+    t4_tiff_state_t *t;
+
+    t = &s->tiff;
+    parm = 0;
+    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm);
+    if (parm != 1)
+        return -1;
+    parm = 0;
+    TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm);
+    if (s->image_width != parm)
+    {
+printf("Width changed\n");
+        return 1;
+    }
+    x_resolution = 0.0f;
+    TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
+    y_resolution = 0.0f;
+    TIFFGetField(t->tiff_file, TIFFTAG_YRESOLUTION, &y_resolution);
+    res_unit = RESUNIT_INCH;
+    TIFFGetField(t->tiff_file, TIFFTAG_RESOLUTIONUNIT, &res_unit);
+
+    /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
+       precise value. The other value should be exact. */
+    /* Treat everything we can't match as R8. Most FAXes are this resolution anyway. */
+    for (i = 0;  x_res_table[i].code > 0;  i++)
+    {
+        if (test_resolution(res_unit, x_resolution, x_res_table[i].resolution))
+            break;
+    }
+    if (s->x_resolution != x_res_table[i].code)
+    {
+printf("X-res changed\n");
+        return 1;
+    }
+    for (i = 0;  y_res_table[i].code > 0;  i++)
+    {
+        if (test_resolution(res_unit, y_resolution, y_res_table[i].resolution))
+            break;
+    }
+    if (s->y_resolution != y_res_table[i].code)
+    {
+printf("Y-res changed\n");
+        return 1;
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 static int get_tiff_total_pages(t4_state_t *s)
 {
     int max;
@@ -378,7 +460,7 @@ static int get_tiff_total_pages(t4_state_t *s)
     while (TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) max))
         max++;
     /* Back to the previous page */
-    if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->pages_transferred))
+    if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
         return -1;
     return max;
 }
@@ -460,15 +542,15 @@ static int close_tiff_output_file(t4_state_t *s)
     t = &s->tiff;
     /* Perform any operations needed to tidy up a written TIFF file before
        closure. */
-    if (s->pages_transferred > 1)
+    if (s->current_page > 1)
     {
         /* We need to edit the TIFF directories. Until now we did not know
            the total page count, so the TIFF file currently says one. Now we
            need to set the correct total page count associated with each page. */
-        for (i = 0;  i < s->pages_transferred;  i++)
+        for (i = 0;  i < s->current_page;  i++)
         {
             TIFFSetDirectory(t->tiff_file, (tdir_t) i);
-            TIFFSetField(t->tiff_file, TIFFTAG_PAGENUMBER, i, s->pages_transferred);
+            TIFFSetField(t->tiff_file, TIFFTAG_PAGENUMBER, i, s->current_page);
             TIFFWriteDirectory(t->tiff_file);
         }
     }
@@ -478,7 +560,7 @@ static int close_tiff_output_file(t4_state_t *s)
     {
         /* Try not to leave a file behind, if we didn't receive any pages to
            put in it. */
-        if (s->pages_transferred == 0)
+        if (s->current_page == 0)
             remove(s->file);
         free((char *) s->file);
     }
@@ -496,6 +578,12 @@ static int set_tiff_directory_info(t4_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 static int get_tiff_directory_info(t4_state_t *s)
+{
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int test_tiff_directory_info(t4_state_t *s)
 {
     return 0;
 }
@@ -1326,7 +1414,7 @@ SPAN_DECLARE(t4_state_t *) t4_rx_init(t4_state_t *s, const char *file, int outpu
        value to ensure it will be seen as changing when the real value is used. */
     s->bytes_per_row = 0;
 
-    s->pages_transferred = 0;
+    s->current_page = 0;
     s->pages_in_file = 0;
     s->start_page = 0;
     s->stop_page = INT_MAX;
@@ -1866,9 +1954,12 @@ SPAN_DECLARE(t4_state_t *) t4_tx_init(t4_state_t *s, const char *file, int start
     if (open_tiff_input_file(s, file) < 0)
         return NULL;
     s->file = strdup(file);
+    s->current_page =
     s->start_page = (start_page >= 0)  ?  start_page  :  0;
     s->stop_page = (stop_page >= 0)  ?  stop_page : INT_MAX;
 
+    if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
+        return -1;
     if (get_tiff_directory_info(s))
     {
         close_tiff_input_file(s);
@@ -1877,7 +1968,6 @@ SPAN_DECLARE(t4_state_t *) t4_tx_init(t4_state_t *s, const char *file, int start
 
     s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
 
-    s->pages_transferred = s->start_page;
     s->pages_in_file = -1;
 
     run_space = (s->image_width + 4)*sizeof(uint32_t);
@@ -1937,7 +2027,7 @@ static void make_header(t4_state_t *s, char *header)
              tm.tm_min,
              s->header_info,
              s->tiff.local_ident,
-             s->pages_transferred + 1);
+             s->current_page + 1);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1950,24 +2040,24 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
     int row_bufptr;
     int run_space;
     int len;
-    int this_image_width;
+    int old_image_width;
     char *t;
     char header[132 + 1];
     uint8_t *bufptr8;
     uint32_t *bufptr;
 
-    span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d\n", s->pages_transferred);
-    if (s->pages_transferred > s->stop_page)
+    span_log(&s->logging, SPAN_LOG_FLOW, "Start tx page %d\n", s->current_page);
+    if (s->current_page > s->stop_page)
         return -1;
     if (s->tiff.tiff_file == NULL)
         return -1;
-    this_image_width = 0;
+    old_image_width = s->image_width;
     if (s->row_read_handler == NULL)
     {
 #if defined(HAVE_LIBTIFF)
-        if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->pages_transferred))
+        if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
             return -1;
-        TIFFGetField(s->tiff.tiff_file, TIFFTAG_IMAGEWIDTH, &this_image_width);
+        get_tiff_directory_info(s);
 #endif
     }
     s->image_size = 0;
@@ -1977,10 +2067,9 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
     s->rows_to_next_1d_row = s->max_rows_to_next_1d_row - 1;
 
     /* Allow for pages being of different width. */
-    run_space = (this_image_width + 4)*sizeof(uint32_t);
-    if (this_image_width != s->image_width)
+    run_space = (s->image_width + 4)*sizeof(uint32_t);
+    if (old_image_width != s->image_width)
     {
-        s->image_width = this_image_width;
         s->bytes_per_row = (s->image_width + 7)/8;
 
         if ((bufptr = (uint32_t *) realloc(s->cur_runs, run_space)) == NULL)
@@ -2073,13 +2162,13 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
     }
     if (s->line_encoding == T4_COMPRESSION_ITU_T6)
     {
-        /* Attach an EOFB (end of facsimile block) to the end of the page */
+        /* Attach an EOFB (end of facsimile block == 2 x EOLs) to the end of the page */
         for (i = 0;  i < EOLS_TO_END_T6_TX_PAGE;  i++)
             encode_eol(s);
     }
     else
     {
-        /* Attach a return to control (RTC == 6 x EOLs) to the end of the page */
+        /* Attach an RTC (return to control == 6 x EOLs) to the end of the page */
         s->row_is_2d = FALSE;
         for (i = 0;  i < EOLS_TO_END_T4_TX_PAGE;  i++)
             encode_eol(s);
@@ -2095,27 +2184,20 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) t4_tx_more_pages(t4_state_t *s)
+SPAN_DECLARE(int) t4_tx_next_page_has_different_format(t4_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Checking for the existance of page %d\n", s->pages_transferred + 1);
-    if (s->pages_transferred >= s->stop_page)
+    span_log(&s->logging, SPAN_LOG_FLOW, "Checking for the existance of page %d\n", s->current_page + 1);
+    if (s->current_page >= s->stop_page)
         return -1;
-    if (s->tiff.tiff_file == NULL)
-        return -1;
-    if (s->pages_in_file >= 0)
+    if (s->row_read_handler == NULL)
     {
-        if (s->pages_transferred + 1 >= s->pages_in_file)
-            return -1;
-    }
-    else
-    {
-        if (s->row_read_handler == NULL)
-        {
 #if defined(HAVE_LIBTIFF)
-            if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->pages_transferred + 1))
-                return -1;
+        if (s->tiff.tiff_file == NULL)
+            return -1;
+        if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page + 1))
+            return -1;
+        return test_tiff_directory_info(s);
 #endif
-        }
     }
     return 0;
 }
@@ -2131,7 +2213,7 @@ SPAN_DECLARE(int) t4_tx_restart_page(t4_state_t *s)
 
 SPAN_DECLARE(int) t4_tx_end_page(t4_state_t *s)
 {
-    s->pages_transferred++;
+    s->current_page++;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2261,9 +2343,15 @@ SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) t4_tx_get_current_page_in_file(t4_state_t *s)
+{
+    return s->current_page;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) t4_get_transfer_statistics(t4_state_t *s, t4_stats_t *t)
 {
-    t->pages_transferred = s->pages_transferred - s->start_page;
+    t->pages_transferred = s->current_page - s->start_page;
     t->pages_in_file = s->pages_in_file;
     t->width = s->image_width;
     t->length = s->image_length;

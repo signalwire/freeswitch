@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway_to_terminal_tests.c,v 1.63 2009/01/07 12:50:53 steveu Exp $
+ * $Id: t38_gateway_to_terminal_tests.c,v 1.64 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*! \file */
@@ -73,6 +73,7 @@ These tests exercise the path
 #if defined(ENABLE_GUI)
 #include "media_monitor.h"
 #endif
+#include "fax_utils.h"
 
 #define SAMPLES_PER_CHUNK       160
 
@@ -97,9 +98,12 @@ int simulate_incrementing_repeats = FALSE;
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
-    
+    char tag[20];
+
     i = (int) (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase B:", i);
     printf("%c: Phase B handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -107,28 +111,14 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
-    t30_stats_t t;
-    const char *u;
+    char tag[20];
 
     i = (int) (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase D:", i);
     printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    t30_get_transfer_statistics(s, &t);
-    printf("%c: Phase D: bit rate %d\n", i, t.bit_rate);
-    printf("%c: Phase D: ECM %s\n", i, (t.error_correcting_mode)  ?  "on"  :  "off");
-    printf("%c: Phase D: pages transferred %d\n", i, t.pages_transferred);
-    printf("%c: Phase D: image size %d x %d\n", i, t.width, t.length);
-    printf("%c: Phase D: image resolution %d x %d\n", i, t.x_resolution, t.y_resolution);
-    printf("%c: Phase D: bad rows %d\n", i, t.bad_rows);
-    printf("%c: Phase D: longest bad row run %d\n", i, t.longest_bad_row_run);
-    printf("%c: Phase D: coding method %s\n", i, t4_encoding_to_str(t.encoding));
-    printf("%c: Phase D: image size %d bytes\n", i, t.image_size);
-    if ((u = t30_get_tx_ident(s)))
-        printf("%c: Phase D: local ident '%s'\n", i, u);
-    if ((u = t30_get_rx_ident(s)))
-        printf("%c: Phase D: remote ident '%s'\n", i, u);
-#if defined(WITH_SPANDSP_INTERNALS)
-    printf("%c: Phase D: bits per row - min %d, max %d\n", i, s->t4.min_row_bits, s->t4.max_row_bits);
-#endif
+    log_transfer_statistics(s, tag);
+    log_tx_parameters(s, tag);
+    log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -137,25 +127,16 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
     t30_stats_t t;
-    const char *u;
+    char tag[20];
     
     i = (int) (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase E:", i);
     printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));
+    log_transfer_statistics(s, tag);
+    log_tx_parameters(s, tag);
+    log_rx_parameters(s, tag);
     t30_get_transfer_statistics(s, &t);
-    printf("%c: Phase E: bit rate %d\n", i, t.bit_rate);
-    printf("%c: Phase E: ECM %s\n", i, (t.error_correcting_mode)  ?  "on"  :  "off");
-    printf("%c: Phase E: pages transferred %d\n", i, t.pages_transferred);
-    printf("%c: Phase E: image size %d x %d\n", i, t.width, t.length);
-    printf("%c: Phase E: image resolution %d x %d\n", i, t.x_resolution, t.y_resolution);
-    printf("%c: Phase E: bad rows %d\n", i, t.bad_rows);
-    printf("%c: Phase E: longest bad row run %d\n", i, t.longest_bad_row_run);
-    printf("%c: Phase E: coding method %s\n", i, t4_encoding_to_str(t.encoding));
-    printf("%c: Phase E: image size %d bytes\n", i, t.image_size);
-    if ((u = t30_get_tx_ident(s)))
-        printf("%c: Phase E: local ident '%s'\n", i, u);
-    if ((u = t30_get_rx_ident(s)))
-        printf("%c: Phase E: remote ident '%s'\n", i, u);
-    succeeded[i - 'A'] = (result == T30_ERR_OK)  &&  (t.pages_transferred == 12);
+    succeeded[i - 'A'] = (result == T30_ERR_OK)  &&  (t.pages_tx == 12  ||  t.pages_rx == 12);
     done[i - 'A'] = TRUE;
 }
 /*- End of function --------------------------------------------------------*/

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_tests.c,v 1.100 2009/01/03 14:44:15 steveu Exp $
+ * $Id: fax_tests.c,v 1.101 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*! \page fax_tests_page FAX tests
@@ -47,6 +47,8 @@
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
+
+#include "fax_utils.h"
 
 #define SAMPLES_PER_CHUNK       160
 
@@ -77,22 +79,12 @@ int t30_state_to_wreck = -1;
 static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
-    const char *u;
-    
-    i = (intptr_t) user_data;
-    if ((u = t30_get_rx_ident(s)))
-        printf("%d: Phase B: remote ident '%s'\n", i, u);
-    if ((u = t30_get_rx_sub_address(s)))
-        printf("%d: Phase B: remote sub-address '%s'\n", i, u);
-    if ((u = t30_get_rx_polled_sub_address(s)))
-        printf("%d: Phase B: remote polled sub-address '%s'\n", i, u);
-    if ((u = t30_get_rx_selective_polling_address(s)))
-        printf("%d: Phase B: remote selective polling address '%s'\n", i, u);
-    if ((u = t30_get_rx_sender_ident(s)))
-        printf("%d: Phase B: remote sender ident '%s'\n", i, u);
-    if ((u = t30_get_rx_password(s)))
-        printf("%d: Phase B: remote password '%s'\n", i, u);
-    printf("%d: Phase B handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    char tag[20];
+
+    i = (int) (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase B:", i);
+    printf("%c: Phase B handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    log_rx_parameters(s, tag);
     return T30_ERR_OK;
 }
 /*- End of function --------------------------------------------------------*/
@@ -100,31 +92,14 @@ static int phase_b_handler(t30_state_t *s, void *user_data, int result)
 static int phase_d_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
-    t30_stats_t t;
-    const char *u;
+    char tag[20];
 
-    i = (intptr_t) user_data;
-    t30_get_transfer_statistics(s, &t);
-
-    printf("%d: Phase D handler on channel %d - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    printf("%d: Phase D: bit rate %d\n", i, t.bit_rate);
-    printf("%d: Phase D: ECM %s\n", i, (t.error_correcting_mode)  ?  "on"  :  "off");
-    printf("%d: Phase D: pages transferred %d\n", i, t.pages_transferred);
-    printf("%d: Phase D: pages in the file %d\n", i, t.pages_in_file);
-    printf("%d: Phase D: image size %d x %d\n", i, t.width, t.length);
-    printf("%d: Phase D: image resolution %d x %d\n", i, t.x_resolution, t.y_resolution);
-    printf("%d: Phase D: bad rows %d\n", i, t.bad_rows);
-    printf("%d: Phase D: longest bad row run %d\n", i, t.longest_bad_row_run);
-    printf("%d: Phase D: bad ECM frames %d\n", i, t.error_correcting_mode_retries);
-    printf("%d: Phase D: compression type %d\n", i, t.encoding);
-    printf("%d: Phase D: image size %d bytes\n", i, t.image_size);
-    if ((u = t30_get_tx_ident(s)))
-        printf("%d: Phase D: local ident '%s'\n", i, u);
-    if ((u = t30_get_rx_ident(s)))
-        printf("%d: Phase D: remote ident '%s'\n", i, u);
-#if defined(WITH_SPANDSP_INTERNALS)
-    printf("%d: Phase D: bits per row - min %d, max %d\n", i, s->t4.min_row_bits, s->t4.max_row_bits);
-#endif
+    i = (int) (intptr_t) user_data;
+    snprintf(tag, sizeof(tag), "%c: Phase D:", i);
+    printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
+    log_transfer_statistics(s, tag);
+    log_tx_parameters(s, tag);
+    log_rx_parameters(s, tag);
 
     if (use_receiver_not_ready)
         t30_set_receiver_not_ready(s, 3);
@@ -160,34 +135,17 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 {
     int i;
     t30_stats_t t;
-    const char *u;
-    
+    char tag[20];
+
     i = (intptr_t) user_data;
-    printf("%d: Phase E handler on channel %d - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));    
+    snprintf(tag, sizeof(tag), "%c: Phase E:", i);
+    printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));    
+    log_transfer_statistics(s, tag);
+    log_tx_parameters(s, tag);
+    log_rx_parameters(s, tag);
     t30_get_transfer_statistics(s, &t);
-    printf("%d: Phase E: bit rate %d\n", i, t.bit_rate);
-    printf("%d: Phase E: ECM %s\n", i, (t.error_correcting_mode)  ?  "on"  :  "off");
-    printf("%d: Phase E: pages transferred %d\n", i, t.pages_transferred);
-    printf("%d: Phase E: pages in the file %d\n", i, t.pages_in_file);
-    printf("%d: Phase E: image size %d x %d\n", i, t.width, t.length);
-    printf("%d: Phase E: image resolution %d x %d\n", i, t.x_resolution, t.y_resolution);
-    printf("%d: Phase E: bad rows %d\n", i, t.bad_rows);
-    printf("%d: Phase E: longest bad row run %d\n", i, t.longest_bad_row_run);
-    printf("%d: Phase E: bad ECM frames %d\n", i, t.error_correcting_mode_retries);
-    printf("%d: Phase E: coding method %s\n", i, t4_encoding_to_str(t.encoding));
-    printf("%d: Phase E: image size %d bytes\n", i, t.image_size);
-    if ((u = t30_get_tx_ident(s)))
-        printf("%d: Phase E: local ident '%s'\n", i, u);
-    if ((u = t30_get_rx_ident(s)))
-        printf("%d: Phase E: remote ident '%s'\n", i, u);
-    if ((u = t30_get_rx_country(s)))
-        printf("%d: Phase E: Remote was made in '%s'\n", i, u);
-    if ((u = t30_get_rx_vendor(s)))
-        printf("%d: Phase E: Remote was made by '%s'\n", i, u);
-    if ((u = t30_get_rx_model(s)))
-        printf("%d: Phase E: Remote is model '%s'\n", i, u);
-    machines[i].succeeded = (result == T30_ERR_OK)  &&  (t.pages_transferred == 12);
-    machines[i].done = TRUE;
+    machines[i - 'A'].succeeded = (result == T30_ERR_OK)  &&  (t.pages_tx == 12  ||  t.pages_rx == 12);
+    machines[i - 'A'].done = TRUE;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -200,7 +158,7 @@ static void real_time_frame_handler(t30_state_t *s,
     int i;
     
     i = (intptr_t) user_data;
-    printf("%d: Real time frame handler on channel %d - %s, %s, length = %d\n",
+    printf("%c: Real time frame handler on channel %c - %s, %s, length = %d\n",
            i,
            i,
            (direction)  ?  "line->T.30"  : "T.30->line",
@@ -214,7 +172,7 @@ static int document_handler(t30_state_t *s, void *user_data, int event)
     int i;
     
     i = (intptr_t) user_data;
-    printf("%d: Document handler on channel %d - event %d\n", i, i, event);
+    printf("%c: Document handler on channel %c - event %d\n", i, i, event);
     return FALSE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -419,6 +377,7 @@ int main(int argc, char *argv[])
             {
                 sprintf(buf, "fax_tests_%d.tif", (mc->chan + 1)/2);
                 t30_set_rx_file(t30, buf, -1);
+                t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T6);
             }
         }
         else
@@ -427,6 +386,7 @@ int main(int argc, char *argv[])
             {
                 sprintf(buf, "fax_tests_%d.tif", (mc->chan + 1)/2);
                 t30_set_rx_file(t30, buf, -1);
+                t30_set_rx_encoding(t30, T4_COMPRESSION_ITU_T6);
             }
             else
             {
@@ -436,16 +396,18 @@ int main(int argc, char *argv[])
                     t30_set_tx_file(t30, input_tiff_file_name, -1, -1);
             }
         }
-        t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) mc->chan);
-        t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) mc->chan);
-        t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) mc->chan);
-        t30_set_real_time_frame_handler(t30, real_time_frame_handler, (void *) (intptr_t) mc->chan);
-        t30_set_document_handler(t30, document_handler, (void *) (intptr_t) mc->chan);
+        t30_set_phase_b_handler(t30, phase_b_handler, (void *) (intptr_t) mc->chan + 'A');
+        t30_set_phase_d_handler(t30, phase_d_handler, (void *) (intptr_t) mc->chan + 'A');
+        t30_set_phase_e_handler(t30, phase_e_handler, (void *) (intptr_t) mc->chan + 'A');
+        t30_set_real_time_frame_handler(t30, real_time_frame_handler, (void *) (intptr_t) mc->chan + 'A');
+        t30_set_document_handler(t30, document_handler, (void *) (intptr_t) mc->chan + 'A');
         sprintf(mc->tag, "FAX-%d", j + 1);
 
         logging = t30_get_logging_state(t30);
         span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         span_log_set_tag(logging, mc->tag);
+        span_log_set_level(&t30->t4.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
+        span_log_set_tag(&t30->t4.logging, mc->tag);
 
         logging = fax_get_logging_state(mc->fax);
         span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);

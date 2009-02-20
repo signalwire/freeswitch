@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.285 2009/02/10 13:06:46 steveu Exp $
+ * $Id: t30.c,v 1.286 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*! \file */
@@ -469,7 +469,9 @@ static int copy_quality(t30_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Image resolution = %d/m x %d/m\n", stats.x_resolution, stats.y_resolution);
     span_log(&s->logging, SPAN_LOG_FLOW, "Bad rows = %d\n", stats.bad_rows);
     span_log(&s->logging, SPAN_LOG_FLOW, "Longest bad row run = %d\n", stats.longest_bad_row_run);
-    if (stats.bad_rows == 0)
+    /* Don't treat a page as perfect because it has zero bad rows out of zero total rows. A zero row
+       page has got to be some kind of total page failure. */
+    if (stats.bad_rows == 0  &&  stats.length != 0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Page quality is perfect\n");
         quality = T30_COPY_QUALITY_PERFECT;
@@ -587,10 +589,21 @@ static void release_resources(t30_state_t *s)
 
 static uint8_t check_next_tx_step(t30_state_t *s)
 {
+    int res;
     int more;
 
-    if (t4_tx_more_pages(&(s->t4)) == 0)
+    res = t4_tx_next_page_has_different_format(&(s->t4));
+    if (res == 0)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "More pages to come with the same format\n");
         return (s->local_interrupt_pending)  ?  T30_PRI_MPS  :  T30_MPS;
+    }
+    if (res > 0)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "More pages to come with a different format\n");
+        s->tx_start_page = t4_tx_get_current_page_in_file(&(s->t4)) + 1;
+        return (s->local_interrupt_pending)  ?  T30_PRI_EOM  :  T30_EOM;
+    }
     /* Call a user handler, if one is set, to check if another document is to be sent.
        If so, we send an EOM, rather than an EOP. Then we will renegotiate, and the new
        document will begin. */
@@ -5778,7 +5791,8 @@ SPAN_DECLARE(void) t30_get_transfer_statistics(t30_state_t *s, t30_stats_t *t)
     t->error_correcting_mode = s->error_correcting_mode;
     t->error_correcting_mode_retries = s->error_correcting_mode_retries;
     t4_get_transfer_statistics(&s->t4, &stats);
-    t->pages_transferred = stats.pages_transferred;
+    t->pages_tx = s->ecm_tx_page;
+    t->pages_rx = s->ecm_rx_page;
     t->pages_in_file = stats.pages_in_file;
     t->width = stats.width;
     t->length = stats.length;
@@ -5833,6 +5847,7 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
     s->far_end_detected = FALSE;
     s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T0);
     release_resources(s);
+    /* The ECM page number is only reset at call establishment */
     s->ecm_rx_page = 0;
     s->ecm_tx_page = 0;
     return 0;

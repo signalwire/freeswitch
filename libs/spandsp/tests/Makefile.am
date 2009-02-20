@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.109 2009/01/30 05:35:18 steveu Exp $
+## $Id: Makefile.am,v 1.110 2009/02/20 12:34:20 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -165,7 +165,7 @@ echo_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspand
 fax_decode_SOURCES = fax_decode.c
 fax_decode_LDADD = $(LIBDIR) -lspandsp
 
-fax_tests_SOURCES = fax_tests.c
+fax_tests_SOURCES = fax_tests.c fax_utils.c
 fax_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 fsk_tests_SOURCES = fsk_tests.c
@@ -255,25 +255,25 @@ super_tone_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR
 t4_tests_SOURCES = t4_tests.c
 t4_tests_LDADD = $(LIBDIR) -lspandsp
 
-t31_tests_SOURCES = t31_tests.c media_monitor.cpp
+t31_tests_SOURCES = t31_tests.c fax_utils.c media_monitor.cpp
 t31_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 t38_core_tests_SOURCES = t38_core_tests.c
 t38_core_tests_LDADD = $(LIBDIR) -lspandsp
 
-t38_gateway_tests_SOURCES = t38_gateway_tests.c media_monitor.cpp
+t38_gateway_tests_SOURCES = t38_gateway_tests.c fax_utils.c media_monitor.cpp
 t38_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
-t38_gateway_to_terminal_tests_SOURCES = t38_gateway_to_terminal_tests.c media_monitor.cpp
+t38_gateway_to_terminal_tests_SOURCES = t38_gateway_to_terminal_tests.c fax_utils.c media_monitor.cpp
 t38_gateway_to_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 t38_non_ecm_buffer_tests_SOURCES = t38_non_ecm_buffer_tests.c
 t38_non_ecm_buffer_tests_LDADD = $(LIBDIR) -lspandsp
 
-t38_terminal_tests_SOURCES = t38_terminal_tests.c media_monitor.cpp
+t38_terminal_tests_SOURCES = t38_terminal_tests.c fax_utils.c media_monitor.cpp
 t38_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
-t38_terminal_to_gateway_tests_SOURCES = t38_terminal_to_gateway_tests.c media_monitor.cpp
+t38_terminal_to_gateway_tests_SOURCES = t38_terminal_to_gateway_tests.c fax_utils.c media_monitor.cpp
 t38_terminal_to_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 time_scale_tests_SOURCES = time_scale_tests.c
@@ -285,7 +285,7 @@ tone_detect_tests_LDADD = $(LIBDIR) -lspandsp
 tone_generate_tests_SOURCES = tone_generate_tests.c
 tone_generate_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
-tsb85_tests_SOURCES = tsb85_tests.c fax_tester.c
+tsb85_tests_SOURCES = tsb85_tests.c fax_utils.c fax_tester.c
 tsb85_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 v17_tests_SOURCES = v17_tests.c line_model_monitor.cpp modem_monitor.cpp

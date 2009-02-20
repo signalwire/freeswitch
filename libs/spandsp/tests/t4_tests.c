@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4_tests.c,v 1.66 2009/02/10 13:06:47 steveu Exp $
+ * $Id: t4_tests.c,v 1.67 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*! \file */
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
             printf("Failed to init T.4 rx\n");
             exit(2);
         }
-        
+        span_log_set_level(&receive_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         t4_rx_set_rx_encoding(&receive_state, compression);
         t4_rx_set_x_resolution(&receive_state, T4_X_RESOLUTION_R8);
         //t4_rx_set_y_resolution(&receive_state, T4_Y_RESOLUTION_FINE);
@@ -365,6 +365,7 @@ int main(int argc, char *argv[])
             printf("Failed to init T.4 send\n");
             exit(2);
         }
+        span_log_set_level(&send_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         t4_tx_set_min_row_bits(&send_state, min_row_bits);
         t4_tx_set_local_ident(&send_state, "111 2222 3333");
 
@@ -374,6 +375,7 @@ int main(int argc, char *argv[])
             printf("Failed to init T.4 rx\n");
             exit(2);
         }
+        span_log_set_level(&receive_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         t4_rx_set_x_resolution(&receive_state, t4_tx_get_x_resolution(&send_state));
         t4_rx_set_y_resolution(&receive_state, t4_tx_get_y_resolution(&send_state));
         t4_rx_set_image_width(&receive_state, t4_tx_get_image_width(&send_state));
@@ -521,6 +523,7 @@ int main(int argc, char *argv[])
             printf("Failed to init T.4 tx\n");
             exit(2);
         }
+        span_log_set_level(&send_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         t4_tx_set_row_read_handler(&send_state, row_read_handler, NULL);
         t4_tx_set_min_row_bits(&send_state, min_row_bits);
         t4_tx_set_local_ident(&send_state, "111 2222 3333");
@@ -531,6 +534,7 @@ int main(int argc, char *argv[])
             printf("Failed to init T.4 rx\n");
             exit(2);
         }
+        span_log_set_level(&receive_state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         t4_rx_set_row_write_handler(&receive_state, row_write_handler, NULL);
         t4_rx_set_x_resolution(&receive_state, t4_tx_get_x_resolution(&send_state));
         t4_rx_set_y_resolution(&receive_state, t4_tx_get_y_resolution(&send_state));

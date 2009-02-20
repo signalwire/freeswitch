@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.123 2009/02/04 13:18:53 steveu Exp $
+ * $Id: t30.h,v 1.124 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*! \file */
@@ -515,8 +515,10 @@ typedef struct
     int bit_rate;
     /*! \brief TRUE if error correcting mode is used. */
     int error_correcting_mode;
-    /*! \brief The number of pages transferred so far. */
-    int pages_transferred;
+    /*! \brief The number of pages sent so far. */
+    int pages_tx;
+    /*! \brief The number of pages received so far. */
+    int pages_rx;
     /*! \brief The number of pages in the file (<0 if not known). */
     int pages_in_file;
     /*! \brief The horizontal column-to-column resolution of the page, in pixels per metre */

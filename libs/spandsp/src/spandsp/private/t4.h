@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.h,v 1.3 2009/02/16 09:57:22 steveu Exp $
+ * $Id: t4.h,v 1.4 2009/02/20 12:34:20 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_T4_H_)
@@ -107,7 +107,7 @@ struct t4_state_s
     int stop_page;
 
     /*! \brief The number of pages transferred to date. */
-    int pages_transferred;
+    int current_page;
     /*! \brief The number of pages in the current image file. */
     int pages_in_file;
     /*! \brief Column-to-column (X) resolution in pixels per metre. */

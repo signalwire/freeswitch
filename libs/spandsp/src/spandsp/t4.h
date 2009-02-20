@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.h,v 1.57 2009/02/10 13:06:47 steveu Exp $
+ * $Id: t4.h,v 1.58 2009/02/20 12:34:20 steveu Exp $
  */
 
 /*! \file */
@@ -323,11 +323,14 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s);
     \return zero for success, -1 for failure. */
 SPAN_DECLARE(int) t4_tx_restart_page(t4_state_t *s);
 
-/*! \brief Check for the existance of the next page. This information can
-    be needed before it is determined that the current page is finished with.
+/*! \brief Check for the existance of the next page, and whether its format is like the
+    current one. This information can be needed before it is determined that the current
+    page is finished with.
     \param s The T.4 context.
-    \return zero for next page found, -1 for failure. */
-SPAN_DECLARE(int) t4_tx_more_pages(t4_state_t *s);
+    \return 0 for next page found with the same format as the current page.
+            1 for next page found with different format from the current page.
+            -1 for no page found, or file failure. */
+SPAN_DECLARE(int) t4_tx_next_page_has_different_format(t4_state_t *s);
 
 /*! \brief Complete the sending of a page.
     \param s The T.4 context.
@@ -434,6 +437,11 @@ SPAN_DECLARE(int) t4_tx_get_image_width(t4_state_t *s);
     \param s The T.4 context.
     \return The number of pages, or -1 if there is an error. */
 SPAN_DECLARE(int) t4_tx_get_pages_in_file(t4_state_t *s);
+
+/*! \brief Get the currnet page number in the file.
+    \param s The T.4 context.
+    \return The page number, or -1 if there is an error. */
+SPAN_DECLARE(int) t4_tx_get_current_page_in_file(t4_state_t *s);
 
 /*! Get the current image transfer statistics. 
     \brief Get the current transfer statistics.
