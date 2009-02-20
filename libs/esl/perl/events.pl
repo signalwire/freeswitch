@@ -1,6 +1,6 @@
 require ESL;
 
-my $con = new ESL::eslConnection("localhost", "8021", "ClueCon");
+my $con = new ESL::ESLconnection("localhost", "8021", "ClueCon");
 
 $con->events("plain", "all");
 
