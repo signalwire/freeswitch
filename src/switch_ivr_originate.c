@@ -1562,7 +1562,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						goto notready;
 					}
 					
-					switch_yield(100000);
+					switch_cond_next();
 				}
 
 				check_per_channel_timeouts(&oglobals, originate_status, and_argc, start);
@@ -1821,7 +1821,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 					
 				} else {
-					switch_yield(100000);
+					switch_cond_next();
 				}
 				
 			}
