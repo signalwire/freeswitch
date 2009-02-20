@@ -17,7 +17,7 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
+			Name="All|Win32"
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
@@ -86,80 +86,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
-			IntermediateDirectory="$(ConfigurationName)"
-			ConfigurationType="1"
-			CharacterSet="1"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="2"
-				EnableIntrinsicFunctions="true"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;HAVE_CONFIG_H"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
+				CommandLine="$(TargetPath) -m V.17 -i -r &gt;$(SolutionDir)\v17rx_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.17 -r &gt;$(SolutionDir)\v17rx_floating_rrc.h&#x0D;&#x0A;&#x0D;&#x0A;$(TargetPath) -m V.17 -i -t &gt;$(SolutionDir)\v17tx_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.17 -t &gt;$(SolutionDir)\v17tx_floating_rrc.h&#x0D;&#x0A;&#x0D;&#x0A;$(TargetPath) -m V.22bis1200 -i -r &gt;$(SolutionDir)\v22bis_rx_1200_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.22bis2400 -i -r &gt;$(SolutionDir)\v22bis_rx_2400_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.22bis1200 -r &gt;$(SolutionDir)\v22bis_rx_1200_floating_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.22bis2400 -r &gt;$(SolutionDir)\v22bis_rx_2400_floating_rrc.h&#x0D;&#x0A;&#x0D;&#x0A;$(TargetPath) -m V.27ter2400 -i -r &gt;$(SolutionDir)\v27ter_rx_2400_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.27ter4800 -i -r &gt;$(SolutionDir)\v27ter_rx_4800_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.27ter2400 -r &gt;$(SolutionDir)\v27ter_rx_2400_floating_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.27ter4800 -r &gt;$(SolutionDir)\v27ter_rx_4800_floating_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.27ter2400 -i -t &gt;$(SolutionDir)\v27ter_tx_2400_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.27ter4800 -i -t &gt;$(SolutionDir)\v27ter_tx_4800_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.27ter2400 -t &gt;$(SolutionDir)\v27ter_tx_2400_floating_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.27ter4800 -t &gt;$(SolutionDir)\v27ter_tx_4800_floating_rrc.h&#x0D;&#x0A;&#x0D;&#x0A;$(TargetPath) -m V.29 -i -r &gt;$(SolutionDir)\v29rx_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.29 -r &gt;$(SolutionDir)\v29rx_floating_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.29 -i -t &gt;$(SolutionDir)\v29tx_fixed_rrc.h&#x0D;&#x0A;$(TargetPath) -m V.29 -t &gt;$(SolutionDir)\v29tx_floating_rrc.h&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -193,12 +120,6 @@
 				RelativePath="..\filter_tools.h"
 				>
 			</File>
-		</Filter>
-		<Filter
-			Name="Resource Files"
-			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
-			>
 		</Filter>
 	</Files>
 	<Globals>
