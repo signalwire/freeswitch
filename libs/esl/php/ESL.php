@@ -131,13 +131,19 @@ class ESLconnection {
 		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
-	function api($cmd,$arg) {
-		$r=ESLconnection_api($this->_cPtr,$cmd,$arg);
+	function api($cmd,$arg=null) {
+		switch (func_num_args()) {
+		case 1: $r=ESLconnection_api($this->_cPtr,$cmd); break;
+		default: $r=ESLconnection_api($this->_cPtr,$cmd,$arg);
+		}
 		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
-	function bgapi($cmd,$arg) {
-		$r=ESLconnection_bgapi($this->_cPtr,$cmd,$arg);
+	function bgapi($cmd,$arg=null) {
+		switch (func_num_args()) {
+		case 1: $r=ESLconnection_bgapi($this->_cPtr,$cmd); break;
+		default: $r=ESLconnection_bgapi($this->_cPtr,$cmd,$arg);
+		}
 		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 

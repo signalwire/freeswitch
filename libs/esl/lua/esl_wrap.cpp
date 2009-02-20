@@ -2337,20 +2337,22 @@ static int _wrap_ESLconnection_api(lua_State* L) {
   int SWIG_arg = -1;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   ESLevent *result = 0 ;
   
-  SWIG_check_num_args("api",3,3)
+  SWIG_check_num_args("api",2,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("api",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("api",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("api",3,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("api",3,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
     SWIG_fail_ptr("ESLconnection_api",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
   result = (ESLevent *)(arg1)->api((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
@@ -2368,20 +2370,22 @@ static int _wrap_ESLconnection_bgapi(lua_State* L) {
   int SWIG_arg = -1;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   ESLevent *result = 0 ;
   
-  SWIG_check_num_args("bgapi",3,3)
+  SWIG_check_num_args("bgapi",2,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("bgapi",1,"ESLconnection *");
   if(!lua_isstring(L,2)) SWIG_fail_arg("bgapi",2,"char const *");
-  if(!lua_isstring(L,3)) SWIG_fail_arg("bgapi",3,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("bgapi",3,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
     SWIG_fail_ptr("ESLconnection_bgapi",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  arg3 = (char *)lua_tostring(L, 3);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
   result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
   SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 

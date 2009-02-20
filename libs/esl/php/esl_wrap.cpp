@@ -1889,14 +1889,16 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_api) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   ESLevent *result = 0 ;
   zval **args[3];
+  int arg_count;
   
   SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<2 || arg_count>3 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
@@ -1910,12 +1912,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_api) {
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[2]);
-  arg3 = (char *) Z_STRVAL_PP(args[2]);
-  /*@SWIG@*/;
-  
+  if(arg_count > 2) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[2]);
+    arg3 = (char *) Z_STRVAL_PP(args[2]);
+    /*@SWIG@*/;
+    
+  }
   result = (ESLevent *)(arg1)->api((char const *)arg2,(char const *)arg3);
   {
     SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 0);
@@ -1929,14 +1932,16 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_bgapi) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   ESLevent *result = 0 ;
   zval **args[3];
+  int arg_count;
   
   SWIG_ResetError();
-  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<2 || arg_count>3 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
@@ -1950,12 +1955,13 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_bgapi) {
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
-  
-  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
-  convert_to_string_ex(args[2]);
-  arg3 = (char *) Z_STRVAL_PP(args[2]);
-  /*@SWIG@*/;
-  
+  if(arg_count > 2) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[2]);
+    arg3 = (char *) Z_STRVAL_PP(args[2]);
+    /*@SWIG@*/;
+    
+  }
   result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
   {
     SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 0);

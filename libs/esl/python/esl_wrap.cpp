@@ -3732,7 +3732,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_api(PyObject *SWIGUNUSEDPARM(self), PyO
   PyObject *resultobj = 0;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3746,7 +3746,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_api(PyObject *SWIGUNUSEDPARM(self), PyO
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOO:ESLconnection_api",&obj0,&obj1,&obj2)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO|O:ESLconnection_api",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_api" "', argument " "1"" of type '" "ESLconnection *""'"); 
@@ -3757,11 +3757,13 @@ SWIGINTERN PyObject *_wrap_ESLconnection_api(PyObject *SWIGUNUSEDPARM(self), PyO
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_api" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_api" "', argument " "3"" of type '" "char const *""'");
+  if (obj2) {
+    res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_api" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
   }
-  arg3 = reinterpret_cast< char * >(buf3);
   result = (ESLevent *)(arg1)->api((char const *)arg2,(char const *)arg3);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -3778,7 +3780,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_bgapi(PyObject *SWIGUNUSEDPARM(self), P
   PyObject *resultobj = 0;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
-  char *arg3 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
   ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3792,7 +3794,7 @@ SWIGINTERN PyObject *_wrap_ESLconnection_bgapi(PyObject *SWIGUNUSEDPARM(self), P
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOO:ESLconnection_bgapi",&obj0,&obj1,&obj2)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO|O:ESLconnection_bgapi",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_bgapi" "', argument " "1"" of type '" "ESLconnection *""'"); 
@@ -3803,11 +3805,13 @@ SWIGINTERN PyObject *_wrap_ESLconnection_bgapi(PyObject *SWIGUNUSEDPARM(self), P
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_bgapi" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_bgapi" "', argument " "3"" of type '" "char const *""'");
+  if (obj2) {
+    res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_bgapi" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
   }
-  arg3 = reinterpret_cast< char * >(buf3);
   result = (ESLevent *)(arg1)->bgapi((char const *)arg2,(char const *)arg3);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
