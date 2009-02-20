@@ -1238,6 +1238,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 {
 	switch_application_interface_t *application_interface;
 
+	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is hungup, aborting execution of application: %s\n", app);
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if ((application_interface = switch_loadable_module_get_application_interface(app)) == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Application %s\n", app);
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
