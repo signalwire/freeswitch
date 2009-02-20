@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="libspandsp"
 	ProjectGUID="{1CBB0077-18C5-455F-801C-0A0CE7B0BBF5}"
 	RootNamespace="libspandsp"

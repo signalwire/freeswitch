@@ -27,8 +27,11 @@ EXTRA_DIST = floating_fudge.h \
              spandsp/version.h.in \
              libspandsp.dsp \
              libspandsp.2008.sln \
+             libspandsp.2005.sln \
              libspandsp.2008.vcproj \
              libtiff.2008.vcproj \
+             libspandsp.2005.vcproj \
+             libtiff.2005.vcproj \
              msvc/config.h \
              msvc/getopt.c \
              msvc/gettimeofday.c \
@@ -37,13 +40,17 @@ EXTRA_DIST = floating_fudge.h \
              msvc/unistd.h \
              msvc/spandsp.h \
              msvc/sys/time.h \
-             msvc/make_at_dictionary.2008.vcproj \
              msvc/make_headers.bat \
+             msvc/make_at_dictionary.2008.vcproj \
              msvc/make_modem_filter.2008.vcproj \
+             msvc/make_at_dictionary.2005.vcproj \
+             msvc/make_modem_filter.2005.vcproj \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
              msvc/vc8proj.head \
              msvc/vc8proj.foot \
+             msvc/vc9proj.head \
+             msvc/vc9proj.foot \
              spandsp/private/README
 INCLUDES = -I$(top_builddir)
 
@@ -399,13 +406,15 @@ v29tx_floating_rrc.h: make_modem_filter$(EXEEXT)
 	./make_modem_filter$(EXEEXT) -m V.29 -t >v29tx_floating_rrc.h
 
 DSP = libspandsp.dsp
-VCPROJ8 = libspandsp.2008.vcproj
+VCPROJ8 = libspandsp.2005.vcproj
+VCPROJ9 = libspandsp.2008.vcproj
 
 WIN32SOURCES = $(libspandsp_la_SOURCES) .\\msvc\\gettimeofday.c
 WIN32HEADERS = $(nobase_include_HEADERS) spandsp.h
 
 DSPOUT = | awk '{printf("%s\r\n", $$0)}' >> $(DSP)
 VCPROJOUT8 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ8)
+VCPROJOUT9 = | awk '{printf("%s\r\n", $$0)}' >> $(VCPROJ9)
 
 $(DSP): msvc/msvcproj.head msvc/msvcproj.foot Makefile.am
 	echo "creating $(DSP)"
@@ -439,6 +448,18 @@ $(VCPROJ8): msvc/vc8proj.head msvc/vc8proj.foot Makefile.am
 		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT8); \
 	done; \
 	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT8) )
+
+$(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
+	echo "creating $(VCPROJ9)"
+	@(cp $(srcdir)/msvc/vc9proj.head $(VCPROJ9); \
+	for file in $(WIN32SOURCES); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
+	done; \
+	echo "</Filter><Filter  Name=\"Header Files\">" $(VCPROJOUT9); \
+	for file in $(WIN32HEADERS); do \
+		echo "<File RelativePath=\""$$file"\"></File>" $(VCPROJOUT9); \
+	done; \
+	cat $(srcdir)/msvc/vc8proj.foot $(VCPROJOUT9) )
 
 $(srcdir)/msvc/spandsp.h: spandsp.h.in
 	echo "creating $(srcdir)/msvc/spandsp.h"
