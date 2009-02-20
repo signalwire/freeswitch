@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk_tests.c,v 1.53 2008/11/30 10:17:31 steveu Exp $
+ * $Id: fsk_tests.c,v 1.55 2009/02/12 14:21:16 steveu Exp $
  */
 
 /*! \page fsk_tests_page FSK modem tests
@@ -69,17 +69,15 @@ both_ways_line_model_state_t *model;
 int rx_bits = 0;
 int cutoff_test_carrier = FALSE;
 
-static int rx_status(void *user_data, int status)
+static void rx_status(void *user_data, int status)
 {
     printf("FSK rx status is %s (%d)\n", signal_status_to_str(status), status);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
-static int tx_status(void *user_data, int status)
+static void tx_status(void *user_data, int status)
 {
     printf("FSK tx status is %s (%d)\n", signal_status_to_str(status), status);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -95,7 +93,7 @@ static void put_bit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int cutoff_test_rx_status(void *user_data, int status)
+static void cutoff_test_rx_status(void *user_data, int status)
 {
     printf("FSK rx status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
@@ -107,7 +105,6 @@ static int cutoff_test_rx_status(void *user_data, int status)
         cutoff_test_carrier = FALSE;
         break;
     }
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

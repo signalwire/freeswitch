@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29_tests.c,v 1.113 2009/01/12 17:20:59 steveu Exp $
+ * $Id: v29_tests.c,v 1.115 2009/02/12 14:21:16 steveu Exp $
  */
 
 /*! \page v29_tests_page V.29 modem tests
@@ -109,7 +109,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v29_rx_status(void *user_data, int status)
+static void v29_rx_status(void *user_data, int status)
 {
     v29_rx_state_t *rx;
     int i;
@@ -139,7 +139,6 @@ static int v29_rx_status(void *user_data, int status)
 #endif
         break;
     }
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -161,10 +160,9 @@ static void v29putbit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v29_tx_status(void *user_data, int status)
+static void v29_tx_status(void *user_data, int status)
 {
     printf("V.29 tx status is %s (%d)\n", signal_status_to_str(status), status);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

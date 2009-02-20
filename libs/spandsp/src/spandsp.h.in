@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: spandsp.h.in,v 1.16 2009/02/03 16:28:40 steveu Exp $
+ * $Id: spandsp.h.in,v 1.17 2009/02/12 12:38:39 steveu Exp $
  */
 
 /*! \file */
@@ -69,8 +69,8 @@
 #include <spandsp/echo.h>
 #include <spandsp/modem_echo.h>
 #include <spandsp/crc.h>
-#include <spandsp/hdlc.h>
 #include <spandsp/async.h>
+#include <spandsp/hdlc.h>
 #include <spandsp/noise.h>
 #include <spandsp/saturated.h>
 #include <spandsp/time_scale.h>

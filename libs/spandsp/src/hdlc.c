@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.c,v 1.70 2009/02/10 13:06:46 steveu Exp $
+ * $Id: hdlc.c,v 1.71 2009/02/12 12:38:39 steveu Exp $
  */
 
 /*! \file */
@@ -43,10 +43,19 @@
 #include "spandsp/hdlc.h"
 #include "spandsp/private/hdlc.h"
 
-static void rx_special_condition(hdlc_rx_state_t *s, int condition)
+static void report_status_change(hdlc_rx_state_t *s, int status)
+{
+    if (s->status_handler)
+        s->status_handler(s->status_user_data, status);
+    else if (s->frame_handler)
+        s->frame_handler(s->frame_user_data, NULL, status, TRUE);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void rx_special_condition(hdlc_rx_state_t *s, int status)
 {
     /* Special conditions */
-    switch (condition)
+    switch (status)
     {
     case SIG_STATUS_CARRIER_UP:
     case SIG_STATUS_TRAINING_SUCCEEDED:
@@ -61,7 +70,7 @@ static void rx_special_condition(hdlc_rx_state_t *s, int condition)
     case SIG_STATUS_TRAINING_FAILED:
     case SIG_STATUS_CARRIER_DOWN:
     case SIG_STATUS_END_OF_DATA:
-        s->frame_handler(s->user_data, NULL, condition, TRUE);
+        report_status_change(s, status);
         break;
     default:
         //printf("Eh!\n");
@@ -82,7 +91,7 @@ static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
         if (--s->octet_count <= 0)
         {
             s->octet_count = s->octet_count_report_interval;
-            s->frame_handler(s->user_data, NULL, SIG_STATUS_OCTET_REPORT, TRUE);
+            report_status_change(s, SIG_STATUS_OCTET_REPORT);
         }
     }
     else
@@ -105,7 +114,7 @@ static __inline__ void octet_count(hdlc_rx_state_t *s)
         if (--s->octet_count <= 0)
         {
             s->octet_count = s->octet_count_report_interval;
-            s->frame_handler(s->user_data, NULL, SIG_STATUS_OCTET_REPORT, TRUE);
+            report_status_change(s, SIG_STATUS_OCTET_REPORT);
         }
     }
 }
@@ -117,7 +126,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
     {
         /* Hit HDLC abort */
         s->rx_aborts++;
-        s->frame_handler(s->user_data, NULL, SIG_STATUS_ABORT, TRUE);
+        report_status_change(s, SIG_STATUS_ABORT);
         /* If we have not yet seen enough flags, restart the count. If we
            are beyond that point, just back off one step, so we need to see
            another flag before proceeding to collect frame octets. */
@@ -147,7 +156,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                         s->rx_frames++;
                         s->rx_bytes += s->len - s->crc_bytes;
                         s->len -= s->crc_bytes;
-                        s->frame_handler(s->user_data, s->buffer, s->len, TRUE);
+                        s->frame_handler(s->frame_user_data, s->buffer, s->len, TRUE);
                     }
                     else
                     {
@@ -155,7 +164,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                         if (s->report_bad_frames)
                         {
                             s->len -= s->crc_bytes;
-                            s->frame_handler(s->user_data, s->buffer, s->len, FALSE);
+                            s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
                         }
                     }
                 }
@@ -170,7 +179,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                             s->len -= s->crc_bytes;
                         else
                             s->len = 0;
-                        s->frame_handler(s->user_data, s->buffer, s->len, FALSE);
+                        s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
                     }
                     s->rx_length_errors++;
                 }
@@ -194,7 +203,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
             }
             if (++s->flags_seen >= s->framing_ok_threshold  &&  !s->framing_ok_announced)
             {
-                s->frame_handler(s->user_data, NULL, SIG_STATUS_FRAMING_OK, TRUE);
+                report_status_change(s, SIG_STATUS_FRAMING_OK);
                 s->framing_ok_announced = TRUE;
             }
         }
@@ -309,12 +318,26 @@ SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
     }
     memset(s, 0, sizeof(*s));
     s->frame_handler = handler;
-    s->user_data = user_data;
+    s->frame_user_data = user_data;
     s->crc_bytes = (crc32)  ?  4  :  2;
     s->report_bad_frames = report_bad_frames;
     s->framing_ok_threshold = (framing_ok_threshold < 1)  ?  1  :  framing_ok_threshold;
     s->max_frame_len = sizeof(s->buffer);
     return s;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) hdlc_rx_set_frame_handler(hdlc_rx_state_t *s, hdlc_frame_handler_t handler, void *user_data)
+{
+    s->frame_handler = handler;
+    s->frame_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) hdlc_rx_set_status_handler(hdlc_rx_state_t *s, modem_rx_status_func_t handler, void *user_data)
+{
+    s->status_handler = handler;
+    s->status_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 

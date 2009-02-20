@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.h,v 1.23 2009/02/10 13:06:47 steveu Exp $
+ * $Id: async.h,v 1.24 2009/02/12 12:38:39 steveu Exp $
  */
 
 /*! \file */
@@ -100,10 +100,10 @@ typedef void (*put_bit_func_t)(void *user_data, int bit);
 typedef int (*get_bit_func_t)(void *user_data);
 
 /*! Completion callback function for tx data pumps */
-typedef int (*modem_tx_status_func_t)(void *user_data, int status);
+typedef void (*modem_tx_status_func_t)(void *user_data, int status);
 
 /*! Completion callback function for rx data pumps */
-typedef int (*modem_rx_status_func_t)(void *user_data, int status);
+typedef void (*modem_rx_status_func_t)(void *user_data, int status);
 
 enum
 {

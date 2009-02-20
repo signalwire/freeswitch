@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.c,v 1.140 2009/02/10 13:06:46 steveu Exp $
+ * $Id: t31.c,v 1.142 2009/02/12 14:14:58 steveu Exp $
  */
 
 /*! \file */
@@ -82,6 +82,7 @@
 #include "spandsp/at_interpreter.h"
 #include "spandsp/fax_modems.h"
 #include "spandsp/t31.h"
+#include "spandsp/t30_fcf.h"
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/t38_core.h"
@@ -115,9 +116,24 @@
 
 typedef const char *(*at_cmd_service_t)(t31_state_t *s, const char *cmd);
 
-#define ETX 0x03
-#define DLE 0x10
-#define SUB 0x1A
+enum
+{
+    ETX = 0x03,
+    DLE = 0x10,
+    SUB = 0x1A
+};
+
+enum
+{
+    DISBIT1 = 0x01,
+    DISBIT2 = 0x02,
+    DISBIT3 = 0x04,
+    DISBIT4 = 0x08,
+    DISBIT5 = 0x10,
+    DISBIT6 = 0x20,
+    DISBIT7 = 0x40,
+    DISBIT8 = 0x80
+};
 
 /* BEWARE: right now this must match up with a list in the AT interpreter code. */
 enum
@@ -159,12 +175,17 @@ enum
     T38_TIMED_STEP_HDLC_MODEM_3 = 0x22,
     T38_TIMED_STEP_HDLC_MODEM_4 = 0x23,
     T38_TIMED_STEP_HDLC_MODEM_5 = 0x24,
-    T38_TIMED_STEP_CED = 0x30,
-    T38_TIMED_STEP_CED_2 = 0x31,
-    T38_TIMED_STEP_CED_3 = 0x32,
-    T38_TIMED_STEP_CNG = 0x40,
-    T38_TIMED_STEP_CNG_2 = 0x41,
-    T38_TIMED_STEP_PAUSE = 0x50
+    T38_TIMED_STEP_FAKE_HDLC_MODEM = 0x30,
+    T38_TIMED_STEP_FAKE_HDLC_MODEM_2 = 0x31,
+    T38_TIMED_STEP_FAKE_HDLC_MODEM_3 = 0x32,
+    T38_TIMED_STEP_FAKE_HDLC_MODEM_4 = 0x33,
+    T38_TIMED_STEP_FAKE_HDLC_MODEM_5 = 0x34,
+    T38_TIMED_STEP_CED = 0x40,
+    T38_TIMED_STEP_CED_2 = 0x41,
+    T38_TIMED_STEP_CED_3 = 0x42,
+    T38_TIMED_STEP_CNG = 0x50,
+    T38_TIMED_STEP_CNG_2 = 0x51,
+    T38_TIMED_STEP_PAUSE = 0x60
 };
 
 static int restart_modem(t31_state_t *s, int new_modem);
@@ -185,6 +206,30 @@ static __inline__ void t31_set_at_rx_mode(t31_state_t *s, int new_mode)
     s->at_state.at_rx_mode = new_mode;
 }
 /*- End of function --------------------------------------------------------*/
+
+#if 0
+static void monitor_control_messages(t31_state_t *s, const uint8_t *buf, int len)
+{
+    /* Monitor the control messages, at the point where we have the whole message, so we can
+       see what is happening to things like training success/failure. */
+    span_log(&s->logging, SPAN_LOG_FLOW, "Monitoring %s\n", t30_frametype(buf[2]));
+    if (len < 3)
+        return;
+    /*endif*/
+    switch (buf[2])
+    {
+    case T30_DCS:
+    case T30_DCS | 1:
+        /* We need to know if ECM is about to be used, so we can fake HDLC stuff. */
+        s->t38_fe.ecm_mode = (len >= 7)  &&  (buf[6] & DISBIT3);
+        break;
+    default:
+        break;
+    }
+    /*endswitch*/
+}
+/*- End of function --------------------------------------------------------*/
+#endif
 
 static void front_end_status(t31_state_t *s, int status)
 {
@@ -980,6 +1025,9 @@ SPAN_DECLARE(int) t31_t38_send_timeout(t31_state_t *s, int samples)
     case T38_TIMED_STEP_HDLC_MODEM:
         delay = stream_hdlc(s);
         break;
+    //case T38_TIMED_STEP_FAKE_HDLC_MODEM:
+    //    delay = stream_fake_hdlc(s);
+    //    break;
     case T38_TIMED_STEP_CED:
         delay = stream_ced(s);
         break;
@@ -2244,7 +2292,7 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void t31_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_data)
+static fax_modems_state_t *t31_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_data)
 {
     s->use_tep = use_tep;
 
@@ -2273,6 +2321,7 @@ static void t31_fax_modems_init(fax_modems_state_t *s, int use_tep, void *user_d
     s->rx_user_data = NULL;
     s->tx_handler = (span_tx_handler_t *) &silence_gen;
     s->tx_user_data = &s->silence_gen;
+    return s;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -2458,7 +2507,6 @@ static int t31_t38_fe_init(t31_state_t *t,
                  2,
                  NULL,
                  NULL);
-
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

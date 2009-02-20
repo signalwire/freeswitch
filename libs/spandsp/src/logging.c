@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: logging.c,v 1.31 2009/02/10 13:06:46 steveu Exp $
+ * $Id: logging.c,v 1.32 2009/02/10 17:44:18 steveu Exp $
  */
 
 /*! \file */
@@ -241,7 +241,7 @@ SPAN_DECLARE(void) span_set_error_handler(error_handler_func_t func)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) span_log_init(logging_state_t *s, int level, const char *tag)
+SPAN_DECLARE(logging_state_t *) span_log_init(logging_state_t *s, int level, const char *tag)
 {
     if (s == NULL)
     {
@@ -256,7 +256,7 @@ SPAN_DECLARE(int) span_log_init(logging_state_t *s, int level, const char *tag)
     s->samples_per_second = SAMPLE_RATE;
     s->elapsed_samples = 0;
 
-    return  0;
+    return s;
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_g168_css.c,v 1.16 2008/11/30 12:38:27 steveu Exp $
+ * $Id: make_g168_css.c,v 1.17 2009/02/10 17:49:20 steveu Exp $
  */
 
 /*! \page makecss_page CSS construction for G.168 testing
@@ -48,9 +48,6 @@
 #include <fftw3.h>
 #else
 #include <fftw.h>
-#endif
-#if defined(HAVE_MATH_H)
-#define GEN_CONST
 #endif
 
 //#if defined(WITH_SPANDSP_INTERNALS)

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.c,v 1.154 2009/02/10 13:06:46 steveu Exp $
+ * $Id: t38_gateway.c,v 1.155 2009/02/12 12:38:39 steveu Exp $
  */
 
 /*! \file */
@@ -747,7 +747,10 @@ static void edit_control_messages(t38_gateway_state_t *s, int from_modem, uint8_
 }
 /*- End of function --------------------------------------------------------*/
 
-static void monitor_control_messages(t38_gateway_state_t *s, int from_modem, uint8_t *buf, int len)
+static void monitor_control_messages(t38_gateway_state_t *s,
+                                     int from_modem,
+                                     const uint8_t *buf,
+                                     int len)
 {
     static const struct
     {
@@ -1704,7 +1707,7 @@ static void hdlc_rx_status(hdlc_rx_state_t *t, int status)
 {
     t38_gateway_state_t *s;
 
-    s = (t38_gateway_state_t *) t->user_data;
+    s = (t38_gateway_state_t *) t->frame_user_data;
     span_log(&s->logging, SPAN_LOG_FLOW, "HDLC signal status is %s (%d)\n", signal_status_to_str(status), status);
     switch (status)
     {
@@ -1761,7 +1764,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
     t38_gateway_state_t *s;
     t38_gateway_to_t38_state_t *u;
     
-    s = (t38_gateway_state_t *) t->user_data;
+    s = (t38_gateway_state_t *) t->frame_user_data;
     u = &s->core.to_t38;
     if ((t->raw_bit_stream & 0x80))
     {
@@ -1916,7 +1919,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
         return;
     }
     /*endif*/
-    s = (t38_gateway_state_t *) t->user_data;
+    s = (t38_gateway_state_t *) t->frame_user_data;
     u = &s->core.to_t38;
     t->buffer[t->len] = (uint8_t) t->byte_in_progress;
     /* Calculate the CRC progressively, before we start altering the frame */

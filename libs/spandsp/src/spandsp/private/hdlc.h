@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.h,v 1.2 2009/01/31 08:48:11 steveu Exp $
+ * $Id: hdlc.h,v 1.3 2009/02/12 12:38:39 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_HDLC_H_)
@@ -39,8 +39,12 @@ struct hdlc_rx_state_s
     size_t max_frame_len;
     /*! \brief The callback routine called to process each good received frame. */
     hdlc_frame_handler_t frame_handler;
-    /*! \brief An opaque parameter passed to the callback routine. */
-    void *user_data;
+    /*! \brief An opaque parameter passed to the frame callback routine. */
+    void *frame_user_data;
+    /*! \brief The callback routine called to report status changes. */
+    modem_rx_status_func_t status_handler;
+    /*! \brief An opaque parameter passed to the status callback routine. */
+    void *status_user_data;
     /*! \brief TRUE if bad frames are to be reported. */
     int report_bad_frames;
     /*! \brief The number of consecutive flags which must be seen before framing is

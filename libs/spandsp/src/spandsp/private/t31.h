@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.h,v 1.6 2009/01/16 15:13:16 steveu Exp $
+ * $Id: t31.h,v 1.7 2009/02/12 12:38:39 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_T31_H_)
@@ -102,6 +102,10 @@ typedef struct
                    estimate the playout time for this frame, through an analogue modem. */
         int extra_bits;
     } hdlc_tx;
+
+    /*! \brief TRUE if we are using ECM mode. This is used to select HDLC faking, necessary
+               with clunky class 1 modems. */
+    int ecm_mode;
 
     /*! \brief Counter for trailing non-ECM bytes, used to flush out the far end's modem. */
     int non_ecm_trailer_bytes;

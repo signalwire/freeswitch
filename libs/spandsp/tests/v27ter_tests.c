@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tests.c,v 1.99 2009/01/12 17:20:59 steveu Exp $
+ * $Id: v27ter_tests.c,v 1.101 2009/02/12 14:21:16 steveu Exp $
  */
 
 /*! \page v27ter_tests_page V.27ter modem tests
@@ -110,10 +110,9 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v27ter_rx_status(void *user_data, int status)
+static void v27ter_rx_status(void *user_data, int status)
 {
     printf("V.27ter rx status is %s (%d)\n", signal_status_to_str(status), status);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -131,10 +130,9 @@ static void v27terputbit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v27ter_tx_status(void *user_data, int status)
+static void v27ter_tx_status(void *user_data, int status)
 {
     printf("V.27ter tx status is %s (%d)\n", signal_status_to_str(status), status);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

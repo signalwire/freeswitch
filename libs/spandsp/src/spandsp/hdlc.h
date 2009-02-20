@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: hdlc.h,v 1.43 2009/02/10 13:06:47 steveu Exp $
+ * $Id: hdlc.h,v 1.44 2009/02/12 12:38:39 steveu Exp $
  */
 
 /*! \file */
@@ -101,8 +101,32 @@ SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
                                              hdlc_frame_handler_t handler,
                                              void *user_data);
 
+/*! Change the put_bit function associated with an HDLC receiver context.
+    \brief Change the put_bit function associated with an HDLC receiver context.
+    \param s A pointer to an HDLC receiver context.
+    \param handler The function to be called when a good HDLC frame is received.
+    \param user_data An opaque parameter for the callback routine.
+*/
+SPAN_DECLARE(void) hdlc_rx_set_frame_handler(hdlc_rx_state_t *s, hdlc_frame_handler_t handler, void *user_data);
+
+/*! Change the status report function associated with an HDLC receiver context.
+    \brief Change the status report function associated with an HDLC receiver context.
+    \param s A pointer to an HDLC receiver context.
+    \param handler The callback routine used to report status changes.
+    \param user_data An opaque parameter for the callback routine.
+*/
+SPAN_DECLARE(void) hdlc_rx_set_status_handler(hdlc_rx_state_t *s, modem_rx_status_func_t handler, void *user_data);
+
+/*! Release an HDLC receiver context.
+    \brief Release an HDLC receiver context.
+    \param s A pointer to an HDLC receiver context.
+    \return 0 for OK */
 SPAN_DECLARE(int) hdlc_rx_release(hdlc_rx_state_t *s);
 
+/*! Free an HDLC receiver context.
+    \brief Free an HDLC receiver context.
+    \param s A pointer to an HDLC receiver context.
+    \return 0 for OK */
 SPAN_DECLARE(int) hdlc_rx_free(hdlc_rx_state_t *s);
 
 /*! \brief Set the maximum frame length for an HDLC receiver context.

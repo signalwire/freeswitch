@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17_tests.c,v 1.98 2009/01/12 17:20:59 steveu Exp $
+ * $Id: v17_tests.c,v 1.100 2009/02/12 14:21:16 steveu Exp $
  */
 
 /*! \page v17_tests_page V.17 modem tests
@@ -114,7 +114,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v17_rx_status(void *user_data, int status)
+static void v17_rx_status(void *user_data, int status)
 {
     v17_rx_state_t *rx;
     int i;
@@ -132,7 +132,6 @@ static int v17_rx_status(void *user_data, int status)
             printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
         break;
     }
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -154,10 +153,9 @@ static void v17putbit(void *user_data, int bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int v17_tx_status(void *user_data, int status)
+static void v17_tx_status(void *user_data, int status)
 {
     printf("V.17 tx status is %s (%d)\n", signal_status_to_str(status), status);
-    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 

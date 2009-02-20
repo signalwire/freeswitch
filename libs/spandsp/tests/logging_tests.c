@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: logging_tests.c,v 1.15 2008/11/30 13:44:35 steveu Exp $
+ * $Id: logging_tests.c,v 1.16 2009/02/12 12:38:39 steveu Exp $
  */
 
 /*! \page logging_tests_page Logging tests
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
     struct timespec delay;
 
     /* Set up a logger */
-    if (span_log_init(&log, 123, "TAG"))
+    if (span_log_init(&log, 123, "TAG") == NULL)
     {
         fprintf(stderr, "Failed to initialise log.\n");
         exit(2);

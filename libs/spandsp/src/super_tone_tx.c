@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: super_tone_tx.c,v 1.29 2009/02/10 13:06:46 steveu Exp $
+ * $Id: super_tone_tx.c,v 1.30 2009/02/10 17:44:18 steveu Exp $
  */
 
 /*! \file */
@@ -120,7 +120,7 @@ SPAN_DECLARE(int) super_tone_tx_free_tone(super_tone_tx_step_t *s)
     {
         /* Follow nesting... */
         if (s->nest)
-            super_tone_tx_free(s->nest);
+            super_tone_tx_free_tone(s->nest);
         t = s;
         s = s->next;
         free(t);
