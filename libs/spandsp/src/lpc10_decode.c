@@ -68,7 +68,7 @@ static int32_t lpc10_random(lpc10_decode_state_t *s)
 
     /* The following is a 16 bit 2's complement addition,
        with overflow checking disabled */
-    s->y[s->k] = (int16_t)(s->y[s->k] + s->y[s->j]);
+    s->y[s->k] += s->y[s->j];
     ret_val = s->y[s->k];
     if (--s->k < 0)
         s->k = 4;

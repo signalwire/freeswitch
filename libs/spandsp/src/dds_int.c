@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: dds_int.c,v 1.15 2009/02/03 16:28:39 steveu Exp $
+ * $Id: dds_int.c,v 1.16 2009/02/21 04:27:46 steveu Exp $
  */
 
 /*! \file */
@@ -309,8 +309,8 @@ SPAN_DECLARE(complexi16_t) dds_complexi16_mod(uint32_t *phase_acc, int32_t phase
 {
     complexi16_t amp;
 
-    amp = complex_seti16((int16_t)(((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*(int32_t) scale) >> 15),
-                         (int16_t)(((int32_t) dds_lookup(*phase_acc + phase)*(int32_t) scale) >> 15));
+    amp = complex_seti16((int16_t) (((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*(int32_t) scale) >> 15),
+                         (int16_t) (((int32_t) dds_lookup(*phase_acc + phase)*(int32_t) scale) >> 15));
     *phase_acc += phase_rate;
     return amp;
 }

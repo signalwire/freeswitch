@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.126 2009/02/20 12:34:20 steveu Exp $
+ * $Id: t4.c,v 1.127 2009/02/21 04:27:46 steveu Exp $
  */
 
 /*
@@ -410,11 +410,8 @@ static int test_tiff_directory_info(t4_state_t *s)
         return -1;
     parm = 0;
     TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm);
-    if (s->image_width != (int)parm)
-    {
-printf("Width changed\n");
+    if (s->image_width != (int) parm)
         return 1;
-    }
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
     y_resolution = 0.0f;
@@ -431,20 +428,14 @@ printf("Width changed\n");
             break;
     }
     if (s->x_resolution != x_res_table[i].code)
-    {
-printf("X-res changed\n");
         return 1;
-    }
     for (i = 0;  y_res_table[i].code > 0;  i++)
     {
         if (test_resolution(res_unit, y_resolution, y_res_table[i].resolution))
             break;
     }
     if (s->y_resolution != y_res_table[i].code)
-    {
-printf("Y-res changed\n");
         return 1;
-    }
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

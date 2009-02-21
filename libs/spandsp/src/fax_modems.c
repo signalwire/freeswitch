@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_modems.c,v 1.2 2009/02/16 09:57:22 steveu Exp $
+ * $Id: fax_modems.c,v 1.3 2009/02/21 04:27:46 steveu Exp $
  */
 
 /*! \file */
@@ -200,7 +200,7 @@ static void v29_rx_status_handler(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-void start_fax_modems_rx_modem(fax_modems_state_t *s, int which)
+SPAN_DECLARE(void) start_fax_modems_rx_modem(fax_modems_state_t *s, int which)
 {
     switch (which)
     {

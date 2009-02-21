@@ -17,10 +17,11 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: regression_tests.sh,v 1.54 2009/01/12 17:20:59 steveu Exp $
+# $Id: regression_tests.sh,v 1.55 2009/02/20 14:04:40 steveu Exp $
 #
 
 ITUTESTS_TIF=../test-data/itu/fax/itutests.tif
+MIXEDSIZES_TIF=../test-data/itu/fax/mixed_size_pages.tif
 STDOUT_DEST=xyzzy
 STDERR_DEST=xyzzy2
 
@@ -181,6 +182,7 @@ echo dtmf_tx_tests completed OK
 #echo echo_tests completed OK
 echo echo_tests not enabled
 
+#Try the ITU test pages without ECM
 rm -f fax_tests_1.tif
 ./fax_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
@@ -198,6 +200,7 @@ then
     echo fax_tests failed!
     exit $RETVAL
 fi
+#Try the ITU test pages with ECM
 rm -f fax_tests_1.tif
 ./fax_tests -e >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?
@@ -213,6 +216,24 @@ RETVAL=$?
 if [ $RETVAL != 0 ]
 then
     echo fax_tests -e failed!
+    exit $RETVAL
+fi
+#Try some mixed sized test pages without ECM
+rm -f fax_tests_1.tif
+./fax_tests -i ${MIXEDSIZES_TIF} >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo fax_tests failed!
+    exit $RETVAL
+fi
+# Now use tiffcmp to check the results. It will return non-zero if any page images differ. The -t
+# option means the normal differences in tags will be ignored.
+tiffcmp -t ${MIXEDSIZES_TIF} fax_tests_1.tif >/dev/null
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo fax_tests failed!
     exit $RETVAL
 fi
 echo fax_tests completed OK

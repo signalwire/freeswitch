@@ -88,7 +88,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="$(TargetPath) &gt;$(SolutionDir)\at_interpreter_dictionary.h&#x0D;&#x0A;"
+				CommandLine="&quot;$(TargetPath)&quot; &gt;&quot;$(SolutionDir)\at_interpreter_dictionary.h&quot;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

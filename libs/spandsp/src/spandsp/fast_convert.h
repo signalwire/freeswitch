@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fast_convert.h,v 1.3 2009/02/10 13:06:47 steveu Exp $
+ * $Id: fast_convert.h,v 1.4 2009/02/21 05:39:09 steveu Exp $
  */
 
 #if !defined(_SPANDSP_FAST_CONVERT_H_)
@@ -231,7 +231,7 @@ extern "C"
     }
 #endif
 
-#elif (defined(WIN32)  ||  defined(_WIN32)) && !defined(_WIN64) 
+#elif (defined(WIN32)  ||  defined(_WIN32))  &&  !defined(_WIN64)
     /*
      *    Win32 doesn't seem to have the lrint() and lrintf() functions.
      *    Therefore implement inline versions of these functions here.
@@ -304,15 +304,31 @@ extern "C"
 #elif defined(WIN64)  ||  defined(_WIN64)
     /* x86_64 machines will do best with a simple assignment. */
 
+    __inline long int lrint(double x)
+    {
+        long int i;
+
+        _asm
+        {
+            fld x
+            fistp i
+        };
+        return i;
+    }
+
+    __inline long int lrintf(float x)
+    {
+        long int i;
+
+        _asm
+        {
+            fld x
+            fistp i
+        };
+        return i;
+    }
+
     __inline long int lfastrint(double x)
-    {
-        return (long int) (x);
-    }
-    __inline__ long int lrint(double x)
-    {
-        return (long int) (x);
-    }
-    __inline__ long int lrintf(float x)
     {
         return (long int) (x);
     }

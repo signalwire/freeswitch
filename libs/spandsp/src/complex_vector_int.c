@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: complex_vector_int.c,v 1.7 2009/02/03 16:28:39 steveu Exp $
+ * $Id: complex_vector_int.c,v 1.8 2009/02/21 04:27:46 steveu Exp $
  */
 
 /*! \file */
@@ -123,8 +123,8 @@ SPAN_DECLARE(void) cvec_lmsi16(const complexi16_t x[], complexi16_t y[], int n, 
 
     for (i = 0;  i < n;  i++)
     {
-        y[i].re = (int16_t)(y[i].re + (((int32_t) x[i].im*(int32_t) error->im + (int32_t) x[i].re*(int32_t) error->re) >> 12));
-        y[i].im = (int16_t)(y[i].im + (((int32_t) x[i].re*(int32_t) error->im - (int32_t) x[i].im*(int32_t) error->re) >> 12));
+        y[i].re += (int16_t) (((int32_t) x[i].im*(int32_t) error->im + (int32_t) x[i].re*(int32_t) error->re) >> 12);
+        y[i].im += (int16_t) (((int32_t) x[i].re*(int32_t) error->im - (int32_t) x[i].im*(int32_t) error->re) >> 12);
     }
 }
 /*- End of function --------------------------------------------------------*/
