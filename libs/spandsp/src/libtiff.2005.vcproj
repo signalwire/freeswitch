@@ -6,7 +6,6 @@
 	ProjectGUID="{401A40CD-5DB4-4E34-AC68-FA99E9FAC014}"
 	RootNamespace="libtiff"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -22,10 +21,11 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="4"
 			CharacterSet="1"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -48,6 +48,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="0"
 				DebugInformationFormat="4"
 				CompileAs="1"
@@ -87,10 +88,11 @@
 			ConfigurationType="4"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -110,6 +112,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FILLODER_LSB2MSB;TIF_PLATFORM_CONSOLE;CCITT_SUPPORT;PACKBITS_SUPPORT;LZW_SUPPORT;THUNDER_SUPPORT;NEXT_SUPPORT;LOGLUV_SUPPORT;TRIPCHOP_DEFAULT=TIFF_STRIPCHOP;STRIP_SIZE_DEFAULT=8192;DEFAULT_EXTRASAMPLE_AS_ALPHA;CHECK_JPEG_YCBCR_SUBSAMPLING;AVOID_WIN32_FILEIO"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="0"
 				DebugInformationFormat="3"
 			/>
@@ -157,13 +160,6 @@
 			<File
 				RelativePath="..\..\tiff-3.8.2\libtiff\tif_close.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\tiff-3.8.2\libtiff\tif_codec.c"
@@ -244,13 +240,6 @@
 			<File
 				RelativePath="..\..\tiff-3.8.2\libtiff\tif_open.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\tiff-3.8.2\libtiff\tif_packbits.c"
@@ -303,13 +292,6 @@
 			<File
 				RelativePath="..\..\tiff-3.8.2\libtiff\tif_write.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\tiff-3.8.2\libtiff\tif_zip.c"

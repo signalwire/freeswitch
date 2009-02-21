@@ -21,6 +21,7 @@
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="1"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -46,6 +47,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				DebugInformationFormat="4"
 				CompileAs="1"
@@ -122,6 +124,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBSPANDSP_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;HAVE_CONFIG_H"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
+				ProgramDataBaseFileName="$(IntDir)\$(TargetName).pdb"
 				WarningLevel="4"
 				DebugInformationFormat="3"
 				DisableSpecificWarnings="4127;4244"
