@@ -113,7 +113,7 @@ static switch_status_t pocketsphinx_asr_open(switch_asr_handle_t *ah, const char
 /*! function to load a grammar to the asr interface */
 static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, const char *grammar, const char *path)
 {
-	char *lm, *dic, *model, *rate = NULL;
+	char *jsgf, *dic, *model, *rate = NULL;
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -123,11 +123,9 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	}
 
 	if (switch_is_file_path(grammar)) {
-		lm = switch_mprintf("%s%s%s.lm", grammar, SWITCH_PATH_SEPARATOR, grammar);
-		dic = switch_mprintf("%s%s%s.dic", grammar, SWITCH_PATH_SEPARATOR, grammar);
+		jsgf = switch_mprintf("%s.gram", grammar);
 	} else {
-		lm = switch_mprintf("%s%s%s%s%s.lm", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar, SWITCH_PATH_SEPARATOR, grammar);
-		dic = switch_mprintf("%s%s%s%s%s.dic", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar, SWITCH_PATH_SEPARATOR, grammar);
+		jsgf = switch_mprintf("%s%s%s.gram", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar);
 	}
 
 	if (ah->rate == 8000) {
@@ -135,24 +133,27 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 	} else {
 		model = switch_mprintf("%s%smodel%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, globals.model16k);
 	}
+
+	dic = switch_mprintf("%s%sdefault.dic", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar);
+
 	if (switch_file_exists(dic, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open dictionary %s.\n", dic); 
 		goto end;
 	}
 
-	if (switch_file_exists(lm, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_file_exists(jsgf, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open language model %s.\n", model); 
 		goto end;
 	}
 
 	rate = switch_mprintf("%d", ah->rate); 
 
-	switch_assert(lm && dic && model);
+	switch_assert(jsgf && dic && model);
 	
 	ps->config = cmd_ln_init(ps->config, ps_args(), FALSE,
 							 "-samprate", rate,
 							 "-hmm", model,
-							 "-lm", lm, 
+							 "-jsgf", jsgf, 
 							 "-dict", dic,
 							 "-frate", "50",
 							 "-silprob", "0.005",
@@ -185,7 +186,7 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
  end:
 	
 	switch_safe_free(rate);
-	switch_safe_free(lm);
+	switch_safe_free(jsgf);
 	switch_safe_free(dic);
 	switch_safe_free(model);
 	
@@ -201,15 +202,12 @@ static switch_status_t pocketsphinx_asr_unload_grammar(switch_asr_handle_t *ah, 
 /*! function to close the asr interface */
 static switch_status_t pocketsphinx_asr_close(switch_asr_handle_t *ah, switch_asr_flag_t *flags)
 {
-	char const *hyp;
-	int32_t score;	
 	pocketsphinx_t *ps = (pocketsphinx_t *) ah->private_info;
 
 	switch_mutex_lock(ps->flag_mutex);
 	if (switch_test_flag(ps, PSFLAG_ALLOCATED)) {
 		if (switch_test_flag(ps, PSFLAG_READY)) {
 			ps_end_utt(ps->ps);
-			hyp = ps_get_hyp(ps->ps, &score, &ps->uttid);
 		}
 		ps_free(ps->ps);
 		ps->ps = NULL;

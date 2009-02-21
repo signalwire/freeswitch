@@ -1,0 +1,14 @@
+#JSGF V1.0;
+
+/**
+  * JSGF Grammar for example
+  */
+
+grammar example;
+
+<yes> = [ yes ];
+<no> = [ no ];
+
+public <results> = [ <yes> | <no> ];
+
+

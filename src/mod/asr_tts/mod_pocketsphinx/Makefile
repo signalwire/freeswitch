@@ -15,7 +15,7 @@ BASE=../../../..
 include $(BASE)/build/modmake.rules
 
 $(SPHINXBASE_DIR):
-	$(GETLIB) $(SPHINXBASE).tar.gz
+	$(GETLIB) $(SPHINXBASE)-latest.tar.gz
 
 $(SPHINXBASE_DIR)/buildstamp: $(SPHINXBASE_DIR)
 	test -f $(SPHINXBASE_DIR)/Makefile || (cd $(SPHINXBASE_DIR) && ./configure --with-pic --without-python --disable-shared CFLAGS=)
@@ -26,7 +26,7 @@ $(SPHINXBASE_LA): $(SPHINXBASE_DIR)/buildstamp
 	$(TOUCH_TARGET)
 
 $(POCKETSPHINX_DIR):
-	$(GETLIB) $(POCKETSPHINX).tar.gz
+	$(GETLIB) $(POCKETSPHINX)-latest.tar.gz
 
 $(POCKETSPHINX_DIR)/Makefile: $(POCKETSPHINX_DIR)
 	cd $(POCKETSPHINX_DIR) && ./configure --with-pic --without-python --disable-shared --with-sphinxbase=$(SPHINXBASE_DIR) CFLAGS=
@@ -51,12 +51,7 @@ $(DESTDIR)$(PREFIX)/grammar/model/wsj1:
 	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/wsj1
 	mv $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(PREFIX)/grammar/model/wsj1
 
-grammar_maker:
-	@cp -f $(BASE)/scripts/mklm $(DESTDIR)$(PREFIX)/bin/mklm
-	@cp -f $(BASE)/scripts/quick_lm.pl $(DESTDIR)$(PREFIX)/bin/quick_lm.pl
-	@chmod 755 $(DESTDIR)$(PREFIX)/bin/mklm
-	@chmod 755 $(DESTDIR)$(PREFIX)/bin/quick_lm.pl
-	@cp -f $(BASE)/scripts/Makefile.gram $(DESTDIR)$(PREFIX)/grammar/Makefile
-	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(PREFIX)/conf/cmudict.0.6d
+dictionary:
+	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(PREFIX)/grammar/default.dic
 
-local_install: $(DESTDIR)$(PREFIX)/grammar/model $(DESTDIR)$(PREFIX)/grammar/model/communicator $(DESTDIR)$(PREFIX)/grammar/model/wsj1 grammar_maker
+local_install: $(DESTDIR)$(PREFIX)/grammar/model $(DESTDIR)$(PREFIX)/grammar/model/communicator $(DESTDIR)$(PREFIX)/grammar/model/wsj1 dictionary
