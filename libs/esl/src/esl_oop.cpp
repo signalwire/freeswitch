@@ -247,7 +247,6 @@ ESLevent::ESLevent(ESLevent *me)
 	me->event = NULL;
 	me->mine = 0;
 	esl_safe_free(me->serialized_string);
-	delete me;
 }
 
 ESLevent::~ESLevent()
