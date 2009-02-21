@@ -248,7 +248,8 @@ typedef int16_t esl_port_t;
 typedef enum {
 	ESL_SUCCESS,
 	ESL_FAIL,
-	ESL_BREAK
+	ESL_BREAK,
+	ESL_DISCONNECTED
 } esl_status_t;
 
 #include <esl_threadmutex.h>
@@ -341,7 +342,15 @@ ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etyp
 
 #define esl_recv(_h) esl_recv_event(_h, NULL)
 #define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, NULL)
-#define esl_safe_strcasecmp(_s1, _s2) ((_s1) && (_s2)) ? strcasecmp((_s1), (_s2)) : 1
+
+static __inline__ int esl_safe_strcasecmp(const char *s1, const char *s2)
+{
+	if (!(s1 && s2)) {
+		return 1;
+	}
+
+	return strcasecmp(s1, s2);
+}
 
 #ifdef __cplusplus
 }

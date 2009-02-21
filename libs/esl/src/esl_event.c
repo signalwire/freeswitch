@@ -118,6 +118,8 @@ static const char *EVENT_NAMES[] = {
 	"GENERAL",
 	"COMMAND",
 	"SESSION_HEARTBEAT",
+	"CLIENT_DISCONNECTED",
+	"SERVER_DISCONNECTED",
 	"ALL"
 };
 
@@ -157,10 +159,12 @@ ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_eve
 
 	(*event)->event_id = event_id;
 
+	esl_event_add_header_string(*event, ESL_STACK_BOTTOM, "Event-Name", esl_event_name((*event)->event_id));
+
 	if (subclass_name) {
 		(*event)->subclass_name = DUP(subclass_name);
 		esl_event_add_header_string(*event, ESL_STACK_BOTTOM, "Event-Subclass", subclass_name);
-	}
+	}	
 	
 	return ESL_SUCCESS;
 }

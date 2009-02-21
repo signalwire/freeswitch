@@ -279,7 +279,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 		}
 
-		if (switch_core_session_dequeue_event(session_a, &event) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_dequeue_event(session_a, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			if (input_callback) {
 				status = input_callback(session_a, event, SWITCH_INPUT_TYPE_EVENT, user_data, 0);
 			}

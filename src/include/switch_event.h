@@ -121,7 +121,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void);
   \param subclass_name the subclass name for custom event (only valid when event_id is SWITCH_EVENT_CUSTOM)
   \return SWITCH_STATUS_SUCCESS on success
 */
-SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, const char *subclass_name);
+SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char *file, const char *func, int line,
+																	  switch_event_t **event, switch_event_types_t event_id, const char *subclass_name);
+
+#define switch_event_create_subclass(_e, _eid, _sn) switch_event_create_subclass_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, _e, _eid, _sn)
 
 /*!
   \brief Set the priority of an event
@@ -197,6 +200,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
   \return
 */
 SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data);
+
+SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, const char *func, int line, switch_event_t *event);
+#define switch_event_prep_for_delivery(_event) switch_event_prep_for_delivery_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, _event)
+
 
 /*!
   \brief Bind an event callback to a specific event

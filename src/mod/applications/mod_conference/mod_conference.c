@@ -1900,7 +1900,7 @@ static void conference_loop_output(conference_member_t *member)
 
 		switch_mutex_lock(member->control_mutex);
 
-		if (switch_core_session_dequeue_event(member->session, &event) == SWITCH_STATUS_SUCCESS) {
+		if (switch_core_session_dequeue_event(member->session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 			if (event->event_id == SWITCH_EVENT_MESSAGE) {
 				char *from = switch_event_get_header(event, "from");
 				char *to = switch_event_get_header(event, "to");

@@ -786,12 +786,11 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 
 	while(handle->connected) {
 		rrval = recv(handle->sock, c, 1, 0);
-
 		if (rrval == 0) {
 			if (++zc >= 100) {
 				esl_disconnect(handle);
 				esl_mutex_unlock(handle->mutex);
-				return ESL_FAIL;
+				return ESL_DISCONNECTED;
 			}
 		} else if (rrval < 0) {
 			strerror_r(handle->errnum, handle->err, sizeof(handle->err));
@@ -876,21 +875,16 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 
 		hval = esl_event_get_header(revent, "content-type");
 
-		if (!esl_strlen_zero(hval) && !esl_safe_strcasecmp(hval, "text/event-plain") && revent->body) {
-			const char *en;
+		if (!esl_safe_strcasecmp(hval, "text/disconnect-notice") && revent->body) {
+			goto fail;
+		}
+		
+		if (!esl_safe_strcasecmp(hval, "text/event-plain") && revent->body) {
 			esl_event_types_t et = ESL_EVENT_COMMAND;
 			char *body = strdup(revent->body);
 			
 			esl_event_safe_destroy(&handle->last_ievent);
 
-			if ((en = esl_stristr("event-name:", body))) {
-				en++;
-				while(*en == ' ') en++;
-				if (en) {
-					esl_name_event(en, &et);
-				}
-			}
-			
 			esl_event_create(&handle->last_ievent, et);
 
 			beg = body;
@@ -914,14 +908,18 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 				if (hname && hval) {
 					esl_url_decode(hval);
 					esl_log(ESL_LOG_DEBUG, "RECV INNER HEADER [%s] = [%s]\n", hname, hval);
+					if (!strcasecmp(hname, "event-name")) {
+						esl_event_del_header(handle->last_ievent, "event-name");
+					}
 					esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
+					esl_name_event(hval, &handle->last_event->event_id);
 				}
 				
 				beg = c + 1;
 			}
 
 			free(body);
-
+			
 			if ((cl = esl_event_get_header(handle->last_ievent, "content-length"))) {
 				esl_ssize_t sofar = 0;
 		

@@ -170,6 +170,8 @@ static char *EVENT_NAMES[] = {
 	"GENERAL",
 	"COMMAND",
 	"SESSION_HEARTBEAT",
+	"CLIENT_DISCONNECTED",
+	"SERVER_DISCONNECTED",
 	"ALL"
 };
 
@@ -589,7 +591,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **event, switch_event_types_t event_id, const char *subclass_name)
+SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char *file, const char *func, int line,
+																	  switch_event_t **event, switch_event_types_t event_id, const char *subclass_name)
 {
 	void *pop;
 
@@ -609,6 +612,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass(switch_event_t **ev
 	memset(*event, 0, sizeof(switch_event_t));
 
 	(*event)->event_id = event_id;
+
+	switch_event_prep_for_delivery_detailed(file, func, line, *event);
 
 	if (subclass_name) {
 		(*event)->subclass_name = DUP(subclass_name);
@@ -1054,13 +1059,37 @@ SWITCH_DECLARE(switch_xml_t) switch_event_xmlize(switch_event_t *event, const ch
 	return xml;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data)
+SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, const char *func, int line, switch_event_t *event)
 {
 	switch_time_exp_t tm;
 	char date[80] = "";
 	switch_size_t retsize;
 	switch_time_t ts = switch_micro_time_now();
 
+
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name(event->event_id));
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", hostname);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
+
+	switch_time_exp_lt(&tm, ts);
+	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
+	switch_rfc822_date(date, ts);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Date-Timestamp", "%" SWITCH_UINT64_T_FMT, (uint64_t) ts);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
+
+
+}
+
+SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data)
+{
+
+	
 	switch_assert(BLOCK != NULL);
 	switch_assert(RUNTIME_POOL != NULL);
 	switch_assert(EVENT_QUEUE_MUTEX != NULL);
@@ -1071,22 +1100,6 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 		switch_event_destroy(event);
 		return SWITCH_STATUS_SUCCESS;
 	}
-
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Name", switch_event_name((*event)->event_id));
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Core-UUID", switch_core_get_uuid());
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-Hostname", hostname);
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv4", guess_ip_v4);
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "FreeSWITCH-IPv6", guess_ip_v6);
-
-	switch_time_exp_lt(&tm, ts);
-	switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-Local", date);
-	switch_rfc822_date(date, ts);
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Date-GMT", date);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Date-Timestamp", "%" SWITCH_UINT64_T_FMT, (uint64_t) ts);
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-File", switch_cut_path(file));
-	switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Function", func);
-	switch_event_add_header(*event, SWITCH_STACK_BOTTOM, "Event-Calling-Line-Number", "%d", line);
 
 	if (user_data) {
 		(*event)->event_user_data = user_data;

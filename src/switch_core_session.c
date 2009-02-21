@@ -680,14 +680,14 @@ SWITCH_DECLARE(uint32_t) switch_core_session_event_count(switch_core_session_t *
 	return 0;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event)
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(switch_core_session_t *session, switch_event_t **event, switch_bool_t force)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	void *pop;
 
 	switch_assert(session != NULL);
 
-	if (session->event_queue) {
+	if (session->event_queue && (force || !switch_channel_test_flag(session->channel, CF_DIVERT_EVENTS))) {
 		if ((status = (switch_status_t) switch_queue_trypop(session->event_queue, &pop)) == SWITCH_STATUS_SUCCESS) {
 			*event = (switch_event_t *) pop;
 		}

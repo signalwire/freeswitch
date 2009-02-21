@@ -373,7 +373,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 		switch_channel_event_set_data(channel, event);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Digit", "%c", dtmf->digit);
 		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "DTMF-Duration", "%u", dtmf->duration);
-		switch_event_fire(&event);
+		if (switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
+			switch_core_session_queue_event(channel->session, &event);
+		} else {
+			switch_event_fire(&event);
+		}
 	}
 
 	return status;

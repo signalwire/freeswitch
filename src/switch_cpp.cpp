@@ -986,7 +986,7 @@ SWITCH_DECLARE(int) CoreSession::flushEvents()
 	}
 	channel = switch_core_session_get_channel(session);
 
-	while (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+	while (switch_core_session_dequeue_event(session, &event, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&event);
 	}
 	return SWITCH_STATUS_SUCCESS;

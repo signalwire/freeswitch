@@ -126,7 +126,7 @@ SWITCH_DECLARE(void) switch_ivr_session_echo(switch_core_session_t *session, swi
 			if (args->input_callback) {
 				switch_event_t *event = NULL;
 
-				if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
 					switch_event_destroy(&event);
 				}
@@ -692,7 +692,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_eavesdrop_session(switch_core_session
 				goto end;
 			}
 
-			if (switch_core_session_dequeue_event(session, &event) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 				char *command = switch_event_get_header(event, "eavesdrop-command");
 				if (command) {
 					fcommand = command;

@@ -830,9 +830,10 @@ SWITCH_DECLARE(uint32_t) switch_core_session_event_count(_In_ switch_core_sessio
   \brief DE-Queue an event on a given session
   \param session the session to de-queue the message on
   \param event the de-queued event
+  \param force force the dequeue
   \return the  SWITCH_STATUS_SUCCESS if the event was de-queued
 */
-SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(_In_ switch_core_session_t *session, _Out_ switch_event_t **event);
+SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_event(_In_ switch_core_session_t *session, _Out_ switch_event_t **event, switch_bool_t force);
 
 /*! 
   \brief Queue a private event on a given session

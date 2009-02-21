@@ -163,7 +163,9 @@ ESLevent *ESLconnection::recvEvent()
 		}
 	}
 
-	return NULL;
+	last_event_obj = new ESLevent("server_disconnected");
+
+	return last_event_obj;
 }
 
 ESLevent *ESLconnection::recvEventTimed(int ms)
@@ -183,7 +185,8 @@ ESLevent *ESLconnection::recvEventTimed(int ms)
 		}
     }
 	
-	return NULL;
+	last_event_obj = new ESLevent("server_disconnected");
+	return last_event_obj;
 }
 
 int ESLconnection::filter(const char *header, const char *value)

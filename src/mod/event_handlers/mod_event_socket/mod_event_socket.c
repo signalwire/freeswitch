@@ -218,7 +218,7 @@ static void event_handler(switch_event_t *event)
 	if (!listen_list.ready) {
 		return;
 	}
-
+	
 	lp = listen_list.listeners;
 
 	switch_mutex_lock(globals.listener_mutex);
@@ -328,7 +328,6 @@ static void event_handler(switch_event_t *event)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
 			}
 		}
-
 	}
 	switch_mutex_unlock(globals.listener_mutex);
 }
@@ -988,8 +987,9 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 	while (listener->sock && !prefs.done) {
 		uint8_t do_sleep = 1;
 		mlen = 1;
-		status = switch_socket_recv(listener->sock, ptr, &mlen);
 
+		status = switch_socket_recv(listener->sock, ptr, &mlen);
+		
 		if (prefs.done || (!SWITCH_STATUS_IS_BREAK(status) && status != SWITCH_STATUS_SUCCESS)) {
 			return SWITCH_STATUS_FALSE;
 		}
@@ -1129,12 +1129,26 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 				}
 			}
 			
+
+			if (listener->session) {
+				switch_channel_t *channel = switch_core_session_get_channel(listener->session);
+				if (switch_channel_get_state(channel) < CS_HANGUP && switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
+					switch_event_t *e = NULL;
+					while (switch_core_session_dequeue_event(listener->session, &e, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+						if (switch_queue_trypush(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
+							switch_core_session_queue_event(listener->session, &e);
+							break;
+						}
+					}
+				}
+			}
+
 			if (switch_test_flag(listener, LFLAG_EVENTS)) {
 				while (switch_queue_trypop(listener->event_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 					char hbuf[512];
 					switch_event_t *pevent = (switch_event_t *) pop;
 					char *etype;
-
+					
 					do_sleep = 0;
 					if (listener->format == EVENT_FORMAT_PLAIN) {
 						etype = "plain";
@@ -1472,6 +1486,47 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 	}
 
+
+	if (!strncasecmp(cmd, "divert_events", 13)) {
+		char *onoff = cmd + 13;
+		switch_channel_t *channel;
+		
+		if (!listener->session) {
+			switch_snprintf(reply, reply_len, "-ERR not controlling a session.");
+			goto done;
+		}
+
+		channel = switch_core_session_get_channel(listener->session);
+		
+		if (onoff) {
+			while(*onoff == ' ') {
+				onoff++;
+			}
+			
+			if (*onoff == '\r' || *onoff == '\n') {
+				onoff = NULL;
+			} else {
+				strip_cr(onoff);
+			}
+		}
+
+		if (switch_strlen_zero(onoff)) {
+			switch_snprintf(reply, reply_len, "-ERR missing value.");
+			goto done;
+		}
+
+		
+		if (!strcasecmp(onoff, "on")) {
+			switch_snprintf(reply, reply_len, "+OK events diverted");
+			switch_channel_set_flag(channel, CF_DIVERT_EVENTS);
+		} else {
+			switch_snprintf(reply, reply_len, "+OK events not diverted");
+			switch_channel_clear_flag(channel, CF_DIVERT_EVENTS);
+		}
+
+		goto done;
+
+	}
 
 	if (!strncasecmp(cmd, "sendmsg", 7)) {
 		switch_core_session_t *session;
