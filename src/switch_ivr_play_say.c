@@ -1059,8 +1059,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				switch_channel_dequeue_dtmf(channel, &dtmf);
 				if (args->input_callback) {
 					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
-					printf("CORE %c %d\n", dtmf.digit, status);
-
 				} else {
 					*((char *) args->buf) = dtmf.digit;
 					status = SWITCH_STATUS_BREAK;
