@@ -1100,10 +1100,25 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	jsval ret, nval, *rval = &nval;
 	JSContext *cx = cb_state->cx;
 	JSObject *obj = cb_state->obj;
+	switch_uuid_t uuid;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char var_name[SWITCH_UUID_FORMATTED_LENGTH + 25];
+	char *p;
 	
 	METHOD_SANITY_CHECK();
 
 	jss->stack_depth++;
+
+
+	switch_uuid_get(&uuid);
+	switch_uuid_format(uuid_str, &uuid);
+	
+	switch_snprintf(var_name, sizeof(var_name), "__event_%s", uuid_str);
+	for(p = var_name; p && *p; p++) {
+		if (*p == '-') {
+			*p = '_';
+		}
+	}	
 
 	if (cb_state->jss_a && cb_state->jss_a->session && cb_state->jss_a->session == session) {
 		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_a);
@@ -1116,7 +1131,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	switch (itype) {
 	case SWITCH_INPUT_TYPE_EVENT:
 		if ((event = (switch_event_t *) input)) {
-			if ((Event = new_js_event(event, "_XX_EVENT_XX_", cb_state->cx, cb_state->obj))) {
+			if ((Event = new_js_event(event, var_name, cb_state->cx, cb_state->obj))) {
 				argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "event"));
 				argv[argc++] = OBJECT_TO_JSVAL(Event);
 			}
@@ -1131,7 +1146,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			
 			if (dtmf) {
-				if ((Event = new_js_dtmf(dtmf, "_XX_DTMF_XX_", cb_state->cx, cb_state->obj))) {
+				if ((Event = new_js_dtmf(dtmf, var_name, cb_state->cx, cb_state->obj))) {
 					argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
 					argv[argc++] = OBJECT_TO_JSVAL(Event);
 				} else {
@@ -1175,10 +1190,11 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 	switch_file_handle_t *fh = cb_state->extra;
 	struct js_session *jss = cb_state->session_state;
 
+	switch_dtmf_t *wtfdtmf = (switch_dtmf_t *) input;
+
 	if ((status = js_common_callback(session, input, itype, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
-
 
 	if ((ret = JS_GetStringBytes(JS_ValueToString(cb_state->cx, cb_state->ret)))) {
 		if (!strncasecmp(ret, "speed", 5)) {

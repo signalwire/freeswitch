@@ -140,7 +140,7 @@ static int perl_parse_and_execute(PerlInterpreter * my_perl, char *input_code, c
 	return error;
 }
 
-#define HACK_CLEAN_CODE "foreach my $kl(keys %main::) {undef($$kl) if (defined($$kl) && ($kl =~ /^\\w+[\\w\\d_]+$/))}"
+#define HACK_CLEAN_CODE "eval{foreach my $kl(keys %main::) {eval{undef($$kl);} if (defined($$kl) && ($kl =~ /^\\w+[\\w\\d_]+$/))}}"
 
 static void destroy_perl(PerlInterpreter ** to_destroy)
 {
@@ -434,18 +434,16 @@ static void message_query_handler(switch_event_t *event)
 	char *account = switch_event_get_header(event, "message-account");
 	
 	if (account) {
-		char *path, *cmd;
+		char path[512], *cmd;
 
-		path = switch_mprintf("%s%smwi.pl", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
-		switch_assert(path != NULL);
-
+		switch_snprintf(path, sizeof(path), "%s%smwi.pl", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
+		
 		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
 			cmd = switch_mprintf("%s %s", path, account);
 			switch_assert(cmd != NULL);
 			perl_thread(cmd);
 			switch_safe_free(cmd);
 		}
-		switch_safe_free(path);
 	}
 }
 

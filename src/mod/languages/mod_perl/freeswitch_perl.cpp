@@ -214,7 +214,7 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			HV *hash;
 			SV *this_sv;
 			char *code;
-
+			
 			if (!(hash = get_hv("__dtmf", TRUE))) {
 				abort();
 			}
@@ -228,8 +228,8 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			this_sv = newSV(strlen(str) + 1);
 			sv_setpv(this_sv, str);
 			hv_store(hash, "duration", 8, this_sv, 0);
-
-			code = switch_mprintf("$__RV = %s($%s, 'dtmf', \\%%__dtmf, %s);", cb_function, suuid, switch_str_nil(cb_arg));
+			
+			code = switch_mprintf("eval { $__RV = &%s($%s, 'dtmf', \\%%__dtmf, %s);};", cb_function, suuid, switch_str_nil(cb_arg));
 			Perl_eval_pv(my_perl, code, FALSE);
 			free(code);
 
@@ -241,11 +241,25 @@ switch_status_t Session::run_dtmf_callback(void *input, switch_input_type_t ityp
 			switch_event_t *event = (switch_event_t *) input;
 			int arg_count = 2;
 			char *code;
+			switch_uuid_t uuid;
+			char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+			char var_name[SWITCH_UUID_FORMATTED_LENGTH + 25];
+			char *p;
 
-			mod_perl_conjure_event(my_perl, event, "__Input_Event__");
+			switch_uuid_get(&uuid);
+			switch_uuid_format(uuid_str, &uuid);
 
-			code = switch_mprintf("$__RV = %s($%s, 'event', $__Input_Event__, %s);", cb_function, suuid, switch_str_nil(cb_arg));
-			Perl_eval_pv(my_perl, code, TRUE);
+			switch_snprintf(var_name, sizeof(var_name), "main::__event_%s", uuid_str);
+			for(p = var_name; p && *p; p++) {
+				if (*p == '-') {
+					*p = '_';
+				}
+			}
+
+			mod_perl_conjure_event(my_perl, event, var_name);
+			code = switch_mprintf("eval {$__RV = &%s($%s, 'event', $%s, '%s');};$%s = undef;", 
+								  cb_function, suuid, var_name, switch_str_nil(cb_arg), var_name);
+			Perl_eval_pv(my_perl, code, FALSE);
 			free(code);
 
 			return process_callback_result(SvPV(get_sv("__RV", TRUE), n_a));
