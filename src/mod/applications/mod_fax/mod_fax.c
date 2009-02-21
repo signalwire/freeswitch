@@ -184,7 +184,9 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote station id: %s\n", far_ident);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Local station id:  %s\n", local_ident);
+#if 0
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Pages transferred: %i\n", t.pages_transferred);
+#endif
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Total fax pages:   %i\n", t.pages_in_file);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Image resolution:  %ix%i\n", t.x_resolution, t.y_resolution);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfer Rate:     %i\n", t.bit_rate);
@@ -212,11 +214,13 @@ static void phase_e_handler(t30_state_t * s, void *user_data, int result)
 	switch_channel_set_variable(channel, "fax_local_station_id", local_ident);
 	switch_channel_set_variable(channel, "fax_remote_station_id", far_ident);
 
+#if 0
 	tmp = switch_mprintf("%i", t.pages_transferred);
 	if (tmp) {
 		switch_channel_set_variable(channel, "fax_document_transferred_pages", tmp);
 		switch_safe_free(tmp);
 	}
+#endif
 
 	tmp = switch_mprintf("%i", t.pages_in_file);
 	if (tmp) {
