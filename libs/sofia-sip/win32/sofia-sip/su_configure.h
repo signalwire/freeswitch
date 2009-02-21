@@ -121,7 +121,7 @@
 #define SOFIA_USIZE_T size_t
 
 #ifdef _WIN64
-#define SOFIA_SSIZE_T __in64
+#define SOFIA_SSIZE_T __int64
 #define SOFIA_ISSIZE_T __int64
 #define SU_INTPTR_T __int64
 #elif _MSC_VER >= 1400

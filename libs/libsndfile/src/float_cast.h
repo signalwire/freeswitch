@@ -121,7 +121,7 @@
 		return retval ;
 	} /* float2int */
 
-#elif (defined (WIN32) || defined (_WIN32))
+#elif (defined (WIN32) || defined (_WIN32)) && !defined(_WIN64)
 
 	#undef		HAVE_LRINT_REPLACEMENT
 	#define		HAVE_LRINT_REPLACEMENT	1
@@ -157,6 +157,15 @@
 		return intgr ;
 	}
 
+#elif defined(_WIN64)
+    __inline long int lrint(double x)
+    {
+        return (long int) (x);
+    }
+    __inline long int lrintf(float x)
+    {
+        return (long int) (x);
+    }
 #elif (defined (__MWERKS__) && defined (macintosh))
 
 	/* This MacOS 9 solution was provided by Stephane Letz */

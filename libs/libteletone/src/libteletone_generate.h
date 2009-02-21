@@ -106,7 +106,7 @@ typedef __int8 int8_t;
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
-#if !defined(powf)
+#if !defined(powf) && !defined(_WIN64)
 extern float powf (float, float);
 #endif
 #include <string.h>

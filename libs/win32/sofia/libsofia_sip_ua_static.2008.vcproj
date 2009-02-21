@@ -11,6 +11,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -93,6 +96,81 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;set AWK=&quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				PreprocessorDefinitions="_WIN64;WIN32;_DEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				PrecompiledHeaderFile=".\Debug/libsofia_sip_ua_static.pch"
+				BrowseInformation="1"
+				WarningLevel="4"
+				WarnAsError="false"
+				SuppressStartupBanner="true"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1035"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(IntDir)\libsofia_sip_ua_static.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile=".\Debug/libsofia_sip_ua_static.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
 			OutputDirectory=".\Release"
 			IntermediateDirectory=".\Release"
@@ -149,6 +227,81 @@
 			<Tool
 				Name="VCLibrarianTool"
 				OutputFile=".\Release\libsofia_sip_ua_static.lib"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+				SuppressStartupBanner="true"
+				OutputFile=".\Release/libsofia_sip_ua_static.bsc"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="4"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="false"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine="if not exist &quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot; cscript /nologo &quot;$(ProjectDir)..\util.vbs&quot; Get http://svn.freeswitch.org/downloads/win32/gawk.exe &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;cd /D &quot;$(ProjectDir)..\..\sofia-sip\win32\&quot;&#x0D;&#x0A;set AWK=&quot;$(ProjectDir)..\..\sofia-sip\win32\gawk.exe&quot;&#x0D;&#x0A;&quot;autogen.cmd&quot;&#x0D;&#x0A;"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="&quot;..\..\sofia-sip\win32&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\su&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\ipt&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sresolv&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\url&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\http&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nth&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\stun&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\tport&quot;;&quot;..\..\sofia-sip\libsofia-sip-ua\features&quot;;&quot;..\..\pthreads-w32-2-7-0-release&quot;;."
+				PreprocessorDefinitions="_WIN64;WIN32;NDEBUG;_LIB;IN_LIBSOFIA_SIP_UA_STATIC;LIBSOFIA_SIP_UA_STATIC;LIBSRES_STATIC;PTW32_STATIC_LIB;HAVE_IPHLPAPI_H;SU_DEBUG=0"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				PrecompiledHeaderFile=".\Release/libsofia_sip_ua_static.pch"
+				BrowseInformation="1"
+				WarningLevel="4"
+				WarnAsError="false"
+				SuppressStartupBanner="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1035"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLibrarianTool"
+				OutputFile="$(IntDir)\libsofia_sip_ua_static.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool

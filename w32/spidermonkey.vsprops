@@ -8,7 +8,7 @@
 	<Tool
 		Name="VCCLCompilerTool"
 		AdditionalIncludeDirectories="&quot;$(SolutionDir)libs\js\src&quot;;&quot;$(SolutionDir)libs\js\nsprpub\pr\include&quot;;&quot;$(SolutionDir)src\mod\languages\mod_spidermonkey&quot;"
-		PreprocessorDefinitions="XP_WIN;_X86_=1;JSFILE;EXPORT_JS_API;JS_THREADSAFE"
+		PreprocessorDefinitions="XP_WIN;JSFILE;EXPORT_JS_API;JS_THREADSAFE"
 	/>
 	<Tool
 		Name="VCLinkerTool"

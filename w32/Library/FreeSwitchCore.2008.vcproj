@@ -12,6 +12,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -84,6 +87,99 @@
 				DataExecutionPrevention="0"
 				ImportLibrary="$(OutDir)/FreeSwitchCore.lib"
 				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="if not exist &quot;$(SolutionDir)$(OutDir)\conf&quot; xcopy &quot;$(SolutionDir)conf\*.*&quot; &quot;$(SolutionDir)$(OutDir)\conf\&quot; /C /D /Y /S&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\db&quot; md  &quot;$(SolutionDir)$(OutDir)\db&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\log&quot; md  &quot;$(SolutionDir)$(OutDir)\log&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; md  &quot;$(SolutionDir)$(OutDir)\htdocs&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; xcopy &quot;$(SolutionDir)htdocs\*.*&quot; &quot;$(SolutionDir)$(OutDir)\htdocs\&quot; /C /D /Y /S&#x0D;&#x0A;&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\winlibs.vsprops"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;PCRE_STATIC"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="switch.h"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
+				BrowseInformation="0"
+				WarningLevel="4"
+				WarnAsError="false"
+				DebugInformationFormat="3"
+				ForcedIncludeFiles=""
+				EnablePREfast="true"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="true"
+				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/FreeSwitch.dll"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
+				AddModuleNamesToAssembly=""
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(SolutionDir)$(OutDir)/FreeSwitch.pdb"
+				SubSystem="2"
+				OptimizeReferences="0"
+				EnableCOMDATFolding="0"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(OutDir)/FreeSwitchCore.lib"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -195,6 +291,94 @@
 				CommandLine="if not exist &quot;$(SolutionDir)$(OutDir)\conf&quot; xcopy &quot;$(SolutionDir)conf\*.*&quot; &quot;$(SolutionDir)$(OutDir)\conf\&quot; /C /D /Y /S&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\db&quot; md  &quot;$(SolutionDir)$(OutDir)\db&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\log&quot; md  &quot;$(SolutionDir)$(OutDir)\log&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; md  &quot;$(SolutionDir)$(OutDir)\htdocs&quot;&#x0D;&#x0A;if not exist &quot;$(SolutionDir)$(OutDir)\htdocs&quot; xcopy &quot;$(SolutionDir)htdocs\*.*&quot; &quot;$(SolutionDir)$(OutDir)\htdocs\&quot; /C /D /Y /S&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(SolutionDir)$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\winlibs.vsprops"
+			CharacterSet="2"
+			BuildLogFile="$(IntDir)\BuildLog $(ProjectName).htm"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+				CommandLine=""
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\src\include;..\..\libs\include;..\..\libs\srtp\include;..\..\libs\srtp\crypto\include;..\..\libs\libteletone\src;..\..\libs\win32\sqlite;..\..\libs\pcre;..\..\libs\stfu;..\..\libs\speex\include"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FREESWITCHCORE_EXPORTS;CRASH_PROT;PCRE_STATIC"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderThrough="switch.h"
+				PrecompiledHeaderFile="$(IntDir)\$(TargetName).pch"
+				BrowseInformation="0"
+				WarningLevel="4"
+				WarnAsError="false"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkLibraryDependencies="true"
+				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/FreeSwitch.dll"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
+				GenerateDebugInformation="true"
+				ProgramDatabaseFile="$(OutDir)/FreeSwitchCore.pdb"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				ImportLibrary="$(OutDir)/FreeSwitchCore.lib"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="if not exist &quot;$(OutDir)\conf&quot; xcopy &quot;$(SolutionDir)conf\*.*&quot; &quot;$(SolutionDir)$(OutDir)\conf\&quot; /C /D /Y /S&#x0D;&#x0A;if not exist &quot;$(OutDir)\db&quot; md  &quot;$(SolutionDir)$(OutDir)\db&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\log&quot; md  &quot;$(SolutionDir)$(OutDir)\log&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\htdocs&quot; md  &quot;$(SolutionDir)$(OutDir)\htdocs&quot;&#x0D;&#x0A;if not exist &quot;$(OutDir)\htdocs&quot; xcopy &quot;$(SolutionDir)htdocs\*.*&quot; &quot;$(SolutionDir)$(OutDir)\htdocs\&quot; /C /D /Y /S&#x0D;&#x0A;&#x0D;&#x0A;"
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -216,7 +400,23 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -236,7 +436,23 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -258,7 +474,27 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -284,7 +520,23 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -371,6 +623,14 @@
 						DisableSpecificWarnings="6385"
 					/>
 				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						DisableSpecificWarnings="6385"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\switch_core_speech.c"
@@ -400,7 +660,23 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -498,7 +774,27 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						PrecompiledHeaderThrough=""
+						PrecompiledHeaderFile=""
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -672,7 +968,23 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -695,7 +1007,29 @@
 					/>
 				</FileConfiguration>
 				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating switch_version.h"
+						CommandLine="cscript /nologo &quot;$(ProjectDir)..\..\libs\win32\util.vbs&quot; Version  &quot;$(ProjectDir)&quot; &quot;$(ProjectDir)..\..\&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h.template&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="..\..\src\include\switch.h;..\..\src\include\switch_apr.h;..\..\src\include\switch_buffer.h;..\..\src\include\switch_caller.h;..\..\src\include\switch_channel.h;..\..\src\include\switch_console.h;..\..\src\include\switch_core.h;..\..\src\include\switch_event.h;..\..\src\include\switch_frame.h;..\..\src\include\switch_ivr.h;..\..\src\include\switch_loadable_module.h;..\..\src\include\switch_log.h;..\..\src\include\switch_module_interfaces.h;..\..\src\include\switch_platform.h;..\..\src\include\switch_resample.h;..\..\src\include\switch_rtp.h;..\..\src\include\switch_sqlite.h;..\..\src\include\switch_stun.h;..\..\src\include\switch_types.h;..\..\src\include\switch_utils.h;..\..\src\include\switch_xml.h;..\..\src\switch_buffer.c;..\..\src\switch_caller.c;..\..\src\switch_channel.c;..\..\src\switch_config.c;..\..\src\switch_console.c;..\..\src\switch_core.c;..\..\src\switch_event.c;..\..\src\switch_ivr.c;..\..\src\switch_loadable_module.c;..\..\src\switch_log.c;..\..\src\switch_resample.c;..\..\src\switch_rtp.c;..\..\src\switch_stun.c;..\..\src\switch_utils.c;..\..\src\switch_xml.c"
+						Outputs="..\..\src\include\switch_version.h;lastversion"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
 					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Generating switch_version.h"
+						CommandLine="cscript /nologo &quot;$(ProjectDir)..\..\libs\win32\util.vbs&quot; Version  &quot;$(ProjectDir)&quot; &quot;$(ProjectDir)..\..\&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h.template&quot; &quot;$(ProjectDir)..\..\src\include\switch_version.h&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="..\..\src\include\switch.h;..\..\src\include\switch_apr.h;..\..\src\include\switch_buffer.h;..\..\src\include\switch_caller.h;..\..\src\include\switch_channel.h;..\..\src\include\switch_console.h;..\..\src\include\switch_core.h;..\..\src\include\switch_event.h;..\..\src\include\switch_frame.h;..\..\src\include\switch_ivr.h;..\..\src\include\switch_loadable_module.h;..\..\src\include\switch_log.h;..\..\src\include\switch_module_interfaces.h;..\..\src\include\switch_platform.h;..\..\src\include\switch_resample.h;..\..\src\include\switch_rtp.h;..\..\src\include\switch_sqlite.h;..\..\src\include\switch_stun.h;..\..\src\include\switch_types.h;..\..\src\include\switch_utils.h;..\..\src\include\switch_xml.h;..\..\src\switch_buffer.c;..\..\src\switch_caller.c;..\..\src\switch_channel.c;..\..\src\switch_config.c;..\..\src\switch_console.c;..\..\src\switch_core.c;..\..\src\switch_event.c;..\..\src\switch_ivr.c;..\..\src\switch_loadable_module.c;..\..\src\switch_log.c;..\..\src\switch_resample.c;..\..\src\switch_rtp.c;..\..\src\switch_stun.c;..\..\src\switch_utils.c;..\..\src\switch_xml.c"
+						Outputs="..\..\src\include\switch_version.h;lastversion"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
 					>
 					<Tool
 						Name="VCCustomBuildTool"

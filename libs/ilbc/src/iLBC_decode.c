@@ -40,7 +40,7 @@
 #include "hpOutput.h"
 #include "syntFilter.h"
 
-#if defined(WIN32)  ||  defined(_WIN32)
+#if (defined(WIN32)  ||  defined(_WIN32)) && !defined(_WIN64)
     __inline double rint(double dbl)
     {
         _asm 
@@ -48,6 +48,11 @@
             fld dbl
             frndint
         }
+    }
+#elif defined (_WIN64)
+    __inline__ long int rint(double x)
+    {
+        return (long int) (x);
     }
 #endif
 

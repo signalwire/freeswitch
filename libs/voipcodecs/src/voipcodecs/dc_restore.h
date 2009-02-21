@@ -99,7 +99,7 @@ static __inline__ int16_t saturate(int32_t amp)
 }
 /*- End of function --------------------------------------------------------*/
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_WIN64)
 __inline float rintf (float flt)
 {
 	_asm
@@ -126,6 +126,19 @@ __inline long lrintf (float flt)
 	}
 	return retval;
 }
+#elif defined(_WIN64)
+    __inline__ long int rint(double x)
+    {
+        return (long int) (x);
+    }
+	__inline__ int rintf(float x)
+	{
+		return (int) rint((double) x);
+	}
+    __inline__ long int lrintf(float x)
+    {
+        return (long int) (x);
+    }
 #endif
 
 static __inline__ int16_t fsaturatef(float famp)

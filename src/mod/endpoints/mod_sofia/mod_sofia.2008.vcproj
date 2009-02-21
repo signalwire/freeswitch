@@ -12,6 +12,9 @@
 		<Platform
 			Name="Win32"
 		/>
+		<Platform
+			Name="x64"
+		/>
 	</Platforms>
 	<ToolFiles>
 	</ToolFiles>
@@ -83,6 +86,77 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_debug.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\tport&quot;"
+				PreprocessorDefinitions="LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB"
+				UsePrecompiledHeader="0"
+				DisableSpecificWarnings="4201"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
+				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
 			ConfigurationType="2"
 			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
@@ -125,6 +199,77 @@
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="..\..\..\..\w32\module_release.vsprops"
+			CharacterSet="2"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalIncludeDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\su&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nua&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\url&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sip&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\msg&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\sdp&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nta&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\nea&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\soa&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\iptsec&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\bnf&quot;;&quot;$(InputDir)..\..\..\..\libs\sofia-sip\libsofia-sip-ua\tport&quot;"
+				PreprocessorDefinitions="LIBSOFIA_SIP_UA_STATIC;PTW32_STATIC_LIB"
+				UsePrecompiledHeader="0"
+				DisableSpecificWarnings="4201"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="ws2_32.lib advapi32.lib iphlpapi.lib"
+				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
+				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\..\..\libs\sofia-sip\win32\pthread&quot;"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
+				TargetMachine="17"
 			/>
 			<Tool
 				Name="VCALinkTool"
