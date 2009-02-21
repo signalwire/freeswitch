@@ -839,7 +839,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 	uint32_t span_max;
 
 	if (span_id) {
-		if (span_id >= ZAP_MAX_SPANS_INTERFACE) {
+		if (span_id >= globals.span_index) {
 			zap_log(ZAP_LOG_CRIT, "SPAN NOT DEFINED!\n");
 			*zchan = NULL;
             return ZAP_FAIL;
