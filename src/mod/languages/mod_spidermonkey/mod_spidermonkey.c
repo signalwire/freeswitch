@@ -1190,8 +1190,6 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 	switch_file_handle_t *fh = cb_state->extra;
 	struct js_session *jss = cb_state->session_state;
 
-	switch_dtmf_t *wtfdtmf = (switch_dtmf_t *) input;
-
 	if ((status = js_common_callback(session, input, itype, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -1372,7 +1370,7 @@ static JSBool session_flush_events(JSContext * cx, JSObject * obj, uintN argc, j
 		return JS_TRUE;
 	}
 
-	while (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
+	while (switch_core_session_dequeue_event(jss->session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		switch_event_destroy(&event);
 	}
 
@@ -2266,7 +2264,7 @@ static JSBool session_get_event(JSContext * cx, JSObject * obj, uintN argc, jsva
 
 	METHOD_SANITY_CHECK();
 
-	if (switch_core_session_dequeue_event(jss->session, &event) == SWITCH_STATUS_SUCCESS) {
+	if (switch_core_session_dequeue_event(jss->session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
 		JSObject *Event;
 		struct event_obj *eo;
 
