@@ -44,6 +44,9 @@ EXTRA_DIST = floating_fudge.h \
              msvc/make_modem_filter.2008.vcproj \
              msvc/make_at_dictionary.2005.vcproj \
              msvc/make_modem_filter.2005.vcproj \
+             msvc/Download_TIFF.2008.vcproj \
+             msvc/Download_TIFF.2005.vcproj \
+             msvc/tiff/cleancout \
              msvc/msvcproj.head \
              msvc/msvcproj.foot \
              msvc/vc8proj.head \
