@@ -562,7 +562,7 @@ ESL_DECLARE(esl_status_t) esl_listen(const char *host, esl_port_t port, esl_list
 			status = ESL_FAIL;
 			goto end;
 		}
-
+		
 		callback(server_sock, client_sock, &echoClntAddr);
 	}
 
@@ -916,31 +916,19 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 				}
 				
 				beg = c + 1;
-			}
 
-			free(body);
+				if (*beg == '\n') {
+					beg++;
+					break;
+				}
+			}
 			
 			if ((cl = esl_event_get_header(handle->last_ievent, "content-length"))) {
-				esl_ssize_t sofar = 0;
-		
-				len = atol(cl);
-				body = malloc(len+1);
-				esl_assert(body);
-				*(body + len) = '\0';
-				
-				do {
-					esl_ssize_t r;
-					if ((r = recv(handle->sock, body + sofar, len - sofar, 0)) < 0) {
-						strerror_r(handle->errnum, handle->err, sizeof(handle->err));	
-						goto fail;
-					}
-					sofar += r;
-				} while (sofar < len);
-				
-				handle->last_ievent->body = body;
+				handle->last_ievent->body = strdup(beg);
 			}
-
 			
+			free(body);			
+
 			if (esl_log_level >= 7) {
 				char *foo;
 				esl_event_serialize(handle->last_ievent, &foo, ESL_FALSE);
