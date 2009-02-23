@@ -150,6 +150,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dialplan_directory_shutdown)
 	switch_safe_free(globals.dn);
 	switch_safe_free(globals.pass);
 	switch_safe_free(globals.base);
+	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
