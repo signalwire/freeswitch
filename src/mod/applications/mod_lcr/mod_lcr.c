@@ -1070,10 +1070,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 	return SWITCH_STATUS_FALSE;
 #endif
 
-	if (switch_core_new_memory_pool(&globals.pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create global memory pool\n");
-		return SWITCH_STATUS_FALSE;
-	}
+	globals.pool = pool;
 
 	if (lcr_load_config() != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load lcr config file\n");
@@ -1110,7 +1107,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown)
 	switch_odbc_handle_disconnect(globals.master_odbc);
 	switch_odbc_handle_destroy(&globals.master_odbc);
 	switch_core_hash_destroy(&globals.profile_hash);
-	switch_core_destroy_memory_pool(&globals.pool);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
