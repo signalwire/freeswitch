@@ -254,6 +254,9 @@ Sub CreateVersion(tmpFolder, VersionDir, includebase, includedest)
 		Wget ToolsBase & "fs_svnversion.exe", tmpFolder
 	End If	
 
+	If Not FSO.FileExists(tmpFolder & "libdb44.dll") Then 
+		Wget ToolsBase & "libdb44.dll", tmpFolder
+	End If	
 	If Not FSO.FileExists(tmpFolder & "libsvn_diff-1.dll") Then 
 		Wget ToolsBase & "libsvn_diff-1.dll", tmpFolder
 	End If	
