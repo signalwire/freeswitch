@@ -161,8 +161,11 @@
 
 #else
 
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
+#define LUA_API	__attribute__((visibility("default")))
+#else
 #define LUA_API		extern
-
+#endif
 #endif
 
 /* more often than not the libs go together with the core */
