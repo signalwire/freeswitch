@@ -1100,8 +1100,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static SWIGTYPE_p_switch_core_session switch_core_session_request_uuid(switch_endpoint_interface endpoint_interface, SWIGTYPE_p_p_apr_pool_t pool, string use_uuid) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_request_uuid(switch_endpoint_interface.getCPtr(endpoint_interface), SWIGTYPE_p_p_apr_pool_t.getCPtr(pool), use_uuid);
+  public static SWIGTYPE_p_switch_core_session switch_core_session_request_uuid(switch_endpoint_interface endpoint_interface, switch_call_direction_t direction, SWIGTYPE_p_p_apr_pool_t pool, string use_uuid) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_request_uuid(switch_endpoint_interface.getCPtr(endpoint_interface), (int)direction, SWIGTYPE_p_p_apr_pool_t.getCPtr(pool), use_uuid);
     SWIGTYPE_p_switch_core_session ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_core_session(cPtr, false);
     return ret;
   }
@@ -1130,8 +1130,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static SWIGTYPE_p_switch_core_session switch_core_session_request_by_name(string endpoint_name, SWIGTYPE_p_p_apr_pool_t pool) {
-    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_request_by_name(endpoint_name, SWIGTYPE_p_p_apr_pool_t.getCPtr(pool));
+  public static SWIGTYPE_p_switch_core_session switch_core_session_request_by_name(string endpoint_name, switch_call_direction_t direction, SWIGTYPE_p_p_apr_pool_t pool) {
+    IntPtr cPtr = freeswitchPINVOKE.switch_core_session_request_by_name(endpoint_name, (int)direction, SWIGTYPE_p_p_apr_pool_t.getCPtr(pool));
     SWIGTYPE_p_switch_core_session ret = (cPtr == IntPtr.Zero) ? null : new SWIGTYPE_p_switch_core_session(cPtr, false);
     return ret;
   }
@@ -2365,8 +2365,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_channel_alloc(SWIGTYPE_p_p_switch_channel channel, SWIGTYPE_p_apr_pool_t pool) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_alloc(SWIGTYPE_p_p_switch_channel.getCPtr(channel), SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static switch_status_t switch_channel_alloc(SWIGTYPE_p_p_switch_channel channel, switch_call_direction_t direction, SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_channel_alloc(SWIGTYPE_p_p_switch_channel.getCPtr(channel), (int)direction, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
@@ -4178,6 +4178,7 @@ public class freeswitch {
   public static readonly string SWITCH_UUID_BRIDGE = freeswitchPINVOKE.SWITCH_UUID_BRIDGE_get();
   public static readonly int SWITCH_BITS_PER_BYTE = freeswitchPINVOKE.SWITCH_BITS_PER_BYTE_get();
   public static readonly int SWITCH_DEFAULT_FILE_BUFFER_LEN = freeswitchPINVOKE.SWITCH_DEFAULT_FILE_BUFFER_LEN_get();
+  public static readonly int SWITCH_DTMF_LOG_LEN = freeswitchPINVOKE.SWITCH_DTMF_LOG_LEN_get();
   public static readonly int SWITCH_MAX_STACKS = freeswitchPINVOKE.SWITCH_MAX_STACKS_get();
   public static readonly int SWITCH_THREAD_STACKSIZE = freeswitchPINVOKE.SWITCH_THREAD_STACKSIZE_get();
   public static readonly int SWITCH_SYSTEM_THREAD_STACKSIZE = freeswitchPINVOKE.SWITCH_SYSTEM_THREAD_STACKSIZE_get();
@@ -4765,6 +4766,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_DEFAULT_FILE_BUFFER_LEN_get")]
   public static extern int SWITCH_DEFAULT_FILE_BUFFER_LEN_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_DTMF_LOG_LEN_get")]
+  public static extern int SWITCH_DTMF_LOG_LEN_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_dtmf_t_digit_set")]
   public static extern void switch_dtmf_t_digit_set(HandleRef jarg1, char jarg2);
@@ -5724,7 +5728,7 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_core_session_get_pool(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_request_uuid")]
-  public static extern IntPtr switch_core_session_request_uuid(HandleRef jarg1, HandleRef jarg2, string jarg3);
+  public static extern IntPtr switch_core_session_request_uuid(HandleRef jarg1, int jarg2, HandleRef jarg3, string jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_set_uuid")]
   public static extern int switch_core_session_set_uuid(HandleRef jarg1, string jarg2);
@@ -5742,7 +5746,7 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_core_session_id();
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_request_by_name")]
-  public static extern IntPtr switch_core_session_request_by_name(string jarg1, HandleRef jarg2);
+  public static extern IntPtr switch_core_session_request_by_name(string jarg1, int jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_thread_launch")]
   public static extern int switch_core_session_thread_launch(HandleRef jarg1);
@@ -8739,7 +8743,7 @@ class freeswitchPINVOKE {
   public static extern IntPtr switch_channel_get_timetable(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_alloc")]
-  public static extern int switch_channel_alloc(HandleRef jarg1, HandleRef jarg2);
+  public static extern int switch_channel_alloc(HandleRef jarg1, int jarg2, HandleRef jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_init")]
   public static extern int switch_channel_init(HandleRef jarg1, HandleRef jarg2, int jarg3, int jarg4);
@@ -16648,6 +16652,22 @@ public enum switch_call_cause_t {
   SWITCH_CAUSE_PICKED_OFF = 605,
   SWITCH_CAUSE_USER_NOT_REGISTERED = 606,
   SWITCH_CAUSE_PROGRESS_TIMEOUT = 607
+}
+
+}
+/* ----------------------------------------------------------------------------
+ * This file was automatically generated by SWIG (http://www.swig.org).
+ * Version 1.3.35
+ *
+ * Do not make changes to this file unless you know what you are doing--modify
+ * the SWIG interface file instead.
+ * ----------------------------------------------------------------------------- */
+
+namespace FreeSWITCH.Native {
+
+public enum switch_call_direction_t {
+  SWITCH_CALL_DIRECTION_INBOUND,
+  SWITCH_CALL_DIRECTION_OUTBOUND
 }
 
 }
