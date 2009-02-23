@@ -1830,7 +1830,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 {
 	char path_buf[1024];
 	uint8_t hasmain = 0, errcnt = 0;
-	switch_xml_t new_main;
+	switch_xml_t new_main, r = NULL;
 
 	switch_mutex_lock(XML_LOCK);
 
@@ -1838,8 +1838,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		hasmain++;
 
 		if (!reload) {
-			switch_mutex_unlock(XML_LOCK);
-			return switch_xml_root();
+			r = switch_xml_root();
+			goto done;
 		}
 		switch_thread_rwlock_wrlock(RWLOCK);
 	}
@@ -1871,8 +1871,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 		switch_thread_rwlock_unlock(RWLOCK);
 	}
 
-	switch_mutex_unlock(XML_LOCK);
-
 	if (errcnt == 0) {
 		switch_event_t *event;
 		if (switch_event_create(&event, SWITCH_EVENT_RELOADXML) == SWITCH_STATUS_SUCCESS) {
@@ -1880,10 +1878,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 				switch_event_destroy(&event);
 			}
 		}
-		return switch_xml_root();
+		r = switch_xml_root();
 	}
 
-	return NULL;
+ done:
+
+	switch_mutex_unlock(XML_LOCK);
+
+	return r;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, const char **err)
@@ -1908,14 +1910,19 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 
 SWITCH_DECLARE(switch_status_t) switch_xml_destroy(void)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	switch_mutex_lock(XML_LOCK);
+	
 	if (MAIN_XML_ROOT) {
 		switch_xml_t xml = MAIN_XML_ROOT;
 		MAIN_XML_ROOT = NULL;
 		switch_xml_free(xml);
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	}
 
-	return SWITCH_STATUS_FALSE;
+	switch_mutex_unlock(XML_LOCK);
+
+	return status;
 }
 
 SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_xml_t *node, switch_event_t *params)
