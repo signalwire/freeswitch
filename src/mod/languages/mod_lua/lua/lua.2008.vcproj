@@ -44,8 +44,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_WIN32"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_WIN32;LUA_BUILD_AS_DLL"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4127, 4505"
 				EnablePREfast="false"
 			/>
@@ -60,12 +62,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\lua.5.1.dll"
-				ModuleDefinitionFile="lua.def"
+				OutputFile="$(OutDir)\lua5.1.dll"
+				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\Debug/lua.5.1.lib"
+				ImportLibrary=".\$(IntDir)/lua5.1.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -116,8 +118,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_WIN32"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_WIN32;LUA_BUILD_AS_DLL"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4127, 4505"
 				EnablePREfast="false"
 			/>
@@ -132,12 +136,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\lua.5.1.dll"
-				ModuleDefinitionFile="lua.def"
+				OutputFile="$(OutDir)\lua5.1.dll"
+				ModuleDefinitionFile=""
 				GenerateDebugInformation="true"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\$(IntDir)/lua.5.1.lib"
+				ImportLibrary=".\$(IntDir)/lua5.1.lib"
 				TargetMachine="17"
 			/>
 			<Tool
@@ -187,8 +191,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_WIN32"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_WIN32;LUA_BUILD_AS_DLL"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4127, 4505"
 			/>
 			<Tool
@@ -202,11 +208,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\lua.5.1.dll"
-				ModuleDefinitionFile="lua.def"
+				OutputFile="$(OutDir)\lua5.1.dll"
+				ModuleDefinitionFile=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\$(IntDir)\lua.5.1.lib"
+				ImportLibrary=".\$(IntDir)/lua5.1.lib"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -257,8 +263,10 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="."
-				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_WIN32"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_WIN32;LUA_BUILD_AS_DLL"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
+				DebugInformationFormat="3"
 				DisableSpecificWarnings="4127, 4505"
 			/>
 			<Tool
@@ -272,11 +280,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)\lua.5.1.dll"
-				ModuleDefinitionFile="lua.def"
+				OutputFile="$(OutDir)\lua5.1.dll"
+				ModuleDefinitionFile=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
-				ImportLibrary=".\$(IntDir)\lua.5.1.lib"
+				ImportLibrary=".\$(IntDir)/lua5.1.lib"
 				TargetMachine="17"
 			/>
 			<Tool

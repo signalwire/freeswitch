@@ -39,7 +39,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=".;./lua"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_WIN32"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_WIN32;LUA_BUILD_AS_DLL"
 				UsePrecompiledHeader="0"
 				DisableSpecificWarnings="4127, 4505"
 				EnablePREfast="false"
@@ -105,7 +105,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories=".;./lua"
-				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_WIN32"
+				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;_WIN32;LUA_BUILD_AS_DLL"
 				UsePrecompiledHeader="0"
 				DisableSpecificWarnings="4127, 4505"
 			/>
