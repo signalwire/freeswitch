@@ -973,6 +973,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_portaudio_shutdown)
 	switch_core_hash_destroy(&globals.call_hash);
 
 	switch_event_free_subclass(MY_EVENT_RINGING);
+	
+	switch_safe_free(globals.dialplan);
+	switch_safe_free(globals.cid_name);
+	switch_safe_free(globals.cid_num);
+	switch_safe_free(globals.ring_file);
+	switch_safe_free(globals.hold_file);
+	switch_safe_free(globals.timer_name);
 
 	return SWITCH_STATUS_SUCCESS;
 }
