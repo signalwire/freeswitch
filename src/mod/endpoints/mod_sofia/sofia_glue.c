@@ -3080,6 +3080,38 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 	if (profile->odbc_dsn) {
 #ifdef SWITCH_HAVE_ODBC
+		int x;
+		char *indexes[] = {
+			"create index sr_call_id on sip_registrations (call_id)",
+			"create index sr_sip_user on sip_registrations (sip_user)",
+			"create index sr_sip_host on sip_registrations (sip_host)",
+			"create index sr_profile_name on sip_registrations (profile_name)",
+			"create index sr_presence_hosts on sip_registrations (presence_hosts)",
+			"create index sr_contact on sip_registrations (contact)",
+			"create index sr_expires on sip_registrations (expires)",
+			"create index sr_hostname on sip_registrations (hostname)",
+			"create index sr_status on sip_registrations (status)",
+			"create index ss_call_id on sip_subscriptions (call_id)",
+			"create index ss_hostname on sip_subscriptions (hostname)",
+			"create index ss_sip_user on sip_subscriptions (sip_user)",
+			"create index ss_sip_host on sip_subscriptions (sip_host)",
+			"create index ss_presence_hosts on sip_subscriptions (presence_hosts)",
+			"create index ss_event on sip_subscriptions (event)",
+			"create index ss_proto on sip_subscriptions (proto)",
+			"create index ss_sub_to_user on sip_subscriptions (sub_to_user)",
+			"create index ss_sub_to_host on sip_subscriptions (sub_to_host)",
+			"create index sd_uuid on sip_dialogs (uuid)",
+			"create index sd_hostname on sip_dialogs (hostname)",
+			"create index sp_hostname on sip_presence (hostname)",
+			"create index sa_nonce on sip_authentication (nonce)",
+			"create index sa_hostname on sip_authentication (hostname)",
+			"create index ssa_hostname on sip_shared_appearance_subscriptions (hostname)",
+			"create index ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)",
+			"create index ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)",
+			"create index ssa_aor on sip_shared_appearance_subscriptions (aor)",
+			NULL	
+		};
+
 		if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
 			return 0;
 		}
@@ -3132,19 +3164,22 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 		free(test_sql);
 
-		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-			test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or hostname='%q'", mod_sofia_globals.hostname);
-			if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
-				switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_shared_appearance_subscriptions", NULL);
-				switch_odbc_handle_exec(profile->master_odbc, shared_appearance_sql, NULL);
-			}
-			free(test_sql);
+		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str='' or hostname='%q'", mod_sofia_globals.hostname);
+		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
+			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_shared_appearance_subscriptions", NULL);
+			switch_odbc_handle_exec(profile->master_odbc, shared_appearance_sql, NULL);
 		}
+		free(test_sql);
+
+		for (x = 0; indexes[x]; x++) {
+			switch_odbc_handle_exec(profile->master_odbc, indexes[x], NULL);
+		}
+
 
 #else
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
-	} else {		
+	} else {
 		if (!(profile->master_db = switch_core_db_open_file(profile->dbname))) {
 			return 0;
 		}
@@ -3172,16 +3207,19 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_authentication", auth_sql);
 		free(test_sql);
 
-		if(sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-			test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str = '' or hostname='%q'", mod_sofia_globals.hostname);
-			switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_shared_appearance_subscriptions", shared_appearance_sql);
-			free(test_sql);
-
-			switch_core_db_exec(profile->master_db, "create index if not exists ssa_hostname on sip_shared_appearance_subscriptions (hostname)", NULL, NULL, NULL);
-			switch_core_db_exec(profile->master_db, "create index if not exists ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)", NULL, NULL, NULL);
-			switch_core_db_exec(profile->master_db, "create index if not exists ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)", NULL, NULL, NULL);
-			switch_core_db_exec(profile->master_db, "create index if not exists ssa_aor on sip_shared_appearance_subscriptions (aor)", NULL, NULL, NULL);
-		}
+		
+		test_sql = switch_mprintf("delete from sip_shared_appearance_subscriptions where contact_str = '' or hostname='%q'", mod_sofia_globals.hostname);
+		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_shared_appearance_subscriptions", shared_appearance_sql);
+		free(test_sql);
+		
+		switch_core_db_exec(profile->master_db, "create index if not exists ssa_hostname on sip_shared_appearance_subscriptions (hostname)", 
+							NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ssa_subscriber on sip_shared_appearance_subscriptions (subscriber)", 
+							NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ssa_profile_name on sip_shared_appearance_subscriptions (profile_name)", 
+							NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists ssa_aor on sip_shared_appearance_subscriptions (aor)", NULL, NULL, NULL);
+		
 
 
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_call_id on sip_registrations (call_id)", NULL, NULL, NULL);

@@ -211,6 +211,21 @@ static switch_status_t do_config()
 
 #ifdef SWITCH_HAVE_ODBC
 	if (globals.odbc_dsn) {
+		int x;
+		char *indexes[] = {
+			"create index ld_hostname on limit_data (hostname)",
+			"create index ld_uuid on limit_data (uuid)",
+			"create index ld_realm on limit_data (realm)",
+			"create index ld_id on limit_data (id)",
+			"create index dd_realm on db_data (realm)",
+			"create index dd_data_key on db_data (data_key)",
+			"create index gd_groupname on group_data (groupname)",
+			"create index gd_url on group_data (url)",
+			NULL
+		};
+		
+
+
 		if (!(globals.master_odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
 			status = SWITCH_STATUS_FALSE;
@@ -237,6 +252,10 @@ static switch_status_t do_config()
 			if (switch_odbc_handle_exec(globals.master_odbc, group_sql, NULL) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Create SQL Database!\n");
 			}
+		}
+
+		for (x = 0; indexes[x]; x++) {
+			switch_odbc_handle_exec(globals.master_odbc, indexes[x], NULL);
 		}
 	} else {
 #endif
