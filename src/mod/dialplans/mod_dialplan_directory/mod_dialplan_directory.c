@@ -35,6 +35,7 @@
 #include <fcntl.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_directory_load);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dialplan_directory_shutdown);
 SWITCH_MODULE_DEFINITION(mod_dialplan_directory, mod_dialplan_directory_load, mod_dialplan_directory_shutdown, NULL);
 
 static struct {
