@@ -702,7 +702,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_caller_profile_t *outbound_profile,
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
-	if ((*new_session = switch_core_session_request(iax_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(iax_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
@@ -1008,7 +1008,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 					switch_core_session_t *session;
 
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "New Inbound Channel %s!\n", iaxevent->ies.calling_name);
-					if ((session = switch_core_session_request(iax_endpoint_interface, NULL)) != 0) {
+					if ((session = switch_core_session_request(iax_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
 						switch_core_session_add_stream(session, NULL);
 						if ((tech_pvt = (private_t *) switch_core_session_alloc(session, sizeof(private_t))) != 0) {
 							channel = switch_core_session_get_channel(session);

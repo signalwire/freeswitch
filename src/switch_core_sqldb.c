@@ -275,8 +275,10 @@ static void core_event_handler(switch_event_t *event)
 			break;
 		}
 	case SWITCH_EVENT_CHANNEL_CREATE:
-		sql = switch_mprintf("insert into channels (uuid,created,created_epoch, name,state,dialplan,context) values('%q','%q','%ld','%q','%q','%q','%q')",
+		sql = switch_mprintf("insert into channels (uuid,direction,created,created_epoch, name,state,dialplan,context) "
+							 "values('%q','%q','%q','%ld','%q','%q','%q','%q')",
 							 switch_event_get_header_nil(event, "unique-id"),
+							 switch_event_get_header_nil(event, "call-direction"),
 							 switch_event_get_header_nil(event, "event-date-local"),
 							 (long)switch_epoch_time_now(NULL),							 
 							 switch_event_get_header_nil(event, "channel-name"),
@@ -434,6 +436,7 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 		char create_channels_sql[] =
 			"CREATE TABLE channels (\n"
 			"   uuid  VARCHAR(255),\n"
+			"   direction  VARCHAR(255),\n"
 			"   created  VARCHAR(255),\n"
 			"   created_epoch  INTEGER,\n"
 			"   name  VARCHAR(255),\n"

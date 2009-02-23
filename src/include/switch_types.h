@@ -168,6 +168,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_UUID_BRIDGE "uuid_bridge"
 #define SWITCH_BITS_PER_BYTE 8
 #define SWITCH_DEFAULT_FILE_BUFFER_LEN 65536
+#define SWITCH_DTMF_LOG_LEN 1000
 
 typedef uint8_t switch_byte_t;
 
@@ -175,6 +176,11 @@ typedef struct {
 	char digit;
 	uint32_t duration;
 } switch_dtmf_t;
+
+typedef enum {
+	SWITCH_CALL_DIRECTION_INBOUND,
+	SWITCH_CALL_DIRECTION_OUTBOUND
+} switch_call_direction_t;
 
 typedef enum {
 	SBF_DIAL_ALEG = (1 << 0),

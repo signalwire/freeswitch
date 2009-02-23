@@ -202,7 +202,7 @@ static switch_call_cause_t unicall_incoming_channel(zap_sigmsg_t *sigmsg, switch
     
     *sp = NULL;
     
-    if (!(session = switch_core_session_request(openzap_endpoint_interface, NULL)))
+    if (!(session = switch_core_session_request(openzap_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)))
     {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Initialization Error!\n");
         return ZAP_FAIL;
@@ -1540,7 +1540,7 @@ static switch_call_cause_t unicall_outgoing_channel(switch_core_session_t *sessi
 
 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_outgoing_channel(%p)\n", (void *) session);
 
-    if ((*new_session = switch_core_session_request(unicall_endpoint_interface, pool)) == NULL)
+ if ((*new_session = switch_core_session_request(unicall_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) == NULL)
     {
         return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
     }

@@ -830,7 +830,7 @@ static int sofia_presence_resub_callback(void *pArg, int argc, char **argv, char
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", uuid);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", state);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "astate", state);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", direction);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", direction);
 		}
 
 		switch_event_fire(&event);
@@ -1030,7 +1030,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 
 	if (helper->event) {
 		switch_stream_handle_t stream = { 0 };
-		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "call-direction"));
+		const char *direction = switch_str_nil(switch_event_get_header(helper->event, "presence-call-direction"));
 		const char *uuid = switch_str_nil(switch_event_get_header(helper->event, "unique-id"));
 		const char *state = switch_str_nil(switch_event_get_header(helper->event, "channel-state"));
 		const char *event_status = switch_str_nil(switch_event_get_header(helper->event, "status"));

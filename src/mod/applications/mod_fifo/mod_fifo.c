@@ -617,7 +617,7 @@ static void send_presence(fifo_node_t *node)
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", wait_count > 0 ? "CS_ROUTING" : "CS_HANGUP");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", node->name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", wait_count > 0 ? "early" : "terminated");
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", "inbound");
 		switch_event_fire(&event);
 	}
 }

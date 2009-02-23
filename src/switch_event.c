@@ -1277,7 +1277,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(char *file,
 		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "unique-id", alt_event_type);
 		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "channel-state", channel_state);
 		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "answer-state", answer_state);
-		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "call-direction", call_direction);
+		switch_event_add_header_string(pres_event, SWITCH_STACK_TOP, "presence-call-direction", call_direction);
 		switch_event_fire_detailed(file, func, line, &pres_event, NULL);
 		return SWITCH_STATUS_SUCCESS;
 	}

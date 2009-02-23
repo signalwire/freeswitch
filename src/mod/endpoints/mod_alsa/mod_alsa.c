@@ -757,7 +757,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 													switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
 
-	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, pool)) != 0) {
+	if ((*new_session = switch_core_session_request(&channel_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		switch_caller_profile_t *caller_profile;
@@ -1412,7 +1412,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 	}
 	dest = argv[0];
 
-	if ((session = switch_core_session_request(&channel_endpoint_interface, NULL)) != 0) {
+	if ((session = switch_core_session_request(&channel_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
 		private_t *tech_pvt;
 		switch_channel_t *channel;
 		char *dialplan = globals.dialplan;

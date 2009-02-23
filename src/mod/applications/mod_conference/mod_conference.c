@@ -604,7 +604,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference->name);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "presence-call-direction", conference->count == 1 ? "outbound" : "inbound");
 			switch_event_fire(&event);
 		}
 

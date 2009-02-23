@@ -269,6 +269,8 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 		switch_assert(channel != NULL);
 
+		switch_channel_set_flag(channel, CF_OUTBOUND);
+
 		forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 		if (!switch_strlen_zero(forwardvar)) {
 			forwardval = atoi(forwardvar) - 1;
@@ -1043,7 +1045,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 }
 
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_endpoint_interface_t
-																		 *endpoint_interface, switch_memory_pool_t **pool, const char *use_uuid)
+																		 *endpoint_interface, 
+																		 switch_call_direction_t direction,
+																		 switch_memory_pool_t **pool, 
+																		 const char *use_uuid)
 {
 	switch_memory_pool_t *usepool;
 	switch_core_session_t *session;
@@ -1091,8 +1096,12 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	session = switch_core_alloc(usepool, sizeof(*session));
 	session->pool = usepool;
 	
-	if (switch_channel_alloc(&session->channel, session->pool) != SWITCH_STATUS_SUCCESS) {
+	if (switch_channel_alloc(&session->channel, direction, session->pool) != SWITCH_STATUS_SUCCESS) {
 		abort();
+	}
+
+	if (direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
+		switch_channel_set_flag(session->channel, CF_OUTBOUND);
 	}
 
 	switch_channel_init(session->channel, session, CS_NEW, 0);
@@ -1154,7 +1163,9 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_id(void)
 }
 
 
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(const char *endpoint_name, switch_memory_pool_t **pool)
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(const char *endpoint_name, 
+																			switch_call_direction_t direction, 
+																			switch_memory_pool_t **pool)
 {
 	switch_endpoint_interface_t *endpoint_interface;
 	switch_core_session_t *session;
@@ -1164,7 +1175,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(cons
 		return NULL;
 	}
 
-	session = switch_core_session_request(endpoint_interface, pool);
+	session = switch_core_session_request(endpoint_interface, direction, pool);
 
 	UNPROTECT_INTERFACE(endpoint_interface);
 

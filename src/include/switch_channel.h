@@ -139,7 +139,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(_In_ s
   \param pool memory_pool to use for allocation
   \return SWITCH_STATUS_SUCCESS if successful
 */
-SWITCH_DECLARE(switch_status_t) switch_channel_alloc(_In_ switch_channel_t **channel, _In_ switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(_In_ switch_channel_t **channel, _In_ switch_call_direction_t direction, _In_ switch_memory_pool_t *pool);
 
 /*!
   \brief Connect a newly allocated channel to a session object and setup it's initial state

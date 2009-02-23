@@ -529,9 +529,10 @@ SWITCH_DECLARE(switch_memory_pool_t *) switch_core_session_get_pool(_In_ switch_
   \param pool the pool to use for the allocation (a new one will be used if NULL)
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ switch_endpoint_interface_t *endpoint_interface,
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ switch_endpoint_interface_t *endpoint_interface, 
+																		 _In_ switch_call_direction_t direction,
 																		 _Inout_opt_ switch_memory_pool_t **pool, _In_opt_z_ const char *use_uuid);
-#define switch_core_session_request(_ep, _p) switch_core_session_request_uuid(_ep, _p, NULL)
+#define switch_core_session_request(_ep, _d, _p) switch_core_session_request_uuid(_ep, _d, _p, NULL)
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session_t *session, const char *use_uuid);
 
@@ -565,7 +566,9 @@ SWITCH_DECLARE(switch_size_t) switch_core_session_id(void);
   \param pool the pool to use
   \return the newly created session
 */
-SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(_In_z_ const char *endpoint_name, _Inout_ switch_memory_pool_t **pool);
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_by_name(_In_z_ const char *endpoint_name, 
+																			_In_ switch_call_direction_t direction,
+																			_Inout_ switch_memory_pool_t **pool);
 
 /*! 
   \brief Launch the session thread (state machine) on a given session

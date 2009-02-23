@@ -109,7 +109,9 @@ static struct switch_cause_table CAUSE_CHART[] = {
 
 struct switch_channel {
 	char *name;
+	switch_call_direction_t direction;
 	switch_queue_t *dtmf_queue;
+	switch_queue_t *dtmf_log_queue;
 	switch_mutex_t *dtmf_mutex;
 	switch_mutex_t *flag_mutex;
 	switch_mutex_t *state_mutex;
@@ -210,7 +212,7 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return times;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_call_direction_t direction, switch_memory_pool_t *pool)
 {
 	switch_assert(pool != NULL);
 
@@ -221,7 +223,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_event_create(&(*channel)->variables, SWITCH_EVENT_GENERAL);
 
 	switch_core_hash_init(&(*channel)->private_hash, pool);
-	switch_queue_create(&(*channel)->dtmf_queue, 128, pool);
+	switch_queue_create(&(*channel)->dtmf_queue, SWITCH_DTMF_LOG_LEN, pool);
+	switch_queue_create(&(*channel)->dtmf_log_queue, SWITCH_DTMF_LOG_LEN, pool);
 
 	switch_mutex_init(&(*channel)->dtmf_mutex, SWITCH_MUTEX_NESTED, pool);
 	switch_mutex_init(&(*channel)->flag_mutex, SWITCH_MUTEX_NESTED, pool);
@@ -229,6 +232,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 	switch_mutex_init(&(*channel)->profile_mutex, SWITCH_MUTEX_NESTED, pool);
 	(*channel)->hangup_cause = SWITCH_CAUSE_NONE;
 	(*channel)->name = "";
+	(*channel)->direction = direction;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -355,7 +359,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_dequeue_dtmf(switch_channel_t *ch
 	if (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
 		dt = (switch_dtmf_t *) pop;
 		*dtmf = *dt;
-		free(dt);
+
+		if (switch_queue_trypush(channel->dtmf_log_queue, dt) != SWITCH_STATUS_SUCCESS) {
+			free(dt);			
+		}
+		
+		dt = NULL;
 
 		if (dtmf->duration > switch_core_max_dtmf_duration(0)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s EXCESSIVE DTMF DIGIT [%c] LEN [%d]\n",
@@ -404,14 +413,21 @@ SWITCH_DECLARE(void) switch_channel_flush_dtmf(switch_channel_t *channel)
 
 	switch_mutex_lock(channel->dtmf_mutex);
 	while (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
-		switch_safe_free(pop);
+		switch_dtmf_t *dt = (switch_dtmf_t *) pop;
+		if (channel->state >= CS_HANGUP || switch_queue_trypush(channel->dtmf_log_queue, dt) != SWITCH_STATUS_SUCCESS) {
+			free(dt);
+		}
 	}
 	switch_mutex_unlock(channel->dtmf_mutex);
 }
 
 SWITCH_DECLARE(void) switch_channel_uninit(switch_channel_t *channel)
 {
+	void *pop;
 	switch_channel_flush_dtmf(channel);
+	while (switch_queue_trypop(channel->dtmf_log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		switch_safe_free(pop);
+	}
 	switch_core_hash_destroy(&channel->private_hash);
 	switch_mutex_lock(channel->profile_mutex);
 	switch_event_destroy(&channel->variables);
@@ -2234,6 +2250,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_time_t uduration = 0, legbillusec = 0, billusec = 0, progresssec = 0, progressusec = 0, progress_mediasec = 0, progress_mediausec = 0;
 	time_t tt_created = 0, tt_answered = 0, tt_progress = 0, tt_progress_media = 0, tt_hungup = 0, mtt_created = 0, mtt_answered = 0, mtt_hungup =
 		0, tt_prof_created, mtt_prof_created, mtt_progress = 0, mtt_progress_media = 0;
+	void *pop;
+	char dtstr[SWITCH_DTMF_LOG_LEN+1] = "";
+	int x = 0;
 
 	if (!(caller_profile = switch_channel_get_caller_profile(channel)) || !channel->variables) {
 		return SWITCH_STATUS_FALSE;
@@ -2254,6 +2273,22 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 											  switch_str_nil(caller_profile->caller_id_number));
 	} else {
 		cid_buf = caller_profile->caller_id_number;
+	}
+
+	while (x < SWITCH_DTMF_LOG_LEN && switch_queue_trypop(channel->dtmf_log_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+		switch_dtmf_t *dt = (switch_dtmf_t *) pop;
+
+		if (dt) {
+			dtstr[x++] = dt->digit;
+			free(dt);
+			dt = NULL;
+		}
+	}
+	
+	if (x) {
+		switch_channel_set_variable(channel, "digits_dialed", dtstr);
+	} else {
+		switch_channel_set_variable(channel, "digits_dialed", "none");
 	}
 
 	if (caller_profile->times) {

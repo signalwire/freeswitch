@@ -483,7 +483,8 @@ FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller
 {
     opal_private_t *tech_pvt;
     FSManager & mgr = (FSManager &) endpoint.GetManager();
-    m_fsSession = switch_core_session_request(mgr.GetSwitchInterface(), NULL);
+    m_fsSession = switch_core_session_request(mgr.GetSwitchInterface(), 
+                                              outbound_profile ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, NULL);
     m_fsChannel = switch_core_session_get_channel(m_fsSession);
 
     tech_pvt = (opal_private_t *) switch_core_session_alloc(m_fsSession, sizeof(*tech_pvt));
