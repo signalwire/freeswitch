@@ -303,29 +303,26 @@ extern "C"
     }
 #elif defined(WIN64)  ||  defined(_WIN64)
     /* x86_64 machines will do best with a simple assignment. */
+#include <intrin.h>
 
     __inline long int lrint(double x)
     {
-        long int i;
-
-        _asm
-        {
-            fld x
-            fistp i
-        };
-        return i;
+#ifdef _M_X64
+		return (long int)_mm_cvtsd_si64x( _mm_loadu_pd ((const double*)&x) );
+#else
+#warning "Not Supported: Replacing with a simple C cast."
+	return (long int) (x);
+#endif
     }
 
     __inline long int lrintf(float x)
     {
-        long int i;
-
-        _asm
-        {
-            fld x
-            fistp i
-        };
-        return i;
+#ifdef _M_X64
+		return _mm_cvt_ss2si( _mm_load_ss((const float*)&x) );
+#else
+#warning "Not Supported: Replacing with a simple C cast."
+	return (long int) (x);
+#endif
     }
 
     __inline long int lfastrint(double x)

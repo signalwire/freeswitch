@@ -41,7 +41,7 @@
 #include "syntFilter.h"
 
 #if (defined(WIN32)  ||  defined(_WIN32)) && !defined(_WIN64)
-    __inline double rint(double dbl)
+    __inline long int rint(double dbl)
     {
         _asm 
     	{
@@ -50,9 +50,15 @@
         }
     }
 #elif defined (_WIN64)
+#include <intrin.h>
     __inline__ long int rint(double x)
     {
-        return (long int) (x);
+#ifdef _M_X64
+		return (long int)_mm_cvtsd_si64x( _mm_loadu_pd ((const double*)&x) );
+#else
+#warning "Not Supported: Replacing with a simple C cast."
+	return (long int) (x);
+#endif
     }
 #endif
 
