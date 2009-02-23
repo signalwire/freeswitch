@@ -850,6 +850,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
 	if (globals.pool) {
 		switch_core_destroy_memory_pool(&globals.pool);
 	}
+	
+	switch_safe_free(globals.root);
+	switch_safe_free(globals.isn_root);
 
 	return SWITCH_STATUS_UNLOAD;
 }

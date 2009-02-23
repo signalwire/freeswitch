@@ -1296,7 +1296,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_erlang_event_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
-
+	
+	memset(&prefs, 0, sizeof(prefs));
+	
 	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
 	
 	/* intialize the unique reference stuff */
@@ -1516,6 +1518,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_erlang_event_shutdown)
 	switch_mutex_unlock(globals.listener_mutex);
 
 	switch_sleep(1500000); /* sleep for 1.5 seconds */
+
+	switch_safe_free(prefs.ip);
+	switch_safe_free(prefs.cookie);
+	switch_safe_free(prefs.nodename);
 
 	return SWITCH_STATUS_SUCCESS;
 }

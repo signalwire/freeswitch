@@ -152,6 +152,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 {
 	switch_status_t status;
 	*module_interface = &console_module_interface;
+	
+	memset(&globals, 0, sizeof(globals));
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
@@ -161,6 +163,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 
 	setlogmask(LOG_UPTO(LOG_DEBUG));
 	switch_log_bind_logger(mod_syslog_logger, log_level, SWITCH_FALSE);
+
+	switch_safe_free(globals.ident);
+	switch_safe_free(globals.format);
 
 	return SWITCH_STATUS_SUCCESS;
 }

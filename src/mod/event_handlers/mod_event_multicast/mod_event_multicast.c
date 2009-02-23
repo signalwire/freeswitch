@@ -267,6 +267,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_multicast_shutdown)
 
 	switch_core_hash_destroy(&globals.event_hash);
 
+	switch_safe_free(globals.address);
+	switch_safe_free(globals.bindings);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

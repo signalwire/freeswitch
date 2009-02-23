@@ -1071,6 +1071,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
                          globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread);
     }
   }
+
+  switch_safe_free(globals.dialplan);
+  switch_safe_free(globals.context);
+  switch_safe_free(globals.destination);
+  switch_safe_free(globals.codec_string);
+  switch_safe_free(globals.codec_rates_string);
+
   return SWITCH_STATUS_SUCCESS;
 }
 

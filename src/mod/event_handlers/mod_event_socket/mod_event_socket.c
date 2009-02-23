@@ -471,6 +471,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_event_socket_shutdown)
 
 	switch_event_unbind(&globals.node);
 
+	switch_safe_free(prefs.ip);
+	switch_safe_free(prefs.password);	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -932,6 +935,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_event_socket_load)
 {
 	switch_application_interface_t *app_interface;
 	switch_api_interface_t *api_interface;
+
+	memset(&globals, 0, sizeof(globals));
 
 	switch_mutex_init(&globals.listener_mutex, SWITCH_MUTEX_NESTED, pool);
 

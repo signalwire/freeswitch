@@ -813,7 +813,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_alsa_load)
 		return SWITCH_STATUS_TERM;
 	}
 
-
+	memset(&globals, 0, sizeof(globals));
 
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
@@ -939,6 +939,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown)
 		switch_core_codec_destroy(&globals.write_codec);
 	}
 	switch_core_hash_destroy(&globals.call_hash);
+	
+	switch_safe_free(globals.dialplan);
+	switch_safe_free(globals.cid_name);
+	switch_safe_free(globals.cid_num);
+	switch_safe_free(globals.ring_file);
+	switch_safe_free(globals.hold_file);
+	switch_safe_free(globals.timer_name);
+	switch_safe_free(globals.device_name);
 
 	return SWITCH_STATUS_SUCCESS;
 }

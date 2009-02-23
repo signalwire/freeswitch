@@ -35,7 +35,7 @@
 #include <fcntl.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_directory_load);
-SWITCH_MODULE_DEFINITION(mod_dialplan_directory, mod_dialplan_directory_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_dialplan_directory, mod_dialplan_directory_load, mod_dialplan_directory_shutdown, NULL);
 
 static struct {
 	char *directory_name;
@@ -142,11 +142,23 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 }
 
 
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
+{
+	switch_safe_free(globals.directory_name);
+	switch_safe_free(globals.host);
+	switch_safe_free(globals.dn);
+	switch_safe_free(globals.pass);
+	switch_safe_free(globals.base);
+}
+
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_dialplan_directory_load)
 {
 	switch_dialplan_interface_t *dp_interface;
 
+	memset(&globals, 0, sizeof(globals));
 	load_config();
+	
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 	SWITCH_ADD_DIALPLAN(dp_interface, "directory", directory_dialplan_hunt);

@@ -1748,6 +1748,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 	switch_api_interface_t *api_interface;
 
 	module_pool = pool;
+	
+	memset(&globals, 0, sizeof(globals));
 
 	load_config();
 
@@ -1889,6 +1891,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 
 
 	switch_core_hash_destroy(&globals.profile_hash);
+
+	switch_safe_free(globals.dialplan);
+	switch_safe_free(globals.codec_string);
+	switch_safe_free(globals.codec_rates_string);	
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

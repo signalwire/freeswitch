@@ -851,6 +851,10 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_xml_rpc_shutdown)
 		switch_yield(100000);
 	} while (globals.running);
 
+	switch_safe_free(globals.realm);
+	switch_safe_free(globals.user);
+	switch_safe_free(globals.pass);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 

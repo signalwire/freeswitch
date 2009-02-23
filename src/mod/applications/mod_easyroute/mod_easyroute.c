@@ -426,6 +426,14 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_easyroute_shutdown)
 #ifdef SWITCH_HAVE_ODBC
 	switch_odbc_handle_disconnect(globals.master_odbc);
 #endif
+	
+	switch_safe_free(globals.db_username);
+	switch_safe_free(globals.db_password);
+	switch_safe_free(globals.db_dsn);
+	switch_safe_free(globals.default_techprofile);
+	switch_safe_free(globals.default_gateway);
+	switch_safe_free(globals.custom_query);
+
 	return SWITCH_STATUS_UNLOAD;
 }
 

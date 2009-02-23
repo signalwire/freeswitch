@@ -802,6 +802,8 @@ switch_io_routines_t iax_io_routines = {
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_iax_load)
 {
+	memset(&globals, 0, sizeof(globals));
+		
 	module_pool = pool;
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -1148,6 +1150,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_iax_shutdown)
 		}
 		switch_yield(20000);
 	}
+	
+	switch_safe_free(globals.dialplan);
+	switch_safe_free(globals.codec_string);
+	switch_safe_free(globals.codec_rates_string);
+	switch_safe_free(globals.ip);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 

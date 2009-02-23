@@ -532,6 +532,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_reference_load)
 
 	module_pool = pool;
 
+	memset(&globals, 0, sizeof(globals));
+
 	load_config();
 
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
@@ -565,6 +567,13 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_reference_shutdown)
 		}
 		switch_yield(20000);
 	}
+	
+	/* Free dynamically allocated strings */
+	switch_safe_free(globals.dialplan);
+	switch_safe_free(globals.codec_string);
+	switch_safe_free(globals.codec_rates_string);
+	switch_safe_free(globals.ip);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
