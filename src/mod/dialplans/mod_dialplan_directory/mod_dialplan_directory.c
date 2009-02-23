@@ -143,7 +143,7 @@ SWITCH_STANDARD_DIALPLAN(directory_dialplan_hunt)
 }
 
 
-SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_enum_shutdown)
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dialplan_directory_shutdown)
 {
 	switch_safe_free(globals.directory_name);
 	switch_safe_free(globals.host);
