@@ -639,7 +639,7 @@ SWITCH_STANDARD_APP(enum_app_function)
 					continue;
 				}
 				switch_snprintf(vbuf, sizeof(vbuf), "enum_route_%d", cnt++);
-				switch_channel_set_variable(channel, vbuf, rp->route);
+				switch_channel_set_variable_var_check(channel, vbuf, rp->route, SWITCH_FALSE);
 				if (rp->preference == last_pref && rp->order == last_order) {
 					*last_delim = ',';
 				}
@@ -653,9 +653,9 @@ SWITCH_STANDARD_APP(enum_app_function)
 			}
 
 			switch_snprintf(vbuf, sizeof(vbuf), "%d", cnt - 1);
-			switch_channel_set_variable(channel, "enum_route_count", vbuf);
+			switch_channel_set_variable_var_check(channel, "enum_route_count", vbuf, SWITCH_FALSE);
 			*(rbuf + strlen(rbuf) - 1) = '\0';
-			switch_channel_set_variable(channel, "enum_auto_route", rbuf);
+			switch_channel_set_variable_var_check(channel, "enum_auto_route", rbuf, SWITCH_FALSE);
 			free_results(&results);
 		}
 	}
