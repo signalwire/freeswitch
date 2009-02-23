@@ -316,6 +316,9 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 {
 	switch_status_t rv;
 	struct sockaddr_in server_addr;
+	struct hostent *nodehost;
+	char thishostname[EI_MAXHOSTNAMELEN+1] = "";
+	char thisnodename[MAXNODELEN+1];
 
 	/* zero out the struct before we use it */
 	memset(&server_addr, 0, sizeof(server_addr));
@@ -334,14 +337,13 @@ switch_status_t initialise_ei(struct ei_cnode_s *ec)
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(prefs.port);
 	
-	struct hostent *nodehost = gethostbyaddr(&server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET);
+	 if ((nodehost = gethostbyaddr(&server_addr.sin_addr.s_addr, sizeof(server_addr.sin_addr.s_addr), AF_INET)))
+		memcpy(thishostname, nodehost->h_name, EI_MAXHOSTNAMELEN);
 	
-	char *thishostname = nodehost->h_name;
-	char thisnodename[MAXNODELEN+1];
-	
-	if (!strcmp(thishostname, "localhost"))
+	if (switch_strlen_zero_buf(thishostname)) {
 		gethostname(thishostname, EI_MAXHOSTNAMELEN);
-	
+	}
+
 	if (prefs.shortname) {
 		char *off;
 		if ((off = strchr(thishostname, '.'))) {

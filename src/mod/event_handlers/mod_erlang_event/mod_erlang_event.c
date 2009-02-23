@@ -932,7 +932,7 @@ static int config(void)
 	}
 
 	if (switch_strlen_zero(prefs.ip)) {
-		set_pref_ip("127.0.0.1");
+		set_pref_ip("0.0.0.0");
 	}
 
 	if (switch_strlen_zero(prefs.cookie)) {
@@ -1423,7 +1423,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_erlang_event_runtime)
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected and published erlang cnode at %s\n", ec.thisnodename);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connected to epmd and published erlang cnode at %s\n", ec.thisnodename);
 
 	listen_list.ready = 1;
 
