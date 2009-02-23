@@ -332,6 +332,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_seek(switch_file_handle_t *fh, 
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (!fh->file_interface->file_seek) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -349,6 +353,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_set_string(switch_file_handle_t
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
 
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if (!fh->file_interface->file_set_string) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -360,6 +368,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_get_string(switch_file_handle_t
 {
 	switch_assert(fh != NULL);
 	switch_assert(fh->file_interface != NULL);
+
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
 
 	if (!fh->file_interface->file_get_string) {
 		return SWITCH_STATUS_FALSE;

@@ -1207,6 +1207,10 @@ SWITCH_DECLARE(switch_status_t) CoreSession::process_callback_result(char *resul
     }
 
 	if (fhp) {
+		if (!switch_test_flag(fhp, SWITCH_FILE_OPEN)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (!strncasecmp(result, "speed", 5)) {
 			char *p;
 		

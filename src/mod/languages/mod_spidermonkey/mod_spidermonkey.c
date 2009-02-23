@@ -1190,6 +1190,10 @@ static switch_status_t js_stream_input_callback(switch_core_session_t *session, 
 	switch_file_handle_t *fh = cb_state->extra;
 	struct js_session *jss = cb_state->session_state;
 
+	if (!switch_test_flag(fh, SWITCH_FILE_OPEN)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
 	if ((status = js_common_callback(session, input, itype, buf, buflen)) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
