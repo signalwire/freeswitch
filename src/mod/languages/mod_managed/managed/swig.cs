@@ -1317,8 +1317,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_core_session_dequeue_event(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_event arg1) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_dequeue_event(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_event.getCPtr(arg1));
+  public static switch_status_t switch_core_session_dequeue_event(SWIGTYPE_p_switch_core_session session, SWIGTYPE_p_p_switch_event arg1, switch_bool_t force) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_core_session_dequeue_event(SWIGTYPE_p_switch_core_session.getCPtr(session), SWIGTYPE_p_p_switch_event.getCPtr(arg1), (int)force);
     return ret;
   }
 
@@ -2759,8 +2759,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_event_create_subclass(SWIGTYPE_p_p_switch_event arg0, switch_event_types_t event_id, string subclass_name) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_subclass(SWIGTYPE_p_p_switch_event.getCPtr(arg0), (int)event_id, subclass_name);
+  public static switch_status_t switch_event_create_subclass_detailed(string file, string func, int line, SWIGTYPE_p_p_switch_event arg3, switch_event_types_t event_id, string subclass_name) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_subclass_detailed(file, func, line, SWIGTYPE_p_p_switch_event.getCPtr(arg3), (int)event_id, subclass_name);
     return ret;
   }
 
@@ -2801,6 +2801,10 @@ public class freeswitch {
   public static switch_status_t switch_event_fire_detailed(string file, string func, int line, SWIGTYPE_p_p_switch_event arg3, SWIGTYPE_p_void user_data) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_fire_detailed(file, func, line, SWIGTYPE_p_p_switch_event.getCPtr(arg3), SWIGTYPE_p_void.getCPtr(user_data));
     return ret;
+  }
+
+  public static void switch_event_prep_for_delivery_detailed(string file, string func, int line, switch_event arg3) {
+    freeswitchPINVOKE.switch_event_prep_for_delivery_detailed(file, func, line, switch_event.getCPtr(arg3));
   }
 
   public static switch_status_t switch_event_bind(string id, switch_event_types_t arg1, string subclass_name, SWIGTYPE_p_f_p_switch_event__void callback, SWIGTYPE_p_void user_data) {
@@ -5852,7 +5856,7 @@ class freeswitchPINVOKE {
   public static extern uint switch_core_session_event_count(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_dequeue_event")]
-  public static extern int switch_core_session_dequeue_event(HandleRef jarg1, HandleRef jarg2);
+  public static extern int switch_core_session_dequeue_event(HandleRef jarg1, HandleRef jarg2, int jarg3);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_core_session_queue_private_event")]
   public static extern int switch_core_session_queue_private_event(HandleRef jarg1, HandleRef jarg2);
@@ -9079,8 +9083,8 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_shutdown")]
   public static extern int switch_event_shutdown();
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_event_create_subclass")]
-  public static extern int switch_event_create_subclass(HandleRef jarg1, int jarg2, string jarg3);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_event_create_subclass_detailed")]
+  public static extern int switch_event_create_subclass_detailed(string jarg1, string jarg2, int jarg3, HandleRef jarg4, int jarg5, string jarg6);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_set_priority")]
   public static extern int switch_event_set_priority(HandleRef jarg1, int jarg2);
@@ -9105,6 +9109,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_fire_detailed")]
   public static extern int switch_event_fire_detailed(string jarg1, string jarg2, int jarg3, HandleRef jarg4, HandleRef jarg5);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_event_prep_for_delivery_detailed")]
+  public static extern void switch_event_prep_for_delivery_detailed(string jarg1, string jarg2, int jarg3, HandleRef jarg4);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_bind")]
   public static extern int switch_event_bind(string jarg1, int jarg2, string jarg3, HandleRef jarg4, HandleRef jarg5);
@@ -17272,6 +17279,7 @@ public enum switch_channel_flag_t {
   CF_REQ_MEDIA,
   CF_VERBOSE_EVENTS,
   CF_PAUSE_BUGS,
+  CF_DIVERT_EVENTS,
   CF_FLAG_MAX
 }
 
@@ -20095,6 +20103,8 @@ public enum switch_event_types_t {
   SWITCH_EVENT_GENERAL,
   SWITCH_EVENT_COMMAND,
   SWITCH_EVENT_SESSION_HEARTBEAT,
+  SWITCH_EVENT_CLIENT_DISCONNECTED,
+  SWITCH_EVENT_SERVER_DISCONNECTED,
   SWITCH_EVENT_ALL
 }
 
