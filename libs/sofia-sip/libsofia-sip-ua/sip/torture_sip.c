@@ -711,6 +711,31 @@ int test_basic(void)
   }
 
   {
+    char *input;
+    char const *output = NULL;
+    char udp[] = "sip/2.0/udp";
+    char tcp[] = "sip/2.0/tCp ";
+    char sctp[] = "sip/2.0/sctp\t";
+    char tls[] = "sip/2.0/tls\r";
+
+    input = udp;
+    TEST(sip_transport_d(&input, &output), 0);
+    TEST_S(output, "SIP/2.0/UDP");
+
+    input = tcp;
+    TEST(sip_transport_d(&input, &output), 0);
+    TEST_S(output, "SIP/2.0/TCP");
+
+    input = sctp;
+    TEST(sip_transport_d(&input, &output), 0);
+    TEST_S(output, "SIP/2.0/SCTP");
+
+    input = tls;
+    TEST(sip_transport_d(&input, &output), 0);
+    TEST_S(output, "SIP/2.0/TLS");
+  }
+
+  {
     sip_expires_t *ex;
 
     TEST_1(!sip_expires_make(home, "-12+1"));
@@ -2323,7 +2348,7 @@ static int test_www_authenticate(void)
   TEST_S(www->au_scheme, "Kerberos");
   TEST_1(www = www->au_next);
   TEST_S(www->au_scheme, "NTLM");
-  
+ 
   msg_destroy(msg);
 
   END();

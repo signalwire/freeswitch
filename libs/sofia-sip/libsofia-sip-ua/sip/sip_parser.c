@@ -459,8 +459,9 @@ issize_t sip_transport_d(char **ss, char const **ttransport)
   size_t pn_len, pv_len, pt_len;
   char *s = *ss;
 
-#define TRANSPORT_MATCH(t)					     \
-  (su_casenmatch(s + 7, t + 7, (sizeof t) - 8) && (IS_LWS(s[sizeof(t)])) \
+#define TRANSPORT_MATCH(t) \
+  (su_casenmatch(s + 7, t + 7, (sizeof t) - 8) && \
+   (!s[sizeof(t) - 1] || IS_LWS(s[sizeof(t) - 1]))	\
    && (transport = t, s += sizeof(t) - 1))
 
   if (!su_casenmatch(s, "SIP/2.0", 7) ||
