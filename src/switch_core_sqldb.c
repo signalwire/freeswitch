@@ -285,7 +285,7 @@ static void core_event_handler(switch_event_t *event)
 							 switch_event_get_header_nil(event, "channel-state"),
 							 switch_event_get_header_nil(event, "caller-dialplan"),
 							 switch_event_get_header_nil(event, "caller-context")
-			);
+							 );
 		break;
 	case SWITCH_EVENT_CODEC:
 		sql =

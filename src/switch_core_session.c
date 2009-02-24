@@ -269,8 +269,6 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 
 		switch_assert(channel != NULL);
 
-		switch_channel_set_flag(channel, CF_OUTBOUND);
-
 		forwardvar = switch_channel_get_variable(channel, SWITCH_MAX_FORWARDS_VARIABLE);
 		if (!switch_strlen_zero(forwardvar)) {
 			forwardval = atoi(forwardvar) - 1;
@@ -1100,12 +1098,12 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 		abort();
 	}
 
+	switch_channel_init(session->channel, session, CS_NEW, 0);
+
 	if (direction == SWITCH_CALL_DIRECTION_OUTBOUND) {
 		switch_channel_set_flag(session->channel, CF_OUTBOUND);
 	}
-
-	switch_channel_init(session->channel, session, CS_NEW, 0);
-
+	
 	/* The session *IS* the pool you may not alter it because you have no idea how
 	   its all private it will be passed to the thread run function */
 

@@ -982,7 +982,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Name", channel->name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Direction",
-										switch_channel_test_flag(channel, CF_OUTBOUND) ? "outbound" : "inbound");
+											   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
+											   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 				if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
 				} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
@@ -1230,8 +1232,13 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", state_num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Name", switch_channel_get_name(channel));
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
+	
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Direction",
+								   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Presence-Call-Direction",
+								   channel->direction == SWITCH_CALL_DIRECTION_OUTBOUND ? "outbound" : "inbound");
 
-	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Direction", switch_channel_test_flag(channel, CF_OUTBOUND) ? "outbound" : "inbound");
+
 	if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "answered");
 	} else if (switch_channel_test_flag(channel, CF_EARLY_MEDIA)) {
