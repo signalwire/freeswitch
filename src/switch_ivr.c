@@ -1547,11 +1547,13 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_del_event(switch_
 SWITCH_DECLARE(void *) switch_ivr_digit_stream_parser_feed(switch_ivr_digit_stream_parser_t *parser, switch_ivr_digit_stream_t *stream, char digit)
 {
 	void *result = NULL;
-	switch_size_t len = strlen(stream->digits);
+	switch_size_t len;
 
 	switch_assert(parser);
 	switch_assert(stream);
 	switch_assert(stream->digits);
+
+	len = strlen(stream->digits);
 
 	/* handle new digit arrivals */
 	if (digit) {
