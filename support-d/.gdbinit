@@ -11,7 +11,9 @@ define list_sessions
 	end
 	printf "Found %d sessions.\n", $i
 end
-document list_sessions Print a list of session uuid and pointers
+document list_sessions
+Print a list of session uuid and pointers
+end
 
 define hash_it_str
 	dont-repeat
@@ -23,7 +25,10 @@ define hash_it_str
 		set $i = $i + 1
 	end
 end
-document hash_it_str Prints the content of a hashtable displaying the key as a string and the value as pointer
+document hash_it_str 
+Usage: hash_it_str [hashtable]
+Prints the content of a hashtable displaying the key as a string and the value as pointer
+end
 
 define hash_it_int
 	dont-repeat
@@ -35,7 +40,10 @@ define hash_it_int
 		set $i = $i + 1
 	end
 end
-document hash_it_int Prints the content of a hashtable displaying the key as an int and the value as pointer
+document hash_it_int
+Usage: hash_it_int [hashtable]
+Prints the content of a hashtable displaying the key as an int and the value as pointer
+end
 
 define hash_it_str_x
 	dont-repeat
@@ -43,13 +51,16 @@ define hash_it_str_x
 	set $x=$arg0->table->first
 	while($x != 0x0)
 		printf "key: %s\n", $x->pKey
-		print (($arg1)$x->data)->$arg2
+		print (($arg1*)$x->data)->$arg2
 		printf "\n\n"
 		set $x = $x->next
 		set $i = $i + 1
 		end
 end
-document hash_it_str_x Prints the content of a hashtable displaying the key as a string and a specific member of the value struct. Args: hashtable value_type member
+document hash_it_str_x
+Usage: hash_it_str_x [hashtable] [value_type] [member]
+Prints the content of a hashtable displaying the key as a string and a specific member of the value struct. Args: hashtable value_type member
+end
 
 define hash_it_int_x
 	dont-repeat
@@ -57,10 +68,13 @@ define hash_it_int_x
 	set $x=$arg0->table->first
 	while($x != 0x0)
 		printf "key: %d\n", $x->pKey
-		print (($arg1)$x->data)->$arg2
+		print (($arg1*)$x->data)->$arg2
 		printf "\n\n"
 		set $x = $x->next
 		set $i = $i + 1
 		end
 end
-document hash_it_int_x Prints the content of a hashtable displaying the key as a string and a specific member of the value struct. Args: hashtable value_type member
+document hash_it_int_x
+Usage: hash_it_int_x [hashtable] [value_type] [member]
+Prints the content of a hashtable displaying the key as a string and a specific member of the value struct. 
+end
