@@ -59,22 +59,17 @@ static void s_pri_error(char *s)
 static void s_pri_error(struct pri *pri, char *s)
 #endif
 {
-
 	zap_log(ZAP_LOG_ERROR, "%s", s);
-
 }
 
 #ifdef WIN32
 static void s_pri_message(char *s)
-{
-	zap_log(ZAP_LOG_DEBUG, "%s", s);
-}
 #else
 static void s_pri_message(struct pri *pri, char *s)
-{
-	zap_log(ZAP_LOG_DEBUG, "%s", s);
-}
 #endif
+{
+		zap_log(ZAP_LOG_DEBUG, "%s", s);
+}
 
 
 static int parse_debug(const char *in)
@@ -357,7 +352,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
-				pri_progress(isdn_data->spri.pri, call, zchan->chan_id, 0);
+				pri_progress(isdn_data->spri.pri, call, zchan->chan_id, 1);
 			} else {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
 			}
@@ -371,7 +366,7 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 					zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
 				}
 			} else if (call) {
-				pri_proceeding(isdn_data->spri.pri, call, zchan->chan_id, 0);
+				pri_proceeding(isdn_data->spri.pri, call, zchan->chan_id, 1);
 			} else {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
 			}
