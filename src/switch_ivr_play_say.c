@@ -1277,7 +1277,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done playing file\n");
-	switch_core_file_seek(fh, &fh->last_pos, 0, SEEK_CUR);
+	//switch_core_file_seek(fh, &fh->last_pos, 0, SEEK_CUR);
 
 	switch_core_file_close(fh);
 	switch_buffer_destroy(&fh->audio_buffer);
