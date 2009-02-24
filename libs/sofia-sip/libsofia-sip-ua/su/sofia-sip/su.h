@@ -163,11 +163,10 @@ union su_sockaddr_u {
   short               su_dummy;	      /**< Dummy member to initialize */
 #if SU_HAVE_SOCKADDR_SA_LEN
 #define               su_len          su_sa.sa_len
-#define               su_family       su_sa.sa_family
 #else
 #define               su_len          su_array[0]
-  short               su_family;
 #endif
+#define               su_family       su_sa.sa_family
 #define               su_port         su_sin.sin_port
 #endif
 
