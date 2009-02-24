@@ -839,7 +839,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 	uint32_t span_max;
 
 	if (span_id) {
-		if (span_id >= globals.span_index) {
+		if (span_id > globals.span_index || !globals.span[span_id]) {
 			zap_log(ZAP_LOG_CRIT, "SPAN NOT DEFINED!\n");
 			*zchan = NULL;
             return ZAP_FAIL;
@@ -1047,9 +1047,16 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 
 	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN) {
 		zap_channel_t *check;
+		
+		if (span_id > globals.span_index || !globals.span[span_id]) {
+			zap_log(ZAP_LOG_ERROR, "SPAN NOT DEFINED!\n");
+			*zchan = NULL;
+			goto done;
+		}
 
 		if (globals.spans[span_id]->channel_request) {
 			zap_log(ZAP_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
+			*zchan = NULL;
 			goto done;
 		}
 		
@@ -1057,6 +1064,7 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 
 		if (zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) || 
 			!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
+			*zchan = NULL;
 			goto done;
 		}
 		
