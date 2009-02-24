@@ -33,7 +33,7 @@
  *
  */
 #include <switch.h>
-
+//#define INTENSE_DEBUG
 SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_conference_shutdown);
 SWITCH_MODULE_DEFINITION(mod_conference, mod_conference_load, mod_conference_shutdown, NULL);
@@ -1961,9 +1961,9 @@ static void conference_loop_output(conference_member_t *member)
 #ifdef INTENSE_DEBUG
 			switch_log_printf(SWITCH_CHANNEL_LOG,
 							  SWITCH_LOG_INFO,
-							  "executing caller control '%s' param '%s' on call '%u, %s, %s, %s'\n",
+							  "executing caller control '%s' param '%s' on call '%u, %s\n",
 							  caller_action->fndesc->key,
-							  param ? param : "none", member->id, switch_channel_get_name(channel), profile->caller_id_name, profile->caller_id_number);
+							  param ? param : "none", member->id, switch_channel_get_name(channel));
 #endif
 
 			caller_action->fndesc->handler(member, caller_action);
@@ -2110,7 +2110,7 @@ static void conference_loop_output(conference_member_t *member)
 	}							/* Rinse ... Repeat */
 
 	if (member->digit_stream != NULL) {
-		switch_ivr_digit_stream_destroy(member->digit_stream);
+		switch_ivr_digit_stream_destroy(&member->digit_stream);
 	}
 
 	switch_clear_flag_locked(member, MFLAG_RUNNING);

@@ -582,7 +582,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_new(switch_ivr_digit_str
   \param stream a pointer to the stream object
   \return NULL if no match found or consumer data that was associated with a given digit string when matched
 */
-SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t *stream);
+SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_destroy(switch_ivr_digit_stream_t **stream);
 
 /*!
   \brief Set a digit string to action mapping
