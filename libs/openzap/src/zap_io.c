@@ -1029,7 +1029,7 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 	if (zap_test_flag(zchan, ZAP_CHANNEL_READY)) {
 		status = zchan->span->zio->open(zchan);
 		if (status == ZAP_SUCCESS) {
-			zap_set_flag(zchan, ZAP_CHANNEL_OPEN+ZAP_CHANNEL_INUSE);
+			zap_set_flag(zchan, ZAP_CHANNEL_OPEN | ZAP_CHANNEL_INUSE);
 		}
 	} else {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", "Channel is not ready");
