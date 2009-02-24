@@ -18,6 +18,11 @@ function my_cb(s, type, obj, arg)
          return "seek:-9000";
       end
 
+      if (obj['digit'] == "2") then
+	 --session:speak("start over");
+         return "seek:0";
+      end
+
       if (obj['digit'] == "3") then
 	 --session:speak("seek forward");
          return "seek:+9000";
