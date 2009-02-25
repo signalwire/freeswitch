@@ -18,6 +18,8 @@ static struct s2dns {
   su_socket_t socket;
   su_wait_t wait[1];
   int reg;
+  int (*filter)(void *data, size_t len, void *userdata);
+  void *userdata;
 } s2dns;
 
 static
@@ -94,6 +96,14 @@ void s2_dns_setup(su_root_t *root)
   s2dns.socket = socket;
 }
 
+/* Set filter function */
+void s2_dns_set_filter(int (*filter)(void *data, size_t len, void *userdata),
+		       void *userdata)
+{
+  s2dns.filter = filter;
+  s2dns.userdata = userdata;
+}
+
 void s2_dns_teardown(void)
 {
   struct s2_dns_response *r, *next;
@@ -145,7 +155,8 @@ s2_dns_query(su_root_magic_t *magic,
       || ntohs(request.header->mh_qdcount) != 1) {
     flags |= FLAGS_QR | FLAGS_UNIMPL_ERR;
     request.header->mh_flags = htons(flags);
-    su_sendto(socket, request.buffer, len, 0, &su->su_sa, sulen);
+    if (!s2dns.filter || s2dns.filter(request.buffer, len, s2dns.userdata))
+      su_sendto(socket, request.buffer, len, 0, &su->su_sa, sulen);
     return 0;
   }
 
@@ -170,7 +181,8 @@ s2_dns_query(su_root_magic_t *magic,
   }
 
   request.header->mh_flags = htons(flags);
-  su_sendto(socket, request.buffer, len, 0, &su->su_sa, sulen);
+  if (!s2dns.filter || s2dns.filter(request.buffer, len, s2dns.userdata))
+    su_sendto(socket, request.buffer, len, 0, &su->su_sa, sulen);
   return 0;
 }
 

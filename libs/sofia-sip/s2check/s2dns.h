@@ -38,6 +38,8 @@
 SOFIA_BEGIN_DECLS
 
 void s2_dns_setup(su_root_t *root);
+void s2_dns_set_filter(int (*filter)(void *data, size_t len, void *userdata),
+		       void *userdata);
 void s2_dns_teardown(void);
 
 char const *s2_dns_default(char const *domain);
