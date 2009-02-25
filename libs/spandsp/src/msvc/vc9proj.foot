@@ -22,6 +22,26 @@
 					Outputs="$(SolutionDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
+			<FileConfiguration
+				Name="Debug|x64"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Copying $(InputPath) to $(SolutionDir)$(InputFileName)"
+					CommandLine="copy $(InputPath) $(SolutionDir)$(InputFileName)"
+					Outputs="$(SolutionDir)$(InputFileName)"
+				/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="Release|x64"
+				>
+				<Tool
+					Name="VCCustomBuildTool"
+					Description="Copying $(InputPath) to $(SolutionDir)$(InputFileName)"
+					CommandLine="copy $(InputPath) $(SolutionDir)$(InputFileName)"
+					Outputs="$(SolutionDir)$(InputFileName)"
+				/>
+			</FileConfiguration>
 		</File>
 	</Files>
 	<Globals>
