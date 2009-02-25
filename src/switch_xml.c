@@ -1554,9 +1554,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && (tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
 			if (clone) {
 				char *x;
-				switch_mutex_lock(XML_GEN_LOCK);
 				x = switch_xml_toxml(tag, SWITCH_FALSE);
-				switch_mutex_unlock(XML_GEN_LOCK);
 				switch_assert(x);
 				*root = switch_xml_parse_str(x, strlen(x));
 				*node = *root;
@@ -2112,9 +2110,12 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 
 SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_header)
 {
-	char *s;
+	char *r, *s;
+	switch_mutex_lock(XML_GEN_LOCK);
 	s = (char *)malloc(SWITCH_XML_BUFSIZE);
-	return switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
+	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
+	switch_mutex_unlock(XML_GEN_LOCK);
+	return r;
 }
 
 // converts an switch_xml structure back to xml, returning a string of xml date that
