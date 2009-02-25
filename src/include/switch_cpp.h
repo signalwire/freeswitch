@@ -93,6 +93,8 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 											const char *exit_sound,
 											const char *confirm_macro,
 											const char *confirm_key,
+											const char *tts_engine,
+											const char *tts_voice,
 											int confirm_attempts, int inter_timeout, int digit_len, 
 											int timeout, int max_failures, int max_timeouts);
 		 virtual SWITCH_DECLARE_CONSTRUCTOR ~ IVRMenu();

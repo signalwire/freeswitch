@@ -1990,12 +1990,14 @@ XS(_wrap_new_IVRMenu) {
     char *arg6 = (char *) 0 ;
     char *arg7 = (char *) 0 ;
     char *arg8 = (char *) 0 ;
-    int arg9 ;
-    int arg10 ;
+    char *arg9 = (char *) 0 ;
+    char *arg10 = (char *) 0 ;
     int arg11 ;
     int arg12 ;
     int arg13 ;
     int arg14 ;
+    int arg15 ;
+    int arg16 ;
     IVRMenu *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
@@ -2020,10 +2022,12 @@ XS(_wrap_new_IVRMenu) {
     int res8 ;
     char *buf8 = 0 ;
     int alloc8 = 0 ;
-    int val9 ;
-    int ecode9 = 0 ;
-    int val10 ;
-    int ecode10 = 0 ;
+    int res9 ;
+    char *buf9 = 0 ;
+    int alloc9 = 0 ;
+    int res10 ;
+    char *buf10 = 0 ;
+    int alloc10 = 0 ;
     int val11 ;
     int ecode11 = 0 ;
     int val12 ;
@@ -2032,11 +2036,15 @@ XS(_wrap_new_IVRMenu) {
     int ecode13 = 0 ;
     int val14 ;
     int ecode14 = 0 ;
+    int val15 ;
+    int ecode15 = 0 ;
+    int val16 ;
+    int ecode16 = 0 ;
     int argvi = 0;
     dXSARGS;
     
-    if ((items < 14) || (items > 14)) {
-      SWIG_croak("Usage: new_IVRMenu(main,name,greeting_sound,short_greeting_sound,invalid_sound,exit_sound,confirm_macro,confirm_key,confirm_attempts,inter_timeout,digit_len,timeout,max_failures,max_timeouts);");
+    if ((items < 16) || (items > 16)) {
+      SWIG_croak("Usage: new_IVRMenu(main,name,greeting_sound,short_greeting_sound,invalid_sound,exit_sound,confirm_macro,confirm_key,tts_engine,tts_voice,confirm_attempts,inter_timeout,digit_len,timeout,max_failures,max_timeouts);");
     }
     res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_IVRMenu, 0 |  0 );
     if (!SWIG_IsOK(res1)) {
@@ -2078,16 +2086,16 @@ XS(_wrap_new_IVRMenu) {
       SWIG_exception_fail(SWIG_ArgError(res8), "in method '" "new_IVRMenu" "', argument " "8"" of type '" "char const *""'");
     }
     arg8 = reinterpret_cast< char * >(buf8);
-    ecode9 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(8), &val9);
-    if (!SWIG_IsOK(ecode9)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "new_IVRMenu" "', argument " "9"" of type '" "int""'");
-    } 
-    arg9 = static_cast< int >(val9);
-    ecode10 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(9), &val10);
-    if (!SWIG_IsOK(ecode10)) {
-      SWIG_exception_fail(SWIG_ArgError(ecode10), "in method '" "new_IVRMenu" "', argument " "10"" of type '" "int""'");
-    } 
-    arg10 = static_cast< int >(val10);
+    res9 = SWIG_AsCharPtrAndSize(ST(8), &buf9, NULL, &alloc9);
+    if (!SWIG_IsOK(res9)) {
+      SWIG_exception_fail(SWIG_ArgError(res9), "in method '" "new_IVRMenu" "', argument " "9"" of type '" "char const *""'");
+    }
+    arg9 = reinterpret_cast< char * >(buf9);
+    res10 = SWIG_AsCharPtrAndSize(ST(9), &buf10, NULL, &alloc10);
+    if (!SWIG_IsOK(res10)) {
+      SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "new_IVRMenu" "', argument " "10"" of type '" "char const *""'");
+    }
+    arg10 = reinterpret_cast< char * >(buf10);
     ecode11 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(10), &val11);
     if (!SWIG_IsOK(ecode11)) {
       SWIG_exception_fail(SWIG_ArgError(ecode11), "in method '" "new_IVRMenu" "', argument " "11"" of type '" "int""'");
@@ -2108,7 +2116,17 @@ XS(_wrap_new_IVRMenu) {
       SWIG_exception_fail(SWIG_ArgError(ecode14), "in method '" "new_IVRMenu" "', argument " "14"" of type '" "int""'");
     } 
     arg14 = static_cast< int >(val14);
-    result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13,arg14);
+    ecode15 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(14), &val15);
+    if (!SWIG_IsOK(ecode15)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode15), "in method '" "new_IVRMenu" "', argument " "15"" of type '" "int""'");
+    } 
+    arg15 = static_cast< int >(val15);
+    ecode16 = SWIG_AsVal_int SWIG_PERL_CALL_ARGS_2(ST(15), &val16);
+    if (!SWIG_IsOK(ecode16)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode16), "in method '" "new_IVRMenu" "', argument " "16"" of type '" "int""'");
+    } 
+    arg16 = static_cast< int >(val16);
+    result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,(char const *)arg10,arg11,arg12,arg13,arg14,arg15,arg16);
     ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_IVRMenu, SWIG_OWNER | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -2118,6 +2136,8 @@ XS(_wrap_new_IVRMenu) {
     if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+    if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
+    if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     
     
     
@@ -2134,6 +2154,8 @@ XS(_wrap_new_IVRMenu) {
     if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
     if (alloc7 == SWIG_NEWOBJ) delete[] buf7;
     if (alloc8 == SWIG_NEWOBJ) delete[] buf8;
+    if (alloc9 == SWIG_NEWOBJ) delete[] buf9;
+    if (alloc10 == SWIG_NEWOBJ) delete[] buf10;
     
     
     

@@ -671,6 +671,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param exit_sound Optional pointer to a sound to play upon exiting the menu.
  *\param confirm_macro phrase macro name to confirm input
  *\param confirm_key the dtmf key required for positive confirmation
+ *\param tts_engine the tts engine to use for this menu
+ *\param tts_voice the tts voice to use for this menu
  *\param confirm_attempts number of times to prompt to confirm input before failure
  *\param inter_timeout inter-digit timeout
  *\param digit_len max number of digits
@@ -689,6 +691,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
 														  const char *exit_sound,
 														  const char *confirm_macro,
 														  const char *confirm_key,
+														  const char *tts_engine,
+														  const char *tts_voice,
 														  int confirm_attempts,
 														  int inter_timeout, int digit_len, int timeout, int max_failures, 
 														  int max_timeouts, switch_memory_pool_t *pool);

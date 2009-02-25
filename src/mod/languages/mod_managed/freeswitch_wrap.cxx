@@ -13056,29 +13056,6 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_file_handle_offset_pos_get(vo
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_last_pos_set(void * jarg1, unsigned long jarg2) {
-  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
-  uint32_t arg2 ;
-  
-  arg1 = (switch_file_handle *)jarg1; 
-  arg2 = (uint32_t)jarg2; 
-  if (arg1) (arg1)->last_pos = arg2;
-  
-}
-
-
-SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_file_handle_last_pos_get(void * jarg1) {
-  unsigned long jresult ;
-  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
-  uint32_t result;
-  
-  arg1 = (switch_file_handle *)jarg1; 
-  result = (uint32_t) ((arg1)->last_pos);
-  jresult = (unsigned long)result; 
-  return jresult;
-}
-
-
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_vol_set(void * jarg1, int jarg2) {
   switch_file_handle *arg1 = (switch_file_handle *) 0 ;
   int32_t arg2 ;
@@ -21713,10 +21690,10 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_digit_stream_new(void * jarg1, void
 
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_digit_stream_destroy(void * jarg1) {
   int jresult ;
-  switch_ivr_digit_stream_t *arg1 = (switch_ivr_digit_stream_t *) 0 ;
+  switch_ivr_digit_stream_t **arg1 = (switch_ivr_digit_stream_t **) 0 ;
   switch_status_t result;
   
-  arg1 = (switch_ivr_digit_stream_t *)jarg1; 
+  arg1 = (switch_ivr_digit_stream_t **)jarg1; 
   result = (switch_status_t)switch_ivr_digit_stream_destroy(arg1);
   jresult = result; 
   return jresult;
@@ -21795,7 +21772,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_digit_stream_parser_set_terminator(
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_menu_init(void * jarg1, void * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, int jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, void * jarg16) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_menu_init(void * jarg1, void * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, char * jarg10, char * jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16, int jarg17, void * jarg18) {
   int jresult ;
   switch_ivr_menu_t **arg1 = (switch_ivr_menu_t **) 0 ;
   switch_ivr_menu_t *arg2 = (switch_ivr_menu_t *) 0 ;
@@ -21806,13 +21783,15 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_menu_init(void * jarg1, void * jarg
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
   char *arg9 = (char *) 0 ;
-  int arg10 ;
-  int arg11 ;
+  char *arg10 = (char *) 0 ;
+  char *arg11 = (char *) 0 ;
   int arg12 ;
   int arg13 ;
   int arg14 ;
   int arg15 ;
-  switch_memory_pool_t *arg16 = (switch_memory_pool_t *) 0 ;
+  int arg16 ;
+  int arg17 ;
+  switch_memory_pool_t *arg18 = (switch_memory_pool_t *) 0 ;
   switch_status_t result;
   
   arg1 = (switch_ivr_menu_t **)jarg1; 
@@ -21824,14 +21803,16 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_menu_init(void * jarg1, void * jarg
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
   arg9 = (char *)jarg9; 
-  arg10 = (int)jarg10; 
-  arg11 = (int)jarg11; 
+  arg10 = (char *)jarg10; 
+  arg11 = (char *)jarg11; 
   arg12 = (int)jarg12; 
   arg13 = (int)jarg13; 
   arg14 = (int)jarg14; 
   arg15 = (int)jarg15; 
-  arg16 = (switch_memory_pool_t *)jarg16; 
-  result = (switch_status_t)switch_ivr_menu_init(arg1,arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,arg10,arg11,arg12,arg13,arg14,arg15,arg16);
+  arg16 = (int)jarg16; 
+  arg17 = (int)jarg17; 
+  arg18 = (switch_memory_pool_t *)jarg18; 
+  result = (switch_status_t)switch_ivr_menu_init(arg1,arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,(char const *)arg10,(char const *)arg11,arg12,arg13,arg14,arg15,arg16,arg17,arg18);
   jresult = result; 
   return jresult;
 }
@@ -26297,7 +26278,7 @@ SWIGEXPORT void SWIGSTDCALL CSharp_consoleCleanLog(char * jarg1) {
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_IvrMenu(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8, int jarg9, int jarg10, int jarg11, int jarg12, int jarg13, int jarg14) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_IvrMenu(void * jarg1, char * jarg2, char * jarg3, char * jarg4, char * jarg5, char * jarg6, char * jarg7, char * jarg8, char * jarg9, char * jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16) {
   void * jresult ;
   IVRMenu *arg1 = (IVRMenu *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -26307,12 +26288,14 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_IvrMenu(void * jarg1, char * jarg2, cha
   char *arg6 = (char *) 0 ;
   char *arg7 = (char *) 0 ;
   char *arg8 = (char *) 0 ;
-  int arg9 ;
-  int arg10 ;
+  char *arg9 = (char *) 0 ;
+  char *arg10 = (char *) 0 ;
   int arg11 ;
   int arg12 ;
   int arg13 ;
   int arg14 ;
+  int arg15 ;
+  int arg16 ;
   IVRMenu *result = 0 ;
   
   arg1 = (IVRMenu *)jarg1; 
@@ -26323,13 +26306,15 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_IvrMenu(void * jarg1, char * jarg2, cha
   arg6 = (char *)jarg6; 
   arg7 = (char *)jarg7; 
   arg8 = (char *)jarg8; 
-  arg9 = (int)jarg9; 
-  arg10 = (int)jarg10; 
+  arg9 = (char *)jarg9; 
+  arg10 = (char *)jarg10; 
   arg11 = (int)jarg11; 
   arg12 = (int)jarg12; 
   arg13 = (int)jarg13; 
   arg14 = (int)jarg14; 
-  result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,arg9,arg10,arg11,arg12,arg13,arg14);
+  arg15 = (int)jarg15; 
+  arg16 = (int)jarg16; 
+  result = (IVRMenu *)new IVRMenu(arg1,(char const *)arg2,(char const *)arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,(char const *)arg10,arg11,arg12,arg13,arg14,arg15,arg16);
   jresult = (void *)result; 
   return jresult;
 }

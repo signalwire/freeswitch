@@ -3221,8 +3221,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_digit_stream_destroy(SWIGTYPE_p_switch_ivr_digit_stream stream) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_digit_stream_destroy(SWIGTYPE_p_switch_ivr_digit_stream.getCPtr(stream));
+  public static switch_status_t switch_ivr_digit_stream_destroy(SWIGTYPE_p_p_switch_ivr_digit_stream stream) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_digit_stream_destroy(SWIGTYPE_p_p_switch_ivr_digit_stream.getCPtr(stream));
     return ret;
   }
 
@@ -3252,8 +3252,8 @@ public class freeswitch {
     return ret;
   }
 
-  public static switch_status_t switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu new_menu, SWIGTYPE_p_switch_ivr_menu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string confirm_macro, string confirm_key, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts, SWIGTYPE_p_apr_pool_t pool) {
-    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu.getCPtr(new_menu), SWIGTYPE_p_switch_ivr_menu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, confirm_macro, confirm_key, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
+  public static switch_status_t switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu new_menu, SWIGTYPE_p_switch_ivr_menu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string confirm_macro, string confirm_key, string tts_engine, string tts_voice, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts, SWIGTYPE_p_apr_pool_t pool) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_ivr_menu_init(SWIGTYPE_p_p_switch_ivr_menu.getCPtr(new_menu), SWIGTYPE_p_switch_ivr_menu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts, SWIGTYPE_p_apr_pool_t.getCPtr(pool));
     return ret;
   }
 
@@ -7497,12 +7497,6 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_offset_pos_get")]
   public static extern uint switch_file_handle_offset_pos_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_last_pos_set")]
-  public static extern void switch_file_handle_last_pos_set(HandleRef jarg1, uint jarg2);
-
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_last_pos_get")]
-  public static extern uint switch_file_handle_last_pos_get(HandleRef jarg1);
-
   [DllImport("mod_managed", EntryPoint="CSharp_switch_file_handle_vol_set")]
   public static extern void switch_file_handle_vol_set(HandleRef jarg1, int jarg2);
 
@@ -9544,7 +9538,7 @@ class freeswitchPINVOKE {
   public static extern int switch_ivr_digit_stream_parser_set_terminator(HandleRef jarg1, char jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_menu_init")]
-  public static extern int switch_ivr_menu_init(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, int jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, HandleRef jarg16);
+  public static extern int switch_ivr_menu_init(HandleRef jarg1, HandleRef jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, string jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16, int jarg17, HandleRef jarg18);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_ivr_menu_bind_action")]
   public static extern int switch_ivr_menu_bind_action(HandleRef jarg1, int jarg2, string jarg3, string jarg4);
@@ -10597,7 +10591,7 @@ class freeswitchPINVOKE {
   public static extern void consoleCleanLog(string jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_IvrMenu")]
-  public static extern IntPtr new_IvrMenu(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, int jarg9, int jarg10, int jarg11, int jarg12, int jarg13, int jarg14);
+  public static extern IntPtr new_IvrMenu(HandleRef jarg1, string jarg2, string jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, int jarg11, int jarg12, int jarg13, int jarg14, int jarg15, int jarg16);
 
   [DllImport("mod_managed", EntryPoint="CSharp_delete_IvrMenu")]
   public static extern void delete_IvrMenu(HandleRef jarg1);
@@ -11125,7 +11119,7 @@ public class IvrMenu : IDisposable {
     }
   }
 
-  public IvrMenu(IvrMenu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string confirm_macro, string confirm_key, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts) : this(freeswitchPINVOKE.new_IvrMenu(IvrMenu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, confirm_macro, confirm_key, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts), true) {
+  public IvrMenu(IvrMenu main, string name, string greeting_sound, string short_greeting_sound, string invalid_sound, string exit_sound, string confirm_macro, string confirm_key, string tts_engine, string tts_voice, int confirm_attempts, int inter_timeout, int digit_len, int timeout, int max_failures, int max_timeouts) : this(freeswitchPINVOKE.new_IvrMenu(IvrMenu.getCPtr(main), name, greeting_sound, short_greeting_sound, invalid_sound, exit_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts), true) {
   }
 
   public void bindAction(string action, string arg, string bind) {
@@ -20433,16 +20427,6 @@ public class switch_file_handle : IDisposable {
     } 
     get {
       uint ret = freeswitchPINVOKE.switch_file_handle_offset_pos_get(swigCPtr);
-      return ret;
-    } 
-  }
-
-  public uint last_pos {
-    set {
-      freeswitchPINVOKE.switch_file_handle_last_pos_set(swigCPtr, value);
-    } 
-    get {
-      uint ret = freeswitchPINVOKE.switch_file_handle_last_pos_get(swigCPtr);
       return ret;
     } 
   }

@@ -108,6 +108,8 @@ SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
 											const char *exit_sound,
 											const char *confirm_macro,
 											const char *confirm_key,
+											const char *tts_engine,
+											const char *tts_voice,
 											int confirm_attempts,
 											int inter_timeout,
 											int digit_len,
@@ -123,7 +125,8 @@ SWITCH_DECLARE_CONSTRUCTOR IVRMenu::IVRMenu(IVRMenu *main,
 	}
 
 	switch_ivr_menu_init(&menu, main ? main->menu : NULL, name, greeting_sound, short_greeting_sound, invalid_sound, 
-						 exit_sound, confirm_macro, confirm_key, confirm_attempts, inter_timeout, digit_len, timeout, max_failures, max_timeouts, pool);
+						 exit_sound, confirm_macro, confirm_key, tts_engine, tts_voice, confirm_attempts, inter_timeout,
+						 digit_len, timeout, max_failures, max_timeouts, pool);
 	
 
 }

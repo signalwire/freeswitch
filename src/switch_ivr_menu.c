@@ -44,6 +44,8 @@ struct switch_ivr_menu {
 	char *ptr;
 	char *confirm_macro;
 	char *confirm_key;
+	char *tts_engine;
+	char *tts_voice;
 	int confirm_attempts;
 	int digit_len;
 	int max_failures;
@@ -99,6 +101,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 													 const char *exit_sound,
 													 const char *confirm_macro,
 													 const char *confirm_key,
+													 const char *tts_engine,
+													 const char *tts_voice,
 													 int confirm_attempts,
 													 int inter_timeout,
 													 int digit_len,
@@ -159,8 +163,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 		menu->confirm_macro = switch_core_strdup(menu->pool, confirm_macro);
 	}
 
-	if (!switch_strlen_zero(confirm_key)) {
-		menu->confirm_key = switch_core_strdup(menu->pool, confirm_key);
+	if (!switch_strlen_zero(tts_engine)) {
+		menu->tts_engine = switch_core_strdup(menu->pool, tts_engine);
+	}
+
+	if (!switch_strlen_zero(tts_voice)) {
+		menu->tts_voice = switch_core_strdup(menu->pool, tts_voice);
 	}
 
 	menu->confirm_attempts = confirm_attempts;
@@ -373,6 +381,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 	channel = switch_core_session_get_channel(session);
 
+
 	if (!(menu = switch_ivr_menu_find(stack, name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Menu!\n");
 		return SWITCH_STATUS_FALSE;
@@ -381,6 +390,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	if (!(menu->buf = malloc(menu->inlen + 1))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Memory!\n");
 		return SWITCH_STATUS_FALSE;
+	}
+
+	if(!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
+		switch_channel_set_variable(channel, "tts_engine", menu->tts_engine);
+		switch_channel_set_variable(channel, "tts_voice", menu->tts_voice);
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Executing IVR menu %s\n", menu->name);
@@ -719,6 +733,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 		const char *max_timeouts = switch_xml_attr_soft(xml_menu, "max-timeouts");
 		const char *confirm_macro= switch_xml_attr(xml_menu, "confirm-macro");
 		const char *confirm_key= switch_xml_attr(xml_menu, "confirm-key");
+		const char *tts_engine= switch_xml_attr(xml_menu, "tts-engine");
+		const char *tts_voice= switch_xml_attr(xml_menu, "tts-voice");
 		const char *confirm_attempts = switch_xml_attr_soft(xml_menu, "confirm-attempts");
 		const char *digit_len = switch_xml_attr_soft(xml_menu, "digit-len");
 		const char *inter_timeout = switch_xml_attr_soft(xml_menu, "inter-digit-timeout");
@@ -740,6 +756,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_
 									  exit_sound, 
 									  confirm_macro,
 									  confirm_key,
+									  tts_engine,
+									  tts_voice,
 									  atoi(confirm_attempts),
 									  atoi(inter_timeout),
 									  atoi(digit_len),
