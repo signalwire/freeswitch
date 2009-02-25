@@ -73,6 +73,7 @@ enum sres_status {
   SRES_TIMEOUT_ERR = 32,	/**< Timeout occurred */
   SRES_RECORD_ERR = 33,	        /**< Name has no given record type */
   SRES_INTERNAL_ERR = 34,	/**< Internal error */
+  SRES_NETWORK_ERR = 35,	/**< Network or DNS configuration error. */
 
   _SRES_LAST_ERR
 };

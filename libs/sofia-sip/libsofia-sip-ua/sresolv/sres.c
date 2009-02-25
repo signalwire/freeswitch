@@ -1554,6 +1554,7 @@ char const *sres_record_status(int status, char buffer[8])
   case SRES_TIMEOUT_ERR: return "TIMEOUT_ERR";
   case SRES_RECORD_ERR: return "RECORD_ERR";
   case SRES_INTERNAL_ERR: return "INTERNAL_ERR";
+  case SRES_NETWORK_ERR: return "NETWORK_ERR";
 
   default:
     if (buffer)
@@ -2749,6 +2750,8 @@ sres_send_dns_query(sres_resolver_t *res,
   if (i0 > N) i0 = 0; /* Number of DNS servers reduced */
   dns = servers[i = i0];
 
+  error = EIO;
+
   if (res->res_config->c_opt.rotate || dns->dns_error || dns->dns_icmp)
     dns = sres_next_server(res, &q->q_i_server, 1), i = q->q_i_server;
 
@@ -2938,10 +2941,21 @@ sres_query_report_error(sres_query_t *q,
       }
     }
 
-    for (i = 0; answers[i]; i++) {
-      status = answers[i]->sr_record->r_status;
-      if (status)
-	break;
+    if (answers == NULL) {
+      sres_cache_t *cache = q->q_res->res_cache;
+
+      status = q->q_retry_count ? SRES_TIMEOUT_ERR : SRES_NETWORK_ERR;
+
+      answers = su_zalloc(CHOME(cache), 2 * sizeof *answers);
+      if (answers)
+	answers[0] = sres_create_error_rr(cache, q, status);
+    }
+    else {
+      for (i = 0; answers[i]; i++) {
+	status = answers[i]->sr_record->r_status;
+	if (status)
+	  break;
+      }
     }
 
     SU_DEBUG_5(("sres(q=%p): reporting error %s for %s %s\n",
