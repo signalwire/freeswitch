@@ -310,11 +310,11 @@ size_t prefix##used(heaptype const h) \
   struct prefix##priv *_priv = *(void **)&h; \
   return _priv ? _priv->_used : 0; \
 } \
-scope int prefix##_less(void *h, size_t a, size_t b) \
+static int prefix##_less(void *h, size_t a, size_t b) \
 { \
   type *_heap = h; return less(_heap[a], _heap[b]);	\
 } \
-scope void prefix##_swap(void *h, size_t a, size_t b) \
+static void prefix##_swap(void *h, size_t a, size_t b) \
 { \
   type *_heap = h; type _swap = _heap[a]; \
   set(_heap, a, _heap[b]); set(_heap, b, _swap); \
