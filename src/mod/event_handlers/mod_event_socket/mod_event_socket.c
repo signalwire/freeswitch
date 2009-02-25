@@ -430,7 +430,7 @@ SWITCH_STANDARD_APP(socket_function)
 		listener_run(NULL, (void *) listener);
 	}
 
-	if (switch_channel_get_state(channel) >= CS_HANGUP) {
+	if (switch_channel_down(channel)) {
 		while (switch_test_flag(listener, LFLAG_SESSION)) {
 			switch_yield(100000);
 		}
@@ -1192,7 +1192,7 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			}
 		}
 
-		if (channel && switch_channel_get_state(channel) >= CS_HANGUP && !switch_test_flag(listener, LFLAG_HANDLE_DISCO)) {
+		if (channel && switch_channel_down(channel) && !switch_test_flag(listener, LFLAG_HANDLE_DISCO)) {
 			switch_set_flag_locked(listener, LFLAG_HANDLE_DISCO);
 			if (switch_test_flag(listener, LFLAG_LINGER)) {
 				char message[128] = "";

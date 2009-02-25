@@ -171,7 +171,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 
 		switch_core_session_exec(collect->session, application_interface, app_data);
 
-		if (switch_channel_get_state(channel) < CS_HANGUP) {
+		if (switch_channel_up(channel)) {
 			switch_channel_set_flag(channel, CF_WINNER);
 		}
 		goto wbreak;
@@ -228,7 +228,7 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 	time_t elapsed = switch_epoch_time_now(NULL) - start;
 
 	for (i = 0; i < max; i++) {
-		if (originate_status[i].peer_channel && switch_channel_get_state(originate_status[i].peer_channel) < CS_HANGUP) {
+		if (originate_status[i].peer_channel && switch_channel_up(originate_status[i].peer_channel)) {
 			if (originate_status[i].per_channel_progress_timelimit_sec && elapsed > originate_status[i].per_channel_progress_timelimit_sec &&
 				!(
 				  switch_channel_test_flag(originate_status[i].peer_channel, CF_RING_READY) ||
@@ -1719,7 +1719,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 							pchannel = switch_core_session_get_channel(originate_status[i].peer_session);
 
-							if (switch_channel_get_state(pchannel) >= CS_HANGUP) {
+							if (switch_channel_down(pchannel)) {
 								cause_str = switch_channel_cause2str(switch_channel_get_cause(pchannel));
 								if (switch_stristr(cause_str, fail_on_single_reject_var)) {
 									ok = 0;

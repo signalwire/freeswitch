@@ -78,7 +78,8 @@ SWITCH_DECLARE(int) switch_channel_test_ready(switch_channel_t *channel, switch_
 
 #define switch_channel_ready(_channel) switch_channel_test_ready(_channel, SWITCH_FALSE)
 #define switch_channel_media_ready(_channel) switch_channel_test_ready(_channel, SWITCH_TRUE)
-
+#define switch_channel_up(_channel) (switch_channel_get_state(_channel) < CS_HANGUP)
+#define switch_channel_down(_channel) (switch_channel_get_state(_channel) >= CS_HANGUP)
 
 SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, switch_channel_t *other_channel, switch_channel_state_t want_state);
 SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *channel, 

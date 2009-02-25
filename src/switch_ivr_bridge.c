@@ -206,7 +206,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			goto end_of_bridge_loop;
 		}
 
-		if ((b_state = switch_channel_get_state(chan_b)) >= CS_HANGUP) {
+		if ((b_state = switch_channel_down(chan_b))) {
 			goto end_of_bridge_loop;
 		}
 
@@ -398,7 +398,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	}
 
 
-	if (switch_channel_get_state(chan_b) >= CS_HANGUP) {
+	if (switch_channel_down(chan_b)) {
 		if (originator && switch_channel_ready(chan_a) && !switch_channel_test_flag(chan_a, CF_ANSWERED)) {
 			switch_channel_hangup(chan_a, switch_channel_get_cause(chan_b));
 		}
@@ -409,7 +409,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	msg.from = __FILE__;
 	switch_core_session_receive_message(session_a, &msg);
 
-	if (!inner_bridge && switch_channel_get_state(chan_a) < CS_HANGUP) {
+	if (!inner_bridge && switch_channel_up(chan_a)) {
 		if ((app_name = switch_channel_get_variable(chan_a, SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE))) {
 			switch_caller_extension_t *extension = NULL;
 			if ((extension = switch_caller_extension_new(session_a, app_name, app_name)) == 0) {
@@ -693,7 +693,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
 			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
 
-			if (switch_channel_get_state(other_channel) < CS_HANGUP) {
+			if (switch_channel_up(other_channel)) {
 				switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
 			}
 		}
@@ -723,7 +723,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_signal_bridge(switch_core_session_t *
 	switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
 	switch_event_t *event;
 
-	if (switch_channel_get_state(peer_channel) >= CS_HANGUP) {
+	if (switch_channel_down(peer_channel)) {
 		switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1013,7 +1013,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_uuid_bridge(const char *originator_uu
 			originator_channel = switch_core_session_get_channel(originator_session);
 			originatee_channel = switch_core_session_get_channel(originatee_session);
 
-			if (switch_channel_get_state(originator_channel) >= CS_HANGUP) {
+			if (switch_channel_down(originator_channel)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s is hungup refusing to bridge.\n", switch_channel_get_name(originatee_channel));
 				switch_core_session_rwunlock(originator_session);
 				switch_core_session_rwunlock(originatee_session);

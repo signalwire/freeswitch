@@ -1081,7 +1081,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				break;
 			case IAX_EVENT_VOICE:
 				if (tech_pvt && (tech_pvt->read_frame.datalen = iaxevent->datalen) != 0) {
-					if (channel && switch_channel_get_state(channel) <= CS_HANGUP) {
+					if (channel && switch_channel_up(channel)) {
 						int bytes = 0, frames = 1;
 
 						if (!switch_test_flag(tech_pvt, TFLAG_CODEC) || !tech_pvt->read_codec.implementation) {

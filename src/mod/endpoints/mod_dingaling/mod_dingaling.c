@@ -1091,7 +1091,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 		now = switch_micro_time_now();
 		elapsed = (unsigned int) ((now - started) / 1000);
 
-		if (switch_channel_get_state(channel) >= CS_HANGUP || switch_test_flag(tech_pvt, TFLAG_BYE)) {
+		if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
 			goto out;
 		}
 
@@ -1119,7 +1119,7 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 		switch_cond_next();
 	}
 
-	if (switch_channel_get_state(channel) >= CS_HANGUP || switch_test_flag(tech_pvt, TFLAG_BYE)) {
+	if (switch_channel_down(channel) || switch_test_flag(tech_pvt, TFLAG_BYE)) {
 		goto out;
 	}
 
@@ -2542,7 +2542,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "using Existing session for %s\n", ldl_session_get_id(dlsession));
 
-		if (switch_channel_get_state(channel) >= CS_HANGUP) {
+		if (switch_channel_down(channel)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Call %s is already over\n", switch_channel_get_name(channel));
 			status = LDL_STATUS_FALSE;
 			goto done;

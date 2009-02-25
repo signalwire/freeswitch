@@ -1532,7 +1532,7 @@ SWITCH_STANDARD_APP(att_xfer_function)
 	switch_channel_clear_flag(peer_channel, CF_INNER_BRIDGE);
 	switch_channel_clear_flag(channel, CF_INNER_BRIDGE);
 
-	if (!switch_channel_get_state(peer_channel) >= CS_HANGUP) {
+	if (!switch_channel_down(peer_channel)) {
 		switch_core_session_rwunlock(peer_session);
 		goto end;
 	}

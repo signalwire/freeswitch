@@ -959,7 +959,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_channel_get_state(channel) >= CS_HANGUP || !tech_pvt) {
+	if (switch_channel_down(channel) || !tech_pvt) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -997,7 +997,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	/* ones that do need to lock sofia mutex */
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
-	if (switch_channel_get_state(channel) >= CS_HANGUP || !tech_pvt) {
+	if (switch_channel_down(channel) || !tech_pvt) {
 		status = SWITCH_STATUS_FALSE;
 		goto end_lock;
 	}

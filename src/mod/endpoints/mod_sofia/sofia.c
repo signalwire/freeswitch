@@ -364,7 +364,7 @@ void sofia_event_callback(nua_event_t event,
 	}
 
 	if (session) {
-		if (channel && switch_channel_get_state(channel) >= CS_HANGUP) {
+		if (channel && switch_channel_down(channel)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
 			goto done;
 		}
@@ -3325,7 +3325,7 @@ void *SWITCH_THREAD_FUNC nightmare_xfer_thread_run(switch_thread_t *thread, void
 
 			status = switch_ivr_originate(a_session, &tsession, &cause, nhelper->exten, timeout, NULL, NULL, NULL, NULL, NULL, SOF_NONE);
 							
-			if ((switch_channel_get_state(channel_a) < CS_HANGUP)) {
+			if ((switch_channel_up(channel_a))) {
 				
 				if (status != SWITCH_STATUS_SUCCESS || cause != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot Create Outgoing Channel! [%s]\n", nhelper->exten);

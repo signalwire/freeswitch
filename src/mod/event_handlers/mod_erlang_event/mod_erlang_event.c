@@ -1234,7 +1234,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 			switch_ivr_park(session, NULL);
 
 			/* keep app thread running for lifetime of session */
-			if (switch_channel_get_state(switch_core_session_get_channel(session)) >= CS_HANGUP) {
+			if (switch_channel_down(switch_core_session_get_channel(session))) {
 				while (switch_test_flag(session_element, LFLAG_SESSION_ALIVE)) {
 					switch_yield(100000);
 				}

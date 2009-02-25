@@ -1590,7 +1590,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
 		
-		switch_core_media_bug_remove_all(channel->session);
 		switch_channel_set_variable(channel, "hangup_cause", switch_channel_cause2str(channel->hangup_cause));
 		switch_channel_presence(channel, "unavailable", switch_channel_cause2str(channel->hangup_cause), NULL);
 

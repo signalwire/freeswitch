@@ -41,7 +41,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_video_frame(switch_cor
 	switch_io_event_hook_video_write_frame_t *ptr;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -65,7 +65,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_video_frame(switch_core
 
 	switch_assert(session != NULL);
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -123,7 +123,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
   top:
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		*frame = NULL;
 		status = SWITCH_STATUS_FALSE; goto even_more_done;
 	}
@@ -1066,7 +1066,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_recv_dtmf(switch_core_sessio
 	switch_status_t status;
 	switch_dtmf_t new_dtmf;
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1096,7 +1096,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(switch_core_sessio
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_dtmf_t new_dtmf;
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -1144,7 +1144,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core
 	switch_assert(session != NULL);
 
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 

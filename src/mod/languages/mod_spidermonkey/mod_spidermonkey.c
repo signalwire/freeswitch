@@ -2152,7 +2152,7 @@ static JSBool session_wait_for_media(JSContext * cx, JSObject * obj, uintN argc,
 	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
 		if (((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > (switch_time_t) timeout)
-			|| switch_channel_get_state(channel) >= CS_HANGUP) {
+			|| switch_channel_down(channel)) {
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 			break;
 		}
@@ -2200,7 +2200,7 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	saveDepth = JS_SuspendRequest(cx);
 	for (;;) {
 		if (((elapsed = (unsigned int) ((switch_micro_time_now() - started) / 1000)) > (switch_time_t) timeout)
-			|| switch_channel_get_state(channel) >= CS_HANGUP) {
+			|| switch_channel_down(channel)) {
 			*rval = BOOLEAN_TO_JSVAL(JS_FALSE);
 			break;
 		}

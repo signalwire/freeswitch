@@ -390,7 +390,6 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				break;
 			case CS_DONE:
 				goto done;
-				/* HANGUP INIT ROUTING and RESET are all short term so we signal lock during their callbacks */
 			case CS_HANGUP:	/* Deactivate and end the thread */
 				{
 					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
@@ -410,10 +409,10 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 							do_extra_handlers = 0;
 						}
 					}
+
+					switch_core_media_bug_remove_all(session);
 					
 					STATE_MACRO(hangup, "HANGUP");
-					
-					switch_core_media_bug_remove_all(session);
 
 					hook_var = switch_channel_get_variable(session->channel, SWITCH_API_HANGUP_HOOK_VARIABLE);
 					if (switch_true(switch_channel_get_variable(session->channel, SWITCH_SESSION_IN_HANGUP_HOOK_VARIABLE))) {

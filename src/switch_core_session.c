@@ -91,7 +91,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 			const char *this_val;
 			session = (switch_core_session_t *) val;
 			if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-				if (switch_channel_get_state(session->channel) < CS_HANGUP &&
+				if (switch_channel_up(session->channel) &&
 					(this_val = switch_channel_get_variable(session->channel, var_name)) && (!strcmp(this_val, var_val))) {
 					switch_channel_hangup(session->channel, cause);
 				}
@@ -163,7 +163,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(const char *uui
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-			if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+			if (switch_channel_up(session->channel)) {
 				status = switch_core_session_receive_message(session, message);
 			}
 			switch_core_session_rwunlock(session);
@@ -183,7 +183,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-			if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+			if (switch_channel_up(session->channel)) {
 				status = switch_core_session_queue_event(session, event);
 			}
 			switch_core_session_rwunlock(session);
@@ -470,7 +470,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_receive_message(swit
 
 	switch_assert(session != NULL);
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -626,7 +626,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_receive_event(switch_core_se
 
 	/* Acquire a read lock on the session or forget it the channel is dead */
 	if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
-		if (switch_channel_get_state(session->channel) < CS_HANGUP) {
+		if (switch_channel_up(session->channel)) {
 			if (session->endpoint_interface->io_routines->receive_event) {
 				status = session->endpoint_interface->io_routines->receive_event(session, *event);
 			}
@@ -1247,7 +1247,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 {
 	switch_application_interface_t *application_interface;
 
-	if (switch_channel_get_state(session->channel) >= CS_HANGUP) {
+	if (switch_channel_down(session->channel)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is hungup, aborting execution of application: %s\n", app);
 		return SWITCH_STATUS_FALSE;
 	}
