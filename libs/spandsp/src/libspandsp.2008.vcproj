@@ -376,7 +376,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					CommandLine="copy &quot;$(InputPath)&quot; &quot;$(ProjectDir)$(InputFileName)&quot;"
 					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
@@ -386,7 +386,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					CommandLine="copy &quot;$(InputPath)&quot; &quot;$(ProjectDir)$(InputFileName)&quot;"
 					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
@@ -396,7 +396,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					CommandLine="copy &quot;$(InputPath)&quot; &quot;$(ProjectDir)$(InputFileName)&quot;"
 					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
@@ -406,7 +406,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					CommandLine="copy &quot;$(InputPath)&quot; &quot;$(ProjectDir)$(InputFileName)&quot;"
 					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
