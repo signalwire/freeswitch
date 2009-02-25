@@ -1552,10 +1552,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 
 		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && (tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
 			if (clone) {
-				char *x = switch_xml_toxml(tag, SWITCH_FALSE);
+				char *x;
+				switch_mutex_lock(XML_LOCK);
+				x = switch_xml_toxml(tag, SWITCH_FALSE);
 				switch_assert(x);
 				*root = switch_xml_parse_str(x, strlen(x));
 				*node = *root;
+				switch_mutex_unlock(XML_LOCK);
 				switch_xml_free(xml);
 			} else {
 				*node = tag;
