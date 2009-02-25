@@ -136,11 +136,14 @@ static void init(void)
 {
   int i;
 
+#define N_SEED 32
+
 #if HAVE_INITSTATE
   /* Allow libsofia-sip-ua.so to unload. */
-  uint32_t *seed = calloc(32, sizeof(uint32_t));
+  uint32_t *seed = calloc(N_SEED, sizeof *seed);
 #else
-  static uint32_t seed[32] = { 0 };
+  static uint32_t _seed[N_SEED] = { 0 };
+  uint32_t *seed = _seed;
 #endif
   su_time_t now;
 
@@ -153,25 +156,25 @@ static void init(void)
 #endif	/* HAVE_DEV_URANDOM */
 
   if (urandom) {
-    size_t len = fread(seed, sizeof seed, 1, urandom); (void)len;
+    size_t len = fread(seed, sizeof *seed, N_SEED, urandom); (void)len;
   }
   else {
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < N_SEED; i += 2) {
 #if HAVE_CLOCK_GETTIME
       struct timespec ts;
       (void)clock_gettime(CLOCK_REALTIME, &ts);
-      seed[2*i] ^= ts.tv_sec; seed[2*i+1] ^= ts.tv_nsec;
+      seed[i] ^= ts.tv_sec; seed[i + 1] ^= ts.tv_nsec;
 #endif
       su_time(&now);
-      seed[2*i] ^= now.tv_sec; seed[2*i+1] ^= now.tv_sec;
+      seed[i] ^= now.tv_sec; seed[i + 1] ^= now.tv_sec;
     }
 
-    seed[30] ^= getuid();
-    seed[31] ^= getpid();
+    seed[0] ^= getuid();
+    seed[1] ^= getpid();
   }
 
 #if HAVE_INITSTATE
-  initstate(seed[0] ^ seed[1], (char *)seed, 32 * sizeof(uint32_t));
+  initstate(seed[0] ^ seed[1], (void *)seed, N_SEED * (sizeof *seed));
 #else
   srand(seed[0] ^ seed[1]);
 #endif
