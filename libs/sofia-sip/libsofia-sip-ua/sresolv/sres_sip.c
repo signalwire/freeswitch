@@ -767,24 +767,26 @@ sres_sip_send_steps(sres_sip_t *srs)
 		(void *)srs, sres_record_type(type, NULL), domain,
 		answers ? " (cached)" : ""));
 
-    if (answers) {
-      sres_sip_answer(step, NULL, answers);
-      return process = 1;
-    }
+    if (answers)
+      ;
     else if (srs->srs_blocking) {
       sres_blocking_query(srs->srs_resolver, type, domain, 0, &answers);
-      sres_sip_answer(step, NULL, answers);
-      return process = 1;
     }
     else {
       step->sp_query = sres_query(srs->srs_resolver,
 				  sres_sip_answer, step,
 				  type, domain);
-      /* Query all self-generated SRV records at the same time */
-      parallel = step->sp_trace == NULL && type == sres_type_srv;
-      if (!parallel)
-	break;
+      if (step->sp_query) {
+	/* Query all self-generated SRV records at the same time */
+	parallel = step->sp_trace == NULL && type == sres_type_srv;
+	if (!parallel)
+	  break;
+	continue;
+      }
     }
+
+    sres_sip_answer(step, NULL, answers);
+    return process = 1;
   }
 
   return process = 0;
@@ -837,7 +839,10 @@ sres_sip_status_of_answers(sres_record_t *answers[], uint16_t type)
 {
   int i;
 
-  for (i = 0; answers && answers[i]; i++) {
+  if (answers == NULL)
+    return SRES_NETWORK_ERR;
+
+  for (i = 0; answers[i]; i++) {
     if (answers[i]->sr_record->r_type == type) {
       return answers[i]->sr_record->r_status;
     }
@@ -956,12 +961,16 @@ sres_sip_return_results(sres_sip_t *srs, int final)
 	break;
       case SRES_SERVER_ERR:
       case SRES_TIMEOUT_ERR:
+      case SRES_NETWORK_ERR:
 	srs->srs_error = SRES_SIP_ERR_AGAIN;
 	break;
       }
       if (srs->srs_error)
 	break;
     }
+
+    if (!srs->srs_error)
+      srs->srs_error = SRES_SIP_ERR_FAIL;
   }
 
   if (srs->srs_callback) {
