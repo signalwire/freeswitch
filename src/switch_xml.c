@@ -142,6 +142,7 @@ static switch_memory_pool_t *XML_MEMORY_POOL = NULL;
 static switch_thread_rwlock_t *RWLOCK = NULL;
 static switch_thread_rwlock_t *B_RWLOCK = NULL;
 static switch_mutex_t *XML_LOCK = NULL;
+static switch_mutex_t *XML_GEN_LOCK = NULL;
 
 
 struct xml_section_t {
@@ -1553,12 +1554,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && (tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
 			if (clone) {
 				char *x;
-				switch_mutex_lock(XML_LOCK);
+				switch_mutex_lock(XML_GEN_LOCK);
 				x = switch_xml_toxml(tag, SWITCH_FALSE);
+				switch_mutex_unlock(XML_GEN_LOCK);
 				switch_assert(x);
 				*root = switch_xml_parse_str(x, strlen(x));
 				*node = *root;
-				switch_mutex_unlock(XML_LOCK);
 				switch_xml_free(xml);
 			} else {
 				*node = tag;
@@ -1904,6 +1905,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_init(switch_memory_pool_t *pool, cons
 	*err = "Success";
 
 	switch_mutex_init(&XML_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
+	switch_mutex_init(&XML_GEN_LOCK, SWITCH_MUTEX_NESTED, XML_MEMORY_POOL);
 	switch_thread_rwlock_create(&RWLOCK, XML_MEMORY_POOL);
 	switch_thread_rwlock_create(&B_RWLOCK, XML_MEMORY_POOL);
 
