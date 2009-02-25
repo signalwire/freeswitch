@@ -375,9 +375,9 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					Description="Copying $(InputPath) to $(SolutionDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(SolutionDir)$(InputFileName)"
-					Outputs="$(SolutionDir)$(InputFileName)"
+					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
+					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -385,9 +385,9 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					Description="Copying $(InputPath) to $(SolutionDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(SolutionDir)$(InputFileName)"
-					Outputs="$(SolutionDir)$(InputFileName)"
+					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
+					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -395,9 +395,9 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					Description="Copying $(InputPath) to $(SolutionDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(SolutionDir)$(InputFileName)"
-					Outputs="$(SolutionDir)$(InputFileName)"
+					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
+					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -405,9 +405,9 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					Description="Copying $(InputPath) to $(SolutionDir)$(InputFileName)"
-					CommandLine="copy $(InputPath) $(SolutionDir)$(InputFileName)"
-					Outputs="$(SolutionDir)$(InputFileName)"
+					Description="Copying $(InputPath) to $(ProjectDir)$(InputFileName)"
+					CommandLine="copy $(InputPath) $(ProjectDir)$(InputFileName)"
+					Outputs="$(ProjectDir)$(InputFileName)"
 				/>
 			</FileConfiguration>
 		</File>
