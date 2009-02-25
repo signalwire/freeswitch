@@ -215,6 +215,93 @@ START_TEST(not_found)
 }
 END_TEST
 
+START_TEST(failure)
+{
+  sres_sip_t *srs;
+  su_addrinfo_t const *ai;
+
+  /* there is no server at all */
+  s2_dns_teardown();
+
+  srs = sres_sip_new(x->sres, (void *)"sip:timeout.example.net", NULL,
+		    1, 1,
+		    resolver_callback, x->root);
+  fail_if(srs == NULL);
+
+  while (sres_sip_next_step(srs))
+    su_root_run(x->root);
+
+  ai = sres_sip_results(srs);
+  fail_if(ai != NULL);
+
+  fail_if(sres_sip_error(srs) != SRES_SIP_ERR_AGAIN);
+
+  sres_sip_unref(srs);
+}
+END_TEST
+
+/* time() replacement */
+static time_t offset;
+
+time_t
+time(time_t *return_time)
+{
+  su_time_t tv;
+  time_t now;
+
+  su_time(&tv);
+
+  now = tv.tv_sec + offset - 2208988800UL; /* NTP_EPOCH */
+
+  if (return_time)
+    *return_time = now;
+
+  return now;
+}
+
+/* Drop packet */
+static int drop(void *data, size_t len, void *userdata)
+{
+  return 0;
+}
+
+/* Fast forward time, call resolver timer */
+static void wakeup(su_root_magic_t *magic,
+		   su_timer_t *timer,
+		   su_timer_arg_t *extra)
+{
+  offset++;
+  sres_resolver_timer(x->sres, 0);
+}
+
+START_TEST(timeout)
+{
+  sres_sip_t *srs;
+  su_addrinfo_t const *ai;
+  su_timer_t *faster = su_timer_create(su_root_task(x->root), 10);
+
+  su_timer_run(faster, wakeup, NULL);
+
+  s2_dns_set_filter(drop, NULL);
+
+  srs = sres_sip_new(x->sres, (void *)"sip:timeout.example.net", NULL,
+		    1, 1,
+		    resolver_callback, x->root);
+  fail_if(srs == NULL);
+
+  while (sres_sip_next_step(srs))
+    su_root_run(x->root);
+
+  ai = sres_sip_results(srs);
+  fail_if(ai != NULL);
+
+  fail_if(sres_sip_error(srs) != SRES_SIP_ERR_AGAIN);
+
+  sres_sip_unref(srs);
+
+  su_timer_destroy(faster);
+}
+END_TEST
 
 START_TEST(found_a)
 {
@@ -339,6 +426,10 @@ START_TEST(found_cname)
 		NULL);
 
   s2_dns_record("cname1.example.com", sres_type_naptr,
+		"", sres_type_cname, "a.example.com.",
+		NULL);
+
+  s2_dns_record("cname1.example.com", sres_type_aaaa,
 		"", sres_type_cname, "a.example.com.",
 		NULL);
 
@@ -933,6 +1024,8 @@ TCase *api_tcase(void)
 
   tcase_add_test(tc, invalid);
   tcase_add_test(tc, not_found);
+  tcase_add_test(tc, failure);
+  tcase_add_test(tc, timeout);
   tcase_add_test(tc, found_a);
   tcase_add_test(tc, found_cname);
   tcase_add_test(tc, found_ip);
