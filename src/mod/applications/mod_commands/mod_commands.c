@@ -459,7 +459,6 @@ static switch_status_t _find_user(const char *cmd, switch_core_session_t *sessio
   end:
 	if (session || tf) {
 		stream->write_function(stream, err ? "false" : "true");
-		switch_xml_free(xml);
 	} else {
 		if (err) {
 			if (host) {
