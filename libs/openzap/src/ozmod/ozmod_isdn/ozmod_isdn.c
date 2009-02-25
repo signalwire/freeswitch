@@ -163,9 +163,10 @@ static zap_status_t closePcapFile(void)
 
 static zap_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, L3ULONG span_id, L3USHORT direction)
 {
-        L3UCHAR                 *frame          = NULL;
+        L3UCHAR                 *frame		= NULL;
+	struct timeval		ts;
 	u_char			spanid		= (u_char)span_id;
-	unsigned long *tcp_next_seq_no = NULL;
+	unsigned long 		*tcp_next_seq_no = NULL;
 
 	spanid=span_id;
 	
@@ -191,8 +192,8 @@ static zap_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, L
         if(q931size > MAX_Q931_SIZE)
         {
                 /*WARNING*/
-		zap_log(ZAP_LOG_WARNING, "Q931 packet size is too big (%u)! Limitting it to %u! Q931 packet will be corrupt.\n", q931size, MAX_Q931_SIZE);
-                q931size=MAX_Q931_SIZE;
+		zap_log(ZAP_LOG_WARNING, "Q931 packet size is too big (%u)! Ignoring it!\n", q931size);
+                return ZAP_FAIL;
         }
 
 	/*Copy q931 buffer into frame*/
@@ -219,16 +220,16 @@ static zap_status_t writeQ931PacketToPcap(L3UCHAR* q931buf, L3USHORT q931size, L
 
         pcaphdr.caplen = SIZE_ETHERNET+SIZE_ETHERNET_CRC+q931size;
         pcaphdr.len = pcaphdr.caplen;
-        pcap_dump((u_char*)pcapfile, &pcaphdr, frame);
-	pcap_dump_flush(pcapfile);
 
-        /*Increase microsecond timestamp by 1*/
-        pcaphdr.ts.tv_usec++;
-        if(pcaphdr.ts.tv_usec==1000000)
-        {
-                pcaphdr.ts.tv_sec++;
-                pcaphdr.ts.tv_usec=0;
-        }
+        /* Set Timestamp */
+        /* Get Time in ms. usecs would be better ...  */
+        gettimeofday(&ts, NULL);
+        /*Write it into packet header*/
+        pcaphdr.ts.tv_sec = ts.tv_sec;
+        pcaphdr.ts.tv_usec = ts.tv_usec;
+
+	pcap_dump((u_char*)pcapfile, &pcaphdr, frame);
+        pcap_dump_flush(pcapfile);
 
         /*Maintain pcap file size*/
         pcapfilesize+=pcaphdr.caplen;
@@ -973,9 +974,6 @@ static int zap_isdn_921_23(void *pvt, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *msg
 {
 	int ret, offset = (ind == Q921_DL_DATA) ? 4 : 3;
 	char bb[4096] = "";
-#ifdef HAVE_LIBPCAP
-	zap_span_t *span = (zap_span_t *) pvt;  /*To get access to spanid for Q931ToPcap*/
-#endif
 
 	switch(ind) {
 	case Q921_DL_DATA:
@@ -984,6 +982,7 @@ static int zap_isdn_921_23(void *pvt, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *msg
 #ifdef HAVE_LIBPCAP
 		/*Q931ToPcap*/
                 if(do_q931ToPcap==1){
+			zap_span_t *span = (zap_span_t *) pvt;
                         if(writeQ931PacketToPcap(msg + offset, mlen - offset, span->span_id, 1) != ZAP_SUCCESS){
                                 zap_log(ZAP_LOG_WARNING, "Couldn't write Q931 buffer to pcap file!\n");
                         }
@@ -991,6 +990,7 @@ static int zap_isdn_921_23(void *pvt, Q921DLMsg_t ind, L2UCHAR tei, L2UCHAR *msg
                 /*Q931ToPcap done*/
 #endif
 		zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n\n", (int)mlen - offset, LINE, bb);
+	
 	default:
 		ret = Q931Rx23(pvt, ind, tei, msg, mlen);
 		if (ret != 0)
@@ -1735,9 +1735,6 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 {
 	int offset = 4;
 	char bb[4096] = "";
-#ifdef HAVE_LIBPCAP
-	zap_span_t *span = (zap_span_t *) pvt;	/*To get access to span_id for Q931ToPcap*/
-#endif
 
 	switch(ind) {
 	case Q921_DL_UNIT_DATA:
@@ -1748,6 +1745,7 @@ static int q931_rx_32(void *pvt, Q921DLMsg_t ind, L3UCHAR tei, L3UCHAR *msg, L3I
 #ifdef HAVE_LIBPCAP
 		/*Q931ToPcap*/
 		if(do_q931ToPcap==1){
+			zap_span_t *span = (zap_span_t *) pvt;
 			if(writeQ931PacketToPcap(msg + offset, mlen - offset, span->span_id, 0) != ZAP_SUCCESS){
 				zap_log(ZAP_LOG_WARNING, "Couldn't write Q931 buffer to pcap file!\n");	
 			}
