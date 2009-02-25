@@ -467,12 +467,12 @@ $(VCPROJ9): msvc/vc9proj.head msvc/vc9proj.foot Makefile.am
 
 $(srcdir)/msvc/spandsp.h: spandsp.h.in
 	echo "creating $(srcdir)/msvc/spandsp.h"
-	@cp $(srcdir)/spandsp.h.in $(srcdir)/msvc/spandsp.h
-	@sed -i -e "s/\@SPANDSP_USE_FIXED_POINT\@/#undef SPANDSP_USE_FIXED_POINT/" $(srcdir)/msvc/spandsp.h
-	@sed -i -e "s/\@SPANDSP_MISALIGNED_ACCESS_FAILS\@/#undef SPANDSP_MISALIGNED_ACCESS_FAILS/" $(srcdir)/msvc/spandsp.h
-	@sed -i -e "s/\@SPANDSP_USE_EXPORT_CAPABILITY\@/#define SPANDSP_USE_EXPORT_CAPABILITY 1/" $(srcdir)/msvc/spandsp.h
-	@sed -i -e "s/\@INSERT_INTTYPES_HEADER\@/#include <inttypes.h>/" $(srcdir)/msvc/spandsp.h
-	@sed -i -e "s/\@INSERT_MATH_HEADER\@/#include <math.h>/" $(srcdir)/msvc/spandsp.h
+	@sed -e "s/#define _SPANDSP_H_/#define _SPANDSP_H_\n\n#define __inline__ __inline\n#pragma warning(disable:4200)/" \
+	     -e "s/\@SPANDSP_USE_FIXED_POINT\@/#undef SPANDSP_USE_FIXED_POINT/" \
+	     -e "s/\@SPANDSP_MISALIGNED_ACCESS_FAILS\@/#undef SPANDSP_MISALIGNED_ACCESS_FAILS/" \
+	     -e "s/\@SPANDSP_USE_EXPORT_CAPABILITY\@/#define SPANDSP_USE_EXPORT_CAPABILITY 1/" \
+	     -e "s/\@INSERT_INTTYPES_HEADER\@/#include <msvc\/inttypes.h>/" \
+	     -e "s/\@INSERT_MATH_HEADER\@/#include <math.h>/" $(srcdir)/spandsp.h.in > $(srcdir)/msvc/spandsp.h
 
 spandsp/version.h:
 	NOWDATE=`date --utc +"%Y%m%d"` ; \

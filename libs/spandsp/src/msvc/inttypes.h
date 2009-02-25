@@ -19,16 +19,7 @@
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1400) // VC8+
-#ifndef _CRT_SECURE_NO_DEPRECATE
-#define _CRT_SECURE_NO_DEPRECATE
-#endif
-#ifndef _CRT_NONSTDC_NO_DEPRECATE
-#define _CRT_NONSTDC_NO_DEPRECATE
-#endif
-#endif // VC8+
-#include <windows.h>
+
 typedef unsigned __int8		uint8_t;
 typedef unsigned __int16	uint16_t;
 typedef unsigned __int32	uint32_t;
@@ -37,41 +28,12 @@ typedef __int8		int8_t;
 typedef __int16		int16_t;
 typedef __int32		int32_t;
 typedef __int64		int64_t;
-#define inline __inline
-#define __inline__ __inline
 #define  INT16_MAX   0x7fff 
 #define  INT16_MIN   (-INT16_MAX - 1) 
-#define _MMX_H_
-
-/* disable the following warnings 
- * C4100: The formal parameter is not referenced in the body of the function. The unreferenced parameter is ignored. 
- * C4200: Non standard extension C zero sized array
- * C4706: assignment within conditional expression
- * C4244: conversion from 'type1' to 'type2', possible loss of data
- * C4295: array is too small to include a terminating null character
- * C4125: decimal digit terminates octal escape sequence
- */
-#pragma warning(disable:4100 4200 4706 4295 4125)
-
-#pragma comment(lib, "ws2_32.lib")
-
-#ifndef strncasecmp
-#define strncasecmp _strnicmp
-#endif
-#ifndef strcasecmp
-#define strcasecmp _stricmp
-#endif
-#ifndef snprintf
-#define snprintf _snprintf
-#endif
 
 #if !defined(INFINITY)
 #define INFINITY 0x7fffffff
 #endif
-#endif
-
-#define PACKAGE "spandsp"
-#define VERSION "0.0.3andabit"
 
 #define INT32_MAX	(2147483647)
 #define INT32_MIN	(-2147483647 - 1)
