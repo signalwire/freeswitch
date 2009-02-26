@@ -2598,7 +2598,11 @@ SWITCH_STANDARD_API(show_function)
 	} else if (!strcasecmp(command, "tasks")) {
 		sprintf(sql, "select * from %s", command);
 	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
-		sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' order by type,name", command);
+		if (argv[1]) {
+			sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' and name = '%s' order by type,name", command, argv[1]);
+		} else {
+			sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' order by type,name", command);
+		}
 	} else if (!strcasecmp(command, "calls")) {
 		sprintf(sql, "select * from calls order by created_epoch");
 		if (argv[1] && !strcasecmp(argv[1],"count")) {
