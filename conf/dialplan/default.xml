@@ -33,7 +33,7 @@
     <extension name="global-intercept">
       <condition field="destination_number" expression="^886$">
 	<action application="answer"/>
-	<action application="intercept" data="${db(select/${domain_name}-last_dial/global)}"/>
+	<action application="intercept" data="${hash(select/${domain_name}-last_dial/global)}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
@@ -41,7 +41,7 @@
     <extension name="group-intercept">
       <condition field="destination_number" expression="^\*8$">
 	<action application="answer"/>
-	<action application="intercept" data="${db(select/${domain_name}-last_dial/${callgroup})}"/>
+	<action application="intercept" data="${hash(select/${domain_name}-last_dial/${callgroup})}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
@@ -49,14 +49,14 @@
     <extension name="intercept-ext">
       <condition field="destination_number" expression="^\*\*(\d+)$">
 	<action application="answer"/>
-	<action application="intercept" data="${db(select/${domain_name}-last_dial_ext/$1)}"/>
+	<action application="intercept" data="${hash(select/${domain_name}-last_dial_ext/$1)}"/>
 	<action application="sleep" data="2000"/>
       </condition>
     </extension>
 
     <extension name="redial">
       <condition field="destination_number" expression="^870$">
-	<action application="transfer" data="${db(select/${domain_name}-last_dial/${caller_id_number})}"/>
+	<action application="transfer" data="${hash(select/${domain_name}-last_dial/${caller_id_number})}"/>
       </condition>
     </extension>
 
@@ -87,9 +87,9 @@
 	<!-- <action application="export" data="sip_secure_media=true"/> -->
       </condition>
       <condition>
-	<action application="db" data="insert/${domain_name}-spymap/${caller_id_number}/${uuid}"/>
-	<action application="db" data="insert/${domain_name}-last_dial/${caller_id_number}/${destination_number}"/>
-	<action application="db" data="insert/${domain_name}-last_dial/global/${uuid}"/>
+	<action application="hash" data="insert/${domain_name}-spymap/${caller_id_number}/${uuid}"/>
+	<action application="hash" data="insert/${domain_name}-last_dial/${caller_id_number}/${destination_number}"/>
+	<action application="hash" data="insert/${domain_name}-last_dial/global/${uuid}"/>
       </condition>
     </extension>
 
@@ -125,7 +125,7 @@
     <extension name="eavesdrop">
       <condition field="destination_number" expression="^88(.*)$|^\*0(.*)$">
 	<action application="answer"/>
-	<action application="eavesdrop" data="${db(select/${domain_name}-spymap/$1)}"/>
+	<action application="eavesdrop" data="${hash(select/${domain_name}-spymap/$1)}"/>
       </condition>
     </extension>
 
@@ -141,7 +141,7 @@
 
     <extension name="call_return">
       <condition field="destination_number" expression="^\*69$|^869$|^lcr$">
-	<action application="transfer" data="${db(select/${domain_name}-call_return/${caller_id_number})}"/>
+	<action application="transfer" data="${hash(select/${domain_name}-call_return/${caller_id_number})}"/>
       </condition>
     </extension>
 
@@ -204,11 +204,11 @@
 	<action application="set" data="hangup_after_bridge=true"/>
 	<!--<action application="set" data="continue_on_fail=NORMAL_TEMPORARY_FAILURE,USER_BUSY,NO_ANSWER,TIMEOUT,NO_ROUTE_DESTINATION"/> -->
 	<action application="set" data="continue_on_fail=true"/>
-	<action application="db" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
-	<action application="db" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
+	<action application="hash" data="insert/${domain_name}-call_return/${dialed_extension}/${caller_id_number}"/>
+	<action application="hash" data="insert/${domain_name}-last_dial_ext/${dialed_extension}/${uuid}"/>
 	<action application="set" data="called_party_callgroup=${user_data(${dialed_extension}@${domain_name} var callgroup)}"/>
 	<!--<action application="export" data="nolocal:sip_secure_media=${user_data(${dialed_extension}@${domain_name} var sip_secure_media)}"/>-->
-	<action application="db" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
+	<action application="hash" data="insert/${domain_name}-last_dial/${called_party_callgroup}/${uuid}"/>
 	<action application="bridge" data="user/${dialed_extension}@${domain_name}"/>
 	<action application="answer"/>
 	<action application="sleep" data="1000"/>
