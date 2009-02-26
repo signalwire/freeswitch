@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fast_convert.h,v 1.4 2009/02/21 05:39:09 steveu Exp $
+ * $Id: fast_convert.h,v 1.5 2009/02/24 14:14:03 steveu Exp $
  */
 
 #if !defined(_SPANDSP_FAST_CONVERT_H_)
@@ -231,7 +231,8 @@ extern "C"
     }
 #endif
 
-#elif (defined(WIN32)  ||  defined(_WIN32))  &&  !defined(_WIN64)
+#elif defined(_M_IX86)
+    /* Visual Studio i386 */
     /*
      *    Win32 doesn't seem to have the lrint() and lrintf() functions.
      *    Therefore implement inline versions of these functions here.
@@ -301,28 +302,19 @@ extern "C"
         };
         return i;
     }
-#elif defined(WIN64)  ||  defined(_WIN64)
+#elif defined(_M_X64)
+    /* Visual Studio x86_64 */
     /* x86_64 machines will do best with a simple assignment. */
 #include <intrin.h>
 
     __inline long int lrint(double x)
     {
-#ifdef _M_X64
 		return (long int)_mm_cvtsd_si64x( _mm_loadu_pd ((const double*)&x) );
-#else
-#warning "Not Supported: Replacing with a simple C cast."
-	return (long int) (x);
-#endif
     }
 
     __inline long int lrintf(float x)
     {
-#ifdef _M_X64
 		return _mm_cvt_ss2si( _mm_load_ss((const float*)&x) );
-#else
-#warning "Not Supported: Replacing with a simple C cast."
-	return (long int) (x);
-#endif
     }
 
     __inline long int lfastrint(double x)

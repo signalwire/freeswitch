@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.4 2009/02/20 12:34:20 steveu Exp $
+## $Id: Makefile.am,v 1.5 2009/02/25 17:52:52 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -96,6 +96,8 @@ MIXED_SIZE_PAGES = R1200_1200_A4.tif \
                    R8_385_A3.tif
 
 EXTRA_DIST = ${ITU_TEST_PAGES_PBM}
+
+MAINTAINERCLEANFILES = Makefile.in
 
 nobase_data_DATA =  itutests.tif \
                     ${ITU_TEST_PAGES} \

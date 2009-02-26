@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.286 2009/02/20 12:34:20 steveu Exp $
+ * $Id: t30.c,v 1.288 2009/02/26 12:11:51 steveu Exp $
  */
 
 /*! \file */
@@ -5353,18 +5353,21 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
        The 2.55s maximum seems to limit signalling frames to no more than 95 octets,
        including FCS, and flag octets (assuming the use of V.21).
     */
-    if (!ok  &&  s->phase != T30_PHASE_C_ECM_RX)
+    if (!ok)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Bad CRC received\n");
-        /* We either force a resend, or we wait until a resend occurs through a timeout. */
-        if ((s->supported_t30_features & T30_SUPPORT_COMMAND_REPEAT))
+        if (s->phase != T30_PHASE_C_ECM_RX)
         {
-            s->step = 0;
-            if (s->phase == T30_PHASE_B_RX)
-                queue_phase(s, T30_PHASE_B_TX);
-            else
-                queue_phase(s, T30_PHASE_D_TX);
-            send_simple_frame(s, T30_CRP);
+            /* We either force a resend, or we wait until a resend occurs through a timeout. */
+            if ((s->supported_t30_features & T30_SUPPORT_COMMAND_REPEAT))
+            {
+                s->step = 0;
+                if (s->phase == T30_PHASE_B_RX)
+                    queue_phase(s, T30_PHASE_B_TX);
+                else
+                    queue_phase(s, T30_PHASE_D_TX);
+                send_simple_frame(s, T30_CRP);
+            }
         }
         return;
     }

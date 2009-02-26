@@ -10,7 +10,7 @@
  *
  * This file is released in the public domain.
  *
- * $Id: config.h,v 1.3 2009/02/10 13:06:47 steveu Exp $
+ * $Id: config.h,v 1.4 2009/02/25 15:30:21 steveu Exp $
  */
 
 #if !defined(_MSVC_CONFIG_H_)
@@ -37,13 +37,10 @@
 
 #define SPANDSP_USE_EXPORT_CAPABILITY 1
 
-
 #define PACKAGE "spandsp"
 #define VERSION "0.0.6"
 
-
-
-// Win32/DevStudio compatibility stuff
+/* Win32/DevStudio compatibility stuff */
 
 #ifdef _MSC_VER
 
@@ -82,6 +79,5 @@
   #include <malloc.h> // To get alloca
 
 #endif
-
 
 #endif

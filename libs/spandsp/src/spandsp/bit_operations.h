@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bit_operations.h,v 1.24 2009/01/31 08:48:11 steveu Exp $
+ * $Id: bit_operations.h,v 1.25 2009/02/24 14:14:03 steveu Exp $
  */
 
 /*! \file */
@@ -56,13 +56,48 @@ static __inline__ int top_bit(unsigned int bits)
              : [res] "=&r" (res)
              : [bits] "r" (bits));
     return 31 - res;
-#elif defined(_M_IX86) // Visual Studio x86
+#elif defined(_M_IX86)
+    /* Visual Studio i386 */
     __asm
     {
         xor eax, eax
         dec eax
         bsr eax, bits
     }
+#elif defined(_M_X64)
+    /* Visual Studio x86_64 */
+    /* TODO: Need the appropriate x86_64 code */
+    int res;
+
+    if (bits == 0)
+        return -1;
+    res = 0;
+    if (bits & 0xFFFF0000)
+    {
+        bits &= 0xFFFF0000;
+        res += 16;
+    }
+    if (bits & 0xFF00FF00)
+    {
+        bits &= 0xFF00FF00;
+        res += 8;
+    }
+    if (bits & 0xF0F0F0F0)
+    {
+        bits &= 0xF0F0F0F0;
+        res += 4;
+    }
+    if (bits & 0xCCCCCCCC)
+    {
+        bits &= 0xCCCCCCCC;
+        res += 2;
+    }
+    if (bits & 0xAAAAAAAA)
+    {
+        bits &= 0xAAAAAAAA;
+        res += 1;
+    }
+    return res;
 #else
     int res;
 

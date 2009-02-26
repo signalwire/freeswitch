@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.3 2009/02/20 12:34:20 steveu Exp $
+## $Id: Makefile.am,v 1.4 2009/02/25 17:52:51 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 
@@ -37,12 +37,16 @@ ETSI_TEST_PAGES = etsi_300_242_a4_diago1.tif \
 
 EXTRA_DIST = 
 
+MAINTAINERCLEANFILES = Makefile.in
+
+LIBDIR = -L$(top_builddir)/src
+
 nobase_data_DATA = ${ETSI_TEST_PAGES}
                    
 noinst_PROGRAMS = generate_etsi_300_242_pages
 
 generate_etsi_300_242_pages_SOURCES = generate_etsi_300_242_pages.c
-generate_etsi_300_242_pages_LDADD = -lspandsp -ltiff
+generate_etsi_300_242_pages_LDADD = $(LIBDIR) -lspandsp -ltiff
 
 clean:
 	rm -f *.tif *.g3

@@ -33,14 +33,13 @@
 #define __inline__ __inline
 #pragma warning(disable:4200)
 
-
 #undef SPANDSP_USE_FIXED_POINT
 #undef SPANDSP_MISALIGNED_ACCESS_FAILS
 
 #define SPANDSP_USE_EXPORT_CAPABILITY 1
 
 #include <stdlib.h>
-#include <msvc\inttypes.h>
+#include <msvc/inttypes.h>
 #include <string.h>
 #include <limits.h>
 #include <time.h>

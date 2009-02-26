@@ -22,13 +22,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: telephony.h,v 1.16 2009/02/03 16:28:41 steveu Exp $
+ * $Id: telephony.h,v 1.17 2009/02/25 15:30:21 steveu Exp $
  */
 
 #if !defined(_SPANDSP_TELEPHONY_H_)
 #define _SPANDSP_TELEPHONY_H_
 
-#if defined(WIN32)
+#if defined(_M_IX86)  ||  defined(_M_X64)
 #if defined(LIBSPANDSP_EXPORTS)
 #define SPAN_DECLARE(type)              __declspec(dllexport) type __stdcall
 #define SPAN_DECLARE_NONSTD(type)       __declspec(dllexport) type __cdecl

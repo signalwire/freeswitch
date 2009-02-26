@@ -12,9 +12,10 @@
  *
  */
 
-struct timeval {
-  long tv_sec;
-  long tv_usec;
+struct timeval
+{
+    long int tv_sec;
+    long int tv_usec;
 };
 
 extern void gettimeofday(struct timeval *tv, void *tz);
