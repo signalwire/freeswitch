@@ -409,6 +409,48 @@ su_root_t *su_root_create(su_root_magic_t *magic)
   return su_root_create_with_port(magic, su_port_create());
 }
 
+/* Initializer used by su_root_clone() */
+static int
+su_root_clone_initializer(su_root_t *root,
+			  su_root_magic_t *magic)
+{
+  *(su_root_t **)magic = root;
+  return 0;
+}
+
+/** Create a a new root object sharing port/thread with existing one.
+ *
+ * Allocate and initialize the instance of su_root_t.
+ *
+ * @param magic     pointer to user data
+ *
+ * @return A pointer to allocated su_root_t instance, NULL on error.
+ *
+ * @NEW_1_12_11
+ */
+su_root_t *
+su_root_clone(su_root_t *self, su_root_magic_t *magic)
+{
+  int threading = 0, error;
+  su_clone_r clone;
+  su_root_t *cloned = NULL;
+
+  if (self == NULL)
+    return NULL;
+
+  threading = self->sur_threading, self->sur_threading = 0;
+  error = su_clone_start(self, clone,
+			 (void *)&cloned, su_root_clone_initializer, NULL);
+  self->sur_threading = threading;
+
+  if (error)
+    return NULL;
+
+  su_clone_forget(clone);	/* destroyed with su_root_destroy() */
+  su_root_set_magic(cloned, magic);
+  return cloned;
+}
+
 /**@internal
  *
  * Create a reactor object using given message port.

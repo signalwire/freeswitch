@@ -487,6 +487,9 @@ SOFIAPUBFUN int su_root_has_thread(su_root_t *root);
 SOFIAPUBFUN int su_root_set_max_defer(su_root_t *, su_duration_t max_defer);
 SOFIAPUBFUN su_duration_t su_root_get_max_defer(su_root_t const *self);
 
+SOFIAPUBFUN su_root_t *su_root_clone(su_root_t *root, su_root_magic_t *magic)
+  __attribute__((__malloc__));
+
 /* Timers */
 SOFIAPUBFUN su_timer_t *su_timer_create(su_task_r const, su_duration_t msec)
      __attribute__((__malloc__));
