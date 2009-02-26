@@ -120,6 +120,7 @@ struct vm_profile {
 	uint32_t max_login_attempts;
 	uint32_t min_record_len;
 	uint32_t max_record_len;
+	uint32_t max_retries;
 	switch_mutex_t *mutex;
 	uint32_t record_threshold;
 	uint32_t record_silence_hits;
@@ -321,7 +322,7 @@ static switch_status_t load_config(void)
 		switch_bool_t auto_playback_recordings = SWITCH_TRUE;
 
 		switch_core_db_t *db;
-		uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300, min_record_len = 3;
+		uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300, min_record_len = 3, max_retries = 3;
 
 		db = NULL;
 
@@ -590,6 +591,16 @@ static switch_status_t load_config(void)
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid record length [%s] must be between 1 and 10000s\n", val);
 				}
+			} else if (!strcasecmp(var, "max-retries")) {
+				int tmp = 0;
+				if (!switch_strlen_zero(val)) {
+					tmp = atoi(val);
+				}
+				if (tmp > 0)  {
+					max_retries = tmp;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid max-retires value [%s] must be higher than 0\n", val);
+				} 
 			} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
 				odbc_dsn = switch_core_strdup(globals.pool, val);
@@ -721,6 +732,7 @@ static switch_status_t load_config(void)
 			profile->max_login_attempts = max_login_attempts;
 			profile->min_record_len = min_record_len;
 			profile->max_record_len = max_record_len;
+			profile->max_retries = max_retries;
 			*profile->terminator_key = *terminator_key;
 			*profile->play_new_messages_key = *play_new_messages_key;
 			*profile->play_saved_messages_key = *play_saved_messages_key;
@@ -1051,7 +1063,7 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	}
 
 	while (switch_channel_ready(channel)) {
-
+		uint32_t counter = 0;
 		switch_snprintf(key_buf, sizeof(key_buf), "%s:%s:%s", profile->listen_file_key, profile->save_file_key, profile->record_file_key);
 
 	  record_file:
@@ -1082,8 +1094,9 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 			}
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Message is less than minimum record length: %d, discarding it.\n",
 							  profile->min_record_len);
-			if (switch_channel_ready(channel)) {
+			if (switch_channel_ready(channel) && counter < profile->max_retries) {
 				TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "too-small", NULL, NULL));
+				counter++;
 				goto record_file;
 			} else {
 				status = SWITCH_STATUS_NOTFOUND;
