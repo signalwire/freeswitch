@@ -598,7 +598,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	*event = NULL;
 
-	if (event_id != SWITCH_EVENT_CUSTOM && subclass_name) {
+	if ((event_id > 0 && event_id != SWITCH_EVENT_CUSTOM) && subclass_name) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -611,9 +611,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	memset(*event, 0, sizeof(switch_event_t));
 
-	(*event)->event_id = event_id;
-
-	switch_event_prep_for_delivery_detailed(file, func, line, *event);
+	if (event_id) {
+		(*event)->event_id = event_id;
+		switch_event_prep_for_delivery_detailed(file, func, line, *event);
+	}
 
 	if (subclass_name) {
 		(*event)->subclass_name = DUP(subclass_name);
@@ -810,19 +811,15 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
-	switch_event_header_t *hp, *hp2;
+	switch_event_header_t *hp;
 
-	if (switch_event_create_subclass(event, todup->event_id, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create_subclass(event, 0, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
-	if (todup->subclass_name) {
-		(*event)->subclass_name = DUP(todup->subclass_name);
-	}
+	(*event)->event_id = todup->event_id;
 	(*event)->event_user_data = todup->event_user_data;
 	(*event)->bind_user_data = todup->bind_user_data;
-
-	hp2 = (*event)->headers;
 
 	for (hp = todup->headers; hp; hp = hp->next) {
 		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);

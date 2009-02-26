@@ -147,7 +147,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_eve
 {
 	*event = NULL;
 
-	if (event_id != ESL_EVENT_CUSTOM && subclass_name) {
+	if ((event_id > 0 && event_id != ESL_EVENT_CUSTOM) && subclass_name) {
 		return ESL_FAIL;
 	}
 
@@ -157,9 +157,10 @@ ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_eve
 
 	memset(*event, 0, sizeof(esl_event_t));
 
-	(*event)->event_id = event_id;
-
-	esl_event_add_header_string(*event, ESL_STACK_BOTTOM, "Event-Name", esl_event_name((*event)->event_id));
+	if (event_id) {
+		(*event)->event_id = event_id;
+		esl_event_add_header_string(*event, ESL_STACK_BOTTOM, "Event-Name", esl_event_name((*event)->event_id));
+	}
 
 	if (subclass_name) {
 		(*event)->subclass_name = DUP(subclass_name);
@@ -389,19 +390,16 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 
 ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 {
-	esl_event_header_t *hp, *hp2;
+	esl_event_header_t *hp;
 
-	if (esl_event_create_subclass(event, todup->event_id, todup->subclass_name) != ESL_SUCCESS) {
+	if (esl_event_create_subclass(event, 0, todup->subclass_name) != ESL_SUCCESS) {
 		return ESL_FAIL;
 	}
 
-	if (todup->subclass_name) {
-		(*event)->subclass_name = DUP(todup->subclass_name);
-	}
+	(*event)->event_id = todup->event_id;
+
 	(*event)->event_user_data = todup->event_user_data;
 	(*event)->bind_user_data = todup->bind_user_data;
-
-	hp2 = (*event)->headers;
 
 	for (hp = todup->headers; hp; hp = hp->next) {
 		esl_event_add_header_string(*event, ESL_STACK_BOTTOM, hp->name, hp->value);
