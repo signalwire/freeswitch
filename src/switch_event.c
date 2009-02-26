@@ -83,8 +83,10 @@ static switch_mutex_t *EVENT_QUEUE_MUTEX = NULL;
 static switch_hash_t *CUSTOM_HASH = NULL;
 static int THREAD_COUNT = 0;
 static int SYSTEM_RUNNING = 0;
+#ifdef SWITCH_EVENT_RECYCLE
 static switch_queue_t *EVENT_RECYCLE_QUEUE = NULL;
 static switch_queue_t *EVENT_HEADER_RECYCLE_QUEUE = NULL;
+#endif
 static void launch_dispatch_threads(uint32_t max, int len, switch_memory_pool_t *pool);
 
 static char *my_dup(const char *s)
@@ -422,6 +424,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_reserve_subclass_detailed(const cha
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
 {
+#ifdef SWITCH_EVENT_RECYCLE
+
 	void *pop;
 	int size;
 	size = switch_queue_size(EVENT_RECYCLE_QUEUE);
@@ -437,6 +441,10 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void)
 	while (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		free(pop);
 	}
+#else
+	return;
+#endif
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void)
@@ -569,8 +577,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[1], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_QUEUE[2], POOL_COUNT_MAX + 10, THRUNTIME_POOL);
+#ifdef SWITCH_EVENT_RECYCLE
 	switch_queue_create(&EVENT_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
 	switch_queue_create(&EVENT_HEADER_RECYCLE_QUEUE, 250000, THRUNTIME_POOL);
+#endif
 
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_increase(thd_attr);
@@ -595,7 +605,9 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char *file, const char *func, int line,
 																	  switch_event_t **event, switch_event_types_t event_id, const char *subclass_name)
 {
+#ifdef SWITCH_EVENT_RECYCLE
 	void *pop;
+#endif
 
 	*event = NULL;
 
@@ -603,12 +615,16 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 		return SWITCH_STATUS_GENERR;
 	}
 
+#ifdef SWITCH_EVENT_RECYCLE
 	if (switch_queue_trypop(EVENT_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		*event = (switch_event_t *) pop;
 	} else {
+#endif
 		*event = ALLOC(sizeof(switch_event_t));
 		switch_assert(*event);
+#ifdef SWITCH_EVENT_RECYCLE
 	}
+#endif
 
 	memset(*event, 0, sizeof(switch_event_t));
 
@@ -686,9 +702,13 @@ SWITCH_DECLARE(switch_status_t) switch_event_del_header(switch_event_t *event, c
 			FREE(hp->name);
 			FREE(hp->value);
 			memset(hp, 0, sizeof(*hp));
+#ifdef SWITCH_EVENT_RECYCLE
 			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, hp) != SWITCH_STATUS_SUCCESS) {
 				FREE(hp);
 			}
+#else
+			FREE(hp);
+#endif
 			status = SWITCH_STATUS_SUCCESS;
 		} else {
 			lp = hp;
@@ -702,14 +722,18 @@ switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack
 {
 	switch_event_header_t *header;
 	switch_ssize_t hlen = -1;
-	void *pop;
 
+#ifdef SWITCH_EVENT_RECYCLE
+	void *pop;
 	if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		header = (switch_event_header_t *) pop;
 	} else {
+#endif
 		header = ALLOC(sizeof(*header));
 		switch_assert(header);
+#ifdef SWITCH_EVENT_RECYCLE
 	}
+#endif
 
 	memset(header, 0, sizeof(*header));
 
@@ -795,17 +819,26 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 			hp = hp->next;
 			FREE(this->name);
 			FREE(this->value);
-			memset(this, 0, sizeof(*this));
+#ifdef SWITCH_EVENT_RECYCLE
 			if (switch_queue_trypush(EVENT_HEADER_RECYCLE_QUEUE, this) != SWITCH_STATUS_SUCCESS) {
 				FREE(this);
 			}
+#else
+			FREE(this);
+#endif
+
+
 		}
 		FREE(ep->body);
 		FREE(ep->subclass_name);
-		memset(ep, 0, sizeof(*ep));
+#ifdef SWITCH_EVENT_RECYCLE
 		if (switch_queue_trypush(EVENT_RECYCLE_QUEUE, ep) != SWITCH_STATUS_SUCCESS) {
 			FREE(ep);
 		}
+#else
+		FREE(ep);
+#endif
+
 	}
 	*event = NULL;
 }

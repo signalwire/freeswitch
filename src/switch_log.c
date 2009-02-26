@@ -58,7 +58,9 @@ static switch_memory_pool_t *LOG_POOL = NULL;
 static switch_log_binding_t *BINDINGS = NULL;
 static switch_mutex_t *BINDLOCK = NULL;
 static switch_queue_t *LOG_QUEUE = NULL;
+#ifdef SWITCH_LOG_RECYCLE
 static switch_queue_t *LOG_RECYCLE_QUEUE = NULL;
+#endif
 static int8_t THREAD_RUNNING = 0;
 static uint8_t MAX_LEVEL = 0;
 static int mods_loaded = 0;
@@ -226,9 +228,14 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 		switch_mutex_unlock(BINDLOCK);
 
 		switch_safe_free(node->data);
+#ifdef SWITCH_LOG_RECYCLE
 		if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			free(node);
 		}
+#else
+		free(node);
+#endif
+
 	}
 
 	THREAD_RUNNING = 0;
@@ -347,14 +354,18 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 	if (do_mods && level <= MAX_LEVEL) {
 		switch_log_node_t *node;
+#ifdef SWITCH_LOG_RECYCLE
 		void *pop = NULL;
 
 		if (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 			node = (switch_log_node_t *) pop;
 		} else {
+#endif
 			node = malloc(sizeof(*node));
 			switch_assert(node);
+#ifdef SWITCH_LOG_RECYCLE
 		}
+#endif
 		
 		node->data = data;
 		data = NULL;
@@ -368,9 +379,13 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 
 		if (switch_queue_trypush(LOG_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 			free(node->data);
+#ifdef SWITCH_LOG_RECYCLE
 			if (switch_queue_trypush(LOG_RECYCLE_QUEUE, node) != SWITCH_STATUS_SUCCESS) {
 				free(node);
 			}
+#else
+			free(node);
+#endif
 			node = NULL;
 		}
 	}
@@ -395,7 +410,9 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 
 
 	switch_queue_create(&LOG_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
+#ifdef SWITCH_LOG_RECYCLE
 	switch_queue_create(&LOG_RECYCLE_QUEUE, SWITCH_CORE_QUEUE_LEN, LOG_POOL);
+#endif
 	switch_mutex_init(&BINDLOCK, SWITCH_MUTEX_NESTED, LOG_POOL);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_thread_create(&thread, thd_attr, log_thread, NULL, LOG_POOL);
@@ -422,6 +439,7 @@ SWITCH_DECLARE(switch_status_t) switch_log_init(switch_memory_pool_t *pool, swit
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 {
+#ifdef SWITCH_LOG_RECYCLE
 	void *pop;
 	int size = switch_queue_size(LOG_RECYCLE_QUEUE);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled log node(s) %d bytes\n", size,
@@ -429,6 +447,10 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void)
 	while (switch_queue_trypop(LOG_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
 		free(pop);
 	}
+#else
+	return;
+#endif
+
 }
 
 SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void)

@@ -1846,7 +1846,7 @@ static void conference_loop_output(conference_member_t *member)
 			int to = 60;
 		
 			if (ann) {
-				member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
+				member->conference->special_announce = switch_core_strdup(member->pool, ann);
 			}
 
 			switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
@@ -2676,7 +2676,7 @@ static switch_status_t conference_say(conference_obj_t *conference, const char *
 	if (!conference->sh) {
 		memset(&conference->lsh, 0, sizeof(conference->lsh));
 		if (switch_core_speech_open(&conference->lsh, conference->tts_engine, conference->tts_voice,
-									conference->rate, conference->interval, &flags, conference->pool) != SWITCH_STATUS_SUCCESS) {
+									conference->rate, conference->interval, &flags, NULL) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid TTS module [%s]!\n", conference->tts_engine);
 			return SWITCH_STATUS_FALSE;
 		}

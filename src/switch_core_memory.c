@@ -34,7 +34,7 @@
 //#define DEBUG_ALLOC
 //#define DEBUG_ALLOC2
 //#define DESTROY_POOLS
-//#define PER_POOL_LOCK
+#define PER_POOL_LOCK
 //#define INSTANTLY_DESTROY_POOLS
 
 #include <switch.h>
