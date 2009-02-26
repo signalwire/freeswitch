@@ -746,8 +746,21 @@ void *su_home_clone(su_home_t *parent, isize_t size)
 /** Return true if home is a clone. */
 int su_home_has_parent(su_home_t const *home)
 {
-  return home && !home->suh_lock &&
-    home->suh_blocks && home->suh_blocks->sub_parent;
+  return su_home_parent(home) != NULL;
+}
+
+/** Return home's parent home. */
+su_home_t *su_home_parent(su_home_t const *home)
+{
+  su_home_t *parent = NULL;
+
+  if (home && home->suh_blocks) {
+    su_block_t *sub = MEMLOCK(home);
+    parent = sub->sub_parent;
+    UNLOCK(home);
+  }
+
+  return parent;
 }
 
 /** Allocate a memory block.
@@ -1134,6 +1147,12 @@ int su_home_move(su_home_t *dst, su_home_t *src)
 	for (i = 0; i < n; i++)
 	  if (s->sub_nodes[i].sua_data) {
 	    su_block_add(d, s->sub_nodes[i].sua_data)[0] = s->sub_nodes[i];
+	    if (s->sub_nodes[i].sua_home) {
+	      su_home_t *subhome = s->sub_nodes[i].sua_data;
+	      su_block_t *subsub = MEMLOCK(subhome);
+	      subsub->sub_parent = dst;
+	      UNLOCK(subhome);
+	    }
 	  }
 
 	s->sub_used = 0;
@@ -1152,8 +1171,21 @@ int su_home_move(su_home_t *dst, su_home_t *src)
     s = MEMLOCK(src);
 
     if (s && s->sub_used) {
+      n = s->sub_n;
+
+      for (i = 0; i < n; i++) {
+	if (s->sub_nodes[i].sua_data && s->sub_nodes[i].sua_home) {
+	  su_home_t *subhome = s->sub_nodes[i].sua_data;
+	  su_block_t *subsub = MEMLOCK(subhome);
+	  subsub->sub_parent = dst;
+	  UNLOCK(subhome);
+	}
+      }
+
       s->sub_used = 0;
       memset(s->sub_nodes, 0, s->sub_n * sizeof (s->sub_nodes[0]));
+
+      s->sub_used = 0;
     }
 
     UNLOCK(src);

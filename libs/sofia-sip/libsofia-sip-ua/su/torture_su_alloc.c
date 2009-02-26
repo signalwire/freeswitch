@@ -192,6 +192,34 @@ static int test_alloc(void)
     TEST(h1->suh_size, 13);
   }
 
+  /* Test su_home_parent() */
+  TEST_1(h0 = su_home_new(sizeof *h0));
+  TEST_1(h1 = su_home_clone(h0->home, sizeof *h1));
+  TEST_1(h2 = su_home_clone(h1->home, sizeof *h2));
+  TEST_1(h3 = su_home_clone(h2->home, sizeof *h3));
+
+  TEST_P(su_home_parent(h0->home), NULL);
+  TEST_P(su_home_parent(h1->home), h0);
+  TEST_P(su_home_parent(h2->home), h1);
+  TEST_P(su_home_parent(h3->home), h2);
+  TEST(su_home_move(h0->home, h1->home), 0);
+  TEST_P(su_home_parent(h2->home), h0);
+  TEST_P(su_home_parent(h3->home), h2);
+  TEST(su_home_move(h0->home, h2->home), 0);
+  TEST_P(su_home_parent(h3->home), h0);
+
+  su_home_move(NULL, h0->home);
+
+  TEST_P(su_home_parent(h0->home), NULL);
+  TEST_P(su_home_parent(h1->home), NULL);
+  TEST_P(su_home_parent(h2->home), NULL);
+  TEST_P(su_home_parent(h3->home), NULL);
+
+  su_home_unref(h0->home);
+  su_home_unref(h1->home);
+  su_home_unref(h2->home);
+  su_home_unref(h3->home);
+
   END();
 }
 
