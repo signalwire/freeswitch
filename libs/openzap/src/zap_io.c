@@ -1131,6 +1131,7 @@ zap_status_t zap_channel_done(zap_channel_t *zchan)
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_MEDIA);
 	zap_clear_flag_locked(zchan, ZAP_CHANNEL_ANSWERED);
 	zchan->init_state = ZAP_CHANNEL_STATE_DOWN;
+	zchan->state = ZAP_CHANNEL_STATE_DOWN;
 	zap_log(ZAP_LOG_DEBUG, "channel done %u:%u\n", zchan->span_id, zchan->chan_id);
 
 	return ZAP_SUCCESS;
