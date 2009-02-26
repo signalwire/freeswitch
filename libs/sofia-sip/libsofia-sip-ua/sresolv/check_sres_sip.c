@@ -602,6 +602,72 @@ START_TEST(found_naptr)
 }
 END_TEST
 
+START_TEST(found_naptr_nohint)
+{
+  sres_sip_t *srs;
+  char const *d;
+
+  s2_dns_default(d = "example.com.");
+
+  s2_dns_record(d, sres_type_naptr,
+		/* order priority flags services regexp target */
+		d, sres_type_naptr, 20, 50, "s", "SIP+D2Z", "", "_sip._tilulilu",
+		/* priority weight port target */
+		"_sip._tilulilu", sres_type_srv, 2, 100, 5060, "sip00",
+		"sip00", sres_type_a, "12.13.14.15",
+		NULL);
+
+  srs = sres_sip_new(x->sres, (void *)"sip:example.com", NULL,
+		    1, 1,
+		    resolver_callback, x->root);
+  fail_if(srs == NULL);
+
+  while (sres_sip_next_step(srs))
+    su_root_step(x->root, 1000);
+
+  fail_unless(sres_sip_results(srs) == NULL);
+  fail_unless(sres_sip_error(srs) == SRES_SIP_ERR_NO_TPORT);
+
+  sres_sip_unref(srs);
+}
+END_TEST
+
+START_TEST(found_bad_naptr)
+{
+  sres_sip_t *srs;
+  su_addrinfo_t const *ai;
+  char const *d;
+
+  s2_dns_default(d = "example.com.");
+
+  s2_dns_record(d, sres_type_naptr,
+		/* order priority flags services regexp target */
+		d, sres_type_naptr, 20, 50, "s", "ZIP+D2T", "", "_zip._tcp",
+		NULL);
+
+  s2_dns_record(d, sres_type_a,
+		"", sres_type_a, "11.12.13.14",
+		NULL);
+
+  srs = sres_sip_new(x->sres, (void *)"sip:example.com", NULL,
+		    1, 1,
+		    resolver_callback, x->root);
+  fail_if(srs == NULL);
+
+  while (sres_sip_next_step(srs))
+    su_root_run(x->root);
+
+  ai = sres_sip_results(srs);
+  assert(ai != NULL);
+  fail_if(ai->ai_protocol != TPPROTO_UDP);
+  fail_if(!(ai = ai->ai_next));
+  fail_if(ai->ai_protocol != TPPROTO_TCP);
+  fail_if((ai = ai->ai_next));
+
+  sres_sip_unref(srs);
+}
+END_TEST
+
 START_TEST(ignore_naptr)
 {
   sres_sip_t *srs;
@@ -1033,6 +1099,8 @@ TCase *api_tcase(void)
   tcase_add_test(tc, found_maddr_ip);
   tcase_add_test(tc, found_a_aaaa);
   tcase_add_test(tc, found_naptr);
+  tcase_add_test(tc, found_bad_naptr);
+  tcase_add_test(tc, found_naptr_nohint);
   tcase_add_test(tc, found_naptr2);
   tcase_add_test(tc, found_naptr3);
   tcase_add_test(tc, found_naptr_with_a);
