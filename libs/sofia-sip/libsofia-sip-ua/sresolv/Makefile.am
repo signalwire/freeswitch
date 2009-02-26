@@ -70,4 +70,3 @@ dist_noinst_DATA = run_test_sresolv \
 
 include $(top_srcdir)/rules/sofia.am
 
-AM_CFLAGS +=		-I${top_srcdir}/s2check
