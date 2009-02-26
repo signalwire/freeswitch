@@ -1846,7 +1846,7 @@ static void conference_loop_output(conference_member_t *member)
 			int to = 60;
 		
 			if (ann) {
-				member->conference->special_announce = switch_core_strdup(member->pool, ann);
+				member->conference->special_announce = switch_core_strdup(member->conference->pool, ann);
 			}
 
 			switch_channel_set_private(channel, "_conference_autocall_list_", NULL);
