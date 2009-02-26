@@ -59,6 +59,7 @@ static char *my_dup(const char *s)
 */
 static const char *EVENT_NAMES[] = {
 	"CUSTOM",
+	"CLONE",
 	"CHANNEL_CREATE",
 	"CHANNEL_DESTROY",
 	"CHANNEL_STATE",
@@ -147,7 +148,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_eve
 {
 	*event = NULL;
 
-	if ((event_id > 0 && event_id != ESL_EVENT_CUSTOM) && subclass_name) {
+	if ((event_id != ESL_EVENT_CLONE && event_id != ESL_EVENT_CUSTOM) && subclass_name) {
 		return ESL_FAIL;
 	}
 
@@ -157,7 +158,7 @@ ESL_DECLARE(esl_status_t) esl_event_create_subclass(esl_event_t **event, esl_eve
 
 	memset(*event, 0, sizeof(esl_event_t));
 
-	if (event_id) {
+	if (event_id != ESL_EVENT_CLONE) {
 		(*event)->event_id = event_id;
 		esl_event_add_header_string(*event, ESL_STACK_BOTTOM, "Event-Name", esl_event_name((*event)->event_id));
 	}
@@ -392,7 +393,7 @@ ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 {
 	esl_event_header_t *hp;
 
-	if (esl_event_create_subclass(event, 0, todup->subclass_name) != ESL_SUCCESS) {
+	if (esl_event_create_subclass(event, ESL_EVENT_CLONE, todup->subclass_name) != ESL_SUCCESS) {
 		return ESL_FAIL;
 	}
 

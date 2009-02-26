@@ -111,6 +111,7 @@ static char *my_dup(const char *s)
 */
 static char *EVENT_NAMES[] = {
 	"CUSTOM",
+	"CLONE",
 	"CHANNEL_CREATE",
 	"CHANNEL_DESTROY",
 	"CHANNEL_STATE",
@@ -598,7 +599,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	*event = NULL;
 
-	if ((event_id > 0 && event_id != SWITCH_EVENT_CUSTOM) && subclass_name) {
+	if ((event_id != SWITCH_EVENT_CLONE && event_id != SWITCH_EVENT_CUSTOM) && subclass_name) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -611,7 +612,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char
 
 	memset(*event, 0, sizeof(switch_event_t));
 
-	if (event_id) {
+	if (event_id != SWITCH_EVENT_CLONE) {
 		(*event)->event_id = event_id;
 		switch_event_prep_for_delivery_detailed(file, func, line, *event);
 	}
@@ -813,7 +814,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 {
 	switch_event_header_t *hp;
 
-	if (switch_event_create_subclass(event, 0, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create_subclass(event, SWITCH_EVENT_CLONE, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 
