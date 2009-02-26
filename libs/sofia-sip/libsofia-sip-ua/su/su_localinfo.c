@@ -96,8 +96,7 @@ static int localinfo6(su_localinfo_t const *, su_localinfo_t **);
 #endif
 
 static int li_scope4(uint32_t ip4);
-
-#ifdef SU_HAVE_IN6
+#if SU_HAVE_IN6
 static int li_scope6(struct in6_addr const *ip6);
 #endif
 
@@ -632,6 +631,9 @@ int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
     struct ifreq ifreq[1];
     int scope, if_index, flags = 0, gni_flags = 0;
     char *if_name;
+#if SU_HAVE_IN6
+    su_sockaddr_t su2[1];
+#endif
 
 #if SA_LEN
     if (ifr->ifr_addr.sa_len > sizeof(ifr->ifr_addr))
@@ -749,7 +751,6 @@ int localinfo4(su_localinfo_t const *hints, su_localinfo_t **rresult)
 
 #if SU_HAVE_IN6
     if (su_xtra) {
-      su_sockaddr_t su2[1];
       /* Map IPv4 address to IPv6 address */
       memset(su2, 0, sizeof(*su2));
       su2->su_family = AF_INET6;
