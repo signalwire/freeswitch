@@ -74,6 +74,7 @@ PRJ_EXPORTS
 ../../libsofia-sip-ua/soa/sofia-sip/soa_session.h \epoc32\include\osextensions\sofia-sip\soa_session.h
 ../../libsofia-sip-ua/soa/sofia-sip/soa_tag.h \epoc32\include\osextensions\sofia-sip\soa_tag.h
 ../../libsofia-sip-ua/sresolv/sofia-sip/sresolv.h \epoc32\include\osextensions\sofia-sip\sresolv.h
+../../libsofia-sip-ua/sresolv/sofia-sip/sres_sip.h \epoc32\include\osextensions\sofia-sip\sres_sip.h
 ../../libsofia-sip-ua/sresolv/sofia-resolv/sres.h \epoc32\include\osextensions\sofia-resolv/sres.h
 ../../libsofia-sip-ua/sresolv/sofia-resolv/sres_async.h \epoc32\include\osextensions\sofia-resolv/sres_async.h
 ../../libsofia-sip-ua/sresolv/sofia-resolv/sres_cache.h \epoc32\include\osextensions\sofia-resolv/sres_cache.h

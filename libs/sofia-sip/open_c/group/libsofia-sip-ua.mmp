@@ -222,6 +222,7 @@ SOURCE          sres.c
 SOURCE          sres_cache.c
 SOURCE          sres_blocking.c
 SOURCE          sresolv.c
+SOURCE          sres_sip.c
 
 SOURCEPATH 			..\..\libsofia-sip-ua\stun
 
