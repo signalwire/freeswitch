@@ -57,6 +57,7 @@ struct switch_ivr_menu {
 	struct switch_ivr_menu_action *actions;
 	struct switch_ivr_menu *next;
 	switch_memory_pool_t *pool;
+	int stack_count;
 };
 
 struct switch_ivr_menu_action {
@@ -207,6 +208,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t ** new_me
 		switch_set_flag(menu, SWITCH_IVR_MENU_FLAG_STACK);
 	}
 
+	menu->buf = switch_core_alloc(menu->pool, 1024);
+	
 	*new_menu = menu;
 
 	return SWITCH_STATUS_SUCCESS;
@@ -263,15 +266,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t 
 	return SWITCH_STATUS_MEMERR;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t * stack)
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t *stack)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	if (stack != NULL && stack->pool != NULL) {
 		if (switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_STACK)
 			&& switch_test_flag(stack, SWITCH_IVR_MENU_FLAG_FREEPOOL)) {
-				switch_memory_pool_t *pool = stack->pool;
-				status = switch_core_destroy_memory_pool(&pool);
+			switch_memory_pool_t *pool = stack->pool;
+			status = switch_core_destroy_memory_pool(&pool);
 		} else {
 			status = SWITCH_STATUS_SUCCESS;
 		}
@@ -363,7 +366,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t * stack, char *name, void *obj)
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t *stack, char *name, void *obj)
 {
 	int reps = 0, errs = 0, timeouts = 0, match = 0, running = 1;
 	char *greeting_sound = NULL, *aptr = NULL;
@@ -373,10 +376,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 	switch_ivr_menu_t *menu;
 	switch_channel_t *channel;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
+	if (++stack->stack_count > 12) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Too many levels of recursion.\n");
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
+	}
 
 	if (!session || !stack || switch_strlen_zero(name)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid menu context\n");
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	channel = switch_core_session_get_channel(session);
@@ -384,12 +392,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 
 	if (!(menu = switch_ivr_menu_find(stack, name))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Menu!\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if (!(menu->buf = malloc(menu->inlen + 1))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Memory!\n");
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
 	if(!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
@@ -480,8 +483,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 						status = switch_ivr_play_file(session, NULL, aptr, NULL);
 						break;
 					case SWITCH_IVR_ACTION_EXECMENU:
-						reps = -1;
-						status = switch_ivr_menu_execute(session, stack, aptr, obj);
+						if (!strcmp(aptr, menu->name)) {
+							status = SWITCH_STATUS_SUCCESS;
+						} else {
+							reps = -1;
+							status = switch_ivr_menu_execute(session, stack, aptr, obj);
+						}
 						break;
 					case SWITCH_IVR_ACTION_EXECAPP:
 						{
@@ -552,12 +559,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit-sound '%s'\n", menu->exit_sound);
-	if (!switch_strlen_zero(menu->exit_sound)) {
-		status = play_and_collect(session, menu, menu->exit_sound, 0);
+	if (stack->stack_count == 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "exit-sound '%s'\n", menu->exit_sound);
+		if (!switch_strlen_zero(menu->exit_sound)) {
+			status = play_and_collect(session, menu, menu->exit_sound, 0);
+		}
 	}
 
-	switch_safe_free(menu->buf);
+ end:
+	
+	stack->stack_count--;
 
 	return status;
 }
