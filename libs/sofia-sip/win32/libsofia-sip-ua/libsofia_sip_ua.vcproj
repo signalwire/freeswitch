@@ -2298,6 +2298,28 @@
 					</FileConfiguration>
 				</File>
 				<File
+					RelativePath="..\..\libsofia-sip-ua\sresolv\sres_sip.c"
+					>
+					<FileConfiguration
+						Name="Debug|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+					<FileConfiguration
+						Name="Release|Win32"
+						>
+						<Tool
+							Name="VCCLCompilerTool"
+							AdditionalIncludeDirectories=""
+							PreprocessorDefinitions=""
+						/>
+					</FileConfiguration>
+				</File>
+				<File
 					RelativePath="..\..\libsofia-sip-ua\sresolv\sresolv.c"
 					>
 					<FileConfiguration
@@ -4278,6 +4300,11 @@
 				</File>
 				<File
 					RelativePath="..\..\libsofia-sip-ua\sresolv\sofia-sip\sresolv.h"
+					>
+				</File>
+				</File>
+				<File
+					RelativePath="..\..\libsofia-sip-ua\sresolv\sofia-sip\sres_sip.h"
 					>
 				</File>
 			</Filter>

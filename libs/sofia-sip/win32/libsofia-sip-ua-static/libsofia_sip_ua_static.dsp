@@ -515,6 +515,10 @@ SOURCE="..\..\libsofia-sip-ua\sresolv\sres_cache.c"
 
 SOURCE="..\..\libsofia-sip-ua\sresolv\sresolv.c"
 # End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\sresolv\sres_sip.c"
+# End Source File
 # End Group
 # Begin Group "nea"
 
@@ -1246,6 +1250,10 @@ SOURCE="..\..\libsofia-sip-ua\sresolv\sofia-resolv\sres_record.h"
 # Begin Source File
 
 SOURCE="..\..\libsofia-sip-ua\sresolv\sofia-sip\sresolv.h"
+# End Source File
+# Begin Source File
+
+SOURCE="..\..\libsofia-sip-ua\sresolv\sofia-sip\sres_sip.h"
 # End Source File
 # End Group
 # Begin Group "nea headers"
