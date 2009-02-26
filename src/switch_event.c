@@ -810,7 +810,7 @@ SWITCH_DECLARE(void) switch_event_destroy(switch_event_t **event)
 
 SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_event_t *todup)
 {
-	switch_event_header_t *header, *hp, *hp2, *last = NULL;
+	switch_event_header_t *hp, *hp2;
 
 	if (switch_event_create_subclass(event, todup->event_id, todup->subclass_name) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
@@ -825,27 +825,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 	hp2 = (*event)->headers;
 
 	for (hp = todup->headers; hp; hp = hp->next) {
-		void *pop;
-
-		if (switch_queue_trypop(EVENT_HEADER_RECYCLE_QUEUE, &pop) == SWITCH_STATUS_SUCCESS) {
-			header = (switch_event_header_t *) pop;
-		} else {
-			header = ALLOC(sizeof(*header));
-			switch_assert(header);
-		}
-
-		memset(header, 0, sizeof(*header));
-
-		header->name = DUP(hp->name);
-		header->value = DUP(hp->value);
-
-		if (last) {
-			last->next = header;
-		} else {
-			(*event)->headers = header;
-		}
-
-		(*event)->last_header = last = header;
+		switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, hp->name, hp->value);
 	}
 
 	if (todup->body) {

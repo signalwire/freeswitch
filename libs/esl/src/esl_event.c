@@ -389,7 +389,7 @@ ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 
 ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 {
-	esl_event_header_t *header, *hp, *hp2, *last = NULL;
+	esl_event_header_t *hp, *hp2;
 
 	if (esl_event_create_subclass(event, todup->event_id, todup->subclass_name) != ESL_SUCCESS) {
 		return ESL_FAIL;
@@ -404,21 +404,7 @@ ESL_DECLARE(esl_status_t) esl_event_dup(esl_event_t **event, esl_event_t *todup)
 	hp2 = (*event)->headers;
 
 	for (hp = todup->headers; hp; hp = hp->next) {
-		header = ALLOC(sizeof(*header));
-		esl_assert(header);
-
-		memset(header, 0, sizeof(*header));
-
-		header->name = DUP(hp->name);
-		header->value = DUP(hp->value);
-
-		if (last) {
-			last->next = header;
-		} else {
-			(*event)->headers = header;
-		}
-
-		(*event)->last_header = last = header;
+		esl_event_add_header_string(*event, ESL_STACK_BOTTOM, hp->name, hp->value);
 	}
 
 	if (todup->body) {

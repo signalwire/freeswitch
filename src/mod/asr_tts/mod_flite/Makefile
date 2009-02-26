@@ -5,7 +5,7 @@ FLITE_A=$(FLITE_LIBDIR)/libflite_cmu_us_awb.a \
 	$(FLITE_LIBDIR)/libflite_cmu_us_kal.a \
 	$(FLITE_LIBDIR)/libflite_cmu_us_rms.a \
 	$(FLITE_LIBDIR)/libflite_cmu_us_slt.a \
-	$(FLITE_LIBDIR)/libflite_cmulex.a $(FLITE_LIBDIR)/libflite_usenglish.a $(FLITE_LIBDIR)/libflite.a -lm
+	$(FLITE_LIBDIR)/libflite_cmulex.a $(FLITE_LIBDIR)/libflite_usenglish.a $(FLITE_LIBDIR)/libflite.a -lm -lasound
 
 LOCAL_CFLAGS=-I$(switch_srcdir)/libs/$(FLITE)/include
 LOCAL_LIBADD=$(FLITE_A)

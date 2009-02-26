@@ -446,6 +446,8 @@ switch_status_t FSManager::ReadConfig(int reload)
         }
     }
 
+    switch_event_destroy(&params);
+
     if (xml)
         switch_xml_free(xml);
 
