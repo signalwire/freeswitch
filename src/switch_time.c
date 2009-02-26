@@ -99,11 +99,11 @@ static void do_sleep(switch_interval_time_t t)
 #endif
 
 #if defined(DARWIN)
-    struct timespec ts;
-    ts.tv_sec = t / APR_USEC_PER_SEC;
-    ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
+	struct timespec ts;
+	ts.tv_sec = t / APR_USEC_PER_SEC;
+	ts.tv_nsec = (t % APR_USEC_PER_SEC) * 1000;
 	
-    nanosleep(&ts, NULL);
+	nanosleep(&ts, NULL);
 	sched_yield();
 #else
 	apr_sleep(t);
@@ -669,12 +669,12 @@ SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_t
 {
 	struct tm xtm = { 0 };
 	const char *tz_name = tz;
-    const char *tzdef;
+	const char *tzdef;
 	time_t timep;
 	
 	if (!thetime) {
-        thetime = switch_micro_time_now();
-    }
+		thetime = switch_micro_time_now();
+	}
 
 	timep =  (thetime) / (int64_t) (1000000);
 
@@ -1648,14 +1648,14 @@ static void tztime(const time_t * const timep, const char *tzstring, struct tm *
 	register const struct ttinfo 	*ttisp;
 
 	if ( tzstring == NULL )
-    	        tzstring = gmt;
+		tzstring = gmt;
 
 	tzptr = (struct state *) malloc(sizeof (struct state));
 	sp = tzptr;
 
 	if (tzptr != NULL) 
 	{
-    
+	
 		memset(tzptr, 0, sizeof(struct state));
 
 		(void) tzparse(tzstring, tzptr, FALSE);
@@ -1676,7 +1676,7 @@ static void tztime(const time_t * const timep, const char *tzstring, struct tm *
 		}
 		ttisp = &sp->ttis[i];
 
-    		/*
+		/*
 		    To get (wrong) behavior that's compatible with System V Release 2.0
 		    you'd replace the statement below with
 		    t += ttisp->tt_gmtoff;
