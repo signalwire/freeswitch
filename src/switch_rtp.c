@@ -1766,6 +1766,7 @@ SWITCH_DECLARE(switch_size_t) switch_rtp_dequeue_dtmf(switch_rtp_t *rtp_session,
 		*dtmf = *_dtmf;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "RTP RECV DTMF %c:%d\n", dtmf->digit, dtmf->duration);
 		bytes++;
+		free(pop);
 	}
 	switch_mutex_unlock(rtp_session->dtmf_data.dtmf_mutex);
 
