@@ -31,16 +31,16 @@
  * switch_core_memory.c -- Main Core Library (memory management)
  *
  */
-//#define DEBUG_ALLOC
-//#define DEBUG_ALLOC2
-//#define DESTROY_POOLS
-#define PER_POOL_LOCK
-//#define INSTANTLY_DESTROY_POOLS
 
 #include <switch.h>
 #include "private/switch_core_pvt.h"
+
+//#define DEBUG_ALLOC
+//#define DEBUG_ALLOC2
+//#define DESTROY_POOLS
+//#define INSTANTLY_DESTROY_POOLS
 /*#define LOCK_MORE*/
-/*#define PER_POOL_LOCK 1*/
+#define PER_POOL_LOCK 1
 
 static struct {
 	switch_mutex_t *mem_lock;
