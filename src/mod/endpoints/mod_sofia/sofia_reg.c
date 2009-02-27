@@ -866,7 +866,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (auth_res != AUTH_OK && !stale) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s for [%s@%s]\n", forbidden ? "forbidden" : "challenge", to_user, to_host);
+			if (profile->debug) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s for [%s@%s]\n", forbidden ? "forbidden" : "challenge", to_user, to_host);
+			}
 			if (auth_res == AUTH_FORBIDDEN) {
 				nua_respond(nh, SIP_403_FORBIDDEN, NUTAG_WITH_THIS(nua), TAG_END());
 			} else {
