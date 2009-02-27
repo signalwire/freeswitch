@@ -1271,6 +1271,10 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	acs->ack = 1;
 	
 	SWITCH_STANDARD_STREAM(stream);
+	
+	if (!strcasecmp(acs->api_cmd, "unload") || !strcasecmp(acs->arg, "mod_event_socket")) {
+		
+	}
 
 	if ((status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
 		reply = stream.data;
@@ -1351,7 +1355,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	
 	*reply = '\0';
 
-	if (switch_stristr("unload mod_event_socket", cmd)) {
+	if (switch_stristr("unload", cmd) && switch_stristr("mod_event_socket", cmd)) {
 		cmd = cheat;
 	}
 
