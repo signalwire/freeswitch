@@ -712,7 +712,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
 
-	if (!handle->connected) {
+	if (!handle->connected || !handle || handle->sock == -1) {
 		return ESL_FAIL;
 	}
 
