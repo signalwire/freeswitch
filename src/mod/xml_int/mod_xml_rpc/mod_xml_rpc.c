@@ -453,6 +453,7 @@ abyss_bool handler_hook(TSession * r)
 	char *path_info = NULL;
 	abyss_bool ret = TRUE;
 	int html = 0, text = 0, xml = 0;
+	const char *api_str;
 
 	stream.data = r;
 	stream.write_function = http_stream_write;
@@ -681,8 +682,14 @@ abyss_bool handler_hook(TSession * r)
 		ConnWrite(r->conn, "\r\n", 2);
 	}
 
+	if (switch_stristr("unload", command) && switch_stristr("mod_xml_rpc", r->requestInfo.query)) {
+		command = "bgapi";
+		api_str = "unload mod_xml_rpc";
+	} else {
+		api_str = r->requestInfo.query;
+	}
 
-	if (switch_api_execute(command, r->requestInfo.query, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
+	if (switch_api_execute(command, api_str, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		ResponseStatus(r, 200);
 		r->responseStarted = TRUE;
 		//r->done = TRUE;
@@ -711,6 +718,8 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	char *command = NULL, *arg = NULL;
 	switch_stream_handle_t stream = { 0 };
 	xmlrpc_value *val = NULL;
+	const char *x_command = "bgapi", x_arg= "unload mod_xml_rpc";
+
 
 	/* Parse our argument array. */
 	xmlrpc_decompose_value(envP, paramArrayP, "(ss)", &command, &arg);
@@ -718,6 +727,13 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	if (envP->fault_occurred) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Request!\n");
 		return NULL;
+	}
+
+	if (switch_stristr("unload", command) && switch_stristr("mod_xml_rpc", arg)) {
+		switch_safe_free(command);
+		command = x_command;
+		switch_safe_free(arg);
+		arg = x_arg;
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
@@ -730,8 +746,14 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	}
 
 	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
-	switch_safe_free(command);
-	switch_safe_free(arg);
+	if (command != x_command) {
+		switch_safe_free(command);
+	}
+
+	if (arg != x_arg) {
+		switch_safe_free(arg);
+	}
+
 	return val;
 }
 

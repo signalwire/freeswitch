@@ -906,7 +906,7 @@ SWITCH_STANDARD_API(event_sink_function)
 		char *api_command = switch_event_get_header(stream->param_event, "fsapi-command");
 		char *api_args = switch_event_get_header(stream->param_event, "fsapi-args");
 		switch_event_t *event, *oevent;
-
+		
 		if (!(api_command)) {
 			stream->write_function(stream, "<data><reply type=\"error\">INVALID API COMMAND!</reply></data>\n");
 			goto end;
@@ -916,6 +916,12 @@ SWITCH_STANDARD_API(event_sink_function)
 		switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 		oevent = stream->param_event;
 		stream->param_event = event;
+
+		if (!strcasecmp(api_command, "unload") && !strcasecmp(api_args, "mod_event_socket")) {
+			api_command = "bgapi";
+			api_args = "unload mod_event_socket";
+		}
+
 		switch_api_execute(api_command, api_args, NULL, stream);
 		stream->param_event = oevent;
 		stream->write_function(stream, " </api-command>\n</data>");
@@ -1341,8 +1347,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *cmd = switch_event_get_header(*event, "command");
-
+	char cheat[] = "api bgapi unload mod_event_socket";
+	
 	*reply = '\0';
+
+	if (switch_stristr("unload mod_event_socket", cmd)) {
+		cmd = cheat;
+	}
 
 	if (!strncasecmp(cmd, "exit", 4)) {
 		switch_clear_flag_locked(listener, LFLAG_RUNNING);
