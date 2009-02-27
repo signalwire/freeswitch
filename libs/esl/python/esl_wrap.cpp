@@ -2515,11 +2515,11 @@ static swig_module_info swig_module = {swig_types, 5, 0, 0, 0, 0};
 #endif
 
 /*-----------------------------------------------
-              @(target):= _ESL.so
+              @(target):= __ESL.so
   ------------------------------------------------*/
-#define SWIG_init    init_ESL
+#define SWIG_init    init__ESL
 
-#define SWIG_name    "_ESL"
+#define SWIG_name    "__ESL"
 
 #define SWIGVERSION 0x010335 
 #define SWIG_VERSION SWIGVERSION
