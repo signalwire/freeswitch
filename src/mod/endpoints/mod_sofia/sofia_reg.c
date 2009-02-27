@@ -1552,6 +1552,13 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 		ret = AUTH_FORBIDDEN;
 		goto end;
+	} else {
+		const char *type = switch_xml_attr(user, "type");
+		if (type && !strcasecmp(type, "pointer")) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cant register a pointer.\n");
+			ret = AUTH_FORBIDDEN;
+			goto end;
+		}
 	}
 	
 	if (!(mailbox = (char *) switch_xml_attr(user, "mailbox"))) {
