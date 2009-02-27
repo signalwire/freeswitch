@@ -920,6 +920,9 @@ SWITCH_STANDARD_API(event_sink_function)
 		if (!strcasecmp(api_command, "unload") && !strcasecmp(api_args, "mod_event_socket")) {
 			api_command = "bgapi";
 			api_args = "unload mod_event_socket";
+		} else if (!strcasecmp(api_command, "reload") && !strcasecmp(api_args, "mod_event_socket")) {
+			api_command = "bgapi";
+			api_args = "reload mod_event_socket";
 		}
 
 		switch_api_execute(api_command, api_args, NULL, stream);
@@ -1351,13 +1354,16 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *cmd = switch_event_get_header(*event, "command");
-	char cheat[] = "api bgapi unload mod_event_socket";
+	char unload_cheat[] = "api bgapi unload mod_event_socket";
+	char reload_cheat[] = "api bgapi reload mod_event_socket";
 	
 	*reply = '\0';
 
 	if (switch_stristr("unload", cmd) && switch_stristr("mod_event_socket", cmd)) {
-		cmd = cheat;
-	}
+		cmd = unload_cheat;
+	} else if (switch_stristr("reload", cmd) && switch_stristr("mod_event_socket", cmd)) {
+		cmd = reload_cheat;
+	} 
 
 	if (!strncasecmp(cmd, "exit", 4)) {
 		switch_clear_flag_locked(listener, LFLAG_RUNNING);

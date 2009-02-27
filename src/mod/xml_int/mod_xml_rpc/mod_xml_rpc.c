@@ -685,6 +685,9 @@ abyss_bool handler_hook(TSession * r)
 	if (switch_stristr("unload", command) && switch_stristr("mod_xml_rpc", r->requestInfo.query)) {
 		command = "bgapi";
 		api_str = "unload mod_xml_rpc";
+	} else if (switch_stristr("reload", command) && switch_stristr("mod_xml_rpc", r->requestInfo.query)) {
+		command = "bgapi";
+		api_str = "reload mod_xml_rpc";
 	} else {
 		api_str = r->requestInfo.query;
 	}
@@ -719,6 +722,7 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	switch_stream_handle_t stream = { 0 };
 	xmlrpc_value *val = NULL;
 	const char *x_command = "bgapi", x_arg= "unload mod_xml_rpc";
+	switch_bool_t freed = 0;
 
 
 	/* Parse our argument array. */
@@ -731,9 +735,16 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 
 	if (switch_stristr("unload", command) && switch_stristr("mod_xml_rpc", arg)) {
 		switch_safe_free(command);
-		command = x_command;
 		switch_safe_free(arg);
-		arg = x_arg;
+		freed = 1;
+		command = "bgapi";
+		arg = "unload mod_xml_rpc";
+	} else 	if (switch_stristr("reload", command) && switch_stristr("mod_xml_rpc", arg)) {
+		switch_safe_free(command);
+		switch_safe_free(arg);
+		freed = 1;
+		command = "bgapi";
+		arg = "reload mod_xml_rpc";
 	}
 
 	SWITCH_STANDARD_STREAM(stream);
@@ -746,11 +757,8 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	}
 
 	/* xmlrpc-c requires us to free memory it malloced from xmlrpc_decompose_value */
-	if (command != x_command) {
+	if (!freed) {
 		switch_safe_free(command);
-	}
-
-	if (arg != x_arg) {
 		switch_safe_free(arg);
 	}
 
