@@ -313,12 +313,21 @@ struct ast_channel *skypiax_request(const char *type, int format, void *data, in
     return NULL;
   }
 
+char interface[256];
+int i;
+memset(interface, '\0', sizeof(interface));
+
+for (i=0; i<sizeof(interface); i++){
+	if(name[i] == '/')
+		break;
+	interface[i]=name[i];
+}
   /* lock the interfaces' list */
   LOKKA(&skypiax_iflock);
   /* make a pointer to the first interface in the interfaces list */
   p = skypiax_iflist;
 
-  if (strncmp("ANY", name, 3) == 0) {
+  if (strcmp("ANY", interface) == 0) {
     /* we've been asked for the "ANY" interface, let's find the first idle interface */
     DEBUGA_SKYPE("Finding one available skype interface\n", SKYPIAX_P_LOG);
     p = find_available_skypiax_interface();
@@ -338,9 +347,9 @@ struct ast_channel *skypiax_request(const char *type, int format, void *data, in
 
   /* Search for the requested interface and verify if is unowned and format compatible */
   while (p && !found) {
-    size_t length = strlen(p->name);
+    //size_t length = strlen(p->name);
     /* is this the requested interface? */
-    if (strncmp(name, p->name, length) == 0) {
+    if (strcmp(interface, p->name) == 0) {
       /* is the requested format supported by this interface? */
       if ((format & AST_FORMAT_SLINEAR) != 0) {
         /* is this interface unowned? */
