@@ -100,7 +100,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
         where = strsep(stringp, " ");
         strncpy(id, where, sizeof(id) - 1);
         if (!strcasecmp(id, tech_pvt->skype_user)) {
-          tech_pvt->SkypiaxHandles.api_connected = 1;
+          tech_pvt->SkypiaxHandles.currentuserhandle = 1;
           DEBUGA_SKYPE
             ("Skype MSG: message: %s, currentuserhandle: %s, cuh: %s, skype_user: %s!\n",
              SKYPIAX_P_LOG, message, obj, id, tech_pvt->skype_user);
@@ -909,6 +909,8 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
   lReturnCode = 0;
   fIssueDefProc = 0;
   tech_pvt = (private_t *) GetWindowLong(hWindow, GWL_USERDATA);
+  if(!running)
+	  return lReturnCode;
   switch (uiMessage) {
   case WM_CREATE:
     tech_pvt = (private_t *) ((LPCREATESTRUCT) ulParam)->lpCreateParams;
@@ -945,8 +947,9 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
           tech_pvt->SkypiaxHandles.win32_uiGlobal_MsgID_SkypeControlAPIAttach) {
         switch (ulParam) {
         case SKYPECONTROLAPI_ATTACH_SUCCESS:
-          if (!tech_pvt->SkypiaxHandles.api_connected) {
+          if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             DEBUGA_SKYPE("\n\n\tConnected to Skype API!\n", SKYPIAX_P_LOG);
+            tech_pvt->SkypiaxHandles.api_connected = 1;
             tech_pvt->SkypiaxHandles.win32_hGlobal_SkypeAPIWindowHandle = (HWND) uiParam;
             tech_pvt->SkypiaxHandles.win32_hGlobal_SkypeAPIWindowHandle =
               tech_pvt->SkypiaxHandles.win32_hGlobal_SkypeAPIWindowHandle;
@@ -957,7 +960,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
             ("\n\n\tIf I do not (almost) immediately connect to Skype API,\n\tplease give the Skype client authorization to be connected \n\tby Asterisk and to not ask you again.\n\n",
              SKYPIAX_P_LOG);
           skypiax_sleep(5000);
-          if (!tech_pvt->SkypiaxHandles.api_connected) {
+          if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             SendMessage(HWND_BROADCAST,
                         tech_pvt->SkypiaxHandles.
                         win32_uiGlobal_MsgID_SkypeControlAPIDiscover,
@@ -974,7 +977,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
         case SKYPECONTROLAPI_ATTACH_API_AVAILABLE:
           DEBUGA_SKYPE("Skype API available\n", SKYPIAX_P_LOG);
           skypiax_sleep(5000);
-          if (!tech_pvt->SkypiaxHandles.api_connected) {
+          if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             SendMessage(HWND_BROADCAST,
                         tech_pvt->SkypiaxHandles.
                         win32_uiGlobal_MsgID_SkypeControlAPIDiscover,
@@ -1234,12 +1237,14 @@ int skypiax_present(struct SkypiaxHandles *SkypiaxHandles)
   if (status != Success || format_ret != 32 || nitems_ret != 1) {
     SkypiaxHandles->skype_win = (Window) - 1;
     DEBUGA_SKYPE("Skype instance not found\n", SKYPIAX_P_LOG);
+    tech_pvt->SkypiaxHandles.api_connected = 0;
     return 0;
   }
 
   SkypiaxHandles->skype_win = *(const unsigned long *) prop & 0xffffffff;
   DEBUGA_SKYPE("Skype instance found with id #%d\n", SKYPIAX_P_LOG,
                (unsigned int) SkypiaxHandles->skype_win);
+  tech_pvt->SkypiaxHandles.api_connected = 1;
   return 1;
 }
 

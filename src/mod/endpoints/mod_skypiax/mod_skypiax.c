@@ -940,15 +940,32 @@ static switch_status_t load_config(void)
 
         skypiax_audio_init(&globals.SKYPIAX_INTERFACES[interface_id]);
 
+        NOTICA("WAITING max 6 seconds to connect to SKYPE API for interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
         i = 0;
-        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 60000) {    // 60sec FIXME
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 400) {    // 6sec on windows (why ????)  FIXME
+          //DEBUGA_SKYPE("interface_id=%d, times=%d\n", SKYPIAX_P_LOG, interface_id, i);
           switch_sleep(1000);
           i++;
         }
         if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected) {
-          NOTICA("STARTED interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+          NOTICA("SKYPE API connected for interface_id=%d, waiting max 60 seconds for CURRENTUSERHANDLE==%s\n", SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
         } else {
-          ERRORA("FAILED to start interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+          ERRORA("SKYPE API FAILED to connect for interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+          running = 0;
+          return SWITCH_STATUS_FALSE;
+        }
+
+        i = 0;
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle == 0 && running && i < 4000) {    // 60sec on windows (why ????)  FIXME
+          //DEBUGA_SKYPE("interface_id=%d, times=%d\n", SKYPIAX_P_LOG, interface_id, i);
+          switch_sleep(1000);
+          i++;
+        }
+        if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle) {
+          NOTICA("CURRENTUSERHANDLE ok (%s), interface_id=%d STARTED\n", SKYPIAX_P_LOG, globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface_id);
+        } else {
+          ERRORA("FAILED to find CURRENTUSERHANDLE=%s, FAILED to start interface_id=%d\n", SKYPIAX_P_LOG, globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface_id);
+          running = 0;
           return SWITCH_STATUS_FALSE;
         }
 
@@ -995,8 +1012,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 
   running = 1;
 
-  if (load_config() != SWITCH_STATUS_SUCCESS)
+  if (load_config() != SWITCH_STATUS_SUCCESS) {
+    running = 0;
     return SWITCH_STATUS_FALSE;
+  }
 
   *module_interface = switch_loadable_module_create_module_interface(pool, modname);
   skypiax_endpoint_interface =
@@ -1039,6 +1058,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
         DEBUGA_SKYPE
           ("got FALSE here, thread probably was already dead. GetLastError returned: %d\n",
            SKYPIAX_P_LOG, GetLastError());
+            globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread=NULL;
       }
 #else
       XEvent e;
@@ -1057,9 +1077,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
       XSync(tech_pvt->SkypiaxHandles.disp, False);
 #endif
     }
-    while (x) {
+    while (x) {//FIXME 2 seconds?
       x--;
-      switch_yield(20000);
+      switch_yield(20000); 
     }
     if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
       switch_thread_join(&status,

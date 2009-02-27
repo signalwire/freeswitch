@@ -136,6 +136,7 @@ struct SkypiaxHandles {
   Window skype_win;
   Display *disp;
   Window win;
+  int currentuserhandle;
   int api_connected;
   int fdesc[2];
 };
@@ -148,6 +149,7 @@ struct SkypiaxHandles {
   char win32_acInit_WindowClassName[128];
   UINT win32_uiGlobal_MsgID_SkypeControlAPIAttach;
   UINT win32_uiGlobal_MsgID_SkypeControlAPIDiscover;
+  int currentuserhandle;
   int api_connected;
   switch_file_t *fdesc[2];
 };
