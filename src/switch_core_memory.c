@@ -40,7 +40,9 @@
 //#define DESTROY_POOLS
 //#define INSTANTLY_DESTROY_POOLS
 /*#define LOCK_MORE*/
+#ifndef SWITCH_POOL_RECYCLE
 #define PER_POOL_LOCK 1
+#endif
 
 static struct {
 	switch_mutex_t *mem_lock;
