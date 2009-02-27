@@ -279,7 +279,9 @@ SWITCH_DECLARE(switch_status_t) switch_channel_queue_dtmf(switch_channel_t *chan
 		*dt = new_dtmf;
 
 		while (switch_queue_trypush(channel->dtmf_queue, dt) != SWITCH_STATUS_SUCCESS) {
-			switch_queue_trypop(channel->dtmf_queue, &pop);
+			if (switch_queue_trypop(channel->dtmf_queue, &pop) == SWITCH_STATUS_SUCCESS) {
+				free(pop);
+			}
 			if (++x > 100) {
 				status = SWITCH_STATUS_FALSE;
 				free(dt);
