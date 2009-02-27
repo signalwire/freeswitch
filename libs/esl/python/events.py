@@ -2,7 +2,6 @@
 
 import string
 import sys
-import pickle
 
 from ESL import *
 
