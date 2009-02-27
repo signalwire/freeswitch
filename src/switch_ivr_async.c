@@ -1133,7 +1133,7 @@ static switch_bool_t inband_dtmf_generate_callback(switch_media_bug_t *bug, void
 				}
 				pvt->ts.duration = duration;
 				teletone_run(&pvt->ts, buf);
-				switch_safe_free(pop);
+				free(pop);
 			}
 
 			if (switch_buffer_inuse(pvt->audio_buffer) && (bytes = switch_buffer_read(pvt->audio_buffer, frame->data, frame->datalen))) {
