@@ -1131,6 +1131,7 @@ int X11_errors_handler(Display * dpy, XErrorEvent * err)
 
   xerror = err->error_code;
   ERRORA("Received error code %d from X Server\n\n", SKYPIAX_P_LOG, xerror);
+  running=0;
   return 0;                     /*  ignore the error */
 }
 
@@ -1237,14 +1238,15 @@ int skypiax_present(struct SkypiaxHandles *SkypiaxHandles)
   if (status != Success || format_ret != 32 || nitems_ret != 1) {
     SkypiaxHandles->skype_win = (Window) - 1;
     DEBUGA_SKYPE("Skype instance not found\n", SKYPIAX_P_LOG);
-    tech_pvt->SkypiaxHandles.api_connected = 0;
+    running =0;
+    SkypiaxHandles->api_connected = 0;
     return 0;
   }
 
   SkypiaxHandles->skype_win = *(const unsigned long *) prop & 0xffffffff;
   DEBUGA_SKYPE("Skype instance found with id #%d\n", SKYPIAX_P_LOG,
                (unsigned int) SkypiaxHandles->skype_win);
-  tech_pvt->SkypiaxHandles.api_connected = 1;
+  SkypiaxHandles->api_connected = 1;
   return 1;
 }
 
