@@ -234,6 +234,18 @@ static char vm_pref_sql[] =
 	"   password        VARCHAR(255)\n" 
 	");\n";
 
+static char *vm_index_list[] = {
+	"create index voicemail_msgs_idx1 on voicemail_msgs(created_epoch)",
+	"create index voicemail_msgs_idx2 on voicemail_msgs(username)",
+	"create index voicemail_msgs_idx3 on voicemail_msgs(domain)",
+	"create index voicemail_msgs_idx4 on voicemail_msgs(uuid)",
+	"create index voicemail_msgs_idx5 on voicemail_msgs(in_folder)",
+	"create index voicemail_msgs_idx6 on voicemail_msgs(read_flags)",
+	"create index voicemail_prefs_idx1 on voicemail_prefs(username)",
+	"create index voicemail_prefs_idx2 on voicemail_prefs(domain)",
+	NULL
+};
+
 static switch_status_t load_config(void)
 {
 	char *cf = "voicemail.conf";
@@ -323,6 +335,7 @@ static switch_status_t load_config(void)
 
 		switch_core_db_t *db;
 		uint32_t timeout = 10000, max_login_attempts = 3, max_record_len = 300, min_record_len = 3, max_retries = 3;
+		int x;
 
 		db = NULL;
 
@@ -671,6 +684,11 @@ static switch_status_t load_config(void)
 					}
 					switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_data", NULL);
 				}
+
+				for (x = 0; vm_index_list[x]; x++) {
+					switch_odbc_handle_exec(profile->master_odbc, vm_index_list[x], NULL);
+				}
+
 #endif
 			} else {
 				if ((db = switch_core_db_open_file(profile->dbname))) {
@@ -705,6 +723,14 @@ static switch_status_t load_config(void)
 					switch_core_db_test_reactive(db, "select count(username) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
 					switch_core_db_test_reactive(db, "select count(password) from voicemail_prefs", NULL, 
 												 "alter table voicemail_prefs add password varchar(255)");
+
+					for (x = 0; vm_index_list[x]; x++) {
+						errmsg = NULL;
+						switch_core_db_exec(db, vm_index_list[x], NULL, NULL, &errmsg);
+						switch_safe_free(errmsg);
+					}
+
+
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
 					continue;
