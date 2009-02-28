@@ -948,7 +948,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
         switch (ulParam) {
         case SKYPECONTROLAPI_ATTACH_SUCCESS:
           if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
-            DEBUGA_SKYPE("\n\n\tConnected to Skype API!\n", SKYPIAX_P_LOG);
+            //DEBUGA_SKYPE("\n\n\tConnected to Skype API!\n", SKYPIAX_P_LOG);
             tech_pvt->SkypiaxHandles.api_connected = 1;
             tech_pvt->SkypiaxHandles.win32_hGlobal_SkypeAPIWindowHandle = (HWND) uiParam;
             tech_pvt->SkypiaxHandles.win32_hGlobal_SkypeAPIWindowHandle =
@@ -956,9 +956,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
           }
           break;
         case SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION:
-          DEBUGA_SKYPE
-            ("\n\n\tIf I do not (almost) immediately connect to Skype API,\n\tplease give the Skype client authorization to be connected \n\tby Asterisk and to not ask you again.\n\n",
-             SKYPIAX_P_LOG);
+          //DEBUGA_SKYPE ("\n\n\tIf I do not (almost) immediately connect to Skype API,\n\tplease give the Skype client authorization to be connected \n\tby Asterisk and to not ask you again.\n\n", SKYPIAX_P_LOG);
           skypiax_sleep(5000);
           if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             SendMessage(HWND_BROADCAST,

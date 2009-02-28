@@ -916,7 +916,7 @@ static switch_status_t load_config(void)
         DEBUGA_SKYPE
           ("interface_id=%d globals.SKYPIAX_INTERFACES[interface_id].context=%s\n",
            SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].context);
-        NOTICA("STARTING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+        WARNINGA("STARTING interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
 
         switch_threadattr_create(&skypiax_api_thread_attr, skypiax_module_pool);
         switch_threadattr_stacksize_set(skypiax_api_thread_attr, SWITCH_THREAD_STACKSIZE);
@@ -940,31 +940,31 @@ static switch_status_t load_config(void)
 
         skypiax_audio_init(&globals.SKYPIAX_INTERFACES[interface_id]);
 
-        NOTICA("WAITING max 6 seconds to connect to SKYPE API for interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+        NOTICA("WAITING max 10 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d. NB: on XP will wait for much much more! (Vista OK)\n", SKYPIAX_P_LOG, interface_id);
         i = 0;
-        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 400) {    // 6sec on windows (why ????)  FIXME
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 10000) {    // 400 x 1000 is 6sec on windows XP but only 0.4 seconds on Vista  FIXME
           //DEBUGA_SKYPE("interface_id=%d, times=%d\n", SKYPIAX_P_LOG, interface_id, i);
           switch_sleep(1000);
           i++;
         }
         if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected) {
-          NOTICA("SKYPE API connected for interface_id=%d, waiting max 60 seconds for CURRENTUSERHANDLE==%s\n", SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
+          NOTICA("Found a running Skype client, connected to its SKYPE API for interface_id=%d, waiting max 60 seconds for CURRENTUSERHANDLE==%s. NB: on XP will wait for much much more! (Vista OK)\n", SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
         } else {
-          ERRORA("SKYPE API FAILED to connect for interface_id=%d\n", SKYPIAX_P_LOG, interface_id);
+          ERRORA("Failed to connect to a SKYPE API for interface_id=%d, no SKYPE client running, please (re)start Skype client. Skypiax exiting\n", SKYPIAX_P_LOG, interface_id);
           running = 0;
           return SWITCH_STATUS_FALSE;
         }
 
         i = 0;
-        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle == 0 && running && i < 4000) {    // 60sec on windows (why ????)  FIXME
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle == 0 && running && i < 60000) {    // 4000 * 1000 is 60sec on windows XP but 4seconds on Vista  FIXME
           //DEBUGA_SKYPE("interface_id=%d, times=%d\n", SKYPIAX_P_LOG, interface_id, i);
           switch_sleep(1000);
           i++;
         }
         if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle) {
-          NOTICA("CURRENTUSERHANDLE ok (%s), interface_id=%d STARTED\n", SKYPIAX_P_LOG, globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface_id);
+          WARNINGA("Interface_id=%d is now STARTED, the Skype client to which we are connected gave us the correct CURRENTUSERHANDLE (%s)\n", SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
         } else {
-          ERRORA("FAILED to find CURRENTUSERHANDLE=%s, FAILED to start interface_id=%d\n", SKYPIAX_P_LOG, globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface_id);
+          ERRORA("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypiax exiting now\n", SKYPIAX_P_LOG, globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
           running = 0;
           return SWITCH_STATUS_FALSE;
         }
