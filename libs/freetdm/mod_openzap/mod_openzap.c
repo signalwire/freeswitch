@@ -891,7 +891,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 
 	const char *dest = NULL;
 	char *data = NULL;
-	int span_id = 0, chan_id = 0;
+	int span_id = -1, chan_id = 0;
 	zap_channel_t *zchan = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	char name[128];
@@ -941,7 +941,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		dest = "";
 	}
 
-	if (!span_id && !switch_strlen_zero(span_name)) {
+	if (span_id == 0 && chan_id != 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Span 0 is used to pick the first available span, selecting a channel is not supported (and doesn't make sense)\n");
+        return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
+	}
+
+	if (span_id == -1 && !switch_strlen_zero(span_name)) {
 		zap_span_t *span;
 		zap_status_t zstatus = zap_span_find_by_name(span_name, &span);
 		if (zstatus == ZAP_SUCCESS && span) {
@@ -949,7 +954,7 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		}
 	}
 
-	if (!span_id) {
+	if (span_id == -1) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing span\n");
 		return SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
 	}
