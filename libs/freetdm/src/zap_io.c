@@ -914,7 +914,7 @@ zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, z
 				check->state == ZAP_CHANNEL_STATE_DOWN
 				) {
 
-				if (globals.spans[span_id]->channel_request) {
+				if (globals.spans[span_id] && globals.spans[span_id]->channel_request) {
 					status = globals.spans[span_id]->channel_request(globals.spans[span_id], i, direction, caller_data, zchan);
 					zap_mutex_unlock(span->mutex);
                     goto done;
