@@ -733,11 +733,11 @@ static zap_status_t zap_libpri_start(zap_span_t *span)
 
 static int str2node(char *node)
 {
-	if (!strcasecmp(node, "cpe"))
+	if (!strcasecmp(node, "cpe") || !strcasecmp(node, "user"))
 		return PRI_CPE;
-	if (!strcasecmp(node, "network"))
+	if (!strcasecmp(node, "network") || !strcasecmp(node, "net"))
 		return PRI_NETWORK;
-	return PRI_CPE;
+	return -1;
 }
 
 static int str2switch(char *swtype)
@@ -826,10 +826,16 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	
 	while((var = va_arg(ap, char *))) {
 		if (!strcasecmp(var, "node")) {
+			int node;
 			if (!(val = va_arg(ap, char *))) {
 				break;
 			}
-			isdn_data->node = str2node(val);
+			node = str2node(val);
+			if (-1 == node) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown node type %s, defaulting to CPE mode\n", val);
+				node = PRI_CPE;
+			}
+			isdn_data->node = node;
 		} else if (!strcasecmp(var, "switch")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
