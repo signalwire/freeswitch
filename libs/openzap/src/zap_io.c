@@ -1041,50 +1041,47 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 
 zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan)
 {
+	zap_channel_t *check;
 	zap_status_t status = ZAP_FAIL;
 
 	zap_mutex_lock(globals.mutex);
 
-	if (span_id < ZAP_MAX_SPANS_INTERFACE && chan_id < ZAP_MAX_CHANNELS_SPAN) {
-		zap_channel_t *check;
-		
-		if (span_id > globals.span_index || !globals.spans[span_id]) {
-			zap_log(ZAP_LOG_ERROR, "SPAN NOT DEFINED!\n");
-			*zchan = NULL;
-			goto done;
-		}
-
-		if (globals.spans[span_id]->channel_request) {
-			zap_log(ZAP_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
-			*zchan = NULL;
-			goto done;
-		}
-		
-		check = globals.spans[span_id]->channels[chan_id];
-
-		if (zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) || 
-			!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
-			*zchan = NULL;
-			goto done;
-		}
-		
-		status = ZAP_FAIL;
-
-		if (zap_test_flag(check, ZAP_CHANNEL_READY) && (!zap_test_flag(check, ZAP_CHANNEL_INUSE) || 
-														(check->type == ZAP_CHAN_TYPE_FXS && check->token_count == 1))) {
-			if (!zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
-				status = check->zio->open(check);
-				if (status == ZAP_SUCCESS) {
-					zap_set_flag(check, ZAP_CHANNEL_OPEN);
-				}
-			} else {
-				status = ZAP_SUCCESS;
-			}
-			zap_set_flag(check, ZAP_CHANNEL_INUSE);
-			*zchan = check;
-		}
-		zap_mutex_unlock(check->mutex);
+	if (span_id > globals.span_index  || chan_id >= ZAP_MAX_CHANNELS_SPAN || !globals.spans[span_id]) {
+		zap_log(ZAP_LOG_ERROR, "SPAN NOT DEFINED!\n");
+		*zchan = NULL;
+		goto done;		
 	}
+
+	if (globals.spans[span_id]->channel_request) {
+		zap_log(ZAP_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
+		*zchan = NULL;
+		goto done;
+	}
+	
+	check = globals.spans[span_id]->channels[chan_id];
+
+	if (zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) || 
+		!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
+		*zchan = NULL;
+		goto done;
+	}
+	
+	status = ZAP_FAIL;
+
+	if (zap_test_flag(check, ZAP_CHANNEL_READY) && (!zap_test_flag(check, ZAP_CHANNEL_INUSE) || 
+													(check->type == ZAP_CHAN_TYPE_FXS && check->token_count == 1))) {
+		if (!zap_test_flag(check, ZAP_CHANNEL_OPEN)) {
+			status = check->zio->open(check);
+			if (status == ZAP_SUCCESS) {
+				zap_set_flag(check, ZAP_CHANNEL_OPEN);
+			}
+		} else {
+			status = ZAP_SUCCESS;
+		}
+		zap_set_flag(check, ZAP_CHANNEL_INUSE);
+		*zchan = check;
+	}
+	zap_mutex_unlock(check->mutex);
 
 	done:
 	zap_mutex_unlock(globals.mutex);

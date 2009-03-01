@@ -832,7 +832,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 			}
 			node = str2node(val);
 			if (-1 == node) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unknown node type %s, defaulting to CPE mode\n", val);
+				zap_log(ZAP_LOG_ERROR, "Unknown node type %s, defaulting to CPE mode\n", val);
 				node = PRI_CPE;
 			}
 			isdn_data->node = node;
