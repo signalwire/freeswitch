@@ -99,6 +99,14 @@ class ESLevent {
 	function delHeader($header_name) {
 		return ESLevent_delHeader($this->_cPtr,$header_name);
 	}
+
+	function firstHeader() {
+		return ESLevent_firstHeader($this->_cPtr);
+	}
+
+	function nextHeader() {
+		return ESLevent_nextHeader($this->_cPtr);
+	}
 }
 
 class ESLconnection {

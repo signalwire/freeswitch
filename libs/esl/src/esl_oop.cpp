@@ -2,7 +2,7 @@
 #include <esl_oop.h>
 
 #define connection_construct_common() memset(&handle, 0, sizeof(handle)); last_event_obj = NULL
-#define event_construct_common() event = NULL; serialized_string = NULL; mine = 0
+#define event_construct_common() event = NULL; serialized_string = NULL; mine = 0; hp = NULL
 
 void eslSetLogLevel(int level)
 {
@@ -264,6 +264,26 @@ ESLevent::~ESLevent()
 	}
 }
 
+const char *ESLevent::nextHeader(void)
+{
+	const char *name = NULL;
+
+	if (hp) {
+		name = hp->name;
+		hp = hp->next;
+	}
+
+	return name;
+}
+
+const char *ESLevent::firstHeader(void)
+{
+	if (event) {
+		hp = event->headers;
+	}
+
+	return nextHeader();
+}
 
 const char *ESLevent::serialize(const char *format)
 {

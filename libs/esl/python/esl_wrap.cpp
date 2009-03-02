@@ -3469,6 +3469,50 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_ESLevent_firstHeader(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLevent_firstHeader",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_firstHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  result = (char *)(arg1)->firstHeader();
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_ESLevent_nextHeader(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLevent_nextHeader",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_nextHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  result = (char *)(arg1)->nextHeader();
+  resultobj = SWIG_FromCharPtr((const char *)result);
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *ESLevent_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
@@ -4174,6 +4218,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"ESLevent_addBody", _wrap_ESLevent_addBody, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_addHeader", _wrap_ESLevent_addHeader, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_delHeader", _wrap_ESLevent_delHeader, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_firstHeader", _wrap_ESLevent_firstHeader, METH_VARARGS, NULL},
+	 { (char *)"ESLevent_nextHeader", _wrap_ESLevent_nextHeader, METH_VARARGS, NULL},
 	 { (char *)"ESLevent_swigregister", ESLevent_swigregister, METH_VARARGS, NULL},
 	 { (char *)"new_ESLconnection", _wrap_new_ESLconnection, METH_VARARGS, NULL},
 	 { (char *)"delete_ESLconnection", _wrap_delete_ESLconnection, METH_VARARGS, NULL},

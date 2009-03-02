@@ -60,6 +60,8 @@ class ESLevent:
     def addBody(*args): return apply(__ESL.ESLevent_addBody, args)
     def addHeader(*args): return apply(__ESL.ESLevent_addHeader, args)
     def delHeader(*args): return apply(__ESL.ESLevent_delHeader, args)
+    def firstHeader(*args): return apply(__ESL.ESLevent_firstHeader, args)
+    def nextHeader(*args): return apply(__ESL.ESLevent_nextHeader, args)
 ESLevent_swigregister = __ESL.ESLevent_swigregister
 ESLevent_swigregister(ESLevent)
 

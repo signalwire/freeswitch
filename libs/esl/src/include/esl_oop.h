@@ -44,6 +44,8 @@ EXTERN_C
 
 
 class ESLevent {
+ private:
+	esl_event_header_t *hp;
  public:
 	esl_event_t *event;
 	char *serialized_string;
@@ -61,6 +63,8 @@ class ESLevent {
 	bool addBody(const char *value);
 	bool addHeader(const char *header_name, const char *value);
 	bool delHeader(const char *header_name);
+	const char *firstHeader(void);
+	const char *nextHeader(void);
 };
 
 

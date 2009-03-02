@@ -2504,6 +2504,62 @@ XS(_wrap_ESLevent_delHeader) {
 }
 
 
+XS(_wrap_ESLevent_firstHeader) {
+  {
+    ESLevent *arg1 = (ESLevent *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: ESLevent_firstHeader(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_firstHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLevent * >(argp1);
+    result = (char *)(arg1)->firstHeader();
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
+XS(_wrap_ESLevent_nextHeader) {
+  {
+    ESLevent *arg1 = (ESLevent *) 0 ;
+    char *result = 0 ;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: ESLevent_nextHeader(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLevent_nextHeader" "', argument " "1"" of type '" "ESLevent *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLevent * >(argp1);
+    result = (char *)(arg1)->nextHeader();
+    ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_new_ESLconnection__SWIG_0) {
   {
     char *arg1 = (char *) 0 ;
@@ -3361,6 +3417,8 @@ static swig_command_info swig_commands[] = {
 {"ESLc::ESLevent_addBody", _wrap_ESLevent_addBody},
 {"ESLc::ESLevent_addHeader", _wrap_ESLevent_addHeader},
 {"ESLc::ESLevent_delHeader", _wrap_ESLevent_delHeader},
+{"ESLc::ESLevent_firstHeader", _wrap_ESLevent_firstHeader},
+{"ESLc::ESLevent_nextHeader", _wrap_ESLevent_nextHeader},
 {"ESLc::new_ESLconnection", _wrap_new_ESLconnection},
 {"ESLc::delete_ESLconnection", _wrap_delete_ESLconnection},
 {"ESLc::ESLconnection_connected", _wrap_ESLconnection_connected},

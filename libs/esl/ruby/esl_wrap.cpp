@@ -1902,7 +1902,7 @@ SWIG_ruby_failed(void)
 } 
 
 
-/*@SWIG:/usr/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
+/*@SWIG:/usr/local/share/swig/1.3.35/ruby/rubyprimtypes.swg,23,%ruby_aux_method@*/
 SWIGINTERN VALUE SWIG_AUX_NUM2LONG(VALUE *args)
 {
   VALUE obj = args[0];
@@ -2587,6 +2587,54 @@ _wrap_ESLevent_delHeader(int argc, VALUE *argv, VALUE self) {
   return vresult;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_ESLevent_firstHeader(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","firstHeader", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  result = (char *)(arg1)->firstHeader();
+  vresult = SWIG_FromCharPtr((const char *)result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_ESLevent_nextHeader(int argc, VALUE *argv, VALUE self) {
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *result = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLevent, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLevent *","nextHeader", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLevent * >(argp1);
+  result = (char *)(arg1)->nextHeader();
+  vresult = SWIG_FromCharPtr((const char *)result);
+  return vresult;
+fail:
   return Qnil;
 }
 
@@ -3586,6 +3634,8 @@ SWIGEXPORT void Init_ESL(void) {
   rb_define_method(cESLevent.klass, "addBody", VALUEFUNC(_wrap_ESLevent_addBody), -1);
   rb_define_method(cESLevent.klass, "addHeader", VALUEFUNC(_wrap_ESLevent_addHeader), -1);
   rb_define_method(cESLevent.klass, "delHeader", VALUEFUNC(_wrap_ESLevent_delHeader), -1);
+  rb_define_method(cESLevent.klass, "firstHeader", VALUEFUNC(_wrap_ESLevent_firstHeader), -1);
+  rb_define_method(cESLevent.klass, "nextHeader", VALUEFUNC(_wrap_ESLevent_nextHeader), -1);
   cESLevent.mark = 0;
   cESLevent.destroy = (void (*)(void *)) free_ESLevent;
   cESLevent.trackObjects = 0;

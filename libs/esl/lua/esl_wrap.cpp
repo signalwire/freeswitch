@@ -2084,6 +2084,56 @@ fail:
 }
 
 
+static int _wrap_ESLevent_firstHeader(lua_State* L) {
+  int SWIG_arg = -1;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("firstHeader",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("firstHeader",1,"ESLevent *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_firstHeader",1,SWIGTYPE_p_ESLevent);
+  }
+  
+  result = (char *)(arg1)->firstHeader();
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_ESLevent_nextHeader(lua_State* L) {
+  int SWIG_arg = -1;
+  ESLevent *arg1 = (ESLevent *) 0 ;
+  char *result = 0 ;
+  
+  SWIG_check_num_args("nextHeader",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("nextHeader",1,"ESLevent *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
+    SWIG_fail_ptr("ESLevent_nextHeader",1,SWIGTYPE_p_ESLevent);
+  }
+  
+  result = (char *)(arg1)->nextHeader();
+  SWIG_arg=0;
+  lua_pushstring(L,(const char*)result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_ESLevent(void *obj) {
 ESLevent *arg1 = (ESLevent *) obj;
 delete arg1;
@@ -2097,6 +2147,8 @@ static swig_lua_method swig_ESLevent_methods[] = {
     {"addBody", _wrap_ESLevent_addBody}, 
     {"addHeader", _wrap_ESLevent_addHeader}, 
     {"delHeader", _wrap_ESLevent_delHeader}, 
+    {"firstHeader", _wrap_ESLevent_firstHeader}, 
+    {"nextHeader", _wrap_ESLevent_nextHeader}, 
     {0,0}
 };
 static swig_lua_attribute swig_ESLevent_attributes[] = {

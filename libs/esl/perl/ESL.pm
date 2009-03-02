@@ -89,6 +89,8 @@ sub DESTROY {
 *addBody = *ESLc::ESLevent_addBody;
 *addHeader = *ESLc::ESLevent_addHeader;
 *delHeader = *ESLc::ESLevent_delHeader;
+*firstHeader = *ESLc::ESLevent_firstHeader;
+*nextHeader = *ESLc::ESLevent_nextHeader;
 sub DISOWN {
     my $self = shift;
     my $ptr = tied(%$self);
