@@ -413,11 +413,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
 	switch_file_handle_t *fh = (switch_file_handle_t *) user_data;
-	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
-	switch_frame_t frame = { 0 };
-
-	frame.data = data;
-	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
@@ -427,11 +422,16 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_core_file_close(fh);
 		}
 		break;
-	case SWITCH_ABC_TYPE_READ:
+	case SWITCH_ABC_TYPE_READ_PING:
 		if (fh) {
 			switch_size_t len;
 			switch_core_session_t *session = switch_core_media_bug_get_session(bug);
 			switch_channel_t *channel = switch_core_session_get_channel(session);
+			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+			switch_frame_t frame = { 0 };
+			
+			frame.data = data;
+			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
 				int doit = 1;
@@ -441,7 +441,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 
 				if (doit) {
 					len = (switch_size_t) frame.datalen / 2;
-					switch_core_file_write(fh, frame.data, &len);
+					switch_core_file_write(fh, data, &len);
 				}
 			}
 		}
@@ -482,7 +482,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	struct eavesdrop_pvt *ep = (struct eavesdrop_pvt *) user_data;
 	uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_frame_t frame = { 0 };
-
+	
 	frame.data = data;
 	frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
@@ -494,7 +494,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 	case SWITCH_ABC_TYPE_WRITE:
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
-		if (ep->buffer) {
+		if (ep->buffer) {			
 			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
 				switch_buffer_lock(ep->buffer);
 				switch_buffer_zwrite(ep->buffer, frame.data, frame.datalen);
@@ -821,7 +821,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	switch_media_bug_t *bug;
 	switch_status_t status;
 	time_t to = 0;
-	switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM;
+	switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING;
 	uint8_t channels;
 	switch_codec_implementation_t read_impl = {0};
     switch_core_session_get_read_impl(session, &read_impl);

@@ -104,105 +104,88 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
 {
-	uint32_t bytes = 0;
-	uint32_t datalen = 0;
+	switch_size_t bytes = 0, datalen = 0;
 	int16_t *dp, *fp;
 	uint32_t x;
 	size_t rlen = 0;
 	size_t wlen = 0;
 	uint32_t blen;
-	size_t rdlen = 0;
-	uint32_t maxlen;
 	switch_codec_implementation_t read_impl = {0};
+	int16_t *tp;
+
 	switch_core_session_get_read_impl(bug->session, &read_impl);
 
-	if (bug->raw_read_buffer) {
-		rlen = switch_buffer_inuse(bug->raw_read_buffer);
-	}
+	bytes = read_impl.decoded_bytes_per_packet;
 
-	if (bug->raw_write_buffer) {
-		wlen = switch_buffer_inuse(bug->raw_write_buffer);
-	}
-
-	if ((bug->raw_read_buffer && bug->raw_write_buffer) && (!rlen && !wlen)) {
+	if (frame->buflen < bytes) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s frame buffer too small!\n", switch_channel_get_name(bug->session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
-
-	maxlen = SWITCH_RECOMMENDED_BUFFER_SIZE > frame->buflen ? frame->buflen : SWITCH_RECOMMENDED_BUFFER_SIZE;
-
-	if ((rdlen = rlen > wlen ? wlen : rlen) > maxlen) {
-		rdlen = maxlen;
+	
+	if (!(bug->raw_read_buffer && bug->raw_write_buffer)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%sBuffer Error\n", switch_channel_get_name(bug->session->channel));
 	}
-
-	if (!rdlen) {
-		rdlen = maxlen;
-	}
-
+	
 	frame->datalen = 0;
-
-	if (rlen) {
-		switch_mutex_lock(bug->read_mutex);
-
-		frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, rdlen);
-		switch_mutex_unlock(bug->read_mutex);
+	
+	switch_mutex_lock(bug->read_mutex);
+	frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, bytes);
+	if (frame->datalen < bytes) {
+		memset(((unsigned char *)frame->data) + frame->datalen, 0, bytes - frame->datalen);
+		frame->datalen = bytes;
 	}
-
-	if (wlen) {
-		switch_mutex_lock(bug->write_mutex);
-		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, rdlen);
-		switch_mutex_unlock(bug->write_mutex);
+	switch_mutex_unlock(bug->read_mutex);
+	
+	switch_mutex_lock(bug->write_mutex);
+	datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, bytes);
+	if (datalen < bytes) {
+		memset(((unsigned char *)bug->data) + datalen, 0, bytes - datalen);
+		datalen = bytes;
 	}
+	switch_mutex_unlock(bug->write_mutex);
 
-
-	bytes = (datalen > frame->datalen) ? datalen : frame->datalen;
-	switch_assert(bytes <= maxlen);
-
-	if (bytes) {
-		int16_t *tp = bug->tmp;
-
-		dp = (int16_t *) bug->data;
-		fp = (int16_t *) frame->data;
-		rlen = frame->datalen / 2;
-		wlen = datalen / 2;
-		blen = bytes / 2;
-
-		if (switch_test_flag(bug, SMBF_STEREO)) {
-			for (x = 0; x < blen; x++) {
-				if (x < rlen) {
-					*(tp++) = *(fp + x);
-				} else {
-					*(tp++) = 0;
-				}
-				if (x < wlen) {
-					*(tp++) = *(dp + x);
-				} else {
-					*(tp++) = 0;
-				}
+	tp = bug->tmp;
+	dp = (int16_t *) bug->data;
+	fp = (int16_t *) frame->data;
+	rlen = frame->datalen / 2;
+	wlen = datalen / 2;
+	blen = bytes / 2;
+	
+	if (switch_test_flag(bug, SMBF_STEREO)) {
+		for (x = 0; x < blen; x++) {
+			if (x < rlen) {
+				*(tp++) = *(fp + x);
+			} else {
+				*(tp++) = 0;
 			}
-			memcpy(frame->data, bug->tmp, bytes * 2);
-		} else {
-			for (x = 0; x < blen; x++) {
-				int32_t z = 0;
-
-				if (x < rlen) {
-					z += (int32_t) *(fp + x);
-				}
-				if (x < wlen) {
-					z += (int32_t) *(dp + x);
-				}
-				switch_normalize_to_16bit(z);
-				*(fp + x) = (int16_t) z;
+			if (x < wlen) {
+				*(tp++) = *(dp + x);
+			} else {
+				*(tp++) = 0;
 			}
 		}
+		memcpy(frame->data, bug->tmp, bytes * 2);
+	} else {
+		for (x = 0; x < blen; x++) {
+			int32_t z = 0;
 
-		frame->datalen = bytes;
-		frame->samples = bytes / sizeof(int16_t);
-		frame->rate = read_impl.actual_samples_per_second;
-
-		return SWITCH_STATUS_SUCCESS;
+			if (x < rlen) {
+				z += (int32_t) *(fp + x);
+			}
+			if (x < wlen) {
+				z += (int32_t) *(dp + x);
+			}
+			switch_normalize_to_16bit(z);
+			*(fp + x) = (int16_t) z / 2;
+		}
 	}
 
-	return SWITCH_STATUS_FALSE;
+	frame->datalen = bytes;
+	frame->samples = bytes / sizeof(int16_t);
+	frame->rate = read_impl.actual_samples_per_second;
+	frame->codec = NULL;
+	
+	return SWITCH_STATUS_SUCCESS;
 }
 
 #define MAX_BUG_BUFFER 1024 * 512
