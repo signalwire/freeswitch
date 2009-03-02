@@ -375,7 +375,7 @@
     </extension>
 
     <extension name="rtp_multicast_page">
-      <condition field="destination_number" expression="^pagegroup$|^7243">
+      <condition field="destination_number" expression="^pagegroup$|^7243$">
 	<action application="answer"/>
 	<action application="esf_page_group"/>
       </condition>
