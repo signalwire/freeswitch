@@ -2355,6 +2355,10 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 
 	nchannel = switch_core_session_get_channel(nsession);
 
+	if ((hval = switch_event_get_header(var_event, "sip_invite_to_uri"))) {
+		dest_to = switch_core_session_strdup(nsession, hval);
+	}
+
 	if (!strncasecmp(profile_name, "gateway", 7)) {
 		char *gw, *params;
 		sofia_gateway_t *gateway_ptr = NULL;
