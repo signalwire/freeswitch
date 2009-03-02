@@ -979,6 +979,12 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 	if ((var = switch_event_get_header(var_event, "openzap_outbound_ton")) || (var = switch_core_get_variable("openzap_outbound_ton"))) {
 		if (!strcasecmp(var, "national")) {
 			caller_data.ani.type = Q931_TON_NATIONAL;
+		} else if (!strcasecmp(var, "international")) {
+			caller_data.ani.type = Q931_TON_INTERNATIONAL;
+		} else if (!strcasecmp(var, "local")) {
+			caller_data.ani.type = Q931_TON_SUBSCRIBER_NUMBER;
+		} else if (!strcasecmp(var, "unknown")) {
+			caller_data.ani.type = Q931_TON_UNKNOWN;
 		}
 	} else {
 		caller_data.ani.type = outbound_profile->destination_number_ton;

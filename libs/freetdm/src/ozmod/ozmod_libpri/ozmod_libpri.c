@@ -412,10 +412,28 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 	case ZAP_CHANNEL_STATE_DIALING:
 		if (isdn_data) {
 			struct pri_sr *sr;
-			
+			int dp;
+			const char *val;
+
 			if (!(call = pri_new_call(isdn_data->spri.pri))) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
 				return;
+			}
+
+			
+			dp = zchan->caller_data.ani.type;
+			switch(dp) {
+			case Q931_TON_NATIONAL:
+				dp = PRI_NATIONAL_ISDN;
+				break;
+			case Q931_TON_INTERNATIONAL:
+				dp = PRI_INTERNATIONAL_ISDN;
+				break;
+			case Q931_TON_SUBSCRIBER_NUMBER:
+				dp = PRI_LOCAL_ISDN;
+				break;
+			default:
+				dp = isdn_data->dp;
 			}
 
 			zchan->call_data = call;
@@ -423,9 +441,9 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			assert(sr);
 			pri_sr_set_channel(sr, zchan->chan_id, 0, 0);
 			pri_sr_set_bearer(sr, 0, isdn_data->l1);
-			pri_sr_set_called(sr, zchan->caller_data.ani.digits, isdn_data->dp, 1);
-			pri_sr_set_caller(sr, zchan->caller_data.cid_num.digits, zchan->caller_data.cid_name, isdn_data->dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
-			pri_sr_set_redirecting(sr, zchan->caller_data.cid_num.digits, isdn_data->dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
+			pri_sr_set_called(sr, zchan->caller_data.ani.digits, dp, 1);
+			pri_sr_set_caller(sr, zchan->caller_data.cid_num.digits, zchan->caller_data.cid_name, dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
+			pri_sr_set_redirecting(sr, zchan->caller_data.cid_num.digits, dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
 			
 			if (pri_setup(isdn_data->spri.pri, call, sr)) {
 				zchan->caller_data.hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;				
