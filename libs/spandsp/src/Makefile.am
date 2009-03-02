@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.127 2009/02/25 15:30:21 steveu Exp $
+## $Id: Makefile.am,v 1.128 2009/03/01 12:49:28 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -292,6 +292,10 @@ at_interpreter.lo: at_interpreter_dictionary.h
 
 at_interpreter_dictionary.h: make_at_dictionary$(EXEEXT)
 	./make_at_dictionary$(EXEEXT) >at_interpreter_dictionary.h
+
+t4.$(OBJEXT): spandsp/version.h
+
+t4.lo: spandsp/version.h
 
 v17rx.$(OBJEXT): v17rx_fixed_rrc.h v17rx_floating_rrc.h
 

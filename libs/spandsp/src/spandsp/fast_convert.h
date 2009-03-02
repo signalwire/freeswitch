@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fast_convert.h,v 1.5 2009/02/24 14:14:03 steveu Exp $
+ * $Id: fast_convert.h,v 1.6 2009/02/26 16:08:51 steveu Exp $
  */
 
 #if !defined(_SPANDSP_FAST_CONVERT_H_)

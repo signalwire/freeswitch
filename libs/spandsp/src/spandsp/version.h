@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: version.h.in,v 1.2 2007/04/06 13:20:36 steveu Exp $
+ * $Id: version.h.in,v 1.3 2009/03/01 12:39:02 steveu Exp $
  */
 
 #if !defined(_SPANDSP_VERSION_H_)
@@ -30,8 +30,9 @@
 
 /* The date and time of the version are in UTC form. */
 
-#define SPANDSP_RELEASE_DATE    20090226
-#define SPANDSP_RELEASE_TIME    121601
+#define SPANDSP_RELEASE_DATE            20090301
+#define SPANDSP_RELEASE_TIME            125126
+#define SPANDSP_RELEASE_DATETIME_STRING "20090301 125126"
 
 #endif
 /*- End of file ------------------------------------------------------------*/

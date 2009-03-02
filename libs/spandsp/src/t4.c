@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.127 2009/02/21 04:27:46 steveu Exp $
+ * $Id: t4.c,v 1.128 2009/03/01 11:47:03 steveu Exp $
  */
 
 /*
@@ -86,6 +86,7 @@
 #include "spandsp/bit_operations.h"
 #include "spandsp/async.h"
 #include "spandsp/t4.h"
+#include "spandsp/version.h"
 
 #include "spandsp/private/logging.h"
 #include "spandsp/private/t4.h"
@@ -205,7 +206,7 @@ static int set_tiff_directory_info(t4_state_t *s)
     TIFFSetField(t->tiff_file, TIFFTAG_RESOLUTIONUNIT, resunit);
 #endif
     /* TODO: add the version of spandsp */
-    TIFFSetField(t->tiff_file, TIFFTAG_SOFTWARE, "spandsp");
+    TIFFSetField(t->tiff_file, TIFFTAG_SOFTWARE, "Spandsp " SPANDSP_RELEASE_DATETIME_STRING);
     if (gethostname(buf, sizeof(buf)) == 0)
         TIFFSetField(t->tiff_file, TIFFTAG_HOSTCOMPUTER, buf);
 
@@ -330,9 +331,11 @@ static int get_tiff_directory_info(t4_state_t *s)
     if (t->photo_metric != PHOTOMETRIC_MINISWHITE)
         span_log(&s->logging, SPAN_LOG_FLOW, "%s: Photometric needs swapping.\n", s->file);
     t->fill_order = FILLORDER_LSB2MSB;
+#if 0
     TIFFGetField(t->tiff_file, TIFFTAG_FILLORDER, &t->fill_order);
     if (t->fill_order != FILLORDER_LSB2MSB)
         span_log(&s->logging, SPAN_LOG_FLOW, "%s: Fill order needs swapping.\n", s->file);
+#endif
 
     /* Allow a little range for the X resolution in centimeters. The spec doesn't pin down the
        precise value. The other value should be exact. */

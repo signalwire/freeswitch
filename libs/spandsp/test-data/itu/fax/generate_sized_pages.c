@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: generate_sized_pages.c,v 1.2 2008/07/10 13:34:01 steveu Exp $
+ * $Id: generate_sized_pages.c,v 1.3 2009/03/01 12:39:02 steveu Exp $
  */
 
 /*! \file */
@@ -289,6 +289,39 @@ int main(int argc, char *argv[])
     float x_resolution;
     float y_resolution;
     int i;
+    int opt;
+    int compression;
+    int photo_metric;
+    int fill_order;
+    
+    compression = T4_COMPRESSION_ITU_T6;
+    photo_metric = PHOTOMETRIC_MINISWHITE;
+    fill_order = FILLORDER_LSB2MSB;
+    while ((opt = getopt(argc, argv, "126ir")) != -1)
+    {
+        switch (opt)
+        {
+        case '1':
+            compression = T4_COMPRESSION_ITU_T4_1D;
+            break;
+        case '2':
+            compression = T4_COMPRESSION_ITU_T4_2D;
+            break;
+        case '6':
+            compression = T4_COMPRESSION_ITU_T6;
+            break;
+        case 'i':
+            photo_metric = PHOTOMETRIC_MINISBLACK;
+            break;
+        case 'r':
+            fill_order = FILLORDER_MSB2LSB;
+            break;
+        default:
+            //usage();
+            exit(2);
+            break;
+        }
+    }
 
     for (i = 0;  sequence[i].name;  i++)
     {
@@ -296,15 +329,15 @@ int main(int argc, char *argv[])
             exit(2);
 
         /* Prepare the directory entry fully before writing the image, or libtiff complains */
-        TIFFSetField(tiff_file, TIFFTAG_COMPRESSION, COMPRESSION_CCITT_T6);
+        TIFFSetField(tiff_file, TIFFTAG_COMPRESSION, compression);
         TIFFSetField(tiff_file, TIFFTAG_IMAGEWIDTH, sequence[i].width);
         TIFFSetField(tiff_file, TIFFTAG_BITSPERSAMPLE, 1);
         TIFFSetField(tiff_file, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
         TIFFSetField(tiff_file, TIFFTAG_SAMPLESPERPIXEL, 1);
         TIFFSetField(tiff_file, TIFFTAG_ROWSPERSTRIP, -1L);
         TIFFSetField(tiff_file, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-        TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
-        TIFFSetField(tiff_file, TIFFTAG_FILLORDER, FILLORDER_LSB2MSB);
+        TIFFSetField(tiff_file, TIFFTAG_PHOTOMETRIC, photo_metric);
+        TIFFSetField(tiff_file, TIFFTAG_FILLORDER, fill_order);
     
         x_resolution = sequence[i].x_res/100.0f;
         y_resolution = sequence[i].y_res/100.0f;

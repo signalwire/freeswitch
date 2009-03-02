@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4_tests.c,v 1.67 2009/02/20 12:34:20 steveu Exp $
+ * $Id: t4_tests.c,v 1.68 2009/03/01 12:39:02 steveu Exp $
  */
 
 /*! \file */
@@ -335,6 +335,17 @@ int main(int argc, char *argv[])
                 for (i = 0;  i < 256;  i++)
                 {
                     if (sscanf(&buf[57 + 29 + 3*i], "%x", (unsigned int *) &bit) != 1)
+                        break;
+                    bit = bit_reverse8(bit);
+                    if ((end_of_page = t4_rx_put_byte(&receive_state, bit)))
+                        break;
+                }
+            }
+            else if (sscanf(buf, "%08x  %02x %02x %02x", (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit, (unsigned int *) &bit) == 4)
+            {
+                for (i = 0;  i < 16;  i++)
+                {
+                    if (sscanf(&buf[10 + 3*i], "%x", (unsigned int *) &bit) != 1)
                         break;
                     bit = bit_reverse8(bit);
                     if ((end_of_page = t4_rx_put_byte(&receive_state, bit)))
