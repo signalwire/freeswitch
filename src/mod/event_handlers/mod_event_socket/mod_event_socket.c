@@ -1275,10 +1275,6 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 	
 	SWITCH_STANDARD_STREAM(stream);
 	
-	if (!strcasecmp(acs->api_cmd, "unload") || !strcasecmp(acs->arg, "mod_event_socket")) {
-		
-	}
-
 	if ((status = switch_api_execute(acs->api_cmd, acs->arg, NULL, &stream)) == SWITCH_STATUS_SUCCESS) {
 		reply = stream.data;
 	} else {
