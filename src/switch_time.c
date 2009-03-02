@@ -174,7 +174,7 @@ SWITCH_DECLARE(void) switch_micro_sleep(switch_interval_time_t t)
 SWITCH_DECLARE(void) switch_sleep(switch_interval_time_t t)
 {
 
-	if (t < 1000 || t >= 10000) {
+	if (!globals.RUNNING || t < 1000 || t >= 10000) {
 		do_sleep(t);
 		return;
 	}

@@ -285,9 +285,11 @@ SWITCH_DECLARE(uint32_t) switch_scheduler_del_task_group(const char *group)
 	return delcnt;
 }
 
+switch_thread_t *task_thread_p = NULL;
+
 SWITCH_DECLARE(void) switch_scheduler_task_thread_start(void)
 {
-	switch_thread_t *thread;
+
 	switch_threadattr_t *thd_attr;
 
 	switch_core_new_memory_pool(&globals.memory_pool);
@@ -295,7 +297,7 @@ SWITCH_DECLARE(void) switch_scheduler_task_thread_start(void)
 	switch_mutex_init(&globals.task_mutex, SWITCH_MUTEX_NESTED, globals.memory_pool);
 
 	switch_threadattr_detach_set(thd_attr, 1);
-	switch_thread_create(&thread, thd_attr, switch_scheduler_task_thread, NULL, globals.memory_pool);
+	switch_thread_create(task_thread_p, thd_attr, switch_scheduler_task_thread, NULL, globals.memory_pool);
 }
 
 SWITCH_DECLARE(void) switch_scheduler_task_thread_stop(void)
@@ -303,8 +305,11 @@ SWITCH_DECLARE(void) switch_scheduler_task_thread_stop(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping Task Thread\n");
 	if (globals.task_thread_running == 1) {
 		int sanity = 0;
+		switch_status_t st;
 
 		globals.task_thread_running = -1;
+		
+		switch_thread_join(&st, task_thread_p);
 
 		while (globals.task_thread_running) {
 			switch_yield(100000);
