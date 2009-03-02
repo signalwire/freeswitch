@@ -323,8 +323,6 @@ bool FSManager::Initialise(switch_loadable_module_interface_t *iface)
     m_FreeSwitch->io_routines = &opalfs_io_routines;
     m_FreeSwitch->state_handler = &opalfs_event_handlers;
 
-    SetAudioJitterDelay(800, 3000); // should be config option
-
     silenceDetectParams.m_mode = OpalSilenceDetector::NoSilenceDetection;
 
     if (m_listeners.empty()) {
@@ -411,6 +409,15 @@ switch_status_t FSManager::ReadConfig(int reload)
                     set_global_dialplan(val);
                 } else if (!strcasecmp(var, "codec-prefs")) {
                     set_global_codec_string(val);
+                } else if (!strcasecmp(var, "jitter-size")) {
+                    char * next;
+                    unsigned minJitter = strtoul(val, &next, 10);
+                    if (minJitter >= 10) {
+                        unsigned maxJitter = minJitter;
+                        if (*next == ',')
+                          maxJitter = atoi(next+1);
+                        SetAudioJitterDelay(minJitter, maxJitter); // In milliseconds
+                    }
                 }
             }
         }
@@ -455,6 +462,12 @@ switch_status_t FSManager::ReadConfig(int reload)
 }
 
 
+OpalCall * FSManager::CreateCall(void * /*userData*/)
+{
+  return new FSCall(*this);
+}
+
+
 ///////////////////////////////////////////////////////////////////////
 
 FSEndPoint::FSEndPoint(FSManager & manager)
@@ -473,6 +486,32 @@ bool FSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userData)
 {
     return new FSConnection(call, *this, (switch_caller_profile_t *)userData);
+}
+
+
+///////////////////////////////////////////////////////////////////////
+
+FSCall::FSCall(OpalManager & manager)
+  : OpalCall(manager)
+{
+}
+
+
+PBoolean FSCall::OnSetUp(OpalConnection & connection)
+{
+  // Transfer FS caller_id_number & caller_id_name from the FSConnection
+  // to the protocol connectionm (e.g. H.323) so gets sent correctly
+  // in outgoing packets
+  PSafePtr<FSConnection> local = GetConnectionAs<FSConnection>();
+  if (local != NULL) {
+    PSafePtr<OpalConnection> proto = local->GetOtherPartyConnection();
+    if (proto != NULL) {
+      proto->SetLocalPartyName(local->GetLocalPartyName());
+      proto->SetDisplayName(local->GetDisplayName());
+    }
+  }
+
+  return OpalCall::OnSetUp(connection);
 }
 
 

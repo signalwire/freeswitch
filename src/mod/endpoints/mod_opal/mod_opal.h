@@ -82,6 +82,14 @@ struct FSListener {
 };
 
 
+class FSCall : public OpalCall {
+    PCLASSINFO(FSCall, OpalCall);
+  public:
+    FSCall(OpalManager & manager);
+    virtual PBoolean OnSetUp(OpalConnection & connection);
+};
+
+
 class FSManager : public OpalManager {
     PCLASSINFO(FSManager, OpalManager);
 
@@ -96,6 +104,8 @@ class FSManager : public OpalManager {
         return m_FreeSwitch;
     }
 
+    virtual OpalCall * CreateCall(void * userData);
+
   private:
     switch_endpoint_interface_t *m_FreeSwitch;
 
@@ -105,6 +115,7 @@ class FSManager : public OpalManager {
 
     list < FSListener > m_listeners;
 };
+
 
 class FSConnection;
 typedef struct {
