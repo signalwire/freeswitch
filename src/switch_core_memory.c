@@ -440,11 +440,17 @@ static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 }
 
+static switch_thread_t *pool_thread_p = NULL;
+
 void switch_core_memory_stop(void)
 {
+	switch_status_t st;
+
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Stopping memory pool queue.\n");
 #ifndef INSTANTLY_DESTROY_POOLS
 	memory_manager.pool_thread_running = -1;
+	switch_thread_join(&st, pool_thread_p);
+	
 	while (memory_manager.pool_thread_running) {
 		switch_cond_next();
 	}
@@ -454,7 +460,6 @@ void switch_core_memory_stop(void)
 switch_memory_pool_t *switch_core_memory_init(void)
 {
 #ifndef INSTANTLY_DESTROY_POOLS
-	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr;
 #endif
 #ifdef PER_POOL_LOCK
@@ -502,7 +507,7 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	switch_threadattr_detach_set(thd_attr, 1);
 
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, pool_thread, NULL, memory_manager.memory_pool);
+	switch_thread_create(&pool_thread_p, thd_attr, pool_thread, NULL, memory_manager.memory_pool);
 
 	while (!memory_manager.pool_thread_running) {
 		switch_cond_next();

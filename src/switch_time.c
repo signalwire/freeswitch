@@ -113,7 +113,7 @@ static void do_sleep(switch_interval_time_t t)
 
 SWITCH_DECLARE(switch_time_t) switch_micro_time_now(void)
 {
-	return runtime.timestamp ? runtime.timestamp : switch_time_now();
+	return (globals.RUNNING == 1 && runtime.timestamp) ? runtime.timestamp : switch_time_now();
 }
 
 
@@ -195,7 +195,7 @@ SWITCH_DECLARE(void) switch_cond_next(void)
 #ifdef DISABLE_1MS_COND
 	do_sleep(1000);
 #else
-	if (!runtime.timestamp || globals.use_cond_yield != 1) {
+	if (globals.RUNNING != 1 || !runtime.timestamp || globals.use_cond_yield != 1) {
 		do_sleep(1000);
 		return;
 	}
@@ -210,7 +210,7 @@ SWITCH_DECLARE(void) switch_cond_yield(switch_interval_time_t t)
 	switch_time_t want;
 	if (!t) return;
 
-	if (!runtime.timestamp || globals.use_cond_yield != 1) {
+	if (globals.RUNNING != 1 || !runtime.timestamp || globals.use_cond_yield != 1) {
 		do_sleep(t);
 		return;
 	}
