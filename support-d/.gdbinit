@@ -58,5 +58,5 @@ define event_dump
 end
 document event_dump
 Usage: event_dump [switch_event_t*]
-Print and event's headers and values
+Print an event's headers and values
 end
