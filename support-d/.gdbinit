@@ -49,9 +49,14 @@ Prints the content of a hashtable displaying the key as a string and a specific 
 end
 
 define event_dump
+	dont-repeat
 	set $x = $arg0->headers
 	while($x != 0x0)
 		printf "%s = %s\n", $x->name, $x->value
 		set $x = $x->next
 	end
+end
+document event_dump
+Usage: event_dump [switch_event_t*]
+Print and event's headers and values
 end
