@@ -398,6 +398,7 @@ SWITCH_DECLARE(const switch_state_handler_table_t *) switch_channel_get_state_ha
   \param key unique keyname to associate your private data to
   \param private_info void pointer to private data
   \return SWITCH_STATUS_SUCCESS if data was set
+  \remarks set NULL to delete your private data
 */
 SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *channel, const char *key, const void *private_info);
 
