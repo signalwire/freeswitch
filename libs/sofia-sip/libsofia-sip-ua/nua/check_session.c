@@ -96,8 +96,12 @@ static void call_teardown(void)
 
   s2_register_teardown();
 
+  mark_point();
+
   nua_shutdown(nua);
   fail_unless(s2_check_event(nua_r_shutdown, 200));
+
+  mark_point();
 
   s2_nua_teardown();
 }
@@ -3095,6 +3099,145 @@ static void options_teardown(void)
   call_teardown();
 }
 
+/* ====================================================================== */
+/* Test cases for REFER */
+
+START_TEST(refer_5_2_1)
+{
+  nua_handle_t *nh;
+  sip_refer_to_t r[1];
+  struct event *refer;
+  struct message *notify;
+
+  s2_case("5.2.1", "Receive REFER",
+	  "Make a call, receive REFER.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  invite_by_nua(nh, TAG_END());
+
+  *sip_refer_to_init(r)->r_url = *s2->local->a_url;
+  r->r_url->url_user = "bob2";
+
+  s2_request_to(dialog, SIP_METHOD_REFER, NULL,
+		SIPTAG_REFER_TO(r),
+		TAG_END());
+  refer = s2_wait_for_event(nua_i_refer, 202);
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+
+  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  s2_respond_to(notify, dialog, SIP_200_OK, TAG_END());
+}
+END_TEST
+
+
+START_TEST(refer_5_2_2)
+{
+  nua_handle_t *nh, *nh2;
+  sip_refer_to_t r[1];
+  sip_referred_by_t by[1];
+  struct event *refer, *notified;
+  sip_t const *sip;
+  sip_event_t const *refer_event = NULL;
+  sip_subscription_state_t const *ss;
+  struct message *invite;
+  struct message *notify0, *notify1, *notify2;
+  struct dialog *dialog1, *dialog2;
+
+  s2_case("5.2.2", "Receive REFER",
+	  "Make a call, receive REFER, "
+	  "make another call with automatic NOTIFYs");
+
+  dialog2 = su_home_new(sizeof *dialog2); fail_unless(dialog2 != NULL);
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  invite_by_nua(nh, TAG_END());
+
+  *sip_refer_to_init(r)->r_url = *s2->local->a_url;
+  r->r_url->url_user = "bob2";
+
+  tport_set_params(s2->master, TPTAG_LOG(1), TAG_END());
+  s2_setup_logs(7);
+
+  s2_request_to(dialog, SIP_METHOD_REFER, NULL,
+		SIPTAG_REFER_TO(r),
+		TAG_END());
+  refer = s2_wait_for_event(nua_i_refer, 202);
+  sip = sip_object(refer->data->e_msg);
+  fail_unless(sip && sip->sip_refer_to);
+
+  bye_by_nua(nh, TAG_END());
+
+  dialog1 = dialog, dialog = dialog2;
+
+  *sip_referred_by_init(by)->b_url =
+    *sip->sip_from->a_url;
+
+  fail_unless(tl_gets(refer->data->e_tags,
+		      NUTAG_REFER_EVENT_REF(refer_event),
+		      TAG_END()) == 1);
+
+  nua_notify(nh,
+	     SIPTAG_EVENT(refer_event),
+	     SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+	     SIPTAG_PAYLOAD_STR("SIP/2.0 100 Trying\r\n"),
+	     NUTAG_SUBSTATE(nua_substate_active),
+	     TAG_END());
+  notify0 = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  fail_unless((ss = notify0->sip->sip_subscription_state) != NULL);
+  fail_unless(su_casematch("active", ss->ss_substate));
+  s2_respond_to(notify0, dialog1, SIP_200_OK, TAG_END());
+  notified = s2_wait_for_event(nua_r_notify, 200);
+
+  nh2 = nua_handle(nua, NULL, NUTAG_URL(r->r_url), TAG_END());
+
+  invite = invite_sent_by_nua(nh2,
+			      NUTAG_REFER_EVENT(refer_event),
+			      NUTAG_NOTIFY_REFER(nh),
+			      SIPTAG_REFERRED_BY(by),
+			      TAG_END());
+  process_offer(invite);
+
+  respond_with_sdp(
+    invite, dialog, SIP_180_RINGING,
+    SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
+    TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  notify1 = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  s2_respond_to(notify1, dialog1, SIP_200_OK, TAG_END());
+
+  respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+  s2_free_message(invite);
+  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+  fail_unless(s2_check_request(SIP_METHOD_ACK));
+
+  notify2 = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  s2_respond_to(notify2, dialog1, SIP_200_OK, TAG_END());
+  fail_unless((ss = notify2->sip->sip_subscription_state) != NULL);
+  fail_unless(su_casematch("terminated", ss->ss_substate));
+
+  nua_handle_destroy(nh);
+  bye_by_nua(nh2, TAG_END());
+  nua_handle_destroy(nh2);
+}
+END_TEST
+
+TCase *refer_tcase(int threading)
+{
+  TCase *tc = tcase_create("5.2 - Call Transfer");
+
+  add_call_fixtures(tc, threading);
+
+  tcase_add_test(tc, refer_5_2_1);
+  tcase_add_test(tc, refer_5_2_2);
+
+  return tc;
+}
 
 /* ====================================================================== */
 
@@ -3137,6 +3280,7 @@ void check_session_cases(Suite *suite, int threading)
   suite_add_tcase(suite, termination_tcase(threading));
   suite_add_tcase(suite, destroy_tcase(threading));
   suite_add_tcase(suite, options_tcase(threading));
+  suite_add_tcase(suite, refer_tcase(threading));
 
   if (0)			/* Template */
     suite_add_tcase(suite, empty_tcase(threading));
