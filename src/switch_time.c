@@ -553,7 +553,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(softtimer_runtime)
 	globals.RUNNING = 0;
 	switch_mutex_unlock(globals.mutex);
 
-	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Soft timer thread exiting.\n");
 
 	return SWITCH_STATUS_TERM;
 }
