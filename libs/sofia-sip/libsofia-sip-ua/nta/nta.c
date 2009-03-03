@@ -860,7 +860,7 @@ nta_agent_t *nta_agent_create(su_root_t *root,
   ta_start(ta, tag, value);
 
   if ((agent = su_home_new(sizeof(*agent)))) {
-    unsigned timer_c;
+    unsigned timer_c = 0, timer_d = 32000;
 
     agent->sa_root = root;
     agent->sa_callback = callback;
@@ -925,6 +925,11 @@ nta_agent_t *nta_agent_create(su_root_t *root,
 
     agent->sa_out.re_t1 = &agent->sa_out.re_list;
 
+    if (agent->sa_use_timer_c || !agent->sa_is_a_uas)
+      timer_c = agent->sa_timer_c;
+    if (timer_d < agent->sa_t1x64)
+      timer_d = agent->sa_t1x64;
+
     outgoing_queue_init(agent->sa_out.delayed, 0);
     outgoing_queue_init(agent->sa_out.resolving, 0);
     outgoing_queue_init(agent->sa_out.trying, agent->sa_t1x64); /* F */
@@ -932,10 +937,8 @@ nta_agent_t *nta_agent_create(su_root_t *root,
     outgoing_queue_init(agent->sa_out.terminated, 0);
     /* Special queues (states) for outgoing INVITE transactions */
     outgoing_queue_init(agent->sa_out.inv_calling, agent->sa_t1x64); /* B */
-    timer_c = (agent->sa_use_timer_c || !agent->sa_is_a_uas)
-      ? agent->sa_timer_c : 0;
     outgoing_queue_init(agent->sa_out.inv_proceeding, timer_c); /* C */
-    outgoing_queue_init(agent->sa_out.inv_completed, 32000); /* Timer D */
+    outgoing_queue_init(agent->sa_out.inv_completed, timer_d); /* D */
 
     if (leg_htable_resize(agent->sa_home, agent->sa_dialogs, 0) < 0 ||
 	leg_htable_resize(agent->sa_home, agent->sa_defaults, 0) < 0 ||
@@ -1446,6 +1449,7 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
   unsigned sip_t4     = agent->sa_t4;
   unsigned sip_t1x64  = agent->sa_t1x64;
   unsigned timer_c    = agent->sa_timer_c;
+  unsigned timer_d    = 32000;
   unsigned graylist   = agent->sa_graylist;
   unsigned blacklist  = agent->sa_blacklist;
   int ua              = agent->sa_is_a_uas;
@@ -1646,6 +1650,9 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
     agent->sa_timer_c = timer_c;
     outgoing_queue_adjust(agent, agent->sa_out.inv_proceeding, timer_c);
   }
+  if (timer_d < sip_t1x64)
+    timer_d = sip_t1x64;
+  outgoing_queue_adjust(agent, agent->sa_out.inv_completed, timer_d);
 
   if (graylist > 24 * 60 * 60)
     graylist = 24 * 60 * 60;
