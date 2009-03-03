@@ -96,10 +96,11 @@ static void call_teardown(void)
 
   s2_register_teardown();
 
-  mark_point();
-
-  nua_shutdown(nua);
-  fail_unless(s2_check_event(nua_r_shutdown, 200));
+  if (s2->shutdown == 0) {
+    mark_point();
+    nua_shutdown(nua);
+    fail_unless(s2_check_event(nua_r_shutdown, 200));
+  }
 
   mark_point();
 
@@ -1051,6 +1052,110 @@ START_TEST(cancel_2_2_8)
 }
 END_TEST
 
+START_TEST(cancel_2_2_9)
+{
+  nua_handle_t *nh;
+  struct message *invite, *cancel;
+  int timeout;
+
+  s2_case("2.2.9", "CANCEL a RFC2543 UA",
+	  "NUA is caller, NUA sends CANCEL after receiving 180, "
+	  "UAS sends 200 OK to CANCEL but no response to INVITE.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
+
+  nua_invite(nh, SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+	     TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  invite = s2_sip_wait_for_request(SIP_METHOD_INVITE);
+  process_offer(invite);
+  respond_with_sdp(
+    invite, dialog, SIP_180_RINGING,
+    SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
+    TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  nua_cancel(nh, TAG_END());
+  cancel = s2_sip_wait_for_request(SIP_METHOD_CANCEL);
+  fail_if(!cancel);
+  s2_sip_respond_to(cancel, dialog, SIP_200_OK, TAG_END());
+  s2_sip_free_message(cancel);
+
+  /* Time out INVITE */
+  for (timeout = 0; timeout < 34; timeout++) {
+    s2_nua_fast_forward(1, s2base->root);
+  }
+
+  fail_unless(s2_check_event(nua_r_invite, 408));
+  fail_unless(s2_check_callstate(nua_callstate_terminated));
+  nua_handle_destroy(nh);
+}
+END_TEST
+
+START_TEST(cancel_2_2_10)
+{
+  nua_handle_t *nh;
+  struct message *invite, *cancel;
+  struct event *event;
+  int timeout;
+
+  s2_case("2.2.10", "CANCEL and INVITE times out",
+	  "NUA is caller, NUA sends CANCEL after receiving 180 "
+	  "but UAS never responds.");
+
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
+
+  nua_invite(nh, SOATAG_USER_SDP_STR("m=audio 5004 RTP/AVP 0 8"),
+	     TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  invite = s2_sip_wait_for_request(SIP_METHOD_INVITE);
+  process_offer(invite);
+  respond_with_sdp(
+    invite, dialog, SIP_180_RINGING,
+    SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
+    TAG_END());
+  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless(s2_check_callstate(nua_callstate_proceeding));
+
+  nua_cancel(nh, TAG_END());
+  cancel = s2_sip_wait_for_request(SIP_METHOD_CANCEL);
+  s2_sip_free_message(cancel);
+  fail_if(!cancel);
+
+  nua_cancel(nh, TAG_END());
+  cancel = s2_sip_wait_for_request(SIP_METHOD_CANCEL);
+  fail_if(!cancel);
+  s2_sip_respond_to(cancel, dialog, SIP_200_OK, TAG_END());
+  s2_sip_free_message(cancel);
+
+  s2_register_teardown();
+
+  nua_set_params(s2->nua, NUTAG_SHUTDOWN_EVENTS(1), TAG_END());
+  fail_unless(s2_check_event(nua_r_set_params, 200));
+
+  nua_shutdown(s2->nua);
+  event = s2_wait_for_event(nua_r_shutdown, 100);
+  fail_unless(event != NULL);
+  s2_free_event(event);
+
+  /* Time out */
+  for (timeout = 0; timeout < 34; timeout++) {
+    s2_nua_fast_forward(5, s2base->root);
+    nua_shutdown(s2->nua);
+    event = s2_wait_for_event(nua_r_shutdown, 0);
+    fail_unless(event != NULL);
+    if (event->data->e_status >= 200)
+      break;
+  }
+
+  s2->shutdown = 200;
+}
+END_TEST
+
+
 
 TCase *cancel_tcase(int threading)
 {
@@ -1065,6 +1170,8 @@ TCase *cancel_tcase(int threading)
   tcase_add_test(tc, cancel_2_2_6);
   tcase_add_test(tc, cancel_2_2_7);
   tcase_add_test(tc, cancel_2_2_8);
+  tcase_add_test(tc, cancel_2_2_9);
+  tcase_add_test(tc, cancel_2_2_10);
 
   return tc;
 }

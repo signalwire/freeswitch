@@ -40,6 +40,8 @@ struct s2nua
 
   nua_t *nua;
 
+  int shutdown;
+
   struct event {
     struct event *next, **prev;
     nua_saved_event_t event[1];
