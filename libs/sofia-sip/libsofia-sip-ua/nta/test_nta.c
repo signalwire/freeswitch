@@ -530,7 +530,7 @@ until_server_canceled(client_t *c)
 {
   agent_t *ag = c->c_ag;
 
-  for (ag->ag_canceled = 0; !ag->ag_canceled;) {
+  for (ag->ag_canceled = 0; !ag->ag_canceled || c->c_status < 200;) {
     if (tstflags & tst_verbatim) {
       fputs(".", stdout); fflush(stdout);
     }
@@ -3612,8 +3612,9 @@ int test_prack(agent_t *ag)
 				SIPTAG_PAYLOAD(sdp),
 				TAG_END()));
 
-    /* Run until 1) server gets CANCEL and 2) client gets 408 */
-    TEST_1(!client_run_until_canceled(ctx, 408));
+    /* Run until 1) server gets CANCEL and 2) client gets 487 */
+    /* Note: this has been changed in 1.12.11 */
+    TEST_1(!client_run_until_canceled(ctx, 487));
 
     TEST_1(ag->ag_canceled != 0);
     TEST_P(ag->ag_latest_leg, ag->ag_server_leg);
