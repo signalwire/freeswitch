@@ -565,18 +565,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *cha
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_channel_unset_private(switch_channel_t *channel, const char *key)
-{
-	switch_status_t status;
-	switch_assert(channel != NULL);
-	
-	switch_mutex_lock(channel->profile_mutex);
-	status = switch_core_hash_delete(channel->private_hash, key);
-	switch_mutex_unlock(channel->profile_mutex);
-	
-	return status;
-}
-
 SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, const char *key)
 {
 	void *val;

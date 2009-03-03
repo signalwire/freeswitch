@@ -410,14 +410,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_private(switch_channel_t *cha
 SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, const char *key);
 
 /*!
-  \brief Unsets private from a given channel
-  \param channel channel to unsets data from
-  \param key your private data's unique keyname 
-  \return void SWITCH_STATUS_SUCCESS if data was unset
-*/
-SWITCH_DECLARE(switch_status_t) switch_channel_unset_private(switch_channel_t *channel, const char *key);
-
-/*!
   \brief Assign a name to a given channel
   \param channel channel to assign name to
   \param name name to assign
