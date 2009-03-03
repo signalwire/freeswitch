@@ -413,7 +413,6 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 		if (isdn_data) {
 			struct pri_sr *sr;
 			int dp;
-			const char *val;
 
 			if (!(call = pri_new_call(isdn_data->spri.pri))) {
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RESTART);
