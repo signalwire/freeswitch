@@ -2504,10 +2504,11 @@ int main(int argc, char *argv[])
 #endif
 
   if (o_attach) {
-    char line[10];
+    char line[10], *cr;
     printf("%s: pid %u\n", name, getpid());
     printf("<Press RETURN to continue>\n");
-    fgets(line, sizeof line, stdin);
+    cr = fgets(line, sizeof line, stdin);
+    (void)cr;
   }
 #if HAVE_ALARM
   else if (o_alarm) {
