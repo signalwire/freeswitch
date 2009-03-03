@@ -711,16 +711,13 @@ START_TEST(notify_6_3_4)
   struct event *response;
   sip_t *sip;
 
-  s2_case("6.3.3", "NOTIFY server - terminate with error response to NOTIFY",
+  s2_case("6.3.4", "NOTIFY server - terminate with error response to NOTIFY",
 	  "NUA receives SUBSCRIBE, sends 202 and NOTIFY. "
 	  "The subscription terminates when watcher "
 	  "returns 481 to second NOTIFY. The queued 3rd NOTIFY gets "
 	  "responded by stack.");
 
   nh = subscribe_to_nua("presence", SIPTAG_EXPIRES_STR("300"), TAG_END());
-
-  tport_set_params(s2->master, TPTAG_LOG(1), TAG_END());
-  s2_setup_logs(7);
 
   nua_notify(nh,
 	     NUTAG_SUBSTATE(nua_substate_active),

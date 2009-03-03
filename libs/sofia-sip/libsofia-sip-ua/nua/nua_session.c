@@ -1767,20 +1767,29 @@ static int nua_prack_client_request(nua_client_request_t *cr,
   else if (nh->nh_soa == NULL) {
     offer_sent = session_get_description(sip, NULL, NULL);
   }
-  /* When 100rel response status was 183 do support for preconditions */
-  else if (ss->ss_precondition && cri->cr_status == 183 &&
-	   cri->cr_offer_sent && cri->cr_answer_recv) {
-    if (soa_generate_offer(nh->nh_soa, 0, NULL) < 0 ||
-	session_include_description(nh->nh_soa, 1, msg, sip) < 0) {
+  else {
+    /* When 100rel response status was 183 do support for preconditions */
+    int send_offer = ss->ss_precondition &&
+      cri->cr_status == 183 && cri->cr_offer_sent && cri->cr_answer_recv;
+
+    if (!send_offer) {
+      tagi_t const *t = tl_find_last(tags, nutag_include_extra_sdp);
+      send_offer = t && t->t_value;
+    }
+
+    if (!send_offer) {
+    }
+    else if (soa_generate_offer(nh->nh_soa, 0, NULL) >= 0 &&
+	     session_include_description(nh->nh_soa, 1, msg, sip) >= 0) {
+      offer_sent = 1;
+    }
+    else {
       status = soa_error_as_sip_response(nh->nh_soa, &phrase);
       SU_DEBUG_3(("nua(%p): PRACK offer: %d %s\n", (void *)nh,
 		  status, phrase));
       nua_stack_event(nh->nh_nua, nh, NULL,
 		      nua_i_media_error, status, phrase, NULL);
       return nua_client_return(cr, status, phrase, msg);
-    }
-    else {
-      offer_sent = 1;
     }
   }
 
