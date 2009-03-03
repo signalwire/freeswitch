@@ -758,7 +758,7 @@ static void load_mime_types(void)
 
  end:
 
-	switch_safe_free(mime_path);
+		switch_core_db_free(mime_path);
 
 }
 
@@ -1034,7 +1034,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	dir_path = switch_mprintf("%s%ssounds", SWITCH_GLOBAL_dirs.base_dir, SWITCH_PATH_SEPARATOR);
 	switch_dir_make_recursive(dir_path, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
-	switch_safe_free(dir_path);
+	switch_core_db_free(dir_path);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.base_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.mod_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);
 	switch_dir_make_recursive(SWITCH_GLOBAL_dirs.conf_dir, SWITCH_DEFAULT_DIR_PERMS, runtime.memory_pool);

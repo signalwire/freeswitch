@@ -289,7 +289,7 @@ static switch_status_t do_config()
 
 	sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
 	limit_execute_sql(sql, globals.mutex);
-	switch_safe_free(sql);
+	switch_core_db_free(sql);
 
 	switch_xml_free(xml);
 
