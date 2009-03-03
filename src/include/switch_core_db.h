@@ -541,6 +541,11 @@ SWITCH_DECLARE(int) switch_core_db_changes(switch_core_db_t *db);
  */
 SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...);
 
+/*!
+ * \see switch_mprintf
+ */
+SWITCH_DECLARE(char *) switch_vmprintf(const char *zFormat, va_list ap);
+
 SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:

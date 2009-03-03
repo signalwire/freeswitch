@@ -180,6 +180,12 @@ SWITCH_DECLARE(char *) switch_mprintf(const char *zFormat, ...)
 	return z;
 }
 
+SWITCH_DECLARE(char *) switch_vmprintf(const char *zFormat, va_list ap)
+{
+
+	return sqlite3_vmprintf(zFormat, ap);
+}
+
 SWITCH_DECLARE(switch_core_db_t *) switch_core_db_open_file(char *filename)
 {
 	switch_core_db_t *db;
