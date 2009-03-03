@@ -1537,11 +1537,12 @@ int agent_set_params(nta_agent_t *agent, tagi_t *tags)
 
   m = 0;
   for (tport = agent->sa_tports; tport; tport = tport_next(tport)) {
-    m = tport_set_params(tport, TAG_NEXT(tags));
+    int m0 = tport_set_params(tport, TAG_NEXT(tags));
+    if (m0 < 0)
+      return m0;
+    if (m0 > m)
+      m = m0;
   }
-
-  if (m == -1)
-    return m;
 
   n += m;
 
