@@ -669,7 +669,6 @@ switch_thread_t *launch_sofia_worker_thread(sofia_profile_t *profile)
 	int x = 0;
 
 	switch_threadattr_create(&thd_attr, profile->pool);
-	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_threadattr_priority_increase(thd_attr);
 	switch_thread_create(&thread, thd_attr, sofia_profile_worker_thread_run, profile, profile->pool);
