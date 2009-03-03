@@ -33,6 +33,7 @@
 
 #include "config.h"
 
+#include "test_s2.h"
 #include "check_nua.h"
 
 #include <stdlib.h>
@@ -42,8 +43,6 @@
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
 #endif
-
-#include "test_s2.h"
 
 static void usage(int exitcode)
 {
@@ -61,6 +60,8 @@ int main(int argc, char *argv[])
   SRunner *runner;
 
   s2_tester = "check_nua";
+
+  s2_suite("N2");
 
   if (getenv("CHECK_NUA_VERBOSE"))
     s2_start_stop = strtoul(getenv("CHECK_NUA_VERBOSE"), NULL, 10);

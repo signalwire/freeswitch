@@ -55,8 +55,6 @@ check_nua_SOURCES = 	check_nua.c check_nua.h \
 check_nua_LDADD = 	$(nua_libs) ${top_builddir}/s2check/libs2.a \
 			@CHECK_LIBS@
 
-check_nua_CFLAGS = 	$(CFLAGS) -I$(top_srcdir)/s2check
-
 nua_libs = 		libnua.la  \
 			../iptsec/libiptsec.la \
 			../ipt/libipt.la \
@@ -84,6 +82,6 @@ EXTRA_DIST =		nua.docs $(BUILT_SOURCES)
 
 include $(top_srcdir)/rules/sofia.am
 
-INCLUDES = ${INTERNAL_INCLUDES}
+INCLUDES = ${INTERNAL_INCLUDES} -I$(top_srcdir)/s2check
 
 TAG_DLL_FLAGS =		LIST=nua_tag_list

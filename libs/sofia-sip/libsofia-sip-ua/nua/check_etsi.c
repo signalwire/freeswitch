@@ -71,7 +71,7 @@ static void etsi_setup(void)
                      NUTAG_OUTBOUND("no-options-keepalive, no-validate"),
 		     TAG_END());
 
-  soa = soa_create(NULL, s2->root, NULL);
+  soa = soa_create(NULL, s2base->root, NULL);
 
   fail_if(!soa);
 
@@ -148,7 +148,7 @@ respond_with_sdp(struct message *request,
   fail_if(soa_get_local_sdp(soa, NULL, &body, &bodylen) != 1);
 
   ta_start(ta, tag, value);
-  s2_respond_to(request, dialog, status, phrase,
+  s2_sip_respond_to(request, dialog, status, phrase,
 		SIPTAG_CONTENT_TYPE_STR("application/sdp"),
 		SIPTAG_PAYLOAD_STR(body),
 		SIPTAG_CONTENT_DISPOSITION_STR("session"),
@@ -168,7 +168,7 @@ invite_sent_by_nua(nua_handle_t *nh,
 
   fail_unless(s2_check_callstate(nua_callstate_calling));
 
-  return s2_wait_for_request(SIP_METHOD_INVITE);
+  return s2_sip_wait_for_request(SIP_METHOD_INVITE);
 }
 
 static void
@@ -182,10 +182,10 @@ bye_by_nua(struct dialog *dialog, nua_handle_t *nh,
   nua_bye(nh, ta_tags(ta));
   ta_end(ta);
 
-  bye = s2_wait_for_request(SIP_METHOD_BYE);
+  bye = s2_sip_wait_for_request(SIP_METHOD_BYE);
   fail_if(!bye);
-  s2_respond_to(bye, dialog, SIP_200_OK, TAG_END());
-  s2_free_message(bye);
+  s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
+  s2_sip_free_message(bye);
   fail_unless(s2_check_event(nua_r_bye, 200));
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 }
@@ -208,7 +208,7 @@ START_TEST(SIP_CC_OE_CE_V_019)
           "sends an ACK request with a To header identical to the "
           "received one for each received Success (200 OK) responses.");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
 
   invite = invite_sent_by_nua(nh, TAG_END());
 
@@ -218,17 +218,17 @@ START_TEST(SIP_CC_OE_CE_V_019)
 
   fail_unless(s2_check_event(nua_r_invite, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
   respond_with_sdp(invite, d2, SIP_200_OK, TAG_END());
-  s2_free_message(invite);
+  s2_sip_free_message(invite);
 
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  bye = s2_wait_for_request(SIP_METHOD_BYE);
+  bye = s2_sip_wait_for_request(SIP_METHOD_BYE);
   fail_if(!bye);
-  s2_respond_to(bye, d2, SIP_200_OK, TAG_END());
-  s2_free_message(bye);
+  s2_sip_respond_to(bye, d2, SIP_200_OK, TAG_END());
+  s2_sip_free_message(bye);
 
   bye_by_nua(d1, nh, TAG_END());
 
@@ -248,39 +248,39 @@ START_TEST(SIP_CC_OE_CE_TI_008)
           "that matches the transaction, still answer with an "
           "ACK request until timer D set to at least 32 second expires.");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
 
   invite = invite_sent_by_nua(nh, TAG_END());
 
-  s2_respond_to(invite, d1, 404, "First not found", TAG_END());
+  s2_sip_respond_to(invite, d1, 404, "First not found", TAG_END());
   fail_unless(s2_check_event(nua_r_invite, 404));
   fail_unless(s2_check_callstate(nua_callstate_terminated));
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);
+  s2_nua_fast_forward(5, s2base->root);
 
-  s2_respond_to(invite, d1, 404, "Not found after 5 seconds", TAG_END());
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  s2_sip_respond_to(invite, d1, 404, "Not found after 5 seconds", TAG_END());
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);
+  s2_nua_fast_forward(5, s2base->root);
 
-  s2_respond_to(invite, d1, 404, "Not found after 10 seconds", TAG_END());
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  s2_sip_respond_to(invite, d1, 404, "Not found after 10 seconds", TAG_END());
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(21, s2->root);
+  s2_nua_fast_forward(21, s2base->root);
 
-  s2_respond_to(invite, d1, 404, "Not found after 31 seconds", TAG_END());
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  s2_sip_respond_to(invite, d1, 404, "Not found after 31 seconds", TAG_END());
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);
+  s2_nua_fast_forward(5, s2base->root);
 
   /* Wake up nua thread and let it time out INVITE transaction */
   nua_set_params(s2->nua, TAG_END());
   s2_check_event(nua_r_set_params, 0);
 
-  s2_respond_to(invite, d1, 404, "Not found after 32 seconds", TAG_END());
-  s2_free_message(invite);
-  fail_if(s2_check_request_timeout(SIP_METHOD_ACK, 500));
+  s2_sip_respond_to(invite, d1, 404, "Not found after 32 seconds", TAG_END());
+  s2_sip_free_message(invite);
+  fail_if(s2_sip_check_request_timeout(SIP_METHOD_ACK, 3));
 
   nua_handle_destroy(nh);
 }
@@ -299,7 +299,7 @@ START_TEST(SIP_CC_OE_CE_TI_011_012)
           "on receipt of a retransmitted Success (200 OK) "
           "responses does not send an ACK request.");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
 
   invite = invite_sent_by_nua(nh, TAG_END());
 
@@ -309,29 +309,29 @@ START_TEST(SIP_CC_OE_CE_TI_011_012)
 
   fail_unless(s2_check_event(nua_r_invite, 200));
   fail_unless(s2_check_callstate(nua_callstate_ready));
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);
+  s2_nua_fast_forward(5, s2base->root);
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);
+  s2_nua_fast_forward(5, s2base->root);
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(21, s2->root);
+  s2_nua_fast_forward(20, s2base->root);
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
-  fail_unless(s2_check_request(SIP_METHOD_ACK));
+  fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  s2_fast_forward(5, s2->root);
+  /* Stack times out the INVITE transaction */
+  s2_nua_fast_forward(5, s2base->root);
 
-  /* Wake up nua thread and let it time out INVITE transaction */
-  nua_set_params(s2->nua, TAG_END());
-  s2_check_event(nua_r_set_params, 0);
-
-  respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
-  s2_free_message(invite);
-  fail_if(s2_check_request_timeout(SIP_METHOD_ACK, 500));
+  respond_with_sdp(invite, d1, SIP_200_OK,
+		   SIPTAG_SUBJECT_STR("Stray 200 OK"),
+		   TAG_END());
+  s2_sip_free_message(invite);
+  mark_point();
+  fail_if(s2_sip_check_request_timeout(SIP_METHOD_ACK, 3));
 
   bye_by_nua(d1, nh, TAG_END());
 

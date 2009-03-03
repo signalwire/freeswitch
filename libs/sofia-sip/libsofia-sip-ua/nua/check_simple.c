@@ -56,7 +56,6 @@
 /* ====================================================================== */
 
 static nua_t *nua;
-static soa_session_t *soa = NULL;
 static struct dialog *dialog = NULL;
 
 #define CRLF "\r\n"
@@ -138,7 +137,7 @@ respond_to_subscribe(struct message *subscribe,
   ta_list ta;
 
   ta_start(ta, tag, value);
-  s2_respond_to(subscribe, dialog, status, phrase,
+  s2_sip_respond_to(subscribe, dialog, status, phrase,
 		ta_tags(ta));
   ta_end(ta);
 
@@ -156,15 +155,15 @@ notify_to_nua(enum nua_substate expect_substate,
   ta_list ta;
 
   ta_start(ta, tag, value);
-  fail_if(s2_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
 			SIPTAG_CONTENT_TYPE_STR(event_mime_type),
 			SIPTAG_PAYLOAD_STR(event_state),
 			ta_tags(ta)));
   ta_end(ta);
 
-  response = s2_wait_for_response(200, SIP_METHOD_NOTIFY);
+  response = s2_sip_wait_for_response(200, SIP_METHOD_NOTIFY);
   fail_if(!response);
-  s2_free_message(response);
+  s2_sip_free_message(response);
 
   event = s2_wait_for_event(nua_i_notify, 200); fail_if(!event);
   fail_unless(s2_check_substate(event, expect_substate));
@@ -186,7 +185,7 @@ subscription_by_nua(nua_handle_t *nh,
   char const *substate_str = subscription_state;
   char const *expires = "600";
 
-  subscribe = s2_wait_for_request(SIP_METHOD_SUBSCRIBE);
+  subscribe = s2_sip_wait_for_request(SIP_METHOD_SUBSCRIBE);
   if (event_type)
     fail_if(!subscribe->sip->sip_event ||
 	    strcmp(event_type, subscribe->sip->sip_event->o_type));
@@ -200,7 +199,7 @@ subscription_by_nua(nua_handle_t *nh,
   ta_start(ta, tag, value);
 
   if (send_notify_before_response) {
-    s2_save_uas_dialog(dialog, subscribe->sip);
+    s2_sip_save_uas_dialog(dialog, subscribe->sip);
     notify = notify_to_nua(substate,
 			   SIPTAG_EVENT(subscribe->sip->sip_event),
 			   SIPTAG_SUBSCRIPTION_STATE_STR(substate_str),
@@ -223,7 +222,7 @@ subscription_by_nua(nua_handle_t *nh,
 			   ta_tags(ta));
   }
 
-  s2_free_message(subscribe);
+  s2_sip_free_message(subscribe);
 
   return notify;
 }
@@ -235,15 +234,15 @@ unsubscribe_by_nua(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...)
   struct event *event;
 
   nua_unsubscribe(nh, TAG_END());
-  subscribe = s2_wait_for_request(SIP_METHOD_SUBSCRIBE);
+  subscribe = s2_sip_wait_for_request(SIP_METHOD_SUBSCRIBE);
 
-  s2_respond_to(subscribe, dialog, SIP_200_OK, SIPTAG_EXPIRES_STR("0"), TAG_END());
+  s2_sip_respond_to(subscribe, dialog, SIP_200_OK, SIPTAG_EXPIRES_STR("0"), TAG_END());
 
   event = s2_wait_for_event(nua_r_unsubscribe, 200); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_active));
   s2_free_event(event);
 
-  fail_if(s2_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
 			SIPTAG_EVENT(subscribe->sip->sip_event),
 			SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=tiemout"),
 			SIPTAG_CONTENT_TYPE_STR(event_mime_type),
@@ -254,9 +253,9 @@ unsubscribe_by_nua(nua_handle_t *nh, tag_type_t tag, tag_value_t value, ...)
   fail_unless(s2_check_substate(event, nua_substate_terminated));
   s2_free_event(event);
 
-  response = s2_wait_for_response(200, SIP_METHOD_NOTIFY);
+  response = s2_sip_wait_for_response(200, SIP_METHOD_NOTIFY);
   fail_if(!response);
-  s2_free_message(response); s2_free_message(subscribe);
+  s2_sip_free_message(response); s2_sip_free_message(subscribe);
 }
 
 /* ====================================================================== */
@@ -269,7 +268,7 @@ START_TEST(subscribe_6_1_1)
   s2_case("6.1.1", "Basic subscription",
 	  "NUA sends SUBSCRIBE, waits for NOTIFY, sends un-SUBSCRIBE");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
   nua_subscribe(nh, SIPTAG_EVENT_STR(event_type), TAG_END());
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_free_event(notify);
@@ -291,15 +290,15 @@ START_TEST(subscribe_6_1_2)
 
   send_notify_before_response = 1;
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
   nua_subscribe(nh, SIPTAG_EVENT_STR(event_type), TAG_END());
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_free_event(notify);
 
   /* Wait for refresh */
-  s2_fast_forward(600, s2->root);
-  subscribe = s2_wait_for_request(SIP_METHOD_SUBSCRIBE);
-  s2_respond_to(subscribe, dialog, SIP_200_OK,
+  s2_nua_fast_forward(600, s2base->root);
+  subscribe = s2_sip_wait_for_request(SIP_METHOD_SUBSCRIBE);
+  s2_sip_respond_to(subscribe, dialog, SIP_200_OK,
 		SIPTAG_EXPIRES_STR("600"),
 		TAG_END());
 
@@ -307,7 +306,7 @@ START_TEST(subscribe_6_1_2)
   fail_unless(s2_check_substate(event, nua_substate_active));
   s2_free_event(event);
 
-  fail_if(s2_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
 			SIPTAG_EVENT(subscribe->sip->sip_event),
 			SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=600"),
 			SIPTAG_CONTENT_TYPE_STR(event_mime_type),
@@ -316,9 +315,9 @@ START_TEST(subscribe_6_1_2)
   event = s2_wait_for_event(nua_i_notify, 200); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_active));
   s2_free_event(event);
-  response = s2_wait_for_response(200, SIP_METHOD_NOTIFY);
+  response = s2_sip_wait_for_response(200, SIP_METHOD_NOTIFY);
   fail_if(!response);
-  s2_free_message(response);
+  s2_sip_free_message(response);
 
   unsubscribe_by_nua(nh, TAG_END());
 
@@ -336,21 +335,21 @@ START_TEST(subscribe_6_1_3)
 	  "NUA sends SUBSCRIBE, waits for NOTIFY, "
 	  "gets NOTIFY terminating the subscription,");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
   nua_subscribe(nh, SIPTAG_EVENT_STR(event_type), TAG_END());
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_free_event(notify);
 
-  fail_if(s2_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
 			SIPTAG_EVENT_STR(event_type),
 			SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
 			TAG_END()));
   event = s2_wait_for_event(nua_i_notify, 200); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_terminated));
   s2_free_event(event);
-  response = s2_wait_for_response(200, SIP_METHOD_NOTIFY);
+  response = s2_sip_wait_for_response(200, SIP_METHOD_NOTIFY);
   fail_if(!response);
-  s2_free_message(response);
+  s2_sip_free_message(response);
 
   nua_handle_destroy(nh);
 }
@@ -366,25 +365,25 @@ START_TEST(subscribe_6_1_4)
 	  "NUA sends SUBSCRIBE, waits for NOTIFY, "
 	  "gets NOTIFY terminating the subscription,");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
   nua_subscribe(nh, SIPTAG_EVENT_STR(event_type), TAG_END());
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_free_event(notify);
 
-  fail_if(s2_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_NOTIFY, NULL,
 			SIPTAG_EVENT_STR(event_type),
 			SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=deactivated"),
 			TAG_END()));
   event = s2_wait_for_event(nua_i_notify, 200); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_embryonic));
   s2_free_event(event);
-  response = s2_wait_for_response(200, SIP_METHOD_NOTIFY);
+  response = s2_sip_wait_for_response(200, SIP_METHOD_NOTIFY);
   fail_if(!response);
-  s2_free_message(response);
+  s2_sip_free_message(response);
 
   su_home_unref((void *)dialog), dialog = su_home_new(sizeof *dialog); fail_if(!dialog);
 
-  s2_fast_forward(5, s2->root);
+  s2_nua_fast_forward(5, s2base->root);
   /* nua re-establishes the subscription */
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_free_event(notify);
@@ -423,7 +422,7 @@ START_TEST(fetch_6_2_1)
   s2_case("6.2.1", "Event fetch - NOTIFY after 202",
 	  "NUA sends SUBSCRIBE with Expires 0, waits for NOTIFY");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
   nua_subscribe(nh, SIPTAG_EVENT_STR(event_type), SIPTAG_EXPIRES_STR("0"), TAG_END());
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_check_substate(notify, nua_substate_terminated);
@@ -442,7 +441,7 @@ START_TEST(fetch_6_2_2)
 
   send_notify_before_response = 1;
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
   nua_subscribe(nh, SIPTAG_EVENT_STR(event_type), SIPTAG_EXPIRES_STR("0"), TAG_END());
   notify = subscription_by_nua(nh, nua_substate_embryonic, TAG_END());
   s2_check_substate(notify, nua_substate_terminated);
@@ -460,18 +459,18 @@ START_TEST(fetch_6_2_3)
   s2_case("6.2.3", "Event fetch - no NOTIFY",
 	  "NUA sends SUBSCRIBE with Expires 0, waits for NOTIFY, times out");
 
-  nh = nua_handle(nua, NULL, SIPTAG_TO(s2->local), TAG_END());
+  nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
   nua_subscribe(nh, SIPTAG_EVENT_STR(event_type), SIPTAG_EXPIRES_STR("0"), TAG_END());
-  subscribe = s2_wait_for_request(SIP_METHOD_SUBSCRIBE);
-  s2_respond_to(subscribe, dialog, SIP_202_ACCEPTED,
+  subscribe = s2_sip_wait_for_request(SIP_METHOD_SUBSCRIBE);
+  s2_sip_respond_to(subscribe, dialog, SIP_202_ACCEPTED,
 		SIPTAG_EXPIRES_STR("0"), TAG_END());
-  s2_free_message(subscribe);
+  s2_sip_free_message(subscribe);
 
   event = s2_wait_for_event(nua_r_subscribe, 202); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_embryonic));
   s2_free_event(event);
 
-  s2_fast_forward(600, s2->root);
+  s2_nua_fast_forward(600, s2base->root);
 
   event = s2_wait_for_event(nua_i_notify, 408); fail_if(!event);
   fail_unless(s2_check_substate(event, nua_substate_terminated));
@@ -513,7 +512,7 @@ subscribe_to_nua(char const *event,
   s2_check_event(nua_r_set_params, 200);
 
   ta_start(ta, tag, value);
-  s2_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
+  s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
 		SIPTAG_EVENT_STR(event),
 		ta_tags(ta));
   ta_end(ta);
@@ -525,10 +524,10 @@ subscribe_to_nua(char const *event,
 	      TAG_END());
   s2_free_event(subscribe);
 
-  response = s2_wait_for_response(202, SIP_METHOD_SUBSCRIBE);
-  s2_update_dialog(dialog, response);
+  response = s2_sip_wait_for_response(202, SIP_METHOD_SUBSCRIBE);
+  s2_sip_update_dialog(dialog, response);
   fail_unless(response->sip->sip_expires != NULL);
-  s2_free_message(response);
+  s2_sip_free_message(response);
 
   return nh;
 }
@@ -544,24 +543,24 @@ START_TEST(notify_6_3_1)
 	  "NUA receives SUBSCRIBE, sends 202 and NOTIFY. "
 	  "First NOTIFY terminates subscription. ");
 
-  s2_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
-		SIPTAG_EVENT_STR("presence"),
-		TAG_END());
+  s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
+		    SIPTAG_EVENT_STR("presence"),
+		    TAG_END());
   /* 489 Bad Event by default */
-  s2_check_response(489, SIP_METHOD_SUBSCRIBE);
+  s2_sip_check_response(489, SIP_METHOD_SUBSCRIBE);
 
   nua_set_params(nua, NUTAG_APPL_METHOD("SUBSCRIBE"), TAG_END());
   s2_check_event(nua_r_set_params, 200);
 
-  s2_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
+  s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
 		SIPTAG_EVENT_STR("presence"),
 		TAG_END());
-  s2_check_response(489, SIP_METHOD_SUBSCRIBE);
+  s2_sip_check_response(489, SIP_METHOD_SUBSCRIBE);
 
   nua_set_params(nua, SIPTAG_ALLOW_EVENTS_STR("presence"), TAG_END());
   s2_check_event(nua_r_set_params, 200);
 
-  s2_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
+  s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
 		SIPTAG_EVENT_STR("presence"),
 		TAG_END());
   subscribe = s2_wait_for_event(nua_i_subscribe, 100);
@@ -571,11 +570,11 @@ START_TEST(notify_6_3_1)
 	      TAG_END());
   s2_free_event(subscribe);
 
-  s2_check_response(403, SIP_METHOD_SUBSCRIBE);
+  s2_sip_check_response(403, SIP_METHOD_SUBSCRIBE);
 
   nua_handle_destroy(nh);
 
-  s2_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
+  s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
 		SIPTAG_EVENT_STR("presence"),
 		TAG_END());
   subscribe = s2_wait_for_event(nua_i_subscribe, 100);
@@ -585,22 +584,22 @@ START_TEST(notify_6_3_1)
 	      TAG_END());
   s2_free_event(subscribe);
 
-  response = s2_wait_for_response(202, SIP_METHOD_SUBSCRIBE);
-  s2_update_dialog(dialog, response);
+  response = s2_sip_wait_for_response(202, SIP_METHOD_SUBSCRIBE);
+  s2_sip_update_dialog(dialog, response);
   fail_unless(response->sip->sip_expires != NULL);
-  s2_free_message(response);
+  s2_sip_free_message(response);
 
   nua_notify(nh,
 	     NUTAG_SUBSTATE(nua_substate_terminated),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
 	     TAG_END());
-  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
   fail_unless(notify != NULL);
   sip = notify->sip;
   fail_unless(sip->sip_subscription_state != NULL);
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "terminated"));
-  s2_respond_to(notify, dialog, SIP_200_OK, TAG_END());
+  s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
 
   s2_check_event(nua_r_notify, 200);
   nua_handle_destroy(nh);
@@ -610,8 +609,7 @@ END_TEST
 START_TEST(notify_6_3_2)
 {
   nua_handle_t *nh;
-  struct event *subscribe;
-  struct message *notify, *response;
+  struct message *notify;
   sip_t *sip;
 
   s2_case("6.3.2", "NOTIFY server - automatic subscription termination",
@@ -624,24 +622,24 @@ START_TEST(notify_6_3_2)
 	     NUTAG_SUBSTATE(nua_substate_active),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
 	     TAG_END());
-  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
   fail_unless(notify != NULL);
   sip = notify->sip;
   fail_unless(sip->sip_subscription_state != NULL);
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
-  s2_respond_to(notify, dialog, SIP_200_OK, TAG_END());
+  s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
   s2_check_event(nua_r_notify, 200);
 
-  s2_fast_forward(300, s2->root);
+  s2_nua_fast_forward(300, s2base->root);
 
-  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
   fail_unless(notify != NULL);
   sip = notify->sip;
   fail_unless(sip->sip_subscription_state != NULL);
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "terminated"));
-  s2_respond_to(notify, dialog, SIP_200_OK, TAG_END());
+  s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
   s2_check_event(nua_r_notify, 200);
 
   nua_handle_destroy(nh);
@@ -677,26 +675,26 @@ START_TEST(notify_6_3_3)
 	     NUTAG_SUBSTATE(nua_substate_active),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
 	     TAG_END());
-  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
   fail_unless(notify != NULL);
   sip = notify->sip;
   fail_unless(sip->sip_subscription_state != NULL);
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
-  s2_respond_to(notify, dialog, SIP_200_OK, TAG_END());
+  s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
   s2_check_event(nua_r_notify, 200);
 
   nua_notify(nh,
 	     NUTAG_SUBSTATE(nua_substate_active),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
 	     TAG_END());
-  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
   fail_unless(notify != NULL);
   sip = notify->sip;
   fail_unless(sip->sip_subscription_state != NULL);
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
-  s2_respond_to(notify, dialog, SIP_481_NO_TRANSACTION, TAG_END());
+  s2_sip_respond_to(notify, dialog, SIP_481_NO_TRANSACTION, TAG_END());
   response = s2_wait_for_event(nua_r_notify, 481);
   fail_unless(s2_event_substate(response) == nua_substate_terminated);
 
@@ -723,13 +721,13 @@ START_TEST(notify_6_3_4)
 	     NUTAG_SUBSTATE(nua_substate_active),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
 	     TAG_END());
-  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
   fail_unless(notify != NULL);
   sip = notify->sip;
   fail_unless(sip->sip_subscription_state != NULL);
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
-  s2_respond_to(notify, dialog, SIP_200_OK, TAG_END());
+  s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
   s2_check_event(nua_r_notify, 200);
 
   nua_notify(nh,
@@ -740,13 +738,13 @@ START_TEST(notify_6_3_4)
 	     NUTAG_SUBSTATE(nua_substate_active),
 	     SIPTAG_PAYLOAD_STR(presence_closed),
 	     TAG_END());
-  notify = s2_wait_for_request(SIP_METHOD_NOTIFY);
+  notify = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
   fail_unless(notify != NULL);
   sip = notify->sip;
   fail_unless(sip->sip_subscription_state != NULL);
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
-  s2_respond_to(notify, dialog, SIP_481_NO_TRANSACTION, TAG_END());
+  s2_sip_respond_to(notify, dialog, SIP_481_NO_TRANSACTION, TAG_END());
   response = s2_wait_for_event(nua_r_notify, 481);
   fail_unless(s2_event_substate(response) == nua_substate_terminated);
   response = s2_wait_for_event(nua_r_notify, 481);
@@ -783,10 +781,10 @@ START_TEST(empty)
   s2_case("0.0.0", "Empty test case",
 	  "Detailed explanation for empty test case.");
 
-  tport_set_params(s2->master, TPTAG_LOG(1), TAG_END());
+  tport_set_params(s2sip->master, TPTAG_LOG(1), TAG_END());
   s2_setup_logs(7);
   s2_setup_logs(0);
-  tport_set_params(s2->master, TPTAG_LOG(0), TAG_END());
+  tport_set_params(s2sip->master, TPTAG_LOG(0), TAG_END());
 }
 
 END_TEST

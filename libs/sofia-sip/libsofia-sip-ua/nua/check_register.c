@@ -75,7 +75,7 @@ static void pingpong_setup(void)
 		     TPTAG_PINGPONG(20000),
 		     TPTAG_KEEPALIVE(10000),
 		     TAG_END());
-  tport_set_params(s2->tcp.tport, TPTAG_PONG2PING(1), TAG_END());
+  tport_set_params(s2sip->tcp.tport, TPTAG_PONG2PING(1), TAG_END());
 }
 
 static void pingpong_thread_setup(void)
@@ -121,12 +121,12 @@ START_TEST(register_1_0_1)
 
   nua_register(nh, TAG_END());
 
-  fail_unless((m = s2_wait_for_request(SIP_METHOD_REGISTER)) != NULL, NULL);
+  fail_unless((m = s2_sip_wait_for_request(SIP_METHOD_REGISTER)) != NULL, NULL);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_403_FORBIDDEN,
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   nua_handle_destroy(nh);
 
@@ -156,38 +156,38 @@ START_TEST(register_1_1_2)
 
   nua_register(nh, TAG_END());
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
-  s2_respond_to(m, NULL,
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
+  s2_sip_respond_to(m, NULL,
 		SIP_407_PROXY_AUTH_REQUIRED,
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
   s2_check_event(nua_r_register, 407);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
-  s2_respond_to(m, NULL,
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
+  s2_sip_respond_to(m, NULL,
 		SIP_401_UNAUTHORIZED,
 		SIPTAG_WWW_AUTHENTICATE_STR(s2_auth2_digest_str),
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
   s2_check_event(nua_r_register, 401);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth2_credentials), TAG_END());
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
   fail_if(!m->sip->sip_authorization);
   fail_if(!m->sip->sip_proxy_authorization);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
   s2_check_event(nua_r_register, 200);
@@ -237,32 +237,32 @@ START_TEST(register_1_2_1) {
 
   nua_register(nh, TAG_END());
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
   fail_if(!m->sip->sip_contact || m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
   s2_check_event(nua_r_register, 100);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
   fail_if(!m->sip->sip_contact || !m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
@@ -286,19 +286,19 @@ static nua_handle_t *make_auth_natted_register(
   nua_register(nh, ta_tags(ta));
   ta_end(ta);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
-  s2_respond_to(m, NULL,
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
+  s2_sip_respond_to(m, NULL,
 		SIP_401_UNAUTHORIZED,
 		SIPTAG_WWW_AUTHENTICATE_STR(s2_auth_digest_str),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   s2_check_event(nua_r_register, 401);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
   fail_if(!m->sip->sip_authorization);
   /* should not unregister the previous contact
@@ -307,12 +307,12 @@ static nua_handle_t *make_auth_natted_register(
   fail_if(m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
   s2_check_event(nua_r_register, 200);
@@ -350,61 +350,61 @@ START_TEST(register_1_2_2_2)
 
   mark_point();
 
-  m = s2_wait_for_request(SIP_METHOD_OPTIONS);
+  m = s2_sip_wait_for_request(SIP_METHOD_OPTIONS);
   fail_if(!m);
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_407_PROXY_AUTH_REQUIRED,
 		SIPTAG_VIA(natted_via(m)),
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
   mark_point();
 
-  m = s2_wait_for_request(SIP_METHOD_OPTIONS);
+  m = s2_sip_wait_for_request(SIP_METHOD_OPTIONS);
   fail_if(!m); fail_if(!m->sip->sip_proxy_authorization);
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
-  su_root_step(s2->root, 20); su_root_step(s2->root, 20);
-  s2_fast_forward(120, s2->root);	  /* Default keepalive interval */
+  su_root_step(s2base->root, 20); su_root_step(s2base->root, 20);
+  s2_nua_fast_forward(120, s2base->root);	  /* Default keepalive interval */
   mark_point();
 
-  m = s2_wait_for_request(SIP_METHOD_OPTIONS);
-  s2_respond_to(m, NULL,
+  m = s2_sip_wait_for_request(SIP_METHOD_OPTIONS);
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
-  su_root_step(s2->root, 20); su_root_step(s2->root, 20);
-  s2_fast_forward(120, s2->root);	  /* Default keepalive interval */
+  su_root_step(s2base->root, 20); su_root_step(s2base->root, 20);
+  s2_nua_fast_forward(120, s2base->root);	  /* Default keepalive interval */
   mark_point();
 
   receive_natted = "received=4.255.255.10";
 
-  m = s2_wait_for_request(SIP_METHOD_OPTIONS);
-  s2_respond_to(m, NULL,
+  m = s2_sip_wait_for_request(SIP_METHOD_OPTIONS);
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   s2_check_event(nua_i_outbound, 0);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
   fail_if(!m->sip->sip_contact || !m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   s2_check_event(nua_r_register, 200);
 
@@ -434,33 +434,33 @@ START_TEST(register_1_2_2_3)
 
   receive_natted = "received=4.255.255.10";
 
-  s2_fast_forward(3600, s2->root);
+  s2_nua_fast_forward(3600, s2base->root);
   mark_point();
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   s2_check_event(nua_r_register, 100);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
   fail_if(!m->sip->sip_contact || !m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
@@ -484,28 +484,28 @@ START_TEST(register_1_2_3) {
 
   mark_point();
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
   fail_if(!m->sip->sip_contact || m->sip->sip_contact->m_next);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		400, "Bad Contact",
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   s2_check_event(nua_r_register, 100);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
@@ -530,34 +530,34 @@ START_TEST(register_1_3_1)
 
   nh = nua_handle(nua, NULL, TAG_END());
 
-  nua_register(nh, NUTAG_PROXY(s2->tcp.contact->m_url), TAG_END());
+  nua_register(nh, NUTAG_PROXY(s2sip->tcp.contact->m_url), TAG_END());
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_contact || m->sip->sip_contact->m_next);
   fail_if(!tport_is_tcp(m->tport));
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
   s2_check_event(nua_r_register, 100);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
   fail_if(!m->sip->sip_contact || !m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
@@ -581,7 +581,7 @@ START_TEST(register_1_3_2_1)
 
   mark_point();
   s2->registration->nh = nh;
-  make_auth_natted_register(nh, NUTAG_PROXY(s2->tcp.contact->m_url), TAG_END());
+  make_auth_natted_register(nh, NUTAG_PROXY(s2sip->tcp.contact->m_url), TAG_END());
   fail_if(!tport_is_tcp(s2->registration->tport));
   s2_register_teardown();
 }
@@ -604,38 +604,38 @@ START_TEST(register_1_3_2_2)
   mark_point();
   s2->registration->nh = nh;
   make_auth_natted_register(
-    nh, NUTAG_PROXY(s2->tcp.contact->m_url),
+    nh, NUTAG_PROXY(s2sip->tcp.contact->m_url),
     NUTAG_OUTBOUND("no-options-keepalive, no-validate"),
     TAG_END());
   fail_if(!tport_is_tcp(s2->registration->tport));
   tport_shutdown(s2->registration->tport, 2);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   /* The "NAT binding" changed when new TCP connection is established */
   /* => NUA re-REGISTERs with newly detected contact */
   s2_check_event(nua_r_register, 100);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
   fail_if(!m->sip->sip_contact || !m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   s2_check_event(nua_r_register, 200);
 
@@ -667,22 +667,22 @@ START_TEST(register_1_3_3_1)
 
   /* NTA tries with UDP, we drop them */
   for (;;) {
-    m = s2_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
+    m = s2_sip_wait_for_request(SIP_METHOD_REGISTER); fail_if(!m);
     if (!tport_is_udp(m->tport)) /* Drop UDP */
       break;
-    s2_free_message(m);
-    s2_fast_forward(4, s2->root);
+    s2_sip_free_message(m);
+    s2_nua_fast_forward(4, s2base->root);
   }
 
   tcp = tport_ref(m->tport);
 
   /* Respond to request over TCP */
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_401_UNAUTHORIZED,
 		SIPTAG_WWW_AUTHENTICATE_STR(s2_auth_digest_str),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
   s2_check_event(nua_r_register, 401);
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
 
@@ -690,32 +690,32 @@ START_TEST(register_1_3_3_1)
   tport_set_params(tcp, TPTAG_PONG2PING(0), TAG_END());
 
   /* Now request over UDP ... registering TCP contact! */
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
   s2_save_register(m);
   fail_unless(
     url_has_param(s2->registration->contact->m_url, "transport=tcp"));
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   /* NUA detects oops... re-registers UDP */
   s2_check_event(nua_r_register, 100);
 
-  m = s2_wait_for_request(SIP_METHOD_REGISTER);
+  m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
   fail_if(!m->sip->sip_contact || !m->sip->sip_contact->m_next);
   s2_save_register(m);
 
-  s2_respond_to(m, NULL,
+  s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
-  s2_free_message(m);
+  s2_sip_free_message(m);
 
   s2_check_event(nua_r_register, 200);
 
@@ -726,10 +726,10 @@ START_TEST(register_1_3_3_1)
   {
     int i;
     for (i = 0; i < 5; i++) {
-      su_root_step(s2->root, 5);
-      su_root_step(s2->root, 5);
-      su_root_step(s2->root, 5);
-      s2_fast_forward(5, s2->root);
+      su_root_step(s2base->root, 5);
+      su_root_step(s2base->root, 5);
+      su_root_step(s2base->root, 5);
+      s2_nua_fast_forward(5, s2base->root);
     }
   }
 
