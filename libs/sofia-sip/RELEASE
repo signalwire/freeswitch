@@ -25,6 +25,16 @@ API/ABI changes and versioning
 
 libsofia-sip-ua:
 - **template**: Added foobar() function (sofia-sip/foobar.h).
+- Timing out CANCELed INVITE client transactions is now done with timer D.
+  Previously, the INVITE client transactions were restarted instead of
+  timing out under certain circumstances.
+- An INVITE transaction that has been timed out with stack timer C is now
+  CANCELed automatically. Previously, such the INVITE client transactions
+  were restarted instead of timing out under certain circumstances.
+- Timing out forked INVITE client transactions is now done by stack.
+  The stack generates a 408 response to each INVITE transaction fork that
+  has not received a final response within 32 seconds (or 64 times SIP T1)
+  after first final response to the INVITE was received.
 - The mp_len type was changed from usize_t to unsigned.
   The change is binary-incompatible on 64-bit platforms when compiled with
   the configure opetion --disable-size-compat
@@ -42,6 +52,7 @@ Removed globals which should have been static in first place:
   - t_next_next(), t_next_move(), t_next_len(), t_next_dup(), t_next_filter()
   - t_filter_with(), t_any_filter()
   - sres_record_class()
+  - u2s_alloc()
 
 libsofia-sip-ua-glib:
 - No ABI/API changes, compatible with 1.12.0. Note, libsofia-sip-ua-glib
