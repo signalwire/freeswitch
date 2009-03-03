@@ -1475,7 +1475,7 @@ SWITCH_DECLARE(size_t) switch_url_encode(const char *url, char *buf, size_t len)
 			break;
 		}
 		if (*p < ' ' || *p > '~' || strchr(urlunsafe, *p)) {
-			if ((x + 3) >= len) {
+			if ((x + 3) > len) {
 				break;
 			}
 			buf[x++] = '%';
