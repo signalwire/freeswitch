@@ -188,7 +188,7 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 			switch_core_file_close(&dh->fh);
 
 			if (session && (channel = switch_core_session_get_channel(session))) {
-				switch_channel_set_private(channel, dh->file, NULL);
+				switch_channel_unset_private(channel, dh->file);
 			}
 		}
 		break;
@@ -269,7 +269,7 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 			switch_core_file_close(&dh->fh);
 
 			if (session && (channel = switch_core_session_get_channel(session))) {
-				switch_channel_set_private(channel, dh->file, NULL);
+				switch_channel_unset_private(channel, dh->file);
 			}
 		}
 		break;
