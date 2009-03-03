@@ -7679,7 +7679,17 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
     }
   }
 
-  if (route_url && !orq->orq_user_tport) {
+  if (tpn) {
+    /* CANCEL or ACK to [3456]XX */
+    invalid = tport_name_dup(home, orq->orq_tpn, tpn);
+#if HAVE_SOFIA_SRESOLV
+    assert(tport_name_is_resolved(orq->orq_tpn));
+#endif
+    resolved = tport_name_is_resolved(orq->orq_tpn);
+    orq->orq_url = url_hdup(home, sip->sip_request->rq_url);
+    scheme = "sip";		/* XXX */
+  }
+  else if (route_url && !orq->orq_user_tport) {
     invalid = nta_tpn_by_url(home, orq->orq_tpn, &scheme, &port, route_url);
 
     if (override_tport) {	/* Use transport protocol name from transport  */
@@ -7691,15 +7701,6 @@ nta_outgoing_t *outgoing_create(nta_agent_t *agent,
     orq->orq_url = url_hdup(home, sip->sip_request->rq_url);
     if (route_url != (url_string_t *)agent->sa_default_proxy)
       orq->orq_route = url_hdup(home, route_url->us_url);
-  }
-  else if (tpn) {
-    invalid = tport_name_dup(home, orq->orq_tpn, tpn);
-#if HAVE_SOFIA_SRESOLV
-    assert(tport_name_is_resolved(orq->orq_tpn));
-#endif
-    resolved = tport_name_is_resolved(orq->orq_tpn);
-    orq->orq_url = url_hdup(home, sip->sip_request->rq_url);
-    scheme = "sip";		/* XXX */
   }
   else {
     invalid = nta_tpn_by_url(home, orq->orq_tpn, &scheme, &port,
