@@ -154,7 +154,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_speech_read_tts(switch_speech_handle
 	if (switch_test_flag(sh, SWITCH_SPEECH_FLAG_DONE)) {
 		switch_clear_flag(sh, SWITCH_SPEECH_FLAG_DONE);
 		*datalen = 0;
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_BREAK;
 	}
 
  more:
