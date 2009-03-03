@@ -4,7 +4,7 @@ LOCAL_LDFLAGS=-lpython2.4
 all: _ESL.so
 
 esl_wrap.cpp:
-	swig -module _ESL -classic -python -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
+	swig -module ESL -classic -python -c++ -DMULTIPLICITY -I../src/include -o esl_wrap.cpp ../ESL.i
 
 esl_wrap.o: esl_wrap.cpp
 	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) -c esl_wrap.cpp -o esl_wrap.o
