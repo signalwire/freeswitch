@@ -413,7 +413,7 @@ SWITCH_DECLARE(void *) switch_channel_get_private(switch_channel_t *channel, con
   \brief Unsets private from a given channel
   \param channel channel to unsets data from
   \param key your private data's unique keyname 
-  \return void pointer to channel's private data
+  \return void SWITCH_STATUS_SUCCESS if data was unset
 */
 SWITCH_DECLARE(switch_status_t) switch_channel_unset_private(switch_channel_t *channel, const char *key);
 
