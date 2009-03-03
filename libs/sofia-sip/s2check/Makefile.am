@@ -19,6 +19,8 @@ noinst_LIBRARIES = 	libs2.a
 # Rules for building the targets
 
 libs2_a_SOURCES = 	s2check.h s2tcase.c \
+			s2base.h s2base.c \
+			s2sip.c s2sip.h \
 			s2_localinfo.h s2_localinfo.c \
 			s2dns.h s2dns.c \
 			s2util.h s2time.c
