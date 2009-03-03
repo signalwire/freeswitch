@@ -2238,6 +2238,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
 	switch_event_t *params = NULL;
+	char stupid[128] = "";
+
 	if (switch_strlen_zero(outbound_profile->destination_number)) {
 		goto done;
 	}
@@ -2357,7 +2359,11 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			myflags |= SOF_NOBLOCK;
 		}
 
-		if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, 
+		switch_snprintf(stupid, sizeof(stupid), "user/%s", user);
+		if (switch_stristr(stupid, d_dest)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Waddya Daft? You almost called '%s' in an infinate loop!\n", stupid);
+			cause = SWITCH_CAUSE_INVALID_IE_CONTENTS;
+		} else if (switch_ivr_originate(session, new_session, &cause, d_dest, timelimit, NULL, 
 								 cid_name_override, cid_num_override, NULL, var_event, myflags) == SWITCH_STATUS_SUCCESS) {
 			const char *context;
 			switch_caller_profile_t *cp;
