@@ -634,7 +634,7 @@ tag_typedef_t ntatag_progress = UINTTAG_TYPEDEF(progress);
  *    instead if NTATAG_TIMER_C(0) is given.
  *
  * @par Default Value
- *   - 180000 (milliseconds, 3 minutes)
+ *   - 185000 (milliseconds, 3 minutes)
  *
  * @sa @RFC3261 sections 13.3.1.1, 16.7 and 16.8,
  * NTATAG_UA(1), NTATAG_TIMER_C(),
