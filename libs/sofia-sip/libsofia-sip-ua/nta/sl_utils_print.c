@@ -218,11 +218,18 @@ issize_t sl_payload_print(FILE *stream, char const *prefix, sip_payload_t const 
     crlf = su_strnspn(s + n, end - s - n, "\r\n");
     if (prefix)
       fputs(prefix, stream), total += strlen(prefix);
+v v v v v v v
     actual = fwrite(s, 1, n + crlf, stream) ;
     if (actual == 0)
        return -1;
     s += actual;
     total += actual;
+*************
+    if (fwrite(s, 1, n + crlf, stream) < n + crlf)
+      return (issize_t)-1;
+    s += n + crlf;
+    total += n + crlf;
+^ ^ ^ ^ ^ ^ ^
   }
   if (crlf == 0)
     fputs("\n", stream), total++;
