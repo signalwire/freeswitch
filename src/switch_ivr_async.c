@@ -182,7 +182,14 @@ static switch_bool_t write_displace_callback(switch_media_bug_t *bug, void *user
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		if (dh) {
+			switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+			switch_channel_t *channel;
+
 			switch_core_file_close(&dh->fh);
+
+			if (session && (channel = switch_core_session_get_channel(session))) {
+				switch_channel_set_private(channel, dh->file, NULL);
+			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ_REPLACE:
@@ -256,7 +263,14 @@ static switch_bool_t read_displace_callback(switch_media_bug_t *bug, void *user_
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
 		if (dh) {
+			switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+			switch_channel_t *channel;
+
 			switch_core_file_close(&dh->fh);
+
+			if (session && (channel = switch_core_session_get_channel(session))) {
+				switch_channel_set_private(channel, dh->file, NULL);
+			}
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE_REPLACE:
