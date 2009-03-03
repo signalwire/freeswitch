@@ -662,7 +662,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	return NULL;
 }
 
-void launch_sofia_worker_thread(sofia_profile_t *profile)
+switch_thread_t *launch_sofia_worker_thread(sofia_profile_t *profile)
 {
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
@@ -680,6 +680,8 @@ void launch_sofia_worker_thread(sofia_profile_t *profile)
 			break;
 		}
 	}
+
+	return thread;
 }
 
 void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void *obj)
@@ -693,6 +695,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
 	const char *supported = NULL;
 	int sanity;
+	switch_thread_t *worker_thread;
+	switch_status_t st;
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -823,7 +827,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	profile->started = switch_epoch_time_now(NULL);
 
 	sofia_set_pflag_locked(profile, PFLAG_RUNNING);
-	launch_sofia_worker_thread(profile);
+	worker_thread = launch_sofia_worker_thread(profile);
 
 	switch_yield(1000000);
 
@@ -850,15 +854,11 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	sofia_reg_unregister(profile);
 	nua_shutdown(profile->nua);
 	su_root_run(profile->s_root);
-	nua_shutdown(profile->nua);
-	su_root_run(profile->s_root);
-
+	
 	sofia_clear_pflag_locked(profile, PFLAG_RUNNING);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Waiting for worker thread\n");
 
-	while (sofia_test_pflag(profile, PFLAG_WORKER_RUNNING)) {
-		switch_yield(100000);
-	}
+	switch_thread_join(&st, worker_thread);
 	
 	sanity = 4;
 	while (profile->inuse) {
@@ -3243,10 +3243,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	case nua_callstate_terminating:
 		if (status == 488 || switch_channel_get_state(channel) == CS_HIBERNATE) {
 			tech_pvt->q850_cause = SWITCH_CAUSE_MANDATORY_IE_MISSING;
-		} else if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-			sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 		}
-		break;
 	case nua_callstate_terminated:
 		if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 			sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
@@ -3274,17 +3271,17 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				switch_channel_hangup(channel, cause);
 			}
 		}
-
-		if (tech_pvt->sofia_private) {
-			tech_pvt->sofia_private = NULL;
-		}
-
-		tech_pvt->nh = NULL;
-		
-
-		if (nh) {
-			nua_handle_bind(nh, NULL);
-			nua_handle_destroy(nh);
+		if (ss_state == nua_callstate_terminated) {
+			if (tech_pvt->sofia_private) {
+				tech_pvt->sofia_private = NULL;
+			}
+			
+			tech_pvt->nh = NULL;
+			
+			if (nh) {
+				nua_handle_bind(nh, NULL);
+				nua_handle_destroy(nh);
+			}
 		}
 		break;
 	}

@@ -409,7 +409,26 @@ SWITCH_DECLARE(void) switch_rtp_get_random(void *buf, uint32_t len)
 
 SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 {
+	switch_core_port_allocator_t *alloc = NULL;
+	switch_hash_index_t *hi;
+    const void *var;
+    void *val;
+
+	switch_mutex_lock(port_lock);
+
+	for (hi = switch_hash_first(NULL, alloc_hash); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		if ((alloc = (switch_core_port_allocator_t *) val)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy port allocator for %s\n", (char *)var);
+			switch_core_port_allocator_destroy(&alloc);
+		}
+	}
+
 	switch_core_hash_destroy(&alloc_hash);
+	switch_mutex_unlock(port_lock);
+
+	crypto_kernel_shutdown();
+
 }
 
 SWITCH_DECLARE(switch_port_t) switch_rtp_set_start_port(switch_port_t port)

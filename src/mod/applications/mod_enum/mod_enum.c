@@ -93,9 +93,9 @@ static void add_route(char *service, char *regex, char *replace)
 	route = switch_core_alloc(globals.pool, sizeof(*route));
 
 
-	route->service = strdup(service);
-	route->regex = strdup(regex);
-	route->replace = strdup(replace);
+	route->service = switch_core_strdup(globals.pool, service);
+	route->regex = switch_core_strdup(globals.pool, regex);
+	route->replace = switch_core_strdup(globals.pool, replace);
 
 	switch_mutex_lock(MUTEX);
 	if (!globals.route_order) {

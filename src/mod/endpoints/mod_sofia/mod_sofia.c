@@ -2964,12 +2964,12 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown)
 	
 	while (mod_sofia_globals.threads) {
 		switch_cond_next();
-		if (++sanity >= 10000) {
+		if (++sanity >= 60000) {
 			break;
 		}
 	}
 
-	switch_yield(1000000);
+	//switch_yield(1000000);
 	su_deinit();
 
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);

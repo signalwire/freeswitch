@@ -249,6 +249,20 @@ SWITCH_DECLARE(char *) switch_core_get_variable(const char *varname)
 	return val;
 }
 
+static void switch_core_unset_variables(void)
+{
+	switch_hash_index_t *hi;
+    const void *var;
+    void *val;
+
+	switch_mutex_lock(runtime.global_var_mutex);
+	for (hi = switch_hash_first(NULL, runtime.global_vars); hi; hi = switch_hash_next(hi)) {
+		switch_hash_this(hi, &var, NULL, &val);
+		free(val);
+	}
+	switch_mutex_unlock(runtime.global_var_mutex);
+}
+
 SWITCH_DECLARE(void) switch_core_set_variable(const char *varname, const char *value)
 {
 	char *val;
@@ -1488,6 +1502,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Finalizing Shutdown.\n");
 	switch_log_shutdown();
 
+	switch_core_unset_variables();
 	switch_core_memory_stop();
 
 	if (runtime.console && runtime.console != stdout && runtime.console != stderr) {
