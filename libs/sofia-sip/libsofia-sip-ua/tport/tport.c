@@ -1196,6 +1196,7 @@ int tport_get_params(tport_t const *self,
   int n;
   tport_params_t const *tpp;
   int connect;
+  tport_master_t *mr = self->tp_master;
 
   if (self == NULL)
     return su_seterrno(EINVAL);
@@ -1227,6 +1228,10 @@ int tport_get_params(tport_t const *self,
 		      TPTAG_PUBLIC(self->tp_pri ?
 				   self->tp_pri->pri_public : 0)),
 	       TPTAG_TOS(tpp->tpp_tos),
+	       TAG_IF((void *)self == (void *)mr,
+		      TPTAG_LOG(mr->mr_log != 0)),
+	       TAG_IF((void *)self == (void *)mr,
+		      TPTAG_DUMP(mr->mr_dump)),
 	       TAG_END());
 
   ta_end(ta);
@@ -1321,7 +1326,7 @@ int tport_set_params(tport_t *self,
   tpp->tpp_pong2ping = pong2ping;
 
   if (memcmp(tpp0, tpp, sizeof tpp) == 0)
-    return n;
+    return n + m;
 
   if (tport_is_secondary(self) &&
       self->tp_params == self->tp_pri->pri_primary->tp_params) {

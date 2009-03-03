@@ -472,6 +472,7 @@ static int init_test(tp_test_t *tt)
   tp_name_t const *tpn;
   tport_t *tp;
   unsigned idle;
+  int logging = -1;
 
   BEGIN();
 
@@ -551,6 +552,15 @@ static int init_test(tp_test_t *tt)
   TEST(tport_get_params(tt->tt_srv_tports,
 			TPTAG_IDLE_REF(idle),
 			TAG_END()), 1);
+
+  /* Check that logging tag works */
+  TEST(tport_get_params(tt->tt_srv_tports,
+			TPTAG_LOG_REF(logging),
+			TAG_END()), 1);
+  TEST(tport_set_params(tt->tt_srv_tports,
+			TPTAG_LOG(logging),
+			TAG_END()), 1);
+
 
   for (tp = tport_primaries(tt->tt_srv_tports); tp; tp = tport_next(tp))
     TEST_S(tport_name(tp)->tpn_ident, "server");
@@ -1298,6 +1308,7 @@ static int tls_test(tp_test_t *tt)
   TEST_1(pending_client_close > 0);
   tp = tt->tt_rtport;
   pending_server_close = tport_pend(tp, NULL, server_closed_callback, NULL);
+
   TEST_1(pending_server_close > 0);
 
   /* Send a largish message */
