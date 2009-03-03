@@ -1,5 +1,5 @@
 #
-# Makefile.am for Sofia-SIP module and unit testing
+# Makefile.am for "Sofia-SIP 2 Check", module and unit testing library
 #
 # Copyright (C) 2009 Nokia Corporation
 # Contact: Pekka Pessi <pekka.pessi@nokia.com>
