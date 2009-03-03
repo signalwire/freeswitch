@@ -2886,6 +2886,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	args.buf = buf;
 	args.buflen = sizeof(buf);
 
+	switch_ivr_sleep(session, 100, SWITCH_TRUE, NULL);
+
 	if (!switch_strlen_zero(greet_path)) {
 		memset(buf, 0, sizeof(buf));
 		TRY_CODE(switch_ivr_play_file(session, NULL, greet_path, &args));
