@@ -97,14 +97,16 @@ void s2_dns_setup(su_root_t *root)
 }
 
 /* Set filter function */
-void s2_dns_set_filter(int (*filter)(void *data, size_t len, void *userdata),
+void
+s2_dns_set_filter(int (*filter)(void *data, size_t len, void *userdata),
 		       void *userdata)
 {
   s2dns.filter = filter;
   s2dns.userdata = userdata;
 }
 
-void s2_dns_teardown(void)
+void
+s2_dns_teardown(void)
 {
   struct s2_dns_response *r, *next;
   su_root_deregister(s2dns.root, s2dns.reg), s2dns.reg = -1;
@@ -442,7 +444,7 @@ static void make_server(char *server, char const *prefix, char const *domain)
   }
 }
 
-/** Set up DNS domain */
+/** Set up records for SIP server */
 void s2_dns_domain(char const *domain, int use_naptr,
 		   /* char *prefix, int priority, url_t const *uri, */
 		   ...)
@@ -471,7 +473,9 @@ void s2_dns_domain(char const *domain, int use_naptr,
       char *services = NULL;
 
       priority = va_arg(va, int);
-      uri = va_arg(va, url_t *); assert(uri);
+      uri = va_arg(va, url_t *);
+      if (uri == NULL)
+	continue;
 
       if (uri->url_type == url_sips) {
 	services = "SIPS+D2T";
@@ -499,7 +503,9 @@ void s2_dns_domain(char const *domain, int use_naptr,
 
     for (;(prefix = va_arg(va, char *));) {
       priority = va_arg(va, int);
-      uri = va_arg(va, url_t *); assert(uri);
+      uri = va_arg(va, url_t *);
+      if (uri == NULL)
+	continue;
 
       make_server(server, prefix, domain);
 
@@ -518,7 +524,9 @@ void s2_dns_domain(char const *domain, int use_naptr,
   va_copy(va, va0);
   for (;(prefix = va_arg(va, char *));) {
     priority = va_arg(va, int);
-    uri = va_arg(va, url_t *); assert(uri);
+    uri = va_arg(va, url_t *);
+    if (uri == NULL)
+      continue;
 
     make_server(server, prefix, domain);
 
@@ -539,7 +547,8 @@ void s2_dns_domain(char const *domain, int use_naptr,
   va_copy(va, va0);
   for (;(prefix = va_arg(va, char *));) {
     (void)va_arg(va, int);
-    (void)va_arg(va, url_t *);
+    if (va_arg(va, url_t *) == NULL)
+      continue;
 
     memset(m, 0, sizeof m);
     make_server(server, prefix, domain);
