@@ -205,7 +205,7 @@ if test -r $pidfile ; then
     exit $exit
 else
     echo "$0: cannot start named (check apparmor/selinux)"
-    exit 77
+    exec ipv6=$ipv6 $VALGRIND ./test_nta "$@"
 fi
 
 else # not having BIND and portbind
