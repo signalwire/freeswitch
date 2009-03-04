@@ -1855,7 +1855,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					continue;
 				}
 
-				switch_channel_clear_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);
+				//switch_channel_clear_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);
 
 				if (switch_channel_test_flag(originate_status[i].peer_channel, CF_TRANSFER) 
 					|| switch_channel_test_flag(originate_status[i].peer_channel, CF_REDIRECT) 
