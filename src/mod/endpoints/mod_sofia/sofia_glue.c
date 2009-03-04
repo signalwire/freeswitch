@@ -1110,6 +1110,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	const char *call_id = NULL;
 	char *route = NULL;
 	char *route_uri = NULL;
+	char *sendto = NULL;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -1171,7 +1172,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *invite_contact_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_contact_params");
 		const char *invite_from_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_from_params");
 		const char *from_var = switch_channel_get_variable(tech_pvt->channel, "sip_from_uri");
-
+		
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error!\n");
 			return SWITCH_STATUS_FALSE;
@@ -1422,6 +1423,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		route_uri = switch_core_session_strdup(session, val);
 		route = NULL;
 	}
+	
+	if ((val = switch_channel_get_variable(channel, "sip_network_destination"))) {
+		sendto = switch_core_session_strdup(session, val);
+	}
 
 	if (route_uri) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting proxy route to %s\n", route_uri, switch_channel_get_name(channel));
@@ -1436,6 +1441,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
 			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
 			   TAG_IF(route, SIPTAG_ROUTE_STR(route)),
+			   TAG_IF(!switch_strlen_zero(sendto), NTATAG_DEFAULT_PROXY(sendto)),
 			   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
 			   SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 			   SOATAG_REUSE_REJECTED(1),
