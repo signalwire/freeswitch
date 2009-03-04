@@ -40,8 +40,6 @@ extern int s2_start_stop;
 void s2_suite(char const *label);
 void s2_setup(char const *label);
 
-void s2_setup_logs(int level);
-
 void s2_step(void);
 
 void s2_case(char const *tag,

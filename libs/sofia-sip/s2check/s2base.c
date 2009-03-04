@@ -135,26 +135,6 @@ void s2_case(char const *number,
     printf("%s - starting %s/%s-%s\n", s2_tester, _s2_suite, _s2_case, title);
 }
 
-SOFIAPUBVAR su_log_t nua_log[];
-SOFIAPUBVAR su_log_t soa_log[];
-SOFIAPUBVAR su_log_t nea_log[];
-SOFIAPUBVAR su_log_t nta_log[];
-SOFIAPUBVAR su_log_t tport_log[];
-SOFIAPUBVAR su_log_t su_log_default[];
-
-void
-s2_setup_logs(int level)
-{
-  assert(s2base);
-
-  su_log_soft_set_level(nua_log, level);
-  su_log_soft_set_level(soa_log, level);
-  su_log_soft_set_level(su_log_default, level);
-  su_log_soft_set_level(nea_log, level);
-  su_log_soft_set_level(nta_log, level);
-  su_log_soft_set_level(tport_log, level);
-}
-
 void s2_step(void)
 {
   su_root_step(s2base->root, 10);
