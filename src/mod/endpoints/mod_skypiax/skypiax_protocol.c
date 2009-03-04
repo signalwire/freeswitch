@@ -270,10 +270,19 @@ int skypiax_signaling_read(private_t * tech_pvt)
               remote_party_is_ringing(tech_pvt);
             }
           } else if (!strcasecmp(value, "EARLYMEDIA")) {
+            char msg_to_skype[1024];
             tech_pvt->skype_callflow = CALLFLOW_STATUS_EARLYMEDIA;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
             NOTICA("Our remote party in skype_call %s is EARLYMEDIA\n",
                          SKYPIAX_P_LOG, id);
+              sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id,
+                      tech_pvt->tcp_cli_port);
+              skypiax_signaling_write(tech_pvt, msg_to_skype);
+              start_audio_threads(tech_pvt);
+              sprintf(msg_to_skype, "ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id,
+                      tech_pvt->tcp_srv_port);
+              skypiax_signaling_write(tech_pvt, msg_to_skype);
+
               remote_party_is_early_media(tech_pvt);
           } else if (!strcasecmp(value, "MISSED")) {
             DEBUGA_SKYPE("We missed skype_call %s\n", SKYPIAX_P_LOG, id);
@@ -344,10 +353,11 @@ int skypiax_signaling_read(private_t * tech_pvt)
 
             if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
                 || !strcasecmp(tech_pvt->skype_call_id, id)) {
-              tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
               strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
-              tech_pvt->interface_state = SKYPIAX_STATE_UP;
               DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPIAX_P_LOG, id);
+              if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA){
+              tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
+              tech_pvt->interface_state = SKYPIAX_STATE_UP;
               sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id,
                       tech_pvt->tcp_cli_port);
               skypiax_signaling_write(tech_pvt, msg_to_skype);
@@ -355,6 +365,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
               sprintf(msg_to_skype, "ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id,
                       tech_pvt->tcp_srv_port);
               skypiax_signaling_write(tech_pvt, msg_to_skype);
+	      }
               tech_pvt->skype_callflow = SKYPIAX_STATE_UP;
               if (!strlen(tech_pvt->session_uuid_str)) {
                 DEBUGA_SKYPE("New Inbound Channel!\n", SKYPIAX_P_LOG);
@@ -445,6 +456,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
       break;
     while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
            && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
+	       || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA
                || tech_pvt->skype_callflow == SKYPIAX_STATE_UP)) {
 
       unsigned int fdselect;
@@ -595,7 +607,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
     if (!running)
       break;
     while (tech_pvt->interface_state != SKYPIAX_STATE_DOWN
-           && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS
+           && (tech_pvt->skype_callflow == CALLFLOW_STATUS_INPROGRESS || tech_pvt->skype_callflow == CALLFLOW_STATUS_EARLYMEDIA 
                || tech_pvt->skype_callflow == SKYPIAX_STATE_UP)) {
       unsigned int fdselect;
       int rt;

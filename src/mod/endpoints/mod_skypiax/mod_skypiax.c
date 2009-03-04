@@ -1241,8 +1241,8 @@ int remote_party_is_early_media(private_t * tech_pvt)
     ERRORA("No session???\n", SKYPIAX_P_LOG);
   }
   if (channel) {
-    //switch_channel_mark_pre_answered(channel);
-    NOTICA("skype_call: REMOTE PARTY EARLY MEDIA, we will pass you the audio, just the code is not yet written :-)\n", SKYPIAX_P_LOG);
+    switch_channel_mark_pre_answered(channel);
+    NOTICA("skype_call: REMOTE PARTY EARLY MEDIA\n", SKYPIAX_P_LOG);
   } else {
     ERRORA("No channel???\n", SKYPIAX_P_LOG);
   }
