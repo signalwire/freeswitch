@@ -764,7 +764,7 @@ CS_CONSUME_MEDIA		 - Channel is consuming all media and dropping it.
 CS_HIBERNATE - Channel is in a sleep state.
 CS_RESET 	 - Channel is in a reset state.
 CS_HANGUP    - Channel is flagged for hangup and ready to end.
-CS_HANGUP    - Channel is ready to collect call detail.
+CS_REPORTING - Channel is ready to collect call detail.
 CS_DONE      - Channel is ready to be destroyed and out of the state machine
 </pre>
  */
