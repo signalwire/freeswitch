@@ -27,6 +27,7 @@
  * Ken Rice, Asteria Solutions Group, Inc <ken@asteriasgi.com>
  * Paul D. Tinsley <pdt at jackhammer.org>
  * Bret McDanel <trixter AT 0xdecafbad.com>
+ * Eliot Gable <egable AT.AT broadvox.com>
  *
  *
  * sofia_glue.c -- SOFIA SIP Endpoint (code to tie sofia to freeswitch)
@@ -1169,6 +1170,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *screen = "no";
 		const char *invite_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_params");
 		const char *invite_to_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_to_params");
+		const char *invite_to_uri = switch_channel_get_variable(tech_pvt->channel, "sip_invite_to_uri");
 		const char *invite_contact_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_contact_params");
 		const char *invite_from_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_from_params");
 		const char *from_var = switch_channel_get_variable(tech_pvt->channel, "sip_from_uri");
@@ -1260,7 +1262,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		url_str = sofia_overcome_sip_uri_weakness(session, url, tech_pvt->transport, SWITCH_TRUE, invite_params);
 		invite_contact = sofia_overcome_sip_uri_weakness(session, tech_pvt->invite_contact, tech_pvt->transport, SWITCH_FALSE, invite_contact_params);
 		from_str = sofia_overcome_sip_uri_weakness(session, use_from_str, 0, SWITCH_TRUE, invite_from_params);
-		to_str = sofia_overcome_sip_uri_weakness(session, tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params ? invite_to_params : invite_params);
+		to_str = sofia_overcome_sip_uri_weakness(session, invite_to_uri ? invite_to_uri : tech_pvt->dest_to, 0, SWITCH_FALSE, invite_to_params ? invite_to_params : invite_params);
 
 
 		/*
@@ -1435,6 +1437,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	nua_invite(tech_pvt->nh,
 			   NUTAG_AUTOANSWER(0),
 			   NUTAG_SESSION_TIMER(session_timeout),
+			   TAG_IF(!switch_strlen_zero(sendto), NTATAG_DEFAULT_PROXY(sendto)),
 			   TAG_IF(!switch_strlen_zero(tech_pvt->rpid), SIPTAG_HEADER_STR(tech_pvt->rpid)),
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
@@ -3019,7 +3022,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   server_user     VARCHAR(255),\n"
 		"   server_host     VARCHAR(255),\n" 
 		"   profile_name    VARCHAR(255),\n" 
-		"   hostname        VARCHAR(255)\n" 
+		"   hostname        VARCHAR(255),\n" 
+		"   network_ip      VARCHAR(255),\n" 
+		"   network_port    VARCHAR(6)\n" 
 		");\n";
 
 
@@ -3032,7 +3037,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   expires         INTEGER,\n" 
 		"   user_agent      VARCHAR(255),\n" 
 		"   profile_name    VARCHAR(255),\n" 
-		"   hostname        VARCHAR(255)\n" 
+		"   hostname        VARCHAR(255),\n" 
+		"   network_ip      VARCHAR(255),\n" 
+		"   network_port    VARCHAR(6)\n" 
 		");\n";
 
 	char dialog_sql[] =
@@ -3104,6 +3111,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index sr_expires on sip_registrations (expires)",
 			"create index sr_hostname on sip_registrations (hostname)",
 			"create index sr_status on sip_registrations (status)",
+			"create index sr_network_ip on sip_registrations (network_ip)",
+			"create index sr_network_port on sip_registrations (network_port)",
 			"create index ss_call_id on sip_subscriptions (call_id)",
 			"create index ss_hostname on sip_subscriptions (hostname)",
 			"create index ss_sip_user on sip_subscriptions (sip_user)",
@@ -3136,7 +3145,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connected ODBC DSN: %s\n", profile->odbc_dsn);
 		
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
-								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q'", 
+								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
+								  "and network_ip!='-1' and network_port!='-1'", 
 								  mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
@@ -3146,7 +3156,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		free(test_sql);
 
 
-		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_subscriptions where hostname='%q' and network_ip!='-1' and network_port!='-1'", mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_subscriptions", NULL);
@@ -3198,7 +3208,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		}
 
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
-								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q'", 
+								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
+								  "and network_ip!='-1' and network_port!='-1'",
 								  mod_sofia_globals.hostname);
 		
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_registrations", reg_sql);
@@ -3244,6 +3255,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_expires on sip_registrations (expires)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_hostname on sip_registrations (hostname)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_status on sip_registrations (status)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_network_ip on sip_registrations (network_ip)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_network_port on sip_registrations (network_port)", NULL, NULL, NULL);
 
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_call_id on sip_subscriptions (call_id)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_hostname on sip_subscriptions (hostname)", NULL, NULL, NULL);

@@ -29,6 +29,7 @@
  * Bret McDanel <trixter AT 0xdecafbad.com>
  * Marcel Barbulescu <marcelbarbulescu@gmail.com>
  * David Knell <>
+ * Eliot Gable <egable AT.AT broadvox.com>
  *
  *
  * sofia_ref.c -- SOFIA SIP Endpoint (registration code)
@@ -653,6 +654,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
 	char network_ip[80];
+	char network_port_c[6];
 	char url_ip[80];
 	char *register_gateway = NULL;
 	int network_port;
@@ -668,6 +670,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr,my_addrinfo->ai_addrlen);
 	network_port = get_port(my_addrinfo->ai_addr);
+
+	snprintf(network_port_c, sizeof(network_port_c), "%d", network_port);
 
 	snprintf(url_ip, sizeof(url_ip), my_addrinfo->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
 
@@ -940,11 +944,11 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
-							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name,hostname) "
-							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q')", 
+							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port) "
+							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q')", 
 							 call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : reg_host, 
 							 contact_str, reg_desc, rpid, (long) switch_epoch_time_now(NULL) + (long) exptime * 2, 
-							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname);
+							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c);
 							 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -965,6 +969,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "expires", "%ld", (long) exptime);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-user", from_user);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
 			switch_event_fire(&s_event);
 		}
 
