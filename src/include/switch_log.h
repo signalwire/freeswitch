@@ -93,12 +93,31 @@ SWITCH_DECLARE(switch_status_t) switch_log_shutdown(void);
   \param level the current log level
   \param fmt desired format
   \param ... variable args
-  \note there are channel macros to supply the first 4 parameters
+  \note there are channel macros to supply the first 4 parameters (SWITCH_CHANNEL_LOG, SWITCH_CHANNEL_LOG_CLEAN, ...)
+  \see switch_types.h
 */
 SWITCH_DECLARE(void) switch_log_printf(_In_ switch_text_channel_t channel, _In_z_ const char *file,
 									   _In_z_ const char *func, _In_ int line,
 									   _In_opt_z_ const char *userdata, _In_ switch_log_level_t level,
 									   _In_z_ _Printf_format_string_ const char *fmt, ...) PRINTF_FUNCTION(7, 8);
+/*!								
+  \brief Write log data to the logging engine
+  \param channel the log channel to write to
+  \param file the current file
+  \param func the current function
+  \param line the current line
+  \param userdata ununsed
+  \param level the current log level
+  \param fmt desired format
+  \param ap variable args
+  \note there are channel macros to supply the first 4 parameters (SWITCH_CHANNEL_LOG, SWITCH_CHANNEL_LOG_CLEAN, ...)
+  \see switch_types.h
+*/
+SWITCH_DECLARE(void) switch_log_vprintf(_In_ switch_text_channel_t channel, _In_z_ const char *file,
+									   _In_z_ const char *func, _In_ int line,
+									   _In_opt_z_ const char *userdata, _In_ switch_log_level_t level,
+										const char *fmt, va_list ap);
+
 #endif
 /*! 
   \brief Shut down  the logging engine

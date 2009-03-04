@@ -2076,6 +2076,17 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 		}
 		goto done;
 	}
+	
+	if (!strcasecmp(argv[1], "siptrace")) {
+		if (argc > 2) {
+			int value = switch_true(argv[2]);
+			nua_set_params(profile->nua, TPTAG_LOG(value), TAG_END());
+			stream->write_function(stream, "%s sip debugging on %s", value ? "Enabled" : "Disabled", profile->name);
+		} else {
+			stream->write_function(stream, "Usage: sofia profile <name> siptrace <on/off>\n");
+		}
+		goto done;
+	}
 
 	stream->write_function(stream, "-ERR Unknown command!\n");
 
@@ -2232,7 +2243,8 @@ SWITCH_STANDARD_API(sofia_function)
 		"sofia profile <profile_name> [[start|stop|restart|rescan] [reloadxml]|flush_inbound_reg [<call_id>] [reboot]|[register|unregister] [<gateway name>|all]|killgw <gateway name>|[stun-auto-disable|stun-enabled] [true|false]]\n"
 		"sofia status profile <name> [ reg <contact str> ] | [ pres <pres str> ]\n"
 		"sofia status gateway <name>\n"
-		"sofia loglevel [0-9]\n" "--------------------------------------------------------------------------------\n";
+		"sofia loglevel <all|default|tport|iptsec|nea|nta|nth_client|nth_server|nua|soa|sresolv|stun> [0-9]\n"
+		"--------------------------------------------------------------------------------\n";
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -2260,12 +2272,17 @@ SWITCH_STANDARD_API(sofia_function)
 	} else if (!strcasecmp(argv[0], "xmlstatus")) {
 		func = cmd_xml_status;
 	} else if (!strcasecmp(argv[0], "loglevel")) {
-		if (argc > 1 && argv[1]) {
-			int level;
-			level = atoi(argv[1]);
-			if (level >= 0 && level <= 9) {
-				su_log_set_level(NULL, atoi(argv[1]));
-				stream->write_function(stream, "Sofia-sip log level set to [%d]", level);
+		if (argc > 2 && argv[2] && switch_is_number(argv[2])) {
+			int level = atoi(argv[2]);
+			if (sofia_set_loglevel(argv[1], level) == SWITCH_STATUS_SUCCESS) {
+				stream->write_function(stream, "Sofia log level for component [%s] has been set to [%d]", argv[1], level);
+			} else {
+				stream->write_function(stream, "%s", usage_string);
+			}
+		} else if (argc > 1 && argv[1]) {
+			int level = sofia_get_loglevel(argv[1]);
+			if (level >= 0) {
+				stream->write_function(stream, "Sofia-sip loglevel for [%s] is [%d]", argv[1], level);
 			} else {
 				stream->write_function(stream, "%s", usage_string);
 			}

@@ -104,6 +104,7 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
+#include <sofia-sip/tport_tag.h>
 #include "nua_stack.h"
 
 typedef enum {
@@ -804,3 +805,23 @@ void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_ha
 void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
 void sofia_sla_handle_sip_r_subscribe(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
 void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
+
+/* 
+ * Logging control functions
+ */
+
+/*!
+ * \brief Changes the loglevel of a sofia component
+ * \param name the sofia component on which to change the loglevel, or "all" to change them all
+ * \note Valid components are "all", "default" (sofia's default logger), "tport", "iptsec", "nea", "nta", "nth_client", "nth_server", "nua", "soa", "sresolv", "stun"
+ * \return SWITCH_STATUS_SUCCESS or SWITCH_STATUS_FALSE if the component isnt valid, or the level is out of range
+ */
+switch_status_t sofia_set_loglevel(const char *name, int level);
+
+/*!
+ * \brief Gets the loglevel of a sofia component
+ * \param name the sofia component on which to change the loglevel
+ * \note Valid components are "default" (sofia's default logger), "tport", "iptsec", "nea", "nta", "nth_client", "nth_server", "nua", "soa", "sresolv", "stun"
+ * \return the component's loglevel, or -1 if the component isn't valid
+ */
+int sofia_get_loglevel(const char *name);

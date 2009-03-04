@@ -243,14 +243,23 @@ static void *SWITCH_THREAD_FUNC log_thread(switch_thread_t *t, void *obj)
 	return NULL;
 }
 
-#define do_mods (LOG_QUEUE && THREAD_RUNNING)
 SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char *file, const char *func, int line,
 									   const char *userdata, switch_log_level_t level, const char *fmt, ...)
+{
+	va_list ap;
+	
+	va_start(ap, fmt);
+	switch_log_vprintf(channel, file, func, line, userdata, level, fmt, ap);
+	va_end(ap);	
+}
+
+#define do_mods (LOG_QUEUE && THREAD_RUNNING)
+SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const char *file, const char *func, int line,
+									   const char *userdata, switch_log_level_t level, const char *fmt, va_list ap)
 {
 	char *data = NULL;
 	char *new_fmt = NULL;
 	int ret = 0;
-	va_list ap;
 	FILE *handle;
 	const char *filep = (file ? switch_cut_path(file) : "");
 	const char *funcp = (func ? func : "");
@@ -264,8 +273,6 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	}
 
 	switch_assert(level < SWITCH_LOG_INVALID);
-
-	va_start(ap, fmt);
 
 	handle = switch_core_data_channel(channel);
 
@@ -285,7 +292,6 @@ SWITCH_DECLARE(void) switch_log_printf(switch_text_channel_t channel, const char
 	}
 
 	ret = switch_vasprintf(&data, fmt, ap);
-	va_end(ap);
 
 	if (ret == -1) {
 		fprintf(stderr, "Memory Error\n");
