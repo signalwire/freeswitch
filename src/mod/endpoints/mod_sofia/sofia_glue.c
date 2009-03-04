@@ -1296,7 +1296,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			session_timeout = SOFIA_NAT_SESSION_TIMEOUT;
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
-
+		
 		/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
 		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
 			priv = "name";
@@ -1418,6 +1418,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		route_uri = sofia_overcome_sip_uri_weakness(tech_pvt->session, route_uri, 0, SWITCH_TRUE, NULL);
 	}
 
+	if ((val = switch_channel_get_variable(channel, "sip_route_uri"))) {
+		route_uri = switch_core_session_strdup(session, val);
+		route = NULL;
+	}
 
 	if (route_uri) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting proxy route to %s\n", route_uri, switch_channel_get_name(channel));
