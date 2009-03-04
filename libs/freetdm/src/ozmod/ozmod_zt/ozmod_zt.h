@@ -75,6 +75,8 @@ struct zt_params {
 	int pulse_break_time;
 	int pulse_make_time;
 	int pulse_after_time;
+    /* latest version of this struct include chan_alarms field */
+    uint32_t chan_alarms;
 };
 
 typedef struct zt_params zt_params_t;
@@ -110,6 +112,18 @@ struct zt_spaninfo {
 	int configured_chan_count;			/* Count of channels configured on the span	*/
 	int channel_count;					/* Total count of channels on the span		*/
 	int span_count;						/* Total count of zaptel spans on the system*/
+    /* end v1 of the struct */
+    /* as long as we don't use the fields below we should be ok regardless of the zaptel/dahdi version */
+    int lbo;                            /* Line Build Out */
+    int lineconfig;                     /* framing/coding */
+    /* end of v2 of the struct */
+    char lboname[40];                   /* Line Build Out in text form */
+    char location[40];                  /* span's device location in system */
+    char manufacturer[40];              /* manufacturer of span's device */
+    char devicetype[40];                /* span's device type */
+    int irq;                            /* span's device IRQ */
+    int linecompat;                     /* signaling modes possible on this span */
+    char spantype[6];                   /* type of span in text form */
 };
 
 struct zt_maintinfo {
@@ -245,6 +259,7 @@ ZT_ABIT = 8
 /* ioctl defines */
 
 #define		ZT_CODE				'J'
+#define     DAHDI_CODE          0xDA
 
 
 #define		ZT_GET_BLOCKSIZE	_IOR  (ZT_CODE, 1, int)					/* Get Transfer Block Size. */
@@ -289,6 +304,49 @@ ZT_ABIT = 8
 /* Set/Get CAS bits */
 #define ZT_SETTXBITS _IOW (ZT_CODE, 43, int)
 #define ZT_GETRXBITS _IOR (ZT_CODE, 45, int)
+
+#define		DAHDI_GET_BLOCKSIZE	_IOR  (DAHDI_CODE, 1, int)					/* Get Transfer Block Size. */
+#define		DAHDI_SET_BLOCKSIZE	_IOW  (DAHDI_CODE, 1, int)					/* Set Transfer Block Size. */
+#define		DAHDI_FLUSH			_IOW  (DAHDI_CODE, 3, int)					/* Flush Buffer(s) and stop I/O */
+#define		DAHDI_SYNC			_IO   (DAHDI_CODE, 4)					/* Wait for Write to Finish */
+#define		DAHDI_GET_PARAMS	_IOR  (DAHDI_CODE, 5, struct zt_params)	/* Get channel parameters */
+#define		DAHDI_SET_PARAMS	_IOW  (DAHDI_CODE, 5, struct zt_params)	/* Set channel parameters */
+#define		DAHDI_HOOK			_IOW  (DAHDI_CODE, 7, int)					/* Set Hookswitch Status */
+#define		DAHDI_GETEVENT		_IOR  (DAHDI_CODE, 8, int)					/* Get Signalling Event */
+#define		DAHDI_IOMUX			_IOWR (DAHDI_CODE, 9, int)					/* Wait for something to happen (IO Mux) */
+#define		DAHDI_SPANSTAT		_IOWR (DAHDI_CODE, 10, struct zt_spaninfo)  /* Get Span Status */
+#define		DAHDI_MAINT			_IOW  (DAHDI_CODE, 11, struct zt_maintinfo) /* Set Maintenance Mode for a span */
+#define		DAHDI_GETCONF		_IOR  (DAHDI_CODE, 12, struct zt_confinfo)	/* Get Conference Mode */
+#define		DAHDI_SETCONF		_IOW  (DAHDI_CODE, 12, struct zt_confinfo)	/* Set Conference Mode */
+#define		DAHDI_CONFLINK		_IOW  (DAHDI_CODE, 14, struct zt_confinfo)	/* Setup or Remove Conference Link */
+#define		DAHDI_CONFDIAG		_IOR  (DAHDI_CODE, 15, int)				/* Display Conference Diagnostic Information on Console */
+
+#define		DAHDI_GETGAINS		_IOR (DAHDI_CODE, 16, struct zt_gains)	/* Get Channel audio gains */
+#define		DAHDI_SETGAINS		_IOW (DAHDI_CODE, 16, struct zt_gains)	/* Set Channel audio gains */
+#define		DAHDI_SPANCONFIG	_IOW (DAHDI_CODE, 18, struct zt_lineconfig)/* Set Line (T1) Configurations and start system  */
+#define		DAHDI_CHANCONFIG	_IOW (DAHDI_CODE, 19, struct zt_chanconfig)/* Set Channel Configuration  */
+#define		DAHDI_SET_BUFINFO	_IOW (DAHDI_CODE, 27, struct zt_bufferinfo)/* Set buffer policy */
+#define		DAHDI_GET_BUFINFO	_IOR (DAHDI_CODE, 27, struct zt_bufferinfo)/* Get current buffer info */
+#define		DAHDI_AUDIOMODE		_IOW (DAHDI_CODE, 32, int)				/* Set a clear channel into audio mode */
+#define		DAHDI_ECHOCANCEL	_IOW (DAHDI_CODE, 33, int)				/* Control Echo Canceller */
+#define		DAHDI_HDLCRAWMODE	_IOW (DAHDI_CODE, 36, int)				/* Set a clear channel into HDLC w/out FCS checking/calculation mode */
+#define		DAHDI_HDLCFCSMODE	_IOW (DAHDI_CODE, 37, int)				/* Set a clear channel into HDLC w/ FCS mode */
+
+/* Specify a channel on /dev/dahdi/chan -- must be done before any other ioctl's and is only valid on /dev/dahdi/chan */
+#define		DAHDI_SPECIFY		_IOW  (DAHDI_CODE, 38, int)
+
+/* Temporarily set the law on a channel to DAHDI_LAW_DEFAULT, DAHDI_LAW_ALAW, or DAHDI_LAW_MULAW. Is reset on close. */
+#define		DAHDI_SETLAW		_IOW  (DAHDI_CODE, 39, int)
+
+/* Temporarily set the channel to operate in linear mode when non-zero or default law if 0 */
+#define		DAHDI_SETLINEAR		_IOW  (DAHDI_CODE, 40, int)
+
+#define		DAHDI_GETCONFMUTE	_IOR  (DAHDI_CODE, 49, int)				/* Get Conference to mute mode */
+#define		DAHDI_ECHOTRAIN		_IOW  (DAHDI_CODE, 50, int)				/* Control Echo Trainer */
+
+/* Set/Get CAS bits */
+#define DAHDI_SETTXBITS _IOW (DAHDI_CODE, 43, int)
+#define DAHDI_GETRXBITS _IOR (DAHDI_CODE, 43, int)
 
 
 #endif
