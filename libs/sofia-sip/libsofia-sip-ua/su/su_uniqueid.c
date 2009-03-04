@@ -73,13 +73,8 @@ int _getpid(void);
 #include "sofia-sip/su_time.h"
 #include "sofia-sip/su_uniqueid.h"
 
-#ifdef SU_HAVE_WINSOCK
-#define PERTHREAD __declspec(thread)
-#else
-#define PERTHREAD
-#endif
 /* For random number generator */
-static PERTHREAD int initialized = 0;
+static int initialized = 0;
 
 static void init(void);
 static void init_node(void);
