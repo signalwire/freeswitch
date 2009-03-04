@@ -942,9 +942,8 @@ static switch_status_t load_config(void)
 
         NOTICA("WAITING roughly 10/15 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d. NB: on XP will wait for much much more! (on Vista and Linux is OK)\n", SKYPIAX_P_LOG, interface_id);
         i = 0;
-        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 10000) {    // 400 x 1000 is 6sec on windows XP but only 0.4 seconds on Vista  FIXME
-          //DEBUGA_SKYPE("interface_id=%d, times=%d\n", SKYPIAX_P_LOG, interface_id, i);
-          switch_sleep(1000);
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 200) {    // 10 seconds? thanks Jeff Lenk
+          switch_sleep(50000);
           i++;
         }
         if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected) {
@@ -956,9 +955,8 @@ static switch_status_t load_config(void)
         }
 
         i = 0;
-        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle == 0 && running && i < 60000) {    // 4000 * 1000 is 60sec on windows XP but 4seconds on Vista  FIXME
-          //DEBUGA_SKYPE("interface_id=%d, times=%d\n", SKYPIAX_P_LOG, interface_id, i);
-          switch_sleep(1000);
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle == 0 && running && i < 1200) {    // 60 seconds? thanks Jeff Lenk
+          switch_sleep(50000);
           i++;
         }
         if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle) {
