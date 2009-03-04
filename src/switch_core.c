@@ -1525,9 +1525,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 
 	if (runtime.memory_pool) {
 		apr_pool_destroy(runtime.memory_pool);
-		if (switch_test_flag((&runtime), SCF_RESTART)) {
-			apr_terminate();
-		}
+		apr_terminate();
 	}
 	
 	return switch_test_flag((&runtime), SCF_RESTART) ? SWITCH_STATUS_RESTART : SWITCH_STATUS_SUCCESS;

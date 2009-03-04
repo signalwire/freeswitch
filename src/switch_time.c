@@ -762,7 +762,7 @@ SWITCH_MODULE_LOAD_FUNCTION(softtimer_load)
 	timer_interface->timer_destroy = timer_destroy;
 
 	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_NOUNLOAD;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
@@ -790,7 +790,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(softtimer_shutdown)
 		switch_core_destroy_memory_pool(&TIMEZONES_LIST.pool);
 	}
 
-	return SWITCH_STATUS_NOUNLOAD;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
