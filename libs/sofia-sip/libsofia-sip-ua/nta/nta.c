@@ -7021,7 +7021,7 @@ static void outgoing_prepare_send(nta_outgoing_t *orq);
 static void outgoing_send_via(nta_outgoing_t *orq, tport_t *tp);
 static void outgoing_send(nta_outgoing_t *orq, int retransmit);
 static void outgoing_try_tcp_instead(nta_outgoing_t *orq);
-static void outgoing_try_udp_instead(nta_outgoing_t *orq);
+static void outgoing_try_udp_instead(nta_outgoing_t *orq, int timeout);
 static void outgoing_tport_error(nta_agent_t *agent, nta_outgoing_t *orq,
 				 tport_t *tp, msg_t *msg, int error);
 static void outgoing_print_tport_error(nta_outgoing_t *orq,
@@ -8024,7 +8024,7 @@ outgoing_send(nta_outgoing_t *orq, int retransmit)
     }
     else if (err == ECONNREFUSED && orq->orq_try_tcp_instead) {
       if (su_casematch(tpn->tpn_proto, "tcp") && msg_size(msg) <= 65535) {
-	outgoing_try_udp_instead(orq);
+	outgoing_try_udp_instead(orq, 0);
 	continue;
       }
     }
@@ -8138,7 +8138,7 @@ outgoing_try_tcp_instead(nta_outgoing_t *orq)
 }
 
 static void
-outgoing_try_udp_instead(nta_outgoing_t *orq)
+outgoing_try_udp_instead(nta_outgoing_t *orq, int timeout)
 {
   tport_t *tp;
   tp_name_t tpn[1];
@@ -8160,8 +8160,9 @@ outgoing_try_udp_instead(nta_outgoing_t *orq)
     sip_fragment_clear(sip->sip_via->v_common);
     sip->sip_via->v_protocol = sip_transport_udp;
 
-    SU_DEBUG_5(("nta: %s (%u) TCP refused, trying UDP\n",
-		orq->orq_method_name, orq->orq_cseq->cs_seq));
+    SU_DEBUG_5(("nta: %s (%u) TCP %s, trying UDP\n",
+		orq->orq_method_name, orq->orq_cseq->cs_seq,
+		timeout ? "times out" : "refused"));
 
     orq->orq_tpn->tpn_proto = "udp";
     tport_decref(&orq->orq_tport);
@@ -8196,7 +8197,7 @@ outgoing_tport_error(nta_agent_t *agent, nta_outgoing_t *orq,
     if (su_casematch(tpn->tpn_proto, "tcp") && msg_size(msg) <= 65535) {
       outgoing_print_tport_error(orq, 5, "retrying with UDP after ",
 				 tpn, msg, error);
-      outgoing_try_udp_instead(orq);
+      outgoing_try_udp_instead(orq, 0);
       outgoing_remove(orq);	/* Reset state - this is no resend! */
       outgoing_send(orq, 0);	/* Send */
       return;
@@ -8601,8 +8602,11 @@ static void outgoing_timer(nta_agent_t *sa)
 	 * but no connection is established within SIP T4
 	 */
 	SU_DEBUG_5(("nta: timer %s fired, %s %s (%u)\n", "N3",
-		    "try UDP instead", orq->orq_method_name, orq->orq_cseq->cs_seq));
-	outgoing_try_udp_instead(orq);
+		    "try UDP instead for",
+		    orq->orq_method_name, orq->orq_cseq->cs_seq));
+	outgoing_try_udp_instead(orq, 1);
+	outgoing_remove(orq);	/* Reset state - this is no resend! */
+	outgoing_send(orq, 0);	/* Send */
       }
       continue;
     }
