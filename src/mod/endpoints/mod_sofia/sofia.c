@@ -49,7 +49,7 @@ extern su_log_t nua_log[];
 extern su_log_t soa_log[];
 extern su_log_t sresolv_log[];
 extern su_log_t stun_log[];
-
+extern su_log_t su_log_default[];
 
 static void set_variable_sip_param(switch_channel_t *channel, char *header_type, sip_param_t const *params);
 
@@ -934,45 +934,43 @@ static void logger(void *logarg, char const *fmt, va_list ap)
 	}
 }
 
-static switch_status_t sofia_get_logger(const char *name, su_log_t **out) 
+static su_log_t *sofia_get_logger(const char *name) 
 {
-	*out = (void*)0x1;
 	if (!strcasecmp(name, "tport")) {
-		*out = tport_log;
+		return tport_log;
 	} else if (!strcasecmp(name, "iptsec")) {
-		*out = iptsec_log;
+		return iptsec_log;
 	} else if (!strcasecmp(name, "nea")) {
-		*out = nea_log;
+		return nea_log;
 	} else if (!strcasecmp(name, "nta")) {
-		*out = nta_log;
+		return nta_log;
 	} else if (!strcasecmp(name, "nth_client")) {
-		*out = nth_client_log;
+		return nth_client_log;
 	} else if (!strcasecmp(name, "nth_server")) {
-		*out = nth_server_log;
+		return nth_server_log;
 	} else if (!strcasecmp(name, "nua")) {
-		*out = nua_log;
+		return nua_log;
 	} else if (!strcasecmp(name, "sresolv")) {
-		*out = sresolv_log;
+		return sresolv_log;
 	} else if (!strcasecmp(name, "stun")) {
-		*out = stun_log;
-	} else if (!strcasecmp(name, "default")){
-		*out = NULL;
+		return stun_log;
+	} else if (!strcasecmp(name, "default")) {
+		return su_log_default;
+	} else {
+		return NULL;
 	}
-	
-	return (*out != (void*)0x1) ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 switch_status_t sofia_set_loglevel(const char *name, int level)
 {
 	su_log_t *log = NULL;
-	switch_status_t status;
 	
 	if (level < 0 || level > 9) {
 		return SWITCH_STATUS_FALSE;
 	}
-	
+		
 	if (!strcasecmp(name, "all")) {
-		su_log_set_level(NULL, level);
+		su_log_set_level(su_log_default, level);
 		su_log_set_level(tport_log, level);
 		su_log_set_level(iptsec_log, level);
 		su_log_set_level(nea_log, level);
@@ -986,19 +984,20 @@ switch_status_t sofia_set_loglevel(const char *name, int level)
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
-	if ((status = sofia_get_logger(name, &log)) == SWITCH_STATUS_SUCCESS) {
-		su_log_set_level(log, level);
+	if (!(log = sofia_get_logger(name))) {
+		return SWITCH_STATUS_FALSE;
 	}
 	
-	return status;
+	su_log_set_level(log, level);
+		
+	return SWITCH_STATUS_SUCCESS;
 }
 
 int sofia_get_loglevel(const char *name)
 {
 	su_log_t *log = NULL;
-	switch_status_t status;
 	
-	if ((status = sofia_get_logger(name, &log)) == SWITCH_STATUS_SUCCESS && log) { /* default logger is NULL */
+	if ((log = sofia_get_logger(name))) {
 		return log->log_level;
 	} else {
 		return -1;
@@ -1777,7 +1776,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 		}
 		
 		/* Redirect loggers in sofia */
-		su_log_redirect(NULL /* default */, logger, NULL);
+		su_log_redirect(su_log_default, logger, NULL);
 		su_log_redirect(tport_log, logger, NULL);
 		su_log_redirect(iptsec_log, logger, NULL);
 		su_log_redirect(nea_log, logger, NULL);
