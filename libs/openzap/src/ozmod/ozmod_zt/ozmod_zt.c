@@ -44,8 +44,122 @@ static struct {
 	uint32_t etlevel;
 } zt_globals;
 
+struct ioctl_codes {
+    int GET_BLOCKSIZE;
+    int SET_BLOCKSIZE;
+    int FLUSH;
+    int SYNC;
+    int GET_PARAMS;
+    int SET_PARAMS;
+    int HOOK;
+    int GETEVENT;
+    int IOMUX;
+    int SPANSTAT;
+    int MAINT;
+    int GETCONF;
+    int SETCONF;
+    int CONFLINK;
+    int CONFDIAG;
+    int GETGAINS;
+    int SETGAINS;
+    int SPANCONFIG;
+    int CHANCONFIG;
+    int SET_BUFINFO;
+    int GET_BUFINFO;
+    int AUDIOMODE;
+    int ECHOCANCEL;
+    int HDLCRAWMODE;
+    int HDLCFCSMODE;
+    int SPECIFY;
+    int SETLAW;
+    int SETLINEAR;
+    int GETCONFMUTE;
+    int ECHOTRAIN;
+    int SETTXBITS;
+    int GETRXBITS;
+};
+
+static struct ioctl_codes zt_ioctl_codes = {
+    .GET_BLOCKSIZE = ZT_GET_BLOCKSIZE,
+    .SET_BLOCKSIZE = ZT_SET_BLOCKSIZE,
+    .FLUSH = ZT_FLUSH,
+    .SYNC = ZT_SYNC,
+    .GET_PARAMS = ZT_GET_PARAMS,
+    .SET_PARAMS = ZT_SET_PARAMS,
+    .HOOK = ZT_HOOK,
+    .GETEVENT = ZT_GETEVENT,
+    .IOMUX = ZT_IOMUX,
+    .SPANSTAT = ZT_SPANSTAT,
+    .MAINT = ZT_MAINT,
+    .GETCONF = ZT_GETCONF,
+    .SETCONF = ZT_SETCONF,
+    .CONFLINK = ZT_CONFLINK,
+    .CONFDIAG = ZT_CONFDIAG,
+    .GETGAINS = ZT_GETGAINS,
+    .SETGAINS = ZT_SETGAINS,
+    .SPANCONFIG = ZT_SPANCONFIG,
+    .CHANCONFIG = ZT_CHANCONFIG,
+    .SET_BUFINFO = ZT_SET_BUFINFO,
+    .GET_BUFINFO = ZT_GET_BUFINFO,
+    .AUDIOMODE = ZT_AUDIOMODE,
+    .ECHOCANCEL = ZT_ECHOCANCEL,
+    .HDLCRAWMODE = ZT_HDLCRAWMODE,
+    .HDLCFCSMODE = ZT_HDLCFCSMODE,
+    .SPECIFY = ZT_SPECIFY,
+    .SETLAW = ZT_SETLAW,
+    .SETLINEAR = ZT_SETLINEAR,
+    .GETCONFMUTE = ZT_GETCONFMUTE,
+    .ECHOTRAIN = ZT_ECHOTRAIN,
+    .SETTXBITS = ZT_SETTXBITS,
+    .GETRXBITS = ZT_GETRXBITS
+};
+
+static struct ioctl_codes dahdi_ioctl_codes = {
+    .GET_BLOCKSIZE = DAHDI_GET_BLOCKSIZE,
+    .SET_BLOCKSIZE = DAHDI_SET_BLOCKSIZE,
+    .FLUSH = DAHDI_FLUSH,
+    .SYNC = DAHDI_SYNC,
+    .GET_PARAMS = DAHDI_GET_PARAMS,
+    .SET_PARAMS = DAHDI_SET_PARAMS,
+    .HOOK = DAHDI_HOOK,
+    .GETEVENT = DAHDI_GETEVENT,
+    .IOMUX = DAHDI_IOMUX,
+    .SPANSTAT = DAHDI_SPANSTAT,
+    .MAINT = DAHDI_MAINT,
+    .GETCONF = DAHDI_GETCONF,
+    .SETCONF = DAHDI_SETCONF,
+    .CONFLINK = DAHDI_CONFLINK,
+    .CONFDIAG = DAHDI_CONFDIAG,
+    .GETGAINS = DAHDI_GETGAINS,
+    .SETGAINS = DAHDI_SETGAINS,
+    .SPANCONFIG = DAHDI_SPANCONFIG,
+    .CHANCONFIG = DAHDI_CHANCONFIG,
+    .SET_BUFINFO = DAHDI_SET_BUFINFO,
+    .GET_BUFINFO = DAHDI_GET_BUFINFO,
+    .AUDIOMODE = DAHDI_AUDIOMODE,
+    .ECHOCANCEL = DAHDI_ECHOCANCEL,
+    .HDLCRAWMODE = DAHDI_HDLCRAWMODE,
+    .HDLCFCSMODE = DAHDI_HDLCFCSMODE,
+    .SPECIFY = DAHDI_SPECIFY,
+    .SETLAW = DAHDI_SETLAW,
+    .SETLINEAR = DAHDI_SETLINEAR,
+    .GETCONFMUTE = DAHDI_GETCONFMUTE,
+    .ECHOTRAIN = DAHDI_ECHOTRAIN,
+    .SETTXBITS = DAHDI_SETTXBITS,
+    .GETRXBITS = DAHDI_GETRXBITS
+};
+
 #define ZT_INVALID_SOCKET -1
-static const char ctlpath[] = "/dev/zap/ctl";
+static struct ioctl_codes codes;
+static const char *ctlpath = NULL;
+static const char *chanpath = NULL;
+
+static const char dahdi_ctlpath[] = "/dev/dahdi/ctl";
+static const char dahdi_chanpath[] = "/dev/dahdi/channel";
+
+static const char zt_ctlpath[] = "/dev/zap/ctl";
+static const char zt_chanpath[] = "/dev/zap/channel";
+
 static zap_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
 ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
@@ -54,7 +168,6 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
 static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number, unsigned char cas_bits)
 {
 	unsigned configured = 0, x;
-	char path[] = "/dev/zap/channel";
 	zt_params_t ztp;
 
 	memset(&ztp, 0, sizeof(ztp));
@@ -67,11 +180,11 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 		zap_socket_t sockfd = ZT_INVALID_SOCKET;
 		int len;
 
-		sockfd = open(path, O_RDWR);
+		sockfd = open(chanpath, O_RDWR);
 		if (sockfd != ZT_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &zchan) == ZAP_SUCCESS) {
 
-			if (ioctl(sockfd, ZT_SPECIFY, &x)) {
-				zap_log(ZAP_LOG_ERROR, "failure configuring device %s chan %d fd %d (%s)\n", path, x, sockfd, strerror(errno));
+			if (ioctl(sockfd, codes.SPECIFY, &x)) {
+				zap_log(ZAP_LOG_ERROR, "failure configuring device %s chan %d fd %d (%s)\n", chanpath, x, sockfd, strerror(errno));
 				close(sockfd);
 				continue;
 			}
@@ -83,8 +196,8 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				binfo.rxbufpolicy = 0;
 				binfo.numbufs = 32;
 				binfo.bufsize = 1024;
-				if (ioctl(sockfd, ZT_SET_BUFINFO, &binfo)) {
-					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", path, zchan->span_id, zchan->chan_id, sockfd);
+				if (ioctl(sockfd, codes.SET_BUFINFO, &binfo)) {
+					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
 					close(sockfd);
 					continue;
 				}
@@ -134,8 +247,8 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 					break;
 				}
 				
-				if (ioctl(CONTROL_FD, ZT_CHANCONFIG, &cc)) {
-					zap_log(ZAP_LOG_WARNING, "this ioctl fails on older zaptel but is harmless if you used ztcfg\n[device %s chan %d fd %d (%s)]\n", path, x, CONTROL_FD, strerror(errno));
+				if (ioctl(CONTROL_FD, codes.CHANCONFIG, &cc)) {
+					zap_log(ZAP_LOG_WARNING, "this ioctl fails on older zaptel but is harmless if you used ztcfg\n[device %s chan %d fd %d (%s)]\n", chanpath, x, CONTROL_FD, strerror(errno));
 				}
 			}
 
@@ -145,8 +258,8 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				cc.chan = cc.master = x;
 				cc.sigtype = ZT_SIG_CAS;
 				cc.idlebits = cas_bits;
-				if (ioctl(CONTROL_FD, ZT_CHANCONFIG, &cc)) {
-					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s", path, zchan->span_id, zchan->chan_id, sockfd, strerror(errno));
+				if (ioctl(CONTROL_FD, codes.CHANCONFIG, &cc)) {
+					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s", chanpath, zchan->span_id, zchan->chan_id, sockfd, strerror(errno));
 					close(sockfd);
 					continue;
 				}
@@ -154,9 +267,9 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 
 			if (zchan->type != ZAP_CHAN_TYPE_DQ921 && zchan->type != ZAP_CHAN_TYPE_DQ931) {
 				len = zt_globals.codec_ms * 8;
-				if (ioctl(zchan->sockfd, ZT_SET_BLOCKSIZE, &len)) {
+				if (ioctl(zchan->sockfd, codes.SET_BLOCKSIZE, &len)) {
 					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d err:%s\n", 
-							path, zchan->span_id, zchan->chan_id, sockfd, strerror(errno));
+							chanpath, zchan->span_id, zchan->chan_id, sockfd, strerror(errno));
 					close(sockfd);
 					continue;
 				}
@@ -169,21 +282,21 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				}
 			}
 			
-			if (ioctl(sockfd, ZT_GET_PARAMS, &ztp) < 0) {
-				zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", path, zchan->span_id, zchan->chan_id, sockfd);
+			if (ioctl(sockfd, codes.GET_PARAMS, &ztp) < 0) {
+				zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
 				close(sockfd);
 				continue;
 			}
 
 			if (zchan->type == ZAP_CHAN_TYPE_DQ921) {
 				if ((ztp.sig_type != ZT_SIG_HDLCRAW) && (ztp.sig_type != ZT_SIG_HDLCFCS)) {
-					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", path, zchan->span_id, zchan->chan_id, sockfd);
+					zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
 					close(sockfd);
 					continue;
 				}
 			}
 
-			zap_log(ZAP_LOG_INFO, "configuring device %s channel %d as OpenZAP device %d:%d fd:%d\n", path, x, zchan->span_id, zchan->chan_id, sockfd);
+			zap_log(ZAP_LOG_INFO, "configuring device %s channel %d as OpenZAP device %d:%d fd:%d\n", chanpath, x, zchan->span_id, zchan->chan_id, sockfd);
 			
 			zchan->rate = 8000;
 			zchan->physical_span_id = ztp.span_no;
@@ -212,8 +325,8 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 			ztp.wink_time = zt_globals.wink_ms;
 			ztp.flash_time = zt_globals.flash_ms;
 
-			if (ioctl(sockfd, ZT_SET_PARAMS, &ztp) < 0) {
-				zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", path, zchan->span_id, zchan->chan_id, sockfd);
+			if (ioctl(sockfd, codes.SET_PARAMS, &ztp) < 0) {
+				zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
 				close(sockfd);
 				continue;
 			}
@@ -227,7 +340,7 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 			}
 			configured++;
 		} else {
-			zap_log(ZAP_LOG_ERROR, "failure configuring device %s\n", path);
+			zap_log(ZAP_LOG_ERROR, "failure configuring device %s\n", chanpath);
 		}
 	}
 	
@@ -347,7 +460,7 @@ static ZIO_OPEN_FUNCTION(zt_open)
 	} else {
 		int blocksize = zt_globals.codec_ms * (zchan->rate / 1000);
 		int err;
-		if ((err = ioctl(zchan->sockfd, ZT_SET_BLOCKSIZE, &blocksize))) {
+		if ((err = ioctl(zchan->sockfd, codes.SET_BLOCKSIZE, &blocksize))) {
 			snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 			return ZAP_FAIL;
 		} else {
@@ -358,21 +471,21 @@ static ZIO_OPEN_FUNCTION(zt_open)
 		
 		if (zchan->type == ZAP_CHAN_TYPE_B) {
 			int one = 1;
-			if (ioctl(zchan->sockfd, ZT_AUDIOMODE, &one)) {
+			if (ioctl(zchan->sockfd, codes.AUDIOMODE, &one)) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 				zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
 				return ZAP_FAIL;
 			}
 		} else if (zchan->type == ZAP_CHAN_TYPE_FXS || zchan->type == ZAP_CHAN_TYPE_FXO || zchan->type == ZAP_CHAN_TYPE_EM) {
 			int len = zt_globals.eclevel;
-			if (ioctl(zchan->sockfd, ZT_ECHOCANCEL, &len)) {
+			if (ioctl(zchan->sockfd, codes.ECHOCANCEL, &len)) {
 				zap_log(ZAP_LOG_WARNING, "Echo cancel not available for %d:%d\n", zchan->span_id, zchan->chan_id);
 				//snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 				//zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
 				//return ZAP_FAIL;
 			} else {
 				len = zt_globals.etlevel;
-				if (ioctl(zchan->sockfd, ZT_ECHOTRAIN, &len)) {
+				if (ioctl(zchan->sockfd, codes.ECHOTRAIN, &len)) {
 					zap_log(ZAP_LOG_WARNING, "Echo training not available for %d:%d\n", zchan->span_id, zchan->chan_id);
 					//snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 					//zap_log(ZAP_LOG_ERROR, "%s\n", zchan->last_error);
@@ -400,33 +513,33 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_ENABLE_ECHOCANCEL:
 		{
 			int level = ZAP_COMMAND_OBJ_INT;
-			err = ioctl(zchan->sockfd, ZT_ECHOCANCEL, &level);
+			err = ioctl(zchan->sockfd, codes.ECHOCANCEL, &level);
 			ZAP_COMMAND_OBJ_INT = level;
 		}
 	case ZAP_COMMAND_DISABLE_ECHOCANCEL:
 		{
 			int level = 0;
-			err = ioctl(zchan->sockfd, ZT_ECHOCANCEL, &level);
+			err = ioctl(zchan->sockfd, codes.ECHOCANCEL, &level);
 			ZAP_COMMAND_OBJ_INT = level;
 		}
 		break;
 	case ZAP_COMMAND_ENABLE_ECHOTRAIN:
 		{
 			int level = ZAP_COMMAND_OBJ_INT;
-			err = ioctl(zchan->sockfd, ZT_ECHOTRAIN, &level);
+			err = ioctl(zchan->sockfd, codes.ECHOTRAIN, &level);
 			ZAP_COMMAND_OBJ_INT = level;
 		}
 	case ZAP_COMMAND_DISABLE_ECHOTRAIN:
 		{
 			int level = 0;
-			err = ioctl(zchan->sockfd, ZT_ECHOTRAIN, &level);
+			err = ioctl(zchan->sockfd, codes.ECHOTRAIN, &level);
 			ZAP_COMMAND_OBJ_INT = level;
 		}
 		break;
 	case ZAP_COMMAND_OFFHOOK:
 		{
 			int command = ZT_OFFHOOK;
-			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+			if (ioctl(zchan->sockfd, codes.HOOK, &command)) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "OFFHOOK Failed");
 				return ZAP_FAIL;
 			}
@@ -436,7 +549,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_ONHOOK:
 		{
 			int command = ZT_ONHOOK;
-			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+			if (ioctl(zchan->sockfd, codes.HOOK, &command)) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "ONHOOK Failed");
 				return ZAP_FAIL;
 			}
@@ -446,7 +559,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_FLASH:
 		{
 			int command = ZT_FLASH;
-			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+			if (ioctl(zchan->sockfd, codes.HOOK, &command)) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "FLASH Failed");
 				return ZAP_FAIL;
 			}
@@ -455,7 +568,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_WINK:
 		{
 			int command = ZT_WINK;
-			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+			if (ioctl(zchan->sockfd, codes.HOOK, &command)) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "WINK Failed");
 				return ZAP_FAIL;
 			}
@@ -464,7 +577,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_GENERATE_RING_ON:
 		{
 			int command = ZT_RING;
-			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+			if (ioctl(zchan->sockfd, codes.HOOK, &command)) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
 				return ZAP_FAIL;
 			}
@@ -474,7 +587,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_GENERATE_RING_OFF:
 		{
 			int command = ZT_RINGOFF;
-			if (ioctl(zchan->sockfd, ZT_HOOK, &command)) {
+			if (ioctl(zchan->sockfd, codes.HOOK, &command)) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off failed");
 				return ZAP_FAIL;
 			}
@@ -484,7 +597,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_GET_INTERVAL:
 		{
 
-			if (!(err = ioctl(zchan->sockfd, ZT_GET_BLOCKSIZE, &zchan->packet_len))) {
+			if (!(err = ioctl(zchan->sockfd, codes.GET_BLOCKSIZE, &zchan->packet_len))) {
 				zchan->native_interval = zchan->packet_len / 8;
 				if (zchan->effective_codec == ZAP_CODEC_SLIN) {
 					zchan->packet_len *= 2;
@@ -498,7 +611,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 			int interval = ZAP_COMMAND_OBJ_INT;
 			int len = interval * 8;
 
-			if (!(err = ioctl(zchan->sockfd, ZT_SET_BLOCKSIZE, &len))) {
+			if (!(err = ioctl(zchan->sockfd, codes.SET_BLOCKSIZE, &len))) {
 				zchan->packet_len = len;
 				zchan->effective_interval = zchan->native_interval = zchan->packet_len / 8;
 
@@ -512,7 +625,7 @@ static ZIO_COMMAND_FUNCTION(zt_command)
 	case ZAP_COMMAND_SET_CAS_BITS:
 		{
 			int bits = ZAP_COMMAND_OBJ_INT;
-			err = ioctl(zchan->sockfd, ZT_SETTXBITS, &bits);
+			err = ioctl(zchan->sockfd, codes.SETTXBITS, &bits);
 		}
 		break;
 	case ZAP_COMMAND_GET_CAS_BITS:
@@ -541,7 +654,7 @@ static ZIO_GET_ALARMS_FUNCTION(zt_get_alarms)
 	memset(&info, 0, sizeof(info));
 	info.span_no = zchan->physical_span_id;
 
-	if (ioctl(CONTROL_FD, ZT_SPANSTAT, &info)) {
+	if (ioctl(CONTROL_FD, codes.SPANSTAT, &info)) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
 		snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
 		return ZAP_FAIL;
@@ -658,7 +771,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 	for(i = 1; i <= span->chan_count; i++) {
 		if (zap_test_flag(span->channels[i], ZAP_CHANNEL_EVENT)) {
 			zap_clear_flag(span->channels[i], ZAP_CHANNEL_EVENT);
-			if (ioctl(span->channels[i]->sockfd, ZT_GETEVENT, &zt_event_id) == -1) {
+			if (ioctl(span->channels[i]->sockfd, codes.GETEVENT, &zt_event_id) == -1) {
 				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 				return ZAP_FAIL;
 			}
@@ -717,7 +830,7 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event)
 				{
 					event_id = ZAP_OOB_CAS_BITS_CHANGE;
 					int bits = 0;
-					int err = ioctl(span->channels[i]->sockfd, ZT_GETRXBITS, &bits);
+					int err = ioctl(span->channels[i]->sockfd, codes.GETRXBITS, &bits);
 					if (err) {
 						return ZAP_FAIL;
 					}
@@ -801,11 +914,26 @@ static zap_io_interface_t zt_interface;
 static ZIO_IO_LOAD_FUNCTION(zt_init)
 {
 	assert(zio != NULL);
+    struct stat statbuf;
 	memset(&zt_interface, 0, sizeof(zt_interface));
 	memset(&zt_globals, 0, sizeof(zt_globals));
 
+    if (!stat(zt_ctlpath, &statbuf)) {
+        zap_log(ZAP_LOG_NOTICE, "Using Zaptel control device\n");
+        ctlpath = zt_ctlpath;
+        chanpath = zt_chanpath;
+        memcpy(&codes, &zt_ioctl_codes, sizeof(codes));
+    } else if (!stat(dahdi_ctlpath, &statbuf)) {
+        zap_log(ZAP_LOG_NOTICE, "Using DAHDI control device\n");
+        ctlpath = dahdi_ctlpath;
+        chanpath = dahdi_chanpath;
+        memcpy(&codes, &dahdi_ioctl_codes, sizeof(codes));
+    } else {
+		zap_log(ZAP_LOG_ERROR, "No DAHDI or Zap control device found in /dev/\n");
+		return ZAP_FAIL;
+    }
 	if ((CONTROL_FD = open(ctlpath, O_RDWR)) < 0) {
-		zap_log(ZAP_LOG_ERROR, "Cannot open control device\n");
+		zap_log(ZAP_LOG_ERROR, "Cannot open control device %s: %s\n", ctlpath, strerror(errno));
 		return ZAP_FAIL;
 	}
 
