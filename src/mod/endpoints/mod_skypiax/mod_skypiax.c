@@ -506,7 +506,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
                                                     switch_memory_pool_t ** pool,
                                                     switch_originate_flag_t flags)
 {
-	if ((*new_session = switch_core_session_request(skypiax_endpoint_interface, SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
+  if ((*new_session =
+       switch_core_session_request(skypiax_endpoint_interface,
+                                   SWITCH_CALL_DIRECTION_OUTBOUND, pool)) != 0) {
     private_t *tech_pvt;
     switch_channel_t *channel;
     switch_caller_profile_t *caller_profile;
@@ -940,29 +942,43 @@ static switch_status_t load_config(void)
 
         skypiax_audio_init(&globals.SKYPIAX_INTERFACES[interface_id]);
 
-        NOTICA("WAITING roughly 10/15 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d. NB: on XP will wait for much much more! (on Vista and Linux is OK)\n", SKYPIAX_P_LOG, interface_id);
+        NOTICA
+          ("WAITING roughly 10 seconds to find a running Skype client and connect to its SKYPE API for interface_id=%d\n",
+           SKYPIAX_P_LOG, interface_id);
         i = 0;
-        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 200) {    // 10 seconds? thanks Jeff Lenk
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected == 0 && running && i < 200) {  // 10 seconds! thanks Jeff Lenk
           switch_sleep(50000);
           i++;
         }
         if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.api_connected) {
-          NOTICA("Found a running Skype client, connected to its SKYPE API for interface_id=%d, waiting roughly 60/90 seconds for CURRENTUSERHANDLE==%s. NB: on XP will wait for much much more! (on Vista and Linux is OK)\n", SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
+          NOTICA
+            ("Found a running Skype client, connected to its SKYPE API for interface_id=%d, waiting 60 seconds for CURRENTUSERHANDLE==%s\n",
+             SKYPIAX_P_LOG, interface_id,
+             globals.SKYPIAX_INTERFACES[interface_id].skype_user);
         } else {
-          ERRORA("Failed to connect to a SKYPE API for interface_id=%d, no SKYPE client running, please (re)start Skype client. Skypiax exiting\n", SKYPIAX_P_LOG, interface_id);
+          ERRORA
+            ("Failed to connect to a SKYPE API for interface_id=%d, no SKYPE client running, please (re)start Skype client. Skypiax exiting\n",
+             SKYPIAX_P_LOG, interface_id);
           running = 0;
           return SWITCH_STATUS_FALSE;
         }
 
         i = 0;
-        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle == 0 && running && i < 1200) {    // 60 seconds? thanks Jeff Lenk
+        while (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle == 0 && running && i < 1200) { // 60 seconds! thanks Jeff Lenk
           switch_sleep(50000);
           i++;
         }
         if (globals.SKYPIAX_INTERFACES[interface_id].SkypiaxHandles.currentuserhandle) {
-          WARNINGA("Interface_id=%d is now STARTED, the Skype client to which we are connected gave us the correct CURRENTUSERHANDLE (%s)\n", SKYPIAX_P_LOG, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
+          WARNINGA
+            ("Interface_id=%d is now STARTED, the Skype client to which we are connected gave us the correct CURRENTUSERHANDLE (%s)\n",
+             SKYPIAX_P_LOG, interface_id,
+             globals.SKYPIAX_INTERFACES[interface_id].skype_user);
         } else {
-          ERRORA("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypiax exiting now\n", SKYPIAX_P_LOG, globals.SKYPIAX_INTERFACES[interface_id].skype_user, interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user, globals.SKYPIAX_INTERFACES[interface_id].skype_user);
+          ERRORA
+            ("The Skype client to which we are connected FAILED to gave us CURRENTUSERHANDLE=%s, interface_id=%d FAILED to start. No Skype client logged in as '%s' has been found. Please (re)launch a Skype client logged in as '%s'. Skypiax exiting now\n",
+             SKYPIAX_P_LOG, globals.SKYPIAX_INTERFACES[interface_id].skype_user,
+             interface_id, globals.SKYPIAX_INTERFACES[interface_id].skype_user,
+             globals.SKYPIAX_INTERFACES[interface_id].skype_user);
           running = 0;
           return SWITCH_STATUS_FALSE;
         }
@@ -1056,7 +1072,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
         DEBUGA_SKYPE
           ("got FALSE here, thread probably was already dead. GetLastError returned: %d\n",
            SKYPIAX_P_LOG, GetLastError());
-            globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread=NULL;
+        globals.SKYPIAX_INTERFACES[interface_id].skypiax_api_thread = NULL;
       }
 #else
       XEvent e;
@@ -1075,9 +1091,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown)
       XSync(tech_pvt->SkypiaxHandles.disp, False);
 #endif
     }
-    while (x) {//FIXME 2 seconds?
+    while (x) {                 //FIXME 2 seconds?
       x--;
-      switch_yield(20000); 
+      switch_yield(20000);
     }
     if (globals.SKYPIAX_INTERFACES[interface_id].skypiax_signaling_thread) {
       switch_thread_join(&status,
@@ -1164,7 +1180,9 @@ int new_inbound_channel(private_t * tech_pvt)
   switch_core_session_t *session = NULL;
   switch_channel_t *channel = NULL;
 
-  if ((session = switch_core_session_request(skypiax_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
+  if ((session =
+       switch_core_session_request(skypiax_endpoint_interface,
+                                   SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
     switch_core_session_add_stream(session, NULL);
     channel = switch_core_session_get_channel(session);
     skypiax_tech_init(tech_pvt, session);
@@ -1220,7 +1238,6 @@ int remote_party_is_ringing(private_t * tech_pvt)
 
   return 0;
 }
-
 
 int remote_party_is_early_media(private_t * tech_pvt)
 {

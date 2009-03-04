@@ -144,7 +144,7 @@ struct ast_cli_entry myclis[] = {
   AST_CLI_DEFINE(skypiax_console_skype, "Sends a Skype command"),
   AST_CLI_DEFINE(skypiax_console_skypiax_dir_import, "imports entries from cellphone"),
   AST_CLI_DEFINE(skypiax_console_skypiax, "all things skypiax"),
-  #endif
+#endif
 };
 #else
 struct ast_cli_entry myclis[] = {
@@ -313,15 +313,15 @@ struct ast_channel *skypiax_request(const char *type, int format, void *data, in
     return NULL;
   }
 
-char interface[256];
-int i;
-memset(interface, '\0', sizeof(interface));
+  char interface[256];
+  int i;
+  memset(interface, '\0', sizeof(interface));
 
-for (i=0; i<sizeof(interface); i++){
-	if(name[i] == '/')
-		break;
-	interface[i]=name[i];
-}
+  for (i = 0; i < sizeof(interface); i++) {
+    if (name[i] == '/')
+      break;
+    interface[i] = name[i];
+  }
   /* lock the interfaces' list */
   LOKKA(&skypiax_iflock);
   /* make a pointer to the first interface in the interfaces list */
@@ -1124,8 +1124,7 @@ struct skypiax_pvt *skypiax_mkif(struct ast_config *cfg, char *ctg, int is_first
             skypiax_store_boost(v->value, &skypiax_default.capture_boost))
         M_UINT("skypiax_dir_entry_extension_prefix",
                skypiax_default.skypiax_dir_entry_extension_prefix)
-        M_END(;
-        );
+        M_END(;);
     }
   }
 
@@ -1161,8 +1160,7 @@ struct skypiax_pvt *skypiax_mkif(struct ast_config *cfg, char *ctg, int is_first
       M_STR("skype_user", tmp->skype_user)
       M_UINT("skypiax_dir_entry_extension_prefix",
              tmp->skypiax_dir_entry_extension_prefix)
-      M_END(;
-      );
+      M_END(;);
   }
 
   if (debug_all) {
@@ -1861,7 +1859,9 @@ int new_inbound_channel(private_t * p)
   switch_core_session_t *session = NULL;
   switch_channel_t *channel = NULL;
 
-  if ((session = switch_core_session_request(skypiax_endpoint_interface, SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
+  if ((session =
+       switch_core_session_request(skypiax_endpoint_interface,
+                                   SWITCH_CALL_DIRECTION_INBOUND, NULL)) != 0) {
     switch_core_session_add_stream(session, NULL);
     channel = switch_core_session_get_channel(session);
     skypiax_tech_init(tech_pvt, session);
@@ -1889,6 +1889,7 @@ int new_inbound_channel(private_t * p)
 #endif
   return 0;
 }
+
 int remote_party_is_ringing(private_t * p)
 {
   if (p->owner) {
@@ -1897,6 +1898,7 @@ int remote_party_is_ringing(private_t * p)
 
   return 0;
 }
+
 int remote_party_is_early_media(private_t * p)
 {
   if (p->owner) {
@@ -1905,7 +1907,6 @@ int remote_party_is_early_media(private_t * p)
 
   return 0;
 }
-
 
 int outbound_channel_answered(private_t * p)
 {
