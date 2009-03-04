@@ -86,6 +86,7 @@ typedef struct {
 	uint8_t answered;
 	uint32_t per_channel_timelimit_sec;
 	uint32_t per_channel_progress_timelimit_sec;
+	uint32_t per_channel_delay_start;
 } originate_status_t;
 
 
@@ -177,7 +178,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		goto wbreak;
 	}
 
-	if (!switch_channel_ready(channel)) {
+	if (switch_channel_up(channel)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		goto wbreak;
 	}
@@ -228,6 +229,11 @@ static int check_per_channel_timeouts(originate_global_t *oglobals,
 	time_t elapsed = switch_epoch_time_now(NULL) - start;
 
 	for (i = 0; i < max; i++) {
+		if (originate_status[i].peer_channel && originate_status[i].per_channel_delay_start && elapsed > originate_status[i].per_channel_delay_start) {
+			switch_channel_clear_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);
+			originate_status[i].per_channel_delay_start = 0;
+		}
+
 		if (originate_status[i].peer_channel && switch_channel_up(originate_status[i].peer_channel)) {
 			if (originate_status[i].per_channel_progress_timelimit_sec && elapsed > originate_status[i].per_channel_progress_timelimit_sec &&
 				!(
@@ -1493,6 +1499,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							originate_status[i].per_channel_progress_timelimit_sec = (uint32_t) val;
 						}
 					}
+
+					if ((vvar = switch_channel_get_variable(originate_status[i].peer_channel, "leg_delay_start"))) {
+						int val = atoi(vvar);
+						if (val > 0) {
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting leg delay start to %d\n", 
+											  switch_channel_get_name(originate_status[0].peer_channel), val);
+							originate_status[i].per_channel_delay_start = (uint32_t) val;
+						}
+					}
 				}
 
 				if (!table) {
@@ -1511,11 +1526,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 
 				if (!switch_core_session_running(originate_status[i].peer_session)) {
-					/*if (!(flags & SOF_NOBLOCK)) {
-					  switch_channel_set_state(originate_status[i].peer_channel, CS_ROUTING);
-					  }
-					  } else {
-					*/
+					if (originate_status[i].per_channel_delay_start) {
+						switch_channel_set_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);
+					}
 					switch_core_session_thread_launch(originate_status[i].peer_session);
 				}
 			}
@@ -1842,6 +1855,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					continue;
 				}
 
+				switch_channel_clear_flag(originate_status[i].peer_channel, CF_BLOCK_STATE);
+
 				if (switch_channel_test_flag(originate_status[i].peer_channel, CF_TRANSFER) 
 					|| switch_channel_test_flag(originate_status[i].peer_channel, CF_REDIRECT) 
 					|| switch_channel_test_flag(originate_status[i].peer_channel, CF_BRIDGED) ||
@@ -1867,7 +1882,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							}
 						}
 					}
-					if (switch_channel_ready(originate_status[i].peer_channel)) {
+					if (switch_channel_up(originate_status[i].peer_channel)) {
 						if (caller_channel && i == 0) {
 							holding = switch_channel_get_variable(caller_channel, SWITCH_HOLDING_UUID_VARIABLE);
 							holding = switch_core_session_strdup(oglobals.session, holding);

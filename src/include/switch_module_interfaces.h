@@ -55,7 +55,8 @@ typedef enum {
 	SWITCH_SHN_ON_CONSUME_MEDIA,
 	SWITCH_SHN_ON_HIBERNATE,
 	SWITCH_SHN_ON_RESET,
-	SWITCH_SHN_ON_PARK
+	SWITCH_SHN_ON_PARK,
+	SWITCH_SHN_ON_REPORTING
 } switch_state_handler_name_t;
 
 struct switch_state_handler_table {
@@ -79,6 +80,8 @@ struct switch_state_handler_table {
 	switch_state_handler_t on_reset;
 	/*! executed when the state changes to park */
 	switch_state_handler_t on_park;
+	/*! executed when the state changes to reporting */
+	switch_state_handler_t on_reporting;
 	void *padding[10];
 };
 

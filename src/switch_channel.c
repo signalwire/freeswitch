@@ -767,7 +767,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (!switch_channel_ready(channel)) {
+		if (switch_channel_down(channel)) {
 			return SWITCH_STATUS_FALSE;
 		}
 
@@ -925,6 +925,7 @@ static const char *state_names[] = {
 	"CS_HIBERNATE",
 	"CS_RESET",
 	"CS_HANGUP",
+	"CS_REPORTING",
 	"CS_DONE",
 	NULL
 };
@@ -1176,6 +1177,16 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 		break;
 
 	case CS_HANGUP:
+		switch (state) {
+		case CS_REPORTING:
+		case CS_DONE:
+			ok++;
+		default:
+			break;
+		}
+		break;
+
+	case CS_REPORTING:
 		switch (state) {
 		case CS_DONE:
 			ok++;
@@ -1573,6 +1584,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 																	 const char *file, const char *func, int line, switch_call_cause_t hangup_cause)
 {
 	switch_assert(channel != NULL);
+
+	switch_channel_clear_flag(channel, CF_BLOCK_STATE);
+
 	switch_mutex_lock(channel->state_mutex);
 
 	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
@@ -1609,6 +1623,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	}
 
 	switch_mutex_unlock(channel->state_mutex);
+
 	return channel->state;
 }
 

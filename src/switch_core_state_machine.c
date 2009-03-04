@@ -47,6 +47,13 @@ static void switch_core_standard_on_hangup(switch_core_session_t *session)
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 }
 
+static void switch_core_standard_on_reporting(switch_core_session_t *session)
+{
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard REPORTING, cause: %s\n",
+					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
+}
+
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
 
@@ -373,28 +380,29 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 	switch_mutex_lock(session->mutex);
 
 	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
+
+		switch_channel_wait_for_flag(session->channel, CF_BLOCK_STATE, SWITCH_FALSE, 0, NULL);
+		
 		midstate = state;
-		if (state != switch_channel_get_running_state(session->channel) || state == CS_HANGUP) {
+		if (state != switch_channel_get_running_state(session->channel) || state >= CS_HANGUP) {
 			int index = 0;
 			int proceed = 1;
 			int global_proceed = 1;
 			int do_extra_handlers = 1;
-
+			
 			switch_channel_set_running_state(session->channel, state);
 			switch_channel_clear_flag(session->channel, CF_TRANSFER);
 			switch_channel_clear_flag(session->channel, CF_REDIRECT);
 
 			switch (state) {
-			case CS_NEW:		/* Just created, Waiting for first instructions */
+			case CS_NEW: /* Just created, Waiting for first instructions */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
 			case CS_DONE:
 				goto done;
-			case CS_HANGUP:	/* Deactivate and end the thread */
+			case CS_REPORTING: /* Call Detail */
 				{
 					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
-					const char *hook_var;
-					switch_core_session_t *use_session = NULL;
 					
 					if (!switch_strlen_zero(var)) {
 						if (!strcasecmp(var, "a_only")) {
@@ -410,6 +418,16 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						}
 					}
 
+					STATE_MACRO(reporting, "REPORTING");
+					
+					switch_channel_set_state(session->channel, CS_DONE);
+				}
+				goto done;
+			case CS_HANGUP:	/* Deactivate and end the thread */
+				{
+					const char *hook_var;
+					switch_core_session_t *use_session = NULL;
+					
 					switch_core_media_bug_remove_all(session);
 					
 					STATE_MACRO(hangup, "HANGUP");
@@ -448,7 +466,8 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						switch_safe_free(stream.data);
 					}
 				}
-				goto done;
+				switch_channel_set_state(session->channel, CS_REPORTING);
+				break;
 			case CS_INIT:		/* Basic setup tasks */
 				STATE_MACRO(init, "INIT");
 				break;

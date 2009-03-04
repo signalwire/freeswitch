@@ -66,7 +66,7 @@ static size_t httpCallBack(char *buffer, size_t size, size_t nitems, void *outst
 	return size * nitems;
 }
 
-static switch_status_t my_on_hangup(switch_core_session_t *session)
+static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
 	switch_xml_t cdr;
 	char *xml_text = NULL;
@@ -264,9 +264,14 @@ static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
 	/*.on_execute */ NULL,
-	/*.on_hangup */ my_on_hangup,
+	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ NULL
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media*/ NULL,
+	/*.on_hibernate*/ NULL,
+	/*.on_reset*/ NULL,
+	/*.on_park*/ NULL,
+	/*.on_reporting*/ my_on_reporting
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_xml_cdr_load)

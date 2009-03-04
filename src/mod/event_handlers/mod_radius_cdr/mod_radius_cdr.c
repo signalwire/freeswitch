@@ -371,7 +371,7 @@ static switch_status_t my_on_routing(switch_core_session_t *session)
 	return (retval);
 }
 
-static switch_status_t my_on_hangup(switch_core_session_t *session)
+static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
 	switch_xml_t cdr;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
@@ -406,7 +406,7 @@ static switch_status_t my_on_hangup(switch_core_session_t *session)
 
 	switch_thread_rwlock_rdlock(globals.rwlock);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_hangup\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "[mod_radius_cdr] Entering my_on_reporting\n");
 
 	rad_config = my_radius_init();
 
@@ -705,9 +705,14 @@ static const switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ my_on_routing,
 	/*.on_execute */ NULL,
-	/*.on_hangup */ my_on_hangup,
+	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ NULL
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media*/ NULL,
+	/*.on_hibernate*/ NULL,
+	/*.on_reset*/ NULL,
+	/*.on_park*/ NULL,
+	/*.on_reporting*/ my_on_reporting
 };
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_radius_cdr_load)

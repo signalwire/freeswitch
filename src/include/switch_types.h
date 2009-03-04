@@ -753,17 +753,18 @@ typedef uint32_t switch_core_session_message_flag_t;
   \enum switch_channel_state_t
   \brief Channel States (these are the defaults, CS_SOFT_EXECUTE, CS_EXCHANGE_MEDIA, and CS_CONSUME_MEDIA are often overridden by specific apps)
 <pre>
-CS_NEW       - Channel is newly created 
-CS_INIT      - Channel has been initilized
-CS_ROUTING   - Channel is looking for an extension to execute
-CS_SOFT_EXECUTE  - Channel is ready to execute from 3rd party control
-CS_EXECUTE   - Channel is executing it's dialplan 
+CS_NEW       - Channel is newly created.
+CS_INIT      - Channel has been initilized.
+CS_ROUTING   - Channel is looking for an extension to execute.
+CS_SOFT_EXECUTE  - Channel is ready to execute from 3rd party control.
+CS_EXECUTE   - Channel is executing it's dialplan.
 CS_EXCHANGE_MEDIA  - Channel is exchanging media with another channel.
 CS_PARK      - Channel is accepting media awaiting commands.
 CS_CONSUME_MEDIA		 - Channel is consuming all media and dropping it.
-CS_HIBERNATE - Channel is in a sleep state
-CS_RESET 	 - Channel is in a reset state
-CS_HANGUP    - Channel is flagged for hangup and ready to end
+CS_HIBERNATE - Channel is in a sleep state.
+CS_RESET 	 - Channel is in a reset state.
+CS_HANGUP    - Channel is flagged for hangup and ready to end.
+CS_HANGUP    - Channel is ready to collect call detail.
 CS_DONE      - Channel is ready to be destroyed and out of the state machine
 </pre>
  */
@@ -779,6 +780,7 @@ typedef enum {
 	CS_HIBERNATE,
 	CS_RESET,
 	CS_HANGUP,
+	CS_REPORTING,
 	CS_DONE,
 	CS_NONE
 } switch_channel_state_t;
@@ -851,6 +853,7 @@ typedef enum {
 	CF_VERBOSE_EVENTS,
 	CF_PAUSE_BUGS,
 	CF_DIVERT_EVENTS,
+	CF_BLOCK_STATE,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;

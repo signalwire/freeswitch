@@ -165,7 +165,7 @@ static void write_cdr(const char *path, const char *log_line)
 	switch_mutex_unlock(fd->mutex);
 }
 
-static switch_status_t my_on_hangup(switch_core_session_t *session)
+static switch_status_t my_on_reporting(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -286,9 +286,14 @@ static switch_state_handler_table_t state_handlers = {
 	/*.on_init */ NULL,
 	/*.on_routing */ NULL,
 	/*.on_execute */ NULL,
-	/*.on_hangup */ my_on_hangup,
+	/*.on_hangup */ NULL,
 	/*.on_exchange_media */ NULL,
-	/*.on_soft_execute */ NULL
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media*/ NULL,
+	/*.on_hibernate*/ NULL,
+	/*.on_reset*/ NULL,
+	/*.on_park*/ NULL,
+	/*.on_reporting*/ my_on_reporting
 };
 
 
