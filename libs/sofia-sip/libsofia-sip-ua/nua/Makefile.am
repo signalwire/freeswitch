@@ -49,8 +49,7 @@ COVERAGE_INPUT = 	$(libnua_la_SOURCES) $(include_sofia_HEADERS)
 
 check_nua_SOURCES = 	check_nua.c check_nua.h \
 			check_session.c check_register.c \
-			check_etsi.c check_simple.c \
-			test_s2.h test_s2.c
+			check_etsi.c check_simple.c
 
 check_nua_LDADD = 	$(nua_libs) ${top_builddir}/s2check/libs2.a \
 			@CHECK_LIBS@

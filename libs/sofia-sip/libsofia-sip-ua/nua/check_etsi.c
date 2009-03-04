@@ -34,9 +34,9 @@
 
 #include "config.h"
 
-#include "check_nua.h"
+#undef NDEBUG
 
-#include "test_s2.h"
+#include "check_nua.h"
 
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sip_header.h>

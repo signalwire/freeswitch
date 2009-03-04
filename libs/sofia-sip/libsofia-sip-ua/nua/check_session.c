@@ -33,9 +33,9 @@
 
 #include "config.h"
 
-#include "check_nua.h"
+#undef NDEBUG
 
-#include "test_s2.h"
+#include "check_nua.h"
 
 #include <sofia-sip/sip_status.h>
 #include <sofia-sip/sip_header.h>
@@ -1131,7 +1131,11 @@ START_TEST(cancel_2_2_10)
   s2_sip_respond_to(cancel, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(cancel);
 
-  s2_register_teardown();
+  /* emulate network gone bad below
+     zap registration handle here
+     so that s2_register_teardown() does not hang
+  */
+  s2->registration->nh = NULL;
 
   nua_set_params(s2->nua, NUTAG_SHUTDOWN_EVENTS(1), TAG_END());
   fail_unless(s2_check_event(nua_r_set_params, 200));
