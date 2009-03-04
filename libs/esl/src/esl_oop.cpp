@@ -98,7 +98,7 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
 	assert(cmd_buf);
 
 	snprintf(cmd_buf, len, "bgapi %s %s", cmd, arg ? arg : "");
-	*(cmd_buf + len) = '\0';
+	*(cmd_buf + (len + 1)) = '\0';
 
 	if (esl_send_recv(&handle, cmd_buf) == ESL_SUCCESS) {
 		esl_event_t *event;
