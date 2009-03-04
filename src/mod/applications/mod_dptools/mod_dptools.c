@@ -968,17 +968,18 @@ SWITCH_STANDARD_APP(privacy_function)
 	} else {
 		switch_set_flag(caller_profile, SWITCH_CPF_SCREEN);
 
-		if (!strcasecmp(data, "no")) {
-			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
-			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
-		} else if (!strcasecmp(data, "yes")) {
-			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
-		} else if (!strcasecmp(data, "full")) {
+
+		if (!strcasecmp(data, "full")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
 		} else if (!strcasecmp(data, "name")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
 		} else if (!strcasecmp(data, "number")) {
 			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
+		} else if (switch_true(data)) {
+			switch_set_flag(caller_profile, SWITCH_CPF_HIDE_NAME | SWITCH_CPF_HIDE_NUMBER);
+		} else if (switch_false(data)) {
+			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NAME);
+			switch_clear_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "INVALID privacy mode specified. Use a valid mode [no|yes|name|full|number].\n");
 		}
