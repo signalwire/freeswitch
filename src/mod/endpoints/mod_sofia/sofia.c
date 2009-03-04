@@ -690,7 +690,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	switch_memory_pool_t *pool;
 	sip_alias_node_t *node;
 	switch_event_t *s_event;
-	int tportlog = 0;
 	int use_100rel = !sofia_test_pflag(profile, PFLAG_DISABLE_100REL);
 	int use_timer = !sofia_test_pflag(profile, PFLAG_DISABLE_TIMER);
 	const char *supported = NULL;
@@ -713,10 +712,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 		goto end;
 	}
 
-	if (sofia_test_flag(profile, TFLAG_TPORT_LOG)) {
-		tportlog = 1;
-	}
-
 	supported = switch_core_sprintf(profile->pool, "%s%sprecondition, path, replaces", 
 									use_100rel ? "100rel, " : "",
 									use_timer ? "timer, " : ""
@@ -736,7 +731,7 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
  							  TAG_IF(sofia_test_pflag(profile, PFLAG_DISABLE_NAPTR), NTATAG_USE_NAPTR(0)),
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 							  NTATAG_SERVER_RPORT(profile->rport_level), 
-							  TAG_IF(tportlog, TPTAG_LOG(1)), 
+							  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), 
 							  TAG_END());	/* Last tag should always finish the sequence */
 
 	if (!profile->nua) {
@@ -1434,6 +1429,13 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 					char *val = (char *) switch_xml_attr_soft(param, "value");
 					if (!strcasecmp(var, "debug")) {
 						profile->debug = atoi(val);
+					} else if (!strcasecmp(var, "sip-trace")) {
+						if (switch_true(val)) {
+							sofia_set_flag(profile, TFLAG_TPORT_LOG);
+						} else {
+							sofia_clear_flag(profile, TFLAG_TPORT_LOG);
+						}
+						nua_set_params(profile->nua, TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), TAG_END());
 					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
 						parse_rtp_bugs(profile, val);
 					} else if (!strcasecmp(var, "user-agent-string")) { 
