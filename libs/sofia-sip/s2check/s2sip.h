@@ -27,7 +27,6 @@
 #include <sofia-sip/su_wait.h>
 #include <sofia-sip/sip.h>
 #include <sofia-sip/tport.h>
-#include <sofia-sip/nua.h>
 
 #include "s2util.h"
 

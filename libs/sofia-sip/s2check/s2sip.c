@@ -44,6 +44,7 @@
 
 #include <sofia-sip/sip_header.h>
 #include <sofia-sip/sip_status.h>
+#include <sofia-sip/sip_tag.h>
 #include <sofia-sip/msg_addr.h>
 #include <sofia-sip/su_log.h>
 #include <sofia-sip/su_tagarg.h>
@@ -269,8 +270,8 @@ s2_sip_save_uas_dialog(struct dialog *d, sip_t *sip)
 
 struct message *
 s2_sip_respond_to(struct message *m, struct dialog *d,
-	      int status, char const *phrase,
-	      tag_type_t tag, tag_value_t value, ...)
+		  int status, char const *phrase,
+		  tag_type_t tag, tag_value_t value, ...)
 {
   ta_list ta;
   msg_t *reply;
@@ -395,9 +396,9 @@ s2_complete_response(msg_t *response,
  */
 int
 s2_sip_request_to(struct dialog *d,
-	      sip_method_t method, char const *name,
-	      tport_t *tport,
-	      tag_type_t tag, tag_value_t value, ...)
+		  sip_method_t method, char const *name,
+		  tport_t *tport,
+		  tag_type_t tag, tag_value_t value, ...)
 {
   ta_list ta;
   tagi_t const *tags;
@@ -811,5 +812,7 @@ s2_sip_teardown(void)
   if (s2sip) {
     tport_destroy(s2sip->master), s2sip->master = NULL;
     su_root_destroy(s2sip->root), s2sip->root = NULL;
+    su_home_unref(s2sip->home);
+    s2sip = NULL;
   }
 }
