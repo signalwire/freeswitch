@@ -1453,6 +1453,8 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						if (switch_true(val)) {
 							profile->rport_level = 2;
 						}
+					} else if (!strcasecmp(var, "caller-id-type")) {
+						profile->cid_type = sofia_cid_name2type(val);
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);;
 					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media"))) {
@@ -1920,6 +1922,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->dbname = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "presence-hosts")) {
 						profile->presence_hosts = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "caller-id-type")) {
+						profile->cid_type = sofia_cid_name2type(val);
 					} else if (!strcasecmp(var, "record-template")) {
 						profile->record_template = switch_core_strdup(profile->pool, val);
 					} else if ((!strcasecmp(var, "inbound-no-media") || !strcasecmp(var, "inbound-bypass-media")) && switch_true(val)) {
@@ -4195,6 +4199,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (!switch_strlen_zero(rpid->rpid_display)) {
 			displayname = rpid->rpid_display;
 		}
+		switch_channel_set_variable(channel, "sip_cid_type", "rpid");
 	}
 
 	if ((passerted = sip_p_asserted_identity(sip))) {
@@ -4204,6 +4209,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (!switch_strlen_zero(passerted->paid_display)) {
 			displayname = passerted->paid_display;
 		}
+		switch_channel_set_variable(channel, "sip_cid_type", "pid");
 	}
 
 	if ((ppreferred = sip_p_preferred_identity(sip))) {
@@ -4213,6 +4219,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		if (!switch_strlen_zero(ppreferred->ppid_display)) {
 			displayname = ppreferred->ppid_display;
 		}
+		switch_channel_set_variable(channel, "sip_cid_type", "pid");
 	}
 
 	if (from_user) {

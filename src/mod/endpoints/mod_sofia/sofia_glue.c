@@ -36,6 +36,7 @@
 #include "mod_sofia.h"
 #include <switch_stun.h>
 
+
 void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *t38_options)
 {
 	char buf[2048];
@@ -1112,6 +1113,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 	char *route = NULL;
 	char *route_uri = NULL;
 	char *sendto = NULL;
+	sofia_cid_type_t cid_type = tech_pvt->profile->cid_type;
 
 	rep = switch_channel_get_variable(channel, SOFIA_REPLACES_HEADER);
 
@@ -1300,23 +1302,54 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			switch_channel_set_variable(channel, "sip_nat_detected", "true");
 		}
 		
-		/* TODO: We should use the new tags for making an rpid and add profile options to turn this on/off */
-		if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
-			priv = "name";
-			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-				priv = "full";
+		if ((val = switch_channel_get_variable(channel, "sip_cid_type"))) {
+			cid_type = sofia_cid_name2type(val);
+		}
+		switch (cid_type) {
+		case CID_TYPE_PID:
+			if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+				tech_pvt->asserted_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
+																	tech_pvt->caller_profile->caller_id_name,
+																	tech_pvt->caller_profile->caller_id_number, 
+																	rpid_domain);
+			} else {
+				tech_pvt->preferred_id = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>",
+																	 tech_pvt->caller_profile->caller_id_name,
+																	 tech_pvt->caller_profile->caller_id_number, 
+																	 rpid_domain);
 			}
-		} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
-			priv = "full";
+			
+			if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+				tech_pvt->privacy = "id";
+			} else {
+				tech_pvt->privacy = "none";
+			}
+
+			break;
+		case CID_TYPE_RPID:
+			{
+				if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NAME)) {
+					priv = "name";
+					if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+						priv = "full";
+					}
+				} else if (switch_test_flag(caller_profile, SWITCH_CPF_HIDE_NUMBER)) {
+					priv = "full";
+				}
+				
+				if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
+					screen = "yes";
+				}
+				
+				tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "\"%s\"<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
+															 tech_pvt->caller_profile->caller_id_name,
+															 tech_pvt->caller_profile->caller_id_number, rpid_domain, screen, priv);
+			}
+			break;
+		default:
+			break;
 		}
 
-		if (switch_test_flag(caller_profile, SWITCH_CPF_SCREEN)) {
-			screen = "yes";
-		}
-
-		tech_pvt->rpid = switch_core_session_sprintf(tech_pvt->session, "Remote-Party-ID: \"%s\"<sip:%s@%s>;party=calling;screen=%s;privacy=%s",
-													 tech_pvt->caller_profile->caller_id_name,
-													 tech_pvt->caller_profile->caller_id_number, rpid_domain, screen, priv);
 
 		switch_safe_free(d_url);
 
@@ -1438,7 +1471,10 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   NUTAG_AUTOANSWER(0),
 			   NUTAG_SESSION_TIMER(session_timeout),
 			   TAG_IF(!switch_strlen_zero(sendto), NTATAG_DEFAULT_PROXY(sendto)),
-			   TAG_IF(!switch_strlen_zero(tech_pvt->rpid), SIPTAG_HEADER_STR(tech_pvt->rpid)),
+			   TAG_IF(!switch_strlen_zero(tech_pvt->rpid), SIPTAG_REMOTE_PARTY_ID_STR(tech_pvt->rpid)),
+			   TAG_IF(!switch_strlen_zero(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
+			   TAG_IF(!switch_strlen_zero(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
+			   TAG_IF(!switch_strlen_zero(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->preferred_id)),
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
@@ -3555,6 +3591,20 @@ const char *sofia_glue_strip_proto(const char *uri)
 	}
 
 	return uri;
+}
+
+sofia_cid_type_t sofia_cid_name2type(const char *name)
+{
+	if (!strcasecmp(name, "rpid")) {
+		return CID_TYPE_RPID;
+	}
+
+	if (!strcasecmp(name, "pid")) {
+		return CID_TYPE_PID;
+	}
+
+	return CID_TYPE_NONE;
+	
 }
 
 

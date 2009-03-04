@@ -105,6 +105,7 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/nea.h>
 #include <sofia-sip/msg_addr.h>
 #include <sofia-sip/tport_tag.h>
+#include <sofia-sip/sip_extra.h>
 #include "nua_stack.h"
 
 typedef enum {
@@ -371,6 +372,12 @@ typedef enum {
 	MEDIA_OPT_BYPASS_AFTER_ATT_XFER = (1 << 1)
 } sofia_media_options_t;
 
+typedef enum {
+	CID_TYPE_RPID,
+	CID_TYPE_PID,
+	CID_TYPE_NONE
+} sofia_cid_type_t;
+
 struct sofia_profile {
 	int debug;
 	char *name;
@@ -403,6 +410,7 @@ struct sofia_profile {
 	char *record_template;
 	char *presence_hosts;
 	char *challenge_realm;
+	sofia_cid_type_t cid_type;
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;
 	int sip_port;
@@ -493,6 +501,9 @@ struct private_object {
 	char *contact_url;
 	char *from_str;
 	char *rpid;
+	char *asserted_id;
+	char *preferred_id;
+	char *privacy;
 	char *gateway_from_str;
 	char *rm_encoding;
 	char *iananame;
@@ -825,3 +836,4 @@ switch_status_t sofia_set_loglevel(const char *name, int level);
  * \return the component's loglevel, or -1 if the component isn't valid
  */
 int sofia_get_loglevel(const char *name);
+sofia_cid_type_t sofia_cid_name2type(const char *name);
