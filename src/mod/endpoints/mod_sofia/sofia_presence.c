@@ -57,10 +57,14 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 	sofia_profile_t *profile = NULL;
 	char *ffrom = NULL;
 	nua_handle_t *msg_nh;
-	char *contact;
+	char *contact = NULL;
 	char *dup = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	const char *ct = "text/html";
+	char *clean_to = NULL;
+	char *route = NULL;
+	char *route_uri = NULL;
+	char *ptr = NULL;
 
 	if (!to) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To: header.\n");
@@ -135,19 +139,55 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 		switch_safe_free(fp);
 	}
 
-	status = SWITCH_STATUS_SUCCESS;
 	contact = sofia_glue_get_url_from_contact(buf, 1);
-	/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
-	msg_nh = nua_handle(profile->nua, NULL, SIPTAG_FROM_STR(from), NUTAG_URL(contact), SIPTAG_TO_STR(buf),	
-						SIPTAG_CONTACT_STR(profile->url), TAG_END());
 
-	switch_safe_free(contact);
+	if (contact && (ptr = strstr(contact, ";fs_path=")) && (route = strdup(ptr + 9))) {
+		char *p;
+		for (p = route; p && *p ; p++) {
+			if (*p == '>' || *p == ';') {
+				*p = '\0';
+				break;
+			}
+		}
+		switch_url_decode(route);
+		route_uri = strdup(route);
+		if ((p = strchr(route_uri, ','))) {
+			while ((p > route_uri) && *(p-1) == ' ') {
+				p--;
+			}
+			if (*p) {
+				*p = '\0';
+			}
+		}
+		*ptr++ = '>';	
+		*ptr++ = '\0';	
+	}
+
+	clean_to = strdup(buf);
+	if ((ptr = strstr(clean_to, ";fs_path="))) {
+		*ptr++ = '>';	
+		*ptr++ = '\0';	
+	}
+
+	/* sofia_glue is running sofia_overcome_sip_uri_weakness we do not, not sure if it matters */
+
+	status = SWITCH_STATUS_SUCCESS;
+	/* if this cries, add contact here too, change the 1 to 0 and omit the safe_free */
+	msg_nh = nua_handle(profile->nua, NULL, TAG_IF(route, NUTAG_PROXY(route_uri)), TAG_IF(route, SIPTAG_ROUTE_STR(route)),
+						SIPTAG_FROM_STR(from), NUTAG_URL(contact),
+						SIPTAG_TO_STR(clean_to), SIPTAG_CONTACT_STR(profile->url),
+						TAG_END());
+
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
  end:
 
+	switch_safe_free(contact);
+	switch_safe_free(route);
+	switch_safe_free(route_uri);
 	switch_safe_free(ffrom);
 	switch_safe_free(dup);
+	switch_safe_free(clean_to);
 
 	if (profile) {
 		switch_thread_rwlock_unlock(profile->rwlock);
