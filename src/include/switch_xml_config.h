@@ -68,7 +68,13 @@ typedef struct {
 struct switch_xml_config_item;
 typedef struct switch_xml_config_item switch_xml_config_item_t;
 
-typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t *data, switch_bool_t changed);
+typedef enum {
+	CONFIG_LOAD,
+	CONFIG_RELOAD,
+	CONFIG_SHUTDOWN
+} switch_config_callback_type_t;
+
+typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed);
 
 /*!
  * \brief A configuration instruction read by switch_xml_config_parse 
@@ -114,6 +120,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
  * \param event [out] event (if *event is NOT NULL, the headers will be appended to the existing event)
  */
 SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event);
+
+
+/*!
+ * \brief Free any memory allocated by the configuration
+ * \param instructions instrutions on how to parse the elements
+ */
+SWITCH_DECLARE(void) switch_xml_config_cleanup(switch_xml_config_item_t *instructions);
 #endif /* !defined(SWITCH_XML_CONFIG_H) */
 
 /* For Emacs:

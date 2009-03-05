@@ -55,14 +55,15 @@ static struct {
 	int integer;
 } globals;
 
-static switch_status_t config_callback_siptrace(switch_xml_config_item_t *data, switch_bool_t changed) 
+static switch_status_t config_callback_siptrace(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed) 
 {
 	switch_bool_t value = *(switch_bool_t*)data->ptr;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "In siptrace callback: value %s changed %s\n",
 		value ? "true" : "false", changed ? "true" : "false");
 	
+	
 	/*
-	if (changed) {
+	if ((callback_type == CONFIG_LOG || callback_type == CONFIG_RELOAD) && changed) {
 		nua_set_params(((sofia_profile_t*)data->functiondata)->nua, TPTAG_LOG(value), TAG_END());
 	} 
 	*/
@@ -143,6 +144,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
   Macro expands to: switch_status_t mod_skel_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown)
 {
+	/* Cleanup dynamically allocated config settings */
+	switch_xml_config_cleanup(instructions);
 	return SWITCH_STATUS_SUCCESS;
 }
 
