@@ -40,7 +40,8 @@ SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const ch
 	switch_size_t count = 0;
 	
 	if (!*event) {
-		switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
+		/* SWITCH_EVENT_CLONE will not insert any generic event headers */
+		switch_event_create(event, SWITCH_EVENT_CLONE);
 		switch_assert(*event);
 	}
 
@@ -74,12 +75,16 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *event, int count, int reload, switch_xml_config_item_t *instructions)
 {
 	switch_xml_config_item_t *item;
-	int file_count = 0, matched_count = 0;
+	int matched_count = 0;
 	
 	for (item = instructions; item->key; item++) {
 		const char *value = switch_event_get_header(event, item->key);
 		switch_bool_t changed = SWITCH_FALSE;
 		switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->function;
+		
+		if (value) {
+			matched_count++;
+		}
 		
 		if (reload && !switch_test_flag(item, CONFIG_RELOADABLE)) {
 			continue;
@@ -283,14 +288,14 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 			callback(item, (reload ? CONFIG_RELOAD : CONFIG_LOAD), changed);
 		}
 	}
-	
-	if (file_count > matched_count) {
+
+	if (count != matched_count) {
 		/* User made a mistake, find it */
 		switch_event_header_t *header;
 		for (header = event->headers; header; header = header->next) {
 			switch_bool_t found = SWITCH_FALSE;
 			for (item = instructions; item->key; item++) {
-				if (strcasecmp(header->name, item->key)) {
+				if (!strcasecmp(header->name, item->key)) {
 					found = SWITCH_TRUE;
 					break;
 				}
@@ -298,7 +303,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 			
 			if (!found) {
 				/* Tell the user */
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Configuration parameter [%s] is unfortunately not valid, you might want to double-check that.\n", header->name);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Configuration parameter [%s] is unfortunately not valid, you might want to double-check that.\n", header->name);
 			}
 		}
 	}
