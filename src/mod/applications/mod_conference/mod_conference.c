@@ -3694,7 +3694,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 			conference_add_member(new_conference, member);
 
 			if (conference->rate != new_conference->rate) {
-				if(setup_media(member, new_conference)) {
+				if (setup_media(member, new_conference)) {
 					switch_clear_flag_locked(member, MFLAG_RUNNING);
 				} else {
 					switch_channel_set_flag(channel, CF_SERVICE);
