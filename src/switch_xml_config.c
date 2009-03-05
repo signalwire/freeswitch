@@ -39,10 +39,11 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 	switch_event_t *event;
 	switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(event);
-	int file_count = 0, 
+	int file_count = 0, matched_count = 0;
 
 	for (node = xml; node; node = node->next) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, switch_xml_attr_soft(node, "name"); switch_xml_attr_soft(node, "value"));
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, switch_xml_attr_soft(node, "name"), switch_xml_attr_soft(node, "value"));
+		file_count++;
 	}
 	
 	for (item = options; item->key; item++) {
@@ -98,10 +99,13 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 				}
 				break;
 			case SWITCH_CONFIG_CUSTOM: 
+#if 0
 				{
+					
 					switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->data;
 					callback(item);
 				}
+#endif
 				break;
 			case SWITCH_CONFIG_ENUM:
 				{
@@ -158,6 +162,10 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 			case SWITCH_CONFIG_LAST:
 				break;
 		}
+	}
+	
+	if (file_count > matched_count) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Config file had %d params but only %d were valid\n", file_count, matched_count);
 	}
 	
 	switch_event_destroy(&event);
