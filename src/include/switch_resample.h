@@ -38,7 +38,7 @@
 	way comes along some day. =D
 	
 */
-#define switch_normalize_volume(x) if(x > 4) x = 4; if (x < -4) x = -4;
+#define switch_normalize_volume(x) if (x > 4) x = 4; if (x < -4) x = -4;
 
 #ifndef SWITCH_RESAMPLE_H
 #define SWITCH_RESAMPLE_H

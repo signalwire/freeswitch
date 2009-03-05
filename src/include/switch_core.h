@@ -144,7 +144,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_add(_In_ switch_core_sessi
 														  _In_opt_ void *user_data,
 														  _In_ time_t stop_time, _In_ switch_media_bug_flag_t flags, _Out_ switch_media_bug_t **new_bug);
 
+/*!
+  \brief Pause a media bug on the session
+  \param session the session to pause the bug on sets CF_PAUSE_BUGS flag
+*/
 SWITCH_DECLARE(void) switch_core_media_bug_pause(switch_core_session_t *session);
+
+/*!
+  \brief Resume a media bug on the session
+  \param session the session to resume the bug on, clears CF_PAUSE_BUGS flag
+*/
 SWITCH_DECLARE(void) switch_core_media_bug_resume(switch_core_session_t *session);
 
 /*!
@@ -179,6 +188,12 @@ SWITCH_DECLARE(switch_frame_t *) switch_core_media_bug_get_read_replace_frame(_I
 */
 SWITCH_DECLARE(switch_core_session_t *) switch_core_media_bug_get_session(_In_ switch_media_bug_t *bug);
 
+/*!
+  \brief Test for the existance of a flag on an media bug
+  \param bug the object to test
+  \param flag the or'd list of flags to test
+  \return true value if the object has the flags defined
+*/
 SWITCH_DECLARE(uint32_t) switch_core_media_bug_test_flag(_In_ switch_media_bug_t *bug, _In_ uint32_t flag);
 
 /*!
@@ -196,6 +211,12 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(_In_ switch_me
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(_In_ switch_core_session_t *session, _Inout_ switch_media_bug_t **bug);
 
+/*!
+  \brief Remove media bug callback
+  \param bug bug to remove
+  \param callback callback to remove
+  \return SWITCH_STATUS_SUCCESS if the operation was a success
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_core_session_t *session, switch_media_bug_callback_t callback);
 
 /*!
@@ -219,7 +240,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(_In_ switch_cor
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
 
+/*!
+  \brief Flush the read and write buffers for the bug
+  \param bug the bug to flush the read and write buffers on
+*/
 SWITCH_DECLARE(void) switch_core_media_bug_flush(_In_ switch_media_bug_t *bug);
+
+/*!
+  \brief Flush the read/write buffers for all media bugs on the session
+  \param session the session to flush the read/write buffers for all media bugs on the session
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_flush_all(_In_ switch_core_session_t *session);
 
 ///\}
