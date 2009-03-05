@@ -70,27 +70,28 @@ static switch_status_t config_callback_siptrace(switch_xml_config_item_t *data, 
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_xml_config_string_options_t config_opt_codec_negotiation = { NULL, 0, "greedy|generous|evil" };
+/* enforce_min, min, enforce_max, max */
+static switch_xml_config_int_options_t config_opt_integer = { SWITCH_TRUE, 0, SWITCH_TRUE, 10 };
+static switch_xml_config_enum_item_t config_opt_codec_negotiation_enum[] = { 
+	{ "greedy", CODEC_NEGOTIATION_GREEDY },
+	{ "generous", CODEC_NEGOTIATION_GENEROUS },
+	{ "evil", CODEC_NEGOTIATION_EVIL },
+	{ NULL, 0 } 
+};
+
+static switch_xml_config_item_t instructions[] = {
+	/* parameter name        type                 reloadable   pointer                         default value     options structure */
+	SWITCH_CONFIG_ITEM("codec-negotiation-str", SWITCH_CONFIG_STRING, SWITCH_TRUE, &globals.codec_negotiation_str, "greedy", &config_opt_codec_negotiation),
+	SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, SWITCH_TRUE, &globals.codec_negotiation,  (void*)CODEC_NEGOTIATION_GREEDY, &config_opt_codec_negotiation_enum),
+	SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, SWITCH_TRUE, &globals.sip_trace,  (void*)SWITCH_FALSE,  config_callback_siptrace, NULL ),
+	SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, SWITCH_FALSE, &globals.integer, (void*)100, &config_opt_integer),
+	SWITCH_CONFIG_ITEM_END()
+};
+
 static switch_status_t do_config(switch_bool_t reload)
 {
 	switch_xml_t cfg, xml, settings;
-	switch_xml_config_string_options_t config_opt_codec_negotiation = { NULL, 0, "greedy|generous|evil" };
-														 /* enforce_min, min, enforce_max, max */
-	switch_xml_config_int_options_t config_opt_integer = { SWITCH_TRUE, 0, SWITCH_TRUE, 10 };
-	switch_xml_config_enum_item_t config_opt_codec_negotiation_enum[] = { 
-		{ "greedy", CODEC_NEGOTIATION_GREEDY },
-		{ "generous", CODEC_NEGOTIATION_GENEROUS },
-		{ "evil", CODEC_NEGOTIATION_EVIL },
-		{ NULL, 0 } 
-	};
-	
-	switch_xml_config_item_t instructions[] = {
-							/* parameter name        type                 reloadable   pointer                         default value     options structure */
-		SWITCH_CONFIG_ITEM("codec-negotiation-str", SWITCH_CONFIG_STRING, SWITCH_TRUE, &globals.codec_negotiation_str, "greedy", &config_opt_codec_negotiation),
-		SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, SWITCH_TRUE, &globals.codec_negotiation,  (void*)CODEC_NEGOTIATION_GREEDY, &config_opt_codec_negotiation_enum),
-		SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, SWITCH_TRUE, &globals.sip_trace,  (void*)SWITCH_FALSE,  config_callback_siptrace, NULL ),
-		SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, SWITCH_FALSE, &globals.integer, (void*)100, &config_opt_integer),
-		SWITCH_CONFIG_ITEM_END()
-	};
 
 	memset(&globals, 0, sizeof(globals));
 
