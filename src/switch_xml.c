@@ -73,27 +73,27 @@ typedef struct {
 } glob_t;
 
 /* Believed to have been introduced in 1003.2-1992 */
-#define	GLOB_APPEND	0x0001	/* Append to output from previous call. */
-#define	GLOB_DOOFFS	0x0002	/* Use gl_offs. */
-#define	GLOB_ERR	0x0004	/* Return on error. */
-#define	GLOB_MARK	0x0008	/* Append / to matching directories. */
+#define	GLOB_APPEND		0x0001	/* Append to output from previous call. */
+#define	GLOB_DOOFFS		0x0002	/* Use gl_offs. */
+#define	GLOB_ERR		0x0004	/* Return on error. */
+#define	GLOB_MARK		0x0008	/* Append / to matching directories. */
 #define	GLOB_NOCHECK	0x0010	/* Return pattern itself if nothing matches. */
-#define	GLOB_NOSORT	0x0020	/* Don't sort. */
+#define	GLOB_NOSORT		0x0020	/* Don't sort. */
 
 /* Error values returned by glob(3) */
 #define	GLOB_NOSPACE	(-1)	/* Malloc call failed. */
 #define	GLOB_ABORTED	(-2)	/* Unignored error. */
 #define	GLOB_NOMATCH	(-3)	/* No match and GLOB_NOCHECK was not set. */
-#define	GLOB_NOSYS	(-4)	/* Obsolete: source comptability only. */
+#define	GLOB_NOSYS		(-4)	/* Obsolete: source comptability only. */
 
 #define	GLOB_ALTDIRFUNC	0x0040	/* Use alternately specified directory funcs. */
 #define	GLOB_MAGCHAR	0x0100	/* Pattern had globbing characters. */
 #define	GLOB_NOMAGIC	0x0200	/* GLOB_NOCHECK without magic chars (csh). */
-#define	GLOB_QUOTE	0x0400	/* Quote special chars with \. */
-#define	GLOB_LIMIT	0x1000	/* limit number of returned paths */
+#define	GLOB_QUOTE		0x0400	/* Quote special chars with \. */
+#define	GLOB_LIMIT		0x1000	/* limit number of returned paths */
 
 int	glob(const char *, int, int (*)(const char *, int), glob_t *);
-void	globfree(glob_t *);
+void globfree(glob_t *);
 
 #endif
 #undef HAVE_MMAP
@@ -104,29 +104,29 @@ extern int madvise(caddr_t, size_t, int);
 #endif
 #endif
 
-#define SWITCH_XML_WS   "\t\r\n "	// whitespace
-#define SWITCH_XML_ERRL 128		// maximum error string length
+#define SWITCH_XML_WS   "\t\r\n "	/* whitespace */
+#define SWITCH_XML_ERRL 128			/* maximum error string length */
 
 static int preprocess(const char *cwd, const char *file, int write_fd, int rlevel);
 
 typedef struct switch_xml_root *switch_xml_root_t;
-struct switch_xml_root {		// additional data for the root tag
-	struct switch_xml xml;		// is a super-struct built on top of switch_xml struct
-	switch_xml_t cur;			// current xml tree insertion point
-	char *m;					// original xml string
-	switch_size_t len;			// length of allocated memory for mmap
+struct switch_xml_root {		/* additional data for the root tag */
+	struct switch_xml xml;		/* is a super-struct built on top of switch_xml struct */
+	switch_xml_t cur;			/* current xml tree insertion point */
+	char *m;					/* original xml string */
+	switch_size_t len;			/* length of allocated memory for mmap */
 	uint8_t dynamic;
-	char *u;					// UTF-8 conversion of string if original was UTF-16
-	char *s;					// start of work area
-	char *e;					// end of work area
-	char **ent;					// general entities (ampersand sequences)
-	char ***attr;				// default attributes
-	char ***pi;					// processing instructions
-	short standalone;			// non-zero if <?xml standalone="yes"?>
-	char err[SWITCH_XML_ERRL];	// error string
+	char *u;					/* UTF-8 conversion of string if original was UTF-16 */
+	char *s;					/* start of work area */
+	char *e;					/* end of work area */
+	char **ent;					/* general entities (ampersand sequences) */
+	char ***attr;				/* default attributes */
+	char ***pi;					/* processing instructions */
+	short standalone;			/* non-zero if <?xml standalone="yes"?> */
+	char err[SWITCH_XML_ERRL];	/* error string */
 };
 
-char *SWITCH_XML_NIL[] = { NULL };	// empty, null terminated array of strings
+char *SWITCH_XML_NIL[] = { NULL };	/* empty, null terminated array of strings */
 
 struct switch_xml_binding {
 	switch_xml_search_function_t function;
@@ -147,7 +147,7 @@ static switch_mutex_t *XML_GEN_LOCK = NULL;
 
 struct xml_section_t {
 	const char *name;
-	//switch_xml_section_t section;
+	/* switch_xml_section_t section; */
 	uint32_t section;
 };
 
@@ -164,7 +164,7 @@ SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(const char 
 {
 	size_t x;
 	char buf[1024] = "";
-	//switch_xml_section_t sections = SWITCH_XML_SECTION_RESULT;
+	/*switch_xml_section_t sections = SWITCH_XML_SECTION_RESULT; */
 	uint32_t sections = SWITCH_XML_SECTION_RESULT;
 	
 	if (str) {
@@ -251,8 +251,9 @@ SWITCH_DECLARE(void *) switch_xml_get_binding_user_data(switch_xml_binding_t *bi
 	return binding->user_data;
 }
 
-
-SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function, switch_xml_section_t sections, void *user_data, switch_xml_binding_t **ret_binding)
+SWITCH_DECLARE(switch_status_t) switch_xml_bind_search_function_ret(switch_xml_search_function_t function,
+																	switch_xml_section_t sections, void *user_data,
+																	switch_xml_binding_t **ret_binding)
 {
 	switch_xml_binding_t *binding = NULL, *ptr = NULL;
 	assert(function != NULL);
@@ -357,7 +358,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(switch_xml_t node, cons
 	return p;
 }
 
-// returns the first child tag with the given name or NULL if not found
+/* returns the first child tag with the given name or NULL if not found */
 SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name)
 {
 	xml = (xml) ? xml->child : NULL;
@@ -366,8 +367,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_child(switch_xml_t xml, const char *name
 	return xml;
 }
 
-// returns the Nth tag with the same name in the same subsection or NULL if not
-// found
+/* returns the Nth tag with the same name in the same subsection or NULL if not found */
 switch_xml_t switch_xml_idx(switch_xml_t xml, int idx)
 {
 	for (; xml && idx; idx--)
@@ -375,7 +375,7 @@ switch_xml_t switch_xml_idx(switch_xml_t xml, int idx)
 	return xml;
 }
 
-// returns the value of the requested tag attribute or "" if not found
+/* returns the value of the requested tag attribute or "" if not found */
 SWITCH_DECLARE(const char *) switch_xml_attr_soft(switch_xml_t xml, const char *attr)
 {
 	const char *ret = switch_xml_attr(xml, attr);
@@ -383,7 +383,7 @@ SWITCH_DECLARE(const char *) switch_xml_attr_soft(switch_xml_t xml, const char *
 	return ret ? ret : "";
 }
 
-// returns the value of the requested tag attribute or NULL if not found
+/* returns the value of the requested tag attribute or NULL if not found */
 SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 {
 	int i = 0, j = 1;
@@ -394,19 +394,19 @@ SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 	while (xml->attr[i] && strcmp(attr, xml->attr[i]))
 		i += 2;
 	if (xml->attr[i])
-		return xml->attr[i + 1];	// found attribute
+		return xml->attr[i + 1];	/* found attribute */
 
 	while (root->xml.parent)
-		root = (switch_xml_root_t) root->xml.parent;	// root tag
+		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
 	for (i = 0; root->attr[i] && strcmp(xml->name, root->attr[i][0]); i++);
 	if (!root->attr[i])
-		return NULL;			// no matching default attributes
+		return NULL;			/* no matching default attributes */
 	while (root->attr[i][j] && strcmp(attr, root->attr[i][j]))
 		j += 3;
-	return (root->attr[i][j]) ? root->attr[i][j + 1] : NULL;	// found default
+	return (root->attr[i][j]) ? root->attr[i][j + 1] : NULL;	/* found default */
 }
 
-// same as switch_xml_get but takes an already initialized va_list
+/* same as switch_xml_get but takes an already initialized va_list */
 static switch_xml_t switch_xml_vget(switch_xml_t xml, va_list ap)
 {
 	char *name = va_arg(ap, char *);
@@ -419,12 +419,12 @@ static switch_xml_t switch_xml_vget(switch_xml_t xml, va_list ap)
 	return (idx < 0) ? xml : switch_xml_vget(switch_xml_idx(xml, idx), ap);
 }
 
-// Traverses the xml tree to retrieve a specific subtag. Takes a variable
-// length list of tag names and indexes. The argument list must be terminated
-// by either an index of -1 or an empty string tag name. Example: 
-// title = switch_xml_get(library, "shelf", 0, "book", 2, "title", -1);
-// This retrieves the title of the 3rd book on the 1st shelf of library.
-// Returns NULL if not found.
+/* Traverses the xml tree to retrieve a specific subtag. Takes a variable
+   length list of tag names and indexes. The argument list must be terminated
+   by either an index of -1 or an empty string tag name. Example: 
+   title = switch_xml_get(library, "shelf", 0, "book", 2, "title", -1);
+   This retrieves the title of the 3rd book on the 1st shelf of library.
+   Returns NULL if not found. */
 SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml,...)
 {
 	va_list ap;
@@ -436,8 +436,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_get(switch_xml_t xml,...)
 	return r;
 }
 
-// returns a null terminated array of processing instructions for the given
-// target
+/* returns a null terminated array of processing instructions for the given target */
 SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target)
 {
 	switch_xml_root_t root = (switch_xml_root_t) xml;
@@ -446,13 +445,13 @@ SWITCH_DECLARE(const char **) switch_xml_pi(switch_xml_t xml, const char *target
 	if (!root)
 		return (const char **) SWITCH_XML_NIL;
 	while (root->xml.parent)
-		root = (switch_xml_root_t) root->xml.parent;	// root tag
+		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
-		i++;					// find target
+		i++;					/* find target */
 	return (const char **) ((root->pi[i]) ? root->pi[i] + 1 : SWITCH_XML_NIL);
 }
 
-// set an error string and return root
+/* set an error string and return root */
 static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *err, ...)
 {
 	va_list ap;
@@ -471,18 +470,18 @@ static switch_xml_t switch_xml_err(switch_xml_root_t root, char *s, const char *
 	return &root->xml;
 }
 
-// Recursively decodes entity and character references and normalizes new lines
-// ent is a null terminated array of alternating entity names and values. set t
-// to '&' for general entity decoding, '%' for parameter entity decoding, 'c'
-// for cdata sections, ' ' for attribute normalization, or '*' for non-cdata
-// attribute normalization. Returns s, or if the decoded string is longer than
-// s, returns a malloced string that must be freed.
+/* Recursively decodes entity and character references and normalizes new lines
+   ent is a null terminated array of alternating entity names and values. set t
+   to '&' for general entity decoding, '%' for parameter entity decoding, 'c'
+   for cdata sections, ' ' for attribute normalization, or '*' for non-cdata
+   attribute normalization. Returns s, or if the decoded string is longer than
+   s, returns a malloced string that must be freed. */
 static char *switch_xml_decode(char *s, char **ent, char t)
 {
 	char *e, *r = s, *m = s;
 	long b, c, d, l;
 
-	for (; *s; s++) {			// normalize line endings
+	for (; *s; s++) {	/* normalize line endings */
 		while (*s == '\r') {
 			*(s++) = '\n';
 			if (*s == '\n')
@@ -496,34 +495,34 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 
 		if (!*s)
 			break;
-		else if (t != 'c' && !strncmp(s, "&#", 2)) {	// character reference
+		else if (t != 'c' && !strncmp(s, "&#", 2)) {	/* character reference */
 			if (s[2] == 'x')
-				c = strtol(s + 3, &e, 16);	// base 16
+				c = strtol(s + 3, &e, 16);	/* base 16 */
 			else
-				c = strtol(s + 2, &e, 10);	// base 10
+				c = strtol(s + 2, &e, 10);	/* base 10 */
 			if (!c || *e != ';') {
 				s++;
 				continue;
-			}					// not a character ref
+			}					/* not a character ref */
 
 			if (c < 0x80)
-				*(s++) = (char) c;	// US-ASCII subset
-			else {				// multi-byte UTF-8 sequence
+				*(s++) = (char) c;	/* US-ASCII subset */
+			else {					/* multi-byte UTF-8 sequence */
 				for (b = 0, d = c; d; d /= 2)
-					b++;		// number of bits in c
-				b = (b - 2) / 5;	// number of bytes in payload
-				*(s++) = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	// head
+					b++;			/* number of bits in c */
+				b = (b - 2) / 5;	/* number of bytes in payload */
+				*(s++) = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	/* head */
 				while (b)
-					*(s++) = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	// payload
+					*(s++) = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	/* payload */
 			}
 
 			memmove(s, strchr(s, ';') + 1, strlen(strchr(s, ';')));
-		} else if ((*s == '&' && (t == '&' || t == ' ' || t == '*')) || (*s == '%' && t == '%')) {	// entity reference
-			for (b = 0; ent[b] && strncmp(s + 1, ent[b], strlen(ent[b])); b += 2);	// find entity in entity list
+		} else if ((*s == '&' && (t == '&' || t == ' ' || t == '*')) || (*s == '%' && t == '%')) {	/* entity reference */
+			for (b = 0; ent[b] && strncmp(s + 1, ent[b], strlen(ent[b])); b += 2);	/* find entity in entity list */
 
-			if (ent[b++]) {		// found a match
+			if (ent[b++]) {		/* found a match */
 				if ((c = (long) strlen(ent[b])) - 1 > (e = strchr(s, ';')) - s) {
-					l = (d = (long) (s - r)) + c + (long) strlen(e);	// new length
+					l = (d = (long) (s - r)) + c + (long) strlen(e);	/* new length */
 					if (l) {
 						if (r == m) {
 							char *tmp = (char *)malloc(l);
@@ -543,20 +542,20 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 							}
 						}
 					}
-					e = strchr((s = r + d), ';');	// fix up pointers
+					e = strchr((s = r + d), ';');	/* fix up pointers */
 				}
 
-				memmove(s + c, e + 1, strlen(e));	// shift rest of string
-				strncpy(s, ent[b], c);	// copy in replacement text
+				memmove(s + c, e + 1, strlen(e));	/* shift rest of string */
+				strncpy(s, ent[b], c);	/* copy in replacement text */
 			} else
-				s++;			// not a known entity
+				s++;			/* not a known entity */
 		} else if ((t == ' ' || t == '*') && isspace((int) (*s)))
 			*(s++) = ' ';
 		else
-			s++;				// no decoding needed
+			s++;				/* no decoding needed */
 	}
 
-	if (t == '*') {				// normalize spaces for non-cdata attributes
+	if (t == '*') {				/* normalize spaces for non-cdata attributes */
 		for (s = r; *s; s++) {
 			if ((l = (long) strspn(s, " ")))
 				memmove(s, s + l, strlen(s + l) + 1);
@@ -564,12 +563,12 @@ static char *switch_xml_decode(char *s, char **ent, char t)
 				s++;
 		}
 		if (--s >= r && *s == ' ')
-			*s = '\0';			// trim any trailing space
+			*s = '\0';			/* trim any trailing space */
 	}
 	return r;
 }
 
-// called when parser finds start of new tag
+/* called when parser finds start of new tag */
 static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 {
 	switch_xml_t xml = root->cur;
@@ -577,13 +576,13 @@ static void switch_xml_open_tag(switch_xml_root_t root, char *name, char **attr)
 	if (xml->name)
 		xml = switch_xml_add_child(xml, name, strlen(xml->txt));
 	else
-		xml->name = name;		// first open tag
+		xml->name = name;		/* first open tag */
 
 	xml->attr = attr;
-	root->cur = xml;			// update tag insertion point
+	root->cur = xml;			/* update tag insertion point */
 }
 
-// called when parser finds character content between open and closing tag
+/* called when parser finds character content between open and closing tag */
 static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size_t len, char t)
 {
 	switch_xml_t xml = root->cur;
@@ -591,15 +590,15 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 	switch_size_t l;
 
 	if (!xml || !xml->name || !len)
-		return;					// sanity check
+		return;					/* sanity check */
 
-	s[len] = '\0';				// null terminate text (calling functions anticipate this)
+	s[len] = '\0';				/* null terminate text (calling functions anticipate this) */
 	len = strlen(s = switch_xml_decode(s, root->ent, t)) + 1;
 
 	if (!*(xml->txt))
-		xml->txt = s;			// initial character content
-	else {						// allocate our own memory and make a copy
-		if ((xml->flags & SWITCH_XML_TXTM)) { // allocate some space
+		xml->txt = s;			/* initial character content */
+	else {						/* allocate our own memory and make a copy */
+		if ((xml->flags & SWITCH_XML_TXTM)) { /* allocate some space */
 			char *tmp = (char *)realloc(xml->txt, (l = strlen(xml->txt)) + len);
 			if (tmp) {
 				xml->txt = tmp;
@@ -614,16 +613,16 @@ static void switch_xml_char_content(switch_xml_root_t root, char *s, switch_size
 				return;
 			}
 		}
-		strcpy(xml->txt + l, s);	// add new char content
+		strcpy(xml->txt + l, s);	/* add new char content */
 		if (s != m)
-			free(s);			// free s if it was malloced by switch_xml_decode()
+			free(s);			/* free s if it was malloced by switch_xml_decode() */
 	}
 
 	if (xml->txt != m)
 		switch_xml_set_flag(xml, SWITCH_XML_TXTM);
 }
 
-// called when parser finds closing tag
+/* called when parser finds closing tag */
 static switch_xml_t switch_xml_close_tag(switch_xml_root_t root, char *name, char *s)
 {
 	if (!root->cur || !root->cur->name || strcmp(name, root->cur->name))
@@ -633,26 +632,26 @@ static switch_xml_t switch_xml_close_tag(switch_xml_root_t root, char *name, cha
 	return NULL;
 }
 
-// checks for circular entity references, returns non-zero if no circular
-// references are found, zero otherwise
+/* checks for circular entity references, returns non-zero if no circular
+   references are found, zero otherwise */
 static int switch_xml_ent_ok(char *name, char *s, char **ent)
 {
 	int i;
 
 	for (;; s++) {
 		while (*s && *s != '&')
-			s++;				// find next entity reference
+			s++;				/* find next entity reference */
 		if (!*s)
 			return 1;
 		if (!strncmp(s + 1, name, strlen(name)))
-			return 0;			// circular ref.
+			return 0;			/* circular ref. */
 		for (i = 0; ent[i] && strncmp(ent[i], s + 1, strlen(ent[i])); i += 2);
 		if (ent[i] && !switch_xml_ent_ok(name, ent[i + 1], ent))
 			return 0;
 	}
 }
 
-// called when the parser finds a processing instruction
+/* called when the parser finds a processing instruction */
 static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t len)
 {
 	int i = 0, j = 1;
@@ -660,15 +659,15 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 	char **sstmp;
 	char *stmp;
 
-	s[len] = '\0';				// null terminate instruction
+	s[len] = '\0';				/* null terminate instruction */
 	if (*(s += strcspn(s, SWITCH_XML_WS))) {
-		*s = '\0';				// null terminate target
-		s += strspn(s + 1, SWITCH_XML_WS) + 1;	// skip whitespace after target
+		*s = '\0';				/* null terminate target */
+		s += strspn(s + 1, SWITCH_XML_WS) + 1;	/* skip whitespace after target */
 	}
 
 	if (!root) return;
 
-	if (!strcmp(target, "xml")) {	// <?xml ... ?>
+	if (!strcmp(target, "xml")) {	/* <?xml ... ?> */
 		if ((s = strstr(s, "standalone")) && !strncmp(s + strspn(s + 10, SWITCH_XML_WS "='\"") + 10, "yes", 3))
 			root->standalone = 1;
 		return;
@@ -677,12 +676,12 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 	if (!root->pi[0]) {
 		root->pi = (char ***)malloc(sizeof(char **));
 		if (!root->pi) return;
-		*(root->pi) = NULL;	//first pi
+		*(root->pi) = NULL;	/* first pi */
 	}
 
 	while (root->pi[i] && strcmp(target, root->pi[i][0]))
-		i++;					// find target
-	if (!root->pi[i]) {			// new target
+		i++;					/* find target */
+	if (!root->pi[i]) {			/* new target */
 		char ***ssstmp = (char ***)realloc(root->pi, sizeof(char **) * (i + 2));
 		if (!ssstmp) return;
 		root->pi = ssstmp; 
@@ -690,12 +689,12 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 		root->pi[i] = (char **)malloc(sizeof(char *) * 3);
 		if (!root->pi[i]) return;
 		root->pi[i][0] = target;
-		root->pi[i][1] = (char *) (root->pi[i + 1] = NULL);	// terminate pi list
-		root->pi[i][2] = strdup("");	// empty document position list
+		root->pi[i][1] = (char *) (root->pi[i + 1] = NULL);	/* terminate pi list */
+		root->pi[i][2] = strdup("");	/* empty document position list */
 	}
 
 	while (root->pi[i][j])
-		j++;					// find end of instruction list for this target
+		j++;					/* find end of instruction list for this target */
 	sstmp = (char **)realloc(root->pi[i], sizeof(char *) * (j + 3));
 	if (!sstmp) return;
 	root->pi[i] = sstmp;
@@ -703,11 +702,11 @@ static void switch_xml_proc_inst(switch_xml_root_t root, char *s, switch_size_t 
 	if (!stmp) return;
 	root->pi[i][j + 2] = stmp; 
 	strcpy(root->pi[i][j + 2] + j - 1, (root->xml.name) ? ">" : "<");
-	root->pi[i][j + 1] = NULL;	// null terminate pi list for this target
-	root->pi[i][j] = s;			// set instruction
+	root->pi[i][j + 1] = NULL;	/* null terminate pi list for this target */
+	root->pi[i][j] = s;			/* set instruction */
 }
 
-// called when the parser finds an internal doctype subset
+/* called when the parser finds an internal doctype subset */
 static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_size_t len)
 {
 	char q, *c, *t, *n = NULL, *v, **ent, **pe;
@@ -718,23 +717,23 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 	
 	for (s[len] = '\0'; s;) {
 		while (*s && *s != '<' && *s != '%')
-			s++;				// find next declaration
+			s++;				/* find next declaration */
 
 		if (!*s)
 			break;
-		else if (!strncmp(s, "<!ENTITY", 8)) {	// parse entity definitions
-			c = s += strspn(s + 8, SWITCH_XML_WS) + 8;	// skip white space separator
-			n = s + strspn(s, SWITCH_XML_WS "%");	// find name
-			*(s = n + strcspn(n, SWITCH_XML_WS)) = ';';	// append ; to name
+		else if (!strncmp(s, "<!ENTITY", 8)) {			/* parse entity definitions */
+			c = s += strspn(s + 8, SWITCH_XML_WS) + 8;	/* skip white space separator */
+			n = s + strspn(s, SWITCH_XML_WS "%");		/* find name */
+			*(s = n + strcspn(n, SWITCH_XML_WS)) = ';';	/* append ; to name */
 
-			v = s + strspn(s + 1, SWITCH_XML_WS) + 1;	// find value
-			if ((q = *(v++)) != '"' && q != '\'') {	// skip externals
+			v = s + strspn(s + 1, SWITCH_XML_WS) + 1;	/* find value */
+			if ((q = *(v++)) != '"' && q != '\'') {		/* skip externals */
 				s = strchr(s, '>');
 				continue;
 			}
 
 			for (i = 0, ent = (*c == '%') ? pe : root->ent; ent[i]; i++);
-			sstmp = (char **)realloc(ent, (i + 3) * sizeof(char *));	// space for next ent
+			sstmp = (char **)realloc(ent, (i + 3) * sizeof(char *));	/* space for next ent */
 			if (!sstmp) {
 				switch_xml_err(root, v, "Allocation Error!");
 				break;
@@ -745,20 +744,20 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 			else
 				root->ent = ent;
 
-			*(++s) = '\0';		// null terminate name
+			*(++s) = '\0';		/* null terminate name */
 			if ((s = strchr(v, q)))
-				*(s++) = '\0';	// null terminate value
-			ent[i + 1] = switch_xml_decode(v, pe, '%');	// set value
-			ent[i + 2] = NULL;	// null terminate entity list
-			if (!switch_xml_ent_ok(n, ent[i + 1], ent)) {	// circular reference
+				*(s++) = '\0';	/* null terminate value */
+			ent[i + 1] = switch_xml_decode(v, pe, '%');	/* set value */
+			ent[i + 2] = NULL;	/* null terminate entity list */
+			if (!switch_xml_ent_ok(n, ent[i + 1], ent)) {	/* circular reference */
 				if (ent[i + 1] != v)
 					free(ent[i + 1]);
 				switch_xml_err(root, v, "circular entity declaration &%s", n);
 				break;
 			} else
-				ent[i] = n;		// set entity name
-		} else if (!strncmp(s, "<!ATTLIST", 9)) {	// parse default attributes
-			t = s + strspn(s + 9, SWITCH_XML_WS) + 9;	// skip whitespace separator
+				ent[i] = n;		/* set entity name */
+		} else if (!strncmp(s, "<!ATTLIST", 9)) {	/* parse default attributes */
+			t = s + strspn(s + 9, SWITCH_XML_WS) + 9;	/* skip whitespace separator */
 			if (!*t) {
 				switch_xml_err(root, t, "unclosed <!ATTLIST");
 				break;
@@ -766,19 +765,19 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 			if (*(s = t + strcspn(t, SWITCH_XML_WS ">")) == '>')
 				continue;
 			else
-				*s = '\0';		// null terminate tag name
+				*s = '\0';		/* null terminate tag name */
 			for (i = 0; root->attr[i] && strcmp(n, root->attr[i][0]); i++);
 
 			while (*(n = ++s + strspn(s, SWITCH_XML_WS)) && *n != '>') {
 				if (*(s = n + strcspn(n, SWITCH_XML_WS)))
-					*s = '\0';	// attr name
+					*s = '\0';	/* attr name */
 				else {
 					switch_xml_err(root, t, "malformed <!ATTLIST");
 					break;
 				}
 
-				s += strspn(s + 1, SWITCH_XML_WS) + 1;	// find next token
-				c = (strncmp(s, "CDATA", 5)) ? (char *)"*" : (char *)" ";	// is it cdata?
+				s += strspn(s + 1, SWITCH_XML_WS) + 1;	/* find next token */
+				c = (strncmp(s, "CDATA", 5)) ? (char *)"*" : (char *)" ";	/* is it cdata? */
 				if (!strncmp(s, "NOTATION", 8))
 					s += strspn(s + 8, SWITCH_XML_WS) + 8;
 				s = (*s == '(') ? strchr(s, ')') : s + strcspn(s, SWITCH_XML_WS);
@@ -787,15 +786,15 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 					break;
 				}
 
-				s += strspn(s, SWITCH_XML_WS ")");	// skip white space separator
+				s += strspn(s, SWITCH_XML_WS ")");	/* skip white space separator */
 				if (!strncmp(s, "#FIXED", 6))
 					s += strspn(s + 6, SWITCH_XML_WS) + 6;
-				if (*s == '#') {	// no default value
+				if (*s == '#') {	/* no default value */
 					s += strcspn(s, SWITCH_XML_WS ">") - 1;
 					if (*c == ' ')
-						continue;	// cdata is default, nothing to do
+						continue;	/* cdata is default, nothing to do */
 					v = NULL;
-				} else if ((*s == '"' || *s == '\'') &&	// default value
+				} else if ((*s == '"' || *s == '\'') &&	/* default value */
 						   (s = strchr(v = s + 1, *s)))
 					*s = '\0';
 				else {
@@ -803,15 +802,15 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 					break;
 				}
 
-				if (!root->attr[i]) {	// new tag name
+				if (!root->attr[i]) {	/* new tag name */
 					root->attr = (!i) ? (char ***)malloc(2 * sizeof(char **))
 						: (char ***)realloc(root->attr, (i + 2) * sizeof(char **));
 					root->attr[i] = (char **)malloc(2 * sizeof(char *));
-					root->attr[i][0] = t;	// set tag name
+					root->attr[i][0] = t;	/* set tag name */
 					root->attr[i][1] = (char *) (root->attr[i + 1] = NULL);
 				}
 
-				for (j = 1; root->attr[i][j]; j += 3);	// find end of list
+				for (j = 1; root->attr[i][j]; j += 3);	/* find end of list */
 				sstmp = (char **)realloc(root->attr[i], (j + 4) * sizeof(char *));
 
 				if (!sstmp) {
@@ -820,19 +819,18 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 				}
 
 				root->attr[i] = sstmp;
-				root->attr[i][j + 3] = NULL;	// null terminate list
-				root->attr[i][j + 2] = c;	// is it cdata?
-				root->attr[i][j + 1] = (v) ? switch_xml_decode(v, root->ent, *c)
-					: NULL;
-				root->attr[i][j] = n;	// attribute name 
+				root->attr[i][j + 3] = NULL;	/* null terminate list */
+				root->attr[i][j + 2] = c;		/* is it cdata? */
+				root->attr[i][j + 1] = (v) ? switch_xml_decode(v, root->ent, *c) : NULL;
+				root->attr[i][j] = n;			/* attribute name  */
 			}
 		} else if (!strncmp(s, "<!--", 4))
-			s = strstr(s + 4, "-->");	// comments
-		else if (!strncmp(s, "<?", 2)) {	// processing instructions
+			s = strstr(s + 4, "-->");			/* comments */
+		else if (!strncmp(s, "<?", 2)) {		/* processing instructions */
 			if ((s = strstr(c = s + 2, "?>")))
 				switch_xml_proc_inst(root, c, s++ - c);
 		} else if (*s == '<')
-			s = strchr(s, '>');	// skip other declarations
+			s = strchr(s, '>');					/* skip other declarations */
 		else if (*(s++) == '%' && !root->standalone)
 			break;
 	}
@@ -841,8 +839,8 @@ static short switch_xml_internal_dtd(switch_xml_root_t root, char *s, switch_siz
 	return !*root->err;
 }
 
-// Converts a UTF-16 string to UTF-8. Returns a new string that must be freed
-// or NULL if no conversion was needed.
+/* Converts a UTF-16 string to UTF-8. Returns a new string that must be freed
+   or NULL if no conversion was needed. */
 static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 {
 	char *u;
@@ -851,13 +849,13 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 	int b, be = (**s == '\xFE') ? 1 : (**s == '\xFF') ? 0 : -1;
 
 	if (be == -1)
-		return NULL;			// not UTF-16
+		return NULL;			/* not UTF-16 */
 
 	u = (char *)malloc(max);
 	for (sl = 2; sl < *len - 1; sl += 2) {
-		c = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)	//UTF-16BE
-			: (((*s)[sl + 1] & 0xFF) << 8) | ((*s)[sl] & 0xFF);	//UTF-16LE
-		if (c >= 0xD800 && c <= 0xDFFF && (sl += 2) < *len - 1) {	// high-half
+		c = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)	/* UTF-16BE */
+			: (((*s)[sl + 1] & 0xFF) << 8) | ((*s)[sl] & 0xFF);		/* UTF-16LE */
+		if (c >= 0xD800 && c <= 0xDFFF && (sl += 2) < *len - 1) {	/* high-half */
 			d = (be) ? (((*s)[sl] & 0xFF) << 8) | ((*s)[sl + 1] & 0xFF)
 				: (((*s)[sl + 1] & 0xFF) << 8) | ((*s)[sl] & 0xFF);
 			c = (((c & 0x3FF) << 10) | (d & 0x3FF)) + 0x10000;
@@ -870,30 +868,30 @@ static char *switch_xml_str2utf8(char **s, switch_size_t *len)
 			u = tmp;
 		}
 		if (c < 0x80)
-			u[l++] = (char) c;	// US-ASCII subset
-		else {					// multi-byte UTF-8 sequence
+			u[l++] = (char) c;	/* US-ASCII subset */
+		else {					/* multi-byte UTF-8 sequence */
 			for (b = 0, d = c; d; d /= 2)
-				b++;			// bits in c
-			b = (b - 2) / 5;	// bytes in payload
-			u[l++] = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	// head
+				b++;			/* bits in c */
+			b = (b - 2) / 5;	/* bytes in payload */
+			u[l++] = (char) ((0xFF << (7 - b)) | (c >> (6 * b)));	/* head */
 			while (b)
-				u[l++] = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	// payload
+				u[l++] = (char) (0x80 | ((c >> (6 * --b)) & 0x3F));	/* payload */
 		}
 	}
 	return *s = (char *)realloc(u, *len = l);
 }
 
-// frees a tag attribute list
+/* frees a tag attribute list */
 static void switch_xml_free_attr(char **attr)
 {
 	int i = 0;
 	char *m;
 
 	if (!attr || attr == SWITCH_XML_NIL)
-		return;					// nothing to free
+		return;					/* nothing to free */
 	while (attr[i])
-		i += 2;					// find end of attribute list
-	m = attr[i + 1];			// list of which names and values are malloced
+		i += 2;					/* find end of attribute list */
+	m = attr[i + 1];			/* list of which names and values are malloced */
 	for (i = 0; m[i]; i++) {
 		if (m[i] & SWITCH_XML_NAMEM)
 			free(attr[i * 2]);
@@ -904,24 +902,24 @@ static void switch_xml_free_attr(char **attr)
 	free(attr);
 }
 
-// parse the given xml string and return an switch_xml structure
+/* parse the given xml string and return an switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 {
 	switch_xml_root_t root = (switch_xml_root_t) switch_xml_new(NULL);
-	char q, e, *d, **attr, **a = NULL;	// initialize a to avoid compile warning
+	char q, e, *d, **attr, **a = NULL;	/* initialize a to avoid compile warning */
 	int l, i, j;
 
 	root->m = s;
 	if (!len)
 		return switch_xml_err(root, s, "root tag missing");
-	root->u = switch_xml_str2utf8(&s, &len);	// convert utf-16 to utf-8
-	root->e = (root->s = s) + len;	// record start and end of work area
+	root->u = switch_xml_str2utf8(&s, &len);	/* convert utf-16 to utf-8 */
+	root->e = (root->s = s) + len;	/* record start and end of work area */
 
-	e = s[len - 1];				// save end char
-	s[len - 1] = '\0';			// turn end char into null terminator
+	e = s[len - 1];				/* save end char */
+	s[len - 1] = '\0';			/* turn end char into null terminator */
 
 	while (*s && *s != '<')
-		s++;					// find first tag
+		s++;					/* find first tag */
 	if (!*s)
 		return switch_xml_err(root, s, "root tag missing");
 
@@ -929,37 +927,37 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 		attr = (char **) SWITCH_XML_NIL;
 		d = ++s;
 
-		if (isalpha((int) (*s)) || *s == '_' || *s == ':' || (int8_t) *s < '\0') {	// new tag
+		if (isalpha((int) (*s)) || *s == '_' || *s == ':' || (int8_t) *s < '\0') {	/* new tag */
 			if (!root->cur)
 				return switch_xml_err(root, d, "markup outside of root element");
 
 			s += strcspn(s, SWITCH_XML_WS "/>");
 			while (isspace((int) (*s)))
-				*(s++) = '\0';	// null terminate tag name
+			*(s++) = '\0';	/* null terminate tag name */
 
-			if (*s && *s != '/' && *s != '>')	// find tag in default attr list
+			if (*s && *s != '/' && *s != '>')	/* find tag in default attr list */
 				for (i = 0; (a = root->attr[i]) && strcmp(a[0], d); i++);
 
-			for (l = 0; *s && *s != '/' && *s != '>'; l += 2) {	// new attrib
+			for (l = 0; *s && *s != '/' && *s != '>'; l += 2) {	/* new attrib */
 				attr = (l) ? (char **)realloc(attr, (l + 4) * sizeof(char *))
-					: (char **)malloc(4 * sizeof(char *));	// allocate space
+					: (char **)malloc(4 * sizeof(char *));	/* allocate space */
 				attr[l + 3] = (l) ? (char *)realloc(attr[l + 1], (l / 2) + 2)
-					: (char *)malloc(2);	// mem for list of maloced vals
-				strcpy(attr[l + 3] + (l / 2), " ");	// value is not malloced
-				attr[l + 2] = NULL;	// null terminate list
-				attr[l + 1] = (char *)"";	// temporary attribute value
-				attr[l] = s;	// set attribute name
+					: (char *)malloc(2);					/* mem for list of maloced vals */
+				strcpy(attr[l + 3] + (l / 2), " ");			/* value is not malloced */
+				attr[l + 2] = NULL;							/* null terminate list */
+				attr[l + 1] = (char *)"";					/* temporary attribute value */
+				attr[l] = s;								/* set attribute name */
 
 				s += strcspn(s, SWITCH_XML_WS "=/>");
 				if (*s == '=' || isspace((int) (*s))) {
-					*(s++) = '\0';	// null terminate tag attribute name
+					*(s++) = '\0';	/* null terminate tag attribute name */
 					q = *(s += strspn(s, SWITCH_XML_WS "="));
-					if (q == '"' || q == '\'') {	// attribute value
+					if (q == '"' || q == '\'') {	/* attribute value */
 						attr[l + 1] = ++s;
 						while (*s && *s != q)
 							s++;
 						if (*s)
-							*(s++) = '\0';	// null terminate attribute val
+							*(s++) = '\0';	/* null terminate attribute val */
 						else {
 							switch_xml_free_attr(attr);
 							return switch_xml_err(root, d, "missing %c", q);
@@ -968,14 +966,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 						for (j = 1; a && a[j] && strcmp(a[j], attr[l]); j += 3);
 						attr[l + 1] = switch_xml_decode(attr[l + 1], root->ent, (a && a[j]) ? *a[j + 2] : ' ');
 						if (attr[l + 1] < d || attr[l + 1] > s)
-							attr[l + 3][l / 2] = SWITCH_XML_TXTM;	// value malloced
+							attr[l + 3][l / 2] = SWITCH_XML_TXTM;	/* value malloced */
 					}
 				}
 				while (isspace((int) (*s)))
 					s++;
 			}
 
-			if (*s == '/') {	// self closing tag
+			if (*s == '/') {	/* self closing tag */
 				*(s++) = '\0';
 				if ((*s && *s != '>') || (!*s && e != '>')) {
 					if (l)
@@ -984,8 +982,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 				}
 				switch_xml_open_tag(root, d, attr);
 				switch_xml_close_tag(root, d, s);
-			} else if ((q = *s) == '>' || (!*s && e == '>')) {	// open tag
-				*s = '\0';		// temporarily null terminate tag name
+			} else if ((q = *s) == '>' || (!*s && e == '>')) {	/* open tag */
+				*s = '\0';		/* temporarily null terminate tag name */
 				switch_xml_open_tag(root, d, attr);
 				*s = q;
 			} else {
@@ -993,24 +991,24 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 					switch_xml_free_attr(attr);
 				return switch_xml_err(root, d, "missing >");
 			}
-		} else if (*s == '/') {	// close tag
+		} else if (*s == '/') {	/* close tag */
 			s += strcspn(d = s + 1, SWITCH_XML_WS ">") + 1;
 			if (!(q = *s) && e != '>')
 				return switch_xml_err(root, d, "missing >");
-			*s = '\0';			// temporarily null terminate tag name
+			*s = '\0';			/* temporarily null terminate tag name */
 			if (switch_xml_close_tag(root, d, s))
 				return &root->xml;
 			if (isspace((int) (*s = q)))
 				s += strspn(s, SWITCH_XML_WS);
-		} else if (!strncmp(s, "!--", 3)) {	// xml comment
+		} else if (!strncmp(s, "!--", 3)) {	/* xml comment */
 			if (!(s = strstr(s + 3, "--")) || (*(s += 2) != '>' && *s) || (!*s && e != '>'))
 				return switch_xml_err(root, d, "unclosed <!--");
-		} else if (!strncmp(s, "![CDATA[", 8)) {	// cdata
+		} else if (!strncmp(s, "![CDATA[", 8)) {	/* cdata */
 			if ((s = strstr(s, "]]>")))
 				switch_xml_char_content(root, d + 8, (s += 2) - d - 10, 'c');
 			else
 				return switch_xml_err(root, d, "unclosed <![CDATA[");
-		} else if (!strncmp(s, "!DOCTYPE", 8)) {	// dtd
+		} else if (!strncmp(s, "!DOCTYPE", 8)) {	/* dtd */
 			for (l = 0; *s && ((!l && *s != '>') || (l && (*s != ']' || *(s + strspn(s + 1, SWITCH_XML_WS) + 1) != '>'))); l = (*s == '[') ? 1 : l)
 				s += strcspn(s + 1, "[]>") + 1;
 			if (!*s && e != '>')
@@ -1018,7 +1016,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 			d = (l) ? strchr(d, '[') + 1 : d;
 			if (l && !switch_xml_internal_dtd(root, d, s++ - d))
 				return &root->xml;
-		} else if (*s == '?') {	// <?...?> processing instructions
+		} else if (*s == '?') {	/* <?...?> processing instructions */
 			do {
 				s = strchr(s, '?');
 			} while (s && *(++s) && *s != '>');
@@ -1033,7 +1031,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 			break;
 		*s = '\0';
 		d = ++s;
-		if (*s && *s != '<') {	// tag character content
+		if (*s && *s != '<') {	/* tag character content */
 			while (*s && *s != '<')
 				s++;
 			if (*s)
@@ -1052,9 +1050,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 		return switch_xml_err(root, d, "unclosed tag <%s>", root->cur->name);
 }
 
-// Wrapper for switch_xml_parse_str() that accepts a file stream. Reads the entire
-// stream into memory and then parses it. For xml files, use switch_xml_parse_file()
-// or switch_xml_parse_fd()
+/* Wrapper for switch_xml_parse_str() that accepts a file stream. Reads the entire
+   stream into memory and then parses it. For xml files, use switch_xml_parse_file()
+   or switch_xml_parse_fd() */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 {
 	switch_xml_root_t root;
@@ -1078,13 +1076,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fp(FILE * fp)
 	if (!s)
 		return NULL;
 	root = (switch_xml_root_t) switch_xml_parse_str(s, len);
-	root->dynamic = 1;			// so we know to free s in switch_xml_free()
+	root->dynamic = 1;			/* so we know to free s in switch_xml_free() */
 	return &root->xml;
 }
 
-// A wrapper for switch_xml_parse_str() that accepts a file descriptor. First
-// attempts to mem map the file. Failing that, reads the file into memory.
-// Returns NULL on failure.
+/* A wrapper for switch_xml_parse_str() that accepts a file descriptor. First
+   attempts to mem map the file. Failing that, reads the file into memory.
+   Returns NULL on failure. */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 {
 	switch_xml_root_t root;
@@ -1099,19 +1097,19 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 #ifdef HAVE_MMAP
 	l = (st.st_size + sysconf(_SC_PAGESIZE) - 1) & ~(sysconf(_SC_PAGESIZE) - 1);
 	if ((m = mmap(NULL, l, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0)) != MAP_FAILED) {
-		madvise(m, l, MADV_SEQUENTIAL);	// optimize for sequential access
+		madvise(m, l, MADV_SEQUENTIAL);	/* optimize for sequential access */
 		root = (switch_xml_root_t) switch_xml_parse_str(m, st.st_size);
-		madvise(m, root->len = l, MADV_NORMAL);	// put it back to normal
-	} else {					// mmap failed, read file into memory
-#endif // HAVE_MMAP
+		madvise(m, root->len = l, MADV_NORMAL);	/* put it back to normal */
+	} else {					/* mmap failed, read file into memory */
+#endif /* HAVE_MMAP */
 		m = malloc(st.st_size);
 		if (!m) return NULL;
 		l = read(fd, m, st.st_size);
 		root = (switch_xml_root_t) switch_xml_parse_str((char *)m, l);
-		root->dynamic = 1;		// so we know to free s in switch_xml_free()
+		root->dynamic = 1;		/* so we know to free s in switch_xml_free() */
 #ifdef HAVE_MMAP
 	}
-#endif // HAVE_MMAP
+#endif /* HAVE_MMAP */
 	return &root->xml;
 }
 
@@ -1199,7 +1197,6 @@ static int preprocess_exec(const char *cwd, const char *command, int write_fd, i
 	return write_fd;
 	
 }
-
 
 static int preprocess_glob(const char *cwd, const char *pattern, int write_fd, int rlevel)
 {
@@ -1578,7 +1575,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 	return SWITCH_STATUS_FALSE;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params, switch_xml_t *root, switch_xml_t *domain)
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(const char *domain_name, switch_event_t *params,
+														 switch_xml_t *root, switch_xml_t *domain)
 {
 	switch_event_t *my_params = NULL;
 	switch_status_t status;
@@ -1648,7 +1646,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(const char *group_name,
 	return status;
 }
 
-static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const char *user_name, const char *key, switch_event_t *params, switch_xml_t *user)
+static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const char *user_name,
+										const char *key, switch_event_t *params, switch_xml_t *user)
 {
 	const char *type = "!pointer";
 	const char *val;
@@ -1683,7 +1682,10 @@ static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const 
 	
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *user_name, switch_xml_t domain, switch_xml_t *user, switch_xml_t *ingroup)
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(const char *user_name,
+																 switch_xml_t domain,
+																 switch_xml_t *user,
+																 switch_xml_t *ingroup)
 {
 	switch_xml_t group = NULL, groups = NULL, users = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
@@ -1773,7 +1775,6 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(const char *key,
 		status = find_user_in_tag(*domain, ip, user_name, key, params, user);
 	}
 	
-
  end:
 
 	if (my_params) {
@@ -1794,7 +1795,6 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void)
 	switch_thread_rwlock_rdlock(RWLOCK);
 	return MAIN_XML_ROOT;
 }
-
 
 struct destroy_xml {
 	switch_xml_t xml;
@@ -1821,7 +1821,7 @@ SWITCH_DECLARE(void) switch_xml_free_in_thread(switch_xml_t xml, int stacksize)
 
 	switch_threadattr_create(&thd_attr, pool);
     switch_threadattr_detach_set(thd_attr, 1);
-	// TBD figure out how much space we need by looking at the xml_t when stacksize == 0
+	/* TBD figure out how much space we need by looking at the xml_t when stacksize == 0 */
     switch_threadattr_stacksize_set(thd_attr, stacksize);
 
 	dx = switch_core_alloc(pool, sizeof(*dx));
@@ -1829,7 +1829,6 @@ SWITCH_DECLARE(void) switch_xml_free_in_thread(switch_xml_t xml, int stacksize)
 	dx->xml = xml;
 
 	switch_thread_create(&thread, thd_attr, destroy_thread, dx, pool);
-
 }
 
 static char not_so_threadsafe_error_buffer[256] = "";
@@ -1868,7 +1867,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(uint8_t reload, const char **e
 			MAIN_XML_ROOT = new_main;
 			switch_set_flag(MAIN_XML_ROOT, SWITCH_XML_ROOT);
 			switch_xml_free(old_root);
-			//switch_xml_free_in_thread(old_root);
+			/* switch_xml_free_in_thread(old_root); */
 		}
 	} else {
 		*err = "Cannot Open log directory or XML Root!";
@@ -1950,8 +1949,8 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_open_cfg(const char *file_path, switch_x
 
 }
 
-// Encodes ampersand sequences appending the results to *dst, reallocating *dst
-// if length exceeds max. a is non-zero for attribute encoding. Returns *dst
+/* Encodes ampersand sequences appending the results to *dst, reallocating *dst
+   if length exceeds max. a is non-zero for attribute encoding. Returns *dst */
 static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, switch_size_t *dlen, switch_size_t *max, short a)
 {
 	const char *e = NULL;
@@ -2014,9 +2013,9 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 }
 
 #define XML_INDENT "  "
-// Recursively converts each tag to xml appending it to *s. Reallocates *s if
-// its length exceeds max. start is the location of the previous tag in the
-// parent tag's character content. Returns *s.
+/* Recursively converts each tag to xml appending it to *s. Reallocates *s if
+   its length exceeds max. start is the location of the previous tag in the
+   parent tag's character content. Returns *s. */
 static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t * count)
 {
 	int i, j;
@@ -2024,27 +2023,27 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	switch_size_t off = 0;
 	uint32_t lcount = 0;
 
-	// parent character content up to this tag
+	/* parent character content up to this tag */
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
 
-	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) {	// reallocate s
+	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) + 1 > *max) {	/* reallocate s */
 		char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
 		if (!tmp) return *s;
 		*s = tmp;
 	}
 
 	if (*(*s + (*len) - 1) == '>') {
-		*len += sprintf(*s + *len, "\n");	// indent
+		*len += sprintf(*s + *len, "\n");	/* indent */
 	}
 	for (lcount = 0; lcount < *count; lcount++) {
-		*len += sprintf(*s + *len, "%s", XML_INDENT);	// indent
+		*len += sprintf(*s + *len, "%s", XML_INDENT);	/* indent */
 	}
 
-	*len += sprintf(*s + *len, "<%s", xml->name);	// open tag
-	for (i = 0; xml->attr[i]; i += 2) {	// tag attributes
+	*len += sprintf(*s + *len, "<%s", xml->name);	/* open tag */
+	for (i = 0; xml->attr[i]; i += 2) {	/* tag attributes */
 		if (switch_xml_attr(xml, xml->attr[i]) != xml->attr[i + 1])
 			continue;
-		while (*len + strlen(xml->attr[i]) + 7 + (strlen(XML_INDENT) * (*count)) > *max) {	// reallocate s
+		while (*len + strlen(xml->attr[i]) + 7 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
 			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
 			if (!tmp) return *s;
 			*s = tmp;
@@ -2056,10 +2055,10 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	}
 
 	for (i = 0; attr[i] && strcmp(attr[i][0], xml->name); i++);
-	for (j = 1; attr[i] && attr[i][j]; j += 3) {	// default attributes
+	for (j = 1; attr[i] && attr[i][j]; j += 3) {	/* default attributes */
 		if (!attr[i][j + 1] || switch_xml_attr(xml, attr[i][j]) != attr[i][j + 1])
-			continue;			// skip duplicates and non-values
-		while (*len + strlen(attr[i][j]) + 8 + (strlen(XML_INDENT) * (*count)) > *max) {	// reallocate s
+			continue;			/* skip duplicates and non-values */
+		while (*len + strlen(attr[i][j]) + 8 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
 			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
 			if (!tmp) return *s;
 			*s = tmp;
@@ -2077,10 +2076,10 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 		*s = switch_xml_toxml_r(xml->child, s, len, max, 0, attr, count);
 
 	} else {
-		*s = switch_xml_ampencode(xml->txt, 0, s, len, max, 0);	//data
+		*s = switch_xml_ampencode(xml->txt, 0, s, len, max, 0);	/* data */
 	}
 
-	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) {	// reallocate s
+	while (*len + strlen(xml->name) + 5 + (strlen(XML_INDENT) * (*count)) > *max) {	/* reallocate s */
 			char *tmp = (char *)realloc(*s, *max += SWITCH_XML_BUFSIZE);
 			if (!tmp) return *s;
 			*s = tmp;
@@ -2089,14 +2088,14 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 	if (xml->child || xml->txt) {
 		if (*(*s + (*len) - 1) == '\n') {
 			for (lcount = 0; lcount < *count; lcount++) {
-				*len += sprintf(*s + *len, "%s", XML_INDENT);	// indent
+				*len += sprintf(*s + *len, "%s", XML_INDENT);	/* indent */
 			}
 		}
-		*len += sprintf(*s + (*len), "</%s>\n", xml->name);	// close tag
+		*len += sprintf(*s + (*len), "</%s>\n", xml->name);	/* close tag */
 	}
 
 	while (txt[off] && off < xml->off)
-		off++;					// make sure off is within bounds
+		off++;					/* make sure off is within bounds */
 
 	if (xml->ordered) {
 		return switch_xml_toxml_r(xml->ordered, s, len, max, off, attr, count);
@@ -2118,8 +2117,8 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_head
 	return r;
 }
 
-// converts an switch_xml structure back to xml, returning a string of xml date that
-// must be freed
+/* converts an switch_xml structure back to xml, returning a string of xml date that
+   must be freed */
 SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_size_t buflen, switch_size_t offset, switch_bool_t prn_header)
 {
 	switch_xml_t p = (xml) ? xml->parent : NULL, o = (xml) ? xml->ordered : NULL;
@@ -2145,14 +2144,14 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	}
 
 	while (root->xml.parent) {
-		root = (switch_xml_root_t) root->xml.parent;	// root tag
+		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
 	}
 
-	for (i = 0; !p && root->pi[i]; i++) {	// pre-root processing instructions
+	for (i = 0; !p && root->pi[i]; i++) {	/* pre-root processing instructions */
 		for (k = 2; root->pi[i][k - 1]; k++);
 		for (j = 1; (n = root->pi[i][j]); j++) {
 			if (root->pi[i][k][j - 1] == '>') {
-				continue;		// not pre-root
+				continue;		/* not pre-root */
 			}
 			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
 				if (!(r = (char *)realloc(s, max += SWITCH_XML_BUFSIZE))) {
@@ -2169,11 +2168,11 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	xml->parent = p;
 	xml->ordered = o;
 
-	for (i = 0; !p && root->pi[i]; i++) {	// post-root processing instructions
+	for (i = 0; !p && root->pi[i]; i++) {	/* post-root processing instructions */
 		for (k = 2; root->pi[i][k - 1]; k++);
 		for (j = 1; (n = root->pi[i][j]); j++) {
 			if (root->pi[i][k][j - 1] == '<') {
-				continue;		// not post-root
+				continue;		/* not post-root */
 			}
 			while (len + strlen(t = root->pi[i][0]) + strlen(n) + 7 > max) {
 				if (!(r = (char *)realloc(s, max += SWITCH_XML_BUFSIZE))) {
@@ -2192,7 +2191,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 	return r;
 }
 
-// free the memory allocated for the switch_xml structure
+/* free the memory allocated for the switch_xml structure */
 SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 {
 	switch_xml_root_t root = (switch_xml_root_t) xml;
@@ -2221,20 +2220,20 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	switch_xml_free(xml->child);
 	switch_xml_free(xml->ordered);
 
-	if (!xml->parent) {			// free root tag allocations
-		for (i = 10; root->ent[i]; i += 2)	// 0 - 9 are default entities (<>&"')
+	if (!xml->parent) {			/* free root tag allocations */
+		for (i = 10; root->ent[i]; i += 2)	/* 0 - 9 are default entities (<>&"') */
 			if ((s = root->ent[i + 1]) < root->s || s > root->e)
 				free(s);
-		free(root->ent);		// free list of general entities
+		free(root->ent);		/* free list of general entities */
 
 		for (i = 0; (a = root->attr[i]); i++) {
-			for (j = 1; a[j++]; j += 2)	// free malloced attribute values
+			for (j = 1; a[j++]; j += 2)	/* free malloced attribute values */
 				if (a[j] && (a[j] < root->s || a[j] > root->e))
 					free(a[j]);
 			free(a);
 		}
 		if (root->attr[0])
-			free(root->attr);	// free default attribute list
+			free(root->attr);	/* free default attribute list */
 
 		for (i = 0; root->pi[i]; i++) {
 			for (j = 1; root->pi[i][j]; j++);
@@ -2242,35 +2241,35 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 			free(root->pi[i]);
 		}
 		if (root->pi[0])
-			free(root->pi);		// free processing instructions
+			free(root->pi);		/* free processing instructions */
 
 		if (root->dynamic == 1)
-			free(root->m);		// malloced xml data
+			free(root->m);		/* malloced xml data */
 #ifdef HAVE_MMAP
 		else if (root->len)
-			munmap(root->m, root->len);	// mem mapped xml data
-#endif // HAVE_MMAP
+			munmap(root->m, root->len);	/* mem mapped xml data */
+#endif /* HAVE_MMAP */
 		if (root->u)
-			free(root->u);		// utf8 conversion
+			free(root->u);		/* utf8 conversion */
 	}
 
-	switch_xml_free_attr(xml->attr);	// tag attributes
+	switch_xml_free_attr(xml->attr);	/* tag attributes */
 	if ((xml->flags & SWITCH_XML_TXTM))
-		free(xml->txt);			// character content
+		free(xml->txt);			/* character content */
 	if ((xml->flags & SWITCH_XML_NAMEM))
-		free(xml->name);		// tag name
+		free(xml->name);		/* tag name */
 	free(xml);
 }
 
-// return parser error message or empty string if none
+/* return parser error message or empty string if none */
 SWITCH_DECLARE(const char *) switch_xml_error(switch_xml_t xml)
 {
 	while (xml && xml->parent)
-		xml = xml->parent;		// find root tag
+		xml = xml->parent;		/* find root tag */
 	return (xml) ? ((switch_xml_root_t) xml)->err : "";
 }
 
-// returns a new empty switch_xml structure with the given root tag name
+/* returns a new empty switch_xml structure with the given root tag name */
 SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 {
 	static const char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
@@ -2286,7 +2285,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	return &root->xml;
 }
 
-// inserts an existing tag into an switch_xml structure
+/* inserts an existing tag into an switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_insert(switch_xml_t xml, switch_xml_t dest, switch_size_t off)
 {
 	switch_xml_t cur, prev, head;
@@ -2295,39 +2294,39 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_insert(switch_xml_t xml, switch_xml_t de
 	xml->off = off;
 	xml->parent = dest;
 
-	if ((head = dest->child)) {	// already have sub tags
-		if (head->off <= off) {	// not first subtag
+	if ((head = dest->child)) {	/* already have sub tags */
+		if (head->off <= off) {	/* not first subtag */
 			for (cur = head; cur->ordered && cur->ordered->off <= off; cur = cur->ordered);
 			xml->ordered = cur->ordered;
 			cur->ordered = xml;
-		} else {				// first subtag
+		} else {				/* first subtag */
 			xml->ordered = head;
 			dest->child = xml;
 		}
 
-		for (cur = head, prev = NULL; cur && strcmp(cur->name, xml->name); prev = cur, cur = cur->sibling);	// find tag type
-		if (cur && cur->off <= off) {	// not first of type
+		for (cur = head, prev = NULL; cur && strcmp(cur->name, xml->name); prev = cur, cur = cur->sibling);	/* find tag type */
+		if (cur && cur->off <= off) {	/* not first of type */
 			while (cur->next && cur->next->off <= off)
 				cur = cur->next;
 			xml->next = cur->next;
 			cur->next = xml;
-		} else {				// first tag of this type
+		} else {				/* first tag of this type */
 			if (prev && cur)
-				prev->sibling = cur->sibling;	// remove old first
-			xml->next = cur;	// old first tag is now next
-			for (cur = head, prev = NULL; cur && cur->off <= off; prev = cur, cur = cur->sibling);	// new sibling insert point
+				prev->sibling = cur->sibling;	/* remove old first */
+			xml->next = cur;	/* old first tag is now next */
+			for (cur = head, prev = NULL; cur && cur->off <= off; prev = cur, cur = cur->sibling);	/* new sibling insert point */
 			xml->sibling = cur;
 			if (prev)
 				prev->sibling = xml;
 		}
 	} else
-		dest->child = xml;		// only sub tag
+		dest->child = xml;		/* only sub tag */
 
 	return xml;
 }
 
-// Adds a child tag. off is the offset of the child tag relative to the start
-// of the parent tag's character content. Returns the child tag
+/* Adds a child tag. off is the offset of the child tag relative to the start
+   of the parent tag's character content. Returns the child tag */
 SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *name, switch_size_t off)
 {
 	switch_xml_t child;
@@ -2344,20 +2343,20 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *
 	return switch_xml_insert(child, xml, off);
 }
 
-// sets the character content for the given tag and returns the tag
+/* sets the character content for the given tag and returns the tag */
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_txt(switch_xml_t xml, const char *txt)
 {
 	if (!xml)
 		return NULL;
 	if (xml->flags & SWITCH_XML_TXTM)
-		free(xml->txt);			// existing txt was malloced
+		free(xml->txt);			/* existing txt was malloced */
 	xml->flags &= ~SWITCH_XML_TXTM;
 	xml->txt = (char *) txt;
 	return xml;
 }
 
-// Sets the given tag attribute or adds a new attribute if not found. A value
-// of NULL will remove the specified attribute.  Returns the tag given
+/* Sets the given tag attribute or adds a new attribute if not found. A value
+   of NULL will remove the specified attribute.  Returns the tag given */
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *name, const char *value)
 {
 	int l = 0, c;
@@ -2366,39 +2365,39 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 		return NULL;
 	while (xml->attr[l] && strcmp(xml->attr[l], name))
 		l += 2;
-	if (!xml->attr[l]) {		// not found, add as new attribute
+	if (!xml->attr[l]) {		/* not found, add as new attribute */
 		if (!value)
-			return xml;			// nothing to do
-		if (xml->attr == SWITCH_XML_NIL) {	// first attribute
+			return xml;			/* nothing to do */
+		if (xml->attr == SWITCH_XML_NIL) {	/* first attribute */
 			xml->attr = (char **)malloc(4 * sizeof(char *));
 			if (!xml->attr) return NULL;
-			xml->attr[1] = strdup("");	// empty list of malloced names/vals
+			xml->attr[1] = strdup("");	/* empty list of malloced names/vals */
 		} else {
 			char **tmp = (char **)realloc(xml->attr, (l + 4) * sizeof(char *));
 			if (!tmp) return xml;
 			xml->attr = tmp;
 		}
 
-		xml->attr[l] = (char *) name;	// set attribute name
-		xml->attr[l + 2] = NULL;	// null terminate attribute list
+		xml->attr[l] = (char *) name;	/* set attribute name */
+		xml->attr[l + 2] = NULL;	/* null terminate attribute list */
 		xml->attr[l + 3] = (char *)realloc(xml->attr[l + 1], (c = (int) strlen(xml->attr[l + 1])) + 2);
-		strcpy(xml->attr[l + 3] + c, " ");	// set name/value as not malloced
+		strcpy(xml->attr[l + 3] + c, " ");	/* set name/value as not malloced */
 		if (xml->flags & SWITCH_XML_DUP)
 			xml->attr[l + 3][c] = SWITCH_XML_NAMEM;
 	} else if (xml->flags & SWITCH_XML_DUP)
-		free((char *) name);	// name was strduped
+		free((char *) name);	/* name was strduped */
 
-	for (c = l; xml->attr[c]; c += 2);	// find end of attribute list
+	for (c = l; xml->attr[c]; c += 2);	/* find end of attribute list */
 	if (xml->attr[c + 1][l / 2] & SWITCH_XML_TXTM)
-		free(xml->attr[l + 1]);	//old val
+		free(xml->attr[l + 1]);	/* old val */
 	if (xml->flags & SWITCH_XML_DUP)
 		xml->attr[c + 1][l / 2] |= SWITCH_XML_TXTM;
 	else
 		xml->attr[c + 1][l / 2] &= ~SWITCH_XML_TXTM;
 
 	if (value)
-		xml->attr[l + 1] = (char *) value;	// set attribute value
-	else {						// remove attribute
+		xml->attr[l + 1] = (char *) value;	/* set attribute value */
+	else {						/* remove attribute */
 		char **tmp;
 		if (xml->attr[c + 1][l / 2] & SWITCH_XML_NAMEM)
 			free(xml->attr[l]);
@@ -2406,14 +2405,14 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_attr(switch_xml_t xml, const char *n
 		tmp =(char **)realloc(xml->attr, (c + 2) * sizeof(char *));
 		if (!tmp) return xml;
 		xml->attr = tmp;
-		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	// fix list of which name/vals are malloced
+		memmove(xml->attr[c + 1] + (l / 2), xml->attr[c + 1] + (l / 2) + 1, (c / 2) - (l / 2));	/* fix list of which name/vals are malloced */
 	}
-	xml->flags &= ~SWITCH_XML_DUP;	// clear strdup() flag
+	xml->flags &= ~SWITCH_XML_DUP;	/* clear strdup() flag */
 
 	return xml;
 }
 
-// sets a flag for the given tag and returns the tag
+/* sets a flag for the given tag and returns the tag */
 SWITCH_DECLARE(switch_xml_t) switch_xml_set_flag(switch_xml_t xml, switch_xml_flag_t flag)
 {
 	if (xml)
@@ -2421,42 +2420,42 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_flag(switch_xml_t xml, switch_xml_fl
 	return xml;
 }
 
-// removes a tag along with its subtags without freeing its memory
+/* removes a tag along with its subtags without freeing its memory */
 SWITCH_DECLARE(switch_xml_t) switch_xml_cut(switch_xml_t xml)
 {
 	switch_xml_t cur;
 
 	if (!xml)
-		return NULL;			// nothing to do
+		return NULL;			/* nothing to do */
 	if (xml->next)
-		xml->next->sibling = xml->sibling;	// patch sibling list
+		xml->next->sibling = xml->sibling;	/* patch sibling list */
 
-	if (xml->parent) {			// not root tag
-		cur = xml->parent->child;	// find head of subtag list
+	if (xml->parent) {			/* not root tag */
+		cur = xml->parent->child;	/* find head of subtag list */
 		if (cur == xml)
-			xml->parent->child = xml->ordered;	// first subtag
-		else {					// not first subtag
+			xml->parent->child = xml->ordered;	/* first subtag */
+		else {					/* not first subtag */
 			while (cur->ordered != xml)
 				cur = cur->ordered;
-			cur->ordered = cur->ordered->ordered;	// patch ordered list
+			cur->ordered = cur->ordered->ordered;	/* patch ordered list */
 
-			cur = xml->parent->child;	// go back to head of subtag list
-			if (strcmp(cur->name, xml->name)) {	// not in first sibling list
+			cur = xml->parent->child;	/* go back to head of subtag list */
+			if (strcmp(cur->name, xml->name)) {	/* not in first sibling list */
 				while (strcmp(cur->sibling->name, xml->name))
 					cur = cur->sibling;
-				if (cur->sibling == xml) {	// first of a sibling list
+				if (cur->sibling == xml) {	/* first of a sibling list */
 					cur->sibling = (xml->next) ? xml->next : cur->sibling->sibling;
 				} else
-					cur = cur->sibling;	// not first of a sibling list
+					cur = cur->sibling;	/* not first of a sibling list */
 			}
 
 			while (cur->next && cur->next != xml)
 				cur = cur->next;
 			if (cur->next)
-				cur->next = cur->next->next;	// patch next list
+				cur->next = cur->next->next;	/* patch next list */
 		}
 	}
-	xml->ordered = xml->sibling = xml->next = NULL;	// prevent switch_xml_free() from clobbering ordered list
+	xml->ordered = xml->sibling = xml->next = NULL;	/* prevent switch_xml_free() from clobbering ordered list */
 	return xml;
 }
 
