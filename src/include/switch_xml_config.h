@@ -60,7 +60,7 @@ typedef struct {
 struct switch_xml_config_item;
 typedef struct switch_xml_config_item switch_xml_config_item_t;
 
-typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t *data);
+typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t *data, switch_bool_t changed);
 
 /*!
  * \brief A configuration instruction read by switch_xml_config_parse 
@@ -72,7 +72,8 @@ struct switch_xml_config_item {
 	void *ptr;						/*< Ptr to the var to be changed */
 	void *defaultvalue; 			/*< Default value */
 	void *data; 					/*< Custom data (depending on the type) */
-	switch_xml_config_callback_t function;	/*< Callback (for type CUSTOM) */
+	switch_xml_config_callback_t function;	/*< Callback to be called after the var is parsed */
+	void *functiondata;				/*< Custom data passed to the callback */
 } ;
 
 

@@ -52,6 +52,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 	
 	for (item = instructions; item->key; item++) {
 		const char *value = switch_event_get_header(event, item->key);
+		switch_bool_t changed = SWITCH_FALSE;
+		switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->function;
 		
 		if (reload && !item->reloadable) {
 			continue;
@@ -61,45 +63,53 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_INT:
 				{
 					int *dest = (int*)item->ptr;
+					int intval;
 					if (value) {
 						if (switch_is_number(value)) {
-							*dest = atoi(value);
+							intval = atoi(value);
 						} else {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n", 
-								value, item->key);
-							*dest = (int)(intptr_t)item->defaultvalue;
+							intval = (int)(intptr_t)item->defaultvalue;
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s] setting default [%d]\n", 
+								value, item->key, intval);
 						}
 					} else {
-						*dest = (int)(intptr_t)item->defaultvalue;
+						intval = (int)(intptr_t)item->defaultvalue;
+					}
+					
+					if (*dest != intval) {
+						*dest = intval;
+						changed = SWITCH_TRUE;
 					}
 				}
 				break;
 			case SWITCH_CONFIG_STRING:
 				{
 					switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t*)item->data;
+					const char *newstring = NULL;
 					if (string_options->length > 0) {
 						/* We have a preallocated buffer */
 						char *dest = (char*)item->ptr;
 						if (value) {
-							switch_copy_string(dest, value, string_options->length);
-						} else if (item->defaultvalue){
-							switch_copy_string(dest, item->defaultvalue, string_options->length);
+							newstring = value;
+						} else if (item->defaultvalue) {
+							newstring = item->defaultvalue;
+						}
+						
+						if (newstring && strncasecmp(dest, newstring, string_options->length)) {
+							switch_copy_string(dest, newstring, string_options->length);
 						}
 					} else {
 						char **dest = (char**)item->ptr;
-						if (string_options->pool) {
-							if (value) {
-								*dest = switch_core_strdup(string_options->pool, value);
-							} else if (item->defaultvalue) {
-								*dest = switch_core_strdup(string_options->pool, (char*)item->defaultvalue);
+						const char *newstring = value ? value : (char*)item->defaultvalue;
+						
+						if (newstring && strcasecmp(*dest, newstring)) {
+							if (string_options->pool) {
+								*dest = switch_core_strdup(string_options->pool, newstring);
+							} else {
+								switch_safe_free(*dest);
+								*dest = strdup(newstring);
 							}
-						} else {
-							switch_safe_free(*dest); /* Free the destination if its not NULL */
-							if (value) {
-								*dest = strdup(value);
-							} else if(item->defaultvalue) {
-								*dest = strdup((char*)item->defaultvalue);
-							}
+							changed = SWITCH_TRUE;								
 						}
 					}
 				}
@@ -107,38 +117,41 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_YESNO:
 				{
 					switch_bool_t *dest = (switch_bool_t*)item->ptr;
-					if (value) {
-						*dest = !!switch_true(value);
-					} else {
-						*dest = (switch_bool_t)(intptr_t)item->defaultvalue;
+					switch_bool_t newval = value ?  !!switch_true(value) : (switch_bool_t)(intptr_t)item->defaultvalue;
+					
+					if (*dest != newval) {
+						*dest = newval;
+						changed = SWITCH_TRUE;
 					}
 				}
 				break;
 			case SWITCH_CONFIG_CUSTOM: 
-				{	
-					switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->function;
-					callback(item);
-				}
 				break;
 			case SWITCH_CONFIG_ENUM:
 				{
 					switch_xml_config_enum_item_t *enum_options = (switch_xml_config_enum_item_t*)item->data;
 					int *dest = (int*)item->ptr;
+					int newval;
 					
 					if (value) {
 						for (;enum_options->key; enum_options++) {
 							if (!strcasecmp(value, enum_options->key)) {
-								*dest = enum_options->value;
+								newval = enum_options->value;
 								break;
 							}
 						}
-					
-						if (!enum_options->key) { /* if (!found) */
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n", 
-								value, item->key);
-						}
 					} else {
-						*dest = (int)(intptr_t)item->defaultvalue;
+						newval = (int)(intptr_t)item->defaultvalue; 
+					}
+					
+					if (!enum_options->key) { /* if (!found) */
+						newval = (int)(intptr_t)item->defaultvalue;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n",  value, item->key);
+					}
+					
+					if (*dest != newval) {
+						changed = SWITCH_TRUE;
+						*dest = newval;
 					}
 				}
 				break;
@@ -146,14 +159,18 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 				{
 					int32_t *dest = (int32_t*)item->ptr;
 					int index = (int)(intptr_t)item->data;
+					int8_t currentval = !!(*dest & index);
+					int8_t newval = 0;
+					
 					if (value) {
-						if (switch_true(value)) {
-							*dest |= (1 << index);
-						} else {
-							*dest &= ~(1 << index);
-						}
+						newval = switch_true(value);
 					} else {
-						if ((switch_bool_t)(intptr_t)item->defaultvalue) {
+						newval = (switch_bool_t)(intptr_t)item->defaultvalue;
+					}
+					
+					if (newval != currentval) {
+						changed = SWITCH_TRUE;
+						if (newval) {
 							*dest |= (1 << index);
 						} else {
 							*dest &= ~(1 << index);
@@ -165,15 +182,21 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 				{
 					int8_t *dest = (int8_t*)item->ptr;
 					int index = (int)(intptr_t)item->data;
-					if (value) {
-						dest[index] = !!switch_true(value);						
-					} else {
-						dest[index] = (int8_t)((intptr_t)item->defaultvalue);
+					int newval = value ? !!switch_true(value) : (int8_t)((intptr_t)item->defaultvalue);
+					if (dest[index] != newval) {
+						changed = SWITCH_TRUE;
+						dest[index] = newval;
 					}
 				}
 				break;
 			case SWITCH_CONFIG_LAST:
 				break;
+			default:
+				break;
+		}
+		
+		if (callback) {
+			callback(item, changed);
 		}
 	}
 	
