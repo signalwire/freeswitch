@@ -124,6 +124,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	
 	if (!(bug->raw_read_buffer && (bug->raw_write_buffer || !switch_test_flag(bug, SMBF_WRITE_STREAM)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%sBuffer Error\n", switch_channel_get_name(bug->session->channel));
+		return SWITCH_STATUS_FALSE;
 	}
 	
 	frame->datalen = 0;
@@ -137,6 +138,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	switch_mutex_unlock(bug->read_mutex);
 	
 	if (switch_test_flag(bug, SMBF_WRITE_STREAM)) {
+		switch_assert(bug->raw_write_buffer);
 		switch_mutex_lock(bug->write_mutex);
 		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, bytes);
 		if (datalen < bytes) {
