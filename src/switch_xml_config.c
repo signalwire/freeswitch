@@ -85,8 +85,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_STRING:
 				{
 					switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t*)item->data;
-					const char *newstring = NULL;
+
 					if (string_options->length > 0) {
+						const char *newstring = NULL;
 						/* We have a preallocated buffer */
 						char *dest = (char*)item->ptr;
 						if (value) {
