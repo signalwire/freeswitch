@@ -804,6 +804,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath="..\..\src\switch_xml_config.c"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -944,6 +948,10 @@
 			</File>
 			<File
 				RelativePath="..\..\src\include\switch_xml.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\src\include\switch_xml_config.h"
 				>
 			</File>
 		</Filter>
