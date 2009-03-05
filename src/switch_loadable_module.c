@@ -1266,6 +1266,10 @@ SWITCH_DECLARE(void) switch_loadable_module_shutdown(void)
 	switch_hash_index_t *hi;
 	void *val;
 	switch_loadable_module_t *module;
+	
+	if (!loadable_modules.module_hash) {
+		return;
+	}
 
 	for (hi = switch_hash_first(NULL, loadable_modules.module_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
