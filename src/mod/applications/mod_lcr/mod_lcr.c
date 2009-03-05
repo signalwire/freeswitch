@@ -326,14 +326,14 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 	switch_channel_t *channel;
 	
 	/* first replace %s with digits to maintain backward compat */
-	if(cb_struct->profile->custom_sql_has_percent == SWITCH_TRUE) {
+	if (cb_struct->profile->custom_sql_has_percent == SWITCH_TRUE) {
 		tmpSQL = switch_string_replace(custom_sql, "%q", digits);
 		newSQL = tmpSQL;
 	}
 	
 	/* expand the vars */
-	if(cb_struct->profile->custom_sql_has_vars == SWITCH_TRUE) {
-		if(cb_struct->session) {
+	if (cb_struct->profile->custom_sql_has_vars == SWITCH_TRUE) {
+		if (cb_struct->session) {
 			channel = switch_core_session_get_channel(cb_struct->session);
 			switch_assert(channel);
 			/*
@@ -349,11 +349,11 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 		}
 	}
 	
-	if(tmpSQL != newSQL) {
+	if (tmpSQL != newSQL) {
 		switch_safe_free(tmpSQL);
 	}
 	
-	if(newSQL == NULL) {
+	if (newSQL == NULL) {
 		return (char *) custom_sql;
 	} else {
 		return newSQL;
@@ -519,8 +519,8 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	digits_expanded = expand_digits(cb_struct->pool, digits_copy);
 	
 	/* set some channel vars if we have a session */
-	if(cb_struct->session) {
-		if((channel = switch_core_session_get_channel(cb_struct->session))) {
+	if (cb_struct->session) {
+		if ((channel = switch_core_session_get_channel(cb_struct->session))) {
 			switch_channel_set_variable_var_check(channel, "lcr_query_digits", digits_copy, SWITCH_FALSE);
 			id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
 			switch_channel_set_variable_var_check(channel, "lcr_query_profile", id_str, SWITCH_FALSE);
@@ -555,11 +555,11 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 
 		/* format the custom_sql */
 		safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
-		if(!safe_sql) {
+		if (!safe_sql) {
 			return SWITCH_STATUS_GENERR;
 		}
 		sql_stream.write_function(&sql_stream, safe_sql);
-		if(safe_sql != profile->custom_sql) {
+		if (safe_sql != profile->custom_sql) {
 			/* channel_expand_variables returned the same string to us, no need to free */
 			switch_safe_free(safe_sql);
 		}
@@ -727,10 +727,10 @@ static switch_status_t lcr_load_config()
 				}
 				
 				if (!switch_strlen_zero(custom_sql)) {
-					if(switch_string_var_check_const(custom_sql)) {
+					if (switch_string_var_check_const(custom_sql)) {
 						profile->custom_sql_has_vars = SWITCH_TRUE;
 					}
-					if(strstr(custom_sql, "%")) {
+					if (strstr(custom_sql, "%")) {
 						profile->custom_sql_has_percent = SWITCH_TRUE;
 					}
 					profile->custom_sql = switch_core_strdup(globals.pool, (char *)custom_sql);
