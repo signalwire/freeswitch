@@ -160,7 +160,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 				{
 					int32_t *dest = (int32_t*)item->ptr;
 					int index = (int)(intptr_t)item->data;
-					int8_t currentval = !!(*dest & index);
+					int8_t currentval = (int8_t)!!(*dest & index);
 					int8_t newval = 0;
 					
 					if (value) {
