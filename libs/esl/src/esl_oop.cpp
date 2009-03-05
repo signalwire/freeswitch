@@ -92,7 +92,7 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
 		return NULL;
 	}
 
-	len = strlen(cmd) + (arg ? strlen(arg) : 0) + 5;
+	len = strlen(cmd) + (arg ? strlen(arg) : 0) + 8;
 
 	cmd_buf = (char *) malloc(len);
 	assert(cmd_buf);
