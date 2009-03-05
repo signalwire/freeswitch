@@ -83,3 +83,14 @@ typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t
 switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *options);
 
 #endif /* !defined(SWITCH_XML_CONFIG_H) */
+
+/* For Emacs:
+ * Local Variables:
+ * mode:c
+ * indent-tabs-mode:t
+ * tab-width:4
+ * c-basic-offset:4
+ * End:
+ * For VIM:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
+ */
