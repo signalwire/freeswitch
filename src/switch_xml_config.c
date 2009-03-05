@@ -30,7 +30,6 @@
  *
  */
 
-#include <stdio.h>
 #include <switch.h>
 
 switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *options)
