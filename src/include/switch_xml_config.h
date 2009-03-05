@@ -49,12 +49,12 @@ typedef enum {
 
 typedef struct {
 	char *key;					/*< The item's key or NULL if this is the last one in the list */
-	switch_size_t value;		/*< The item's value */
+	int value;		/*< The item's value */
 } switch_xml_config_enum_item_t;
 
 typedef struct {
 	switch_memory_pool_t *pool; /*< If set, the string will be allocated on the pool (unless the length param is > 0, then you misread this file)*/
-	int length;					/*< Length of the char array, or 0 if memory has to be allocated dynamically*/
+	switch_size_t length;					/*< Length of the char array, or 0 if memory has to be allocated dynamically*/
 } switch_xml_config_string_options_t;
 
 struct switch_xml_config_item;
