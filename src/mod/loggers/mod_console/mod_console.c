@@ -328,8 +328,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_console_load)
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
-	SWITCH_ADD_API(api_interface, "console", "Console", console_api_function, "");
-
+	SWITCH_ADD_API(api_interface, "console", "Console", console_api_function, "loglevel [level]|colorize [on|off]");
+	switch_console_set_complete("add console loglevel");
+	switch_console_set_complete("add console colorize");
 
 	/* setup my logger function */
 	switch_log_bind_logger(switch_console_logger, SWITCH_LOG_DEBUG, SWITCH_TRUE);
