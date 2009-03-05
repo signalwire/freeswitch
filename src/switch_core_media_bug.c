@@ -123,7 +123,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	}
 	
 	if (!(bug->raw_read_buffer && (bug->raw_write_buffer || !switch_test_flag(bug, SMBF_WRITE_STREAM)))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%sBuffer Error\n", switch_channel_get_name(bug->session->channel));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s Buffer Error\n", switch_channel_get_name(bug->session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
 	
