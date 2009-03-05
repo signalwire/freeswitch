@@ -77,13 +77,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_STRING:
 				{
 					switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t*)item->data;
-					if (options->length > 0) {
+					if (string_options->length > 0) {
 						/* We have a preallocated buffer */
 						char *dest = (char*)item->ptr;
 						if (value) {
 							switch_copy_string(dest, value, string_options->length);
-						} else if (options->defaultvalue){
-							switch_copy_string(dest, value, string_options->length);
+						} else if (item->defaultvalue){
+							switch_copy_string(dest, item->defaultvalue, string_options->length);
 						}
 					} else {
 						char **dest = (char**)item->ptr;
@@ -145,7 +145,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_FLAG:
 				{
 					int32_t *dest = (int32_t*)item->ptr;
-					int index = (int)item->data;
+					int index = (int)(intptr_t)item->data;
 					if (value) {
 						if (switch_true(value)) {
 							*dest |= (1 << index);
@@ -164,7 +164,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_FLAGARRAY:
 				{
 					int8_t *dest = (int8_t*)item->ptr;
-					int index = (int)item->data;
+					int index = (int)(intptr_t)item->data;
 					if (value) {
 						dest[index] = !!switch_true(value);						
 					} else {

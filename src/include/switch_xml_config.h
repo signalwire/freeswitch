@@ -87,7 +87,7 @@ struct switch_xml_config_item {
  * \param options instrutions on how to parse the elements
  * \see switch_xml_config_item_t
  */
-switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *options);
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions);
 
 #endif /* !defined(SWITCH_XML_CONFIG_H) */
 
