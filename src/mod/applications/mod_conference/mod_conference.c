@@ -1563,7 +1563,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 	while (switch_test_flag(member, MFLAG_RUNNING) && switch_channel_ready(channel)) {
 
-		if (switch_channel_test_flag(channel, CF_SERVICE)) {
+		if (switch_channel_test_app_flag(channel, CF_APP_TAGGED)) {
 			switch_yield(100000);
 			continue;
 		}
@@ -1878,7 +1878,7 @@ static void conference_loop_output(conference_member_t *member)
 	}
 
 	if (restarting) {
-		switch_channel_clear_flag(channel, CF_SERVICE);
+		switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
 	}
 
 	/* Fair WARNING, If you expect the caller to hear anything or for digit handling to be processed,      */
@@ -2094,9 +2094,9 @@ static void conference_loop_output(conference_member_t *member)
 
 
 		if (switch_core_session_private_event_count(member->session)) {
-			switch_channel_set_flag(channel, CF_SERVICE);
+			switch_channel_set_app_flag(channel, CF_APP_TAGGED);
 			switch_ivr_parse_all_events(member->session);
-			switch_channel_clear_flag(channel, CF_SERVICE);
+			switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
 			switch_set_flag_locked(member, MFLAG_FLUSH_BUFFER);
 			switch_core_session_set_read_codec(member->session, &member->read_codec);
 		}
@@ -3697,7 +3697,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				if (setup_media(member, new_conference)) {
 					switch_clear_flag_locked(member, MFLAG_RUNNING);
 				} else {
-					switch_channel_set_flag(channel, CF_SERVICE);
+					switch_channel_set_app_flag(channel, CF_APP_TAGGED);
 					switch_set_flag_locked(member, MFLAG_RESTART);
 				}
 			}

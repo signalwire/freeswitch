@@ -975,9 +975,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 			switch_ivr_parse_all_events(session);
 		}
 
-
+		
 		if (eff_timeout) {
 			digit_elapsed = (uint32_t) ((switch_micro_time_now() - digit_started) / 1000);
+
 			if (digit_elapsed >= eff_timeout) {
 				status = SWITCH_STATUS_TIMEOUT;
 				break;
@@ -987,7 +988,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 		if (switch_channel_has_dtmf(channel)) {
 			switch_dtmf_t dtmf = { 0 };
 			switch_size_t y;
-
+			
 			if (eff_timeout) {
 				eff_timeout = digit_timeout;
 				digit_started = switch_micro_time_now();
@@ -1006,6 +1007,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_collect_digits_count(switch_core_sess
 
 				buf[x++] = dtmf.digit;
 				buf[x] = '\0';
+				
 				if (x >= buflen || x >= maxdigits) {
 					return SWITCH_STATUS_SUCCESS;
 				}
