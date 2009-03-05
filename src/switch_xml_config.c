@@ -34,7 +34,7 @@
 
 #include <switch.h>
 
-SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *options)
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions)
 {
 	switch_xml_config_item_t *item;
 	switch_xml_t node;
@@ -50,7 +50,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 		file_count++;
 	}
 	
-	for (item = options; item->key; item++) {
+	for (item = instructions; item->key; item++) {
 		const char *value = switch_event_get_header(event, item->key);
 		
 		if (reload && !item->reloadable) {
@@ -77,7 +77,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_STRING:
 				{
 					switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t*)item->data;
-					if (string_options->length > 0) {
+					if (options->length > 0) {
 						/* We have a preallocated buffer */
 						char *dest = (char*)item->ptr;
 						if (value) {
@@ -122,18 +122,18 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 				break;
 			case SWITCH_CONFIG_ENUM:
 				{
-					switch_xml_config_enum_item_t *options = (switch_xml_config_enum_item_t*)item->data;
+					switch_xml_config_enum_item_t *enum_options = (switch_xml_config_enum_item_t*)item->data;
 					int *dest = (int*)item->ptr;
 					
 					if (value) {
-						for (;options->key; options++) {
-							if (!strcasecmp(value, options->key)) {
-								*dest = options->value;
+						for (;enum_options->key; enum_options++) {
+							if (!strcasecmp(value, enum_options->key)) {
+								*dest = enum_options->value;
 								break;
 							}
 						}
 					
-						if (!options->key) { /* if (!found) */
+						if (!enum_options->key) { /* if (!found) */
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n", 
 								value, item->key);
 						}
