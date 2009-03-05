@@ -32,7 +32,7 @@
 
 #include <switch.h>
 
-switch_xml_config_string_options_t switch_config_string_strdup = { NULL, 0, NULL };
+SWITCH_DECLARE_DATA switch_xml_config_string_options_t switch_config_string_strdup = { NULL, 0, NULL };
 
 SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event)
 {

@@ -58,7 +58,7 @@ typedef struct {
 	char *validation_regex;			/*< Enforce validation using this regular expression */
 } switch_xml_config_string_options_t;
 
-extern switch_xml_config_string_options_t switch_config_string_strdup; 	/*< String options structure for strdup, no validation */
+SWITCH_DECLARE_DATA extern switch_xml_config_string_options_t switch_config_string_strdup; 	/*< String options structure for strdup, no validation */
 
 typedef struct {
 	switch_bool_t enforce_min;
