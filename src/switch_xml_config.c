@@ -181,8 +181,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_FLAGARRAY:
 				{
 					int8_t *dest = (int8_t*)item->ptr;
-					int index = (int)(intptr_t)item->data;
-					int newval = value ? !!switch_true(value) : (int8_t)((intptr_t)item->defaultvalue);
+					int8_t index = (int)(intptr_t)item->data;
+					int8_t newval = value ? !!switch_true(value) : (int8_t)((intptr_t)item->defaultvalue);
 					if (dest[index] != newval) {
 						changed = SWITCH_TRUE;
 						dest[index] = newval;
