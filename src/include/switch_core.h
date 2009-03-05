@@ -196,6 +196,8 @@ SWITCH_DECLARE(void) switch_core_media_bug_set_read_replace_frame(_In_ switch_me
 */
 SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(_In_ switch_core_session_t *session, _Inout_ switch_media_bug_t **bug);
 
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_core_session_t *session, switch_media_bug_callback_t callback);
+
 /*!
   \brief Close and destroy a media bug
   \param bug bug to remove

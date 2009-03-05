@@ -370,15 +370,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 	if (session->bugs) {
 		switch_thread_rwlock_wrlock(session->bug_rwlock);
 		for (bp = session->bugs; bp; bp = bp->next) {
-			if (bp->thread_id && bp->thread_id != switch_thread_self()) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "BUG is thread locked skipping.\n");
-				continue;
-			}
-
-			if (!bp->ready) {
-				continue;
-			}
-			if (bp == *bug) {
+			if ((!bp->thread_id || bp->thread_id == switch_thread_self()) && bp->ready && bp == *bug) {
 				if (last) {
 					last->next = bp->next;
 				} else {
@@ -386,6 +378,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 				}
 				break;
 			}
+
 			last = bp;
 		}
 		switch_thread_rwlock_unlock(session->bug_rwlock);
@@ -400,6 +393,44 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 	}
 
 	return status;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_core_session_t *session, switch_media_bug_callback_t callback)
+{
+	switch_media_bug_t *cur = NULL, *bp = NULL, *last = NULL;
+	int total = 0;
+
+	if (session->bugs) {
+		switch_thread_rwlock_wrlock(session->bug_rwlock);
+		
+		bp = session->bugs;
+		while (bp) {
+			cur = bp;
+			bp = bp->next;
+
+			if ((!cur->thread_id || cur->thread_id == switch_thread_self()) && cur->ready && cur->callback == callback) {
+				if (last) {
+					last->next = cur->next;
+				} else {
+					session->bugs = cur->next;
+				}
+				if (switch_core_media_bug_close(&cur) == SWITCH_STATUS_SUCCESS) {
+					total++;
+				}
+			} else {
+				last = cur;
+			}
+		}
+		switch_thread_rwlock_unlock(session->bug_rwlock);
+	}
+	
+	if (!session->bugs && session->bug_codec.implementation) {
+		switch_core_codec_destroy(&session->bug_codec);
+		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
+	}
+
+	return total ? SWITCH_STATUS_SUCCESS : SWITCH_STATUS_FALSE;
 }
 
 /* For Emacs:

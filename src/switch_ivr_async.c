@@ -424,23 +424,31 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	return SWITCH_STATUS_SUCCESS;
 }
 
+struct record_helper {
+	char *file;
+	switch_file_handle_t *fh;
+};
+
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
 {
-	switch_file_handle_t *fh = (switch_file_handle_t *) user_data;
+	switch_core_session_t *session = switch_core_media_bug_get_session(bug);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	struct record_helper *rh = (struct record_helper *) user_data;
 
 	switch (type) {
 	case SWITCH_ABC_TYPE_INIT:
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
-		if (fh) {
-			switch_core_file_close(fh);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stop recording file %s\n", rh->file);
+		switch_channel_set_private(channel, rh->file, NULL);
+		
+		if (rh->fh) {
+			switch_core_file_close(rh->fh);
 		}
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
-		if (fh) {
+		if (rh->fh) {
 			switch_size_t len;
-			switch_core_session_t *session = switch_core_media_bug_get_session(bug);
-			switch_channel_t *channel = switch_core_session_get_channel(session);
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 			switch_frame_t frame = { 0 };
 			
@@ -455,7 +463,7 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 
 				if (doit) {
 					len = (switch_size_t) frame.datalen / 2;
-					switch_core_file_write(fh, data, &len);
+					switch_core_file_write(rh->fh, data, &len);
 				}
 			}
 		}
@@ -473,8 +481,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_stop_record_session(switch_core_sessi
 	switch_media_bug_t *bug;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 
-	if ((bug = switch_channel_get_private(channel, file))) {
-		switch_channel_set_private(channel, file, NULL);
+	if (!strcasecmp(file, "all")) {
+		return switch_core_media_bug_remove_callback(session, record_callback);
+	} else if ((bug = switch_channel_get_private(channel, file))) {
 		switch_core_media_bug_remove(session, &bug);
 		return SWITCH_STATUS_SUCCESS;
 	}
@@ -838,6 +847,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	switch_media_bug_flag_t flags = SMBF_READ_STREAM | SMBF_WRITE_STREAM | SMBF_READ_PING;
 	uint8_t channels;
 	switch_codec_implementation_t read_impl = {0};
+	struct record_helper *rh = NULL;
+
     switch_core_session_get_read_impl(session, &read_impl);
 
 	if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
@@ -925,7 +936,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 		to = switch_epoch_time_now(NULL) + limit;
 	}
 
-	if ((status = switch_core_media_bug_add(session, record_callback, fh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
+	rh = switch_core_session_alloc(session, sizeof(*rh));
+	rh->fh = fh;
+	rh->file = switch_core_session_strdup(session, file);
+
+	if ((status = switch_core_media_bug_add(session, record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
 		switch_core_file_close(fh);
 		return status;
