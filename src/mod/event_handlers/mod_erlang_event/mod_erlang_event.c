@@ -413,7 +413,12 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) /* XXX no unicode or character codes > 255 */
 		return NULL;
 
-	char *xmlstr = switch_core_alloc(ptr->listener->pool, size + 1);
+	char *xmlstr;
+	
+	if (!(xmlstr = malloc(size + 1))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error\n");
+		return NULL;
+	}
 
 	ei_decode_string_or_binary(rep->buff, &rep->index, size, xmlstr);
 
@@ -431,7 +436,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	/*switch_safe_free(rep->buff);*/
 	/*switch_safe_free(rep);*/
-	/*switch_safe_free(xmlstr);*/
+	free(xmlstr);
 
 	return xml;
 }
@@ -811,7 +816,6 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_mutex_unlock(globals.listener_mutex);
 
 	switch_core_hash_init(&listener->fetch_reply_hash, listener->pool);
-	switch_core_hash_init(&listener->spawn_pid_hash, listener->pool);
 
 	switch_assert(listener != NULL);
 
@@ -1071,6 +1075,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 		else {
 			char hash[100];
 			int i = 0;
+			void *p = NULL;
 			session_element->session = session;
 			erlang_pid *pid;
 			erlang_ref ref;
@@ -1081,12 +1086,16 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			/* attach the session to the listener */
 			add_session_elem_to_listener(listener,session_element);
 
+			ei_init_ref(listener->ec, &ref);
+			ei_hash_ref(&ref, hash);
+			/* insert the waiting marker */
+			switch_core_hash_insert(listener->spawn_pid_hash, hash, &globals.WAITING);
+
 			if (!strcmp(function, "!")) {
 				/* send a message to request a pid */
 				ei_x_buff rbuf;
 				ei_x_new_with_version(&rbuf);
 
-				ei_init_ref(listener->ec, &ref);
 				ei_x_encode_tuple_header(&rbuf, 3);
 				ei_x_encode_atom(&rbuf, "new_pid");
 				ei_x_encode_ref(&rbuf, &ref);
@@ -1107,23 +1116,27 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 				*/
 			}
 
-			ei_hash_ref(&ref, hash);
-
-			while (!(pid = (erlang_pid *) switch_core_hash_find(listener->spawn_pid_hash, hash))) {
+			/* loop until either we timeout or we get a value that's not the waiting marker */
+			while (!(p = switch_core_hash_find(listener->spawn_pid_hash, hash)) || p == &globals.WAITING) {
 				if (i > 50) { /* half a second timeout */
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid\n");
 					switch_core_session_rwunlock(session);
 					remove_session_elem_from_listener(listener,session_element);
+					switch_core_hash_insert(listener->spawn_pid_hash, hash, &globals.TIMEOUT); /* TODO lock this? */
 					return NULL;
 				}
 				i++;
 				switch_yield(10000); /* 10ms */
 			}
 
+			switch_core_hash_delete(listener->spawn_pid_hash, hash);
+
+			pid = (erlang_pid *) p;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "got pid!\n");
 
 			session_element->process.type = ERLANG_PID;
 			memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
+			free(pid); /* malloced in handle_ref_tuple */
 			switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 			switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
 			switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
@@ -1222,6 +1235,7 @@ SWITCH_STANDARD_APP(erlang_outbound_function)
 		}
 
 		if (module && function) {
+			switch_core_hash_init(&listener->spawn_pid_hash, listener->pool);
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating new spawned session for listener\n");
 			session_element=attach_call_to_spawned_process(listener, module, function, session);
 		} else {

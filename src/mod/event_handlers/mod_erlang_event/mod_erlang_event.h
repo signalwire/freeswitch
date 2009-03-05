@@ -136,6 +136,8 @@ struct globals_struct {
 	unsigned int reference0;
 	unsigned int reference1;
 	unsigned int reference2;
+	char TIMEOUT; /* marker for a timed out request */
+	char WAITING; /* marker for a request waiting for a response */
 	switch_mutex_t *ref_mutex;
 };
 typedef struct globals_struct globals_t;

@@ -700,7 +700,8 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
 {
 	erlang_ref ref;
-	erlang_pid *pid2, *pid = switch_core_alloc(listener->pool, sizeof(erlang_pid));
+	erlang_pid *pid;/* = switch_core_alloc(listener->pool, sizeof(erlang_pid));*/
+	void *p;
 	char hash[100];
 	int arity;
 
@@ -711,6 +712,14 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 		return SWITCH_STATUS_FALSE;
 	}
 
+	if (!(pid = malloc(sizeof(erlang_pid)))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error\n");
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "error");
+		ei_x_encode_atom(rbuf, "badmem");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	if (ei_decode_pid(buf->buff, &buf->index, pid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid pid in a reference/pid tuple\n");
 		return SWITCH_STATUS_FALSE;
@@ -720,19 +729,36 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hashed ref to %s\n", hash);
 	
-	if ((pid2 = (erlang_pid *) switch_core_hash_find(listener->spawn_pid_hash, hash))) {
-		if (pid2 == NULL) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found unfilled slot for %s\n", hash);
+	if ((p = switch_core_hash_find(listener->spawn_pid_hash, hash))) {
+		if (p == &globals.TIMEOUT) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handler for %s timed out\n", hash);
+			switch_core_hash_delete(listener->spawn_pid_hash, hash);
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "error");
+			ei_x_encode_atom(rbuf, "timeout");
+		} else if (p == &globals.WAITING) {
+			/* update the key to point at a pid */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", hash);
+			switch_core_hash_delete(listener->spawn_pid_hash, hash);
+			switch_core_hash_insert(listener->spawn_pid_hash, hash, pid);
+			return SWITCH_STATUS_FALSE; /*no reply */
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", hash);
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "error");
+			ei_x_encode_atom(rbuf, "duplicate_response");
 		}
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No slot for %s\n", hash);
-		switch_core_hash_insert(listener->spawn_pid_hash, hash, pid);
+		/* nothin in the hash */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Empty slot for %s\n", hash);
+		ei_x_encode_tuple_header(rbuf, 2);
+		ei_x_encode_atom(rbuf, "error");
+		ei_x_encode_atom(rbuf, "invalid_ref");
 	}
 
-	/* no reply */
-	return SWITCH_STATUS_FALSE;
+	free(pid); /* don't need it */
+
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
@@ -758,8 +784,7 @@ int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff 
 				break;
 			case ERL_REFERENCE_EXT :
 			case ERL_NEW_REFERENCE_EXT :
-				handle_ref_tuple(listener, msg, buf, rbuf);
-				return 0;
+				ret = handle_ref_tuple(listener, msg, buf, rbuf);
 			default :
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d\n", type);
 				/* some other kind of erlang term */

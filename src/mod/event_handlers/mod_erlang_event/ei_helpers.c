@@ -131,7 +131,6 @@ int ei_pid_from_rpc(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *mo
 	ei_x_buff buf;
 	ei_x_new(&buf);
 	ei_x_encode_list_header(&buf, 1);
-	ei_init_ref(ec, ref);
 	ei_x_encode_ref(&buf, ref);
 	ei_x_encode_empty_list(&buf);
 
