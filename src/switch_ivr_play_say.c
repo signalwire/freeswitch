@@ -1446,7 +1446,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	switch_input_args_t args = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char terminator;
-	size_t len;
+	size_t len = 0;
 
 	switch_assert(session);
 
@@ -1509,6 +1509,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	}
 	
  end:
+
+	if (max_digits == 1 && len == 1 && valid_terminators && strchr(valid_terminators, *digit_buffer)) {
+		*digit_buffer = '\0';
+	}
 
 	if (var_name && !switch_strlen_zero(digit_buffer)) {
 		switch_channel_set_variable(channel, var_name, digit_buffer);
