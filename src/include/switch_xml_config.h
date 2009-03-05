@@ -77,9 +77,9 @@ struct switch_xml_config_item {
 } ;
 
 
-#define SWITCH_CONFIG_ITEM (_key, _type, _reloadable, _ptr, _defaultvalue, _data)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, NULL, NULL }
-#define SWITCH_CONFIG_ITEM_CALLBACK (_key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata }
-#define SWITCH_CONFIG_ITEM_END () { NULL, SWITCH_CONFIG_LAST, 0, NULL ,NULL, NULL, NULL }
+#define SWITCH_CONFIG_ITEM(_key, _type, _reloadable, _ptr, _defaultvalue, _data)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, NULL, NULL }
+#define SWITCH_ITEM_CALLBACK(_key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata }
+#define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL ,NULL, NULL, NULL }
 
 /*! 
  * \brief Parses all the xml elements, following a ruleset defined by an array of switch_xml_config_item_t 

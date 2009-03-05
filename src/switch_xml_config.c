@@ -30,7 +30,7 @@
  *
  */
 
-//#define SWITCH_XML_CONFIG_TEST
+#define SWITCH_XML_CONFIG_TEST
 
 #include <switch.h>
 
@@ -211,7 +211,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 }
 
 
-#if SWITCH_XML_CONFIG_TEST
+#ifdef SWITCH_XML_CONFIG_TEST
 typedef enum {
 	MYENUM_TEST1 = 1,
 	MYENUM_TEST2 = 2,
@@ -243,7 +243,7 @@ SWITCH_DECLARE(void) switch_xml_config_test()
 	switch_xml_config_item_t instructions[] = {
 			SWITCH_CONFIG_ITEM("db_host", SWITCH_CONFIG_STRING, SWITCH_TRUE, &globals.stringalloc, "blah", &config_opt_stringalloc),
 			SWITCH_CONFIG_ITEM("db_user", SWITCH_CONFIG_STRING, SWITCH_TRUE, globals.string, "dflt", &config_opt_buffer ),
-			SWITCH_CONFIG_ITEM("test", SWITCH_CONFIG_ENUM, SWITCH_FALSE, &globals.enumm,  (void*)MYENUM_TEST1, enumm_options ),
+			SWITCH_CONFIG_ITEM("test", SWITCH_CONFIG_ENUM, SWITCH_FALSE, &globals.enumm,  (void*)MYENUM_TEST1, enumm_options),
 			SWITCH_CONFIG_ITEM_END()
 	};
 
