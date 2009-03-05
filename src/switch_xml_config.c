@@ -30,16 +30,20 @@
  *
  */
 
+//#define SWITCH_XML_CONFIG_TEST
+
 #include <switch.h>
 
-switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *options)
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *options)
 {
 	switch_xml_config_item_t *item;
 	switch_xml_t node;
 	switch_event_t *event;
+	int file_count = 0, matched_count = 0;
+	
 	switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(event);
-	int file_count = 0, matched_count = 0;
+
 
 	for (node = xml; node; node = node->next) {
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, switch_xml_attr_soft(node, "name"), switch_xml_attr_soft(node, "value"));
@@ -63,27 +67,39 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n", 
 								value, item->key);
-							*dest = (int)item->defaultvalue;
+							*dest = (int)(intptr_t)item->defaultvalue;
 						}
 					} else {
-						*dest = (int)item->defaultvalue;
+						*dest = (int)(intptr_t)item->defaultvalue;
 					}
 				}
 				break;
 			case SWITCH_CONFIG_STRING:
 				{
-					switch_xml_config_string_options_t *options = (switch_xml_config_string_options_t*)item->data;
-					if (options->length > 0) {
+					switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t*)item->data;
+					if (string_options->length > 0) {
 						/* We have a preallocated buffer */
 						char *dest = (char*)item->ptr;
-						strncpy(dest, value, options->length);
+						if (value) {
+							switch_copy_string(dest, value, string_options->length);
+						} else if (options->defaultvalue){
+							switch_copy_string(dest, value, string_options->length);
+						}
 					} else {
 						char **dest = (char**)item->ptr;
-						if (options->pool) {
-							*dest = switch_core_strdup(options->pool, value);
+						if (string_options->pool) {
+							if (value) {
+								*dest = switch_core_strdup(string_options->pool, value);
+							} else if (item->defaultvalue) {
+								*dest = switch_core_strdup(string_options->pool, (char*)item->defaultvalue);
+							}
 						} else {
 							switch_safe_free(*dest); /* Free the destination if its not NULL */
-							*dest = strdup(value);
+							if (value) {
+								*dest = strdup(value);
+							} else if(item->defaultvalue) {
+								*dest = strdup((char*)item->defaultvalue);
+							}
 						}
 					}
 				}
@@ -94,18 +110,15 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 					if (value) {
 						*dest = !!switch_true(value);
 					} else {
-						*dest = (switch_bool_t)item->defaultvalue;
+						*dest = (switch_bool_t)(intptr_t)item->defaultvalue;
 					}
 				}
 				break;
 			case SWITCH_CONFIG_CUSTOM: 
-#if 0
-				{
-					
-					switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->data;
+				{	
+					switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->function;
 					callback(item);
 				}
-#endif
 				break;
 			case SWITCH_CONFIG_ENUM:
 				{
@@ -125,7 +138,7 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 								value, item->key);
 						}
 					} else {
-						*dest = (int)item->defaultvalue;
+						*dest = (int)(intptr_t)item->defaultvalue;
 					}
 				}
 				break;
@@ -140,7 +153,7 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 							*dest &= ~(1 << index);
 						}
 					} else {
-						if ((switch_bool_t)item->defaultvalue) {
+						if ((switch_bool_t)(intptr_t)item->defaultvalue) {
 							*dest |= (1 << index);
 						} else {
 							*dest &= ~(1 << index);
@@ -155,7 +168,7 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 					if (value) {
 						dest[index] = !!switch_true(value);						
 					} else {
-						dest[index] = (int8_t)((int32_t)item->defaultvalue);
+						dest[index] = (int8_t)((intptr_t)item->defaultvalue);
 					}
 				}
 				break;
@@ -174,7 +187,7 @@ switch_status_t switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml
 }
 
 
-#if 0
+#if SWITCH_XML_CONFIG_TEST
 typedef enum {
 	MYENUM_TEST1 = 1,
 	MYENUM_TEST2 = 2,
@@ -190,7 +203,7 @@ static struct {
 } globals;
 
 
-void switch_xml_config_test()
+SWITCH_DECLARE(void) switch_xml_config_test()
 {
 	char *cf = "test.conf";
 	switch_xml_t cfg, xml, settings;
@@ -204,10 +217,10 @@ void switch_xml_config_test()
 	};
 	
 	switch_xml_config_item_t instructions[] = {
-			{ "db_host", SWITCH_CONFIG_STRING, SWITCH_TRUE, &globals.stringalloc, "blah", &config_opt_stringalloc },
-			{ "db_user", SWITCH_CONFIG_STRING, SWITCH_TRUE, globals.string, 	  "dflt", &config_opt_buffer },
-			{ "test",	 SWITCH_CONFIG_ENUM, SWITCH_FALSE, &globals.enumm,  (void*)MYENUM_TEST1, enumm_options },
-			SWITCH_CONFIG_END
+			SWITCH_CONFIG_ITEM("db_host", SWITCH_CONFIG_STRING, SWITCH_TRUE, &globals.stringalloc, "blah", &config_opt_stringalloc),
+			SWITCH_CONFIG_ITEM("db_user", SWITCH_CONFIG_STRING, SWITCH_TRUE, globals.string, "dflt", &config_opt_buffer ),
+			SWITCH_CONFIG_ITEM("test", SWITCH_CONFIG_ENUM, SWITCH_FALSE, &globals.enumm,  (void*)MYENUM_TEST1, enumm_options ),
+			SWITCH_CONFIG_ITEM_END()
 	};
 
 	if (!(xml = switch_xml_open_cfg("blaster.conf", &cfg, NULL))) {
