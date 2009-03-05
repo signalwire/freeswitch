@@ -37,7 +37,7 @@
 typedef enum {
 	SWITCH_CONFIG_INT,				/*< (ptr=int* default=int data=NULL) Integer */
 	SWITCH_CONFIG_STRING, 			/*< (ptr=[char* or char ** (for alloc)] default=char* data=switch_xml_config_string_options_t*) Zero-terminated C-string */
-	SWITCH_CONFIG_YESNO, 			/*< (ptr=switch_bool_t* default=switch_bool_t data=NULL) Yes and no */
+	SWITCH_CONFIG_BOOL, 			/*< (ptr=switch_bool_t* default=switch_bool_t data=NULL) Yes and no */
 	SWITCH_CONFIG_CUSTOM, 			/*< (ptr=<custom function data> default=<custom function data> data=switch_xml_config_callback_t) Custom, get value through function pointer  */
 	SWITCH_CONFIG_ENUM, 			/*< (ptr=int* default=int data=switch_xml_config_enum_item_t*) */
 	SWITCH_CONFIG_FLAG,				/*< (ptr=int32_t* default=switch_bool_t data=int (flag index) */
@@ -55,7 +55,15 @@ typedef struct {
 typedef struct {
 	switch_memory_pool_t *pool; 	/*< If set, the string will be allocated on the pool (unless the length param is > 0, then you misread this file)*/
 	switch_size_t length;			/*< Length of the char array, or 0 if memory has to be allocated dynamically*/
+	char *validation_regex;			/*< Enforce validation using this regular expression */
 } switch_xml_config_string_options_t;
+
+typedef struct {
+	switch_bool_t enforce_min;
+	int min;
+	switch_bool_t enforce_max;	
+	int max;
+} switch_xml_config_int_options_t;
 
 struct switch_xml_config_item;
 typedef struct switch_xml_config_item switch_xml_config_item_t;
@@ -73,12 +81,11 @@ struct switch_xml_config_item {
 	void *defaultvalue; 		   			/*< Default value */
 	void *data; 				   			/*< Custom data (depending on the type) */
 	switch_xml_config_callback_t function;	/*< Callback to be called after the var is parsed */
-	void *functiondata;						/*< Custom data passed to the callback */
 } ;
 
 
-#define SWITCH_CONFIG_ITEM(_key, _type, _reloadable, _ptr, _defaultvalue, _data)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, NULL, NULL }
-#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata }
+#define SWITCH_CONFIG_ITEM(_key, _type, _reloadable, _ptr, _defaultvalue, _data)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, NULL }
+#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _functiondata, _data }
 #define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL ,NULL, NULL, NULL }
 
 /*! 

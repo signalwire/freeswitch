@@ -33,22 +33,105 @@
 #include <switch.h>
 
 /* Prototypes */
-//SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown);
-//SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown);
+SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime);
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load);
 
 /* SWITCH_MODULE_DEFINITION(name, load, shutdown, runtime) 
  * Defines a switch_loadable_module_function_table_t and a static const char[] modname
  */
-SWITCH_MODULE_DEFINITION(mod_skel, mod_skel_load, NULL, NULL);
+SWITCH_MODULE_DEFINITION(mod_skel, mod_skel_load, mod_skel_shutdown, NULL);
+
+typedef enum {
+	CODEC_NEGOTIATION_GREEDY = 1,
+	CODEC_NEGOTIATION_GENEROUS = 2,
+	CODEC_NEGOTIATION_EVIL = 3
+} codec_negotiation_t;
+
+static struct {
+	char *codec_negotiation_str;
+	codec_negotiation_t codec_negotiation;
+	switch_bool_t sip_trace;
+	int integer;
+} globals;
+
+static switch_status_t config_callback_siptrace(switch_xml_config_item_t *data, switch_bool_t changed) 
+{
+	switch_bool_t value = *(switch_bool_t*)data->ptr;
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "In siptrace callback: value %s changed %s\n",
+		value ? "true" : "false", changed ? "true" : "false");
+	
+	/*
+	if (changed) {
+		nua_set_params(((sofia_profile_t*)data->functiondata)->nua, TPTAG_LOG(value), TAG_END());
+	} 
+	*/
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t do_config(switch_bool_t reload)
+{
+	switch_xml_t cfg, xml, settings;
+	switch_xml_config_string_options_t config_opt_codec_negotiation = { NULL, 0, "greedy|generous|evil" };
+														 /* enforce_min, min, enforce_max, max */
+	switch_xml_config_int_options_t config_opt_integer = { SWITCH_TRUE, 0, SWITCH_TRUE, 10 };
+	switch_xml_config_enum_item_t config_opt_codec_negotiation_enum[] = { 
+		{ "greedy", CODEC_NEGOTIATION_GREEDY },
+		{ "generous", CODEC_NEGOTIATION_GENEROUS },
+		{ "evil", CODEC_NEGOTIATION_EVIL },
+		{ NULL, 0 } 
+	};
+	
+	switch_xml_config_item_t instructions[] = {
+							/* parameter name        type                 reloadable   pointer                         default value     options structure */
+		SWITCH_CONFIG_ITEM("codec-negotiation-str", SWITCH_CONFIG_STRING, SWITCH_TRUE, &globals.codec_negotiation_str, "greedy", &config_opt_codec_negotiation),
+		SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, SWITCH_TRUE, &globals.codec_negotiation,  (void*)CODEC_NEGOTIATION_GREEDY, &config_opt_codec_negotiation_enum),
+		SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, SWITCH_TRUE, &globals.sip_trace,  (void*)SWITCH_FALSE,  config_callback_siptrace, NULL ),
+		SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, SWITCH_FALSE, &globals.integer, (void*)100, &config_opt_integer),
+		SWITCH_CONFIG_ITEM_END()
+	};
+
+	memset(&globals, 0, sizeof(globals));
+
+	if (!(xml = switch_xml_open_cfg("skel.conf", &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open skel.conf\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		if (switch_xml_config_parse(switch_xml_child(settings, "param"), 0, instructions) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"Config parsed ok!\n");
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	
+	if (cfg) {
+		switch_xml_free(cfg);
+	}
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(skel_function)
+{
+	stream->write_function(stream, "+OK Reloading\n");
+	do_config(SWITCH_TRUE);
+	return SWITCH_STATUS_SUCCESS;
+}
 
 /* Macro expands to: switch_status_t mod_skel_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
 SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 {
+	switch_api_interface_t *api_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Hello World!\n");
+	
+	do_config(SWITCH_FALSE);
+	
+	SWITCH_ADD_API(api_interface, "skel", "Skel API", skel_function, "syntax");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
@@ -56,12 +139,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skel_load)
 
 /*
   Called when the system shuts down
-  Macro expands to: switch_status_t mod_skel_shutdown()
+  Macro expands to: switch_status_t mod_skel_shutdown() */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skel_shutdown)
 {
 	return SWITCH_STATUS_SUCCESS;
 }
-*/
+
 
 /*
   If it exists, this is called in it's own thread when the module-load completes
@@ -85,5 +168,5 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_skel_runtime)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4
  */

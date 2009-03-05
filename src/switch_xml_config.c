@@ -30,8 +30,6 @@
  *
  */
 
-#define SWITCH_XML_CONFIG_TEST
-
 #include <switch.h>
 
 SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions)
@@ -62,6 +60,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 		switch(item->type) {
 			case SWITCH_CONFIG_INT:
 				{
+					switch_xml_config_int_options_t *int_options = (switch_xml_config_int_options_t*)item->data;
 					int *dest = (int*)item->ptr;
 					int intval;
 					if (value) {
@@ -69,8 +68,25 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 							intval = atoi(value);
 						} else {
 							intval = (int)(intptr_t)item->defaultvalue;
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s] setting default [%d]\n", 
+							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%d]\n", 
 								value, item->key, intval);
+						}
+						
+						if (int_options) {
+							/* Enforce validation options */
+							if ((int_options->enforce_min && !(intval > int_options->min)) ||
+								(int_options->enforce_max && !(intval < int_options->max))) {
+									/* Validation failed, set default */
+									intval = (int)(intptr_t)item->defaultvalue;
+									/* Then complain */
+									if (int_options->enforce_min && int_options->enforce_max) {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], should be between [%d] and [%d], setting default [%d]\n", 
+											value, item->key, int_options->min, int_options->max, intval);
+ 									} else {
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], should be %s [%d], setting default [%d]\n", 
+											value, item->key, int_options->enforce_min ? "at least" : "at max", int_options->enforce_min ? int_options->min : int_options->max, intval);
+									}
+								}
 						}
 					} else {
 						intval = (int)(intptr_t)item->defaultvalue;
@@ -85,40 +101,74 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 			case SWITCH_CONFIG_STRING:
 				{
 					switch_xml_config_string_options_t *string_options = (switch_xml_config_string_options_t*)item->data;
-
-					if (string_options->length > 0) {
-						const char *newstring = NULL;
-						/* We have a preallocated buffer */
-						char *dest = (char*)item->ptr;
-						if (value) {
-							newstring = value;
-						} else if (item->defaultvalue) {
-							newstring = item->defaultvalue;
-						}
-						
-						if (newstring && strncasecmp(dest, newstring, string_options->length)) {
-							switch_copy_string(dest, newstring, string_options->length);
+					const char *newstring = NULL;
+					
+					if (!string_options) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing mandatory switch_xml_config_string_options_t structure for parameter [%s], skipping!\n",
+										  item->key);
+						continue;
+					}
+					
+					/* Perform validation */
+					if (value) {
+						if (!switch_strlen_zero(string_options->validation_regex)) {
+							if (switch_regex_match(value, string_options->validation_regex) == SWITCH_STATUS_SUCCESS) {
+								newstring = value; /* Regex match, accept value*/
+							} else {
+								newstring = (char*)item->defaultvalue;  /* Regex failed */
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%s]\n", 
+									value, item->key, newstring);
+							}
+						} else {
+							newstring = value; /* No validation */
 						}
 					} else {
-						char **dest = (char**)item->ptr;
-						const char *newstring = value ? value : (char*)item->defaultvalue;
+						newstring = (char*)item->defaultvalue;
+					}
+
+					
+					if (newstring) {
+						if (string_options->length > 0) {
+							/* We have a preallocated buffer */
+							char *dest = (char*)item->ptr;
 						
-						if (newstring && strcasecmp(*dest, newstring)) {
-							if (string_options->pool) {
-								*dest = switch_core_strdup(string_options->pool, newstring);
-							} else {
-								switch_safe_free(*dest);
-								*dest = strdup(newstring);
+							if (strncasecmp(dest, newstring, string_options->length)) {
+								switch_copy_string(dest, newstring, string_options->length);
+								changed = SWITCH_TRUE;
 							}
-							changed = SWITCH_TRUE;								
+						} else {
+							char **dest = (char**)item->ptr;
+						
+							if (strcasecmp(*dest, newstring)) {
+								if (string_options->pool) {
+									*dest = switch_core_strdup(string_options->pool, newstring);
+								} else {
+									switch_safe_free(*dest);
+									*dest = strdup(newstring);
+								}
+								changed = SWITCH_TRUE;								
+							}
 						}
 					}
 				}
 				break;
-			case SWITCH_CONFIG_YESNO:
+			case SWITCH_CONFIG_BOOL:
 				{
 					switch_bool_t *dest = (switch_bool_t*)item->ptr;
-					switch_bool_t newval = value ?  !!switch_true(value) : (switch_bool_t)(intptr_t)item->defaultvalue;
+					switch_bool_t newval = SWITCH_FALSE;
+					
+					if (value && switch_true(value)) {
+						newval = SWITCH_TRUE;
+					} else if (value && switch_false(value)) {
+						newval = SWITCH_FALSE;
+					} else if (value) {
+						/* Value isnt true or false */
+						newval = (switch_bool_t)(intptr_t)item->defaultvalue;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%s]\n",  
+										value, item->key, newval ? "true" : "false");
+					} else {
+						newval = (switch_bool_t)(intptr_t)item->defaultvalue;
+					}
 					
 					if (*dest != newval) {
 						*dest = newval;
@@ -231,8 +281,8 @@ SWITCH_DECLARE(void) switch_xml_config_test()
 {
 	char *cf = "test.conf";
 	switch_xml_t cfg, xml, settings;
-	switch_xml_config_string_options_t config_opt_stringalloc = { NULL, 0 }; /* No pool, use strdup */
-	switch_xml_config_string_options_t config_opt_buffer = { NULL, 50 }; 	/* No pool, use current var as buffer */
+	switch_xml_config_string_options_t config_opt_stringalloc = { NULL, 0, NULL }; /* No pool, use strdup, no regex */
+	switch_xml_config_string_options_t config_opt_buffer = { NULL, 50, NULL }; 	/* No pool, use current var as buffer, no regex */
 	switch_xml_config_enum_item_t enumm_options[] = { 
 		{ "test1", MYENUM_TEST1 },
 		{ "test2", MYENUM_TEST2 },
