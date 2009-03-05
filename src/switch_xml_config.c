@@ -132,7 +132,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 				{
 					switch_xml_config_enum_item_t *enum_options = (switch_xml_config_enum_item_t*)item->data;
 					int *dest = (int*)item->ptr;
-					int newval;
+					int newval = 0;
 					
 					if (value) {
 						for (;enum_options->key; enum_options++) {
