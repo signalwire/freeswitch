@@ -394,7 +394,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if(!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
+	if (!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
 		switch_channel_set_variable(channel, "tts_engine", menu->tts_engine);
 		switch_channel_set_variable(channel, "tts_voice", menu->tts_voice);
 	}
@@ -442,7 +442,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *s
 				char substituted[1024];
 				char *use_arg = ap->arg;
 
-				if(!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
+				if (!switch_strlen_zero(menu->tts_engine) && !switch_strlen_zero(menu->tts_voice)) {
 					switch_channel_set_variable(channel, "tts_engine", menu->tts_engine);
 					switch_channel_set_variable(channel, "tts_voice", menu->tts_voice);
 				}
