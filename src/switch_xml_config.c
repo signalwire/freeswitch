@@ -41,7 +41,7 @@ SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const ch
 	
 	if (!*event) {
 		switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
-		switch_assert(event);
+		switch_assert(*event);
 	}
 
 	for (node = xml; node; node = node->next) {
@@ -58,7 +58,7 @@ SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const ch
 
 SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions)
 {
-	switch_event_t *event;
+	switch_event_t *event = NULL;
 	switch_status_t result;
 	int count = switch_event_import_xml(xml, "name", "value", &event);
 	
@@ -165,14 +165,14 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 							/* We have a preallocated buffer */
 							char *dest = (char*)item->ptr;
 						
-							if (strncasecmp(dest, newstring, string_options->length)) {
+							if (!dest || strncasecmp(dest, newstring, string_options->length)) {
 								switch_copy_string(dest, newstring, string_options->length);
 								changed = SWITCH_TRUE;
 							}
 						} else {
 							char **dest = (char**)item->ptr;
 						
-							if (strcasecmp(*dest, newstring)) {
+							if (!*dest || strcasecmp(*dest, newstring)) {
 								if (string_options->pool) {
 									*dest = switch_core_strdup(string_options->pool, newstring);
 								} else {
