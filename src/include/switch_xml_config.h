@@ -58,6 +58,8 @@ typedef struct {
 	char *validation_regex;			/*< Enforce validation using this regular expression */
 } switch_xml_config_string_options_t;
 
+extern switch_xml_config_string_options_t switch_config_string_strdup; 	/*< String options structure for strdup, no validation */
+
 typedef struct {
 	switch_bool_t enforce_min;
 	int min;
@@ -74,6 +76,11 @@ typedef enum {
 	CONFIG_SHUTDOWN
 } switch_config_callback_type_t;
 
+typedef enum {
+	CONFIG_RELOADABLE = (1 << 0),
+	CONFIG_REQUIRED = (1 << 1)
+} switch_config_flags_t;
+
 typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed);
 
 /*!
@@ -82,16 +89,16 @@ typedef switch_status_t (*switch_xml_config_callback_t)(switch_xml_config_item_t
 struct switch_xml_config_item {
 	char *key;					   			/*< The key of the element, or NULL to indicate the end of the list */
 	switch_xml_config_type_t type; 			/*< The type of variable */
-	switch_bool_t reloadable; 	   			/*< True if the var can be changed on reload */
+	switch_config_flags_t flags; 	   		/*< True if the var can be changed on reload */
 	void *ptr;					   			/*< Ptr to the var to be changed */
 	void *defaultvalue; 		   			/*< Default value */
 	void *data; 				   			/*< Custom data (depending on the type) */
 	switch_xml_config_callback_t function;	/*< Callback to be called after the var is parsed */
-} ;
+};
 
-
-#define SWITCH_CONFIG_ITEM(_key, _type, _reloadable, _ptr, _defaultvalue, _data)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _data, NULL }
-#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _reloadable, _ptr, _defaultvalue, _data, _functiondata)	{ _key, _type, _reloadable, _ptr, _defaultvalue, _functiondata, _data }
+#define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data)	{ _key, _type, _flags, _ptr, _defaultvalue, _data, NULL }
+#define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue)	{ _key, SWITCH_CONFIG_STRING, _flags, _ptr, _defaultvalue, &switch_config_string_strdup, NULL }
+#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _data, _functiondata)	{ _key, _type, _flags, _ptr, _defaultvalue, _functiondata, _data }
 #define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL ,NULL, NULL, NULL }
 
 /*! 

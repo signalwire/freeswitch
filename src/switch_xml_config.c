@@ -32,6 +32,8 @@
 
 #include <switch.h>
 
+switch_xml_config_string_options_t switch_config_string_strdup = { NULL, 0, NULL };
+
 SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event)
 {
 	switch_xml_t node;
@@ -79,8 +81,13 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 		switch_bool_t changed = SWITCH_FALSE;
 		switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->function;
 		
-		if (reload && !item->reloadable) {
+		if (reload && !switch_test_flag(item, CONFIG_RELOADABLE)) {
 			continue;
+		}
+		
+		if (!value && switch_test_flag(item, CONFIG_REQUIRED)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Required parameter [%s] is missing\n", item->key);
+			return SWITCH_STATUS_FALSE;
 		}
 		
 		switch(item->type) {
