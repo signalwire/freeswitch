@@ -97,6 +97,23 @@ struct switch_xml_config_item {
  */
 SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions);
 
+/*! 
+ * \brief Parses all of an event's elements, following a ruleset defined by an array of switch_xml_config_item_t 
+ * \param event The event structure containing the key and values to parse
+ * \param reload true to skip all non-reloadable options
+ * \param instructions instrutions on how to parse the elements
+ * \see switch_xml_config_item_t
+ */
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *event, int count, int reload, switch_xml_config_item_t *instructions);
+
+/*!
+ * \brief Parses a list of xml elements into an event  
+ * \param xml First element of the xml list to parse
+ * \param keyname Name of the key attribute
+ * \param keyvalue Name of the value attribute 
+ * \param event [out] event (if *event is NOT NULL, the headers will be appended to the existing event)
+ */
+SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event);
 #endif /* !defined(SWITCH_XML_CONFIG_H) */
 
 /* For Emacs:

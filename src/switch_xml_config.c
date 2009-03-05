@@ -32,21 +32,47 @@
 
 #include <switch.h>
 
-SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions)
+SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event)
 {
-	switch_xml_config_item_t *item;
 	switch_xml_t node;
-	switch_event_t *event;
-	int file_count = 0, matched_count = 0;
+	switch_size_t count = 0;
 	
-	switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_assert(event);
-
+	if (!*event) {
+		switch_event_create(event, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_assert(event);
+	}
 
 	for (node = xml; node; node = node->next) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, switch_xml_attr_soft(node, "name"), switch_xml_attr_soft(node, "value"));
-		file_count++;
+		const char *key = switch_xml_attr_soft(node, keyname);
+		const char *value = switch_xml_attr_soft(node, valuename);
+		if (key && value) {
+			switch_event_add_header_string(*event, SWITCH_STACK_BOTTOM, key, value);
+			count++;
+		}
 	}
+	
+	return count;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions)
+{
+	switch_event_t *event;
+	switch_status_t result;
+	int count = switch_event_import_xml(xml, "name", "value", &event);
+	
+	result = switch_xml_config_parse_event(event, count, reload, instructions);
+	
+	if (event) {
+		switch_event_destroy(&event);
+	}
+	
+	return result;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *event, int count, int reload, switch_xml_config_item_t *instructions)
+{
+	switch_xml_config_item_t *item;
+	int file_count = 0, matched_count = 0;
 	
 	for (item = instructions; item->key; item++) {
 		const char *value = switch_event_get_header(event, item->key);
@@ -252,67 +278,26 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 	}
 	
 	if (file_count > matched_count) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Config file had %d params but only %d were valid\n", file_count, matched_count);
-	}
-	
-	switch_event_destroy(&event);
-	
-	return SWITCH_STATUS_SUCCESS;
-}
-
-
-#ifdef SWITCH_XML_CONFIG_TEST
-typedef enum {
-	MYENUM_TEST1 = 1,
-	MYENUM_TEST2 = 2,
-	MYENUM_TEST3 = 3
-} myenum_t;
-
-static struct {
-	char *stringalloc;
-	char string[50];
-	myenum_t enumm;
-	int yesno;
-	
-} globals;
-
-
-SWITCH_DECLARE(void) switch_xml_config_test()
-{
-	char *cf = "test.conf";
-	switch_xml_t cfg, xml, settings;
-	switch_xml_config_string_options_t config_opt_stringalloc = { NULL, 0, NULL }; /* No pool, use strdup, no regex */
-	switch_xml_config_string_options_t config_opt_buffer = { NULL, 50, NULL }; 	/* No pool, use current var as buffer, no regex */
-	switch_xml_config_enum_item_t enumm_options[] = { 
-		{ "test1", MYENUM_TEST1 },
-		{ "test2", MYENUM_TEST2 },
-		{ "test3", MYENUM_TEST3 },
-		{ NULL, 0 } 
-	};
-	
-	switch_xml_config_item_t instructions[] = {
-			SWITCH_CONFIG_ITEM("db_host", SWITCH_CONFIG_STRING, SWITCH_TRUE, &globals.stringalloc, "blah", &config_opt_stringalloc),
-			SWITCH_CONFIG_ITEM("db_user", SWITCH_CONFIG_STRING, SWITCH_TRUE, globals.string, "dflt", &config_opt_buffer ),
-			SWITCH_CONFIG_ITEM("test", SWITCH_CONFIG_ENUM, SWITCH_FALSE, &globals.enumm,  (void*)MYENUM_TEST1, enumm_options),
-			SWITCH_CONFIG_ITEM_END()
-	};
-
-	if (!(xml = switch_xml_open_cfg("blaster.conf", &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open %s\n", cf);
-		return;
-	}
-
-	if ((settings = switch_xml_child(cfg, "settings"))) {
-		if (switch_xml_config_parse(switch_xml_child(settings, "param"), 0, instructions) == SWITCH_STATUS_SUCCESS) {
-			printf("YAY!\n");
+		/* User made a mistake, find it */
+		switch_event_header_t *header;
+		for (header = event->headers; header; header = header->next) {
+			switch_bool_t found = SWITCH_FALSE;
+			for (item = instructions; item->key; item++) {
+				if (strcasecmp(header->name, item->key)) {
+					found = SWITCH_TRUE;
+					break;
+				}
+			}
+			
+			if (!found) {
+				/* Tell the user */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Configuration parameter [%s] is unfortunately not valid, you might want to double-check that.\n", header->name);
+			}
 		}
 	}
 	
-	if (cfg) {
-		switch_xml_free(cfg);
-	}
+	return SWITCH_STATUS_SUCCESS;
 }
-#endif
 
 /* For Emacs:
  * Local Variables:
