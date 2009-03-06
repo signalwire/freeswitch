@@ -4,6 +4,14 @@
 ** modify it under the terms of GNU Lesser General Public License.
 */
 
+#include "config.h"
+#ifdef HAVE_GNUTLS
+#define _XOPEN_SOURCE 500
+#define _GNU_SOURCE
+#include <pthread.h>
+#endif
+
+
 #include "common.h"
 #include "iksemel.h"
 
@@ -37,14 +45,17 @@ struct stream_data {
 };
 
 #ifdef HAVE_GNUTLS
+static pthread_mutex_t tls_send_mutex;
+static pthread_mutex_t tls_recv_mutex;
 
 static size_t
 tls_push (iksparser *prs, const char *buffer, size_t len)
 {
 	struct stream_data *data = iks_user_data (prs);
 	int ret;
-
+	pthread_mutex_lock(&tls_send_mutex);
 	ret = data->trans->send (data->sock, buffer, len);
+	pthread_mutex_unlock(&tls_send_mutex);
 	if (ret) return (size_t) -1;
 	return len;
 }
@@ -54,8 +65,9 @@ tls_pull (iksparser *prs, char *buffer, size_t len)
 {
 	struct stream_data *data = iks_user_data (prs);
 	int ret;
-
+	pthread_mutex_lock(&tls_recv_mutex);
 	ret = data->trans->recv (data->sock, buffer, len, -1);
+	pthread_mutex_unlock(&tls_recv_mutex);
 	if (ret == -1) return (size_t) -1;
 	return ret;
 }
@@ -584,6 +596,43 @@ iks_is_secure (iksparser *prs)
 	return 0;
 #endif
 }
+#ifdef HAVE_GNUTLS
+
+
+int
+iks_init(void)
+{
+	int ok = 0;
+	pthread_mutexattr_t attr;
+
+	if (pthread_mutexattr_init(&attr))
+		return -1;
+	
+	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
+		ok = -1;
+	
+	if (ok == 0 && pthread_mutex_init(&tls_send_mutex, &attr))
+		ok = -1;
+
+	if (ok == 0 && pthread_mutex_init(&tls_recv_mutex, &attr)) {
+		pthread_mutex_destroy(&tls_send_mutex);
+		ok = -1;
+	}
+	
+
+	pthread_mutexattr_destroy(&attr);
+
+	return ok;
+
+}
+#else
+int
+iks_init(void)
+{
+	return 0;
+}
+#endif
+
 
 int
 iks_start_tls (iksparser *prs)

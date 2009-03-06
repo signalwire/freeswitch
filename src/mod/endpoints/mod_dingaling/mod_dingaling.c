@@ -2495,9 +2495,10 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 					}
 					from = ffrom;
 				}
-
-
-				switch_core_chat_send(proto, MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), NULL, hint);
+				
+				if (strcasecmp(proto, MDL_CHAT_PROTO)) { /* yes no ! on purpose */
+					switch_core_chat_send(proto, MDL_CHAT_PROTO, from, to, subject, switch_str_nil(msg), NULL, hint);
+				}
 
 				switch_safe_free(pproto);
 				switch_safe_free(ffrom);

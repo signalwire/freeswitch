@@ -31,7 +31,7 @@ AC_ARG_WITH(libgnutls-prefix,
     no_libgnutls=yes
   else
     LIBGNUTLS_CFLAGS=`$LIBGNUTLS_CONFIG $libgnutls_config_args --cflags`
-    LIBGNUTLS_LIBS=`$LIBGNUTLS_CONFIG $libgnutls_config_args --libs`
+    LIBGNUTLS_LIBS="`$LIBGNUTLS_CONFIG $libgnutls_config_args --libs` -lpthread"
     libgnutls_config_version=`$LIBGNUTLS_CONFIG $libgnutls_config_args --version`
 
 
