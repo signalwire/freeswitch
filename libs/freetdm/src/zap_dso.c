@@ -21,6 +21,50 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef WIN32
+#include <windows.h>
+#include <stdio.h>
+
+
+void zap_dso_destroy(zap_dso_lib_t *lib) {
+	if (lib && *lib) {
+		FreeLibrary(*lib);
+		*lib = NULL;
+	}
+}
+
+zap_dso_lib_t zap_dso_open(const char *path, char **err) {
+    HINSTANCE lib;
+	
+	lib = LoadLibraryEx(path, NULL, 0);
+
+	if (!lib) {
+		LoadLibraryEx(path, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
+	}
+
+	if (!lib) {
+		DWORD error = GetLastError();
+		char tmp[80];
+		sprintf(tmp, "dll open error [%ul]\n", error);
+		*err = _strdup(tmp);
+	}
+
+	return lib;
+}
+
+void* zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
+	FARPROC func = GetProcAddress(lib, sym);
+	if (!func) {
+		DWORD error = GetLastError();
+		char tmp[80];
+		sprintf(tmp, "dll sym error [%ul]\n", error);
+		*err = _strdup(tmp);
+	}
+	return (void *)(intptr_t)func; // this should really be addr - zap_dso_func_data
+}
+
+#else
+
 /*
 ** {========================================================================
 ** This is an implementation of loadlib based on the dlfcn interface.
@@ -55,6 +99,7 @@ void *zap_dso_func_sym(zap_dso_lib_t lib, const char *sym, char **err) {
 	}
 	return func;
 }
+#endif
 
 /* }====================================================== */
 

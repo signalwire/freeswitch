@@ -617,7 +617,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 	*frame = &tech_pvt->read_frame;
-	tech_pvt->read_frame.datalen = len;
+	tech_pvt->read_frame.datalen = (uint32_t)len;
 	tech_pvt->read_frame.samples = tech_pvt->read_frame.datalen;
 
 	if (tech_pvt->zchan->effective_codec == ZAP_CODEC_SLIN) {
@@ -2185,7 +2185,7 @@ SWITCH_STANDARD_API(oz_function)
 			stream->write_function(stream, "-ERR Usage: oz dump <span_id> [<chan_id>]\n");
 			goto end;
 		} else {
-			int32_t span_id, chan_id = 0;
+			uint32_t span_id, chan_id = 0;
 			zap_span_t *span;
 
 			span_id = atoi(argv[1]);
@@ -2204,7 +2204,7 @@ SWITCH_STANDARD_API(oz_function)
 						dump_chan(span, chan_id, stream);
 					}
 				} else {
-					int j;
+					uint32_t j;
 					
 					stream->write_function(stream, "+OK\n");
 					for (j = 1; j <= span->chan_count; j++) {
@@ -2271,7 +2271,7 @@ SWITCH_STANDARD_API(oz_function)
 				if (chan_id) {
 					zap_log(ZAP_LOG_INFO,"Bounce span: %d, chan: %d\n", span_id, chan_id);
 				} else {
-					int j;
+					uint32_t j;
 					
 					stream->write_function(stream, "+OK\n");
 					for (j = 1; j <= span->chan_count; j++) {
