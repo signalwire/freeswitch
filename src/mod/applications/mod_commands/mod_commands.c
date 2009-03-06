@@ -777,7 +777,7 @@ SWITCH_STANDARD_API(regex_function)
 
 	if ((proceed = switch_regex_perform(argv[0], argv[1], &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 		if (argc > 2) {
-			len = strlen(argv[0]) * 3;
+			len = (strlen(argv[0]) + strlen(argv[2]) + 10) * proceed;
 			substituted = malloc(len);
 			switch_assert(substituted);
 			memset(substituted, 0, len);

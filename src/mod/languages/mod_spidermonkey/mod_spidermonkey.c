@@ -403,7 +403,7 @@ static JSBool pcre_substitute(JSContext * cx, JSObject * obj, uintN argc, jsval 
 	if (argc > 0) {
 		uint32_t len;
 		subst_string = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
-		len = (uint32_t) (strlen(pcre_obj->string) + strlen(subst_string) + 10);
+		len = (uint32_t) (strlen(pcre_obj->string) + strlen(subst_string) + 10) * pcre_obj->proceed;
 		substituted = malloc(len);
 		switch_assert(substituted != NULL);
 		switch_perform_substitution(pcre_obj->re, pcre_obj->proceed, subst_string, pcre_obj->string, substituted, len, pcre_obj->ovector);
