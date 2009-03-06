@@ -932,11 +932,19 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 {
 	private_object_t *tech_pvt;
 	char message[128] = "";
+	sofia_dtmf_t dtmf_type;
 
 	tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	switch_assert(tech_pvt != NULL);
 
-	switch (tech_pvt->dtmf_type) {
+	dtmf_type = tech_pvt->dtmf_type;
+
+	/* We only can send INFO when we have no media */
+	if (!tech_pvt->rtp_session || !switch_channel_media_ready(tech_pvt->channel) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE)) {
+		dtmf_type = DTMF_INFO;
+	}
+
+	switch (dtmf_type) {
 	case DTMF_2833:
 		return switch_rtp_queue_rfc2833(tech_pvt->rtp_session, dtmf);
 
@@ -947,6 +955,7 @@ static switch_status_t sofia_send_dtmf(switch_core_session_t *session, const swi
 		switch_mutex_unlock(tech_pvt->sofia_mutex);
 		break;
 	default:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled DTMF type!\n");
 		break;
 	}
 
