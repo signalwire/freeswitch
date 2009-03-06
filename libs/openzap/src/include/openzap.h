@@ -630,6 +630,7 @@ int zap_load_module(const char *name);
 int zap_load_module_assume(const char *name);
 zap_status_t zap_span_find_by_name(const char *name, zap_span_t **span);
 char *zap_api_execute(const char *type, const char *cmd);
+int zap_vasprintf(char **ret, const char *fmt, va_list ap);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);
