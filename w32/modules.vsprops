@@ -3,8 +3,8 @@
 	ProjectType="Visual C++"
 	Version="8.00"
 	Name="modules"
-	OutputDirectory="$(ConfigurationName)"
-	IntermediateDirectory="$(ConfigurationName)"
+	OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+	IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
 	InheritedPropertySheets=".\winlibs.vsprops"
 	>
 	<Tool
@@ -17,7 +17,7 @@
 		Name="VCLinkerTool"
 		OutputFile=""
 		GenerateDebugInformation="true"
-		ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
+		ProgramDatabaseFile="$(OutDir)\$(TargetName).pdb"
 		ImportLibrary="$(OutDir)/$(InputName).lib"
 	/>
 </VisualStudioPropertySheet>
