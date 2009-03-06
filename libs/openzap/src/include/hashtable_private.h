@@ -17,7 +17,7 @@ struct entry
 };
 
 struct hashtable_iterator {
-	int pos;
+	unsigned int pos;
 	struct entry *e;
 	struct hashtable *h;
 };

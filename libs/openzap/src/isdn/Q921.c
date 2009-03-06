@@ -83,6 +83,9 @@
 #include "Q921priv.h"
 #include "mfifo.h"
 
+#ifdef WIN32
+#pragma warning(disable:4100 4244)
+#endif
 
 /******************************************************************************************************
  * Actual code below this line
@@ -650,7 +653,7 @@ static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2
 			if(tei != link->tei) {
 				APPEND_MSG(pbuf, poffset, pleft, "    CONTENT:\n");
 
-				len = print_hex(pbuf + poffset, pleft, &pmes[4], size - (trunk->Q921HeaderSpace + 4));
+				len = print_hex(pbuf + poffset, (int)pleft, &pmes[4], size - (trunk->Q921HeaderSpace + 4));
 				poffset += len;
 				pleft   -= len;
 			}
@@ -775,7 +778,7 @@ static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2
 				else {
 					APPEND_MSG(pbuf, poffset, pleft, "    ENT ID: %d (%s), MESSAGE CONTENT:\n", pmes[3], type);
 
-					len = print_hex(pbuf + poffset, pleft, &pmes[3], size - (trunk->Q921HeaderSpace + 3));
+					len = print_hex(pbuf + poffset, (int)pleft, &pmes[3], size - (trunk->Q921HeaderSpace + 3));
 					poffset += len;
 					pleft   -= len;
 				}
@@ -822,7 +825,7 @@ static int Q921LogMesg(L2TRUNK trunk, Q921LogLevel_t level, L2UCHAR received, L2
 out:
 	buf[sizeof(buf) - 1] = '\0';
 
-	return trunk->Q921LogProc(trunk->PrivateDataLog, level, buf, strlen(buf));
+	return trunk->Q921LogProc(trunk->PrivateDataLog, level, buf, (int)strlen(buf));
 }
 
 /*****************************************************************************
@@ -3108,7 +3111,11 @@ static int Q921TeiSendAssignRequest(L2TRUNK trunk)
 	if (!Q921_IS_PTMP_TE(trunk))	/* only ptmp te mode*/
 		return 0;
 
-	link->ri = (L2USHORT)(random() % 0xffff);
+#ifndef WIN32
+		link->ri = (L2USHORT)(random() % 0xffff);
+#else
+		link->ri = (L2USHORT)(rand() % 0xffff); //todo
+#endif
 
 	/* send TEI assign request */
 	res = Q921TeiSend(trunk, Q921_TEI_ID_REQUEST, link->ri, Q921_TEI_BCAST);

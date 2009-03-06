@@ -268,7 +268,7 @@ struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i)
 {
 
 	if (i->e) {
-		if ((i->e = i->e->next)) {
+		if ((i->e = i->e->next) != 0) { 
 			return i;
 		} else {
 			i->pos++;
@@ -283,7 +283,7 @@ struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i)
 		return NULL;
 	}
 	
-	if ((i->e = i->h->table[i->pos])) {
+	if ((i->e = i->h->table[i->pos]) != 0) { 
 		return i;
 	}
 
@@ -307,7 +307,7 @@ void hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, v
 			*key = i->e->k;
 		}
 		if (klen) {
-			*klen = strlen(i->e->k);
+			*klen = (int)strlen(i->e->k);
 		}
 		if (val) {
 			*val = i->e->v;

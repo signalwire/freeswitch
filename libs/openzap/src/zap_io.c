@@ -1707,7 +1707,7 @@ zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf)
 static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 {
 	zap_buffer_t *buffer = NULL;
-	zap_size_t dblen;
+	zap_size_t dblen = 0;
 
 	if (zchan->gen_dtmf_buffer && (dblen = zap_buffer_inuse(zchan->gen_dtmf_buffer))) {
 		char digits[128] = "";
@@ -2362,6 +2362,7 @@ int zap_load_module(const char *name)
 #ifdef WIN32
     const char *ext = ".dll";
     //const char *EXT = ".DLL";
+#define ZAP_MOD_DIR "." //todo
 #elif defined (MACOSX) || defined (DARWIN)
     const char *ext = ".dylib";
     //const char *EXT = ".DYLIB";
@@ -2389,18 +2390,18 @@ int zap_load_module(const char *name)
 	}
 
 	if (mod->io_load) {
-		zap_io_interface_t *interface = NULL;
+		zap_io_interface_t *interface1 = NULL; /* name conflict w/windows here */
 
-		if (mod->io_load(&interface) != ZAP_SUCCESS || !interface || !interface->name) {
+		if (mod->io_load(&interface1) != ZAP_SUCCESS || !interface1 || !interface1->name) {
 			zap_log(ZAP_LOG_ERROR, "Error loading %s\n", path);
 		} else {
-			zap_log(ZAP_LOG_INFO, "Loading IO from %s [%s]\n", path, interface->name);
+			zap_log(ZAP_LOG_INFO, "Loading IO from %s [%s]\n", path, interface1->name);
 			zap_mutex_lock(globals.mutex);
-			if (hashtable_search(globals.interface_hash, (void *)interface->name)) {
-				zap_log(ZAP_LOG_ERROR, "Interface %s already loaded!\n", interface->name);
+			if (hashtable_search(globals.interface_hash, (void *)interface1->name)) {
+				zap_log(ZAP_LOG_ERROR, "Interface %s already loaded!\n", interface1->name);
 			} else {
-				hashtable_insert(globals.interface_hash, (void *)interface->name, interface, HASHTABLE_FLAG_NONE);
-				process_module_config(interface);
+				hashtable_insert(globals.interface_hash, (void *)interface1->name, interface1, HASHTABLE_FLAG_NONE);
+				process_module_config(interface1);
 				x++;
 			}
 			zap_mutex_unlock(globals.mutex);
@@ -2844,6 +2845,42 @@ zap_status_t zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *
 	return ZAP_SUCCESS;
 }
 
+int zap_vasprintf(char **ret, const char *fmt, va_list ap) /* code from switch_apr.c */
+{
+#ifdef HAVE_VASPRINTF
+	return vasprintf(ret, fmt, ap);
+#else
+	char *buf;
+	int len;
+	size_t buflen;
+	va_list ap2;
+	char *tmp = NULL;
+
+#ifdef _MSC_VER
+#if _MSC_VER >= 1500
+	/* hack for incorrect assumption in msvc header files for code analysis */
+	__analysis_assume(tmp);
+#endif
+	ap2 = ap;
+#else
+	va_copy(ap2, ap);
+#endif
+
+	len = vsnprintf(tmp, 0, fmt, ap2);
+
+	if (len > 0 && (buf = malloc((buflen = (size_t) (len + 1)))) != NULL) {
+		len = vsnprintf(buf, buflen, fmt, ap);
+		*ret = buf;
+	} else {
+		*ret = NULL;
+		len = -1;
+	}
+
+	va_end(ap2);
+	return len;
+#endif
+}
+
 zap_status_t zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...)
 {
 	va_list ap;
@@ -2857,7 +2894,7 @@ zap_status_t zap_console_stream_write(zap_stream_handle_t *handle, const char *f
 	}
 
 	va_start(ap, fmt);
-	ret = vasprintf(&data, fmt, ap);
+	ret = zap_vasprintf(&data, fmt, ap);
 	va_end(ap);
 
 	if (data) {

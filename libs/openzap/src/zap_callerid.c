@@ -83,7 +83,7 @@ zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state)
 		check = check + state->buf[i];
 	}
 
-	state->checksum = state->buf[state->bpos] = 256 - check;
+	state->checksum = state->buf[state->bpos] = (uint8_t)(256 - check);
 	state->bpos++;
 
 	state->dlen = state->bpos;

@@ -213,6 +213,7 @@ int zap_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 {
 	char cas_bits[5];
 	unsigned char bit = 0x8;
+	int x = 0;
 	char *double_colon = strchr(strvalue, ':');
 	if (!double_colon) {
 		zap_log(ZAP_LOG_ERROR, "No CAS bits specified: %s, :xxxx definition expected, where x is 1 or 0\n", double_colon);
@@ -226,7 +227,6 @@ int zap_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 		return -1;
 	}
 	zap_log(ZAP_LOG_DEBUG, "CAS bits specification found: %s\n", cas_bits);
-	int x = 0;
 	for (; cas_bits[x]; x++) {
 		if ('1' == cas_bits[x]) {
 			*outbits |= bit;

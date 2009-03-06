@@ -164,7 +164,7 @@ zap_size_t zap_buffer_read_loop(zap_buffer_t *buffer, void *data, zap_size_t dat
 		}
 		buffer->head = buffer->data;
 		buffer->used = buffer->actually_used;
-		len = zap_buffer_read(buffer, data + len, datalen - len);
+		len = zap_buffer_read(buffer, (char*)data + len, datalen - len);
 		buffer->loops--;
 	}
 	return len;

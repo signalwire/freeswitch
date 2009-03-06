@@ -239,6 +239,10 @@
 		else zap_log(ZAP_LOG_WARNING, "VETO Changing state on %d:%d from %s to %s\n", obj->span_id, obj->chan_id, zap_channel_state2str(st), zap_channel_state2str(s)); \
 	}
 
+#ifdef _MSC_VER
+/* The while(0) below throws a conditional expression is constant warning */
+#pragma warning(disable:4127) 
+#endif
 #define zap_set_state_locked_wait(obj, s) 						\
 	do {										\
 		int __safety = 100;							\
