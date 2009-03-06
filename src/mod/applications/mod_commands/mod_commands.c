@@ -2743,7 +2743,7 @@ SWITCH_STANDARD_API(help_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define HEARTBEAT_SYNTAX "<uuid> [sched] <on|off|<seconds>>"
+#define HEARTBEAT_SYNTAX "<uuid> [sched] [0|<seconds>]"
 SWITCH_STANDARD_API(uuid_session_heartbeat_function)
 {
 	char *mycmd = NULL, *argv[3] = { 0 };

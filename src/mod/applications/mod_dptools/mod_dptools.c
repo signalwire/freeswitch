@@ -111,6 +111,42 @@ SWITCH_STANDARD_APP(detect_speech_function)
 	}
 }
 
+
+#define SCHED_HEARTBEAT_SYNTAX "[0|<seconds>]"
+SWITCH_STANDARD_APP(sched_heartbeat_function)
+{
+	int seconds = 0;
+
+	if (data) {
+		seconds = atoi(data);
+		if (seconds >= 0) {
+			switch_core_session_sched_heartbeat(session, seconds);
+			return;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", SCHED_HEARTBEAT_SYNTAX);
+
+}
+
+
+#define HEARTBEAT_SYNTAX "[0|<seconds>]"
+SWITCH_STANDARD_APP(heartbeat_function)
+{
+	int seconds = 0;
+
+	if (data) {
+		seconds = atoi(data);
+		if (seconds >= 0) {
+			switch_core_session_enable_heartbeat(session, seconds);
+			return;
+		}
+	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Usage: %s\n", HEARTBEAT_SYNTAX);
+
+}
+
 #define EXE_SYNTAX "<extension> <dialplan> <context>"
 SWITCH_STANDARD_APP(exe_function)
 {
@@ -2605,6 +2641,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_APP(app_interface, "sched_transfer", SCHED_TRANSF_DESCR, SCHED_TRANSF_DESCR, sched_transfer_function,
 				   "[+]<time> <extension> <dialplan> <context>", SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "execute_extension", "Execute an extension", "Execute an extension", exe_function, EXE_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "sched_heartbeat", "Enable Scheduled Heartbeat", "Enable Scheduled Heartbeat", 
+				   sched_heartbeat_function, SCHED_HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
+	SWITCH_ADD_APP(app_interface, "enable_heartbeat", "Enable Media Heartbeat", "Enable Media Heartbeat", 
+				   heartbeat_function, HEARTBEAT_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "mkdir", "Create a directory", "Create a directory", mkdir_function, MKDIR_SYNTAX, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "soft_hold", "Put a bridged channel on hold", "Put a bridged channel on hold", soft_hold_function, SOFT_HOLD_SYNTAX,
 				   SAF_NONE);
