@@ -2537,7 +2537,7 @@ static int _wrap_ESLconnection_filter(lua_State* L) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  ESLevent *result = 0 ;
   
   SWIG_check_num_args("filter",3,3)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("filter",1,"ESLconnection *");
@@ -2550,9 +2550,9 @@ static int _wrap_ESLconnection_filter(lua_State* L) {
   
   arg2 = (char *)lua_tostring(L, 2);
   arg3 = (char *)lua_tostring(L, 3);
-  result = (int)(arg1)->filter((char const *)arg2,(char const *)arg3);
+  result = (ESLevent *)(arg1)->filter((char const *)arg2,(char const *)arg3);
   SWIG_arg=0;
-  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  SWIG_NewPointerObj(L,result,SWIGTYPE_p_ESLevent,0); SWIG_arg++; 
   return SWIG_arg;
   
   if(0) SWIG_fail;

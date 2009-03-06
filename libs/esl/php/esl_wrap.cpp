@@ -2120,7 +2120,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_filter) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  ESLevent *result = 0 ;
   zval **args[3];
   
   SWIG_ResetError();
@@ -2146,9 +2146,9 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_filter) {
   arg3 = (char *) Z_STRVAL_PP(args[2]);
   /*@SWIG@*/;
   
-  result = (int)(arg1)->filter((char const *)arg2,(char const *)arg3);
+  result = (ESLevent *)(arg1)->filter((char const *)arg2,(char const *)arg3);
   {
-    ZVAL_LONG(return_value,result);
+    SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_ESLevent, 0);
   }
   return;
 fail:

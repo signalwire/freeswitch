@@ -26,7 +26,17 @@ for(;;) {
 
   printf "Connected call %s, from %s\n", $uuid, $info->getHeader("caller-caller-id-number");
 
-  $con->sendRecv("myevents");
+  $e = $con->filter("unique-id", $uuid);
+  if ($e) {
+    print $e->serialize();
+  } else {
+    printf("WTF?\n");
+  }
+    
+  $con->events("plain", "all");
+
+
+  #$con->sendRecv("myevents");
   $con->execute("answer");
   $con->execute("playback", "/ram/swimp.raw");
   

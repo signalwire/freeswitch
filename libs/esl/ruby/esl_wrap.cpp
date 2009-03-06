@@ -3087,7 +3087,7 @@ _wrap_ESLconnection_filter(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   char *arg3 = (char *) 0 ;
-  int result;
+  ESLevent *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -3116,8 +3116,8 @@ _wrap_ESLconnection_filter(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","filter", 3, argv[1] ));
   }
   arg3 = reinterpret_cast< char * >(buf3);
-  result = (int)(arg1)->filter((char const *)arg2,(char const *)arg3);
-  vresult = SWIG_From_int(static_cast< int >(result));
+  result = (ESLevent *)(arg1)->filter((char const *)arg2,(char const *)arg3);
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 |  0 );
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   return vresult;

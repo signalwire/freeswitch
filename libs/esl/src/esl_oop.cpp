@@ -189,9 +189,18 @@ ESLevent *ESLconnection::recvEventTimed(int ms)
 	return NULL;
 }
 
-int ESLconnection::filter(const char *header, const char *value)
+ESLevent *ESLconnection::filter(const char *header, const char *value)
 {
-	return esl_filter(&handle, header, value);
+	esl_status_t status = esl_filter(&handle, header, value);
+
+	if (status == ESL_SUCCESS && handle.last_sr_event) {
+		esl_event_t *event;
+		esl_event_dup(&event, handle.last_sr_event);
+		return new ESLevent(event, 1);
+	}
+
+	return NULL;
+
 }
 
 int ESLconnection::events(const char *etype, const char *value)

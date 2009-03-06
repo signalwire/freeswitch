@@ -86,7 +86,7 @@ class ESLconnection {
 	int sendEvent(ESLevent *send_me);
 	ESLevent *recvEvent();
 	ESLevent *recvEventTimed(int ms);
-	int filter(const char *header, const char *value);
+	ESLevent *filter(const char *header, const char *value);
 	int events(const char *etype, const char *value);
 	int execute(const char *app, const char *arg = NULL, const char *uuid = NULL);
 	int setBlockingExecute(const char *val);

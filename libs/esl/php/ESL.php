@@ -170,7 +170,8 @@ class ESLconnection {
 	}
 
 	function filter($header,$value) {
-		return ESLconnection_filter($this->_cPtr,$header,$value);
+		$r=ESLconnection_filter($this->_cPtr,$header,$value);
+		return is_resource($r) ? new ESLevent($r) : $r;
 	}
 
 	function events($etype,$value) {

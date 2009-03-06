@@ -3092,7 +3092,7 @@ XS(_wrap_ESLconnection_filter) {
     ESLconnection *arg1 = (ESLconnection *) 0 ;
     char *arg2 = (char *) 0 ;
     char *arg3 = (char *) 0 ;
-    int result;
+    ESLevent *result = 0 ;
     void *argp1 = 0 ;
     int res1 = 0 ;
     int res2 ;
@@ -3122,8 +3122,8 @@ XS(_wrap_ESLconnection_filter) {
       SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_filter" "', argument " "3"" of type '" "char const *""'");
     }
     arg3 = reinterpret_cast< char * >(buf3);
-    result = (int)(arg1)->filter((char const *)arg2,(char const *)arg3);
-    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    result = (ESLevent *)(arg1)->filter((char const *)arg2,(char const *)arg3);
+    ST(argvi) = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_ESLevent, 0 | SWIG_SHADOW); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
     if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
