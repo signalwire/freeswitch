@@ -134,15 +134,20 @@ static switch_status_t pocketsphinx_asr_load_grammar(switch_asr_handle_t *ah, co
 		model = switch_mprintf("%s%smodel%s%s", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, SWITCH_PATH_SEPARATOR, globals.model16k);
 	}
 
-	dic = switch_mprintf("%s%sdefault.dic", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR, grammar);
+	dic = switch_mprintf("%s%sdefault.dic", SWITCH_GLOBAL_dirs.grammar_dir, SWITCH_PATH_SEPARATOR);
 
 	if (switch_file_exists(dic, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open dictionary %s.\n", dic); 
 		goto end;
 	}
 
+	if (switch_file_exists(model, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open speech model %s.\n", model); 
+		goto end;
+	}
+
 	if (switch_file_exists(jsgf, ah->memory_pool) != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open language model %s.\n", model); 
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't open grammar file %s.\n", jsgf); 
 		goto end;
 	}
 
