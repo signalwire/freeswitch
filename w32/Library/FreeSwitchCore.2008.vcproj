@@ -30,7 +30,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -60,7 +60,7 @@
 				WarnAsError="true"
 				DebugInformationFormat="3"
 				ForcedIncludeFiles=""
-				EnablePREfast="true"
+				EnablePREfast="$(EnablePREfast)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -79,7 +79,7 @@
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				AddModuleNamesToAssembly=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(SolutionDir)$(OutDir)/FreeSwitch.pdb"
+				ProgramDatabaseFile="$(OutDir)/FreeSwitch.pdb"
 				SubSystem="2"
 				OptimizeReferences="0"
 				EnableCOMDATFolding="0"
@@ -122,7 +122,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -153,7 +153,7 @@
 				WarnAsError="false"
 				DebugInformationFormat="3"
 				ForcedIncludeFiles=""
-				EnablePREfast="true"
+				EnablePREfast="$(EnablePREfast)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -172,7 +172,7 @@
 				AdditionalLibraryDirectories="&quot;$(InputDir)..\..\libs\apr\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\sqlite\$(OutDir) DLL&quot;;&quot;$(InputDir)..\..\libs\apr-util\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\apr-iconv\$(OutDir)&quot;;&quot;$(InputDir)..\..\libs\libresample\win&quot;;&quot;$(InputDir)..\..\libs\srtp\$(OutDir)&quot;"
 				AddModuleNamesToAssembly=""
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="$(SolutionDir)$(OutDir)/FreeSwitch.pdb"
+				ProgramDatabaseFile="$(OutDir)/FreeSwitch.pdb"
 				SubSystem="2"
 				OptimizeReferences="0"
 				EnableCOMDATFolding="0"
@@ -215,7 +215,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -242,6 +242,7 @@
 				WarningLevel="4"
 				WarnAsError="true"
 				DebugInformationFormat="3"
+				EnablePREfast="$(EnablePREfast)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -302,7 +303,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine=""
+				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -330,6 +331,7 @@
 				WarningLevel="4"
 				WarnAsError="false"
 				DebugInformationFormat="3"
+				EnablePREfast="$(EnablePREfast)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -763,46 +765,6 @@
 			<File
 				RelativePath="..\..\src\switch_xml.c"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|x64"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						PrecompiledHeaderThrough=""
-						PrecompiledHeaderFile=""
-					/>
-				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\switch_xml_config.c"
