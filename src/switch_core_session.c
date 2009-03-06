@@ -1299,9 +1299,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 
 	app = application_interface->interface_name;
 	
-	if (arg && (expanded = switch_channel_expand_variables(session->channel, arg)) != arg) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Expanded String %s(%s)\n", switch_channel_get_name(session->channel), app, expanded);
+	if (arg) {
+		expanded = switch_channel_expand_variables(session->channel, arg);
 	}
+
+	switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_DEBUG, "EXECUTE %s %s(%s)\n", 
+					  switch_channel_get_name(session->channel), app, switch_str_nil(expanded));
 
 	if ((var = switch_channel_get_variable(session->channel, "verbose_presence")) && switch_true(var)) {
 		char *myarg = NULL;
@@ -1316,10 +1319,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 			switch_channel_presence(session->channel, "unknown", myarg, NULL);
 			switch_safe_free(myarg);
 		}
-	}
-
-	if (!arg) {
-		arg = "";
 	}
 
 	if (!(var = switch_channel_get_variable(session->channel, SWITCH_DISABLE_APP_LOG_VARIABLE)) || (!(switch_true(var)))) {

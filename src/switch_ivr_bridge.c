@@ -250,7 +250,8 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 		}
 #endif
 
-		if (loop_count > DEFAULT_LEAD_FRAMES && bypass_media_after_bridge) {
+		if (loop_count > DEFAULT_LEAD_FRAMES && bypass_media_after_bridge && switch_channel_test_flag(chan_a, CF_ANSWERED) && 
+			switch_channel_test_flag(chan_b, CF_ANSWERED)) {
 			switch_ivr_nomedia(switch_core_session_get_uuid(session_a), SMF_REBRIDGE);
 			bypass_media_after_bridge = 0;
 		}

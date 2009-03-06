@@ -1961,7 +1961,6 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 	switch_core_session_t *peer_session = NULL;
 	unsigned int timelimit = 60;
 	const char *var, *continue_on_fail = NULL, *failure_causes = NULL;
-	uint8_t no_media_bridge = 0;
 	switch_call_cause_t cause = SWITCH_CAUSE_NORMAL_CLEARING;
 
 	if (switch_strlen_zero(data)) {
@@ -1989,8 +1988,10 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 				switch_ivr_media(switch_core_session_get_uuid(session), SMF_REBRIDGE);
 				switch_channel_set_flag(caller_channel, CF_PROXY_MODE);
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are up.\n");
-				no_media_bridge = 1;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already up, delaying proxy mode 'till both legs are answered.\n");
+				switch_channel_set_variable(caller_channel, "bypass_media_after_bridge", "true");
+				switch_channel_set_variable(caller_channel, SWITCH_BYPASS_MEDIA_VARIABLE, NULL);
+				switch_channel_clear_flag(caller_channel, CF_PROXY_MODE);
 			}
 		}
 	}
@@ -2032,60 +2033,35 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 		}
 		return;
 	} else {
-		if (no_media_bridge) {
-			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
-			switch_frame_t *read_frame;
-			/* SIP won't let us redir media until the call has been answered #$^#%& so we will proxy any early media until they do */
-			while (switch_channel_ready(caller_channel) && switch_channel_ready(peer_channel)
-				   && !switch_channel_test_flag(peer_channel, CF_ANSWERED)) {
-				switch_status_t status = switch_core_session_read_frame(peer_session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-				uint8_t bad = 1;
-
-				if (SWITCH_READ_ACCEPTABLE(status)
-					&& switch_core_session_write_frame(session, read_frame, SWITCH_IO_FLAG_NONE, 0) == SWITCH_STATUS_SUCCESS) {
-					bad = 0;
-				}
-				if (bad) {
-					switch_channel_hangup(caller_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					switch_channel_hangup(peer_channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-					goto end;
-				}
-			}
-
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting media to proxy mode.\n");
-			switch_ivr_nomedia(switch_core_session_get_uuid(session), SMF_FORCE);
-			switch_ivr_nomedia(switch_core_session_get_uuid(peer_session), SMF_FORCE);
+		
+		if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
 			switch_ivr_signal_bridge(session, peer_session);
 		} else {
-			if (switch_channel_test_flag(caller_channel, CF_PROXY_MODE)) {
-				switch_ivr_signal_bridge(session, peer_session);
-			} else {
-				switch_channel_t *channel = switch_core_session_get_channel(session);
-				switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
-				char *a_key = (char *) switch_channel_get_variable(channel, "bridge_terminate_key");
-				char *b_key = (char *) switch_channel_get_variable(peer_channel, "bridge_terminate_key");
-				int ok = 0;
-				switch_input_callback_function_t func = NULL;
+			switch_channel_t *channel = switch_core_session_get_channel(session);
+			switch_channel_t *peer_channel = switch_core_session_get_channel(peer_session);
+			char *a_key = (char *) switch_channel_get_variable(channel, "bridge_terminate_key");
+			char *b_key = (char *) switch_channel_get_variable(peer_channel, "bridge_terminate_key");
+			int ok = 0;
+			switch_input_callback_function_t func = NULL;
 
-				if (a_key) {
-					a_key = switch_core_session_strdup(session, a_key);
-					ok++;
-				}
-				if (b_key) {
-					b_key = switch_core_session_strdup(session, b_key);
-					ok++;
-				}
-				if (ok) {
-					func = bridge_on_dtmf;
-				} else {
-					a_key = NULL;
-					b_key = NULL;
-				}
-
-				switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, a_key);
+			if (a_key) {
+				a_key = switch_core_session_strdup(session, a_key);
+				ok++;
 			}
+			if (b_key) {
+				b_key = switch_core_session_strdup(session, b_key);
+				ok++;
+			}
+			if (ok) {
+				func = bridge_on_dtmf;
+			} else {
+				a_key = NULL;
+				b_key = NULL;
+			}
+
+			switch_ivr_multi_threaded_bridge(session, peer_session, func, a_key, a_key);
 		}
-	  end:
+		
 		if (peer_session) {
 			switch_core_session_rwunlock(peer_session);
 		}

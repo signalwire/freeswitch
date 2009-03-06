@@ -156,9 +156,6 @@ static void switch_core_standard_on_execute(switch_core_session_t *session)
 
 		extension->current_application = extension->current_application->next;
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Execute %s(%s)\n", switch_channel_get_name(session->channel),
-						  current_application->application_name, switch_str_nil(current_application->application_data));
-
 		if (switch_core_session_execute_application(session,
 													current_application->application_name,
 													current_application->application_data) != SWITCH_STATUS_SUCCESS) {
