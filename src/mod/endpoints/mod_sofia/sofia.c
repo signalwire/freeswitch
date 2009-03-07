@@ -1085,6 +1085,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*extension = NULL,
 				*proxy = NULL,
 				*context = profile->context,
+				*contact_user = NULL,
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
 				*from_user = "", *from_domain = "", *register_proxy = NULL, *contact_params = NULL, *params = NULL, *register_transport = NULL;
@@ -1164,6 +1165,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					realm = val;
 				} else if (!strcmp(var, "username")) {
 					username = val;
+				} else if (!strcmp(var, "contact-username")) {
+					contact_user = val;
 				} else if (!strcmp(var, "auth-username")) {
 					auth_username = val;
 				} else if (!strcmp(var, "password")) {
@@ -1294,12 +1297,21 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 
 			sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
-			format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
+			if (contact_user) {
+				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
+				gateway->register_contact = switch_core_sprintf(gateway->pool, format, contact_user,
+																sipip,
+																sofia_glue_transport_has_tls(gateway->register_transport) ?
+																profile->tls_sip_port : profile->sip_port, params);
+			} else {
+				format = strchr(sipip, ':') ? "<sip:gw+%s@[%s]:%d%s>" : "<sip:gw+%s@%s:%d%s>";
+				gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
+																sipip,
+																sofia_glue_transport_has_tls(gateway->register_transport) ?
+																profile->tls_sip_port : profile->sip_port, params);
+			}
 			gateway->extension = switch_core_strdup(gateway->pool, extension);
-			gateway->register_contact = switch_core_sprintf(gateway->pool, format, gateway->name,
-															sipip,
-															sofia_glue_transport_has_tls(gateway->register_transport) ?
-															profile->tls_sip_port : profile->sip_port, params);
+			
 			
 			if (!strncasecmp(proxy, "sip:", 4)) {
 				gateway->register_proxy = switch_core_strdup(gateway->pool, proxy);
