@@ -368,9 +368,7 @@ SWITCH_DECLARE(void *) switch_core_perform_alloc(switch_memory_pool_t *pool, swi
 
 SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 {
-#ifdef INSTANTLY_DESTROY_POOLS
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Recycled memory pool(s) disabled.\n");
-#else
+#if !defined(PER_POOL_LOCK) && !defined(INSTANTLY_DESTROY_POOLS)
 	switch_memory_pool_t *pool;
 	void *pop = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Returning %d recycled memory pool(s)\n",
@@ -384,6 +382,7 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim(void)
 		apr_pool_destroy(pool);
 	}
 #endif
+	return;
 }
 
 static void *SWITCH_THREAD_FUNC pool_thread(switch_thread_t *thread, void *obj)
