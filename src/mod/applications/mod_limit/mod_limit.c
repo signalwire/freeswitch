@@ -166,44 +166,41 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 	return ret;
 }
 
+static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "\\w+:\\w+:\\w+" };
+
+static switch_xml_config_item_t config_settings[] = {
+	SWITCH_CONFIG_ITEM("odbc-dsn", SWITCH_CONFIG_STRING, 0, &globals.odbc_dsn, NULL, &limit_config_dsn,  
+		"dsn:username:password", "If set, the ODBC DSN used by the limit and db applications"),
+	SWITCH_CONFIG_ITEM_END()
+};
+
 static switch_status_t do_config()
 {
-	char *cf = "limit.conf";
-	switch_xml_t cfg, xml, settings, param;
 	switch_core_db_t *db;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *odbc_user = NULL;
 	char *odbc_pass = NULL;
 	char *sql = NULL;
+	
+	limit_config_dsn.pool = globals.pool;
 
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
+	if (switch_xml_config_parse_module_settings("limit.conf", SWITCH_FALSE, config_settings) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_TERM;
 	}
-
-	if ((settings = switch_xml_child(cfg, "settings"))) {
-		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = NULL;
-			char *val = NULL;
-
-			var = (char *) switch_xml_attr_soft(param, "name");
-			val = (char *) switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
+	
+	if (globals.odbc_dsn) {
 #ifdef SWITCH_HAVE_ODBC
-				globals.odbc_dsn = switch_core_strdup(globals.pool, val);
-				if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
-					*odbc_user++ = '\0';
-					if ((odbc_pass = strchr(odbc_user, ':'))) {
-						*odbc_pass++ = '\0';
-					}
-				}
-#else
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
-#endif
+		if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
+			*odbc_user++ = '\0';
+			if ((odbc_pass = strchr(odbc_user, ':'))) {
+				*odbc_pass++ = '\0';
 			}
 		}
+#else
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
+#endif
 	}
+
 
 	if (switch_strlen_zero(globals.odbc_dsn) || switch_strlen_zero(odbc_user) || switch_strlen_zero(odbc_pass)) {
 		globals.dbname = "call_limit";
@@ -290,8 +287,6 @@ static switch_status_t do_config()
 	sql = switch_mprintf("delete from limit_data where hostname='%q';", globals.hostname);
 	limit_execute_sql(sql, globals.mutex);
 	switch_safe_free(sql);
-
-	switch_xml_free(xml);
 
 	return status;
 }
