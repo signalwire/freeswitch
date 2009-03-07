@@ -215,8 +215,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 								newstring = value; /* Regex match, accept value*/
 							} else {
 								newstring = (char*)item->defaultvalue;  /* Regex failed */
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%s]\n", 
-									value, item->key, newstring ? newstring : "(null)");
+								if (newstring) {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%s]\n", 
+										value, item->key, newstring);
+								} else {
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n", value, item->key);
+								}
 								switch_xml_config_item_print_doc(SWITCH_LOG_ERROR, item);
 							}
 						} else {
