@@ -37,6 +37,12 @@
 #define _XOPEN_SOURCE 600
 #endif
 
+#ifndef WIN32
+#ifdef HAVE_SETRLIMIT
+#include <sys/resource.h>
+#endif
+#endif
+
 #include <switch.h>
 #include "private/switch_core_pvt.h"
 
@@ -274,6 +280,10 @@ int main(int argc, char *argv[])
 	switch_status_t destroy_status;
 	switch_file_t *fd;
 	switch_memory_pool_t *pool = NULL;
+#ifdef HAVE_SETRLIMIT
+	struct rlimit rlp;
+	int waste = 0;
+#endif
 
 	if (argv[0] && strstr(argv[0], "freeswitchd")) {
 		nc++;
@@ -291,6 +301,7 @@ int main(int argc, char *argv[])
 #endif
 		"\t-help                  -- this message\n"
 #ifdef HAVE_SETRLIMIT
+		"\t-waste                 -- allow memory waste\n"
 		"\t-core                  -- dump cores\n"
 #endif
 		"\t-hp                    -- enable high priority settings\n"
@@ -374,6 +385,7 @@ int main(int argc, char *argv[])
 					exit(0);
 				}
 			}
+
 			if (argv[x] && !strcmp(argv[x], "-uninstall")) {
 				x++;
 				if (argv[x] && strlen(argv[x])) {
@@ -429,11 +441,15 @@ int main(int argc, char *argv[])
 #endif
 #ifdef HAVE_SETRLIMIT
 		if (argv[x] && !strcmp(argv[x], "-core")) {
-			struct rlimit rlp;
 			memset(&rlp, 0, sizeof(rlp));
 			rlp.rlim_cur = RLIM_INFINITY;
 			rlp.rlim_max = RLIM_INFINITY;
 			setrlimit(RLIMIT_CORE, &rlp);
+			known_opt++;
+		}
+
+		if (argv[x] && !strcmp(argv[x], "-waste")) {
+			waste++;
 			known_opt++;
 		}
 #endif
@@ -600,11 +616,31 @@ int main(int argc, char *argv[])
 #endif
 	}
 
+#ifdef HAVE_SETRLIMIT
+	if (!waste) {
+		memset(&rlp, 0, sizeof(rlp));
+		getrlimit(RLIMIT_STACK, &rlp);
+		if (rlp.rlim_max > SWITCH_THREAD_STACKSIZE) {
+			memset(&rlp, 0, sizeof(rlp));
+			rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
+			rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
+			setrlimit(RLIMIT_STACK, &rlp);
+			fprintf(stderr, "Error: stacksize %d is too large: run ulimit -s %d or run %s -waste.\nauto-adjusting stack size for optimal performance....\n", 
+					SWITCH_THREAD_STACKSIZE / 1024, SWITCH_THREAD_STACKSIZE / 1024, argv[0]);
+			return (int)execv(argv[0], argv);
+		}
+	}
+#endif
+
+
+
+
 	if (high_prio) {
 		set_high_priority();
 	}
 
 	switch_core_setrlimits();
+
 
 #ifndef WIN32
 	if (runas_user || runas_group) {

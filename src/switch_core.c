@@ -792,7 +792,7 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 #ifndef __FreeBSD__
 	memset(&rlp, 0, sizeof(rlp));
 	rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
-	rlp.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
+	rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
 	setrlimit(RLIMIT_STACK, &rlp);
 #endif
 
@@ -808,6 +808,8 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	setrlimit(RLIMIT_CPU, &rlp);
 	setrlimit(RLIMIT_DATA, &rlp);
 	setrlimit(RLIMIT_FSIZE, &rlp);
+	setrlimit(RLIMIT_NPROC, &rlp);
+	setrlimit(RLIMIT_RTPRIO, &rlp);
 #if !defined(__OpenBSD__) && !defined(__NetBSD__)
 	setrlimit(RLIMIT_AS, &rlp);
 #endif
@@ -1631,6 +1633,15 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_SYSTEM_THREAD_STACKSIZE);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_thread_create(&thread, thd_attr, system_thread, sth, sth->pool);
+
+
+#if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
+	rlim.rlim_cur = SWITCH_THREAD_STACKSIZE;
+	rlim.rlim_max = SWITCH_THREAD_STACKSIZE;
+	if (setrlimit(RLIMIT_STACK, &rlim) < 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed!\n");
+	}
+#endif
 
 	if (wait) {
 		switch_thread_cond_wait(sth->cond, sth->mutex);
