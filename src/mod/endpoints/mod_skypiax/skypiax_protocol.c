@@ -1051,7 +1051,7 @@ int win32_Initialize_CreateWindowClass(private_t * tech_pvt)
     }
   }
   if (fReturnStatus == 0)
-    CloseHandle(tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle),
+    CloseHandle(tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle);
       tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle = NULL;
   return (fReturnStatus);
 }
@@ -1060,7 +1060,7 @@ void win32_DeInitialize_DestroyWindowClass(private_t * tech_pvt)
 {
   UnregisterClass(tech_pvt->SkypiaxHandles.win32_acInit_WindowClassName,
                   tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle);
-  CloseHandle(tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle),
+  CloseHandle(tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle);
     tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle = NULL;
 }
 
