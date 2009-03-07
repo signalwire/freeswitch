@@ -1075,7 +1075,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 		if ((gateway = switch_core_alloc(profile->pool, sizeof(*gateway)))) {
 			const char *sipip, *format;
 			switch_uuid_t uuid;
-			uint32_t ping_freq = 0;
+			uint32_t ping_freq = 0, extension_in_contact = 0;
 			char *register_str = "true", *scheme = "Digest",
 				*realm = NULL,
 				*username = NULL,
@@ -1085,7 +1085,6 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*extension = NULL,
 				*proxy = NULL,
 				*context = profile->context,
-				*contact_user = NULL,
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
 				*from_user = "", *from_domain = "", *register_proxy = NULL, *contact_params = NULL, *params = NULL, *register_transport = NULL;
@@ -1165,8 +1164,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					realm = val;
 				} else if (!strcmp(var, "username")) {
 					username = val;
-				} else if (!strcmp(var, "contact-username")) {
-					contact_user = val;
+				} else if (!strcmp(var, "extension-in-contact")) {
+					extension_in_contact = switch_true(val);
 				} else if (!strcmp(var, "auth-username")) {
 					auth_username = val;
 				} else if (!strcmp(var, "password")) {
@@ -1297,9 +1296,9 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 
 			sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
-			if (contact_user) {
+			if (extension_in_contact) {
 				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
-				gateway->register_contact = switch_core_sprintf(gateway->pool, format, contact_user,
+				gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
 																sipip,
 																sofia_glue_transport_has_tls(gateway->register_transport) ?
 																profile->tls_sip_port : profile->sip_port, params);
