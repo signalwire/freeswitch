@@ -704,28 +704,70 @@ static int on_anything(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_ev
 
 
 
+static int on_io_fail(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event * pevent)
+{
+
+	zap_log(ZAP_LOG_DEBUG, "Caught Event span %d %u (%s)\n", spri->span, event_type, lpwrap_pri_event_str(event_type));
+	return 0;
+}
+
+
+
 static void *zap_libpri_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
 	zap_libpri_data_t *isdn_data = span->signal_data;
-
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANY, on_anything);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RING, on_ring);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RINGING, on_ringing);
-	//LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_SETUP_ACK, on_proceed);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_PROCEEDING, on_proceed);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANSWER, on_answer);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_UP, on_dchan_up);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_DOWN, on_dchan_down);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_HANGUP_REQ, on_hangup);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_HANGUP, on_hangup);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_INFO_RECEIVED, on_info);
-	LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
-
-	isdn_data->spri.on_loop = check_flags;
-	isdn_data->spri.private_info = span;
+	int x, i;
 	
-	lpwrap_run_pri(&isdn_data->spri);
+	while(zap_running()) {
+		x = 0;
+
+		for(i = 1; i <= span->chan_count; i++) {
+			if (span->channels[i]->type == ZAP_CHAN_TYPE_DQ921) {
+				if (zap_channel_open(span->span_id, i, &isdn_data->dchan) == ZAP_SUCCESS) {
+					zap_log(ZAP_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, isdn_data->dchan->span_id, isdn_data->dchan->chan_id);
+					isdn_data->dchan->state = ZAP_CHANNEL_STATE_UP;
+					x++;
+					break;
+				}
+			}
+		}
+
+		
+		if (x && lpwrap_init_pri(&isdn_data->spri,
+							span->span_id,  // span
+							isdn_data->dchan, // dchan
+							isdn_data->pswitch,
+							isdn_data->node,
+							isdn_data->debug) < 0) {
+			snprintf(span->last_error, sizeof(span->last_error), "PRI init FAIL!");
+		} else {
+
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANY, on_anything);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RING, on_ring);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RINGING, on_ringing);
+			//LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_SETUP_ACK, on_proceed);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_PROCEEDING, on_proceed);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_ANSWER, on_answer);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_UP, on_dchan_up);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_DCHAN_DOWN, on_dchan_down);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_HANGUP_REQ, on_hangup);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_HANGUP, on_hangup);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_INFO_RECEIVED, on_info);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
+			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_IO_FAIL, on_io_fail);
+
+
+			isdn_data->spri.on_loop = check_flags;
+			isdn_data->spri.private_info = span;
+			
+			lpwrap_run_pri(&isdn_data->spri);
+			zap_channel_close(&isdn_data->dchan);
+		}
+		
+		zap_log(ZAP_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span);
+		zap_sleep(5000);
+	}
 
 	
 	return NULL;
@@ -736,9 +778,10 @@ static zap_status_t zap_libpri_start(zap_span_t *span)
 	zap_status_t ret;
 
 	zap_libpri_data_t *isdn_data = span->signal_data;
-	zap_set_flag(isdn_data, OZMOD_LIBPRI_RUNNING);
 
+	zap_set_flag(isdn_data, OZMOD_LIBPRI_RUNNING);
 	ret = zap_thread_create_detached(zap_libpri_run, span);
+
 	if (ret != ZAP_SUCCESS) {
 		return ret;
 	}
@@ -806,7 +849,7 @@ static int str2dp(char *dp)
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 {
 	uint32_t i, x = 0;
-	zap_channel_t *dchans[2] = {0};
+	//zap_channel_t *dchans[2] = {0};
 	zap_libpri_data_t *isdn_data;
 	char *var, *val;
 	int32_t opts = 0;
@@ -823,19 +866,23 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 				snprintf(span->last_error, sizeof(span->last_error), "Span has more than 2 D-Channels!");
 				return ZAP_FAIL;
 			} else {
+#if 0
 				if (zap_channel_open(span->span_id, i, &dchans[x]) == ZAP_SUCCESS) {
 					zap_log(ZAP_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, dchans[x]->span_id, dchans[x]->chan_id);
 					dchans[x]->state = ZAP_CHANNEL_STATE_UP;
 					x++;
 				}
+#endif
 			}
 		}
 	}
 	
+#if 0
 	if (!x) {
 		snprintf(span->last_error, sizeof(span->last_error), "Span has no D-Channels!");
 		return ZAP_FAIL;
 	}
+#endif
 
 	isdn_data = malloc(sizeof(*isdn_data));
 	assert(isdn_data != NULL);
@@ -888,21 +935,12 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 
 	span->start = zap_libpri_start;
 	isdn_data->sig_cb = sig_cb;
-	isdn_data->dchans[0] = dchans[0];
-	isdn_data->dchans[1] = dchans[1];
-	isdn_data->dchan = isdn_data->dchans[0];
+	//isdn_data->dchans[0] = dchans[0];
+	//isdn_data->dchans[1] = dchans[1];
+	//isdn_data->dchan = isdn_data->dchans[0];
 	
 	isdn_data->debug = parse_debug(debug);
 		
-	if (lpwrap_init_pri(&isdn_data->spri,
-						span->span_id,  // span
-						isdn_data->dchan, // dchan
-						isdn_data->pswitch,
-						isdn_data->node,
-						isdn_data->debug) < 0) {
-		snprintf(span->last_error, sizeof(span->last_error), "PRI init FAIL!");
-		return ZAP_FAIL;
-	}
 
 	span->signal_data = isdn_data;
 	span->signal_type = ZAP_SIGTYPE_ISDN;
