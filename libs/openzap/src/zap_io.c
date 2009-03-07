@@ -2563,6 +2563,8 @@ zap_status_t zap_global_init(void)
 
 	time_init();
 	
+	zap_thread_override_default_stacksize(ZAP_THREAD_STACKSIZE);
+
 	memset(&interfaces, 0, sizeof(interfaces));
 	globals.interface_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	globals.module_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);

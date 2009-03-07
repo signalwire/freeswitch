@@ -87,6 +87,7 @@
 #pragma comment(lib, "Winmm")
 #endif
 
+#define ZAP_THREAD_STACKSIZE 240 * 1024
 #define ZAP_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
 #define ZAP_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
 #define ZAP_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\

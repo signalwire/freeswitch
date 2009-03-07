@@ -97,7 +97,8 @@ static struct lpwrap_pri_event_list LPWRAP_PRI_EVENT_LIST[] = {
 	{15, LPWRAP_PRI_EVENT_HANGUP_REQ, "HANGUP_REQ"},
 	{16, LPWRAP_PRI_EVENT_NOTIFY, "NOTIFY"},
 	{17, LPWRAP_PRI_EVENT_PROGRESS, "PROGRESS"},
-	{18, LPWRAP_PRI_EVENT_KEYPAD_DIGIT, "KEYPAD_DIGIT"}
+	{18, LPWRAP_PRI_EVENT_KEYPAD_DIGIT, "KEYPAD_DIGIT"},
+	{19, LPWRAP_PRI_EVENT_IO_FAIL, "IO_FAIL"}
 };
 
 #define LINE "--------------------------------------------------------------------------------"
@@ -114,8 +115,9 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	int res;
 
 	if (zap_channel_read(spri->zdchan, buf, &len) != ZAP_SUCCESS) {
-		printf("D-READ FAIL! [%s]\n", spri->zdchan->last_error);
-		return 0;
+		zap_log(ZAP_LOG_CRIT, "span %d D-READ FAIL! [%s]\n", spri->span, spri->zdchan->last_error);
+		zap_clear_flag(spri, LPWRAP_PRI_READY);
+		return -1;
 	}
 	res = (int)len;
 	memset(&((unsigned char*)buf)[res],0,2);
@@ -133,8 +135,9 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 	zap_size_t len = buflen -2;
 
 	if (zap_channel_write(spri->zdchan, buf, buflen, &len) != ZAP_SUCCESS) {
-		printf("D-WRITE FAIL! [%s]\n", spri->zdchan->last_error);
-        return 0;
+		zap_log(ZAP_LOG_CRIT, "span %d D-WRITE FAIL! [%s]\n", spri->span, spri->zdchan->last_error);
+		zap_clear_flag(spri, LPWRAP_PRI_READY);
+        return -1;
 	}
 	
 	//print_bits(buf, (int)buflen-2, bb, sizeof(bb), 1, 0);
@@ -155,6 +158,7 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, int span, zap_channel_t *dchan, int
 		spri->span = span;
 		pri_set_debug(spri->pri, debug);
 		ret = 0;
+		zap_set_flag(spri, LPWRAP_PRI_READY);
 	} else {
 		fprintf(stderr, "Unable to create PRI\n");
 	}
@@ -168,6 +172,7 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 	fd_set rfds, efds;
 	struct timeval now = {0,0}, *next;
 	pri_event *event;
+	event_handler handler;
     int sel;
 	
 	if (spri->on_loop) {
@@ -210,7 +215,6 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 	}
 
 	if (event) {
-		event_handler handler;
 		/* 0 is catchall event handler */
 		if ((handler = spri->eventmap[event->e] ? spri->eventmap[event->e] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
 			handler(spri, event->e, event);
@@ -219,16 +223,25 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 		}
 	}
 
-	return sel;
+	if (zap_test_flag(spri, LPWRAP_PRI_READY)) {
+		return sel;
+	}
+
+	if ((handler = spri->eventmap[LPWRAP_PRI_EVENT_IO_FAIL] ? spri->eventmap[LPWRAP_PRI_EVENT_IO_FAIL] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
+		handler(spri, LPWRAP_PRI_EVENT_IO_FAIL, NULL);
+	}
+
+	return -1;
 }
 
 int lpwrap_run_pri(struct lpwrap_pri *spri)
 {
 	int ret = 0;
-
+	
 	for (;;){
-		ret=lpwrap_one_loop(spri);
-		if (ret < 0){
+		ret = lpwrap_one_loop(spri);
+
+		if (ret < 0) {
 
 #ifndef WIN32 //This needs to be adressed fror WIN32 still
 			if (errno == EINTR){
@@ -236,9 +249,8 @@ int lpwrap_run_pri(struct lpwrap_pri *spri)
 				continue;
 			}
 #endif	
-			printf("Error = %i\n",ret);
-			perror("Lpwrap Run Pri: ");
-			break;		
+			zap_log(ZAP_LOG_CRIT, "Error = %i [%s]\n", ret, strerror(errno));
+			break;
 		}
 	}
 
