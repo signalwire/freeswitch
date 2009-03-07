@@ -94,12 +94,35 @@ struct switch_xml_config_item {
 	void *defaultvalue; 		   			/*< Default value */
 	void *data; 				   			/*< Custom data (depending on the type) */
 	switch_xml_config_callback_t function;	/*< Callback to be called after the var is parsed */
+	char *syntax;							/*< Optional syntax documentation for this setting */
+	char *helptext;							/*< Optional documentation text for this setting */
 };
 
-#define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data)	{ _key, _type, _flags, _ptr, _defaultvalue, _data, NULL }
-#define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue)	{ _key, SWITCH_CONFIG_STRING, _flags, _ptr, _defaultvalue, &switch_config_string_strdup, NULL }
-#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _data, _functiondata)	{ _key, _type, _flags, _ptr, _defaultvalue, _functiondata, _data }
-#define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL ,NULL, NULL, NULL }
+#define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)	{ _key, _type, _flags, _ptr, _defaultvalue, _data, NULL, _syntax, _helptext }
+#define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue, _syntax, _helptext)	{ _key, SWITCH_CONFIG_STRING, _flags, _ptr, _defaultvalue, &switch_config_string_strdup, NULL, _helptext}
+#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _data, _functiondata, _syntax, _helptext)	{ _key, _type, _flags, _ptr, _defaultvalue, _functiondata, _data, _helptext}
+#define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL ,NULL, NULL, NULL, NULL, NULL }
+
+/*! 
+ * \brief Gets the int representation of an enum
+ * \param enum_options the switch_xml_config_enum_item_t array for this enum
+ * \param value string value to search 
+ */
+SWITCH_DECLARE(switch_status_t) switch_xml_config_enum_str2int(switch_xml_config_enum_item_t *enum_options, const char *value, int *out);
+
+/*! 
+ * \brief Gets the string representation of an enum
+ * \param enum_options the switch_xml_config_enum_item_t array for this enum
+ * \param value int value to search 
+ */
+SWITCH_DECLARE(const char*) switch_xml_config_enum_int2str(switch_xml_config_enum_item_t *enum_options, int value);
+
+/*!
+ * \brief Prints out an item's documentation on the console 
+ * \param level loglevel to use
+ * \param item item which the doc should be printed
+ */
+SWITCH_DECLARE(void) switch_xml_config_item_print_doc(int level, switch_xml_config_item_t *item);
 
 /*! 
  * \brief Parses all the xml elements, following a ruleset defined by an array of switch_xml_config_item_t 
@@ -108,7 +131,15 @@ struct switch_xml_config_item {
  * \param instructions instrutions on how to parse the elements
  * \see switch_xml_config_item_t
  */
-SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions);
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, switch_bool_t reload, switch_xml_config_item_t *instructions);
+
+/*!
+ * \brief Parses a module's settings
+ * \param reload true to skip all non-reloadable options
+ * \param file the configuration file to look for
+ * \param instructions the instructions 
+ */
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_module_settings(const char *file, switch_bool_t reload, switch_xml_config_item_t *instructions);
 
 /*! 
  * \brief Parses all of an event's elements, following a ruleset defined by an array of switch_xml_config_item_t 
@@ -117,7 +148,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
  * \param instructions instrutions on how to parse the elements
  * \see switch_xml_config_item_t
  */
-SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *event, int count, int reload, switch_xml_config_item_t *instructions);
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *event, int count, switch_bool_t reload, switch_xml_config_item_t *instructions);
 
 /*!
  * \brief Parses a list of xml elements into an event  
@@ -128,12 +159,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
  */
 SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event);
 
-
 /*!
  * \brief Free any memory allocated by the configuration
  * \param instructions instrutions on how to parse the elements
  */
 SWITCH_DECLARE(void) switch_xml_config_cleanup(switch_xml_config_item_t *instructions);
+
 #endif /* !defined(SWITCH_XML_CONFIG_H) */
 
 /* For Emacs:

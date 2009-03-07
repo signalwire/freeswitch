@@ -34,6 +34,17 @@
 
 SWITCH_DECLARE_DATA switch_xml_config_string_options_t switch_config_string_strdup = { NULL, 0, NULL };
 
+static switch_xml_config_enum_item_t switch_config_types_enum[] = {
+	{"int", 	SWITCH_CONFIG_INT		},
+	{"string", 	SWITCH_CONFIG_STRING	},
+	{"bool", 	SWITCH_CONFIG_BOOL		},
+	{"custom", 	SWITCH_CONFIG_CUSTOM	},
+	{"enum", 	SWITCH_CONFIG_ENUM		},
+	{"flag", 	SWITCH_CONFIG_FLAG		},
+	{"flagarray",SWITCH_CONFIG_FLAGARRAY},
+	{ NULL, 0 }
+};
+
 SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const char *keyname, const char *valuename, switch_event_t **event)
 {
 	switch_xml_t node;
@@ -57,7 +68,35 @@ SWITCH_DECLARE(switch_size_t) switch_event_import_xml(switch_xml_t xml, const ch
 	return count;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int reload, switch_xml_config_item_t *instructions)
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_module_settings(const char *file, switch_bool_t reload, switch_xml_config_item_t *instructions)
+{
+	switch_xml_t cfg, xml, settings;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
+	if (!(xml = switch_xml_open_cfg(file, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not open %s\n", file);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		status = switch_xml_config_parse(switch_xml_child(settings, "param"), reload, instructions);
+	}
+	
+	switch_xml_free(xml);
+	
+	return status;
+}
+
+SWITCH_DECLARE(void) switch_xml_config_item_print_doc(int level, switch_xml_config_item_t *item)
+{
+	if (item->syntax && item->helptext) {
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, level, "Item name: [%s]\nType: %s (%s)\nSyntax: %s\nHelp: %s\n\n",
+		 	item->key, switch_xml_config_enum_int2str(switch_config_types_enum, item->type), 
+			switch_test_flag(item, CONFIG_REQUIRED) ? "required" : "optional", item->syntax, item->helptext);
+	}
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, switch_bool_t reload, switch_xml_config_item_t *instructions)
 {
 	switch_event_t *event = NULL;
 	switch_status_t result;
@@ -72,7 +111,29 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse(switch_xml_t xml, int re
 	return result;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *event, int count, int reload, switch_xml_config_item_t *instructions)
+SWITCH_DECLARE(switch_status_t) switch_xml_config_enum_str2int(switch_xml_config_enum_item_t *enum_options, const char *value, int *out)
+{
+	for (;enum_options->key; enum_options++) {
+		if (!strcasecmp(value, enum_options->key)) {
+			*out = enum_options->value;
+			return SWITCH_STATUS_SUCCESS;
+		}
+	}
+	
+	return SWITCH_STATUS_FALSE;
+}
+
+SWITCH_DECLARE(const char*) switch_xml_config_enum_int2str(switch_xml_config_enum_item_t *enum_options, int value)
+{
+	for (;enum_options->key; enum_options++) {
+		if (value == enum_options->value) {
+			return enum_options->key;
+		}
+	}
+	return NULL;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *event, int count, switch_bool_t reload, switch_xml_config_item_t *instructions)
 {
 	switch_xml_config_item_t *item;
 	int matched_count = 0;
@@ -142,9 +203,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 					const char *newstring = NULL;
 					
 					if (!string_options) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing mandatory switch_xml_config_string_options_t structure for parameter [%s], skipping!\n",
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Missing mandatory switch_xml_config_string_options_t structure for parameter [%s], skipping!\n",
 										  item->key);
-						continue;
+						return SWITCH_STATUS_FALSE;
 					}
 					
 					/* Perform validation */
@@ -155,7 +216,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 							} else {
 								newstring = (char*)item->defaultvalue;  /* Regex failed */
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%s]\n", 
-									value, item->key, newstring);
+									value, item->key, newstring ? newstring : "(null)");
+								switch_xml_config_item_print_doc(SWITCH_LOG_ERROR, item);
 							}
 						} else {
 							newstring = value; /* No validation */
@@ -204,6 +266,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 						newval = (switch_bool_t)(intptr_t)item->defaultvalue;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s], setting default [%s]\n",  
 										value, item->key, newval ? "true" : "false");
+						switch_xml_config_item_print_doc(SWITCH_LOG_ERROR, item);
 					} else {
 						newval = (switch_bool_t)(intptr_t)item->defaultvalue;
 					}
@@ -221,21 +284,18 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 					switch_xml_config_enum_item_t *enum_options = (switch_xml_config_enum_item_t*)item->data;
 					int *dest = (int*)item->ptr;
 					int newval = 0;
+					switch_status_t lookup_result;
 					
 					if (value) {
-						for (;enum_options->key; enum_options++) {
-							if (!strcasecmp(value, enum_options->key)) {
-								newval = enum_options->value;
-								break;
-							}
-						}
+						lookup_result = switch_xml_config_enum_str2int(enum_options, value, &newval);
 					} else {
 						newval = (int)(intptr_t)item->defaultvalue; 
 					}
 					
-					if (!enum_options->key) { /* if (!found) */
+					if (value != SWITCH_STATUS_SUCCESS) {
 						newval = (int)(intptr_t)item->defaultvalue;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n",  value, item->key);
+						switch_xml_config_item_print_doc(SWITCH_LOG_ERROR, item);
 					}
 					
 					if (*dest != newval) {
