@@ -32,12 +32,12 @@ opt/freeswitch/mod/mod_iax.so*
 opt/freeswitch/mod/mod_portaudio.so*
 opt/freeswitch/mod/mod_sofia.so*
 opt/freeswitch/mod/mod_openzap.so
-opt/freeswitch/mod/ozmod_analog_em.so
-opt/freeswitch/mod/ozmod_analog.so
-opt/freeswitch/mod/ozmod_isdn.so
+opt/freeswitch/mod/ozmod_analog_em.so*
+opt/freeswitch/mod/ozmod_analog.so*
+opt/freeswitch/mod/ozmod_isdn.so*
 opt/freeswitch/mod/ozmod_ss7_boost.so
-opt/freeswitch/mod/ozmod_wanpipe.so
-opt/freeswitch/mod/ozmod_zt.so
+opt/freeswitch/mod/ozmod_wanpipe.so*
+opt/freeswitch/mod/ozmod_zt.so*
 opt/freeswitch/mod/mod_event_*.so*
 opt/freeswitch/mod/mod_native_file.so*
 opt/freeswitch/mod/mod_sndfile.so*
@@ -53,6 +53,7 @@ opt/freeswitch/conf/web-vm.tpl
 opt/freeswitch/conf/tetris.ttml
 opt/freeswitch/conf/fur_elise.ttml
 opt/freeswitch/conf/openzap.conf
+opt/freeswitch/conf/wanpipe.conf
 opt/freeswitch/conf/dialplan/public.xml
 opt/freeswitch/conf/dialplan/default.xml
 opt/freeswitch/conf/dialplan/features.xml
@@ -89,6 +90,7 @@ opt/freeswitch/conf/directory/default.xml
 opt/freeswitch/conf/voicemail.tpl
 opt/freeswitch/conf/freeswitch.xml
 opt/freeswitch/conf/extensions.conf
+opt/freeswitch/conf/autoload_configs/openzap.conf.xml
 opt/freeswitch/conf/autoload_configs/ivr.conf.xml
 opt/freeswitch/conf/autoload_configs/shout.conf.xml
 opt/freeswitch/conf/autoload_configs/voicemail.conf.xml
