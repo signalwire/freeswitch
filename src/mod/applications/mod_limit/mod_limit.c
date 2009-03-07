@@ -37,8 +37,11 @@
 #include <switch_odbc.h>
 #endif
 
+#define LIMIT_EVENT_USAGE "limit::usage"
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load);
-SWITCH_MODULE_DEFINITION(mod_limit, mod_limit_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown);
+SWITCH_MODULE_DEFINITION(mod_limit, mod_limit_load, mod_limit_shutdown, NULL);
 
 static struct {
 	switch_memory_pool_t *pool;
@@ -289,6 +292,21 @@ static switch_status_t do_config()
 	switch_safe_free(sql);
 
 	return status;
+}
+
+static void limit_fire_event(const char *realm, const char *key, uint32_t usage, uint32_t rate, uint32_t max, uint32_t ratemax)
+{
+	switch_event_t *event;
+	
+	if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, LIMIT_EVENT_USAGE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "realm", realm);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "key", key);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "usage", "%d", usage);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "rate", "%d", rate);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "max", "%d", max);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "ratemax", "%d", ratemax);
+		switch_event_fire(&event);
+	}
 }
 
 static switch_status_t db_state_handler(switch_core_session_t *session)
@@ -792,7 +810,8 @@ SWITCH_STANDARD_APP(limit_function)
 	limit_execute_sql(sql, NULL);
 	switch_safe_free(sql);
 	
-	switch_channel_set_variable(channel, "limit_usage", switch_core_session_sprintf(session, "%d", ++got));
+	switch_channel_set_variable_printf(channel, "limit_usage", "%d", ++got);
+	limit_fire_event(realm, id, got, 0, max, 0);
 
   done:
 	switch_mutex_unlock(globals.mutex);
@@ -954,7 +973,6 @@ SWITCH_STANDARD_APP(limit_hash_function)
 	if (increment) {
 		item->total_usage++;
 		
-
 		switch_core_hash_insert(pvt->hash, hashkey, item);
 		
 		if (max == -1) {
@@ -964,6 +982,8 @@ SWITCH_STANDARD_APP(limit_hash_function)
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Usage for %s is now %d/%d for the last %d seconds\n", hashkey, item->rate_usage, max, interval);
 		}
+		
+		limit_fire_event(realm, id, item->total_usage, item->rate_usage, max, max >=0 ? (uint32_t)max : 0);
 	}
 	
 	/* Save current usage & rate into channel variables so it can be used later in the dialplan, or added to CDR records */
@@ -1036,6 +1056,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	gethostname(globals.hostname, sizeof(globals.hostname));
 	globals.pool = pool;
 
+
+	if (switch_event_reserve_subclass(LIMIT_EVENT_USAGE) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt register event subclass \"%s\"", 
+			LIMIT_EVENT_USAGE);
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	if ((status = do_config() != SWITCH_STATUS_SUCCESS)) {
 		return status;
 	}
@@ -1048,6 +1075,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+		
+
 
 	SWITCH_ADD_APP(app_interface, "limit", "Limit", LIMIT_DESC, limit_function, LIMIT_USAGE, SAF_SUPPORT_NOMEDIA);
 	SWITCH_ADD_APP(app_interface, "limit_hash", "Limit (hash)", LIMITHASH_DESC, limit_hash_function, LIMITHASH_USAGE, SAF_SUPPORT_NOMEDIA);
@@ -1071,6 +1100,23 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 	switch_console_set_complete("add group call");
 
 	/* indicate that the module should continue to be loaded */
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown) 
+{
+	switch_event_free_subclass(LIMIT_EVENT_USAGE);
+	
+	switch_xml_config_cleanup(config_settings);
+	
+	switch_mutex_destroy(globals.mutex);
+	switch_mutex_destroy(globals.limit_hash_mutex);
+	switch_mutex_destroy(globals.db_hash_mutex);
+
+	switch_core_hash_destroy(&globals.limit_hash);
+	switch_core_hash_destroy(&globals.db_hash);
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
