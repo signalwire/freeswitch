@@ -116,6 +116,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalOptions="rpcrt4.lib"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>

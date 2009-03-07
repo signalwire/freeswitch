@@ -2,11 +2,13 @@
 
 #ifdef ASTERISK
 #define skypiax_sleep usleep
+#define skypiax_strncpy strncpy
 #define tech_pvt p
 extern int skypiax_debug;
 extern char *skypiax_console_active;
 #else /* FREESWITCH */
 #define skypiax_sleep switch_sleep
+#define skypiax_strncpy switch_copy_string
 extern switch_memory_pool_t *skypiax_module_pool;
 extern switch_endpoint_interface_t *skypiax_endpoint_interface;
 #endif /* ASTERISK */
@@ -75,7 +77,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
           tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
         }
       }
-      strncpy(message_2, message, sizeof(message) - 1);
+      skypiax_strncpy(message_2, message, sizeof(message) - 1);
       buf = message;
       stringp = &buf;
       where = strsep(stringp, " ");
@@ -96,9 +98,9 @@ int skypiax_signaling_read(private_t * tech_pvt)
         }
       }
       if (!strcasecmp(message, "CURRENTUSERHANDLE")) {
-        strncpy(obj, where, sizeof(obj) - 1);
+        skypiax_strncpy(obj, where, sizeof(obj) - 1);
         where = strsep(stringp, " ");
-        strncpy(id, where, sizeof(id) - 1);
+        skypiax_strncpy(id, where, sizeof(id) - 1);
         if (!strcasecmp(id, tech_pvt->skype_user)) {
           tech_pvt->SkypiaxHandles.currentuserhandle = 1;
           DEBUGA_SKYPE
@@ -107,11 +109,11 @@ int skypiax_signaling_read(private_t * tech_pvt)
         }
       }
       if (!strcasecmp(message, "USER")) {
-        strncpy(obj, where, sizeof(obj) - 1);
+        skypiax_strncpy(obj, where, sizeof(obj) - 1);
         where = strsep(stringp, " ");
-        strncpy(id, where, sizeof(id) - 1);
+        skypiax_strncpy(id, where, sizeof(id) - 1);
         where = strsep(stringp, " ");
-        strncpy(prop, where, sizeof(prop) - 1);
+        skypiax_strncpy(prop, where, sizeof(prop) - 1);
         if (!strcasecmp(prop, "RECEIVEDAUTHREQUEST")) {
           char msg_to_skype[256];
           DEBUGA_SKYPE("Skype MSG: message: %s, obj: %s, id: %s, prop: %s!\n",
@@ -122,14 +124,14 @@ int skypiax_signaling_read(private_t * tech_pvt)
         }
       }
       if (!strcasecmp(message, "MESSAGE")) {
-        strncpy(obj, where, sizeof(obj) - 1);
+        skypiax_strncpy(obj, where, sizeof(obj) - 1);
         where = strsep(stringp, " ");
-        strncpy(id, where, sizeof(id) - 1);
+        skypiax_strncpy(id, where, sizeof(id) - 1);
         where = strsep(stringp, " ");
-        strncpy(prop, where, sizeof(prop) - 1);
+        skypiax_strncpy(prop, where, sizeof(prop) - 1);
         if (!strcasecmp(prop, "STATUS")) {
           where = strsep(stringp, " ");
-          strncpy(value, where, sizeof(value) - 1);
+          skypiax_strncpy(value, where, sizeof(value) - 1);
           if (!strcasecmp(value, "RECEIVED")) {
             char msg_to_skype[256];
             DEBUGA_SKYPE("Skype MSG: message: %s, obj: %s, id: %s, prop: %s value: %s!\n",
@@ -148,13 +150,13 @@ int skypiax_signaling_read(private_t * tech_pvt)
         }
       }
       if (!strcasecmp(message, "CALL")) {
-        strncpy(obj, where, sizeof(obj) - 1);
+        skypiax_strncpy(obj, where, sizeof(obj) - 1);
         where = strsep(stringp, " ");
-        strncpy(id, where, sizeof(id) - 1);
+        skypiax_strncpy(id, where, sizeof(id) - 1);
         where = strsep(stringp, " ");
-        strncpy(prop, where, sizeof(prop) - 1);
+        skypiax_strncpy(prop, where, sizeof(prop) - 1);
         where = strsep(stringp, " ");
-        strncpy(value, where, sizeof(value) - 1);
+        skypiax_strncpy(value, where, sizeof(value) - 1);
         where = strsep(stringp, " ");
 
         DEBUGA_SKYPE
@@ -162,7 +164,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
            SKYPIAX_P_LOG, message, obj, id, prop, value, where ? where : "NULL");
 
         if (!strcasecmp(prop, "PARTNER_HANDLE")) {
-          strncpy(tech_pvt->callid_number, value, sizeof(tech_pvt->callid_number) - 1);
+          skypiax_strncpy(tech_pvt->callid_number, value, sizeof(tech_pvt->callid_number) - 1);
           DEBUGA_SKYPE
             ("the skype_call %s caller PARTNER_HANDLE (tech_pvt->callid_number) is: %s\n",
              SKYPIAX_P_LOG, id, tech_pvt->callid_number);
@@ -196,7 +198,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
         }
         if (!strcasecmp(prop, "DURATION") && (!strcasecmp(value, "1"))) {
           if (strcasecmp(id, tech_pvt->skype_call_id)) {
-            strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
             DEBUGA_SKYPE
               ("We called a Skype contact and he answered us on skype_call: %s.\n",
                SKYPIAX_P_LOG, id);
@@ -227,7 +229,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
                 skypiax_signaling_write(tech_pvt, msg_to_skype);
                 DEBUGA_SKYPE("We answered a Skype RING on skype_call %s\n", SKYPIAX_P_LOG,
                              id);
-                strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+                skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
               } else {
                 /* we're owned, we're in a call, let's try to transfer */
         /************************** TODO
@@ -264,7 +266,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
               /* we are calling out */
               tech_pvt->skype_callflow = CALLFLOW_STATUS_RINGING;
               tech_pvt->interface_state = SKYPIAX_STATE_RINGING;
-              strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+              skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
               DEBUGA_SKYPE("Our remote party in skype_call %s is RINGING\n",
                            SKYPIAX_P_LOG, id);
               remote_party_is_ringing(tech_pvt);
@@ -320,7 +322,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
               ("we tried to call Skype on skype_call %s and Skype has now FAILED\n",
                SKYPIAX_P_LOG, id);
             tech_pvt->skype_call_id[0] = '\0';
-            strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
             tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
             return CALLFLOW_INCOMING_HANGUP;
           } else if (!strcasecmp(value, "REFUSED")) {
@@ -330,7 +332,7 @@ int skypiax_signaling_read(private_t * tech_pvt)
               DEBUGA_SKYPE
                 ("we tried to call Skype on skype_call %s and Skype has now REFUSED\n",
                  SKYPIAX_P_LOG, id);
-              strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+              skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
               tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
               tech_pvt->skype_call_id[0] = '\0';
               return CALLFLOW_INCOMING_HANGUP;
@@ -341,19 +343,19 @@ int skypiax_signaling_read(private_t * tech_pvt)
           } else if (!strcasecmp(value, "ROUTING")) {
             tech_pvt->skype_callflow = CALLFLOW_STATUS_ROUTING;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
-            strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
             DEBUGA_SKYPE("skype_call: %s is now ROUTING\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "UNPLACED")) {
             tech_pvt->skype_callflow = CALLFLOW_STATUS_UNPLACED;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
-            strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
             DEBUGA_SKYPE("skype_call: %s is now UNPLACED\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "INPROGRESS")) {
             char msg_to_skype[1024];
 
             if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
                 || !strcasecmp(tech_pvt->skype_call_id, id)) {
-              strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+              skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
               DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPIAX_P_LOG, id);
               if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA) {
                 tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
@@ -389,19 +391,19 @@ int skypiax_signaling_read(private_t * tech_pvt)
         /* DEBUGA_SKYPE("Skype MSG: message_2: %s, message2[11]: %s\n", SKYPIAX_P_LOG,
          * message_2, &message_2[11]); */
         memset(tech_pvt->skype_friends, 0, 4096);
-        strncpy(tech_pvt->skype_friends, &message_2[11], 4095);
+        skypiax_strncpy(tech_pvt->skype_friends, &message_2[11], 4095);
       }
       if (!strcasecmp(message, "#222")) {
         /* DEBUGA_SKYPE("Skype MSG: message_2: %s, message2[10]: %s\n", SKYPIAX_P_LOG,
          * message_2, &message_2[10]); */
         memset(tech_pvt->skype_fullname, 0, 512);
-        strncpy(tech_pvt->skype_fullname, &message_2[10], 511);
+        skypiax_strncpy(tech_pvt->skype_fullname, &message_2[10], 511);
       }
       if (!strcasecmp(message, "#765")) {
         /* DEBUGA_SKYPE("Skype MSG: message_2: %s, message2[10]: %s\n", SKYPIAX_P_LOG,
          * message_2, &message_2[10]); */
         memset(tech_pvt->skype_displayname, 0, 512);
-        strncpy(tech_pvt->skype_displayname, &message_2[10], 511);
+        skypiax_strncpy(tech_pvt->skype_displayname, &message_2[10], 511);
       }
       a = 0;
     }                           //message end
@@ -943,7 +945,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
       PCOPYDATASTRUCT poCopyData = (PCOPYDATASTRUCT) ulParam;
 
       memset(msg_from_skype, '\0', sizeof(msg_from_skype));
-      strncpy(msg_from_skype, (const char *) poCopyData->lpData,
+      skypiax_strncpy(msg_from_skype, (const char *) poCopyData->lpData,
               sizeof(msg_from_skype) - 2);
 
       howmany = strlen(msg_from_skype) + 1;
