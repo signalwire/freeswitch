@@ -190,6 +190,7 @@ struct switch_runtime {
 	uint32_t flags;
 	switch_time_t timestamp;
 	switch_mutex_t *throttle_mutex;
+	switch_mutex_t *session_hash_mutex;
 	switch_mutex_t *global_mutex;
 	switch_mutex_t *global_var_mutex;
 	uint32_t sps_total;

@@ -53,7 +53,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 	switch_core_session_t *session = NULL;
 
 	if (uuid_str) {
-		switch_mutex_lock(runtime.throttle_mutex);
+		switch_mutex_lock(runtime.session_hash_mutex);
 		if ((session = switch_core_hash_find(session_manager.session_table, uuid_str))) {
 			/* Acquire a read lock on the session */
 #ifdef SWITCH_DEBUG_RWLOCKS
@@ -68,7 +68,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 				session = NULL;
 			}
 		}
-		switch_mutex_unlock(runtime.throttle_mutex);
+		switch_mutex_unlock(runtime.session_hash_mutex);
 	}
 
 	/* if its not NULL, now it's up to you to rwunlock this */
@@ -84,7 +84,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 
 	if (!var_val) return;
 
-	switch_mutex_lock(runtime.throttle_mutex);
+	switch_mutex_lock(runtime.session_hash_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		if (val) {
@@ -99,7 +99,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_nam
 			}
 		}
 	}
-	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_mutex_unlock(runtime.session_hash_mutex);
 }	
 
 SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_interface_t *endpoint_interface, switch_call_cause_t cause)
@@ -108,7 +108,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 	void *val;
 	switch_core_session_t *session;
 
-	switch_mutex_lock(runtime.throttle_mutex);
+	switch_mutex_lock(runtime.session_hash_mutex);
 	for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, NULL, NULL, &val);
 		if (val) {
@@ -121,7 +121,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_i
 			}
 		}
 	}
-	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_mutex_unlock(runtime.session_hash_mutex);
 }	
 
 SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
@@ -132,7 +132,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 	uint32_t loops = 0;
 	
 	while (session_manager.session_count > 0) {
-		switch_mutex_lock(runtime.throttle_mutex);
+		switch_mutex_lock(runtime.session_hash_mutex);
 		for (hi = switch_hash_first(NULL, session_manager.session_table); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			if (val) {
@@ -143,7 +143,7 @@ SWITCH_DECLARE(void) switch_core_session_hupall(switch_call_cause_t cause)
 				}
 			}
 		}
-		switch_mutex_unlock(runtime.throttle_mutex);
+		switch_mutex_unlock(runtime.session_hash_mutex);
 		switch_yield(1000000);
 		if (++loops == 30) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Giving up with %d session%s remaining\n",
@@ -159,7 +159,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(const char *uui
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(runtime.throttle_mutex);
+	switch_mutex_lock(runtime.session_hash_mutex);
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -169,7 +169,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_message_send(const char *uui
 			switch_core_session_rwunlock(session);
 		}
 	}
-	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	return status;
 }
@@ -179,7 +179,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_
 	switch_core_session_t *session = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
-	switch_mutex_lock(runtime.throttle_mutex);
+	switch_mutex_lock(runtime.session_hash_mutex);
 	if ((session = switch_core_hash_find(session_manager.session_table, uuid_str)) != 0) {
 		/* Acquire a read lock on the session or forget it the channel is dead */
 		if (switch_core_session_read_lock(session) == SWITCH_STATUS_SUCCESS) {
@@ -189,7 +189,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(const char *uuid_
 			switch_core_session_rwunlock(session);
 		}
 	}
-	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	return status;
 }
@@ -847,12 +847,12 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 
 	switch_scheduler_del_task_group((*session)->uuid_str);
 
-	switch_mutex_lock(runtime.throttle_mutex);
+	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_delete(session_manager.session_table, (*session)->uuid_str);
 	if (session_manager.session_count) {
 		session_manager.session_count--;
 	}
-	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_mutex_unlock(runtime.session_hash_mutex);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DESTROY) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data((*session)->channel, event);
@@ -1030,11 +1030,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
-	switch_mutex_lock(runtime.throttle_mutex);
+	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_delete(session_manager.session_table, session->uuid_str);
 	switch_set_string(session->uuid_str, use_uuid);
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
-	switch_mutex_unlock(runtime.throttle_mutex);
+	switch_mutex_unlock(runtime.session_hash_mutex);
 	switch_channel_event_set_data(session->channel, event);
 	switch_event_fire(&event);
 	
@@ -1136,12 +1136,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 	switch_queue_create(&session->message_queue, SWITCH_MESSAGE_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
 	switch_queue_create(&session->private_event_queue, SWITCH_EVENT_QUEUE_LEN, session->pool);
-	switch_mutex_lock(runtime.throttle_mutex);
-	session->id = session_manager.session_id++;
-	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
-	session_manager.session_count++;
-	switch_mutex_unlock(runtime.throttle_mutex);
 
+	switch_mutex_lock(runtime.session_hash_mutex);
+	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
+	session->id = session_manager.session_id++;
+	session_manager.session_count++;
+	switch_mutex_unlock(runtime.session_hash_mutex);
+	
 	return session;
 }
 

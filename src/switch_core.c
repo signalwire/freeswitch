@@ -1064,6 +1064,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 
 	switch_mutex_init(&runtime.throttle_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
+	switch_mutex_init(&runtime.session_hash_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_mutex_init(&runtime.global_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_mutex_init(&runtime.global_var_mutex, SWITCH_MUTEX_NESTED, runtime.memory_pool);
 	switch_core_set_globals();
