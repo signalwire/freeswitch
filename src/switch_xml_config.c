@@ -284,7 +284,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 					switch_xml_config_enum_item_t *enum_options = (switch_xml_config_enum_item_t*)item->data;
 					int *dest = (int*)item->ptr;
 					int newval = 0;
-					switch_status_t lookup_result;
+					switch_status_t lookup_result = SWITCH_STATUS_SUCCESS;
 					
 					if (value) {
 						lookup_result = switch_xml_config_enum_str2int(enum_options, value, &newval);
@@ -292,7 +292,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 						newval = (int)(intptr_t)item->defaultvalue; 
 					}
 					
-					if (value != SWITCH_STATUS_SUCCESS) {
+					if (lookup_result != SWITCH_STATUS_SUCCESS) {
 						newval = (int)(intptr_t)item->defaultvalue;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid value [%s] for parameter [%s]\n",  value, item->key);
 						switch_xml_config_item_print_doc(SWITCH_LOG_ERROR, item);
