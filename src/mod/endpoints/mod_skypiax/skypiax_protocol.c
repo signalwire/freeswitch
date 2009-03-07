@@ -12,6 +12,7 @@ extern char *skypiax_console_active;
 extern switch_memory_pool_t *skypiax_module_pool;
 extern switch_endpoint_interface_t *skypiax_endpoint_interface;
 #endif /* ASTERISK */
+int samplerate_skypiax = SAMPLERATE_SKYPIAX;
 
 extern int running;
 
@@ -484,7 +485,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
         if (len == 320) {
           unsigned int howmany;
 
-          if (SAMPLERATE_SKYPIAX == 8000) {
+          if (samplerate_skypiax == 8000) {
             /* we're downsampling from 16khz to 8khz, srv_out will contain each other sample from srv_in */
             a = 0;
             for (i = 0; i < len / sizeof(short); i++) {
@@ -492,7 +493,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
               i++;
               a++;
             }
-          } else if (SAMPLERATE_SKYPIAX == 16000) {
+          } else if (samplerate_skypiax == 16000) {
             /* we're NOT downsampling, srv_out will contain ALL samples from srv_in */
             for (i = 0; i < len / sizeof(short); i++) {
               srv_out[i] = srv_in[i];
@@ -647,7 +648,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
         }
 
         if (got == SAMPLES_PER_FRAME * sizeof(short)) {
-          if (SAMPLERATE_SKYPIAX == 8000) {
+          if (samplerate_skypiax == 8000) {
 
             /* we're upsampling from 8khz to 16khz, cli_out will contain two times each sample from cli_in */
             a = 0;
@@ -658,7 +659,7 @@ void *skypiax_do_tcp_cli_thread_func(void *obj)
               a++;
             }
             got = got * 2;
-          } else if (SAMPLERATE_SKYPIAX == 16000) {
+          } else if (samplerate_skypiax == 16000) {
             /* we're NOT upsampling, cli_out will contain just ALL samples from cli_in */
             for (i = 0; i < got / sizeof(short); i++) {
               cli_out[i] = cli_in[i];
