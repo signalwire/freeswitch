@@ -158,10 +158,10 @@ static switch_status_t channel_on_init(switch_core_session_t * session)
   private_t *tech_pvt = NULL;
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
   switch_set_flag_locked(tech_pvt, TFLAG_IO);
 
   /* Move channel's state machine to ROUTING. This means the call is trying
@@ -184,10 +184,10 @@ static switch_status_t channel_on_hangup(switch_core_session_t * session)
   char msg_to_skype[256];
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   switch_clear_flag_locked(tech_pvt, TFLAG_IO);
   switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
@@ -226,10 +226,10 @@ static switch_status_t channel_on_routing(switch_core_session_t * session)
   private_t *tech_pvt = NULL;
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   DEBUGA_SKYPE("%s CHANNEL ROUTING\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
 
@@ -243,10 +243,10 @@ static switch_status_t channel_on_execute(switch_core_session_t * session)
   private_t *tech_pvt = NULL;
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   DEBUGA_SKYPE("%s CHANNEL EXECUTE\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
 
@@ -259,10 +259,10 @@ static switch_status_t channel_kill_channel(switch_core_session_t * session, int
   private_t *tech_pvt = NULL;
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   switch (sig) {
   case SWITCH_SIG_KILL:
@@ -320,10 +320,10 @@ static switch_status_t channel_read_frame(switch_core_session_t * session,
   switch_byte_t *data;
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
   tech_pvt->read_frame.flags = SFF_NONE;
   *frame = NULL;
 
@@ -390,10 +390,10 @@ static switch_status_t channel_write_frame(switch_core_session_t * session,
   unsigned int sent;
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   if (!switch_test_flag(tech_pvt, TFLAG_IO)) {
     ERRORA("CIAPA \n", SKYPIAX_P_LOG);
@@ -424,10 +424,10 @@ static switch_status_t channel_answer_channel(switch_core_session_t * session)
   switch_channel_t *channel = NULL;
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   DEBUGA_SKYPE("ANSWERED! \n", SKYPIAX_P_LOG);
 
@@ -441,10 +441,10 @@ static switch_status_t channel_receive_message(switch_core_session_t * session,
   private_t *tech_pvt;
 
   channel = switch_core_session_get_channel(session);
-  assert(channel != NULL);
+  switch_assert(channel != NULL);
 
   tech_pvt = (private_t *) switch_core_session_get_private(session);
-  assert(tech_pvt != NULL);
+  switch_assert(tech_pvt != NULL);
 
   switch (msg->message_id) {
   case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -521,11 +521,11 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t * sess
       int found = 0;
       char interface_name[256];
 
-      if (strlen(outbound_profile->destination_number)) {
+      if (!switch_strlen_zero(outbound_profile->destination_number)) {
         int i;
         char *slash;
 
-        strncpy(interface_name, outbound_profile->destination_number, 255);
+        switch_copy_string(interface_name, outbound_profile->destination_number, 255);
         slash = strrchr(interface_name, '/');
         *slash = '\0';
 
@@ -657,12 +657,12 @@ static void *SWITCH_THREAD_FUNC skypiax_signaling_thread_func(switch_thread_t * 
         } else {
           DEBUGA_SKYPE("no session\n", SKYPIAX_P_LOG);
         }
-      } else {
+        tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
+        memset(tech_pvt->session_uuid_str, '\0', sizeof(tech_pvt->session_uuid_str));
+	  } else {
         ERRORA("no tech_pvt?\n", SKYPIAX_P_LOG);
-      }
-      tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
-      memset(tech_pvt->session_uuid_str, '\0', sizeof(tech_pvt->session_uuid_str));
-    }
+	  }
+	}
   }
   return NULL;
 }
@@ -1217,25 +1217,29 @@ int remote_party_is_ringing(private_t * tech_pvt)
   switch_core_session_t *session = NULL;
   switch_channel_t *channel = NULL;
 
-  if (strlen(tech_pvt->session_uuid_str)) {
+  if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
     session = switch_core_session_locate(tech_pvt->session_uuid_str);
   } else {
     ERRORA("No session???\n", SKYPIAX_P_LOG);
+	goto done;
   }
   if (session) {
     channel = switch_core_session_get_channel(session);
   } else {
     ERRORA("No session???\n", SKYPIAX_P_LOG);
+	goto done;
   }
   if (channel) {
     switch_channel_mark_ring_ready(channel);
     DEBUGA_SKYPE("skype_call: REMOTE PARTY RINGING\n", SKYPIAX_P_LOG);
   } else {
     ERRORA("No channel???\n", SKYPIAX_P_LOG);
+	goto done;
   }
 
   switch_core_session_rwunlock(session);
 
+done:
   return 0;
 }
 
@@ -1244,26 +1248,30 @@ int remote_party_is_early_media(private_t * tech_pvt)
   switch_core_session_t *session = NULL;
   switch_channel_t *channel = NULL;
 
-  if (strlen(tech_pvt->session_uuid_str)) {
+  if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
     session = switch_core_session_locate(tech_pvt->session_uuid_str);
   } else {
     ERRORA("No session???\n", SKYPIAX_P_LOG);
+	goto done;
   }
   if (session) {
     channel = switch_core_session_get_channel(session);
     switch_core_session_add_stream(session, NULL);
   } else {
     ERRORA("No session???\n", SKYPIAX_P_LOG);
+	goto done;
   }
   if (channel) {
     switch_channel_mark_pre_answered(channel);
     NOTICA("skype_call: REMOTE PARTY EARLY MEDIA\n", SKYPIAX_P_LOG);
   } else {
     ERRORA("No channel???\n", SKYPIAX_P_LOG);
+	goto done;
   }
 
   switch_core_session_rwunlock(session);
 
+done:
   return 0;
 }
 
@@ -1272,24 +1280,29 @@ int outbound_channel_answered(private_t * tech_pvt)
   switch_core_session_t *session = NULL;
   switch_channel_t *channel = NULL;
 
-  if (strlen(tech_pvt->session_uuid_str)) {
+  if (!switch_strlen_zero(tech_pvt->session_uuid_str)) {
     session = switch_core_session_locate(tech_pvt->session_uuid_str);
   } else {
     ERRORA("No session???\n", SKYPIAX_P_LOG);
+	goto done;
   }
   if (session) {
     channel = switch_core_session_get_channel(session);
   } else {
     ERRORA("No session???\n", SKYPIAX_P_LOG);
+	goto done;
   }
   if (channel) {
     switch_channel_mark_answered(channel);
     //DEBUGA_SKYPE("skype_call: %s, answered\n", SKYPIAX_P_LOG, id);
   } else {
     ERRORA("No channel???\n", SKYPIAX_P_LOG);
+	goto done;
   }
 
   switch_core_session_rwunlock(session);
+
+done:
   DEBUGA_SKYPE("HERE!\n", SKYPIAX_P_LOG);
 
   return 0;
