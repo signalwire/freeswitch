@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.h,v 1.36 2009/02/10 13:06:47 steveu Exp $
+ * $Id: adsi.h,v 1.37 2009/03/04 12:15:15 steveu Exp $
  */
 
 /*! \file */
@@ -249,7 +249,7 @@ enum
 /*! Message waiting/not waiting */
 #define MCLASS_VISUAL_INDICATOR         0x0B
 
-/*! Definitions for CLIP (Calling Line Identity Presentation) */
+/*! Definitions for CLIP (Calling Line Identity Presentation) (from ETS 300 659-1) */
 enum
 {
     /*! Multiple data message caller ID */
@@ -262,31 +262,37 @@ enum
     CLIP_MDMF_SMS =                     0x89
 };
 
-/*! CLIP message IDs */
+/*! CLIP message IDs (from ETS 300 659-1) */
 enum
 {
     /*! Date and time (MMDDHHMM) */
     CLIP_DATETIME =                     0x01,
-    /*! Caller number */
+    /*! Caller number (AKA calling line identity) */
     CLIP_CALLER_NUMBER =                0x02,
-    /*! Dialed number */
+    /*! Dialed number (AKA called line identity) */
     CLIP_DIALED_NUMBER =                0x03,
-    /*! Caller number absent: 'O' or 'P' */
+    /*! Caller number absent: 'O' or 'P' (AKA reason for absence of calling line identity) */
     CLIP_ABSENCE1 =                     0x04,
-    /*! Caller's name */
+    /*! Caller's name (AKA calling party name) */
     CLIP_CALLER_NAME =                  0x07,
-    /*! Caller's name absent: 'O' or 'P' */
+    /*! Caller's name absent: 'O' or 'P' (AKA reason for absence of calling party name) */
     CLIP_ABSENCE2 =                     0x08,
     /*! Visual indicator */
     CLIP_VISUAL_INDICATOR =             0x0B,
     /*! Message ID */
     CLIP_MESSAGE_ID =                   0x0D,
-    /*! Voice call, ring-back-when-free call, or msg waiting call */
+    /*! Complementary calling line identity */
+    CLIP_COMPLEMENTARY_CALLER_NUMBER =  0x10,
+    /*! Call type - voice call (1), ring-back-when-free call (2), calling name delivery (3) or msg waiting call(0x81) */
     CLIP_CALLTYPE =                     0x11,
     /*! Number of messages */
     CLIP_NUM_MSG =                      0x13,
+    /*! Type of forwarded call */
+    CLIP_TYPE_OF_FORWARDED_CALL =       0x15,
+    /*! Type of calling user */
+    CLIP_TYPE_OF_CALLING_USER =         0x16,
     /*! Redirecting number */
-    CLIP_REDIR_NUMBER =                 0x03,
+    CLIP_REDIR_NUMBER =                 0x1A,
     /*! Charge */
     CLIP_CHARGE =                       0x20,
     /*! Duration of the call */

@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_local.h,v 1.13 2009/01/16 15:49:59 steveu Exp $
+ * $Id: gsm0610_local.h,v 1.14 2009/03/07 16:47:30 steveu Exp $
  */
 
 #if !defined(_GSM0610_LOCAL_H_)
@@ -215,8 +215,6 @@ extern void gsm0610_short_term_synthesis_filter(gsm0610_state_t *s,
 extern int16_t gsm0610_norm(int32_t a);
 
 #if defined(__GNUC__)  &&  defined(__i386__)
-
-void gsm0610_vec_vsraw(const int16_t *p, int n, int bits);
 
 int32_t gsm0610_vec_iprod(const int16_t *p, const int16_t *q, int n);
 
