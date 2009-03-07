@@ -52,6 +52,7 @@ opt/freeswitch/conf/mime.types
 opt/freeswitch/conf/web-vm.tpl
 opt/freeswitch/conf/tetris.ttml
 opt/freeswitch/conf/fur_elise.ttml
+opt/freeswitch/conf/openzap.conf
 opt/freeswitch/conf/dialplan/public.xml
 opt/freeswitch/conf/dialplan/default.xml
 opt/freeswitch/conf/dialplan/features.xml
