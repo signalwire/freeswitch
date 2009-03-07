@@ -36,7 +36,7 @@
 /* Best viewed in a 160 x 60 VT100 Terminal or so the line below at least fits across your screen*/
 /*************************************************************************************************************************************************************/
 #include "mod_sofia.h"
-
+#include "sofia-sip/sip_extra.h"
 SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_sofia_shutdown);
 SWITCH_MODULE_DEFINITION(mod_sofia, mod_sofia_load, mod_sofia_shutdown, NULL);
