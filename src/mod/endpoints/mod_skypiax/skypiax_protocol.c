@@ -341,6 +341,10 @@ int skypiax_signaling_read(private_t * tech_pvt)
               /* we're here because were us that refused an incoming call */
               DEBUGA_SKYPE("we REFUSED skype_call %s\n", SKYPIAX_P_LOG, id);
             }
+          } else if (!strcasecmp(value, "TRANSFERRING")) {
+              DEBUGA_SKYPE("skype_call %s is transferring\n", SKYPIAX_P_LOG, id);
+          } else if (!strcasecmp(value, "TRANSFERRED")) {
+              DEBUGA_SKYPE("skype_call %s has been transferred\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "ROUTING")) {
             tech_pvt->skype_callflow = CALLFLOW_STATUS_ROUTING;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
