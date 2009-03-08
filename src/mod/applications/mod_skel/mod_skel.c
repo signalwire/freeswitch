@@ -83,10 +83,14 @@ static switch_xml_config_enum_item_t config_opt_codec_negotiation_enum[] = {
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
-	SWITCH_CONFIG_ITEM("codec-negotiation-str", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &globals.codec_negotiation_str, "greedy", &config_opt_codec_negotiation),
-	SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.codec_negotiation,  (void*)CODEC_NEGOTIATION_GREEDY, &config_opt_codec_negotiation_enum),
-	SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.sip_trace,  (void*)SWITCH_FALSE,  config_callback_siptrace, NULL ),
-	SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, CONFIG_RELOADABLE | CONFIG_REQUIRED, &globals.integer, (void*)100, &config_opt_integer),
+	SWITCH_CONFIG_ITEM("codec-negotiation-str", SWITCH_CONFIG_STRING, CONFIG_RELOADABLE, &globals.codec_negotiation_str, "greedy", &config_opt_codec_negotiation, \
+		"greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
+	SWITCH_CONFIG_ITEM("codec-negotiation", SWITCH_CONFIG_ENUM, CONFIG_RELOADABLE, &globals.codec_negotiation,  (void*)CODEC_NEGOTIATION_GREEDY, &config_opt_codec_negotiation_enum,
+		"greedy|generous|evil", "Specifies the codec negotiation scheme to be used."),
+	SWITCH_CONFIG_ITEM_CALLBACK("sip-trace", SWITCH_CONFIG_BOOL, CONFIG_RELOADABLE, &globals.sip_trace,  (void*)SWITCH_FALSE,  config_callback_siptrace, NULL ,
+		"yes|no", "If enabled, print out sip messages on the console."),
+	SWITCH_CONFIG_ITEM("integer", SWITCH_CONFIG_INT, CONFIG_RELOADABLE | CONFIG_REQUIRED, &globals.integer, (void*)100, &config_opt_integer,
+		NULL, NULL),
 	SWITCH_CONFIG_ITEM_END()
 };
 
