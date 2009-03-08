@@ -296,8 +296,6 @@ const char *ESLevent::firstHeader(void)
 
 const char *ESLevent::serialize(const char *format)
 {
-	int isxml = 0;
-
 	this_check("");
 
 	esl_safe_free(serialized_string);
