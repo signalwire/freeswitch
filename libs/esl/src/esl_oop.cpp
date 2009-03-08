@@ -327,7 +327,7 @@ bool ESLevent::setPriority(esl_priority_t priority)
 	return false;
 }
 
-const char *ESLevent::getHeader(char *header_name)
+const char *ESLevent::getHeader(const char *header_name)
 {
 	this_check("");
 
