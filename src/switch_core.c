@@ -809,7 +809,10 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	setrlimit(RLIMIT_DATA, &rlp);
 	setrlimit(RLIMIT_FSIZE, &rlp);
 	setrlimit(RLIMIT_NPROC, &rlp);
+#ifdef RLIMIT_RTPRIO
 	setrlimit(RLIMIT_RTPRIO, &rlp);
+#endif
+
 #if !defined(__OpenBSD__) && !defined(__NetBSD__)
 	setrlimit(RLIMIT_AS, &rlp);
 #endif
