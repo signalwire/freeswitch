@@ -912,7 +912,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 						esl_event_del_header(handle->last_ievent, "event-name");
 					}
 					esl_event_add_header_string(handle->last_ievent, ESL_STACK_BOTTOM, hname, hval);
-					esl_name_event(hval, &handle->last_event->event_id);
+					esl_name_event(hval, &handle->last_ievent->event_id);
 				}
 				
 				beg = c + 1;
