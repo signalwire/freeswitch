@@ -968,7 +968,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 
 	switch_channel_clear_flag(channel, CF_TAGGED);
 
-	if (channel->state >= CS_ROUTING) {
+	if (channel->state >= CS_ROUTING && channel->state <= CS_HANGUP) {
 		switch_channel_presence(channel, "unknown", (char *) state_names[state], NULL);
 	}
 
