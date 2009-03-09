@@ -388,7 +388,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	_ei_x_encode_string(&buf, uuid_str);
 	ei_encode_switch_event_headers(&buf, params);
 
-	/*switch_core_hash_insert(ptr->reply_hash, uuid_str, );*/
+	switch_core_hash_insert(ptr->listener->fetch_reply_hash, uuid_str, &globals.WAITING);
 
 	switch_mutex_lock(ptr->listener->sock_mutex);
 	ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
@@ -396,16 +396,19 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	int i = 0;
 	ei_x_buff *rep;
-	/*int index = 3;*/
-	while (!(rep = (ei_x_buff *) switch_core_hash_find(ptr->listener->fetch_reply_hash, uuid_str))) {
+	void *p = NULL;
+
+	while (!(p = switch_core_hash_find(ptr->listener->fetch_reply_hash, uuid_str)) || p == &globals.WAITING) {
 		if (i > 50) { /* half a second timeout */
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for XML fetch response!\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for XML fetch response\n");
+			switch_core_hash_insert(ptr->listener->fetch_reply_hash, uuid_str, &globals.TIMEOUT); /* TODO lock this? */
 			return NULL;
 		}
 		i++;
 		switch_yield(10000); /* 10ms */
 	}
 
+	rep = (ei_x_buff *) p;
 	int type, size;
 
 	ei_get_type(rep->buff, &rep->index, &type, &size);
@@ -432,10 +435,10 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XML parsed OK!\n");
 	}
 
+	/* cleanup */
 	switch_core_hash_delete(ptr->listener->fetch_reply_hash, uuid_str);
-
-	/*switch_safe_free(rep->buff);*/
-	/*switch_safe_free(rep);*/
+	free(rep->buff);
+	free(rep);
 	free(xmlstr);
 
 	return xml;

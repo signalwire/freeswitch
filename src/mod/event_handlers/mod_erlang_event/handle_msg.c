@@ -165,20 +165,47 @@ static void *SWITCH_THREAD_FUNC api_exec(switch_thread_t *thread, void *obj)
 static switch_status_t  handle_msg_fetch_reply(listener_t *listener, ei_x_buff *buf, ei_x_buff *rbuf)
 {
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	void *p;
 
 	if (ei_decode_string_or_binary(buf->buff, &buf->index, SWITCH_UUID_FORMATTED_LENGTH, uuid_str)) {
 		ei_x_encode_tuple_header(rbuf, 2);
 		ei_x_encode_atom(rbuf, "error");
 		ei_x_encode_atom(rbuf, "badarg");
 	} else {
-		ei_x_buff *nbuf = switch_core_alloc(listener->pool, sizeof(nbuf));
-		nbuf->buff = switch_core_alloc(listener->pool, buf->buffsz);
+		ei_x_buff *nbuf = malloc(sizeof(nbuf));
+		nbuf->buff = malloc(buf->buffsz);
 		memcpy(nbuf->buff, buf->buff, buf->buffsz);
 		nbuf->index = buf->index;
 		nbuf->buffsz = buf->buffsz;
-	
-		switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);
-		ei_x_encode_atom(rbuf, "ok");
+
+		if ((p = switch_core_hash_find(listener->fetch_reply_hash, uuid_str))) {
+			if (p == &globals.TIMEOUT) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Handler for %s timed out\n", uuid_str);
+				switch_core_hash_delete(listener->fetch_reply_hash, uuid_str);
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "timeout");
+			} else if (p == &globals.WAITING) {
+				/* update the key to point at a pid */
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found waiting slot for %s\n", uuid_str);
+				switch_core_hash_delete(listener->fetch_reply_hash, uuid_str);
+				switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);
+				ei_x_encode_atom(rbuf, "ok");
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", uuid_str);
+				ei_x_encode_tuple_header(rbuf, 2);
+				ei_x_encode_atom(rbuf, "error");
+				ei_x_encode_atom(rbuf, "duplicate_response");
+			}
+		} else {
+			/* nothin in the hash */
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Empty slot for %s\n", uuid_str);
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "error");
+			ei_x_encode_atom(rbuf, "invalid_uuid");
+		}
+
+		/*switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);*/
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -700,7 +727,7 @@ static switch_status_t  handle_msg_atom(listener_t *listener, erlang_msg *msg, e
 static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
 {
 	erlang_ref ref;
-	erlang_pid *pid;/* = switch_core_alloc(listener->pool, sizeof(erlang_pid));*/
+	erlang_pid *pid;
 	void *p;
 	char hash[100];
 	int arity;
