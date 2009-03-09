@@ -808,7 +808,9 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 	setrlimit(RLIMIT_CPU, &rlp);
 	setrlimit(RLIMIT_DATA, &rlp);
 	setrlimit(RLIMIT_FSIZE, &rlp);
+#ifdef RLIMIT_NPROC
 	setrlimit(RLIMIT_NPROC, &rlp);
+#endif
 #ifdef RLIMIT_RTPRIO
 	setrlimit(RLIMIT_RTPRIO, &rlp);
 #endif
