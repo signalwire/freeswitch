@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\src\isdn\include;..\..\src\include"
+				AdditionalIncludeDirectories="..\..\isdn\include;..\..\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;OZMOD_ISDN_EXPORTS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -114,6 +114,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="..\..\isdn\include;..\..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;OZMOD_ISDN_EXPORTS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -171,87 +172,87 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\src\isdn\5ESSmes.c"
+				RelativePath="..\..\isdn\5ESSmes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\5ESSStateNT.c"
+				RelativePath="..\..\isdn\5ESSStateNT.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\5ESSStateTE.c"
+				RelativePath="..\..\isdn\5ESSStateTE.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\DMSmes.c"
+				RelativePath="..\..\isdn\DMSmes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\DMSStateNT.c"
+				RelativePath="..\..\isdn\DMSStateNT.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\DMSStateTE.c"
+				RelativePath="..\..\isdn\DMSStateTE.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\EuroISDNStateNT.c"
+				RelativePath="..\..\isdn\EuroISDNStateNT.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\EuroISDNStateTE.c"
+				RelativePath="..\..\isdn\EuroISDNStateTE.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\mfifo.c"
+				RelativePath="..\..\isdn\mfifo.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\nationalmes.c"
+				RelativePath="..\..\isdn\nationalmes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\nationalStateNT.c"
+				RelativePath="..\..\isdn\nationalStateNT.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\nationalStateTE.c"
+				RelativePath="..\..\isdn\nationalStateTE.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\ozmod\ozmod_isdn\ozmod_isdn.c"
+				RelativePath="ozmod_isdn.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q921.c"
+				RelativePath="..\..\isdn\Q921.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q931.c"
+				RelativePath="..\..\isdn\Q931.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q931api.c"
+				RelativePath="..\..\isdn\Q931api.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q931ie.c"
+				RelativePath="..\..\isdn\Q931ie.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q931mes.c"
+				RelativePath="..\..\isdn\Q931mes.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q931StateNT.c"
+				RelativePath="..\..\isdn\Q931StateNT.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q931StateTE.c"
+				RelativePath="..\..\isdn\Q931StateTE.c"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\Q932mes.c"
+				RelativePath="..\..\isdn\Q932mes.c"
 				>
 			</File>
 		</Filter>
@@ -261,50 +262,46 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\src\isdn\include\5ESS.h"
+				RelativePath="..\..\isdn\include\5ESS.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\DMS.h"
+				RelativePath="..\..\isdn\include\DMS.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\mfifo.h"
+				RelativePath="..\..\isdn\include\mfifo.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\national.h"
+				RelativePath="..\..\isdn\include\national.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\Q921.h"
+				RelativePath="..\..\isdn\include\Q921.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\Q921priv.h"
+				RelativePath="..\..\isdn\include\Q921priv.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\Q931.h"
+				RelativePath="..\..\isdn\include\Q931.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\Q931ie.h"
+				RelativePath="..\..\isdn\include\Q931ie.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\isdn\include\Q932.h"
+				RelativePath="..\..\isdn\include\Q932.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\src\ozmod\ozmod_isdn\zap_isdn.h"
+				RelativePath="zap_isdn.h"
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\ReadMe.txt"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

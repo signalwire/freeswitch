@@ -19,10 +19,19 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_openzap", "mod_openzap\
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_analog", "src\ozmod\ozmod_analog\ozmod_analog.2005.vcproj", "{37C94798-6E33-4B4F-8EE0-C72A7DC91157}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_analog_em", "src\ozmod\ozmod_analog_em\ozmod_analog_em.2005.vcproj", "{C539D7C8-26A8-4A94-B938-77672165C130}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozmod_isdn", "src\ozmod\ozmod_isdn\ozmod_isdn.2005.vcproj", "{729344A5-D5E9-434D-8EE8-AF8C6C795D15}"
+	ProjectSection(ProjectDependencies) = postProject
+		{93B8812C-3EC4-4F78-8970-FFBFC99E167D} = {93B8812C-3EC4-4F78-8970-FFBFC99E167D}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
