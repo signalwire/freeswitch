@@ -888,10 +888,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal16\voxdefs.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\flite-1.3.99\lang\cmu_us_kal\voxdefs.h"
 				>
 			</File>
