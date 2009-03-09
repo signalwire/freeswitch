@@ -1692,7 +1692,6 @@ static switch_status_t load_config(void)
 				zap_log(ZAP_LOG_ERROR, "Error starting OpenZAP span %d\n", span_id);
 				continue;
 			}
-			zap_log(ZAP_LOG_ERROR, "SPANID = %i\n", span->span_id);
 
 			SPAN_CONFIG[span->span_id].span = span;
 			switch_set_string(SPAN_CONFIG[span->span_id].context, context);
