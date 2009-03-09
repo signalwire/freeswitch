@@ -1087,7 +1087,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 				*context = profile->context,
 				*expire_seconds = "3600",
 				*retry_seconds = "30",
-				*from_user = "", *from_domain = "", *register_proxy = NULL, *contact_params = NULL, *params = NULL, *register_transport = NULL;
+				*from_user = "", *from_domain = "", *register_proxy = NULL, *contact_host = NULL,
+				*contact_params = NULL, *params = NULL, *register_transport = NULL;
 			
 			if (!context) {
 				context = "default";
@@ -1190,6 +1191,8 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 					from_user = val;
 				} else if (!strcmp(var, "from-domain")) {
 					from_domain = val;
+				} else if (!strcmp(var, "contact-host")) {
+					contact_host = val;
 				} else if (!strcmp(var, "register-proxy")) {
 					register_proxy = val;
 				} else if (!strcmp(var, "contact-params")) {
@@ -1295,7 +1298,7 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 			gateway->register_url = switch_core_sprintf(gateway->pool, "sip:%s;transport=%s", proxy, register_transport);
 			gateway->register_from = switch_core_sprintf(gateway->pool, "<sip:%s@%s;transport=%s>", from_user, from_domain, register_transport);
 
-			sipip = profile->extsipip ?  profile->extsipip : profile->sipip;
+			sipip = contact_host ? contact_host : profile->extsipip ?  profile->extsipip : profile->sipip;
 			if (extension_in_contact) {
 				format = strchr(sipip, ':') ? "<sip:%s@[%s]:%d%s>" : "<sip:%s@%s:%d%s>";
 				gateway->register_contact = switch_core_sprintf(gateway->pool, format, extension,
