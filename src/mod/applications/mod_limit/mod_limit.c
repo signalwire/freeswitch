@@ -169,7 +169,7 @@ static switch_bool_t limit_execute_sql_callback(switch_mutex_t *mutex, char *sql
 	return ret;
 }
 
-static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "(.+?):(.+?):(.+)" };
+static switch_xml_config_string_options_t limit_config_dsn = { NULL, 0, "[^:]+:[^:]+:[^:]+" };
 
 static switch_xml_config_item_t config_settings[] = {
 	SWITCH_CONFIG_ITEM("odbc-dsn", SWITCH_CONFIG_STRING, 0, &globals.odbc_dsn, NULL, &limit_config_dsn,  
@@ -203,7 +203,7 @@ static switch_status_t do_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC IS NOT AVAILABLE!\n");
 #endif
 	}
-
+	
 
 	if (switch_strlen_zero(globals.odbc_dsn) || switch_strlen_zero(odbc_user) || switch_strlen_zero(odbc_pass)) {
 		globals.dbname = "call_limit";
