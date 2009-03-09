@@ -433,6 +433,11 @@ static switch_status_t switch_loadable_module_unprocess(switch_loadable_module_t
                 }
 
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deleting Endpoint '%s'\n", ptr->interface_name);
+				if (switch_event_create(&event, SWITCH_EVENT_MODULE_UNLOAD) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "type", "endpoint");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "name", ptr->interface_name);
+					switch_event_fire(&event);
+				}
 				switch_core_hash_delete(loadable_modules.endpoint_hash, ptr->interface_name);
 			}
 		}
