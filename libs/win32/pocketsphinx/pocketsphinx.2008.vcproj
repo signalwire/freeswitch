@@ -485,6 +485,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\pocketsphinx-0.5.99\include\ps_mllr.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\s2_semi_mgau.h"
 				>
 			</File>
@@ -1006,6 +1010,10 @@
 			</File>
 			<File
 				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_lattice.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\pocketsphinx-0.5.99\src\libpocketsphinx\ps_mllr.c"
 				>
 			</File>
 			<File
