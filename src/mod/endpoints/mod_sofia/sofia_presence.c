@@ -1103,7 +1103,7 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			dft_state = "confirmed";
 		}
 
-		if (!strcasecmp(state, "cs_execute") && !strstr(event_status, "hold")) {
+		if ((!strcasecmp(state, "cs_execute") && !strstr(event_status, "hold")) || !strcasecmp(state, "cs_reporting")) {
 			goto end;
 		}
 
