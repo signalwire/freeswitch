@@ -792,7 +792,7 @@ SWITCH_DECLARE(void) switch_core_setrlimits(void)
 #ifndef __FreeBSD__
 	memset(&rlp, 0, sizeof(rlp));
 	rlp.rlim_cur = SWITCH_THREAD_STACKSIZE;
-	rlp.rlim_max = SWITCH_THREAD_STACKSIZE;
+	rlp.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
 	setrlimit(RLIMIT_STACK, &rlp);
 #endif
 
