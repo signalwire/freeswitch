@@ -72,7 +72,7 @@ typedef struct zap_isdn_data zap_isdn_data_t;
 /* b-channel private data */
 struct zap_isdn_bchan_data
 {
-	int32_t digit_timeout;
+	L2ULONG digit_timeout;
 };
 
 typedef struct zap_isdn_bchan_data zap_isdn_bchan_data_t;

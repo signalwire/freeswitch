@@ -49,7 +49,7 @@
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -92,6 +92,9 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -120,13 +123,13 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../../freeswitch.trunk/src/include;../src/include;../src/isdn/include"
+				AdditionalIncludeDirectories="../../../src/include;../src/include;../src/isdn/include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MOD_EXPORTS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="4"
 				WarnAsError="true"
-				Detect64BitPortabilityProblems="true"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -143,7 +146,7 @@
 				AdditionalDependencies="FreeSwitchCore.lib"
 				OutputFile="$(SolutionDir)$(OutDir)/mod/$(InputName).dll"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="&quot;../../freeswitch.trunk/w32/Library/$(OutDir)&quot;"
+				AdditionalLibraryDirectories="&quot;../../../w32/Library/$(OutDir)&quot;"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(OutDir)$(TargetName).pdb"
 				SubSystem="2"
@@ -170,6 +173,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
