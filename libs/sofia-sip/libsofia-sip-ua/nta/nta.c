@@ -4542,10 +4542,10 @@ int nta_leg_get_route(nta_leg_t *leg,
  *
  * @since New in @VERSION_1_12_2.
  */
-SOFIAPUBFUN
-sip_replaces_t *nta_leg_make_replaces(nta_leg_t *leg,
-				      su_home_t *home,
-				      int early_only)
+sip_replaces_t *
+nta_leg_make_replaces(nta_leg_t *leg,
+		      su_home_t *home,
+		      int early_only)
 {
   char const *from_tag, *to_tag;
 
@@ -4566,8 +4566,8 @@ sip_replaces_t *nta_leg_make_replaces(nta_leg_t *leg,
  *
  * @since New in @VERSION_1_12_2.
  */
-SOFIAPUBFUN
-nta_leg_t *nta_leg_by_replaces(nta_agent_t *sa, sip_replaces_t const *rp)
+nta_leg_t *
+nta_leg_by_replaces(nta_agent_t *sa, sip_replaces_t const *rp)
 {
   nta_leg_t *leg = NULL;
 
@@ -4593,9 +4593,9 @@ nta_leg_t *nta_leg_by_replaces(nta_agent_t *sa, sip_replaces_t const *rp)
  * Find a leg corresponding to the request message.
  *
  */
-static
-nta_leg_t *leg_find_call_id(nta_agent_t const *sa,
-		    sip_call_id_t const *i)
+static nta_leg_t *
+leg_find_call_id(nta_agent_t const *sa,
+		 sip_call_id_t const *i)
 {
   hash_value_t hash = i->i_hash;
   leg_htable_t const *lht = sa->sa_dialogs;
@@ -4625,8 +4625,8 @@ nta_leg_t *leg_find_call_id(nta_agent_t const *sa,
  *
  * @since New in @VERSION_1_12_9.
  */
-SOFIAPUBFUN
-nta_leg_t *nta_leg_by_call_id(nta_agent_t *sa, const char *call_id)
+nta_leg_t *
+nta_leg_by_call_id(nta_agent_t *sa, const char *call_id)
 {
   nta_leg_t *leg = NULL;
 
@@ -7390,7 +7390,7 @@ nta_outgoing_t *nta_outgoing_tcancel(nta_outgoing_t *orq,
   return NULL;
 }
 
-/**Bind callback and application context to an client transaction.
+/**Bind callback and application context to a client transaction.
  *
  * @param orq       outgoing client transaction
  * @param callback  callback function (may be NULL)
@@ -7399,9 +7399,10 @@ nta_outgoing_t *nta_outgoing_tcancel(nta_outgoing_t *orq,
  *
  * @NEW_1_12_9
  */
-SOFIAPUBFUN int nta_outgoing_bind(nta_outgoing_t *orq,
-				  nta_response_f *callback,
-				  nta_outgoing_magic_t *magic)
+int
+nta_outgoing_bind(nta_outgoing_t *orq,
+		  nta_response_f *callback,
+		  nta_outgoing_magic_t *magic)
 {
   if (orq && !orq->orq_destroyed) {
     if (callback == NULL)
