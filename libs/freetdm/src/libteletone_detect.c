@@ -83,7 +83,7 @@ static void goertzel_init(teletone_goertzel_state_t *goertzel_state, teletone_de
 	goertzel_state->fac = tdesc->fac;
 }
 
-void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
+TELETONE_API(void) teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 							  int16_t sample_buffer[],
 							  int samples)
 {
@@ -102,7 +102,7 @@ void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 
 #define teletone_goertzel_result(gs) (double)(((gs)->v3 * (gs)->v3 + (gs)->v2 * (gs)->v2 - (gs)->v2 * (gs)->v3 * (gs)->fac))
 
-void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate)
+TELETONE_API(void) teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate)
 {
 	int i;
 	float theta;
@@ -136,7 +136,7 @@ void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state,
 	dtmf_detect_state->mhit = 0;
 }
 
-void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map)
+TELETONE_API(void) teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map)
 {
 	float theta = 0;
 	int x = 0;
@@ -145,7 +145,7 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 		mt->sample_rate = 8000;
 	}
 
-	if(!mt->min_samples) {
+	if (!mt->min_samples) {
 		mt->min_samples = 102;
 	}
 
@@ -176,7 +176,7 @@ void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *ma
 
 }
 
-int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
+TELETONE_API(int) teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 								int16_t sample_buffer[],
 								int samples)
 {
@@ -266,7 +266,7 @@ int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 }
 
 
-int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 						  int16_t sample_buffer[],
 						  int samples)
 {
@@ -397,7 +397,7 @@ int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 }
 
 
-int teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
 					   char *buf,
 					   int max)
 {
@@ -423,5 +423,5 @@ int teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

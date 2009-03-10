@@ -49,7 +49,7 @@ struct zap_buffer {
 };
 
 
-zap_status_t zap_buffer_create(zap_buffer_t **buffer, zap_size_t blocksize, zap_size_t start_len, zap_size_t max_len)
+OZ_DECLARE(zap_status_t) zap_buffer_create(zap_buffer_t **buffer, zap_size_t blocksize, zap_size_t start_len, zap_size_t max_len)
 {
 	zap_buffer_t *new_buffer;
 
@@ -79,7 +79,7 @@ zap_status_t zap_buffer_create(zap_buffer_t **buffer, zap_size_t blocksize, zap_
 	return ZAP_MEMERR;
 }
 
-zap_size_t zap_buffer_len(zap_buffer_t *buffer)
+OZ_DECLARE(zap_size_t) zap_buffer_len(zap_buffer_t *buffer)
 {
 
 	assert(buffer != NULL);
@@ -89,7 +89,7 @@ zap_size_t zap_buffer_len(zap_buffer_t *buffer)
 }
 
 
-zap_size_t zap_buffer_freespace(zap_buffer_t *buffer)
+OZ_DECLARE(zap_size_t) zap_buffer_freespace(zap_buffer_t *buffer)
 {
 	assert(buffer != NULL);
 
@@ -101,14 +101,14 @@ zap_size_t zap_buffer_freespace(zap_buffer_t *buffer)
 
 }
 
-zap_size_t zap_buffer_inuse(zap_buffer_t *buffer)
+OZ_DECLARE(zap_size_t) zap_buffer_inuse(zap_buffer_t *buffer)
 {
 	assert(buffer != NULL);
 
 	return buffer->used;
 }
 
-zap_size_t zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen)
+OZ_DECLARE(zap_size_t) zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen)
 {
 	zap_size_t reading = 0;
 
@@ -129,7 +129,7 @@ zap_size_t zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen)
 	return reading;
 }
 
-zap_size_t zap_buffer_toss(zap_buffer_t *buffer, zap_size_t datalen)
+OZ_DECLARE(zap_size_t) zap_buffer_toss(zap_buffer_t *buffer, zap_size_t datalen)
 {
 	zap_size_t reading = 0;
 
@@ -150,12 +150,12 @@ zap_size_t zap_buffer_toss(zap_buffer_t *buffer, zap_size_t datalen)
 	return buffer->used;
 }
 
-void zap_buffer_set_loops(zap_buffer_t *buffer, int loops)
+OZ_DECLARE(void) zap_buffer_set_loops(zap_buffer_t *buffer, int loops)
 {
 	buffer->loops = loops;
 }
 
-zap_size_t zap_buffer_read_loop(zap_buffer_t *buffer, void *data, zap_size_t datalen)
+OZ_DECLARE(zap_size_t) zap_buffer_read_loop(zap_buffer_t *buffer, void *data, zap_size_t datalen)
 {
 	zap_size_t len;
 	if ((len = zap_buffer_read(buffer, data, datalen)) < datalen) {
@@ -170,7 +170,7 @@ zap_size_t zap_buffer_read_loop(zap_buffer_t *buffer, void *data, zap_size_t dat
 	return len;
 }
 
-zap_size_t zap_buffer_read(zap_buffer_t *buffer, void *data, zap_size_t datalen)
+OZ_DECLARE(zap_size_t) zap_buffer_read(zap_buffer_t *buffer, void *data, zap_size_t datalen)
 {
 	zap_size_t reading = 0;
 
@@ -195,7 +195,7 @@ zap_size_t zap_buffer_read(zap_buffer_t *buffer, void *data, zap_size_t datalen)
 	return reading;
 }
 
-zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t datalen)
+OZ_DECLARE(zap_size_t) zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t datalen)
 {
 	zap_size_t freespace, actual_freespace;
 
@@ -258,7 +258,7 @@ zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t d
 	return buffer->used;
 }
 
-void zap_buffer_zero(zap_buffer_t *buffer)
+OZ_DECLARE(void) zap_buffer_zero(zap_buffer_t *buffer)
 {
 	assert(buffer != NULL);
 	assert(buffer->data != NULL);
@@ -268,7 +268,7 @@ void zap_buffer_zero(zap_buffer_t *buffer)
 	buffer->head = buffer->data;
 }
 
-zap_size_t zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen)
+OZ_DECLARE(zap_size_t) zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen)
 {
 	zap_size_t w;
 	
@@ -280,7 +280,7 @@ zap_size_t zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t 
 	return w;
 }
 
-void zap_buffer_destroy(zap_buffer_t **buffer)
+OZ_DECLARE(void) zap_buffer_destroy(zap_buffer_t **buffer)
 {
 	if (*buffer) {
 		free((*buffer)->data);

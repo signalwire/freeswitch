@@ -169,7 +169,7 @@ extern "C" {
 	  \param mt the multi-frequency tone descriptor
 	  \param map a representation of the multi-frequency tone
 	*/
-	void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map);
+TELETONE_API(void) teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map);
 
 	/*! 
 	  \brief Check a sample buffer for the presence of the mulit-frequency tone described by mt
@@ -178,7 +178,7 @@ extern "C" {
 	  \param samples the number of samples present in sample_buffer
 	  \return true when the tone was detected or false when it is not
 	*/
-	int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
+TELETONE_API(int) teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 									int16_t sample_buffer[],
 									int samples);
 
@@ -187,7 +187,7 @@ extern "C" {
 	  \param dtmf_detect_state the DTMF detection state to initilize
 	  \param sample_rate the desired sample rate
 	*/
-	void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate);
+TELETONE_API(void) teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate);
 
 	/*! 
 	  \brief Check a sample buffer for the presence of DTMF digits
@@ -196,7 +196,7 @@ extern "C" {
 	  \param samples the number of samples present in sample_buffer
 	  \return true when DTMF was detected or false when it is not
 	*/
-	int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 							  int16_t sample_buffer[],
 							  int samples);
 	/*! 
@@ -206,7 +206,7 @@ extern "C" {
 	  \param max the maximum length of buf
 	  \return the number of characters written to buf
 	*/
-	int teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
 						   char *buf,
 						   int max);
 
@@ -216,7 +216,7 @@ extern "C" {
 	  \param sample_buffer an array aof 16 bit signed linear samples
 	  \param samples the number of samples present in sample_buffer
 	*/
-	void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
+TELETONE_API(void) teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 								  int16_t sample_buffer[],
 								  int samples);
 
@@ -236,5 +236,5 @@ extern "C" {
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

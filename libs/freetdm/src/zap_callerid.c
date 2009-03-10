@@ -37,7 +37,7 @@ static void fsk_byte_handler (void *x, int data)
 	}
 }
 
-zap_status_t zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint32_t datalen)
+OZ_DECLARE(zap_status_t) zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint32_t datalen)
 {
 	memset(state, 0, sizeof(*state));
 	state->buf = data;
@@ -47,7 +47,7 @@ zap_status_t zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint3
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date, char *number)
+OZ_DECLARE(zap_status_t) zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date, char *number)
 {
 	size_t dlen = strlen(date);
 	size_t nlen = strlen(number);
@@ -61,7 +61,7 @@ zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, const uint8_t *data, uint32_t datalen)
+OZ_DECLARE(zap_status_t) zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, const uint8_t *data, uint32_t datalen)
 {
 	state->buf[0] = ZAP_CID_TYPE_MDMF;
 	state->buf[state->bpos++] = type;
@@ -72,7 +72,7 @@ zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t 
 }
 
 
-zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state)
+OZ_DECLARE(zap_status_t) zap_fsk_data_add_checksum(zap_fsk_data_state_t *state)
 {
 	uint32_t i;
 	uint8_t check = 0;
@@ -93,7 +93,7 @@ zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state)
 }
 
 
-zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len)
+OZ_DECLARE(zap_status_t) zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len)
 {
 
 	zap_size_t i;
@@ -146,7 +146,7 @@ zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, c
 	return ZAP_FAIL;
 }
 
-zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, zap_size_t samples)
+OZ_DECLARE(zap_status_t) zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, zap_size_t samples)
 {
 	uint32_t x;
 	int16_t *sp = data;
@@ -166,14 +166,14 @@ zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, zap_
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state)
+OZ_DECLARE(zap_status_t) zap_fsk_demod_destroy(zap_fsk_data_state_t *state)
 {
 	dsp_fsk_destroy(&state->fsk1200_handle);
 	memset(state, 0, sizeof(*state));
 	return ZAP_SUCCESS;
 }
 
-int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, zap_size_t bufsize)
+OZ_DECLARE(int) zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, zap_size_t bufsize)
 {
 
 	dsp_fsk_attr_t fsk1200_attr;
@@ -199,7 +199,7 @@ int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, zap_
 	return ZAP_SUCCESS;
 }
 
-zap_size_t zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen)
+OZ_DECLARE(zap_size_t) zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen)
 {
 	zap_size_t i;
 		
@@ -217,7 +217,7 @@ zap_size_t zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t
 }
 
 
-int32_t zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits)
+OZ_DECLARE(int32_t) zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits)
 {
 	uint32_t i = 0;
 	zap_size_t r = 0;
@@ -237,7 +237,7 @@ int32_t zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, 
 }
 
 
-void zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans)
+OZ_DECLARE(void) zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans)
 {
 	uint32_t i = 0;
 	zap_size_t r = 0;
@@ -258,7 +258,7 @@ void zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans)
 }
 
 
-void zap_fsk_modulator_send_data(zap_fsk_modulator_t *fsk_trans)
+OZ_DECLARE(void) zap_fsk_modulator_send_data(zap_fsk_modulator_t *fsk_trans)
 {
 	zap_size_t r = 0;
 	int8_t bit = 0;
@@ -275,7 +275,7 @@ void zap_fsk_modulator_send_data(zap_fsk_modulator_t *fsk_trans)
 }
 
 
-zap_status_t zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
+OZ_DECLARE(zap_status_t) zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
 									fsk_modem_types_t modem_type,
 									uint32_t sample_rate,
 									zap_fsk_data_state_t *fsk_data,
