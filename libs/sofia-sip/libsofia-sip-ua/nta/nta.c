@@ -11378,6 +11378,16 @@ int nta_outgoing_setrseq(nta_outgoing_t *orq, uint32_t rseq)
 
 #include <sofia-sip/nta_tport.h>
 
+/** Return the master transport for the agent.
+ *
+ * @NEW_1_12_11
+ */
+tport_t *
+nta_agent_tports(nta_agent_t *agent)
+{
+  return agent ? agent->sa_tports : NULL;
+}
+
 su_inline tport_t *
 nta_transport_(nta_agent_t *agent,
 	       nta_incoming_t *irq,
