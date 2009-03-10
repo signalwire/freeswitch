@@ -1457,7 +1457,7 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 	zap_span_t *span = (zap_span_t *) obj;
 	zap_isdn_data_t *isdn_data = span->signal_data;
 	zap_buffer_t *dt_buffer = NULL;
-	teletone_generation_session_t ts = {{0}};
+	teletone_generation_session_t ts = {{{{0}}}};
 	unsigned char frame[1024];
 	uint32_t x;
 	int interval = 0;
