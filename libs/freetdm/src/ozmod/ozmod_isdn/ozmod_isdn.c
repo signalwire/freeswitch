@@ -497,7 +497,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 	zap_span_t *span = (zap_span_t *) pvt;
 	zap_isdn_data_t *isdn_data = span->signal_data;
 	Q931mes_Generic *gen = (Q931mes_Generic *) msg;
-	int chan_id = 0;
+	uint32_t chan_id = 0;
 	int chan_hunt = 0;
 	zap_channel_t *zchan = NULL;
 	zap_caller_data_t *caller_data = NULL;
@@ -718,7 +718,7 @@ static L3INT zap_isdn_931_34(void *pvt, L2UCHAR *msg, L2INT mlen)
 				 * Channel selection for incoming calls:
 				 */
 				if (ZAP_SPAN_IS_NT(span) && chan_hunt) {
-					int x;
+					uint32_t x;
 
 					/*
 					 * In NT-mode with channel selection "any",
@@ -1457,9 +1457,10 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 	zap_span_t *span = (zap_span_t *) obj;
 	zap_isdn_data_t *isdn_data = span->signal_data;
 	zap_buffer_t *dt_buffer = NULL;
-	teletone_generation_session_t ts;
+	teletone_generation_session_t ts = {0};
 	unsigned char frame[1024];
-	int x, interval;
+	uint32_t x;
+	int interval = 0;
 	int offset = 0;
 
 	zap_log(ZAP_LOG_DEBUG, "ISDN tones thread starting.\n");
