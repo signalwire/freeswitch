@@ -59,7 +59,8 @@ typedef enum {
 	LPWRAP_PRI_EVENT_NOTIFY = PRI_EVENT_NOTIFY,
 	LPWRAP_PRI_EVENT_PROGRESS = PRI_EVENT_PROGRESS,
 	LPWRAP_PRI_EVENT_KEYPAD_DIGIT = PRI_EVENT_KEYPAD_DIGIT,
-	LPWRAP_PRI_EVENT_IO_FAIL = 19
+	LPWRAP_PRI_EVENT_IO_FAIL = 19,
+	LPWRAP_PRI_EVENT_TIME_CHECK = 20
 } lpwrap_pri_event_t;
 
 typedef enum {
@@ -92,13 +93,12 @@ typedef int (*loop_handler)(struct lpwrap_pri *);
 
 struct lpwrap_pri {
 	struct pri *pri;
-	int span;
-	int dchan;
+	zap_span_t *span;
+	zap_channel_t *dchan;
 	unsigned int flags;
 	void *private_info;
 	event_handler eventmap[MAX_EVENT+1];
 	loop_handler on_loop;
-	zap_channel_t *zdchan;
 };
 
 typedef struct lpwrap_pri lpwrap_pri_t;
@@ -115,7 +115,7 @@ struct lpwrap_pri_event_list {
 
 const char *lpwrap_pri_event_str(lpwrap_pri_event_t event_id);
 int lpwrap_one_loop(struct lpwrap_pri *spri);
-int lpwrap_init_pri(struct lpwrap_pri *spri, int span, zap_channel_t *dchan, int swtype, int node, int debug);
+int lpwrap_init_pri(struct lpwrap_pri *spri, zap_span_t *span, zap_channel_t *dchan, int swtype, int node, int debug);
 int lpwrap_run_pri(struct lpwrap_pri *spri);
 
 #endif

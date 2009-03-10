@@ -219,11 +219,16 @@ static zap_status_t zap_span_destroy(zap_span_t *span)
 {
 	zap_status_t status = ZAP_FAIL;
 	
-	if (zap_test_flag(span, ZAP_SPAN_CONFIGURED) && span->zio && span->zio->span_destroy) {
-		zap_log(ZAP_LOG_INFO, "Destroying span %u type (%s)\n", span->span_id, span->type);
-		status = span->zio->span_destroy(span);
-		zap_safe_free(span->type);
-		zap_safe_free(span->dtmf_hangup);
+	if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
+		if (span->stop) {
+			span->stop(span);
+		}
+		if (span->zio && span->zio->span_destroy) {
+			zap_log(ZAP_LOG_INFO, "Destroying span %u type (%s)\n", span->span_id, span->type);
+			status = span->zio->span_destroy(span);
+			zap_safe_free(span->type);
+			zap_safe_free(span->dtmf_hangup);
+		}
 	}
 
 	return status;
