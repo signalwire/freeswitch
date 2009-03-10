@@ -5828,11 +5828,21 @@ int nta_incoming_status(nta_incoming_t const *irq)
   return irq ? irq->irq_status : 400;
 }
 
-/** Get context pointer for an incoming transaction */
+/** Get application context for a server transaction.
+ *
+ * @param irq server transaction
+ * @param callback callback pointer
+ *
+ * Return the application context bound to the server transaction. If the @a
+ * callback function pointer is given, return application context only if
+ * the callback matches with the callback bound to the server transaction.
+ *
+ */
 nta_incoming_magic_t *nta_incoming_magic(nta_incoming_t *irq,
 					 nta_ack_cancel_f *callback)
 {
-  return irq && irq->irq_callback == callback ? irq->irq_magic : NULL;
+  return irq && (callback == NULL || irq->irq_callback == callback)
+    ? irq->irq_magic : NULL;
 }
 
 /** When received.
