@@ -353,6 +353,11 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	struct erlang_binding *ptr;
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH+1];
+	int type, size;
+	int i = 0;
+	void *p = NULL;
+	char *xmlstr;
+	ei_x_buff *rep;
 	ei_x_buff buf;
 	ei_x_new_with_version(&buf);
 
@@ -394,10 +399,6 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	ei_sendto(ptr->listener->ec, ptr->listener->sockfd, &ptr->process, &buf);
 	switch_mutex_unlock(ptr->listener->sock_mutex);
 
-	int i = 0;
-	ei_x_buff *rep;
-	void *p = NULL;
-
 	while (!(p = switch_core_hash_find(ptr->listener->fetch_reply_hash, uuid_str)) || p == &globals.WAITING) {
 		if (i > 50) { /* half a second timeout */
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for XML fetch response\n");
@@ -409,14 +410,12 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	}
 
 	rep = (ei_x_buff *) p;
-	int type, size;
 
 	ei_get_type(rep->buff, &rep->index, &type, &size);
 
 	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) /* XXX no unicode or character codes > 255 */
 		return NULL;
 
-	char *xmlstr;
 	
 	if (!(xmlstr = malloc(size + 1))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error\n");
