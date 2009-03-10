@@ -116,7 +116,7 @@ static void goertzel_init(teletone_goertzel_state_t *goertzel_state, teletone_de
 	goertzel_state->fac = tdesc->fac;
 }
 
-TELETONE_API void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
+TELETONE_API(void) teletone_goertzel_update(teletone_goertzel_state_t *goertzel_state,
 							  int16_t sample_buffer[],
 							  int samples)
 {
@@ -135,7 +135,7 @@ TELETONE_API void teletone_goertzel_update(teletone_goertzel_state_t *goertzel_s
 
 #define teletone_goertzel_result(gs) (double)(((gs)->v3 * (gs)->v3 + (gs)->v2 * (gs)->v2 - (gs)->v2 * (gs)->v3 * (gs)->fac))
 
-TELETONE_API void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate)
+TELETONE_API(void) teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_detect_state, int sample_rate)
 {
 	int i;
 	float theta;
@@ -169,7 +169,7 @@ TELETONE_API void teletone_dtmf_detect_init (teletone_dtmf_detect_state_t *dtmf_
 	dtmf_detect_state->mhit = 0;
 }
 
-TELETONE_API void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map)
+TELETONE_API(void) teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_tone_map_t *map)
 {
 	float theta = 0;
 	int x = 0;
@@ -209,7 +209,7 @@ TELETONE_API void teletone_multi_tone_init(teletone_multi_tone_t *mt, teletone_t
 
 }
 
-TELETONE_API int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
+TELETONE_API(int) teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 								int16_t sample_buffer[],
 								int samples)
 {
@@ -299,7 +299,7 @@ TELETONE_API int teletone_multi_tone_detect (teletone_multi_tone_t *mt,
 }
 
 
-TELETONE_API int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(int) teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect_state,
 						  int16_t sample_buffer[],
 						  int samples)
 {
@@ -430,7 +430,7 @@ TELETONE_API int teletone_dtmf_detect (teletone_dtmf_detect_state_t *dtmf_detect
 }
 
 
-TELETONE_API int teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
+TELETONE_API(int) teletone_dtmf_get (teletone_dtmf_detect_state_t *dtmf_detect_state,
 					   char *buf,
 					   int max)
 {

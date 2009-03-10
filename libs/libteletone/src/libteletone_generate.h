@@ -137,7 +137,7 @@ typedef struct teletone_dds_state teletone_dds_state_t;
 /* 3.02 represents twice the power */
 #define DBM0_MAX_POWER (3.14f + 3.02f)
 
-TELETONE_API extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
+TELETONE_API_DATA extern int16_t TELETONE_SINES[SINE_TABLE_MAX];
 
 static __inline__ int32_t teletone_dds_phase_rate(teletone_process_t tone, uint32_t rate)
 {
@@ -255,7 +255,7 @@ typedef struct teletone_generation_session teletone_generation_session_t;
   \param ... up to TELETONE_MAX_TONES frequencies terminated by 0.0
   \return 0
 */
-TELETONE_API int teletone_set_tone(teletone_generation_session_t *ts, int index, ...);
+TELETONE_API(int) teletone_set_tone(teletone_generation_session_t *ts, int index, ...);
 
 /*! 
   \brief Assign a set of tones to a single tone map
@@ -263,7 +263,7 @@ TELETONE_API int teletone_set_tone(teletone_generation_session_t *ts, int index,
   \param ... up to TELETONE_MAX_TONES frequencies terminated by 0.0
   \return 0
 */
-TELETONE_API int teletone_set_map(teletone_tone_map_t *map, ...);
+TELETONE_API(int) teletone_set_map(teletone_tone_map_t *map, ...);
 
 /*! 
   \brief Initilize a tone generation session
@@ -273,14 +273,14 @@ TELETONE_API int teletone_set_map(teletone_tone_map_t *map, ...);
   \param user_data optional user data to send
   \return 0
 */
-TELETONE_API int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data);
+TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data);
 
 /*! 
   \brief Free the buffer allocated by a tone generation session
   \param ts the tone generation session to destroy
   \return 0
 */
-TELETONE_API int teletone_destroy_session(teletone_generation_session_t *ts);
+TELETONE_API(int) teletone_destroy_session(teletone_generation_session_t *ts);
 
 /*! 
   \brief Execute a single tone generation instruction
@@ -288,7 +288,7 @@ TELETONE_API int teletone_destroy_session(teletone_generation_session_t *ts);
   \param map the tone mapping to use for the frequencies
   \return 0
 */
-TELETONE_API int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map);
+TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map);
 
 /*! 
   \brief Execute a tone generation script and call callbacks after each instruction
@@ -296,7 +296,7 @@ TELETONE_API int teletone_mux_tones(teletone_generation_session_t *ts, teletone_
   \param cmd the script to execute
   \return 0
 */
-TELETONE_API int teletone_run(teletone_generation_session_t *ts, const char *cmd);
+TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cmd);
 
 #ifdef __cplusplus
 }

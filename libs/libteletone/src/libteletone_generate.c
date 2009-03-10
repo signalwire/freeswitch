@@ -79,7 +79,7 @@
 #pragma warning(disable:4706)
 #endif
 
-TELETONE_API int16_t TELETONE_SINES[SINE_TABLE_MAX] = {
+TELETONE_API_DATA int16_t TELETONE_SINES[SINE_TABLE_MAX] = {
 	0x00c9, 0x025b, 0x03ed, 0x057f, 0x0711, 0x08a2, 0x0a33, 0x0bc4,
 	0x0d54, 0x0ee4, 0x1073, 0x1201, 0x138f, 0x151c, 0x16a8, 0x1833,
 	0x19be, 0x1b47, 0x1cd0, 0x1e57, 0x1fdd, 0x2162, 0x22e5, 0x2467,
@@ -99,7 +99,7 @@ TELETONE_API int16_t TELETONE_SINES[SINE_TABLE_MAX] = {
 };
 
 
-TELETONE_API int teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
+TELETONE_API(int) teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
 {
 	va_list ap;
 	int i = 0;
@@ -115,7 +115,7 @@ TELETONE_API int teletone_set_tone(teletone_generation_session_t *ts, int index,
 	
 }
 
-TELETONE_API int teletone_set_map(teletone_tone_map_t *map, ...)
+TELETONE_API(int) teletone_set_map(teletone_tone_map_t *map, ...)
 {
 	va_list ap;
 	int i = 0;
@@ -131,7 +131,7 @@ TELETONE_API int teletone_set_map(teletone_tone_map_t *map, ...)
 	
 }
 
-TELETONE_API int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data)
+TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data)
 {
 	memset(ts, 0, sizeof(*ts));
 	ts->rate = 8000;
@@ -174,7 +174,7 @@ TELETONE_API int teletone_init_session(teletone_generation_session_t *ts, int bu
 	return 0;
 }
 
-TELETONE_API int teletone_destroy_session(teletone_generation_session_t *ts)
+TELETONE_API(int) teletone_destroy_session(teletone_generation_session_t *ts)
 {
 	if (ts->buffer) {
 		free(ts->buffer);
@@ -203,7 +203,7 @@ static int ensure_buffer(teletone_generation_session_t *ts, int need)
 	return 0;
 }
 
-TELETONE_API int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
+TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	/*teletone_process_t period = (1.0 / ts->rate) / ts->channels;*/
 	int i, c;
@@ -318,7 +318,7 @@ static char *my_strdup (const char *s)
 	return (char *) memcpy (new, s, len);
 }
 
-TELETONE_API int teletone_run(teletone_generation_session_t *ts, const char *cmd)
+TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cmd)
 {
 	char *data = NULL, *cur = NULL, *end = NULL;
 	int var = 0, LOOPING = 0;
