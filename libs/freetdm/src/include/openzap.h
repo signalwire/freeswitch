@@ -543,6 +543,7 @@ struct zap_span {
 	zio_channel_outgoing_call_t outgoing_call;
 	zio_channel_request_t channel_request;
 	zap_span_start_t start;
+	zap_span_stop_t stop;
 	void *mod_data;
 	char *type;
 	char *dtmf_hangup;

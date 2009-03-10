@@ -282,7 +282,9 @@ typedef enum {
 	ZAP_SPAN_CONFIGURED = (1 << 0),
 	ZAP_SPAN_READY = (1 << 1),
 	ZAP_SPAN_STATE_CHANGE = (1 << 2),
-	ZAP_SPAN_SUSPENDED = (1 << 3)
+	ZAP_SPAN_SUSPENDED = (1 << 3),
+	ZAP_SPAN_IN_THREAD = (1 << 4),
+	ZAP_SPAN_STOP_THREAD = (1 << 5)
 } zap_span_flag_t;
 
 typedef enum {
@@ -529,6 +531,7 @@ typedef struct value zap_hash_val_t;
 typedef struct zap_bitstream zap_bitstream_t;
 typedef struct zap_fsk_modulator zap_fsk_modulator_t;
 typedef zap_status_t (*zap_span_start_t)(zap_span_t *span);
+typedef zap_status_t (*zap_span_stop_t)(zap_span_t *span);
 
 typedef enum {
 	ZAP_CAUSE_NONE = 0,

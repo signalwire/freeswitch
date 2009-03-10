@@ -98,7 +98,8 @@ static struct lpwrap_pri_event_list LPWRAP_PRI_EVENT_LIST[] = {
 	{16, LPWRAP_PRI_EVENT_NOTIFY, "NOTIFY"},
 	{17, LPWRAP_PRI_EVENT_PROGRESS, "PROGRESS"},
 	{18, LPWRAP_PRI_EVENT_KEYPAD_DIGIT, "KEYPAD_DIGIT"},
-	{19, LPWRAP_PRI_EVENT_IO_FAIL, "IO_FAIL"}
+	{19, LPWRAP_PRI_EVENT_IO_FAIL, "IO_FAIL"},
+	{20, LPWRAP_PRI_EVENT_TIME_CHECK, "TIME_CHECK"}
 };
 
 #define LINE "--------------------------------------------------------------------------------"
@@ -114,8 +115,8 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	zap_size_t len = buflen;
 	int res;
 
-	if (zap_channel_read(spri->zdchan, buf, &len) != ZAP_SUCCESS) {
-		zap_log(ZAP_LOG_CRIT, "span %d D-READ FAIL! [%s]\n", spri->span, spri->zdchan->last_error);
+	if (zap_channel_read(spri->dchan, buf, &len) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "span %d D-READ FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
 		return -1;
 	}
@@ -134,8 +135,8 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 	struct lpwrap_pri *spri = (struct lpwrap_pri *) pri_get_userdata(pri);
 	zap_size_t len = buflen -2;
 
-	if (zap_channel_write(spri->zdchan, buf, buflen, &len) != ZAP_SUCCESS) {
-		zap_log(ZAP_LOG_CRIT, "span %d D-WRITE FAIL! [%s]\n", spri->span, spri->zdchan->last_error);
+	if (zap_channel_write(spri->dchan, buf, buflen, &len) != ZAP_SUCCESS) {
+		zap_log(ZAP_LOG_CRIT, "span %d D-WRITE FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
         return -1;
 	}
@@ -146,15 +147,15 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 	return (int) buflen;
 }
 
-int lpwrap_init_pri(struct lpwrap_pri *spri, int span, zap_channel_t *dchan, int swtype, int node, int debug)
+int lpwrap_init_pri(struct lpwrap_pri *spri, zap_span_t *span, zap_channel_t *dchan, int swtype, int node, int debug)
 {
 	int ret = -1;
 
 	memset(spri, 0, sizeof(struct lpwrap_pri));
 	
-	spri->zdchan = dchan;
+	spri->dchan = dchan;
 
-	if ((spri->pri = pri_new_cb(spri->zdchan->sockfd, node, swtype, __pri_lpwrap_read, __pri_lpwrap_write, spri))){
+	if ((spri->pri = pri_new_cb(spri->dchan->sockfd, node, swtype, __pri_lpwrap_read, __pri_lpwrap_write, spri))){
 		spri->span = span;
 		pri_set_debug(spri->pri, debug);
 		ret = 0;
@@ -203,6 +204,13 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 	event = NULL;
 
 	if (!sel) {
+		if ((handler = spri->eventmap[LPWRAP_PRI_EVENT_TIME_CHECK] ? 
+			 spri->eventmap[LPWRAP_PRI_EVENT_TIME_CHECK] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
+			if (handler(spri, LPWRAP_PRI_EVENT_TIME_CHECK, NULL) < 0) {
+				return -1;
+			}
+		}
+
 		if ((next = pri_schedule_next(spri->pri))) {
 			gettimeofday(&now, NULL);
 			if (now.tv_sec >= next->tv_sec && (now.tv_usec >= next->tv_usec || next->tv_usec <= 100000)) {
