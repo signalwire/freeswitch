@@ -7414,6 +7414,28 @@ nta_outgoing_bind(nta_outgoing_t *orq,
   return -1;
 }
 
+/**Get application context bound to a client transaction.
+ *
+ * @param orq       outgoing client transaction
+ * @param callback  callback function (may be NULL)
+ *
+ * Return the application context bound to a client transaction. If the @a
+ * callback function pointer is given, return application context only if
+ * the callback matches with the callback bound to the client transaction.
+ *
+ * @NEW_1_12_11
+ */
+nta_outgoing_magic_t *
+nta_outgoing_magic(nta_outgoing_t const *orq,
+		   nta_response_f *callback)
+{
+  if (orq && (callback == NULL || callback == orq->orq_callback))
+    return orq->orq_magic;
+  else
+    return NULL;
+}
+
+
 /**
  * Destroy a request object.
  *
