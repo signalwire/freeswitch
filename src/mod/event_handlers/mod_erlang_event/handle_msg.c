@@ -191,6 +191,7 @@ static switch_status_t  handle_msg_fetch_reply(listener_t *listener, ei_x_buff *
 				switch_core_hash_delete(listener->fetch_reply_hash, uuid_str);
 				switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);
 				ei_x_encode_atom(rbuf, "ok");
+				return SWITCH_STATUS_SUCCESS;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Found filled slot for %s\n", uuid_str);
 				ei_x_encode_tuple_header(rbuf, 2);
@@ -206,6 +207,8 @@ static switch_status_t  handle_msg_fetch_reply(listener_t *listener, ei_x_buff *
 		}
 
 		/*switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);*/
+		free(nbuf->buff);
+		free(nbuf);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
