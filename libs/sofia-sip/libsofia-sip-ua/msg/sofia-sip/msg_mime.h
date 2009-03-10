@@ -168,13 +168,13 @@ struct msg_multipart_s
   msg_error_t            *mp_error;
 
   /* === Headers start here */
-  msg_content_type_t     *mp_content_type;	/**< Content-Type */
+  msg_content_type_t     *mp_content_type;	/**< Content-Type (c) */
   msg_content_disposition_t *mp_content_disposition;
                                                 /**< Content-Disposition */
   msg_content_location_t *mp_content_location;	/**< Content-Location */
   msg_content_id_t       *mp_content_id;        /**< Content-ID */
   msg_content_language_t *mp_content_language;	/**< Content-Language */
-  msg_content_encoding_t *mp_content_encoding;	/**< Content-Encoding */
+  msg_content_encoding_t *mp_content_encoding;	/**< Content-Encoding (e) */
   msg_content_transfer_encoding_t *mp_content_transfer_encoding;
                                         /**< Content-Transfer-Encoding */
 #if 0

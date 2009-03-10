@@ -87,7 +87,7 @@ MSG_PARSER_AWK = $(srcdir)/msg_parser.awk
 
 AWK_MSG_AWK = LC_ALL=C $(AWK) -f $(MSG_PARSER_AWK)
 
-${GENERATED_HC}: ${MSG_PARSER_AWK}
+${GENERATED_HC}: ${MSG_PARSER_AWK} Makefile.am
 
 TEST_CLASS_H = ${srcdir}/test_class.h
 

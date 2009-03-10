@@ -1193,8 +1193,15 @@ int test_mime(void)
     CRLF			/* 13 */
 #define BODY3 "<html><body>part 3</body></html>" CRLF
     BODY3			/* 14 */
-    CRLF			/* 15 */
-    "--LaGqGt4BI6Ho--" CRLF;
+    CRLF "--LaGqGt4BI6Ho"	/* 15 */
+    "c: text/html" CRLF		/* 16 */
+    "l: 9" CRLF			/* 17 */
+    "e: identity" CRLF		/* 18 */
+    CRLF			/* 19 */
+#define BODY4 "<html/>" CRLF
+    BODY4			  /* 20 */
+    CRLF "--LaGqGt4BI6Ho--"	  /* 21 */
+    CRLF;
 
   BEGIN();
 
@@ -1275,6 +1282,18 @@ int test_mime(void)
   TEST_SIZE(strlen(BODY3), pl->pl_len);
   TEST(memcmp(pl->pl_data, BODY3, pl->pl_len), 0);
 
+  TEST_1(mp = mp->mp_next);
+
+  TEST_1(mp->mp_data);
+  TEST_M(mp->mp_data, CRLF "--" "LaGqGt4BI6Ho" CRLF, mp->mp_len);
+
+  TEST_1(mp->mp_content_encoding);
+  TEST_1(mp->mp_content_type);
+
+  TEST_1(pl = mp->mp_payload); TEST_1(pl->pl_data);
+  TEST_SIZE(strlen(BODY4), pl->pl_len);
+  TEST(memcmp(pl->pl_data, BODY4, pl->pl_len), 0);
+
   mpX = mp;
 
   TEST_1(!(mp = mp->mp_next));
@@ -1293,7 +1312,7 @@ int test_mime(void)
     h->sh_succ = NULL;
   }
 
-  TEST(n, 15);
+  TEST(n, 21);
 
   head = NULL;
   TEST_1(h = msg_multipart_serialize(&head, mp0));
@@ -1304,7 +1323,7 @@ int test_mime(void)
     h_succ = h->sh_succ;
   }
 
-  TEST(n, 15);
+  TEST(n, 21);
 
   /* Add a new part to multipart */
   mpnew = su_zalloc(home, sizeof(*mpnew)); TEST_1(mpnew);
@@ -1324,7 +1343,7 @@ int test_mime(void)
     TEST_1(h != removed);
   }
 
-  TEST(n, 19);
+  TEST(n, 21 + 4);
 
 #define remove(h) \
   (((*((msg_header_t*)(h))->sh_prev = ((msg_header_t*)(h))->sh_succ) ? \
@@ -1336,7 +1355,7 @@ int test_mime(void)
   remove(mp0->mp_separator);
   remove(mp0->mp_next->mp_payload);
   remove(mp0->mp_next->mp_next->mp_content_type);
-  remove(mp0->mp_next->mp_next->mp_next->mp_close_delim);
+  remove(mp0->mp_next->mp_next->mp_next->mp_next->mp_close_delim);
 
   TEST_1(!msg_chain_errors((msg_header_t *)mp0));
 
@@ -1352,7 +1371,7 @@ int test_mime(void)
     TEST_1(h != removed);
   }
 
-  TEST(n, 19);
+  TEST(n, 21 + 4);
 
   /* Add an recursive multipart */
   mpnew = su_zalloc(home, sizeof(*mpnew)); TEST_1(mpnew);
@@ -1371,7 +1390,7 @@ int test_mime(void)
   for (h = (msg_header_t *)mp0, n = 0; h; h = h_succ, n++)
     h_succ = h->sh_succ;
 
-  TEST(n, 24);
+  TEST(n, 21 + 9);
 
   su_home_check(home);
   su_home_zap(home);
