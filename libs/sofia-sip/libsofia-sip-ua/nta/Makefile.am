@@ -16,17 +16,20 @@ INCLUDES = 		-I$(srcdir)/../ipt -I../ipt \
 			-I$(srcdir)/../tport -I../tport \
 			-I$(srcdir)/../url -I../url \
 			-I$(srcdir)/../features -I../features \
-			-I$(srcdir)/../su -I../su
+			-I$(srcdir)/../su -I../su \
+			-I$(top_srcdir)/s2check \
+			-I$(srcdir)/../stun -I ../stun
 
 # ----------------------------------------------------------------------
 # Build targets
 
 noinst_LTLIBRARIES = 	libnta.la
 
-check_PROGRAMS = 	test_nta_api test_nta portbind
+check_PROGRAMS = 	check_nta test_nta_api test_nta portbind
 dist_noinst_SCRIPTS =	run_test_nta_api run_test_nta
 
-TESTS =			run_test_nta_api run_test_nta
+TESTS =			run_check_nta run_test_nta_api run_test_nta
+
 TESTS_ENVIRONMENT =	$(SHELL)
 
 # ----------------------------------------------------------------------
@@ -62,6 +65,19 @@ LDADD = 		libnta.la \
 test_nta_LDFLAGS = 	-static
 
 MOSTLYCLEANFILES +=	.test[0-9]*
+
+if HAVE_CHECK
+
+check_nta_SOURCES =	check_nta.c check_nta.h \
+			check_nta_api.c \
+			check_nta_client.c
+
+check_nta_LDADD = 	${LDADD} ${top_builddir}/s2check/libs2.a \
+			@CHECK_LIBS@
+
+else
+check_nta_SOURCES = 	$(top_srcdir)/s2check/exit77.c
+endif
 
 # ----------------------------------------------------------------------
 # Install and distribution rules
