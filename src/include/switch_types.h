@@ -381,6 +381,7 @@ SWITCH_DECLARE_DATA extern switch_directories SWITCH_GLOBAL_dirs;
 #define SWITCH_ACCEPTABLE_INTERVAL(_i) (_i && _i <= SWITCH_MAX_INTERVAL && (_i % 10) == 0)
 
 typedef enum {
+	SWITCH_CPF_NONE = 0,
 	SWITCH_CPF_SCREEN = (1 << 0),
 	SWITCH_CPF_HIDE_NAME = (1 << 1),
 	SWITCH_CPF_HIDE_NUMBER = (1 << 2)

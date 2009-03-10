@@ -916,7 +916,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	const char *cid_tmp;
 	originate_global_t oglobals = { 0 };
 
-
 	oglobals.idx = IDX_NADA;
 	oglobals.early_ok = 1;
 	oglobals.session = session;
@@ -1421,6 +1420,35 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					}
 					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", tmp);
+				}
+
+
+				if (vdata && (var_begin = switch_stristr("origination_privacy=", vdata))) {
+					char tmp[512] = "";
+					var_begin += strlen("origination_privacy=");
+					var_end = strchr(var_begin, '|');
+					if (var_end) {
+						strncpy(tmp, var_begin, var_end-var_begin);
+					} else {
+						strncpy(tmp, var_begin, strlen(var_begin));
+					}
+
+					new_profile->flags = SWITCH_CPF_NONE;
+
+					if (switch_stristr(tmp, "screen")) {
+						switch_set_flag(new_profile, SWITCH_CPF_SCREEN);
+					}
+
+					if (switch_stristr(tmp, "hide_name")) {
+						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NAME);
+					}
+
+					if (switch_stristr(tmp, "hide_number")) {
+						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NUMBER);
+					}
+
+					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_privacy", tmp);
 				}
 				
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
