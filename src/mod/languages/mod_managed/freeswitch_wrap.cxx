@@ -3824,6 +3824,26 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_switch_mprintf(char * jarg1) {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_switch_vmprintf(char * jarg1, void * jarg2) {
+  char * jresult ;
+  char *arg1 = (char *) 0 ;
+  va_list arg2 ;
+  char *result = 0 ;
+  va_list *argp2 ;
+  
+  arg1 = (char *)jarg1; 
+  argp2 = (va_list *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null va_list", 0);
+    return 0;
+  }
+  arg2 = *argp2; 
+  result = (char *)switch_vmprintf((char const *)arg1,arg2);
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_switch_regex_compile(char * jarg1, int jarg2, void * jarg3, void * jarg4, void * jarg5) {
   void * jresult ;
   char *arg1 = (char *) 0 ;
@@ -5005,6 +5025,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_remove(void * jarg1, voi
   arg1 = (switch_core_session_t *)jarg1; 
   arg2 = (switch_media_bug_t **)jarg2; 
   result = (switch_status_t)switch_core_media_bug_remove(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_remove_callback(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_media_bug_callback_t arg2 = (switch_media_bug_callback_t) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_media_bug_callback_t)jarg2; 
+  result = (switch_status_t)switch_core_media_bug_remove_callback(arg1,arg2);
   jresult = result; 
   return jresult;
 }
@@ -10612,6 +10646,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_state_handler_table_on_park_get(void
   
   arg1 = (switch_state_handler_table *)jarg1; 
   result = (switch_state_handler_t) ((arg1)->on_park);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_state_handler_table_on_reporting_set(void * jarg1, void * jarg2) {
+  switch_state_handler_table *arg1 = (switch_state_handler_table *) 0 ;
+  switch_state_handler_t arg2 = (switch_state_handler_t) 0 ;
+  
+  arg1 = (switch_state_handler_table *)jarg1; 
+  arg2 = (switch_state_handler_t)jarg2; 
+  if (arg1) (arg1)->on_reporting = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_state_handler_table_on_reporting_get(void * jarg1) {
+  void * jresult ;
+  switch_state_handler_table *arg1 = (switch_state_handler_table *) 0 ;
+  switch_state_handler_t result;
+  
+  arg1 = (switch_state_handler_table *)jarg1; 
+  result = (switch_state_handler_t) ((arg1)->on_reporting);
   jresult = (void *)result; 
   return jresult;
 }
