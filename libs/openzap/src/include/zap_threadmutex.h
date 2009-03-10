@@ -27,14 +27,14 @@ typedef struct zap_mutex zap_mutex_t;
 typedef struct zap_thread zap_thread_t;
 typedef void *(*zap_thread_function_t) (zap_thread_t *, void *);
 
-zap_status_t zap_thread_create_detached(zap_thread_function_t func, void *data);
-zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *data, zap_size_t stack_size);
-void zap_thread_override_default_stacksize(zap_size_t size);
-zap_status_t zap_mutex_create(zap_mutex_t **mutex);
-zap_status_t zap_mutex_destroy(zap_mutex_t **mutex);
-zap_status_t _zap_mutex_lock(zap_mutex_t *mutex);
-zap_status_t _zap_mutex_trylock(zap_mutex_t *mutex);
-zap_status_t _zap_mutex_unlock(zap_mutex_t *mutex);
+OZ_DECLARE(zap_status_t) zap_thread_create_detached(zap_thread_function_t func, void *data);
+OZ_DECLARE(zap_status_t) zap_thread_create_detached_ex(zap_thread_function_t func, void *data, zap_size_t stack_size);
+OZ_DECLARE(void) zap_thread_override_default_stacksize(zap_size_t size);
+OZ_DECLARE(zap_status_t) zap_mutex_create(zap_mutex_t **mutex);
+OZ_DECLARE(zap_status_t) zap_mutex_destroy(zap_mutex_t **mutex);
+OZ_DECLARE(zap_status_t) _zap_mutex_lock(zap_mutex_t *mutex);
+OZ_DECLARE(zap_status_t) _zap_mutex_trylock(zap_mutex_t *mutex);
+OZ_DECLARE(zap_status_t) _zap_mutex_unlock(zap_mutex_t *mutex);
 
 #endif
 

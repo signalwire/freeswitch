@@ -47,8 +47,34 @@
 #endif
 
 #ifndef __WINDOWS__
-#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32)
+#if defined(WIN32) || defined(WIN64) || defined(_MSC_VER) || defined(_WIN32) || defined(_WIN64)
 #define __WINDOWS__
+#endif
+#endif
+
+#ifdef _MSC_VER
+#if defined(OZ_DECLARE_STATIC)
+#define OZ_DECLARE(type)			type __stdcall
+#define OZ_DECLARE_NONSTD(type)		type __cdecl
+#define OZ_DECLARE_DATA
+#elif defined(OPENZAP_EXPORTS)
+#define OZ_DECLARE(type)			__declspec(dllexport) type __stdcall
+#define OZ_DECLARE_NONSTD(type)		__declspec(dllexport) type __cdecl
+#define OZ_DECLARE_DATA				__declspec(dllexport)
+#else
+#define OZ_DECLARE(type)			__declspec(dllimport) type __stdcall
+#define OZ_DECLARE_NONSTD(type)		__declspec(dllimport) type __cdecl
+#define OZ_DECLARE_DATA				__declspec(dllimport)
+#endif
+#else
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
+#define OZ_DECLARE(type)		__attribute__((visibility("default"))) type
+#define OZ_DECLARE_NONSTD(type)	__attribute__((visibility("default"))) type
+#define OZ_DECLARE_DATA		__attribute__((visibility("default")))
+#else
+#define OZ_DECLARE(type)		type
+#define OZ_DECLARE_NONSTD(type)	type
+#define OZ_DECLARE_DATA
 #endif
 #endif
 
@@ -89,9 +115,9 @@
 
 #define ZAP_THREAD_STACKSIZE 240 * 1024
 #define ZAP_ENUM_NAMES(_NAME, _STRINGS) static const char * _NAME [] = { _STRINGS , NULL };
-#define ZAP_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
+#define ZAP_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) OZ_DECLARE(_TYPE) _FUNC1 (const char *name); OZ_DECLARE(const char *) _FUNC2 (_TYPE type);
 #define ZAP_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\
-	_TYPE _FUNC1 (const char *name)							\
+	OZ_DECLARE(_TYPE) _FUNC1 (const char *name)							\
 	{														\
 		int i;												\
 		_TYPE t = _MAX ;									\
@@ -105,7 +131,7 @@
 															\
 		return t;											\
 	}														\
-	const char * _FUNC2 (_TYPE type)						\
+	OZ_DECLARE(const char *) _FUNC2 (_TYPE type)						\
 	{														\
 		if (type > _MAX) {									\
 			type = _MAX;									\
@@ -123,7 +149,7 @@
 
 
 #include <time.h>
-#ifndef WIN32
+#ifndef __WINDOWS__
 #include <sys/time.h>
 #endif
 
@@ -146,7 +172,7 @@
 
 #define XX if (0)
 
-#ifdef WIN32
+#ifdef __WINDOWS__
 #define zap_sleep(x) Sleep(x)
 #else
 #define zap_sleep(x) usleep(x * 1000)
@@ -304,8 +330,8 @@ struct zap_stream_handle {
 };
 
 
-zap_status_t zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen);
-zap_status_t zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...);
+OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen);
+OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...);
 
 #define ZAP_CMD_CHUNK_LEN 1024
 #define ZAP_STANDARD_STREAM(s) memset(&s, 0, sizeof(s)); s.data = malloc(ZAP_CMD_CHUNK_LEN); \
@@ -526,7 +552,7 @@ struct zap_span {
 };
 
 
-extern zap_logger_t zap_log;
+OZ_DECLARE_DATA extern zap_logger_t zap_log;
 
 struct zap_io_interface {
 	const char *name;
@@ -547,16 +573,16 @@ struct zap_io_interface {
 };
 
 
-zap_size_t zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
-int32_t zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);
-void zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans);
-void zap_fsk_modulator_send_data(zap_fsk_modulator_t *fsk_trans);
+OZ_DECLARE(zap_size_t) zap_fsk_modulator_generate_bit(zap_fsk_modulator_t *fsk_trans, int8_t bit, int16_t *buf, zap_size_t buflen);
+OZ_DECLARE(int32_t) zap_fsk_modulator_generate_carrier_bits(zap_fsk_modulator_t *fsk_trans, uint32_t bits);
+OZ_DECLARE(void) zap_fsk_modulator_generate_chan_sieze(zap_fsk_modulator_t *fsk_trans);
+OZ_DECLARE(void) zap_fsk_modulator_send_data(zap_fsk_modulator_t *fsk_trans);
 #define zap_fsk_modulator_send_all(_it) zap_fsk_modulator_generate_chan_sieze(_it); \
 	zap_fsk_modulator_generate_carrier_bits(_it, _it->carrier_bits_start); \
 	zap_fsk_modulator_send_data(_it); \
 	zap_fsk_modulator_generate_carrier_bits(_it, _it->carrier_bits_stop)
 
-zap_status_t zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
+OZ_DECLARE(zap_status_t) zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
 									fsk_modem_types_t modem_type,
 									uint32_t sample_rate,
 									zap_fsk_data_state_t *fsk_data,
@@ -566,72 +592,72 @@ zap_status_t zap_fsk_modulator_init(zap_fsk_modulator_t *fsk_trans,
 									uint32_t chan_sieze_bits,
 									zap_fsk_write_sample_t write_sample_callback,
 									void *user_data);
-int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp);
-void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, uint8_t ss);
-zap_status_t zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len);
-zap_status_t zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size_t samples);
-zap_status_t zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
-int zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsize);
-zap_status_t zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint32_t datalen);
-zap_status_t zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, const uint8_t *data, uint32_t datalen);
-zap_status_t zap_fsk_data_add_checksum(zap_fsk_data_state_t *state);
-zap_status_t zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date, char *number);
-zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan);
-void zap_channel_rotate_tokens(zap_channel_t *zchan);
-void zap_channel_clear_detected_tones(zap_channel_t *zchan);
-void zap_channel_clear_needed_tones(zap_channel_t *zchan);
-zap_status_t zap_channel_get_alarms(zap_channel_t *zchan);
-zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level);
-zap_status_t zap_channel_clear_token(zap_channel_t *zchan, const char *token);
-zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end);
-zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock);
-zap_status_t zap_span_load_tones(zap_span_t *span, const char *mapname);
-zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
-zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
-void zap_channel_flush_dtmf(zap_channel_t *zchan);
-zap_time_t zap_current_time_in_ms(void);
-zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms);
-zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event);
-zap_status_t zap_span_find(uint32_t id, zap_span_t **span);
-zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span);
-zap_status_t zap_span_close_all(void);
-zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
-zap_status_t zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback);
-zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
-zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
-zap_status_t zap_channel_open_chan(zap_channel_t *zchan);
-zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan);
-zap_status_t zap_channel_close(zap_channel_t **zchan);
-zap_status_t zap_channel_done(zap_channel_t *zchan);
-zap_status_t zap_channel_use(zap_channel_t *zchan);
-zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to);
-zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
-zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen);
-zap_status_t zap_channel_add_var(zap_channel_t *zchan, const char *var_name, const char *value);
-const char * zap_channel_get_var(zap_channel_t *zchan, const char *var_name);
-zap_status_t zap_channel_clear_vars(zap_channel_t *zchan);
-zap_status_t zap_global_init(void);
-zap_status_t zap_global_destroy(void);
-void zap_global_set_logger(zap_logger_t logger);
-void zap_global_set_default_logger(int level);
-uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen);
-void print_bits(uint8_t *b, int bl, char *buf, int blen, int e, uint8_t ss);
-void print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen);
-int zap_hash_equalkeys(void *k1, void *k2);
-uint32_t zap_hash_hashfromstring(void *ky);
-uint32_t zap_running(void);
-zap_status_t zap_channel_complete_state(zap_channel_t *zchan);
-zap_status_t zap_channel_init(zap_channel_t *zchan);
-int zap_load_modules(void);
-zap_status_t zap_unload_modules(void);
-zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...);
-zap_status_t zap_span_start(zap_span_t *span);
-int zap_load_module(const char *name);
-int zap_load_module_assume(const char *name);
-zap_status_t zap_span_find_by_name(const char *name, zap_span_t **span);
-char *zap_api_execute(const char *type, const char *cmd);
-int zap_vasprintf(char **ret, const char *fmt, va_list ap);
+OZ_DECLARE(int8_t) zap_bitstream_get_bit(zap_bitstream_t *bsp);
+OZ_DECLARE(void) zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, uint8_t ss);
+OZ_DECLARE(zap_status_t) zap_fsk_data_parse(zap_fsk_data_state_t *state, zap_size_t *type, char **data, zap_size_t *len);
+OZ_DECLARE(zap_status_t) zap_fsk_demod_feed(zap_fsk_data_state_t *state, int16_t *data, size_t samples);
+OZ_DECLARE(zap_status_t) zap_fsk_demod_destroy(zap_fsk_data_state_t *state);
+OZ_DECLARE(int) zap_fsk_demod_init(zap_fsk_data_state_t *state, int rate, uint8_t *buf, size_t bufsize);
+OZ_DECLARE(zap_status_t) zap_fsk_data_init(zap_fsk_data_state_t *state, uint8_t *data, uint32_t datalen);
+OZ_DECLARE(zap_status_t) zap_fsk_data_add_mdmf(zap_fsk_data_state_t *state, zap_mdmf_type_t type, const uint8_t *data, uint32_t datalen);
+OZ_DECLARE(zap_status_t) zap_fsk_data_add_checksum(zap_fsk_data_state_t *state);
+OZ_DECLARE(zap_status_t) zap_fsk_data_add_sdmf(zap_fsk_data_state_t *state, const char *date, char *number);
+OZ_DECLARE(zap_status_t) zap_channel_outgoing_call(zap_channel_t *zchan);
+OZ_DECLARE(void) zap_channel_rotate_tokens(zap_channel_t *zchan);
+OZ_DECLARE(void) zap_channel_clear_detected_tones(zap_channel_t *zchan);
+OZ_DECLARE(void) zap_channel_clear_needed_tones(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_channel_get_alarms(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level);
+OZ_DECLARE(zap_status_t) zap_channel_clear_token(zap_channel_t *zchan, const char *token);
+OZ_DECLARE(zap_status_t) zap_channel_add_token(zap_channel_t *zchan, char *token, int end);
+OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock);
+OZ_DECLARE(zap_status_t) zap_span_load_tones(zap_span_t *span, const char *mapname);
+OZ_DECLARE(zap_size_t) zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len);
+OZ_DECLARE(zap_status_t) zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf);
+OZ_DECLARE(void) zap_channel_flush_dtmf(zap_channel_t *zchan);
+OZ_DECLARE(zap_time_t) zap_current_time_in_ms(void);
+OZ_DECLARE(zap_status_t) zap_span_poll_event(zap_span_t *span, uint32_t ms);
+OZ_DECLARE(zap_status_t) zap_span_next_event(zap_span_t *span, zap_event_t **event);
+OZ_DECLARE(zap_status_t) zap_span_find(uint32_t id, zap_span_t **span);
+OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **span);
+OZ_DECLARE(zap_status_t) zap_span_close_all(void);
+OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
+OZ_DECLARE(zap_status_t) zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback);
+OZ_DECLARE(zap_status_t) zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback);
+OZ_DECLARE(zap_status_t) zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan);
+OZ_DECLARE(zap_status_t) zap_channel_open_chan(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan);
+OZ_DECLARE(zap_status_t) zap_channel_close(zap_channel_t **zchan);
+OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_channel_use(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj);
+OZ_DECLARE(zap_status_t) zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to);
+OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen);
+OZ_DECLARE(zap_status_t) zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen);
+OZ_DECLARE(zap_status_t) zap_channel_add_var(zap_channel_t *zchan, const char *var_name, const char *value);
+OZ_DECLARE(const char *) zap_channel_get_var(zap_channel_t *zchan, const char *var_name);
+OZ_DECLARE(zap_status_t) zap_channel_clear_vars(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_global_init(void);
+OZ_DECLARE(zap_status_t) zap_global_destroy(void);
+OZ_DECLARE(void) zap_global_set_logger(zap_logger_t logger);
+OZ_DECLARE(void) zap_global_set_default_logger(int level);
+OZ_DECLARE(uint32_t) zap_separate_string(char *buf, char delim, char **array, int arraylen);
+OZ_DECLARE(void) print_bits(uint8_t *b, int bl, char *buf, int blen, int e, uint8_t ss);
+OZ_DECLARE(void) print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen);
+OZ_DECLARE_NONSTD(int) zap_hash_equalkeys(void *k1, void *k2);
+OZ_DECLARE_NONSTD(uint32_t) zap_hash_hashfromstring(void *ky);
+OZ_DECLARE(uint32_t) zap_running(void);
+OZ_DECLARE(zap_status_t) zap_channel_complete_state(zap_channel_t *zchan);
+OZ_DECLARE(zap_status_t) zap_channel_init(zap_channel_t *zchan);
+OZ_DECLARE(int) zap_load_modules(void);
+OZ_DECLARE(zap_status_t) zap_unload_modules(void);
+OZ_DECLARE(zap_status_t) zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...);
+OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span);
+OZ_DECLARE(int) zap_load_module(const char *name);
+OZ_DECLARE(int) zap_load_module_assume(const char *name);
+OZ_DECLARE(zap_status_t) zap_span_find_by_name(const char *name, zap_span_t **span);
+OZ_DECLARE(char *) zap_api_execute(const char *type, const char *cmd);
+OZ_DECLARE(int) zap_vasprintf(char **ret, const char *fmt, va_list ap);
 
 ZIO_CODEC_FUNCTION(zio_slin2ulaw);
 ZIO_CODEC_FUNCTION(zio_ulaw2slin);

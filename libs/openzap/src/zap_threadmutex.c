@@ -62,7 +62,7 @@ struct zap_thread {
 
 zap_size_t thread_default_stacksize = 0;
 
-void zap_thread_override_default_stacksize(zap_size_t size)
+OZ_DECLARE(void) zap_thread_override_default_stacksize(zap_size_t size)
 {
 	thread_default_stacksize = size;
 }
@@ -80,12 +80,12 @@ static void * ZAP_THREAD_CALLING_CONVENTION thread_launch(void *args)
 	return exit_val;
 }
 
-zap_status_t zap_thread_create_detached(zap_thread_function_t func, void *data)
+OZ_DECLARE(zap_status_t) zap_thread_create_detached(zap_thread_function_t func, void *data)
 {
 	return zap_thread_create_detached_ex(func, data, thread_default_stacksize);
 }
 
-zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *data, zap_size_t stack_size)
+OZ_DECLARE(zap_status_t) zap_thread_create_detached_ex(zap_thread_function_t func, void *data, zap_size_t stack_size)
 {
 	zap_thread_t *thread = NULL;
 	zap_status_t status = ZAP_FAIL;
@@ -132,7 +132,7 @@ zap_status_t zap_thread_create_detached_ex(zap_thread_function_t func, void *dat
 }
 
 
-zap_status_t zap_mutex_create(zap_mutex_t **mutex)
+OZ_DECLARE(zap_status_t) zap_mutex_create(zap_mutex_t **mutex)
 {
 	zap_status_t status = ZAP_FAIL;
 #ifndef WIN32
@@ -170,7 +170,7 @@ zap_status_t zap_mutex_create(zap_mutex_t **mutex)
 	return status;
 }
 
-zap_status_t zap_mutex_destroy(zap_mutex_t **mutex)
+OZ_DECLARE(zap_status_t) zap_mutex_destroy(zap_mutex_t **mutex)
 {
 	zap_mutex_t *mp = *mutex;
 	*mutex = NULL;
@@ -187,7 +187,7 @@ zap_status_t zap_mutex_destroy(zap_mutex_t **mutex)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t _zap_mutex_lock(zap_mutex_t *mutex)
+OZ_DECLARE(zap_status_t) _zap_mutex_lock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	EnterCriticalSection(&mutex->mutex);
@@ -198,7 +198,7 @@ zap_status_t _zap_mutex_lock(zap_mutex_t *mutex)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t _zap_mutex_trylock(zap_mutex_t *mutex)
+OZ_DECLARE(zap_status_t) _zap_mutex_trylock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	if (!TryEnterCriticalSection(&mutex->mutex))
@@ -210,7 +210,7 @@ zap_status_t _zap_mutex_trylock(zap_mutex_t *mutex)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t _zap_mutex_unlock(zap_mutex_t *mutex)
+OZ_DECLARE(zap_status_t) _zap_mutex_unlock(zap_mutex_t *mutex)
 {
 #ifdef WIN32
 	LeaveCriticalSection(&mutex->mutex);

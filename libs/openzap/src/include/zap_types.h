@@ -461,7 +461,7 @@ typedef zap_status_t (*zio_api_t) ZIO_API_ARGS ;
 #define ZIO_SPAN_NEXT_EVENT_FUNCTION(name) zap_status_t name ZIO_SPAN_NEXT_EVENT_ARGS
 #define ZIO_SIGNAL_CB_FUNCTION(name) zap_status_t name ZIO_SIGNAL_CB_ARGS
 #define ZIO_EVENT_CB_FUNCTION(name) zap_status_t name ZIO_EVENT_CB_ARGS
-#define ZIO_CODEC_FUNCTION(name) zap_status_t name ZIO_CODEC_ARGS
+#define ZIO_CODEC_FUNCTION(name) OZ_DECLARE_NONSTD(zap_status_t) name ZIO_CODEC_ARGS
 #define ZIO_CONFIGURE_SPAN_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_SPAN_ARGS
 #define ZIO_CONFIGURE_FUNCTION(name) zap_status_t name ZIO_CONFIGURE_ARGS
 #define ZIO_OPEN_FUNCTION(name) zap_status_t name ZIO_OPEN_ARGS

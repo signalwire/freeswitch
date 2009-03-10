@@ -53,25 +53,25 @@ typedef struct zap_buffer zap_buffer_t;
  * \param max_len length the buffer is allowed to grow to
  * \return status
  */
-zap_status_t zap_buffer_create(zap_buffer_t **buffer, zap_size_t blocksize, zap_size_t start_len, zap_size_t max_len);
+OZ_DECLARE(zap_status_t) zap_buffer_create(zap_buffer_t **buffer, zap_size_t blocksize, zap_size_t start_len, zap_size_t max_len);
 
 /*! \brief Get the length of a zap_buffer_t 
  * \param buffer any buffer of type zap_buffer_t
  * \return int size of the buffer.
  */
-zap_size_t zap_buffer_len(zap_buffer_t *buffer);
+OZ_DECLARE(zap_size_t) zap_buffer_len(zap_buffer_t *buffer);
 
 /*! \brief Get the freespace of a zap_buffer_t 
  * \param buffer any buffer of type zap_buffer_t
  * \return int freespace in the buffer.
  */
-zap_size_t zap_buffer_freespace(zap_buffer_t *buffer);
+OZ_DECLARE(zap_size_t) zap_buffer_freespace(zap_buffer_t *buffer);
 
 /*! \brief Get the in use amount of a zap_buffer_t 
  * \param buffer any buffer of type zap_buffer_t
  * \return int ammount of buffer curently in use
  */
-zap_size_t zap_buffer_inuse(zap_buffer_t *buffer);
+OZ_DECLARE(zap_size_t) zap_buffer_inuse(zap_buffer_t *buffer);
 
 /*! \brief Read data from a zap_buffer_t up to the ammount of datalen if it is available.  Remove read data from buffer. 
  * \param buffer any buffer of type zap_buffer_t
@@ -79,7 +79,7 @@ zap_size_t zap_buffer_inuse(zap_buffer_t *buffer);
  * \param datalen amount of data to be returned
  * \return int ammount of data actually read
  */
-zap_size_t zap_buffer_read(zap_buffer_t *buffer, void *data, zap_size_t datalen);
+OZ_DECLARE(zap_size_t) zap_buffer_read(zap_buffer_t *buffer, void *data, zap_size_t datalen);
 
 /*! \brief Read data endlessly from a zap_buffer_t 
  * \param buffer any buffer of type zap_buffer_t
@@ -88,13 +88,13 @@ zap_size_t zap_buffer_read(zap_buffer_t *buffer, void *data, zap_size_t datalen)
  * \return int ammount of data actually read
  * \note Once you have read all the data from the buffer it will loop around.
  */
-zap_size_t zap_buffer_read_loop(zap_buffer_t *buffer, void *data, zap_size_t datalen);
+OZ_DECLARE(zap_size_t) zap_buffer_read_loop(zap_buffer_t *buffer, void *data, zap_size_t datalen);
 
 /*! \brief Assign a number of loops to read
  * \param buffer any buffer of type zap_buffer_t
  * \param loops the number of loops (-1 for infinite)
  */
-void zap_buffer_set_loops(zap_buffer_t *buffer, int32_t loops);
+OZ_DECLARE(void) zap_buffer_set_loops(zap_buffer_t *buffer, int32_t loops);
 
 /*! \brief Write data into a zap_buffer_t up to the length of datalen
  * \param buffer any buffer of type zap_buffer_t
@@ -102,36 +102,36 @@ void zap_buffer_set_loops(zap_buffer_t *buffer, int32_t loops);
  * \param datalen amount of data to be written
  * \return int amount of buffer used after the write, or 0 if no space available
  */
-zap_size_t zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t datalen);
+OZ_DECLARE(zap_size_t) zap_buffer_write(zap_buffer_t *buffer, const void *data, zap_size_t datalen);
 
 /*! \brief Remove data from the buffer
  * \param buffer any buffer of type zap_buffer_t
  * \param datalen amount of data to be removed
  * \return int size of buffer, or 0 if unable to toss that much data
  */
-zap_size_t zap_buffer_toss(zap_buffer_t *buffer, zap_size_t datalen);
+OZ_DECLARE(zap_size_t) zap_buffer_toss(zap_buffer_t *buffer, zap_size_t datalen);
 
 /*! \brief Remove all data from the buffer
  * \param buffer any buffer of type zap_buffer_t
  */
-void zap_buffer_zero(zap_buffer_t *buffer);
+OZ_DECLARE(void) zap_buffer_zero(zap_buffer_t *buffer);
 
 /*! \brief Destroy the buffer
  * \param buffer buffer to destroy
  * \note only neccessary on dynamic buffers (noop on pooled ones)
  */
-void zap_buffer_destroy(zap_buffer_t **buffer);
+OZ_DECLARE(void) zap_buffer_destroy(zap_buffer_t **buffer);
 
 /*! \brief Seek to offset from the beginning of the buffer
  * \param buffer buffer to seek
  * \param datalen offset in bytes
  * \return new position
  */
-zap_size_t zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen);
+OZ_DECLARE(zap_size_t) zap_buffer_seek(zap_buffer_t *buffer, zap_size_t datalen);
 
 /** @} */
 
-zap_size_t zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen);
+OZ_DECLARE(zap_size_t) zap_buffer_zwrite(zap_buffer_t *buffer, const void *data, zap_size_t datalen);
 
 #endif
 /* For Emacs:

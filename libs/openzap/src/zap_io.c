@@ -63,7 +63,7 @@ static void time_end(void)
 	time_is_init = 0;
 }
 
-zap_time_t zap_current_time_in_ms(void)
+OZ_DECLARE(zap_time_t) zap_current_time_in_ms(void)
 {
 #ifdef WIN32
 	return timeGetTime();
@@ -175,9 +175,9 @@ static void default_logger(const char *file, const char *func, int line, int lev
 
 }
 
-zap_logger_t zap_log = null_logger;
+OZ_DECLARE_DATA zap_logger_t zap_log = null_logger;
 
-void zap_global_set_logger(zap_logger_t logger)
+OZ_DECLARE(void) zap_global_set_logger(zap_logger_t logger)
 {
 	if (logger) {
 		zap_log = logger;
@@ -186,7 +186,7 @@ void zap_global_set_logger(zap_logger_t logger)
 	}
 }
 
-void zap_global_set_default_logger(int level)
+OZ_DECLARE(void) zap_global_set_default_logger(int level)
 {
 	if (level < 0 || level > 7) {
 		level = 7;
@@ -196,12 +196,12 @@ void zap_global_set_default_logger(int level)
 	zap_log_level = level;
 }
 
-int zap_hash_equalkeys(void *k1, void *k2)
+OZ_DECLARE_NONSTD(int) zap_hash_equalkeys(void *k1, void *k2)
 {
     return strcmp((char *) k1, (char *) k2) ? 0 : 1;
 }
 
-uint32_t zap_hash_hashfromstring(void *ky)
+OZ_DECLARE_NONSTD(uint32_t) zap_hash_hashfromstring(void *ky)
 {
 	unsigned char *str = (unsigned char *) ky;
 	uint32_t hash = 0;
@@ -270,7 +270,7 @@ static zap_status_t zap_channel_destroy(zap_channel_t *zchan)
 
 
 
-zap_status_t zap_channel_get_alarms(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_get_alarms(zap_channel_t *zchan)
 {
 	zap_status_t status = ZAP_FAIL;
 
@@ -304,7 +304,7 @@ zap_status_t zap_channel_get_alarms(zap_channel_t *zchan)
 	return status;
 }
 
-zap_status_t zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
+OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
 {
 	zap_span_t *new_span = NULL;
 	zap_status_t status = ZAP_FAIL;
@@ -343,7 +343,7 @@ done:
 	return status;
 }
 
-zap_status_t zap_span_close_all(void)
+OZ_DECLARE(zap_status_t) zap_span_close_all(void)
 {
 	zap_span_t *span;
 	uint32_t i, j;
@@ -362,7 +362,7 @@ zap_status_t zap_span_close_all(void)
 	return i ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-zap_status_t zap_span_load_tones(zap_span_t *span, const char *mapname)
+OZ_DECLARE(zap_status_t) zap_span_load_tones(zap_span_t *span, const char *mapname)
 {
 	zap_config_t cfg;
 	char *var, *val;
@@ -428,7 +428,7 @@ zap_status_t zap_span_load_tones(zap_span_t *span, const char *mapname)
 	
 }
 
-zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan)
+OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan)
 {
 	if (span->chan_count < ZAP_MAX_CHANNELS_SPAN) {
 		zap_channel_t *new_chan = span->channels[++span->chan_count];
@@ -473,7 +473,7 @@ zap_status_t zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_cha
 	return ZAP_FAIL;
 }
 
-zap_status_t zap_span_find_by_name(const char *name, zap_span_t **span)
+OZ_DECLARE(zap_status_t) zap_span_find_by_name(const char *name, zap_span_t **span)
 {
 	zap_status_t status = ZAP_FAIL;
 
@@ -486,7 +486,7 @@ zap_status_t zap_span_find_by_name(const char *name, zap_span_t **span)
 	return status;
 }
 
-zap_status_t zap_span_find(uint32_t id, zap_span_t **span)
+OZ_DECLARE(zap_status_t) zap_span_find(uint32_t id, zap_span_t **span)
 {
 	zap_span_t *fspan;
 
@@ -508,7 +508,7 @@ zap_status_t zap_span_find(uint32_t id, zap_span_t **span)
 	
 }
 
-zap_status_t zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback)
+OZ_DECLARE(zap_status_t) zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback)
 {
 	zap_mutex_lock(span->mutex);
 	span->event_callback = event_callback;
@@ -517,7 +517,7 @@ zap_status_t zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_
 }
 
 
-zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms)
+OZ_DECLARE(zap_status_t) zap_span_poll_event(zap_span_t *span, uint32_t ms)
 {
 	assert(span->zio != NULL);
 
@@ -530,7 +530,7 @@ zap_status_t zap_span_poll_event(zap_span_t *span, uint32_t ms)
 	return ZAP_NOTIMPL;
 }
 
-zap_status_t zap_span_next_event(zap_span_t *span, zap_event_t **event)
+OZ_DECLARE(zap_status_t) zap_span_next_event(zap_span_t *span, zap_event_t **event)
 {
 	assert(span->zio != NULL);
 
@@ -550,7 +550,7 @@ static zap_status_t zchan_fsk_write_sample(int16_t *buf, zap_size_t buflen, void
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level)
+OZ_DECLARE(zap_status_t) zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_t *fsk_data, float db_level)
 {
 	struct zap_fsk_modulator fsk_trans;
 
@@ -573,7 +573,7 @@ zap_status_t zap_channel_send_fsk_data(zap_channel_t *zchan, zap_fsk_data_state_
 }
 
 
-zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback)
+OZ_DECLARE(zap_status_t) zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t event_callback)
 {
 	zap_mutex_lock(zchan->mutex);
 	zchan->event_callback = event_callback;
@@ -581,7 +581,7 @@ zap_status_t zap_channel_set_event_callback(zap_channel_t *zchan, zio_event_cb_t
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_clear_token(zap_channel_t *zchan, const char *token)
+OZ_DECLARE(zap_status_t) zap_channel_clear_token(zap_channel_t *zchan, const char *token)
 {
 	zap_status_t status = ZAP_FAIL;
 	
@@ -610,7 +610,7 @@ zap_status_t zap_channel_clear_token(zap_channel_t *zchan, const char *token)
 	return status;
 }
 
-void zap_channel_rotate_tokens(zap_channel_t *zchan)
+OZ_DECLARE(void) zap_channel_rotate_tokens(zap_channel_t *zchan)
 {
 	if (zchan->token_count) {
 		memmove(zchan->tokens[1], zchan->tokens[0], zchan->token_count * ZAP_TOKEN_STRLEN);
@@ -619,7 +619,7 @@ void zap_channel_rotate_tokens(zap_channel_t *zchan)
 	}
 }
 
-zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end)
+OZ_DECLARE(zap_status_t) zap_channel_add_token(zap_channel_t *zchan, char *token, int end)
 {
 	zap_status_t status = ZAP_FAIL;
 
@@ -640,7 +640,7 @@ zap_status_t zap_channel_add_token(zap_channel_t *zchan, char *token, int end)
 }
 
 
-zap_status_t zap_channel_complete_state(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_complete_state(zap_channel_t *zchan)
 {
 	zap_channel_state_t state = zchan->state;
 
@@ -704,7 +704,7 @@ static int zap_parse_state_map(zap_channel_t *zchan, zap_channel_state_t state, 
 	return ok;
 }
 
-zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock)
+OZ_DECLARE(zap_status_t) zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t state, int lock)
 {
 	int ok = 1;
 	
@@ -830,7 +830,7 @@ zap_status_t zap_channel_set_state(zap_channel_t *zchan, zap_channel_state_t sta
 	return ok ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
-zap_status_t zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
+OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t direction, zap_caller_data_t *caller_data, zap_channel_t **zchan)
 {
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
@@ -997,7 +997,7 @@ static zap_status_t zap_channel_reset(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_init(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_init(zap_channel_t *zchan)
 {
 
 	if (zchan->init_state != ZAP_CHANNEL_STATE_DOWN) {
@@ -1008,7 +1008,7 @@ zap_status_t zap_channel_init(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_open_chan(zap_channel_t *zchan)
 {
 	zap_status_t status = ZAP_FAIL;
 
@@ -1039,7 +1039,7 @@ zap_status_t zap_channel_open_chan(zap_channel_t *zchan)
 	return status;
 }
 
-zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan)
+OZ_DECLARE(zap_status_t) zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t **zchan)
 {
 	zap_channel_t *check;
 	zap_status_t status = ZAP_FAIL;
@@ -1089,7 +1089,7 @@ zap_status_t zap_channel_open(uint32_t span_id, uint32_t chan_id, zap_channel_t 
 	return status;
 }
 
-zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_outgoing_call(zap_channel_t *zchan)
 {
 	zap_status_t status;
 
@@ -1107,7 +1107,7 @@ zap_status_t zap_channel_outgoing_call(zap_channel_t *zchan)
 	return ZAP_FAIL;
 }
 
-zap_status_t zap_channel_done(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_done(zap_channel_t *zchan)
 {
 	assert(zchan != NULL);
 
@@ -1134,7 +1134,7 @@ zap_status_t zap_channel_done(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_use(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_use(zap_channel_t *zchan)
 {
 
 	assert(zchan != NULL);
@@ -1144,7 +1144,7 @@ zap_status_t zap_channel_use(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_close(zap_channel_t **zchan)
+OZ_DECLARE(zap_status_t) zap_channel_close(zap_channel_t **zchan)
 {
 	zap_channel_t *check;
 	zap_status_t status = ZAP_FAIL;
@@ -1206,7 +1206,7 @@ static zap_status_t zchan_activate_dtmf_buffer(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj)
+OZ_DECLARE(zap_status_t) zap_channel_command(zap_channel_t *zchan, zap_command_t command, void *obj)
 {
 	zap_status_t status = ZAP_FAIL;
 	
@@ -1467,7 +1467,7 @@ zap_status_t zap_channel_command(zap_channel_t *zchan, zap_command_t command, vo
 
 }
 
-zap_status_t zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to)
+OZ_DECLARE(zap_status_t) zap_channel_wait(zap_channel_t *zchan, zap_wait_flag_t *flags, int32_t to)
 {
 	assert(zchan != NULL);
 	assert(zchan->zio != NULL);
@@ -1617,17 +1617,17 @@ ZIO_CODEC_FUNCTION(zio_alaw2ulaw)
 
 /******************************/
 
-void zap_channel_clear_detected_tones(zap_channel_t *zchan)
+OZ_DECLARE(void) zap_channel_clear_detected_tones(zap_channel_t *zchan)
 {
 	memset(zchan->detected_tones, 0, sizeof(zchan->detected_tones[0]) * ZAP_TONEMAP_INVALID);
 }
 
-void zap_channel_clear_needed_tones(zap_channel_t *zchan)
+OZ_DECLARE(void) zap_channel_clear_needed_tones(zap_channel_t *zchan)
 {
 	memset(zchan->needed_tones, 0, sizeof(zchan->needed_tones[0]) * ZAP_TONEMAP_INVALID);
 }
 
-zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len)
+OZ_DECLARE(zap_size_t) zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t len)
 {
 	zap_size_t bytes = 0;
 
@@ -1648,7 +1648,7 @@ zap_size_t zap_channel_dequeue_dtmf(zap_channel_t *zchan, char *dtmf, zap_size_t
 	return bytes;
 }
 
-void zap_channel_flush_dtmf(zap_channel_t *zchan)
+OZ_DECLARE(void) zap_channel_flush_dtmf(zap_channel_t *zchan)
 {
 	if (zchan->digit_buffer && zap_buffer_inuse(zchan->digit_buffer)) {
 		zap_mutex_lock(zchan->mutex);
@@ -1657,7 +1657,7 @@ void zap_channel_flush_dtmf(zap_channel_t *zchan)
 	}
 }
 
-zap_status_t zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf)
+OZ_DECLARE(zap_status_t) zap_channel_queue_dtmf(zap_channel_t *zchan, const char *dtmf)
 {
 	zap_status_t status;
 	register zap_size_t len, inuse;
@@ -1785,7 +1785,7 @@ static zap_status_t handle_dtmf(zap_channel_t *zchan, zap_size_t datalen)
 
 
 
-zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen)
+OZ_DECLARE(zap_status_t) zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *datalen)
 {
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
@@ -1983,7 +1983,7 @@ zap_status_t zap_channel_read(zap_channel_t *zchan, void *data, zap_size_t *data
 }
 
 
-zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen)
+OZ_DECLARE(zap_status_t) zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t datasize, zap_size_t *datalen)
 {
 	zap_status_t status = ZAP_FAIL;
 	zio_codec_t codec_func = NULL;
@@ -2042,7 +2042,7 @@ zap_status_t zap_channel_write(zap_channel_t *zchan, void *data, zap_size_t data
 	return status;
 }
 
-zap_status_t zap_channel_clear_vars(zap_channel_t *zchan)
+OZ_DECLARE(zap_status_t) zap_channel_clear_vars(zap_channel_t *zchan)
 {
 	if(zchan->variable_hash) {
 		hashtable_destroy(zchan->variable_hash);
@@ -2055,7 +2055,7 @@ zap_status_t zap_channel_clear_vars(zap_channel_t *zchan)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_channel_add_var(zap_channel_t *zchan, const char *var_name, const char *value)
+OZ_DECLARE(zap_status_t) zap_channel_add_var(zap_channel_t *zchan, const char *var_name, const char *value)
 {
 	char *t_name = 0, *t_val = 0;
 
@@ -2073,7 +2073,7 @@ zap_status_t zap_channel_add_var(zap_channel_t *zchan, const char *var_name, con
 	return ZAP_FAIL;
 }
 
-const char * zap_channel_get_var(zap_channel_t *zchan, const char *var_name)
+OZ_DECLARE(const char *) zap_channel_get_var(zap_channel_t *zchan, const char *var_name)
 {
 	if(!zchan->variable_hash || !var_name)
 	{
@@ -2087,7 +2087,7 @@ static struct {
 } interfaces;
 
 
-char *zap_api_execute(const char *type, const char *cmd)
+OZ_DECLARE(char *) zap_api_execute(const char *type, const char *cmd)
 {
 	zap_io_interface_t *zio = NULL;
 	char *dup = NULL, *p;
@@ -2351,7 +2351,7 @@ static zap_status_t process_module_config(zap_io_interface_t *zio)
 	return ZAP_SUCCESS;
 }
 
-int zap_load_module(const char *name)
+OZ_DECLARE(int) zap_load_module(const char *name)
 {
 	zap_dso_lib_t lib;
 	int count = 0, x = 0;
@@ -2445,7 +2445,7 @@ int zap_load_module(const char *name)
 	return count;
 }
 
-int zap_load_module_assume(const char *name)
+OZ_DECLARE(int) zap_load_module_assume(const char *name)
 {
 	char buf[256] = "";
 
@@ -2453,7 +2453,7 @@ int zap_load_module_assume(const char *name)
 	return zap_load_module(buf);
 }
 
-int zap_load_modules(void)
+OZ_DECLARE(int) zap_load_modules(void)
 {
 	char cfg_name[] = "modules.conf";
 	zap_config_t cfg;
@@ -2475,7 +2475,7 @@ int zap_load_modules(void)
 	return count;
 }
 
-zap_status_t zap_unload_modules(void)
+OZ_DECLARE(zap_status_t) zap_unload_modules(void)
 {
 	zap_hash_iterator_t *i;
 	zap_dso_lib_t lib;
@@ -2520,7 +2520,7 @@ zap_status_t zap_unload_modules(void)
 	return ZAP_SUCCESS;
 }
 
-zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...)
+OZ_DECLARE(zap_status_t) zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...)
 {
 	zap_module_t *mod = (zap_module_t *) hashtable_search(globals.module_hash, (void *)type);
 	zap_status_t status = ZAP_FAIL;
@@ -2545,7 +2545,7 @@ zap_status_t zap_configure_span(const char *type, zap_span_t *span, zio_signal_c
 	return status;
 }
 
-zap_status_t zap_span_start(zap_span_t *span)
+OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span)
 {
 	if (span->start) {
 		return span->start(span);
@@ -2555,7 +2555,7 @@ zap_status_t zap_span_start(zap_span_t *span)
 }
 
 
-zap_status_t zap_global_init(void)
+OZ_DECLARE(zap_status_t) zap_global_init(void)
 {
 	int modcount;
 
@@ -2584,13 +2584,13 @@ zap_status_t zap_global_init(void)
 	return ZAP_FAIL;
 }
 
-uint32_t zap_running(void)
+OZ_DECLARE(uint32_t) zap_running(void)
 {
 	return globals.running;
 }
 
 
-zap_status_t zap_global_destroy(void)
+OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 {
 	unsigned int i,j;
 	time_end();
@@ -2650,7 +2650,7 @@ zap_status_t zap_global_destroy(void)
 }
 
 
-uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
+OZ_DECLARE(uint32_t) zap_separate_string(char *buf, char delim, char **array, int arraylen)
 {
 	int argc;
 	char *ptr;
@@ -2707,7 +2707,7 @@ uint32_t zap_separate_string(char *buf, char delim, char **array, int arraylen)
 	return argc;
 }
 
-void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, uint8_t ss)
+OZ_DECLARE(void) zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, zap_endian_t endian, uint8_t ss)
 {
 	memset(bsp, 0, sizeof(*bsp));
 	bsp->data = data;
@@ -2725,7 +2725,7 @@ void zap_bitstream_init(zap_bitstream_t *bsp, uint8_t *data, uint32_t datalen, z
 
 }
 
-int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp)
+OZ_DECLARE(int8_t) zap_bitstream_get_bit(zap_bitstream_t *bsp)
 {
 	int8_t bit = -1;
 	
@@ -2771,7 +2771,7 @@ int8_t zap_bitstream_get_bit(zap_bitstream_t *bsp)
 	return bit;
 }
 
-void print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen)
+OZ_DECLARE(void) print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen)
 {
 	char *bp = buf;
 	uint8_t *byte = data;
@@ -2794,7 +2794,7 @@ void print_hex_bytes(uint8_t *data, zap_size_t dlen, char *buf, zap_size_t blen)
 
 }
 
-void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t ss)
+OZ_DECLARE(void) print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t ss)
 {
 	zap_bitstream_t bs;
 	int j = 0, c = 0;
@@ -2823,7 +2823,7 @@ void print_bits(uint8_t *b, int bl, char *buf, int blen, zap_endian_t e, uint8_t
 
 
 
-zap_status_t zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen)
+OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *data, zap_size_t datalen)
 {
 	zap_size_t need = handle->data_len + datalen;
 	
@@ -2847,7 +2847,7 @@ zap_status_t zap_console_stream_raw_write(zap_stream_handle_t *handle, uint8_t *
 	return ZAP_SUCCESS;
 }
 
-int zap_vasprintf(char **ret, const char *fmt, va_list ap) /* code from switch_apr.c */
+OZ_DECLARE(int) zap_vasprintf(char **ret, const char *fmt, va_list ap) /* code from switch_apr.c */
 {
 #ifdef HAVE_VASPRINTF
 	return vasprintf(ret, fmt, ap);
@@ -2883,7 +2883,7 @@ int zap_vasprintf(char **ret, const char *fmt, va_list ap) /* code from switch_a
 #endif
 }
 
-zap_status_t zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...)
+OZ_DECLARE_NONSTD(zap_status_t) zap_console_stream_write(zap_stream_handle_t *handle, const char *fmt, ...)
 {
 	va_list ap;
 	char *buf = handle->data;

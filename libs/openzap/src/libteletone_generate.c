@@ -43,7 +43,7 @@
 #pragma warning(disable:4706)
 #endif
 
-int16_t TELETONE_SINES[SINE_TABLE_MAX] = {
+TELETONE_API_DATA int16_t TELETONE_SINES[SINE_TABLE_MAX] = {
 	0x00c9, 0x025b, 0x03ed, 0x057f, 0x0711, 0x08a2, 0x0a33, 0x0bc4,
 	0x0d54, 0x0ee4, 0x1073, 0x1201, 0x138f, 0x151c, 0x16a8, 0x1833,
 	0x19be, 0x1b47, 0x1cd0, 0x1e57, 0x1fdd, 0x2162, 0x22e5, 0x2467,
@@ -63,7 +63,7 @@ int16_t TELETONE_SINES[SINE_TABLE_MAX] = {
 };
 
 
-int teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
+TELETONE_API(int) teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
 {
 	va_list ap;
 	int i = 0;
@@ -79,7 +79,7 @@ int teletone_set_tone(teletone_generation_session_t *ts, int index, ...)
 	
 }
 
-int teletone_set_map(teletone_tone_map_t *map, ...)
+TELETONE_API(int) teletone_set_map(teletone_tone_map_t *map, ...)
 {
 	va_list ap;
 	int i = 0;
@@ -95,7 +95,7 @@ int teletone_set_map(teletone_tone_map_t *map, ...)
 	
 }
 
-int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data)
+TELETONE_API(int) teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_handler handler, void *user_data)
 {
 	memset(ts, 0, sizeof(*ts));
 	ts->rate = 8000;
@@ -138,7 +138,7 @@ int teletone_init_session(teletone_generation_session_t *ts, int buflen, tone_ha
 	return 0;
 }
 
-int teletone_destroy_session(teletone_generation_session_t *ts)
+TELETONE_API(int) teletone_destroy_session(teletone_generation_session_t *ts)
 {
 	if (ts->buffer) {
 		free(ts->buffer);
@@ -167,7 +167,7 @@ static int ensure_buffer(teletone_generation_session_t *ts, int need)
 	return 0;
 }
 
-int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
+TELETONE_API(int) teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *map)
 {
 	/*teletone_process_t period = (1.0 / ts->rate) / ts->channels;*/
 	int i, c;
@@ -185,7 +185,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 	wait = (ts->tmp_wait > -1) ? ts->tmp_wait : ts->wait;
 
 	if (map->freqs[0] > 0) {
-		for (freqlen = 0; map->freqs[freqlen] && freqlen < TELETONE_MAX_TONES; freqlen++) {
+		for (freqlen = 0; freqlen < TELETONE_MAX_TONES && map->freqs[freqlen]; freqlen++) {
 			teletone_dds_state_set_tone(&tones[freqlen], map->freqs[freqlen], ts->rate, 0);
 			teletone_dds_state_set_tx_level(&tones[freqlen], vol);
 		}
@@ -207,7 +207,7 @@ int teletone_mux_tones(teletone_generation_session_t *ts, teletone_tone_map_t *m
 
 				if (nvol <= TELETONE_VOL_DB_MAX && nvol >= TELETONE_VOL_DB_MIN) {
 					vol = nvol;
-					for (j = 0; map->freqs[j] && j < TELETONE_MAX_TONES; j++) {					
+					for (j = 0; j < TELETONE_MAX_TONES && map->freqs[j]; j++) {					
 						teletone_dds_state_set_tx_level(&tones[j], vol);
 					}
 					dc = 0;
@@ -282,7 +282,7 @@ static char *my_strdup (const char *s)
 	return (char *) memcpy (new, s, len);
 }
 
-int teletone_run(teletone_generation_session_t *ts, const char *cmd)
+TELETONE_API(int) teletone_run(teletone_generation_session_t *ts, const char *cmd)
 {
 	char *data = NULL, *cur = NULL, *end = NULL;
 	int var = 0, LOOPING = 0;
@@ -460,5 +460,5 @@ int teletone_run(teletone_generation_session_t *ts, const char *cmd)
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */

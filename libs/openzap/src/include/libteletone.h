@@ -110,6 +110,32 @@ typedef __int16 int16_t;
 #define teletone_assert(expr) assert(expr)
 #endif
 
+#ifdef _MSC_VER
+#if defined(TT_DECLARE_STATIC)
+#define TELETONE_API(type)			type __stdcall
+#define TELETONE_API_NONSTD(type)		type __cdecl
+#define TELETONE_API_DATA
+#elif defined(TELETONE_EXPORTS)
+#define TELETONE_API(type)			__declspec(dllexport) type __stdcall
+#define TELETONE_API_NONSTD(type)		__declspec(dllexport) type __cdecl
+#define TELETONE_API_DATA				__declspec(dllexport)
+#else
+#define TELETONE_API(type)			__declspec(dllimport) type __stdcall
+#define TELETONE_API_NONSTD(type)		__declspec(dllimport) type __cdecl
+#define TELETONE_API_DATA				__declspec(dllimport)
+#endif
+#else
+#if (defined(__GNUC__) || defined(__SUNPRO_CC) || defined (__SUNPRO_C)) && defined(HAVE_VISIBILITY)
+#define TELETONE_API(type)		__attribute__((visibility("default"))) type
+#define TELETONE_API_NONSTD(type)	__attribute__((visibility("default"))) type
+#define TELETONE_API_DATA		__attribute__((visibility("default")))
+#else
+#define TELETONE_API(type)		type
+#define TELETONE_API_NONSTD(type)	type
+#define TELETONE_API_DATA
+#endif
+#endif
+
 #include <libteletone_generate.h>
 #include <libteletone_detect.h>
 
@@ -131,5 +157,5 @@ typedef __int16 int16_t;
  * c-basic-offset:4
  * End:
  * For VIM:
- * vim:set softtabstop=4 shiftwidth=4 tabstop=4 expandtab:
+ * vim:set softtabstop=4 shiftwidth=4 tabstop=4:
  */
