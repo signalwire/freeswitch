@@ -111,7 +111,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	config_data->bytes += realsize;
 
 	if (config_data->bytes > config_data->max_bytes) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%ld bytes]\n", config_data->bytes);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int)config_data->bytes);
 		config_data->err = 1;
 		return 0;
 	}
