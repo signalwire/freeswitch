@@ -45,17 +45,15 @@ struct stream_data {
 };
 
 #ifdef HAVE_GNUTLS
-static pthread_mutex_t tls_send_mutex;
-static pthread_mutex_t tls_recv_mutex;
+#include <gcrypt.h>
+GCRY_THREAD_OPTION_PTHREAD_IMPL;
 
 static size_t
 tls_push (iksparser *prs, const char *buffer, size_t len)
 {
 	struct stream_data *data = iks_user_data (prs);
 	int ret;
-	pthread_mutex_lock(&tls_send_mutex);
 	ret = data->trans->send (data->sock, buffer, len);
-	pthread_mutex_unlock(&tls_send_mutex);
 	if (ret) return (size_t) -1;
 	return len;
 }
@@ -65,9 +63,7 @@ tls_pull (iksparser *prs, char *buffer, size_t len)
 {
 	struct stream_data *data = iks_user_data (prs);
 	int ret;
-	pthread_mutex_lock(&tls_recv_mutex);
 	ret = data->trans->recv (data->sock, buffer, len, -1);
-	pthread_mutex_unlock(&tls_recv_mutex);
 	if (ret == -1) return (size_t) -1;
 	return ret;
 }
@@ -81,6 +77,8 @@ handshake (struct stream_data *data)
 	const int comp_priority[] = { GNUTLS_COMP_ZLIB, GNUTLS_COMP_NULL, 0 };
 	const int mac_priority[] = { GNUTLS_MAC_SHA, GNUTLS_MAC_MD5, 0 };
 	int ret;
+
+	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 
 	if (gnutls_global_init () != 0)
 		return IKS_NOMEM;
@@ -99,8 +97,10 @@ handshake (struct stream_data *data)
 	gnutls_mac_set_priority(data->sess, mac_priority);
 	gnutls_credentials_set (data->sess, GNUTLS_CRD_CERTIFICATE, data->cred);
 
+
 	gnutls_transport_set_push_function (data->sess, (gnutls_push_func) tls_push);
 	gnutls_transport_set_pull_function (data->sess, (gnutls_pull_func) tls_pull);
+	
 	gnutls_transport_set_ptr (data->sess, data->prs);
 
 	ret = gnutls_handshake (data->sess);
@@ -487,9 +487,15 @@ iks_connect_fd (iksparser *prs, int fd)
 int
 iks_fd (iksparser *prs)
 {
-	struct stream_data *data = iks_user_data (prs);
+	struct stream_data *data;
 
-	return (int) data->sock;
+	if (prs) {
+		data = iks_user_data (prs);
+		if (data) {
+			return (int) data->sock;
+		}
+	}
+	return -1;
 }
 
 int
@@ -603,24 +609,11 @@ int
 iks_init(void)
 {
 	int ok = 0;
-	pthread_mutexattr_t attr;
-
-	if (pthread_mutexattr_init(&attr))
-		return -1;
 	
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE))
-		ok = -1;
-	
-	if (ok == 0 && pthread_mutex_init(&tls_send_mutex, &attr))
-		ok = -1;
+	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
 
-	if (ok == 0 && pthread_mutex_init(&tls_recv_mutex, &attr)) {
-		pthread_mutex_destroy(&tls_send_mutex);
-		ok = -1;
-	}
-	
-
-	pthread_mutexattr_destroy(&attr);
+	if (gnutls_global_init () != 0)
+		return IKS_NOMEM;
 
 	return ok;
 

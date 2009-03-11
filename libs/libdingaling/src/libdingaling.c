@@ -1566,8 +1566,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		}
 
 	fail:
-		iks_disconnect(handle->parser);
-		iks_parser_delete(handle->parser);
+		
 		ldl_clear_flag_locked(handle, LDL_FLAG_CONNECTED);
 		ldl_clear_flag_locked(handle, LDL_FLAG_AUTHORIZED);
 		handle->state = CS_NEW;
@@ -1575,6 +1574,9 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
 			microsleep(100);
 		}
+
+		iks_disconnect(handle->parser);
+		iks_parser_delete(handle->parser);
 	}
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
 	if (!ldl_test_flag(handle, LDL_FLAG_TLS)) {

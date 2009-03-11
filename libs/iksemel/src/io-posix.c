@@ -108,6 +108,7 @@ io_recv (void *socket, char *buffer, size_t buf_len, int timeout)
 	fd_set fds;
 	struct timeval tv, *tvptr;
 	int len;
+	char *bound;
 
 	tv.tv_sec = 0;
 	tv.tv_usec = 0;
@@ -115,20 +116,22 @@ io_recv (void *socket, char *buffer, size_t buf_len, int timeout)
 	FD_ZERO (&fds);
 	FD_SET (sock, &fds);
 	tv.tv_sec = timeout;
+
 	if (timeout != -1) tvptr = &tv; else tvptr = NULL;
 	if (select (sock + 1, &fds, NULL, NULL, tvptr) > 0) {
 		len = recv (sock, buffer, buf_len, 0);
 		if (len > 0) {
 			char *p, *e = NULL, *t = NULL;
-			*(buffer+buf_len+1) = '\0';
-			for (p = buffer; p && *p; p++) {
+			bound = buffer + (len -1);
+
+			for (p = buffer; p < bound; p++) {
 				if (*p == '>') {
 					e = p;
 					t = p+1;
 					if (*t == '<') {
 						continue;
 					}
-					while(t && *t) {
+					while(p < bound && t < bound) {
 						if (*t != ' ' && *t != '<') {
 							t = e = NULL;
 							break;
