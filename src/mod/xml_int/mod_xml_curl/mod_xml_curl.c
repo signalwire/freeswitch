@@ -54,9 +54,14 @@ static int keep_files_around = 0;
 
 typedef struct xml_binding xml_binding_t;
 
+#define XML_CURL_MAX_BYTES 1024 * 1024
+
 struct config_data {
 	char *name;
 	int fd;
+	switch_size_t bytes;
+	switch_size_t max_bytes;
+	int err;
 };
 
 typedef struct hash_node {
@@ -102,6 +107,15 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	register unsigned int realsize = (unsigned int) (size * nmemb);
 	struct config_data *config_data = data;
 	int x;
+
+	config_data->bytes += realsize;
+
+	if (config_data->bytes > config_data->max_bytes) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%ld bytes]\n", config_data->bytes);
+		config_data->err = 1;
+		return 0;
+	}
+
 	x = write(config_data->fd, ptr, realsize);
 	if (x != (int) realsize) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Short write! %d out of %d\n", x, realsize);
@@ -185,6 +199,7 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 	}
 
 	config_data.name = filename;
+	config_data.max_bytes = XML_CURL_MAX_BYTES;
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		if (!switch_strlen_zero(binding->cred)) {
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
@@ -222,13 +237,18 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Opening temp file!\n");
 	}
 
-	if (httpRes == 200) {
-		if (!(xml = switch_xml_parse_file(filename))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\ndata: [%s]\n", httpRes, binding->url, data);
+	if (config_data.err) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error encountered!\n");
 		xml = NULL;
+	} else {
+		if (httpRes == 200) {
+			if (!(xml = switch_xml_parse_file(filename))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing Result!\n");
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received HTTP error %ld trying to fetch %s\ndata: [%s]\n", httpRes, binding->url, data);
+			xml = NULL;
+		}
 	}
 
 	/* Debug by leaving the file behind for review */
