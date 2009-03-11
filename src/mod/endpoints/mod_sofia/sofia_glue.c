@@ -1202,7 +1202,12 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			use_from_str = tech_pvt->from_str;
 		}
 
-		rpid_domain = switch_core_session_strdup(session, use_from_str);
+		if (!switch_strlen_zero(tech_pvt->gateway_from_str)) {
+			rpid_domain = switch_core_session_strdup(session, tech_pvt->gateway_from_str);
+		} else if (!switch_strlen_zero(tech_pvt->from_str)) {
+			rpid_domain = switch_core_session_strdup(session, tech_pvt->from_str);
+		} 
+
 		sofia_glue_get_url_from_contact(rpid_domain, 0);
 		if ((rpid_domain = strrchr(rpid_domain, '@'))) {
 			rpid_domain++;
