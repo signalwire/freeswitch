@@ -1104,11 +1104,17 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	char var_name[SWITCH_UUID_FORMATTED_LENGTH + 25];
 	char *p;
+	switch_status_t status = SWITCH_STATUS_FALSE;
 	
-	METHOD_SANITY_CHECK();
+	if (!jss || !jss->session) {
+		return SWITCH_STATUS_FALSE;
+	}
 
-	jss->stack_depth++;
-
+	if (++jss->stack_depth > MAX_STACK_DEPTH) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Maximum recursive callback limit %d reached.\n", MAX_STACK_DEPTH);
+		jss->stack_depth--;
+		return SWITCH_STATUS_FALSE;
+	}
 
 	switch_uuid_get(&uuid);
 	switch_uuid_format(uuid_str, &uuid);
@@ -1119,6 +1125,9 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 			*p = '_';
 		}
 	}	
+
+	JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
+	METHOD_SANITY_CHECK();
 
 	if (cb_state->jss_a && cb_state->jss_a->session && cb_state->jss_a->session == session) {
 		argv[argc++] = OBJECT_TO_JSVAL(cb_state->session_obj_a);
@@ -1137,8 +1146,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 			}
 		}
 		if (!Event) {
-			jss->stack_depth--;
-			return SWITCH_STATUS_FALSE;
+			goto done;
 		}
 		break;
 	case SWITCH_INPUT_TYPE_DTMF:
@@ -1150,8 +1158,7 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 					argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
 					argv[argc++] = OBJECT_TO_JSVAL(Event);
 				} else {
-					jss->stack_depth--;
-					return SWITCH_STATUS_FALSE;
+					goto done;
 				}
 			}
 		}
@@ -1162,24 +1169,17 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 		argv[argc++] = cb_state->arg;
 	}
 
-	if (jss->stack_depth > MAX_STACK_DEPTH) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Maximum recursive callback limit %d reached.\n", MAX_STACK_DEPTH);
-		jss->stack_depth--;
-		return SWITCH_STATUS_FALSE;
-	}
-
-	JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
 	check_hangup_hook(jss, &ret);
-	cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
 
 	if (ret == JS_TRUE) {
-		JS_ResumeRequest(cb_state->cx, cb_state->saveDepth);
 		JS_CallFunction(cb_state->cx, cb_state->obj, cb_state->function, argc, argv, &cb_state->ret);
-		cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
-		jss->stack_depth--;
 	}
 
-	return SWITCH_STATUS_SUCCESS;
+	status = SWITCH_STATUS_SUCCESS;
+done:
+	cb_state->saveDepth = JS_SuspendRequest(cb_state->cx);
+	jss->stack_depth--;
+	return status;
 }
 
 static switch_status_t js_stream_input_callback(switch_core_session_t *session, void *input, switch_input_type_t itype, void *buf, unsigned int buflen)
