@@ -99,7 +99,6 @@ static struct lpwrap_pri_event_list LPWRAP_PRI_EVENT_LIST[] = {
 	{17, LPWRAP_PRI_EVENT_PROGRESS, "PROGRESS"},
 	{18, LPWRAP_PRI_EVENT_KEYPAD_DIGIT, "KEYPAD_DIGIT"},
 	{19, LPWRAP_PRI_EVENT_IO_FAIL, "IO_FAIL"},
-	{20, LPWRAP_PRI_EVENT_TIME_CHECK, "TIME_CHECK"}
 };
 
 #define LINE "--------------------------------------------------------------------------------"
@@ -125,7 +124,7 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	res+=2;
 
 	//print_bits(buf, res-2, bb, sizeof(bb), 1, 0);
-	//zap_log(ZAP_LOG_DEBUG, "READ %d\n%s\n%s\n\n", res-2, LINE, bb);
+	//zap_log(ZAP_LOG_DEBUG, "READ %d\n", res-2);
 
 	return res;
 }
@@ -142,7 +141,7 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 	}
 	
 	//print_bits(buf, (int)buflen-2, bb, sizeof(bb), 1, 0);
-	//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n%s\n%s\n\n", (int)buflen-2, LINE, bb);
+	//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n", (int)buflen-2);
 
 	return (int) buflen;
 }
@@ -156,10 +155,13 @@ int lpwrap_init_pri(struct lpwrap_pri *spri, zap_span_t *span, zap_channel_t *dc
 	spri->dchan = dchan;
 
 	if ((spri->pri = pri_new_cb(spri->dchan->sockfd, node, swtype, __pri_lpwrap_read, __pri_lpwrap_write, spri))){
+		unsigned char buf[4] = { 0 };
+		size_t buflen = sizeof(buf), len = 0;
 		spri->span = span;
 		pri_set_debug(spri->pri, debug);
 		ret = 0;
 		zap_set_flag(spri, LPWRAP_PRI_READY);
+		zap_channel_write(spri->dchan, buf, buflen, &len);
 	} else {
 		fprintf(stderr, "Unable to create PRI\n");
 	}
@@ -177,7 +179,13 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
     int sel;
 	
 	if (spri->on_loop) {
-		spri->on_loop(spri);
+		if ((sel = spri->on_loop(spri)) < 0) {
+			return sel;
+		}
+	}
+
+	if (!zap_test_flag(spri, LPWRAP_PRI_READY)) {
+		return -1;
 	}
 
 	FD_ZERO(&rfds);
@@ -204,13 +212,6 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 	event = NULL;
 
 	if (!sel) {
-		if ((handler = spri->eventmap[LPWRAP_PRI_EVENT_TIME_CHECK] ? 
-			 spri->eventmap[LPWRAP_PRI_EVENT_TIME_CHECK] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
-			if (handler(spri, LPWRAP_PRI_EVENT_TIME_CHECK, NULL) < 0) {
-				return -1;
-			}
-		}
-
 		if ((next = pri_schedule_next(spri->pri))) {
 			gettimeofday(&now, NULL);
 			if (now.tv_sec >= next->tv_sec && (now.tv_usec >= next->tv_usec || next->tv_usec <= 100000)) {
