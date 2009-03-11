@@ -31,9 +31,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define EXTERN_C extern "C" {
 #ifndef _ESL_OOP_H_
 #define _ESL_OOP_H_
+#ifndef EXTERN_C
+#define EXTERN_C extern "C" {
+#endif
 #include <esl.h>
 #ifdef __cplusplus
 EXTERN_C
