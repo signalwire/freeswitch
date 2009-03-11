@@ -1613,9 +1613,12 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 
 	rlim.rlim_cur = SWITCH_SYSTEM_THREAD_STACKSIZE;
 	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
+
+	/**
 	if (setrlimit(RLIMIT_STACK, &rlim) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed!\n");
 	}
+	**/
 #endif
 
 	if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
@@ -1643,10 +1646,12 @@ SWITCH_DECLARE(int) switch_system(const char *cmd, switch_bool_t wait)
 
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
 	rlim.rlim_cur = SWITCH_THREAD_STACKSIZE;
-	rlim.rlim_max = SWITCH_THREAD_STACKSIZE;
+	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE;
+	/**
 	if (setrlimit(RLIMIT_STACK, &rlim) < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed!\n");
 	}
+	**/
 #endif
 
 	if (wait) {
