@@ -550,6 +550,7 @@ struct zap_span {
 	size_t dtmf_hangup_len;
 	int suggest_chan_id;
 	zap_state_map_t *state_map;
+	struct zap_span *next;
 };
 
 
@@ -620,7 +621,7 @@ OZ_DECLARE(zap_time_t) zap_current_time_in_ms(void);
 OZ_DECLARE(zap_status_t) zap_span_poll_event(zap_span_t *span, uint32_t ms);
 OZ_DECLARE(zap_status_t) zap_span_next_event(zap_span_t *span, zap_event_t **event);
 OZ_DECLARE(zap_status_t) zap_span_find(uint32_t id, zap_span_t **span);
-OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **span);
+OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **span, const char *name);
 OZ_DECLARE(zap_status_t) zap_span_close_all(void);
 OZ_DECLARE(zap_status_t) zap_span_add_channel(zap_span_t *span, zap_socket_t sockfd, zap_chan_type_t type, zap_channel_t **chan);
 OZ_DECLARE(zap_status_t) zap_span_set_event_callback(zap_span_t *span, zio_event_cb_t event_callback);
@@ -654,6 +655,7 @@ OZ_DECLARE(int) zap_load_modules(void);
 OZ_DECLARE(zap_status_t) zap_unload_modules(void);
 OZ_DECLARE(zap_status_t) zap_configure_span(const char *type, zap_span_t *span, zio_signal_cb_t sig_cb, ...);
 OZ_DECLARE(zap_status_t) zap_span_start(zap_span_t *span);
+OZ_DECLARE(zap_status_t) zap_span_stop(zap_span_t *span);
 OZ_DECLARE(int) zap_load_module(const char *name);
 OZ_DECLARE(int) zap_load_module_assume(const char *name);
 OZ_DECLARE(zap_status_t) zap_span_find_by_name(const char *name, zap_span_t **span);

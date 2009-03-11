@@ -2184,16 +2184,16 @@ SWITCH_STANDARD_API(oz_function)
 			stream->write_function(stream, "-ERR Usage: oz dump <span_id> [<chan_id>]\n");
 			goto end;
 		} else {
-			uint32_t span_id, chan_id = 0;
+			uint32_t chan_id = 0;
 			zap_span_t *span;
-
-			span_id = atoi(argv[1]);
-
+			
+			zap_span_find_by_name(argv[1], &span);
+			
 			if (argc > 2) {
 				chan_id = atoi(argv[2]);
 			}
 			
-			if (!(span_id && (span = SPAN_CONFIG[span_id].span))) {
+			if (!span) {
 				stream->write_function(stream, "-ERR invalid span\n");
 			} else {
 				if (chan_id) {
@@ -2249,38 +2249,31 @@ SWITCH_STANDARD_API(oz_function)
 									   );
 			}
 		}
-	} else if (!strcasecmp(argv[0], "bounce")) {
-		/* MSC testing "oz bounce" command */
-		if (argc < 2) {
-			stream->write_function(stream, "-ERR Usage: oz bounce <span_id> [<chan_id>]\n");
+	} else if (!strcasecmp(argv[0], "stop") || !strcasecmp(argv[0], "start")) {
+		char *span_name = argv[1];
+		zap_span_t *span = NULL;
+		zap_status_t status;
+
+		if (span_name) {
+			zap_span_find_by_name(span_name, &span);
+		}
+
+		if (!span) {
+			stream->write_function(stream, "-ERR no span\n");
 			goto end;
+		}
+		
+		if (!strcasecmp(argv[0], "stop")) {
+			status = zap_span_stop(span);
 		} else {
-			int32_t span_id, chan_id = 0;
-			zap_span_t *span;
+			status = zap_span_start(span);
+		}
+		
+		stream->write_function(stream, status == ZAP_SUCCESS ? "+OK\n" : "-ERR failure\n");
+		
+		goto end;
 
-			span_id = atoi(argv[1]);
-
-			if (argc > 2) {
-				chan_id = atoi(argv[2]);
-			}
-			
-			if (!(span_id && (span = SPAN_CONFIG[span_id].span))) {
-				stream->write_function(stream, "-ERR invalid span\n");
-			} else {
-				if (chan_id) {
-					zap_log(ZAP_LOG_INFO,"Bounce span: %d, chan: %d\n", span_id, chan_id);
-				} else {
-					uint32_t j;
-					
-					stream->write_function(stream, "+OK\n");
-					for (j = 1; j <= span->chan_count; j++) {
-						zap_log(ZAP_LOG_INFO,"Bounce span: %d, chan: %d\n", span_id, j);
-					}
-
-				}
-			}
-		}	
-	/*Q931ToPcap enhancement*/
+		/*Q931ToPcap enhancement*/
 	} else if (!strcasecmp(argv[0], "q931_pcap")) {
 		int32_t span_id = 0;
                 zap_span_t *span;

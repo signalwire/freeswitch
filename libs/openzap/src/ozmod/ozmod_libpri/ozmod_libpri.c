@@ -131,7 +131,9 @@ static int parse_debug(const char *in)
 	return flags;
 }
 
+static zap_io_interface_t zap_libpri_interface;
 
+static zap_status_t zap_libpri_start(zap_span_t *span);
 
 static ZIO_API_FUNCTION(zap_libpri_api)
 {
@@ -143,14 +145,40 @@ static ZIO_API_FUNCTION(zap_libpri_api)
 		argc = zap_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 	}
 
-
-	if (argc > 2) {
-		if (!strcasecmp(argv[0], "debug")) {
+	if (argc == 2) {
+		if (!strcasecmp(argv[0], "kill")) {
 			int span_id = atoi(argv[1]);
 			zap_span_t *span = NULL;
 
 			if (zap_span_find_by_name(argv[1], &span) == ZAP_SUCCESS || zap_span_find(span_id, &span) == ZAP_SUCCESS) {
 				zap_libpri_data_t *isdn_data = span->signal_data;
+
+				if (span->start != zap_libpri_start) {
+					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					goto done;
+				}
+
+				zap_clear_flag((&isdn_data->spri), LPWRAP_PRI_READY);
+				stream->write_function(stream, "%s: +OK killed.\n", __FILE__);
+				goto done;
+			} else {
+				stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+				goto done;
+			}
+		}
+	}
+
+	if (argc > 2) {
+		if (!strcasecmp(argv[0], "debug")) {
+			zap_span_t *span = NULL;
+
+			if (zap_span_find_by_name(argv[1], &span) == ZAP_SUCCESS) {
+				zap_libpri_data_t *isdn_data = span->signal_data;
+				if (span->start != zap_libpri_start) {
+					stream->write_function(stream, "%s: -ERR invalid span.\n", __FILE__);
+					goto done;
+				}
+
 				pri_set_debug(isdn_data->spri.pri, parse_debug(argv[2]));				
 				stream->write_function(stream, "%s: +OK debug set.\n", __FILE__);
 				goto done;
@@ -159,6 +187,7 @@ static ZIO_API_FUNCTION(zap_libpri_api)
 				goto done;
 			}
 		}
+
 	}
 
 	stream->write_function(stream, "%s: -ERR invalid command.\n", __FILE__);
@@ -170,8 +199,6 @@ static ZIO_API_FUNCTION(zap_libpri_api)
 	return ZAP_SUCCESS;
 }
 
-
-static zap_io_interface_t zap_libpri_interface;
 
 static ZIO_IO_LOAD_FUNCTION(zap_libpri_io_init)
 {
@@ -190,7 +217,6 @@ static ZIO_SIG_LOAD_FUNCTION(zap_libpri_init)
 {
 	pri_set_error(s_pri_error);
 	pri_set_message(s_pri_message);
-
 	return ZAP_SUCCESS;
 }
 
@@ -648,6 +674,10 @@ static int check_flags(lpwrap_pri_t *spri)
 
 	check_state(span);
 
+	if (!zap_running() || zap_test_flag(span, ZAP_SPAN_STOP_THREAD)) {
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -712,22 +742,12 @@ static int on_io_fail(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_eve
 }
 
 
-static int on_time_check(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event *pevent)
-{
-
-	if (!zap_running() || zap_test_flag(spri->span, ZAP_SPAN_STOP_THREAD)) {
-		return -1;
-	}
-
-	return 0;
-}
-
-
 static void *zap_libpri_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
 	zap_libpri_data_t *isdn_data = span->signal_data;
 	int x, i;
+	int down = 0;
 	
 	zap_set_flag(span, ZAP_SPAN_IN_THREAD);
 	
@@ -768,8 +788,12 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_INFO_RECEIVED, on_info);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_IO_FAIL, on_io_fail);
-			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_TIME_CHECK, on_time_check);
-
+			
+			if (down) {
+				zap_log(ZAP_LOG_INFO, "PRI back up on span %d\n", isdn_data->spri.span->span_id);
+				zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+				down = 0;
+			}
 
 			isdn_data->spri.on_loop = check_flags;
 			isdn_data->spri.private_info = span;
@@ -782,29 +806,53 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 			break;
 		}
 
-		zap_log(ZAP_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span);
+		zap_log(ZAP_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span->span_id);
+		zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+		check_state(span);
+		check_state(span);
+		down++;
 		zap_sleep(5000);
 	}
 
+	zap_log(ZAP_LOG_DEBUG, "PRI thread ended on span %d\n", isdn_data->spri.span->span_id);
+
 	zap_clear_flag(span, ZAP_SPAN_IN_THREAD);
-	
+	zap_clear_flag(isdn_data, OZMOD_LIBPRI_RUNNING);
+
 	return NULL;
 }
 
+
 static zap_status_t zap_libpri_stop(zap_span_t *span)
 {
+	zap_libpri_data_t *isdn_data = span->signal_data;
+
+	if (!zap_test_flag(isdn_data, OZMOD_LIBPRI_RUNNING)) {
+		return ZAP_FAIL;
+	}
+
+	zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+	check_state(span);
 	zap_set_flag(span, ZAP_SPAN_STOP_THREAD);
 	while(zap_test_flag(span, ZAP_SPAN_IN_THREAD)) {
 		zap_sleep(100);
 	}
+	check_state(span);
+
 	return ZAP_SUCCESS;
 }
 
 static zap_status_t zap_libpri_start(zap_span_t *span)
 {
 	zap_status_t ret;
-
 	zap_libpri_data_t *isdn_data = span->signal_data;
+
+	if (zap_test_flag(isdn_data, OZMOD_LIBPRI_RUNNING)) {
+		return ZAP_FAIL;
+	}
+
+	zap_clear_flag(span, ZAP_SPAN_STOP_THREAD);
+	zap_clear_flag(span, ZAP_SPAN_IN_THREAD);
 
 	zap_set_flag(isdn_data, OZMOD_LIBPRI_RUNNING);
 	ret = zap_thread_create_detached(zap_libpri_run, span);
@@ -815,7 +863,6 @@ static zap_status_t zap_libpri_start(zap_span_t *span)
 
 	return ret;
 }
-
 
 
 static int str2node(char *node)

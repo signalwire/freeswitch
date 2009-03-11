@@ -79,9 +79,10 @@ static struct {
 	zap_hash_t *module_hash;
 	zap_hash_t *span_hash;
 	zap_mutex_t *mutex;
-	struct zap_span *spans[ZAP_MAX_SPANS_INTERFACE+1];
+	zap_mutex_t *span_mutex;
 	uint32_t span_index;
 	uint32_t running;
+	zap_span_t *spans;
 } globals;
 
 
@@ -309,7 +310,55 @@ OZ_DECLARE(zap_status_t) zap_channel_get_alarms(zap_channel_t *zchan)
 	return status;
 }
 
-OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **span)
+static void zap_span_add(zap_span_t *span)
+{
+	zap_span_t *sp;
+	zap_mutex_lock(globals.span_mutex);
+	for (sp = globals.spans; sp && sp->next; sp = sp->next);
+	if (sp) {
+		sp->next = span;
+	} else {
+		globals.spans = span;
+	}
+	hashtable_insert(globals.span_hash, (void *)span->name, span, HASHTABLE_FLAG_NONE);
+	zap_mutex_unlock(globals.span_mutex);
+}
+
+#if 0
+static void zap_span_del(zap_span_t *span)
+{
+	zap_span_t *last = NULL, *sp;
+
+	zap_mutex_lock(globals.span_mutex);
+	for (sp = globals.spans; sp; sp = sp->next) {
+		
+		if (sp == span) {
+			if (last) {
+				last->next = sp->next;
+			} else {
+				globals.spans = sp->next;
+			}
+			hashtable_remove(globals.span_hash, (void *)sp->name);
+			break;
+		}
+
+		last = sp;
+	}
+	zap_mutex_unlock(globals.span_mutex);
+}
+#endif
+
+OZ_DECLARE(zap_status_t) zap_span_stop(zap_span_t *span)
+{
+	if (span->stop) {
+		span->stop(span);
+		return ZAP_SUCCESS;
+	}
+	
+	return ZAP_FAIL;
+}
+
+OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **span, const char *name)
 {
 	zap_span_t *new_span = NULL;
 	zap_status_t status = ZAP_FAIL;
@@ -317,21 +366,16 @@ OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **s
 	assert(zio != NULL);
 
 	zap_mutex_lock(globals.mutex);
+
 	if (globals.span_index < ZAP_MAX_SPANS_INTERFACE) {
-		new_span = globals.spans[++globals.span_index];
-		if (!new_span) {
-			if (!(new_span = malloc(sizeof(*new_span)))) {
-				goto done;
-			}
-			globals.spans[globals.span_index] = new_span;
-		}
+		new_span = malloc(sizeof(*new_span));
+		assert(new_span);
 		memset(new_span, 0, sizeof(*new_span));
 		status = zap_mutex_create(&new_span->mutex);
-		if (status != ZAP_SUCCESS) {
-			goto done;
-		}
+		assert(status == ZAP_SUCCESS);
+		
 		zap_set_flag(new_span, ZAP_SPAN_CONFIGURED);
-		new_span->span_id = globals.span_index;
+		new_span->span_id = ++globals.span_index;
 		new_span->zio = zio;
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_DIAL], "%(1000,0,350,440)", ZAP_TONEMAP_LEN);
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_RING], "%(2000,4000,440,480)", ZAP_TONEMAP_LEN);
@@ -339,11 +383,24 @@ OZ_DECLARE(zap_status_t) zap_span_create(zap_io_interface_t *zio, zap_span_t **s
 		zap_copy_string(new_span->tone_map[ZAP_TONEMAP_ATTN], "%(100,100,1400,2060,2450,2600)", ZAP_TONEMAP_LEN);
 		new_span->trunk_type = ZAP_TRUNK_NONE;
 		new_span->data_type = ZAP_TYPE_SPAN;
+
+		zap_mutex_lock(globals.span_mutex);
+		if (!zap_strlen_zero(name) && hashtable_search(globals.span_hash, (void *)name)) {
+			zap_log(ZAP_LOG_WARNING, "name %s is already used, substituting 'span%d' as the name\n", name, new_span->span_id);
+			name = NULL;
+		}
+		zap_mutex_unlock(globals.span_mutex);
+		
+		if (!name) {
+			char buf[128] = "";
+			snprintf(buf, sizeof(buf), "span%d", new_span->span_id);
+			name = buf;
+		}
+		new_span->name = strdup(name);
+		zap_span_add(new_span);
 		*span = new_span;
 		status = ZAP_SUCCESS;
 	}
-
-done:
 	zap_mutex_unlock(globals.mutex);
 	return status;
 }
@@ -351,18 +408,18 @@ done:
 OZ_DECLARE(zap_status_t) zap_span_close_all(void)
 {
 	zap_span_t *span;
-	uint32_t i, j;
+	uint32_t i = 0, j;
 
-	zap_mutex_lock(globals.mutex);
-	for(i = 1; i <= globals.span_index; i++) {
-		span = globals.spans[i];
+	zap_mutex_lock(globals.span_mutex);
+	for (span = globals.spans; span; span = span->next) {
 		if (zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			for(j = 1; j <= span->chan_count && span->channels[j]; j++) {
 				zap_channel_destroy(span->channels[j]);
+				i++;
 			}
 		} 
 	}
-	zap_mutex_unlock(globals.mutex);
+	zap_mutex_unlock(globals.span_mutex);
 
 	return i ? ZAP_SUCCESS : ZAP_FAIL;
 }
@@ -482,26 +539,40 @@ OZ_DECLARE(zap_status_t) zap_span_find_by_name(const char *name, zap_span_t **sp
 {
 	zap_status_t status = ZAP_FAIL;
 
-	zap_mutex_lock(globals.mutex);
-	if (!zap_strlen_zero(name) && (*span = hashtable_search(globals.span_hash, (void *)name))) {
-		status = ZAP_SUCCESS;
-	}
-	zap_mutex_unlock(globals.mutex);
+	zap_mutex_lock(globals.span_mutex);
+	if (!zap_strlen_zero(name)) {
+		if ((*span = hashtable_search(globals.span_hash, (void *)name))) {
+			status = ZAP_SUCCESS;
+		} else {
+			int span_id = atoi(name);
 
+			zap_span_find(span_id, span);
+			if (*span) {
+				status = ZAP_SUCCESS;
+			}
+		}
+	}
+	zap_mutex_unlock(globals.span_mutex);
+	
 	return status;
 }
 
 OZ_DECLARE(zap_status_t) zap_span_find(uint32_t id, zap_span_t **span)
 {
-	zap_span_t *fspan;
+	zap_span_t *fspan = NULL, *sp;
 
 	if (id > ZAP_MAX_SPANS_INTERFACE) {
 		return ZAP_FAIL;
 	}
 
-	zap_mutex_lock(globals.mutex);
-	fspan = globals.spans[id];
-	zap_mutex_unlock(globals.mutex);
+	zap_mutex_lock(globals.span_mutex);
+	for (sp = globals.spans; sp; sp = sp->next) {
+		if (sp->span_id == id) {
+			fspan = sp;
+			break;
+		}
+	}
+	zap_mutex_unlock(globals.span_mutex);
 
 	if (!fspan || !zap_test_flag(fspan, ZAP_SPAN_CONFIGURED)) {
 		return ZAP_FAIL;
@@ -840,122 +911,94 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 	zap_status_t status = ZAP_FAIL;
 	zap_channel_t *check;
 	uint32_t i,j;
-	zap_span_t *span;
+	zap_span_t *span = NULL;
 	uint32_t span_max;
 
 	if (span_id) {
-		if (span_id > globals.span_index || !globals.spans[span_id]) {
+		zap_span_find(span_id, &span);
+
+		if (!span || !zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
 			zap_log(ZAP_LOG_CRIT, "SPAN NOT DEFINED!\n");
 			*zchan = NULL;
             return ZAP_FAIL;
 		}
 
-		if (globals.spans[span_id]->active_count >= globals.spans[span_id]->chan_count) {
+		if (span->active_count >= span->chan_count) {
 			zap_log(ZAP_LOG_CRIT, "All circuits are busy.\n");
 			*zchan = NULL;
 			return ZAP_FAIL;
 		}
 		
-		if (globals.spans[span_id]->channel_request && !globals.spans[span_id]->suggest_chan_id) {
-			return globals.spans[span_id]->channel_request(globals.spans[span_id], 0, direction, caller_data, zchan);
+		if (span->channel_request && !span->suggest_chan_id) {
+			return span->channel_request(span, 0, direction, caller_data, zchan);
 		}
 		
 		span_max = span_id;
 		j = span_id;
 	} else {
-		span_max = globals.span_index;
-		if (direction == ZAP_TOP_DOWN) {
-			j = 1;
-		} else {
-			j = span_max;
-		}
+		zap_log(ZAP_LOG_CRIT, "No span supplied\n");
+		*zchan = NULL;
+		return ZAP_FAIL;
 	}
 	
+	zap_mutex_lock(span->mutex);
+		
+	if (direction == ZAP_TOP_DOWN) {
+		i = 1;
+	} else {
+		i = span->chan_count;
+	}	
+		
 	for(;;) {
+
 		if (direction == ZAP_TOP_DOWN) {
-			if (j > span_max) {
-				goto done;
+			if (i > span->chan_count) {
+				break;
 			}
 		} else {
-			if (j == 0) {
-				goto done;
+			if (i == 0) {
+				break;
 			}
 		}
-
-		span = globals.spans[j];
-		zap_mutex_lock(span->mutex);
-
-		if (!zap_test_flag(span, ZAP_SPAN_CONFIGURED)) {
-			goto next_loop;
-		}
-		
-		if (direction == ZAP_TOP_DOWN) {
-			i = 1;
-		} else {
-			i = span->chan_count;
-		}	
-		
-		for(;;) {
-
-			if (direction == ZAP_TOP_DOWN) {
-				if (i > span->chan_count) {
-					break;
-				}
-			} else {
-				if (i == 0) {
-					break;
-				}
-			}
 			
-			if (!(check = span->channels[i])) {
-				status = ZAP_FAIL;
+		if (!(check = span->channels[i])) {
+			status = ZAP_FAIL;
+			zap_mutex_unlock(span->mutex);
+			goto done;
+		}
+			
+		if (zap_test_flag(check, ZAP_CHANNEL_READY) && 
+			!zap_test_flag(check, ZAP_CHANNEL_INUSE) && 
+			!zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) && 
+			check->state == ZAP_CHANNEL_STATE_DOWN
+			) {
+
+			if (span && span->channel_request) {
+				status = span->channel_request(span, i, direction, caller_data, zchan);
 				zap_mutex_unlock(span->mutex);
 				goto done;
 			}
-			
-			if (zap_test_flag(check, ZAP_CHANNEL_READY) && 
-				!zap_test_flag(check, ZAP_CHANNEL_INUSE) && 
-				!zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) && 
-				check->state == ZAP_CHANNEL_STATE_DOWN
-				) {
 
-				if (globals.spans[span_id] && globals.spans[span_id]->channel_request) {
-					status = globals.spans[span_id]->channel_request(globals.spans[span_id], i, direction, caller_data, zchan);
-					zap_mutex_unlock(span->mutex);
-                    goto done;
-				}
-
-				status = check->zio->open(check);
+			status = check->zio->open(check);
 				
-				if (status == ZAP_SUCCESS) {
-					zap_set_flag(check, ZAP_CHANNEL_INUSE);
-					zap_channel_open_chan(check);
-					*zchan = check;
-					zap_mutex_unlock(span->mutex);
-					goto done;
-				}
-			}
-			
-			if (direction == ZAP_TOP_DOWN) {
-				i++;
-			} else {
-				i--;
+			if (status == ZAP_SUCCESS) {
+				zap_set_flag(check, ZAP_CHANNEL_INUSE);
+				zap_channel_open_chan(check);
+				*zchan = check;
+				zap_mutex_unlock(span->mutex);
+				goto done;
 			}
 		}
 		
-	next_loop:
-		
-		zap_mutex_unlock(span->mutex);
-		
 		if (direction == ZAP_TOP_DOWN) {
-			j++;
+			i++;
 		} else {
-			j--;
+			i--;
 		}
 	}
 
  done:
-
+	
 	return status;
 }
 
@@ -1048,22 +1091,24 @@ OZ_DECLARE(zap_status_t) zap_channel_open(uint32_t span_id, uint32_t chan_id, za
 {
 	zap_channel_t *check;
 	zap_status_t status = ZAP_FAIL;
+	zap_span_t *span = NULL;
 
-	zap_mutex_lock(globals.mutex);
+	zap_mutex_unlock(globals.mutex);
+	zap_span_find(span_id, &span);
 
-	if (span_id > globals.span_index  || chan_id >= ZAP_MAX_CHANNELS_SPAN || !globals.spans[span_id]) {
-		zap_log(ZAP_LOG_ERROR, "SPAN NOT DEFINED!\n");
+	if (!span || !zap_test_flag(span, ZAP_SPAN_CONFIGURED) || chan_id >= ZAP_MAX_CHANNELS_SPAN) {
+		zap_log(ZAP_LOG_CRIT, "SPAN NOT DEFINED!\n");
 		*zchan = NULL;
-		goto done;		
+		goto done;
 	}
 
-	if (globals.spans[span_id]->channel_request) {
+	if (span->channel_request) {
 		zap_log(ZAP_LOG_ERROR, "Individual channel selection not implemented on this span.\n");
 		*zchan = NULL;
 		goto done;
 	}
 	
-	check = globals.spans[span_id]->channels[chan_id];
+	check = span->channels[chan_id];
 
 	if (zap_test_flag(check, ZAP_CHANNEL_SUSPENDED) || 
 		!zap_test_flag(check, ZAP_CHANNEL_READY) || (status = zap_mutex_trylock(check->mutex)) != ZAP_SUCCESS) {
@@ -2202,24 +2247,9 @@ static zap_status_t load_config(void)
 					continue;
 				}
 
-				if (zap_span_create(zio, &span) == ZAP_SUCCESS) {
+				if (zap_span_create(zio, &span, name) == ZAP_SUCCESS) {
 					span->type = strdup(type);
 					d = 0;
-
-					zap_mutex_lock(globals.mutex);
-					if (!zap_strlen_zero(name) && hashtable_search(globals.span_hash, (void *)name)) {
-						zap_log(ZAP_LOG_WARNING, "name %s is already used, substituting 'span%d' as the name\n", name, span->span_id);
-						name = NULL;
-					}
-
-					if (!name) {
-						char buf[128] = "";
-						snprintf(buf, sizeof(buf), "span%d", span->span_id);
-						name = buf;
-					}
-					span->name = strdup(name);
-					hashtable_insert(globals.span_hash, (void *)span->name, span, HASHTABLE_FLAG_NONE);
-					zap_mutex_unlock(globals.mutex);
 
 					zap_log(ZAP_LOG_DEBUG, "created span %d (%s) of type %s\n", span->span_id, span->name, type);
 					
@@ -2576,6 +2606,7 @@ OZ_DECLARE(zap_status_t) zap_global_init(void)
 	globals.span_hash = create_hashtable(16, zap_hash_hashfromstring, zap_hash_equalkeys);
 	modcount = 0;
 	zap_mutex_create(&globals.mutex);
+	zap_mutex_create(&globals.span_mutex);
 	
 	modcount = zap_load_modules();
 	zap_log(ZAP_LOG_NOTICE, "Modules configured: %d \n", modcount);
@@ -2597,15 +2628,19 @@ OZ_DECLARE(uint32_t) zap_running(void)
 
 OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 {
-	unsigned int i,j;
+	unsigned int j;
+	zap_span_t *sp;
+
 	time_end();
 
 	globals.running = 0;	
 	zap_span_close_all();
 	zap_sleep(1000);
 
-	for(i = 1; i <= globals.span_index; i++) {
-		zap_span_t *cur_span = globals.spans[i];
+	zap_mutex_lock(globals.span_mutex);
+	for (sp = globals.spans; sp;) {
+		zap_span_t *cur_span = sp;
+		sp = sp->next;
 
 		if (cur_span) {
 			if (zap_test_flag(cur_span, ZAP_SPAN_CONFIGURED)) {
@@ -2630,15 +2665,17 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 				zap_safe_free(cur_span->signal_data);
 				zap_span_destroy(cur_span);
 			}
-			zap_mutex_lock(globals.mutex);
+
 			hashtable_remove(globals.span_hash, (void *)cur_span->name);
-			zap_mutex_unlock(globals.mutex);
 			zap_safe_free(cur_span->type);
 			zap_safe_free(cur_span->name);
 			free(cur_span);
 			cur_span = NULL;
 		}
 	}
+	globals.spans = NULL;
+	zap_mutex_unlock(globals.span_mutex);
+
 	globals.span_index = 0;
 	
 	zap_unload_modules();
@@ -2649,6 +2686,7 @@ OZ_DECLARE(zap_status_t) zap_global_destroy(void)
 	hashtable_destroy(globals.span_hash);
 	zap_mutex_unlock(globals.mutex);
 	zap_mutex_destroy(&globals.mutex);
+	zap_mutex_destroy(&globals.span_mutex);
 
 	memset(&globals, 0, sizeof(globals));
 	return ZAP_SUCCESS;
