@@ -1146,8 +1146,21 @@ static switch_status_t js_common_callback(switch_core_session_t *session, void *
 			switch_dtmf_t *dtmf = (switch_dtmf_t *) input;
 			
 			if (dtmf) {
-				if ((Event = new_js_dtmf(dtmf, var_name, cb_state->cx, cb_state->obj))) {
-					argv[argc++] = STRING_TO_JSVAL(JS_NewStringCopyZ(cb_state->cx, "dtmf"));
+				JSString *str = NULL;
+				/* FSCORE-327 - If a javascript garbage collection is in progress, 
+					JS_NewStringCopyZ returns NULL */
+				int try = 100;
+				while (try-- && !str) {
+					if ((str = JS_NewStringCopyZ(cb_state->cx, "dtmf"))) break;
+					switch_yield(10000);
+				}
+				
+				if (!str) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Javascript memory allocation failed\n");	
+				}
+				
+				if (str && (Event = new_js_dtmf(dtmf, var_name, cb_state->cx, cb_state->obj))) {
+					argv[argc++] = STRING_TO_JSVAL(str);
 					argv[argc++] = OBJECT_TO_JSVAL(Event);
 				} else {
 					jss->stack_depth--;
