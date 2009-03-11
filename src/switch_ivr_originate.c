@@ -1435,15 +1435,15 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 					new_profile->flags = SWITCH_CPF_NONE;
 
-					if (switch_stristr(tmp, "screen")) {
+					if (switch_stristr("screen", tmp)) {
 						switch_set_flag(new_profile, SWITCH_CPF_SCREEN);
 					}
 
-					if (switch_stristr(tmp, "hide_name")) {
+					if (switch_stristr("hide_name", tmp)) {
 						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NAME);
 					}
 
-					if (switch_stristr(tmp, "hide_number")) {
+					if (switch_stristr("hide_number", tmp)) {
 						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NUMBER);
 					}
 

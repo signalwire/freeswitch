@@ -1176,6 +1176,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char *invite_contact_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_contact_params");
 		const char *invite_from_params = switch_channel_get_variable(tech_pvt->channel, "sip_invite_from_params");
 		const char *from_var = switch_channel_get_variable(tech_pvt->channel, "sip_from_uri");
+		const char *from_display = switch_channel_get_variable(tech_pvt->channel, "sip_from_display");
 		
 		if (switch_strlen_zero(tech_pvt->dest)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "URL Error!\n");
@@ -1277,10 +1278,11 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		   or did he just suggest it to make our lives miserable?
 		 */
 		use_from_str = from_str;
-		if (!strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
+		if (!from_display && !strcasecmp(tech_pvt->caller_profile->caller_id_name, "_undef_")) {
 			from_str = switch_core_session_sprintf(session, "<%s>", use_from_str);
 		} else {
-			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", tech_pvt->caller_profile->caller_id_name, use_from_str);
+			from_str = switch_core_session_sprintf(session, "\"%s\" <%s>", from_display ? from_display : 
+												   tech_pvt->caller_profile->caller_id_name, use_from_str);
 		}
 		
 		if (!(call_id = switch_channel_get_variable(channel, "sip_outgoing_call_id"))) {
