@@ -33,12 +33,9 @@
 
 #ifndef _ESL_OOP_H_
 #define _ESL_OOP_H_
-#ifndef EXTERN_C
-#define EXTERN_C extern "C" {
-#endif
 #include <esl.h>
 #ifdef __cplusplus
-EXTERN_C
+extern "C" { 
 #endif
 
 #define this_check(x) do { if (!this) { esl_log(ESL_LOG_ERROR, "object is not initalized\n"); return x;}} while(0)

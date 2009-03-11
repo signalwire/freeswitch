@@ -3,7 +3,7 @@ PERL_LIBDIR =-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE
 PERL_LIBS   =$(shell perl -MConfig -e 'print $$Config{libs}')
 LOCAL_CFLAGS= -w -DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts) -DEMBED_PERL
 LOCAL_LDFLAGS=$(shell $(PERL) -MExtUtils::Embed -e ldopts) $(shell $(PERL) -MConfig -e 'print $$Config{libs}')
-
+PERL_INC=$(shell $(PERL) -MExtUtils::Embed -e perl_inc)
 all: ESL.so
 
 esl_wrap.cpp:
@@ -16,7 +16,7 @@ perlxsi.o: perlxsi.c
 	$(CC) $(CC_CFLAGS) $(CFLAGS) $(LOCAL_CFLAGS) -c perlxsi.c -o perlxsi.o
 
 esl_wrap.o: esl_wrap.cpp
-	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(LOCAL_CFLAGS) -c esl_wrap.cpp -o esl_wrap.o
+	$(CXX) $(CXX_CFLAGS) $(CXXFLAGS) $(PERL_INC) -c esl_wrap.cpp -o esl_wrap.o
 
 ESL.so: esl_wrap.o perlxsi.o
 	$(CXX) $(SOLINK) esl_wrap.o perlxsi.o $(MYLIB) $(LOCAL_LDFLAGS) -o ESL.so -L. $(LIBS)
