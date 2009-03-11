@@ -7,7 +7,7 @@
 ;(setq cperl-hairy t)
 (global-unset-key "\C-h")
 (global-set-key "\C-h" 'delete-backward-char)
-;(load "/usr/share/emacs/site-lisp/rng-auto.el")
+(load "/usr/share/emacs/site-lisp/rng-auto.el")
 
 (require 'cc-mode)
 (defun my-build-tab-stop-list (width)
@@ -171,6 +171,7 @@
                (font-lock-function-name-face "limegreen")
                (font-lock-variable-name-face "Yellow")
                (font-lock-type-face          "Yellow")
+               (font-lock-reference-face     "Purple")
                ))
        ;; Load the font-lock package.
        (require 'font-lock)
