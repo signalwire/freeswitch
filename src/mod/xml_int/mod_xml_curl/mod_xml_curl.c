@@ -198,8 +198,11 @@ static switch_xml_t xml_url_fetch(const char *section, const char *tag_name, con
 		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
 	}
 
+	memset(&config_data, 0, sizeof(config_data));
+
 	config_data.name = filename;
 	config_data.max_bytes = XML_CURL_MAX_BYTES;
+
 	if ((config_data.fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
 		if (!switch_strlen_zero(binding->cred)) {
 			curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
