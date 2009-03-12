@@ -463,7 +463,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 				}
 			}
 
-			if (peer_profile) {
+			if (peer_profile && !(flags & SOF_FORKED_DIAL)) {
 				if ((cloned_profile = switch_caller_profile_clone(session, peer_profile)) != 0) {
 					switch_channel_set_originatee_caller_profile(channel, cloned_profile);
 				}
