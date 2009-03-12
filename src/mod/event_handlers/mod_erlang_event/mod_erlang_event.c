@@ -950,7 +950,7 @@ static int config(void)
 	}
 
 	if (!prefs.nodename) {
-		prefs.nodename = "freeswitch";
+		set_pref_nodename("freeswitch");
 	}
 
 	return 0;
