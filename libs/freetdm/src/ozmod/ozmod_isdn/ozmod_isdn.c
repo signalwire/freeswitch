@@ -1383,8 +1383,16 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 		{
 			sig.event_id = ZAP_OOB_ALARM_TRAP;
 			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
-				zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RESTART);
+				if (event->channel->type == ZAP_CHAN_TYPE_B) {
+					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RESTART);
+				}
 			}
+
+			if (event->channel->type == ZAP_CHAN_TYPE_DQ921) {
+				zap_log(ZAP_LOG_WARNING, "Stopping ISDN for span %s\n", span->name);
+				span->stop(span);
+			}
+
 			zap_set_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
 			isdn_data->sig_cb(&sig);
@@ -1396,6 +1404,12 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 		break;
 	case ZAP_OOB_ALARM_CLEAR:
 		{
+
+			if (event->channel->type == ZAP_CHAN_TYPE_DQ921) {
+				zap_log(ZAP_LOG_WARNING, "Resuming ISDN for span %s\n", span->name);
+				span->start(span);
+			}
+
 			sig.event_id = ZAP_OOB_ALARM_CLEAR;
 			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
 			zap_channel_get_alarms(event->channel);
@@ -1464,6 +1478,7 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 	int offset = 0;
 
 	zap_log(ZAP_LOG_DEBUG, "ISDN tones thread starting.\n");
+	zap_set_flag(isdn_data, ZAP_ISDN_TONES_RUNNING);
 
 	if (zap_buffer_create(&dt_buffer, 1024, 1024, 0) != ZAP_SUCCESS) {
 		snprintf(isdn_data->dchan->last_error, sizeof(isdn_data->dchan->last_error), "memory error!");
@@ -1489,7 +1504,7 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 	ts.duration = ts.rate;
 
 	/* main loop */
-	while(zap_running() && zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
+	while(zap_running() && zap_test_flag(isdn_data, ZAP_ISDN_TONES_RUNNING) && !zap_test_flag(isdn_data, ZAP_ISDN_STOP)) {
 		zap_wait_flag_t flags;
 		zap_status_t status;
 		int last_chan_state = 0;
@@ -1636,6 +1651,7 @@ done:
 	}
 
 	zap_log(ZAP_LOG_DEBUG, "ISDN tone thread ended.\n");
+	zap_clear_flag(isdn_data, ZAP_ISDN_TONES_RUNNING);
 
 	return NULL;
 }
@@ -1653,10 +1669,11 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 #endif
 
 	zap_log(ZAP_LOG_DEBUG, "ISDN thread starting.\n");
+	zap_set_flag(isdn_data, ZAP_ISDN_RUNNING);
 
 	Q921Start(&isdn_data->q921);
 
-	while(zap_running() && zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
+	while(zap_running() && zap_test_flag(isdn_data, ZAP_ISDN_RUNNING) && !zap_test_flag(isdn_data, ZAP_ISDN_STOP)) {
 		zap_wait_flag_t flags = ZAP_READ;
 		zap_status_t status = zap_channel_wait(isdn_data->dchan, &flags, 100);
 
@@ -1891,14 +1908,40 @@ static zap_state_map_t isdn_state_map = {
 	}
 };
 
+static zap_status_t zap_isdn_stop(zap_span_t *span)
+{
+	zap_isdn_data_t *isdn_data = span->signal_data;
+
+	if (!zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
+		return ZAP_FAIL;
+	}
+		
+	zap_set_flag(isdn_data, ZAP_ISDN_STOP);
+	
+	while(zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
+		zap_sleep(100);
+	}
+
+	while(zap_test_flag(isdn_data, ZAP_ISDN_TONES_RUNNING)) {
+		zap_sleep(100);
+	}
+
+	return ZAP_SUCCESS;
+	
+}
+
 static zap_status_t zap_isdn_start(zap_span_t *span)
 {
 	zap_status_t ret;
-
 	zap_isdn_data_t *isdn_data = span->signal_data;
-	zap_set_flag(isdn_data, ZAP_ISDN_RUNNING);
 
+	if (zap_test_flag(isdn_data, ZAP_ISDN_RUNNING)) {
+		return ZAP_FAIL;
+	}
+
+	zap_clear_flag(isdn_data, ZAP_ISDN_STOP);
 	ret = zap_thread_create_detached(zap_isdn_run, span);
+
 	if (ret != ZAP_SUCCESS) {
 		return ret;
 	}
@@ -2071,6 +2114,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	}
 					
 	span->start = zap_isdn_start;
+	span->stop = zap_isdn_stop;
 	isdn_data->sig_cb = sig_cb;
 	isdn_data->dchans[0] = dchans[0];
 	isdn_data->dchans[1] = dchans[1];
