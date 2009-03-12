@@ -1041,6 +1041,9 @@ static switch_call_cause_t channel_outgoing_channel(switch_core_session_t *sessi
 		snprintf(name, sizeof(name), "OpenZAP/%u:%u/%s", zchan->span_id, zchan->chan_id, dest);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect outbound channel %s\n", name);
 		switch_channel_set_name(channel, name);
+		switch_channel_set_variable(channel, "openzap_span_name", zchan->span->name);
+		switch_channel_set_variable_printf(channel, "openzap_span_number", "%d", zchan->span_id);	
+		switch_channel_set_variable_printf(channel, "openzap_chan_number", "%d", zchan->chan_id);
 		zchan->caller_data = caller_data;
 		caller_profile = switch_caller_profile_clone(*new_session, outbound_profile);
 		switch_channel_set_caller_profile(channel, caller_profile);
@@ -1150,6 +1153,10 @@ zap_status_t zap_channel_from_event(zap_sigmsg_t *sigmsg, switch_core_session_t 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connect inbound channel %s\n", name);
 	switch_channel_set_name(channel, name);
 	switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
+
+	switch_channel_set_variable(channel, "openzap_span_name", sigmsg->channel->span->name);
+	switch_channel_set_variable_printf(channel, "openzap_span_number", "%d", sigmsg->channel->span_id);	
+	switch_channel_set_variable_printf(channel, "openzap_chan_number", "%d", sigmsg->channel->chan_id);
 		
 	switch_channel_set_state(channel, CS_INIT);
 	if (switch_core_session_thread_launch(session) != SWITCH_STATUS_SUCCESS) {
