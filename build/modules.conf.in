@@ -50,6 +50,7 @@ endpoints/mod_loopback
 event_handlers/mod_event_socket
 event_handlers/mod_cdr_csv
 #event_handlers/mod_radius_cdr
+#event_handlers/mod_erlang_event
 formats/mod_native_file
 formats/mod_sndfile
 #formats/mod_shout
