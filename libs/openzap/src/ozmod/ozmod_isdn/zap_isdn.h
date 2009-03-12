@@ -46,7 +46,9 @@ typedef enum {
 } zap_isdn_opts_t;
 
 typedef enum {
-	ZAP_ISDN_RUNNING = (1 << 0)
+	ZAP_ISDN_RUNNING = (1 << 0),
+	ZAP_ISDN_TONES_RUNNING = (1 << 1),
+	ZAP_ISDN_STOP = (1 << 2)
 } zap_isdn_flag_t;
 
 
