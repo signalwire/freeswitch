@@ -39,42 +39,42 @@ fs_cli: $(MYLIB) fs_cli.c
 
 clean:
 	rm -f *.o src/*.o testclient testserver fs_cli libesl.a *~ src/*~ src/include/*~
-	make -C perl clean
-	make -C php clean
-	make -C lua clean
-	make -C python clean
-	make -C ruby clean
+	$(MAKE) -C perl clean
+	$(MAKE) -C php clean
+	$(MAKE) -C lua clean
+	$(MAKE) -C python clean
+	$(MAKE) -C ruby clean
 
 reswig:	swigclean
-	make -C perl reswig
-	make -C php reswig
-	make -C lua reswig
-	make -C python reswig
-	make -C ruby reswig
+	$(MAKE) -C perl reswig
+	$(MAKE) -C php reswig
+	$(MAKE) -C lua reswig
+	$(MAKE) -C python reswig
+	$(MAKE) -C ruby reswig
 
 swigclean: clean
-	make -C perl swigclean
-	make -C php swigclean
-	make -C lua swigclean
-	make -C python swigclean
-	make -C ruby swigclean
+	$(MAKE) -C perl swigclean
+	$(MAKE) -C php swigclean
+	$(MAKE) -C lua swigclean
+	$(MAKE) -C python swigclean
+	$(MAKE) -C ruby swigclean
 
 perlmod: $(MYLIB)
-	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
+	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C perl
 
 phpmod: $(MYLIB)
-	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C php 
+	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C php 
 
 luamod: $(MYLIB)
-	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C lua
+	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C lua
 
 pymod: $(MYLIB)
-	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C python
+	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C python
 
 rubymod: $(MYLIB)
-	make MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C ruby
+	$(MAKE) MYLIB="../$(MYLIB)" SOLINK="$(SOLINK)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CXX_CFLAGS="$(CXX_CFLAGS)" -C ruby
 
 phpmod-install: phpmod
-	make -C php install
+	$(MAKE) -C php install
 
 everymod: perlmod phpmod luamod pymod rubymod

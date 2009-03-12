@@ -1,7 +1,7 @@
-PERL        = $(shell which perl)
-PERL_LIBDIR =-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE
-PERL_LIBS   =$(shell perl -MConfig -e 'print $$Config{libs}')
-LOCAL_CFLAGS= -w -DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts) -DEMBED_PERL
+PERL=$(shell which perl)
+PERL_LIBDIR=-L$(shell perl -MConfig -e 'print $$Config{archlib}')/CORE
+PERL_LIBS=$(shell perl -MConfig -e 'print $$Config{libs}')
+LOCAL_CFLAGS=-w -DMULTIPLICITY $(shell $(PERL) -MExtUtils::Embed -e ccopts) -DEMBED_PERL
 LOCAL_LDFLAGS=$(shell $(PERL) -MExtUtils::Embed -e ldopts) $(shell $(PERL) -MConfig -e 'print $$Config{libs}')
 PERL_INC=$(shell $(PERL) -MExtUtils::Embed -e perl_inc)
 all: ESL.so
