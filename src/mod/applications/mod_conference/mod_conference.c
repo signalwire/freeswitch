@@ -2274,7 +2274,7 @@ static void *SWITCH_THREAD_FUNC conference_record_thread_run(switch_thread_t *th
 	if (switch_test_flag((&fh), SWITCH_FILE_OPEN)) {
 		switch_core_file_close(&fh);
 	}
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recording Stopped\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Recording of %s Stopped\n", rec->path);
 
 	if (rec->pool) {
 		switch_memory_pool_t *pool = rec->pool;
@@ -2728,7 +2728,9 @@ static void conference_member_itterator(conference_obj_t *conference, switch_str
 
 	switch_mutex_lock(conference->member_mutex);
 	for (member = conference->members; member; member = member->next) {
-		pfncallback(member, stream, data);
+		if (member->session && !switch_test_flag(member, MFLAG_NOCHANNEL)) {
+			pfncallback(member, stream, data);
+		}
 	}
 	switch_mutex_unlock(conference->member_mutex);
 }
@@ -2926,6 +2928,7 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
 	switch_mutex_lock(member->control_mutex);
 	switch_clear_flag(member, MFLAG_RUNNING);
 	switch_set_flag_locked(member, MFLAG_KICKED);
+
 	switch_core_session_kill_channel(member->session, SWITCH_SIG_BREAK);
 	switch_mutex_unlock(member->control_mutex);
 	if (stream != NULL) {
@@ -3907,7 +3910,7 @@ switch_status_t conf_api_dispatch(conference_obj_t *conference, switch_stream_ha
 						}
 
 						/* exec functio on last (oldest) member */
-						if (last_member != NULL) {
+						if (last_member != NULL && last_member->session && !switch_test_flag(last_member, MFLAG_NOCHANNEL)) {
 							conf_api_member_cmd_t pfn = (conf_api_member_cmd_t) conf_api_sub_commands[i].pfnapicmd;
 							pfn(last_member, stream, argv[argn + 2]);
 						}
