@@ -320,6 +320,19 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				continue;
 			}
 		}
+
+		if (!ans_a && !ans_b) {
+			switch_channel_t *un = ans_a ? chan_b : chan_a;
+			
+			if (switch_channel_answer(un) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(un));
+				goto end_of_bridge_loop;
+			}
+			
+			if (ans_a) ans_b++; else ans_a++;
+		}
+		
+
 #ifndef SWITCH_VIDEO_IN_THREADS
 		if (switch_channel_test_flag(chan_a, CF_VIDEO) && switch_channel_test_flag(chan_b, CF_VIDEO)) {
 			/* read video from 1 channel and write it to the other */
