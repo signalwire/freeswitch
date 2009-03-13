@@ -143,6 +143,8 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 		switch_bool_t changed = SWITCH_FALSE;
 		switch_xml_config_callback_t callback = (switch_xml_config_callback_t)item->function;
 		
+		switch_assert(item->ptr);
+		
 		if (value) {
 			matched_count++;
 		}
@@ -236,7 +238,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 							/* We have a preallocated buffer */
 							char *dest = (char*)item->ptr;
 						
-							if (!dest || strncasecmp(dest, newstring, string_options->length)) {
+							if (strncasecmp(dest, newstring, string_options->length)) {
 								switch_copy_string(dest, newstring, string_options->length);
 								changed = SWITCH_TRUE;
 							}
