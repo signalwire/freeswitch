@@ -1387,16 +1387,14 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RESTART);
 				}
 			}
-
-			if (event->channel->type == ZAP_CHAN_TYPE_DQ921) {
-				zap_log(ZAP_LOG_WARNING, "Stopping ISDN for span %s\n", span->name);
-				span->stop(span);
-			}
+			
 
 			zap_set_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
+
+			
 			zap_channel_get_alarms(event->channel);
 			isdn_data->sig_cb(&sig);
-			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) has alarms [%s]\n", 
+			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
 					event->channel->span_id, event->channel->chan_id, 
 					event->channel->physical_span_id, event->channel->physical_chan_id, 
 					event->channel->last_error);
@@ -1404,11 +1402,9 @@ static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *even
 		break;
 	case ZAP_OOB_ALARM_CLEAR:
 		{
-
-			if (event->channel->type == ZAP_CHAN_TYPE_DQ921) {
-				zap_log(ZAP_LOG_WARNING, "Resuming ISDN for span %s\n", span->name);
-				span->start(span);
-			}
+			
+			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) alarms Cleared!\n", event->channel->span_id, event->channel->chan_id,
+					event->channel->physical_span_id, event->channel->physical_chan_id);
 
 			sig.event_id = ZAP_OOB_ALARM_CLEAR;
 			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
@@ -1705,6 +1701,10 @@ static void *zap_isdn_run(zap_thread_t *me, void *obj)
 			{
 				errs = 0;
 				if (flags & ZAP_READ) {
+
+					if (zap_test_flag(isdn_data->dchan, ZAP_CHANNEL_SUSPENDED)) {
+						zap_clear_flag_all(span, ZAP_CHANNEL_SUSPENDED);
+					}
 					len = sizeof(frame);
 					if (zap_channel_read(isdn_data->dchan, frame, &len) == ZAP_SUCCESS) {
 #ifdef IODEBUG
