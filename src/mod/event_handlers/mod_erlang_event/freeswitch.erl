@@ -14,13 +14,13 @@
 
 -module(freeswitch).
 
--export([send/2, api/3, bgapi/3, event/2,
+-export([send/2, api/3, api/2, bgapi/3, bgapi/4, event/2,
 		nixevent/2, noevents/1, close/1,
 		get_event_header/2, get_event_body/1,
 		get_event_name/1, getpid/1, sendmsg/3,
-		sendevent/3, handlecall/2, start_fetch_handler/4,
+		sendevent/3, handlecall/2, handlecall/3, start_fetch_handler/4,
 		start_log_handler/3, start_event_handler/3]).
--define(TIMEOUT, 10000).
+-define(TIMEOUT, 5000).
 
 %% @doc Return the value for a specific header in an event or `{error,notfound}'.
 get_event_header([], _Needle) ->
@@ -63,10 +63,17 @@ send(Node, Term) ->
 api(Node, Cmd, Args) ->
 	{api, Node} ! {api, Cmd, Args},
 	receive
-		X -> X
+		{ok, X} -> 
+			{ok, X};
+		{error, X} ->
+			{error, X}
 	after ?TIMEOUT ->
 		timeout
 	end.
+
+%% @doc Same as @link{api/3} except there's no additional arguments.
+api(Node, Cmd) ->
+	api(Node, Cmd, "").
 
 %% @doc Make a backgrounded API call to FreeSWITCH. The asynchronous reply is
 %% sent to calling process after it is received. This function
@@ -104,11 +111,48 @@ bgapi(Node, Cmd, Args) ->
 		{api, X} -> X
 	end.
 
+%% @doc Make a backgrounded API call to FreeSWITCH. The asynchronous reply is
+%% passed as the argument to `Fun' after it is received. This function
+%% returns the result of the initial bgapi call or `timeout' if FreeSWITCH fails
+%% to respond.
+bgapi(Node, Cmd, Args, Fun) ->
+	Self = self(),
+	% spawn a new process so that both responses go here instead of directly to
+	% the calling process.
+	spawn(fun() ->
+		{bgapi, Node} ! {bgapi, Cmd, Args},
+		receive
+			{error, Reason} ->
+				% send the error condition to the calling process
+				Self ! {api, {error, Reason}};
+			{ok, JobID} ->
+				% send the reply to the calling process
+				Self ! {api, ok},
+				receive % wait for the job's reply
+					{bgok, JobID, Reply} ->
+						% Call the function with the reply
+						Fun(ok, Reply);
+					{bgerror, JobID, Reply} ->
+						Fun(error, Reply)
+				end
+		after ?TIMEOUT ->
+			% send a timeout to the calling process
+			Self ! {api, timeout}
+		end
+	end),
+
+	% get the initial result of the command, NOT the asynchronous response, and
+	% return it
+	receive
+		{api, X} -> X
+	end.
+
 %% @doc Request to receive any events in the list `List'.
 event(Node, Events) when is_list(Events) ->
 	{event, Node} ! list_to_tuple(lists:append([event], Events)),
 	receive
-		X -> X
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
 	after ?TIMEOUT ->
 		timeout
 	end;
@@ -130,7 +174,8 @@ nixevent(Node, Event) when is_atom(Event) ->
 noevents(Node) ->
 	{noevents, Node} ! noevents,
 	receive
-		X -> X
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
 	after ?TIMEOUT ->
 		timeout
 	end.
@@ -139,7 +184,7 @@ noevents(Node) ->
 close(Node) ->
 	{close, Node} ! exit,
 	receive
-		X -> X
+		ok -> ok
 	after ?TIMEOUT ->
 		timeout
 	end.
@@ -150,7 +195,8 @@ close(Node) ->
 sendevent(Node, EventName, Headers) ->
 	{sendevent, Node} ! {sendevent, EventName, Headers},
 	receive
-		X -> X
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
 	after ?TIMEOUT ->
 		timeout
 	end.
@@ -160,7 +206,8 @@ sendevent(Node, EventName, Headers) ->
 sendmsg(Node, UUID, Headers) ->
 	{sendmsg, Node} ! {sendmsg, UUID, Headers},
 	receive
-		X -> X
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
 	after ?TIMEOUT ->
 		timeout
 	end.
@@ -171,17 +218,29 @@ sendmsg(Node, UUID, Headers) ->
 getpid(Node) ->
 	{getpid, Node} ! getpid,
 	receive
-		X -> X
+		{ok, Pid} when is_pid(Pid) -> {ok, Pid}
 	after ?TIMEOUT ->
 		timeout
 	end.
 
 %% @doc Request that FreeSWITCH send any events pertaining to call `UUID' to
 %% `Process' where process is a registered process name.
-handlecall(Node, Process) ->
-	{handlecall, Node} ! {handlecall, Process},
+handlecall(Node, UUID, Process) ->
+	{handlecall, Node} ! {handlecall, UUID, Process},
 	receive
-		X -> X
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
+	after ?TIMEOUT ->
+		timeout
+	end.
+
+%% @doc Request that FreeSWITCH send any events pertaining to call `UUID' to
+%% the calling process.
+handlecall(Node, UUID) ->
+	{handlecall, Node} ! {handlecall, UUID},
+	receive
+		ok -> ok;
+		{error, Reason} -> {error, Reason}
 	after ?TIMEOUT ->
 		timeout
 	end.
