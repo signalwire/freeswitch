@@ -584,6 +584,9 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *m
 				ei_x_encode_atom(rbuf, "error");
 				ei_x_encode_atom(rbuf, "badsession");
 			}
+			/* release the lock returned by switch_core_locate_session */
+			switch_core_session_rwunlock(session);
+
 		} else {
 			ei_x_encode_tuple_header(rbuf, 2);
 			ei_x_encode_atom(rbuf, "error");
