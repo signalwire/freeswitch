@@ -712,6 +712,16 @@ static __inline__ void zap_set_flag_all(zap_span_t *span, uint32_t flag)
 	zap_mutex_unlock(span->mutex);
 }
 
+static __inline__ void zap_clear_flag_all(zap_span_t *span, uint32_t flag)
+{
+	uint32_t j;
+	zap_mutex_lock(span->mutex);
+	for(j = 1; j <= span->chan_count; j++) {
+		zap_clear_flag_locked((span->channels[j]), flag);
+	}
+	zap_mutex_unlock(span->mutex);
+}
+
 #endif
 
 /* For Emacs:
