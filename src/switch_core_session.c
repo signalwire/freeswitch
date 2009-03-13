@@ -379,6 +379,7 @@ SWITCH_DECLARE(switch_call_cause_t) switch_core_session_outgoing_channel(switch_
 		peer_profile = switch_channel_get_caller_profile(peer_channel);
 		
 		if ((use_uuid = switch_event_get_header(var_event, "origination_uuid"))) {
+			use_uuid = switch_core_session_strdup(*new_session, use_uuid);
 			if (switch_core_session_set_uuid(*new_session, use_uuid) == SWITCH_STATUS_SUCCESS) {
 				switch_event_del_header(var_event, "origination_uuid");
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s set UUID=%s\n", switch_channel_get_name(peer_channel), use_uuid);
@@ -1068,14 +1069,15 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session
 
 	switch_assert(use_uuid);
 
+	switch_mutex_lock(runtime.session_hash_mutex);
 	if (switch_core_hash_find(session_manager.session_table, use_uuid)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Duplicate UUID!\n");
+		switch_mutex_unlock(runtime.session_hash_mutex);
         return SWITCH_STATUS_FALSE;
 	}
 
 	switch_event_create(&event, SWITCH_EVENT_CHANNEL_UUID);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Old-Unique-ID", session->uuid_str);
-	switch_mutex_lock(runtime.session_hash_mutex);
 	switch_core_hash_delete(session_manager.session_table, session->uuid_str);
 	switch_set_string(session->uuid_str, use_uuid);
 	switch_core_hash_insert(session_manager.session_table, session->uuid_str, session);
