@@ -1305,7 +1305,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				char *vdata;
 				end = NULL;
 				chan_type = peer_names[i];
-				
+				const char *privacy_str = NULL;
+
 				while (chan_type && *chan_type && *chan_type == ' ') {
 					chan_type++;
 				}
@@ -1432,28 +1433,28 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					} else {
 						strncpy(tmp, var_begin, strlen(var_begin));
 					}
-
-					new_profile->flags = SWITCH_CPF_NONE;
-
-					if (switch_stristr("screen", tmp)) {
-						switch_set_flag(new_profile, SWITCH_CPF_SCREEN);
-					}
-
-					if (switch_stristr("hide_name", tmp)) {
-						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NAME);
-					}
-
-					if (switch_stristr("hide_number", tmp)) {
-						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NUMBER);
-					}
-
-					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
+					
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_privacy", tmp);
 				}
 				
 				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
 				
+				if ((privacy_str = switch_event_get_header(var_event, "origination_privacy"))) {
+					new_profile->flags = SWITCH_CPF_NONE;
+					
+					if (switch_stristr("screen", privacy_str)) {
+						switch_set_flag(new_profile, SWITCH_CPF_SCREEN);
+					}
 
+					if (switch_stristr("hide_name", privacy_str)) {
+						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NAME);
+					}
+
+					if (switch_stristr("hide_number", privacy_str)) {
+						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NUMBER);
+					}
+				}
+				
 				if ((reason = switch_core_session_outgoing_channel(oglobals.session, var_event, chan_type, 
 																   new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", 
