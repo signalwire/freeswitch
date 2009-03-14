@@ -1928,10 +1928,13 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "change-password");
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User-Password", buf);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User", myid);
+					if (actual_id) {
+						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Actual-User", actual_id);
+					}
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
 					switch_channel_event_set_data(channel, params);
 					
-					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
+					if (switch_xml_locate_user("id", actual_id ? actual_id : myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 											   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
 						switch_xml_free(xx_domain_root);
 					}
