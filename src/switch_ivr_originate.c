@@ -1305,7 +1305,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				char *vdata;
 				end = NULL;
 				chan_type = peer_names[i];
-				const char *privacy_str = NULL;
+				const char *current_variable;
+				char variable_buffer[512] = "";
 
 				while (chan_type && *chan_type && *chan_type == ' ') {
 					chan_type++;
@@ -1383,78 +1384,100 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						myflags |= SOF_FORKED_DIAL;
 					}
 				}
-
-				if (vdata && (var_begin = switch_stristr("origination_caller_id_number=", vdata))) {
-					char tmp[512] = "";
-					var_begin += strlen("origination_caller_id_number=");
-					var_end = strchr(var_begin, '|');
-					if (var_end) {
-						strncpy(tmp, var_begin, var_end-var_begin);
-					} else {
-						strncpy(tmp, var_begin, strlen(var_begin));
-					}
-					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, tmp);
-					myflags |= SOF_NO_EFFECTIVE_CID_NUM;
-				}
-
-				if (vdata && (var_begin = switch_stristr("origination_caller_id_name=", vdata))) {
-					char tmp[512] = "";
-					var_begin += strlen("origination_caller_id_name=");
-					var_end = strchr(var_begin, '|');
-					if (var_end) {
-						strncpy(tmp, var_begin, var_end-var_begin);
-					} else {
-						strncpy(tmp, var_begin, strlen(var_begin));
-					}
-					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
-					myflags |= SOF_NO_EFFECTIVE_CID_NAME;
-				}
+				
+				/* only valid in [] since it's unique to each channel leg */
 
 				if (vdata && (var_begin = switch_stristr("origination_uuid=", vdata))) {
 					char tmp[512] = "";
 					var_begin += strlen("origination_uuid=");
 					var_end = strchr(var_begin, '|');
+
 					if (var_end) {
 						strncpy(tmp, var_begin, var_end-var_begin);
 					} else {
 						strncpy(tmp, var_begin, strlen(var_begin));
 					}
+
 					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", tmp);
 				}
 
+				/* The rest are valid in both {} and [] with [] taking precedence */
 
-				if (vdata && (var_begin = switch_stristr("origination_privacy=", vdata))) {
-					char tmp[512] = "";
-					var_begin += strlen("origination_privacy=");
+				current_variable = NULL;
+				
+				if (vdata && (var_begin = switch_stristr("origination_caller_id_number=", vdata))) {
+					var_begin += strlen("origination_caller_id_number=");
 					var_end = strchr(var_begin, '|');
+
 					if (var_end) {
-						strncpy(tmp, var_begin, var_end-var_begin);
+						strncpy(variable_buffer, var_begin, var_end-var_begin);
 					} else {
-						strncpy(tmp, var_begin, strlen(var_begin));
+						strncpy(variable_buffer, var_begin, strlen(var_begin));
 					}
-					
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_privacy", tmp);
+
+					current_variable = variable_buffer;
 				}
 				
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
+				if (current_variable || (current_variable = switch_event_get_header(var_event, "origination_caller_id_number"))) {
+					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, current_variable);
+					myflags |= SOF_NO_EFFECTIVE_CID_NUM;
+				}
+
+				current_variable = NULL;
 				
-				if ((privacy_str = switch_event_get_header(var_event, "origination_privacy"))) {
+				if (vdata && (var_begin = switch_stristr("origination_caller_id_name=", vdata))) {
+					var_begin += strlen("origination_caller_id_name=");
+					var_end = strchr(var_begin, '|');
+
+					if (var_end) {
+						strncpy(variable_buffer, var_begin, var_end-var_begin);
+					} else {
+						strncpy(variable_buffer, var_begin, strlen(var_begin));
+					}
+
+					current_variable = variable_buffer;
+				}
+				
+				if (current_variable || (current_variable = switch_event_get_header(var_event, "origination_caller_id_name"))) {
+					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, current_variable);
+					myflags |= SOF_NO_EFFECTIVE_CID_NAME;
+				}
+				
+				current_variable = NULL;
+				
+				if (vdata && (var_begin = switch_stristr("origination_privacy=", vdata))) {
+					var_begin += strlen("origination_privacy=");
+					var_end = strchr(var_begin, '|');
+
+					if (var_end) {
+						strncpy(variable_buffer, var_begin, var_end-var_begin);
+					} else {
+						strncpy(variable_buffer, var_begin, strlen(var_begin));
+					}
+
+					current_variable = variable_buffer;
+				}
+				
+				if (current_variable || (current_variable = switch_event_get_header(var_event, "origination_privacy"))) {
 					new_profile->flags = SWITCH_CPF_NONE;
 					
-					if (switch_stristr("screen", privacy_str)) {
+					if (switch_stristr("screen", current_variable)) {
 						switch_set_flag(new_profile, SWITCH_CPF_SCREEN);
 					}
 
-					if (switch_stristr("hide_name", privacy_str)) {
+					if (switch_stristr("hide_name", current_variable)) {
 						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NAME);
 					}
 
-					if (switch_stristr("hide_number", privacy_str)) {
+					if (switch_stristr("hide_number", current_variable)) {
 						switch_set_flag(new_profile, SWITCH_CPF_HIDE_NUMBER);
 					}
 				}
-				
+
+				current_variable = NULL;
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "originate_early_media", oglobals.early_ok ? "true" : "false");
+
 				if ((reason = switch_core_session_outgoing_channel(oglobals.session, var_event, chan_type, 
 																   new_profile, &new_session, &pool, myflags)) != SWITCH_CAUSE_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot create outgoing channel of type [%s] cause: [%s]\n", 
