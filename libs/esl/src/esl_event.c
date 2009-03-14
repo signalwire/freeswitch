@@ -367,22 +367,25 @@ ESL_DECLARE(esl_status_t) esl_event_add_body(esl_event_t *event, const char *fmt
 
 ESL_DECLARE(void) esl_event_destroy(esl_event_t **event)
 {
-	esl_event_t *ep = *event;
-	esl_event_header_t *hp, *this;
+	esl_event_t *ep = *event, *this_event;
+	esl_event_header_t *hp, *this_header;
 
-	if (ep) {
-		for (hp = ep->headers; hp;) {
-			this = hp;
+	for (ep = *event ; ep ;) {
+		this_event = ep;
+		ep = ep->next;
+		
+		for (hp = this_event->headers; hp;) {
+			this_header = hp;
 			hp = hp->next;
-			FREE(this->name);
-			FREE(this->value);
-			memset(this, 0, sizeof(*this));
-			FREE(this);
+			FREE(this_header->name);
+			FREE(this_header->value);
+			memset(this_header, 0, sizeof(*this_header));
+			FREE(this_header);
 		}
-		FREE(ep->body);
-		FREE(ep->subclass_name);
-		memset(ep, 0, sizeof(*ep));
-		FREE(ep);
+		FREE(this_event->body);
+		FREE(this_event->subclass_name);
+		memset(this_event, 0, sizeof(*this_event));
+		FREE(this_event);
 	}
 	*event = NULL;
 }

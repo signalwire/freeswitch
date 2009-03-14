@@ -193,8 +193,7 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 	thread_running = 1;
 
 	while(thread_running && handle->connected) {
-		esl_status_t status = esl_recv_timed(handle, 10);
-		
+		esl_status_t status = esl_recv_event_timed(handle, 10, 1, NULL);
 		if (status == ESL_FAIL) {
 			esl_log(ESL_LOG_WARNING, "Disconnected.\n");
 			running = thread_running = 0;
@@ -240,7 +239,11 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 				}
 				
 				if (!known) {
-					printf("INCOMING DATA [%s]\n%s", type, handle->last_event->body);
+					printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
+						char *foo;
+						esl_event_serialize(handle->last_event, &foo, ESL_FALSE);
+						printf("RECV EVENT\n%s\n", foo);
+						free(foo);
 				}
 			}
 		}
@@ -724,6 +727,7 @@ int main(int argc, char *argv[])
 	print_banner(stdout);
 
 	esl_log(ESL_LOG_INFO, "FS CLI Ready.\nenter /help for a list of commands.\n");
+	printf("%s\n", handle.last_sr_reply);
 
 	while (running) {
 

@@ -154,7 +154,7 @@ ESLevent *ESLconnection::recvEvent()
 		delete last_event_obj;
 	}
 	
-	if (esl_recv_event(&handle, NULL) == ESL_SUCCESS) {
+	if (esl_recv_event(&handle, 1, NULL) == ESL_SUCCESS) {
 		esl_event_t *e = handle.last_ievent ? handle.last_ievent : handle.last_event;
 		if (e) {
 			esl_event_t *event;
@@ -176,7 +176,7 @@ ESLevent *ESLconnection::recvEventTimed(int ms)
 		last_event_obj = NULL;
 	}
 
-	if (esl_recv_event_timed(&handle, ms, NULL) == ESL_SUCCESS) {
+	if (esl_recv_event_timed(&handle, ms, 1, NULL) == ESL_SUCCESS) {
 		esl_event_t *e = handle.last_ievent ? handle.last_ievent : handle.last_event;
 		if (e) {
 			esl_event_t *event;

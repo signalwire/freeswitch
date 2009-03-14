@@ -266,6 +266,7 @@ typedef struct {
 	char last_sr_reply[1024];
 	esl_event_t *last_event;
 	esl_event_t *last_sr_event;
+	esl_event_t *race_event;
 	esl_event_t *last_ievent;
 	esl_event_t *info_event;
 	int connected;
@@ -334,14 +335,14 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 ESL_DECLARE(esl_status_t) esl_connect(esl_handle_t *handle, const char *host, esl_port_t port, const char *password);
 ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle);
 ESL_DECLARE(esl_status_t) esl_send(esl_handle_t *handle, const char *cmd);
-ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **save_event);
-ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event);
+ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_event_t **save_event);
+ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, int check_q, esl_event_t **save_event);
 ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd);
 ESL_DECLARE(esl_status_t) esl_filter(esl_handle_t *handle, const char *header, const char *value);
 ESL_DECLARE(esl_status_t) esl_events(esl_handle_t *handle, esl_event_type_t etype, const char *value);
 
-#define esl_recv(_h) esl_recv_event(_h, NULL)
-#define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, NULL)
+#define esl_recv(_h) esl_recv_event(_h, 0, NULL)
+#define esl_recv_timed(_h, _ms) esl_recv_event_timed(_h, _ms, 0, NULL)
 
 static __inline__ int esl_safe_strcasecmp(const char *s1, const char *s2)
 {

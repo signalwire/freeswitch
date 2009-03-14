@@ -683,6 +683,7 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 		esl_mutex_lock(mutex);
 	}
 
+	esl_event_safe_destroy(&handle->race_event);
 	esl_event_safe_destroy(&handle->last_event);
 	esl_event_safe_destroy(&handle->last_sr_event);
 	esl_event_safe_destroy(&handle->last_ievent);
@@ -705,12 +706,21 @@ ESL_DECLARE(esl_status_t) esl_disconnect(esl_handle_t *handle)
 	return status;
 }
 
-ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, esl_event_t **save_event)
+ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms, int check_q, esl_event_t **save_event)
 {
 	fd_set rfds, efds;
 	struct timeval tv = { 0 };
 	int max, activity;
 	esl_status_t status = ESL_SUCCESS;
+
+	if (check_q) {
+		esl_mutex_lock(handle->mutex);
+		if (handle->race_event) {
+			esl_mutex_unlock(handle->mutex);
+			return esl_recv_event(handle, check_q, save_event);
+		}
+		esl_mutex_unlock(handle->mutex);
+	}
 
 	if (!handle || !handle->connected || handle->sock == -1) {
 		return ESL_FAIL;
@@ -718,7 +728,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 
 	tv.tv_usec = ms * 1000;
 
-	esl_mutex_lock(handle->mutex);
+
 	FD_ZERO(&rfds);
 	FD_ZERO(&efds);
 
@@ -736,20 +746,20 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 	max = handle->sock + 1;
 	
 	if ((activity = select(max, &rfds, NULL, &efds, &tv)) < 0) {
-		status = ESL_FAIL;
-		goto done;
+		return ESL_FAIL;
+	}
+
+	if (esl_mutex_trylock(handle->mutex) != ESL_SUCCESS) {
+		return ESL_BREAK;
 	}
 
 	if (activity && FD_ISSET(handle->sock, &rfds)) {
-		if (esl_recv_event(handle, save_event)) {
+		if (esl_recv_event(handle, check_q, save_event)) {
 			status = ESL_FAIL;
-			goto done;
 		}
 	} else {
 		status = ESL_BREAK;
 	}
-
- done:
 
 	if (handle->mutex) esl_mutex_unlock(handle->mutex);
 
@@ -758,25 +768,40 @@ ESL_DECLARE(esl_status_t) esl_recv_event_timed(esl_handle_t *handle, uint32_t ms
 }
 
 
-ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **save_event)
+ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_event_t **save_event)
 {
 	char *c;
 	esl_ssize_t rrval;
 	int crc = 0;
-	esl_event_t *revent = NULL;
+	esl_event_t *revent = NULL, *qevent = NULL;
 	char *beg;
 	char *hname, *hval;
 	char *col;
 	char *cl;
 	esl_ssize_t len;
 	int zc = 0;
-	
 
 	if (!handle->connected) {
 		return ESL_FAIL;
 	}
-
+	
 	esl_mutex_lock(handle->mutex);
+
+	if (check_q && handle->race_event) {
+		qevent = handle->race_event;
+		handle->race_event = handle->race_event->next;
+		qevent->next = NULL;
+
+		if (save_event) {
+			*save_event = qevent;
+			qevent = NULL;
+		} else {
+			handle->last_event = qevent;
+		}
+		
+		esl_mutex_unlock(handle->mutex);
+		return ESL_SUCCESS;
+	}
 
 	esl_event_safe_destroy(&handle->last_event);
 	memset(handle->header_buf, 0, sizeof(handle->header_buf));
@@ -834,7 +859,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 			c++;
 		}
 	}
-
+	
 	if (!revent) {
 		goto fail;
 	}
@@ -862,6 +887,7 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, esl_event_t **sav
 
 	if (save_event) {
 		*save_event = revent;
+		revent = NULL;
 	} else {
 		handle->last_event = revent;
 	}
@@ -992,19 +1018,50 @@ ESL_DECLARE(esl_status_t) esl_send_recv(esl_handle_t *handle, const char *cmd)
 		return ESL_FAIL;
 	}
 
+
 	esl_mutex_lock(handle->mutex);
 
+	esl_event_safe_destroy(&handle->last_event);
+	esl_event_safe_destroy(&handle->last_sr_event);
+
+	*handle->last_sr_reply = '\0';
+
 	if ((status = esl_send(handle, cmd))) {
+		esl_mutex_unlock(handle->mutex);
 		return status;
 	}
 
-	status = esl_recv_event(handle, &handle->last_sr_event);
-	
-	if (handle->last_sr_event) {
-		hval = esl_event_get_header(handle->last_sr_event, "reply-text");
+ recv:	
 
-		if (!esl_strlen_zero(hval)) {
-			strncpy(handle->last_sr_reply, hval, sizeof(handle->last_sr_reply));
+	status = esl_recv_event(handle, 0, &handle->last_sr_event);
+
+	if (handle->last_sr_event) {
+		char *ct = esl_event_get_header(handle->last_sr_event,"content-type");
+
+		if (strcasecmp(ct, "api/response") && strcasecmp(ct, "command/reply")) {
+			esl_event_t *ep;
+
+			for(ep = handle->race_event; ep && ep->next; ep = ep->next);
+			
+			if (ep) {
+				ep->next = handle->last_sr_event;
+			} else {
+				handle->race_event = handle->last_sr_event;
+			}
+
+			handle->last_sr_event = NULL;
+			
+			esl_mutex_unlock(handle->mutex);
+			esl_mutex_lock(handle->mutex);
+			goto recv;
+		}
+
+		if (handle->last_sr_event) {
+			hval = esl_event_get_header(handle->last_sr_event, "reply-text");
+
+			if (!esl_strlen_zero(hval)) {
+				strncpy(handle->last_sr_reply, hval, sizeof(handle->last_sr_reply));
+			}		
 		}
 	}
 	
