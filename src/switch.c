@@ -270,7 +270,6 @@ int main(int argc, char *argv[])
 	int nc = 0;					/* TRUE if we are running in noconsole mode */
 	pid_t pid = 0;
 	int x;
-	int die = 0;
 	char *usageDesc;
 	int alt_dirs = 0;
 	int known_opt;
@@ -470,8 +469,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-stop")) {
-			die++;
-			known_opt++;
+				return freeswitch_kill_background();
 		}
 
 		if (argv[x] && !strcmp(argv[x], "-nc")) {
@@ -592,10 +590,6 @@ int main(int argc, char *argv[])
 	if (apr_initialize() != SWITCH_STATUS_SUCCESS) {
 		fprintf(stderr, "FATAL ERROR! Could not initialize APR\n");
 		return 255;
-	}
-
-	if (die) {
-		return freeswitch_kill_background();
 	}
 
 	if (alt_dirs && alt_dirs != 3) {
