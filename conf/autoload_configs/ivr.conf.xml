@@ -49,10 +49,7 @@
           max-failures="3">
       <entry action="menu-exit" digits="*"/>
       <entry action="menu-playback" digits="1" param="say:You pressed 1"/>
-      <entry action="menu-call-transfer" digits="2" param=
-
-
-"1000"/>
+      <entry action="menu-call-transfer" digits="2" param="1000"/>
       <entry action="menu-call-transfer" digits="3" param="1001"/>
     </menu>
 -->
