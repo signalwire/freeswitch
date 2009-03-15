@@ -5,7 +5,7 @@ import sys
 
 from ESL import *
 
-con = ESLconnection("localhost","8021","ClueCon")
+con = ESLconnection("localhost","8021","rad1ance")
 #are we connected?
 
 if con.connected:

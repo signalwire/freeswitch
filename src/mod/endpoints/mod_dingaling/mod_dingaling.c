@@ -1868,10 +1868,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_dingaling_shutdown)
 	if (globals.running) {
 		int x = 0;
 		globals.running = 0;
+		ldl_global_terminate();
 		while (globals.handles > 0) {
 			switch_yield(100000);
 			x++;
-			if (x > 10) {
+			if (x > 100) {
 				break;
 			}
 		}

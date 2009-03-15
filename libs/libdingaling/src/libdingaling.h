@@ -603,6 +603,9 @@ ldl_status ldl_handle_destroy(ldl_handle_t **handle);
   \param log_stream the new log stream
 */
 void ldl_handle_set_log_stream(ldl_handle_t *handle, FILE *log_stream);
+
+ldl_status ldl_global_terminate(void);
+
 ///\}
 
 

@@ -1432,7 +1432,7 @@ static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
 
 	ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
 
-	while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
+	while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 		ldl_flush_queue(handle, 0);
 
 		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
@@ -1467,7 +1467,7 @@ static void launch_queue_thread(ldl_handle_t *handle)
 
 static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 {
-	while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
+	while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 		int e;
 		char tmp[512], *sl;
 
@@ -1522,7 +1522,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 			launch_queue_thread(handle);
 		}
 
-		while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
+		while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 			e = iks_recv(handle->parser, 1);
 			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && handle->loop_callback) {
 				if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
@@ -2166,6 +2166,12 @@ ldl_status ldl_session_get_payloads(ldl_session_t *session, ldl_payload_t **payl
 	}
 }
 
+ldl_status ldl_global_terminate(void)
+{
+	ldl_clear_flag_locked((&globals), LDL_FLAG_READY);
+	return LDL_STATUS_SUCCESS;
+}
+
 ldl_status ldl_global_init(int debug)
 {
 	if (ldl_test_flag((&globals), LDL_FLAG_INIT)) {
@@ -2191,6 +2197,7 @@ ldl_status ldl_global_init(int debug)
 	globals.logger = default_logger;
 	globals.avatar_hash = apr_hash_make(globals.memory_pool);
 	ldl_set_flag_locked((&globals), LDL_FLAG_INIT);
+	ldl_set_flag_locked((&globals), LDL_FLAG_READY);
 	
 	return LDL_STATUS_SUCCESS;
 }
