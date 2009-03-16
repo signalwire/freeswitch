@@ -152,7 +152,7 @@ static void send_event_to_attached_sessions(listener_t* listener, switch_event_t
 	for (s = listener->session_list; s; s = s->next) {
 		/* check the event uuid against the uuid of each session */
 		if (!strcmp(uuid, switch_core_session_get_uuid(s->session))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending event to attached session\n");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending event to attached session for %s\n", switch_core_session_get_uuid(s->session));
 			if (switch_event_dup(&clone, event) == SWITCH_STATUS_SUCCESS) {
 				/* add the event to the queue for this session */
 				if (switch_queue_trypush(s->event_queue, clone) != SWITCH_STATUS_SUCCESS) {
@@ -525,7 +525,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 
 			/* event is a hangup, so this session can be removed */
 			if (pevent->event_id == SWITCH_EVENT_CHANNEL_HANGUP) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup event for attached session\n");
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup event for attached session for %s\n", switch_core_session_get_uuid(sp->session));
 
 				/* remove session from list */
 				if (last)
@@ -1269,7 +1269,11 @@ SWITCH_STANDARD_API(erlang_cmd)
 	char *mycmd = NULL;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	const char *usage_string = "Supply some arguments, maybe?";
+	const char *usage_string = "USAGE:\n"
+		"--------------------------------------------------------------------------------\n"
+		"erlang listeners\n"
+		"erlang sessions <node_name>\n"
+		"--------------------------------------------------------------------------------\n";
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "%s", usage_string);
@@ -1292,11 +1296,43 @@ SWITCH_STANDARD_API(erlang_cmd)
 		listener_t *l;
 		switch_mutex_lock(globals.listener_mutex);
 
-		for (l = listen_list.listeners; l; l = l->next) {
-			stream->write_function(stream, "Listener to %s with %d outbound sessions\n", l->peer_nodename, count_listener_sessions(l));
+		if (listen_list.listeners) {
+			for (l = listen_list.listeners; l; l = l->next) {
+				stream->write_function(stream, "Listener to %s with %d outbound sessions\n", l->peer_nodename, count_listener_sessions(l));
+			}
+		} else {
+			stream->write_function(stream, "No active listeners\n");
 		}
 
 		switch_mutex_unlock(globals.listener_mutex);
+	} else if (!strcasecmp(argv[0], "sessions") && argc == 2) {
+		listener_t *l;
+		int found = 0;
+
+		switch_mutex_lock(globals.listener_mutex);
+		for (l = listen_list.listeners; l; l = l->next) {
+			if (!strcasecmp(l->peer_nodename, argv[1])) {
+				session_elem_t *sp;
+
+				found = 1;
+				switch_mutex_lock(l->session_mutex);
+				if ((sp = l->session_list)) {
+					while(sp) {
+						stream->write_function(stream, "Outbound session for %s\n", switch_core_session_get_uuid(sp->session));
+						sp = sp->next;
+					}
+					switch_mutex_unlock(l->session_mutex);
+				} else {
+					stream->write_function(stream, "No active sessions for %s\n", argv[1]);
+				}
+				break;
+			}
+		}
+		switch_mutex_unlock(globals.listener_mutex);
+
+		if (!found)
+			stream->write_function(stream, "Could not find a listener for %s\n", argv[1]);
+
 	} else {
 		stream->write_function(stream, "I don't care for those arguments at all, sorry");
 		goto done;
