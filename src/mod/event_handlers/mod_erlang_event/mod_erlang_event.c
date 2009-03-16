@@ -487,6 +487,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	session_elem_t *last,*sp;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	void *pop;
+	int removed = 0;
 	/* check up on all the attached sessions -
 	   if they have not yet sent an initial call event to the associated erlang process then do so
 	   if they have pending events in their queues then send them
@@ -496,6 +497,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 	sp = listener->session_list;
 	last = NULL;
 	while(sp) {
+		removed = 0;
 		if (switch_test_flag(sp, LFLAG_WAITING_FOR_PID)) {
 			break;
 		}
@@ -538,6 +540,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 				/* this allows the application threads to exit */
 				switch_clear_flag_locked(sp, LFLAG_SESSION_ALIVE);
 				switch_core_session_rwunlock(sp->session);
+				removed = 1;
 
 				/* TODO
 				   if this listener was created outbound, and the last session has been detached
@@ -548,7 +551,8 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			ei_x_free(&ebuf);
 			switch_event_destroy(&pevent);
 		}
-		last = sp;
+		if (!removed)
+			last = sp;
 		sp = sp->next;
 	}
 	switch_mutex_unlock(listener->session_mutex);
@@ -1321,10 +1325,10 @@ SWITCH_STANDARD_API(erlang_cmd)
 						stream->write_function(stream, "Outbound session for %s\n", switch_core_session_get_uuid(sp->session));
 						sp = sp->next;
 					}
-					switch_mutex_unlock(l->session_mutex);
 				} else {
 					stream->write_function(stream, "No active sessions for %s\n", argv[1]);
 				}
+				switch_mutex_unlock(l->session_mutex);
 				break;
 			}
 		}
