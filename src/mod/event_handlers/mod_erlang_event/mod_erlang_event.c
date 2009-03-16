@@ -516,7 +516,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			   to distinguish them from normal events (if they are sent to the same process)
 			 */
 			ei_x_buff ebuf;
-			ei_x_new_with_version(&ebuf);		 
+			ei_x_new_with_version(&ebuf);
 			ei_x_encode_tuple_header(&ebuf, 2);
 			ei_x_encode_atom(&ebuf, "call_event");
 			ei_encode_switch_event(&ebuf, pevent);
@@ -524,6 +524,7 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			switch_mutex_lock(listener->sock_mutex);
 			ei_sendto(listener->ec, listener->sockfd, &sp->process, &ebuf);
 			switch_mutex_unlock(listener->sock_mutex);
+			ei_x_free(&ebuf);
 
 			/* event is a hangup, so this session can be removed */
 			if (pevent->event_id == SWITCH_EVENT_CHANNEL_HANGUP) {
@@ -534,7 +535,6 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 					last->next = sp->next;
 				else
 					listener->session_list = sp->next;
-					
 
 				switch_channel_clear_flag(switch_core_session_get_channel(sp->session), CF_CONTROLLED);
 				/* this allows the application threads to exit */
@@ -542,13 +542,18 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 				switch_core_session_rwunlock(sp->session);
 				removed = 1;
 
+				ei_x_new_with_version(&ebuf);
+				ei_x_encode_atom(&ebuf, "call_hangup");
+				switch_mutex_lock(listener->sock_mutex);
+				ei_sendto(listener->ec, listener->sockfd, &sp->process, &ebuf);
+				switch_mutex_unlock(listener->sock_mutex);
+				ei_x_free(&ebuf);
+
 				/* TODO
 				   if this listener was created outbound, and the last session has been detached
 				   should the listener also exit? Does it matter?
 				 */
 			}
-			
-			ei_x_free(&ebuf);
 			switch_event_destroy(&pevent);
 		}
 		if (!removed)
