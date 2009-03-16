@@ -1106,6 +1106,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_limit_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_limit_shutdown) 
 {
+	
+	#ifdef SWITCH_HAVE_ODBC
+	if (globals.master_odbc) {
+		switch_odbc_handle_destroy(&globals.master_odbc);
+	}
+	#endif
+	
 	switch_event_free_subclass(LIMIT_EVENT_USAGE);
 	
 	switch_xml_config_cleanup(config_settings);
