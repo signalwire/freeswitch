@@ -114,6 +114,7 @@ struct profile_obj {
 	switch_bool_t custom_sql_has_vars;
 	
 	switch_bool_t reorder_by_rate;
+	switch_bool_t quote_in_list;
 };
 typedef struct profile_obj profile_t;
 
@@ -296,7 +297,7 @@ static char *escape_sql(const char *sql)
 #endif
 
 /* expand the digits */
-static char *expand_digits(switch_memory_pool_t *pool, char *digits)
+static char *expand_digits(switch_memory_pool_t *pool, char *digits, switch_bool_t quote)
 {
 	switch_stream_handle_t dig_stream = { 0 };
 	char *ret;
@@ -304,13 +305,17 @@ static char *expand_digits(switch_memory_pool_t *pool, char *digits)
 	int n;
 	int digit_len;
 	SWITCH_STANDARD_STREAM(dig_stream);
-	
+
 	digit_len = strlen(digits);
 	digits_copy = switch_core_strdup(pool, digits);
 	
 	for (n = digit_len; n > 0; n--) {
 		digits_copy[n] = '\0';
-		dig_stream.write_function(&dig_stream, "%s%s", (n==digit_len ? "" : ", "), digits_copy);
+		dig_stream.write_function(&dig_stream, "%s%s%s%s", 
+									(n==digit_len ? "" : ", "), 
+									(quote ? "'" : ""),
+									digits_copy,
+									(quote ? "'" : ""));
 	}
 
 	ret = switch_core_strdup(pool, dig_stream.data);
@@ -494,7 +499,6 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 {
 	/* instantiate the object/struct we defined earlier */
 	switch_stream_handle_t sql_stream = { 0 };
-	size_t n, digit_len = strlen(digits);
 	char *digits_copy;
 	char *digits_expanded;
 	profile_t *profile = cb_struct->profile;
@@ -516,7 +520,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
 	SWITCH_STANDARD_STREAM(sql_stream);
 	
-	digits_expanded = expand_digits(cb_struct->pool, digits_copy);
+	digits_expanded = expand_digits(cb_struct->pool, digits_copy, cb_struct->profile->quote_in_list);
 	
 	/* set some channel vars if we have a session */
 	if (cb_struct->session) {
@@ -534,10 +538,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 								  "SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
 								  );
 		sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
-		for (n = digit_len; n > 0; n--) {
-			digits_copy[n] = '\0';
-			sql_stream.write_function(&sql_stream, "%s%s", (n==digit_len ? "" : ", "), digits_copy);
-		}
+		sql_stream.write_function(&sql_stream, "%s", digits_expanded);
 		sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
 		if (profile->id > 0) {
 			sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
@@ -647,6 +648,7 @@ static switch_status_t lcr_load_config()
 			switch_stream_handle_t pre_order = { 0 };
 			switch_stream_handle_t *thisorder = NULL;
 			char *reorder_by_rate = NULL;
+			char *quote_in_list = NULL;
 			char *id_s = NULL;
 			char *custom_sql = NULL;
 			int argc, x = 0;
@@ -699,6 +701,8 @@ static switch_status_t lcr_load_config()
 					custom_sql = val;
 				} else if (!strcasecmp(var, "reorder_by_rate") && !switch_strlen_zero(val)) {
 					reorder_by_rate = val;
+				} else if (!strcasecmp(var, "quote_in_list") && !switch_strlen_zero(val)) {
+					quote_in_list = val;
 				}
 			}
 			
@@ -738,6 +742,10 @@ static switch_status_t lcr_load_config()
 				
 				if (!switch_strlen_zero(reorder_by_rate)) {
 					profile->reorder_by_rate = switch_true(reorder_by_rate);
+				}
+				
+				if (!switch_strlen_zero(quote_in_list)) {
+					profile->quote_in_list = switch_true(quote_in_list);
 				}
 				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
@@ -1040,6 +1048,8 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				}
 				stream->write_function(stream, " Reorder rate:\t%s\n", 
 										profile->reorder_by_rate ? "enabled" : "disabled");
+				stream->write_function(stream, " Quote IN() List:\t%s\n", 
+										profile->quote_in_list ? "enabled" : "disabled");
 				stream->write_function(stream, "\n");
 			}
 		} else {
