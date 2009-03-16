@@ -115,7 +115,7 @@ struct switch_xml_root {		/* additional data for the root tag */
 	switch_xml_t cur;			/* current xml tree insertion point */
 	char *m;					/* original xml string */
 	switch_size_t len;			/* length of allocated memory for mmap */
-	uint8_t dynamic;
+	uint8_t dynamic;			/* Free the original string when calling switch_xml_free */
 	char *u;					/* UTF-8 conversion of string if original was UTF-16 */
 	char *s;					/* start of work area */
 	char *e;					/* end of work area */
@@ -1551,9 +1551,12 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && (tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
 			if (clone) {
 				char *x;
+				switch_xml_root_t xmlroot = NULL;
 				x = switch_xml_toxml(tag, SWITCH_FALSE);
 				switch_assert(x);
-				*root = switch_xml_parse_str(x, strlen(x));
+				xmlroot = (switch_xml_root_t)switch_xml_parse_str(x, strlen(x));
+				xmlroot->dynamic = 1;	/* free the memory in switch_xml_free */
+				*root = (switch_xml_t)xmlroot;
 				*node = *root;
 				switch_xml_free(xml);
 			} else {
