@@ -610,7 +610,7 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-#ifdef HAVE_SETRLIMIT
+#if defined(HAVE_SETRLIMIT) && !defined(__sun)
 	if (!waste) {
 		memset(&rlp, 0, sizeof(rlp));
 		getrlimit(RLIMIT_STACK, &rlp);
