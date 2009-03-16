@@ -38,7 +38,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_g729_load);
 SWITCH_MODULE_DEFINITION(mod_g729, mod_g729_load, NULL, NULL);
 
 #ifndef G729_PASSTHROUGH
-#include "g729ab.h"
+#include "g729.h"
 
 struct g729_context {
 	struct dec_state decoder_object;
@@ -112,7 +112,7 @@ static switch_status_t switch_g729_encode(switch_codec_t *codec,
 	if (decoded_data_len % 160 == 0) {
 		uint32_t new_len = 0;
 		INT16 *ddp = decoded_data;
-		unsigned char *edp = encoded_data;
+		char *edp = encoded_data;
 		int x;
 		int loops = (int) decoded_data_len / 160;
 
@@ -170,7 +170,7 @@ static switch_status_t switch_g729_decode(switch_codec_t *codec,
 		if (encoded_data_len % divisor == 0) {
 			uint8_t *test;
 			int loops = (int) encoded_data_len / divisor;
-			unsigned char *edp = encoded_data;
+			char *edp = encoded_data;
 			short *ddp = decoded_data;
 			int x;
 			uint32_t new_len = 0;

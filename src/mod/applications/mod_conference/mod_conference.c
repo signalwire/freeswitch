@@ -2922,7 +2922,7 @@ static switch_status_t conf_api_sub_kick(conference_member_t *member, switch_str
 {
 	switch_event_t *event;
 
-	if (member == NULL || switch_test_flag(member, MFLAG_NOCHANNEL))
+	if (member == NULL)
 		return SWITCH_STATUS_GENERR;
 
 	switch_mutex_lock(member->control_mutex);

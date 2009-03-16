@@ -272,6 +272,8 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	switch_time_t started = switch_time_now();
+	unsigned int elapsed;
 	switch_byte_t *data;
 
 	channel = switch_core_session_get_channel(session);
