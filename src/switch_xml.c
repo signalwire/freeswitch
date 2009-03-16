@@ -2035,7 +2035,7 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 		*s = tmp;
 	}
 
-	if (*(*s + (*len) - 1) == '>') {
+	if (*len && *(*s + (*len) - 1) == '>') {
 		*len += sprintf(*s + *len, "\n");	/* indent */
 	}
 	for (lcount = 0; lcount < *count; lcount++) {
