@@ -1303,10 +1303,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			for (i = 0; i < and_argc; i++) {
 				char *vdata;
-				end = NULL;
-				chan_type = peer_names[i];
 				const char *current_variable;
 				char variable_buffer[512] = "";
+				end = NULL;
+				chan_type = peer_names[i];
 
 				while (chan_type && *chan_type && *chan_type == ' ') {
 					chan_type++;
