@@ -1490,9 +1490,10 @@ static void *zap_isdn_tones_run(zap_thread_t *me, void *obj)
 			break;
 		}
 	}
+	if (!interval) {
+		interval = 20;
+	}
 	zap_log(ZAP_LOG_NOTICE, "Tone generating interval %d\n", interval);
-
-	assert(interval != 0);
 
 	/* init teletone */
 	teletone_init_session(&ts, 0, teletone_handler, dt_buffer);
