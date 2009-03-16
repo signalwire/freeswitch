@@ -3332,14 +3332,13 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 void sofia_glue_sql_close(sofia_profile_t *profile)
 {
 #ifdef SWITCH_HAVE_ODBC
-	if (profile->odbc_dsn) {
+	if (profile->master_odbc) {
 		switch_odbc_handle_destroy(&profile->master_odbc);
-		return;
 	}
-#endif
-
+#else
 	switch_core_db_close(profile->master_db);
 	profile->master_db = NULL;
+#endif
 }
 
 
