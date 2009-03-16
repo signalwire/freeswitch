@@ -247,13 +247,13 @@ static switch_bool_t set_db_random()
 {
 	char *sql = NULL;
 	if (globals.odbc_dsn) {
-		sql = "SELECT * FROM lcr ORDER BY rand() LIMIT 1";
+		sql = "SELECT rand()";
 		if (switch_odbc_handle_exec(globals.master_odbc, sql, NULL)
 				== SWITCH_ODBC_SUCCESS) {
 			db_random = "rand()";
 			return SWITCH_TRUE;
 		}
-		sql = "SELECT * FROM lcr ORDER BY random() LIMIT 1";
+		sql = "SELECT random()";
 		if (switch_odbc_handle_exec(globals.master_odbc, sql, NULL)
 				== SWITCH_ODBC_SUCCESS) {
 			db_random = "random()";
