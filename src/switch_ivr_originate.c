@@ -178,7 +178,7 @@ static void *SWITCH_THREAD_FUNC collect_thread_run(switch_thread_t *thread, void
 		goto wbreak;
 	}
 
-	if (switch_channel_up(channel)) {
+	if (!switch_channel_up(channel)) {
 		switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 		goto wbreak;
 	}
