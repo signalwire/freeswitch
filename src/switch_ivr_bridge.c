@@ -307,13 +307,13 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
 					goto end_of_bridge_loop;
 				}
-				ans_a++;
+				ans_a = 1;
 			} else if (!pre_b && switch_channel_test_flag(chan_b, CF_EARLY_MEDIA)) {
 				if (switch_channel_pre_answer(chan_a) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Media Establishment Failed.\n", switch_channel_get_name(chan_a));
 					goto end_of_bridge_loop;
 				}
-				pre_b++;
+				pre_b = 1;
 			}
 			if (!pre_b) {
 				switch_yield(10000);
@@ -321,7 +321,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 			}
 		}
 
-		if (!ans_a && !ans_b) {
+		if (ans_a != ans_b) {
 			switch_channel_t *un = ans_a ? chan_b : chan_a;
 			
 			if (switch_channel_answer(un) != SWITCH_STATUS_SUCCESS) {
@@ -329,7 +329,7 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 				goto end_of_bridge_loop;
 			}
 			
-			if (ans_a) ans_b++; else ans_a++;
+			if (ans_a) ans_b = 1; else ans_a = 1;
 		}
 		
 
