@@ -65,11 +65,11 @@ ESLevent *ESLconnection::api(const char *cmd, const char *arg)
 
 	len = strlen(cmd) + (arg ? strlen(arg) : 0) + 10;
 
-	cmd_buf = (char *) malloc(len);
+	cmd_buf = (char *) malloc(len + 1);
 	assert(cmd_buf);
 
 	snprintf(cmd_buf, len, "api %s %s", cmd, arg ? arg : "");
-	*(cmd_buf + (len + 1)) = '\0';
+	*(cmd_buf + (len)) = '\0';
 
 
 	if (esl_send_recv(&handle, cmd_buf) == ESL_SUCCESS) {
@@ -94,11 +94,11 @@ ESLevent *ESLconnection::bgapi(const char *cmd, const char *arg)
 
 	len = strlen(cmd) + (arg ? strlen(arg) : 0) + 10;
 
-	cmd_buf = (char *) malloc(len);
+	cmd_buf = (char *) malloc(len + 1);
 	assert(cmd_buf);
 
 	snprintf(cmd_buf, len, "bgapi %s %s", cmd, arg ? arg : "");
-	*(cmd_buf + (len + 1)) = '\0';
+	*(cmd_buf + (len)) = '\0';
 
 	if (esl_send_recv(&handle, cmd_buf) == ESL_SUCCESS) {
 		esl_event_t *event;
