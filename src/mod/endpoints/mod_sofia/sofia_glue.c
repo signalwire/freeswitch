@@ -2297,6 +2297,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 			switch_yield(250000);
 
 			if (tech_pvt->max_missed_packets) {
+				switch_rtp_reset_media_timer(tech_pvt->rtp_session);
 				switch_rtp_set_max_missed_packets(tech_pvt->rtp_session, tech_pvt->max_missed_packets);
 			}
 
