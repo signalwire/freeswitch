@@ -631,14 +631,6 @@ static switch_status_t lcr_load_config()
 		}
 	}
 	
-	/* define default profile  */
-	profile = switch_core_alloc(globals.pool, sizeof(*profile));
-	memset(profile, 0, sizeof(profile_t));
-	profile->name = "global_default";
-	profile->order_by = ", rate";
-	profile->pre_order = "";
-	globals.default_profile = profile;
-	
 	switch_core_hash_init(&globals.profile_hash, globals.pool);
 	if ((x_profiles = switch_xml_child(cfg, "profiles"))) {
 		for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
@@ -750,6 +742,11 @@ static switch_status_t lcr_load_config()
 				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded lcr profile %s.\n", profile->name);
+				
+				if (!strcasecmp(profile->name, "default")) {
+					globals.default_profile = profile;
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting user defined default profile: %s.\n", profile->name);
+				}
 			}
 			switch_safe_free(order_by.data);
 			switch_safe_free(pre_order.data);
@@ -758,7 +755,18 @@ static switch_status_t lcr_load_config()
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No lcr profiles defined.\n");
 	}
 	
- done:
+	/* define default profile  */
+	if (!globals.default_profile) {
+		profile = switch_core_alloc(globals.pool, sizeof(*profile));
+		memset(profile, 0, sizeof(profile_t));
+		profile->name = "global_default";
+		profile->order_by = ", rate";
+		profile->pre_order = "";
+		globals.default_profile = profile;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting system defined default profile.");
+	}
+
+	done:
 	switch_xml_free(xml);
 	return status;
 }
