@@ -1440,7 +1440,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				}
 				
 				if (current_variable || (current_variable = switch_event_get_header(var_event, "origination_caller_id_name"))) {
-					new_profile->caller_id_number = switch_core_strdup(new_profile->pool, current_variable);
+					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, current_variable);
 					myflags |= SOF_NO_EFFECTIVE_CID_NAME;
 				}
 				
