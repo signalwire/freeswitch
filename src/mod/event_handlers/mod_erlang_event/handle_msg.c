@@ -490,7 +490,7 @@ static switch_status_t handle_msg_sendmsg(listener_t *listener, int arity, ei_x_
 					
 				}
 			}
-			/* release the lock returned by switch_core_session_locate */
+			/* release the lock returned by session locate */
 			switch_core_session_rwunlock(session);
 
 		} else {
@@ -579,7 +579,7 @@ static switch_status_t handle_msg_handlecall(listener_t *listener, erlang_msg *m
 					ei_x_encode_atom(rbuf, "error");
 					ei_x_encode_atom(rbuf, "session_attach_failed");
 				}
-				/* release the lock returned by switch_core_session_locate */
+				/* release the lock returned by session locate */
 				switch_core_session_rwunlock(session);
 			} else {
 				ei_x_encode_tuple_header(rbuf, 2);

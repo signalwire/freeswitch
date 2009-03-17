@@ -311,8 +311,6 @@ static void remove_session_elem_from_listener(listener_t *listener, session_elem
 	if (!session_element)
 		return;
 
-		return;
-
 	switch_mutex_lock(listener->session_mutex);
 	for(s = listener->session_list; s; s = s->next) {
 		if (s == session_element) {
@@ -322,12 +320,12 @@ static void remove_session_elem_from_listener(listener_t *listener, session_elem
 			} else {
 				listener->session_list = s->next;
 			}
-			if (!(session = switch_core_session_locate(session_element->uuid_str))) {
+			if ((session = switch_core_session_locate(session_element->uuid_str))) {
 				switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
-				/* this allows the application threads to exit */
-				switch_clear_flag_locked(s, LFLAG_SESSION_ALIVE);
 				switch_core_session_rwunlock(session);
 			}
+			/* this allows the application threads to exit */
+			switch_clear_flag_locked(s, LFLAG_SESSION_ALIVE);
 			break;
 		}
 		last = s;
@@ -460,17 +458,20 @@ static switch_status_t notify_new_session(listener_t *listener, session_elem_t *
 	/* Send a message to the associated registered process to let it know there is a call.
 	   Message is a tuple of the form {call, <call-event>}
 	*/
-	if (!(session = switch_core_session_locate(session_element->uuid_str)))
-		return SWITCH_STATUS_FALSE;
-
-	channel = switch_core_session_get_channel(session);
-	switch_core_session_rwunlock(session);
+	
 	if (switch_event_create(&call_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 		return SWITCH_STATUS_MEMERR;
 	}
+
+	if (!(session = switch_core_session_locate(session_element->uuid_str)))
+		return SWITCH_STATUS_FALSE;
+
+	channel = switch_core_session_get_channel(session);
+
 	switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
 	switch_channel_event_set_data(channel, call_event);
+	switch_core_session_rwunlock(session);
 	switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
 	switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
 	
@@ -538,11 +539,11 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 			switch_mutex_unlock(listener->sock_mutex);
 			ei_x_free(&ebuf);
 
-			/* event is a hangup, so this session can be removed */
-			if (pevent->event_id == SWITCH_EVENT_CHANNEL_HANGUP) {
+			/* event is a channel destroy, so this session can be removed */
+			if (pevent->event_id == SWITCH_EVENT_CHANNEL_DESTROY) {
 				switch_core_session_t *session;
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Hangup event for attached session for %s\n", sp->uuid_str);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroy event for attached session for %s\n", sp->uuid_str);
 
 				/* remove session from list */
 				if (last)
@@ -552,10 +553,10 @@ static switch_status_t check_attached_sessions(listener_t *listener)
 
 				if ((session = switch_core_session_locate(sp->uuid_str))) {
 					switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
-					/* this allows the application threads to exit */
-					switch_clear_flag_locked(sp, LFLAG_SESSION_ALIVE);
 					switch_core_session_rwunlock(session);
 				}
+				/* this allows the application threads to exit */
+				switch_clear_flag_locked(sp, LFLAG_SESSION_ALIVE);
 				removed = 1;
 
 				ei_x_new_with_version(&ebuf);
@@ -882,10 +883,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	for (s = listener->session_list; s; s = s->next) {
 		if ((session = switch_core_session_locate(s->uuid_str))) {
 			switch_channel_clear_flag(switch_core_session_get_channel(session), CF_CONTROLLED);
-			/* this allows the application threads to exit */
-			switch_clear_flag_locked(s, LFLAG_SESSION_ALIVE);
 			switch_core_session_rwunlock(session);
 		}
+		/* this allows the application threads to exit */
+		switch_clear_flag_locked(s, LFLAG_SESSION_ALIVE);
 	}
 	switch_mutex_unlock(listener->session_mutex);
 
@@ -1148,7 +1149,6 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 			while (!(p = switch_core_hash_find(listener->spawn_pid_hash, hash)) || p == &globals.WAITING) {
 				if (i > 50) { /* half a second timeout */
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Timed out when waiting for outbound pid\n");
-					/*switch_core_session_rwunlock(session);*/
 					remove_session_elem_from_listener(listener,session_element);
 					switch_core_hash_insert(listener->spawn_pid_hash, hash, &globals.TIMEOUT); /* TODO lock this? */
 					return NULL;
