@@ -389,6 +389,7 @@ static ldl_status parse_session_code(ldl_handle_t *handle, char *id, char *from,
 			if (!strcasecmp(type, "initiate") || !strcasecmp(type, "accept")) {
 
 				dl_signal = LDL_SIGNAL_INITIATE;
+
 				if (!strcasecmp(type, "accept")) {
 					msg = "accept";
 				}
@@ -1432,10 +1433,10 @@ static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
 
 	ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
 
-	while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
+	while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 		ldl_flush_queue(handle, 0);
 
-		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS) {
+		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS || !ldl_test_flag((&globals), LDL_FLAG_READY)) {
 			int fd;
 
 			if ((fd = iks_fd(handle->parser)) > -1) {
@@ -1470,6 +1471,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 	while (ldl_test_flag((&globals), LDL_FLAG_READY) && ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
 		int e;
 		char tmp[512], *sl;
+		int fd;
 
 		handle->parser = iks_stream_new(ldl_test_flag(handle, LDL_FLAG_COMPONENT) ? IKS_NS_COMPONENT : IKS_NS_CLIENT,
 										handle,
@@ -1570,6 +1572,10 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		ldl_clear_flag_locked(handle, LDL_FLAG_CONNECTED);
 		ldl_clear_flag_locked(handle, LDL_FLAG_AUTHORIZED);
 		handle->state = CS_NEW;
+		
+		if ((fd = iks_fd(handle->parser)) > -1) {
+			shutdown(fd, 0x02);
+		}
 
 		while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
 			microsleep(100);
@@ -2224,7 +2230,7 @@ void ldl_global_set_log_stream(FILE *log_stream)
 
 int8_t ldl_handle_ready(ldl_handle_t *handle)
 {
-	return (int8_t)ldl_test_flag(handle, LDL_FLAG_READY);
+	return (int8_t) (ldl_test_flag(handle, LDL_FLAG_READY) && ldl_test_flag((&globals), LDL_FLAG_READY));
 }
 
 ldl_status ldl_handle_init(ldl_handle_t **handle,

@@ -873,9 +873,14 @@ static int activate_rtp(struct private_object *tech_pvt)
 					  tech_pvt->local_port, tech_pvt->remote_ip, tech_pvt->remote_port);
 
 	flags = SWITCH_RTP_FLAG_DATAWAIT | SWITCH_RTP_FLAG_GOOGLEHACK | SWITCH_RTP_FLAG_AUTOADJ | SWITCH_RTP_FLAG_RAW_WRITE | SWITCH_RTP_FLAG_AUTO_CNG;
+	
 
 	if (switch_test_flag(tech_pvt->profile, TFLAG_TIMER)) {
 		flags |= SWITCH_RTP_FLAG_USE_TIMER;
+	}
+
+	if (switch_true(switch_channel_get_variable(channel, "disable_rtp_auto_adjust"))) {
+		flags &= ~SWITCH_RTP_FLAG_AUTOADJ;
 	}
 
 	if (!(tech_pvt->rtp_session = switch_rtp_new(tech_pvt->profile->ip,
@@ -1131,7 +1136,9 @@ static switch_status_t negotiate_media(switch_core_session_t *session)
 		if (!do_candidates(tech_pvt, 0)) {
 			goto out;
 		}
-		switch_channel_answer(channel);
+		if (switch_test_flag(tech_pvt, TFLAG_TRANSPORT_ACCEPT)) {
+			switch_channel_answer(channel);
+		}
 	}
 	ret = SWITCH_STATUS_SUCCESS;
 
@@ -2549,7 +2556,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			status = LDL_STATUS_FALSE;
 			goto done;
 		}
-
+		
 	} else {
 		if (dl_signal != LDL_SIGNAL_INITIATE && !msg) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session is already dead\n");
@@ -2746,6 +2753,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 			if (switch_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
 				if (!strcasecmp(msg, "accept")) {
 					switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
+					switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 					if (!do_candidates(tech_pvt, 0)) {
 						terminate_session(&session, __LINE__, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 						status = LDL_STATUS_FALSE;
@@ -2909,7 +2917,7 @@ static ldl_status handle_signalling(ldl_handle_t *handle, ldl_session_t *dlsessi
 				}
 
 				if (!strcasecmp(subject, "candidates")) {
-					switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
+					//switch_set_flag_locked(tech_pvt, TFLAG_TRANSPORT_ACCEPT);
 					switch_set_flag_locked(tech_pvt, TFLAG_ANSWER);
 				}
 
