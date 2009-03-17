@@ -124,7 +124,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_shutdown(void);
 SWITCH_DECLARE(switch_status_t) switch_event_create_subclass_detailed(const char *file, const char *func, int line,
 																	  switch_event_t **event, switch_event_types_t event_id, const char *subclass_name);
 
-#define switch_event_create_subclass(_e, _eid, _sn) switch_event_create_subclass_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, _e, _eid, _sn)
+#define switch_event_create_subclass(_e, _eid, _sn) switch_event_create_subclass_detailed(__FILE__, (const char * )__SWITCH_FUNC__, __LINE__, _e, _eid, _sn)
 
 /*!
   \brief Set the priority of an event
@@ -202,7 +202,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_dup(switch_event_t **event, switch_
 SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data);
 
 SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, const char *func, int line, switch_event_t *event);
-#define switch_event_prep_for_delivery(_event) switch_event_prep_for_delivery_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, _event)
+#define switch_event_prep_for_delivery(_event) switch_event_prep_for_delivery_detailed(__FILE__, (const char * )__SWITCH_FUNC__, __LINE__, _event)
 
 
 /*!
@@ -310,7 +310,7 @@ SWITCH_DECLARE(switch_status_t) switch_event_create_pres_in_detailed(_In_z_ char
 																	 _In_z_ const char *alt_event_type, _In_ int event_count,
 																	 _In_z_ const char *unique_id, _In_z_ const char *channel_state,
 																	 _In_z_ const char *answer_state, _In_z_ const char *call_direction);
-#define switch_event_create_pres_in(event) switch_event_create_pres_in_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, \
+#define switch_event_create_pres_in(event) switch_event_create_pres_in_detailed(__FILE__, (const char * )__SWITCH_FUNC__, __LINE__, \
 											proto, login, from, from_domain, status, event_type, alt_event_type, event_count, \
 											unique_id, channel_state, answer_state, call_direction)
 
@@ -345,7 +345,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-#define switch_event_fire(event) switch_event_fire_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, event, NULL)
+#define switch_event_fire(event) switch_event_fire_detailed(__FILE__, (const char * )__SWITCH_FUNC__, __LINE__, event, NULL)
 
 /*!
   \brief Fire an event filling in most of the arguements with obvious values and allowing user_data to be sent
@@ -354,7 +354,7 @@ SWITCH_DECLARE(void) switch_event_deliver(switch_event_t **event);
   \return SWITCH_STATUS_SUCCESS if the operation was successful
   \note the body supplied by this function will supersede an existing body the event may have
 */
-#define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (char * )__SWITCH_FUNC__, __LINE__, event, data)
+#define switch_event_fire_data(event, data) switch_event_fire_detailed(__FILE__, (const char * )__SWITCH_FUNC__, __LINE__, event, data)
 
 SWITCH_DECLARE(char *) switch_event_build_param_string(switch_event_t *event, const char *prefix, switch_hash_t *vars_map);
 

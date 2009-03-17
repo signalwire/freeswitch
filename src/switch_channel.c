@@ -489,7 +489,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
-	if (!channel->variables || !(v = switch_event_get_header(channel->variables, (char *) varname))) {
+	if (!channel->variables || !(v = switch_event_get_header(channel->variables, varname))) {
 		switch_caller_profile_t *cp = channel->caller_profile;
 
 		if (cp) {
@@ -969,7 +969,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 	switch_channel_clear_flag(channel, CF_TAGGED);
 
 	if (channel->state >= CS_ROUTING && channel->state <= CS_HANGUP) {
-		switch_channel_presence(channel, "unknown", (char *) state_names[state], NULL);
+		switch_channel_presence(channel, "unknown", (const char *) state_names[state], NULL);
 	}
 
 	if (state < CS_HANGUP) {
@@ -978,10 +978,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(
 			if (state == CS_ROUTING) {
 				switch_channel_event_set_data(channel, event);
 			} else {
-				char state_num[25];
-				switch_snprintf(state_num, sizeof(state_num), "%d", state);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", (char *) switch_channel_state_name(state));
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", (char *) state_num);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-State", switch_channel_state_name(state));
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-State-Number", "%d", state);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Name", channel->name);
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Unique-ID", switch_core_session_get_uuid(channel->session));
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Direction",
