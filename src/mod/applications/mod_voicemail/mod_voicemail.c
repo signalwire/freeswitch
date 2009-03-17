@@ -2075,20 +2075,20 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					const char *val = switch_xml_attr_soft(x_param, "value");
 					
 					if (!strcasecmp(var, "a1-hash")) {
-						thehash = val;
+						thehash = switch_core_session_strdup(session, val);
 					} else if (!strcasecmp(var, "vm-a1-hash")) {
-						vmhash = val;
+						vmhash = switch_core_session_strdup(session, val);
 					} else if (!auth && !thepass && !strcasecmp(var, "password")) {
-						thepass = val;
+						thepass = switch_core_session_strdup(session, val);
 					} else if (!auth && !strcasecmp(var, "vm-password")) {
 						if (!switch_strlen_zero(val) && !strcasecmp(val, "user-choose")) {
 							if (switch_strlen_zero(cbt.password)) {
 								auth = 1;
 							} else {
-								thepass = val;
+								thepass = switch_core_session_strdup(session, val);
 							}
 						} else {
-							thepass = val;
+							thepass = switch_core_session_strdup(session, val);
 						}
 					} else if (!strcasecmp(var, "vm-mailto")) {
 						vm_email = switch_core_session_strdup(session, val);
