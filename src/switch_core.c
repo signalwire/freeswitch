@@ -298,8 +298,8 @@ static void *switch_core_service_thread(switch_thread_t *thread, void *obj)
 	switch_channel_t *channel;
 	switch_frame_t *read_frame;
 
-	switch_assert(thread != NULL);
-	switch_assert(session != NULL);
+//	switch_assert(thread != NULL);
+//	switch_assert(session != NULL);
 
 	if (switch_core_session_read_lock(session) != SWITCH_STATUS_SUCCESS) {
 		return NULL;

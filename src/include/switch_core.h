@@ -566,7 +566,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(_In_ sw
 																		 _Inout_opt_ switch_memory_pool_t **pool, _In_opt_z_ const char *use_uuid);
 #define switch_core_session_request(_ep, _d, _p) switch_core_session_request_uuid(_ep, _d, _p, NULL)
 
-SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(switch_core_session_t *session, const char *use_uuid);
+SWITCH_DECLARE(switch_status_t) switch_core_session_set_uuid(_In_ switch_core_session_t *session, _In_z_ const char *use_uuid);
 
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_session_t **session,
 														 _In_z_ const char *file, _In_z_ const char *func, _In_ int line);
@@ -584,7 +584,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_ses
 */
 SWITCH_DECLARE(uint32_t) switch_core_session_count(void);
 
-SWITCH_DECLARE(switch_size_t) switch_core_session_get_id(switch_core_session_t *session);
+SWITCH_DECLARE(switch_size_t) switch_core_session_get_id(_In_ switch_core_session_t *session);
 
 /*! 
   \brief Provide the current session_id
