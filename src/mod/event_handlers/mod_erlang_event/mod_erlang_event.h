@@ -55,7 +55,7 @@ struct erlang_process {
 };
 
 struct session_elem {
-	switch_core_session_t *session;
+	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	switch_mutex_t *flag_mutex;
 	uint32_t flags;
 	struct erlang_process process;
