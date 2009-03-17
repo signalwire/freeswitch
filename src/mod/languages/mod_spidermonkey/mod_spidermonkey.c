@@ -3746,7 +3746,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 {
-	JS_DestroyRuntime(globals.rt);
+	// this causes a crash
+	//JS_DestroyRuntime(globals.rt);
 	
 	curl_global_cleanup();
 	switch_event_unbind(&globals.node);
