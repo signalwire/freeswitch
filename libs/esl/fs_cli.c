@@ -239,11 +239,11 @@ static void *msg_thread_run(esl_thread_t *me, void *obj)
 				}
 				
 				if (!known) {
+					char *foo;
 					printf("INCOMING DATA [%s]\n%s\n", type, handle->last_event->body ? handle->last_event->body : "");
-						char *foo;
-						esl_event_serialize(handle->last_event, &foo, ESL_FALSE);
-						printf("RECV EVENT\n%s\n", foo);
-						free(foo);
+					esl_event_serialize(handle->last_event, &foo, ESL_FALSE);
+					printf("RECV EVENT\n%s\n", foo);
+					free(foo);
 				}
 			}
 		}
