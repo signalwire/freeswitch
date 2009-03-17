@@ -735,6 +735,14 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 									int rtp_timeout_sec = 0;
 									int rtp_hold_timeout_sec = 0;
 								
+									if (codec_ms > 120) { /* yeah right */
+										switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
+														  "Your phone is trying to send timestamps that suggest an increment of %dms per packet\n"
+														  "That seems hard to believe so I am going to go on ahead and um ignore that, mmkay?", (int)codec_ms);
+										tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
+										goto skip;
+									}
+
 									tech_pvt->read_frame.datalen = 0;
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
 													  "We were told to use ptime %d but what they meant to say was %d\n"
