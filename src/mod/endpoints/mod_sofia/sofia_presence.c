@@ -1737,7 +1737,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 				nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP);
 			}
 
-			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(contact_str), NUTAG_WITH_THIS(nua), 
+			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(contactstr), NUTAG_WITH_THIS(nua), 
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						SIPTAG_EXPIRES_STR(exp_delta_str),
 						TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());
