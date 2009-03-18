@@ -388,6 +388,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Python Framework Loading...\n");
 
+	globals.pool = pool;
+
 	if (!Py_IsInitialized()) {
 
 		// initialize python system
@@ -408,7 +410,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 		PyEval_ReleaseLock();
 	}
 
-	globals.pool = pool;
 	do_config();
 
 	/* connect my internal structure to the blank pointer passed to me */
