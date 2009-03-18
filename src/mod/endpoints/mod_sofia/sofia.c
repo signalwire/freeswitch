@@ -2691,7 +2691,7 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			}
 		}
 
-		if (channel && sip && (status >= 300 && status < 399) && switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (channel && sip && status == 100 && switch_channel_test_flag(channel, CF_OUTBOUND)) {
 			sip_contact_t * p_contact = sip->sip_contact;
 			int i = 0;
 			char var_name[80];	
