@@ -124,6 +124,10 @@
     <!--Uncomment if you want to force the outbound leg of a bridge to only offer the codec 
 	that the originator is using-->
     <!--<param name="disable-transcoding" value="true"/>-->
+    <!-- Disable Refer -->
+    <!--<param name="disable-transfer" value="true"/> -->
+    <!-- Disable Register -->
+    <!--<param name="disable-register" value="true"/> -->
     <!-- Used for when phones respond to a challenged ACK with method INVITE in the hash -->
     <!--<param name="NDLB-broken-auth-hash" value="true"/>-->
     <!-- add a ;received="<ip>:<port>" to the contact when replying to register for nat handling -->
