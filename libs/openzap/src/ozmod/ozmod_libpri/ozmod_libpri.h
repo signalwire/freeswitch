@@ -40,8 +40,9 @@
 typedef enum {
 	OZMOD_LIBPRI_OPT_NONE = 0,
 	OZMOD_LIBPRI_OPT_SUGGEST_CHANNEL = (1 << 0),
-
-	OZMOD_LIBPRI_OPT_MAX = (2 << 0)
+	OZMOD_LIBPRI_OPT_OMIT_DISPLAY_IE = (2 << 0),
+	
+	OZMOD_LIBPRI_OPT_MAX = (3 << 0)
 } zap_isdn_opts_t;
 
 typedef enum {
