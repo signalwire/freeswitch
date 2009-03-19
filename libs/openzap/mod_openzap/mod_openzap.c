@@ -1850,8 +1850,8 @@ static switch_status_t load_config(void)
 			zap_span_t *span = NULL;
 			const char *tonegroup = NULL;
 			char *digit_timeout = NULL;
+			const char *opts = "none";
 			uint32_t to = 0;
-			uint32_t opts = 0;
 			int q921loglevel = -1;
 			int q931loglevel = -1;
 			// quick debug
@@ -1877,8 +1877,8 @@ static switch_status_t load_config(void)
                     }
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
-				} else if (!strcasecmp(var, "suggest-channel") && switch_true(val)) {
-					opts |= 1;
+				} else if (!strcasecmp(var, "opts")) {
+					opts = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
 				} else if (!strcasecmp(var, "digit_timeout") || !strcasecmp(var, "digit-timeout")) {

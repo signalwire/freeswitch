@@ -41,6 +41,8 @@
 typedef enum {
 	ZAP_ISDN_OPT_NONE = 0,
 	ZAP_ISDN_OPT_SUGGEST_CHANNEL = (1 << 0),
+	ZAP_ISDN_OPT_OMIT_DISPLAY_IE = (1 << 1),	/*!< Do not send Caller name in outgoing SETUP message (= Display IE) */
+	ZAP_ISDN_OPT_DISABLE_TONES = (1 << 2),		/*!< Disable tone generating thread (NT mode) */
 
 	ZAP_ISDN_OPT_MAX = (2 << 0)
 } zap_isdn_opts_t;
