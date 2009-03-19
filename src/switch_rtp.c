@@ -624,10 +624,11 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_set_local_address(switch_rtp_t *rtp_s
 
 SWITCH_DECLARE(void) switch_rtp_set_max_missed_packets(switch_rtp_t *rtp_session, uint32_t max)
 {
-	if (rtp_session->missed_count >= max)
+	if (rtp_session->missed_count >= max) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, 
-				"new max missed packets(%d->%d) greater than current missed packets(%d). RTP will timeout.\n", 
-				rtp_session->missed_count, max, rtp_session->missed_count);
+						  "new max missed packets(%d->%d) greater than current missed packets(%d). RTP will timeout.\n", 
+						  rtp_session->missed_count, max, rtp_session->missed_count);
+	}
 
 	rtp_session->max_missed_packets = max;
 }
