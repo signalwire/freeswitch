@@ -124,7 +124,8 @@ static struct {
 	private_t *call_list;
 	int ring_interval;
 	GFLAGS flags;
-	switch_timer_t timer;
+	switch_timer_t read_timer;
+	switch_timer_t write_timer;
 	switch_timer_t hold_timer;
 	int dual_streams;
 	time_t deactivate_timer;
@@ -249,7 +250,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		}
 
 		while (switch_channel_get_state(channel) == CS_INIT && !switch_test_flag(tech_pvt, TFLAG_ANSWER)) {
-			switch_size_t olen = globals.timer.samples;
+			switch_size_t olen = globals.read_timer.samples;
 
 			if (switch_micro_time_now() - last >= waitsec) {
 				char buf[512];
@@ -268,7 +269,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 			}
 
 			if (ring_file) {
-				if (switch_core_timer_next(&globals.timer) != SWITCH_STATUS_SUCCESS) {
+				if (switch_core_timer_next(&globals.read_timer) != SWITCH_STATUS_SUCCESS) {
 					switch_core_file_close(&fh);
 					break;
 				}
@@ -279,7 +280,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 				}
 
 				if (globals.ring_stream) {
-					WriteAudioStream(globals.ring_stream, abuf, (long) olen, &globals.timer);
+					WriteAudioStream(globals.ring_stream, abuf, (long) olen, &globals.write_timer);
 				}
 			} else {
 				switch_yield(10000);
@@ -355,8 +356,12 @@ static void destroy_codecs(void)
 		switch_core_codec_destroy(&globals.write_codec);
 	}
 
-	if (globals.timer.timer_interface) {
-		switch_core_timer_destroy(&globals.timer);
+	if (globals.read_timer.timer_interface) {
+		switch_core_timer_destroy(&globals.read_timer);
+	}
+
+	if (globals.write_timer.timer_interface) {
+		switch_core_timer_destroy(&globals.write_timer);
 	}
 
 	if (globals.hold_timer.timer_interface) {
@@ -597,14 +602,13 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	
 	switch_mutex_lock(globals.device_lock);
 	samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data,
-							  globals.read_codec.implementation->samples_per_packet, &globals.timer);
+							  globals.read_codec.implementation->samples_per_packet, &globals.read_timer);
 	switch_mutex_unlock(globals.device_lock);
 	
 	if (samples) {
 		globals.read_frame.datalen = samples * 2;
 		globals.read_frame.samples = samples;
 
-		//switch_core_timer_check(&globals.timer, SWITCH_TRUE);
 		*frame = &globals.read_frame;
 
 		if (!switch_test_flag((&globals), GFLAG_MOUTH)) {
@@ -649,7 +653,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	if (globals.audio_stream) {
 		if (switch_test_flag((&globals), GFLAG_EAR)) {
-			WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)), &globals.timer);
+			WriteAudioStream(globals.audio_stream, (short *) frame->data, (int) (frame->datalen / sizeof(SAMPLE)), &globals.write_timer);
 		}
 		status = SWITCH_STATUS_SUCCESS;
 	}
@@ -1278,8 +1282,12 @@ static switch_status_t engage_device(int restart)
 		destroy_codecs();
 	}
 
-	if (globals.timer.timer_interface) {
-		switch_core_timer_sync(&globals.timer);
+	if (globals.read_timer.timer_interface) {
+		switch_core_timer_sync(&globals.read_timer);
+	}
+
+	if (globals.write_timer.timer_interface) {
+		switch_core_timer_sync(&globals.write_timer);
 	}
 
 	if (globals.audio_stream) {
@@ -1310,13 +1318,26 @@ static switch_status_t engage_device(int restart)
 		}
 	}
 
-	if (!globals.timer.timer_interface) {
-		if (switch_core_timer_init(&globals.timer,
+	if (!globals.read_timer.timer_interface) {
+		if (switch_core_timer_init(&globals.read_timer,
 								   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
 								   module_pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
 			switch_core_codec_destroy(&globals.read_codec);
 			switch_core_codec_destroy(&globals.write_codec);
+			return SWITCH_STATUS_FALSE;
+		}
+	}
+
+
+	if (!globals.write_timer.timer_interface) {
+		if (switch_core_timer_init(&globals.write_timer,
+								   globals.timer_name, codec_ms, globals.read_codec.implementation->samples_per_packet,
+								   module_pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup timer failed!\n");
+			switch_core_codec_destroy(&globals.read_codec);
+			switch_core_codec_destroy(&globals.write_codec);
+			switch_core_timer_destroy(&globals.read_timer);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -1328,7 +1349,8 @@ static switch_status_t engage_device(int restart)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "setup hold timer failed!\n");
 			switch_core_codec_destroy(&globals.read_codec);
 			switch_core_codec_destroy(&globals.write_codec);
-			switch_core_timer_destroy(&globals.timer);
+			switch_core_timer_destroy(&globals.read_timer);
+			switch_core_timer_destroy(&globals.write_timer);
 			return SWITCH_STATUS_FALSE;
 		}
 	}
@@ -1366,7 +1388,8 @@ static switch_status_t engage_device(int restart)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't open audio device\n");
 		switch_core_codec_destroy(&globals.read_codec);
 		switch_core_codec_destroy(&globals.write_codec);
-		switch_core_timer_destroy(&globals.timer);
+		switch_core_timer_destroy(&globals.read_timer);
+		switch_core_timer_destroy(&globals.write_timer);
 		switch_core_timer_destroy(&globals.hold_timer);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -1963,8 +1986,8 @@ SWITCH_STANDARD_API(pa_cmd)
 									   playfile, seconds, samples, globals.read_codec.implementation->actual_samples_per_second);
 				
 				while (switch_core_file_read(&fh, abuf, &olen) == SWITCH_STATUS_SUCCESS) {
-					WriteAudioStream(globals.audio_stream, abuf, (long) olen, &globals.timer);
-					switch_core_timer_next(&globals.timer);
+					WriteAudioStream(globals.audio_stream, abuf, (long) olen, &globals.read_timer);
+					switch_core_timer_next(&globals.read_timer);
 					samples -= (int) olen;
 					if (samples <= 0) {
 						break;
@@ -1993,8 +2016,8 @@ SWITCH_STANDARD_API(pa_cmd)
 			int i;
 			for(i = 0; i < 400; i++) {
 				if ((samples = ReadAudioStream(globals.audio_stream, globals.read_frame.data,
-						globals.read_codec.implementation->samples_per_packet, &globals.timer))) {
-					WriteAudioStream(globals.audio_stream, globals.read_frame.data, (long) samples, &globals.timer);
+						globals.read_codec.implementation->samples_per_packet, &globals.read_timer))) {
+					WriteAudioStream(globals.audio_stream, globals.read_frame.data, (long) samples, &globals.write_timer);
 					success = 1;
 				}
 				switch_yield(10000);

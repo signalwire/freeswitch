@@ -1990,12 +1990,12 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 
 		if (rtp_session->timer.interval && 
-			(rtp_session->timer.samplecount - rtp_session->last_write_samplecount) > rtp_session->samples_per_interval * 2) {
+			(rtp_session->timer.samplecount - rtp_session->last_write_samplecount) > rtp_session->samples_per_interval * 10) {
 			m++;
 		}
 
 		if (!rtp_session->timer.interval && 
-			((unsigned)((switch_micro_time_now() - rtp_session->last_write_timestamp))) > (rtp_session->ms_per_packet *2)) {
+			((unsigned)((switch_micro_time_now() - rtp_session->last_write_timestamp))) > (rtp_session->ms_per_packet * 10)) {
 			m++;
 		}
 
