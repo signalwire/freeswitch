@@ -71,6 +71,25 @@ static void s_pri_message(struct pri *pri, char *s)
 		zap_log(ZAP_LOG_DEBUG, "%s", s);
 }
 
+static uint32_t parse_opts(const char *in)
+{
+	uint32_t flags = 0;
+	
+	if (!in) {
+		return 0;
+	}
+	
+	if (strstr(in, "suggest_channel")) {
+		flags |= OZMOD_LIBPRI_OPT_SUGGEST_CHANNEL;
+	}
+	
+	if (strstr(in, "omit_display")) {
+		flags |= OZMOD_LIBPRI_OPT_OMIT_DISPLAY_IE;
+	}
+
+	return flags;
+}
+
 
 static int parse_debug(const char *in)
 {
@@ -467,7 +486,8 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			pri_sr_set_channel(sr, zchan->chan_id, 0, 0);
 			pri_sr_set_bearer(sr, 0, isdn_data->l1);
 			pri_sr_set_called(sr, zchan->caller_data.ani.digits, dp, 1);
-			pri_sr_set_caller(sr, zchan->caller_data.cid_num.digits, zchan->caller_data.cid_name, dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
+			pri_sr_set_caller(sr, zchan->caller_data.cid_num.digits, (isdn_data->opts & OZMOD_LIBPRI_OPT_OMIT_DISPLAY_IE ? NULL : zchan->caller_data.cid_name),
+						dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
 			pri_sr_set_redirecting(sr, zchan->caller_data.cid_num.digits, dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
 			
 			if (pri_setup(isdn_data->spri.pri, call, sr)) {
@@ -926,9 +946,8 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	//zap_channel_t *dchans[2] = {0};
 	zap_libpri_data_t *isdn_data;
 	char *var, *val;
-	int32_t opts = 0;
 	char *debug = NULL;
-	
+
 	if (span->trunk_type >= ZAP_TRUNK_NONE) {
 		zap_log(ZAP_LOG_WARNING, "Invalid trunk type '%s' defaulting to T1.\n", zap_trunk_type2str(span->trunk_type));
 		span->trunk_type = ZAP_TRUNK_T1;
@@ -980,11 +999,10 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 			}
 			isdn_data->pswitch = str2switch(val);
 		} else if (!strcasecmp(var, "opts")) {
-			opts = va_arg(ap, uint32_t);
-			if  (opts >= OZMOD_LIBPRI_OPT_MAX) {
-				return ZAP_FAIL;
+			if (!(val = va_arg(ap, char *))) {
+				break;
 			}
-			isdn_data->opts = opts;
+			isdn_data->opts = parse_opts(val);
 		} else if (!strcasecmp(var, "dp")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
@@ -1021,7 +1039,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_libpri_configure_span)
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
 
-	if ((opts & OZMOD_LIBPRI_OPT_SUGGEST_CHANNEL)) {
+	if ((isdn_data->opts & OZMOD_LIBPRI_OPT_SUGGEST_CHANNEL)) {
 		span->channel_request = isdn_channel_request;
 		span->suggest_chan_id = 1;
 	}

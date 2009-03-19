@@ -1956,12 +1956,12 @@ static switch_status_t load_config(void)
 			const char *o_switch = "dms100";
 			const char *o_dp = "unknown";
 			const char *o_l1 = "ulaw";
-			const char *o_debug = NULL;
-
-			
+			const char *o_debug = "none";
+			const char* opts = "none";	
+					
 			uint32_t span_id = 0;
 			zap_span_t *span = NULL;
-			uint32_t opts = 0;
+
 			
 			for (param = switch_xml_child(myspan, "param"); param; param = param->next) {
 				char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -1979,8 +1979,8 @@ static switch_status_t load_config(void)
 					o_debug = val;
 				} else if (!strcasecmp(var, "context")) {
 					context = val;
-				} else if (!strcasecmp(var, "suggest-channel") && switch_true(val)) {
-					opts |= 1;
+				} else if (!strcasecmp(var, "opts")) {
+					opts = val;
 				} else if (!strcasecmp(var, "dialplan")) {
 					dialplan = val;
 				}
