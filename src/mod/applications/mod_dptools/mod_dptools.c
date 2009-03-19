@@ -1163,8 +1163,8 @@ SWITCH_STANDARD_APP(ivr_application_function)
 
 		/* Open the config from the xml registry */
 		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Menu-Name", name);
 		switch_assert(params);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Menu-Name", name);
 		switch_channel_event_set_data(channel, params);
 
 		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, params)) != NULL) {
