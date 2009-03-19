@@ -1156,18 +1156,20 @@ SWITCH_STANDARD_APP(ivr_application_function)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_event_t *params;
+	const char *name = (const char*)data;
 
 	if (channel) {
 		switch_xml_t cxml = NULL, cfg = NULL, xml_menus = NULL, xml_menu = NULL;
 
 		/* Open the config from the xml registry */
 		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "Menu-Name", name);
 		switch_assert(params);
 		switch_channel_event_set_data(channel, params);
 
 		if ((cxml = switch_xml_open_cfg(ivr_cf_name, &cfg, params)) != NULL) {
 			if ((xml_menus = switch_xml_child(cfg, "menus"))) {
-				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", (char *) data);
+				xml_menu = switch_xml_find_child(xml_menus, "menu", "name", name);
 
 				/* if the menu was found */
 				if (xml_menu != NULL) {
@@ -1182,7 +1184,7 @@ SWITCH_STANDARD_APP(ivr_application_function)
 						&& switch_ivr_menu_stack_xml_build(xml_ctx, &menu_stack, xml_menus, xml_menu) == SWITCH_STATUS_SUCCESS) {
 						switch_xml_free(cxml);
 						cxml = NULL;
-						switch_ivr_menu_execute(session, menu_stack, (char *) data, NULL);
+						switch_ivr_menu_execute(session, menu_stack, (char*)name, NULL);
 						switch_ivr_menu_stack_free(menu_stack);
 					} else {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to create menu\n");
