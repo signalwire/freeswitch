@@ -195,60 +195,60 @@ Index: src/mod/endpoints/mod_portaudio/pablio.c
 +	bytesWritten = PaUtil_WriteRingBuffer(&aStream->outFIFO, p, numBytes);
 +	numBytes -= bytesWritten;
 +	p += bytesWritten;
-+
++	
 +	if (numBytes > 0) {
 +		PaUtil_FlushRingBuffer(&aStream->outFIFO);
 +		return 0;
  	}
  	return numFrames;
  }
-@@ -171,32 +169,28 @@
+@@ -170,31 +168,32 @@
+ 	long bytesRead = 0;
  	char *p = (char *) data;
  	long avail, totalBytes = 0, neededBytes = aStream->bytesPerFrame * numFrames;
++	int max = 5000;
  
 -	for (;;) {
 -		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
-+	switch_core_timer_next(timer);
-+
-+	avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
- 		
+-		
 -		if (switch_core_timer_check(timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 -			break;
 -		}
-+	if (avail >= neededBytes * 6) {
-+		PaUtil_FlushRingBuffer(&aStream->inFIFO);
-+		avail = 0;
-+	}
++	switch_core_timer_next(timer);
  
--		if (avail >= neededBytes * 6) {
--			PaUtil_FlushRingBuffer(&aStream->inFIFO);
--			avail = 0;
++	while(totalBytes < neededBytes && --max > 0) {
++
++		avail = PaUtil_GetRingBufferReadAvailable(&aStream->inFIFO);
++		//printf("AVAILABLE BYTES %ld pass %d\n", avail, 5000 - max);
+ 		if (avail >= neededBytes * 6) {
+ 			PaUtil_FlushRingBuffer(&aStream->inFIFO);
+ 			avail = 0;
 -		}
-+	bytesRead = 0;
++		} else {
  
 -		bytesRead = 0;
--
++			bytesRead = 0;
++			
++			if (totalBytes < neededBytes && avail >= neededBytes) {
++				bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, neededBytes);
++				totalBytes += bytesRead;
++			}
+ 
 -		if (totalBytes < neededBytes && avail >= neededBytes) {
 -			bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, neededBytes);
 -			totalBytes += bytesRead;
--		}
++			if (bytesRead) {
++				p += bytesRead;
++			} else {
++				switch_cond_next();
++			}
+ 		}
 -
 -		if (bytesRead) {
 -			p += bytesRead;
 -		} else {
 -			switch_cond_next();
 -		}
-+	if (totalBytes < neededBytes && avail >= neededBytes) {
-+		bytesRead = PaUtil_ReadRingBuffer(&aStream->inFIFO, p, neededBytes);
-+		totalBytes += bytesRead;
  	}
  
-+	if (bytesRead) {
-+		p += bytesRead;
-+	} else {
-+		switch_cond_next();
-+	}
-+	
  	return totalBytes / aStream->bytesPerFrame;
- }
- 
