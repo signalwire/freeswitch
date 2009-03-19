@@ -341,11 +341,13 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(isdn_channel_request)
 	/*
 	 * Display IE
 	 */
-	Q931InitIEDisplay(&Display);
-	Display.Size = Display.Size + (unsigned char)strlen(caller_data->cid_name);
-	gen->Display = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &Display);			
-	ptrDisplay = Q931GetIEPtr(gen->Display, gen->buf);
-	zap_copy_string((char *)ptrDisplay->Display, caller_data->cid_name, strlen(caller_data->cid_name)+1);
+	if (!(isdn_data->opts & ZAP_ISDN_OPT_OMIT_DISPLAY_IE)) {
+		Q931InitIEDisplay(&Display);
+		Display.Size = Display.Size + (unsigned char)strlen(caller_data->cid_name);
+		gen->Display = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &Display);			
+		ptrDisplay = Q931GetIEPtr(gen->Display, gen->buf);
+		zap_copy_string((char *)ptrDisplay->Display, caller_data->cid_name, strlen(caller_data->cid_name)+1);
+	}
 
 	/*
 	 * Calling Number IE
@@ -1214,12 +1216,14 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 
 			/*
 			 * Display IE
-			 */			
-			Q931InitIEDisplay(&Display);
-			Display.Size = Display.Size + (unsigned char)strlen(zchan->caller_data.cid_name);
-			gen->Display = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &Display);
-			ptrDisplay = Q931GetIEPtr(gen->Display, gen->buf);
-			zap_copy_string((char *)ptrDisplay->Display, zchan->caller_data.cid_name, strlen(zchan->caller_data.cid_name)+1);
+			 */
+			if (!(isdn_data->opts & ZAP_ISDN_OPT_OMIT_DISPLAY_IE)) {
+				Q931InitIEDisplay(&Display);
+				Display.Size = Display.Size + (unsigned char)strlen(zchan->caller_data.cid_name);
+				gen->Display = Q931AppendIE((L3UCHAR *) gen, (L3UCHAR *) &Display);
+				ptrDisplay = Q931GetIEPtr(gen->Display, gen->buf);
+				zap_copy_string((char *)ptrDisplay->Display, zchan->caller_data.cid_name, strlen(zchan->caller_data.cid_name)+1);
+			}
 
 			/*
 			 * CallingNum IE
@@ -1947,13 +1951,34 @@ static zap_status_t zap_isdn_start(zap_span_t *span)
 		return ret;
 	}
 
-	if(ZAP_SPAN_IS_NT(span)) {
+	if (ZAP_SPAN_IS_NT(span) && !(isdn_data->opts & ZAP_ISDN_OPT_DISABLE_TONES)) {
 		ret = zap_thread_create_detached(zap_isdn_tones_run, span);
 	}
 	return ret;
 }
 
+static uint32_t parse_opts(const char *in)
+{
+	uint32_t flags = 0;
+	
+	if (!in) {
+		return 0;
+	}
+	
+	if (strstr(in, "suggest_channel")) {
+		flags |= ZAP_ISDN_OPT_SUGGEST_CHANNEL;
+	}
 
+	if (strstr(in, "omit_display")) {
+		flags |= ZAP_ISDN_OPT_OMIT_DISPLAY_IE;
+	}
+
+	if (strstr(in, "disable_tones")) {
+		flags |= ZAP_ISDN_OPT_DISABLE_TONES;
+	}
+
+	return flags;
+}
 
 static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 {
@@ -1963,7 +1988,6 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	const char *tonemap = "us";
 	char *var, *val;
 	Q931Dialect_t dialect = Q931_Dialect_National;
-	uint32_t opts = 0;
 	int32_t digit_timeout = 0;
 	int q921loglevel = -1;
 	int q931loglevel = -1;
@@ -2052,11 +2076,10 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 				return ZAP_FAIL;
 			}
 		} else if (!strcasecmp(var, "opts")) {
-			opts = va_arg(ap, uint32_t);
-			if  (opts >= ZAP_ISDN_OPT_MAX) {
-				return ZAP_FAIL;
+			if (!(val = va_arg(ap, char *))) {
+				break;
 			}
-			isdn_data->opts = opts;
+			isdn_data->opts = parse_opts(val);
 		} else if (!strcasecmp(var, "tonemap")) {
 			if (!(val = va_arg(ap, char *))) {
 				break;
@@ -2156,7 +2179,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_isdn_configure_span)
 	span->signal_type = ZAP_SIGTYPE_ISDN;
 	span->outgoing_call = isdn_outgoing_call;
 
-	if ((opts & ZAP_ISDN_OPT_SUGGEST_CHANNEL)) {
+	if ((isdn_data->opts & ZAP_ISDN_OPT_SUGGEST_CHANNEL)) {
 		span->channel_request = isdn_channel_request;
 		span->suggest_chan_id = 1;
 	}
