@@ -1634,67 +1634,67 @@ SWITCH_DECLARE(int) switch_ivr_set_xml_profile_data(switch_xml_t xml, switch_cal
 	if (!(param = switch_xml_add_child_d(xml, "username", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->username);
+	switch_xml_set_txt_d(param, caller_profile->username);
 
 	if (!(param = switch_xml_add_child_d(xml, "dialplan", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->dialplan);
+	switch_xml_set_txt_d(param, caller_profile->dialplan);
 
 	if (!(param = switch_xml_add_child_d(xml, "caller_id_name", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->caller_id_name);
+	switch_xml_set_txt_d(param, caller_profile->caller_id_name);
 
 	if (!(param = switch_xml_add_child_d(xml, "ani", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->ani);
+	switch_xml_set_txt_d(param, caller_profile->ani);
 
 	if (!(param = switch_xml_add_child_d(xml, "aniii", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->aniii);
+	switch_xml_set_txt_d(param, caller_profile->aniii);
 
 	if (!(param = switch_xml_add_child_d(xml, "caller_id_number", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->caller_id_number);
+	switch_xml_set_txt_d(param, caller_profile->caller_id_number);
 
 	if (!(param = switch_xml_add_child_d(xml, "network_addr", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->network_addr);
+	switch_xml_set_txt_d(param, caller_profile->network_addr);
 
 	if (!(param = switch_xml_add_child_d(xml, "rdnis", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->rdnis);
+	switch_xml_set_txt_d(param, caller_profile->rdnis);
 
 	if (!(param = switch_xml_add_child_d(xml, "destination_number", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->destination_number);
+	switch_xml_set_txt_d(param, caller_profile->destination_number);
 
 	if (!(param = switch_xml_add_child_d(xml, "uuid", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->uuid);
+	switch_xml_set_txt_d(param, caller_profile->uuid);
 
 	if (!(param = switch_xml_add_child_d(xml, "source", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->source);
+	switch_xml_set_txt_d(param, caller_profile->source);
 
 	if (!(param = switch_xml_add_child_d(xml, "context", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->context);
+	switch_xml_set_txt_d(param, caller_profile->context);
 
 	if (!(param = switch_xml_add_child_d(xml, "chan_name", off++))) {
 		return -1;
 	}
-	switch_xml_set_txt(param, caller_profile->chan_name);
+	switch_xml_set_txt_d(param, caller_profile->chan_name);
 
 	return off;
 }
