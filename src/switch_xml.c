@@ -2022,9 +2022,14 @@ static char *switch_xml_ampencode(const char *s, switch_size_t len, char **dst, 
 static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, switch_size_t *max, switch_size_t start, char ***attr, uint32_t * count)
 {
 	int i, j;
-	char *txt = (char *)(xml->parent) ? xml->parent->txt : (char *)"";
-	switch_size_t off = 0;
-	uint32_t lcount = 0;
+	char *txt;
+	switch_size_t off;
+	uint32_t lcount;
+
+tailrecurse:
+	off = 0;
+	lcount = 0;
+	txt = (char *)(xml->parent) ? xml->parent->txt : (char *)"";
 
 	/* parent character content up to this tag */
 	*s = switch_xml_ampencode(txt + start, xml->off - start, s, len, max, 0);
@@ -2101,8 +2106,12 @@ static char *switch_xml_toxml_r(switch_xml_t xml, char **s, switch_size_t *len, 
 		off++;					/* make sure off is within bounds */
 
 	if (xml->ordered) {
+		xml = xml->ordered;
+		start = off;
+		goto tailrecurse;
+/*
 		return switch_xml_toxml_r(xml->ordered, s, len, max, off, attr, count);
-
+*/
 	} else {
 		if (*count > 0)
 			(*count)--;
@@ -2197,11 +2206,13 @@ SWITCH_DECLARE(char *) switch_xml_toxml_buf(switch_xml_t xml, char *buf, switch_
 /* free the memory allocated for the switch_xml structure */
 SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 {
-	switch_xml_root_t root = (switch_xml_root_t) xml;
+	switch_xml_root_t root;
 	int i, j;
 	char **a, *s;
+	switch_xml_t orig_xml;
 
-
+tailrecurse:
+ 	root = (switch_xml_root_t) xml;
 	if (!xml) {
 		return;
 	}
@@ -2221,7 +2232,7 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 	}
 
 	switch_xml_free(xml->child);
-	switch_xml_free(xml->ordered);
+	/*switch_xml_free(xml->ordered);*/
 
 	if (!xml->parent) {			/* free root tag allocations */
 		for (i = 10; root->ent[i]; i += 2)	/* 0 - 9 are default entities (<>&"') */
@@ -2261,6 +2272,12 @@ SWITCH_DECLARE(void) switch_xml_free(switch_xml_t xml)
 		free(xml->txt);			/* character content */
 	if ((xml->flags & SWITCH_XML_NAMEM))
 		free(xml->name);		/* tag name */
+	if (xml->ordered) {
+		orig_xml = xml;
+		xml = xml->ordered;
+		free(orig_xml);
+		goto tailrecurse;
+	}
 	free(xml);
 }
 
