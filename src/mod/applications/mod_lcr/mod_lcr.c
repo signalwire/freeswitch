@@ -530,13 +530,13 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
 	if (switch_strlen_zero(digits_copy)) {
-		return SWITCH_FALSE;
+		return SWITCH_STATUS_GENERR;
 	}
 	
 	/* allocate the dedup hash */
 	if (switch_core_hash_init(&cb_struct->dedup_hash, cb_struct->pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error initializing the dedup hash\n");
-		return SWITCH_STATUS_FALSE;
+		return SWITCH_STATUS_GENERR;
 	}
 	
 	digits_expanded = expand_digits(cb_struct->pool, digits_copy, cb_struct->profile->quote_in_list);
@@ -586,7 +586,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	}
 }
 
-switch_status_t test_profile(char *lcr_profile)
+switch_bool_t test_profile(char *lcr_profile)
 {
 	callback_t routes = { 0 };
 	switch_memory_pool_t *pool = NULL;
@@ -603,7 +603,8 @@ switch_status_t test_profile(char *lcr_profile)
 	}
 	
 	routes.lookup_number = "15555551212";
-	return lcr_do_lookup(&routes, routes.lookup_number);
+	return (lcr_do_lookup(&routes, routes.lookup_number) == SWITCH_STATUS_SUCCESS) ?
+	        SWITCH_TRUE : SWITCH_FALSE;
 }
 
 static switch_status_t lcr_load_config()
@@ -805,12 +806,13 @@ static switch_status_t lcr_load_config()
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded lcr profile %s.\n", profile->name);
 				/* test the profile */
-				if (test_profile(profile->name) != SWITCH_TRUE) {
+				if (test_profile(profile->name) == SWITCH_TRUE) {
 					if (!strcasecmp(profile->name, "default")) {
 						globals.default_profile = profile;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting user defined default profile: %s.\n", profile->name);
 					}
 				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Removing INAVLID Profile %s.\n", profile->name);
 					switch_core_hash_delete(globals.profile_hash, profile->name);
 				}
 				
