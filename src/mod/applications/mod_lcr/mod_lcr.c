@@ -527,6 +527,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	switch_bool_t lookup_status;
 	switch_channel_t *channel;
 	char *id_str;
+	char *safe_sql;
 
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
 	if (switch_strlen_zero(digits_copy)) {
@@ -558,7 +559,6 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	}
 
 	/* set up the query to be executed */
-	char *safe_sql;
 
 	/* format the custom_sql */
 	safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
