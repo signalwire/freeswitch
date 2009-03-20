@@ -1593,6 +1593,7 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 		microsleep(100);
 	}
 
+	ldl_set_flag_locked(handle, LDL_FLAG_STOPPED);
 
 }
 
@@ -2324,6 +2325,7 @@ ldl_status ldl_handle_init(ldl_handle_t **handle,
 
 void ldl_handle_run(ldl_handle_t *handle)
 {
+	ldl_clear_flag_locked(handle, LDL_FLAG_STOPPED);
 	ldl_set_flag_locked(handle, LDL_FLAG_RUNNING);
 	xmpp_connect(handle, handle->login, handle->password);
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
@@ -2332,12 +2334,24 @@ void ldl_handle_run(ldl_handle_t *handle)
 void ldl_handle_stop(ldl_handle_t *handle)
 {
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);
+	if (ldl_test_flag(handle, LDL_FLAG_TLS)) {
+		int fd;
+		if ((fd = iks_fd(handle->parser)) > -1) {
+			shutdown(fd, 0x02);
+		}
+	}
+	
+	while(!ldl_test_flag(handle, LDL_FLAG_STOPPED)) {
+		microsleep(100);
+	}
+
 }
 
 ldl_status ldl_handle_destroy(ldl_handle_t **handle)
 {
 	apr_pool_t *pool = (*handle)->pool;
 
+	ldl_handle_stop(*handle);
 	ldl_flush_queue(*handle, 1);
 	
 

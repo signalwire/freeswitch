@@ -321,7 +321,7 @@ core-clean: clean_core
 core-install: core_install
 
 clean_core: clean-libLTLIBRARIES
-
+	rm -f $(libfreeswitch_la_OBJECTS)
 install_core: install-libLTLIBRARIES
 
 core_install: install_core

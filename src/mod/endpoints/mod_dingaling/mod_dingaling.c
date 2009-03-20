@@ -1805,7 +1805,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 
 #define PRES_SYNTAX "dl_pres <profile_name>"
 #define LOGOUT_SYNTAX "dl_logout <profile_name>"
-#define LOGIN_SYNTAX "dl_login <profile_name>"
+#define LOGIN_SYNTAX "Existing Profile:\ndl_login profile=<profile_name>\nDynamic Profile:\ndl_login var1=val1;var2=val2;varN=valN\n"
 #define DEBUG_SYNTAX "dl_debug [true|false]"
 
 	SWITCH_ADD_API(api_interface, "dl_debug", "DingaLing Debug", dl_debug, DEBUG_SYNTAX);
