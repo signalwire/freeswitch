@@ -1839,7 +1839,13 @@ static switch_status_t init_profile(mdl_profile_t *profile, uint8_t login)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 						  "Invalid Profile\n" "login[%s]\n" "pass[%s]\n" "dialplan[%s]\n"
 						  "message[%s]\n" "rtp-ip[%s]\n" "name[%s]\n" "exten[%s]\n",
-						  profile->login, profile->password, profile->dialplan, profile->message, profile->ip, profile->name, profile->exten);
+						  switch_str_nil(profile->login), 
+						  switch_str_nil(profile->password), 
+						  switch_str_nil(profile->dialplan), 
+						  switch_str_nil(profile->message), 
+						  switch_str_nil(profile->ip), 
+						  switch_str_nil(profile->name), 
+						  switch_str_nil(profile->exten));
 
 		return SWITCH_STATUS_FALSE;
 	}
