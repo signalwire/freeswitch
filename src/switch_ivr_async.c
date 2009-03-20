@@ -439,12 +439,23 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 	case SWITCH_ABC_TYPE_INIT:
 		break;
 	case SWITCH_ABC_TYPE_CLOSE:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stop recording file %s\n", rh->file);
-		switch_channel_set_private(channel, rh->file, NULL);
+		{
+			switch_codec_implementation_t read_impl = {0};
+			switch_core_session_get_read_impl(session, &read_impl);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Stop recording file %s\n", rh->file);
+			switch_channel_set_private(channel, rh->file, NULL);
+			
+			if (rh->fh) {
+				switch_core_file_close(rh->fh);
+			}
 		
-		if (rh->fh) {
-			switch_core_file_close(rh->fh);
+			if (rh->fh->samples_out < read_impl.samples_per_second * 3) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
+				switch_file_remove(rh->file, switch_core_session_get_pool(session));
+			}
 		}
+
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
 		if (rh->fh) {

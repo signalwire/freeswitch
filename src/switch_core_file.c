@@ -177,6 +177,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				if ((status = fh->file_interface->file_read(fh, fh->pre_buffer_data, &rlen)) != SWITCH_STATUS_SUCCESS || !rlen) {
 					switch_set_flag(fh, SWITCH_FILE_BUFFER_DONE);
 				} else {
+					fh->samples_in += rlen;
 					if (fh->channels > 1) {
 						switch_mux_channels((int16_t *)fh->pre_buffer_data, rlen, fh->channels);
 					}
@@ -201,6 +202,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 			switch_set_flag(fh, SWITCH_FILE_DONE);
 			goto top;
 		}
+
+		fh->samples_in += *len;
 
 		if (fh->channels > 1) {
 			switch_mux_channels((int16_t *)data, *len, fh->channels);
@@ -317,11 +320,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 			if ((status = fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen)) != SWITCH_STATUS_SUCCESS) {
 				*len = 0;
 			}
+			fh->samples_out += blen;
 		}
 		
 		return status;
 	} else {
-		return fh->file_interface->file_write(fh, data, len);
+		switch_status_t status;
+		if ((status = fh->file_interface->file_write(fh, data, len)) == SWITCH_STATUS_SUCCESS) {
+			fh->samples_out += *len;
+		}
+		return status;
 	}
 }
 

@@ -317,7 +317,8 @@ struct switch_file_handle {
 	uint32_t thresh;
 	uint32_t silence_hits;
 	uint32_t offset_pos;
-	//uint32_t last_pos;
+	switch_size_t samples_in;
+	switch_size_t samples_out;
 	int32_t vol;
 	switch_audio_resampler_t *resampler;
 	switch_buffer_t *buffer;
