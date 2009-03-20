@@ -506,6 +506,9 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 			v = switch_core_get_variable(varname);
 		}
 	}
+
+	if (v) v = switch_core_session_strdup(channel->session, v);
+	
 	switch_mutex_unlock(channel->profile_mutex);
 
 	return v;
@@ -527,6 +530,8 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 			}
 		}
 	}
+
+	if (val) val = switch_core_session_strdup(channel->session, val);
 
 	return val;
 }
@@ -870,9 +875,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t
 	switch_channel_state_t state;
 	switch_assert(channel != NULL);
 
-	switch_mutex_lock(channel->state_mutex);
 	state = channel->state;
-	switch_mutex_unlock(channel->state_mutex);
 
 	return state;
 }
@@ -882,9 +885,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_c
 	switch_channel_state_t state;
 	switch_assert(channel != NULL);
 
-	switch_mutex_lock(channel->state_mutex);
 	state = channel->running_state;
-	switch_mutex_unlock(channel->state_mutex);
 
 	return state;
 }
@@ -1201,9 +1202,8 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	if (ok) {
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_DEBUG, "(%s) State Change %s -> %s\n",
 						  channel->name, state_names[last_state], state_names[state]);
-		switch_mutex_lock(channel->state_mutex);
+
 		channel->state = state;
-		switch_mutex_unlock(channel->state_mutex);
 
 		if (state == CS_HANGUP && !channel->hangup_cause) {
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
@@ -1228,7 +1228,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *channel, switch_event_t *event)
 {
 	switch_caller_profile_t *caller_profile, *originator_caller_profile = NULL, *originatee_caller_profile = NULL;
-	switch_codec_t *codec;
+	switch_codec_implementation_t impl = {0};
 	char state_num[25];
 
 	switch_mutex_lock(channel->profile_mutex);
@@ -1258,14 +1258,18 @@ SWITCH_DECLARE(void) switch_channel_event_set_basic_data(switch_channel_t *chann
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Answer-State", "ringing");
 	}
 
-	if ((codec = switch_core_session_get_read_codec(channel->session)) && codec->implementation) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", switch_str_nil(codec->implementation->iananame));
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", codec->implementation->actual_samples_per_second);
+	switch_core_session_get_read_impl(channel->session, &impl);
+
+	if (impl.iananame) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Name", impl.iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Read-Codec-Rate", "%u", impl.actual_samples_per_second);
 	}
 
-	if ((codec = switch_core_session_get_write_codec(channel->session)) && codec->implementation) {
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", switch_str_nil(codec->implementation->iananame));
-		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", codec->implementation->actual_samples_per_second);
+	switch_core_session_get_write_impl(channel->session, &impl);
+
+	if (impl.iananame) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Name", impl.iananame);
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Channel-Write-Codec-Rate", "%u", impl.actual_samples_per_second);
 	}
 
 	/* Index Caller's Profile */
@@ -1584,22 +1588,23 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	switch_assert(channel != NULL);
 
 	switch_channel_clear_flag(channel, CF_BLOCK_STATE);
-
-	switch_mutex_lock(channel->state_mutex);
-
-	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
-		switch_mutex_lock(channel->profile_mutex);
-		channel->caller_profile->times->hungup = switch_micro_time_now();
-		switch_mutex_unlock(channel->profile_mutex);
-	}
-
-	switch_channel_stop_broadcast(channel);
-
+	
 	if (channel->state < CS_HANGUP) {
 		switch_event_t *event;
 		switch_channel_state_t last_state = channel->state;
 
+		if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
+			switch_mutex_lock(channel->profile_mutex);
+			channel->caller_profile->times->hungup = switch_micro_time_now();
+			switch_mutex_unlock(channel->profile_mutex);
+		}
+		
+		switch_channel_stop_broadcast(channel);
+
+		switch_mutex_lock(channel->state_mutex);
 		channel->state = CS_HANGUP;
+		switch_mutex_unlock(channel->state_mutex);
+
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
@@ -1619,8 +1624,6 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		}
 
 	}
-
-	switch_mutex_unlock(channel->state_mutex);
 
 	return channel->state;
 }
