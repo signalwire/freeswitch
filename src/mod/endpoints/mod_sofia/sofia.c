@@ -344,19 +344,13 @@ void sofia_event_callback(nua_event_t event,
 				tech_pvt = switch_core_session_get_private(session);
 				channel = switch_core_session_get_channel(session);
 				if (tech_pvt) {
-
-					if (status >= 300) {
-						sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
-					}
-
 					switch_mutex_lock(tech_pvt->sofia_mutex);
 					locked = 1;										
 				} else {
 					switch_core_session_rwunlock(session);
 					return;
 				}
-				
-				
+
 				if (status >= 180 && !*sofia_private->auth_gateway_name) {
 					const char *gwname = switch_channel_get_variable(channel, "sip_use_gateway");
 					if (!switch_strlen_zero(gwname)) {
@@ -3338,6 +3332,7 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			tech_pvt->q850_cause = SWITCH_CAUSE_MANDATORY_IE_MISSING;
 		}
 	case nua_callstate_terminated:
+		sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 		if (sofia_test_flag(tech_pvt, TFLAG_NOHUP)) {
 			sofia_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
 		} else if (switch_channel_up(channel)) {
