@@ -449,6 +449,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	switch_caller_extension_t *extension = NULL;
 	char *app_name, *arg = NULL;
 	char sql[256] = "";
+	const char *member_wait = NULL;
 
 	switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count+1 where uuid='%s'", h->uuid);
 	fifo_execute_sql(sql, globals.sql_mutex);
@@ -462,10 +463,17 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	
 
 	channel = switch_core_session_get_channel(session);
+
+	if ((member_wait = switch_channel_get_variable(channel, "member_wait"))) {
+		if (strcasecmp(member_wait, "wait") && strcasecmp(member_wait, "nowait")) {
+			member_wait = NULL;
+		}
+	}
+
 	switch_channel_set_variable(channel, "fifo_outbound_uuid", h->uuid);
 	switch_core_event_hook_add_state_change(session, hanguphook);
 	app_name = "fifo";
-	arg = switch_core_session_sprintf(session, "%s out wait", h->node_name);
+	arg = switch_core_session_sprintf(session, "%s out %s", h->node_name, member_wait ? member_wait : "wait");
 	extension = switch_caller_extension_new(session, app_name, arg);
 	switch_caller_extension_add_application(session, extension, app_name, arg);
 	switch_channel_set_caller_extension(channel, extension);
