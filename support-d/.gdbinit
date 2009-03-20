@@ -60,3 +60,16 @@ document event_dump
 Usage: event_dump [switch_event_t*]
 Print an event's headers and values
 end
+
+define print_list
+	dont-repeat
+	set $x = $arg0
+	while ($x != 0x0)
+		print *$x
+		set $x = $x->next
+	end
+end
+document print_list
+Usage print_list [symbol]
+Prints all the remaining elements of a linked list
+end
