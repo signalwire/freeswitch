@@ -3984,7 +3984,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	int network_port = 0;
 	char *is_nat = NULL;
-	char *acl_token = NULL;
+	char acl_token[512] = "";
 
 	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
@@ -4060,11 +4060,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 		if (ok) {
 			if (token) {
-				acl_token = strdup(token);
+				switch_set_string(acl_token, token);
 			}
 			if (sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Approved by acl \"%s[%s]\". Access Granted.\n",
-								  network_ip, switch_str_nil(last_acl), switch_str_nil(acl_token));
+								  network_ip, switch_str_nil(last_acl), acl_token);
 				is_auth = 1;
 			}
 		} else {
@@ -4123,7 +4123,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	channel = tech_pvt->channel = switch_core_session_get_channel(session);
 
-	if (acl_token) {
+	if (*acl_token) {
 		switch_channel_set_variable(channel, "acl_token", acl_token);
 		if (strchr(acl_token, '@')) {
 			if (switch_ivr_set_user(session, acl_token) == SWITCH_STATUS_SUCCESS) {
@@ -4132,8 +4132,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error Authenticating user %s\n", acl_token);
 			}
 		}
-		free(acl_token);
-		acl_token = NULL;
 	}
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {
