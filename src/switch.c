@@ -611,7 +611,7 @@ int main(int argc, char *argv[])
 	}
 
 #if defined(HAVE_SETRLIMIT) && !defined(__sun)
-	if (!waste) {
+	if (!waste && !(flags & SCF_VG)) {
 		memset(&rlp, 0, sizeof(rlp));
 		getrlimit(RLIMIT_STACK, &rlp);
 		if (rlp.rlim_max > SWITCH_THREAD_STACKSIZE) {
