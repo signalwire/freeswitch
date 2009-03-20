@@ -510,8 +510,13 @@ struct private_object {
 	char *rm_fmtp;
 	char *fmtp_out;
 	char *remote_sdp_str;
+	int crypto_tag;
+	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
+	switch_rtp_crypto_key_type_t crypto_send_type;
+	switch_rtp_crypto_key_type_t crypto_recv_type;
+	switch_rtp_crypto_key_type_t crypto_type;
 	char *local_sdp_str;
-	char *orig_local_sdp_str;
 	char *dest;
 	char *dest_to;
 	char *key;
@@ -533,12 +538,6 @@ struct private_object {
 	char *stun_ip;
 	switch_port_t stun_port;
 	uint32_t stun_flags;
-	int crypto_tag;
-	unsigned char local_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	unsigned char remote_raw_key[SWITCH_RTP_MAX_CRYPTO_LEN];
-	switch_rtp_crypto_key_type_t crypto_send_type;
-	switch_rtp_crypto_key_type_t crypto_recv_type;
-	switch_rtp_crypto_key_type_t crypto_type;
 	unsigned long rm_rate;
 	switch_payload_t pt;
 	switch_mutex_t *flag_mutex;
@@ -837,3 +836,4 @@ switch_status_t sofia_set_loglevel(const char *name, int level);
  */
 int sofia_get_loglevel(const char *name);
 sofia_cid_type_t sofia_cid_name2type(const char *name);
+void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup);

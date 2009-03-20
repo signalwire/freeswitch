@@ -303,13 +303,13 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		switch_core_session_rwunlock(a_session);
 	}
 
-
-
 	if (tech_pvt->nh && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		char reason[128] = "";
 		switch_stream_handle_t stream = { 0 };
 		switch_event_header_t *hi;
 		char *bye_headers = NULL;
+
+		sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 
 		SWITCH_STANDARD_STREAM(stream);
 		if ((hi = switch_channel_variable_first(channel))) {
@@ -337,7 +337,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			switch_snprintf(reason, sizeof(reason), "FreeSWITCH;cause=%d;text=\"%s\"", cause, switch_channel_cause2str(cause));
 		}
 		
-		if (sofia_test_flag(tech_pvt, TFLAG_ANS)) {
+		if (switch_channel_test_flag(channel, CF_ANSWERED)) {
 			if (!tech_pvt->got_bye) {
 				switch_channel_set_variable(channel, "sip_hangup_disposition", "send_bye");
 			}
@@ -347,11 +347,12 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 					TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 					TAG_END());
 		} else {
-			if (sofia_test_flag(tech_pvt, TFLAG_OUTBOUND)) {
+			if (switch_channel_test_flag(channel, CF_OUTBOUND)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Sending CANCEL to %s\n", switch_channel_get_name(channel));
 				if (!tech_pvt->got_bye) {
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_cancel");
 				}
+
 				nua_cancel(tech_pvt->nh, 
 						   SIPTAG_REASON_STR(reason), 
 						   TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
@@ -362,14 +363,16 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				if (!tech_pvt->got_bye) {
 					switch_channel_set_variable(channel, "sip_hangup_disposition", "send_refuse");
 				}
-				nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), 
-							SIPTAG_REASON_STR(reason), 
-							TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
-							TAG_END());
+				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					nua_respond(tech_pvt->nh, sip_cause, sip_status_phrase(sip_cause), 
+								SIPTAG_REASON_STR(reason), 
+								TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
+								TAG_END());
+				}
 			}
 		}
 
-		sofia_set_flag(tech_pvt, TFLAG_BYE);
+
 		switch_safe_free(stream.data);
 	}
 
@@ -431,7 +434,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 	is_proxy = (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA));
 
 	if (b_sdp && is_proxy) {
-		tech_pvt->local_sdp_str = switch_core_session_strdup(session, b_sdp);
+		sofia_glue_tech_set_local_sdp(tech_pvt, b_sdp, SWITCH_TRUE);
 
 		if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 			sofia_glue_tech_patch_sdp(tech_pvt);
@@ -443,13 +446,16 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		/* This if statement check and handles the 3pcc proxy mode */
 		if (sofia_test_pflag(tech_pvt->profile, PFLAG_3PCC_PROXY) && sofia_test_flag(tech_pvt, TFLAG_3PCC)) {
 			/* Send the 200 OK */
-			nua_respond(tech_pvt->nh, SIP_200_OK,
-				SIPTAG_CONTACT_STR(tech_pvt->profile->url),
-				SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-				SOATAG_REUSE_REJECTED(1),
-				SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Sent a 200 OK, waiting for ACK\n");
-			
+			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+				nua_respond(tech_pvt->nh, SIP_200_OK,
+							SIPTAG_CONTACT_STR(tech_pvt->profile->url),
+							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+							SOATAG_REUSE_REJECTED(1),
+							SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "3PCC-PROXY, Sent a 200 OK, waiting for ACK\n");
+			}
+
 			/* Unlock the session signal to allow the ack to make it in */
 			// Maybe we should timeout?
 			switch_mutex_unlock(tech_pvt->sofia_mutex);
@@ -520,15 +526,16 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		switch_channel_set_variable(channel, "sip_nat_detected", "true");
 	}
 
-
-	nua_respond(tech_pvt->nh, SIP_200_OK,
-				NUTAG_AUTOANSWER(0),
-				TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-				NUTAG_SESSION_TIMER(session_timeout),
-				SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-				SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-				SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
-	sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
+	if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+		nua_respond(tech_pvt->nh, SIP_200_OK,
+					NUTAG_AUTOANSWER(0),
+					TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+					NUTAG_SESSION_TIMER(session_timeout),
+					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+					SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -976,7 +983,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	private_object_t *tech_pvt = switch_core_session_get_private(session);
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (switch_channel_down(channel) || !tech_pvt) {
+	if (switch_channel_down(channel) || !tech_pvt || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		status = SWITCH_STATUS_FALSE;
 		goto end;
 	}
@@ -1010,11 +1017,11 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	default:
 		break;
 	}
-	
+
 	/* ones that do need to lock sofia mutex */
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
-	if (switch_channel_down(channel) || !tech_pvt) {
+	if (switch_channel_down(channel) || !tech_pvt || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 		status = SWITCH_STATUS_FALSE;
 		goto end_lock;
 	}
@@ -1046,11 +1053,13 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				sofia_glue_set_local_sdp(tech_pvt, ip, atoi(port), msg->string_arg, 1);
 			}
 
-			nua_respond(tech_pvt->nh, SIP_200_OK,
-						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-						SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-						SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
-			switch_channel_mark_answered(channel);
+			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+				nua_respond(tech_pvt->nh, SIP_200_OK,
+							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+							SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+				switch_channel_mark_answered(channel);
+			}
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_NOMEDIA:
@@ -1061,7 +1070,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			const char *ip = NULL, *port = NULL;
 
 			switch_channel_set_flag(channel, CF_PROXY_MODE);
-			tech_pvt->local_sdp_str = NULL;
+			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
+
 			if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 				&& (other_session = switch_core_session_locate(uuid))) {
 				other_channel = switch_core_session_get_channel(other_session);
@@ -1085,7 +1095,8 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Sending media re-direct:\n%s\n", 
 							  switch_channel_get_name(channel), msg->string_arg);
-			tech_pvt->local_sdp_str = switch_core_session_strdup(session, msg->string_arg);
+			sofia_glue_tech_set_local_sdp(tech_pvt, msg->string_arg, SWITCH_TRUE);
+
 			sofia_set_flag_locked(tech_pvt, TFLAG_SENT_UPDATE);
 			sofia_glue_do_invite(session);
 		}
@@ -1112,7 +1123,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			uint32_t send_invite = 1;
 
 			switch_channel_clear_flag(channel, CF_PROXY_MODE);
-			tech_pvt->local_sdp_str = NULL;
+			sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
 
 			if (!switch_channel_media_ready(channel)) {
 				if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
@@ -1175,7 +1186,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		break;
 	case SWITCH_MESSAGE_INDICATE_REDIRECT:
 		if (!switch_strlen_zero(msg->string_arg)) {
-			if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+			if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Redirecting to %s\n", msg->string_arg);
 				nua_respond(tech_pvt->nh, SIP_302_MOVED_TEMPORARILY, SIPTAG_CONTACT_STR(msg->string_arg), TAG_END());
 				sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
@@ -1212,7 +1223,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (msg->numeric_arg || msg->string_arg) {
 			int code = msg->numeric_arg;
 			const char *reason = NULL;
-
+			
 			if (code) {
 				reason = msg->string_arg;
 			} else {
@@ -1229,6 +1240,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				code = 488;
 			}
 
+			if (!switch_channel_test_flag(channel, CF_ANSWERED) && code >= 300) {
+				if (sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					goto end_lock;
+				}
+			}
+			
 			if (switch_strlen_zero(reason) && code != 407 && code != 302) {
 				reason = sip_status_phrase(code);
 				if (switch_strlen_zero(reason)) {
@@ -1260,11 +1277,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					}
 				}
 
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
-				nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
-							SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
-							TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
-				if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+				if (!switch_channel_test_flag(channel, CF_ANSWERED) && !sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Overlap Dial with %d %s\n", code, reason);
+					nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), TAG_IF(to_uri, SIPTAG_CONTACT_STR(to_uri)),
+								SIPTAG_SUPPORTED_STR(NULL), SIPTAG_ACCEPT_STR(NULL),
+								TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)), TAG_END());
+					
 					sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 				}
 			} else if (code == 302 && !switch_strlen_zero(msg->string_arg)) {
@@ -1274,31 +1292,30 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				msg->string_arg = p;
 				switch_core_session_receive_message(session, msg);
 				goto end_lock;
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
-
-				if (!switch_strlen_zero(((char *) msg->pointer_arg))) {
-					tech_pvt->local_sdp_str = switch_core_session_strdup(tech_pvt->session, (char *) msg->pointer_arg);
-					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
-						sofia_glue_tech_patch_sdp(tech_pvt);
-						sofia_glue_tech_proxy_remote_addr(tech_pvt);
+			} else if (!switch_channel_test_flag(channel, CF_ANSWERED)) {				
+				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
+					if (!switch_strlen_zero(((char *) msg->pointer_arg))) {
+						sofia_glue_tech_set_local_sdp(tech_pvt, (char *) msg->pointer_arg, SWITCH_TRUE);
+						
+						if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+							sofia_glue_tech_patch_sdp(tech_pvt);
+							sofia_glue_tech_proxy_remote_addr(tech_pvt);
+						}
+						nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+									SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
+									SOATAG_REUSE_REJECTED(1),
+									SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
+					} else {
+						nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 					}
-					nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
-								SOATAG_REUSE_REJECTED(1),
-								SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
-				} else {
-					nua_respond(tech_pvt->nh, code, su_strdup(tech_pvt->nh->nh_home, reason), SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
-				}
-				if (!switch_channel_test_flag(channel, CF_ANSWERED) && code >= 300) {
-					sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
 				}
 			}
 
 		}
 		break;
 	case SWITCH_MESSAGE_INDICATE_RINGING:
-		if (!switch_channel_test_flag(channel, CF_RING_READY) &&
+		if (!switch_channel_test_flag(channel, CF_RING_READY) && !sofia_test_flag(tech_pvt, TFLAG_BYE) &&
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 			nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
 			switch_channel_mark_ring_ready(channel);
@@ -1321,10 +1338,12 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
 					const char *sdp = NULL;
 					if ((sdp = switch_channel_get_variable(channel, SWITCH_B_SDP_VARIABLE))) {
-						tech_pvt->local_sdp_str = switch_core_session_strdup(session, sdp);
+						sofia_glue_tech_set_local_sdp(tech_pvt, sdp, SWITCH_TRUE);
 					}
 					if (switch_channel_test_flag(channel, CF_PROXY_MEDIA)) {
+						
 						sofia_glue_tech_patch_sdp(tech_pvt);
+						
 						if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 							status = SWITCH_STATUS_FALSE;
 							goto end_lock;
@@ -1369,16 +1388,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					switch_channel_set_variable(channel, "sip_nat_detected", "true");
 				}
 
-
-				nua_respond(tech_pvt->nh,
-							SIP_183_SESSION_PROGRESS,
-							NUTAG_AUTOANSWER(0),
-							TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
-							SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
-							SOATAG_REUSE_REJECTED(1),
-							SOATAG_ORDERED_USER(1),
-							SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
-							SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), TAG_END());
+				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+					nua_respond(tech_pvt->nh,
+								SIP_183_SESSION_PROGRESS,
+								NUTAG_AUTOANSWER(0),
+								TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+								SOATAG_REUSE_REJECTED(1),
+								SOATAG_ORDERED_USER(1),
+								SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),
+								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str), SOATAG_AUDIO_AUX("cn telephone-event"), TAG_END());
+				}
 			}
 		}
 		break;
@@ -1391,6 +1411,10 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch_mutex_unlock(tech_pvt->sofia_mutex);
 
   end:
+
+	if (switch_channel_down(channel) || !tech_pvt || sofia_test_flag(tech_pvt, TFLAG_BYE)) {
+		status = SWITCH_STATUS_FALSE;
+	}
 
 	return status;
 

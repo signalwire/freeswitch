@@ -342,8 +342,21 @@ void sofia_event_callback(nua_event_t event,
 		} else if (!switch_strlen_zero(sofia_private->uuid)) {
 			if ((session = switch_core_session_locate(sofia_private->uuid))) {
 				tech_pvt = switch_core_session_get_private(session);
-				switch_assert(tech_pvt);
-				channel = switch_core_session_get_channel(tech_pvt->session);
+				channel = switch_core_session_get_channel(session);
+				if (tech_pvt) {
+
+					if (status >= 300) {
+						sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
+					}
+
+					switch_mutex_lock(tech_pvt->sofia_mutex);
+					locked = 1;										
+				} else {
+					switch_core_session_rwunlock(session);
+					return;
+				}
+				
+				
 				if (status >= 180 && !*sofia_private->auth_gateway_name) {
 					const char *gwname = switch_channel_get_variable(channel, "sip_use_gateway");
 					if (!switch_strlen_zero(gwname)) {
@@ -368,11 +381,6 @@ void sofia_event_callback(nua_event_t event,
 		if (channel && switch_channel_down(channel)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is already hungup.\n");
 			goto done;
-		}
-
-		if (tech_pvt) {
-			switch_mutex_lock(tech_pvt->sofia_mutex);
-			locked = 1;
 		}
 	} else if (sofia_private && sofia_private->is_call) {
 		sofia_private->destroy_me = 22;
@@ -542,12 +550,12 @@ void sofia_event_callback(nua_event_t event,
 		sofia_reg_release_gateway(gateway);
 	}
 
+	if (locked && tech_pvt) {
+		switch_mutex_unlock(tech_pvt->sofia_mutex);
+	}
+	
 	if (session) {
 		switch_core_session_rwunlock(session);
-	}
-
-	if (tech_pvt && locked) {
-		switch_mutex_unlock(tech_pvt->sofia_mutex);
 	}
 }
 
@@ -696,6 +704,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 	int sanity;
 	switch_thread_t *worker_thread;
 	switch_status_t st;
+
+	
 
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.threads++;
@@ -2798,13 +2808,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 	if (session) {
 		channel = switch_core_session_get_channel(session);
 		tech_pvt = switch_core_session_get_private(session);
-		switch_assert(tech_pvt != NULL);
-		if (!tech_pvt->nh) {
+
+		if (!tech_pvt || !tech_pvt->nh) {
 			goto done;
 		}
 
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s]\n",
-						  switch_channel_get_name(channel), nua_callstate_name(ss_state));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s entering state [%s][%d]\n",
+						  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 		
 		if (r_sdp) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
@@ -2894,7 +2904,6 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if (!switch_channel_get_variable(other_channel, SWITCH_B_SDP_VARIABLE)) {
 						switch_channel_set_variable(other_channel, SWITCH_B_SDP_VARIABLE, r_sdp);
 					}
-
 					switch_channel_pre_answer(other_channel);
 					switch_core_session_rwunlock(other_session);
 				}
@@ -3071,13 +3080,13 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 					if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))
 						&& (other_session = switch_core_session_locate(uuid))) {
 						switch_core_session_message_t msg = { 0 };
-
+						
 						if (profile->media_options & MEDIA_OPT_MEDIA_ON_HOLD) {
 							tech_pvt->hold_laps = 1;
 							switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
 							switch_channel_clear_flag(channel, CF_PROXY_MODE);
-							tech_pvt->local_sdp_str = NULL;
-
+							sofia_glue_tech_set_local_sdp(tech_pvt, NULL, SWITCH_FALSE);
+							
 							if (!switch_channel_media_ready(channel)) {
 								if (!switch_channel_test_flag(tech_pvt->channel, CF_OUTBOUND)) {
 									//const char *r_sdp = switch_channel_get_variable(channel, SWITCH_R_SDP_VARIABLE);
@@ -3329,44 +3338,44 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 			tech_pvt->q850_cause = SWITCH_CAUSE_MANDATORY_IE_MISSING;
 		}
 	case nua_callstate_terminated:
-		if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
-			sofia_set_flag_locked(tech_pvt, TFLAG_BYE);
-			if (sofia_test_flag(tech_pvt, TFLAG_NOHUP)) {
-				sofia_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
+		if (sofia_test_flag(tech_pvt, TFLAG_NOHUP)) {
+			sofia_clear_flag_locked(tech_pvt, TFLAG_NOHUP);
+		} else if (switch_channel_up(channel)) {
+			int cause;
+			if (tech_pvt->q850_cause) {
+				cause = tech_pvt->q850_cause;
 			} else {
-				int cause;
-				if (tech_pvt->q850_cause) {
-					cause = tech_pvt->q850_cause;
-				} else {
-					cause = sofia_glue_sip_cause_to_freeswitch(status);
-				}
-				if (status) {
-					switch_snprintf(st, sizeof(st), "%d", status);
-					switch_channel_set_variable(channel, "sip_term_status", st);
-					switch_snprintf(st, sizeof(st), "sip:%d", status);
-					switch_channel_set_variable_partner(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, st);
-					switch_channel_set_variable(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, st);
-					if (phrase) {
-						switch_channel_set_variable_partner(channel, "sip_hangup_phrase", phrase);
-					}
-				}
-				switch_snprintf(st, sizeof(st), "%d", cause);
-				switch_channel_set_variable(channel, "sip_term_cause", st);
-				switch_channel_hangup(channel, cause);
+				cause = sofia_glue_sip_cause_to_freeswitch(status);
 			}
+			if (status) {
+				switch_snprintf(st, sizeof(st), "%d", status);
+				switch_channel_set_variable(channel, "sip_term_status", st);
+				switch_snprintf(st, sizeof(st), "sip:%d", status);
+				switch_channel_set_variable_partner(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, st);
+				switch_channel_set_variable(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE, st);
+				if (phrase) {
+					switch_channel_set_variable_partner(channel, "sip_hangup_phrase", phrase);
+				}
+			}
+			switch_snprintf(st, sizeof(st), "%d", cause);
+			switch_channel_set_variable(channel, "sip_term_cause", st);
+			switch_channel_hangup(channel, cause);
 		}
+		
+
 		if (ss_state == nua_callstate_terminated) {
 			if (tech_pvt->sofia_private) {
 				tech_pvt->sofia_private = NULL;
 			}
 			
 			tech_pvt->nh = NULL;
-			
+	
 			if (nh) {
 				nua_handle_bind(nh, NULL);
 				nua_handle_destroy(nh);
 			}
 		}
+		
 		break;
 	}
 
@@ -4616,7 +4625,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		
 		switch_channel_set_caller_profile(channel, tech_pvt->caller_profile);
 	}
-
+	
 	if (!(sofia_private = malloc(sizeof(*sofia_private)))) {
 		abort();
 	}
