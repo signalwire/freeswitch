@@ -47,8 +47,10 @@
 #define LCR_TSTRIP_PLACE 6
 #define LCR_PREFIX_PLACE 7
 #define LCR_SUFFIX_PLACE 8
+#define LCR_CODEC_PLACE 9
 
-#define LCR_QUERY_COLS 9
+#define LCR_QUERY_COLS_REQUIRED 9
+#define LCR_QUERY_COLS 10
 
 #define LCR_DIALSTRING_PLACE 3
 #define LCR_HEADERS_COUNT 4
@@ -84,6 +86,7 @@ struct lcr_obj {
 	size_t lstrip;
 	size_t tstrip;
 	size_t digit_len;
+	char *codec;
 	struct lcr_obj *prev;
 	struct lcr_obj *next;
 };
@@ -126,6 +129,7 @@ struct callback_obj {
 	char *lookup_number;
 	profile_t *profile;
 	switch_core_session_t *session;
+	switch_event_t *event;
 };
 typedef struct callback_obj callback_t;
 
@@ -153,6 +157,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 	char *data = NULL;
 	char *destination_number = NULL;
 	char *orig_destination_number = NULL; 
+	char *codec = NULL;
 
 	orig_destination_number = destination_number = switch_core_strdup(pool, dialed_number);
 
@@ -166,8 +171,14 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 		destination_number += lstrip;
 	}
 	
-	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s]%s%s%s%s%s"
+	codec = "";
+	if (!switch_strlen_zero(cur_route->codec)) {
+		codec = switch_core_sprintf(pool, ",absolute_codec_string=%s", cur_route->codec);
+	}
+	
+	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s]%s%s%s%s%s"
 								, cur_route->carrier_name, cur_route->rate_str
+								, codec
 								, cur_route->gw_prefix, cur_route->prefix
 								, destination_number, cur_route->suffix, cur_route->gw_suffix);
 			
@@ -243,24 +254,29 @@ switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *de
 	return SWITCH_STATUS_SUCCESS;
 }
 
-/* try each type of random until we suceed */
-static switch_bool_t set_db_random()
+static switch_bool_t db_check(char *sql)
 {
-	char *sql = NULL;
 	if (globals.odbc_dsn) {
-		sql = "SELECT rand()";
-		if (switch_odbc_handle_exec(globals.master_odbc, sql, NULL)
-				== SWITCH_ODBC_SUCCESS) {
-			db_random = "rand()";
-			return SWITCH_TRUE;
-		}
-		sql = "SELECT random()";
-		if (switch_odbc_handle_exec(globals.master_odbc, sql, NULL)
-				== SWITCH_ODBC_SUCCESS) {
-			db_random = "random()";
+		if (switch_odbc_handle_exec(globals.master_odbc, sql, NULL) == SWITCH_ODBC_SUCCESS) {
 			return SWITCH_TRUE;
 		}
 	}
+	
+	return SWITCH_FALSE;
+}
+
+/* try each type of random until we suceed */
+static switch_bool_t set_db_random()
+{
+	if (db_check("SELECT rand();") == SWITCH_TRUE) {
+		db_random = "rand()";
+		return SWITCH_TRUE;
+	}
+	if(db_check("SELECT random();") == SWITCH_TRUE) {
+		db_random = "random()";
+		return SWITCH_TRUE;
+	}
+	
 	return SWITCH_FALSE;
 }
 
@@ -348,6 +364,10 @@ static char *format_custom_sql(const char *custom_sql, callback_t *cb_struct, co
 			*/
 			newSQL = switch_channel_expand_variables(channel, 
 														tmpSQL ? tmpSQL : custom_sql);
+		} else if (cb_struct->event) {
+			/* use event system to expand vars */
+			newSQL = switch_event_expand_headers(cb_struct->event, tmpSQL ? tmpSQL : custom_sql);
+			
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
 								"mod_lcr called without a valid session while using a custom_sql that has channel variables.\n");
@@ -392,9 +412,9 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	switch_memory_pool_t *pool = cbt->pool;
 	
 	
-	if (argc != LCR_QUERY_COLS) {
+	if (argc < LCR_QUERY_COLS_REQUIRED) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT,
-							"Unexpected number of columns returned for SQL.  Returned columns are: %d. "
+							"Unexpected number of columns returned for SQL.  Returned column count: %d. "
 							"If using a custom sql for this profile, verify it is correct.  Otherwise file a bug report.\n",
 							argc);
 		return SWITCH_STATUS_GENERR;
@@ -422,6 +442,9 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	additional->gw_suffix = switch_core_strdup(pool, switch_str_nil(argv[LCR_GW_SUFFIX_PLACE]));
 	additional->lstrip = atoi(switch_str_nil(argv[LCR_LSTRIP_PLACE]));
 	additional->tstrip = atoi(switch_str_nil(argv[LCR_TSTRIP_PLACE]));
+	if (argc > LCR_CODEC_PLACE) {
+		additional->codec = switch_core_strdup(pool, switch_str_nil(argv[LCR_CODEC_PLACE]));
+	}
 	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, additional);
 
 	if (cbt->head == NULL) {
@@ -497,7 +520,6 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 
 switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 {
-	/* instantiate the object/struct we defined earlier */
 	switch_stream_handle_t sql_stream = { 0 };
 	char *digits_copy;
 	char *digits_expanded;
@@ -517,9 +539,6 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
-	SWITCH_STANDARD_STREAM(sql_stream);
-	
 	digits_expanded = expand_digits(cb_struct->pool, digits_copy, cb_struct->profile->quote_in_list);
 	
 	/* set some channel vars if we have a session */
@@ -531,39 +550,26 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 			switch_channel_set_variable_var_check(channel, "lcr_query_expanded_digits", digits_expanded, SWITCH_FALSE);
 		}
 	}
+	if (cb_struct->event) {
+		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_digits", digits_copy);
+		id_str = switch_core_sprintf(cb_struct->pool, "%d", cb_struct->profile->id);
+		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_profile", id_str);
+		switch_event_add_header_string(cb_struct->event, SWITCH_STACK_BOTTOM, "lcr_query_expanded_digits", digits_expanded);
+	}
 
 	/* set up the query to be executed */
-	if (switch_strlen_zero(profile->custom_sql)) {
-		sql_stream.write_function(&sql_stream, 
-								  "SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
-								  );
-		sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
-		sql_stream.write_function(&sql_stream, "%s", digits_expanded);
-		sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
-		if (profile->id > 0) {
-			sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
-		}
-		sql_stream.write_function(&sql_stream, "ORDER BY %s%s digits DESC%s", 
-												profile->pre_order,
-												switch_strlen_zero(profile->pre_order)? "" : ",",
-												profile->order_by);
-		if (db_random) {
-			sql_stream.write_function(&sql_stream, ", %s", db_random);
-		}
-		sql_stream.write_function(&sql_stream, ";");
-	} else {
-		char *safe_sql;
+	char *safe_sql;
 
-		/* format the custom_sql */
-		safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
-		if (!safe_sql) {
-			return SWITCH_STATUS_GENERR;
-		}
-		sql_stream.write_function(&sql_stream, safe_sql);
-		if (safe_sql != profile->custom_sql) {
-			/* channel_expand_variables returned the same string to us, no need to free */
-			switch_safe_free(safe_sql);
-		}
+	/* format the custom_sql */
+	safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
+	if (!safe_sql) {
+		return SWITCH_STATUS_GENERR;
+	}
+	SWITCH_STANDARD_STREAM(sql_stream);
+	sql_stream.write_function(&sql_stream, safe_sql);
+	if (safe_sql != profile->custom_sql) {
+		/* channel_expand_variables returned the same string to us, no need to free */
+		switch_safe_free(safe_sql);
 	}
 	
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", (char *)sql_stream.data);    
@@ -580,9 +586,30 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	}
 }
 
+switch_status_t test_profile(char *lcr_profile)
+{
+	callback_t routes = { 0 };
+	switch_memory_pool_t *pool = NULL;
+	switch_event_t *event = NULL;
+
+	switch_core_new_memory_pool(&pool);
+	switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+	routes.event = event;
+	routes.pool = pool;
+	
+	if (!(routes.profile = locate_profile(lcr_profile))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
+		return SWITCH_FALSE;
+	}
+	
+	routes.lookup_number = "15555551212";
+	return lcr_do_lookup(&routes, routes.lookup_number);
+}
+
 static switch_status_t lcr_load_config()
 {
 	char *cf = "lcr.conf";
+	switch_stream_handle_t sql_stream = { 0 };
 	switch_xml_t cfg, xml, settings, param, x_profile, x_profiles;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	char *odbc_user = NULL;
@@ -631,6 +658,12 @@ static switch_status_t lcr_load_config()
 		}
 	}
 	
+	if (set_db_random() == SWITCH_TRUE) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Database RANDOM function set to %s\n", db_random);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to determine database RANDOM function\n");
+	};
+
 	switch_core_hash_init(&globals.profile_hash, globals.pool);
 	if ((x_profiles = switch_xml_child(cfg, "profiles"))) {
 		for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
@@ -722,15 +755,44 @@ static switch_status_t lcr_load_config()
 					profile->id = (uint16_t)atoi(id_s);
 				}
 				
-				if (!switch_strlen_zero(custom_sql)) {
-					if (switch_string_var_check_const(custom_sql)) {
-						profile->custom_sql_has_vars = SWITCH_TRUE;
+				/* SWITCH_STANDARD_STREAM doesn't use pools.  but we only have to free sql_stream.data */
+				SWITCH_STANDARD_STREAM(sql_stream);
+				if (switch_strlen_zero(custom_sql)) {
+					/* use default sql */
+					sql_stream.write_function(&sql_stream, 
+											  "SELECT l.digits, c.carrier_name, l.rate, cg.prefix AS gw_prefix, cg.suffix AS gw_suffix, l.lead_strip, l.trail_strip, l.prefix, l.suffix "
+											  );
+					if (db_check("SELECT codec from carrier_gateway limit 1") == SWITCH_TRUE) {
+						sql_stream.write_function(&sql_stream, ", cg.codec ");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "codec field defined.\n");
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "codec field not defined, please update your lcr database schema.\n");
 					}
-					if (strstr(custom_sql, "%")) {
-						profile->custom_sql_has_percent = SWITCH_TRUE;
+					sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
+					sql_stream.write_function(&sql_stream, "${lcr_query_expanded_digits}");
+					sql_stream.write_function(&sql_stream, ") AND CURRENT_TIMESTAMP BETWEEN date_start AND date_end ");
+					if (profile->id > 0) {
+						sql_stream.write_function(&sql_stream, "AND lcr_profile=%d ", profile->id);
 					}
-					profile->custom_sql = switch_core_strdup(globals.pool, (char *)custom_sql);
+					sql_stream.write_function(&sql_stream, "ORDER BY %s%s digits DESC%s", 
+															profile->pre_order,
+															switch_strlen_zero(profile->pre_order)? "" : ",",
+															profile->order_by);
+					if (db_random) {
+						sql_stream.write_function(&sql_stream, ", %s", db_random);
+					}
+					sql_stream.write_function(&sql_stream, ";");
+					
+					custom_sql = sql_stream.data;
 				}
+				
+				if (switch_string_var_check_const(custom_sql)) {
+					profile->custom_sql_has_vars = SWITCH_TRUE;
+				}
+				if (strstr(custom_sql, "%")) {
+					profile->custom_sql_has_percent = SWITCH_TRUE;
+				}
+				profile->custom_sql = switch_core_strdup(globals.pool, (char *)custom_sql);
 				
 				if (!switch_strlen_zero(reorder_by_rate)) {
 					profile->reorder_by_rate = switch_true(reorder_by_rate);
@@ -742,14 +804,20 @@ static switch_status_t lcr_load_config()
 				
 				switch_core_hash_insert(globals.profile_hash, profile->name, profile);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Loaded lcr profile %s.\n", profile->name);
-				
-				if (!strcasecmp(profile->name, "default")) {
-					globals.default_profile = profile;
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting user defined default profile: %s.\n", profile->name);
+				/* test the profile */
+				if (test_profile(profile->name) != SWITCH_TRUE) {
+					if (!strcasecmp(profile->name, "default")) {
+						globals.default_profile = profile;
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Setting user defined default profile: %s.\n", profile->name);
+					}
+				} else {
+					switch_core_hash_delete(globals.profile_hash, profile->name);
 				}
+				
 			}
 			switch_safe_free(order_by.data);
 			switch_safe_free(pre_order.data);
+			switch_safe_free(sql_stream.data);
 		}
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No lcr profiles defined.\n");
@@ -779,12 +847,15 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 	lcr_route cur_route = { 0 };
 	char *lcr_profile = NULL;
 	switch_memory_pool_t *pool = NULL;
+	switch_event_t *event = NULL;
 
 	if (session) {
 		pool = switch_core_session_get_pool(session);
 		routes.session = session;
 	} else {
 		switch_core_new_memory_pool(&pool);
+		switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+		routes.event = event;
 	}
 	routes.pool = pool;
 	if (!(routes.profile = locate_profile(lcr_profile))) {
@@ -850,6 +921,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
 	switch_memory_pool_t *pool;
+	switch_event_t *event;
 
 	if (!(mydata = switch_core_session_strdup(session, data))) {
 		return;
@@ -860,6 +932,8 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		routes.session = session;
 	} else {
 		switch_core_new_memory_pool(&pool);
+		switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+		routes.event = event;
 	}
 	routes.pool = pool;
 
@@ -913,6 +987,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	max_obj_t maximum_lengths = { 0 };
 	callback_t cb_struct = { 0 };
 	switch_memory_pool_t *pool;
+	switch_event_t *event;
 	switch_status_t lookup_status = SWITCH_STATUS_SUCCESS;
 
 	if (switch_strlen_zero(cmd)) {
@@ -924,6 +999,8 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		cb_struct.session = session;
 	} else {
 		switch_core_new_memory_pool(&pool);
+		switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+		cb_struct.event = event;
 	}
 	cb_struct.pool = pool;
 	
@@ -1090,11 +1167,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 
 	globals.pool = pool;
 
-	if (lcr_load_config() != SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load lcr config file\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
 	if (switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize mutex\n");
 	}
@@ -1102,12 +1174,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize db_mutex\n");
 	}
 
-	
-	if (set_db_random() == SWITCH_TRUE) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Database RANDOM function set to %s\n", db_random);
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to determine database RANDOM function\n");
-	};
+	if (lcr_load_config() != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to load lcr config file\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
 	SWITCH_ADD_API(dialplan_lcr_api_interface, "lcr", "Least Cost Routing Module", dialplan_lcr_function, LCR_SYNTAX);
 	SWITCH_ADD_API(dialplan_lcr_api_admin_interface, "lcr_admin", "Least Cost Routing Module Admin", dialplan_lcr_admin_function, LCR_ADMIN_SYNTAX);
