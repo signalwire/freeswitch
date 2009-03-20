@@ -456,11 +456,27 @@ static void *audio_bridge_thread(switch_thread_t *thread, void *obj)
 	return NULL;
 }
 
+static void transfer_after_bridge(switch_core_session_t *session, const char *where)
+{
+	int argc;
+	char *argv[4] = { 0 };
+	char *mydata;
+	
+	if (!switch_strlen_zero(where) && (mydata = switch_core_session_strdup(session, where))) {
+		if ((argc = switch_separate_string(mydata, ':', argv, (sizeof(argv) / sizeof(argv[0])))) >= 1) {
+			switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No extension specified.\n");
+		}
+	}
+}
+
 static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *session)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_ivr_bridge_data_t *bd = switch_channel_get_private(channel, "_bridge_");
 	switch_channel_state_t state;
+	const char *var;
 
 	if (bd) {
 		switch_channel_set_private(channel, "_bridge_", NULL);
@@ -479,6 +495,8 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 	
 	if (state < CS_HANGUP && switch_true(switch_channel_get_variable(channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 		switch_ivr_park_session(session);
+	} else if (state < CS_HANGUP && (var = switch_channel_get_variable(channel, SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE))) {
+		transfer_after_bridge(session, var);
 	} else {
 		if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) && bd && !bd->clean_exit 
 			&& state != CS_PARK && state != CS_ROUTING && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
@@ -808,6 +826,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	switch_event_t *event;
 	int br = 0;
 	int inner_bridge = switch_channel_test_flag(caller_channel, CF_INNER_BRIDGE);
+	const char *var;
 
 	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 
@@ -971,6 +990,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 			(switch_channel_test_flag(peer_channel, CF_ANSWERED) && state < CS_HANGUP)) {
 			if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
 				switch_ivr_park_session(session);
+			} else if ((var = switch_channel_get_variable(caller_channel, SWITCH_PARK_AFTER_BRIDGE_VARIABLE))) {
+				transfer_after_bridge(session, var);
 			} else if (switch_true(switch_channel_get_variable(caller_channel, SWITCH_HANGUP_AFTER_BRIDGE_VARIABLE))) {
 				switch_channel_hangup(caller_channel, switch_channel_get_cause(peer_channel));
 			}
