@@ -39,7 +39,7 @@ struct switch_core_port_allocator {
 	switch_port_t start;
 	switch_port_t end;
 	switch_port_t next;
-	switch_byte_t *track;
+	int8_t *track;
 	uint32_t track_len;
 	uint32_t track_used;
 	switch_port_flag_t flags;
@@ -118,12 +118,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 	int odd = switch_test_flag(alloc, SPF_ODD);
 
 	switch_mutex_lock(alloc->mutex);
-	srand(getpid() + (unsigned) switch_epoch_time_now(NULL));
+	srand((unsigned)(intptr_t)port_ptr + switch_thread_self() + switch_micro_time_now());
 
 	while (alloc->track_used < alloc->track_len) {
 		uint32_t index;
 		uint32_t tries = 0;
-
+		
 		/* randomly pick a port */
 		index = rand() % alloc->track_len;
 
@@ -131,6 +131,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_request_port(switch_c
 		while (alloc->track[index] && tries < alloc->track_len)
 		{
 			tries++;
+			if (alloc->track[index] < 0) {
+				alloc->track[index]++;
+			}
 			if (++index >= alloc->track_len) { 
 				index = 0;
 			}
@@ -179,8 +182,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_port_allocator_free_port(switch_core
 	}
 
 	switch_mutex_lock(alloc->mutex);
-	if (alloc->track[index]) {
-		alloc->track[index] = 0;
+	if (alloc->track[index] > 0) {
+		alloc->track[index] = -4;
 		alloc->track_used--;
 		status = SWITCH_STATUS_SUCCESS;
 	}
