@@ -114,22 +114,22 @@ SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size
   \return true or false 
 */
 #define switch_true(expr)\
-(expr && ( !strcasecmp(expr, "yes") ||\
+((expr && ( !strcasecmp(expr, "yes") ||\
 !strcasecmp(expr, "on") ||\
 !strcasecmp(expr, "true") ||\
 !strcasecmp(expr, "enabled") ||\
 !strcasecmp(expr, "active") ||\
 !strcasecmp(expr, "allow") ||\
-atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
+atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE)
 
 #define switch_true_buf(expr)\
-(( !strcasecmp(expr, "yes") ||\
+((( !strcasecmp(expr, "yes") ||\
 !strcasecmp(expr, "on") ||\
 !strcasecmp(expr, "true") ||\
 !strcasecmp(expr, "enabled") ||\
 !strcasecmp(expr, "active") ||\
 !strcasecmp(expr, "allow") ||\
-atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
+atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE)
 
 /*!
   \brief Evaluate the falsefullness of a string expression
@@ -137,13 +137,13 @@ atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
   \return true or false 
 */
 #define switch_false(expr)\
-(expr && ( !strcasecmp(expr, "no") ||\
+((expr && ( !strcasecmp(expr, "no") ||\
 !strcasecmp(expr, "off") ||\
 !strcasecmp(expr, "false") ||\
 !strcasecmp(expr, "disabled") ||\
 !strcasecmp(expr, "inactive") ||\
 !strcasecmp(expr, "disallow") ||\
-!atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE
+!atoi(expr))) ? SWITCH_TRUE : SWITCH_FALSE)
 
 
 /*!
