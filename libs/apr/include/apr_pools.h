@@ -411,6 +411,17 @@ APR_DECLARE(int) apr_pool_is_ancestor(apr_pool_t *a, apr_pool_t *b);
  */
 APR_DECLARE(void) apr_pool_tag(apr_pool_t *pool, const char *tag);
 
+#if APR_HAS_THREADS
+/**
+ * Add a mutex to a pool to make it suitable to use from multiple threads.
+ * @param pool The pool to add the mutex to
+ * @param mutex The mutex
+ * @remark The mutex does not protect the destroy operation just the low level allocs.
+ */
+APR_DECLARE(void) apr_pool_mutex_set(apr_pool_t *pool,
+									 apr_thread_mutex_t *mutex);
+#endif
+
 
 /*
  * User data management
@@ -435,6 +446,7 @@ APR_DECLARE(void) apr_pool_tag(apr_pool_t *pool, const char *tag);
  *      key names is a typical way to help ensure this uniqueness.
  *
  */
+
 APR_DECLARE(apr_status_t) apr_pool_userdata_set(
     const void *data,
     const char *key,
