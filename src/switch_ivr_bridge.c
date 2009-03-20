@@ -687,6 +687,29 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 	switch_core_session_t *other_session;
 	switch_event_t *event;
 
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))) {
+		switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
+	}
+
+	switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
+
+	if (uuid && (other_session = switch_core_session_locate(uuid))) {
+        switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
+        const char *sbv = switch_channel_get_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
+
+        if (!switch_strlen_zero(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
+
+            switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
+            switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
+			
+            if (switch_channel_up(other_channel)) {
+                switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
+            }
+        }
+		
+        switch_core_session_rwunlock(other_session);
+    }
+	
 	if (switch_channel_test_flag(channel, CF_ORIGINATOR)) {
 		switch_channel_clear_flag(channel, CF_ORIGINATOR);
 		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNBRIDGE) == SWITCH_STATUS_SUCCESS) {
@@ -694,29 +717,7 @@ static switch_status_t signal_bridge_on_hangup(switch_core_session_t *session)
 			switch_event_fire(&event);
 		}
 	}
-
-	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE))
-		&& (other_session = switch_core_session_locate(uuid))) {
-		switch_channel_t *other_channel = switch_core_session_get_channel(other_session);
-		const char *sbv = switch_channel_get_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE);
-		
-		if (!switch_strlen_zero(sbv) && !strcmp(sbv, switch_core_session_get_uuid(session))) {
-			
-			switch_channel_set_variable(other_channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
-
-			switch_channel_set_variable(channel, SWITCH_BRIDGE_VARIABLE, NULL);
-			switch_channel_set_variable(other_channel, SWITCH_BRIDGE_VARIABLE, NULL);
-
-			if (switch_channel_up(other_channel)) {
-				switch_channel_hangup(other_channel, switch_channel_get_cause(channel));
-			}
-		}
-		
-		switch_channel_set_variable(channel, SWITCH_SIGNAL_BRIDGE_VARIABLE, NULL);
-
-		switch_core_session_rwunlock(other_session);
-	}
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
