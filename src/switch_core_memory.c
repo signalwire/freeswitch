@@ -243,7 +243,7 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "Sess Strdup Allocate %d\n", (int) len);
 #endif
 
-	duped = strdup(todup);
+	duped = apr_pstrdup(session->pool, todup);
 	switch_assert(duped != NULL);
 	
 #ifdef LOCK_MORE
