@@ -1405,6 +1405,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	}
 	
 	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(h->profile->url), TAG_END());
+	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),

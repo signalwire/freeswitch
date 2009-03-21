@@ -333,6 +333,14 @@ void sofia_event_callback(nua_event_t event,
 	int locked = 0;
 	int check_destroy = 1;
 
+	if (nh && sofia_private == &mod_sofia_globals.keep_private) {
+		if (status >= 300) {
+			nua_handle_bind(nh, NULL);
+			nua_handle_destroy(nh);
+			return;
+		}
+	}
+
 	if (sofia_private && sofia_private != &mod_sofia_globals.destroy_private && sofia_private != &mod_sofia_globals.keep_private) {
 		if ((gateway = sofia_private->gateway)) {
 			if (switch_thread_rwlock_tryrdlock(gateway->profile->rwlock) != SWITCH_STATUS_SUCCESS) {
