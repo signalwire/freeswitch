@@ -1,0 +1,383 @@
+Index: src/mod/endpoints/mod_sofia/sofia_reg.c
+===================================================================
+--- src/mod/endpoints/mod_sofia/sofia_reg.c	(revision 12705)
++++ src/mod/endpoints/mod_sofia/sofia_reg.c	(working copy)
+@@ -37,26 +37,56 @@
+  */
+ #include "mod_sofia.h"
+ 
+-static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr, int unreg)
++static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr)
+ {
++	int ss_state = nua_callstate_authenticating;
++
+ 	if (gateway_ptr->nh) {
+-		if (unreg) {
+-			nua_unregister(gateway_ptr->nh,
+-						   NUTAG_URL(gateway_ptr->register_url),
+-						   SIPTAG_FROM_STR(gateway_ptr->register_from),
+-						   SIPTAG_TO_STR(gateway_ptr->register_from),
+-						   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+-						   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+-						   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+-						   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+-		}
+ 		nua_handle_bind(gateway_ptr->nh, NULL);
+ 		nua_handle_destroy(gateway_ptr->nh);
+ 		gateway_ptr->nh = NULL;
++		sofia_private_free(gateway_ptr->sofia_private);
+ 	}
+ 
++	gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
++								 SIPTAG_CALL_ID_STR(gateway_ptr->uuid_str),
++								 NUTAG_URL(gateway_ptr->register_proxy),
++								 SIPTAG_TO_STR(gateway_ptr->register_to),
++								 NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
++
++
++	if (!gateway_ptr->sofia_private) {
++		gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
++		switch_assert(gateway_ptr->sofia_private);
++	}
++	memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
++	
++	gateway_ptr->sofia_private->gateway = gateway_ptr;
++	nua_handle_bind(gateway_ptr->nh, gateway_ptr->sofia_private);
+ }
+ 
++static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
++{
++
++	if (!gateway_ptr->nh) {
++		sofia_reg_new_handle(gateway_ptr);
++
++	}
++
++	if (gateway_ptr->nh) {
++		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UNRegistering %s\n", gateway_ptr->name);
++		nua_unregister(gateway_ptr->nh,
++					   NUTAG_URL(gateway_ptr->register_url),
++					   SIPTAG_FROM_STR(gateway_ptr->register_from),
++					   SIPTAG_TO_STR(gateway_ptr->register_from),
++					   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
++					   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
++					   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
++					   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
++	}
++	
++}
++
+ static void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway) {
+ 	switch_event_t *s_event;
+ 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_STATE) == SWITCH_STATUS_SUCCESS) {
+@@ -71,10 +101,9 @@
+ 	sofia_gateway_t *gateway_ptr;
+ 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+ 		if (gateway_ptr->sofia_private) {
+-			free(gateway_ptr->sofia_private);
+-			gateway_ptr->sofia_private = NULL;
++			sofia_private_free(gateway_ptr->sofia_private);
+ 		}
+-		sofia_reg_kill_reg(gateway_ptr, 1);
++		sofia_reg_kill_reg(gateway_ptr);
+ 	}
+ }
+ 
+@@ -108,7 +137,7 @@
+ 				break;
+ 			case SUB_STATE_UNSUBSCRIBE:
+ 				gw_sub_ptr->state = SUB_STATE_NOSUB;
+-				
++
+ 				/* not tested .. */
+ 				nua_unsubscribe(gateway_ptr->nh,
+ 						NUTAG_URL(gateway_ptr->register_url),
+@@ -121,24 +150,23 @@
+ 				
+ 				break;
+ 			case SUB_STATE_UNSUBED:
+-				if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
+-												  NUTAG_URL(gateway_ptr->register_proxy),
+-												  SIPTAG_TO_STR(gateway_ptr->register_to),
+-												  NUTAG_CALLSTATE_REF(ss_state), 
+-												  SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
+-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "subscribing to [%s] on gateway [%s]\n", gw_sub_ptr->event, gateway_ptr->name);
+-				}
++				gateway_ptr->sub_nh = nua_handle(gateway_ptr->profile->nua, NULL,
++												 NUTAG_URL(gateway_ptr->register_proxy),
++												 SIPTAG_TO_STR(gateway_ptr->register_to),
++												 NUTAG_CALLSTATE_REF(ss_state), 
++												 SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
++				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "subscribing to [%s] on gateway [%s]\n", gw_sub_ptr->event, gateway_ptr->name);
+ 				
+ 				gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+ 				switch_assert(gateway_ptr->sofia_private);
+-
++				
+ 				memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
+ 
+ 				gateway_ptr->sofia_private->gateway = gateway_ptr;
+ 				nua_handle_bind(gateway_ptr->nh, gateway_ptr->sofia_private);
+ 
+ 				if (now) {
+-					nua_subscribe(gateway_ptr->nh,
++					nua_subscribe(gateway_ptr->sub_nh,
+ 							NUTAG_URL(gateway_ptr->register_url),
+ 							SIPTAG_EVENT_STR(gw_sub_ptr->event),
+ 							SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),  
+@@ -149,7 +177,7 @@
+ 							TAG_NULL());
+ 					gw_sub_ptr->retry = now + gw_sub_ptr->retry_seconds;
+ 				} else {
+-					nua_unsubscribe(gateway_ptr->nh,
++					nua_unsubscribe(gateway_ptr->sub_nh,
+ 							NUTAG_URL(gateway_ptr->register_url),
+ 							SIPTAG_EVENT_STR(gw_sub_ptr->event),
+ 							SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
+@@ -207,7 +235,6 @@
+ 	}
+ 
+ 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
+-		int ss_state = nua_callstate_authenticating;
+ 		reg_state_t ostate = gateway_ptr->state;
+ 
+ 		if (!now) {
+@@ -223,6 +250,7 @@
+ 			switch_assert(pvt);
+ 			memset(pvt, 0, sizeof(*pvt));
+ 			pvt->destroy_nh = 1;
++			pvt->destroy_me = 1;
+ 			switch_copy_string(pvt->gateway_name, gateway_ptr->name, sizeof(pvt->gateway_name));
+ 			nua_handle_bind(nh, pvt);
+ 
+@@ -254,64 +282,46 @@
+ 			break;
+ 
+ 		case REG_STATE_UNREGISTER:
+-			sofia_reg_kill_reg(gateway_ptr, 1);
++			sofia_reg_kill_reg(gateway_ptr);
+ 			gateway_ptr->state = REG_STATE_NOREG;
+ 			break;
+ 		case REG_STATE_UNREGED:
+ 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
+-			sofia_reg_kill_reg(gateway_ptr, 0);
++
++			sofia_reg_new_handle(gateway_ptr);
+ 			
+-			if ((gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
+-											  SIPTAG_CALL_ID_STR(gateway_ptr->uuid_str),
+-											  NUTAG_URL(gateway_ptr->register_proxy),
+-											  SIPTAG_TO_STR(gateway_ptr->register_to),
+-											  NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END()))) {
+-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registering %s\n", gateway_ptr->name);
+-
+-				if (!gateway_ptr->sofia_private) {
+-					gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
+-					switch_assert(gateway_ptr->sofia_private);
+-				}
+-				memset(gateway_ptr->sofia_private, 0, sizeof(*gateway_ptr->sofia_private));
+-
+-				gateway_ptr->sofia_private->gateway = gateway_ptr;
+-				nua_handle_bind(gateway_ptr->nh, gateway_ptr->sofia_private);
+-
+-				if (now) {
+-					nua_register(gateway_ptr->nh,
+-								 NUTAG_URL(gateway_ptr->register_url),
+-								 TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
+-								 SIPTAG_TO_STR(gateway_ptr->register_from),
+-								 SIPTAG_FROM_STR(gateway_ptr->register_from),
+-								 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+-								 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+-								 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+-								 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+-					gateway_ptr->retry = now + gateway_ptr->retry_seconds;
+-				} else {
+-					nua_unregister(gateway_ptr->nh,
+-								   NUTAG_URL(gateway_ptr->register_url),
+-								   SIPTAG_FROM_STR(gateway_ptr->register_from),
+-								   SIPTAG_TO_STR(gateway_ptr->register_from),
+-								   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+-								   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
+-								   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
+-								   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+-				}
++			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registering %s\n", gateway_ptr->name);
++			
++			if (now) {
++				nua_register(gateway_ptr->nh,
++							 NUTAG_URL(gateway_ptr->register_url),
++							 TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
++							 SIPTAG_TO_STR(gateway_ptr->register_from),
++							 SIPTAG_FROM_STR(gateway_ptr->register_from),
++							 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
++							 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
++							 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
++							 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+ 				gateway_ptr->retry = now + gateway_ptr->retry_seconds;
+-				gateway_ptr->state = REG_STATE_TRYING;
+-
+ 			} else {
+-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error registering %s failure #%d\n", gateway_ptr->name, ++gateway_ptr->failures);
+-				gateway_ptr->state = REG_STATE_FAILED;
++				nua_unregister(gateway_ptr->nh,
++							   NUTAG_URL(gateway_ptr->register_url),
++							   SIPTAG_FROM_STR(gateway_ptr->register_from),
++							   SIPTAG_TO_STR(gateway_ptr->register_from),
++							   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
++							   SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
++							   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
++							   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+ 			}
++			gateway_ptr->retry = now + gateway_ptr->retry_seconds;
++			gateway_ptr->state = REG_STATE_TRYING;
++			
+ 			break;
+ 
+ 		case REG_STATE_FAILED:
+ 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "%s Failed Registration, setting retry to %d seconds.\n", 
+ 								  gateway_ptr->name, gateway_ptr->retry_seconds * (gateway_ptr->failures + 1));
+ 			gateway_ptr->retry =  now + (gateway_ptr->retry_seconds * (gateway_ptr->failures + 1));
+-			sofia_reg_kill_reg(gateway_ptr, 0);
+ 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
+ 			gateway_ptr->state = REG_STATE_FAIL_WAIT;
+ 			break;
+@@ -408,6 +418,7 @@
+ 						SIPTAG_CONTACT_STR(profile->url), 
+ 						TAG_END());
+ 
++		nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+ 		nua_notify(nh,
+ 				   NUTAG_NEWSUB(1),
+ 				   SIPTAG_EVENT_STR(event), 
+@@ -1275,6 +1286,23 @@
+ 		if (ostate != sofia_private->gateway->state) {
+ 			sofia_reg_fire_custom_gateway_state_event(sofia_private->gateway);
+ 		}
++
++
++		if (status >= 200) {
++			if (sofia_private) {
++				if (sofia_private->gateway) {
++					nua_handle_destroy(sofia_private->gateway->nh);
++					sofia_private->gateway->nh = NULL;
++					nua_handle_bind(sofia_private->gateway->nh, NULL);
++					sofia_private->gateway->sofia_private = NULL;
++				} else {
++					nua_handle_destroy(nh);
++				}
++				sofia_private_free(sofia_private);
++			} else {
++				nua_handle_destroy(nh);
++			}
++		}
+ 	}
+ }
+ 
+Index: src/mod/endpoints/mod_sofia/mod_sofia.c
+===================================================================
+--- src/mod/endpoints/mod_sofia/mod_sofia.c	(revision 12705)
++++ src/mod/endpoints/mod_sofia/mod_sofia.c	(working copy)
+@@ -2703,6 +2703,8 @@
+ 					SIPTAG_CONTACT_STR(profile->url), 
+ 					TAG_END());
+ 				
++	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
++
+ 	nua_notify(nh,
+ 			   NUTAG_NEWSUB(1),
+ 			   SIPTAG_EVENT_STR(es), 
+@@ -2902,6 +2904,8 @@
+ 
+ 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
+ 	mod_sofia_globals.destroy_private.destroy_nh = 1;
++	mod_sofia_globals.destroy_private.is_static = 1;
++	mod_sofia_globals.keep_private.is_static = 1;
+ 	mod_sofia_globals.pool = pool;
+ 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
+ 
+Index: src/mod/endpoints/mod_sofia/sofia.c
+===================================================================
+--- src/mod/endpoints/mod_sofia/sofia.c	(revision 12705)
++++ src/mod/endpoints/mod_sofia/sofia.c	(working copy)
+@@ -111,6 +111,7 @@
+ 			sofia_sla_handle_sip_i_notify(nua, profile, nh, sip, tags);
+ 
+ 			if (sub_state == nua_substate_terminated) {
++				sofia_private_free(sofia_private);
+ 				nua_handle_bind(nh, NULL);
+ 				nua_handle_destroy(nh);
+ 			}
+@@ -544,8 +545,7 @@
+ 			nua_handle_bind(nh, NULL);
+ 		}
+ 		sofia_private->destroy_me = 12;
+-		free(sofia_private);
+-		sofia_private = NULL;
++		sofia_private_free(sofia_private);
+ 	}
+ 
+ 	if (gateway) {
+@@ -4721,7 +4721,7 @@
+ 	}
+ 
+ 	nua_handle_bind(nh, NULL);
+-	free(sofia_private);
++	sofia_private_free(sofia_private);
+ 	switch_core_session_destroy(&session);
+ 	nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+ }
+Index: src/mod/endpoints/mod_sofia/mod_sofia.h
+===================================================================
+--- src/mod/endpoints/mod_sofia/mod_sofia.h	(revision 12705)
++++ src/mod/endpoints/mod_sofia/mod_sofia.h	(working copy)
+@@ -122,10 +122,12 @@
+ 	int destroy_nh;
+ 	int destroy_me;
+ 	int is_call;
++	int is_static;
+ };
+ 
+ #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
+ #define set_anchor(t,m) if (t->Anchor) {delete t->Anchor;} t->Anchor = new SipMessage(m);
++#define sofia_private_free(_pvt) if (_pvt && ! _pvt->is_static) {free(_pvt); _pvt = NULL;}
+ 
+ /* Local Structures */
+ /*************************************************************************************************************************************************************/
+@@ -321,6 +323,7 @@
+ struct sofia_gateway {
+ 	sofia_private_t *sofia_private;
+ 	nua_handle_t *nh;
++	nua_handle_t *sub_nh;
+ 	sofia_profile_t *profile;
+ 	char *name;
+ 	char *register_scheme;
+Index: src/mod/endpoints/mod_sofia/sofia_presence.c
+===================================================================
+--- src/mod/endpoints/mod_sofia/sofia_presence.c	(revision 12705)
++++ src/mod/endpoints/mod_sofia/sofia_presence.c	(working copy)
+@@ -177,7 +177,7 @@
+ 						SIPTAG_FROM_STR(from), NUTAG_URL(contact),
+ 						SIPTAG_TO_STR(clean_to), SIPTAG_CONTACT_STR(profile->url),
+ 						TAG_END());
+-
++	nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
+ 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
+ 
+  end:
+@@ -1860,6 +1860,16 @@
+ 	default:
+ 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "status (%d) != 200, updated state to SUB_STATE_FAILED.\n", status);
+ 		gw_sub_ptr->state = SUB_STATE_FAILED;
++		
++		if (sofia_private) {
++			nua_handle_destroy(sofia_private->gateway->sub_nh);
++			sofia_private->gateway->sub_nh = NULL;
++			nua_handle_bind(sofia_private->gateway->sub_nh, NULL);
++			sofia_private_free(sofia_private);
++		} else {
++			nua_handle_destroy(nh);
++		}
++
+ 		break;
+ 	}
+ }
