@@ -396,7 +396,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 {
-	const char *abs, *codec_string = NULL;
+	const char *abs, *codec_string, *uuid;
+	switch_core_session_t *b_session = NULL;
 	const char *ocodec = NULL;
 
 	if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)) {
@@ -409,7 +410,17 @@ void sofia_glue_tech_prepare_codecs(private_object_t *tech_pvt)
 
 	switch_assert(tech_pvt->session != NULL);
 
-	if ((abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
+	if ((abs = switch_channel_get_variable(tech_pvt->channel, "inherit_codec")) && (switch_true(abs)) && (uuid = switch_channel_get_variable(tech_pvt->channel, SWITCH_SIGNAL_BOND_VARIABLE)) != NULL && (b_session = switch_core_session_locate(uuid)) != NULL) {
+		switch_codec_implementation_t impl = {0};
+		switch_core_session_get_read_impl(b_session, &impl);
+		if (impl.iananame == NULL || !(abs = switch_core_session_sprintf(tech_pvt->session, "%s@%uh", impl.iananame, impl.actual_samples_per_second))) {
+			abs = NULL;
+		}
+	} else {
+		abs = NULL;
+	}
+
+	if (abs || (abs = switch_channel_get_variable(tech_pvt->channel, "absolute_codec_string"))) {
 		codec_string = abs;
 	} else {
 		if (!(codec_string = switch_channel_get_variable(tech_pvt->channel, "codec_string"))) {
