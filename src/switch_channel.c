@@ -485,7 +485,7 @@ SWITCH_DECLARE(void) switch_channel_presence(switch_channel_t *channel, const ch
 
 SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *channel, const char *varname)
 {
-	const char *v = NULL;
+	const char *v = NULL, *r = NULL;
 	switch_assert(channel != NULL);
 
 	switch_mutex_lock(channel->profile_mutex);
@@ -507,17 +507,17 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 		}
 	}
 
-	if (v) v = switch_core_session_strdup(channel->session, v);
+	if (v) r = switch_core_session_strdup(channel->session, v);
 	
 	switch_mutex_unlock(channel->profile_mutex);
 
-	return v;
+	return r;
 }
 
 SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_t *channel, const char *varname)
 {
 	const char *uuid;
-	const char *val = NULL;
+	const char *val = NULL, *r = NULL;
 	switch_assert(channel != NULL);
 	
 	if (!switch_strlen_zero(varname)) {
@@ -531,9 +531,9 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable_partner(switch_channel_
 		}
 	}
 
-	if (val) val = switch_core_session_strdup(channel->session, val);
+	if (val) r = switch_core_session_strdup(channel->session, val);
 
-	return val;
+	return r;
 }
 
 

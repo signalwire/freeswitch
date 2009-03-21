@@ -569,11 +569,12 @@ switch_memory_pool_t *switch_core_memory_init(void)
 		abort();
 	}
 
-	if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_DEFAULT, memory_manager.memory_pool)) != APR_SUCCESS) {
+	if ((apr_thread_mutex_create(&my_mutex, APR_THREAD_MUTEX_NESTED, memory_manager.memory_pool)) != APR_SUCCESS) {
 		abort();
 	}
 
 	apr_allocator_mutex_set(my_allocator, my_mutex);
+	apr_pool_mutex_set(memory_manager.memory_pool, my_mutex);
 	apr_allocator_owner_set(my_allocator, memory_manager.memory_pool);
 #else
 	apr_pool_create(&memory_manager.memory_pool, NULL);
