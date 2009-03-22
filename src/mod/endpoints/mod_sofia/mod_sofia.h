@@ -122,10 +122,12 @@ struct sofia_private {
 	int destroy_nh;
 	int destroy_me;
 	int is_call;
+	int is_static;
 };
 
 #define set_param(ptr,val) if (ptr) {free(ptr) ; ptr = NULL;} if (val) {ptr = strdup(val);}
 #define set_anchor(t,m) if (t->Anchor) {delete t->Anchor;} t->Anchor = new SipMessage(m);
+#define sofia_private_free(_pvt) if (_pvt && ! _pvt->is_static) {free(_pvt); _pvt = NULL;}
 
 /* Local Structures */
 /*************************************************************************************************************************************************************/
@@ -321,6 +323,7 @@ struct sofia_gateway_subscription {
 struct sofia_gateway {
 	sofia_private_t *sofia_private;
 	nua_handle_t *nh;
+	nua_handle_t *sub_nh;
 	sofia_profile_t *profile;
 	char *name;
 	char *register_scheme;
@@ -810,10 +813,12 @@ void sofia_glue_set_image_sdp(private_object_t *tech_pvt, switch_t38_options_t *
  * SLA (shared line appearance) entrypoints
  */
 
-void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip);
+void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip, long exptime, const char *full_contact);
 void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
 void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
-void sofia_sla_handle_sip_r_subscribe(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
+void sofia_sla_handle_sip_r_subscribe(int status,
+									  char const *phrase,
+									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[]);
 void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[]);
 
 /* 

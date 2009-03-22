@@ -2703,6 +2703,8 @@ static int notify_callback(void *pArg, int argc, char **argv, char **columnNames
 					SIPTAG_CONTACT_STR(profile->url), 
 					TAG_END());
 				
+	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
 			   SIPTAG_EVENT_STR(es), 
@@ -2902,6 +2904,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 
 	memset(&mod_sofia_globals, 0, sizeof(mod_sofia_globals));
 	mod_sofia_globals.destroy_private.destroy_nh = 1;
+	mod_sofia_globals.destroy_private.is_static = 1;
+	mod_sofia_globals.keep_private.is_static = 1;
 	mod_sofia_globals.pool = pool;
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
 

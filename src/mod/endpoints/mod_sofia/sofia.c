@@ -111,6 +111,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			sofia_sla_handle_sip_i_notify(nua, profile, nh, sip, tags);
 
 			if (sub_state == nua_substate_terminated) {
+				sofia_private_free(sofia_private);
 				nua_handle_bind(nh, NULL);
 				nua_handle_destroy(nh);
 			}
@@ -544,8 +545,7 @@ void sofia_event_callback(nua_event_t event,
 			nua_handle_bind(nh, NULL);
 		}
 		sofia_private->destroy_me = 12;
-		free(sofia_private);
-		sofia_private = NULL;
+		sofia_private_free(sofia_private);
 	}
 
 	if (gateway) {
@@ -4721,7 +4721,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	}
 
 	nua_handle_bind(nh, NULL);
-	free(sofia_private);
+	sofia_private_free(sofia_private);
 	switch_core_session_destroy(&session);
 	nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
 }

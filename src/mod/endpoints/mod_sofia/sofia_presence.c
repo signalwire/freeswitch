@@ -177,7 +177,7 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 						SIPTAG_FROM_STR(from), NUTAG_URL(contact),
 						SIPTAG_TO_STR(clean_to), SIPTAG_CONTACT_STR(profile->url),
 						TAG_END());
-
+	nua_handle_bind(msg_nh, &mod_sofia_globals.destroy_private);
 	nua_message(msg_nh, SIPTAG_CONTENT_TYPE_STR(ct), SIPTAG_PAYLOAD_STR(body), TAG_END());
 
  end:
@@ -1827,7 +1827,7 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 	/* the following could possibly be refactored back towards the calling event handler in sofia.c XXX MTK */
 	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		if (!strcasecmp(o->o_type, "dialog") && msg_params_find(o->o_params, "sla")) {
-			sofia_sla_handle_sip_r_subscribe(nua, profile, nh, sip, tags);
+			sofia_sla_handle_sip_r_subscribe(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 			return;
 		}
 	}
@@ -1860,6 +1860,16 @@ void sofia_presence_handle_sip_r_subscribe(int status,
 	default:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "status (%d) != 200, updated state to SUB_STATE_FAILED.\n", status);
 		gw_sub_ptr->state = SUB_STATE_FAILED;
+		
+		if (sofia_private) {
+			nua_handle_destroy(sofia_private->gateway->sub_nh);
+			sofia_private->gateway->sub_nh = NULL;
+			nua_handle_bind(sofia_private->gateway->sub_nh, NULL);
+			sofia_private_free(sofia_private);
+		} else {
+			nua_handle_destroy(nh);
+		}
+
 		break;
 	}
 }

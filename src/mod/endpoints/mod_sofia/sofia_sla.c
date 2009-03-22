@@ -39,37 +39,81 @@
 static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **columnNames);
 
 
-void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip)
+struct sla_helper {
+	char call_id[1024];
+};
+
+
+static int get_call_id_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
-	nua_handle_t *nh;
+	struct sla_helper *sh = (struct sla_helper *) pArg;
 
-	/* TODO:
-	 *  check to see if it says in the group or extension xml that we are handling SLA for this AOR
-	 *  check to see if we're already subscribed and the call-id in the subscribe matches. if so,
-	 *    we can skip this, which would keep us from re-subscribing which would also keep us from
-	 *    leaking so horribly much memory like we do now
-	*/
+	switch_set_string(sh->call_id, argv[0]);
 
-	nh = nua_handle(nua, NULL, NUTAG_URL(sip->sip_contact->m_url), TAG_NULL());
+	return 0;
+}
 
-	/* we make up and bind a sofia_private so that the existing event handler destruction code won't be confused by us */
-	/* (though it isn't clear that this is sufficient... we still have break cases for nua_i_notify and nua_r_notify
-	 *  in sofia_event_callback's destruction end because if we don't, the handle gets destroyed. or maybe it is
-	 *  something else i'm doing wrong? MTK
+char *strip_uri(const char *str)
+{
+	char *p;
+	char *r;
 
-	 mod_sofia_globals.keep_private is a magic static private things can share for this purpose: ACM
-	*/
+	if ((p = strchr(str, '<'))) {
+		p++;
+		r = strdup(p);
+		if ((p = strchr(r, '>'))) {
+			*p = '\0';
+		}
+	} else {
+		r = strdup(str);
+	}
+
+	return r;
+}
+
+void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const *sip, long exptime, const char *full_contact)
+{
+	nua_handle_t *nh = NULL;
+	char exp_str[256] = "";
+	char my_contact[256] = "";
+	char *sql;
+	struct sla_helper sh = { { 0 } };
+	char *contact_str = strip_uri(full_contact);
+
+
+	sql = switch_mprintf("select call_id from sip_shared_appearance_dialogs where hostname='%q' and profile_name='%q' and contact_str='%q'", 
+						 mod_sofia_globals.hostname, profile->name, contact_str);
+	sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, get_call_id_callback, &sh);
+
+	free(sql);
+
+	if (*sh.call_id) {
+		if (!(nh = nua_handle_by_call_id(profile->nua, sh.call_id))) {
+			if ((sql = switch_mprintf("delete from sip_shared_appearance_dialogs where hostname='%q' and profile_name='%q' and contact_str='%q'", 
+									  mod_sofia_globals.hostname, profile->name, contact_str))) {
+				sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+			}
+		}
+	}
+
+	if (!nh) {
+		nh = nua_handle(nua, NULL, NUTAG_URL(sip->sip_contact->m_url), TAG_NULL());
+	}
 
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 
+	switch_snprintf(exp_str, sizeof(exp_str), "%ld", exptime + 30);
+	switch_snprintf(my_contact, sizeof(my_contact), "%s;expires=%s", profile->sla_contact, exp_str);
 	
 	nua_subscribe(nh,
-		SIPTAG_TO(sip->sip_to),
-		SIPTAG_FROM(sip->sip_to), // ?
-		SIPTAG_CONTACT_STR(profile->sla_contact),
-		SIPTAG_EXPIRES_STR("3500"),		/* ok, this is totally fake here XXX MTK */
-		SIPTAG_EVENT_STR("dialog;sla"),	/* some phones want ;include-session-description too? */
-		TAG_NULL());
+				  SIPTAG_TO(sip->sip_to),
+				  SIPTAG_FROM(sip->sip_to), // ?
+				  SIPTAG_CONTACT_STR(my_contact),
+				  SIPTAG_EXPIRES_STR(exp_str),
+				  SIPTAG_EVENT_STR("dialog;sla"),	/* some phones want ;include-session-description too? */
+				  TAG_NULL());
+
+	free(contact_str);
 }
 
 void sofia_sla_handle_sip_i_publish(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
@@ -165,9 +209,32 @@ struct sla_notify_helper {
 	char *payload;
 };
 
-void sofia_sla_handle_sip_r_subscribe(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
+void sofia_sla_handle_sip_r_subscribe(int status,
+									  char const *phrase,
+									  nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sofia_private_t *sofia_private, sip_t const *sip, tagi_t tags[])
 {
-	/* apparently, we do nothing */
+	if (status >= 300) {
+		nua_handle_destroy(nh);
+		sofia_private_free(sofia_private);
+	} else {
+		char *full_contact = sip_header_as_string(nh->nh_home, (void *) sip->sip_contact);
+		time_t expires = switch_epoch_time_now(NULL);
+		char *sql;
+		char *contact_str = strip_uri(full_contact);
+
+		if (sip && sip->sip_expires) {
+			expires += sip->sip_expires->ex_delta + 30;
+		}
+
+		if ((sql = switch_mprintf("insert into sip_shared_appearance_dialogs (profile_name, hostname, contact_str, call_id, expires) "
+								  "values ('%q','%q','%q','%q','%ld')", 
+								  profile->name, mod_sofia_globals.hostname, contact_str, sip->sip_call_id->i_id, (long)expires))) {
+			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
+		}
+
+		free(contact_str);
+	}
+		
 }
 
 void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_handle_t *nh, sip_t const *sip, tagi_t tags[])
