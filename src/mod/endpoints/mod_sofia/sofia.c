@@ -89,7 +89,10 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	private_object_t *tech_pvt = NULL;
 	switch_event_t *s_event = NULL;
 	sofia_gateway_subscription_t *gw_sub_ptr;
+	int sub_state;
 
+	tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
+	
 	/* make sure we have a proper event */
 	if (!sip || !sip->sip_event) {
 		goto error;
@@ -105,18 +108,8 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 		
 		if (sip->sip_request->rq_url->url_user && !strncmp(sip->sip_request->rq_url->url_user, "sla-agent", sizeof("sla-agent"))) {
-			int sub_state;
-			tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
-			
 			sofia_sla_handle_sip_i_notify(nua, profile, nh, sip, tags);
-
-			if (sub_state == nua_substate_terminated) {
-				sofia_private_free(sofia_private);
-				nua_handle_bind(nh, NULL);
-				nua_handle_destroy(nh);
-			}
-
-			return;
+			goto end;
 		}
 	}
 
@@ -124,7 +117,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	if (!strcasecmp(sip->sip_event->o_type, "keep-alive")) {
 		/* XXX MTK - is this right? in this case isn't sofia is already sending a 200 itself also? */
 		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-		return;
+		goto end;
 	}
 
 	if (session) {
@@ -214,7 +207,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 			switch_channel_set_variable(channel, "auto_answer_destination", switch_channel_get_variable(channel, "destination_number"));
 			switch_ivr_session_transfer(session, "auto_answer", NULL, NULL);
 			nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-			return;
+			goto end;
 		}
 	}
 	
@@ -257,11 +250,20 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 		goto error;	
 	}
 
-	return;
+	goto end;
 
   error:
+
 	nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS(nua), TAG_END());
-	return;
+
+ end:
+	
+	if (sub_state == nua_substate_terminated) {
+		sofia_private_free(sofia_private);
+		nua_handle_bind(nh, NULL);
+		nua_handle_destroy(nh);
+	}
+
 }
 
 void sofia_handle_sip_i_bye(switch_core_session_t *session, int status,
@@ -425,7 +427,6 @@ void sofia_event_callback(nua_event_t event,
 
 	switch (event) {
 	case nua_r_get_params:
-	case nua_r_unregister:
 	case nua_i_fork:
 	case nua_r_info:
 	case nua_r_bye:
@@ -463,6 +464,7 @@ void sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_r_register:
+	case nua_r_unregister:
 		sofia_reg_handle_sip_r_register(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_options:
