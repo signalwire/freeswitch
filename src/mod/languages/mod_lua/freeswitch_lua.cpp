@@ -134,7 +134,7 @@ void Session::do_hangup_hook()
 static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session_hungup);
-	CoreSession *coresession = NULL;
+	Session *coresession = NULL;
 	switch_channel_state_t state = switch_channel_get_state(channel);
 
 	if (session_hungup) {
@@ -142,7 +142,7 @@ static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup)
 		channel = switch_core_session_get_channel(session_hungup);
 
 		if (channel) {
-			coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession");
+			coresession = (Session *) switch_channel_get_private(channel, "CoreSession");
 		}
 		
 		if (!(coresession && coresession->hook_state)) {
