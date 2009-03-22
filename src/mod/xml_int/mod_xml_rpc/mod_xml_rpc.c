@@ -721,7 +721,6 @@ static xmlrpc_value *freeswitch_api(xmlrpc_env * const envP, xmlrpc_value * cons
 	char *command = NULL, *arg = NULL;
 	switch_stream_handle_t stream = { 0 };
 	xmlrpc_value *val = NULL;
-//	const char *x_command = "bgapi", x_arg = "unload mod_xml_rpc";
 	switch_bool_t freed = 0;
 
 
