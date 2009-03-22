@@ -430,6 +430,7 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_fork:
 	case nua_r_info:
 	case nua_r_bye:
+	case nua_r_unregister:
 	case nua_r_unsubscribe:
 	case nua_r_publish:
 	case nua_i_cancel:
@@ -464,7 +465,6 @@ void sofia_event_callback(nua_event_t event,
 		sofia_handle_sip_i_notify(session, status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_r_register:
-	case nua_r_unregister:
 		sofia_reg_handle_sip_r_register(status, phrase, nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_options:

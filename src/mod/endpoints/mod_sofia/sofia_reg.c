@@ -50,10 +50,8 @@ static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 
 	gateway_ptr->nh = nua_handle(gateway_ptr->profile->nua, NULL,
 								 SIPTAG_CALL_ID_STR(gateway_ptr->uuid_str),
-								 NUTAG_URL(gateway_ptr->register_proxy),
 								 SIPTAG_TO_STR(gateway_ptr->register_to),
 								 NUTAG_CALLSTATE_REF(ss_state), SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
-
 	if (attach) {
 		if (!gateway_ptr->sofia_private) {
 			gateway_ptr->sofia_private = malloc(sizeof(*gateway_ptr->sofia_private));
@@ -77,12 +75,9 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
 		nua_unregister(gateway_ptr->nh,
 					   NUTAG_URL(gateway_ptr->register_url),
-					   SIPTAG_FROM_STR(gateway_ptr->register_from),
-					   SIPTAG_TO_STR(gateway_ptr->register_from),
 					   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
-					   SIPTAG_EXPIRES_STR("0"),
-					   NUTAG_REGISTRAR(gateway_ptr->register_proxy),
-					   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
+					   NUTAG_REGISTRAR(gateway_ptr->register_proxy), 
+					   TAG_END());
 	}
 	
 }
