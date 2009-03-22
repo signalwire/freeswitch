@@ -888,6 +888,10 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 {
 	this_check_void();
 
+	if (channel) {
+		switch_channel_set_private(channel, "CoreSession", NULL);
+	}
+	
 	switch_safe_free(xml_cdr_text);
 	switch_safe_free(uuid);	
 	switch_safe_free(tts_name);

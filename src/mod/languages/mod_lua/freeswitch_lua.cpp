@@ -32,7 +32,7 @@ Session::~Session()
 		if (session) {
 			switch_core_event_hook_remove_state_change(session, lua_hanguphook);
 		}
-		free(hangup_func_str);
+		switch_safe_free(hangup_func_str);
 	}
 
 	switch_safe_free(hangup_func_arg);
@@ -128,6 +128,16 @@ void Session::do_hangup_hook()
 		if (!switch_strlen_zero(err)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s\n", err);
 		}
+
+		if (channel) {
+			switch_channel_set_private(channel, "CoreSession", NULL);
+		}
+
+		if (session) {
+			switch_core_event_hook_remove_state_change(session, lua_hanguphook);
+		}
+		switch_safe_free(hangup_func_str);
+
 	}
 }
 
@@ -142,7 +152,10 @@ static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup)
 		channel = switch_core_session_get_channel(session_hungup);
 
 		if (channel) {
-			coresession = (Session *) switch_channel_get_private(channel, "CoreSession");
+			void *vs = switch_channel_get_private(channel, "CoreSession");
+			if (vs) {
+				coresession = (Session *) vs;
+			}
 		}
 		
 		if (!(coresession && coresession->hook_state)) {
