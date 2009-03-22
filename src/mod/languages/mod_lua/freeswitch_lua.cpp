@@ -24,6 +24,10 @@ static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup);
 Session::~Session()
 {
 
+	if (channel) {
+		switch_channel_set_private(channel, "CoreSession", NULL);
+	}
+
 	if (hangup_func_str) {
 		if (session) {
 			switch_core_event_hook_remove_state_change(session, lua_hanguphook);
@@ -141,6 +145,10 @@ static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup)
 			coresession = (CoreSession *) switch_channel_get_private(channel, "CoreSession");
 		}
 		
+		if (!(coresession && coresession->hook_state)) {
+			return SWITCH_STATUS_FALSE;
+		}
+
 		if (coresession && coresession->allocated && (state == CS_HANGUP || state == CS_ROUTING) && coresession->hook_state != state) {
 			coresession->hook_state = state;
 			coresession->check_hangup_hook();
