@@ -60,7 +60,7 @@
 				WarnAsError="true"
 				DebugInformationFormat="3"
 				ForcedIncludeFiles=""
-				EnablePREfast="$(EnablePREfast)"
+				EnablePREfast="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -153,7 +153,6 @@
 				WarnAsError="false"
 				DebugInformationFormat="3"
 				ForcedIncludeFiles=""
-				EnablePREfast="$(EnablePREfast)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -242,7 +241,6 @@
 				WarningLevel="4"
 				WarnAsError="true"
 				DebugInformationFormat="3"
-				EnablePREfast="$(EnablePREfast)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -331,7 +329,6 @@
 				WarningLevel="4"
 				WarnAsError="false"
 				DebugInformationFormat="3"
-				EnablePREfast="$(EnablePREfast)"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
