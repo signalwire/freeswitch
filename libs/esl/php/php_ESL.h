@@ -64,5 +64,6 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_events);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_execute);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setBlockingExecute);
 ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setEventLock);
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_disconnect);
 ZEND_NAMED_FUNCTION(_wrap_eslSetLogLevel);
 #endif /* PHP_ESL_H */

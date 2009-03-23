@@ -2304,10 +2304,10 @@ XS(_wrap_ESLevent_getHeader) {
     arg1 = reinterpret_cast< ESLevent * >(argp1);
     res2 = SWIG_AsCharPtrAndSize(ST(1), &buf2, NULL, &alloc2);
     if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char *""'");
+      SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char const *""'");
     }
     arg2 = reinterpret_cast< char * >(buf2);
-    result = (char *)(arg1)->getHeader(arg2);
+    result = (char *)(arg1)->getHeader((char const *)arg2);
     ST(argvi) = SWIG_FromCharPtr((const char *)result); argvi++ ;
     
     if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
@@ -3330,6 +3330,34 @@ XS(_wrap_ESLconnection_setEventLock) {
 }
 
 
+XS(_wrap_ESLconnection_disconnect) {
+  {
+    ESLconnection *arg1 = (ESLconnection *) 0 ;
+    int result;
+    void *argp1 = 0 ;
+    int res1 = 0 ;
+    int argvi = 0;
+    dXSARGS;
+    
+    if ((items < 1) || (items > 1)) {
+      SWIG_croak("Usage: ESLconnection_disconnect(self);");
+    }
+    res1 = SWIG_ConvertPtr(ST(0), &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_disconnect" "', argument " "1"" of type '" "ESLconnection *""'"); 
+    }
+    arg1 = reinterpret_cast< ESLconnection * >(argp1);
+    result = (int)(arg1)->disconnect();
+    ST(argvi) = SWIG_From_int  SWIG_PERL_CALL_ARGS_1(static_cast< int >(result)); argvi++ ;
+    
+    XSRETURN(argvi);
+  fail:
+    
+    SWIG_croak_null();
+  }
+}
+
+
 XS(_wrap_eslSetLogLevel) {
   {
     int arg1 ;
@@ -3435,6 +3463,7 @@ static swig_command_info swig_commands[] = {
 {"ESLc::ESLconnection_execute", _wrap_ESLconnection_execute},
 {"ESLc::ESLconnection_setBlockingExecute", _wrap_ESLconnection_setBlockingExecute},
 {"ESLc::ESLconnection_setEventLock", _wrap_ESLconnection_setEventLock},
+{"ESLc::ESLconnection_disconnect", _wrap_ESLconnection_disconnect},
 {"ESLc::eslSetLogLevel", _wrap_eslSetLogLevel},
 {0,0}
 };

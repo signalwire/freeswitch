@@ -33,6 +33,15 @@ ESLconnection::~ESLconnection()
 
 }
 
+int ESLconnection::disconnect()
+{
+	if (handle.connected) {
+        return esl_disconnect(&handle);
+    }
+
+	return 0;
+}
+
 int ESLconnection::connected()
 {
 	return handle.connected;

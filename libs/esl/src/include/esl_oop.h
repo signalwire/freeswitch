@@ -90,6 +90,7 @@ class ESLconnection {
 	int execute(const char *app, const char *arg = NULL, const char *uuid = NULL);
 	int setBlockingExecute(const char *val);
 	int setEventLock(const char *val);
+	int disconnect(void);
 };
 
 void eslSetLogLevel(int level);

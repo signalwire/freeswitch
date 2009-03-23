@@ -91,6 +91,7 @@ class ESLconnection:
     def execute(*args): return apply(_ESL.ESLconnection_execute, args)
     def setBlockingExecute(*args): return apply(_ESL.ESLconnection_setBlockingExecute, args)
     def setEventLock(*args): return apply(_ESL.ESLconnection_setEventLock, args)
+    def disconnect(*args): return apply(_ESL.ESLconnection_disconnect, args)
 ESLconnection_swigregister = _ESL.ESLconnection_swigregister
 ESLconnection_swigregister(ESLconnection)
 

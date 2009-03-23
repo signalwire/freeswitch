@@ -1465,7 +1465,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLevent_getHeader) {
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
-  result = (char *)(arg1)->getHeader(arg2);
+  result = (char *)(arg1)->getHeader((char const *)arg2);
   {
     if(!result) {
       ZVAL_NULL(return_value);
@@ -2313,6 +2313,32 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_disconnect) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  zval **args[1];
+  
+  SWIG_ResetError();
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_disconnect. Expected SWIGTYPE_p_ESLconnection");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (int)(arg1)->disconnect();
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_eslSetLogLevel) {
   int arg1 ;
   zval **args[1];
@@ -2391,6 +2417,7 @@ static zend_function_entry ESL_functions[] = {
  SWIG_ZEND_NAMED_FE(eslconnection_execute,_wrap_ESLconnection_execute,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_setblockingexecute,_wrap_ESLconnection_setBlockingExecute,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_seteventlock,_wrap_ESLconnection_setEventLock,NULL)
+ SWIG_ZEND_NAMED_FE(eslconnection_disconnect,_wrap_ESLconnection_disconnect,NULL)
  SWIG_ZEND_NAMED_FE(eslsetloglevel,_wrap_eslSetLogLevel,NULL)
 {NULL, NULL, NULL}
 };

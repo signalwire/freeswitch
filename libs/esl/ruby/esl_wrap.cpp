@@ -2414,10 +2414,10 @@ _wrap_ESLevent_getHeader(int argc, VALUE *argv, VALUE self) {
   arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char *","getHeader", 2, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","getHeader", 2, argv[0] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  result = (char *)(arg1)->getHeader(arg2);
+  result = (char *)(arg1)->getHeader((char const *)arg2);
   vresult = SWIG_FromCharPtr((const char *)result);
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return vresult;
@@ -3306,6 +3306,30 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_ESLconnection_disconnect(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","disconnect", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (int)(arg1)->disconnect();
+  vresult = SWIG_From_int(static_cast< int >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_eslSetLogLevel(int argc, VALUE *argv, VALUE self) {
   int arg1 ;
   int val1 ;
@@ -3658,6 +3682,7 @@ SWIGEXPORT void Init_ESL(void) {
   rb_define_method(cESLconnection.klass, "execute", VALUEFUNC(_wrap_ESLconnection_execute), -1);
   rb_define_method(cESLconnection.klass, "setBlockingExecute", VALUEFUNC(_wrap_ESLconnection_setBlockingExecute), -1);
   rb_define_method(cESLconnection.klass, "setEventLock", VALUEFUNC(_wrap_ESLconnection_setEventLock), -1);
+  rb_define_method(cESLconnection.klass, "disconnect", VALUEFUNC(_wrap_ESLconnection_disconnect), -1);
   cESLconnection.mark = 0;
   cESLconnection.destroy = (void (*)(void *)) free_ESLconnection;
   cESLconnection.trackObjects = 0;

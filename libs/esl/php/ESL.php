@@ -194,6 +194,10 @@ class ESLconnection {
 	function setEventLock($val) {
 		return ESLconnection_setEventLock($this->_cPtr,$val);
 	}
+
+	function disconnect() {
+		return ESLconnection_disconnect($this->_cPtr);
+	}
 }
 
 

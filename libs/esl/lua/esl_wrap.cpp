@@ -1927,14 +1927,14 @@ static int _wrap_ESLevent_getHeader(lua_State* L) {
   
   SWIG_check_num_args("getHeader",2,2)
   if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("getHeader",1,"ESLevent *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("getHeader",2,"char *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("getHeader",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLevent,0))){
     SWIG_fail_ptr("ESLevent_getHeader",1,SWIGTYPE_p_ESLevent);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  result = (char *)(arg1)->getHeader(arg2);
+  result = (char *)(arg1)->getHeader((char const *)arg2);
   SWIG_arg=0;
   lua_pushstring(L,(const char*)result); SWIG_arg++;
   return SWIG_arg;
@@ -2688,6 +2688,31 @@ fail:
 }
 
 
+static int _wrap_ESLconnection_disconnect(lua_State* L) {
+  int SWIG_arg = -1;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  
+  SWIG_check_num_args("disconnect",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("disconnect",1,"ESLconnection *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_disconnect",1,SWIGTYPE_p_ESLconnection);
+  }
+  
+  result = (int)(arg1)->disconnect();
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static void swig_delete_ESLconnection(void *obj) {
 ESLconnection *arg1 = (ESLconnection *) obj;
 delete arg1;
@@ -2707,6 +2732,7 @@ static swig_lua_method swig_ESLconnection_methods[] = {
     {"execute", _wrap_ESLconnection_execute}, 
     {"setBlockingExecute", _wrap_ESLconnection_setBlockingExecute}, 
     {"setEventLock", _wrap_ESLconnection_setEventLock}, 
+    {"disconnect", _wrap_ESLconnection_disconnect}, 
     {0,0}
 };
 static swig_lua_attribute swig_ESLconnection_attributes[] = {

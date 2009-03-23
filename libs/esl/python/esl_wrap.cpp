@@ -3298,10 +3298,10 @@ SWIGINTERN PyObject *_wrap_ESLevent_getHeader(PyObject *SWIGUNUSEDPARM(self), Py
   arg1 = reinterpret_cast< ESLevent * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLevent_getHeader" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  result = (char *)(arg1)->getHeader(arg2);
+  result = (char *)(arg1)->getHeader((char const *)arg2);
   resultobj = SWIG_FromCharPtr((const char *)result);
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return resultobj;
@@ -4173,6 +4173,28 @@ fail:
 }
 
 
+SWIGINTERN PyObject *_wrap_ESLconnection_disconnect(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:ESLconnection_disconnect",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_disconnect" "', argument " "1"" of type '" "ESLconnection *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  result = (int)(arg1)->disconnect();
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *ESLconnection_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *obj;
   if (!PyArg_ParseTuple(args,(char*)"O:swigregister", &obj)) return NULL;
@@ -4237,6 +4259,7 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"ESLconnection_execute", _wrap_ESLconnection_execute, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_setBlockingExecute", _wrap_ESLconnection_setBlockingExecute, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_setEventLock", _wrap_ESLconnection_setEventLock, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_disconnect", _wrap_ESLconnection_disconnect, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_swigregister", ESLconnection_swigregister, METH_VARARGS, NULL},
 	 { (char *)"eslSetLogLevel", _wrap_eslSetLogLevel, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
