@@ -1871,7 +1871,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 							silence = ringback.silence;
 						}
 					} else {
-						silence = 400;
+						silence = 600;
 					}
 					
 					if ((ringback.fh || silence || ringback.audio_buffer) && write_frame.codec && write_frame.datalen) {
