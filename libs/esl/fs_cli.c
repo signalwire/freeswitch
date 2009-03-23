@@ -180,7 +180,7 @@ static int usage(char *name){
 	printf("  -p, --password=FILENAME         Password\n");
 	printf("  -x, --execute=command           Execute Command and Exit\n");
 	printf("  -l, --loglevel=command          Log Level\n");
-	printf("  -q, --quiet			          Disable logging\n");
+	printf("  -q, --quiet                     Disable logging\n");
 	printf("  -d, --debug=level               Debug Level (0 - 7)\n\n");
 	return 1;
 }
