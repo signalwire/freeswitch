@@ -1439,8 +1439,26 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 		}
 
 		if (!strncasecmp(cmd, "connect", 7)) {
-			switch_snprintf(reply, reply_len, "+OK");
-			goto done;
+			switch_event_t *call_event;
+			char *event_str;
+			switch_size_t len;
+			switch_event_create(&call_event, SWITCH_EVENT_CHANNEL_DATA);
+			
+			switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
+			switch_channel_event_set_data(channel, call_event);
+			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
+			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
+			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
+			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
+
+			switch_event_serialize(call_event, &event_str, SWITCH_TRUE);
+			switch_assert(event_str);
+			len = strlen(event_str);
+			switch_socket_send(listener->sock, event_str, &len);
+			switch_safe_free(event_str);
+
+			//switch_snprintf(reply, reply_len, "+OK");
+			goto done_noreply;
 		} else if (!strncasecmp(cmd, "getvar", 6)) {
 			char *arg;
 			const char *val = "";
@@ -1966,10 +1984,8 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	add_listener(listener);
 
 	if (session && switch_test_flag(listener, LFLAG_AUTHED)) {
-		switch_event_t *ievent = NULL, *call_event;
-		char *event_str;
-
-
+		switch_event_t *ievent = NULL;
+		
 		switch_set_flag_locked(listener, LFLAG_SESSION);
 		status = read_packet(listener, &ievent, 25);
 
@@ -1978,35 +1994,14 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;
 		}
-
-		if (switch_event_create(&call_event, SWITCH_EVENT_CHANNEL_DATA) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			switch_clear_flag_locked(listener, LFLAG_RUNNING);
-			goto done;
-		}
+		
 
 		if (parse_command(listener, &ievent, reply, sizeof(reply)) != SWITCH_STATUS_SUCCESS) {
 			switch_clear_flag_locked(listener, LFLAG_RUNNING);
 			goto done;
 		}
 
-		switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
-		switch_channel_event_set_data(channel, call_event);
-		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
-		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
-		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
-		switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Control", switch_test_flag(listener, LFLAG_FULL) ? "full" : "single-channel");
 
-		switch_event_serialize(call_event, &event_str, SWITCH_TRUE);
-		if (!event_str) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-			switch_clear_flag_locked(listener, LFLAG_RUNNING);
-			goto done;
-		}
-		len = strlen(event_str);
-		switch_socket_send(listener->sock, event_str, &len);
-
-		switch_safe_free(event_str);
 	} else {
 		switch_snprintf(buf, sizeof(buf), "Content-Type: auth/request\n\n");
 
