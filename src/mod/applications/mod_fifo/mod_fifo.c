@@ -1253,6 +1253,8 @@ SWITCH_STANDARD_APP(fifo_function)
 
 				switch_core_media_bug_resume(session);
 				switch_core_media_bug_resume(other_session);
+				switch_process_import(session, other_channel, "fifo_caller_consumer_import");
+				switch_process_import(other_session, channel, "fifo_consumer_caller_import");
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 				switch_core_media_bug_pause(session);
 				switch_core_media_bug_pause(other_session);

@@ -550,10 +550,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_transfer_variable(switch_core_session
 
 /******************************************************************************************************/
 
-	 struct switch_ivr_digit_stream_parser;
-	 typedef struct switch_ivr_digit_stream_parser switch_ivr_digit_stream_parser_t;
-	 struct switch_ivr_digit_stream;
-	 typedef struct switch_ivr_digit_stream switch_ivr_digit_stream_t;
+struct switch_ivr_digit_stream_parser;
+typedef struct switch_ivr_digit_stream_parser switch_ivr_digit_stream_parser_t;
+struct switch_ivr_digit_stream;
+typedef struct switch_ivr_digit_stream switch_ivr_digit_stream_t;
 /*!
   \brief Create a digit stream parser object
   \param pool the pool to use for the new hash
@@ -639,25 +639,25 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  * @{
  */
 
-	 typedef enum {
-		 SWITCH_IVR_MENU_FLAG_FALLTOMAIN = (1 << 0),
-		 SWITCH_IVR_MENU_FLAG_FREEPOOL = (1 << 1),
-		 SWITCH_IVR_MENU_FLAG_STACK = (1 << 2)
-	 } switch_ivr_menu_flags;
+typedef enum {
+	SWITCH_IVR_MENU_FLAG_FALLTOMAIN = (1 << 0),
+	SWITCH_IVR_MENU_FLAG_FREEPOOL = (1 << 1),
+	SWITCH_IVR_MENU_FLAG_STACK = (1 << 2)
+} switch_ivr_menu_flags;
 /* Actions are either set in switch_ivr_menu_bind_function or returned by a callback */
-	 typedef enum {
-		 SWITCH_IVR_ACTION_DIE,	/* Exit the menu.                  */
-		 SWITCH_IVR_ACTION_EXECMENU,	/* Goto another menu in the stack. */
-		 SWITCH_IVR_ACTION_EXECAPP,	/* Execute an application.         */
-		 SWITCH_IVR_ACTION_PLAYSOUND,	/* Play a sound.                   */
-		 SWITCH_IVR_ACTION_BACK,	/* Go back 1 menu.                 */
-		 SWITCH_IVR_ACTION_TOMAIN,	/* Go back to the top level menu.  */
-		 SWITCH_IVR_ACTION_NOOP	/* No operation                    */
-	 } switch_ivr_action_t;
-	 struct switch_ivr_menu;
-	 typedef switch_ivr_action_t switch_ivr_menu_action_function_t (struct switch_ivr_menu *, char *, char *, size_t, void *);
-	 typedef struct switch_ivr_menu switch_ivr_menu_t;
-	 typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
+typedef enum {
+	SWITCH_IVR_ACTION_DIE,	/* Exit the menu.                  */
+	SWITCH_IVR_ACTION_EXECMENU,	/* Goto another menu in the stack. */
+	SWITCH_IVR_ACTION_EXECAPP,	/* Execute an application.         */
+	SWITCH_IVR_ACTION_PLAYSOUND,	/* Play a sound.                   */
+	SWITCH_IVR_ACTION_BACK,	/* Go back 1 menu.                 */
+	SWITCH_IVR_ACTION_TOMAIN,	/* Go back to the top level menu.  */
+	SWITCH_IVR_ACTION_NOOP	/* No operation                    */
+} switch_ivr_action_t;
+struct switch_ivr_menu;
+typedef switch_ivr_action_t switch_ivr_menu_action_function_t (struct switch_ivr_menu *, char *, char *, size_t, void *);
+typedef struct switch_ivr_menu switch_ivr_menu_t;
+typedef struct switch_ivr_menu_action switch_ivr_menu_action_t;
 /******************************************************************************************************/
 
 /*!
@@ -682,20 +682,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\return SWITCH_STATUS_SUCCESS if the menu was created.
  */
 
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
-														  switch_ivr_menu_t *main,
-														  const char *name,
-														  const char *greeting_sound,
-														  const char *short_greeting_sound,
-														  const char *invalid_sound,
-														  const char *exit_sound,
-														  const char *confirm_macro,
-														  const char *confirm_key,
-														  const char *tts_engine,
-														  const char *tts_voice,
-														  int confirm_attempts,
-														  int inter_timeout, int digit_len, int timeout, int max_failures, 
-														  int max_timeouts, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_init(switch_ivr_menu_t **new_menu,
+													 switch_ivr_menu_t *main,
+													 const char *name,
+													 const char *greeting_sound,
+													 const char *short_greeting_sound,
+													 const char *invalid_sound,
+													 const char *exit_sound,
+													 const char *confirm_macro,
+													 const char *confirm_key,
+													 const char *tts_engine,
+													 const char *tts_voice,
+													 int confirm_attempts,
+													 int inter_timeout, int digit_len, int timeout, int max_failures, 
+													 int max_timeouts, switch_memory_pool_t *pool);
 
 /*!
  *\brief switch_ivr_menu_bind_action: Bind a keystroke to an action.
@@ -705,8 +705,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param bind KeyStrokes to bind the action to.
  *\return SWUTCH_STATUS_SUCCESS if the action was binded
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, const char *arg,
-																 const char *bind);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_action(switch_ivr_menu_t *menu, switch_ivr_action_t ivr_action, const char *arg,
+															const char *bind);
 
 
 /*!
@@ -720,8 +720,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\note The function returns an switch_ivr_action_t enum of what you want to do. and looks to your buffer for args.
  *\return SWUTCH_STATUS_SUCCESS if the function was binded
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu,
-																   switch_ivr_menu_action_function_t *function, const char *arg, const char *bind);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_bind_function(switch_ivr_menu_t *menu,
+															  switch_ivr_menu_action_function_t *function, const char *arg, const char *bind);
 
 
 /*!
@@ -732,17 +732,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param obj A void pointer to an object you want to make avaliable to your callback functions that you may have binded with switch_ivr_menu_bind_function.
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t *stack, char *name, void *obj);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_execute(switch_core_session_t *session, switch_ivr_menu_t *stack, char *name, void *obj);
 
 /*!
  *\brief free a stack of menu objects.
  *\param stack The top level menu you wish to destroy.
  *\return SWITCH_STATUS_SUCCESS if the object was a top level menu and it was freed
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t *stack);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_free(switch_ivr_menu_t *stack);
 
-	 struct switch_ivr_menu_xml_ctx;
-	 typedef struct switch_ivr_menu_xml_ctx switch_ivr_menu_xml_ctx_t;
+struct switch_ivr_menu_xml_ctx;
+typedef struct switch_ivr_menu_xml_ctx switch_ivr_menu_xml_ctx_t;
 /*!
  *\brief Build a menu stack from an xml source
  *\param xml_menu_ctx The XML menu parser context previously created by switch_ivr_menu_stack_xml_init
@@ -751,10 +751,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param xml_menu The xml Menu source of the menu to be created
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
-																	 switch_ivr_menu_t **menu_stack, switch_xml_t xml_menus, switch_xml_t xml_menu);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_build(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
+																switch_ivr_menu_t **menu_stack, switch_xml_t xml_menus, switch_xml_t xml_menu);
 
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_str2action(const char *action_name, switch_ivr_action_t *action);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_str2action(const char *action_name, switch_ivr_action_t *action);
 
 /*!
  *\param xml_menu_ctx The XML menu parser context previously created by switch_ivr_menu_stack_xml_init
@@ -762,46 +762,47 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_digit_stream_parser_set_terminator(sw
  *\param function The menu function callback that will be executed when menu digits are bound to this name
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
-																		  const char *name, switch_ivr_menu_action_function_t *function);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_add_custom(switch_ivr_menu_xml_ctx_t *xml_menu_ctx,
+																	 const char *name, switch_ivr_menu_action_function_t *function);
 
 /*!
  *\param xml_menu_ctx A pointer of a XML menu parser context to be created
  *\param pool memory pool (NULL to create one)
  *\return SWITCH_STATUS_SUCCESS if all is well
  */
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t **xml_menu_ctx, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_ivr_menu_stack_xml_init(switch_ivr_menu_xml_ctx_t **xml_menu_ctx, switch_memory_pool_t *pool);
 
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
-															 switch_input_args_t *args);
-	 SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms);
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, char *b_uuid, switch_size_t blen);
-	 SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg);
-	 SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session);
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t *session, switch_core_session_t *peer_session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *session, const char *macro_name, const char *data, const char *lang,
+														switch_input_args_t *args);
+SWITCH_DECLARE(void) switch_ivr_delay_echo(switch_core_session_t *session, uint32_t delay_ms);
+SWITCH_DECLARE(switch_status_t) switch_ivr_find_bridged_uuid(const char *uuid, char *b_uuid, switch_size_t blen);
+SWITCH_DECLARE(void) switch_ivr_intercept_session(switch_core_session_t *session, const char *uuid, switch_bool_t bleg);
+SWITCH_DECLARE(void) switch_ivr_park_session(switch_core_session_t *session);
+SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t *session, switch_core_session_t *peer_session);
 
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
-													 uint32_t min_digits,
-													 uint32_t max_digits,
-													 const char *prompt_audio_file,
-													 const char *var_name,
-													 char *digit_buffer,
-													 switch_size_t digit_buffer_length, uint32_t timeout, const char *valid_terminators);
+SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
+												uint32_t min_digits,
+												uint32_t max_digits,
+												const char *prompt_audio_file,
+												const char *var_name,
+												char *digit_buffer,
+												switch_size_t digit_buffer_length, uint32_t timeout, const char *valid_terminators);
 
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_session_t *session, uint32_t key,
-																	   switch_bind_flag_t bind_flags, const char *app);
-     SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_session_t *session, uint32_t key);
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *session, const char *unhold_key, const char *moh_a, const char *moh_b);
-	 SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, const char *tosay, const char *module_name, const char *say_type,
-													const char *say_method, switch_input_args_t *args);
+SWITCH_DECLARE(switch_status_t) switch_ivr_bind_dtmf_meta_session(switch_core_session_t *session, uint32_t key,
+																  switch_bind_flag_t bind_flags, const char *app);
+SWITCH_DECLARE(switch_status_t) switch_ivr_unbind_dtmf_meta_session(switch_core_session_t *session, uint32_t key);
+SWITCH_DECLARE(switch_status_t) switch_ivr_soft_hold(switch_core_session_t *session, const char *unhold_key, const char *moh_a, const char *moh_b);
+SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, const char *tosay, const char *module_name, const char *say_type,
+											   const char *say_method, switch_input_args_t *args);
 
-	 SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char *name);
-	 SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *name);
-     SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
-     SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session);
+SWITCH_DECLARE(switch_say_method_t) switch_ivr_get_say_method_by_name(const char *name);
+SWITCH_DECLARE(switch_say_type_t) switch_ivr_get_say_type_by_name(const char *name);
+SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data);
+SWITCH_DECLARE(switch_status_t) switch_ivr_sound_test(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_process_import(switch_core_session_t *session, switch_channel_t *peer_channel, const char *varname);
 /** @} */
 
-	 SWITCH_END_EXTERN_C
+SWITCH_END_EXTERN_C
 #endif
 /* For Emacs:
  * Local Variables:
