@@ -563,6 +563,8 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	/* format the custom_sql */
 	safe_sql = format_custom_sql(profile->custom_sql, cb_struct, digits_copy);
 	if (!safe_sql) {
+		switch_event_safe_destroy(&cb_struct->event);
+		switch_core_hash_destroy(&cb_struct->dedup_hash);
 		return SWITCH_STATUS_GENERR;
 	}
 	SWITCH_STANDARD_STREAM(sql_stream);
@@ -577,6 +579,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	lookup_status = lcr_execute_sql_callback((char *)sql_stream.data, route_add_callback, cb_struct);
 
 	switch_safe_free(sql_stream.data);
+	switch_event_safe_destroy(&cb_struct->event);
 	switch_core_hash_destroy(&cb_struct->dedup_hash);
 
 	if (lookup_status) {
