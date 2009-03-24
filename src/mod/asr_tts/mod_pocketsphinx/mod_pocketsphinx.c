@@ -221,7 +221,7 @@ static switch_status_t pocketsphinx_asr_close(switch_asr_handle_t *ah, switch_as
 	switch_mutex_unlock(ps->flag_mutex);
 	switch_clear_flag(ps, PSFLAG_HAS_TEXT);
 	switch_clear_flag(ps, PSFLAG_READY);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Port Closed.\n"); 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Port Closed.\n"); 
 	switch_set_flag(ah, SWITCH_ASR_FLAG_CLOSED);
 	return SWITCH_STATUS_SUCCESS;
 }
