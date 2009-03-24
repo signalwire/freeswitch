@@ -309,6 +309,8 @@ int nua_event_is_incoming_request(nua_event_t event)
 char const *nua_event_name(nua_event_t event)
 {
   switch (event) {
+  case nua_i_none: return "nua_i_none";
+
   case nua_i_error: return "nua_i_error";
   case nua_i_invite: return "nua_i_invite";
   case nua_i_cancel: return "nua_i_cancel";
