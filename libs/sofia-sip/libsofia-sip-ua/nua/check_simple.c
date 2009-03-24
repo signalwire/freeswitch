@@ -265,7 +265,7 @@ START_TEST(subscribe_6_1_1)
 {
   nua_handle_t *nh;
   struct event *notify;
-  s2_case("6.1.1", "Basic subscription",
+  S2_CASE("6.1.1", "Basic subscription",
 	  "NUA sends SUBSCRIBE, waits for NOTIFY, sends un-SUBSCRIBE");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -283,7 +283,7 @@ START_TEST(subscribe_6_1_2)
   struct message *subscribe, *response;
   struct event *notify, *event;
 
-  s2_case("6.1.2", "Basic subscription with refresh",
+  S2_CASE("6.1.2", "Basic subscription with refresh",
 	  "NUA sends SUBSCRIBE, waits for NOTIFY, "
 	  "sends re-SUBSCRIBE, waits for NOTIFY, "
 	  "sends un-SUBSCRIBE");
@@ -331,7 +331,7 @@ START_TEST(subscribe_6_1_3)
   struct message *response;
   struct event *notify, *event;
 
-  s2_case("6.1.3", "Subscription terminated by notifier",
+  S2_CASE("6.1.3", "Subscription terminated by notifier",
 	  "NUA sends SUBSCRIBE, waits for NOTIFY, "
 	  "gets NOTIFY terminating the subscription,");
 
@@ -361,7 +361,7 @@ START_TEST(subscribe_6_1_4)
   struct message *response;
   struct event *notify, *event;
 
-  s2_case("6.1.4", "Subscription terminated by notifier, re-established",
+  S2_CASE("6.1.4", "Subscription terminated by notifier, re-established",
 	  "NUA sends SUBSCRIBE, waits for NOTIFY, "
 	  "gets NOTIFY terminating the subscription,");
 
@@ -419,7 +419,7 @@ START_TEST(fetch_6_2_1)
   nua_handle_t *nh;
   struct event *notify;
 
-  s2_case("6.2.1", "Event fetch - NOTIFY after 202",
+  S2_CASE("6.2.1", "Event fetch - NOTIFY after 202",
 	  "NUA sends SUBSCRIBE with Expires 0, waits for NOTIFY");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -436,7 +436,7 @@ START_TEST(fetch_6_2_2)
   nua_handle_t *nh;
   struct event *notify;
 
-  s2_case("6.2.2", "Event fetch - NOTIFY before 200",
+  S2_CASE("6.2.2", "Event fetch - NOTIFY before 200",
 	  "NUA sends SUBSCRIBE with Expires 0, waits for NOTIFY");
 
   send_notify_before_response = 1;
@@ -456,7 +456,7 @@ START_TEST(fetch_6_2_3)
   struct message *subscribe;
   struct event *event;
 
-  s2_case("6.2.3", "Event fetch - no NOTIFY",
+  S2_CASE("6.2.3", "Event fetch - no NOTIFY",
 	  "NUA sends SUBSCRIBE with Expires 0, waits for NOTIFY, times out");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -539,7 +539,7 @@ START_TEST(notify_6_3_1)
   struct message *notify, *response;
   sip_t *sip;
 
-  s2_case("6.3.1", "Basic NOTIFY server",
+  S2_CASE("6.3.1", "Basic NOTIFY server",
 	  "NUA receives SUBSCRIBE, sends 202 and NOTIFY. "
 	  "First NOTIFY terminates subscription. ");
 
@@ -612,7 +612,7 @@ START_TEST(notify_6_3_2)
   struct message *notify;
   sip_t *sip;
 
-  s2_case("6.3.2", "NOTIFY server - automatic subscription termination",
+  S2_CASE("6.3.2", "NOTIFY server - automatic subscription termination",
 	  "NUA receives SUBSCRIBE, sends 202 and NOTIFY. "
 	  "The subscription terminates with timeout. ");
 
@@ -664,7 +664,7 @@ START_TEST(notify_6_3_3)
   struct event *response;
   sip_t *sip;
 
-  s2_case("6.3.3", "NOTIFY server - terminate with error response to NOTIFY",
+  S2_CASE("6.3.3", "NOTIFY server - terminate with error response to NOTIFY",
 	  "NUA receives SUBSCRIBE, sends 202 and NOTIFY. "
 	  "The subscription terminates when watcher "
 	  "returns 481 to second NOTIFY.");
@@ -709,7 +709,7 @@ START_TEST(notify_6_3_4)
   struct event *response;
   sip_t *sip;
 
-  s2_case("6.3.4", "NOTIFY server - terminate with error response to NOTIFY",
+  S2_CASE("6.3.4", "NOTIFY server - terminate with error response to NOTIFY",
 	  "NUA receives SUBSCRIBE, sends 202 and NOTIFY. "
 	  "The subscription terminates when watcher "
 	  "returns 481 to second NOTIFY. The queued 3rd NOTIFY gets "
@@ -778,7 +778,7 @@ TCase *notifier_tcase(int threading)
 
 START_TEST(empty)
 {
-  s2_case("0.0.0", "Empty test case",
+  S2_CASE("0.0.0", "Empty test case",
 	  "Detailed explanation for empty test case.");
 
   tport_set_params(s2sip->master, TPTAG_LOG(1), TAG_END());

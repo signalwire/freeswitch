@@ -428,7 +428,7 @@ START_TEST(call_2_1_1)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.1", "Basic call",
+  S2_CASE("2.1.1", "Basic call",
 	  "NUA sends INVITE, NUA sends BYE");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -446,7 +446,7 @@ START_TEST(call_2_1_2_1)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.2.1", "Basic call",
+  S2_CASE("2.1.2.1", "Basic call",
 	  "NUA sends INVITE, NUA receives BYE");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -463,7 +463,7 @@ START_TEST(call_2_1_2_2)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.2.2", "Basic call over TCP",
+  S2_CASE("2.1.2.2", "Basic call over TCP",
 	  "NUA sends INVITE, NUA receives BYE");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor),
@@ -484,7 +484,7 @@ START_TEST(call_2_1_3_1)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.3.1", "Incoming call",
+  S2_CASE("2.1.3.1", "Incoming call",
 	  "NUA receives INVITE and BYE");
 
   nh = invite_to_nua(TAG_END());
@@ -500,7 +500,7 @@ START_TEST(call_2_1_3_2)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.3.2", "Incoming call over TCP",
+  S2_CASE("2.1.3.2", "Incoming call over TCP",
 	  "NUA receives INVITE and BYE");
 
   dialog->tport = s2sip->tcp.tport;
@@ -518,7 +518,7 @@ START_TEST(call_2_1_4)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.4", "Incoming call",
+  S2_CASE("2.1.4", "Incoming call",
 	  "NUA receives INVITE and sends BYE");
 
   nh = invite_to_nua(TAG_END());
@@ -534,7 +534,7 @@ START_TEST(call_2_1_5)
 {
   nua_handle_t *nh;
 
-  s2_case("2.1.5", "Incoming call",
+  S2_CASE("2.1.5", "Incoming call",
 	  "NUA receives INVITE and sends BYE, BYE is challenged");
 
   nh = invite_to_nua(TAG_END());
@@ -553,7 +553,7 @@ START_TEST(call_2_1_6)
   struct event *invite;
   struct message *response;
 
-  s2_case("2.1.6", "Basic call",
+  S2_CASE("2.1.6", "Basic call",
 	  "NUA received INVITE, "
 	  "NUA responds (and saves proxy for dialog), "
 	  "NUA sends BYE");
@@ -621,7 +621,7 @@ START_TEST(call_2_1_7)
   nua_handle_t *nh, *nh2;
   sip_replaces_t *replaces;
 
-  s2_case("2.1.7", "Call lookup",
+  S2_CASE("2.1.7", "Call lookup",
 	  "Test dialog and call-id lookup");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -654,7 +654,7 @@ START_TEST(call_2_1_8)
   nua_handle_t *nh;
   struct message *invite, *ack;
 
-  s2_case("2.1.8", "Call using NUTAG_PROXY()",
+  S2_CASE("2.1.8", "Call using NUTAG_PROXY()",
 	  "Test handle-specific NUTAG_PROXY().");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -713,7 +713,7 @@ START_TEST(cancel_2_2_1)
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
-  s2_case("2.2.1", "Cancel call",
+  S2_CASE("2.2.1", "Cancel call",
 	  "NUA is caller, NUA sends CANCEL immediately");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -749,7 +749,7 @@ START_TEST(cancel_2_2_2)
   nua_handle_t *nh;
   struct message *invite;
 
-  s2_case("2.2.2", "Canceled call",
+  S2_CASE("2.2.2", "Canceled call",
 	  "NUA is caller, NUA sends CANCEL after receiving 100");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -776,7 +776,7 @@ START_TEST(cancel_2_2_3)
   nua_handle_t *nh;
   struct message *invite;
 
-  s2_case("2.2.3", "Canceled call",
+  S2_CASE("2.2.3", "Canceled call",
 	  "NUA is caller, NUA sends CANCEL after receiving 180");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -807,7 +807,7 @@ START_TEST(cancel_2_2_4)
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
-  s2_case("2.2.4", "Cancel and 200 OK glare",
+  S2_CASE("2.2.4", "Cancel and 200 OK glare",
 	  "NUA is caller, NUA sends CANCEL after receiving 180 "
 	  "but UAS already sent 200 OK.");
 
@@ -852,7 +852,7 @@ START_TEST(cancel_2_2_5)
   nua_handle_t *nh;
   struct message *invite, *cancel, *bye;
 
-  s2_case(
+  S2_CASE(
     "2.2.5", "Cancel and 200 OK glare",
     "NUA is caller, "
     "NUA uses nua_bye() to send CANCEL after receiving 180\n"
@@ -907,7 +907,7 @@ START_TEST(cancel_2_2_6)
   struct event *invite;
   struct message *response;
 
-  s2_case("2.2.6", "Cancel call",
+  S2_CASE("2.2.6", "Cancel call",
 	  "NUA is callee, sends 100, 180, INVITE gets canceled");
 
   soa_generate_offer(soa, 1, NULL);
@@ -959,7 +959,7 @@ START_TEST(cancel_2_2_7)
   struct message *response;
   char const *via = "SIP/2.0/UDP host.in.invalid;rport";
 
-  s2_case("2.2.7", "Call gets canceled",
+  S2_CASE("2.2.7", "Call gets canceled",
 	  "NUA is callee, sends 100, 180, INVITE gets canceled. "
 	  "Using RFC 2543 dialog and transaction matching.");
 
@@ -1013,7 +1013,7 @@ START_TEST(cancel_2_2_8)
   struct message *invite, *cancel;
   int timeout;
 
-  s2_case("2.2.8", "CANCEL and INVITE times out",
+  S2_CASE("2.2.8", "CANCEL and INVITE times out",
 	  "NUA is caller, NUA sends CANCEL after receiving 180 "
 	  "but UAS never responds.");
 
@@ -1058,7 +1058,7 @@ START_TEST(cancel_2_2_9)
   struct message *invite, *cancel;
   int timeout;
 
-  s2_case("2.2.9", "CANCEL a RFC2543 UA",
+  S2_CASE("2.2.9", "CANCEL a RFC2543 UA",
 	  "NUA is caller, NUA sends CANCEL after receiving 180, "
 	  "UAS sends 200 OK to CANCEL but no response to INVITE.");
 
@@ -1101,7 +1101,7 @@ START_TEST(cancel_2_2_10)
   struct event *event;
   int timeout;
 
-  s2_case("2.2.10", "CANCEL and INVITE times out",
+  S2_CASE("2.2.10", "CANCEL and INVITE times out",
 	  "NUA is caller, NUA sends CANCEL after receiving 180 "
 	  "but UAS never responds.");
 
@@ -1221,7 +1221,7 @@ START_TEST(call_2_3_1)
   rr->r_url->url_user = "record";
   rr->r_url->url_params = "lr";
 
-  s2_case("2.3.1", "Incoming call with call timers",
+  S2_CASE("2.3.1", "Incoming call with call timers",
 	  "NUA receives INVITE, "
 	  "activates call timers, "
 	  "sends re-INVITE twice, "
@@ -1249,7 +1249,7 @@ START_TEST(call_2_3_2)
 {
   nua_handle_t *nh;
 
-  s2_case("2.3.2", "Incoming call with call timers",
+  S2_CASE("2.3.2", "Incoming call with call timers",
 	  "NUA receives INVITE, "
 	  "activates call timers, "
 	  "sends re-INVITE, "
@@ -1294,7 +1294,7 @@ START_TEST(call_2_4_1)
   int with_sdp;
   sip_record_route_t rr[1];
 
-  s2_case("2.4.1", "Call with 100rel",
+  S2_CASE("2.4.1", "Call with 100rel",
 	  "NUA sends INVITE, "
 	  "receives 183, sends PRACK, receives 200 for it, "
 	  "receives 180, sends PRACK, receives 200 for it, "
@@ -1357,7 +1357,7 @@ START_TEST(call_2_4_2)
   struct message *invite, *prack;
   int with_sdp;
 
-  s2_case("2.4.2", "Call with 100rel",
+  S2_CASE("2.4.2", "Call with 100rel",
 	  "NUA sends INVITE, "
 	  "receives 183, sends PRACK, receives 200 for it, "
 	  "receives 180, sends PRACK, receives 200 for it, "
@@ -1425,7 +1425,7 @@ START_TEST(call_2_5_1)
   struct message *invite, *prack, *update;
   int with_sdp;
 
-  s2_case("2.5.1", "Call with preconditions",
+  S2_CASE("2.5.1", "Call with preconditions",
 	  "NUA sends INVITE, "
 	  "receives 183, sends PRACK, receives 200 for it, "
 	  "sends UPDATE, receives 200 for it, "
@@ -1493,7 +1493,7 @@ START_TEST(call_2_5_2)
   sip_rseq_t rs[1];
   sip_rack_t rack[1];
 
-  s2_case("2.5.2", "Call with preconditions - send 200 w/ ongoing PRACK ",
+  S2_CASE("2.5.2", "Call with preconditions - send 200 w/ ongoing PRACK ",
 	  "NUA sends INVITE, "
 	  "receives 183, sends PRACK, "
           "receives 200 to INVITE, "
@@ -1570,7 +1570,7 @@ START_TEST(call_2_5_3)
   sip_rseq_t rs[1];
   sip_rack_t rack[1];
 
-  s2_case("2.5.3", "Call with preconditions - send 200 w/ ongoing UPDATE ",
+  S2_CASE("2.5.3", "Call with preconditions - send 200 w/ ongoing UPDATE ",
 	  "NUA sends INVITE, "
 	  "receives 183, sends PRACK, receives 200 to PRACK, "
 	  "sends UPDATE, "
@@ -1658,7 +1658,7 @@ START_TEST(call_2_6_1)
   struct message *invite, *ack;
   int i;
 
-  s2_case("2.6.1", "Queued re-INVITEs",
+  S2_CASE("2.6.1", "Queued re-INVITEs",
 	  "NUA receives INVITE, "
 	  "sends re-INVITE twice, "
 	  "sends BYE.");
@@ -1696,7 +1696,7 @@ START_TEST(call_2_6_2)
   nua_handle_t *nh;
   struct message *invite, *ack, *response;
 
-  s2_case("2.6.2", "Re-INVITE glare",
+  S2_CASE("2.6.2", "Re-INVITE glare",
 	  "NUA sends re-INVITE and then receives re-INVITE, "
 	  "sends BYE.");
 
@@ -1754,7 +1754,7 @@ START_TEST(call_2_6_3)
   nua_handle_t *nh;
   struct message *response;
 
-  s2_case("2.6.3", "Handling re-INVITE without SDP gracefully",
+  S2_CASE("2.6.3", "Handling re-INVITE without SDP gracefully",
 	  "NUA receives INVITE, "
 	  "re-INVITE without SDP (w/o NUTAG_REFRESH_WITHOUT_SDP(), "
 	  "re-INVITE without SDP (using NUTAG_REFRESH_WITHOUT_SDP(), "
@@ -1819,7 +1819,7 @@ START_TEST(call_2_6_4)
   nua_handle_t *nh;
   struct message *invite, *ack;
 
-  s2_case("2.6.4", "re-INVITEs w/o SDP",
+  S2_CASE("2.6.4", "re-INVITEs w/o SDP",
 	  "NUA sends re-INVITE w/o SDP, "
 	  "receives SDP w/ offer, "
 	  "sends ACK w/ answer, "
@@ -1874,7 +1874,7 @@ START_TEST(call_3_1_1)
   nua_handle_t *nh;
   struct message *invite, *ack;
 
-  s2_case("3.1.1", "Call failure", "Call fails with 403 response");
+  S2_CASE("3.1.1", "Call failure", "Call fails with 403 response");
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor),
 		  TAG_END());
 
@@ -1908,7 +1908,7 @@ START_TEST(call_3_1_2)
   struct message *invite;
   int i;
 
-  s2_case("3.1.2", "Call fails after too many retries",
+  S2_CASE("3.1.2", "Call fails after too many retries",
 	  "Call fails after 4 times 500 Retry-After");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor),
@@ -1945,7 +1945,7 @@ START_TEST(call_3_2_1)
   nua_handle_t *nh;
   struct message *invite;
 
-  s2_case("3.2.1", "Re-INVITE failure", "Re-INVITE fails with 403 response");
+  S2_CASE("3.2.1", "Re-INVITE failure", "Re-INVITE fails with 403 response");
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor),
 		  TAG_END());
 
@@ -1976,7 +1976,7 @@ START_TEST(call_3_2_2)
   struct message *invite, *bye;
   int i;
 
-  s2_case("3.2.2", "Re-INVITE fails after too many retries",
+  S2_CASE("3.2.2", "Re-INVITE fails after too many retries",
 	  "Call fails after 4 times 500 Retry-After");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor),
@@ -2023,7 +2023,7 @@ START_TEST(call_3_2_3)
   nua_handle_t *nh;
   struct message *invite;
 
-  s2_case("3.2.3", "Re-INVITE failure", "Re-INVITE fails with 491 response");
+  S2_CASE("3.2.3", "Re-INVITE failure", "Re-INVITE fails with 491 response");
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor),
 		  TAG_END());
 
@@ -2071,7 +2071,7 @@ START_TEST(bye_4_1_1)
   nua_handle_t *nh;
   struct message *bye, *r481;
 
-  s2_case("4.1.1", "Re-INVITE while terminating",
+  S2_CASE("4.1.1", "Re-INVITE while terminating",
 	  "NUA sends BYE, "
 	  "BYE is challenged, "
 	  "and NUA is re-INVITEd at the same time.");
@@ -2113,7 +2113,7 @@ START_TEST(bye_4_1_2)
   nua_handle_t *nh;
   struct message *bye, *r481;
 
-  s2_case("4.1.2", "Re-INVITE while terminating",
+  S2_CASE("4.1.2", "Re-INVITE while terminating",
 	  "NUA sends BYE, and gets re-INVITEd at same time");
 
   nh = invite_to_nua(TAG_END());
@@ -2149,7 +2149,7 @@ START_TEST(bye_4_1_3)
   struct message *bye;
   struct event *i_bye;
 
-  s2_case("4.1.3", "BYE while terminating",
+  S2_CASE("4.1.3", "BYE while terminating",
 	  "NUA sends BYE and receives BYE");
 
   nh = invite_to_nua(TAG_END());
@@ -2190,7 +2190,7 @@ START_TEST(bye_4_1_4)
   struct message *bye;
   struct event *i_bye;
 
-  s2_case("4.1.4", "Send BYE after BYE has been received",
+  S2_CASE("4.1.4", "Send BYE after BYE has been received",
 	  "NUA receives BYE, tries to send BYE at same time");
 
   nh = invite_to_nua(TAG_END());
@@ -2229,7 +2229,7 @@ START_TEST(bye_4_1_5)
   struct message *bye;
   struct event *i_bye;
 
-  s2_case("4.1.5", "Send BYE after BYE has been received",
+  S2_CASE("4.1.5", "Send BYE after BYE has been received",
 	  "NUA receives BYE, tries to send BYE at same time");
 
   nh = invite_to_nua(TAG_END());
@@ -2265,7 +2265,7 @@ START_TEST(bye_4_1_6)
   nua_handle_t *nh;
   struct message *bye, *r486;
 
-  s2_case("4.1.6", "Send BYE after INVITE has been received",
+  S2_CASE("4.1.6", "Send BYE after INVITE has been received",
 	  "NUA receives INVITE, sends BYE at same time");
 
   nh = invite_to_nua(TAG_END());
@@ -2303,7 +2303,7 @@ START_TEST(bye_4_1_7)
   nua_handle_t *nh;
   struct message *bye, *r486;
 
-  s2_case("4.1.7", "Send BYE after INVITE has been received",
+  S2_CASE("4.1.7", "Send BYE after INVITE has been received",
 	  "NUA receives INVITE, sends BYE at same time");
 
   nh = invite_to_nua(TAG_END());
@@ -2340,7 +2340,7 @@ START_TEST(bye_4_1_8)
   nua_handle_t *nh;
   struct message *bye, *r486;
 
-  s2_case("4.1.8", "BYE followed by response to INVITE",
+  S2_CASE("4.1.8", "BYE followed by response to INVITE",
 	  "NUA receives INVITE, sends BYE at same time");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -2380,7 +2380,7 @@ START_TEST(bye_4_1_9)
   struct message *bye;
   struct event *i_bye;
 
-  s2_case("4.1.6", "Send BYE, receive BYE, destroy",
+  S2_CASE("4.1.6", "Send BYE, receive BYE, destroy",
 	  "NUA sends BYE, receives BYE and handle gets destroyed");
 
   nh = invite_to_nua(TAG_END());
@@ -2424,7 +2424,7 @@ START_TEST(bye_4_1_10)
   struct message *invite, *bye;
   struct event *i_bye;
 
-  s2_case("4.1.6", "Send auto-BYE upon receiving 501, receive BYE, destroy",
+  S2_CASE("4.1.6", "Send auto-BYE upon receiving 501, receive BYE, destroy",
 	  "NUA sends BYE, receives BYE and handle gets destroyed");
 
   nh = invite_to_nua(TAG_END());
@@ -2475,7 +2475,7 @@ START_TEST(bye_4_1_11)
   struct message *invite, *ack;
   struct event *i_bye;
 
-  s2_case("4.1.11", "Receive BYE in completing state",
+  S2_CASE("4.1.11", "Receive BYE in completing state",
 	  "NUA sends INVITE, receives 200, receives BYE.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -2511,7 +2511,7 @@ START_TEST(bye_4_2_1)
   nua_handle_t *nh;
   struct message *bye;
 
-  s2_case("4.2.1", "BYE in progress while call timer expires",
+  S2_CASE("4.2.1", "BYE in progress while call timer expires",
 	  "NUA receives INVITE, "
 	  "activates call timers, "
 	  "sends BYE, BYE challenged, "
@@ -2555,7 +2555,7 @@ START_TEST(bye_4_2_2)
   nua_handle_t *nh;
   struct message *bye;
 
-  s2_case("4.2.2", "BYE in progress while call timer expires",
+  S2_CASE("4.2.2", "BYE in progress while call timer expires",
 	  "NUA receives INVITE, "
 	  "activates call timers, "
 	  "sends BYE, BYE challenged, "
@@ -2626,7 +2626,7 @@ START_TEST(destroy_4_3_1)
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
-  s2_case("4.3.1", "Destroy handle after INVITE sent",
+  S2_CASE("4.3.1", "Destroy handle after INVITE sent",
 	  "NUA sends INVITE, handle gets destroyed.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -2654,7 +2654,7 @@ START_TEST(destroy_4_3_2)
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
-  s2_case("4.3.2", "Destroy handle in calling state",
+  S2_CASE("4.3.2", "Destroy handle in calling state",
 	  "NUA sends INVITE, receives 180, handle gets destroyed.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -2682,7 +2682,7 @@ START_TEST(destroy_4_3_3)
   nua_handle_t *nh;
   struct message *invite, *ack, *bye;
 
-  s2_case("4.3.3", "Destroy handle in completing state",
+  S2_CASE("4.3.3", "Destroy handle in completing state",
 	  "NUA sends INVITE, receives 200, handle gets destroyed.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -2718,7 +2718,7 @@ START_TEST(destroy_4_3_4)
   nua_handle_t *nh;
   struct message *invite, *ack, *bye;
 
-  s2_case("4.3.3", "Destroy handle in ready state ",
+  S2_CASE("4.3.3", "Destroy handle in ready state ",
 	  "NUA sends INVITE, receives 200, handle gets destroyed.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -2757,7 +2757,7 @@ START_TEST(destroy_4_3_5)
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
-  s2_case("4.3.5", "Destroy handle in re-INVITE calling state",
+  S2_CASE("4.3.5", "Destroy handle in re-INVITE calling state",
 	  "NUA sends re-INVITE, handle gets destroyed.");
 
   nh = invite_to_nua(TAG_END());
@@ -2785,7 +2785,7 @@ START_TEST(destroy_4_3_6)
   nua_handle_t *nh;
   struct message *invite, *cancel;
 
-  s2_case("4.3.6", "Destroy handle in calling state of re-INVITE",
+  S2_CASE("4.3.6", "Destroy handle in calling state of re-INVITE",
 	  "NUA sends re-INVITE, receives 180, handle gets destroyed.");
 
   nh = invite_to_nua(TAG_END());
@@ -2814,7 +2814,7 @@ START_TEST(destroy_4_3_7)
   nua_handle_t *nh;
   struct message *invite, *ack, *bye;
 
-  s2_case("4.3.7", "Destroy handle in completing state of re-INVITE",
+  S2_CASE("4.3.7", "Destroy handle in completing state of re-INVITE",
 	  "NUA sends INVITE, receives 200, handle gets destroyed.");
 
   nh = invite_to_nua(TAG_END());
@@ -2850,7 +2850,7 @@ START_TEST(destroy_4_3_8)
   nua_handle_t *nh;
   struct message *invite, *ack, *bye;
 
-  s2_case("4.3.8", "Destroy handle after INVITE sent",
+  S2_CASE("4.3.8", "Destroy handle after INVITE sent",
 	  "NUA sends INVITE, handle gets destroyed, "
 	  "but remote end returns 200 OK. "
 	  "Make sure nua tries to release call properly.");
@@ -2882,7 +2882,7 @@ START_TEST(destroy_4_3_9)
   nua_handle_t *nh;
   struct message *invite, *cancel, *ack, *bye;
 
-  s2_case("4.3.9", "Destroy handle in calling state",
+  S2_CASE("4.3.9", "Destroy handle in calling state",
 	  "NUA sends INVITE, receives 180, handle gets destroyed, "
 	  "but remote end returns 200 OK. "
 	  "Make sure nua tries to release call properly.");
@@ -2923,7 +2923,7 @@ START_TEST(destroy_4_4_1)
   struct event *invite;
   struct message *response;
 
-  s2_case("4.4.1", "Destroy handle while call is on-going",
+  S2_CASE("4.4.1", "Destroy handle while call is on-going",
 	  "NUA is callee, sends 100, destroys handle");
 
   soa_generate_offer(soa, 1, NULL);
@@ -2958,7 +2958,7 @@ START_TEST(destroy_4_4_2)
   struct event *invite;
   struct message *response;
 
-  s2_case("4.4.1", "Destroy handle while call is on-going",
+  S2_CASE("4.4.1", "Destroy handle while call is on-going",
 	  "NUA is callee, sends 180, destroys handle");
 
   soa_generate_offer(soa, 1, NULL);
@@ -2999,7 +2999,7 @@ START_TEST(destroy_4_4_3_1)
   struct event *invite;
   struct message *response, *bye;
 
-  s2_case("4.4.3.1", "Destroy handle while call is on-going",
+  S2_CASE("4.4.3.1", "Destroy handle while call is on-going",
 	  "NUA is callee, sends 200, destroys handle");
 
   soa_generate_offer(soa, 1, NULL);
@@ -3053,7 +3053,7 @@ START_TEST(destroy_4_4_3_2)
   struct event *invite;
   struct message *response, *bye;
 
-  s2_case("4.4.3.1", "Destroy handle while call is on-going",
+  S2_CASE("4.4.3.1", "Destroy handle while call is on-going",
 	  "NUA is callee, sends 200, destroys handle");
 
   soa_generate_offer(soa, 1, NULL);
@@ -3139,7 +3139,7 @@ START_TEST(options_5_1_1)
   nua_handle_t *nh;
   struct message *response;
 
-  s2_case("5.1.1", "Test nua_respond() API",
+  S2_CASE("5.1.1", "Test nua_respond() API",
 	  "Test nua_respond() API with OPTIONS.");
 
   s2_sip_request_to(dialog, SIP_METHOD_OPTIONS, NULL, TAG_END());
@@ -3198,7 +3198,7 @@ START_TEST(options_5_1_2)
   pthread_t tid;
   void *thread_return = NULL;
 
-  s2_case("5.1.2", "Test nua_respond() API with another thread",
+  S2_CASE("5.1.2", "Test nua_respond() API with another thread",
 	  "Test multithreading nua_respond() API with OPTIONS.");
 
   nua_set_params(nua, NUTAG_APPL_METHOD("OPTIONS"), TAG_END());
@@ -3262,7 +3262,7 @@ START_TEST(refer_5_2_1)
   struct event *refer;
   struct message *notify;
 
-  s2_case("5.2.1", "Receive REFER",
+  S2_CASE("5.2.1", "Receive REFER",
 	  "Make a call, receive REFER.");
 
   nh = nua_handle(nua, NULL, SIPTAG_TO(s2sip->aor), TAG_END());
@@ -3299,7 +3299,7 @@ START_TEST(refer_5_2_2)
   struct message *notify0, *notify1, *notify2;
   struct dialog *dialog1, *dialog2;
 
-  s2_case("5.2.2", "Receive REFER",
+  S2_CASE("5.2.2", "Receive REFER",
 	  "Make a call, receive REFER, "
 	  "make another call with automatic NOTIFYs");
 
@@ -3395,7 +3395,7 @@ TCase *refer_tcase(int threading)
 
 START_TEST(empty)
 {
-  s2_case("0.0.0", "Empty test case",
+  S2_CASE("0.0.0", "Empty test case",
 	  "Detailed explanation for empty test case.");
 
   tport_set_params(s2sip->master, TPTAG_LOG(1), TAG_END());

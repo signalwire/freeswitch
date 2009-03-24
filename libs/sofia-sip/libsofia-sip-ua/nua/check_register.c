@@ -117,7 +117,7 @@ START_TEST(register_1_0_1)
   nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
   struct message *m;
 
-  s2_case("1.0.1", "Failed Register", "REGISTER returned 403 response");
+  S2_CASE("1.0.1", "Failed Register", "REGISTER returned 403 response");
 
   nua_register(nh, TAG_END());
 
@@ -135,7 +135,7 @@ START_TEST(register_1_0_1)
 
 START_TEST(register_1_1_1)
 {
-  s2_case("1.1.1", "Basic Register", "REGISTER returning 200 OK");
+  S2_CASE("1.1.1", "Basic Register", "REGISTER returning 200 OK");
 
   s2_register_setup();
 
@@ -149,7 +149,7 @@ START_TEST(register_1_1_2)
   nua_handle_t *nh;
   struct message *m;
 
-  s2_case("1.1.2", "Register with dual authentication",
+  S2_CASE("1.1.2", "Register with dual authentication",
 	  "Register, authenticate");
 
   nh = nua_handle(nua, NULL, TAG_END());
@@ -230,7 +230,7 @@ START_TEST(register_1_2_1) {
   nua_handle_t *nh;
   struct message *m;
 
-  s2_case("1.2.1", "Register behind NAT",
+  S2_CASE("1.2.1", "Register behind NAT",
 	  "Register through NAT, detect NAT, re-REGISTER");
 
   nh = nua_handle(nua, NULL, TAG_END());
@@ -324,7 +324,7 @@ START_TEST(register_1_2_2_1)
 {
   nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
 
-  s2_case("1.2.2.1", "Register behind NAT",
+  S2_CASE("1.2.2.1", "Register behind NAT",
 	  "Authenticate, outbound activated");
 
   mark_point();
@@ -339,7 +339,7 @@ START_TEST(register_1_2_2_2)
   nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
   struct message *m;
 
-  s2_case("1.2.2.2", "Register behind NAT",
+  S2_CASE("1.2.2.2", "Register behind NAT",
 	  "Authenticate, outbound activated, "
 	  "authenticate OPTIONS probe, "
 	  "NAT binding change");
@@ -421,7 +421,7 @@ START_TEST(register_1_2_2_3)
   nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
   struct message *m;
 
-  s2_case("1.2.2.3", "Register behind NAT",
+  S2_CASE("1.2.2.3", "Register behind NAT",
 	  "Authenticate, outbound activated, "
 	  "detect NAT binding change when re-REGISTERing");
 
@@ -476,7 +476,7 @@ START_TEST(register_1_2_3) {
   nua_handle_t *nh;
   struct message *m;
 
-  s2_case("1.2.3", "Register behind NAT",
+  S2_CASE("1.2.3", "Register behind NAT",
 	  "Outbound activated by error response");
 
   nh = nua_handle(nua, NULL, TAG_END());
@@ -525,7 +525,7 @@ START_TEST(register_1_3_1)
   nua_handle_t *nh;
   struct message *m;
 
-  s2_case("1.3.1", "Register over TCP via NAT",
+  S2_CASE("1.3.1", "Register over TCP via NAT",
 	  "REGISTER via TCP, detect NTA, re-REGISTER");
 
   nh = nua_handle(nua, NULL, TAG_END());
@@ -576,7 +576,7 @@ START_TEST(register_1_3_2_1)
 {
   nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
 
-  s2_case("1.3.2.1", "Register behind NAT",
+  S2_CASE("1.3.2.1", "Register behind NAT",
 	  "Authenticate, outbound activated");
 
   mark_point();
@@ -593,7 +593,7 @@ START_TEST(register_1_3_2_2)
   nua_handle_t *nh = nua_handle(nua, NULL, TAG_END());
   struct message *m;
 
-  s2_case("1.3.2.2", "Register behind NAT with TCP",
+  S2_CASE("1.3.2.2", "Register behind NAT with TCP",
 	  "Detect NAT over TCP using rport. "
 	  "Authenticate, detect NAT, "
 	  "close TCP at server, wait for re-REGISTERs.");
@@ -652,7 +652,7 @@ START_TEST(register_1_3_3_1)
   struct message *m;
   tport_t *tcp;
 
-  s2_case("1.3.3.1", "Register behind NAT with UDP and TCP",
+  S2_CASE("1.3.3.1", "Register behind NAT with UDP and TCP",
 	  "Register with UDP, UDP time-outing, then w/ TCP using rport. ");
 
   nua_set_params(nua, NTATAG_TCP_RPORT(1), TAG_END());

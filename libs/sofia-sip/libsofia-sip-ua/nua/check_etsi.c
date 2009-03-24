@@ -201,7 +201,7 @@ START_TEST(SIP_CC_OE_CE_V_019)
   struct message *invite;
   struct message *bye;
 
-  s2_case("6.1.1", "SIP_CC_OE_CE_V_019",
+  S2_CASE("6.1.1", "SIP_CC_OE_CE_V_019",
           "Ensure that the IUT when an INVITE client transaction "
           "is in the Calling state, on receipt of Success (200 OK) "
           "responses differing only on the tag in the To header, "
@@ -241,7 +241,7 @@ START_TEST(SIP_CC_OE_CE_TI_008)
   nua_handle_t *nh;
   struct message *invite;
 
-  s2_case("6.1.2", "SIP_CC_OE_CE_TI_008",
+  S2_CASE("6.1.2", "SIP_CC_OE_CE_TI_008",
           "If an unreliable transport is used, ensure that "
           "the IUT, when an INVITE client transaction is in "
           "the Completed state, on receipt of final responses "
@@ -291,7 +291,7 @@ START_TEST(SIP_CC_OE_CE_TI_011_012)
   nua_handle_t *nh;
   struct message *invite;
 
-  s2_case("6.1.2", "SIP_CC_OE_CE_TI_011_012",
+  S2_CASE("6.1.2", "SIP_CC_OE_CE_TI_011_012",
           "Ensure that the IUT, when an INVITE client transaction "
           "has been in the Terminated state, on receipt of a "
           "retransmitted Success (200 OK) responses sends an ACK "
