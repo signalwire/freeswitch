@@ -3078,7 +3078,7 @@ tport_delivered_with_comp(tport_t *tp, msg_t const *msg,
 int
 tport_subject_search(char const *subject, su_strlst_t const *lst)
 {
-  int idx, ilen;
+  usize_t idx, ilen;
   const char *subjuri;
 
   if (!subject || su_strmatch(tpn_any, subject))
