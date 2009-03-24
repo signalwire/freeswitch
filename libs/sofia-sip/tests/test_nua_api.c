@@ -94,7 +94,7 @@ int test_nua_api_errors(struct context *ctx)
   TEST_1(!nua_handle_has_registrations(NULL));
   TEST_1(!nua_handle_remote(NULL));
   TEST_1(!nua_handle_local(NULL));
-  TEST_S(nua_event_name(-1), "NUA_UNKNOWN");
+  TEST_S(nua_event_name(-111), "NUA_UNKNOWN");
   TEST_VOID(nua_register(NULL, TAG_END()));
   TEST_VOID(nua_unregister(NULL, TAG_END()));
   TEST_VOID(nua_invite(NULL, TAG_END()));
