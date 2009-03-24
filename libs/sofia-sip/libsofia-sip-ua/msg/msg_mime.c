@@ -513,7 +513,7 @@ msg_multipart_t *msg_multipart_parse(su_home_t *home,
 
   for (mp = all; mp; mp = mp->mp_next) {
     mp->mp_data = boundary;
-    mp->mp_len = blen;
+    mp->mp_len = (unsigned)blen; /* XXX */
 
     assert(mp->mp_payload || mp->mp_separator);
 
@@ -613,7 +613,8 @@ int msg_multipart_complete(su_home_t *home,
 
   for (; mp; mp = mp->mp_next) {
     if (mp->mp_data == NULL) {
-      mp->mp_data = boundary, mp->mp_len = blen;
+      mp->mp_data = boundary;
+      mp->mp_len = (unsigned)blen; /* XXX */
     } else {
       if (mp->mp_len < 3)
 	return -1;
