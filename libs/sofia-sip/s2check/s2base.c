@@ -74,7 +74,7 @@ now(void)
 static double
 now(void)
 {
-  struct timespec tv;
+  struct timeval tv;
 
   gettimeofday(&tv, NULL);
 
