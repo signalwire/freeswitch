@@ -28,7 +28,7 @@ libs2_a_SOURCES = 	s2check.h s2tcase.c \
 # ----------------------------------------------------------------------
 # Install and distribution rules
 
-EXTRA_DIST =
+EXTRA_DIST =		exit77.c
 
 # ----------------------------------------------------------------------
 # Tests
