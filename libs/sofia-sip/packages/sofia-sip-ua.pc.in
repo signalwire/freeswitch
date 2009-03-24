@@ -4,6 +4,7 @@ libdir=@libdir@
 libexecdir=@libexecdir@
 includedir=@includedir@
 include_sofiadir=@include_sofiadir@
+datarootdir=@datarootdir@
 sofiaawkdir=@datadir@/@PACKAGE@
 
 Name: sofia-sip-ua
