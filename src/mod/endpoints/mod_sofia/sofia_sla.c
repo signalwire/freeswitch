@@ -217,7 +217,7 @@ void sofia_sla_handle_sip_r_subscribe(int status,
 		nua_handle_destroy(nh);
 		sofia_private_free(sofia_private);
 	} else {
-		char *full_contact = sip_header_as_string(nh->nh_home, (void *) sip->sip_contact);
+		char *full_contact = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_contact);
 		time_t expires = switch_epoch_time_now(NULL);
 		char *sql;
 		char *contact_str = strip_uri(full_contact);

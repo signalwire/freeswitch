@@ -793,7 +793,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (sip->sip_path) {
-			path_val = sip_header_as_string(nh->nh_home, (void *) sip->sip_path);
+			path_val = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_path);
 			path_encoded_len = (strlen(path_val) * 3) + 1;
 			switch_zmalloc(path_encoded, path_encoded_len);
 			switch_copy_string(path_encoded, ";fs_path=", 10);
@@ -1117,7 +1117,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 		if (exptime) {
 			switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
-			sip_contact_add_param(nh->nh_home, sip->sip_contact, exp_param);
+			sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
 
 			if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, reg_host);
@@ -1147,10 +1147,10 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 
 		if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
-			char *full_contact = sip_header_as_string(nh->nh_home, (void *) sip->sip_contact);
+			char *full_contact = sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_contact);
 			if (full_contact && switch_stristr("SUBSCRIBE", full_contact)) {
 				sofia_sla_handle_register(nua, profile, sip, exptime, full_contact);
-				su_free(nh->nh_home, full_contact);
+				su_free(nua_handle_home(nh), full_contact);
 			}
 		}
 
