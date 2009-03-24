@@ -290,10 +290,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
 			}
 			switch_assert(fh->resampler->to_len <= fh->dbuflen);
-			memcpy(fh->dbuf, fh->resampler->to, fh->resampler->to_len);
+			memcpy(fh->dbuf, fh->resampler->to, fh->resampler->to_len * 2);
 			data = fh->dbuf;
 		} else {
-			memcpy(data, fh->resampler->to, fh->resampler->to_len);
+			memcpy(data, fh->resampler->to, fh->resampler->to_len * 2);
 		}
 
 		*len = fh->resampler->to_len / fh->channels;

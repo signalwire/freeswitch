@@ -103,7 +103,8 @@ static switch_status_t sndfile_file_open(switch_file_handle_t *handle, const cha
 		context->sfinfo.channels = handle->channels;
 		context->sfinfo.samplerate = handle->samplerate;
 		if (handle->samplerate == 8000 || handle->samplerate == 16000 ||
-			handle->samplerate == 24000 || handle->samplerate == 32000 || handle->samplerate == 48000) {
+			handle->samplerate == 24000 || handle->samplerate == 32000 || handle->samplerate == 48000 ||
+			handle->samplerate == 11025 || handle->samplerate == 22050 || handle->samplerate == 44100) {
 			context->sfinfo.format |= SF_FORMAT_PCM_16;
 		}
 

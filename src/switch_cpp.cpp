@@ -888,22 +888,28 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 {
 	this_check_void();
 
-	if (channel) {
-		switch_channel_set_private(channel, "CoreSession", NULL);
-	}
-	
 	switch_safe_free(xml_cdr_text);
 	switch_safe_free(uuid);	
 	switch_safe_free(tts_name);
 	switch_safe_free(voice_name);
 
 	if (session) {
+		if (!channel) {
+			channel = switch_core_session_get_channel(session);
+		}
+
+		if (channel) {
+			switch_channel_set_private(channel, "CoreSession", NULL);
+		}
+		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "destroy/unlink session from object\n");
-        if (switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
+
+        if (switch_channel_up(channel) && switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
             switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
         }
         switch_core_session_rwunlock(session);
 		session = NULL;
+		channel = NULL;
     }
 
 	allocated = 0;
