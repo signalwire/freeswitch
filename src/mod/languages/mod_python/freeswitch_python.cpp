@@ -21,16 +21,25 @@ Session::Session(switch_core_session_t *new_session):CoreSession(new_session)
 }
 static switch_status_t python_hanguphook(switch_core_session_t *session_hungup);
 
-Session::~Session()
+void Session::destroy(void)
 {
 	
-	if (hangup_func) {
-		if (session) {
-			switch_core_event_hook_remove_state_change(session, python_hanguphook);
-		}
-		Py_DECREF(hangup_func);
-		hangup_func = NULL;
+	if (!allocated) {
+		return;
 	}
+
+	if (session) {
+		if (!channel) {
+			channel = switch_core_session_get_channel(session);
+		}
+		switch_channel_set_private(channel, "CoreSession", NULL);
+		switch_core_event_hook_remove_state_change(session, python_hanguphook);
+	}
+
+	if (hangup_func) {
+		Py_DECREF(hangup_func);
+        hangup_func = NULL;
+    }
 	
 	if (hangup_func_arg) {
 		Py_DECREF(hangup_func_arg);
@@ -49,7 +58,14 @@ Session::~Session()
 
 	if (Self) {
 		Py_DECREF(Self);
-	}
+	}	
+
+	CoreSession::destroy();
+}
+
+Session::~Session()
+{
+	destroy();
 }
 
 bool Session::begin_allow_threads()

@@ -7388,6 +7388,30 @@ fail:
 }
 
 
+static int _wrap_Session_destroy(lua_State* L) {
+  int SWIG_arg = -1;
+  LUA::Session *arg1 = (LUA::Session *) 0 ;
+  
+  SWIG_check_num_args("destroy",1,1)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("destroy",1,"LUA::Session *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_LUA__Session,0))){
+    SWIG_fail_ptr("Session_destroy",1,SWIGTYPE_p_LUA__Session);
+  }
+  
+  (arg1)->destroy();
+  SWIG_arg=0;
+  
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
 static int _wrap_Session_begin_allow_threads(lua_State* L) {
   int SWIG_arg = -1;
   LUA::Session *arg1 = (LUA::Session *) 0 ;
@@ -8086,6 +8110,7 @@ LUA::Session *arg1 = (LUA::Session *) obj;
 delete arg1;
 }
 static swig_lua_method swig_LUA_Session_methods[] = {
+    {"destroy", _wrap_Session_destroy}, 
     {"begin_allow_threads", _wrap_Session_begin_allow_threads}, 
     {"end_allow_threads", _wrap_Session_end_allow_threads}, 
     {"check_hangup_hook", _wrap_Session_check_hangup_hook}, 

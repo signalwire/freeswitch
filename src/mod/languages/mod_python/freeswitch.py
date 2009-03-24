@@ -324,6 +324,7 @@ class Session(CoreSession):
     def begin_allow_threads(*args): return _freeswitch.Session_begin_allow_threads(*args)
     def end_allow_threads(*args): return _freeswitch.Session_end_allow_threads(*args)
     def check_hangup_hook(*args): return _freeswitch.Session_check_hangup_hook(*args)
+    def destroy(*args): return _freeswitch.Session_destroy(*args)
     def run_dtmf_callback(*args): return _freeswitch.Session_run_dtmf_callback(*args)
     def setInputCallback(*args): return _freeswitch.Session_setInputCallback(*args)
     def unsetInputCallback(*args): return _freeswitch.Session_unsetInputCallback(*args)

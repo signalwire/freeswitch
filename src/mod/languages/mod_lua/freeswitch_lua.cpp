@@ -21,8 +21,14 @@ Session::Session(switch_core_session_t *new_session):CoreSession(new_session)
 	hh = mark = 0;
 }
 static switch_status_t lua_hanguphook(switch_core_session_t *session_hungup);
-Session::~Session()
+
+
+void Session::destroy(void)
 {
+	
+	if (!allocated) {
+		return;
+	}
 
 	if (session) {
 		if (!channel) {
@@ -30,8 +36,6 @@ Session::~Session()
 		}
 		switch_channel_set_private(channel, "CoreSession", NULL);
 		switch_core_event_hook_remove_state_change(session, lua_hanguphook);
-		session = NULL;
-		channel = NULL;
 	}
 
 	switch_safe_free(hangup_func_str);
@@ -39,8 +43,13 @@ Session::~Session()
 	switch_safe_free(cb_function);
 	switch_safe_free(cb_arg);
 
-	init_vars();
-	
+	CoreSession::destroy();
+}
+
+
+Session::~Session()
+{
+	destroy();
 }
 
 bool Session::begin_allow_threads()

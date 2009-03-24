@@ -264,7 +264,7 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 SWITCH_DECLARE(int) originate(CoreSession * a_leg_session, char *dest, int timeout = 60);
 
 
-		 SWITCH_DECLARE(void) destroy(void);
+		 SWITCH_DECLARE(virtual void) destroy(void);
 
 	/** \brief set a DTMF callback function
 	 * 

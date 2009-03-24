@@ -478,6 +478,7 @@ sub DESTROY {
     }
 }
 
+*destroy = *freeswitchc::Session_destroy;
 *begin_allow_threads = *freeswitchc::Session_begin_allow_threads;
 *end_allow_threads = *freeswitchc::Session_end_allow_threads;
 *check_hangup_hook = *freeswitchc::Session_check_hangup_hook;

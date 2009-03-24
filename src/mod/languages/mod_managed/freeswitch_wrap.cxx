@@ -1444,6 +1444,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_PARK_AFTER_BRIDGE_VARIABLE_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_TRANSFER_AFTER_BRIDGE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "transfer_after_bridge";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_EXEC_AFTER_BRIDGE_APP_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -13113,6 +13124,64 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_file_handle_offset_pos_get(vo
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_samples_in_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->samples_in = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_samples_in_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result =  ((arg1)->samples_in);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_samples_out_set(void * jarg1, void * jarg2) {
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->samples_out = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_file_handle_samples_out_get(void * jarg1) {
+  void * jresult ;
+  switch_file_handle *arg1 = (switch_file_handle *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_file_handle *)jarg1; 
+  result =  ((arg1)->samples_out);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_switch_file_handle_vol_set(void * jarg1, int jarg2) {
   switch_file_handle *arg1 = (switch_file_handle *) 0 ;
   int32_t arg2 ;
@@ -22242,6 +22311,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_ivr_sound_test(void * jarg1) {
   result = (switch_status_t)switch_ivr_sound_test(arg1);
   jresult = result; 
   return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_process_import(void * jarg1, void * jarg2, char * jarg3) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  switch_channel_t *arg2 = (switch_channel_t *) 0 ;
+  char *arg3 = (char *) 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  arg2 = (switch_channel_t *)jarg2; 
+  arg3 = (char *)jarg3; 
+  switch_process_import(arg1,arg2,(char const *)arg3);
 }
 
 

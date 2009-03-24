@@ -44,18 +44,33 @@ Session::Session(switch_core_session_t *new_session):CoreSession(new_session)
 	}
 }
 static switch_status_t perl_hanguphook(switch_core_session_t *session_hungup);
-Session::~Session()
-{
-	switch_safe_free(cb_function);
-	switch_safe_free(cb_arg);
 
-	if (session && hangup_func_str) {
+void Session::destroy(void)
+{
+	
+	if (!allocated) {
+		return;
+	}
+
+	if (session) {
+		if (!channel) {
+			channel = switch_core_session_get_channel(session);
+		}
+		switch_channel_set_private(channel, "CoreSession", NULL);
 		switch_core_event_hook_remove_state_change(session, perl_hanguphook);
 	}
 
+	switch_safe_free(cb_function);
+	switch_safe_free(cb_arg);
 	switch_safe_free(hangup_func_str);
-	switch_safe_free(hangup_func_arg);
+	switch_safe_free(hangup_func_arg);	
 
+	CoreSession::destroy();
+}
+
+Session::~Session()
+{
+	destroy();
 }
 
 bool Session::begin_allow_threads()

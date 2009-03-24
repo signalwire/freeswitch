@@ -23,6 +23,7 @@ class Session : public CoreSession {
     Session(char *uuid, CoreSession *a_leg = NULL);
     Session(switch_core_session_t *session);
     ~Session();        
+	virtual void destroy(void);
 	
 	virtual bool begin_allow_threads();
 	virtual bool end_allow_threads();
@@ -40,6 +41,7 @@ class Session : public CoreSession {
 	char *hangup_func_str;
 	char *hangup_func_arg;
 	void setLUA(lua_State *state);
+
 };
 }
 #endif

@@ -887,6 +887,10 @@ SWITCH_DECLARE(bool) CoreSession::answered() {
 SWITCH_DECLARE(void) CoreSession::destroy(void)
 {
 	this_check_void();
+	
+	if (!allocated) {
+		return;
+	}
 
 	switch_safe_free(xml_cdr_text);
 	switch_safe_free(uuid);	
@@ -903,7 +907,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 		}
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "destroy/unlink session from object\n");
-
+		
         if (switch_channel_up(channel) && switch_test_flag(this, S_HUP) && !switch_channel_test_flag(channel, CF_TRANSFER)) {
             switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
         }
@@ -912,7 +916,7 @@ SWITCH_DECLARE(void) CoreSession::destroy(void)
 		channel = NULL;
     }
 
-	allocated = 0;
+	init_vars();
 	
 }
 

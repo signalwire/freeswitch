@@ -27,6 +27,7 @@ class Session : public CoreSession {
 	virtual bool begin_allow_threads();
 	virtual bool end_allow_threads();
 	virtual void check_hangup_hook();
+	virtual void destroy(void);
 
 	virtual switch_status_t run_dtmf_callback(void *input, switch_input_type_t itype);
 	void setInputCallback(PyObject *cbfunc, PyObject *funcargs = NULL);
