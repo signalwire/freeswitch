@@ -44,7 +44,16 @@ void s2_step(void);
 
 void s2_case(char const *tag,
 	     char const *title,
-	     char const *description);
+	     char const *description,
+	     char const *function);
+
+#if HAVE_FUNC
+#define S2_CASE(n, t, d) s2_case((n),(t),(d), __func__)
+#elif HAVE_FUNCTION
+#define S2_CASE(n, t, d) s2_case((n),(t),(d), __FUNCTION__)
+#else
+#define S2_CASE(n, t, d) s2_case((n),(t),(d), "")
+#endif
 
 void s2_teardown_started(char const *label);
 void s2_teardown(void);

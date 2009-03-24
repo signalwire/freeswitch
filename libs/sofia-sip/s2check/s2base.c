@@ -126,13 +126,15 @@ void s2_setup(char const *label)
 
 void s2_case(char const *number,
 	     char const *title,
-	     char const *description)
+	     char const *description,
+	     char const *function)
 {
   stamps.start = now();
 
   _s2_case = number;
   if (s2_start_stop)
-    printf("%s - starting %s/%s-%s\n", s2_tester, _s2_suite, _s2_case, title);
+    printf("%s - starting %s (%s/%s %s)\n", s2_tester, function,
+	   _s2_suite, _s2_case, title);
 }
 
 void s2_step(void)
