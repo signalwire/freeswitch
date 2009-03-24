@@ -160,7 +160,7 @@ START_TEST(invalid)
   sres_sip_t *srs;
 
 #if 0
-  s2_case("1.0", "Check invalid input values",
+  S2_CASE("1.0", "Check invalid input values",
 	  "Detailed explanation for empty test case.");
 #endif
 
