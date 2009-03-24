@@ -993,6 +993,9 @@ void _su_home_deinit(su_home_t *home)
   if (home->suh_blocks) {
     size_t i;
     su_block_t *b;
+    void *suh_lock = home->suh_lock;
+
+    home->suh_lock = NULL;
 
      if (home->suh_blocks->sub_destructor) {
       void (*destructor)(void *) = home->suh_blocks->sub_destructor;
@@ -1034,11 +1037,7 @@ void _su_home_deinit(su_home_t *home)
 
     home->suh_blocks = NULL;
 
-    if (home->suh_lock) {
-      void *suh_lock = home->suh_lock;
-
-      home->suh_lock = NULL;
-
+    if (suh_lock) {
       /* Unlock, or risk assert() or leak handles on Windows */
       _su_home_unlocker(suh_lock);
       _su_home_destroy_mutexes(suh_lock);
