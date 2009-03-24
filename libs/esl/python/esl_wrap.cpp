@@ -4105,7 +4105,69 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_ESLconnection_setBlockingExecute(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_ESLconnection_executeAsync(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  PyObject * obj3 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OO|OO:ESLconnection_executeAsync",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_executeAsync" "', argument " "1"" of type '" "ESLconnection *""'"); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_executeAsync" "', argument " "2"" of type '" "char const *""'");
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (obj2) {
+    res3 = SWIG_AsCharPtrAndSize(obj2, &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "ESLconnection_executeAsync" "', argument " "3"" of type '" "char const *""'");
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+  }
+  if (obj3) {
+    res4 = SWIG_AsCharPtrAndSize(obj3, &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "ESLconnection_executeAsync" "', argument " "4"" of type '" "char const *""'");
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+  }
+  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  resultobj = SWIG_From_int(static_cast< int >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return resultobj;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_ESLconnection_setAsyncExecute(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
@@ -4118,18 +4180,18 @@ SWIGINTERN PyObject *_wrap_ESLconnection_setBlockingExecute(PyObject *SWIGUNUSED
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_setBlockingExecute",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OO:ESLconnection_setAsyncExecute",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_setBlockingExecute" "', argument " "1"" of type '" "ESLconnection *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "ESLconnection_setAsyncExecute" "', argument " "1"" of type '" "ESLconnection *""'"); 
   }
   arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(obj1, &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_setBlockingExecute" "', argument " "2"" of type '" "char const *""'");
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "ESLconnection_setAsyncExecute" "', argument " "2"" of type '" "char const *""'");
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  result = (int)(arg1)->setBlockingExecute((char const *)arg2);
+  result = (int)(arg1)->setAsyncExecute((char const *)arg2);
   resultobj = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return resultobj;
@@ -4257,7 +4319,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"ESLconnection_filter", _wrap_ESLconnection_filter, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_events", _wrap_ESLconnection_events, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_execute", _wrap_ESLconnection_execute, METH_VARARGS, NULL},
-	 { (char *)"ESLconnection_setBlockingExecute", _wrap_ESLconnection_setBlockingExecute, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_executeAsync", _wrap_ESLconnection_executeAsync, METH_VARARGS, NULL},
+	 { (char *)"ESLconnection_setAsyncExecute", _wrap_ESLconnection_setAsyncExecute, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_setEventLock", _wrap_ESLconnection_setEventLock, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_disconnect", _wrap_ESLconnection_disconnect, METH_VARARGS, NULL},
 	 { (char *)"ESLconnection_swigregister", ESLconnection_swigregister, METH_VARARGS, NULL},

@@ -451,7 +451,7 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 	char app_buf[512] = "";
 	char arg_buf[512] = "";
 	const char *el_buf = "event-lock: true\n";
-	const char *bl_buf = "blocking: true\n";
+	const char *bl_buf = "async: true\n";
 	char send_buf[1292] = "";
 	
 	if (!handle->connected) {
@@ -471,7 +471,7 @@ ESL_DECLARE(esl_status_t) esl_execute(esl_handle_t *handle, const char *app, con
 	}
 
 	snprintf(send_buf, sizeof(send_buf), "%s\ncall-command: execute\n%s%s%s%s\n", 
-			 cmd_buf, app_buf, arg_buf, handle->event_lock ? el_buf : "", handle->blocking_execute ? bl_buf : "");
+			 cmd_buf, app_buf, arg_buf, handle->event_lock ? el_buf : "", handle->async_execute ? bl_buf : "");
 
 	return esl_send_recv(handle, send_buf);
 }

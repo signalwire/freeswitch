@@ -187,8 +187,17 @@ class ESLconnection {
 		return $r;
 	}
 
-	function setBlockingExecute($val) {
-		return ESLconnection_setBlockingExecute($this->_cPtr,$val);
+	function executeAsync($app,$arg=null,$uuid=null) {
+		switch (func_num_args()) {
+		case 1: $r=ESLconnection_executeAsync($this->_cPtr,$app); break;
+		case 2: $r=ESLconnection_executeAsync($this->_cPtr,$app,$arg); break;
+		default: $r=ESLconnection_executeAsync($this->_cPtr,$app,$arg,$uuid);
+		}
+		return $r;
+	}
+
+	function setAsyncExecute($val) {
+		return ESLconnection_setAsyncExecute($this->_cPtr,$val);
 	}
 
 	function setEventLock($val) {

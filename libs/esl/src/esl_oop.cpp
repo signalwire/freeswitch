@@ -131,12 +131,12 @@ ESLevent *ESLconnection::getInfo()
 	return NULL;
 }
 
-int ESLconnection::setBlockingExecute(const char *val)
+int ESLconnection::setAsyncExecute(const char *val)
 {
 	if (val) {
-		handle.blocking_execute = esl_true(val);
+		handle.async_execute = esl_true(val);
 	}
-	return handle.blocking_execute;
+	return handle.async_execute;
 }
 
 int ESLconnection::setEventLock(const char *val)
@@ -150,6 +150,19 @@ int ESLconnection::setEventLock(const char *val)
 int ESLconnection::execute(const char *app, const char *arg, const char *uuid)
 {
 	return esl_execute(&handle, app, arg, uuid);
+}
+
+
+int ESLconnection::executeAsync(const char *app, const char *arg, const char *uuid)
+{
+	int async = handle.async_execute;
+	int r;
+
+	handle.async_execute = 1;
+	r = esl_execute(&handle, app, arg, uuid);
+	handle.async_execute = async;
+
+	return r;
 }
 
 int ESLconnection::sendEvent(ESLevent *send_me)

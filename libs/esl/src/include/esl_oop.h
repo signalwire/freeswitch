@@ -88,7 +88,8 @@ class ESLconnection {
 	ESLevent *filter(const char *header, const char *value);
 	int events(const char *etype, const char *value);
 	int execute(const char *app, const char *arg = NULL, const char *uuid = NULL);
-	int setBlockingExecute(const char *val);
+	int executeAsync(const char *app, const char *arg = NULL, const char *uuid = NULL);
+	int setAsyncExecute(const char *val);
 	int setEventLock(const char *val);
 	int disconnect(void);
 };

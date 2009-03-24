@@ -2632,22 +2632,60 @@ fail:
 }
 
 
-static int _wrap_ESLconnection_setBlockingExecute(lua_State* L) {
+static int _wrap_ESLconnection_executeAsync(lua_State* L) {
+  int SWIG_arg = -1;
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  int result;
+  
+  SWIG_check_num_args("executeAsync",2,4)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("executeAsync",1,"ESLconnection *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("executeAsync",2,"char const *");
+  if(lua_gettop(L)>=3 && !lua_isstring(L,3)) SWIG_fail_arg("executeAsync",3,"char const *");
+  if(lua_gettop(L)>=4 && !lua_isstring(L,4)) SWIG_fail_arg("executeAsync",4,"char const *");
+  
+  if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
+    SWIG_fail_ptr("ESLconnection_executeAsync",1,SWIGTYPE_p_ESLconnection);
+  }
+  
+  arg2 = (char *)lua_tostring(L, 2);
+  if(lua_gettop(L)>=3){
+    arg3 = (char *)lua_tostring(L, 3);
+  }
+  if(lua_gettop(L)>=4){
+    arg4 = (char *)lua_tostring(L, 4);
+  }
+  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  SWIG_arg=0;
+  lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
+  return SWIG_arg;
+  
+  if(0) SWIG_fail;
+  
+fail:
+  lua_error(L);
+  return SWIG_arg;
+}
+
+
+static int _wrap_ESLconnection_setAsyncExecute(lua_State* L) {
   int SWIG_arg = -1;
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
   
-  SWIG_check_num_args("setBlockingExecute",2,2)
-  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setBlockingExecute",1,"ESLconnection *");
-  if(!lua_isstring(L,2)) SWIG_fail_arg("setBlockingExecute",2,"char const *");
+  SWIG_check_num_args("setAsyncExecute",2,2)
+  if(!SWIG_isptrtype(L,1)) SWIG_fail_arg("setAsyncExecute",1,"ESLconnection *");
+  if(!lua_isstring(L,2)) SWIG_fail_arg("setAsyncExecute",2,"char const *");
   
   if (!SWIG_IsOK(SWIG_ConvertPtr(L,1,(void**)&arg1,SWIGTYPE_p_ESLconnection,0))){
-    SWIG_fail_ptr("ESLconnection_setBlockingExecute",1,SWIGTYPE_p_ESLconnection);
+    SWIG_fail_ptr("ESLconnection_setAsyncExecute",1,SWIGTYPE_p_ESLconnection);
   }
   
   arg2 = (char *)lua_tostring(L, 2);
-  result = (int)(arg1)->setBlockingExecute((char const *)arg2);
+  result = (int)(arg1)->setAsyncExecute((char const *)arg2);
   SWIG_arg=0;
   lua_pushnumber(L, (lua_Number) result); SWIG_arg++;
   return SWIG_arg;
@@ -2730,7 +2768,8 @@ static swig_lua_method swig_ESLconnection_methods[] = {
     {"filter", _wrap_ESLconnection_filter}, 
     {"events", _wrap_ESLconnection_events}, 
     {"execute", _wrap_ESLconnection_execute}, 
-    {"setBlockingExecute", _wrap_ESLconnection_setBlockingExecute}, 
+    {"executeAsync", _wrap_ESLconnection_executeAsync}, 
+    {"setAsyncExecute", _wrap_ESLconnection_setAsyncExecute}, 
     {"setEventLock", _wrap_ESLconnection_setEventLock}, 
     {"disconnect", _wrap_ESLconnection_disconnect}, 
     {0,0}

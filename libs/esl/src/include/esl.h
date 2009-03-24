@@ -272,7 +272,7 @@ typedef struct {
 	int connected;
 	struct sockaddr_in addr;
 	esl_mutex_t *mutex;
-	int blocking_execute;
+	int async_execute;
 	int event_lock;
 } esl_handle_t;
 

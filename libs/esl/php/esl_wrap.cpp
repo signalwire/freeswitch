@@ -2247,7 +2247,58 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setBlockingExecute) {
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_executeAsync) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  int result;
+  zval **args[4];
+  int arg_count;
+  
+  SWIG_ResetError();
+  arg_count = ZEND_NUM_ARGS();
+  if(arg_count<2 || arg_count>4 ||
+    zend_get_parameters_array_ex(arg_count,args)!=SUCCESS)
+  WRONG_PARAM_COUNT;
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_executeAsync. Expected SWIGTYPE_p_ESLconnection");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+  convert_to_string_ex(args[1]);
+  arg2 = (char *) Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if(arg_count > 2) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[2]);
+    arg3 = (char *) Z_STRVAL_PP(args[2]);
+    /*@SWIG@*/;
+    
+  }
+  if(arg_count > 3) {
+    /*@SWIG:/usr/local/share/swig/1.3.35/php4/utils.i,26,CONVERT_STRING_IN@*/
+    convert_to_string_ex(args[3]);
+    arg4 = (char *) Z_STRVAL_PP(args[3]);
+    /*@SWIG@*/;
+    
+  }
+  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  zend_error(SWIG_ErrorCode(),SWIG_ErrorMsg());
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setAsyncExecute) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
@@ -2260,7 +2311,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setBlockingExecute) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_ESLconnection, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_setBlockingExecute. Expected SWIGTYPE_p_ESLconnection");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of ESLconnection_setAsyncExecute. Expected SWIGTYPE_p_ESLconnection");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
@@ -2270,7 +2321,7 @@ ZEND_NAMED_FUNCTION(_wrap_ESLconnection_setBlockingExecute) {
   arg2 = (char *) Z_STRVAL_PP(args[1]);
   /*@SWIG@*/;
   
-  result = (int)(arg1)->setBlockingExecute((char const *)arg2);
+  result = (int)(arg1)->setAsyncExecute((char const *)arg2);
   {
     ZVAL_LONG(return_value,result);
   }
@@ -2415,7 +2466,8 @@ static zend_function_entry ESL_functions[] = {
  SWIG_ZEND_NAMED_FE(eslconnection_filter,_wrap_ESLconnection_filter,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_events,_wrap_ESLconnection_events,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_execute,_wrap_ESLconnection_execute,NULL)
- SWIG_ZEND_NAMED_FE(eslconnection_setblockingexecute,_wrap_ESLconnection_setBlockingExecute,NULL)
+ SWIG_ZEND_NAMED_FE(eslconnection_executeasync,_wrap_ESLconnection_executeAsync,NULL)
+ SWIG_ZEND_NAMED_FE(eslconnection_setasyncexecute,_wrap_ESLconnection_setAsyncExecute,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_seteventlock,_wrap_ESLconnection_setEventLock,NULL)
  SWIG_ZEND_NAMED_FE(eslconnection_disconnect,_wrap_ESLconnection_disconnect,NULL)
  SWIG_ZEND_NAMED_FE(eslsetloglevel,_wrap_eslSetLogLevel,NULL)

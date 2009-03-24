@@ -3236,7 +3236,68 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_ESLconnection_setBlockingExecute(int argc, VALUE *argv, VALUE self) {
+_wrap_ESLconnection_executeAsync(int argc, VALUE *argv, VALUE self) {
+  ESLconnection *arg1 = (ESLconnection *) 0 ;
+  char *arg2 = (char *) 0 ;
+  char *arg3 = (char *) NULL ;
+  char *arg4 = (char *) NULL ;
+  int result;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  int res3 ;
+  char *buf3 = 0 ;
+  int alloc3 = 0 ;
+  int res4 ;
+  char *buf4 = 0 ;
+  int alloc4 = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 1) || (argc > 3)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","executeAsync", 1, self )); 
+  }
+  arg1 = reinterpret_cast< ESLconnection * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","executeAsync", 2, argv[0] ));
+  }
+  arg2 = reinterpret_cast< char * >(buf2);
+  if (argc > 1) {
+    res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+    if (!SWIG_IsOK(res3)) {
+      SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","executeAsync", 3, argv[1] ));
+    }
+    arg3 = reinterpret_cast< char * >(buf3);
+  }
+  if (argc > 2) {
+    res4 = SWIG_AsCharPtrAndSize(argv[2], &buf4, NULL, &alloc4);
+    if (!SWIG_IsOK(res4)) {
+      SWIG_exception_fail(SWIG_ArgError(res4), Ruby_Format_TypeError( "", "char const *","executeAsync", 4, argv[2] ));
+    }
+    arg4 = reinterpret_cast< char * >(buf4);
+  }
+  result = (int)(arg1)->executeAsync((char const *)arg2,(char const *)arg3,(char const *)arg4);
+  vresult = SWIG_From_int(static_cast< int >(result));
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return vresult;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_ESLconnection_setAsyncExecute(int argc, VALUE *argv, VALUE self) {
   ESLconnection *arg1 = (ESLconnection *) 0 ;
   char *arg2 = (char *) 0 ;
   int result;
@@ -3252,15 +3313,15 @@ _wrap_ESLconnection_setBlockingExecute(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_ESLconnection, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","setBlockingExecute", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "ESLconnection *","setAsyncExecute", 1, self )); 
   }
   arg1 = reinterpret_cast< ESLconnection * >(argp1);
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","setBlockingExecute", 2, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char const *","setAsyncExecute", 2, argv[0] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  result = (int)(arg1)->setBlockingExecute((char const *)arg2);
+  result = (int)(arg1)->setAsyncExecute((char const *)arg2);
   vresult = SWIG_From_int(static_cast< int >(result));
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return vresult;
@@ -3680,7 +3741,8 @@ SWIGEXPORT void Init_ESL(void) {
   rb_define_method(cESLconnection.klass, "filter", VALUEFUNC(_wrap_ESLconnection_filter), -1);
   rb_define_method(cESLconnection.klass, "events", VALUEFUNC(_wrap_ESLconnection_events), -1);
   rb_define_method(cESLconnection.klass, "execute", VALUEFUNC(_wrap_ESLconnection_execute), -1);
-  rb_define_method(cESLconnection.klass, "setBlockingExecute", VALUEFUNC(_wrap_ESLconnection_setBlockingExecute), -1);
+  rb_define_method(cESLconnection.klass, "executeAsync", VALUEFUNC(_wrap_ESLconnection_executeAsync), -1);
+  rb_define_method(cESLconnection.klass, "setAsyncExecute", VALUEFUNC(_wrap_ESLconnection_setAsyncExecute), -1);
   rb_define_method(cESLconnection.klass, "setEventLock", VALUEFUNC(_wrap_ESLconnection_setEventLock), -1);
   rb_define_method(cESLconnection.klass, "disconnect", VALUEFUNC(_wrap_ESLconnection_disconnect), -1);
   cESLconnection.mark = 0;

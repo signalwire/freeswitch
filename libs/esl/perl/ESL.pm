@@ -140,7 +140,8 @@ sub DESTROY {
 *filter = *ESLc::ESLconnection_filter;
 *events = *ESLc::ESLconnection_events;
 *execute = *ESLc::ESLconnection_execute;
-*setBlockingExecute = *ESLc::ESLconnection_setBlockingExecute;
+*executeAsync = *ESLc::ESLconnection_executeAsync;
+*setAsyncExecute = *ESLc::ESLconnection_setAsyncExecute;
 *setEventLock = *ESLc::ESLconnection_setEventLock;
 *disconnect = *ESLc::ESLconnection_disconnect;
 sub DISOWN {
