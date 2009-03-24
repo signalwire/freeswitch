@@ -110,6 +110,12 @@ if test x"$have_check" = "xyes"; then
 fi
 AC_CHECK_HEADERS([fnmatch.h])
 
+dnl dl is currently used only in testing
+AC_CHECK_LIB([dl], [dlopen], [
+   dnl Note: -ldl is not added to LIBS
+   AC_DEFINE([HAVE_LIBDL], 1, [Define to 1 if dl library is available])
+])
+
 ### internal modules
 ### ----------------
 AC_DEFINE([HAVE_SOFIA_SIP], 1, [Define to 1 always])
