@@ -58,6 +58,10 @@ sub getVar($;) {
 sub playAndGetDigits($;) {
   my $self = shift;
   my ($min, $max, $tries, $to, $term, $file, $invalid_file, $var) = @_;
+
+  if (!$self->{_esl}->connected()) {
+    return undef;
+  }
   
   $self->execute("play_and_get_digits", "$min $max $tries $to $term $file $invalid_file $var");
 
@@ -69,6 +73,10 @@ sub read($;) {
   my $self = shift;
   my ($min, $max, $file, $var, $to, $term) = @_;
   
+  if (!$self->{_esl}->connected()) {
+    return undef;
+  }
+
   $self->execute("read", "$min $max $file $var $to $term");
 
   return $self->getVar($var);
@@ -78,6 +86,10 @@ sub read($;) {
 sub playback($;) {
   my $self = shift;
   my ($file) = @_;
+
+  if (!$self->{_esl}->connected()) {
+    return undef;
+  }
 
   $self->execute("playback", $file);
   return $self->getVar("playback_terminators_used");
