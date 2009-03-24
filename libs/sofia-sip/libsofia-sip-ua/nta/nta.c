@@ -74,6 +74,7 @@
 
 #include <sofia-sip/msg_addr.h>
 #include <sofia-sip/msg_parser.h>
+#include <sofia-sip/htable.h>
 
 /* Resolver context type */
 #define SRES_CONTEXT_T    nta_outgoing_t

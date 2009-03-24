@@ -47,7 +47,6 @@ SOFIA_BEGIN_DECLS
 #if HAVE_SOFIA_SRESOLV
 #include <sofia-sip/sresolv.h>
 #endif
-#include <sofia-sip/htable.h>
 
 typedef struct nta_compressor nta_compressor_t;
 
