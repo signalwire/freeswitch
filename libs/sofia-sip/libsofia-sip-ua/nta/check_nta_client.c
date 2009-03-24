@@ -95,7 +95,7 @@ START_TEST(client_2_0_0)
   struct message *request;
   struct event *response;
 
-  s2_case("2.0.0", "Send MESSAGE",
+  S2_CASE("2.0.0", "Send MESSAGE",
 	  "Basic non-INVITE transaction with outbound proxy");
 
   orq = nta_outgoing_tcreate(s2->default_leg,
@@ -123,7 +123,7 @@ START_TEST(client_2_0_1)
   struct message *request;
   struct event *response;
 
-  s2_case("2.0.0", "Send MESSAGE",
+  S2_CASE("2.0.0", "Send MESSAGE",
 	  "Basic non-INVITE transaction with "
 	  "numeric per-transaction outbound proxy");
 
@@ -155,7 +155,7 @@ START_TEST(client_2_0_2)
 
   char payload[2048];
 
-  s2_case("2.0.2", "Send MESSAGE",
+  S2_CASE("2.0.2", "Send MESSAGE",
 	  "Basic non-INVITE transaction exceeding "
 	  "default path MTU (1300 bytes)");
 
@@ -210,7 +210,7 @@ START_TEST(client_2_1_0)
 
   char payload[2048];
 
-  s2_case("2.1.0", "Try UDP after trying with TCP",
+  S2_CASE("2.1.0", "Try UDP after trying with TCP",
 	  "TCP connect() is refused");
 
   memset(payload, 'x', sizeof payload);
@@ -279,7 +279,7 @@ START_TEST(client_2_1_1)
 
   char payload[2048];
 
-  s2_case("2.1.1", "Try UDP after trying with TCP",
+  S2_CASE("2.1.1", "Try UDP after trying with TCP",
 	  "TCP connect() times out");
 
   memset(payload, 'x', sizeof payload);
@@ -337,7 +337,7 @@ START_TEST(client_2_1_2)
   struct event *response;
   url_t udpurl[1];
 
-  s2_case("2.1.2", "Send MESSAGE",
+  S2_CASE("2.1.2", "Send MESSAGE",
 	  "Non-INVITE transaction to TCP-only server");
 
   client_setup_tcp_only_server();
