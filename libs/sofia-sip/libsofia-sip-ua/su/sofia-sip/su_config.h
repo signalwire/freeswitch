@@ -84,7 +84,7 @@
     #undef SOFIAPUBVAR
     #if defined(IN_LIBSOFIA_SIP_UA)
       #define SOFIAPUBFUN __declspec(dllexport)
-     	#define SOFIAPUBVAR __declspec(dllexport)
+      #define SOFIAPUBVAR __declspec(dllexport) extern
     #else
       #define SOFIAPUBFUN __declspec(dllimport)
       #define SOFIAPUBVAR __declspec(dllimport) extern
@@ -104,7 +104,7 @@
     #undef SOFIAPUBVAR
     #if defined(IN_LIBSOFIA_SIP_UA)
       #define SOFIAPUBFUN __declspec(dllexport)
-     	#define SOFIAPUBVAR __declspec(dllexport) extern
+      #define SOFIAPUBVAR __declspec(dllexport) extern
     #else
       #define SOFIAPUBFUN __declspec(dllimport)
       #define SOFIAPUBVAR __declspec(dllimport)
