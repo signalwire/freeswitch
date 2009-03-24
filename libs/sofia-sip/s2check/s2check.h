@@ -42,10 +42,16 @@
 SOFIA_BEGIN_DECLS
 
 #undef tcase_add_test
-/* Redirect tcase_add_test() to our function */
-#define tcase_add_test(tc, tf) s2_tcase_add_test(tc, tf, "" #tf "")
+#undef tcase_add_loop_test
 
-void s2_tcase_add_test(TCase *, TFun, char const *name);
+/* Redirect tcase_add_test() to our function */
+#define tcase_add_test(tc, tf) s2_tcase_add_test(tc, tf, "" #tf "", 0, 0, 1)
+
+void s2_tcase_add_test(TCase *, TFun, char const *name,
+		       int signo, int start, int end);
+
+#define tcase_add_loop_test(tc, tf, s, e) \
+  s2_tcase_add_test(tc, tf, "" #tf "", 0, (s), (e))
 
 void s2_select_tests(char const *pattern);
 
