@@ -45,8 +45,10 @@ struct stream_data {
 };
 
 #ifdef HAVE_GNUTLS
+#ifndef WIN32
 #include <gcrypt.h>
 GCRY_THREAD_OPTION_PTHREAD_IMPL;
+#endif
 
 static size_t
 tls_push (iksparser *prs, const char *buffer, size_t len)
@@ -78,7 +80,9 @@ handshake (struct stream_data *data)
 	const int mac_priority[] = { GNUTLS_MAC_SHA, GNUTLS_MAC_MD5, 0 };
 	int ret;
 
+#ifndef WIN32
 	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#endif
 
 	if (gnutls_global_init () != 0)
 		return IKS_NOMEM;
@@ -610,7 +614,9 @@ iks_init(void)
 {
 	int ok = 0;
 	
+#ifndef WIN32
 	gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread);
+#endif
 
 	if (gnutls_global_init () != 0)
 		return IKS_NOMEM;
