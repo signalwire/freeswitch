@@ -33,8 +33,8 @@ libtestproxy_a_SOURCES = test_proxy.h test_proxy.c
 libtestnat_a_SOURCES =	test_nat.h test_nat.c test_nat_tags.c
 
 if HAVE_CHECK
-TESTS += check_sofia
-check_PROGRAMS += check_sofia
+TESTS += check_dlopen_sofia check_sofia
+check_PROGRAMS += check_dlopen_sofia check_sofia
 endif
 
 check_sofia_CFLAGS = @CHECK_CFLAGS@
@@ -45,6 +45,9 @@ check_sofia_SOURCES = check_sofia.c check_sofia.h \
 check_sofia_LDADD = 	$(check_LIBRARIES) \
 			${sofiabuilddir}/libsofia-sip-ua.la \
 			@CHECK_LIBS@
+
+check_dlopen_sofia_CFLAGS = -I$(top_srcdir)/s2check @CHECK_CFLAGS@
+check_dlopen_sofia_LDADD = ${top_builddir}/s2check/libs2.a @CHECK_LIBS@
 
 CLEANFILES =            tmp_sippasswd.??????
 
