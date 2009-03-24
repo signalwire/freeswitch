@@ -1440,8 +1440,8 @@ sres_sip_process_aaaa(sres_sip_t *srs,
 
     memset(ai, 0, (sizeof ai));
     ai->ai_protocol = stp->stp_number;
-    ai->ai_addr = memset(su, 0, (sizeof su->su_sin6));
-    su->su_len = ai->ai_addrlen = (sizeof su->su_sin6);
+    ai->ai_addr = memset(su, 0, ai->ai_addrlen = (sizeof su->su_sin6));
+    su->su_len = (sizeof su->su_sin6);
     su->su_family = ai->ai_family = AF_INET6;
     su->su_port = htons(step->sp_port);
 
@@ -1477,8 +1477,8 @@ sres_sip_process_a(sres_sip_t *srs,
 
     memset(ai, 0, (sizeof ai));
     ai->ai_protocol = stp->stp_number;
-    ai->ai_addr = memset(su, 0, (sizeof su->su_sin));
-    su->su_len = ai->ai_addrlen = (sizeof su->su_sin);
+    ai->ai_addr = memset(su, 0, ai->ai_addrlen = (sizeof su->su_sin));
+    su->su_len = (sizeof su->su_sin);
     su->su_family = ai->ai_family = AF_INET;
     su->su_port = htons(step->sp_port);
 
@@ -1541,8 +1541,8 @@ sres_sip_process_numeric(sres_sip_t *srs)
   memset(ai, 0, (sizeof ai)); (void)buffer;
 
   if (host_is_ip4_address(target)) {
-    ai->ai_addr = memset(su, 0, (sizeof su->su_sin));
-    su->su_len = ai->ai_addrlen = (sizeof su->su_sin);
+    ai->ai_addr = memset(su, 0, ai->ai_addrlen = (sizeof su->su_sin));
+    su->su_len = (sizeof su->su_sin);
     if (su_inet_pton(su->su_family = ai->ai_family = AF_INET,
 		     target, &su->su_sin.sin_addr) <= 0) {
       srs->srs_error = SRES_SIP_ERR_BAD_URI;
@@ -1551,8 +1551,8 @@ sres_sip_process_numeric(sres_sip_t *srs)
   }
 #if SU_HAVE_IN6
   else if (host_is_ip6_address(target)) {
-    ai->ai_addr = memset(su, 0, (sizeof su->su_sin6));
-    su->su_len = ai->ai_addrlen = (sizeof su->su_sin6);
+    ai->ai_addr = memset(su, 0, ai->ai_addrlen = (sizeof su->su_sin6));
+    su->su_len = (sizeof su->su_sin6);
     if (su_inet_pton(su->su_family = ai->ai_family = AF_INET6,
 		     target, &su->su_sin6.sin6_addr) <= 0) {
       srs->srs_error = SRES_SIP_ERR_BAD_URI;
@@ -1562,8 +1562,8 @@ sres_sip_process_numeric(sres_sip_t *srs)
   else if (host_is_ip6_reference(target)) {
     size_t len = strlen(target) - 2;
 
-    ai->ai_addr = memset(su, 0, (sizeof su->su_sin6));
-    su->su_len = ai->ai_addrlen = (sizeof su->su_sin6);
+    ai->ai_addr = memset(su, 0, ai->ai_addrlen = (sizeof su->su_sin6));
+    su->su_len = (sizeof su->su_sin6);
 
     if (len >= sizeof buffer ||
 	!memcpy(buffer, target + 1, len) ||
