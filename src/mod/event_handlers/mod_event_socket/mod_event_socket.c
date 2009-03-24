@@ -1593,7 +1593,7 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 				strip_cr(uuid);
 			}
 		}
-
+		
 		if (switch_strlen_zero(uuid)) {
 			uuid = switch_event_get_header(*event, "session-id");
 		}

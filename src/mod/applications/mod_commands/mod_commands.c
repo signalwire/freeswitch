@@ -2598,7 +2598,7 @@ SWITCH_STANDARD_API(show_function)
 	} else if (!strcasecmp(command, "tasks")) {
 		sprintf(sql, "select * from %s", command);
 	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
-		if (argv[1]) {
+		if (argv[1] && strcasecmp(argv[1], "as")) {
 			sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' and name = '%s' order by type,name", command, argv[1]);
 		} else {
 			sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' order by type,name", command);
@@ -2628,7 +2628,7 @@ SWITCH_STANDARD_API(show_function)
 
 		help = 1;
 		holder.print_title = 0;
-		if ((cmdname = strchr(command, ' ')) != 0) {
+		if ((cmdname = strchr(command, ' ')) && strcasecmp(cmdname, "as")) {
 			*cmdname++ = '\0';
 			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s' order by name",
 							cmdname);
