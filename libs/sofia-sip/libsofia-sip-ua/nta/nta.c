@@ -4391,7 +4391,7 @@ char const *nta_leg_tag(nta_leg_t *leg, char const *tag)
   /* If there already is a tag,
      return NULL if it does not match with new one */
   if (leg->leg_local->a_tag) {
-    if (su_casematch(tag, leg->leg_local->a_tag))
+    if (tag == NULL || su_casematch(tag, leg->leg_local->a_tag))
       return leg->leg_local->a_tag;
     else
       return NULL;
