@@ -74,116 +74,133 @@ int _getpid(void);
 #include "sofia-sip/su_uniqueid.h"
 
 /* For random number generator */
-static int initialized = 0;
+static FILE *urandom;
 
-static void init(void);
-static void init_node(void);
+union state {
+  uint64_t u64;
+};
 
-/* Constants */
-static const unsigned version = 1;	/* Current version */
-static const unsigned reserved = 128;	/* DCE variant */
-#define granularity (10000000UL)
-static const uint64_t mask60 = SU_U64_C(0xfffFFFFffffFFFF);
-#define MAGIC (16384)
+#if SU_HAVE_PTHREADS
 
-/* 100-nanosecond intervals between 15 October 1582 and 1 January 1900 */
-static const uint64_t ntp_epoch =
-(uint64_t)(141427) * (24 * 60 * 60L) * granularity;
+#include <pthread.h>
 
-/* State */
-static uint64_t timestamp0 = 0;
-static unsigned clock_sequence = MAGIC;
-static unsigned char node[6];
+static pthread_once_t once = PTHREAD_ONCE_INIT;
+static int done_once = 1;
+static pthread_key_t state_key;
 
-FILE *urandom;
-
-/*
- * Get current timestamp
- */
-static uint64_t timestamp(void)
+static void
+init_once(void)
 {
-  uint64_t tl = su_ntp_now();
-  uint64_t hi = su_ntp_hi(tl), lo = su_ntp_lo(tl);
-
-  lo *= granularity;
-  hi *= granularity;
-
-  tl = hi + (lo >> 32) + ntp_epoch;
-
-#ifdef TESTING
-  printf("timestamp %08x-%08x\n", (unsigned)(tl >>32), (unsigned)tl);
-#endif
-
-  tl &= mask60;
-
-  if (tl <= timestamp0)
-    clock_sequence = (clock_sequence + 1) & (MAGIC - 1);
-
-  timestamp0 = tl;
-
-  return tl;
+  pthread_key_create(&state_key, free);
+#if HAVE_DEV_URANDOM
+  urandom = fopen("/dev/urandom", "rb");
+#endif	/* HAVE_DEV_URANDOM */
+  done_once = 1;
 }
 
-#if !HAVE_RANDOM
-#define random() rand()
-#define srandom(x) srand(x)
-#endif
-
-/*
- * Initialize clock_sequence and timestamp0
- */
-static void init(void)
-{
-  int i;
-
-#define N_SEED 32
-
-#if HAVE_INITSTATE
-  /* Allow libsofia-sip-ua.so to unload. */
-  uint32_t *seed = calloc(N_SEED, sizeof *seed);
 #else
-  static uint32_t _seed[N_SEED] = { 0 };
-  uint32_t *seed = _seed;
+static int initialized;
 #endif
-  su_time_t now;
 
-  initialized = 1;
+static union state *
+get_state(void)
+{
+  static union state *retval, state0[1];
 
-  /* Initialize our random number generator */
+#if SU_HAVE_PTHREADS
+
+  pthread_once(&once, init_once);
+
+  if (urandom)
+    return NULL;
+
+  retval = pthread_getspecific(state_key);
+  if (retval) {
+    return retval;
+  }
+
+  retval = calloc(1, sizeof *retval);
+  if (retval != NULL)
+    pthread_setspecific(state_key, retval);
+  else
+    retval = state0;
+
+#else  /* !SU_HAVE_PTHREADS */
+
+  if (urandom == NULL) {
 #if HAVE_DEV_URANDOM
-  if (!urandom)
     urandom = fopen("/dev/urandom", "rb");
 #endif	/* HAVE_DEV_URANDOM */
-
-  if (urandom) {
-    size_t len = fread(seed, sizeof *seed, N_SEED, urandom); (void)len;
   }
-  else {
-    for (i = 0; i < N_SEED; i += 2) {
+
+  if (urandom)
+    return NULL;
+
+  retval = state0;
+
+  if (initialized)
+    return retval;
+#endif
+
+  {
+    uint32_t seed[32];
+    int i;
+    union {
+      uint32_t u32;
+      pthread_t tid;
+    } tid32 = { 0 };
+
+    tid32.tid = pthread_self();
+
+    memset(seed, 0, sizeof seed); /* Make valgrind happy */
+
+    for (i = 0; i < 32; i += 2) {
 #if HAVE_CLOCK_GETTIME
       struct timespec ts;
       (void)clock_gettime(CLOCK_REALTIME, &ts);
       seed[i] ^= ts.tv_sec; seed[i + 1] ^= ts.tv_nsec;
-#endif
+#else
+      su_time_t now;
       su_time(&now);
       seed[i] ^= now.tv_sec; seed[i + 1] ^= now.tv_sec;
+#endif
     }
 
     seed[0] ^= getuid();
     seed[1] ^= getpid();
+    seed[2] ^= tid32.u32;
+    seed[3] ^= (uint32_t)(intptr_t)retval;
+
+    for (i = 0; i < 32; i+= 4) {
+      retval->u64 += ((uint64_t)seed[i] << 32) | seed[i + 1];
+      retval->u64 *= ((uint64_t)seed[i + 3] << 32) | seed[i + 2];
+    }
+
+    retval->u64 += (uint64_t)su_nanotime(NULL);
   }
 
-#if HAVE_INITSTATE
-  initstate(seed[0] ^ seed[1], (void *)seed, N_SEED * (sizeof *seed));
-#else
-  srand(seed[0] ^ seed[1]);
+  return retval;
+}
+
+#if !defined(WIN32) && !defined(WIN64)
+void sofia_su_uniqueid_destructor(void)
+  __attribute__((destructor));
 #endif
 
-  clock_sequence = su_randint(0, MAGIC - 1);
+void
+sofia_su_uniqueid_destructor(void)
+{
+#if HAVE_DEV_URANDOM
+  if (urandom)
+    fclose(urandom);
+#endif	/* HAVE_DEV_URANDOM */
 
-  (void)timestamp();
-
-  init_node();
+#if SU_HAVE_PTHREADS
+  if (done_once) {
+    pthread_key_delete(state_key);
+    done_once = 0;
+  }
+#endif
 }
 
 #if HAVE_GETIFADDRS
@@ -196,10 +213,8 @@ static void init(void)
 #endif
 
 static
-void init_node(void)
+void init_node(uint8_t node[6])
 {
-  size_t i;
-
 #if HAVE_GETIFADDRS && HAVE_SOCKADDR_LL
   struct ifaddrs *ifa, *results;
 
@@ -232,24 +247,18 @@ void init_node(void)
   }
 #endif
 
-  if (urandom) {
-    size_t len = fread(node, sizeof node, 1, urandom); (void)len;
-  }
-  else for (i = 0; i < sizeof(node); i++) {
-    unsigned r = random();
-    node[i] = (r >> 24) ^ (r >> 16) ^ (r >> 8) ^ r;
-  }
-
+  su_randmem(node, 6);
   node[0] |= 1;			/* "multicast" address */
 }
+
+static unsigned char node[6];
 
 size_t su_node_identifier(void *address, size_t addrlen)
 {
   if (addrlen > sizeof node)
     addrlen = sizeof node;
 
-  if (!initialized) init();
-
+  su_guid_generate(NULL);
   memcpy(address, node, addrlen);
 
   return addrlen;
@@ -257,21 +266,66 @@ size_t su_node_identifier(void *address, size_t addrlen)
 
 void su_guid_generate(su_guid_t *v)
 {
-  uint64_t time;
-  unsigned clock;
+  /* Constants */
+  static const unsigned version = 1;	/* Current version */
+  static const unsigned reserved = 128;	/* DCE variant */
+#define granularity (10000000UL)
+  static const uint64_t mask60 = SU_U64_C(0xfffFFFFffffFFFF);
+#define MAGIC (16384)
 
-  if (!initialized) init();
+  /* 100-nanosecond intervals between 15 October 1582 and 1 January 1900 */
+  static const uint64_t ntp_epoch =
+    (uint64_t)(141427) * (24 * 60 * 60L) * granularity;
 
-  time = timestamp();
-  clock = clock_sequence;
+  static uint64_t timestamp0 = 0;
+  static unsigned clock_sequence = MAGIC;
 
-  v->s.time_high_and_version =
-    htons((unsigned short)(((time >> 48) & 0x0fff) | (version << 12)));
-  v->s.time_mid = htons((unsigned short)((time >> 32) & 0xffff));
-  v->s.time_low = htonl((unsigned long)(time & 0xffffffffUL));
-  v->s.clock_seq_low = clock & 0xff;
-  v->s.clock_seq_hi_and_reserved = (clock >> 8) | reserved;
-  memcpy(v->s.node, node, sizeof(v->s.node));
+#if SU_HAVE_PTHREADS
+  static pthread_mutex_t update = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+  uint64_t tl = su_ntp_now();
+  uint64_t hi = su_ntp_hi(tl), lo = su_ntp_lo(tl);
+
+  lo *= granularity;
+  hi *= granularity;
+
+  tl = hi + (lo >> 32) + ntp_epoch;
+
+#ifdef TESTING
+  printf("timestamp %08x-%08x\n", (unsigned)(tl >>32), (unsigned)tl);
+#endif
+
+  tl &= mask60;
+  if (tl == 0) tl++;
+
+#if SU_HAVE_PTHREADS
+  pthread_mutex_lock(&update);
+#endif
+
+  if (timestamp0 == 0) {
+    clock_sequence = su_randint(0, MAGIC - 1);
+    init_node(node);
+  }
+  else if (tl <= timestamp0) {
+    clock_sequence = (clock_sequence + 1) & (MAGIC - 1);
+  }
+
+  timestamp0 = tl;
+
+#if SU_HAVE_PTHREADS
+  pthread_mutex_unlock(&update);
+#endif
+
+  if (v) {
+    v->s.time_high_and_version =
+      htons((unsigned short)(((tl >> 48) & 0x0fff) | (version << 12)));
+    v->s.time_mid = htons((unsigned short)((tl >> 32) & 0xffff));
+    v->s.time_low = htonl((unsigned long)(tl & 0xffffffffUL));
+    v->s.clock_seq_low = clock_sequence & 0xff;
+    v->s.clock_seq_hi_and_reserved = (clock_sequence >> 8) | reserved;
+    memcpy(v->s.node, node, sizeof(v->s.node));
+  }
 }
 
 /*
@@ -292,58 +346,73 @@ isize_t su_guid_sprintf(char* buf, size_t len, su_guid_t const *v)
   return su_guid_strlen;
 }
 
-/*
- * Generate random integer in range [lb, ub] (inclusive)
- */
-int su_randint(int lb, int ub)
+uint64_t su_random64(void)
 {
-  unsigned rnd = 0;
+  union state *state = get_state();
 
-  if (!initialized) init();
-
-  if (urandom) {
-    size_t len = fread(&rnd, 1, sizeof rnd, urandom); (void)len;
+  if (state) {
+    /* Simple rand64 from AoCP */
+    return state->u64 = state->u64 * 0X5851F42D4C957F2DULL + 1ULL;
   }
-  else
-    rnd = random();
-
-  if (ub - lb + 1 != 0)
-    rnd %= (ub - lb + 1);
-
-  return rnd + lb;
+  else {
+    uint64_t retval;
+    size_t len = fread(&retval, 1, sizeof retval, urandom); (void)len;
+    return retval;
+  }
 }
 
 void *su_randmem(void *mem, size_t siz)
 {
-  size_t i;
+  union state *state = get_state();
 
-  if (!initialized) init();
+  if (state) {
+    size_t i;
+    uint64_t r64;
+    uint32_t r32;
 
-  if (urandom) {
-    size_t len = fread(mem, 1, siz, urandom); (void)len;
+    for (i = 0; i < siz; i += 4) {
+      /* Simple rand64 from AoCP */
+      state->u64 = r64 = state->u64 * 0X5851F42D4C957F2DULL + 1ULL;
+      r32 = (uint32_t) (r64 >> 32) ^ (uint32_t)r64;
+      if (siz - i >= 4)
+	memcpy((char *)mem + i, &r32, 4);
+      else
+	memcpy((char *)mem + i, &r32, siz - i);
+    }
   }
-  else for (i = 0; i < siz; i++) {
-    unsigned r = random();
-    ((char *)mem)[i] = (r >> 24) ^ (r >> 16) ^ (r >> 8) ^ r;
+  else {
+    size_t len = fread(mem, 1, siz, urandom); (void)len;
   }
 
   return mem;
 }
 
-/** Get random number for RTP timestamps.
+/**
+ * Generate random integer in range [lb, ub] (inclusive)
+ */
+int su_randint(int lb, int ub)
+{
+  uint64_t rnd;
+  unsigned modulo = (unsigned)(ub - lb + 1);
+
+  if (modulo != 0) {
+    do {
+      rnd = su_random64();
+    } while (rnd / modulo == 0xffffFFFFffffFFFFULL / modulo);
+
+    rnd %= modulo;
+  }
+  else {
+    rnd = su_random64();
+  }
+
+  return (int)rnd + lb;
+}
+
+/** Get random 32-bit unsigned number.
  *
- * This function returns a 32-bit random integer. It also initializes the
- * random number generator, if needed.
  */
 uint32_t su_random(void)
 {
-  if (!initialized) init();
-
-  if (urandom) {
-    uint32_t rnd;
-    size_t len = fread(&rnd, 1, sizeof rnd, urandom); (void)len;
-    return rnd;
-  }
-
-  return (uint32_t)random();
+  return (uint32_t)(su_random64() >> 16);
 }
