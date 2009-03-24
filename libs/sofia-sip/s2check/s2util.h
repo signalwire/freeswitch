@@ -34,10 +34,12 @@
  */
 
 #include <sofia-sip/su_wait.h>
+#include <stdarg.h>
 
 SOFIA_BEGIN_DECLS
 
 void s2_fast_forward(unsigned long seconds, su_root_t *root);
+void s2_timed_logger(void *stream, char const *fmt, va_list ap);
 
 SOFIA_END_DECLS
 

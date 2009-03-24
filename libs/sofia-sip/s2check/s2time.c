@@ -26,6 +26,9 @@
 
 #include "s2util.h"
 
+#include <string.h>
+#include <stdio.h>
+
 /* -- Delay scenarios --------------------------------------------------- */
 
 static unsigned long time_offset;
@@ -49,3 +52,23 @@ void s2_fast_forward(unsigned long seconds,
     su_root_step(root, 0);
 }
 
+void
+s2_timed_logger(void *stream, char const *fmt, va_list ap)
+{
+  char buffer[4096];
+  su_time_t now = su_now();
+  size_t prefix, wrote;
+  int n;
+
+  snprintf(buffer, sizeof buffer,
+	   "%02u:%02u:%02u.%06lu[+%lu] ",
+	   (unsigned)(now.tv_sec / 3600 % 24),
+	   (unsigned)(now.tv_sec / 60 % 60),
+	   (unsigned)(now.tv_sec % 60),
+	   now.tv_usec,
+	   time_offset);
+  prefix = strlen(buffer);
+  n = vsnprintf(buffer + prefix, (sizeof buffer) - prefix, fmt, ap);
+  if (n > 0)
+    wrote = fwrite(buffer, prefix + n, 1, stream);
+}
