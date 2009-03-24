@@ -1175,10 +1175,9 @@ char const *nta_agent_version(nta_agent_t const *agent)
 static int agent_tag_init(nta_agent_t *self)
 {
   sip_contact_t *m = self->sa_contact;
-  uint32_t hash = 1;
+  uint32_t hash = su_random();
 
   if (m) {
-
     if (m->m_url->url_user)
       hash = 914715421U * hash + msg_hash_string(m->m_url->url_user);
     if (m->m_url->url_host)
@@ -1192,7 +1191,7 @@ static int agent_tag_init(nta_agent_t *self)
   if (hash == 0)
     hash = 914715421U;
 
-  self->sa_branch = NTA_BRANCH_PRIME * su_ntp_now();
+  self->sa_branch = NTA_BRANCH_PRIME * (uint64_t)su_nanotime(NULL);
   self->sa_branch *= hash;
 
   self->sa_tags = NTA_TAG_PRIME * self->sa_branch;
@@ -2504,6 +2503,8 @@ int agent_init_contact(nta_agent_t *self)
 
   if (!self->sa_contact)
     return -1;
+
+  agent_tag_init(self);
 
   return 0;
 }
