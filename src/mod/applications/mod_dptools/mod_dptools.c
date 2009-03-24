@@ -938,7 +938,7 @@ SWITCH_STANDARD_APP(info_function)
 	switch_event_t *event;
 	char *buf;
 
-	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
+	if (switch_event_create_plain(&event, SWITCH_EVENT_CHANNEL_DATA) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		switch_event_serialize(event, &buf, SWITCH_FALSE);
 		switch_assert(buf);

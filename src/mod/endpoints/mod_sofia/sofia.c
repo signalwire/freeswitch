@@ -1147,14 +1147,14 @@ static void parse_gateways(sofia_profile_t *profile, switch_xml_t gateways_tag)
 
 					if (in) {
 						if (!gateway->ib_vars) {
-							switch_event_create(&gateway->ib_vars, SWITCH_EVENT_GENERAL);
+							switch_event_create_plain(&gateway->ib_vars, SWITCH_EVENT_GENERAL);
 						}
 						switch_event_add_header_string(gateway->ib_vars, SWITCH_STACK_BOTTOM, var, val);
 					}
 
 					if (out) {
 						if (!gateway->ob_vars) {
-							switch_event_create(&gateway->ob_vars, SWITCH_EVENT_GENERAL);
+							switch_event_create_plain(&gateway->ob_vars, SWITCH_EVENT_GENERAL);
 						}
 						switch_event_add_header_string(gateway->ob_vars, SWITCH_STACK_BOTTOM, var, val);
 					}

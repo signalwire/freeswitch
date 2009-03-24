@@ -611,8 +611,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 		switch_mutex_lock(listener->filter_mutex);		
 		if (!listener->filters) {
-			switch_event_create(&listener->filters, SWITCH_EVENT_CLONE);
-			listener->filters->event_id = SWITCH_EVENT_CHANNEL_DATA;
+			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 		}
 
 		if (!strcasecmp(action, "delete")) {
@@ -623,8 +622,7 @@ SWITCH_STANDARD_API(event_sink_function)
 
 			if (!strcasecmp(header_val, "all")) {
 				switch_event_destroy(&listener->filters);
-				switch_event_create(&listener->filters, SWITCH_EVENT_CLONE);
-				listener->filters->event_id = SWITCH_EVENT_CHANNEL_DATA;
+				switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 			} else {
 				switch_event_del_header(listener->filters, header_val);
 			}
@@ -1408,15 +1406,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		switch_mutex_lock(listener->filter_mutex);		
 		if (!listener->filters) {
-			switch_event_create(&listener->filters, SWITCH_EVENT_CLONE);
-			listener->filters->event_id = SWITCH_EVENT_CHANNEL_DATA;
+			switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 		}
 		
 		if (!strcasecmp(header_name, "delete")) {
 			if (!strcasecmp(header_val, "all")) {
 				switch_event_destroy(&listener->filters);
-				switch_event_create(&listener->filters, SWITCH_EVENT_CLONE);
-				listener->filters->event_id = SWITCH_EVENT_CHANNEL_DATA;
+				switch_event_create_plain(&listener->filters, SWITCH_EVENT_CHANNEL_DATA);
 			} else {
 				switch_event_del_header(listener->filters, header_val);
 			}

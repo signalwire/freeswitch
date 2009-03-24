@@ -220,7 +220,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel,
 		return SWITCH_STATUS_MEMERR;
 	}
 
-	switch_event_create(&(*channel)->variables, SWITCH_EVENT_GENERAL);
+	switch_event_create_plain(&(*channel)->variables, SWITCH_EVENT_CHANNEL_DATA);
 
 	switch_core_hash_init(&(*channel)->private_hash, pool);
 	switch_queue_create(&(*channel)->dtmf_queue, SWITCH_DTMF_LOG_LEN, pool);

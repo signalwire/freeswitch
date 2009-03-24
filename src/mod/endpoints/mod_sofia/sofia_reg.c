@@ -1780,8 +1780,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 
 	if (first && ret == AUTH_OK) {
 		if (v_event) {
-			switch_event_create(v_event, SWITCH_EVENT_REQUEST_PARAMS);
+			switch_event_create_plain(v_event, SWITCH_EVENT_REQUEST_PARAMS);
 		}
+
+		
 		if (v_event && *v_event) {
 			switch_xml_t xparams[3];
 			int i = 0;
