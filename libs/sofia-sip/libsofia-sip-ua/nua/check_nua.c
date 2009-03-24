@@ -405,7 +405,7 @@ void s2_register_setup(void)
   s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   s2->registration->nh = nh;
 }
@@ -437,7 +437,7 @@ void s2_register_teardown(void)
 
     s2_sip_free_message(m);
 
-    s2_check_event(nua_r_unregister, 200);
+    fail_unless_event(nua_r_unregister, 200);
 
     nua_handle_destroy(nh);
     s2->registration->nh = NULL;

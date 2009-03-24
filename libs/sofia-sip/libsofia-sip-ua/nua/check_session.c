@@ -99,7 +99,7 @@ static void call_teardown(void)
   if (s2->shutdown == 0) {
     mark_point();
     nua_shutdown(nua);
-    fail_unless(s2_check_event(nua_r_shutdown, 200));
+    fail_unless_event(nua_r_shutdown, 200);
   }
 
   mark_point();
@@ -242,7 +242,7 @@ respond_with_100rel(struct message *invite,
   }
   ta_end(ta);
 
-  fail_unless(s2_check_event(nua_r_invite, status));
+  fail_unless_event(nua_r_invite, status);
 
   return s2_sip_wait_for_request(SIP_METHOD_PRACK);
 }
@@ -264,12 +264,12 @@ invite_by_nua(nua_handle_t *nh,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
 
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 }
@@ -322,7 +322,7 @@ invite_to_nua(tag_type_t tag, tag_value_t value, ...)
 
   fail_if(s2_sip_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
 
-  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless_event(nua_i_ack, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
   return nh;
@@ -343,7 +343,7 @@ bye_by_nua(nua_handle_t *nh,
   fail_if(!bye);
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 }
 
@@ -366,14 +366,14 @@ bye_by_nua_challenged(nua_handle_t *nh,
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 407));
+  fail_unless_event(nua_r_bye, 407);
 
   nua_authenticate(nh, NUTAG_AUTH("Digest:\"s2test\":abc:abc"), TAG_END());
   bye = s2_sip_wait_for_request(SIP_METHOD_BYE);
   fail_if(!bye);
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   fail_if(s2->events);
 }
@@ -396,12 +396,12 @@ cancel_by_nua(nua_handle_t *nh,
   fail_if(!cancel);
   s2_sip_respond_to(cancel, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(cancel);
-  fail_unless(s2_check_event(nua_r_cancel, 200));
+  fail_unless_event(nua_r_cancel, 200);
 
   s2_sip_respond_to(invite, dialog, SIP_487_REQUEST_CANCELLED, TAG_END());
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  fail_unless(s2_check_event(nua_r_invite, 487));
+  fail_unless_event(nua_r_invite, 487);
 }
 
 static void
@@ -414,7 +414,7 @@ bye_to_nua(nua_handle_t *nh,
   fail_if(s2_sip_request_to(dialog, SIP_METHOD_BYE, NULL, ta_tags(ta)));
   ta_end(ta);
 
-  fail_unless(s2_check_event(nua_i_bye, 200));
+  fail_unless_event(nua_i_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   fail_unless(s2_sip_check_response(200, SIP_METHOD_BYE));
 }
@@ -598,7 +598,7 @@ START_TEST(call_2_1_6)
 
   fail_if(s2_sip_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
 
-  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless_event(nua_i_ack, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
   nua_bye(nh, TAG_END());
@@ -608,7 +608,7 @@ START_TEST(call_2_1_6)
   fail_unless(tport_is_tcp(bye->tport));
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_handle_destroy(nh);
@@ -669,12 +669,12 @@ START_TEST(call_2_1_8)
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
 
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   ack = s2_sip_wait_for_request(SIP_METHOD_ACK);
   fail_unless(ack && tport_is_tcp(ack->tport));
@@ -734,9 +734,9 @@ START_TEST(cancel_2_2_1)
 
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
-  fail_unless(s2_check_event(nua_r_invite, 487));
+  fail_unless_event(nua_r_invite, 487);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
-  fail_unless(s2_check_event(nua_r_cancel, 200));
+  fail_unless_event(nua_r_cancel, 200);
   fail_if(s2->events != NULL);
 
   nua_handle_destroy(nh);
@@ -791,7 +791,7 @@ START_TEST(cancel_2_2_3)
     invite, dialog, SIP_180_RINGING,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   cancel_by_nua(nh, invite, dialog, TAG_END());
@@ -823,7 +823,7 @@ START_TEST(cancel_2_2_4)
     invite, dialog, SIP_180_RINGING,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_cancel(nh, TAG_END());
@@ -834,7 +834,7 @@ START_TEST(cancel_2_2_4)
 
   s2_sip_respond_to(cancel, dialog, SIP_481_NO_TRANSACTION, TAG_END());
   s2_sip_free_message(cancel);
-  fail_unless(s2_check_event(nua_r_cancel, 481));
+  fail_unless_event(nua_r_cancel, 481);
 
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
@@ -872,7 +872,7 @@ START_TEST(cancel_2_2_5)
     invite, dialog, SIP_180_RINGING,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_bye(nh, TAG_END());
@@ -883,7 +883,7 @@ START_TEST(cancel_2_2_5)
 
   s2_sip_respond_to(cancel, dialog, SIP_481_NO_TRANSACTION, TAG_END());
   s2_sip_free_message(cancel);
-  fail_unless(s2_check_event(nua_r_cancel, 481));
+  fail_unless_event(nua_r_cancel, 481);
 
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
@@ -893,7 +893,7 @@ START_TEST(cancel_2_2_5)
   fail_if(!bye);
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_handle_destroy(nh);
@@ -935,7 +935,7 @@ START_TEST(cancel_2_2_6)
   s2_sip_free_message(response);
 
   fail_if(s2_sip_request_to(dialog, SIP_METHOD_CANCEL, NULL, TAG_END()));
-  fail_unless(s2_check_event(nua_i_cancel, 200));
+  fail_unless_event(nua_i_cancel, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   response = s2_sip_wait_for_response(200, SIP_METHOD_CANCEL);
@@ -990,7 +990,7 @@ START_TEST(cancel_2_2_7)
   s2_sip_free_message(response);
 
   fail_if(s2_sip_request_to(dialog, SIP_METHOD_CANCEL, NULL, TAG_END()));
-  fail_unless(s2_check_event(nua_i_cancel, 200));
+  fail_unless_event(nua_i_cancel, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   response = s2_sip_wait_for_response(200, SIP_METHOD_CANCEL);
@@ -1029,7 +1029,7 @@ START_TEST(cancel_2_2_8)
     invite, dialog, SIP_180_RINGING,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_cancel(nh, TAG_END());
@@ -1045,8 +1045,8 @@ START_TEST(cancel_2_2_8)
       s2_sip_free_message(cancel);
   }
 
-  fail_unless(s2_check_event(nua_r_cancel, 408));
-  fail_unless(s2_check_event(nua_r_invite, 408));
+  fail_unless_event(nua_r_cancel, 408);
+  fail_unless_event(nua_r_invite, 408);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   nua_handle_destroy(nh);
 }
@@ -1074,7 +1074,7 @@ START_TEST(cancel_2_2_9)
     invite, dialog, SIP_180_RINGING,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_cancel(nh, TAG_END());
@@ -1088,7 +1088,7 @@ START_TEST(cancel_2_2_9)
     s2_nua_fast_forward(1, s2base->root);
   }
 
-  fail_unless(s2_check_event(nua_r_invite, 408));
+  fail_unless_event(nua_r_invite, 408);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   nua_handle_destroy(nh);
 }
@@ -1117,7 +1117,7 @@ START_TEST(cancel_2_2_10)
     invite, dialog, SIP_180_RINGING,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_cancel(nh, TAG_END());
@@ -1138,7 +1138,7 @@ START_TEST(cancel_2_2_10)
   s2->registration->nh = NULL;
 
   nua_set_params(s2->nua, NUTAG_SHUTDOWN_EVENTS(1), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
 
   nua_shutdown(s2->nua);
   event = s2_wait_for_event(nua_r_shutdown, 100);
@@ -1202,7 +1202,7 @@ invite_timer_round(nua_handle_t *nh,
     SIPTAG_RECORD_ROUTE(rr),
     TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   ack = s2_sip_wait_for_request(SIP_METHOD_ACK);
   if (rr == NULL)
@@ -1319,7 +1319,7 @@ START_TEST(call_2_4_1)
   s2_sip_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
 
   prack = respond_with_100rel(invite, dialog, with_sdp = 0,
 			      SIP_180_RINGING,
@@ -1330,7 +1330,7 @@ START_TEST(call_2_4_1)
   s2_sip_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
 
   /* Change the record-route */
   rr->r_url->url_user = "record2";
@@ -1338,7 +1338,7 @@ START_TEST(call_2_4_1)
 		SIPTAG_RECORD_ROUTE(rr),
 		TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   ack = s2_sip_wait_for_request(SIP_METHOD_ACK);
   fail_if(!ack);
@@ -1383,7 +1383,7 @@ START_TEST(call_2_4_2)
   s2_sip_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
 
   prack = respond_with_100rel(invite, dialog, with_sdp = 0,
 			      SIP_180_RINGING,
@@ -1391,11 +1391,11 @@ START_TEST(call_2_4_2)
   s2_sip_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
 
   s2_sip_respond_to(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
@@ -1450,7 +1450,7 @@ START_TEST(call_2_5_1)
     SIPTAG_REQUIRE_STR("100rel"),
     TAG_END());
   s2_sip_free_message(prack), prack = NULL;
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   update = s2_sip_wait_for_request(SIP_METHOD_UPDATE);
@@ -1463,7 +1463,7 @@ START_TEST(call_2_5_1)
     TAG_END());
   s2_sip_free_message(update), update = NULL;
 
-  fail_unless(s2_check_event(nua_r_update, 200));
+  fail_unless_event(nua_r_update, 200);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   prack = respond_with_100rel(invite, dialog, with_sdp = 0,
@@ -1472,11 +1472,11 @@ START_TEST(call_2_5_1)
   s2_sip_respond_to(prack, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(prack), prack = NULL;
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
 
   s2_sip_respond_to(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
@@ -1518,7 +1518,7 @@ START_TEST(call_2_5_2)
     SIPTAG_REQUIRE_STR("100rel"),
     SIPTAG_RSEQ(rs),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 183));
+  fail_unless_event(nua_r_invite, 183);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   sip_rack_init(rack)->ra_response = s2_rseq;
@@ -1532,14 +1532,14 @@ START_TEST(call_2_5_2)
 
   s2_sip_respond_to(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_completing));
 
   respond_with_sdp(
     prack, dialog, SIP_200_OK,
     TAG_END());
   s2_sip_free_message(prack), prack = NULL;
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
@@ -1554,7 +1554,7 @@ START_TEST(call_2_5_2)
     TAG_END());
   s2_sip_free_message(update), update = NULL;
 
-  fail_unless(s2_check_event(nua_r_update, 200));
+  fail_unless_event(nua_r_update, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
   bye_to_nua(nh, TAG_END());
@@ -1594,7 +1594,7 @@ START_TEST(call_2_5_3)
     SIPTAG_REQUIRE_STR("100rel"),
     SIPTAG_RSEQ(rs),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 183));
+  fail_unless_event(nua_r_invite, 183);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   sip_rack_init(rack)->ra_response = s2_rseq;
@@ -1609,7 +1609,7 @@ START_TEST(call_2_5_3)
     prack, dialog, SIP_200_OK,
     TAG_END());
   s2_sip_free_message(prack), prack = NULL;
-  fail_unless(s2_check_event(nua_r_prack, 200));
+  fail_unless_event(nua_r_prack, 200);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   update = s2_sip_wait_for_request(SIP_METHOD_UPDATE);
@@ -1618,7 +1618,7 @@ START_TEST(call_2_5_3)
 
   s2_sip_respond_to(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_completing));
 
   process_offer(update);
@@ -1627,7 +1627,7 @@ START_TEST(call_2_5_3)
     TAG_END());
   s2_sip_free_message(update), update = NULL;
 
-  fail_unless(s2_check_event(nua_r_update, 200));
+  fail_unless_event(nua_r_update, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
@@ -1681,7 +1681,7 @@ START_TEST(call_2_6_1)
     fail_if(!ack);
     s2_sip_free_message(ack);
 
-    fail_unless(s2_check_event(nua_r_invite, 200));
+    fail_unless_event(nua_r_invite, 200);
     fail_unless(s2_check_callstate(nua_callstate_ready));
   }
 
@@ -1727,7 +1727,7 @@ START_TEST(call_2_6_2)
   fail_if(soa_process_reject(soa, NULL) < 0);
 
   /* We get nua_r_invite with 100 trying (and 500 in sip->sip_status) */
-  fail_unless(s2_check_event(nua_r_invite, 100));
+  fail_unless_event(nua_r_invite, 100);
 
   s2_nua_fast_forward(10, s2base->root);
 
@@ -1737,7 +1737,7 @@ START_TEST(call_2_6_2)
   process_offer(invite);
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   ack = s2_sip_wait_for_request(SIP_METHOD_ACK);
   fail_if(!ack);
@@ -1780,13 +1780,13 @@ START_TEST(call_2_6_3)
 
   fail_if(s2_sip_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
 
-  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless_event(nua_i_ack, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
   s2_nua_fast_forward(10, s2base->root);
 
   nua_set_hparams(nh, NUTAG_REFRESH_WITHOUT_SDP(1), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_sip_request_to(dialog, SIP_METHOD_INVITE, NULL,
 		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
@@ -1805,7 +1805,7 @@ START_TEST(call_2_6_3)
 
   fail_if(s2_sip_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
 
-  fail_unless(s2_check_event(nua_i_ack, 200));
+  fail_unless_event(nua_i_ack, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
   bye_by_nua(nh, TAG_END());
@@ -1842,7 +1842,7 @@ START_TEST(call_2_6_4)
   process_answer(ack);
   s2_sip_free_message(ack);
 
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
   bye_by_nua(nh, TAG_END());
@@ -1894,7 +1894,7 @@ START_TEST(call_3_1_1)
   fail_if(!ack);
   fail_if(strcmp(ack->sip->sip_to->a_display, "UAS Changed"));
   s2_sip_free_message(ack);
-  fail_unless(s2_check_event(nua_r_invite, 403));
+  fail_unless_event(nua_r_invite, 403);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_handle_destroy(nh);
@@ -1929,11 +1929,11 @@ START_TEST(call_3_1_2)
     fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
     if (i == 3)
       break;
-    fail_unless(s2_check_event(nua_r_invite, 100));
+    fail_unless_event(nua_r_invite, 100);
     s2_nua_fast_forward(5, s2base->root);
   }
 
-  fail_unless(s2_check_event(nua_r_invite, 500));
+  fail_unless_event(nua_r_invite, 500);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_handle_destroy(nh);
@@ -1961,7 +1961,7 @@ START_TEST(call_3_2_1)
   s2_sip_free_message(invite);
 
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
-  fail_unless(s2_check_event(nua_r_invite, 403));
+  fail_unless_event(nua_r_invite, 403);
   /* Return to previous state */
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
@@ -1999,18 +1999,18 @@ START_TEST(call_3_2_2)
     fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
     if (i == 3)
       break;
-    fail_unless(s2_check_event(nua_r_invite, 100));
+    fail_unless_event(nua_r_invite, 100);
     s2_nua_fast_forward(5, s2base->root);
   }
 
-  fail_unless(s2_check_event(nua_r_invite, 500));
+  fail_unless_event(nua_r_invite, 500);
   /* Graceful termination */
   fail_unless(s2_check_callstate(nua_callstate_terminating));
   bye = s2_sip_wait_for_request(SIP_METHOD_BYE);
   fail_if(!bye);
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_handle_destroy(nh);
@@ -2038,7 +2038,7 @@ START_TEST(call_3_2_3)
   s2_sip_respond_to(invite, NULL, SIP_491_REQUEST_PENDING, TAG_END());
   s2_sip_free_message(invite);
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
-  fail_unless(s2_check_event(nua_r_invite, 491));
+  fail_unless_event(nua_r_invite, 491);
   /* Return to previous state */
   fail_unless(s2_check_callstate(nua_callstate_ready));
 
@@ -2088,7 +2088,7 @@ START_TEST(bye_4_1_1)
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 407));
+  fail_unless_event(nua_r_bye, 407);
 
   soa_generate_offer(soa, 1, NULL);
 
@@ -2137,7 +2137,7 @@ START_TEST(bye_4_1_2)
   s2_sip_respond_to(bye, dialog, SIP_200_OK,
 		TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
 
   nua_handle_destroy(nh);
 }
@@ -2157,7 +2157,7 @@ START_TEST(bye_4_1_3)
   mark_point();
 
   nua_set_hparams(nh, NUTAG_APPL_METHOD("BYE"), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_flush_events();
 
@@ -2174,7 +2174,7 @@ START_TEST(bye_4_1_3)
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
 
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   fail_unless(s2_sip_check_response(200, SIP_METHOD_BYE));
@@ -2197,7 +2197,7 @@ START_TEST(bye_4_1_4)
 
   mark_point();
   nua_set_hparams(nh, NUTAG_APPL_METHOD("BYE"), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
   s2_flush_events();
 
   s2_sip_request_to(dialog, SIP_METHOD_BYE, NULL, TAG_END());
@@ -2212,7 +2212,7 @@ START_TEST(bye_4_1_4)
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
 
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_respond(nh, 200, "OKOK", NUTAG_WITH(i_bye->data->e_msg), TAG_END());
@@ -2236,7 +2236,7 @@ START_TEST(bye_4_1_5)
 
   mark_point();
   nua_set_hparams(nh, NUTAG_APPL_METHOD("BYE"), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
   s2_flush_events();
 
   s2_sip_request_to(dialog, SIP_METHOD_BYE, NULL, TAG_END());
@@ -2251,7 +2251,7 @@ START_TEST(bye_4_1_5)
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
 
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 
   nua_handle_destroy(nh);
@@ -2271,14 +2271,14 @@ START_TEST(bye_4_1_6)
   nh = invite_to_nua(TAG_END());
 
   nua_set_hparams(nh, NUTAG_AUTOANSWER(0), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_flush_events();
 
   request_with_sdp(dialog, SIP_METHOD_INVITE, NULL, TAG_END());
   fail_unless(s2_sip_check_response(100, SIP_METHOD_INVITE));
   nua_bye(nh, TAG_END());
-  fail_unless(s2_check_event(nua_i_invite, 100));
+  fail_unless_event(nua_i_invite, 100);
   fail_unless(s2_check_callstate(nua_callstate_received));
 
   do {
@@ -2309,14 +2309,14 @@ START_TEST(bye_4_1_7)
   nh = invite_to_nua(TAG_END());
 
   nua_set_hparams(nh, NUTAG_AUTOANSWER(0), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_flush_events();
 
   request_with_sdp(dialog, SIP_METHOD_INVITE, NULL, TAG_END());
   fail_unless(s2_sip_check_response(100, SIP_METHOD_INVITE));
   nua_bye(nh, TAG_END());
-  fail_unless(s2_check_event(nua_i_invite, 100));
+  fail_unless_event(nua_i_invite, 100);
   fail_unless(s2_check_callstate(nua_callstate_received));
 
   bye = s2_sip_wait_for_request(SIP_METHOD_BYE);
@@ -2352,7 +2352,7 @@ START_TEST(bye_4_1_8)
   request_with_sdp(dialog, SIP_METHOD_INVITE, NULL, TAG_END());
   fail_unless(s2_sip_check_response(100, SIP_METHOD_INVITE));
   nua_bye(nh, TAG_END());
-  fail_unless(s2_check_event(nua_i_invite, 100));
+  fail_unless_event(nua_i_invite, 100);
   fail_unless(s2_check_callstate(nua_callstate_received));
 
   nua_respond(nh, SIP_486_BUSY_HERE, TAG_END());
@@ -2445,7 +2445,7 @@ START_TEST(bye_4_1_10)
   fail_if(!bye);
 
   fail_unless(s2_check_callstate(nua_callstate_calling));
-  fail_unless(s2_check_event(nua_r_invite, 501));
+  fail_unless_event(nua_r_invite, 501);
   fail_unless(s2_check_callstate(nua_callstate_terminating));
 
   s2_sip_request_to(dialog, SIP_METHOD_BYE, NULL, TAG_END());
@@ -2483,12 +2483,12 @@ START_TEST(bye_4_1_11)
   invite = invite_sent_by_nua(nh, NUTAG_AUTOACK(0), TAG_END());
   process_offer(invite);
   s2_sip_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_completing));
 
   s2_sip_request_to(dialog, SIP_METHOD_BYE, NULL, TAG_END());
@@ -2533,7 +2533,7 @@ START_TEST(bye_4_2_1)
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 407));
+  fail_unless_event(nua_r_bye, 407);
 
   s2_nua_fast_forward(300, s2base->root);
 
@@ -2542,7 +2542,7 @@ START_TEST(bye_4_2_1)
   fail_if(!bye);
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   fail_if(s2->events);
 
@@ -2579,7 +2579,7 @@ START_TEST(bye_4_2_2)
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 407));
+  fail_unless_event(nua_r_bye, 407);
 
   s2_nua_fast_forward(160, s2base->root);
 
@@ -2588,7 +2588,7 @@ START_TEST(bye_4_2_2)
   fail_if(!bye);
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   fail_if(s2->events);
 
@@ -2662,7 +2662,7 @@ START_TEST(destroy_4_3_2)
   invite = invite_sent_by_nua(nh, TAG_END());
   process_offer(invite);
   s2_sip_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_handle_destroy(nh);
@@ -2690,11 +2690,11 @@ START_TEST(destroy_4_3_3)
   invite = invite_sent_by_nua(nh, NUTAG_AUTOACK(0), TAG_END());
   process_offer(invite);
   s2_sip_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_completing));
 
   nua_handle_destroy(nh);
@@ -2726,11 +2726,11 @@ START_TEST(destroy_4_3_4)
   invite = invite_sent_by_nua(nh, NUTAG_AUTOACK(0), TAG_END());
   process_offer(invite);
   s2_sip_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_completing));
 
   nua_ack(nh, TAG_END());
@@ -2793,7 +2793,7 @@ START_TEST(destroy_4_3_6)
   invite = invite_sent_by_nua(nh, TAG_END());
   process_offer(invite);
   s2_sip_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_handle_destroy(nh);
@@ -2822,11 +2822,11 @@ START_TEST(destroy_4_3_7)
   invite = invite_sent_by_nua(nh, NUTAG_AUTOACK(0), TAG_END());
   process_offer(invite);
   s2_sip_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_completing));
 
   nua_handle_destroy(nh);
@@ -2892,7 +2892,7 @@ START_TEST(destroy_4_3_9)
   invite = invite_sent_by_nua(nh, TAG_END());
   process_offer(invite);
   s2_sip_respond_to(invite, dialog, SIP_180_RINGING, TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   nua_handle_destroy(nh);
@@ -3156,7 +3156,7 @@ START_TEST(options_5_1_1)
   nua_handle_destroy(nh);
 
   nua_set_params(nua, NUTAG_APPL_METHOD("OPTIONS"), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_sip_request_to(dialog, SIP_METHOD_OPTIONS, NULL, TAG_END());
 
@@ -3202,7 +3202,7 @@ START_TEST(options_5_1_2)
 	  "Test multithreading nua_respond() API with OPTIONS.");
 
   nua_set_params(nua, NUTAG_APPL_METHOD("OPTIONS"), TAG_END());
-  fail_unless(s2_check_event(nua_r_set_params, 200));
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_sip_request_to(dialog, SIP_METHOD_OPTIONS, NULL, TAG_END());
 
@@ -3354,7 +3354,7 @@ START_TEST(refer_5_2_2)
     invite, dialog, SIP_180_RINGING,
     SIPTAG_CONTENT_DISPOSITION_STR("session;handling=optional"),
     TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 180));
+  fail_unless_event(nua_r_invite, 180);
   fail_unless(s2_check_callstate(nua_callstate_proceeding));
 
   notify1 = s2_sip_wait_for_request(SIP_METHOD_NOTIFY);
@@ -3362,7 +3362,7 @@ START_TEST(refer_5_2_2)
 
   respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(invite);
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 

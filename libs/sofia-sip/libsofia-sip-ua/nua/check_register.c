@@ -94,7 +94,7 @@ static void register_teardown(void)
 {
   s2_teardown_started("register");
   nua_shutdown(nua);
-  fail_unless(s2_check_event(nua_r_shutdown, 200));
+  fail_unless_event(nua_r_shutdown, 200);
   s2_nua_teardown();
 }
 
@@ -162,7 +162,7 @@ START_TEST(register_1_1_2)
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
   s2_sip_free_message(m);
-  s2_check_event(nua_r_register, 407);
+  fail_unless_event(nua_r_register, 407);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
 
@@ -173,7 +173,7 @@ START_TEST(register_1_1_2)
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
   s2_sip_free_message(m);
-  s2_check_event(nua_r_register, 401);
+  fail_unless_event(nua_r_register, 401);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth2_credentials), TAG_END());
 
@@ -190,7 +190,7 @@ START_TEST(register_1_1_2)
   s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   s2->registration->nh = nh;
 
@@ -250,7 +250,7 @@ START_TEST(register_1_2_1) {
   s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
-  s2_check_event(nua_r_register, 100);
+  fail_unless_event(nua_r_register, 100);
 
   m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
@@ -266,7 +266,7 @@ START_TEST(register_1_2_1) {
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   s2->registration->nh = nh;
 
@@ -294,7 +294,7 @@ static nua_handle_t *make_auth_natted_register(
 		TAG_END());
   s2_sip_free_message(m);
 
-  s2_check_event(nua_r_register, 401);
+  fail_unless_event(nua_r_register, 401);
 
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
 
@@ -315,7 +315,7 @@ static nua_handle_t *make_auth_natted_register(
   s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   return nh;
 }
@@ -392,7 +392,7 @@ START_TEST(register_1_2_2_2)
 		TAG_END());
   s2_sip_free_message(m);
 
-  s2_check_event(nua_i_outbound, 0);
+  fail_unless_event(nua_i_outbound, 0);
 
   m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
@@ -406,7 +406,7 @@ START_TEST(register_1_2_2_2)
 		TAG_END());
   s2_sip_free_message(m);
 
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
@@ -448,7 +448,7 @@ START_TEST(register_1_2_2_3)
 		TAG_END());
   s2_sip_free_message(m);
 
-  s2_check_event(nua_r_register, 100);
+  fail_unless_event(nua_r_register, 100);
 
   m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
@@ -465,7 +465,7 @@ START_TEST(register_1_2_2_3)
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
 
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   s2_register_teardown();
 
@@ -494,7 +494,7 @@ START_TEST(register_1_2_3) {
 		TAG_END());
   s2_sip_free_message(m);
 
-  s2_check_event(nua_r_register, 100);
+  fail_unless_event(nua_r_register, 100);
 
   m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
@@ -509,7 +509,7 @@ START_TEST(register_1_2_3) {
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   s2->registration->nh = nh;
 
@@ -545,7 +545,7 @@ START_TEST(register_1_3_1)
   s2_sip_free_message(m);
 
   assert(s2->registration->contact != NULL);
-  s2_check_event(nua_r_register, 100);
+  fail_unless_event(nua_r_register, 100);
 
   m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m);
@@ -563,7 +563,7 @@ START_TEST(register_1_3_1)
   fail_if(s2->registration->contact->m_next != NULL);
   fail_unless(
     url_has_param(s2->registration->contact->m_url, "transport=tcp"));
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   s2->registration->nh = nh;
 
@@ -599,7 +599,7 @@ START_TEST(register_1_3_2_2)
 	  "close TCP at server, wait for re-REGISTERs.");
 
   nua_set_params(nua, NTATAG_TCP_RPORT(1), TAG_END());
-  s2_check_event(nua_r_set_params, 200);
+  fail_unless_event(nua_r_set_params, 200);
 
   mark_point();
   s2->registration->nh = nh;
@@ -623,7 +623,7 @@ START_TEST(register_1_3_2_2)
 
   /* The "NAT binding" changed when new TCP connection is established */
   /* => NUA re-REGISTERs with newly detected contact */
-  s2_check_event(nua_r_register, 100);
+  fail_unless_event(nua_r_register, 100);
 
   m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
@@ -637,7 +637,7 @@ START_TEST(register_1_3_2_2)
 		TAG_END());
   s2_sip_free_message(m);
 
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);
@@ -656,7 +656,7 @@ START_TEST(register_1_3_3_1)
 	  "Register with UDP, UDP time-outing, then w/ TCP using rport. ");
 
   nua_set_params(nua, NTATAG_TCP_RPORT(1), TAG_END());
-  s2_check_event(nua_r_set_params, 200);
+  fail_unless_event(nua_r_set_params, 200);
 
   mark_point();
   s2->registration->nh = nh;
@@ -683,7 +683,7 @@ START_TEST(register_1_3_3_1)
 		SIPTAG_VIA(natted_via(m)),
 		TAG_END());
   s2_sip_free_message(m);
-  s2_check_event(nua_r_register, 401);
+  fail_unless_event(nua_r_register, 401);
   nua_authenticate(nh, NUTAG_AUTH(s2_auth_credentials), TAG_END());
 
   /* Turn off pong */
@@ -703,7 +703,7 @@ START_TEST(register_1_3_3_1)
   s2_sip_free_message(m);
 
   /* NUA detects oops... re-registers UDP */
-  s2_check_event(nua_r_register, 100);
+  fail_unless_event(nua_r_register, 100);
 
   m = s2_sip_wait_for_request(SIP_METHOD_REGISTER);
   fail_if(!m); fail_if(!m->sip->sip_authorization);
@@ -717,7 +717,7 @@ START_TEST(register_1_3_3_1)
 		TAG_END());
   s2_sip_free_message(m);
 
-  s2_check_event(nua_r_register, 200);
+  fail_unless_event(nua_r_register, 200);
 
   fail_unless(s2->registration->contact != NULL);
   fail_if(s2->registration->contact->m_next != NULL);

@@ -83,6 +83,9 @@ int s2_check_event(nua_event_t event, int status);
 int s2_check_callstate(enum nua_callstate state);
 int s2_check_substate(struct event *e, enum nua_substate state);
 
+#define fail_unless_event(event, status) \
+  fail_unless(s2_check_event(event, status))
+
 #define SIP_METHOD_UNKNOWN sip_method_unknown, NULL
 
 void s2_flush_all(void);

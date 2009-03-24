@@ -103,7 +103,7 @@ static void etsi_teardown(void)
   mark_point();
 
   nua_shutdown(nua);
-  fail_unless(s2_check_event(nua_r_shutdown, 200));
+  fail_unless_event(nua_r_shutdown, 200);
 
   s2_nua_teardown();
 }
@@ -186,7 +186,7 @@ bye_by_nua(struct dialog *dialog, nua_handle_t *nh,
   fail_if(!bye);
   s2_sip_respond_to(bye, dialog, SIP_200_OK, TAG_END());
   s2_sip_free_message(bye);
-  fail_unless(s2_check_event(nua_r_bye, 200));
+  fail_unless_event(nua_r_bye, 200);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
 }
 
@@ -216,7 +216,7 @@ START_TEST(SIP_CC_OE_CE_V_019)
 
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
 
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
@@ -253,7 +253,7 @@ START_TEST(SIP_CC_OE_CE_TI_008)
   invite = invite_sent_by_nua(nh, TAG_END());
 
   s2_sip_respond_to(invite, d1, 404, "First not found", TAG_END());
-  fail_unless(s2_check_event(nua_r_invite, 404));
+  fail_unless_event(nua_r_invite, 404);
   fail_unless(s2_check_callstate(nua_callstate_terminated));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 
@@ -276,7 +276,7 @@ START_TEST(SIP_CC_OE_CE_TI_008)
 
   /* Wake up nua thread and let it time out INVITE transaction */
   nua_set_params(s2->nua, TAG_END());
-  s2_check_event(nua_r_set_params, 0);
+  fail_unless_event(nua_r_set_params, 0);
 
   s2_sip_respond_to(invite, d1, 404, "Not found after 32 seconds", TAG_END());
   s2_sip_free_message(invite);
@@ -307,7 +307,7 @@ START_TEST(SIP_CC_OE_CE_TI_011_012)
 
   respond_with_sdp(invite, d1, SIP_200_OK, TAG_END());
 
-  fail_unless(s2_check_event(nua_r_invite, 200));
+  fail_unless_event(nua_r_invite, 200);
   fail_unless(s2_check_callstate(nua_callstate_ready));
   fail_unless(s2_sip_check_request(SIP_METHOD_ACK));
 

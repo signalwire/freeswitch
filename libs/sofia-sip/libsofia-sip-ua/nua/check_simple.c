@@ -80,7 +80,7 @@ void s2_dialog_teardown(void)
 
   nua_shutdown(nua);
 
-  fail_unless(s2_check_event(nua_r_shutdown, 200));
+  fail_unless_event(nua_r_shutdown, 200);
 
   s2_nua_teardown();
 }
@@ -509,7 +509,7 @@ subscribe_to_nua(char const *event,
   nua_set_params(nua, NUTAG_APPL_METHOD("SUBSCRIBE"),
 		 SIPTAG_ALLOW_EVENTS_STR(event),
 		 TAG_END());
-  s2_check_event(nua_r_set_params, 200);
+  fail_unless_event(nua_r_set_params, 200);
 
   ta_start(ta, tag, value);
   s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
@@ -550,7 +550,7 @@ START_TEST(notify_6_3_1)
   s2_sip_check_response(489, SIP_METHOD_SUBSCRIBE);
 
   nua_set_params(nua, NUTAG_APPL_METHOD("SUBSCRIBE"), TAG_END());
-  s2_check_event(nua_r_set_params, 200);
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
 		SIPTAG_EVENT_STR("presence"),
@@ -558,7 +558,7 @@ START_TEST(notify_6_3_1)
   s2_sip_check_response(489, SIP_METHOD_SUBSCRIBE);
 
   nua_set_params(nua, SIPTAG_ALLOW_EVENTS_STR("presence"), TAG_END());
-  s2_check_event(nua_r_set_params, 200);
+  fail_unless_event(nua_r_set_params, 200);
 
   s2_sip_request_to(dialog, SIP_METHOD_SUBSCRIBE, NULL,
 		SIPTAG_EVENT_STR("presence"),
@@ -601,7 +601,7 @@ START_TEST(notify_6_3_1)
 			  "terminated"));
   s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
 
-  s2_check_event(nua_r_notify, 200);
+  fail_unless_event(nua_r_notify, 200);
   nua_handle_destroy(nh);
 }
 END_TEST
@@ -629,7 +629,7 @@ START_TEST(notify_6_3_2)
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
   s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
-  s2_check_event(nua_r_notify, 200);
+  fail_unless_event(nua_r_notify, 200);
 
   s2_nua_fast_forward(300, s2base->root);
 
@@ -640,7 +640,7 @@ START_TEST(notify_6_3_2)
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "terminated"));
   s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
-  s2_check_event(nua_r_notify, 200);
+  fail_unless_event(nua_r_notify, 200);
 
   nua_handle_destroy(nh);
 }
@@ -682,7 +682,7 @@ START_TEST(notify_6_3_3)
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
   s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
-  s2_check_event(nua_r_notify, 200);
+  fail_unless_event(nua_r_notify, 200);
 
   nua_notify(nh,
 	     NUTAG_SUBSTATE(nua_substate_active),
@@ -728,7 +728,7 @@ START_TEST(notify_6_3_4)
   fail_unless(su_strmatch(sip->sip_subscription_state->ss_substate,
 			  "active"));
   s2_sip_respond_to(notify, dialog, SIP_200_OK, TAG_END());
-  s2_check_event(nua_r_notify, 200);
+  fail_unless_event(nua_r_notify, 200);
 
   nua_notify(nh,
 	     NUTAG_SUBSTATE(nua_substate_active),
