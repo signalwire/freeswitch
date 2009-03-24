@@ -51,7 +51,7 @@ Removed globals which should have been static in first place:
   - t_skip_next(), t_skip_move(), t_skip_len(), t_skip_dup(), t_skip_filter()
   - t_next_next(), t_next_move(), t_next_len(), t_next_dup(), t_next_filter()
   - t_filter_with(), t_any_filter()
-  - sres_record_class()
+  - sres_record_class(), urandom
   - u2s_alloc()
 
 libsofia-sip-ua-glib:
