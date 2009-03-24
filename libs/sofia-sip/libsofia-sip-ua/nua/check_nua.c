@@ -295,6 +295,11 @@ s2_setup_logs(int level)
   su_log_soft_set_level(nea_log, level);
   su_log_soft_set_level(nta_log, level);
   su_log_soft_set_level(tport_log, level);
+
+  if (getenv("TPORT_LOG") == NULL && getenv("S2_TPORT_LOG") == NULL) {
+    if (s2sip)
+      tport_set_params(s2sip->master, TPTAG_LOG(level > 1), TAG_END());
+  }
 }
 
 nua_t *s2_nua_setup(char const *label,
