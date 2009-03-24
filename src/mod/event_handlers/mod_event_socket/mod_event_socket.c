@@ -1575,7 +1575,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 	if (!strncasecmp(cmd, "sendmsg", 7)) {
 		switch_core_session_t *session;
 		char *uuid = cmd + 7;
-
+		const char *async_var = switch_event_get_header(*event, "async");
+		int async = switch_test_flag(listener, LFLAG_ASYNC);
+		
+		if (switch_true(async_var)) {
+			async = 1;
+		}
+		
 		if (uuid) {
 			while (*uuid == ' ') {
 				uuid++;
@@ -1592,14 +1598,11 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			uuid = switch_event_get_header(*event, "session-id");
 		}
 
-		if (switch_strlen_zero(uuid) && listener->session) {
-			const char *blocking = switch_event_get_header(*event, "blocking");
-			int async = switch_test_flag(listener, LFLAG_ASYNC);
-			
-			if (blocking && switch_true(blocking)) {
-				async = 0;
-			}
+		if (uuid && listener->session && !strcmp(uuid, switch_core_session_get_uuid(listener->session))) {
+			uuid = NULL;
+		}
 
+		if (switch_strlen_zero(uuid) && listener->session) {
 			if (async) {
 				if ((status = switch_core_session_queue_private_event(listener->session, event)) == SWITCH_STATUS_SUCCESS) {
 					switch_snprintf(reply, reply_len, "+OK");
