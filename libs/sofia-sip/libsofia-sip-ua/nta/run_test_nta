@@ -188,7 +188,7 @@ EOF
 # -g is also very nice option for named
 named -f -c $namedfile &
 pid=$!
-while ! test -r $pidfile && kill -0 $!
+while ! test -r $pidfile && kill -0 $! 2>/dev/null
 do
     sleep 1
 done
@@ -205,12 +205,10 @@ if test -r $pidfile ; then
     exit $exit
 else
     echo "$0: cannot start named (check apparmor/selinux)"
-    exec ipv6=$ipv6 $VALGRIND ./test_nta "$@"
+    ipv6=$ipv6 $VALGRIND exec ./test_nta "$@"
 fi
 
 else # not having BIND and portbind
-
-ipv6=$ipv6 $VALGRIND ./test_nta "$@"
-exit $?
+    ipv6=$ipv6 $VALGRIND exec ./test_nta "$@"
 fi
 
