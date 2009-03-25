@@ -57,6 +57,7 @@ SWITCH_DECLARE(int) switch_isupper(int c);
 SWITCH_DECLARE(int) switch_isxdigit(int c);
 
 #define switch_goto_status(_status, _label) status = _status; goto _label
+#define switch_goto_int(_n, _i, _label) _n = _i; goto _label
 #define switch_samples_per_packet(rate, interval) ((uint32_t)((float)rate / (1000.0f / (float)interval)))
 #define SWITCH_SMAX 32767
 #define SWITCH_SMIN -32768

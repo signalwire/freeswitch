@@ -1488,14 +1488,19 @@ static int show_reg_callback(void *pArg, int argc, char **argv, char **columnNam
 	}
 
 	cb->stream->write_function(cb->stream,
-							   "Call-ID: \t%s\n"
-							   "User:    \t%s@%s\n"
-							   "Contact: \t%s\n"
-							   "Agent:   \t%s\n"
-							   "Status:  \t%s(%s) EXP(%s)\n"
-							   "Host:    \t%s\n\n",
+							   "Call-ID:    \t%s\n"
+							   "User:       \t%s@%s\n"
+							   "Contact:    \t%s\n"
+							   "Agent:      \t%s\n"
+							   "Status:     \t%s(%s) EXP(%s)\n"
+							   "Host:       \t%s\n"
+							   "IP:         \t%s\n"
+							   "Port:       \t%s\n"
+							   "Auth-User:  \t%s\n"
+							   "Auth-Realm: \t%s\n\n",
 							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_str_nil(argv[3]),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]));
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]),
+							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]));
 	return 0;
 }
 
@@ -1516,16 +1521,22 @@ static int show_reg_callback_xml(void *pArg, int argc, char **argv, char **colum
 	}
 
 	cb->stream->write_function(cb->stream,
-							   "<Registration>\n"
-							   "<Call-ID>%s</Call-ID>\n"
-							   "<User>%s@%s</User>\n"
-							   "<Contact>%s</Contact>\n"
-							   "<Agent>%s</Agent>\n"
-							   "<Status>%s(%s) EXP(%s)</Status>\n"
-							   "<Host>%s</Host>\n"
-							   "</Registration>\n", 
-							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), switch_amp_encode(switch_str_nil(argv[3]),xmlbuf,buflen),
-							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]));
+							   "    <registration>\n"
+							   "        <call-id>%s</call-id>\n"
+							   "        <user>%s@%s</user>\n"
+							   "        <contact>%s</contact>\n"
+							   "        <agent>%s</agent>\n"
+							   "        <status>%s(%s) exp(%s)</status>\n"
+							   "        <host>%s</host>\n"
+							   "        <network-ip>%s</network-ip>\n"
+							   "        <network-port>%s</network-port>\n"
+							   "        <sip-auth-user>%s</sip-auth-user>\n"
+							   "        <sip-auth-realm>%s</sip-auth-realm>\n"
+							   "    </registration>\n", 
+							   switch_str_nil(argv[0]), switch_str_nil(argv[1]), switch_str_nil(argv[2]), 
+							   switch_amp_encode(switch_str_nil(argv[3]),xmlbuf,buflen),
+							   switch_str_nil(argv[7]), switch_str_nil(argv[4]), switch_str_nil(argv[5]), exp_buf, switch_str_nil(argv[11]),
+							   switch_str_nil(argv[12]), switch_str_nil(argv[13]), switch_str_nil(argv[14]), switch_str_nil(argv[15]));
 	return 0;
 }
 
@@ -1639,13 +1650,15 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					if (argv[4]) {
 						if (!strcasecmp(argv[3], "pres")) {
 							sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-												 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+												 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+												 "network_ip,network_port,sip_username,sip_realm"
 												 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
 												 profile->name, argv[4]);
 						}
 					} else {
 						sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-											 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+											 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+											 "network_ip,network_port,sip_username,sip_realm"
 											 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
 											 profile->name, argv[3]);
 					}
@@ -1653,7 +1666,8 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 
 				if (!sql) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+										 "network_ip,network_port,sip_username,sip_realm"
 										 " from sip_registrations where profile_name='%q'", 
 										 profile->name);
 				}
@@ -1739,28 +1753,29 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		if (!strcasecmp(argv[0], "gateway")) {
 			if ((gp = sofia_reg_find_gateway(argv[1]))) {
 				switch_assert(gp->state < REG_STATE_LAST);
-        stream->write_function(stream, "%s\n", header);
-        stream->write_function(stream, "<Gateway>\n");
-				stream->write_function(stream, "<Name>%s</Name>\n", switch_str_nil(gp->name));
-				stream->write_function(stream, "<Scheme>%s</Scheme>\n", switch_str_nil(gp->register_scheme));
-				stream->write_function(stream, "<Realm>%s</Realm>\n", switch_str_nil(gp->register_realm));
-				stream->write_function(stream, "<Username>%s</Username>\n", switch_str_nil(gp->register_username));
-				stream->write_function(stream, "<Password>%s</Password>\n", switch_strlen_zero(gp->register_password) ? "no" : "yes");
-				stream->write_function(stream, "<From>%s</From>\n", switch_amp_encode(switch_str_nil(gp->register_from),xmlbuf,buflen));
-				stream->write_function(stream, "<Contact>%s</Contact>\n", switch_amp_encode(switch_str_nil(gp->register_contact),xmlbuf,buflen));
-				stream->write_function(stream, "<Exten>%s</Exten>\n", switch_amp_encode(switch_str_nil(gp->extension),xmlbuf,buflen));
-				stream->write_function(stream, "<To>%s</To>\n", switch_str_nil(gp->register_to));
-				stream->write_function(stream, "<Proxy>%s</Proxy>\n", switch_str_nil(gp->register_proxy));
-				stream->write_function(stream, "<Context>%s</Context>\n", switch_str_nil(gp->register_context));
-				stream->write_function(stream, "<Expires>%s</Expires>\n", switch_str_nil(gp->expires_str));
-				stream->write_function(stream, "<Freq>%d</Freq>\n", gp->freq);
-				stream->write_function(stream, "<Ping>%d</Ping>\n", gp->ping);
-				stream->write_function(stream, "<PingFreq>%d</PingFreq>\n", gp->ping_freq);
-				stream->write_function(stream, "<State>%s</State>\n", sofia_state_names[gp->state]);
-				stream->write_function(stream, "<Status>%s%s</Status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
-				stream->write_function(stream, "<CallsIN>%d</CallsIN>\n", gp->ib_calls);
-				stream->write_function(stream, "<CallsOUT>%d</CallsOUT>\n", gp->ob_calls);
-				stream->write_function(stream, "</Gateway>\n");
+				stream->write_function(stream, "%s\n", header);
+				stream->write_function(stream, "  <gateway>\n");
+				stream->write_function(stream, "    <name>%s</name>\n", switch_str_nil(gp->name));
+				stream->write_function(stream, "    <scheme>%s</scheme>\n", switch_str_nil(gp->register_scheme));
+				stream->write_function(stream, "    <realm>%s</realm>\n", switch_str_nil(gp->register_realm));
+				stream->write_function(stream, "    <username>%s</username>\n", switch_str_nil(gp->register_username));
+				stream->write_function(stream, "    <password>%s</password>\n", switch_strlen_zero(gp->register_password) ? "no" : "yes");
+				stream->write_function(stream, "    <from>%s</from>\n", switch_amp_encode(switch_str_nil(gp->register_from),xmlbuf,buflen));
+				stream->write_function(stream, "    <contact>%s</contact>\n", switch_amp_encode(switch_str_nil(gp->register_contact),xmlbuf,buflen));
+				stream->write_function(stream, "    <exten>%s</exten>\n", switch_amp_encode(switch_str_nil(gp->extension),xmlbuf,buflen));
+				stream->write_function(stream, "    <to>%s</to>\n", switch_str_nil(gp->register_to));
+				stream->write_function(stream, "    <proxy>%s</proxy>\n", switch_str_nil(gp->register_proxy));
+				stream->write_function(stream, "    <context>%s</context>\n", switch_str_nil(gp->register_context));
+				stream->write_function(stream, "    <expires>%s</expires>\n", switch_str_nil(gp->expires_str));
+				stream->write_function(stream, "    <freq>%d</freq>\n", gp->freq);
+				stream->write_function(stream, "    <ping>%d</ping>\n", gp->ping);
+				stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
+				stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
+				stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
+				stream->write_function(stream, "    <callsin>%d</callsin>\n", gp->ib_calls);
+				stream->write_function(stream, "    <callsout>%d</callsout>\n", gp->ob_calls);
+
+				stream->write_function(stream, "  </gateway>\n");
 				sofia_reg_release_gateway(gp);
 			} else {
 				stream->write_function(stream, "Invalid Gateway!\n");
@@ -1772,57 +1787,47 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
 				if (!argv[2] || strcasecmp(argv[2], "reg")) {
 					stream->write_function(stream, "%s\n", header);
-					stream->write_function(stream, "<Profile>\n");
-					stream->write_function(stream, "<ProfileInfo>\n");
-					stream->write_function(stream, "<Name>%s</Name>\n", switch_str_nil(argv[1]));
-					stream->write_function(stream, "<DomainName>%s</DomainName>\n", profile->domain_name ? profile->domain_name : "N/A");
+					stream->write_function(stream, "  <profile>\n");
+					stream->write_function(stream, "    <profile-info>\n");
+					stream->write_function(stream, "    <name>%s</name>\n", switch_str_nil(argv[1]));
+					stream->write_function(stream, "    <domain-name>%s</domain-name>\n", profile->domain_name ? profile->domain_name : "N/A");
 					if (strcasecmp(argv[1], profile->name)) {
-						stream->write_function(stream, "<AliasOf>%s</AliasOf>\n", switch_str_nil(profile->name));
+						stream->write_function(stream, "    <alias-of>%s</alias-of>\n", switch_str_nil(profile->name));
 					}
-					stream->write_function(stream, "<DBName>%s</DBName>\n", switch_str_nil(profile->dbname));
-					stream->write_function(stream, "<PresHosts>%s</PresHosts>\n", switch_str_nil(profile->presence_hosts));
-					stream->write_function(stream, "<Dialplan>%s</Dialplan>\n", switch_str_nil(profile->dialplan));
-					stream->write_function(stream, "<Context>%s</Context>\n", switch_str_nil(profile->context));
-					stream->write_function(stream, "<ChallengeRealm>%s</ChallengeRealm>\n", 
+					stream->write_function(stream, "    <DB-name>%s</DB-name>\n", switch_str_nil(profile->dbname));
+					stream->write_function(stream, "    <pres-hosts>%s</pres-hosts>\n", switch_str_nil(profile->presence_hosts));
+					stream->write_function(stream, "    <dialplan>%s</dialplan>\n", switch_str_nil(profile->dialplan));
+					stream->write_function(stream, "    <context>%s</context>\n", switch_str_nil(profile->context));
+					stream->write_function(stream, "    <challenge-realm>%s</challenge-realm>\n", 
 										   switch_strlen_zero(profile->challenge_realm) ? "auto_to" : profile->challenge_realm);
-					stream->write_function(stream, "<RTP-IP>%s</RTP-IP>\n", switch_str_nil(profile->rtpip));
-					if (profile->extrtpip) {
-						stream->write_function(stream, "<Ext-RTP-IP>%s</Ext-RTP-IP>\n", profile->extrtpip);
-					}
+					stream->write_function(stream, "    <rtp-ip>%s</rtp-ip>\n", switch_str_nil(profile->rtpip));
+					stream->write_function(stream, "    <ext-rtp-ip>%s</ext-rtp-ip>\n", profile->extrtpip);
+					stream->write_function(stream, "    <sip-ip>%s</sip-ip>\n", switch_str_nil(profile->sipip));
+					stream->write_function(stream, "    <ext-sip-ip>%s</ext-sip-ip>\n", profile->extsipip);
+					stream->write_function(stream, "    <url>%s</url>\n", switch_str_nil(profile->url));
+					stream->write_function(stream, "    <bind-url>%s</bind-url>\n", switch_str_nil(profile->bindurl));
+					stream->write_function(stream, "    <tls-url>%s</tls-url>\n", switch_str_nil(profile->tls_url));
+					stream->write_function(stream, "    <tls-bind-url>%s</tls-bind-url>\n", switch_str_nil(profile->tls_bindurl));
+					stream->write_function(stream, "    <hold-music>%s</hold-music>\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
+					stream->write_function(stream, "    <outbound-proxy>%s</outbound-proxy>\n", switch_strlen_zero(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
+					stream->write_function(stream, "    <codecs>%s</codecs>\n", switch_str_nil(profile->codec_string));
+					stream->write_function(stream, "    <tel-event>%d</tel-event>\n", profile->te);
+					stream->write_function(stream, "    <dtmf-mode>rfc2833</dtmf-mode>\n");
+					stream->write_function(stream, "    <dtmf-mode>info</dtmf-mode>\n");
+					stream->write_function(stream, "    <dtmf-mode>none</dtmf-mode>\n");
+					stream->write_function(stream, "    <cng>%d</cng>\n", profile->cng_pt);
+					stream->write_function(stream, "    <session-to>%d</session-to>\n", profile->session_timeout);
+					stream->write_function(stream, "    <max-dialog>%d</max-dialog>\n", profile->max_proceeding);
+					stream->write_function(stream, "    <nomedia>%s</nomedia>\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
+					stream->write_function(stream, "    <late-neg>%s</late-neg>\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
+					stream->write_function(stream, "    <proxy-media>%s</proxy-media>\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
+					stream->write_function(stream, "    <aggressivenat>%s</aggressive-nat>\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
+					stream->write_function(stream, "    <stun-enabled>%s</stun-enabled>\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
+					stream->write_function(stream, "    <stun-auto-disable>%s</stun-auto-disable>\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
 
-					stream->write_function(stream, "<SIP-IP>%s</SIP-IP>\n", switch_str_nil(profile->sipip));
-					if (profile->extsipip) {
-						stream->write_function(stream, "<Ext-SIP-IP>%s</Ext-SIP-IP>\n", profile->extsipip);
-					}
-					stream->write_function(stream, "<URL>%s</URL>\n", switch_str_nil(profile->url));
-					stream->write_function(stream, "<BIND-URL>%s</BIND-URL>\n", switch_str_nil(profile->bindurl));
-					if (sofia_test_pflag(profile, PFLAG_TLS)) {
-						stream->write_function(stream, "<TLS-URL>%s</TLS-URL>\n", switch_str_nil(profile->tls_url));
-						stream->write_function(stream, "<TLS-BIND-URL>%s</TLS-BIND-URL>\n", switch_str_nil(profile->tls_bindurl));
-					}
-					stream->write_function(stream, "<HOLD-MUSIC>%s</HOLD-MUSIC>\n", switch_strlen_zero(profile->hold_music) ? "N/A" : profile->hold_music);
-					stream->write_function(stream, "<OUTBOUND-PROXY>%s</OUTBOUND-PROXY>\n", switch_strlen_zero(profile->outbound_proxy) ? "N/A" : profile->outbound_proxy);
-					stream->write_function(stream, "<CODECS>%s</CODECS>\n", switch_str_nil(profile->codec_string));
-					stream->write_function(stream, "<TEL-EVENT>%d</TEL-EVENT>\n", profile->te);
-					if (profile->dtmf_type == DTMF_2833) {
-						stream->write_function(stream, "<DTMF-MODE>rfc2833</DTMF-MODE>\n");
-					} else if (profile->dtmf_type == DTMF_INFO) {
-						stream->write_function(stream, "<DTMF-MODE>info</DTMF-MODE>\n");
-					} else {
-						stream->write_function(stream, "<DTMF-MODE>none</DTMF-MODE>\n");
-					}
-					stream->write_function(stream, "<CNG>%d</CNG>\n", profile->cng_pt);
-					stream->write_function(stream, "<SESSION-TO>%d</SESSION-TO>\n", profile->session_timeout);
-					stream->write_function(stream, "<MAX-DIALOG>%d</MAX-DIALOG>\n", profile->max_proceeding);
-					stream->write_function(stream, "<NOMEDIA>%s</NOMEDIA>\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
-					stream->write_function(stream, "<LATE-NEG>%s</LATE-NEG>\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
-					stream->write_function(stream, "<PROXY-MEDIA>%s</PROXY-MEDIA>\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
-					stream->write_function(stream, "<AGGRESSIVENAT>%s</AGGRESSIVENAT>\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
-					stream->write_function(stream, "<STUN_ENABLED>%s</STUN_ENABLED>\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
-					stream->write_function(stream, "<STUN_AUTO_DISABLE>%s</STUN_AUTO_DISABLE>\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
 				}
-				stream->write_function(stream, "</ProfileInfo>\n");
-				stream->write_function(stream, "<Registrations>\n");
+				stream->write_function(stream, "  </profile-info>\n");
+				stream->write_function(stream, "  <registrations>\n");
 
 				cb.profile = profile;
 				cb.stream = stream;
@@ -1831,13 +1836,15 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					if (argv[4]) {
 						if (!strcasecmp(argv[3], "pres")) {
 							sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-												 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+												 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+												 "network_ip,network_port,sip_username,sip_realm"
 												 " from sip_registrations where profile_name='%q' and presence_hosts like '%%%q%%'", 
 												 profile->name, argv[4]);
 						}
 					} else {
 						sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-											 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+											 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+											 "network_ip,network_port,sip_username,sip_realm"
 											 " from sip_registrations where profile_name='%q' and contact like '%%%q%%'", 
 											 profile->name, argv[3]);
 					}
@@ -1845,7 +1852,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 				if (!sql) {
 					sql = switch_mprintf("select call_id,sip_user,sip_host,contact,status,"
-										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname"
+										 "rpid,expires,user_agent,server_user,server_host,profile_name,hostname,"
+										 "network_ip,network_port,sip_username,sip_realm"
 										 " from sip_registrations where profile_name='%q'", 
 										 profile->name);
 				}
@@ -1853,8 +1861,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
 				free(sql);
 
-				stream->write_function(stream, "</Registrations>\n");
-				stream->write_function(stream, "</Profile>\n");
+				stream->write_function(stream, "</registrations>\n");
+				stream->write_function(stream, "</profile>\n");
 
 				sofia_glue_release_profile(profile);
 			} else {

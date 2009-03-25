@@ -406,7 +406,7 @@ void sofia_event_callback(nua_event_t event,
 			get_addr(network_ip, sizeof(network_ip), addrinfo->ai_addr, addrinfo->ai_addrlen);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip,
 											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0,
-											REG_INVITE, NULL);
+											REG_INVITE, NULL, NULL);
 		}
 		
 		if (auth_res != AUTH_OK) {
@@ -579,6 +579,12 @@ void event_handler(switch_event_t *event)
 		char *profile_name = switch_event_get_header(event, "orig-profile-name");
 		char *to_user = switch_event_get_header(event, "orig-to-user");
 		char *presence_hosts = switch_event_get_header(event, "presence-hosts");
+		char *network_ip = switch_event_get_header(event, "network-ip");
+		char *network_port = switch_event_get_header(event, "network-port");
+		char *username = switch_event_get_header(event, "username");
+		char *realm = switch_event_get_header(event, "realm");
+
+		
 		sofia_profile_t *profile = NULL;
 
 		char guess_ip4[256];
@@ -606,10 +612,11 @@ void event_handler(switch_event_t *event)
 		
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
-							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name,hostname) "
-							 "values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q', '%q', '%q','%q','%q')",
+							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
+							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm) "
+							 "values ('%q', '%q','%q','%q','Registered', '%q', %ld, '%q', '%q', '%q','%q','%q','%q','%q','%q','%q')",
 							 call_id, from_user, from_host, presence_hosts, contact_str, rpid, expires, user_agent, to_user, guess_ip4, 
-							 profile_name,mod_sofia_globals.hostname);
+							 profile_name,mod_sofia_globals.hostname, network_ip, network_port, username, realm);
 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);

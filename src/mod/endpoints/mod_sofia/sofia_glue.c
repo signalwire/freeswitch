@@ -3191,7 +3191,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   profile_name    VARCHAR(255),\n" 
 		"   hostname        VARCHAR(255),\n" 
 		"   network_ip      VARCHAR(255),\n" 
-		"   network_port    VARCHAR(6)\n" 
+		"   network_port    VARCHAR(6),\n" 
+		"   sip_username    VARCHAR(255),\n" 
+		"   sip_realm       VARCHAR(255)\n" 
 		");\n";
 
 
@@ -3289,6 +3291,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index sr_status on sip_registrations (status)",
 			"create index sr_network_ip on sip_registrations (network_ip)",
 			"create index sr_network_port on sip_registrations (network_port)",
+			"create index sr_sip_username on sip_registrations (sip_username)",
+			"create index sr_sip_realm on sip_registrations (sip_realm)",
 			"create index ss_call_id on sip_subscriptions (call_id)",
 			"create index ss_hostname on sip_subscriptions (hostname)",
 			"create index ss_sip_user on sip_subscriptions (sip_user)",
@@ -3329,7 +3333,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
 								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
-								  "and network_ip!='-1' and network_port!='-1'", 
+								  "and network_ip!='-1' and network_port!='-1' and sip_username != '-1'", 
 								  mod_sofia_globals.hostname);
 
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
@@ -3401,7 +3405,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 
 		test_sql = switch_mprintf("delete from sip_registrations where (contact like '%%TCP%%' "
 								  "or status like '%%TCP%%' or status like '%%TLS%%') and hostname='%q' "
-								  "and network_ip!='-1' and network_port!='-1'",
+								  "and network_ip!='-1' and network_port!='-1' and sip_username != '-1'",
 								  mod_sofia_globals.hostname);
 		
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_registrations", reg_sql);
@@ -3465,6 +3469,9 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_status on sip_registrations (status)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_network_ip on sip_registrations (network_ip)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists sr_network_port on sip_registrations (network_port)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_sip_username on sip_registrations (sip_username)", NULL, NULL, NULL);
+		switch_core_db_exec(profile->master_db, "create index if not exists sr_sip_realm on sip_registrations (sip_realm)", NULL, NULL, NULL);
+
 
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_call_id on sip_subscriptions (call_id)", NULL, NULL, NULL);
 		switch_core_db_exec(profile->master_db, "create index if not exists ss_hostname on sip_subscriptions (hostname)", NULL, NULL, NULL);

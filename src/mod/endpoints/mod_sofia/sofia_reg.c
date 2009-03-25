@@ -699,6 +699,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char received_data[128] = "";
 	char *path_val = NULL;
 	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
+	switch_event_t *auth_params = NULL;
+	int r = 0;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
@@ -723,7 +725,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (!to_user || !to_host) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can not do authorization without a complete from header\n");
 		nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
-		return 1;
+		switch_goto_int(r, 1, end);
 	}
 
 	if (!reg_host) {
@@ -840,7 +842,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (authorization) {
 		char *v_contact_str;
 		if ((auth_res = sofia_reg_parse_auth(profile, authorization, sip, sip->sip_request->rq_method_name,
-											 key, keylen, network_ip, v_event, exptime, regtype, to_user)) == AUTH_STALE) {
+											 key, keylen, network_ip, v_event, exptime, regtype, to_user, &auth_params)) == AUTH_STALE) {
 			stale = 1;
 		}
 
@@ -913,7 +915,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			} else {
 				nua_respond(nh, SIP_401_UNAUTHORIZED, NUTAG_WITH_THIS(nua), TAG_END());
 			}
-			return 1;
+			switch_goto_int(r, 1, end);
 		}
 	}
 
@@ -934,12 +936,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		} else {
 			sofia_reg_auth_challenge(nua, profile, nh, regtype, realm, stale);
 		}
-		return 1;
+		switch_goto_int(r, 1, end);
 	}
   reg:
 
 	if (regtype != REG_REGISTER) {
-		return 0;
+		switch_goto_int(r, 0, end);
 	}
 
 	call_id = sip->sip_call_id->i_id;
@@ -959,6 +961,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	if (exptime) {
 		const char *agent = "dunno";
 		char guess_ip4[256];
+		const char *username = "unknown";
+		const char *realm = reg_host;
+
+		if (auth_params) {
+			username = switch_event_get_header(auth_params, "sip_auth_username");
+			realm = switch_event_get_header(auth_params, "sip_auth_realm");
+		}
 
 		if (sip->sip_user_agent) {
 			agent = sip->sip_user_agent->g_string;
@@ -979,11 +988,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		
 		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
-							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port) "
-							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q')", 
+							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
+							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm) "
+							 "values ('%q','%q', '%q','%q','%q','%q', '%q', %ld, '%q', '%q', '%q', '%q', '%q', '%q', '%q','%q','%q')", 
 							 call_id, to_user, reg_host, profile->presence_hosts ? profile->presence_hosts : reg_host, 
 							 contact_str, reg_desc, rpid, (long) switch_epoch_time_now(NULL) + (long) exptime * 2, 
-							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c);
+							 agent, from_user, guess_ip4, profile->name, mod_sofia_globals.hostname, network_ip, network_port_c, username, realm);
 							 
 		if (sql) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
@@ -1006,6 +1016,8 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "to-host", from_host);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-ip", network_ip);
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "network-port", network_port_c);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "username", username);
+			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "realm", realm);
 			switch_event_fire(&s_event);
 		}
 
@@ -1154,10 +1166,17 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 		}
 
-		return 1;
+		switch_goto_int(r, 1, end);
 	}
 
-	return 0;
+
+ end:
+
+	if (auth_params) {
+		switch_event_destroy(&auth_params);
+	}
+
+	return r;
 }
 
 
@@ -1458,8 +1477,19 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 }
 
-auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t const *authorization, sip_t const *sip, const char *regstr,
-								char *np, size_t nplen, char *ip, switch_event_t **v_event, long exptime, sofia_regtype_t regtype, const char *to_user)
+auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, 
+								sip_authorization_t const *authorization, 
+								sip_t const *sip, 
+								const char *regstr,
+								char *np, 
+								size_t nplen, 
+								char *ip, 
+								switch_event_t **v_event, 
+								long exptime, 
+								sofia_regtype_t 
+								regtype, 
+								const char *to_user,
+								switch_event_t **auth_params)
 {
 	int indexnum;
 	const char *cur;
@@ -1599,6 +1629,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile, sip_authorization_t co
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_response", response);
 
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "sip_auth_method", (sip && sip->sip_request) ? sip->sip_request->rq_method_name : NULL);
+
+	if (auth_params) {
+		switch_event_dup(auth_params, params);
+	}
 
 
 	if (!switch_strlen_zero(profile->reg_domain)) {
