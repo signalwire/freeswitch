@@ -359,7 +359,6 @@ SWITCH_STANDARD_API(user_data_function)
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", user);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "domain", domain);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "type", type);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "key", key);
 
 	if (key && type && switch_xml_locate_user("id", user, domain, NULL, &xml, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
 		if (!strcmp(type, "attr")) {
