@@ -14,7 +14,6 @@ $(DIRECTORY):
 	$(GETLIB) $(VERSION).tar.gz
 	cd $(DIRECTORY) && ./configure $(DEFAULT_ARGS) --enable-integer-samples
 
-$(LA):
-	$(DIRECTORY)
+$(LA): $(DIRECTORY)
 	cd $(DIRECTORY) && $(MAKE)
 	$(TOUCH_TARGET)
