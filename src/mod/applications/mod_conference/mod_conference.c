@@ -93,7 +93,8 @@ typedef enum {
 	CALLER_CONTROL_HANGUP,
 	CALLER_CONTROL_MENU,
 	CALLER_CONTROL_DIAL,
-	CALLER_CONTROL_EVENT
+	CALLER_CONTROL_EVENT,
+	CALLER_CONTROL_LOCK
 } caller_control_t;
 
 /* forward declaration for conference_obj and caller_control */
@@ -1280,6 +1281,42 @@ static void conference_loop_fn_mute_toggle(conference_member_t *member, caller_c
 	}
 }
 
+
+static void conference_loop_fn_lock_toggle(conference_member_t *member, caller_control_action_t *action)
+{
+	switch_event_t *event;
+
+	if (member == NULL)
+		return;
+
+	if (!switch_test_flag(member->conference, CFLAG_LOCKED)) {
+		if (member->conference->is_locked_sound) {
+			conference_play_file(member->conference, member->conference->is_locked_sound, CONF_DEFAULT_LEADIN, NULL, 0);
+		}
+
+		switch_set_flag_locked(member->conference, CFLAG_LOCKED);
+		if (test_eflag(member->conference, EFLAG_LOCK) && 
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(member->conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "lock");
+			switch_event_fire(&event);
+		}
+	} else {
+		if (member->conference->is_unlocked_sound) {
+			conference_play_file(member->conference, member->conference->is_unlocked_sound, CONF_DEFAULT_LEADIN, NULL, 0);
+		}
+
+		switch_clear_flag_locked(member->conference, CFLAG_LOCKED);
+		if (test_eflag(member->conference, EFLAG_UNLOCK) && 
+			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+			conference_add_event_data(member->conference, event);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "unlock");
+			switch_event_fire(&event);
+		}
+	}
+
+}
+
 static void conference_loop_fn_deafmute_toggle(conference_member_t *member, caller_control_action_t *action)
 {
 	if (member == NULL)
@@ -1755,7 +1792,8 @@ static caller_control_fn_table_t ccfntbl[] = {
 	{"vol listen zero", "5", CALLER_CONTROL_VOL_LISTEN_ZERO, conference_loop_fn_volume_listen_zero},
 	{"vol listen dn", "4", CALLER_CONTROL_VOL_LISTEN_DN, conference_loop_fn_volume_listen_dn},
 	{"hangup", "#", CALLER_CONTROL_HANGUP, conference_loop_fn_hangup},
-	{"event", NULL, CALLER_CONTROL_EVENT, conference_loop_fn_event}
+	{"event", NULL, CALLER_CONTROL_EVENT, conference_loop_fn_event},
+	{"lock", NULL, CALLER_CONTROL_LOCK, conference_loop_fn_lock_toggle}
 };
 
 #define CCFNTBL_QTY (sizeof(ccfntbl)/sizeof(ccfntbl[0]))
