@@ -464,7 +464,7 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
 	channel = switch_core_session_get_channel(session);
 
-	if ((member_wait = switch_channel_get_variable(channel, "member_wait"))) {
+	if ((member_wait = switch_channel_get_variable(channel, "fifo_member_wait")) || (member_wait = switch_channel_get_variable(channel, "member_wait"))) {
 		if (strcasecmp(member_wait, "wait") && strcasecmp(member_wait, "nowait")) {
 			member_wait = NULL;
 		}
