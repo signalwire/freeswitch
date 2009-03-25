@@ -424,8 +424,19 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				{
 					const char *hook_var;
 					switch_core_session_t *use_session = NULL;
-					
+					switch_call_cause_t cause = switch_channel_get_cause(session->channel);
+					switch_event_t *event;
+		
+					switch_channel_set_hangup_time(session->channel);
+
 					switch_core_media_bug_remove_all(session);
+				
+					switch_channel_stop_broadcast(session->channel);
+					
+					switch_channel_set_variable(session->channel, "hangup_cause", switch_channel_cause2str(cause));
+					switch_channel_presence(session->channel, "unavailable", switch_channel_cause2str(cause), NULL);
+					
+					switch_channel_set_timestamps(session->channel);
 					
 					STATE_MACRO(hangup, "HANGUP");
 
@@ -462,8 +473,16 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						}
 						switch_safe_free(stream.data);
 					}
+
+					if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
+						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(cause));
+						switch_channel_event_set_data(session->channel, event);
+						switch_event_fire(&event);
+					}
+				
+					switch_channel_set_state(session->channel, CS_REPORTING);
 				}
-				switch_channel_set_state(session->channel, CS_REPORTING);
+
 				break;
 			case CS_INIT:		/* Basic setup tasks */
 				STATE_MACRO(init, "INIT");

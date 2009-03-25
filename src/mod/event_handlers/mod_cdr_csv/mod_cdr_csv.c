@@ -209,7 +209,7 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 			free(buf);
 		}
 	}
-
+	
 	g_template_str = (const char *) switch_core_hash_find(globals.template_hash, globals.default_template);
 
 	if ((accountcode = switch_channel_get_variable(channel, "ACCOUNTCODE"))) {

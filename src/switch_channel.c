@@ -609,10 +609,12 @@ SWITCH_DECLARE(char *) switch_channel_get_name(switch_channel_t *channel)
 SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_channel_t *channel, 
 																	  const char *varname, const char *value, switch_bool_t var_check)
 {
+	switch_status_t status = SWITCH_STATUS_FALSE;
+	
 	switch_assert(channel != NULL);
 
+	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !switch_strlen_zero(varname)) {
-		switch_mutex_lock(channel->profile_mutex);
 		switch_event_del_header(channel->variables, varname);
 		if (!switch_strlen_zero(value)) {
 			int ok = 1;
@@ -626,11 +628,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_var_check(switch_cha
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Invalid data (${%s} contains a variable)\n", varname);
 			}
 		}
-		switch_mutex_unlock(channel->profile_mutex);
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	}
+	switch_mutex_unlock(channel->profile_mutex);
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 switch_status_t switch_event_base_add_header(switch_event_t *event, switch_stack_t stack, const char *header_name, char *data);
@@ -640,10 +642,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channe
 	int ret = 0;
 	char *data;
 	va_list ap;
+	switch_status_t status = SWITCH_STATUS_FALSE;
+
 	switch_assert(channel != NULL);
 
+	switch_mutex_lock(channel->profile_mutex);
 	if (channel->variables && !switch_strlen_zero(varname)) {
-		switch_mutex_lock(channel->profile_mutex);
 		switch_event_del_header(channel->variables, varname);
 
 		va_start(ap, fmt);
@@ -657,11 +661,11 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_variable_printf(switch_channe
 
 		switch_event_base_add_header(channel->variables, SWITCH_STACK_BOTTOM, varname, data);
 
-		switch_mutex_unlock(channel->profile_mutex);
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
 	}
+	switch_mutex_unlock(channel->profile_mutex);
 
-	return SWITCH_STATUS_FALSE;
+	return status;
 }
 
 
@@ -1582,6 +1586,16 @@ SWITCH_DECLARE(switch_caller_extension_t *) switch_channel_get_caller_extension(
 }
 
 
+SWITCH_DECLARE(void) switch_channel_set_hangup_time(switch_channel_t *channel)
+{
+	if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
+		switch_mutex_lock(channel->profile_mutex);
+		channel->caller_profile->times->hungup = switch_micro_time_now();
+		switch_mutex_unlock(channel->profile_mutex);
+	}
+}
+
+
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_channel_t *channel,
 																	 const char *file, const char *func, int line, switch_call_cause_t hangup_cause)
 {
@@ -1590,16 +1604,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 	switch_channel_clear_flag(channel, CF_BLOCK_STATE);
 	
 	if (channel->state < CS_HANGUP) {
-		switch_event_t *event;
 		switch_channel_state_t last_state = channel->state;
-
-		if (channel->caller_profile && channel->caller_profile->times && !channel->caller_profile->times->hungup) {
-			switch_mutex_lock(channel->profile_mutex);
-			channel->caller_profile->times->hungup = switch_micro_time_now();
-			switch_mutex_unlock(channel->profile_mutex);
-		}
-		
-		switch_channel_stop_broadcast(channel);
 
 		switch_mutex_lock(channel->state_mutex);
 		channel->state = CS_HANGUP;
@@ -1608,21 +1613,9 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_hangup(switch_chan
 		channel->hangup_cause = hangup_cause;
 		switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_NOTICE, "Hangup %s [%s] [%s]\n",
 						  channel->name, state_names[last_state], switch_channel_cause2str(channel->hangup_cause));
-		
-		switch_channel_set_variable(channel, "hangup_cause", switch_channel_cause2str(channel->hangup_cause));
-		switch_channel_presence(channel, "unavailable", switch_channel_cause2str(channel->hangup_cause), NULL);
 
 		switch_core_session_kill_channel(channel->session, SWITCH_SIG_KILL);
 		switch_core_session_signal_state_change(channel->session);
-
-		switch_channel_set_timestamps(channel);
-
-		if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(channel->hangup_cause));
-			switch_channel_event_set_data(channel, event);
-			switch_event_fire(&event);
-		}
-
 	}
 
 	return channel->state;
