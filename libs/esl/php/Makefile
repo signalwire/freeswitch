@@ -1,5 +1,7 @@
 LOCAL_CFLAGS=$(shell php-config --includes)
-LOCAL_LDFLAGS=$(shell php-config --ldflags --libs)
+PHP_LDFLAGS=$(shell php-config --ldflags)
+PHP_LIBS=$(shell php-config --libs)
+LOCAL_LDFLAGS=$(PHP_LDFLAGS) $(PHP_LIBS)
 WRAP_GCC_WARNING_SILENCE=-Wno-unused-label -Wno-unused-function
 
 all: ESL.so
