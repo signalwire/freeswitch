@@ -245,11 +245,11 @@ int skypiax_signaling_read(private_t * tech_pvt)
                 if (available_skypiax_interface) {
                   /* there is a skypiax interface idle, let's transfer the call to it */
                   DEBUGA_SKYPE
-                    ("Let's transfer the skype_call %s to %s interface, because we are already in a skypiax call(%s)\n",
+                    ("Let's transfer the skype_call %s to %s interface (with skype_user: %s), because we are already in a skypiax call(%s)\n",
                      SKYPIAX_P_LOG, tech_pvt->skype_call_id,
-                     available_skypiax_interface->name, id);
+                     available_skypiax_interface->name, available_skypiax_interface->skype_user, id);
                   sprintf(msg_to_skype, "ALTER CALL %s TRANSFER %s", id,
-                          available_skypiax_interface->name);
+                          available_skypiax_interface->skype_user);
                 } else {
                   /* no skypiax interfaces idle, let's refuse the call */
                   DEBUGA_SKYPE
