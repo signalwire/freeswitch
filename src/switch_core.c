@@ -1590,6 +1590,8 @@ struct system_thread_handle {
 static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj) 
 {
 	struct system_thread_handle *sth = (struct system_thread_handle *)obj;
+
+#if 0 // if we are a luser we can never turn this back down, didn't we already set the stack size?
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
 	struct rlimit rlim;
 
@@ -1599,9 +1601,11 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed! (%s)\n", strerror(errno));
 	}
 #endif
+#endif
 
 	sth->ret = system(sth->cmd);
 
+#if 0
 #if defined(HAVE_SETRLIMIT) && !defined(__FreeBSD__)
 	rlim.rlim_cur = SWITCH_THREAD_STACKSIZE;
 	rlim.rlim_max = SWITCH_SYSTEM_THREAD_STACKSIZE; 
@@ -1609,6 +1613,7 @@ static void *SWITCH_THREAD_FUNC system_thread(switch_thread_t *thread, void *obj
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setting stack size failed! (%s)\n", strerror(errno));
 	}
 
+#endif
 #endif
 
 	switch_mutex_lock(sth->mutex);
