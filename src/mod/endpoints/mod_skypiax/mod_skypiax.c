@@ -39,6 +39,8 @@
 SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown);
 SWITCH_MODULE_DEFINITION(mod_skypiax, mod_skypiax_load, mod_skypiax_shutdown, NULL);
+SWITCH_STANDARD_API(sk_function);
+#define SK_SYNTAX "list || console || skype_API_msg" 
 
 static struct {
   int debug;
@@ -59,6 +61,7 @@ static struct {
   char hold_music[256];
   private_t SKYPIAX_INTERFACES[SKYPIAX_MAX_INTERFACES];
   switch_mutex_t *mutex;
+  private_t *sk_console;
 } globals;
 
 switch_endpoint_interface_t *skypiax_endpoint_interface;
@@ -1021,6 +1024,7 @@ static switch_status_t load_config(void)
 SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 {
   skypiax_module_pool = pool;
+	switch_api_interface_t *commands_api_interface;
 
   memset(&globals, '\0', sizeof(globals));
 
@@ -1038,9 +1042,12 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
   skypiax_endpoint_interface->io_routines = &skypiax_io_routines;
   skypiax_endpoint_interface->state_handler = &skypiax_state_handlers;
 
-  if (running)
+  if (running){
+
+	SWITCH_ADD_API(commands_api_interface, "sk", "Skypiax commands", sk_function, SK_SYNTAX);
     /* indicate that the module should continue to be loaded */
     return SWITCH_STATUS_SUCCESS;
+  }
   else
     return SWITCH_STATUS_FALSE;
 }
@@ -1334,6 +1341,83 @@ private_t *find_available_skypiax_interface(void)
   else
     return NULL;
 }
+
+SWITCH_STANDARD_API(sk_function)
+{
+	char *mycmd = NULL, *argv[10] = { 0 };
+	int argc = 0;
+
+	if(globals.sk_console)
+		stream->write_function(stream,"sk console is: |||%s|||\n", globals.sk_console->name);
+	else
+		stream->write_function(stream,"sk console is NOT yet assigned\n");
+
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (!argc) {
+		stream->write_function(stream, "%s", SK_SYNTAX);
+		goto end;
+	}
+
+	if (!strcasecmp(argv[0], "list")) {
+		int i;
+		for (i = 0; i < SKYPIAX_MAX_INTERFACES; i++) {
+			if (strlen(globals.SKYPIAX_INTERFACES[i].name)) {
+				if (strlen(globals.SKYPIAX_INTERFACES[i].session_uuid_str)) {
+					stream->write_function(stream,"globals.SKYPIAX_INTERFACES[%d].name=\t|||%s||| is \tBUSY, session_uuid_str=|||%s|||\n", i, globals.SKYPIAX_INTERFACES[i].name, globals.SKYPIAX_INTERFACES[i].session_uuid_str);
+				} else {
+					stream->write_function(stream,"globals.SKYPIAX_INTERFACES[%d].name=\t|||%s||| is \tIDLE\n", i, globals.SKYPIAX_INTERFACES[i].name);
+				}
+			}
+		}
+	} else if (!strcasecmp(argv[0], "console")) {
+		int i;
+		int found =0;
+
+		if (argc == 2) {
+			for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
+				/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
+				if (strlen(globals.SKYPIAX_INTERFACES[i].name)
+						&&
+						(strncmp
+						 (globals.SKYPIAX_INTERFACES[i].name, argv[1],
+						  strlen(argv[1])) == 0)) {
+					globals.sk_console=&globals.SKYPIAX_INTERFACES[i];
+					stream->write_function(stream,"sk console is now: globals.SKYPIAX_INTERFACES[%d].name=|||%s|||\n", i, globals.SKYPIAX_INTERFACES[i].name);
+					stream->write_function(stream,"sk console is: |||%s|||\n", globals.sk_console->name);
+					found = 1;
+					break;
+				}
+
+			}
+			if(!found)
+				stream->write_function(stream,"ERROR: A Skypiax interface with name='%s' was not found\n", argv[1]);
+		} else {
+
+			stream->write_function(stream, "-ERR Usage: sk console interface_name\n");
+			goto end;
+		}
+
+
+	} else if (!strcasecmp(argv[0], "ciapalino")) {
+
+	} else {
+		if(globals.sk_console)
+			skypiax_signaling_write(globals.sk_console, (char *)cmd);
+		else
+			stream->write_function(stream,"sk console is NOT yet assigned\n");
+	}
+end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+
 
 /* For Emacs:
  * Local Variables:
