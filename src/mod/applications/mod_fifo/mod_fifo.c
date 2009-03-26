@@ -1255,6 +1255,18 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_core_media_bug_resume(other_session);
 				switch_process_import(session, other_channel, "fifo_caller_consumer_import");
 				switch_process_import(other_session, channel, "fifo_consumer_caller_import");
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-consumer");
+					switch_event_fire(&event);
+				}
+				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
+					switch_channel_event_set_data(other_channel, event);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Action", "bridge-caller");
+					switch_event_fire(&event);
+				}
 				switch_ivr_multi_threaded_bridge(session, other_session, on_dtmf, other_session, session);
 				switch_core_media_bug_pause(session);
 				switch_core_media_bug_pause(other_session);
