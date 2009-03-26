@@ -135,7 +135,7 @@ AC_ARG_WITH(odbc-include,
 	fi
 
 	AC_MSG_CHECKING(whether to include odbc)
-	if test "X$ac_cv_odbc_where_lib" = "X" -a "X$ac_cv_odbc_where_inc" = "X"; then
+	if test "X$ac_cv_odbc_where_lib" = "X" -o "X$ac_cv_odbc_where_inc" = "X"; then
 	  ac_cv_found_odbc=no
 	  AC_MSG_RESULT(no)
 	else
