@@ -41,6 +41,8 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_skypiax_shutdown);
 SWITCH_MODULE_DEFINITION(mod_skypiax, mod_skypiax_load, mod_skypiax_shutdown, NULL);
 SWITCH_STANDARD_API(sk_function);
 #define SK_SYNTAX "list || console || skype_API_msg" 
+SWITCH_STANDARD_API(skypiax_function);
+#define SKYPIAX_SYNTAX "interface_name skype_API_msg" 
 
 static struct {
   int debug;
@@ -1044,7 +1046,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 
   if (running){
 
-	SWITCH_ADD_API(commands_api_interface, "sk", "Skypiax commands", sk_function, SK_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "sk", "Skypiax console commands", sk_function, SK_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "skypiax", "Skypiax interface commands", skypiax_function, SKYPIAX_SYNTAX);
     /* indicate that the module should continue to be loaded */
     return SWITCH_STATUS_SUCCESS;
   }
@@ -1409,6 +1412,62 @@ SWITCH_STANDARD_API(sk_function)
 			skypiax_signaling_write(globals.sk_console, (char *)cmd);
 		else
 			stream->write_function(stream,"sk console is NOT yet assigned\n");
+	}
+end:
+	switch_safe_free(mycmd);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(skypiax_function)
+{
+	char *mycmd = NULL, *argv[10] = { 0 };
+	int argc = 0;
+	private_t *tech_pvt=NULL;
+
+
+	if (!switch_strlen_zero(cmd) && (mycmd = strdup(cmd))) {
+		argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	}
+
+	if (!argc) {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_SYNTAX);
+		goto end;
+	}
+
+	if (argc < 2) {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_SYNTAX);
+		goto end;
+	}
+
+	if (argv[0]) {
+		int i;
+		int found =0;
+
+		for (i = 0; !found && i < SKYPIAX_MAX_INTERFACES; i++) {
+			/* we've been asked for a normal interface name, or we have not found idle interfaces to serve as the "ANY" interface */
+			if (strlen(globals.SKYPIAX_INTERFACES[i].name)
+					&&
+					(strncmp
+					 (globals.SKYPIAX_INTERFACES[i].name, argv[0],
+					  strlen(argv[0])) == 0)) {
+				tech_pvt=&globals.SKYPIAX_INTERFACES[i];
+				stream->write_function(stream,"Using interface: globals.SKYPIAX_INTERFACES[%d].name=|||%s|||\n", i, globals.SKYPIAX_INTERFACES[i].name);
+				found = 1;
+				break;
+			}
+
+		}
+		if(!found){
+			stream->write_function(stream,"ERROR: A Skypiax interface with name='%s' was not found\n", argv[0]);
+			switch_safe_free(mycmd);
+
+			return SWITCH_STATUS_SUCCESS;
+		} else {
+			skypiax_signaling_write(tech_pvt, (char *)&cmd[ strlen(argv[0]) + 1 ] );
+		}
+	} else {
+		stream->write_function(stream, "ERROR, usage: %s", SKYPIAX_SYNTAX);
 	}
 end:
 	switch_safe_free(mycmd);
