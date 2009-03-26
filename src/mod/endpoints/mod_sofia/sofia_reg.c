@@ -597,8 +597,11 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name"
-						" from sip_registrations where status like '%%AUTO-NAT%%' or status like '%%UDP-NAT%%'");
+		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,"
+						"expires,user_agent,server_user,server_host,profile_name"
+						" from sip_registrations where (status like '%%AUTO-NAT%%' "
+						"or status like '%%UDP-NAT%%') and hostname='%s'", mod_sofia_globals.hostname);
+
 		sofia_glue_execute_sql_callback(profile, SWITCH_TRUE, NULL, sql, sofia_reg_nat_callback, profile);
 	}
 

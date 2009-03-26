@@ -210,7 +210,8 @@ void sofia_presence_cancel(void)
 	if ((sql = switch_mprintf(
 							  "select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
 							  "full_via,expires,user_agent,accept,profile_name"
-							  ",-1,'unavailable','unavailable' from sip_subscriptions where event='presence'"))) {
+							  ",-1,'unavailable','unavailable' from sip_subscriptions where event='presence' and hostname='%q'", 
+							  mod_sofia_globals.hostname))) {
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
 		for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
