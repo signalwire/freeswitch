@@ -1387,7 +1387,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *
 	}
 	
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_VARIABLE, application_interface->interface_name);
-	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE, expanded);
+	switch_channel_set_variable_var_check(channel, SWITCH_CURRENT_APPLICATION_DATA_VARIABLE, expanded, SWITCH_FALSE);
 	switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, NULL);
 	
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_EXECUTE) == SWITCH_STATUS_SUCCESS) {
