@@ -1057,9 +1057,11 @@ FSMediaStream::FSMediaStream(FSConnection & conn, const OpalMediaFormat & mediaF
     , m_readRTP(0, 512)
     , m_callOnStart(true)
 {
-    memset(&m_readFrame, 0, sizeof(m_readFrame));
-    m_readFrame.codec = m_switchCodec;
-    m_readFrame.flags = SFF_RAW_RTP;
+
+    m_readFrame = (switch_frame_t *) switch_core_session_alloc(m_fsSession, sizeof(*m_readFrame));
+
+    m_readFrame->codec = m_switchCodec;
+    m_readFrame->flags = SFF_RAW_RTP;
 }
 
 
@@ -1116,7 +1118,7 @@ PBoolean FSMediaStream::Open()
            << mediaFormat.GetMediaType() << " codec " << mediaFormat << " for connection " << *this);
 
     if (IsSink()) {
-        m_readFrame.rate = mediaFormat.GetClockRate();
+        m_readFrame->rate = mediaFormat.GetClockRate();
 
         if (isAudio) {
             switch_core_session_set_read_codec(m_fsSession, m_switchCodec);
@@ -1195,7 +1197,7 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         m_callOnStart = false;
     }
 
-    m_readFrame.flags = 0;
+    m_readFrame->flags = 0;
 
     /*
     while (switch_channel_ready(m_fsChannel)) {
@@ -1222,7 +1224,7 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
                 return SWITCH_STATUS_FALSE;
             }
             if (!m_readRTP.GetPayloadSize()) {
-                m_readFrame.flags = SFF_CNG;
+                m_readFrame->flags = SFF_CNG;
                 break;
             }
         }
@@ -1234,8 +1236,8 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
     
         switch_core_timer_next(m_switchTimer);
     
-        if (!(m_readFrame.datalen = m_readRTP.GetPayloadSize())) {
-            m_readFrame.flags = SFF_CNG;
+        if (!(m_readFrame->datalen = m_readRTP.GetPayloadSize())) {
+            m_readFrame->flags = SFF_CNG;
         }
     }
 
@@ -1245,17 +1247,17 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
 
     //switch_core_timer_step(&m_switchTimer);
 
-    m_readFrame.buflen = m_readRTP.GetSize();
-    m_readFrame.data = m_readRTP.GetPayloadPtr();
-    m_readFrame.packet = m_readRTP.GetPointer();
-    m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readFrame.datalen;
-    m_readFrame.payload = (switch_payload_t) m_readRTP.GetPayloadType();
-    m_readFrame.timestamp = m_readRTP.GetTimestamp();
-    m_readFrame.m = (switch_bool_t) m_readRTP.GetMarker();
-    m_readFrame.seq = m_readRTP.GetSequenceNumber();
-    m_readFrame.ssrc = m_readRTP.GetSyncSource();
-    m_readFrame.codec = m_switchCodec;
-    *frame = &m_readFrame;
+    m_readFrame->buflen = m_readRTP.GetSize();
+    m_readFrame->data = m_readRTP.GetPayloadPtr();
+    m_readFrame->packet = m_readRTP.GetPointer();
+    m_readFrame->packetlen = m_readRTP.GetHeaderSize() + m_readFrame->datalen;
+    m_readFrame->payload = (switch_payload_t) m_readRTP.GetPayloadType();
+    m_readFrame->timestamp = m_readRTP.GetTimestamp();
+    m_readFrame->m = (switch_bool_t) m_readRTP.GetMarker();
+    m_readFrame->seq = m_readRTP.GetSequenceNumber();
+    m_readFrame->ssrc = m_readRTP.GetSyncSource();
+    m_readFrame->codec = m_switchCodec;
+    *frame = m_readFrame;
 
     return SWITCH_STATUS_SUCCESS;
 }
