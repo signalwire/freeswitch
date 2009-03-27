@@ -3618,11 +3618,13 @@ static switch_status_t conf_api_sub_bgdial(conference_obj_t *conference, switch_
 		stream->write_function(stream, "Bad Args\n");
 		return SWITCH_STATUS_GENERR;
 	}
+
 	if (conference) {
 		conference_outcall_bg(conference, NULL, NULL, argv[2], 60, NULL, argv[4], argv[3]);
 	} else {
-		conference_outcall_bg(NULL, argv[1], NULL, argv[2], 60, NULL, argv[4], argv[3]);
+		conference_outcall_bg(NULL, argv[0], NULL, argv[2], 60, NULL, argv[4], argv[3]);
 	}
+
 	stream->write_function(stream, "OK\n");
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4064,7 +4066,7 @@ SWITCH_STANDARD_API(conf_api_main)
 					/* command returned error, so show syntax usage */
 					stream->write_function(stream, conf_api_sub_commands[CONF_API_COMMAND_DIAL].psyntax);
 				}
-			} else if (strcasecmp(argv[0], "bgdial") == 0) {
+			} else if (argv[1] && strcasecmp(argv[1], "bgdial") == 0) {
 				if (conf_api_sub_bgdial(NULL, stream, argc, argv) != SWITCH_STATUS_SUCCESS) {
 					/* command returned error, so show syntax usage */
 					stream->write_function(stream, conf_api_sub_commands[CONF_API_COMMAND_BGDIAL].psyntax);
@@ -4210,6 +4212,7 @@ struct bg_call {
 	char *cid_name;
 	char *cid_num;
 	char *conference_name;
+	switch_memory_pool_t *pool;
 };
 
 static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, void *obj)
@@ -4219,11 +4222,11 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 	if (call) {
 		switch_call_cause_t cause;
 		switch_event_t *event;
-
+		
 		conference_outcall(call->conference, call->conference_name,
 						   call->session, call->bridgeto, call->timeout, call->flags, call->cid_name, call->cid_num, &cause);
 
-		if (test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
+		if (call->conference && test_eflag(call->conference, EFLAG_BGDIAL_RESULT) &&
 			switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
 			conference_add_event_data(call->conference, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "bgdial-result");
@@ -4235,6 +4238,9 @@ static void *SWITCH_THREAD_FUNC conference_outcall_run(switch_thread_t *thread, 
 		switch_safe_free(call->cid_name);
 		switch_safe_free(call->cid_num);
 		switch_safe_free(call->conference_name);
+		if (call->pool) {
+			switch_core_destroy_memory_pool(&call->pool);
+		}
 		switch_safe_free(call);
 	}
 
@@ -4249,6 +4255,7 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	struct bg_call *call = NULL;
 	switch_thread_t *thread;
 	switch_threadattr_t *thd_attr = NULL;
+	switch_memory_pool_t *pool = NULL;
 
 	if (!(call = malloc(sizeof(*call))))
 		return SWITCH_STATUS_MEMERR;
@@ -4257,6 +4264,13 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 	call->conference = conference;
 	call->session = session;
 	call->timeout = timeout;
+
+	if (conference) {
+		pool = conference->pool;
+	} else {
+		switch_core_new_memory_pool(&pool);
+		call->pool = pool;
+	}
 
 	if (bridgeto) {
 		call->bridgeto = strdup(bridgeto);
@@ -4275,10 +4289,10 @@ static switch_status_t conference_outcall_bg(conference_obj_t *conference,
 		call->conference_name = strdup(conference_name);
 	}
 
-	switch_threadattr_create(&thd_attr, conference->pool);
+	switch_threadattr_create(&thd_attr, pool);
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
-	switch_thread_create(&thread, thd_attr, conference_outcall_run, call, conference->pool);
+	switch_thread_create(&thread, thd_attr, conference_outcall_run, call, pool);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Launching BG Thread for outcall\n");
 
 	return SWITCH_STATUS_SUCCESS;
@@ -4673,13 +4687,6 @@ SWITCH_STANDARD_APP(conference_function)
 		xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
 	}
 
-	if (!xml_cfg.profile) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile: %s\n", profile_name);
-		switch_xml_free(cxml);
-		cxml = NULL;
-		goto done;
-	}
-
 	xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
 
 	/* if this is a bridging call, and it's not a duplicate, build a */
@@ -4700,7 +4707,6 @@ SWITCH_STANDARD_APP(conference_function)
 		conference = conference_new(conf_name, xml_cfg, NULL);
 
 		if (!conference) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 			goto done;
 		}
 
@@ -4725,9 +4731,8 @@ SWITCH_STANDARD_APP(conference_function)
 		if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
 			/* couldn't find the conference, create one */
 			conference = conference_new(conf_name, xml_cfg, NULL);
-
+			
 			if (!conference) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 				goto done;
 			}
 
@@ -5213,6 +5218,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	}
 
 	/* parse the profile tree for param values */
+	if (cfg.profile)
 	for (xml_kvp = switch_xml_child(cfg.profile, "param"); xml_kvp; xml_kvp = xml_kvp->next) {
 		char *var = (char *) switch_xml_attr_soft(xml_kvp, "name");
 		char *val = (char *) switch_xml_attr_soft(xml_kvp, "value");
@@ -5365,7 +5371,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
 	/* initialize the conference object with settings from the specified profile */
 	conference->pool = pool;
-	conference->profile_name = switch_core_strdup(conference->pool, switch_xml_attr_soft(cfg.profile, "name"));
+	conference->profile_name = switch_core_strdup(conference->pool, cfg.profile ? switch_xml_attr_soft(cfg.profile, "name") : "none");
 	if (timer_name) {
 		conference->timer_name = switch_core_strdup(conference->pool, timer_name);
 	}
