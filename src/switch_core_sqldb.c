@@ -368,10 +368,12 @@ static void core_event_handler(switch_event_t *event)
 			const char *name = switch_event_get_header_nil(event, "name");
 			const char *description = switch_event_get_header_nil(event, "description");
 			const char *syntax = switch_event_get_header_nil(event, "syntax");
+			const char *key = switch_event_get_header_nil(event, "key");
+			const char *filename = switch_event_get_header_nil(event, "filename");
 			if (!switch_strlen_zero(type) && !switch_strlen_zero(name)) {
 				sql =
-					switch_mprintf("insert into interfaces (type,name,description,syntax) values('%q','%q','%q','%q')",
-								   type, name, switch_str_nil(description), switch_str_nil(syntax)
+					switch_mprintf("insert into interfaces (type,name,description,syntax,key,filename) values('%q','%q','%q','%q','%q','%q')",
+								   type, name, switch_str_nil(description), switch_str_nil(syntax), switch_str_nil(key), switch_str_nil(filename)
 					);
 			}
 			break;
@@ -477,6 +479,8 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   type             VARCHAR(255),\n"
 			"   name             VARCHAR(255),\n" 
 			"   description      VARCHAR(255),\n" 
+			"   key              VARCHAR(255),\n" 
+			"   filename         VARCHAR(255),\n" 
 			"   syntax           VARCHAR(255)\n" 
 			");\n";
 		char create_tasks_sql[] =

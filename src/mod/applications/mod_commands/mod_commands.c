@@ -2525,7 +2525,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete|chat|endpoint|management|say|interfaces|interface_types"
+#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete|chat|endpoint|management|modules|say|interfaces|interface_types"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -2589,18 +2589,24 @@ SWITCH_STANDARD_API(show_function)
 		if (end_of(command) == 's') {
 			end_of(command) = '\0';
 		}
-		sprintf(sql, "select type, name from interfaces where type = '%s' order by type,name", command);
+		sprintf(sql, "select type, name, key from interfaces where name = '%s' order by type,name", command);
+	} else if (!strncasecmp(command, "module", 6)) {
+		if (argv[1]) {
+			sprintf(sql, "select distinct type, name, key, filename from interfaces where key = '%s' order by type,name", argv[1]);
+		} else {
+			sprintf(sql, "select distinct type, name, key, filename from interfaces order by type,name");
+		}
 	} else if (!strcasecmp(command, "interfaces")) {
-		sprintf(sql, "select type, name from interfaces order by type,name");
+		sprintf(sql, "select type, name, key from interfaces order by type,name");
 	} else if (!strcasecmp(command, "interface_types")) {
 		sprintf(sql, "select type,count(type) as total from interfaces group by type order by type");
 	} else if (!strcasecmp(command, "tasks")) {
 		sprintf(sql, "select * from %s", command);
 	} else if (!strcasecmp(command, "application") || !strcasecmp(command, "api")) {
 		if (argv[1] && strcasecmp(argv[1], "as")) {
-			sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' and name = '%s' order by type,name", command, argv[1]);
+			sprintf(sql, "select name, description, syntax, key from interfaces where type = '%s' and description != '' and name = '%s' order by type,name", command, argv[1]);
 		} else {
-			sprintf(sql, "select name, description, syntax from interfaces where type = '%s' and description != '' order by type,name", command);
+			sprintf(sql, "select name, description, syntax, key from interfaces where type = '%s' and description != '' order by type,name", command);
 		}
 	} else if (!strcasecmp(command, "calls")) {
 		sprintf(sql, "select * from calls order by created_epoch");
@@ -2629,10 +2635,10 @@ SWITCH_STANDARD_API(show_function)
 		holder.print_title = 0;
 		if ((cmdname = strchr(command, ' ')) && strcasecmp(cmdname, "as")) {
 			*cmdname++ = '\0';
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' and name = '%s' order by name",
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, key from interfaces where type = 'api' and name = '%s' order by name",
 							cmdname);
 		} else {
-			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description from interfaces where type = 'api' order by name");
+			switch_snprintf(sql, sizeof(sql) - 1, "select name, syntax, description, key from interfaces where type = 'api' order by name");
 		}
 	} else {
 		stream->write_function(stream, "-USAGE: %s\n", SHOW_SYNTAX);
@@ -2651,6 +2657,8 @@ SWITCH_STANDARD_API(show_function)
 		holder.delim = ",";
 	}
 
+	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s.\n", sql); */
+	
 	if (!strcasecmp(as, "delim") || !strcasecmp(as, "csv")) {
 		if (switch_strlen_zero(holder.delim)) {
 			if (!(holder.delim = argv[3])) {
