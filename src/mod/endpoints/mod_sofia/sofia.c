@@ -477,6 +477,8 @@ void sofia_event_callback(nua_event_t event,
 		sofia_presence_handle_sip_i_publish(nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_register:
+		//nua_respond(nh, SIP_200_OK, SIPTAG_CONTACT(sip->sip_contact), NUTAG_WITH_THIS(nua), TAG_END());
+		//nua_handle_destroy(nh);
 		sofia_reg_handle_sip_i_register(nua, profile, nh, sofia_private, sip, tags);
 		break;
 	case nua_i_state:

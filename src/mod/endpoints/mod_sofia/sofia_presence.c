@@ -283,6 +283,8 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	switch_event_header_t *hp;
 	struct mwi_helper h = { 0 };
 	char *pname = NULL;
+	const char *call_id;
+	const char *sub_call_id;
 
 	switch_assert(event != NULL);
 
@@ -295,6 +297,9 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing required Header 'MWI-Messages-Waiting'\n");
 		return;
 	}
+
+	call_id = switch_event_get_header(event, "call-id");
+	sub_call_id = switch_event_get_header(event, "sub-call-id");
 
 	dup_account = strdup(account);
 	switch_assert(dup_account != NULL);
@@ -339,30 +344,39 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	stream.write_function(&stream, "\r\n");
 	
-	sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-						 "full_via,expires,user_agent,accept,profile_name"
-						 ",'%q','%q' from sip_subscriptions where event='message-summary' "
-						 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
-						 stream.data, host, user, host, host);
+	sql = NULL;
 
-	switch_assert(sql != NULL);
-	sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_mwi_callback, &h);
-	
+	if (sub_call_id) {
+		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
+							 "full_via,expires,user_agent,accept,profile_name"
+							 ",'%q','%q' from sip_subscriptions where event='message-summary' "
+							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%' and call_id='%q')",
+							 stream.data, host, user, host, host, sub_call_id);
+	} else if (!call_id) {
+		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
+							 "full_via,expires,user_agent,accept,profile_name"
+							 ",'%q','%q' from sip_subscriptions where event='message-summary' "
+							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
+							 stream.data, host, user, host, host);
+	}
+
+	if (sql) {
+		sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_mwi_callback, &h);
+		switch_safe_free(sql);
+
+	} else if (call_id) {
+		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q' "
+							 "from sip_registrations where sip_user='%q' and sip_host='%q' and call_id='%q'", 
+							 stream.data, user, host, call_id);
+		switch_assert(sql != NULL);
+		sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_mwi_callback2, &h);
+	}
+
+
 	switch_safe_free(sql);
-
-	sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q' from sip_registrations where sip_user='%q' and sip_host='%q'", 
-						 stream.data, user, host);
-
-
-
-	switch_assert(sql != NULL);
-	sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_mwi_callback2, &h);
-
-	switch_safe_free(sql);
-
 	switch_safe_free(stream.data);
-
 	switch_safe_free(dup_account);
+
 	if (profile) {
 		sofia_glue_release_profile(profile);
 	}
@@ -791,6 +805,7 @@ static int sofia_presence_sub_reg_callback(void *pArg, int argc, char **argv, ch
 		if (switch_event_create(&event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", user, host);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "VM-sub-call-id", argv[7]);
 			switch_event_fire(&event);
 		}
 		return 0;
