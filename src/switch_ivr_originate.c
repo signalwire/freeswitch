@@ -546,15 +546,18 @@ static uint8_t check_channel_status(originate_global_t *oglobals, originate_stat
 	if (pindex > -1 && caller_channel && switch_channel_ready(caller_channel) && !switch_channel_media_ready(caller_channel)) {
 		const char *var = switch_channel_get_variable(caller_channel, "inherit_codec");
 		if (switch_true(var)) {
-			switch_codec_implementation_t impl;
+			switch_codec_implementation_t impl = { 0 };
 			char tmp[128] = "";
 
 			
-			switch_core_session_get_read_impl(originate_status[pindex].peer_session, &impl);
-			switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
-			switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n", switch_channel_get_name(caller_channel), tmp);
-
+			if (switch_core_session_get_read_impl(originate_status[pindex].peer_session, &impl) == SWITCH_STATUS_SUCCESS) {
+				switch_snprintf(tmp, sizeof(tmp), "%s@%uh@%ui", impl.iananame, impl.samples_per_second, impl.microseconds_per_packet / 1000);
+				switch_channel_set_variable(caller_channel, "absolute_codec_string", tmp);
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setting codec string on %s to %s\n", switch_channel_get_name(caller_channel), tmp);
+			} else {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Error inheriting codec.  Channel %s has no read codec yet.\n", 
+								  switch_channel_get_name(originate_status[pindex].peer_channel));
+			}
 
 		}
 	}
