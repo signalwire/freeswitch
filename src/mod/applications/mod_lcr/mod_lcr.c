@@ -34,7 +34,7 @@
 #include <switch_odbc.h>
 
 
-#define LCR_SYNTAX "lcr <digits> [<lcr profile>]"
+#define LCR_SYNTAX "lcr <digits> [<lcr profile>] [caller_id]"
 #define LCR_ADMIN_SYNTAX "lcr_admin show profiles"
 
 /* SQL Query places */
@@ -48,17 +48,28 @@
 #define LCR_PREFIX_PLACE 7
 #define LCR_SUFFIX_PLACE 8
 #define LCR_CODEC_PLACE 9
+#define LCR_CID_PLACE 10
 
 #define LCR_QUERY_COLS_REQUIRED 9
-#define LCR_QUERY_COLS 10
+#define LCR_QUERY_COLS 11
 
-#define LCR_DIALSTRING_PLACE 3
-#define LCR_HEADERS_COUNT 4
+#define LCR_HEADERS_COUNT 6
+
+#define LCR_HEADERS_DIGITS 0
+#define LCR_HEADERS_CARRIER 1
+#define LCR_HEADERS_RATE 2
+#define LCR_HEADERS_DIALSTRING 3
+#define LCR_HEADERS_CODEC 4
+#define LCR_HEADERS_CID 5
+
+#define LCR_
 char headers[LCR_HEADERS_COUNT][32] = {
 	"Digit Match",
 	"Carrier",
 	"Rate",
 	"Dialstring",
+	"Codec",
+	"CID Regexp"
 };
 
 /* sql for random function */
@@ -87,6 +98,7 @@ struct lcr_obj {
 	size_t tstrip;
 	size_t digit_len;
 	char *codec;
+	char *cid;
 	struct lcr_obj *prev;
 	struct lcr_obj *next;
 };
@@ -95,6 +107,8 @@ struct max_obj {
 	size_t carrier_name;
 	size_t digit_str;
 	size_t rate;
+	size_t codec;
+	size_t cid;
 	size_t dialstring;
 };
 
@@ -127,6 +141,7 @@ struct callback_obj {
 	int matches;
 	switch_memory_pool_t *pool;
 	char *lookup_number;
+	char *cid;
 	profile_t *profile;
 	switch_core_session_t *session;
 	switch_event_t *event;
@@ -150,7 +165,64 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lcr_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lcr_shutdown);
 SWITCH_MODULE_DEFINITION(mod_lcr, mod_lcr_load, mod_lcr_shutdown, NULL);
 
-static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_number, lcr_route cur_route)
+static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const char *number)
+{
+	switch_regex_t *re = NULL;
+	int proceed = 0, ovector[30];
+	char *substituted = NULL;
+	uint32_t len = 0;
+	char *src = NULL;
+	char *dst = NULL;
+	
+	if (!switch_strlen_zero(cid)) {
+		len = strlen(cid);
+	} else {
+		goto done;
+	}
+	
+	src = switch_core_strdup(pool, cid);
+	/* check that this is a valid regexp and split the string */
+	
+	if ((src[0] == '/') && src[len-1] == '/') {
+		/* strip leading / trailing slashes */
+		src[len-1] = '\0';
+		src++;
+		
+		/* break on first / */
+		dst = strchr(src, '/');
+		*dst = '\0';
+		dst++;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "src: %s, dst: %s\n", src, dst);
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Not a valid regexp: %s\n", src);
+		goto done;
+	}
+	
+	switch_assert(src != NULL);
+	switch_assert(dst != NULL);
+
+	if ((proceed = switch_regex_perform(number, src, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
+		len = (uint32_t) (strlen(src) + strlen(dst) + 10) * proceed; /* guestimate size */
+		if (!(substituted = switch_core_alloc(pool, len))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Memory Error!\n");
+			goto done;
+		}
+		memset(substituted, 0, len);
+		switch_perform_substitution(re, proceed, dst, number, substituted, len, ovector);
+	} else {
+		goto done;
+	}
+
+	switch_regex_safe_free(re);
+	
+	return substituted;
+	
+done:
+	switch_regex_safe_free(re);
+	return number;
+}
+
+static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, char *caller_id, lcr_route cur_route)
 {
 	size_t lstrip;
 	size_t  tstrip;
@@ -158,6 +230,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 	char *destination_number = NULL;
 	char *orig_destination_number = NULL; 
 	char *codec = NULL;
+	char *cid = NULL;
 
 	orig_destination_number = destination_number = switch_core_strdup(pool, dialed_number);
 
@@ -176,9 +249,15 @@ static char *get_bridge_data(switch_memory_pool_t *pool, const char *dialed_numb
 		codec = switch_core_sprintf(pool, ",absolute_codec_string=%s", cur_route->codec);
 	}
 	
-	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s]%s%s%s%s%s"
+	cid = "";
+	if (!switch_strlen_zero(cur_route->cid)) {
+		cid = switch_core_sprintf(pool, ",effective_caller_id_number=%s", 
+								  do_cid(pool, cur_route->cid, caller_id));
+	}
+	
+	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s]%s%s%s%s%s"
 								, cur_route->carrier_name, cur_route->rate_str
-								, codec
+								, codec, cid
 								, cur_route->gw_prefix, cur_route->prefix
 								, destination_number, cur_route->suffix, cur_route->gw_suffix);
 			
@@ -202,11 +281,12 @@ profile_t *locate_profile(const char *profile_name)
 
 void init_max_lens(max_len maxes)
 {
-	maxes->digit_str = (headers[LCR_DIGITS_PLACE] == NULL ? 0 : strlen(headers[LCR_DIGITS_PLACE]));
-	maxes->carrier_name = (headers[LCR_CARRIER_PLACE] == NULL ? 0 : strlen(headers[LCR_CARRIER_PLACE]));
-	maxes->dialstring = (headers[LCR_DIALSTRING_PLACE] == NULL ? 0 : strlen(headers[LCR_DIALSTRING_PLACE]));
-	maxes->digit_str = (headers[LCR_DIGITS_PLACE] == NULL ? 0 : strlen(headers[LCR_DIGITS_PLACE]));
+	maxes->digit_str = (headers[LCR_HEADERS_DIGITS] == NULL ? 0 : strlen(headers[LCR_HEADERS_DIGITS]));
+	maxes->carrier_name = (headers[LCR_HEADERS_CARRIER] == NULL ? 0 : strlen(headers[LCR_HEADERS_CARRIER]));
+	maxes->dialstring = (headers[LCR_HEADERS_DIALSTRING] == NULL ? 0 : strlen(headers[LCR_HEADERS_DIALSTRING]));
 	maxes->rate = 8;
+	maxes->codec = (headers[LCR_HEADERS_CODEC] == NULL ? 0 : strlen(headers[LCR_HEADERS_CODEC]));
+	maxes->cid = (headers[LCR_HEADERS_CID] == NULL ? 0 : strlen(headers[LCR_HEADERS_CID]));
 }
 
 switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *destination_number)
@@ -248,6 +328,18 @@ switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *de
 			this_len = strlen(current->rate_str);
 			if (this_len > maxes->rate) {
 				maxes->rate = this_len;
+			}
+		}
+		if (current->codec != NULL) {
+			this_len= strlen(current->codec);
+			if (this_len > maxes->codec) {
+				maxes->codec = this_len;
+			}
+		}
+		if (current->cid != NULL) {
+			this_len = strlen(current->cid);
+			if (this_len > maxes->cid) {
+				maxes->cid = this_len;
 			}
 		}
 	}
@@ -445,7 +537,10 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	if (argc > LCR_CODEC_PLACE) {
 		additional->codec = switch_core_strdup(pool, switch_str_nil(argv[LCR_CODEC_PLACE]));
 	}
-	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, additional);
+	if (argc > LCR_CID_PLACE) {
+		additional->cid = switch_core_strdup(pool, switch_str_nil(argv[LCR_CID_PLACE]));
+	}
+	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional);
 
 	if (cbt->head == NULL) {
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
@@ -518,9 +613,10 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
+switch_status_t lcr_do_lookup(callback_t *cb_struct)
 {
 	switch_stream_handle_t sql_stream = { 0 };
+	char *digits = cb_struct->lookup_number;
 	char *digits_copy;
 	char *digits_expanded;
 	profile_t *profile = cb_struct->profile;
@@ -528,6 +624,9 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct, char *digits)
 	switch_channel_t *channel;
 	char *id_str;
 	char *safe_sql;
+	
+	switch_assert(cb_struct->cid != NULL);
+	switch_assert(cb_struct->lookup_number != NULL);
 
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
 	if (switch_strlen_zero(digits_copy)) {
@@ -606,7 +705,8 @@ switch_bool_t test_profile(char *lcr_profile)
 	}
 	
 	routes.lookup_number = "15555551212";
-	return (lcr_do_lookup(&routes, routes.lookup_number) == SWITCH_STATUS_SUCCESS) ?
+	routes.cid = "18005551212";
+	return (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) ?
 	        SWITCH_TRUE : SWITCH_FALSE;
 }
 
@@ -770,7 +870,13 @@ static switch_status_t lcr_load_config()
 						sql_stream.write_function(&sql_stream, ", cg.codec ");
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "codec field defined.\n");
 					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "codec field not defined, please update your lcr database schema.\n");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "codec field not defined, please update your lcr carrier_gateway database schema.\n");
+					}
+					if (db_check("SELECT cid from lcr limit 1") == SWITCH_TRUE) {
+						sql_stream.write_function(&sql_stream, ", l.cid ");
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cid field defined.\n");
+					} else {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "cid field not defined, please update your lcr database schema.\n");
 					}
 					sql_stream.write_function(&sql_stream, "FROM lcr l JOIN carriers c ON l.carrier_id=c.id JOIN carrier_gateway cg ON c.id=cg.carrier_id WHERE c.enabled = '1' AND cg.enabled = '1' AND l.enabled = '1' AND digits IN (");
 					sql_stream.write_function(&sql_stream, "${lcr_query_expanded_digits}");
@@ -874,7 +980,8 @@ SWITCH_STANDARD_DIALPLAN(lcr_dialplan_hunt)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s\n", caller_profile->destination_number);
 	routes.lookup_number = caller_profile->destination_number;
-	if (lcr_do_lookup(&routes, caller_profile->destination_number) == SWITCH_STATUS_SUCCESS) {
+	routes.cid = (char *) caller_profile->caller_id_number;
+	if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 		if ((extension = switch_caller_extension_new(session, caller_profile->destination_number, caller_profile->destination_number)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "memory error!\n");
 			goto end;
@@ -954,7 +1061,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
 			goto end;
 		}
-		if (lcr_do_lookup(&routes, dest) == SWITCH_STATUS_SUCCESS) {
+		if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 			for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
 				switch_snprintf(vbuf, sizeof(vbuf), "lcr_route_%d", cnt++);
 				switch_channel_set_variable(channel, vbuf, cur_route->dialstring);
@@ -986,7 +1093,6 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 	int argc;
 	char *mydata = NULL;
 	char *dialstring = NULL;
-	char *destination_number = NULL;
 	char *lcr_profile = NULL;
 	lcr_route current = NULL;
 	max_obj_t maximum_lengths = { 0 };
@@ -1013,11 +1119,18 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		switch_assert(argv[0] != NULL);
-		destination_number = switch_core_strdup(pool, argv[0]);
+		cb_struct.lookup_number = switch_core_strdup(pool, argv[0]);
 		if (argc > 1) {
 			lcr_profile = argv[1];
 		}
-		cb_struct.lookup_number = destination_number;
+		if (argc > 2) {
+			cb_struct.cid = switch_core_strdup(pool, argv[2]);
+		} else {
+			cb_struct.cid = "18005551212";
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING
+							  , "Using default CID [%s]\n", cb_struct.cid
+							  );
+		}
 		if (!(cb_struct.profile = locate_profile(lcr_profile))) {
 			stream->write_function(stream, "-ERR Unknown profile: %s\n", lcr_profile);
 			goto end;
@@ -1026,7 +1139,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
 						  , "data passed to lcr is [%s]\n", cmd
 						  );
-		lookup_status = lcr_do_lookup(&cb_struct, destination_number);
+		lookup_status = lcr_do_lookup(&cb_struct);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO
 						  , "lcr lookup returned [%d]\n"
 						  , lookup_status
@@ -1034,25 +1147,35 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 		if (cb_struct.head != NULL) {
 			size_t len;
 
-			process_max_lengths(&maximum_lengths, cb_struct.head, destination_number);
+			process_max_lengths(&maximum_lengths, cb_struct.head, cb_struct.lookup_number);
 
-			stream->write_function(stream, " | %s", headers[LCR_DIGITS_PLACE]);
-			if ((len = (maximum_lengths.digit_str - strlen(headers[LCR_DIGITS_PLACE]))) > 0) {
+			stream->write_function(stream, " | %s", headers[LCR_HEADERS_DIGITS]);
+			if ((len = (maximum_lengths.digit_str - strlen(headers[LCR_HEADERS_DIGITS]))) > 0) {
 				str_repeat(len, " ", stream);
 			}
 
-			stream->write_function(stream, " | %s", headers[LCR_CARRIER_PLACE]);
-			if ((len = (maximum_lengths.carrier_name - strlen(headers[LCR_CARRIER_PLACE]))) > 0) {
+			stream->write_function(stream, " | %s", headers[LCR_HEADERS_CARRIER]);
+			if ((len = (maximum_lengths.carrier_name - strlen(headers[LCR_HEADERS_CARRIER]))) > 0) {
 				str_repeat(len, " ", stream);
 			}
 
-			stream->write_function(stream, " | %s", headers[LCR_RATE_PLACE]);
-			if ((len = (maximum_lengths.rate - strlen(headers[LCR_RATE_PLACE]))) > 0) {
+			stream->write_function(stream, " | %s", headers[LCR_HEADERS_RATE]);
+			if ((len = (maximum_lengths.rate - strlen(headers[LCR_HEADERS_RATE]))) > 0) {
 				str_repeat(len, " ", stream);
 			}
 
-			stream->write_function(stream, " | %s", headers[LCR_DIALSTRING_PLACE]);
-			if ((len = (maximum_lengths.dialstring - strlen(headers[LCR_DIALSTRING_PLACE]))) > 0) {
+			stream->write_function(stream, " | %s", headers[LCR_HEADERS_CODEC]);
+			if ((len = (maximum_lengths.codec - strlen(headers[LCR_HEADERS_CODEC]))) > 0) {
+				str_repeat(len, " ", stream);
+			}
+
+			stream->write_function(stream, " | %s", headers[LCR_HEADERS_CID]);
+			if ((len = (maximum_lengths.cid - strlen(headers[LCR_HEADERS_CID]))) > 0) {
+				str_repeat(len, " ", stream);
+			}
+
+			stream->write_function(stream, " | %s", headers[LCR_HEADERS_DIALSTRING]);
+			if ((len = (maximum_lengths.dialstring - strlen(headers[LCR_HEADERS_DIALSTRING]))) > 0) {
 				str_repeat(len, " ", stream);
 			}
 
@@ -1061,7 +1184,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 			current = cb_struct.head;
 			while (current) {
 
-				dialstring = get_bridge_data(pool, destination_number, current);
+				dialstring = get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current);
 
 				stream->write_function(stream, " | %s", current->digit_str);
 				str_repeat((maximum_lengths.digit_str - current->digit_len), " ", stream);
@@ -1071,7 +1194,23 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 				
 				stream->write_function(stream, " | %s", current->rate_str );
 				str_repeat((maximum_lengths.rate - strlen(current->rate_str)), " ", stream);
-								
+
+				if (current->codec) {
+					stream->write_function(stream, " | %s", current->codec );
+					str_repeat((maximum_lengths.codec - strlen(current->codec)), " ", stream);
+				} else {
+					stream->write_function(stream, " | ");
+					str_repeat((maximum_lengths.codec), " ", stream);
+				}
+
+				if (current->cid) {
+					stream->write_function(stream, " | %s", current->cid );
+					str_repeat((maximum_lengths.cid - strlen(current->cid)), " ", stream);
+				} else {
+					stream->write_function(stream, " | ");
+					str_repeat((maximum_lengths.cid), " ", stream);
+				}
+				
 				stream->write_function(stream, " | %s", dialstring);
 				str_repeat((maximum_lengths.dialstring - strlen(dialstring)), " ", stream);
 				
