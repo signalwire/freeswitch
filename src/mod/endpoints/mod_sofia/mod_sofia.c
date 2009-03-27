@@ -993,8 +993,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	switch (msg->message_id) {
 	case SWITCH_MESSAGE_INDICATE_TRANSCODING_NECESSARY:
 		if (tech_pvt->rtp_session && switch_rtp_test_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Cannot pass 2833 on a transcoded call.\n");
-			switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Pass 2833 mode may not work on a transcoded call.\n");
 		}
 		goto end;
 
