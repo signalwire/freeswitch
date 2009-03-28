@@ -1,4 +1,16 @@
 //gcc -Wall -ggdb client.c -o client -lX11 -lpthread
+/*
+USAGE:
+
+on skype_client_machine:
+# mknod /tmp/backpipe_103 p
+# ./client :103  0</tmp/backpipe_103 | nc -l -p 123456 | tee 1>/tmp/backpipe_103
+
+on skypiax server machine:
+# nc skype_client_machine 123456
+
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <X11/Xlib.h>
@@ -176,6 +188,7 @@ void *threadfunc(void *parm)
 
         //printf("\tRECEIVED\t==>\t%s\n", b);
         printf("%s\n", b);
+	fflush(stdout);
         memset(buffer, '\0', 17000);
       }
 
