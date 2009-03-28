@@ -198,9 +198,6 @@ static const char *do_cid(switch_memory_pool_t *pool, const char *cid, const cha
 		goto done;
 	}
 	
-	switch_assert(src != NULL);
-	switch_assert(dst != NULL);
-
 	if ((proceed = switch_regex_perform(number, src, &re, ovector, sizeof(ovector) / sizeof(ovector[0])))) {
 		len = (uint32_t) (strlen(src) + strlen(dst) + 10) * proceed; /* guestimate size */
 		if (!(substituted = switch_core_alloc(pool, len))) {
@@ -625,7 +622,6 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	char *id_str;
 	char *safe_sql;
 	
-	switch_assert(cb_struct->cid != NULL);
 	switch_assert(cb_struct->lookup_number != NULL);
 
 	digits_copy = string_digitsonly(cb_struct->pool, digits);
@@ -1029,6 +1025,7 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	uint32_t cnt = 1;
 	char *lcr_profile = NULL;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_caller_profile_t *caller_profile = NULL;
 	char *last_delim = "|";
 	callback_t routes = { 0 };
 	lcr_route cur_route = { 0 };
@@ -1049,6 +1046,12 @@ SWITCH_STANDARD_APP(lcr_app_function)
 	}
 	routes.pool = pool;
 
+	if (!caller_profile) {
+		if (!(caller_profile = switch_channel_get_caller_profile(channel))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unable to locate caller_profile\n");
+		}
+	}
+
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		dest = argv[0];
 		if (argc > 1) {
@@ -1057,6 +1060,10 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", dest, lcr_profile);
 		routes.lookup_number = dest;
+		if (caller_profile) {
+			routes.cid = (char *) caller_profile->caller_id_number;
+		}
+	
 		if (!(routes.profile = locate_profile(lcr_profile))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown profile: %s\n", lcr_profile);
 			goto end;
