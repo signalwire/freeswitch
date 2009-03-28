@@ -1375,7 +1375,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	const char *sip_auth_username = NULL;
 	const char *sip_auth_password = NULL;
 
-	if ((channel = switch_core_session_get_channel(session))) {
+	if (session && (channel = switch_core_session_get_channel(session))) {
 		sip_auth_username = switch_channel_get_variable(channel, "sip_auth_username");
 		sip_auth_password = switch_channel_get_variable(channel, "sip_auth_password");
 	}
