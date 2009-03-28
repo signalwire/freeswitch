@@ -1371,6 +1371,9 @@ void sofia_reg_handle_sip_r_challenge(int status,
 	int ss_state;
 	sofia_gateway_t *var_gateway = NULL;
 	const char *gw_name = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	const char *sip_auth_username = switch_channel_get_variable(channel, "sip_auth_username");
+	const char *sip_auth_password = switch_channel_get_variable(channel, "sip_auth_password");
 
 	if (sofia_private && *sofia_private->auth_gateway_name) {
 		gw_name = sofia_private->auth_gateway_name;
@@ -1435,6 +1438,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		}
 	}
 
+	
 
 
 	if (!(scheme && realm)) {
@@ -1442,12 +1446,14 @@ void sofia_reg_handle_sip_r_challenge(int status,
 		goto end;
 	}
 
-	if (!gateway) {
+	if (sip_auth_username && sip_auth_password) {
+		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, sip_auth_username, sip_auth_password);
+	} else if (gateway) {
+		switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
+	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Matching gateway found\n");
-		goto cancel;
+		goto cancel;		
 	}
-
-	switch_snprintf(authentication, sizeof(authentication), "%s:%s:%s:%s", scheme, realm, gateway->auth_username, gateway->register_password);
 
 	if (profile->debug) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Authenticating '%s' with '%s'.\n", profile->username, authentication);
@@ -1457,7 +1463,7 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	tl_gets(tags, NUTAG_CALLSTATE_REF(ss_state), SIPTAG_WWW_AUTHENTICATE_REF(authenticate), TAG_END());
 
-	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway->expires_str), NUTAG_AUTH(authentication), TAG_END());
+	nua_authenticate(nh, SIPTAG_EXPIRES_STR(gateway ? gateway->expires_str : "3600"), NUTAG_AUTH(authentication), TAG_END());
 
 	goto end;
 
