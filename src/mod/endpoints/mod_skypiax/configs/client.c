@@ -6,8 +6,9 @@ on skype_client_machine:
 # mknod /tmp/backpipe_103 p
 # ./client :103  0</tmp/backpipe_103 | nc -l -p 123456 | tee 1>/tmp/backpipe_103
 
-on skypiax server machine:
-# nc skype_client_machine 123456
+on skypiax server machine (please compile skypiax_protocol.c with FARMING #defined):
+# mknod /tmp/backpipe_103 p
+# /usr/local/freeswitch/bin/freeswitch -nf -nc 0</tmp/backpipe_103 | nc 1.124.232.41 123456 | tee 1>/tmp/backpipe_103
 
 */
 
