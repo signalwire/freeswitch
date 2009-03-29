@@ -167,7 +167,8 @@ int skypiax_signaling_read(private_t * tech_pvt)
            SKYPIAX_P_LOG, message, obj, id, prop, value, where ? where : "NULL");
 
         if (!strcasecmp(prop, "PARTNER_HANDLE")) {
-          skypiax_strncpy(tech_pvt->callid_number, value, sizeof(tech_pvt->callid_number) - 1);
+          skypiax_strncpy(tech_pvt->callid_number, value,
+                          sizeof(tech_pvt->callid_number) - 1);
           DEBUGA_SKYPE
             ("the skype_call %s caller PARTNER_HANDLE (tech_pvt->callid_number) is: %s\n",
              SKYPIAX_P_LOG, id, tech_pvt->callid_number);
@@ -201,7 +202,8 @@ int skypiax_signaling_read(private_t * tech_pvt)
         }
         if (!strcasecmp(prop, "DURATION") && (!strcasecmp(value, "1"))) {
           if (strcasecmp(id, tech_pvt->skype_call_id)) {
-            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id,
+                            sizeof(tech_pvt->skype_call_id) - 1);
             DEBUGA_SKYPE
               ("We called a Skype contact and he answered us on skype_call: %s.\n",
                SKYPIAX_P_LOG, id);
@@ -234,7 +236,8 @@ int skypiax_signaling_read(private_t * tech_pvt)
                 skypiax_signaling_write(tech_pvt, msg_to_skype);
                 DEBUGA_SKYPE("We answered a Skype RING on skype_call %s\n", SKYPIAX_P_LOG,
                              id);
-                skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+                skypiax_strncpy(tech_pvt->skype_call_id, id,
+                                sizeof(tech_pvt->skype_call_id) - 1);
               } else {
                 /* we're owned, we're in a call, let's try to transfer */
         /************************** TODO
@@ -251,7 +254,8 @@ int skypiax_signaling_read(private_t * tech_pvt)
                   DEBUGA_SKYPE
                     ("Let's transfer the skype_call %s to %s interface (with skype_user: %s), because we are already in a skypiax call(%s)\n",
                      SKYPIAX_P_LOG, tech_pvt->skype_call_id,
-                     available_skypiax_interface->name, available_skypiax_interface->skype_user, id);
+                     available_skypiax_interface->name,
+                     available_skypiax_interface->skype_user, id);
                   sprintf(msg_to_skype, "ALTER CALL %s TRANSFER %s", id,
                           available_skypiax_interface->skype_user);
                 } else {
@@ -271,7 +275,8 @@ int skypiax_signaling_read(private_t * tech_pvt)
               /* we are calling out */
               tech_pvt->skype_callflow = CALLFLOW_STATUS_RINGING;
               tech_pvt->interface_state = SKYPIAX_STATE_RINGING;
-              skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+              skypiax_strncpy(tech_pvt->skype_call_id, id,
+                              sizeof(tech_pvt->skype_call_id) - 1);
               DEBUGA_SKYPE("Our remote party in skype_call %s is RINGING\n",
                            SKYPIAX_P_LOG, id);
               remote_party_is_ringing(tech_pvt);
@@ -282,12 +287,12 @@ int skypiax_signaling_read(private_t * tech_pvt)
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
             NOTICA("Our remote party in skype_call %s is EARLYMEDIA\n", SKYPIAX_P_LOG,
                    id);
-                start_audio_threads(tech_pvt);
-          	skypiax_sleep(1000);
+            start_audio_threads(tech_pvt);
+            skypiax_sleep(1000);
             sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id,
                     tech_pvt->tcp_cli_port);
             skypiax_signaling_write(tech_pvt, msg_to_skype);
-                sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id,
+            sprintf(msg_to_skype, "#output ALTER CALL %s SET_OUTPUT PORT=\"%d\"", id,
                     tech_pvt->tcp_srv_port);
             skypiax_signaling_write(tech_pvt, msg_to_skype);
 
@@ -328,7 +333,8 @@ int skypiax_signaling_read(private_t * tech_pvt)
               ("we tried to call Skype on skype_call %s and Skype has now FAILED\n",
                SKYPIAX_P_LOG, id);
             tech_pvt->skype_call_id[0] = '\0';
-            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id,
+                            sizeof(tech_pvt->skype_call_id) - 1);
             tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
             return CALLFLOW_INCOMING_HANGUP;
           } else if (!strcasecmp(value, "REFUSED")) {
@@ -338,7 +344,8 @@ int skypiax_signaling_read(private_t * tech_pvt)
               DEBUGA_SKYPE
                 ("we tried to call Skype on skype_call %s and Skype has now REFUSED\n",
                  SKYPIAX_P_LOG, id);
-              skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+              skypiax_strncpy(tech_pvt->skype_call_id, id,
+                              sizeof(tech_pvt->skype_call_id) - 1);
               tech_pvt->interface_state = SKYPIAX_STATE_DOWN;
               tech_pvt->skype_call_id[0] = '\0';
               return CALLFLOW_INCOMING_HANGUP;
@@ -347,31 +354,34 @@ int skypiax_signaling_read(private_t * tech_pvt)
               DEBUGA_SKYPE("we REFUSED skype_call %s\n", SKYPIAX_P_LOG, id);
             }
           } else if (!strcasecmp(value, "TRANSFERRING")) {
-              DEBUGA_SKYPE("skype_call %s is transferring\n", SKYPIAX_P_LOG, id);
+            DEBUGA_SKYPE("skype_call %s is transferring\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "TRANSFERRED")) {
-              DEBUGA_SKYPE("skype_call %s has been transferred\n", SKYPIAX_P_LOG, id);
+            DEBUGA_SKYPE("skype_call %s has been transferred\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "ROUTING")) {
             tech_pvt->skype_callflow = CALLFLOW_STATUS_ROUTING;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
-            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id,
+                            sizeof(tech_pvt->skype_call_id) - 1);
             DEBUGA_SKYPE("skype_call: %s is now ROUTING\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "UNPLACED")) {
             tech_pvt->skype_callflow = CALLFLOW_STATUS_UNPLACED;
             tech_pvt->interface_state = SKYPIAX_STATE_DIALING;
-            skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+            skypiax_strncpy(tech_pvt->skype_call_id, id,
+                            sizeof(tech_pvt->skype_call_id) - 1);
             DEBUGA_SKYPE("skype_call: %s is now UNPLACED\n", SKYPIAX_P_LOG, id);
           } else if (!strcasecmp(value, "INPROGRESS")) {
             char msg_to_skype[1024];
 
             if (!strlen(tech_pvt->session_uuid_str) || !strlen(tech_pvt->skype_call_id)
                 || !strcasecmp(tech_pvt->skype_call_id, id)) {
-              skypiax_strncpy(tech_pvt->skype_call_id, id, sizeof(tech_pvt->skype_call_id) - 1);
+              skypiax_strncpy(tech_pvt->skype_call_id, id,
+                              sizeof(tech_pvt->skype_call_id) - 1);
               DEBUGA_SKYPE("skype_call: %s is now active\n", SKYPIAX_P_LOG, id);
               if (tech_pvt->skype_callflow != CALLFLOW_STATUS_EARLYMEDIA) {
                 tech_pvt->skype_callflow = CALLFLOW_STATUS_INPROGRESS;
                 tech_pvt->interface_state = SKYPIAX_STATE_UP;
                 start_audio_threads(tech_pvt);
-          	skypiax_sleep(1000);
+                skypiax_sleep(1000);
                 sprintf(msg_to_skype, "ALTER CALL %s SET_INPUT PORT=\"%d\"", id,
                         tech_pvt->tcp_cli_port);
                 skypiax_signaling_write(tech_pvt, msg_to_skype);
@@ -495,7 +505,7 @@ void *skypiax_do_tcp_srv_thread_func(void *obj)
       if (rt > 0) {
 
 #ifdef FARMING
-	switch_sleep(500); //seems that reconnecting through a proxy leads to half the packet size, bizarrely, 158-162, never 160 :-)
+        switch_sleep(500);      //seems that reconnecting through a proxy leads to half the packet size, bizarrely, 158-162, never 160 :-)
 #endif // FARMING
         len = recv(fd, (char *) srv_in, 320, 0);    //seems that Skype only sends 320 bytes at time
 
@@ -790,6 +800,7 @@ int skypiax_pipe_read(switch_file_t * pipe, short *buf, int howmany)
 
   return howmany;
 }
+
 int skypiax_pipe_write(switch_file_t * pipe, short *buf, int howmany)
 {
   switch_size_t quantity;
@@ -802,6 +813,7 @@ int skypiax_pipe_write(switch_file_t * pipe, short *buf, int howmany)
 
   return howmany;
 }
+
 int skypiax_close_socket(unsigned int fd)
 {
   int res;
@@ -828,11 +840,13 @@ int skypiax_pipe_read(int pipe, short *buf, int howmany)
   howmany = read(pipe, buf, howmany);
   return howmany;
 }
+
 int skypiax_pipe_write(int pipe, short *buf, int howmany)
 {
   howmany = write(pipe, buf, howmany);
   return howmany;
 }
+
 int skypiax_close_socket(unsigned int fd)
 {
   int res;
@@ -966,7 +980,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
 
       memset(msg_from_skype, '\0', sizeof(msg_from_skype));
       skypiax_strncpy(msg_from_skype, (const char *) poCopyData->lpData,
-              sizeof(msg_from_skype) - 2);
+                      sizeof(msg_from_skype) - 2);
 
       howmany = strlen(msg_from_skype) + 1;
       howmany =
@@ -995,8 +1009,8 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
           skypiax_sleep(5000);
           if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             SendMessage(HWND_BROADCAST,
-                        tech_pvt->SkypiaxHandles.
-                        win32_uiGlobal_MsgID_SkypeControlAPIDiscover,
+                        tech_pvt->
+                        SkypiaxHandles.win32_uiGlobal_MsgID_SkypeControlAPIDiscover,
                         (WPARAM) tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle,
                         0);
           }
@@ -1012,8 +1026,8 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
           skypiax_sleep(5000);
           if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             SendMessage(HWND_BROADCAST,
-                        tech_pvt->SkypiaxHandles.
-                        win32_uiGlobal_MsgID_SkypeControlAPIDiscover,
+                        tech_pvt->
+                        SkypiaxHandles.win32_uiGlobal_MsgID_SkypeControlAPIDiscover,
                         (WPARAM) tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle,
                         0);
           }
@@ -1072,7 +1086,7 @@ int win32_Initialize_CreateWindowClass(private_t * tech_pvt)
   }
   if (fReturnStatus == 0)
     CloseHandle(tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle);
-      tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle = NULL;
+  tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle = NULL;
   return (fReturnStatus);
 }
 
@@ -1081,7 +1095,7 @@ void win32_DeInitialize_DestroyWindowClass(private_t * tech_pvt)
   UnregisterClass(tech_pvt->SkypiaxHandles.win32_acInit_WindowClassName,
                   tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle);
   CloseHandle(tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle);
-    tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle = NULL;
+  tech_pvt->SkypiaxHandles.win32_hInit_ProcessHandle = NULL;
 }
 
 int win32_Initialize_CreateMainWindow(private_t * tech_pvt)
@@ -1183,11 +1197,11 @@ static int X11_errors_untrap(void)
 #ifdef FARMING
 int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *message_P)
 {
-        printf("%s\n", message_P);
-        fflush(stdout);
+  printf("%s\n", message_P);
+  fflush(stdout);
   return 1;
 }
-#else// FARMING
+#else // FARMING
 int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *message_P)
 {
 
@@ -1236,7 +1250,7 @@ int skypiax_send_message(struct SkypiaxHandles *SkypiaxHandles, const char *mess
   return 1;
 }
 
-#endif// FARMING
+#endif // FARMING
 int skypiax_signaling_write(private_t * tech_pvt, char *msg_to_skype)
 {
   struct SkypiaxHandles *SkypiaxHandles;
@@ -1336,23 +1350,22 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
   }
   SkypiaxHandles = &tech_pvt->SkypiaxHandles;
 
-
   SkypiaxHandles->api_connected = 1;
 
-    char *b;
-          unsigned int howmany;
+  char *b;
+  unsigned int howmany;
 
-    while (1) {
-      char s[17000];
+  while (1) {
+    char s[17000];
 
-      memset(s, '\0', 17000);
-      b=fgets(s, sizeof(s) - 1, stdin);
-      s[strlen(s) - 1] = '\0';
-          howmany = strlen(s) + 1;
+    memset(s, '\0', 17000);
+    b = fgets(s, sizeof(s) - 1, stdin);
+    s[strlen(s) - 1] = '\0';
+    howmany = strlen(s) + 1;
 
-          howmany = write(SkypiaxHandles->fdesc[1], &s, howmany);
+    howmany = write(SkypiaxHandles->fdesc[1], &s, howmany);
 
-    }
+  }
 }
 
 #else //FARMING
