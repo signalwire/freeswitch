@@ -1,6 +1,6 @@
 #include "skypiax.h"
 
-#define FARMING
+#undef FARMING
 
 #ifdef ASTERISK
 #define skypiax_sleep usleep
