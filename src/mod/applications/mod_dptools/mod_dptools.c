@@ -2056,12 +2056,12 @@ SWITCH_STANDARD_APP(audio_bridge_function)
 			cause_str = switch_channel_cause2str(cause);
 			switch_snprintf(cause_num, sizeof(cause_num), "%u", cause);
 			
-			if (failure_causes && !(switch_stristr(cause_str, failure_causes) || strstr(cause_num, failure_causes))) {
+			if (failure_causes && !(switch_stristr(cause_str, failure_causes) || strstr(failure_causes, cause_num))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Failiure causes [%s]:  Cause: %s\n", failure_causes, cause_str);
 				return;
 			}
-			
-			if (continue_on_fail && (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(cause_num, continue_on_fail))) {
+
+			if (continue_on_fail && (switch_true(continue_on_fail) || switch_stristr(cause_str, continue_on_fail) || strstr(continue_on_fail, cause_num))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Continue on fail [%s]:  Cause: %s\n", continue_on_fail, cause_str);
 				return;
 			}
