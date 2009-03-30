@@ -1,7 +1,7 @@
 NEW_MICRO=4pre3
-rm -rf freeswitch-1.0.$(NEW_MICRO)
-svn co http://svn.freeswitch.org/svn/freeswitch/trunk freeswitch-1.0.$(NEW_MICRO)
-cd freeswitch-1.0.$(NEW_MICRO)
+rm -rf freeswitch-1.0.$NEW_MICRO
+svn co http://svn.freeswitch.org/svn/freeswitch/trunk freeswitch-1.0.$NEW_MICRO
+cd freeswitch-1.0.$NEW_MICRO
 SWITCH_VERSION_MAJOR=`grep SWITCH_VERSION_MAJOR configure.in | sed "s|.*\[||" | sed "s|\].*||"`
 SWITCH_VERSION_MINOR=`grep SWITCH_VERSION_MINOR configure.in | sed "s|.*\[||" | sed "s|\].*||"`
 SWITCH_VERSION_MICRO=`grep SWITCH_VERSION_MICRO configure.in | sed "s|.*\[||" | sed "s|\].*||"`
