@@ -1,7 +1,7 @@
 <include>
   <user id="1013" mailbox="1013">
     <params>
-      <param name="password" value="${default_password}"/>
+      <param name="password" value="$${default_password}"/>
       <param name="vm-password" value="1013"/>
     </params>
     <variables>

@@ -43,7 +43,7 @@
     </gateways>
     <params>
       <!-- omit password for authless registration -->
-      <param name="password" value="${default_password}"/>
+      <param name="password" value="$${default_password}"/>
       <param name="vm-password" value="9999"/><!--if vm-password is omitted password param is used-->
       <!--<param name="email-addr" value="me@mydomain.com"/>-->
       <!--<param name="vm-delete-file" value="true"/>-->
