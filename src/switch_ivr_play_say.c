@@ -1446,8 +1446,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	switch_channel_t *channel;
 	switch_input_args_t args = { 0 };
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-	char terminator;
 	size_t len = 0;
+	char tb[2] = "";
 
 	switch_assert(session);
 
@@ -1488,7 +1488,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_read(switch_core_session_t *session,
 	if ((min_digits && len < min_digits) || len < max_digits) {
 		args.buf = digit_buffer + len;
 		args.buflen = (uint32_t) (digit_buffer_length - len);
-		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &terminator, timeout, 0, 0);
+		status = switch_ivr_collect_digits_count(session, digit_buffer, digit_buffer_length, max_digits, valid_terminators, &tb[0], timeout, 0, 0);
+	}
+
+
+	if (tb[0]) {
+		switch_channel_set_variable(channel, SWITCH_READ_TERMINATOR_USED_VARIABLE, tb);
 	}
 
 	len = strlen(digit_buffer);
