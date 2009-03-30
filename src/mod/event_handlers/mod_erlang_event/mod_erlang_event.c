@@ -417,8 +417,10 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	ei_get_type(rep->buff, &rep->index, &type, &size);
 
-	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) /* XXX no unicode or character codes > 255 */
+	if (type != ERL_STRING_EXT && type != ERL_BINARY_EXT) { /* XXX no unicode or character codes > 255 */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "XML fetch response contained non ASCII characters? (was type %d of size %d)\n", type, size);
 		return NULL;
+	}
 
 	
 	if (!(xmlstr = malloc(size + 1))) {
@@ -778,7 +780,7 @@ static void listener_main_loop(listener_t *listener)
 
 		check_log_queue(listener);
 		check_event_queue(listener);
-		if (SWITCH_STATUS_SUCCESS != check_attached_sessions(listener)) {
+		if (check_attached_sessions(listener) != SWITCH_STATUS_SUCCESS) {
 			return;
 		}
 	}
@@ -1038,6 +1040,7 @@ session_elem_t* attach_call_to_registered_process(listener_t* listener, char* re
 	if (!(session_element = switch_core_session_alloc(session, sizeof(*session_element)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to allocate session element\n");
 	} else {
+		memcpy(session_element->uuid_str, switch_core_session_get_uuid(session), SWITCH_UUID_FORMATTED_LENGTH);
 		session_element->process.type = ERLANG_REG_PROCESS;
 		session_element->process.reg_name = switch_core_strdup(switch_core_session_get_pool(session),reg_name);
 		switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
