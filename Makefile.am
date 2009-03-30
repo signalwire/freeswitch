@@ -165,12 +165,15 @@ MOD_LINK       = $(BASE)/libfreeswitch.la
 CLEANFILES     = src/include/switch_version.h src/include/switch_swigable_cpp.h
 BUILT_SOURCES  = src/include/switch_version.h src/include/switch_swigable_cpp.h
 
-bin_PROGRAMS = freeswitch fs_cli
+bin_PROGRAMS = freeswitch fs_cli fs_ivrd
+fs_ivrd_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/ivrd.c
 fs_cli_SOURCES = libs/esl/src/esl.c libs/esl/src/esl_config.c libs/esl/src/esl_event.c libs/esl/src/esl_threadmutex.c libs/esl/fs_cli.c
 freeswitch_SOURCES = src/switch.c
 nodist_freeswitch_SOURCES = src/include/switch_version.h
 fs_cli_CFLAGS = $(AM_CFLAGS) -Ilibs/esl/src/include 
 fs_cli_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
+fs_ivrd_CFLAGS = $(AM_CFLAGS) -Ilibs/esl/src/include 
+fs_ivrd_LDFLAGS = $(AM_LDFLAGS) -lpthread $(ESL_LDFLAGS)
 freeswitch_CFLAGS = $(AM_CFLAGS) $(CORE_CFLAGS)
 freeswitch_LDFLAGS = $(AM_LDFLAGS) -rpath $(libdir)
 freeswitch_LDADD = libfreeswitch.la libs/apr/libapr-1.la
