@@ -1100,7 +1100,8 @@ SWITCH_DECLARE(void) switch_event_prep_for_delivery_detailed(const char *file, c
 SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, const char *func, int line, switch_event_t **event, void *user_data)
 {
 
-	
+	int index;
+
 	switch_assert(BLOCK != NULL);
 	switch_assert(RUNTIME_POOL != NULL);
 	switch_assert(EVENT_QUEUE_MUTEX != NULL);
@@ -1116,8 +1117,22 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 		(*event)->event_user_data = user_data;
 	}
 
+	for (;;) {
+		for (index = (*event)->priority; index < 3; index++) {
+			if (switch_queue_trypush(EVENT_QUEUE[index], *event) == SWITCH_STATUS_SUCCESS) {
+				if (index != (*event)->priority) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "queued event at a lower priority!\n");
+				}
+				goto end;
+			}
+		}
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Event queue is full!\n");
+		switch_yield(100000);
+	}
 
-	switch_queue_push(EVENT_QUEUE[(*event)->priority], *event);
+ end:
+
 	*event = NULL;
 
 	return SWITCH_STATUS_SUCCESS;
