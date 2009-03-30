@@ -7,21 +7,21 @@ Name:         freeswitch
 Summary:      FreeSWITCH open source telephony platform
 License:      MPL
 Group:        Productivity/Telephony/Servers
-Version:      1.0.3
+Version:      1.0.4
 Release:      1
 URL:          http://www.freeswitch.org/
 Packager:     	Michal Bielicki
 Vendor:       	http://www.halokwadrat.de/
 Source0:      	http://files.freeswitch.org/%{name}-%{version}.tar.bz2
 Source1:	http://svn.freeswitch.org/downloads/libs/celt-0.5.1.tar.gz
-Source2:	http://svn.freeswitch.org/downloads/libs/flite-1.3.99.tar.gz
+Source2:	http://svn.freeswitch.org/downloads/libs/flite-1.3.99-latest.tar.gz
 Source3:	http://svn.freeswitch.org/downloads/libs/lame-3.97.tar.gz
 Source4:	http://svn.freeswitch.org/downloads/libs/libshout-2.2.2.tar.gz
 Source5:	http://svn.freeswitch.org/downloads/libs/mpg123.tar.gz
 Source6:	http://svn.freeswitch.org/downloads/libs/openldap-2.4.11.tar.gz
-Source7:	http://svn.freeswitch.org/downloads/libs/pocketsphinx-0.5.99.tar.gz
+Source7:	http://svn.freeswitch.org/downloads/libs/pocketsphinx-0.5.99-latest.tar.gz
 Source8:	http://svn.freeswitch.org/downloads/libs/soundtouch-1.3.1.tar.gz
-Source9:	http://svn.freeswitch.org/downloads/libs/sphinxbase-0.4.99.tar.gz
+Source9:	http://svn.freeswitch.org/downloads/libs/sphinxbase-0.4.99-latest.tar.gz
 Source10:	http://files.freeswitch.org/freeswitch-sounds-music-8000-1.0.7.tar.gz
 Source11:	http://files.freeswitch.org/freeswitch-sounds-music-16000-1.0.7.tar.gz
 Source12:	http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.7.tar.gz
@@ -61,16 +61,13 @@ BuildRequires: libvorbis-devel
 BuildRequires: libtiff-devel
 #BuildRequires: mono-devel
 BuildRequires: alsa-lib-devel
+BuildRequires: which
+BuildRequires: zlib-devel
 
 %if %{?suse_version:1}0
 %if 0%{?suse_version} > 910
 #BuildRequires: autogen
 %endif
-%endif
-
-# Fedora doesn't seem to have 'which' as part of the base system
-%if %{?fedora_version:1}0
-BuildRequires: which
 %endif
 
 %if 0%{?suse_version} > 800
