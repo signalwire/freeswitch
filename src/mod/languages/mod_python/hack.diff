@@ -1,6 +1,26 @@
---- mod_python_wrap.cpp	2008-07-16 17:05:18.000000000 -0400
-+++ old.cpp	2008-07-16 17:05:07.000000000 -0400
-@@ -8621,20 +8621,20 @@
+--- mod_python_wrap.cpp.orig	2009-03-21 11:37:16.000000000 +0100
++++ mod_python_wrap.cpp	2009-03-21 11:33:18.000000000 +0100
+@@ -5469,7 +5469,9 @@
+     SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "EventConsumer_pop" "', argument " "2"" of type '" "int""'");
+   } 
+   arg2 = static_cast< int >(val2);
++  Py_BEGIN_ALLOW_THREADS;
+   result = (Event *)(arg1)->pop(arg2);
++  Py_END_ALLOW_THREADS;
+   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 |  0 );
+   return resultobj;
+ fail:
+@@ -5491,7 +5493,9 @@
+     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "EventConsumer_pop" "', argument " "1"" of type '" "EventConsumer *""'"); 
+   }
+   arg1 = reinterpret_cast< EventConsumer * >(argp1);
++  Py_BEGIN_ALLOW_THREADS;
+   result = (Event *)(arg1)->pop();
++  Py_END_ALLOW_THREADS;
+   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_Event, 0 |  0 );
+   return resultobj;
+ fail:
+@@ -9206,20 +9210,20 @@
  }
  
  
@@ -24,7 +44,7 @@
    PyObject *resultobj = 0;
    char *arg1 = (char *) 0 ;
    CoreSession *arg2 = (CoreSession *) 0 ;
-@@ -8659,7 +8659,7 @@
+@@ -9244,7 +9248,7 @@
    }
    arg2 = reinterpret_cast< CoreSession * >(argp2);
    result = (PYTHON::Session *)new PYTHON::Session(arg1,arg2);
@@ -33,7 +53,7 @@
    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
    return resultobj;
  fail:
-@@ -8668,7 +8668,7 @@
+@@ -9253,7 +9257,7 @@
  }
  
  
@@ -42,7 +62,7 @@
    PyObject *resultobj = 0;
    char *arg1 = (char *) 0 ;
    PYTHON::Session *result = 0 ;
-@@ -8684,7 +8684,7 @@
+@@ -9269,7 +9273,7 @@
    }
    arg1 = reinterpret_cast< char * >(buf1);
    result = (PYTHON::Session *)new PYTHON::Session(arg1);
@@ -51,7 +71,7 @@
    if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
    return resultobj;
  fail:
-@@ -8693,7 +8693,7 @@
+@@ -9278,7 +9282,7 @@
  }
  
  
@@ -60,7 +80,7 @@
    PyObject *resultobj = 0;
    switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
    PYTHON::Session *result = 0 ;
-@@ -8708,7 +8708,7 @@
+@@ -9293,7 +9297,7 @@
    }
    arg1 = reinterpret_cast< switch_core_session_t * >(argp1);
    result = (PYTHON::Session *)new PYTHON::Session(arg1);
