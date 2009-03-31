@@ -31,6 +31,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+//#define IODEBUG
+
 #include "openzap.h"
 #include "lpwrap_pri.h"
 #ifndef HAVE_GETTIMEOFDAY
@@ -123,8 +125,14 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	memset(&((unsigned char*)buf)[res],0,2);
 	res+=2;
 
-	//print_bits(buf, res-2, bb, sizeof(bb), 1, 0);
-	//zap_log(ZAP_LOG_DEBUG, "READ %d\n", res-2);
+#ifdef IODEBUG
+	{
+		char bb[2048] = { 0 };
+
+		print_hex_bytes(buf, res - 2, bb, sizeof(bb));
+		zap_log(ZAP_LOG_DEBUG, "READ %d\n", res-2);
+	}
+#endif
 
 	return res;
 }
@@ -137,11 +145,17 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 	if (zap_channel_write(spri->dchan, buf, buflen, &len) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_CRIT, "span %d D-WRITE FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
-        return -1;
+	        return -1;
 	}
-	
-	//print_bits(buf, (int)buflen-2, bb, sizeof(bb), 1, 0);
-	//zap_log(ZAP_LOG_DEBUG, "WRITE %d\n", (int)buflen-2);
+
+#ifdef IODEBUG
+	{
+		char bb[2048] = { 0 };
+
+		print_hex_bytes(buf, buflen - 2, bb, sizeof(bb));
+		zap_log(ZAP_LOG_DEBUG, "WRITE %d\n", (int)buflen-2);
+	}
+#endif
 
 	return (int) buflen;
 }
