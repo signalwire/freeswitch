@@ -56,6 +56,7 @@ struct fifo_node {
 	switch_memory_pool_t *pool;
 	int has_outbound;
 	int ready;
+	int is_static;
 };
 
 typedef struct fifo_node fifo_node_t;
@@ -1756,7 +1757,7 @@ static switch_status_t load_config(int reload, int del_all)
 		void *val;
 		for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
-			if ((node = (fifo_node_t *) val)) {
+			if ((node = (fifo_node_t *) val) && node->is_static) {
 				node->ready = 0;
 			}
 		}
@@ -1845,6 +1846,7 @@ static switch_status_t load_config(int reload, int del_all)
 				
 			}
 			node->ready = 1;
+			node->is_static = 1;
 			switch_mutex_unlock(node->mutex);
 			
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%s configured\n", node->name);
@@ -1862,10 +1864,9 @@ static switch_status_t load_config(int reload, int del_all)
 		for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_next(hi)) {
 			int x = 0;
 			switch_hash_this(hi, NULL, NULL, &val);
-			if (!(node = (fifo_node_t *) val) || node->ready) {
+			if (!(node = (fifo_node_t *) val) || !node->is_static || node->ready) {
 				continue;
 			}
-
 
 			if (node_consumer_wait_count(node) || node->consumer_count || node_idle_consumers(node)) {
 				node->ready = 1;
