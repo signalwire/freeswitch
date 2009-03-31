@@ -3695,27 +3695,6 @@ SWITCH_STANDARD_API(launch_async)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-static void message_query_handler(switch_event_t *event)
-{
-	char *account = switch_event_get_header(event, "message-account");
-
-	if (account) {
-		char *path, *cmd;
-
-		path = switch_mprintf("%s%smwi.js", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
-		switch_assert(path != NULL);
-
-		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
-			cmd = switch_mprintf("%s %s", path, account);
-			switch_assert(cmd != NULL);
-			js_thread_launch(cmd);
-			switch_safe_free(cmd);
-		}
-
-		switch_safe_free(path);
-	}
-}
-
 SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 {
 	switch_application_interface_t *app_interface;
@@ -3723,12 +3702,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_spidermonkey_load)
 
 	if ((status = init_js()) != SWITCH_STATUS_SUCCESS) {
 		return status;
-	}
-
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL, &globals.node)
-		!= SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
 	}
 
 	/* connect my internal structure to the blank pointer passed to me */

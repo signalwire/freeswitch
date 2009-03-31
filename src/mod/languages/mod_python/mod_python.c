@@ -333,26 +333,6 @@ int py_thread(const char *text)
 	return 0;
 }
 
-static void message_query_handler(switch_event_t *event)
-{
-	char *account = switch_event_get_header(event, "message-account");
-
-	if (account) {
-		char *path, *cmd;
-		
-		path = switch_mprintf("%s%smwi.py", SWITCH_GLOBAL_dirs.script_dir, SWITCH_PATH_SEPARATOR);
-		switch_assert(path != NULL);
-		
-		if (switch_file_exists(path, NULL) == SWITCH_STATUS_SUCCESS) {
-			cmd = switch_mprintf("%s %s", path, account);
-			switch_assert(cmd != NULL);
-			py_thread(cmd);
-			switch_safe_free(cmd);
-		}
-		switch_safe_free(path);
-	}
-}
-
 SWITCH_STANDARD_API(launch_python)
 {
 
@@ -371,12 +351,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_python_load)
 	switch_api_interface_t *api_interface;
 	switch_application_interface_t *app_interface;
 	char *pp = getenv("PYTHONPATH");
-
-	if (switch_event_bind_removable(modname, SWITCH_EVENT_MESSAGE_QUERY, SWITCH_EVENT_SUBCLASS_ANY, message_query_handler, NULL, &globals.node)
-		!= SWITCH_STATUS_SUCCESS) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
-		return SWITCH_STATUS_GENERR;
-	}
 
 	if (pp) {
 		char *path = switch_mprintf("%s:%s", pp, SWITCH_GLOBAL_dirs.script_dir);
