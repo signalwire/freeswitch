@@ -3319,10 +3319,8 @@ msg_t *nta_msg_create_for_transport(nta_agent_t *agent, int flags,
 
   msg_maxsize(msg, agent->sa_maxsize);
 
-  if (1 || agent->sa_preload) {
-	  isize_t preload = (dlen + agent->sa_preload + 1023) & ~1023;
-	  su_home_preload(msg_home(msg), 1, preload);
-  }
+  if (agent->sa_preload)
+    su_home_preload(msg_home(msg), 1, dlen + agent->sa_preload);
 
   return msg;
 }
