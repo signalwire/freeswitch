@@ -164,15 +164,16 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_syslog_load)
 	setlogmask(LOG_UPTO(LOG_DEBUG));
 	switch_log_bind_logger(mod_syslog_logger, log_level, SWITCH_FALSE);
 
-	switch_safe_free(globals.ident);
-	switch_safe_free(globals.format);
-
 	return SWITCH_STATUS_SUCCESS;
 }
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_syslog_shutdown)
 {
 	closelog();
+
+	switch_safe_free(globals.ident);
+	switch_safe_free(globals.format);
+
 	switch_log_unbind_logger(mod_syslog_logger);
 
 	return SWITCH_STATUS_SUCCESS;
