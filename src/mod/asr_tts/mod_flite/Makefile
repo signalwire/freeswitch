@@ -17,7 +17,7 @@ $(FLITE_DIR):
 	$(GETLIB) $(FLITE)-latest.tar.gz
 
 $(FLITE_DIR)/Makefile: $(FLITE_DIR)
-	cd $(FLITE_DIR) && ./configure --without-audio --with-pic --disable-shared
+	cd $(FLITE_DIR) && CFLAGS="`echo $(CFLAGS) | sed -e 's:-std=c99::'`" ./configure --without-audio --with-pic --disable-shared
 	$(TOUCH_TARGET)
 
 $(FLITE_A): $(FLITE_DIR) $(FLITE_DIR)/Makefile
