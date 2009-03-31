@@ -2997,24 +2997,34 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 		}
 	}
 	
-	switch_channel_get_variables(channel, &vars);
-	status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars, 
-						switch_core_session_get_pool(session), caller_id_name, caller_id_number, SWITCH_FALSE);
-	switch_event_destroy(&vars);
-	if (status == SWITCH_STATUS_SUCCESS) {
-		if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
-			char *cmd = switch_core_session_sprintf(session, "%s %s %s %s", vm_cc, file_path, caller_id_number, caller_id_name);
-			if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
-			}
-		}
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to deliver message\n");
-		TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
-	}
+	switch_event_t *params = NULL;
+	
+	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+	switch_assert(params);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", id);
 
+	if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
+							   &x_domain_root, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+	
+		switch_channel_get_variables(channel, &vars);
+		status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars, 
+							switch_core_session_get_pool(session), caller_id_name, caller_id_number, SWITCH_FALSE);
+		switch_event_destroy(&vars);
+		if (status == SWITCH_STATUS_SUCCESS) {
+			if ((vm_cc = switch_channel_get_variable(channel, "vm_cc"))) {
+				char *cmd = switch_core_session_sprintf(session, "%s %s %s %s", vm_cc, file_path, caller_id_number, caller_id_name);
+				if (voicemail_inject(cmd) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Sent Carbon Copy to %s\n", vm_cc);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to Carbon Copy to %s\n", vm_cc);
+				}
+			}
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to deliver message\n");
+			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
+		}
+	}
+	switch_event_destroy(&params);
   end:
 
 	if (x_domain_root) {
