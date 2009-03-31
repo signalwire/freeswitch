@@ -181,6 +181,7 @@ typedef enum {
 	PFLAG_MANAGE_SHARED_APPEARANCE,
 	PFLAG_DISABLE_SRV,
 	PFLAG_DISABLE_NAPTR,
+	PFLAG_AUTOFLUSH,
 
 	/* No new flags below this line */
 	PFLAG_MAX

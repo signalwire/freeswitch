@@ -2054,6 +2054,12 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		flags |= SWITCH_RTP_FLAG_PASS_RFC2833;
 	}
 
+
+	if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFLUSH)
+		|| ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_autoflush")) && switch_true(val))) {
+		flags |= SWITCH_RTP_FLAG_AUTOFLUSH;
+	}
+
 	if (!(sofia_test_pflag(tech_pvt->profile, PFLAG_REWRITE_TIMESTAMPS) ||
 		  ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_rewrite_timestamps")) && !switch_true(val)))) {
 		flags |= SWITCH_RTP_FLAG_RAW_WRITE;
