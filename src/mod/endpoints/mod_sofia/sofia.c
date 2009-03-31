@@ -640,7 +640,8 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 	uint32_t gateway_loops = 0;
 	int loops = 0;
 	uint32_t qsize;
-
+	void *pop;
+	
 	ireg_loops = IREG_SECONDS;
 	gateway_loops = GATEWAY_SECONDS;
 
@@ -652,7 +653,6 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 
 	while ((mod_sofia_globals.running == 1 && sofia_test_pflag(profile, PFLAG_RUNNING)) || qsize) {
 		if (qsize) {
-			void *pop;
 			switch_mutex_lock(profile->ireg_mutex);
 			while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 				sofia_glue_actually_execute_sql(profile, SWITCH_TRUE, (char *) pop, NULL);
@@ -675,9 +675,16 @@ void *SWITCH_THREAD_FUNC sofia_profile_worker_thread_run(switch_thread_t *thread
 			loops = 0;
 		}
 
-		switch_yield(10000);
+		switch_cond_next();
 		qsize = switch_queue_size(profile->sql_queue);
 	}
+
+	switch_mutex_lock(profile->ireg_mutex);
+	while (switch_queue_trypop(profile->sql_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		sofia_glue_actually_execute_sql(profile, SWITCH_TRUE, (char *) pop, NULL);
+		free(pop);
+	}
+	switch_mutex_unlock(profile->ireg_mutex);
 
 	sofia_clear_pflag_locked(profile, PFLAG_WORKER_RUNNING);
 
