@@ -94,11 +94,11 @@ static uint32_t parse_opts(const char *in)
 static int parse_debug(const char *in)
 {
 	int flags = 0;
-	
+
 	if (!in) {
 		return 0;
 	}
-	
+
 	if (strstr(in, "q921_raw")) {
 		flags |= PRI_DEBUG_Q921_RAW;
 	}
@@ -118,13 +118,9 @@ static int parse_debug(const char *in)
 	if (strstr(in, "q931_dump")) {
 		flags |= PRI_DEBUG_Q931_DUMP;
 	}
-	
+
 	if (strstr(in, "q931_state")) {
 		flags |= PRI_DEBUG_Q931_STATE;
-	}
-
-	if (strstr(in, "q931_anomaly")) {
-		flags |= PRI_DEBUG_Q931_ANOMALY;
 	}
 
 	if (strstr(in, "q931_anomaly")) {
