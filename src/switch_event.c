@@ -1119,9 +1119,10 @@ SWITCH_DECLARE(switch_status_t) switch_event_fire_detailed(const char *file, con
 
 	for (;;) {
 		for (index = (*event)->priority; index < 3; index++) {
+			int was = (*event)->priority;
 			if (switch_queue_trypush(EVENT_QUEUE[index], *event) == SWITCH_STATUS_SUCCESS) {
-				if (index != (*event)->priority) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "queued event at a lower priority!\n");
+				if (index != was) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "queued event at a lower priority %d/%d!\n", index, was);
 				}
 				goto end;
 			}
