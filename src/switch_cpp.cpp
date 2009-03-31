@@ -97,6 +97,10 @@ SWITCH_DECLARE_CONSTRUCTOR EventConsumer::~EventConsumer()
 		switch_event_unbind(&node);
 	}
 
+	if (events) {
+		switch_queue_interrupt_all(events);
+	}
+
 	switch_core_destroy_memory_pool(&pool);
 }
 
