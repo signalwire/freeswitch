@@ -385,6 +385,7 @@ SWITCH_STANDARD_APP(eavesdrop_function)
 				switch_safe_free(e_data.uuid_list[x]);
 			}
 
+			free(sql);
 			switch_core_db_close(db);
 
 		} else {

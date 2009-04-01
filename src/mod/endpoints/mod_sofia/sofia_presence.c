@@ -1113,8 +1113,8 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 		const char *from_id = switch_str_nil(switch_event_get_header(helper->event, "Other-Leg-Caller-ID-Number"));
 		const char *to_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_to_user"));
 		const char *from_user = switch_str_nil(switch_event_get_header(helper->event, "variable_sip_from_user"));
-		const char *clean_to_user = NULL;
-		const char *clean_from_user = NULL;
+		char *clean_to_user = NULL;
+		char *clean_from_user = NULL;
 		const char *p_to_user = switch_str_nil(switch_event_get_header(helper->event, "to-user"));
 #if 0
 		char *buf;
@@ -1221,6 +1221,9 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 						stream.write_function(&stream, "</remote>\n");
 					}
 				}
+
+				switch_safe_free(clean_to_user);
+				switch_safe_free(clean_from_user);
 			}
 			if (is_dialog) {
 				stream.write_function(&stream, "</dialog>\n");

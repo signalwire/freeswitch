@@ -276,7 +276,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 						status = switch_ivr_play_file(session, NULL, odata, args);
 					} else if (!strcasecmp(func, "break")) {
 						done = 1;
-						break;
+						/* must allow the switch_safe_free below to execute or we leak - do not break here */
 					} else if (!strcasecmp(func, "execute")) {
 						switch_application_interface_t *app;
 						char *cmd, *cmd_args;
