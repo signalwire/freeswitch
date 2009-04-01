@@ -96,24 +96,11 @@ static switch_xml_config_item_t instructions[] = {
 
 static switch_status_t do_config(switch_bool_t reload)
 {
-	switch_xml_t cfg, xml, settings;
-
 	memset(&globals, 0, sizeof(globals));
 
-	if (!(xml = switch_xml_open_cfg("skel.conf", &cfg, NULL))) {
+	if (switch_xml_config_parse_module_settings("skel.conf", SWITCH_FALSE, instructions) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open skel.conf\n");
 		return SWITCH_STATUS_FALSE;
-	}
-
-	if ((settings = switch_xml_child(cfg, "settings"))) {
-		if (switch_xml_config_parse(switch_xml_child(settings, "param"), 0, instructions) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"Config parsed ok!\n");
-			return SWITCH_STATUS_SUCCESS;
-		}
-	}
-	
-	if (xml) {
-		switch_xml_free(xml);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
