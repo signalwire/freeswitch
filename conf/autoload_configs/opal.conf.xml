@@ -4,6 +4,9 @@
     <param name="context" value="default"/>
     <param name="dialplan" value="XML"/>
     <param name="codec-prefs" value="PCMU"/>
+    <param name="gk-address" value=""/>    <!-- empty to disable, "*" to search LAN -->
+    <param name="gk-identifer" value=""/>  <!-- optional name of gk -->
+    <param name="gk-interface" value=""/>  <!-- optional listener interface name -->
   </settings>
   <listeners>
     <listener name="default">

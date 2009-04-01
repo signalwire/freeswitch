@@ -111,7 +111,11 @@ class FSManager : public OpalManager {
 
     H323EndPoint *m_h323ep;
     IAX2EndPoint *m_iaxep;
-    FSEndPoint *m_fsep;
+    FSEndPoint   *m_fsep;
+
+    PString m_gkAddress;
+    PString m_gkIdentifer;
+    PString m_gkInterface;
 
     list < FSListener > m_listeners;
 };

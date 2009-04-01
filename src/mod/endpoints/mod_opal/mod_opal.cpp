@@ -25,6 +25,7 @@
 #include "mod_opal.h"
 #include <opal/patch.h>
 #include <h323/h323pdu.h>
+#include <h323/gkclient.h>
 
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_string, mod_opal_globals.codec_string);
 SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_context, mod_opal_globals.context);
@@ -364,6 +365,18 @@ bool FSManager::Initialise(switch_loadable_module_interface_t *iface)
       }
     }
 
+    if (!m_gkAddress.IsEmpty()) {
+      if (m_h323ep->UseGatekeeper(m_gkAddress, m_gkIdentifer, m_gkInterface))
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Started gatekeeper: %s\n",
+                          (const char *)m_h323ep->GetGatekeeper()->GetName());
+      else
+        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR,
+                          "Could not start gatekeeper: addr=\"%s\", id=\"%s\", if=\"%s\"\n",
+                          (const char *)m_gkAddress,
+                          (const char *)m_gkIdentifer,
+                          (const char *)m_gkInterface);
+    }
+
     return TRUE;
 }
 
@@ -391,38 +404,43 @@ switch_status_t FSManager::ReadConfig(int reload)
     if (xml == NULL) {
         switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "open of %s failed\n", cf);
         return SWITCH_STATUS_FALSE;
-    } else {
-        switch_xml_t xmlSettings = switch_xml_child(cfg, "settings");
-        if (xmlSettings) {
-            for (switch_xml_t xmlParam = switch_xml_child(xmlSettings, "param"); xmlParam != NULL; xmlParam = xmlParam->next) {
-                const char *var = switch_xml_attr_soft(xmlParam, "name");
-                const char *val = switch_xml_attr_soft(xmlParam, "value");
+    }
 
-                if (!strcasecmp(var, "trace-level")) {
-                    int level = atoi(val);
-                    if (level > 0) {
-                        mod_opal_globals.trace_level = level;
-                    }
-                } else if (!strcasecmp(var, "context")) {
-                    set_global_context(val);
-                } else if (!strcasecmp(var, "dialplan")) {
-                    set_global_dialplan(val);
-                } else if (!strcasecmp(var, "codec-prefs")) {
-                    set_global_codec_string(val);
-                } else if (!strcasecmp(var, "jitter-size")) {
-                    char * next;
-                    unsigned minJitter = strtoul(val, &next, 10);
-                    if (minJitter >= 10) {
-                        unsigned maxJitter = minJitter;
-                        if (*next == ',')
-                          maxJitter = atoi(next+1);
-                        SetAudioJitterDelay(minJitter, maxJitter); // In milliseconds
-                    }
+    switch_xml_t xmlSettings = switch_xml_child(cfg, "settings");
+    if (xmlSettings) {
+        for (switch_xml_t xmlParam = switch_xml_child(xmlSettings, "param"); xmlParam != NULL; xmlParam = xmlParam->next) {
+            const char *var = switch_xml_attr_soft(xmlParam, "name");
+            const char *val = switch_xml_attr_soft(xmlParam, "value");
+
+            if (!strcasecmp(var, "trace-level")) {
+                int level = atoi(val);
+                if (level > 0) {
+                    mod_opal_globals.trace_level = level;
                 }
+            } else if (!strcasecmp(var, "context")) {
+                set_global_context(val);
+            } else if (!strcasecmp(var, "dialplan")) {
+                set_global_dialplan(val);
+            } else if (!strcasecmp(var, "codec-prefs")) {
+                set_global_codec_string(val);
+            } else if (!strcasecmp(var, "jitter-size")) {
+                char * next;
+                unsigned minJitter = strtoul(val, &next, 10);
+                if (minJitter >= 10) {
+                    unsigned maxJitter = minJitter;
+                    if (*next == ',')
+                      maxJitter = atoi(next+1);
+                    SetAudioJitterDelay(minJitter, maxJitter); // In milliseconds
+                }
+            } else if (!strcasecmp(var, "gk-address")) {
+                m_gkAddress = val;
+            } else if (!strcasecmp(var, "gk-identifer")) {
+                m_gkIdentifer = val;
+            } else if (!strcasecmp(var, "gk-interface")) {
+                m_gkInterface = val;
             }
         }
     }
-
 
     switch_xml_t xmlListeners = switch_xml_child(cfg, "listeners");
     if (xmlListeners != NULL) {
