@@ -58,6 +58,7 @@ static struct {
 
 static switch_status_t config_callback_memcached(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed) 
 {
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	memcached_server_st *memcached_server = NULL;
 	memcached_st *newmemcached = NULL;
 	memcached_st *oldmemcached = NULL;
@@ -73,7 +74,7 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 		memcached_server = memcached_servers_parse(memcached_str);
 		if (!memcached_server) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to initialize memcached data structure (server_list).\n");
-			goto error;
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
 		
 		if ((servercount = memcached_server_list_count(memcached_server)) == 0) {
@@ -86,12 +87,12 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 		newmemcached = memcached_create(NULL);
 		if (!newmemcached) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Unable to initialize memcached data structure (memcached_st).\n");
-			goto error;
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
 		rc = memcached_server_push(newmemcached, memcached_server);
 		if (rc != MEMCACHED_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memcache error adding server list: %s\n", memcached_strerror(newmemcached, rc));
-			goto error;
+			switch_goto_status(SWITCH_STATUS_GENERR, end);
 		}
 		/* memcached_behavior_set(newmemcached, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL, 1); */
 		
@@ -101,18 +102,10 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 		newmemcached = NULL;
 	}
 	
-	if (memcached_server) {
-		memcached_server_list_free(memcached_server);
-	}
-	if (newmemcached) {
-		memcached_free(newmemcached);
-	}
-	if (oldmemcached) {
-		memcached_free(oldmemcached);
-	}
-	return SWITCH_STATUS_SUCCESS;
+	switch_goto_status(SWITCH_STATUS_SUCCESS, end);
+	
 
-error:
+end:
 	if (memcached_server) {
 		memcached_server_list_free(memcached_server);
 	}
@@ -122,10 +115,10 @@ error:
 	if (oldmemcached) {
 		memcached_free(oldmemcached);
 	}
-	return SWITCH_STATUS_GENERR;
+	return status;
 }
 
-static switch_xml_config_string_options_t config_opt_memcache_servers = {NULL, 0, ".*"}; /* anything is ok here */
+static switch_xml_config_string_options_t config_opt_memcache_servers = {NULL, 0, NULL}; /* anything is ok here */
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
@@ -136,24 +129,12 @@ static switch_xml_config_item_t instructions[] = {
 
 static switch_status_t do_config(switch_bool_t reload)
 {
-	switch_xml_t cfg, xml, settings;
-
 	memset(&globals, 0, sizeof(globals));
-
-	if (!(xml = switch_xml_open_cfg("memcache.conf", &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open memcache.conf\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	if ((settings = switch_xml_child(cfg, "settings"))) {
-		if (switch_xml_config_parse(switch_xml_child(settings, "param"), 0, instructions) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE,"Config parsed ok!\n");
-		}
+	
+	if (switch_xml_config_parse_module_settings("memcache.conf", SWITCH_FALSE, instructions) != SWITCH_STATUS_SUCCESS) {
+		return SWITCH_STATUS_GENERR;
 	}
 	
-	if (xml) {
-		switch_xml_free(xml);
-	}
 	
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -230,6 +211,7 @@ SWITCH_STANDARD_API(memcache_function)
 			} else {
 				stream->write_function(stream, "-ERR Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
 			}
+			switch_safe_free(val);
 		} else if (!strcasecmp(subcmd, "getflags") && argc > 1) {
 			key = argv[1];
 			
@@ -239,6 +221,7 @@ SWITCH_STANDARD_API(memcache_function)
 			} else {
 				stream->write_function(stream, "-ERR Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
 			}
+			switch_safe_free(val);
 		} else if ((!strcasecmp(subcmd, "increment") || !strcasecmp(subcmd, "decrement")) && argc > 1) {
 			key = argv[1];
 			uint64_t ivalue;
