@@ -74,14 +74,26 @@ typedef struct {
  
 static char limit_sql[] =
 	"CREATE TABLE limit_data (\n"
-	"   hostname   VARCHAR(255),\n" "   realm      VARCHAR(255),\n" "   id         VARCHAR(255),\n" "   uuid       VARCHAR(255)\n" ");\n";
+	"   hostname   VARCHAR(255),\n"
+	"   realm      VARCHAR(255),\n"
+	"   id         VARCHAR(255),\n"
+	"   uuid       VARCHAR(255)\n"
+	");\n";
 
 static char db_sql[] =
 	"CREATE TABLE db_data (\n"
-	"   hostname   VARCHAR(255),\n" "   realm      VARCHAR(255),\n" "   data_key   VARCHAR(255),\n" "   data       VARCHAR(255)\n" ");\n";
+	"   hostname   VARCHAR(255),\n"
+	"   realm      VARCHAR(255),\n"
+	"   data_key   VARCHAR(255),\n"
+	"   data       VARCHAR(255)\n"
+	");\n";
 
 static char group_sql[] =
-	"CREATE TABLE group_data (\n" "   hostname   VARCHAR(255),\n" "   groupname  VARCHAR(255),\n" "   url        VARCHAR(255)\n" ");\n";
+	"CREATE TABLE group_data (\n"
+	"   hostname   VARCHAR(255),\n"
+	"   groupname  VARCHAR(255),\n"
+	"   url        VARCHAR(255)\n"
+	");\n";
 
 static switch_status_t limit_execute_sql(char *sql, switch_mutex_t *mutex)
 {
