@@ -348,7 +348,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_new_memory_pool(switch_memor
 #ifdef DEBUG_ALLOC2
 	switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_CONSOLE, "New Pool\n");
 #endif
-	tmp = switch_core_sprintf(*pool, "%s:%d", func, line);
+	tmp = switch_core_sprintf(*pool, "%s:%d", file, line);
 	apr_pool_tag(*pool, tmp);
 
 
@@ -576,6 +576,7 @@ switch_memory_pool_t *switch_core_memory_init(void)
 	apr_allocator_mutex_set(my_allocator, my_mutex);
 	apr_pool_mutex_set(memory_manager.memory_pool, my_mutex);
 	apr_allocator_owner_set(my_allocator, memory_manager.memory_pool);
+	apr_pool_tag(memory_manager.memory_pool, "core_pool");
 #else
 	apr_pool_create(&memory_manager.memory_pool, NULL);
 	switch_assert(memory_manager.memory_pool != NULL);
