@@ -4727,6 +4727,13 @@ SWITCH_STANDARD_APP(conference_function)
 		launch_conference_thread(conference);
 
 	} else {
+		int enforce_security = !switch_channel_test_flag(channel, CF_OUTBOUND);
+		const char *pvar = switch_channel_get_variable(channel, "conference_enforce_security");
+
+		if (pvar) {
+			enforce_security = switch_true(pvar);
+		}
+
 		/* if the conference exists, get the pointer to it */
 		if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
 			/* couldn't find the conference, create one */
@@ -4763,7 +4770,7 @@ SWITCH_STANDARD_APP(conference_function)
 		rl++;
 
 		/* if this is not an outbound call, deal with conference pins */
-		if (!switch_channel_test_flag(channel, CF_OUTBOUND) && conference->pin && *(conference->pin)) {
+		if (enforce_security && conference->pin && *(conference->pin)) {
 			char pin_buf[80] = "";
 			int pin_retries = 3;	/* XXX - this should be configurable - i'm too lazy to do it right now... */
 			int pin_valid = 0;
@@ -4815,7 +4822,7 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 
 		/* don't allow more callers if the conference is locked, unless we invited them */
-		if (switch_test_flag(conference, CFLAG_LOCKED) && !switch_channel_test_flag(channel, CF_OUTBOUND)) {
+		if (switch_test_flag(conference, CFLAG_LOCKED) && enforce_security) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Conference %s is locked.\n", conf_name);
 			if (conference->locked_sound) {
 				/* Answer the channel */
