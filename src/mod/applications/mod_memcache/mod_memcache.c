@@ -45,7 +45,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load);
 SWITCH_MODULE_DEFINITION(mod_memcache, mod_memcache_load, mod_memcache_shutdown, NULL);
 
 static char *SYNTAX = "memcache <set|replace|add> <key> <value> [expiration [flags]]\n"
-  "memcache <getflags> <key>\n"
+  "memcache <get|getflags> <key>\n"
   "memcache <delete> <key>\n"
   "memcache <increment|decrement> <key> [offset]\n"
   "memcache <flush>\n"
