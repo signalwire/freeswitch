@@ -141,6 +141,7 @@ static switch_status_t do_config(switch_bool_t reload)
 
 SWITCH_STANDARD_API(memcache_function)
 {
+	switch_status_t status;
 	char *argv[5] = { 0 };
 	int argc;
 	char *subcmd = NULL;
@@ -301,22 +302,21 @@ SWITCH_STANDARD_API(memcache_function)
 			goto usage;
 		}
 	}
+	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 	
+usage:
+	stream->write_function(stream, "-ERR\n%s\n", SYNTAX);
+	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+	
+done: 
 	if (memcached) {
 		memcached_quit(memcached);
 		memcached_free(memcached);
 	}
 	switch_safe_free(mydata);
 	switch_safe_free(stat);
-	return SWITCH_STATUS_SUCCESS;
-usage:
-	if (memcached) {
-		memcached_quit(memcached);
-		memcached_free(memcached);
-	}
-	switch_safe_free(mydata);
-	stream->write_function(stream, "-ERR\n%s\n", SYNTAX);
-	return SWITCH_STATUS_SUCCESS;
+	
+	return status;
 }
 
 /* Macro expands to: switch_status_t mod_memcache_load(switch_loadable_module_interface_t **module_interface, switch_memory_pool_t *pool) */
