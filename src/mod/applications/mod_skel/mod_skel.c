@@ -112,8 +112,8 @@ static switch_status_t do_config(switch_bool_t reload)
 		}
 	}
 	
-	if (cfg) {
-		switch_xml_free(cfg);
+	if (xml) {
+		switch_xml_free(xml);
 	}
 	
 	return SWITCH_STATUS_SUCCESS;
