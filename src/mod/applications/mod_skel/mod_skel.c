@@ -98,7 +98,7 @@ static switch_status_t do_config(switch_bool_t reload)
 {
 	memset(&globals, 0, sizeof(globals));
 
-	if (switch_xml_config_parse_module_settings("skel.conf", SWITCH_FALSE, instructions) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_config_parse_module_settings("skel.conf", reload, instructions) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Could not open skel.conf\n");
 		return SWITCH_STATUS_FALSE;
 	}
