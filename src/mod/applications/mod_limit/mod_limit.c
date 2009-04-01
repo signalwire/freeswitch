@@ -315,7 +315,7 @@ static switch_status_t db_state_handler(switch_core_session_t *session)
 	switch_channel_state_t state = switch_channel_get_state(channel);
 	char *sql = NULL;
 
-	if (state == CS_HANGUP || state == CS_ROUTING) {
+	if (state >= CS_HANGUP || state == CS_ROUTING) {
 		sql = switch_mprintf("delete from limit_data where uuid='%q';",
 							 switch_core_session_get_uuid(session));
 		limit_execute_sql(sql, globals.mutex);
@@ -334,7 +334,7 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 	limit_hash_private_t *pvt = switch_channel_get_private(channel, "limit_hash");
 	
 	/* The call is either hung up, or is going back into the dialplan, decrement appropriate couters */
-	if (state == CS_HANGUP || state == CS_ROUTING) {	
+	if (state >= CS_HANGUP || state == CS_ROUTING) {	
 		switch_hash_index_t *hi;
 		switch_mutex_lock(globals.limit_hash_mutex);
 
