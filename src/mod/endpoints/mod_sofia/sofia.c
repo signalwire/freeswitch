@@ -92,7 +92,7 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	int sub_state;
 
 	tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
-	
+
 	/* make sure we have a proper event */
 	if (!sip || !sip->sip_event) {
 		goto error;
@@ -254,8 +254,14 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 
   error:
 
-	nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS(nua), TAG_END());
 
+	if (sip->sip_event && sip->sip_event->o_type && !strcasecmp(sip->sip_event->o_type, "message-summary")) {
+		/* unsolicited mwi, just say ok */
+		nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+	} else {
+		nua_respond(nh, 481, "Subscription Does Not Exist", NUTAG_WITH_THIS(nua), TAG_END());
+	}
+	
  end:
 	
 	if (sub_state == nua_substate_terminated) {
