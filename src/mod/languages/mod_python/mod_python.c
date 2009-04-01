@@ -57,7 +57,6 @@ SWITCH_MODULE_DEFINITION_EX(mod_python, mod_python_load, mod_python_shutdown, NU
 static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;
-	switch_event_node_t *node;
 } globals;
 
 static void eval_some_python(const char *funcname, char *args, switch_core_session_t *session, switch_stream_handle_t *stream, switch_event_t *params, char **str)
@@ -412,7 +411,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_python_shutdown)
 
 	Py_Finalize();
 	PyEval_ReleaseLock();
-	switch_event_unbind(&globals.node);
+
 	return SWITCH_STATUS_UNLOAD;
 
 }

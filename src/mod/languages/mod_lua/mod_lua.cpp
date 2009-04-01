@@ -44,7 +44,6 @@ SWITCH_MODULE_DEFINITION_EX(mod_lua, mod_lua_load, mod_lua_shutdown, NULL, SMODF
 static struct {
 	switch_memory_pool_t *pool;
 	char *xml_handler;
-	switch_event_node_t *node;
 } globals;
 
 int luaopen_freeswitch(lua_State * L);
@@ -461,7 +460,6 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_lua_load)
 
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_lua_shutdown)
 {
-	switch_event_unbind(&globals.node);
 	return SWITCH_STATUS_SUCCESS;
 }
 

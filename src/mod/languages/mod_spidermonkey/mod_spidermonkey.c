@@ -95,7 +95,6 @@ static struct {
 	FILE *gOutFile;
 	int stackDummy;
 	JSRuntime *rt;
-	switch_event_node_t *node;
 } globals;
 
 static JSClass global_class = {
@@ -3723,7 +3722,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_spidermonkey_shutdown)
 	//JS_DestroyRuntime(globals.rt);
 	
 	curl_global_cleanup();
-	switch_event_unbind(&globals.node);
+
 	switch_core_hash_destroy(&module_manager.mod_hash);
 	switch_core_hash_destroy(&module_manager.load_hash);
 	return SWITCH_STATUS_SUCCESS;

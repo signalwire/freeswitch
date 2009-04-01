@@ -54,7 +54,6 @@ static struct {
 	PerlInterpreter *my_perl;
 	switch_memory_pool_t *pool;
 	char *xml_handler;
-	switch_event_node_t *node;
 } globals;
 
 
