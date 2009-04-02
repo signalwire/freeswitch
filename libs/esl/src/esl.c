@@ -427,6 +427,7 @@ ESL_DECLARE(esl_status_t) esl_attach_handle(esl_handle_t *handle, esl_socket_t s
 ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event)
 {
 	char *txt;
+	char event_buf[256] = "";
 
 	if (!handle->connected || !event) {
 		return ESL_FAIL;
@@ -436,7 +437,9 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 
 	esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
 		
-	send(handle->sock, "sendevent\n", 10, 0);
+	snprintf(event_buf, sizeof(event_buf), "sendevent %s\n", esl_event_name(event->event_id));
+	
+	send(handle->sock, event_buf, strlen(event_buf), 0);
 	send(handle->sock, txt, strlen(txt), 0);
 	send(handle->sock, "\n\n", 2, 0);
 
