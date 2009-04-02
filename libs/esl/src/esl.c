@@ -428,11 +428,11 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 {
 	char *txt;
 
-	if (!handle->connected) {
+	if (!handle->connected || !event) {
 		return ESL_FAIL;
 	}
 
-	esl_event_serialize(handle->last_ievent, &txt, ESL_TRUE);
+	esl_event_serialize(event, &txt, ESL_TRUE);
 
 	esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
 		
