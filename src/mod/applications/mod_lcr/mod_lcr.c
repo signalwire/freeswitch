@@ -1070,8 +1070,15 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		}
 		if (lcr_do_lookup(&routes) == SWITCH_STATUS_SUCCESS) {
 			for (cur_route = routes.head; cur_route; cur_route = cur_route->next) {
-				switch_snprintf(vbuf, sizeof(vbuf), "lcr_route_%d", cnt++);
+				switch_snprintf(vbuf, sizeof(vbuf), "lcr_route_%d", cnt);
 				switch_channel_set_variable(channel, vbuf, cur_route->dialstring);
+				switch_snprintf(vbuf, sizeof(vbuf), "lcr_rate_%d", cnt);
+				switch_channel_set_variable(channel, vbuf, cur_route->rate_str);
+				switch_snprintf(vbuf, sizeof(vbuf), "lcr_carrier_%d", cnt);
+				switch_channel_set_variable(channel, vbuf, cur_route->carrier_name);
+				switch_snprintf(vbuf, sizeof(vbuf), "lcr_codec_%d", cnt);
+				switch_channel_set_variable(channel, vbuf, cur_route->codec);
+				cnt++;
 				switch_snprintf(rbp, rbl, "%s|", cur_route->dialstring);
 				last_delim = end_of_p(rbp);
 				l = strlen(cur_route->dialstring) + 1;
