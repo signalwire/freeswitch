@@ -174,6 +174,8 @@ typedef enum {
 #include <stdlib.h>
 #include <string.h>
 #ifndef WIN32
+#include <sys/types.h>
+#include <sys/select.h>
 #include <netinet/tcp.h>
 #include <sys/signal.h>
 #include <unistd.h>
