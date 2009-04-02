@@ -962,7 +962,6 @@ SWITCH_STANDARD_APP(event_function)
 	char *lbuf;
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_APPLICATION) == SWITCH_STATUS_SUCCESS) {
-		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
 			&& (argc = switch_separate_string(lbuf, ',', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 			int x = 0;
@@ -987,11 +986,24 @@ SWITCH_STANDARD_APP(event_function)
 						while (*p == ' ')
 							*p++ = '\0';
 						val = p;
-						switch_event_add_header(event, SWITCH_STACK_BOTTOM, var, "%s", val);
+						if (!strcasecmp(var,"Event-Name")) {
+							switch_name_event(val, &event->event_id);
+							switch_event_del_header(event, var);
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, var, "%s", val);
+						} else if (!strcasecmp(var,"Event-Subclass")) {
+							size_t len = strlen(val) + 1;
+							void *new = malloc(len);
+							switch_assert(new);
+							memcpy(new, val, len);
+							event->subclass_name = new;
+						} else {
+							switch_event_add_header(event, SWITCH_STACK_BOTTOM, var, "%s", val);
+						}
 					}
 				}
 			}
 		}
+		switch_channel_event_set_data(switch_core_session_get_channel(session), event);
 		switch_event_fire(&event);
 	}
 }
