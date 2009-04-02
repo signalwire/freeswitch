@@ -596,7 +596,7 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 	sofia_glue_actually_execute_sql(profile, SWITCH_FALSE, sql, NULL);
 
 
-	if (now) {
+	if (now && sofia_test_pflag(profile, PFLAG_NAT_OPTIONS_PING)) {
 		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,"
 						"expires,user_agent,server_user,server_host,profile_name"
 						" from sip_registrations where (status like '%%AUTO-NAT%%' "

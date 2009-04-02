@@ -1679,6 +1679,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTOFLUSH);
 						}
+					} else if (!strcasecmp(var, "nat-options-ping")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
+						}
 					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
 						if (!strcasecmp(val, "greedy")) {
 							sofia_set_pflag(profile, PFLAG_GREEDY);
@@ -2210,6 +2216,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_AUTOFLUSH);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTOFLUSH);
+						}
+					} else if (!strcasecmp(var, "nat-options-ping")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_NAT_OPTIONS_PING);
 						}
 					} else if (!strcasecmp(var, "inbound-codec-negotiation")) {
 						if (!strcasecmp(val, "greedy")) {

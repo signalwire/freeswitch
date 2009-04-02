@@ -182,7 +182,7 @@ typedef enum {
 	PFLAG_DISABLE_SRV,
 	PFLAG_DISABLE_NAPTR,
 	PFLAG_AUTOFLUSH,
-
+	PFLAG_NAT_OPTIONS_PING,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
