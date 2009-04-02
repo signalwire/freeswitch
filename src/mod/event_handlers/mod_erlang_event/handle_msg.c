@@ -207,8 +207,8 @@ static switch_status_t  handle_msg_fetch_reply(listener_t *listener, ei_x_buff *
 		}
 
 		/*switch_core_hash_insert(listener->fetch_reply_hash, uuid_str, nbuf);*/
-		free(nbuf->buff);
-		free(nbuf);
+		switch_safe_free(nbuf->buff);
+		switch_safe_free(nbuf);
 	}
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -794,7 +794,7 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 		ei_x_encode_atom(rbuf, "invalid_ref");
 	}
 
-	free(pid); /* don't need it */
+	switch_safe_free(pid); /* don't need it */
 
 	return SWITCH_STATUS_SUCCESS;
 }

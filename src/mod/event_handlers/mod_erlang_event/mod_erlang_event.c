@@ -442,9 +442,9 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	/* cleanup */
 	switch_core_hash_delete(ptr->listener->fetch_reply_hash, uuid_str);
-	free(rep->buff);
-	free(rep);
-	free(xmlstr);
+	switch_safe_free(rep->buff);
+	switch_safe_free(rep);
+	switch_safe_free(xmlstr);
 
 	return xml;
 }
@@ -624,8 +624,8 @@ static void check_log_queue(listener_t *listener)
 				switch_mutex_unlock(listener->sock_mutex);
 				
 				ei_x_free(&lbuf);
-				free(dnode->data);
-				free(dnode);
+				switch_safe_free(dnode->data);
+				switch_safe_free(dnode);
 			}
 		}
 	}
@@ -1145,7 +1145,7 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 
 		session_element->process.type = ERLANG_PID;
 		memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
-		free(pid); /* malloced in handle_ref_tuple */
+		switch_safe_free(pid); /* malloced in handle_ref_tuple */
 		switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 		switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
 		switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
