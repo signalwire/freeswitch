@@ -1081,6 +1081,8 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	char input[10] = "", key_buf[80] = "";
 	cc_t cc = { 0 };
 	switch_codec_implementation_t read_impl = {0};
+	int got_file = 0;
+
     switch_core_session_get_read_impl(session, &read_impl);
 
 
@@ -1110,10 +1112,15 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 
 		switch_ivr_record_file(session, &fh, file_path, &args, profile->max_record_len);
 
+		if (switch_file_exists(file_path, switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			got_file = 1;
+		}
+
 		if (limit && (*message_len = fh.sample_count / read_impl.actual_samples_per_second) < profile->min_record_len) {
 			if (unlink(file_path) != 0) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Failed to delete file [%s]\n", file_path);
 			}
+			got_file = 0;
 			if (exit_keys && input[0] && strchr(exit_keys, input[0])) {
 				*key_pressed = input[0];
 				return SWITCH_STATUS_SUCCESS;
@@ -1166,6 +1173,11 @@ static switch_status_t create_file(switch_core_session_t *session, vm_profile_t 
 	}
 
   end:
+
+	if (!got_file) {
+		status = SWITCH_STATUS_NOTFOUND;
+	}
+
 	return status;
 }
 
@@ -3002,9 +3014,12 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_assert(params);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", id);
 
-	if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
-							   &x_domain_root, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
-	
+	if (!x_domain_root) {
+		switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
+							   &x_domain_root, &x_domain, &x_user, NULL, params);
+	}
+
+	if (x_domain_root) {
 		switch_channel_get_variables(channel, &vars);
 		status = deliver_vm(profile, x_user, domain_name, file_path, message_len, read_flags, vars, 
 							switch_core_session_get_pool(session), caller_id_name, caller_id_number, SWITCH_FALSE);
@@ -3022,8 +3037,11 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to deliver message\n");
 			TRY_CODE(switch_ivr_phrase_macro(session, VM_ACK_MACRO, "deleted", NULL, NULL));
 		}
+
 	}
+
 	switch_event_destroy(&params);
+
   end:
 
 	if (x_domain_root) {
