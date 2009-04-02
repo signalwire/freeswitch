@@ -905,6 +905,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_URL_SEPARATOR_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_READ_TERMINATOR_USED_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "read_terminator_used";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -18952,6 +18963,14 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_test_app_flag(void * jarg1, uns
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_hangup_time(void * jarg1) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  switch_channel_set_hangup_time(arg1);
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_buffer_create(void * jarg1, void * jarg2, void * jarg3) {
   int jresult ;
   switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
@@ -20003,6 +20022,20 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_pres_in_detailed(char * ja
   arg14 = (char *)jarg14; 
   arg15 = (char *)jarg15; 
   result = (switch_status_t)switch_event_create_pres_in_detailed(arg1,arg2,arg3,(char const *)arg4,(char const *)arg5,(char const *)arg6,(char const *)arg7,(char const *)arg8,(char const *)arg9,(char const *)arg10,arg11,(char const *)arg12,(char const *)arg13,(char const *)arg14,(char const *)arg15);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_event_create_plain(void * jarg1, int jarg2) {
+  int jresult ;
+  switch_event_t **arg1 = (switch_event_t **) 0 ;
+  switch_event_types_t arg2 ;
+  switch_status_t result;
+  
+  arg1 = (switch_event_t **)jarg1; 
+  arg2 = (switch_event_types_t)jarg2; 
+  result = (switch_status_t)switch_event_create_plain(arg1,arg2);
   jresult = result; 
   return jresult;
 }

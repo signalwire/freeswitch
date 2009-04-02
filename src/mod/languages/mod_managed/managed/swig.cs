@@ -2674,6 +2674,10 @@ public class freeswitch {
     return ret;
   }
 
+  public static void switch_channel_set_hangup_time(SWIGTYPE_p_switch_channel channel) {
+    freeswitchPINVOKE.switch_channel_set_hangup_time(SWIGTYPE_p_switch_channel.getCPtr(channel));
+  }
+
   public static switch_status_t switch_buffer_create(SWIGTYPE_p_apr_pool_t pool, SWIGTYPE_p_p_switch_buffer buffer, SWIGTYPE_p_switch_size_t max_len) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_buffer_create(SWIGTYPE_p_apr_pool_t.getCPtr(pool), SWIGTYPE_p_p_switch_buffer.getCPtr(buffer), SWIGTYPE_p_switch_size_t.getCPtr(max_len));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -2875,6 +2879,11 @@ public class freeswitch {
 
   public static switch_status_t switch_event_create_pres_in_detailed(string file, string func, int line, string proto, string login, string from, string from_domain, string status, string event_type, string alt_event_type, int event_count, string unique_id, string channel_state, string answer_state, string call_direction) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_pres_in_detailed(file, func, line, proto, login, from, from_domain, status, event_type, alt_event_type, event_count, unique_id, channel_state, answer_state, call_direction);
+    return ret;
+  }
+
+  public static switch_status_t switch_event_create_plain(SWIGTYPE_p_p_switch_event arg0, switch_event_types_t event_id) {
+    switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_event_create_plain(SWIGTYPE_p_p_switch_event.getCPtr(arg0), (int)event_id);
     return ret;
   }
 
@@ -4136,6 +4145,7 @@ public class freeswitch {
   public static readonly int SWITCH_MAX_DTMF_DURATION = freeswitchPINVOKE.SWITCH_MAX_DTMF_DURATION_get();
   public static readonly string SWITCH_PATH_SEPARATOR = freeswitchPINVOKE.SWITCH_PATH_SEPARATOR_get();
   public static readonly string SWITCH_URL_SEPARATOR = freeswitchPINVOKE.SWITCH_URL_SEPARATOR_get();
+  public static readonly string SWITCH_READ_TERMINATOR_USED_VARIABLE = freeswitchPINVOKE.SWITCH_READ_TERMINATOR_USED_VARIABLE_get();
   public static readonly string SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE = freeswitchPINVOKE.SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get();
   public static readonly string SWITCH_CURRENT_APPLICATION_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_VARIABLE_get();
   public static readonly string SWITCH_CURRENT_APPLICATION_DATA_VARIABLE = freeswitchPINVOKE.SWITCH_CURRENT_APPLICATION_DATA_VARIABLE_get();
@@ -4611,6 +4621,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_URL_SEPARATOR_get")]
   public static extern string SWITCH_URL_SEPARATOR_get();
+
+  [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_READ_TERMINATOR_USED_VARIABLE_get")]
+  public static extern string SWITCH_READ_TERMINATOR_USED_VARIABLE_get();
 
   [DllImport("mod_managed", EntryPoint="CSharp_SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get")]
   public static extern string SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE_get();
@@ -8965,6 +8978,9 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_test_app_flag")]
   public static extern int switch_channel_test_app_flag(HandleRef jarg1, uint jarg2);
 
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_hangup_time")]
+  public static extern void switch_channel_set_hangup_time(HandleRef jarg1);
+
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_create")]
   public static extern int switch_buffer_create(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
 
@@ -9189,6 +9205,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_create_pres_in_detailed")]
   public static extern int switch_event_create_pres_in_detailed(string jarg1, string jarg2, int jarg3, string jarg4, string jarg5, string jarg6, string jarg7, string jarg8, string jarg9, string jarg10, int jarg11, string jarg12, string jarg13, string jarg14, string jarg15);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_event_create_plain")]
+  public static extern int switch_event_create_plain(HandleRef jarg1, int jarg2);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_event_deliver")]
   public static extern void switch_event_deliver(HandleRef jarg1);
@@ -23205,7 +23224,8 @@ namespace FreeSWITCH.Native {
   SWITCH_RTP_FLAG_SECURE_RECV_RESET = (1 << 17),
   SWITCH_RTP_FLAG_PROXY_MEDIA = (1 << 18),
   SWITCH_RTP_FLAG_SHUTDOWN = (1 << 19),
-  SWITCH_RTP_FLAG_FLUSH = (1 << 20)
+  SWITCH_RTP_FLAG_FLUSH = (1 << 20),
+  SWITCH_RTP_FLAG_AUTOFLUSH = (1 << 21)
 }
 
 }
