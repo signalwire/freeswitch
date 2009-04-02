@@ -351,7 +351,6 @@ static switch_status_t hash_state_handler(switch_core_session_t *session)
 		switch_mutex_lock(globals.limit_hash_mutex);
 
 		/* Loop through the channel's hashtable which contains mapping to all the limit_hash_item_t referenced by that channel */
-		//for(hi = switch_hash_first(NULL, pvt->hash); hi; hi = switch_hash_next(hi))
 		while((hi = switch_hash_first(NULL, pvt->hash)))
 		{
 			void *val = NULL;
