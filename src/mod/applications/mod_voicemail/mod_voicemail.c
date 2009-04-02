@@ -2758,6 +2758,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params = NULL, x_param = NULL;
 	switch_event_t *vars = NULL;
 	const char *vm_cc = NULL, *vtmp, *vm_ext = NULL;
+	switch_event_t *params = NULL;
 	
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
@@ -2996,8 +2997,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 			(void)switch_ivr_phrase_macro(session, VM_ACK_MACRO, "saved", NULL, NULL);
 		}
 	}
-	
-	switch_event_t *params = NULL;
 	
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
