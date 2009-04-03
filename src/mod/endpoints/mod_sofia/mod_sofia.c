@@ -716,7 +716,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 						return SWITCH_STATUS_GENERR;
 					}
 					
-					if (tech_pvt->check_frames++ < MAX_CODEC_CHECK_FRAMES) {
+					if (sofia_test_pflag(tech_pvt->profile, PFLAG_AUTOFIX_TIMING) && tech_pvt->check_frames++ < MAX_CODEC_CHECK_FRAMES) {
 						if (!tech_pvt->read_impl.encoded_bytes_per_packet) {
 							tech_pvt->check_frames = MAX_CODEC_CHECK_FRAMES;
 							goto skip;

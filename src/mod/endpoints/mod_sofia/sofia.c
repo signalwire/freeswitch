@@ -1680,6 +1680,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTOFLUSH);
 						}
+					} else if (!strcasecmp(var, "rtp-autofix-timing")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_AUTOFIX_TIMING);
+						}
 					} else if (!strcasecmp(var, "nat-options-ping")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
@@ -1947,6 +1953,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
 				sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 				profile->auto_restart = 1;
+				sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2217,6 +2224,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_AUTOFLUSH);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTOFLUSH);
+						}
+					} else if (!strcasecmp(var, "rtp-autofix-timing")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_AUTOFIX_TIMING);
 						}
 					} else if (!strcasecmp(var, "nat-options-ping")) {
 						if (switch_true(val)) {
