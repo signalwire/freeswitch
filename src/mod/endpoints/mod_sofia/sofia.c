@@ -539,7 +539,8 @@ void sofia_event_callback(nua_event_t event,
 		break;
 	}
 
-	if ((sofia_private && sofia_private == &mod_sofia_globals.destroy_private) || (status >= 300 && status != 401 && status != 407 && status != 603)) {
+	if ((sofia_private && sofia_private == &mod_sofia_globals.destroy_private) || 
+		(!session && (status >= 300 && status != 401 && status != 407))) {
 		nua_handle_bind(nh, NULL);
 		nua_handle_destroy(nh);
 		nh = NULL;
