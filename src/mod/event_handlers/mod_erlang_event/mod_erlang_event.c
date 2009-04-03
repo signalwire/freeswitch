@@ -1145,12 +1145,12 @@ session_elem_t* attach_call_to_spawned_process(listener_t* listener, char *modul
 
 		session_element->process.type = ERLANG_PID;
 		memcpy(&session_element->process.pid, pid, sizeof(erlang_pid));
-		switch_safe_free(pid); /* malloced in handle_ref_tuple */
 		switch_set_flag(session_element, LFLAG_SESSION_ALIVE);
 		switch_clear_flag(session_element, LFLAG_OUTBOUND_INIT);
 		switch_clear_flag(session_element, LFLAG_WAITING_FOR_PID);
 
-		ei_link(listener, ei_self(listener->ec), pid); 
+		ei_link(listener, ei_self(listener->ec), pid);
+		switch_safe_free(pid); /* malloced in handle_ref_tuple */
 	}
 	return session_element;
 }
