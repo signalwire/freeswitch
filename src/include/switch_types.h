@@ -426,6 +426,24 @@ typedef enum {
 } switch_vad_flag_enum_t;
 typedef uint32_t switch_vad_flag_t;
 
+typedef struct {
+	switch_size_t raw_bytes;
+	switch_size_t media_bytes;
+	switch_size_t packet_count;
+	switch_size_t media_packet_count;
+	switch_size_t skip_packet_count;
+	switch_size_t jb_packet_count;
+	switch_size_t dtmf_packet_count;
+	switch_size_t cng_packet_count;
+	switch_size_t flush_packet_count;
+} switch_rtp_numbers_t;
+
+typedef struct {
+	switch_rtp_numbers_t in;
+	switch_rtp_numbers_t out;
+} switch_rtp_stats_t;
+
+
 #define SWITCH_RTP_CNG_PAYLOAD 13
 
 /*!

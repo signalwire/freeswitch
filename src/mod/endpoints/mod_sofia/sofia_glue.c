@@ -1689,6 +1689,40 @@ void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt)
 	}
 }
 
+
+#define add_stat(_i, _s) \
+	switch_snprintf(var_name, sizeof(var_name), "rtp_%s_%s", switch_str_nil(prefix), _s) ; \
+	switch_snprintf(var_val, sizeof(var_val), "%" SWITCH_SIZE_T_FMT, _i); \
+	switch_channel_set_variable(tech_pvt->channel, var_name, var_val)
+
+static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, const char *prefix)
+{
+	switch_rtp_stats_t *stats = switch_rtp_get_stats(rtp_session, NULL);
+	char var_name[256] = "", var_val[35] = "";
+
+	if (stats) {
+
+		add_stat(stats->in.raw_bytes, "in_raw_bytes");
+		add_stat(stats->in.media_bytes, "in_media_bytes");
+		add_stat(stats->in.packet_count, "in_packet_count");
+		add_stat(stats->in.media_packet_count, "in_media_packet_count");
+		add_stat(stats->in.skip_packet_count, "in_skip_packet_count");
+		add_stat(stats->in.jb_packet_count, "in_jb_packet_count");
+		add_stat(stats->in.dtmf_packet_count, "in_dtmf_packet_count");
+		add_stat(stats->in.cng_packet_count, "in_cng_packet_count");
+		add_stat(stats->in.cng_packet_count, "in_flush_packet_count");
+
+		add_stat(stats->out.raw_bytes, "out_raw_bytes");
+		add_stat(stats->out.media_bytes, "out_media_bytes");
+		add_stat(stats->out.packet_count, "out_packet_count");
+		add_stat(stats->out.media_packet_count, "out_media_packet_count");
+		add_stat(stats->out.skip_packet_count, "out_skip_packet_count");
+		add_stat(stats->out.dtmf_packet_count, "out_dtmf_packet_count");
+		add_stat(stats->out.cng_packet_count, "out_cng_packet_count");
+		
+	}
+}
+
 void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 {
 	int loops = 0;
@@ -1700,12 +1734,14 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	}
 
 	if (tech_pvt->rtp_session) {
+		set_stats(tech_pvt->rtp_session, tech_pvt, "audio");
 		switch_rtp_destroy(&tech_pvt->rtp_session);
 	} else if (tech_pvt->local_sdp_audio_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
 	if (tech_pvt->video_rtp_session) {
+		set_stats(tech_pvt->video_rtp_session, tech_pvt, "video");
 		switch_rtp_destroy(&tech_pvt->video_rtp_session);
 	} else if (tech_pvt->local_sdp_video_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_video_port);
