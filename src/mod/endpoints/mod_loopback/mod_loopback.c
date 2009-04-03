@@ -255,15 +255,14 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 		//switch_ivr_transfer_variable(session, tech_pvt->other_session, "process_cdr");
 		switch_ivr_transfer_variable(session, tech_pvt->other_session, NULL);
 
+		switch_channel_set_variable(channel, "other_loopback_leg_uuid", switch_channel_get_uuid(b_channel));
+		switch_channel_set_variable(b_channel, "other_loopback_leg_uuid", switch_channel_get_uuid(channel));
+
 		if (switch_core_session_thread_launch(b_session) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Error spawning thread\n");
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			goto end;
 		}
-
-		switch_channel_set_variable(channel,"other_loopback_leg_uuid",switch_channel_get_uuid(b_channel));
-		switch_channel_set_variable(b_channel,"other_loopback_leg_uuid",switch_channel_get_uuid(channel));
-
 	}
 	
 	if (tech_pvt->other_session) {
