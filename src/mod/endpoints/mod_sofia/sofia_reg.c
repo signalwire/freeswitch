@@ -67,9 +67,19 @@ static void sofia_reg_new_handle(sofia_gateway_t *gateway_ptr, int attach)
 static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 {
 
+	if (gateway_ptr->state != REG_STATE_REGED) {
+		if (gateway_ptr->nh) {
+			nua_handle_destroy(gateway_ptr->nh);
+			gateway_ptr->nh = NULL;
+		}
+		return;
+	}
+	
+	/*
 	if (!gateway_ptr->nh) {
 		sofia_reg_new_handle(gateway_ptr, SWITCH_FALSE);
 	}
+	*/
 
 	if (gateway_ptr->nh) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
@@ -80,6 +90,8 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 					   TAG_END());
 	}
 	
+
+
 }
 
 static void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway) {
@@ -100,7 +112,9 @@ void sofia_reg_unregister(sofia_profile_t *profile)
 			sofia_private_free(gateway_ptr->sofia_private);
 		}
 
-		sofia_reg_kill_reg(gateway_ptr);
+		if (gateway_ptr->state == REG_STATE_REGED) {
+			sofia_reg_kill_reg(gateway_ptr);
+		}
 
 	}
 }
