@@ -2589,7 +2589,7 @@ SWITCH_STANDARD_API(show_function)
 		if (end_of(command) == 's') {
 			end_of(command) = '\0';
 		}
-		sprintf(sql, "select type, name, key from interfaces where name = '%s' order by type,name", command);
+		sprintf(sql, "select type, name, key from interfaces where key = '%s' order by type,name", command);
 	} else if (!strncasecmp(command, "module", 6)) {
 		if (argv[1]) {
 			sprintf(sql, "select distinct type, name, key, filename from interfaces where key = '%s' order by type,name", argv[1]);
