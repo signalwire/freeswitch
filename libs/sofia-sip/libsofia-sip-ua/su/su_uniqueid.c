@@ -212,8 +212,9 @@ sofia_su_uniqueid_destructor(void)
 #endif
 #endif
 
+#define SIZEOF_NODE 6
 static
-void init_node(uint8_t node[6])
+void init_node(uint8_t node[SIZEOF_NODE])
 {
 #if HAVE_GETIFADDRS && HAVE_SOCKADDR_LL
   struct ifaddrs *ifa, *results;
@@ -234,7 +235,7 @@ void init_node(uint8_t node[6])
 	continue;
       }
 
-      memcpy(node, sll->sll_addr, sizeof node);
+      memcpy(node, sll->sll_addr, SIZEOF_NODE);
 
       break;
 #endif
@@ -247,16 +248,16 @@ void init_node(uint8_t node[6])
   }
 #endif
 
-  su_randmem(node, 6);
+  su_randmem(node, SIZEOF_NODE);
   node[0] |= 1;			/* "multicast" address */
 }
 
-static unsigned char node[6];
+static unsigned char node[SIZEOF_NODE];
 
 size_t su_node_identifier(void *address, size_t addrlen)
 {
-  if (addrlen > sizeof node)
-    addrlen = sizeof node;
+  if (addrlen > SIZEOF_NODE)
+    addrlen = SIZEOF_NODE;
 
   su_guid_generate(NULL);
   memcpy(address, node, addrlen);
