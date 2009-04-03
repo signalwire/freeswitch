@@ -191,6 +191,8 @@
     <!--<param name="inbound-use-callid-as-uuid" value="true"/>-->
     <!-- on outbound calls set the callid to match the uuid of the session -->
     <!--<param name="outbound-use-uuid-as-callid" value="true"/>-->
+    <!-- set to false disable this feature -->
+    <!--<param name="rtp-autofix-timing" value="false"/>-->
 
     <!-- clear clears them all or supply the name to add or the name prefixed with ~ to remove
 	 valid values:
