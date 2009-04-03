@@ -87,7 +87,7 @@ fi
 # output is multiline from 1.5 onwards
 
 # Require libtool 1.4 or newer
-libtool=${LIBTOOL:-`${LIBDIR}/apr/build/PrintPath glibtool libtool libtool15 libtool14`}
+libtool=`${LIBDIR}/apr/build/PrintPath glibtool libtool libtool15 libtool14`
 lt_pversion=`$libtool --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'`
 if test -z "$lt_pversion"; then
 echo "bootstrap: libtool not found."
@@ -103,11 +103,8 @@ lt_status="good"
 if test -z "$1"; then a=0 ; else a=$1;fi
 if test -z "$2"; then b=0 ; else b=$2;fi
 if test -z "$3"; then c=0 ; else c=$3;fi
-lt_major=$a
 
-if test "$a" -eq "2"; then
-   lt_status="good"
-elif test "$a" -lt "2"; then
+if test "$a" -lt "2"; then
    if test "$b" -lt "5" -o "$b" =  "5" -a "$c" -lt "14" ; then
       lt_status="bad"
    fi
@@ -123,43 +120,6 @@ echo "           to build FreeSWITCH from SVN."
 
 exit 1
 fi
-
-# check libtoolize availability
-if [ -n "${LIBTOOL}" ]; then
-    libtoolize=${LIBTOOLIZE:-`dirname "${libtool}"`/libtoolize}
-else
-    libtoolize=${LIBTOOLIZE:-`${LIBDIR}/apr/build/PrintPath glibtoolize libtoolize15 libtoolize14 libtoolize`}
-fi
-if [ "x$libtoolize" = "x" ]; then
-    echo "libtoolize not found in path"
-    exit 1
-fi
-if [ ! -x "$libtoolize" ]; then
-    echo "$libtoolize does not exist or ist not executable"
-    exit 1
-fi
-
-# compare libtool and libtoolize version
-ltl_pversion=`$libtoolize --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'`
-ltl_version=`echo $ltl_pversion|sed -e 's/\([a-z]*\)$/.\1/'`
-IFS=.; set $ltl_version; IFS=' '
-
-if [ "x${lt_version}" != "x${ltl_version}" ]; then
-    echo "$libtool and $libtoolize have different versions"
-    exit 1
-fi
-
-
-#
-# Info output
-#
-echo "Bootstrapping using:"
-echo "  autoconf  : ${AUTOCONF:-`which autoconf`}"
-echo "  automake  : ${AUTOMAKE:-`which automake`}"
-echo "  aclocal   : ${ACLOCAL:-`which aclocal`}"
-echo "  libtool   : ${libtool} (${lt_version})"
-echo "  libtoolize: ${libtoolize}"
-echo
 
 echo "Entering directory ${LIBDIR}/apr"
 cd ${LIBDIR}/apr
@@ -184,6 +144,13 @@ cd ${LIBDIR}/apr
 # bootstrap: Build the support scripts needed to compile from a
 #            checked-out version of the source code.
 
+
+libtoolize=`build/PrintPath glibtoolize libtoolize15 libtoolize14 libtoolize`
+if [ "x$libtoolize" = "x" ]; then
+    echo "libtoolize not found in path"
+    exit 1
+fi
+
 # Create the libtool helper files
 #
 # Note: we copy (rather than link) them to simplify distribution.
@@ -196,30 +163,21 @@ echo "Copying libtool helper files ..."
 # and libtool 1.4 by simply rerunning the bootstrap script.
 (cd build ; rm -f ltconfig ltmain.sh libtool.m4)
 
-if ${libtoolize} -n --install 2>&1 >/dev/null ; then
-  $libtoolize --force --copy --install
-else
-  $libtoolize --force --copy
-fi
+$libtoolize --copy --automake
 
 if [ -f libtool.m4 ]; then 
    ltfile=`pwd`/libtool.m4
 else
-   if [ $lt_major -eq 2 ]; then
-       ltfindcmd="`sed -n \"/aclocaldir=/{s/.*=/echo /p;q;}\" < $libtoolize`"
-       ltfile=${LIBTOOL_M4-`eval "$ltfindcmd"`/libtool.m4}
-   else
-       ltfindcmd="`sed -n \"/=[^\\\`]/p;/libtool_m4=/{s/.*=/echo /p;q;}\" \
-                     < $libtoolize`"
-       ltfile=${LIBTOOL_M4-`eval "$ltfindcmd"`}
-   fi
+   ltfindcmd="`sed -n \"/=[^\\\`]/p;/libtool_m4=/{s/.*=/echo /p;q;}\" \
+                   < $libtoolize`"
+   ltfile=${LIBTOOL_M4-`eval "$ltfindcmd"`}
    # Expecting the code above to be very portable, but just in case...
    if [ -z "$ltfile" -o ! -f "$ltfile" ]; then
      ltpath=`dirname $libtoolize`
      ltfile=`cd $ltpath/../share/aclocal ; pwd`/libtool.m4
    fi
 fi
-
+  
 if [ ! -f $ltfile ]; then
     echo "$ltfile not found"
     exit 1
@@ -238,6 +196,19 @@ fi
 # Clean up any leftovers
 rm -f aclocal.m4 libtool.m4
 
+#
+# Generate the autoconf header and ./configure
+#
+echo "Creating include/arch/unix/apr_private.h.in ..."
+${AUTOHEADER:-autoheader}
+
+echo "Creating configure ..."
+### do some work to toss config.cache?
+${AUTOCONF:-autoconf}
+
+# Remove autoconf 2.5x's cache directory
+rm -rf autom4te*.cache
+
 # fix for FreeBSD (at least):
 # libtool.m4 is in share/aclocal, while e.g. aclocal19 only looks in share/aclocal19
 # get aclocal's default directory and include the libtool.m4 directory via -I if
@@ -248,24 +219,6 @@ aclocal_dir="`${ACLOCAL:-aclocal} --print-ac-dir`"
 if [ -n "${aclocal_dir}" -a -n "${ltfile}" -a "`dirname ${ltfile}`" != "${aclocal_dir}" ] ; then
   ACLOCAL_OPTS="-I `dirname ${ltfile}`"
 fi
-
-### run aclocal
-echo "Re-creating aclocal.m4 ..."
-${ACLOCAL:-aclocal} ${ACLOCAL_OPTS}
-
-### do some work to toss config.cache?
-echo "Creating configure ..."
-${AUTOCONF:-autoconf}
-
-#
-# Generate the autoconf header
-#
-echo "Creating include/arch/unix/apr_private.h.in ..."
-${AUTOHEADER:-autoheader}
-
-
-# Remove autoconf 2.5x's cache directory
-rm -rf autom4te*.cache
 
 echo "Entering directory ${LIBDIR}/apr-util"
 cd ${LIBDIR}/apr-util
@@ -298,11 +251,7 @@ do
 #only run if AC_PROG_LIBTOOL is in configure.in/configure.ac
       if [ ! -z "${LTTEST}" -o "${LTTEST2}" ] ; then
           echo "Running libtoolize..."
-          if ${libtoolize} -n --install 2>&1 >/dev/null ; then
-             $libtoolize --force --copy --install
-          else
-             $libtoolize --force --copy
-          fi
+          $libtoolize --force --copy ;
       fi
 
       echo "Creating configure"
