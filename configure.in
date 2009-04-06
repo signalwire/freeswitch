@@ -76,7 +76,7 @@ m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
-libtool=$(switch_builddir)/libtool
+libtool=$switch_builddir/libtool
 LIBTOOL_MAJOR_VERSION=`$libtool --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'| awk -F . '{print $1}'`
 
 #Check for compiler vendor
