@@ -130,7 +130,7 @@ esac
 #
 AC_MSG_CHECKING([libtool major version])
 libtool="${switch_builddir}/libtool"
-LIBTOOL_MAJOR_VERSION="`${libtool} --version 2>/dev/null| sed -e 's/([[^)]]*)//g;s/^[[^0-9]]*//;s/[[- ]].*//g;q'| awk -F . '{print $1}'`"
+LIBTOOL_MAJOR_VERSION="`$libtool --version 2>/dev/null| sed -e 's/([[^)]]*)//g;s/^[[^0-9]]*//;s/[[- ]].*//g;q'| awk -F . '{print $1}'`"
 AC_MSG_RESULT([${LIBTOOL_MAJOR_VERSION}])
 
 LIBTOOL_LIB_EXTEN="$DYNAMIC_LIB_EXTEN"
