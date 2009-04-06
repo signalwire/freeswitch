@@ -15,6 +15,7 @@
       <param name="callback-context" value="default"/>
       <param name="play-new-messages-key" value="1"/>
       <param name="play-saved-messages-key" value="2"/>
+      <param name="login-keys" value="0"/>
       <param name="main-menu-key" value="0"/>
       <param name="config-menu-key" value="5"/>
       <param name="record-greeting-key" value="1"/>

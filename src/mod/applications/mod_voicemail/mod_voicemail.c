@@ -73,6 +73,7 @@ struct vm_profile {
 	char play_new_messages_key[2];
 	char play_saved_messages_key[2];
 
+	char login_keys[16];
 	char main_menu_key[2];
 	char skip_greet_key[2];
 	char config_menu_key[2];
@@ -283,6 +284,7 @@ static switch_status_t load_config(void)
 		char *play_new_messages_key = "1";
 		char *play_saved_messages_key = "2";
 
+		char *login_keys = "0";
 		char *main_menu_key = "0";
 		char *skip_greet_key = "#";
 		char *config_menu_key = "5";
@@ -464,6 +466,8 @@ static switch_status_t load_config(void)
 				play_new_messages_key = val;
 			} else if (!strcasecmp(var, "play-saved-messages-key") && !switch_strlen_zero(val)) {
 				play_saved_messages_key = val;
+			} else if (!strcasecmp(var, "login-keys") && !switch_strlen_zero(val)) {
+				login_keys = val;
 			} else if (!strcasecmp(var, "main-menu-key") && !switch_strlen_zero(val)) {
 				main_menu_key = val;
 			} else if (!strcasecmp(var, "skip-greet-key") && val && (!*val || is_dtmf(*val))) {
@@ -762,6 +766,7 @@ static switch_status_t load_config(void)
 			*profile->terminator_key = *terminator_key;
 			*profile->play_new_messages_key = *play_new_messages_key;
 			*profile->play_saved_messages_key = *play_saved_messages_key;
+			switch_set_string(profile->login_keys, login_keys);
 			*profile->main_menu_key = *main_menu_key;
 			*profile->skip_greet_key = *skip_greet_key;
 			*profile->config_menu_key = *config_menu_key;
@@ -2925,7 +2930,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 
 	if (*buf != '\0') {
   greet_key_press:
-		if (!strcasecmp(buf, profile->main_menu_key)) {
+		if (switch_stristr(buf, profile->login_keys)) {
 			voicemail_check_main(session, profile_name, domain_name, id, 0);
 		} else if (!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
 			int argc;
