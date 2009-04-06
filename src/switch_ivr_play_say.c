@@ -1561,6 +1561,8 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 				}
 				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
 					return SWITCH_STATUS_SUCCESS;
+				} else {
+					switch_channel_set_variable(channel, var_name, NULL);
 				}
 			}
 		}

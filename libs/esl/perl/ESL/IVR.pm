@@ -75,13 +75,13 @@ sub setVar($;) {
 
 sub playAndGetDigits($;) {
   my $self = shift;
-  my ($min, $max, $tries, $to, $term, $file, $invalid_file, $var) = @_;
+  my ($min, $max, $tries, $to, $term, $file, $invalid_file, $var, $regex) = @_;
 
   if (!$self->{_esl}->connected()) {
     return undef;
   }
   
-  $self->execute("play_and_get_digits", "$min $max $tries $to $term $file $invalid_file $var");
+  $self->execute("play_and_get_digits", "$min $max $tries $to $term $file $invalid_file $var $regex");
 
   return $self->getVar($var);
 
