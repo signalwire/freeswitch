@@ -71,6 +71,7 @@
 #include <setjmp.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <string.h>
 #ifdef _MSC_VER
 #include <Winsock2.h>
 #if _MSC_VER < 1500
@@ -85,7 +86,6 @@
 #else
 #include <strings.h>
 #endif
-#include <string.h>
 #include <sys/stat.h>
 #include <limits.h>
 #include <sys/types.h>
