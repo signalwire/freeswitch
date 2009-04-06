@@ -76,9 +76,6 @@ m4_defun([_LT_AC_LANG_RC_CONFIG], [:])
 AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
-libtool=$switch_builddir/libtool
-LIBTOOL_MAJOR_VERSION=`$libtool --version 2>/dev/null|sed -e 's/([^)]*)//g;s/^[^0-9]*//;s/[- ].*//g;q'| awk -F . '{print $1}'`
-
 #Check for compiler vendor
 AX_COMPILER_VENDOR
 
@@ -126,12 +123,23 @@ case "$host" in
     ;;
 esac
 
+##
+# detect libtool major version,
+# set libtool library extension based on this
+# to work around some brokeness when using 'la' with libtool-1.5
+#
+AC_MSG_CHECKING([libtool major version])
+libtool="${switch_builddir}/libtool"
+LIBTOOL_MAJOR_VERSION="`${libtool} --version 2>/dev/null| sed -e 's/([[^)]]*)//g;s/^[[^0-9]]*//;s/[[- ]].*//g;q'| awk -F . '{print $1}'`"
+AC_MSG_RESULT([${LIBTOOL_MAJOR_VERSION}])
 
 LIBTOOL_LIB_EXTEN="$DYNAMIC_LIB_EXTEN"
 
-if test "$LIBTOOL_MAJOR_VERSION" = "2"; then
+if test "${LIBTOOL_MAJOR_VERSION}" = "2" ; then
    LIBTOOL_LIB_EXTEN="la"
 fi
+AC_MSG_RESULT([using libtool library extension... ${LIBTOOL_LIB_EXTEN}])
+
 
 #  Enable 64 bit build
 AC_ARG_ENABLE(64,
