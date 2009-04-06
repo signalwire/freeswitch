@@ -26,11 +26,19 @@
 #ifndef __FREESWITCH_MOD_OPAL__
 #define __FREESWITCH_MOD_OPAL__
 
+#if defined(__GNUC__) && defined(HAVE_VISIBILITY)
+#pragma GCC visibility push(default)
+#endif
+
 #include <ptlib.h>
 #include <opal/manager.h>
 #include <opal/localep.h>
 #include <h323/h323ep.h>
 #include <iax2/iax2ep.h>
+
+#if defined(__GNUC__) && defined(HAVE_VISIBILITY)
+#pragma GCC visibility pop
+#endif
 
 #undef strcasecmp
 #undef strncasecmp
