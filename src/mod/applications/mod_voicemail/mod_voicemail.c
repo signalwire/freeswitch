@@ -3176,7 +3176,7 @@ SWITCH_STANDARD_API(boxcount_api_function)
 			}
 		}
 
-		switch_safe_free(id);
+		switch_safe_free(dup);
 	}
 
 	if (!strcasecmp(how, "saved")) {
