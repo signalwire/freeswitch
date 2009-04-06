@@ -268,6 +268,15 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	if (tech_pvt->other_session) {
 		if (switch_core_session_read_lock(tech_pvt->other_session) != SWITCH_STATUS_SUCCESS) {
 			tech_pvt->other_session = NULL;
+			tech_pvt->other_tech_pvt = NULL;
+			tech_pvt->other_channel = NULL;
+			switch_clear_flag_locked(tech_pvt, TFLAG_LINKED);
+			if (b_tech_pvt) {
+				b_tech_pvt->other_session = NULL;
+				b_tech_pvt->other_tech_pvt = NULL;
+				b_tech_pvt->other_channel = NULL;
+				switch_clear_flag_locked(b_tech_pvt, TFLAG_LINKED);
+			}
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			goto end;
 		}
