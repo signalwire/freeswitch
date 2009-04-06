@@ -267,6 +267,7 @@ static switch_status_t channel_on_init(switch_core_session_t *session)
 	
 	if (tech_pvt->other_session) {
 		if (switch_core_session_read_lock(tech_pvt->other_session) != SWITCH_STATUS_SUCCESS) {
+			tech_pvt->other_session = NULL;
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			goto end;
 		}
