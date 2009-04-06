@@ -129,7 +129,7 @@ esac
 
 LIBTOOL_LIB_EXTEN="$DYNAMIC_LIB_EXTEN"
 
-if test "$LIBTOOL_MAJOR_VERSION" -eq "2"; then
+if test "$LIBTOOL_MAJOR_VERSION" = "2"; then
    LIBTOOL_LIB_EXTEN="la"
 fi
 
