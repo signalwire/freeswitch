@@ -148,10 +148,10 @@ typedef int gid_t;
 #define SWITCH_MOD_DECLARE(type)		type __cdecl
 #define SWITCH_MOD_DECLARE_DATA
 #elif defined(MOD_EXPORTS)
-#define SWITCH_MOD_DECLARE(type)		__declspec(dllexport) type __cdecl
+#define SWITCH_MOD_DECLARE(type)		__declspec(dllexport) type __stdcall
 #define SWITCH_MOD_DECLARE_DATA			__declspec(dllexport)
 #else
-#define SWITCH_MOD_DECLARE(type)		__declspec(dllimport) type __cdecl
+#define SWITCH_MOD_DECLARE(type)		__declspec(dllimport) type __stdcall
 #define SWITCH_MOD_DECLARE_DATA			__declspec(dllimport)
 #endif
 #define SIGHUP SIGTERM
