@@ -55,6 +55,24 @@ sub getVar($;) {
 
 }
 
+sub setVar($;) {
+  my $self = shift;
+  my ($var, $val) = @_;
+  my $e = $self->api("uuid_setvar", "$self->{_uuid} $var $val");
+  my $input;
+  if ($e) {
+    $input = $e->getBody() . "\n";
+    if ($input eq "_undef_") {
+      $input = undef;
+    }
+  }
+
+  chomp $input;
+
+  return $input;
+
+}
+
 sub playAndGetDigits($;) {
   my $self = shift;
   my ($min, $max, $tries, $to, $term, $file, $invalid_file, $var) = @_;
