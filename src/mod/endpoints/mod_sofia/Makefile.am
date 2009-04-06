@@ -49,12 +49,3 @@ $(SOFIALA): $(SOFIA_DIR) $(SOFIA_DIR)/.update
 
 ../../../../libs/sofia-sip/libsofia-sip-ua/nua/sofia-sip/nua_tag.h: $(SOFIALA)
 
-#install-data-am: $(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN)
-
-#$(DESTDIR)$(PREFIX)/$(moddir)/$(MODNAME).$(DYNAMIC_LIB_EXTEN): $(MODNAME).la
-#	@echo installing $(MODNAME).$(DYNAMIC_LIB_EXTEN)
-#	@if [ -f .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) ] ; then \
-#	  $(LIBTOOL) --mode=install $(INSTALL) .libs/$(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
-#	else \
-#	  $(LIBTOOL) --mode=install $(INSTALL) $(MODNAME).$(DYNAMIC_LIB_EXTEN) $(DESTDIR)$(PREFIX)/$(moddir) >/dev/null  ; \
-#	fi
