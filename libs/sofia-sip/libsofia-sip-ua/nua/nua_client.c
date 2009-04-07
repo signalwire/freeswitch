@@ -1195,7 +1195,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
     }
   }
 
-  if (500 <= status && status < 600 &&
+  if (0 && 500 <= status && status < 600 &&
       sip->sip_retry_after &&
       sip->sip_retry_after->af_delta < 32) {
     su_timer_t *timer;
@@ -1219,6 +1219,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
     nua_client_report(cr, 100, phrase, NULL, orq, NULL);
     nta_outgoing_destroy(orq);
     cr->cr_status = 0, cr->cr_phrase = NULL;
+
     return 1;
   }
 
