@@ -11,14 +11,14 @@ sleep 3
 /usr/bin/Xvfb :101 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 sleep 3
 
-# start a Skype client instance that will connect to the X server above, and will login to the Skype network using the "username password" you send to it on stdin. Here xxx would be the password and skypiax1 the username
-echo "skypiax1 xxx"| DISPLAY=:101 /usr/bin/skype --pipelogin &
+# as user "unixusername", start a Skype client instance that will connect to the X server above, and will login to the Skype network using the 'username password' you send to it on stdin. Here xxx would be the Skype password and skypiax1 the Skype username. Please note that the ".Skypiax" directory containing the Skype clients configurations MUST be in the home directory of the "unixusername" user.
+su unixusername -c "/bin/echo 'skypiax1 xxx'| DISPLAY=:101 /usr/bin/skype --pipelogin &"
 
 sleep 7
 /usr/bin/Xvfb :102 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 sleep 3
 
-echo "skypiax2 xxx"| DISPLAY=:102 /usr/bin/skype --pipelogin &
+su unixusername -c "/bin/echo 'skypiax2 xxx'| DISPLAY=:102 /usr/bin/skype --pipelogin &"
 
 sleep 7
 
@@ -28,109 +28,109 @@ sleep 7
 ###/usr/bin/Xvfb :103 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax3 xxx"| DISPLAY=:103 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax3 xxx'| DISPLAY=:103 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :104 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax4 xxx"| DISPLAY=:104 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax4 xxx'| DISPLAY=:104 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :105 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax5 xxx"| DISPLAY=:105 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax5 xxx'| DISPLAY=:105 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :106 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax6 xxx"| DISPLAY=:106 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax6 xxx'| DISPLAY=:106 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :107 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax7 xxx"| DISPLAY=:107 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax7 xxx'| DISPLAY=:107 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :108 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax8 xxx"| DISPLAY=:108 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax8 xxx'| DISPLAY=:108 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :109 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax9 xxx"| DISPLAY=:109 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax9 xxx'| DISPLAY=:109 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :110 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax10 xxx"| DISPLAY=:110 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax10 xxx'| DISPLAY=:110 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :111 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax11 xxx"| DISPLAY=:111 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax11 xxx'| DISPLAY=:111 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :112 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax12 xxx"| DISPLAY=:112 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax12 xxx'| DISPLAY=:112 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :113 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax13 xxx"| DISPLAY=:113 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax13 xxx'| DISPLAY=:113 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :114 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax14 xxx"| DISPLAY=:114 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax14 xxx'| DISPLAY=:114 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :115 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax15 xxx"| DISPLAY=:115 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax15 xxx'| DISPLAY=:115 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :116 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax16 xxx"| DISPLAY=:116 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax16 xxx'| DISPLAY=:116 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :117 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax17 xxx"| DISPLAY=:117 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax17 xxx'| DISPLAY=:117 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :118 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax18 xxx"| DISPLAY=:118 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax18 xxx'| DISPLAY=:118 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :119 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax19 xxx"| DISPLAY=:119 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax19 xxx'| DISPLAY=:119 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###/usr/bin/Xvfb :120 -auth /usr/local/freeswitch/conf/autoload_configs/skypiax.X.conf &
 ###sleep 3
 ###
-###echo "skypiax20 xxx"| DISPLAY=:120 /usr/bin/skype --pipelogin &
+###su unixusername -c "/bin/echo 'skypiax20 xxx'| DISPLAY=:120 /usr/bin/skype --pipelogin &"
 ###
 ###sleep 7
 ###
