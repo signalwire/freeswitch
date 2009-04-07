@@ -298,7 +298,7 @@ do
 #only run if AC_PROG_LIBTOOL is in configure.in/configure.ac
       if [ ! -z "${LTTEST}" -o "${LTTEST2}" ] ; then
           echo "Running libtoolize..."
-          if ${libtoolize} -n --install 2>&1 >/dev/null ; then
+          if ${libtoolize} -n --install >/dev/null 2>&1 ; then
              $libtoolize --force --copy --install
           else
              $libtoolize --force --copy
