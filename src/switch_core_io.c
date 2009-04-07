@@ -610,7 +610,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	switch_mutex_lock(session->write_codec->mutex);
-	switch_mutex_lock(frame->codec->mutex);
+
 	
 
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
@@ -1002,7 +1002,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							write_frame->timestamp = 0;
 						}
 
-						if ((status = perform_write(session, write_frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
+						status = perform_write(session, write_frame, flags, stream_id);
+
+						if (status != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
 					}
@@ -1025,7 +1027,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
  error:
 
 	switch_mutex_unlock(session->write_codec->mutex);
-	switch_mutex_unlock(frame->codec->mutex);
 	switch_mutex_unlock(session->codec_write_mutex);
 
 	return status;
