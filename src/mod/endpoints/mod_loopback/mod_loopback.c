@@ -113,10 +113,12 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
+		memset(&tech_pvt->read_codec, 0, sizeof(tech_pvt->read_codec));
 	}
 
 	if (tech_pvt->write_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->write_codec);
+		memset(&tech_pvt->write_codec, 0, sizeof(tech_pvt->write_codec));
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s setup codec %s/%d/%d\n", switch_channel_get_name(channel), iananame, rate, interval);
@@ -365,6 +367,16 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	}
 
 	switch_core_timer_destroy(&tech_pvt->timer);
+
+	if (tech_pvt->read_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+		memset(&tech_pvt->read_codec, 0, sizeof(tech_pvt->read_codec));
+	}
+
+	if (tech_pvt->write_codec.implementation) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+		memset(&tech_pvt->write_codec, 0, sizeof(tech_pvt->write_codec));
+	}
 
 	return SWITCH_STATUS_SUCCESS;
 }
