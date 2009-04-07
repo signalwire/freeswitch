@@ -196,7 +196,7 @@ echo "Copying libtool helper files ..."
 # and libtool 1.4 by simply rerunning the bootstrap script.
 (cd build ; rm -f ltconfig ltmain.sh libtool.m4)
 
-if ${libtoolize} -n --install 2>&1 >/dev/null ; then
+if ${libtoolize} -n --install >/dev/null 2>&1 ; then
   $libtoolize --force --copy --install
 else
   $libtoolize --force --copy
