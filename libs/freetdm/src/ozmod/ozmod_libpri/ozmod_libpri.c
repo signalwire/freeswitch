@@ -463,13 +463,13 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			
 			dp = zchan->caller_data.ani.type;
 			switch(dp) {
-			case Q931_TON_NATIONAL:
+			case ZAP_TON_NATIONAL:
 				dp = PRI_NATIONAL_ISDN;
 				break;
-			case Q931_TON_INTERNATIONAL:
+			case ZAP_TON_INTERNATIONAL:
 				dp = PRI_INTERNATIONAL_ISDN;
 				break;
-			case Q931_TON_SUBSCRIBER_NUMBER:
+			case ZAP_TON_SUBSCRIBER_NUMBER:
 				dp = PRI_LOCAL_ISDN;
 				break;
 			default:

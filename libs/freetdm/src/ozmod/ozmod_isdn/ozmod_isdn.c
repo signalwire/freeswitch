@@ -32,7 +32,6 @@
  */
 
 #include "openzap.h"
-#include "zap_isdn.h"
 #include "Q931.h"
 #include "Q921.h"
 #ifdef WIN32
@@ -40,6 +39,8 @@
 #else
 #include <sys/time.h>
 #endif
+
+#include "zap_isdn.h"
 
 #define LINE "--------------------------------------------------------------------------------"
 //#define IODEBUG
