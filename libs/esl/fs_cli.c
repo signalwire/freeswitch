@@ -140,10 +140,20 @@ static unsigned char console_f12key(EditLine * el, int ch)
 
 static unsigned char console_eofkey(EditLine * el, int ch)
 {
-	printf("/exit\n\n");
-	running = thread_running = 0;
-
-	return CC_EOF;
+	LineInfo *line;
+	/* only exit if empty line */
+	line = (LineInfo *)el_line(el);
+	if (line->buffer == line->lastchar) {
+		printf("/exit\n\n");
+		running = thread_running = 0;
+		return CC_EOF;
+	} else {
+		if (line->cursor != line->lastchar) {
+			line->cursor++;
+			el_deletestr(el, 1);
+		}
+		return CC_REDISPLAY;
+	}
 }
 
 #endif
