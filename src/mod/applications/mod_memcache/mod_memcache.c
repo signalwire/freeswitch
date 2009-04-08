@@ -65,7 +65,7 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 	char *memcached_str = NULL;
 	memcached_return rc;
 	unsigned int servercount;
-
+	
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
 		memcached_str = *((char**)data->ptr);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcached data: %s\n", memcached_str);
@@ -173,6 +173,7 @@ SWITCH_STANDARD_API(memcache_function)
 		/* clone memcached struct so we're thread safe */
 		memcached = memcached_clone(NULL, globals.memcached);
 		if (!memcached) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error cloning memcached object");
 			stream->write_function(stream, "-ERR Error cloning memcached object\n");
 		}
 		
@@ -201,7 +202,7 @@ SWITCH_STANDARD_API(memcache_function)
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "+OK\n");
 			} else {
-				stream->write_function(stream, "-ERR Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
+				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 		} else if (!strcasecmp(subcmd, "get") && argc > 1) {
 			key = argv[1];
@@ -210,7 +211,8 @@ SWITCH_STANDARD_API(memcache_function)
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "%.*s", (int)string_length, val);
 			} else {
-				stream->write_function(stream, "-ERR Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
+				switch_safe_free(val);
+				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 			switch_safe_free(val);
 		} else if (!strcasecmp(subcmd, "getflags") && argc > 1) {
@@ -220,7 +222,8 @@ SWITCH_STANDARD_API(memcache_function)
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "%x", flags);
 			} else {
-				stream->write_function(stream, "-ERR Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
+				switch_safe_free(val);
+				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 			switch_safe_free(val);
 		} else if ((!strcasecmp(subcmd, "increment") || !strcasecmp(subcmd, "decrement")) && argc > 1) {
@@ -238,7 +241,7 @@ SWITCH_STANDARD_API(memcache_function)
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "%ld", ivalue);
 			} else {
-				stream->write_function(stream, "-ERR Error while running command %s %s: %s\n", subcmd, key, memcached_strerror(memcached, rc));
+				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 		} else if (!strcasecmp(subcmd, "delete") && argc > 1) {
 			key = argv[1];
@@ -250,7 +253,7 @@ SWITCH_STANDARD_API(memcache_function)
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "+OK\n", key);
 			} else {
-				stream->write_function(stream, "-ERR Error while running command %s %s: %s\n", subcmd, key, memcached_strerror(memcached, rc));
+				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 		} else if (!strcasecmp(subcmd, "flush")) {
 			if(argc > 1) {
@@ -261,7 +264,7 @@ SWITCH_STANDARD_API(memcache_function)
 			if (rc == MEMCACHED_SUCCESS) {
 				stream->write_function(stream, "+OK\n", key);
 			} else {
-				stream->write_function(stream, "-ERR Error while running command %s : %s\n", subcmd, memcached_strerror(memcached, rc));
+				switch_goto_status(SWITCH_STATUS_SUCCESS, mcache_error);
 			}
 		} else if (!strcasecmp(subcmd, "status")) {
 			switch_bool_t verbose = SWITCH_FALSE;
@@ -303,6 +306,13 @@ SWITCH_STANDARD_API(memcache_function)
 		}
 	}
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+
+mcache_error:
+	if (rc != MEMCACHED_NOTFOUND) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error while running command %s: %s\n", subcmd, memcached_strerror(memcached, rc));
+	}
+	stream->write_function(stream, "-ERR %s\n", memcached_strerror(memcached, rc));
+	goto done;
 	
 usage:
 	stream->write_function(stream, "-ERR\n%s\n", SYNTAX);
