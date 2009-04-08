@@ -206,11 +206,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		need_codec = TRUE;
 	}
 
-	if (session->read_codec && !(*frame)->codec) {
-		need_codec = TRUE;
-	}
-
-	if (!session->read_codec && (*frame)->codec) {
+	if (!(session->read_codec && (*frame)->codec && (*frame)->codec->implementation)) {
 		status = SWITCH_STATUS_FALSE;
 		goto done;
 	}
@@ -533,6 +529,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 		*frame = &runtime.dummy_cng_frame;
 	}
 
+	(*frame)->session = session;
+
 	switch_mutex_unlock(session->read_codec->mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
 
@@ -610,9 +608,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	switch_mutex_lock(session->write_codec->mutex);
-
+	switch_mutex_lock(frame->codec->mutex);
 	
-
 	if ((session->write_codec && frame->codec && session->write_codec->implementation != frame->codec->implementation)) {
 		if (session->write_impl.codec_id == frame->codec->implementation->codec_id || 
 			session->write_impl.microseconds_per_packet != frame->codec->implementation->microseconds_per_packet) {
@@ -661,8 +658,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 										  frame->datalen,
 										  session->write_impl.actual_samples_per_second,
 										  session->raw_write_frame.data, &session->raw_write_frame.datalen, &session->raw_write_frame.rate, &flag);
-
-
+		
+		
 		
 
 		if (do_resample && status == SWITCH_STATUS_SUCCESS) {
@@ -682,6 +679,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 												session->write_impl.decoded_bytes_per_packet,
 												SWITCH_RESAMPLE_QUALITY);
 												
+				
 				switch_mutex_unlock(session->resample_mutex);
 				if (status != SWITCH_STATUS_SUCCESS) {
 					goto done;
@@ -725,18 +723,30 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		}
 	}
 
+	
+
 	if (session->write_resampler) {
 		short *data = write_frame->data;
 
 		switch_mutex_lock(session->resample_mutex);
-		switch_resample_process(session->write_resampler, data, write_frame->datalen / 2);
-		memcpy(data, session->write_resampler->to, session->write_resampler->to_len * 2);
-		write_frame->samples = session->write_resampler->to_len;
-		write_frame->datalen = write_frame->samples * 2;
-		write_frame->rate = session->write_resampler->to_rate;
-		did_write_resample = 1;
+		if (session->write_resampler) {
+			
+			switch_resample_process(session->write_resampler, data, write_frame->datalen / 2);
+			
+			memcpy(data, session->write_resampler->to, session->write_resampler->to_len * 2);
+			
+			write_frame->samples = session->write_resampler->to_len;
+			
+			write_frame->datalen = write_frame->samples * 2;
+			
+			write_frame->rate = session->write_resampler->to_rate;
+			
+			did_write_resample = 1;
+		}
 		switch_mutex_unlock(session->resample_mutex);
 	}
+
+	
 
 	if (session->bugs && !switch_channel_test_flag(session->channel, CF_PAUSE_BUGS)) {
 		switch_media_bug_t *bp, *dp, *last = NULL;
@@ -804,7 +814,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			write_frame->codec->implementation->decoded_bytes_per_packet == session->write_impl.decoded_bytes_per_packet) {
 			perfect = TRUE;
 		}
+
 		
+
 		if (perfect) {
 			
 			if (write_frame->datalen < session->write_impl.decoded_bytes_per_packet) {
@@ -821,6 +833,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 											  enc_frame->datalen,
 											  session->write_impl.actual_samples_per_second,
 											  session->enc_write_frame.data, &session->enc_write_frame.datalen, &session->enc_write_frame.rate, &flag);
+
+
+			
 
 			switch (status) {
 			case SWITCH_STATUS_RESAMPLE:
@@ -864,6 +879,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			if (flag & SFF_CNG) {
 				switch_set_flag(write_frame, SFF_CNG);
 			}
+
 			status = perform_write(session, write_frame, flags, stream_id);
 			goto error;
 		} else {
@@ -924,6 +940,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 														  &session->enc_write_frame.rate, &flag);
 
 						
+						
+
 						switch (status) {
 						case SWITCH_STATUS_RESAMPLE:
 							resample++;
@@ -935,13 +953,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							write_frame = &session->enc_write_frame;
 							if (!session->write_resampler) {
 								switch_mutex_lock(session->resample_mutex);
-								status = switch_resample_create(&session->write_resampler,
-																frame->codec->implementation->actual_samples_per_second,
-																session->write_impl.actual_samples_per_second, 
-																session->write_impl.decoded_bytes_per_packet,
-																SWITCH_RESAMPLE_QUALITY);
-																
+								if (!session->write_resampler) {
+									status = switch_resample_create(&session->write_resampler,
+																	frame->codec->implementation->actual_samples_per_second,
+																	session->write_impl.actual_samples_per_second, 
+																	session->write_impl.decoded_bytes_per_packet,
+																	SWITCH_RESAMPLE_QUALITY);
+								}
 								switch_mutex_unlock(session->resample_mutex);
+
+								
 
 								if (status != SWITCH_STATUS_SUCCESS) {
 									goto done;
@@ -959,8 +980,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 						case SWITCH_STATUS_NOOP:
 							if (session->write_resampler) {
 								switch_mutex_lock(session->resample_mutex);
-								switch_resample_destroy(&session->write_resampler);
-								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+								if (session->write_resampler) {
+									switch_resample_destroy(&session->write_resampler);
+									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Deactivating write resampler\n");
+								}
 								switch_mutex_unlock(session->resample_mutex);
 							}
 							enc_frame->codec = session->write_codec;
@@ -985,11 +1008,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 						if (!did_write_resample && session->read_resampler) {
 							short *data = write_frame->data;
 							switch_mutex_lock(session->resample_mutex);
-							switch_resample_process(session->read_resampler, data, write_frame->datalen / 2);
-							memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2);
-							write_frame->samples = session->read_resampler->to_len;
-							write_frame->datalen = session->read_resampler->to_len * 2;
-							write_frame->rate = session->read_resampler->to_rate;
+							if (session->read_resampler) {
+								switch_resample_process(session->read_resampler, data, write_frame->datalen / 2);
+								memcpy(data, session->read_resampler->to, session->read_resampler->to_len * 2);
+								write_frame->samples = session->read_resampler->to_len;
+								write_frame->datalen = session->read_resampler->to_len * 2;
+								write_frame->rate = session->read_resampler->to_rate;
+							}
 							switch_mutex_unlock(session->resample_mutex);
 
 						}
@@ -1002,9 +1027,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 							write_frame->timestamp = 0;
 						}
 
-						status = perform_write(session, write_frame, flags, stream_id);
-
-						if (status != SWITCH_STATUS_SUCCESS) {
+						if ((status = perform_write(session, write_frame, flags, stream_id)) != SWITCH_STATUS_SUCCESS) {
 							break;
 						}
 					}
@@ -1021,12 +1044,18 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 	}
 
 	if (do_write) {
+
+		
+
 		status = perform_write(session, write_frame, flags, stream_id);
+
+		
 	}
 	
  error:
 
 	switch_mutex_unlock(session->write_codec->mutex);
+	switch_mutex_unlock(frame->codec->mutex);
 	switch_mutex_unlock(session->codec_write_mutex);
 
 	return status;

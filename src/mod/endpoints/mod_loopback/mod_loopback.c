@@ -115,12 +115,10 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
-		memset(&tech_pvt->read_codec, 0, sizeof(tech_pvt->read_codec));
 	}
 
 	if (tech_pvt->write_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->write_codec);
-		memset(&tech_pvt->write_codec, 0, sizeof(tech_pvt->write_codec));
 	}
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s setup codec %s/%d/%d\n", switch_channel_get_name(channel), iananame, rate, interval);
@@ -161,7 +159,9 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 
 	tech_pvt->write_frame.data = tech_pvt->write_databuf;
 	tech_pvt->write_frame.buflen = sizeof(tech_pvt->write_databuf);
+	tech_pvt->write_frame.codec = &tech_pvt->write_codec;
 	
+
 	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
 	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_databuf);
 	switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
@@ -362,7 +362,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_LINKED);
 		tech_pvt->other_tech_pvt = NULL;
 	}
-	switch_mutex_unlock(tech_pvt->mutex);
 	
 	if (tech_pvt->other_session) {
 		switch_channel_hangup(tech_pvt->other_channel, switch_channel_get_cause(channel));
@@ -370,17 +369,16 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		tech_pvt->other_channel = NULL;
 		tech_pvt->other_session = NULL;
 	}
+	switch_mutex_unlock(tech_pvt->mutex);
 
 	switch_core_timer_destroy(&tech_pvt->timer);
 
 	if (tech_pvt->read_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
-		memset(&tech_pvt->read_codec, 0, sizeof(tech_pvt->read_codec));
 	}
 
 	if (tech_pvt->write_codec.implementation) {
 		switch_core_codec_destroy(&tech_pvt->write_codec);
-		memset(&tech_pvt->write_codec, 0, sizeof(tech_pvt->write_codec));
 	}
 
 	return SWITCH_STATUS_SUCCESS;
@@ -518,33 +516,21 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	mutex = tech_pvt->mutex;
 	switch_mutex_lock(mutex);
 
-	while(switch_test_flag(tech_pvt, TFLAG_LINKED) && tech_pvt->other_tech_pvt) {
-		if (!switch_channel_ready(channel)) {
-			goto end;
-		}
-		if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
-			break;
-		}
-		
-		if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
-			break;
-		}
-
-		if (switch_core_timer_check(&tech_pvt->timer, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
-			switch_set_flag(tech_pvt, TFLAG_CNG);
-			break;
-		}
-
-		switch_cond_next();
+	
+	if (!switch_channel_ready(channel)) {
+		goto end;
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
-		if (tech_pvt->other_tech_pvt && switch_test_flag(tech_pvt->other_tech_pvt, TFLAG_WRITE)) {
-			switch_core_timer_sync(&tech_pvt->timer);
-			*frame = &tech_pvt->other_tech_pvt->write_frame;
-			switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
-			switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
-		}
+	if (!switch_test_flag(tech_pvt, TFLAG_CNG) && !switch_test_flag(tech_pvt, TFLAG_WRITE)) {
+		switch_core_timer_next(&tech_pvt->timer);
+	}
+
+	if (switch_test_flag(tech_pvt, TFLAG_WRITE)) {
+		*frame = &tech_pvt->write_frame;
+		switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
+		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
+	} else {
+		switch_set_flag(tech_pvt, TFLAG_CNG);
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
@@ -555,7 +541,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 
 
-	if (*frame && switch_test_flag(tech_pvt, TFLAG_LINKED)) {
+	if (*frame) {
 		status = SWITCH_STATUS_SUCCESS;
 	} else {
 		status = SWITCH_STATUS_FALSE;
@@ -624,12 +610,12 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 			tech_init(tech_pvt->other_tech_pvt, tech_pvt->other_session, frame->codec);
 		}
 		
-		memcpy(&tech_pvt->write_frame, frame, sizeof(*frame));
-		tech_pvt->write_frame.data = tech_pvt->write_databuf;
-		tech_pvt->write_frame.buflen = sizeof(tech_pvt->write_databuf);
-		tech_pvt->write_frame.codec = &tech_pvt->write_codec;
-		memcpy(tech_pvt->write_frame.data, frame->data, frame->datalen);
-		switch_set_flag_locked(tech_pvt, TFLAG_WRITE);
+		memcpy(&tech_pvt->other_tech_pvt->write_frame, frame, sizeof(*frame));
+		tech_pvt->other_tech_pvt->write_frame.data = tech_pvt->other_tech_pvt->write_databuf;
+		tech_pvt->other_tech_pvt->write_frame.buflen = sizeof(tech_pvt->other_tech_pvt->write_databuf);
+		//tech_pvt->other_tech_pvt->write_frame.codec = &tech_pvt->other_tech_pvt->write_codec;
+		memcpy(tech_pvt->other_tech_pvt->write_frame.data, frame->data, frame->datalen);
+		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 

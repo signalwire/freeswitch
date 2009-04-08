@@ -68,6 +68,7 @@ SWITCH_BEGIN_EXTERN_C
 	switch_bool_t m;
 	/*! frame flags */
 	switch_frame_flag_t flags;
+	switch_core_session_t *session;
 };
 
 SWITCH_END_EXTERN_C
