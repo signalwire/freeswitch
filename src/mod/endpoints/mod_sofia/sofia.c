@@ -2886,9 +2886,19 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 						  switch_channel_get_name(channel), nua_callstate_name(ss_state), status);
 		
 		if (r_sdp) {
+			sdp_parser_t *parser;
+			sdp_session_t *sdp;
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Remote SDP:\n%s\n", r_sdp);
 			tech_pvt->remote_sdp_str = switch_core_session_strdup(session, r_sdp);
 			switch_channel_set_variable(channel, SWITCH_R_SDP_VARIABLE, r_sdp);
+
+			if ( sofia_test_flag(tech_pvt, TFLAG_LATE_NEGOTIATION) && (parser = sdp_parse(NULL, r_sdp, (int) strlen(r_sdp), 0))) {
+				if ((sdp = sdp_session(parser))) {
+					sofia_glue_set_r_sdp_codec_string(channel, (tech_pvt->profile?tech_pvt->profile->codec_string:NULL), sdp);
+				}
+				sdp_parser_free(parser);
+			}
 			sofia_glue_pass_sdp(tech_pvt, (char *) r_sdp);
 		}
 	}

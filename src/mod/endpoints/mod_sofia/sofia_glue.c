@@ -2380,6 +2380,142 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 }
 
+void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *codec_string, sdp_session_t *sdp)
+{
+	char buf[1024] = {0};
+	sdp_media_t *m;
+	sdp_attribute_t *attr;
+	int ptime = 0, dptime = 0;
+	sdp_connection_t *connection;
+	sdp_rtpmap_t *map;
+	short int match = 0;
+	int i;
+	int already_did[128] = { 0 };
+	int num_codecs = 0;
+	char *codec_order[SWITCH_MAX_CODECS];
+	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS] = { 0 };
+
+	if (codec_string) {
+		char *tmp_codec_string;
+		if ((tmp_codec_string = strdup(codec_string))) {
+			num_codecs = switch_separate_string(tmp_codec_string, ',', codec_order, SWITCH_MAX_CODECS);
+			num_codecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, codec_order, num_codecs);
+			switch_safe_free(tmp_codec_string);
+		}
+	} else {
+		num_codecs = switch_loadable_module_get_codecs(codecs, SWITCH_MAX_CODECS);
+	}
+
+	if (!channel || !num_codecs) {
+		return;
+	}
+
+	for (attr = sdp->sdp_attributes; attr; attr = attr->a_next) {
+		if (switch_strlen_zero(attr->a_name)) {
+			continue;
+		}
+
+		if (!strcasecmp(attr->a_name, "ptime")) {
+			dptime = atoi(attr->a_value);
+			break;
+		}
+	}
+
+	for (m = sdp->sdp_media; m; m = m->m_next) {
+		ptime = dptime;
+		if ( m->m_type == sdp_media_image && m->m_port) {
+			switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",t38");
+		} else if (m->m_type == sdp_media_audio && m->m_port) {
+			for (attr = m->m_attributes; attr; attr = attr->a_next) {
+				if (switch_strlen_zero(attr->a_name)) {
+					continue;
+				}
+				if (!strcasecmp(attr->a_name, "ptime") && attr->a_value) {
+					ptime = atoi(attr->a_value);
+					break;
+				}
+			}
+			connection = sdp->sdp_connection;
+			if (m->m_connections) {
+				connection = m->m_connections;
+			}
+
+			if (!connection) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
+				break;
+			}
+
+			for (i = 0; i < num_codecs; i++) {
+				const switch_codec_implementation_t *imp = codecs[i];
+				if (imp->codec_type != SWITCH_CODEC_TYPE_AUDIO || imp->ianacode > 127 || already_did[imp->ianacode]) {
+					continue;
+				}
+				for (map = m->m_rtpmaps; map; map = map->rm_next) {
+					if ( map->rm_pt > 127 ||  already_did[map->rm_pt]) {
+						continue;
+					}
+
+					if (map->rm_pt < 96) {
+						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
+					} else {
+						if(map->rm_encoding) {
+							match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+						} else {
+							match = 0;
+						}
+					}
+
+					if (match) {
+						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (int) map->rm_rate, ptime);
+						already_did[imp->ianacode] = 1;
+						break;
+					}
+				}
+			}
+		} else if (m->m_type == sdp_media_video && m->m_port) {
+			connection = sdp->sdp_connection;
+			if (m->m_connections) {
+				connection = m->m_connections;
+			}
+
+			if (!connection) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find a c= line in the sdp at media or session level!\n");
+				break;
+			}
+			for (i = 0; i < num_codecs; i++) {
+				const switch_codec_implementation_t *imp = codecs[i];
+				if (imp->codec_type != SWITCH_CODEC_TYPE_VIDEO || imp->ianacode > 127 || already_did[imp->ianacode]) {
+					continue;
+				}
+				for (map = m->m_rtpmaps; map; map = map->rm_next) {
+					if ( map->rm_pt > 127 || already_did[map->rm_pt]) {
+						continue;
+					}
+
+					if (map->rm_pt < 96) {
+						match = (map->rm_pt == imp->ianacode) ? 1 : 0;
+					} else {
+						if(map->rm_encoding) {
+							match = strcasecmp(map->rm_encoding, imp->iananame) ? 0 : 1;
+						} else {
+							match = 0;
+						}
+					}
+
+					if (match) {
+						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (int) map->rm_rate, ptime);
+						already_did[imp->ianacode] = 1;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if (buf[0] == ',') {
+		switch_channel_set_variable(channel, "ep_codec_string", buf + 1);
+	}
+}
+
 switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp)
 {
 	sdp_parser_t *parser = NULL;
