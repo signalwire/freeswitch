@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
     NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE 
     
@@ -16,7 +17,6 @@
     
     NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE 
 -->
-<?xml version="1.0"?>
 <document type="freeswitch/xml">
   <!--#comment 
       All comments starting with #command will be preprocessed and never sent to the xml parser
