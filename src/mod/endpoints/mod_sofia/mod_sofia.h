@@ -672,6 +672,12 @@ switch_status_t sofia_presence_chat_send(const char *proto, const char *from, co
 						  const char *body, const char *type, const char *hint);
 void sofia_glue_tech_absorb_sdp(private_object_t *tech_pvt);
 
+/*
+ * \brief Sets the "ep_codec_string" channel variable, parsing r_sdp and taing codec_string in consideration 
+ * \param channel Current channel
+ * \param codec_string The profile's codec string or NULL if inexistant
+ * \param sdp The parsed SDP content
+ */
 void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *codec_string, sdp_session_t *sdp);
 switch_status_t sofia_glue_tech_media(private_object_t *tech_pvt, const char *r_sdp);
 char *sofia_reg_find_reg_url(sofia_profile_t *profile, const char *user, const char *host, char *val, switch_size_t len);
