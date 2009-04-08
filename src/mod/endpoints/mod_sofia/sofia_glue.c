@@ -2395,7 +2395,7 @@ void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *cod
 	char *codec_order[SWITCH_MAX_CODECS];
 	const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS] = { 0 };
 
-	if (codec_string) {
+	if (!switch_strlen_zero(codec_string)) {
 		char *tmp_codec_string;
 		if ((tmp_codec_string = strdup(codec_string))) {
 			num_codecs = switch_separate_string(tmp_codec_string, ',', codec_order, SWITCH_MAX_CODECS);
