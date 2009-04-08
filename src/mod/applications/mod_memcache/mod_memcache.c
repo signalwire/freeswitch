@@ -367,6 +367,9 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_memcache_shutdown)
 	if (globals.memcached) {
 		memcached_free(globals.memcached);
 	}
+	
+	switch_event_unbind(&NODE);
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
