@@ -44,6 +44,15 @@ LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
 
 
 #
+# GNU pkgconfig file
+#
+EXTRA_DIST = openzap.pc.in
+
+pkgconfigdir   = $(libdir)/pkgconfig
+pkgconfig_DATA = openzap.pc
+
+
+#
 # libopenzap
 #
 libopenzap_la_SOURCES = \

@@ -160,5 +160,6 @@ AM_CONDITIONAL([LIBPRI],[test "${enable_libpri}" = "yes"])
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"
 AC_SUBST(COMP_VENDOR_CFLAGS)
 AC_CONFIG_FILES([Makefile
+		openzap.pc
 		mod_openzap/Makefile])
 AC_OUTPUT
