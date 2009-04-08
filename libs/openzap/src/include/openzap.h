@@ -167,8 +167,6 @@
 #include "libteletone.h"
 #include "zap_buffer.h"
 #include "zap_threadmutex.h"
-#include "Q921.h"
-#include "Q931.h"
 
 #define XX if (0)
 
@@ -409,6 +407,19 @@ struct zap_fsk_modulator {
 	void *user_data;
 	int16_t sample_buffer[64];
 };
+
+/**
+ * Type Of Number (TON)
+ */
+typedef enum {
+	ZAP_TON_UNKNOWN = 0,
+	ZAP_TON_INTERNATIONAL,
+	ZAP_TON_NATIONAL,
+	ZAP_TON_NETWORK_SPECIFIC,
+	ZAP_TON_SUBSCRIBER_NUMBER,
+	ZAP_TON_ABBREVIATED_NUMBER,
+	ZAP_TON_RESERVED
+} zap_ton_t;
 
 typedef struct {
 	char digits[25];
