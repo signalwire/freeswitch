@@ -1025,9 +1025,9 @@ static switch_status_t load_config(void)
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_skypiax_load)
 {
-  skypiax_module_pool = pool;
   switch_api_interface_t *commands_api_interface;
 
+  skypiax_module_pool = pool;
   memset(&globals, '\0', sizeof(globals));
 
   running = 1;
