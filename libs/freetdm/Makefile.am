@@ -29,22 +29,24 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-PREFIX=$(prefix)
+PREFIX = $(prefix)
+SRC    = src
 
-SRC=src
-
-moddir=@modinstdir@
-
-INCS=-I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
-MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
-COMPILE      = $(CC) $(MY_CFLAGS) $(INCS)
-LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
-LINK = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
-
+moddir = @modinstdir@
 libdir = $(PREFIX)/lib/
-library_includedir      = $(PREFIX)/include
+library_includedir = $(PREFIX)/include
 
-libopenzap_la_SOURCES	= \
+INCS      = -I$(OZ_SRCDIR)/$(SRC)/include -I$(OZ_SRCDIR)/$(SRC)/isdn/include -I$(OZ_SRCDIR)/$(SRC)/ozmod/ozmod_ss7_boost 
+MY_CFLAGS = $(INCS) $(ZAP_CFLAGS) -DZAP_CONFIG_DIR=\"@prefix@/conf\" -DZAP_MOD_DIR=\"$(moddir)\" @COMP_VENDOR_CFLAGS@ @DEFS@
+COMPILE   = $(CC) $(MY_CFLAGS) $(INCS)
+LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(COMPILE)
+LINK      = $(LIBTOOL) --mode=link --tag=CC $(CC) $(MY_CFLAGS) $(LDFLAGS) -o $@
+
+
+#
+# libopenzap
+#
+libopenzap_la_SOURCES = \
 $(SRC)/hashtable.c \
 $(SRC)/hashtable_itr.c \
 $(SRC)/zap_io.c \
@@ -80,82 +82,73 @@ $(SRC)/include/zap_types.h
 lib_LTLIBRARIES	       = libopenzap.la
 libopenzap_la_CFLAGS   = $(AM_CFLAGS) $(MY_CFLAGS)
 libopenzap_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS)
-libopenzap_la_LIBADD     = $(LIBS)
+libopenzap_la_LIBADD   = $(LIBS)
 
-MYLIB=libopenzap.la
+MYLIB = libopenzap.la
 
 core: libopenzap.la 
 core-install: install-libLTLIBRARIES
 
+#
+# tools & test programs
+#
 noinst_PROGRAMS = testtones detect_tones detect_dtmf testisdn testboost testanalog testapp testcid
+
 testapp_SOURCES = $(SRC)/testapp.c
-testapp_LDADD = libopenzap.la
-testapp_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testapp_LDADD   = libopenzap.la
+testapp_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 testcid_SOURCES = $(SRC)/testcid.c
-testcid_LDADD = libopenzap.la
-testcid_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testcid_LDADD   = libopenzap.la
+testcid_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 testtones_SOURCES = $(SRC)/testtones.c
-testtones_LDADD = libopenzap.la
-testtones_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testtones_LDADD   = libopenzap.la
+testtones_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 detect_tones_SOURCES = $(SRC)/detect_tones.c
-detect_tones_LDADD = libopenzap.la
-detect_tones_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+detect_tones_LDADD   = libopenzap.la
+detect_tones_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 detect_dtmf_SOURCES = $(SRC)/detect_dtmf.c
-detect_dtmf_LDADD = libopenzap.la
-detect_dtmf_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+detect_dtmf_LDADD   = libopenzap.la
+detect_dtmf_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 testisdn_SOURCES = $(SRC)/testisdn.c
-testisdn_LDADD = libopenzap.la
-testisdn_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testisdn_LDADD   = libopenzap.la
+testisdn_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 testboost_SOURCES = $(SRC)/testboost.c
-testboost_LDADD = libopenzap.la
-testboost_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testboost_LDADD   = libopenzap.la
+testboost_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
+
 testanalog_SOURCES = $(SRC)/testanalog.c
-testanalog_LDADD = libopenzap.la
-testanalog_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+testanalog_LDADD   = libopenzap.la
+testanalog_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 
-dox:
-	cd docs && doxygen $(OZ_SRCDIR)/docs/Doxygen.conf
-
-mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN): $(MYLIB) mod_openzap/mod_openzap.c
-	cd mod_openzap && make
-
-mod_openzap: mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN)
-
-mod_openzap-install: mod_openzap
-	cd mod_openzap && make install
-
-mod_openzap-clean:
-	@if [ -f mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN) ] ; then cd mod_openzap && make clean ; fi
-
-install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(PREFIX)
-	$(mkinstalldirs) $(DESTDIR)$(PREFIX)/conf
-	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
-	@echo OpenZAP Installed
-
+#
+# ozmod modules
+#
 mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_wanpipe.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la
+
 if LIBPRI
 mod_LTLIBRARIES += ozmod_libpri.la
 endif
+
 ozmod_zt_la_SOURCES = $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
-ozmod_zt_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_zt_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_zt_la_LDFLAGS = -module
-ozmod_zt_la_LIBADD = $(MYLIB)
+ozmod_zt_la_LIBADD  = $(MYLIB)
+
 ozmod_skel_la_SOURCES = $(SRC)/ozmod/ozmod_skel/ozmod_skel.c
-ozmod_skel_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_skel_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_skel_la_LDFLAGS = -module
-ozmod_skel_la_LIBADD = $(MYLIB)
+ozmod_skel_la_LIBADD  = $(MYLIB)
+
 ozmod_wanpipe_la_SOURCES = $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
-ozmod_wanpipe_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_wanpipe_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_wanpipe_la_LDFLAGS = -module
-ozmod_wanpipe_la_LIBADD = $(MYLIB)
-
-#PIKA_DIR=$(shell ls -d /usr/include/pika 2>/dev/null)
-#PIKA_LIB=$(shell ls /usr/lib/libpikahmpapi.so 2>/dev/null)
-
-#$(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN): $(SRC)/ozmod/ozmod_pika/ozmod_pika.o $(MYLIB)
-#	$(LINK) $(SOLINK) $(SRC)/ozmod/ozmod_pika/ozmod_pika.o  $(MYLIB) -rpath $(libdir)
-#pikamod: $(SRC)/ozmod/ozmod_pika/ozmod_pika.$(DYNAMIC_LIB_EXTEN)
+ozmod_wanpipe_la_LIBADD  = $(MYLIB)
 
 ozmod_isdn_la_SOURCES = \
 $(SRC)/isdn/EuroISDNStateNT.c \
@@ -179,28 +172,50 @@ $(SRC)/isdn/5ESSStateNT.c \
 $(SRC)/isdn/5ESSStateTE.c \
 $(SRC)/isdn/Q932mes.c \
 $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
-ozmod_isdn_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
+
+ozmod_isdn_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
 ozmod_isdn_la_LDFLAGS = $(PCAP_LIB_FLAGS) -module 
-ozmod_isdn_la_LIBADD = $(MYLIB)
+ozmod_isdn_la_LIBADD  = $(MYLIB)
 
 ozmod_analog_la_SOURCES = $(SRC)/ozmod/ozmod_analog/ozmod_analog.c
-ozmod_analog_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_analog_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_analog_la_LDFLAGS = -module
-ozmod_analog_la_LIBADD = $(MYLIB)
+ozmod_analog_la_LIBADD  = $(MYLIB)
 
 ozmod_analog_em_la_SOURCES = $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.c
-ozmod_analog_em_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_analog_em_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_analog_em_la_LDFLAGS = -module
-ozmod_analog_em_la_LIBADD = $(MYLIB)
+ozmod_analog_em_la_LIBADD  = $(MYLIB)
 
 ozmod_ss7_boost_la_SOURCES = $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
-ozmod_ss7_boost_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_ss7_boost_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_ss7_boost_la_LDFLAGS = -module
-ozmod_ss7_boost_la_LIBADD = $(MYLIB)
+ozmod_ss7_boost_la_LIBADD  = $(MYLIB)
 
 if LIBPRI
 ozmod_libpri_la_SOURCES = $(SRC)/ozmod/ozmod_libpri/ozmod_libpri.c $(SRC)/ozmod/ozmod_libpri/lpwrap_pri.c
-ozmod_libpri_la_CFLAGS = $(AM_CFLAGS) $(MY_CFLAGS)
+ozmod_libpri_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_libpri_la_LDFLAGS = -module -lpri
-ozmod_libpri_la_LIBADD = $(MYLIB)
+ozmod_libpri_la_LIBADD  = $(MYLIB)
 endif
+
+
+dox doxygen:
+	cd docs && doxygen $(OZ_SRCDIR)/docs/Doxygen.conf
+
+mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN): $(MYLIB) mod_openzap/mod_openzap.c
+	cd mod_openzap && make
+
+mod_openzap: mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN)
+
+mod_openzap-install: mod_openzap
+	cd mod_openzap && make install
+
+mod_openzap-clean:
+	@if [ -f mod_openzap/mod_openzap.$(DYNAMIC_LIB_EXTEN) ] ; then cd mod_openzap && make clean ; fi
+
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)$(PREFIX)
+	$(mkinstalldirs) $(DESTDIR)$(PREFIX)/conf
+	@[ -f "$(DESTDIR)$(PREFIX)/conf/openzap.conf" ] || ( cp conf/*.conf $(DESTDIR)$(PREFIX)/conf)
+	@echo OpenZAP Installed
