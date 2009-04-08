@@ -1249,6 +1249,8 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 	char *tcmd, *targ;
 
 	if ((read_fd = open(file, O_RDONLY, 0)) < 0) {
+		const char *reason = strerror(errno);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt open %s (%s)\n", file, reason);
 		return read_fd;
 	}
 
