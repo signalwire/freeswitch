@@ -168,15 +168,13 @@
 #include "zap_buffer.h"
 #include "zap_threadmutex.h"
 
-#define XX if (0)
-
 #ifdef __WINDOWS__
 #define zap_sleep(x) Sleep(x)
 #else
 #define zap_sleep(x) usleep(x * 1000)
 #endif
 
-#ifdef  NDEBUG
+#ifdef NDEBUG
 #undef assert
 #define assert(_Expression)     ((void)(_Expression))
 #endif
