@@ -56,6 +56,8 @@ static struct {
 	char *memcached_str;
 } globals;
 
+static switch_event_node_t *NODE = NULL;
+
 static switch_status_t config_callback_memcached(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed) 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
@@ -131,12 +133,18 @@ static switch_status_t do_config(switch_bool_t reload)
 {
 	memset(&globals, 0, sizeof(globals));
 	
-	if (switch_xml_config_parse_module_settings("memcache.conf", SWITCH_FALSE, instructions) != SWITCH_STATUS_SUCCESS) {
+	if (switch_xml_config_parse_module_settings("memcache.conf", reload, instructions) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
 	
 	
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static void event_handler(switch_event_t *event)
+{
+	do_config(SWITCH_TRUE);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Memcache Reloaded\n");
 }
 
 SWITCH_STANDARD_API(memcache_function)
@@ -337,6 +345,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load)
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
 	do_config(SWITCH_FALSE);
+	
+	if ((switch_event_bind_removable(modname, SWITCH_EVENT_RELOADXML, NULL, event_handler, NULL, &NODE) != SWITCH_STATUS_SUCCESS)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind event!\n");
+		return SWITCH_STATUS_TERM;
+	}
 	
 	SWITCH_ADD_API(api_interface, "memcache", "Memcache API", memcache_function, "syntax");
 
