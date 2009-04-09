@@ -1,10 +1,10 @@
 <language>
   <ru>
 	<ascii>
-		<prompt phrase="Ïðîáåë " filename= "32"/>
-		<prompt phrase="Òî÷êà " filename= "35"/>
-		<prompt phrase="Çâåçäî÷êà " filename= "42"/>
-		<prompt phrase="Òî÷êà " filename= "46"/>
+		<prompt phrase="ÐŸÑ€Ð¾Ð±ÐµÐ» " filename= "32"/>
+		<prompt phrase="Ð¢Ð¾Ñ‡ÐºÐ° " filename= "35"/>
+		<prompt phrase="Ð—Ð²ÐµÐ·Ð´Ð¾Ñ‡ÐºÐ° " filename= "42"/>
+		<prompt phrase="Ð¢Ð¾Ñ‡ÐºÐ° " filename= "46"/>
 		<prompt phrase="A " filename= "97"/>
 		<prompt phrase="B " filename= "98"/>
 		<prompt phrase="C " filename= "99"/>
@@ -33,8 +33,8 @@
 		<prompt phrase="Z " filename= "122"/>
     </ascii>
 	<phonetic>
-		<prompt phrase="Ïðîáåë " filename= "32"/>
-		<prompt phrase="Òî÷êà " filename= "46"/>
+		<prompt phrase="ÐŸÑ€Ð¾Ð±ÐµÐ» " filename= "32"/>
+		<prompt phrase="Ð¢Ð¾Ñ‡ÐºÐ° " filename= "46"/>
 		<prompt phrase="Alpha " filename= "97"/>
 		<prompt phrase="Bravo " filename= "98"/>
 		<prompt phrase="Charlie " filename= "99"/>
@@ -63,443 +63,443 @@
 		<prompt phrase="Zulu " filename= "122"/>
 	</phonetic>
 	<digits>
-		<prompt phrase="íîëü " filename= "0"/>
-		<prompt phrase="íóëåâàÿ" filename= "h-0f"/>
-		<prompt phrase="íåëåâîé" filename= "h-0m"/>
-		<prompt phrase="Íåëåâîå" filename= "h-0n"/>
-		<prompt phrase="íóëåâîãî" filename= "h-0x"/>
-		<prompt phrase="Îäèí " filename= "1"/>
-		<prompt phrase="Îäíà " filename= "1f"/>
-		<prompt phrase="Îäíî " filename= "1n"/>
-		<prompt phrase="Îäíîãî" filename= "1x"/>
-		<prompt phrase="Ïåðâîãî " filename= "h-1x"/>
-		<prompt phrase="Ïåðâûé " filename= "h-1m"/>
-		<prompt phrase="Ïåðâîå" filename= "h-1n"/>
-		<prompt phrase="Ïåðâàÿ" filename= "h-1f"/>
-		<prompt phrase="Îäíà" filename= "h-1xx"/>
-		<prompt phrase="Äâà " filename= "2"/>
-		<prompt phrase="Äâå " filename= "2f"/>
-		<prompt phrase="Äâà " filename= "2n"/>
-		<prompt phrase="Âòîðîå" filename= "h-2n"/>
-		<prompt phrase="Âòîðîãî " filename= "h-2x"/>
-		<prompt phrase="Âòîðîé " filename= "h-2m"/>
-		<prompt phrase="Âòîðàÿ" filename= "h-2f"/>
-		<prompt phrase="Äâóõ" filename= "h-2xx"/>
-		<prompt phrase="Òðè " filename= "3"/>
-		<prompt phrase="Òðåòüåãî " filename= "h-3x"/>
-		<prompt phrase="Òðåòèé " filename= "h-3m"/>
-		<prompt phrase="Òðåòüÿ" filename= "h-3f"/>
-		<prompt phrase="òðåòüå" filename= "h-3n"/>
-		<prompt phrase="Òð¸õ" filename= "h-3xx"/>
-		<prompt phrase="×åòûðå " filename= "4"/>
-		<prompt phrase="×åòâ¸ðòàÿ" filename= "h-4f"/>
-		<prompt phrase="×åòâ¸ðòîãî " filename= "h-4x"/>
-		<prompt phrase="×åòâ¸ðòûé " filename= "h-4m"/>
-		<prompt phrase="×åòâ¸ðòîå" filename= "h-4n"/>
-		<prompt phrase="×åòûð¸õ" filename= "h-4xx"/>
-		<prompt phrase="Ïÿòü" filename= "5"/>
-		<prompt phrase="Ïÿòàÿ" filename= "h-5f"/>
-		<prompt phrase="Ïÿòîãî" filename= "h-5x"/>
-		<prompt phrase="×åòâ¸ðòûé " filename= "h-5m"/>
-		<prompt phrase="×åòâ¸ðòîå" filename= "h-5n"/>
-		<prompt phrase="Ïÿòè" filename= "h-5xx"/>
-		<prompt phrase="Øåñòü" filename= "6"/>
-		<prompt phrase="Øåñòàÿ" filename= "h-6f"/>
-		<prompt phrase="Øåñòîãî" filename= "h-6x"/>
-		<prompt phrase="Øåñòîé" filename= "h-6m"/>
-		<prompt phrase="Øåñòîå" filename= "h-6n"/>
-		<prompt phrase="Øåñòè" filename= "h-6xx"/>
-		<prompt phrase="Ñåìü" filename= "7"/>
-		<prompt phrase="Ñåäüìàÿ" filename= "h-7f"/>
-		<prompt phrase="Ñåäüìîãî" filename= "h-7x"/>
-		<prompt phrase="Ñåäüìîé" filename= "h-7m"/>
-		<prompt phrase="Ñåäüìîå" filename= "h-7n"/>
-		<prompt phrase="Ñåìè" filename= "h-7xx"/>
-		<prompt phrase="Âîñåìü" filename= "8"/>
-		<prompt phrase="Âîñüìàÿ" filename= "h-8f"/>
-		<prompt phrase="Âîñüìîãî" filename= "h-8x"/>
-		<prompt phrase="Âîñüìîé" filename= "h-8m"/>
-		<prompt phrase="Âîñüìîå" filename= "h-8n"/>
-		<prompt phrase="Âîñüìè" filename= "h-8xx"/>
-		<prompt phrase="Äåâÿòü" filename= "9"/>
-		<prompt phrase="Äåâÿòàÿ" filename= "h-9f"/>
-		<prompt phrase="Äåâÿòîãî" filename= "h-9x"/>
-		<prompt phrase="Äåâÿòûé" filename= "h-9m"/>
-		<prompt phrase="Äåâÿòîå" filename= "h-9n"/>
-		<prompt phrase="Äåâÿòè" filename= "h-9xx"/>
-		<prompt phrase="Äåñÿòü" filename= "10"/>
-		<prompt phrase="Äåñÿòàÿ" filename= "h-10f"/>
-		<prompt phrase="Äåñÿòîãî" filename= "h-10x"/>
-		<prompt phrase="Äåñÿòûé" filename= "h-10m"/>
-		<prompt phrase="Äåñÿòîå" filename= "h-10n"/>
-		<prompt phrase="Äåñÿòè" filename= "h-10xx"/>
-		<prompt phrase="Îäèíàäöàòü" filename= "11"/>
-		<prompt phrase="Îäèíàäöàòàÿ" filename= "h-11f"/>
-		<prompt phrase="Îäèíàäöàòîãî" filename= "h-11x"/>
-		<prompt phrase="Îäèíàäöàòûé" filename= "h-11m"/>
-		<prompt phrase="Îäèíàäöàòîå" filename= "h-11n"/>
-		<prompt phrase="Îäèíàäöàòè" filename= "h-11xx"/>
-		<prompt phrase="Äâåíàäöàòü" filename= "12"/>
-		<prompt phrase="Äâåíàäöàòàÿ" filename= "h-12f"/>
-		<prompt phrase="Äâåíàäöàòîãî" filename= "h-12x"/>
-		<prompt phrase="Äâåíàäöàòûé" filename= "h-12m"/>
-		<prompt phrase="Äâåíàäöàòîå" filename= "h-12n"/>
-		<prompt phrase="Äâåíàäöàòè" filename= "h-12xx"/>
-		<prompt phrase="Òðèíàäöàòü" filename= "13"/>
-		<prompt phrase="Òðèíàäöàòàÿ" filename= "h-13f"/>
-		<prompt phrase="Òðèíàäöàòîãî" filename= "h-13x"/>
-		<prompt phrase="Òðèíàäöàòûé" filename= "h-13m"/>
-		<prompt phrase="Òðèíàäöàòîå" filename= "h-13n"/>
-		<prompt phrase="Òðèíàäöàòè" filename= "h-13xx"/>
-		<prompt phrase="×åòûðíàäöàòü" filename= "14"/>
-		<prompt phrase="×åòûðíàäöàòàÿ" filename= "h-14f"/>
-		<prompt phrase="×åòûðíàäöàòîãî" filename= "h-14x"/>
-		<prompt phrase="×åòûðíàäöàòûé" filename= "h-14m"/>
-		<prompt phrase="×åòûðíàäöàòîå" filename= "h-14n"/>
-		<prompt phrase="×åòûðíàäöàòè" filename= "h-14xx"/>
-		<prompt phrase="Ïÿòíàäöàòü" filename= "15"/>
-		<prompt phrase="Ïÿòíàäöàòàÿ" filename= "h-15f"/>
-		<prompt phrase="Ïÿòíàäöàòîãî" filename= "h-15x"/>
-		<prompt phrase="Ïÿòíàäöàòûé" filename= "h-15m"/>
-		<prompt phrase="Ïÿòíàäöàòîå" filename= "h-15n"/>
-		<prompt phrase="Ïÿòíàäöàòè" filename= "h-15xx"/>
-		<prompt phrase="Øåñòíàäöàòü" filename= "16"/>
-		<prompt phrase="Øåñòíàäöàòàÿ" filename= "h-16f"/>
-		<prompt phrase="Øåñòíàäöàòîãî" filename= "h-16x"/>
-		<prompt phrase="Øåñòíàäöàòûé" filename= "h-16m"/>
-		<prompt phrase="Øåñòíàäöàòîå" filename= "h-16n"/>
-		<prompt phrase="Øåñòíàäöàòè" filename= "h-16xx"/>
-		<prompt phrase="Ñåìíàäöàòü" filename= "17"/>
-		<prompt phrase="Ñåìíàäöàòàÿ" filename= "h-17f"/>
-		<prompt phrase="Ñåìíàäöàòîãî" filename= "h-17x"/>
-		<prompt phrase="Ñåìíàäöàòûé" filename= "h-17m"/>
-		<prompt phrase="Ñåìíàäöàòîå" filename= "h-17n"/>
-		<prompt phrase="Ñåìíàäöàòè" filename= "h-17xx"/>
-		<prompt phrase="Âîñåìíàäöàòü" filename= "18"/>
-		<prompt phrase="Âîñåìíàäöàòàÿ" filename= "h-18f"/>
-		<prompt phrase="Âîñåìíàäöàòîãî" filename= "h-18x"/>
-		<prompt phrase="Âîñåìíàäöàòûé" filename= "h-18m"/>
-		<prompt phrase="Âîñåìíàäöàòîå" filename= "h-18n"/>
-		<prompt phrase="Âåñåìíàäöàòè" filename= "h-18xx"/>
-		<prompt phrase="Äåâÿòíàäöàòü" filename= "19"/>
-		<prompt phrase="Äåâÿòíàäöàòàÿ" filename= "h-19f"/>
-		<prompt phrase="Äåâÿòíàäöàòîãî" filename= "h-19x"/>
-		<prompt phrase="Äåâÿòíàäöàòûé" filename= "h-19m"/>
-		<prompt phrase="Äåâÿòíàäöàòîå" filename= "h-19n"/>
-		<prompt phrase="Äåâÿòíàäöàòè" filename= "h-19xx"/>
-		<prompt phrase="Äâàäöàòü" filename= "20"/>
-		<prompt phrase="Äâàäöàòàÿ" filename= "h-20f"/>
-		<prompt phrase="Äâàäöàòîãî" filename= "h-20x"/>
-		<prompt phrase="Äâàäöàòûé" filename= "h-20m"/>
-		<prompt phrase="Äâàäöàòîå" filename= "h-20n"/>
-		<prompt phrase="Äâàäöàòè" filename= "h-20xx"/>
-		<prompt phrase="Òðèäöàòü" filename= "30"/>
-		<prompt phrase="Òðèäöàòàÿ" filename= "h-30f"/>
-		<prompt phrase="Òðèäöàòîãî" filename= "h-30x"/>
-		<prompt phrase="Òðèäöàòûé" filename= "h-30m"/>
-		<prompt phrase="Òðèäöàòîå" filename= "h-30n"/>
-		<prompt phrase="Òðèäöàòè" filename= "h-30xx"/>
-		<prompt phrase="Ñîðîê" filename= "40"/>
-		<prompt phrase="Ñîðîêîâàÿ" filename= "h-40f"/>
-		<prompt phrase="Ñîðîêîâîãî" filename= "h-40x"/>
-		<prompt phrase="Ñîðîêîâîé" filename= "h-40m"/>
-		<prompt phrase="Ñîðîêîâîå" filename= "h-40n"/>
-		<prompt phrase="Ñîðîêà" filename= "h-40xx"/>
-		<prompt phrase="Ïÿòüäåñÿò" filename= "50"/>
-		<prompt phrase="Ïÿòèäåñÿòàÿ" filename= "h-50f"/>
-		<prompt phrase="Ïÿòèäåñÿòîãî" filename= "h-50x"/>
-		<prompt phrase="Ïÿòèäåñÿòûé" filename= "h-50m"/>
-		<prompt phrase="Ïÿòèäåñÿòîå" filename= "h-50n"/>
-		<prompt phrase="Ïÿòèäåñÿòè" filename= "h-50xx"/>
-		<prompt phrase="Øåñòüäåñÿò" filename= "60"/>
-		<prompt phrase="Øåñòèäåñÿòàÿ" filename= "h-60f"/>
-		<prompt phrase="Øåñòèäåñÿòîãî" filename= "h-60x"/>
-		<prompt phrase="Øåñòèäåñÿòûé" filename= "h-60m"/>
-		<prompt phrase="Øåñòèäåñÿòîå" filename= "h-60n"/>
-		<prompt phrase="Øåñòèäåñÿòè" filename= "h-60xx"/>
-		<prompt phrase="Ñåìüäåñÿò" filename= "70"/>
-		<prompt phrase="Ñåìèäåñÿòàÿ" filename= "h-70f"/>
-		<prompt phrase="Ñåìèäèñÿòîãî" filename= "h-70x"/>
-		<prompt phrase="Ñåìèäåñÿòûé" filename= "h-70m"/>
-		<prompt phrase="Ñåìèäåñÿòîå" filename= "h-70n"/>
-		<prompt phrase="Ñåìèäåñÿòè" filename= "h-70xx"/>
-		<prompt phrase="Âîñåìüäåñÿò" filename= "80"/>
-		<prompt phrase="Âîñüìèäåñÿòàÿ" filename= "h-80f"/>
-		<prompt phrase="Âîñåìèäåñÿòîãî" filename= "h-80x"/>
-		<prompt phrase="Âîñåìüäåñÿòûé" filename= "h-80m"/>
-		<prompt phrase="Âîñüìèäåñÿòîå" filename= "h-80n"/>
-		<prompt phrase="Âîñüìèäåñÿòè" filename= "h-80xx"/>
-		<prompt phrase="Äåâÿíîñòî" filename= "90"/>
-		<prompt phrase="Äåâÿíîñòàÿ" filename= "h-90f"/>
-		<prompt phrase="Äåâÿíîñòîãî" filename= "h-90x"/>
-		<prompt phrase="Äåâÿíîñòûé" filename= "h-90m"/>
-		<prompt phrase="Äåâÿíîñòîå" filename= "h-90n"/>
-		<prompt phrase="Äåâÿíîñòà" filename= "h-90xx"/>
-		<prompt phrase="Ñòî" filename= "100"/>
-		<prompt phrase="Ñîòàÿ" filename= "h-100f"/>
-		<prompt phrase="Ñîòîãî" filename= "h-100x"/>
-		<prompt phrase="Ñîòûé" filename= "h-100m"/>
-		<prompt phrase="Ñîòîå" filename= "h-100n"/>
-		<prompt phrase="Ñòà" filename= "h-100xx"/>
-		<prompt phrase="Äâåñòè" filename= "200"/>
-		<prompt phrase="Äâóõñîòàÿ" filename= "h-200f"/>
-		<prompt phrase="Äâóõñîòîãî" filename= "h-200x"/>
-		<prompt phrase="Äâóõñîòûé" filename= "h-200m"/>
-		<prompt phrase="Äâóõñîòîå" filename= "h-200n"/>
-		<prompt phrase="Äâóõñîò" filename= "h-200xx"/>
-		<prompt phrase="Òðèñòà" filename= "300"/>
-		<prompt phrase="Òð¸õñîòàÿ" filename= "h-300f"/>
-		<prompt phrase="Òð¸õñîòîãî" filename= "h-300x"/>
-		<prompt phrase="Òð¸õñîòûé" filename= "h-300m"/>
-		<prompt phrase="Òð¸õñîòîå" filename= "h-300n"/>
-		<prompt phrase="Òð¸õñîò" filename= "h-300xx"/>
-		<prompt phrase="×åòûðåñòà" filename= "400"/>
-		<prompt phrase="×åòûð¸õñîòàÿ" filename= "h-400f"/>
-		<prompt phrase="×åòûð¸õñîòîãî" filename= "h-400x"/>
-		<prompt phrase="×åòûð¸õñîòûé" filename= "h-400m"/>
-		<prompt phrase="×åòûð¸õñîòîå" filename= "h-400n"/>
-		<prompt phrase="×åòûð¸õñîò" filename= "h-400xx"/>
-		<prompt phrase="Ïÿòüñîò" filename= "500"/>
-		<prompt phrase="Ïÿòèñîòàÿ" filename= "h-500f"/>
-		<prompt phrase="Ïÿòîñîòîãî" filename= "h-500x"/>
-		<prompt phrase="Ïÿòèñîòûé" filename= "h-500m"/>
-		<prompt phrase="Ïÿòèñîòîå" filename= "h-500n"/>
-		<prompt phrase="Ïÿòèñîò" filename= "h-500xx"/>
-		<prompt phrase="Øåñòüñîò" filename= "600"/>
-		<prompt phrase="Øåñòèñîòàÿ" filename= "h-600f"/>
-		<prompt phrase="Øåñòèñîòîãî" filename= "h-600x"/>
-		<prompt phrase="Øåñòèñîòûé" filename= "h-600m"/>
-		<prompt phrase="Øåñòèñîòîå" filename= "h-600n"/>
-		<prompt phrase="Øåñòèñîò" filename= "h-600xx"/>
-		<prompt phrase="Ñåìüñîò" filename= "700"/>
-		<prompt phrase="Ñåìèñîòàÿ" filename= "h-700f"/>
-		<prompt phrase="Ñåìèñîòîãî" filename= "h-700x"/>
-		<prompt phrase="Ñåìèñîòûé" filename= "h-700m"/>
-		<prompt phrase="Ñåìèñîòîå" filename= "h-700n"/>
-		<prompt phrase="Ñåìèñîò" filename= "h-700xx"/>
-		<prompt phrase="Âîñåìüñîò" filename= "800"/>
-		<prompt phrase="Âîñüìèñîòàÿ" filename= "h-800f"/>
-		<prompt phrase="Âîñüìèñîòîãî" filename= "h-800x"/>
-		<prompt phrase="Âîñüìèñîòûé" filename= "h-800m"/>
-		<prompt phrase="Âîñüìèñîòîå" filename= "h-800n"/>
-		<prompt phrase="Âîñüìèñîò" filename= "h-800xx"/>
-		<prompt phrase="Äåâÿòüñîò" filename= "900"/>
-		<prompt phrase="Äåâÿòèñîòàÿ" filename= "h-900f"/>
-		<prompt phrase="Äåâÿòîñîòîãî" filename= "h-900x"/>
-		<prompt phrase="Äåâÿòèñîòûé" filename= "h-900m"/>
-		<prompt phrase="Äåâÿòèñîòîå" filename= "h-900n"/>
-		<prompt phrase="Äåâÿòèñîò" filename= "h-900xx"/>
-		<prompt phrase="Òûñÿ÷à " filename= "thousand"/>
-		<prompt phrase="Òûñÿ÷è " filename= "thousands-i"/>
-		<prompt phrase="Òûñÿ÷ " filename= "thousands"/>
-		<prompt phrase="Òûñÿ÷íàÿ" filename= "h-thousandf"/>
-		<prompt phrase="Òûñÿ÷íîãî" filename= "h-thousandx"/>
-		<prompt phrase="Òûñÿ÷íûé" filename= "h-thousandm"/>
-		<prompt phrase="Òûñÿ÷íîå" filename= "h-thousandn"/>
-		<prompt phrase="Ìèëëèîí " filename= "million"/>
-		<prompt phrase="Ìèëëèîíà " filename= "million-a"/>
-		<prompt phrase="Ìèëëèîíîâ " filename= "millions"/>
-		<prompt phrase="Ìèëëèîííàÿ" filename= "h-millionf"/>
-		<prompt phrase="Ìèëëèîííîãî " filename= "h-millionx"/>
-		<prompt phrase="Ìèëëèîííûé" filename= "h-millionm"/>
-		<prompt phrase="Ìèëëèîííîå" filename= "h-millionn"/>
-		<prompt phrase="Òî÷êà " filename= "dot"/>
-		<prompt phrase="Ïåðèîä " filename= "period"/>
-		<prompt phrase="Òî÷êà " filename= "point"/>
-		<prompt phrase="Ðåø¸òêà " filename= "pound"/>
-		<prompt phrase="Çâ¸çäî÷êà " filename= "star"/>
+		<prompt phrase="Ð½Ð¾Ð»ÑŒ " filename= "0"/>
+		<prompt phrase="Ð½ÑƒÐ»ÐµÐ²Ð°Ñ" filename= "h-0f"/>
+		<prompt phrase="Ð½ÐµÐ»ÐµÐ²Ð¾Ð¹" filename= "h-0m"/>
+		<prompt phrase="ÐÐµÐ»ÐµÐ²Ð¾Ðµ" filename= "h-0n"/>
+		<prompt phrase="Ð½ÑƒÐ»ÐµÐ²Ð¾Ð³Ð¾" filename= "h-0x"/>
+		<prompt phrase="ÐžÐ´Ð¸Ð½ " filename= "1"/>
+		<prompt phrase="ÐžÐ´Ð½Ð° " filename= "1f"/>
+		<prompt phrase="ÐžÐ´Ð½Ð¾ " filename= "1n"/>
+		<prompt phrase="ÐžÐ´Ð½Ð¾Ð³Ð¾" filename= "1x"/>
+		<prompt phrase="ÐŸÐµÑ€Ð²Ð¾Ð³Ð¾ " filename= "h-1x"/>
+		<prompt phrase="ÐŸÐµÑ€Ð²Ñ‹Ð¹ " filename= "h-1m"/>
+		<prompt phrase="ÐŸÐµÑ€Ð²Ð¾Ðµ" filename= "h-1n"/>
+		<prompt phrase="ÐŸÐµÑ€Ð²Ð°Ñ" filename= "h-1f"/>
+		<prompt phrase="ÐžÐ´Ð½Ð°" filename= "h-1xx"/>
+		<prompt phrase="Ð”Ð²Ð° " filename= "2"/>
+		<prompt phrase="Ð”Ð²Ðµ " filename= "2f"/>
+		<prompt phrase="Ð”Ð²Ð° " filename= "2n"/>
+		<prompt phrase="Ð’Ñ‚Ð¾Ñ€Ð¾Ðµ" filename= "h-2n"/>
+		<prompt phrase="Ð’Ñ‚Ð¾Ñ€Ð¾Ð³Ð¾ " filename= "h-2x"/>
+		<prompt phrase="Ð’Ñ‚Ð¾Ñ€Ð¾Ð¹ " filename= "h-2m"/>
+		<prompt phrase="Ð’Ñ‚Ð¾Ñ€Ð°Ñ" filename= "h-2f"/>
+		<prompt phrase="Ð”Ð²ÑƒÑ…" filename= "h-2xx"/>
+		<prompt phrase="Ð¢Ñ€Ð¸ " filename= "3"/>
+		<prompt phrase="Ð¢Ñ€ÐµÑ‚ÑŒÐµÐ³Ð¾ " filename= "h-3x"/>
+		<prompt phrase="Ð¢Ñ€ÐµÑ‚Ð¸Ð¹ " filename= "h-3m"/>
+		<prompt phrase="Ð¢Ñ€ÐµÑ‚ÑŒÑ" filename= "h-3f"/>
+		<prompt phrase="Ñ‚Ñ€ÐµÑ‚ÑŒÐµ" filename= "h-3n"/>
+		<prompt phrase="Ð¢Ñ€Ñ‘Ñ…" filename= "h-3xx"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ðµ " filename= "4"/>
+		<prompt phrase="Ð§ÐµÑ‚Ð²Ñ‘Ñ€Ñ‚Ð°Ñ" filename= "h-4f"/>
+		<prompt phrase="Ð§ÐµÑ‚Ð²Ñ‘Ñ€Ñ‚Ð¾Ð³Ð¾ " filename= "h-4x"/>
+		<prompt phrase="Ð§ÐµÑ‚Ð²Ñ‘Ñ€Ñ‚Ñ‹Ð¹ " filename= "h-4m"/>
+		<prompt phrase="Ð§ÐµÑ‚Ð²Ñ‘Ñ€Ñ‚Ð¾Ðµ" filename= "h-4n"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ñ‘Ñ…" filename= "h-4xx"/>
+		<prompt phrase="ÐŸÑÑ‚ÑŒ" filename= "5"/>
+		<prompt phrase="ÐŸÑÑ‚Ð°Ñ" filename= "h-5f"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¾Ð³Ð¾" filename= "h-5x"/>
+		<prompt phrase="Ð§ÐµÑ‚Ð²Ñ‘Ñ€Ñ‚Ñ‹Ð¹ " filename= "h-5m"/>
+		<prompt phrase="Ð§ÐµÑ‚Ð²Ñ‘Ñ€Ñ‚Ð¾Ðµ" filename= "h-5n"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸" filename= "h-5xx"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚ÑŒ" filename= "6"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð°Ñ" filename= "h-6f"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¾Ð³Ð¾" filename= "h-6x"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¾Ð¹" filename= "h-6m"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¾Ðµ" filename= "h-6n"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸" filename= "h-6xx"/>
+		<prompt phrase="Ð¡ÐµÐ¼ÑŒ" filename= "7"/>
+		<prompt phrase="Ð¡ÐµÐ´ÑŒÐ¼Ð°Ñ" filename= "h-7f"/>
+		<prompt phrase="Ð¡ÐµÐ´ÑŒÐ¼Ð¾Ð³Ð¾" filename= "h-7x"/>
+		<prompt phrase="Ð¡ÐµÐ´ÑŒÐ¼Ð¾Ð¹" filename= "h-7m"/>
+		<prompt phrase="Ð¡ÐµÐ´ÑŒÐ¼Ð¾Ðµ" filename= "h-7n"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸" filename= "h-7xx"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼ÑŒ" filename= "8"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð°Ñ" filename= "h-8f"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¾Ð³Ð¾" filename= "h-8x"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¾Ð¹" filename= "h-8m"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¾Ðµ" filename= "h-8n"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸" filename= "h-8xx"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚ÑŒ" filename= "9"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð°Ñ" filename= "h-9f"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¾Ð³Ð¾" filename= "h-9x"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ñ‹Ð¹" filename= "h-9m"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¾Ðµ" filename= "h-9n"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¸" filename= "h-9xx"/>
+		<prompt phrase="Ð”ÐµÑÑÑ‚ÑŒ" filename= "10"/>
+		<prompt phrase="Ð”ÐµÑÑÑ‚Ð°Ñ" filename= "h-10f"/>
+		<prompt phrase="Ð”ÐµÑÑÑ‚Ð¾Ð³Ð¾" filename= "h-10x"/>
+		<prompt phrase="Ð”ÐµÑÑÑ‚Ñ‹Ð¹" filename= "h-10m"/>
+		<prompt phrase="Ð”ÐµÑÑÑ‚Ð¾Ðµ" filename= "h-10n"/>
+		<prompt phrase="Ð”ÐµÑÑÑ‚Ð¸" filename= "h-10xx"/>
+		<prompt phrase="ÐžÐ´Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "11"/>
+		<prompt phrase="ÐžÐ´Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-11f"/>
+		<prompt phrase="ÐžÐ´Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-11x"/>
+		<prompt phrase="ÐžÐ´Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-11m"/>
+		<prompt phrase="ÐžÐ´Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-11n"/>
+		<prompt phrase="ÐžÐ´Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-11xx"/>
+		<prompt phrase="Ð”Ð²ÐµÐ½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "12"/>
+		<prompt phrase="Ð”Ð²ÐµÐ½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-12f"/>
+		<prompt phrase="Ð”Ð²ÐµÐ½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-12x"/>
+		<prompt phrase="Ð”Ð²ÐµÐ½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-12m"/>
+		<prompt phrase="Ð”Ð²ÐµÐ½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-12n"/>
+		<prompt phrase="Ð”Ð²ÐµÐ½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-12xx"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "13"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-13f"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-13x"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-13m"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-13n"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-13xx"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "14"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-14f"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-14x"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-14m"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-14n"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-14xx"/>
+		<prompt phrase="ÐŸÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "15"/>
+		<prompt phrase="ÐŸÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-15f"/>
+		<prompt phrase="ÐŸÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-15x"/>
+		<prompt phrase="ÐŸÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-15m"/>
+		<prompt phrase="ÐŸÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-15n"/>
+		<prompt phrase="ÐŸÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-15xx"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "16"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-16f"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-16x"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-16m"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-16n"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-16xx"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "17"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-17f"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-17x"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-17m"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-17n"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-17xx"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "18"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-18f"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-18x"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-18m"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-18n"/>
+		<prompt phrase="Ð’ÐµÑÐµÐ¼Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-18xx"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "19"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-19f"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-19x"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-19m"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-19n"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð½Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-19xx"/>
+		<prompt phrase="Ð”Ð²Ð°Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "20"/>
+		<prompt phrase="Ð”Ð²Ð°Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-20f"/>
+		<prompt phrase="Ð”Ð²Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-20x"/>
+		<prompt phrase="Ð”Ð²Ð°Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-20m"/>
+		<prompt phrase="Ð”Ð²Ð°Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-20n"/>
+		<prompt phrase="Ð”Ð²Ð°Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-20xx"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð´Ñ†Ð°Ñ‚ÑŒ" filename= "30"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð´Ñ†Ð°Ñ‚Ð°Ñ" filename= "h-30f"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð´Ñ†Ð°Ñ‚Ð¾Ð³Ð¾" filename= "h-30x"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð´Ñ†Ð°Ñ‚Ñ‹Ð¹" filename= "h-30m"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð´Ñ†Ð°Ñ‚Ð¾Ðµ" filename= "h-30n"/>
+		<prompt phrase="Ð¢Ñ€Ð¸Ð´Ñ†Ð°Ñ‚Ð¸" filename= "h-30xx"/>
+		<prompt phrase="Ð¡Ð¾Ñ€Ð¾Ðº" filename= "40"/>
+		<prompt phrase="Ð¡Ð¾Ñ€Ð¾ÐºÐ¾Ð²Ð°Ñ" filename= "h-40f"/>
+		<prompt phrase="Ð¡Ð¾Ñ€Ð¾ÐºÐ¾Ð²Ð¾Ð³Ð¾" filename= "h-40x"/>
+		<prompt phrase="Ð¡Ð¾Ñ€Ð¾ÐºÐ¾Ð²Ð¾Ð¹" filename= "h-40m"/>
+		<prompt phrase="Ð¡Ð¾Ñ€Ð¾ÐºÐ¾Ð²Ð¾Ðµ" filename= "h-40n"/>
+		<prompt phrase="Ð¡Ð¾Ñ€Ð¾ÐºÐ°" filename= "h-40xx"/>
+		<prompt phrase="ÐŸÑÑ‚ÑŒÐ´ÐµÑÑÑ‚" filename= "50"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð°Ñ" filename= "h-50f"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð¾Ð³Ð¾" filename= "h-50x"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ñ‹Ð¹" filename= "h-50m"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð¾Ðµ" filename= "h-50n"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð¸" filename= "h-50xx"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚ÑŒÐ´ÐµÑÑÑ‚" filename= "60"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð°Ñ" filename= "h-60f"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð¾Ð³Ð¾" filename= "h-60x"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ñ‹Ð¹" filename= "h-60m"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð¾Ðµ" filename= "h-60n"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸Ð´ÐµÑÑÑ‚Ð¸" filename= "h-60xx"/>
+		<prompt phrase="Ð¡ÐµÐ¼ÑŒÐ´ÐµÑÑÑ‚" filename= "70"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸Ð´ÐµÑÑÑ‚Ð°Ñ" filename= "h-70f"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸Ð´Ð¸ÑÑÑ‚Ð¾Ð³Ð¾" filename= "h-70x"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸Ð´ÐµÑÑÑ‚Ñ‹Ð¹" filename= "h-70m"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸Ð´ÐµÑÑÑ‚Ð¾Ðµ" filename= "h-70n"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸Ð´ÐµÑÑÑ‚Ð¸" filename= "h-70xx"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼ÑŒÐ´ÐµÑÑÑ‚" filename= "80"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸Ð´ÐµÑÑÑ‚Ð°Ñ" filename= "h-80f"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼Ð¸Ð´ÐµÑÑÑ‚Ð¾Ð³Ð¾" filename= "h-80x"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼ÑŒÐ´ÐµÑÑÑ‚Ñ‹Ð¹" filename= "h-80m"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸Ð´ÐµÑÑÑ‚Ð¾Ðµ" filename= "h-80n"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸Ð´ÐµÑÑÑ‚Ð¸" filename= "h-80xx"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÐ½Ð¾ÑÑ‚Ð¾" filename= "90"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÐ½Ð¾ÑÑ‚Ð°Ñ" filename= "h-90f"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÐ½Ð¾ÑÑ‚Ð¾Ð³Ð¾" filename= "h-90x"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÐ½Ð¾ÑÑ‚Ñ‹Ð¹" filename= "h-90m"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÐ½Ð¾ÑÑ‚Ð¾Ðµ" filename= "h-90n"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÐ½Ð¾ÑÑ‚Ð°" filename= "h-90xx"/>
+		<prompt phrase="Ð¡Ñ‚Ð¾" filename= "100"/>
+		<prompt phrase="Ð¡Ð¾Ñ‚Ð°Ñ" filename= "h-100f"/>
+		<prompt phrase="Ð¡Ð¾Ñ‚Ð¾Ð³Ð¾" filename= "h-100x"/>
+		<prompt phrase="Ð¡Ð¾Ñ‚Ñ‹Ð¹" filename= "h-100m"/>
+		<prompt phrase="Ð¡Ð¾Ñ‚Ð¾Ðµ" filename= "h-100n"/>
+		<prompt phrase="Ð¡Ñ‚Ð°" filename= "h-100xx"/>
+		<prompt phrase="Ð”Ð²ÐµÑÑ‚Ð¸" filename= "200"/>
+		<prompt phrase="Ð”Ð²ÑƒÑ…ÑÐ¾Ñ‚Ð°Ñ" filename= "h-200f"/>
+		<prompt phrase="Ð”Ð²ÑƒÑ…ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-200x"/>
+		<prompt phrase="Ð”Ð²ÑƒÑ…ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-200m"/>
+		<prompt phrase="Ð”Ð²ÑƒÑ…ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-200n"/>
+		<prompt phrase="Ð”Ð²ÑƒÑ…ÑÐ¾Ñ‚" filename= "h-200xx"/>
+		<prompt phrase="Ð¢Ñ€Ð¸ÑÑ‚Ð°" filename= "300"/>
+		<prompt phrase="Ð¢Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ð°Ñ" filename= "h-300f"/>
+		<prompt phrase="Ð¢Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-300x"/>
+		<prompt phrase="Ð¢Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-300m"/>
+		<prompt phrase="Ð¢Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-300n"/>
+		<prompt phrase="Ð¢Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚" filename= "h-300xx"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€ÐµÑÑ‚Ð°" filename= "400"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ð°Ñ" filename= "h-400f"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-400x"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-400m"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-400n"/>
+		<prompt phrase="Ð§ÐµÑ‚Ñ‹Ñ€Ñ‘Ñ…ÑÐ¾Ñ‚" filename= "h-400xx"/>
+		<prompt phrase="ÐŸÑÑ‚ÑŒÑÐ¾Ñ‚" filename= "500"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸ÑÐ¾Ñ‚Ð°Ñ" filename= "h-500f"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¾ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-500x"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-500m"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-500n"/>
+		<prompt phrase="ÐŸÑÑ‚Ð¸ÑÐ¾Ñ‚" filename= "h-500xx"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚ÑŒÑÐ¾Ñ‚" filename= "600"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸ÑÐ¾Ñ‚Ð°Ñ" filename= "h-600f"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-600x"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-600m"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-600n"/>
+		<prompt phrase="Ð¨ÐµÑÑ‚Ð¸ÑÐ¾Ñ‚" filename= "h-600xx"/>
+		<prompt phrase="Ð¡ÐµÐ¼ÑŒÑÐ¾Ñ‚" filename= "700"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸ÑÐ¾Ñ‚Ð°Ñ" filename= "h-700f"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-700x"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-700m"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-700n"/>
+		<prompt phrase="Ð¡ÐµÐ¼Ð¸ÑÐ¾Ñ‚" filename= "h-700xx"/>
+		<prompt phrase="Ð’Ð¾ÑÐµÐ¼ÑŒÑÐ¾Ñ‚" filename= "800"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸ÑÐ¾Ñ‚Ð°Ñ" filename= "h-800f"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-800x"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-800m"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-800n"/>
+		<prompt phrase="Ð’Ð¾ÑÑŒÐ¼Ð¸ÑÐ¾Ñ‚" filename= "h-800xx"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚ÑŒÑÐ¾Ñ‚" filename= "900"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¸ÑÐ¾Ñ‚Ð°Ñ" filename= "h-900f"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¾ÑÐ¾Ñ‚Ð¾Ð³Ð¾" filename= "h-900x"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¸ÑÐ¾Ñ‚Ñ‹Ð¹" filename= "h-900m"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¸ÑÐ¾Ñ‚Ð¾Ðµ" filename= "h-900n"/>
+		<prompt phrase="Ð”ÐµÐ²ÑÑ‚Ð¸ÑÐ¾Ñ‚" filename= "h-900xx"/>
+		<prompt phrase="Ð¢Ñ‹ÑÑÑ‡Ð° " filename= "thousand"/>
+		<prompt phrase="Ð¢Ñ‹ÑÑÑ‡Ð¸ " filename= "thousands-i"/>
+		<prompt phrase="Ð¢Ñ‹ÑÑÑ‡ " filename= "thousands"/>
+		<prompt phrase="Ð¢Ñ‹ÑÑÑ‡Ð½Ð°Ñ" filename= "h-thousandf"/>
+		<prompt phrase="Ð¢Ñ‹ÑÑÑ‡Ð½Ð¾Ð³Ð¾" filename= "h-thousandx"/>
+		<prompt phrase="Ð¢Ñ‹ÑÑÑ‡Ð½Ñ‹Ð¹" filename= "h-thousandm"/>
+		<prompt phrase="Ð¢Ñ‹ÑÑÑ‡Ð½Ð¾Ðµ" filename= "h-thousandn"/>
+		<prompt phrase="ÐœÐ¸Ð»Ð»Ð¸Ð¾Ð½ " filename= "million"/>
+		<prompt phrase="ÐœÐ¸Ð»Ð»Ð¸Ð¾Ð½Ð° " filename= "million-a"/>
+		<prompt phrase="ÐœÐ¸Ð»Ð»Ð¸Ð¾Ð½Ð¾Ð² " filename= "millions"/>
+		<prompt phrase="ÐœÐ¸Ð»Ð»Ð¸Ð¾Ð½Ð½Ð°Ñ" filename= "h-millionf"/>
+		<prompt phrase="ÐœÐ¸Ð»Ð»Ð¸Ð¾Ð½Ð½Ð¾Ð³Ð¾ " filename= "h-millionx"/>
+		<prompt phrase="ÐœÐ¸Ð»Ð»Ð¸Ð¾Ð½Ð½Ñ‹Ð¹" filename= "h-millionm"/>
+		<prompt phrase="ÐœÐ¸Ð»Ð»Ð¸Ð¾Ð½Ð½Ð¾Ðµ" filename= "h-millionn"/>
+		<prompt phrase="Ð¢Ð¾Ñ‡ÐºÐ° " filename= "dot"/>
+		<prompt phrase="ÐŸÐµÑ€Ð¸Ð¾Ð´ " filename= "period"/>
+		<prompt phrase="Ð¢Ð¾Ñ‡ÐºÐ° " filename= "point"/>
+		<prompt phrase="Ð ÐµÑˆÑ‘Ñ‚ÐºÐ° " filename= "pound"/>
+		<prompt phrase="Ð—Ð²Ñ‘Ð·Ð´Ð¾Ñ‡ÐºÐ° " filename= "star"/>
 	</digits>
 	<currency>
-		<prompt phrase="è " filename= "and"/>
-		<prompt phrase="Öåíò " filename= "cent"/>
-		<prompt phrase="öåíòðàëüíûé " filename= "central"/>
-		<prompt phrase="Öåíòîâ â ìèíóòó " filename= "cents-per-minute"/>
-		<prompt phrase="Öåíòû " filename= "cents"/>
-		<prompt phrase="Äîëëàð " filename= "dollar"/>
-		<prompt phrase="Äîëëàðîâ " filename= "dollars"/>
-		<prompt phrase="Ìèíóñ " filename= "minus"/>
-		<prompt phrase="Îòðèöàòåëüíûé " filename= "negative"/>
-		<prompt phrase="Êîïååê " filename= "kopx "/>
-		<prompt phrase="Êîïåéêà " filename= "kop "/>
-		<prompt phrase="Êîïåéêè " filename= "kops "/>
-		<prompt phrase="Ðóáëü " filename= "rubl "/>
-		<prompt phrase="Ðóáëÿ " filename= "rublx "/>
-		<prompt phrase="Ðóáëåé " filename= "rubls "/>
+		<prompt phrase="Ð¸ " filename= "and"/>
+		<prompt phrase="Ð¦ÐµÐ½Ñ‚ " filename= "cent"/>
+		<prompt phrase="Ñ†ÐµÐ½Ñ‚Ñ€Ð°Ð»ÑŒÐ½Ñ‹Ð¹ " filename= "central"/>
+		<prompt phrase="Ð¦ÐµÐ½Ñ‚Ð¾Ð² Ð² Ð¼Ð¸Ð½ÑƒÑ‚Ñƒ " filename= "cents-per-minute"/>
+		<prompt phrase="Ð¦ÐµÐ½Ñ‚Ñ‹ " filename= "cents"/>
+		<prompt phrase="Ð”Ð¾Ð»Ð»Ð°Ñ€ " filename= "dollar"/>
+		<prompt phrase="Ð”Ð¾Ð»Ð»Ð°Ñ€Ð¾Ð² " filename= "dollars"/>
+		<prompt phrase="ÐœÐ¸Ð½ÑƒÑ " filename= "minus"/>
+		<prompt phrase="ÐžÑ‚Ñ€Ð¸Ñ†Ð°Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ð¹ " filename= "negative"/>
+		<prompt phrase="ÐšÐ¾Ð¿ÐµÐµÐº " filename= "kopx "/>
+		<prompt phrase="ÐšÐ¾Ð¿ÐµÐ¹ÐºÐ° " filename= "kop "/>
+		<prompt phrase="ÐšÐ¾Ð¿ÐµÐ¹ÐºÐ¸ " filename= "kops "/>
+		<prompt phrase="Ð ÑƒÐ±Ð»ÑŒ " filename= "rubl "/>
+		<prompt phrase="Ð ÑƒÐ±Ð»Ñ " filename= "rublx "/>
+		<prompt phrase="Ð ÑƒÐ±Ð»ÐµÐ¹ " filename= "rubls "/>
 	</currency>
 	<time>
-		<prompt phrase="äî ïîëóäíÿ " filename= "a-m"/>
-		<prompt phrase="Â " filename= "at"/>
-		<prompt phrase="Âîñêðåñåíüå " filename= "day-0"/>
-		<prompt phrase="Ïîíåäåëüíèê " filename= "day-1"/>
-		<prompt phrase="Âòîðíèê " filename= "day-2"/>
-		<prompt phrase="Ñðåäà " filename= "day-3"/>
-		<prompt phrase="×åòâåðã " filename= "day-4"/>
-		<prompt phrase="Ïÿòíèöà " filename= "day-5"/>
-		<prompt phrase="Ñóááîòà " filename= "day-6"/>
-		<prompt phrase="÷àñ" filename= "hour"/>
-		<prompt phrase="÷àñà " filename= "hours-a"/>
-		<prompt phrase="÷àñîâ " filename= "hours"/>
-		<prompt phrase="ìèíóòà " filename= "minute"/>
-		<prompt phrase="Ìèíóòû" filename= "minutes-i"/>
-		<prompt phrase="ìèíóò " filename= "minutes"/>
-		<prompt phrase="ñåêóíäà " filename= "second"/>
-		<prompt phrase="ñåêóíäû " filename= "seconds-i"/>
-		<prompt phrase="ñåêóíä" filename= "seconds"/>
-		<prompt phrase="ÿíâàðÿ " filename= "mon-0"/>
-		<prompt phrase="ôåâðàëÿ " filename= "mon-1"/>
-		<prompt phrase="ìàðòà " filename= "mon-2"/>
-		<prompt phrase="àïðåëÿ " filename= "mon-3"/>
-		<prompt phrase="ìàÿ " filename= "mon-4"/>
-		<prompt phrase="èþíÿ " filename= "mon-5"/>
-		<prompt phrase="èþëÿ " filename= "mon-6"/>
-		<prompt phrase="àâãóñòà " filename= "mon-7"/>
-		<prompt phrase="ñåíòÿáðÿ " filename= "mon-8"/>
-		<prompt phrase="îêòÿáðÿ " filename= "mon-9"/>
-		<prompt phrase="íîÿáðÿ " filename= "mon-10"/>
-		<prompt phrase="äåêàáðÿ " filename= "mon-11"/>
-		<prompt phrase="ïîñëå ïîëóäíÿ " filename= "p-m"/>
-		<prompt phrase="ñåãîäíÿ " filename= "today"/>
-		<prompt phrase="çàâòðà " filename= "tomorrow"/>
-		<prompt phrase="â÷åðà " filename= "yesterday"/>
-		<prompt phrase="Ãîä" filename= "year"/>
-		<prompt phrase="Ãîäà" filename= "h-year"/>
-		<prompt phrase="Ãîäîâ" filename= "years"/>
-		<prompt phrase="Ëåò" filename= "yearsx"/>
+		<prompt phrase="Ð´Ð¾ Ð¿Ð¾Ð»ÑƒÐ´Ð½Ñ " filename= "a-m"/>
+		<prompt phrase="Ð’ " filename= "at"/>
+		<prompt phrase="Ð’Ð¾ÑÐºÑ€ÐµÑÐµÐ½ÑŒÐµ " filename= "day-0"/>
+		<prompt phrase="ÐŸÐ¾Ð½ÐµÐ´ÐµÐ»ÑŒÐ½Ð¸Ðº " filename= "day-1"/>
+		<prompt phrase="Ð’Ñ‚Ð¾Ñ€Ð½Ð¸Ðº " filename= "day-2"/>
+		<prompt phrase="Ð¡Ñ€ÐµÐ´Ð° " filename= "day-3"/>
+		<prompt phrase="Ð§ÐµÑ‚Ð²ÐµÑ€Ð³ " filename= "day-4"/>
+		<prompt phrase="ÐŸÑÑ‚Ð½Ð¸Ñ†Ð° " filename= "day-5"/>
+		<prompt phrase="Ð¡ÑƒÐ±Ð±Ð¾Ñ‚Ð° " filename= "day-6"/>
+		<prompt phrase="Ñ‡Ð°Ñ" filename= "hour"/>
+		<prompt phrase="Ñ‡Ð°ÑÐ° " filename= "hours-a"/>
+		<prompt phrase="Ñ‡Ð°ÑÐ¾Ð² " filename= "hours"/>
+		<prompt phrase="Ð¼Ð¸Ð½ÑƒÑ‚Ð° " filename= "minute"/>
+		<prompt phrase="ÐœÐ¸Ð½ÑƒÑ‚Ñ‹" filename= "minutes-i"/>
+		<prompt phrase="Ð¼Ð¸Ð½ÑƒÑ‚ " filename= "minutes"/>
+		<prompt phrase="ÑÐµÐºÑƒÐ½Ð´Ð° " filename= "second"/>
+		<prompt phrase="ÑÐµÐºÑƒÐ½Ð´Ñ‹ " filename= "seconds-i"/>
+		<prompt phrase="ÑÐµÐºÑƒÐ½Ð´" filename= "seconds"/>
+		<prompt phrase="ÑÐ½Ð²Ð°Ñ€Ñ " filename= "mon-0"/>
+		<prompt phrase="Ñ„ÐµÐ²Ñ€Ð°Ð»Ñ " filename= "mon-1"/>
+		<prompt phrase="Ð¼Ð°Ñ€Ñ‚Ð° " filename= "mon-2"/>
+		<prompt phrase="Ð°Ð¿Ñ€ÐµÐ»Ñ " filename= "mon-3"/>
+		<prompt phrase="Ð¼Ð°Ñ " filename= "mon-4"/>
+		<prompt phrase="Ð¸ÑŽÐ½Ñ " filename= "mon-5"/>
+		<prompt phrase="Ð¸ÑŽÐ»Ñ " filename= "mon-6"/>
+		<prompt phrase="Ð°Ð²Ð³ÑƒÑÑ‚Ð° " filename= "mon-7"/>
+		<prompt phrase="ÑÐµÐ½Ñ‚ÑÐ±Ñ€Ñ " filename= "mon-8"/>
+		<prompt phrase="Ð¾ÐºÑ‚ÑÐ±Ñ€Ñ " filename= "mon-9"/>
+		<prompt phrase="Ð½Ð¾ÑÐ±Ñ€Ñ " filename= "mon-10"/>
+		<prompt phrase="Ð´ÐµÐºÐ°Ð±Ñ€Ñ " filename= "mon-11"/>
+		<prompt phrase="Ð¿Ð¾ÑÐ»Ðµ Ð¿Ð¾Ð»ÑƒÐ´Ð½Ñ " filename= "p-m"/>
+		<prompt phrase="ÑÐµÐ³Ð¾Ð´Ð½Ñ " filename= "today"/>
+		<prompt phrase="Ð·Ð°Ð²Ñ‚Ñ€Ð° " filename= "tomorrow"/>
+		<prompt phrase="Ð²Ñ‡ÐµÑ€Ð° " filename= "yesterday"/>
+		<prompt phrase="Ð“Ð¾Ð´" filename= "year"/>
+		<prompt phrase="Ð“Ð¾Ð´Ð°" filename= "h-year"/>
+		<prompt phrase="Ð“Ð¾Ð´Ð¾Ð²" filename= "years"/>
+		<prompt phrase="Ð›ÐµÑ‚" filename= "yearsx"/>
 	</time>
 	<voicemail>
-		<prompt phrase="Àáîíåíò ñ íîìåðîì " filename= "vm-person"/>
-		<prompt phrase="Ïîìå÷åíî êàê âàæíîå " filename= "vm-marked_urgent"/>
-		<prompt phrase="îòïðàâëåí íà ýëåêòðîííóþ ïî÷òó" filename= "vm-emailed"/>
-		<prompt phrase="ó Âàñ  " filename= "vm-you_have"/>
-		<prompt phrase="ïîæàëóéñòà, ââåäèòå ñâîé íîìå " filename= "vm-enter_id"/>
-		<prompt phrase="ïîæàëóéñòà, ââåäèòå ñâîé ïàðîëü  " filename= "vm-enter_pass"/>
-		<prompt phrase="Íåïðàâèëüíûé íîìåð " filename= "vm-fail_auth"/>
-		<prompt phrase="Äîáðî ïîæàëîâàòü â Âàøó ãîëîñîâóþ ïî÷òó  " filename= "vm-hello"/>
-		<prompt phrase="Äî ñâèäàíèÿ  " filename= "vm-goodbye"/>
-		<prompt phrase="Ïîñëå ñèãíàëà, ïîæàëóéñòà, çàïèøèòå ñâîå èìÿ, äëÿ îêîí÷àíèÿ çàïèñè íàæìèòå ëþáóþ êëàâèøó èëè ïåðåñòàíüòå ãîâîðèòü. " filename= "vm-record_name1"/>
-		<prompt phrase="Âûáåðèòå ïðèâåòñòâèå îò åäèíèöû äî äåâÿòè " filename= "vm-choose_greeting_choose"/>
-		<prompt phrase="Íåïðàâèëüíîå çíà÷åíèå " filename= "vm-choose_greeting_fail"/>
-		<prompt phrase="Ñëèøêîì ìíîãî íåóäà÷íûõ ïîïûòîê " filename= "vm-abort"/>
-		<prompt phrase="Äëÿ èçìåíåíèÿ Âàøåãî ïàðîëÿ " filename= "vm-change_password"/>
-		<prompt phrase="Ïîñëå ñèãíàëà, çàïèøèòå ñâîå ïðèâåòñòâèå, äëÿ îêîí÷àíèÿ çàïèñè íàæìèòå ëþáóþ êëàâèøó èëè ïåðåñòàíüòå ãîâîðèòü  " filename= "vm-to_record_greeting"/>
-		<prompt phrase="Ïîñëå ñèãíàëà, çàïèøèòå ñâîå ñîîáùåíèå, äëÿ îêîí÷àíèÿ çàïèñè íàæìèòå ëþáóþ êëàâèøó èëè ïåðåñòàíüòå ãîâîðèòü  " filename= "vm-record_message"/>
-		<prompt phrase="íå äîñòóïíî " filename= "vm-play_greeting"/>
-		<prompt phrase="íîâûõ âàæíûõ" filename= "vm-urgent-newx"/>
-		<prompt phrase="íîâîå âàæíîå " filename= "vm-urgent-new"/>
-		<prompt phrase="íîâîå " filename= "vm-new"/>
-		<prompt phrase="íîâûõ " filename= "vm-newx "/>
-		<prompt phrase="âàæíîå ñîõðàíåíî " filename= "vm-urgent-saved"/>
-		<prompt phrase="ñîõðàíåíî " filename= "vm-saved"/>
-		<prompt phrase="ñîîáùåíèå " filename= "vm-message"/>
-		<prompt phrase="ñîîáùåíèé " filename= "vm-messagex"/>
-		<prompt phrase="ñîîáùåíèÿ " filename= "vm-messages"/>
-		<prompt phrase="íàæìèòå " filename= "vm-press"/>
-		<prompt phrase="äëÿ ïðîñëóøèâàíèÿ íîâûõ ñîîáùåíèé " filename= "vm-listen_new"/>
-		<prompt phrase="äëÿ ïðîñëóøèâàíèÿ ñîõðàíåííûõ ñîîáùåíèé " filename= "vm-listen_saved"/>
-		<prompt phrase="äëÿ äîïîëíèòåëüíûõ ïàðàìåòðîâ " filename= "vm-advanced"/>
-		<prompt phrase="äëÿ âûõîäà " filename= "vm-to_exit"/>
-		<prompt phrase="äëÿ çàïèñè ïðèâåòñòâèÿ " filename= "vm-record_greeting"/>
-		<prompt phrase="äëÿ âûáîðà ïðèâåòñòâèÿ " filename= "vm-choose_greeting"/>
-		<prompt phrase="äëÿ çàïèñè Âàøåãî èìåíè " filename= "vm-record_name2"/>
-		<prompt phrase="äëÿ ïåðåõîäà â ãëàâíîå ìåíþ " filename= "vm-main_menu"/>
-		<prompt phrase="ïðîñëóøàòü çàïèñü " filename= "vm-listen_to_recording"/>
-		<prompt phrase="ñîõðàíèòü çàïèñü " filename= "vm-save_recording"/>
-		<prompt phrase="çàïèñàòü " filename= "vm-rerecord"/>
-		<prompt phrase="ïîìåòèòü ýòî ñîîáùåíèå ñðî÷íûì " filename= "vm-mark-urgent"/>
-		<prompt phrase="äëÿ ïðîäîëæåíèÿ " filename= "vm-continue"/>
-		<prompt phrase="ïðîñëóøàòü çàïèñü ñíîâà " filename= "vm-listen_to_recording_again"/>
-		<prompt phrase="óäàëèòü çàïèñü " filename= "vm-delete_recording"/>
-		<prompt phrase="ïåðåñëàòü ýòî ñîîáùåíèå" filename= "vm-to_forward"/>
-		<prompt phrase="ïåðåñëàòü çàïèñü íà ýëåêòðîííóþ ïî÷òó " filename= "vm-forward_to_email"/>
-		<prompt phrase="ïðèâåòñòâèå " filename= "vm-greeting"/>
-		<prompt phrase="âûáðàíî " filename= "vm-selected"/>
-		<prompt phrase="íå äîñòóïåí " filename= "vm-not_available"/>
-		<prompt phrase="ñîîáùåíèå íîìåð " filename= "vm-message_number"/>
-		<prompt phrase="óäàëåíî " filename= "vm-deleted"/>
-		<prompt phrase="Âàøà çàïèñü êîðî÷å ìèíèìàëüíî äîïóñòèìîé äëèííû, ïîæàëóéñòà ïîïðîáóéòå ñíîâà " filename= "vm-too-small"/>
-		<prompt phrase="â ïàïêå Âõîäÿùèå " filename= "vm-in_folder"/>
-		<prompt phrase="÷òî áû ïåðåçâîíèòü" filename= "vm-return_call_1"/>
-		<prompt phrase="äëÿ âîçâðàòà âûçîâà " filename= "vm-return_call"/>
-		<prompt phrase="Âàæíîå" filename= "vm-urgent"/>
-		<prompt phrase="äîáàâèòü âñòóïëåíèå ê ñîîáùåíèþ" filename= "vm-forward_add_intro"/>
-		<prompt phrase="äëÿ òîãî ÷òî áû ïîñëàòü ñîáîùåíèå " filename= "vm-send_message_now"/>
-		<prompt phrase="ïîæàëóéñòà, ââåäèòå äîáàâî÷íûé íîìåð äëÿ îòïðàâêè ñîîáùåíèÿ" filename= "vm-forward_enter_ext"/>
-		<prompt phrase="ÍÅÏÐÀÂÈËÜÍÛÉ ÄÎÁÀÂÎ×ÍÛÉ ÍÎÌÅÐ" filename= "vm-that_was_an_invalid_ext"/>
+		<prompt phrase="ÐÐ±Ð¾Ð½ÐµÐ½Ñ‚ Ñ Ð½Ð¾Ð¼ÐµÑ€Ð¾Ð¼ " filename= "vm-person"/>
+		<prompt phrase="ÐŸÐ¾Ð¼ÐµÑ‡ÐµÐ½Ð¾ ÐºÐ°Ðº Ð²Ð°Ð¶Ð½Ð¾Ðµ " filename= "vm-marked_urgent"/>
+		<prompt phrase="Ð¾Ñ‚Ð¿Ñ€Ð°Ð²Ð»ÐµÐ½ Ð½Ð° ÑÐ»ÐµÐºÑ‚Ñ€Ð¾Ð½Ð½ÑƒÑŽ Ð¿Ð¾Ñ‡Ñ‚Ñƒ" filename= "vm-emailed"/>
+		<prompt phrase="Ñƒ Ð’Ð°Ñ  " filename= "vm-you_have"/>
+		<prompt phrase="Ð¿Ð¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÑÐ²Ð¾Ð¹ Ð½Ð¾Ð¼Ðµ " filename= "vm-enter_id"/>
+		<prompt phrase="Ð¿Ð¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÑÐ²Ð¾Ð¹ Ð¿Ð°Ñ€Ð¾Ð»ÑŒ  " filename= "vm-enter_pass"/>
+		<prompt phrase="ÐÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ð¹ Ð½Ð¾Ð¼ÐµÑ€ " filename= "vm-fail_auth"/>
+		<prompt phrase="Ð”Ð¾Ð±Ñ€Ð¾ Ð¿Ð¾Ð¶Ð°Ð»Ð¾Ð²Ð°Ñ‚ÑŒ Ð² Ð’Ð°ÑˆÑƒ Ð³Ð¾Ð»Ð¾ÑÐ¾Ð²ÑƒÑŽ Ð¿Ð¾Ñ‡Ñ‚Ñƒ  " filename= "vm-hello"/>
+		<prompt phrase="Ð”Ð¾ ÑÐ²Ð¸Ð´Ð°Ð½Ð¸Ñ  " filename= "vm-goodbye"/>
+		<prompt phrase="ÐŸÐ¾ÑÐ»Ðµ ÑÐ¸Ð³Ð½Ð°Ð»Ð°, Ð¿Ð¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð·Ð°Ð¿Ð¸ÑˆÐ¸Ñ‚Ðµ ÑÐ²Ð¾Ðµ Ð¸Ð¼Ñ, Ð´Ð»Ñ Ð¾ÐºÐ¾Ð½Ñ‡Ð°Ð½Ð¸Ñ Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð½Ð°Ð¶Ð¼Ð¸Ñ‚Ðµ Ð»ÑŽÐ±ÑƒÑŽ ÐºÐ»Ð°Ð²Ð¸ÑˆÑƒ Ð¸Ð»Ð¸ Ð¿ÐµÑ€ÐµÑÑ‚Ð°Ð½ÑŒÑ‚Ðµ Ð³Ð¾Ð²Ð¾Ñ€Ð¸Ñ‚ÑŒ. " filename= "vm-record_name1"/>
+		<prompt phrase="Ð’Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ð¿Ñ€Ð¸Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ðµ Ð¾Ñ‚ ÐµÐ´Ð¸Ð½Ð¸Ñ†Ñ‹ Ð´Ð¾ Ð´ÐµÐ²ÑÑ‚Ð¸ " filename= "vm-choose_greeting_choose"/>
+		<prompt phrase="ÐÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ð¾Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ " filename= "vm-choose_greeting_fail"/>
+		<prompt phrase="Ð¡Ð»Ð¸ÑˆÐºÐ¾Ð¼ Ð¼Ð½Ð¾Ð³Ð¾ Ð½ÐµÑƒÐ´Ð°Ñ‡Ð½Ñ‹Ñ… Ð¿Ð¾Ð¿Ñ‹Ñ‚Ð¾Ðº " filename= "vm-abort"/>
+		<prompt phrase="Ð”Ð»Ñ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ Ð’Ð°ÑˆÐµÐ³Ð¾ Ð¿Ð°Ñ€Ð¾Ð»Ñ " filename= "vm-change_password"/>
+		<prompt phrase="ÐŸÐ¾ÑÐ»Ðµ ÑÐ¸Ð³Ð½Ð°Ð»Ð°, Ð·Ð°Ð¿Ð¸ÑˆÐ¸Ñ‚Ðµ ÑÐ²Ð¾Ðµ Ð¿Ñ€Ð¸Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ðµ, Ð´Ð»Ñ Ð¾ÐºÐ¾Ð½Ñ‡Ð°Ð½Ð¸Ñ Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð½Ð°Ð¶Ð¼Ð¸Ñ‚Ðµ Ð»ÑŽÐ±ÑƒÑŽ ÐºÐ»Ð°Ð²Ð¸ÑˆÑƒ Ð¸Ð»Ð¸ Ð¿ÐµÑ€ÐµÑÑ‚Ð°Ð½ÑŒÑ‚Ðµ Ð³Ð¾Ð²Ð¾Ñ€Ð¸Ñ‚ÑŒ  " filename= "vm-to_record_greeting"/>
+		<prompt phrase="ÐŸÐ¾ÑÐ»Ðµ ÑÐ¸Ð³Ð½Ð°Ð»Ð°, Ð·Ð°Ð¿Ð¸ÑˆÐ¸Ñ‚Ðµ ÑÐ²Ð¾Ðµ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ, Ð´Ð»Ñ Ð¾ÐºÐ¾Ð½Ñ‡Ð°Ð½Ð¸Ñ Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð½Ð°Ð¶Ð¼Ð¸Ñ‚Ðµ Ð»ÑŽÐ±ÑƒÑŽ ÐºÐ»Ð°Ð²Ð¸ÑˆÑƒ Ð¸Ð»Ð¸ Ð¿ÐµÑ€ÐµÑÑ‚Ð°Ð½ÑŒÑ‚Ðµ Ð³Ð¾Ð²Ð¾Ñ€Ð¸Ñ‚ÑŒ  " filename= "vm-record_message"/>
+		<prompt phrase="Ð½Ðµ Ð´Ð¾ÑÑ‚ÑƒÐ¿Ð½Ð¾ " filename= "vm-play_greeting"/>
+		<prompt phrase="Ð½Ð¾Ð²Ñ‹Ñ… Ð²Ð°Ð¶Ð½Ñ‹Ñ…" filename= "vm-urgent-newx"/>
+		<prompt phrase="Ð½Ð¾Ð²Ð¾Ðµ Ð²Ð°Ð¶Ð½Ð¾Ðµ " filename= "vm-urgent-new"/>
+		<prompt phrase="Ð½Ð¾Ð²Ð¾Ðµ " filename= "vm-new"/>
+		<prompt phrase="Ð½Ð¾Ð²Ñ‹Ñ… " filename= "vm-newx "/>
+		<prompt phrase="Ð²Ð°Ð¶Ð½Ð¾Ðµ ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¾ " filename= "vm-urgent-saved"/>
+		<prompt phrase="ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¾ " filename= "vm-saved"/>
+		<prompt phrase="ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ " filename= "vm-message"/>
+		<prompt phrase="ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ " filename= "vm-messagex"/>
+		<prompt phrase="ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ " filename= "vm-messages"/>
+		<prompt phrase="Ð½Ð°Ð¶Ð¼Ð¸Ñ‚Ðµ " filename= "vm-press"/>
+		<prompt phrase="Ð´Ð»Ñ Ð¿Ñ€Ð¾ÑÐ»ÑƒÑˆÐ¸Ð²Ð°Ð½Ð¸Ñ Ð½Ð¾Ð²Ñ‹Ñ… ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ " filename= "vm-listen_new"/>
+		<prompt phrase="Ð´Ð»Ñ Ð¿Ñ€Ð¾ÑÐ»ÑƒÑˆÐ¸Ð²Ð°Ð½Ð¸Ñ ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ð½Ñ‹Ñ… ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ð¹ " filename= "vm-listen_saved"/>
+		<prompt phrase="Ð´Ð»Ñ Ð´Ð¾Ð¿Ð¾Ð»Ð½Ð¸Ñ‚ÐµÐ»ÑŒÐ½Ñ‹Ñ… Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð² " filename= "vm-advanced"/>
+		<prompt phrase="Ð´Ð»Ñ Ð²Ñ‹Ñ…Ð¾Ð´Ð° " filename= "vm-to_exit"/>
+		<prompt phrase="Ð´Ð»Ñ Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð¿Ñ€Ð¸Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ñ " filename= "vm-record_greeting"/>
+		<prompt phrase="Ð´Ð»Ñ Ð²Ñ‹Ð±Ð¾Ñ€Ð° Ð¿Ñ€Ð¸Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ñ " filename= "vm-choose_greeting"/>
+		<prompt phrase="Ð´Ð»Ñ Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð’Ð°ÑˆÐµÐ³Ð¾ Ð¸Ð¼ÐµÐ½Ð¸ " filename= "vm-record_name2"/>
+		<prompt phrase="Ð´Ð»Ñ Ð¿ÐµÑ€ÐµÑ…Ð¾Ð´Ð° Ð² Ð³Ð»Ð°Ð²Ð½Ð¾Ðµ Ð¼ÐµÐ½ÑŽ " filename= "vm-main_menu"/>
+		<prompt phrase="Ð¿Ñ€Ð¾ÑÐ»ÑƒÑˆÐ°Ñ‚ÑŒ Ð·Ð°Ð¿Ð¸ÑÑŒ " filename= "vm-listen_to_recording"/>
+		<prompt phrase="ÑÐ¾Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ Ð·Ð°Ð¿Ð¸ÑÑŒ " filename= "vm-save_recording"/>
+		<prompt phrase="Ð·Ð°Ð¿Ð¸ÑÐ°Ñ‚ÑŒ " filename= "vm-rerecord"/>
+		<prompt phrase="Ð¿Ð¾Ð¼ÐµÑ‚Ð¸Ñ‚ÑŒ ÑÑ‚Ð¾ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ ÑÑ€Ð¾Ñ‡Ð½Ñ‹Ð¼ " filename= "vm-mark-urgent"/>
+		<prompt phrase="Ð´Ð»Ñ Ð¿Ñ€Ð¾Ð´Ð¾Ð»Ð¶ÐµÐ½Ð¸Ñ " filename= "vm-continue"/>
+		<prompt phrase="Ð¿Ñ€Ð¾ÑÐ»ÑƒÑˆÐ°Ñ‚ÑŒ Ð·Ð°Ð¿Ð¸ÑÑŒ ÑÐ½Ð¾Ð²Ð° " filename= "vm-listen_to_recording_again"/>
+		<prompt phrase="ÑƒÐ´Ð°Ð»Ð¸Ñ‚ÑŒ Ð·Ð°Ð¿Ð¸ÑÑŒ " filename= "vm-delete_recording"/>
+		<prompt phrase="Ð¿ÐµÑ€ÐµÑÐ»Ð°Ñ‚ÑŒÂ ÑÑ‚Ð¾Â ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ" filename= "vm-to_forward"/>
+		<prompt phrase="Ð¿ÐµÑ€ÐµÑÐ»Ð°Ñ‚ÑŒ Ð·Ð°Ð¿Ð¸ÑÑŒ Ð½Ð° ÑÐ»ÐµÐºÑ‚Ñ€Ð¾Ð½Ð½ÑƒÑŽ Ð¿Ð¾Ñ‡Ñ‚Ñƒ " filename= "vm-forward_to_email"/>
+		<prompt phrase="Ð¿Ñ€Ð¸Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ðµ " filename= "vm-greeting"/>
+		<prompt phrase="Ð²Ñ‹Ð±Ñ€Ð°Ð½Ð¾ " filename= "vm-selected"/>
+		<prompt phrase="Ð½Ðµ Ð´Ð¾ÑÑ‚ÑƒÐ¿ÐµÐ½ " filename= "vm-not_available"/>
+		<prompt phrase="ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ Ð½Ð¾Ð¼ÐµÑ€ " filename= "vm-message_number"/>
+		<prompt phrase="ÑƒÐ´Ð°Ð»ÐµÐ½Ð¾ " filename= "vm-deleted"/>
+		<prompt phrase="Ð’Ð°ÑˆÐ° Ð·Ð°Ð¿Ð¸ÑÑŒ ÐºÐ¾Ñ€Ð¾Ñ‡Ðµ Ð¼Ð¸Ð½Ð¸Ð¼Ð°Ð»ÑŒÐ½Ð¾ Ð´Ð¾Ð¿ÑƒÑÑ‚Ð¸Ð¼Ð¾Ð¹ Ð´Ð»Ð¸Ð½Ð½Ñ‹, Ð¿Ð¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð° Ð¿Ð¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹Ñ‚Ðµ ÑÐ½Ð¾Ð²Ð° " filename= "vm-too-small"/>
+		<prompt phrase="Ð² Ð¿Ð°Ð¿ÐºÐµ Ð’Ñ…Ð¾Ð´ÑÑ‰Ð¸Ðµ " filename= "vm-in_folder"/>
+		<prompt phrase="Ñ‡Ñ‚Ð¾ Ð±Ñ‹ Ð¿ÐµÑ€ÐµÐ·Ð²Ð¾Ð½Ð¸Ñ‚ÑŒ" filename= "vm-return_call_1"/>
+		<prompt phrase="Ð´Ð»Ñ Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð° Ð²Ñ‹Ð·Ð¾Ð²Ð° " filename= "vm-return_call"/>
+		<prompt phrase="Ð’Ð°Ð¶Ð½Ð¾Ðµ" filename= "vm-urgent"/>
+		<prompt phrase="Ð´Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ Ð²ÑÑ‚ÑƒÐ¿Ð»ÐµÐ½Ð¸Ðµ Ðº ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸ÑŽ" filename= "vm-forward_add_intro"/>
+		<prompt phrase="Ð´Ð»Ñ Ñ‚Ð¾Ð³Ð¾ Ñ‡Ñ‚Ð¾ Ð±Ñ‹ Ð¿Ð¾ÑÐ»Ð°Ñ‚ÑŒ ÑÐ¾Ð±Ð¾Ñ‰ÐµÐ½Ð¸Ðµ " filename= "vm-send_message_now"/>
+		<prompt phrase="Ð¿Ð¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð´Ð¾Ð±Ð°Ð²Ð¾Ñ‡Ð½Ñ‹Ð¹ Ð½Ð¾Ð¼ÐµÑ€ Ð´Ð»Ñ Ð¾Ñ‚Ð¿Ñ€Ð°Ð²ÐºÐ¸ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ñ" filename= "vm-forward_enter_ext"/>
+		<prompt phrase="ÐÐ•ÐŸÐ ÐÐ’Ð˜Ð›Ð¬ÐÐ«Ð™ Ð”ÐžÐ‘ÐÐ’ÐžÐ§ÐÐ«Ð™ ÐÐžÐœÐ•Ð " filename= "vm-that_was_an_invalid_ext"/>
 	</voicemail>
 	<conference>
 		<prompt phrase="NULL " filename= "conf-ack type"/>
 		<prompt phrase="NULL " filename= "conf-nack type"/>
-		<prompt phrase="Âàø ìèêðîôîí îòêëþ÷åí " filename= "conf-mute"/>
-		<prompt phrase="Âàø ìèêðîôîí âêëþ÷¸í " filename= "conf-unmuted"/>
-		<prompt phrase="Âû åäèíñòâåííûé ó÷àñòíèê êîíôåðåíöèè" filename= "conf-alone"/>
+		<prompt phrase="Ð’Ð°Ñˆ Ð¼Ð¸ÐºÑ€Ð¾Ñ„Ð¾Ð½ Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½ " filename= "conf-mute"/>
+		<prompt phrase="Ð’Ð°Ñˆ Ð¼Ð¸ÐºÑ€Ð¾Ñ„Ð¾Ð½ Ð²ÐºÐ»ÑŽÑ‡Ñ‘Ð½ " filename= "conf-unmuted"/>
+		<prompt phrase="Ð’Ñ‹ ÐµÐ´Ð¸Ð½ÑÑ‚Ð²ÐµÐ½Ð½Ñ‹Ð¹ ÑƒÑ‡Ð°ÑÑ‚Ð½Ð¸Ðº ÐºÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸Ð¸" filename= "conf-alone"/>
 		<prompt phrase="NULL " filename= "conf-perpetual type"/>
 		<prompt phrase="NULL " filename= "conf-enter type"/>
 		<prompt phrase="NULL " filename= "conf-exit type"/>
-		<prompt phrase="Âû áûëè îòêëþ÷åíû îò êîíôåðåíöèè " filename= "conf-kicked"/>
-		<prompt phrase="Ýòà êîíôåðåíöèÿ çàáëîêèðîâàíà " filename= "conf-locked"/>
-		<prompt phrase="Êîíôåðåíöèÿ çàáëîêèðîâàíà " filename= "conf-is-locked"/>
-		<prompt phrase="Êîíôåðåíöèÿ ðàçáëîêèðîâàíà " filename= "conf-is-unlocked"/>
-		<prompt phrase="Ïîæàëóéñòà, ââåäèòå ïèí-êîä êîíôåðåíöèè " filename= "conf-pin"/>
-		<prompt phrase="Íåïðàâèëüíûé ïèí-êîä, ïîïðîáóéòå ñíîâà " filename= "conf-bad-pin"/>
-		<prompt phrase="Äî ñâèäàíèÿ " filename= "conf-goodbye"/>
-		<prompt phrase="Äîáðî ïîæàëîâàòü â êîíôåðåíöèþ " filename= "conf-welcome"/>
+		<prompt phrase="Ð’Ñ‹ Ð±Ñ‹Ð»Ð¸ Ð¾Ñ‚ÐºÐ»ÑŽÑ‡ÐµÐ½Ñ‹ Ð¾Ñ‚ ÐºÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸Ð¸ " filename= "conf-kicked"/>
+		<prompt phrase="Ð­Ñ‚Ð° ÐºÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸Ñ Ð·Ð°Ð±Ð»Ð¾ÐºÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð° " filename= "conf-locked"/>
+		<prompt phrase="ÐšÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸Ñ Ð·Ð°Ð±Ð»Ð¾ÐºÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð° " filename= "conf-is-locked"/>
+		<prompt phrase="ÐšÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸Ñ Ñ€Ð°Ð·Ð±Ð»Ð¾ÐºÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð° " filename= "conf-is-unlocked"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð¿Ð¸Ð½-ÐºÐ¾Ð´ ÐºÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸Ð¸ " filename= "conf-pin"/>
+		<prompt phrase="ÐÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ñ‹Ð¹ Ð¿Ð¸Ð½-ÐºÐ¾Ð´, Ð¿Ð¾Ð¿Ñ€Ð¾Ð±ÑƒÐ¹Ñ‚Ðµ ÑÐ½Ð¾Ð²Ð° " filename= "conf-bad-pin"/>
+		<prompt phrase="Ð”Ð¾ ÑÐ²Ð¸Ð´Ð°Ð½Ð¸Ñ " filename= "conf-goodbye"/>
+		<prompt phrase="Ð”Ð¾Ð±Ñ€Ð¾ Ð¿Ð¾Ð¶Ð°Ð»Ð¾Ð²Ð°Ñ‚ÑŒ Ð² ÐºÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸ÑŽ " filename= "conf-welcome"/>
 	</conference>
 	<ivr>
-		<prompt phrase="Íîìåð ñ÷åòà  " filename= "ivr-account_number"/>
-		<prompt phrase="Ñîåäèíåíèå ñ âûçûâàþùèì àáîíåíòîì " filename= "ivr-connect_to_caller"/>
-		<prompt phrase="åñëè âàì èçâåñòåí äîáàâî÷íûé íîìåð âûçûâàåìîãî àáîíåíòà, ïîæàëóéñòà ââåäèòå åãî ñåé÷àñ " filename= "ivr-enter_ext_pound"/>
-		<prompt phrase="Ïîæàëóéñòà, ââåäèòå äîáàâî÷íûé íîìåð àáîíåíòà ïîñëå çíàêà ðåø¸òêà " filename= "ivr-enter_ext"/>
-		<prompt phrase="Äëÿ ýòîãî àáîíåíòà " filename= "ivr-for_this_person"/>
-		<prompt phrase="Ïîæàëóéñòà, îñòàâàéòåñü íà ëèíèè, èäåò ñîåäèíåíèå " filename= "ivr-hold_connect_call"/>
-		<prompt phrase="Èçâèíèòå " filename= "ivr-im_sorry"/>
-		<prompt phrase="Ïîæàëóéñòà " filename= "ivr-please"/>
-		<prompt phrase="Ïîæàëóéñòà, ïåðåçâîíèòå íàì â … " filename= "ivr-please_return_our_call_at"/>
-		<prompt phrase="Ñîãëàñíî íîìåðà ññûëêè " filename= "ivr-regarding_reference_number"/>
-		<prompt phrase="Ýòî ïðîñòîå ivr ïîäìåíþ " filename= "ivr-sample_submenu"/>
-		<prompt phrase="Ïîæàëóéñòà, íàçîâèòå ñâîå èìÿ ïîñëå ñèãíàëà " filename= "ivr-say_name"/>
-		<prompt phrase="Ïåðåíàïðàâèòü íà ãîëîñîâóþ ïî÷òó " filename= "ivr-send_to_voicemail"/>
-		<prompt phrase="Äëÿ ðàçãîâîðà ñ ïðåäñòàâèòåëåì ïî îáñëóæèâàíèþ êëèåíòîâ " filename= "ivr-speak_to_a_customer_service_representative"/>
-		<prompt phrase="Ïðèìèòå ñîîáùåíèå " filename= "ivr-take_a_message"/>
-		<prompt phrase="Ñïàñèáî " filename= "ivr-thank_you"/>
-		<prompt phrase="Íåïðàâèëüíîå çíà÷åíèå " filename= "ivr-that_was_an_invalid_entry"/>
-		<prompt phrase="Ýòîò çâîíîê îò " filename= "ivr-this_is_a_call_from"/>
-		<prompt phrase="Ýòî ãîëîñîâîå ïðèâåòñòâèå ïîçâîëèò Âàì ïðîòåñòèðîâàòü íåêîòîðûå ôóíêöèè " filename= "ivr-this_ivr_will_let_you_test_features"/>
-		<prompt phrase="Äëÿ òîãî ÷òîáû íàáðàòü êîíôåðåíöèþ ÔÑ ___ " filename= "ivr-to_call_the_freeswitch_conference"/>
-		<prompt phrase="Äëÿ âûïîëíåíèÿ ýõî-òåñòà â ÔÑ " filename= "ivr-to_do_a_freeswitch_echo_test"/>
-		<prompt phrase="Äëÿ âûïîëíåíèÿ ýõî-òåñòà free world dialed " filename= "ivr-to_do_a_fwd_echo_test"/>
-		<prompt phrase="Äëÿ ïðîñëóøèâàíèÿ ïðèìåðà ãîëîñîâîãî ïîäìåíþ " filename= "ivr-to_hear_sample_submenu"/>
-		<prompt phrase="×òîáû óñëûøàòü êðè÷àùèõ îáåçüÿí " filename= "ivr-to_hear_screaming_monkeys"/>
-		<prompt phrase="Äëÿ âûáîðà ìåëîäèé â ðåæèìå îæèäàíèÿ " filename= "ivr-to_listen_to_moh"/>
-		<prompt phrase="Äëÿ ïîâòîðà ýòèõ ïàðàìåòðîâ " filename= "ivr-to_repeat_these_options"/>
-		<prompt phrase="Äëÿ âîçâðàòà ê ïðåäûäóùåìó ìåíþ " filename= "ivr-to_return_to_previous_menu"/>
-		<prompt phrase="Äëÿ ðàçãîâîðà ñ îïåðàòîðîì " filename= "ivr-to_speak_with_an_operator"/>
-		<prompt phrase="Äîáðî ïîæàëîâàòü â FreeSwitch, áóäóùåå òåëåôîíèè " filename= "ivr-welcome_to_freeswitch"/>
-		<prompt phrase="Âû ìîæåòå âûéòè â ëþáîå âðåìÿ ïîâåñèâ òðóáêó " filename= "ivr-you_may_exit_by_hanging_up"/>
-		<prompt phrase="èëè  " filename= "ivr-or"/>
-		<prompt phrase="íå  " filename= "ivr-not"/>
-		<prompt phrase="çâîíîê  " filename= "ivr-call"/>
-		<prompt phrase="Âû ìîæåòå  " filename= "ivr-you_may"/>
-		<prompt phrase="Çäðàâñòâóéòå " filename= "ivr-hello"/>
-		<prompt phrase="Èñïîëüçóÿ êëàâèàòóðó òåëåôîíà… " filename= "ivr-use_telephone_keypad"/>
-		<prompt phrase="Ïîæàëóéñòà, íàçîâèòå èìÿ ñîòðóäíèêà, êîòîðîìó ïûòàåòåñü äîçâîíèòüñÿ " filename= "ivr-spell_name"/>
-		<prompt phrase="Ñíà÷àëà ôàìèëèÿ " filename= "ivr-last_name_first"/>
-		<prompt phrase="Ñíà÷àëà èìÿ " filename= "ivr-first_name_first"/>
-		<prompt phrase="Íàæìèòå 1 äëÿ Q èëè Z. " filename= "ivr-press_one_q_or_z"/>
-		<prompt phrase="Îòäåë ïðîäàæ " filename= "ivr-sales"/>
-		<prompt phrase="Öåíòð îáñëóæèâàíèÿ êëèåíòîâ " filename= "ivr-customer_service"/>
-		<prompt phrase="Îòäåë òåõíè÷åñêîé ïîääåðæêè " filename= "ivr-technical_support"/>
-		<prompt phrase="Îïåðàòîð " filename= "ivr-operator"/>
+		<prompt phrase="ÐÐ¾Ð¼ÐµÑ€ ÑÑ‡ÐµÑ‚Ð°  " filename= "ivr-account_number"/>
+		<prompt phrase="Ð¡Ð¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ðµ Ñ Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÑŽÑ‰Ð¸Ð¼ Ð°Ð±Ð¾Ð½ÐµÐ½Ñ‚Ð¾Ð¼ " filename= "ivr-connect_to_caller"/>
+		<prompt phrase="ÐµÑÐ»Ð¸ Ð²Ð°Ð¼ Ð¸Ð·Ð²ÐµÑÑ‚ÐµÐ½ Ð´Ð¾Ð±Ð°Ð²Ð¾Ñ‡Ð½Ñ‹Ð¹ Ð½Ð¾Ð¼ÐµÑ€ Ð²Ñ‹Ð·Ñ‹Ð²Ð°ÐµÐ¼Ð¾Ð³Ð¾ Ð°Ð±Ð¾Ð½ÐµÐ½Ñ‚Ð°, Ð¿Ð¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð° Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ ÐµÐ³Ð¾ ÑÐµÐ¹Ñ‡Ð°Ñ " filename= "ivr-enter_ext_pound"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð´Ð¾Ð±Ð°Ð²Ð¾Ñ‡Ð½Ñ‹Ð¹ Ð½Ð¾Ð¼ÐµÑ€ Ð°Ð±Ð¾Ð½ÐµÐ½Ñ‚Ð° Ð¿Ð¾ÑÐ»Ðµ Ð·Ð½Ð°ÐºÐ° Ñ€ÐµÑˆÑ‘Ñ‚ÐºÐ° " filename= "ivr-enter_ext"/>
+		<prompt phrase="Ð”Ð»Ñ ÑÑ‚Ð¾Ð³Ð¾ Ð°Ð±Ð¾Ð½ÐµÐ½Ñ‚Ð° " filename= "ivr-for_this_person"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð¾ÑÑ‚Ð°Ð²Ð°Ð¹Ñ‚ÐµÑÑŒ Ð½Ð° Ð»Ð¸Ð½Ð¸Ð¸, Ð¸Ð´ÐµÑ‚ ÑÐ¾ÐµÐ´Ð¸Ð½ÐµÐ½Ð¸Ðµ " filename= "ivr-hold_connect_call"/>
+		<prompt phrase="Ð˜Ð·Ð²Ð¸Ð½Ð¸Ñ‚Ðµ " filename= "ivr-im_sorry"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð° " filename= "ivr-please"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð¿ÐµÑ€ÐµÐ·Ð²Ð¾Ð½Ð¸Ñ‚Ðµ Ð½Ð°Ð¼ Ð² â€¦ " filename= "ivr-please_return_our_call_at"/>
+		<prompt phrase="Ð¡Ð¾Ð³Ð»Ð°ÑÐ½Ð¾ Ð½Ð¾Ð¼ÐµÑ€Ð° ÑÑÑ‹Ð»ÐºÐ¸ " filename= "ivr-regarding_reference_number"/>
+		<prompt phrase="Ð­Ñ‚Ð¾ Ð¿Ñ€Ð¾ÑÑ‚Ð¾Ðµ ivr Ð¿Ð¾Ð´Ð¼ÐµÐ½ÑŽ " filename= "ivr-sample_submenu"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð½Ð°Ð·Ð¾Ð²Ð¸Ñ‚Ðµ ÑÐ²Ð¾Ðµ Ð¸Ð¼Ñ Ð¿Ð¾ÑÐ»Ðµ ÑÐ¸Ð³Ð½Ð°Ð»Ð° " filename= "ivr-say_name"/>
+		<prompt phrase="ÐŸÐµÑ€ÐµÐ½Ð°Ð¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ Ð½Ð° Ð³Ð¾Ð»Ð¾ÑÐ¾Ð²ÑƒÑŽ Ð¿Ð¾Ñ‡Ñ‚Ñƒ " filename= "ivr-send_to_voicemail"/>
+		<prompt phrase="Ð”Ð»Ñ Ñ€Ð°Ð·Ð³Ð¾Ð²Ð¾Ñ€Ð° Ñ Ð¿Ñ€ÐµÐ´ÑÑ‚Ð°Ð²Ð¸Ñ‚ÐµÐ»ÐµÐ¼ Ð¿Ð¾ Ð¾Ð±ÑÐ»ÑƒÐ¶Ð¸Ð²Ð°Ð½Ð¸ÑŽ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð² " filename= "ivr-speak_to_a_customer_service_representative"/>
+		<prompt phrase="ÐŸÑ€Ð¸Ð¼Ð¸Ñ‚Ðµ ÑÐ¾Ð¾Ð±Ñ‰ÐµÐ½Ð¸Ðµ " filename= "ivr-take_a_message"/>
+		<prompt phrase="Ð¡Ð¿Ð°ÑÐ¸Ð±Ð¾ " filename= "ivr-thank_you"/>
+		<prompt phrase="ÐÐµÐ¿Ñ€Ð°Ð²Ð¸Ð»ÑŒÐ½Ð¾Ðµ Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ " filename= "ivr-that_was_an_invalid_entry"/>
+		<prompt phrase="Ð­Ñ‚Ð¾Ñ‚ Ð·Ð²Ð¾Ð½Ð¾Ðº Ð¾Ñ‚ " filename= "ivr-this_is_a_call_from"/>
+		<prompt phrase="Ð­Ñ‚Ð¾ Ð³Ð¾Ð»Ð¾ÑÐ¾Ð²Ð¾Ðµ Ð¿Ñ€Ð¸Ð²ÐµÑ‚ÑÑ‚Ð²Ð¸Ðµ Ð¿Ð¾Ð·Ð²Ð¾Ð»Ð¸Ñ‚ Ð’Ð°Ð¼ Ð¿Ñ€Ð¾Ñ‚ÐµÑÑ‚Ð¸Ñ€Ð¾Ð²Ð°Ñ‚ÑŒ Ð½ÐµÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ðµ Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸ " filename= "ivr-this_ivr_will_let_you_test_features"/>
+		<prompt phrase="Ð”Ð»Ñ Ñ‚Ð¾Ð³Ð¾ Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð½Ð°Ð±Ñ€Ð°Ñ‚ÑŒ ÐºÐ¾Ð½Ñ„ÐµÑ€ÐµÐ½Ñ†Ð¸ÑŽ Ð¤Ð¡ ___ " filename= "ivr-to_call_the_freeswitch_conference"/>
+		<prompt phrase="Ð”Ð»Ñ Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ ÑÑ…Ð¾-Ñ‚ÐµÑÑ‚Ð° Ð² Ð¤Ð¡ " filename= "ivr-to_do_a_freeswitch_echo_test"/>
+		<prompt phrase="Ð”Ð»Ñ Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÐµÐ½Ð¸Ñ ÑÑ…Ð¾-Ñ‚ÐµÑÑ‚Ð° free world dialed " filename= "ivr-to_do_a_fwd_echo_test"/>
+		<prompt phrase="Ð”Ð»Ñ Ð¿Ñ€Ð¾ÑÐ»ÑƒÑˆÐ¸Ð²Ð°Ð½Ð¸Ñ Ð¿Ñ€Ð¸Ð¼ÐµÑ€Ð° Ð³Ð¾Ð»Ð¾ÑÐ¾Ð²Ð¾Ð³Ð¾ Ð¿Ð¾Ð´Ð¼ÐµÐ½ÑŽ " filename= "ivr-to_hear_sample_submenu"/>
+		<prompt phrase="Ð§Ñ‚Ð¾Ð±Ñ‹ ÑƒÑÐ»Ñ‹ÑˆÐ°Ñ‚ÑŒ ÐºÑ€Ð¸Ñ‡Ð°Ñ‰Ð¸Ñ… Ð¾Ð±ÐµÐ·ÑŒÑÐ½ " filename= "ivr-to_hear_screaming_monkeys"/>
+		<prompt phrase="Ð”Ð»Ñ Ð²Ñ‹Ð±Ð¾Ñ€Ð° Ð¼ÐµÐ»Ð¾Ð´Ð¸Ð¹ Ð² Ñ€ÐµÐ¶Ð¸Ð¼Ðµ Ð¾Ð¶Ð¸Ð´Ð°Ð½Ð¸Ñ " filename= "ivr-to_listen_to_moh"/>
+		<prompt phrase="Ð”Ð»Ñ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð° ÑÑ‚Ð¸Ñ… Ð¿Ð°Ñ€Ð°Ð¼ÐµÑ‚Ñ€Ð¾Ð² " filename= "ivr-to_repeat_these_options"/>
+		<prompt phrase="Ð”Ð»Ñ Ð²Ð¾Ð·Ð²Ñ€Ð°Ñ‚Ð° Ðº Ð¿Ñ€ÐµÐ´Ñ‹Ð´ÑƒÑ‰ÐµÐ¼Ñƒ Ð¼ÐµÐ½ÑŽ " filename= "ivr-to_return_to_previous_menu"/>
+		<prompt phrase="Ð”Ð»Ñ Ñ€Ð°Ð·Ð³Ð¾Ð²Ð¾Ñ€Ð° Ñ Ð¾Ð¿ÐµÑ€Ð°Ñ‚Ð¾Ñ€Ð¾Ð¼ " filename= "ivr-to_speak_with_an_operator"/>
+		<prompt phrase="Ð”Ð¾Ð±Ñ€Ð¾ Ð¿Ð¾Ð¶Ð°Ð»Ð¾Ð²Ð°Ñ‚ÑŒ Ð² FreeSwitch, Ð±ÑƒÐ´ÑƒÑ‰ÐµÐµ Ñ‚ÐµÐ»ÐµÑ„Ð¾Ð½Ð¸Ð¸ " filename= "ivr-welcome_to_freeswitch"/>
+		<prompt phrase="Ð’Ñ‹ Ð¼Ð¾Ð¶ÐµÑ‚Ðµ Ð²Ñ‹Ð¹Ñ‚Ð¸ Ð² Ð»ÑŽÐ±Ð¾Ðµ Ð²Ñ€ÐµÐ¼Ñ Ð¿Ð¾Ð²ÐµÑÐ¸Ð² Ñ‚Ñ€ÑƒÐ±ÐºÑƒ " filename= "ivr-you_may_exit_by_hanging_up"/>
+		<prompt phrase="Ð¸Ð»Ð¸  " filename= "ivr-or"/>
+		<prompt phrase="Ð½Ðµ  " filename= "ivr-not"/>
+		<prompt phrase="Ð·Ð²Ð¾Ð½Ð¾Ðº  " filename= "ivr-call"/>
+		<prompt phrase="Ð’Ñ‹ Ð¼Ð¾Ð¶ÐµÑ‚Ðµ  " filename= "ivr-you_may"/>
+		<prompt phrase="Ð—Ð´Ñ€Ð°Ð²ÑÑ‚Ð²ÑƒÐ¹Ñ‚Ðµ " filename= "ivr-hello"/>
+		<prompt phrase="Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·ÑƒÑ ÐºÐ»Ð°Ð²Ð¸Ð°Ñ‚ÑƒÑ€Ñƒ Ñ‚ÐµÐ»ÐµÑ„Ð¾Ð½Ð°â€¦ " filename= "ivr-use_telephone_keypad"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð½Ð°Ð·Ð¾Ð²Ð¸Ñ‚Ðµ Ð¸Ð¼Ñ ÑÐ¾Ñ‚Ñ€ÑƒÐ´Ð½Ð¸ÐºÐ°, ÐºÐ¾Ñ‚Ð¾Ñ€Ð¾Ð¼Ñƒ Ð¿Ñ‹Ñ‚Ð°ÐµÑ‚ÐµÑÑŒ Ð´Ð¾Ð·Ð²Ð¾Ð½Ð¸Ñ‚ÑŒÑÑ " filename= "ivr-spell_name"/>
+		<prompt phrase="Ð¡Ð½Ð°Ñ‡Ð°Ð»Ð° Ñ„Ð°Ð¼Ð¸Ð»Ð¸Ñ " filename= "ivr-last_name_first"/>
+		<prompt phrase="Ð¡Ð½Ð°Ñ‡Ð°Ð»Ð° Ð¸Ð¼Ñ " filename= "ivr-first_name_first"/>
+		<prompt phrase="ÐÐ°Ð¶Ð¼Ð¸Ñ‚Ðµ 1 Ð´Ð»Ñ Q Ð¸Ð»Ð¸ Z. " filename= "ivr-press_one_q_or_z"/>
+		<prompt phrase="ÐžÑ‚Ð´ÐµÐ» Ð¿Ñ€Ð¾Ð´Ð°Ð¶ " filename= "ivr-sales"/>
+		<prompt phrase="Ð¦ÐµÐ½Ñ‚Ñ€ Ð¾Ð±ÑÐ»ÑƒÐ¶Ð¸Ð²Ð°Ð½Ð¸Ñ ÐºÐ»Ð¸ÐµÐ½Ñ‚Ð¾Ð² " filename= "ivr-customer_service"/>
+		<prompt phrase="ÐžÑ‚Ð´ÐµÐ» Ñ‚ÐµÑ…Ð½Ð¸Ñ‡ÐµÑÐºÐ¾Ð¹ Ð¿Ð¾Ð´Ð´ÐµÑ€Ð¶ÐºÐ¸ " filename= "ivr-technical_support"/>
+		<prompt phrase="ÐžÐ¿ÐµÑ€Ð°Ñ‚Ð¾Ñ€ " filename= "ivr-operator"/>
 	</ivr>
 	<misc>
-		<prompt phrase="Ýòîò çâîíîê øèôðóåòñÿ " filename= "call_secured"/>
-		<prompt phrase="çàâåðøàåìûé íàæàòèåì íà êëàâèøó ðåøåòêà " filename= "vm-followed_by"/>
-		<prompt phrase="Åñëè âû ýòîò ÷åëîâåê " filename= "if_you_are_this_person"/>
-		<prompt phrase="Åñëè âû õîòèòå " filename= "if_you_would_like_to"/>
-		<prompt phrase="Ïðåäîñòàâüòå íîìåð ññûëêè  " filename= "provide_reference_number"/>
-		<prompt phrase="Ïîæàëóéñòà, ââåäèòå äîáàâî÷íûé íîìåð íà êîòîðûé õîòèòå ïåðåâåñòè çâîíîê  " filename= "transfer1"/>
-		<prompt phrase="Ïåðåâîä" filename= "transfer2"/>
-		<prompt phrase="Ìû ïûòàåìñÿ äîçâîíèòüñÿ " filename= "we_are_trying_to_reach"/>
-		<prompt phrase="Ïðîèçîøëà îøèáêà, ïîæàëóéñòà îáðàòèòåñü ê àäìèíèñòðàòîðó " filename= "error"/>
+		<prompt phrase="Ð­Ñ‚Ð¾Ñ‚ Ð·Ð²Ð¾Ð½Ð¾Ðº ÑˆÐ¸Ñ„Ñ€ÑƒÐµÑ‚ÑÑ " filename= "call_secured"/>
+		<prompt phrase="Ð·Ð°Ð²ÐµÑ€ÑˆÐ°ÐµÐ¼Ñ‹Ð¹ Ð½Ð°Ð¶Ð°Ñ‚Ð¸ÐµÐ¼ Ð½Ð° ÐºÐ»Ð°Ð²Ð¸ÑˆÑƒ Ñ€ÐµÑˆÐµÑ‚ÐºÐ° " filename= "vm-followed_by"/>
+		<prompt phrase="Ð•ÑÐ»Ð¸ Ð²Ñ‹ ÑÑ‚Ð¾Ñ‚ Ñ‡ÐµÐ»Ð¾Ð²ÐµÐº " filename= "if_you_are_this_person"/>
+		<prompt phrase="Ð•ÑÐ»Ð¸ Ð²Ñ‹ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ " filename= "if_you_would_like_to"/>
+		<prompt phrase="ÐŸÑ€ÐµÐ´Ð¾ÑÑ‚Ð°Ð²ÑŒÑ‚Ðµ Ð½Ð¾Ð¼ÐµÑ€ ÑÑÑ‹Ð»ÐºÐ¸  " filename= "provide_reference_number"/>
+		<prompt phrase="ÐŸÐ¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð°, Ð²Ð²ÐµÐ´Ð¸Ñ‚Ðµ Ð´Ð¾Ð±Ð°Ð²Ð¾Ñ‡Ð½Ñ‹Ð¹ Ð½Ð¾Ð¼ÐµÑ€ Ð½Ð° ÐºÐ¾Ñ‚Ð¾Ñ€Ñ‹Ð¹ Ñ…Ð¾Ñ‚Ð¸Ñ‚Ðµ Ð¿ÐµÑ€ÐµÐ²ÐµÑÑ‚Ð¸ Ð·Ð²Ð¾Ð½Ð¾Ðº  " filename= "transfer1"/>
+		<prompt phrase="ÐŸÐµÑ€ÐµÐ²Ð¾Ð´" filename= "transfer2"/>
+		<prompt phrase="ÐœÑ‹ Ð¿Ñ‹Ñ‚Ð°ÐµÐ¼ÑÑ Ð´Ð¾Ð·Ð²Ð¾Ð½Ð¸Ñ‚ÑŒÑÑ " filename= "we_are_trying_to_reach"/>
+		<prompt phrase="ÐŸÑ€Ð¾Ð¸Ð·Ð¾ÑˆÐ»Ð° Ð¾ÑˆÐ¸Ð±ÐºÐ°, Ð¿Ð¾Ð¶Ð°Ð»ÑƒÐ¹ÑÑ‚Ð° Ð¾Ð±Ñ€Ð°Ñ‚Ð¸Ñ‚ÐµÑÑŒ Ðº Ð°Ð´Ð¼Ð¸Ð½Ð¸ÑÑ‚Ñ€Ð°Ñ‚Ð¾Ñ€Ñƒ " filename= "error"/>
 	</misc>
   </ru>                                                                                                                                                                      
 </language>                                                                                                                                                                  
