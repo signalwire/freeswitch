@@ -755,7 +755,10 @@ SWITCH_DECLARE(char *) CoreSession::read(int min_digits,
 		timeout = 1;
 	}
 
+    begin_allow_threads();
 	switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, NULL, dtmf_buf, sizeof(dtmf_buf), timeout, valid_terminators);
+    end_allow_threads();
+
 	return dtmf_buf;
 }
 
@@ -774,6 +777,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 	this_check((char *)"");
 	begin_allow_threads();
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
+    begin_allow_threads();
     status = switch_play_and_get_digits( session, 
 										 (uint32_t) min_digits,
 										 (uint32_t) max_digits,
@@ -786,6 +790,7 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 										 dtmf_buf, 
 										 sizeof(dtmf_buf), 
 										 digits_regex);
+    end_allow_threads();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playAndGetDigits dtmf_buf: %s\n", dtmf_buf);
 
