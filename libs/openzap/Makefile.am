@@ -146,17 +146,17 @@ endif
 
 ozmod_zt_la_SOURCES = $(SRC)/ozmod/ozmod_zt/ozmod_zt.c
 ozmod_zt_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_zt_la_LDFLAGS = -module
+ozmod_zt_la_LDFLAGS = -module -avoid-version
 ozmod_zt_la_LIBADD  = $(MYLIB)
 
 ozmod_skel_la_SOURCES = $(SRC)/ozmod/ozmod_skel/ozmod_skel.c
 ozmod_skel_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_skel_la_LDFLAGS = -module
+ozmod_skel_la_LDFLAGS = -module -avoid-version
 ozmod_skel_la_LIBADD  = $(MYLIB)
 
 ozmod_wanpipe_la_SOURCES = $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
 ozmod_wanpipe_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_wanpipe_la_LDFLAGS = -module
+ozmod_wanpipe_la_LDFLAGS = -module -avoid-version
 ozmod_wanpipe_la_LIBADD  = $(MYLIB)
 
 ozmod_isdn_la_SOURCES = \
@@ -183,7 +183,7 @@ $(SRC)/isdn/Q932mes.c \
 $(SRC)/ozmod/ozmod_isdn/ozmod_isdn.c
 
 ozmod_isdn_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D_GNU_SOURCE
-ozmod_isdn_la_LDFLAGS = $(PCAP_LIB_FLAGS) -module 
+ozmod_isdn_la_LDFLAGS = $(PCAP_LIB_FLAGS) -module -avoid-version
 ozmod_isdn_la_LIBADD  = $(MYLIB)
 
 ozmod_analog_la_SOURCES = $(SRC)/ozmod/ozmod_analog/ozmod_analog.c
@@ -193,18 +193,18 @@ ozmod_analog_la_LIBADD  = $(MYLIB)
 
 ozmod_analog_em_la_SOURCES = $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.c
 ozmod_analog_em_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_analog_em_la_LDFLAGS = -module
+ozmod_analog_em_la_LDFLAGS = -module -avoid-version
 ozmod_analog_em_la_LIBADD  = $(MYLIB)
 
 ozmod_ss7_boost_la_SOURCES = $(SRC)/ozmod/ozmod_ss7_boost/ss7_boost_client.c $(SRC)/ozmod/ozmod_ss7_boost/ozmod_ss7_boost.c
 ozmod_ss7_boost_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_ss7_boost_la_LDFLAGS = -module
+ozmod_ss7_boost_la_LDFLAGS = -module -avoid-version
 ozmod_ss7_boost_la_LIBADD  = $(MYLIB)
 
 if LIBPRI
 ozmod_libpri_la_SOURCES = $(SRC)/ozmod/ozmod_libpri/ozmod_libpri.c $(SRC)/ozmod/ozmod_libpri/lpwrap_pri.c
 ozmod_libpri_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_libpri_la_LDFLAGS = -module -lpri
+ozmod_libpri_la_LDFLAGS = -module  -avoid-version -lpri
 ozmod_libpri_la_LIBADD  = $(MYLIB)
 endif
 
