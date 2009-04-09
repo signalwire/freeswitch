@@ -1194,7 +1194,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_event_destroy(&auth_params);
 	}
 
-	return r;
+	return (uint8_t)r;
 }
 
 
@@ -1400,14 +1400,13 @@ void sofia_reg_handle_sip_r_challenge(int status,
 
 	if (session) {
 		private_object_t *tech_pvt;
-		switch_channel_t *channel = switch_core_session_get_channel(session);
 
 		if ((tech_pvt = switch_core_session_get_private(session)) && sofia_test_flag(tech_pvt, TFLAG_REFER)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Received reply from REFER\n");
 			goto end;
 		}
 
-		gw_name = switch_channel_get_variable(channel, "sip_use_gateway");
+		gw_name = switch_channel_get_variable(switch_core_session_get_channel(session), "sip_use_gateway");
 	}
 
 
