@@ -1294,7 +1294,7 @@ static switch_status_t engage_device(int restart)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!switch_core_codec_ready(&globals.read_codec))) {
+	if (!switch_core_codec_ready(&globals.read_codec)) {
 		if (switch_core_codec_init(&globals.read_codec,
 								   "L16",
 								   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
