@@ -1,0 +1,506 @@
+<language>
+  <ru>
+	<ascii>
+		<prompt phrase="Пробел " filename= "32"/>
+		<prompt phrase="Точка " filename= "35"/>
+		<prompt phrase="Звездочка " filename= "42"/>
+		<prompt phrase="Точка " filename= "46"/>
+		<prompt phrase="A " filename= "97"/>
+		<prompt phrase="B " filename= "98"/>
+		<prompt phrase="C " filename= "99"/>
+		<prompt phrase="D " filename= "100"/>
+		<prompt phrase="E " filename= "101"/>
+		<prompt phrase="F " filename= "102"/>
+		<prompt phrase="G " filename= "103"/>
+		<prompt phrase="H " filename= "104"/>
+		<prompt phrase="I " filename= "105"/>
+		<prompt phrase="J " filename= "106"/>
+		<prompt phrase="K " filename= "107"/>
+		<prompt phrase="L " filename= "108"/>
+		<prompt phrase="M " filename= "109"/>
+		<prompt phrase="N " filename= "110"/>
+		<prompt phrase="O " filename= "111"/>
+		<prompt phrase="P " filename= "112"/>
+		<prompt phrase="Q " filename= "112"/>
+		<prompt phrase="R " filename= "114"/>
+		<prompt phrase="S " filename= "115"/>
+		<prompt phrase="T " filename= "116"/>
+		<prompt phrase="U " filename= "117"/>
+		<prompt phrase="V " filename= "118"/>
+		<prompt phrase="W " filename= "119"/>
+		<prompt phrase="X " filename= "120"/>
+		<prompt phrase="Y " filename= "121"/>
+		<prompt phrase="Z " filename= "122"/>
+    </ascii>
+	<phonetic>
+		<prompt phrase="Пробел " filename= "32"/>
+		<prompt phrase="Точка " filename= "46"/>
+		<prompt phrase="Alpha " filename= "97"/>
+		<prompt phrase="Bravo " filename= "98"/>
+		<prompt phrase="Charlie " filename= "99"/>
+		<prompt phrase="Delta " filename= "100"/>
+		<prompt phrase="Echo " filename= "101"/>
+		<prompt phrase="Foxtrot " filename= "102"/>
+		<prompt phrase="Golf " filename= "103"/>
+		<prompt phrase="Hotel " filename= "104"/>
+		<prompt phrase="India " filename= "105"/>
+		<prompt phrase="Juliet " filename= "106"/>
+		<prompt phrase="Kilo " filename= "107"/>
+		<prompt phrase="Lima " filename= "108"/>
+		<prompt phrase="Mike " filename= "109"/>
+		<prompt phrase="November " filename= "110"/>
+		<prompt phrase="Oscar " filename= "111"/>
+		<prompt phrase="Papa " filename= "112"/>
+		<prompt phrase="Quebec " filename= "113"/>
+		<prompt phrase="Romeo " filename= "114"/>
+		<prompt phrase="Sierra " filename= "115"/>
+		<prompt phrase="Tango " filename= "116"/>
+		<prompt phrase="Unifor " filename= "117"/>
+		<prompt phrase="Victor " filename= "118"/>
+		<prompt phrase="Whiskey " filename= "119"/>
+		<prompt phrase="Xray " filename= "120"/>
+		<prompt phrase="Yankee " filename= "121"/>
+		<prompt phrase="Zulu " filename= "122"/>
+	</phonetic>
+	<digits>
+		<prompt phrase="ноль " filename= "0"/>
+		<prompt phrase="нулевая" filename= "h-0f"/>
+		<prompt phrase="нелевой" filename= "h-0m"/>
+		<prompt phrase="Нелевое" filename= "h-0n"/>
+		<prompt phrase="нулевого" filename= "h-0x"/>
+		<prompt phrase="Один " filename= "1"/>
+		<prompt phrase="Одна " filename= "1f"/>
+		<prompt phrase="Одно " filename= "1n"/>
+		<prompt phrase="Одного" filename= "1x"/>
+		<prompt phrase="Первого " filename= "h-1x"/>
+		<prompt phrase="Первый " filename= "h-1m"/>
+		<prompt phrase="Первое" filename= "h-1n"/>
+		<prompt phrase="Первая" filename= "h-1f"/>
+		<prompt phrase="Одна" filename= "h-1xx"/>
+		<prompt phrase="Два " filename= "2"/>
+		<prompt phrase="Две " filename= "2f"/>
+		<prompt phrase="Два " filename= "2n"/>
+		<prompt phrase="Второе" filename= "h-2n"/>
+		<prompt phrase="Второго " filename= "h-2x"/>
+		<prompt phrase="Второй " filename= "h-2m"/>
+		<prompt phrase="Вторая" filename= "h-2f"/>
+		<prompt phrase="Двух" filename= "h-2xx"/>
+		<prompt phrase="Три " filename= "3"/>
+		<prompt phrase="Третьего " filename= "h-3x"/>
+		<prompt phrase="Третий " filename= "h-3m"/>
+		<prompt phrase="Третья" filename= "h-3f"/>
+		<prompt phrase="третье" filename= "h-3n"/>
+		<prompt phrase="Трёх" filename= "h-3xx"/>
+		<prompt phrase="Четыре " filename= "4"/>
+		<prompt phrase="Четвёртая" filename= "h-4f"/>
+		<prompt phrase="Четвёртого " filename= "h-4x"/>
+		<prompt phrase="Четвёртый " filename= "h-4m"/>
+		<prompt phrase="Четвёртое" filename= "h-4n"/>
+		<prompt phrase="Четырёх" filename= "h-4xx"/>
+		<prompt phrase="Пять" filename= "5"/>
+		<prompt phrase="Пятая" filename= "h-5f"/>
+		<prompt phrase="Пятого" filename= "h-5x"/>
+		<prompt phrase="Четвёртый " filename= "h-5m"/>
+		<prompt phrase="Четвёртое" filename= "h-5n"/>
+		<prompt phrase="Пяти" filename= "h-5xx"/>
+		<prompt phrase="Шесть" filename= "6"/>
+		<prompt phrase="Шестая" filename= "h-6f"/>
+		<prompt phrase="Шестого" filename= "h-6x"/>
+		<prompt phrase="Шестой" filename= "h-6m"/>
+		<prompt phrase="Шестое" filename= "h-6n"/>
+		<prompt phrase="Шести" filename= "h-6xx"/>
+		<prompt phrase="Семь" filename= "7"/>
+		<prompt phrase="Седьмая" filename= "h-7f"/>
+		<prompt phrase="Седьмого" filename= "h-7x"/>
+		<prompt phrase="Седьмой" filename= "h-7m"/>
+		<prompt phrase="Седьмое" filename= "h-7n"/>
+		<prompt phrase="Семи" filename= "h-7xx"/>
+		<prompt phrase="Восемь" filename= "8"/>
+		<prompt phrase="Восьмая" filename= "h-8f"/>
+		<prompt phrase="Восьмого" filename= "h-8x"/>
+		<prompt phrase="Восьмой" filename= "h-8m"/>
+		<prompt phrase="Восьмое" filename= "h-8n"/>
+		<prompt phrase="Восьми" filename= "h-8xx"/>
+		<prompt phrase="Девять" filename= "9"/>
+		<prompt phrase="Девятая" filename= "h-9f"/>
+		<prompt phrase="Девятого" filename= "h-9x"/>
+		<prompt phrase="Девятый" filename= "h-9m"/>
+		<prompt phrase="Девятое" filename= "h-9n"/>
+		<prompt phrase="Девяти" filename= "h-9xx"/>
+		<prompt phrase="Десять" filename= "10"/>
+		<prompt phrase="Десятая" filename= "h-10f"/>
+		<prompt phrase="Десятого" filename= "h-10x"/>
+		<prompt phrase="Десятый" filename= "h-10m"/>
+		<prompt phrase="Десятое" filename= "h-10n"/>
+		<prompt phrase="Десяти" filename= "h-10xx"/>
+		<prompt phrase="Одинадцать" filename= "11"/>
+		<prompt phrase="Одинадцатая" filename= "h-11f"/>
+		<prompt phrase="Одинадцатого" filename= "h-11x"/>
+		<prompt phrase="Одинадцатый" filename= "h-11m"/>
+		<prompt phrase="Одинадцатое" filename= "h-11n"/>
+		<prompt phrase="Одинадцати" filename= "h-11xx"/>
+		<prompt phrase="Двенадцать" filename= "12"/>
+		<prompt phrase="Двенадцатая" filename= "h-12f"/>
+		<prompt phrase="Двенадцатого" filename= "h-12x"/>
+		<prompt phrase="Двенадцатый" filename= "h-12m"/>
+		<prompt phrase="Двенадцатое" filename= "h-12n"/>
+		<prompt phrase="Двенадцати" filename= "h-12xx"/>
+		<prompt phrase="Тринадцать" filename= "13"/>
+		<prompt phrase="Тринадцатая" filename= "h-13f"/>
+		<prompt phrase="Тринадцатого" filename= "h-13x"/>
+		<prompt phrase="Тринадцатый" filename= "h-13m"/>
+		<prompt phrase="Тринадцатое" filename= "h-13n"/>
+		<prompt phrase="Тринадцати" filename= "h-13xx"/>
+		<prompt phrase="Четырнадцать" filename= "14"/>
+		<prompt phrase="Четырнадцатая" filename= "h-14f"/>
+		<prompt phrase="Четырнадцатого" filename= "h-14x"/>
+		<prompt phrase="Четырнадцатый" filename= "h-14m"/>
+		<prompt phrase="Четырнадцатое" filename= "h-14n"/>
+		<prompt phrase="Четырнадцати" filename= "h-14xx"/>
+		<prompt phrase="Пятнадцать" filename= "15"/>
+		<prompt phrase="Пятнадцатая" filename= "h-15f"/>
+		<prompt phrase="Пятнадцатого" filename= "h-15x"/>
+		<prompt phrase="Пятнадцатый" filename= "h-15m"/>
+		<prompt phrase="Пятнадцатое" filename= "h-15n"/>
+		<prompt phrase="Пятнадцати" filename= "h-15xx"/>
+		<prompt phrase="Шестнадцать" filename= "16"/>
+		<prompt phrase="Шестнадцатая" filename= "h-16f"/>
+		<prompt phrase="Шестнадцатого" filename= "h-16x"/>
+		<prompt phrase="Шестнадцатый" filename= "h-16m"/>
+		<prompt phrase="Шестнадцатое" filename= "h-16n"/>
+		<prompt phrase="Шестнадцати" filename= "h-16xx"/>
+		<prompt phrase="Семнадцать" filename= "17"/>
+		<prompt phrase="Семнадцатая" filename= "h-17f"/>
+		<prompt phrase="Семнадцатого" filename= "h-17x"/>
+		<prompt phrase="Семнадцатый" filename= "h-17m"/>
+		<prompt phrase="Семнадцатое" filename= "h-17n"/>
+		<prompt phrase="Семнадцати" filename= "h-17xx"/>
+		<prompt phrase="Восемнадцать" filename= "18"/>
+		<prompt phrase="Восемнадцатая" filename= "h-18f"/>
+		<prompt phrase="Восемнадцатого" filename= "h-18x"/>
+		<prompt phrase="Восемнадцатый" filename= "h-18m"/>
+		<prompt phrase="Восемнадцатое" filename= "h-18n"/>
+		<prompt phrase="Весемнадцати" filename= "h-18xx"/>
+		<prompt phrase="Девятнадцать" filename= "19"/>
+		<prompt phrase="Девятнадцатая" filename= "h-19f"/>
+		<prompt phrase="Девятнадцатого" filename= "h-19x"/>
+		<prompt phrase="Девятнадцатый" filename= "h-19m"/>
+		<prompt phrase="Девятнадцатое" filename= "h-19n"/>
+		<prompt phrase="Девятнадцати" filename= "h-19xx"/>
+		<prompt phrase="Двадцать" filename= "20"/>
+		<prompt phrase="Двадцатая" filename= "h-20f"/>
+		<prompt phrase="Двадцатого" filename= "h-20x"/>
+		<prompt phrase="Двадцатый" filename= "h-20m"/>
+		<prompt phrase="Двадцатое" filename= "h-20n"/>
+		<prompt phrase="Двадцати" filename= "h-20xx"/>
+		<prompt phrase="Тридцать" filename= "30"/>
+		<prompt phrase="Тридцатая" filename= "h-30f"/>
+		<prompt phrase="Тридцатого" filename= "h-30x"/>
+		<prompt phrase="Тридцатый" filename= "h-30m"/>
+		<prompt phrase="Тридцатое" filename= "h-30n"/>
+		<prompt phrase="Тридцати" filename= "h-30xx"/>
+		<prompt phrase="Сорок" filename= "40"/>
+		<prompt phrase="Сороковая" filename= "h-40f"/>
+		<prompt phrase="Сорокового" filename= "h-40x"/>
+		<prompt phrase="Сороковой" filename= "h-40m"/>
+		<prompt phrase="Сороковое" filename= "h-40n"/>
+		<prompt phrase="Сорока" filename= "h-40xx"/>
+		<prompt phrase="Пятьдесят" filename= "50"/>
+		<prompt phrase="Пятидесятая" filename= "h-50f"/>
+		<prompt phrase="Пятидесятого" filename= "h-50x"/>
+		<prompt phrase="Пятидесятый" filename= "h-50m"/>
+		<prompt phrase="Пятидесятое" filename= "h-50n"/>
+		<prompt phrase="Пятидесяти" filename= "h-50xx"/>
+		<prompt phrase="Шестьдесят" filename= "60"/>
+		<prompt phrase="Шестидесятая" filename= "h-60f"/>
+		<prompt phrase="Шестидесятого" filename= "h-60x"/>
+		<prompt phrase="Шестидесятый" filename= "h-60m"/>
+		<prompt phrase="Шестидесятое" filename= "h-60n"/>
+		<prompt phrase="Шестидесяти" filename= "h-60xx"/>
+		<prompt phrase="Семьдесят" filename= "70"/>
+		<prompt phrase="Семидесятая" filename= "h-70f"/>
+		<prompt phrase="Семидисятого" filename= "h-70x"/>
+		<prompt phrase="Семидесятый" filename= "h-70m"/>
+		<prompt phrase="Семидесятое" filename= "h-70n"/>
+		<prompt phrase="Семидесяти" filename= "h-70xx"/>
+		<prompt phrase="Восемьдесят" filename= "80"/>
+		<prompt phrase="Восьмидесятая" filename= "h-80f"/>
+		<prompt phrase="Восемидесятого" filename= "h-80x"/>
+		<prompt phrase="Восемьдесятый" filename= "h-80m"/>
+		<prompt phrase="Восьмидесятое" filename= "h-80n"/>
+		<prompt phrase="Восьмидесяти" filename= "h-80xx"/>
+		<prompt phrase="Девяносто" filename= "90"/>
+		<prompt phrase="Девяностая" filename= "h-90f"/>
+		<prompt phrase="Девяностого" filename= "h-90x"/>
+		<prompt phrase="Девяностый" filename= "h-90m"/>
+		<prompt phrase="Девяностое" filename= "h-90n"/>
+		<prompt phrase="Девяноста" filename= "h-90xx"/>
+		<prompt phrase="Сто" filename= "100"/>
+		<prompt phrase="Сотая" filename= "h-100f"/>
+		<prompt phrase="Сотого" filename= "h-100x"/>
+		<prompt phrase="Сотый" filename= "h-100m"/>
+		<prompt phrase="Сотое" filename= "h-100n"/>
+		<prompt phrase="Ста" filename= "h-100xx"/>
+		<prompt phrase="Двести" filename= "200"/>
+		<prompt phrase="Двухсотая" filename= "h-200f"/>
+		<prompt phrase="Двухсотого" filename= "h-200x"/>
+		<prompt phrase="Двухсотый" filename= "h-200m"/>
+		<prompt phrase="Двухсотое" filename= "h-200n"/>
+		<prompt phrase="Двухсот" filename= "h-200xx"/>
+		<prompt phrase="Триста" filename= "300"/>
+		<prompt phrase="Трёхсотая" filename= "h-300f"/>
+		<prompt phrase="Трёхсотого" filename= "h-300x"/>
+		<prompt phrase="Трёхсотый" filename= "h-300m"/>
+		<prompt phrase="Трёхсотое" filename= "h-300n"/>
+		<prompt phrase="Трёхсот" filename= "h-300xx"/>
+		<prompt phrase="Четыреста" filename= "400"/>
+		<prompt phrase="Четырёхсотая" filename= "h-400f"/>
+		<prompt phrase="Четырёхсотого" filename= "h-400x"/>
+		<prompt phrase="Четырёхсотый" filename= "h-400m"/>
+		<prompt phrase="Четырёхсотое" filename= "h-400n"/>
+		<prompt phrase="Четырёхсот" filename= "h-400xx"/>
+		<prompt phrase="Пятьсот" filename= "500"/>
+		<prompt phrase="Пятисотая" filename= "h-500f"/>
+		<prompt phrase="Пятосотого" filename= "h-500x"/>
+		<prompt phrase="Пятисотый" filename= "h-500m"/>
+		<prompt phrase="Пятисотое" filename= "h-500n"/>
+		<prompt phrase="Пятисот" filename= "h-500xx"/>
+		<prompt phrase="Шестьсот" filename= "600"/>
+		<prompt phrase="Шестисотая" filename= "h-600f"/>
+		<prompt phrase="Шестисотого" filename= "h-600x"/>
+		<prompt phrase="Шестисотый" filename= "h-600m"/>
+		<prompt phrase="Шестисотое" filename= "h-600n"/>
+		<prompt phrase="Шестисот" filename= "h-600xx"/>
+		<prompt phrase="Семьсот" filename= "700"/>
+		<prompt phrase="Семисотая" filename= "h-700f"/>
+		<prompt phrase="Семисотого" filename= "h-700x"/>
+		<prompt phrase="Семисотый" filename= "h-700m"/>
+		<prompt phrase="Семисотое" filename= "h-700n"/>
+		<prompt phrase="Семисот" filename= "h-700xx"/>
+		<prompt phrase="Восемьсот" filename= "800"/>
+		<prompt phrase="Восьмисотая" filename= "h-800f"/>
+		<prompt phrase="Восьмисотого" filename= "h-800x"/>
+		<prompt phrase="Восьмисотый" filename= "h-800m"/>
+		<prompt phrase="Восьмисотое" filename= "h-800n"/>
+		<prompt phrase="Восьмисот" filename= "h-800xx"/>
+		<prompt phrase="Девятьсот" filename= "900"/>
+		<prompt phrase="Девятисотая" filename= "h-900f"/>
+		<prompt phrase="Девятосотого" filename= "h-900x"/>
+		<prompt phrase="Девятисотый" filename= "h-900m"/>
+		<prompt phrase="Девятисотое" filename= "h-900n"/>
+		<prompt phrase="Девятисот" filename= "h-900xx"/>
+		<prompt phrase="Тысяча " filename= "thousand"/>
+		<prompt phrase="Тысячи " filename= "thousands-i"/>
+		<prompt phrase="Тысяч " filename= "thousands"/>
+		<prompt phrase="Тысячная" filename= "h-thousandf"/>
+		<prompt phrase="Тысячного" filename= "h-thousandx"/>
+		<prompt phrase="Тысячный" filename= "h-thousandm"/>
+		<prompt phrase="Тысячное" filename= "h-thousandn"/>
+		<prompt phrase="Миллион " filename= "million"/>
+		<prompt phrase="Миллиона " filename= "million-a"/>
+		<prompt phrase="Миллионов " filename= "millions"/>
+		<prompt phrase="Миллионная" filename= "h-millionf"/>
+		<prompt phrase="Миллионного " filename= "h-millionx"/>
+		<prompt phrase="Миллионный" filename= "h-millionm"/>
+		<prompt phrase="Миллионное" filename= "h-millionn"/>
+		<prompt phrase="Точка " filename= "dot"/>
+		<prompt phrase="Период " filename= "period"/>
+		<prompt phrase="Точка " filename= "point"/>
+		<prompt phrase="Решётка " filename= "pound"/>
+		<prompt phrase="Звёздочка " filename= "star"/>
+	</digits>
+	<currency>
+		<prompt phrase="и " filename= "and"/>
+		<prompt phrase="Цент " filename= "cent"/>
+		<prompt phrase="центральный " filename= "central"/>
+		<prompt phrase="Центов в минуту " filename= "cents-per-minute"/>
+		<prompt phrase="Центы " filename= "cents"/>
+		<prompt phrase="Доллар " filename= "dollar"/>
+		<prompt phrase="Долларов " filename= "dollars"/>
+		<prompt phrase="Минус " filename= "minus"/>
+		<prompt phrase="Отрицательный " filename= "negative"/>
+		<prompt phrase="Копеек " filename= "kopx "/>
+		<prompt phrase="Копейка " filename= "kop "/>
+		<prompt phrase="Копейки " filename= "kops "/>
+		<prompt phrase="Рубль " filename= "rubl "/>
+		<prompt phrase="Рубля " filename= "rublx "/>
+		<prompt phrase="Рублей " filename= "rubls "/>
+	</currency>
+	<time>
+		<prompt phrase="до полудня " filename= "a-m"/>
+		<prompt phrase="В " filename= "at"/>
+		<prompt phrase="Воскресенье " filename= "day-0"/>
+		<prompt phrase="Понедельник " filename= "day-1"/>
+		<prompt phrase="Вторник " filename= "day-2"/>
+		<prompt phrase="Среда " filename= "day-3"/>
+		<prompt phrase="Четверг " filename= "day-4"/>
+		<prompt phrase="Пятница " filename= "day-5"/>
+		<prompt phrase="Суббота " filename= "day-6"/>
+		<prompt phrase="час" filename= "hour"/>
+		<prompt phrase="часа " filename= "hours-a"/>
+		<prompt phrase="часов " filename= "hours"/>
+		<prompt phrase="минута " filename= "minute"/>
+		<prompt phrase="Минуты" filename= "minutes-i"/>
+		<prompt phrase="минут " filename= "minutes"/>
+		<prompt phrase="секунда " filename= "second"/>
+		<prompt phrase="секунды " filename= "seconds-i"/>
+		<prompt phrase="секунд" filename= "seconds"/>
+		<prompt phrase="января " filename= "mon-0"/>
+		<prompt phrase="февраля " filename= "mon-1"/>
+		<prompt phrase="марта " filename= "mon-2"/>
+		<prompt phrase="апреля " filename= "mon-3"/>
+		<prompt phrase="мая " filename= "mon-4"/>
+		<prompt phrase="июня " filename= "mon-5"/>
+		<prompt phrase="июля " filename= "mon-6"/>
+		<prompt phrase="августа " filename= "mon-7"/>
+		<prompt phrase="сентября " filename= "mon-8"/>
+		<prompt phrase="октября " filename= "mon-9"/>
+		<prompt phrase="ноября " filename= "mon-10"/>
+		<prompt phrase="декабря " filename= "mon-11"/>
+		<prompt phrase="после полудня " filename= "p-m"/>
+		<prompt phrase="сегодня " filename= "today"/>
+		<prompt phrase="завтра " filename= "tomorrow"/>
+		<prompt phrase="вчера " filename= "yesterday"/>
+		<prompt phrase="Год" filename= "year"/>
+		<prompt phrase="Года" filename= "h-year"/>
+		<prompt phrase="Годов" filename= "years"/>
+		<prompt phrase="Лет" filename= "yearsx"/>
+	</time>
+	<voicemail>
+		<prompt phrase="Абонент с номером " filename= "vm-person"/>
+		<prompt phrase="Помечено как важное " filename= "vm-marked_urgent"/>
+		<prompt phrase="отправлен на электронную почту" filename= "vm-emailed"/>
+		<prompt phrase="у Вас  " filename= "vm-you_have"/>
+		<prompt phrase="пожалуйста, введите свой номе " filename= "vm-enter_id"/>
+		<prompt phrase="пожалуйста, введите свой пароль  " filename= "vm-enter_pass"/>
+		<prompt phrase="Неправильный номер " filename= "vm-fail_auth"/>
+		<prompt phrase="Добро пожаловать в Вашу голосовую почту  " filename= "vm-hello"/>
+		<prompt phrase="До свидания  " filename= "vm-goodbye"/>
+		<prompt phrase="После сигнала, пожалуйста, запишите свое имя, для окончания записи нажмите любую клавишу или перестаньте говорить. " filename= "vm-record_name1"/>
+		<prompt phrase="Выберите приветствие от единицы до девяти " filename= "vm-choose_greeting_choose"/>
+		<prompt phrase="Неправильное значение " filename= "vm-choose_greeting_fail"/>
+		<prompt phrase="Слишком много неудачных попыток " filename= "vm-abort"/>
+		<prompt phrase="Для изменения Вашего пароля " filename= "vm-change_password"/>
+		<prompt phrase="После сигнала, запишите свое приветствие, для окончания записи нажмите любую клавишу или перестаньте говорить  " filename= "vm-to_record_greeting"/>
+		<prompt phrase="После сигнала, запишите свое сообщение, для окончания записи нажмите любую клавишу или перестаньте говорить  " filename= "vm-record_message"/>
+		<prompt phrase="не доступно " filename= "vm-play_greeting"/>
+		<prompt phrase="новых важных" filename= "vm-urgent-newx"/>
+		<prompt phrase="новое важное " filename= "vm-urgent-new"/>
+		<prompt phrase="новое " filename= "vm-new"/>
+		<prompt phrase="новых " filename= "vm-newx "/>
+		<prompt phrase="важное сохранено " filename= "vm-urgent-saved"/>
+		<prompt phrase="сохранено " filename= "vm-saved"/>
+		<prompt phrase="сообщение " filename= "vm-message"/>
+		<prompt phrase="сообщений " filename= "vm-messagex"/>
+		<prompt phrase="сообщения " filename= "vm-messages"/>
+		<prompt phrase="нажмите " filename= "vm-press"/>
+		<prompt phrase="для прослушивания новых сообщений " filename= "vm-listen_new"/>
+		<prompt phrase="для прослушивания сохраненных сообщений " filename= "vm-listen_saved"/>
+		<prompt phrase="для дополнительных параметров " filename= "vm-advanced"/>
+		<prompt phrase="для выхода " filename= "vm-to_exit"/>
+		<prompt phrase="для записи приветствия " filename= "vm-record_greeting"/>
+		<prompt phrase="для выбора приветствия " filename= "vm-choose_greeting"/>
+		<prompt phrase="для записи Вашего имени " filename= "vm-record_name2"/>
+		<prompt phrase="для перехода в главное меню " filename= "vm-main_menu"/>
+		<prompt phrase="прослушать запись " filename= "vm-listen_to_recording"/>
+		<prompt phrase="сохранить запись " filename= "vm-save_recording"/>
+		<prompt phrase="записать " filename= "vm-rerecord"/>
+		<prompt phrase="пометить это сообщение срочным " filename= "vm-mark-urgent"/>
+		<prompt phrase="для продолжения " filename= "vm-continue"/>
+		<prompt phrase="прослушать запись снова " filename= "vm-listen_to_recording_again"/>
+		<prompt phrase="удалить запись " filename= "vm-delete_recording"/>
+		<prompt phrase="переслать это сообщение" filename= "vm-to_forward"/>
+		<prompt phrase="переслать запись на электронную почту " filename= "vm-forward_to_email"/>
+		<prompt phrase="приветствие " filename= "vm-greeting"/>
+		<prompt phrase="выбрано " filename= "vm-selected"/>
+		<prompt phrase="не доступен " filename= "vm-not_available"/>
+		<prompt phrase="сообщение номер " filename= "vm-message_number"/>
+		<prompt phrase="удалено " filename= "vm-deleted"/>
+		<prompt phrase="Ваша запись короче минимально допустимой длинны, пожалуйста попробуйте снова " filename= "vm-too-small"/>
+		<prompt phrase="в папке Входящие " filename= "vm-in_folder"/>
+		<prompt phrase="что бы перезвонить" filename= "vm-return_call_1"/>
+		<prompt phrase="для возврата вызова " filename= "vm-return_call"/>
+		<prompt phrase="Важное" filename= "vm-urgent"/>
+		<prompt phrase="добавить вступление к сообщению" filename= "vm-forward_add_intro"/>
+		<prompt phrase="для того что бы послать собощение " filename= "vm-send_message_now"/>
+		<prompt phrase="пожалуйста, введите добавочный номер для отправки сообщения" filename= "vm-forward_enter_ext"/>
+		<prompt phrase="НЕПРАВИЛЬНЫЙ ДОБАВОЧНЫЙ НОМЕР" filename= "vm-that_was_an_invalid_ext"/>
+	</voicemail>
+	<conference>
+		<prompt phrase="NULL " filename= "conf-ack type"/>
+		<prompt phrase="NULL " filename= "conf-nack type"/>
+		<prompt phrase="Ваш микрофон отключен " filename= "conf-mute"/>
+		<prompt phrase="Ваш микрофон включён " filename= "conf-unmuted"/>
+		<prompt phrase="Вы единственный участник конференции" filename= "conf-alone"/>
+		<prompt phrase="NULL " filename= "conf-perpetual type"/>
+		<prompt phrase="NULL " filename= "conf-enter type"/>
+		<prompt phrase="NULL " filename= "conf-exit type"/>
+		<prompt phrase="Вы были отключены от конференции " filename= "conf-kicked"/>
+		<prompt phrase="Эта конференция заблокирована " filename= "conf-locked"/>
+		<prompt phrase="Конференция заблокирована " filename= "conf-is-locked"/>
+		<prompt phrase="Конференция разблокирована " filename= "conf-is-unlocked"/>
+		<prompt phrase="Пожалуйста, введите пин-код конференции " filename= "conf-pin"/>
+		<prompt phrase="Неправильный пин-код, попробуйте снова " filename= "conf-bad-pin"/>
+		<prompt phrase="До свидания " filename= "conf-goodbye"/>
+		<prompt phrase="Добро пожаловать в конференцию " filename= "conf-welcome"/>
+	</conference>
+	<ivr>
+		<prompt phrase="Номер счета  " filename= "ivr-account_number"/>
+		<prompt phrase="Соединение с вызывающим абонентом " filename= "ivr-connect_to_caller"/>
+		<prompt phrase="если вам известен добавочный номер вызываемого абонента, пожалуйста введите его сейчас " filename= "ivr-enter_ext_pound"/>
+		<prompt phrase="Пожалуйста, введите добавочный номер абонента после знака решётка " filename= "ivr-enter_ext"/>
+		<prompt phrase="Для этого абонента " filename= "ivr-for_this_person"/>
+		<prompt phrase="Пожалуйста, оставайтесь на линии, идет соединение " filename= "ivr-hold_connect_call"/>
+		<prompt phrase="Извините " filename= "ivr-im_sorry"/>
+		<prompt phrase="Пожалуйста " filename= "ivr-please"/>
+		<prompt phrase="Пожалуйста, перезвоните нам в … " filename= "ivr-please_return_our_call_at"/>
+		<prompt phrase="Согласно номера ссылки " filename= "ivr-regarding_reference_number"/>
+		<prompt phrase="Это простое ivr подменю " filename= "ivr-sample_submenu"/>
+		<prompt phrase="Пожалуйста, назовите свое имя после сигнала " filename= "ivr-say_name"/>
+		<prompt phrase="Перенаправить на голосовую почту " filename= "ivr-send_to_voicemail"/>
+		<prompt phrase="Для разговора с представителем по обслуживанию клиентов " filename= "ivr-speak_to_a_customer_service_representative"/>
+		<prompt phrase="Примите сообщение " filename= "ivr-take_a_message"/>
+		<prompt phrase="Спасибо " filename= "ivr-thank_you"/>
+		<prompt phrase="Неправильное значение " filename= "ivr-that_was_an_invalid_entry"/>
+		<prompt phrase="Этот звонок от " filename= "ivr-this_is_a_call_from"/>
+		<prompt phrase="Это голосовое приветствие позволит Вам протестировать некоторые функции " filename= "ivr-this_ivr_will_let_you_test_features"/>
+		<prompt phrase="Для того чтобы набрать конференцию ФС ___ " filename= "ivr-to_call_the_freeswitch_conference"/>
+		<prompt phrase="Для выполнения эхо-теста в ФС " filename= "ivr-to_do_a_freeswitch_echo_test"/>
+		<prompt phrase="Для выполнения эхо-теста free world dialed " filename= "ivr-to_do_a_fwd_echo_test"/>
+		<prompt phrase="Для прослушивания примера голосового подменю " filename= "ivr-to_hear_sample_submenu"/>
+		<prompt phrase="Чтобы услышать кричащих обезьян " filename= "ivr-to_hear_screaming_monkeys"/>
+		<prompt phrase="Для выбора мелодий в режиме ожидания " filename= "ivr-to_listen_to_moh"/>
+		<prompt phrase="Для повтора этих параметров " filename= "ivr-to_repeat_these_options"/>
+		<prompt phrase="Для возврата к предыдущему меню " filename= "ivr-to_return_to_previous_menu"/>
+		<prompt phrase="Для разговора с оператором " filename= "ivr-to_speak_with_an_operator"/>
+		<prompt phrase="Добро пожаловать в FreeSwitch, будущее телефонии " filename= "ivr-welcome_to_freeswitch"/>
+		<prompt phrase="Вы можете выйти в любое время повесив трубку " filename= "ivr-you_may_exit_by_hanging_up"/>
+		<prompt phrase="или  " filename= "ivr-or"/>
+		<prompt phrase="не  " filename= "ivr-not"/>
+		<prompt phrase="звонок  " filename= "ivr-call"/>
+		<prompt phrase="Вы можете  " filename= "ivr-you_may"/>
+		<prompt phrase="Здравствуйте " filename= "ivr-hello"/>
+		<prompt phrase="Используя клавиатуру телефона… " filename= "ivr-use_telephone_keypad"/>
+		<prompt phrase="Пожалуйста, назовите имя сотрудника, которому пытаетесь дозвониться " filename= "ivr-spell_name"/>
+		<prompt phrase="Сначала фамилия " filename= "ivr-last_name_first"/>
+		<prompt phrase="Сначала имя " filename= "ivr-first_name_first"/>
+		<prompt phrase="Нажмите 1 для Q или Z. " filename= "ivr-press_one_q_or_z"/>
+		<prompt phrase="Отдел продаж " filename= "ivr-sales"/>
+		<prompt phrase="Центр обслуживания клиентов " filename= "ivr-customer_service"/>
+		<prompt phrase="Отдел технической поддержки " filename= "ivr-technical_support"/>
+		<prompt phrase="Оператор " filename= "ivr-operator"/>
+	</ivr>
+	<misc>
+		<prompt phrase="Этот звонок шифруется " filename= "call_secured"/>
+		<prompt phrase="завершаемый нажатием на клавишу решетка " filename= "vm-followed_by"/>
+		<prompt phrase="Если вы этот человек " filename= "if_you_are_this_person"/>
+		<prompt phrase="Если вы хотите " filename= "if_you_would_like_to"/>
+		<prompt phrase="Предоставьте номер ссылки  " filename= "provide_reference_number"/>
+		<prompt phrase="Пожалуйста, введите добавочный номер на который хотите перевести звонок  " filename= "transfer1"/>
+		<prompt phrase="Перевод" filename= "transfer2"/>
+		<prompt phrase="Мы пытаемся дозвониться " filename= "we_are_trying_to_reach"/>
+		<prompt phrase="Произошла ошибка, пожалуйста обратитесь к администратору " filename= "error"/>
+	</misc>
+  </ru>                                                                                                                                                                      
+</language>                                                                                                                                                                  
+
