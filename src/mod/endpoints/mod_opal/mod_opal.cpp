@@ -1144,7 +1144,6 @@ PBoolean FSMediaStream::Open()
                                        m_switchCodec->implementation->samples_per_packet,
                                        switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
                 switch_core_codec_destroy(m_switchCodec);
-                m_switchCodec = NULL;
                 return false;
             }
         } else {
@@ -1172,11 +1171,6 @@ PBoolean FSMediaStream::Close()
     if (!IsOpen())
         return false;
     
-    /* forget these FS will properly destroy them for us */
-
-    m_switchTimer = NULL;
-    m_switchCodec = NULL;
-
     return OpalMediaStream::Close();
 }
 
@@ -1258,6 +1252,10 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
     }
 
     if (!switch_channel_ready(m_fsChannel)) {
+        return SWITCH_STATUS_FALSE;
+    }
+
+    if (!switch_core_codec_ready(m_switchCodec)) {
         return SWITCH_STATUS_FALSE;
     }
 
