@@ -276,7 +276,8 @@ SWITCH_STANDARD_API(memcache_function)
 			}
 		} else if (!strcasecmp(subcmd, "status")) {
 			switch_bool_t verbose = SWITCH_FALSE;
-			
+			int x;
+
 			if (argc > 1) {
 				if (!strcasecmp(argv[1], "verbose")) {
 					verbose = SWITCH_TRUE;
@@ -291,7 +292,7 @@ SWITCH_STANDARD_API(memcache_function)
 			server_list = memcached_server_list(memcached);
 			server_count = memcached_server_count(memcached);
 			stream->write_function(stream, "Servers: %d\n", server_count);
-			for (int x=0; x < server_count; x++) {
+			for (x = 0; x < server_count; x++) {
 				stream->write_function(stream, "  %s (%u)\n", memcached_server_name(memcached, server_list[x]), memcached_server_port(memcached, server_list[x]));
 				if (verbose == SWITCH_TRUE) {
 					char **list;
