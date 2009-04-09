@@ -117,11 +117,63 @@ static int32_t switch_dahdi_get_transcoder(struct dahdi_transcoder_formats *fmts
 	return fd;
 }
 
+static switch_status_t init_encoder(switch_codec_t *codec)
+{
+	struct dahdi_transcoder_formats fmts;
+	struct dahdi_context *context = codec->private_info;
+
+	fmts.srcfmt = DAHDI_FORMAT_ULAW;
+	fmts.dstfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
+		? DAHDI_FORMAT_G729A : DAHDI_FORMAT_G723_1;
+	context->encoding_fd = switch_dahdi_get_transcoder(&fmts);
+	if (context->decoding_fd < 0) {
+#ifdef DEBUG_DAHDI_CODEC
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "encoding requested and denied with %d/%d.\n",
+						  fmts.srcfmt, fmts.dstfmt);
+#endif
+		return SWITCH_STATUS_FALSE;
+	}
+	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? */
+	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
+		? 8 : 12;
+#ifdef DEBUG_DAHDI_CODEC
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoding requested and granted with %d/%d.\n",
+					  fmts.srcfmt, fmts.dstfmt);
+#endif
+
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t init_decoder(switch_codec_t *codec)
+{
+    struct dahdi_transcoder_formats fmts;
+    struct dahdi_context *context = codec->private_info;
+
+	fmts.dstfmt = DAHDI_FORMAT_ULAW;
+	fmts.srcfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
+		? DAHDI_FORMAT_G729A : DAHDI_FORMAT_G723_1;
+	context->decoding_fd = switch_dahdi_get_transcoder(&fmts);
+	if (context->decoding_fd < 0) {
+#ifdef DEBUG_DAHDI_CODEC
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and denied with %d/%d.\n",
+				fmts.srcfmt, fmts.dstfmt);
+#endif
+		return SWITCH_STATUS_FALSE;
+	}
+#ifdef DEBUG_DAHDI_CODEC
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and granted with %d/%d.\n",
+				fmts.srcfmt, fmts.dstfmt);
+#endif
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_flag_t flags, const switch_codec_settings_t *codec_settings)
 {
 	uint32_t encoding, decoding;
 	struct dahdi_context *context = NULL;
-	struct dahdi_transcoder_formats fmts;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Switch DAHDI init called.\n");
 
 	encoding = (flags & SWITCH_CODEC_FLAG_ENCODE);
@@ -141,44 +193,10 @@ static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_fla
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (encoding) {
-		fmts.srcfmt = DAHDI_FORMAT_ULAW;
-		fmts.dstfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
-			? DAHDI_FORMAT_G729A : DAHDI_FORMAT_G723_1;
-		context->encoding_fd = switch_dahdi_get_transcoder(&fmts);
-		if (context->decoding_fd < 0) {
-#ifdef DEBUG_DAHDI_CODEC
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "encoding requested and denied with %d/%d.\n",
-				fmts.srcfmt, fmts.dstfmt);
-#endif
-			return SWITCH_STATUS_FALSE;
-		}
-		/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? */
-		context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
-			? 8 : 12;
-#ifdef DEBUG_DAHDI_CODEC
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoding requested and granted with %d/%d.\n",
-				fmts.srcfmt, fmts.dstfmt);
-#endif
-	}
-	if (decoding) {
-		fmts.dstfmt = DAHDI_FORMAT_ULAW;
-		fmts.srcfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
-			? DAHDI_FORMAT_G729A : DAHDI_FORMAT_G723_1;
-		context->decoding_fd = switch_dahdi_get_transcoder(&fmts);
-		if (context->decoding_fd < 0) {
-#ifdef DEBUG_DAHDI_CODEC
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and denied with %d/%d.\n",
-				fmts.srcfmt, fmts.dstfmt);
-#endif
-			return SWITCH_STATUS_FALSE;
-		}
-#ifdef DEBUG_DAHDI_CODEC
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Decoding requested and granted with %d/%d.\n",
-				fmts.srcfmt, fmts.dstfmt);
-#endif
-	}
 	codec->private_info = context;
+	context->encoding_fd = -1;
+	context->decoding_fd = -1;
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -195,10 +213,19 @@ static switch_status_t switch_dahdi_encode(switch_codec_t *codec,
 	unsigned char ebuf_ulaw[decoded_data_len/2];
 	uint32_t i;
 	struct dahdi_context *context = NULL;
+	switch_status_t status;
+
 #ifdef DEBUG_DAHDI_CODEC
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Switch DAHDI encode called to encode %d bytes.\n", decoded_data_len);
 #endif
 	context = codec->private_info;
+
+	if (context->encoding_fd == -1) {
+		if ((status = init_encoder(codec)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+	}
+
 	dbuf_linear = decoded_data;
 	ebuf_g729 = encoded_data;
 	for (i = 0; i < decoded_data_len / sizeof(short); i++) {
@@ -245,6 +272,8 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 	unsigned char *ebuf_g729;
 	uint32_t i;
 	struct dahdi_context *context;
+	switch_status_t status;
+
 #ifdef DEBUG_DAHDI_CODEC
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Switch DAHDI decode called to decode %d bytes.\n", encoded_data_len);
 #endif
@@ -252,6 +281,12 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 	context = codec->private_info;
 	dbuf_linear = decoded_data;
 	ebuf_g729 = encoded_data;
+
+	if (context->decoding_fd == -1) {
+		if ((status = init_decoder(codec)) != SWITCH_STATUS_SUCCESS) {
+			return status;
+		}
+	}
 
 	if (*flag & SWITCH_CODEC_FLAG_SILENCE) {
 		memset(dbuf_linear, 0, codec->implementation->decoded_bytes_per_packet);
