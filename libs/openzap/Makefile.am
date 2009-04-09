@@ -188,7 +188,7 @@ ozmod_isdn_la_LIBADD  = $(MYLIB)
 
 ozmod_analog_la_SOURCES = $(SRC)/ozmod/ozmod_analog/ozmod_analog.c
 ozmod_analog_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_analog_la_LDFLAGS = -module
+ozmod_analog_la_LDFLAGS = -module -avoid-version
 ozmod_analog_la_LIBADD  = $(MYLIB)
 
 ozmod_analog_em_la_SOURCES = $(SRC)/ozmod/ozmod_analog_em/ozmod_analog_em.c
