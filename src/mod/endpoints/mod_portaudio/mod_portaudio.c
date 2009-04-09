@@ -348,11 +348,11 @@ static void deactivate_audio_device(void)
 static void destroy_codecs(void) 
 {
 
-	if (globals.read_codec.implementation) {
+	if (switch_core_codec_ready(&globals.read_codec)) {
 		switch_core_codec_destroy(&globals.read_codec);
 	}
 
-	if (globals.write_codec.implementation) {
+	if (switch_core_codec_ready(&globals.write_codec)) {
 		switch_core_codec_destroy(&globals.write_codec);
 	}
 
@@ -1294,7 +1294,7 @@ static switch_status_t engage_device(int restart)
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (!globals.read_codec.implementation) {
+	if (!switch_core_codec_ready(&globals.read_codec))) {
 		if (switch_core_codec_init(&globals.read_codec,
 								   "L16",
 								   NULL, sample_rate, codec_ms, 1, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
@@ -1306,7 +1306,7 @@ static switch_status_t engage_device(int restart)
 
 	switch_assert(globals.read_codec.implementation);
 
-	if (!globals.write_codec.implementation) {
+	if (!switch_core_codec_ready(&globals.write_codec)) {
 		if (switch_core_codec_init(&globals.write_codec,
 								   "L16",
 								   NULL,

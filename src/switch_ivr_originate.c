@@ -833,7 +833,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 
-	if (write_codec.implementation) {
+	if (switch_core_codec_ready(&write_codec)) {
 		switch_core_codec_destroy(&write_codec);
 	}
 
@@ -2102,7 +2102,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_core_session_reset(oglobals.session, SWITCH_FALSE, SWITCH_TRUE);
 			}
 
-			if (write_codec.implementation) {
+			if (switch_core_codec_ready(&write_codec)) {
 				switch_core_codec_destroy(&write_codec);
 			}
 

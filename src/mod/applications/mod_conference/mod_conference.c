@@ -4489,7 +4489,7 @@ static int setup_media(conference_member_t *member, conference_obj_t *conference
 
 	switch_core_session_reset(member->session, SWITCH_TRUE, SWITCH_FALSE);
 
-	if (member->read_codec.implementation) {
+	if (switch_core_codec_ready(&member->read_codec)) {
 		switch_core_codec_destroy(&member->read_codec);
 	}
 

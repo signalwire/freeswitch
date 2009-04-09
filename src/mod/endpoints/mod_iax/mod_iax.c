@@ -498,11 +498,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 	switch_clear_flag_locked(tech_pvt, TFLAG_CODEC);
 
-	if (tech_pvt->read_codec.implementation) {
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 	}
 
-	if (tech_pvt->write_codec.implementation) {
+	if (!switch_core_codec_ready(&tech_pvt->write_codec)) {
 		switch_core_codec_destroy(&tech_pvt->write_codec);
 	}
 
@@ -1084,7 +1084,8 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 					if (channel && switch_channel_up(channel)) {
 						int bytes = 0, frames = 1;
 
-						if (!switch_test_flag(tech_pvt, TFLAG_CODEC) || !tech_pvt->read_codec.implementation) {
+						if (!switch_test_flag(tech_pvt, TFLAG_CODEC) || !tech_pvt->read_codec.implementation || 
+							!switch_core_codec_ready(&tech_pvt->read_codec)) {
 							switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
 							break;
 						}

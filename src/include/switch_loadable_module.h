@@ -413,6 +413,7 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 		impl->destroy = destroy;
 		impl->codec_id = codec_interface->codec_id;
 		impl->next = codec_interface->implementations;
+		impl->impl_id = switch_core_codec_next_id();
 		codec_interface->implementations = impl;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Rejected codec name: %s rate: %u ptime: %u\n", 
@@ -426,6 +427,11 @@ static inline void switch_core_codec_add_implementation(switch_memory_pool_t *po
 		switch_loadable_module_build_dynamic(__FILE__, load, run, shut, SWITCH_FALSE); \
 	}
 
+
+static inline switch_bool_t switch_core_codec_ready(switch_codec_t *codec)
+{
+	return (codec->flags & SWITCH_CODEC_FLAG_READY) ? SWITCH_TRUE : SWITCH_FALSE;
+}
 
 
 

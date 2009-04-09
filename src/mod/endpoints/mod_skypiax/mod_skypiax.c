@@ -205,12 +205,12 @@ static switch_status_t channel_on_hangup(switch_core_session_t * session)
     skypiax_signaling_write(tech_pvt, msg_to_skype);
   }
 
-  if (tech_pvt->read_codec.implementation) {
-    switch_core_codec_destroy(&tech_pvt->read_codec);
+  if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+	  switch_core_codec_destroy(&tech_pvt->read_codec);
   }
 
-  if (tech_pvt->write_codec.implementation) {
-    switch_core_codec_destroy(&tech_pvt->write_codec);
+  if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+	  switch_core_codec_destroy(&tech_pvt->write_codec);
   }
 
   memset(tech_pvt->session_uuid_str, '\0', sizeof(tech_pvt->session_uuid_str));

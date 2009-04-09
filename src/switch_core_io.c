@@ -106,10 +106,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	int need_codec, perfect, do_bugs = 0, do_resample = 0, is_cng = 0;
 	unsigned int flag = 0;
+	switch_codec_implementation_t codec_impl;
 
 	switch_assert(session != NULL);
 
-	if (!(session->read_codec && session->read_codec->implementation)) {
+	if (!(session->read_codec && session->read_codec->implementation && switch_core_codec_ready(session->read_codec))) {
 		if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) || switch_channel_get_state(session->channel) == CS_HIBERNATE) {
 			*frame = &runtime.dummy_cng_frame;
 			return SWITCH_STATUS_SUCCESS;
@@ -202,16 +203,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 	switch_assert((*frame)->codec != NULL);
 
 
-	if (((*frame)->codec && session->read_codec->implementation != (*frame)->codec->implementation)) {
-		need_codec = TRUE;
-	}
-
-	if (!(session->read_codec && (*frame)->codec && (*frame)->codec->implementation)) {
+	switch_mutex_lock((*frame)->codec->mutex);		
+	if (!(session->read_codec && (*frame)->codec && (*frame)->codec->implementation) && switch_core_codec_ready((*frame)->codec)) {
 		status = SWITCH_STATUS_FALSE;
+		switch_mutex_unlock((*frame)->codec->mutex);
 		goto done;
 	}
 
-	if ((*frame)->codec->implementation->actual_samples_per_second != session->read_impl.actual_samples_per_second) {
+	codec_impl = *(*frame)->codec->implementation;
+	switch_mutex_unlock((*frame)->codec->mutex);
+
+	if (session->read_codec->implementation->impl_id != codec_impl.impl_id) {
+		need_codec = TRUE;
+	}
+
+	if (codec_impl.actual_samples_per_second != session->read_impl.actual_samples_per_second) {
 		do_resample = 1;
 	}
 
@@ -243,7 +249,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 			} else {
 				switch_codec_t *use_codec = read_frame->codec;
 				if (do_bugs) {
-					if (!session->bug_codec.implementation) {
+					if (!switch_core_codec_ready(&session->bug_codec)) {
 						switch_core_codec_copy(read_frame->codec, &session->bug_codec, switch_core_session_get_pool(session));
 					}
 					use_codec = &session->bug_codec;
@@ -525,11 +531,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
   even_more_done:
 
-	if (!*frame || !(*frame)->codec || !(*frame)->codec->implementation) {
+	if (!*frame || !(*frame)->codec || !(*frame)->codec->implementation || !switch_core_codec_ready((*frame)->codec)) {
 		*frame = &runtime.dummy_cng_frame;
 	}
-
-	(*frame)->session = session;
 
 	switch_mutex_unlock(session->read_codec->mutex);
 	switch_mutex_unlock(session->codec_read_mutex);
@@ -579,7 +583,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 		return SWITCH_STATUS_SUCCESS;
 	}
 	
-	if (!(session->write_codec && session->write_codec->implementation) && !pass_cng) {
+	if (!(session->write_codec && switch_core_codec_ready(session->write_codec)) && !pass_cng) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "%s has no write codec.\n", switch_channel_get_name(session->channel));
 		return SWITCH_STATUS_FALSE;
 	}
@@ -924,7 +928,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 						
 
 						
-						if (frame->codec && frame->codec->implementation) {
+						if (frame->codec && frame->codec->implementation && switch_core_codec_ready(frame->codec)) {
 							rate = frame->codec->implementation->actual_samples_per_second;
 						} else {
 							rate = session->write_impl.actual_samples_per_second;

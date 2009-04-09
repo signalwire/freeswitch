@@ -931,11 +931,11 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_alsa_shutdown)
 {
 	deactivate_audio_device();
 
-	if (globals.read_codec.implementation) {
+	if (switch_core_codec_ready(&globals.read_codec)) {
 		switch_core_codec_destroy(&globals.read_codec);
 	}
 
-	if (globals.write_codec.implementation) {
+	if (switch_core_codec_ready(&globals.write_codec)) {
 		switch_core_codec_destroy(&globals.write_codec);
 	}
 	switch_core_hash_destroy(&globals.call_hash);

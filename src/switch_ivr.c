@@ -342,7 +342,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_deactivate_unicast(switch_core_sessio
 				break;
 			}
 		}
-		if (conninfo->read_codec.implementation) {
+		if (switch_core_codec_ready(&conninfo->read_codec)) {
 			switch_core_codec_destroy(&conninfo->read_codec);
 		}
 		switch_socket_close(conninfo->socket);

@@ -379,11 +379,11 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	sofia_clear_flag(tech_pvt, TFLAG_IO);
 
-	if (tech_pvt->read_codec.implementation) {
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 	}
 
-	if (tech_pvt->write_codec.implementation) {
+	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 		switch_core_codec_destroy(&tech_pvt->write_codec);
 	}
 
@@ -665,7 +665,8 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 	tech_pvt->read_frame.datalen = 0;
 	sofia_set_flag_locked(tech_pvt, TFLAG_READING);
 
-	if (sofia_test_flag(tech_pvt, TFLAG_HUP) || sofia_test_flag(tech_pvt, TFLAG_BYE) || !tech_pvt->read_codec.implementation) {
+	if (sofia_test_flag(tech_pvt, TFLAG_HUP) || sofia_test_flag(tech_pvt, TFLAG_BYE) || !tech_pvt->read_codec.implementation || 
+		!switch_core_codec_ready(&tech_pvt->read_codec)) {
 		return SWITCH_STATUS_FALSE;
 	}
 
@@ -711,7 +712,7 @@ static switch_status_t sofia_read_frame(switch_core_session_t *session, switch_f
 				int frames = 1;
 				
 				if (!switch_test_flag((&tech_pvt->read_frame), SFF_CNG)) {
-					if (!tech_pvt->read_codec.implementation) {
+					if (!tech_pvt->read_codec.implementation || !switch_core_codec_ready(&tech_pvt->read_codec)) {
 						*frame = NULL;
 						return SWITCH_STATUS_GENERR;
 					}
@@ -872,7 +873,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 		}
 	}
 
-	if (!tech_pvt->read_codec.implementation) {
+	if (!tech_pvt->read_codec.implementation || !switch_core_codec_ready(&tech_pvt->read_codec)) {
 		return SWITCH_STATUS_GENERR;
 	}
 
@@ -888,7 +889,7 @@ static switch_status_t sofia_write_frame(switch_core_session_t *session, switch_
 		return SWITCH_STATUS_SUCCESS;
 	}
 
-	if (sofia_test_flag(tech_pvt, TFLAG_BYE) || !tech_pvt->read_codec.implementation) {
+	if (sofia_test_flag(tech_pvt, TFLAG_BYE) || !tech_pvt->read_codec.implementation || !switch_core_codec_ready(&tech_pvt->read_codec)) {
 		return SWITCH_STATUS_FALSE;
 	}
 

@@ -1752,7 +1752,7 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int force)
 {
 
-	if (tech_pvt->video_read_codec.implementation) {
+	if (tech_pvt->video_read_codec.implementation && switch_core_codec_ready(&tech_pvt->video_read_codec)) {
 		if (!force) {
 			return SWITCH_STATUS_SUCCESS;
 		}
@@ -1825,7 +1825,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}
 
-	if (tech_pvt->read_codec.implementation) {
+	if (tech_pvt->read_codec.implementation && switch_core_codec_ready(&tech_pvt->read_codec)) {
 		if (!force) {
 			switch_goto_status(SWITCH_STATUS_SUCCESS, end);
 		}
@@ -1885,7 +1885,7 @@ switch_status_t sofia_glue_tech_set_codec(private_object_t *tech_pvt, int force)
 	tech_pvt->read_frame.rate = tech_pvt->rm_rate;
 	ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 
-	if (!tech_pvt->read_codec.implementation) {
+	if (!switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't load codec?\n");
 		switch_goto_status(SWITCH_STATUS_FALSE, end);
 	}

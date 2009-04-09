@@ -346,11 +346,11 @@ SWITCH_STANDARD_APP(play_fsv_function)
 		switch_core_session_set_read_codec(session, read_codec);
 	}
 
-	if (codec.implementation) {
+	if (switch_core_codec_ready(&codec)) {
 		switch_core_codec_destroy(&codec);
 	}
 
-	if (vid_codec.implementation) {
+	if (switch_core_codec_ready(&vid_codec)) {
 		switch_core_codec_destroy(&vid_codec);
 	}
 

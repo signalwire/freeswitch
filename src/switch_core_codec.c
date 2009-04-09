@@ -100,7 +100,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_read_codec(switch_core_s
 
 	switch_mutex_lock(session->codec_read_mutex);
 
-	if (codec && !codec->implementation) {
+	if (codec && (!codec->implementation || !switch_core_codec_ready(codec))) {
 		codec = NULL;
 	}
 	
@@ -221,7 +221,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_write_codec(switch_core_
 
 	switch_mutex_lock(session->codec_write_mutex);
 
-	if (!codec || !codec->implementation) {
+	if (!codec || !codec->implementation || !switch_core_codec_ready(codec)) {
 		if (session->real_write_codec) {
 			session->write_codec = session->real_write_codec;
 			session->write_impl = *session->real_write_codec->implementation;
@@ -301,7 +301,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_read_codec(switch_
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
-	if (!codec || !codec->implementation) {
+	if (!codec || !codec->implementation || !switch_core_codec_ready(codec)) {
 		if (session->video_read_codec) {
 			session->video_read_codec = NULL;
         	status = SWITCH_STATUS_SUCCESS;
@@ -345,7 +345,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_set_video_write_codec(switch
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char tmp[30];
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
-		if (!codec || !codec->implementation) {
+	if (!codec || !codec->implementation || !switch_core_codec_ready(codec)) {
 		if (session->video_write_codec) {
 			session->video_write_codec = NULL;
         	status = SWITCH_STATUS_SUCCESS;
@@ -493,7 +493,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_init(switch_codec_t *codec, co
 
 		implementation->init(codec, flags, codec_settings);
 		switch_mutex_init(&codec->mutex, SWITCH_MUTEX_NESTED, codec->memory_pool);
-		
+		switch_set_flag(codec, SWITCH_CODEC_FLAG_READY);
 		return SWITCH_STATUS_SUCCESS;
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec %s Exists but not at the desired implementation. %dhz %dms\n", codec_name, rate,
@@ -518,7 +518,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_encode(switch_codec_t *codec,
 	switch_assert(encoded_data != NULL);
 	switch_assert(decoded_data != NULL);
 
-	if (!codec->implementation) {
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
@@ -550,7 +550,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_decode(switch_codec_t *codec,
 	switch_assert(encoded_data != NULL);
 	switch_assert(decoded_data != NULL);
 
-	if (!codec->implementation) {
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Codec is not initialized!\n");
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
@@ -576,7 +576,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	
 	switch_assert(codec != NULL);	
 	
-	if (!codec->implementation) {
+	if (!codec->implementation || !switch_core_codec_ready(codec)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Codec is not initialized!\n");
 		return SWITCH_STATUS_NOT_INITALIZED;
 	}
@@ -591,11 +591,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_codec_destroy(switch_codec_t *codec)
 	if (mutex) switch_mutex_lock(mutex);
 
 	codec->implementation->destroy(codec);
+	switch_clear_flag(codec, SWITCH_CODEC_FLAG_READY);
 
 	UNPROTECT_INTERFACE(codec->codec_interface);
 
-	memset(codec, 0, sizeof(*codec));
-	
 	if (mutex) switch_mutex_unlock(mutex);
 
 	if (free_pool) {

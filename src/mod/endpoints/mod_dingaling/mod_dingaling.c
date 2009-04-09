@@ -1244,11 +1244,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		tech_pvt->rtp_session = NULL;
 	}
 
-	if (tech_pvt->read_codec.implementation) {
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 	}
 
-	if (tech_pvt->write_codec.implementation) {
+	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 		switch_core_codec_destroy(&tech_pvt->write_codec);
 	}
 
@@ -1440,7 +1440,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		}
 	}
 
-	if (!tech_pvt->read_codec.implementation) {
+	if (!switch_core_codec_ready(&tech_pvt->read_codec) || !tech_pvt->read_codec.implementation) {
 		return SWITCH_STATUS_GENERR;
 	}
 

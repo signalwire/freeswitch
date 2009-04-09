@@ -678,11 +678,11 @@ void process_fax(switch_core_session_t *session, const char *data, application_m
 
     switch_core_session_set_read_codec(session, NULL);
 
-	if (read_codec.implementation) {
+	if (switch_core_codec_ready(&read_codec)) {
 		switch_core_codec_destroy(&read_codec);
 	}
 
-	if (write_codec.implementation) {
+	if (switch_core_codec_ready(&write_codec)) {
 		switch_core_codec_destroy(&write_codec);
 	}
 

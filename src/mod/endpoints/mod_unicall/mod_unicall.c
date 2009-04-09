@@ -948,11 +948,11 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_on_hangup(%p)\n"
     switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
     //switch_thread_cond_signal(tech_pvt->cond);
 
-    if (tech_pvt->read_codec.implementation)
+    if (switch_core_codec_ready(&tech_pvt->read_codec))
         switch_core_codec_destroy(&tech_pvt->read_codec);
-    if (tech_pvt->write_codec.implementation)
+    if (switch_core_codec_ready(&tech_pvt->write_codec)
         switch_core_codec_destroy(&tech_pvt->write_codec);
-
+		
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s channel hangup\n", switch_channel_get_name(channel));
 
 #if 0

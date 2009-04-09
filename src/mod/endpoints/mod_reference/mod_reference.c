@@ -200,11 +200,11 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 	//switch_thread_cond_signal(tech_pvt->cond);
 
-	if (tech_pvt->read_codec.implementation) {
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
 		switch_core_codec_destroy(&tech_pvt->read_codec);
 	}
 
-	if (tech_pvt->write_codec.implementation) {
+	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 		switch_core_codec_destroy(&tech_pvt->write_codec);
 	}
 

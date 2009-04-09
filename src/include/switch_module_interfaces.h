@@ -609,6 +609,7 @@ struct switch_codec_implementation {
 	/*! deinitalize a codec handle using this implementation */
 	switch_core_codec_destroy_func_t destroy;
 	uint32_t codec_id;
+	uint32_t impl_id;
 	struct switch_codec_implementation *next;
 };
 

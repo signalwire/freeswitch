@@ -242,7 +242,7 @@ SWITCH_STANDARD_APP(bcast_function)
   fail:
 
 	switch_core_session_set_read_codec(session, NULL);
-	if (codec.implementation) {
+	if (switch_core_codec_ready(&codec)) {
 		switch_core_codec_destroy(&codec);
 	}
 

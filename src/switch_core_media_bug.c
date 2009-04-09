@@ -334,7 +334,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(switch_core_ses
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
-	if (session->bug_codec.implementation) {
+	if (switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
 		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
@@ -389,7 +389,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove(switch_core_session
 		}
 	}
 	
-	if (!session->bugs && session->bug_codec.implementation) {
+	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
 		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
@@ -427,7 +427,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_callback(switch_cor
 		switch_thread_rwlock_unlock(session->bug_rwlock);
 	}
 	
-	if (!session->bugs && session->bug_codec.implementation) {
+	if (!session->bugs && switch_core_codec_ready(&session->bug_codec)) {
 		switch_core_codec_destroy(&session->bug_codec);
 		memset(&session->bug_codec, 0, sizeof(session->bug_codec));
 	}
