@@ -4052,6 +4052,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	sip_p_preferred_identity_t *ppreferred = NULL;
 	sip_privacy_t *privacy = NULL;
 	sip_alert_info_t *alert_info = NULL;
+	sip_call_info_t *call_info = NULL;
 	private_object_t *tech_pvt = NULL;
 	switch_channel_t *channel = NULL;
 	const char *channel_name = NULL;
@@ -4516,6 +4517,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if ((alert_info = sip_alert_info(sip))) {
 		char *tmp = sip_header_as_string(profile->home, (void *) alert_info);
 		switch_channel_set_variable(channel, "alert_info", tmp);
+		su_free(profile->home, tmp);
+	}
+
+	if ((call_info = sip_call_info(sip))) {
+		char *tmp = sip_header_as_string(profile->home, (void *) call_info);
+		switch_channel_set_variable(channel, "sip_call_info", tmp);
 		su_free(profile->home, tmp);
 	}
 
