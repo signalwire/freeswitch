@@ -319,8 +319,8 @@ LANGUAGES_MODULES="languages/mod_perl languages/mod_lua languages/mod_python lan
 LOGGERS_MODULES="loggers/mod_console loggers/mod_logfile loggers/mod_syslog"
 SAY_MODULES="say/mod_say_en say/mod_say_de say/mod_say_fr"
 TIMERS_MODULES=
-DISABLED_MODULES="applications/mod_soundtouch languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox directories/mod_ldap event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl"
-XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr xml_int/mod_xml_ldap"
+DISABLED_MODULES="applications/mod_soundtouch languages/mod_spidermonkey_skel ast_tts/mod_cepstral asr_tts/mod_lumenvox event_handlers/mod_event_test event_handlers/mod_radius_cdr event_handlers/mod_zeroconf languages/mod_managed languages/mod_java say/mod_say_it say/mod_say_es say/mod_say_nl"
+XML_INT_MODULES="xml_int/mod_xml_rpc  xml_int/mod_xml_curl xml_int/mod_xml_cdr "
 MYMODULES="$PASSTHRU_CODEC_MODULES $SPIDERMONKEY_MODULES $APPLICATIONS_MODULES $ASR_TTS_MODULES $CODECS_MODULES $DIALPLANS_MODULES $DIRECTORIES_MODULES $ENDPOINTS_MODULES $EVENT_HANDLERS_MODULES $FORMATS_MODULES $LANGUAGES_MODULES $LOGGERS_MODULES $SAY_MODULES $TIMERS_MODULES $XML_INT_MODULES"
 
 export MODULES=$MYMODULES
@@ -387,7 +387,7 @@ touch .noversion
 %{__install} -D -m 744 build/freeswitch.init.suse $RPM_BUILD_ROOT/etc/init.d/freeswitch
 %else
 # On RedHat like
-%{__install} -D -o root -g root -m 0755 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
+%{__install} -D -m 0755 build/freeswitch.init.redhat $RPM_BUILD_ROOT/etc/init.d/freeswitch
 %endif
 # On SuSE make /usr/sbin/rcfreeswitch a link to /etc/init.d/freeswitch
 %if 0%{?suse_version} > 100
@@ -457,7 +457,6 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/m3ua.conf
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/extensions.conf
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/cmudict.0.6d
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/acl.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/alsa.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/conference.conf.xml
@@ -496,6 +495,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/lcr.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/opal.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/unicall.conf.xml
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/memcache.conf.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/default/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/dialplan/public/*.xml
@@ -505,7 +505,7 @@ userdel freeswitch
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/internal/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/sip_profiles/external/*.xml
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/jingle_profiles/*.xml
-%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/Makefile
+%config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/default.dic
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/communicator/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/grammar/model/wsj1/*
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/htdocs/*
@@ -566,7 +566,6 @@ userdel freeswitch
 %{prefix}/mod/mod_stress.so
 %{prefix}/mod/mod_yaml.so
 %{prefix}/mod/mod_shout.so
-%{prefix}/mod/mod_xml_ldap.so
 %{prefix}/mod/mod_fax.so
 %{prefix}/mod/mod_soundtouch.so
 %{prefix}/mod/mod_vmd.so
@@ -630,7 +629,7 @@ userdel freeswitch
 %files python
 %defattr(-,freeswitch,daemon)
 %{prefix}/mod/mod_python*.so*
-%attr(0644, root, bin) /usr/lib/python2.4/site-packages/freeswitch.py
+%attr(0644, root, bin) /usr/lib/python2.4/site-packages/freeswitch.py*
 %dir %attr(0750, freeswitch, daemon) %{prefix}/conf/autoload_configs
 %config(noreplace) %attr(0640, freeswitch, daemon) %{prefix}/conf/autoload_configs/python.conf.xml
 
@@ -784,7 +783,6 @@ userdel freeswitch
 - added mod/mod_stress.so
 - added mod_yaml.so
 - added mod_shout.so
-- added mod_xml_ldap.so
 - added rpms or all sounds
 - openzap is now its own rpm
 - added french
