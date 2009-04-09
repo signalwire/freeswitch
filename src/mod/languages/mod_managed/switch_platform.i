@@ -31,6 +31,7 @@ typedef unsigned long in_addr_t;
 #define SWITCH_DECLARE(type) type
 #define SWITCH_DECLARE_NONSTD(type) type
 #define SWITCH_MOD_DECLARE(type) type
+#define SWITCH_MOD_DECLARE_NONSTD(type) type
 #define SWITCH_DECLARE_DATA
 #define SWITCH_MOD_DECLARE_DATA
 #define SWITCH_THREAD_FUNC

@@ -240,7 +240,7 @@ const sm_module_interface_t curl_module_interface = {
 	/*.next */ NULL
 };
 
-SWITCH_MOD_DECLARE(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
+SWITCH_MOD_DECLARE_NONSTD(switch_status_t) spidermonkey_init(const sm_module_interface_t **module_interface)
 {
 	curl_global_init(CURL_GLOBAL_ALL);
 	*module_interface = &curl_module_interface;

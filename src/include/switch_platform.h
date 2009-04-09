@@ -145,13 +145,16 @@ typedef int gid_t;
 #define SWITCH_DECLARE_DATA				__declspec(dllimport)
 #endif
 #if defined(SWITCH_MOD_DECLARE_STATIC)
-#define SWITCH_MOD_DECLARE(type)		type __cdecl
+#define SWITCH_MOD_DECLARE(type)		type __stdcall
+#define SWITCH_MOD_DECLARE_NONSTD(type)	type __cdecl
 #define SWITCH_MOD_DECLARE_DATA
 #elif defined(MOD_EXPORTS)
 #define SWITCH_MOD_DECLARE(type)		__declspec(dllexport) type __stdcall
+#define SWITCH_MOD_DECLARE_NONSTD(type)	__declspec(dllexport) type __cdecl
 #define SWITCH_MOD_DECLARE_DATA			__declspec(dllexport)
 #else
 #define SWITCH_MOD_DECLARE(type)		__declspec(dllimport) type __stdcall
+#define SWITCH_MOD_DECLARE_NONSTD(type)	__declspec(dllimport) type __cdecl
 #define SWITCH_MOD_DECLARE_DATA			__declspec(dllimport)
 #endif
 #define SIGHUP SIGTERM
@@ -170,6 +173,7 @@ typedef int gid_t;
 #define SWITCH_DECLARE_NONSTD(type)	__attribute__((visibility("default"))) type
 #define SWITCH_DECLARE_DATA		__attribute__((visibility("default")))
 #define SWITCH_MOD_DECLARE(type)	__attribute__((visibility("default"))) type
+#define SWITCH_MOD_DECLARE_NONSTD(type)	__attribute__((visibility("default"))) type
 #define SWITCH_MOD_DECLARE_DATA		__attribute__((visibility("default")))
 #define SWITCH_DECLARE_CLASS		__attribute__((visibility("default")))
 #else
@@ -177,6 +181,7 @@ typedef int gid_t;
 #define SWITCH_DECLARE_NONSTD(type)	type
 #define SWITCH_DECLARE_DATA
 #define SWITCH_MOD_DECLARE(type)	type
+#define SWITCH_MOD_DECLARE_NONSTD(type)	type
 #define SWITCH_MOD_DECLARE_DATA
 #define SWITCH_DECLARE_CLASS
 #endif

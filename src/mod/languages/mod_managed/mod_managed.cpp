@@ -77,7 +77,7 @@ static executeFunction executeDelegate;
 static executeBackgroundFunction executeBackgroundDelegate;
 static loadAssemblyFunction loadAssemblyDelegate;
 
-SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, loadAssemblyFunction loadAssembly) 
+SWITCH_MOD_DECLARE_NONSTD(void) InitManagedDelegates(runFunction run, executeFunction execute, executeBackgroundFunction executeBackground, loadAssemblyFunction loadAssembly) 
 {
 	runDelegate = run;
 	executeDelegate = execute;
@@ -88,7 +88,7 @@ SWITCH_MOD_DECLARE(void) InitManagedDelegates(runFunction run, executeFunction e
 // Sets up delegates (and anything else needed) on the ManagedSession object
 // Called from ManagedSession.Initialize Managed -> this is Unmanaged code so all pointers are marshalled and prevented from GC
 // Exported method.
-SWITCH_MOD_DECLARE(void) InitManagedSession(ManagedSession *session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
+SWITCH_MOD_DECLARE_NONSTD(void) InitManagedSession(ManagedSession *session, inputFunction dtmfDelegate, hangupFunction hangupDelegate) 
 {
 	switch_assert(session);
 	if (!session) {
