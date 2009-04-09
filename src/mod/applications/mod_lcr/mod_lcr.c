@@ -63,7 +63,7 @@
 #define LCR_HEADERS_CID 5
 
 #define LCR_
-char headers[LCR_HEADERS_COUNT][32] = {
+static char headers[LCR_HEADERS_COUNT][32] = {
 	"Digit Match",
 	"Carrier",
 	"Rate",
@@ -73,7 +73,7 @@ char headers[LCR_HEADERS_COUNT][32] = {
 };
 
 /* sql for random function */
-char *db_random = NULL;
+static char *db_random = NULL;
 
 struct odbc_obj {
 	switch_odbc_handle_t *handle;
@@ -262,7 +262,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	return data;
 }
 
-profile_t *locate_profile(const char *profile_name)
+static profile_t *locate_profile(const char *profile_name)
 {
 	profile_t *profile = NULL;
 	
@@ -276,7 +276,7 @@ profile_t *locate_profile(const char *profile_name)
 }
 
 
-void init_max_lens(max_len maxes)
+static void init_max_lens(max_len maxes)
 {
 	maxes->digit_str = (headers[LCR_HEADERS_DIGITS] == NULL ? 0 : strlen(headers[LCR_HEADERS_DIGITS]));
 	maxes->carrier_name = (headers[LCR_HEADERS_CARRIER] == NULL ? 0 : strlen(headers[LCR_HEADERS_CARRIER]));
@@ -286,7 +286,7 @@ void init_max_lens(max_len maxes)
 	maxes->cid = (headers[LCR_HEADERS_CID] == NULL ? 0 : strlen(headers[LCR_HEADERS_CID]));
 }
 
-switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *destination_number)
+static switch_status_t process_max_lengths(max_obj_t *maxes, lcr_route routes, char *destination_number)
 {
 	lcr_route current = NULL;
 
@@ -491,7 +491,7 @@ static switch_bool_t lcr_execute_sql_callback(char *sql, switch_core_db_callback
 	return retval;
 }
 
-int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
+static int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 {
 	lcr_route additional = NULL;
 	lcr_route current = NULL;
@@ -610,7 +610,7 @@ int route_add_callback(void *pArg, int argc, char **argv, char **columnNames)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-switch_status_t lcr_do_lookup(callback_t *cb_struct)
+static switch_status_t lcr_do_lookup(callback_t *cb_struct)
 {
 	switch_stream_handle_t sql_stream = { 0 };
 	char *digits = cb_struct->lookup_number;
@@ -684,7 +684,7 @@ switch_status_t lcr_do_lookup(callback_t *cb_struct)
 	}
 }
 
-switch_bool_t test_profile(char *lcr_profile)
+static switch_bool_t test_profile(char *lcr_profile)
 {
 	callback_t routes = { 0 };
 	switch_memory_pool_t *pool = NULL;
