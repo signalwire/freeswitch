@@ -2,7 +2,7 @@
   <ru>
 	<ascii>
 		<prompt phrase="Пробел " filename= "32"/>
-		<prompt phrase="Точка " filename= "35"/>
+		<prompt phrase="Решётка" filename= "35"/>
 		<prompt phrase="Звездочка " filename= "42"/>
 		<prompt phrase="Точка " filename= "46"/>
 		<prompt phrase="A " filename= "97"/>
@@ -65,8 +65,8 @@
 	<digits>
 		<prompt phrase="ноль " filename= "0"/>
 		<prompt phrase="нулевая" filename= "h-0f"/>
-		<prompt phrase="нелевой" filename= "h-0m"/>
-		<prompt phrase="Нелевое" filename= "h-0n"/>
+		<prompt phrase="нулевой" filename= "h-0m"/>
+		<prompt phrase="Нулевое" filename= "h-0n"/>
 		<prompt phrase="нулевого" filename= "h-0x"/>
 		<prompt phrase="Один " filename= "1"/>
 		<prompt phrase="Одна " filename= "1f"/>
@@ -80,11 +80,11 @@
 		<prompt phrase="Два " filename= "2"/>
 		<prompt phrase="Две " filename= "2f"/>
 		<prompt phrase="Два " filename= "2n"/>
+		<prompt phrase="Двух" filename= "h-2xx"/>
 		<prompt phrase="Второе" filename= "h-2n"/>
 		<prompt phrase="Второго " filename= "h-2x"/>
 		<prompt phrase="Второй " filename= "h-2m"/>
 		<prompt phrase="Вторая" filename= "h-2f"/>
-		<prompt phrase="Двух" filename= "h-2xx"/>
 		<prompt phrase="Три " filename= "3"/>
 		<prompt phrase="Третьего " filename= "h-3x"/>
 		<prompt phrase="Третий " filename= "h-3m"/>
@@ -100,8 +100,8 @@
 		<prompt phrase="Пять" filename= "5"/>
 		<prompt phrase="Пятая" filename= "h-5f"/>
 		<prompt phrase="Пятого" filename= "h-5x"/>
-		<prompt phrase="Четвёртый " filename= "h-5m"/>
-		<prompt phrase="Четвёртое" filename= "h-5n"/>
+		<prompt phrase="Пятый " filename= "h-5m"/>
+		<prompt phrase="Пятое" filename= "h-5n"/>
 		<prompt phrase="Пяти" filename= "h-5xx"/>
 		<prompt phrase="Шесть" filename= "6"/>
 		<prompt phrase="Шестая" filename= "h-6f"/>
@@ -219,14 +219,14 @@
 		<prompt phrase="Шестидесяти" filename= "h-60xx"/>
 		<prompt phrase="Семьдесят" filename= "70"/>
 		<prompt phrase="Семидесятая" filename= "h-70f"/>
-		<prompt phrase="Семидисятого" filename= "h-70x"/>
+		<prompt phrase="Семидесятого" filename= "h-70x"/>
 		<prompt phrase="Семидесятый" filename= "h-70m"/>
 		<prompt phrase="Семидесятое" filename= "h-70n"/>
 		<prompt phrase="Семидесяти" filename= "h-70xx"/>
 		<prompt phrase="Восемьдесят" filename= "80"/>
 		<prompt phrase="Восьмидесятая" filename= "h-80f"/>
 		<prompt phrase="Восемидесятого" filename= "h-80x"/>
-		<prompt phrase="Восемьдесятый" filename= "h-80m"/>
+		<prompt phrase="Восемидесятый" filename= "h-80m"/>
 		<prompt phrase="Восьмидесятое" filename= "h-80n"/>
 		<prompt phrase="Восьмидесяти" filename= "h-80xx"/>
 		<prompt phrase="Девяносто" filename= "90"/>
@@ -261,7 +261,7 @@
 		<prompt phrase="Четырёхсот" filename= "h-400xx"/>
 		<prompt phrase="Пятьсот" filename= "500"/>
 		<prompt phrase="Пятисотая" filename= "h-500f"/>
-		<prompt phrase="Пятосотого" filename= "h-500x"/>
+		<prompt phrase="Пятисотого" filename= "h-500x"/>
 		<prompt phrase="Пятисотый" filename= "h-500m"/>
 		<prompt phrase="Пятисотое" filename= "h-500n"/>
 		<prompt phrase="Пятисот" filename= "h-500xx"/>
@@ -371,8 +371,8 @@
 		<prompt phrase="Помечено как важное " filename= "vm-marked_urgent"/>
 		<prompt phrase="отправлен на электронную почту" filename= "vm-emailed"/>
 		<prompt phrase="у Вас  " filename= "vm-you_have"/>
-		<prompt phrase="пожалуйста, введите свой номе " filename= "vm-enter_id"/>
-		<prompt phrase="пожалуйста, введите свой пароль  " filename= "vm-enter_pass"/>
+		<prompt phrase="Пожалуйста, введите свой номер " filename= "vm-enter_id"/>
+		<prompt phrase="Пожалуйста, введите свой пароль  " filename= "vm-enter_pass"/>
 		<prompt phrase="Неправильный номер " filename= "vm-fail_auth"/>
 		<prompt phrase="Добро пожаловать в Вашу голосовую почту  " filename= "vm-hello"/>
 		<prompt phrase="До свидания  " filename= "vm-goodbye"/>
