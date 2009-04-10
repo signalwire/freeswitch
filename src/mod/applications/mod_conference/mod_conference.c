@@ -3635,6 +3635,8 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 	switch_status_t ret_status = SWITCH_STATUS_SUCCESS;
 	char *conf_name = NULL, *profile_name;
 	switch_event_t *params = NULL;
+	conference_obj_t *new_conference = NULL;
+	
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
@@ -3652,7 +3654,6 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 		for (x = 3; x < argc; x++) {
 			conference_member_t *member = NULL;
 			uint32_t id = atoi(argv[x]);
-			conference_obj_t *new_conference = NULL;
 			switch_channel_t *channel;
 			switch_event_t *event;
 			switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
@@ -3664,71 +3665,73 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 
 			channel = switch_core_session_get_channel(member->session);
 
-			/* build a new conference if it doesn't exist */
-			if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
-				switch_memory_pool_t *pool = NULL;
-				conf_xml_cfg_t xml_cfg = { 0 };
+			if (!new_conference) {
+				if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
+					/* build a new conference if it doesn't exist */
+					switch_memory_pool_t *pool = NULL;
+					conf_xml_cfg_t xml_cfg = { 0 };
 
-				/* Setup a memory pool to use. */
-				if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
-					goto done;
-				}
-
-				switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-				switch_assert(params);
-				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
-				switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
-				switch_channel_event_set_data(channel, params);
-
-				/* Open the config from the xml registry  */
-				if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
-					goto done;
-				}
-
-				if ((profiles = switch_xml_child(cfg, "profiles"))) {
-					xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
-				}
-
-				if (!xml_cfg.profile) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile: %s\n", profile_name);
-					switch_xml_free(cxml);
-					cxml = NULL;
-					goto done;
-				}
-
-				xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
-
-				/* Release the config registry handle */
-				if (cxml) {
-					switch_xml_free(cxml);
-					cxml = NULL;
-				}
-
-				/* Create the conference object. */
-				new_conference = conference_new(conf_name, xml_cfg, pool);
-
-				if (!new_conference) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
-					if (pool != NULL) {
-						switch_core_destroy_memory_pool(&pool);
+					/* Setup a memory pool to use. */
+					if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+						goto done;
 					}
-					goto done;
+
+					switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
+					switch_assert(params);
+					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "conf_name", conf_name);
+					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "profile_name", profile_name);
+					switch_channel_event_set_data(channel, params);
+
+					/* Open the config from the xml registry  */
+					if (!(cxml = switch_xml_open_cfg(global_cf_name, &cfg, params))) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf_name);
+						goto done;
+					}
+
+					if ((profiles = switch_xml_child(cfg, "profiles"))) {
+						xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
+					}
+
+					if (!xml_cfg.profile) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile: %s\n", profile_name);
+						switch_xml_free(cxml);
+						cxml = NULL;
+						goto done;
+					}
+
+					xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
+
+					/* Release the config registry handle */
+					if (cxml) {
+						switch_xml_free(cxml);
+						cxml = NULL;
+					}
+
+					/* Create the conference object. */
+					new_conference = conference_new(conf_name, xml_cfg, pool);
+
+					if (!new_conference) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
+						if (pool != NULL) {
+							switch_core_destroy_memory_pool(&pool);
+						}
+						goto done;
+					}
+
+					/* Set the minimum number of members (once you go above it you cannot go below it) */
+					new_conference->min = 1;
+
+					/* Indicate the conference is dynamic */
+					switch_set_flag_locked(new_conference, CFLAG_DYNAMIC);
+
+					switch_mutex_lock(new_conference->mutex);
+
+					/* Start the conference thread for this conference */
+					launch_conference_thread(new_conference);
+				} else {
+					switch_mutex_lock(new_conference->mutex);
 				}
-
-				/* Set the minimum number of members (once you go above it you cannot go below it) */
-				new_conference->min = 1;
-
-				/* Indicate the conference is dynamic */
-				switch_set_flag_locked(new_conference, CFLAG_DYNAMIC);
-
-				switch_mutex_lock(new_conference->mutex);
-
-				/* Start the conference thread for this conference */
-				launch_conference_thread(new_conference);
-			} else {
-				switch_mutex_lock(new_conference->mutex);
 			}
 
 			/* move the member from the old conference to the new one */
@@ -3745,9 +3748,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				}
 			}
 
-			switch_mutex_unlock(new_conference->mutex);
 			switch_mutex_unlock(member->control_mutex);
-
 			
 			stream->write_function(stream, "OK Member '%d' sent to conference %s.\n", member->id, argv[2]);
 
@@ -3761,6 +3762,11 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 				switch_event_fire(&event);
 			}
 		}
+
+		if (new_conference) {
+			switch_mutex_unlock(new_conference->mutex);
+		}
+
 	} else {
 		ret_status = SWITCH_STATUS_GENERR;
 	}
