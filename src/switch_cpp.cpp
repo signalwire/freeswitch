@@ -777,7 +777,6 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 	this_check((char *)"");
 	begin_allow_threads();
 	memset(dtmf_buf, 0, sizeof(dtmf_buf));
-    begin_allow_threads();
     status = switch_play_and_get_digits( session, 
 										 (uint32_t) min_digits,
 										 (uint32_t) max_digits,
