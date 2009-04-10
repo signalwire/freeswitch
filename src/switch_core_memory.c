@@ -135,8 +135,13 @@ SWITCH_DECLARE(char *) switch_core_perform_permanent_strdup(const char *todup, c
 	switch_size_t len;
 	switch_assert(memory_manager.memory_pool != NULL);
 
-	if (!todup)
+	if (!todup) {
 		return NULL;
+	}
+
+	if (switch_strlen_zero(todup)) {
+		return SWITCH_BLANK_STRING;
+	}
 
 #ifdef LOCK_MORE
 #ifdef USE_MEM_LOCK
@@ -229,6 +234,11 @@ SWITCH_DECLARE(char *) switch_core_perform_session_strdup(switch_core_session_t 
 	if (!todup) {
 		return NULL;
 	}
+
+	if (switch_strlen_zero(todup)) {
+		return SWITCH_BLANK_STRING;
+	}
+
 #ifdef LOCK_MORE
 #ifdef USE_MEM_LOCK
 	switch_mutex_lock(memory_manager.mem_lock);
@@ -264,6 +274,11 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 	if (!todup) {
 		return NULL;
 	}
+
+	if (switch_strlen_zero(todup)) {
+		return SWITCH_BLANK_STRING;
+	}
+
 #ifdef LOCK_MORE
 #ifdef USE_MEM_LOCK
 	switch_mutex_lock(memory_manager.mem_lock);

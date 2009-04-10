@@ -1447,19 +1447,17 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 	session->stack_count++;
 
 	new_profile = switch_caller_profile_clone(session, profile);
-	new_profile->destination_number = switch_core_session_strdup(session, exten);
+	new_profile->destination_number = switch_core_strdup(new_profile->pool, exten);
 
 	if (!switch_strlen_zero(dialplan)) {
-		new_profile->dialplan = switch_core_session_strdup(session, dialplan);
+		new_profile->dialplan = switch_core_strdup(new_profile->pool, dialplan);
 	}
 
 	if (!switch_strlen_zero(context)) {
-		new_profile->context = switch_core_session_strdup(session, context);
+		new_profile->context = switch_core_strdup(new_profile->pool, context);
 	}
 
-	if (!(dpstr = switch_core_session_strdup(session, new_profile->dialplan))) {
-		abort();
-	}
+	dpstr = switch_core_session_strdup(session, new_profile->dialplan);
 
 	argc = switch_separate_string(dpstr, ',', dp, (sizeof(dp) / sizeof(dp[0])));
 	for (x = 0; x < argc; x++) {
