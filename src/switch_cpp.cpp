@@ -789,7 +789,6 @@ SWITCH_DECLARE(char *) CoreSession::playAndGetDigits(int min_digits,
 										 dtmf_buf, 
 										 sizeof(dtmf_buf), 
 										 digits_regex);
-    end_allow_threads();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "playAndGetDigits dtmf_buf: %s\n", dtmf_buf);
 
