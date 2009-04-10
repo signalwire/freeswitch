@@ -907,7 +907,7 @@ static int str2switch(char *swtype)
 		return PRI_SWITCH_DMS100;
 	if (!strcasecmp(swtype, "lucent5e") || !strcasecmp(swtype, "5ess"))
 		return PRI_SWITCH_LUCENT5E;
-	if (!strcasecmp(swtype, "att4ess"))
+	if (!strcasecmp(swtype, "att4ess") || !strcasecmp(swtype, "4ess"))
 		return PRI_SWITCH_ATT4ESS;
 	if (!strcasecmp(swtype, "euroisdn"))
 		return PRI_SWITCH_EUROISDN_E1;
