@@ -180,7 +180,7 @@
 		<prompt phrase="Восемнадцатого" filename= "h-18x"/>
 		<prompt phrase="Восемнадцатый" filename= "h-18m"/>
 		<prompt phrase="Восемнадцатое" filename= "h-18n"/>
-		<prompt phrase="Весемнадцати" filename= "h-18xx"/>
+		<prompt phrase="Восемнадцати" filename= "h-18xx"/>
 		<prompt phrase="Девятнадцать" filename= "19"/>
 		<prompt phrase="Девятнадцатая" filename= "h-19f"/>
 		<prompt phrase="Девятнадцатого" filename= "h-19x"/>
@@ -296,6 +296,7 @@
 		<prompt phrase="Тысячного" filename= "h-thousandx"/>
 		<prompt phrase="Тысячный" filename= "h-thousandm"/>
 		<prompt phrase="Тысячное" filename= "h-thousandn"/>
+		<prompt phrase="Тысячных" filename= "h-thousandxxx"/>
 		<prompt phrase="Миллион " filename= "million"/>
 		<prompt phrase="Миллиона " filename= "million-a"/>
 		<prompt phrase="Миллионов " filename= "millions"/>
@@ -303,6 +304,7 @@
 		<prompt phrase="Миллионного " filename= "h-millionx"/>
 		<prompt phrase="Миллионный" filename= "h-millionm"/>
 		<prompt phrase="Миллионное" filename= "h-millionn"/>
+		<prompt phrase="Миллионных" filename= "h-millionxxx"/>
 		<prompt phrase="Точка " filename= "dot"/>
 		<prompt phrase="Период " filename= "period"/>
 		<prompt phrase="Точка " filename= "point"/>
