@@ -1214,22 +1214,22 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	struct private_object *tech_pvt = NULL;
 
 	tech_pvt = switch_core_session_get_private(session);
-	switch_assert(tech_pvt != NULL);
 
-	if (tech_pvt->rtp_session) {
-		switch_rtp_destroy(&tech_pvt->rtp_session);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NUKE RTP\n");
-		tech_pvt->rtp_session = NULL;
+	if (tech_pvt) {
+		if (tech_pvt->rtp_session) {
+			switch_rtp_destroy(&tech_pvt->rtp_session);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "NUKE RTP\n");
+			tech_pvt->rtp_session = NULL;
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->read_codec);
+		}
+
+		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->write_codec);
+		}
 	}
-
-	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-		switch_core_codec_destroy(&tech_pvt->read_codec);
-	}
-
-	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
-		switch_core_codec_destroy(&tech_pvt->write_codec);
-	}
-
 
 	return SWITCH_STATUS_SUCCESS;
 }

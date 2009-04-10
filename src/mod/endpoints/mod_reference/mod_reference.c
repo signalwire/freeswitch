@@ -195,15 +195,15 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 	assert(channel != NULL);
 
 	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
 
-
-	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-		switch_core_codec_destroy(&tech_pvt->read_codec);
-	}
-
-	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
-		switch_core_codec_destroy(&tech_pvt->write_codec);
+	if (tech_pvt) {
+		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+			switch_core_codec_destroy(&tech_pvt->read_codec);
+		}
+		
+		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+			switch_core_codec_destroy(&tech_pvt->write_codec);
+		}
 	}
 
 	return SWITCH_STATUS_SUCCESS;

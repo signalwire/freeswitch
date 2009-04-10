@@ -428,14 +428,12 @@ static void remove_pvt(private_t *tech_pvt)
 
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
-	switch_channel_t *channel = NULL;
-	private_t *tech_pvt = NULL;
+	//switch_channel_t *channel = NULL;
+	//private_t *tech_pvt = NULL;
 
-	channel = switch_core_session_get_channel(session);
-	assert(channel != NULL);
+	//channel = switch_core_session_get_channel(session);
+	//tech_pvt = switch_core_session_get_private(session);
 
-	tech_pvt = switch_core_session_get_private(session);
-	assert(tech_pvt != NULL);
 
 	return SWITCH_STATUS_SUCCESS;
 }

@@ -835,38 +835,36 @@ switch_status_t FSConnection::on_execute()
 
 static switch_status_t on_destroy(switch_core_session_t *session)
 {
-    switch_channel_t *channel = switch_core_session_get_channel(session);
+    //switch_channel_t *channel = switch_core_session_get_channel(session);
     opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session);
 
-    if (tech_pvt->read_codec.implementation) {
-        switch_core_codec_destroy(&tech_pvt->read_codec);
+    if (tech_pvt) {
+        if (tech_pvt->read_codec.implementation) {
+            switch_core_codec_destroy(&tech_pvt->read_codec);
+        }
+
+        if (tech_pvt->write_codec.implementation) {
+            switch_core_codec_destroy(&tech_pvt->write_codec);
+        }
+
+        if (tech_pvt->vid_read_codec.implementation) {
+            switch_core_codec_destroy(&tech_pvt->vid_read_codec);
+        }
+
+        if (tech_pvt->vid_write_codec.implementation) {
+            switch_core_codec_destroy(&tech_pvt->vid_write_codec);
+        }
+
+        if (tech_pvt->read_timer.timer_interface) {
+            switch_core_timer_destroy(&tech_pvt->read_timer);
+        }
+
+        if (tech_pvt->vid_read_timer.timer_interface) {
+            switch_core_timer_destroy(&tech_pvt->vid_read_timer);
+        }
     }
 
-    if (tech_pvt->write_codec.implementation) {
-        switch_core_codec_destroy(&tech_pvt->write_codec);
-    }
-
-    if (tech_pvt->vid_read_codec.implementation) {
-        switch_core_codec_destroy(&tech_pvt->vid_read_codec);
-    }
-
-    if (tech_pvt->vid_write_codec.implementation) {
-        switch_core_codec_destroy(&tech_pvt->vid_write_codec);
-    }
-
-    if (tech_pvt->read_timer.timer_interface) {
-        switch_core_timer_destroy(&tech_pvt->read_timer);
-    }
-
-    if (tech_pvt->vid_read_timer.timer_interface) {
-        switch_core_timer_destroy(&tech_pvt->vid_read_timer);
-    }
-
-    switch_core_session_unset_read_codec(session);
-    switch_core_session_unset_write_codec(session);
-    
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 /* this function has to be called with the original session beause the FSConnection might already be destroyed and we 
