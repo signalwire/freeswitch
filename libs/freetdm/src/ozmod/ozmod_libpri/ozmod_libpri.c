@@ -86,6 +86,10 @@ static uint32_t parse_opts(const char *in)
 	if (strstr(in, "omit_display")) {
 		flags |= OZMOD_LIBPRI_OPT_OMIT_DISPLAY_IE;
 	}
+	
+	if (strstr(in, "omit_redirecting_number")) {
+		flags |= OZMOD_LIBPRI_OPT_OMIT_REDIRECTING_NUMBER_IE;
+	}
 
 	return flags;
 }
@@ -484,8 +488,11 @@ static __inline__ void state_advance(zap_channel_t *zchan)
 			pri_sr_set_called(sr, zchan->caller_data.ani.digits, dp, 1);
 			pri_sr_set_caller(sr, zchan->caller_data.cid_num.digits, (isdn_data->opts & OZMOD_LIBPRI_OPT_OMIT_DISPLAY_IE ? NULL : zchan->caller_data.cid_name),
 						dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN);
-			pri_sr_set_redirecting(sr, zchan->caller_data.cid_num.digits, dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
-			
+
+			if (!(isdn_data->opts & OZMOD_LIBPRI_OPT_OMIT_REDIRECTING_NUMBER_IE)) {
+				pri_sr_set_redirecting(sr, zchan->caller_data.cid_num.digits, dp, PRES_ALLOWED_USER_NUMBER_PASSED_SCREEN, PRI_REDIR_UNCONDITIONAL);
+			}
+
 			if (pri_setup(isdn_data->spri.pri, call, sr)) {
 				zchan->caller_data.hangup_cause = ZAP_CAUSE_DESTINATION_OUT_OF_ORDER;				
 				zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_HANGUP);
