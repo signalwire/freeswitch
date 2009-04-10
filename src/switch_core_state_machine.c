@@ -54,6 +54,13 @@ static void switch_core_standard_on_reporting(switch_core_session_t *session)
 					  switch_channel_get_name(session->channel), switch_channel_cause2str(switch_channel_get_cause(session->channel)));
 }
 
+static void switch_core_standard_on_destroy(switch_core_session_t *session)
+{
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Standard DESTROY\n",
+					  switch_channel_get_name(session->channel));
+}
+
 static void switch_core_standard_on_reset(switch_core_session_t *session)
 {
 
@@ -318,7 +325,7 @@ void switch_core_state_machine_init(switch_memory_pool_t *pool)
 
 SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 {
-	switch_channel_state_t state = CS_NEW, midstate = CS_DONE, endstate;
+	switch_channel_state_t state = CS_NEW, midstate = CS_DESTROY, endstate;
 	const switch_endpoint_interface_t *endpoint_interface;
 	const switch_state_handler_table_t *driver_state_handler = NULL;
 	const switch_state_handler_table_t *application_state_handler = NULL;
@@ -376,7 +383,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 	switch_mutex_lock(session->mutex);
 
-	while ((state = switch_channel_get_state(session->channel)) != CS_DONE) {
+	while ((state = switch_channel_get_state(session->channel)) != CS_DESTROY) {
 
 		switch_channel_wait_for_flag(session->channel, CF_BLOCK_STATE, SWITCH_FALSE, 0, NULL);
 		
@@ -395,7 +402,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 			case CS_NEW: /* Just created, Waiting for first instructions */
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "(%s) State NEW\n", switch_channel_get_name(session->channel));
 				break;
-			case CS_DONE:
+			case CS_DESTROY:
 				goto done;
 			case CS_REPORTING: /* Call Detail */
 				{
@@ -417,7 +424,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 
 					STATE_MACRO(reporting, "REPORTING");
 					
-					switch_channel_set_state(session->channel, CS_DONE);
+					switch_channel_set_state(session->channel, CS_DESTROY);
 				}
 				goto done;
 			case CS_HANGUP:	/* Deactivate and end the thread */
@@ -517,7 +524,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				break;
 			}
 
-			if (midstate == CS_DONE) {
+			if (midstate == CS_DESTROY) {
 				break;
 			}
 
@@ -541,6 +548,32 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 		//apr_hash_set(stack_table, &thread_id, sizeof(thread_id), NULL);
 	}
 	session->thread_running = 0;
+}
+
+SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *session)
+{
+	switch_channel_state_t state = CS_DESTROY, midstate = CS_DESTROY;
+	const switch_endpoint_interface_t *endpoint_interface;
+	const switch_state_handler_table_t *driver_state_handler = NULL;
+	const switch_state_handler_table_t *application_state_handler = NULL;
+	int proceed = 1;
+	int global_proceed = 1;
+	int do_extra_handlers = 1;
+	int silly = 0;
+	int index = 0;
+
+	switch_assert(session != NULL);
+
+	session->thread_running = 1;
+	endpoint_interface = session->endpoint_interface;
+	switch_assert(endpoint_interface != NULL);
+
+	driver_state_handler = endpoint_interface->state_handler;
+	switch_assert(driver_state_handler != NULL);
+	
+	STATE_MACRO(destroy, "DESTROY");
+
+	return;
 }
 
 /* For Emacs:

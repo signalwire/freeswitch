@@ -416,6 +416,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
+static switch_status_t channel_on_destroy(switch_core_session_t *session);
 static switch_status_t channel_on_routing(switch_core_session_t *session);
 static switch_status_t channel_on_exchange_media(switch_core_session_t *session);
 static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
@@ -488,6 +489,23 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t channel_on_destroy(switch_core_session_t *session)
+{
+	private_t *tech_pvt = switch_core_session_get_private(session);
+
+	switch_assert(tech_pvt != NULL);
+
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+	}
+
+	if (!switch_core_codec_ready(&tech_pvt->write_codec)) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+	}
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
@@ -497,14 +515,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 	switch_clear_flag_locked(tech_pvt, TFLAG_IO);
 	switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
 	switch_clear_flag_locked(tech_pvt, TFLAG_CODEC);
-
-	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-		switch_core_codec_destroy(&tech_pvt->read_codec);
-	}
-
-	if (!switch_core_codec_ready(&tech_pvt->write_codec)) {
-		switch_core_codec_destroy(&tech_pvt->write_codec);
-	}
 
 	switch_mutex_lock(globals.mutex);
 	if (tech_pvt->iax_session) {
@@ -787,7 +797,13 @@ switch_state_handler_table_t iax_state_handlers = {
 	/*.on_execute */ channel_on_execute,
 	/*.on_hangup */ channel_on_hangup,
 	/*.on_exchange_media */ channel_on_exchange_media,
-	/*.on_soft_execute */ channel_on_soft_execute
+	/*.on_soft_execute */ channel_on_soft_execute,
+	/*.on_consume_media*/ NULL,
+    /*.on_hibernate*/ NULL,
+    /*.on_reset*/ NULL,
+    /*.on_park*/ NULL,
+    /*.on_reporting*/ NULL,
+    /*.on_destroy*/ channel_on_destroy
 };
 
 switch_io_routines_t iax_io_routines = {

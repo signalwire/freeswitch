@@ -232,6 +232,34 @@ static int hangup_cause_to_sip(switch_call_cause_t cause)
 	}
 }
 
+switch_status_t sofia_on_destroy(switch_core_session_t *session)
+{
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s SOFIA DESTROY\n", switch_channel_get_name(channel));
+
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+	}
+
+	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+	}
+
+	switch_core_session_unset_read_codec(session);
+	switch_core_session_unset_write_codec(session);
+
+	switch_mutex_lock(tech_pvt->profile->flag_mutex);
+	tech_pvt->profile->inuse--;
+	switch_mutex_unlock(tech_pvt->profile->flag_mutex);
+
+	sofia_glue_deactivate_rtp(tech_pvt);
+
+	return SWITCH_STATUS_SUCCESS;
+
+}
+
 switch_status_t sofia_on_hangup(switch_core_session_t *session)
 {
 	switch_core_session_t *a_session;
@@ -281,8 +309,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 		}
 		sofia_clear_flag_locked(tech_pvt, TFLAG_SIP_HOLD);
 	}
-
-	sofia_glue_deactivate_rtp(tech_pvt);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel %s hanging up, cause: %s\n",
 					  switch_channel_get_name(channel), switch_channel_cause2str(cause));
@@ -378,21 +404,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 	}
 
 	sofia_clear_flag(tech_pvt, TFLAG_IO);
-
-	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-		switch_core_codec_destroy(&tech_pvt->read_codec);
-	}
-
-	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
-		switch_core_codec_destroy(&tech_pvt->write_codec);
-	}
-
-	switch_core_session_unset_read_codec(session);
-	switch_core_session_unset_write_codec(session);
-
-	switch_mutex_lock(tech_pvt->profile->flag_mutex);
-	tech_pvt->profile->inuse--;
-	switch_mutex_unlock(tech_pvt->profile->flag_mutex);
 
 	if (tech_pvt->sofia_private) {
 		*tech_pvt->sofia_private->uuid = '\0';
@@ -2378,7 +2389,10 @@ switch_state_handler_table_t sofia_event_handlers = {
 	/*.on_soft_execute */ sofia_on_soft_execute,
 	/*.on_consume_media */ NULL,
 	/*.on_hibernate */ sofia_on_hibernate,
-	/*.on_reset */ sofia_on_reset
+	/*.on_reset */ sofia_on_reset,
+	/*.on_park*/ NULL,
+	/*.on_reporting*/ NULL,
+	/*.on_destroy*/ sofia_on_destroy
 };
 
 static switch_status_t sofia_manage(char *relative_oid, switch_management_action_t action, char *data, switch_size_t datalen)

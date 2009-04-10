@@ -70,7 +70,14 @@ static switch_state_handler_table_t opalfs_event_handlers = {
     /*.on_execute */ FSConnection::on_execute,
     /*.on_hangup */ on_hangup,
     /*.on_loopback */ FSConnection::on_loopback,
-    /*.on_transmit */ FSConnection::on_transmit
+    /*.on_transmit */ FSConnection::on_transmit,
+	/*.on_soft_execute */ NULL,
+	/*.on_consume_media*/ NULL,
+	/*.on_hibernate*/ NULL,
+	/*.on_reset*/ NULL,
+	/*.on_park*/ NULL,
+	/*.on_reporting*/ NULL,
+	/*.on_destroy*/ on_destroy
 };
 
 
@@ -826,23 +833,11 @@ switch_status_t FSConnection::on_execute()
     return SWITCH_STATUS_SUCCESS;
 }
 
-
-/* this function has to be called with the original session beause the FSConnection might already be destroyed and we 
-   will can't have it be a method of a dead object
- */
-static switch_status_t on_hangup(switch_core_session_t *session)
+static switch_status_t on_destroy(switch_core_session_t *session)
 {
     switch_channel_t *channel = switch_core_session_get_channel(session);
     opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session);
-    
-    /* if this is still here it was our idea to hangup not opal's */
-    if (tech_pvt->me) {
-        Q931::CauseValues cause = (Q931::CauseValues)switch_channel_get_cause_q850(channel);
-        tech_pvt->me->SetQ931Cause(cause);
-        tech_pvt->me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
-        tech_pvt->me = NULL;
-    }
-    
+
     if (tech_pvt->read_codec.implementation) {
         switch_core_codec_destroy(&tech_pvt->read_codec);
     }
@@ -869,7 +864,27 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 
     switch_core_session_unset_read_codec(session);
     switch_core_session_unset_write_codec(session);
+    
+	return SWITCH_STATUS_SUCCESS;
 
+}
+
+/* this function has to be called with the original session beause the FSConnection might already be destroyed and we 
+   will can't have it be a method of a dead object
+ */
+static switch_status_t on_hangup(switch_core_session_t *session)
+{
+    switch_channel_t *channel = switch_core_session_get_channel(session);
+    opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session);
+    
+    /* if this is still here it was our idea to hangup not opal's */
+    if (tech_pvt->me) {
+        Q931::CauseValues cause = (Q931::CauseValues)switch_channel_get_cause_q850(channel);
+        tech_pvt->me->SetQ931Cause(cause);
+        tech_pvt->me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
+        tech_pvt->me = NULL;
+    }
+    
     return SWITCH_STATUS_SUCCESS;
 }
 

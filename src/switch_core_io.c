@@ -202,16 +202,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_read_frame(switch_core_sessi
 
 	switch_assert((*frame)->codec != NULL);
 
-
-	switch_mutex_lock((*frame)->codec->mutex);		
 	if (!(session->read_codec && (*frame)->codec && (*frame)->codec->implementation) && switch_core_codec_ready((*frame)->codec)) {
 		status = SWITCH_STATUS_FALSE;
-		switch_mutex_unlock((*frame)->codec->mutex);
 		goto done;
 	}
 
 	codec_impl = *(*frame)->codec->implementation;
-	switch_mutex_unlock((*frame)->codec->mutex);
 
 	if (session->read_codec->implementation->impl_id != codec_impl.impl_id) {
 		need_codec = TRUE;

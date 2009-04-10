@@ -79,6 +79,7 @@ SWITCH_DECLARE_GLOBAL_STRING_FUNC(set_global_codec_rates_string,
 
 static switch_status_t channel_on_init(switch_core_session_t * session);
 static switch_status_t channel_on_hangup(switch_core_session_t * session);
+static switch_status_t channel_on_destroy(switch_core_session_t * session);
 static switch_status_t channel_on_routing(switch_core_session_t * session);
 static switch_status_t channel_on_exchange_media(switch_core_session_t * session);
 static switch_status_t channel_on_soft_execute(switch_core_session_t * session);
@@ -186,6 +187,29 @@ static switch_status_t channel_on_hangup(switch_core_session_t * session)
 {
   switch_channel_t *channel = NULL;
   private_t *tech_pvt = NULL;
+
+  channel = switch_core_session_get_channel(session);
+  switch_assert(channel != NULL);
+
+  tech_pvt = switch_core_session_get_private(session);
+  switch_assert(tech_pvt != NULL);
+
+  if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+	  switch_core_codec_destroy(&tech_pvt->read_codec);
+  }
+
+  if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+	  switch_core_codec_destroy(&tech_pvt->write_codec);
+  }
+
+  return SWITCH_STATUS_SUCCESS;
+}
+
+
+static switch_status_t channel_on_hangup(switch_core_session_t * session)
+{
+  switch_channel_t *channel = NULL;
+  private_t *tech_pvt = NULL;
   char msg_to_skype[256];
 
   channel = switch_core_session_get_channel(session);
@@ -205,13 +229,6 @@ static switch_status_t channel_on_hangup(switch_core_session_t * session)
     skypiax_signaling_write(tech_pvt, msg_to_skype);
   }
 
-  if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-	  switch_core_codec_destroy(&tech_pvt->read_codec);
-  }
-
-  if (switch_core_codec_ready(&tech_pvt->write_codec)) {
-	  switch_core_codec_destroy(&tech_pvt->write_codec);
-  }
 
   memset(tech_pvt->session_uuid_str, '\0', sizeof(tech_pvt->session_uuid_str));
   DEBUGA_SKYPE("%s CHANNEL HANGUP\n", SKYPIAX_P_LOG, switch_channel_get_name(channel));
@@ -490,7 +507,13 @@ switch_state_handler_table_t skypiax_state_handlers = {
   /*.on_execute */ channel_on_execute,
   /*.on_hangup */ channel_on_hangup,
   /*.on_exchange_media */ channel_on_exchange_media,
-  /*.on_soft_execute */ channel_on_soft_execute
+  /*.on_soft_execute */ channel_on_soft_execute,
+  /*.on_consume_media*/ NULL,
+  /*.on_hibernate*/ NULL,
+  /*.on_reset*/ NULL,
+  /*.on_park*/ NULL,
+  /*.on_reporting*/ NULL,
+  /*.on_destroy*/ channel_on_destroy
 };
 
 switch_io_routines_t skypiax_io_routines = {

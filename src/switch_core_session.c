@@ -874,7 +874,6 @@ SWITCH_DECLARE(unsigned int) switch_core_session_running(switch_core_session_t *
 	return session->thread_running;
 }
 
-
 SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t **session, const char *file, const char *func, int line)
 {
 	switch_memory_pool_t *pool;
@@ -905,6 +904,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 		switch_event_fire(&event);
 	}
 
+	switch_core_session_destroy_state(*session);
 
 	switch_buffer_destroy(&(*session)->raw_read_buffer);
 	switch_buffer_destroy(&(*session)->raw_write_buffer);
@@ -920,6 +920,8 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(switch_core_session_t *
 
 	UNPROTECT_INTERFACE(endpoint_interface);
 }
+
+
 
 SWITCH_STANDARD_SCHED_FUNC(sch_heartbeat_callback)
 {

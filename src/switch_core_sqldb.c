@@ -309,7 +309,7 @@ static void core_event_handler(switch_event_t *event)
 	case SWITCH_EVENT_CHANNEL_STATE:
 		{
 			char *state = switch_event_get_header_nil(event, "channel-state-number");
-			switch_channel_state_t state_i = CS_DONE;
+			switch_channel_state_t state_i = CS_DESTROY;
 
 			if (!switch_strlen_zero(state)) {
 				state_i = atoi(state);
@@ -317,7 +317,7 @@ static void core_event_handler(switch_event_t *event)
 
 			switch (state_i) {
 			case CS_HANGUP:
-			case CS_DONE:
+			case CS_DESTROY:
 				break;
 			case CS_ROUTING:
 				sql = switch_mprintf("update channels set state='%s',cid_name='%q',cid_num='%q',ip_addr='%s',dest='%q',dialplan='%q',context='%q' "

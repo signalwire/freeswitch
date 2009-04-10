@@ -932,6 +932,25 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_on_execute(%p)\n
     return SWITCH_STATUS_SUCCESS;
 }
 
+static switch_status_t unicall_on_destroy(switch_core_session_t *session)
+{
+    switch_channel_t *channel;
+    private_t *tech_pvt;
+
+    channel = switch_core_session_get_channel(session);
+    assert(channel != NULL);
+    tech_pvt = switch_core_session_get_private(session);
+    assert(tech_pvt != NULL);
+
+    if (switch_core_codec_ready(&tech_pvt->read_codec))
+        switch_core_codec_destroy(&tech_pvt->read_codec);
+    if (switch_core_codec_ready(&tech_pvt->write_codec))
+        switch_core_codec_destroy(&tech_pvt->write_codec);
+	
+	return SWITCH_STATUS_SUCCESS;
+		
+}
+
 static switch_status_t unicall_on_hangup(switch_core_session_t *session)
 {
     switch_channel_t *channel;
@@ -948,10 +967,6 @@ switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "unicall_on_hangup(%p)\n"
     switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
     //switch_thread_cond_signal(tech_pvt->cond);
 
-    if (switch_core_codec_ready(&tech_pvt->read_codec))
-        switch_core_codec_destroy(&tech_pvt->read_codec);
-    if (switch_core_codec_ready(&tech_pvt->write_codec)
-        switch_core_codec_destroy(&tech_pvt->write_codec);
 		
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s channel hangup\n", switch_channel_get_name(channel));
 
@@ -1722,7 +1737,14 @@ switch_state_handler_table_t unicall_state_handlers =
     /*.on_execute */ unicall_on_execute,
     /*.on_hangup */ unicall_on_hangup,
     /*.on_exchange_media */ unicall_on_exchange_media,
-    /*.on_soft_execute */ unicall_on_soft_execute
+    /*.on_soft_execute */ unicall_on_soft_execute,
+    /*.on_consume_media*/ NULL,
+    /*.on_hibernate*/ NULL,
+    /*.on_reset*/ NULL,
+    /*.on_park*/ NULL,
+    /*.on_reporting*/ NULL,
+    /*.on_destroy*/ unicall_on_destroy
+
 };
 
 switch_io_routines_t unicall_io_routines =

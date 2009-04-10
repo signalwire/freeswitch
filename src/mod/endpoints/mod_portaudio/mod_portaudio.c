@@ -148,6 +148,7 @@ static void add_pvt(private_t *tech_pvt, int master);
 static void remove_pvt(private_t *tech_pvt);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
+static switch_status_t channel_on_destroy(switch_core_session_t *session);
 static switch_status_t channel_on_routing(switch_core_session_t *session);
 static switch_status_t channel_on_exchange_media(switch_core_session_t *session);
 static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
@@ -469,6 +470,13 @@ static void tech_close_file(private_t *tech_pvt)
 	}
 }
 
+static switch_status_t channel_on_destroy(switch_core_session_t *session)
+{
+	//private_t *tech_pvt = switch_core_session_get_private(session);
+	//switch_assert(tech_pvt != NULL);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
@@ -692,7 +700,14 @@ switch_state_handler_table_t portaudio_event_handlers = {
 	/*.on_execute */ channel_on_execute,
 	/*.on_hangup */ channel_on_hangup,
 	/*.on_exchange_media */ channel_on_exchange_media,
-	/*.on_soft_execute */ channel_on_soft_execute
+	/*.on_soft_execute */ channel_on_soft_execute,
+	/*.on_consume_media*/ NULL,
+    /*.on_hibernate*/ NULL,
+    /*.on_reset*/ NULL,
+    /*.on_park*/ NULL,
+    /*.on_reporting*/ NULL,
+    /*.on_destroy*/ channel_on_destroy
+
 };
 
 switch_io_routines_t portaudio_io_routines = {

@@ -931,7 +931,7 @@ static const char *state_names[] = {
 	"CS_RESET",
 	"CS_HANGUP",
 	"CS_REPORTING",
-	"CS_DONE",
+	"CS_DESTROY",
 	NULL
 };
 
@@ -950,7 +950,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_name_state(const char *nam
 		}
 	}
 
-	return CS_DONE;
+	return CS_DESTROY;
 }
 
 SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_running_state(switch_channel_t *channel, switch_channel_state_t state,
@@ -1015,11 +1015,11 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	int ok = 0;
 
 	switch_assert(channel != NULL);
-	switch_assert(state <= CS_DONE);
+	switch_assert(state <= CS_DESTROY);
 	switch_mutex_lock(channel->state_mutex);
 
 	last_state = channel->state;
-	switch_assert(last_state <= CS_DONE);
+	switch_assert(last_state <= CS_DESTROY);
 
 	if (last_state == state) {
 		goto done;
@@ -1040,7 +1040,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	   case CS_ROUTING:
 	   case CS_EXECUTE:
 	   case CS_HANGUP:
-	   case CS_DONE:
+	   case CS_DESTROY:
 
 	   default:
 	   break;
@@ -1182,7 +1182,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 	case CS_HANGUP:
 		switch (state) {
 		case CS_REPORTING:
-		case CS_DONE:
+		case CS_DESTROY:
 			ok++;
 		default:
 			break;
@@ -1191,7 +1191,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 
 	case CS_REPORTING:
 		switch (state) {
-		case CS_DONE:
+		case CS_DESTROY:
 			ok++;
 		default:
 			break;
@@ -1213,7 +1213,7 @@ SWITCH_DECLARE(switch_channel_state_t) switch_channel_perform_set_state(switch_c
 			channel->hangup_cause = SWITCH_CAUSE_NORMAL_CLEARING;
 		}
 
-		if (state < CS_DONE) {
+		if (state < CS_DESTROY) {
 			switch_core_session_signal_state_change(channel->session);
 		}
 	} else {

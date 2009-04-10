@@ -787,7 +787,7 @@ CS_HIBERNATE - Channel is in a sleep state.
 CS_RESET 	 - Channel is in a reset state.
 CS_HANGUP    - Channel is flagged for hangup and ready to end.
 CS_REPORTING - Channel is ready to collect call detail.
-CS_DONE      - Channel is ready to be destroyed and out of the state machine
+CS_DESTROY      - Channel is ready to be destroyed and out of the state machine
 </pre>
  */
 typedef enum {
@@ -803,7 +803,7 @@ typedef enum {
 	CS_RESET,
 	CS_HANGUP,
 	CS_REPORTING,
-	CS_DONE,
+	CS_DESTROY,
 	CS_NONE
 } switch_channel_state_t;
 

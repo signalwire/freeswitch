@@ -88,6 +88,7 @@ static struct {
 
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
+static switch_status_t channel_on_destroy(switch_core_session_t *session);
 static switch_status_t channel_on_routing(switch_core_session_t *session);
 static switch_status_t channel_on_exchange_media(switch_core_session_t *session);
 static switch_status_t channel_on_soft_execute(switch_core_session_t *session);
@@ -339,9 +340,35 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 	assert(tech_pvt != NULL);
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s CHANNEL EXECUTE\n", switch_channel_get_name(channel));
+	
+	return SWITCH_STATUS_SUCCESS;
+}
+
+static switch_status_t channel_on_destroy(switch_core_session_t *session)
+{
+	switch_channel_t *channel = NULL;
+	private_t *tech_pvt = NULL;
+
+	channel = switch_core_session_get_channel(session);
+	switch_assert(channel != NULL);
+
+	tech_pvt = switch_core_session_get_private(session);
+	switch_assert(tech_pvt != NULL);
+
+	switch_core_timer_destroy(&tech_pvt->timer);
+
+	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
+		switch_core_codec_destroy(&tech_pvt->read_codec);
+	}
+
+	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
+		switch_core_codec_destroy(&tech_pvt->write_codec);
+	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
+
 
 static switch_status_t channel_on_hangup(switch_core_session_t *session)
 {
@@ -370,17 +397,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		tech_pvt->other_session = NULL;
 	}
 	switch_mutex_unlock(tech_pvt->mutex);
-
-	switch_core_timer_destroy(&tech_pvt->timer);
-
-	if (switch_core_codec_ready(&tech_pvt->read_codec)) {
-		switch_core_codec_destroy(&tech_pvt->read_codec);
-	}
-
-	if (switch_core_codec_ready(&tech_pvt->write_codec)) {
-		switch_core_codec_destroy(&tech_pvt->write_codec);
-	}
-
+	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -754,7 +771,11 @@ static switch_state_handler_table_t channel_event_handlers = {
 	/*.on_soft_execute */ channel_on_soft_execute,
 	/*.on_consume_media */ channel_on_consume_media,
 	/*.on_hibernate */ channel_on_hibernate,
-	/*.on_reset */ channel_on_reset
+	/*.on_reset */ channel_on_reset,
+	/*.on_park*/ NULL,
+    /*.on_reporting*/ NULL,
+    /*.on_destroy*/ channel_on_destroy
+
 };
 
 static switch_io_routines_t channel_io_routines = {

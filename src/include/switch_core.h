@@ -578,6 +578,8 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_ses
 */
 #define switch_core_session_destroy(session) switch_core_session_perform_destroy(session, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *session);
+
 /*! 
   \brief Provide the total number of sessions
   \return the total number of allocated sessions
