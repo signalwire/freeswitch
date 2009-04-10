@@ -221,7 +221,7 @@
     <conference>
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
       <prompt phrase="NULL" filename="conf-nack.wav" type="tone"/>
-      <prompt phrase="You are now muted." filename="conf-mute.wav"/>
+      <prompt phrase="You are now muted." filename="conf-muted.wav"/>
       <prompt phrase="You are now unmuted." filename="conf-unmuted.wav"/>
       <prompt phrase="You are currently the only person in this conference." filename="conf-alone.wav"/>
       <prompt phrase="NULL" filename="conf-perpetual.wav" type="music"/>
