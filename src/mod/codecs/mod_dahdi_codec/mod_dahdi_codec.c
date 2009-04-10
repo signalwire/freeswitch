@@ -126,7 +126,7 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 	fmts.dstfmt = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
 		? DAHDI_FORMAT_G729A : DAHDI_FORMAT_G723_1;
 	context->encoding_fd = switch_dahdi_get_transcoder(&fmts);
-	if (context->decoding_fd < 0) {
+	if (context->encoding_fd < 0) {
 #ifdef DEBUG_DAHDI_CODEC
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "encoding requested and denied with %d/%d.\n",
 						  fmts.srcfmt, fmts.dstfmt);
