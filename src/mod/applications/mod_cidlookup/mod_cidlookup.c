@@ -437,12 +437,15 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 	}
 	
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
-		if (argc > 0) { /* && strcmp("skipurl", argv[0])) { */
+		if (argc > 0) {
+			number = switch_core_session_strdup(session, argv[0]);
+		}
+		if (argc > 1) {
 			skipurl = SWITCH_TRUE;
 		}
 	}
 	
-	if (profile) {
+	if (!number && profile) {
 		number = switch_caller_get_field_by_name(profile, "caller_id_number");
 	}
 	
@@ -564,7 +567,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 	
 	SWITCH_ADD_API(api_interface, "cidlookup", "cidlookup API", cidlookup_function, SYNTAX);
 	SWITCH_ADD_APP(app_interface, "cidlookup", "Perform a CID lookup", "Perform a CID lookup",
-				   cidlookup_app_function, "number [skipurl]", SAF_SUPPORT_NOMEDIA);
+				   cidlookup_app_function, "[number [skipurl]]", SAF_SUPPORT_NOMEDIA);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
