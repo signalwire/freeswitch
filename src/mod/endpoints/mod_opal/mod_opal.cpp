@@ -49,6 +49,7 @@ static const char ModuleName[] = "opal";
 
 
 static switch_status_t on_hangup(switch_core_session_t *session);
+static switch_status_t on_destroy(switch_core_session_t *session);
 
 
 static switch_io_routines_t opalfs_io_routines = {
@@ -69,9 +70,8 @@ static switch_state_handler_table_t opalfs_event_handlers = {
     /*.on_routing */ FSConnection::on_routing,
     /*.on_execute */ FSConnection::on_execute,
     /*.on_hangup */ on_hangup,
-    /*.on_loopback */ FSConnection::on_loopback,
-    /*.on_transmit */ FSConnection::on_transmit,
-	/*.on_soft_execute */ NULL,
+    /*.on_exchange_media */ FSConnection::on_exchange_media,
+    /*.on_soft_execute */ FSConnection::on_soft_execute,
 	/*.on_consume_media*/ NULL,
 	/*.on_hibernate*/ NULL,
 	/*.on_reset*/ NULL,
@@ -676,6 +676,12 @@ void FSConnection::OnEstablished()
     OpalLocalConnection::OnEstablished();
 }
 
+PBoolean FSConnection::SendUserInputTone(char tone, unsigned duration)
+{
+    switch_dtmf_t dtmf = { tone, duration };
+
+    return (switch_channel_queue_dtmf(m_fsChannel, &dtmf) == SWITCH_STATUS_SUCCESS) ? true : false;
+}
 
 OpalMediaFormatList FSConnection::GetMediaFormats() const
 {
@@ -887,14 +893,14 @@ static switch_status_t on_hangup(switch_core_session_t *session)
 }
 
 
-switch_status_t FSConnection::on_loopback()
+switch_status_t FSConnection::on_exchange_media()
 {
     PTRACE(3, "mod_opal\tLoopback on connection " << *this);
     return SWITCH_STATUS_SUCCESS;
 }
 
 
-switch_status_t FSConnection::on_transmit()
+switch_status_t FSConnection::on_soft_execute()
 {
     PTRACE(3, "mod_opal\tTransmit on connection " << *this);
     return SWITCH_STATUS_SUCCESS;

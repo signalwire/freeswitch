@@ -187,6 +187,7 @@ class FSConnection:public OpalLocalConnection {
     virtual OpalMediaStream *CreateMediaStream(const OpalMediaFormat &, unsigned, PBoolean);
     virtual PBoolean OnOpenMediaStream(OpalMediaStream & stream);
     virtual OpalMediaFormatList GetMediaFormats() const;
+    virtual PBoolean SendUserInputTone(char tone, unsigned duration);
 
     void SetCodecs();
 
@@ -195,8 +196,8 @@ class FSConnection:public OpalLocalConnection {
     DECLARE_CALLBACK0(on_execute);
     //DECLARE_CALLBACK0(on_hangup);
 
-    DECLARE_CALLBACK0(on_loopback);
-    DECLARE_CALLBACK0(on_transmit);
+    DECLARE_CALLBACK0(on_exchange_media);
+    DECLARE_CALLBACK0(on_soft_execute);
 
     DECLARE_CALLBACK1(kill_channel, int, sig);
     DECLARE_CALLBACK1(send_dtmf, const switch_dtmf_t *, dtmf);
