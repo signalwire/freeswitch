@@ -49,11 +49,11 @@ static char *SYNTAX = "cidlookup number";
 
 static struct {
 	char *url;
+
 	switch_bool_t cache;
 	int cache_expire;
 	
 	char *odbc_dsn;
-	switch_status_t db_overide;
 	char *sql;
 
 	switch_mutex_t *db_mutex;
@@ -149,11 +149,10 @@ done:
 static switch_xml_config_string_options_t config_opt_dsn = {NULL, 0, NULL}; /* anything is ok here */
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
-	SWITCH_CONFIG_ITEM_STRING_STRDUP("url", CONFIG_REQUIRED | CONFIG_RELOAD, &globals.url, NULL, "http://server.example.com/app?number=${caller_id_number}", "URL for the CID lookup service"),
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("url", CONFIG_RELOAD, &globals.url, NULL, "http://server.example.com/app?number=${caller_id_number}", "URL for the CID lookup service"),
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, NULL, "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
-	SWITCH_CONFIG_ITEM("db-overide", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.db_overide, SWITCH_FALSE, NULL, "true|false", "whether to overide CID with local table"),
 	SWITCH_CONFIG_ITEM_CALLBACK("odbc-dsn", SWITCH_CONFIG_STRING, CONFIG_RELOAD, &globals.odbc_dsn, NULL, config_callback_dsn, &config_opt_dsn,
 		"db:user:passwd", "Database to use."),
 	SWITCH_CONFIG_ITEM_END()
@@ -249,6 +248,7 @@ static char *check_cache(switch_memory_pool_t *pool, const char *number) {
 		}
 	}
 	
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: k:'%s', v:'%s'\n", cmd, (name) ? name : "(null)");
 	switch_safe_free(stream.data);
 	return name;
 }
@@ -260,6 +260,7 @@ switch_bool_t set_cache(switch_memory_pool_t *pool, const char *number, const ch
 	
 	SWITCH_STANDARD_STREAM(stream);
 	cmd = switch_core_sprintf(pool, "set fs:cidlookup:%s '%s' %d", number, cid, globals.cache_expire);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcache: %s\n", cmd);
 	
 	if (switch_api_execute("memcache", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
 		if (strncmp("-ERR", stream.data, 4)) {
@@ -291,7 +292,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static char *do_lookup_real(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
+static char *do_lookup_url(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
 	char *name = NULL;
 	char *newurl = NULL;
 	
@@ -310,7 +311,7 @@ static char *do_lookup_real(switch_memory_pool_t *pool, switch_core_session_t *s
 	
 	newurl = switch_event_expand_headers(event, globals.url);
 	
-	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd: %s\n", cmd); */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "url: %s\n", newurl);
 	curl_handle = curl_easy_init();
 	
 	if (!strncasecmp(newurl, "https", 5)) {
@@ -343,13 +344,13 @@ static char *do_lookup_real(switch_memory_pool_t *pool, switch_core_session_t *s
 	return name;
 }
 
-static char *do_dboveride(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
+static char *do_db_lookup(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
 	char *name = NULL;
 	char *newsql = NULL;
 	callback_t cbt = { 0 };
 	cbt.pool = pool;
 	
-	if (globals.db_overide && globals.master_odbc) {
+	if (globals.master_odbc) {
 		newsql = switch_event_expand_headers(event, globals.sql);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL: %s\n", newsql);
 		if (cidlookup_execute_sql_callback(newsql, cidlookup_callback, &cbt)) {
@@ -374,11 +375,11 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_core_session_t *sessio
 	if (globals.cache) {
 		name = check_cache(pool, number);
 	}
-	if (!name) {
-		name = do_dboveride(pool, session, event, number);
+	if (!name && globals.master_odbc && globals.sql) {
+		name = do_db_lookup(pool, session, event, number);
 	}
-	if (!name) {
-		name = do_lookup_real(pool, session, event, number);
+	if (!name && globals.url) {
+		name = do_lookup_url(pool, session, event, number);
 		if (globals.cache && name) {
 			set_cache(pool, number, name);
 		}
@@ -422,8 +423,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 									(globals.cache) ? "true" : "false",
 									globals.cache_expire);
 									
-			stream->write_function(stream, " db-overide: %s\n dsn: %s\n sql: %s\n", 
-									(globals.db_overide) ? "true" : "false",
+			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n", 
 									globals.odbc_dsn,
 									globals.sql);
 
