@@ -24,9 +24,6 @@
  * Contributor(s):
  * 
  * Rupa Schomaker <rupa@rupa.com>
- * Anthony Minessale II <anthm@freeswitch.org>
- * Neal Horman <neal at wanlink dot com>
- *
  *
  * mod_memcache.c -- API for memcache
  *
