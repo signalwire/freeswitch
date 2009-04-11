@@ -33,6 +33,7 @@
  */
 #include <switch.h>
 #include <switch_odbc.h>
+#include <curl/curl.h>
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown);
@@ -72,6 +73,14 @@ struct odbc_obj {
 
 typedef struct odbc_obj  odbc_obj_t;
 typedef odbc_obj_t *odbc_handle;
+
+struct http_data {
+	switch_stream_handle_t stream;
+	switch_size_t bytes;
+	switch_size_t max_bytes;
+	int err;
+};
+
 
 struct callback_obj {
 	switch_memory_pool_t *pool;
@@ -264,34 +273,73 @@ switch_bool_t set_cache(switch_memory_pool_t *pool, const char *number, const ch
 	return success;
 }
 
+static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
+{
+	register unsigned int realsize = (unsigned int) (size * nmemb);
+	struct http_data *http_data = data;
+
+	http_data->bytes += realsize;
+
+	if (http_data->bytes > http_data->max_bytes) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Oversized file detected [%d bytes]\n", (int)http_data->bytes);
+		http_data->err = 1;
+		return 0;
+	}
+
+	http_data->stream.write_function(
+		&http_data->stream, "%.*s",  realsize, ptr);
+	return realsize;
+}
+
 static char *do_lookup_real(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
-	char *cmd = NULL;
 	char *name = NULL;
 	char *newurl = NULL;
-	switch_stream_handle_t stream = { 0 };
 	
-	SWITCH_STANDARD_STREAM(stream);
+	CURL *curl_handle = NULL;
+	long httpRes = 0;
+	char hostname[256] = "";
+
+	struct http_data http_data;
+	
+	memset(&http_data, 0, sizeof(http_data));
+	
+	http_data.max_bytes = 1024;
+	SWITCH_STANDARD_STREAM(http_data.stream);
+
+	gethostname(hostname, sizeof(hostname));
 	
 	newurl = switch_event_expand_headers(event, globals.url);
 	
-	cmd = switch_core_sprintf(pool, "GET '%s' '{}' '' bodyonly", newurl);
-
 	/* switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "cmd: %s\n", cmd); */
+	curl_handle = curl_easy_init();
 	
-	if (switch_api_execute("http", cmd, NULL, &stream) == SWITCH_STATUS_SUCCESS) {
-		if (strncmp("-ERR", stream.data, 4) && 
-		   !switch_strlen_zero((char *)stream.data) &&
-		   strncmp(" ", stream.data, 1)) { /* some vendors give a single space for invalid */
-			name = switch_core_strdup(pool, stream.data);
-		} else {
-			name = NULL;
-		}
+	if (!strncasecmp(newurl, "https", 5)) {
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0);
+	}
+	curl_easy_setopt(curl_handle, CURLOPT_POST, SWITCH_FALSE);
+	curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_MAXREDIRS, 10);
+	curl_easy_setopt(curl_handle, CURLOPT_URL, newurl);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, file_callback);
+	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) &http_data);
+	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "freeswitch-cidlookup/1.0");
+
+	curl_easy_perform(curl_handle);
+	curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &httpRes);
+	curl_easy_cleanup(curl_handle);
+	
+	if (	http_data.stream.data &&
+			!switch_strlen_zero((char *)http_data.stream.data) &&
+			strcmp(" ", http_data.stream.data) ) {
+		
+		name = switch_core_strdup(pool, http_data.stream.data);
 	}
 	
-	switch_safe_free(stream.data);
 	if (newurl != globals.url) {
 		switch_safe_free(newurl);
 	}
+	switch_safe_free(http_data.stream.data);
 	return name;
 }
 
