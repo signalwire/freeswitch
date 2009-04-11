@@ -291,13 +291,14 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel;
+	char *sound_expanded = sound;
 
 	if (!session || !menu || switch_strlen_zero(sound)) {
 		return status;
 	}
 
 	if ((channel = switch_core_session_get_channel(session))) {
-		sound = switch_channel_expand_variables(channel, sound);
+		sound_expanded = switch_channel_expand_variables(channel, sound);
 	}
 
 	memset(menu->buf, 0, menu->inlen + 1);
@@ -313,7 +314,11 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	args.buf = ptr;
 	args.buflen = len;
 
-	status = switch_ivr_play_file(session, NULL, sound, &args);
+	status = switch_ivr_play_file(session, NULL, sound_expanded, &args);
+	
+	if (sound_expanded != sound) {
+		switch_safe_free(sound_expanded);
+	}
 
 	if (!need) {
 		return status;
