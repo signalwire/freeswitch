@@ -24,9 +24,6 @@
  * Contributor(s):
  * 
  * Rupa Schomaker <rupa@rupa.com>
- * Anthony Minessale II <anthm@freeswitch.org>
- * Neal Horman <neal at wanlink dot com>
- *
  *
  * mod_cidlookup.c -- API for querying cid->name services
  *
@@ -453,10 +450,9 @@ SWITCH_STANDARD_APP(cidlookup_app_function)
 		name = do_lookup(pool, event, number, skipurl);
 	}
 	
-	if (name) {
-		if (channel) {
-			switch_channel_set_variable(channel, "effective_caller_id_name", name);
-		}
+	if (name && channel) {
+		switch_channel_set_variable(channel, "original_caller_id_name", switch_core_strdup(pool, profile->caller_id_name));
+		profile->caller_id_name = switch_core_strdup(profile->pool, name);;
 	}
 	
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
