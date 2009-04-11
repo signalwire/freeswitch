@@ -1,0 +1,15 @@
+<configuration name="cidlookup.conf" description="cidlookup Configuration">
+  <settings>
+    <param name="url" value="http://query.voipcnam.com/query.php?api_key=MYAPIKEY&number=${caller_id_number}"/>
+    <param name="cache" value="true"/>
+    <param name="cache-expire" value="86400"/>
+
+    <param name="odbc-dsn" value="phone:phone:phone"/>
+    <param name="sql" value="
+SELECT name||' ('||type||')' AS name 
+  FROM phonebook p JOIN numbers n ON p.id = n.phonebook_id
+  WHERE n.number='${caller_id_number}' 
+  LIMIT 1
+    "/>
+  </settings>
+</configuration>
