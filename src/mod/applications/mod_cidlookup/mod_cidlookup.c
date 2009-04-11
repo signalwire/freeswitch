@@ -48,7 +48,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load);
  */
 SWITCH_MODULE_DEFINITION(mod_cidlookup, mod_cidlookup_load, mod_cidlookup_shutdown, NULL);
 
-static char *SYNTAX = "cidlookup number";
+static char *SYNTAX = "cidlookup status|number";
 
 static struct {
 	char *url;
@@ -310,7 +310,7 @@ static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 	return realsize;
 }
 
-static char *do_lookup_url(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
+static char *do_lookup_url(switch_memory_pool_t *pool, switch_event_t *event, const char *num) {
 	char *name = NULL;
 	char *newurl = NULL;
 	
@@ -363,7 +363,7 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_core_session_t *se
 }
 
 #ifdef SWITCH_HAVE_ODBC
-static char *do_db_lookup(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
+static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num) {
 	char *name = NULL;
 	char *newsql = NULL;
 	callback_t cbt = { 0 };
@@ -385,7 +385,7 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_core_session_t *ses
 }
 #endif
 
-static char *do_lookup(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
+static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num) {
 	char *number = NULL;
 	char *name = NULL;
 	
@@ -397,11 +397,11 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_core_session_t *sessio
 	}
 #ifdef SWITCH_HAVE_ODBC
 	if (!name && globals.master_odbc && globals.sql) {
-		name = do_db_lookup(pool, session, event, number);
+		name = do_db_lookup(pool, event, number);
 	}
 #endif
 	if (!name && globals.url) {
-		name = do_lookup_url(pool, session, event, number);
+		name = do_lookup_url(pool, event, number);
 		if (globals.cache && name) {
 			set_cache(pool, number, name);
 		}
@@ -456,7 +456,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}
 
-		name = do_lookup(pool, session, event, argv[0]);
+		name = do_lookup(pool, event, argv[0]);
 		if (name) {
 			stream->write_function(stream, name);
 		} else {
@@ -504,7 +504,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 		return SWITCH_STATUS_TERM;
 	}
 	
-	SWITCH_ADD_API(api_interface, "cidlookup", "cidlookup API", cidlookup_function, "syntax");
+	SWITCH_ADD_API(api_interface, "cidlookup", "cidlookup API", cidlookup_function, SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
