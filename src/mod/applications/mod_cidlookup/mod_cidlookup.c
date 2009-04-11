@@ -48,7 +48,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load);
  */
 SWITCH_MODULE_DEFINITION(mod_cidlookup, mod_cidlookup_load, mod_cidlookup_shutdown, NULL);
 
-static char *SYNTAX = "cidlookup status|number";
+static char *SYNTAX = "cidlookup status|number [skipurl]";
 
 static struct {
 	char *url;
@@ -385,7 +385,7 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_event_t *event, con
 }
 #endif
 
-static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num) {
+static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const char *num, switch_bool_t skipurl) {
 	char *number = NULL;
 	char *name = NULL;
 	
@@ -400,7 +400,7 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 		name = do_db_lookup(pool, event, number);
 	}
 #endif
-	if (!name && globals.url) {
+	if (!skipurl && !name && globals.url) {
 		name = do_lookup_url(pool, event, number);
 		if (globals.cache && name) {
 			set_cache(pool, number, name);
@@ -409,7 +409,61 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 	return name;
 }
 
+SWITCH_STANDARD_APP(cidlookup_app_function)
+{
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
+	char *argv[3] = { 0 };
+	int argc;
+	char *mydata = NULL;
 
+	switch_memory_pool_t *pool = NULL;
+	switch_event_t *event = NULL;
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_caller_profile_t *profile = switch_channel_get_caller_profile(channel);
+	char *name = NULL;
+	const char *number = NULL;
+	switch_bool_t skipurl = SWITCH_FALSE;
+	
+	if (session) {
+		pool = switch_core_session_get_pool(session);
+	} else {
+		switch_core_new_memory_pool(&pool);
+	}
+	switch_event_create(&event, SWITCH_EVENT_MESSAGE);
+
+	if (!(mydata = switch_core_session_strdup(session, data))) {
+		return;
+	}
+	
+	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+		if (argc > 0) { /* && strcmp("skipurl", argv[0])) { */
+			skipurl = SWITCH_TRUE;
+		}
+	}
+	
+	if (profile) {
+		number = switch_caller_get_field_by_name(profile, "caller_id_number");
+	}
+	
+	if (number) {
+		name = do_lookup(pool, event, number, skipurl);
+	}
+	
+	if (name) {
+		if (channel) {
+			switch_channel_set_variable(channel, "effective_caller_id_name", name);
+		}
+	}
+	
+	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+	
+done:
+	switch_event_destroy(&event);
+	if (!session) {
+		switch_core_destroy_memory_pool(&pool);
+	}
+}
 SWITCH_STANDARD_API(cidlookup_function)
 {
 	switch_status_t status;
@@ -420,6 +474,7 @@ SWITCH_STANDARD_API(cidlookup_function)
 
 	switch_memory_pool_t *pool = NULL;
 	switch_event_t *event = NULL;
+	switch_bool_t skipurl = SWITCH_FALSE;
 	
 	if (switch_strlen_zero(cmd)) {
 		switch_goto_status(SWITCH_STATUS_SUCCESS, usage);
@@ -455,8 +510,11 @@ SWITCH_STANDARD_API(cidlookup_function)
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}
+		if (argc > 1 && !strcmp("skipurl", argv[1])) {
+			skipurl = SWITCH_TRUE;
+		}
 
-		name = do_lookup(pool, event, argv[0]);
+		name = do_lookup(pool, event, argv[0], skipurl);
 		if (name) {
 			stream->write_function(stream, name);
 		} else {
@@ -482,6 +540,7 @@ done:
 SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 {
 	switch_api_interface_t *api_interface;
+	switch_application_interface_t *app_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
 
@@ -505,6 +564,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 	}
 	
 	SWITCH_ADD_API(api_interface, "cidlookup", "cidlookup API", cidlookup_function, SYNTAX);
+	SWITCH_ADD_APP(app_interface, "cidlookup", "Perform a CID lookup", "Perform a CID lookup",
+				   cidlookup_app_function, "number [skipurl]", SAF_SUPPORT_NOMEDIA);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
