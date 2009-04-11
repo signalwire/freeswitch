@@ -31,9 +31,19 @@
  * mod_cidlookup.c -- API for querying cid->name services
  *
  */
+ 
+/* ok, what is the right way to conditionally compile CURL? */
+#ifndef HAVE_CURL
+#define HAVE_CURL
+#endif
+ 
 #include <switch.h>
+#ifdef SWITCH_HAVE_ODBC
 #include <switch_odbc.h>
+#endif
+#ifdef HAVE_CURL
 #include <curl/curl.h>
+#endif
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown);
@@ -56,12 +66,20 @@ static struct {
 	char *odbc_dsn;
 	char *sql;
 
+#ifdef SWITCH_HAVE_ODBC
 	switch_mutex_t *db_mutex;
-	switch_odbc_handle_t *master_odbc;
+#else
+	void *filler1;
+#endif
 	switch_memory_pool_t *pool;
-
+#ifdef SWITCH_HAVE_ODBC
+	switch_odbc_handle_t *master_odbc;
+#else
+	void *filler2;
+#endif
 } globals;
 
+#ifdef SWITCH_HAVE_ODBC
 struct odbc_obj {
 	switch_odbc_handle_t *handle;
 	SQLHSTMT stmt;
@@ -73,6 +91,7 @@ struct odbc_obj {
 
 typedef struct odbc_obj  odbc_obj_t;
 typedef odbc_obj_t *odbc_handle;
+#endif
 
 struct http_data {
 	switch_stream_handle_t stream;
@@ -94,6 +113,7 @@ static switch_event_node_t *reload_xml_event = NULL;
 static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, switch_config_callback_type_t callback_type, switch_bool_t changed)
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+#ifdef SWITCH_HAVE_ODBC
 	char *odbc_user = NULL;
 	char *odbc_pass = NULL;
 	
@@ -136,8 +156,12 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, switc
 		/* and swap in new connection */
 		globals.master_odbc = odbc;
 	}
-	
+
 	switch_goto_status(SWITCH_STATUS_SUCCESS, done);
+#else
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "ODBC is not compiled in.  Do not configure odbc-dsn parameter!\n");
+	switch_goto_status(SWITCH_STATUS_FALSE, done);
+#endif	
 	
 done:
 	if (globals.db_mutex) {
@@ -164,7 +188,12 @@ static switch_status_t do_config(switch_bool_t reload)
 		return SWITCH_STATUS_GENERR;
 	}
 	
-	
+#ifndef HAVE_CURL
+	if (globals.url) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No LIBCURL - compile with LIBCURL or remove url param\n");
+		return SWITCH_STATUS_GENERR;
+	}
+#endif	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -174,6 +203,7 @@ static void event_handler(switch_event_t *event)
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "cidlookup Reloaded\n");
 }
 
+#ifdef SWITCH_HAVE_ODBC
 static switch_bool_t cidlookup_execute_sql_callback(char *sql, switch_core_db_callback_func_t callback, void *pdata)
 {
 	switch_bool_t retval = SWITCH_FALSE;
@@ -207,6 +237,7 @@ static int cidlookup_callback(void *pArg, int argc, char **argv, char **columnNa
 	
 	return SWITCH_STATUS_SUCCESS;
 }
+#endif
 
 /* make a new string with digits only */
 static char *string_digitsonly(switch_memory_pool_t *pool, const char *str) 
@@ -274,6 +305,7 @@ switch_bool_t set_cache(switch_memory_pool_t *pool, const char *number, const ch
 	return success;
 }
 
+#ifdef HAVE_CURL
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
@@ -343,7 +375,9 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_core_session_t *se
 	switch_safe_free(http_data.stream.data);
 	return name;
 }
+#endif 
 
+#ifdef SWITCH_HAVE_ODBC
 static char *do_db_lookup(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
 	char *name = NULL;
 	char *newsql = NULL;
@@ -364,6 +398,7 @@ static char *do_db_lookup(switch_memory_pool_t *pool, switch_core_session_t *ses
 	}
 	return name;
 }
+#endif
 
 static char *do_lookup(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
 	char *number = NULL;
@@ -375,16 +410,19 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_core_session_t *sessio
 	if (globals.cache) {
 		name = check_cache(pool, number);
 	}
+#ifdef SWITCH_HAVE_ODBC
 	if (!name && globals.master_odbc && globals.sql) {
 		name = do_db_lookup(pool, session, event, number);
 	}
+#endif
+#ifdef HAVE_CURL
 	if (!name && globals.url) {
 		name = do_lookup_url(pool, session, event, number);
 		if (globals.cache && name) {
 			set_cache(pool, number, name);
 		}
 	}
-
+#endif
 	return name;
 }
 
@@ -426,6 +464,16 @@ SWITCH_STANDARD_API(cidlookup_function)
 			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n", 
 									globals.odbc_dsn,
 									globals.sql);
+#ifdef HAVE_CURL
+			stream->write_function(stream, " LIBCURL: true");
+#else
+			stream->write_function(stream, " LIBCURL: false");
+#endif
+#ifdef SWITCH_HAVE_ODBC
+			stream->write_function(stream, " ODBC: true");
+#else
+			stream->write_function(stream, " ODBC: false");
+#endif
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
 		}
@@ -463,11 +511,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 	
 	globals.pool = pool;
 
+#ifdef SWITCH_HAVE_ODBC
 	if (!globals.db_mutex) {
 		if (switch_mutex_init(&globals.db_mutex, SWITCH_MUTEX_UNNESTED, globals.pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "failed to initialize db_mutex\n");
 		}
 	}
+#endif
 
 	do_config(SWITCH_FALSE);
 	
@@ -488,9 +538,15 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cidlookup_load)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown)
 {
 	/* Cleanup dynamically allocated config settings */
-	switch_mutex_destroy(globals.db_mutex);
-	switch_odbc_handle_disconnect(globals.master_odbc);
-	switch_odbc_handle_destroy(&globals.master_odbc);
+#ifdef SWITCH_HAVE_ODBC
+	if (globals.db_mutex) {
+		switch_mutex_destroy(globals.db_mutex);
+	}
+	if (globals.master_odbc) {
+		switch_odbc_handle_disconnect(globals.master_odbc);
+		switch_odbc_handle_destroy(&globals.master_odbc);
+	}
+#endif
 	switch_event_unbind(&reload_xml_event);
 	return SWITCH_STATUS_SUCCESS;
 }
