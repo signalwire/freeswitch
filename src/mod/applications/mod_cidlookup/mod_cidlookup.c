@@ -32,18 +32,11 @@
  *
  */
  
-/* ok, what is the right way to conditionally compile CURL? */
-#ifndef HAVE_CURL
-#define HAVE_CURL
-#endif
- 
 #include <switch.h>
 #ifdef SWITCH_HAVE_ODBC
 #include <switch_odbc.h>
 #endif
-#ifdef HAVE_CURL
 #include <curl/curl.h>
-#endif
 
 /* Prototypes */
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_cidlookup_shutdown);
@@ -188,12 +181,6 @@ static switch_status_t do_config(switch_bool_t reload)
 		return SWITCH_STATUS_GENERR;
 	}
 	
-#ifndef HAVE_CURL
-	if (globals.url) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No LIBCURL - compile with LIBCURL or remove url param\n");
-		return SWITCH_STATUS_GENERR;
-	}
-#endif	
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -305,7 +292,6 @@ switch_bool_t set_cache(switch_memory_pool_t *pool, const char *number, const ch
 	return success;
 }
 
-#ifdef HAVE_CURL
 static size_t file_callback(void *ptr, size_t size, size_t nmemb, void *data)
 {
 	register unsigned int realsize = (unsigned int) (size * nmemb);
@@ -375,7 +361,6 @@ static char *do_lookup_url(switch_memory_pool_t *pool, switch_core_session_t *se
 	switch_safe_free(http_data.stream.data);
 	return name;
 }
-#endif 
 
 #ifdef SWITCH_HAVE_ODBC
 static char *do_db_lookup(switch_memory_pool_t *pool, switch_core_session_t *session, switch_event_t *event, const char *num) {
@@ -415,14 +400,12 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_core_session_t *sessio
 		name = do_db_lookup(pool, session, event, number);
 	}
 #endif
-#ifdef HAVE_CURL
 	if (!name && globals.url) {
 		name = do_lookup_url(pool, session, event, number);
 		if (globals.cache && name) {
 			set_cache(pool, number, name);
 		}
 	}
-#endif
 	return name;
 }
 
@@ -464,15 +447,10 @@ SWITCH_STANDARD_API(cidlookup_function)
 			stream->write_function(stream, " odbc-dsn: %s\n sql: %s\n", 
 									globals.odbc_dsn,
 									globals.sql);
-#ifdef HAVE_CURL
-			stream->write_function(stream, " LIBCURL: true");
-#else
-			stream->write_function(stream, " LIBCURL: false");
-#endif
 #ifdef SWITCH_HAVE_ODBC
-			stream->write_function(stream, " ODBC: true");
+			stream->write_function(stream, " ODBC Compiled: true\n");
 #else
-			stream->write_function(stream, " ODBC: false");
+			stream->write_function(stream, " ODBC Compiled: false\n");
 #endif
 
 			switch_goto_status(SWITCH_STATUS_SUCCESS, done);
