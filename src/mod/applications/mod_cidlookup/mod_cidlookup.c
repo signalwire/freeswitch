@@ -392,18 +392,21 @@ static char *do_lookup(switch_memory_pool_t *pool, switch_event_t *event, const 
 	number = string_digitsonly(pool, num);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "caller_id_number", number);
 
-	if (globals.cache) {
-		name = check_cache(pool, number);
-	}
 #ifdef SWITCH_HAVE_ODBC
-	if (!name && globals.master_odbc && globals.sql) {
+	/* database always wins */
+	if (globals.master_odbc && globals.sql) {
 		name = do_db_lookup(pool, event, number);
 	}
 #endif
-	if (!skipurl && !name && globals.url) {
-		name = do_lookup_url(pool, event, number);
-		if (globals.cache && name) {
-			set_cache(pool, number, name);
+	if (!name && globals.url) {
+		if (globals.cache) {
+			name = check_cache(pool, number);
+		}
+		if (!skipurl && !name) {
+			name = do_lookup_url(pool, event, number);
+			if (globals.cache && name) {
+				set_cache(pool, number, name);
+			}
 		}
 	}
 	return name;
