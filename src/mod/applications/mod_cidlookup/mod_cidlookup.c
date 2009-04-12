@@ -154,9 +154,11 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, switc
 #endif	
 	
 done:
+#ifdef SWITCH_HAVE_ODBC
 	if (globals.db_mutex) {
 		switch_mutex_unlock(globals.db_mutex);
 	}
+#endif
 	return status;
 }
 
