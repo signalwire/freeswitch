@@ -537,6 +537,8 @@ SWITCH_STANDARD_APP(hash_function)
 	char *hash_key = NULL;
 	char *value = NULL;
 	
+	switch_mutex_lock(globals.db_hash_mutex);
+	
 	if (!switch_strlen_zero(data)) {
 		mydata = strdup(data);
 		switch_assert(mydata);
@@ -544,14 +546,15 @@ SWITCH_STANDARD_APP(hash_function)
 	}
 	
 	if (argc < 3 || !argv[0]) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: hash %s\n", HASH_USAGE);
-		goto end;
+		goto usage;
 	}
 	
 	hash_key = switch_mprintf("%s_%s", argv[1], argv[2]);
 	
-	switch_mutex_lock(globals.db_hash_mutex);
 	if (!strcasecmp(argv[0], "insert")) {
+		if (argc < 4) {
+			goto usage;
+		}
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			free(value);
 			switch_core_hash_delete(globals.db_hash, hash_key);
@@ -564,10 +567,17 @@ SWITCH_STANDARD_APP(hash_function)
 			switch_safe_free(value);
 			switch_core_hash_delete(globals.db_hash, hash_key);
 		}
+	} else {
+		goto usage;
 	}
-	switch_mutex_unlock(globals.db_hash_mutex);
 	
-end:
+	goto done;
+
+usage:
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "USAGE: hash %s\n", HASH_USAGE);
+
+done:
+	switch_mutex_unlock(globals.db_hash_mutex);
 	switch_safe_free(mydata);
 	switch_safe_free(hash_key);
 }
@@ -590,16 +600,14 @@ SWITCH_STANDARD_API(hash_api_function)
 	}
 	
 	if (argc < 3 || !argv[0]) {
-		stream->write_function(stream, "-ERR Usage: hash %s\n", HASH_API_USAGE);
-		goto end;
+		goto usage;
 	}
 	
 	hash_key = switch_mprintf("%s_%s", argv[1], argv[2]);
 	
 	if (!strcasecmp(argv[0], "insert")) {
 		if (argc < 4) {
-			stream->write_function(stream, "-ERR Usage: hash %s\n", HASH_API_USAGE);
-			goto end;
+			goto usage;
 		}
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			switch_safe_free(value);
@@ -613,15 +621,24 @@ SWITCH_STANDARD_API(hash_api_function)
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			switch_safe_free(value);
 			switch_core_hash_delete(globals.db_hash, hash_key);
+			stream->write_function(stream, "+OK\n");
+		} else {
+			stream->write_function(stream, "-ERR Not found\n");
 		}
-		stream->write_function(stream, "+OK\n");
 	} else if (!strcasecmp(argv[0], "select")) {
 		if ((value = switch_core_hash_find(globals.db_hash, hash_key))) {
 			stream->write_function(stream, "%s", value);
 		}
+	} else {
+		goto usage;
 	}
 	
-end:
+	goto done;
+	
+usage:
+	stream->write_function(stream, "-ERR Usage: hash %s\n", HASH_API_USAGE);
+	
+done:
 	switch_mutex_unlock(globals.db_hash_mutex);
 	switch_safe_free(mydata);
 	switch_safe_free(hash_key);
