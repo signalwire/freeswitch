@@ -109,6 +109,10 @@ SWITCH_DECLARE(char *) switch_amp_encode(char *s, char *buf, switch_size_t len);
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len);
 
 
+SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switch_size_t size);
+SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_frame_t **clone);
+SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
+
 /*!
   \brief Evaluate the truthfullness of a string expression
   \param expr a string expression

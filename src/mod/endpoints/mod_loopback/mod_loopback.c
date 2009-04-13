@@ -69,7 +69,7 @@ struct private_object {
 	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
 	switch_frame_t *x_write_frame;
-	switch_frame_t write_frame;
+	switch_frame_t *write_frame;
 	unsigned char write_databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
 	switch_frame_t cng_frame;
@@ -78,6 +78,7 @@ struct private_object {
 	switch_caller_profile_t *caller_profile;
 	int32_t bowout_frame_count;
 	char *other_uuid;
+	switch_queue_t *frame_queue;
 };
 
 typedef struct private_object private_t;
@@ -157,10 +158,6 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 	tech_pvt->read_frame.data = tech_pvt->databuf;
 	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	tech_pvt->read_frame.codec = &tech_pvt->read_codec;
-
-	tech_pvt->write_frame.data = tech_pvt->write_databuf;
-	tech_pvt->write_frame.buflen = sizeof(tech_pvt->write_databuf);
-	tech_pvt->write_frame.codec = &tech_pvt->write_codec;
 	
 
 	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
@@ -190,6 +187,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_core_session_set_private(session, tech_pvt);
+		switch_queue_create(&tech_pvt->frame_queue, 50000, switch_core_session_get_pool(session));
 		tech_pvt->session = session;
 		tech_pvt->channel = switch_core_session_get_channel(session);
 	}
@@ -348,6 +346,7 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	switch_channel_t *channel = NULL;
 	private_t *tech_pvt = NULL;
+	void *pop;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -363,6 +362,15 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		
 		if (switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
+		}
+
+		if (tech_pvt->write_frame) {
+			switch_frame_free(&tech_pvt->write_frame);
+		}
+
+		while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+			switch_frame_t *frame = (switch_frame_t *) pop;
+			switch_frame_free(&frame);
 		}
 	}
 
@@ -518,6 +526,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	private_t *tech_pvt = NULL;
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	switch_mutex_t *mutex = NULL;
+	void *pop = NULL;
 
 	channel = switch_core_session_get_channel(session);
 	switch_assert(channel != NULL);
@@ -539,18 +548,19 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		goto end;
 	}
 
-	if (!switch_test_flag(tech_pvt, TFLAG_CNG) && !switch_test_flag(tech_pvt, TFLAG_WRITE)) {
-		switch_core_timer_next(&tech_pvt->timer);
-	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_WRITE)) {
-		*frame = &tech_pvt->write_frame;
-		switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
-		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
+	switch_core_timer_next(&tech_pvt->timer);
+	if (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+		if (tech_pvt->write_frame) {
+			switch_frame_free(&tech_pvt->write_frame);
+		}
+		tech_pvt->write_frame = (switch_frame_t *) pop;
+		tech_pvt->write_frame->codec = &tech_pvt->read_codec;
+		*frame = tech_pvt->write_frame;
 	} else {
 		switch_set_flag(tech_pvt, TFLAG_CNG);
 	}
-
+	
 	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
 		*frame = &tech_pvt->cng_frame;
 		tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
@@ -622,17 +632,18 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 	}
 
 	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
+		switch_frame_t *clone;
 		if (frame->codec->implementation != tech_pvt->write_codec.implementation) {
 			/* change codecs to match */
 			tech_init(tech_pvt, session, frame->codec);
 			tech_init(tech_pvt->other_tech_pvt, tech_pvt->other_session, frame->codec);
 		}
+
+		if (switch_frame_dup(frame, &clone) != SWITCH_STATUS_SUCCESS) {
+			abort();
+		}
 		
-		memcpy(&tech_pvt->other_tech_pvt->write_frame, frame, sizeof(*frame));
-		tech_pvt->other_tech_pvt->write_frame.data = tech_pvt->other_tech_pvt->write_databuf;
-		tech_pvt->other_tech_pvt->write_frame.buflen = sizeof(tech_pvt->other_tech_pvt->write_databuf);
-		//tech_pvt->other_tech_pvt->write_frame.codec = &tech_pvt->other_tech_pvt->write_codec;
-		memcpy(tech_pvt->other_tech_pvt->write_frame.data, frame->data, frame->datalen);
+		switch_queue_push(tech_pvt->other_tech_pvt->frame_queue, clone);
 		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
 		status = SWITCH_STATUS_SUCCESS;
 	}

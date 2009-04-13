@@ -896,6 +896,7 @@ SFF_RAW_RTP    = (1 <<  1) - Frame has raw rtp accessible
 SFF_RTP_HEADER = (1 << 2)  - Get the rtp header from the frame header
 SFF_PLC        = (1 << 3)  - Frame has generated PLC data
 SFF_RFC2833    = (1 << 4)  - Frame has rfc2833 dtmf data
+SFF_DYNAMIC    = (1 << 5)  - Frame is dynamic and should be freed
 </pre>
  */
 typedef enum {
@@ -905,7 +906,8 @@ typedef enum {
 	SFF_RTP_HEADER = (1 << 2),
 	SFF_PLC = (1 << 3),
 	SFF_RFC2833 = (1 << 4),
-	SFF_PROXY_PACKET = (1 << 5)
+	SFF_PROXY_PACKET = (1 << 5),
+	SFF_DYNAMIC = (1 << 6)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 

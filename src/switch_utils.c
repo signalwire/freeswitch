@@ -61,6 +61,56 @@ int switch_inet_pton(int af, const char *src, void *dst)
 }
 #endif
 
+
+SWITCH_DECLARE(switch_status_t) switch_frame_alloc(switch_frame_t **frame, switch_size_t size)
+{
+	switch_frame_t *new_frame;
+
+	switch_zmalloc(new_frame, sizeof(*new_frame));
+
+	switch_set_flag(new_frame, SFF_DYNAMIC);
+	new_frame->buflen = size;
+	new_frame->data = malloc(size);
+	switch_assert(new_frame->data);
+
+	*frame = new_frame;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+
+SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_frame_t **clone)
+{
+	switch_frame_t *new_frame;
+
+	new_frame = malloc(sizeof(*new_frame));
+	
+	*new_frame = *orig;
+	switch_set_flag(new_frame, SFF_DYNAMIC);
+	new_frame->data = malloc(new_frame->buflen);
+	switch_assert(new_frame->data);
+
+	memcpy(new_frame->data, orig->data, orig->datalen);
+	new_frame->codec = NULL;
+	
+	*clone = new_frame;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
+{
+	if (!frame || !*frame || !switch_test_flag((*frame), SFF_DYNAMIC)) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	free((*frame)->data);
+	free(*frame);
+	*frame = NULL;
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool)
 {
 	switch_network_list_t *new_list;
