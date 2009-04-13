@@ -864,7 +864,7 @@ static ZIO_READ_FUNCTION(zt_read)
 	zap_ssize_t r = 0;
 	int errs = 0;
 
-	while (errs++ < 100) {
+	while (errs++ < 300) {
 		if ((r = read(zchan->sockfd, data, *datalen)) > 0) {
 			break;
 		}
