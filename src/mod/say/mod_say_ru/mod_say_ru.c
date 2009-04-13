@@ -63,7 +63,13 @@ typedef enum {
     when,       //какого - когда   -- без пола
     what_       //какая/какой/какое с полом
 } question_t;   //вопрос
-                                
+
+typedef enum {
+    million,
+    thousand,
+    zero,
+    empty       
+} unit_t;
 
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_say_ru_load);
@@ -111,7 +117,7 @@ static switch_status_t ru_spell(switch_core_session_t *session, char *tosay, swi
 
 //воспроизводить по 3 цифры
 static switch_status_t play_group( sex_t sex,question_t question, int a, int b, int c,
-                                            char *what,int last, switch_core_session_t *session, switch_input_args_t *args)
+                                            unit_t what,int last, switch_core_session_t *session, switch_input_args_t *args)
 {
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d   sex=%d  q=%d  last=%d\n", a,b,c,sex,question,last);
     if (a)    {
@@ -122,10 +128,10 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         		switch (sex) { //пол 		
         		    case male: //мужчина
     				say_file("digits/%d00.wav", a); //сто
-				if (what=="thousand")   {
+				if (what==thousand)   {
         			    say_file("digits/thousands.wav");//тысяч
         	    		}
-				else if (what=="million")   {
+				else if (what==million)   {
         			    say_file("digits/millions.wav");//миллионов
         	    		}
 				//-------------    	        	        	    
@@ -133,20 +139,20 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
 			          
         		    case   female:   //женщина
     				say_file("digits/%d00.wav", a);//сто
-				if (what=="thousand")   {
+				if (what==thousand)   {
         			    say_file("digits/thousands.wav");//тысяч
         	    		}
-				else if (what=="million")   {
+				else if (what==million)   {
         			    say_file("digits/millions.wav");//миллионов
         	    		}
         		    	break;
         		    	//-------------
         		    case     it:   //оно
         			say_file("digits/%d00.wav", a);//сто
-				if (what=="thousand")   {
+				if (what==thousand)   {
         			    say_file("digits/thousands.wav"); //тысяч
         	    		}
-				else if (what=="million")   {
+				else if (what==million)   {
         			    say_file("digits/millions.wav");//миллионов
         	    		}
         		        break;
@@ -157,7 +163,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
 	            case what_:	//какой/я/ое
         		switch (sex) { //пол 		
         		    case   male:   //мужчина
-				if (what=="thousand")   {
+				if (what==thousand)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionx.wav");//тысячный
@@ -167,7 +173,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         				say_file("digits/thousands.wav");//тысяч
 				    }
 				}
-				else if (what=="million")   {
+				else if (what==million)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionm.wav");//Миллионный
@@ -183,7 +189,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			break;
         			   
         		    case female: //женщина
-				if (what=="thousand")   {
+				if (what==thousand)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionf.wav");//тысячная
@@ -193,7 +199,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         				say_file("digits/thousands.wav");//тысяч
 				    }
 				}
-				else if (what=="million")   {
+				else if (what==million)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionf.wav");//Миллионная
@@ -208,7 +214,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    		}
         		    	break;
         		    case     it:   //оно
-				if (what=="thousand")   {
+				if (what==thousand)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionn.wav");//тысячное
@@ -218,7 +224,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         				say_file("digits/thousands.wav");//тысяч
 				    }
 				}
-				else if (what=="million")   {
+				else if (what==million)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionn.wav");//Миллионное
@@ -236,7 +242,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    break;
 //-------------------------------------------------------
         	    case     when:	//какого - когда  без пола
-				if (what=="thousand")   {
+				if (what==thousand)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionx.wav");//тысячного
@@ -246,7 +252,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         				say_file("digits/thousands.wav");//тысяч
 				    }
 				}
-				else if (what=="million")   {
+				else if (what==million)   {
 				    if (last==0) {
 					say_file("digits/h-%d00xx.wav", a);//двухсот
         				say_file("digits/h-millionx.wav");//Миллионного
@@ -297,10 +303,10 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         		switch (sex) { //пол 		
         		    case male: //мужчина
     				say_file("digits/%d0.wav", b); //двадцать
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         	    	    	    say_file("digits/thousands.wav", b); //тысяч
         	    	        }
-        			else if (what=="millon")  {
+        			else if (what==million)  {
         	    	    	    say_file("digits/millions.wav", b); //миллионов
         	    	        }
 				//-------------    	        	        	    
@@ -308,20 +314,20 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
 			          
         		    case   female:   //женщина
     				say_file("digits/%d0.wav", b);//двадцать
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         	    	    	    say_file("digits/thousands.wav", b); //тысяч
         	    	        }
-        			else if (what=="millon")  {
+        			else if (what==million)  {
         	    	    	    say_file("digits/millions.wav", b); //миллионов
         	    	        }
         		    	break;
         		    	//-------------
         		    case     it:   //оно
         			say_file("digits/%d0.wav", b);// двадцать
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         	    	    	    say_file("digits/thousands.wav", b); //тысяч
         	    	        }
-        			else if (what=="millon")  {
+        			else if (what==million)  {
         	    	    	    say_file("digits/millions.wav", b); //миллионов
         	    	        }
         		        break;
@@ -332,7 +338,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
 	            case what_:	//какой/я/ое >19 и c==0 20-30-40
         		switch (sex) { //пол 		
         		    case   male:   //мужчина
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-thousandm.wav", b); //тысячный
@@ -342,7 +348,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav", b); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-millionm.wav", b); //миллионный
@@ -362,7 +368,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	        }
 				break;
         		    case female: //женщина
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-thousandf.wav", b); //тысячная
@@ -372,7 +378,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav", b); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-millionf.wav", b); //миллионная
@@ -392,7 +398,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	        }
         		    	break;
         		    case     it:   //оно
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-thousandn.wav", b); //тысячное
@@ -402,7 +408,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav", b); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-millionn.wav", b); //миллионное
@@ -425,7 +431,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         		break;
 //-------------------------------------------------------
         	    case     when:	//какого - когда  без пола
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-thousandx.wav", b); //тысячного
@@ -435,7 +441,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav", b); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d0xx.wav", b);//двадцати
         			        say_file("digits/h-millionx.wav", b); //миллионного
@@ -468,30 +474,30 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    switch (sex) { //пол 		
     			case male: //мужчина
 			    say_file("digits/%d%d.wav",b ,c); //девятнадцать
-        		    if (what=="thousand")  {
+        		    if (what==thousand)  {
         	    	        say_file("digits/thousands.wav"); //тысяч
         	    	    }
-        		    else if (what=="million")  {
+        		    else if (what==million)  {
         	    	        say_file("digits/millions.wav"); //миллионов
         	    	    }
 			    //-------------    	        	        	    
 		    	    break;
     			case   female:   //женщина
 			    say_file("digits/%d%d.wav",b ,c);//девятнадцать
-        		    if (what=="thousand")  {
+        		    if (what==thousand)  {
         	    	        say_file("digits/thousands.wav"); //тысяч
         	    	    }
-        		    else if (what=="million")  {
+        		    else if (what==million)  {
         	    	        say_file("digits/millions.wav"); //миллионов
         	    	    }
     		    	    break;
     		    	    //-------------
     			case     it:   //оно
     			    say_file("digits/%d%d.wav",b ,c);// девятнадцать
-        		    if (what=="thousand")  {
+        		    if (what==thousand)  {
         	    	        say_file("digits/thousands.wav"); //тысяч
         	    	    }
-        		    else if (what=="million")  {
+        		    else if (what==million)  {
         	    	        say_file("digits/millions.wav"); //миллионов
         	    	    }
     		    	    break;
@@ -502,7 +508,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	case what_:	//какой/я/ое
     		    switch (sex) { //пол 		
     			case male: //женщина
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-thousandm.wav"); //тысячный
@@ -512,7 +518,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav"); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-millionm.wav"); //миллионный
@@ -531,7 +537,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    }
         	    	        }
     			case female: //женщина
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-thousandf.wav"); //тысячная
@@ -541,7 +547,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav"); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-millionf.wav"); //миллионная
@@ -561,7 +567,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	        }
     		    	    break;
     			case     it:   //оно
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-thousandn.wav"); //тысячное
@@ -571,7 +577,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav"); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-millionn.wav"); //миллионное
@@ -594,7 +600,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    break;
 //-------------------------------------------------------
         	case    when:	//какого - когда  без пола
-        			if (what=="thousand")  {
+        			if (what==thousand)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-thousandx.wav"); //тысячного
@@ -604,7 +610,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         			        say_file("digits/h-thousand.wav"); //тысяч
         			    }
         	    	        }
-        			else if (what=="million")  {
+        			else if (what==million)  {
         			    if (last==0) {
         				say_file("digits/h-%d%dxx.wav", b,c);//десяти, пятнадцати ..
         			        say_file("digits/h-millionx.wav"); //миллионного
@@ -633,7 +639,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     
 
                                                                                                  
-    if ((c)||(what=="zero")) {// последняя цифра (самая сложная) или проговорить ноль , для случает когда первые цифры нули
+    if ((c)||(what==zero)) {// последняя цифра (самая сложная) или проговорить ноль , для случает когда первые цифры нули
 	if (c>2||c==0) {//0 и 3-9
     switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group  c 1\n");
 
@@ -644,7 +650,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    switch (sex) 
     		    { //пол 		
     			case male: //мужчина
-    			    if (what=="thousand")  { //тысяч
+    			    if (what==thousand)  { //тысяч
     				if ((c>2)&&(c<5)) {
     				    say_file("digits/%d.wav", c);// три - четыре
     				    say_file("digits/thousands-i.wav"); //тысячи
@@ -654,7 +660,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     				    say_file("digits/thousands.wav"); //тысяч
     				}
         	    	    }
-        	    	    else if (what=="million") { //миллионов
+        	    	    else if (what==million) { //миллионов
     				if ((c>2)&&(c<5)) {
     				    say_file("digits/%d.wav", c);// три четыре
     				    say_file("digits/million-a.wav"); //миллиона
@@ -670,7 +676,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
 		    	    break;
 		    	    
     			case   female:   //женщина
-    			    if (what=="thousand")  { //тысяч
+    			    if (what==thousand)  { //тысяч
     				if ((c>2)&&(c<5)) {
     				    say_file("digits/%d.wav", c);// три - четыре
     				    say_file("digits/thousands-i.wav"); //тысячи
@@ -680,7 +686,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     				    say_file("digits/thousands.wav"); //тысяч
     				}
         	    	    }
-        	    	    else if (what=="million") { //миллионов
+        	    	    else if (what==million) { //миллионов
     				if ((c>2)&&(c<5)) {
     				    say_file("digits/%d.wav", c);// три четыре
     				    say_file("digits/million-a.wav"); //миллиона
@@ -697,7 +703,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
 
     		    	    //-------------
     			case     it:   //оно
-    			    if (what=="thousand")  { //тысяч
+    			    if (what==thousand)  { //тысяч
     				if ((c>2)&&(c<5)) {
     				    say_file("digits/%d.wav", c);// три - четыре
     				    say_file("digits/thousands-i.wav"); //тысячи
@@ -707,7 +713,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     				    say_file("digits/thousands.wav"); //тысяч
     				}
         	    	    }
-        	    	    else if (what=="million") { //миллионов
+        	    	    else if (what==million) { //миллионов
     				if ((c>2)&&(c<5)) {
     				    say_file("digits/%d.wav", c);// три четыре
     				    say_file("digits/million-a.wav"); //миллиона
@@ -728,7 +734,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    switch (sex) 
     		    { //пол 		
     			case   male:   //мужчина
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-thousandm.wav"); //тысячный
@@ -738,7 +744,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousand.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-millionm.wav"); //миллионный
@@ -753,7 +759,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    }
     			    break;
     			case female: //женщина
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-thousandf.wav"); //тысячная
@@ -763,7 +769,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousand.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-millionf.wav"); //миллионная
@@ -778,7 +784,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    }
     		    	    break;
     			case it: //оно
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-thousandn.wav"); //тысячное
@@ -788,7 +794,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousand.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-millionn.wav"); //миллионное
@@ -806,7 +812,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    break;
 //-------------------------------------------------------
         	case     when:	//какого - когда  без пола
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-thousandx.wav"); //тысячного
@@ -816,7 +822,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousand.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
         	    	    	    say_file("digits/h-millionx.wav"); //миллионого
@@ -839,7 +845,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    switch (sex) 
     		    { //пол 		
     			case male: //мужчина
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				    if (c==1)  {    				    
     					say_file("digits/%df.wav", c); // одна две
     					say_file("digits/thousand.wav"); //тысяча
@@ -849,7 +855,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     					say_file("digits/thousands-i.wav"); //тысячи
     				    }
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
 			    	    say_file("digits/%d.wav", c); // один два
     				    if (c==1) {
     					say_file("digits/million.wav", c); //миллион
@@ -864,7 +870,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
 		    	    break;
 			    //-------------    	        	        	    
     			case   female:   //женщина
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				    if (c==1)  {    				    
     					say_file("digits/%df.wav", c); // одна две
     					say_file("digits/thousand.wav"); //тысяча
@@ -874,7 +880,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     					say_file("digits/thousands-i.wav"); //тысячи
     				    }
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
 			    	    say_file("digits/%d.wav", c); // один два
     				    if (c==1) {
     					say_file("digits/million.wav"); //миллион
@@ -889,7 +895,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     			    break;
     		    	    //-------------
     			case     it:   //оно
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				    if (c==1)  {    				    
     					say_file("digits/%df.wav", c); // одна две
     					say_file("digits/thousand.wav"); //тысяча
@@ -899,7 +905,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     					say_file("digits/thousands-i.wav"); //тысячи
     				    }
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
 			    	    say_file("digits/%d.wav", c); // один два
     				    if (c==1) {
     					say_file("digits/million.wav"); //миллион
@@ -919,7 +925,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		    switch (sex) 
     		    { //пол 		
     			case male: //мужчина
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух,одна 2-х, ...
     				    if (c!=1) { //не произность одна тысячный
     					say_file("digits/h-%dxx.wav", c);//одна, двух
@@ -931,7 +937,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousands-i.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    if (c!=1)  {
     					say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
@@ -948,7 +954,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    }
     		    	    break;
     			case female: //женщина
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 1-х, 2-х ...
     				    if (c!=1) { //не произность одна тысячная
     					say_file("digits/h-%dxx.wav", c);//одна, двух
@@ -960,7 +966,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousands-i.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    if (c!=1)  {
     					say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
@@ -977,7 +983,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    }
     		    	    break;
     			case     it:   //оно
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 1-х, 2-х ...
     				    if (c!=1) { //не произность одна тысячное
     					say_file("digits/h-%dxx.wav", c);//одна, двух
@@ -989,7 +995,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousands-i.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    if (c!=1)  {
     					say_file("digits/h-%dxx.wav", c);//одна, двух
@@ -1009,7 +1015,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
     		break;
 //-------------------------------------------------------
         	case     when:	//какого - когда  без пола
-    			    if (what=="thousand")  {
+    			    if (what==thousand)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    if (c!=1) { //не произность одна тысячного
     					say_file("digits/h-%dxx.wav", c);//одна, двух
@@ -1021,7 +1027,7 @@ static switch_status_t play_group( sex_t sex,question_t question, int a, int b, 
         	    	    	    say_file("digits/thousands-i.wav"); //тысячи
         	    	    	}
         	    	    }
-    			    else if (what=="million")  {
+    			    else if (what==million)  {
     				if (last==0) {// если дальше нету цифр значит говорить двух, 3-х, 4-х ...
     				    if (c!=1)  {
     					say_file("digits/h-%dxx.wav", c);//одна, двух, трёх
@@ -1120,21 +1126,21 @@ static switch_status_t ru_say_count(switch_core_session_t *session,
 		}
     		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "int in=%d \n", in);
 
-			if ((status = play_group(sex,question, places[8], places[7], places[6], "million",in%1000000, session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(sex,question, places[8], places[7], places[6], million,in%1000000, session, args)) != SWITCH_STATUS_SUCCESS) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d million!\n", places[8], places[7], places[6]);
 				return status;
 			}
-			if ((status = play_group(sex,question, places[5], places[4], places[3], "thousand",in_%1000,session, args)) != SWITCH_STATUS_SUCCESS) {
+			if ((status = play_group(sex,question, places[5], places[4], places[3], thousand,in_%1000,session, args)) != SWITCH_STATUS_SUCCESS) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d thousand!\n", places[5], places[4], places[3]);
 				return status;
 			}
-			if ((status = play_group(sex,question, places[2], places[1], places[0], NULL, 0,session, args)) != SWITCH_STATUS_SUCCESS) 
+			if ((status = play_group(sex,question, places[2], places[1], places[0], empty, 0,session, args)) != SWITCH_STATUS_SUCCESS) 
 			{
 	                    switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d other!\n", places[2], places[1], places[0]);
 			    return status;
 			}
 	} else { //если ноль что бы и его проговаривать в правильных падежах
-	    if ((status = play_group(sex,question, places[2], places[1], places[0], "zero",0, session, args)) != SWITCH_STATUS_SUCCESS) 
+	    if ((status = play_group(sex,question, places[2], places[1], places[0], zero,0, session, args)) != SWITCH_STATUS_SUCCESS) 
 	    {
 	        switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "play group %d %d %d other!\n", places[2], places[1], places[0]);
 	        return status;
