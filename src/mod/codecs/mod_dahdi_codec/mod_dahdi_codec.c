@@ -133,9 +133,6 @@ static switch_status_t init_encoder(switch_codec_t *codec)
 #endif
 		return SWITCH_STATUS_FALSE;
 	}
-	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? */
-	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
-		? 8 : 12;
 #ifdef DEBUG_DAHDI_CODEC
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Encoding requested and granted with %d/%d.\n",
 					  fmts.srcfmt, fmts.dstfmt);
@@ -196,6 +193,10 @@ static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_fla
 	codec->private_info = context;
 	context->encoding_fd = -1;
 	context->decoding_fd = -1;
+
+	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? */
+	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
+		? 8 : 12;
 
 	return SWITCH_STATUS_SUCCESS;
 }
