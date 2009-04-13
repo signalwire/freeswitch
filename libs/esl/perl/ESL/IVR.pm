@@ -43,13 +43,11 @@ sub getVar($;) {
   my $input;
 
   if ($e) {
-    $input = $e->getBody() . "\n";
-    if ($input eq "_undef_") {
+    $input = $e->getBody();
+    if ($input && $input eq "_undef_") {
       $input = undef;
     }
   }
-  
-  chomp $input;
   
   return $input;  
 
