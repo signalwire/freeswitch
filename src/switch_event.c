@@ -1331,7 +1331,7 @@ SWITCH_DECLARE(char *) switch_event_expand_headers(switch_event_t *event, const 
 	char *func_val = NULL;
 	int nv = 0;
 
-	nv = switch_string_var_check_const(in);
+	nv = switch_string_var_check_const(in) || switch_string_has_escaped_data(in);
 
 	if (!nv) {
 		return (char *) in;

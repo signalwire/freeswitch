@@ -1916,7 +1916,7 @@ SWITCH_DECLARE(char *) switch_channel_expand_variables(switch_channel_t *channel
 		return (char *) in;
 	}
 
-	nv = switch_string_var_check_const(in);
+	nv = switch_string_var_check_const(in) || switch_string_has_escaped_data(in);
 
 	if (!nv) {
 		return (char *) in;

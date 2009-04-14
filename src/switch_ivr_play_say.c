@@ -1559,6 +1559,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 				if (switch_strlen_zero(digits_regex)) {
 					return SWITCH_STATUS_SUCCESS;
 				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Test Regex [%s][%s]\n", digit_buffer, digits_regex);
 				if (switch_regex_match(digit_buffer, digits_regex) == SWITCH_STATUS_SUCCESS) {
 					return SWITCH_STATUS_SUCCESS;
 				} else {

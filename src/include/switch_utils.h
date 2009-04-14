@@ -87,7 +87,20 @@ static inline switch_bool_t switch_is_moh(const char *s)
 }
 
 
+static inline int switch_string_has_escaped_data(const char *in)
+{
+	const char *i = strchr(in, '\\');
 
+	while (i && *i == '\\') {
+		i++;
+		if (*i == '\\' || *i == 'n' || *i == 's' || *i == 't') {
+			return 1;
+		}
+		i = strchr(i, '\\');
+	}
+	
+	return 0;
+}
 
 SWITCH_DECLARE(switch_status_t) switch_b64_encode(unsigned char *in, switch_size_t ilen, unsigned char *out, switch_size_t olen);
 SWITCH_DECLARE(switch_size_t) switch_b64_decode(char *in, char *out, switch_size_t olen);
