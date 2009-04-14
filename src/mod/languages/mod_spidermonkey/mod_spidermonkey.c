@@ -2233,6 +2233,9 @@ static JSBool session_detach(JSContext * cx, JSObject * obj, uintN argc, jsval *
 				int32 i = 0;
 				JS_ValueToInt32(cx, argv[0], &i);
 				cause = i;
+			} else {
+				const char *cause_name = JS_GetStringBytes(JS_ValueToString(cx, argv[0]));
+				cause = switch_channel_str2cause(cause_name);
 			}
 		}
 		
