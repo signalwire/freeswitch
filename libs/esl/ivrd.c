@@ -35,22 +35,25 @@
 #include <stdlib.h>
 #include <esl.h>
 
+
 static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struct sockaddr_in *addr)
 {
 	esl_handle_t handle = {{0}};
 	char path_buffer[1024] = { 0 };
 	const char *path;
-
+	
 	if (fork()) {
 		close(client_sock);
 		return;
 	}
+	
 
 	esl_attach_handle(&handle, client_sock, addr);
 
 	if (!(path = esl_event_get_header(handle.info_event, "variable_ivr_path"))) {
+		esl_disconnect(&handle);
 		esl_log(ESL_LOG_ERROR, "Missing ivr_path param!\n");
-		return;
+		exit(0);
 	}
 
 	strncpy(path_buffer, path, sizeof(path_buffer) - 1);
@@ -63,12 +66,10 @@ static void mycallback(esl_socket_t server_sock, esl_socket_t client_sock, struc
 	handle.sock = -1;
 	esl_disconnect(&handle);
 	
-	/* DOH! we're still here! Close the socket. */
-	
 	execl(path_buffer, path_buffer, NULL);
-	esl_log(ESL_LOG_ERROR, "Error %d\n", client_sock);
+	//system(path_buffer);
 	close(client_sock);
-
+	exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -91,6 +92,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Usage %s -h <host> -p <port>\n", argv[0]);
 		return -1;
 	}
+
+	signal(SIGCHLD, SIG_IGN);
 
 	esl_listen(ip, port, mycallback);
 	
