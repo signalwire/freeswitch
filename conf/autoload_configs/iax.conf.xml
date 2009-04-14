@@ -8,5 +8,7 @@
     <param name="codec-prefs" value="PCMU@20i,PCMA,speex,L16"/>
     <param name="codec-master" value="us"/>
     <param name="codec-rates" value="8"/>
+    <!-- seconds till we give up when there is no media -->
+    <param name="media-timeout" value="300"/>
   </settings>
 </configuration>

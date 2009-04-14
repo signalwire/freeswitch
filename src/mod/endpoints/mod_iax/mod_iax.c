@@ -79,14 +79,14 @@ static struct {
 	int fd;
 	int calls;
 	switch_mutex_t *mutex;
+	int media_timeout;
 } globals;
 
 struct private_object {
 	unsigned int flags;
 	switch_codec_t read_codec;
 	switch_codec_t write_codec;
-	switch_frame_t read_frame;
-	unsigned char databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	switch_frame_t *read_frame;
 	switch_frame_t cng_frame;
 	unsigned char cng_databuf[10];
 	switch_core_session_t *session;
@@ -97,6 +97,10 @@ struct private_object {
 	unsigned short samprate;
 	switch_mutex_t *mutex;
 	switch_mutex_t *flag_mutex;
+	int cng_count;
+	switch_timer_t timer;
+	switch_queue_t *frame_queue;
+	int media_timeout;
 	//switch_thread_cond_t *cond;
 };
 
@@ -224,6 +228,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 	unsigned int local_cap = 0, mixed_cap = 0, chosen = 0, leading = 0;
 	int x, srate = 8000;
 	uint32_t interval = 0;
+	const switch_codec_implementation_t *read_impl;
 
 	if (globals.codec_string) {
 		num_codecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, globals.codec_order, globals.codec_order_last);
@@ -395,9 +400,7 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 			int rate;
 			ms = tech_pvt->write_codec.implementation->microseconds_per_packet / 1000;
 			rate = tech_pvt->write_codec.implementation->samples_per_second;
-			tech_pvt->read_frame.rate = rate;
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Activate Codec %s/%d %d ms\n", dname, rate, ms);
-			tech_pvt->read_frame.codec = &tech_pvt->read_codec;
 			switch_core_session_set_read_codec(tech_pvt->session, &tech_pvt->read_codec);
 			switch_core_session_set_write_codec(tech_pvt->session, &tech_pvt->write_codec);
 			switch_set_flag_locked(tech_pvt, TFLAG_CODEC);
@@ -405,6 +408,16 @@ static switch_status_t iax_set_codec(private_t *tech_pvt, struct iax_session *ia
 		tech_pvt->codec = chosen;
 		tech_pvt->codecs = local_cap;
 	}
+
+	read_impl = tech_pvt->read_codec.implementation;
+
+	switch_core_timer_init(&tech_pvt->timer, "soft", 
+						   read_impl->microseconds_per_packet / 1000, 
+						   read_impl->samples_per_packet,
+						   switch_core_session_get_pool(tech_pvt->session));
+
+	tech_pvt->media_timeout = (read_impl->samples_per_second * globals.media_timeout) / read_impl->samples_per_packet;
+
 
 	if (io == IAX_QUERY) {
 		*format = tech_pvt->codec;
@@ -442,14 +455,13 @@ static void iax_out_cb(const char *s)
 
 static void tech_init(private_t *tech_pvt, switch_core_session_t *session)
 {
-	tech_pvt->read_frame.data = tech_pvt->databuf;
-	tech_pvt->read_frame.buflen = sizeof(tech_pvt->databuf);
 	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
 	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_databuf);
 	switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 	tech_pvt->cng_frame.datalen = 2;
 	switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 	switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
+	switch_queue_create(&tech_pvt->frame_queue, 50000, switch_core_session_get_pool(session));
 	switch_core_session_set_private(session, tech_pvt);
 	tech_pvt->session = session;
 }
@@ -492,6 +504,7 @@ static switch_status_t channel_on_execute(switch_core_session_t *session)
 static switch_status_t channel_on_destroy(switch_core_session_t *session)
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
+	void *pop;
 
 	if (tech_pvt) {
 		if (switch_core_codec_ready(&tech_pvt->read_codec)) {
@@ -500,6 +513,11 @@ static switch_status_t channel_on_destroy(switch_core_session_t *session)
 		
 		if (!switch_core_codec_ready(&tech_pvt->write_codec)) {
 			switch_core_codec_destroy(&tech_pvt->write_codec);
+		}
+
+		while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+			switch_frame_t *frame = (switch_frame_t *) pop;
+			switch_frame_free(&frame);
 		}
 	}
 
@@ -585,10 +603,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 {
 	private_t *tech_pvt = switch_core_session_get_private(session);
 	switch_byte_t *data;
-	int ms_count = 0;
+	void *pop;
 
 	switch_assert(tech_pvt != NULL);
-	tech_pvt->read_frame.flags = SFF_NONE;
 	*frame = NULL;
 
 	while (switch_test_flag(tech_pvt, TFLAG_IO)) {
@@ -606,41 +623,45 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			return SWITCH_STATUS_FALSE;
 		}
 
-		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_DTMF)) {
-			switch_clear_flag_locked(tech_pvt, TFLAG_DTMF);
-			*frame = &tech_pvt->cng_frame;
-			return SWITCH_STATUS_SUCCESS;
-		}
+		switch_core_timer_next(&tech_pvt->timer);
 
-		if (switch_test_flag(tech_pvt, TFLAG_IO) && switch_test_flag(tech_pvt, TFLAG_VOICE)) {
-			switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
-			if (!tech_pvt->read_frame.datalen) {
-				continue;
+
+		if (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+			if (tech_pvt->read_frame) {
+				switch_frame_free(&tech_pvt->read_frame);
 			}
-			*frame = &tech_pvt->read_frame;
+
+			tech_pvt->read_frame = (switch_frame_t *) pop;
+			tech_pvt->read_frame->codec = &tech_pvt->read_codec;
+			*frame = tech_pvt->read_frame;
+
 #ifdef BIGENDIAN
 			if (switch_test_flag(tech_pvt, TFLAG_LINEAR)) {
 				switch_swap_linear((*frame)->data, (int) (*frame)->datalen);
 			}
 #endif
+			switch_clear_flag_locked(tech_pvt, TFLAG_VOICE);
+			tech_pvt->cng_count = tech_pvt->media_timeout;
 			return SWITCH_STATUS_SUCCESS;
+		} else {
+			if (tech_pvt->cng_count && --tech_pvt->cng_count == 0) {
+				break;
+			}
+			goto cng;
 		}
 
-		switch_cond_next();
-		if (++ms_count >= 30000) {
-			break;
-		}
+
 	}
 
 	return SWITCH_STATUS_FALSE;
 
   cng:
-	data = (switch_byte_t *) tech_pvt->read_frame.data;
+	data = (switch_byte_t *) tech_pvt->cng_frame.data;
 	data[0] = 65;
 	data[1] = 0;
-	tech_pvt->read_frame.datalen = 2;
-	tech_pvt->read_frame.flags = SFF_CNG;
-	*frame = &tech_pvt->read_frame;
+	tech_pvt->cng_frame.datalen = 2;
+	tech_pvt->cng_frame.flags = SFF_CNG;
+	*frame = &tech_pvt->cng_frame;
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -698,6 +719,18 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 			channel_answer_channel(session);
 		}
 		break;
+
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
+		{
+			void *pop;
+
+			while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+				switch_frame_t *frame = (switch_frame_t *) pop;
+				switch_frame_free(&frame);
+			}
+		}
 	default:
 		break;
 	}
@@ -850,6 +883,8 @@ static switch_status_t load_config(void)
 		return SWITCH_STATUS_TERM;
 	}
 
+	globals.media_timeout = 300;
+
 	if ((settings = switch_xml_child(cfg, "settings"))) {
 		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 			char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -864,6 +899,11 @@ static switch_status_t load_config(void)
 			} else if (!strcmp(var, "codec-master")) {
 				if (!strcasecmp(val, "us")) {
 					switch_set_flag(&globals, GFLAG_MY_CODEC_PREFS);
+				}
+			} else if (!strcmp(var, "media-timeout")) {
+				int mt = atoi(val);
+				if (mt > 0) {
+					globals.media_timeout = mt;
 				}
 			} else if (!strcmp(var, "dialplan")) {
 				set_global_dialplan(val);
@@ -1096,9 +1136,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "sending silence\n");
 				break;
 			case IAX_EVENT_VOICE:
-				if (tech_pvt && (tech_pvt->read_frame.datalen = iaxevent->datalen) != 0) {
+				if (tech_pvt && iaxevent->datalen) {
 					if (channel && switch_channel_up(channel)) {
 						int bytes = 0, frames = 1;
+						switch_frame_t *frame = NULL;
 
 						if (!switch_test_flag(tech_pvt, TFLAG_CODEC) || !tech_pvt->read_codec.implementation || 
 							!switch_core_codec_ready(&tech_pvt->read_codec)) {
@@ -1108,11 +1149,16 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_iax_runtime)
 						
 						if (tech_pvt->read_codec.implementation->encoded_bytes_per_packet) {
 							bytes = tech_pvt->read_codec.implementation->encoded_bytes_per_packet;
-							frames = (int) (tech_pvt->read_frame.datalen / bytes);
+							frames = (int) (iaxevent->datalen / bytes);
 						}
+						
+						switch_frame_alloc(&frame, iaxevent->datalen);
+						
+						memcpy(frame->data, iaxevent->data, iaxevent->datalen);
+						frame->datalen = iaxevent->datalen;
+						switch_queue_push(tech_pvt->frame_queue, frame);
+						frame = NULL;
 
-						tech_pvt->read_frame.samples = frames * tech_pvt->read_codec.implementation->samples_per_packet;
-						memcpy(tech_pvt->read_frame.data, iaxevent->data, iaxevent->datalen);
 						/* wake up the i/o thread */
 						switch_set_flag_locked(tech_pvt, TFLAG_VOICE);
 					}
