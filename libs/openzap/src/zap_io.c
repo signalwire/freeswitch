@@ -942,7 +942,7 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 	}
 	
 	zap_mutex_lock(span->mutex);
-		
+	
 	if (direction == ZAP_TOP_DOWN) {
 		i = 1;
 	} else {
@@ -963,8 +963,7 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 			
 		if (!(check = span->channels[i])) {
 			status = ZAP_FAIL;
-			zap_mutex_unlock(span->mutex);
-			goto done;
+			break;
 		}
 			
 		if (zap_test_flag(check, ZAP_CHANNEL_READY) && 
@@ -975,8 +974,7 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 
 			if (span && span->channel_request) {
 				status = span->channel_request(span, i, direction, caller_data, zchan);
-				zap_mutex_unlock(span->mutex);
-				goto done;
+				break;
 			}
 
 			status = check->zio->open(check);
@@ -985,8 +983,7 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 				zap_set_flag(check, ZAP_CHANNEL_INUSE);
 				zap_channel_open_chan(check);
 				*zchan = check;
-				zap_mutex_unlock(span->mutex);
-				goto done;
+				break;
 			}
 		}
 		
@@ -997,8 +994,8 @@ OZ_DECLARE(zap_status_t) zap_channel_open_any(uint32_t span_id, zap_direction_t 
 		}
 	}
 
- done:
-	
+	zap_mutex_unlock(span->mutex);
+
 	return status;
 }
 
