@@ -1723,6 +1723,17 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 	}
 }
 
+void sofia_glue_set_rtp_stats(private_object_t *tech_pvt)
+{
+	if (tech_pvt->rtp_session) {
+        set_stats(tech_pvt->rtp_session, tech_pvt, "audio");
+	}
+
+	if (tech_pvt->video_rtp_session) {
+        set_stats(tech_pvt->video_rtp_session, tech_pvt, "video");
+	}
+}
+
 void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 {
 	int loops = 0;
@@ -1734,14 +1745,12 @@ void sofia_glue_deactivate_rtp(private_object_t *tech_pvt)
 	}
 
 	if (tech_pvt->rtp_session) {
-		set_stats(tech_pvt->rtp_session, tech_pvt, "audio");
 		switch_rtp_destroy(&tech_pvt->rtp_session);
 	} else if (tech_pvt->local_sdp_audio_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_audio_port);
 	}
 
 	if (tech_pvt->video_rtp_session) {
-		set_stats(tech_pvt->video_rtp_session, tech_pvt, "video");
 		switch_rtp_destroy(&tech_pvt->video_rtp_session);
 	} else if (tech_pvt->local_sdp_video_port) {
 		switch_rtp_release_port(tech_pvt->profile->rtpip, tech_pvt->local_sdp_video_port);

@@ -854,3 +854,4 @@ switch_status_t sofia_set_loglevel(const char *name, int level);
 int sofia_get_loglevel(const char *name);
 sofia_cid_type_t sofia_cid_name2type(const char *name);
 void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup);
+void sofia_glue_set_rtp_stats(private_object_t *tech_pvt);
