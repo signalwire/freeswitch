@@ -2216,6 +2216,40 @@ static JSBool session_wait_for_answer(JSContext * cx, JSObject * obj, uintN argc
 	return ret;
 }
 
+static JSBool session_detach(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
+{
+	struct js_session *jss = JS_GetPrivate(cx, obj);
+	jsval ret = JS_TRUE;
+	switch_call_cause_t cause = 0;
+	switch_channel_t *channel;
+	switch_core_session_t *session;
+	METHOD_SANITY_CHECK();
+
+	if ((session = jss->session)) {
+		jss->session = NULL;
+
+		if (argc > 1) {
+			if (JSVAL_IS_INT(argv[0])) {
+				int32 i = 0;
+				JS_ValueToInt32(cx, argv[0], &i);
+				cause = i;
+			}
+		}
+		
+		if (cause) {
+			channel = switch_core_session_get_channel(session);
+			switch_channel_hangup(channel, cause);
+		}
+
+		switch_core_session_rwunlock(session);
+		*rval = JS_TRUE;
+	} else {
+		*rval = JS_FALSE;
+	}
+
+	return ret;
+}
+
 static JSBool session_execute(JSContext * cx, JSObject * obj, uintN argc, jsval * argv, jsval * rval)
 {
 	JSBool retval = JS_FALSE;
@@ -2617,6 +2651,7 @@ static JSFunctionSpec session_methods[] = {
 	{"sendEvent", session_send_event, 0},
 	{"hangup", session_hangup, 0},
 	{"execute", session_execute, 0},
+	{"destroy", session_detach, 0},
 	{"sleep", session_sleep, 1},
 	{0}
 };
