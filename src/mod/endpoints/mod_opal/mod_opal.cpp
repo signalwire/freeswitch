@@ -72,12 +72,12 @@ static switch_state_handler_table_t opalfs_event_handlers = {
     /*.on_hangup */ on_hangup,
     /*.on_exchange_media */ FSConnection::on_exchange_media,
     /*.on_soft_execute */ FSConnection::on_soft_execute,
-	/*.on_consume_media*/ NULL,
-	/*.on_hibernate*/ NULL,
-	/*.on_reset*/ NULL,
-	/*.on_park*/ NULL,
-	/*.on_reporting*/ NULL,
-	/*.on_destroy*/ on_destroy
+    /*.on_consume_media*/ NULL,
+    /*.on_hibernate*/ NULL,
+    /*.on_reset*/ NULL,
+    /*.on_park*/ NULL,
+    /*.on_reporting*/ NULL,
+    /*.on_destroy*/ on_destroy
 };
 
 
@@ -510,7 +510,20 @@ bool FSEndPoint::OnIncomingCall(OpalLocalConnection & connection)
 
 OpalLocalConnection *FSEndPoint::CreateConnection(OpalCall & call, void *userData)
 {
-    return new FSConnection(call, *this, (switch_caller_profile_t *)userData);
+    FSManager & mgr = (FSManager &) GetManager();
+    switch_core_session_t *fsSession = switch_core_session_request(mgr.GetSwitchInterface(), 
+                                       (switch_caller_profile_t *)userData ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, NULL);
+    if (fsSession == NULL)
+        return NULL;
+
+    switch_channel_t *fsChannel = switch_core_session_get_channel(fsSession);
+
+    if (fsChannel == NULL) {
+        switch_core_session_destroy(&fsSession);
+        return NULL;
+    }
+
+    return new FSConnection(call, *this, (switch_caller_profile_t *)userData, fsSession, fsChannel);
 }
 
 
@@ -543,15 +556,13 @@ PBoolean FSCall::OnSetUp(OpalConnection & connection)
 ///////////////////////////////////////////////////////////////////////
 
 
-FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile)
+FSConnection::FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile, switch_core_session_t *fsSession, switch_channel_t *fsChannel)
   : OpalLocalConnection(call, endpoint, NULL)
   , m_endpoint(endpoint)
+  , m_fsSession(fsSession)
+  , m_fsChannel(fsChannel)
 {
     opal_private_t *tech_pvt;
-    FSManager & mgr = (FSManager &) endpoint.GetManager();
-    m_fsSession = switch_core_session_request(mgr.GetSwitchInterface(), 
-                                              outbound_profile ? SWITCH_CALL_DIRECTION_OUTBOUND : SWITCH_CALL_DIRECTION_INBOUND, NULL);
-    m_fsChannel = switch_core_session_get_channel(m_fsSession);
 
     tech_pvt = (opal_private_t *) switch_core_session_alloc(m_fsSession, sizeof(*tech_pvt));
     tech_pvt->me = this;
@@ -679,8 +690,7 @@ void FSConnection::OnEstablished()
 PBoolean FSConnection::SendUserInputTone(char tone, unsigned duration)
 {
     switch_dtmf_t dtmf = { tone, duration };
-
-    return (switch_channel_queue_dtmf(m_fsChannel, &dtmf) == SWITCH_STATUS_SUCCESS) ? true : false;
+    return switch_channel_queue_dtmf(m_fsChannel, &dtmf) == SWITCH_STATUS_SUCCESS;
 }
 
 OpalMediaFormatList FSConnection::GetMediaFormats() const
@@ -697,37 +707,37 @@ void FSConnection::SetCodecs()
 {
     int numCodecs = 0;
     const switch_codec_implementation_t *codecs[SWITCH_MAX_CODECS];    
-	const char *codec_string = NULL, *abs, *ocodec;
+    const char *codec_string = NULL, *abs, *ocodec;
     char *tmp_codec_string = NULL;
     char *codec_order[SWITCH_MAX_CODECS];
     int codec_order_last;
 
 
-	if ((abs = switch_channel_get_variable(m_fsChannel, "absolute_codec_string"))) {
-		codec_string = abs;
-	} else {
-		if ((abs = switch_channel_get_variable(m_fsChannel, "codec_string"))) {
+    if ((abs = switch_channel_get_variable(m_fsChannel, "absolute_codec_string"))) {
+        codec_string = abs;
+    } else {
+        if ((abs = switch_channel_get_variable(m_fsChannel, "codec_string"))) {
             codec_string = abs;
-		}
+        }
 
-		if ((ocodec = switch_channel_get_variable(m_fsChannel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
+        if ((ocodec = switch_channel_get_variable(m_fsChannel, SWITCH_ORIGINATOR_CODEC_VARIABLE))) {
             codec_string = switch_core_session_sprintf(m_fsSession, "%s,%s", ocodec, codec_string);
-		}
-	}
+        }
+    }
     
     if (!codec_string) {
         codec_string = mod_opal_globals.codec_string;
     }
 
-	if (codec_string) {
-		if ((tmp_codec_string = strdup(codec_string))) {
-			codec_order_last = switch_separate_string(tmp_codec_string, ',', codec_order, SWITCH_MAX_CODECS);
+    if (codec_string) {
+        if ((tmp_codec_string = strdup(codec_string))) {
+            codec_order_last = switch_separate_string(tmp_codec_string, ',', codec_order, SWITCH_MAX_CODECS);
             numCodecs = switch_loadable_module_get_codecs_sorted(codecs, SWITCH_MAX_CODECS, codec_order, codec_order_last);
             
-		}
-	} else {
-		numCodecs = switch_loadable_module_get_codecs(codecs, sizeof(codecs) / sizeof(codecs[0]));
-	}
+        }
+    } else {
+        numCodecs = switch_loadable_module_get_codecs(codecs, sizeof(codecs) / sizeof(codecs[0]));
+    }
     
     for (int i = 0; i < numCodecs; i++) {
         const switch_codec_implementation_t *codec = codecs[i];
@@ -843,34 +853,34 @@ static switch_status_t on_destroy(switch_core_session_t *session)
 {
     //switch_channel_t *channel = switch_core_session_get_channel(session);
     opal_private_t *tech_pvt = (opal_private_t *) switch_core_session_get_private(session);
-
+    
     if (tech_pvt) {
-        if (tech_pvt->read_codec.implementation) {
-            switch_core_codec_destroy(&tech_pvt->read_codec);
-        }
-
-        if (tech_pvt->write_codec.implementation) {
-            switch_core_codec_destroy(&tech_pvt->write_codec);
-        }
-
-        if (tech_pvt->vid_read_codec.implementation) {
-            switch_core_codec_destroy(&tech_pvt->vid_read_codec);
-        }
-
-        if (tech_pvt->vid_write_codec.implementation) {
-            switch_core_codec_destroy(&tech_pvt->vid_write_codec);
-        }
-
-        if (tech_pvt->read_timer.timer_interface) {
-            switch_core_timer_destroy(&tech_pvt->read_timer);
-        }
-
-        if (tech_pvt->vid_read_timer.timer_interface) {
-            switch_core_timer_destroy(&tech_pvt->vid_read_timer);
-        }
+    if (tech_pvt->read_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->read_codec);
     }
 
-	return SWITCH_STATUS_SUCCESS;
+    if (tech_pvt->write_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->write_codec);
+    }
+
+    if (tech_pvt->vid_read_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->vid_read_codec);
+    }
+
+    if (tech_pvt->vid_write_codec.implementation) {
+        switch_core_codec_destroy(&tech_pvt->vid_write_codec);
+    }
+
+    if (tech_pvt->read_timer.timer_interface) {
+        switch_core_timer_destroy(&tech_pvt->read_timer);
+    }
+
+    if (tech_pvt->vid_read_timer.timer_interface) {
+        switch_core_timer_destroy(&tech_pvt->vid_read_timer);
+    }
+    }
+
+    return SWITCH_STATUS_SUCCESS;
 }
 
 /* this function has to be called with the original session beause the FSConnection might already be destroyed and we 
@@ -888,7 +898,7 @@ static switch_status_t on_hangup(switch_core_session_t *session)
         tech_pvt->me->ClearCallSynchronous(NULL, H323TranslateToCallEndReason(cause, UINT_MAX));
         tech_pvt->me = NULL;
     }
-    
+
     return SWITCH_STATUS_SUCCESS;
 }
 
@@ -973,6 +983,14 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
         SetPhase(OpalConnection::AlertingPhase);
         OnAlerting();
         break;
+
+    case SWITCH_MESSAGE_INDICATE_DEFLECT:
+    {
+        char transfer_to[128] = "";
+        switch_set_string(transfer_to, msg->string_arg);
+        TransferConnection(transfer_to);
+        break;
+    }
 
     case SWITCH_MESSAGE_INDICATE_PROGRESS:
     case SWITCH_MESSAGE_INDICATE_ANSWER:
@@ -1163,6 +1181,7 @@ PBoolean FSMediaStream::Open()
                                        m_switchCodec->implementation->samples_per_packet,
                                        switch_core_session_get_pool(m_fsSession)) != SWITCH_STATUS_SUCCESS) {
                 switch_core_codec_destroy(m_switchCodec);
+                m_switchCodec = NULL;
                 return false;
             }
         } else {
@@ -1189,7 +1208,12 @@ PBoolean FSMediaStream::Close()
 {
     if (!IsOpen())
         return false;
-    
+
+    /* forget these FS will properly destroy them for us */
+
+    m_switchTimer = NULL;
+    m_switchCodec = NULL;
+
     return OpalMediaStream::Close();
 }
 
@@ -1205,6 +1229,21 @@ PBoolean FSMediaStream::RequiresPatchThread(OpalMediaStream *) const
     return false;
 }
 
+bool FSMediaStream::CheckPatchAndLock()
+{
+    if (GetConnection().GetPhase() >= GetConnection().ReleasingPhase || !IsOpen())
+        return false;
+
+    if (LockReadWrite()) {
+        if (!GetPatch() || !IsOpen()) {
+            UnlockReadWrite();
+            return false;
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
 
 switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag_t flags)
 {
@@ -1222,16 +1261,27 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         while(!GetPatch()) {
             switch_cond_next();
         }
-        GetPatch()->OnPatchStart();
-        m_callOnStart = false;
+        if (CheckPatchAndLock()) {
+            GetPatch()->OnPatchStart();
+            m_callOnStart = false;
+            UnlockReadWrite();
+        } else {
+            return SWITCH_STATUS_FALSE; 
+        }
     }
 
     m_readFrame.flags = 0;
 
     /*
     while (switch_channel_ready(m_fsChannel)) {
-        if (!GetPatch()->GetSource().ReadPacket(m_readRTP)) {
-            return SWITCH_STATUS_FALSE;
+        if (CheckPatchAndLock()) {
+            if (!GetPatch()->GetSource().ReadPacket(m_readRTP)) {
+                UnlockReadWrite();
+                return SWITCH_STATUS_FALSE;
+            }            
+            UnlockReadWrite();
+        } else {
+            return SWITCH_STATUS_FALSE; 
         }
         
         if ((m_readFrame.datalen = m_readRTP.GetPayloadSize()) || switch_core_timer_check(&m_switchTimer, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
@@ -1249,9 +1299,16 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
     if (switch_channel_test_private_flag(m_fsChannel, CF_NEED_FLUSH)) {
         switch_channel_clear_private_flag(m_fsChannel, CF_NEED_FLUSH);
         for(;;) {
-            if (!GetPatch()->GetSource().ReadPacket(m_readRTP)) {
-                return SWITCH_STATUS_FALSE;
+            if (CheckPatchAndLock()) {
+                if (!GetPatch()->GetSource().ReadPacket(m_readRTP)) {
+                    UnlockReadWrite();
+                    return SWITCH_STATUS_FALSE;
+                }            
+                UnlockReadWrite();
+            } else {
+                return SWITCH_STATUS_FALSE; 
             }
+
             if (!m_readRTP.GetPayloadSize()) {
                 m_readFrame.flags = SFF_CNG;
                 break;
@@ -1259,8 +1316,14 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
         }
     } else {
 
-        if (!m_switchTimer || !GetPatch()->GetSource().ReadPacket(m_readRTP)) {
-            return SWITCH_STATUS_FALSE;
+        if (CheckPatchAndLock()) {
+            if (!m_switchTimer || !GetPatch()->GetSource().ReadPacket(m_readRTP)) {
+                UnlockReadWrite();
+                return SWITCH_STATUS_FALSE;
+            }            
+            UnlockReadWrite();
+        } else {
+            return SWITCH_STATUS_FALSE; 
         }
     
         switch_core_timer_next(m_switchTimer);
@@ -1303,8 +1366,13 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
     }
 
     if (m_callOnStart) {
-        GetPatch()->OnPatchStart();
-        m_callOnStart = false;
+        if (CheckPatchAndLock()) {
+            GetPatch()->OnPatchStart();
+            m_callOnStart = false;
+            UnlockReadWrite();
+        } else {
+            return SWITCH_STATUS_FALSE; 
+        }
     }
 
     if ((frame->flags & SFF_CNG)) {
@@ -1313,8 +1381,15 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
 
     if ((frame->flags & SFF_RAW_RTP) != 0) {
         RTP_DataFrame rtp((const BYTE *) frame->packet, frame->packetlen, false);
-        if (GetPatch()->PushFrame(rtp)) {
-            return SWITCH_STATUS_SUCCESS;
+
+        if (CheckPatchAndLock()) {
+            if (GetPatch()->PushFrame(rtp)) {
+                UnlockReadWrite();
+                return SWITCH_STATUS_SUCCESS;
+            }
+            UnlockReadWrite();
+        } else {
+            return SWITCH_STATUS_FALSE; 
         }
     } 
     
@@ -1337,8 +1412,14 @@ switch_status_t FSMediaStream::write_frame(const switch_frame_t *frame, switch_i
 
     memcpy(rtp.GetPayloadPtr(), frame->data, frame->datalen);
 
-    if (GetPatch()->PushFrame(rtp)) {
-        return SWITCH_STATUS_SUCCESS;
+    if (CheckPatchAndLock()) {
+        if (GetPatch()->PushFrame(rtp)) {
+            UnlockReadWrite();
+            return SWITCH_STATUS_SUCCESS;
+        }
+        UnlockReadWrite();
+    } else {
+        return SWITCH_STATUS_FALSE; 
     }
 
 

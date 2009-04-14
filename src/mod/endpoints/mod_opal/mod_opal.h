@@ -177,7 +177,11 @@ class FSConnection:public OpalLocalConnection {
     PCLASSINFO(FSConnection, OpalLocalConnection)
 
   public:
-    FSConnection(OpalCall & call, FSEndPoint & endpoint, switch_caller_profile_t *outbound_profile);
+    FSConnection(OpalCall & call,
+                 FSEndPoint & endpoint,
+                 switch_caller_profile_t *outbound_profile,
+                 switch_core_session_t *fsSession,
+                 switch_channel_t *fsChannel);
 
     virtual bool OnIncoming();
     virtual void OnReleased();
@@ -194,7 +198,6 @@ class FSConnection:public OpalLocalConnection {
     DECLARE_CALLBACK0(on_init);
     DECLARE_CALLBACK0(on_routing);
     DECLARE_CALLBACK0(on_execute);
-    //DECLARE_CALLBACK0(on_hangup);
 
     DECLARE_CALLBACK0(on_exchange_media);
     DECLARE_CALLBACK0(on_soft_execute);
@@ -251,6 +254,8 @@ class FSMediaStream:public OpalMediaStream {
     RTP_DataFrame m_readRTP;
     bool m_callOnStart;
     uint32_t m_timeStamp;
+
+    bool CheckPatchAndLock();
 };
 
 
