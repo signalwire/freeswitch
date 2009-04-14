@@ -688,6 +688,25 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 	default:
 		break;
 	}
+
+	switch (msg->message_id) {
+	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
+		{
+			void *pop;
+
+			while (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+				switch_frame_t *frame = (switch_frame_t *) pop;
+				switch_frame_free(&frame);
+			}
+		}
+		break;
+    default:
+        break;
+    }
+	
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
