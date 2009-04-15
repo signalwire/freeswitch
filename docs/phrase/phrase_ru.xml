@@ -427,6 +427,7 @@
 		<prompt phrase="для того что бы послать собощение " filename= "vm-send_message_now.wav"/>
 		<prompt phrase="пожалуйста, введите добавочный номер для отправки сообщения" filename= "vm-forward_enter_ext.wav"/>
 		<prompt phrase="Неправильный добавочный номер" filename= "vm-that_was_an_invalid_ext.wav"/>
+		<prompt phrase="Почтовый ящик переполнен. Пожалуйста перезвоните позже" filename= "vm-mailbox_full.wav"/>
 	</voicemail>
 	<conference>
 		<prompt phrase="NULL " filename= "conf-ack type.wav"/>
@@ -491,6 +492,21 @@
 		<prompt phrase="Центр обслуживания клиентов " filename= "ivr-customer_service.wav"/>
 		<prompt phrase="Отдел технической поддержки " filename= "ivr-technical_support.wav"/>
 		<prompt phrase="Оператор " filename= "ivr-operator.wav"/>
+		<prompt phrase="Вы набрали несуществующий добавочный номер" filename= "ivr-you_have_dialed_an_invalid_extension.wav"/>
+		<prompt phrase="Пожалйста, наберите добавочный номер и нажмите клавишу решетка" filename= "ivr-please_enter_extension_followed_by_pound.wav"/>
+		<prompt phrase="Пожалуйста введите ваш пинкод и нажмите клавишу решётка" filename= "ivr-please_enter_pin_followed_by_pound.wav"/>
+		<prompt phrase="Ваш пин код или номер не верны" filename= "ivr-pin_or_extension_is-invalid.wav"/>
+		<prompt phrase="вы почти закрепили этот телефон за вашей учётной записью" filename= "ivr-you_are_about_to_provision_this_phone.wav"/>
+		<prompt phrase="пожалуйста повторите ваш пин код для подтверждения" filename= "ivr-please_reenter_your_pin.wav"/>
+		<prompt phrase="Для регистрации на clueCon , пожалуйста нажмите .." filename= "ivr-register_for_cluecon.wav"/>
+		<prompt phrase="Для входа" filename= "ivr-to_log_in.wav"/>
+		<prompt phrase="Для выхода" filename= "ivr-to_log_out.wav"/>
+		<prompt phrase="Вы вошли" filename= "ivr-you_are_now_logged_in.wav"/>
+		<prompt phrase="Вы вышли" filename= "ivr-you_are_now_logged_out.wav"/>
+		<prompt phrase="Попробуйте снова" filename= "ivr-please_try_again.wav"/>
+		<prompt phrase="Вы почти закрепили этот телефон за Вашим добавочным номером" filename= "ivr-provision_phone_permanently_to_extension.wav"/>
+		<prompt phrase="Пожалуйста введите добавочный номер за которым вы хотите закрепить этот телефон и нажмите решётку" filename= "ivr-extension_to_provision_this_phone.wav"/>
+		<prompt phrase="Спасибо, этот телефон сейчас перезагрузится" filename= "ivr-this_phone_will_now_reboot.wav"/>
 	</ivr>
 	<misc>
 		<prompt phrase="Этот звонок шифруется " filename= "call_secured.wav"/>
