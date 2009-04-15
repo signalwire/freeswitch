@@ -4746,6 +4746,11 @@ SWITCH_STANDARD_APP(conference_function)
 
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 
+			/* Set MOH from variable if not set */
+			if(switch_strlen_zero(conference->moh_sound)) {
+				conference->moh_sound = switch_core_strdup(conference->pool, switch_channel_get_variable(channel, "conference_moh_sound"));
+			}
+			
 			/* Set the minimum number of members (once you go above it you cannot go below it) */
 			conference->min = 1;
 
