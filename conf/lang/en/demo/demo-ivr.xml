@@ -41,18 +41,21 @@
         <action function="play-file" data="voicemail/vm-press.wav"/>
         <action function="play-file" data="digits/3.wav"/>
 
-        <!-- Menu option 4: Hear a sample submenu -->
-        <action function="play-file" data="ivr/ivr-to_hear_sample_submenu.wav"/>
-        <action function="play-file" data="ivr/ivr-please.wav"/>
-        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <!-- Menu option 4: Register for ClueCon -->
+        <action function="play-file" data="ivr/ivr-register_for_cluecon.wav"/>
         <action function="play-file" data="digits/4.wav"/>
 
         <!-- Menu option 5: Listen to screaming monkeys -->
         <action function="play-file" data="ivr/ivr-to_hear_screaming_monkeys.wav"/>
-
         <action function="play-file" data="ivr/ivr-please.wav"/>
         <action function="play-file" data="voicemail/vm-press.wav"/>
         <action function="play-file" data="digits/5.wav"/>
+
+        <!-- Menu option 6: Hear a sample submenu -->
+        <action function="play-file" data="ivr/ivr-to_hear_sample_submenu.wav"/>
+        <action function="play-file" data="ivr/ivr-please.wav"/>
+        <action function="play-file" data="voicemail/vm-press.wav"/>
+        <action function="play-file" data="digits/6.wav"/>
 
         <!-- Menu option 9: Repeat these options -->
         <action function="play-file" data="ivr/ivr-to_repeat_these_options.wav"/>
