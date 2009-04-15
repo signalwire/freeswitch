@@ -272,7 +272,7 @@ static char *check_cache(switch_memory_pool_t *pool, const char *number) {
 
 switch_bool_t set_cache(switch_memory_pool_t *pool, const char *number, const char *cid) {
 	char *cmd;
-	switch_bool_t success;
+	switch_bool_t success = SWITCH_TRUE;
 	switch_stream_handle_t stream = { 0 };
 	
 	SWITCH_STANDARD_STREAM(stream);
