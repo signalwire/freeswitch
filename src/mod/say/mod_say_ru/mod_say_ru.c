@@ -1440,6 +1440,43 @@ static switch_status_t ru_say_time(switch_core_session_t *session, char *tosay, 
 }
 
 
+static switch_status_t ru_ip(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method,
+                                                             switch_input_args_t *args)
+{
+    char *a, *b, *c, *d;
+    if (!(a = switch_core_session_strdup(session, tosay))) {
+        return SWITCH_STATUS_FALSE;
+    }
+    
+    if (!(b = strchr(a, '.'))) {
+        return SWITCH_STATUS_FALSE;
+    }
+                                            
+    *b++ = '\0';
+                                                                            
+    if (!(c = strchr(b, '.'))) {
+        return SWITCH_STATUS_FALSE;
+    }
+                                                                                            
+    *c++ = '\0';
+    
+    if (!(d = strchr(c, '.'))) {
+        return SWITCH_STATUS_FALSE;
+    }
+    
+    *d++ = '\0';
+    
+    ru_say_count(session,a ,male,how_much,args);
+    say_file("digits/dot.wav");
+    ru_say_count(session,b ,male,how_much,args);
+    say_file("digits/dot.wav");
+    ru_say_count(session,c ,male,how_much,args);
+    say_file("digits/dot.wav");
+    ru_say_count(session,d ,male,how_much,args);
+    return SWITCH_STATUS_SUCCESS;
+}
+                                                                                                                                                                                                                                
+
         
 static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switch_say_type_t type, switch_say_method_t method, switch_input_args_t *args)
 {
@@ -1469,7 +1506,7 @@ static switch_status_t ru_say(switch_core_session_t *session, char *tosay, switc
                 say_cb = ru_say_time;
                 break;
             case SST_IP_ADDRESS:
-//                say_cb = ru_ip;
+                say_cb = ru_ip;
                 break;
             case SST_NAME_SPELLED:
             case SST_NAME_PHONETIC:
