@@ -1188,60 +1188,60 @@ static switch_status_t ru_say_money(switch_core_session_t *session, char *tosay,
                 switch_say_method_t method,switch_input_args_t *args)
 {
         char sbuf[16] = "";                    
-        char *dollars = NULL;
-        char *cents = NULL;
+        char *rubles = NULL;
+        char *kopecks = NULL;
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " ru_say_money %s\n",tosay );
         if (strlen(tosay) > 15 || !(tosay = strip_nonnumerics(tosay, sbuf, sizeof(sbuf)))) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Parse Error!\n");
                 return SWITCH_STATUS_GENERR;
         }
-        dollars = sbuf;
+        rubles = sbuf;
 
-        if ((cents = strchr(sbuf, '.'))) {
-                *cents++ = '\0';
-                if (strlen(cents) > 2) {
-                        cents[2] = '\0';
+        if ((kopecks = strchr(sbuf, '.'))) {
+                *kopecks++ = '\0';
+                if (strlen(kopecks) > 2) {
+                        kopecks[2] = '\0';
                 }
         }
         if (sbuf[0] == '+') {
-                dollars++;
+                rubles++;
         }
 
         if (sbuf[0] == '-') {
                 say_file("currency/minus.wav");
-                dollars++;
+                rubles++;
         }
-	    ru_say_count(session,dollars ,male,how_much,args);
-    	    int idollars = atoi(dollars)%100;
-    	    int idollar = atoi(dollars)%10;
-    	    if (idollars == 1 || (idollars > 20 && idollar == 1)) {/* рубль */
-		say_file("currency/dollar.wav");
+	    ru_say_count(session,rubles ,male,how_much,args);
+    	    int irubles = atoi(rubles)%100;
+    	    int iruble = atoi(rubles)%10;
+    	    if (irubles == 1 || (irubles > 20 && iruble == 1)) {/* рубль */
+		say_file("currency/ruble.wav");
     	    } 
-    	    else if ((idollars > 1 && idollars < 5) || (idollars > 20 && idollar > 1 && idollar < 5))  {  /*рубля */
-        	say_file("currency/dollar1.wav");
+    	    else if ((irubles > 1 && irubles < 5) || (irubles > 20 && iruble > 1 && iruble < 5))  {  /*рубля */
+        	say_file("currency/ruble-a.wav");
     	    } 
     	    else  {    /*рублей */
-    		say_file("currency/dollar2.wav");
+    		say_file("currency/rubles.wav");
     	    }
-        /* Say cents */
-            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " %s\n",cents );
-	    ru_say_count(session,cents ,female,how_much,args);
-            int icents = atoi(cents)%100;
-            int icent = atoi(cents)%10;
-            if (icents == 1 || (icents > 20 && icent == 1)) 
+        /* Say kopecks */
+            switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, " %s\n",kopecks );
+	    ru_say_count(session,kopecks ,female,how_much,args);
+            int ikopecks = atoi(kopecks)%100;
+            int ikopeck = atoi(kopecks)%10;
+            if (ikopecks == 1 || (ikopecks > 20 && ikopeck == 1)) 
             {
                 /* копейка */
-                say_file("currency/cent.wav");
+                say_file("currency/kopeck.wav");
             } 
-            else if ((icents > 1 && icents < 5) || (icents > 20 && icent > 1 && icent < 5)) 
+            else if ((ikopecks > 1 && ikopecks < 5) || (ikopecks > 20 && ikopeck > 1 && ikopeck < 5)) 
             {
         	/* копейки */
-                say_file("currency/cent1.wav");
+                say_file("currency/kopeck-i.wav");
             }
             else 
             {
         	/* копеек */
-                say_file("currency/cents.wav");
+                say_file("currency/kopecks.wav");
             }
     return SWITCH_STATUS_SUCCESS;
 }
