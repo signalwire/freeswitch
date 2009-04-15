@@ -3728,7 +3728,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 
 						if ((a_session = switch_core_session_locate(br_a))) {
 							const char *port = NULL;
-							char *param_string = "", *headers = "";
+							char *param_string = "";
 							int count = 0, bytes = 0;
 
 							if (refer_to && refer_to->r_url && refer_to->r_url->url_port) {
