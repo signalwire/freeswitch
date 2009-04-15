@@ -217,6 +217,7 @@
       <prompt phrase="in folder inbox" filename="vm-in_folder.wav"/>
       <prompt phrase="to return the call now" filename="vm-return_call.wav"/>
       <prompt phrase="urgent" filename="vm-urgent.wav"/>
+      <prompt phrase="That mailbox is full. Please try your call again later." filename="vm-mailbox_full.wav"/>
     </voicemail>
     <conference>
       <prompt phrase="NULL" filename="conf-ack.wav" type="tone"/>
@@ -281,6 +282,21 @@
       <prompt phrase="Customer service" filename="ivr-customer_service.wav"/>
       <prompt phrase="Technical support" filename="ivr-technical_support.wav"/>
       <prompt phrase="Operator" filename="ivr-operator.wav"/>
+      <prompt phrase="You have dialed an invalid extension." filename="ivr-you_have_dialed_an_invalid_extension.wav"/>
+      <prompt phrase="Please enter your extension, followed by the pound sign." filename="ivr-please_enter_extension_followed_by_pound.wav"/>
+      <prompt phrase="Please enter your pin number, followed by the pound sign." filename="ivr-please_enter_pin_followed_by_pound.wav"/>
+      <prompt phrase="Your pin number or extension is invalid." filename="ivr-pin_or_extension_is-invalid.wav"/>
+      <prompt phrase="You are about to provision this phone to your account..." filename="ivr-you_are_about_to_provision_this_phone.wav"/>
+      <prompt phrase="Please re-enter your pin number to confirm." filename="ivr-please_reenter_your_pin.wav"/>
+      <prompt phrase="To register for ClueCon, please press..." filename="ivr-register_for_cluecon.wav"/>
+      <prompt phrase="to log in" filename="ivr-to_log_in.wav"/>
+      <prompt phrase="to log out" filename="ivr-to_log_out.wav"/>
+      <prompt phrase="You are now logged in" filename="ivr-you_are_now_logged_in.wav"/>
+      <prompt phrase="You are now logged out" filename="ivr-you_are_now_logged_out.wav"/>
+      <prompt phrase="Please try again." filename="ivr-please_try_again.wav"/>
+      <prompt phrase="You are about to provision this phone permanently to your extension." filename="ivr-provision_phone_permanently_to_extension.wav"/>
+      <prompt phrase="Please enter the extension number to which you would like to provision this phone, followed by the pound sign." filename="ivr-extension_to_provision_this_phone.wav"/>
+      <prompt phrase="Thank you, this phone will now reboot." filename="ivr-this_phone_will_now_reboot.wav"/>
     </ivr>
     <misc>
       <prompt phrase="This call has been secured" filename="call_secured.wav"/>
@@ -292,6 +308,8 @@
       <prompt phrase="Transfer" filename="transfer2.wav"/>
       <prompt phrase="We are trying to reach" filename="we_are_trying_to_reach.wav"/>
       <prompt phrase="An error has occurred please contact the administrator" filename="error.wav"/>
+      <prompt phrase="Your call will be terminated in..." filename="misc-your_call_will_be_terminated_in.wav"/>
+      <prompt phrase="Your call has been terminated." filename="misc-your_call_has_been_terminated.wav"/>
     </misc>
   </en>
 </language>
