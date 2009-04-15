@@ -439,8 +439,8 @@ typedef struct {
 } switch_rtp_numbers_t;
 
 typedef struct {
-	switch_rtp_numbers_t in;
-	switch_rtp_numbers_t out;
+	switch_rtp_numbers_t inbound;
+	switch_rtp_numbers_t outbound;
 } switch_rtp_stats_t;
 
 

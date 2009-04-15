@@ -1251,8 +1251,8 @@ static void do_2833(switch_rtp_t *rtp_session)
 														  rtp_session->dtmf_data.out_digit_packet, 4, 0, 
 														  rtp_session->te, rtp_session->dtmf_data.timestamp_dtmf, &flags);
 
-			rtp_session->stats.out.raw_bytes += wrote;
-			rtp_session->stats.out.dtmf_packet_count++;
+			rtp_session->stats.outbound.raw_bytes += wrote;
+			rtp_session->stats.outbound.dtmf_packet_count++;
 
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send %s packet for [%c] ts=%u dur=%d/%d/%d seq=%d\n",
@@ -1316,8 +1316,8 @@ static void do_2833(switch_rtp_t *rtp_session)
 										   rtp_session->rtp_bugs & RTP_BUG_CISCO_SKIP_MARK_BIT_2833 ? 0 : 1,
 										   rtp_session->te, rtp_session->dtmf_data.timestamp_dtmf, &flags);
 			
-			rtp_session->stats.out.raw_bytes += wrote;
-			rtp_session->stats.out.dtmf_packet_count++;
+			rtp_session->stats.outbound.raw_bytes += wrote;
+			rtp_session->stats.outbound.dtmf_packet_count++;
 
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Send start packet for [%c] ts=%u dur=%d/%d/%d seq=%d\n",
 							  rtp_session->dtmf_data.out_digit,
@@ -1361,9 +1361,9 @@ static void do_flush(switch_rtp_t *rtp_session)
 				bytes = sizeof(rtp_msg_t);
 				status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, &bytes);
 				if (bytes) {
-					rtp_session->stats.in.raw_bytes += bytes;
-					rtp_session->stats.in.flush_packet_count++;
-					rtp_session->stats.in.packet_count++;
+					rtp_session->stats.inbound.raw_bytes += bytes;
+					rtp_session->stats.inbound.flush_packet_count++;
+					rtp_session->stats.inbound.packet_count++;
 				}
 			} else {
 				break;
@@ -1392,17 +1392,17 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 	status = switch_socket_recvfrom(rtp_session->from_addr, rtp_session->sock_input, 0, (void *) &rtp_session->recv_msg, bytes);
 
 	if (*bytes) {
-		rtp_session->stats.in.raw_bytes += *bytes;
+		rtp_session->stats.inbound.raw_bytes += *bytes;
 		if (rtp_session->te && rtp_session->recv_msg.header.pt == rtp_session->te) {
-			rtp_session->stats.in.dtmf_packet_count++;
+			rtp_session->stats.inbound.dtmf_packet_count++;
 		} else if (rtp_session->cng_pt && (rtp_session->recv_msg.header.pt == rtp_session->cng_pt || rtp_session->recv_msg.header.pt == 13)) {
-			rtp_session->stats.in.cng_packet_count++;
+			rtp_session->stats.inbound.cng_packet_count++;
 		} else {
-			rtp_session->stats.in.media_packet_count++;
-			rtp_session->stats.in.media_bytes += *bytes;
+			rtp_session->stats.inbound.media_packet_count++;
+			rtp_session->stats.inbound.media_bytes += *bytes;
 		}
 		
-		rtp_session->stats.in.packet_count++;
+		rtp_session->stats.inbound.packet_count++;
 	}
 
 	if (rtp_session->jb && rtp_session->recv_msg.header.version == 2 && *bytes) {
@@ -1421,7 +1421,7 @@ static switch_status_t read_rtp_packet(switch_rtp_t *rtp_session, switch_size_t 
 			if (jb_frame->plc) {
 				*flags |= SFF_PLC;
 			} else {
-				rtp_session->stats.in.jb_packet_count++;
+				rtp_session->stats.inbound.jb_packet_count++;
 			}
 			*bytes = jb_frame->dlen + rtp_header_len;
 			rtp_session->recv_msg.header.ts = htonl(jb_frame->ts);
@@ -1772,7 +1772,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			*flags |= SFF_CNG;
 			*payload_type = (switch_payload_t) rtp_session->recv_msg.header.pt;
 			ret = 2 + rtp_header_len;
-			rtp_session->stats.in.skip_packet_count++;
+			rtp_session->stats.inbound.skip_packet_count++;
 			goto end;
 		}
 
@@ -2225,14 +2225,14 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 			goto end;
 		}
 
-		rtp_session->stats.out.raw_bytes += bytes;
-		rtp_session->stats.out.packet_count++;
+		rtp_session->stats.outbound.raw_bytes += bytes;
+		rtp_session->stats.outbound.packet_count++;
 
 		if (send_msg->header.pt == rtp_session->cng_pt) {
-			rtp_session->stats.out.cng_packet_count++;
+			rtp_session->stats.outbound.cng_packet_count++;
 		} else {
-			rtp_session->stats.out.media_packet_count++;
-			rtp_session->stats.out.media_bytes += bytes;
+			rtp_session->stats.outbound.media_packet_count++;
+			rtp_session->stats.outbound.media_bytes += bytes;
 		}
 
 		if (rtp_session->timer.interval) {
@@ -2346,10 +2346,10 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			return -1;
 		}
 
-		rtp_session->stats.out.raw_bytes += bytes;
-		rtp_session->stats.out.media_bytes += bytes;
-		rtp_session->stats.out.media_packet_count++;
-		rtp_session->stats.out.packet_count++;
+		rtp_session->stats.outbound.raw_bytes += bytes;
+		rtp_session->stats.outbound.media_bytes += bytes;
+		rtp_session->stats.outbound.media_packet_count++;
+		rtp_session->stats.outbound.packet_count++;
 
 		return (int) bytes;
 	}
@@ -2369,10 +2369,10 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 		switch_size_t wrote = switch_rtp_write_manual(rtp_session, frame->data, frame->datalen, 
 													  frame->m, frame->payload, (uint32_t) (frame->timestamp), &frame->flags);
 
-		rtp_session->stats.out.raw_bytes += wrote;
-		rtp_session->stats.out.media_bytes += wrote;
-		rtp_session->stats.out.media_packet_count++;
-		rtp_session->stats.out.packet_count++;
+		rtp_session->stats.outbound.raw_bytes += wrote;
+		rtp_session->stats.outbound.media_bytes += wrote;
+		rtp_session->stats.outbound.media_packet_count++;
+		rtp_session->stats.outbound.packet_count++;
 	}
 
 	if (fwd) {

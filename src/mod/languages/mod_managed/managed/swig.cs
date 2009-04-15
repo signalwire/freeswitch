@@ -5103,17 +5103,17 @@ class freeswitchPINVOKE {
   [DllImport("mod_managed", EntryPoint="CSharp_delete_switch_rtp_numbers_t")]
   public static extern void delete_switch_rtp_numbers_t(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_in_set")]
-  public static extern void switch_rtp_stats_t_in_set(HandleRef jarg1, HandleRef jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_inbound_set")]
+  public static extern void switch_rtp_stats_t_inbound_set(HandleRef jarg1, HandleRef jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_in_get")]
-  public static extern IntPtr switch_rtp_stats_t_in_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_inbound_get")]
+  public static extern IntPtr switch_rtp_stats_t_inbound_get(HandleRef jarg1);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_out_set")]
-  public static extern void switch_rtp_stats_t_out_set(HandleRef jarg1, HandleRef jarg2);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_outbound_set")]
+  public static extern void switch_rtp_stats_t_outbound_set(HandleRef jarg1, HandleRef jarg2);
 
-  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_out_get")]
-  public static extern IntPtr switch_rtp_stats_t_out_get(HandleRef jarg1);
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_rtp_stats_t_outbound_get")]
+  public static extern IntPtr switch_rtp_stats_t_outbound_get(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_new_switch_rtp_stats_t")]
   public static extern IntPtr new_switch_rtp_stats_t();
@@ -23713,23 +23713,23 @@ public class switch_rtp_stats_t : IDisposable {
     }
   }
 
-  public switch_rtp_numbers_t in {
+  public switch_rtp_numbers_t inbound {
     set {
-      freeswitchPINVOKE.switch_rtp_stats_t_in_set(swigCPtr, switch_rtp_numbers_t.getCPtr(value));
+      freeswitchPINVOKE.switch_rtp_stats_t_inbound_set(swigCPtr, switch_rtp_numbers_t.getCPtr(value));
     } 
     get {
-      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_in_get(swigCPtr);
+      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_inbound_get(swigCPtr);
       switch_rtp_numbers_t ret = (cPtr == IntPtr.Zero) ? null : new switch_rtp_numbers_t(cPtr, false);
       return ret;
     } 
   }
 
-  public switch_rtp_numbers_t out {
+  public switch_rtp_numbers_t outbound {
     set {
-      freeswitchPINVOKE.switch_rtp_stats_t_out_set(swigCPtr, switch_rtp_numbers_t.getCPtr(value));
+      freeswitchPINVOKE.switch_rtp_stats_t_outbound_set(swigCPtr, switch_rtp_numbers_t.getCPtr(value));
     } 
     get {
-      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_out_get(swigCPtr);
+      IntPtr cPtr = freeswitchPINVOKE.switch_rtp_stats_t_outbound_get(swigCPtr);
       switch_rtp_numbers_t ret = (cPtr == IntPtr.Zero) ? null : new switch_rtp_numbers_t(cPtr, false);
       return ret;
     } 

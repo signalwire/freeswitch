@@ -1702,23 +1702,23 @@ static void set_stats(switch_rtp_t *rtp_session, private_object_t *tech_pvt, con
 
 	if (stats) {
 
-		add_stat(stats->in.raw_bytes, "in_raw_bytes");
-		add_stat(stats->in.media_bytes, "in_media_bytes");
-		add_stat(stats->in.packet_count, "in_packet_count");
-		add_stat(stats->in.media_packet_count, "in_media_packet_count");
-		add_stat(stats->in.skip_packet_count, "in_skip_packet_count");
-		add_stat(stats->in.jb_packet_count, "in_jb_packet_count");
-		add_stat(stats->in.dtmf_packet_count, "in_dtmf_packet_count");
-		add_stat(stats->in.cng_packet_count, "in_cng_packet_count");
-		add_stat(stats->in.cng_packet_count, "in_flush_packet_count");
+		add_stat(stats->inbound.raw_bytes, "in_raw_bytes");
+		add_stat(stats->inbound.media_bytes, "in_media_bytes");
+		add_stat(stats->inbound.packet_count, "in_packet_count");
+		add_stat(stats->inbound.media_packet_count, "in_media_packet_count");
+		add_stat(stats->inbound.skip_packet_count, "in_skip_packet_count");
+		add_stat(stats->inbound.jb_packet_count, "in_jb_packet_count");
+		add_stat(stats->inbound.dtmf_packet_count, "in_dtmf_packet_count");
+		add_stat(stats->inbound.cng_packet_count, "in_cng_packet_count");
+		add_stat(stats->inbound.cng_packet_count, "in_flush_packet_count");
 
-		add_stat(stats->out.raw_bytes, "out_raw_bytes");
-		add_stat(stats->out.media_bytes, "out_media_bytes");
-		add_stat(stats->out.packet_count, "out_packet_count");
-		add_stat(stats->out.media_packet_count, "out_media_packet_count");
-		add_stat(stats->out.skip_packet_count, "out_skip_packet_count");
-		add_stat(stats->out.dtmf_packet_count, "out_dtmf_packet_count");
-		add_stat(stats->out.cng_packet_count, "out_cng_packet_count");
+		add_stat(stats->outbound.raw_bytes, "out_raw_bytes");
+		add_stat(stats->outbound.media_bytes, "out_media_bytes");
+		add_stat(stats->outbound.packet_count, "out_packet_count");
+		add_stat(stats->outbound.media_packet_count, "out_media_packet_count");
+		add_stat(stats->outbound.skip_packet_count, "out_skip_packet_count");
+		add_stat(stats->outbound.dtmf_packet_count, "out_dtmf_packet_count");
+		add_stat(stats->outbound.cng_packet_count, "out_cng_packet_count");
 		
 	}
 }
