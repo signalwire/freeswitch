@@ -1259,6 +1259,9 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
           
         */
         while(!GetPatch()) {
+            if (!m_fsChannel || !switch_channel_up(m_fsChannel)) {
+                return SWITCH_STATUS_FALSE;
+            }
             switch_cond_next();
         }
         if (CheckPatchAndLock()) {
