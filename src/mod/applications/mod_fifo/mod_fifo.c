@@ -1399,6 +1399,7 @@ SWITCH_STANDARD_APP(fifo_function)
 	}
 
  done:
+	switch_channel_clear_app_flag(channel, CF_APP_TAGGED);
 
 	switch_core_media_bug_resume(session);
 
