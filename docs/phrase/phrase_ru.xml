@@ -321,12 +321,12 @@
 		<prompt phrase="Долларов " filename= "dollars.wav"/>
 		<prompt phrase="Минус " filename= "minus.wav"/>
 		<prompt phrase="Отрицательный " filename= "negative.wav"/>
-		<prompt phrase="Копеек " filename= "kopx .wav"/>
-		<prompt phrase="Копейка " filename= "kop .wav"/>
-		<prompt phrase="Копейки " filename= "kops .wav"/>
-		<prompt phrase="Рубль " filename= "rubl .wav"/>
-		<prompt phrase="Рубля " filename= "rublx .wav"/>
-		<prompt phrase="Рублей " filename= "rubls .wav"/>
+		<prompt phrase="Копеек " filename= "kopeck-i.wav"/>
+		<prompt phrase="Копейка " filename= "kopeck.wav"/>
+		<prompt phrase="Копейки " filename= "kopecks.wav"/>
+		<prompt phrase="Рубль " filename= "ruble.wav"/>
+		<prompt phrase="Рубля " filename= "ruble-a.wav"/>
+		<prompt phrase="Рублей " filename= "rubles.wav"/>
 	</currency>
 	<time>
 		<prompt phrase="до полудня " filename= "a-m.wav"/>
