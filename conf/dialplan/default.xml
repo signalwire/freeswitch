@@ -540,6 +540,13 @@
       </condition>
     </extension>
 
+    <extension name="ClueCon">
+      <condition field="destination_number" expression="^9991$">
+        <action application="set" data="effective_caller_id_name=ClueCon"/>
+        <action application="bridge" data="sofia/$${domain}/brian@bkw.org"/>
+      </condition>
+    </extension>
+
     <extension name="show_info">
       <condition field="destination_number" expression="^9992$">
 	<action application="answer"/>
