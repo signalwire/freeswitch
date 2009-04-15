@@ -2418,6 +2418,351 @@ SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_MAX_MANAGEMENT_BUFFER_LEN_get() {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_raw_bytes_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->raw_bytes = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_raw_bytes_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->raw_bytes);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_media_bytes_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->media_bytes = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_media_bytes_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->media_bytes);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_packet_count_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_packet_count_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->packet_count);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_media_packet_count_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->media_packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_media_packet_count_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->media_packet_count);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_skip_packet_count_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->skip_packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_skip_packet_count_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->skip_packet_count);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_jb_packet_count_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->jb_packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_jb_packet_count_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->jb_packet_count);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_dtmf_packet_count_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->dtmf_packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_dtmf_packet_count_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->dtmf_packet_count);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_cng_packet_count_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->cng_packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_cng_packet_count_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->cng_packet_count);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_numbers_t_flush_packet_count_set(void * jarg1, void * jarg2) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t arg2 ;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->flush_packet_count = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_numbers_t_flush_packet_count_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  switch_size_t result;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  result =  ((arg1)->flush_packet_count);
+  jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_rtp_numbers_t() {
+  void * jresult ;
+  switch_rtp_numbers_t *result = 0 ;
+  
+  result = (switch_rtp_numbers_t *)new switch_rtp_numbers_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtp_numbers_t(void * jarg1) {
+  switch_rtp_numbers_t *arg1 = (switch_rtp_numbers_t *) 0 ;
+  
+  arg1 = (switch_rtp_numbers_t *)jarg1; 
+  delete arg1;
+  
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_stats_t_in_set(void * jarg1, void * jarg2) {
+  switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
+  switch_rtp_numbers_t *arg2 = (switch_rtp_numbers_t *) 0 ;
+  
+  arg1 = (switch_rtp_stats_t *)jarg1; 
+  arg2 = (switch_rtp_numbers_t *)jarg2; 
+  if (arg1) (arg1)->in = *arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_stats_t_in_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
+  switch_rtp_numbers_t *result = 0 ;
+  
+  arg1 = (switch_rtp_stats_t *)jarg1; 
+  result = (switch_rtp_numbers_t *)& ((arg1)->in);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_stats_t_out_set(void * jarg1, void * jarg2) {
+  switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
+  switch_rtp_numbers_t *arg2 = (switch_rtp_numbers_t *) 0 ;
+  
+  arg1 = (switch_rtp_stats_t *)jarg1; 
+  arg2 = (switch_rtp_numbers_t *)jarg2; 
+  if (arg1) (arg1)->out = *arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_stats_t_out_get(void * jarg1) {
+  void * jresult ;
+  switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
+  switch_rtp_numbers_t *result = 0 ;
+  
+  arg1 = (switch_rtp_stats_t *)jarg1; 
+  result = (switch_rtp_numbers_t *)& ((arg1)->out);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_switch_rtp_stats_t() {
+  void * jresult ;
+  switch_rtp_stats_t *result = 0 ;
+  
+  result = (switch_rtp_stats_t *)new switch_rtp_stats_t();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_switch_rtp_stats_t(void * jarg1) {
+  switch_rtp_stats_t *arg1 = (switch_rtp_stats_t *) 0 ;
+  
+  arg1 = (switch_rtp_stats_t *)jarg1; 
+  delete arg1;
+  
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_SWITCH_RTP_CNG_PAYLOAD_get() {
   int jresult ;
   int result;
@@ -5604,6 +5949,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_perform_destroy(void * ja
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_core_session_destroy_state(void * jarg1) {
+  switch_core_session_t *arg1 = (switch_core_session_t *) 0 ;
+  
+  arg1 = (switch_core_session_t *)jarg1; 
+  switch_core_session_destroy_state(arg1);
+}
+
+
 SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_core_session_count() {
   unsigned long jresult ;
   uint32_t result;
@@ -8157,6 +8510,18 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_is_moh(char * jarg1) {
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_string_has_escaped_data(char * jarg1) {
+  int jresult ;
+  char *arg1 = (char *) 0 ;
+  int result;
+  
+  arg1 = (char *)jarg1; 
+  result = (int)switch_string_has_escaped_data((char const *)arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_b64_encode(void * jarg1, void * jarg2, void * jarg3, void * jarg4) {
   int jresult ;
   unsigned char *arg1 = (unsigned char *) 0 ;
@@ -8261,6 +8626,52 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_fd_read_line(int jarg1, char * jarg2
   arg3 = *argp3; 
   result = switch_fd_read_line(arg1,arg2,arg3);
   jresult = new switch_size_t((switch_size_t &)result); 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_alloc(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_frame_t **arg1 = (switch_frame_t **) 0 ;
+  switch_size_t arg2 ;
+  switch_status_t result;
+  switch_size_t *argp2 ;
+  
+  arg1 = (switch_frame_t **)jarg1; 
+  argp2 = (switch_size_t *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null switch_size_t", 0);
+    return 0;
+  }
+  arg2 = *argp2; 
+  result = (switch_status_t)switch_frame_alloc(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_dup(void * jarg1, void * jarg2) {
+  int jresult ;
+  switch_frame_t *arg1 = (switch_frame_t *) 0 ;
+  switch_frame_t **arg2 = (switch_frame_t **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_frame_t *)jarg1; 
+  arg2 = (switch_frame_t **)jarg2; 
+  result = (switch_status_t)switch_frame_dup(arg1,arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_frame_free(void * jarg1) {
+  int jresult ;
+  switch_frame_t **arg1 = (switch_frame_t **) 0 ;
+  switch_status_t result;
+  
+  arg1 = (switch_frame_t **)jarg1; 
+  result = (switch_status_t)switch_frame_free(arg1);
+  jresult = result; 
   return jresult;
 }
 
@@ -10691,6 +11102,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_state_handler_table_on_reporting_get
   
   arg1 = (switch_state_handler_table *)jarg1; 
   result = (switch_state_handler_t) ((arg1)->on_reporting);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_state_handler_table_on_destroy_set(void * jarg1, void * jarg2) {
+  switch_state_handler_table *arg1 = (switch_state_handler_table *) 0 ;
+  switch_state_handler_t arg2 = (switch_state_handler_t) 0 ;
+  
+  arg1 = (switch_state_handler_table *)jarg1; 
+  arg2 = (switch_state_handler_t)jarg2; 
+  if (arg1) (arg1)->on_destroy = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_state_handler_table_on_destroy_get(void * jarg1) {
+  void * jresult ;
+  switch_state_handler_table *arg1 = (switch_state_handler_table *) 0 ;
+  switch_state_handler_t result;
+  
+  arg1 = (switch_state_handler_table *)jarg1; 
+  result = (switch_state_handler_t) ((arg1)->on_destroy);
   jresult = (void *)result; 
   return jresult;
 }
@@ -16919,6 +17353,29 @@ SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_codec_implementation_codec_id
   
   arg1 = (switch_codec_implementation *)jarg1; 
   result = (uint32_t) ((arg1)->codec_id);
+  jresult = (unsigned long)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_codec_implementation_impl_id_set(void * jarg1, unsigned long jarg2) {
+  switch_codec_implementation *arg1 = (switch_codec_implementation *) 0 ;
+  uint32_t arg2 ;
+  
+  arg1 = (switch_codec_implementation *)jarg1; 
+  arg2 = (uint32_t)jarg2; 
+  if (arg1) (arg1)->impl_id = arg2;
+  
+}
+
+
+SWIGEXPORT unsigned long SWIGSTDCALL CSharp_switch_codec_implementation_impl_id_get(void * jarg1) {
+  unsigned long jresult ;
+  switch_codec_implementation *arg1 = (switch_codec_implementation *) 0 ;
+  uint32_t result;
+  
+  arg1 = (switch_codec_implementation *)jarg1; 
+  result = (uint32_t) ((arg1)->impl_id);
   jresult = (unsigned long)result; 
   return jresult;
 }
@@ -23245,6 +23702,20 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_rtp_intentional_bugs(void * jarg1, int
   arg1 = (switch_rtp_t *)jarg1; 
   arg2 = (switch_rtp_bug_flag_t)jarg2; 
   switch_rtp_intentional_bugs(arg1,arg2);
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_rtp_get_stats(void * jarg1, void * jarg2) {
+  void * jresult ;
+  switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_memory_pool_t *arg2 = (switch_memory_pool_t *) 0 ;
+  switch_rtp_stats_t *result = 0 ;
+  
+  arg1 = (switch_rtp_t *)jarg1; 
+  arg2 = (switch_memory_pool_t *)jarg2; 
+  result = (switch_rtp_stats_t *)switch_rtp_get_stats(arg1,arg2);
+  jresult = (void *)result; 
+  return jresult;
 }
 
 
