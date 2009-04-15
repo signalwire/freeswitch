@@ -3761,13 +3761,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 								}
 							}
 
-							if (refer_to->r_url && refer_to->r_url->url_headers) {
-								headers = switch_core_session_sprintf(session, "?%s", refer_to->r_url->url_headers);
-							}
-
-							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s:%s%s%s", 
+							exten = switch_core_session_sprintf(session, "sofia/%s/sip:%s@%s", 
 																profile->name, refer_to->r_url->url_user, 
-																refer_to->r_url->url_host, port, param_string, headers);
+																refer_to->r_url->url_host);
 
 							switch_core_new_memory_pool(&npool);
 							nightmare_xfer_helper = switch_core_alloc(npool, sizeof(*nightmare_xfer_helper));
