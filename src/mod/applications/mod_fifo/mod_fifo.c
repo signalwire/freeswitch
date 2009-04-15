@@ -184,6 +184,8 @@ struct fifo_chime_data {
 	time_t orbit_timeout;
 	int do_orbit;
 	char *orbit_exten;
+	char *orbit_dialplan;
+	char *orbit_context;
 };
 
 typedef struct fifo_chime_data fifo_chime_data_t;
@@ -794,16 +796,19 @@ SWITCH_STANDARD_APP(fifo_function)
 		fifo_chime_data_t cd = { {0} };
 		const char *chime_list = switch_channel_get_variable(channel, "fifo_chime_list");
 		const char *chime_freq = switch_channel_get_variable(channel, "fifo_chime_freq");
-		const char *orbit_var = switch_channel_get_variable(channel, "fifo_orbit_exten");
+		const char *orbit_exten = switch_channel_get_variable(channel, "fifo_orbit_exten");
+		const char *orbit_dialplan = switch_channel_get_variable(channel, "fifo_orbit_dialplan");
+		const char *orbit_context = switch_channel_get_variable(channel, "fifo_orbit_context");
+
 		const char *orbit_ann = switch_channel_get_variable(channel, "fifo_orbit_announce");
 		const char *caller_exit_key = switch_channel_get_variable(channel, "fifo_caller_exit_key");
 		int freq = 30;
 		int ftmp = 0;
 		int to = 60;
 
-		if (orbit_var) {
+		if (orbit_exten) {
 			char *ot;
-			if ((cd.orbit_exten = switch_core_session_strdup(session, orbit_var))) {
+			if ((cd.orbit_exten = switch_core_session_strdup(session, orbit_exten))) {
 				if ((ot = strchr(cd.orbit_exten, ':'))) {
 					*ot++ = '\0';
 					if ((to = atoi(ot)) < 0) {
@@ -812,6 +817,8 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 				cd.orbit_timeout = switch_epoch_time_now(NULL) + to;
 			}
+			cd.orbit_dialplan = switch_core_session_strdup(session, orbit_dialplan);
+			cd.orbit_context = switch_core_session_strdup(session, orbit_context);
 		}
 
 		if (chime_freq) {
@@ -969,7 +976,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			if (orbit_ann) {
 				switch_ivr_play_file(session, NULL, orbit_ann, NULL);
 			}
-			switch_ivr_session_transfer(session, cd.orbit_exten, NULL, NULL);
+			switch_ivr_session_transfer(session, cd.orbit_exten, cd.orbit_dialplan, cd.orbit_context);
 		}
 
 		goto done;
