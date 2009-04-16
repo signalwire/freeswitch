@@ -800,50 +800,138 @@ static switch_status_t handle_ref_tuple(listener_t *listener, erlang_msg *msg, e
 }
 
 
-int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+/* fake enough of the net_kernel module to be able to respond to net_adm:ping */
+/* {'$gen_call', {<cpx@freecpx.128.0>, #Ref<254770.4.0>}, {is_auth, cpx@freecpx} */
+static switch_status_t handle_net_kernel_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
 {
-	int type, type2, size, version, arity, tmpindex;
-	switch_status_t ret = SWITCH_STATUS_SUCCESS;
+	int version, size, type, arity;
+	char atom[MAXATOMLEN];
+	erlang_ref ref;
+	erlang_pid pid;
 
 	buf->index = 0;
 	ei_decode_version(buf->buff, &buf->index, &version);
 	ei_get_type(buf->buff, &buf->index, &type, &size);
 
-	switch(type) {
-	case ERL_SMALL_TUPLE_EXT :
-	case ERL_LARGE_TUPLE_EXT :
-		tmpindex = buf->index;
-		ei_decode_tuple_header(buf->buff, &tmpindex, &arity);
-		ei_get_type(buf->buff, &tmpindex, &type2, &size);
+	if (type != ERL_SMALL_TUPLE_EXT && type != ERL_SMALL_TUPLE_EXT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not a tuple\n");
+		return SWITCH_STATUS_FALSE;
+	}
 
-		switch(type2) {
-			case ERL_ATOM_EXT:
-				ret = handle_msg_tuple(listener,msg,buf,rbuf);
-				break;
-			case ERL_REFERENCE_EXT :
-			case ERL_NEW_REFERENCE_EXT :
-				ret = handle_ref_tuple(listener, msg, buf, rbuf);
-			default :
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d\n", type);
-				/* some other kind of erlang term */
-				ei_x_encode_tuple_header(rbuf, 2);
-				ei_x_encode_atom(rbuf, "error");
-				ei_x_encode_atom(rbuf, "undef");
-				break;
+	ei_decode_tuple_header(buf->buff, &buf->index, &arity);
+
+	if (arity != 3) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "wrong arity\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (ei_decode_atom(buf->buff, &buf->index, atom) || strncmp(atom, "$gen_call", MAXATOMLEN)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not gen_call\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	ei_get_type(buf->buff, &buf->index, &type, &size);
+
+	if (type != ERL_SMALL_TUPLE_EXT && type != ERL_SMALL_TUPLE_EXT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not a tuple\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	ei_decode_tuple_header(buf->buff, &buf->index, &arity);
+
+	if (arity != 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "wrong arity\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (ei_decode_pid(buf->buff, &buf->index, &pid) || ei_decode_ref(buf->buff, &buf->index, &ref)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "decoding pid and ref error\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	ei_get_type(buf->buff, &buf->index, &type, &size);
+
+	if (type != ERL_SMALL_TUPLE_EXT && type != ERL_SMALL_TUPLE_EXT) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not a tuple\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	ei_decode_tuple_header(buf->buff, &buf->index, &arity);
+
+	if (arity != 2) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "bad arity\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if (ei_decode_atom(buf->buff, &buf->index, atom) || strncmp(atom, "is_auth", MAXATOMLEN)) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "not is_auth\n");
+		return SWITCH_STATUS_FALSE;
+	}
+
+	/* To ! {Tag, Reply} */
+	ei_x_encode_tuple_header(rbuf, 2);
+	ei_x_encode_ref(rbuf, &ref);
+	ei_x_encode_atom(rbuf, "yes");
+	
+	switch_mutex_lock(listener->sock_mutex);
+	ei_send(listener->sockfd, &pid, rbuf->buff, rbuf->index);
+	switch_mutex_unlock(listener->sock_mutex);
+#ifdef EI_DEBUG
+	ei_x_print_msg(rbuf, &pid, 1);
+#endif
+
+	return SWITCH_STATUS_FALSE;
+}
+
+
+int handle_msg(listener_t *listener, erlang_msg *msg, ei_x_buff *buf, ei_x_buff *rbuf)
+{
+	int type, type2, size, version, arity, tmpindex;
+	switch_status_t ret = SWITCH_STATUS_SUCCESS;
+
+	if (msg->msgtype == ERL_REG_SEND && !strncmp(msg->toname, "net_kernel", MAXATOMLEN)) {
+		/* try to respond to ping stuff */
+		ret = handle_net_kernel_msg(listener, msg, buf, rbuf);
+	} else {
+		buf->index = 0;
+		ei_decode_version(buf->buff, &buf->index, &version);
+		ei_get_type(buf->buff, &buf->index, &type, &size);
+		switch(type) {
+		case ERL_SMALL_TUPLE_EXT :
+		case ERL_LARGE_TUPLE_EXT :
+			tmpindex = buf->index;
+			ei_decode_tuple_header(buf->buff, &tmpindex, &arity);
+			ei_get_type(buf->buff, &tmpindex, &type2, &size);
+
+			switch(type2) {
+				case ERL_ATOM_EXT:
+					ret = handle_msg_tuple(listener,msg,buf,rbuf);
+					break;
+				case ERL_REFERENCE_EXT :
+				case ERL_NEW_REFERENCE_EXT :
+					ret = handle_ref_tuple(listener, msg, buf, rbuf);
+				default :
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "WEEEEEEEE %d\n", type);
+					/* some other kind of erlang term */
+					ei_x_encode_tuple_header(rbuf, 2);
+					ei_x_encode_atom(rbuf, "error");
+					ei_x_encode_atom(rbuf, "undef");
+					break;
+			}
+			
+			break;
+							
+		case ERL_ATOM_EXT :
+			ret = handle_msg_atom(listener,msg,buf,rbuf);
+			break;
+
+		default :
+			/* some other kind of erlang term */
+			ei_x_encode_tuple_header(rbuf, 2);
+			ei_x_encode_atom(rbuf, "error");
+			ei_x_encode_atom(rbuf, "undef");
+			break;
 		}
-		
-		break;
-						 
-	case ERL_ATOM_EXT :
-		ret = handle_msg_atom(listener,msg,buf,rbuf);
-		break;
-
-	default :
-		/* some other kind of erlang term */
-		ei_x_encode_tuple_header(rbuf, 2);
-		ei_x_encode_atom(rbuf, "error");
-		ei_x_encode_atom(rbuf, "undef");
-		break;
 	}
 
 	if (SWITCH_STATUS_FALSE==ret) {
