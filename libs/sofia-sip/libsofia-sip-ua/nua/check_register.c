@@ -200,10 +200,11 @@ START_TEST(register_1_1_2)
 
 /* ---------------------------------------------------------------------- */
 
-static char const *receive_natted = "received=4.255.255.9";
+static char const receive_natted[] = "received=4.255.255.9";
+static char const receive_natted2[] = "received=4.255.255.10";
 
 /* Return Via that looks very natted */
-static sip_via_t *natted_via(struct message *m)
+static sip_via_t *natted_via(struct message *m, const char *receive_natted)
 {
   su_home_t *h;
   sip_via_t *via;
@@ -245,7 +246,7 @@ START_TEST(register_1_2_1) {
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -260,7 +261,7 @@ START_TEST(register_1_2_1) {
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -290,7 +291,7 @@ static nua_handle_t *make_auth_natted_register(
   s2_sip_respond_to(m, NULL,
 		SIP_401_UNAUTHORIZED,
 		SIPTAG_WWW_AUTHENTICATE_STR(s2_auth_digest_str),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -310,7 +311,7 @@ static nua_handle_t *make_auth_natted_register(
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -354,7 +355,7 @@ START_TEST(register_1_2_2_2)
   fail_if(!m);
   s2_sip_respond_to(m, NULL,
 		SIP_407_PROXY_AUTH_REQUIRED,
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		SIPTAG_PROXY_AUTHENTICATE_STR(s2_auth_digest_str),
 		TAG_END());
   s2_sip_free_message(m);
@@ -364,7 +365,7 @@ START_TEST(register_1_2_2_2)
   fail_if(!m); fail_if(!m->sip->sip_proxy_authorization);
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -375,7 +376,7 @@ START_TEST(register_1_2_2_2)
   m = s2_sip_wait_for_request(SIP_METHOD_OPTIONS);
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -388,7 +389,7 @@ START_TEST(register_1_2_2_2)
   m = s2_sip_wait_for_request(SIP_METHOD_OPTIONS);
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted2)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -402,7 +403,7 @@ START_TEST(register_1_2_2_2)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted2)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -428,7 +429,7 @@ START_TEST(register_1_2_2_3)
   mark_point();
 
   make_auth_natted_register(nh,
-			    NUTAG_OUTBOUND("no-options-keepalive"),
+			    NUTAG_OUTBOUND("no-options-keepalive, no-validate"),
 			    TAG_END());
   s2->registration->nh = nh;
 
@@ -444,7 +445,7 @@ START_TEST(register_1_2_2_3)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted2)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -458,7 +459,7 @@ START_TEST(register_1_2_2_3)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted2)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -490,7 +491,7 @@ START_TEST(register_1_2_3) {
 
   s2_sip_respond_to(m, NULL,
 		400, "Bad Contact",
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -503,7 +504,7 @@ START_TEST(register_1_2_3) {
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -540,7 +541,7 @@ START_TEST(register_1_3_1)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -555,7 +556,7 @@ START_TEST(register_1_3_1)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -617,7 +618,7 @@ START_TEST(register_1_3_2_2)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -633,7 +634,7 @@ START_TEST(register_1_3_2_2)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -680,7 +681,7 @@ START_TEST(register_1_3_3_1)
   s2_sip_respond_to(m, NULL,
 		SIP_401_UNAUTHORIZED,
 		SIPTAG_WWW_AUTHENTICATE_STR(s2_auth_digest_str),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
   fail_unless_event(nua_r_register, 401);
@@ -698,7 +699,7 @@ START_TEST(register_1_3_3_1)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
@@ -713,7 +714,7 @@ START_TEST(register_1_3_3_1)
   s2_sip_respond_to(m, NULL,
 		SIP_200_OK,
 		SIPTAG_CONTACT(s2->registration->contact),
-		SIPTAG_VIA(natted_via(m)),
+		SIPTAG_VIA(natted_via(m, receive_natted)),
 		TAG_END());
   s2_sip_free_message(m);
 
