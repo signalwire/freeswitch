@@ -1,7 +1,7 @@
 <language>
   <ru>
 	<ascii>
-		<prompt phrase="Пробел " filename= "32.wav"/>  <--    -->
+		<prompt phrase="Пробел " filename= "32.wav"/>  <!--    -->
 		<prompt phrase="Решётка" filename= "35.wav"/>
 		<prompt phrase="Звездочка " filename= "42.wav"/>
 		<prompt phrase="Точка " filename= "46.wav"/>
