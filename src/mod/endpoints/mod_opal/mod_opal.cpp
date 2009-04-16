@@ -687,11 +687,19 @@ void FSConnection::OnEstablished()
     OpalLocalConnection::OnEstablished();
 }
 
+
 PBoolean FSConnection::SendUserInputTone(char tone, unsigned duration)
 {
     switch_dtmf_t dtmf = { tone, duration };
     return switch_channel_queue_dtmf(m_fsChannel, &dtmf) == SWITCH_STATUS_SUCCESS;
 }
+
+
+PBoolean FSConnection::SendUserInputString(const PString & value)
+{
+  return OpalConnection::SendUserInputString(value);
+}
+
 
 OpalMediaFormatList FSConnection::GetMediaFormats() const
 {

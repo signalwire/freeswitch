@@ -192,6 +192,7 @@ class FSConnection:public OpalLocalConnection {
     virtual PBoolean OnOpenMediaStream(OpalMediaStream & stream);
     virtual OpalMediaFormatList GetMediaFormats() const;
     virtual PBoolean SendUserInputTone(char tone, unsigned duration);
+    virtual PBoolean SendUserInputString(const PString & value);
 
     void SetCodecs();
 
