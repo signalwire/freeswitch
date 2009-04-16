@@ -1436,6 +1436,10 @@ static int nua_invite_client_complete(nua_client_request_t *cr)
 static int nua_cancel_client_request(nua_client_request_t *cr,
 				     msg_t *msg, sip_t *sip,
 				     tagi_t const *tags);
+static int nua_cancel_client_check_restart(nua_client_request_t *cr,
+					   int status,
+					   char const *phrase,
+					   sip_t const *sip);
 
 nua_client_methods_t const nua_cancel_client_methods = {
   SIP_METHOD_CANCEL,		/* crm_method, crm_method_name */
@@ -1447,8 +1451,8 @@ nua_client_methods_t const nua_cancel_client_methods = {
   },
   NULL,				/* crm_template */
   NULL,				/* crm_init */
-  nua_cancel_client_request,	/* crm_send */
-  NULL,				/* crm_check_restart */
+  nua_cancel_client_request,	/* .. not really crm_send */
+  nua_cancel_client_check_restart, /* crm_check_restart */
   NULL,				/* crm_recv */
   NULL,				/* crm_preliminary */
   NULL,				/* crm_report */
@@ -1485,6 +1489,16 @@ static int nua_cancel_client_request(nua_client_request_t *cr,
     return -1;
   }
 
+  return 0;
+}
+
+static int
+nua_cancel_client_check_restart(nua_client_request_t *cr,
+				int status,
+				char const *phrase,
+				sip_t const *sip)
+{
+  /* We cannot really restart CANCEL */
   return 0;
 }
 
