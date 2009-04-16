@@ -1154,7 +1154,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
   if (status == 423) {
     unsigned my_expires = 0;
 
-    if (cr->cr_sip && cr->cr_sip->sip_expires)
+    if (cr->cr_sip->sip_expires)
       my_expires = cr->cr_sip->sip_expires->ex_delta;
 
     if (sip->sip_min_expires &&
@@ -1209,8 +1209,7 @@ int nua_base_client_check_restart(nua_client_request_t *cr,
     }
   }
 
-  if (500 <= status && status < 600 &&
-	  cr->cr_sip &&
+  if (0 && 500 <= status && status < 600 &&
       sip->sip_retry_after &&
       sip->sip_retry_after->af_delta < 32) {
     su_timer_t *timer;
