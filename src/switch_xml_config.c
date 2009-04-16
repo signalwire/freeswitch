@@ -232,27 +232,49 @@ SWITCH_DECLARE(switch_status_t) switch_xml_config_parse_event(switch_event_t *ev
 						newstring = (char*)item->defaultvalue;
 					}
 
-					
-					if (newstring) {
-						if (string_options->length > 0) {
-							/* We have a preallocated buffer */
-							char *dest = (char*)item->ptr;
+					if (string_options->length > 0) {
+						/* We have a preallocated buffer */
+						char *dest = (char*)item->ptr;
 						
+						if (newstring) {
 							if (strncasecmp(dest, newstring, string_options->length)) {
 								switch_copy_string(dest, newstring, string_options->length);
 								changed = SWITCH_TRUE;
 							}
 						} else {
-							char **dest = (char**)item->ptr;
+							if (*dest != '\0') {
+								*dest = '\0';
+								changed = SWITCH_TRUE;
+							}
+						}
+					} else if (string_options->pool) {
+						/* Pool-allocated buffer */
+						char **dest = (char**)item->ptr;
 						
-							if (!*dest || strcasecmp(*dest, newstring)) {
-								if (string_options->pool) {
-									*dest = switch_core_strdup(string_options->pool, newstring);
-								} else {
-									switch_safe_free(*dest);
-									*dest = strdup(newstring);
-								}
-								changed = SWITCH_TRUE;								
+						if (newstring) {
+							if (!*dest || strcmp(*dest, newstring)) {
+								*dest = switch_core_strdup(string_options->pool, newstring);
+							}
+						} else {
+							if (*dest) {
+								changed = SWITCH_TRUE;
+								*dest = NULL;
+							}
+						}
+					} else {
+						/* Dynamically allocated buffer */
+						char **dest = (char**)item->ptr;
+						
+						if (newstring) {
+							if (!*dest || strcmp(*dest, newstring)) {
+								switch_safe_free(*dest);
+								*dest = strdup(newstring);
+								changed = SWITCH_TRUE;						
+							}	
+						} else {
+							if (*dest) {
+								switch_safe_free(*dest);
+								changed = SWITCH_TRUE;
 							}
 						}
 					}

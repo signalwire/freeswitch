@@ -100,8 +100,8 @@ struct switch_xml_config_item {
 
 #define SWITCH_CONFIG_ITEM(_key, _type, _flags, _ptr, _defaultvalue, _data, _syntax, _helptext)	{ _key, _type, _flags, _ptr, _defaultvalue, _data, NULL, _syntax, _helptext }
 #define SWITCH_CONFIG_ITEM_STRING_STRDUP(_key, _flags, _ptr, _defaultvalue, _syntax, _helptext)	{ _key, SWITCH_CONFIG_STRING, _flags, _ptr, _defaultvalue, &switch_config_string_strdup, NULL, _helptext}
-#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _data, _functiondata, _syntax, _helptext)	{ _key, _type, _flags, _ptr, _defaultvalue, _functiondata, _data, _helptext}
-#define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL ,NULL, NULL, NULL, NULL, NULL }
+#define SWITCH_CONFIG_ITEM_CALLBACK(_key, _type, _flags, _ptr, _defaultvalue, _data, _functiondata, _syntax, _helptext)	{ _key, _type, _flags, _ptr, _defaultvalue, _functiondata, _data, _syntax, _helptext }
+#define SWITCH_CONFIG_ITEM_END() { NULL, SWITCH_CONFIG_LAST, 0, NULL, NULL, NULL, NULL, NULL, NULL }
 
 /*! 
  * \brief Gets the int representation of an enum
