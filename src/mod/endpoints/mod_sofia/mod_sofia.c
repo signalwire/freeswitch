@@ -1015,10 +1015,18 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		goto end;
 
 	case SWITCH_MESSAGE_INDICATE_BRIDGE:
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
+		}
+		goto end;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
+		if (switch_rtp_ready(tech_pvt->rtp_session)) {
+			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+		}
+		goto end;
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
 		if (switch_rtp_ready(tech_pvt->rtp_session)) {
-			rtp_flush_read_buffer(tech_pvt->rtp_session);
+			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 		goto end;
 

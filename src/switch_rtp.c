@@ -1330,10 +1330,20 @@ static void do_2833(switch_rtp_t *rtp_session)
 	}
 }
 
-SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session)
+SWITCH_DECLARE(void) rtp_flush_read_buffer(switch_rtp_t *rtp_session, switch_rtp_flush_t flush)
 {
 	if (switch_rtp_ready(rtp_session) && !switch_test_flag(rtp_session, SWITCH_RTP_FLAG_PROXY_MEDIA)) {
 		switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_FLUSH);
+		switch (flush) {
+		case SWITCH_RTP_FLUSH_STICK:
+			switch_set_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+			break;
+		case SWITCH_RTP_FLUSH_UNSTICK:
+			switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH);
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -1459,7 +1469,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		int do_cng = 0;
 
 		if (rtp_session->timer.interval) {
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH)) {
+			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 1) == SWITCH_STATUS_SUCCESS) {
 					hot_socket = 1;
 				}
@@ -1526,7 +1536,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		}
 		
 		if (bytes && rtp_session->recv_msg.header.m && rtp_session->recv_msg.header.pt != rtp_session->te) {
-			rtp_flush_read_buffer(rtp_session);
+			rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 
 		if (bytes && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOADJ) && switch_sockaddr_get_port(rtp_session->from_addr)) {

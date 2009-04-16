@@ -110,6 +110,7 @@ SWITCH_BEGIN_EXTERN_C
 #define SWITCH_PATH_SEPARATOR "/"
 #endif
 #define SWITCH_URL_SEPARATOR "://"
+#define SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE "bridge_hangup_cause"
 #define SWITCH_READ_TERMINATOR_USED_VARIABLE "read_terminator_used"
 #define SWITCH_SEND_SILENCE_WHEN_IDLE_VARIABLE "send_silence_when_idle"
 #define SWITCH_CURRENT_APPLICATION_VARIABLE "current_application"
@@ -443,6 +444,11 @@ typedef struct {
 	switch_rtp_numbers_t outbound;
 } switch_rtp_stats_t;
 
+typedef enum {
+	SWITCH_RTP_FLUSH_ONCE,
+	SWITCH_RTP_FLUSH_STICK,
+	SWITCH_RTP_FLUSH_UNSTICK
+} switch_rtp_flush_t;
 
 #define SWITCH_RTP_CNG_PAYLOAD 13
 
@@ -464,7 +470,7 @@ typedef struct {
 	SWITCH_RTP_FLAG_DATAWAIT	  - Do not return from reads unless there is data even when non blocking
 	SWITCH_RTP_FLAG_BUGGY_2833    - Emulate the bug in cisco equipment to allow interop
 	SWITCH_RTP_FLAG_PASS_RFC2833  - Pass 2833 (ignore it)
-	SWITCH_RTP_FLAG_AUTO_CNG      - Generate outbound CNG frames when idle
+	SWITCH_RTP_FLAG_AUTO_CNG      - Generate outbound CNG frames when idle    
 </pre>
  */
 typedef enum {
@@ -489,7 +495,8 @@ typedef enum {
 	SWITCH_RTP_FLAG_PROXY_MEDIA = (1 << 18),
 	SWITCH_RTP_FLAG_SHUTDOWN = (1 << 19),
 	SWITCH_RTP_FLAG_FLUSH = (1 << 20),
-	SWITCH_RTP_FLAG_AUTOFLUSH = (1 << 21)
+	SWITCH_RTP_FLAG_AUTOFLUSH = (1 << 21),
+	SWITCH_RTP_FLAG_STICKY_FLUSH = (1 << 22)
 } switch_rtp_flag_enum_t;
 typedef uint32_t switch_rtp_flag_t;
 

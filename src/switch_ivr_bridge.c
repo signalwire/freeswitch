@@ -829,6 +829,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 	int br = 0;
 	int inner_bridge = switch_channel_test_flag(caller_channel, CF_INNER_BRIDGE);
 	const char *var;
+	switch_call_cause_t cause;
 
 	switch_channel_set_flag(caller_channel, CF_ORIGINATOR);
 
@@ -959,6 +960,14 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			while (switch_channel_get_state(peer_channel) == CS_EXCHANGE_MEDIA) {
 				switch_cond_next();
+			}
+
+			if ((cause = switch_channel_get_cause(caller_channel))) {
+				switch_channel_set_variable(peer_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
+			}
+
+			if ((cause = switch_channel_get_cause(peer_channel))) {
+				switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
 			}
 
 			switch_core_session_rwunlock(peer_session);
