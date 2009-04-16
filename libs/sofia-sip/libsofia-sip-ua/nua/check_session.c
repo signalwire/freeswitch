@@ -1710,9 +1710,9 @@ START_TEST(call_2_6_2)
 
   invite = s2_sip_wait_for_request(SIP_METHOD_INVITE);
   fail_if(!invite);
-  respond_with_sdp(invite, dialog, SIP_500_INTERNAL_SERVER_ERROR,
-		   SIPTAG_RETRY_AFTER_STR("8"),
-		   TAG_END());
+  s2_sip_respond_to(invite, dialog, SIP_500_INTERNAL_SERVER_ERROR,
+		    SIPTAG_RETRY_AFTER_STR("8"),
+		    TAG_END());
   s2_sip_free_message(invite);
   ack = s2_sip_wait_for_request(SIP_METHOD_ACK);
   fail_if(!ack);
@@ -1789,8 +1789,8 @@ START_TEST(call_2_6_3)
   fail_unless_event(nua_r_set_params, 200);
 
   s2_sip_request_to(dialog, SIP_METHOD_INVITE, NULL,
-		SIPTAG_USER_AGENT_STR("evil (evil) evil"),
-		TAG_END());
+		    SIPTAG_USER_AGENT_STR("evil (evil) evil"),
+		    TAG_END());
 
   nua_respond(nh, SIP_200_OK, TAG_END());
 
@@ -1851,6 +1851,70 @@ START_TEST(call_2_6_4)
 }
 END_TEST
 
+START_TEST(call_2_6_5)
+{
+  nua_handle_t *nh;
+  struct event *reinvite;
+  struct message *invite, *ack, *response;
+
+  /* Test case for FreeSwitch bugs #SFSIP-135, #SFSIP-137 */
+
+  S2_CASE("2.6.5", "Re-INVITE glare and 500 Retry-After",
+	  "NUA receives re-INVITE, replies with 200, "
+	  "sends re-INVITE, gets 500, gets ACK, retrys INVITE,"
+	  "sends BYE.");
+
+  nh = invite_to_nua(TAG_END());
+
+  soa_generate_offer(soa, 1, NULL);
+  request_with_sdp(dialog, SIP_METHOD_INVITE, NULL, TAG_END());
+  reinvite = s2_wait_for_event(nua_i_invite, 200); fail_unless(reinvite != NULL);
+  fail_unless(s2_check_callstate(nua_callstate_completed));
+  response = s2_sip_wait_for_response(200, SIP_METHOD_INVITE);
+  fail_if(!response);
+  s2_sip_update_dialog(dialog, response);
+  process_answer(response);
+  s2_sip_free_message(response);
+
+  nua_invite(nh, TAG_END());
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+  invite = s2_sip_wait_for_request(SIP_METHOD_INVITE);
+  fail_if(!invite);
+  s2_sip_respond_to(invite, dialog, SIP_500_INTERNAL_SERVER_ERROR,
+		    SIPTAG_RETRY_AFTER_STR("7"),
+		    TAG_END());
+  s2_sip_free_message(invite);
+  ack = s2_sip_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  s2_sip_free_message(ack);
+
+  /* We get nua_r_invite with 100 trying (and 500 in sip->sip_status) */
+  fail_unless_event(nua_r_invite, 100);
+
+  fail_if(s2_sip_request_to(dialog, SIP_METHOD_ACK, NULL, TAG_END()));
+  fail_unless_event(nua_i_ack, 200);
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+
+  s2_nua_fast_forward(10, s2base->root);
+
+  fail_unless(s2_check_callstate(nua_callstate_calling));
+
+  invite = s2_sip_wait_for_request(SIP_METHOD_INVITE);
+  process_offer(invite);
+
+  respond_with_sdp(invite, dialog, SIP_200_OK, TAG_END());
+  fail_unless_event(nua_r_invite, 200);
+  fail_unless(s2_check_callstate(nua_callstate_ready));
+  ack = s2_sip_wait_for_request(SIP_METHOD_ACK);
+  fail_if(!ack);
+  s2_sip_free_message(ack);
+
+  bye_by_nua(nh, TAG_END());
+
+  nua_handle_destroy(nh);
+}
+END_TEST
+
 TCase *reinvite_tcase(int threading)
 {
   TCase *tc = tcase_create("2.6 - re-INVITEs");
@@ -1861,6 +1925,7 @@ TCase *reinvite_tcase(int threading)
     tcase_add_test(tc, call_2_6_2);
     tcase_add_test(tc, call_2_6_3);
     tcase_add_test(tc, call_2_6_4);
+    tcase_add_test(tc, call_2_6_5);
   }
   return tc;
 }
