@@ -106,35 +106,39 @@ static switch_status_t config_callback_dsn(switch_xml_config_item_t *data, switc
 #ifdef SWITCH_HAVE_ODBC
 	char *odbc_user = NULL;
 	char *odbc_pass = NULL;
+	char *odbc_dsn = NULL;
 	
 	switch_odbc_handle_t *odbc = NULL;
 
-	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dsn data: %s\n", globals.odbc_dsn);
+	if (globals.db_mutex) {
+		switch_mutex_lock(globals.db_mutex);
 	}
 	
-	/* setup dsn */
-	if (globals.odbc_dsn) {
-		if ((odbc_user = strchr(globals.odbc_dsn, ':'))) {
-			*odbc_user++ = '\0';
-			if ((odbc_pass = strchr(odbc_user, ':'))) {
-				*odbc_pass++ = '\0';
+	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
+		odbc_dsn = strdup(*((char**)data->ptr));
+
+		if(switch_strlen_zero(odbc_dsn)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No local database defined.\n");
+		} else {
+			if ((odbc_user = strchr(odbc_dsn, ':'))) {
+				*odbc_user++ = '\0';
+				if ((odbc_pass = strchr(odbc_user, ':'))) {
+					*odbc_pass++ = '\0';
+				}
 			}
-		}
-		
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connecting to dsn: %s, %s, %s.\n", globals.odbc_dsn, odbc_user, odbc_pass);
-	
-		if (globals.db_mutex) {
-			switch_mutex_lock(globals.db_mutex);
-		}
-		
-		if (!(odbc = switch_odbc_handle_new(globals.odbc_dsn, odbc_user, odbc_pass))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			switch_goto_status(SWITCH_STATUS_FALSE, done);
-		}
-		if (switch_odbc_handle_connect(odbc) != SWITCH_ODBC_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-			switch_goto_status(SWITCH_STATUS_FALSE, done);
+
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Connecting to dsn: %s, %s, %s.\n", globals.odbc_dsn, odbc_user, odbc_pass);
+			
+			/* setup dsn */
+			
+			if (!(odbc = switch_odbc_handle_new(odbc_dsn, odbc_user, odbc_pass))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+				switch_goto_status(SWITCH_STATUS_FALSE, done);
+			}
+			if (switch_odbc_handle_connect(odbc) != SWITCH_ODBC_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+				switch_goto_status(SWITCH_STATUS_FALSE, done);
+			}
 		}
 		
 		/* ok, we have a new connection, tear down old one */
@@ -158,6 +162,7 @@ done:
 	if (globals.db_mutex) {
 		switch_mutex_unlock(globals.db_mutex);
 	}
+	switch_safe_free(odbc_dsn);
 #endif
 	return status;
 }
@@ -168,8 +173,8 @@ static switch_xml_config_item_t instructions[] = {
 	SWITCH_CONFIG_ITEM_STRING_STRDUP("url", CONFIG_RELOAD, &globals.url, NULL, "http://server.example.com/app?number=${caller_id_number}", "URL for the CID lookup service"),
 	SWITCH_CONFIG_ITEM("cache", SWITCH_CONFIG_BOOL, CONFIG_RELOAD, &globals.cache, SWITCH_FALSE, NULL, "true|false", "whether to cache via cidlookup"),
 	SWITCH_CONFIG_ITEM("cache-expire", SWITCH_CONFIG_INT, CONFIG_RELOAD, &globals.cache_expire, (void *)300, NULL, "expire", "seconds to preserve num->name cache"),
-	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, NULL, "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
-	SWITCH_CONFIG_ITEM_CALLBACK("odbc-dsn", SWITCH_CONFIG_STRING, CONFIG_RELOAD, &globals.odbc_dsn, NULL, config_callback_dsn, &config_opt_dsn,
+	SWITCH_CONFIG_ITEM_STRING_STRDUP("sql", CONFIG_RELOAD, &globals.sql, "", "sql whre number=${caller_id_number}", "SQL to run if overriding CID"),
+	SWITCH_CONFIG_ITEM_CALLBACK("odbc-dsn", SWITCH_CONFIG_STRING, CONFIG_RELOAD, &globals.odbc_dsn, "", config_callback_dsn, &config_opt_dsn,
 		"db:user:passwd", "Database to use."),
 	SWITCH_CONFIG_ITEM_END()
 };
@@ -186,7 +191,6 @@ static switch_status_t do_config(switch_bool_t reload)
 static void event_handler(switch_event_t *event)
 {
 	do_config(SWITCH_TRUE);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "cidlookup Reloaded\n");
 }
 
 #ifdef SWITCH_HAVE_ODBC
