@@ -623,8 +623,9 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 			return SWITCH_STATUS_FALSE;
 		}
 
-		switch_core_timer_next(&tech_pvt->timer);
-
+		if (!switch_queue_size(tech_pvt->frame_queue)) {
+			switch_core_timer_next(&tech_pvt->timer);
+		}
 
 		if (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 			if (tech_pvt->read_frame) {
