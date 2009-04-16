@@ -373,12 +373,12 @@
 		<prompt phrase="Помечено как важное " filename= "vm-marked_urgent.wav"/> <!-- marked urgent-->
 		<prompt phrase="отправлен на электронную почту" filename= "vm-emailed.wav"/><!-- emailed-->
 		<prompt phrase="у Вас  " filename= "vm-you_have.wav"/><!--you have    -->
-		<prompt phrase="Пожалуйста, введите свой номер " filename= "vm-enter_id.wav"/><!--   please enter your i d, followed by -->
+		<prompt phrase="Пожалуйста, введите свой идентификатор " filename= "vm-enter_id.wav"/><!--   please enter your i d, followed by -->
 		<prompt phrase="Пожалуйста, введите свой пароль  " filename= "vm-enter_pass.wav"/><!-- please enter your password, followed by   -->
 		<prompt phrase="Неправильный номер " filename= "vm-fail_auth.wav"/><!-- login incorrect   -->
 		<prompt phrase="Добро пожаловать в Вашу голосовую почту  " filename= "vm-hello.wav"/><!-- welcome to your voicemail   -->
 		<prompt phrase="До свидания  " filename= "vm-goodbye.wav"/><!--goodbye    -->
-		<prompt phrase="После сигнала, пожалуйста, запишите свое имя, для окончания записи нажмите любую клавишу или перестаньте говорить. " filename= "vm-record_name1.wav"/><!--at the tone please record your name, press any key or stop talking to end the recording.    -->
+		<prompt phrase="После сигнала, произнесите ваше приветствие, для окончания записи нажмите любую клавишу или перестаньте говорить" filename= "vm-record_name1.wav"/><!--at the tone please record your name, press any key or stop talking to end the recording.    -->
 		<prompt phrase="Выберите приветствие от единицы до девяти " filename= "vm-choose_greeting_choose.wav"/><!--choose a greeting between 1 and 9    -->
 		<prompt phrase="Неправильное значение " filename= "vm-choose_greeting_fail.wav"/><!--invalid value    -->
 		<prompt phrase="Слишком много неудачных попыток " filename= "vm-abort.wav"/><!--too many failed attempts    -->
@@ -386,17 +386,17 @@
 		<prompt phrase="После сигнала, запишите свое приветствие, для окончания записи нажмите любую клавишу или перестаньте говорить  " filename= "vm-to_record_greeting.wav"/><!-- record your greeting at the tone, press any key or stop talking to end the recording   -->
 		<prompt phrase="После сигнала, запишите свое сообщение, для окончания записи нажмите любую клавишу или перестаньте говорить  " filename= "vm-record_message.wav"/><!--record your message at the tone, press any key or stop talking to end the recording   -->
 		<prompt phrase="не доступно " filename= "vm-play_greeting.wav"/><!-- is not available   -->
-		<prompt phrase="новых важных" filename= "vm-urgent-newx.wav"/><!-- urgent new   -->
-		<prompt phrase="новое важное " filename= "vm-urgent-new.wav"/><!--    -->
+		<prompt phrase="новых срочных" filename= "vm-urgent-newx.wav"/><!-- urgent new   -->
+		<prompt phrase="новое срочное " filename= "vm-urgent-new.wav"/><!--    -->
 		<prompt phrase="новое " filename= "vm-new.wav"/><!-- new   -->
 		<prompt phrase="новых " filename= "vm-newx .wav"/><!--    -->
-		<prompt phrase="важное сохранено " filename= "vm-urgent-saved.wav"/><!--urgent saved    -->
+		<prompt phrase="срочное сообщение сохранено" filename= "vm-urgent-saved.wav"/><!--urgent saved    -->
 		<prompt phrase="сохранено " filename= "vm-saved.wav"/><!--saved    -->
 		<prompt phrase="сообщение " filename= "vm-message.wav"/><!--message    -->
 		<prompt phrase="сообщений " filename= "vm-messagex.wav"/><!--messages    -->
 		<prompt phrase="сообщения " filename= "vm-messages.wav"/><!-- message   -->
 		<prompt phrase="нажмите " filename= "vm-press.wav"/><!-- press   -->
-		<prompt phrase="для прослушивания новых сообщений " filename= "vm-listen_new.wav"/><!-- to listen to new messages   -->
+		<prompt phrase="чтобы прослушать новые сообщения" filename= "vm-listen_new.wav"/><!-- to listen to new messages   -->
 		<prompt phrase="для прослушивания сохраненных сообщений " filename= "vm-listen_saved.wav"/><!-- to listen to saved messages   -->
 		<prompt phrase="для дополнительных параметров " filename= "vm-advanced.wav"/><!-- for advanced options   -->
 		<prompt phrase="для выхода " filename= "vm-to_exit.wav"/><!-- to exit   -->
@@ -407,7 +407,7 @@
 		<prompt phrase="прослушать запись " filename= "vm-listen_to_recording.wav"/><!--  to listen to the recording  -->
 		<prompt phrase="сохранить запись " filename= "vm-save_recording.wav"/><!-- to save the recording   -->
 		<prompt phrase="записать " filename= "vm-rerecord.wav"/><!--  to rerecord  -->
-		<prompt phrase="пометить это сообщение срочным " filename= "vm-mark-urgent.wav"/><!--  to mark this message urgent  -->
+		<prompt phrase="пометить это сообщение как срочное" filename= "vm-mark-urgent.wav"/><!--  to mark this message urgent  -->
 		<prompt phrase="для продолжения " filename= "vm-continue.wav"/><!--  to continue  -->
 		<prompt phrase="прослушать запись снова " filename= "vm-listen_to_recording_again.wav"/><!-- to listen to the recording again   -->
 		<prompt phrase="удалить запись " filename= "vm-delete_recording.wav"/><!-- to delete the recording   -->
@@ -422,7 +422,7 @@
 		<prompt phrase="в папке Входящие " filename= "vm-in_folder.wav"/><!-- in folder inbox   -->
 		<prompt phrase="что бы перезвонить" filename= "vm-return_call_1.wav"/><!-- to return the call now   -->
 		<prompt phrase="для возврата вызова " filename= "vm-return_call.wav"/><!-- to return the call now   -->
-		<prompt phrase="Важное" filename= "vm-urgent.wav"/><!--  urgent  -->
+		<prompt phrase="Срочное" filename= "vm-urgent.wav"/><!--  urgent  -->
 		<prompt phrase="добавить вступление к сообщению" filename= "vm-forward_add_intro.wav"/><!--  to add an introduction to this message  -->
 		<prompt phrase="для того что бы послать собощение " filename= "vm-send_message_now.wav"/><!--  to send this messege now  -->
 		<prompt phrase="пожалуйста, введите добавочный номер для отправки сообщения" filename= "vm-forward_enter_ext.wav"/><!--please, enter the extention to forward this message to    -->
@@ -457,22 +457,22 @@
 		<prompt phrase="Извините " filename= "ivr-im_sorry.wav"/><!-- I'm sorry   -->
 		<prompt phrase="Пожалуйста " filename= "ivr-please.wav"/><!--  Please  -->
 		<prompt phrase="Пожалуйста, перезвоните нам в … " filename= "ivr-please_return_our_call_at.wav"/><!--  Please return our call at  -->
-		<prompt phrase="Согласно номера ссылки " filename= "ivr-regarding_reference_number.wav"/><!-- Regarding reference number   -->
-		<prompt phrase="Это простое ivr подменю " filename= "ivr-sample_submenu.wav"/><!-- This is a sample IVR submenu...   -->
-		<prompt phrase="Пожалуйста, назовите свое имя после сигнала " filename= "ivr-say_name.wav"/><!-- Please say your name after the tone   -->
+		<prompt phrase="относительно номера ссылки" filename= "ivr-regarding_reference_number.wav"/><!-- Regarding reference number   -->
+		<prompt phrase="Это простое голосовое подменю" filename= "ivr-sample_submenu.wav"/><!-- This is a sample IVR submenu...   -->
+		<prompt phrase="Пожалуйста, представьтесь после сигнала" filename= "ivr-say_name.wav"/><!-- Please say your name after the tone   -->
 		<prompt phrase="Перенаправить на голосовую почту " filename= "ivr-send_to_voicemail.wav"/><!--  Send this caller to voicemail  -->
 		<prompt phrase="Для разговора с представителем по обслуживанию клиентов " filename= "ivr-speak_to_a_customer_service_representative.wav"/><!-- To speak to a customer service representative   -->
-		<prompt phrase="Примите сообщение " filename= "ivr-take_a_message.wav"/><!--  Take a message  -->
+		<prompt phrase="принять сообщение." filename= "ivr-take_a_message.wav"/><!--  Take a message  -->
 		<prompt phrase="Спасибо " filename= "ivr-thank_you.wav"/><!-- Thank you   -->
 		<prompt phrase="Неправильное значение " filename= "ivr-that_was_an_invalid_entry.wav"/><!-- That was an invalid entry   -->
 		<prompt phrase="Этот звонок от " filename= "ivr-this_is_a_call_from.wav"/><!-- This is a call from   -->
-		<prompt phrase="Это голосовое приветствие позволит Вам протестировать некоторые функции " filename= "ivr-this_ivr_will_let_you_test_features.wav"/><!-- This IVR will let you test some of the features...   -->
+		<prompt phrase="это голосовое меню позволит Вам протестировать некоторые функции" filename= "ivr-this_ivr_will_let_you_test_features.wav"/><!-- This IVR will let you test some of the features...   -->
 		<prompt phrase="Для того чтобы набрать конференцию ФС ___ " filename= "ivr-to_call_the_freeswitch_conference.wav"/><!--  To call the FreeSWITCH conference  -->
 		<prompt phrase="Для выполнения эхо-теста в ФС " filename= "ivr-to_do_a_freeswitch_echo_test.wav"/><!--  To do a FreeSWITCH echo test  -->
 		<prompt phrase="Для выполнения эхо-теста free world dialed " filename= "ivr-to_do_a_fwd_echo_test.wav"/><!--  To do a fwd echo test  -->
-		<prompt phrase="Для прослушивания примера голосового подменю " filename= "ivr-to_hear_sample_submenu.wav"/><!--  To hear a sample IVR submenu  -->
+		<prompt phrase="чтобы прослушать пример голосового подменю " filename= "ivr-to_hear_sample_submenu.wav"/><!--  To hear a sample IVR submenu  -->
 		<prompt phrase="Чтобы услышать кричащих обезьян " filename= "ivr-to_hear_screaming_monkeys.wav"/><!-- To hear screaming monkeys   -->
-		<prompt phrase="Для выбора мелодий в режиме ожидания " filename= "ivr-to_listen_to_moh.wav"/><!-- To list to music on hold   -->
+		<prompt phrase="Для прослушивания списка мелодий в режиме ожидания " filename= "ivr-to_listen_to_moh.wav"/><!-- To list to music on hold   -->
 		<prompt phrase="Для повтора этих параметров " filename= "ivr-to_repeat_these_options.wav"/><!-- To repeat these options   -->
 		<prompt phrase="Для возврата к предыдущему меню " filename= "ivr-to_return_to_previous_menu.wav"/><!-- To return to the previous menu   -->
 		<prompt phrase="Для соединения с оператором " filename= "ivr-to_speak_with_an_operator.wav"/><!-- To speak with an operator   -->
@@ -516,7 +516,7 @@
 		<prompt phrase="Предоставьте номер ссылки  " filename= "provide_reference_number.wav"/><!--  Provide reference number  -->
 		<prompt phrase="Пожалуйста, введите добавочный номер на который хотите перевести звонок  " filename= "transfer1.wav"/><!--  Please enter extension you want to transfer to  -->
 		<prompt phrase="Перевод" filename= "transfer2.wav"/><!--  Transfer  -->
-		<prompt phrase="Мы пытаемся дозвониться " filename= "we_are_trying_to_reach.wav"/><!-- We are trying to reach   -->
+		<prompt phrase="Мы пытаемся связаться" filename= "we_are_trying_to_reach.wav"/><!-- We are trying to reach   -->
 		<prompt phrase="Произошла ошибка, пожалуйста обратитесь к администратору " filename= "error.wav"/><!-- An error has occurred please contact the administrator   -->
 	</misc>
   </ru>                                                                                                                                                                      
