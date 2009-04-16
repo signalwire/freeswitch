@@ -67,7 +67,6 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 	
 	if ((callback_type == CONFIG_LOAD || callback_type == CONFIG_RELOAD) && changed) {
 		memcached_str = *((char**)data->ptr);
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "memcached data: %s\n", memcached_str);
 		
 		/* initialize main ptr */
 		memcached_server = memcached_servers_parse(memcached_str);
@@ -79,7 +78,7 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 		if ((servercount = memcached_server_list_count(memcached_server)) == 0) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "No memcache servers defined.  Server string: %s.\n", memcached_str);
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%u servers defined.\n", servercount);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "%u servers defined (%s).\n", servercount, memcached_str);
 		}
 		
 		/* setup memcached */
@@ -102,7 +101,6 @@ static switch_status_t config_callback_memcached(switch_xml_config_item_t *data,
 	}
 	
 	switch_goto_status(SWITCH_STATUS_SUCCESS, end);
-	
 
 end:
 	if (memcached_server) {
@@ -117,19 +115,17 @@ end:
 	return status;
 }
 
-static switch_xml_config_string_options_t config_opt_memcache_servers = {NULL, 0, NULL}; /* anything is ok here */
+static switch_xml_config_string_options_t config_opt_memcache_servers = {NULL, 0, NULL}; /* anything ok */
 
 static switch_xml_config_item_t instructions[] = {
 	/* parameter name        type                 reloadable   pointer                         default value     options structure */
-	SWITCH_CONFIG_ITEM_CALLBACK("memcache-servers", SWITCH_CONFIG_STRING, CONFIG_REQUIRED | CONFIG_RELOAD, &globals.memcached_str, NULL, config_callback_memcached, &config_opt_memcache_servers,
+	SWITCH_CONFIG_ITEM_CALLBACK("memcache-servers", SWITCH_CONFIG_STRING, CONFIG_REQUIRED | CONFIG_RELOAD, &globals.memcached_str, "", config_callback_memcached, &config_opt_memcache_servers,
 		"host,host:port,host", "List of memcached servers."),
 	SWITCH_CONFIG_ITEM_END()
 };
 
 static switch_status_t do_config(switch_bool_t reload)
 {
-	memset(&globals, 0, sizeof(globals));
-	
 	if (switch_xml_config_parse_module_settings("memcache.conf", reload, instructions) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_GENERR;
 	}
@@ -141,7 +137,6 @@ static switch_status_t do_config(switch_bool_t reload)
 static void event_handler(switch_event_t *event)
 {
 	do_config(SWITCH_TRUE);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Memcache Reloaded\n");
 }
 
 SWITCH_STANDARD_API(memcache_function)
@@ -341,6 +336,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_memcache_load)
 	switch_api_interface_t *api_interface;
 	/* connect my internal structure to the blank pointer passed to me */
 	*module_interface = switch_loadable_module_create_module_interface(pool, modname);
+
+	memset(&globals, 0, sizeof(globals));
 
 	do_config(SWITCH_FALSE);
 	
