@@ -378,7 +378,7 @@
 		<prompt phrase="Неправильный номер " filename= "vm-fail_auth.wav"/><!-- login incorrect   -->
 		<prompt phrase="Добро пожаловать в Вашу голосовую почту  " filename= "vm-hello.wav"/><!-- welcome to your voicemail   -->
 		<prompt phrase="До свидания  " filename= "vm-goodbye.wav"/><!--goodbye    -->
-		<prompt phrase="После сигнала, произнесите ваше приветствие, для окончания записи нажмите любую клавишу или перестаньте говорить" filename= "vm-record_name1.wav"/><!--at the tone please record your name, press any key or stop talking to end the recording.    -->
+		<prompt phrase="После сигнала, пожалуйста, сообщите свое имя, для окончания записи нажмите любую клавишу или перестаньте говорить." filename= "vm-record_name1.wav"/><!--at the tone please record your name, press any key or stop talking to end the recording.    -->
 		<prompt phrase="Выберите приветствие от единицы до девяти " filename= "vm-choose_greeting_choose.wav"/><!--choose a greeting between 1 and 9    -->
 		<prompt phrase="Неправильное значение " filename= "vm-choose_greeting_fail.wav"/><!--invalid value    -->
 		<prompt phrase="Слишком много неудачных попыток " filename= "vm-abort.wav"/><!--too many failed attempts    -->
