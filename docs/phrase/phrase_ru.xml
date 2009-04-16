@@ -423,9 +423,9 @@
 		<prompt phrase="что бы перезвонить" filename= "vm-return_call_1.wav"/><!-- to return the call now   -->
 		<prompt phrase="для возврата вызова " filename= "vm-return_call.wav"/><!-- to return the call now   -->
 		<prompt phrase="Важное" filename= "vm-urgent.wav"/><!--  urgent  -->
-		<prompt phrase="добавить вступление к сообщению" filename= "vm-forward_add_intro.wav"/><!--    -->
-		<prompt phrase="для того что бы послать собощение " filename= "vm-send_message_now.wav"/><!--    -->
-		<prompt phrase="пожалуйста, введите добавочный номер для отправки сообщения" filename= "vm-forward_enter_ext.wav"/><!--    -->
+		<prompt phrase="добавить вступление к сообщению" filename= "vm-forward_add_intro.wav"/><!--  to add an introduction to this message  -->
+		<prompt phrase="для того что бы послать собощение " filename= "vm-send_message_now.wav"/><!--  to send this messege now  -->
+		<prompt phrase="пожалуйста, введите добавочный номер для отправки сообщения" filename= "vm-forward_enter_ext.wav"/><!--please, enter the extention to forward this message to    -->
 		<prompt phrase="Неправильный добавочный номер" filename= "vm-that_was_an_invalid_ext.wav"/><!--    -->
 		<prompt phrase="Почтовый ящик переполнен. Пожалуйста перезвоните позже" filename= "vm-mailbox_full.wav"/><!--  That mailbox is full. Please try your call again later.  -->
 	</voicemail>
