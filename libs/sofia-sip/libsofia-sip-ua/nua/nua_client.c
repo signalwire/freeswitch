@@ -413,6 +413,20 @@ int nua_client_bind(nua_client_request_t *cr, nua_dialog_usage_t *du)
   return 0;
 }
 
+/** Check if client request is in progress.
+ *
+ * A client request is in progress, if
+ * 1) it has actual transaction going on
+ * 2) it is waiting credentials from application
+ * 3) it is waiting for Retry-After timer
+ */
+int
+nua_client_request_in_progress(nua_client_request_t const *cr)
+{
+  return cr &&
+    (cr->cr_orq || cr->cr_wait_for_cred || cr->cr_timer);
+}
+
 /**Initialize client request for sending.
  *
  * This function is called when the request is taken from queue and sent.
@@ -1564,7 +1578,7 @@ int nua_client_next_request(nua_client_request_t *cr, int invite)
       break;
   }
 
-  if (cr && cr->cr_orq == NULL) {
+  if (cr && !nua_client_request_in_progress(cr)) {
     nua_client_init_request(cr);
   }
 

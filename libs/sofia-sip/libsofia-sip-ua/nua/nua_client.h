@@ -250,6 +250,8 @@ su_inline int nua_client_is_queued(nua_client_request_t const *cr)
   return cr && cr->cr_prev;
 }
 
+int nua_client_request_in_progress(nua_client_request_t const *cr);
+
 int nua_client_request_complete(nua_client_request_t *cr);
 int nua_client_request_remove(nua_client_request_t *cr);
 int nua_client_request_clean(nua_client_request_t *cr);

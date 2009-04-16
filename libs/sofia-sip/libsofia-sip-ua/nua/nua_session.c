@@ -1535,7 +1535,7 @@ static void nua_session_usage_refresh(nua_handle_t *nh,
 
   if (ss->ss_state >= nua_callstate_terminating ||
       /* INVITE is in progress or being authenticated */
-      (cr && (cr->cr_orq || cr->cr_wait_for_cred)))
+      nua_client_request_in_progress(cr))
     return;
 
   /* UPDATE has been queued */
