@@ -433,7 +433,7 @@ ESL_DECLARE(esl_status_t) esl_sendevent(esl_handle_t *handle, esl_event_t *event
 		return ESL_FAIL;
 	}
 
-	esl_event_serialize(event, &txt, ESL_TRUE);
+	esl_event_serialize(event, &txt, ESL_FALSE);
 
 	esl_log(ESL_LOG_DEBUG, "SEND EVENT\n%s\n", txt);
 		
