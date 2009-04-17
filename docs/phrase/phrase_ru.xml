@@ -306,7 +306,7 @@
 		<prompt phrase="Миллионное" filename="h-millionn.wav"/>
 		<prompt phrase="Миллионных" filename="h-millionxxx.wav"/>
 		<prompt phrase="Точка" filename="dot.wav"/>
-		<prompt phrase="Точка" filename="period.wav"/><--period -->
+		<prompt phrase="Точка" filename="period.wav"/><!--period -->
 		<prompt phrase="Точка" filename="point.wav"/>
 		<prompt phrase="Решётка" filename="pound.wav"/>
 		<prompt phrase="Звёздочка" filename="star.wav"/>
@@ -450,7 +450,7 @@
 	<ivr>
 		<prompt phrase="Номер счета" filename="ivr-account_number.wav"/><!-- Account number   -->
 		<prompt phrase="Соединение с вызывающим абонентом" filename="ivr-connect_to_caller.wav"/><!--Connect to caller    -->
-		<prompt phrase="если вам известен добавочный номер вызываемого абонента, пожалуйста введите его сейчас" filename="ivr-enter_ext_pound.wav"/><!-- If you know your party's extension, please enter it now   -->
+		<prompt phrase="Если вам известен добавочный номер вызываемого абонента, пожалуйста введите его сейчас" filename="ivr-enter_ext_pound.wav"/><!-- If you know your party's extension, please enter it now   -->
 		<prompt phrase="Пожалуйста, введите добавочный номер абонента завершив нажатием на клавишу решётка" filename="ivr-enter_ext.wav"/><!-- Please enter an extension followed by the pound sign-->
 		<prompt phrase="Для этого абонента" filename="ivr-for_this_person.wav"/><!-- For this person   -->
 		<prompt phrase="Пожалуйста, оставайтесь на линии, идет соединение" filename="ivr-hold_connect_call.wav"/><!-- Please hold while I connect your call   -->
