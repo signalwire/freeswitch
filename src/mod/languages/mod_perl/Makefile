@@ -23,10 +23,10 @@ mod_perl_wrap.cpp:
 orig: mod_perl_wrap.cpp
 	patch -R -s -p0 -i hack.diff
 
-freeswitch.$(DYNAMIC_LIB_EXTEN): $(LOCAL_OBJS) $(LOCAL_LIBADD)
-	$(LINK) $(SOLINK) -o freeswitch.$(DYNAMIC_LIB_EXTEN)  $(LOCAL_OBJS) $(LOCAL_LIBADD) $(LDFLAGS)
+freeswitch.$(LIBTOOL_LIB_EXTEN): $(LOCAL_OBJS) $(LOCAL_LIBADD)
+	$(CXXLINK) $(SOLINK) -o freeswitch.$(LIBTOOL_LIB_EXTEN) $(LOCAL_OBJS) $(LOCAL_LIBADD) $(LDFLAGS)
 
-local_all: freeswitch.$(DYNAMIC_LIB_EXTEN)
+local_all: freeswitch.$(LIBTOOL_LIB_EXTEN)
 
 .perlok:
 	@(${PERL} -V | grep -i usemultiplicity=define >/dev/null && echo Phew, You have the right perl.) \
@@ -34,9 +34,9 @@ local_all: freeswitch.$(DYNAMIC_LIB_EXTEN)
 	@touch .perlok
 
 local_clean:
-	rm -fr *~ .perlok freeswitch.$(DYNAMIC_LIB_EXTEN)
+	rm -fr *~ .perlok .libs freeswitch.$(LIBTOOL_LIB_EXTEN) 2>/dev/null
 
 depend_install:
 	mkdir -p $(DESTDIR)$(PREFIX)/perl
-	$(LTINSTALL) freeswitch.$(DYNAMIC_LIB_EXTEN) freeswitch.pm $(DESTDIR)$(PREFIX)/perl
+	$(LTINSTALL) freeswitch.$(LIBTOOL_LIB_EXTEN) freeswitch.pm $(DESTDIR)$(PREFIX)/perl
 	if [ ! -f $(DESTDIR)$(PREFIX)/perl/freeswitch.pm ] ; then $(LTINSTALL) freeswitch.pm $(DESTDIR)$(PREFIX)/perl ; fi
