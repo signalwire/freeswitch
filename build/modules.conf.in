@@ -21,6 +21,7 @@ applications/mod_fsv
 #applications/mod_vmd
 #applications/mod_memcache
 #applications/mod_spy
+applications/mod_cluechoo
 #asr_tts/mod_flite
 #asr_tts/mod_pocketsphinx
 #asr_tts/mod_cepstral
