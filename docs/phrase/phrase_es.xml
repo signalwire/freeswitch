@@ -5,10 +5,10 @@
 <language>
   <en>
     <ascii>
-      <prompt phrase="Space" filename="32.wav"/>
-      <prompt phrase="Pound" filename="35.wav"/>
-      <prompt phrase="Star" filename="42.wav"/>
-      <prompt phrase="Dot" filename="46.wav"/>
+      <prompt phrase="Espacio" filename="32.wav"/>
+      <prompt phrase="Signo de n�mero" filename="35.wav"/>
+      <prompt phrase="Asterisco" filename="42.wav"/>
+      <prompt phrase="Punto" filename="46.wav"/>
       <prompt phrase="A" filename="97.wav"/>
       <prompt phrase="B" filename="98.wav"/>
       <prompt phrase="C" filename="99.wav"/>
@@ -21,8 +21,10 @@
       <prompt phrase="J" filename="106.wav"/>
       <prompt phrase="K" filename="107.wav"/>
       <prompt phrase="L" filename="108.wav"/>
+      <prompt phrase="LL" filename="???.wav"/>
       <prompt phrase="M" filename="109.wav"/>
       <prompt phrase="N" filename="110.wav"/>
+      <prompt phrase="�" filename="???.wav"/>
       <prompt phrase="O" filename="111.wav"/>
       <prompt phrase="P" filename="112.wav"/>
       <prompt phrase="Q" filename="113.wav"/>
@@ -37,8 +39,8 @@
       <prompt phrase="Z" filename="122.wav"/>
     </ascii>
     <phonetic-ascii>
-      <prompt phrase="Space" filename="32.wav"/>
-      <prompt phrase="Dot" filename="46.wav"/>
+      <prompt phrase="Espacio" filename="32.wav"/>
+      <prompt phrase="Punto" filename="46.wav"/>
       <prompt phrase="Alpha" filename="97.wav"/>
       <prompt phrase="Bravo" filename="98.wav"/>
       <prompt phrase="Charlie" filename="99.wav"/>
@@ -67,12 +69,12 @@
       <prompt phrase="Zulu" filename="122.wav"/>
     </phonetic-ascii>
     <digits>
-      <prompt phrase="Cerro" filename="0.wav"/>
+      <prompt phrase="Cero" filename="0.wav"/>
       <prompt phrase="Uno" filename="1.wav"/>
       <prompt phrase="Dos" filename="2.wav"/>
       <prompt phrase="Tres" filename="3.wav"/>
       <prompt phrase="Cuatro" filename="4.wav"/>
-      <prompt phrase="Cinqo" filename="5.wav"/>
+      <prompt phrase="Cinco" filename="5.wav"/>
       <prompt phrase="Seis" filename="6.wav"/>
       <prompt phrase="Siete" filename="7.wav"/>
       <prompt phrase="Ocho" filename="8.wav"/>
@@ -83,86 +85,123 @@
       <prompt phrase="Trece" filename="13.wav"/>
       <prompt phrase="Catorce" filename="14.wav"/>
       <prompt phrase="Quince" filename="15.wav"/>
-      <prompt phrase="Dieciséis" filename="16.wav"/>
-      <prompt phrase="Diecisiete " filename="17.wav"/>
-      <prompt phrase="Dieciocho " filename="18.wav"/>
-      <prompt phrase="Diecinueve " filename="19.wav"/>
-      <prompt phrase="Veinte " filename="20.wav"/>
-      <prompt phrase="Thirty" filename="30.wav"/>
-      <prompt phrase="Fourty" filename="40.wav"/>
-      <prompt phrase="Fifty" filename="50.wav"/>
-      <prompt phrase="Sixty" filename="60.wav"/>
-      <prompt phrase="Seventy" filename="70.wav"/>
-      <prompt phrase="Eighty" filename="80.wav"/>
-      <prompt phrase="Ninety" filename="90.wav"/>
-      <prompt phrase="Dot" filename="dot.wav"/>
-      <prompt phrase="First" filename="h-1.wav"/>
-      <prompt phrase="Second" filename="h-2.wav"/>
-      <prompt phrase="Third" filename="h-3.wav"/>
-      <prompt phrase="Fourth" filename="h-4.wav"/>
-      <prompt phrase="Fifth" filename="h-5.wav"/>
-      <prompt phrase="Sixth" filename="h-6.wav"/>
-      <prompt phrase="Seventh" filename="h-7.wav"/>
-      <prompt phrase="Eighth" filename="h-8.wav"/>
-      <prompt phrase="Nineth" filename="h-9.wav"/>
-      <prompt phrase="Tenth" filename="h-10.wav"/>
-      <prompt phrase="Eleventh" filename="h-11.wav"/>
-      <prompt phrase="Twelveth" filename="h-12.wav"/>
-      <prompt phrase="Thirteenth" filename="h-13.wav"/>
-      <prompt phrase="Fourteenth" filename="h-14.wav"/>
-      <prompt phrase="Fifteenth" filename="h-15.wav"/>
-      <prompt phrase="Sixteenth" filename="h-16.wav"/>
-      <prompt phrase="Seventeenth" filename="h-17.wav"/>
-      <prompt phrase="Eighteenth" filename="h-18.wav"/>
-      <prompt phrase="Nineteenth" filename="h-19.wav"/>
-      <prompt phrase="Twentieth" filename="h-20.wav"/>
-      <prompt phrase="Thirtieth" filename="h-30.wav"/>
-      <prompt phrase="Hundred" filename="hundred.wav"/>
-      <prompt phrase="Million" filename="million.wav"/>
-      <prompt phrase="Period" filename="period.wav"/>
-      <prompt phrase="Point" filename="point.wav"/>
-      <prompt phrase="Pound" filename="pound.wav"/>
-      <prompt phrase="Star" filename="star.wav"/>
-      <prompt phrase="Thousand" filename="thousand.wav"/>
+      <prompt phrase="Diecis�is" filename="16.wav"/>
+      <prompt phrase="Diecisiete" filename="17.wav"/>
+      <prompt phrase="Dieciocho" filename="18.wav"/>
+      <prompt phrase="Diecinueve" filename="19.wav"/>
+      <prompt phrase="Veinte" filename="20.wav"/>
+<!-- In english we just say twenty one
+in spanish we say veintiuno etc in the 20's
+and treinta y uno etc from 30's on
+-->
+      <prompt phrase="Veintiuno" filename="21.wav"/>
+      <prompt phrase="Veintidos" filename="22.wav"/>
+      <prompt phrase="Veintitr�s" filename="23.wav"/>
+      <prompt phrase="Veinticuatro" filename="24.wav"/>
+      <prompt phrase="Veinticinco" filename="25.wav"/>
+      <prompt phrase="Veintis�is" filename="26.wav"/>
+      <prompt phrase="Veintisiete" filename="27.wav"/>
+      <prompt phrase="Veintiocho" filename="28.wav"/>
+      <prompt phrase="Veintinueve" filename="29.wav"/>
+      <prompt phrase="Treinta" filename="30.wav"/>
+      <prompt phrase="Cuarenta" filename="40.wav"/>
+      <prompt phrase="Cincuenta" filename="50.wav"/>
+      <prompt phrase="Sesenta" filename="60.wav"/>
+      <prompt phrase="Setenta" filename="70.wav"/>
+      <prompt phrase="Ochenta" filename="80.wav"/>
+      <prompt phrase="Noventa" filename="90.wav"/>
+      <prompt phrase="Punto" filename="dot.wav"/>
+<!-- This part is not easy... it depends on context
+When used as an adjective, ordinal numbers must agree 
+with the nouns the refer to in both number and gender: 
+el segundo coche ("the second car"), 
+but la segunda vez ("the second time").
+
+Note also that when primero and tercero precede a singular 
+masculine noun, the final -o is dropped: 
+el primer rey ("the first king"), 
+el tercer trimestre ("the third trimester").
+I will assume a non singular masculine noun for the sake
+of translating something
+-->
+      <prompt phrase="Primero" filename="h-1.wav"/>
+      <prompt phrase="Segundo" filename="h-2.wav"/>
+      <prompt phrase="Tercero" filename="h-3.wav"/>
+      <prompt phrase="Cuarto" filename="h-4.wav"/>
+      <prompt phrase="Quinto" filename="h-5.wav"/>
+      <prompt phrase="Sexto" filename="h-6.wav"/>
+      <prompt phrase="S�ptimo" filename="h-7.wav"/>
+      <prompt phrase="Octavo" filename="h-8.wav"/>
+      <prompt phrase="Noveno" filename="h-9.wav"/>
+      <prompt phrase="D�cimo" filename="h-10.wav"/>
+<!-- For larger numbers, it is common to use simply the 
+cardinal number, especially in speech. Thus el siglo veinte 
+("the 20th century") is more common than the cardinal form, 
+el siglo vig�simo, and in writing the numerical form (el siglo 20) 
+is often used. It is also common to word a sentence in such a way 
+that the ordinal form is not used. So, for example, cumple cuarenta 
+y cinco a�os would be the most common way of saying it is someone's 
+45th birthday. In general, the ordinal numbers for 11th and above 
+can be considered mostly a formal usage.
+I will translate them anyways
+-->
+      <prompt phrase="Und�cimo" filename="h-11.wav"/>
+      <prompt phrase="Duod�cimo" filename="h-12.wav"/>
+      <prompt phrase="Decimotecero" filename="h-13.wav"/>
+      <prompt phrase="Decimocuarto" filename="h-14.wav"/>
+      <prompt phrase="Decimoquinto" filename="h-15.wav"/>
+      <prompt phrase="Decimosexto" filename="h-16.wav"/>
+      <prompt phrase="Decimo�ptimo" filename="h-17.wav"/>
+      <prompt phrase="Decimoctavo" filename="h-18.wav"/>
+      <prompt phrase="Decimonoveno" filename="h-19.wav"/>
+      <prompt phrase="Vig�simo" filename="h-20.wav"/>
+      <prompt phrase="Trig�simo" filename="h-30.wav"/>
+      <prompt phrase="Cien" filename="hundred.wav"/>
+      <prompt phrase="Mill?n" filename="million.wav"/>
+      <prompt phrase="Per�odo" filename="period.wav"/>
+      <prompt phrase="Punto" filename="point.wav"/>
+      <prompt phrase="Signo de n�mero" filename="pound.wav"/>
+      <prompt phrase="Asterisco" filename="star.wav"/>
+      <prompt phrase="Mil" filename="thousand.wav"/>
     </digits>
     <currency>
-      <prompt phrase="And" filename="and.wav"/>
-      <prompt phrase="Cent" filename="cent.wav"/>
+      <prompt phrase="Y" filename="and.wav"/>
+      <prompt phrase="Centavo" filename="cent.wav"/>
       <prompt phrase="Central" filename="central.wav"/>
-      <prompt phrase="Cents per minute" filename="cents-per-minute.wav"/>
-      <prompt phrase="Cents" filename="cents.wav"/>
-      <prompt phrase="Dollar" filename="dollar.wav"/>
-      <prompt phrase="Dollars" filename="dollars.wav"/>
-      <prompt phrase="Minus" filename="minus.wav"/>
-      <prompt phrase="Negative" filename="negative.wav"/>
+      <prompt phrase="Centavos por minuto" filename="cents-per-minute.wav"/>
+      <prompt phrase="Centavos" filename="cents.wav"/>
+      <prompt phrase="Dolar" filename="dollar.wav"/>
+      <prompt phrase="D�lares" filename="dollars.wav"/>
+      <prompt phrase="Menos" filename="minus.wav"/>
+      <prompt phrase="Negativo" filename="negative.wav"/>
     </currency>
     <time>
       <prompt phrase="A.M." filename="a-m.wav"/>
-      <prompt phrase="At" filename="at.wav"/>
-      <prompt phrase="Sunday" filename="day-0.wav"/>
-      <prompt phrase="Monday" filename="day-1.wav"/>
-      <prompt phrase="Tuesday" filename="day-2.wav"/>
-      <prompt phrase="Wednesday" filename="day-3.wav"/>
-      <prompt phrase="Thursday" filename="day-4.wav"/>
-      <prompt phrase="Friday" filename="day-5.wav"/>
-      <prompt phrase="Saturday" filename="day-6.wav"/>
-      <prompt phrase="Hour" filename="hour.wav"/>
-      <prompt phrase="Hours" filename="hours.wav"/>
-      <prompt phrase="Minute" filename="minute.wav"/>
-      <prompt phrase="Minutes" filename="minutes.wav"/>
-      <prompt phrase="January" filename="mon-0.wav"/>
-      <prompt phrase="Febuary" filename="mon-1.wav"/>
-      <prompt phrase="March" filename="mon-2.wav"/>
-      <prompt phrase="April" filename="mon-3.wav"/>
-      <prompt phrase="May" filename="mon-4.wav"/>
-      <prompt phrase="June" filename="mon-5.wav"/>
-      <prompt phrase="July" filename="mon-6.wav"/>
-      <prompt phrase="August" filename="mon-7.wav"/>
-      <prompt phrase="September" filename="mon-8.wav"/>
-      <prompt phrase="October" filename="mon-9.wav"/>
-      <prompt phrase="November" filename="mon-10.wav"/>
-      <prompt phrase="December" filename="mon-11.wav"/>
-      <prompt phrase="O'Clock" filename="oclock.wav"/>
+      <prompt phrase="A" filename="at.wav"/>
+      <prompt phrase="Domingo" filename="day-0.wav"/>
+      <prompt phrase="Lunes" filename="day-1.wav"/>
+      <prompt phrase="Martes" filename="day-2.wav"/>
+      <prompt phrase="Mi�rcoles" filename="day-3.wav"/>
+      <prompt phrase="Jueves" filename="day-4.wav"/>
+      <prompt phrase="Viernes" filename="day-5.wav"/>
+      <prompt phrase="S�bado" filename="day-6.wav"/>
+      <prompt phrase="Hora" filename="hour.wav"/>
+      <prompt phrase="Horas" filename="hours.wav"/>
+      <prompt phrase="Minuto" filename="minute.wav"/>
+      <prompt phrase="Minutos" filename="minutes.wav"/>
+      <prompt phrase="Enero" filename="mon-0.wav"/>
+      <prompt phrase="Febrero" filename="mon-1.wav"/>
+      <prompt phrase="Marzo" filename="mon-2.wav"/>
+      <prompt phrase="Abril" filename="mon-3.wav"/>
+      <prompt phrase="Mayo" filename="mon-4.wav"/>
+      <prompt phrase="Junio" filename="mon-5.wav"/>
+      <prompt phrase="Julio" filename="mon-6.wav"/>
+      <prompt phrase="Agosto" filename="mon-7.wav"/>
+      <prompt phrase="Septiembre" filename="mon-8.wav"/>
+      <prompt phrase="Octubre" filename="mon-9.wav"/>
+      <prompt phrase="Noviembre" filename="mon-10.wav"/>
+      <prompt phrase="Diciembre" filename="mon-11.wav"/>
+      <prompt phrase="En punto" filename="oclock.wav"/>
       <prompt phrase="oh" filename="oh.wav"/>
       <prompt phrase="P.M." filename="p-m.wav"/>
       <prompt phrase="Second" filename="second.wav"/>
@@ -271,10 +310,10 @@
       <prompt phrase="To speak with an operator" filename="ivr-to_speak_with_an_operator.wav"/>
       <prompt phrase="Welcome to FreeSWITCH, the future of telephony" filename="ivr-welcome_to_freeswitch.wav"/>
       <prompt phrase="You may exit at any time by simply hanging up" filename="ivr-you_may_exit_by_hanging_up.wav"/>
-      <prompt phrase="or" filename ="ivr-or.wav"/>
-      <prompt phrase="not" filename ="ivr-not.wav"/>
-      <prompt phrase="call" filename ="ivr-call.wav"/>
-      <prompt phrase="You may" filename ="ivr-you_may.wav"/>
+      <prompt phrase="or" filename="ivr-or.wav"/>
+      <prompt phrase="not" filename="ivr-not.wav"/>
+      <prompt phrase="call" filename="ivr-call.wav"/>
+      <prompt phrase="You may" filename="ivr-you_may.wav"/>
       <prompt phrase="hello" filename="ivr-hello.wav"/>
       <prompt phrase="Using your telephone keypad..." filename="ivr-use_telephone_keypad.wav"/>
       <prompt phrase="please spell the name of the person you are trying to reach." filename="ivr-spell_name.wav"/>
