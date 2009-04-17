@@ -905,6 +905,17 @@ SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_URL_SEPARATOR_get() {
 }
 
 
+SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE_get() {
+  char * jresult ;
+  char *result = 0 ;
+  
+  result = (char *) "bridge_hangup_cause";
+  
+  jresult = SWIG_csharp_string_callback((const char *)result); 
+  return jresult;
+}
+
+
 SWIGEXPORT char * SWIGSTDCALL CSharp_SWITCH_READ_TERMINATOR_USED_VARIABLE_get() {
   char * jresult ;
   char *result = 0 ;
@@ -23545,11 +23556,13 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_rtp_zerocopy_read_frame(void * jarg1, v
 }
 
 
-SWIGEXPORT void SWIGSTDCALL CSharp_rtp_flush_read_buffer(void * jarg1) {
+SWIGEXPORT void SWIGSTDCALL CSharp_rtp_flush_read_buffer(void * jarg1, int jarg2) {
   switch_rtp_t *arg1 = (switch_rtp_t *) 0 ;
+  switch_rtp_flush_t arg2 ;
   
   arg1 = (switch_rtp_t *)jarg1; 
-  rtp_flush_read_buffer(arg1);
+  arg2 = (switch_rtp_flush_t)jarg2; 
+  rtp_flush_read_buffer(arg1,arg2);
 }
 
 
