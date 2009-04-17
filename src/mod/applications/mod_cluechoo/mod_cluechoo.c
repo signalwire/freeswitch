@@ -217,7 +217,7 @@ int vgo(int i, switch_core_session_t *session)
 	int hangover = 40, hangunder = 15;
 	int talking = 0;
 	int energy_level = 500;
-
+	int done = 0;
     switch_core_session_get_read_impl(session, &read_impl);
 
 	printf("%s", SWITCH_SEQ_CLEARSCR);
@@ -245,15 +245,18 @@ int vgo(int i, switch_core_session_t *session)
 
     for (x = COLS - 1; ; --x) {
 
-		if (!switch_channel_ready(channel)) {
-			break;
+		if (!done && !switch_channel_ready(channel)) {
+			done = 1;
 		}
-
-		status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-		if (!SWITCH_READ_ACCEPTABLE(status)) {
-			break;
+		
+		if (!done) {
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+			if (!SWITCH_READ_ACCEPTABLE(status)) {
+				done = 1;
+			}
 		}
-
+		
+		if (!done)
 		{
 			int16_t *fdata = (int16_t *) read_frame->data;
 			uint32_t samples = read_frame->datalen / sizeof(*fdata);
@@ -261,6 +264,7 @@ int vgo(int i, switch_core_session_t *session)
 			double energy = 0;
 			int divisor = 0;
 
+			
 			for (count = 0; count < samples; count++) {
 				energy += abs(fdata[j]);
 				j += read_impl.number_of_channels;
@@ -296,11 +300,13 @@ int vgo(int i, switch_core_session_t *session)
 					}
 				}
 			}
-		}
 
-		if (!talking) {
-			x++;
-			continue;
+			if (!talking) {
+				x++;
+				continue;
+			}
+		} else {
+			usleep(20000);
 		}
 
 		if (LOGO == 0) {
@@ -309,8 +315,6 @@ int vgo(int i, switch_core_session_t *session)
 			if (add_sl(x) == ERR) break;
 		}
 		refresh();
-
-		
 
 		/*
 		if (x == COLS / 4) {
