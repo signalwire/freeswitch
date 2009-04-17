@@ -204,23 +204,23 @@ I will translate them anyways
       <prompt phrase="En punto" filename="oclock.wav"/>
       <prompt phrase="oh" filename="oh.wav"/>
       <prompt phrase="P.M." filename="p-m.wav"/>
-      <prompt phrase="Second" filename="second.wav"/>
-      <prompt phrase="Seconds" filename="seconds.wav"/>
-      <prompt phrase="Today" filename="today.wav"/>
-      <prompt phrase="Tomorrow" filename="tomorrow.wav"/>
-      <prompt phrase="Yesterday" filename="yesterday.wav"/>
+      <prompt phrase="Segundo" filename="second.wav"/>
+      <prompt phrase="Segundos" filename="seconds.wav"/>
+      <prompt phrase="Hoy" filename="today.wav"/>
+      <prompt phrase="Ma�ana" filename="tomorrow.wav"/>
+      <prompt phrase="Ayer" filename="yesterday.wav"/>
     </time>
     <voicemail>
-      <prompt phrase="The person at extension" filename="vm-person.wav"/>
-      <prompt phrase="marked urgent" filename="vm-marked-urgent.wav"/>
-      <prompt phrase="emailed" filename="vm-emailed.wav"/>
-      <prompt phrase="you have" filename="vm-you_have.wav"/>
-      <prompt phrase="please enter your i d, followed by" filename="vm-enter_id.wav"/>
-      <prompt phrase="please enter your password, followed by" filename="vm-enter_pass.wav"/>
-      <prompt phrase="login incorrect" filename="vm-fail_auth.wav"/>
-      <prompt phrase="welcome to your voicemail" filename="vm-hello.wav"/>
-      <prompt phrase="goodbye" filename="vm-goodbye.wav"/>
-      <prompt phrase="at the tone please record your name, press any key or stop talking to end the recording." filename="vm-record_name1.wav"/>
+      <prompt phrase="La persona a la extensi�n" filename="vm-person.wav"/>
+      <prompt phrase="marcado urgente" filename="vm-marked-urgent.wav"/>
+      <prompt phrase="correo electr�nico" filename="vm-emailed.wav"/>
+      <prompt phrase="usted tiene" filename="vm-you_have.wav"/>
+      <prompt phrase="por favor ingrese su numero de usuario, seguido por" filename="vm-enter_id.wav"/>
+      <prompt phrase="por favor ingrese su contrase�a, seguido por" filename="vm-enter_pass.wav"/>
+      <prompt phrase="inicio de sesi�n incorrectos" filename="vm-fail_auth.wav"/>
+      <prompt phrase="bienvenido a su buz�n de voz" filename="vm-hello.wav"/>
+      <prompt phrase="Gracias por llamar" filename="vm-goodbye.wav"/>
+      <prompt phrase="En el tono, por favor anote su nombre, pulse cualquier tecla o dejar de hablar para poner fin a la grabaci�n." filename="vm-record_name1.wav"/>
       <prompt phrase="choose a greeting between 1 and 9" filename="vm-choose_greeting_choose.wav"/>
       <prompt phrase="invalid value" filename="vm-choose_greeting_fail.wav"/>
       <prompt phrase="too many failed attempts" filename="vm-abort.wav"/>
