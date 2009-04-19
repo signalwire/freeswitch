@@ -1007,6 +1007,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
         case SKYPECONTROLAPI_ATTACH_PENDING_AUTHORIZATION:
           //DEBUGA_SKYPE ("\n\n\tIf I do not (almost) immediately connect to Skype API,\n\tplease give the Skype client authorization to be connected \n\tby Asterisk and to not ask you again.\n\n", SKYPIAX_P_LOG);
           skypiax_sleep(5000);
+#if 0
           if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             SendMessage(HWND_BROADCAST,
                         tech_pvt->
@@ -1014,6 +1015,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
                         (WPARAM) tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle,
                         0);
           }
+#endif
           break;
         case SKYPECONTROLAPI_ATTACH_REFUSED:
           ERRORA("Skype client refused to be connected by Skypiax!\n", SKYPIAX_P_LOG);
@@ -1024,6 +1026,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
         case SKYPECONTROLAPI_ATTACH_API_AVAILABLE:
           DEBUGA_SKYPE("Skype API available\n", SKYPIAX_P_LOG);
           skypiax_sleep(5000);
+#if 0
           if (!tech_pvt->SkypiaxHandles.currentuserhandle) {
             SendMessage(HWND_BROADCAST,
                         tech_pvt->
@@ -1031,6 +1034,7 @@ LRESULT APIENTRY skypiax_present(HWND hWindow, UINT uiMessage, WPARAM uiParam,
                         (WPARAM) tech_pvt->SkypiaxHandles.win32_hInit_MainWindowHandle,
                         0);
           }
+#endif
           break;
         default:
           WARNINGA("GOT AN UNKNOWN SKYPE WINDOWS MSG\n", SKYPIAX_P_LOG);
@@ -1139,7 +1143,7 @@ void *skypiax_do_skypeapi_thread_func(void *obj)
   tech_pvt->SkypiaxHandles.win32_uiGlobal_MsgID_SkypeControlAPIDiscover =
     RegisterWindowMessage("SkypeControlAPIDiscover");
 
-  skypiax_sleep(2000000);
+  skypiax_sleep(200000); //0,2 sec
 
   if (tech_pvt->SkypiaxHandles.win32_uiGlobal_MsgID_SkypeControlAPIAttach != 0
       && tech_pvt->SkypiaxHandles.win32_uiGlobal_MsgID_SkypeControlAPIDiscover != 0) {
