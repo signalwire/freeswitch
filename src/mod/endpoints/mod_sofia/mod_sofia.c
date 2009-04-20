@@ -2899,7 +2899,6 @@ static void general_event_handler(switch_event_t *event)
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
 				return;
 			}
-
 			
 			nh = nua_handle(profile->nua, 
 							NULL, 
@@ -2909,7 +2908,10 @@ static void general_event_handler(switch_event_t *event)
 							SIPTAG_CONTACT_STR(profile->url), 
 							TAG_END());
 			
+			nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+
 			nua_info(nh,
+					 NUTAG_WITH_THIS(profile->nua),
 					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), 
 					 TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
 					 TAG_END());

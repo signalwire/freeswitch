@@ -3900,7 +3900,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					}
 				} else {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Bad signal\n");
-					goto fail;
+					goto end;
 				}
 
 				if ((signal_ptr = switch_stristr("Duration=", sip->sip_payload->pl_data))) {
@@ -3916,7 +3916,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				int tmp = atoi(sip->sip_payload->pl_data);
 				dtmf.digit = switch_rfc2833_to_char(tmp);
 			} else {
-				goto fail;
+				goto end;
 			}
 
 			if (dtmf.digit) {
@@ -3944,11 +3944,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 				/* Send 200 OK response */
 				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-
-				goto end;
-			} else {
-				goto fail;
 			}
+			goto end;
 		}
 
 		if ((clientcode_header = sofia_glue_get_unknown_header(sip, "x-clientcode"))) {
@@ -3956,8 +3953,6 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				switch_channel_set_variable(channel, "call_clientcode", clientcode_header);
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Setting CMC to %s\n", clientcode_header);
 				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
-			} else {
-				goto fail;
 			}
 			goto end;
 		}
@@ -3991,15 +3986,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					}
 				}
 			}
-			goto end;
 		}
 	}
-	goto end;
-
-  fail:
-
-	/* *shrug* just ok it */
-	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 
  end:
 
@@ -4041,13 +4029,15 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			}
 		}
 
-		if (sip->sip_payload->pl_data) {
+		if (sip->sip_payload && sip->sip_payload->pl_data) {
 			switch_event_add_body(event, "%s", sip->sip_payload->pl_data);
 		}
 
 		switch_event_fire(&event);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dispatched freeswitch event for INFO\n");
 	}
+
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 
 	return;
 
