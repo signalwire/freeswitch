@@ -3082,25 +3082,17 @@ nh_referral_respond(nua_handle_t *nh, int status, char const *phrase)
  * @sa #nua_i_info
  */
 
-static int nua_info_client_init(nua_client_request_t *cr,
-				msg_t *msg, sip_t *sip,
-				tagi_t const *tags);
-
-static int nua_info_client_request(nua_client_request_t *cr,
-				   msg_t *msg, sip_t *sip,
-				   tagi_t const *tags);
-
 nua_client_methods_t const nua_info_client_methods = {
   SIP_METHOD_INFO,		/* crm_method, crm_method_name */
   0,				/* crm_extra */
   {				/* crm_flags */
     /* create_dialog */ 0,
-    /* in_dialog */ 1,
+    /* in_dialog */ 0,
     /* target refresh */ 0
   },
   NULL,				/* crm_template */
-  nua_info_client_init,		/* crm_init */
-  nua_info_client_request,	/* crm_send */
+  NULL,				/* crm_init */
+  NULL,				/* crm_send */
   NULL,				/* crm_check_restart */
   NULL,				/* crm_recv */
   NULL,				/* crm_preliminary */
@@ -3112,32 +3104,6 @@ int
 nua_stack_info(nua_t *nua, nua_handle_t *nh, nua_event_t e, tagi_t const *tags)
 {
   return nua_client_create(nh, e, &nua_info_client_methods, tags);
-}
-
-static int nua_info_client_init(nua_client_request_t *cr,
-				msg_t *msg, sip_t *sip,
-				tagi_t const *tags)
-{
-  nua_handle_t *nh = cr->cr_owner;
-  nua_dialog_usage_t *du = nua_dialog_usage_for_session(nh->nh_ds);
-  nua_session_usage_t *ss = nua_dialog_usage_private(du);
-
-  if (!ss || ss->ss_state >= nua_callstate_terminating)
-    return nua_client_return(cr, 900, "Invalid handle for INFO", msg);
-
-  cr->cr_usage = du;
-
-  return 0;
-}
-
-static int nua_info_client_request(nua_client_request_t *cr,
-				   msg_t *msg, sip_t *sip,
-				   tagi_t const *tags)
-{
-  if (cr->cr_usage == NULL)
-    return nua_client_return(cr, SIP_481_NO_TRANSACTION, msg);
-  else
-    return nua_base_client_request(cr, msg, sip, tags);
 }
 
 /** @NUA_EVENT nua_r_info
@@ -3183,7 +3149,7 @@ nua_server_methods_t const nua_info_server_methods =
     nua_i_info,			/* Event */
     {
       0,			/* Do not create dialog */
-      1,			/* In-dialog request */
+      0,			/* In-dialog request */
       0,			/* Not a target refresh request  */
       0,			/* Do not add Contact */
     },
