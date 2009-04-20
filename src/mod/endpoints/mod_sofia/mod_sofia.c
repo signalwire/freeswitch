@@ -2869,6 +2869,56 @@ static void general_event_handler(switch_event_t *event)
 
 		}
 		break;
+	case SWITCH_EVENT_SEND_INFO:
+		{
+			const char *profile_name = switch_event_get_header(event, "profile");
+			const char *ct = switch_event_get_header(event, "content-type");
+			const char *to_uri = switch_event_get_header(event, "to-uri");
+			const char *from_uri = switch_event_get_header(event, "from-uri");
+			const char *body = switch_event_get_body(event);
+			sofia_profile_t *profile;
+			nua_handle_t *nh;
+
+			if (!profile_name) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Profile Name\n");
+				return;
+			}
+
+			if (!to_uri) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To-URI header\n");
+				return;
+			}
+
+			if (!from_uri) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From-URI header\n");
+				return;
+			}
+
+			
+			if (!(profile = sofia_glue_find_profile(profile_name))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
+				return;
+			}
+
+			
+			nh = nua_handle(profile->nua, 
+							NULL, 
+							NUTAG_URL(to_uri), 
+							SIPTAG_FROM_STR(from_uri), 
+							SIPTAG_TO_STR(to_uri), 
+							SIPTAG_CONTACT_STR(profile->url), 
+							TAG_END());
+			
+			nua_info(nh,
+					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), 
+					 TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
+					 TAG_END());
+
+				
+			sofia_glue_release_profile(profile);
+			
+		}
+		break;
 	case SWITCH_EVENT_TRAP:
 		{
 			const char *cond = switch_event_get_header(event, "condition");
@@ -3014,6 +3064,11 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	}
 
 	if (switch_event_bind(modname, SWITCH_EVENT_SEND_MESSAGE, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
+		return SWITCH_STATUS_GENERR;
+	}
+
+	if (switch_event_bind(modname, SWITCH_EVENT_SEND_INFO, SWITCH_EVENT_SUBCLASS_ANY, general_event_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't bind!\n");
 		return SWITCH_STATUS_GENERR;
 	}

@@ -1668,6 +1668,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							profile->ndlb &= ~PFLAG_NDLB_BROKEN_AUTH_HASH;
 						}
+					} else if (!strcasecmp(var, "NDLB-sendrecv-in-session")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_SENDRECV_IN_SESSION;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_SENDRECV_IN_SESSION;
+						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_PASS_RFC2833);
@@ -2214,6 +2220,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "NDLB-broken-auth-hash")) {
 						if (switch_true(val)) {
 							profile->ndlb |= PFLAG_NDLB_BROKEN_AUTH_HASH;
+						}
+					} else if (!strcasecmp(var, "NDLB-sendrecv-in-session")) {
+						if (switch_true(val)) {
+							profile->ndlb |= PFLAG_NDLB_SENDRECV_IN_SESSION;
+						} else {
+							profile->ndlb &= ~PFLAG_NDLB_SENDRECV_IN_SESSION;
 						}
 					} else if (!strcasecmp(var, "pass-rfc2833")) {
 						if (switch_true(val)) {
@@ -3863,6 +3875,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	const char *rec_header;
 	const char *clientcode_header;
 	switch_dtmf_t dtmf = { 0, switch_core_default_dtmf_duration(0) };
+	switch_event_t *event;
 
 	if (session) {
 		/* Get the channel */
@@ -3932,7 +3945,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				/* Send 200 OK response */
 				nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
 
-				return;
+				goto end;
 			} else {
 				goto fail;
 			}
@@ -3946,7 +3959,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 			} else {
 				goto fail;
 			}
-			return;
+			goto end;
 		}
 
 		if ((rec_header = sofia_glue_get_unknown_header(sip, "record"))) {
@@ -3978,13 +3991,66 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					}
 				}
 			}
-			return;
+			goto end;
 		}
 	}
-	return;
+	goto end;
 
   fail:
-	nua_respond(nh, 488, "Unsupported Request", NUTAG_WITH_THIS(nua), TAG_END());
+
+	/* *shrug* just ok it */
+	nua_respond(nh, SIP_200_OK, NUTAG_WITH_THIS(nua), TAG_END());
+
+ end:
+
+
+	if (switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS) {
+		
+		if (sip->sip_content_type) {
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", "%s", sip->sip_content_type->c_type);
+		}
+
+		if (sip->sip_from && sip->sip_from->a_url) {
+			if (sip->sip_from->a_url->url_user) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-From-User", sip->sip_from->a_url->url_user);
+			}
+
+			if (sip->sip_from->a_url->url_host) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-From-Host", sip->sip_from->a_url->url_host);
+			}
+		}
+
+		if (sip->sip_to && sip->sip_to->a_url) {
+			if (sip->sip_to->a_url->url_user) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-To-User", sip->sip_to->a_url->url_user);
+			}
+
+			if (sip->sip_to->a_url->url_host) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-To-Host", sip->sip_to->a_url->url_host);
+			}
+		}
+
+
+		if (sip->sip_contact && sip->sip_contact->m_url) {
+			if (sip->sip_contact->m_url->url_user) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-Contact-User", sip->sip_contact->m_url->url_user);
+			}
+
+			if (sip->sip_contact->m_url->url_host) {
+				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-Contact-Host", sip->sip_contact->m_url->url_host);
+			}
+		}
+
+		if (sip->sip_payload->pl_data) {
+			switch_event_add_body(event, "%s", sip->sip_payload->pl_data);
+		}
+
+		switch_event_fire(&event);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "dispatched freeswitch event for INFO\n");
+	}
+
+	return;
+
 }
 
 #define url_set_chanvars(session, url, varprefix) _url_set_chanvars(session, url, #varprefix "_user", #varprefix "_host", #varprefix "_port", #varprefix "_uri", #varprefix "_params")

@@ -117,6 +117,8 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 	const char *family;
 	const char *pass_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_video_fmtp");
 	const char *ov_fmtp = switch_channel_get_variable(tech_pvt->channel, "sip_force_video_fmtp");
+	char srbuf[128] = "";
+	const char *var_val;
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_SUPPRESS_CNG) ||
 		((val = switch_channel_get_variable(tech_pvt->channel, "supress_cng")) && switch_true(val)) ||
@@ -155,14 +157,22 @@ void sofia_glue_set_local_sdp(private_object_t *tech_pvt, const char *ip, uint32
 
 	tech_pvt->session_id++;
 
+	if ((tech_pvt->profile->ndlb & PFLAG_NDLB_SENDRECV_IN_SESSION) || 
+		((var_val=switch_channel_get_variable(tech_pvt->channel, "ndlb_sendrecv_in_session")) && switch_true(var_val))) {
+		switch_snprintf(srbuf, sizeof(srbuf), "a=%s\n", sr);
+		sr = NULL;
+	}
+	
 	family = strchr(ip, ':') ? "IP6" : "IP4";
 	switch_snprintf(buf, sizeof(buf),
 					"v=0\n"
 					"o=FreeSWITCH %010u %010u IN %s %s\n"
 					"s=FreeSWITCH\n"
 					"c=IN %s %s\n" "t=0 0\n"
-					"m=audio %d RTP/%sAVP", 
-					tech_pvt->owner_id, tech_pvt->session_id, family, ip, family, ip, port,
+					"%sm=audio %d RTP/%sAVP", 
+					tech_pvt->owner_id, tech_pvt->session_id, family, ip, family, ip, 
+					srbuf,
+					port,
 					(!switch_strlen_zero(tech_pvt->local_crypto_key) 
 					&& sofia_test_flag(tech_pvt,TFLAG_SECURE)) ? "S" : "");
 

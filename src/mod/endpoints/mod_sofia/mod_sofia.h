@@ -190,7 +190,8 @@ typedef enum {
 
 typedef enum {
 	PFLAG_NDLB_TO_IN_200_CONTACT = (1 << 0),
-	PFLAG_NDLB_BROKEN_AUTH_HASH = (1 << 1)
+	PFLAG_NDLB_BROKEN_AUTH_HASH = (1 << 1),
+	PFLAG_NDLB_SENDRECV_IN_SESSION = (1 << 2)
 } sofia_NDLB_t;
 
 typedef enum {
