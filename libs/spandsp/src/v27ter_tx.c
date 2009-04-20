@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tx.c,v 1.73 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v27ter_tx.c,v 1.74 2009/04/12 04:20:01 steveu Exp $
  */
 
 /*! \file */
@@ -66,17 +66,25 @@
 #include "v27ter_tx_2400_floating_rrc.h"
 #endif
 
+/*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1800.0f
 
 /* Segments of the training sequence */
 /* V.27ter defines a long and a short sequence. FAX doesn't use the
    short sequence, so it is not implemented here. */
+/*! The start of training segment 1, in symbols */
 #define V27TER_TRAINING_SEG_1           0
+/*! The start of training segment 2, in symbols */
 #define V27TER_TRAINING_SEG_2           (V27TER_TRAINING_SEG_1 + 320)
+/*! The start of training segment 3, in symbols */
 #define V27TER_TRAINING_SEG_3           (V27TER_TRAINING_SEG_2 + 32)
+/*! The start of training segment 4, in symbols */
 #define V27TER_TRAINING_SEG_4           (V27TER_TRAINING_SEG_3 + 50)
+/*! The start of training segment 5, in symbols */
 #define V27TER_TRAINING_SEG_5           (V27TER_TRAINING_SEG_4 + 1074)
+/*! The end of the training, in symbols */
 #define V27TER_TRAINING_END             (V27TER_TRAINING_SEG_5 + 8)
+/*! The end of the shutdown sequence, in symbols */
 #define V27TER_TRAINING_SHUTDOWN_END    (V27TER_TRAINING_END + 32)
 
 static int fake_get_bit(void *user_data)

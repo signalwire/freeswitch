@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t31.h,v 1.58 2009/02/10 13:06:47 steveu Exp $
+ * $Id: t31.h,v 1.59 2009/03/13 12:59:26 steveu Exp $
  */
 
 /*! \file */
@@ -68,6 +68,14 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len);
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
 SPAN_DECLARE(int) t31_rx(t31_state_t *s, int16_t amp[], int len);
+
+/*! Fake processing of a missing block of received T.31 modem audio samples
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received T.31 modem audio samples.
+    \param s The T.31 modem context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed. */
+SPAN_DECLARE(int) t31_rx_fillin(t31_state_t *s, int len);
 
 /*! Generate a block of T.31 modem audio samples.
     \brief Generate a block of T.31 modem audio samples.

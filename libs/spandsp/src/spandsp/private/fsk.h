@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.2 2009/01/29 18:30:14 steveu Exp $
+ * $Id: fsk.h,v 1.5 2009/04/01 13:22:40 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_FSK_H_)
@@ -50,7 +50,6 @@ struct fsk_tx_state_s
     int32_t current_phase_rate;
     uint32_t phase_acc;
     int baud_frac;
-    int baud_inc;
     int shutdown;
 };
 
@@ -61,7 +60,8 @@ struct fsk_tx_state_s
 struct fsk_rx_state_s
 {
     int baud_rate;
-    int sync_mode;
+    /*! \brief Synchronous/asynchronous framing control */
+    int framing_mode;
     /*! \brief The callback function used to put each bit received. */
     put_bit_func_t put_bit;
     /*! \brief A user specified opaque pointer passed to the put_bit routine. */
@@ -89,9 +89,10 @@ struct fsk_rx_state_s
     complexi32_t dot[2];
     int buf_ptr;
 
-    int baud_inc;
-    int baud_pll;
-    int lastbit;
+    int frame_state;
+    int frame_bits;
+    int baud_phase;
+    int last_bit;
     int scaling_shift;
 };
 

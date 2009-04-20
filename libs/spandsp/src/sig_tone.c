@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.c,v 1.31 2009/02/10 13:06:46 steveu Exp $
+ * $Id: sig_tone.c,v 1.32 2009/04/12 14:18:02 steveu Exp $
  */
 
 /*! \file */
@@ -56,6 +56,7 @@
 
 #include "spandsp/private/sig_tone.h"
 
+/*! PI */
 #define PI 3.14159265358979323
 
 /* The coefficients for the data notch filter. This filter is also the

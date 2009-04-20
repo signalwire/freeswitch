@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v42bis.h,v 1.26 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v42bis.h,v 1.27 2009/04/11 18:11:19 steveu Exp $
  */
 
 /*! \page v42bis_page V.42bis modem data compression
@@ -107,11 +107,11 @@ SPAN_DECLARE(void) v42bis_compression_control(v42bis_state_t *s, int mode);
     \param negotiated_p0 The negotiated P0 parameter, from the V.42bis spec.
     \param negotiated_p1 The negotiated P1 parameter, from the V.42bis spec.
     \param negotiated_p2 The negotiated P2 parameter, from the V.42bis spec.
-    \param frame_handler .
-    \param frame_user_data .
+    \param frame_handler Frame callback handler.
+    \param frame_user_data An opaque pointer passed to the frame callback handler.
     \param max_frame_len The maximum length that should be passed to the frame handler.
-    \param data_handler .
-    \param data_user_data .
+    \param data_handler data callback handler.
+    \param data_user_data An opaque pointer passed to the data callback handler.
     \param max_data_len The maximum length that should be passed to the data handler.
     \return The V.42bis context. */
 SPAN_DECLARE(v42bis_state_t *) v42bis_init(v42bis_state_t *s,

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_modems.c,v 1.3 2009/02/21 04:27:46 steveu Exp $
+ * $Id: fax_modems.c,v 1.5 2009/04/12 03:29:58 steveu Exp $
  */
 
 /*! \file */
@@ -74,6 +74,7 @@
 #include "spandsp/fax_modems.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/silence_gen.h"
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/v17tx.h"
 #include "spandsp/private/v17rx.h"
@@ -106,6 +107,17 @@ SPAN_DECLARE(int) fax_modems_v17_v21_rx(void *user_data, const int16_t amp[], in
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) fax_modems_v17_v21_rx_fillin(void *user_data, int len)
+{
+    fax_modems_state_t *s;
+
+    s = (fax_modems_state_t *) user_data;
+    v17_rx_fillin(&s->v17_rx, len);
+    fsk_rx_fillin(&s->v21_rx, len);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
@@ -125,6 +137,17 @@ SPAN_DECLARE(int) fax_modems_v27ter_v21_rx(void *user_data, const int16_t amp[],
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) fax_modems_v27ter_v21_rx_fillin(void *user_data, int len)
+{
+    fax_modems_state_t *s;
+
+    s = (fax_modems_state_t *) user_data;
+    v27ter_rx_fillin(&s->v27ter_rx, len);
+    fsk_rx_fillin(&s->v21_rx, len);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], int len)
 {
     fax_modems_state_t *s;
@@ -140,6 +163,17 @@ SPAN_DECLARE(int) fax_modems_v29_v21_rx(void *user_data, const int16_t amp[], in
         s->rx_handler = (span_rx_handler_t *) &fsk_rx;
         s->rx_user_data = &s->v21_rx;
     }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) fax_modems_v29_v21_rx_fillin(void *user_data, int len)
+{
+    fax_modems_state_t *s;
+
+    s = (fax_modems_state_t *) user_data;
+    v29_rx_fillin(&s->v29_rx, len);
+    fsk_rx_fillin(&s->v21_rx, len);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -200,7 +234,7 @@ static void v29_rx_status_handler(void *user_data, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) start_fax_modems_rx_modem(fax_modems_state_t *s, int which)
+SPAN_DECLARE(void) fax_modems_start_rx_modem(fax_modems_state_t *s, int which)
 {
     switch (which)
     {

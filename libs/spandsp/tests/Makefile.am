@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.110 2009/02/20 12:34:20 steveu Exp $
+## $Id: Makefile.am,v 1.112 2009/04/01 13:22:40 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -93,6 +93,7 @@ noinst_PROGRAMS =   adsi_tests \
                     tone_generate_tests \
                     tsb85_tests \
                     v17_tests \
+                    v18_tests \
                     v22bis_tests \
                     v27ter_tests \
                     v29_tests \
@@ -107,6 +108,7 @@ noinst_PROGRAMS =   adsi_tests \
 
 noinst_HEADERS =    echo_monitor.h \
                     fax_tester.h \
+                    fax_utils.h \
                     line_model_monitor.h \
                     media_monitor.h \
                     modem_monitor.h
@@ -290,6 +292,9 @@ tsb85_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspan
 
 v17_tests_SOURCES = v17_tests.c line_model_monitor.cpp modem_monitor.cpp
 v17_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+v18_tests_SOURCES = v18_tests.c
+v18_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 v22bis_tests_SOURCES = v22bis_tests.c line_model_monitor.cpp modem_monitor.cpp
 v22bis_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp

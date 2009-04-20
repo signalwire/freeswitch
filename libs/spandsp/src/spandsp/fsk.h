@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fsk.h,v 1.36 2009/02/10 13:06:47 steveu Exp $
+ * $Id: fsk.h,v 1.39 2009/04/01 13:22:40 steveu Exp $
  */
 
 /*! \file */
@@ -111,7 +111,8 @@ enum
     FSK_BELL103CH1,
     FSK_BELL103CH2,
     FSK_BELL202,
-    FSK_WEITBRECHT      /* Used for TDD (Telecom Device for the Deaf) */
+    FSK_WEITBRECHT,     /* 45.45 baud version, used for TDD (Telecom Device for the Deaf) */
+    FSK_WEITBRECHT50    /* 50 baud version, used for TDD (Telecom Device for the Deaf) */
 };
 
 SPAN_DECLARE_DATA extern const fsk_spec_t preset_fsk_specs[];
@@ -191,13 +192,14 @@ SPAN_DECLARE(void) fsk_rx_signal_cutoff(fsk_rx_state_t *s, float cutoff);
     \brief Initialise an FSK modem receive context.
     \param s The modem context.
     \param spec The specification of the modem tones and rate.
-    \param sync_mode TRUE for synchronous modem. FALSE for asynchronous mode.
+    \param framing_mode 0 for fully asynchronous mode. 1 for synchronous mode. >1 for
+           this many bits per asynchronous character frame.
     \param put_bit The callback routine used to put the received data.
     \param user_data An opaque pointer.
     \return A pointer to the modem context, or NULL if there was a problem. */
 SPAN_DECLARE(fsk_rx_state_t *) fsk_rx_init(fsk_rx_state_t *s,
                                            const fsk_spec_t *spec,
-                                           int sync_mode,
+                                           int framing_mode,
                                            put_bit_func_t put_bit,
                                            void *user_data);
 
@@ -213,6 +215,15 @@ SPAN_DECLARE(int) fsk_rx_free(fsk_rx_state_t *s);
     \return The number of samples unprocessed.
 */
 SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len);
+
+/*! Fake processing of a missing block of received FSK modem audio samples
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received FSK modem audio samples.
+    \param s The modem context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed.
+*/
+SPAN_DECLARE(int) fsk_rx_fillin(fsk_rx_state_t *s, int len);
 
 SPAN_DECLARE(void) fsk_rx_set_put_bit(fsk_rx_state_t *s, put_bit_func_t put_bit, void *user_data);
 

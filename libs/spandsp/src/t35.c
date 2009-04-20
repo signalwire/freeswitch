@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t35.c,v 1.29 2009/02/03 16:28:40 steveu Exp $
+ * $Id: t35.c,v 1.30 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*
@@ -68,19 +68,29 @@
 #include "spandsp/bit_operations.h"
 #include "spandsp/t35.h"
 
+/*! NSF pattern for FAX machine identification */
 typedef struct
 {
+    /*! The number of bytes of the NSF byte string to match */
     int model_id_size;
+    /*! The NSF byte string to expect */
     const char *model_id;
+    /*! The model name of the FAX terminal */
     const char *model_name;
 } model_data_t;
 
+/*! NSF pattern for identifying the manufacturer of a FAX machine */
 typedef struct
 {
+    /*! The vendor ID byte string */
     const char *vendor_id;
+    /*! The length of the vendor ID byte string */
     int vendor_id_len;
+    /*! The vendor's name */
     const char *vendor_name;
+    /*! TRUE if the station ID for this vendor is reversed */
     int inverse_station_id_order;
+    /*! A pointer to a list of known models from this vendor */
     const model_data_t *known_models;
 } nsf_data_t;
 

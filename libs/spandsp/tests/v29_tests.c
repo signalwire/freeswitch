@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29_tests.c,v 1.115 2009/02/12 14:21:16 steveu Exp $
+ * $Id: v29_tests.c,v 1.117 2009/03/15 09:09:21 steveu Exp $
  */
 
 /*! \page v29_tests_page V.29 modem tests
@@ -201,7 +201,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
             qam_monitor_update_symbol_tracking(qam_monitor, v29_rx_symbol_timing_correction(rx));
         }
 #endif
-        printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.2f\n",
+        printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.4f\n",
                symbol_no,
                constel->re,
                constel->im,
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
     int signal_level;
     int bits_per_test;
     int line_model_no;
-    int block;
+    int block_no;
     int log_audio;
     int channel_codec;
     int rbs_pattern;
@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
 #endif
 
     memset(&latest_results, 0, sizeof(latest_results));
-    for (block = 0;  ;  block++)
+    for (block_no = 0;  ;  block_no++)
     {
         if (decode_test_file)
         {

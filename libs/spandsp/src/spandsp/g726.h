@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g726.h,v 1.25 2009/02/10 13:06:47 steveu Exp $
+ * $Id: g726.h,v 1.26 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*! \file */
@@ -59,6 +59,9 @@ enum
     G726_PACKING_RIGHT = 2
 };
 
+/*!
+    G.726 state
+ */
 typedef struct g726_state_s g726_state_t;
 
 typedef int16_t (*g726_decoder_func_t)(g726_state_t *s, uint8_t code);

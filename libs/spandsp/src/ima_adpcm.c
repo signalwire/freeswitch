@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: ima_adpcm.c,v 1.35 2009/02/10 13:06:46 steveu Exp $
+ * $Id: ima_adpcm.c,v 1.36 2009/04/11 18:11:19 steveu Exp $
  */
 
 /*! \file */
@@ -115,6 +115,7 @@
    to indicate a partially filled last octet.
 */
 
+/*! The number of ADPCM step sizes */
 #define STEP_MAX 88
 
 /* Intel ADPCM step variation table */
@@ -277,7 +278,9 @@ static uint8_t encode(ima_adpcm_state_t *s, int16_t linear)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s, int variant, int chunk_size)
+SPAN_DECLARE(ima_adpcm_state_t *) ima_adpcm_init(ima_adpcm_state_t *s,
+                                                 int variant,
+                                                 int chunk_size)
 {
     if (s == NULL)
     {

@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: expose.h,v 1.11 2008/11/30 13:44:35 steveu Exp $
+ * $Id: expose.h,v 1.12 2009/04/12 03:29:58 steveu Exp $
  */
 
 /*! \file */
@@ -55,6 +55,7 @@
 #include <spandsp/private/time_scale.h>
 #include <spandsp/private/super_tone_tx.h>
 #include <spandsp/private/super_tone_rx.h>
+#include <spandsp/private/silence_gen.h>
 #include <spandsp/private/async.h>
 #include <spandsp/private/fsk.h>
 #include <spandsp/private/v29rx.h>

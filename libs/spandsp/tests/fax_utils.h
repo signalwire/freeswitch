@@ -1,11 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * version.h - A tag file, so the exact installed revision can be assertained.
+ * fax_utils.h
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2007 Steve Underwood
+ * Copyright (C) 2009 Steve Underwood
  *
  * All rights reserved.
  *
@@ -22,17 +22,28 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: version.h.in,v 1.3 2009/03/01 12:39:02 steveu Exp $
+ * $Id: fax_utils.h,v 1.1 2009/02/20 12:34:20 steveu Exp $
  */
 
-#if !defined(_SPANDSP_VERSION_H_)
-#define _SPANDSP_VERSION_H_
+/*! \file */
 
-/* The date and time of the version are in UTC form. */
+#if !defined(_SPANDSP_FAX_UTILS_H_)
+#define _SPANDSP_FAX_UTILS_H_
 
-#define SPANDSP_RELEASE_DATE            20090420
-#define SPANDSP_RELEASE_TIME            163808
-#define SPANDSP_RELEASE_DATETIME_STRING "20090420 163808"
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+void log_tx_parameters(t30_state_t *s, const char *tag);
+
+void log_rx_parameters(t30_state_t *s, const char *tag);
+
+void log_transfer_statistics(t30_state_t *s, const char *tag);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
 /*- End of file ------------------------------------------------------------*/

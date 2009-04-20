@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax.h,v 1.38 2009/02/03 16:28:41 steveu Exp $
+ * $Id: fax.h,v 1.39 2009/03/13 12:59:26 steveu Exp $
  */
 
 /*! \file */
@@ -53,6 +53,16 @@ extern "C"
             the software has reached the end of the FAX call.
 */
 SPAN_DECLARE(int) fax_rx(fax_state_t *s, int16_t *amp, int len);
+
+/*! Apply fake T.30 receive processing when a block of audio samples is missing (e.g due
+    to packet loss).
+    \brief Apply fake T.30 receive processing.
+    \param s The FAX context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed. This should only be non-zero if
+            the software has reached the end of the FAX call.
+*/
+SPAN_DECLARE(int) fax_rx_fillin(fax_state_t *s, int len);
 
 /*! Apply T.30 transmit processing to generate a block of audio samples.
     \brief Apply T.30 transmit processing to generate a block of audio samples.

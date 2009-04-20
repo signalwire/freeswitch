@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.124 2009/02/20 12:34:20 steveu Exp $
+ * $Id: t30.h,v 1.125 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*! \file */
@@ -140,8 +140,11 @@ There are many other commonly encountered variations between machines, including
     - DCN usage
 */
 
+/*! The maximum length of a DIS, DTC or DCS frame */
 #define T30_MAX_DIS_DTC_DCS_LEN     22
+/*! The maximum length of the body of an ident string */
 #define T30_MAX_IDENT_LEN           20
+/*! The maximum length of the user string to insert in page headers */
 #define T30_MAX_PAGE_HEADER_INFO    50
 
 typedef struct t30_state_s t30_state_t;
@@ -190,7 +193,7 @@ typedef void (t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int comple
 typedef void (t30_real_time_frame_handler_t)(t30_state_t *s,
                                              void *user_data,
                                              int direction,
-                                             const uint8_t *msg,
+                                             const uint8_t msg[],
                                              int len);
 
 /*!
@@ -220,7 +223,7 @@ typedef void (t30_set_handler_t)(void *user_data, int type, int bit_rate, int sh
     \param msg The HDLC message.
     \param len The length of the message.
 */
-typedef void (t30_send_hdlc_handler_t)(void *user_data, const uint8_t *msg, int len);
+typedef void (t30_send_hdlc_handler_t)(void *user_data, const uint8_t msg[], int len);
 
 /*!
     T.30 protocol completion codes, at phase E.
@@ -650,7 +653,7 @@ SPAN_DECLARE(void) t30_non_ecm_put_chunk(void *user_data, const uint8_t buf[], i
     \param msg The HDLC message.
     \param len The length of the message, in octets.
     \param ok TRUE if the frame was received without error. */
-SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok);
+SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t msg[], int len, int ok);
 
 /*! Report the passage of time to the T.30 engine.
     \brief Report the passage of time to the T.30 engine.

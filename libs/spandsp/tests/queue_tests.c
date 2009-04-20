@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue_tests.c,v 1.12 2008/11/30 13:08:42 steveu Exp $
+ * $Id: queue_tests.c,v 1.13 2009/04/11 17:43:04 steveu Exp $
  */
 
 /* THIS IS A WORK IN PROGRESS. IT IS NOT FINISHED. */
@@ -65,7 +65,7 @@ int total_out;
 static void tests_failed(void)
 {
     printf("Tests failed\n");
-    tests_failed();
+    exit(2);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -309,7 +309,7 @@ static void check_contents(int total_in, int total_out)
 static int monitored_queue_write(const uint8_t buf[], int len)
 {
     int lenx;
-    
+
     lenx = queue_write(queue, buf, len);
     if (lenx >= 0)
         total_in += lenx;
@@ -321,7 +321,7 @@ static int monitored_queue_write(const uint8_t buf[], int len)
 static int monitored_queue_write_byte(const uint8_t buf)
 {
     int res;
-    
+
     if ((res = queue_write_byte(queue, buf)) >= 0)
         total_in++;
     check_contents(total_in, total_out);
@@ -332,7 +332,7 @@ static int monitored_queue_write_byte(const uint8_t buf)
 static int monitored_queue_read(uint8_t buf[], int len)
 {
     int lenx;
-    
+
     lenx = queue_read(queue, buf, len);
     if (lenx >= 0)
         total_out += lenx;
@@ -344,7 +344,7 @@ static int monitored_queue_read(uint8_t buf[], int len)
 static int monitored_queue_read_byte(void)
 {
     int res;
-    
+
     if ((res = queue_read_byte(queue)) >= 0)
         total_out++;
     check_contents(total_in, total_out);
@@ -357,7 +357,7 @@ static void functional_stream_tests(void)
     uint8_t buf[MSG_LEN];
     int i;
     int res;
-    
+
     total_in = 0;
     total_out = 0;
 

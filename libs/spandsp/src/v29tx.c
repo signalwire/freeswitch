@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.c,v 1.86 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v29tx.c,v 1.87 2009/04/12 04:20:01 steveu Exp $
  */
 
 /*! \file */
@@ -65,15 +65,23 @@
 #include "v29tx_floating_rrc.h"
 #endif
 
+/*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ        1700.0f
 
 /* Segments of the training sequence */
+/*! The start of the optional TEP, that may preceed the actual training, in symbols */
 #define V29_TRAINING_SEG_TEP        0
+/*! The start of training segment 1, in symbols */
 #define V29_TRAINING_SEG_1          (V29_TRAINING_SEG_TEP + 480)
+/*! The start of training segment 2, in symbols */
 #define V29_TRAINING_SEG_2          (V29_TRAINING_SEG_1 + 48)
+/*! The start of training segment 3, in symbols */
 #define V29_TRAINING_SEG_3          (V29_TRAINING_SEG_2 + 128)
+/*! The start of training segment 4, in symbols */
 #define V29_TRAINING_SEG_4          (V29_TRAINING_SEG_3 + 384)
+/*! The end of the training, in symbols */
 #define V29_TRAINING_END            (V29_TRAINING_SEG_4 + 48)
+/*! The end of the shutdown sequence, in symbols */
 #define V29_TRAINING_SHUTDOWN_END   (V29_TRAINING_END + 32)
 
 static int fake_get_bit(void *user_data)

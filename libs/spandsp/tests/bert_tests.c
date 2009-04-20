@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert_tests.c,v 1.26 2008/11/30 12:38:27 steveu Exp $
+ * $Id: bert_tests.c,v 1.27 2009/04/14 16:04:54 steveu Exp $
  */
 
 /*! \file */
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
             zeros++;
         }
         bert_put_bit(&rx_bert, bit);        
-        test[tx_bert.tx_reg]++;
+        test[tx_bert.tx.reg]++;
     }
     failed = FALSE;
     if (test[0] != 0)
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
             zeros++;
         }
         bert_put_bit(&rx_bert, bit);        
-        test[tx_bert.tx_reg]++;
+        test[tx_bert.tx.reg]++;
     }
     failed = FALSE;
     if (test[0] != 0)
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
             zeros++;
         }
         bert_put_bit(&rx_bert, bit);        
-        test[tx_bert.tx_reg]++;
+        test[tx_bert.tx.reg]++;
     }
     failed = FALSE;
     if (test[0] != 0)
@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
             zeros++;
         }
         bert_put_bit(&rx_bert, bit);        
-        test[tx_bert.tx_reg]++;
+        test[tx_bert.tx.reg]++;
     }
     failed = FALSE;
     if (test[0] != 0)
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
             zeros++;
         }
         bert_put_bit(&rx_bert, bit);        
-        test[tx_bert.tx_reg]++;
+        test[tx_bert.tx.reg]++;
     }
     failed = FALSE;
     if (test[0] != 0)

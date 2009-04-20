@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.c,v 1.70 2009/02/10 13:06:46 steveu Exp $
+ * $Id: adsi.c,v 1.76 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*! \file */
@@ -69,14 +69,19 @@
 #include "spandsp/private/dtmf.h"
 #include "spandsp/private/adsi.h"
 
+/*! The baudot code to shift from alpha to digits and symbols */
 #define BAUDOT_FIGURE_SHIFT     0x1B
+/*! The baudot code to shift from digits and symbols to alpha */
 #define BAUDOT_LETTER_SHIFT     0x1F
 
-#define SOH 0x01
-#define STX 0x02
-#define ETX 0x03
-#define DLE 0x10
-#define SUB 0x1A
+enum
+{
+    SOH = 0x01,
+    STX = 0x02,
+    ETX = 0x03,
+    DLE = 0x10,
+    SUB = 0x1A
+};
 
 static uint16_t adsi_encode_baudot(adsi_tx_state_t *s, uint8_t ch);
 static uint8_t adsi_decode_baudot(adsi_rx_state_t *s, uint8_t ch);
@@ -183,18 +188,16 @@ static void adsi_rx_put_bit(void *user_data, int bit)
     if (bit < 0)
     {
         /* Special conditions */
+        span_log(&s->logging, SPAN_LOG_FLOW, "ADSI signal status is %s (%d)\n", signal_status_to_str(bit), bit);
         switch (bit)
         {
         case SIG_STATUS_CARRIER_UP:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Carrier up.\n");
             s->consecutive_ones = 0;
             s->bit_pos = 0;
             s->in_progress = 0;
             s->msg_len = 0;
-            s->baudot_shift = 0;
             break;
         case SIG_STATUS_CARRIER_DOWN:
-            span_log(&s->logging, SPAN_LOG_FLOW, "Carrier down.\n");
             break;
         default:
             span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected special put bit value - %d!\n", bit);
@@ -303,10 +306,11 @@ static void adsi_tdd_put_async_byte(void *user_data, int byte)
     uint8_t octet;
     
     s = (adsi_rx_state_t *) user_data;
+    //printf("Rx bit %x\n", bit);
     if (byte < 0)
     {
         /* Special conditions */
-        printf("Status is %s (%d)\n", signal_status_to_str(byte), byte);
+        span_log(&s->logging, SPAN_LOG_FLOW, "ADSI signal status is %s (%d)\n", signal_status_to_str(byte), byte);
         switch (byte)
         {
         case SIG_STATUS_CARRIER_UP:
@@ -314,7 +318,6 @@ static void adsi_tdd_put_async_byte(void *user_data, int byte)
             s->bit_pos = 0;
             s->in_progress = 0;
             s->msg_len = 0;
-            s->baudot_shift = 0;
             break;
         case SIG_STATUS_CARRIER_DOWN:
             if (s->msg_len > 0)
@@ -330,7 +333,7 @@ static void adsi_tdd_put_async_byte(void *user_data, int byte)
         }
         return;
     }
-    if ((octet = adsi_decode_baudot(s, (uint8_t) byte)))
+    if ((octet = adsi_decode_baudot(s, (uint8_t) (byte & 0x1F))))
         s->msg[s->msg_len++] = octet;
     if (s->msg_len >= 256)
     {
@@ -393,7 +396,7 @@ static void start_tx(adsi_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t *amp, int len)
+SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t amp[], int len)
 {
     switch (s->standard)
     {
@@ -439,8 +442,9 @@ SPAN_DECLARE(adsi_rx_state_t *) adsi_rx_init(adsi_rx_state_t *s,
         dtmf_rx_init(&(s->dtmfrx), adsi_rx_dtmf, s);
         break;
     case ADSI_STANDARD_TDD:
-        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT], FALSE, async_rx_put_bit, &(s->asyncrx));
-        async_rx_init(&(s->asyncrx), 5, ASYNC_PARITY_NONE, 2, TRUE, adsi_tdd_put_async_byte, s);
+        /* TDD uses 5 bit data, no parity and 1.5 stop bits. We scan for the first stop bit, and
+           ride over the fraction. */
+        fsk_rx_init(&(s->fskrx), &preset_fsk_specs[FSK_WEITBRECHT], 7, adsi_tdd_put_async_byte, s);
         break;
     }
     s->standard = standard;
@@ -462,7 +466,7 @@ SPAN_DECLARE(int) adsi_rx_free(adsi_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE(int) adsi_tx(adsi_tx_state_t *s, int16_t amp[], int max_len)
 {
     int len;
     int lenx;

@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.128 2009/03/01 12:49:28 steveu Exp $
+## $Id: Makefile.am,v 1.130 2009/04/16 13:09:40 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -126,6 +126,7 @@ libspandsp_la_SOURCES = adsi.c \
                         tone_generate.c \
                         v17rx.c \
                         v17tx.c \
+                        v18.c \
                         v22bis_rx.c \
                         v22bis_tx.c \
                         v27ter_rx.c \
@@ -205,6 +206,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/tone_generate.h \
                          spandsp/v17rx.h \
                          spandsp/v17tx.h \
+                         spandsp/v18.h \
                          spandsp/v22bis.h \
                          spandsp/v27ter_rx.h \
                          spandsp/v27ter_tx.h \
@@ -241,6 +243,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/private/queue.h \
                          spandsp/private/schedule.h \
                          spandsp/private/sig_tone.h \
+                         spandsp/private/silence_gen.h \
                          spandsp/private/super_tone_rx.h \
                          spandsp/private/super_tone_tx.h \
                          spandsp/private/t30.h \
@@ -255,6 +258,7 @@ nobase_include_HEADERS = spandsp/adsi.h \
                          spandsp/private/tone_generate.h \
                          spandsp/private/v17rx.h \
                          spandsp/private/v17tx.h \
+                         spandsp/private/v18.h \
                          spandsp/private/v22bis.h \
                          spandsp/private/v27ter_rx.h \
                          spandsp/private/v27ter_tx.h \

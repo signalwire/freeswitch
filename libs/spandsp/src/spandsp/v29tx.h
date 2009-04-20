@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.h,v 1.38 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v29tx.h,v 1.39 2009/04/12 09:12:11 steveu Exp $
  */
 
 /*! \file */
@@ -94,6 +94,7 @@ gives
 
 */
 
+/*! The number of taps in the pulse shaping/bandpass filter */
 #define V29_TX_FILTER_STEPS     9
 
 /*!
@@ -144,6 +145,10 @@ SPAN_DECLARE(int) v29_tx_release(v29_tx_state_t *s);
     \return 0 for OK */
 SPAN_DECLARE(int) v29_tx_free(v29_tx_state_t *s);
 
+/*! Get the logging context associated with a V.29 modem transmit context.
+    \brief Get the logging context associated with a V.29 modem transmit context.
+    \param s The modem context.
+    \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) v29_tx_get_logging_state(v29_tx_state_t *s);
 
 /*! Change the get_bit function associated with a V.29 modem transmit context.
@@ -167,7 +172,7 @@ SPAN_DECLARE(void) v29_tx_set_modem_status_handler(v29_tx_state_t *s, modem_tx_s
     \param len The number of samples to be generated.
     \return The number of samples actually generated.
 */
-SPAN_DECLARE(int) v29_tx(v29_tx_state_t *s, int16_t *amp, int len);
+SPAN_DECLARE(int) v29_tx(v29_tx_state_t *s, int16_t amp[], int len);
 
 #if defined(__cplusplus)
 }

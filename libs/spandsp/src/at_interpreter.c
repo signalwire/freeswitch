@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.36 2009/02/10 13:06:46 steveu Exp $
+ * $Id: at_interpreter.c,v 1.37 2009/03/23 14:17:42 steveu Exp $
  */
 
 /*! \file */
@@ -52,6 +52,8 @@
 #include "spandsp/async.h"
 #include "spandsp/hdlc.h"
 #include "spandsp/fsk.h"
+#include "spandsp/super_tone_rx.h"
+#include "spandsp/fax_modems.h"
 
 #include "spandsp/at_interpreter.h"
 
@@ -110,18 +112,6 @@ static const char *revision = VERSION;
 #define ETX 0x03
 #define DLE 0x10
 #define SUB 0x1A
-
-/* BEWARE: right now this must match up with a list in the T.31 code. */
-enum
-{
-    T31_NONE = -1,
-    T31_FLUSH = 0,
-    T31_SILENCE_TX,
-    T31_SILENCE_RX,
-    T31_CED_TONE,
-    T31_CNG_TONE,
-    T31_NOCNG_TONE,
-};
 
 static const char *at_response_codes[] =
 {
@@ -239,7 +229,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         {
             /* FAX modem connection */
             at_set_at_rx_mode(s, AT_MODE_DELIVERY);
-            at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) T31_CED_TONE);
+            at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CED_TONE);
         }
         break;
     case AT_CALL_EVENT_CONNECTED:
@@ -256,9 +246,9 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
             /* FAX modem connection */
             at_set_at_rx_mode(s, AT_MODE_DELIVERY);
             if (s->silent_dial)
-                at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) T31_NOCNG_TONE);
+                at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE);
             else
-                at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) T31_CNG_TONE);
+                at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE);
             s->dte_is_waiting = TRUE;
         }
         break;
@@ -931,7 +921,7 @@ static const char *at_cmd_H(at_state_t *s, const char *t)
     if (s->at_rx_mode != AT_MODE_ONHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND)
     {
         /* Push out the last of the audio (probably by sending a short silence). */
-        at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) T31_FLUSH);
+        at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_FLUSH);
         s->do_hangup = TRUE;
         at_set_at_rx_mode(s, AT_MODE_CONNECTED);
         return (const char *) -1;

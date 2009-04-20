@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: t38_gateway.h,v 1.3 2009/04/12 14:18:02 steveu Exp $
  */
 
 /*! \file */
@@ -59,12 +59,16 @@ typedef struct
 */
 typedef struct
 {
+    /*! \brief The FAX modem set for the audio side fo the gateway. */
     fax_modems_state_t modems;
     /*! \brief The current receive signal handler. Actual receiving hop between this
                and a dummy receive routine. */
     span_rx_handler_t *base_rx_handler;
 } t38_gateway_audio_state_t;
 
+/*!
+    T.38 gateway T.38 side state.
+*/
 typedef struct
 {
     /*! \brief non-ECM and HDLC modem receive data buffer. */
@@ -87,10 +91,15 @@ typedef struct
                rate and the current specified packet interval. */
     int octets_per_data_packet;
 
+    /*! \brief Bits into the non-ECM buffer */
     int in_bits;
+    /*! \brief Octets fed out from the non-ECM buffer */
     int out_octets;
 } t38_gateway_to_t38_state_t;
 
+/*!
+    T.38 gateway HDLC buffer.
+*/
 typedef struct
 {
     /*! \brief HDLC message buffers. */
@@ -103,6 +112,9 @@ typedef struct
     int contents;
 } t38_gateway_hdlc_buf_t;
 
+/*!
+    T.38 gateway HDLC state.
+*/
 typedef struct
 {
     /*! \brief HDLC message buffers. */
@@ -183,8 +195,11 @@ typedef struct
 */
 struct t38_gateway_state_s
 {
+    /*! T.38 side state */
     t38_gateway_t38_state_t t38x;
+    /*! Audio side state */
     t38_gateway_audio_state_t audio;
+    /*! T.38 core state */
     t38_gateway_core_state_t core;
 
     /*! \brief Error and flow logging control */

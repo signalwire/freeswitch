@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: queue.c,v 1.29 2009/02/10 13:06:46 steveu Exp $
+ * $Id: queue.c,v 1.31 2009/04/11 18:11:19 steveu Exp $
  */
 
 /*! \file */
@@ -176,7 +176,7 @@ SPAN_DECLARE(int) queue_read(queue_state_t *s, uint8_t *buf, int len)
             memcpy(buf, s->data + optr, real_len);
         /*endif*/
         new_optr = optr + real_len;
-        if (new_optr > s->len)
+        if (new_optr >= s->len)
             new_optr = 0;
         /*endif*/
     }
@@ -250,7 +250,7 @@ SPAN_DECLARE(int) queue_write(queue_state_t *s, const uint8_t *buf, int len)
         /* A one step process */
         memcpy(s->data + iptr, buf, real_len);
         new_iptr = iptr + real_len;
-        if (new_iptr > s->len)
+        if (new_iptr >= s->len)
             new_iptr = 0;
         /*endif*/
     }
@@ -365,7 +365,7 @@ SPAN_DECLARE(int) queue_write_msg(queue_state_t *s, const uint8_t *buf, int len)
         memcpy(s->data + iptr, &lenx, sizeof(uint16_t));
         memcpy(s->data + iptr + sizeof(uint16_t), buf, len);
         new_iptr = iptr + real_len;
-        if (new_iptr > s->len)
+        if (new_iptr >= s->len)
             new_iptr = 0;
         /*endif*/
     }

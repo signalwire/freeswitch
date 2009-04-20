@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.c,v 1.123 2009/02/10 13:06:46 steveu Exp $
+ * $Id: t38_terminal.c,v 1.124 2009/03/13 14:49:56 steveu Exp $
  */
 
 /*! \file */
@@ -527,7 +527,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
 
 static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
 {
-    if (s->t38_fe.ms_per_tx_chunk == 0)
+    if (s->t38_fe.ms_per_tx_chunk == 0  ||  s->t38_fe.tx_bit_rate == 0)
         return 0;
     return bits*1000000/s->t38_fe.tx_bit_rate;
 }

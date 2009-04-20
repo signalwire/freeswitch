@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: g722.h,v 1.2 2009/04/12 09:12:11 steveu Exp $
  */
 
 
@@ -51,6 +51,9 @@ typedef struct
     int16_t d[7];
 } g722_band_t;
 
+/*!
+    G.722 encode state
+ */
 struct g722_encode_state_s
 {
     /*! TRUE if the operating in the special ITU test mode, with the band split filters
@@ -76,6 +79,9 @@ struct g722_encode_state_s
     int out_bits;
 };
 
+/*!
+    G.722 decode state
+ */
 struct g722_decode_state_s
 {
     /*! TRUE if the operating in the special ITU test mode, with the band split filters

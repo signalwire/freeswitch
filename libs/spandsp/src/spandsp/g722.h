@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.h,v 1.25 2009/02/10 13:06:47 steveu Exp $
+ * $Id: g722.h,v 1.26 2009/04/12 09:12:10 steveu Exp $
  */
 
 
@@ -56,8 +56,14 @@ enum
     G722_PACKED = 0x0002
 };
 
+/*!
+    G.722 encode state
+ */
 typedef struct g722_encode_state_s g722_encode_state_t;
 
+/*!
+    G.722 decode state
+ */
 typedef struct g722_decode_state_s g722_decode_state_t;
 
 #if defined(__cplusplus)
@@ -73,8 +79,14 @@ extern "C"
     \return A pointer to the G.722 encode context, or NULL for error. */
 SPAN_DECLARE(g722_encode_state_t *) g722_encode_init(g722_encode_state_t *s, int rate, int options);
 
+/*! Release a G.722 encode context.
+    \param s The G.722 encode context.
+    \return 0 for OK. */
 SPAN_DECLARE(int) g722_encode_release(g722_encode_state_t *s);
 
+/*! Free a G.722 encode context.
+    \param s The G.722 encode context.
+    \return 0 for OK. */
 SPAN_DECLARE(int) g722_encode_free(g722_encode_state_t *s);
 
 /*! Encode a buffer of linear PCM data to G.722
@@ -93,8 +105,14 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
     \return A pointer to the G.722 decode context, or NULL for error. */
 SPAN_DECLARE(g722_decode_state_t *) g722_decode_init(g722_decode_state_t *s, int rate, int options);
 
+/*! Release a G.722 decode context.
+    \param s The G.722 decode context.
+    \return 0 for OK. */
 SPAN_DECLARE(int) g722_decode_release(g722_decode_state_t *s);
 
+/*! Free a G.722 decode context.
+    \param s The G.722 decode context.
+    \return 0 for OK. */
 SPAN_DECLARE(int) g722_decode_free(g722_decode_state_t *s);
 
 /*! Decode a buffer of G.722 data to linear PCM.

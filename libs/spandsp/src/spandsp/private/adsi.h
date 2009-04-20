@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi.h,v 1.1 2008/10/13 13:14:01 steveu Exp $
+ * $Id: adsi.h,v 1.4 2009/04/12 04:20:01 steveu Exp $
  */
 
 /*! \file */
@@ -36,27 +36,45 @@
  */
 struct adsi_tx_state_s
 {
+    /*! */
     int standard;
 
+    /*! */
     tone_gen_descriptor_t alert_tone_desc;
+    /*! */
     tone_gen_state_t alert_tone_gen;
+    /*! */
     fsk_tx_state_t fsktx;
+    /*! */
     dtmf_tx_state_t dtmftx;
+    /*! */
     async_tx_state_t asynctx;
-    
+
+    /*! */
     int tx_signal_on;
-    
+
+    /*! */
     int byte_no;
+    /*! */
     int bit_pos;
+    /*! */
     int bit_no;
+    /*! */
     uint8_t msg[256];
+    /*! */
     int msg_len;
+    /*! */
     int preamble_len;
+    /*! */
     int preamble_ones_len;
+    /*! */
     int postamble_ones_len;
+    /*! */
     int stop_bits;
+    /*! */
     int baudot_shift;
     
+    /*! */
     logging_state_t logging;
 };
 
@@ -66,24 +84,35 @@ struct adsi_tx_state_s
  */
 struct adsi_rx_state_s
 {
+    /*! */
     int standard;
+    /*! */
     put_msg_func_t put_msg;
+    /*! */
     void *user_data;
 
+    /*! */
     fsk_rx_state_t fskrx;
+    /*! */
     dtmf_rx_state_t dtmfrx;
-    async_rx_state_t asyncrx;
-    
+
+    /*! */
     int consecutive_ones;
+    /*! */
     int bit_pos;
+    /*! */
     int in_progress;
+    /*! */
     uint8_t msg[256];
+    /*! */
     int msg_len;
+    /*! */
     int baudot_shift;
     
     /*! A count of the framing errors. */
     int framing_errors;
 
+    /*! */
     logging_state_t logging;
 };
 

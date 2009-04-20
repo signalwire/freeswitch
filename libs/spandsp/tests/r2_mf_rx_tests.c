@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: r2_mf_rx_tests.c,v 1.12 2008/11/30 10:17:31 steveu Exp $
+ * $Id: r2_mf_rx_tests.c,v 1.13 2009/04/11 18:11:19 steveu Exp $
  */
 
 /*! \file */
@@ -87,6 +87,9 @@ a fair test of performance in a real PSTN channel.
 #define MF_PAUSE                    (68*8)
 #define MF_CYCLE                    (MF_DURATION + MF_PAUSE)
 
+/*!
+    MF tone generator descriptor for tests.
+*/
 typedef struct
 {
     float       f1;         /* First freq */

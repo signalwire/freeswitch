@@ -22,22 +22,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: silence_gen.h,v 1.16 2009/02/10 13:06:47 steveu Exp $
+ * $Id: silence_gen.h,v 1.17 2009/04/12 03:29:58 steveu Exp $
  */
 
 #if !defined(_SPANDSP_SILENCE_GEN_H_)
 #define _SPANDSP_SILENCE_GEN_H_
 
-typedef struct
-{
-    /*! \brief The callback function used to report status changes. */
-    modem_tx_status_func_t status_handler;
-    /*! \brief A user specified opaque pointer passed to the status function. */
-    void *status_user_data;
-
-    int remaining_samples;
-    int total_samples;
-} silence_gen_state_t;
+typedef struct silence_gen_state_s silence_gen_state_t;
 
 #if defined(__cplusplus)
 extern "C"

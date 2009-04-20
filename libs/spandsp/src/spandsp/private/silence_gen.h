@@ -1,11 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * private/g711.h - In line A-law and u-law conversion routines
+ * private/silence_gen.c - A silence generator, for inserting timed silences.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2001 Steve Underwood
+ * Copyright (C) 2006 Steve Underwood
  *
  * All rights reserved.
  *
@@ -22,19 +22,21 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: g711.h,v 1.2 2009/04/12 09:12:11 steveu Exp $
+ * $Id: silence_gen.h,v 1.1 2009/04/12 03:29:58 steveu Exp $
  */
 
-#if !defined(_SPANDSP_PRIVATE_G711_H_)
-#define _SPANDSP_PRIVATE_G711_H_
+#if !defined(_SPANDSP_PRIVATE_SILENCE_GEN_H_)
+#define _SPANDSP_PRIVATE_SILENCE_GEN_H_
 
-/*!
-    G.711 state
- */
-struct g711_state_s
+struct silence_gen_state_s
 {
-    /*! One of the G.711_xxx options */
-    int mode;
+    /*! \brief The callback function used to report status changes. */
+    modem_tx_status_func_t status_handler;
+    /*! \brief A user specified opaque pointer passed to the status function. */
+    void *status_user_data;
+
+    int remaining_samples;
+    int total_samples;
 };
 
 #endif

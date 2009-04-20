@@ -1,3 +1,4 @@
+#define IAXMODEM_STUFF
 /*
  * SpanDSP - a series of DSP components for telephony
  *
@@ -22,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.154 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v29rx.c,v 1.163 2009/04/20 16:36:36 steveu Exp $
  */
 
 /*! \file */
@@ -68,8 +69,11 @@
 #include "v29rx_floating_rrc.h"
 #endif
 
+/*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1700.0f
+/*! The nominal baud or symbol rate */
 #define BAUD_RATE                       2400
+/*! The adaption rate coefficient for the equalizer */
 #define EQUALIZER_DELTA                 0.21f
 
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -78,10 +82,14 @@
 #endif
 
 /* Segments of the training sequence */
+/*! The length of training segment 2, in symbols */
 #define V29_TRAINING_SEG_2_LEN          128
+/*! The length of training segment 3, in symbols */
 #define V29_TRAINING_SEG_3_LEN          384
+/*! The length of training segment 4, in symbols */
 #define V29_TRAINING_SEG_4_LEN          48
 
+/*! The length of the equalizer buffer */
 #define V29_EQUALIZER_LEN    (V29_EQUALIZER_PRE_LEN + 1 + V29_EQUALIZER_POST_LEN)
 
 enum
@@ -121,6 +129,8 @@ static const uint8_t space_map_9600[20][20] =
 };
 
 /* Coefficients for the band edge symbol timing synchroniser (alpha = 0.99) */
+/* low_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ - BAUD_RATE/2.0f)/SAMPLE_RATE; */
+/* high_edge = 2.0f*M_PI*(CARRIER_NOMINAL_FREQ + BAUD_RATE/2.0f)/SAMPLE_RATE; */
 #if defined(SPANDSP_USE_FIXED_POINT)
 #define SYNC_LOW_BAND_EDGE_COEFF_0      ((int)(FP_FACTOR* 1.829281f))   /* 2*alpha*cos(low_edge) */
 #define SYNC_LOW_BAND_EDGE_COEFF_1      ((int)(FP_FACTOR*-0.980100f))   /* -alpha^2 */
@@ -153,7 +163,7 @@ SPAN_DECLARE(float) v29_rx_symbol_timing_correction(v29_rx_state_t *s)
 
 SPAN_DECLARE(float) v29_rx_signal_power(v29_rx_state_t *s)
 {
-    return power_meter_current_dbm0(&s->power);
+    return power_meter_current_dbm0(&s->power) + 3.98f;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -492,7 +502,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
     s->symbol_sync_dc_filter[0] = v;
     /* A little integration will now filter away much of the noise */
     s->baud_phase -= p;
-    if (abs(s->baud_phase) > 100*FP_FACTOR)
+    if (abs(s->baud_phase) > 30*FP_FACTOR)
     {
         if (s->baud_phase > 0)
             i = (s->baud_phase > 1000*FP_FACTOR)  ?  5  :  1;
@@ -674,6 +684,8 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             s->carrier_phase += angle;
             /* We have just seen the first bit of the scrambled sequence, so skip it. */
             bit = scrambled_training_bit(s);
+            s->constellation_state = cdcd_pos[s->training_cd + bit];
+            target = &v29_9600_constellation[s->constellation_state];
             s->training_count = 1;
             s->training_stage = TRAINING_STAGE_TRAIN_ON_CDCD;
             report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
@@ -858,7 +870,7 @@ SPAN_DECLARE(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
            We need to measure the power with the DC blocked, but not using
            a slow to respond DC blocker. Use the most elementary HPF. */
         x = amp[i] >> 1;
-        /* There could be oveflow here, but it isn't a problem in practice */
+        /* There could be overflow here, but it isn't a problem in practice */
         diff = x - s->last_sample;
         power = power_meter_update(&(s->power), diff);
 #if defined(IAXMODEM_STUFF)
@@ -994,6 +1006,34 @@ SPAN_DECLARE(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
 #else
         dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
 #endif
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v29_rx_fillin(v29_rx_state_t *s, int len)
+{
+    int i;
+
+    /* We want to sustain the current state (i.e carrier on<->carrier off), and
+       try to sustain the carrier phase. We should probably push the filters, as well */
+    span_log(&s->logging, SPAN_LOG_FLOW, "Fill-in %d samples\n", len);
+    if (!s->signal_present)
+        return 0;
+    if (s->training_stage == TRAINING_STAGE_PARKED)
+        return 0;
+    for (i = 0;  i < len;  i++)
+    {
+#if defined(SPANDSP_USE_FIXED_POINT)
+        dds_advance(&s->carrier_phase, s->carrier_phase_rate);
+#else
+        dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
+#endif
+        /* Advance the symbol phase the appropriate amount */
+        s->eq_put_step -= RX_PULSESHAPER_COEFF_SETS;
+        if (s->eq_put_step <= 0)
+            s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
+        /* TODO: Should we rotate any buffers */
     }
     return 0;
 }

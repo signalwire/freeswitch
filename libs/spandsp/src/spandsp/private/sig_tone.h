@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: sig_tone.h,v 1.2 2009/01/30 07:19:25 steveu Exp $
+ * $Id: sig_tone.h,v 1.3 2009/04/12 14:18:02 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_SIG_TONE_H_)
@@ -53,6 +53,7 @@ struct sig_tone_descriptor_s
     /*! \brief Parameters to control the behaviour of the notch filter, used
                to remove the tone from the voice path in some protocols. */
     int notch_lag_time;
+    /*! \brief TRUE if the notch may be used in the media flow. */
     int notch_allowed;
 
     /*! \brief The tone on persistence check, in audio samples. */
@@ -60,6 +61,7 @@ struct sig_tone_descriptor_s
     /*! \brief The tone off persistence check, in audio samples. */
     int tone_off_check_time;
 
+    /*! \brief ??? */
     int tones;
     /*! \brief The coefficients for the cascaded bi-quads notch filter. */
     struct
@@ -79,17 +81,22 @@ struct sig_tone_descriptor_s
     } tone[2];
 
 
-    /*! \brief Flat mode bandpass bi-quad parameters */
 #if defined(SPANDSP_USE_FIXED_POINT)
+    /*! \brief Flat mode bandpass bi-quad parameters */
     int32_t broad_a[3];
+    /*! \brief Flat mode bandpass bi-quad parameters */
     int32_t broad_b[3];
+    /*! \brief Post filter scaling */
     int broad_postscale;
 #else
+    /*! \brief Flat mode bandpass bi-quad parameters */
     float broad_a[3];
+    /*! \brief Flat mode bandpass bi-quad parameters */
     float broad_b[3];
 #endif
     /*! \brief The coefficients for the post notch leaky integrator. */
     int32_t notch_slugi;
+    /*! \brief ??? */
     int32_t notch_slugp;
 
     /*! \brief The coefficients for the post modulus leaky integrator in the
@@ -97,20 +104,27 @@ struct sig_tone_descriptor_s
                detection ratio. This is called the guard ratio in some
                protocols. */
     int32_t unfiltered_slugi;
+    /*! \brief ??? */
     int32_t unfiltered_slugp;
 
     /*! \brief The coefficients for the post modulus leaky integrator in the
                bandpass filter data path. */
     int32_t broad_slugi;
+    /*! \brief ??? */
     int32_t broad_slugp;
 
     /*! \brief Masks which effectively threshold the notched, weighted and
                bandpassed data. */
     int32_t notch_threshold;
+    /*! \brief ??? */
     int32_t unfiltered_threshold;
+    /*! \brief ??? */
     int32_t broad_threshold;
 };
 
+/*!
+    Signaling tone transmit state
+ */
 struct sig_tone_tx_state_s
 {
     /*! \brief The callback function used to handle signaling changes. */
@@ -118,6 +132,7 @@ struct sig_tone_tx_state_s
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 
+    /*! \brief Tone descriptor */
     sig_tone_descriptor_t *desc;
 
     /*! The scaling values for the high and low level tones */
@@ -130,11 +145,17 @@ struct sig_tone_tx_state_s
     /*! The phase accumulators for the one or two tones */
     uint32_t phase_acc[2];
 
+    /*! \brief Current transmit tone */
     int current_tx_tone;
+    /*! \brief Current transmit timeout */
     int current_tx_timeout;
+    /*! \brief Time in current signaling state, in samples. */
     int signaling_state_duration;
 };
 
+/*!
+    Signaling tone receive state
+ */
 struct sig_tone_rx_state_s
 {
     /*! \brief The callback function used to handle signaling changes. */
@@ -142,19 +163,25 @@ struct sig_tone_rx_state_s
     /*! \brief A user specified opaque pointer passed to the callback function. */
     void *user_data;
 
+    /*! \brief Tone descriptor */
     sig_tone_descriptor_t *desc;
 
+    /*! \brief The current receive tone */
     int current_rx_tone;
+    /*! \brief The timeout for switching from the high level to low level tone detector. */
     int high_low_timer;
 
     struct
     {
-        /*! \brief The z's for the notch filter */
 #if defined(SPANDSP_USE_FIXED_POINT)
+        /*! \brief The z's for the notch filter */
         int32_t notch_z1[3];
+        /*! \brief The z's for the notch filter */
         int32_t notch_z2[3];
 #else
+        /*! \brief The z's for the notch filter */
         float notch_z1[3];
+        /*! \brief The z's for the notch filter */
         float notch_z2[3];
 #endif
 
@@ -162,22 +189,30 @@ struct sig_tone_rx_state_s
         int32_t notch_zl;
     } tone[2];
 
-    /*! \brief The z's for the weighting/bandpass filter. */
 #if defined(SPANDSP_USE_FIXED_POINT)
+    /*! \brief The z's for the weighting/bandpass filter. */
     int32_t broad_z[3];
 #else
+    /*! \brief The z's for the weighting/bandpass filter. */
     float broad_z[3];
 #endif
     /*! \brief The z for the broadband integrator. */
     int32_t broad_zl;
 
+    /*! \brief ??? */
     int flat_mode;
+    /*! \brief ??? */
     int tone_present;
+    /*! \brief ??? */
     int notch_enabled;
+    /*! \brief ??? */
     int flat_mode_timeout;
+    /*! \brief ??? */
     int notch_insertion_timeout;
+    /*! \brief ??? */
     int tone_persistence_timeout;
     
+    /*! \brief ??? */
     int signaling_state_duration;
 };
 

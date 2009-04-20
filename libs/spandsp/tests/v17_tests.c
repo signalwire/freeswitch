@@ -23,7 +23,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17_tests.c,v 1.100 2009/02/12 14:21:16 steveu Exp $
+ * $Id: v17_tests.c,v 1.101 2009/03/15 09:09:21 steveu Exp $
  */
 
 /*! \page v17_tests_page V.17 modem tests
@@ -189,7 +189,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
         fpower = (constel->re - target->re)*(constel->re - target->re)
                + (constel->im - target->im)*(constel->im - target->im);
         smooth_power = 0.95f*smooth_power + 0.05f*fpower;
-        printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.2f\n",
+        printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.4f\n",
                symbol_no,
                constel->re,
                constel->im,

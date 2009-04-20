@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_core.h,v 1.37 2009/02/10 13:06:47 steveu Exp $
+ * $Id: t38_core.h,v 1.38 2009/04/12 14:18:02 steveu Exp $
  */
 
 /*! \file */
@@ -173,8 +173,11 @@ enum t38_data_rate_management_types_e
 /*! T.38 data field */
 typedef struct
 {
+    /*! Field type */
     int field_type;
+    /*! Field contents */
     const uint8_t *field;
+    /*! Field length */
     int field_len;
 } t38_data_field_t;
 
@@ -328,6 +331,16 @@ SPAN_DECLARE(void) t38_set_tep_handling(t38_core_state_t *s, int allow_for_tep);
 */
 SPAN_DECLARE(logging_state_t *) t38_core_get_logging_state(t38_core_state_t *s);
 
+/*! Initialise a T.38 core context.
+    \brief Initialise a T.38 core context.
+    \param s The T.38 context.
+    \param rx_indicator_handler Receive indicator handling routine.
+    \param rx_data_handler Receive data packet handling routine.
+    \param rx_rx_missing_handler Missing receive packet handling routine.
+    \param rx_packet_user_data An opaque pointer passed to the rx packet handling routines.
+    \param tx_packet_handler Packet transmit handling routine.
+    \param tx_packet_user_data An opaque pointer passed to the tx_packet_handler.
+    \return A pointer to the T.38 context, or NULL if there was a problem. */
 SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
                                                t38_rx_indicator_handler_t *rx_indicator_handler,
                                                t38_rx_data_handler_t *rx_data_handler,
@@ -336,8 +349,16 @@ SPAN_DECLARE(t38_core_state_t *) t38_core_init(t38_core_state_t *s,
                                                t38_tx_packet_handler_t *tx_packet_handler,
                                                void *tx_packet_user_data);
 
+/*! Release a signaling tone transmitter context.
+    \brief Release a signaling tone transmitter context.
+    \param s The T.38 context.
+    \return 0 for OK */
 SPAN_DECLARE(int) t38_core_release(t38_core_state_t *s);
 
+/*! Free a signaling tone transmitter context.
+    \brief Free a signaling tone transmitter context.
+    \param s The T.38 context.
+    \return 0 for OK */
 SPAN_DECLARE(int) t38_core_free(t38_core_state_t *s);
 
 #if defined(__cplusplus)

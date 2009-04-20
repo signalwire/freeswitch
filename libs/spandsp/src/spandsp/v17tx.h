@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.h,v 1.40 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v17tx.h,v 1.41 2009/04/12 09:12:11 steveu Exp $
  */
 
 /*! \file */
@@ -81,6 +81,7 @@ suits the receiver better, so the same signal generator is also used for the
 transmitter. 
 */
 
+/*! The number of taps in the pulse shaping/bandpass filter */
 #define V17_TX_FILTER_STEPS     9
 
 /*!
@@ -132,6 +133,10 @@ SPAN_DECLARE(int) v17_tx_release(v17_tx_state_t *s);
     \return 0 for OK */
 SPAN_DECLARE(int) v17_tx_free(v17_tx_state_t *s);
 
+/*! Get the logging context associated with a V.17 modem transmit context.
+    \brief Get the logging context associated with a V.17 modem transmit context.
+    \param s The modem context.
+    \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) v17_tx_get_logging_state(v17_tx_state_t *s);
 
 /*! Change the get_bit function associated with a V.17 modem transmit context.

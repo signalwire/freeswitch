@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.1 2008/11/30 03:39:58 steveu Exp $
+ * $Id: v22bis.h,v 1.4 2009/04/17 14:37:53 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V22BIS_H_)
@@ -44,6 +44,10 @@ struct v22bis_state_s
     get_bit_func_t get_bit;
     /*! \brief A user specified opaque pointer passed to the callback routines. */
     void *user_data;
+    /*! \brief The callback function used to report modem status changes. */
+    modem_rx_status_func_t status_handler;
+    /*! \brief A user specified opaque pointer passed to the status function. */
+    void *status_user_data;
 
     /* RECEIVE SECTION */
     struct
@@ -79,6 +83,8 @@ struct v22bis_state_s
         float carrier_track_p;
         /*! \brief The integral part of the carrier tracking filter. */
         float carrier_track_i;
+        
+        int scrambled_ones_to_date;
 
         /*! \brief A callback function which may be enabled to report every symbol's
                    constellation position. */
@@ -125,6 +131,10 @@ struct v22bis_state_s
         int baud_phase;
     
         int sixteen_way_decisions;
+
+        int detected_unscrambled_ones;
+        int detected_unscrambled_zeros;
+        int detected_2400bps_markers;
     } rx;
 
     /* TRANSMIT SECTION */
@@ -166,14 +176,6 @@ struct v22bis_state_s
         /*! \brief The get_bit function in use at any instant. */
         get_bit_func_t current_get_bit;
     } tx;
-
-    int detected_unscrambled_ones;
-    int detected_unscrambled_zeros;
-
-    int detected_unscrambled_ones_or_zeros;
-    int detected_unscrambled_0011_ending;
-    int detected_scrambled_ones_or_zeros_at_1200bps;
-    int detected_scrambled_ones_at_2400bps;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

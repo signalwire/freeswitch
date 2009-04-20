@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bell_r2_mf.c,v 1.38 2009/02/10 13:06:46 steveu Exp $
+ * $Id: bell_r2_mf.c,v 1.39 2009/04/11 18:11:19 steveu Exp $
  */
 
 /*! \file */
@@ -67,6 +67,9 @@
 
 #define ms_to_samples(t)            (((t)*SAMPLE_RATE)/1000)
 
+/*!
+    MF tone descriptor.
+*/
 typedef struct
 {
     int         f1;         /* First freq */

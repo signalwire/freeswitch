@@ -25,7 +25,7 @@
  * This code is based on the widely used GSM 06.10 code available from
  * http://kbs.cs.tu-berlin.de/~jutta/toast.html
  *
- * $Id: gsm0610_local.h,v 1.14 2009/03/07 16:47:30 steveu Exp $
+ * $Id: gsm0610_local.h,v 1.15 2009/03/13 15:57:29 steveu Exp $
  */
 
 #if !defined(_GSM0610_LOCAL_H_)
@@ -39,7 +39,7 @@
 
 static __inline__ int16_t gsm_add(int16_t a, int16_t b)
 {
-#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
+#if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(
         " addw %2,%0;\n"
         " jno 0f;\n"
@@ -62,7 +62,7 @@ static __inline__ int16_t gsm_add(int16_t a, int16_t b)
 
 static __inline__ int32_t gsm_l_add(int32_t a, int32_t b)
 {
-#if defined(__GNUC__)  &&  defined(SPANDSP_USE_MMX)
+#if defined(__GNUC__)  &&  (defined(__i386__)  ||  defined(__x86_64__))
     __asm__ __volatile__(
         " addl %2,%0;\n"
         " jno 0f;\n"
@@ -213,16 +213,6 @@ extern void gsm0610_short_term_synthesis_filter(gsm0610_state_t *s,
                                                 int16_t amp[160]);
 
 extern int16_t gsm0610_norm(int32_t a);
-
-#if defined(__GNUC__)  &&  defined(__i386__)
-
-int32_t gsm0610_vec_iprod(const int16_t *p, const int16_t *q, int n);
-
-int32_t gsm0610_vec_maxmin(const int16_t *p, int n, int16_t *out);
-
-int32_t gsm0610_max_cross_corr(const int16_t *wt, const int16_t *dp, int16_t *Nc_out);
-
-#endif
 
 #endif
 

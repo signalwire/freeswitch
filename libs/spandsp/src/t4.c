@@ -24,7 +24,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.c,v 1.128 2009/03/01 11:47:03 steveu Exp $
+ * $Id: t4.c,v 1.130 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*
@@ -91,13 +91,19 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/t4.h"
 
+/*! The number of centimetres in one inch */
 #define CM_PER_INCH                 2.54f
 
+/*! The number of EOLs to be sent at the end of a T.4 page */
 #define EOLS_TO_END_T4_TX_PAGE      6
+/*! The number of EOLs to be sent at the end of a T.6 page */
 #define EOLS_TO_END_T6_TX_PAGE      2
 
+/*! The number of EOLs to expect at the end of a T.4 page */
 #define EOLS_TO_END_ANY_RX_PAGE     6
+/*! The number of EOLs to check at the end of a T.4 page */
 #define EOLS_TO_END_T4_RX_PAGE      5
+/*! The number of EOLs to check at the end of a T.6 page */
 #define EOLS_TO_END_T6_RX_PAGE      2
 
 /* Finite state machine state codes */
@@ -134,19 +140,26 @@ static void STATE_TRACE(const char *format, ...)
 #define STATE_TRACE(...) /**/
 #endif
 
-/* Finite state machine state table entry */
+/*! T.4 finite state machine state table entry */
 typedef struct
 {
-    uint8_t state;          /* See above */
-    uint8_t width;          /* Width of code in bits */
-    int16_t param;          /* Run length in bits */
+    /*! State */
+    uint8_t state;
+    /*! Width of code in bits */
+    uint8_t width;
+    /*! Run length in bits */
+    int16_t param;
 } t4_table_entry_t;
 
+/*! T.4 run length table entry */
 typedef struct
 {
-    uint16_t length;        /* Length of T.4 code, in bits */
-    uint16_t code;          /* T.4 code */
-    int16_t run_length;     /* Run length, in bits */
+    /*! Length of T.4 code, in bits */
+    uint16_t length;
+    /*! T.4 code */
+    uint16_t code;
+    /*! Run length, in bits */
+    int16_t run_length;
 } t4_run_table_entry_t;
 
 #include "t4_states.h"
@@ -302,24 +315,25 @@ static int get_tiff_directory_info(t4_state_t *s)
         {             -1.00f, -1, -1}
     };
     uint16_t res_unit;
-    uint32_t parm;
+    uint16_t parm16;
+    uint32_t parm32;
     float x_resolution;
     float y_resolution;
     int i;
     t4_tiff_state_t *t;
 
     t = &s->tiff;
-    parm = 0;
-    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm);
-    if (parm != 1)
+    parm16 = 0;
+    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm16);
+    if (parm16 != 1)
         return -1;
-    parm = 0;
-    TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm);
-    s->image_width = parm;
+    parm32 = 0;
+    TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
+    s->image_width = parm32;
     s->bytes_per_row = (s->image_width + 7)/8;
-    parm = 0;
-    TIFFGetField(t->tiff_file, TIFFTAG_IMAGELENGTH, &parm);
-    s->image_length = parm;
+    parm32 = 0;
+    TIFFGetField(t->tiff_file, TIFFTAG_IMAGELENGTH, &parm32);
+    s->image_length = parm32;
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);
     y_resolution = 0.0f;
@@ -400,20 +414,21 @@ static int test_tiff_directory_info(t4_state_t *s)
         {             -1.00f, -1, -1}
     };
     uint16_t res_unit;
-    uint32_t parm;
+    uint16_t parm16;
+    uint32_t parm32;
     float x_resolution;
     float y_resolution;
     int i;
     t4_tiff_state_t *t;
 
     t = &s->tiff;
-    parm = 0;
-    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm);
-    if (parm != 1)
+    parm16 = 0;
+    TIFFGetField(t->tiff_file, TIFFTAG_BITSPERSAMPLE, &parm16);
+    if (parm16 != 1)
         return -1;
-    parm = 0;
-    TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm);
-    if (s->image_width != (int) parm)
+    parm32 = 0;
+    TIFFGetField(t->tiff_file, TIFFTAG_IMAGEWIDTH, &parm32);
+    if (s->image_width != (int) parm32)
         return 1;
     x_resolution = 0.0f;
     TIFFGetField(t->tiff_file, TIFFTAG_XRESOLUTION, &x_resolution);

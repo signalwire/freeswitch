@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.h,v 1.3 2009/01/29 18:30:14 steveu Exp $
+ * $Id: t30.h,v 1.4 2009/04/12 14:18:02 steveu Exp $
  */
 
 /*! \file */
@@ -41,6 +41,7 @@ struct t30_state_s
     /*! \brief T.4 context for reading or writing image data. */
     t4_state_t t4;
     
+    /*! \brief The type of FAX operation currently in progress */
     int operation_in_progress;
 
     /*! \brief TRUE if behaving as the calling party */
@@ -235,8 +236,10 @@ struct t30_state_s
     /*! \brief TRUE if we are at the end of an ECM page to se sent - i.e. there are no more
         partial pages still to come. */
     int ecm_at_page_end;
+
+    /*! \brief The transmission step queued to follow the one in progress. */
     int next_tx_step;
-    /* The FCF for the next receive step */
+    /*! \brief The FCF for the next receive step. */
     uint8_t next_rx_step;
     /*! \brief Image file name for image reception. */
     char rx_file[256];
@@ -248,6 +251,7 @@ struct t30_state_s
     int tx_start_page;
     /*! \brief The last page to be sent from the image file. -1 means no restriction. */
     int tx_stop_page;
+    /*! \brief The current completion status. */
     int current_status;
     /*! \brief Internet Aware FAX mode bit mask. */
     int iaf;

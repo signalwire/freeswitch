@@ -357,6 +357,10 @@ SOURCE=.\v17tx.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\v18.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\v22bis_rx.c
 # End Source File
 # Begin Source File
@@ -667,6 +671,10 @@ SOURCE=.\spandsp/v17tx.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/v18.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/v22bis.h
 # End Source File
 # Begin Source File
@@ -811,6 +819,10 @@ SOURCE=.\spandsp/private/sig_tone.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/private/silence_gen.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/private/super_tone_rx.h
 # End Source File
 # Begin Source File
@@ -864,6 +876,10 @@ SOURCE=.\spandsp/private/v17rx.h
 # Begin Source File
 
 SOURCE=.\spandsp/private/v17tx.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\spandsp/private/v18.h
 # End Source File
 # Begin Source File
 

@@ -16,7 +16,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: configure.ac,v 1.66 2009/02/10 17:20:31 steveu Exp $
+# $Id: configure.ac,v 1.67 2009/03/28 17:14:53 steveu Exp $
 
 # @start 1
 
@@ -271,7 +271,7 @@ AC_CHECK_LIB([xml2], [xmlParseFile], [AC_DEFINE([HAVE_LIBXML2], [1], [Define to 
 if test -n "$enable_tests" ; then
     AC_LANG([C])
     AC_CHECK_LIB([audiofile], [afOpenFile], TESTLIBS="$TESTLIBS -laudiofile", AC_MSG_ERROR("Can't make tests without libaudiofile (does your system require a libaudiofile-devel package?)"))
-    AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], TESTLIBS="$TESTLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], TESTLIBS="$TESTLIBS -lfftw")])
+    AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], TESTLIBS="$TESTLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], TESTLIBS="$TESTLIBS -lfftw", AC_MSG_ERROR("Can't make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)"))])
     AC_CHECK_LIB([pthread], [pthread_attr_init], TESTLIBS="$TESTLIBS -lpthread")
     AC_CHECK_LIB([dl], [dlopen], TESTLIBS="$TESTLIBS -ldl")
     AC_CHECK_LIB([Xft], [XftFontOpen], TESTLIBS="$TESTLIBS -lXft",, $TESTLIBS)

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t4.h,v 1.58 2009/02/20 12:34:20 steveu Exp $
+ * $Id: t4.h,v 1.59 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*! \file */
@@ -258,6 +258,11 @@ SPAN_DECLARE(int) t4_rx_release(t4_state_t *s);
     \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_rx_free(t4_state_t *s);
 
+/*! \brief Set the row write handler for a T.4 receive context.
+    \param s The T.4 receive context.
+    \param handler A pointer to the handler routine.
+    \param user_data An opaque pointer passed to the handler routine.
+    \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_rx_set_row_write_handler(t4_state_t *s, t4_row_write_handler_t handler, void *user_data);
 
 /*! \brief Set the encoding for the received data.
@@ -416,6 +421,11 @@ SPAN_DECLARE(void) t4_tx_set_local_ident(t4_state_t *s, const char *ident);
     \param info A string, of up to 50 bytes, which will form the info field. */
 SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info);
 
+/*! \brief Set the row read handler for a T.4 transmit context.
+    \param s The T.4 transmit context.
+    \param handler A pointer to the handler routine.
+    \param user_data An opaque pointer passed to the handler routine.
+    \return 0 for success, otherwise -1. */
 SPAN_DECLARE(int) t4_tx_set_row_read_handler(t4_state_t *s, t4_row_read_handler_t handler, void *user_data);
 
 /*! \brief Get the row-to-row (y) resolution of the current page.

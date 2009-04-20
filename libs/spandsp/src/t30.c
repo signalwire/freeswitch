@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.288 2009/02/26 12:11:51 steveu Exp $
+ * $Id: t30.c,v 1.290 2009/04/16 12:11:54 steveu Exp $
  */
 
 /*! \file */
@@ -73,8 +73,10 @@
 
 #include "t30_local.h"
 
+/*! The maximum number of consecutive retries allowed. */
 #define MAX_MESSAGE_TRIES   3
 
+/*! Conversion between milliseconds and audio samples. */
 #define ms_to_samples(t)    (((t)*SAMPLE_RATE)/1000)
 
 /* T.30 defines the following call phases:
@@ -207,7 +209,7 @@ enum
 
 /* All timers specified in milliseconds */
 
-/* Time-out T0 defines the amount of time an automatic calling terminal waits for the called terminal
+/*! Time-out T0 defines the amount of time an automatic calling terminal waits for the called terminal
 to answer the call.
 T0 begins after the dialling of the number is completed and is reset:
 a) when T0 times out; or
@@ -219,41 +221,45 @@ time may be encountered, an alternative value of up to 120s may be used.
 NOTE - National regulations may require the use of other values for T0. */
 #define DEFAULT_TIMER_T0                60000
 
-/* Time-out T1 defines the amount of time two terminals will continue to attempt to identify each
+/*! Time-out T1 defines the amount of time two terminals will continue to attempt to identify each
 other. T1 is 35+-5s, begins upon entering phase B, and is reset upon detecting a valid signal or
 when T1 times out.
 For operating methods 3 and 4 (see 3.1), the calling terminal starts time-out T1 upon reception of
 the V.21 modulation scheme.
 For operating method 4 bis a (see 3.1), the calling terminal starts time-out T1 upon starting
-transmission using the V.21 modulation scheme. */
+transmission using the V.21 modulation scheme.
+Annex A says T1 is also the timeout to be used for the receipt of the first HDLC frame after the
+start of high speed flags in ECM mode. This seems a strange reuse of the T1 name, so we distinguish
+it here by calling it T1A. */
 #define DEFAULT_TIMER_T1                35000
+#define DEFAULT_TIMER_T1A               35000
 
-/* Time-out T2 makes use of the tight control between commands and responses to detect the loss of
+/*! Time-out T2 makes use of the tight control between commands and responses to detect the loss of
 command/response synchronization. T2 is 6+-1s, and begins when initiating a command search
 (e.g., the first entrance into the "command received" subroutine, reference flow diagram in section 5.2).
 T2 is reset when an HDLC flag is received or when T2 times out. */
 #define DEFAULT_TIMER_T2                7000
 
-/* Once HDLC flags begin, T2 is reset, and a 3s timer begins. This timer is unnamed in T.30. Here we
+/*! Once HDLC flags begin, T2 is reset, and a 3s timer begins. This timer is unnamed in T.30. Here we
 term it T2A. No tolerance is specified for this timer. T2A specifies the maximum time to wait for the
 end of a frame, after the initial flag has been seen. */
 #define DEFAULT_TIMER_T2A               3000
 
-/* If the HDLC carrier falls during reception, we need to apply a minimum time before continuing. if we
+/*! If the HDLC carrier falls during reception, we need to apply a minimum time before continuing. if we
    don't, there are circumstances where we could continue and reply before the incoming signals have
    really finished. E.g. if a bad DCS is received in a DCS-TCF sequence, we need wait for the TCF
    carrier to pass, before continuing. This timer is specified as 200ms, but no tolerance is specified.
-   It is unnamed in T.30. Here we termin it T2B */
+   It is unnamed in T.30. Here we term it T2B */
 #define DEFAULT_TIMER_T2B               200
 
-/* Time-out T3 defines the amount of time a terminal will attempt to alert the local operator in
+/*! Time-out T3 defines the amount of time a terminal will attempt to alert the local operator in
 response to a procedural interrupt. Failing to achieve operator intervention, the terminal will
 discontinue this attempt and shall issue other commands or responses. T3 is 10+-5s, begins on the
 first detection of a procedural interrupt command/response signal (i.e., PIN/PIP or PRI-Q) and is
 reset when T3 times out or when the operator initiates a line request. */
 #define DEFAULT_TIMER_T3                15000
 
-/* Time-out T4 defines the amount of time a terminal will wait for flags to begin, when waiting for a
+/*! Time-out T4 defines the amount of time a terminal will wait for flags to begin, when waiting for a
 response from a remote terminal. T2 is 3s +-15%, and begins when initiating a response search
 (e.g., the first entrance into the "response received" subroutine, reference flow diagram in section 5.2).
 T4 is reset when an HDLC flag is received or when T4 times out.
@@ -262,19 +268,20 @@ If the value of 4.5s is used, then after detection of a valid response to the fi
 be reduced to 3.0s +-15%. T4 = 3.0s +-15% for automatic units. */
 #define DEFAULT_TIMER_T4                3450
 
-/* Once HDLC flags begin, T4 is reset, and a 3s timer begins. This timer is unnamed in T.30. Here we
+/*! Once HDLC flags begin, T4 is reset, and a 3s timer begins. This timer is unnamed in T.30. Here we
 term it T4A. No tolerance is specified for this timer. T4A specifies the maximum time to wait for the
-end of a frame, after the initial flag has been seen. */
+end of a frame, after the initial flag has been seen. Note that a different timer is used for the fast
+HDLC in ECM mode, to provide time for physical paper handling. */
 #define DEFAULT_TIMER_T4A               3000
 
-/* If the HDLC carrier falls during reception, we need to apply a minimum time before continuing. if we
+/*! If the HDLC carrier falls during reception, we need to apply a minimum time before continuing. if we
    don't, there are circumstances where we could continue and reply before the incoming signals have
    really finished. E.g. if a bad DCS is received in a DCS-TCF sequence, we need wait for the TCF
    carrier to pass, before continuing. This timer is specified as 200ms, but no tolerance is specified.
-   It is unnamed in T.30. Here we termin it T4B */
+   It is unnamed in T.30. Here we term it T4B */
 #define DEFAULT_TIMER_T4B               200
 
-/* Time-out T5 is defined for the optional T.4 error correction mode. Time-out T5 defines the amount
+/*! Time-out T5 is defined for the optional T.4 error correction mode. Time-out T5 defines the amount
 of time waiting for clearance of the busy condition of the receiving terminal. T5 is 60+-5s and
 begins on the first detection of the RNR response. T5 is reset when T5 times out or the MCF or PIP
 response is received or when the ERR or PIN response is received in the flow control process after
@@ -282,27 +289,27 @@ transmitting the EOR command. If the timer T5 has expired, the DCN command is tr
 call release. */
 #define DEFAULT_TIMER_T5                65000
 
-/* (Annex C - ISDN) Time-out T6 defines the amount of time two terminals will continue to attempt to
+/*! (Annex C - ISDN) Time-out T6 defines the amount of time two terminals will continue to attempt to
 identify each other. T6 is 5+-0.5s. The timeout begins upon entering Phase B, and is reset upon
 detecting a valid signal, or when T6 times out. */
 #define DEFAULT_TIMER_T6                5000
 
-/* (Annex C - ISDN) Time-out T7 is used to detect loss of command/response synchronization. T7 is 6+-1s.
+/*! (Annex C - ISDN) Time-out T7 is used to detect loss of command/response synchronization. T7 is 6+-1s.
 The timeout begins when initiating a command search (e.g., the first entrance into the "command received"
 subroutine - see flow diagram in C.5) and is reset upon detecting a valid signal or when T7 times out. */
 #define DEFAULT_TIMER_T7                7000
 
-/* (Annex C - ISDN) Time-out T8 defines the amount of time waiting for clearance of the busy condition
+/*! (Annex C - ISDN) Time-out T8 defines the amount of time waiting for clearance of the busy condition
 of the receiving terminal. T8 is 10+-1s. The timeout begins on the first detection of the combination
 of no outstanding corrections and the RNR response. T8 is reset when T8 times out or MCF response is
 received. If the timer T8 expires, a DCN command is transmitted for call release. */
 #define DEFAULT_TIMER_T8                10000
 
-/* Final time we allow for things to flush through the system, before we disconnect, in milliseconds.
+/*! Final time we allow for things to flush through the system, before we disconnect, in milliseconds.
    200ms should be fine for a PSTN call. For a T.38 call something longer is desirable. */
 #define FINAL_FLUSH_TIME                1000
 
-/* The number of PPRs received before CTC or EOR is sent in ECM mode. T.30 defines this as 4,
+/*! The number of PPRs received before CTC or EOR is sent in ECM mode. T.30 defines this as 4,
    but it could be varied, and the Japanese spec, for example, does make this value a
    variable. */
 #define PPR_LIMIT_BEFORE_CTC_OR_EOR     4
@@ -320,8 +327,11 @@ enum
 };
 
 /* Start points in the fallback table for different capabilities */
+/*! The starting point in the modem fallback sequence if V.17 is allowed */
 #define T30_V17_FALLBACK_START          0
+/*! The starting point in the modem fallback sequence if V.17 is not allowed */
 #define T30_V29_FALLBACK_START          3
+/*! The starting point in the modem fallback sequence if V.29 is not allowed */
 #define T30_V27TER_FALLBACK_START       6
 
 static const struct
@@ -361,10 +371,15 @@ static void timer_t2b_start(t30_state_t *s);
 static void timer_t4_start(t30_state_t *s);
 static void timer_t4a_start(t30_state_t *s);
 static void timer_t4b_start(t30_state_t *s);
+static void timer_t2_t4_stop(t30_state_t *s);
 
+/*! Test a specified bit within a DIS, DTC or DCS frame */
 #define test_ctrl_bit(s,bit) ((s)[3 + ((bit - 1)/8)] & (1 << ((bit - 1)%8)))
+/*! Set a specified bit within a DIS, DTC or DCS frame */
 #define set_ctrl_bit(s,bit) (s)[3 + ((bit - 1)/8)] |= (1 << ((bit - 1)%8))
+/*! Set a specified block of bits within a DIS, DTC or DCS frame */
 #define set_ctrl_bits(s,val,bit) (s)[3 + ((bit - 1)/8)] |= ((val) << ((bit - 1)%8))
+/*! Clear a specified bit within a DIS, DTC or DCS frame */
 #define clr_ctrl_bit(s,bit) (s)[3 + ((bit - 1)/8)] &= ~(1 << ((bit - 1)%8))
 
 static int terminate_operation_in_progress(t30_state_t *s)
@@ -4648,8 +4663,19 @@ static void timer_t2_start(t30_state_t *s)
 
 static void timer_t2a_start(t30_state_t *s)
 {
-    span_log(&s->logging, SPAN_LOG_FLOW, "Start T2A\n");
-    s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T2A);
+    /* T.30 Annex A says timeout T1 should be used in ECM phase C to time out the
+       first frame after the flags start. This seems a strange reuse of the name T1
+       for a different purpose, but there it is. We distinguish it by calling it T1A. */
+    if (s->phase == T30_PHASE_C_ECM_RX)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Start T1A\n");
+        s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T1A);
+    }
+    else
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Start T2A\n");
+        s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T2A);
+    }
     s->timer_t2_t4_is = TIMER_IS_T2A;
 }
 /*- End of function --------------------------------------------------------*/
@@ -4683,6 +4709,13 @@ static void timer_t4b_start(t30_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Start T4B\n");
     s->timer_t2_t4 = ms_to_samples(DEFAULT_TIMER_T4B);
     s->timer_t2_t4_is = TIMER_IS_T4B;
+}
+/*- End of function --------------------------------------------------------*/
+
+static void timer_t2_t4_stop(t30_state_t *s)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "Stop T2/T4\n");
+    s->timer_t2_t4 = 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -4934,7 +4967,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
         s->tcf_most_zeros = 0;
         s->rx_signal_present = TRUE;
         s->rx_trained = TRUE;
-        s->timer_t2_t4 = 0;
+        timer_t2_t4_stop(s);
         break;
     case SIG_STATUS_CARRIER_UP:
         break;
@@ -5261,11 +5294,11 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         {
         case TIMER_IS_T2B:
             s->timer_t2_t4_is = TIMER_IS_T2C;
-            s->timer_t2_t4 = 0;
+            timer_t2_t4_stop(s);
             break;
         case TIMER_IS_T4B:
             s->timer_t2_t4_is = TIMER_IS_T4C;
-            s->timer_t2_t4 = 0;
+            timer_t2_t4_stop(s);
             break;
         }
         break;
@@ -5276,7 +5309,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
            its time to change. */
         if (s->next_phase != T30_PHASE_IDLE)
         {
-            s->timer_t2_t4 = 0;
+            timer_t2_t4_stop(s);
             set_phase(s, s->next_phase);
             if (s->next_phase == T30_PHASE_C_NON_ECM_RX)
                 timer_t2_start(s);
@@ -5384,7 +5417,7 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
     }
     s->rx_frame_received = TRUE;
     /* Cancel the command or response timer */
-    s->timer_t2_t4 = 0;
+    timer_t2_t4_stop(s);
     process_rx_control_msg(s, msg, len);
 }
 /*- End of function --------------------------------------------------------*/
@@ -5684,7 +5717,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             /* Cancel any receive timeout, and declare that a receive signal is present,
                since the front end is explicitly telling us we have seen something. */
             s->rx_signal_present = TRUE;
-            s->timer_t2_t4 = 0;
+            timer_t2_t4_stop(s);
             break;
         }
         break;

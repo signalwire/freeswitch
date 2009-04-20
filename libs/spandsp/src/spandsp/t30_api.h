@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30_api.h,v 1.9 2009/02/03 16:28:41 steveu Exp $
+ * $Id: t30_api.h,v 1.10 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*! \file */
@@ -60,7 +60,7 @@ SPAN_DECLARE(size_t) t30_get_rx_nsf(t30_state_t *s, const uint8_t *nsf[]);
 /*! Set the transmitted NSC frame to be associated with a T.30 context.
     \brief Set the transmitted NSC frame to be associated with a T.30 context.
     \param s The T.30 context.
-    \param nsf A pointer to the frame.
+    \param nsc A pointer to the frame.
     \param len The length of the frame.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t30_set_tx_nsc(t30_state_t *s, const uint8_t *nsc, int len);
@@ -82,7 +82,7 @@ SPAN_DECLARE(size_t) t30_get_rx_nsc(t30_state_t *s, const uint8_t *nsc[]);
 /*! Set the transmitted NSS frame to be associated with a T.30 context.
     \brief Set the transmitted NSS frame to be associated with a T.30 context.
     \param s The T.30 context.
-    \param nsf A pointer to the frame.
+    \param nss A pointer to the frame.
     \param len The length of the frame.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t30_set_tx_nss(t30_state_t *s, const uint8_t *nss, int len);
@@ -111,15 +111,13 @@ SPAN_DECLARE(int) t30_set_tx_ident(t30_state_t *s, const char *id);
 /*! Get the transmitted identifier associated with a T.30 context.
     \brief Set the transmitted identifier associated with a T.30 context.
     \param s The T.30 context.
-    \param id A pointer to the identifier.
-    \return 0 for OK, else -1. */
+    \return A pointer to the identifier. */
 SPAN_DECLARE(const char *) t30_get_tx_ident(t30_state_t *s);
 
 /*! Get the transmitted identifier associated with a T.30 context.
     \brief Set the transmitted identifier associated with a T.30 context.
     \param s The T.30 context.
-    \param id A pointer to the identifier.
-    \return 0 for OK, else -1. */
+    \return A pointer to the identifier. */
 SPAN_DECLARE(const char *) t30_get_rx_ident(t30_state_t *s);
 
 /*! Set the transmitted sub-address associated with a T.30 context.
@@ -132,15 +130,13 @@ SPAN_DECLARE(int) t30_set_tx_sub_address(t30_state_t *s, const char *sub_address
 /*! Get the received sub-address associated with a T.30 context.
     \brief Get the received sub-address associated with a T.30 context.
     \param s The T.30 context.
-    \param sub_address A pointer to the sub-address.
-    \return 0 for OK, else -1. */
+    \return A pointer to the sub-address. */
 SPAN_DECLARE(const char *) t30_get_tx_sub_address(t30_state_t *s);
 
 /*! Get the received sub-address associated with a T.30 context.
     \brief Get the received sub-address associated with a T.30 context.
     \param s The T.30 context.
-    \param sub_address A pointer to the sub-address.
-    \return 0 for OK, else -1. */
+    \return A pointer to the sub-address. */
 SPAN_DECLARE(const char *) t30_get_rx_sub_address(t30_state_t *s);
 
 /*! Set the transmitted selective polling address (i.e. the one we will send to the far
@@ -155,16 +151,14 @@ SPAN_DECLARE(int) t30_set_tx_selective_polling_address(t30_state_t *s, const cha
     end) associated with a T.30 context.
     \brief Get the received selective polling address associated with a T.30 context.
     \param s The T.30 context.
-    \param selective_polling_address A pointer to the selective polling address.
-    \return 0 for OK, else -1. */
+    \return A pointer to the selective polling address. */
 SPAN_DECLARE(const char *) t30_get_tx_selective_polling_address(t30_state_t *s);
 
 /*! Get the received selective polling address (i.e. the one we will send to the far
     end) associated with a T.30 context.
     \brief Get the received selective polling address associated with a T.30 context.
     \param s The T.30 context.
-    \param selective_polling_address A pointer to the selective polling address.
-    \return 0 for OK, else -1. */
+    \return A pointer to the selective polling address. */
 SPAN_DECLARE(const char *) t30_get_rx_selective_polling_address(t30_state_t *s);
 
 /*! Set the transmitted polled sub-address (i.e. the one we will send to the far
@@ -179,16 +173,14 @@ SPAN_DECLARE(int) t30_set_tx_polled_sub_address(t30_state_t *s, const char *poll
     end) associated with a T.30 context.
     \brief Get the received polled sub-address associated with a T.30 context.
     \param s The T.30 context.
-    \param polled_sub_address A pointer to the polled sub-address.
-    \return 0 for OK, else -1. */
+    \return A pointer to the polled sub-address. */
 SPAN_DECLARE(const char *) t30_get_tx_polled_sub_address(t30_state_t *s);
 
 /*! Get the received polled sub-address (i.e. the one we will send to the far
     end) associated with a T.30 context.
     \brief Get the received polled sub-address associated with a T.30 context.
     \param s The T.30 context.
-    \param polled_sub_address A pointer to the polled sub-address.
-    \return 0 for OK, else -1. */
+    \return A pointer to the polled sub-address. */
 SPAN_DECLARE(const char *) t30_get_rx_polled_sub_address(t30_state_t *s);
 
 /*! Set the transmitted sender ident (i.e. the one we will send to the far
@@ -203,16 +195,14 @@ SPAN_DECLARE(int) t30_set_tx_sender_ident(t30_state_t *s, const char *sender_ide
     end) associated with a T.30 context.
     \brief Get the received sender ident associated with a T.30 context.
     \param s The T.30 context.
-    \param sender_ident A pointer to the sender ident.
-    \return 0 for OK, else -1. */
+    \return A pointer to the sender ident. */
 SPAN_DECLARE(const char *) t30_get_tx_sender_ident(t30_state_t *s);
 
 /*! Get the received sender ident (i.e. the one we will send to the far
     end) associated with a T.30 context.
     \brief Get the received sender ident associated with a T.30 context.
     \param s The T.30 context.
-    \param sender_ident A pointer to the sender ident.
-    \return 0 for OK, else -1. */
+    \return A pointer to the sender ident. */
 SPAN_DECLARE(const char *) t30_get_rx_sender_ident(t30_state_t *s);
 
 /*! Set the transmitted password (i.e. the one we will send to the far
@@ -227,16 +217,14 @@ SPAN_DECLARE(int) t30_set_tx_password(t30_state_t *s, const char *password);
     end) associated with a T.30 context.
     \brief Get the received password associated with a T.30 context.
     \param s The T.30 context.
-    \param password A pointer to the password.
-    \return 0 for OK, else -1. */
+    \return A pointer to the password. */
 SPAN_DECLARE(const char *) t30_get_tx_password(t30_state_t *s);
 
 /*! Get the received password (i.e. the one we will send to the far
     end) associated with a T.30 context.
     \brief Get the received password associated with a T.30 context.
     \param s The T.30 context.
-    \param password A pointer to the password.
-    \return 0 for OK, else -1. */
+    \return A pointer to the password. */
 SPAN_DECLARE(const char *) t30_get_rx_password(t30_state_t *s);
 
 /*! Set the transmitted ??? (i.e. the one we will send to the far
@@ -244,7 +232,7 @@ SPAN_DECLARE(const char *) t30_get_rx_password(t30_state_t *s);
     \brief Set the transmitted ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
+    \param address A pointer to the address.
     \param len The length of the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t30_set_tx_tsa(t30_state_t *s, int type, const char *address, int len);
@@ -254,9 +242,8 @@ SPAN_DECLARE(int) t30_set_tx_tsa(t30_state_t *s, int type, const char *address, 
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
-    \return 0 for OK, else -1. */
+    \param address A pointer to the address.
+    \return The length of the address. */
 SPAN_DECLARE(size_t) t30_get_tx_tsa(t30_state_t *s, int *type, const char *address[]);
 
 /*! Get the received ??? (i.e. the one we will send to the far
@@ -264,9 +251,8 @@ SPAN_DECLARE(size_t) t30_get_tx_tsa(t30_state_t *s, int *type, const char *addre
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
-    \return 0 for OK, else -1. */
+    \param address A pointer to the address.
+    \return The length of the address. */
 SPAN_DECLARE(size_t) t30_get_rx_tsa(t30_state_t *s, int *type, const char *address[]);
 
 /*! Set the transmitted ??? (i.e. the one we will send to the far
@@ -274,7 +260,7 @@ SPAN_DECLARE(size_t) t30_get_rx_tsa(t30_state_t *s, int *type, const char *addre
     \brief Set the transmitted ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
+    \param address A pointer to the address.
     \param len The length of the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t30_set_tx_ira(t30_state_t *s, int type, const char *address, int len);
@@ -284,9 +270,8 @@ SPAN_DECLARE(int) t30_set_tx_ira(t30_state_t *s, int type, const char *address, 
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
-    \return 0 for OK, else -1. */
+    \param address A pointer to the address.
+    \return The length of the address. */
 SPAN_DECLARE(size_t) t30_get_tx_ira(t30_state_t *s, int *type, const char *address[]);
 
 /*! Get the received ??? (i.e. the one we will send to the far
@@ -294,9 +279,8 @@ SPAN_DECLARE(size_t) t30_get_tx_ira(t30_state_t *s, int *type, const char *addre
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
-    \return 0 for OK, else -1. */
+    \param address A pointer to the address.
+    \return The length of the address. */
 SPAN_DECLARE(size_t) t30_get_rx_ira(t30_state_t *s, int *type, const char *address[]);
 
 /*! Set the transmitted ??? (i.e. the one we will send to the far
@@ -304,7 +288,7 @@ SPAN_DECLARE(size_t) t30_get_rx_ira(t30_state_t *s, int *type, const char *addre
     \brief Set the transmitted ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
+    \param address A pointer to the address.
     \param len The length of the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t30_set_tx_cia(t30_state_t *s, int type, const char *address, int len);
@@ -314,9 +298,8 @@ SPAN_DECLARE(int) t30_set_tx_cia(t30_state_t *s, int type, const char *address, 
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
-    \return 0 for OK, else -1. */
+    \param address A pointer to the address.
+    \return The length of the address. */
 SPAN_DECLARE(size_t) t30_get_tx_cia(t30_state_t *s, int *type, const char *address[]);
 
 /*! Get the received ??? (i.e. the one we will send to the far
@@ -324,8 +307,7 @@ SPAN_DECLARE(size_t) t30_get_tx_cia(t30_state_t *s, int *type, const char *addre
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
+    \param address A pointer to the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(size_t) t30_get_rx_cia(t30_state_t *s, int *type, const char *address[]);
 
@@ -334,7 +316,7 @@ SPAN_DECLARE(size_t) t30_get_rx_cia(t30_state_t *s, int *type, const char *addre
     \brief Set the transmitted ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
+    \param address A pointer to the address.
     \param len The length of the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t30_set_tx_isp(t30_state_t *s, int type, const char *address, int len);
@@ -344,7 +326,7 @@ SPAN_DECLARE(int) t30_set_tx_isp(t30_state_t *s, int type, const char *address, 
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
+    \param address A pointer to the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(size_t) t30_get_tx_isp(t30_state_t *s, int *type, const char *address[]);
 
@@ -353,7 +335,7 @@ SPAN_DECLARE(size_t) t30_get_tx_isp(t30_state_t *s, int *type, const char *addre
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
+    \param address A pointer to the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(size_t) t30_get_rx_isp(t30_state_t *s, int *type, const char *address[]);
 
@@ -362,7 +344,7 @@ SPAN_DECLARE(size_t) t30_get_rx_isp(t30_state_t *s, int *type, const char *addre
     \brief Set the transmitted ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
+    \param address A pointer to the address.
     \param len The length of the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(int) t30_set_tx_csa(t30_state_t *s, int type, const char *address, int len);
@@ -372,9 +354,8 @@ SPAN_DECLARE(int) t30_set_tx_csa(t30_state_t *s, int type, const char *address, 
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
-    \return 0 for OK, else -1. */
+    \param address A pointer to the address.
+    \return The length of the address. */
 SPAN_DECLARE(size_t) t30_get_tx_csa(t30_state_t *s, int *type, const char *address[]);
 
 /*! Get the received ??? (i.e. the one we will send to the far
@@ -382,8 +363,7 @@ SPAN_DECLARE(size_t) t30_get_tx_csa(t30_state_t *s, int *type, const char *addre
     \brief Get the received ??? associated with a T.30 context.
     \param s The T.30 context.
     \param type The type of address.
-    \param type A pointer to the address.
-    \param len The length of the address.
+    \param address A pointer to the address.
     \return 0 for OK, else -1. */
 SPAN_DECLARE(size_t) t30_get_rx_csa(t30_state_t *s, int *type, const char *address[]);
 

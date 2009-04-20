@@ -17,7 +17,7 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id: regression_tests.sh,v 1.55 2009/02/20 14:04:40 steveu Exp $
+# $Id: regression_tests.sh,v 1.56 2009/04/02 13:43:49 steveu Exp $
 #
 
 ITUTESTS_TIF=../test-data/itu/fax/itutests.tif
@@ -799,6 +799,15 @@ then
     exit $RETVAL
 fi
 echo v8_tests completed OK
+
+./v18_tests >$STDOUT_DEST 2>$STDERR_DEST
+RETVAL=$?
+if [ $RETVAL != 0 ]
+then
+    echo v18_tests failed!
+    exit $RETVAL
+fi
+echo v18_tests completed OK
 
 ./vector_float_tests >$STDOUT_DEST 2>$STDERR_DEST
 RETVAL=$?

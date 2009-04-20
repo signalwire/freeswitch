@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.h,v 1.68 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v29rx.h,v 1.70 2009/04/12 09:12:11 steveu Exp $
  */
 
 /*! \file */
@@ -122,9 +122,12 @@ therefore, only tests that bits starting at bit 24 are really ones.
 
 /* Target length for the equalizer is about 63 taps, to deal with the worst stuff
    in V.56bis. */
-#define V29_EQUALIZER_PRE_LEN   16  /* This much before the real event */
-#define V29_EQUALIZER_POST_LEN  14  /* This much after the real event (must be even) */
+/*! Samples before the target position in the equalizer buffer */
+#define V29_EQUALIZER_PRE_LEN   16
+/*! Samples after the target position in the equalizer buffer */
+#define V29_EQUALIZER_POST_LEN  14
 
+/*! The number of taps in the pulse shaping/bandpass filter */
 #define V29_RX_FILTER_STEPS     27
 
 typedef void (*qam_report_handler_t)(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol);
@@ -169,6 +172,10 @@ SPAN_DECLARE(int) v29_rx_release(v29_rx_state_t *s);
     \return 0 for OK */
 SPAN_DECLARE(int) v29_rx_free(v29_rx_state_t *s);
 
+/*! Get the logging context associated with a V.29 modem receive context.
+    \brief Get the logging context associated with a V.29 modem receive context.
+    \param s The modem context.
+    \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) v29_rx_get_logging_state(v29_rx_state_t *s);
 
 /*! Change the put_bit function associated with a V.29 modem receive context.
@@ -192,6 +199,14 @@ SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_rx_s
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
 SPAN_DECLARE(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len);
+
+/*! Fake processing of a missing block of received V.29 modem audio samples.
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received V.29 modem audio samples.
+    \param s The modem context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed. */
+SPAN_DECLARE(int) v29_rx_fillin(v29_rx_state_t *s, int len);
 
 /*! Get a snapshot of the current equalizer coefficients.
     \brief Get a snapshot of the current equalizer coefficients.

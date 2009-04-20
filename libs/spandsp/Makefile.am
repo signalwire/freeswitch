@@ -16,7 +16,7 @@
 ## License along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.45 2008/11/28 12:41:25 steveu Exp $
+## $Id: Makefile.am,v 1.46 2009/03/19 14:13:12 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -42,7 +42,7 @@ EXTRA_DIST = autogen.sh \
              debian/compat \
              debian/control \
              debian/copyright \
-             debian/libspandsp5.install \
+             debian/libspandsp6.install \
              debian/libspandsp-dev.install \
              debian/libspandsp-doc.install \
              debian/rules \

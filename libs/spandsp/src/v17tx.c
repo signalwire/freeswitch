@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.c,v 1.71 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v17tx.c,v 1.72 2009/04/12 04:20:01 steveu Exp $
  */
 
 /*! \file */
@@ -69,21 +69,31 @@
 #include "v17tx_floating_rrc.h"
 #endif
 
+/*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ        1800.0f
 
 /* Segments of the training sequence */
+/*! The start of the optional TEP, that may preceed the actual training, in symbols */
 #define V17_TRAINING_SEG_TEP_A      0
+/*! The mid point of the optional TEP, that may preceed the actual training, in symbols */
 #define V17_TRAINING_SEG_TEP_B      (V17_TRAINING_SEG_TEP_A + 480)
+/*! The start of training segment 1, in symbols */
 #define V17_TRAINING_SEG_1          (V17_TRAINING_SEG_TEP_B + 48)
+/*! The start of training segment 2, in symbols */
 #define V17_TRAINING_SEG_2          (V17_TRAINING_SEG_1 + 256)
+/*! The start of training segment 3, in symbols */
 #define V17_TRAINING_SEG_3          (V17_TRAINING_SEG_2 + 2976)
+/*! The start of training segment 4, in symbols */
 #define V17_TRAINING_SEG_4          (V17_TRAINING_SEG_3 + 64)
+/*! The start of training segment 4 in short training mode, in symbols */
+#define V17_TRAINING_SHORT_SEG_4    (V17_TRAINING_SEG_2 + 38)
+/*! The end of the training, in symbols */
 #define V17_TRAINING_END            (V17_TRAINING_SEG_4 + 48)
 #define V17_TRAINING_SHUTDOWN_A     (V17_TRAINING_END + 32)
+/*! The end of the shutdown sequence, in symbols */
 #define V17_TRAINING_SHUTDOWN_END   (V17_TRAINING_SHUTDOWN_A + 48)
 
-#define V17_TRAINING_SHORT_SEG_4    (V17_TRAINING_SEG_2 + 38)
-
+/*! The 16 bit pattern used in the bridge section of the training sequence */
 #define V17_BRIDGE_WORD             0x8880
 
 static __inline__ int scramble(v17_tx_state_t *s, int in_bit)

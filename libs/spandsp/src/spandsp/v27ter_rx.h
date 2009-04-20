@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.h,v 1.57 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v27ter_rx.h,v 1.59 2009/04/12 09:12:11 steveu Exp $
  */
 
 /*! \file */
@@ -48,10 +48,14 @@ straightforward.
 
 /* Target length for the equalizer is about 43 taps for 4800bps and 32 taps for 2400bps
    to deal with the worst stuff in V.56bis. */
+/*! Samples before the target position in the equalizer buffer */
 #define V27TER_EQUALIZER_PRE_LEN        16  /* This much before the real event */
+/*! Samples after the target position in the equalizer buffer */
 #define V27TER_EQUALIZER_POST_LEN       14  /* This much after the real event (must be even) */
 
+/*! The number of taps in the 4800bps pulse shaping/bandpass filter */
 #define V27TER_RX_4800_FILTER_STEPS     27
+/*! The number of taps in the 2400bps pulse shaping/bandpass filter */
 #define V27TER_RX_2400_FILTER_STEPS     27
 
 #if V27TER_RX_4800_FILTER_STEPS > V27TER_RX_2400_FILTER_STEPS
@@ -100,6 +104,10 @@ SPAN_DECLARE(int) v27ter_rx_release(v27ter_rx_state_t *s);
     \return 0 for OK */
 SPAN_DECLARE(int) v27ter_rx_free(v27ter_rx_state_t *s);
 
+/*! Get the logging context associated with a V.27ter modem receive context.
+    \brief Get the logging context associated with a V.27ter modem receive context.
+    \param s The modem context.
+    \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) v27ter_rx_get_logging_state(v27ter_rx_state_t *s);
 
 /*! Change the put_bit function associated with a V.27ter modem receive context.
@@ -124,6 +132,15 @@ SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, mode
     \return The number of samples unprocessed.
 */
 SPAN_DECLARE(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len);
+
+/*! Fake processing of a missing block of received V.27ter modem audio samples.
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received V.27ter modem audio samples.
+    \param s The modem context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed.
+*/
+SPAN_DECLARE(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len);
 
 /*! Get a snapshot of the current equalizer coefficients.
     \brief Get a snapshot of the current equalizer coefficients.

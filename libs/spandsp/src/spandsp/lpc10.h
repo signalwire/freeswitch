@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: lpc10.h,v 1.21 2009/02/10 13:06:47 steveu Exp $
+ * $Id: lpc10.h,v 1.22 2009/04/11 18:11:19 steveu Exp $
  */
 
 #if !defined(_SPANDSP_LPC10_H_)
@@ -48,8 +48,11 @@ or other restrictions.
 */
 typedef struct
 {
+    /*! Pitch */
     int32_t ipitch;
+    /*! Energy */
     int32_t irms;
+    /*! Reflection coefficients */
     int32_t irc[10];
 } lpc10_frame_t;
 

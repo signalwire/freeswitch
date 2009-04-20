@@ -1,3 +1,4 @@
+#define IAXMODEM_STUFF
 /*
  * SpanDSP - a series of DSP components for telephony
  *
@@ -22,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_rx.c,v 1.117 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v27ter_rx.c,v 1.125 2009/04/20 16:36:36 steveu Exp $
  */
 
 /*! \file */
@@ -74,7 +75,13 @@
    signal to a static constellation, even though dealing with differences is all
    that is necessary. */
 
+/*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1800.0f
+/*! The nominal baud or symbol rate in 2400bps mode */
+#define BAUD_RATE_2400                  1200
+/*! The nominal baud or symbol rate in 4800bps mode */
+#define BAUD_RATE_4800                  1600
+/*! The adaption rate coefficient for the equalizer */
 #define EQUALIZER_DELTA                 0.25f
 
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -85,10 +92,14 @@
 /* Segments of the training sequence */
 /* V.27ter defines a long and a short sequence. FAX doesn't use the
    short sequence, so it is not implemented here. */
+/*! The length of training segment 3, in symbols */
 #define V27TER_TRAINING_SEG_3_LEN       50
+/*! The length of training segment 5, in symbols */
 #define V27TER_TRAINING_SEG_5_LEN       1074
+/*! The length of training segment 6, in symbols */
 #define V27TER_TRAINING_SEG_6_LEN       8
 
+/*! The length of the equalizer buffer */
 #define V27TER_EQUALIZER_LEN    (V27TER_EQUALIZER_PRE_LEN + 1 + V27TER_EQUALIZER_POST_LEN)
 
 enum
@@ -145,7 +156,7 @@ SPAN_DECLARE(float) v27ter_rx_symbol_timing_correction(v27ter_rx_state_t *s)
 
 SPAN_DECLARE(float) v27ter_rx_signal_power(v27ter_rx_state_t *s)
 {
-    return power_meter_current_dbm0(&s->power);
+    return power_meter_current_dbm0(&s->power) + 3.98f;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -630,6 +641,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             s->training_bc ^= descramble(s, 1);
             descramble(s, 1);
             descramble(s, 1);
+            s->constellation_state = abab_pos[s->training_bc];
             s->training_count = 1;
             s->training_stage = TRAINING_STAGE_TRAIN_ON_ABAB;
             report_status_change(s, SIG_STATUS_TRAINING_IN_PROGRESS);
@@ -772,7 +784,7 @@ SPAN_DECLARE(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                We need to measure the power with the DC blocked, but not using
                a slow to respond DC blocker. Use the most elementary HPF. */
             x = amp[i] >> 1;
-            /* There could be oveflow here, but it isn't a problem in practice */
+            /* There could be overflow here, but it isn't a problem in practice */
             diff = x - s->last_sample;
             power = power_meter_update(&(s->power), diff);
 #if defined(IAXMODEM_STUFF)
@@ -894,7 +906,7 @@ SPAN_DECLARE(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
                We need to measure the power with the DC blocked, but not using
                a slow to respond DC blocker. Use the most elementary HPF. */
             x = amp[i] >> 1;
-            /* There could be oveflow here, but it isn't a problem in practice */
+            /* There could be overflow here, but it isn't a problem in practice */
             diff = x - s->last_sample;
             power = power_meter_update(&(s->power), diff);
 #if defined(IAXMODEM_STUFF)
@@ -1004,6 +1016,41 @@ SPAN_DECLARE(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
             dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
 #endif
         }
+    }
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len)
+{
+    int i;
+
+    /* We want to sustain the current state (i.e carrier on<->carrier off), and
+       try to sustain the carrier phase. We should probably push the filters, as well */
+    span_log(&s->logging, SPAN_LOG_FLOW, "Fill-in %d samples\n", len);
+    if (!s->signal_present)
+        return 0;
+    if (s->training_stage == TRAINING_STAGE_PARKED)
+        return 0;
+    for (i = 0;  i < len;  i++)
+    {
+#if defined(SPANDSP_USE_FIXED_POINT)
+        dds_advance(&s->carrier_phase, s->carrier_phase_rate);
+#else
+        dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
+#endif
+        /* Advance the symbol phase the appropriate amount */
+        if (s->bit_rate == 4800)
+        {
+            if ((s->eq_put_step -= RX_PULSESHAPER_4800_COEFF_SETS) <= 0)
+                s->eq_put_step += RX_PULSESHAPER_4800_COEFF_SETS*5/2;
+        }
+        else
+        {
+            if ((s->eq_put_step -= RX_PULSESHAPER_2400_COEFF_SETS) <= 0)
+                s->eq_put_step += RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
+        }
+        /* TODO: Should we rotate any buffers */
     }
     return 0;
 }

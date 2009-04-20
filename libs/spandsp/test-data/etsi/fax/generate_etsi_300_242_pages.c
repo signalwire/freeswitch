@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: generate_etsi_300_242_pages.c,v 1.4 2009/03/01 12:39:02 steveu Exp $
+ * $Id: generate_etsi_300_242_pages.c,v 1.5 2009/03/23 14:34:13 steveu Exp $
  */
 
 /*! \file */
@@ -183,12 +183,6 @@ int fill_order = FILLORDER_LSB2MSB;
 static void clear_row(uint8_t buf[], int width)
 {
     memset(buf, 0, width/8 + 1);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void set_row(uint8_t buf[], int width)
-{
-    memset(buf, 0xFF, width/8 + 1);
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -26,7 +26,7 @@
  * Based on a bit from here, a bit from there, eye of toad,
  * ear of bat, etc - plus, of course, my own 2 cents.
  *
- * $Id: ima_adpcm.h,v 1.24 2009/02/10 13:06:47 steveu Exp $
+ * $Id: ima_adpcm.h,v 1.25 2009/04/11 18:11:19 steveu Exp $
  */
 
 /*! \file */
@@ -67,8 +67,8 @@ extern "C"
 #endif
 
 /*! Initialise an IMA ADPCM encode or decode context.
-    \param s The IMA ADPCM context
-    \param variant ???
+    \param s The IMA ADPCM context.
+    \param variant IMA_ADPCM_IMA4, IMA_ADPCM_DVI4, or IMA_ADPCM_VDVI.
     \param chunk_size The size of a chunk, in samples. A chunk size of
            zero sample samples means treat each encode or decode operation
            as a chunk.
@@ -101,8 +101,8 @@ SPAN_DECLARE(int) ima_adpcm_encode(ima_adpcm_state_t *s,
 /*! Decode a buffer of IMA ADPCM data to linear PCM.
     \param s The IMA ADPCM context.
     \param amp The audio sample buffer.
-    \param ima_data
-    \param ima_bytes
+    \param ima_data The IMA ADPCM data
+    \param ima_bytes The number of bytes of IMA ADPCM data
     \return The number of samples returned. */
 SPAN_DECLARE(int) ima_adpcm_decode(ima_adpcm_state_t *s,
                                    int16_t amp[],

@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.h,v 1.61 2009/02/10 13:06:47 steveu Exp $
+ * $Id: v17rx.h,v 1.63 2009/04/12 04:20:01 steveu Exp $
  */
 
 /*! \file */
@@ -213,16 +213,21 @@ TCM absolutely transformed the phone line modem business.
 
 /* Target length for the equalizer is about 63 taps, to deal with the worst stuff
    in V.56bis. */
-#define V17_EQUALIZER_PRE_LEN       8  /* This much before the real event */
-#define V17_EQUALIZER_POST_LEN      8  /* This much after the real event (must be even) */
+/*! Samples before the target position in the equalizer buffer */
+#define V17_EQUALIZER_PRE_LEN       8
+/*! Samples after the target position in the equalizer buffer */
+#define V17_EQUALIZER_POST_LEN      8
 
+/*! The number of taps in the pulse shaping/bandpass filter */
 #define V17_RX_FILTER_STEPS         27
 
 /* We can store more trellis depth that we look back over, so that we can push out a group
    of symbols in one go, giving greater processing efficiency, at the expense of a bit more
    latency through the modem. */
 /* Right now we don't take advantage of this optimisation. */
+/*! The depth of the trellis buffer */
 #define V17_TRELLIS_STORAGE_DEPTH   16
+/*! How far we look back into history for trellis decisions */
 #define V17_TRELLIS_LOOKBACK_DEPTH  16
 
 /*!
@@ -265,6 +270,10 @@ SPAN_DECLARE(int) v17_rx_release(v17_rx_state_t *s);
     \return 0 for OK */
 SPAN_DECLARE(int) v17_rx_free(v17_rx_state_t *s);
 
+/*! Get the logging context associated with a V.17 modem receive context.
+    \brief Get the logging context associated with a V.17 modem receive context.
+    \param s The modem context.
+    \return A pointer to the logging context */
 SPAN_DECLARE(logging_state_t *) v17_rx_get_logging_state(v17_rx_state_t *s);
 
 /*! Change the put_bit function associated with a V.17 modem receive context.
@@ -289,6 +298,15 @@ SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_rx_s
     \return The number of samples unprocessed.
 */
 SPAN_DECLARE(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len);
+
+/*! Fake processing of a missing block of received V.17 modem audio samples.
+    (e.g due to packet loss).
+    \brief Fake processing of a missing block of received V.17 modem audio samples.
+    \param s The modem context.
+    \param len The number of samples to fake.
+    \return The number of samples unprocessed.
+*/
+SPAN_DECLARE(int) v17_rx_fillin(v17_rx_state_t *s, int len);
 
 /*! Get a snapshot of the current equalizer coefficients.
     \brief Get a snapshot of the current equalizer coefficients.

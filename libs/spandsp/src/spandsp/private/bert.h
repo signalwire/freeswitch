@@ -22,11 +22,38 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: bert.h,v 1.1 2008/11/30 12:38:27 steveu Exp $
+ * $Id: bert.h,v 1.2 2009/04/14 16:04:54 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_BERT_H_)
 #define _SPANDSP_PRIVATE_BERT_H_
+
+typedef struct
+{
+    uint32_t reg;
+    int step;
+    int step_bit;
+    int bits;
+    int zeros;
+} bert_tx_state_t;
+
+typedef struct
+{
+    uint32_t reg;
+    uint32_t ref_reg;
+    uint32_t master_reg;
+    int step;
+    int step_bit;
+    int resync;
+    int bits;
+    int zeros;
+    int resync_len;
+    int resync_percent;
+    int resync_bad_bits;
+    int resync_cnt;
+    int report_countdown;
+    int measurement_step;
+} bert_rx_state_t;
 
 /*!
     Bit error rate tester (BERT) descriptor. This defines the working state for a
@@ -41,25 +68,6 @@ struct bert_state_s
     int report_frequency;
     int limit;
 
-    uint32_t tx_reg;
-    int tx_step;
-    int tx_step_bit;
-    int tx_bits;
-    int tx_zeros;
-
-    uint32_t rx_reg;
-    uint32_t ref_reg;
-    uint32_t master_reg;
-    int rx_step;
-    int rx_step_bit;
-    int resync;
-    int rx_bits;
-    int rx_zeros;
-    int resync_len;
-    int resync_percent;
-    int resync_bad_bits;
-    int resync_cnt;
-    
     uint32_t mask;
     int shift;
     int shift2;
@@ -69,11 +77,10 @@ struct bert_state_s
 
     int decade_ptr[9];
     int decade_bad[9][10];
-    int step;
     int error_rate;
 
-    int bit_error_status;
-    int report_countdown;
+    bert_tx_state_t tx;
+    bert_rx_state_t rx;
 
     bert_results_t results;
 

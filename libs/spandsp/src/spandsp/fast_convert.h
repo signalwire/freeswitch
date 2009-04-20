@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fast_convert.h,v 1.6 2009/02/26 16:08:51 steveu Exp $
+ * $Id: fast_convert.h,v 1.7 2009/04/18 03:18:41 steveu Exp $
  */
 
 #if !defined(_SPANDSP_FAST_CONVERT_H_)
@@ -228,6 +228,17 @@ extern "C"
         );
 
         return res[1];
+    }
+#else
+    /* Fallback routines, for unrecognised platforms */
+    static __inline__ long int lfastrint(double x)
+    {
+        return (long int) x;
+    }
+
+    static __inline__ long int lfastrintf(float x)
+    {
+        return (long int) x;
     }
 #endif
 

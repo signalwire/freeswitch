@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: spandsp.h.in,v 1.17 2009/02/12 12:38:39 steveu Exp $
+ * $Id: spandsp.h.in,v 1.18 2009/04/02 13:43:49 steveu Exp $
  */
 
 /*! \file */
@@ -92,6 +92,7 @@
 #include <spandsp/v27ter_rx.h>
 #include <spandsp/v27ter_tx.h>
 #include <spandsp/v8.h>
+#include <spandsp/v18.h>
 #include <spandsp/v42.h>
 #include <spandsp/v42bis.h>
 #include <spandsp/t4.h>

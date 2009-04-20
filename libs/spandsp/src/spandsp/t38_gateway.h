@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_gateway.h,v 1.62 2009/02/10 13:06:47 steveu Exp $
+ * $Id: t38_gateway.h,v 1.63 2009/04/12 09:12:10 steveu Exp $
  */
 
 /*! \file */
@@ -40,9 +40,11 @@ to maximum the tolerance of jitter and packet loss on the IP network.
 \section t38_gateway_page_sec_2 How does it work?
 */
 
+/*! The receive buffer length */
 #define T38_RX_BUF_LEN          2048
+/*! The number of HDLC transmit buffers */
 #define T38_TX_HDLC_BUFS        256
-/* Make sure the HDLC frame buffers are big enough for ECM frames. */
+/*! The maximum length of an HDLC frame buffer. This must be big enough for ECM frames. */
 #define T38_MAX_HDLC_LEN        260
 
 typedef struct t38_gateway_state_s t38_gateway_state_t;
@@ -62,6 +64,9 @@ typedef void (t38_gateway_real_time_frame_handler_t)(t38_gateway_state_t *s,
                                                      const uint8_t *msg,
                                                      int len);
 
+/*!
+    T.38 gateway results.
+ */
 typedef struct
 {
     /*! \brief The current bit rate for image transfer. */
