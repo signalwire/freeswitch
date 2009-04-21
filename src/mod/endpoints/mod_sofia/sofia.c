@@ -3995,37 +3995,37 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 	if (switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS) {
 		
 		if (sip->sip_content_type) {
-			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", "%s", sip->sip_content_type->c_type);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", sip->sip_content_type->c_type);
 		}
 
 		if (sip->sip_from && sip->sip_from->a_url) {
 			if (sip->sip_from->a_url->url_user) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-From-User", "%s", sip->sip_from->a_url->url_user);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-From-User", sip->sip_from->a_url->url_user);
 			}
 
 			if (sip->sip_from->a_url->url_host) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-From-Host", "%s", sip->sip_from->a_url->url_host);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-From-Host", sip->sip_from->a_url->url_host);
 			}
 		}
 
 		if (sip->sip_to && sip->sip_to->a_url) {
 			if (sip->sip_to->a_url->url_user) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-To-User", "%s", sip->sip_to->a_url->url_user);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-To-User", sip->sip_to->a_url->url_user);
 			}
 
 			if (sip->sip_to->a_url->url_host) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-To-Host", "%s", sip->sip_to->a_url->url_host);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-To-Host", sip->sip_to->a_url->url_host);
 			}
 		}
 
 
 		if (sip->sip_contact && sip->sip_contact->m_url) {
 			if (sip->sip_contact->m_url->url_user) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-Contact-User", "%s", sip->sip_contact->m_url->url_user);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-User", sip->sip_contact->m_url->url_user);
 			}
 
 			if (sip->sip_contact->m_url->url_host) {
-				switch_event_add_header(event, SWITCH_STACK_BOTTOM, "SIP-Contact-Host", "%s", sip->sip_contact->m_url->url_host);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-Host", sip->sip_contact->m_url->url_host);
 			}
 		}
 
