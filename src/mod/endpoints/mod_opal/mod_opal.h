@@ -252,6 +252,7 @@ class FSMediaStream:public OpalMediaStream {
     switch_timer_t *m_switchTimer;
     switch_codec_t *m_switchCodec;
     switch_frame_t m_readFrame;
+    unsigned char m_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
     RTP_DataFrame m_readRTP;
     bool m_callOnStart;
     uint32_t m_timeStamp;

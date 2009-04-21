@@ -24,6 +24,7 @@
 
 #include "mod_opal.h"
 #include <opal/patch.h>
+#include <opal/rtp/rtp.h>
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
 
@@ -1354,16 +1355,33 @@ switch_status_t FSMediaStream::read_frame(switch_frame_t **frame, switch_io_flag
 
     //switch_core_timer_step(&m_switchTimer);
 
-    m_readFrame.buflen = m_readRTP.GetSize();
-    m_readFrame.data = m_readRTP.GetPayloadPtr();
-    m_readFrame.packet = m_readRTP.GetPointer();
-    m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readFrame.datalen;
-    m_readFrame.payload = (switch_payload_t) m_readRTP.GetPayloadType();
-    m_readFrame.timestamp = m_readRTP.GetTimestamp();
-    m_readFrame.m = (switch_bool_t) m_readRTP.GetMarker();
-    m_readFrame.seq = m_readRTP.GetSequenceNumber();
-    m_readFrame.ssrc = m_readRTP.GetSyncSource();
-    m_readFrame.codec = m_switchCodec;
+    if (m_readFrame.payload == RTP_DataFrame::CN || m_readFrame.payload == RTP_DataFrame::Cisco_CN) {
+        m_readFrame.flags = SFF_CNG;
+    }
+
+    if (m_readFrame.flags & SFF_CNG) {
+        m_readFrame.buflen = sizeof(m_buf);
+        m_readFrame.data = m_buf;
+        m_readFrame.packet = NULL;
+        m_readFrame.packetlen = 0;
+        m_readFrame.timestamp = 0;
+        m_readFrame.m = SWITCH_FALSE;
+        m_readFrame.seq = 0;
+        m_readFrame.ssrc = 0;
+        m_readFrame.codec = m_switchCodec;
+    } else {
+        m_readFrame.buflen = m_readRTP.GetSize();
+        m_readFrame.data = m_readRTP.GetPayloadPtr();
+        m_readFrame.packet = m_readRTP.GetPointer();
+        m_readFrame.packetlen = m_readRTP.GetHeaderSize() + m_readFrame.datalen;
+        m_readFrame.payload = (switch_payload_t) m_readRTP.GetPayloadType();
+        m_readFrame.timestamp = m_readRTP.GetTimestamp();
+        m_readFrame.m = (switch_bool_t) m_readRTP.GetMarker();
+        m_readFrame.seq = m_readRTP.GetSequenceNumber();
+        m_readFrame.ssrc = m_readRTP.GetSyncSource();
+        m_readFrame.codec = m_switchCodec;
+    }
+
     *frame = &m_readFrame;
 
     return SWITCH_STATUS_SUCCESS;
