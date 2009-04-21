@@ -995,7 +995,6 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_frame_t *read_frame;
 		switch_status_t status;
 		char *uuid;
-		int done = 0;
 		switch_core_session_t *other_session;
 		switch_input_args_t args = { 0 };
 		const char *pop_order = NULL;
@@ -1310,9 +1309,10 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_mutex_unlock(node->mutex);
 				send_presence(node);
 				switch_core_session_rwunlock(other_session);
+				switch_safe_free(uuid);
 
-				if (!do_wait) {
-					done = 1;
+				if (!do_wait || !switch_channel_ready(channel)) {
+					break;
 				}
 
 				fifo_consumer_wrapup_sound = switch_channel_get_variable(channel, "fifo_consumer_wrapup_sound");
@@ -1377,13 +1377,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 				switch_channel_set_variable(channel, "fifo_status", "WAITING");
 			}
-
-			switch_safe_free(uuid);
-
-			if (done) {
-				break;
-			}
-
+			
 			if (do_wait && switch_channel_ready(channel)) {
 				if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 					switch_channel_event_set_data(channel, event);
@@ -1393,7 +1387,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				}
 			}
 		}
-
+		
 		if (switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, FIFO_EVENT) == SWITCH_STATUS_SUCCESS) {
 			switch_channel_event_set_data(channel, event);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "FIFO-Name", argv[0]);
