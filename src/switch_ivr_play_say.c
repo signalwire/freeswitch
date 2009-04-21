@@ -634,6 +634,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 	}
 
+	switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_in / read_impl.samples_per_second);
+	switch_channel_set_variable_printf(channel, "record_samples", "%d", fh->samples_in);
+
 	switch_core_file_close(fh);
 	switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
 	return status;
@@ -1279,6 +1282,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done playing file\n");
 	//switch_core_file_seek(fh, &fh->last_pos, 0, SEEK_CUR);
+
+
+	switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_out / read_impl.samples_per_second);
+	switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_out);
 
 	switch_core_file_close(fh);
 	switch_buffer_destroy(&fh->audio_buffer);
