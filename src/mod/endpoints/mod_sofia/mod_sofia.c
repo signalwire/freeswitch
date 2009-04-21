@@ -1918,7 +1918,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 	}
 
   stream->write_function(stream, "%s\n", header);
-  stream->write_function(stream, "<Profiles>\n");
+  stream->write_function(stream, "<profiles>\n");
 	switch_mutex_lock(mod_sofia_globals.hash_mutex);
 	for (hi = switch_hash_first(NULL, mod_sofia_globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 		switch_hash_this(hi, &vvar, NULL, &val);
@@ -1927,9 +1927,9 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 			if (strcmp(vvar, profile->name)) {
 				ac++;
-				stream->write_function(stream, "<alias>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s</State>\n</alias>\n", vvar, "alias", profile->name, "ALIASED");
+				stream->write_function(stream, "<alias>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</alias>\n", vvar, "alias", profile->name, "ALIASED");
 			} else {
-				stream->write_function(stream, "<profile>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s (%u)</State>\n</profile>\n", profile->name, "profile", profile->url,
+				stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u)</state>\n</profile>\n", profile->name, "profile", profile->url,
 									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
 
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
@@ -1941,7 +1941,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 
 				for (gp = profile->gateways; gp; gp = gp->next) {
 					switch_assert(gp->state < REG_STATE_LAST);
-					stream->write_function(stream, "<gateway>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s</State>\n</gateway>\n", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
+					stream->write_function(stream, "<gateway>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s</state>\n</gateway>\n", gp->name, "gateway", gp->register_to, sofia_state_names[gp->state]);
 					if (gp->state == REG_STATE_FAILED || gp->state == REG_STATE_TRYING) {
 						time_t now = switch_epoch_time_now(NULL);
 						if (gp->retry > now) {
@@ -1956,7 +1956,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 		}
 	}
 	switch_mutex_unlock(mod_sofia_globals.hash_mutex);
-	stream->write_function(stream, "</Profiles>\n");
+	stream->write_function(stream, "</profiles>\n");
 	return SWITCH_STATUS_SUCCESS;
 }
 
