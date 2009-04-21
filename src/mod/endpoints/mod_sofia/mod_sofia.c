@@ -1672,10 +1672,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "AGGRESSIVENAT    \t%s\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					stream->write_function(stream, "STUN-ENABLED     \t%s\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
 					stream->write_function(stream, "STUN-AUTO-DISABLE\t%s\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
-					stream->write_function(stream, "CallsIN          \t%d\n", profile->ib_calls);
-					stream->write_function(stream, "FailedCallsIN    \t%d\n", profile->ib_failed_calls);
-					stream->write_function(stream, "CallsOUT         \t%d\n", profile->ob_calls);
-					stream->write_function(stream, "FailedCallsOUT   \t%d\n", profile->ob_failed_calls);
+					stream->write_function(stream, "CALLS-IN         \t%d\n", profile->ib_calls);
+					stream->write_function(stream, "FAILED-CALLS-IN  \t%d\n", profile->ib_failed_calls);
+					stream->write_function(stream, "CALLS-OUT        \t%d\n", profile->ob_calls);
+					stream->write_function(stream, "FAILED-CALLS-OUT \t%d\n", profile->ob_failed_calls);
 				}
 				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
