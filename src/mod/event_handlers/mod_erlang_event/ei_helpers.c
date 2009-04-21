@@ -58,7 +58,7 @@ void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to) {
 	char msgbuf[2048];
 	char *s;
 	int index = 0;
-	/*int n;*/
+	int ret;
 
 	index = 5;                                     /* max sizes: */
 	ei_encode_version(msgbuf,&index);                     /*   1 */
@@ -74,7 +74,7 @@ void ei_link(listener_t *listener, erlang_pid *from, erlang_pid *to) {
 	/* sum:  542 */
 
 	switch_mutex_lock(listener->sock_mutex);
-	write(listener->sockfd, msgbuf, index);
+	ret = write(listener->sockfd, msgbuf, index);
 	switch_mutex_unlock(listener->sock_mutex);
 }
 
@@ -190,7 +190,7 @@ int ei_spawn(struct ei_cnode_s *ec, int sockfd, erlang_ref *ref, char *module, c
 void ei_init_ref(ei_cnode *ec, erlang_ref *ref)
 {
 	memset(ref, 0, sizeof(*ref)); /* zero out the struct */
-	snprintf(ref->node, MAXATOMLEN, ec->thisnodename);
+	snprintf(ref->node, MAXATOMLEN, "%s", ec->thisnodename);
 	
 	switch_mutex_lock(globals.ref_mutex);
 	globals.reference0++;
