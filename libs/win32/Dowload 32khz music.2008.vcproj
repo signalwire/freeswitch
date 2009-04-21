@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="Download 32khzsound"
-	ProjectGUID="{6E49F6C2-ADDA-4BFB-81FE-AB9AF51B455F}"
-	RootNamespace="Download 32khzsound"
+	Name="Download 32khz music"
+	ProjectGUID="{1F0A8A77-E661-418F-BB92-82172AE43803}"
+	RootNamespace="Download 32khz music"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -75,8 +75,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 32khzsound."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.8.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\sounds\en\us\callie\voicemail\32000"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sounds\music\32000"
 				/>
 			</FileConfiguration>
 			<FileConfiguration
@@ -85,8 +85,8 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 32khzsound."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\en\us\callie\voicemail\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-en-us-callie-32000-1.0.8.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
-					Outputs="$(ProjectDir)..\sounds\en\us\callie\voicemail\32000"
+					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					Outputs="$(ProjectDir)..\sounds\music\32000"
 				/>
 			</FileConfiguration>
 		</File>
