@@ -1473,6 +1473,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 			profile->rport_level = 1; /* default setting */
 			profile->acl_count = 0;
 			sofia_set_pflag(profile, PFLAG_STUN_ENABLED);
+			profile->ib_calls = 0;
+			profile->ob_calls = 0;
+			profile->ib_failed_calls = 0;
+			profile->ob_failed_calls = 0;
 
 			if (xprofiledomain) {
 				profile->domain_name = switch_core_strdup(profile->pool, xprofiledomain);
@@ -4124,21 +4128,23 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	char *is_nat = NULL;
 	char acl_token[512] = "";
 
+	profile->ib_calls++;
+
 	if (sess_count >= sess_max || !sofia_test_pflag(profile, PFLAG_RUNNING)) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-		return;
+		goto fail;
 	}
 
 	if (!sip || !sip->sip_request || !sip->sip_request->rq_method_name) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Received an invalid packet!\n");
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
-		return;
+		goto fail;
 	}
 
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
 		nua_respond(nh, 400, "Missing Contact Header", TAG_END());
-		return;
+		goto fail;
 	}
 
 	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
@@ -4209,7 +4215,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 			if (!sofia_test_pflag(profile, PFLAG_AUTH_CALLS)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "IP %s Rejected by acl \"%s\"\n", network_ip, switch_str_nil(last_acl));
 				nua_respond(nh, SIP_403_FORBIDDEN, TAG_END());
-				return;
+				goto fail;
 			} else {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "IP %s Rejected by acl \"%s\". Falling back to Digest auth.\n",
 								  network_ip, switch_str_nil(last_acl));
@@ -4226,6 +4232,11 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				if (v_event) {
 					switch_event_destroy(&v_event);
 				}
+				
+				if (sip->sip_authorization || sip->sip_proxy_authorization) {
+					goto fail;
+				}
+
 				return;
 			}
 		}
@@ -4242,14 +4253,14 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (!session) {
 		nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
-		return;
+		goto fail;
 	}
 
 	if (!(tech_pvt = (private_object_t *) switch_core_session_alloc(session, sizeof(private_object_t)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Hey where is my memory pool?\n");
 		nua_respond(nh, SIP_503_SERVICE_UNAVAILABLE, TAG_END());
 		switch_core_session_destroy(&session);
-		return;
+		goto fail;
 	}
 
 
@@ -4860,6 +4871,12 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	sofia_private_free(sofia_private);
 	switch_core_session_destroy(&session);
 	nua_respond(nh, 503, "Maximum Calls In Progress", SIPTAG_RETRY_AFTER_STR("300"), TAG_END());
+	return;
+
+ fail:
+	profile->ib_failed_calls++;
+	return;
+
 }
 
 void sofia_handle_sip_i_options(int status,

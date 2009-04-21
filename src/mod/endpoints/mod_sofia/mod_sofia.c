@@ -273,6 +273,14 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 
 	switch_mutex_lock(tech_pvt->sofia_mutex);
 
+	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
+		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+			tech_pvt->profile->ob_failed_calls++;
+		} else {
+			tech_pvt->profile->ib_failed_calls++;
+		}
+	}
+
 	if (!((use_my_cause = switch_channel_get_variable(channel, "sip_ignore_remote_cause")) && switch_true(use_my_cause))) {
 		ps_cause = switch_channel_get_variable(channel, SWITCH_PROTO_SPECIFIC_HANGUP_CAUSE_VARIABLE);
 	}
@@ -1664,6 +1672,10 @@ static switch_status_t cmd_status(char **argv, int argc, switch_stream_handle_t 
 					stream->write_function(stream, "AGGRESSIVENAT    \t%s\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					stream->write_function(stream, "STUN_ENABLED     \t%s\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
 					stream->write_function(stream, "STUN_AUTO_DISABLE\t%s\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+					stream->write_function(stream, "CallsIN          \t%d\n", profile->ib_calls);
+					stream->write_function(stream, "FailedCallsIN    \t%d\n", profile->ib_failed_calls);
+					stream->write_function(stream, "CallsOUT         \t%d\n", profile->ob_calls);
+					stream->write_function(stream, "FailedCallsOUT   \t%d\n", profile->ob_failed_calls);
 				}
 				stream->write_function(stream, "\nRegistrations:\n%s\n", line);
 
@@ -1796,8 +1808,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				stream->write_function(stream, "    <pingfreq>%d</pingfreq>\n", gp->ping_freq);
 				stream->write_function(stream, "    <state>%s</state>\n", sofia_state_names[gp->state]);
 				stream->write_function(stream, "    <status>%s%s</status>\n", status_names[gp->status], gp->pinging ? " (ping)" : "");
-				stream->write_function(stream, "    <callsin>%d</callsin>\n", gp->ib_calls);
-				stream->write_function(stream, "    <callsout>%d</callsout>\n", gp->ob_calls);
+				stream->write_function(stream, "    <calls-in>%d</calls-in>\n", gp->ib_calls);
+				stream->write_function(stream, "    <calls-out>%d</calls-out>\n", gp->ob_calls);
 
 				stream->write_function(stream, "  </gateway>\n");
 				sofia_reg_release_gateway(gp);
@@ -1845,9 +1857,15 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <nomedia>%s</nomedia>\n", sofia_test_flag(profile, TFLAG_INB_NOMEDIA) ? "true" : "false");
 					stream->write_function(stream, "    <late-neg>%s</late-neg>\n", sofia_test_flag(profile, TFLAG_LATE_NEGOTIATION) ? "true" : "false");
 					stream->write_function(stream, "    <proxy-media>%s</proxy-media>\n", sofia_test_flag(profile, TFLAG_PROXY_MEDIA) ? "true" : "false");
-					stream->write_function(stream, "    <aggressivenat>%s</aggressive-nat>\n", sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
+					stream->write_function(stream, "    <aggressivenat>%s</aggressive-nat>\n", 
+										   sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION) ? "true" : "false");
 					stream->write_function(stream, "    <stun-enabled>%s</stun-enabled>\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
-					stream->write_function(stream, "    <stun-auto-disable>%s</stun-auto-disable>\n", sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+					stream->write_function(stream, "    <stun-auto-disable>%s</stun-auto-disable>\n", 
+										   sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
+					stream->write_function(stream, "    <calls-in>%s</calls-in>\n", profile->ib_calls);
+					stream->write_function(stream, "    <calls-out>%s</calls-out>\n", profile->ob_calls);
+					stream->write_function(stream, "    <failed-calls-in>%s</failed-calls-in>\n", profile->ib_failed_calls);
+					stream->write_function(stream, "    <failed-calls-out>%s</failed-calls-out>\n", profile->ob_failed_calls);
 
 				}
 				stream->write_function(stream, "  </profile-info>\n");
@@ -2694,6 +2712,11 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
   done:
 
 	if (profile) {
+		if (cause == SWITCH_CAUSE_SUCCESS) {
+			profile->ob_calls++;
+		} else {
+			profile->ob_failed_calls++;
+		}
 		sofia_glue_release_profile(profile);
 	}
 	return cause;

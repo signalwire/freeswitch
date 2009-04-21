@@ -469,6 +469,10 @@ struct sofia_profile {
 	sofia_media_options_t media_options;
 	uint32_t force_subscription_expires;
 	switch_rtp_bug_flag_t auto_rtp_bugs;
+	uint32_t ib_calls;
+	uint32_t ob_calls;
+	uint32_t ib_failed_calls;
+	uint32_t ob_failed_calls;
 };
 
 struct private_object {

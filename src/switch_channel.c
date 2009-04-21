@@ -212,6 +212,11 @@ SWITCH_DECLARE(switch_channel_timetable_t *) switch_channel_get_timetable(switch
 	return times;
 }
 
+SWITCH_DECLARE(switch_call_direction_t) switch_channel_direction(switch_channel_t *channel)
+{
+	return channel->direction;
+}
+
 SWITCH_DECLARE(switch_status_t) switch_channel_alloc(switch_channel_t **channel, switch_call_direction_t direction, switch_memory_pool_t *pool)
 {
 	switch_assert(pool != NULL);
