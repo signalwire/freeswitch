@@ -181,6 +181,8 @@ extern switch_io_event_hooks_t switch_core_session_get_event_hooks(switch_core_s
 	{																	\
 		switch_io_event_hook_##_NAME##_t *hook, *ptr;					\
 		assert(_NAME != NULL);											\
+		for (ptr = session->event_hooks._NAME; ptr && ptr->next; ptr = ptr->next) \
+			if (ptr->_NAME == _NAME) return SWITCH_STATUS_FALSE;		\
 		if ((hook = switch_core_session_alloc(session, sizeof(*hook))) != 0) { \
 			hook->_NAME = _NAME ;										\
 			if (! session->event_hooks._NAME ) {						\
