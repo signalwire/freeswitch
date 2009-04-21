@@ -515,6 +515,64 @@ SWITCH_STANDARD_API(url_decode_function)
     return SWITCH_STATUS_SUCCESS;
 }
 
+SWITCH_STANDARD_API(echo_function)
+{
+	stream->write_function(stream, "%s", cmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(expand_function)
+{
+	char *expanded;
+	char *dup;
+	char *arg;
+	char *mycmd;
+	switch_status_t status;
+	const char *p;
+	switch_core_session_t *xsession;
+	char uuid[80] = "";
+	
+	dup = strdup(cmd);
+	mycmd = dup;
+
+	if (!strncasecmp(mycmd, "uuid:", 5)) {
+		p = cmd + 5;
+		if ((mycmd = strchr(p, ' ')) && *mycmd++) {
+			switch_copy_string(uuid, p, mycmd - p);
+		}
+	}
+	
+	if (switch_strlen_zero(mycmd)) {
+		stream->write_function(stream, "-ERR, no input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	if (*uuid) {
+		if ((xsession = switch_core_session_locate(uuid))) {
+			switch_channel_event_set_data(switch_core_session_get_channel(xsession), stream->param_event);
+			switch_core_session_rwunlock(xsession);
+		}
+	}
+
+	if ((arg = strchr(mycmd, ' '))) {
+		*arg++ = '\0';
+	}
+
+	expanded = switch_event_expand_headers(stream->param_event, arg);
+	status = switch_api_execute(mycmd, expanded, session, stream);
+
+	if (expanded != arg) {
+		free(expanded);
+		expanded = NULL;
+	}
+
+	free(dup);
+	dup = NULL;
+
+	return status;
+}
+
+
 SWITCH_STANDARD_API(eval_function)
 {
 	char *expanded;
@@ -3332,7 +3390,9 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "module_exists", "check if module exists", module_exists_function, "<module>");
 	SWITCH_ADD_API(commands_api_interface, "domain_exists", "check if a domain exists", domain_exists_function, "<domain>");
 	SWITCH_ADD_API(commands_api_interface, "uuid_send_dtmf", "send dtmf digits", uuid_send_dtmf_function, UUID_SEND_DTMF_SYNTAX);
-	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "<expression>");
+	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "[uuid:<uuid> ]<expression>");
+	SWITCH_ADD_API(commands_api_interface, "expand", "expand vars and exexute", expand_function, "[uuid:<uuid> ]<cmd> <args>");
+	SWITCH_ADD_API(commands_api_interface, "echo", "echo", echo_function, "<data>");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
 
