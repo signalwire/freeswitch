@@ -75,7 +75,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 32khzsound."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					CommandLine="set /P SOUND_VERSION=&lt;$(ProjectDir)..\..\build\moh_version.txt&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sounds\music\32000"
 				/>
 			</FileConfiguration>
@@ -85,7 +85,7 @@
 				<Tool
 					Name="VCCustomBuildTool"
 					Description="Downloading 32khzsound."
-					CommandLine="if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-1.0.8.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;"
+					CommandLine="set /P SOUND_VERSION=&lt;$(ProjectDir)..\..\build\moh_version.txt&#x0D;&#x0A;if not exist &quot;$(ProjectDir)..\sounds\music\32000&quot; cscript /nologo &quot;$(ProjectDir)util.vbs&quot; GetUnzip http://files.freeswitch.org/freeswitch-sounds-music-32000-%SOUND_VERSION%.tar.gz &quot;$(ProjectDir)..\sounds&quot;&#x0D;&#x0A;&#x0D;&#x0A;"
 					Outputs="$(ProjectDir)..\sounds\music\32000"
 				/>
 			</FileConfiguration>
