@@ -532,6 +532,11 @@ SWITCH_STANDARD_API(expand_function)
 	switch_core_session_t *xsession;
 	char uuid[80] = "";
 	
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "-ERR, no input\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
 	dup = strdup(cmd);
 	mycmd = dup;
 
@@ -558,8 +563,10 @@ SWITCH_STANDARD_API(expand_function)
 		*arg++ = '\0';
 	}
 
-	expanded = switch_event_expand_headers(stream->param_event, arg);
-	status = switch_api_execute(mycmd, expanded, session, stream);
+	expanded = arg ? switch_event_expand_headers(stream->param_event, arg) : arg;
+	if ((status = switch_api_execute(mycmd, expanded, session, stream)) != SWITCH_STATUS_SUCCESS) {
+		stream->write_function(stream, "-ERR, error executing command\n");
+	}
 
 	if (expanded != arg) {
 		free(expanded);
@@ -569,7 +576,7 @@ SWITCH_STANDARD_API(expand_function)
 	free(dup);
 	dup = NULL;
 
-	return status;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 
