@@ -909,7 +909,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 	switch_mutex_unlock(globals.hash_mutex);
 	
 	if (conference->auto_record) {
-		uint32_t sanity = 100;
+		uint32_t sanity = 1200;
 
 		while (!conference->members && --sanity) {
 			switch_yield(100000);
