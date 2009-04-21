@@ -989,7 +989,7 @@ SWITCH_STANDARD_APP(event_function)
 						if (!strcasecmp(var,"Event-Name")) {
 							switch_name_event(val, &event->event_id);
 							switch_event_del_header(event, var);
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, var, "%s", val);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
 						} else if (!strcasecmp(var,"Event-Subclass")) {
 							size_t len = strlen(val) + 1;
 							void *new = malloc(len);
@@ -997,7 +997,7 @@ SWITCH_STANDARD_APP(event_function)
 							memcpy(new, val, len);
 							event->subclass_name = new;
 						} else {
-							switch_event_add_header(event, SWITCH_STACK_BOTTOM, var, "%s", val);
+							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, var, val);
 						}
 					}
 				}

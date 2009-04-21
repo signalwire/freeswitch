@@ -97,8 +97,8 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 static void sofia_reg_fire_custom_gateway_state_event(sofia_gateway_t *gateway) {
 	switch_event_t *s_event;
 	if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_GATEWAY_STATE) == SWITCH_STATUS_SUCCESS) {
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Gateway", "%s", gateway->name);
-		switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "State", "%s", sofia_state_string(gateway->state));
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "Gateway", gateway->name);
+		switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "State", sofia_state_string(gateway->state));
 		switch_event_fire(&s_event);
 	}
 }

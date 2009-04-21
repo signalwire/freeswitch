@@ -1647,7 +1647,7 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 	if (total_new_messages || total_new_urgent_messages) {
 		yn = "yes";
 	}
-	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", "%s", yn);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", "%s@%s", id, domain_name);
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
 	switch_event_fire(&event);
