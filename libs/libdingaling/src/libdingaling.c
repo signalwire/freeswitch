@@ -2336,6 +2336,16 @@ int ldl_handle_running(ldl_handle_t *handle)
 	return ldl_test_flag(handle, LDL_FLAG_RUNNING) ? 1 : 0;
 }
 
+int ldl_handle_connected(ldl_handle_t *handle)
+{
+	return ldl_test_flag(handle, LDL_FLAG_CONNECTED) ? 1 : 0;
+}
+
+int ldl_handle_authorized(ldl_handle_t *handle)
+{
+	return ldl_test_flag(handle, LDL_FLAG_AUTHORIZED) ? 1 : 0;
+}
+
 void ldl_handle_stop(ldl_handle_t *handle)
 {
 	ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);

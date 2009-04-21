@@ -591,6 +591,8 @@ void ldl_handle_run(ldl_handle_t *handle);
 void ldl_handle_stop(ldl_handle_t *handle);
 
 int ldl_handle_running(ldl_handle_t *handle);
+int ldl_handle_connected(ldl_handle_t *handle);
+int ldl_handle_authorized(ldl_handle_t *handle);
 
 
 /*!
