@@ -2703,6 +2703,11 @@ public class freeswitch {
     freeswitchPINVOKE.switch_channel_set_hangup_time(SWIGTYPE_p_switch_channel.getCPtr(channel));
   }
 
+  public static switch_call_direction_t switch_channel_direction(SWIGTYPE_p_switch_channel channel) {
+    switch_call_direction_t ret = (switch_call_direction_t)freeswitchPINVOKE.switch_channel_direction(SWIGTYPE_p_switch_channel.getCPtr(channel));
+    return ret;
+  }
+
   public static switch_status_t switch_buffer_create(SWIGTYPE_p_apr_pool_t pool, SWIGTYPE_p_p_switch_buffer buffer, SWIGTYPE_p_switch_size_t max_len) {
     switch_status_t ret = (switch_status_t)freeswitchPINVOKE.switch_buffer_create(SWIGTYPE_p_apr_pool_t.getCPtr(pool), SWIGTYPE_p_p_switch_buffer.getCPtr(buffer), SWIGTYPE_p_switch_size_t.getCPtr(max_len));
     if (freeswitchPINVOKE.SWIGPendingException.Pending) throw freeswitchPINVOKE.SWIGPendingException.Retrieve();
@@ -9120,6 +9125,9 @@ class freeswitchPINVOKE {
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_set_hangup_time")]
   public static extern void switch_channel_set_hangup_time(HandleRef jarg1);
+
+  [DllImport("mod_managed", EntryPoint="CSharp_switch_channel_direction")]
+  public static extern int switch_channel_direction(HandleRef jarg1);
 
   [DllImport("mod_managed", EntryPoint="CSharp_switch_buffer_create")]
   public static extern int switch_buffer_create(HandleRef jarg1, HandleRef jarg2, HandleRef jarg3);
@@ -20372,6 +20380,8 @@ public enum switch_event_types_t {
   SWITCH_EVENT_SESSION_HEARTBEAT,
   SWITCH_EVENT_CLIENT_DISCONNECTED,
   SWITCH_EVENT_SERVER_DISCONNECTED,
+  SWITCH_EVENT_SEND_INFO,
+  SWITCH_EVENT_RECV_INFO,
   SWITCH_EVENT_ALL
 }
 

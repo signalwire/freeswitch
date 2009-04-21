@@ -19439,6 +19439,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_hangup_time(void * jarg1) 
 }
 
 
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_channel_direction(void * jarg1) {
+  int jresult ;
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_call_direction_t result;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  result = (switch_call_direction_t)switch_channel_direction(arg1);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_switch_buffer_create(void * jarg1, void * jarg2, void * jarg3) {
   int jresult ;
   switch_memory_pool_t *arg1 = (switch_memory_pool_t *) 0 ;
