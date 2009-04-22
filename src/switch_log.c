@@ -332,6 +332,7 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 
 			fd = fileno(handle);
 			memset(&to, 0, sizeof(to));
+			FD_ZERO(&can_write);
 			FD_SET(fd, &can_write);
 			to.tv_sec = 0;
 			to.tv_usec = 100000;
