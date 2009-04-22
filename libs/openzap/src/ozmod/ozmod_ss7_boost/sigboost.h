@@ -1,5 +1,5 @@
 /****************************************************************************
- * sigboost.h     $Revision: 1.5 $
+ * sigboost.h     $Revision: 1.13 $
  *
  * Definitions for the sigboost interface.
  *
@@ -13,6 +13,8 @@
 ****************************************************************************/
 #ifndef _SIGBOOST_H_
 #define _SIGBOOST_H_
+
+#define SIGBOOST_VERSION 100
 
 #include <stdint.h>
 #include <sys/time.h>
@@ -48,14 +50,22 @@ enum	e_sigboost_release_cause_values
 
 enum	e_sigboost_call_setup_ack_nack_cause_values
 {
-	SIGBOOST_CALL_SETUP_NACK_ALL_CKTS_BUSY		= 117, /* unused Q.850 value */
-	SIGBOOST_CALL_SETUP_NACK_TEST_CKT_BUSY		= 118, /* unused Q.850 value */
-	SIGBOOST_CALL_SETUP_NACK_INVALID_NUMBER		= 28,
-	/* probable elimination */
-	//SIGBOOST_CALL_SETUP_RESERVED			= 0x00,
-	//SIGBOOST_CALL_SETUP_CIRCUIT_RESET		= 0x10,
-	//SIGBOOST_CALL_SETUP_NACK_CKT_START_TIMEOUT	= 0x11,
-	//SIGBOOST_CALL_SETUP_NACK_AUTO_CALL_GAP	= 0x17,
+	//SIGBOOST_CALL_SETUP_NACK_ALL_CKTS_BUSY		= 34,  /* Q.850 value - don't use */
+	SIGBOOST_CALL_SETUP_NACK_ALL_CKTS_BUSY		= 117,  /* non Q.850 value indicates local all ckt busy 
+								   causing sangoma_mgd to perform automatic call 
+								   gapping*/
+	SIGBOOST_CALL_SETUP_NACK_TEST_CKT_BUSY		= 17,  /* Q.850 value */
+	SIGBOOST_CALL_SETUP_NACK_INVALID_NUMBER		= 28,  /* Q.850 value */
+	SIGBOOST_CALL_SETUP_CSUPID_DBL_USE		= 200, /* unused Q.850 value */
+};
+
+
+enum	e_sigboost_huntgroup_values
+{
+	SIGBOOST_HUNTGRP_SEQ_ASC	= 0x00, /* sequential with lowest available first */
+	SIGBOOST_HUNTGRP_SEQ_DESC	= 0x01, /* sequential with highest available first */
+	SIGBOOST_HUNTGRP_RR_ASC		= 0x02, /* round-robin with lowest available first */
+	SIGBOOST_HUNTGRP_RR_DESC	= 0x03, /* round-robin with highest available first */
 };
 
 #define MAX_DIALED_DIGITS	31
@@ -67,63 +77,73 @@ enum	e_sigboost_call_setup_ack_nack_cause_values
 #define CORE_MAX_CHAN_PER_SPAN 	30
 #define MAX_PENDING_CALLS 	CORE_MAX_SPANS * CORE_MAX_CHAN_PER_SPAN
 /* 0..(MAX_PENDING_CALLS-1) is range of call_setup_id below */
-#define SIZE_RDNIS		128
+#define SIZE_RDNIS	900
+
 
 #pragma pack(1)
+
 typedef struct
 {
-	uint32_t	event_id;
+	uint8_t			capability;
+	uint8_t			uil1p;
+}t_sigboost_bearer;
+
+typedef struct
+{
+	uint16_t		version;
+	uint32_t		event_id;
 	/* delete sequence numbers - SCTP does not need them */
-	uint32_t	fseqno;
-	uint32_t	bseqno;
-	uint16_t	call_setup_id;
-	uint32_t	trunk_group;
-	uint8_t		span;
-	uint8_t		chan;
-	struct timeval  tv;
-	uint8_t		called_number_digits_count;
-	char		called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
-	uint8_t		calling_number_digits_count; /* it's an array */
-	char		calling_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
+	uint32_t		fseqno;
+	uint32_t		bseqno;
+	uint16_t		call_setup_id;
+	uint32_t		trunk_group;
+	uint8_t			span;
+	uint8_t			chan;
+	struct timeval  	tv;
+	uint8_t			called_number_digits_count;
+	char			called_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
+	uint8_t			calling_number_digits_count; /* it's an array */
+	char			calling_number_digits [MAX_DIALED_DIGITS + 1]; /* it's a null terminated string */
 	/* ref. Q.931 Table 4-11 and Q.951 Section 3 */
-	uint8_t		calling_number_screening_ind;
-	uint8_t		calling_number_presentation;
-	char		calling_name[MAX_DIALED_DIGITS + 1];
-	uint16_t	redirection_string_size;
-	char		redirection_string [SIZE_RDNIS]; /* it's a null terminated string */
-	/* redir string format: 
-	 * http://www.ss7box.com/wiki/tiki-index.php?page=Call+Redirection
-	 * */
+	uint8_t			calling_number_screening_ind;
+	uint8_t			calling_number_presentation;
+	char			calling_name[MAX_DIALED_DIGITS + 1];
+	t_sigboost_bearer 	bearer;
+	uint8_t			hunt_group;
+	uint16_t		isup_in_rdnis_size;
+	char			isup_in_rdnis [SIZE_RDNIS]; /* it's a null terminated string */
 } t_sigboost_callstart;
 
-#define MIN_SIZE_CALLSTART_MSG  (sizeof(t_sigboost_callstart) - SIZE_RDNIS)
+#define MIN_SIZE_CALLSTART_MSG  sizeof(t_sigboost_callstart) - SIZE_RDNIS
 
 typedef struct
 {
-	uint32_t	event_id;
+	uint16_t		version;
+	uint32_t		event_id;
 	/* delete sequence numbers - SCTP does not need them */
-	uint32_t	fseqno;
-	uint32_t	bseqno;
-	uint16_t	call_setup_id;
-	uint32_t	trunk_group;
-	uint8_t		span;
-	uint8_t		chan;
-	struct timeval  tv;
-	uint8_t		release_cause;
+	uint32_t		fseqno;
+	uint32_t		bseqno;
+	uint16_t		call_setup_id;
+	uint32_t		trunk_group;
+	uint8_t			span;
+	uint8_t			chan;
+	struct timeval  	tv;
+	uint8_t			release_cause;
 } t_sigboost_short;
 #pragma pack()
 
 static inline int boost_full_event(int event_id)
 {
-	switch (event_id) {
-	case SIGBOOST_EVENT_CALL_START:
-	case SIGBOOST_EVENT_DIGIT_IN:
-		return 1;
-	default:
-		return 0;
-	}
+        switch (event_id) {
+        case SIGBOOST_EVENT_CALL_START:
+        case SIGBOOST_EVENT_DIGIT_IN:
+                return 1;
+        default:
+                return 0;
+        }
 
-	return 0;
+        return 0;
 }
+
 
 #endif

@@ -73,7 +73,7 @@ static void ss7bc_print_event_call(ss7bc_connection_t *mcon, ss7bc_event_t *even
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s]\n", 
+	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT: %s:(%X) [w%dg%d] CSid=%i Seq=%i Cn=[%s] Cd=[%s] Ci=[%s]\n", 
 		    dir ? "TX":"RX", 
 			ss7bc_event_id_name(event->event_id), 
 			event->event_id, 
@@ -91,7 +91,7 @@ static void ss7bc_print_event_short(ss7bc_connection_t *mcon, ss7bc_short_event_
 {
 	if (event->event_id == SIGBOOST_EVENT_HEARTBEAT)
 		return;
-	zap_log(file, func, line, ZAP_LOG_LEVEL_DEBUG, "%s EVENT (%s): %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i \n", 
+	zap_log(file, func, line, ZAP_LOG_LEVEL_WARNING, "%s EVENT (%s): %s:(%X) [w%dg%d] Rc=%i CSid=%i Seq=%i \n", 
 			   dir ? "TX":"RX", 
 			   priority ? "P":"N", 	
                            ss7bc_event_id_name(event->event_id), 
@@ -261,6 +261,10 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, 
 					 (struct sockaddr *) &mcon->local_addr, &fromlen);
 
+    if (mcon->event.version != SIGBOOST_VERSION) {
+		zap_log(ZAP_LOG_CRIT, "Invalid Boost Version %i  Expecting %i\n",mcon->event.version, SIGBOOST_VERSION);
+    }   
+
 	/* Must check for < 0 cannot rely on bytes > MIN_SIZE_... compiler issue */
 	if (bytes < 0) {
 		msg_ok=0;
@@ -293,7 +297,7 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 			ss7bc_print_event_short(mcon, (ss7bc_short_event_t*)&mcon->event, 0, 0, file, func, line);
 		}
 
-#if 1
+#if 0
 /* NC: NOT USED ANY MORE */
 		if (mcon->rxseq_reset) {
 			//if (mcon->event.event_id == SIGBOOST_EVENT_SYSTEM_RESTART_ACK) {
@@ -310,15 +314,17 @@ ss7bc_event_t *__ss7bc_connection_read(ss7bc_connection_t *mcon, int iteration, 
 		mcon->txwindow = mcon->txseq - mcon->event.bseqno;
 		mcon->rxseq++;
 
+#if 0
 		if (mcon->rxseq != mcon->event.fseqno) {
 			zap_log(ZAP_LOG_CRIT, "Invalid Sequence Number Expect=%i Rx=%i\n", mcon->rxseq, mcon->event.fseqno);
 			return NULL;
 		}
+#endif
 
 		return &mcon->event;
 	} else {
 		if (iteration == 0) {
-			zap_log(ZAP_LOG_CRIT, "Invalid Event length from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
+			zap_log(ZAP_LOG_CRIT, "NC -  Invalid Event length from boost rxlen=%i evsz=%i\n", bytes, sizeof(mcon->event));
 			return NULL;
 		}
 	}
@@ -332,6 +338,10 @@ ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration,
 	int bytes = 0;
 
 	bytes = recvfrom(mcon->socket, &mcon->event, sizeof(mcon->event), MSG_DONTWAIT, (struct sockaddr *) &mcon->local_addr, &fromlen);
+    
+    if (mcon->event.version != SIGBOOST_VERSION) {
+		zap_log(ZAP_LOG_CRIT, "Invalid Boost Version %i  Expecting %i\n",mcon->event.version, SIGBOOST_VERSION);
+    }   
 
 	if (bytes == sizeof(ss7bc_short_event_t)) {
 
@@ -356,7 +366,7 @@ ss7bc_event_t *__ss7bc_connection_readp(ss7bc_connection_t *mcon, int iteration,
 int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, const char *file, const char *func, int line)
 {
 	int err;
-	int event_size=sizeof(ss7bc_event_t);
+	int event_size=MIN_SIZE_CALLSTART_MSG+event->isup_in_rdnis_size;
  
 	if (!event || mcon->socket < 0 || !mcon->mutex) {
 		zap_log(file, func, line, ZAP_LOG_LEVEL_CRIT, "Critical Error: No Event Device\n");
@@ -395,6 +405,7 @@ int __ss7bc_connection_write(ss7bc_connection_t *mcon, ss7bc_event_t *event, con
 		event->fseqno = mcon->txseq++;
 	}
 	event->bseqno = mcon->rxseq;
+    event->version = SIGBOOST_VERSION; 
 	err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
 
 	zap_mutex_unlock(mcon->mutex);
@@ -432,6 +443,7 @@ int __ss7bc_connection_writep(ss7bc_connection_t *mcon, ss7bc_event_t *event, co
 	gettimeofday(&event->tv, NULL);
 	
 	zap_mutex_lock(mcon->mutex);
+    event->version = SIGBOOST_VERSION; 
 	err = sendto(mcon->socket, event, event_size, 0, (struct sockaddr *) &mcon->remote_addr, sizeof(mcon->remote_addr));
 	zap_mutex_unlock(mcon->mutex);
 

@@ -154,10 +154,12 @@ ozmod_skel_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 ozmod_skel_la_LDFLAGS = -module -avoid-version
 ozmod_skel_la_LIBADD  = $(MYLIB)
 
+if LIBSANGOMA
 ozmod_wanpipe_la_SOURCES = $(SRC)/ozmod/ozmod_wanpipe/ozmod_wanpipe.c
-ozmod_wanpipe_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
-ozmod_wanpipe_la_LDFLAGS = -module -avoid-version
+ozmod_wanpipe_la_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS) -D__LINUX__ -I/usr/include/wanpipe
+ozmod_wanpipe_la_LDFLAGS = -module -avoid-version -lsangoma
 ozmod_wanpipe_la_LIBADD  = $(MYLIB)
+endif
 
 ozmod_isdn_la_SOURCES = \
 $(SRC)/isdn/EuroISDNStateNT.c \

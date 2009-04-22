@@ -38,7 +38,7 @@
 #include "openzap.h"
 #include <poll.h>
 #include <sys/socket.h>
-#include "wanpipe_tdm_api_iface.h"
+#include "libsangoma.h"
 
 typedef enum {
 	WP_RINGING = (1 << 0)
@@ -57,196 +57,28 @@ static struct {
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event);
 ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event);
 
-#define WP_INVALID_SOCKET -1
-/* on windows right now, there is no way to specify if we want to read events here or not, we allways get them here */
-/* we need some what to select if we are reading regular tdm msgs or events */
-/* need to either have 2 functions, 1 for events, 1 for regural read, or a flag on this function to choose */
-/* 2 functions preferred.  Need implementation for the event function for both nix and windows that is threadsafe */
-static __inline__ int tdmv_api_readmsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen, void *databuf, int datalen)
-{
-	/* What do we need to do here to avoid having to do all */
-	/* the memcpy's on windows and still maintain api compat with nix */
-	uint32_t rx_len=0;
-#if defined(__WINDOWS__)
-	static RX_DATA_STRUCT	rx_data;
-	api_header_t			*pri;
-	wp_tdm_api_rx_hdr_t		*tdm_api_rx_hdr;
-	wp_tdm_api_rx_hdr_t		*user_buf = (wp_tdm_api_rx_hdr_t*)hdrbuf;
-	DWORD ln;
-
-	if (hdrlen != sizeof(wp_tdm_api_rx_hdr_t)){
-		return -1;
-	}
-
-	if (!DeviceIoControl(
-						 fd,
-						 IoctlReadCommand,
-						 (LPVOID)NULL,
-						 0L,
-						 (LPVOID)&rx_data,
-						 sizeof(RX_DATA_STRUCT),
-						 (LPDWORD)(&ln),
-						 (LPOVERLAPPED)NULL
-						 )){
-		return -1;
-	}
-
-	pri = &rx_data.api_header;
-	tdm_api_rx_hdr = (wp_tdm_api_rx_hdr_t*)rx_data.data;
-
-	user_buf->wp_tdm_api_event_type = pri->operation_status;
-
-	switch(pri->operation_status)
-		{
-		case SANG_STATUS_RX_DATA_AVAILABLE:
-			if (pri->data_length > datalen){
-				break;
-			}
-			memcpy(databuf, rx_data.data, pri->data_length);
-			rx_len = pri->data_length;
-			break;
-
-		default:
-			break;
-		}
-
-#else
-	struct msghdr msg;
-	struct iovec iov[2];
-
-	memset(&msg,0,sizeof(struct msghdr));
-
-	iov[0].iov_len=hdrlen;
-	iov[0].iov_base=hdrbuf;
-
-	iov[1].iov_len=datalen;
-	iov[1].iov_base=databuf;
-
-	msg.msg_iovlen=2;
-	msg.msg_iov=iov;
-
-	rx_len = read(fd,&msg,datalen+hdrlen);
-
-	if (rx_len <= sizeof(wp_tdm_api_rx_hdr_t)){
-		return -EINVAL;
-	}
-
-	rx_len-=sizeof(wp_tdm_api_rx_hdr_t);
-#endif
-    return rx_len;
-}                    
-
-static __inline__ int tdmv_api_writemsg_tdm(sng_fd_t fd, void *hdrbuf, int hdrlen, void *databuf, unsigned short datalen)
-{
-	/* What do we need to do here to avoid having to do all */
-	/* the memcpy's on windows and still maintain api compat with nix */
-	int bsent = 0;
-#if defined(__WINDOWS__)
-	static TX_DATA_STRUCT	local_tx_data;
-	api_header_t			*pri;
-	DWORD ln;
-
-	/* Are these really not needed or used???  What about for nix?? */
-	(void)hdrbuf;
-	(void)hdrlen;
-
-	pri = &local_tx_data.api_header;
-
-	pri->data_length = datalen;
-	memcpy(local_tx_data.data, databuf, pri->data_length);
-
-	if (!DeviceIoControl(
-						 fd,
-						 IoctlWriteCommand,
-						 (LPVOID)&local_tx_data,
-						 (ULONG)sizeof(TX_DATA_STRUCT),
-						 (LPVOID)&local_tx_data,
-						 sizeof(TX_DATA_STRUCT),
-						 (LPDWORD)(&ln),
-						 (LPOVERLAPPED)NULL
-						 )){
-		return -1;
-	}
-
-	if (local_tx_data.api_header.operation_status == SANG_STATUS_SUCCESS) {
-		bsent = datalen;
-	}
-#else
-	struct msghdr msg;
-	struct iovec iov[2];
-
-	memset(&msg,0,sizeof(struct msghdr));
-
-	iov[0].iov_len = hdrlen;
-	iov[0].iov_base = hdrbuf;
-
-	iov[1].iov_len = datalen;
-	iov[1].iov_base = databuf;
-
-	msg.msg_iovlen = 2;
-	msg.msg_iov = iov;
-
-	bsent = write(fd, &msg, datalen + hdrlen);
-	if (bsent > 0){
-		bsent -= sizeof(wp_tdm_api_tx_hdr_t);
-	}
-#endif
-	return bsent;
-}
+#define WP_INVALID_SOCKET -1 
 
 /* a cross platform way to poll on an actual pollset (span and/or list of spans) will probably also be needed for analog */
 /* so we can have one analong handler thread that will deal with all the idle analog channels for events */
 /* the alternative would be for the driver to provide one socket for all of the oob events for all analog channels */
 static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
 {
-#if defined(__WINDOWS__)
-	DWORD ln;
-	API_POLL_STRUCT	api_poll;
-
-	memset(&api_poll, 0x00, sizeof(API_POLL_STRUCT));
 	
-	api_poll.user_flags_bitmap = *flags;
-	api_poll.timeout = timeout;
+#ifdef LIBSANGOMA_VERSION
+	int err;
+	sangoma_wait_obj_t sangoma_wait_obj;
 
-	if (!DeviceIoControl(
-						 fd,
-						 IoctlApiPoll,
-						 (LPVOID)NULL,
-						 0L,
-						 (LPVOID)&api_poll,
-						 sizeof(API_POLL_STRUCT),
-						 (LPDWORD)(&ln),
-						 (LPOVERLAPPED)NULL)) {
-		return -1;
+ 	sangoma_init_wait_obj(&sangoma_wait_obj, fd, 1, 1, *flags, SANGOMA_WAIT_OBJ);
+
+	err=sangoma_socket_waitfor_many(&sangoma_wait_obj,1 , timeout);
+	if (err > 0) {
+		*flags=sangoma_wait_obj.flags_out;
 	}
+	return err;
 
-	*flags = 0;
-
-	switch(api_poll.operation_status)
-		{
-		case SANG_STATUS_RX_DATA_AVAILABLE:
-			break;
-
-		case SANG_STATUS_RX_DATA_TIMEOUT:
-			return 0;
-
-		default:
-			return -1;
-		}
-
-	if (api_poll.poll_events_bitmap == 0){
-		return -1;
-	}
-
-	if (api_poll.poll_events_bitmap & POLL_EVENT_TIMEOUT) {
-		return 0;
-	}
-
-	*flags = api_poll.poll_events_bitmap;
-
-	return 1;
 #else
-    struct pollfd pfds[1];
+ 	struct pollfd pfds[1];
     int res;
 
     memset(&pfds[0], 0, sizeof(pfds[0]));
@@ -265,86 +97,17 @@ static __inline__ int tdmv_api_wait_socket(sng_fd_t fd, int timeout, int *flags)
 
     return res;
 #endif
+	
 }
 
-#define FNAME_LEN 128
 static __inline__ sng_fd_t tdmv_api_open_span_chan(int span, int chan) 
 {
-   	char fname[FNAME_LEN];
-	sng_fd_t fd = WP_INVALID_SOCKET;
-#if defined(__WINDOWS__)
-	DWORD			ln;
-	wan_udp_hdr_t	wan_udp;
-
-	/* NOTE: under Windows Interfaces are zero based but 'chan' is 1 based. */
-	/*		Subtract 1 from 'chan'. */
-	_snprintf(fname , FNAME_LEN, "\\\\.\\WANPIPE%d_IF%d", span, chan - 1);
-
-	fd = CreateFile(	fname, 
-						GENERIC_READ | GENERIC_WRITE, 
-						FILE_SHARE_READ | FILE_SHARE_WRITE,
-						(LPSECURITY_ATTRIBUTES)NULL, 
-						OPEN_EXISTING,
-						FILE_FLAG_NO_BUFFERING | FILE_FLAG_WRITE_THROUGH,
-						(HANDLE)NULL
-						);
-
-	/* make sure that we are the only ones who have this chan open */
-	/* is this a threadsafe way to make sure that we are ok and will */
-	/* never return a valid handle to more than one thread for the same channel? */
-
-	wan_udp.wan_udphdr_command = GET_OPEN_HANDLES_COUNTER; 
-	wan_udp.wan_udphdr_data_len = 0;
-
-	DeviceIoControl(
-					fd,
-					IoctlManagementCommand,
-					(LPVOID)&wan_udp,
-					sizeof(wan_udp_hdr_t),
-					(LPVOID)&wan_udp,
-					sizeof(wan_udp_hdr_t),
-					(LPDWORD)(&ln),
-					(LPOVERLAPPED)NULL
-					);
-
-	if ((wan_udp.wan_udphdr_return_code) || (*(int*)&wan_udp.wan_udphdr_data[0] != 1)){
-		/* somone already has this channel, or somthing else is not right. */
-		tdmv_api_close_socket(&fd);
-	}
-
-#else
-	/* Does this fail if another thread already has this chan open? */
-	/* if not, we need to add some code to make sure it does */
-	snprintf(fname, FNAME_LEN, "/dev/wptdm_s%dc%d",span,chan);
-
-	fd = open(fname, O_RDWR);
-
-	if (fd < 0) {
-		fd = WP_INVALID_SOCKET;
-	}
-
-#endif
-	return fd;  
+	return sangoma_open_tdmapi_span_chan(span, chan);
 }            
 
 
 
 static zap_io_interface_t wanpipe_interface;
-
-static zap_status_t wp_tdm_cmd_exec(zap_channel_t *zchan, wanpipe_tdm_api_t *tdm_api)
-{
-	int err;
-
-	/* I'm told the 2nd arg is ignored but i send it as the cmd anyway for good measure */
-	err = ioctl(zchan->sockfd, tdm_api->wp_tdm_cmd.cmd, &tdm_api->wp_tdm_cmd);
-
-	if (err) {
-		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
-		return ZAP_FAIL;
-	}
-
-	return ZAP_SUCCESS;
-}
 
 static unsigned char wanpipe_swap_bits(unsigned char cas_bits)
 {
@@ -374,59 +137,60 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 	for(x = start; x < end; x++) {
 		zap_channel_t *chan;
 		zap_socket_t sockfd = WP_INVALID_SOCKET;
-		
+		const char *dtmf = "none";
+
 		sockfd = tdmv_api_open_span_chan(spanno, x);
 		
 		if (sockfd != WP_INVALID_SOCKET && zap_span_add_channel(span, sockfd, type, &chan) == ZAP_SUCCESS) {
 			wanpipe_tdm_api_t tdm_api;
-			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d\n", spanno, x, chan->span_id, chan->chan_id, sockfd);
+			memset(&tdm_api,0,sizeof(tdm_api));
+			
 			chan->physical_span_id = spanno;
 			chan->physical_chan_id = x;
 			chan->rate = 8000;
 
-			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
-				
-
-#if 1
-				if (type == ZAP_CHAN_TYPE_FXO) {
-					tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
-					tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-					wp_tdm_cmd_exec(chan, &tdm_api);
-				}
-#endif
-
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING_DETECT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-				wp_tdm_cmd_exec(chan, &tdm_api);
-#if 1
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RING_TRIP_DETECT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-				wp_tdm_cmd_exec(chan, &tdm_api);
-#endif
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_RXHOOK;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-				wp_tdm_cmd_exec(chan, &tdm_api);
-
-			}
-
 			if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO || type == ZAP_CHAN_TYPE_B) {
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_HW_CODING;
-				wp_tdm_cmd_exec(chan, &tdm_api);
+				int err;
+				
+				dtmf = "software";
+
+				/* FIXME: Handle Error Conditino Check for return code */
+				err= sangoma_tdm_get_hw_coding(chan->sockfd, &tdm_api);
+
 				if (tdm_api.wp_tdm_cmd.hw_tdm_coding) {
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ALAW;
 				} else {
 					chan->native_codec = chan->effective_codec = ZAP_CODEC_ULAW;
 				}
+
+				err = sangoma_tdm_get_hw_dtmf(chan->sockfd, &tdm_api);
+				if (err > 0) {
+					err = sangoma_tdm_enable_dtmf_events(chan->sockfd, &tdm_api);
+					if (err == 0) {
+						zap_channel_set_feature(chan, ZAP_CHANNEL_FEATURE_DTMF_DETECT);
+						dtmf = "hardware";
+					}
+				}
 			}
 
+#if 0
+            if (type == ZAP_CHAN_TYPE_FXS || type == ZAP_CHAN_TYPE_FXO) {
+                /* Enable FLASH/Wink Events */
+                int err=sangoma_set_rm_rxflashtime(chan->sockfd, &tdm_api, wp_globals.flash_ms);
+                if (err == 0) {
+			        zap_log(ZAP_LOG_ERROR, "flash enabled s%dc%d\n", spanno, x);
+                } else {
+			        zap_log(ZAP_LOG_ERROR, "flash disabled s%dc%d\n", spanno, x);
+                }
+            }
+#endif
+
 			if (type == ZAP_CHAN_TYPE_CAS) {
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_WRITE_RBS_BITS;
-				tdm_api.wp_tdm_cmd.rbs_tx_bits = wanpipe_swap_bits(cas_bits);
-				wp_tdm_cmd_exec(chan, &tdm_api);
+#ifdef LIBSANGOMA_VERSION
+				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api,chan->physical_chan_id,wanpipe_swap_bits(cas_bits));
+#else
+				sangoma_tdm_write_rbs(chan->sockfd,&tdm_api,wanpipe_swap_bits(cas_bits));
+#endif
 			}
 			
 			if (!zap_strlen_zero(name)) {
@@ -439,6 +203,9 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 		} else {
 			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
 		}
+
+		zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d DTMF: %s\n", 
+				spanno, x, chan->span_id, chan->chan_id, sockfd, dtmf);
 	}
 	
 	return configured;
@@ -552,16 +319,15 @@ static ZIO_OPEN_FUNCTION(wanpipe_open)
 
 	wanpipe_tdm_api_t tdm_api;
 
+	memset(&tdm_api,0,sizeof(tdm_api));
+
 	if (zchan->type == ZAP_CHAN_TYPE_DQ921 || zchan->type == ZAP_CHAN_TYPE_DQ931) {
 		zchan->native_codec = zchan->effective_codec = ZAP_CODEC_NONE;
 	} else {
 		zchan->effective_codec = zchan->native_codec;
-		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_CODEC;
-		tdm_api.wp_tdm_cmd.tdm_codec = 0;
-		wp_tdm_cmd_exec(zchan, &tdm_api);		
-		tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
-		tdm_api.wp_tdm_cmd.usr_period = wp_globals.codec_ms;
-		wp_tdm_cmd_exec(zchan, &tdm_api);
+		
+		sangoma_tdm_set_usr_period(zchan->sockfd, &tdm_api, wp_globals.codec_ms);
+
 		zap_channel_set_feature(zchan, ZAP_CHANNEL_FEATURE_INTERVAL);
 		zchan->effective_interval = zchan->native_interval = wp_globals.codec_ms;
 		zchan->packet_len = zchan->native_interval * 8;
@@ -585,10 +351,8 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 	switch(command) {
 	case ZAP_COMMAND_OFFHOOK:
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+			err=sangoma_tdm_txsig_offhook(zchan->sockfd,&tdm_api);
+			if (err) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "OFFHOOK Failed");
 				return ZAP_FAIL;
 			}
@@ -597,10 +361,8 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_ONHOOK:
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+			err=sangoma_tdm_txsig_onhook(zchan->sockfd,&tdm_api);
+			if (err) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "ONHOOK Failed");
 				return ZAP_FAIL;
 			}
@@ -609,9 +371,8 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_GENERATE_RING_ON:
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_START;
-			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+			err=sangoma_tdm_txsig_start(zchan->sockfd,&tdm_api);
+			if (err) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
 				return ZAP_FAIL;
 			}
@@ -622,9 +383,8 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_GENERATE_RING_OFF:
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-			tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
-			if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+			err=sangoma_tdm_txsig_offhook(zchan->sockfd,&tdm_api);
+			if (err) {
 				snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
 				return ZAP_FAIL;
 			}
@@ -634,27 +394,26 @@ static ZIO_COMMAND_FUNCTION(wanpipe_command)
 		break;
 	case ZAP_COMMAND_GET_INTERVAL:
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_GET_USR_PERIOD;
-			
-			if (!(err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
-				ZAP_COMMAND_OBJ_INT = tdm_api.wp_tdm_cmd.usr_period;
+			err=sangoma_tdm_get_usr_period(zchan->sockfd, &tdm_api);
+			if (err > 0 ) {
+				ZAP_COMMAND_OBJ_INT = err;
+				err=0;
 			}
-
 		}
 		break;
 	case ZAP_COMMAND_SET_INTERVAL: 
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_USR_PERIOD;
-			tdm_api.wp_tdm_cmd.usr_period = ZAP_COMMAND_OBJ_INT;
-			err = wp_tdm_cmd_exec(zchan, &tdm_api);
+			err=sangoma_tdm_set_usr_period(zchan->sockfd, &tdm_api, ZAP_COMMAND_OBJ_INT);
 			zchan->packet_len = zchan->native_interval * (zchan->effective_codec == ZAP_CODEC_SLIN ? 16 : 8);
 		}
 		break;
 	case ZAP_COMMAND_SET_CAS_BITS:
 		{
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_WRITE_RBS_BITS;
-			tdm_api.wp_tdm_cmd.rbs_tx_bits = wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT);
-			err = wp_tdm_cmd_exec(zchan, &tdm_api);
+#ifdef LIBSANGOMA_VERSION
+			err=sangoma_tdm_write_rbs(zchan->sockfd,&tdm_api,zchan->physical_chan_id,wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT));
+#else
+			err=sangoma_tdm_write_rbs(zchan->sockfd,&tdm_api,wanpipe_swap_bits(ZAP_COMMAND_OBJ_INT));
+#endif
 		}
 		break;
 	case ZAP_COMMAND_GET_CAS_BITS:
@@ -683,14 +442,18 @@ static ZIO_READ_FUNCTION(wanpipe_read)
 
 	memset(&hdrframe, 0, sizeof(hdrframe));
 
-	rx_len = tdmv_api_readmsg_tdm(zchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen);
-	
+	rx_len = sangoma_readmsg_tdm(zchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (int)*datalen,0);
 	*datalen = rx_len;
 
-	if (rx_len <= 0) {
+	if (rx_len == 0 || rx_len == -17) {
+		return ZAP_TIMEOUT;
+	}
+
+	if (rx_len < 0) {
 		snprintf(zchan->last_error, sizeof(zchan->last_error), "%s", strerror(errno));
 		return ZAP_FAIL;
-	}
+	} 
+
 
 	return ZAP_SUCCESS;
 }
@@ -702,7 +465,7 @@ static ZIO_WRITE_FUNCTION(wanpipe_write)
 
 	/* Do we even need the headerframe here? on windows, we don't even pass it to the driver */
 	memset(&hdrframe, 0, sizeof(hdrframe));
-	bsent = tdmv_api_writemsg_tdm(zchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (unsigned short)(*datalen));
+	bsent = sangoma_writemsg_tdm(zchan->sockfd, &hdrframe, (int)sizeof(hdrframe), data, (unsigned short)(*datalen),0);
 
 	/* should we be checking if bsent == *datalen here? */
 	if (bsent > 0) {
@@ -759,19 +522,29 @@ static ZIO_WAIT_FUNCTION(wanpipe_wait)
 	return ZAP_SUCCESS;
 }
 
-#ifndef WIN32
 ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 {
+#ifdef LIBSANGOMA_VERSION
+	sangoma_wait_obj_t pfds[ZAP_MAX_CHANNELS_SPAN];
+#else
 	struct pollfd pfds[ZAP_MAX_CHANNELS_SPAN];
+#endif
+
 	uint32_t i, j = 0, k = 0, l = 0;
+	int objects=0;
 	int r;
 	
 	for(i = 1; i <= span->chan_count; i++) {
 		zap_channel_t *zchan = span->channels[i];
+
+#ifdef LIBSANGOMA_VERSION
+ 		sangoma_init_wait_obj(&pfds[j], zchan->sockfd , 1, 1, POLLPRI, SANGOMA_WAIT_OBJ);
+#else
 		memset(&pfds[j], 0, sizeof(pfds[j]));
 		pfds[j].fd = span->channels[i]->sockfd;
 		pfds[j].events = POLLPRI;
-
+#endif
+		objects++;
 		/* The driver probably should be able to do this wink/flash/ringing by itself this is sort of a hack to make it work! */
 
 		if (zap_test_flag(zchan, ZAP_CHANNEL_WINK) || zap_test_flag(zchan, ZAP_CHANNEL_FLASH)) {
@@ -789,20 +562,16 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 			int err;
 			memset(&tdm_api, 0, sizeof(tdm_api));
 			if (zap_test_pflag(zchan, WP_RINGING)) {
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_OFFHOOK;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_DISABLE;
-				if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+				err=sangoma_tdm_txsig_offhook(zchan->sockfd,&tdm_api);
+				if (err) {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring-off Failed");
 					return ZAP_FAIL;
 				}
 				zap_clear_pflag_locked(zchan, WP_RINGING);
 				zchan->ring_time = zap_current_time_in_ms() + wp_globals.ring_off_ms;
 			} else {
-				tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_START;
-				tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-				if ((err = wp_tdm_cmd_exec(zchan, &tdm_api))) {
+				err=sangoma_tdm_txsig_start(zchan->sockfd,&tdm_api);
+				if (err) {
 					snprintf(zchan->last_error, sizeof(zchan->last_error), "Ring Failed");
 					return ZAP_FAIL;
 				}
@@ -815,8 +584,11 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	if (l) {
 		ms = l;
 	}
-	
-    r = poll(pfds, j, ms);
+#ifdef LIBSANGOMA_VERSION
+	r = sangoma_socket_waitfor_many(pfds,objects,ms);
+#else
+	r = poll(pfds, j, ms);
+#endif
 	
 	if (r == 0) {
 		return l ? ZAP_SUCCESS : ZAP_TIMEOUT;
@@ -828,7 +600,11 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	for(i = 1; i <= span->chan_count; i++) {
 		zap_channel_t *zchan = span->channels[i];
 
+#ifdef LIBSANGOMA_VERSION
+		if (pfds[i-1].flags_out & POLLPRI) {
+#else
 		if (pfds[i-1].revents & POLLPRI) {
+#endif
 			zap_set_flag(zchan, ZAP_CHANNEL_EVENT);
 			zchan->last_event_time = zap_current_time_in_ms();
 			k++;
@@ -836,15 +612,43 @@ ZIO_SPAN_POLL_EVENT_FUNCTION(wanpipe_poll_event)
 	}
 	
 
-
 	return k ? ZAP_SUCCESS : ZAP_FAIL;
 }
 
+
+static ZIO_GET_ALARMS_FUNCTION(wanpipe_get_alarms)
+{
+	wanpipe_tdm_api_t tdm_api;
+	unsigned int alarms = 0;
+	int err;
+
+	memset(&tdm_api,0,sizeof(tdm_api));
+
+#ifdef LIBSANGOMA_VERSION
+	if ((err = sangoma_tdm_get_fe_alarms(zchan->sockfd, &tdm_api, &alarms))) {
+        snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
+        snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
+        return ZAP_FAIL;		
+	}
+#else
+	if ((err = sangoma_tdm_get_fe_alarms(zchan->sockfd, &tdm_api)) < 0){
+        snprintf(zchan->last_error, sizeof(zchan->last_error), "ioctl failed (%s)", strerror(errno));
+        snprintf(zchan->span->last_error, sizeof(zchan->span->last_error), "ioctl failed (%s)", strerror(errno));
+        return ZAP_FAIL;		
+	}
+	alarms = tdm_api.wp_tdm_cmd.fe_alarms;
 #endif
+
+	
+    zchan->alarm_flags = alarms ? ZAP_ALARM_RED : ZAP_ALARM_NONE;
+
+    return ZAP_SUCCESS;
+}
+
 
 ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 {
-	uint32_t i;
+	uint32_t i,err;
 	zap_oob_event_t event_id;
 	
 	for(i = 1; i <= span->chan_count; i++) {
@@ -869,29 +673,43 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					event_id = ZAP_OOB_ONHOOK;
 
 					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXO) {
+						zap_channel_t *zchan = span->channels[i];
 						wanpipe_tdm_api_t tdm_api;
 						memset(&tdm_api, 0, sizeof(tdm_api));
-						tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
-						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-						wp_tdm_cmd_exec(span->channels[i], &tdm_api);
+
+						sangoma_tdm_txsig_onhook(zchan->sockfd,&tdm_api);
 					}
 					goto event;
 				}
 			}
-		}
+		} 
 		if (zap_test_flag(span->channels[i], ZAP_CHANNEL_EVENT)) {
 			wanpipe_tdm_api_t tdm_api;
+			zap_channel_t *zchan = span->channels[i];
 			memset(&tdm_api, 0, sizeof(tdm_api));
 			zap_clear_flag(span->channels[i], ZAP_CHANNEL_EVENT);
 
-			tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_READ_EVENT;
-			if (wp_tdm_cmd_exec(span->channels[i], &tdm_api) != ZAP_SUCCESS) {
+			err=sangoma_tdm_read_event(zchan->sockfd,&tdm_api);
+			if (err != ZAP_SUCCESS) {
 				snprintf(span->last_error, sizeof(span->last_error), "%s", strerror(errno));
 				return ZAP_FAIL;
 			}
 			
 			switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type) {
+
+			case WP_TDMAPI_EVENT_LINK_STATUS:
+				{
+					switch(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_link_status) {
+					case WP_TDMAPI_EVENT_LINK_STATUS_CONNECTED:
+						event_id = ZAP_OOB_ALARM_CLEAR;
+						break;
+					default:
+						event_id = ZAP_OOB_ALARM_TRAP;
+						break;
+					};
+				}
+				break;
+
 			case WP_TDMAPI_EVENT_RXHOOK:
 				{
 					if (span->channels[i]->type == ZAP_CHAN_TYPE_FXS) {
@@ -918,11 +736,9 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 						continue;
 					} else {
 						int err;
-						
-						tdm_api.wp_tdm_cmd.cmd = SIOC_WP_TDM_SET_EVENT;
-						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_type = WP_TDMAPI_EVENT_TXSIG_ONHOOK;
-						tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_mode = WP_TDMAPI_EVENT_ENABLE;
-						if ((err = wp_tdm_cmd_exec(span->channels[i], &tdm_api))) {
+						zap_channel_t *zchan = span->channels[i];
+						err=sangoma_tdm_txsig_onhook(zchan->sockfd,&tdm_api);
+						if (err) {
 							snprintf(span->channels[i]->last_error, sizeof(span->channels[i]->last_error), "ONHOOK Failed");
 							return ZAP_FAIL;
 						}
@@ -947,6 +763,20 @@ ZIO_SPAN_NEXT_EVENT_FUNCTION(wanpipe_next_event)
 					   is there a best play to store this? instead of adding cas_bits member to zap_chan? */
 					span->channels[i]->cas_bits = wanpipe_swap_bits(tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_rbs_bits);
 				}
+				break;
+            case WP_TDMAPI_EVENT_DTMF:
+                {
+                    char tmp_dtmf[2] = { tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_digit, 0 };
+					event_id = ZAP_OOB_NOOP;
+
+					//zap_log(ZAP_LOG_DEBUG, "%d:%d queue hardware dtmf %s\n", zchan->span_id, zchan->chan_id, tmp_dtmf);
+                    if (tdm_api.wp_tdm_cmd.event.wp_tdm_api_event_dtmf_type == WAN_EC_TONE_STOP) {
+                        zap_channel_queue_dtmf(zchan, tmp_dtmf);
+                    } 
+                }
+                break;
+			case WP_TDMAPI_EVENT_ALARM:
+				event_id = ZAP_OOB_NOOP;
 				break;
 			default:
 				{
@@ -1005,6 +835,7 @@ static ZIO_IO_LOAD_FUNCTION(wanpipe_init)
 #endif
 	wanpipe_interface.next_event = wanpipe_next_event;
 	wanpipe_interface.channel_destroy = wanpipe_channel_destroy;
+	wanpipe_interface.get_alarms = wanpipe_get_alarms;
 	*zio = &wanpipe_interface;
 
 	return ZAP_SUCCESS;

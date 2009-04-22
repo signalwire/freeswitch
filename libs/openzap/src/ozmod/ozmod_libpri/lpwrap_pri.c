@@ -115,9 +115,14 @@ static int __pri_lpwrap_read(struct pri *pri, void *buf, int buflen)
 	struct lpwrap_pri *spri = (struct lpwrap_pri *) pri_get_userdata(pri);
 	zap_size_t len = buflen;
 	int res;
+	zap_status_t zst;
 
-	if (zap_channel_read(spri->dchan, buf, &len) != ZAP_SUCCESS) {
-		zap_log(ZAP_LOG_CRIT, "span %d D-READ FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
+	if ((zst = zap_channel_read(spri->dchan, buf, &len)) != ZAP_SUCCESS) {
+		if (zst == ZAP_FAIL) {
+			zap_log(ZAP_LOG_CRIT, "span %d D-READ FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
+		} else {
+			zap_log(ZAP_LOG_CRIT, "span %d D-READ TIMEOUT\n", spri->span->span_id);
+		}
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
 		return -1;
 	}
@@ -145,7 +150,7 @@ static int __pri_lpwrap_write(struct pri *pri, void *buf, int buflen)
 	if (zap_channel_write(spri->dchan, buf, buflen, &len) != ZAP_SUCCESS) {
 		zap_log(ZAP_LOG_CRIT, "span %d D-WRITE FAIL! [%s]\n", spri->span->span_id, spri->dchan->last_error);
 		zap_clear_flag(spri, LPWRAP_PRI_READY);
-	        return -1;
+		return -1;
 	}
 
 #ifdef IODEBUG
@@ -198,9 +203,9 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 		}
 	}
 
-	if (!zap_test_flag(spri, LPWRAP_PRI_READY)) {
-		return -1;
-	}
+	//if (!zap_test_flag(spri, LPWRAP_PRI_READY)) {
+	//return -1;
+	//}
 
 	FD_ZERO(&rfds);
 	FD_ZERO(&efds);
@@ -246,9 +251,9 @@ int lpwrap_one_loop(struct lpwrap_pri *spri)
 		}
 	}
 
-	if (zap_test_flag(spri, LPWRAP_PRI_READY)) {
-		return sel;
-	}
+
+	return sel;
+
 
 	if ((handler = spri->eventmap[LPWRAP_PRI_EVENT_IO_FAIL] ? spri->eventmap[LPWRAP_PRI_EVENT_IO_FAIL] : spri->eventmap[0] ? spri->eventmap[0] : NULL)) {
 		handler(spri, LPWRAP_PRI_EVENT_IO_FAIL, NULL);
