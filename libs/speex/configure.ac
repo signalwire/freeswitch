@@ -130,7 +130,7 @@ gnu)
 #  CFLAGS="$SAVE_CFLAGS"
 #  ]
 #  )
-  ;;
+#  ;;
 *)
   has_visibility=no
   AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
