@@ -1325,7 +1325,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				msg->string_arg = p;
 				switch_core_session_receive_message(session, msg);
 				goto end_lock;
-			} else if (!switch_channel_test_flag(channel, CF_ANSWERED)) {				
+			} else {
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Responding with %d [%s]\n", code, reason);
 					if (!switch_strlen_zero(((char *) msg->pointer_arg))) {
