@@ -155,6 +155,7 @@ static int can_write(FILE * handle, int ms)
 
 	fd = fileno(handle);
 	memset(&to, 0, sizeof(to));
+	FD_ZERO(&can_write);
 	FD_SET(fd, &can_write);
 	to.tv_sec = sec;
 	to.tv_usec = usec;
