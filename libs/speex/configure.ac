@@ -112,24 +112,24 @@ gnu)
   ]
   )
   ;;
-sun)
-  SAVE_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS -xldscope=hidden"
-  AC_COMPILE_IFELSE([
-  AC_LANG_PROGRAM([[
-  __attribute__((visibility("default")))
-  int var=10;
-  ]])],
-  [
-  has_visibility=yes
-  AC_DEFINE([EXPORT], [__attribute__((visibility("default")))], [Symbol visibility prefix])
-  ],
-  [
-  has_visibility=no
-  AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
-  CFLAGS="$SAVE_CFLAGS"
-  ]
-  )
+#sun)
+#  SAVE_CFLAGS="$CFLAGS"
+#  CFLAGS="$CFLAGS -xldscope=hidden"
+#  AC_COMPILE_IFELSE([
+#  AC_LANG_PROGRAM([[
+#  __attribute__((visibility("default")))
+#  int var=10;
+#  ]])],
+#  [
+#  has_visibility=yes
+#  AC_DEFINE([EXPORT], [__attribute__((visibility("default")))], [Symbol visibility prefix])
+#  ],
+#  [
+#  has_visibility=no
+#  AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
+#  CFLAGS="$SAVE_CFLAGS"
+#  ]
+#  )
   ;;
 *)
   has_visibility=no
