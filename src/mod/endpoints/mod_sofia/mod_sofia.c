@@ -1830,7 +1830,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					if (strcasecmp(argv[1], profile->name)) {
 						stream->write_function(stream, "    <alias-of>%s</alias-of>\n", switch_str_nil(profile->name));
 					}
-					stream->write_function(stream, "    <DB-name>%s</DB-name>\n", switch_str_nil(profile->dbname));
+					stream->write_function(stream, "    <db-name>%s</db-name>\n", switch_str_nil(profile->dbname));
 					stream->write_function(stream, "    <pres-hosts>%s</pres-hosts>\n", switch_str_nil(profile->presence_hosts));
 					stream->write_function(stream, "    <dialplan>%s</dialplan>\n", switch_str_nil(profile->dialplan));
 					stream->write_function(stream, "    <context>%s</context>\n", switch_str_nil(profile->context));
@@ -1933,7 +1933,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 									   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
 
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
-					stream->write_function(stream, "<profile>\n<Name>%s</Name>\n<Type>%s</Type>\n<Data>%s</Data>\n<State>%s (%u) (TLS)</State>\n</profile>\n", profile->name, "profile", profile->tls_url,
+					stream->write_function(stream, "<profile>\n<name>%s</name>\n<type>%s</type>\n<data>%s</data>\n<state>%s (%u) (TLS)</state>\n</profile>\n", profile->name, "profile", profile->tls_url,
 										   sofia_test_pflag(profile, PFLAG_RUNNING) ? "RUNNING" : "DOWN", profile->inuse);
 				}
 
