@@ -215,7 +215,11 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 
 	ss7bc_call_init(&event, caller_data->cid_num.digits, caller_data->ani.digits, r);
 	zap_set_string(event.calling_name, caller_data->cid_name);
-	zap_set_string(event.redirection_string, caller_data->rdnis.digits);
+	zap_set_string(event.isup_in_rdnis, caller_data->rdnis.digits);
+    if (strlen(caller_data->rdnis.digits)) {
+        event.isup_in_rdnis_size = strlen(caller_data->rdnis.digits)+1;
+    }
+    
 	event.calling_number_screening_ind = caller_data->screen;
 	event.calling_number_presentation = caller_data->pres;
 
@@ -483,7 +487,7 @@ static void handle_call_start(zap_span_t *span, ss7bc_connection_t *mcon, ss7bc_
 	}
 	zap_set_string(zchan->caller_data.ani.digits, (char *)event->calling_number_digits);
 	zap_set_string(zchan->caller_data.dnis.digits, (char *)event->called_number_digits);
-	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->redirection_string);
+	zap_set_string(zchan->caller_data.rdnis.digits, (char *)event->isup_in_rdnis);
 	zchan->caller_data.screen = event->calling_number_screening_ind;
 	zchan->caller_data.pres = event->calling_number_presentation;
 	zap_set_state_locked(zchan, ZAP_CHANNEL_STATE_RING);
@@ -851,7 +855,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
     zap_span_t *span = (zap_span_t *) obj;
     zap_ss7_boost_data_t *ss7_boost_data = span->signal_data;
 	ss7bc_connection_t *mcon, *pcon;
-	uint32_t ms = 10, too_long = 20000;
+	uint32_t ms = 10; //, too_long = 20000;
 		
 
 	ss7_boost_data->pcon = ss7_boost_data->mcon;
@@ -942,6 +946,8 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 			pcon->hb_elapsed = 0;
 		}
 
+
+#if 0
 		if (pcon->hb_elapsed >= too_long) {
 			zap_log(ZAP_LOG_CRIT, "Lost Heartbeat!\n");
 			zap_set_flag_locked(span, ZAP_SPAN_SUSPENDED);
@@ -953,6 +959,7 @@ static void *zap_ss7_boost_run(zap_thread_t *me, void *obj)
 								SIGBOOST_EVENT_SYSTEM_RESTART,
 								0);
 		}
+#endif
 
 		if (zap_running()) {
 			check_state(span);
@@ -1094,7 +1101,7 @@ static ZIO_SIG_CONFIGURE_FUNCTION(zap_ss7_boost_configure_span)
 {
 	zap_ss7_boost_data_t *ss7_boost_data = NULL;
 	const char *local_ip = "127.0.0.65", *remote_ip = "127.0.0.66";
-	int local_port = 5300, remote_port = 5300;
+	int local_port = 53000, remote_port = 53000;
 	char *var, *val;
 	int *intval;
 

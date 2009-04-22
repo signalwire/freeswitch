@@ -475,7 +475,7 @@ static switch_status_t channel_on_hangup(switch_core_session_t *session)
 		break;
 	default: 
 		{
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unhandled type for channel %s\n", switch_channel_get_name(channel));
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Unhandled type for channel %s\n", switch_channel_get_name(channel));
 		}
 		break;
 	}

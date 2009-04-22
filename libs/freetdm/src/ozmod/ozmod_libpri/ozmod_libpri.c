@@ -691,15 +691,102 @@ static int on_ring(lpwrap_pri_t *spri, lpwrap_pri_event_t event_type, pri_event 
 	return ret;
 }
 
+
+static __inline__ zap_status_t process_event(zap_span_t *span, zap_event_t *event)
+{
+	zap_sigmsg_t sig;
+	zap_libpri_data_t *isdn_data = span->signal_data;
+
+	memset(&sig, 0, sizeof(sig));
+	sig.chan_id = event->channel->chan_id;
+	sig.span_id = event->channel->span_id;
+	sig.channel = event->channel;
+
+	zap_log(ZAP_LOG_DEBUG, "EVENT [%s][%d][%d:%d] STATE [%s]\n", 
+			zap_oob_event2str(event->enum_id), event->enum_id, event->channel->span_id, event->channel->chan_id, zap_channel_state2str(event->channel->state));
+
+	switch(event->enum_id) {
+	case ZAP_OOB_ALARM_TRAP:
+		{
+			sig.event_id = ZAP_OOB_ALARM_TRAP;
+			if (event->channel->state != ZAP_CHANNEL_STATE_DOWN) {
+				if (event->channel->type == ZAP_CHAN_TYPE_B) {
+					zap_set_state_locked(event->channel, ZAP_CHANNEL_STATE_RESTART);
+				}
+			}
+			
+
+			zap_set_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
+
+			
+			zap_channel_get_alarms(event->channel);
+			isdn_data->sig_cb(&sig);
+			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) has alarms! [%s]\n", 
+					event->channel->span_id, event->channel->chan_id, 
+					event->channel->physical_span_id, event->channel->physical_chan_id, 
+					event->channel->last_error);
+		}
+		break;
+	case ZAP_OOB_ALARM_CLEAR:
+		{
+			
+			zap_log(ZAP_LOG_WARNING, "channel %d:%d (%d:%d) alarms Cleared!\n", event->channel->span_id, event->channel->chan_id,
+					event->channel->physical_span_id, event->channel->physical_chan_id);
+
+			sig.event_id = ZAP_OOB_ALARM_CLEAR;
+			zap_clear_flag(event->channel, ZAP_CHANNEL_SUSPENDED);
+			zap_channel_get_alarms(event->channel);
+			isdn_data->sig_cb(&sig);
+		}
+		break;
+	}
+
+	return ZAP_SUCCESS;
+}
+
+
+
+static __inline__ void check_events(zap_span_t *span)
+{
+	zap_status_t status;
+
+	status = zap_span_poll_event(span, 5);
+
+	switch(status) {
+	case ZAP_SUCCESS:
+		{
+			zap_event_t *event;
+			while (zap_span_next_event(span, &event) == ZAP_SUCCESS) {
+				if (event->enum_id == ZAP_OOB_NOOP) {
+					continue;
+				}
+				if (process_event(span, event) != ZAP_SUCCESS) {
+					break;
+				}
+			}
+		}
+		break;
+	case ZAP_FAIL:
+		{
+			zap_log(ZAP_LOG_DEBUG, "Event Failure! %d\n", zap_running());
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 static int check_flags(lpwrap_pri_t *spri)
 {
 	zap_span_t *span = spri->private_info;
 
-	check_state(span);
-
 	if (!zap_running() || zap_test_flag(span, ZAP_SPAN_STOP_THREAD)) {
 		return -1;
 	}
+
+	check_state(span);
+	check_events(span);
+
 
 	return 0;
 }
@@ -769,27 +856,29 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 {
 	zap_span_t *span = (zap_span_t *) obj;
 	zap_libpri_data_t *isdn_data = span->signal_data;
-	int x, i;
+	int i, x = 0;
 	int down = 0;
+	int got_d = 0;
 	
 	zap_set_flag(span, ZAP_SPAN_IN_THREAD);
 	
 	while(zap_running() && !zap_test_flag(span, ZAP_SPAN_STOP_THREAD)) {
-		x = 0;
-
-		for(i = 1; i <= span->chan_count; i++) {
-			if (span->channels[i]->type == ZAP_CHAN_TYPE_DQ921) {
-				if (zap_channel_open(span->span_id, i, &isdn_data->dchan) == ZAP_SUCCESS) {
-					zap_log(ZAP_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, isdn_data->dchan->span_id, isdn_data->dchan->chan_id);
-					isdn_data->dchan->state = ZAP_CHANNEL_STATE_UP;
-					x++;
-					break;
+		if (!got_d) {
+			for(i = 1; i <= span->chan_count; i++) {
+				if (span->channels[i]->type == ZAP_CHAN_TYPE_DQ921) {
+					if (zap_channel_open(span->span_id, i, &isdn_data->dchan) == ZAP_SUCCESS) {
+						zap_log(ZAP_LOG_DEBUG, "opening d-channel #%d %d:%d\n", x, isdn_data->dchan->span_id, isdn_data->dchan->chan_id);
+						isdn_data->dchan->state = ZAP_CHANNEL_STATE_UP;
+						got_d = 1;
+						x++;
+						break;
+					}
 				}
 			}
 		}
-
 		
-		if (!x || lpwrap_init_pri(&isdn_data->spri,
+		
+		if (lpwrap_init_pri(&isdn_data->spri,
 								  span,  // span
 								  isdn_data->dchan, // dchan
 								  isdn_data->pswitch,
@@ -820,9 +909,8 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 
 			isdn_data->spri.on_loop = check_flags;
 			isdn_data->spri.private_info = span;
-			
 			lpwrap_run_pri(&isdn_data->spri);
-			zap_channel_close(&isdn_data->dchan);
+			
 		}
 		
 		if (!zap_running() || zap_test_flag(span, ZAP_SPAN_STOP_THREAD)) {
@@ -830,9 +918,15 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 		}
 
 		zap_log(ZAP_LOG_CRIT, "PRI down on span %d\n", isdn_data->spri.span->span_id);
-		zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+
+		if (!down) {
+			zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
+			check_state(span);
+		}
+
 		check_state(span);
-		check_state(span);
+		check_events(span);
+
 		down++;
 		zap_sleep(5000);
 	}

@@ -155,6 +155,9 @@ AC_ARG_WITH([libpri],
  [AS_HELP_STRING([--with-libpri], [Install ozmod_libpri])], [enable_libpri="yes"], [enable_libpri="no"])
 AC_SUBST(enable_libpri)
 
+AC_CHECK_LIB([sangoma], [sangoma_span_chan_toif], [have_libsangoma="yes"])
+AM_CONDITIONAL([LIBSANGOMA],[test "${have_libsangoma}" = "yes"])
+
 AM_CONDITIONAL([LIBPRI],[test "${enable_libpri}" = "yes"])
 
 COMP_VENDOR_CFLAGS="$COMP_VENDOR_CFLAGS"

@@ -868,6 +868,9 @@ static ZIO_READ_FUNCTION(zt_read)
 		if ((r = read(zchan->sockfd, data, *datalen)) > 0) {
 			break;
 		}
+		if (r == 0) {
+			errs--;
+		}
 	}
 
 	if (r > 0) {
@@ -878,7 +881,7 @@ static ZIO_READ_FUNCTION(zt_read)
 		return ZAP_SUCCESS;
 	}
 
-	return ZAP_FAIL;
+	return r == 0 ? ZAP_TIMEOUT : ZAP_FAIL;
 }
 
 static ZIO_WRITE_FUNCTION(zt_write)
