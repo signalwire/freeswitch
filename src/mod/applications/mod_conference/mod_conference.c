@@ -3670,8 +3670,17 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 			channel = switch_core_session_get_channel(member->session);
 
 			if (!new_conference) {
-				switch_mutex_lock(globals.setup_mutex);
-				locked = 1;
+				if (!locked) {
+					switch_mutex_lock(globals.setup_mutex);
+					locked = 1;
+				}
+
+				if ((new_conference = conference_find(conf_name))) {
+					if (locked) {
+						switch_mutex_unlock(globals.setup_mutex);
+						locked = 0;
+					}
+				}
 
 				if (!(new_conference = conference_find(conf_name))) {
 					/* build a new conference if it doesn't exist */
@@ -3700,13 +3709,6 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 						xml_cfg.profile = switch_xml_find_child(profiles, "profile", "name", profile_name);
 					}
 
-					if (!xml_cfg.profile) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot find profile: %s\n", profile_name);
-						switch_xml_free(cxml);
-						cxml = NULL;
-						goto done;
-					}
-
 					xml_cfg.controls = switch_xml_child(cfg, "caller-controls");
 
 					/* Release the config registry handle */
@@ -3726,8 +3728,10 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 						goto done;
 					}
 
-					switch_mutex_unlock(globals.setup_mutex);
-					locked = 0;
+					if (locked) {
+						switch_mutex_unlock(globals.setup_mutex);
+						locked = 0;
+					}
 
 					/* Set the minimum number of members (once you go above it you cannot go below it) */
 					new_conference->min = 1;
@@ -4715,8 +4719,10 @@ SWITCH_STANDARD_APP(conference_function)
 	/* if this is a bridging call, and it's not a duplicate, build a */
 	/* conference object, and skip pin handling, and locked checking */
 
-	switch_mutex_lock(globals.setup_mutex);
-	locked = 1;
+	if (!locked) {
+		switch_mutex_lock(globals.setup_mutex);
+		locked = 1;
+	}
 
 	if (isbr) {
 		char *uuid = switch_core_session_get_uuid(session);
@@ -4737,8 +4743,10 @@ SWITCH_STANDARD_APP(conference_function)
 			goto done;
 		}
 
-		switch_mutex_unlock(globals.setup_mutex);
-		locked = 0;
+		if (locked) {
+			switch_mutex_unlock(globals.setup_mutex);
+			locked = 0;
+		}
 
 		switch_channel_set_variable(channel, "conference_name", conference->name);
 
@@ -4759,8 +4767,15 @@ SWITCH_STANDARD_APP(conference_function)
 			enforce_security = switch_true(pvar);
 		}
 
+		if ((conference = conference_find(conf_name))) {
+			if (locked) {
+				switch_mutex_unlock(globals.setup_mutex);
+				locked = 0;
+			}
+		}
+
 		/* if the conference exists, get the pointer to it */
-		if (!(conference = conference_find(conf_name))) {
+		if (!conference) {
 			/* couldn't find the conference, create one */
 			conference = conference_new(conf_name, xml_cfg, NULL);
 			
@@ -4768,8 +4783,10 @@ SWITCH_STANDARD_APP(conference_function)
 				goto done;
 			}
 
-			switch_mutex_unlock(globals.setup_mutex);
-			locked = 0;
+			if (locked) {
+				switch_mutex_unlock(globals.setup_mutex);
+				locked = 0;
+			}
 
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 
