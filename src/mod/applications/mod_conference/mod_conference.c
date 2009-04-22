@@ -72,6 +72,7 @@ static struct {
 	switch_hash_t *conference_hash;
 	switch_mutex_t *id_mutex;
 	switch_mutex_t *hash_mutex;
+	switch_mutex_t *setup_mutex;
 	uint32_t id_pool;
 	int32_t running;
 	uint32_t threads;
@@ -356,6 +357,8 @@ static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t s
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async);
 static switch_status_t conference_say(conference_obj_t *conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
+static conference_obj_t *conference_find(char *name);
+
 SWITCH_STANDARD_API(conf_api_main);
 
 static switch_status_t conference_outcall(conference_obj_t *conference,
@@ -3636,7 +3639,8 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 	char *conf_name = NULL, *profile_name;
 	switch_event_t *params = NULL;
 	conference_obj_t *new_conference = NULL;
-	
+	int locked = 0;
+
 	switch_assert(conference != NULL);
 	switch_assert(stream != NULL);
 
@@ -3657,7 +3661,7 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 			switch_channel_t *channel;
 			switch_event_t *event;
 			switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
-
+			
 			if (!id || !(member = conference_member_get(conference, id))) {
 				stream->write_function(stream, "No Member %u in conference %s.\n", id, conference->name);
 				continue;
@@ -3666,7 +3670,10 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 			channel = switch_core_session_get_channel(member->session);
 
 			if (!new_conference) {
-				if (!(new_conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
+				switch_mutex_lock(globals.setup_mutex);
+				locked = 1;
+
+				if (!(new_conference = conference_find(conf_name))) {
 					/* build a new conference if it doesn't exist */
 					switch_memory_pool_t *pool = NULL;
 					conf_xml_cfg_t xml_cfg = { 0 };
@@ -3718,6 +3725,9 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 						}
 						goto done;
 					}
+
+					switch_mutex_unlock(globals.setup_mutex);
+					locked = 0;
 
 					/* Set the minimum number of members (once you go above it you cannot go below it) */
 					new_conference->min = 1;
@@ -3772,6 +3782,12 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 	}
 
   done:
+	
+	if (locked) {
+		switch_mutex_unlock(globals.setup_mutex);
+		locked = 0;
+	}
+
 	if (params) {
 		switch_event_destroy(&params);
 	}
@@ -4047,7 +4063,7 @@ SWITCH_STANDARD_API(conf_api_main)
 	if (argc && argv[0]) {
 		conference_obj_t *conference = NULL;
 
-		if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, argv[0]))) {
+		if ((conference = conference_find(argv[0]))) {
 			if (switch_thread_rwlock_tryrdlock(conference->rwlock) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Read Lock Fail\n");
 				goto done;
@@ -4614,6 +4630,7 @@ SWITCH_STANDARD_APP(conference_function)
 	char *dpin = NULL;
 	conf_xml_cfg_t xml_cfg = { 0 };
 	switch_event_t *params = NULL;
+	int locked = 0;
 
 	/* Save the original read codec. */
 	if (!(read_codec = switch_core_session_get_read_codec(session))) {
@@ -4669,7 +4686,7 @@ SWITCH_STANDARD_APP(conference_function)
 	} else {
 		profile_name = "default";
 	}
-
+	
 #if 0
 	if (0) {
 		member.dtmf_parser = conference->dtmf_parser;
@@ -4697,6 +4714,10 @@ SWITCH_STANDARD_APP(conference_function)
 
 	/* if this is a bridging call, and it's not a duplicate, build a */
 	/* conference object, and skip pin handling, and locked checking */
+
+	switch_mutex_lock(globals.setup_mutex);
+	locked = 1;
+
 	if (isbr) {
 		char *uuid = switch_core_session_get_uuid(session);
 
@@ -4704,7 +4725,7 @@ SWITCH_STANDARD_APP(conference_function)
 			conf_name = uuid;
 		}
 
-		if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
+		if ((conference = conference_find(conf_name))) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Conference %s already exists!\n", conf_name);
 			goto done;
 		}
@@ -4715,6 +4736,9 @@ SWITCH_STANDARD_APP(conference_function)
 		if (!conference) {
 			goto done;
 		}
+
+		switch_mutex_unlock(globals.setup_mutex);
+		locked = 0;
 
 		switch_channel_set_variable(channel, "conference_name", conference->name);
 
@@ -4736,13 +4760,16 @@ SWITCH_STANDARD_APP(conference_function)
 		}
 
 		/* if the conference exists, get the pointer to it */
-		if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
+		if (!(conference = conference_find(conf_name))) {
 			/* couldn't find the conference, create one */
 			conference = conference_new(conf_name, xml_cfg, NULL);
 			
 			if (!conference) {
 				goto done;
 			}
+
+			switch_mutex_unlock(globals.setup_mutex);
+			locked = 0;
 
 			switch_channel_set_variable(channel, "conference_name", conference->name);
 
@@ -4954,6 +4981,11 @@ SWITCH_STANDARD_APP(conference_function)
 
   done:
 
+	if (locked) {
+		switch_mutex_unlock(globals.setup_mutex);
+		locked = 0;
+	}
+
 	if (member.read_resampler) {
 		switch_resample_destroy(&member.read_resampler);
 	}
@@ -5020,7 +5052,6 @@ static void launch_conference_thread(conference_obj_t *conference)
 	switch_threadattr_detach_set(thd_attr, 1);
 	switch_threadattr_stacksize_set(thd_attr, SWITCH_THREAD_STACKSIZE);
 	switch_mutex_lock(globals.hash_mutex);
-	switch_core_hash_insert(globals.conference_hash, conference->name, conference);
 	switch_mutex_unlock(globals.hash_mutex);
 	switch_thread_create(&thread, thd_attr, conference_thread_run, conference, conference->pool);
 }
@@ -5090,7 +5121,7 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 	}
 
 
-	if (!(conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, name))) {
+	if (!(conference = conference_find(name))) {
 		switch_core_chat_send(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL);
 		return SWITCH_STATUS_FALSE;
 	}
@@ -5207,6 +5238,17 @@ static switch_status_t conference_new_install_caller_controls_custom(conference_
 	return status;
 }
 
+static conference_obj_t *conference_find(char *name)
+{
+	conference_obj_t *conference;
+
+	switch_mutex_lock(globals.hash_mutex);
+	conference = switch_core_hash_find(globals.conference_hash, name);
+	switch_mutex_unlock(globals.hash_mutex);
+
+	return conference;
+}
+
 /* create a new conferene with a specific profile */
 static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_memory_pool_t *pool)
 {
@@ -5253,6 +5295,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Record! no name.\n");
 		return NULL;
 	}
+
+	switch_mutex_lock(globals.hash_mutex);
 
 	/* parse the profile tree for param values */
 	if (cfg.profile)
@@ -5395,7 +5439,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
 			status = SWITCH_STATUS_TERM;
-			return NULL;
+			conference = NULL;
+			goto end;
 		}
 	}
 
@@ -5403,7 +5448,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	if (!(conference = switch_core_alloc(pool, sizeof(*conference)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Memory Error!\n");
 		status = SWITCH_STATUS_TERM;
-		return NULL;
+		conference = NULL;
+		goto end;
 	}
 
 	/* initialize the conference object with settings from the specified profile */
@@ -5558,6 +5604,11 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	switch_mutex_init(&conference->flag_mutex, SWITCH_MUTEX_NESTED, conference->pool);
 	switch_thread_rwlock_create(&conference->rwlock, conference->pool);
 	switch_mutex_init(&conference->member_mutex, SWITCH_MUTEX_NESTED, conference->pool);
+	switch_core_hash_insert(globals.conference_hash, conference->name, conference);
+
+ end:
+
+	switch_mutex_unlock(globals.hash_mutex);
 
 	return conference;
 }
@@ -5582,7 +5633,7 @@ static void pres_event_handler(switch_event_t *event)
 		*e = '\0';
 	}
 
-	if ((conference = (conference_obj_t *) switch_core_hash_find(globals.conference_hash, conf_name))) {
+	if ((conference = conference_find(conf_name))) {
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
@@ -5713,6 +5764,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 	switch_mutex_init(&globals.conference_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.id_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 	switch_mutex_init(&globals.hash_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
+	switch_mutex_init(&globals.setup_mutex, SWITCH_MUTEX_NESTED, globals.conference_pool);
 
 	/* Subscribe to presence request events */
 	if (switch_event_bind_removable(modname, SWITCH_EVENT_PRESENCE_PROBE, SWITCH_EVENT_SUBCLASS_ANY, pres_event_handler, NULL, &globals.node) != SWITCH_STATUS_SUCCESS) {
