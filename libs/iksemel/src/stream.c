@@ -517,8 +517,8 @@ iks_recv (iksparser *prs, int timeout)
 		{
 			len = data->trans->recv (data->sock, data->buf, NET_IO_BUF_SIZE - 1, timeout);
 		}
-		if (len < 0) return IKS_NET_RWERR;
-		if (len == 0) break;
+		if (len <= 0) return IKS_NET_RWERR;
+
 		data->buf[len] = '\0';
 		if (data->logHook) data->logHook (data->user_data, data->buf, len, 1);
 		ret = iks_parse (prs, data->buf, len, 0);
