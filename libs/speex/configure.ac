@@ -38,6 +38,7 @@ AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
 
+AX_COMPILER_VENDOR
 
 AC_MSG_CHECKING(for C99 variable-size arrays)
 AC_TRY_COMPILE( , [
@@ -89,25 +90,52 @@ has_sse=no
 )
 AC_MSG_RESULT($has_sse)  
 
-SAVE_CFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -fvisibility=hidden"
 AC_MSG_CHECKING(for ELF visibility)
-AC_COMPILE_IFELSE([
-AC_LANG_PROGRAM([[
-#pragma GCC visibility push(hidden)
-__attribute__((visibility("default")))
-int var=10;
-]])],
-[
-has_visibility=yes
-AC_DEFINE([EXPORT], [__attribute__((visibility("default")))], [Symbol visibility prefix])
-],
-[
-has_visibility=no
-AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
-CFLAGS="$SAVE_CFLAGS"
-]
-)
+case "$ax_cv_c_compiler_vendor" in
+gnu)
+  SAVE_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -fvisibility=hidden"
+  AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([[
+  #pragma GCC visibility push(hidden)
+  __attribute__((visibility("default")))
+  int var=10;
+  ]])],
+  [
+  has_visibility=yes
+  AC_DEFINE([EXPORT], [__attribute__((visibility("default")))], [Symbol visibility prefix])
+  ],
+  [
+  has_visibility=no
+  AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
+  CFLAGS="$SAVE_CFLAGS"
+  ]
+  )
+  ;;
+sun)
+  SAVE_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -xldscope=hidden"
+  AC_COMPILE_IFELSE([
+  AC_LANG_PROGRAM([[
+  __attribute__((visibility("default")))
+  int var=10;
+  ]])],
+  [
+  has_visibility=yes
+  AC_DEFINE([EXPORT], [__attribute__((visibility("default")))], [Symbol visibility prefix])
+  ],
+  [
+  has_visibility=no
+  AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
+  CFLAGS="$SAVE_CFLAGS"
+  ]
+  )
+  ;;
+*)
+  has_visibility=no
+  AC_DEFINE([EXPORT], [], [Symbol visibility prefix])
+  ;;
+esac
 AC_MSG_RESULT($has_visibility)
 
 AC_CHECK_HEADERS(sys/soundcard.h sys/audioio.h)
