@@ -1064,7 +1064,7 @@ switch_status_t measure_file_len(const char *path, switch_size_t *message_len)
 							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) == SWITCH_STATUS_SUCCESS) {
 
 		if (switch_core_file_seek(&fh, &pos, 0, SEEK_END) == SWITCH_STATUS_SUCCESS) {
-			*message_len = pos;
+			*message_len = pos / fh.samplerate;
 			status = SWITCH_STATUS_SUCCESS;
 		}
 		switch_core_file_close(&fh);
