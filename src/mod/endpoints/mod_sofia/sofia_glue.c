@@ -2106,7 +2106,7 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 
 	if (sofia_test_pflag(tech_pvt->profile, PFLAG_PASS_RFC2833)
 		|| ((val = switch_channel_get_variable(tech_pvt->channel, "pass_rfc2833")) && switch_true(val))) {
-		flags |= SWITCH_RTP_FLAG_PASS_RFC2833;
+		sofia_set_flag(tech_pvt, TFLAG_PASS_RFC2833);
 	}
 
 
@@ -2219,6 +2219,8 @@ switch_status_t sofia_glue_activate_rtp(private_object_t *tech_pvt, switch_rtp_f
 		uint8_t vad_out = sofia_test_flag(tech_pvt, TFLAG_VAD_OUT) ? 1 : 0;
 		uint8_t inb = sofia_test_flag(tech_pvt, TFLAG_OUTBOUND) ? 0 : 1;
 		uint32_t stun_ping = 0;
+
+		switch_channel_set_flag(tech_pvt->channel, CF_FS_RTP);
 		
 		if ((val = switch_channel_get_variable(tech_pvt->channel, "rtp_enable_vad_in")) && switch_true(val)) {
 			vad_in = 1;

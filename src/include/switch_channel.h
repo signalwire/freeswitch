@@ -301,6 +301,8 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *
 */
 SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag);
 
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag);
+
 /*!
   \brief Set given flag(s) on a given channel to be applied on the next state change
   \param channel channel on which to set flag(s)

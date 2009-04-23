@@ -883,6 +883,7 @@ typedef enum {
 	CF_PAUSE_BUGS,
 	CF_DIVERT_EVENTS,
 	CF_BLOCK_STATE,
+	CF_FS_RTP,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;

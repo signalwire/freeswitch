@@ -719,6 +719,24 @@ SWITCH_DECLARE(switch_bool_t) switch_channel_set_flag_partner(switch_channel_t *
 	return SWITCH_FALSE;
 }
 
+SWITCH_DECLARE(uint32_t) switch_channel_test_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag)
+{
+	const char *uuid;
+	int r = 0;
+	
+	switch_assert(channel != NULL);
+
+	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		switch_core_session_t *session;
+		if ((session = switch_core_session_locate(uuid))) {
+			r = switch_channel_test_flag(switch_core_session_get_channel(session), flag);
+			switch_core_session_rwunlock(session);
+		}
+	}
+
+	return r;
+}
+
 SWITCH_DECLARE(switch_bool_t) switch_channel_clear_flag_partner(switch_channel_t *channel, switch_channel_flag_t flag)
 {
 	const char *uuid;
