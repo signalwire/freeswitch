@@ -2838,8 +2838,8 @@ void *SWITCH_THREAD_FUNC media_on_hold_thread_run(switch_thread_t *thread, void 
 				}
 
 				sofia_glue_toggle_hold(tech_pvt, 1);
-				switch_core_session_rwunlock(other_session);
 			}
+			switch_core_session_rwunlock(other_session);
 		}
 
 		switch_core_session_rwunlock(session);
