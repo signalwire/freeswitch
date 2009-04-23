@@ -143,7 +143,8 @@ typedef enum {
 	MFLAG_HAS_AUDIO = (1 << 10),
 	MFLAG_TALKING = (1 << 11),
 	MFLAG_RESTART = (1 << 12),
-	MFLAG_MINTWO = (1 << 13)
+	MFLAG_MINTWO = (1 << 13),
+	MFLAG_MUTE_DETECT = (1 << 14)
 } member_flag_t;
 
 typedef enum {
@@ -191,7 +192,8 @@ typedef enum {
 	EFLAG_UNLOCK = (1 << 22),
 	EFLAG_TRANSFER = (1 << 23),
 	EFLAG_BGDIAL_RESULT = (1 << 24),
-	EFLAG_FLOOR_CHANGE = (1 << 25)
+	EFLAG_FLOOR_CHANGE = (1 << 25),
+	EFLAG_MUTE_DETECT = (1 << 26)
 } event_type_t;
 
 typedef struct conference_file_node {
@@ -225,6 +227,7 @@ typedef struct conference_obj {
 	char *ack_sound;
 	char *nack_sound;
 	char *muted_sound;
+	char *mute_detect_sound;
 	char *unmuted_sound;
 	char *locked_sound;
 	char *is_locked_sound;
@@ -1642,7 +1645,7 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 
 		/* if the member can speak, compute the audio energy level and */
 		/* generate events when the level crosses the threshold        */
-		if (switch_test_flag(member, MFLAG_CAN_SPEAK) && energy_level) {
+		if ((switch_test_flag(member, MFLAG_CAN_SPEAK) || switch_test_flag(member, MFLAG_MUTE_DETECT)) && energy_level) {
 			uint32_t energy = 0, i = 0, samples = 0, j = 0;
 			int16_t *data;
 			int divisor = 0;
@@ -1698,6 +1701,22 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 							switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "start-talking");
 							switch_event_fire(&event);
 						}
+						
+						if (switch_test_flag(member, MFLAG_MUTE_DETECT) && !switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+
+							if (!switch_strlen_zero(member->conference->mute_detect_sound)) {
+								conference_member_play_file(member, member->conference->mute_detect_sound, 0);
+							}
+
+							if (test_eflag(member->conference, EFLAG_MUTE_DETECT) &&
+								switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+								conference_add_event_member_data(member, event);
+								switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "mute-detect");
+								switch_event_fire(&event);
+							}
+
+						}
+						
 					}
 				}
 			} else {
@@ -4390,25 +4409,36 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference, 
 static void set_mflags(char *flags, member_flag_t *f)
 {
 	if (flags) {
-		if (strstr(flags, "mute")) {
-			*f &= ~MFLAG_CAN_SPEAK;
+		char *dup = strdup(flags);
+		char *p;
+		char *argv[10] = { 0 };
+		int i, argc = 0;
+
+		for(p = dup; p && *p; p++) {
+			if (*p == ',') {
+				*p = '|';
+			}
 		}
 
-		if (strstr(flags, "deaf")) {
-			*f &= ~MFLAG_CAN_HEAR;
+		argc = switch_separate_string(dup, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+
+		for(i = 0; i < argc; i++) {
+			if (!strcasecmp(argv[i], "mute")) {
+				*f &= ~MFLAG_CAN_SPEAK;
+			} else if (!strcasecmp(argv[i], "deaf")) {
+				*f &= ~MFLAG_CAN_HEAR;
+			} else if (!strcasecmp(argv[i], "waste")) {
+				*f |= MFLAG_WASTE_BANDWIDTH;
+			} else if (!strcasecmp(argv[i], "mute-detect")) {
+				*f |= MFLAG_MUTE_DETECT;
+			} else if (!strcasecmp(argv[i], "endconf")) {
+				*f |= MFLAG_ENDCONF;
+			} else if (!strcasecmp(argv[i], "mintwo")) {
+				*f |= MFLAG_MINTWO;
+			}
 		}
 
-		if (strstr(flags, "waste")) {
-			*f |= MFLAG_WASTE_BANDWIDTH;
-		}
-
-		if (strstr(flags, "endconf")) {
-			*f |= MFLAG_ENDCONF;
-		}
-
-		if (strstr(flags, "mintwo")) {
-			*f |= MFLAG_MINTWO;
-		}
+		free(dup);
 	}
 }
 
@@ -4443,6 +4473,8 @@ static void clear_eflags(char *events, uint32_t *f)
 				*f &= ~EFLAG_STOP_TALKING;
 			} else if (!strcmp(event, "start-talking")) {
 				*f &= ~EFLAG_START_TALKING;
+			} else if (!strcmp(event, "mute-detect")) {
+				*f &= ~EFLAG_MUTE_DETECT;
 			} else if (!strcmp(event, "mute-member")) {
 				*f &= ~EFLAG_MUTE_MEMBER;
 			} else if (!strcmp(event, "unmute-member")) {
@@ -5282,6 +5314,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *ack_sound = NULL;
 	char *nack_sound = NULL;
 	char *muted_sound = NULL;
+	char *mute_detect_sound = NULL;
 	char *unmuted_sound = NULL;
 	char *locked_sound = NULL;
 	char *is_locked_sound = NULL;
@@ -5370,6 +5403,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			nack_sound = val;
 		} else if (!strcasecmp(var, "muted-sound") && !switch_strlen_zero(val)) {
 			muted_sound = val;
+		} else if (!strcasecmp(var, "mute-detect-sound") && !switch_strlen_zero(val)) {
+			mute_detect_sound = val;
 		} else if (!strcasecmp(var, "unmuted-sound") && !switch_strlen_zero(val)) {
 			unmuted_sound = val;
 		} else if (!strcasecmp(var, "locked-sound") && !switch_strlen_zero(val)) {
@@ -5523,6 +5558,14 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
 	if (!switch_strlen_zero(muted_sound)) {
 		conference->muted_sound = switch_core_strdup(conference->pool, muted_sound);
+	}
+
+	if (switch_strlen_zero(mute_detect_sound)) {
+		if (!switch_strlen_zero(muted_sound)) {
+			conference->mute_detect_sound = switch_core_strdup(conference->pool, muted_sound);
+		}
+	} else {
+		conference->mute_detect_sound = switch_core_strdup(conference->pool, mute_detect_sound);
 	}
 
 	if (!switch_strlen_zero(unmuted_sound)) {
