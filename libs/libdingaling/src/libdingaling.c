@@ -144,6 +144,7 @@ struct ldl_handle {
 	void *private_info;
 	FILE *log_stream;
 	ldl_handle_state_t state;
+	int fail_count;
 };
 
 struct ldl_session {
@@ -1128,6 +1129,7 @@ static int on_stream_component(ldl_handle_t *handle, int type, iks *node)
 					}
 					globals.logger(DL_LOG_DEBUG, "XMPP authenticated\n");
 					ldl_set_flag_locked(handle, LDL_FLAG_AUTHORIZED);
+					handle->fail_count = 0;
 				}
 			} else {
 				globals.logger(DL_LOG_ERR, "LOGIN ERROR!\n");
@@ -1433,7 +1435,7 @@ static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
 
 	ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
 
-	while (ldl_test_flag(handle, LDL_FLAG_RUNNING)) {
+	while (ldl_test_flag(handle, LDL_FLAG_RUNNING) && !ldl_test_flag(handle, LDL_FLAG_QUEUE_STOP)) {
 		ldl_flush_queue(handle, 0);
 
 		if (handle->loop_callback(handle) != LDL_STATUS_SUCCESS || !ldl_test_flag((&globals), LDL_FLAG_READY)) {
@@ -1442,13 +1444,14 @@ static void *APR_THREAD_FUNC queue_thread(apr_thread_t *thread, void *obj)
 			if ((fd = iks_fd(handle->parser)) > -1) {
 				shutdown(fd, 0x02);
 			}
-			ldl_clear_flag_locked(handle, LDL_FLAG_RUNNING);	
+			ldl_set_flag_locked(handle, LDL_FLAG_BREAK);	
 			break;
 		}
 		microsleep(100);
 	}
 	
 	ldl_clear_flag_locked(handle, LDL_FLAG_QUEUE_RUNNING);
+	ldl_clear_flag_locked(handle, LDL_FLAG_QUEUE_STOP);
 
 	return NULL;
 }
@@ -1541,13 +1544,12 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 				break;
 			}
 
-			if (IKS_OK != e) {
-				globals.logger(DL_LOG_DEBUG, "io error 2 %d\n", e);
-				microsleep(1000);
+			if (IKS_OK != e || ldl_test_flag(handle, LDL_FLAG_BREAK)) {
+				globals.logger(DL_LOG_DEBUG, "io error 2 %d retry in %d second(s)\n", e, ++handle->fail_count);
+				microsleep(1000 * handle->fail_count);
 				goto fail;
 			}
 
-			
 			if (!ldl_test_flag(handle, LDL_FLAG_TLS) && ldl_test_flag(handle, LDL_FLAG_READY)) {
 				ldl_flush_queue(handle, 0);
 			}
@@ -1569,13 +1571,17 @@ static void xmpp_connect(ldl_handle_t *handle, char *jabber_id, char *pass)
 
 	fail:
 		
+		ldl_set_flag_locked(handle, LDL_FLAG_QUEUE_STOP);
 		ldl_clear_flag_locked(handle, LDL_FLAG_CONNECTED);
 		ldl_clear_flag_locked(handle, LDL_FLAG_AUTHORIZED);
+		ldl_clear_flag_locked(handle, LDL_FLAG_BREAK);
 		handle->state = CS_NEW;
 		
 		if ((fd = iks_fd(handle->parser)) > -1) {
 			shutdown(fd, 0x02);
 		}
+
+		
 
 		while(ldl_test_flag(handle, LDL_FLAG_QUEUE_RUNNING)) {
 			microsleep(100);
