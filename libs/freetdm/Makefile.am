@@ -138,7 +138,11 @@ testanalog_CFLAGS  = $(AM_CFLAGS) $(MY_CFLAGS)
 #
 # ozmod modules
 #
-mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_wanpipe.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la
+mod_LTLIBRARIES = ozmod_zt.la ozmod_skel.la ozmod_isdn.la ozmod_analog.la ozmod_analog_em.la ozmod_ss7_boost.la
+
+if LIBSANGOMA
+mod_LTLIBRARIES += ozmod_wanpipe.la
+endif
 
 if LIBPRI
 mod_LTLIBRARIES += ozmod_libpri.la
