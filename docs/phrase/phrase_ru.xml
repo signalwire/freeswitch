@@ -72,6 +72,7 @@
 		<prompt phrase="Одна" filename="1f.wav"/>
 		<prompt phrase="Одно" filename="1n.wav"/>
 		<prompt phrase="Одного" filename="1x.wav"/>
+		<prompt phrase="Одной" filename="1xx.wav"/>
 		<prompt phrase="Первого" filename="h-1x.wav"/>
 		<prompt phrase="Первый" filename="h-1m.wav"/>
 		<prompt phrase="Первое" filename="h-1n.wav"/>
