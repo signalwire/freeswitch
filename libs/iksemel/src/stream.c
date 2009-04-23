@@ -512,11 +512,11 @@ iks_recv (iksparser *prs, int timeout)
 #ifdef HAVE_GNUTLS
 		if (data->flags & SF_SECURE) {
 			len = gnutls_record_recv (data->sess, data->buf, NET_IO_BUF_SIZE - 1);
+			if (len == 0) len = -1;
 		} else
 #endif
 		{
 			len = data->trans->recv (data->sock, data->buf, NET_IO_BUF_SIZE - 1, timeout);
-			if (len == 0) len = -1;
 		}
 		if (len < 0) return IKS_NET_RWERR;
 		if (len == 0) break;
