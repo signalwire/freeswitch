@@ -37,6 +37,7 @@
  *
  */
 #include <switch.h>
+#include <switch_stun.h>
 #include <switch_version.h>
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
@@ -518,6 +519,63 @@ SWITCH_STANDARD_API(url_decode_function)
 SWITCH_STANDARD_API(echo_function)
 {
 	stream->write_function(stream, "%s", cmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(stun_function)
+{
+	char *stun_ip = NULL;
+	switch_port_t stun_port = (switch_port_t)SWITCH_STUN_DEFAULT_PORT;
+	char *p;
+	char ip_buf[50] = "";
+	char *ip = NULL;
+	char *pip = NULL;
+	switch_port_t port = 0;
+	switch_memory_pool_t *pool = NULL;
+	char *error = "";
+
+	ip = ip_buf;
+
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%s", "-STUN Failed! NO STUN SERVER\n");
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	stun_ip = strdup(cmd);
+
+	if ((p = strchr(stun_ip, ':'))) {
+		int iport;
+		*p++ = '\0';
+		iport = atoi(p);
+		if (iport > 0 && iport < 0xFFFF) {
+			stun_port = (switch_port_t) iport;
+		}
+	} else {
+		p = stun_ip;
+	}
+
+	if (p && (pip = strchr(p, ' '))) {
+		*pip++ = '\0';
+	}
+
+	if (pip) {
+		switch_copy_string(ip_buf, pip, sizeof(ip_buf));
+	}
+
+	switch_core_new_memory_pool(&pool);
+
+	if (switch_strlen_zero(stun_ip)) {
+		stream->write_function(stream, "%s", "-STUN Failed! NO STUN SERVER\n");
+	} else {
+		if ((switch_stun_lookup(&ip, &port, stun_ip, stun_port, &error, pool)) == SWITCH_STATUS_SUCCESS && ip && port) {
+			stream->write_function(stream, "%s:%u\n", ip, port);
+		} else {
+			stream->write_function(stream, "-STUN Failed! [%s]\n", error);
+		}
+	}
+
+	switch_core_destroy_memory_pool(&pool);
+	free(stun_ip);
 	return SWITCH_STATUS_SUCCESS;
 }
 
@@ -3400,6 +3458,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "eval", "eval (noop)", eval_function, "[uuid:<uuid> ]<expression>");
 	SWITCH_ADD_API(commands_api_interface, "expand", "expand vars and exexute", expand_function, "[uuid:<uuid> ]<cmd> <args>");
 	SWITCH_ADD_API(commands_api_interface, "echo", "echo", echo_function, "<data>");
+	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
 
