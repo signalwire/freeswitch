@@ -3998,7 +3998,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 	if (switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS) {
 		
-		if (sip->sip_content_type) {
+		if (sip && sip->sip_content_type) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", sip->sip_content_type->c_type);
 		}
 
