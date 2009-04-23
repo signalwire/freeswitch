@@ -27,6 +27,15 @@
 
 
 
+(add-hook 'c-mode-common-hook
+  (lambda()
+    (local-set-key (kbd "C-c <right>") 'hs-show-block)
+    (local-set-key (kbd "C-c <left>")  'hs-hide-block)
+    (local-set-key (kbd "C-c <up>")    'hs-hide-all)
+    (local-set-key (kbd "C-c <down>")  'hs-show-all)
+    (hs-minor-mode t)))
+
+
 ;; replace C-s with C-\ in a much more general way so that C-\ can be typed
 ;; for every instance of C-s. It is at such a low level that emacs even thinks
 ;; that you typed a C-s.  replace C-s with C-\  ,  globally
