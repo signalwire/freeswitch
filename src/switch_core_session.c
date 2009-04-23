@@ -1296,7 +1296,8 @@ SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(switch_core_s
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_core_session_t *session, const char *app, const char *arg)
 {
 	switch_application_interface_t *application_interface;
-
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	
 	if (switch_channel_down(session->channel)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Channel is hungup, aborting execution of application: %s\n", app);
 		return SWITCH_STATUS_FALSE;
@@ -1311,8 +1312,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 	if (!application_interface->application_function) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Function for %s\n", app);
 		switch_channel_hangup(session->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
-		UNPROTECT_INTERFACE(application_interface);
-		return SWITCH_STATUS_FALSE;
+		switch_goto_status(SWITCH_STATUS_FALSE, done);
 	}
 
 	if (switch_channel_test_flag(session->channel, CF_PROXY_MODE) && !switch_test_flag(application_interface, SAF_SUPPORT_NOMEDIA)) {
@@ -1324,15 +1324,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(switch_c
 						  app, switch_channel_get_name(session->channel));
 		if (switch_channel_pre_answer(session->channel) != SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Well, that didn't work very well did it? ...\n");
-			return SWITCH_STATUS_FALSE;
+			switch_goto_status(SWITCH_STATUS_FALSE, done);
 		}
 	}
 
 	switch_core_session_exec(session, application_interface, arg);
 
+done:
 	UNPROTECT_INTERFACE(application_interface);
 	
-	return SWITCH_STATUS_SUCCESS;
+	return status;
 }
 
 SWITCH_DECLARE(switch_status_t) switch_core_session_exec(switch_core_session_t *session,
