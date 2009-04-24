@@ -54,6 +54,7 @@ static switch_status_t voicemail_inject(const char *data);
 static struct {
 	switch_hash_t *profile_hash;
 	int debug;
+	int message_query_exact_match;
 	switch_memory_pool_t *pool;
 } globals;
 
@@ -269,6 +270,8 @@ static switch_status_t load_config(void)
 
 			if (!strcasecmp(var, "debug")) {
 				globals.debug = atoi(val);
+			} else if (!strcasecmp(var, "message-query-exact-match")) {
+				globals.message_query_exact_match = switch_true(val);
 			}
 		}
 	}
@@ -3199,19 +3202,40 @@ SWITCH_STANDARD_API(boxcount_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define parse_profile() {\
+		total_new_messages = total_saved_messages = 0;					\
+		message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,	\
+					  &total_new_urgent_messages, &total_saved_urgent_messages); \
+		if (total_new_messages || total_saved_messages) {\
+			if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) { \
+				const char *yn = "no";									\
+				if (total_new_messages || total_new_urgent_messages) {	\
+					yn = "yes";											\
+				}														\
+				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);\
+				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account); \
+				switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", \
+										total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages); \
+				created++;												\
+			}															\
+		}																\
+	}
+
+
+
 static void message_query_handler(switch_event_t *event)
 {
 	char *account = switch_event_get_header(event, "message-account");
 	int created = 0;
 	switch_event_t *new_event = NULL;
 	char *dup = NULL;
+	int total_new_messages = 0;
+	int total_saved_messages = 0;
+	int total_new_urgent_messages = 0;
+	int total_saved_urgent_messages = 0;
 
 	if (account) {
 		switch_hash_index_t *hi;
-		int total_new_messages = 0;
-		int total_saved_messages = 0;
-		int total_new_urgent_messages = 0;
-		int total_saved_urgent_messages = 0;
 		void *val;
 		vm_profile_t *profile;
 		char *id, *domain;
@@ -3222,38 +3246,32 @@ static void message_query_handler(switch_event_t *event)
 		if (!strncasecmp(account, "sip:", 4)) {
 			id += 4;
 		}
-
+		
 		if (!id) {
 			free(dup);
 			return;
 		}
 
+
 		if ((domain = strchr(id, '@'))) {
 			*domain++ = '\0';
-			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-				switch_hash_this(hi, NULL, NULL, &val);
-				profile = (vm_profile_t *) val;
-				total_new_messages = total_saved_messages = 0;
-				message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
-							  &total_new_urgent_messages, &total_saved_urgent_messages);
-				if (total_new_messages || total_saved_messages) {
-					if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) {
-						const char *yn = "no";
-						if (total_new_messages || total_new_urgent_messages) {
-							yn = "yes";
-						}
-						switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);
-						switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account);
-						switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)",
-												total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages);
-						created++;
-					}
+			profile = NULL;
+
+			if (globals.message_query_exact_match) {
+				if ((profile = (vm_profile_t *) switch_core_hash_find(globals.profile_hash, domain))) {
+					parse_profile();
+				}
+			} else {
+				for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+					switch_hash_this(hi, NULL, NULL, &val);
+					profile = (vm_profile_t *) val;
+					parse_profile();
 				}
 			}
 		}
-
+		
 		switch_safe_free(dup);
-
+		
 	}
 
 	if (!created) {
