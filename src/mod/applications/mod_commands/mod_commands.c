@@ -527,7 +527,7 @@ SWITCH_STANDARD_API(stun_function)
 	char *stun_ip = NULL;
 	switch_port_t stun_port = (switch_port_t)SWITCH_STUN_DEFAULT_PORT;
 	char *p;
-	char ip_buf[50] = "";
+	char ip_buf[256] = "";
 	char *ip = NULL;
 	char *pip = NULL;
 	switch_port_t port = 0;
@@ -560,6 +560,8 @@ SWITCH_STANDARD_API(stun_function)
 
 	if (pip) {
 		switch_copy_string(ip_buf, pip, sizeof(ip_buf));
+	} else {
+		switch_find_local_ip(ip_buf, sizeof(ip_buf), AF_INET);
 	}
 
 	switch_core_new_memory_pool(&pool);
