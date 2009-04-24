@@ -1871,10 +1871,10 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <stun-enabled>%s</stun-enabled>\n", sofia_test_pflag(profile, PFLAG_STUN_ENABLED) ? "true" : "false");
 					stream->write_function(stream, "    <stun-auto-disable>%s</stun-auto-disable>\n", 
 										   sofia_test_pflag(profile, PFLAG_STUN_AUTO_DISABLE) ? "true" : "false");
-					stream->write_function(stream, "    <calls-in>%s</calls-in>\n", profile->ib_calls);
-					stream->write_function(stream, "    <calls-out>%s</calls-out>\n", profile->ob_calls);
-					stream->write_function(stream, "    <failed-calls-in>%s</failed-calls-in>\n", profile->ib_failed_calls);
-					stream->write_function(stream, "    <failed-calls-out>%s</failed-calls-out>\n", profile->ob_failed_calls);
+					stream->write_function(stream, "    <calls-in>%d</calls-in>\n", profile->ib_calls);
+					stream->write_function(stream, "    <calls-out>%d</calls-out>\n", profile->ob_calls);
+					stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", profile->ib_failed_calls);
+					stream->write_function(stream, "    <failed-calls-out>%d</failed-calls-out>\n", profile->ob_failed_calls);
 
 				}
 				stream->write_function(stream, "  </profile-info>\n");
