@@ -1495,6 +1495,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							sofia_clear_flag(profile, TFLAG_TPORT_LOG);
 						}
 						nua_set_params(profile->nua, TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), TAG_END());
+					} else if (!strcasecmp(var, "send-message-query-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
+						}
 					} else if (!strcasecmp(var, "auto-rtp-bugs")) {
 						parse_rtp_bugs(profile, val);
 					} else if (!strcasecmp(var, "user-agent-string")) { 
@@ -1964,6 +1970,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_DISABLE_100REL);
 				profile->auto_restart = 1;
 				sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
+				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2021,6 +2028,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						int tmp = atoi(val);
 						if (tmp > 0) {
 							profile->force_subscription_expires = tmp;
+						}
+					} else if (!strcasecmp(var, "send-message-query-on-register")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 						}
 					} else if (!strcasecmp(var, "inbound-use-callid-as-uuid")) {
 						if (switch_true(val)) {

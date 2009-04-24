@@ -1148,10 +1148,12 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_snprintf(exp_param, sizeof(exp_param), "expires=%ld", exptime);
 			sip_contact_add_param(nua_handle_home(nh), sip->sip_contact, exp_param);
 
-			if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
-				switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, reg_host);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
-				switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
+			if (sofia_test_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER)) {
+				if (switch_event_create(&s_event, SWITCH_EVENT_MESSAGE_QUERY) == SWITCH_STATUS_SUCCESS) {
+					switch_event_add_header(s_event, SWITCH_STACK_BOTTOM, "Message-Account", "sip:%s@%s", to_user, reg_host);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Sofia-Profile", profile->name);
+					switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "VM-Call-ID", call_id);
+				}
 			}
 		} else {
 			if (switch_event_create_subclass(&s_event, SWITCH_EVENT_CUSTOM, MY_EVENT_UNREGISTER) == SWITCH_STATUS_SUCCESS) {
