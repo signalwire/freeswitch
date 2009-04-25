@@ -381,7 +381,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	switch_dtmf_t dtmf = { 0 };
 	switch_file_handle_t lfh = { 0 };
 	switch_frame_t *read_frame;
-	switch_codec_t codec;
+	switch_codec_t codec, write_codec = { 0 };
 	char *codec_name;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	const char *p;
@@ -389,7 +389,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	time_t start = 0;
 	uint32_t org_silence_hits = 0;
 	int asis = 0;
+	int waste_resources = 0;
     switch_codec_implementation_t read_impl = {0};
+	switch_frame_t write_frame = { 0 };
+	char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+
+
     switch_core_session_get_read_impl(session, &read_impl);
 
 	if (!switch_channel_ready(channel)) {
@@ -411,8 +416,29 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	fh->channels = read_impl.number_of_channels;
 	fh->native_rate = read_impl.actual_samples_per_second;
 
+	if ((vval = switch_channel_get_variable(channel, "record_waste_resources")) && switch_true(vval)) {
+	
+		if (switch_core_codec_init(&write_codec,
+								   "L16",
+								   NULL,
+								   read_impl.actual_samples_per_second,
+								   read_impl.microseconds_per_packet / 1000,
+								   read_impl.number_of_channels,
+								   SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL,
+								   switch_core_session_get_pool(session)) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Raw Codec Activated, ready to waste resources!\n");
+			write_frame.data = write_buf;
+			write_frame.buflen = sizeof(write_buf);
+			write_frame.datalen = read_impl.decoded_bytes_per_packet;
+			write_frame.samples = write_frame.datalen / 2;
+			write_frame.codec = &write_codec;
+		} else {
+			return SWITCH_STATUS_FALSE;
+		}
 
-
+		waste_resources = 1;
+	}
+	
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
 		char *ext;
 		const char *prefix;
@@ -632,6 +658,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 				break;
 			}
 		}
+
+		if (waste_resources) {
+			if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
+				break;
+			}
+		}
+
+	}
+
+	if (waste_resources) {
+		switch_core_codec_destroy(&write_codec);
 	}
 
 	switch_channel_set_variable_printf(channel, "record_ms", "%d", fh->samples_in / read_impl.samples_per_second);
