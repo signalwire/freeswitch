@@ -392,7 +392,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	int waste_resources = 0;
     switch_codec_implementation_t read_impl = {0};
 	switch_frame_t write_frame = { 0 };
-	char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE];
+	unsigned char write_buf[SWITCH_RECOMMENDED_BUFFER_SIZE] = { 0 };
 
 
     switch_core_session_get_read_impl(session, &read_impl);
