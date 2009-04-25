@@ -73,7 +73,7 @@ struct private_object {
 	unsigned char write_databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 
 	switch_frame_t cng_frame;
-	unsigned char cng_databuf[10];
+	unsigned char cng_databuf[SWITCH_RECOMMENDED_BUFFER_SIZE];
 	switch_timer_t timer;
 	switch_caller_profile_t *caller_profile;
 	int32_t bowout_frame_count;
@@ -162,7 +162,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 
 	tech_pvt->cng_frame.data = tech_pvt->cng_databuf;
 	tech_pvt->cng_frame.buflen = sizeof(tech_pvt->cng_databuf);
-	switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
+	//switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 	tech_pvt->cng_frame.datalen = 2;
 
 	tech_pvt->bowout_frame_count = (tech_pvt->read_codec.implementation->actual_samples_per_second / 
@@ -564,9 +564,34 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	}
 	
 	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
+		unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+		uint32_t flag = 0;
+		switch_status_t status;
+		uint32_t rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
+
 		*frame = &tech_pvt->cng_frame;
 		tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
-		switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
+		tech_pvt->cng_frame.datalen = tech_pvt->read_codec.implementation->decoded_bytes_per_packet;
+		memset(tech_pvt->cng_frame.data, 0, tech_pvt->cng_frame.datalen);
+
+		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, "L16")) {
+			status = switch_core_codec_encode(&tech_pvt->read_codec,
+											  NULL,
+											  data,
+											  sizeof(data),
+											  tech_pvt->read_codec.implementation->actual_samples_per_second,
+
+											  tech_pvt->cng_frame.data,
+											  &tech_pvt->cng_frame.datalen,											  
+											  &rate,
+											  &flag);
+			if (status != SWITCH_STATUS_SUCCESS) {
+				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+			}
+													 
+		}
+
+		//switch_set_flag((&tech_pvt->cng_frame), SFF_CNG);
 		switch_clear_flag_locked(tech_pvt, TFLAG_CNG);
 	}
 
