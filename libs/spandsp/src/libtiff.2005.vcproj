@@ -25,7 +25,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -92,7 +92,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
+				CommandLine="if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tiffconf.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tiffconf.h&quot; /Y&#x0D;&#x0A;if not exist &quot;$(ProjectDir)../../tiff-3.8.2/libtiff/tif_config.h&quot; copy &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h.vc&quot; &quot;$(ProjectDir)..\..\tiff-3.8.2\libtiff\tif_config.h&quot; /Y&#x0D;&#x0A;"
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
