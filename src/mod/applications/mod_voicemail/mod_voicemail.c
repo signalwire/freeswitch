@@ -44,17 +44,20 @@
 #endif
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load);
-SWITCH_MODULE_DEFINITION(mod_voicemail, mod_voicemail_load, NULL, NULL);
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown);
+SWITCH_MODULE_DEFINITION(mod_voicemail, mod_voicemail_load, mod_voicemail_shutdown, NULL);
 #define VM_EVENT_MAINT "vm::maintenance"
 
 #define VM_MAX_GREETINGS 9
 
 static switch_status_t voicemail_inject(const char *data);
 
+static const char *global_cf = "voicemail.conf";
 static struct {
 	switch_hash_t *profile_hash;
 	int debug;
 	int message_query_exact_match;
+	switch_mutex_t *mutex;
 	switch_memory_pool_t *pool;
 } globals;
 
@@ -129,6 +132,8 @@ struct vm_profile {
 	uint32_t record_sample_rate;
 	switch_odbc_handle_t *master_odbc;
 	switch_bool_t auto_playback_recordings;
+	switch_thread_rwlock_t *rwlock;
+	switch_memory_pool_t *pool;
 };
 typedef struct vm_profile vm_profile_t;
 
@@ -248,40 +253,49 @@ static char *vm_index_list[] = {
 	NULL
 };
 
-static switch_status_t load_config(void)
+
+static void destroy_profile(const char *profile_name) 
 {
-	char *cf = "voicemail.conf";
 	vm_profile_t *profile = NULL;
-	switch_xml_t cfg, xml, settings, param, x_profile, x_profiles, x_email;
-
-	memset(&globals, 0, sizeof(globals));
-	switch_core_new_memory_pool(&globals.pool);
-	switch_core_hash_init(&globals.profile_hash, globals.pool);
-
-	if (!(xml = switch_xml_open_cfg(cf, &cfg, NULL))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", cf);
-		return SWITCH_STATUS_TERM;
+	switch_mutex_lock(globals.mutex);
+	if ((profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+		switch_core_hash_delete(globals.profile_hash, profile_name);
 	}
+	switch_mutex_unlock(globals.mutex);
 
-	if ((settings = switch_xml_child(cfg, "settings"))) {
-		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
-			char *var = (char *) switch_xml_attr_soft(param, "name");
-			char *val = (char *) switch_xml_attr_soft(param, "value");
-
-			if (!strcasecmp(var, "debug")) {
-				globals.debug = atoi(val);
-			} else if (!strcasecmp(var, "message-query-exact-match")) {
-				globals.message_query_exact_match = switch_true(val);
-			}
-		}
+	if (!profile) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Profile %s\n", profile_name);
+		return;
 	}
+	/* wait readers */
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for write lock (Profile %s)\n", profile->name);	
+	switch_thread_rwlock_wrlock(profile->rwlock);
 
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
+#ifdef SWITCH_HAVE_ODBC
+	if (profile->odbc_dsn && profile->master_odbc) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
+		switch_odbc_handle_destroy(&profile->master_odbc);
+	}
+#endif
+	switch_core_destroy_memory_pool(&profile->pool);
+}
+
+static vm_profile_t * load_profile(const char *profile_name)
+{
+	vm_profile_t *profile = NULL;
+	switch_xml_t x_profiles, x_profile, x_email, param, cfg, xml;
+
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
+		return profile;
+	}
 	if (!(x_profiles = switch_xml_child(cfg, "profiles"))) {
 		goto end;
 	}
 
-	for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
-		char *name = (char *) switch_xml_attr_soft(x_profile, "name");
+	if ((x_profile = switch_xml_find_child(x_profiles, "profile", "name", profile_name))) {
+		switch_memory_pool_t *pool;
 		char *odbc_dsn = NULL, *odbc_user = NULL, *odbc_pass = NULL;
 		char *terminator_key = "#";
 		char *play_new_messages_key = "1";
@@ -344,13 +358,28 @@ static switch_status_t load_config(void)
 
 		db = NULL;
 
+		if (switch_core_new_memory_pool(&pool) != SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Pool Failure\n");
+			goto end;
+		}
+
+		if (!(profile = switch_core_alloc(pool, sizeof(*profile)))) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Alloc Failure\n");
+			switch_core_destroy_memory_pool(&pool);
+			goto end;			
+		}
+
+		profile->pool = pool;
+		switch_thread_rwlock_create(&profile->rwlock, pool);
+		profile->name = switch_core_strdup(pool, profile_name);
+
 		if ((x_email = switch_xml_child(x_profile, "email"))) {
 			if ((param = switch_xml_child(x_email, "body"))) {
-				email_body = switch_core_strdup(globals.pool, param->txt);
+				email_body = switch_core_strdup(profile->pool, param->txt);
 			}
 
 			if ((param = switch_xml_child(x_email, "headers"))) {
-				email_headers = switch_core_strdup(globals.pool, param->txt);
+				email_headers = switch_core_strdup(profile->pool, param->txt);
 			}
 
 			for (param = switch_xml_child(x_email, "param"); param; param = param->next) {
@@ -383,7 +412,8 @@ static switch_status_t load_config(void)
 							stream.write_function(&stream, "%s", buf);
 						}
 						close(fd);
-						email_headers = stream.data;
+						email_headers = switch_core_strdup(pool, stream.data);
+						switch_safe_free(stream.data);
 						if ((email_body = strstr(email_headers, "\n\n"))) {
 							*email_body = '\0';
 							email_body += 2;
@@ -413,7 +443,8 @@ static switch_status_t load_config(void)
 							stream.write_function(&stream, "%s", buf);
 						}
 						close(fd);
-						notify_email_headers = stream.data;
+						notify_email_headers = switch_core_strdup(pool, stream.data);
+						switch_safe_free(stream.data);
 						if ((notify_email_body = strstr(notify_email_headers, "\n\n"))) {
 							*notify_email_body = '\0';
 							notify_email_body += 2;
@@ -455,7 +486,9 @@ static switch_status_t load_config(void)
 						stream.write_function(&stream, "%s", buf);
 					}
 					close(fd);
-					web_head = stream.data;
+					web_head = switch_core_strdup(pool, stream.data);
+					switch_safe_free(stream.data);
+
 					if ((web_tail = strstr(web_head, "<!break>\n"))) {
 						*web_tail = '\0';
 						web_tail += 9;
@@ -623,7 +656,7 @@ static switch_status_t load_config(void)
 				} 
 			} else if (!strcasecmp(var, "odbc-dsn") && !switch_strlen_zero(val)) {
 #ifdef SWITCH_HAVE_ODBC
-				odbc_dsn = switch_core_strdup(globals.pool, val);
+				odbc_dsn = switch_core_strdup(profile->pool, val);
 				if ((odbc_user = strchr(odbc_dsn, ':'))) {
 					*odbc_user++ = '\0';
 					if ((odbc_pass = strchr(odbc_user, ':'))) {
@@ -638,186 +671,230 @@ static switch_status_t load_config(void)
 			}
 		}
 
-		if (switch_strlen_zero(name)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No name specified.\n");
+		if (!switch_strlen_zero(odbc_dsn) && !switch_strlen_zero(odbc_user) && !switch_strlen_zero(odbc_pass)) {
+			profile->odbc_dsn = odbc_dsn;
+			profile->odbc_user = odbc_user;
+			profile->odbc_pass = odbc_pass;
 		} else {
-			profile = switch_core_alloc(globals.pool, sizeof(*profile));
-			profile->name = switch_core_strdup(globals.pool, name);
-
-			if (!switch_strlen_zero(odbc_dsn) && !switch_strlen_zero(odbc_user) && !switch_strlen_zero(odbc_pass)) {
-				profile->odbc_dsn = odbc_dsn;
-				profile->odbc_user = odbc_user;
-				profile->odbc_pass = odbc_pass;
-			} else {
-				profile->dbname = switch_core_sprintf(globals.pool, "voicemail_%s", name);
-			}
-			if (profile->odbc_dsn) {
+			profile->dbname = switch_core_sprintf(profile->pool, "voicemail_%s", profile_name);
+		}
+		if (profile->odbc_dsn) {
 #ifdef SWITCH_HAVE_ODBC
-				if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
+			if (!(profile->master_odbc = switch_odbc_handle_new(profile->odbc_dsn, profile->odbc_user, profile->odbc_pass))) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+				goto end;
 
-				}
-				if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
-					continue;
-				}
+			}
+			if (switch_odbc_handle_connect(profile->master_odbc) != SWITCH_ODBC_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open ODBC Database!\n");
+				goto end;
+			}
 
-				if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_msgs", NULL) != SWITCH_ODBC_SUCCESS) {
-					switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_msgs", NULL);
-					switch_odbc_handle_exec(profile->master_odbc, vm_sql, NULL);
-				}
+			if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_msgs", NULL) != SWITCH_ODBC_SUCCESS) {
+				switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_msgs", NULL);
+				switch_odbc_handle_exec(profile->master_odbc, vm_sql, NULL);
+			}
 
-				if (switch_odbc_handle_exec(profile->master_odbc, "select count(username) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
-					switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_prefs", NULL);
-					switch_odbc_handle_exec(profile->master_odbc, vm_pref_sql, NULL);
-				}
+			if (switch_odbc_handle_exec(profile->master_odbc, "select count(username) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
+				switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_prefs", NULL);
+				switch_odbc_handle_exec(profile->master_odbc, vm_pref_sql, NULL);
+			}
 
-				if (switch_odbc_handle_exec(profile->master_odbc, "select count(password) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
-					switch_odbc_handle_exec(profile->master_odbc, "alter table voicemail_prefs add password varchar(255)", NULL);
-				}
+			if (switch_odbc_handle_exec(profile->master_odbc, "select count(password) from voicemail_prefs", NULL) != SWITCH_ODBC_SUCCESS) {
+				switch_odbc_handle_exec(profile->master_odbc, "alter table voicemail_prefs add password varchar(255)", NULL);
+			}
 
-				if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_data", NULL) == SWITCH_ODBC_SUCCESS) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Old table voicemail_data found, migrating data!\n");
-					/* XXX: Old table found.. migrating data into new table */
-					if (switch_odbc_handle_exec(profile->master_odbc,
-												"insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
-													"in_folder, file_path, message_len, flags, read_flags) "
-												"select created_epoch, read_epoch, user, domain, uuid, "
-												"cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags from voicemail_data",
-												NULL) != SWITCH_ODBC_SUCCESS) {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to migrate old voicemail_data to voicemail_msgs!\n");
-						continue;
-					}
-					switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_data", NULL);
-				}
-
-				for (x = 0; vm_index_list[x]; x++) {
-					switch_odbc_handle_exec(profile->master_odbc, vm_index_list[x], NULL);
-				}
-
-#endif
-			} else {
-				if ((db = switch_core_db_open_file(profile->dbname))) {
-					char *errmsg;
-					switch_core_db_test_reactive(db, "select count(message_len) from voicemail_msgs", "drop table voicemail_msgs", vm_sql);
-
-					switch_core_db_exec(db, "select count(message_len) from voicemail_data", NULL, NULL, &errmsg);
-					if (errmsg) {
-						switch_core_db_free(errmsg);
-						errmsg = NULL;
-					} else {
-						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Migrating data from voicemail_data to voicemail_msgs!\n");
-						switch_core_db_exec(db, "insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
+			if (switch_odbc_handle_exec(profile->master_odbc, "select count(message_len) from voicemail_data", NULL) == SWITCH_ODBC_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Old table voicemail_data found, migrating data!\n");
+				/* XXX: Old table found.. migrating data into new table */
+				if (switch_odbc_handle_exec(profile->master_odbc,
+											"insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
 											"in_folder, file_path, message_len, flags, read_flags) "
 											"select created_epoch, read_epoch, user, domain, uuid, "
 											"cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags from voicemail_data",
-											NULL, NULL, &errmsg);
-						if (errmsg) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", errmsg);
-							switch_core_db_free(errmsg);
-							errmsg = NULL;
-						}
-						switch_core_db_exec(db, "drop table voicemail_data", NULL, NULL, &errmsg);
-						if (errmsg) {
-							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", errmsg);
-							switch_core_db_free(errmsg);
-							errmsg = NULL;
-						}
+											NULL) != SWITCH_ODBC_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to migrate old voicemail_data to voicemail_msgs!\n");
+					goto end;
+				}
+				switch_odbc_handle_exec(profile->master_odbc, "drop table voicemail_data", NULL);
+			}
+
+			for (x = 0; vm_index_list[x]; x++) {
+				switch_odbc_handle_exec(profile->master_odbc, vm_index_list[x], NULL);
+			}
+#endif
+		} else {
+			if ((db = switch_core_db_open_file(profile->dbname))) {
+				char *errmsg;
+				switch_core_db_test_reactive(db, "select count(message_len) from voicemail_msgs", "drop table voicemail_msgs", vm_sql);
+
+				switch_core_db_exec(db, "select count(message_len) from voicemail_data", NULL, NULL, &errmsg);
+				if (errmsg) {
+					switch_core_db_free(errmsg);
+					errmsg = NULL;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Migrating data from voicemail_data to voicemail_msgs!\n");
+					switch_core_db_exec(db, "insert into voicemail_msgs (created_epoch, read_epoch, username, domain, uuid, cid_name, cid_number, "
+										"in_folder, file_path, message_len, flags, read_flags) "
+										"select created_epoch, read_epoch, user, domain, uuid, "
+										"cid_name, cid_number, in_folder, file_path, message_len, flags, read_flags from voicemail_data",
+										NULL, NULL, &errmsg);
+					if (errmsg) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", errmsg);
+						switch_core_db_free(errmsg);
+						errmsg = NULL;
 					}
+					switch_core_db_exec(db, "drop table voicemail_data", NULL, NULL, &errmsg);
+					if (errmsg) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "SQL ERR [%s]\n", errmsg);
+						switch_core_db_free(errmsg);
+						errmsg = NULL;
+					}
+				}
 
 
-					switch_core_db_test_reactive(db, "select count(username) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
-					switch_core_db_test_reactive(db, "select count(password) from voicemail_prefs", NULL, 
+				switch_core_db_test_reactive(db, "select count(username) from voicemail_prefs", "drop table voicemail_prefs", vm_pref_sql);
+				switch_core_db_test_reactive(db, "select count(password) from voicemail_prefs", NULL, 
 												 "alter table voicemail_prefs add password varchar(255)");
 
-					for (x = 0; vm_index_list[x]; x++) {
-						errmsg = NULL;
-						switch_core_db_exec(db, vm_index_list[x], NULL, NULL, &errmsg);
-						switch_safe_free(errmsg);
-					}
-
-
-				} else {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
-					continue;
+				for (x = 0; vm_index_list[x]; x++) {
+					errmsg = NULL;
+					switch_core_db_exec(db, vm_index_list[x], NULL, NULL, &errmsg);
+					switch_safe_free(errmsg);
 				}
-				switch_core_db_close(db);
-			}
 
-			profile->web_head = web_head;
-			profile->web_tail = web_tail;
-
-			profile->email_body = email_body;
-			profile->email_headers = email_headers;
-			if (notify_email_headers) {
-				profile->notify_email_body = notify_email_body;
-				profile->notify_email_headers = notify_email_headers;
 			} else {
-				profile->notify_email_body = email_body;
-				profile->notify_email_headers = email_headers;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Cannot Open SQL Database!\n");
+				goto end;
 			}
-			profile->email_from = switch_core_strdup(globals.pool, email_from);
-			profile->date_fmt = switch_core_strdup(globals.pool, date_fmt);
-			profile->play_date_announcement = play_date_announcement;
+			switch_core_db_close(db);
+		}
 
-			profile->digit_timeout = timeout;
-			profile->max_login_attempts = max_login_attempts;
-			profile->min_record_len = min_record_len;
-			profile->max_record_len = max_record_len;
-			profile->max_retries = max_retries;
-			*profile->terminator_key = *terminator_key;
-			*profile->play_new_messages_key = *play_new_messages_key;
-			*profile->play_saved_messages_key = *play_saved_messages_key;
-			switch_set_string(profile->login_keys, login_keys);
-			*profile->main_menu_key = *main_menu_key;
-			*profile->skip_greet_key = *skip_greet_key;
-			*profile->config_menu_key = *config_menu_key;
-			*profile->record_greeting_key = *record_greeting_key;
-			*profile->choose_greeting_key = *choose_greeting_key;
-			*profile->record_name_key = *record_name_key;
-			*profile->change_pass_key = *change_pass_key;
-			*profile->record_file_key = *record_file_key;
-			*profile->listen_file_key = *listen_file_key;
-			*profile->save_file_key = *save_file_key;
-			*profile->delete_file_key = *delete_file_key;
-			*profile->undelete_file_key = *undelete_file_key;
-			*profile->email_key = *email_key;
-			*profile->callback_key = *callback_key;
-			*profile->pause_key = *pause_key;
-			*profile->restart_key = *restart_key;
-			*profile->ff_key = *ff_key;
-			*profile->rew_key = *rew_key;
-			*profile->urgent_key = *urgent_key;
-			*profile->operator_key = *operator_key;
-			*profile->vmain_key = *vmain_key;
-			*profile->forward_key = *forward_key;
-			*profile->prepend_key = *prepend_key;
-			profile->record_threshold = record_threshold;
-			profile->record_silence_hits = record_silence_hits;
-			profile->record_sample_rate = record_sample_rate;
+		profile->web_head = web_head;
+		profile->web_tail = web_tail;
 
-			profile->auto_playback_recordings = auto_playback_recordings;
-			profile->operator_ext = switch_core_strdup(globals.pool, operator_ext);
-			profile->vmain_ext = switch_core_strdup(globals.pool, vmain_ext);
-			profile->storage_dir = switch_core_strdup(globals.pool, storage_dir);
-			profile->tone_spec = switch_core_strdup(globals.pool, tone_spec);
-			profile->callback_dialplan = switch_core_strdup(globals.pool, callback_dialplan);
-			profile->callback_context = switch_core_strdup(globals.pool, callback_context);
+		profile->email_body = email_body;
+		profile->email_headers = email_headers;
+		if (notify_email_headers) {
+			profile->notify_email_body = notify_email_body;
+			profile->notify_email_headers = notify_email_headers;
+		} else {
+			profile->notify_email_body = email_body;
+			profile->notify_email_headers = email_headers;
+		}
+		profile->email_from = switch_core_strdup(profile->pool, email_from);
+		profile->date_fmt = switch_core_strdup(profile->pool, date_fmt);
+		profile->play_date_announcement = play_date_announcement;
 
-			profile->record_title = switch_core_strdup(globals.pool, record_title);
-			profile->record_comment = switch_core_strdup(globals.pool, record_comment);
-			profile->record_copyright = switch_core_strdup(globals.pool, record_copyright);
+		profile->digit_timeout = timeout;
+		profile->max_login_attempts = max_login_attempts;
+		profile->min_record_len = min_record_len;
+		profile->max_record_len = max_record_len;
+		profile->max_retries = max_retries;
+		*profile->terminator_key = *terminator_key;
+		*profile->play_new_messages_key = *play_new_messages_key;
+		*profile->play_saved_messages_key = *play_saved_messages_key;
+		switch_set_string(profile->login_keys, login_keys);
+		*profile->main_menu_key = *main_menu_key;
+		*profile->skip_greet_key = *skip_greet_key;
+		*profile->config_menu_key = *config_menu_key;
+		*profile->record_greeting_key = *record_greeting_key;
+		*profile->choose_greeting_key = *choose_greeting_key;
+		*profile->record_name_key = *record_name_key;
+		*profile->change_pass_key = *change_pass_key;
+		*profile->record_file_key = *record_file_key;
+		*profile->listen_file_key = *listen_file_key;
+		*profile->save_file_key = *save_file_key;
+		*profile->delete_file_key = *delete_file_key;
+		*profile->undelete_file_key = *undelete_file_key;
+		*profile->email_key = *email_key;
+		*profile->callback_key = *callback_key;
+		*profile->pause_key = *pause_key;
+		*profile->restart_key = *restart_key;
+		*profile->ff_key = *ff_key;
+		*profile->rew_key = *rew_key;
+		*profile->urgent_key = *urgent_key;
+		*profile->operator_key = *operator_key;
+		*profile->vmain_key = *vmain_key;
+		*profile->forward_key = *forward_key;
+		*profile->prepend_key = *prepend_key;
+		profile->record_threshold = record_threshold;
+		profile->record_silence_hits = record_silence_hits;
+		profile->record_sample_rate = record_sample_rate;
+		profile->auto_playback_recordings = auto_playback_recordings;
+		profile->operator_ext = switch_core_strdup(profile->pool, operator_ext);
+		profile->vmain_ext = switch_core_strdup(profile->pool, vmain_ext);
+		profile->storage_dir = switch_core_strdup(profile->pool, storage_dir);
+		profile->tone_spec = switch_core_strdup(profile->pool, tone_spec);
+		profile->callback_dialplan = switch_core_strdup(profile->pool, callback_dialplan);
+		profile->callback_context = switch_core_strdup(profile->pool, callback_context);
+		profile->record_title = switch_core_strdup(profile->pool, record_title);
+		profile->record_comment = switch_core_strdup(profile->pool, record_comment);
+		profile->record_copyright = switch_core_strdup(profile->pool, record_copyright);
+		switch_copy_string(profile->file_ext, file_ext, sizeof(profile->file_ext));
+		switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, profile->pool);
 
-			switch_copy_string(profile->file_ext, file_ext, sizeof(profile->file_ext));
-			switch_mutex_init(&profile->mutex, SWITCH_MUTEX_NESTED, globals.pool);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added Profile %s\n", profile->name);
+		switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+	}
 
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Added Profile %s\n", profile->name);
-			switch_core_hash_insert(globals.profile_hash, profile->name, profile);
+
+  end:
+	if (xml) {
+		switch_xml_free(xml);
+	}
+	return profile;
+
+}
+
+
+static vm_profile_t * get_profile(const char *profile_name) 
+{
+	vm_profile_t *profile;
+
+	switch_mutex_lock(globals.mutex);
+	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
+    	profile = load_profile(profile_name);
+	}
+	if (profile) {
+		switch_thread_rwlock_rdlock(profile->rwlock);
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	return profile;
+}
+
+
+static switch_status_t load_config(void)
+{
+	switch_xml_t cfg, xml, settings, param, x_profiles, x_profile;
+
+	if (!(xml = switch_xml_open_cfg(global_cf, &cfg, NULL))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Open of %s failed\n", global_cf);
+		return SWITCH_STATUS_TERM;
+	}
+
+	switch_mutex_lock(globals.mutex);
+	if ((settings = switch_xml_child(cfg, "settings"))) {
+		for (param = switch_xml_child(settings, "param"); param; param = param->next) {
+			char *var = (char *) switch_xml_attr_soft(param, "name");
+			char *val = (char *) switch_xml_attr_soft(param, "value");
+
+			if (!strcasecmp(var, "debug")) {
+				globals.debug = atoi(val);
+			} else if (!strcasecmp(var, "message-query-exact-match")) {
+				globals.message_query_exact_match = switch_true(val);
+			}
 		}
 	}
 
-  end:
+	if ((x_profiles = switch_xml_child(cfg, "profiles"))) {
+		for (x_profile = switch_xml_child(x_profiles, "profile"); x_profile; x_profile = x_profile->next) {
+			load_profile(switch_xml_attr_soft(x_profile, "name"));
+		}
+	}
+	switch_mutex_unlock(globals.mutex);        
+
 	switch_xml_free(xml);
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1660,12 +1737,11 @@ static void update_mwi(vm_profile_t *profile, const char *id, const char *domain
 #define FREE_DOMAIN_ROOT() if (x_domain_root) switch_xml_free(x_domain_root); x_user = x_domain = x_domain_root = NULL
 
 
-static void voicemail_check_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id, int auth)
+static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *profile, const char *domain_name, const char *id, int auth)
 {
 	vm_check_state_t vm_check_state = VM_CHECK_START;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_caller_profile_t *caller_profile = switch_channel_get_caller_profile(channel);
-	vm_profile_t *profile;
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
 	switch_status_t status;
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
@@ -1686,18 +1762,13 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 	switch_input_args_t args = { 0 };
 	const char *caller_id_name = NULL;
 	const char *caller_id_number = NULL;
-	
+
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
 	}
 
 	if (!(caller_id_number = switch_channel_get_variable(channel, "effective_caller_id_number"))) {
 		caller_id_number = caller_profile->caller_id_number;
-	}
-
-	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
-		return;
 	}
 
 	timeout = profile->digit_timeout;
@@ -2073,8 +2144,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 
 				}
 
-				
-
 				thepass = thehash = NULL;
 				switch_snprintf(sql, sizeof(sql), "select * from voicemail_prefs where username='%s' and domain='%s'", myid, domain_name);
 				vm_execute_sql_callback(profile, profile->mutex, sql, prefs_callback, &cbt);
@@ -2120,7 +2189,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 					} 
 
 				}
-				
 
 				if (!mypass) {
 					if (auth) {
@@ -2138,8 +2206,6 @@ static void voicemail_check_main(switch_core_session_t *session, const char *pro
 						}
 					}
 				}
-
-
 
 				if (vmhash) {
 					thehash = vmhash;
@@ -2624,8 +2690,8 @@ static switch_status_t voicemail_inject(const char *data)
 		goto end;
 	}
 
-	if (!(profile = switch_core_hash_find(globals.profile_hash, domain))) {
-		profile = switch_core_hash_find(globals.profile_hash, "default");
+	if (!(profile = get_profile(domain))) {
+		profile = get_profile("default");
 	}
 	
 	if (!profile) {
@@ -2724,6 +2790,7 @@ static switch_status_t voicemail_inject(const char *data)
 				status = SWITCH_STATUS_FALSE;
 			}
 		}
+		switch_thread_rwlock_unlock(profile->rwlock);
 		
 		switch_core_destroy_memory_pool(&pool);
 
@@ -2737,12 +2804,11 @@ static switch_status_t voicemail_inject(const char *data)
 	return status;
 }
 
-static switch_status_t voicemail_leave_main(switch_core_session_t *session, const char *profile_name, const char *domain_name, const char *id)
+static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_profile_t *profile, const char *domain_name, const char *id)
 {
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	char sql[256];
 	prefs_callback_t cbt;
-	vm_profile_t *profile;
 	char *uuid = switch_core_session_get_uuid(session);
 	char *file_path = NULL;
 	char *dir_path = NULL;
@@ -2789,10 +2855,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	}
 
 	memset(&cbt, 0, sizeof(cbt));
-	if (!(profile = switch_core_hash_find(globals.profile_hash, profile_name))) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
-		return SWITCH_STATUS_FALSE;
-	}
 
 	if (id) {
 		int ok = 1;
@@ -2934,7 +2996,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, cons
 	if (*buf != '\0') {
   greet_key_press:
 		if (switch_stristr(buf, profile->login_keys)) {
-			voicemail_check_main(session, profile_name, domain_name, id, 0);
+			voicemail_check_main(session, profile, domain_name, id, 0);
 		} else if (!strcasecmp(buf, profile->operator_key) && !switch_strlen_zero(profile->operator_key)) {
 			int argc;
 			char *argv[4];
@@ -3075,6 +3137,7 @@ SWITCH_STANDARD_APP(voicemail_function)
 	int argc = 0;
 	char *argv[6] = { 0 };
 	char *mydata = NULL;
+	vm_profile_t * profile = NULL;
 	const char *profile_name = NULL;
 	const char *domain_name = NULL;
 	const char *id = NULL;
@@ -3132,11 +3195,19 @@ SWITCH_STANDARD_APP(voicemail_function)
 		return;
 	}
 
-	if (check) {
-		voicemail_check_main(session, profile_name, domain_name, id, auth);
-	} else {
-		voicemail_leave_main(session, profile_name, domain_name, id);
+	if (!(profile = get_profile(profile_name))) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error invalid profile %s\n", profile_name);
+		return;
 	}
+
+	if (check) {
+		voicemail_check_main(session, profile, domain_name, id, auth);
+	} else {
+		voicemail_leave_main(session, profile, domain_name, id);
+	}
+
+	switch_thread_rwlock_unlock(profile->rwlock);
+	
 }
 
 #define BOXCOUNT_SYNTAX "<user>@<domain>[|[new|saved|new-urgent|saved-urgent|all]]"
@@ -3174,7 +3245,7 @@ SWITCH_STANDARD_API(boxcount_api_function)
 				*p++ = '\0';
 				how = p;
 			}
-
+			switch_mutex_lock(globals.mutex);
 			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 				switch_hash_this(hi, NULL, NULL, &val);
 				profile = (vm_profile_t *) val;
@@ -3182,6 +3253,7 @@ SWITCH_STANDARD_API(boxcount_api_function)
 				message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
 							  &total_new_urgent_messages, &total_saved_urgent_messages);
 			}
+			switch_mutex_unlock(globals.mutex);
 		}
 
 		switch_safe_free(dup);
@@ -3206,21 +3278,20 @@ SWITCH_STANDARD_API(boxcount_api_function)
 		total_new_messages = total_saved_messages = 0;					\
 		message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,	\
 					  &total_new_urgent_messages, &total_saved_urgent_messages); \
-		if (total_new_messages || total_saved_messages) {\
+		if (total_new_messages || total_saved_messages) {				\
 			if (switch_event_create(&new_event, SWITCH_EVENT_MESSAGE_WAITING) == SWITCH_STATUS_SUCCESS) { \
 				const char *yn = "no";									\
 				if (total_new_messages || total_new_urgent_messages) {	\
 					yn = "yes";											\
 				}														\
-				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);\
+				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Messages-Waiting", yn);	\
 				switch_event_add_header_string(new_event, SWITCH_STACK_BOTTOM, "MWI-Message-Account", account); \
 				switch_event_add_header(new_event, SWITCH_STACK_BOTTOM, "MWI-Voice-Message", "%d/%d (%d/%d)", \
-										total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages); \
+										+total_new_messages, total_saved_messages, total_new_urgent_messages, total_saved_urgent_messages); \
 				created++;												\
 			}															\
 		}																\
 	}
-
 
 
 static void message_query_handler(switch_event_t *event)
@@ -3246,12 +3317,11 @@ static void message_query_handler(switch_event_t *event)
 		if (!strncasecmp(account, "sip:", 4)) {
 			id += 4;
 		}
-		
+
 		if (!id) {
 			free(dup);
 			return;
 		}
-
 
 		if ((domain = strchr(id, '@'))) {
 			*domain++ = '\0';
@@ -3269,9 +3339,9 @@ static void message_query_handler(switch_event_t *event)
 				}
 			}
 		}
-		
+
 		switch_safe_free(dup);
-		
+
 	}
 
 	if (!created) {
@@ -3296,7 +3366,6 @@ static void message_query_handler(switch_event_t *event)
 
 }
 
-#define VOICEMAIL_SYNTAX "rss [<host> <port> <uri> <user> <domain>]"
 
 struct holder {
 	vm_profile_t *profile;
@@ -3731,6 +3800,7 @@ SWITCH_STANDARD_API(voicemail_inject_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define VOICEMAIL_SYNTAX "rss [<host> <port> <uri> <user> <domain>] | [load|unload|reload] <profile> [reloadxml]"
 SWITCH_STANDARD_API(voicemail_api_function)
 {
 	int argc = 0;
@@ -3741,6 +3811,11 @@ SWITCH_STANDARD_API(voicemail_api_function)
 	vm_profile_t *profile = NULL;
 	char *path_info = NULL;
 	int rss = 0, xarg = 0;
+	switch_hash_index_t *hi;
+	void *val = NULL;
+	switch_xml_t xml_root;
+	const char *err;
+
 
 	if (session) {
 		return SWITCH_STATUS_FALSE;
@@ -3765,6 +3840,47 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		if (!strcasecmp(argv[0], "rss")) {
 			rss++;
 			xarg++;
+		} else if (argc > 1 && !strcasecmp(argv[0], "load")) {
+			if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
+				if ((xml_root = switch_xml_open_root(1, &err))) {
+					switch_xml_free(xml_root);
+				}
+				stream->write_function(stream, "Reload XML [%s]\n", err);
+			}
+			if ((profile = get_profile(argv[1]))) {
+				switch_thread_rwlock_unlock(profile->rwlock);
+			}
+			stream->write_function(stream, "+OK load complete\n");
+			goto done;
+		} else if (argc > 1 && !strcasecmp(argv[0], "unload")) {
+			destroy_profile(argv[1]);
+			stream->write_function(stream, "+OK unload complete\n");
+			goto done;
+		} else if (argc > 1 && !strcasecmp(argv[0], "reload")) {
+			destroy_profile(argv[1]);
+			if (argc > 2 && !strcasecmp(argv[2], "reloadxml")) {
+				if ((xml_root = switch_xml_open_root(1, &err))) {
+					switch_xml_free(xml_root);
+				}
+				stream->write_function(stream, "Reload XML [%s]\n", err);
+			}
+			if ((profile = get_profile(argv[1]))) {
+				switch_thread_rwlock_unlock(profile->rwlock);
+			}
+			stream->write_function(stream, "+OK reload complete\n");
+			goto done;
+			
+		} else if (!strcasecmp(argv[0], "status")) {
+			stream->write_function(stream, "============================\n");
+			switch_mutex_lock(globals.mutex);
+			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				switch_hash_this(hi, NULL, NULL, &val);
+				profile = (vm_profile_t *) val;
+				stream->write_function(stream, "Profile: %s\n", profile->name);
+			}
+			switch_mutex_unlock(globals.mutex);
+			stream->write_function(stream, "============================\n");
+			goto done;
 		}
 	}
 
@@ -3783,23 +3899,24 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		goto error;
 	}
 
-	profile = switch_core_hash_find(globals.profile_hash, domain);
-
-	if (!profile) {
-		profile = switch_core_hash_find(globals.profile_hash, "default");
+	if (!(profile = get_profile(domain))) {
+		profile = get_profile("default");
 	}
 
 	if (!profile) {
 		switch_hash_index_t *hi;
 		void *val;
 
+		switch_mutex_lock(globals.mutex);
 		for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
 			switch_hash_this(hi, NULL, NULL, &val);
 			profile = (vm_profile_t *) val;
 			if (profile) {
+				switch_thread_rwlock_rdlock(profile->rwlock);
 				break;
 			}
 		}
+		switch_mutex_unlock(globals.mutex);
 	}
 
 	if (!profile) {
@@ -3821,6 +3938,7 @@ SWITCH_STANDARD_API(voicemail_api_function)
 		do_rss(profile, user, domain, host, port, uri, stream);
 	}
 
+	switch_thread_rwlock_unlock(profile->rwlock);
 	goto done;
 
   error:
@@ -3849,6 +3967,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 		return SWITCH_STATUS_TERM;
 	}
 
+	memset(&globals, 0, sizeof(globals));
+	globals.pool = pool;
+
+	switch_core_hash_init(&globals.profile_hash, globals.pool);
+	switch_mutex_init(&globals.mutex, SWITCH_MUTEX_NESTED, globals.pool);
+
+
 	if ((status = load_config()) != SWITCH_STATUS_SUCCESS) {
 		return status;
 	}
@@ -3866,9 +3991,47 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 	SWITCH_ADD_API(commands_api_interface, "voicemail_inject", "voicemail_inject", voicemail_inject_api_function, VM_INJECT_USAGE);
 	SWITCH_ADD_API(commands_api_interface, "vm_boxcount", "vm_boxcount", boxcount_api_function, BOXCOUNT_SYNTAX);
 
-	/* indicate that the module should continue to be loaded */
-	return SWITCH_STATUS_NOUNLOAD;
+
+	return SWITCH_STATUS_SUCCESS;
 }
+
+
+SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_voicemail_shutdown)
+{
+	switch_hash_index_t *hi;
+	vm_profile_t *profile;
+	void *val = NULL;
+	const void *key;
+	switch_ssize_t keylen;
+
+	switch_event_free_subclass(VM_EVENT_MAINT);
+	switch_event_unbind_callback(message_query_handler);
+
+	switch_mutex_lock(globals.mutex);
+	while((hi = switch_hash_first(NULL, globals.profile_hash))) {
+		switch_hash_this(hi, &key, &keylen, &val);
+		profile = (vm_profile_t *) val;
+		
+		switch_core_hash_delete(globals.profile_hash, profile->name);
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Waiting for write lock (Profile %s)\n", profile->name);	
+		switch_thread_rwlock_wrlock(profile->rwlock);
+		
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying Profile %s\n", profile->name);
+#ifdef SWITCH_HAVE_ODBC
+		if (profile->odbc_dsn && profile->master_odbc) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Closing ODBC Database! %s\n", profile->name);
+			switch_odbc_handle_destroy(&profile->master_odbc);
+		}
+#endif
+		switch_core_destroy_memory_pool(&profile->pool);
+		profile = NULL;
+	}
+	switch_mutex_unlock(globals.mutex);
+
+	return SWITCH_STATUS_SUCCESS;
+}
+
 
 /* For Emacs:
  * Local Variables:
