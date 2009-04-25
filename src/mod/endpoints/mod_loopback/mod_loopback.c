@@ -702,6 +702,11 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				switch_frame_t *frame = (switch_frame_t *) pop;
 				switch_frame_free(&frame);
 			}
+			/* avoid endless loop by not forwarding it when it came from this same place */
+			if (tech_pvt->other_session && strcmp(msg->_file, __FILE__)) {
+				/* pass message over to the other leg */
+				switch_core_session_receive_message(tech_pvt->other_session, msg);
+			}
 		}
 		break;
     default:
