@@ -416,8 +416,16 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 	fh->channels = read_impl.number_of_channels;
 	fh->native_rate = read_impl.actual_samples_per_second;
 
-	if ((vval = switch_channel_get_variable(channel, "record_waste_resources")) && switch_true(vval)) {
+	if ((vval = switch_channel_get_variable(channel, "record_waste_resources"))) {
 	
+		if (switch_true(vval)) {
+			waste_resources = 1400;
+		} else {
+			if ((waste_resources = atoi(vval)) < 0) {
+				waste_resources = 0;
+			}
+		}
+
 		if (switch_core_codec_init(&write_codec,
 								   "L16",
 								   NULL,
@@ -435,8 +443,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		} else {
 			return SWITCH_STATUS_FALSE;
 		}
-
-		waste_resources = 1;
 	}
 	
 	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
@@ -660,6 +666,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 		}
 
 		if (waste_resources) {
+			switch_generate_sln_silence((int16_t *) write_frame.data, write_frame.samples, waste_resources);
 			if (switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0) != SWITCH_STATUS_SUCCESS) {
 				break;
 			}
