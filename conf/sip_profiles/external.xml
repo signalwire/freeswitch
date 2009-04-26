@@ -24,7 +24,6 @@
     <param name="dtmf-duration" value="100"/>
     <param name="codec-prefs" value="$${outbound_codec_prefs}"/>
     <param name="hold-music" value="$${hold_music}"/>
-    <param name="use-rtp-timer" value="true"/>
     <param name="rtp-timer-name" value="soft"/>
     <!--<param name="enable-100rel" value="true"/>-->
     <!-- This could be set to "passive" -->
