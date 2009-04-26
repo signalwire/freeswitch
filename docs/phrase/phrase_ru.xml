@@ -32,7 +32,7 @@
 		<prompt phrase="Y" filename="121.wav"/>
 		<prompt phrase="Z" filename="122.wav"/>
     </ascii>
-	<phonetic>
+	<phonetic-ascii>
 		<prompt phrase="Пробел" filename="32.wav"/>
 		<prompt phrase="Точка" filename="46.wav"/>
 		<prompt phrase="Alpha" filename="97.wav"/>
@@ -61,7 +61,7 @@
 		<prompt phrase="Xray" filename="120.wav"/>
 		<prompt phrase="Yankee" filename="121.wav"/>
 		<prompt phrase="Zulu" filename="122.wav"/>
-	</phonetic>
+	</phonetic-ascii>
 	<digits>
 		<prompt phrase="ноль" filename="0.wav"/>
 		<prompt phrase="нулевая" filename="h-0f.wav"/>
@@ -390,7 +390,7 @@
 		<prompt phrase="новых срочных" filename="vm-urgent-newx.wav"/><!-- urgent new   -->
 		<prompt phrase="новое срочное" filename="vm-urgent-new.wav"/><!--    -->
 		<prompt phrase="новое" filename="vm-new.wav"/><!-- new   -->
-		<prompt phrase="новых" filename="vm-newx .wav"/><!--    -->
+		<prompt phrase="новых" filename="vm-newx.wav"/><!--    -->
 		<prompt phrase="срочное сообщение сохранено" filename="vm-urgent-saved.wav"/><!--urgent saved    -->
 		<prompt phrase="сохранено" filename="vm-saved.wav"/><!--saved    -->
 		<prompt phrase="сообщение" filename="vm-message.wav"/><!--message    -->
