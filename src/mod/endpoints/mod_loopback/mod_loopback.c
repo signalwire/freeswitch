@@ -187,7 +187,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_core_session_set_private(session, tech_pvt);
-		switch_queue_create(&tech_pvt->frame_queue, 50000, switch_core_session_get_pool(session));
+		switch_queue_create(&tech_pvt->frame_queue, 3, switch_core_session_get_pool(session));
 		tech_pvt->session = session;
 		tech_pvt->channel = switch_core_session_get_channel(session);
 	}
@@ -503,7 +503,7 @@ static switch_status_t channel_on_consume_media(switch_core_session_t *session)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "CHANNEL CONSUME_MEDIA\n");
 
-	return SWITCH_STATUS_FALSE;
+	return SWITCH_STATUS_SUCCESS;
 }
 
 static switch_status_t channel_send_dtmf(switch_core_session_t *session, const switch_dtmf_t *dtmf)
@@ -548,9 +548,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		goto end;
 	}
 
-	if (!switch_queue_size(tech_pvt->frame_queue)) {
-		switch_core_timer_next(&tech_pvt->timer);
-	}
+	switch_core_timer_next(&tech_pvt->timer);
 	
 	if (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		if (tech_pvt->write_frame) {
@@ -669,8 +667,11 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		if (switch_frame_dup(frame, &clone) != SWITCH_STATUS_SUCCESS) {
 			abort();
 		}
+
+		if (switch_queue_trypush(tech_pvt->other_tech_pvt->frame_queue, clone) != SWITCH_STATUS_SUCCESS) {
+			switch_frame_free(&clone);
+		}
 		
-		switch_queue_push(tech_pvt->other_tech_pvt->frame_queue, clone);
 		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
 		status = SWITCH_STATUS_SUCCESS;
 	}
@@ -727,10 +728,10 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				switch_frame_t *frame = (switch_frame_t *) pop;
 				switch_frame_free(&frame);
 			}
-			/* avoid endless loop by not forwarding it when it came from this same place */
-			if (tech_pvt->other_session && strcmp(msg->_file, __FILE__)) {
-				/* pass message over to the other leg */
-				switch_core_session_receive_message(tech_pvt->other_session, msg);
+
+			while (switch_queue_trypop(tech_pvt->other_tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
+				switch_frame_t *frame = (switch_frame_t *) pop;
+				switch_frame_free(&frame);
 			}
 		}
 		break;

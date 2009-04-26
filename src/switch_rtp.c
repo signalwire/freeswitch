@@ -31,6 +31,7 @@
  *
  */
 //#define DEBUG_2833
+#define RTP_DEBUG_WRITE_DELTA
 #include <switch.h>
 #include <switch_stun.h>
 #undef PACKAGE_NAME
@@ -203,6 +204,11 @@ struct switch_rtp {
 	uint32_t cng_count;
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_rtp_stats_t stats;
+
+#ifdef RTP_DEBUG_WRITE_DELTA
+	switch_time_t send_time;
+#endif
+
 };
 
 static int global_init = 0;
@@ -2228,6 +2234,18 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 			bytes = sbytes;
 		}
+
+#undef RTP_DEBUG_WRITE_DELTA
+#ifdef RTP_DEBUG_WRITE_DELTA
+		{
+			switch_time_t now = switch_time_now();
+			int delta = (int) (now - rtp_session->send_time) / 1000;
+			//assert(delta);
+			//printf("WRITE %d delta %d\n", (int)bytes, delta);
+			rtp_session->send_time = now;
+		}
+#endif
+
 
 		if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) send_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 			rtp_session->seq--;
