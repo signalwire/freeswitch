@@ -84,12 +84,17 @@
 (global-unset-key "\C-b" )
 (global-set-key "\C-b" 'backward-word)
 (global-unset-key "\M-f" )
+
+
 (global-set-key "\M-f" 'find-file)
 (global-set-key "\M-o" 'find-file-other-window)
 (global-set-key "\M-\\" 'mark-word)
-(global-set-key "\M-[" 'mark-whole-buffer)
-(global-unset-key "\M-]")
-(global-set-key "\M-]" 'indent-region)
+(global-set-key "\M-{" 'mark-whole-buffer)
+;(global-unset-key "\M-}")
+
+
+
+(global-set-key "\M-}" 'indent-region)
 (global-set-key "\C-x\C-m" 'save-buffer)
 (global-set-key "\C-c\C-m" 'delete-other-windows)
 (global-set-key "\C-c\'" 'split-window-vertically)
