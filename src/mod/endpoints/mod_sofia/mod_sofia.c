@@ -2908,6 +2908,8 @@ static void general_event_handler(switch_event_t *event)
 			const char *to_uri = switch_event_get_header(event, "to-uri");
 			const char *local_user_full = switch_event_get_header(event, "local-user");
 			const char *from_uri = switch_event_get_header(event, "from-uri");
+			const char *call_info = switch_event_get_header(event, "call-info");
+			const char *alert_info = switch_event_get_header(event, "alert-info");
 			const char *body = switch_event_get_body(event);
 			sofia_profile_t *profile = NULL;
 			nua_handle_t *nh;
@@ -2972,7 +2974,9 @@ static void general_event_handler(switch_event_t *event)
 
 			nua_info(nh,
 					 NUTAG_WITH_THIS(profile->nua),
-					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)), 
+					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)),
+					 TAG_IF(alert_info, SIPTAG_ALERT_INFO_STR(alert_info)),
+					 TAG_IF(call_info, SIPTAG_ALERT_INFO_STR(call_info)),
 					 TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
 					 TAG_END());
 

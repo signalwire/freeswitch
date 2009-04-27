@@ -35,9 +35,7 @@
  *
  */
 #include "mod_sofia.h"
-#include "sofia-sip/msg_parser.h"
-#include "sofia-sip/sip_extra.h"
-#include "sofia-sip/tport_tag.h"
+
 
 extern su_log_t tport_log[];
 extern su_log_t iptsec_log[];
@@ -4010,7 +4008,8 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 
 
 	if (switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS) {
-		
+		sip_alert_info_t *alert_info = sip_alert_info(sip);
+
 		if (sip && sip->sip_content_type) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Content-Type", sip->sip_content_type->c_type);
 		}
@@ -4045,6 +4044,16 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "SIP-Contact-Host", sip->sip_contact->m_url->url_host);
 			}
 		}
+
+
+		if (sip->sip_call_info) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Call-Info", sip_header_as_string(nua_handle_home(nh), (void *) sip->sip_call_info));
+		}
+
+		if (alert_info) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Alert-Info", sip_header_as_string(nua_handle_home(nh), (void *) alert_info));
+		}
+
 
 		if (sip->sip_payload && sip->sip_payload->pl_data) {
 			switch_event_add_body(event, "%s", sip->sip_payload->pl_data);

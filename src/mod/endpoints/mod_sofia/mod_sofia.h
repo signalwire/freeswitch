@@ -107,6 +107,10 @@ typedef struct private_object private_object_t;
 #include <sofia-sip/tport_tag.h>
 #include <sofia-sip/sip_extra.h>
 #include "nua_stack.h"
+#include "sofia-sip/msg_parser.h"
+#include "sofia-sip/sip_parser.h"
+#include "sofia-sip/tport_tag.h"
+
 
 typedef enum {
 	DTMF_2833,
