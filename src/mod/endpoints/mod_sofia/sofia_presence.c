@@ -634,11 +634,15 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								  event->event_id == SWITCH_EVENT_PRESENCE_IN ? "IN" : "OUT", profile->name);
 			}
 
-			if (mod_sofia_globals.debug_presence > 1) {
+			if (mod_sofia_globals.debug_presence) {
 				char *buf;
 				switch_event_serialize(event, &buf, SWITCH_FALSE);
 				switch_assert(buf);
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DUMP PRESENCE SQL:\n%s\nEVENT DUMP:\n%s\n", sql, buf);
+				if (mod_sofia_globals.debug_presence > 1) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "DUMP PRESENCE SQL:\n%s\nEVENT DUMP:\n%s\n", sql, buf);
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "EVENT DUMP:\n%s\n", buf);
+				}
 				free(buf);
 			}
 
@@ -946,16 +950,18 @@ static char *translate_rpid(char *in)
 
 static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *rpid, char *prpid, char *status, const char **ct)
 {
+	char *ret = NULL;
+
 	if (switch_stristr("polycom", user_agent)) {
 		*ct = "application/xpidf+xml";
-
+		
 		/* of course!, lets make a big deal over dashes. Now the stupidity is complete. */
 
 		if (!strcmp(prpid, "on-the-phone")) {
 			prpid = "onthephone";
 		}
 
-		return switch_mprintf(
+		ret = switch_mprintf(
 							  "<?xml version=\"1.0\"?>\n"
 							  "<!DOCTYPE presence PUBLIC \"-//IETF//DTD RFCxxxx XPIDF 1.0//EN\" \"xpidf.dtd\">\n"
 							  "<presence>\n"
@@ -973,7 +979,7 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							  );
 	} else {
 		*ct = "application/pidf+xml";
-		return switch_mprintf(
+		ret = switch_mprintf(
 							  "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> \n"
 							  "<presence xmlns='urn:ietf:params:xml:ns:pidf' \n"
 							  "xmlns:dm='urn:ietf:params:xml:ns:pidf:data-model' \n"
@@ -993,6 +999,9 @@ static char *gen_pidf(char *user_agent, char *id, char *url, char *open, char *r
 							  " </dm:person>\n"
 							  "</presence>", id, open, prpid, status);
 	}
+
+
+	return ret;
 }
 
 static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char **columnNames)
@@ -1304,6 +1313,12 @@ static int sofia_presence_sub_callback(void *pArg, int argc, char **argv, char *
 			nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, delta, delta);
 		}
 	}
+
+	if (mod_sofia_globals.debug_presence > 0 && pl) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "send payload:\n%s\n", pl);
+	}
+
+
 
 	nua_notify(nh, 
 			   TAG_IF(*expires_str, SIPTAG_EXPIRES_STR(expires_str)),

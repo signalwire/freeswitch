@@ -1114,7 +1114,7 @@ SWITCH_STANDARD_API(presence_api_function)
 			goto error;
 		}
 
-		if (argc != need) {
+		if (argc < need) {
 			goto error;
 		}
 
@@ -1122,12 +1122,19 @@ SWITCH_STANDARD_API(presence_api_function)
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", "dp");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", __FILE__);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", argv[1]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", argv[2]);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", argv[3]);
 			if (type == SWITCH_EVENT_PRESENCE_IN) {
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "rpid", argv[2]);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", argv[3]);
+				if (!strncasecmp(argv[3], "cs_", 3) || switch_stristr("hangup", argv[3])) {
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+					switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "CS_HANGUP");
+				}
+			} else {
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", "CS_HANGUP");
 			}
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", 0);
 			switch_event_fire(&event);
 		}
 		stream->write_function(stream, "Event Sent");

@@ -443,7 +443,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 					
 					switch_channel_set_variable(session->channel, "hangup_cause", switch_channel_cause2str(cause));
 					switch_channel_set_variable_printf(session->channel, "hangup_cause_q850", "%d", cause_q850);
-					switch_channel_presence(session->channel, "unavailable", switch_channel_cause2str(cause), NULL);
+					switch_channel_presence(session->channel, "unknown", switch_channel_cause2str(cause), NULL);
 					
 					switch_channel_set_timestamps(session->channel);
 					
