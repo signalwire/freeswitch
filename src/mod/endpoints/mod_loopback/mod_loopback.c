@@ -36,6 +36,8 @@
 #include <math.h>
 #include <string.h>
 
+#define FRAME_QUEUE_LEN 3
+
 SWITCH_MODULE_LOAD_FUNCTION(mod_loopback_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_loopback_shutdown);
 SWITCH_MODULE_DEFINITION(mod_loopback, mod_loopback_load, mod_loopback_shutdown, NULL);
@@ -187,7 +189,7 @@ static switch_status_t tech_init(private_t *tech_pvt, switch_core_session_t *ses
 		switch_mutex_init(&tech_pvt->flag_mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_mutex_init(&tech_pvt->mutex, SWITCH_MUTEX_NESTED, switch_core_session_get_pool(session));
 		switch_core_session_set_private(session, tech_pvt);
-		switch_queue_create(&tech_pvt->frame_queue, 3, switch_core_session_get_pool(session));
+		switch_queue_create(&tech_pvt->frame_queue, FRAME_QUEUE_LEN, switch_core_session_get_pool(session));
 		tech_pvt->session = session;
 		tech_pvt->channel = switch_core_session_get_channel(session);
 	}
@@ -658,18 +660,21 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 
 	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
 		switch_frame_t *clone;
+
 		if (frame->codec->implementation != tech_pvt->write_codec.implementation) {
 			/* change codecs to match */
 			tech_init(tech_pvt, session, frame->codec);
 			tech_init(tech_pvt->other_tech_pvt, tech_pvt->other_session, frame->codec);
 		}
 
-		if (switch_frame_dup(frame, &clone) != SWITCH_STATUS_SUCCESS) {
-			abort();
-		}
+		if (switch_queue_size(tech_pvt->other_tech_pvt->frame_queue) < FRAME_QUEUE_LEN) {
+			if (switch_frame_dup(frame, &clone) != SWITCH_STATUS_SUCCESS) {
+				abort();
+			}
 
-		if (switch_queue_trypush(tech_pvt->other_tech_pvt->frame_queue, clone) != SWITCH_STATUS_SUCCESS) {
-			switch_frame_free(&clone);
+			if (switch_queue_trypush(tech_pvt->other_tech_pvt->frame_queue, clone) != SWITCH_STATUS_SUCCESS) {
+				switch_frame_free(&clone);
+			}
 		}
 		
 		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
