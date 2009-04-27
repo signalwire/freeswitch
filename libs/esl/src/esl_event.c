@@ -524,7 +524,7 @@ ESL_DECLARE(esl_status_t) esl_event_serialize(esl_event_t *event, char **str, es
 		}
 		
 		if (blen) {
-			snprintf(buf + len, dlen - len, "\n%s", event->body);
+			snprintf(buf + len, dlen - len, "Content-Length: %d\n\n%s", (int)strlen(event->body), event->body);
 		} else {
 			snprintf(buf + len, dlen - len, "\n");
 		}
