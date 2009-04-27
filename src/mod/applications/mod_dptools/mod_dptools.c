@@ -1094,20 +1094,28 @@ SWITCH_STANDARD_API(strftime_api_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+
+#define PRESENCE_USAGE "[in|out] <user> <rpid> <message>"
 SWITCH_STANDARD_API(presence_api_function)
 {
 	switch_event_t *event;
 	char *lbuf, *argv[4];
 	int argc = 0;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
+	int need = 4;
 
 	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
-		&& (argc = switch_separate_string(lbuf, '|', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
+		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) > 0) {
+
 		if (!strcasecmp(argv[0], "out")) {
 			type = SWITCH_EVENT_PRESENCE_OUT;
-		} else if (argc != 4) {
-			stream->write_function(stream, "Invalid");
-			return SWITCH_STATUS_SUCCESS;
+			need = 2;
+		} else if (strcasecmp(argv[0], "in")) {
+			goto error;
+		}
+
+		if (argc != need) {
+			goto error;
 		}
 
 		if (switch_event_create(&event, type) == SWITCH_STATUS_SUCCESS) {
@@ -1119,14 +1127,22 @@ SWITCH_STANDARD_API(presence_api_function)
 				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "status", argv[3]);
 			}
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event_type", "presence");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "alt_event_type", "dialog");
 			switch_event_fire(&event);
 		}
 		stream->write_function(stream, "Event Sent");
 		switch_safe_free(lbuf);
 	} else {
-		stream->write_function(stream, "Invalid");
+		goto error;
 	}
+
 	return SWITCH_STATUS_SUCCESS;
+
+ error:
+
+	stream->write_function(stream, "Invalid: presence %s", PRESENCE_USAGE);
+	return SWITCH_STATUS_SUCCESS;
+
 }
 
 SWITCH_STANDARD_API(chat_api_function)
@@ -2599,7 +2615,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dptools_load)
 	SWITCH_ADD_API(api_interface, "strepoch", "Convert a date string into epoch time", strepoch_api_function, "<string>");
 	SWITCH_ADD_API(api_interface, "chat", "chat", chat_api_function, "<proto>|<from>|<to>|<message>|[<content-type>]");
 	SWITCH_ADD_API(api_interface, "strftime", "strftime", strftime_api_function, "<format_string>");
-	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, "<user> <rpid> <message>");
+	SWITCH_ADD_API(api_interface, "presence", "presence", presence_api_function, PRESENCE_USAGE);
 	SWITCH_ADD_APP(app_interface, "privacy", "Set privacy on calls", "Set caller privacy on calls.", privacy_function, "off|on|name|full|number",
 				   SAF_SUPPORT_NOMEDIA);
 
