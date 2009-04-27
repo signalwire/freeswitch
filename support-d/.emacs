@@ -178,7 +178,7 @@
        ;; Customize face attributes
        (setq font-lock-face-attributes
              ;; Symbol-for-Face Foreground Background Bold Italic Underline
-             '((font-lock-comment-face       "DarkGreen")
+             '((font-lock-comment-face       "green")
 	       (font-lock-preprocessor-face       "gray")
                (font-lock-string-face        "Sienna")
                (font-lock-keyword-face       "purple")
@@ -186,6 +186,13 @@
                (font-lock-variable-name-face "Yellow")
                (font-lock-type-face          "Yellow")
                (font-lock-reference-face     "Purple")
+
+	       (font-lock-builtin-face "limegreen")
+	       (font-lock-constant-face "yellow")
+	       (font-lock-doc-face "limegreen")
+	       (font-lock-highlighting-face "limegreen")
+	       (font-lock-warning-face "limegreen")
+
                ))
        ;; Load the font-lock package.
        (require 'font-lock)
@@ -194,6 +201,10 @@
        ;; Turn on font-lock in all modes that support it
        (global-font-lock-mode t)))
 
+
+
+
+ 
 
 
 
