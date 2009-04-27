@@ -764,7 +764,7 @@ SWITCH_DECLARE(void) switch_channel_wait_for_state(switch_channel_t *channel, sw
 		state = switch_channel_get_running_state(other_channel);
 		mystate = switch_channel_get_running_state(channel);
 
-		if (mystate != ostate || state >= CS_HANGUP || state == want_state) {
+		if (mystate != ostate || state >= CS_HANGUP || state >= want_state) {
 			break;
 		}
 		switch_cond_next();

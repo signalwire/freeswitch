@@ -75,6 +75,19 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 	return session;
 }
 
+SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_session_t *session, switch_core_session_t **partner)
+{
+	const char *uuid;
+	
+	if ((uuid = switch_channel_get_variable(session->channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
+		*partner = switch_core_session_locate(uuid);
+		return SWITCH_STATUS_SUCCESS;
+	}
+
+	*partner = NULL;
+	return SWITCH_STATUS_FALSE;
+}
+
 
 SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(const char *var_name, const char *var_val, switch_call_cause_t cause)
 {
