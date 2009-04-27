@@ -640,21 +640,27 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		) {
 		const char *a_uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE);
 		const char *b_uuid = switch_channel_get_variable(tech_pvt->other_channel, SWITCH_SIGNAL_BOND_VARIABLE);
-				
+		const char *vetoa, *vetob;
+
 		switch_set_flag_locked(tech_pvt, TFLAG_BOWOUT);
 		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_BOWOUT);
-				
-		switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
-		switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
-				
-		if (a_uuid && b_uuid) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-							  "%s detected bridge on both ends, attempting direct connection.\n", switch_channel_get_name(channel));
 
-			/* channel_masquerade eat your heart out....... */
-			switch_ivr_uuid_bridge(a_uuid, b_uuid);
-			switch_mutex_unlock(tech_pvt->mutex);
-			return SWITCH_STATUS_SUCCESS;
+		vetoa = switch_channel_get_variable(tech_pvt->channel, "loopback_bowout");
+		vetob = switch_channel_get_variable(tech_pvt->other_tech_pvt->channel, "loopback_bowout");
+		
+		if ((!vetoa || switch_true(vetoa)) && (!vetob || switch_true(vetob))) {
+			switch_clear_flag_locked(tech_pvt, TFLAG_WRITE);
+			switch_clear_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
+			
+			if (a_uuid && b_uuid) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
+								  "%s detected bridge on both ends, attempting direct connection.\n", switch_channel_get_name(channel));
+				
+				/* channel_masquerade eat your heart out....... */
+				switch_ivr_uuid_bridge(a_uuid, b_uuid);
+				switch_mutex_unlock(tech_pvt->mutex);
+				return SWITCH_STATUS_SUCCESS;
+			}
 		}
 	}
 
@@ -675,9 +681,10 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 			if (switch_queue_trypush(tech_pvt->other_tech_pvt->frame_queue, clone) != SWITCH_STATUS_SUCCESS) {
 				switch_frame_free(&clone);
 			}
+
+			switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
 		}
 		
-		switch_set_flag_locked(tech_pvt->other_tech_pvt, TFLAG_WRITE);
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
