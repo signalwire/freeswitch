@@ -557,6 +557,88 @@ SWITCH_STANDARD_API(stop_local_stream_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define SHOW_LOCAL_STREAM_SYNTAX "[local_stream_name [xml]]"
+SWITCH_STANDARD_API(show_local_stream_function)
+{
+	local_stream_source_t *source = NULL;
+	char *mycmd = NULL, *argv[2] = { 0 };
+	char *local_stream_name = NULL;
+	int argc = 0;
+	switch_hash_index_t *hi;
+	const void *var;
+	void *val;
+	switch_bool_t xml = SWITCH_FALSE;
+
+	switch_mutex_lock(globals.mutex);
+
+	if (switch_strlen_zero(cmd)) {
+		for (hi = switch_hash_first(NULL, globals.source_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, &var, NULL, &val);
+			if ((source = (local_stream_source_t *) val)) {
+				stream->write_function(stream, "%s,%s\n", source->name, source->location);
+			}
+		}
+	} else {
+		if (!(mycmd = strdup(cmd))) {
+			goto usage;
+		}
+
+		if ((argc = switch_separate_string(mycmd, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			local_stream_name = argv[0];
+			if (argc > 1 && !strcasecmp("xml", argv[1])) {
+				xml = SWITCH_TRUE;
+			}
+		}
+		
+		source = switch_core_hash_find(globals.source_hash, local_stream_name);
+		if (source) {
+			if (xml) {
+				stream->write_function(stream, "<?xml version=\"1.0\"?>\n<local_stream name=\"%s\">\n", source->name);
+				stream->write_function(stream, "  <location>%s</location>\n", source->location);
+				stream->write_function(stream, "  <channels>%d</channels>\n", source->channels);
+				stream->write_function(stream, "  <rate>%d</rate>\n", source->rate);
+				stream->write_function(stream, "  <interval>%d<interval>\n", source->interval);
+				stream->write_function(stream, "  <samples>%d</samples>\n", source->samples);
+				stream->write_function(stream, "  <prebuf>%d</prebuf>\n", source->prebuf);
+				stream->write_function(stream, "  <timer>%s</timer>\n", source->timer_name);
+				stream->write_function(stream, "  <total>%d</total>\n", source->total);
+				stream->write_function(stream, "  <shuffle>%s</shuffle>\n", (source->shuffle) ? "true" : "false");
+				stream->write_function(stream, "  <ready>%s</ready>\n", (source->ready) ? "true" : "false");
+				stream->write_function(stream, "  <stopped>%s</stopped>\n", (source->stopped) ? "true" : "false");
+				stream->write_function(stream, "</local_stream>\n");
+			} else {
+				stream->write_function(stream, "%s\n", source->name);
+				stream->write_function(stream, "  location: %s\n", source->location);
+				stream->write_function(stream, "  channels: %d\n", source->channels);
+				stream->write_function(stream, "  rate:     %d\n", source->rate);
+				stream->write_function(stream, "  interval: %d\n", source->interval);
+				stream->write_function(stream, "  samples:  %d\n", source->samples);
+				stream->write_function(stream, "  prebuf:   %d\n", source->prebuf);
+				stream->write_function(stream, "  timer:    %s\n", source->timer_name);
+				stream->write_function(stream, "  total:    %d\n", source->total);
+				stream->write_function(stream, "  shuffle:  %s\n", (source->shuffle) ? "true" : "false");
+				stream->write_function(stream, "  ready:    %s\n", (source->ready) ? "true" : "false");
+				stream->write_function(stream, "  stopped:  %s\n", (source->stopped) ? "true" : "false");
+			}
+		} else {
+			stream->write_function(stream, "-ERR Cannot locate local_stream %s!\n",local_stream_name);
+			goto done;
+		}
+	}
+
+	stream->write_function(stream,"+OK");
+	goto done;
+
+ usage:
+	stream->write_function(stream, "-USAGE: %s\n", SHOW_LOCAL_STREAM_SYNTAX);
+
+ done:
+
+	switch_mutex_unlock(globals.mutex);
+	switch_safe_free(mycmd);
+	return SWITCH_STATUS_SUCCESS;
+}
+
 #define START_LOCAL_STREAM_SYNTAX "<local_stream_name> [<path>] [<rate>] [<shuffle>] [<prebuf>] [<channels>] [<interval>] [<timer_name>]"
 SWITCH_STANDARD_API(start_local_stream_function)
 {
@@ -758,6 +840,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_local_stream_load)
 
 	SWITCH_ADD_API(commands_api_interface, "stop_local_stream", "Stops and unloads a local_stream", stop_local_stream_function, STOP_LOCAL_STREAM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "start_local_stream", "Starts a new local_stream", start_local_stream_function, START_LOCAL_STREAM_SYNTAX);
+	SWITCH_ADD_API(commands_api_interface, "show_local_stream", "Shows a local stream", show_local_stream_function, SHOW_LOCAL_STREAM_SYNTAX);
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_SUCCESS;
