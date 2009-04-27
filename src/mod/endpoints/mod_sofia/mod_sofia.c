@@ -2875,7 +2875,7 @@ static void general_event_handler(switch_event_t *event)
 
 				switch_assert(id);
 				contact = sofia_glue_get_url_from_contact(buf, 0);
-
+				
 				if ((p = strstr(contact, ";fs_"))) {
 					*p = '\0';
 				}
@@ -2906,32 +2906,60 @@ static void general_event_handler(switch_event_t *event)
 			const char *profile_name = switch_event_get_header(event, "profile");
 			const char *ct = switch_event_get_header(event, "content-type");
 			const char *to_uri = switch_event_get_header(event, "to-uri");
+			const char *local_user_full = switch_event_get_header(event, "local-user");
 			const char *from_uri = switch_event_get_header(event, "from-uri");
 			const char *body = switch_event_get_body(event);
-			sofia_profile_t *profile;
+			sofia_profile_t *profile = NULL;
 			nua_handle_t *nh;
+			char *local_dup = NULL;
+			char *local_user, *local_host;
+			char buf[1024] = "";
+			char *p;
 
+			
 			if (!profile_name) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Profile Name\n");
-				return;
+				goto done;
 			}
 
-			if (!to_uri) {
+			if (!to_uri && !local_user_full) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To-URI header\n");
-				return;
+				goto done;
 			}
 
 			if (!from_uri) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From-URI header\n");
-				return;
+				goto done;
 			}
 
 			
 			if (!(profile = sofia_glue_find_profile(profile_name))) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
-				return;
+				goto done;
 			}
 			
+
+			if (local_user_full) {
+				local_dup = strdup(local_user_full);
+				local_user = local_dup;
+				if ((local_host = strchr(local_user, '@'))) {
+					*local_host++ = '\0';
+				}
+
+				if (!local_user || !local_host || !sofia_reg_find_reg_url(profile, local_user, local_host, buf, sizeof(buf))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find local user\n");
+					goto done;
+				}
+
+				to_uri = sofia_glue_get_url_from_contact(buf, 0);
+				
+				if ((p = strstr(to_uri, ";fs_"))) {
+					*p = '\0';
+				}
+
+			}
+
+
 			nh = nua_handle(profile->nua, 
 							NULL, 
 							NUTAG_URL(to_uri), 
@@ -2948,8 +2976,14 @@ static void general_event_handler(switch_event_t *event)
 					 TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
 					 TAG_END());
 
-				
-			sofia_glue_release_profile(profile);
+
+			if (profile) {
+				sofia_glue_release_profile(profile);
+			}
+			
+		done:
+
+			switch_safe_free(local_dup);
 			
 		}
 		break;
