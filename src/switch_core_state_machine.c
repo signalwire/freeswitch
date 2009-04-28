@@ -573,6 +573,7 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 	int do_extra_handlers = 1;
 	int silly = 0;
 	int index = 0;
+	const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
 
 	if (switch_channel_test_flag(session->channel, CF_REPORTING)) {
 		return;
@@ -588,9 +589,6 @@ SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *
 
 	driver_state_handler = endpoint_interface->state_handler;
 	switch_assert(driver_state_handler != NULL);
-	
-
-	const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
 	
 	if (!switch_strlen_zero(var)) {
 		if (!strcasecmp(var, "a_only")) {
