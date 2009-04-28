@@ -2976,7 +2976,7 @@ static void general_event_handler(switch_event_t *event)
 					 NUTAG_WITH_THIS(profile->nua),
 					 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)),
 					 TAG_IF(alert_info, SIPTAG_ALERT_INFO_STR(alert_info)),
-					 TAG_IF(call_info, SIPTAG_ALERT_INFO_STR(call_info)),
+					 TAG_IF(call_info, SIPTAG_CALL_INFO_STR(call_info)),
 					 TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
 					 TAG_END());
 
