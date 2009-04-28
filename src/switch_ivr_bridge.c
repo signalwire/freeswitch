@@ -503,32 +503,9 @@ static switch_status_t audio_bridge_on_exchange_media(switch_core_session_t *ses
 		if (!switch_channel_test_flag(channel, CF_TRANSFER) && !switch_channel_test_flag(channel, CF_REDIRECT) && bd && !bd->clean_exit 
 			&& state != CS_PARK && state != CS_ROUTING && !switch_channel_test_flag(channel, CF_INNER_BRIDGE)) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_NORMAL_CLEARING);
-			}
-	}
-	
-
-	if (switch_true(switch_channel_get_variable(channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
-		switch_core_session_t *other_session;
-		switch_channel_t *other_channel;
-		switch_xml_t cdr;
-		char *xml_text;
-
-		if (switch_core_session_get_partner(session, &other_session) == SWITCH_STATUS_SUCCESS) {
-			other_channel = switch_core_session_get_channel(other_session);
-			
-			switch_channel_wait_for_state(channel, other_channel, CS_REPORTING);
-			
-			if (switch_ivr_generate_xml_cdr(session, &cdr) == SWITCH_STATUS_SUCCESS) {
-				if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
-					switch_channel_set_variable(other_channel, "b_leg_cdr", xml_text);
-					switch_safe_free(xml_text);
-				}
-				switch_xml_free(cdr);
-			}
-			switch_core_session_rwunlock(other_session);
 		}
 	}
-
+	
 	if (switch_channel_get_state(channel) == CS_EXCHANGE_MEDIA) {
 		switch_channel_set_state(channel, CS_RESET);
 	}
@@ -977,6 +954,21 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_multi_threaded_bridge(switch_core_ses
 
 			if ((cause = switch_channel_get_cause(peer_channel))) {
 				switch_channel_set_variable(caller_channel, SWITCH_BRIDGE_HANGUP_CAUSE_VARIABLE, switch_channel_cause2str(cause));
+			}
+
+			if (switch_channel_down(peer_channel) && switch_true(switch_channel_get_variable(peer_channel, SWITCH_COPY_XML_CDR_VARIABLE))) {
+				switch_xml_t cdr;
+				char *xml_text;
+				
+				switch_channel_wait_for_state(caller_channel, peer_channel, CS_DESTROY);
+
+				if (switch_ivr_generate_xml_cdr(peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
+					if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
+						switch_channel_set_variable(caller_channel, "b_leg_cdr", xml_text);
+						switch_safe_free(xml_text);
+					}
+					switch_xml_free(cdr);
+				}
 			}
 
 			switch_core_session_rwunlock(peer_session);

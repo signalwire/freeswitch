@@ -75,13 +75,58 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(const char *u
 	return session;
 }
 
+
+
+
+#ifdef SWITCH_DEBUG_RWLOCKS
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_force_locate(const char *uuid_str, const char *file, const char *func, int line)
+#else
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(const char *uuid_str)
+#endif
+{
+	switch_core_session_t *session = NULL;
+	switch_status_t status;
+	
+	if (uuid_str) {
+		switch_mutex_lock(runtime.session_hash_mutex);
+		if ((session = switch_core_hash_find(session_manager.session_table, uuid_str))) {
+			/* Acquire a read lock on the session */
+
+			if (switch_test_flag(session, SSF_DESTROYED)) {
+				status = SWITCH_STATUS_FALSE;
+#ifdef SWITCH_DEBUG_RWLOCKS
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read lock FAIL\n",
+								  switch_channel_get_name(session->channel));
+#endif
+			} else {
+				status = (switch_status_t) switch_thread_rwlock_tryrdlock(session->rwlock);
+#ifdef SWITCH_DEBUG_RWLOCKS
+				switch_log_printf(SWITCH_CHANNEL_ID_LOG, file, func, line, NULL, SWITCH_LOG_ERROR, "%s Read lock ACQUIRED\n",
+								  switch_channel_get_name(session->channel));
+#endif
+			}
+
+			if (status != SWITCH_STATUS_SUCCESS) {
+				/* not available, forget it */
+				session = NULL;
+			}
+		}
+		switch_mutex_unlock(runtime.session_hash_mutex);
+	}
+
+	/* if its not NULL, now it's up to you to rwunlock this */
+	return session;
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_session_t *session, switch_core_session_t **partner)
 {
 	const char *uuid;
 	
 	if ((uuid = switch_channel_get_variable(session->channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
-		*partner = switch_core_session_locate(uuid);
-		return SWITCH_STATUS_SUCCESS;
+		if ((*partner = switch_core_session_locate(uuid))) {
+			return SWITCH_STATUS_SUCCESS;
+		}
 	}
 
 	*partner = NULL;

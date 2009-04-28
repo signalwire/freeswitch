@@ -579,6 +579,7 @@ SWITCH_DECLARE(void) switch_core_session_perform_destroy(_Inout_ switch_core_ses
 #define switch_core_session_destroy(session) switch_core_session_perform_destroy(session, __FILE__, __SWITCH_FUNC__, __LINE__)
 
 SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *session);
+SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *session);
 
 /*! 
   \brief Provide the total number of sessions
@@ -650,6 +651,13 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const
 #define switch_core_session_locate(uuid_str) switch_core_session_perform_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
 #else
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(_In_z_ const char *uuid_str);
+#endif
+
+
+#ifdef SWITCH_DEBUG_RWLOCKS
+#define switch_core_session_locate(uuid_str) switch_core_session_perform_force_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
+#else
+SWITCH_DECLARE(switch_core_session_t *) switch_core_session_force_locate(_In_z_ const char *uuid_str);
 #endif
 
 /*! 

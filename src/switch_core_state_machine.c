@@ -406,24 +406,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 				goto done;
 			case CS_REPORTING: /* Call Detail */
 				{
-					const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
-					
-					if (!switch_strlen_zero(var)) {
-						if (!strcasecmp(var, "a_only")) {
-							if (switch_channel_get_originator_caller_profile(session->channel)) {
-								do_extra_handlers = 0;
-							}
-						} else if (!strcasecmp(var, "b_only")) {
-							if (switch_channel_get_originatee_caller_profile(session->channel)) {
-								do_extra_handlers = 0;
-							}
-						} else if (!switch_true(var)) {
-							do_extra_handlers = 0;
-						}
-					}
-
-					STATE_MACRO(reporting, "REPORTING");
-					
+					switch_core_session_reporting_state(session);
 					switch_channel_set_state(session->channel, CS_DESTROY);
 				}
 				goto done;
@@ -575,6 +558,56 @@ SWITCH_DECLARE(void) switch_core_session_destroy_state(switch_core_session_t *se
 	
 	STATE_MACRO(destroy, "DESTROY");
 
+	return;
+}
+
+
+SWITCH_DECLARE(void) switch_core_session_reporting_state(switch_core_session_t *session)
+{
+	switch_channel_state_t state = switch_channel_get_state(session->channel), midstate = state;
+	const switch_endpoint_interface_t *endpoint_interface;
+	const switch_state_handler_table_t *driver_state_handler = NULL;
+	const switch_state_handler_table_t *application_state_handler = NULL;
+	int proceed = 1;
+	int global_proceed = 1;
+	int do_extra_handlers = 1;
+	int silly = 0;
+	int index = 0;
+
+	if (switch_channel_test_flag(session->channel, CF_REPORTING)) {
+		return;
+	}
+
+	switch_channel_set_flag(session->channel, CF_REPORTING);
+	
+	switch_assert(session != NULL);
+
+	session->thread_running = 1;
+	endpoint_interface = session->endpoint_interface;
+	switch_assert(endpoint_interface != NULL);
+
+	driver_state_handler = endpoint_interface->state_handler;
+	switch_assert(driver_state_handler != NULL);
+	
+
+	const char *var = switch_channel_get_variable(session->channel, SWITCH_PROCESS_CDR_VARIABLE);
+	
+	if (!switch_strlen_zero(var)) {
+		if (!strcasecmp(var, "a_only")) {
+			if (switch_channel_get_originator_caller_profile(session->channel)) {
+				do_extra_handlers = 0;
+			}
+		} else if (!strcasecmp(var, "b_only")) {
+			if (switch_channel_get_originatee_caller_profile(session->channel)) {
+				do_extra_handlers = 0;
+			}
+		} else if (!switch_true(var)) {
+			do_extra_handlers = 0;
+		}
+	}
+
+	STATE_MACRO(reporting, "REPORTING");
+					
 	return;
 }
 
