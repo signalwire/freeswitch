@@ -412,6 +412,10 @@ SWITCH_DECLARE(void) switch_core_session_rwunlock(_In_ switch_core_session_t *se
 */
 SWITCH_DECLARE(int) switch_core_add_state_handler(_In_ const switch_state_handler_table_t *state_handler);
 
+/*!
+  \brief Remove a global state handler
+  \param state_handler the state handler to remove
+*/
 SWITCH_DECLARE(void) switch_core_remove_state_handler(_In_ const switch_state_handler_table_t *state_handler);
 
 /*! 
@@ -642,7 +646,7 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const
 #endif
 
 /*! 
-  \brief Locate a session based on it's uuiid
+  \brief Locate a session based on it's uuid
   \param uuid_str the unique id of the session you want to find
   \return the session or NULL
   \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
@@ -653,7 +657,12 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_perform_locate(const
 SWITCH_DECLARE(switch_core_session_t *) switch_core_session_locate(_In_z_ const char *uuid_str);
 #endif
 
-
+/*! 
+  \brief Locate a session based on it's uuid even if the channel is not ready
+  \param uuid_str the unique id of the session you want to find
+  \return the session or NULL
+  \note if the session was located it will have a read lock obtained which will need to be released with switch_core_session_rwunlock()
+*/
 #ifdef SWITCH_DEBUG_RWLOCKS
 #define switch_core_session_locate(uuid_str) switch_core_session_perform_force_locate(uuid_str, __FILE__, __SWITCH_FUNC__, __LINE__)
 #else
@@ -677,14 +686,31 @@ SWITCH_DECLARE(void) switch_core_set_variable(_In_z_ const char *varname, _In_op
 SWITCH_DECLARE(void) switch_core_dump_variables(_In_ switch_stream_handle_t *stream);
 
 /*! 
-  \brief Hangup All Sessions
+  \brief Hangup all sessions
   \param cause the hangup cause to apply to the hungup channels
 */
 SWITCH_DECLARE(void) switch_core_session_hupall(_In_ switch_call_cause_t cause);
 
+/*! 
+  \brief Hangup all sessions which match a specific channel variable
+  \param var_name The variable name to look for
+  \param var_val The value to look for 
+  \param cause the hangup cause to apply to the hungup channels
+*/
 SWITCH_DECLARE(void) switch_core_session_hupall_matching_var(_In_ const char *var_name, _In_ const char *var_val, _In_ switch_call_cause_t cause);
+/*! 
+  \brief Hangup all sessions that belong to an endpoint
+  \param endpoint_interface The endpoint interface 
+  \param cause the hangup cause to apply to the hungup channels
+*/
 SWITCH_DECLARE(void) switch_core_session_hupall_endpoint(const switch_endpoint_interface_t *endpoint_interface, switch_call_cause_t cause);
 
+/*! 
+  \brief Get the session's partner (the session its bridged to)
+  \param session The session we're searching with 
+  \param partner [out] The session's partner, or NULL if it wasnt found
+  \return SWITCH_STATUS_SUCCESS or SWITCH_STATUS_FALSE if this session isn't bridged
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_session_get_partner(switch_core_session_t *session, switch_core_session_t **partner);
 
 /*! 
@@ -725,14 +751,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_queue_indication(_In_ switch
   \brief DE-Queue an message on a given session
   \param session the session to de-queue the message on
   \param message the de-queued message
-  \return the  SWITCH_STATUS_SUCCESS if the message was de-queued
+  \return SWITCH_STATUS_SUCCESS if the message was de-queued
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_dequeue_message(_In_ switch_core_session_t *session, _Out_ switch_core_session_message_t **message);
 
 /*! 
   \brief Flush a message queue on a given session
   \param session the session to de-queue the message on
-  \return the  SWITCH_STATUS_SUCCESS if the message was de-queued
+  \return SWITCH_STATUS_SUCCESS if the message was de-queued
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_flush_message(_In_ switch_core_session_t *session);
 
@@ -746,12 +772,35 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_event_send(_In_z_ const char
 
 SWITCH_DECLARE(switch_app_log_t *) switch_core_session_get_app_log(_In_ switch_core_session_t *session);
 
+/*! 
+  \brief Execute an application on a session 
+  \param session the current session
+  \param application_interface the interface of the application to execute
+  \param arg application arguments
+  \warning Has to be called from the session's thread
+  \return the application's return value
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_session_exec(_In_ switch_core_session_t *session,
 														 _In_ const switch_application_interface_t *application_interface, _In_opt_z_ const char *arg);
-
+/*! 
+  \brief Execute an application on a session 
+  \param session the current session
+  \param app the application's name
+  \param arg application arguments
+  \warning Has to be called from the session's thread
+  \return the application's return value
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_application(_In_ switch_core_session_t *session,
 																		_In_ const char *app, _In_opt_z_ const char *arg);
-
+/*! 
+  \brief Run a dialplan and execute an extension
+  \param session the current session
+  \param exten the interface of the application to execute
+  \param arg application arguments
+  \note It does not change the channel back to CS_ROUTING, it manually calls the dialplan and executes the applications
+  \warning Has to be called from the session's thread
+  \return the application's return value
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(_In_ switch_core_session_t *session,
 																  _In_z_ const char *exten,
 																  _In_opt_z_ const char *dialplan, _In_opt_z_ const char *context);
@@ -980,10 +1029,16 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_perform_kill_channel(_In_ sw
 /*! 
   \brief Send DTMF to a session
   \param session session to send DTMF to
-  \param dtmf string to send to the session
+  \param dtmf dtmf to send to the session
   \return SWITCH_STATUS_SUCCESS if the dtmf was written
 */
 SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf(_In_ switch_core_session_t *session, const switch_dtmf_t *dtmf);
+/*! 
+  \brief Send DTMF to a session
+  \param session session to send DTMF to
+  \param dtmf_string string to send to the session
+  \return SWITCH_STATUS_SUCCESS if the dtmf was written
+*/
 SWITCH_DECLARE(switch_status_t) switch_core_session_send_dtmf_string(switch_core_session_t *session, const char *dtmf_string);
 
 /*! 
@@ -1076,8 +1131,28 @@ SWITCH_DECLARE(void *) switch_core_hash_find(_In_ switch_hash_t *hash, _In_z_ co
 */
 SWITCH_DECLARE(void *) switch_core_hash_find_locked(_In_ switch_hash_t *hash, _In_z_ const char *key, _In_ switch_mutex_t *mutex);
 
+/*!
+ \brief Gets the first element of a hashtable
+ \param depricate_me [deprecated] NULL
+ \param hash the hashtable to use
+ \return The element, or NULL if it wasn't found 
+*/
 SWITCH_DECLARE(switch_hash_index_t *) switch_hash_first(char *depricate_me, _In_ switch_hash_t *hash);
+
+/*!
+ \brief Gets the next element of a hashtable
+ \param hi The current element
+ \return The next element, or NULL if there are no more
+*/
 SWITCH_DECLARE(switch_hash_index_t *) switch_hash_next(_In_ switch_hash_index_t *hi);
+
+/*!
+ \brief Gets the key and value of the current hash element
+ \param hi The current element 
+ \param key [out] the key
+ \param klen [out] the key's size
+ \param val [out] the value 
+*/
 SWITCH_DECLARE(void) switch_hash_this(_In_ switch_hash_index_t *hi, _Out_opt_ptrdiff_cap_(klen)
 									  const void **key, _Out_opt_ switch_ssize_t *klen, _Out_ void **val);
 
@@ -1729,12 +1804,18 @@ SWITCH_DECLARE(switch_thread_t *) switch_core_launch_thread(void *(SWITCH_THREAD
 SWITCH_DECLARE(void) switch_core_set_globals(void);
 
 /*!
-  \brief indicate if 2 sessions are the same type
+  \brief Checks if 2 sessions are using the same endpoint module
   \param a the first session
   \param b the second session
   \return TRUE or FALSE
 */
 SWITCH_DECLARE(uint8_t) switch_core_session_compare(switch_core_session_t *a, switch_core_session_t *b);
+/*!
+  \brief Checks if a session is using a specific endpoint 
+  \param session the session
+  \param endpoint_interface interface of the endpoint to check
+  \return TRUE or FALSE
+*/
 SWITCH_DECLARE(uint8_t) switch_core_session_check_interface(switch_core_session_t *session, const switch_endpoint_interface_t *endpoint_interface);
 SWITCH_DECLARE(switch_hash_index_t *) switch_core_mime_index(void);
 SWITCH_DECLARE(const char *) switch_core_mime_ext2type(const char *ext);
@@ -1742,6 +1823,10 @@ SWITCH_DECLARE(switch_status_t) switch_core_mime_add_type(const char *type, cons
 
 SWITCH_DECLARE(switch_loadable_module_interface_t *) switch_loadable_module_create_module_interface(switch_memory_pool_t *pool, const char *name);
 SWITCH_DECLARE(void *) switch_loadable_module_create_interface(switch_loadable_module_interface_t *mod, switch_module_interface_name_t iname);
+/*! 
+ \brief Get the current epoch time in microseconds
+ \return the current epoch time in microseconds
+*/
 SWITCH_DECLARE(switch_time_t) switch_micro_time_now(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_events(void);
@@ -1749,6 +1834,11 @@ SWITCH_DECLARE(void) switch_core_memory_reclaim_logger(void);
 SWITCH_DECLARE(void) switch_core_memory_reclaim_all(void);
 SWITCH_DECLARE(void) switch_core_setrlimits(void);
 SWITCH_DECLARE(void) switch_time_sync(void);
+/*! 
+ \brief Get the current epoch time
+ \param [out] (optional) The current epoch time 
+ \return The current epoch time 
+*/
 SWITCH_DECLARE(time_t) switch_epoch_time_now(time_t *t);
 SWITCH_DECLARE(switch_status_t) switch_strftime_tz(const char *tz, const char *format, char *date, size_t len, switch_time_t thetime);
 SWITCH_DECLARE(switch_status_t) switch_time_exp_tz_name(const char *tz, switch_time_exp_t *tm, switch_time_t thetime);
