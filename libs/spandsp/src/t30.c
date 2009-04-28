@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t30.c,v 1.290 2009/04/16 12:11:54 steveu Exp $
+ * $Id: t30.c,v 1.291 2009/04/23 15:40:32 steveu Exp $
  */
 
 /*! \file */
@@ -5914,7 +5914,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
     s->send_hdlc_user_data = send_hdlc_user_data;
 
     /* Default to the basic modems. */
-    s->supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29;
+    s->supported_modems = T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17;
     s->supported_compressions = T30_SUPPORT_T4_1D_COMPRESSION | T30_SUPPORT_T4_2D_COMPRESSION;
     s->supported_resolutions = T30_SUPPORT_STANDARD_RESOLUTION | T30_SUPPORT_FINE_RESOLUTION | T30_SUPPORT_SUPERFINE_RESOLUTION
                              | T30_SUPPORT_R8_RESOLUTION;

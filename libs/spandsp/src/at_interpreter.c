@@ -25,7 +25,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter.c,v 1.37 2009/03/23 14:17:42 steveu Exp $
+ * $Id: at_interpreter.c,v 1.39 2009/04/24 22:35:25 steveu Exp $
  */
 
 /*! \file */
@@ -510,6 +510,64 @@ static int parse_2_out(at_state_t *s, const char **t, int *target1, int max_valu
         val1 = (target1)  ?  *target1  :  0;
         val2 = (target2)  ?  *target2  :  0;
         snprintf(buf, sizeof(buf), "%s%d,%d", (prefix)  ?  prefix  :  "", val1, val2);
+        at_put_response(s, buf);
+        break;
+    default:
+        return FALSE;
+    }
+    return TRUE;
+}
+/*- End of function --------------------------------------------------------*/
+
+static int parse_n_out(at_state_t *s,
+                       const char **t,
+                       int *targets[],
+                       const int max_values[],
+                       int entries,
+                       const char *prefix,
+                       const char *def)
+{
+    char buf[100];
+    int val;
+    int len;
+    int i;
+
+    switch (*(*t)++)
+    {
+    case '=':
+        switch (**t)
+        {
+        case '?':
+            /* Show possible values */
+            (*t)++;
+            snprintf(buf, sizeof(buf), "%s%s", (prefix)  ?  prefix  :  "", def);
+            at_put_response(s, buf);
+            break;
+        default:
+            /* Set value */
+            for (i = 0;  i < entries;  i++)
+            {
+                if ((val = parse_num(t, max_values[i])) < 0)
+                    return FALSE;
+                if (targets[i])
+                    *targets[i] = val;
+                if (**t != ',')
+                    break;
+                (*t)++;
+            }
+            break;
+        }
+        break;
+    case '?':
+        /* Show current value */
+        len = snprintf(buf, sizeof(buf), "%s", (prefix)  ?  prefix  :  "");
+        for (i = 0;  i < entries;  i++)
+        {
+            if (i > 0)
+                len += snprintf(&buf[len], sizeof(buf) - len, ",");
+            val = (targets[i])  ?  *targets[i]  :  0;
+            len += snprintf(&buf[len], sizeof(buf) - len, "%d", val);
+        }
         at_put_response(s, buf);
         break;
     default:
@@ -3191,9 +3249,76 @@ static const char *at_cmd_plus_ER(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ES(at_state_t *s, const char *t)
 {
+    static const int maxes[3] =
+    {
+        7, 4, 9
+    };
+    int *locations[3];
+
     /* V.250 6.5.1 - Error control selection */ 
+
+    /* orig_rqst
+        0:  Direct mode
+        1:  Initiate call with Buffered mode only
+        2:  Initiate V.42 without Detection Phase. If Rec. V.8 is in use, this is a request to disable V.42 Detection Phase
+        3:  Initiate V.42 with Detection Phase
+        4:  Initiate Altemative Protocol
+        5:  Initiate Synchronous Mode when connection is completed, immediately after the entire CONNECT result code
+            is delivered. V.24 circuits 113 and 115 are activated when Data State is entered
+        6:  Initiate Synchronous Access Mode when connection is completed, and Data State is entered
+        7:  Initiate Frame Tunnelling Mode when connection is completed, and Data State is entered
+
+       orig_fbk
+        0:  Error control optional (either LAPM or Alternative acceptable); if error control not established, maintain
+            DTE-DCE data rate and use V.14 buffered mode with flow control during non-error-control operation
+        1:  Error control optional (either LAPM or Alternative acceptable); if error control not established, change
+            DTE-DCE data rate to match line rate and use Direct mode
+        2:  Error control required (either LAPM or Alternative acceptable); if error control not established, disconnect
+        3:  Error control required (only LAPM acceptable); if error control not established, disconnect
+        4:  Error control required (only Altemative protocol acceptable); if error control not established, disconnect
+
+       ans_fbk
+        0:  Direct mode
+        1:  Error control disabled, use Buffered mode
+        2:  Error control optional (either LAPM or Alternative acceptable); if error control not established, maintain
+            DTE-DCE data rate and use local buffering and flow control during non-error-control operation
+        3:  Error control optional (either LAPM or Alternative acceptable); if error control not established, change
+            DTE-DCE data rate to match line rate and use Direct mode
+        4:  Error control required (either LAPM or Alternative acceptable); if error control not established, disconnect
+        5:  Error control required (only LAPM acceptable); if error control not established, disconnect
+        6:  Error control required (only Alternative protocol acceptable); if error control not established, disconnect
+        7:  Initiate Synchronous Mode when connection is completed, immediately after the entire CONNECT result code
+            is delivered. V.24 cicuits 113 and 115 are activated when Data State is entered
+        8:  Initiate Synchronous Access Mode when connection is completed, and Data State is entered
+        9:  Initiate Frame Tunnelling Mode when connection is completed, and Data State is entered */
+
     /* TODO: */
     t += 3;
+    locations[0] = NULL;
+    locations[1] = NULL;
+    locations[2] = NULL;
+    if (!parse_n_out(s, &t, locations, maxes, 3, "+ES:", "(0-7),(0-4),(0-9)"))
+        return NULL;
+    return t;
+}
+/*- End of function --------------------------------------------------------*/
+
+static const char *at_cmd_plus_ESA(at_state_t *s, const char *t)
+{
+    static const int maxes[8] =
+    {
+        2, 1, 1, 1, 2, 1, 255, 255
+    };
+    int *locations[8];
+    int i;
+
+    /* V.80 8.2 - Synchronous access mode configuration */
+    /* TODO: */
+    t += 4;
+    for (i = 0;  i < 8;  i++)
+        locations[i] = NULL;
+    if (!parse_n_out(s, &t, locations, maxes, 8, "+ESA:", "(0-2),(0-1),(0-1),(0-1),(0-2),(0-1),(0-255),(0-255)"))
+        return NULL;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3800,18 +3925,66 @@ static const char *at_cmd_plus_GSN(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_IBC(at_state_t *s, const char *t)
 {
-    /* TIA-617 8.3 - Control of in-band control */
+    static const int maxes[13] =
+    {
+        2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    };
+    int *locations[13];
+    int i;
+
+    /* V.80 7.9 - Control of in-band control */
     /* TODO: */
     t += 4;
+    /* 0: In-band control service disabled
+       1: In-band control service enabled, 7-bit codes allowed, and top bit insignificant
+       2; In-band control service enabled, 7-bit codes allowed, and 8-bit codes available
+    
+       Circuits 105, 106, 107, 108, 109, 110, 125, 132, 133, 135, 142 in that order. For each one:
+       0: disabled
+       1: enabled
+       
+       DCE line connect status reports:
+       0: disabled
+       1: enabled */
+    for (i = 0;  i < 13;  i++)
+        locations[i] = NULL;
+    if (!parse_n_out(s, &t, locations, maxes, 13, "+IBC:", "(0-2),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0.1),(0,1)"))
+        return NULL;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
 
 static const char *at_cmd_plus_IBM(at_state_t *s, const char *t)
 {
-    /* TIA-617 8.4 - In-Band MARK idle reporting control */
+    static const int maxes[3] =
+    {
+        7, 255, 255
+    };
+    int *locations[3];
+
+    /* V.80 7.10 - In-band MARK idle reporting control */
     /* TODO: */
     t += 4;
+    /* Report control
+        0: No reports
+        1: Report only once when <T1 > expires
+        2: Report each time <T2> expires
+        3: Report once when <T1> expires, and then each time <T2> expires
+        4: Report only when the Mark-ldle Period ends; T3 = the entire interval
+        5: Report the first time when <T1> is exceeded, and then once more when the mark idle period ends
+        6: Report each time when <T2> is exceeded, and then once more when the mark idle period ends;
+           T3 = entire interval -- N*T2
+        7: report the first time when <T1> is exceeded, and then each time <T2> is exceeded, and then once
+           more when the mark idle period ends; T3 = entire mark idle period -- N*T2 - T1
+           
+       T1 in units of 10ms
+        
+       T2 in units of 10ms */
+    locations[0] = NULL;
+    locations[1] = NULL;
+    locations[2] = NULL;
+    if (!parse_n_out(s, &t, locations, maxes, 3, "+IBM:", "(0-7),(0-255),(0-255)"))
+        return NULL;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -3821,19 +3994,19 @@ static const char *at_cmd_plus_ICF(at_state_t *s, const char *t)
     /* V.250 6.2.11 - DTE-DCE character framing */ 
     t += 4;
     /* Character format
-        0    auto detect
-        1    8 data 2 stop
-        2    8 data 1 parity 1 stop
-        3    8 data 1 stop
-        4    7 data 2 stop
-        5    7 data 1 parity 1 stop
-        6    7 data 1 stop
+        0:  auto detect
+        1:  8 data 2 stop
+        2:  8 data 1 parity 1 stop
+        3:  8 data 1 stop
+        4:  7 data 2 stop
+        5:  7 data 1 parity 1 stop
+        6:  7 data 1 stop
     
-       parity
-        0    Odd
-        1    Even
-        2    Mark
-        3    Space */
+       Parity
+        0:  Odd
+        1:  Even
+        2:  Mark
+        3:  Space */
     if (!parse_2_out(s, &t, &s->dte_char_format, 6, &s->dte_parity, 3, "+ICF:", "(0-6),(0-3)"))
         return NULL;
     return t;
@@ -3905,6 +4078,15 @@ static const char *at_cmd_plus_IRTS(at_state_t *s, const char *t)
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+IRTS:", "(0,1)"))
         return NULL;
+    return t;
+}
+/*- End of function --------------------------------------------------------*/
+
+static const char *at_cmd_plus_ITF(at_state_t *s, const char *t)
+{
+    /* V.80 8.4 - Transmit flow control thresholds */
+    /* TODO: */
+    t += 5;
     return t;
 }
 /*- End of function --------------------------------------------------------*/

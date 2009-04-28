@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29tx.c,v 1.87 2009/04/12 04:20:01 steveu Exp $
+ * $Id: v29tx.c,v 1.88 2009/04/21 13:59:07 steveu Exp $
  */
 
 /*! \file */
@@ -368,6 +368,15 @@ SPAN_DECLARE(int) v29_tx_restart(v29_tx_state_t *s, int bit_rate, int tep)
 
 SPAN_DECLARE(v29_tx_state_t *) v29_tx_init(v29_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data)
 {
+    switch (bit_rate)
+    {
+    case 9600:
+    case 7200:
+    case 4800:
+        break;
+    default:
+        return NULL;
+    }
     if (s == NULL)
     {
         if ((s = (v29_tx_state_t *) malloc(sizeof(*s))) == NULL)

@@ -16,7 +16,7 @@
 ## along with this program; if not, write to the Free Software
 ## Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 ##
-## $Id: Makefile.am,v 1.112 2009/04/01 13:22:40 steveu Exp $
+## $Id: Makefile.am,v 1.114 2009/04/26 08:25:37 steveu Exp $
 
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
@@ -25,7 +25,26 @@ LIBS += $(TESTLIBS)
 
 noinst_DATA = sound_c1_8k.wav sound_c3_8k.wav
 
-EXTRA_DIST = regression_tests.sh v42bis_tests.sh fax_tests.sh tsb85_tests.sh
+EXTRA_DIST = regression_tests.sh \
+             v42bis_tests.sh \
+             fax_tests.sh \
+             tsb85_tests.sh \
+             msvc/adsi_tests.vcproj \
+             msvc/complex_tests.vcproj \
+             msvc/complex_vector_float_tests.vcproj \
+             msvc/complex_vector_int_tests.vcproj \
+             msvc/dtmf_rx_tests.vcproj \
+             msvc/dtmf_tx_tests.vcproj \
+             msvc/queue_tests.vcproj \
+             msvc/t38_core_tests.vcproj \
+             msvc/t38_non_ecm_buffer_tests.vcproj \
+             msvc/t38_terminal_tests.vcproj \
+             msvc/v22bis_tests.vcproj \
+             msvc/v29_tests.vcproj \
+             msvc/v8_tests.vcproj \
+             msvc/v80_tests.vcproj \
+             msvc/vector_float_tests.vcproj \
+             msvc/vector_int_tests.vcproj
  
 MAINTAINERCLEANFILES = Makefile.in
 

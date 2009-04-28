@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: make_at_dictionary.c,v 1.2 2009/02/10 17:16:57 steveu Exp $
+ * $Id: make_at_dictionary.c,v 1.4 2009/04/24 22:35:25 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -228,6 +228,7 @@ const char *wordlist[] =
     "+EFRAM",   /* V.250 6.5.8 - Frame length */ 
     "+ER",      /* V.250 6.5.5 - Error control reporting */ 
     "+ES",      /* V.250 6.5.1 - Error control selection */ 
+    "+ESA",     /* V.80 8.2 - Synchronous access mode configuration */ 
     "+ESR",     /* V.250 6.5.3 - Selective repeat */ 
     "+ETBM",    /* V.250 6.5.6 - Call termination buffer management */ 
     "+EWIND",   /* V.250 6.5.7 - Window size */ 
@@ -289,8 +290,8 @@ const char *wordlist[] =
     "+GMR",     /* V.250 6.1.6 - Request revision identification */ 
     "+GOI",     /* V.250 6.1.8 - Request global object identification */ 
     "+GSN",     /* V.250 6.1.7 - Request product serial number identification */ 
-    "+IBC",     /* TIA-617 8.3 - Control of in-band control */
-    "+IBM",     /* TIA-617 8.4 - In-Band MARK idle reporting control */
+    "+IBC",     /* V.80 7.9 - Control of in-band control */
+    "+IBM",     /* V.80 7.10 - In-band MARK idle reporting control */
     "+ICF",     /* V.250 6.2.11 - DTE-DCE character framing */ 
     "+ICLOK",   /* V.250 6.2.14 - Select sync transmit clock source */ 
     "+IDSR",    /* V.250 6.2.16 - Select data set ready option */ 
@@ -299,6 +300,7 @@ const char *wordlist[] =
     "+ILSD",    /* V.250 6.2.15 - Select long space disconnect option */ 
     "+IPR",     /* V.250 6.2.10 - Fixed DTE rate */ 
     "+IRTS",    /* V.250 6.2.17 - Select synchronous mode RTS option */ 
+    "+ITF",     /* V.80 8.4 - Transmit flow control thresholds */
     "+MA",      /* V.250 6.4.2 - Modulation automode control */ 
     "+MR",      /* V.250 6.4.3 - Modulation reporting control */ 
     "+MS",      /* V.250 6.4.1 - Modulation selection */ 

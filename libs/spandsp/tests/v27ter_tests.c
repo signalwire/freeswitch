@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v27ter_tests.c,v 1.103 2009/03/15 09:09:21 steveu Exp $
+ * $Id: v27ter_tests.c,v 1.104 2009/04/25 16:30:52 steveu Exp $
  */
 
 /*! \page v27ter_tests_page V.27ter modem tests
@@ -471,6 +471,14 @@ int main(int argc, char *argv[])
     if (use_gui)
         qam_wait_to_end(qam_monitor);
 #endif
+    if (decode_test_file)
+    {
+        if (afCloseFile(inhandle))
+        {
+            fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
+            exit(2);
+        }
+    }
     if (log_audio)
     {
         if (afCloseFile(outhandle))

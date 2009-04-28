@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v29rx.c,v 1.163 2009/04/20 16:36:36 steveu Exp $
+ * $Id: v29rx.c,v 1.164 2009/04/21 13:59:07 steveu Exp $
  */
 
 /*! \file */
@@ -1156,14 +1156,22 @@ SPAN_DECLARE(int) v29_rx_restart(v29_rx_state_t *s, int bit_rate, int old_train)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int rate, put_bit_func_t put_bit, void *user_data)
+SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data)
 {
+    switch (bit_rate)
+    {
+    case 9600:
+    case 7200:
+    case 4800:
+        break;
+    default:
+        return NULL;
+    }
     if (s == NULL)
     {
         if ((s = (v29_rx_state_t *) malloc(sizeof(*s))) == NULL)
             return NULL;
     }
-
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "V.29 RX");
@@ -1176,7 +1184,7 @@ SPAN_DECLARE(v29_rx_state_t *) v29_rx_init(v29_rx_state_t *s, int rate, put_bit_
     /* The thresholds should be on at -26dBm0 and off at -31dBm0 */
     v29_rx_signal_cutoff(s, -28.5f);
 
-    v29_rx_restart(s, rate, FALSE);
+    v29_rx_restart(s, bit_rate, FALSE);
     return s;
 }
 /*- End of function --------------------------------------------------------*/

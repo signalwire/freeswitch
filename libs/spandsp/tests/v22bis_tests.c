@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tests.c,v 1.58 2009/04/17 14:37:53 steveu Exp $
+ * $Id: v22bis_tests.c,v 1.61 2009/04/25 16:30:52 steveu Exp $
  */
 
 /*! \page v22bis_tests_page V.22bis modem tests
@@ -62,12 +62,12 @@ display of modem status is maintained.
 
 #define BLOCK_LEN       160
 
-#define IN_FILE_NAME    "v22bis_samp.wav"
 #define OUT_FILE_NAME   "v22bis.wav"
 
-int rx_bits = 0;
-
+char *decode_test_file = NULL;
 int use_gui = FALSE;
+
+int rx_bits = 0;
 
 both_ways_line_model_state_t *model;
 
@@ -115,6 +115,7 @@ static void v22bis_putbit(void *user_data, int bit)
     endpoint_t *s;
     int i;
     int len;
+    int bit_rate;
     complexf_t *coeffs;
     
     s = (endpoint_t *) user_data;
@@ -125,7 +126,9 @@ static void v22bis_putbit(void *user_data, int bit)
         switch (bit)
         {
         case SIG_STATUS_TRAINING_SUCCEEDED:
-            len = v22bis_equalizer_state(s->v22bis, &coeffs);
+            bit_rate = v22bis_current_bit_rate(s->v22bis);
+            printf("Negotiated bit rate: %d\n", bit_rate);
+            len = v22bis_rx_equalizer_state(s->v22bis, &coeffs);
             printf("Equalizer:\n");
             for (i = 0;  i < len;  i++)
                 printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
@@ -134,8 +137,10 @@ static void v22bis_putbit(void *user_data, int bit)
         return;
     }
 
-    //printf("Rx bit %p - %d\n", user_data, bit);
-    bert_put_bit(&s->bert_rx, bit);
+    if (decode_test_file)
+        printf("Rx bit %p-%d - %d\n", user_data, rx_bits++, bit);
+    else
+        bert_put_bit(&s->bert_rx, bit);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -166,7 +171,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
         {
             qam_monitor_update_constel(s->qam_monitor, constel);
             qam_monitor_update_carrier_tracking(s->qam_monitor, v22bis_rx_carrier_frequency(s->v22bis));
-            qam_monitor_update_symbol_tracking(s->qam_monitor, v22bis_symbol_timing_correction(s->v22bis));
+            qam_monitor_update_symbol_tracking(s->qam_monitor, v22bis_rx_symbol_timing_correction(s->v22bis));
         }
 #endif
         fpower = (constel->re - target->re)*(constel->re - target->re)
@@ -188,7 +193,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
     else
     {
         printf("Gardner step %d\n", symbol);
-        len = v22bis_equalizer_state(s->v22bis, &coeffs);
+        len = v22bis_rx_equalizer_state(s->v22bis, &coeffs);
         printf("Equalizer A:\n");
         for (i = 0;  i < len;  i++)
             printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
@@ -205,9 +210,11 @@ int main(int argc, char *argv[])
     int16_t amp[2][BLOCK_LEN];
     int16_t model_amp[2][BLOCK_LEN];
     int16_t out_amp[2*BLOCK_LEN];
+    AFfilehandle inhandle;
     AFfilehandle outhandle;
     int outframes;
     int samples;
+    int samples2;
     int i;
     int j;
     int test_bps;
@@ -222,11 +229,12 @@ int main(int argc, char *argv[])
     channel_codec = MUNGE_CODEC_NONE;
     test_bps = 2400;
     line_model_no = 0;
+    decode_test_file = NULL;
     noise_level = -70;
     signal_level = -13;
     bits_per_test = 50000;
     log_audio = FALSE;
-    while ((opt = getopt(argc, argv, "b:B:c:glm:n:s:")) != -1)
+    while ((opt = getopt(argc, argv, "b:B:c:d:glm:n:s:")) != -1)
     {
         switch (opt)
         {
@@ -243,6 +251,9 @@ int main(int argc, char *argv[])
             break;
         case 'c':
             channel_codec = atoi(optarg);
+            break;
+        case 'd':
+            decode_test_file = optarg;
             break;
         case 'g':
 #if defined(ENABLE_GUI)
@@ -270,6 +281,17 @@ int main(int argc, char *argv[])
             break;
         }
     }
+    inhandle = AF_NULL_FILEHANDLE;
+    if (decode_test_file)
+    {
+        /* We will decode the audio from a wave file. */
+        if ((inhandle = afOpenFile_telephony_read(decode_test_file, 1)) == AF_NULL_FILEHANDLE)
+        {
+            fprintf(stderr, "    Cannot open wave file '%s'\n", decode_test_file);
+            exit(2);
+        }
+    }
+
     outhandle = AF_NULL_FILEHANDLE;
     if (log_audio)
     {
@@ -283,11 +305,11 @@ int main(int argc, char *argv[])
 
     for (i = 0;  i < 2;  i++)
     {
-        endpoint[i].v22bis = v22bis_init(NULL, test_bps, V22BIS_GUARD_TONE_1800HZ, (i == 0), v22bis_getbit, v22bis_putbit, &endpoint[i]);
+        endpoint[i].v22bis = v22bis_init(NULL, test_bps, V22BIS_GUARD_TONE_1800HZ, (i == 0), v22bis_getbit, &endpoint[i], v22bis_putbit, &endpoint[i]);
         v22bis_tx_power(endpoint[i].v22bis, signal_level);
         /* Move the carrier off a bit */
         endpoint[i].v22bis->tx.carrier_phase_rate = dds_phase_ratef((i == 0)  ?  1207.0f  :  2407.0f);
-        v22bis_set_qam_report_handler(endpoint[i].v22bis, qam_report, (void *) &endpoint[i]);
+        v22bis_rx_set_qam_report_handler(endpoint[i].v22bis, qam_report, (void *) &endpoint[i]);
         span_log_set_level(&endpoint[i].v22bis->logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
         span_log_set_tag(&endpoint[i].v22bis->logging, (i == 0)  ?  "caller"  :  "answerer");
         endpoint[i].smooth_power = 0.0f;
@@ -334,7 +356,7 @@ int main(int argc, char *argv[])
             }
         }
 
-#if 0
+#if 1
         both_ways_line_model(model, 
                              model_amp[0],
                              amp[0],
@@ -345,6 +367,15 @@ int main(int argc, char *argv[])
         vec_copyi16(model_amp[0], amp[0], samples);
         vec_copyi16(model_amp[1], amp[1], samples);
 #endif
+        if (decode_test_file)
+        {
+            samples2 = afReadFrames(inhandle,
+                                    AF_DEFAULT_TRACK,
+                                    model_amp[0],
+                                    samples);
+            if (samples2 != samples)
+                break;
+        }
         for (i = 0;  i < 2;  i++)
         {
             span_log_bump_samples(&endpoint[i].v22bis->logging, samples);
@@ -366,6 +397,18 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "    Error writing wave file\n");
                 exit(2);
             }
+        }
+    }
+#if defined(ENABLE_GUI)
+    if (use_gui)
+        qam_wait_to_end(endpoint[0].qam_monitor);
+#endif
+    if (decode_test_file)
+    {
+        if (afCloseFile(inhandle))
+        {
+            fprintf(stderr, "    Cannot close wave file '%s'\n", decode_test_file);
+            exit(2);
         }
     }
     if (log_audio)

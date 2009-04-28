@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: gsm0610_tests.c,v 1.23 2009/01/12 17:20:59 steveu Exp $
+ * $Id: gsm0610_tests.c,v 1.24 2009/04/22 12:57:40 steveu Exp $
  */
 
 /*! \file */
@@ -516,6 +516,30 @@ static int perform_pack_unpack_test(void)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void etsi_compliance_tests(void)
+{
+    perform_linear_test(TRUE, 1, "Seq01");
+    perform_linear_test(TRUE, 1, "Seq02");
+    perform_linear_test(TRUE, 1, "Seq03");
+    perform_linear_test(TRUE, 1, "Seq04");
+    perform_linear_test(FALSE, 1, "Seq05");
+    perform_law_test(TRUE, 'a', "Seq01");
+    perform_law_test(TRUE, 'a', "Seq02");
+    perform_law_test(TRUE, 'a', "Seq03");
+    perform_law_test(TRUE, 'a', "Seq04");
+    perform_law_test(FALSE, 'a', "Seq05");
+    perform_law_test(TRUE, 'u', "Seq01");
+    perform_law_test(TRUE, 'u', "Seq02");
+    perform_law_test(TRUE, 'u', "Seq03");
+    perform_law_test(TRUE, 'u', "Seq04");
+    perform_law_test(FALSE, 'u', "Seq05");
+    /* This is not actually an ETSI test */
+    perform_pack_unpack_test();
+
+    printf("Tests passed.\n");
+}
+/*- End of function --------------------------------------------------------*/
+
 int main(int argc, char *argv[])
 {
     AFfilehandle inhandle;
@@ -552,25 +576,7 @@ int main(int argc, char *argv[])
 
     if (etsitests)
     {
-        perform_linear_test(TRUE, 1, "Seq01");
-        perform_linear_test(TRUE, 1, "Seq02");
-        perform_linear_test(TRUE, 1, "Seq03");
-        perform_linear_test(TRUE, 1, "Seq04");
-        perform_linear_test(FALSE, 1, "Seq05");
-        perform_law_test(TRUE, 'a', "Seq01");
-        perform_law_test(TRUE, 'a', "Seq02");
-        perform_law_test(TRUE, 'a', "Seq03");
-        perform_law_test(TRUE, 'a', "Seq04");
-        perform_law_test(FALSE, 'a', "Seq05");
-        perform_law_test(TRUE, 'u', "Seq01");
-        perform_law_test(TRUE, 'u', "Seq02");
-        perform_law_test(TRUE, 'u', "Seq03");
-        perform_law_test(TRUE, 'u', "Seq04");
-        perform_law_test(FALSE, 'u', "Seq05");
-        /* This is not actually an ETSI test */
-        perform_pack_unpack_test();
-
-        printf("Tests passed.\n");
+        etsi_compliance_tests();
     }
     else
     {

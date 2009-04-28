@@ -28,7 +28,7 @@
  * Computer Science, Speech Group
  * Chengxiang Lu and Alex Hauptmann
  *
- * $Id: g722.c,v 1.9 2009/02/21 04:27:46 steveu Exp $
+ * $Id: g722.c,v 1.10 2009/04/22 12:57:40 steveu Exp $
  */
 
 /*! \file */
@@ -415,7 +415,8 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
         {
             if (s->eight_k)
             {
-                amp[outlen++] = (int16_t) rlow;
+                /* We shift by 1 to allow for the 15 bit input to the G.722 algorithm. */
+                amp[outlen++] = (int16_t) (rlow << 1);
             }
             else
             {
@@ -424,8 +425,10 @@ SPAN_DECLARE(int) g722_decode(g722_decode_state_t *s, int16_t amp[], const uint8
                 s->y[s->ptr] = (int16_t) (rlow - rhigh);
                 if (++s->ptr >= 12)
                     s->ptr = 0;
-                amp[outlen++] = (int16_t) (vec_circular_dot_prodi16(s->y, qmf_coeffs_rev, 12, s->ptr) >> 12);
-                amp[outlen++] = (int16_t) (vec_circular_dot_prodi16(s->x, qmf_coeffs_fwd, 12, s->ptr) >> 12);
+                /* We shift by 12 to allow for the QMF filters (DC gain = 4096), less 1
+                   to allow for the 15 bit input to the G.722 algorithm. */
+                amp[outlen++] = (int16_t) (vec_circular_dot_prodi16(s->y, qmf_coeffs_rev, 12, s->ptr) >> 11);
+                amp[outlen++] = (int16_t) (vec_circular_dot_prodi16(s->x, qmf_coeffs_fwd, 12, s->ptr) >> 11);
             }
         }
     }
@@ -511,7 +514,8 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
         {
             if (s->eight_k)
             {
-                xlow = amp[j++];
+                /* We shift by 1 to allow for the 15 bit input to the G.722 algorithm. */
+                xlow = amp[j++] >> 1;
             }
             else
             {
@@ -522,8 +526,11 @@ SPAN_DECLARE(int) g722_encode(g722_encode_state_t *s, uint8_t g722_data[], const
                     s->ptr = 0;
                 sumodd = vec_circular_dot_prodi16(s->x, qmf_coeffs_fwd, 12, s->ptr);
                 sumeven = vec_circular_dot_prodi16(s->y, qmf_coeffs_rev, 12, s->ptr);
-                xlow = (int16_t) ((sumeven + sumodd) >> 13);
-                xhigh = (int16_t) ((sumeven - sumodd) >> 13);
+                /* We shift by 12 to allow for the QMF filters (DC gain = 4096), plus 1
+                   to allow for us summing two filters, plus 1 to allow for the 15 bit
+                   input to the G.722 algorithm. */
+                xlow = (int16_t) ((sumeven + sumodd) >> 14);
+                xhigh = (int16_t) ((sumeven - sumodd) >> 14);
             }
         }
         /* Block 1L, SUBTRA */

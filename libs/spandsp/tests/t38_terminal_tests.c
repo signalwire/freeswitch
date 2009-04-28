@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal_tests.c,v 1.65 2009/02/20 12:34:20 steveu Exp $
+ * $Id: t38_terminal_tests.c,v 1.67 2009/04/25 14:34:45 steveu Exp $
  */
 
 /*! \file */
@@ -34,7 +34,6 @@ These tests exercise the path
     T.38 termination <-> T.38 termination
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
 //#define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
@@ -48,20 +47,12 @@ These tests exercise the path
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#if !defined(__USE_MISC)
-#define __USE_MISC
+#if !defined(_WIN32)
+#include <unistd.h>
 #endif
-#include <arpa/inet.h>
-#include <sys/select.h>
-#include <sys/time.h>
-#include <audiofile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES

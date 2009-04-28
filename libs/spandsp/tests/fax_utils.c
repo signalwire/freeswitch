@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_utils.c,v 1.1 2009/02/20 12:34:20 steveu Exp $
+ * $Id: fax_utils.c,v 1.2 2009/04/25 14:17:47 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -31,10 +31,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <string.h>
 #include <assert.h>
-#include <audiofile.h>
 
 //#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES

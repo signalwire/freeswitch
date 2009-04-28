@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17tx.c,v 1.72 2009/04/12 04:20:01 steveu Exp $
+ * $Id: v17tx.c,v 1.73 2009/04/21 13:59:07 steveu Exp $
  */
 
 /*! \file */
@@ -400,6 +400,16 @@ SPAN_DECLARE(int) v17_tx_restart(v17_tx_state_t *s, int bit_rate, int tep, int s
 
 SPAN_DECLARE(v17_tx_state_t *) v17_tx_init(v17_tx_state_t *s, int bit_rate, int tep, get_bit_func_t get_bit, void *user_data)
 {
+    switch (bit_rate)
+    {
+    case 14400:
+    case 12000:
+    case 9600:
+    case 7200:
+        break;
+    default:
+        return NULL;
+    }
     if (s == NULL)
     {
         if ((s = (v17_tx_state_t *) malloc(sizeof(*s))) == NULL)

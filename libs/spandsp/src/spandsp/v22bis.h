@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.39 2009/04/17 14:37:53 steveu Exp $
+ * $Id: v22bis.h,v 1.41 2009/04/25 10:18:50 steveu Exp $
  */
 
 /*! \file */
@@ -81,13 +81,6 @@ extern "C"
 {
 #endif
 
-/*! Reinitialise an existing V.22bis modem receive context.
-    \brief Reinitialise an existing V.22bis modem receive context.
-    \param s The modem context.
-    \param bit_rate The bit rate of the modem. Valid values are 1200 and 2400.
-    \return 0 for OK, -1 for bad parameter */
-SPAN_DECLARE(int) v22bis_rx_restart(v22bis_state_t *s, int bit_rate);
-
 /*! Process a block of received V.22bis modem audio samples.
     \brief Process a block of received V.22bis modem audio samples.
     \param s The modem context.
@@ -108,7 +101,7 @@ SPAN_DECLARE(int) v22bis_rx_fillin(v22bis_state_t *s, int len);
     \brief Get a snapshot of the current equalizer coefficients.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
-SPAN_DECLARE(int) v22bis_equalizer_state(v22bis_state_t *s, complexf_t **coeffs);
+SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coeffs);
 
 /*! Get the current received carrier frequency.
     \param s The modem context.
@@ -118,7 +111,7 @@ SPAN_DECLARE(float) v22bis_rx_carrier_frequency(v22bis_state_t *s);
 /*! Get the current symbol timing correction since startup.
     \param s The modem context.
     \return The correction. */
-SPAN_DECLARE(float) v22bis_symbol_timing_correction(v22bis_state_t *s);
+SPAN_DECLARE(float) v22bis_rx_symbol_timing_correction(v22bis_state_t *s);
 
 /*! Get a current received signal power.
     \param s The modem context.
@@ -134,7 +127,7 @@ SPAN_DECLARE(void) v22bis_rx_signal_cutoff(v22bis_state_t *s, float cutoff);
     \param s The modem context.
     \param handler The handler routine.
     \param user_data An opaque pointer passed to the handler routine. */
-SPAN_DECLARE(void) v22bis_set_qam_report_handler(v22bis_state_t *s, qam_report_handler_t handler, void *user_data);
+SPAN_DECLARE(void) v22bis_rx_set_qam_report_handler(v22bis_state_t *s, qam_report_handler_t handler, void *user_data);
 
 /*! Generate a block of V.22bis modem audio samples.
     \brief Generate a block of V.22bis modem audio samples.
@@ -157,6 +150,18 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power);
     \return 0 for OK, -1 for bad parameter. */
 SPAN_DECLARE(int) v22bis_restart(v22bis_state_t *s, int bit_rate);
 
+/*! Request a retrain for a V.22bis modem context. A rate change may also be resquested.
+    \brief Request a retrain for a V.22bis modem context.
+    \param s The modem context.
+    \param bit_rate The bit rate of the modem. Valid values are 1200 and 2400.
+    \return 0 for OK, -1 for bad parameter. */
+SPAN_DECLARE(int) v22bis_request_retrain(v22bis_state_t *s, int bit_rate);
+
+/*! Report the current operating bit rate of a V.22bis modem context.
+    \brief Report the current operating bit rate of a V.22bis modem context
+    \param s The modem context. */
+SPAN_DECLARE(int) v22bis_current_bit_rate(v22bis_state_t *s);
+
 /*! Initialise a V.22bis modem context. This must be called before the first
     use of the context, to initialise its contents.
     \brief Initialise a V.22bis modem context.
@@ -173,8 +178,9 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
                                            int guard,
                                            int caller,
                                            get_bit_func_t get_bit,
+                                           void *get_bit_user_data,
                                            put_bit_func_t put_bit,
-                                           void *user_data);
+                                           void *put_bit_user_data);
 
 /*! Release a V.22bis modem receive context.
     \brief Release a V.22bis modem receive context.

@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: at_interpreter_tests.c,v 1.20 2008/11/30 05:43:37 steveu Exp $
+ * $Id: at_interpreter_tests.c,v 1.22 2009/04/24 22:35:25 steveu Exp $
  */
 
 /*! \file */
@@ -221,9 +221,14 @@ static const struct command_response_s general_test_seq[] =
     {"AT+EB=?\r", "\r\n+EB:\r\n\r\nOK\r\n"},                        /* V.250 6.5.2 - Break handling in error control operation */ 
     {"AT+EFCS=?\r", "\r\n+EFCS:(0-2)\r\n\r\nOK\r\n"},               /* V.250 6.5.4 - 32-bit frame check sequence */ 
     {"AT+EFCS?\r", "\r\n+EFCS:0\r\n\r\nOK\r\n"},
-    {"AT+EFRAM=?\r", "\r\n+EFRAM:(1-65535),(1-65535)\r\n\r\nOK\r\n"},     /* V.250 6.5.8 - Frame length */ 
+    {"AT+EFRAM=?\r", "\r\n+EFRAM:(1-65535),(1-65535)\r\n\r\nOK\r\n"},
+                                                                    /* V.250 6.5.8 - Frame length */ 
     {"AT+ER=?\r", "\r\n+ER:(0,1)\r\n\r\nOK\r\n"},                   /* V.250 6.5.5 - Error control reporting */ 
-    {"AT+ES\r", "\r\nOK\r\n"},                                      /* V.250 6.5.1 - Error control selection */ 
+    {"AT+ES=?\r", "\r\n+ES:(0-7),(0-4),(0-9)\r\n\r\nOK\r\n"},       /* V.250 6.5.1 - Error control selection */ 
+    {"AT+ES?\r", "\r\n+ES:0,0,0\r\n\r\nOK\r\n"},
+    {"AT+ESA=?\r", "\r\n+ESA:(0-2),(0-1),(0-1),(0-1),(0-2),(0-1),(0-255),(0-255)\r\n\r\nOK\r\n"},
+                                                                    /* V.80 8.2 - Synchronous access mode configuration */
+    {"AT+ESA?\r", "\r\n+ESA:0,0,0,0,0,0,0,0\r\n\r\nOK\r\n"},
     {"AT+ESR\r", "\r\nOK\r\n"},                                     /* V.250 6.5.3 - Selective repeat */ 
     {"AT+ETBM=?\r", "\r\n+ETBM:(0-2),(0-2),(0-30)\r\n\r\nOK\r\n"},  /* T.31 8.5.1 - Adaptive reception control */ 
     {"AT+ETBM?\r", "\r\n+ETBM:0,0\r\n\r\nOK\r\n"},
@@ -264,6 +269,11 @@ static const struct command_response_s general_test_seq[] =
     {"AT+GMR?\r", "\r\n" VERSION "\r\n\r\nOK\r\n"},                 /* V.250 6.1.6 - Request revision identification */ 
     {"AT+GOI\r", "\r\nOK\r\n"},                                     /* V.250 6.1.8 - Request global object identification */ 
     {"AT+GSN?\r", "\r\n42\r\n\r\nOK\r\n"},                          /* V.250 6.1.7 - Request product serial number identification */ 
+    {"AT+IBC=?\r", "\r\n+IBC:(0-2),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0,1),(0.1),(0,1)\r\n\r\nOK\r\n"},
+                                                                    /* V.80 7.9 - Control of in-band control */
+    {"AT+IBC?\r", "\r\n+IBC:0,0,0,0,0,0,0,0,0,0,0,0,0\r\n\r\nOK\r\n"},
+    {"AT+IBM=?\r", "\r\n+IBM:(0-7),(0-255),(0-255)\r\n\r\nOK\r\n"}, /* V.80 7.10 - In-band MARK idle reporting control */
+    {"AT+IBM?\r", "\r\n+IBM:0,0,0\r\n\r\nOK\r\n"},
     {"AT+ICF?\r", "\r\n+ICF:0,0\r\n\r\nOK\r\n"},                    /* V.250 6.2.11 - DTE-DCE character framing */ 
     {"AT+ICLOK?\r", "\r\n+ICLOK:0\r\n\r\nOK\r\n"},                  /* V.250 6.2.14 - Select sync transmit clock source */ 
     {"AT+IDSR?\r", "\r\n+IDSR:0\r\n\r\nOK\r\n"},                    /* V.250 6.2.16 - Select data set ready option */ 

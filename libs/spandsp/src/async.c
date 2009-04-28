@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.c,v 1.18 2009/02/10 13:06:46 steveu Exp $
+ * $Id: async.c,v 1.19 2009/04/23 14:12:34 steveu Exp $
  */
 
 /*! \file */
@@ -67,6 +67,10 @@ SPAN_DECLARE(const char *) signal_status_to_str(int status)
         return "Shutdown complete";
     case SIG_STATUS_OCTET_REPORT:
         return "Octet report";
+    case SIG_STATUS_POOR_SIGNAL_QUALITY:
+        return "Poor signal quality";
+    case SIG_STATUS_MODEM_RETRAIN_OCCURRED:
+        return "Modem retrain occurred";
     }
     return "???";
 }

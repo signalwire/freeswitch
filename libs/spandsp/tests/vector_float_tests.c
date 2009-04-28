@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: vector_float_tests.c,v 1.12 2008/10/09 13:25:19 steveu Exp $
+ * $Id: vector_float_tests.c,v 1.13 2009/04/26 07:00:39 steveu Exp $
  */
 
 #if defined(HAVE_CONFIG_H)
@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
-#include <audiofile.h>
 
 #include "spandsp.h"
 

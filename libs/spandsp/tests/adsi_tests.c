@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: adsi_tests.c,v 1.55 2009/04/11 15:16:14 steveu Exp $
+ * $Id: adsi_tests.c,v 1.56 2009/04/26 07:24:35 steveu Exp $
  */
 
 /*! \page adsi_tests_page ADSI tests
@@ -47,7 +47,6 @@ tests, these tests do not include line modelling.
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
 #include <assert.h>
 #include <audiofile.h>
 

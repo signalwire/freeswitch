@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v17rx.c,v 1.145 2009/04/20 16:36:36 steveu Exp $
+ * $Id: v17rx.c,v 1.146 2009/04/21 13:59:07 steveu Exp $
  */
 
 /*! \file */
@@ -1323,6 +1323,16 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
 
 SPAN_DECLARE(v17_rx_state_t *) v17_rx_init(v17_rx_state_t *s, int bit_rate, put_bit_func_t put_bit, void *user_data)
 {
+    switch (bit_rate)
+    {
+    case 14400:
+    case 12000:
+    case 9600:
+    case 7200:
+        break;
+    default:
+        return NULL;
+    }
     if (s == NULL)
     {
         if ((s = (v17_rx_state_t *) malloc(sizeof(*s))) == NULL)

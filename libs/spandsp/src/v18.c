@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v18.c,v 1.6 2009/04/20 16:36:36 steveu Exp $
+ * $Id: v18.c,v 1.7 2009/04/26 07:00:38 steveu Exp $
  */
  
 /*! \file */
@@ -113,12 +113,21 @@ static const struct dtmf_to_ascii_s dtmf_to_ascii[] =
     {"##8", 'W'},
     {"##9", 'Z'},
     {"##0", ' '},
+#if defined(WIN32)
+    {"#*1", 'X'}, // (Note 1) 111 1011
+    {"#*2", 'X'}, // (Note 1) 111 1100
+    {"#*3", 'X'}, // (Note 1) 111 1101
+    {"#*4", 'X'}, // (Note 1) 101 1011
+    {"#*5", 'X'}, // (Note 1) 101 1100
+    {"#*6", 'X'}, // (Note 1) 101 1101
+#else
     {"#*1", 'æ'}, // (Note 1) 111 1011
     {"#*2", 'ø'}, // (Note 1) 111 1100
     {"#*3", 'å'}, // (Note 1) 111 1101
     {"#*4", 'Æ'}, // (Note 1) 101 1011
     {"#*5", 'Ø'}, // (Note 1) 101 1100
     {"#*6", 'Å'}, // (Note 1) 101 1101
+#endif
     {"#0", '?'},
     {"#1", 'c'},
     {"#2", 'f'},

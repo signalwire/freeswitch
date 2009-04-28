@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.4 2009/04/17 14:37:53 steveu Exp $
+ * $Id: v22bis.h,v 1.9 2009/04/26 09:50:28 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V22BIS_H_)
@@ -34,22 +34,26 @@
 */
 struct v22bis_state_s
 {
-    /*! \brief The bit rate of the modem. Valid values are 1200 and 2400. */
+    /*! \brief The maximum permitted bit rate of the modem. Valid values are 1200 and 2400. */
     int bit_rate;
     /*! \brief TRUE is this is the calling side modem. */
     int caller;
-    /*! \brief The callback function used to put each bit received. */
-    put_bit_func_t put_bit;
     /*! \brief The callback function used to get the next bit to be transmitted. */
     get_bit_func_t get_bit;
-    /*! \brief A user specified opaque pointer passed to the callback routines. */
-    void *user_data;
+    /*! \brief A user specified opaque pointer passed to the get_bit callback routine. */
+    void *get_bit_user_data;
+    /*! \brief The callback function used to put each bit received. */
+    put_bit_func_t put_bit;
+    /*! \brief A user specified opaque pointer passed to the put_bit callback routine. */
+    void *put_bit_user_data;
     /*! \brief The callback function used to report modem status changes. */
     modem_rx_status_func_t status_handler;
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
-    /* RECEIVE SECTION */
+    int negotiated_bit_rate;
+
+    /* Receive section */
     struct
     {
         /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
@@ -84,8 +88,6 @@ struct v22bis_state_s
         /*! \brief The integral part of the carrier tracking filter. */
         float carrier_track_i;
         
-        int scrambled_ones_to_date;
-
         /*! \brief A callback function which may be enabled to report every symbol's
                    constellation position. */
         qam_report_handler_t qam_report;
@@ -132,12 +134,11 @@ struct v22bis_state_s
     
         int sixteen_way_decisions;
 
-        int detected_unscrambled_ones;
-        int detected_unscrambled_zeros;
-        int detected_2400bps_markers;
+        int pattern_repeats;
+        int last_raw_bits;
     } rx;
 
-    /* TRANSMIT SECTION */
+    /* Transmit section */
     struct
     {
         /*! \brief The gain factor needed to achieve the specified output power. */
@@ -180,6 +181,23 @@ struct v22bis_state_s
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+/*! Reinitialise an existing V.22bis modem receive context.
+    \brief Reinitialise an existing V.22bis modem receive context.
+    \param s The modem context.
+    \return 0 for OK, -1 for bad parameter */
+int v22bis_rx_restart(v22bis_state_t *s);
+
+void v22bis_report_status_change(v22bis_state_t *s, int status);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif
 /*- End of file ------------------------------------------------------------*/

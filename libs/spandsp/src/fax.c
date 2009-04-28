@@ -23,7 +23,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax.c,v 1.91 2009/04/12 03:29:58 steveu Exp $
+ * $Id: fax.c,v 1.92 2009/04/23 15:48:21 steveu Exp $
  */
 
 /*! \file */
@@ -575,7 +575,7 @@ SPAN_DECLARE(fax_state_t *) fax_init(fax_state_t *s, int calling_party)
              (void *) s,
              fax_send_hdlc,
              (void *) s);
-    t30_set_supported_modems(&s->t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29);
+    t30_set_supported_modems(&s->t30, T30_SUPPORT_V27TER | T30_SUPPORT_V29 | T30_SUPPORT_V17);
     t30_restart(&s->t30);
 #if defined(LOG_FAX_AUDIO)
     {

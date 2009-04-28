@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: async.h,v 1.24 2009/02/12 12:38:39 steveu Exp $
+ * $Id: async.h,v 1.25 2009/04/23 14:12:34 steveu Exp $
  */
 
 /*! \file */
@@ -78,7 +78,11 @@ enum
     /*! \brief A modem has completed its task, and shut down. */
     SIG_STATUS_SHUTDOWN_COMPLETE = -10,
     /*! \brief Regular octet report for things like HDLC to the MTP standards. */
-    SIG_STATUS_OCTET_REPORT = -11
+    SIG_STATUS_OCTET_REPORT = -11,
+    /*! \brief Notification that a modem has detected signal quality degradation. */
+    SIG_STATUS_POOR_SIGNAL_QUALITY = -12,
+    /*! \brief Notification that a modem retrain has occurred. */
+    SIG_STATUS_MODEM_RETRAIN_OCCURRED = -13
 };
 
 /*! Message put function for data pumps */

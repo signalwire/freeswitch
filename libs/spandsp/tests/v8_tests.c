@@ -22,14 +22,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v8_tests.c,v 1.31 2008/11/30 10:17:31 steveu Exp $
+ * $Id: v8_tests.c,v 1.32 2009/04/24 22:35:25 steveu Exp $
  */
 
 /*! \page v8_tests_page V.8 tests
 \section v8_tests_page_sec_1 What does it do?
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
+/* Enable the following definition to enable direct probing into the internal structures */
 //#define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
