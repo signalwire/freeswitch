@@ -327,7 +327,7 @@ static switch_status_t timer_next(switch_timer_t *timer)
 	int delta = (int)(private_info->reference - TIMER_MATRIX[timer->interval].tick);
 
 	/* sync up timer if it's not been called for a while otherwise it will return instantly several times until it catches up */
-	if (delta < 0) { 
+	if (delta < -1) { 
 		private_info->reference = timer->tick = TIMER_MATRIX[timer->interval].tick;
 	}
 	timer_step(timer);

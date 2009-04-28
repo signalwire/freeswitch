@@ -745,6 +745,9 @@ static switch_status_t channel_receive_message(switch_core_session_t *session, s
 				switch_frame_t *frame = (switch_frame_t *) pop;
 				switch_frame_free(&frame);
 			}
+
+			switch_core_timer_sync(&tech_pvt->timer);
+
 		}
 		break;
     default:
