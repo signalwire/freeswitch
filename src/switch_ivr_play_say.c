@@ -354,7 +354,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 		input = input->next;
 	}
 
-  done:
+ done:
 
 	if (hint_data) {
 		switch_event_destroy(&hint_data);
@@ -588,9 +588,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_file(switch_core_session_t *se
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
 			/*
-			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
-			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
-			 */
+			  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			*/
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf) {
 					status = SWITCH_STATUS_BREAK;
@@ -769,9 +769,9 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 
 		if (args && (args->input_callback || args->buf || args->buflen)) {
 			/*
-			   dtmf handler function you can hook up to be executed when a digit is dialed during gentones 
-			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
-			 */
+			  dtmf handler function you can hook up to be executed when a digit is dialed during gentones 
+			  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+			*/
 			if (switch_channel_has_dtmf(channel)) {
 				if (!args->input_callback && !args->buf) {
 					status = SWITCH_STATUS_BREAK;
@@ -848,11 +848,33 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	const char *timer_name;
 	const char *prebuf;
 	const char *alt = NULL;
+	const char *sleep_val;
+	const char *play_delimiter_val;
+	char play_delimiter = 0;
+	int sleep_val_i = 250;
 	int eof = 0;
 	switch_size_t bread = 0;
 	int l16 = 0;
     switch_codec_implementation_t read_impl = {0};
+	char *file_dup;
+	char *argv[128] = { 0 };
+	int argc;
+	int cur;
+	switch_status_t rst;
+
+	
     switch_core_session_get_read_impl(session, &read_impl);
+
+	if ((play_delimiter_val = switch_channel_get_variable(channel, "playback_delimiter"))) {
+		play_delimiter = *play_delimiter_val;
+
+		if ((sleep_val = switch_channel_get_variable(channel, "playback_sleep_val"))) {
+			int tmp = atoi(sleep_val);
+			if (tmp >= 0) {
+				sleep_val_i = tmp;
+			}
+		}
+	}
 
 	if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
@@ -862,489 +884,528 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	timer_name = switch_channel_get_variable(channel, "timer_name");
 
 	if (switch_strlen_zero(file) || !switch_channel_media_ready(channel)) {
-		status = SWITCH_STATUS_FALSE;
-		goto end;
+		return SWITCH_STATUS_FALSE;
 	}
 
 	if (!strcasecmp(read_impl.iananame, "l16")) {
 		l16++;
 	}
 
-	if ((alt = strchr(file, ':'))) {
-		char *dup;
+	
+	if (play_delimiter) {
+		file_dup = switch_core_session_strdup(session, file);
+		argc = switch_separate_string(file_dup, play_delimiter, argv, (sizeof(argv) / sizeof(argv[0])));
+	} else {
+		argc = 1;
+		argv[0] = (char *)file;
+	}
 
-		if (!strncasecmp(file, "phrase:", 7)) {
-			char *arg = NULL;
-			const char *lang = switch_channel_get_variable(channel, "language");
-			alt = file + 7;
-			dup = switch_core_session_strdup(session, alt);
-
-			if (dup) {
-				if ((arg = strchr(dup, ':'))) {
-					*arg++ = '\0';
-				}
-				return switch_ivr_phrase_macro(session, dup, arg, lang, args);
-			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
-				return SWITCH_STATUS_FALSE;
+	for(cur = 0; switch_channel_ready(channel) && cur < argc; cur++) {
+		file = argv[cur];
+		asis = 0;
+		eof = 0;
+		
+		if (cur) {
+			fh->samples = sample_start = 0;
+			if (sleep_val_i) {
+				switch_ivr_sleep(session, sleep_val_i, SWITCH_FALSE, args);
 			}
-		} else if (!strncasecmp(file, "say:", 4)) {
-			char *engine = NULL, *voice = NULL, *text = NULL;
-			alt = file + 4;
-			dup = switch_core_session_strdup(session, alt);
-			engine = dup;
+		}
+		
+		status = SWITCH_STATUS_SUCCESS;
 
-			if (!switch_strlen_zero(engine)) {
-				if ((voice = strchr(engine, ':'))) {
-					*voice++ = '\0';
-					if (!switch_strlen_zero(voice) && (text = strchr(voice, ':'))) {
-						*text++ = '\0';
+		if ((alt = strchr(file, ':'))) {
+			char *dup;
+
+			if (!strncasecmp(file, "phrase:", 7)) {
+				char *arg = NULL;
+				const char *lang = switch_channel_get_variable(channel, "language");
+				alt = file + 7;
+				dup = switch_core_session_strdup(session, alt);
+
+				if (dup) {
+					if ((arg = strchr(dup, ':'))) {
+						*arg++ = '\0';
+					}
+					if ((rst = switch_ivr_phrase_macro(session, dup, arg, lang, args) != SWITCH_STATUS_SUCCESS)) {
+						return rst;
+					}
+					continue;
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+					continue;
+				}
+			} else if (!strncasecmp(file, "say:", 4)) {
+				char *engine = NULL, *voice = NULL, *text = NULL;
+				alt = file + 4;
+				dup = switch_core_session_strdup(session, alt);
+				engine = dup;
+
+				if (!switch_strlen_zero(engine)) {
+					if ((voice = strchr(engine, ':'))) {
+						*voice++ = '\0';
+						if (!switch_strlen_zero(voice) && (text = strchr(voice, ':'))) {
+							*text++ = '\0';
+						}
 					}
 				}
-			}
 
-			if (!switch_strlen_zero(engine) && !switch_strlen_zero(voice) && !switch_strlen_zero(text)) {
-				return switch_ivr_speak_text(session, engine, voice, text, args);
-			} else if (!switch_strlen_zero(engine) && !(voice && text)) {
-				text = engine;
-				engine = (char *) switch_channel_get_variable(channel, "tts_engine");
-				voice = (char *) switch_channel_get_variable(channel, "tts_voice");
-				if (engine && text) {
-					return switch_ivr_speak_text(session, engine, voice, text, args);
+				if (!switch_strlen_zero(engine) && !switch_strlen_zero(voice) && !switch_strlen_zero(text)) {
+					if ((rst = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
+						return rst;
+					}
+					continue;
+				} else if (!switch_strlen_zero(engine) && !(voice && text)) {
+					text = engine;
+					engine = (char *) switch_channel_get_variable(channel, "tts_engine");
+					voice = (char *) switch_channel_get_variable(channel, "tts_voice");
+					if (engine && text) {
+						if ((rst = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
+							return rst;
+						}
+						continue;
+					}
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
+					continue;
 				}
+			}
+
+		}
+
+		if (!prefix) {
+			prefix = SWITCH_GLOBAL_dirs.base_dir;
+		}
+
+		if (!strstr(file, SWITCH_URL_SEPARATOR)) {
+			if (!switch_is_file_path(file)) {
+				file = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
+			}
+			if ((ext = strrchr(file, '.'))) {
+				ext++;
 			} else {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Args\n");
-				return SWITCH_STATUS_FALSE;
+				ext = read_impl.iananame;
+				file = switch_core_session_sprintf(session, "%s.%s", file, ext);
+				asis = 1;
 			}
 		}
 
-	}
-
-	if (!prefix) {
-		prefix = SWITCH_GLOBAL_dirs.base_dir;
-	}
-
-	if (!strstr(file, SWITCH_URL_SEPARATOR)) {
-		if (!switch_is_file_path(file)) {
-			file = switch_core_session_sprintf(session, "%s%s%s", prefix, SWITCH_PATH_SEPARATOR, file);
+	
+		if (!fh) {
+			fh = &lfh;
+			memset(fh, 0, sizeof(lfh));
 		}
-		if ((ext = strrchr(file, '.'))) {
-			ext++;
-		} else {
-			ext = read_impl.iananame;
-			file = switch_core_session_sprintf(session, "%s.%s", file, ext);
+
+		if (fh->samples > 0) {
+			sample_start = fh->samples;
+			fh->samples = 0;
+		}
+
+		if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
+			int maybe = atoi(prebuf);
+			if (maybe > 0) {
+				fh->prebuf = maybe;
+			}
+		}
+		
+		if (switch_core_file_open(fh,
+								  file,
+								  read_impl.number_of_channels,
+								  read_impl.actual_samples_per_second,
+								  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
+			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+			status = SWITCH_STATUS_NOTFOUND;
+			continue;
+		}
+		if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
 			asis = 1;
 		}
-	}
 
-	if (!fh) {
-		fh = &lfh;
-		memset(fh, 0, sizeof(lfh));
-	}
-
-	if (fh->samples > 0) {
-		sample_start = fh->samples;
-		fh->samples = 0;
-	}
-
-	if ((prebuf = switch_channel_get_variable(channel, "stream_prebuffer"))) {
-		int maybe = atoi(prebuf);
-		if (maybe > 0) {
-			fh->prebuf = maybe;
+		if (!abuf) {
+			switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
+			write_frame.data = abuf;
+			write_frame.buflen = FILE_STARTSAMPLES;
 		}
-	}
 
-	if (switch_core_file_open(fh,
-							  file,
-							  read_impl.number_of_channels,
-							  read_impl.actual_samples_per_second,
-							  SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
-		switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-		status = SWITCH_STATUS_NOTFOUND;
-		goto end;
-	}
-	if (switch_test_flag(fh, SWITCH_FILE_NATIVE)) {
-		asis = 1;
-	}
+		if (sample_start > 0) {
+			uint32_t pos = 0;
+			switch_core_file_seek(fh, &pos, 0, SEEK_SET);
+			switch_core_file_seek(fh, &pos, sample_start, SEEK_CUR);
+		}
 
-	switch_zmalloc(abuf, FILE_STARTSAMPLES * sizeof(*abuf));
-	write_frame.data = abuf;
-	write_frame.buflen = FILE_STARTSAMPLES;
+		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
+			title = switch_core_session_strdup(session, p);
+			switch_channel_set_variable(channel, "RECORD_TITLE", p);
+		}
 
-	if (sample_start > 0) {
-		uint32_t pos = 0;
-		switch_core_file_seek(fh, &pos, 0, SEEK_SET);
-		switch_core_file_seek(fh, &pos, sample_start, SEEK_CUR);
-	}
+		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, &p) == SWITCH_STATUS_SUCCESS) {
+			copyright = switch_core_session_strdup(session, p);
+			switch_channel_set_variable(channel, "RECORD_COPYRIGHT", p);
+		}
 
-	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_TITLE, &p) == SWITCH_STATUS_SUCCESS) {
-		title = switch_core_session_strdup(session, p);
-		switch_channel_set_variable(channel, "RECORD_TITLE", p);
-	}
+		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, &p) == SWITCH_STATUS_SUCCESS) {
+			software = switch_core_session_strdup(session, p);
+			switch_channel_set_variable(channel, "RECORD_SOFTWARE", p);
+		}
 
-	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COPYRIGHT, &p) == SWITCH_STATUS_SUCCESS) {
-		copyright = switch_core_session_strdup(session, p);
-		switch_channel_set_variable(channel, "RECORD_COPYRIGHT", p);
-	}
+		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, &p) == SWITCH_STATUS_SUCCESS) {
+			artist = switch_core_session_strdup(session, p);
+			switch_channel_set_variable(channel, "RECORD_ARTIST", p);
+		}
 
-	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_SOFTWARE, &p) == SWITCH_STATUS_SUCCESS) {
-		software = switch_core_session_strdup(session, p);
-		switch_channel_set_variable(channel, "RECORD_SOFTWARE", p);
-	}
+		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, &p) == SWITCH_STATUS_SUCCESS) {
+			comment = switch_core_session_strdup(session, p);
+			switch_channel_set_variable(channel, "RECORD_COMMENT", p);
+		}
 
-	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_ARTIST, &p) == SWITCH_STATUS_SUCCESS) {
-		artist = switch_core_session_strdup(session, p);
-		switch_channel_set_variable(channel, "RECORD_ARTIST", p);
-	}
+		if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_DATE, &p) == SWITCH_STATUS_SUCCESS) {
+			date = switch_core_session_strdup(session, p);
+			switch_channel_set_variable(channel, "RECORD_DATE", p);
+		}
 
-	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_COMMENT, &p) == SWITCH_STATUS_SUCCESS) {
-		comment = switch_core_session_strdup(session, p);
-		switch_channel_set_variable(channel, "RECORD_COMMENT", p);
-	}
+		interval = read_impl.microseconds_per_packet / 1000;
 
-	if (switch_core_file_get_string(fh, SWITCH_AUDIO_COL_STR_DATE, &p) == SWITCH_STATUS_SUCCESS) {
-		date = switch_core_session_strdup(session, p);
-		switch_channel_set_variable(channel, "RECORD_DATE", p);
-	}
-
-	interval = read_impl.microseconds_per_packet / 1000;
-
-	if (!fh->audio_buffer) {
-		switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
 		if (!fh->audio_buffer) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setup buffer failed\n");
-
-			switch_core_file_close(fh);
-			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-
-			status = SWITCH_STATUS_GENERR;
-			goto end;
+			switch_buffer_create_dynamic(&fh->audio_buffer, FILE_BLOCKSIZE, FILE_BUFSIZE, 0);
+			switch_assert(fh->audio_buffer);
 		}
-	}
 
-	if (asis) {
-		write_frame.codec = switch_core_session_get_read_codec(session);
-		samples = read_impl.samples_per_packet;
-		framelen = read_impl.encoded_bytes_per_packet;
-	} else {
-		codec_name = "L16";
+		if (asis) {
+			write_frame.codec = switch_core_session_get_read_codec(session);
+			samples = read_impl.samples_per_packet;
+			framelen = read_impl.encoded_bytes_per_packet;
+		} else {
+			codec_name = "L16";
 
-		if (switch_core_codec_init(&codec,
-								   codec_name,
-								   NULL,
-								   fh->samplerate,
-								   interval, fh->channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG,
-							  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+			if (!switch_core_codec_ready((&codec))) {
+				if (switch_core_codec_init(&codec,
+										   codec_name,
+										   NULL,
+										   fh->samplerate,
+										   interval, fh->channels, SWITCH_CODEC_FLAG_ENCODE | SWITCH_CODEC_FLAG_DECODE, NULL, pool) == SWITCH_STATUS_SUCCESS) {
+					switch_log_printf(SWITCH_CHANNEL_LOG,
+									  SWITCH_LOG_DEBUG, "Codec Activated %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+				
+
+				} else {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
+									  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
+					switch_core_file_close(fh);
+					switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+					status = SWITCH_STATUS_GENERR;
+					continue;
+				}
+			}
 
 			write_frame.codec = &codec;
-		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
-							  "Raw Codec Activation Failed %s@%uhz %u channels %dms\n", codec_name, fh->samplerate, fh->channels, interval);
-			switch_core_file_close(fh);
-			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-			status = SWITCH_STATUS_GENERR;
-			goto end;
-		}
-		samples = codec.implementation->samples_per_packet;
-		framelen = codec.implementation->decoded_bytes_per_packet;
-	}
 
-	if (timer_name) {
-		uint32_t len;
-
-		len = samples * 2;
-		if (switch_core_timer_init(&timer, timer_name, interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setup timer failed!\n");
-			switch_core_codec_destroy(&codec);
-			switch_core_file_close(fh);
-			switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
-			status = SWITCH_STATUS_GENERR;
-			goto end;
-		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", len, interval);
-	}
-	write_frame.rate = fh->samplerate;
-
-	if (timer_name) {
-		/* start a thread to absorb incoming audio */
-		switch_core_service_session(session);
-	}
-
-	ilen = samples;
-
-	for (;;) {
-		int done = 0;
-		int do_speed = 1;
-		int last_speed = -1;
-
-		if (!switch_channel_ready(channel)) {
-			status = SWITCH_STATUS_FALSE;
-			break; 
+			samples = codec.implementation->samples_per_packet;
+			framelen = codec.implementation->decoded_bytes_per_packet;
 		}
 
-		if (switch_channel_test_flag(channel, CF_BREAK)) {
-			switch_channel_clear_flag(channel, CF_BREAK);
-			status = SWITCH_STATUS_BREAK;
-			break; 
+		if (timer_name && !timer.samplecount) {
+			uint32_t len;
+
+			len = samples * 2;
+			if (switch_core_timer_init(&timer, timer_name, interval, samples, pool) != SWITCH_STATUS_SUCCESS) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Setup timer failed!\n");
+				switch_core_codec_destroy(&codec);
+				switch_core_file_close(fh);
+				switch_core_session_reset(session, SWITCH_TRUE, SWITCH_TRUE);
+				status = SWITCH_STATUS_GENERR;
+				continue;
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Setup timer success %u bytes per %d ms!\n", len, interval);
+		}
+		write_frame.rate = fh->samplerate;
+
+		if (timer_name) {
+			/* start a thread to absorb incoming audio */
+			switch_core_service_session(session);
 		}
 
-		if (switch_core_session_private_event_count(session)) {
-			switch_ivr_parse_all_events(session);
-		}
+		ilen = samples;
 
-		if (args && (args->input_callback || args->buf || args->buflen)) {
-			/*
-			   dtmf handler function you can hook up to be executed when a digit is dialed during playback 
-			   if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
-			 */
-			if (switch_channel_has_dtmf(channel)) {
-				if (!args->input_callback && !args->buf) {
-					status = SWITCH_STATUS_BREAK;
+		for (;;) {
+			int done = 0;
+			int do_speed = 1;
+			int last_speed = -1;
+
+			if (!switch_channel_ready(channel)) {
+				status = SWITCH_STATUS_FALSE;
+				break; 
+			}
+
+			if (switch_channel_test_flag(channel, CF_BREAK)) {
+				switch_channel_clear_flag(channel, CF_BREAK);
+				status = SWITCH_STATUS_BREAK;
+				break; 
+			}
+
+			if (switch_core_session_private_event_count(session)) {
+				switch_ivr_parse_all_events(session);
+			}
+
+			if (args && (args->input_callback || args->buf || args->buflen)) {
+				/*
+				  dtmf handler function you can hook up to be executed when a digit is dialed during playback 
+				  if you return anything but SWITCH_STATUS_SUCCESS the playback will stop.
+				*/
+				if (switch_channel_has_dtmf(channel)) {
+					if (!args->input_callback && !args->buf) {
+						status = SWITCH_STATUS_BREAK;
+						done = 1;
+						break; 
+					}
+					switch_channel_dequeue_dtmf(channel, &dtmf);
+					if (args->input_callback) {
+						status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
+					} else {
+						*((char *) args->buf) = dtmf.digit;
+						status = SWITCH_STATUS_BREAK;
+					}
+				}
+
+				if (args->input_callback) {
+					switch_event_t *event;
+
+					if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
+						status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
+						switch_event_destroy(&event);
+					}
+				}
+
+				if (status != SWITCH_STATUS_SUCCESS) {
 					done = 1;
 					break; 
 				}
-				switch_channel_dequeue_dtmf(channel, &dtmf);
-				if (args->input_callback) {
-					status = args->input_callback(session, (void *) &dtmf, SWITCH_INPUT_TYPE_DTMF, args->buf, args->buflen);
-				} else {
-					*((char *) args->buf) = dtmf.digit;
-					status = SWITCH_STATUS_BREAK;
+			}
+
+			if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
+				if (framelen > FILE_STARTSAMPLES) {
+					framelen = FILE_STARTSAMPLES;
+				}
+				memset(abuf, 0, framelen);
+				olen = ilen;
+				do_speed = 0;
+			} else if (fh->sp_audio_buffer && (eof || (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen)))) {
+				if (!(bread = switch_buffer_read(fh->sp_audio_buffer, abuf, framelen))) {
+					if (eof) {
+						continue;
+					} else {
+						break; 
+					}
+				}
+
+				if (bread < framelen) {
+					memset(abuf + bread, 0, framelen - bread);
+				}
+
+				olen = asis ? framelen : ilen;
+				do_speed = 0;
+			} else if (fh->audio_buffer && (eof || (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen)))) {
+				if (!(bread = switch_buffer_read(fh->audio_buffer, abuf, framelen))) {
+					if (eof) {
+						break; 
+					} else {
+						continue;
+					}
+				}
+
+				if (bread < framelen) {
+					memset(abuf + bread, 0, framelen - bread);
+				}
+
+				olen = asis ? framelen : ilen;
+			} else {
+				if (eof) {
+					break;
+				}
+				olen = FILE_STARTSAMPLES;
+				if (!asis) {
+					olen /= 2;
+				}
+				if (switch_core_file_read(fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
+					eof++;
+					continue;
+				}
+				switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
+				olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
+				if (!asis) {
+					olen /= 2;
 				}
 			}
 
-			if (args->input_callback) {
-				switch_event_t *event;
+			if (done || olen <= 0) {
+				break; 
+			}
 
-				if (switch_core_session_dequeue_event(session, &event, SWITCH_FALSE) == SWITCH_STATUS_SUCCESS) {
-					status = args->input_callback(session, event, SWITCH_INPUT_TYPE_EVENT, args->buf, args->buflen);
-					switch_event_destroy(&event);
+			if (!asis) {
+				if (fh->speed > 2) {
+					fh->speed = 2;
+				} else if (fh->speed < -2) {
+					fh->speed = -2;
 				}
 			}
 
-			if (status != SWITCH_STATUS_SUCCESS) {
+			if (!asis && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
+				switch_buffer_zero(fh->sp_audio_buffer);
+			}
+
+			if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
+				/* file position has changed flush the buffer */
+				switch_buffer_zero(fh->audio_buffer);
+				switch_clear_flag(fh, SWITCH_FILE_SEEK);
+			}
+
+
+			if (!asis && fh->speed && do_speed) {
+				float factor = 0.25f * abs(fh->speed);
+				switch_size_t newlen, supplement, step;
+				short *bp = write_frame.data;
+				switch_size_t wrote = 0;
+
+				supplement = (int) (factor * olen);
+				if (!supplement) {
+					supplement = 1;
+				}
+				newlen = (fh->speed > 0) ? olen - supplement : olen + supplement;
+
+				step = (fh->speed > 0) ? (newlen / supplement) : (olen / supplement);
+
+				if (!fh->sp_audio_buffer) {
+					switch_buffer_create_dynamic(&fh->sp_audio_buffer, 1024, 1024, 0);
+				}
+
+				while ((wrote + step) < newlen) {
+					switch_buffer_write(fh->sp_audio_buffer, bp, step * 2);
+					wrote += step;
+					bp += step;
+					if (fh->speed > 0) {
+						bp++;
+					} else {
+						float f;
+						short s;
+						f = (float) (*bp + *(bp + 1) + *(bp - 1));
+						f /= 3;
+						s = (short) f;
+						switch_buffer_write(fh->sp_audio_buffer, &s, 2);
+						wrote++;
+					}
+				}
+				if (wrote < newlen) {
+					switch_size_t r = newlen - wrote;
+					switch_buffer_write(fh->sp_audio_buffer, bp, r * 2);
+					wrote += r;
+				}
+				last_speed = fh->speed;
+				continue;
+			}
+
+			if (olen < llen) {
+				uint8_t *dp = (uint8_t *) write_frame.data;
+				memset(dp + (int) olen, 0, (int) (llen - olen));
+				olen = llen;
+			}
+
+			write_frame.samples = (uint32_t) olen;
+
+			if (asis) {
+				write_frame.datalen = (uint32_t) olen;
+			} else {
+				write_frame.datalen = write_frame.samples * 2;
+			}
+
+			llen = olen;
+
+			if (timer_name) {
+				write_frame.timestamp = timer.samplecount;
+			}
+#ifndef WIN32
+#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
+			if (!asis && l16) {
+				switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
+			}
+#endif
+#endif
+			if (fh->vol) {
+				switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
+			}
+
+			fh->offset_pos += write_frame.samples / 2;
+			status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
+
+			if (status == SWITCH_STATUS_MORE_DATA) {
+				status = SWITCH_STATUS_SUCCESS;
+				continue;
+			} else if (status != SWITCH_STATUS_SUCCESS) {
 				done = 1;
 				break; 
 			}
-		}
 
-		if (switch_test_flag(fh, SWITCH_FILE_PAUSE)) {
-			if (framelen > FILE_STARTSAMPLES) {
-				framelen = FILE_STARTSAMPLES;
-			}
-			memset(abuf, 0, framelen);
-			olen = ilen;
-			do_speed = 0;
-		} else if (fh->sp_audio_buffer && (eof || (switch_buffer_inuse(fh->sp_audio_buffer) > (switch_size_t) (framelen)))) {
-			if (!(bread = switch_buffer_read(fh->sp_audio_buffer, abuf, framelen))) {
-				if (eof) {
-					continue;
-				} else {
-					break; 
-				}
-			}
-
-			if (bread < framelen) {
-				memset(abuf + bread, 0, framelen - bread);
-			}
-
-			olen = asis ? framelen : ilen;
-			do_speed = 0;
-		} else if (fh->audio_buffer && (eof || (switch_buffer_inuse(fh->audio_buffer) > (switch_size_t) (framelen)))) {
-			if (!(bread = switch_buffer_read(fh->audio_buffer, abuf, framelen))) {
-				if (eof) {
-					break; 
-				} else {
-					continue;
-				}
-			}
-
-			if (bread < framelen) {
-				memset(abuf + bread, 0, framelen - bread);
-			}
-
-			olen = asis ? framelen : ilen;
-		} else {
-			if (eof) {
-				break;
-			}
-			olen = FILE_STARTSAMPLES;
-			if (!asis) {
-				olen /= 2;
-			}
-			if (switch_core_file_read(fh, abuf, &olen) != SWITCH_STATUS_SUCCESS) {
-				eof++;
-				continue;
-			}
-			switch_buffer_write(fh->audio_buffer, abuf, asis ? olen : olen * 2);
-			olen = switch_buffer_read(fh->audio_buffer, abuf, framelen);
-			if (!asis) {
-				olen /= 2;
-			}
-		}
-
-		if (done || olen <= 0) {
-			break; 
-		}
-
-		if (!asis) {
-			if (fh->speed > 2) {
-				fh->speed = 2;
-			} else if (fh->speed < -2) {
-				fh->speed = -2;
-			}
-		}
-
-		if (!asis && fh->audio_buffer && last_speed > -1 && last_speed != fh->speed) {
-			switch_buffer_zero(fh->sp_audio_buffer);
-		}
-
-		if (switch_test_flag(fh, SWITCH_FILE_SEEK)) {
-			/* file position has changed flush the buffer */
-			switch_buffer_zero(fh->audio_buffer);
-			switch_clear_flag(fh, SWITCH_FILE_SEEK);
-		}
-
-
-		if (!asis && fh->speed && do_speed) {
-			float factor = 0.25f * abs(fh->speed);
-			switch_size_t newlen, supplement, step;
-			short *bp = write_frame.data;
-			switch_size_t wrote = 0;
-
-			supplement = (int) (factor * olen);
-			if (!supplement) {
-				supplement = 1;
-			}
-			newlen = (fh->speed > 0) ? olen - supplement : olen + supplement;
-
-			step = (fh->speed > 0) ? (newlen / supplement) : (olen / supplement);
-
-			if (!fh->sp_audio_buffer) {
-				switch_buffer_create_dynamic(&fh->sp_audio_buffer, 1024, 1024, 0);
-			}
-
-			while ((wrote + step) < newlen) {
-				switch_buffer_write(fh->sp_audio_buffer, bp, step * 2);
-				wrote += step;
-				bp += step;
-				if (fh->speed > 0) {
-					bp++;
-				} else {
-					float f;
-					short s;
-					f = (float) (*bp + *(bp + 1) + *(bp - 1));
-					f /= 3;
-					s = (short) f;
-					switch_buffer_write(fh->sp_audio_buffer, &s, 2);
-					wrote++;
-				}
-			}
-			if (wrote < newlen) {
-				switch_size_t r = newlen - wrote;
-				switch_buffer_write(fh->sp_audio_buffer, bp, r * 2);
-				wrote += r;
-			}
-			last_speed = fh->speed;
-			continue;
-		}
-		if (olen < llen) {
-			uint8_t *dp = (uint8_t *) write_frame.data;
-			memset(dp + (int) olen, 0, (int) (llen - olen));
-			olen = llen;
-		}
-
-		write_frame.samples = (uint32_t) olen;
-
-		if (asis) {
-			write_frame.datalen = (uint32_t) olen;
-		} else {
-			write_frame.datalen = write_frame.samples * 2;
-		}
-
-		llen = olen;
-
-		if (timer_name) {
-			write_frame.timestamp = timer.samplecount;
-		}
-#ifndef WIN32
-#if SWITCH_BYTE_ORDER == __BIG_ENDIAN
-		if (!asis && l16) {
-			switch_swap_linear(write_frame.data, (int) write_frame.datalen / 2);
-		}
-#endif
-#endif
-		if (fh->vol) {
-			switch_change_sln_volume(write_frame.data, write_frame.datalen / 2, fh->vol);
-		}
-
-		fh->offset_pos += write_frame.samples / 2;
-		status = switch_core_session_write_frame(session, &write_frame, SWITCH_IO_FLAG_NONE, 0);
-
-		if (status == SWITCH_STATUS_MORE_DATA) {
-			status = SWITCH_STATUS_SUCCESS;
-			continue;
-		} else if (status != SWITCH_STATUS_SUCCESS) {
-			done = 1;
-			break; 
-		}
-
-		if (done) {
-			break; 
-		}
-
-		if (timer_name) {
-			if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
-				break; 
-			}
-		} else {				/* time off the channel (if you must) */
-			switch_frame_t *read_frame;
-			switch_status_t tstatus;
-			while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
-				switch_yield(10000);
-			}
-
-			tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
-
-			if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
+			if (done) {
 				break; 
 			}
 
-			if (args && (args->read_frame_callback)) {
-				int ok = 1;
-				switch_set_flag(fh, SWITCH_FILE_CALLBACK);
-				if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
-					ok = 0;
-				}
-				switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
-				if (!ok) {
+			if (timer_name) {
+				if (switch_core_timer_next(&timer) != SWITCH_STATUS_SUCCESS) {
 					break; 
 				}
+			} else {				/* time off the channel (if you must) */
+				switch_frame_t *read_frame;
+				switch_status_t tstatus;
+				while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_HOLD)) {
+					switch_yield(10000);
+				}
+
+				tstatus = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, 0);
+
+				if (!SWITCH_READ_ACCEPTABLE(tstatus)) {
+					break; 
+				}
+
+				if (args && (args->read_frame_callback)) {
+					int ok = 1;
+					switch_set_flag(fh, SWITCH_FILE_CALLBACK);
+					if (args->read_frame_callback(session, read_frame, args->user_data) != SWITCH_STATUS_SUCCESS) {
+						ok = 0;
+					}
+					switch_clear_flag(fh, SWITCH_FILE_CALLBACK);
+					if (!ok) {
+						break; 
+					}
+				}
 			}
+		}
+
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done playing file\n");
+		
+		switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_out / read_impl.samples_per_second);
+		switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_out);
+
+		switch_core_file_close(fh);
+
+		if (fh->audio_buffer) {
+			switch_buffer_destroy(&fh->audio_buffer);
+		}
+		
+		if (fh->sp_audio_buffer) {
+			switch_buffer_destroy(&fh->sp_audio_buffer);
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "done playing file\n");
-	//switch_core_file_seek(fh, &fh->last_pos, 0, SEEK_CUR);
-
-
-	switch_channel_set_variable_printf(channel, "playback_ms", "%d", fh->samples_out / read_impl.samples_per_second);
-	switch_channel_set_variable_printf(channel, "playback_samples", "%d", fh->samples_out);
-
-	switch_core_file_close(fh);
-	switch_buffer_destroy(&fh->audio_buffer);
-	switch_buffer_destroy(&fh->sp_audio_buffer);
-	if (!asis) {
+	if (switch_core_codec_ready((&codec))) {
 		switch_core_codec_destroy(&codec);
 	}
-	if (timer_name) {
+
+	if (timer.samplecount) {
 		/* End the audio absorbing thread */
 		switch_core_thread_session_end(session);
 		switch_core_timer_destroy(&timer);
 	}
 
 
-  end:
+
 	switch_safe_free(abuf);
 
 	switch_core_session_reset(session, SWITCH_FALSE, SWITCH_TRUE);
@@ -1600,7 +1661,7 @@ SWITCH_DECLARE(switch_status_t) switch_play_and_get_digits(switch_core_session_t
 		memset(digit_buffer, 0, digit_buffer_length);
 		switch_channel_flush_dtmf(channel);
 		status = switch_ivr_read(session, min_digits, max_digits, prompt_audio_file, var_name, 
-												 digit_buffer, digit_buffer_length, timeout, valid_terminators);
+								 digit_buffer, digit_buffer_length, timeout, valid_terminators);
 		if (status == SWITCH_STATUS_TIMEOUT && strlen(digit_buffer) >= min_digits) {
 			status = SWITCH_STATUS_SUCCESS;
 		}

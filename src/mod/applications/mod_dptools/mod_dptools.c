@@ -40,8 +40,6 @@ SWITCH_MODULE_DEFINITION(mod_dptools, mod_dptools_load, NULL, NULL);
 SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
-	char *argv[128] = { 0 };
-	int argc;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int x = 0;
 	char *lbuf;
@@ -1834,7 +1832,7 @@ SWITCH_STANDARD_APP(playback_function)
 {
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_status_t status;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	args.input_callback = on_dtmf;
 
