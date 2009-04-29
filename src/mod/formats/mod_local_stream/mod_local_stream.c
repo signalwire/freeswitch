@@ -301,11 +301,12 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		return SWITCH_STATUS_FALSE;
 	}
 
+	switch_mutex_lock(globals.mutex);
+
  top:
 
 	alt_path = switch_mprintf("%s/%d", path, handle->samplerate);
 
-	switch_mutex_lock(globals.mutex);
 	if ((source = switch_core_hash_find(globals.source_hash, alt_path))) {
 		path = alt_path;
 	} else {
