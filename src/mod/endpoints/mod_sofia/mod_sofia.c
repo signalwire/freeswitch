@@ -2807,30 +2807,62 @@ static void general_event_handler(switch_event_t *event)
 			const char *from_uri = switch_event_get_header(event, "from-uri");
 			sofia_profile_t *profile;
 
-			if (to_uri && from_uri && ct && es && profile_name && (profile = sofia_glue_find_profile(profile_name))) {
-				nua_handle_t *nh = nua_handle(profile->nua, 
-											  NULL, 
-											  NUTAG_URL(to_uri), 
-											  SIPTAG_FROM_STR(from_uri), 
-											  SIPTAG_TO_STR(to_uri), 
-											  SIPTAG_CONTACT_STR(profile->url), 
-											  TAG_END());
-				
-				nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
-				
-				nua_info(nh,
-						 NUTAG_WITH_THIS(profile->nua),
-						 TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)),
-						 TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
-						 TAG_END());
-				
 
+			if (to_uri || from_uri) {
+				
+				if (!to_uri) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To-URI header\n");
+					return;
+				}
+				
+				if (!from_uri) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From-URI header\n");
+					return;
+				}
+				
+				if (!es) {
+					es = "message-summary";
+				}
 
-				sofia_glue_release_profile(profile);
+				if (!ct) {
+					ct = "application/simple-message-summary";
+				}
+
+				if (!profile_name) {
+					profile_name = "default";
+				}
+				
+				if (!(profile = sofia_glue_find_profile(profile_name))) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
+					return;
+				}
+
+				
+				if (to_uri && from_uri && ct && es && profile_name && (profile = sofia_glue_find_profile(profile_name))) {
+					nua_handle_t *nh = nua_handle(profile->nua, 
+												  NULL, 
+												  NUTAG_URL(to_uri), 
+												  SIPTAG_FROM_STR(from_uri), 
+												  SIPTAG_TO_STR(to_uri), 
+												  SIPTAG_CONTACT_STR(profile->url), 
+												  TAG_END());
+				
+					nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+				
+					nua_notify(nh,
+							   NUTAG_NEWSUB(1),
+							   NUTAG_WITH_THIS(profile->nua),
+							   SIPTAG_EVENT_STR(es), 
+							   TAG_IF(ct, SIPTAG_CONTENT_TYPE_STR(ct)),
+							   TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
+							   TAG_END());
+				
+					sofia_glue_release_profile(profile);
+				}
+
 				return;
-				
 			}
-			
+
 			if (uuid && ct && es) {
 				switch_core_session_t *session;
 				private_object_t *tech_pvt;
@@ -2944,28 +2976,27 @@ static void general_event_handler(switch_event_t *event)
 			char buf[1024] = "";
 			char *p;
 
-			
 			if (!profile_name) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Profile Name\n");
-				goto done;
-			}
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing Profile Name\n");
+                goto done;
+            }
 
-			if (!to_uri && !local_user_full) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To-URI header\n");
-				goto done;
-			}
+            if (!to_uri && !local_user_full) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To-URI header\n");
+                goto done;
+            }
 
-			if (!from_uri) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From-URI header\n");
-				goto done;
-			}
+            if (!from_uri) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From-URI header\n");
+                goto done;
+            }
 
-			
-			if (!(profile = sofia_glue_find_profile(profile_name))) {
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
-				goto done;
-			}
-			
+
+            if (!(profile = sofia_glue_find_profile(profile_name))) {
+                switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find profile %s\n", profile_name);
+                goto done;
+            }
+
 
 			if (local_user_full) {
 				local_dup = strdup(local_user_full);
