@@ -40,6 +40,8 @@ SWITCH_MODULE_DEFINITION(mod_dptools, mod_dptools_load, NULL, NULL);
 SWITCH_STANDARD_DIALPLAN(inline_dialplan_hunt)
 {
 	switch_caller_extension_t *extension = NULL;
+	char *argv[128] = { 0 };
+	int argc;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	int x = 0;
 	char *lbuf;
