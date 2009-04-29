@@ -1029,7 +1029,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s activate passthru 2833 mode.\n", switch_channel_get_name(channel));
 			}
 			
-			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
+			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_UNBRIDGE:
@@ -1038,7 +1038,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s deactivate passthru 2833 mode.\n", switch_channel_get_name(channel));
 				switch_rtp_clear_flag(tech_pvt->rtp_session, SWITCH_RTP_FLAG_PASS_RFC2833);
 			}
-			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
+			rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		}
 		goto end;
 	case SWITCH_MESSAGE_INDICATE_AUDIO_SYNC:
