@@ -154,7 +154,7 @@ typedef enum {
 	CFLAG_ENFORCE_MIN = (1 << 2),
 	CFLAG_DESTRUCT = (1 << 3),
 	CFLAG_LOCKED = (1 << 4),
-	CFLAG_ANSWERED = (1 << 5),
+	CFLAG_ANSWERED = (1 << 5)
 } conf_flag_t;
 
 typedef enum {
