@@ -2650,7 +2650,7 @@ SWITCH_STANDARD_API(alias_function)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-#define SHOW_SYNTAX "codec|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete|chat|endpoint|management|modules|say|interfaces|interface_types"
+#define SHOW_SYNTAX "codec|endpoint|application|api|dialplan|file|timer|calls [count]|channels [count]|aliases|complete|chat|endpoint|management|modules|say|interfaces|interface_types"
 SWITCH_STANDARD_API(show_function)
 {
 	char sql[1024];
@@ -2741,12 +2741,35 @@ SWITCH_STANDARD_API(show_function)
 			as = argv[3];
 		    }
 		}
+	} else if (!strcasecmp(command, "channels") && argv[1] && !strcasecmp(argv[1], "like")) {
+		if (argv[2]) {
+			char *p;
+			for (p = argv[2]; p && *p; p++) {
+				if (*p == '\'' || *p == ';') {
+					*p = ' ';
+				}
+			}
+			if (strchr(argv[2], '%')) {
+				sprintf(sql, "select * from channels where name like '%s' or cid_name like '%s' or cid_num like '%s' order by created_epoch",
+						argv[2], argv[2], argv[2]);
+			} else {
+				sprintf(sql, "select * from channels where name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' order by created_epoch",
+						argv[2], argv[2], argv[2]);
+
+			}
+					
+		    if (argv[4] && !strcasecmp(argv[3], "as")) {
+				as = argv[4];
+		    }
+		} else {
+			sprintf(sql, "select * from channels order by created_epoch");
+		}
 	} else if (!strcasecmp(command, "channels")) {
 		sprintf(sql, "select * from channels order by created_epoch");
 		if (argv[1] && !strcasecmp(argv[1],"count")) {
 		    holder.justcount = 1;
 		    if (argv[3] && !strcasecmp(argv[2], "as")) {
-			as = argv[3];
+				as = argv[3];
 		    }
 		}
 	} else if (!strcasecmp(command, "aliases")) {
