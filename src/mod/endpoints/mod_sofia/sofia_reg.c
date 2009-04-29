@@ -885,19 +885,14 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
 				if (!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) {
 					char *path_encoded;
-					size_t path_encoded_len = (strlen(contact_str) * 3) + 1;
+					size_t path_encoded_len;
 					char my_contact_str[1024];
 
-					if (contact->m_url->url_params) {
-						switch_snprintf(my_contact_str, sizeof(my_contact_str), "%s <sip:%s@%s:%d;%s%s;fs_nat=yes>",
-										display, contact->m_url->url_user, url_ip, network_port, contact->m_url->url_params, received_data);
-					} else {
-						switch_snprintf(my_contact_str, sizeof(my_contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, url_ip,
-										network_port, received_data);
-					}
+					switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
+					path_encoded_len = (strlen(my_contact_str) * 3) + 1;
 
 					switch_zmalloc(path_encoded, path_encoded_len);
-					switch_copy_string(path_encoded, ";fs_nat=yes;fs_path=", 20);
+					switch_copy_string(path_encoded, ";fs_nat=yes;fs_path=", 21);
 					switch_url_encode(my_contact_str, path_encoded + 20, path_encoded_len - 20);
 					reg_desc = "Registered(AUTO-NAT-2.0)";
 					exptime = 20;
