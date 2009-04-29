@@ -883,33 +883,44 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			}
 
 			if ((v_contact_str = switch_event_get_header(*v_event, "sip-force-contact"))) {
+				if (!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction-2.0")) {
+					char *path_encoded;
+					size_t path_encoded_len = (strlen(contact_str) * 3) + 1;
 
-				if (*received_data && sofia_test_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
-					switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
-				}
-
-				if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
-					!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
-					if (contact->m_url->url_params) {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s%s;fs_nat=yes>",
-										display, contact->m_url->url_user, url_ip, network_port, contact->m_url->url_params, received_data);
-					} else {
-						switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, url_ip,
-										network_port, received_data);
-					}
-					if (strstr(v_contact_str, "tls")) {
-						reg_desc = "Registered(TLSHACK)";
-					} else {
-						reg_desc = "Registered(AUTO-NAT)";
-						exptime = 20;
-					}
-					nat_hack = 1;
+					switch_zmalloc(path_encoded, path_encoded_len);
+					switch_copy_string(path_encoded, ";fs_nat=yes;fs_path=", 20);
+					switch_url_encode(contact_str, path_encoded + 22, path_encoded_len - 20);
+					reg_desc = "Registered(AUTO-NAT-2.0)";
+					exptime = 20;
 				} else {
-					char *p;
-					switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
-					for (p = contact_str; p && *p; p++) {
-						if (*p == '\'' || *p == '[' || *p == ']') {
-							*p = '"';
+					if (*received_data && sofia_test_pflag(profile, PFLAG_RECIEVED_IN_NAT_REG_CONTACT)) {
+						switch_snprintf(received_data, sizeof(received_data), ";received=%s:%d", url_ip, network_port);
+					}
+
+	
+					if (!strcasecmp(v_contact_str, "nat-connectile-dysfunction") ||
+						!strcasecmp(v_contact_str, "NDLB-connectile-dysfunction") || !strcasecmp(v_contact_str, "NDLB-tls-connectile-dysfunction")) {
+						if (contact->m_url->url_params) {
+							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d;%s%s;fs_nat=yes>",
+											display, contact->m_url->url_user, url_ip, network_port, contact->m_url->url_params, received_data);
+						} else {
+							switch_snprintf(contact_str, sizeof(contact_str), "%s <sip:%s@%s:%d%s;fs_nat=yes>", display, contact->m_url->url_user, url_ip,
+											network_port, received_data);
+						}
+						if (strstr(v_contact_str, "tls")) {
+							reg_desc = "Registered(TLSHACK)";
+						} else {
+							reg_desc = "Registered(AUTO-NAT)";
+							exptime = 20;
+						}
+						nat_hack = 1;
+					} else {
+						char *p;
+						switch_copy_string(contact_str, v_contact_str, sizeof(contact_str));
+						for (p = contact_str; p && *p; p++) {
+							if (*p == '\'' || *p == '[' || *p == ']') {
+								*p = '"';
+							}
 						}
 					}
 				}
