@@ -301,6 +301,8 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		return SWITCH_STATUS_FALSE;
 	}
 
+ top:
+
 	alt_path = switch_mprintf("%s/%d", path, handle->samplerate);
 
 	switch_mutex_lock(globals.mutex);
@@ -312,6 +314,13 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 	if (source) {
 		if (switch_thread_rwlock_tryrdlock(source->rwlock) != SWITCH_STATUS_SUCCESS) {
 			source = NULL;
+		}
+	} else {
+		if (!switch_stristr("default", alt_path) && !switch_stristr("default", path)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown source %s, trying 'default'\n", path);
+			free(alt_path);
+			path = "default";
+			goto top;
 		}
 	}
 	switch_mutex_unlock(globals.mutex);
