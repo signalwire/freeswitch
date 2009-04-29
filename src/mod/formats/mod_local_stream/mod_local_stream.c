@@ -318,7 +318,7 @@ static switch_status_t local_stream_file_open(switch_file_handle_t *handle, cons
 		}
 	} else {
 		if (!switch_stristr("default", alt_path) && !switch_stristr("default", path)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unknown source %s, trying 'default'\n", path);
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Unknown source %s, trying 'default'\n", path);
 			free(alt_path);
 			path = "default";
 			goto top;
