@@ -262,7 +262,8 @@ void sofia_handle_sip_i_notify(switch_core_session_t *session, int status,
 	
  end:
 	
-	if (sub_state == nua_substate_terminated && sofia_private != &mod_sofia_globals.destroy_private) {
+	if (sub_state == nua_substate_terminated && sofia_private && sofia_private != &mod_sofia_globals.destroy_private && 
+		sofia_private != &mod_sofia_globals.keep_private) {
 		sofia_private->destroy_nh = 1;
 		sofia_private->destroy_me = 1;
 	}
