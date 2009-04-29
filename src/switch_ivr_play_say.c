@@ -835,7 +835,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	switch_size_t olen = 0, llen = 0;
 	switch_frame_t write_frame = { 0 };
 	switch_timer_t timer = { 0 };
-	switch_codec_t codec;
+	switch_codec_t codec = { 0 };
 	switch_memory_pool_t *pool = switch_core_session_get_pool(session);
 	char *codec_name;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
