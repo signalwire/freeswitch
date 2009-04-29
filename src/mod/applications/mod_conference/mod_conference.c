@@ -95,7 +95,8 @@ typedef enum {
 	CALLER_CONTROL_MENU,
 	CALLER_CONTROL_DIAL,
 	CALLER_CONTROL_EVENT,
-	CALLER_CONTROL_LOCK
+	CALLER_CONTROL_LOCK,
+	CALLER_CONTROL_TRANSFER
 } caller_control_t;
 
 /* forward declaration for conference_obj and caller_control */
@@ -1580,6 +1581,54 @@ static void conference_loop_fn_event(conference_member_t *member, caller_control
 	}
 }
 
+static void conference_loop_fn_transfer(conference_member_t *member, caller_control_action_t *action)
+{
+	char *exten = NULL;
+	char *dialplan = "XML";
+	char *context = "default";
+
+	char *argv[3] = { 0 };
+	int argc;
+	char *mydata = NULL;
+	switch_event_t *event;
+	
+	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_add_event_member_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "transfer");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Dialplan", action->data);
+		switch_event_fire(&event);
+	}
+	switch_clear_flag_locked(member, MFLAG_RUNNING);
+	
+	if ((mydata = switch_core_session_strdup(member->session, action->data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			if (argc > 0) {
+				exten = argv[0];
+			}
+			if (argc > 1) {
+				dialplan = argv[1];
+			}
+			if (argc > 2) {
+				context = argv[2];
+			}
+			
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Empty transfer string [%s]\n", (char *) action->data);
+			goto done;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate transfer data.\n");
+		goto done;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Transfering to: %s, %s, %s\n", exten, dialplan, context);
+	
+	switch_ivr_session_transfer(member->session,
+								exten, dialplan, context);
+								
+done:
+	return;
+}
+
 static void conference_loop_fn_hangup(conference_member_t *member, caller_control_action_t *action)
 {
 	switch_clear_flag_locked(member, MFLAG_RUNNING);
@@ -1817,7 +1866,8 @@ static caller_control_fn_table_t ccfntbl[] = {
 	{"vol listen dn", "4", CALLER_CONTROL_VOL_LISTEN_DN, conference_loop_fn_volume_listen_dn},
 	{"hangup", "#", CALLER_CONTROL_HANGUP, conference_loop_fn_hangup},
 	{"event", NULL, CALLER_CONTROL_EVENT, conference_loop_fn_event},
-	{"lock", NULL, CALLER_CONTROL_LOCK, conference_loop_fn_lock_toggle}
+	{"lock", NULL, CALLER_CONTROL_LOCK, conference_loop_fn_lock_toggle},
+	{"transfer", NULL, CALLER_CONTROL_TRANSFER, conference_loop_fn_transfer}
 };
 
 #define CCFNTBL_QTY (sizeof(ccfntbl)/sizeof(ccfntbl[0]))
