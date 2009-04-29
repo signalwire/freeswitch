@@ -898,7 +898,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 
 					switch_zmalloc(path_encoded, path_encoded_len);
 					switch_copy_string(path_encoded, ";fs_nat=yes;fs_path=", 20);
-					switch_url_encode(my_contact_str, path_encoded + 22, path_encoded_len - 20);
+					switch_url_encode(my_contact_str, path_encoded + 20, path_encoded_len - 20);
 					reg_desc = "Registered(AUTO-NAT-2.0)";
 					exptime = 20;
 					switch_snprintf(contact_str + strlen(contact_str), sizeof(contact_str) - strlen(contact_str), "%s", path_encoded);
