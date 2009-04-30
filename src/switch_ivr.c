@@ -650,9 +650,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 
 	switch_codec_implementation_t read_impl = {0};
     switch_core_session_get_read_impl(session, &read_impl);
-
-
-
+	
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
 		return SWITCH_STATUS_FALSE;
@@ -665,8 +663,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 			return SWITCH_STATUS_FALSE;
 		}
 	}
-
-	if (switch_channel_test_flag(channel, CF_PROXY_MODE)) {
+	
+	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_get_state(channel) == CS_RESET) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
@@ -684,16 +682,20 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		} else {
 			expires = switch_epoch_time_now(NULL) + timeout;
 		}
+		switch_channel_set_variable(channel, "park_timeout", NULL);
 	}
 
 	switch_channel_set_flag(channel, CF_CONTROLLED);
+	switch_channel_set_flag(channel, CF_PARK);
+
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_PARK) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);
 		switch_event_fire(&event);
 	}
 
-	while (switch_channel_media_ready(channel) && switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED)) {
-
+	while (switch_channel_media_ready(channel) && switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED) 
+		   && switch_channel_test_flag(channel, CF_PARK)) {
+		
 		if ((status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) == SWITCH_STATUS_SUCCESS) {
 			if (!SWITCH_READ_ACCEPTABLE(status)) {
 				break;
@@ -798,6 +800,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	}
 
 	switch_channel_clear_flag(channel, CF_CONTROLLED);
+	switch_channel_clear_flag(channel, CF_PARK);
 
 	if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_UNPARK) == SWITCH_STATUS_SUCCESS) {
 		switch_channel_event_set_data(channel, event);

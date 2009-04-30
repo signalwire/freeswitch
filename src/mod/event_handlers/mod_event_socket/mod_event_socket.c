@@ -51,7 +51,9 @@ typedef enum {
 	LFLAG_STATEFUL = (1 << 8),
 	LFLAG_OUTBOUND = (1 << 9),
 	LFLAG_LINGER = (1 << 10),
-	LFLAG_HANDLE_DISCO = (1 << 11)
+	LFLAG_HANDLE_DISCO = (1 << 11),
+	LFLAG_CONNECTED = (1 << 12),
+	LFLAG_RESUME = (1 << 13),
 } event_flag_t;
 
 typedef enum {
@@ -422,9 +424,29 @@ SWITCH_STANDARD_APP(socket_function)
 		}
 	}
 
-	if (switch_test_flag(listener, LFLAG_ASYNC)) {
+	if (switch_test_flag(listener, LFLAG_ASYNC)) {		
+		const char *var;
+		
 		launch_listener_thread(listener);
+
+		if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+			return;
+		}
+		
+		while(switch_channel_ready(channel) && !switch_test_flag(listener, LFLAG_CONNECTED)) {
+			switch_cond_next();
+		}
+		
 		switch_ivr_park(session, NULL);
+
+		if (switch_core_session_private_event_count(session)) {
+			switch_ivr_parse_all_events(session);
+		}
+		
+		if (switch_test_flag(listener, LFLAG_RESUME) || ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var))) {
+			switch_channel_set_state(channel, CS_EXECUTE);
+		}
+
 		return;
 	} else {
 		listener_run(NULL, (void *) listener);
@@ -1425,7 +1447,13 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 
 		goto done;
 	}
-
+	
+	if (listener->session && !strncasecmp(cmd, "resume", 6)) {
+		switch_set_flag_locked(listener, LFLAG_RESUME);			
+		switch_channel_set_variable(switch_core_session_get_channel(listener->session), "socket_resume", "true");
+		switch_snprintf(reply, reply_len, "+OK");
+		goto done;
+	}
 
 	if (listener->session || !strncasecmp(cmd, "myevents ", 9)) {
 		switch_channel_t *channel = NULL;
@@ -1438,6 +1466,8 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_event_t *call_event;
 			char *event_str;
 			switch_size_t len;
+
+			switch_set_flag_locked(listener, LFLAG_CONNECTED);			
 			switch_event_create(&call_event, SWITCH_EVENT_CHANNEL_DATA);
 			
 			switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
@@ -1935,6 +1965,7 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	switch_core_session_t *session = NULL;
 	switch_channel_t *channel = NULL;
 	switch_event_t *revent = NULL;
+	const char *var;
 
 	switch_mutex_lock(globals.listener_mutex);
 	prefs.threads++;
@@ -2084,6 +2115,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		switch_event_destroy(&listener->filters);
 	}
 	switch_mutex_unlock(listener->filter_mutex);
+
+	if (listener->session && (switch_test_flag(listener, LFLAG_RESUME) || 
+							  ((var = switch_channel_get_variable(channel, "socket_resume")) && switch_true(var)))) {
+		channel = switch_core_session_get_channel(listener->session);
+		switch_channel_set_state(channel, CS_RESET);
+	}
 	if (listener->sock) {
 		char disco_buf[512] = "";
 		const char message[] = "Disconnected, goodbye.\nSee you at ClueCon! http://www.cluecon.com/\n";
