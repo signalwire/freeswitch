@@ -7,7 +7,7 @@
   </advertise>
 
   <!-- These are the default keys that map when you do not specify a caller control group -->	
-  <!-- Note: none and default are reserved names for group names -->	
+  <!-- Note: none and default are reserved names for group names.  Disabled if dist-dtmf member flag is set. -->	
   <caller-controls>
     <group name="default">
       <control action="mute" digits="0"/>
@@ -38,8 +38,9 @@
       <!-- Energy level required for audio to be sent to the other users -->
       <param name="energy-level" value="300"/>
 
-      <!--Can be | delim of waste|mute|deaf waste will always transmit data to each channel
-          even during silence -->
+      <!--Can be | delim of waste|mute|deaf|dist-dtmf waste will always transmit data to each channel
+          even during silence.  dist-dtmf propagates dtmfs to all other members, but channel controls
+	  via dtmf will be disabled. -->
       <!--<param name="member-flags" value="waste"/>-->
 
       <!-- Name of the caller control group to use for this profile -->
