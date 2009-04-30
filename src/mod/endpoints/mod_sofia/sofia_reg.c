@@ -780,7 +780,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		}
 		
 		display = contact->m_display;
-
+		
 		if (is_nat) {
 			if (is_tls) {
 				reg_desc = "Registered(TLS-NAT)";
@@ -826,7 +826,6 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_copy_string(path_encoded, ";fs_path=", 10);
 			switch_url_encode(my_contact_str, path_encoded + 9, path_encoded_len - 9);
 			exptime = 30;
-			switch_snprintf(contact_str + strlen(contact_str), sizeof(contact_str) - strlen(contact_str), "%s", path_encoded);
 		}
 
 		if (port) {
