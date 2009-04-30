@@ -155,7 +155,8 @@ typedef enum {
 	CFLAG_ENFORCE_MIN = (1 << 2),
 	CFLAG_DESTRUCT = (1 << 3),
 	CFLAG_LOCKED = (1 << 4),
-	CFLAG_ANSWERED = (1 << 5)
+	CFLAG_ANSWERED = (1 << 5),
+	CFLAG_BRIDGE_TO = (1 << 6),
 } conf_flag_t;
 
 typedef enum {
@@ -642,13 +643,17 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
 				} else if (conference->count == 1 && !conference->perpetual_sound) {
-					if (conference->alone_sound) {
-						conference_stop_file(conference, FILE_STOP_ASYNC);
-						conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 1);
-					} else {
-						switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
-						conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
+					/* as long as its not a bridge_to conference, announce if person is alone */
+					if (!switch_test_flag(conference, CFLAG_BRIDGE_TO)) {
+						if (conference->alone_sound) {
+							conference_stop_file(conference, FILE_STOP_ASYNC);
+							conference_play_file(conference, conference->alone_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 1);
+						} else {
+							switch_snprintf(msg, sizeof(msg), "You are currently the only person in this conference.");
+							conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
+						}
 					}
+
 				}
 			}
 		}
@@ -4872,6 +4877,9 @@ SWITCH_STANDARD_APP(conference_function)
 
 		/* Indicate the conference is dynamic */
 		switch_set_flag_locked(conference, CFLAG_DYNAMIC);
+
+		/* Indicate the conference has a bridgeto party */
+		switch_set_flag_locked(conference, CFLAG_BRIDGE_TO);
 
 		/* Start the conference thread for this conference */
 		launch_conference_thread(conference);
