@@ -360,7 +360,7 @@ static void *SWITCH_THREAD_FUNC conference_video_thread_run(switch_thread_t *thr
 static void conference_loop_output(conference_member_t *member);
 static uint32_t conference_stop_file(conference_obj_t *conference, file_stop_t stop);
 static switch_status_t conference_play_file(conference_obj_t *conference, char *file, uint32_t leadin, switch_channel_t *channel, uint8_t async);
-static void conference_send_all_dtmf(conference_obj_t *conference, const char *dtmf);
+static void conference_send_all_dtmf(conference_member_t *member, conference_obj_t *conference, const char *dtmf);
 static switch_status_t conference_say(conference_obj_t *conference, const char *text, uint32_t leadin);
 static void conference_list(conference_obj_t *conference, switch_stream_handle_t *stream, char *delim);
 static conference_obj_t *conference_find(char *name);
@@ -2052,7 +2052,7 @@ static void conference_loop_output(conference_member_t *member)
 			switch_channel_dequeue_dtmf_string(channel, dtmf, sizeof(dtmf));
 
 			if (switch_test_flag(member, MFLAG_DIST_DTMF)) {
-				conference_send_all_dtmf(member->conference, dtmf);
+				conference_send_all_dtmf(member, member->conference, dtmf);
 			} else {
 				if (member->conference->dtmf_parser != NULL) {
 					for (digit = dtmf; *digit && caller_action == NULL; digit++) {
@@ -2469,7 +2469,7 @@ static uint32_t conference_member_stop_file(conference_member_t *member, file_st
 	return count;
 }
 
-static void conference_send_all_dtmf(conference_obj_t *conference, const char *dtmf)
+static void conference_send_all_dtmf(conference_member_t *member, conference_obj_t *conference, const char *dtmf)
 {
 	conference_member_t *imember;
 
@@ -2477,11 +2477,18 @@ static void conference_send_all_dtmf(conference_obj_t *conference, const char *d
 	switch_mutex_lock(conference->member_mutex);
 
 	for (imember = conference->members; imember; imember = imember->next) {
+		/* don't send to self */
+		if (imember->id == member->id) {
+			continue; 			
+		}
 		if (imember->session) {
 			const char *p;
 			for (p = dtmf; p && *p; p++) {
 				switch_dtmf_t dtmf = { *p, SWITCH_DEFAULT_DTMF_DURATION};
-				switch_channel_queue_dtmf(switch_core_session_get_channel(imember->session), &dtmf);
+				switch_mutex_lock(imember->control_mutex);
+				switch_core_session_kill_channel(imember->session, SWITCH_SIG_BREAK);
+				switch_core_session_send_dtmf(imember->session, &dtmf);
+				switch_mutex_unlock(imember->control_mutex);
 			}
 		}
 	}
