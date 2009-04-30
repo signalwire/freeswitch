@@ -892,7 +892,7 @@ static switch_status_t lcr_load_config()
 					custom_sql = sql_stream.data;
 				}
 				
-				if (switch_string_var_check_const(custom_sql)) {
+				if (switch_string_var_check_const(custom_sql) || switch_string_has_escaped_data(custom_sql)) {
 					profile->custom_sql_has_vars = SWITCH_TRUE;
 				}
 				if (strstr(custom_sql, "%")) {
