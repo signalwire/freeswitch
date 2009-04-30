@@ -701,7 +701,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	uint8_t multi_reg = 0, multi_reg_contact = 0, avoid_multi_reg = 0;
 	uint8_t stale = 0, forbidden = 0;
 	auth_res_t auth_res;
-	long exptime = 60;
+	long exptime = 300;
 	switch_event_t *event;
 	const char *rpid = "unknown";
 	const char *display = "\"user\"";
@@ -789,9 +789,9 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			} else {
 				reg_desc = "Registered(UDP-NAT)";
 			}
-			contact_host = url_ip;
-			switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
-			port = NULL;
+			//contact_host = url_ip;
+			//switch_snprintf(new_port, sizeof(new_port), ":%d", network_port);
+			//port = NULL;
 		} else {
 			if (is_tls) {
 				reg_desc = "Registered(TLS)";
@@ -817,6 +817,16 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_zmalloc(path_encoded, path_encoded_len);
 			switch_copy_string(path_encoded, ";fs_path=", 10);
 			switch_url_encode(path_val, path_encoded + 9, path_encoded_len - 9);
+		} else if (is_nat) {
+			char my_contact_str[1024];
+			switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
+			path_encoded_len = (strlen(my_contact_str) * 3) + 1;
+
+			switch_zmalloc(path_encoded, path_encoded_len);
+			switch_copy_string(path_encoded, ";fs_path=", 10);
+			switch_url_encode(my_contact_str, path_encoded + 9, path_encoded_len - 9);
+			exptime = 30;
+			switch_snprintf(contact_str + strlen(contact_str), sizeof(contact_str) - strlen(contact_str), "%s", path_encoded);
 		}
 
 		if (port) {
@@ -895,7 +905,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 					switch_copy_string(path_encoded, ";fs_nat=yes;fs_path=", 21);
 					switch_url_encode(my_contact_str, path_encoded + 20, path_encoded_len - 20);
 					reg_desc = "Registered(AUTO-NAT-2.0)";
-					exptime = 20;
+					exptime = 30;
 					switch_snprintf(contact_str + strlen(contact_str), sizeof(contact_str) - strlen(contact_str), "%s", path_encoded);
 					free(path_encoded);
 				} else {
@@ -917,7 +927,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 							reg_desc = "Registered(TLSHACK)";
 						} else {
 							reg_desc = "Registered(AUTO-NAT)";
-							exptime = 20;
+							exptime = 30;
 						}
 						nat_hack = 1;
 					} else {
