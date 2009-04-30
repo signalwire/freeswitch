@@ -1156,9 +1156,9 @@ SWITCH_DECLARE(int) switch_build_uri(char *uri,
 	if (flags & SWITCH_URI_NO_SCOPE && sa->family == AF_INET6) {
 		memcpy(&ss, &sa->sa, sa->salen);
 		((struct sockaddr_in6*) (intptr_t) &ss)->sin6_scope_id = 0;
-		addr = (const struct sockaddr*) &ss;
+		addr = (const struct sockaddr*) (intptr_t)&ss;
 	} else {
-		addr = (const struct sockaddr*) &sa->sa;
+		addr = (const struct sockaddr*) (intptr_t)&sa->sa;
 	}
 
 	if (getnameinfo(addr, sa->salen, host, sizeof(host), serv, sizeof(serv),
