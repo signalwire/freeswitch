@@ -918,6 +918,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 	uint32_t progress_timelimit_sec = 0;
 	const char *cid_tmp;
 	originate_global_t oglobals = { 0 };
+	int cdr_total = 0;
 
 	oglobals.idx = IDX_NADA;
 	oglobals.early_ok = 1;
@@ -1007,7 +1008,17 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 	if (oglobals.session) {
 		switch_event_header_t *hi;
+		const char *cdr_total_var;
+
 		caller_channel = switch_core_session_get_channel(oglobals.session);
+
+		if ((cdr_total_var = switch_channel_get_variable(caller_channel, "failed_xml_cdr_total"))) {
+			int tmp = atoi(cdr_total_var);
+			if (tmp > 0) {
+				cdr_total = tmp;
+			}
+		}
+		
 
 		/* Copy all the applicable channel variables into the event */
 		if ((hi = switch_channel_variable_first(caller_channel))) {
@@ -2018,7 +2029,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 			} else {
 				const char *cdr_var = NULL;
-				int cdr_total = 0;
 				switch_xml_t cdr;
 				char *xml_text;
 				char buf[128] = "", buf2[128] = "";
