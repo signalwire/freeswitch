@@ -879,9 +879,15 @@ SWITCH_DECLARE(void) switch_core_session_reset(switch_core_session_t *session, s
 	switch_mutex_unlock(session->resample_mutex);
 	/* clear indications */
 	switch_core_session_flush_message(session);
+
 	/* wipe these, they will be recreated if need be */
-	switch_buffer_destroy(&session->raw_read_buffer);
+	switch_mutex_lock(session->codec_write_mutex);
 	switch_buffer_destroy(&session->raw_write_buffer);
+	switch_mutex_unlock(session->codec_write_mutex);
+
+	switch_mutex_lock(session->codec_read_mutex);
+	switch_buffer_destroy(&session->raw_read_buffer);
+	switch_mutex_unlock(session->codec_read_mutex);
 
 	if (flush_dtmf) {
 		while ((has = switch_channel_has_dtmf(channel))) {

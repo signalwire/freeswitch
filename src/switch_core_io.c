@@ -915,6 +915,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_write_frame(switch_core_sess
 			} else {
 				switch_size_t x;
 				for (x = 0; x < frames; x++) {
+					if (switch_channel_down(session->channel) || !session->raw_write_buffer) {
+						goto error;
+					}
 					if ((session->raw_write_frame.datalen = (uint32_t)
 						 switch_buffer_read(session->raw_write_buffer, session->raw_write_frame.data, bytes)) != 0) {
 						int rate;
