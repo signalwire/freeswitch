@@ -789,7 +789,9 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 	}
 	
 	esl_mutex_lock(handle->mutex);
-
+	esl_event_safe_destroy(&handle->last_event);
+	esl_event_safe_destroy(&handle->last_ievent);
+	
 	if (check_q && handle->race_event) {
 		qevent = handle->race_event;
 		handle->race_event = handle->race_event->next;
@@ -806,7 +808,6 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		return ESL_SUCCESS;
 	}
 
-	esl_event_safe_destroy(&handle->last_event);
 	memset(handle->header_buf, 0, sizeof(handle->header_buf));
 
 	c = handle->header_buf;
@@ -907,13 +908,11 @@ ESL_DECLARE(esl_status_t) esl_recv_event(esl_handle_t *handle, int check_q, esl_
 		if (!esl_safe_strcasecmp(hval, "text/disconnect-notice") && revent->body) {
 			goto fail;
 		}
-		
+
 		if (!esl_safe_strcasecmp(hval, "text/event-plain") && revent->body) {
 			esl_event_types_t et = ESL_EVENT_COMMAND;
 			char *body = strdup(revent->body);
 			
-			esl_event_safe_destroy(&handle->last_ievent);
-
 			esl_event_create(&handle->last_ievent, et);
 
 			beg = body;
