@@ -28,6 +28,7 @@
  * Bret McDanel <trixter at 0xdecafbad dot com>
  * Dale Thatcher <freeswitch at dalethatcher dot com>
  * Chris Danielson <chris at maxpowersoft dot com>
+ * Rupa Schomaker <rupa@rupa.com>
  *
  * mod_conference.c -- Software Conference Bridge
  *
@@ -96,7 +97,8 @@ typedef enum {
 	CALLER_CONTROL_DIAL,
 	CALLER_CONTROL_EVENT,
 	CALLER_CONTROL_LOCK,
-	CALLER_CONTROL_TRANSFER
+	CALLER_CONTROL_TRANSFER,
+	CALLER_CONTROL_EXEC_APP
 } caller_control_t;
 
 /* forward declaration for conference_obj and caller_control */
@@ -948,7 +950,7 @@ static void *SWITCH_THREAD_FUNC conference_thread_run(switch_thread_t *thread, v
 		switch_size_t file_data_len = samples * 2;
 		int has_file_data = 0, members_with_video = 0;
 
-		if (conference->perpetual_sound && !conference->async_fnode) {
+  		if (conference->perpetual_sound && !conference->async_fnode) {
 			conference_play_file(conference, conference->perpetual_sound, CONF_DEFAULT_LEADIN, NULL, 1);
 		} else if (conference->moh_sound && conference->count == 1 && !conference->async_fnode) {
 			conference_play_file(conference, conference->moh_sound, CONF_DEFAULT_LEADIN, NULL, 1);
@@ -1582,6 +1584,7 @@ static void conference_loop_fn_event(conference_member_t *member, caller_control
 		conference_add_event_member_data(member, event);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "dtmf");
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "DTMF-Key", action->binded_dtmf);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Data", action->data);
 		switch_event_fire(&event);
 	}
 }
@@ -1630,6 +1633,54 @@ static void conference_loop_fn_transfer(conference_member_t *member, caller_cont
 	switch_ivr_session_transfer(member->session,
 								exten, dialplan, context);
 								
+done:
+	return;
+}
+
+static void conference_loop_fn_exec_app(conference_member_t *member, caller_control_action_t *action)
+{
+	char *app = NULL;
+	char *arg = "";
+
+	char *argv[2] = { 0 };
+	int argc;
+	char *mydata = NULL;
+	switch_event_t *event = NULL;
+	switch_channel_t *channel = NULL;
+	
+	if (test_eflag(member->conference, EFLAG_DTMF) && switch_event_create_subclass(&event, SWITCH_EVENT_CUSTOM, CONF_EVENT_MAINT) == SWITCH_STATUS_SUCCESS) {
+		conference_add_event_member_data(member, event);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Action", "execute_app");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Application", action->data);
+		switch_event_fire(&event);
+	}
+	
+	if ((mydata = switch_core_session_strdup(member->session, action->data))) {
+		if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
+			if (argc > 0) {
+				app = argv[0];
+			}
+			if (argc > 1) {
+				arg = argv[1];
+			}
+			
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Empty execute app string [%s]\n", (char *) action->data);
+			goto done;
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate execute_app data.\n");
+		goto done;
+	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute app: %s, %s\n", app, arg);
+
+	channel = switch_core_session_get_channel(member->session);
+	
+	switch_channel_set_app_flag(channel, CF_APP_TAGGED);
+	switch_core_session_set_read_codec(member->session, NULL);
+	switch_core_session_execute_application(member->session, app, arg);
+	switch_core_session_set_read_codec(member->session, &member->read_codec);							
+	switch_channel_clear_app_flag(channel, CF_APP_TAGGED);										
 done:
 	return;
 }
@@ -1872,7 +1923,8 @@ static caller_control_fn_table_t ccfntbl[] = {
 	{"hangup", "#", CALLER_CONTROL_HANGUP, conference_loop_fn_hangup},
 	{"event", NULL, CALLER_CONTROL_EVENT, conference_loop_fn_event},
 	{"lock", NULL, CALLER_CONTROL_LOCK, conference_loop_fn_lock_toggle},
-	{"transfer", NULL, CALLER_CONTROL_TRANSFER, conference_loop_fn_transfer}
+	{"transfer", NULL, CALLER_CONTROL_TRANSFER, conference_loop_fn_transfer},
+	{"execute_application", NULL, CALLER_CONTROL_EXEC_APP, conference_loop_fn_exec_app}
 };
 
 #define CCFNTBL_QTY (sizeof(ccfntbl)/sizeof(ccfntbl[0]))
