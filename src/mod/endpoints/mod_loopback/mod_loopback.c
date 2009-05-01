@@ -573,6 +573,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		tech_pvt->cng_frame.codec = &tech_pvt->read_codec;
 		tech_pvt->cng_frame.datalen = tech_pvt->read_codec.implementation->decoded_bytes_per_packet;
 		memset(tech_pvt->cng_frame.data, 0, tech_pvt->cng_frame.datalen);
+		memset(&data, 0, sizeof(data));
 
 		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, "L16")) {
 			status = switch_core_codec_encode(&tech_pvt->read_codec,
