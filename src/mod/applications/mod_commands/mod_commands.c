@@ -2750,11 +2750,11 @@ SWITCH_STANDARD_API(show_function)
 				}
 			}
 			if (strchr(argv[2], '%')) {
-				sprintf(sql, "select * from channels where name like '%s' or cid_name like '%s' or cid_num like '%s' order by created_epoch",
-						argv[2], argv[2], argv[2]);
+				sprintf(sql, "select * from channels where uuid like '%s' or name like '%s' or cid_name like '%s' or cid_num like '%s' order by created_epoch",
+						argv[2], argv[2], argv[2], argv[2]);
 			} else {
-				sprintf(sql, "select * from channels where name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' order by created_epoch",
-						argv[2], argv[2], argv[2]);
+				sprintf(sql, "select * from channels where uuid like '%%%s%%' or name like '%%%s%%' or cid_name like '%%%s%%' or cid_num like '%%%s%%' order by created_epoch",
+						argv[2], argv[2], argv[2], argv[2]);
 
 			}
 					
