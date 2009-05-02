@@ -93,6 +93,7 @@ typedef struct listener listener_t;
 static struct {
 	switch_mutex_t *listener_mutex;	
 	switch_event_node_t *node;
+	int debug;
 } globals;
 
 static struct {
@@ -235,7 +236,9 @@ static void event_handler(switch_event_t *event)
 		}
 		
 		if (switch_test_flag(l, LFLAG_STATEFUL) && l->timeout && switch_epoch_time_now(NULL) - l->last_flush > l->timeout) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Stateful Listener %u has expired\n", l->id);
+			if (globals.debug > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Stateful Listener %u has expired\n", l->id);
+			}
 			remove_listener(l);
 			expire_listener(&l);
 			continue;
@@ -814,8 +817,11 @@ SWITCH_STANDARD_API(event_sink_function)
 		stream->write_function(stream, " <reply type=\"success\">Listener %u Created</reply>\n", listener->id);
 		xmlize_listener(listener, stream);
 		stream->write_function(stream, "</data>\n");
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating event-sink listener [%u]\n", listener->id);
 
+		if (globals.debug > 0) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Creating event-sink listener [%u]\n", listener->id);
+		}
+		
 		goto end;
 	} else if (!strcasecmp(wcmd, "destroy-listener")) {		
 		char *id = switch_event_get_header(stream->param_event, "listen-id");
@@ -826,7 +832,9 @@ SWITCH_STANDARD_API(event_sink_function)
 		}
 
 		if ((listener = find_listener(idl))) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying event-sink listener [%u]\n", idl);
+			if (globals.debug > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Destroying event-sink listener [%u]\n", idl);
+			}
 			remove_listener(listener);
 			stream->write_function(stream, "<data>\n <reply type=\"success\">listener %u destroyed</reply>\n", listener->id);
 			xmlize_listener(listener, stream);
@@ -834,7 +842,9 @@ SWITCH_STANDARD_API(event_sink_function)
 			expire_listener(&listener);
 			goto end;
 		} else {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Request to destroy unknown event-sink listener [%u]\n", idl);
+			if (globals.debug > 0) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Request to destroy unknown event-sink listener [%u]\n", idl);
+			}
 			stream->write_function(stream, "<data><reply type=\"error\">Can't find listener</reply></data>\n");
 			goto end;
 		}
@@ -2003,10 +2013,12 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 		}
 	}
 	
-	if (switch_strlen_zero(listener->remote_ip)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
-	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
+	if (globals.debug > 0) {
+		if (switch_strlen_zero(listener->remote_ip)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open\n");
+		} else {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Open from %s:%d\n", listener->remote_ip, listener->remote_port);
+		}
 	}
 
 	switch_socket_opt_set(listener->sock, SWITCH_SO_NONBLOCK, TRUE);
@@ -2106,7 +2118,9 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 	
 	remove_listener(listener);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
+	if (globals.debug > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Session complete, waiting for children\n");
+	}
 
 	switch_thread_rwlock_wrlock(listener->rwlock);
 	flush_listener(listener, SWITCH_TRUE, SWITCH_TRUE);
@@ -2145,7 +2159,10 @@ static void *SWITCH_THREAD_FUNC listener_run(switch_thread_t *thread, void *obj)
 
 	switch_thread_rwlock_unlock(listener->rwlock);
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
+	if (globals.debug > 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Connection Closed\n");
+	}
+
 	switch_core_hash_destroy(&listener->event_hash);
 
 	if (listener->session) {
@@ -2194,6 +2211,8 @@ static int config(void)
 
 				if (!strcmp(var, "listen-ip")) {
 					set_pref_ip(val);
+				} else if (!strcmp(var, "debug")) {
+					globals.debug = atoi(val);
 				} else if (!strcmp(var, "listen-port")) {
 					prefs.port = (uint16_t) atoi(val);
 				} else if (!strcmp(var, "password")) {
