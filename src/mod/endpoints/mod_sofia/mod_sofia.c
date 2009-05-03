@@ -1248,7 +1248,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			} else {
 				switch_set_string(ref_to, msg->string_arg);
 			}
-			switch_yield(10);
 			nua_refer(tech_pvt->nh, SIPTAG_REFER_TO_STR(ref_to), SIPTAG_REFERRED_BY_STR(tech_pvt->contact_url), TAG_END());
 			switch_mutex_unlock(tech_pvt->sofia_mutex);
 			sofia_wait_for_reply(tech_pvt, 9999, 300);
