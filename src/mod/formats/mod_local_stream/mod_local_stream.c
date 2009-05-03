@@ -184,7 +184,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 			fname = path_buf;
 			fh.prebuf = source->prebuf;
 			fh.pre_buffer_datalen = source->prebuf;
-
+			
 			if (switch_core_file_open(&fh,
 									  (char *) fname,
 									  source->channels, source->rate, SWITCH_FILE_FLAG_READ | SWITCH_FILE_DATA_SHORT, NULL) != SWITCH_STATUS_SUCCESS) {
@@ -192,10 +192,7 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 				switch_yield(1000000);
 				continue;
 			}
-
-			source->rate = fh.samplerate;
-			source->samples = switch_samples_per_packet(fh.native_rate, source->interval);
-
+			
 			if (switch_core_timer_init(&timer, source->timer_name, source->interval, source->samples, source->pool) != SWITCH_STATUS_SUCCESS) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Can't start timer.\n");
 				switch_dir_close(source->dir_handle);
