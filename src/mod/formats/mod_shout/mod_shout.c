@@ -97,6 +97,7 @@ mpg123_handle *our_mpg123_new(const char* decoder, int *error)
 
 struct shout_context {
 	shout_t *shout;
+	char curl_error_buff[CURL_ERROR_SIZE];
 	lame_global_flags *gfp;
 	char *stream_url;
 	switch_mutex_t *audio_mutex;
@@ -512,6 +513,7 @@ static size_t stream_callback(void *ptr, size_t size, size_t nmemb, void *data)
 static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void *obj)
 {
 	CURL *curl_handle = NULL;
+	CURLcode cc;
 	shout_context_t *context = (shout_context_t *) obj;
 	
 	switch_thread_rwlock_rdlock(context->rwlock);
@@ -523,7 +525,15 @@ static void *SWITCH_THREAD_FUNC read_stream_thread(switch_thread_t *thread, void
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, stream_callback);
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *) context);
 	curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "FreeSWITCH(mod_shout)/1.0");
-	curl_easy_perform(curl_handle);
+	curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1);
+	curl_easy_setopt(curl_handle, CURLOPT_CONNECTTIMEOUT, 30); /* eventually timeout connect */
+	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_LIMIT, 100); /* handle trickle connections */
+	curl_easy_setopt(curl_handle, CURLOPT_LOW_SPEED_TIME, 30);
+	curl_easy_setopt(curl_handle, CURLOPT_ERRORBUFFER, context->curl_error_buff);
+	cc = curl_easy_perform(curl_handle);
+	if (cc && cc != CURLE_WRITE_ERROR) { /* write error is ok, we just exited from callback early */
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "CURL returned error:[%d] %s : %s [%s]\n", cc, curl_easy_strerror(cc), context->curl_error_buff, context->stream_url);
+	}
 	curl_easy_cleanup(curl_handle);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Read Thread Done\n");
 
