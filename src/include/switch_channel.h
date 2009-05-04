@@ -247,13 +247,16 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 SWITCH_DECLARE(switch_status_t) switch_channel_get_variables(switch_channel_t *channel, switch_event_t **event);
 
 /*!
- * Start iterating over the entries in the channel variable list.
- * @param channel the channel to intterate the variales for
- * @remark  Use switch_hash_next and switch_hash_this with this function to iterate all the channel variables
+ * \brief Start iterating over the entries in the channel variable list.
+ * \param channel the channel to iterate the variables for
+ * \remark This function locks the profile mutex, use switch_channel_variable_last to unlock
  */
 SWITCH_DECLARE(switch_event_header_t *) switch_channel_variable_first(switch_channel_t *channel);
 
-
+/*!
+ * \brief Stop iterating over channel variables. 
+ * \remark Unlocks the profile mutex initially locked in switch_channel_variable_first
+ */
 SWITCH_DECLARE(void) switch_channel_variable_last(switch_channel_t *channel);
 
 /*!
