@@ -2487,7 +2487,11 @@ void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *cod
 					}
 
 					if (match) {
-						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (int) map->rm_rate, ptime);
+						if(ptime > 0) {
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (unsigned int) map->rm_rate, ptime);
+						} else {
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh", imp->iananame, (unsigned int) map->rm_rate);
+						}
 						already_did[imp->ianacode] = 1;
 						break;
 					}
@@ -2524,7 +2528,11 @@ void sofia_glue_set_r_sdp_codec_string(switch_channel_t *channel,const char *cod
 					}
 
 					if (match) {
-						switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (int) map->rm_rate, ptime);
+						if(ptime > 0) {
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh@%di", imp->iananame, (unsigned int) map->rm_rate, ptime);
+						} else {
+							switch_snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), ",%s@%uh", imp->iananame, (unsigned int) map->rm_rate);
+						}
 						already_did[imp->ianacode] = 1;
 						break;
 					}
