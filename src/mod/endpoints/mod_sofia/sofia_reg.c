@@ -819,7 +819,13 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 			switch_url_encode(path_val, path_encoded + 9, path_encoded_len - 9);
 		} else if (is_nat) {
 			char my_contact_str[1024];
-			switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
+			if (sip->sip_contact->m_url->url_params) {
+				switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d;%s", 
+								contact->m_url->url_user, url_ip, network_port, sip->sip_contact->m_url->url_params);
+			} else {
+				switch_snprintf(my_contact_str, sizeof(my_contact_str), "sip:%s@%s:%d", contact->m_url->url_user, url_ip, network_port);
+			}
+
 			path_encoded_len = (strlen(my_contact_str) * 3) + 1;
 
 			switch_zmalloc(path_encoded, path_encoded_len);
