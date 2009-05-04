@@ -1385,23 +1385,6 @@ void sofia_reg_handle_sip_r_register(int status,
 		if (ostate != sofia_private->gateway->state) {
 			sofia_reg_fire_custom_gateway_state_event(sofia_private->gateway);
 		}
-
-
-		if (status >= 300) {
-			if (sofia_private) {
-				if (sofia_private->gateway) {
-					nua_handle_destroy(sofia_private->gateway->nh);
-					sofia_private->gateway->nh = NULL;
-					nua_handle_bind(sofia_private->gateway->nh, NULL);
-					sofia_private->gateway->sofia_private = NULL;
-				} else {
-					nua_handle_destroy(nh);
-				}
-				sofia_private_free(sofia_private);
-			} else {
-				nua_handle_destroy(nh);
-			}
-		}
 	}
 }
 
