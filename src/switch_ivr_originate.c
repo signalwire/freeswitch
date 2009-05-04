@@ -1048,13 +1048,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "instant_ringback")) {
 					ok = 1;
-				} else if (!strcasecmp((char *) hi->name, "originate_retries")) {
-					ok = 1;
-				} else if (!strcasecmp((char *) hi->name, "originate_timeout")) {
-					ok = 1;
 				} else if (!strcasecmp((char *) hi->name, "progress_timeout")) {
-					ok = 1;
-				} else if (!strcasecmp((char *) hi->name, "originate_retry_sleep_ms")) {
 					ok = 1;
 				}
 
@@ -1286,6 +1280,10 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Originate attempt %d/%d in %d ms\n", try + 1, retries, sleep_ms);
 				if (caller_channel) {
 					switch_ivr_sleep(oglobals.session, sleep_ms, SWITCH_TRUE, NULL);
+					if (!switch_channel_ready(caller_channel)) {
+						status = SWITCH_STATUS_FALSE;
+						goto done;
+					}
 				} else {
 					switch_yield(sleep_ms * 1000);
 				}
