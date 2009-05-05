@@ -1,12 +1,12 @@
-<!--
-    This is a sofia sip profile/user agent.  This will service exactly one ip and port.
-    In FreeSWITCH you can run multiple sip user agents on their own ip and port.
-    
-    When you hear someone say "sofia profile" this is what they are talking about.
--->
-
-<!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
 <profile name="internal">
+  <!--
+      This is a sofia sip profile/user agent.  This will service exactly one ip and port.
+      In FreeSWITCH you can run multiple sip user agents on their own ip and port.
+      
+      When you hear someone say "sofia profile" this is what they are talking about.
+  -->
+  
+  <!-- http://wiki.freeswitch.org/wiki/Sofia_Configuration_Files -->
   <!--aliases are other names that will work as a valid profile name for this profile-->
   <aliases>
     <alias name="default"/>
