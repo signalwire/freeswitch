@@ -122,7 +122,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_file_open(const char *file, 
 		}
 	}
 
-	if (fh->pre_buffer_datalen) {
+	if (0 && fh->pre_buffer_datalen) {
 		//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Prebuffering %d bytes\n", (int)fh->pre_buffer_datalen);
 		switch_buffer_create_dynamic(&fh->pre_buffer, fh->pre_buffer_datalen * fh->channels, fh->pre_buffer_datalen * fh->channels / 2, 0);
 		fh->pre_buffer_data = switch_core_alloc(fh->memory_pool, fh->pre_buffer_datalen * fh->channels);
@@ -232,11 +232,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_read(switch_file_handle_t *fh, 
 				switch_assert(fh->buffer);
 			}
 			if (!fh->dbuf || fh->dbuflen < fh->resampler->to_len * 2) {
+				void *mem;
 				fh->dbuflen = fh->resampler->to_len * 2;
-				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
+				mem = realloc(fh->dbuf, fh->dbuflen);
+				switch_assert(mem);
+				fh->dbuf = mem;
 			}
-			switch_assert(fh->resampler->to_len <= fh->dbuflen);
-		
+			switch_assert(fh->resampler->to_len * 2 <= fh->dbuflen);
 			memcpy((int16_t *) fh->dbuf, fh->resampler->to, fh->resampler->to_len * 2);
 			switch_buffer_write(fh->buffer, fh->dbuf, fh->resampler->to_len * 2);
 
@@ -286,10 +288,13 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 		if (fh->resampler->to_len > orig_len * fh->channels) {
 			if (!fh->dbuf) {
+				void *mem;
 				fh->dbuflen = fh->resampler->to_len * 2;
-				fh->dbuf = switch_core_alloc(fh->memory_pool, fh->dbuflen);
+				mem = realloc(fh->dbuf, fh->dbuflen);
+				switch_assert(mem);
+				fh->dbuf = mem;
 			}
-			switch_assert(fh->resampler->to_len <= fh->dbuflen);
+			switch_assert(fh->resampler->to_len * 2 <= fh->dbuflen);
 			memcpy(fh->dbuf, fh->resampler->to, fh->resampler->to_len * 2);
 			data = fh->dbuf;
 		} else {
@@ -314,13 +319,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_write(switch_file_handle_t *fh,
 
 		rlen = switch_buffer_inuse(fh->pre_buffer);
 		if (rlen >= fh->pre_buffer_datalen) {
-			blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen);
-			if (!asis) blen /= 2;
-			if (fh->channels) blen /= fh->channels;
-			if ((status = fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen)) != SWITCH_STATUS_SUCCESS) {
-				*len = 0;
+			if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
+				if (!asis) blen /= 2;
+				if (fh->channels) blen /= fh->channels;
+				if ((status = fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen)) != SWITCH_STATUS_SUCCESS) {
+					*len = 0;
+				}
+				fh->samples_out += blen;
 			}
-			fh->samples_out += blen;
 		}
 		
 		return status;
@@ -409,11 +415,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 			int asis = switch_test_flag(fh, SWITCH_FILE_NATIVE);
 
 			while((rlen = switch_buffer_inuse(fh->pre_buffer))) {
-				blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen);
-				if (!asis) blen /= 2;
-				if (fh->channels) blen /= fh->channels;
-				if (fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen) != SWITCH_STATUS_SUCCESS) {
-					break;
+				if ((blen = switch_buffer_read(fh->pre_buffer, fh->pre_buffer_data, fh->pre_buffer_datalen))) {
+					if (!asis) blen /= 2;
+					if (fh->channels) blen /= fh->channels;
+					if (fh->file_interface->file_write(fh, fh->pre_buffer_data, &blen) != SWITCH_STATUS_SUCCESS) {
+						break;
+					}
 				}
 			}
 		}
@@ -431,6 +438,9 @@ SWITCH_DECLARE(switch_status_t) switch_core_file_close(switch_file_handle_t *fh)
 	if (switch_test_flag(fh, SWITCH_FILE_FLAG_FREE_POOL)) {
 		switch_core_destroy_memory_pool(&fh->memory_pool);
 	}
+
+	switch_safe_free(fh->dbuf);
+
 
 	return status;
 }
