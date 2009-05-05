@@ -542,16 +542,15 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	
 	*frame = NULL;
 	
-	mutex = tech_pvt->mutex;
-	switch_mutex_lock(mutex);
-
-	
 	if (!switch_channel_ready(channel)) {
 		goto end;
 	}
 
 	switch_core_timer_next(&tech_pvt->timer);
 	
+	mutex = tech_pvt->mutex;
+	switch_mutex_lock(mutex);
+
 	if (switch_queue_trypop(tech_pvt->frame_queue, &pop) == SWITCH_STATUS_SUCCESS && pop) {
 		if (tech_pvt->write_frame) {
 			switch_frame_free(&tech_pvt->write_frame);
