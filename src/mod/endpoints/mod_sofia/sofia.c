@@ -554,6 +554,10 @@ void sofia_event_callback(nua_event_t event,
 	}
 	
 	if (sofia_private && sofia_private->destroy_me) {
+		if (tech_pvt) {
+            tech_pvt->sofia_private = NULL;
+        }
+
 		if (nh) {
 			nua_handle_bind(nh, NULL);
 		}
