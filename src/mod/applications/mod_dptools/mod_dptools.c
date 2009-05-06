@@ -2428,11 +2428,12 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 			} else {
 				switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(event);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
-				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
-				d_dest = switch_event_expand_headers(event, dest);
-				switch_event_destroy(&event);
-			}			
+			}
+
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+			d_dest = switch_event_expand_headers(event, dest);
+			switch_event_destroy(&event);
 		}
 
 		if ((flags & SOF_FORKED_DIAL)) {
