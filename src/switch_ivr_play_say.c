@@ -340,7 +340,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_phrase_macro(switch_core_session_t *s
 			switch_safe_free(substituted);
 
 
-			if (match && do_break && switch_true(do_break)) {
+			if ((match && do_break && switch_true(do_break)) || status == SWITCH_STATUS_BREAK) {
 				break;
 			}
 
@@ -860,8 +860,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	char *argv[128] = { 0 };
 	int argc;
 	int cur;
-	switch_status_t rst;
-
 	
     switch_core_session_get_read_impl(session, &read_impl);
 
@@ -927,8 +925,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					if ((arg = strchr(dup, ':'))) {
 						*arg++ = '\0';
 					}
-					if ((rst = switch_ivr_phrase_macro(session, dup, arg, lang, args) != SWITCH_STATUS_SUCCESS)) {
-						return rst;
+					if ((status = switch_ivr_phrase_macro(session, dup, arg, lang, args)) != SWITCH_STATUS_SUCCESS) {
+						return status;
 					}
 					continue;
 				} else {
@@ -951,8 +949,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 				}
 
 				if (!switch_strlen_zero(engine) && !switch_strlen_zero(voice) && !switch_strlen_zero(text)) {
-					if ((rst = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
-						return rst;
+					if ((status = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
+						return status;
 					}
 					continue;
 				} else if (!switch_strlen_zero(engine) && !(voice && text)) {
@@ -960,8 +958,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 					engine = (char *) switch_channel_get_variable(channel, "tts_engine");
 					voice = (char *) switch_channel_get_variable(channel, "tts_voice");
 					if (engine && text) {
-						if ((rst = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
-							return rst;
+						if ((status = switch_ivr_speak_text(session, engine, voice, text, args)) != SWITCH_STATUS_SUCCESS) {
+							return status;
 						}
 						continue;
 					}
@@ -1403,8 +1401,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		switch_core_thread_session_end(session);
 		switch_core_timer_destroy(&timer);
 	}
-
-
 
 	switch_safe_free(abuf);
 
