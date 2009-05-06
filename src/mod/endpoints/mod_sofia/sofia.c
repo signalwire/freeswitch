@@ -775,6 +775,10 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 							  NTATAG_DEFAULT_PROXY(profile->outbound_proxy),
 							  NTATAG_SERVER_RPORT(profile->rport_level), 
 							  TPTAG_LOG(sofia_test_flag(profile, TFLAG_TPORT_LOG)), 
+							  TAG_IF(profile->timer_t1, NTATAG_SIP_T1(profile->timer_t1)),
+							  TAG_IF(profile->timer_t1x64, NTATAG_SIP_T1X64(profile->timer_t1x64)),
+							  TAG_IF(profile->timer_t2, NTATAG_SIP_T2(profile->timer_t2)),
+							  TAG_IF(profile->timer_t4, NTATAG_SIP_T4(profile->timer_t4)),
 							  TAG_END());	/* Last tag should always finish the sequence */
 
 	if (!profile->nua) {
@@ -1780,6 +1784,38 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 							profile->dtmf_duration = SWITCH_DEFAULT_DTMF_DURATION;
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Duration out of bounds, using default of %d!\n", SWITCH_DEFAULT_DTMF_DURATION);
 						}
+					} else if (!strcasecmp(var, "timer-T1")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t1 = v;
+						} else {
+							profile->timer_t1 = 500;
+						}
+						nua_set_params(profile->nua, NTATAG_SIP_T1(profile->timer_t1), TAG_END());
+					} else if (!strcasecmp(var, "timer-T1X64")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t1x64 = v;
+						} else {
+							profile->timer_t1x64 = 32000;
+						}
+						nua_set_params(profile->nua, NTATAG_SIP_T1X64(profile->timer_t1x64), TAG_END());
+					} else if (!strcasecmp(var, "timer-T2")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t2 = v;
+						} else {
+							profile->timer_t2 = 4000;
+						}
+						nua_set_params(profile->nua, NTATAG_SIP_T2(profile->timer_t2), TAG_END());
+					} else if (!strcasecmp(var, "timer-T4")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t4 = v;
+						} else {
+							profile->timer_t4 = 4000;
+						}
+						nua_set_params(profile->nua, NTATAG_SIP_T4(profile->timer_t4), TAG_END());
 					}
 				}
 			}
@@ -2407,6 +2443,34 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							profile->tls_version = 1;
 						} else {
 							profile->tls_version = 0;
+						}
+					} else if (!strcasecmp(var, "timer-T1")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t1 = v;
+						} else {
+							profile->timer_t1 = 500;
+						}
+					} else if (!strcasecmp(var, "timer-T1X64")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t1x64 = v;
+						} else {
+							profile->timer_t1x64 = 32000;
+						}
+					} else if (!strcasecmp(var, "timer-T2")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t2 = v;
+						} else {
+							profile->timer_t2 = 4000;
+						}
+					} else if (!strcasecmp(var, "timer-T4")) {
+						int v = atoi(val);
+						if (v > 0) {
+							profile->timer_t4 = v;
+						} else {
+							profile->timer_t4 = 4000;
 						}
 					}
 				}

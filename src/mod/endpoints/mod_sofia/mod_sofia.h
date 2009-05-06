@@ -479,6 +479,10 @@ struct sofia_profile {
 	uint32_t ob_calls;
 	uint32_t ib_failed_calls;
 	uint32_t ob_failed_calls;
+	uint32_t timer_t1;
+	uint32_t timer_t1x64;
+	uint32_t timer_t2;
+	uint32_t timer_t4;	
 };
 
 struct private_object {
