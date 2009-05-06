@@ -2187,11 +2187,11 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	switch_originate_flag_t myflags = SOF_NONE;
 	char *cid_name_override = NULL;
 	char *cid_num_override = NULL;
-	const char *var;
+	const char *var, *skip = NULL;
 	unsigned int timelimit = 60;
 	char *domain = NULL;
 	switch_channel_t *new_channel = NULL;
-
+	
 	group = strdup(outbound_profile->destination_number);
 
 	if (!group) goto done;
@@ -2206,17 +2206,35 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 		goto done;
 	}
 
+
+	if (var_event && (skip=switch_event_get_header(var_event, "group_recurse_variables")) && switch_false(skip)) {
+		if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) || 
+			(var = switch_event_get_header(var_event, "leg_timeout"))) {
+			timelimit = atoi(var);
+		}
+		var_event = NULL;
+	}
+
+
+
 	template = switch_mprintf("${group_call(%s@%s)}", group, domain);
 	
 	if (session) {
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		dest = switch_channel_expand_variables(channel, template);
-		if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+		if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE)) ||
+			(var = switch_event_get_header(var_event, "leg_timeout"))) {
 			timelimit = atoi(var);
 		}
 	} else if (var_event) {
 		dest = switch_event_expand_headers(var_event, template);
+	} else {
+		switch_event_t *event = NULL;
+		switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
+		dest = switch_event_expand_headers(event, template);
+		switch_event_destroy(&event);
 	}
+
 	if (!dest) {
 		goto done;
 	}
@@ -2224,7 +2242,8 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	if (var_event) {
 		cid_name_override = switch_event_get_header(var_event, "origination_caller_id_name");
 		cid_num_override = switch_event_get_header(var_event, "origination_caller_id_number");
-		if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+		if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) ||
+			(var = switch_event_get_header(var_event, "leg_timeout"))) {
 			timelimit = atoi(var);
 		}
 	}
@@ -2290,6 +2309,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	switch_channel_t *new_channel = NULL;
 	switch_event_t *params = NULL;
 	char stupid[128] = "";
+	const char *skip = NULL, *var = NULL;
 
 	if (switch_strlen_zero(outbound_profile->destination_number)) {
 		goto done;
@@ -2309,6 +2329,16 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		goto done;
 	}
 	
+
+	if (var_event && (skip=switch_event_get_header(var_event, "user_recurse_variables")) && switch_false(skip)) {
+		if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) || 
+			(var = switch_event_get_header(var_event, "leg_timeout"))) {
+			timelimit = atoi(var);
+		}
+		var_event = NULL;
+	}
+
+
 
 	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
 	switch_assert(params);
@@ -2374,7 +2404,8 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 		if (session) {
 			channel = switch_core_session_get_channel(session);
-			if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+			if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))
+				|| (var = switch_event_get_header(var_event, "leg_timeout"))) {
 				timelimit = atoi(var);
 			}
 
@@ -2388,22 +2419,20 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 			if (var_event) {
 				switch_event_dup(&event, var_event);
-				switch_event_del_header(event, "dialer_user");
-				switch_event_del_header(event, "dialer_domain");
-				if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE))) {
+				switch_event_del_header(event, "dialed_user");
+				switch_event_del_header(event, "dialed_domain");
+				if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) || 
+					(var = switch_event_get_header(var_event, "leg_timeout"))) {
 					timelimit = atoi(var);
 				}
 			} else {
 				switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
 				switch_assert(event);
-			}
-			switch_assert(var_event);
-
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
-			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
-			d_dest = switch_event_expand_headers(event, dest);
-
-			switch_event_destroy(&event);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_user", user);
+				switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "dialed_domain", domain);
+				d_dest = switch_event_expand_headers(event, dest);
+				switch_event_destroy(&event);
+			}			
 		}
 
 		if ((flags & SOF_FORKED_DIAL)) {
