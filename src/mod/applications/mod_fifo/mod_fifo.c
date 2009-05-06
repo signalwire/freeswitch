@@ -1014,7 +1014,7 @@ SWITCH_STANDARD_APP(fifo_function)
 
 		}
 
-		if (cd.do_orbit && cd.orbit_exten) {
+		if ((switch_true(switch_channel_get_variable(channel, "fifo_caller_exit_to_orbit")) || cd.do_orbit) && cd.orbit_exten) {
 			if (orbit_ann) {
 				switch_ivr_play_file(session, NULL, orbit_ann, NULL);
 			}
@@ -1975,7 +1975,7 @@ static switch_status_t load_config(int reload, int del_all)
 static void fifo_member_add(char *fifo_name, char *originate_string, int simo_count, int timeout, int lag, time_t expires)
 {
 	char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
-	char *sql;
+	char *sql, *name_dup, *p;
 	fifo_node_t *node = NULL;
 	
 	switch_md5_string(digest, (void *) originate_string, strlen(originate_string));
@@ -1994,15 +1994,23 @@ static void fifo_member_add(char *fifo_name, char *originate_string, int simo_co
 
 	node->has_outbound = 1;	
 
+	name_dup = strdup(fifo_name);
+	if ((p = strchr(name_dup, '@'))) {
+		*p = '\0';
+	}
+
 	sql = switch_mprintf("insert into fifo_outbound "
 						 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, "
 						 "lag, next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-						 "values ('%q','%q','%q',%d,%d,%d,%d,%d,%ld,0,0,0,'%q')",
-						 digest, fifo_name, originate_string, simo_count, 0, timeout, lag, 0, (long)expires, globals.hostname
+						 "values ('%q','%q',"
+						 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q'',origination_caller_id_name=Queue,"
+						 "origination_caller_id_number=''fifo+%q''}%q',%d,%d,%d,%d,%d,%ld,0,0,0,'%q')",
+						 digest, fifo_name, fifo_name, name_dup, originate_string, simo_count, 0, timeout, lag, 0, (long)expires, globals.hostname
 						 );
 	switch_assert(sql);
 	fifo_execute_sql(sql, globals.sql_mutex);
 	free(sql);
+	free(name_dup);
 	
 }
 
