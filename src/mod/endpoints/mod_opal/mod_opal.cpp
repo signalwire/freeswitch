@@ -24,7 +24,7 @@
 
 #include "mod_opal.h"
 #include <opal/patch.h>
-#include <opal/rtp/rtp.h>
+#include <rtp/rtp.h>
 #include <h323/h323pdu.h>
 #include <h323/gkclient.h>
 
