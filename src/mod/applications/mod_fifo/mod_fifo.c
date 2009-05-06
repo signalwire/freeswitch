@@ -50,6 +50,7 @@ struct fifo_node {
 	switch_hash_t *consumer_hash;
 	int caller_count;
 	int consumer_count;
+	int ring_consumer_count;
 	switch_time_t start_waiting;
 	uint32_t importance;
 	switch_thread_rwlock_t *rwlock;
@@ -458,6 +459,17 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 	char *app_name, *arg = NULL;
 	char sql[256] = "";
 	const char *member_wait = NULL;
+	fifo_node_t *node = NULL;
+
+	switch_mutex_lock(globals.mutex);
+	node = switch_core_hash_find(globals.fifo_hash, h->node_name);
+	switch_mutex_unlock(globals.mutex);
+	
+	if (node) {
+		switch_mutex_lock(node->mutex);
+		node->ring_consumer_count++;
+		switch_mutex_unlock(node->mutex);
+	}
 
 	switch_snprintf(sql, sizeof(sql), "update fifo_outbound set use_count=use_count+1 where uuid='%s'", h->uuid);
 	fifo_execute_sql(sql, globals.sql_mutex);
@@ -490,6 +502,11 @@ static void *SWITCH_THREAD_FUNC o_thread_run(switch_thread_t *thread, void *obj)
 
   end:
 
+	if (node) {
+		switch_mutex_lock(node->mutex);
+		if (node->ring_consumer_count-- < 0) node->ring_consumer_count = 0;
+		switch_mutex_unlock(node->mutex);
+	}
 	switch_core_destroy_memory_pool(&h->pool);
 
 	return NULL;
@@ -532,7 +549,7 @@ static void find_consumers(fifo_node_t *node)
 	sql = switch_mprintf("select uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
 						 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname "
 						 "from fifo_outbound where (fifo_name = '%q') and (use_count < simo_count) and (next_avail = 0 or next_avail <= %ld) "
-						 "order by outbound_call_count", node->name, (long) switch_epoch_time_now(NULL));
+						 "order by next_avail", node->name, (long) switch_epoch_time_now(NULL));
 
 	switch_assert(sql);
 	fifo_execute_sql_callback(globals.sql_mutex, sql, place_call_callback, &need);
@@ -561,9 +578,9 @@ static void *SWITCH_THREAD_FUNC node_thread_run(switch_thread_t *thread, void *o
 				idle_consumers = node_idle_consumers(node);
 
 				//switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, 
-				//"%s waiting %d consumer_total %d idle_consumers %d\n", node->name, ppl_waiting, consumer_total, idle_consumers);
+				//"%s waiting %d consumer_total %d idle_consumers %d ring_consumers\n", node->name, ppl_waiting, consumer_total, idle_consumers, node->ring_consumer_count);
 		
-				if (ppl_waiting && (!consumer_total || !idle_consumers)) {
+				if ((ppl_waiting - node->ring_consumer_count > 0)&& (!consumer_total || !idle_consumers)) {
 					find_consumers(node);
 				}
 				switch_mutex_unlock(node->mutex);
@@ -605,6 +622,19 @@ static int stop_node_thread(void)
 	}
 
 	return 0;
+}
+
+static void check_cancel(fifo_node_t *node) 
+{
+	int ppl_waiting = node_consumer_wait_count(node);
+		
+	if (node->ring_consumer_count > 0 && ppl_waiting < 1) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Outbound call count (%d) exceeds required value for queue %s (%d), "
+						  "Ending extraneous calls\n", node->ring_consumer_count, node->name, ppl_waiting);
+						  
+						  
+		switch_core_session_hupall_matching_var("fifo_hangup_check", node->name, SWITCH_CAUSE_ORIGINATOR_CANCEL);
+	}
 }
 
 static void send_presence(fifo_node_t *node)
@@ -707,6 +737,8 @@ SWITCH_STANDARD_APP(fifo_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Args\n");
 		return;
 	}
+
+	switch_channel_set_variable(channel, "fifo_hangup_check", NULL);
 
 	mydata = switch_core_session_strdup(session, data);
 	switch_assert(mydata);
@@ -977,6 +1009,7 @@ SWITCH_STANDARD_APP(fifo_function)
 			switch_core_hash_delete(node->caller_hash, uuid);
 			switch_mutex_unlock(node->mutex);
 			send_presence(node);
+			check_cancel(node);
 			switch_mutex_unlock(globals.mutex);
 
 		}
@@ -1224,7 +1257,8 @@ SWITCH_STANDARD_APP(fifo_function)
 					switch_core_hash_delete(node->caller_hash, uuid);
 					switch_mutex_unlock(node->mutex);
 					send_presence(node);
-					
+					check_cancel(node);
+
 
 					if (app) {
 						extension = switch_caller_extension_new(other_session, app, arg);
@@ -1308,6 +1342,7 @@ SWITCH_STANDARD_APP(fifo_function)
 				switch_core_hash_delete(node->caller_hash, uuid);
 				switch_mutex_unlock(node->mutex);
 				send_presence(node);
+				check_cancel(node);
 				switch_core_session_rwunlock(other_session);
 				switch_safe_free(uuid);
 
@@ -1841,6 +1876,7 @@ static switch_status_t load_config(int reload, int del_all)
 				const char *simo = switch_xml_attr_soft(member, "simo");
 				const char *lag = switch_xml_attr_soft(member, "lag");
 				const char *timeout = switch_xml_attr_soft(member, "timeout");
+				char *name_dup, *p;
 				char digest[SWITCH_MD5_DIGEST_STRING_SIZE] = { 0 };
 				switch_md5_string(digest, (void *) member->txt, strlen(member->txt));
 
@@ -1861,17 +1897,24 @@ static switch_status_t load_config(int reload, int del_all)
 					}
 				}
 				
-				
+				name_dup = strdup(node->name);
+				if ((p = strchr(name_dup, '@'))) {
+					*p = '\0';
+				}
+
 				sql = switch_mprintf("insert into fifo_outbound "
 									 "(uuid, fifo_name, originate_string, simo_count, use_count, timeout, lag, "
 									 "next_avail, expires, static, outbound_call_count, outbound_fail_count, hostname) "
-									 "values ('%q','%q','%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
-									 digest, node->name, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname
+									 "values ('%q','%q',"
+									 "'{execute_on_answer=''unset fifo_hangup_check'',fifo_hangup_check=''%q'',origination_caller_id_name=Queue,"
+									 "origination_caller_id_number=''fifo+%q''}%q',%d,%d,%d,%d,0,0,1,0,0,'%q')",
+									 
+									 digest, node->name, node->name, name_dup, member->txt, simo_i, 0, timeout_i, lag_i, globals.hostname
 									 );
 				switch_assert(sql);
 				fifo_execute_sql(sql, globals.sql_mutex);
 				free(sql);
-				
+				free(name_dup);
 				node->has_outbound = 1;
 				
 			}
