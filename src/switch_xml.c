@@ -902,6 +902,19 @@ static void switch_xml_free_attr(char **attr)
 	free(attr);
 }
 
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t dup) 
+{
+	switch_xml_root_t root;
+	char *data = dup ? strdup(s) : s;
+	
+	if ((root = (switch_xml_root_t) switch_xml_parse_str(data, strlen(data)))) {
+		root->dynamic = 1; /* Make sure we free the memory is switch_xml_free() */
+		return &root->xml;
+	} else {
+		return NULL;
+	}
+}
+	
 /* parse the given xml string and return an switch_xml structure */
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str(char *s, switch_size_t len)
 {
@@ -1552,14 +1565,9 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate(const char *section,
 
 		if ((conf = switch_xml_find_child(xml, "section", "name", section)) && (tag = switch_xml_find_child(conf, tag_name, key_name, key_value))) {
 			if (clone) {
-				char *x;
-				switch_xml_root_t xmlroot = NULL;
-				x = switch_xml_toxml(tag, SWITCH_FALSE);
+				char *x = switch_xml_toxml(tag, SWITCH_FALSE);
 				switch_assert(x);
-				xmlroot = (switch_xml_root_t)switch_xml_parse_str(x, strlen(x));
-				xmlroot->dynamic = 1;	/* free the memory in switch_xml_free */
-				*root = (switch_xml_t)xmlroot;
-				*node = *root;
+				*node = *root = switch_xml_parse_str_dynamic(x, SWITCH_FALSE); /* x will be free()'d in switch_xml_free() */
 				switch_xml_free(xml);
 			} else {
 				*node = tag;

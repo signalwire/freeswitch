@@ -98,6 +98,21 @@ struct switch_xml {
 	uint32_t flags;
 };
 
+/*! 
+ * \brief Parses a string into a switch_xml_t, ensuring the memory will be freed with switch_xml_free
+ * \param s The string to parse
+ * \param dup true if you want the string to be strdup()'d automatically
+ * \return the switch_xml_t or NULL if an error occured
+ */ 
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t dup);
+
+/*! 
+ * \brief Parses a string into a switch_xml_t 
+ * \param s The string to parse
+ * \return the switch_xml_t or NULL if an error occured
+ */
+#define switch_xml_parse_str_dup(x)  switch_xml_parse_str_dynamic(x, SWITCH_TRUE)
+
 ///\brief Given a string of xml data and its length, parses it and creates an switch_xml
 ///\ structure. For efficiency, modifies the data by adding null terminators
 ///\ and decoding ampersand sequences. If you don't want this, copy the data and
