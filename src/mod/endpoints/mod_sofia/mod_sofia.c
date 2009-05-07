@@ -1062,7 +1062,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			}
 			
 			if (ok) {
-				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_STICK);
+				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_UNSTICK);
 			} else {
 				rtp_flush_read_buffer(tech_pvt->rtp_session, SWITCH_RTP_FLUSH_ONCE);
 			}
