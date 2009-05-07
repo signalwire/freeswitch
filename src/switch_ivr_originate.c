@@ -1410,7 +1410,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 						strncpy(tmp, var_begin, strlen(var_begin));
 					}
 
-					new_profile->caller_id_name = switch_core_strdup(new_profile->pool, tmp);
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, "origination_uuid", tmp);
 				}
 
