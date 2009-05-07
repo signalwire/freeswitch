@@ -434,7 +434,7 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 
 	if (switch_strlen_zero(xmlstr)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
-	} else if (!(xml = switch_xml_parse_str(xmlstr, strlen(xmlstr)))) {
+	} else if (!(xml = switch_xml_parse_str_dynamic(xmlstr, strlen(xmlstr)))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error Parsing XML Result!\n");
 	} else {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "XML parsed OK!\n");
@@ -444,7 +444,6 @@ static switch_xml_t erlang_fetch(const char *sectionstr, const char *tag_name, c
 	switch_core_hash_delete(ptr->listener->fetch_reply_hash, uuid_str);
 	switch_safe_free(rep->buff);
 	switch_safe_free(rep);
-	switch_safe_free(xmlstr);
 
 	return xml;
 }
