@@ -1557,6 +1557,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_CALLID_AS_UUID);
 						}
+					} else if (!strcasecmp(var, "rtp-autoflush-during-bridge")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						}
 					} else if (!strcasecmp(var, "outbound-use-uuid-as-callid")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_UUID_AS_CALLID);
@@ -2059,6 +2065,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						sofia_set_flag(profile, TFLAG_INB_NOMEDIA);
 					} else if (!strcasecmp(var, "inbound-late-negotiation") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_LATE_NEGOTIATION);
+					} else if (!strcasecmp(var, "rtp-autoflush-during-bridge")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						}
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_PROXY_MEDIA);
 					} else if (!strcasecmp(var, "force-subscription-expires")) {
