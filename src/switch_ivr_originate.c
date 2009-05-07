@@ -1006,6 +1006,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 	}
 
+	if (vars) {					/* Parse parameters specified from the dialstring */
+		char *var_array[1024] = { 0 };
+		int var_count = 0;
+		if ((var_count = switch_separate_string(vars, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
+			int x = 0;
+			for (x = 0; x < var_count; x++) {
+				char *inner_var_array[2] = { 0 };
+				int inner_var_count;
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "variable string %d = [%s]\n", x, var_array[x]);
+				if ((inner_var_count =
+					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
+					switch_event_del_header(var_event, inner_var_array[0]);
+					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
+				}
+			}
+		}
+	}
+
 	if (oglobals.session) {
 		switch_event_header_t *hi;
 		const char *cdr_total_var;
@@ -1020,7 +1038,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		}
 		
 
-		/* Copy all the applicable channel variables into the event */
+		/* Copy all the missing applicable channel variables from A-leg into the event */
 		if ((hi = switch_channel_variable_first(caller_channel))) {
 			for (; hi; hi = hi->next) {
 				int ok = 0;
@@ -1052,7 +1070,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 					ok = 1;
 				}
 
-				if (ok) {
+				if (ok && !switch_event_get_header(var_event, hi->name)) {
 					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, (char *) hi->name, (char *) hi->value);
 				}
 			}
@@ -1069,24 +1087,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 		  switch_channel_variable_last(caller_channel);
 		  }
 		*/
-	}
-
-	if (vars) {					/* Parse parameters specified from the dialstring */
-		char *var_array[1024] = { 0 };
-		int var_count = 0;
-		if ((var_count = switch_separate_string(vars, ',', var_array, (sizeof(var_array) / sizeof(var_array[0]))))) {
-			int x = 0;
-			for (x = 0; x < var_count; x++) {
-				char *inner_var_array[2] = { 0 };
-				int inner_var_count;
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "variable string %d = [%s]\n", x, var_array[x]);
-				if ((inner_var_count =
-					 switch_separate_string(var_array[x], '=', inner_var_array, (sizeof(inner_var_array) / sizeof(inner_var_array[0])))) == 2) {
-					switch_event_del_header(var_event, inner_var_array[0]);
-					switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, inner_var_array[0], inner_var_array[1]);
-				}
-			}
-		}
 	}
 
 	if (caller_channel) {		/* ringback is only useful when there is an originator */

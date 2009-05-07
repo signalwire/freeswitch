@@ -2307,7 +2307,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	static switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	unsigned int timelimit = 60;
 	switch_channel_t *new_channel = NULL;
-	switch_event_t *params = NULL;
+	switch_event_t *params = NULL, *var_event_orig = var_event;
 	char stupid[128] = "";
 	const char *skip = NULL, *var = NULL;
 
@@ -2357,7 +2357,13 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 			if (!strcasecmp(var, "dial-string")) {
 				dest = val;
-				break;
+			} else if (!strncasecmp(var, "dial-var-", 9)) {
+				if (!var_event) {
+					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
+				} else {
+					switch_event_del_header(var_event, var + 9);
+				}
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, var + 9, val);
 			}
 		}
 	}
@@ -2369,7 +2375,13 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 			if (!strcasecmp(var, "dial-string")) {
 				dest = val;
-				break;
+			} else if (!strncasecmp(var, "dial-var-", 9)) {
+				if (!var_event) {
+					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
+				} else {
+					switch_event_del_header(var_event, var + 9);
+				}
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, var + 9, val);
 			}
 		}
 	}
@@ -2381,7 +2393,13 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 			if (!strcasecmp(var, "dial-string")) {
 				dest = val;
-				break;
+			} else if (!strncasecmp(var, "dial-var-", 9)) {
+				if (!var_event) {
+					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
+				} else {
+					switch_event_del_header(var_event, var + 9);
+				}
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, var + 9, val);
 			}
 		}
 	}
@@ -2488,6 +2506,10 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	if (params) {
 		switch_event_destroy(&params);
+	}
+	
+	if (var_event && var_event_orig != var_event) {
+		switch_event_destroy(&var_event);
 	}
 
 	switch_safe_free(user);
