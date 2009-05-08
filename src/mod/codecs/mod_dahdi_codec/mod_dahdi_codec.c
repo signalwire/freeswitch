@@ -39,6 +39,16 @@
 #include <fcntl.h>
 #include <errno.h>
 
+/*
+ * some rules to keep in mind for G729 (the frame size may be different for G723)
+ * we cannot write more than SFRAME_SIZE (320) - sizeof(struct rtp_packet) which 
+ * seems to be 266 bytes
+ * if we write less than 160 bytes (1 ulaw frame which is 20 bytes of G729 bytes, a read will block forever)
+ * TODO: do buffering ourselves to provide just the fixed amount of samples that the card expects
+ * */
+#define DAHDI_G729_INPUT_FRAME_SIZE 160
+#define DAHDI_G729_OUTPUT_FRAME_SIZE 20
+
 /*#define DEBUG_DAHDI_CODEC 1*/
 
 #define CODEC_G729_IANA_CODE 18
@@ -221,19 +231,22 @@ static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_fla
 	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
 		? 8 : 12;
 
+
 	return SWITCH_STATUS_SUCCESS;
 }
 
 static int wait_for_transcoder(int fd)
 {
-	/* let's wait a bit for the transcoder, if in 20msthe driver does not notify us that its ready to accept more works
+	/* let's wait a bit for the transcoder, if in 20msthe driver does not notify us that its ready to give us something
 	then just bail out with 0 bytes encoded/decoded as result, I'd expect the card to hold that buffer and return it later */
 	int res = 0;
 	struct pollfd readpoll;
 	memset(&readpoll, 0, sizeof(readpoll));
 	readpoll.fd = fd;
-	readpoll.events = POLLOUT;
-	res = poll(&readpoll, 1, 50);
+	readpoll.events = POLLIN;
+	/* my testing shows that it does not take more than 1ms to encode a 160 bytes frame ulaw to g729,
+	   I dont think there is much difference decoding and for g723, waiting 10ms seems more than reasonable */
+	res = poll(&readpoll, 1, 10); 
 	return res;
 }
 
