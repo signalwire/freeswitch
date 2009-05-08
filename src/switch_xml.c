@@ -905,12 +905,18 @@ static void switch_xml_free_attr(char **attr)
 SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(char *s, switch_bool_t dup) 
 {
 	switch_xml_root_t root;
-	char *data = dup ? strdup(s) : s;
+	char *data;
+	
+	switch_assert(s);
+	data = dup ? strdup(s) : s;
 	
 	if ((root = (switch_xml_root_t) switch_xml_parse_str(data, strlen(data)))) {
 		root->dynamic = 1; /* Make sure we free the memory is switch_xml_free() */
 		return &root->xml;
 	} else {
+		if (dup) {
+			free(data);
+		}
 		return NULL;
 	}
 }
