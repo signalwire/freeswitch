@@ -360,14 +360,14 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(_In_z_ const char *group
 														_Out_ switch_xml_t *root,
 														_Out_ switch_xml_t *domain,
 														_Out_ switch_xml_t *group,
-														_In_ switch_event_t *params);
+														_In_opt_ switch_event_t *params);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(_In_z_ const char *key,
 													   _In_z_ const char *user_name,
 													   _In_z_ const char *domain_name,
 													   _In_z_ const char *ip,
 													   _Out_ switch_xml_t *root, _Out_ switch_xml_t *domain, _Out_ switch_xml_t *user, _Out_ switch_xml_t *ingroup, 
-													   _In_ switch_event_t *params);
+													   _In_opt_ switch_event_t *params);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const char *user_name, _In_ switch_xml_t domain, _Out_ switch_xml_t *user, _Out_ switch_xml_t *ingroup);
 
