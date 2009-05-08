@@ -32,8 +32,12 @@
 
 #include <switch.h>
 #include <g711.h>
+#include <poll.h>
 #include <linux/types.h> /* __u32 */
 #include <sys/ioctl.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 
 /*#define DEBUG_DAHDI_CODEC 1*/
 
@@ -91,6 +95,7 @@ struct dahdi_context {
 
 static int32_t switch_dahdi_get_transcoder(struct dahdi_transcoder_formats *fmts)
 {
+	int32_t fdflags;
 	int32_t fd = open(transcoding_device, O_RDWR);
 	if (fd < 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, 
@@ -105,6 +110,21 @@ static int32_t switch_dahdi_get_transcoder(struct dahdi_transcoder_formats *fmts
 		close(fd);
 		return -1;
 	}
+	fdflags = fcntl(fd, F_GETFL);
+	if (fdflags > -1) {
+		fdflags |= O_NONBLOCK;
+		if (fcntl(fd, F_SETFL, fdflags)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not set non-block mode in %s transcoder FD: %s\n", 
+					transcoder_name, strerror(errno));
+			/* should we abort? this may cause channels to hangup when overruning the device 
+			 * see jira dahdi codec issue MODCODEC-8 (Hung Calls and Codec DAHDI G.729A 8.0k decoder error!)
+			 * */
+		}
+	} else {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Could not get flags from %s transcoder FD: %s\n", 
+				transcoder_name, strerror(errno));
+	}
+
 	if (fmts->srcfmt & DAHDI_FORMAT_ULAW) {
 		switch_mutex_lock(transcoder_counter_mutex);
 		total_encoders_usage++;
@@ -114,6 +134,7 @@ static int32_t switch_dahdi_get_transcoder(struct dahdi_transcoder_formats *fmts
 		total_decoders_usage++;
 		switch_mutex_unlock(transcoder_counter_mutex);
 	}
+
 	return fd;
 }
 
@@ -194,11 +215,26 @@ static switch_status_t switch_dahdi_init(switch_codec_t *codec, switch_codec_fla
 	context->encoding_fd = -1;
 	context->decoding_fd = -1;
 
-	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? */
+	/* ulaw requires 8 times more storage than g729 and 12 times more than G723, right? 
+	 * this can be used to calculate the target buffer when encoding and decoding
+	 * */
 	context->codec_r = (codec->implementation->ianacode == CODEC_G729_IANA_CODE) 
 		? 8 : 12;
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+static int wait_for_transcoder(int fd)
+{
+	/* let's wait a bit for the transcoder, if in 20msthe driver does not notify us that its ready to accept more works
+	then just bail out with 0 bytes encoded/decoded as result, I'd expect the card to hold that buffer and return it later */
+	int res = 0;
+	struct pollfd readpoll;
+	memset(&readpoll, 0, sizeof(readpoll));
+	readpoll.fd = fd;
+	readpoll.events = POLLOUT;
+	res = poll(&readpoll, 1, 50);
+	return res;
 }
 
 static switch_status_t switch_dahdi_encode(switch_codec_t *codec,
@@ -244,12 +280,26 @@ static switch_status_t switch_dahdi_encode(switch_codec_t *codec,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Requested to write %d bytes to %s encoder device, but only wrote %d bytes.\n", i, transcoder_name, res);
 		return SWITCH_STATUS_FALSE;
 	}
-#ifdef DEBUG_DAHDI_CODEC
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wrote %d bytes of decoded ulaw data.\n", res);
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attempting to read %d bytes of encoded data.\n", i/context->codec_r);
-#endif
-	res = read(context->encoding_fd, encoded_data, i/context->codec_r);
+	res = wait_for_transcoder(context->encoding_fd);
 	if (-1 == res) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to poll on %s encoder device: %s.\n", transcoder_name, strerror(errno));
+		return SWITCH_STATUS_FALSE;
+	}
+	if (0 == res) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s encoder device.\n", transcoder_name);
+		*encoded_data_len = 0;
+		return SWITCH_STATUS_SUCCESS;
+	}
+#ifdef DEBUG_DAHDI_CODEC
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attempting to read %d bytes of encoded data.\n", *encoded_data_len);
+#endif
+	res = read(context->encoding_fd, encoded_data, *encoded_data_len);
+	if (-1 == res) {
+		if (EAGAIN == errno || EWOULDBLOCK == errno) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s encoder device (%s).\n", transcoder_name, strerror(errno));
+			*encoded_data_len = 0;
+			return SWITCH_STATUS_SUCCESS;
+		}
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read from %s encoder device: %s.\n", transcoder_name, strerror(errno));
 		return SWITCH_STATUS_FALSE;
 	}
@@ -269,7 +319,8 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 {
 	int32_t res;
 	short *dbuf_linear;
-	unsigned char dbuf_ulaw[encoded_data_len * ((struct dahdi_context*)codec->private_info)->codec_r]; 
+	// we only can decode up to half ulaw bytes of whatever their destiny linear buffer is
+	unsigned char dbuf_ulaw[*decoded_data_len/2]; 
 	unsigned char *ebuf_g729;
 	uint32_t i;
 	struct dahdi_context *context;
@@ -302,7 +353,7 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 #endif
 	res = write(context->decoding_fd, ebuf_g729, encoded_data_len);
 	if (-1 == res) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to write to %s decoder device.\n", transcoder_name);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to write to %s decoder device: %s.\n", transcoder_name, strerror(errno));
 		return SWITCH_STATUS_FALSE;
 	}
 	if (encoded_data_len != res) {
@@ -310,13 +361,27 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 #ifdef DEBUG_DAHDI_CODEC
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Wrote %d bytes to decode.\n", res);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Attempting to read from device %d bytes of decoded ulaw data.\n", 
-			encoded_data_len*context->codec_r);
+			sizeof(dbuf_ulaw));
 #endif
-	res = read(context->decoding_fd, dbuf_ulaw, encoded_data_len*context->codec_r);
+	res = wait_for_transcoder(context->decoding_fd);
 	if (-1 == res) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read from %s encoder device: %s.\n", transcoder_name, strerror(errno));
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to poll on %s decoder device: %s.\n", transcoder_name, strerror(errno));
+		return SWITCH_STATUS_FALSE;
+	}
+	if (0 == res) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s decoder device.\n", transcoder_name);
+		*decoded_data_len = 0;
+		return SWITCH_STATUS_SUCCESS;
+	}
+	res = read(context->decoding_fd, dbuf_ulaw, sizeof(dbuf_ulaw));
+	if (-1 == res) {
+		if (EAGAIN == errno || EWOULDBLOCK == errno) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s decoder device (%s).\n", transcoder_name, strerror(errno));
+			*decoded_data_len = 0;
+			return SWITCH_STATUS_SUCCESS;
+		}
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to read from %s decoder device: %s.\n", transcoder_name, strerror(errno));
 		return SWITCH_STATUS_FALSE;
 	}
 	for (i = 0; i < res; i++) {
