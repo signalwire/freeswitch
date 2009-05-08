@@ -187,7 +187,7 @@ static int usage(char *name){
 	printf("  -?,-h --help                    Usage Information\n");
 	printf("  -H, --host=hostname             Host to connect\n");
 	printf("  -P, --port=port                 Port to connect (1 - 65535)\n");
-	printf("  -p, --password=FILENAME         Password\n");
+	printf("  -p, --password=password         Password\n");
 	printf("  -x, --execute=command           Execute Command and Exit\n");
 	printf("  -l, --loglevel=command          Log Level\n");
 	printf("  -q, --quiet                     Disable logging\n");
