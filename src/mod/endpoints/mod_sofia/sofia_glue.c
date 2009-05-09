@@ -1605,7 +1605,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(tech_pvt->rpid), SIPTAG_REMOTE_PARTY_ID_STR(tech_pvt->rpid)),
 			   TAG_IF(!switch_strlen_zero(tech_pvt->preferred_id), SIPTAG_P_PREFERRED_IDENTITY_STR(tech_pvt->preferred_id)),
 			   TAG_IF(!switch_strlen_zero(tech_pvt->asserted_id), SIPTAG_P_ASSERTED_IDENTITY_STR(tech_pvt->asserted_id)),
-			   TAG_IF(!switch_strlen_zero(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->preferred_id)),
+			   TAG_IF(!switch_strlen_zero(tech_pvt->privacy), SIPTAG_PRIVACY_STR(tech_pvt->privacy)),
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
