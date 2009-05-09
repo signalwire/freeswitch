@@ -383,8 +383,11 @@ static switch_status_t switch_dahdi_decode(switch_codec_t *codec,
 		return SWITCH_STATUS_FALSE;
 	}
 	if (0 == res) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s decoder device.\n", transcoder_name);
-		*decoded_data_len = 0;
+		memset(dbuf_linear, 0, codec->implementation->decoded_bytes_per_packet);
+		*decoded_data_len = codec->implementation->decoded_bytes_per_packet;
+#ifdef DEBUG_DAHDI_CODEC
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No output on %s decoder device, returning silence frame of %d bytes.\n", transcoder_name, *decoded_data_len);
+#endif
 		return SWITCH_STATUS_SUCCESS;
 	}
 	res = read(context->decoding_fd, dbuf_ulaw, sizeof(dbuf_ulaw));
@@ -508,7 +511,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	int spf = 160; 
 	int bpfd = 320; 
 	int bpfc = 20; 
-	int fpnp = 10; 
+	int fpnp = 20; 
 	switch_core_codec_add_implementation(pool,
 	 codec_interface,
 	 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
@@ -518,7 +521,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	 8000,				/* samples transferred per second */
 	 8000,				/* actual samples transferred per second */
 	 8000,				/* bits transferred per second */
-	 mpf,				/* number of microseconds per frame (10ms frames) */
+	 mpf,				/* number of microseconds per frame */
 	 spf,				/* number of samples per frame */
 	 bpfd,				/* number of bytes per frame decompressed */
 	 bpfc,				/* number of bytes per frame compressed */
@@ -544,7 +547,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	 8000,				/* samples transferred per second */
 	 8000,				/* actual samples transferred per second */
 	 8000,				/* bits transferred per second */
-	 mpf,				/* number of microseconds per frame (10ms frames) */
+	 mpf,				/* number of microseconds per frame */
 	 spf,				/* number of samples per frame */
 	 bpfd,				/* number of bytes per frame decompressed */
 	 bpfc,				/* number of bytes per frame compressed */
