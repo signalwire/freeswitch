@@ -1857,10 +1857,10 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 			char *sql = NULL;
 
 			if ((argv[1]) && (profile = sofia_glue_find_profile(argv[1]))) {
+				stream->write_function(stream, "%s\n", header);
+				stream->write_function(stream, "<profile>\n");
 				if (!argv[2] || strcasecmp(argv[2], "reg")) {
-					stream->write_function(stream, "%s\n", header);
-					stream->write_function(stream, "  <profile>\n");
-					stream->write_function(stream, "    <profile-info>\n");
+					stream->write_function(stream, "  <profile-info>\n");
 					stream->write_function(stream, "    <name>%s</name>\n", switch_str_nil(argv[1]));
 					stream->write_function(stream, "    <domain-name>%s</domain-name>\n", profile->domain_name ? profile->domain_name : "N/A");
 					if (strcasecmp(argv[1], profile->name)) {
@@ -1902,9 +1902,8 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 					stream->write_function(stream, "    <calls-out>%d</calls-out>\n", profile->ob_calls);
 					stream->write_function(stream, "    <failed-calls-in>%d</failed-calls-in>\n", profile->ib_failed_calls);
 					stream->write_function(stream, "    <failed-calls-out>%d</failed-calls-out>\n", profile->ob_failed_calls);
-
+					stream->write_function(stream, "  </profile-info>\n");
 				}
-				stream->write_function(stream, "  </profile-info>\n");
 				stream->write_function(stream, "  <registrations>\n");
 
 				cb.profile = profile;
@@ -1939,7 +1938,7 @@ static switch_status_t cmd_xml_status(char **argv, int argc, switch_stream_handl
 				sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, show_reg_callback_xml, &cb);
 				free(sql);
 
-				stream->write_function(stream, "</registrations>\n");
+				stream->write_function(stream, "  </registrations>\n");
 				stream->write_function(stream, "</profile>\n");
 
 				sofia_glue_release_profile(profile);
