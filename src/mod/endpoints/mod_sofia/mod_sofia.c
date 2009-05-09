@@ -2043,6 +2043,14 @@ static switch_status_t cmd_profile(char **argv, int argc, switch_stream_handle_t
 			sofia_glue_del_gateway(gateway_ptr);
 			sofia_reg_release_gateway(gateway_ptr);
 			stream->write_function(stream, "+OK gateway marked for deletion.\n");
+			
+			if (argc > 3 && !strcasecmp(argv[3], "rescan")) {
+				if (reconfig_sofia(profile) == SWITCH_STATUS_SUCCESS) {
+					stream->write_function(stream, "+OK scan complete\n");
+				} else {
+					stream->write_function(stream, "-ERR cannot find config for profile %s\n", profile->name);
+				}
+			}
 		} else {
 			stream->write_function(stream, "-ERR no such gateway.\n");
 		}
