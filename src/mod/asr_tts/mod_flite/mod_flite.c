@@ -45,8 +45,8 @@ cst_voice *register_cmu_us_slt(void);
 void unregister_cmu_us_slt(cst_voice * v);
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_flite_load);
-SWITCH_MODULE_DEFINITION(mod_flite, mod_flite_load, NULL, NULL);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_flite_shutdown);
+SWITCH_MODULE_DEFINITION(mod_flite, mod_flite_load, mod_flite_shutdown, NULL);
 
 static struct {
 	cst_voice *awb;
