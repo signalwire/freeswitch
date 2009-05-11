@@ -2521,7 +2521,7 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 		if (switch_strlen_zero(profile->email_from)) {
 			from = switch_core_sprintf(pool, "%s@%s", myid, domain_name);
 		} else {
-			from = switch_event_expand_headers(params, profile->email_headers);
+			from = switch_event_expand_headers(params, profile->email_from);
 		}
 
 
