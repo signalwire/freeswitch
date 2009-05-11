@@ -61,7 +61,7 @@
       </match>
     </input>
     <!-- от 10 до 19 и ноль   --> <!-- от 5до 9 и больше 20-ти 25-29   -->
-    <input pattern="^(1[0-9]|0|\d+[0-9][0,5-9]|[2-9][0,5-9]|[0,5-9]):(.*)$">
+    <input pattern="^(\d+1[0-9]|1[0-9]|0|\d+[0-9][0,5-9]|[2-9][0,5-9]|[0,5-9]):(.*)$">
       <match>
 	<action function="play-file" data="voicemail/vm-you_have.wav"/>
 	<action function="say" data="$1" method="pronounced" type="MESSAGES"/>
