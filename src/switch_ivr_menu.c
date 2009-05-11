@@ -292,6 +292,7 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel;
 	char *sound_expanded = sound;
+	switch_size_t menu_buf_len = 0;
 
 	if (!session || !menu || switch_strlen_zero(sound)) {
 		return status;
@@ -324,12 +325,14 @@ static switch_status_t play_and_collect(switch_core_session_t *session, switch_i
 		return status;
 	}
 
-	menu->ptr += strlen(menu->buf);
-	if (strlen(menu->buf) < need) {
+	menu_buf_len = strlen(menu->buf);
+
+	menu->ptr += menu_buf_len;
+	if (menu_buf_len < need) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "waiting for %u/%u digits t/o %d\n", 
 						  (uint32_t)(menu->inlen - strlen(menu->buf)), (uint32_t)need, menu->inter_timeout);
 		status = switch_ivr_collect_digits_count(session, menu->ptr, menu->inlen - strlen(menu->buf), 
-												 need, "#", &terminator, menu->inter_timeout, 0, 0);
+												 need, "#", &terminator, menu_buf_len ? menu->inter_timeout : menu->timeout, 0, 0);
 	}
 
 	if (menu->confirm_macro && status == SWITCH_STATUS_SUCCESS && *menu->buf != '\0') {
