@@ -4096,7 +4096,7 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
  end:
 
 
-	if (switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS) {
+	if (sip && switch_event_create(&event, SWITCH_EVENT_RECV_INFO) == SWITCH_STATUS_SUCCESS) {
 		sip_alert_info_t *alert_info = sip_alert_info(sip);
 
 		if (sip && sip->sip_content_type) {

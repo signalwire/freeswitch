@@ -597,6 +597,10 @@ SWITCH_STANDARD_API(show_local_stream_function)
 			}
 		}
 		
+		if (!local_stream_name) {
+			goto usage;
+		}
+
 		source = switch_core_hash_find(globals.source_hash, local_stream_name);
 		if (source) {
 			if (xml) {

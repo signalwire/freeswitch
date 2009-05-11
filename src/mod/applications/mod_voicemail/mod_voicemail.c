@@ -2858,15 +2858,15 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 	if (id) {
 		int ok = 1;
-		switch_event_t *params = NULL;
+		switch_event_t *locate_params = NULL;
 		const char *email_addr = NULL;
 
-		switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-		switch_assert(params);
-		switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", id);
+		switch_event_create(&locate_params, SWITCH_EVENT_REQUEST_PARAMS);
+		switch_assert(locate_params);
+		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "mailbox", id);
 
 		if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
-								   &x_domain_root, &x_domain, &x_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+								   &x_domain_root, &x_domain, &x_user, NULL, locate_params) == SWITCH_STATUS_SUCCESS) {
 			if ((x_params = switch_xml_child(x_user, "params"))) {
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
@@ -2925,7 +2925,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 			ok = 0;
 		}
 
-		switch_event_destroy(&params);
+		switch_event_destroy(&locate_params);
 		
 		if (!ok) {
 			goto end;
@@ -3904,13 +3904,13 @@ SWITCH_STANDARD_API(voicemail_api_function)
 	}
 
 	if (!profile) {
-		switch_hash_index_t *hi;
-		void *val;
+		switch_hash_index_t *index;
+		void *value;
 
 		switch_mutex_lock(globals.mutex);
-		for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
-			switch_hash_this(hi, NULL, NULL, &val);
-			profile = (vm_profile_t *) val;
+		for (index = switch_hash_first(NULL, globals.profile_hash); index; index = switch_hash_next(index)) {
+			switch_hash_this(index, NULL, NULL, &value);
+			profile = (vm_profile_t *) value;
 			if (profile) {
 				switch_thread_rwlock_rdlock(profile->rwlock);
 				break;

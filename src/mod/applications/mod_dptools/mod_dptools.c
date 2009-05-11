@@ -2352,54 +2352,54 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 	if ((x_params = switch_xml_child(x_domain, "params"))) {
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
+			const char *pvar = switch_xml_attr(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 
-			if (!strcasecmp(var, "dial-string")) {
+			if (!strcasecmp(pvar, "dial-string")) {
 				dest = val;
 			} else if (!strncasecmp(var, "dial-var-", 9)) {
 				if (!var_event) {
 					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
 				} else {
-					switch_event_del_header(var_event, var + 9);
+					switch_event_del_header(var_event, pvar + 9);
 				}
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, var + 9, val);
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
 			}
 		}
 	}
 
 	if ((x_params = switch_xml_child(x_group, "params"))) {
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
+			const char *pvar = switch_xml_attr(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 
-			if (!strcasecmp(var, "dial-string")) {
+			if (!strcasecmp(pvar, "dial-string")) {
 				dest = val;
-			} else if (!strncasecmp(var, "dial-var-", 9)) {
+			} else if (!strncasecmp(pvar, "dial-var-", 9)) {
 				if (!var_event) {
 					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
 				} else {
-					switch_event_del_header(var_event, var + 9);
+					switch_event_del_header(var_event, pvar + 9);
 				}
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, var + 9, val);
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
 			}
 		}
 	}
 
 	if ((x_params = switch_xml_child(x_user, "params"))) {
 		for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
-			const char *var = switch_xml_attr(x_param, "name");
+			const char *pvar = switch_xml_attr(x_param, "name");
 			const char *val = switch_xml_attr(x_param, "value");
 
-			if (!strcasecmp(var, "dial-string")) {
+			if (!strcasecmp(pvar, "dial-string")) {
 				dest = val;
-			} else if (!strncasecmp(var, "dial-var-", 9)) {
+			} else if (!strncasecmp(pvar, "dial-var-", 9)) {
 				if (!var_event) {
 					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
 				} else {
-					switch_event_del_header(var_event, var + 9);
+					switch_event_del_header(var_event, pvar + 9);
 				}
-				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, var + 9, val);
+				switch_event_add_header_string(var_event, SWITCH_STACK_BOTTOM, pvar + 9, val);
 			}
 		}
 	}
@@ -2408,7 +2408,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No dial-string available, please check your user directory.\n");
 		cause = SWITCH_CAUSE_MANDATORY_IE_MISSING;
 	} else {
-		const char *var;
+		const char *varval;
 		char *d_dest = NULL;
 		switch_channel_t *channel;
 		switch_originate_flag_t myflags = SOF_NONE;
@@ -2422,9 +2422,9 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 		if (session) {
 			channel = switch_core_session_get_channel(session);
-			if ((var = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))
-				|| (var = switch_event_get_header(var_event, "leg_timeout"))) {
-				timelimit = atoi(var);
+			if ((varval = switch_channel_get_variable(channel, SWITCH_CALL_TIMEOUT_VARIABLE))
+				|| (varval = switch_event_get_header(var_event, "leg_timeout"))) {
+				timelimit = atoi(varval);
 			}
 
 			switch_channel_set_variable(channel, "dialed_user", user);
@@ -2439,9 +2439,9 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 				switch_event_dup(&event, var_event);
 				switch_event_del_header(event, "dialed_user");
 				switch_event_del_header(event, "dialed_domain");
-				if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) || 
-					(var = switch_event_get_header(var_event, "leg_timeout"))) {
-					timelimit = atoi(var);
+				if ((varval = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) || 
+					(varval = switch_event_get_header(var_event, "leg_timeout"))) {
+					timelimit = atoi(varval);
 				}
 			} else {
 				switch_event_create(&event, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2485,17 +2485,17 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 	if (new_channel && xml) {
 		if ((x_params = switch_xml_child(x_domain, "variables"))) {
 			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-				const char *var = switch_xml_attr(x_param, "name");
+				const char *pvar = switch_xml_attr(x_param, "name");
 				const char *val = switch_xml_attr(x_param, "value");
-				switch_channel_set_variable(new_channel, var, val);
+				switch_channel_set_variable(new_channel, pvar, val);
 			}
 		}
 
 		if ((x_params = switch_xml_child(x_user, "variables"))) {
 			for (x_param = switch_xml_child(x_params, "variable"); x_param; x_param = x_param->next) {
-				const char *var = switch_xml_attr(x_param, "name");
+				const char *pvar = switch_xml_attr(x_param, "name");
 				const char *val = switch_xml_attr(x_param, "value");
-				switch_channel_set_variable(new_channel, var, val);
+				switch_channel_set_variable(new_channel, pvar, val);
 			}
 		}
 	}

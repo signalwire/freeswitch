@@ -565,7 +565,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 	if (switch_test_flag(tech_pvt, TFLAG_CNG)) {
 		unsigned char data[SWITCH_RECOMMENDED_BUFFER_SIZE];
 		uint32_t flag = 0;
-		switch_status_t status;
+		switch_status_t encode_status;
 		uint32_t rate = tech_pvt->read_codec.implementation->actual_samples_per_second;
 
 		*frame = &tech_pvt->cng_frame;
@@ -575,7 +575,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 		memset(&data, 0, sizeof(data));
 
 		if (strcasecmp(tech_pvt->read_codec.implementation->iananame, "L16")) {
-			status = switch_core_codec_encode(&tech_pvt->read_codec,
+			encode_status = switch_core_codec_encode(&tech_pvt->read_codec,
 											  NULL,
 											  data,
 											  sizeof(data),
@@ -585,7 +585,7 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 											  &tech_pvt->cng_frame.datalen,											  
 											  &rate,
 											  &flag);
-			if (status != SWITCH_STATUS_SUCCESS) {
+			if (encode_status != SWITCH_STATUS_SUCCESS) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 													 
@@ -664,7 +664,7 @@ static switch_status_t channel_write_frame(switch_core_session_t *session, switc
 		}
 	}
 
-	if (switch_test_flag(tech_pvt, TFLAG_LINKED)) {
+	if (switch_test_flag(tech_pvt, TFLAG_LINKED) && tech_pvt->other_tech_pvt) { 
 		switch_frame_t *clone;
 
 		if (frame->codec->implementation != tech_pvt->write_codec.implementation) {

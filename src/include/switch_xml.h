@@ -104,7 +104,7 @@ struct switch_xml {
  * \param dup true if you want the string to be strdup()'d automatically
  * \return the switch_xml_t or NULL if an error occured
  */ 
-SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(_In_z_ char *s, _In_opt_ switch_bool_t dup);
+SWITCH_DECLARE(switch_xml_t) switch_xml_parse_str_dynamic(_In_z_ char *s, _In_ switch_bool_t dup);
 
 /*! 
  * \brief Parses a string into a switch_xml_t 
@@ -156,7 +156,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_child(_In_ switch_xml_t xml, _In_z_ cons
 ///\param attrname the attribute name
 ///\param value the value
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(_In_ switch_xml_t node, _In_z_ const char *childname, _In_z_ const char *attrname, _In_z_ const char *value);
+SWITCH_DECLARE(switch_xml_t) switch_xml_find_child(_In_ switch_xml_t node, _In_z_ const char *childname, _In_opt_z_ const char *attrname, _In_opt_z_ const char *value);
 SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(_In_ switch_xml_t node, _In_z_ const char *childname, ...);
 
 ///\brief returns the next tag of the same name in the same section and depth or NULL
@@ -170,7 +170,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(_In_ switch_xml_t node,
 ///\param xml the xml node
 ///\param idx the index
 ///\return an xml node or NULL
-	 switch_xml_t switch_xml_idx(_In_z_ switch_xml_t xml, _In_opt_ int idx);
+	 switch_xml_t switch_xml_idx(_In_ switch_xml_t xml, _In_ int idx);
 
 ///\brief returns the name of the given tag
 ///\param xml the xml node
@@ -186,7 +186,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_find_child_multi(_In_ switch_xml_t node,
 ///\param xml the xml node
 ///\param attr the attribute
 ///\return the value
-SWITCH_DECLARE(const char *) switch_xml_attr(_In_ switch_xml_t xml, _In_z_ const char *attr);
+SWITCH_DECLARE(const char *) switch_xml_attr(_In_opt_ switch_xml_t xml, _In_opt_z_ const char *attr);
 
 ///\brief returns the value of the requested tag attribute, or "" if not found
 ///\param xml the xml node
@@ -209,7 +209,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_get(_In_ switch_xml_t xml, ...);
 ///\param xml the xml node
 ///\param prn_header add <?xml version..> header too
 ///\return the xml text string
-SWITCH_DECLARE(char *) switch_xml_toxml(_In_ switch_xml_t xml, _In_opt_ switch_bool_t prn_header);
+SWITCH_DECLARE(char *) switch_xml_toxml(_In_ switch_xml_t xml, _In_ switch_bool_t prn_header);
 
 ///\brief Converts an switch_xml structure back to xml using the buffer passed in the parameters.
 ///\param xml the xml node
@@ -218,7 +218,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml(_In_ switch_xml_t xml, _In_opt_ switch_b
 ///\param offset offset to start at
 ///\param prn_header add <?xml version..> header too
 ///\return the xml text string
-SWITCH_DECLARE(char *) switch_xml_toxml_buf(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_opt_ switch_size_t offset, _In_opt_ switch_bool_t prn_header);
+SWITCH_DECLARE(char *) switch_xml_toxml_buf(_In_ switch_xml_t xml, _In_z_ char *buf, _In_ switch_size_t buflen, _In_ switch_size_t offset, _In_ switch_bool_t prn_header);
 
 ///\brief returns a NULL terminated array of processing instructions for the given
 ///\ target
@@ -230,7 +230,7 @@ SWITCH_DECLARE(const char **) switch_xml_pi(_In_ switch_xml_t xml, _In_z_ const 
 ///\brief frees the memory allocated for an switch_xml structure
 ///\param xml the xml node
 ///\note in the case of the root node the readlock will be lifted
-SWITCH_DECLARE(void) switch_xml_free(_In_ switch_xml_t xml);
+SWITCH_DECLARE(void) switch_xml_free(_In_opt_ switch_xml_t xml);
 SWITCH_DECLARE(void) switch_xml_free_in_thread(_In_ switch_xml_t xml, _In_ int stacksize);
 
 ///\brief returns parser error message or empty string if none
@@ -253,7 +253,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(_In_z_ const char *name);
 ///\param name the name of the tag
 ///\param off the offset
 ///\return an xml node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(_In_ switch_xml_t xml, _In_z_ const char *name, _In_opt_ switch_size_t off);
+SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(_In_ switch_xml_t xml, _In_z_ const char *name, _In_ switch_size_t off);
 
 ///\brief wrapper for switch_xml_add_child() that strdup()s name
 ///\param xml the xml node
@@ -306,7 +306,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_set_flag(switch_xml_t xml, switch_xml_fl
 SWITCH_DECLARE(switch_xml_t) switch_xml_cut(_In_ switch_xml_t xml);
 
 ///\brief inserts an existing tag into an ezxml structure
-SWITCH_DECLARE(switch_xml_t) switch_xml_insert(_In_ switch_xml_t xml, _In_ switch_xml_t dest, _In_opt_ switch_size_t off);
+SWITCH_DECLARE(switch_xml_t) switch_xml_insert(_In_ switch_xml_t xml, _In_ switch_xml_t dest, _In_ switch_size_t off);
 
 ///\brief Moves an existing tag to become a subtag of dest at the given offset from
 ///\ the start of dest's character content. Returns the moved tag.
@@ -319,7 +319,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_insert(_In_ switch_xml_t xml, _In_ switc
 ///\param reload if it's is already open close it and open it again as soon as permissable (blocking)
 ///\param err a pointer to set error strings
 ///\return the xml root node or NULL
-SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(_In_opt_ uint8_t reload, _Out_ const char **err);
+SWITCH_DECLARE(switch_xml_t) switch_xml_open_root(_In_ uint8_t reload, _Out_ const char **err);
 
 ///\brief initilize the core XML backend
 ///\param pool a memory pool to use
@@ -345,13 +345,13 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_root(void);
 ///\param params optional URL formatted params to pass to external gateways
 ///\return SWITCH_STATUS_SUCCESS if successful root and node will be assigned
 SWITCH_DECLARE(switch_status_t) switch_xml_locate(_In_z_ const char *section,
-												  _In_z_ const char *tag_name,
-												  _In_z_ const char *key_name, 
-												  _In_z_ const char *key_value, 
+												  _In_opt_z_ const char *tag_name,
+												  _In_opt_z_ const char *key_name, 
+												  _In_opt_z_ const char *key_value, 
 												  _Out_ switch_xml_t *root, 
 												  _Out_ switch_xml_t *node,
 												  _In_opt_ switch_event_t *params,
-												  _In_opt_ switch_bool_t clone);
+												  _In_ switch_bool_t clone);
 
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_domain(_In_z_ const char *domain_name, _In_opt_ switch_event_t *params, _Out_ switch_xml_t *root, _Out_ switch_xml_t *domain);
 
@@ -365,11 +365,11 @@ SWITCH_DECLARE(switch_status_t) switch_xml_locate_group(_In_z_ const char *group
 SWITCH_DECLARE(switch_status_t) switch_xml_locate_user(_In_z_ const char *key,
 													   _In_z_ const char *user_name,
 													   _In_z_ const char *domain_name,
-													   _In_z_ const char *ip,
-													   _Out_ switch_xml_t *root, _Out_ switch_xml_t *domain, _Out_ switch_xml_t *user, _Out_ switch_xml_t *ingroup, 
+													   _In_opt_z_ const char *ip,
+													   _Out_ switch_xml_t *root, _Out_ switch_xml_t *domain, _Out_ switch_xml_t *user, _Out_opt_ switch_xml_t *ingroup, 
 													   _In_opt_ switch_event_t *params);
 
-SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const char *user_name, _In_ switch_xml_t domain, _Out_ switch_xml_t *user, _Out_ switch_xml_t *ingroup);
+SWITCH_DECLARE(switch_status_t) switch_xml_locate_user_in_domain(_In_z_ const char *user_name, _In_ switch_xml_t domain, _Out_ switch_xml_t *user, _Out_opt_ switch_xml_t *ingroup);
 
 ///\brief open a config in the core registry
 ///\param file_path the name of the config section e.g. modules.conf
@@ -400,7 +400,7 @@ SWITCH_DECLARE(switch_status_t) switch_xml_unbind_search_function_ptr(_In_ switc
 ///\brief parse a string for a list of sections
 ///\param str a | delimited list of section names
 ///\return the section mask
-SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(_In_z_ const char *str);
+SWITCH_DECLARE(switch_xml_section_t) switch_xml_parse_section_string(_In_opt_z_ const char *str);
 
 SWITCH_END_EXTERN_C
 ///\}

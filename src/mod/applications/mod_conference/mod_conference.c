@@ -1672,6 +1672,11 @@ static void conference_loop_fn_exec_app(conference_member_t *member, caller_cont
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to allocate memory to duplicate execute_app data.\n");
 		goto done;
 	}
+
+	if (!app) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to find application.\n");
+		goto done;
+	}
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Execute app: %s, %s\n", app, arg);
 
 	channel = switch_core_session_get_channel(member->session);
@@ -2541,10 +2546,10 @@ static void conference_send_all_dtmf(conference_member_t *member, conference_obj
 		if (imember->session) {
 			const char *p;
 			for (p = dtmf; p && *p; p++) {
-				switch_dtmf_t dtmf = { *p, SWITCH_DEFAULT_DTMF_DURATION};
+				switch_dtmf_t digit = { *p, SWITCH_DEFAULT_DTMF_DURATION};
 				switch_mutex_lock(imember->control_mutex);
 				switch_core_session_kill_channel(imember->session, SWITCH_SIG_BREAK);
-				switch_core_session_send_dtmf(imember->session, &dtmf);
+				switch_core_session_send_dtmf(imember->session, &digit);
 				switch_mutex_unlock(imember->control_mutex);
 			}
 		}
@@ -4562,7 +4567,7 @@ static void set_mflags(char *flags, member_flag_t *f)
 
 		argc = switch_separate_string(dup, '|', argv, (sizeof(argv) / sizeof(argv[0])));
 
-		for(i = 0; i < argc; i++) {
+		for(i = 0; i < argc && argv[i]; i++) {
 			if (!strcasecmp(argv[i], "mute")) {
 				*f &= ~MFLAG_CAN_SPEAK;
 			} else if (!strcasecmp(argv[i], "deaf")) {

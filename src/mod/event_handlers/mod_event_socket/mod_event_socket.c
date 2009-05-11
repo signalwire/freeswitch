@@ -1177,8 +1177,8 @@ static switch_status_t read_packet(listener_t *listener, switch_event_t **event,
 			
 
 			if (listener->session) {
-				switch_channel_t *channel = switch_core_session_get_channel(listener->session);
-				if (switch_channel_get_state(channel) < CS_HANGUP && switch_channel_test_flag(channel, CF_DIVERT_EVENTS)) {
+				switch_channel_t *chan = switch_core_session_get_channel(listener->session);
+				if (switch_channel_get_state(chan) < CS_HANGUP && switch_channel_test_flag(chan, CF_DIVERT_EVENTS)) {
 					switch_event_t *e = NULL;
 					while (switch_core_session_dequeue_event(listener->session, &e, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 						if (switch_queue_trypush(listener->event_queue, e) != SWITCH_STATUS_SUCCESS) {
@@ -1480,8 +1480,10 @@ static switch_status_t parse_command(listener_t *listener, switch_event_t **even
 			switch_set_flag_locked(listener, LFLAG_CONNECTED);			
 			switch_event_create(&call_event, SWITCH_EVENT_CHANNEL_DATA);
 			
-			switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
-			switch_channel_event_set_data(channel, call_event);
+			if (channel) {
+				switch_caller_profile_event_set_data(switch_channel_get_caller_profile(channel), "Channel", call_event);
+				switch_channel_event_set_data(channel, call_event);
+			}
 			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Content-Type", "command/reply");
 			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Reply-Text", "+OK\n");
 			switch_event_add_header_string(call_event, SWITCH_STACK_BOTTOM, "Socket-Mode", switch_test_flag(listener, LFLAG_ASYNC) ? "async" : "static");
