@@ -886,6 +886,7 @@ typedef enum {
 	CF_FS_RTP,
 	CF_REPORTING,
 	CF_PARK,
+	CF_TIMESTAMP_SET,
 	/* WARNING: DO NOT ADD ANY FLAGS BELOW THIS LINE */
 	CF_FLAG_MAX
 } switch_channel_flag_t;

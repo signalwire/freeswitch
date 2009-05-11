@@ -2507,6 +2507,8 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, legbillusec);
 	switch_channel_set_variable(channel, "flow_billusec", tmp);
 
+	switch_channel_set_flag(channel, CF_TIMESTAMP_SET);
+	
 	return status;
 }
 

@@ -2048,12 +2048,24 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 				
 				if (cdr_var) {
 					for (i = 0; i < and_argc; i++) {
+						switch_channel_t *channel;
+
 						if (!originate_status[i].peer_session) {
                             continue;
                         }
+
+						channel = switch_core_session_get_channel(originate_status[i].peer_session);
 						
-						switch_channel_wait_for_state_timeout(switch_core_session_get_channel(originate_status[i].peer_session), CS_REPORTING, 5000);
-						switch_yield(100000);
+						switch_channel_wait_for_flag(channel,
+													 CF_TIMESTAMP_SET,
+													 SWITCH_TRUE,
+													 5000,
+													 NULL);
+
+						if (!switch_channel_test_flag(channel, CF_TIMESTAMP_SET) || !switch_core_session_running(originate_status[i].peer_session)) {
+							switch_core_session_reporting_state(originate_status[i].peer_session);
+						}
+
 						if (switch_ivr_generate_xml_cdr(originate_status[i].peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
 							if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
 								switch_snprintf(buf, sizeof(buf), "%s_%d", cdr_var, ++cdr_total);
