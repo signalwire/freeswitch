@@ -786,15 +786,23 @@ SWITCH_DECLARE(switch_status_t) switch_pollset_create(switch_pollset_t **pollset
 
 SWITCH_DECLARE(switch_status_t) switch_pollset_add(switch_pollset_t *pollset, const switch_pollfd_t *descriptor)
 {
+	if (!pollset) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
 	return apr_pollset_add((apr_pollset_t *)pollset, (const apr_pollfd_t *)descriptor);
 }
 
 SWITCH_DECLARE(switch_status_t) switch_poll(switch_pollfd_t *aprset, int32_t numsock, int32_t *nsds, switch_interval_time_t timeout)
 {
-	apr_status_t st = apr_poll((apr_pollfd_t *)aprset, numsock, nsds, timeout);
+	apr_status_t st = SWITCH_STATUS_FALSE;
+	
+	if (aprset) {
+		st = apr_poll((apr_pollfd_t *)aprset, numsock, nsds, timeout);
 
-	if (st == APR_TIMEUP) {
-		st = SWITCH_STATUS_TIMEOUT;
+		if (st == APR_TIMEUP) {
+			st = SWITCH_STATUS_TIMEOUT;
+		}
 	}
 
 	return st;

@@ -1475,7 +1475,8 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		int do_cng = 0;
 
 		if (rtp_session->timer.interval) {
-			if (switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) {
+			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
+				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 1) == SWITCH_STATUS_SUCCESS) {
 					hot_socket = 1;
 				}
@@ -1487,7 +1488,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 	recvfrom:
 
-		if (!rtp_session->timer.interval) {
+		if (!rtp_session->timer.interval && rtp_session->read_pollfd) {
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, poll_sec * 1000000);
 		} 
 		
