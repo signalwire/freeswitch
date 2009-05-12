@@ -34,7 +34,7 @@ then
 		fi
 		AC_MSG_RESULT([$ERLANG_VER])
 
-		ERLANG_LIBDIR=`$ERLANG -noshell -eval 'io:format("~s/lib~n", [[code:lib_dir("erl_interface")]]).' -s erlang halt`
+		ERLANG_LIBDIR=`$ERLANG -noshell -eval 'io:format("~n~s/lib~n", [[code:lib_dir("erl_interface")]]).' -s erlang halt | tail -n 1`
 		AC_MSG_CHECKING([erlang libdir])
 		if test -z "`echo $ERLANG_LIBDIR`" ; then
 			AC_MSG_ERROR([failed])
@@ -44,7 +44,7 @@ then
 		fi
 		AC_MSG_RESULT([$ERLANG_LIBDIR])
 
-		ERLANG_INCDIR=`$ERLANG -noshell -eval 'io:format("~s/include~n", [[code:lib_dir("erl_interface")]]).' -s erlang halt`
+		ERLANG_INCDIR=`$ERLANG -noshell -eval 'io:format("~n~s/include~n", [[code:lib_dir("erl_interface")]]).' -s erlang halt | tail -n 1`
 		AC_MSG_CHECKING([erlang incdir])
 		if test -z "`echo $ERLANG_INCDIR`" ; then
 			AC_MSG_ERROR([failed])
