@@ -60,11 +60,18 @@ SWITCH_DECLARE(int) switch_regex_perform(const char *field, const char *expressi
 	int match_count = 0;
 	char *tmp = NULL;
 	uint32_t flags = 0;
+	char abuf[256] = "";
 
 	if (!(field && expression)) {
 		return 0;
 	}
 
+	if (*expression == '_') {
+		if (switch_ast2regex(expression + 1, abuf, sizeof(abuf))) {
+			expression = abuf;
+		}
+	}
+	
 	if (*expression == '/') {
 		char *opts = NULL;
 		tmp = strdup(expression + 1);
