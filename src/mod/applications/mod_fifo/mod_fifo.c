@@ -2168,7 +2168,7 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_fifo_shutdown)
 		stop_node_thread();
 	}
 		
-	for (hi = switch_hash_first(NULL, globals.fifo_hash); hi; hi = switch_hash_first(NULL, globals.fifo_hash)) {
+	while (hi = switch_hash_first(NULL, globals.fifo_hash)) {
 		int x = 0;
 		switch_hash_this(hi, NULL, NULL, &val);
 		node = (fifo_node_t *) val;
