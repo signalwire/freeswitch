@@ -152,8 +152,9 @@ struct say_t{
 
 //порядковый
 //мужской
+//родительный
 #define m_14 {\
-	{"h-0x","h-1x","h-2x","h-3x","h-4x","h-4x","h-","x"},\
+	{"h-0x","h-1x","h-2x","h-3x","h-4x","h-5x","h-","x"},\
 	{"","","","h-thousandx","h-2xx","h-thousandx","h-3xx","h-thousandx","h-4xx","h-thousandx","h-5xx","h-thousandx","h-","xx"},\
 	{"","","","h-millionx","h-2xx","h-millionx","h-3xx","h-millionx","h-4xx","h-millionx","h-5xx","h-millionx","h-","xx"},\
 	0,\
