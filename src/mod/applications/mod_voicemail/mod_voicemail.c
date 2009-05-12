@@ -3210,43 +3210,62 @@ SWITCH_STANDARD_APP(voicemail_function)
 	
 }
 
-#define BOXCOUNT_SYNTAX "<user>@<domain>[|[new|saved|new-urgent|saved-urgent|all]]"
+#define BOXCOUNT_SYNTAX "[profile/]<user>@<domain>[|[new|saved|new-urgent|saved-urgent|all]]"
 SWITCH_STANDARD_API(boxcount_api_function)
 {
 	char *dup;
-	char *how = "new";
+	const char *how = "new";
 	int total_new_messages = 0;
 	int total_saved_messages = 0;
 	int total_new_urgent_messages = 0;
 	int total_saved_urgent_messages = 0;
+	vm_profile_t *profile;
+	char *id, *domain, *p, *profilename = NULL;
+	
+	if (switch_strlen_zero(cmd)) {
+		stream->write_function(stream, "%d", 0);	
+		return SWITCH_STATUS_SUCCESS;
+	}
 
-	if (cmd) {
-		switch_hash_index_t *hi;
-		void *val;
-		vm_profile_t *profile;
-		char *id, *domain, *p;
+	id = dup = strdup(cmd);
+	
+	if ((p = strchr(dup, '/'))) {
+		*p++ = '\0';
+		id = p;
+		profilename = dup;
+	}
+	
+	if (!strncasecmp(id, "sip:", 4)) {
+		id += 4;
+	}
 
-		dup = strdup(cmd);
-		id = dup;
+	if (switch_strlen_zero(id)) {
+		stream->write_function(stream, "%d", 0);
+		goto done;
+	}
 
-		if (!strncasecmp(cmd, "sip:", 4)) {
-			id += 4;
+	if ((domain = strchr(id, '@'))) {
+		*domain++ = '\0';
+		if ((p = strchr(domain, '|'))) {
+			*p++ = '\0';
+			how = p;
 		}
 
-		if (!id) {
-			stream->write_function(stream, "%d", 0);
-			free(dup);
-			return SWITCH_STATUS_SUCCESS;
-		}
-
-		if ((domain = strchr(id, '@'))) {
-			*domain++ = '\0';
-			if ((p = strchr(domain, '|'))) {
-				*p++ = '\0';
-				how = p;
+		if (!switch_strlen_zero(profilename)) {
+			if ((profile = get_profile(profilename))) {
+				message_count(profile, id, domain, "inbox", &total_new_messages, &total_saved_messages,
+							  &total_new_urgent_messages, &total_saved_urgent_messages);
+				switch_thread_rwlock_unlock(profile->rwlock);
+			} else {
+				stream->write_function(stream, "-ERR No such profile\n");
+				goto done;
 			}
+		} else {
+			/* Kept for backwards-compatibility */
+			switch_hash_index_t *hi;
 			switch_mutex_lock(globals.mutex);
 			for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+				void *val;
 				switch_hash_this(hi, NULL, NULL, &val);
 				profile = (vm_profile_t *) val;
 				total_new_messages = total_saved_messages = 0;
@@ -3255,8 +3274,6 @@ SWITCH_STANDARD_API(boxcount_api_function)
 			}
 			switch_mutex_unlock(globals.mutex);
 		}
-
-		switch_safe_free(dup);
 	}
 
 	if (!strcasecmp(how, "saved")) {
@@ -3271,6 +3288,8 @@ SWITCH_STANDARD_API(boxcount_api_function)
 		stream->write_function(stream, "%d", total_new_messages);
 	}
 
+done:
+	switch_safe_free(dup);
 	return SWITCH_STATUS_SUCCESS;
 }
 
