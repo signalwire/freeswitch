@@ -796,7 +796,7 @@ SWITCH_DECLARE(switch_status_t) switch_channel_wait_for_flag(switch_channel_t *c
 															 uint32_t to,
 															 switch_channel_t *super_channel)
 {
-
+	
 	if (to) {
 		to++;
 	}
@@ -2314,6 +2314,12 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 	char dtstr[SWITCH_DTMF_LOG_LEN+1] = "";
 	int x = 0;
 
+	if (switch_channel_test_flag(channel, CF_TIMESTAMP_SET)) {
+		return SWITCH_STATUS_FALSE;
+	}
+	
+	switch_channel_set_flag(channel, CF_TIMESTAMP_SET);
+
 	if (!(caller_profile = switch_channel_get_caller_profile(channel)) || !channel->variables) {
 		return SWITCH_STATUS_FALSE;
 	}
@@ -2506,8 +2512,6 @@ SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *
 
 	switch_snprintf(tmp, sizeof(tmp), "%" SWITCH_TIME_T_FMT, legbillusec);
 	switch_channel_set_variable(channel, "flow_billusec", tmp);
-
-	switch_channel_set_flag(channel, CF_TIMESTAMP_SET);
 	
 	return status;
 }

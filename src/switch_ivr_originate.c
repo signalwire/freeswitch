@@ -2056,16 +2056,12 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_originate(switch_core_session_t *sess
 
 						channel = switch_core_session_get_channel(originate_status[i].peer_session);
 						
-						switch_channel_wait_for_flag(channel,
-													 CF_TIMESTAMP_SET,
-													 SWITCH_TRUE,
-													 5000,
-													 NULL);
-
-						if (!switch_channel_test_flag(channel, CF_TIMESTAMP_SET) || !switch_core_session_running(originate_status[i].peer_session)) {
-							switch_core_session_reporting_state(originate_status[i].peer_session);
+						switch_channel_wait_for_state_timeout(channel, CS_REPORTING, 5000);
+						
+						if (!switch_channel_test_flag(channel, CF_TIMESTAMP_SET)) {
+							switch_channel_set_timestamps(channel);
 						}
-
+						
 						if (switch_ivr_generate_xml_cdr(originate_status[i].peer_session, &cdr) == SWITCH_STATUS_SUCCESS) {
 							if ((xml_text = switch_xml_toxml(cdr, SWITCH_FALSE))) {
 								switch_snprintf(buf, sizeof(buf), "%s_%d", cdr_var, ++cdr_total);
