@@ -432,10 +432,6 @@ SWITCH_STANDARD_APP(socket_function)
 		
 		launch_listener_thread(listener);
 
-		if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
-			return;
-		}
-		
 		while(switch_channel_ready(channel) && !switch_test_flag(listener, LFLAG_CONNECTED)) {
 			switch_cond_next();
 		}

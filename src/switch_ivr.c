@@ -642,40 +642,23 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 	int stream_id = 0;
 	switch_event_t *event;
 	switch_unicast_conninfo_t *conninfo = NULL;
-	uint32_t rate;
-	uint32_t bpf;
+	uint32_t rate = 0;
+	uint32_t bpf = 0;
 	const char *to;
 	int timeout = 0;
 	time_t expires = 0;
-
 	switch_codec_implementation_t read_impl = {0};
-    switch_core_session_get_read_impl(session, &read_impl);
+
 	
 	if (switch_channel_test_flag(channel, CF_CONTROLLED)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that are under control already.\n");
 		return SWITCH_STATUS_FALSE;
 	}
 
-	if (!switch_channel_test_flag(channel, CF_ANSWERED)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Careful, Channel is unanswered. Pre-answering...\n");
-		if ((status = switch_channel_pre_answer(channel)) != SWITCH_STATUS_SUCCESS) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot establish media.\n");
-			return SWITCH_STATUS_FALSE;
-		}
-	}
-	
 	if (switch_channel_test_flag(channel, CF_PROXY_MODE) || switch_channel_get_state(channel) == CS_RESET) {
 		return SWITCH_STATUS_FALSE;
 	}
 	
-	if (!switch_channel_media_ready(channel)) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Cannot park channels that have no read codec.\n");
-		return SWITCH_STATUS_FALSE;
-	}
-
-	rate = read_impl.actual_samples_per_second;
-	bpf = read_impl.decoded_bytes_per_packet;
-
 	if ((to = switch_channel_get_variable(channel, "park_timeout"))) {
 		if ((timeout = atoi(to)) < 0) {
 			timeout = 0;
@@ -693,20 +676,36 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 		switch_event_fire(&event);
 	}
 
-	while (switch_channel_media_ready(channel) && switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED) 
-		   && switch_channel_test_flag(channel, CF_PARK)) {
-		
-		if ((status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id)) == SWITCH_STATUS_SUCCESS) {
-			if (!SWITCH_READ_ACCEPTABLE(status)) {
-				break;
-			}
+	while (switch_channel_ready(channel) && switch_channel_test_flag(channel, CF_CONTROLLED) && switch_channel_test_flag(channel, CF_PARK)) {
+	
+		if (!rate && switch_channel_media_ready(channel)) {
+			switch_core_session_get_read_impl(session, &read_impl);
+			rate = read_impl.actual_samples_per_second;
+			bpf = read_impl.decoded_bytes_per_packet;
+		}
+	
+		if (rate) {
+			status = switch_core_session_read_frame(session, &read_frame, SWITCH_IO_FLAG_NONE, stream_id);
+		} else {
+			switch_yield(20000);
+			status = SWITCH_STATUS_SUCCESS;
+		}
 
+		if (!SWITCH_READ_ACCEPTABLE(status)) {
+			break;
+		} else {
 			if (expires && switch_epoch_time_now(NULL) >= expires) {
 				switch_channel_hangup(channel, SWITCH_CAUSE_RECOVERY_ON_TIMER_EXPIRE);
 				break;
 			}
 
 			if (switch_channel_test_flag(channel, CF_UNICAST)) {
+				if (!switch_channel_media_ready(channel)) {
+					if (switch_channel_pre_answer(channel) != SWITCH_STATUS_SUCCESS) {
+						return SWITCH_STATUS_FALSE;
+					}
+				}
+
 				if (!conninfo) {
 					if (!(conninfo = switch_channel_get_private(channel, "unicast"))) {
 						switch_channel_clear_flag(channel, CF_UNICAST);
