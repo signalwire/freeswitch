@@ -1,3 +1,3 @@
 #! /bin/sh
-./configure "$@" --with-apr=../apr --disable-shared --with-pic --without-sqlite2 --without-sqlite3
+./configure "$@" --with-apr=../apr --disable-shared --with-pic --without-sqlite2 --without-sqlite3 --with-expat=builtin
 
