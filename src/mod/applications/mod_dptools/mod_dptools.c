@@ -1807,6 +1807,7 @@ SWITCH_STANDARD_APP(phrase_function)
 	char *mydata = NULL;
 	switch_input_args_t args = { 0 };
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_status_t status;
 
 	if (!switch_strlen_zero(data) && (mydata = switch_core_session_strdup(session, data))) {
 		const char *lang;
@@ -1825,7 +1826,22 @@ SWITCH_STANDARD_APP(phrase_function)
 		
 		switch_channel_set_variable(channel, SWITCH_PLAYBACK_TERMINATOR_USED, "" );
 
-		switch_ivr_phrase_macro(session, macro, mdata, lang, &args);
+		status = switch_ivr_phrase_macro(session, macro, mdata, lang, &args);
+	} else {
+		status = SWITCH_STATUS_NOOP;
+	}
+
+	switch (status) {
+	case SWITCH_STATUS_SUCCESS:
+	case SWITCH_STATUS_BREAK:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "PHRASE PLAYED");
+		break;
+	case SWITCH_STATUS_NOOP:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "NOTHING");
+		break;
+	default:
+		switch_channel_set_variable(channel, SWITCH_CURRENT_APPLICATION_RESPONSE_VARIABLE, "UNKNOWN ERROR");
+		break;
 	}
 }
 
