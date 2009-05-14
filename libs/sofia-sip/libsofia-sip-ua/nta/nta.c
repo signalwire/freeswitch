@@ -1048,11 +1048,14 @@ void nta_agent_destroy(nta_agent_t *agent)
 	nta_outgoing_t *orq = oht->oht_table[i];
 
 	if (!orq->orq_destroyed)
-	  SU_DEBUG_3(("%s: destroying %s client transaction to <"
+	  SU_DEBUG_3(("%s: destroying %s%s client transaction to <"
 		      URL_PRINT_FORMAT ">\n",
-		      __func__, orq->orq_method_name,
+		      __func__,
+		      (orq->orq_forking || orq->orq_forks) ? "forked " : "forking",
+		      orq->orq_method_name,
 		      URL_PRINT_ARGS(orq->orq_to->a_url)));
 
+	orq->orq_forks = NULL, orq->orq_forking = NULL;
 	outgoing_free(orq);
       }
 
@@ -8493,6 +8496,7 @@ static
 void outgoing_free(nta_outgoing_t *orq)
 {
   SU_DEBUG_9(("nta: outgoing_free(%p)\n", (void *)orq));
+  assert(orq->orq_forks == NULL && orq->orq_forking == NULL);
   outgoing_cut_off(orq);
   outgoing_reclaim(orq);
 }
@@ -8585,7 +8589,10 @@ int outgoing_default_cb(nta_outgoing_magic_t *magic,
 void outgoing_destroy(nta_outgoing_t *orq)
 {
   if (orq->orq_terminated || orq->orq_default) {
-    outgoing_free(orq);
+    if (!orq->orq_forking && !orq->orq_forks) {
+      outgoing_free(orq);
+      return;
+    }
   }
   /* Application is expected to handle 200 OK statelessly
      => kill transaction immediately */
@@ -8596,12 +8603,12 @@ void outgoing_destroy(nta_outgoing_t *orq)
 	   && !orq->orq_forking && !orq->orq_forks) {
     orq->orq_destroyed = 1;
     outgoing_terminate(orq);
+    return;
   }
-  else {
-    orq->orq_destroyed = 1;
-    orq->orq_callback = outgoing_default_cb;
-    orq->orq_magic = NULL;
-  }
+
+  orq->orq_destroyed = 1;
+  orq->orq_callback = outgoing_default_cb;
+  orq->orq_magic = NULL;
 }
 
 /** @internal Outgoing transaction timer routine.
@@ -8881,6 +8888,8 @@ outgoing_terminate_invite(nta_outgoing_t *original)
     SU_DEBUG_5(("nta: timer %s fired, %s %s (%u);tag=%s\n", "D",
 		"terminate", orq->orq_method_name, orq->orq_cseq->cs_seq,
 		orq->orq_tag));
+
+    orq->orq_forking = NULL;
 
     if (outgoing_terminate(orq))
       continue;
