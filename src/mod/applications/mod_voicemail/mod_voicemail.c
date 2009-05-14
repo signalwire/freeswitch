@@ -1046,6 +1046,7 @@ typedef enum {
 #define VM_HELLO_MACRO "voicemail_hello"
 #define VM_GOODBYE_MACRO "voicemail_goodbye"
 #define VM_MESSAGE_COUNT_MACRO "voicemail_message_count"
+#define VM_DISK_QUOTA_EXCEEDED_MACRO "voicemail_disk_quota_exceeded"
 #define URGENT_FLAG_STRING "A_URGENT"
 #define NORMAL_FLAG_STRING "B_NORMAL"
 
@@ -2844,6 +2845,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params = NULL, x_param = NULL;
 	switch_event_t *vars = NULL;
 	const char *vm_cc = NULL, *vtmp, *vm_ext = NULL;
+	int disk_quota = 0;
 	switch_event_t *params = NULL;
 	
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
@@ -2888,6 +2890,8 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 						insert_db = switch_true(val);
 					} else if (!strcasecmp(var, "vm-attach-file")) {
 						email_attach = switch_true(val);
+					} else if (!strcasecmp(var, "vm-disk-quota")) {
+						disk_quota = atoi(val);
 					} else if (!strcasecmp(var, "vm-alternate-greet-id")) {
 						read_id = switch_core_session_strdup(session, val);
 					}
@@ -3031,6 +3035,27 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 			goto greet;
 		}
 	}
+
+	if (disk_quota) {
+		callback_t cbt = { 0 };
+		char sql[256];
+		char disk_usage[256]; 
+
+		cbt.buf = disk_usage;
+		cbt.len = sizeof(disk_usage);
+
+		switch_snprintf(sql, sizeof(sql),
+						"select sum(message_len) from voicemail_msgs where username='%s' and domain='%s'",
+						id, domain_name);
+		vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
+
+		if (atoi(disk_usage) >= disk_quota) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Voicemail disk quota is exceeded for %s\n", id);
+			TRY_CODE(switch_ivr_phrase_macro(session, VM_DISK_QUOTA_EXCEEDED_MACRO, NULL, NULL, NULL));
+			goto end;
+		}
+	}
+
 
 	memset(&fh, 0, sizeof(fh));
 	args.input_callback = control_playback;
