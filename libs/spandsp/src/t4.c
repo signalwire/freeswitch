@@ -1668,9 +1668,14 @@ static void encode_eol(t4_state_t *s)
     }
     if (s->row_bits)
     {
-        /* We may need to pad the row to a minimum length. */
-        if (s->row_bits + length < s->min_bits_per_row)
-            put_encoded_bits(s, 0, s->min_bits_per_row - (s->row_bits + length));
+        /* We may need to pad the row to a minimum length, unless we are in T.6 mode.
+           In T.6 we only come here at the end of the page to add the EOFB marker, which
+           is like two 1D EOLs. */
+        if (s->line_encoding != T4_COMPRESSION_ITU_T6)
+        {
+            if (s->row_bits + length < s->min_bits_per_row)
+                put_encoded_bits(s, 0, s->min_bits_per_row - (s->row_bits + length));
+        }
         put_encoded_bits(s, code, length);
         update_row_bit_info(s);
     }
@@ -1678,6 +1683,10 @@ static void encode_eol(t4_state_t *s)
     {
         /* We don't pad zero length rows. They are the consecutive EOLs which end a page. */
         put_encoded_bits(s, code, length);
+        /* Don't do the full update row bit info, or the minimum suddenly drops to the
+           length of an EOL. Just clear the row bits, so we treat the next EOL as an
+           end of page EOL, with no padding. */
+        s->row_bits = 0;
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -2183,8 +2192,9 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
             encode_eol(s);
     }
 
-    /* Force any partial byte in progress to flush */
-    put_encoded_bits(s, 0, 7);
+    /* Force any partial byte in progress to flush using ones. Any post EOL padding when
+       sending is normally ones, so this is consistent. */
+    put_encoded_bits(s, 0xFF, 7);
     s->bit_pos = 7;
     s->bit_ptr = 0;
     s->line_image_size = s->image_size*8;

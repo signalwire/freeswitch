@@ -22,7 +22,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: fax_decode.c,v 1.54 2009/02/10 13:06:47 steveu Exp $
+ * $Id: fax_decode.c,v 1.55 2009/04/29 12:37:45 steveu Exp $
  */
 
 /*! \page fax_decode_page FAX decoder
@@ -229,7 +229,7 @@ static void hdlc_accept(void *user_data, const uint8_t *msg, int len, int ok)
     {
         if (msg[0] != 0xFF  ||  !(msg[1] == 0x03  ||  msg[1] == 0x13))
         {
-            fprintf(stderr, "Bad frame header - %02x %02x", msg[0], msg[1]);
+            fprintf(stderr, "Bad frame header - %02x %02x\n", msg[0], msg[1]);
             return;
         }
         print_frame("HDLC: ", msg, len);

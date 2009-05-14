@@ -22,12 +22,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_rx.c,v 1.66 2009/04/27 15:18:52 steveu Exp $
+ * $Id: v22bis_rx.c,v 1.67 2009/04/29 12:37:45 steveu Exp $
  */
 
 /*! \file */
 
-/* THIS IS A WORK IN PROGRESS - NOT YET FUNCTIONAL! */
+/* THIS IS A WORK IN PROGRESS - It is basically functional, but it is not feature
+   complete, and doesn't reliably sync over the signal and noise level ranges it
+   should. There are some nasty inefficiencies too!
+   TODO:
+        Better noise performance
+        Retrain is incomplete
+        Rate change is not implemented
+        Remote loopback is not implemented */
 
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
@@ -103,33 +110,6 @@ The basic method used by the V.22bis receiver is:
         Descramble and output the bits represented by the decision.
 */
 
-enum
-{
-    V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION,
-    V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION,
-    V22BIS_RX_TRAINING_STAGE_LOG_PHASE,
-    V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES,
-    V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES_SUSTAINING,
-    V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200,
-    V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200_SUSTAINING,
-    V22BIS_RX_TRAINING_STAGE_WAIT_FOR_SCRAMBLED_ONES_AT_2400,
-    V22BIS_RX_TRAINING_STAGE_PARKED
-};
-
-/* Segments of the training sequence */
-enum
-{
-    V22BIS_TX_TRAINING_STAGE_NORMAL_OPERATION = 0,
-    V22BIS_TX_TRAINING_STAGE_INITIAL_TIMED_SILENCE,
-    V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE,
-    V22BIS_TX_TRAINING_STAGE_U11,
-    V22BIS_TX_TRAINING_STAGE_U0011,
-    V22BIS_TX_TRAINING_STAGE_S11,
-    V22BIS_TX_TRAINING_STAGE_TIMED_S11,
-    V22BIS_TX_TRAINING_STAGE_S1111,
-    V22BIS_TX_TRAINING_STAGE_PARKED
-};
-
 static const uint8_t space_map_v22bis[6][6] =
 {
     {11,  9,  9,  6,  6,  7},
@@ -194,19 +174,28 @@ SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coef
 }
 /*- End of function --------------------------------------------------------*/
 
-static void equalizer_reset(v22bis_state_t *s)
+void v22bis_equalizer_coefficient_reset(v22bis_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINTx)
     cvec_zeroi16(s->rx.eq_coeff, 2*V22BIS_EQUALIZER_LEN + 1);
     s->rx.eq_coeff[V22BIS_EQUALIZER_LEN] = complex_seti16(3*FP_FACTOR, 0*FP_FACTOR);
-    cvec_zeroi16(s->rx.eq_buf, V22BIS_EQUALIZER_MASK + 1);
     s->rx.eq_delta = 32768.0f*EQUALIZER_DELTA/(2*V22BIS_EQUALIZER_LEN + 1);
 #else
     cvec_zerof(s->rx.eq_coeff, 2*V22BIS_EQUALIZER_LEN + 1);
     s->rx.eq_coeff[V22BIS_EQUALIZER_LEN] = complex_setf(3.0f, 0.0f);
-    cvec_zerof(s->rx.eq_buf, V22BIS_EQUALIZER_MASK + 1);
     s->rx.eq_delta = EQUALIZER_DELTA/(2*V22BIS_EQUALIZER_LEN + 1);
+#endif
+}
+/*- End of function --------------------------------------------------------*/
+
+static void equalizer_reset(v22bis_state_t *s)
+{
+    v22bis_equalizer_coefficient_reset(s);
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    cvec_zeroi16(s->rx.eq_buf, V22BIS_EQUALIZER_MASK + 1);
+#else
+    cvec_zerof(s->rx.eq_buf, V22BIS_EQUALIZER_MASK + 1);
 #endif
     s->rx.eq_put_step = 20 - 1;
     s->rx.eq_step = 0;
@@ -345,35 +334,63 @@ static int decode_baudx(v22bis_state_t *s, int nearest)
 }
 /*- End of function --------------------------------------------------------*/
 
-static __inline__ int find_quadrant(const complexf_t *z)
+static __inline__ void symbol_sync(v22bis_state_t *s)
 {
-    int b1;
-    int b2;
+    float p;
+    float q;
+    complexf_t zz;
+    complexf_t a;
+    complexf_t b;
+    complexf_t c;
 
-    /* Split the space along the two diagonals, as follows:
-         \ 1 /
-          \ /
-       2   X   0
-          / \
-         / 3 \
-     */
-    b1 = (z->im > z->re);
-    b2 = (z->im < -z->re);
-    return (b2 << 1) | (b1 ^ b2);
+    /* This routine adapts the position of the half baud samples entering the equalizer. */
+
+    /* Perform a Gardner test for baud alignment on the three most recent samples. */
+    if (s->rx.sixteen_way_decisions)
+    {
+        p = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].re
+          - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].re;
+        p *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].re;
+
+        q = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].im
+        - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].im;
+        q *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].im;
+    }
+    else
+    {
+        /* Rotate the points to the 45 degree positions, to maximise the effectiveness of
+           the Gardner algorithm. This is particularly significant at the start of operation
+           to pull things in quickly. */
+        zz = complex_setf(0.894427, 0.44721f);
+        a = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK], &zz);
+        b = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK], &zz);
+        c = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK], &zz);
+        p = (a.re - c.re)*b.re;
+        q = (a.im - c.im)*b.im;
+    }
+
+    s->rx.gardner_integrate += (p + q > 0.0f)  ?  s->rx.gardner_step  :  -s->rx.gardner_step;
+
+    if (abs(s->rx.gardner_integrate) >= 16)
+    {
+        /* This integrate and dump approach avoids rapid changes of the equalizer put step.
+           Rapid changes, without hysteresis, are bad. They degrade the equalizer performance
+           when the true symbol boundary is close to a sample boundary. */
+        s->rx.eq_put_step += (s->rx.gardner_integrate/16);
+        s->rx.total_baud_timing_correction += (s->rx.gardner_integrate/16);
+        //span_log(&s->logging, SPAN_LOG_FLOW, "Gardner kick %d [total %d]\n", s->rx.gardner_integrate, s->rx.total_baud_timing_correction);
+        if (s->rx.qam_report)
+            s->rx.qam_report(s->rx.qam_user_data, NULL, NULL, s->rx.gardner_integrate);
+        s->rx.gardner_integrate = 0;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
 static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
 {
-    complexf_t a;
-    complexf_t b;
-    complexf_t c;
-
     complexf_t z;
     complexf_t zz;
     const complexf_t *target;
-    float p;
-    float q;
     int re;
     int im;
     int nearest;
@@ -392,56 +409,11 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
     if ((s->rx.baud_phase ^= 1))
         return;
 
-    /* Perform a Gardner test for baud alignment on the three most recent samples. */
-#if 0
-    p = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].re
-      - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].re;
-    p *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].re;
-
-    q = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].im
-      - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].im;
-    q *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].im;
-#else
-    if (s->rx.sixteen_way_decisions)
-    {
-        p = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].re
-          - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].re;
-        p *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].re;
-
-        q = s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK].im
-        - s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK].im;
-        q *= s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK].im;
-    }
-    else
-    {
-        /* Rotate the points to the 45 degree positions, to maximise the effectiveness of the Gardner algorithm */
-        zz = complex_setf(cosf(26.57f*3.14159f/180.0f), sinf(26.57f*3.14159f/180.0f));
-        a = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 3) & V22BIS_EQUALIZER_MASK], &zz);
-        b = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 2) & V22BIS_EQUALIZER_MASK], &zz);
-        c = complex_mulf(&s->rx.eq_buf[(s->rx.eq_step - 1) & V22BIS_EQUALIZER_MASK], &zz);
-        p = (a.re - c.re)*b.re;
-        q = (a.im - c.im)*b.im;
-    }
-#endif
-
-    p += q;
-    s->rx.gardner_integrate += ((p + q) > 0.0f)  ?  s->rx.gardner_step  :  -s->rx.gardner_step;
-
-    if (abs(s->rx.gardner_integrate) >= 16)
-    {
-        /* This integrate and dump approach avoids rapid changes of the equalizer put step.
-           Rapid changes, without hysteresis, are bad. They degrade the equalizer performance
-           when the true symbol boundary is close to a sample boundary. */
-        s->rx.eq_put_step += (s->rx.gardner_integrate/16);
-        s->rx.total_baud_timing_correction += (s->rx.gardner_integrate/16);
-        //span_log(&s->logging, SPAN_LOG_FLOW, "Gardner kick %d [total %d]\n", s->rx.gardner_integrate, s->rx.total_baud_timing_correction);
-        if (s->rx.qam_report)
-            s->rx.qam_report(s->rx.qam_user_data, NULL, NULL, s->rx.gardner_integrate);
-        s->rx.gardner_integrate = 0;
-    }
+    symbol_sync(s);
 
     z = equalizer_get(s);
 
+    /* Find the constellation point */
     if (s->rx.sixteen_way_decisions)
     {
         re = (int) (z.re + 3.0f);
@@ -458,9 +430,17 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
     }
     else
     {
-        zz = complex_setf(3.0f/3.162278f, -1.0f/3.162278f);
+        /* Rotate to 45 degrees, to make the slicing trivial */
+        zz = complex_setf(0.894427, 0.44721f);
         zz = complex_mulf(&z, &zz);
-        nearest = (find_quadrant(&zz) << 2) | 0x01;
+        nearest = 0x01;
+        if (zz.re < 0.0f)
+            nearest |= 0x04;
+        if (zz.im < 0.0f)
+        {
+            nearest ^= 0x04;
+            nearest |= 0x08;
+        }
     }
     raw_bits = 0;
 
@@ -471,6 +451,31 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
         target = &v22bis_constellation[nearest];
         track_carrier(s, &z, target);
         tune_equalizer(s, &z, target);
+        raw_bits = phase_steps[((nearest >> 2) - (s->rx.constellation_state >> 2)) & 3];
+        /* TODO: detect unscrambled ones indicating a loopback request */
+
+        /* Search for the S1 signal that might be requesting a retrain */
+        if ((s->rx.last_raw_bits ^ raw_bits) == 0x3)
+        {
+            s->rx.pattern_repeats++;
+        }
+        else
+        {
+            if (s->rx.pattern_repeats >= 50  &&  (s->rx.last_raw_bits == 0x3  ||  s->rx.last_raw_bits == 0x0))
+            {
+                /* We should get a full run of 00 11 (about 60 bauds) at either modem. */
+                span_log(&s->logging, SPAN_LOG_FLOW, "+++ S1 detected (%d long)\n", s->rx.pattern_repeats);
+                span_log(&s->logging, SPAN_LOG_FLOW, "+++ Accepting a retrain request\n");
+                s->rx.pattern_repeats = 0;
+                s->rx.training_count = 0;
+                s->rx.training = V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200;
+                s->tx.training_count = 0;
+                s->tx.training = V22BIS_TX_TRAINING_STAGE_U0011;
+                v22bis_equalizer_coefficient_reset(s);
+                v22bis_report_status_change(s, SIG_STATUS_MODEM_RETRAIN_OCCURRED);
+            }
+            s->rx.pattern_repeats = 0;
+        }
         decode_baud(s, nearest);
         break;
     case V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION:
@@ -505,7 +510,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
         track_carrier(s, &z, target);
         raw_bits = phase_steps[((nearest >> 2) - (s->rx.constellation_state >> 2)) & 3];
         s->rx.constellation_state = nearest;
-        if (raw_bits != s->rx.last_raw_bits) 
+        if (raw_bits != s->rx.last_raw_bits)
             s->rx.pattern_repeats = 0;
         else
             s->rx.pattern_repeats++;
@@ -578,7 +583,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                 {
                     /* We should get a full run of 00 11 (about 60 bauds) at the calling modem, but only about 20
                        at the answering modem, as the first 40 are TED settling time. */
-                    span_log(&s->logging, SPAN_LOG_FLOW, "+++ S1 detected at %d\n", s->rx.pattern_repeats);
+                    span_log(&s->logging, SPAN_LOG_FLOW, "+++ S1 detected (%d long)\n", s->rx.pattern_repeats);
                     if (s->bit_rate == 2400)
                     {
                         if (!s->caller)
@@ -709,7 +714,8 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
             s->rx.rrc_filter_step = 0;
 
         /* Calculate the I filter, with an arbitrary phase step, just so we can calculate
-           the signal power. */
+           the signal power of the required carrier, with any guard tone or spillback of our
+           own transmitted signal suppressed. */
         if (s->caller)
         {
             ii = rx_pulseshaper_2400_re[6][0]*s->rx.rrc_filter[s->rx.rrc_filter_step];
@@ -744,7 +750,7 @@ SPAN_DECLARE(int) v22bis_rx(v22bis_state_t *s, const int16_t amp[], int len)
         if (s->rx.training != V22BIS_RX_TRAINING_STAGE_PARKED)
         {
             /* Only spend effort processing this data if the modem is not
-               parked, after training failure. */
+               parked, after a training failure. */
             z = dds_complexf(&s->rx.carrier_phase, s->rx.carrier_phase_rate);
             if (s->rx.training == V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION)
             {

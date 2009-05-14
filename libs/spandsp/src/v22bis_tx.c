@@ -22,12 +22,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis_tx.c,v 1.61 2009/04/25 10:18:50 steveu Exp $
+ * $Id: v22bis_tx.c,v 1.62 2009/04/29 12:37:45 steveu Exp $
  */
 
 /*! \file */
 
-/* THIS IS A WORK IN PROGRESS - NOT YET FUNCTIONAL! */
+/* THIS IS A WORK IN PROGRESS - It is basically functional, but it is not feature
+   complete, and doesn't reliably sync over the signal and noise level ranges it should! */
 
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
@@ -239,20 +240,6 @@ Both ends should accept unscrambled binary 1 or binary 0 as the preamble.
 */
 
 #define ms_to_symbols(t)    (((t)*600)/1000)
-
-/* Segments of the training sequence */
-enum
-{
-    V22BIS_TX_TRAINING_STAGE_NORMAL_OPERATION = 0,
-    V22BIS_TX_TRAINING_STAGE_INITIAL_TIMED_SILENCE,
-    V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE,
-    V22BIS_TX_TRAINING_STAGE_U11,
-    V22BIS_TX_TRAINING_STAGE_U0011,
-    V22BIS_TX_TRAINING_STAGE_S11,
-    V22BIS_TX_TRAINING_STAGE_TIMED_S11,
-    V22BIS_TX_TRAINING_STAGE_S1111,
-    V22BIS_TX_TRAINING_STAGE_PARKED
-};
 
 static const int phase_steps[4] =
 {
@@ -598,6 +585,7 @@ SPAN_DECLARE(int) v22bis_restart(v22bis_state_t *s, int bit_rate)
 
 SPAN_DECLARE(int) v22bis_request_retrain(v22bis_state_t *s, int bit_rate)
 {
+    /* TODO: support bit rate switching */
     switch (bit_rate)
     {
     case 2400:
@@ -606,7 +594,33 @@ SPAN_DECLARE(int) v22bis_request_retrain(v22bis_state_t *s, int bit_rate)
     default:
         return -1;
     }
-    /* TODO: Implement retrain and bit rate change */
+    /* TODO: support bit rate changes */
+    /* Retrain is only valid when we are normal operation at 2400bps */
+    if (s->rx.training != V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION
+        ||
+        s->tx.training != V22BIS_TX_TRAINING_STAGE_NORMAL_OPERATION
+        ||
+        s->negotiated_bit_rate != 2400)
+    {
+        return -1;
+    }
+    /* Send things back into the training process at the appropriate point.
+       The far end should detect the S1 signal, and reciprocate. */
+    span_log(&s->logging, SPAN_LOG_FLOW, "+++ Initiating a retrain\n");
+    s->rx.pattern_repeats = 0;
+    s->rx.training_count = 0;
+    s->rx.training = V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200;
+    s->tx.training_count = 0;
+    s->tx.training = V22BIS_TX_TRAINING_STAGE_U0011;
+    v22bis_equalizer_coefficient_reset(s);
+    v22bis_report_status_change(s, SIG_STATUS_MODEM_RETRAIN_OCCURRED);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(int) v22bis_remote_loopback(v22bis_state_t *s, int enable)
+{
+    /* TODO: */
     return -1;
 }
 /*- End of function --------------------------------------------------------*/

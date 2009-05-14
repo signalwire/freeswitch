@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: t38_terminal.c,v 1.124 2009/03/13 14:49:56 steveu Exp $
+ * $Id: t38_terminal.c,v 1.125 2009/05/02 04:43:48 steveu Exp $
  */
 
 /*! \file */
@@ -566,6 +566,8 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             /* Create a 75ms silence */
             if (fe->t38.current_tx_indicator != T38_IND_NO_SIGNAL)
                 delay = t38_core_send_indicator(&fe->t38, T38_IND_NO_SIGNAL, fe->t38.indicator_tx_count);
+            else
+                delay = 75000;
             fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_2;
             fe->next_tx_samples = fe->samples;
             break;
@@ -663,6 +665,8 @@ static int stream_hdlc(t38_terminal_state_t *s)
             /* Create a 75ms silence */
             if (fe->t38.current_tx_indicator != T38_IND_NO_SIGNAL)
                 delay = t38_core_send_indicator(&fe->t38, T38_IND_NO_SIGNAL, fe->t38.indicator_tx_count);
+            else
+                delay = 75000;
             fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_2;
             fe->next_tx_samples = fe->samples;
             break;

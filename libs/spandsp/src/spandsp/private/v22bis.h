@@ -22,11 +22,39 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.9 2009/04/26 09:50:28 steveu Exp $
+ * $Id: v22bis.h,v 1.10 2009/04/29 12:37:45 steveu Exp $
  */
 
 #if !defined(_SPANDSP_PRIVATE_V22BIS_H_)
 #define _SPANDSP_PRIVATE_V22BIS_H_
+
+/*! Segments of the training sequence on the receive side */
+enum
+{
+    V22BIS_RX_TRAINING_STAGE_NORMAL_OPERATION,
+    V22BIS_RX_TRAINING_STAGE_SYMBOL_ACQUISITION,
+    V22BIS_RX_TRAINING_STAGE_LOG_PHASE,
+    V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES,
+    V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES_SUSTAINING,
+    V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200,
+    V22BIS_RX_TRAINING_STAGE_SCRAMBLED_ONES_AT_1200_SUSTAINING,
+    V22BIS_RX_TRAINING_STAGE_WAIT_FOR_SCRAMBLED_ONES_AT_2400,
+    V22BIS_RX_TRAINING_STAGE_PARKED
+};
+
+/*! Segments of the training sequence on the transmit side */
+enum
+{
+    V22BIS_TX_TRAINING_STAGE_NORMAL_OPERATION = 0,
+    V22BIS_TX_TRAINING_STAGE_INITIAL_TIMED_SILENCE,
+    V22BIS_TX_TRAINING_STAGE_INITIAL_SILENCE,
+    V22BIS_TX_TRAINING_STAGE_U11,
+    V22BIS_TX_TRAINING_STAGE_U0011,
+    V22BIS_TX_TRAINING_STAGE_S11,
+    V22BIS_TX_TRAINING_STAGE_TIMED_S11,
+    V22BIS_TX_TRAINING_STAGE_S1111,
+    V22BIS_TX_TRAINING_STAGE_PARKED
+};
 
 /*!
     V.22bis modem descriptor. This defines the working state for a single instance
@@ -194,6 +222,8 @@ extern "C"
 int v22bis_rx_restart(v22bis_state_t *s);
 
 void v22bis_report_status_change(v22bis_state_t *s, int status);
+
+void v22bis_equalizer_coefficient_reset(v22bis_state_t *s);
 
 #if defined(__cplusplus)
 }

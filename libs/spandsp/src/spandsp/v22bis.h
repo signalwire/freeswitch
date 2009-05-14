@@ -22,7 +22,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- * $Id: v22bis.h,v 1.41 2009/04/25 10:18:50 steveu Exp $
+ * $Id: v22bis.h,v 1.42 2009/04/29 12:37:45 steveu Exp $
  */
 
 /*! \file */
@@ -150,12 +150,19 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power);
     \return 0 for OK, -1 for bad parameter. */
 SPAN_DECLARE(int) v22bis_restart(v22bis_state_t *s, int bit_rate);
 
-/*! Request a retrain for a V.22bis modem context. A rate change may also be resquested.
+/*! Request a retrain for a V.22bis modem context. A rate change may also be requested.
     \brief Request a retrain for a V.22bis modem context.
     \param s The modem context.
     \param bit_rate The bit rate of the modem. Valid values are 1200 and 2400.
-    \return 0 for OK, -1 for bad parameter. */
+    \return 0 for OK, -1 for request rejected. */
 SPAN_DECLARE(int) v22bis_request_retrain(v22bis_state_t *s, int bit_rate);
+
+/*! Request a loopback 2 for a V.22bis modem context.
+    \brief Request a loopback 2 for a V.22bis modem context.
+    \param s The modem context.
+    \param enable TRUE to enable loopback, or FALSE to disable it.
+    \return 0 for OK, -1 for request reject. */
+SPAN_DECLARE(int) v22bis_remote_loopback(v22bis_state_t *s, int enable);
 
 /*! Report the current operating bit rate of a V.22bis modem context.
     \brief Report the current operating bit rate of a V.22bis modem context
