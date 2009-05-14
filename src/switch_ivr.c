@@ -725,6 +725,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 					switch_byte_t *sendbuf = NULL;
 					uint32_t sendlen = 0;
 
+					switch_assert(read_frame);
+
 					if (switch_test_flag(read_frame, SFF_CNG)) {
 						sendlen = bpf;
 						switch_assert(sendlen <= SWITCH_RECOMMENDED_BUFFER_SIZE);
