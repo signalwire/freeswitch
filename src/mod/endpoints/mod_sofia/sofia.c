@@ -4575,16 +4575,21 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s>", tech_pvt->to_uri);
 				}
 			} else {
-				const char *url;
-
-				if ((url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url)) {
-					if (strchr(url, '>')) {
-						tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url, sofia_glue_transport2str(transport));
-					} else {
-						tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url, sofia_glue_transport2str(transport));
-					}
+				if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<sip:%s@%s>", user, host);
 				} else {
-					switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					
+					const char *url;
+					
+					if ((url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url)) {
+						if (strchr(url, '>')) {
+							tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url, sofia_glue_transport2str(transport));
+						} else {
+							tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url, sofia_glue_transport2str(transport));
+						}
+					} else {
+						switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
+					}
 				}
 			}
 		} else {
