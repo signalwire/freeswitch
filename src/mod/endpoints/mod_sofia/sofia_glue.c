@@ -2603,7 +2603,7 @@ void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly)
 				stream = tech_pvt->profile->hold_music;
 			}
 
-			if (stream && switch_is_moh(stream)) {
+			if (stream && strcasecmp(stream, "silence")) {
 				if (!strcasecmp(stream, "indicate_hold")) {
 					switch_channel_set_flag(tech_pvt->channel, CF_SUSPEND);
 					switch_channel_set_flag(tech_pvt->channel, CF_HOLD);
