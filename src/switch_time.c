@@ -35,9 +35,9 @@
 #include <stdio.h>
 #include "private/switch_core_pvt.h"
 
-#if defined(DARWIN)
+//#if defined(DARWIN)
 #define DISABLE_1MS_COND
-#endif
+//#endif
 
 #ifndef UINT32_MAX
 #define UINT32_MAX 0xffffffff
