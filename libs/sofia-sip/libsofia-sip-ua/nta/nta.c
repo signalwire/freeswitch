@@ -8872,7 +8872,11 @@ outgoing_terminate_invite(nta_outgoing_t *original)
     orq = original->orq_forks;
     original->orq_forks = orq->orq_forks;
 
-    assert(orq->orq_forking == original);
+    //assert(orq->orq_forking == original);
+
+	if (orq->orq_forking != original) {
+		break;
+	}
 
     SU_DEBUG_5(("nta: timer %s fired, %s %s (%u);tag=%s\n", "D",
 		"terminate", orq->orq_method_name, orq->orq_cseq->cs_seq,
