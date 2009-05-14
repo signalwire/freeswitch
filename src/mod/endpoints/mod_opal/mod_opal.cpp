@@ -997,7 +997,7 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
     {
         char transfer_to[128] = "";
         switch_set_string(transfer_to, msg->string_arg);
-        TransferConnection(transfer_to);
+        GetCall().Transfer(transfer_to);
         break;
     }
 
