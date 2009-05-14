@@ -4858,6 +4858,11 @@ SWITCH_STANDARD_APP(conference_function)
 
 	conf_name = mydata;
 
+	/* eat all leading spaces on conference name, which can cause problems */
+	while (*conf_name == ' ') {
+		conf_name++;
+	}
+
 	/* is there a conference pin ? */
 	if ((dpin = strchr(conf_name, '+'))) {
 		*dpin++ = '\0';
