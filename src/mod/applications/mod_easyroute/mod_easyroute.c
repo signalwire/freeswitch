@@ -44,7 +44,6 @@
 
 typedef struct easyroute_results{
 	char	limit[16];
-	char	destnum[16];
 	char	dialstring[256];
 	char	group[16];
 	char	acctcode[17];
@@ -323,7 +322,7 @@ SWITCH_STANDARD_APP(easyroute_app_function)
 		}
 		route_lookup(destnum, &results, noat, seperator);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "EASY ROUTE DEST: [%s]\n", results.dialstring);
-		switch_channel_set_variable(channel, "easy_destnum", results.destnum);
+		switch_channel_set_variable(channel, "easy_destnum", destnum);
 		switch_channel_set_variable(channel, "easy_dialstring", results.dialstring);
 		switch_channel_set_variable(channel, "easy_group", results.group);
 		switch_channel_set_variable(channel, "easy_limit", results.limit);
