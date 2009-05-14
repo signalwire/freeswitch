@@ -638,7 +638,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_park(switch_core_session_t *session, 
 {
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
-	switch_frame_t *read_frame;
+	switch_frame_t *read_frame = NULL;
 	int stream_id = 0;
 	switch_event_t *event;
 	switch_unicast_conninfo_t *conninfo = NULL;
