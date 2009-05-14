@@ -127,7 +127,7 @@ struct switch_core_session {
 	void *streams[SWITCH_MAX_STREAMS];
 	int stream_count;
 
-	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
+	char uuid_str[128];
 	void *private_info;
 	switch_queue_t *event_queue;
 	switch_queue_t *message_queue;
