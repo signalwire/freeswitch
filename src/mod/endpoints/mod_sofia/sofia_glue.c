@@ -2805,11 +2805,26 @@ uint8_t sofia_glue_negotiate_sdp(switch_core_session_t *session, sdp_session_t *
 							const char *a = switch_stristr("AES", tech_pvt->remote_crypto_key);
 							const char *b = switch_stristr("AES", crypto);
 
+							/* Change our key every time we can */
+							if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_32, crypto)) {
+								switch_channel_set_variable(tech_pvt->channel, SOFIA_HAS_CRYPTO_VARIABLE, SWITCH_RTP_CRYPTO_KEY_32);
+								sofia_glue_build_crypto(tech_pvt, atoi(crypto), AES_CM_128_HMAC_SHA1_32, SWITCH_RTP_CRYPTO_SEND);
+								switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), tech_pvt->crypto_type,
+														  tech_pvt->local_raw_key, SWITCH_RTP_KEY_LEN);
+							} else if (switch_stristr(SWITCH_RTP_CRYPTO_KEY_80, crypto)) {
+								switch_channel_set_variable(tech_pvt->channel, SOFIA_HAS_CRYPTO_VARIABLE, SWITCH_RTP_CRYPTO_KEY_80);
+								sofia_glue_build_crypto(tech_pvt, atoi(crypto), AES_CM_128_HMAC_SHA1_80, SWITCH_RTP_CRYPTO_SEND);
+								switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_SEND, atoi(crypto), tech_pvt->crypto_type,
+														  tech_pvt->local_raw_key, SWITCH_RTP_KEY_LEN);
+							} else {
+								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Crypto Setup Failed!.\n");
+							}
+														
 							if (a && b && !strncasecmp(a, b, 23)) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Change Remote key to [%s]\n", crypto);
 								tech_pvt->remote_crypto_key = switch_core_session_strdup(tech_pvt->session, crypto);
 								tech_pvt->crypto_tag = crypto_tag;
-
+								
 								if (switch_rtp_ready(tech_pvt->rtp_session) && sofia_test_flag(tech_pvt, TFLAG_SECURE)) {
 									sofia_glue_add_crypto(tech_pvt, tech_pvt->remote_crypto_key, SWITCH_RTP_CRYPTO_RECV);
 									switch_rtp_add_crypto_key(tech_pvt->rtp_session, SWITCH_RTP_CRYPTO_RECV, tech_pvt->crypto_tag,

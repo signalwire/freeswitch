@@ -87,15 +87,6 @@
 	<!-- <action application="export" data="sip_secure_media=true"/> -->
       </condition>
 
-      <!-- 
-	   This will cause us to not enable SRTP on known broken 3.x.x Polycom Firmware.
-      -->
-      <condition field="${sip_secure_media}" expression="^true$" break="never"/>
-      <condition field="${sip_user_agent}" expression="^PolycomSound(Point|Station)IP-S(S|P)IP_\d{3,4}-UA\/((3).(\d).(\d).(\d{4}))$" break="never">
-	<action application="set" data="sip_secure_media=false"/>
-	<action application="log" data="crit Your phone is a Polycom running 3.x firmware that is known broken for SRTP."/>
-      </condition>
-
       <condition>
 	<action application="hash" data="insert/${domain_name}-spymap/${caller_id_number}/${uuid}"/>
 	<action application="hash" data="insert/${domain_name}-last_dial/${caller_id_number}/${destination_number}"/>

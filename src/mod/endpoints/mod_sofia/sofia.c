@@ -3372,6 +3372,9 @@ static void sofia_handle_sip_i_state(switch_core_session_t *session, int status,
 				}
 				
 				if (is_ok) {
+					if (tech_pvt->local_crypto_key) {
+						sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
+					}
 					nua_respond(tech_pvt->nh, SIP_200_OK,
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 								SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
