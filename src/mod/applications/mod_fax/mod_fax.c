@@ -805,8 +805,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_fax_init)
 		/* Not such severe to prevent loading */
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_fax loaded, using spandsp library version %d [%d]\n", SPANDSP_RELEASE_DATE,
-					  SPANDSP_RELEASE_TIME);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mod_fax loaded, using spandsp library version [%s]\n", SPANDSP_RELEASE_DATETIME_STRING);
 
 	return SWITCH_STATUS_SUCCESS;
 }
