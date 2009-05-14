@@ -213,7 +213,7 @@ static switch_xml_t lua_fetch(const char *section,
 	if (!switch_strlen_zero(globals.xml_handler)) {
 		lua_State *L = lua_init();
 		char *mycmd = strdup(globals.xml_handler);
-		const char *str;
+		char *str;
 
 		switch_assert(mycmd);
 
@@ -240,8 +240,8 @@ static switch_xml_t lua_fetch(const char *section,
 		lua_parse_and_execute(L, mycmd);
 
 		lua_getfield(L, LUA_GLOBALSINDEX, "XML_STRING");
-		str = lua_tostring(L, 1);
-
+		str = strdup( lua_tostring(L, 1) );
+		
 		if (str) {
 			if (switch_strlen_zero(str)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "No Result\n");
@@ -252,6 +252,7 @@ static switch_xml_t lua_fetch(const char *section,
 
 		lua_uninit(L);
 		free(mycmd);
+		free(str);
 	}
 
 	return xml;
