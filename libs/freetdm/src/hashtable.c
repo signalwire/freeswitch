@@ -56,7 +56,7 @@ const unsigned int prime_table_length = sizeof(primes)/sizeof(primes[0]);
 const float max_load_factor = 0.65f;
 
 /*****************************************************************************/
-struct hashtable *
+OZ_DECLARE(struct hashtable *)
 create_hashtable(unsigned int minsize,
                  unsigned int (*hashf) (void*),
                  int (*eqf) (void*,void*))
@@ -157,14 +157,14 @@ hashtable_expand(struct hashtable *h)
 }
 
 /*****************************************************************************/
-unsigned int
+OZ_DECLARE(unsigned int)
 hashtable_count(struct hashtable *h)
 {
     return h->entrycount;
 }
 
 /*****************************************************************************/
-int
+OZ_DECLARE(int)
 hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags)
 {
     /* This method allows duplicate keys - but they shouldn't be used */
@@ -191,7 +191,7 @@ hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags)
 }
 
 /*****************************************************************************/
-void * /* returns value associated with key */
+OZ_DECLARE(void *) /* returns value associated with key */
 hashtable_search(struct hashtable *h, void *k)
 {
     struct entry *e;
@@ -209,7 +209,7 @@ hashtable_search(struct hashtable *h, void *k)
 }
 
 /*****************************************************************************/
-void * /* returns value associated with key */
+OZ_DECLARE(void *) /* returns value associated with key */
 hashtable_remove(struct hashtable *h, void *k)
 {
     /* TODO: consider compacting the table when the load factor drops enough,
@@ -246,7 +246,7 @@ hashtable_remove(struct hashtable *h, void *k)
 
 /*****************************************************************************/
 /* destroy */
-void
+OZ_DECLARE(void)
 hashtable_destroy(struct hashtable *h)
 {
     unsigned int i;
@@ -264,7 +264,7 @@ hashtable_destroy(struct hashtable *h)
     free(h);
 }
 
-struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i)
+OZ_DECLARE(struct hashtable_iterator *) hashtable_next(struct hashtable_iterator *i)
 {
 
 	if (i->e) {
@@ -290,7 +290,7 @@ struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i)
 	return NULL;
 }
 
-struct hashtable_iterator *hashtable_first(struct hashtable *h)
+OZ_DECLARE(struct hashtable_iterator *) hashtable_first(struct hashtable *h)
 {
 	h->iterator.pos = 0;
 	h->iterator.e = NULL;
@@ -300,7 +300,7 @@ struct hashtable_iterator *hashtable_first(struct hashtable *h)
 
 
 
-void hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val)
+OZ_DECLARE(void) hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val)
 {
 	if (i->e) {
 		if (key) {

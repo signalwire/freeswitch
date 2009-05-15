@@ -38,6 +38,30 @@
 
 
 
+#define PIKA_STR2ENUM_P(_FUNC1, _FUNC2, _TYPE) _TYPE _FUNC1 (const char *name); const char * _FUNC2 (_TYPE type);
+#define PIKA_STR2ENUM(_FUNC1, _FUNC2, _TYPE, _STRINGS, _MAX)	\
+	_TYPE _FUNC1 (const char *name)								\
+	{														\
+		int i;												\
+		_TYPE t = _MAX ;									\
+															\
+		for (i = 0; i < _MAX ; i++) {						\
+			if (!strcasecmp(name, _STRINGS[i])) {			\
+				t = (_TYPE) i;								\
+				break;										\
+			}												\
+		}													\
+															\
+		return t;											\
+	}														\
+	const char * _FUNC2 (_TYPE type)						\
+	{														\
+		if (type > _MAX) {									\
+			type = _MAX;									\
+		}													\
+		return _STRINGS[(int)type];							\
+	}
+
 
 typedef enum {
 	PIKA_SPAN_FRAMING_T1_D4,
@@ -47,7 +71,7 @@ typedef enum {
 	PIKA_SPAN_INVALID
 } PIKA_TSpanFraming;
 #define PIKA_SPAN_STRINGS "T1_D4", "T1_ESF", "E1_BASIC", "E1_CRC4"
-ZAP_STR2ENUM_P(pika_str2span, pika_span2str, PIKA_TSpanFraming)
+PIKA_STR2ENUM_P(pika_str2span, pika_span2str, PIKA_TSpanFraming)
 
 typedef enum {
 	PIKA_SPAN_ENCODING_T1_AMI_ZS_NONE,
@@ -60,7 +84,7 @@ typedef enum {
 	PIKA_SPAN_ENCODING_INVALID
 } PIKA_TSpanEncoding;
 #define PIKA_SPAN_ENCODING_STRINGS "T1_AMI_ZS_NONE", "T1_AMI_ZS_GTE", "T1_AMI_ZS_BELL", "T1_AMI_ZS_JAM8", "T1_B8ZS", "E1_AMI", "E1_HDB3"
-ZAP_STR2ENUM_P(pika_str2span_encoding, pika_span_encoding2str, PIKA_TSpanEncoding)
+PIKA_STR2ENUM_P(pika_str2span_encoding, pika_span_encoding2str, PIKA_TSpanEncoding)
 
 typedef enum {
 	PIKA_SPAN_LOOP_LENGTH_SHORT_HAUL,
@@ -68,7 +92,7 @@ typedef enum {
 	PIKA_SPAN_LOOP_INVALID
 } PIKA_TSpanLoopLength;
 #define PIKA_LL_STRINGS "SHORT_HAUL", "LONG_HAUL"
-ZAP_STR2ENUM_P(pika_str2loop_length, pika_loop_length2str, PIKA_TSpanLoopLength)
+PIKA_STR2ENUM_P(pika_str2loop_length, pika_loop_length2str, PIKA_TSpanLoopLength)
 
 typedef enum {
 	PIKA_SPAN_LBO_T1_LONG_0_DB,
@@ -84,7 +108,7 @@ typedef enum {
 	PIKA_SPAN_LBO_INVALID
 } PIKA_TSpanBuildOut;
 #define PIKA_LBO_STRINGS "T1_LONG_0_DB", "T1_LONG_7_DB", "T1_LONG_15_DB", "T1_LONG_22_DB", "T1_SHORT_133_FT", "T1_SHORT_266_FT", "T1_SHORT_399_FT", "T1_SHORT_533_FT", "T1_SHORT_655_FT", "E1_WAVEFORM_120_OHM"
-ZAP_STR2ENUM_P(pika_str2lbo, pika_lbo2str, PIKA_TSpanBuildOut)
+PIKA_STR2ENUM_P(pika_str2lbo, pika_lbo2str, PIKA_TSpanBuildOut)
 
 typedef enum {
 	PIKA_SPAN_COMPAND_MODE_MU_LAW = 1,
@@ -92,7 +116,7 @@ typedef enum {
 	PIKA_SPAN_COMPAND_MODE_INVALID
 } PIKA_TSpanCompandMode;
 #define PIKA_SPAN_COMPAND_MODE_STRINGS "MU_LAW", "A_LAW"
-ZAP_STR2ENUM_P(pika_str2compand_mode, pika_compand_mode2str, PIKA_TSpanCompandMode)
+PIKA_STR2ENUM_P(pika_str2compand_mode, pika_compand_mode2str, PIKA_TSpanCompandMode)
 
 #endif
 

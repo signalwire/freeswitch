@@ -36,9 +36,34 @@
 #include <stropts.h>
 #endif
 #include "openzap.h"
+#ifndef __WINDOWS__
 #include <poll.h>
 #include <sys/socket.h>
+#endif
 #include "libsangoma.h"
+
+#if defined(__WINDOWS__)
+/*! Backward compatible defines - current code is all using the old names*/ 
+#define sangoma_open_tdmapi_span_chan sangoma_open_api_span_chan
+#define sangoma_open_tdmapi_span sangoma_open_api_span
+#define sangoma_open_tdmapi_ctrl sangoma_open_api_ctrl
+#define sangoma_tdm_get_fe_status sangoma_get_fe_status
+#define sangoma_socket_close sangoma_close
+#define sangoma_tdm_get_hw_coding sangoma_get_hw_coding
+#define sangoma_tdm_set_fe_status sangoma_set_fe_status
+#define sangoma_tdm_get_link_status sangoma_get_link_status
+#define sangoma_tdm_flush_bufs sangoma_flush_bufs
+#define sangoma_tdm_cmd_exec sangoma_cmd_exec
+#define sangoma_tdm_read_event sangoma_read_event
+#define sangoma_readmsg_tdm sangoma_readmsg
+#define sangoma_readmsg_socket sangoma_readmsg
+#define sangoma_sendmsg_socket sangoma_writemsg
+#define sangoma_writemsg_tdm sangoma_writemsg
+#define sangoma_create_socket_intr sangoma_open_api_span_chan
+#define EX_DECLARE_DATA				__declspec(dllexport)
+#else
+WP_DECLARE_DATA
+#endif
 
 typedef enum {
 	WP_RINGING = (1 << 0)
@@ -849,7 +874,7 @@ static ZIO_IO_UNLOAD_FUNCTION(wanpipe_destroy)
 }
 
 
-zap_module_t zap_module = { 
+EX_DECLARE_DATA zap_module_t zap_module = { 
 	"wanpipe",
 	wanpipe_init,
 	wanpipe_destroy,
