@@ -2815,8 +2815,9 @@ void tport_hup_event(tport_t *self)
   if (!tport_is_secondary(self))
     return;
 
-  /* End of stream */
-  tport_shutdown0(self, 0);
+  /* Shutdown completely if there are no queued messages */
+  /* Problem reported by Arsen Chaloyan */
+  tport_shutdown0(self, tport_has_queued(self) ? 0 : 2);
   tport_set_secondary_timer(self);
 }
 
