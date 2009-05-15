@@ -7,6 +7,7 @@
 #define __inline__ __inline
 #endif
 #endif
+#include "openzap.h"
 
 struct hashtable;
 struct hashtable_iterator;
@@ -77,7 +78,7 @@ struct hashtable_iterator;
  * @return                  newly created hashtable or NULL on failure
  */
 
-struct hashtable *
+OZ_DECLARE(struct hashtable *)
 create_hashtable(unsigned int minsize,
                  unsigned int (*hashfunction) (void*),
                  int (*key_eq_fn) (void*,void*));
@@ -108,7 +109,7 @@ typedef enum {
 	HASHTABLE_FLAG_FREE_VALUE = (1 << 1)
 } hashtable_flag_t;
 
-int 
+OZ_DECLARE(int)
 hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags);
 
 #define DEFINE_HASHTABLE_INSERT(fnname, keytype, valuetype)		\
@@ -126,7 +127,7 @@ hashtable_insert(struct hashtable *h, void *k, void *v, hashtable_flag_t flags);
  * @return      the value associated with the key, or NULL if none found
  */
 
-void *
+OZ_DECLARE(void *)
 hashtable_search(struct hashtable *h, void *k);
 
 #define DEFINE_HASHTABLE_SEARCH(fnname, keytype, valuetype) \
@@ -144,7 +145,7 @@ hashtable_search(struct hashtable *h, void *k);
  * @return      the value associated with the key, or NULL if none found
  */
 
-void * /* returns value */
+OZ_DECLARE(void *) /* returns value */
 hashtable_remove(struct hashtable *h, void *k);
 
 #define DEFINE_HASHTABLE_REMOVE(fnname, keytype, valuetype) \
@@ -161,7 +162,7 @@ hashtable_remove(struct hashtable *h, void *k);
  * @param   h   the hashtable
  * @return      the number of items stored in the hashtable
  */
-unsigned int
+OZ_DECLARE(unsigned int)
 hashtable_count(struct hashtable *h);
 
 
@@ -173,12 +174,12 @@ hashtable_count(struct hashtable *h);
  * @param       free_values     whether to call 'free' on the remaining values
  */
 
-void
+OZ_DECLARE(void)
 hashtable_destroy(struct hashtable *h);
 
-struct hashtable_iterator *hashtable_first(struct hashtable *h);
-struct hashtable_iterator *hashtable_next(struct hashtable_iterator *i);
-void hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val);
+OZ_DECLARE(struct hashtable_iterator*) hashtable_first(struct hashtable *h);
+OZ_DECLARE(struct hashtable_iterator*) hashtable_next(struct hashtable_iterator *i);
+OZ_DECLARE(void) hashtable_this(struct hashtable_iterator *i, const void **key, int *klen, void **val);
 
 #endif /* __HASHTABLE_CWC22_H__ */
 

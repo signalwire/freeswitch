@@ -209,7 +209,7 @@ int zap_config_next_pair(zap_config_t *cfg, char **var, char **val)
 
 }
 
-int zap_config_get_cas_bits(char *strvalue, unsigned char *outbits)
+OZ_DECLARE (int) zap_config_get_cas_bits(char *strvalue, unsigned char *outbits)
 {
 	char cas_bits[5];
 	unsigned char bit = 0x8;

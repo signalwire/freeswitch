@@ -35,6 +35,12 @@
 #include "openzap.h"
 #include "zap_pika.h"
 
+#if defined(__WINDOWS__)
+#define EX_DECLARE_DATA				__declspec(dllexport)
+#else
+EX_DECLARE_DATA
+#endif
+
 #define MAX_NUMBER_OF_TRUNKS 64
 #define PIKA_BLOCK_SIZE 160
 #define PIKA_BLOCK_LEN 20
@@ -45,19 +51,19 @@
 PK_VOID PK_CALLBACK media_out_callback(PKH_TPikaEvent *event);
 
 ZAP_ENUM_NAMES(PIKA_SPAN_NAMES, PIKA_SPAN_STRINGS)
-ZAP_STR2ENUM(pika_str2span, pika_span2str, PIKA_TSpanFraming, PIKA_SPAN_NAMES, PIKA_SPAN_INVALID)
+PIKA_STR2ENUM(pika_str2span, pika_span2str, PIKA_TSpanFraming, PIKA_SPAN_NAMES, PIKA_SPAN_INVALID)
 
 ZAP_ENUM_NAMES(PIKA_SPAN_ENCODING_NAMES, PIKA_SPAN_ENCODING_STRINGS)
-ZAP_STR2ENUM(pika_str2span_encoding, pika_span_encoding2str, PIKA_TSpanEncoding, PIKA_SPAN_ENCODING_NAMES, PIKA_SPAN_ENCODING_INVALID)
+PIKA_STR2ENUM(pika_str2span_encoding, pika_span_encoding2str, PIKA_TSpanEncoding, PIKA_SPAN_ENCODING_NAMES, PIKA_SPAN_ENCODING_INVALID)
 
 ZAP_ENUM_NAMES(PIKA_LL_NAMES, PIKA_LL_STRINGS)
-ZAP_STR2ENUM(pika_str2loop_length, pika_loop_length2str, PIKA_TSpanLoopLength, PIKA_LL_NAMES, PIKA_SPAN_LOOP_INVALID)
+PIKA_STR2ENUM(pika_str2loop_length, pika_loop_length2str, PIKA_TSpanLoopLength, PIKA_LL_NAMES, PIKA_SPAN_LOOP_INVALID)
 
 ZAP_ENUM_NAMES(PIKA_LBO_NAMES, PIKA_LBO_STRINGS)
-ZAP_STR2ENUM(pika_str2lbo, pika_lbo2str, PIKA_TSpanBuildOut, PIKA_LBO_NAMES, PIKA_SPAN_LBO_INVALID)
+PIKA_STR2ENUM(pika_str2lbo, pika_lbo2str, PIKA_TSpanBuildOut, PIKA_LBO_NAMES, PIKA_SPAN_LBO_INVALID)
 
 ZAP_ENUM_NAMES(PIKA_SPAN_COMPAND_MODE_NAMES, PIKA_SPAN_COMPAND_MODE_STRINGS)
-ZAP_STR2ENUM(pika_str2compand_mode, pika_compand_mode2str, PIKA_TSpanCompandMode, PIKA_SPAN_COMPAND_MODE_NAMES, PIKA_SPAN_COMPAND_MODE_INVALID)
+PIKA_STR2ENUM(pika_str2compand_mode, pika_compand_mode2str, PIKA_TSpanCompandMode, PIKA_SPAN_COMPAND_MODE_NAMES, PIKA_SPAN_COMPAND_MODE_INVALID)
 
 
 typedef enum {
@@ -153,7 +159,7 @@ static ZIO_CONFIGURE_FUNCTION(pika_configure)
 		profile->ec_config = globals.ec_config;
 		profile->record_config = globals.record_config;
 		profile->play_config = globals.play_config;
-		hashtable_insert(globals.profile_hash, (void *)profile->name, profile);
+		hashtable_insert(globals.profile_hash, (void *)profile->name, profile, HASHTABLE_FLAG_NONE);
 		zap_log(ZAP_LOG_INFO, "creating profile [%s]\n", category);
 	}
 
@@ -1335,12 +1341,12 @@ static ZIO_IO_UNLOAD_FUNCTION(pika_destroy)
 		zap_log(ZAP_LOG_INFO, "Closing system handle\n");
 	}
 
-	hashtable_destroy(globals.profile_hash, 0, 1);
+	hashtable_destroy(globals.profile_hash);
 
 	return ZAP_SUCCESS;
 }
 
-zap_module_t zap_module = { 
+EX_DECLARE_DATA zap_module_t zap_module = { 
 	"pika",
 	pika_init,
 	pika_destroy,
