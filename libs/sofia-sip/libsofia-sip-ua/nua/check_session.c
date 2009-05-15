@@ -1195,6 +1195,9 @@ invite_timer_round(nua_handle_t *nh,
   fail_unless(s2_check_callstate(nua_callstate_calling));
   invite = s2_sip_wait_for_request(SIP_METHOD_INVITE);
   process_offer(invite);
+  /* Check that INVITE contains Session-Expires header with refresher=uac */
+  fail_unless(invite->sip->sip_session_expires != NULL);
+  fail_unless(su_casematch(invite->sip->sip_session_expires->x_refresher, "uac"));
   respond_with_sdp(
     invite, dialog, SIP_200_OK,
     SIPTAG_SESSION_EXPIRES_STR(session_expires),
@@ -1261,9 +1264,9 @@ START_TEST(call_2_3_2)
     TAG_END());
 
   s2_nua_fast_forward(300, s2base->root);
-  invite_timer_round(nh, "300", NULL);
+  invite_timer_round(nh, "300;refresher=uac", NULL);
   s2_nua_fast_forward(300, s2base->root);
-  invite_timer_round(nh, "300", NULL);
+  invite_timer_round(nh, "300;refresher=uac", NULL);
 
   bye_by_nua(nh, TAG_END());
 
