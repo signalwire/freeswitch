@@ -1014,6 +1014,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "32khz music", "libs\win32\S
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_file_string", "src\mod\formats\mod_file_string\mod_file_string.2008.vcproj", "{70564D74-199A-4452-9C60-19ED5F242F0D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{202D7A4E-760D-4D0E-AFA1-D7459CED30FF} = {202D7A4E-760D-4D0E-AFA1-D7459CED30FF}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
