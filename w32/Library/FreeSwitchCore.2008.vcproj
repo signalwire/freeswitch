@@ -30,7 +30,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -122,7 +122,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -153,6 +153,7 @@
 				WarnAsError="false"
 				DebugInformationFormat="3"
 				ForcedIncludeFiles=""
+				EnablePREfast="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -214,7 +215,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -241,6 +242,7 @@
 				WarningLevel="4"
 				WarnAsError="true"
 				DebugInformationFormat="3"
+				EnablePREfast="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -301,7 +303,7 @@
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
-				CommandLine="echo Testing for Code Analysis support&#x0D;&#x0A;echo ; &gt; &quot;$(OutDir)\TestAnalysis.c&#x0D;&#x0A;cl /analyze /nologo /c &quot;$(OutDir)\TestAnalysis.c&quot;  | findstr D9040&#x0D;&#x0A;if ERRORLEVEL 0 set EnablePREfast=&quot;false&quot; else set EnablePREfast=&quot;true&quot;&#x0D;&#x0A;exit 0&#x0D;&#x0A;"
+				CommandLine=""
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
@@ -329,6 +331,7 @@
 				WarningLevel="4"
 				WarnAsError="false"
 				DebugInformationFormat="3"
+				EnablePREfast="false"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
