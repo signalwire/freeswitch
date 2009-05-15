@@ -415,12 +415,14 @@ issize_t msg_avlist_d(su_home_t *home,
 
     if (n == N) {
       /* Reallocate params */
-      char **nparams = su_alloc(home,
-				(N = MSG_PARAMS_NUM(N + 1)) * sizeof(*params));
+      char const **nparams = su_realloc(home, params != stack ? params : NULL,
+					(N = MSG_PARAMS_NUM(N + 1)) * sizeof(*params));
       if (!nparams) {
 	goto error;
       }
-      params = memcpy(nparams, params, n * sizeof(*params));
+      if (params == stack)
+	memcpy(nparams, stack, n * sizeof(*params));
+      params = nparams;
     }
 
     params[n++] = p;
@@ -441,12 +443,14 @@ issize_t msg_avlist_d(su_home_t *home,
   }
   else if (n == N) {
     /* Reallocate params */
-    char **nparams = su_alloc(home,
-			      (N = MSG_PARAMS_NUM(N + 1)) * sizeof(*params));
+    char const **nparams = su_realloc(home, params != stack ? params : NULL,
+				      (N = MSG_PARAMS_NUM(N + 1)) * sizeof(*params));
     if (!nparams) {
       goto error;
     }
-    params = memcpy(nparams, params, n * sizeof(*params));
+    if (params == stack)
+      memcpy(nparams, stack, n * sizeof(*params));
+    params = nparams;
   }
 
   params[n] = NULL;

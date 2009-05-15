@@ -285,6 +285,24 @@ int test_header_parsing(void)
       su_free(home, (void *)p), p = NULL;
     }
 
+    master = ";0";
+
+    for (i = 1; i < 256; i++) {
+      master = su_sprintf(home, "%s; %u", master, i); TEST_1(master);
+      list = end = su_strdup(home, master);
+      TEST_1(msg_params_d(NULL, &end, &p) >= 0);
+      TEST_S(end, "");
+      TEST_1(p);
+      for (j = 0; j <= i; j++) {
+	char number[10];
+	snprintf(number, sizeof number, "%u", j);
+	TEST_S(p[j], number);
+      }
+      TEST_1(p[i + 1] == NULL);
+      su_free(home, list);
+      su_free(NULL, (void *)p), p = NULL;
+    }
+
     su_home_deinit(home);
   }
 
@@ -722,6 +740,8 @@ int test_msg_parsing(void)
     TEST(msg_serialize(msg, (msg_pub_t *)tst), 0);
   }
 
+  msg_destroy(msg);
+
   /* Bug #2429 */
   orig = read_msg("GET a-life HTTP/1.1" CRLF
 		 "Foo: bar" CRLF
@@ -734,6 +754,7 @@ int test_msg_parsing(void)
   TEST_1(otst);
 
   msg = msg_copy(orig);
+  msg_destroy(orig);
   tst = msg_test_public(msg);
   TEST_1(tst);
 
