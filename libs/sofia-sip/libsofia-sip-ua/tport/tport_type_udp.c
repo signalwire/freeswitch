@@ -254,19 +254,15 @@ static void tport_check_trunc(tport_t *tp, su_addrinfo_t *ai)
   if (n != 4)
     return;
 
-  for (;;) {
-    n = su_recvfrom(tp->tp_socket, buffer, sizeof buffer, MSG_TRUNC,
-		    (void *)&su, &sulen);
+  n = su_recvfrom(tp->tp_socket, buffer, sizeof buffer, MSG_TRUNC,
+		  (void *)&su, &sulen);
 
-    if (n > (ssize_t)sizeof buffer) {
-      tp->tp_trunc = 1;
-      return;
-    }
-
-    /* XXX - check that su and tp->tp_addrinfo->ai_addr match */
-
+  if (n > (ssize_t)sizeof buffer) {
+    tp->tp_trunc = 1;
     return;
   }
+
+  /* XXX - check that su and tp->tp_addrinfo->ai_addr match */
 #endif
 }
 
