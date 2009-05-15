@@ -707,6 +707,8 @@ sres_resolver_new_with_cache_va(char const *conf_file_path,
   if (olist != oarray)
     free(olist);
 
+  va_end(va0);
+
   return res;
 }
 
