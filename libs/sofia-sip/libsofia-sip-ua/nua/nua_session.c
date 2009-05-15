@@ -1250,9 +1250,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
 
   if (!ds->ds_leg) {
     /* XXX - fix nua_dialog_usage_remove_at() instead! */
-    nua_client_request_clean(cr);
-    nua_client_request_remove(cr);
-    return -1;
+    goto error;
   }
 
   assert(ds->ds_leg);
@@ -1260,7 +1258,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   msg = nta_outgoing_getrequest(cr->cr_orq);
   sip = sip_object(msg);
   if (!msg)
-    return -1;
+    goto error;
   invite_branch = nta_outgoing_branch(cr->cr_orq);
 
   wa = sip_authorization(sip);
@@ -1271,7 +1269,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   msg = nta_msg_create(nh->nh_nua->nua_nta, 0);
   sip = sip_object(msg);
   if (!msg)
-    return -1;
+    goto error;
 
   cseq = sip_cseq_create(msg_home(msg), cr->cr_seq, SIP_METHOD_ACK);
 
@@ -1386,6 +1384,7 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
   if (error == -1)
     msg_destroy(msg);
 
+ error:
   cr->cr_acked = 1;		/* ... or we have at least tried */
 
   nua_client_request_clean(cr);
@@ -1617,7 +1616,6 @@ static int nua_session_usage_shutdown(nua_handle_t *nh,
       }
       else if (cri->cr_status < 300 && !cri->cr_acked) {
 	nua_invite_client_ack(cri, NULL);
-	nua_client_request_clean(cri);
       }
     }
     if (nua_client_create(nh, nua_r_bye, &nua_bye_client_methods, NULL) != 0)
@@ -3418,7 +3416,6 @@ static int nua_update_client_report(nua_client_request_t *cr,
 	  next_state = nua_callstate_ready;
 	else
 	  next_state = nua_callstate_terminating;
-	nua_client_request_clean(du->du_cr);
       }
     }
 
