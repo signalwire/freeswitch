@@ -57,9 +57,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="flite.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(SolutionDir)Debug"
+				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 			/>
@@ -124,10 +123,9 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="flite.lib"
 				OutputFile="$(SolutionDir)$(PlatformName)\$(ConfigurationName)/mod/$(ProjectName).dll"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="$(SolutionDir)Debug"
+				AdditionalLibraryDirectories=""
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
 				TargetMachine="17"

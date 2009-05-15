@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mod_file_string"
-	ProjectGUID="{2CA40887-1622-46A1-A7F9-17FD7E7E545B}"
+	ProjectGUID="{70564D74-199A-4452-9C60-19ED5F242F0D}"
 	RootNamespace="mod_file_string"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
