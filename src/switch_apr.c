@@ -30,6 +30,10 @@
  *
  */
 
+#ifdef __linux__
+#define _GNU_SOURCE
+#endif
+
 #include <switch.h>
 #ifndef WIN32
 #include <switch_private.h>
