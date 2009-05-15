@@ -230,17 +230,26 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	char *cid = NULL;
 
 	orig_destination_number = destination_number = switch_core_strdup(pool, dialed_number);
-
+	
 	tstrip = ((cur_route->digit_len - cur_route->tstrip) + 1);
 	lstrip = cur_route->lstrip;
 	
-	if (strlen(destination_number) > tstrip && cur_route->tstrip > 0) {
-		destination_number[tstrip] = '\0';
-	}
-	if (strlen(destination_number) > lstrip && cur_route->lstrip > 0) {
-		destination_number += lstrip;
-	}
-	
+	if (cur_route->tstrip > 0) {
+		if (strlen(destination_number) > tstrip) {
+			destination_number[tstrip] = '\0';
+		}
+		else {
+			destination_number[0] = '\0';
+			       }
+    }
+	if (cur_route->lstrip > 0) {
+		if (strlen(destination_number) > lstrip) {
+			destination_number += lstrip;
+		}
+		else {
+			destination_number[0] = '\0';
+		}
+	}	
 	codec = "";
 	if (!switch_strlen_zero(cur_route->codec)) {
 		codec = switch_core_sprintf(pool, ",absolute_codec_string=%s", cur_route->codec);
