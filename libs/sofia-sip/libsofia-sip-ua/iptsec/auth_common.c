@@ -125,8 +125,10 @@ issize_t auth_get_params(su_home_t *home,
 	else
 	  value = su_strdup(home, p + len);
 
-	if (value == NULL)
+	if (value == NULL) {
+	  va_end(ap);
 	  return -1;
+	}
 
 	break;
       }
