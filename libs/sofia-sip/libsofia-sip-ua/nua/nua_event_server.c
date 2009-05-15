@@ -144,9 +144,13 @@ nea_event_t *nh_notifier_event(nua_handle_t *nh,
   char const *ct_s = NULL;
 
   if (ev == NULL) {
-    char *o_type = su_strdup(home, event->o_type);
-    char *o_subtype = o_type ? strchr(o_type, '.') : NULL;
+    char *o_type, *o_subtype;
+    char *temp = NULL;
 
+    o_type = su_strdup(home, event->o_type);
+    if (o_type == NULL)
+      return NULL;
+    o_subtype = strchr(o_type, '.');
     if (o_subtype)
       *o_subtype++ = '\0';
 
@@ -162,7 +166,7 @@ nea_event_t *nh_notifier_event(nua_handle_t *nh,
      * types
      */
     if (accept_s == NULL && accept)
-      accept_s = sip_header_as_string(home, (sip_header_t *)accept);
+      accept_s = temp = sip_header_as_string(home, (sip_header_t *)accept);
     if (accept_s == NULL && ct)
       accept_s = ct->c_type;
     if (accept_s == NULL && ct_s)
@@ -173,6 +177,9 @@ nea_event_t *nh_notifier_event(nua_handle_t *nh,
 			  o_type, o_subtype,
 			  ct ? ct->c_type : ct_s,
 			  accept_s);
+
+    su_free(home, temp);
+    su_free(home, o_type);
   }
 
   return ev;
