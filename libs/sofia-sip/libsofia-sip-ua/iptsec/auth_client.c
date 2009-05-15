@@ -919,9 +919,9 @@ int auc_digest_authorization(auth_client_t *ca,
   auth_challenge_t const *ac = cda->cda_ac;
   char const *cnonce = cda->cda_cnonce;
   unsigned nc = ++cda->cda_ncount;
-  char *uri = url_as_string(home, url);
   void const *data = body ? body->pl_data : "";
   usize_t dlen = body ? body->pl_len : 0;
+  char *uri;
 
   msg_header_t *h;
   auth_hexmd5_t sessionkey, response;
@@ -942,7 +942,10 @@ int auc_digest_authorization(auth_client_t *ca,
   ar->ar_qop = NULL;
   ar->ar_auth = ac->ac_auth;
   ar->ar_auth_int = ac->ac_auth_int;
-  ar->ar_uri = uri;
+  ar->ar_uri = uri = url_as_string(home, url);
+
+  if (ar->ar_uri == NULL)
+    return -1;
 
   /* If there is no qop, we MUST NOT include cnonce or nc */
   if (!ar->ar_auth && !ar->ar_auth_int)
