@@ -496,6 +496,22 @@ int test_header_parsing(void)
     su_home_deinit(home);
   }
 
+  {
+    char b[8];
+    TEST(msg_unquoted_e(NULL, 0, "\"\""), 6);
+    TEST(msg_unquoted_e(b, 0, "\"\""), 6);
+    TEST(msg_unquoted_e(b, 4, "\"\""), 6);
+    TEST(msg_unquoted_e(b, 6, "\"\""), 6);
+    TEST(memcmp(b, "\"\\\"\\\"\"", 6), 0);
+    TEST(msg_unquoted_e(b, 4, "\""), 4);
+    memset(b, 0, sizeof b);
+    TEST(msg_unquoted_e(b, 1, "\"kuik"), 8);
+    TEST(memcmp(b, "\"\0", 2), 0);
+    TEST(msg_unquoted_e(b, 3, "\"kuik"), 8);
+    TEST(memcmp(b, "\"\\\"\0", 4), 0);
+    TEST(msg_unquoted_e(b, 7, "\"kuik"), 8);
+    TEST(memcmp(b, "\"\\\"kuik\0", 8), 0);
+  }
 
   END();
 }

@@ -1741,35 +1741,37 @@ char *msg_unquote(char *dst, char const *s)
 /** Quote string */
 issize_t msg_unquoted_e(char *b, isize_t bsiz, char const *s)
 {
-  char *begin = b;
-  char *end = b + bsiz;
+  isize_t e = 0;
 
-  if (b && b + 1 < end)
+  if (b == NULL)
+    bsiz = 0;
+
+  if (0 < bsiz)
     *b = '"';
-  b++;
+  e++;
 
   for (;*s;) {
     size_t n = strcspn(s, "\"\\");
 
     if (n == 0) {
-      if (b && b + 2 < end)
-	b[0] = '\\', b[1] = s[0];
-      b += 2;
+      if (e + 2 <= bsiz)
+	b[e] = '\\', b[e + 1] = s[0];
+      e += 2;
       s++;
     }
     else {
-      if (b && b + n < end)
-	memcpy(b, s, n);
-      b += n;
+      if (e + n <= bsiz)
+	memcpy(b + e, s, n);
+      e += n;
       s += n;
     }
   }
 
-  if (b && b + 1 < end)
-    *b = '"';
-  b++;
+  if (e < bsiz)
+    b[e] = '"';
+  e++;
 
-  return b - begin;
+  return e;
 }
 
 
