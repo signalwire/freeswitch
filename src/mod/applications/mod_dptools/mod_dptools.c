@@ -2373,7 +2373,7 @@ static switch_call_cause_t user_outgoing_channel(switch_core_session_t *session,
 
 			if (!strcasecmp(pvar, "dial-string")) {
 				dest = val;
-			} else if (!strncasecmp(var, "dial-var-", 9)) {
+			} else if (!strncasecmp(pvar, "dial-var-", 9)) {
 				if (!var_event) {
 					switch_event_create(&var_event, SWITCH_EVENT_GENERAL);
 				} else {
