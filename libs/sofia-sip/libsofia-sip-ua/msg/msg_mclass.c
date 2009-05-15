@@ -164,25 +164,7 @@ int msg_mclass_insert_header(msg_mclass_t *mc,
 			     msg_hclass_t *hc,
 			     unsigned short offset)
 {
-  msg_href_t hr[1];
-
-  if (mc == NULL || hc == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  if (msg_hclass_offset(mc, NULL, hc))
-    return (void)(errno = EEXIST), -1;
-
-  if (offset == 0)
-    offset = mc->mc_msize, mc->mc_msize += sizeof(msg_header_t *);
-
-  assert(offset < mc->mc_msize);
-
-  hr->hr_class = hc;
-  hr->hr_offset = offset;
-
-  return msg_mclass_insert(mc, hr);
+  return msg_mclass_insert_with_mask(mc, hc, offset, 0);
 }
 
 /**Add a new header to the message class.
