@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
     if (uri && uri->url_type == url_unknown)
       url_sanitize(uri);
 
-    if (uri->url_type == url_any)
+    if (uri && uri->url_type == url_any)
       continue;
 
     if (!uri || (uri->url_type != url_sip && uri->url_type != url_sips)) {
