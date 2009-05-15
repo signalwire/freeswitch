@@ -87,6 +87,8 @@ static struct sdp_printer_s printer_memory_error = {
   sizeof(printer_memory_error.pr_buffer)
 };
 
+static void printing_error(sdp_printer_t *p, const char *fmt, ...);
+
 static void print_session(sdp_printer_t *p, sdp_session_t const *session);
 
 /** Print a SDP description.
@@ -154,7 +156,7 @@ sdp_printer_t *sdp_print(su_home_t *home,
     p->pr_mode_manual = (flags & sdp_f_mode_manual) != 0;
     p->pr_mode_always = (flags & sdp_f_mode_always) != 0;
 
-    if (sdp)
+    if (session)
       print_session(p, session);
     else
       printing_error(p, "NULL session description");
@@ -264,7 +266,6 @@ static void print_text_list(sdp_printer_t*,
 			    const char *, sdp_list_t const *l);
 
 static void sdp_printf(sdp_printer_t *p, const char *fmt, ...);
-static void printing_error(sdp_printer_t *p, const char *fmt, ...);
 
 static void print_session(sdp_printer_t *p, sdp_session_t const *sdp)
 {
