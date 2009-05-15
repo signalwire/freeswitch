@@ -716,7 +716,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
 {
   soa_static_session_t *sss = (soa_static_session_t *)ss;
 
-  int Ns, Nu, Nr, size, i, j;
+  int Ns, Nu, Nr, Nmax, n, i, j;
   sdp_media_t *m, **mm, *um;
   sdp_media_t **s_media, **o_media, **u_media;
   sdp_media_t const *rm, **r_media;
@@ -730,13 +730,13 @@ int soa_sdp_upgrade(soa_session_t *ss,
   Nr = sdp_media_count(remote, sdp_media_any, 0, 0, 0);
 
   if (remote == NULL)
-    size = Ns + Nu + 1;
+    Nmax = Ns + Nu;
   else if (Ns < Nr)
-    size = Nr + 1;
+    Nmax = Nr;
   else
-    size = Ns + 1;
+    Nmax = Ns;
 
-  s_media = su_zalloc(home, size * (sizeof *s_media));
+  s_media = su_zalloc(home, (Nmax + 1) * (sizeof *s_media));
   o_media = su_zalloc(home, (Ns + 1) * (sizeof *o_media));
   u_media = su_zalloc(home, (Nu + 1) * (sizeof *u_media));
   r_media = su_zalloc(home, (Nr + 1) * (sizeof *r_media));
@@ -748,17 +748,17 @@ int soa_sdp_upgrade(soa_session_t *ss,
     return -1;
 
   u2s = su_alloc(home, (Nu + 1) * sizeof(*u2s));
-  s2u = su_alloc(home, size * sizeof(*s2u));
+  s2u = su_alloc(home, (Nmax + 1) * sizeof(*s2u));
   if (!u2s || !s2u)
     return -1;
 
   for (i = 0; i < Nu; i++)
     u2s[i] = U2S_NOT_USED;
-  u2s[i] = U2S_SENTINEL;
+  u2s[Nu] = U2S_SENTINEL;
 
-  for (i = 0; i <= size; i++)
+  for (i = 0; i < Nmax; i++)
     s2u[i] = U2S_NOT_USED;
-  s2u[i] = U2S_SENTINEL;
+  s2u[Nmax] = U2S_SENTINEL;
 
   for (i = 0, m = session->sdp_media; m && i < Ns; m = m->m_next)
     o_media[i++] = m;
@@ -778,6 +778,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	continue;
       if (j >= Nu) /* lines removed from user SDP */
 	continue;
+      assert(i < Ns);
       s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
       u2s[j] = i, s2u[i] = j;
     }
@@ -834,7 +835,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	if (u_media[j] == SDP_MEDIA_NONE)
 	  continue;
 
-	for (i = 0; i < size - 1; i++) {
+	for (i = 0; i < Nmax; i++) {
 	  if (s_media[i] == NULL) {
 	    s_media[i] = u_media[j], u_media[j] = SDP_MEDIA_NONE;
 	    u2s[j] = i, s2u[i] = j;
@@ -842,7 +843,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	  }
 	}
 
-	assert(i != size - 1);
+	assert(i != Nmax);
       }
     }
 
@@ -869,7 +870,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
 	i++;
       }
     }
-    assert(i <= size);
+    assert(i <= Nmax);
   }
 
   mm = &session->sdp_media;
@@ -878,7 +879,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
   }
   *mm = NULL;
 
-  s2u[size = i] = U2S_SENTINEL;
+  s2u[n = i] = U2S_SENTINEL;
   *return_u2s = u2s;
   *return_s2u = s2u;
 
@@ -887,7 +888,7 @@ int soa_sdp_upgrade(soa_session_t *ss,
     i = u2s[j];
     assert(i == U2S_NOT_USED || s2u[i] == j);
   }
-  for (i = 0; i < size; i++) {
+  for (i = 0; i < n; i++) {
     j = s2u[i];
     assert(j == U2S_NOT_USED || u2s[j] == i);
   }
