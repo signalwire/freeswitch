@@ -543,8 +543,8 @@ static uint32_t m_get_uint32(sres_message_t *m);
 static uint16_t m_get_uint16(sres_message_t *m);
 static uint8_t m_get_uint8(sres_message_t *m);
 
-static int m_get_string(char *d, int n, sres_message_t *m, uint16_t offset);
-static int m_get_domain(char *d, int n, sres_message_t *m, uint16_t offset);
+static unsigned m_get_string(char *d, unsigned n, sres_message_t *m, uint16_t offset);
+static unsigned m_get_domain(char *d, unsigned n, sres_message_t *m, uint16_t offset);
 
 /* ---------------------------------------------------------------------- */
 
@@ -3673,7 +3673,7 @@ sres_create_record(sres_resolver_t *res, sres_message_t *m, int nth)
 
   uint16_t m_size;
   char name[1025];
-  int len;
+  unsigned len;
   char btype[8], bclass[8];
 
   sr = memset(sr0, 0, sizeof sr0);
@@ -3686,7 +3686,10 @@ sres_create_record(sres_resolver_t *res, sres_message_t *m, int nth)
   sr->sr_parsed = 1;
   if (m->m_error)
     goto error;
-
+  if (len >= (sizeof name)) {
+    m->m_error = "too long domain name in record";
+    goto error;
+  }
   name[len] = 0;
 
   SU_DEBUG_9(("%s RR received %s %s %s %d rdlen=%d\n",
@@ -3766,7 +3769,7 @@ static sres_record_t *sres_init_rr_soa(sres_cache_t *cache,
 				       sres_message_t *m)
 {
   uint16_t moffset, roffset;
-  int mnamelen, rnamelen;
+  unsigned mnamelen, rnamelen;
 
   soa->soa_record->r_size = sizeof *soa;
 
@@ -3818,8 +3821,8 @@ static sres_record_t *sres_init_rr_a6(sres_cache_t *cache,
 				      sres_message_t *m)
 {
 
-  int suffixlen = 0, i;
-  int prefixlen = 0;
+  unsigned suffixlen = 0, i;
+  unsigned prefixlen = 0;
   uint16_t offset;
 
   a6->a6_record->r_size = sizeof *a6;
@@ -3876,7 +3879,7 @@ static sres_record_t *sres_init_rr_cname(sres_cache_t *cache,
 					 sres_message_t *m)
 {
   uint16_t offset;
-  int dlen;
+  unsigned dlen;
 
   cn->cn_record->r_size = sizeof *cn;
 
@@ -3898,7 +3901,7 @@ static sres_record_t *sres_init_rr_ptr(sres_cache_t *cache,
 				       sres_message_t *m)
 {
   uint16_t offset;
-  int dlen;
+  unsigned dlen;
 
   ptr->ptr_record->r_size = sizeof *ptr;
 
@@ -3920,7 +3923,7 @@ static sres_record_t *sres_init_rr_srv(sres_cache_t *cache,
 				       sres_message_t *m)
 {
   uint16_t offset;
-  int dlen;
+  unsigned dlen;
 
   srv->srv_record->r_size = sizeof *srv;
 
@@ -3944,7 +3947,7 @@ static sres_record_t *sres_init_rr_naptr(sres_cache_t *cache,
 					 sres_message_t *m)
 {
   uint16_t offset[4];
-  int len[4];
+  unsigned len[4];
 
   na->na_record->r_size = sizeof *na;
 
@@ -4186,10 +4189,11 @@ m_get_uint8(sres_message_t *m)
 /**
  * Get a string.
  */
-static int m_get_string(char *d,
-			int n,
-			sres_message_t *m,
-			uint16_t offset)
+static unsigned
+m_get_string(char *d,
+	     unsigned n,
+	     sres_message_t *m,
+	     uint16_t offset)
 {
   uint8_t size;
   uint8_t *p = m->m_data;
@@ -4231,13 +4235,14 @@ static int m_get_string(char *d,
  *
  * @param offset start uncompression from this point in message
  */
-static int m_get_domain(char *d,
-			int n,
-			sres_message_t *m,
-			uint16_t offset)
+static unsigned
+m_get_domain(char *d,
+	     unsigned n,
+	     sres_message_t *m,
+	     uint16_t offset)
 {
   uint8_t cnt;
-  int i = 0;
+  unsigned i = 0;
   uint8_t *p = m->m_data;
   uint16_t new_offset;
   int save_offset;
