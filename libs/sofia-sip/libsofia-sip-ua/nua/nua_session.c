@@ -4393,10 +4393,15 @@ session_timer_add_headers(struct session_timer *t,
      */
     if (t->local.refresher == nua_local_refresher)
       refresher = nua_local_refresher;
+    else if (!initial)
+      refresher = t->refresher;
 
     expires = t->local.expires;
     if (expires != 0 && expires < min)
       expires = min;
+
+    if (expires == 0 && !initial && t->interval)
+      expires = t->interval;
   }
 
   sip_min_se_init(min_se)->min_delta = min;
