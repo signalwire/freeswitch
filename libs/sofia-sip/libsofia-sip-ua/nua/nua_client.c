@@ -336,7 +336,8 @@ nua_client_request_complete(nua_client_request_t *cr)
 {
   if (cr->cr_orq) {
     nua_client_request_ref(cr);
-    if (cr && cr->cr_methods->crm_complete)
+    if (cr->cr_methods->crm_complete)
+      /* Calls nua_invite_client_complete() */
       cr->cr_methods->crm_complete(cr);
     nua_client_request_clean(cr);
     if (nua_client_request_unref(cr))
