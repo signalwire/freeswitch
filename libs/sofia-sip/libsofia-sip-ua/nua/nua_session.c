@@ -3622,7 +3622,7 @@ int nua_update_server_report(nua_server_request_t *sr, tagi_t const *tags)
       && NH_PGET(nh, auto_alert))  {
     nua_server_request_t *sri;
 
-    for (sri = nh->nh_ds->ds_sr; sri; sri = sr->sr_next)
+    for (sri = nh->nh_ds->ds_sr; sri; sri = sri->sr_next)
       if (sri->sr_method == sip_method_invite &&
 	  nua_server_request_is_pending(sri))
 	break;
