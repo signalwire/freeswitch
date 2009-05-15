@@ -9353,7 +9353,6 @@ static int outgoing_duplicate(nta_outgoing_t *orq,
  */
 void outgoing_ack(nta_outgoing_t *orq, sip_t *sip)
 {
-  nta_outgoing_t *ack;
   msg_t *ackmsg;
 
   assert(orq);
@@ -9367,18 +9366,16 @@ void outgoing_ack(nta_outgoing_t *orq, sip_t *sip)
   assert(orq->orq_tport);
 
   ackmsg = outgoing_ackmsg(orq, SIP_METHOD_ACK, SIPTAG_TO(sip->sip_to), TAG_END());
+  if (!ackmsg)
+    return;
 
-  if (ackmsg) {
-    if ((ack = outgoing_create(orq->orq_agent, NULL, NULL,
-			       NULL, orq->orq_tpn, ackmsg,
-			       NTATAG_BRANCH_KEY(sip->sip_via->v_branch),
-			       NTATAG_USER_VIA(1),
-			       NTATAG_STATELESS(1),
-			       TAG_END())))
-      ;
-    else
-      msg_destroy(ackmsg);
-  }
+  if (!outgoing_create(orq->orq_agent, NULL, NULL,
+		      NULL, orq->orq_tpn, ackmsg,
+		      NTATAG_BRANCH_KEY(sip->sip_via->v_branch),
+		      NTATAG_USER_VIA(1),
+		      NTATAG_STATELESS(1),
+		      TAG_END()))
+    msg_destroy(ackmsg);
 }
 
 /** Generate messages for hop-by-hop ACK or CANCEL.
