@@ -2952,6 +2952,7 @@ void tport_deliver(tport_t *self,
   tport_t *ref;
   int error;
   struct tport_delivery *d;
+  char ipaddr[SU_ADDRSIZE + 2];
 
   assert(msg);
 
@@ -2962,7 +2963,6 @@ void tport_deliver(tport_t *self,
   *d->d_from = *self->tp_name;
 
   if (tport_is_primary(self)) {
-    char ipaddr[SU_ADDRSIZE + 2];
     su_sockaddr_t const *su = msg_addr(msg);
 
 #if SU_HAVE_IN6
@@ -3005,16 +3005,16 @@ void tport_deliver(tport_t *self,
 
   ref = tport_incref(self);
 
-
   if (self->tp_pri->pri_vtable->vtp_deliver) {
     self->tp_pri->pri_vtable->vtp_deliver(self, msg, now);
   }
   else
     tport_base_deliver(self, msg, now);
 
-  tport_decref(&ref);
-
+  memset(d->d_from, 0, sizeof d->d_from);
   d->d_msg = NULL;
+
+  tport_decref(&ref);
 }
 
 /** Pass message to the protocol stack */
