@@ -130,7 +130,7 @@ issize_t msg_auth_e(char b[], isize_t bsiz, msg_header_t const *h, int f)
  */
 isize_t msg_auth_dup_xtra(msg_header_t const *h, isize_t offset)
 {
-  msg_auth_t const *au = h->sh_auth;
+  msg_auth_t const *au = (msg_auth_t *)h;
 
   MSG_PARAMS_SIZE(offset, au->au_params);
   offset += MSG_STRING_SIZE(au->au_scheme);
@@ -144,8 +144,8 @@ char *msg_auth_dup_one(msg_header_t *dst,
 		       char *b,
 		       isize_t xtra)
 {
-  msg_auth_t *au = dst->sh_auth;
-  msg_auth_t const *o = src->sh_auth;
+  msg_auth_t *au = (msg_auth_t *)dst;
+  msg_auth_t const *o = (msg_auth_t const *)src;
   char *end = b + xtra;
 
   b = msg_params_dup(&au->au_params, o->au_params, b, xtra);

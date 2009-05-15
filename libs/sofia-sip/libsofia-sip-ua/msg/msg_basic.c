@@ -235,8 +235,10 @@ msg_payload_t *msg_payload_create(su_home_t *home, void const *data, usize_t len
 /** Parse payload. */
 issize_t msg_payload_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
 {
-  h->sh_payload->pl_len = slen;
-  h->sh_payload->pl_data = s;
+  msg_payload_t *pl = (msg_payload_t *)h;
+
+  pl->pl_len = slen;
+  pl->pl_data = s;
 
   h->sh_len = slen;
   h->sh_data = s;
@@ -246,11 +248,14 @@ issize_t msg_payload_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
 
 issize_t msg_payload_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
-  size_t len = h->sh_payload->pl_len;
+  msg_payload_t *pl = (msg_payload_t *)h;
+  size_t len = pl->pl_len;
 
   if (bsiz > 0) {
-    memcpy(b, h->sh_payload->pl_data, bsiz > len ? len : bsiz);
-    b[bsiz > len ? len : bsiz - 1] = '\0';
+    if (len < bsiz)
+      memcpy(b, pl->pl_data, len), b[len] = '\0';
+    else
+      memcpy(b, pl->pl_data, bsiz - 1), b[bsiz - 1] = '\0';
   }
 
   return len;
@@ -258,7 +263,8 @@ issize_t msg_payload_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 
 isize_t msg_payload_dup_xtra(msg_header_t const *h, isize_t offset)
 {
-  return offset + h->sh_payload->pl_len + 1;
+  msg_payload_t *pl = (msg_payload_t *)h;
+  return offset + pl->pl_len + 1;
 }
 
 char *msg_payload_dup_one(msg_header_t *dst,
@@ -266,13 +272,13 @@ char *msg_payload_dup_one(msg_header_t *dst,
 			  char *b,
 			  isize_t xtra)
 {
-  msg_payload_t *pl = dst->sh_payload;
-  msg_payload_t const *o = src->sh_payload;
+  msg_payload_t *pl = (msg_payload_t *)dst;
+  msg_payload_t const *o = (msg_payload_t const *)src;
 
   memcpy(pl->pl_data = b, o->pl_data, pl->pl_len = o->pl_len);
 
-  pl->pl_common->h_data = pl->pl_data;
-  pl->pl_common->h_len = pl->pl_len;
+  dst->sh_data = pl->pl_data;
+  dst->sh_len = pl->pl_len;
 
   pl->pl_data[pl->pl_len] = 0;	/* NUL terminate just in case */
 
@@ -322,12 +328,13 @@ MSG_HEADER_CLASS(msg_, separator, NULL, "", sep_common, single,
 issize_t msg_separator_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
 {
   int len = CRLF_TEST(s);
+  msg_separator_t *sep = (msg_separator_t *)h;
 
   if (len == 0 && slen > 0)
     return -1;
 
-  memcpy(h->sh_separator->sep_data, s, len);
-  h->sh_separator->sep_data[len] = '\0';
+  memcpy(sep->sep_data, s, len);
+  sep->sep_data[len] = '\0';
 
   return 0;
 }
@@ -335,19 +342,20 @@ issize_t msg_separator_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen
 /** Encode a separator line. */
 issize_t msg_separator_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
-  size_t n = strlen(h->sh_separator->sep_data);
+  msg_separator_t const *sep = (msg_separator_t const *)h;
+  size_t n = strlen(sep->sep_data);
 
   if (bsiz > n)
-    strcpy(b, h->sh_separator->sep_data);
+    strcpy(b, sep->sep_data);
 
   return (issize_t)n;
 }
 
 msg_separator_t *msg_separator_create(su_home_t *home)
 {
-  msg_separator_t *sep =
-    msg_header_alloc(home, msg_separator_class, 0)->sh_separator;
+  msg_separator_t *sep;
 
+  sep = (msg_separator_t *)msg_header_alloc(home, msg_separator_class, 0);
   if (sep)
     strcpy(sep->sep_data, CRLF);
 

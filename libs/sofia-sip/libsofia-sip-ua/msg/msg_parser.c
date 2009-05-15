@@ -1003,7 +1003,7 @@ extract_next(msg_t *msg, msg_pub_t *mo, char *b, isize_t bsiz,
 
 /** Extract a header. */
 issize_t msg_extract_header(msg_t *msg, msg_pub_t *mo,
-			   char b[], isize_t bsiz, int eos)
+			    char b[], isize_t bsiz, int eos)
 {
   return extract_header(msg, mo, b, bsiz, eos, 0);
 }
@@ -1143,6 +1143,7 @@ msg_header_t *header_parse(msg_t *msg, msg_pub_t *mo,
       /* XXX - This should be done by msg_header_free_all() */
       msg_header_t *h_next;
       msg_param_t *h_params;
+      msg_error_t *er;
 
       while (h) {
 	h_next = h->sh_next;
@@ -1157,10 +1158,12 @@ msg_header_t *header_parse(msg_t *msg, msg_pub_t *mo,
       /* XXX - This should be done by msg_header_free_all() */
       hr = msg->m_class->mc_error;
       h = msg_header_alloc(home, hr->hr_class, 0);
-      if (!h)
-	return h;
+      er = (msg_error_t *)h;
 
-      h->sh_error->er_name = hc->hc_name;
+      if (!er)
+	return NULL;
+
+      er->er_name = hc->hc_name;
       hh = (msg_header_t **)((char *)mo + hr->hr_offset);
     }
   }

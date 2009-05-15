@@ -68,7 +68,8 @@ issize_t msg_generic_d(su_home_t *home,
 		       char *s,
 		       isize_t slen)
 {
-  h->sh_generic->g_string = s;
+  msg_generic_t *g = (msg_generic_t *)h;
+  g->g_string = s;
   return 0;
 }
 
@@ -80,7 +81,7 @@ issize_t msg_generic_d(su_home_t *home,
  */
 issize_t msg_generic_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
-  msg_generic_t const *g = h->sh_generic;
+  msg_generic_t const *g = (msg_generic_t const *)h;
   size_t n = strlen(g->g_string);
 
   if (bsiz > n)
@@ -92,7 +93,7 @@ issize_t msg_generic_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 /** Calculate the size of strings associated with a @c msg_generic_t object. */
 isize_t msg_generic_dup_xtra(msg_header_t const *h, isize_t offset)
 {
-  msg_generic_t const *g = h->sh_generic;
+  msg_generic_t const *g = (msg_generic_t const *)h;
   return offset + MSG_STRING_SIZE(g->g_string);
 }
 
@@ -102,8 +103,10 @@ char *msg_generic_dup_one(msg_header_t *dst,
 			  char *b,
 			  isize_t xtra)
 {
+  msg_generic_t *g = (msg_generic_t *)dst;
+  msg_generic_t const *o = (msg_generic_t const *)src;
   char *end = b + xtra;
-  MSG_STRING_DUP(b, dst->sh_generic->g_string, src->sh_generic->g_string);
+  MSG_STRING_DUP(b, g->g_string, o->g_string);
   assert(b <= end); (void)end;
   return b;
 }
@@ -117,7 +120,7 @@ issize_t msg_numeric_d(su_home_t *home,
   uint32_t value = 0;
   issize_t retval = msg_uint32_d(&s, &value);
 
-  assert(x->x_common->h_class->hc_size >= sizeof *x);
+  assert(h->sh_class->hc_size >= sizeof *x);
 
   x->x_value = value;
 
@@ -150,15 +153,17 @@ issize_t msg_numeric_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 
 issize_t msg_list_d(su_home_t *home, msg_header_t *h, char *s, isize_t slen)
 {
-  return msg_commalist_d(home, &s, &h->sh_list->k_items, NULL);
+  msg_list_t *k = (msg_list_t *)h;
+  return msg_commalist_d(home, &s, &k->k_items, NULL);
 }
 
 issize_t msg_list_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
 {
+  msg_list_t *k = (msg_list_t *)h;
   int compact = MSG_IS_COMPACT(flags);
   char *b0 = b, *end = b + bsiz;
 
-  MSG_COMMALIST_E(b, end, h->sh_list->k_items, compact);
+  MSG_COMMALIST_E(b, end, k->k_items, compact);
   MSG_TERM_E(b, end);
 
   return b - b0;
@@ -176,7 +181,8 @@ issize_t msg_list_e(char b[], isize_t bsiz, msg_header_t const *h, int flags)
  */
 isize_t msg_list_dup_xtra(msg_header_t const *h, isize_t offset)
 {
-  MSG_PARAMS_SIZE(offset, h->sh_list->k_items);
+  msg_list_t const *k = (msg_list_t const *)h;
+  MSG_PARAMS_SIZE(offset, k->k_items);
   return offset;
 }
 
@@ -185,10 +191,12 @@ char *msg_list_dup_one(msg_header_t *dst,
 		       char *b,
 		       isize_t xtra)
 {
+  msg_list_t *k = (msg_list_t *)dst;
+  msg_list_t const *o = (msg_list_t const *)src;
   char *end = b + xtra;
-  msg_param_t const ** items = (msg_param_t const **)&dst->sh_list->k_items;
+  msg_param_t const ** items = (msg_param_t const **)&k->k_items;
 
-  b = msg_params_dup(items, src->sh_list->k_items, b, xtra);
+  b = msg_params_dup(items, o->k_items, b, xtra);
 
   assert(b <= end); (void)end;
 
