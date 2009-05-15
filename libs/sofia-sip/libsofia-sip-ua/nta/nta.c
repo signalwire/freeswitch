@@ -11007,10 +11007,12 @@ void reliable_timeout(nta_incoming_t *irq, int timeout)
 
   irq->irq_in_callback = 0;
 
+  if (!timeout)
+    return;
+
   if (irq->irq_completed && irq->irq_destroyed)
     incoming_free(irq), irq = NULL;
-
-  if (timeout && irq && irq->irq_status < 200)
+  else if (irq->irq_status < 200)
     nta_incoming_treply(irq, 503, "Reliable Response Time-Out", TAG_END());
 }
 
