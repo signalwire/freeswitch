@@ -154,7 +154,10 @@ sdp_printer_t *sdp_print(su_home_t *home,
     p->pr_mode_manual = (flags & sdp_f_mode_manual) != 0;
     p->pr_mode_always = (flags & sdp_f_mode_always) != 0;
 
-    print_session(p, session);
+    if (sdp)
+      print_session(p, session);
+    else
+      printing_error(p, "NULL session description");
 
     return p;
   }
@@ -267,8 +270,6 @@ static void print_session(sdp_printer_t *p, sdp_session_t const *sdp)
 {
   p->pr_ok = 1;
 
-  if (!sdp)
-    printing_error(p, "NULL session description");
   if (p->pr_ok && sdp->sdp_version)
     print_version(p, sdp->sdp_version);
   if (p->pr_ok && sdp->sdp_origin)
