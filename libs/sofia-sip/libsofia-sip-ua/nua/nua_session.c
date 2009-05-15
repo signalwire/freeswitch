@@ -1885,8 +1885,8 @@ static int nua_prack_client_report(nua_client_request_t *cr,
   }
 
   if (acked &&
-      du->du_cr->cr_method == sip_method_invite &&
-      nua_client_is_queued(du->du_cr)) {
+      nua_client_is_queued(du->du_cr) &&
+      du->du_cr->cr_method == sip_method_invite) {
     /* New INVITE was queued - do not send UPDATE */
   }
   else if (ss->ss_update_needed && 200 <= status && status < 300 &&
