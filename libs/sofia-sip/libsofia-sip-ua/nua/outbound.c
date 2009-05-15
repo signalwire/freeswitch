@@ -309,13 +309,12 @@ int outbound_set_options(outbound_t *ob,
   }
 
   invalid = s && s[0];
-  su_free(NULL, options);
-
-  if (invalid) {
+  if (invalid)
     SU_DEBUG_1(("outbound(%p): invalid options \"%s\"\n",
 		(void *)ob->ob_owner, options));
+  su_free(NULL, options);
+  if (invalid)
     return -1;
-  }
 
   if (prefs->natify &&
       !(prefs->outbound ||
