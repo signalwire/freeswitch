@@ -99,7 +99,7 @@ void usage(void)
 int main(int ac, char *av[])
 {
   int numeric = 0;
-  sip_time_t t, t2;
+  sip_time_t t = 0, t2 = 0;
   char const *s;
   char buf[1024];
 
@@ -132,8 +132,6 @@ int main(int ac, char *av[])
     }
     else {
       for (; *s; ) {
-	t2 = 0;
-
 	if (msg_delta_d(&s, &t2) < 0)
 	  usage();
 
