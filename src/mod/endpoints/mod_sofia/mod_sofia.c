@@ -557,6 +557,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 					TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 					NUTAG_SESSION_TIMER(session_timeout),
 					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
+					SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
 					SOATAG_USER_SDP_STR(tech_pvt->local_sdp_str),
 					SOATAG_REUSE_REJECTED(1), SOATAG_ORDERED_USER(1), SOATAG_AUDIO_AUX("cn telephone-event"), NUTAG_INCLUDE_EXTRA_SDP(1), TAG_END());
 		sofia_set_flag_locked(tech_pvt, TFLAG_ANS);
@@ -2994,6 +2995,7 @@ static void general_event_handler(switch_event_t *event)
 			const char *from_uri = switch_event_get_header(event, "from-uri");
 			const char *call_info = switch_event_get_header(event, "call-info");
 			const char *alert_info = switch_event_get_header(event, "alert-info");
+			const char *call_id = switch_event_get_header(event, "call-id");
 			const char *body = switch_event_get_body(event);
 			sofia_profile_t *profile = NULL;
 			nua_handle_t *nh;
@@ -3007,12 +3009,12 @@ static void general_event_handler(switch_event_t *event)
                 goto done;
             }
 
-            if (!to_uri && !local_user_full) {
+            if (!call_id && !to_uri && !local_user_full) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing To-URI header\n");
                 goto done;
             }
 
-            if (!from_uri) {
+            if (!call_id && !from_uri) {
                 switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Missing From-URI header\n");
                 goto done;
             }
@@ -3023,37 +3025,47 @@ static void general_event_handler(switch_event_t *event)
                 goto done;
             }
 
+			if (call_id) {
+				nh = nua_handle_by_call_id(profile->nua, call_id);
 
-			if (local_user_full) {
-				local_dup = strdup(local_user_full);
-				local_user = local_dup;
-				if ((local_host = strchr(local_user, '@'))) {
-					*local_host++ = '\0';
-				}
-
-				if (!local_user || !local_host || !sofia_reg_find_reg_url(profile, local_user, local_host, buf, sizeof(buf))) {
-					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find local user\n");
+				if (!nh) {
+					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid Call-ID %s\n", call_id);
 					goto done;
 				}
-
-				to_uri = sofia_glue_get_url_from_contact(buf, 0);
-				
-				if ((p = strstr(to_uri, ";fs_"))) {
-					*p = '\0';
-				}
-
 			}
 
+			else {
+				if (local_user_full) {
+					local_dup = strdup(local_user_full);
+					local_user = local_dup;
+					if ((local_host = strchr(local_user, '@'))) {
+						*local_host++ = '\0';
+					}
 
-			nh = nua_handle(profile->nua, 
-							NULL, 
-							NUTAG_URL(to_uri), 
-							SIPTAG_FROM_STR(from_uri), 
-							SIPTAG_TO_STR(to_uri), 
-							SIPTAG_CONTACT_STR(profile->url), 
-							TAG_END());
-			
-			nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+					if (!local_user || !local_host || !sofia_reg_find_reg_url(profile, local_user, local_host, buf, sizeof(buf))) {
+						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Can't find local user\n");
+						goto done;
+					}
+
+					to_uri = sofia_glue_get_url_from_contact(buf, 0);
+					
+					if ((p = strstr(to_uri, ";fs_"))) {
+						*p = '\0';
+					}
+
+				}
+
+
+				nh = nua_handle(profile->nua, 
+								NULL, 
+								NUTAG_URL(to_uri), 
+								SIPTAG_FROM_STR(from_uri), 
+								SIPTAG_TO_STR(to_uri), 
+								SIPTAG_CONTACT_STR(profile->url), 
+								TAG_END());
+				
+				nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
+			}
 
 			nua_info(nh,
 					 NUTAG_WITH_THIS(profile->nua),
@@ -3063,6 +3075,9 @@ static void general_event_handler(switch_event_t *event)
 					 TAG_IF(!switch_strlen_zero(body), SIPTAG_PAYLOAD_STR(body)),
 					 TAG_END());
 
+			if (call_id && nh) {
+				nua_handle_unref(nh);
+			}
 
 			if (profile) {
 				sofia_glue_release_profile(profile);
