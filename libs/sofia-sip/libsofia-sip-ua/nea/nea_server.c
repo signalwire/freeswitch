@@ -1222,6 +1222,9 @@ nea_event_t *nea_event_tcreate(nea_server_t *nes,
   size_t len = strlen(name);
   ta_list ta;
 
+  if (nes == NULL || callback == NULL || name == NULL)
+    return NULL;
+
   /* Find a matching event */
   if (subname == NULL) {
     for (pev = &nes->nes_events; (ev = *pev); pev = &(*pev)->ev_next) {
