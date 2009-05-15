@@ -3543,7 +3543,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
     }
   }
 
-  if (200 <= sr->sr_status && sr->sr_status < 300) {
+  if (ss && 200 <= sr->sr_status && sr->sr_status < 300) {
     session_timer_preferences(ss->ss_timer,
 			      sip,
 			      NH_PGET(nh, supported),
@@ -3552,7 +3552,7 @@ int nua_update_server_respond(nua_server_request_t *sr, tagi_t const *tags)
 			      NH_PGET(nh, refresher),
 			      NH_PGET(nh, min_se));
 
-    if (ss && session_timer_is_supported(ss->ss_timer)) {
+    if (session_timer_is_supported(ss->ss_timer)) {
       nua_server_request_t *sr0;
       int uas;
 
