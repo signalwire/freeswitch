@@ -281,7 +281,12 @@ sdp_media_t *soa_sdp_make_rejected_media(su_home_t *home,
   rejected->m_proto_name = m->m_proto_name;
 
   if (include_all_codecs) {
-    rejected->m_rtpmaps = m->m_rtpmaps;
+    if (m->m_rtpmaps) {
+      rejected->m_rtpmaps = m->m_rtpmaps;
+    }
+    else if (m->m_format) {
+      rejected->m_format = m->m_format;
+    }
   }
 
   rejected->m_rejected = 1;
