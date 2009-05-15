@@ -62,7 +62,7 @@
 #define sangoma_create_socket_intr sangoma_open_api_span_chan
 #define EX_DECLARE_DATA				__declspec(dllexport)
 #else
-WP_DECLARE_DATA
+#define EX_DECLARE_DATA
 #endif
 
 typedef enum {
