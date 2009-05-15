@@ -200,12 +200,13 @@ static unsigned wp_open_range(zap_span_t *span, unsigned spanno, unsigned start,
 				zap_copy_string(chan->chan_number, number, sizeof(chan->chan_number));
 			}
 			configured++;
+
+			zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d DTMF: %s\n",
+				spanno, x, chan->span_id, chan->chan_id, sockfd, dtmf);
+
 		} else {
 			zap_log(ZAP_LOG_ERROR, "failure configuring device s%dc%d\n", spanno, x);
 		}
-
-		zap_log(ZAP_LOG_INFO, "configuring device s%dc%d as OpenZAP device %d:%d fd:%d DTMF: %s\n", 
-				spanno, x, chan->span_id, chan->chan_id, sockfd, dtmf);
 	}
 	
 	return configured;
