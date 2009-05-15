@@ -335,7 +335,7 @@ char const * const sip_method_names[] = {
 char const *sip_method_name(sip_method_t method, char const *name)
 {
   const size_t N = sizeof(sip_method_names)/sizeof(sip_method_names[0]);
-  if (method > 0 && (size_t)method <= N)
+  if (method > 0 && (size_t)method < N)
     return sip_method_names[method];
   else if (method == 0)
     return name;
