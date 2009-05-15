@@ -52,7 +52,6 @@
  * The @e sip-dig utility accepts following command line options:
  * <dl>
  * <dt>-p <em>protoname</em></dt>
-
  * <dd>Use named transport protocol. The <em>protoname</em> can be either
  * well-known, e.g., "udp", or it can specify NAPTR service and SRV
  * identifier, e.g., "tls-udp/SIPS+D2U/_sips._udp.".
@@ -160,7 +159,7 @@ struct dig {
 
   unsigned preference, ip4, ip6, sips, print;
 
-  struct transport tports[N_TPORT];
+  struct transport tports[N_TPORT + 1];
 };
 
 int dig_naptr(struct dig *dig, char const *host, double weight);
@@ -370,7 +369,7 @@ int prepare_transport(struct dig *dig, char const *tport)
   struct transport *tports = dig->tports;
   int j;
 
-  for (j = 0; j < N_TPORT - 1; j++) {
+  for (j = 0; j < N_TPORT; j++) {
     if (!tports[j].name)
       break;
     if (su_casematch(tports[j].name, tport))
