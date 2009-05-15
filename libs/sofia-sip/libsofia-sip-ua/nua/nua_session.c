@@ -2776,9 +2776,9 @@ static int process_prack(nua_server_request_t *sr,
 			 sip_t const *sip)
 {
   nua_handle_t *nh;
-  nua_dialog_usage_t *du;
 
   nta_reliable_destroy(rel);
+
   if (irq == NULL)
     /* Final response interrupted 100rel, we did not actually receive PRACK */
     return 200;
@@ -2792,8 +2792,6 @@ static int process_prack(nua_server_request_t *sr,
 
   if (nh->nh_ds->ds_leg == NULL)
     return 500;
-
-  du = nua_dialog_usage_for_session(nh->nh_ds);
 
   if (sip == NULL) {
     /* 100rel timeout */
