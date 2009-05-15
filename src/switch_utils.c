@@ -83,6 +83,8 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 	switch_frame_t *new_frame;
 
 	new_frame = malloc(sizeof(*new_frame));
+
+	switch_assert(new_frame);
 	
 	*new_frame = *orig;
 	switch_set_flag(new_frame, SFF_DYNAMIC);

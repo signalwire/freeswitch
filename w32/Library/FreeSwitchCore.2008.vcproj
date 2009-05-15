@@ -713,6 +713,22 @@
 			<File
 				RelativePath="..\..\src\switch_ivr_originate.c"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/analyze:stacksize17000"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						AdditionalOptions="/analyze:stacksize17000"
+					/>
+				</FileConfiguration>
 			</File>
 			<File
 				RelativePath="..\..\src\switch_ivr_play_say.c"

@@ -391,17 +391,17 @@ SWITCH_DECLARE(const char *) switch_xml_attr(switch_xml_t xml, const char *attr)
 
 	if (!xml || !xml->attr)
 		return NULL;
-	while (xml->attr[i] && strcmp(attr, xml->attr[i]))
+	while (xml->attr[i] && attr && strcmp(attr, xml->attr[i]))
 		i += 2;
 	if (xml->attr[i])
 		return xml->attr[i + 1];	/* found attribute */
 
 	while (root->xml.parent)
 		root = (switch_xml_root_t) root->xml.parent;	/* root tag */
-	for (i = 0; root->attr[i] && strcmp(xml->name, root->attr[i][0]); i++);
+	for (i = 0; root->attr[i] && xml->name && strcmp(xml->name, root->attr[i][0]); i++);
 	if (!root->attr[i])
 		return NULL;			/* no matching default attributes */
-	while (root->attr[i][j] && strcmp(attr, root->attr[i][j]))
+	while (root->attr[i][j] && attr && strcmp(attr, root->attr[i][j]))
 		j += 3;
 	return (root->attr[i][j]) ? root->attr[i][j + 1] : NULL;	/* found default */
 }
@@ -2140,6 +2140,7 @@ SWITCH_DECLARE(char *) switch_xml_toxml(switch_xml_t xml, switch_bool_t prn_head
 	char *r, *s;
 	switch_mutex_lock(XML_GEN_LOCK);
 	s = (char *)malloc(SWITCH_XML_BUFSIZE);
+	switch_assert(s);
 	r = switch_xml_toxml_buf(xml, s, SWITCH_XML_BUFSIZE, 0, prn_header);
 	switch_mutex_unlock(XML_GEN_LOCK);
 	return r;
@@ -2251,6 +2252,9 @@ tailrecurse:
 	/*switch_xml_free(xml->ordered);*/
 
 	if (!xml->parent) {			/* free root tag allocations */
+#if (_MSC_VER >= 1400)			// VC8+
+		__analysis_assume(sizeof(root->ent) > 44); /* tail recursion confuses code analysis */
+#endif
 		for (i = 10; root->ent[i]; i += 2)	/* 0 - 9 are default entities (<>&"') */
 			if ((s = root->ent[i + 1]) < root->s || s > root->e)
 				free(s);

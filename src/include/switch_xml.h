@@ -240,7 +240,7 @@ SWITCH_DECLARE(const char *) switch_xml_error(_In_ switch_xml_t xml);
 
 ///\brief returns a new empty switch_xml structure with the given root tag name
 ///\param name the name of the new root tag
-SWITCH_DECLARE(switch_xml_t) switch_xml_new(_In_z_ const char *name);
+SWITCH_DECLARE(switch_xml_t) switch_xml_new(_In_opt_z_ const char *name);
 
 ///\brief wrapper for switch_xml_new() that strdup()s name
 ///\param name the name of the root
