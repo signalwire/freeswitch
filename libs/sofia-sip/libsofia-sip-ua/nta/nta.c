@@ -4899,7 +4899,7 @@ nta_leg_t *leg_find(nta_agent_t const *sa,
 nta_leg_t *nta_leg_by_uri(nta_agent_t const *agent, url_string_t const *us)
 {
   url_t *url;
-  nta_leg_t *leg;
+  nta_leg_t *leg = NULL;
 
   if (!agent)
     return NULL;
@@ -4909,11 +4909,11 @@ nta_leg_t *nta_leg_by_uri(nta_agent_t const *agent, url_string_t const *us)
 
   url = url_hdup(NULL, us->us_url);
 
-  agent_aliases(agent, url, NULL);
-
-  leg = url ? dst_find(agent, url, NULL) : NULL;
-
-  su_free(NULL, url);
+  if (url) {
+    agent_aliases(agent, url, NULL);
+    leg = dst_find(agent, url, NULL);
+    su_free(NULL, url);
+  }
 
   return leg;
 }
