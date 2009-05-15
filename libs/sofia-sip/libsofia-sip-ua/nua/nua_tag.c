@@ -1319,6 +1319,12 @@ tag_typedef_t nutag_autoanswer = BOOLTAG_TYPEDEF(autoAnswer);
  *
  * Default value is NUTAG_AUTOACK(1).
  *
+ * @par Auto ACK with Re-INVITE requests
+ * By default, NUA tries to auto-ACK the final response to re-INVITE used to
+ * refresh the session when the media is enabled. Set NUTAG_AUTOACK(0) on
+ * the call handle (e.g., include the tag with nua_invite() or
+ * nua_respond()) in order to disable the auto ACK with re-INVITE.
+ *
  * Corresponding tag taking reference parameter is NUTAG_AUTOACK_REF().
  */
 tag_typedef_t nutag_autoack = BOOLTAG_TYPEDEF(autoACK);

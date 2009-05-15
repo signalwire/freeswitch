@@ -1108,8 +1108,9 @@ static int nua_invite_client_report(nua_client_request_t *cr,
 
   if (next_state == nua_callstate_completing) {
     if (NH_PGET(nh, auto_ack) ||
-	/* Auto-ACK response to re-INVITE unless auto_ack is set to 0 */
-	(ss->ss_state == nua_callstate_ready &&
+	/* Auto-ACK response to re-INVITE when media is enabled
+	   and auto_ack is not set to 0 on handle */
+	(ss->ss_state == nua_callstate_ready && nh->nh_soa &&
 	 !NH_PISSET(nh, auto_ack))) {
       nua_client_request_t *cru;
 
@@ -1867,8 +1868,10 @@ static int nua_prack_client_report(nua_client_request_t *cr,
       /* There is an un-ACK-ed INVITE there */
       assert(du->du_cr->cr_method == sip_method_invite);
       if (NH_PGET(nh, auto_ack) ||
-	  /* Auto-ACK response to re-INVITE unless auto_ack is set to 0 */
-	  (ss->ss_state == nua_callstate_ready && !NH_PISSET(nh, auto_ack))) {
+	  /* Auto-ACK response to re-INVITE when media is enabled
+	     and auto_ack is not set to 0 on handle */
+	  (ss->ss_state == nua_callstate_ready && nh->nh_soa &&
+	   !NH_PISSET(nh, auto_ack))) {
 	/* There should be no UPDATE with offer/answer
 	   if PRACK with offer/answer was ongoing! */
 	if (nua_invite_client_ack(du->du_cr, NULL) > 0)
@@ -3407,8 +3410,10 @@ static int nua_update_client_report(nua_client_request_t *cr,
       assert(du->du_cr->cr_method == sip_method_invite);
 
       if (NH_PGET(nh, auto_ack) ||
-	  /* Auto-ACK response to re-INVITE unless auto_ack is set to 0 */
-	  (ss->ss_state == nua_callstate_ready && !NH_PISSET(nh, auto_ack))) {
+	  /* Auto-ACK response to re-INVITE when media is enabled
+	     and auto_ack is not set to 0 on handle */
+	  (ss->ss_state == nua_callstate_ready && nh->nh_soa &&
+	   !NH_PISSET(nh, auto_ack))) {
 	if (nua_invite_client_ack(du->du_cr, NULL) > 0)
 	  next_state = nua_callstate_ready;
 	else
