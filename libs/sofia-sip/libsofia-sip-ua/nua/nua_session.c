@@ -1190,11 +1190,8 @@ int nua_stack_ack(nua_t *nua, nua_handle_t *nh, nua_event_t e,
     return 1;
   }
 
-  if (tags) {
+  if (tags)
     nua_stack_set_params(nua, nh, nua_i_error, tags);
-    if (nh->nh_soa)
-      soa_set_params(nh->nh_soa, TAG_NEXT(tags));
-  }
 
   nua_client_request_ref(cr);
   error = nua_invite_client_ack(cr, tags);
@@ -1387,8 +1384,8 @@ int nua_invite_client_ack(nua_client_request_t *cr, tagi_t const *tags)
  error:
   cr->cr_acked = 1;		/* ... or we have at least tried */
 
-  nua_client_request_clean(cr);
   nua_client_request_remove(cr);
+  nua_client_request_clean(cr);
 
   return error;
 }
