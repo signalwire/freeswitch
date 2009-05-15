@@ -1593,7 +1593,7 @@ int tport_bind_server(tport_master_t *mr,
 		      enum tport_via public,
 		      tagi_t *tags)
 {
-  char hostname[256];
+  char hostname[TPORT_HOSTPORTSIZE];
   char const *canon = NULL, *host, *service;
   int error = 0, not_supported, family = 0;
   tport_primary_t *pri = NULL, **tbf;
@@ -1613,10 +1613,12 @@ int tport_bind_server(tport_master_t *mr,
     host = NULL;
   }
 #ifdef SU_HAVE_IN6
-  else if (tpn->tpn_host && tpn->tpn_host[0] == '[') {
+  else if (host_is_ip6_reference(tpn->tpn_host)) {
     /* Remove [] around IPv6 addresses. */
-    host = strcpy(hostname, tpn->tpn_host + 1);
-    hostname[strlen(hostname) - 1] = '\0';
+    size_t len = strlen(tpn->tpn_host);
+    assert(len < sizeof hostname);
+    host = memcpy(hostname, tpn->tpn_host + 1, len - 2);
+    hostname[len - 2] = '\0';
   }
 #endif
   else
@@ -3986,29 +3988,21 @@ tport_resolve(tport_t *self, msg_t *msg, tp_name_t const *tpn)
   hints->ai_socktype = self->tp_addrinfo->ai_socktype;
   hints->ai_protocol = self->tp_addrinfo->ai_protocol;
 
-#if HAVE_OPEN_C
-  if (host_is_ip_address(tpn->tpn_host))
-    hints->ai_flags |= AI_NUMERICHOST;
-#endif
-
-  if (tpn->tpn_host[0] == '[') {
+  if (host_is_ip6_reference(tpn->tpn_host)) {
     /* Remove [] around IPv6 address */
-    char *end;
+    size_t len = strlen(tpn->tpn_host);
+    assert(len < sizeof ipaddr);
+    host = memcpy(ipaddr, tpn->tpn_host + 1, len - 2);
+    ipaddr[len - 2] = '\0';
     hints->ai_flags |= AI_NUMERICHOST;
-    host = strncpy(ipaddr, tpn->tpn_host +  1, sizeof(ipaddr) - 1);
-    ipaddr[sizeof(ipaddr) - 1] = '\0';
-
-    if ((end = strchr(host, ']'))) {
-      *end = 0;
-    }
-    else {
-      SU_DEBUG_3(("tport_resolve: bad IPv6 address\n"));
-      msg_set_errno(msg, EINVAL);
-      return -1;
-    }
   }
-  else
+  else {
+#if HAVE_OPEN_C
+    if (host_is_ip_address(tpn->tpn_host))
+      hints->ai_flags |= AI_NUMERICHOST;
+#endif
     host = tpn->tpn_host;
+  }
 
   if ((error = su_getaddrinfo(host, tpn->tpn_port, hints, &res))) {
     SU_DEBUG_3(("tport_resolve: getaddrinfo(\"%s\":%s): %s\n",
