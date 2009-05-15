@@ -6386,11 +6386,13 @@ msg_t *nta_incoming_create_response(nta_incoming_t *irq,
     msg = nta_msg_create(irq->irq_agent, 0);
     sip = sip_object(msg);
 
-    if (sip && status != 0)
-      sip->sip_status = sip_status_create(msg_home(msg), status, phrase, NULL);
+    if (sip) {
+      if (status != 0)
+	sip->sip_status = sip_status_create(msg_home(msg), status, phrase, NULL);
 
-    if (nta_incoming_response_headers(irq, msg, sip) < 0)
-      msg_destroy(msg), msg = NULL;
+      if (nta_incoming_response_headers(irq, msg, sip) < 0)
+	msg_destroy(msg), msg = NULL;
+    }
   }
 
   return msg;
