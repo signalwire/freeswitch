@@ -346,9 +346,9 @@ char *msg_default_dup_one(msg_header_t *h,
 			  char *b,
 			  isize_t xtra)
 {
-  memcpy(&h->sh_header_next[1],
-	 &src->sh_header_next[1],
-	 h->sh_class->hc_size - offsetof(msg_header_t, sh_header_next[1]));
+  size_t skip = offsetof(msg_numeric_t, x_value);  /* Skip common part */
+
+  memcpy((char *)h + skip, (char const *)src + skip, h->sh_class->hc_size - skip);
 
   return b;
 }
