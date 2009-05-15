@@ -1981,7 +1981,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 		switch_set_flag(frame, SFF_RFC2833);
 	}
 	frame->timestamp = ntohl(rtp_session->recv_msg.header.ts);
-	frame->seq = (uint16_t) ntohs((u_short) rtp_session->recv_msg.header.seq);
+	frame->seq = (uint16_t) ntohs((uint16_t) rtp_session->recv_msg.header.seq);
 	frame->ssrc = ntohl(rtp_session->recv_msg.header.ssrc);
 	frame->m = rtp_session->recv_msg.header.m ? SWITCH_TRUE : SWITCH_FALSE;
 
