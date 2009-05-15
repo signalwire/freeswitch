@@ -586,8 +586,8 @@ static void tm2switchtime(struct tm * tm, switch_time_exp_t *xt )
 	xt->tm_wday 	= tm->tm_wday;
 	xt->tm_yday 	= tm->tm_yday;
 	xt->tm_isdst 	= tm->tm_isdst;
-#if !defined(WIN32) && !defined(__SVR4) && !defined(__sun)
 
+#if defined(HAVE_STRUCT_TM_TM_GMTOFF)
 	xt->tm_gmtoff 	= tm->tm_gmtoff;
 #endif
 
@@ -1635,7 +1635,7 @@ static void timesub(const time_t * const timep, const long offset, register cons
 
 	tmp->tm_mday = (int) (days + 1);
 	tmp->tm_isdst = 0;
-#if !defined(WIN32) && !defined(__SVR4) && !defined(__sun)
+#if defined(HAVE_STRUCT_TM_TM_GMTOFF)
 	tmp->tm_gmtoff = offset;
 #endif
 }
@@ -1691,7 +1691,7 @@ static void tztime(const time_t * const timep, const char *tzstring, struct tm *
 		{
 	    		timesub( &t, ttisp->tt_gmtoff, sp, tmp);
 			tmp->tm_isdst = ttisp->tt_isdst;
-#if !defined(WIN32) && !defined(__SVR4) && !defined(__sun)
+#if defined(HAVE_STRUCT_TM_TM_ZONE)
 			tmp->tm_zone = &sp->chars[ttisp->tt_abbrind];
 #endif
 		}
