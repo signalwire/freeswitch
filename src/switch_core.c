@@ -33,6 +33,11 @@
  *
  */
 
+
+#ifdef __linux__
+#define _BSD_SOURCE
+#endif
+
 #include <switch.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
@@ -43,6 +48,7 @@
 #endif
 #endif
 #include <errno.h>
+
 
 SWITCH_DECLARE_DATA switch_directories SWITCH_GLOBAL_dirs = { 0 };
 
