@@ -1312,35 +1312,38 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 	return -1;
 }
 
-static void resolve_id(const char **myid, const char *domain_name, const char *action)
+static char *resolve_id(const char *myid, const char *domain_name, const char *action)
 {
 	switch_xml_t xx_user, xx_domain, xx_domain_root;
 	switch_event_t *params;
+	char *ret = (char *) myid;
 
 	switch_event_create(&params, SWITCH_EVENT_GENERAL);
 	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", action);
 
-	if (switch_xml_locate_user("id", *myid, domain_name, NULL,
+	if (switch_xml_locate_user("id", myid, domain_name, NULL,
 							   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
-		*myid = switch_xml_attr(xx_user, "id");
+		ret = strdup(switch_xml_attr(xx_user, "id"));
 		switch_xml_free(xx_domain_root);
 	}
 	
 	switch_event_destroy(&params);
+	return ret;
 }
 
-static void message_count(vm_profile_t *profile, const char *myid, const char *domain_name, const char *myfolder,
+static void message_count(vm_profile_t *profile, const char *id_in, const char *domain_name, const char *myfolder,
 						  int *total_new_messages, int *total_saved_messages, int *total_new_urgent_messages, int *total_saved_urgent_messages)
 {
 	char msg_count[80] = "";
 	callback_t cbt = { 0 };
 	char sql[256];
+	char *myid;
 
 	cbt.buf = msg_count;
 	cbt.len = sizeof(msg_count);
 	
-	resolve_id(&myid, domain_name, "message-count");
-
+	myid = resolve_id(id_in, domain_name, "message-count");
+	
 	switch_snprintf(sql, sizeof(sql),
 					"select count(*) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' and read_epoch=0",
 					myid, domain_name, myfolder);
@@ -1364,6 +1367,11 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
 					myid, domain_name, myfolder, URGENT_FLAG_STRING);
 	vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
 	*total_saved_urgent_messages = atoi(msg_count);
+
+	if (myid != id_in) {
+		free(myid);
+	}
+
 }
 
 #define VM_STARTSAMPLES 1024 * 32
@@ -2137,7 +2145,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
 					} else {
-						myid = switch_xml_attr(x_user, "id");
+						myid = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 					}
 
 					switch_event_destroy(&params);
@@ -2864,7 +2872,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 		if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
 								   &x_domain_root, &x_domain, &x_user, NULL, locate_params) == SWITCH_STATUS_SUCCESS) {
-			id = switch_xml_attr(x_user, "id");
+			id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 			if ((x_params = switch_xml_child(x_user, "params"))) {
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
@@ -3104,7 +3112,7 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	if (!x_domain_root) {
 		switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
 							   &x_domain_root, &x_domain, &x_user, NULL, NULL);
-		id = switch_xml_attr(x_user, "id");
+		id = switch_core_session_strdup(session, switch_xml_attr(x_user, "id"));
 	}
 
 	if (x_domain_root) {
@@ -3783,15 +3791,16 @@ static void do_rss(vm_profile_t *profile, char *user, char *domain, char *host, 
 }
 
 
-static void do_web(vm_profile_t *profile, const char *user, const char *domain, const char *host, const char *port, const char *uri, switch_stream_handle_t *stream)
+static void do_web(vm_profile_t *profile, const char *user_in, const char *domain, const char *host, const char *port, const char *uri, switch_stream_handle_t *stream)
 {
 	char buf[80] = "";
 	struct holder holder;
 	char *sql;
 	callback_t cbt = { 0 };
 	int ttl = 0;
+	char *user;
 
-	resolve_id(&user, domain, "web-vm");
+	user = resolve_id(user_in, domain, "web-vm");
 
 	stream->write_function(stream, "Content-type: text/html\n\n");
 	memset(&holder, 0, sizeof(holder));
@@ -3823,6 +3832,10 @@ static void do_web(vm_profile_t *profile, const char *user, const char *domain, 
 
 	if (profile->web_tail) {
 		stream->raw_write_function(stream, (uint8_t *) profile->web_tail, strlen(profile->web_tail));
+	}
+
+	if (user != user_in) {
+		free(user);
 	}
 }
 
