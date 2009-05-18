@@ -1096,6 +1096,7 @@ SWITCH_STANDARD_API(status_function)
 	switch_core_session_ctl(SCSC_LAST_SPS, &last_sps);
 	switch_core_session_ctl(SCSC_SPS, &sps);
 	stream->write_function(stream, "%d session(s) %d/%d\n", switch_core_session_count(), last_sps, sps);
+	stream->write_function(stream, "%d session(s) max\n", switch_core_session_limit(0));
 
 	if (html) {
 		stream->write_function(stream, "</b>\n");
