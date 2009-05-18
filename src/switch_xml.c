@@ -1686,14 +1686,14 @@ static switch_status_t find_user_in_tag(switch_xml_t tag, const char *ip, const 
 	} 
 
 	if (user_name) {
-		if (params && switch_event_get_header(params, (char *) "mailbox")) {
-			if ((*user = switch_xml_find_child_multi(tag, "user", "mailbox", user_name, "type", type, NULL))) {
+		if (!strcasecmp(key, "id")) {
+			if ((*user = switch_xml_find_child_multi(tag, "user", key, user_name, "number-alias", user_name, "type", type, NULL))) {
 				return SWITCH_STATUS_SUCCESS;
 			}
-		}
-
-		if ((*user = switch_xml_find_child_multi(tag, "user", key, user_name, "type", type, NULL))) {
-			return SWITCH_STATUS_SUCCESS;
+		} else {
+			if ((*user = switch_xml_find_child_multi(tag, "user", key, user_name, "type", type, NULL))) {
+				return SWITCH_STATUS_SUCCESS;
+			}
 		}
 	}
 	

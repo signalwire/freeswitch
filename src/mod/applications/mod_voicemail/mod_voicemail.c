@@ -1312,6 +1312,22 @@ static int listen_callback(void *pArg, int argc, char **argv, char **columnNames
 	return -1;
 }
 
+static void resolve_id(const char **myid, const char *domain_name, const char *action)
+{
+	switch_xml_t xx_user, xx_domain, xx_domain_root;
+	switch_event_t *params;
+
+	switch_event_create(&params, SWITCH_EVENT_GENERAL);
+	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "action", action);
+
+	if (switch_xml_locate_user("id", *myid, domain_name, NULL,
+							   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
+		*myid = switch_xml_attr(xx_user, "id");
+		switch_xml_free(xx_domain_root);
+	}
+	
+	switch_event_destroy(&params);
+}
 
 static void message_count(vm_profile_t *profile, const char *myid, const char *domain_name, const char *myfolder,
 						  int *total_new_messages, int *total_saved_messages, int *total_new_urgent_messages, int *total_saved_urgent_messages)
@@ -1322,6 +1338,8 @@ static void message_count(vm_profile_t *profile, const char *myid, const char *d
 
 	cbt.buf = msg_count;
 	cbt.len = sizeof(msg_count);
+	
+	resolve_id(&myid, domain_name, "message-count");
 
 	switch_snprintf(sql, sizeof(sql),
 					"select count(*) from voicemail_msgs where username='%s' and domain='%s' and in_folder='%s' and read_epoch=0",
@@ -1746,7 +1764,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 	switch_xml_t x_domain = NULL, x_domain_root = NULL, x_user = NULL, x_params, x_param;
 	switch_status_t status;
 	char pass_buf[80] = "", *mypass = NULL, id_buf[80] = "", *myfolder = NULL;
-	const char *thepass = NULL, *myid = id, *actual_id = NULL, *thehash = NULL, *vmhash = NULL;
+	const char *thepass = NULL, *myid = id, *thehash = NULL, *vmhash = NULL;
 	char term = 0;
 	uint32_t timeout, attempts = 0;
 	int failed = 0;
@@ -1792,7 +1810,6 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				play_msg_type = MSG_NONE;
 				attempts = profile->max_login_attempts;
 				myid = id;
-				actual_id = NULL;
 				mypass = NULL;
 				myfolder = "inbox";
 				vm_check_state = VM_CHECK_AUTH;
@@ -1912,7 +1929,7 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 				vm_execute_sql(profile, sql, profile->mutex);
 				vm_check_state = VM_CHECK_FOLDER_SUMMARY;
 
-				update_mwi(profile, actual_id ? actual_id : myid, domain_name, myfolder);
+				update_mwi(profile, myid, domain_name, myfolder);
 			}
 			break;
 		case VM_CHECK_CONFIG:
@@ -2020,13 +2037,10 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Action", "change-password");
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User-Password", buf);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-User", myid);
-					if (actual_id) {
-						switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Actual-User", actual_id);
-					}
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "VM-Domain", domain_name);
 					switch_channel_event_set_data(channel, params);
 					
-					if (switch_xml_locate_user("id", actual_id ? actual_id : myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
+					if (switch_xml_locate_user("id", myid, domain_name, switch_channel_get_variable(channel, "network_addr"),
 											   &xx_domain_root, &xx_domain, &xx_user, NULL, params) == SWITCH_STATUS_SUCCESS) {
 						switch_xml_free(xx_domain_root);
 					}
@@ -2114,7 +2128,6 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 
 					switch_event_create(&params, SWITCH_EVENT_GENERAL);
 					switch_assert(params);
-					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", myid);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "destination_number", caller_profile->destination_number);
 					switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "caller_id_number", caller_id_number);
 					
@@ -2123,26 +2136,15 @@ static void voicemail_check_main(switch_core_session_t *session, vm_profile_t *p
 											   &x_domain_root, &x_domain, &x_user, NULL, params) != SWITCH_STATUS_SUCCESS) {
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Can't find user [%s@%s]\n", myid, domain_name);
 						ok = 0;
+					} else {
+						myid = switch_xml_attr(x_user, "id");
 					}
-					
+
 					switch_event_destroy(&params);
 
 					if (!ok) {
 						goto end;
-					} else {
-						const char *x_box = switch_xml_attr(x_user, "mailbox");
-						
-						if (x_box) {
-							myid = switch_core_session_strdup(session, x_box);
-						}
-						
-						if ((actual_id = switch_xml_attr(x_user, "id"))) {
-							actual_id = switch_core_session_strdup(session, actual_id);
-						} else {
-							actual_id = id;
-						}
 					}
-
 				}
 
 				thepass = thehash = NULL;
@@ -2313,7 +2315,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 {
 	char *file_path = NULL, *dir_path = NULL;
 	const char *myid = switch_xml_attr(x_user, "id");
-	const char *mybox = switch_xml_attr(x_user, "mailbox");
 	switch_uuid_t uuid;
 	char uuid_str[SWITCH_UUID_FORMATTED_LENGTH + 1];
 	const char *filename;
@@ -2333,10 +2334,6 @@ static switch_status_t deliver_vm(vm_profile_t *profile,
 	const char *tmp;
 	switch_event_t *local_event = NULL;
 	switch_status_t ret = SWITCH_STATUS_SUCCESS;
-	
-	if (mybox) {
-		myid = mybox;
-	}
 	
 	if (params) {
 		switch_event_create(&local_event, SWITCH_EVENT_REQUEST_PARAMS);
@@ -2846,7 +2843,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	switch_event_t *vars = NULL;
 	const char *vm_cc = NULL, *vtmp, *vm_ext = NULL;
 	int disk_quota = 0;
-	switch_event_t *params = NULL;
 	
 	if (!(caller_id_name = switch_channel_get_variable(channel, "effective_caller_id_name"))) {
 		caller_id_name = caller_profile->caller_id_name;
@@ -2865,10 +2861,10 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 
 		switch_event_create(&locate_params, SWITCH_EVENT_REQUEST_PARAMS);
 		switch_assert(locate_params);
-		switch_event_add_header_string(locate_params, SWITCH_STACK_BOTTOM, "mailbox", id);
 
 		if (switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
 								   &x_domain_root, &x_domain, &x_user, NULL, locate_params) == SWITCH_STATUS_SUCCESS) {
+			id = switch_xml_attr(x_user, "id");
 			if ((x_params = switch_xml_child(x_user, "params"))) {
 				for (x_param = switch_xml_child(x_params, "param"); x_param; x_param = x_param->next) {
 					const char *var = switch_xml_attr_soft(x_param, "name");
@@ -3105,13 +3101,10 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		}
 	}
 	
-	switch_event_create(&params, SWITCH_EVENT_REQUEST_PARAMS);
-	switch_assert(params);
-	switch_event_add_header_string(params, SWITCH_STACK_BOTTOM, "mailbox", id);
-
 	if (!x_domain_root) {
 		switch_xml_locate_user("id", id, domain_name, switch_channel_get_variable(channel, "network_addr"),
-							   &x_domain_root, &x_domain, &x_user, NULL, params);
+							   &x_domain_root, &x_domain, &x_user, NULL, NULL);
+		id = switch_xml_attr(x_user, "id");
 	}
 
 	if (x_domain_root) {
@@ -3134,8 +3127,6 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 		}
 
 	}
-
-	switch_event_destroy(&params);
 
   end:
 
@@ -3419,11 +3410,11 @@ struct holder {
 	switch_xml_t x_item;
 	switch_xml_t x_channel;
 	int items;
-	char *user;
-	char *domain;
-	char *host;
-	char *port;
-	char *uri;
+	const char *user;
+	const char *domain;
+	const char *host;
+	const char *port;
+	const char *uri;
 };
 
 
@@ -3792,13 +3783,15 @@ static void do_rss(vm_profile_t *profile, char *user, char *domain, char *host, 
 }
 
 
-static void do_web(vm_profile_t *profile, char *user, char *domain, char *host, char *port, char *uri, switch_stream_handle_t *stream)
+static void do_web(vm_profile_t *profile, const char *user, const char *domain, const char *host, const char *port, const char *uri, switch_stream_handle_t *stream)
 {
 	char buf[80] = "";
 	struct holder holder;
 	char *sql;
 	callback_t cbt = { 0 };
 	int ttl = 0;
+
+	resolve_id(&user, domain, "web-vm");
 
 	stream->write_function(stream, "Content-type: text/html\n\n");
 	memset(&holder, 0, sizeof(holder));
