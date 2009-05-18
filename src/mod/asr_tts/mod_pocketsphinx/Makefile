@@ -45,11 +45,11 @@ $(DESTDIR)$(PREFIX)/grammar/model:
 $(DESTDIR)$(PREFIX)/grammar/model/communicator:
 	$(GETLIB) $(SPHINXMODEL).tar.gz
 	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/communicator
-	mv $(BASE)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
+	cp -drp $(BASE)/libs/Communicator_semi_40.cd_semi_6000/* $(DESTDIR)$(PREFIX)/grammar/model/communicator
 
 $(DESTDIR)$(PREFIX)/grammar/model/wsj1:
 	mkdir -p $(DESTDIR)$(PREFIX)/grammar/model/wsj1
-	mv $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(PREFIX)/grammar/model/wsj1
+	cp -drp $(POCKETSPHINX_DIR)/model/hmm/wsj1/* $(DESTDIR)$(PREFIX)/grammar/model/wsj1
 
 dictionary:
 	@cp -f $(POCKETSPHINX_DIR)/model/lm/cmudict.0.6d $(DESTDIR)$(PREFIX)/grammar/default.dic
