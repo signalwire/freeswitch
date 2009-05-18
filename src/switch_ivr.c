@@ -2026,7 +2026,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_say(switch_core_session_t *session, c
 SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *session, const char *data)
 {
 	switch_xml_t x_domain, xml = NULL, x_user, x_param, x_params, x_group = NULL;
-	char *user, *mailbox, *domain;
+	char *user, *number_alias, *domain;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
@@ -2049,8 +2049,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_set_user(switch_core_session_t *sessi
 
 	status = SWITCH_STATUS_SUCCESS;
 
-	if ((mailbox = (char *) switch_xml_attr(x_user, "mailbox"))) {
-		switch_channel_set_variable(channel, "mailbox", mailbox);
+	if ((number_alias = (char *) switch_xml_attr(x_user, "number-alias"))) {
+		switch_channel_set_variable(channel, "number_alias", number_alias);
 	}
 
 	if ((x_params = switch_xml_child(x_domain, "variables"))) {
