@@ -2093,17 +2093,20 @@ SWITCH_STANDARD_API(dl_login)
 {
 	char *argv[10] = { 0 };
 	int argc = 0;
-	char *var, *val, *myarg;
+	char *var, *val, *myarg = NULL;
 	mdl_profile_t *profile = NULL;
 	int x;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (session) {
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	myarg = strdup(cmd);
@@ -2112,7 +2115,8 @@ SWITCH_STANDARD_API(dl_login)
 
 	if (switch_strlen_zero(cmd) || argc != 1) {
 		stream->write_function(stream, "USAGE: %s\n", LOGIN_SYNTAX);
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	if (argv[0] && !strncasecmp(argv[0], "profile=", 8)) {
@@ -2123,7 +2127,8 @@ SWITCH_STANDARD_API(dl_login)
 			if (switch_test_flag(profile, TFLAG_IO)) {
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Profile already exists.\n");
 				stream->write_function(stream, "Profile already exists\n");
-				return SWITCH_STATUS_SUCCESS;
+				status = SWITCH_STATUS_SUCCESS;
+				goto done;
 			}
 
 		}
@@ -2145,9 +2150,10 @@ SWITCH_STANDARD_API(dl_login)
 	} else {
 		stream->write_function(stream, "FAIL\n");
 	}
+ done:
+	switch_safe_free(myarg);
 
-	return SWITCH_STATUS_SUCCESS;
-
+	return status;
 }
 
 static switch_status_t load_config(void)
