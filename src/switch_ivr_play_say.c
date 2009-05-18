@@ -860,7 +860,8 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 	char *argv[128] = { 0 };
 	int argc;
 	int cur;
-	
+	int done = 0;
+
     switch_core_session_get_read_impl(session, &read_impl);
 
 	if ((play_delimiter_val = switch_channel_get_variable(channel, "playback_delimiter"))) {
@@ -898,7 +899,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		argv[0] = (char *)file;
 	}
 
-	for(cur = 0; switch_channel_ready(channel) && cur < argc; cur++) {
+	for(cur = 0; switch_channel_ready(channel) && !done && cur < argc; cur++) {
 		file = argv[cur];
 		asis = 0;
 		eof = 0;
@@ -1125,7 +1126,6 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_play_file(switch_core_session_t *sess
 		ilen = samples;
 
 		for (;;) {
-			int done = 0;
 			int do_speed = 1;
 			int last_speed = -1;
 
