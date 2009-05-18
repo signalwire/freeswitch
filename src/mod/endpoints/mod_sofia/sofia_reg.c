@@ -1557,7 +1557,7 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 	const char *passwd = NULL;
 	const char *a1_hash = NULL;
 	char *sql;
-	char *mailbox = NULL;
+	char *number_alias = NULL;
 	switch_xml_t domain, xml = NULL, user, param, uparams, dparams, group = NULL, gparams = NULL;
 	char hexdigest[2 * SU_MD5_DIGEST_SIZE + 1] = "";
 	char *domain_name = NULL;
@@ -1714,8 +1714,8 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 		}
 	}
 	
-	if (!(mailbox = (char *) switch_xml_attr(user, "mailbox"))) {
-		mailbox = switch_strlen_zero(username) ? "nobody" : username;
+	if (!(number_alias = (char *) switch_xml_attr(user, "number-alias"))) {
+		number_alias = switch_strlen_zero(username) ? "nobody" : username;
 	}
 
 	dparams = switch_xml_child(domain, "params");
@@ -1877,10 +1877,10 @@ auth_res_t sofia_reg_parse_auth(sofia_profile_t *profile,
 			switch_xml_t xparams[3];
 			int i = 0;
 
-			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_mailbox", mailbox);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_number_alias", number_alias);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_username", username);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "sip_auth_realm", realm);
-			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "mailbox", mailbox);
+			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "number_alias", number_alias);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "user_name", username);
 			switch_event_add_header_string(*v_event, SWITCH_STACK_BOTTOM, "domain_name", domain_name);
 
