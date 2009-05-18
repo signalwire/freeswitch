@@ -1,5 +1,5 @@
 <include>
-  <user id="1017" mailbox="1017">
+  <user id="1017">
     <params>
       <param name="password" value="$${default_password}"/>
       <param name="vm-password" value="1017"/>

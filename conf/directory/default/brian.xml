@@ -3,7 +3,7 @@
       ipauth if you have an cidr= in the user attributes ie cidr="1.2.3.4/32"  
       see <node type="allow" domain="$${domain}"/> in default acl.conf.xml 
   -->
-  <user id="brian" mailbox="9999" cidr="192.0.2.0/24">
+  <user id="brian" cidr="192.0.2.0/24">
     <!-- Outbound Registrations Related to this user -->
     <gateways>
       <!--<gateway name="asterlink.com">-->
