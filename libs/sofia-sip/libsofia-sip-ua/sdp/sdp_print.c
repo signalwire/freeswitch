@@ -87,9 +87,8 @@ static struct sdp_printer_s printer_memory_error = {
   sizeof(printer_memory_error.pr_buffer)
 };
 
-static void printing_error(sdp_printer_t *p, const char *fmt, ...);
-
 static void print_session(sdp_printer_t *p, sdp_session_t const *session);
+static void printing_error(sdp_printer_t *p, const char *fmt, ...);
 
 /** Print a SDP description.
  *
