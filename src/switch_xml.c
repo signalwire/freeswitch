@@ -2316,8 +2316,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_new(const char *name)
 	static const char *ent[] = { "lt;", "&#60;", "gt;", "&#62;", "quot;", "&#34;",
 		"apos;", "&#39;", "amp;", "&#38;", NULL
 	};
-	switch_xml_root_t root = (switch_xml_root_t) memset(malloc(sizeof(struct switch_xml_root)),
-														'\0', sizeof(struct switch_xml_root));
+	switch_xml_root_t root = (switch_xml_root_t) malloc(sizeof(struct switch_xml_root));
+	if (!root) return NULL;
+	memset(root, '\0', sizeof(struct switch_xml_root));
 	root->xml.name = (char *) name;
 	root->cur = &root->xml;
 	strcpy(root->err, root->xml.txt = (char *)"");
@@ -2372,9 +2373,9 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_add_child(switch_xml_t xml, const char *
 {
 	switch_xml_t child;
 
-	if (!xml)
-		return NULL;
-	child = (switch_xml_t) memset(malloc(sizeof(struct switch_xml)), '\0', sizeof(struct switch_xml));
+	if (!xml) return NULL;
+	if (!(child = (switch_xml_t) malloc(sizeof(struct switch_xml)))) return NULL;
+	memset(child, '\0', sizeof(struct switch_xml));
 	child->name = (char *) name;
 	child->attr = SWITCH_XML_NIL;
 	child->off = off;
