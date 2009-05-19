@@ -2017,6 +2017,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
 				sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+				profile->contact_user = SOFIA_DEFAULT_CONTACT_USER;
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
@@ -2312,6 +2313,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTOFIX_TIMING);
 						}
+					} else if (!strcasecmp(var, "contact-user")) {
+						profile->contact_user = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "nat-options-ping")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_NAT_OPTIONS_PING);
@@ -2534,7 +2537,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				if (profile->extsipip) {
 					char *ipv6 = strchr(profile->extsipip, ':');
 					profile->url = switch_core_sprintf(profile->pool,
-														"sip:mod_sofia@%s%s%s:%d",
+														"sip:%s@%s%s%s:%d",
+														profile->contact_user,
 														ipv6 ? "[" : "",
 														profile->extsipip,
 														ipv6 ? "]" : "",
@@ -2543,7 +2547,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				} else {
 					char *ipv6 = strchr(profile->sipip, ':');
 					profile->url = switch_core_sprintf(profile->pool,
-														"sip:mod_sofia@%s%s%s:%d",
+														"sip:%s@%s%s%s:%d",
+														profile->contact_user,
 														ipv6 ? "[" : "",
 														profile->sipip,
 														ipv6 ? "]" : "",
@@ -2570,13 +2575,15 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						char *ipv6 = strchr(profile->extsipip, ':');
 						profile->tls_url = 
 							switch_core_sprintf(profile->pool,
-												"sip:mod_sofia@%s%s%s:%d",
+												"sip:%s@%s%s%s:%d",
+												profile->contact_user,
 												ipv6 ? "[" : "",
 												profile->extsipip, ipv6 ? "]" : "",
 												profile->tls_sip_port);
 						profile->tls_bindurl =
 							switch_core_sprintf(profile->pool,
-												"sips:mod_sofia@%s%s%s:%d;maddr=%s",
+												"sips:%s@%s%s%s:%d;maddr=%s",
+												profile->contact_user,
 												ipv6 ? "[" : "",
 												profile->extsipip,
 												ipv6 ? "]" : "",
@@ -2586,14 +2593,16 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						char *ipv6 = strchr(profile->sipip, ':');
 						profile->tls_url = 
 							switch_core_sprintf(profile->pool,
-												"sip:mod_sofia@%s%s%s:%d",
+												"sip:%s@%s%s%s:%d",
+												profile->contact_user,
 												ipv6 ? "[" : "",
 												profile->sipip,
 												ipv6 ? "]" : "",
 												profile->tls_sip_port);
 						profile->tls_bindurl =
 							switch_core_sprintf(profile->pool,
-												"sips:mod_sofia@%s%s%s:%d",
+												"sips:%s@%s%s%s:%d",
+												profile->contact_user,
 												ipv6 ? "[" : "",
 												profile->sipip,
 												ipv6 ? "]" : "",

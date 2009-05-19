@@ -56,6 +56,7 @@
 #define MAX_CODEC_CHECK_FRAMES 50
 #define MAX_MISMATCH_FRAMES 3
 #define MODNAME "mod_sofia"
+#define SOFIA_DEFAULT_CONTACT_USER MODNAME
 static const switch_state_handler_table_t noop_state_handler = { 0 };
 struct sofia_gateway;
 typedef struct sofia_gateway sofia_gateway_t;
@@ -483,7 +484,8 @@ struct sofia_profile {
 	uint32_t timer_t1;
 	uint32_t timer_t1x64;
 	uint32_t timer_t2;
-	uint32_t timer_t4;	
+	uint32_t timer_t4;
+	char *contact_user;
 };
 
 struct private_object {
