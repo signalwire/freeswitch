@@ -3041,17 +3041,17 @@ static switch_status_t voicemail_leave_main(switch_core_session_t *session, vm_p
 	}
 
 	if (disk_quota) {
-		callback_t cbt = { 0 };
-		char sql[256];
+		callback_t callback = { 0 };
+		char sqlstmt[256];
 		char disk_usage[256]; 
 
-		cbt.buf = disk_usage;
-		cbt.len = sizeof(disk_usage);
+		callback.buf = disk_usage;
+		callback.len = sizeof(disk_usage);
 
-		switch_snprintf(sql, sizeof(sql),
+		switch_snprintf(sqlstmt, sizeof(sqlstmt),
 						"select sum(message_len) from voicemail_msgs where username='%s' and domain='%s'",
 						id, domain_name);
-		vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &cbt);
+		vm_execute_sql_callback(profile, profile->mutex, sql, sql2str_callback, &callback);
 
 		if (atoi(disk_usage) >= disk_quota) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Voicemail disk quota is exceeded for %s\n", id);
