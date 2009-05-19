@@ -1375,7 +1375,7 @@ void sofia_reg_handle_sip_r_register(int status,
 					new_expires = contact->m_expires;
 					expi = (uint32_t) atoi(new_expires);
 	
-					if (expi != sofia_private->gateway->freq) {
+					if (expi > 0 && expi != sofia_private->gateway->freq) {
 						sofia_private->gateway->freq = expi;
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Changing expire time to %d by request of proxy %s\n", expi, sofia_private->gateway->register_proxy);
