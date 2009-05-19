@@ -3486,15 +3486,17 @@ void sres_log_response(sres_resolver_t const *res,
     if (from == NULL)
       ;
     else if (from->ss_family == AF_INET) {
-      struct sockaddr_in const *sin = (void *)from;
-      su_inet_ntop(AF_INET, &sin->sin_addr, host, sizeof host);
-      port = sin->sin_port;
+      struct sockaddr_in sin;
+      memcpy(&sin, from, sizeof sin);
+      su_inet_ntop(AF_INET, &sin.sin_addr, host, sizeof host);
+      port = sin.sin_port;
     }
 #if HAVE_SIN6
     else if (from->ss_family == AF_INET6) {
-      struct sockaddr_in6 const *sin6 = (void *)from;
-      su_inet_ntop(AF_INET6, &sin6->sin6_addr, host, sizeof host);
-      port = sin6->sin6_port;
+      struct sockaddr_in6 sin6;
+      memcpy(&sin6, from, sizeof sin6);
+      su_inet_ntop(AF_INET6, &sin6.sin6_addr, host, sizeof host);
+      port = sin6.sin6_port;
     }
 #endif
 

@@ -739,7 +739,7 @@ dns_socket dns_open(struct dns_ctx *ctx) {
       sns = &ctx->dnsc_serv[i];
       if (sns->sa.sa_family == AF_INET) {
         sin6.sin6_port = sns->sin.sin_port;
-        ((struct in_addr*)&sin6.sin6_addr)[3] = sns->sin.sin_addr;
+        memcpy(&sin6.sin6_addr.s6_addr[12], &sns->sin.sin_addr, sizeof(struct in_addr));
         sns->sin6 = sin6;
       }
     }

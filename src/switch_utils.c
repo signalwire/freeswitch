@@ -1151,14 +1151,15 @@ SWITCH_DECLARE(int) switch_build_uri(char *uri,
 									 int flags)
 {
 	char host[NI_MAXHOST], serv[NI_MAXSERV];
-	struct sockaddr_storage ss;
+	struct sockaddr_in6 si6;
 	const struct sockaddr *addr;
 	const char *colon;
 
 	if (flags & SWITCH_URI_NO_SCOPE && sa->family == AF_INET6) {
-		memcpy(&ss, &sa->sa, sa->salen);
-		((struct sockaddr_in6*) (intptr_t) &ss)->sin6_scope_id = 0;
-		addr = (const struct sockaddr*) (intptr_t)&ss;
+		memcpy(&si6, &sa->sa, sa->salen);
+		si6.sin6_scope_id = 0;
+
+		addr = (const struct sockaddr*) &si6;
 	} else {
 		addr = (const struct sockaddr*) (intptr_t)&sa->sa;
 	}
