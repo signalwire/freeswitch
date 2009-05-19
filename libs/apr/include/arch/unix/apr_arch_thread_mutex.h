@@ -17,6 +17,10 @@
 #ifndef THREAD_MUTEX_H
 #define THREAD_MUTEX_H
 
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE=600
+#endif
+
 #include "apr.h"
 #include "apr_private.h"
 #include "apr_general.h"
