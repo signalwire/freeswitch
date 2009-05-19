@@ -18,7 +18,7 @@
 #define PROC_MUTEX_H
 
 #ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE=600
+#define _XOPEN_SOURCE 600
 #endif
 
 #include "apr.h"
