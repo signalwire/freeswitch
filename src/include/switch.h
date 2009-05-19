@@ -59,8 +59,18 @@
 #define _XOPEN_SOURCE 600
 #endif
 #endif
+#ifdef __linux__
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#endif
 #ifndef __BSD_VISIBLE
 #define __BSD_VISIBLE 1
+#endif
+#ifdef __linux__
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #endif
 #endif
 #include <stdlib.h>

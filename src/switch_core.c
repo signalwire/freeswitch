@@ -34,9 +34,6 @@
  */
 
 
-#ifdef __linux__
-#define _BSD_SOURCE
-#endif
 
 #include <switch.h>
 #include <switch_version.h>
