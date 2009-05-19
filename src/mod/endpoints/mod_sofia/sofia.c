@@ -2016,6 +2016,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				profile->auto_restart = 1;
 				sofia_set_pflag(profile, PFLAG_AUTOFIX_TIMING);
 				sofia_set_pflag(profile, PFLAG_MESSAGE_QUERY_ON_REGISTER);
+				sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 
 				for (param = switch_xml_child(settings, "param"); param; param = param->next) {
 					char *var = (char *) switch_xml_attr_soft(param, "name");
