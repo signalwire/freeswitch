@@ -1147,7 +1147,7 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 	while (*rp && wp < ep) {
 
 		if (*rp == '$' && *(rp + 1) == '$' && *(rp + 2) == '{') {
-			char *e = strchr(rp, '}');
+			char *e = switch_find_end_paren(rp + 2, '{', '}');
 
 			if (e) {
 				rp += 3;
@@ -1160,6 +1160,7 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 						*wp++ = *p;
 					}
 				}
+				continue;
 			}
 		}
 
