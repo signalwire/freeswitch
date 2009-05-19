@@ -204,6 +204,7 @@ SWITCH_STANDARD_API(dl_login);
 SWITCH_STANDARD_API(dl_logout);
 SWITCH_STANDARD_API(dl_pres);
 SWITCH_STANDARD_API(dl_debug);
+SWITCH_STANDARD_API(dingaling);
 static switch_status_t channel_on_init(switch_core_session_t *session);
 static switch_status_t channel_on_hangup(switch_core_session_t *session);
 static switch_status_t channel_on_destroy(switch_core_session_t *session);
@@ -1827,11 +1828,13 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dingaling_load)
 #define LOGOUT_SYNTAX "dl_logout <profile_name>"
 #define LOGIN_SYNTAX "Existing Profile:\ndl_login profile=<profile_name>\nDynamic Profile:\ndl_login var1=val1;var2=val2;varN=valN\n"
 #define DEBUG_SYNTAX "dl_debug [true|false]"
+#define DINGALING_SYNTAX "dingaling [status]"
 
 	SWITCH_ADD_API(api_interface, "dl_debug", "DingaLing Debug", dl_debug, DEBUG_SYNTAX);
 	SWITCH_ADD_API(api_interface, "dl_pres", "DingaLing Presence", dl_pres, PRES_SYNTAX);
 	SWITCH_ADD_API(api_interface, "dl_logout", "DingaLing Logout", dl_logout, LOGOUT_SYNTAX);
 	SWITCH_ADD_API(api_interface, "dl_login", "DingaLing Login", dl_login, LOGIN_SYNTAX);
+	SWITCH_ADD_API(api_interface, "dingaling", "DingaLing Menu", dingaling, DINGALING_SYNTAX);
 	SWITCH_ADD_CHAT(chat_interface, MDL_CHAT_PROTO, chat_send);
 
 	/* indicate that the module should continue to be loaded */
@@ -2087,6 +2090,53 @@ SWITCH_STANDARD_API(dl_logout)
 	}
 
 	return SWITCH_STATUS_SUCCESS;
+}
+
+SWITCH_STANDARD_API(dingaling)
+{
+	char *argv[10] = { 0 };
+	int argc = 0;
+	void *val;
+	char *myarg = NULL;
+	mdl_profile_t *profile = NULL;
+	switch_hash_index_t *hi;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
+
+	if (session) return status;
+
+	if (switch_strlen_zero(cmd) || !(myarg = strdup(cmd))) {
+		stream->write_function(stream, "USAGE: %s\n", DINGALING_SYNTAX);
+		return SWITCH_STATUS_FALSE;
+	}
+
+	if ((argc = switch_separate_string(myarg, ' ', argv, (sizeof(argv) / sizeof(argv[0])))) != 1) {
+		stream->write_function(stream, "USAGE: %s\n", DINGALING_SYNTAX);
+		goto done;
+	}
+
+	if (argv[0] && !strncasecmp(argv[0], "status", 6)) {
+		stream->write_function(stream, "--DingaLing status--\n");
+		stream->write_function(stream, "login	|	connected\n");
+		for (hi = switch_hash_first(NULL, globals.profile_hash); hi; hi = switch_hash_next(hi)) {
+			switch_hash_this(hi, NULL, NULL, &val);
+			profile = (mdl_profile_t *) val;
+			stream->write_function(stream, "%s	|	", profile->login);
+			if (ldl_handle_authorized(profile->handle)){
+				stream->write_function(stream, "AUTHORIZED");
+			} else if (ldl_handle_connected(profile->handle)){
+				stream->write_function(stream, "CONNECTED");
+			} else {
+				stream->write_function(stream, "UNCONNECTED");
+			}
+			stream->write_function(stream, "\n");
+		}
+	} else {
+		stream->write_function(stream, "USAGE: %s\n", DINGALING_SYNTAX);
+	}
+
+done:
+	switch_safe_free(myarg);
+	return status;
 }
 
 SWITCH_STANDARD_API(dl_login)
