@@ -68,10 +68,37 @@ static char const __func__[] = "tport_tls";
 #include <signal.h>
 #endif
 
+#if SU_HAVE_PTHREADS
+
+#include <pthread.h>
+
+#if __sun
+#undef PTHREAD_ONCE_INIT
+#define PTHREAD_ONCE_INIT {{ 0, 0, 0, PTHREAD_ONCE_NOTDONE }}
+#endif
+
+static pthread_once_t once = PTHREAD_ONCE_INIT;
+#define ONCE_INIT(f) pthread_once(&once, f)
+
+#else
+
+static int once;
+#define ONCE_INIT(f) (!once ? (once = 1), f() : (void)0)
+
+#endif
+
 #include "tport_tls.h"
 
 char const tls_version[] = OPENSSL_VERSION_TEXT;
 int tls_ex_data_idx = -1; /* see SSL_get_ex_new_index(3ssl) */
+
+static void
+tls_init_once(void)
+{
+  SSL_library_init();
+  SSL_load_error_strings();
+  tls_ex_data_idx = SSL_get_ex_new_index(0, "sofia-sip private data", NULL, NULL, NULL);
+}
 
 enum  { tls_master = 0, tls_slave = 1};
 
@@ -218,15 +245,13 @@ int tls_verify_cb(int ok, X509_STORE_CTX *store)
 static
 int tls_init_context(tls_t *tls, tls_issues_t const *ti)
 {
-  static int initialized = 0;
   int verify;
+  static int random_loaded;
 
-  if (!initialized) {
-    initialized = 1;
-    SSL_library_init();
-    SSL_load_error_strings();
-    tls_ex_data_idx = SSL_get_ex_new_index(0, \
-                      "sofia-sip private data", NULL, NULL, NULL);
+  ONCE_INIT(tls_init_once);
+
+  if (!random_loaded) {
+    random_loaded = 1;
 
     if (ti->randFile &&
 	!RAND_load_file(ti->randFile, 1024 * 1024)) {
