@@ -532,6 +532,31 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_dahdi_codec_load)
 	 switch_dahdi_decode,		/* function to decode encoded data into raw data */
 	 switch_dahdi_destroy);		/* deinitalize a codec handle using this implementation */
 
+	mpf = 30000; 
+	spf = 240; 
+	bpfd = 480; 
+	bpfc = 30; 
+	fpnp = 30; 
+	switch_core_codec_add_implementation(pool,
+	 codec_interface,
+	 SWITCH_CODEC_TYPE_AUDIO,	/* enumeration defining the type of the codec */
+	 18,				/* the IANA code number */
+	 "G729",  			/* the IANA code name */
+	 NULL,				/* default fmtp to send (can be overridden by the init function) */
+	 8000,				/* samples transferred per second */
+	 8000,				/* actual samples transferred per second */
+	 8000,				/* bits transferred per second */
+	 mpf,				/* number of microseconds per frame */
+	 spf,				/* number of samples per frame */
+	 bpfd,				/* number of bytes per frame decompressed */
+	 bpfc,				/* number of bytes per frame compressed */
+	 1,				/* number of channels represented */
+	 fpnp,				/* number of frames per network packet */
+	 switch_dahdi_init, 		/* function to initialize a codec handle using this implementation */
+	 switch_dahdi_encode,		/* function to encode raw data into encoded data */
+	 switch_dahdi_decode,		/* function to decode encoded data into raw data */
+	 switch_dahdi_destroy);		/* deinitalize a codec handle using this implementation */
+
 	SWITCH_ADD_CODEC(codec_interface, "DAHDI G.723.1 5.3k"); /* 5.3kbit */
 	mpf = 30000; /* Algorithmic delay of 37.5ms with 7.5ms of look-ahead delay */
 	spf = 240;
