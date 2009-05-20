@@ -1565,6 +1565,12 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						}
+					} else if (!strcasecmp(var, "proxy-follow-redirect")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
+						}
 					} else if (!strcasecmp(var, "outbound-use-uuid-as-callid")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_UUID_AS_CALLID);
@@ -2074,6 +2080,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							sofia_set_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
 						} else {
 							sofia_clear_pflag(profile, PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE);
+						}
+					} else if (!strcasecmp(var, "proxy-follow-redirect")) {
+						if (switch_true(val)) {
+							sofia_set_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
+						} else {
+							sofia_clear_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT);
 						}
 					} else if (!strcasecmp(var, "inbound-proxy-media") && switch_true(val)) {
 						sofia_set_flag(profile, TFLAG_PROXY_MEDIA);
@@ -2898,11 +2910,10 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			int i = 0;
 			char var_name[80];	
 			
-			if (tech_pvt->route_uri && p_contact && p_contact->m_url) {
+			if (sofia_test_pflag(profile, PFLAG_PROXY_FOLLOW_REDIRECT) && tech_pvt->route_uri && p_contact && p_contact->m_url) {
 				tech_pvt->route_uri = switch_core_session_strdup(tech_pvt->session, (const char *) p_contact->m_url);
-				nua_set_hparams(tech_pvt->nh, NUTAG_PROXY(tech_pvt->route_uri));
+				nua_set_hparams(tech_pvt->nh, NUTAG_PROXY(tech_pvt->route_uri), TAG_END());
 			}
-
 
 			while (p_contact) {
 				if (p_contact->m_url) {
