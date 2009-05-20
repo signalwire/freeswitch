@@ -1597,6 +1597,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 
 	if (route_uri) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s Setting proxy route to %s\n", route_uri, switch_channel_get_name(channel));
+		tech_pvt->route_uri = switch_core_session_strdup(tech_pvt->session, route_uri);
 	}
 
 	nua_invite(tech_pvt->nh,
@@ -1609,7 +1610,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 			   TAG_IF(!switch_strlen_zero(alert_info), SIPTAG_HEADER_STR(alert_info)),
 			   TAG_IF(!switch_strlen_zero(extra_headers), SIPTAG_HEADER_STR(extra_headers)),
 			   TAG_IF(!switch_strlen_zero(max_forwards), SIPTAG_MAX_FORWARDS_STR(max_forwards)),
-			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
+			   TAG_IF(tech_pvt->route_uri, NUTAG_PROXY(tech_pvt->route_uri)),
 			   TAG_IF(route, SIPTAG_ROUTE_STR(route)),
 			   TAG_IF(!switch_strlen_zero(sendto), NUTAG_PROXY(sendto)),
 			   SOATAG_ADDRESS(tech_pvt->adv_sdp_audio_ip),

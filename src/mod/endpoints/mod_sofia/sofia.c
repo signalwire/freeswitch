@@ -2897,6 +2897,12 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 			sip_contact_t * p_contact = sip->sip_contact;
 			int i = 0;
 			char var_name[80];	
+			
+			if (tech_pvt->route_uri && p_contact && p_contact->m_url) {
+				tech_pvt->route_uri = switch_core_session_strdup(tech_pvt->session, (const char *) p_contact->m_url);
+				nua_set_hparams(tech_pvt->nh, NUTAG_PROXY(tech_pvt->route_uri));
+			}
+
 
 			while (p_contact) {
 				if (p_contact->m_url) {

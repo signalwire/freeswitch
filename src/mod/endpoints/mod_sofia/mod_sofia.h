@@ -191,6 +191,7 @@ typedef enum {
 	PFLAG_AUTOFIX_TIMING,
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE,
+	PFLAG_PROXY_FOLLOW_REDIRECT,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -559,6 +560,7 @@ struct private_object {
 	char *record_route;
 	char *extrtpip;
 	char *stun_ip;
+	char *route_uri;
 	switch_port_t stun_port;
 	uint32_t stun_flags;
 	unsigned long rm_rate;
