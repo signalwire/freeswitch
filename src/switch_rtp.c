@@ -553,7 +553,9 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	switch_mutex_unlock(port_lock);
 
 #ifdef ENABLE_ZRTP
-	zrtp_down(zrtp_global);
+	if (zrtp_on) {
+		zrtp_down(zrtp_global);
+	}
 #endif
 	crypto_kernel_shutdown();
 
