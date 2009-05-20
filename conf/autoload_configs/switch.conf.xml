@@ -60,6 +60,7 @@
     <!--RTP port range -->
     <!--<param name="rtp-start-port" value="16384"/>-->
     <!--<param name="rtp-end-port" value="32768"/>-->
+    <param name="rtp-enable-zrtp" value="true"/>
   </settings>
 
 </configuration>
