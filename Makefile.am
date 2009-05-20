@@ -198,6 +198,10 @@ libfreeswitch_la_SOURCES += src/switch_odbc.c
 libfreeswitch_la_LDFLAGS     += $(ODBC_LIB_FLAGS)
 endif
 
+if ENABLE_ZRTP
+libfreeswitch_la_LDFLAGS  += -lzrtp -lbn
+endif
+
 bin_SCRIPTS = scripts/gentls_cert scripts/fsxs
 
 src/include/switch_swigable_cpp.h: src/include/switch_cpp.h

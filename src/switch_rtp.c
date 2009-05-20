@@ -59,12 +59,22 @@
 #define RTP_MAGIC_NUMBER 42
 #define MAX_SRTP_ERRS 10
 
+
+
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_port_t NEXT_PORT = RTP_START_PORT;
 static switch_mutex_t *port_lock = NULL;
 
 typedef srtp_hdr_t rtp_hdr_t;
+
+#ifdef ENABLE_ZRTP
+#include <libzrtp/zrtp.h>
+static zrtp_global_t *zrtp_global;
+static zrtp_zid_t zid = { "FreeSWITCH01" };
+static int zrtp_on = 0;
+
+#endif
 
 #ifdef _MSC_VER
 #pragma pack(4)
@@ -204,6 +214,12 @@ struct switch_rtp {
 	uint32_t cng_count;
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_rtp_stats_t stats;
+
+#ifdef ENABLE_ZRTP
+	zrtp_session_t *zrtp_session;
+	zrtp_profile_t *zrtp_profile;
+	zrtp_stream_t *zrtp_ctx;
+#endif
 
 #ifdef RTP_DEBUG_WRITE_DELTA
 	switch_time_t send_time;
@@ -397,13 +413,114 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 	WRITE_DEC(rtp_session);
 }
 
+#ifdef ENABLE_ZRTP
+static void zrtp_security_event_callback(zrtp_stream_t *stream, unsigned event)
+{
+	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
+	zrtp_session_info_t zrtp_session_info;
+
+	switch (event) {
+	case ZRTP_EVENT_IS_SECURE:
+		zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info);
+		zrtp_log_print_sessioninfo(&zrtp_session_info);
+
+		break;
+	default:
+		break;
+	}
+}
+
+static int zrtp_send_rtp_callback(const zrtp_stream_t* stream, char* rtp_packet, unsigned int rtp_packet_length)
+{
+	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
+	switch_size_t len = rtp_packet_length;
+	zrtp_status_t status = zrtp_status_ok;
+
+	switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, rtp_packet, &len);
+	return status;
+}
+
+static void zrtp_protocol_event_callback(zrtp_stream_t *stream, unsigned event)
+{
+	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
+
+	switch (event) {
+	case ZRTP_EVENT_IS_SECURE_DONE:
+		break;
+	case ZRTP_EVENT_IS_SECURE:
+		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
+		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
+		break;
+	case ZRTP_EVENT_IS_CLIENT_ENROLLMENT:
+	case ZRTP_EVENT_IS_CLEAR:
+	case ZRTP_EVENT_IS_INITIATINGSECURE:
+	case ZRTP_EVENT_IS_PENDINGSECURE:
+	case ZRTP_EVENT_IS_PENDINGCLEAR:
+	case ZRTP_EVENT_NO_ZRTP:
+	case ZRTP_EVENT_LOCAL_SAS_UPDATED:
+		break;
+	default:
+		break;
+	}
+}
+
+static void zrtp_logger(int level, const char *data, int len)
+{
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s", data);
+}
+
+static void zrtp_handler(switch_rtp_t *rtp_session, switch_socket_t *sock, void *data, switch_size_t datalen, switch_sockaddr_t *from_addr)
+{
+	zrtp_status_t status = zrtp_status_fail;
+	unsigned int len = datalen;
+
+	status = zrtp_process_srtp(rtp_session->zrtp_ctx, (char*)data, &len);
+	switch(status) {
+	case zrtp_status_ok:
+		break;
+	case zrtp_status_drop:
+		break;
+	case zrtp_status_fail:
+		break;
+	default:
+		break;
+	}
+}
+#endif
 
 SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 {
+#ifdef ENABLE_ZRTP
+	const char *zid_string = switch_core_get_variable("switch_serial");
+	const char *zrtp_enabled = switch_core_get_variable("zrtp_enabled");
+	zrtp_on = zrtp_enabled ? switch_true(zrtp_enabled) : 0;
+	zrtp_config_t zrtp_config;
+	char zrtp_cache_path[256] = "";
+#endif
 	if (global_init) {
 		return;
 	}
 	switch_core_hash_init(&alloc_hash, pool);
+#ifdef ENABLE_ZRTP
+	if (zrtp_on) {
+		zrtp_config_defaults(&zrtp_config);
+		strcpy(zrtp_config.client_id, "FreeSWITCH");
+		zrtp_config.lic_mode = ZRTP_LICENSE_MODE_ACTIVE;
+		switch_snprintf(zrtp_cache_path, sizeof(zrtp_cache_path), "%s%szrtp.dat", SWITCH_GLOBAL_dirs.db_dir, SWITCH_PATH_SEPARATOR);
+		zrtp_zstrcpyc( ZSTR_GV(zrtp_config.def_cache_path), zrtp_cache_path);
+		zrtp_config.cb.event_cb.on_zrtp_protocol_event = zrtp_protocol_event_callback;
+		zrtp_config.cb.misc_cb.on_send_packet = zrtp_send_rtp_callback;
+		zrtp_config.cb.event_cb.on_zrtp_security_event = zrtp_security_event_callback;
+		
+		zrtp_log_set_log_engine(zrtp_logger);
+		zrtp_log_set_level(4);
+		if (zrtp_status_ok != zrtp_init(&zrtp_config, &zrtp_global)) {
+			abort();
+		}
+		
+		memcpy(zid, zid_string, 12);
+	}
+#endif
 	srtp_init();
 	switch_mutex_init(&port_lock, SWITCH_MUTEX_NESTED, pool);
 	global_init = 1;
@@ -435,6 +552,9 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 	switch_core_hash_destroy(&alloc_hash);
 	switch_mutex_unlock(port_lock);
 
+#ifdef ENABLE_ZRTP
+	zrtp_down(zrtp_global);
+#endif
 	crypto_kernel_shutdown();
 
 }
@@ -918,6 +1038,29 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 
 	rtp_session->ready = 1;
 	*new_rtp_session = rtp_session;
+#ifdef ENABLE_ZRTP
+	if (zrtp_on) {
+		rtp_session->zrtp_profile = switch_core_alloc(rtp_session->pool, sizeof(*rtp_session->zrtp_profile));
+		zrtp_profile_defaults(rtp_session->zrtp_profile, zrtp_global);
+	
+		if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, 1, &rtp_session->zrtp_session)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
+			zrtp_session_down(rtp_session->zrtp_session);
+			rtp_session->zrtp_session = NULL;
+		}
+
+		zrtp_session_set_userdata(rtp_session->zrtp_session, rtp_session);
+	
+		if (zrtp_status_ok != zrtp_stream_attach(rtp_session->zrtp_session, &rtp_session->zrtp_ctx)) {
+			abort();
+		}
+		zrtp_stream_set_userdata(rtp_session->zrtp_ctx, rtp_session);
+
+		zrtp_stream_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
+
+		switch_rtp_set_invald_handler(rtp_session, zrtp_handler);
+	}
+#endif	
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1169,7 +1312,23 @@ SWITCH_DECLARE(void) switch_rtp_destroy(switch_rtp_t **rtp_session)
 		(*rtp_session)->recv_ctx = NULL;
 		switch_clear_flag((*rtp_session), SWITCH_RTP_FLAG_SECURE_RECV);
 	}
+#ifdef ENABLE_ZRTP
+	/* ZRTP */
+	if (zrtp_on) {
+		if (switch_test_flag((*rtp_session), SWITCH_ZRTP_FLAG_SECURE_SEND)) {
+			switch_clear_flag((*rtp_session), SWITCH_ZRTP_FLAG_SECURE_SEND);
+		}
 
+		if (switch_test_flag((*rtp_session), SWITCH_ZRTP_FLAG_SECURE_RECV)) {
+			switch_clear_flag((*rtp_session), SWITCH_ZRTP_FLAG_SECURE_RECV);
+		}
+
+		if ((*rtp_session)->zrtp_session) {
+			zrtp_session_down((*rtp_session)->zrtp_session);
+			(*rtp_session)->zrtp_session = NULL;
+		}
+	}
+#endif
 	if ((*rtp_session)->timer.timer_interface) {
 		switch_core_timer_destroy(&(*rtp_session)->timer);
 	}
@@ -1316,11 +1475,11 @@ static void do_2833(switch_rtp_t *rtp_session)
 				}
 			}
 			
-			wrote =switch_rtp_write_manual(rtp_session,
-										   rtp_session->dtmf_data.out_digit_packet,
-										   4,
-										   rtp_session->rtp_bugs & RTP_BUG_CISCO_SKIP_MARK_BIT_2833 ? 0 : 1,
-										   rtp_session->te, rtp_session->dtmf_data.timestamp_dtmf, &flags);
+			wrote = switch_rtp_write_manual(rtp_session,
+											rtp_session->dtmf_data.out_digit_packet,
+											4,
+											rtp_session->rtp_bugs & RTP_BUG_CISCO_SKIP_MARK_BIT_2833 ? 0 : 1,
+											rtp_session->te, rtp_session->dtmf_data.timestamp_dtmf, &flags);
 			
 			rtp_session->stats.outbound.raw_bytes += wrote;
 			rtp_session->stats.outbound.dtmf_packet_count++;
@@ -1592,7 +1751,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (!bytes && (io_flags & SWITCH_IO_FLAG_NOBLOCK)) {
 			return_cng_frame();
-		}
+	}
 
 		
 		if (check && switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTO_CNG) &&
@@ -1670,6 +1829,30 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			bytes = sbytes;
 		}
 
+#ifdef ENABLE_ZRTP
+		/* ZRTP Recv */
+
+		if (bytes && switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV)) {
+			unsigned int sbytes = (int) bytes;
+			zrtp_status_t stat = 0;
+
+			stat = zrtp_process_srtp(rtp_session->zrtp_ctx, (void *)&rtp_session->recv_msg, &sbytes);
+
+			switch (stat) {
+			case zrtp_status_ok:
+				break;
+			case zrtp_status_drop:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+			case zrtp_status_fail:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+				ret = -1;
+				goto end;
+			default:
+				break;
+			}
+			bytes = sbytes;
+		}
+#endif
 
 #ifdef DEBUG_2833
 		if (rtp_session->dtmf_data.in_digit_sanity && !(rtp_session->dtmf_data.in_digit_sanity % 100)) {
@@ -2235,7 +2418,29 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 
 			bytes = sbytes;
 		}
+#ifdef ENABLE_ZRTP
+		/* ZRTP Send */
 
+		if (switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND)) {
+			unsigned int sbytes = (int) bytes;
+			zrtp_status_t stat = zrtp_status_fail;
+
+			stat = zrtp_process_rtp(rtp_session->zrtp_ctx, (void*)send_msg, &sbytes);
+
+			switch (stat) {
+			case zrtp_status_ok:
+				break;
+			case zrtp_status_drop:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+			case zrtp_status_fail:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+			default:
+				break;
+			}
+			
+			bytes = sbytes;
+		}
+#endif
 
 #ifdef RTP_DEBUG_WRITE_DELTA
 		{
@@ -2477,7 +2682,29 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		}
 		bytes = sbytes;
 	}
+#ifdef ENABLE_ZRTP
+		/* ZRTP Send */
 
+		if (switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND)) {
+			unsigned int sbytes = (int) bytes;
+			zrtp_status_t stat = zrtp_status_fail;
+
+			stat = zrtp_process_rtp(rtp_session->zrtp_ctx, (void*)&rtp_session->write_msg, &sbytes);
+
+			switch (stat) {
+			case zrtp_status_ok:
+				break;
+			case zrtp_status_drop:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+			case zrtp_status_fail:
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+			default:
+				break;
+			}
+			
+			bytes = sbytes;
+		}
+#endif
 	if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) &rtp_session->write_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 		rtp_session->seq--;
 		ret = -1;

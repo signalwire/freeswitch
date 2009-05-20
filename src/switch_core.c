@@ -36,6 +36,7 @@
 
 
 #include <switch.h>
+#include <switch_stun.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
 #ifndef WIN32
@@ -1026,6 +1027,48 @@ SWITCH_DECLARE(uint32_t) switch_core_default_dtmf_duration(uint32_t duration)
 	return runtime.default_dtmf_duration;
 }
 
+static void switch_core_set_serial(void)
+{
+	char buf[13] = "";
+	char path[256];
+	
+	int fd = -1, write_fd = -1;
+	ssize_t bytes = 0;
+
+	switch_snprintf(path, sizeof(path), "%s%sfreeswitch.serial", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR);
+
+
+	if ((fd = open(path, O_RDONLY, 0)) < 0) {
+		char *ip = switch_core_get_variable("local_ip_v4");
+		uint32_t ipi = 0;
+		switch_byte_t *byte;
+		int i = 0;
+
+		switch_inet_pton(AF_INET, ip, &ipi);
+		byte = (switch_byte_t *) &ipi;
+
+		for(i = 0; i < 8; i += 2) {
+			switch_snprintf(buf + i, sizeof(buf) - i, "%0.2x", *byte);
+			byte++;
+		}
+
+		switch_stun_random_string(buf + 8, 4, "0123456789abcdef");
+
+		if ((write_fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) >= 0) {
+			bytes = write(write_fd, buf, sizeof(buf));
+			close(write_fd);
+			write_fd = -1;
+		}
+	} else {
+		bytes = read(fd, buf, sizeof(buf));
+		close(fd);
+		fd = -1;
+	}
+	
+	switch_core_set_variable("switch_serial", buf);
+}
+
+
 SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switch_bool_t console, const char **err)
 {
 	switch_uuid_t uuid;
@@ -1084,12 +1127,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.flags = flags;
 	runtime.sps_total = 30;
 
+	
+
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET6);
 	switch_core_set_variable("local_ip_v6", guess_ip);
 	switch_core_set_variable("base_dir", SWITCH_GLOBAL_dirs.base_dir);
-
+	switch_core_set_serial();
 
 	switch_event_init(runtime.memory_pool);
 
@@ -1253,6 +1298,10 @@ static void switch_load_core_config(const char *file)
 					switch_rtp_set_start_port((switch_port_t) atoi(val));
 				} else if (!strcasecmp(var, "rtp-end-port") && !switch_strlen_zero(val)) {
 					switch_rtp_set_end_port((switch_port_t) atoi(val));
+#ifdef ENABLE_ZRTP
+				} else if (!strcasecmp(var, "rtp-enable-zrtp")) {
+					switch_core_set_variable("zrtp_enabled", val);
+#endif
 				}
 			}
 		}

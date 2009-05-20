@@ -264,6 +264,21 @@ if test "${enable_debug}" = "yes"; then
 
 fi
 
+AC_ARG_ENABLE(zrtp,
+	[AS_HELP_STRING([--enable-zrtp], [Compile with zrtp Support])],,[enable_zrtp="no"])
+if test "x$enable_zrtp" = "xyes" ; then
+   saved_LIBS=$LIBS
+   LIBS="$saved_LIBS -L/usr/local/lib -lbn -lpthread"
+   AC_CHECK_LIB(zrtp, zrtp_init, [has_zrtp="yes"], [has_zrtp="no"])
+   LIBS=$saved_LIBS
+   if test "x$has_zrtp" = "xno"; then
+      AC_ERROR([Cannot locate zrtp libraries])
+   fi
+   APR_ADDTO(SWITCH_AM_CFLAGS, -DENABLE_ZRTP)
+fi
+AM_CONDITIONAL([ENABLE_ZRTP],[test "x$enable_zrtp" != "xno"])
+
+
 AM_CONDITIONAL([WANT_DEBUG],[test "${enable_debug}" = "yes"])
 
 AC_ARG_ENABLE(core-odbc-support,     
