@@ -337,11 +337,11 @@ AC_CHECK_LIB(rt, clock_gettime, [AC_DEFINE(HAVE_CLOCK_GETTIME, 1, [Define if you
 AC_CHECK_LIB(rt, clock_nanosleep, [AC_DEFINE(HAVE_CLOCK_NANOSLEEP, 1, [Define if you have clock_nanosleep()])])
 AC_CHECK_FUNC(socket, , AC_CHECK_LIB(socket, socket))
 
-AC_CHECK_MEMBERS([struct tm.tm_gmtoff, struct tm.__tm_gmtoff],,,[
+AC_CHECK_MEMBERS([struct tm.tm_gmtoff],,,[
 #include <sys/types.h>
 #include <time.h>])
 
-AC_CHECK_MEMBERS([struct tm.tm_zone, struct tm.__tm_zone],,,[
+AC_CHECK_MEMBERS([struct tm.tm_zone],,,[
 #include <sys/types.h>
 #include <time.h>])
 
