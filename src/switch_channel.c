@@ -1893,12 +1893,17 @@ SWITCH_DECLARE(switch_status_t) switch_channel_perform_mark_answered(switch_chan
 		char *arg = NULL;
 
 		app = switch_core_session_strdup(channel->session, var);
-
-		if ((arg = strchr(app, ' '))) {
-			*arg++ = '\0';
+		
+		if ((arg = strchr(app, ':')) && *(arg+1) == ':') {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s execute on answer: %s (BROADCAST)\n", channel->name, app);
+			switch_ivr_broadcast(switch_core_session_get_uuid(channel->session), app, SMF_NONE);
+		} else {
+			if ((arg = strchr(app, ' '))) {
+				*arg++ = '\0';
+			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)\n", channel->name, app, switch_str_nil(arg));
+			switch_core_session_execute_application(channel->session, app, arg);
 		}
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "%s execute on answer: %s(%s)", channel->name, app, switch_str_nil(arg));
-		switch_core_session_execute_application(channel->session, app, arg);
 	}
 
 	switch_channel_audio_sync(channel);
