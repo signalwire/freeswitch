@@ -1059,8 +1059,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		zrtp_stream_set_userdata(rtp_session->zrtp_ctx, rtp_session);
 
 		zrtp_stream_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
-
-		switch_rtp_set_invald_handler(rtp_session, zrtp_handler);
 	}
 #endif	
 
@@ -1772,11 +1770,19 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 		if (bytes && rtp_session->recv_msg.header.version != 2) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
 			if (rtp_session->recv_msg.header.version == 0) {
-				if (rtp_session->ice_user) {
-					handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
-				} else if (rtp_session->remote_stun_addr) {
-					handle_stun_ping_reply(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+#ifdef ENABLE_ZRTP
+				if (zrtp_on && ZRTP_PACKETS_MAGIC == zrtp_ntoh32(rtp_session->recv_msg.header.ts)) {
+					zrtp_handler(rtp_session, rtp_session->sock_input, (void *) &rtp_session->recv_msg, bytes, rtp_session->from_addr);
+				} else {
+#endif
+					if (rtp_session->ice_user) {
+						handle_ice(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+					} else if (rtp_session->remote_stun_addr) {
+						handle_stun_ping_reply(rtp_session, (void *) &rtp_session->recv_msg, bytes);
+					}
+#ifdef ENABLE_ZRTP
 				}
+#endif
 			}
 
 			if (rtp_session->invalid_handler) {
