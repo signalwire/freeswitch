@@ -1033,7 +1033,7 @@ static void switch_core_set_serial(void)
 	char path[256];
 	
 	int fd = -1, write_fd = -1;
-	ssize_t bytes = 0;
+	switch_ssize_t bytes = 0;
 
 	switch_snprintf(path, sizeof(path), "%s%sfreeswitch.serial", SWITCH_GLOBAL_dirs.conf_dir, SWITCH_PATH_SEPARATOR);
 
