@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2006 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -16,12 +16,16 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#include	<config.h>
+
 #include	<stdarg.h>
 #include	<string.h>
 #include	<ctype.h>
 #include	<math.h>
 #include	<time.h>
-
+#ifndef _MSC_VER
+#include	<sys/time.h>
+#endif
 #include	"sndfile.h"
 #include	"sfendian.h"
 #include	"common.h"
@@ -314,7 +318,6 @@ psf_log_printf (SF_PRIVATE *psf, const char *format, ...)
 	return ;
 } /* psf_log_printf */
 
-#ifndef PSF_LOG_PRINTF_ONLY
 /*-----------------------------------------------------------------------------------------------
 **  ASCII header printf functions.
 **  Some formats (ie NIST) use ascii text in their headers.
@@ -334,7 +337,7 @@ psf_asciiheader_printf (SF_PRIVATE *psf, const char *format, ...)
 	maxlen	= sizeof (psf->header) - maxlen ;
 
 	va_start (argptr, format) ;
-	LSF_VSNPRINTF (start, maxlen, format, argptr) ;
+	vsnprintf (start, maxlen, format, argptr) ;
 	va_end (argptr) ;
 
 	/* Make sure the string is properly terminated. */
@@ -776,24 +779,17 @@ psf_binheader_writef (SF_PRIVATE *psf, const char *format, ...)
 #define	GET_BE_INT(ptr)		( 	((ptr) [0] << 24)	| ((ptr) [1] << 16) |	\
 							 	((ptr) [2] << 8)	| ((ptr) [3]) )
 
-#if (SIZEOF_LONG == 4)
-#define	GET_LE_8BYTE(ptr)	( 	((ptr) [3] << 24)	| ((ptr) [2] << 16) |	\
-							 	((ptr) [1] << 8)	| ((ptr) [0]) )
+#define	GET_LE_8BYTE(ptr)	( 	(((sf_count_t) (ptr) [7]) << 56) | (((sf_count_t) (ptr) [6]) << 48) |	\
+							 	(((sf_count_t) (ptr) [5]) << 40) | (((sf_count_t) (ptr) [4]) << 32) |	\
+							 	(((sf_count_t) (ptr) [3]) << 24) | (((sf_count_t) (ptr) [2]) << 16) |	\
+							 	(((sf_count_t) (ptr) [1]) << 8 ) | ((ptr) [0]))
 
-#define	GET_BE_8BYTE(ptr)	( 	((ptr) [4] << 24)	| ((ptr) [5] << 16) |	\
-								((ptr) [6] << 8)	| ((ptr) [7]) )
-#else
-#define	GET_LE_8BYTE(ptr)	( 	(((ptr) [7] * 1L) << 56) | (((ptr) [6] * 1L) << 48) |	\
-							 	(((ptr) [5] * 1L) << 40) | (((ptr) [4] * 1L) << 32) |	\
-							 	(((ptr) [3] * 1L) << 24) | (((ptr) [2] * 1L) << 16) |	\
-							 	(((ptr) [1] * 1L) << 8 ) | ((ptr) [0]))
+#define	GET_BE_8BYTE(ptr)	( 	(((sf_count_t) (ptr) [0]) << 56) | (((sf_count_t) (ptr) [1]) << 48) |	\
+							 	(((sf_count_t) (ptr) [2]) << 40) | (((sf_count_t) (ptr) [3]) << 32) |	\
+							 	(((sf_count_t) (ptr) [4]) << 24) | (((sf_count_t) (ptr) [5]) << 16) |	\
+							 	(((sf_count_t) (ptr) [6]) << 8 ) | ((ptr) [7]))
 
-#define	GET_BE_8BYTE(ptr)	( 	(((ptr) [0] * 1L) << 56) | (((ptr) [1] * 1L) << 48) |	\
-							 	(((ptr) [2] * 1L) << 40) | (((ptr) [3] * 1L) << 32) |	\
-							 	(((ptr) [4] * 1L) << 24) | (((ptr) [5] * 1L) << 16) |	\
-							 	(((ptr) [6] * 1L) << 8 ) | ((ptr) [7]))
 
-#endif
 
 static int
 header_read (SF_PRIVATE *psf, void *ptr, int bytes)
@@ -1093,7 +1089,7 @@ psf_binheader_readf (SF_PRIVATE *psf, char const *format, ...)
 */
 
 sf_count_t
-psf_default_seek (SF_PRIVATE *psf, int mode, sf_count_t samples_from_start)
+psf_default_seek (SF_PRIVATE *psf, int UNUSED (mode), sf_count_t samples_from_start)
 {	sf_count_t position, retval ;
 
 	if (! (psf->blockwidth && psf->dataoffset >= 0))
@@ -1113,8 +1109,6 @@ psf_default_seek (SF_PRIVATE *psf, int mode, sf_count_t samples_from_start)
 		return PSF_SEEK_ERROR ;
 		} ;
 
-	mode = mode ;
-
 	return samples_from_start ;
 } /* psf_default_seek */
 
@@ -1122,8 +1116,9 @@ psf_default_seek (SF_PRIVATE *psf, int mode, sf_count_t samples_from_start)
 */
 
 void
-psf_hexdump (void *ptr, int len)
-{	char	ascii [17], *data ;
+psf_hexdump (const void *ptr, int len)
+{	const char *data ;
+	char	ascii [17] ;
 	int		k, m ;
 
 	if ((data = ptr) == NULL)
@@ -1169,25 +1164,6 @@ psf_log_SF_INFO (SF_PRIVATE *psf)
 /*========================================================================================
 */
 
-SF_INSTRUMENT *
-psf_instrument_alloc (void)
-{	SF_INSTRUMENT *instr ;
-
-	instr = calloc (1, sizeof (SF_INSTRUMENT)) ;
-
-	if (instr == NULL)
-		return NULL ;
-
-	/* Set non-zero default values. */
-	instr->basenote = -1 ;
-	instr->velocity_lo = -1 ;
-	instr->velocity_hi = -1 ;
-	instr->key_lo = -1 ;
-	instr->key_hi = -1 ;
-
-	return instr ;
-} /* psf_instrument_alloc */
-
 void*
 psf_memset (void *s, int c, sf_count_t len)
 {	char	*ptr ;
@@ -1207,7 +1183,38 @@ psf_memset (void *s, int c, sf_count_t len)
 	return s ;
 } /* psf_memset */
 
-void psf_get_date_str (char *str, int maxlen)
+SF_INSTRUMENT *
+psf_instrument_alloc (void)
+{	SF_INSTRUMENT *instr ;
+
+	instr = calloc (1, sizeof (SF_INSTRUMENT)) ;
+
+	if (instr == NULL)
+		return NULL ;
+
+	/* Set non-zero default values. */
+	instr->basenote = -1 ;
+	instr->velocity_lo = -1 ;
+	instr->velocity_hi = -1 ;
+	instr->key_lo = -1 ;
+	instr->key_hi = -1 ;
+
+	return instr ;
+} /* psf_instrument_alloc */
+
+void
+psf_sanitize_string (char * cptr, int len)
+{
+	do
+	{
+		len -- ;
+		cptr [len] = isprint (cptr [len]) ? cptr [len] : '.' ;
+	}
+	while (len > 0) ;
+} /* psf_sanitize_string */
+
+void
+psf_get_date_str (char *str, int maxlen)
 {	time_t		current ;
 	struct tm	timedata, *tmptr ;
 
@@ -1225,11 +1232,11 @@ void psf_get_date_str (char *str, int maxlen)
 #endif
 
 	if (tmptr)
-		LSF_SNPRINTF (str, maxlen, "%4d-%02d-%02d %02d:%02d:%02d UTC",
+		snprintf (str, maxlen, "%4d-%02d-%02d %02d:%02d:%02d UTC",
 			1900 + timedata.tm_year, timedata.tm_mon, timedata.tm_mday,
 			timedata.tm_hour, timedata.tm_min, timedata.tm_sec) ;
 	else
-		LSF_SNPRINTF (str, maxlen, "Unknown date") ;
+		snprintf (str, maxlen, "Unknown date") ;
 
 	return ;
 } /* psf_get_date_str */
@@ -1279,12 +1286,130 @@ u_bitwidth_to_subformat (int bits)
 	return array [((bits + 7) / 8) - 1] ;
 } /* bitwidth_to_subformat */
 
-#endif /* PSF_LOG_PRINTF_ONLY */
-
 /*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 33e9795e-f717-461a-9feb-65d083a56395
+**	psf_rand_int32 : Not crypto quality, but more than adequate for things
+**	like stream serial numbers in Ogg files or the unique_id field of the
+**	SF_PRIVATE struct.
 */
+
+int32_t
+psf_rand_int32 (void)
+{	static int32_t value = -1 ;
+	int k, count ;
+
+	if (value == -1)
+	{
+#if HAVE_GETTIMEOFDAY
+		struct timeval tv ;
+		gettimeofday (&tv, NULL) ;
+		value = tv.tv_sec + tv.tv_usec ;
+#else
+		value = time (NULL) ;
+#endif
+		} ;
+
+	count = 4 + (value & 7) ;
+	for (k = 0 ; k < count ; k++)
+		value = 11117 * value + 211231 ;
+
+	return value ;
+} /* psf_rand_int32 */
+
+/*==============================================================================
+*/
+
+#define CASE_NAME(x)		case x : return #x ; break ;
+
+const char *
+str_of_major_format (int format)
+{	switch (SF_CONTAINER (format))
+	{	CASE_NAME (SF_FORMAT_WAV) ;
+		CASE_NAME (SF_FORMAT_AIFF) ;
+		CASE_NAME (SF_FORMAT_AU) ;
+		CASE_NAME (SF_FORMAT_RAW) ;
+		CASE_NAME (SF_FORMAT_PAF) ;
+		CASE_NAME (SF_FORMAT_SVX) ;
+		CASE_NAME (SF_FORMAT_NIST) ;
+		CASE_NAME (SF_FORMAT_VOC) ;
+		CASE_NAME (SF_FORMAT_IRCAM) ;
+		CASE_NAME (SF_FORMAT_W64) ;
+		CASE_NAME (SF_FORMAT_MAT4) ;
+		CASE_NAME (SF_FORMAT_MAT5) ;
+		CASE_NAME (SF_FORMAT_PVF) ;
+		CASE_NAME (SF_FORMAT_XI) ;
+		CASE_NAME (SF_FORMAT_HTK) ;
+		CASE_NAME (SF_FORMAT_SDS) ;
+		CASE_NAME (SF_FORMAT_AVR) ;
+		CASE_NAME (SF_FORMAT_WAVEX) ;
+		CASE_NAME (SF_FORMAT_SD2) ;
+		CASE_NAME (SF_FORMAT_FLAC) ;
+		CASE_NAME (SF_FORMAT_CAF) ;
+		CASE_NAME (SF_FORMAT_WVE) ;
+		CASE_NAME (SF_FORMAT_OGG) ;
+		default :
+			break ;
+		} ;
+
+	return "BAD_MAJOR_FORMAT" ;
+} /* str_of_major_format */
+
+const char *
+str_of_minor_format (int format)
+{	switch (SF_CODEC (format))
+	{	CASE_NAME (SF_FORMAT_PCM_S8) ;
+		CASE_NAME (SF_FORMAT_PCM_16) ;
+		CASE_NAME (SF_FORMAT_PCM_24) ;
+		CASE_NAME (SF_FORMAT_PCM_32) ;
+		CASE_NAME (SF_FORMAT_PCM_U8) ;
+		CASE_NAME (SF_FORMAT_FLOAT) ;
+		CASE_NAME (SF_FORMAT_DOUBLE) ;
+		CASE_NAME (SF_FORMAT_ULAW) ;
+		CASE_NAME (SF_FORMAT_ALAW) ;
+		CASE_NAME (SF_FORMAT_IMA_ADPCM) ;
+		CASE_NAME (SF_FORMAT_MS_ADPCM) ;
+		CASE_NAME (SF_FORMAT_GSM610) ;
+		CASE_NAME (SF_FORMAT_VOX_ADPCM) ;
+		CASE_NAME (SF_FORMAT_G721_32) ;
+		CASE_NAME (SF_FORMAT_G723_24) ;
+		CASE_NAME (SF_FORMAT_G723_40) ;
+		CASE_NAME (SF_FORMAT_DWVW_12) ;
+		CASE_NAME (SF_FORMAT_DWVW_16) ;
+		CASE_NAME (SF_FORMAT_DWVW_24) ;
+		CASE_NAME (SF_FORMAT_DWVW_N) ;
+		CASE_NAME (SF_FORMAT_DPCM_8) ;
+		CASE_NAME (SF_FORMAT_DPCM_16) ;
+		CASE_NAME (SF_FORMAT_VORBIS) ;
+		default :
+			break ;
+		} ;
+
+	return "BAD_MINOR_FORMAT" ;
+} /* str_of_minor_format */
+
+const char *
+str_of_open_mode (int mode)
+{	switch (mode)
+	{	CASE_NAME (SFM_READ) ;
+		CASE_NAME (SFM_WRITE) ;
+		CASE_NAME (SFM_RDWR) ;
+
+		default :
+			break ;
+		} ;
+
+	return "BAD_MODE" ;
+} /* str_of_open_mode */
+
+const char *
+str_of_endianness (int end)
+{	switch (end)
+	{	CASE_NAME (SF_ENDIAN_BIG) ;
+		CASE_NAME (SF_ENDIAN_LITTLE) ;
+		CASE_NAME (SF_ENDIAN_CPU) ;
+		default :
+			break ;
+		} ;
+
+	/* Zero length string for SF_ENDIAN_FILE. */
+	return "" ;
+} /* str_of_endianness */

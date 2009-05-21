@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -18,9 +18,10 @@
 
 #include	"sfconfig.h"
 
+#include <math.h>
+
 #include	"sndfile.h"
 #include	"sfendian.h"
-#include	"float_cast.h"
 #include	"common.h"
 
 /* Need to be able to handle 3 byte (24 bit) integers. So defined a
@@ -120,14 +121,21 @@ pcm_init (SF_PRIVATE *psf)
 {	int chars = 0 ;
 
 	if (psf->bytewidth == 0 || psf->sf.channels == 0)
+	{	psf_log_printf (psf, "pcm_init : internal error : bytewitdh = %d, channels = %d\n", psf->bytewidth, psf->sf.channels) ;
 		return SFE_INTERNAL ;
+		} ;
 
 	psf->blockwidth = psf->bytewidth * psf->sf.channels ;
 
-	if ((psf->sf.format & SF_FORMAT_SUBMASK) == SF_FORMAT_PCM_S8)
+	if ((SF_CODEC (psf->sf.format)) == SF_FORMAT_PCM_S8)
 		chars = SF_CHARS_SIGNED ;
-	else if ((psf->sf.format & SF_FORMAT_SUBMASK) == SF_FORMAT_PCM_U8)
+	else if ((SF_CODEC (psf->sf.format)) == SF_FORMAT_PCM_U8)
 		chars = SF_CHARS_UNSIGNED ;
+
+	if (CPU_IS_BIG_ENDIAN)
+		psf->data_endswap = (psf->endian == SF_ENDIAN_BIG) ? SF_FALSE : SF_TRUE ;
+	else
+		psf->data_endswap = (psf->endian == SF_ENDIAN_LITTLE) ? SF_FALSE : SF_TRUE ;
 
 	if (psf->mode == SFM_READ || psf->mode == SFM_RDWR)
 	{	switch (psf->bytewidth * 0x10000 + psf->endian + chars)
@@ -159,6 +167,7 @@ pcm_init (SF_PRIVATE *psf)
 					psf->read_double	= pcm_read_bet2d ;
 					break ;
 			case (4 * 0x10000 + SF_ENDIAN_BIG) :
+
 					psf->read_short		= pcm_read_bei2s ;
 					psf->read_int		= pcm_read_bei2i ;
 					psf->read_float		= pcm_read_bei2f ;
@@ -184,7 +193,7 @@ pcm_init (SF_PRIVATE *psf)
 					psf->read_double	= pcm_read_lei2d ;
 					break ;
 			default :
-				psf_log_printf (psf, "pcm.c returning SFE_UNIMPLEMENTED\n") ;
+				psf_log_printf (psf, "pcm.c returning SFE_UNIMPLEMENTED\nbytewidth %d    endian %d\n", psf->bytewidth, psf->endian) ;
 				return SFE_UNIMPLEMENTED ;
 			} ;
 		} ;
@@ -249,7 +258,7 @@ pcm_init (SF_PRIVATE *psf)
 					break ;
 
 			default :
-				psf_log_printf (psf, "pcm.c returning SFE_UNIMPLEMENTED\n") ;
+				psf_log_printf (psf, "pcm.c returning SFE_UNIMPLEMENTED\nbytewidth %s    endian %d\n", psf->bytewidth, psf->endian) ;
 				return SFE_UNIMPLEMENTED ;
 			} ;
 
@@ -2890,10 +2899,3 @@ pcm_write_d2lei	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 	return total ;
 } /* pcm_write_d2lei */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: d8bc7c0e-1e2f-4ff3-a28f-10ce1fbade3b
-*/

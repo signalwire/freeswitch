@@ -165,6 +165,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libsndfile\src\audio_detect.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libsndfile\src\avr.c"
 				>
 			</File>
@@ -177,11 +181,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libsndfile\src\chunk.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libsndfile\src\command.c"
 				>
 			</File>
 			<File
-				RelativePath=".\common.c"
+				RelativePath="..\..\libsndfile\src\common.c"
 				>
 			</File>
 			<File
@@ -247,6 +255,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\libsndfile\src\ima_oki_adpcm.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libsndfile\src\ima_oki_adpcm.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\libsndfile\src\ircam.c"
 				>
 			</File>
@@ -256,6 +272,10 @@
 			</File>
 			<File
 				RelativePath="..\..\libsndfile\src\mat5.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libsndfile\src\mpc2k.c"
 				>
 			</File>
 			<File
@@ -284,6 +304,10 @@
 			</File>
 			<File
 				RelativePath="..\..\libsndfile\src\raw.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\libsndfile\src\rf64.c"
 				>
 			</File>
 			<File

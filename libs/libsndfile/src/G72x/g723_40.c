@@ -150,11 +150,4 @@ int	g723_40_decoder	(int i, G72x_STATE *state_ptr)
 
 	return (sr << 2);	/* sr was of 14-bit dynamic range */
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: eb8d9a00-32bf-4dd2-b287-01b0336d72bf
-*/
 

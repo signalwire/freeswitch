@@ -9,8 +9,6 @@
 
 #include "gsm610_priv.h"
 
-#include "gsm.h"
-
 /*  4.2.13 .. 4.2.17  RPE ENCODING SECTION
  */
 
@@ -480,11 +478,3 @@ void Gsm_RPE_Decoding (
 	RPE_grid_positioning( Mcr, xMp, erp );
 
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 82005b9e-1560-4e94-9ddb-00cb14867295
-*/
-

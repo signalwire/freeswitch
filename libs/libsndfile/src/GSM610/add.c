@@ -12,7 +12,6 @@
 #include	<assert.h>
 
 #include	"gsm610_priv.h"
-#include	"gsm.h"
 
 #define	saturate(x) 	\
 	((x) < MIN_WORD ? MIN_WORD : (x) > MAX_WORD ? MAX_WORD: (x))
@@ -238,11 +237,4 @@ word gsm_div (word num, word denum)
 
 	return div;
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: a7398579-e2e1-4733-aa2d-4c6efc0c58ff
-*/
 

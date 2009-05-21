@@ -2,62 +2,65 @@
 
 SUBDIRS = GSM610 G72x
 
+INCLUDES = @EXTERNAL_CFLAGS@
+
 lib_LTLIBRARIES = libsndfile.la
 include_HEADERS = sndfile.hh
 nodist_include_HEADERS = sndfile.h
 
+noinst_LTLIBRARIES = libcommon.la
+
 OS_SPECIFIC_CFLAGS = @OS_SPECIFIC_CFLAGS@
 OS_SPECIFIC_LINKS = @OS_SPECIFIC_LINKS@
 
+SYMBOL_FILES = Symbols.linux Symbols.darwin libsndfile-1.def Symbols.os2
+
 EXTRA_DIST = sndfile.h.in config.h.in test_endswap.tpl test_endswap.def \
-			Symbols.linux Symbols.darwin libsndfile.def cygsndfile.def \
-			create_symbols_file.py binheader_writef_check.py
+			$(SYMBOL_FILES) create_symbols_file.py binheader_writef_check.py
 
-noinst_HEADERS = common.h sfconfig.h sfendian.h float_cast.h wav_w64.h sf_unistd.h
+noinst_HEADERS = common.h sfconfig.h sfendian.h wav_w64.h sf_unistd.h
 
-noinst_PROGRAMS = test_endswap test_file_io test_log_printf
+noinst_PROGRAMS = test_main
 
-COMMON = sndfile.c common.c file_io.c command.c pcm.c ulaw.c alaw.c float32.c \
+COMMON = common.c file_io.c command.c pcm.c ulaw.c alaw.c float32.c \
 		double64.c ima_adpcm.c ms_adpcm.c gsm610.c dwvw.c vox_adpcm.c \
-		interleave.c strings.c dither.c broadcast.c
+		interleave.c strings.c dither.c broadcast.c audio_detect.c \
+ 		ima_oki_adpcm.c ima_oki_adpcm.h chunk.c
 
-FILESPECIFIC = aiff.c au.c g72x.c avr.c caf.c ircam.c macbinary3.c macos.c \
-				mat4.c mat5.c nist.c paf.c pvf.c raw.c svx.c voc.c htk.c dwd.c \
-				ogg.c rx2.c sd2.c sds.c txw.c wve.c w64.c wav_w64.c wav.c xi.c \
-				flac.c
+FILESPECIFIC = sndfile.c aiff.c au.c avr.c caf.c dwd.c flac.c g72x.c htk.c ircam.c \
+		macbinary3.c macos.c mat4.c mat5.c nist.c ogg.c paf.c pvf.c raw.c rx2.c sd2.c \
+		sds.c svx.c txw.c voc.c wve.c w64.c wav_w64.c wav.c xi.c mpc2k.c rf64.c
 
 # MinGW requires -no-undefined if a DLL is to be built.
 libsndfile_la_LDFLAGS = -no-undefined -version-info @SHARED_VERSION_INFO@ @SHLIB_VERSION_ARG@
-libsndfile_la_SOURCES = $(COMMON) $(FILESPECIFIC) $(noinst_HEADERS)
+libsndfile_la_SOURCES = $(FILESPECIFIC) $(noinst_HEADERS)
 nodist_libsndfile_la_SOURCES = $(nodist_include_HEADERS)
-libsndfile_la_LIBADD  = GSM610/libgsm.la G72x/libg72x.la -lm $(FLAC_LIBS)
+libsndfile_la_LIBADD = libcommon.la GSM610/libgsm.la G72x/libg72x.la \
+		@EXTERNAL_LIBS@ -lm
 
-test_endswap_SOURCES = test_endswap.c
+libcommon_la_SOURCES = $(COMMON)
 
-test_file_io_CFLAGS = $(AM_CFLAGS)
-test_file_io_SOURCES = file_io.c test_file_io.c
+test_main_SOURCES = test_main.c test_main.h test_conversions.c test_float.c test_endswap.c \
+					test_audio_detect.c test_log_printf.c test_file_io.c test_ima_oki_adpcm.c
+test_main_LDADD = libcommon.la
 
-test_log_printf_CFLAGS = $(AM_CFLAGS)
-test_log_printf_SOURCES = test_log_printf.c
 
 test_endswap.c: test_endswap.def test_endswap.tpl
 	autogen --writable test_endswap.def
 
-genfiles : test_endswap.c Symbols.linux Symbols.darwin libsndfile.def cygsndfile.def
+genfiles : test_endswap.c $(SYMBOL_FILES)
 
-# Two test programs.
+# A single test programs.
 # It is not possible to place these in the tests/ directory because they
 # need access to the internals of the SF_PRIVATE struct.
 
-check: test_endswap test_file_io test_log_printf
+check: $(noinst_PROGRAMS)
 	@echo
 	@echo
 	@echo
 	@echo "============================================================"
-	@if [ -x /usr/bin/python2.4 ]; then $(srcdir)/binheader_writef_check.py $(srcdir)/*.c ; fi
-	./test_endswap
-	./test_file_io
-	./test_log_printf
+	@if [ -x /usr/bin/python2.5 ]; then $(srcdir)/binheader_writef_check.py $(srcdir)/*.c ; fi
+	./test_main$(EXEEXT)
 	@echo "============================================================"
 	@echo
 	@echo
@@ -69,19 +72,19 @@ check: test_endswap test_file_io test_log_printf
 # end user to create these files.
 
 Symbols.linux: create_symbols_file.py
-	./create_symbols_file.py linux $(VERSION) > Symbols.linux
+	./create_symbols_file.py linux $(VERSION) > $@
 
 Symbols.darwin: create_symbols_file.py
-	./create_symbols_file.py darwin $(VERSION) > Symbols.darwin
+	./create_symbols_file.py darwin $(VERSION) > $@
 
-libsndfile.def: create_symbols_file.py
-	./create_symbols_file.py win32 $(VERSION) > libsndfile.def
+libsndfile-1.def: create_symbols_file.py
+	./create_symbols_file.py win32 $(VERSION) > $@
 
-cygsndfile.def: create_symbols_file.py
-	./create_symbols_file.py cygwin $(VERSION) > cygsndfile.def
+Symbols.os2: create_symbols_file.py
+	./create_symbols_file.py os2 $(VERSION) > $@
 
 # Fake dependancy to force the creation of these files.
-sndfile.c : Symbols.linux Symbols.darwin libsndfile.def cygsndfile.def
+sndfile.o : $(SYMBOL_FILES)
 
 #======================================================================
 # Disable autoheader.
@@ -95,10 +98,3 @@ sds.c wve.c dwd.c ogg.c xi.c sndfile.c common.c file_io.c : sndfile.h common.h
 command.c pcm.c ulaw.c alaw.c float32.c double64.c ima_adpcm.c : sndfile.h common.h
 ms_adpcm.c gsm610.c dwvw.c vox_adpcm.c interleave.c strings.c : sndfile.h common.h
 dither.c : sndfile.h common.h
-
-## Do not edit or modify anything in this comment block.
-## The arch-tag line is a file identity tag for the GNU Arch
-## revision control system.
-##
-## arch-tag: fc3511e6-4230-4bcb-9c86-f728d7a06fe7
-

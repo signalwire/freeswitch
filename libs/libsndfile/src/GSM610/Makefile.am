@@ -13,9 +13,4 @@ libgsm_la_SOURCES = $(CFILES) $(noinst_HEADERS)
 # Disable autoheader. 
 AUTOHEADER=echo
 
-## Do not edit or modify anything in this comment block.
-## The arch-tag line is a file identity tag for the GNU Arch 
-## revision control system.
-##
-## arch-tag: ba91ffbe-9d1d-4044-a1de-e8ee2f890560
 

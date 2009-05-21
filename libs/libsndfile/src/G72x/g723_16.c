@@ -159,11 +159,4 @@ g723_16_decoder(
 		/* sr was of 14-bit dynamic range */
 		return (sr << 2);       
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: ae265466-c3fc-4f83-bb32-edae488a5ca5
-*/
 

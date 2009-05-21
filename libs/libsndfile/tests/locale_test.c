@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2005-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -48,8 +48,11 @@ main (void)
 		{	"en_AU", "kangaroo.au", 11 },
 		{	"POSIX", "posix.au", 8 },
 		{	"pt_PT", "concei\303\247\303\243o.au", 12 },
+
+#if OS_IS_WIN32 == 0
 		{	"ja_JP", "\343\201\212\343\201\257\343\202\210\343\201\206\343\201\224\343\201\226\343\201\204\343\201\276\343\201\231.au", 21 },
 		{	"vi_VN", "qu\341\273\221c ng\341\273\257.au", 11 },
+#endif
 
 		{	NULL, NULL, 0 }
 		} ;
@@ -104,11 +107,3 @@ locale_test (const char * locname, const char * filename, int width)
 #endif
 } /* locale_test */
 
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 087b25a3-03a2-4195-acd2-23fbbc489021
-*/

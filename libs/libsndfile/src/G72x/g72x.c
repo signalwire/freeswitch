@@ -87,12 +87,12 @@ int fmult (int an, int srn)
 
 	/*
 	** The original was :
-	**		wanmant = (anmant * (srn & 0x37) + 0x30) >> 4 ;
+	**		wanmant = (anmant * (srn & 0x3F) + 0x30) >> 4 ;
 	** but could see no valid reason for the + 0x30.
 	** Removed it and it improved the SNR of the codec.
 	*/
 
-	wanmant = (anmant * (srn & 0x37)) >> 4 ;
+	wanmant = (anmant * (srn & 0x3F)) >> 4 ;
 
 	retval = (wanexp >= 0) ? ((wanmant << wanexp) & 0x7FFF) :
 	    (wanmant >> -wanexp);
@@ -641,12 +641,4 @@ pack_bytes (int bits, const short * samples, unsigned char * block)
 
 	return bindex ;
 } /* pack_bytes */
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 6298dc75-fd0f-4062-9b90-f73ed69f22d4
-*/
 

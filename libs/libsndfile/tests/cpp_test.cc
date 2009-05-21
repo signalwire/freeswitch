@@ -123,8 +123,8 @@ read_file (const char * filename, int format)
 		} ;
 
 	if (file.frames () != ARRAY_LEN (sbuffer) * 4)
-	{	printf ("\n\n%s %d : Error : frames %ld should be %d.\n\n", __func__, __LINE__,
-				SF_COUNT_TO_LONG (file.frames ()), ARRAY_LEN (sbuffer) * 4 / 2) ;
+	{	printf ("\n\n%s %d : Error : frames %ld should be %lu.\n\n", __func__, __LINE__,
+				SF_COUNT_TO_LONG (file.frames ()), (long unsigned int) ARRAY_LEN (sbuffer) * 4 / 2) ;
 		exit (1) ;
 		} ;
 
@@ -178,6 +178,35 @@ ceeplusplus_test (const char *filename, int format)
 	puts ("ok") ;
 } /* ceeplusplus_test */
 
+static void
+ceeplusplus_extra_test (void)
+{	SndfileHandle file ;
+	const char * filename = "bad_file_name.wav" ;
+	int error ;
+
+	print_test_name ("ceeplusplus_extra_test", filename) ;
+
+	file = SndfileHandle (filename) ;
+
+	error = file.error () ;
+	if (error == 0)
+	{	printf ("\n\n%s %d : error should be zero.\n\n", __func__, __LINE__) ;
+		exit (1) ;
+		} ;
+
+	if (file.strError () == NULL)
+	{	printf ("\n\n%s %d : strError should not return NULL.\n\n", __func__, __LINE__) ;
+		exit (1) ;
+		} ;
+
+	if (file.seek (0, SEEK_SET) != 0)
+	{	printf ("\n\n%s %d : bad seek ().\n\n", __func__, __LINE__) ;
+		exit (1) ;
+		} ;
+
+	puts ("ok") ;
+} /* ceeplusplus_extra_test */
+
 int
 main (void)
 {
@@ -185,13 +214,8 @@ main (void)
 	ceeplusplus_test ("cpp_test.aiff", SF_FORMAT_AIFF | SF_FORMAT_PCM_S8) ;
 	ceeplusplus_test ("cpp_test.au", SF_FORMAT_AU | SF_FORMAT_FLOAT) ;
 
+	ceeplusplus_extra_test () ;
+
 	return 0 ;
 } /* main */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The following line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 06e48ee6-b19d-4453-9999-a5cf2d7bf0b6
-*/

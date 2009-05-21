@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -88,12 +88,4 @@ int g72x_encode_block (struct g72x_state *pstate, short *samples, unsigned char 
 */
 
 #endif /* !G72X_HEADER_FILE */
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 6ca84e5f-f932-4ba1-87ee-37056d921621
-*/
 

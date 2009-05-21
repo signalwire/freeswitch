@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -33,17 +33,6 @@
 #define	BUFFER_SIZE		(1<<15)
 #define	SHORT_BUFFER	(256)
 
-static void error_number_test (void) ;
-static void error_value_test (void) ;
-
-int
-main (void)
-{	error_number_test () ;
-	error_value_test () ;
-
-	return 0 ;
-} /* main */
-
 static void
 error_number_test (void)
 {	const char 	*noerror, *errstr ;
@@ -62,7 +51,9 @@ error_number_test (void)
 
 		/* Test for error. */
 		if (strstr (errstr, "This is a bug in libsndfile."))
+		{	printf ("\n\nError : error number %d : %s\n\n\n", k, errstr) ;
 			exit (1) ;
+			} ;
 		} ;
 
 
@@ -104,10 +95,134 @@ error_value_test (void)
 	return ;
 } /* error_value_test */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 799eba74-b505-49d9-89a6-22a7f51a31b4
-*/
+static void
+no_file_test (const char * filename)
+{	SNDFILE		*sndfile ;
+	SF_INFO		sfinfo ;
+
+	print_test_name (__func__, filename) ;
+
+	unlink (filename) ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sndfile = sf_open (filename, SFM_READ, &sfinfo) ;
+
+	exit_if_true (sndfile != NULL, "\n\nLine %d : should not have received a valid SNDFILE* pointer.\n", __LINE__) ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* no_file_test */
+
+static void
+zero_length_test (const char *filename)
+{	SNDFILE		*sndfile ;
+	SF_INFO		sfinfo ;
+	FILE		*file ;
+
+	print_test_name (__func__, filename) ;
+
+	/* Create a zero length file. */
+	file = fopen (filename, "w") ;
+	exit_if_true (file == NULL, "\n\nLine %d : fopen ('%s') failed.\n", __LINE__, filename) ;
+	fclose (file) ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sndfile = sf_open (filename, SFM_READ, &sfinfo) ;
+
+	exit_if_true (sndfile != NULL, "\n\nLine %d : should not have received a valid SNDFILE* pointer.\n", __LINE__) ;
+
+	exit_if_true (0 && sf_error (NULL) != SF_ERR_UNRECOGNISED_FORMAT,
+		"\n\nLine %3d : Error : %s\n       should be : %s\n", __LINE__,
+		sf_strerror (NULL), sf_error_number (SF_ERR_UNRECOGNISED_FORMAT)) ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* zero_length_test */
+
+static void
+bad_wav_test (const char * filename)
+{	SNDFILE		*sndfile ;
+	SF_INFO		sfinfo ;
+
+	FILE		*file ;
+	const char	data [] = "RIFF    WAVEfmt            " ;
+
+	print_test_name (__func__, filename) ;
+
+	if ((file = fopen (filename, "w")) == NULL)
+	{	printf ("\n\nLine %d : fopen returned NULL.\n", __LINE__) ;
+		exit (1) ;
+		} ;
+
+	exit_if_true (fwrite (data, sizeof (data), 1, file) != 1, "\n\nLine %d : fwrite failed.\n", __LINE__) ;
+	fclose (file) ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sndfile = sf_open (filename, SFM_READ, &sfinfo) ;
+
+	if (sndfile)
+	{	printf ("\n\nLine %d : should not have received a valid SNDFILE* pointer.\n", __LINE__) ;
+		exit (1) ;
+		} ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* bad_wav_test */
+
+static void
+error_close_test (void)
+{	static short buffer [SHORT_BUFFER] ;
+	const char	*filename = "error_close.wav" ;
+	SNDFILE		*sndfile ;
+	SF_INFO		sfinfo ;
+	FILE		*file ;
+
+	print_test_name (__func__, filename) ;
+
+	/* Open a FILE* from which we will extract a file descriptor. */
+	if ((file = fopen (filename, "w")) == NULL)
+	{	printf ("\n\nLine %d : fopen returned NULL.\n", __LINE__) ;
+		exit (1) ;
+		} ;
+
+	/* Set parameters for writing the file. */
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sfinfo.channels = 1 ;
+	sfinfo.samplerate = 44100 ;
+	sfinfo.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16 ;
+
+	sndfile = sf_open_fd (fileno (file), SFM_WRITE, &sfinfo, SF_TRUE) ;
+	if (sndfile == NULL)
+	{	printf ("\n\nLine %d : sf_open_fd failed : %s\n", __LINE__, sf_strerror (NULL)) ;
+		exit (1) ;
+		} ;
+
+	test_write_short_or_die (sndfile, 0, buffer, ARRAY_LEN (buffer), __LINE__) ;
+
+	/* Now close the fd associated with file before calling sf_close. */
+	fclose (file) ;
+
+	if (sf_close (sndfile) == 0)
+	{	printf ("\n\nLine %d : sf_close should not have returned zero.\n", __LINE__) ;
+		exit (1) ;
+		} ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* error_close_test */
+
+int
+main (void)
+{
+	error_number_test () ;
+	error_value_test () ;
+
+	error_close_test () ;
+
+	no_file_test ("no_file.wav") ;
+	zero_length_test ("zero_length.wav") ;
+	bad_wav_test ("bad_wav.wav") ;
+
+	return 0 ;
+} /* main */
+

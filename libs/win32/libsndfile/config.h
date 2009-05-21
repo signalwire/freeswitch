@@ -263,7 +263,7 @@
 #define USE_WINDOWS_API 1
 
 /* Version number of package */
-#define VERSION "1.0.16"
+#define VERSION "1.0.18"
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
@@ -274,11 +274,14 @@
 /* Define for large files, on AIX-style hosts. */
 /* #undef _LARGE_FILES */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 78a733c0-a430-46bd-81ab-4e479fbcffac
-*/
+#include <stddef.h>
 
+typedef __int32 int32_t;
+typedef intptr_t ssize_t;
+typedef unsigned __int16 uint16_t;
+typedef unsigned __int32 uint32_t;
+
+#define __func__ __FUNCTION__
+#define snprintf _snprintf
+
+#include <float_cast.h>

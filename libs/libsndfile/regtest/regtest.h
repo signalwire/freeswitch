@@ -36,10 +36,3 @@ int db_del_entry (REG_DB * db_handle, const char * entry) ;
 /* In checksum.c */
 int calc_checksum (SNDFILE * file, const SF_INFO * info) ;
 
-/*
-** Do not edit or modify anything in this comment block.
-** The following line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 80138e38-f373-48d3-8152-7f7882a62cd7
-*/

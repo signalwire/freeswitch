@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,7 @@ int
 rx2_open	(SF_PRIVATE *psf)
 {	if (psf)
 		return SFE_UNIMPLEMENTED ;
-	return (psf && 0) ;
+	return 0 ;
 } /* rx2_open */
 
 #else
@@ -317,10 +317,3 @@ rx2_close	(SF_PRIVATE *psf)
 } /* rx2_close */
 
 #endif
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 7366e813-9fee-4d1f-881e-e4a691469370
-*/

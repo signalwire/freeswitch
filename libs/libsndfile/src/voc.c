@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2006 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -112,10 +112,10 @@ voc_open	(SF_PRIVATE *psf)
 			return error ;
 		} ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
-	{	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_VOC)
+	{	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_VOC)
 			return	SFE_BAD_OPEN_FORMAT ;
 
 		psf->endian = SF_ENDIAN_LITTLE ;
@@ -199,20 +199,26 @@ voc_read_header	(SF_PRIVATE *psf)
 	psf->endian = SF_ENDIAN_LITTLE ;
 
 	while (1)
-	{	offset += psf_binheader_readf (psf, "1", &block_type) ;
+	{	int size ;
+		short count ;
+
+		block_type = 0 ;
+		offset += psf_binheader_readf (psf, "1", &block_type) ;
 
 		switch (block_type)
 		{	case VOC_ASCII :
-					{	int size ;
+					offset += psf_binheader_readf (psf, "e3", &size) ;
 
-						offset += psf_binheader_readf (psf, "e3", &size) ;
+					psf_log_printf (psf, " ASCII : %d\n", size) ;
 
-						psf_log_printf (psf, " ASCII : %d\n", size) ;
+					offset += psf_binheader_readf (psf, "b", psf->header, size) ;
+					psf->header [size] = 0 ;
+					psf_log_printf (psf, "  text : %s\n", psf->header) ;
+					continue ;
 
-						offset += psf_binheader_readf (psf, "b", psf->header, size) ;
-						psf->header [size] = 0 ;
-						psf_log_printf (psf, "  text : %s\n", psf->header) ;
-						} ;
+			case VOC_REPEAT :
+					offset += psf_binheader_readf (psf, "e32", &size, &count) ;
+					psf_log_printf (psf, " Repeat : %d\n", count) ;
 					continue ;
 
 			case VOC_SOUND_DATA :
@@ -242,7 +248,7 @@ voc_read_header	(SF_PRIVATE *psf)
 			psf_log_printf (psf, "offset: %d    size: %d    sum: %d    filelength: %D\n", offset, size, offset + size, psf->filelength) ;
 			return SFE_VOC_BAD_SECTIONS ;
 			}
-		else if (offset + size - 1 < psf->filelength)
+		else if (psf->filelength - offset - size > 4)
 		{	psf_log_printf (psf, "Seems to be a multi-segment file (#1).\n") ;
 			psf_log_printf (psf, "offset: %d    size: %d    sum: %d    filelength: %D\n", offset, size, offset + size, psf->filelength) ;
 			return SFE_VOC_BAD_SECTIONS ;
@@ -422,7 +428,7 @@ voc_write_header (SF_PRIVATE *psf, int calc_length)
 		psf->sf.frames = psf->datalength / (psf->bytewidth * psf->sf.channels) ;
 		} ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 	/* Reset the current header length to zero. */
 	psf->header [0] = 0 ;
 	psf->headindex = 0 ;
@@ -869,10 +875,3 @@ BLOCK 9 - data block that supersedes blocks 1 and 8.
         Data is stored left, right
 
 ------------------------------------------------------------------------*/
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 40a50167-a81c-463a-9e1d-3282ff84e09d
-*/

@@ -9,8 +9,6 @@
 
 #include "gsm610_priv.h"
 
-#include	"gsm.h"
-
 /*	4.2.0 .. 4.2.3	PREPROCESSING SECTION
  *  
  *  	After A-law to linear conversion (or directly from the
@@ -105,11 +103,3 @@ void Gsm_Preprocess (
 	S->L_z2 = L_z2;
 	S->mp   = mp;
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: b760b0d9-3a05-4da3-9dc9-441ffb905d87
-*/
-

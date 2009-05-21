@@ -8,10 +8,7 @@
 #include	<stdlib.h>
 #include	<string.h>
 
-#include	"config.h"
-
 #include	"gsm610_priv.h"
-#include	"gsm.h"
 
 /* 
  *  4.2 FIXED POINT IMPLEMENTATION OF THE RPE-LTP CODER 
@@ -73,7 +70,7 @@ void Gsm_Coder (
 					  xmaxc++, Mc++, xMc );
 		/*
 		 * Gsm_Update_of_reconstructed_short_time_residual_signal
-		 *			( dpp, e + 5, dp );
+		 *			( dpp, State->e + 5, dp );
 		 */
 
 		{ register int i;
@@ -87,11 +84,4 @@ void Gsm_Coder (
 	(void)memcpy( (char *)State->dp0, (char *)(State->dp0 + 160),
 		120 * sizeof(*State->dp0) );
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: ae8ef1b2-5a1e-4263-94cd-42b15dca81a3
-*/
 

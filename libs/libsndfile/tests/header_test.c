@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software ; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -55,6 +55,8 @@ static void	update_seek_double_test	(const char *filename, int filetype) ;
 
 static void extra_header_test (const char *filename, int filetype) ;
 
+static void header_shrink_test (const char *filename, int filetype) ;
+
 /* Force the start of this buffer to be double aligned. Sparc-solaris will
 ** choke if its not.
 */
@@ -83,7 +85,16 @@ main (int argc, char *argv [])
 		update_seek_int_test ("header_int.wav", SF_FORMAT_WAV) ;
 		update_seek_float_test ("header_float.wav", SF_FORMAT_WAV) ;
 		update_seek_double_test ("header_double.wav", SF_FORMAT_WAV) ;
+		header_shrink_test ("header_shrink.wav", SF_FORMAT_WAV) ;
 		extra_header_test ("extra.wav", SF_FORMAT_WAV) ;
+
+		update_header_test ("header.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_short_test ("header_short.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_int_test ("header_int.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_float_test ("header_float.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_double_test ("header_double.wavex", SF_FORMAT_WAVEX) ;
+		header_shrink_test ("header_shrink.wavex", SF_FORMAT_WAVEX) ;
+		extra_header_test ("extra.wavex", SF_FORMAT_WAVEX) ;
 		test_count++ ;
 		} ;
 
@@ -93,6 +104,7 @@ main (int argc, char *argv [])
 		update_seek_int_test ("header_int.aiff", SF_FORMAT_AIFF) ;
 		update_seek_float_test ("header_float.aiff", SF_FORMAT_AIFF) ;
 		update_seek_double_test ("header_double.aiff", SF_FORMAT_AIFF) ;
+		header_shrink_test ("header_shrink.wav", SF_FORMAT_AIFF) ;
 		extra_header_test ("extra.aiff", SF_FORMAT_AIFF) ;
 		test_count++ ;
 		} ;
@@ -141,6 +153,15 @@ main (int argc, char *argv [])
 		update_seek_int_test ("header_int.w64", SF_FORMAT_W64) ;
 		update_seek_float_test ("header_float.w64", SF_FORMAT_W64) ;
 		update_seek_double_test ("header_double.w64", SF_FORMAT_W64) ;
+		test_count++ ;
+		} ;
+
+	if (do_all || ! strcmp (argv [1], "rf64"))
+	{	update_header_test ("header.rf64", SF_FORMAT_RF64) ;
+		update_seek_short_test ("header_short.rf64", SF_FORMAT_RF64) ;
+		update_seek_int_test ("header_int.rf64", SF_FORMAT_RF64) ;
+		update_seek_float_test ("header_float.rf64", SF_FORMAT_RF64) ;
+		update_seek_double_test ("header_double.rf64", SF_FORMAT_RF64) ;
 		test_count++ ;
 		} ;
 
@@ -195,6 +216,12 @@ main (int argc, char *argv [])
 	if (do_all || ! strcmp (argv [1], "sds"))
 	{	update_header_test ("header.sds", SF_FORMAT_SDS) ;
 		/*-update_seek_short_test ("header_short.sds", SF_FORMAT_SDS) ;-*/
+		test_count++ ;
+		} ;
+
+	if (do_all || ! strcmp (argv [1], "mpc2k"))
+	{	update_header_test ("header.mpc", SF_FORMAT_MPC2K) ;
+		update_seek_short_test ("header_short.mpc", SF_FORMAT_MPC2K) ;
 		test_count++ ;
 		} ;
 
@@ -290,18 +317,6 @@ update_header_test (const char *filename, int typemajor)
 {
 	print_test_name ("update_header_test", filename) ;
 
-#if 0 /*-(OS_IS_WIN32 == 0)-*/
-	if (typemajor == SF_FORMAT_PAF)
-	{	/*
-		** I think this is a bug in the win32 file I/O code in src/file_io.c.
-		** I didn't write that code and I don't have the time to debug and
-		** fix it. Patches will gladly be accepted. Erik
-		*/
-		puts ("doesn't work on win32") ;
-		return ;
-		} ;
-#endif
-
 	update_header_sub (filename, typemajor, SFM_WRITE) ;
 	update_header_sub (filename, typemajor, SFM_RDWR) ;
 
@@ -378,6 +393,7 @@ update_seek_short_test	(const char *filename, int filetype)
 	puts ("ok") ;
 	return ;
 } /* update_seek_short_test */
+
 static void
 update_seek_int_test	(const char *filename, int filetype)
 {	SNDFILE *outfile, *infile ;
@@ -444,6 +460,7 @@ update_seek_int_test	(const char *filename, int filetype)
 	puts ("ok") ;
 	return ;
 } /* update_seek_int_test */
+
 static void
 update_seek_float_test	(const char *filename, int filetype)
 {	SNDFILE *outfile, *infile ;
@@ -510,6 +527,7 @@ update_seek_float_test	(const char *filename, int filetype)
 	puts ("ok") ;
 	return ;
 } /* update_seek_float_test */
+
 static void
 update_seek_double_test	(const char *filename, int filetype)
 {	SNDFILE *outfile, *infile ;
@@ -579,12 +597,52 @@ update_seek_double_test	(const char *filename, int filetype)
 
 
 
+static void
+header_shrink_test (const char *filename, int filetype)
+{	SNDFILE *outfile, *infile ;
+	SF_INFO sfinfo ;
+	sf_count_t frames ;
+	float buffer [8], bufferin [8] ;
 
+	print_test_name ("header_shrink_test", filename) ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sfinfo.samplerate = 44100 ;
+	sfinfo.format = filetype | SF_FORMAT_FLOAT ;
+	sfinfo.channels = 1 ;
+
+	memset (buffer, 0xA0, sizeof (buffer)) ;
+
+	/* Now write some frames. */
+	frames = ARRAY_LEN (buffer) / sfinfo.channels ;
+
+	/* Test the file with extra header data. */
+	outfile = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_FALSE, __LINE__) ;
+
+	sf_command (outfile, SFC_SET_ADD_PEAK_CHUNK, NULL, SF_TRUE) ;
+	sf_command (outfile, SFC_UPDATE_HEADER_NOW, NULL, SF_FALSE) ;
+	sf_command (outfile, SFC_SET_ADD_PEAK_CHUNK, NULL, SF_FALSE) ;
+
+	test_writef_float_or_die (outfile, 0, buffer, frames, __LINE__) ;
+	sf_close (outfile) ;
+
+	/* Open again for read. */
+	infile = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_FALSE, __LINE__) ;
+
+	test_readf_float_or_die (infile, 0, bufferin, frames, __LINE__) ;
+	sf_close (infile) ;
+
+	compare_float_or_die (buffer, bufferin, frames, __LINE__) ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+	return ;
+} /* header_shrink_test */
 
 
 static void
 extra_header_test (const char *filename, int filetype)
-{	SNDFILE *outfile, *infile ;
+{	SNDFILE *outfile ;
 	SF_INFO sfinfo ;
     sf_count_t frames ;
     short buffer [8] ;
@@ -602,9 +660,9 @@ extra_header_test (const char *filename, int filetype)
 	frames = ARRAY_LEN (buffer) / sfinfo.channels ;
 
 	/* Test the file with extra header data. */
-	outfile = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, 409) ;
+	outfile = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, 464) ;
 	sf_set_string (outfile, SF_STR_TITLE, filename) ;
-	test_writef_short_or_die (outfile, k, buffer, frames, 411) ;
+	test_writef_short_or_die (outfile, k, buffer, frames, 466) ;
 	sf_set_string (outfile, SF_STR_COPYRIGHT, "(c) 1980 Erik") ;
 	sf_close (outfile) ;
 
@@ -618,7 +676,7 @@ extra_header_test (const char *filename, int filetype)
 	** integration is done.
 	*/
 
-	if ((infile = sf_open (filename, SFM_RDWR, &sfinfo)) != NULL)
+	if (sf_open (filename, SFM_RDWR, &sfinfo) != NULL)
 	{	printf ("\n\nError : should not be able to open this file in SFM_RDWR.\n\n") ;
 		exit (1) ;
 		} ;
@@ -631,7 +689,7 @@ extra_header_test (const char *filename, int filetype)
 	hexdump_file (filename, 0, 100000) ;
 
 	/* Open again for read/write. */
-	outfile = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, 438) ;
+	outfile = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, 493) ;
 
 	/*
 	** In auto header update mode, seeking to the end of the file with
@@ -652,26 +710,26 @@ extra_header_test (const char *filename, int filetype)
 		memset (buffer, 0xA0 + k, sizeof (buffer)) ;
 
 
-		test_seek_or_die (outfile, k * frames, SEEK_SET, k * frames, sfinfo.channels, 459) ;
-		test_seek_or_die (outfile, 0, SEEK_END, k * frames, sfinfo.channels, 460) ;
+		test_seek_or_die (outfile, k * frames, SEEK_SET, k * frames, sfinfo.channels, 514) ;
+		test_seek_or_die (outfile, 0, SEEK_END, k * frames, sfinfo.channels, 515) ;
 
 		/* Open file again and make sure no errors in log buffer. */
 		if (0)
-		{	infile = test_open_file_or_die (filename, SFM_READ, &sfinfo, 464) ;
-			check_log_buffer_or_die (infile, 465) ;
+		{	infile = test_open_file_or_die (filename, SFM_READ, &sfinfo, 519) ;
+			check_log_buffer_or_die (infile, 520) ;
 			sf_close (infile) ;
 			} ;
 
 		if (sfinfo.frames != k * frames)
-		{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %ld)\n", 470, SF_COUNT_TO_LONG (sfinfo.frames), SF_COUNT_TO_LONG (k + frames)) ;
+		{	printf ("\n\nLine %d : Incorrect sample count (%ld should be %ld)\n", 525, SF_COUNT_TO_LONG (sfinfo.frames), SF_COUNT_TO_LONG (k + frames)) ;
 			dump_log_buffer (infile) ;
 			exit (1) ;
 			} ;
 
 		if ((k & 1) == 0)
-			test_write_short_or_die (outfile, k, buffer, sfinfo.channels * frames, 476) ;
+			test_write_short_or_die (outfile, k, buffer, sfinfo.channels * frames, 531) ;
 		else
-			test_writef_short_or_die (outfile, k, buffer, frames, 478) ;
+			test_writef_short_or_die (outfile, k, buffer, frames, 533) ;
 		hexdump_file (filename, 0, 100000) ;
 		} ;
 
@@ -682,5 +740,4 @@ extra_header_test (const char *filename, int filetype)
 	return ;
 #endif
 } /* extra_header_test */
-
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -23,10 +23,10 @@
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "sndfile.h"
 #include "sfendian.h"
-#include "float_cast.h"
 #include "common.h"
 
 /*------------------------------------------------------------------------------
@@ -113,13 +113,13 @@ paf_open	(SF_PRIVATE *psf)
 			return error ;
 		} ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
-	{	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_PAF)
+	{	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_PAF)
 			return	SFE_BAD_OPEN_FORMAT ;
 
-		endian = psf->sf.format & SF_FORMAT_ENDMASK ;
+		endian = SF_ENDIAN (psf->sf.format) ;
 
 		/* PAF is by default big endian. */
 		psf->endian = SF_ENDIAN_BIG ;
@@ -273,7 +273,7 @@ paf_read_header	(SF_PRIVATE *psf)
 } /* paf_read_header */
 
 static int
-paf_write_header (SF_PRIVATE *psf, int calc_length)
+paf_write_header (SF_PRIVATE *psf, int UNUSED (calc_length))
 {	int			paf_format ;
 
 	/* PAF header already written so no need to re-write. */
@@ -282,12 +282,7 @@ paf_write_header (SF_PRIVATE *psf, int calc_length)
 
 	psf->dataoffset = PAF_HEADER_LENGTH ;
 
-	psf->dataoffset = PAF_HEADER_LENGTH ;
-
-	/* Prevent compiler warning. */
-	calc_length = calc_length ;
-
-	switch (psf->sf.format & SF_FORMAT_SUBMASK)
+	switch (SF_CODEC (psf->sf.format))
 	{	case SF_FORMAT_PCM_S8 :
 					paf_format = PAF_PCM_S8 ;
 					break ;
@@ -833,11 +828,3 @@ paf24_write_d (SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 	return total ;
 } /* paf24_write_d */
 
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 477a5308-451e-4bbd-bab4-fab6caa4e884
-*/

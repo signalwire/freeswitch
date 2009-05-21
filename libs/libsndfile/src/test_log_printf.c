@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -16,67 +16,76 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#include "sfconfig.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <errno.h>
 
-#include "sfconfig.h"
+#include "common.h"
 
-/* 
-** This is a bit rough, but it is the nicest way to do it.
-*/
-#define PSF_LOG_PRINTF_ONLY
-#include "common.c"
-
+#include "test_main.h"
 
 #define	CMP_0_ARGS(line,err,fmt)	\
 	{	psf->logindex = 0 ;			\
-		LSF_SNPRINTF (buffer, sizeof (buffer), (fmt)) ;	\
+		snprintf (buffer, sizeof (buffer), (fmt)) ;	\
 		psf_log_printf (psf, (fmt)) ;				\
 		err += compare_strings_or_die (line, fmt, buffer, psf->logbuffer) ;	\
 		}
 
 #define	CMP_2_ARGS(line,err,fmt,a)	\
 	{	psf->logindex = 0 ;			\
-		LSF_SNPRINTF (buffer, sizeof (buffer), (fmt), (a), (a)) ;	\
+		snprintf (buffer, sizeof (buffer), (fmt), (a), (a)) ;	\
 		psf_log_printf (psf, (fmt), (a), (a)) ;					\
 		err += compare_strings_or_die (line, fmt, buffer, psf->logbuffer) ;	\
 		}
 
 #define	CMP_4_ARGS(line,err,fmt,a)	\
 	{	psf->logindex = 0 ;			\
-		LSF_SNPRINTF (buffer, sizeof (buffer), (fmt), (a), (a), (a), (a)) ;	\
+		snprintf (buffer, sizeof (buffer), (fmt), (a), (a), (a), (a)) ;	\
 		psf_log_printf (psf, (fmt), (a), (a), (a), (a)) ;				\
 		err += compare_strings_or_die (line, fmt, buffer, psf->logbuffer) ;	\
 		}
 
 #define	CMP_5_ARGS(line,err,fmt,a)	\
 	{	psf->logindex = 0 ;			\
-		LSF_SNPRINTF (buffer, sizeof (buffer), (fmt), (a), (a), (a), (a), (a)) ;	\
+		snprintf (buffer, sizeof (buffer), (fmt), (a), (a), (a), (a), (a)) ;	\
 		psf_log_printf (psf, (fmt), (a), (a), (a), (a), (a)) ;					\
 		err += compare_strings_or_die (line, fmt, buffer, psf->logbuffer) ;		\
 		}
 
 #define	CMP_6_ARGS(line,err,fmt,a)	\
 	{	psf->logindex = 0 ;			\
-		LSF_SNPRINTF (buffer, sizeof (buffer), (fmt), (a), (a), (a), (a), (a), (a)) ;	\
+		snprintf (buffer, sizeof (buffer), (fmt), (a), (a), (a), (a), (a), (a)) ;	\
 		psf_log_printf (psf, (fmt), (a), (a), (a), (a), (a), (a)) ;					\
 		err += compare_strings_or_die (line, fmt, buffer, psf->logbuffer) ;			\
 		}
 
-static int compare_strings_or_die (int linenum, const char *fmt, const char* s1, const char* s3) ;
+static int
+compare_strings_or_die (int linenum, const char *fmt, const char* s1, const char* s2)
+{	int errors = 0 ;
+/*-puts (s1) ;puts (s2) ;-*/
 
-int
-main (void)
+	if (strcmp (s1, s2) != 0)
+	{	printf ("\n\nLine %d: string compare mismatch:\n\t", linenum) ;
+		printf ("\"%s\"\n", fmt) ;
+		printf ("\t\"%s\"\n\t\"%s\"\n", s1, s2) ;
+		errors ++ ;
+		} ;
+
+	return errors ;
+} /* compare_strings_or_die */
+
+void
+test_log_printf (void)
 {	static char buffer [2048] ;
 	SF_PRIVATE	sf_private, *psf ;
 	int			k, errors = 0 ;
 	int			int_values [] = { 0, 1, 12, 123, 1234, 123456, -1, -12, -123, -1234, -123456 } ;
 
-	printf ("    %-24s : ", "psf_log_printf_test") ;
-	fflush (stdout) ;
+	print_test_name ("Testing psf_log_printf") ;
 
 	psf = &sf_private ;
 	memset (psf, 0, sizeof (sf_private)) ;
@@ -110,29 +119,5 @@ main (void)
 		} ;
 
 	puts ("ok") ;
+} /* test_log_printf */
 
-	return 0 ;
-} /* main */
-
-static int
-compare_strings_or_die (int linenum, const char *fmt, const char* s1, const char* s2)
-{	int errors = 0 ;
-/*-puts (s1) ;puts (s2) ;-*/
-
-	if (strcmp (s1, s2) != 0)
-	{	printf ("\n\nLine %d: string compare mismatch:\n\t", linenum) ;
-		printf ("\"%s\"\n", fmt) ;
-		printf ("\t\"%s\"\n\t\"%s\"\n", s1, s2) ;
-		errors ++ ;
-		} ;
-
-	return errors ;
-} /* compare_strings_or_die */
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 45147310-868b-400a-97e8-cc0a572a6270
-*/

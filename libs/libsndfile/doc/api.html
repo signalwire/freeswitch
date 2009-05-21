@@ -62,7 +62,7 @@ The functions of libsndfile are defined as follows:
 
       sf_count_t  <A HREF="#seek">sf_seek</A>          (SNDFILE *sndfile, sf_count_t frames, int whence) ;
 
-      int         <A HREF="#command">sf_command</A>       (SNDFILE *sndfile, int cmd, void *data, int datasize) ;
+      int         <A HREF="command.html">sf_command</A>       (SNDFILE *sndfile, int cmd, void *data, int datasize) ;
 
       int         <A HREF="#error">sf_error</A>         (SNDFILE *sndfile) ;
       const char* <A HREF="#error">sf_strerror</A>      (SNDFILE *sndfile) ;
@@ -346,34 +346,6 @@ sf_seek will return the offset in (multichannel) frames from the start of the au
 or -1 if an error occured (ie an attempt is made to seek beyond the start or end of the file).
 </P>
 
-<A NAME="command"></A>
-<H2><BR><B>Command Interface</B></H2>
-
-<PRE>
-      int  sf_command  (SNDFILE *sndfile, int cmd, void *data, int datasize) ;
-</PRE>
-
-<P>
-This function allows the caller to retrieve information from or change aspects of the
-library behaviour on a per file basis. Examples include reading or writing text descriptions
-to a file or changing the scaling applied to sample data during read and write.
-</P>
-<!-- pepper -->
-<P>
-The cmd parameter is a short null terminated string which specifies which command
-to execute. Data is passed to and returned from the library by use of a void
-pointer. The library will not read or write more than datasize bytes from the void
-pointer. For some calls no data is required in which case data should be NULL and
-datasize may be used for some other purpose.
-</P>
-<P>
-The return value of sf_command () depends on the value of the cmd parameter, but it is
-usually non-zero for success and zero on error.
-</P>
-<P>
-This function is explained more fully <A HREF="command.html">here</A>.
-</P>
-
 <A NAME="error"></A>
 <H2><BR><B>Error Reporting Functions</B></H2>
 
@@ -588,6 +560,10 @@ compressed file formats other than SF_FORMAT_ALAW and SF_FORMAT_ULAW is undefine
 </B>
 </P>
 
+<p>
+See also : <a href="command.html#SFC_RAW_NEEDS_ENDSWAP">SFC_RAW_NEEDS_ENDSWAP</a>
+</p>
+
 <A NAME="string"></A>
 <H2><BR><B>Functions for Reading and Writing String Data</B></H2>
 
@@ -684,7 +660,7 @@ and a parameter of SF_TRUE to force correct scaling.
 		<A HREF="http://www.mega-nerd.com/libsndfile/">here</A>.
 </P>
 <P>
-Version : 1.0.17
+Version : 1.0.19
 </P>
 <!-- pepper -->
 <!-- pepper -->
@@ -693,11 +669,3 @@ Version : 1.0.17
 
 </BODY>
 </HTML>
-
-<!--
-  Do not edit or modify anything in this comment block.
-  The arch-tag line is a file identity tag for the GNU Arch
-  revision control system.
-
-  arch-tag: f6d3aa8f-983a-4ad3-9681-346e122d815e
--->

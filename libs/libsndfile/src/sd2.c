@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2006 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 ** Copyright (C) 2004 Paavo Jumppanen
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -58,6 +58,7 @@ enum
 typedef struct
 {	unsigned char * rsrc_data ;
 	int rsrc_len ;
+	int need_to_free_rsrc_data ;
 
 	int data_offset, data_length ;
 	int map_offset, map_length ;
@@ -118,12 +119,12 @@ sd2_open (SF_PRIVATE *psf)
 			goto error_cleanup ;
 		} ;
 
-	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_SD2)
+	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_SD2)
 	{	error = SFE_BAD_OPEN_FORMAT ;
 		goto error_cleanup ;
 		} ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 	psf->dataoffset = 0 ;
 
 	/* Only open and write the resource in RDWR mode is its current length is zero. */
@@ -249,9 +250,9 @@ sd2_write_rsrc_fork (SF_PRIVATE *psf, int UNUSED (calc_length))
 	rsrc.rsrc_len = sizeof (psf->header) ;
 	memset (rsrc.rsrc_data, 0xea, rsrc.rsrc_len) ;
 
-	LSF_SNPRINTF (str_rsrc [0].value, sizeof (str_rsrc [0].value), "_%d", rsrc.sample_size) ;
-	LSF_SNPRINTF (str_rsrc [1].value, sizeof (str_rsrc [1].value), "_%d.000000", rsrc.sample_rate) ;
-	LSF_SNPRINTF (str_rsrc [2].value, sizeof (str_rsrc [2].value), "_%d", rsrc.channels) ;
+	snprintf (str_rsrc [0].value, sizeof (str_rsrc [0].value), "_%d", rsrc.sample_size) ;
+	snprintf (str_rsrc [1].value, sizeof (str_rsrc [1].value), "_%d.000000", rsrc.sample_rate) ;
+	snprintf (str_rsrc [2].value, sizeof (str_rsrc [2].value), "_%d", rsrc.channels) ;
 
 	for (k = 0 ; k < ARRAY_LEN (str_rsrc) ; k++)
 	{	if (str_rsrc [k].value_len == 0)
@@ -420,7 +421,9 @@ sd2_parse_rsrc_fork (SF_PRIVATE *psf)
 	psf_log_printf (psf, "Resource length : %d (0x%04X)\n", rsrc.rsrc_len, rsrc.rsrc_len) ;
 
 	if (rsrc.rsrc_len > SIGNED_SIZEOF (psf->header))
-		rsrc.rsrc_data = calloc (1, rsrc.rsrc_len) ;
+	{	rsrc.rsrc_data = calloc (1, rsrc.rsrc_len) ;
+		rsrc.need_to_free_rsrc_data = SF_TRUE ;
+		}
 	else
 		rsrc.rsrc_data = psf->header ;
 
@@ -477,6 +480,12 @@ sd2_parse_rsrc_fork (SF_PRIVATE *psf)
 		goto parse_rsrc_fork_cleanup ;
 		} ;
 
+	if (rsrc.map_offset + 28 >= rsrc.rsrc_len)
+	{	psf_log_printf (psf, "Bad map offset (%d + 28 > %d).\n", rsrc.map_offset, rsrc.rsrc_len) ;
+		error = SFE_SD2_BAD_RSRC ;
+		goto parse_rsrc_fork_cleanup ;
+		} ;
+
 	rsrc.string_offset = rsrc.map_offset + read_short (rsrc.rsrc_data, rsrc.map_offset + 26) ;
 	if (rsrc.string_offset > rsrc.rsrc_len)
 	{	psf_log_printf (psf, "Bad string offset (%d).\n", rsrc.string_offset) ;
@@ -519,7 +528,7 @@ parse_rsrc_fork_cleanup :
 
 	psf_use_rsrc (psf, SF_FALSE) ;
 
-	if ((void *) rsrc.rsrc_data < (void *) psf || (void *) rsrc.rsrc_data > (void *) (psf + 1))
+	if (rsrc.need_to_free_rsrc_data)
 		free (rsrc.rsrc_data) ;
 
 	return error ;
@@ -528,12 +537,14 @@ parse_rsrc_fork_cleanup :
 static int
 parse_str_rsrc (SF_PRIVATE *psf, SD2_RSRC * rsrc)
 {	char name [32], value [32] ;
-	int k, str_offset, data_offset, data_len, rsrc_id ;
+	int k, str_offset, rsrc_id, data_offset = 0, data_len = 0 ;
 
 	psf_log_printf (psf, "Finding parameters :\n") ;
 
 	str_offset = rsrc->string_offset ;
-	for (k = 0 ; k < rsrc->str_count ; k++)
+	psf_log_printf (psf, "  Offset    RsrcId    dlen    slen    Value\n") ;
+
+	for (k = 0 ; data_offset + data_len < rsrc->rsrc_len ; k++)
 	{	int slen ;
 
 		slen = read_char (rsrc->rsrc_data, str_offset) ;
@@ -544,27 +555,41 @@ parse_str_rsrc (SF_PRIVATE *psf, SD2_RSRC * rsrc)
 
 		data_offset = rsrc->data_offset + read_int (rsrc->rsrc_data, rsrc->item_offset + k * 12 + 4) ;
 		if (data_offset < 0 || data_offset > rsrc->rsrc_len)
-		{	psf_log_printf (psf, "Bad data offset (%d)\n", data_offset) ;
-			return SFE_SD2_BAD_DATA_OFFSET ;
+		{	psf_log_printf (psf, "Exiting parser on data offset of %d.\n", data_offset) ;
+			break ;
 			} ;
 
 		data_len = read_int (rsrc->rsrc_data, data_offset) ;
 		if (data_len < 0 || data_len > rsrc->rsrc_len)
-		{	psf_log_printf (psf, "Bad data length (%d).\n", data_len) ;
-			return SFE_SD2_BAD_RSRC ;
+		{	psf_log_printf (psf, "Exiting parser on data length of %d.\n", data_len) ;
+			break ;
 			} ;
 
 		slen = read_char (rsrc->rsrc_data, data_offset + 4) ;
 		read_str (rsrc->rsrc_data, data_offset + 5, value, SF_MIN (SIGNED_SIZEOF (value), slen + 1)) ;
 
-		psf_log_printf (psf, "  %-12s   0x%04x    %4d    %2d    %2d    '%s'\n", name, data_offset, rsrc_id, data_len, slen, value) ;
+		psf_log_printf (psf, "  0x%04x     %4d     %4d     %3d    '%s'\n", data_offset, rsrc_id, data_len, slen, value) ;
 
-		if (strcmp (name, "sample-size") == 0 && rsrc->sample_size == 0)
+		if (rsrc_id == 1000 && rsrc->sample_size == 0)
 			rsrc->sample_size = strtol (value, NULL, 10) ;
-		else if (strcmp (name, "sample-rate") == 0 && rsrc->sample_rate == 0)
+		else if (rsrc_id == 1001 && rsrc->sample_rate == 0)
 			rsrc->sample_rate = strtol (value, NULL, 10) ;
-		else if (strcmp (name, "channels") == 0 && rsrc->channels == 0)
+		else if (rsrc_id == 1002 && rsrc->channels == 0)
 			rsrc->channels = strtol (value, NULL, 10) ;
+		} ;
+
+	psf_log_printf (psf, "Found Parameters :\n") ;
+	psf_log_printf (psf, "  sample-size : %d\n", rsrc->sample_size) ;
+	psf_log_printf (psf, "  sample-rate : %d\n", rsrc->sample_rate) ;
+	psf_log_printf (psf, "  channels    : %d\n", rsrc->channels) ;
+
+	if (rsrc->sample_rate <= 4 && rsrc->sample_size > 4)
+	{	int temp ;
+
+		psf_log_printf (psf, "Geez!! Looks like sample rate and sample size got switched.\nCorrecting this screw up.\n") ;
+		temp = rsrc->sample_rate ;
+		rsrc->sample_rate = rsrc->sample_size ;
+		rsrc->sample_size = temp ;
 		} ;
 
 	if (rsrc->sample_rate < 0)
@@ -604,10 +629,3 @@ parse_str_rsrc (SF_PRIVATE *psf, SD2_RSRC * rsrc)
 	return 0 ;
 } /* parse_str_rsrc */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 1ee183e5-6b9f-4c2c-bd0a-24f35595cefc
-*/

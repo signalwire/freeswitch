@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -21,10 +21,10 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	<math.h>
 
 #include	"sndfile.h"
 #include	"sfendian.h"
-#include	"float_cast.h"
 #include	"common.h"
 
 typedef struct IMA_ADPCM_PRIVATE_tag
@@ -92,6 +92,16 @@ static int wav_w64_ima_encode_block (SF_PRIVATE *psf, IMA_ADPCM_PRIVATE *pima) ;
 static int aiff_ima_decode_block (SF_PRIVATE *psf, IMA_ADPCM_PRIVATE *pima) ;
 static int aiff_ima_encode_block (SF_PRIVATE *psf, IMA_ADPCM_PRIVATE *pima) ;
 
+
+static inline int
+clamp_ima_step_index (int indx)
+{	if (indx < 0)
+		return 0 ;
+	if (indx >= ARRAY_LEN (ima_step_size))
+		return ARRAY_LEN (ima_step_size) - 1 ;
+
+	return indx ;
+} /* clamp_ima_step_index */
 
 /*============================================================================================
 ** IMA ADPCM Reader initialisation function.
@@ -194,18 +204,25 @@ ima_reader_init (SF_PRIVATE *psf, int blockalign, int samplesperblock)
 	psf->datalength = (psf->dataend) ? psf->dataend - psf->dataoffset :
 							psf->filelength - psf->dataoffset ;
 
+    if (pima->blocksize == 0)
+	{	psf_log_printf (psf, "*** Error : pima->blocksize should not be zero.\n") ;
+		return SFE_INTERNAL ;
+		} ;
+
 	if (psf->datalength % pima->blocksize)
 		pima->blocks = psf->datalength / pima->blocksize + 1 ;
 	else
 		pima->blocks = psf->datalength / pima->blocksize ;
 
-	switch (psf->sf.format & SF_FORMAT_TYPEMASK)
+	switch (SF_CONTAINER (psf->sf.format))
 	{	case SF_FORMAT_WAV :
 		case SF_FORMAT_W64 :
 				count = 2 * (pima->blocksize - 4 * pima->channels) / pima->channels + 1 ;
 
 				if (pima->samplesperblock != count)
-					psf_log_printf (psf, "*** Warning : samplesperblock should be %d.\n", count) ;
+				{	psf_log_printf (psf, "*** Error : samplesperblock should be %d.\n", count) ;
+					return SFE_INTERNAL ;
+					} ;
 
 				pima->decode_block = wav_w64_ima_decode_block ;
 
@@ -260,16 +277,9 @@ count ++ ;
 		sampledata = pima->samples + chan ;
 
 		predictor = (blockdata [0] << 8) | (blockdata [1] & 0x80) ;
-		stepindx = blockdata [1] & 0x7F ;
 
-{
-if (count < 5)
-printf ("\nchan: %d    predictor: %d    stepindx: %d (%d)\n",
-	chan, predictor, stepindx, ima_step_size [stepindx]) ;
-}
-		/* FIXME : Do this a better way. */
-		if (stepindx < 0) stepindx = 0 ;
-		else if (stepindx > 88)	stepindx = 88 ;
+		stepindx = blockdata [1] & 0x7F ;
+		stepindx = clamp_ima_step_index (stepindx) ;
 
 		/*
 		**	Pull apart the packed 4 bit samples and store them in their
@@ -288,9 +298,7 @@ printf ("\nchan: %d    predictor: %d    stepindx: %d (%d)\n",
 			bytecode = pima->samples [pima->channels * k + chan] ;
 
 			stepindx += ima_indx_adjust [bytecode] ;
-
-			if (stepindx < 0) stepindx = 0 ;
-			else if (stepindx > 88) stepindx = 88 ;
+			stepindx = clamp_ima_step_index (stepindx) ;
 
 			diff = step >> 3 ;
 			if (bytecode & 1)	diff += step >> 2 ;
@@ -299,17 +307,9 @@ printf ("\nchan: %d    predictor: %d    stepindx: %d (%d)\n",
 			if (bytecode & 8)	diff = -diff ;
 
 			predictor += diff ;
-
 			pima->samples [pima->channels * k + chan] = predictor ;
 			} ;
 		} ;
-
-if (count < 5)
-{
-	for (k = 0 ; k < 10 ; k++)
-		printf ("% 7d,", pima->samples [k]) ;
-	puts ("") ;
-}
 
 	return 1 ;
 } /* aiff_ima_decode_block */
@@ -318,14 +318,6 @@ static int
 aiff_ima_encode_block (SF_PRIVATE *psf, IMA_ADPCM_PRIVATE *pima)
 {	int		chan, k, step, diff, vpdiff, blockindx, indx ;
 	short	bytecode, mask ;
-
-static int count = 0 ;
-if (0 && count == 0)
-{	pima->samples [0] = 0 ;
-	printf ("blocksize : %d\n", pima->blocksize) ;
-	printf ("pima->stepindx [0] : %d\n", pima->stepindx [0]) ;
-	}
-count ++ ;
 
 	/* Encode the block header. */
 	for (chan = 0 ; chan < pima->channels ; chan ++)
@@ -372,11 +364,8 @@ count ++ ;
 			pima->previous [chan] = -32768 ;
 
 		pima->stepindx [chan] += ima_indx_adjust [bytecode] ;
-		if (pima->stepindx [chan] < 0)
-			pima->stepindx [chan] = 0 ;
-		else if (pima->stepindx [chan] > 88)
-			pima->stepindx [chan] = 88 ;
 
+		pima->stepindx [chan] = clamp_ima_step_index (pima->stepindx [chan]) ;
 		pima->samples [k] = bytecode ;
 		} ;
 
@@ -385,9 +374,6 @@ count ++ ;
 	for (chan = 0 ; chan < pima->channels ; chan ++)
 	{	for (indx = pima->channels ; indx < pima->channels * pima->samplesperblock ; indx += 2 * pima->channels)
 		{	blockindx = chan * pima->blocksize + 2 + indx / 2 ;
-
-if (0 && count ++ < 5)
-	printf ("chan: %d    blockindx: %3d    indx: %3d\n", chan, blockindx, indx) ;
 
 			pima->block [blockindx] = pima->samples [indx] & 0x0F ;
 			pima->block [blockindx] |= (pima->samples [indx + pima->channels] << 4) & 0xF0 ;
@@ -430,10 +416,8 @@ wav_w64_ima_decode_block (SF_PRIVATE *psf, IMA_ADPCM_PRIVATE *pima)
 			current -= 0x10000 ;
 
 		stepindx [chan] = pima->block [chan*4+2] ;
-		if (stepindx [chan] < 0)
-			stepindx [chan] = 0 ;
-		else if (stepindx [chan] > 88)
-			stepindx [chan] = 88 ;
+		stepindx [chan] = clamp_ima_step_index (stepindx [chan]) ;
+
 
 		if (pima->block [chan*4+3] != 0)
 			psf_log_printf (psf, "IMA ADPCM synchronisation error.\n") ;
@@ -491,11 +475,7 @@ wav_w64_ima_decode_block (SF_PRIVATE *psf, IMA_ADPCM_PRIVATE *pima)
 			current = -32768 ;
 
 		stepindx [chan] += ima_indx_adjust [bytecode] ;
-
-		if (stepindx [chan] < 0)
-			stepindx [chan] = 0 ;
-		else if (stepindx [chan] > 88)
-			stepindx [chan] = 88 ;
+		stepindx [chan] = clamp_ima_step_index (stepindx [chan]) ;
 
 		pima->samples [k] = current ;
 		} ;
@@ -555,10 +535,7 @@ wav_w64_ima_encode_block (SF_PRIVATE *psf, IMA_ADPCM_PRIVATE *pima)
 			pima->previous [chan] = -32768 ;
 
 		pima->stepindx [chan] += ima_indx_adjust [bytecode] ;
-		if (pima->stepindx [chan] < 0)
-			pima->stepindx [chan] = 0 ;
-		else if (pima->stepindx [chan] > 88)
-			pima->stepindx [chan] = 88 ;
+		pima->stepindx [chan] = clamp_ima_step_index (pima->stepindx [chan]) ;
 
 		pima->samples [k] = bytecode ;
 		} ;
@@ -806,7 +783,7 @@ ima_writer_init (SF_PRIVATE *psf, int blockalign)
 
 	pima->samplecount = 0 ;
 
-	switch (psf->sf.format & SF_FORMAT_TYPEMASK)
+	switch (SF_CONTAINER (psf->sf.format))
 	{	case SF_FORMAT_WAV :
 		case SF_FORMAT_W64 :
 				pima->encode_block = wav_w64_ima_encode_block ;
@@ -966,11 +943,3 @@ ima_write_d (SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 	return total ;
 } /* ima_write_d */
 
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 75a54b82-ad18-4758-9933-64e00a7f24e0
-*/

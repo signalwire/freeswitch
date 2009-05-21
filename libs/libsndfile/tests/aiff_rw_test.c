@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003,2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 
 static unsigned char aifc_data [] =
 {	'F' , 'O' , 'R' , 'M' ,
-	0x00, 0x00, 0x01, 0xAA, /* FORM length */
+	0x00, 0x00, 0x01, 0xE8, /* FORM length */
 
 	'A' , 'I' , 'F' , 'C' ,
 	0x43, 0x4F, 0x4D, 0x4D, /* COMM */
@@ -41,6 +41,14 @@ static unsigned char aifc_data [] =
 	'd' , 0x00,
 
 	'F' , 'V' , 'E' , 'R' , 0x00, 0x00, 0x00, 0x04, 0xA2, 0x80, 0x51, 0x40,
+
+	/* A 'MARK' chunk. */
+	'M' , 'A' , 'R' , 'K' , 0x00, 0x00, 0x00, 0x36, 0x00, 0x05,
+	0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 'A' ,
+	0x00, 0x02, 0x00, 0x00, 0x11, 0x3A, 0x02, 'B' , 'C' , 0x00,
+	0x00, 0x03, 0x00, 0x00, 0x22, 0x74, 0x03, 'D' , 'E' , 'F',
+	0x00, 0x04, 0x00, 0x00, 0x33, 0xAE, 0x04, 'G' , 'H' , 'I', 'J' , 0x00,
+	0x00, 0x05, 0x00, 0x00, 0x44, 0xE8, 0x05, 'K' , 'L' , 'M', 'N' , 'O' ,
 
 	'S' , 'S' , 'N' , 'D' ,
 	0x00, 0x00, 0x01, 0x64, /* SSND length */
@@ -132,7 +140,7 @@ rw_test (const char *filename)
 
 	/* Now compare the two. */
 	if (sfinfo_rd.format != sfinfo_rw.format)
-	{	printf ("\n\nLine %d : channel count mismatch (0x%08X != 0x%08X).\n\n", __LINE__,
+	{	printf ("\n\nLine %d : format mismatch (0x%08X != 0x%08X).\n\n", __LINE__,
 			sfinfo_rd.format, sfinfo_rw.format) ;
 		exit (1) ;
 		} ;
@@ -144,7 +152,7 @@ rw_test (const char *filename)
 		} ;
 
 	if (sfinfo_rd.frames != sfinfo_rw.frames)
-	{	printf ("\n\nLine %d : frame count mismatch (%ld != %ld).\n\n", __LINE__,
+	{	printf ("\n\nLine %d : frame count mismatch (rd %ld != rw %ld).\n\n", __LINE__,
 			SF_COUNT_TO_LONG (sfinfo_rd.frames), SF_COUNT_TO_LONG (sfinfo_rw.frames)) ;
 		exit (1) ;
 		} ;
@@ -152,10 +160,3 @@ rw_test (const char *filename)
 	return ;
 } /* rw_test */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 12561248-1ad1-4ba6-941c-029f1333c080
-*/

@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 2002-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -42,13 +42,21 @@
 #define		M_PI		3.14159265358979323846264338
 #endif
 
-#if (defined (WIN32) || defined (_WIN32))
-	#define	WRITE_FLAGS	(O_WRONLY | O_CREAT | O_TRUNC | O_BINARY)
-	#define	READ_FLAGS	(O_RDONLY | O_BINARY)
+/*
+**	Neat solution to the Win32/OS2 binary file flage requirement.
+**	If O_BINARY isn't already defined by the inclusion of the system
+**	headers, set it to zero.
+*/
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
+#define	WRITE_FLAGS	(O_WRONLY | O_CREAT | O_TRUNC | O_BINARY)
+#define	READ_FLAGS	(O_RDONLY | O_BINARY)
+
+#if (defined (WIN32) || defined (_WIN32) || defined (__OS2__))
 	#define WRITE_PERMS	0777
 #else
-	#define	WRITE_FLAGS	(O_WRONLY | O_CREAT | O_TRUNC)
-	#define	READ_FLAGS	(O_RDONLY)
 	#define WRITE_PERMS	(S_IRUSR | S_IWUSR | S_IRGRP)
 #endif
 
@@ -350,12 +358,3 @@ get_subtype_str (int subtype)
 	return "UNKNOWN" ;
 } /* get_subtype_str */
 
-[+ COMMENT
-
- Do not edit or modify anything in this comment block.
- The following line is a file identity tag for the GNU Arch 
- revision control system.
-
- arch-tag: 64ccb3fb-c61d-42d7-b14f-0ec3ba303f88
-
-+]

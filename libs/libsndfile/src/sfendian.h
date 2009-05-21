@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2006 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -15,6 +15,9 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
+
+#ifndef SFENDIAN_INCLUDED
+#define SFENDIAN_INCLUDED
 
 #include "sfconfig.h"
 
@@ -247,10 +250,5 @@ endswap_double_copy (double *dest, const double *src, int len)
 {	endswap_int64_t_copy ((int64_t *) dest, (const int64_t *) src, len) ;
 } /* endswap_double_copy */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: f0c5cd54-42d3-4237-90ec-11fe24995de7
-*/
+#endif /* SFENDIAN_INCLUDED */
+

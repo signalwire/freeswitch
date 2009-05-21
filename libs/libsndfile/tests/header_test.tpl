@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 2001-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software ; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -55,6 +55,8 @@ static void	update_header_test (const char *filename, int typemajor) ;
 
 static void extra_header_test (const char *filename, int filetype) ;
 
+static void header_shrink_test (const char *filename, int filetype) ;
+
 /* Force the start of this buffer to be double aligned. Sparc-solaris will
 ** choke if its not.
 */
@@ -83,7 +85,16 @@ main (int argc, char *argv [])
 		update_seek_int_test ("header_int.wav", SF_FORMAT_WAV) ;
 		update_seek_float_test ("header_float.wav", SF_FORMAT_WAV) ;
 		update_seek_double_test ("header_double.wav", SF_FORMAT_WAV) ;
+		header_shrink_test ("header_shrink.wav", SF_FORMAT_WAV) ;
 		extra_header_test ("extra.wav", SF_FORMAT_WAV) ;
+
+		update_header_test ("header.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_short_test ("header_short.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_int_test ("header_int.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_float_test ("header_float.wavex", SF_FORMAT_WAVEX) ;
+		update_seek_double_test ("header_double.wavex", SF_FORMAT_WAVEX) ;
+		header_shrink_test ("header_shrink.wavex", SF_FORMAT_WAVEX) ;
+		extra_header_test ("extra.wavex", SF_FORMAT_WAVEX) ;
 		test_count++ ;
 		} ;
 
@@ -93,6 +104,7 @@ main (int argc, char *argv [])
 		update_seek_int_test ("header_int.aiff", SF_FORMAT_AIFF) ;
 		update_seek_float_test ("header_float.aiff", SF_FORMAT_AIFF) ;
 		update_seek_double_test ("header_double.aiff", SF_FORMAT_AIFF) ;
+		header_shrink_test ("header_shrink.wav", SF_FORMAT_AIFF) ;
 		extra_header_test ("extra.aiff", SF_FORMAT_AIFF) ;
 		test_count++ ;
 		} ;
@@ -141,6 +153,15 @@ main (int argc, char *argv [])
 		update_seek_int_test ("header_int.w64", SF_FORMAT_W64) ;
 		update_seek_float_test ("header_float.w64", SF_FORMAT_W64) ;
 		update_seek_double_test ("header_double.w64", SF_FORMAT_W64) ;
+		test_count++ ;
+		} ;
+
+	if (do_all || ! strcmp (argv [1], "rf64"))
+	{	update_header_test ("header.rf64", SF_FORMAT_RF64) ;
+		update_seek_short_test ("header_short.rf64", SF_FORMAT_RF64) ;
+		update_seek_int_test ("header_int.rf64", SF_FORMAT_RF64) ;
+		update_seek_float_test ("header_float.rf64", SF_FORMAT_RF64) ;
+		update_seek_double_test ("header_double.rf64", SF_FORMAT_RF64) ;
 		test_count++ ;
 		} ;
 
@@ -195,6 +216,12 @@ main (int argc, char *argv [])
 	if (do_all || ! strcmp (argv [1], "sds"))
 	{	update_header_test ("header.sds", SF_FORMAT_SDS) ;
 		/*-update_seek_short_test ("header_short.sds", SF_FORMAT_SDS) ;-*/
+		test_count++ ;
+		} ;
+
+	if (do_all || ! strcmp (argv [1], "mpc2k"))
+	{	update_header_test ("header.mpc", SF_FORMAT_MPC2K) ;
+		update_seek_short_test ("header_short.mpc", SF_FORMAT_MPC2K) ;
 		test_count++ ;
 		} ;
 
@@ -290,18 +317,6 @@ update_header_test (const char *filename, int typemajor)
 {
 	print_test_name ("update_header_test", filename) ;
 
-#if 0 /*-(OS_IS_WIN32 == 0)-*/
-	if (typemajor == SF_FORMAT_PAF)
-	{	/*
-		** I think this is a bug in the win32 file I/O code in src/file_io.c.
-		** I didn't write that code and I don't have the time to debug and
-		** fix it. Patches will gladly be accepted. Erik
-		*/
-		puts ("doesn't work on win32") ;
-		return ;
-		} ;
-#endif
-
 	update_header_sub (filename, typemajor, SFM_WRITE) ;
 	update_header_sub (filename, typemajor, SFM_RDWR) ;
 
@@ -379,11 +394,51 @@ update_seek_[+ (get "name") +]_test	(const char *filename, int filetype)
 	puts ("ok") ;
 	return ;
 } /* update_seek_[+ (get "name") +]_test */
+
 [+ ENDFOR data_type
 +]
 
+static void
+header_shrink_test (const char *filename, int filetype)
+{	SNDFILE *outfile, *infile ;
+	SF_INFO sfinfo ;
+	sf_count_t frames ;
+	float buffer [8], bufferin [8] ;
 
+	print_test_name ("header_shrink_test", filename) ;
 
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+	sfinfo.samplerate = 44100 ;
+	sfinfo.format = filetype | SF_FORMAT_FLOAT ;
+	sfinfo.channels = 1 ;
+
+	memset (buffer, 0xA0, sizeof (buffer)) ;
+
+	/* Now write some frames. */
+	frames = ARRAY_LEN (buffer) / sfinfo.channels ;
+
+	/* Test the file with extra header data. */
+	outfile = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_FALSE, __LINE__) ;
+
+	sf_command (outfile, SFC_SET_ADD_PEAK_CHUNK, NULL, SF_TRUE) ;
+	sf_command (outfile, SFC_UPDATE_HEADER_NOW, NULL, SF_FALSE) ;
+	sf_command (outfile, SFC_SET_ADD_PEAK_CHUNK, NULL, SF_FALSE) ;
+
+	test_writef_float_or_die (outfile, 0, buffer, frames, __LINE__) ;
+	sf_close (outfile) ;
+
+	/* Open again for read. */
+	infile = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_FALSE, __LINE__) ;
+
+	test_readf_float_or_die (infile, 0, bufferin, frames, __LINE__) ;
+	sf_close (infile) ;
+
+	compare_float_or_die (buffer, bufferin, frames, __LINE__) ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+	return ;
+} /* header_shrink_test */
 
 
 static void
@@ -487,12 +542,3 @@ extra_header_test (const char *filename, int filetype)
 #endif
 } /* extra_header_test */
 
-[+ COMMENT
-
- Do not edit or modify anything in this comment block.
- The arch-tag line is a file identity tag for the GNU Arch
- revision control system.
-
- arch-tag: ba02b7d6-8a89-45f3-aad2-a50390f52af5
-
-+]

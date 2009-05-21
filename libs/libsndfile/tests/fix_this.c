@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -45,8 +45,8 @@ static	void	gen_signal_double (double *data, double scale, int datalen) ;
 */
 
 typedef union
-{	double	d [BUFFER_SIZE + 1];
-	int 	i [BUFFER_SIZE + 1];
+{	double	d [BUFFER_SIZE + 1] ;
+	int 	i [BUFFER_SIZE + 1] ;
 } BUFFER ;
 
 static	BUFFER	data_buffer ;
@@ -322,10 +322,3 @@ error_function (double data, double orig, double margin)
 	return 0 ;
 } /* error_function */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 368e2777-2848-4e16-a77f-4db841377c73
-*/

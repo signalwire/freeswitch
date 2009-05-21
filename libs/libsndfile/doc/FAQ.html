@@ -23,7 +23,7 @@
 		substitution" error during linking. What can I do to fix this?</A><BR>
 <A HREF="#Q005">Q5 : Why doesn't libsndfile do interleaving/de-interleaving?</A><BR>
 <A HREF="#Q006">Q6 : What's the best format for storing temporary files?</A><BR>
-<A HREF="#Q007">Q7 : On Linux/Unix/MaxOSX, what's the best way of detecting the
+<A HREF="#Q007">Q7 : On Linux/Unix/MacOSX, what's the best way of detecting the
 	presence of libsndfile?</A><BR>
 <A HREF="#Q008">Q8 : But I just want a simple Makefile! What do I do?</A><BR>
 <A HREF="#Q009">Q9 : How about adding the ability to write/read sound files to/from
@@ -42,6 +42,19 @@
 <A HREF="#Q016">Q16 : Will you accept a fix for compiling libsndfile with compiler X?
 	</A><BR>
 <A HREF="#Q017">Q17 : Can libsndfile read/write files from/to UNIX pipes?
+	</A><BR>
+<A HREF="#Q018">Q18 : Is it possible to build a Universal Binary on Mac OSX?
+	</A><BR>
+<A HREF="#Q019">Q19 : I have project files for Visual Studio / XCode / Whatever. Why
+	don't you distribute them with libsndfile?
+	</A><BR>
+<A HREF="#Q020">Q20 : Why doesn't libsndfile support MP3? Lots of other Open Source
+	projects support it!
+	</A><BR>
+<A HREF="#Q021">Q21 : How do I use libsndfile in a closed source or commercial program
+	and comply with the license?
+	</A><BR>
+<A HREF="#Q022">Q22 : What versions of windows does libsndfile work on?
 	</A><BR>
 <HR>
 
@@ -89,9 +102,12 @@ and always have the optimal behavior.
 <A NAME="Q003"></A>
 <H2><BR><B>Q3 : Compiling is really slow on MacOSX. Why?</B></H2>
 <P>
-When you configure and compile libsndfile, it uses the Bourne shell for a number
+When you configure and compile libsndfile, it uses the /bin/sh shell for a number
 of tasks (ie configure script and libtool).
-However, Apple has decided to ship their system with a really crappy Bourne shell.
+Older versions of OSX (10.2?) shipped a a really crappy Bourne shell as /bin/sh
+which resulted in <b>really</b> slow compiles.
+New version of OSX ship GNU BASh as /bin/sh and this answer doesn't apply in that
+case.
 </P>
 <P>
 To fix this I suggest that you install the GNU Bash shell, rename /bin/sh to
@@ -313,8 +329,18 @@ between 16 bit shorts and normalised floats is going to suffer other losses
 in audio quality that they should also be concerned about.
 </P>
 <P>
-The correct way to deal with this problem is to consider 16 bit short data as
-a final destination format only, not as an intermediate storage format.
+Since this problem only occurs when converting between integer data on disk and
+normalized floats in the application, it can be avoided by using something
+other than normalized floats in the application.
+Alternatives to normalized floats are the <b>short</b> and <b>int</b> data
+types (ie using sf_read_short or sf_read_int) or using un-normalized floats
+(see
+	<a href="http://www.mega-nerd.com/libsndfile/command.html#SFC_SET_NORM_FLOAT">
+	SFC_SET_NORM_FLOAT</a>).
+</P>
+<P>
+Another way to deal with this problem is to consider 16 bit short data as a
+final destination format only, not as an intermediate storage format.
 All intermediate data (ie which is going to be processed further) should be
 stored in floating point format which is supported by all of the most common
 file formats.
@@ -552,9 +578,204 @@ data in both big and little endian format.
 </P>
 
 <P>
-Sell also <A HREF="#Q006">FAQ Q6</A>.
+See also <A HREF="#Q006">FAQ Q6</A>.
 </P>
 
+<!-- ========================================================================= -->
+<A NAME="Q018"></A>
+<H2><BR><B>Q18 : Is it possible to build a Universal Binary on Mac OSX?
+</B></H2>
+
+<P>
+Yes, but you must do two separate configure/build/test runs; one on PowerPC
+and one on Intel.
+It is then possible to merge the binaries into a single universal binary using
+one of the programs in the Apple tool chain.
+</P>
+
+<P>
+It is <b>not</b> possible to build a working universal binary via a single
+compile/build run on a single CPU.
+</P>
+
+<P>
+The problem is that the libsndfile build process detects features of the CPU its
+being built for during the configure process and when building a universal binary,
+configure is only run once and that data is then used for both CPUs.
+That configure data will be wrong for one of those CPUs.
+You will still be able to compile libsndfile, and the test suite will pass on
+the machine you compiled it on.
+However, if you take the universal binary test suite programs compiled on one
+CPU and run them on the other, the test suite will fail.
+</P>
+
+<P>
+Part of the problem is the the CPU endian-ness is detected at configure time.
+Yes, I know the Apple compiler defines one of the macros __LITTLE_ENDIAN__
+and __BIG_ENDIAN__, but those macros are not part of the 1999 ISO C Standard
+and they are not portable.
+</P>
+
+<P>
+Endian issues are not the only reason why the cross compiled binary will fail.
+The configure script also detects other CPU specific idiosyncrasies to provide
+more optimized code.
+</P>
+
+<P>
+Finally, the real show stopper problem with universal binaries is the problem
+with the test suite.
+libsndfile contains a huge, comprehensive test suite.
+When you compile a universal binary and run the test suite, you only test the
+native compile.
+The cross compiled binary (the one with the much higher chance of having
+problems) cannot be tested.
+</P>
+
+<P>
+Now, if you have read this far you're probably thinking there must be a way
+to fix this and there probably is.
+The problem is that its a hell of a lot of work and would require significant
+changes to the configure process, the internal code and the test suite.
+In addition, these changes must not break compilation on any of the platforms
+libsndfile is currently working on.
+</p>
+
+
+<!-- ========================================================================= -->
+<A NAME="Q019"></A>
+<H2><BR><B>Q19 : I have project files for Visual Studio / XCode / Whatever. Why
+	don't you distribute them with libsndfile?
+</B></H2>
+
+<P>
+There's a very good reason for this.
+I will only distribute things that I actually have an ability to test and
+maintain.
+Project files for a bunch of different compilers and Integrated Development
+Environments are simply too difficult to maintain.
+</P>
+
+<P>
+The problem is that every time I add a new file to libsndfile or rename an
+existing file I would have to modify all the project files and then test that
+libsndfile still built with all the different compilers.
+</P>
+
+<P>
+Maintaining these project files is also rather difficult if I don't have access
+to the required compiler/IDE.
+If I just edit the project files without testing them I will almost certainly
+get it wrong.
+If I release a version of libsndfile with broken project files, I'll get a bunch
+of emails from people complaining about it not building and have no way of
+fixing or even testing it.
+</P>
+
+<P>
+I currently release sources that I personally test on Win32, Linux and
+MacOSX (PowerPC) using the compiler I trust (GNU GCC).
+Supporting one compiler on three (actually much more because GCC is available
+almost everywhere) platforms is doable without too much pain.
+I also release binaries for Win32 with instructions on how to use those
+binaries with Visual Studio.
+As a guy who is mainly interested in Linux, I'm not to keen to jump through
+a bunch of hoops to support compilers and operating systems I don't use.
+</P>
+
+<P>
+So, I hear you want to volunteer to maintain the project files for Some Crappy
+Compiler 2007?
+Well sorry, that won't work either.
+I have had numerous people over the years offer to maintaining the project
+files for Microsoft's Visual Studio.
+Every single time that happened, they maintained it for a release or two and
+then disappeared off the face of the earth.
+Hence, I'm not willing to enter into an arrangement like that again.
+</P>
+
+<!-- ========================================================================= -->
+<A NAME="Q020"></A>
+<H2><BR><B>Q20 : Why doesn't libsndfile support MP3? Lots of other Open Source
+	projects support it!
+</B></H2>
+
+<P>
+MP3 is not supported for one very good reason; doing so requires the payment
+of licensing fees.
+As can be seen from
+	<a href="http://www.mp3licensing.com/royalty/software.html">
+	mp3licensing.com</a>
+the required royalty payments are not cheap.
+</P>
+
+<p>
+Yes, I know other libraries ignore the licensing requirements, but their legal
+status is extremely dubious.
+At any time, the body selling the licenses could go after the authors of those
+libraries.
+Some of those authors may be students and hence wouldn't be worth pursuing.
+</P>
+
+<p>
+However, libsndfile is released under the name of a company, Mega Nerd Pty Ltd;
+a company which has income from from libsamplerate licensing, libsndfile based
+consulting income and other unrelated consulting income.
+Adding MP3 support to libsndfile could place that income would be under legal
+threat.
+</p>
+
+<p>
+Fortunately, Ogg Vorbis exists as an alternative to MP3.
+Support for Ogg Vorbis was added to libsndfile (mostly due to the efforts of
+John ffitch of the Csound project) in version 1.0.18.
+</p>
+
+
+<!-- ========================================================================= -->
+<A NAME="Q021"></A>
+<H2><BR><B>Q21 : How do I use libsndfile in a closed source or commercial program
+	and comply with the license?
+</B></H2>
+
+<p>
+Here is a checklist of things you need to do to make sure your use of libsndfile
+in a closed source or commercial project complies with the license libsndfile is
+released under, the GNU Lesser General Public License (LGPL):
+</p>
+
+<ul>
+<li>Make sure you are linking to libsndfile as a shared library (Linux and Unix
+	systems), Dynamic Link Library (Microsoft Windows) or dynlib (Mac OSX).
+	If you are using some other operating system that doesn't allow dynamically
+	linked libraries, you will not be able to use libsndfile unless you release
+	the source code to your program.
+<li>In the licensing documentation for your program, add a statement that your
+	software depends on libsndfile and that libsndfile is released under the GNU
+	Lesser General Public License, either
+		<a href="http://www.gnu.org/licenses/lgpl-2.1.txt">version 2.1</a>
+	or optionally
+		<a href="http://www.gnu.org/licenses/lgpl.txt">version 3</a>.
+<li>Include the text for both versions of the license, possibly as separate
+	files named libsndfile_lgpl_v2_1.txt and libsndfile_lgpl_v3.txt.
+</ul>
+
+<!-- ========================================================================= -->
+<A NAME="Q022"></A>
+<H2><BR><B>Q22 : What versions of windows does libsndfile work on?
+</B></H2>
+
+<p>
+Currently the precompiled windows binaries are tested in Windows XP.
+As such, they should also work on Win2k and Windows Vista.
+They may also work on earlier versions of windows.
+</p>
+
+<p>
+libsndfile does not yet work on 64 bit versions of windows.
+Support for 64 bit versions of WinXP and Vista is likely to be working some
+time late in 2008.
+</p>
 <!-- ========================================================================= -->
 <HR>
 <P>
@@ -562,16 +783,8 @@ Sell also <A HREF="#Q006">FAQ Q6</A>.
 		<A HREF="http://www.mega-nerd.com/libsndfile/">
 			http://www.mega-nerd.com/libsndfile/</A>.
 <BR>
-Version : 1.0.13
+Version : 1.0.19
 </P>
 
 </BODY>
 </HTML>
-
-<!--
-  Do not edit or modify anything in this comment block.
-  The arch-tag line is a file identity tag for the GNU Arch
-  revision control system.
-
-  arch-tag: 508f827d-b9a7-4a86-8c2f-d82321df91f7
--->

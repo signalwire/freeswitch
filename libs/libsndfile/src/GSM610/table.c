@@ -15,7 +15,6 @@
 
 #define	GSM_TABLE_C
 #include "gsm610_priv.h"
-#include	"gsm.h"
 
 /*  Table 4.1  Quantization of the Log.-Area Ratios
  */
@@ -59,11 +58,3 @@ word gsm_NRFAC[8] = { 29128, 26215, 23832, 21846, 20165, 18725, 17476, 16384 };
  */
 /* i                  0      1       2      3      4      5      6      7   */
 word gsm_FAC[8]	= { 18431, 20479, 22527, 24575, 26623, 28671, 30719, 32767 };
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 8957c531-e6b0-4097-9202-da7ca42729ca
-*/
-

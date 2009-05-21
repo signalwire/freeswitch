@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003,2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -128,11 +128,12 @@ dither_init (SF_PRIVATE *psf, int mode)
 		if (pdither == NULL)
 			return SFE_MALLOC_FAILED ;
 
-		switch (psf->sf.format & SF_FORMAT_SUBMASK)
+		switch (SF_CODEC (psf->sf.format))
 		{	case SF_FORMAT_DOUBLE :
 			case SF_FORMAT_FLOAT :
 					pdither->read_int = psf->read_int ;
 					psf->read_int = dither_read_int ;
+					break ;
 
 			case SF_FORMAT_PCM_32 :
 			case SF_FORMAT_PCM_24 :
@@ -141,6 +142,7 @@ dither_init (SF_PRIVATE *psf, int mode)
 			case SF_FORMAT_PCM_U8 :
 					pdither->read_short = psf->read_short ;
 					psf->read_short = dither_read_short ;
+					break ;
 
 			default : break ;
 			} ;
@@ -153,17 +155,19 @@ dither_init (SF_PRIVATE *psf, int mode)
 		if (pdither == NULL)
 			return SFE_MALLOC_FAILED ;
 
-		switch (psf->sf.format & SF_FORMAT_SUBMASK)
+		switch (SF_CODEC (psf->sf.format))
 		{	case SF_FORMAT_DOUBLE :
 			case SF_FORMAT_FLOAT :
 					pdither->write_int = psf->write_int ;
 					psf->write_int = dither_write_int ;
+					break ;
 
 			case SF_FORMAT_PCM_32 :
 			case SF_FORMAT_PCM_24 :
 			case SF_FORMAT_PCM_16 :
 			case SF_FORMAT_PCM_S8 :
 			case SF_FORMAT_PCM_U8 :
+					break ;
 
 			default : break ;
 			} ;
@@ -194,16 +198,14 @@ static void dither_float	(const float *in, float *out, int frames, int channels)
 static void dither_double	(const double *in, double *out, int frames, int channels) ;
 
 static sf_count_t
-dither_read_short (SF_PRIVATE *psf, short *ptr, sf_count_t len)
-{	psf = psf ;
-	ptr = ptr ;
+dither_read_short (SF_PRIVATE * UNUSED (psf), short * UNUSED (ptr), sf_count_t len)
+{
 	return len ;
 } /* dither_read_short */
 
 static sf_count_t
-dither_read_int (SF_PRIVATE *psf, int *ptr, sf_count_t len)
-{	psf = psf ;
-	ptr = ptr ;
+dither_read_int (SF_PRIVATE * UNUSED (psf), int * UNUSED (ptr), sf_count_t len)
+{
 	return len ;
 } /* dither_read_int */
 
@@ -221,7 +223,7 @@ dither_write_short	(SF_PRIVATE *psf, const short *ptr, sf_count_t len)
 		return 0 ;
 		} ;
 
-	switch (psf->sf.format & SF_FORMAT_SUBMASK)
+	switch (SF_CODEC (psf->sf.format))
 	{	case SF_FORMAT_PCM_S8 :
 		case SF_FORMAT_PCM_U8 :
 		case SF_FORMAT_DPCM_8 :
@@ -261,11 +263,12 @@ dither_write_int	(SF_PRIVATE *psf, const int *ptr, sf_count_t len)
 		return 0 ;
 		} ;
 
-	switch (psf->sf.format & SF_FORMAT_SUBMASK)
+	switch (SF_CODEC (psf->sf.format))
 	{	case SF_FORMAT_PCM_S8 :
 		case SF_FORMAT_PCM_U8 :
 		case SF_FORMAT_PCM_16 :
 		case SF_FORMAT_PCM_24 :
+				break ;
 
 		case SF_FORMAT_DPCM_8 :
 		case SF_FORMAT_DPCM_16 :
@@ -306,11 +309,12 @@ dither_write_float	(SF_PRIVATE *psf, const float *ptr, sf_count_t len)
 		return 0 ;
 		} ;
 
-	switch (psf->sf.format & SF_FORMAT_SUBMASK)
+	switch (SF_CODEC (psf->sf.format))
 	{	case SF_FORMAT_PCM_S8 :
 		case SF_FORMAT_PCM_U8 :
 		case SF_FORMAT_PCM_16 :
 		case SF_FORMAT_PCM_24 :
+				break ;
 
 		case SF_FORMAT_DPCM_8 :
 		case SF_FORMAT_DPCM_16 :
@@ -350,11 +354,12 @@ dither_write_double	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 		return 0 ;
 		} ;
 
-	switch (psf->sf.format & SF_FORMAT_SUBMASK)
+	switch (SF_CODEC (psf->sf.format))
 	{	case SF_FORMAT_PCM_S8 :
 		case SF_FORMAT_PCM_U8 :
 		case SF_FORMAT_PCM_16 :
 		case SF_FORMAT_PCM_24 :
+				break ;
 
 		case SF_FORMAT_DPCM_8 :
 		case SF_FORMAT_DPCM_16 :
@@ -526,10 +531,4 @@ DO_NOT_USE_sf_dither_double (const SF_DITHER_INFO *dither, const double *in, dou
 } /* DO_NOT_USE_sf_dither_double */
 
 #endif
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 673fad58-5314-421c-9144-9d54bfdf104c
-*/
+

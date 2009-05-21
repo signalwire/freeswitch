@@ -95,6 +95,13 @@
 	<TD>Set/clear the scale factor when integer (short/int) data is read from a file
 	containing floating point data.</TD>
 </TR>
+
+<TR>
+	<TD><A HREF="#SFC_SET_SCALE_INT_FLOAT_WRITE">SFC_SET_SCALE_INT_FLOAT_WRITE</A></TD>
+	<TD>Set/clear the scale factor when integer (short/int) data is written to a file
+	as floating point data.</TD>
+</TR>
+
 <TR>
 	<TD><A HREF="#SFC_GET_SIMPLE_FORMAT_COUNT">SFC_GET_SIMPLE_FORMAT_COUNT</A></TD>
 	<TD>Retrieve the number of simple formats supported by libsndfile.</TD>
@@ -168,6 +175,35 @@
 	<TD>Retreive information about audio files embedded inside other files.</TD>
 </TR>
 
+<TR>
+	<TD><A HREF="#SFC_WAVEX_GET_AMBISONIC">SFC_GET_AMBISONIC</A></TD>
+	<TD>Test a WAVEX file for Ambisonic format</TD>
+</TR>
+
+<TR>
+	<TD><A HREF="#SFC_WAVEX_SET_AMBISONIC">SFC_SET_AMBISONIC</A></TD>
+	<TD>Modify a WAVEX header for Ambisonic format</TD>
+</TR>
+
+<TR>
+	<TD><A HREF="#SFC_SET_VBR_ENCODING_QUALITY">SFC_SET_VBR_ENCODING_QUALITY</A></TD>
+	<TD>Set the the Variable Bit Rate encoding quality</TD>
+</TR>
+
+<TR>
+	<TD><A HREF="#SFC_RAW_NEEDS_ENDSWAP">SFC_RAW_NEEDS_ENDSWAP</a></td>
+	<TD>Determine if raw data needs endswapping</TD>
+</TR>
+
+<TR>
+	<TD><A HREF="#SFC_GET_BROADCAST_INFO">SFC_GET_BROADCAST_INFO</A></TD>
+	<TD>Retrieve the Broadcast Chunk info</TD>
+</TR>
+
+<TR>
+	<TD><A HREF="#SFC_SET_BROADCAST_INFO">SFC_SET_BROADCAST_INFO</A></TD>
+	<TD>Set the Broadcast Chunk info</TD>
+</TR>
 
 <!--
 <TR>
@@ -593,6 +629,33 @@ Example:
 	<DD>Returns the previous SFC_SET_SCALE_FLOAT_INT_READ setting for this file.
 </DL>
 
+
+<!-- ========================================================================= -->
+<A NAME="SFC_SET_SCALE_INT_FLOAT_WRITE"></A>
+<H2><BR><B>SFC_SET_SCALE_INT_FLOAT_WRITE</B></H2>
+<P>
+Set/clear the scale factor when integer (short/int) data is written to a file
+as floating point data.
+</P>
+<P>
+Parameters:
+</P>
+<PRE>
+        sndfile  : A valid SNDFILE* pointer
+        cmd      : SFC_SET_SCALE_FLOAT_INT_READ
+        data     : NULL
+        datasize : TRUE or FALSE
+</PRE>
+<P>
+Example:
+</P>
+<PRE>
+        sf_command (sndfile, SFC_SET_SCALE_INT_FLOAT_WRITE, NULL, SF_TRUE) ;
+</PRE>
+<DL>
+<DT>Return value: </DT>
+	<DD>Returns the previous SFC_SET_SCALE_INT_FLOAT_WRITE setting for this file.
+</DL>
 
 <!-- ========================================================================= -->
 <A NAME="SFC_GET_SIMPLE_FORMAT_COUNT"></A>
@@ -1059,7 +1122,7 @@ Example:
 </PRE>
 <DL>
 <DT>Return value:</DT>
-	<DD>Zero on sucess, non-zero otherwise.
+	<DD>Zero on success, non-zero otherwise.
 </DL>
 
 <!-- ========================================================================= -->
@@ -1137,7 +1200,7 @@ Parameters:
         datasize : sizeof (SF_EMBED_FILE_INFO)
 </PRE>
 <P>
-The SF_FORMAT_INFO struct is defined in &lt;sndfile.h&gt; as:
+The SF_EMBED_FILE_INFO struct is defined in &lt;sndfile.h&gt; as:
 </P>
 <PRE>
         typedef struct
@@ -1158,6 +1221,178 @@ The SF_FORMAT_INFO struct is defined in &lt;sndfile.h&gt; as:
 
 
 <!-- ========================================================================= -->
+<A NAME="SFC_WAVEX_GET_AMBISONIC"></A>
+<H2><BR><B>SFC_WAVEX_GET_AMBISONIC</B></H2>
+<P>
+Test if the current file has the GUID of a WAVEX file for any of the Ambisonic
+formats.
+</P>
+<P>
+Parameters:
+<PRE>
+        sndfile  : A valid SNDFILE* pointer
+        cmd      : SFC_WAVEX_GET_AMBISONIC
+        data     : NULL
+        datasize : 0
+</PRE>
+<P>
+	The Ambisonic WAVEX formats are defined here :
+		<A HREF="http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html">
+			http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html</A>.
+</P>
+<DL>
+<DT>Return value: </DT>
+	<DD>SF_AMBISONIC_NONE or SF_AMBISONIC_B_FORMAT or zero if the file format 
+		does not support ambisonic formats.
+</DL>
+
+<!-- ========================================================================= -->
+<A NAME="SFC_WAVEX_SET_AMBISONIC"></A>
+<H2><BR><B>SFC_WAVEX_SET_AMBISONIC</B></H2>
+<P>
+Set the GUID of a new WAVEX file to indicate an Ambisonics format.
+</P>
+<P>
+Parameters:
+<PRE>
+        sndfile  : A valid SNDFILE* pointer
+        cmd      : SFC_WAVEX_SET_AMBISONIC
+        data     : NULL
+        datasize : SF_AMBISONIC_NONE or SF_AMBISONIC_B_FORMAT
+</PRE>
+<P>
+Turn on (SF_AMBISONIC_B_FORMAT) or off (SF_AMBISONIC_NONE) encoding.
+This command is currently only supported for files with SF_FORMAT_WAVEX format.
+</P>
+<P>
+	The Ambisonic WAVEX formats are defined here :
+		<A HREF="http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html">
+			http://dream.cs.bath.ac.uk/researchdev/wave-ex/bformat.html</A>.
+</P>
+<DL>
+<DT>Return value: </DT>
+	<DD>Return the ambisonic value that has just been set or zero if the file
+		format does not support ambisonic encoding.
+</DL>
+
+<!-- ========================================================================= -->
+<A NAME="SFC_SET_VBR_ENCODING_QUALITY"></A>
+<H2><BR><B>SFC_SET_VBR_ENCODING_QUALITY</B></H2>
+<P>
+Set the the Variable Bit Rate encoding quality.
+The encoding quality value should be between 0.0 (lowest quality) and 1.0
+(highest quality).
+</P>
+<P>
+Parameters:
+<PRE>
+        sndfile  : A valid SNDFILE* pointer
+        cmd      : SFC_SET_VBR_ENCODING_QUALITY
+        data     : A pointer to a double value
+        datasize : sizeof (double)
+</PRE>
+<P>
+The command must be sent before any audio data is written to the file.
+</P>
+<P>
+</P>
+<DL>
+<DT>Return value: </DT>
+	<DD>Zero on success, non-zero otherwise.
+</DL>
+
+<!-- ========================================================================= -->
+<A NAME="SFC_RAW_NEEDS_ENDSWAP"></A>
+<H2><BR><B>SFC_RAW_NEEDS_ENDSWAP</B></H2>
+<P>
+Determine if raw data read using
+	<a href="api.html#raw">
+	sf_read_raw</a>
+needs to be end swapped on the host CPU.
+</P>
+<P>
+For instance, will return SF_TRUE on when reading WAV containing
+SF_FORMAT_PCM_16 data on a big endian machine and SF_FALSE on a little endian
+machine.
+</P>
+<P>
+Parameters:
+<PRE>
+        sndfile  : A valid SNDFILE* pointer
+        cmd      : SFC_RAW_NEEDS_ENDSWAP
+        data     : NULL
+        datasize : 0
+</PRE>
+
+<DL>
+<DT>Return value: </DT>
+	<DD>SF_TRUE or SF_FALSE
+</DL>
+
+
+<!-- ========================================================================= -->
+<A NAME="SFC_GET_BROADCAST_INFO"></A>
+<H2><BR><B>SFC_GET_BROADCAST_INFO</B></H2>
+<P>
+Retrieve the Broadcast Extention Chunk from WAV (and related) files.
+</P>
+<p>
+Parameters:
+</p>
+<PRE>
+        sndfile  : A valid SNDFILE* pointer
+        cmd      : SFC_GET_BROADCAST_INFO
+        data     : a pointer to an SF_BROADCAST_INFO struct
+        datasize : sizeof (SF_BROADCAST_INFO)
+</PRE>
+<P>
+The SF_BROADCAST_INFO struct is defined in &lt;sndfile.h&gt; as:
+</P>
+<PRE>
+    typedef struct
+    {   char            description [256] ;
+        char            originator [32] ;
+        char            originator_reference [32] ;
+        char            origination_date [10] ;
+        char            origination_time [8] ;
+        unsigned int    time_reference_low ;
+        unsigned int    time_reference_high ;
+        short           version ;
+        char            umid [64] ;
+        char            reserved [190] ;
+        unsigned int    coding_history_size ;
+        char            coding_history [256] ;
+    } SF_BROADCAST_INFO ;
+</PRE>
+
+<DL>
+<DT>Return value: </DT>
+	<DD>SF_TRUE if the file contained a Broadcast Extention chunk or SF_FALSE
+	otherwise.
+</DL>
+
+<!-- ========================================================================= -->
+<A NAME="SFC_SET_BROADCAST_INFO"></A>
+<H2><BR><B>SFC_SET_BROADCAST_INFO</B></H2>
+<P>
+Set the Broadcast Extention Chunk for WAV (and related) files.
+</P>
+<p>
+Parameters:
+</p>
+<PRE>
+        sndfile  : A valid SNDFILE* pointer
+        cmd      : SFC_SET_BROADCAST_INFO
+        data     : a pointer to an SF_BROADCAST_INFO struct
+        datasize : sizeof (SF_BROADCAST_INFO)
+</PRE>
+
+<DL>
+<DT>Return value: </DT>
+	<DD>SF_TRUE if setting the Broadcast Extention chunk was successful and SF_FALSE
+	otherwise.
+</DL>
+<!-- ========================================================================= -->
 
 
 <HR>
@@ -1166,16 +1401,8 @@ The SF_FORMAT_INFO struct is defined in &lt;sndfile.h&gt; as:
 		<A HREF="http://www.mega-nerd.com/libsndfile/">
 			http://www.mega-nerd.com/libsndfile/</A>.
 <BR>
-Version : 1.0.17
+Version : 1.0.19
 </P>
 
 </BODY>
 </HTML>
-
-<!--
-  Do not edit or modify anything in this comment block.
-  The arch-tag line is a file identity tag for the GNU Arch
-  revision control system.
-
-  arch-tag: 6ee72f74-0fb3-42b6-a85c-d3331d7145b5
--->

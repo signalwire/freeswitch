@@ -48,11 +48,5 @@ int  gsm_explode (gsm, gsm_byte   *, gsm_signal *);
 void gsm_implode (gsm, gsm_signal *, gsm_byte   *);
 
 #endif	/* GSM_H */
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 8cfc7698-5433-4b6f-aeca-967c6fda4dec
-*/
+
 

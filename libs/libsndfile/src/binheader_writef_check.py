@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python2.5
 
 # Copyright (C) 2006 Erik de Castro Lopo <erikd@mega-nerd.com>
 #
@@ -29,6 +29,13 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+# This parses C code using regexes (yes, thats horrible) and makes sure
+# that calling conventions to the function psf_binheader_writef are
+# correct.
+
+
 
 import re, string, sys
 
@@ -107,8 +114,3 @@ if len (sys.argv) > 1:
 
 print "ok"
 
-# Do not edit or modify anything in this comment block.
-# The following line is a file identity tag for the GNU Arch
-# revision control system.
-#
-# arch-tag: 4ed34789-925a-4135-af90-2e51523ca1ce

@@ -1,5 +1,5 @@
 /*
-**	Copyright (C) 2005 Erik de Castro Lopo
+**	Copyright (C) 2005-2009 Erik de Castro Lopo
 **
 **	This program is free software; you can redistribute it and/or modify
 **	it under the terms of the GNU General Public License as published by
@@ -20,15 +20,14 @@
 **	A simple checksum for short, int and float data.
 */
 
-#include "config.h"
+#include "sfconfig.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include <sndfile.h>
-
-#include "float_cast.h"
 
 #include "regtest.h"
 
@@ -116,10 +115,3 @@ float_checksum (SNDFILE * file, int start)
 	return start ;
 } /* float_checksum */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The following line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 6ae999d1-dd5a-4306-9e11-d4cfc9e8ae27
-*/

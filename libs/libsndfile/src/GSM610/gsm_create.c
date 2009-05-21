@@ -34,11 +34,4 @@ void gsm_init (gsm state)
 	memset (state, 0, sizeof (struct gsm_state)) ;
 	state->nrp = 40 ;
 } 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 9fedb6b3-ed99-40c2-aac1-484c536261fe
-*/
 

@@ -7,7 +7,6 @@
 #include <stdio.h>
 
 #include	"gsm610_priv.h"
-#include	"gsm.h"
 
 /*
  *  4.3 FIXED POINT IMPLEMENTATION OF THE RPE-LTP DECODER
@@ -57,11 +56,4 @@ void Gsm_Decoder (
 	Gsm_Short_Term_Synthesis_Filter( S, LARcr, wt, s );
 	Postprocessing(S, s);
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 11ae5b90-2e8b-400b-ac64-a69a1fc6cc41
-*/
 

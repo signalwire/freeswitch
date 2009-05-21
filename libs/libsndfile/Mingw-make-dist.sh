@@ -114,9 +114,3 @@ if [ ! -f $ZIPNAME ]; then
 	zip -r $ZIPNAME $INSTALL/
 	fi
 
-
-# Do not edit or modify anything in this comment block.
-# The following line is a file identity tag for the GNU Arch
-# revision control system.
-#
-# arch-tag: 3f82cd8a-f800-48d7-9646-2cdcf03c81a0

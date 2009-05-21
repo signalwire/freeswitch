@@ -1,6 +1,6 @@
 [+ AutoGen5 template h c +]
 /*
-** Copyright (C) 2002-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 extern "C" {
 #endif	/* __cplusplus */
 
+#include <stdint.h>
 #include <stdarg.h>
 
 #define SF_COUNT_TO_LONG(x)	((long) (x))
@@ -40,7 +41,7 @@ extern "C" {
 #define	PIPE_INDEX(x)	((x) + 500)
 #define	PIPE_TEST_LEN	12345
 
-#if (defined (WIN32) || defined (_WIN32))
+#if (defined (WIN32) || defined (_WIN32) || defined (__OS2__))
 #define	snprintf	_snprintf
 #endif
 
@@ -49,11 +50,15 @@ extern "C" {
 [+ ENDFOR float_type
 +]
 
-void	check_file_hash_or_die	(const char *filename, unsigned int target_hash, int line_num) ;
+void	create_short_sndfile (const char *filename, int format, int channels) ;
+
+void	check_file_hash_or_die	(const char *filename, uint64_t target_hash, int line_num) ;
 
 void	print_test_name (const char *test, const char *filename) ;
 
-void	dump_data_to_file (const char *filename, void *data, unsigned int datalen) ;
+void	dump_data_to_file (const char *filename, const void *data, unsigned int datalen) ;
+
+void	write_mono_file (const char * filename, int format, int srate, float * output, int len) ;
 
 static inline void
 exit_if_true (int test, const char *format, ...)
@@ -72,7 +77,7 @@ exit_if_true (int test, const char *format, ...)
 */
 
 [+ FOR io_type
-+]int	oct_save_[+ (get "io_element") +]	([+ (get "io_element") +] *a, [+ (get "io_element") +] *b, int len) ;
++]int	oct_save_[+ (get "io_element") +]	(const [+ (get "io_element") +] *a, const [+ (get "io_element") +] *b, int len) ;
 [+ ENDFOR io_type
 +]
 
@@ -111,6 +116,16 @@ void	test_seek_or_die
 			(SNDFILE *file, int pass, const [+ (get "io_element") +] *test, sf_count_t [+ (get "count_name") +], int line_num) ;
 [+ ENDFOR io_type +][+ ENDFOR write_op +]
 
+[+ FOR io_type
++]void compare_[+ (get "io_element") +]_or_die (const [+ (get "io_element") +] *left, const [+ (get "io_element") +] *right, unsigned count, int line_num) ;
+[+ ENDFOR io_type +]
+
+
+void	gen_lowpass_noise_float (float *data, int len) ;
+
+sf_count_t		file_length (const char * fname) ;
+sf_count_t		file_length_fd (int fd) ;
+
 #endif
 
 #ifdef __cplusplus
@@ -123,6 +138,7 @@ void	test_seek_or_die
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -148,6 +164,15 @@ void	test_seek_or_die
 #endif
 
 #define	LOG_BUFFER_SIZE		2048
+
+/*
+**	Neat solution to the Win32/OS2 binary file flage requirement.
+**	If O_BINARY isn't already defined by the inclusion of the system
+**	headers, set it to zero.
+*/
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 [+ FOR float_type +]
 void
@@ -175,42 +200,57 @@ gen_windowed_sine_[+ (get "name") +] ([+ (get "name") +] *data, int len, double 
 [+ ENDFOR float_type +]
 
 void
-check_file_hash_or_die (const char *filename, unsigned int target_hash, int line_num)
-{	static unsigned char	buffer [2048] ;
-	unsigned int	hash1, hash2 ;
-	FILE 	*file ;
-	int		k, read_count ;
+create_short_sndfile (const char *filename, int format, int channels)
+{	short data [2 * 3 * 4 * 5 * 6 * 7] = { 0, } ;
+	SNDFILE *file ;
+	SF_INFO sfinfo ;
 
-	memset (buffer, 0xEE, sizeof (buffer)) ;
+	sfinfo.samplerate = 44100 ;
+	sfinfo.channels = channels ;
+	sfinfo.format = format ;
+
+	if ((file = sf_open (filename, SFM_WRITE, &sfinfo)) == NULL)
+	{	printf ("Error (%s, %d) : sf_open failed : %s\n", __FILE__, __LINE__, sf_strerror (file)) ;
+		exit (1) ;
+		} ;
+
+	sf_write_short (file, data, ARRAY_LEN (data)) ;
+
+	sf_close (file) ;
+} /* create_short_sndfile */
+
+void
+check_file_hash_or_die (const char *filename, uint64_t target_hash, int line_num)
+{	static unsigned char buf [4096] ;
+	uint64_t	cksum ;
+	FILE 		*file ;
+	int			k, read_count ;
+
+	memset (buf, 0, sizeof (buf)) ;
 
 	/* The 'b' in the mode string means binary for Win32. */
-	if (! (file = fopen (filename, "rb")))
+	if ((file = fopen (filename, "rb")) == NULL)
 	{	printf ("\n\nLine %d: could not open file '%s'\n\n", line_num, filename) ;
 		exit (1) ;
 		} ;
 
-	hash1 = hash2 = 0 ;
+	cksum = 0 ;
 
-	while ((read_count = fread (buffer, 1, sizeof (buffer), file)))
-	{	for (k = 0 ; k < read_count ; k++)
-		{	hash1 = hash1 + buffer [k] ;
-			hash2 = hash2 ^ (buffer [k] << (k % 25)) ;
-			} ;
-		} ;
+	while ((read_count = fread (buf, 1, sizeof (buf), file)))
+		for (k = 0 ; k < read_count ; k++)
+			cksum = cksum * 511 + buf [k] ;
 
 	fclose (file) ;
 
-	hash1 += hash2 ;
-
 	if (target_hash == 0)
-	{	printf (" 0x%08x ", hash1) ;
+	{	printf (" 0x%016" PRIx64 "\n", cksum) ;
 		return ;
 		} ;
 
-	if (hash1 != target_hash)
-	{	printf ("\n\nLine %d: incorrect hash value 0x%08x should be 0x%08x\n\n", line_num, hash1, target_hash) ;
+	if (cksum != target_hash)
+	{	printf ("\n\nLine %d: incorrect hash value 0x%016" PRIx64 " should be 0x%016" PRIx64 ".\n\n", line_num, cksum, target_hash) ;
 		exit (1) ;
-		}
+		} ;
 
 	return ;
 } /* check_file_hash_or_die */
@@ -219,14 +259,20 @@ void
 print_test_name (const char *test, const char *filename)
 {	int count ;
 
-	if (test == NULL || filename == NULL)
+	if (test == NULL)
 	{	printf (__FILE__ ": bad test of filename parameter.\n") ;
 		exit (1) ;
 		} ;
 
-	printf ("    %-25s : %s ", test, filename) ;
+	if (filename == NULL || strlen (filename) == 0)
+	{	printf ("    %-30s : ", test) ;
+		count = 25 ;
+		}
+	else
+	{	printf ("    %-30s : %s ", test, filename) ;
+		count = 24 - strlen (filename) ;
+		} ;
 
-	count = 24 - strlen (filename) ;
 	while (count -- > 0)
 		putchar ('.') ;
 	putchar (' ') ;
@@ -235,7 +281,7 @@ print_test_name (const char *test, const char *filename)
 } /* print_test_name */
 
 void
-dump_data_to_file (const char *filename, void *data, unsigned int datalen)
+dump_data_to_file (const char *filename, const void *data, unsigned int datalen)
 {	FILE *file ;
 
 	if ((file = fopen (filename, "wb")) == NULL)
@@ -259,7 +305,7 @@ static char octfilename [] = "error.dat" ;
 
 [+ FOR io_type
 +]int
-oct_save_[+ (get "io_element") +]	([+ (get "io_element") +] *a, [+ (get "io_element") +] *b, int len)
+oct_save_[+ (get "io_element") +]	(const [+ (get "io_element") +] *a, const [+ (get "io_element") +] *b, int len)
 {	FILE 	*file ;
 	int		k ;
 
@@ -274,7 +320,7 @@ oct_save_[+ (get "io_element") +]	([+ (get "io_element") +] *a, [+ (get "io_elem
 	fprintf (file, "# columns: 1\n") ;
 
 	for (k = 0 ; k < len ; k++)
-		fprintf (file, [+ (get "format_str") +], a [k]) ;
+		fprintf (file, [+ (get "format_str") +] "\n", a [k]) ;
 
 	fprintf (file, "# name: b\n") ;
 	fprintf (file, "# type: matrix\n") ;
@@ -282,7 +328,7 @@ oct_save_[+ (get "io_element") +]	([+ (get "io_element") +] *a, [+ (get "io_elem
 	fprintf (file, "# columns: 1\n") ;
 
 	for (k = 0 ; k < len ; k++)
-		fprintf (file, [+ (get "format_str") +], b [k]) ;
+		fprintf (file, [+ (get "format_str") +] "\n", b [k]) ;
 
 	fclose (file) ;
 	return 0 ;
@@ -433,19 +479,19 @@ test_open_file_or_die (const char *filename, int mode, SF_INFO *sfinfo, int allo
 	switch (mode)
 	{	case SFM_READ :
 				modestr = "SFM_READ" ;
-				oflags = O_RDONLY ;
+				oflags = O_RDONLY | O_BINARY ;
 				omode = 0 ;
 				break ;
 
 		case SFM_WRITE :
 				modestr = "SFM_WRITE" ;
-				oflags = O_WRONLY | O_CREAT | O_TRUNC ;
+				oflags = O_WRONLY | O_CREAT | O_TRUNC | O_BINARY ;
 				omode = S_IRUSR | S_IWUSR | S_IRGRP ;
 				break ;
 
 		case SFM_RDWR :
 				modestr = "SFM_RDWR" ;
-				oflags = O_RDWR | O_CREAT ;
+				oflags = O_RDWR | O_CREAT | O_BINARY ;
 				omode = S_IRUSR | S_IWUSR | S_IRGRP ;
 				break ;
 		default :
@@ -454,18 +500,15 @@ test_open_file_or_die (const char *filename, int mode, SF_INFO *sfinfo, int allo
 				exit (1) ;
 		} ;
 
-#if (defined (WIN32) || defined (_WIN32))
-	/* Stupid fscking windows. */
-	oflags |= O_BINARY ;
-#endif
+	if (OS_IS_WIN32)
+	{	/* Windows doesn't support Unix file permissions so set it to zero. */
+		omode = 0 ;
+		} ;
 
 	if (allow_fd && ((++count) & 1) == 1)
 	{	int fd ;
 
-		if (omode == 0)
-			fd = open (filename, oflags) ;
-		else
-			fd = open (filename, oflags, omode) ;
+		fd = open (filename, oflags, omode) ;
 
 		if (fd < 0)
 		{	perror ("open") ;
@@ -611,6 +654,23 @@ test_[+ (get "op_element") +]_[+ (get "io_element") +]_or_die (SNDFILE *file, in
 } /* test_[+ (get "op_element") +]_[+ (get "io_element") +] */
 [+ ENDFOR io_type +][+ ENDFOR write_op +]
 
+[+ FOR io_type
++]void
+compare_[+ (get "io_element") +]_or_die (const [+ (get "io_element") +] *left, const [+ (get "io_element") +] *right, unsigned count, int line_num)
+{
+	unsigned k ;
+
+	for (k = 0 ; k < count ;k++)
+		if (left [k] != right [k])
+		{	printf ("\n\nLine %d : Error at index %d, " [+ (get "format_str") +] " should be " [+ (get "format_str") +] ".\n\n", line_num, k, left [k], right [k]) ;
+			exit (1) ;
+			} ;
+
+	return ;
+} /* compare_[+ (get "io_element") +]_or_die */
+[+ ENDFOR io_type +]
+
+
 void
 delete_file (int format, const char *filename)
 {	char rsrc_name [512], *fname ;
@@ -691,14 +751,75 @@ check_open_file_count_or_die (int lineno)
 #endif
 } /* check_open_file_count_or_die */
 
+void
+write_mono_file (const char * filename, int format, int srate, float * output, int len)
+{	SNDFILE * file ;
+	SF_INFO sfinfo ;
+
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
+
+	sfinfo.samplerate = srate ;
+	sfinfo.channels = 1 ;
+	sfinfo.format = format ;
+
+	if ((file = sf_open (filename, SFM_WRITE, &sfinfo)) == NULL)
+	{	printf ("sf_open (%s) : %s\n", filename, sf_strerror (NULL)) ;
+		exit (1) ;
+		} ;
+
+	sf_write_float (file, output, len) ;
+
+	sf_close (file) ;
+} /* write_mono_file */
+
+void
+gen_lowpass_noise_float (float *data, int len)
+{	int32_t value = 0x1243456 ;
+	double sample, last_val = 0.0 ;
+	int k ;
+
+	for (k = 0 ; k < len ; k++)
+	{	/* Not a crypto quality RNG. */
+		value = 11117 * value + 211231 ;
+		value = 11117 * value + 211231 ;
+		value = 11117 * value + 211231 ;
+
+		sample = value / (0x7fffffff * 1.000001) ;
+		sample = 0.2 * sample - 0.9 * last_val ;
+
+		data [k] = last_val = sample ;
+		} ;
+
+} /* gen_lowpass_noise_float */
+
+
+/*
+**	Windows is fucked.
+**	If a file is opened R/W and data is written to it, then fstat will return
+**	the correct file length, but stat will return zero.
+*/
+
+sf_count_t
+file_length (const char * fname)
+{	struct stat data ;
+
+	if (stat (fname, &data) != 0)
+		return 0 ;
+
+	return (sf_count_t) data.st_size ;
+} /* file_length */
+
+sf_count_t
+file_length_fd (int fd)
+{	struct stat data ;
+
+	memset (&data, 0, sizeof (data)) ;
+	if (fstat (fd, &data) != 0)
+		return 0 ;
+
+	return (sf_count_t) data.st_size ;
+} /* file_length_fd */
+
+
 [+ ESAC +]
 
-[+ COMMENT
-
- Do not edit or modify anything in this comment block.
- The following line is a file identity tag for the GNU Arch
- revision control system.
-
- arch-tag: b1183d5d-ebd4-4bc5-af50-60d774d6b1f5
-
-+]

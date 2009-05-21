@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -104,6 +104,8 @@ headerless_test (const char * filename, int format, int expected)
 
 	check_log_buffer_or_die (file, __LINE__) ;
 
+	sf_close (file) ;
+
 	printf ("ok\n") ;
 	unlink (filename) ;
 } /* headerless_test */
@@ -174,14 +176,9 @@ old_test (void)
 			exit (1) ;
 			} ;
 
+	sf_close (file) ;
+
 	printf ("ok\n") ;
 	unlink (filename) ;
 } /* old_test */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 0820bc1a-c396-4e66-9997-096999b0bc40
-*/

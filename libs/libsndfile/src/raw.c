@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -31,9 +31,9 @@ int
 raw_open	(SF_PRIVATE *psf)
 {	int	subformat, error = SFE_NO_ERROR ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
-	psf->endian = psf->sf.format & SF_FORMAT_ENDMASK ;
+	psf->endian = SF_ENDIAN (psf->sf.format) ;
 
 	if (CPU_IS_BIG_ENDIAN && (psf->endian == 0 || psf->endian == SF_ENDIAN_CPU))
 		psf->endian = SF_ENDIAN_BIG ;
@@ -102,10 +102,3 @@ raw_open	(SF_PRIVATE *psf)
 
 	return error ;
 } /* raw_open */
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: f0066de7-d6ce-4f36-a1e0-e475c07d4e1a
-*/

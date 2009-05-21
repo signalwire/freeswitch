@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -47,8 +47,8 @@
 			static unsigned char name [16] = { (x0), (x1), (x2), (x3), (x4), (x5), \
 				(x6), (x7), (x8), (x9), (xa), (xb), (xc), (xd), (xe), (xf) }
 
-#define	riff_HASH16 MAKE_HASH16 ('r', 'i', 'f', 'f', 0x2E, 0x91, 0xCF, 0x11, 0xA5, \
-								0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00)
+#define	riff_HASH16 MAKE_HASH16 ('r', 'i', 'f', 'f', 0x2E, 0x91, 0xCF, 0x11, \
+								0xA5, 0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00)
 
 #define	wave_HASH16 	MAKE_HASH16 ('w', 'a', 'v', 'e', 0xF3, 0xAC, 0xD3, 0x11, \
 								0x8C, 0xD1, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A)
@@ -64,6 +64,25 @@
 
 #define	ACID_HASH16 	MAKE_HASH16 (0x6D, 0x07, 0x1C, 0xEA, 0xA3, 0xEF, 0x78, 0x4C, \
 								0x90, 0x57, 0x7F, 0x79, 0xEE, 0x25, 0x2A, 0xAE)
+
+#define	levl_HASH16		MAKE_HASH16 (0x6c, 0x65, 0x76, 0x6c, 0xf3, 0xac, 0xd3, 0x11, \
+								0xd1, 0x8c, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A)
+
+#define list_HASH16		MAKE_HASH16 (0x6C, 0x69, 0x73, 0x74, 0x2F, 0x91, 0xCF, 0x11, \
+								0xA5, 0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00)
+
+#define junk_HASH16		MAKE_HASH16 (0x6A, 0x75, 0x6E, 0x6b, 0xF3, 0xAC, 0xD3, 0x11, \
+								0x8C, 0xD1, 0x00, 0xC0, 0x4f, 0x8E, 0xDB, 0x8A)
+
+#define bext_MARKER		MAKE_HASH16 (0x62, 0x65, 0x78, 0x74, 0xf3, 0xac, 0xd3, 0xaa, \
+								0xd1, 0x8c, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A)
+
+#define MARKER_HASH16	MAKE_HASH16 (0x56, 0x62, 0xf7, 0xab, 0x2d, 0x39, 0xd2, 0x11, \
+								0x86, 0xc7, 0x00, 0xc0, 0x4f, 0x8e, 0xdb, 0x8a)
+
+#define	SUMLIST_HASH16	MAKE_HASH16 (0xBC, 0x94, 0x5F, 0x92, 0x5A, 0x52, 0xD2, 0x11, \
+								0x86, 0xDC, 0x00, 0xC0, 0x4F, 0x8E, 0xDB, 0x8A)
+
 
 MAKE_MARKER16 (riff_MARKER16, 'r', 'i', 'f', 'f', 0x2E, 0x91, 0xCF, 0x11,
 								0xA5, 0xD6, 0x28, 0xDB, 0x04, 0xC1, 0x00, 0x00) ;
@@ -103,17 +122,22 @@ static int	w64_close (SF_PRIVATE *psf) ;
 
 int
 w64_open	(SF_PRIVATE *psf)
-{	int	subformat, error, blockalign = 0, framesperblock = 0 ;
+{	WAV_PRIVATE * wpriv ;
+	int	subformat, error, blockalign = 0, framesperblock = 0 ;
+
+	if ((wpriv = calloc (1, sizeof (WAV_PRIVATE))) == NULL)
+		return SFE_MALLOC_FAILED ;
+	psf->container_data = wpriv ;
 
 	if (psf->mode == SFM_READ || (psf->mode == SFM_RDWR &&psf->filelength > 0))
 	{	if ((error = w64_read_header (psf, &blockalign, &framesperblock)))
 			return error ;
 		} ;
 
-	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_W64)
+	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_W64)
 		return	SFE_BAD_OPEN_FORMAT ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
 	{	if (psf->is_pipe)
@@ -196,17 +220,25 @@ w64_open	(SF_PRIVATE *psf)
 
 static int
 w64_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
-{	WAV_FMT 	wav_fmt ;
+{	WAV_PRIVATE *wpriv ;
+	WAV_FMT 	*wav_fmt ;
 	int			dword = 0, marker, format = 0 ;
 	sf_count_t	chunk_size, bytesread = 0 ;
 	int			parsestage = 0, error, done = 0 ;
 
+	if ((wpriv = psf->container_data) == NULL)
+		return SFE_INTERNAL ;
+	wav_fmt = &wpriv->wav_fmt ;
+
 	/* Set position to start of file to begin reading header. */
-	memset (&wav_fmt, 0, sizeof (wav_fmt)) ;
 	psf_binheader_readf (psf, "p", 0) ;
 
 	while (! done)
-	{	/* Read the 4 byte marker and jump 12 bytes. */
+	{	/* Each new chunk must start on an 8 byte boundary, so jump if needed. */
+		if (psf->headindex & 0x7)
+			psf_binheader_readf (psf, "j", 8 - (psf->headindex & 0x7)) ;
+
+		/* Generate hash of 16 byte marker. */
 		bytesread += psf_binheader_readf (psf, "h", &marker) ;
 		chunk_size = 0 ;
 
@@ -217,7 +249,7 @@ w64_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 
 					bytesread += psf_binheader_readf (psf, "e8", &chunk_size) ;
 
-					if (psf->filelength < chunk_size)
+					if (psf->filelength != chunk_size)
 						psf_log_printf (psf, "riff : %D (should be %D)\n", chunk_size, psf->filelength) ;
 					else
 						psf_log_printf (psf, "riff : %D\n", chunk_size) ;
@@ -238,7 +270,7 @@ w64_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 
 			case fmt_HASH16 :
 					if ((parsestage & (HAVE_riff | HAVE_wave)) != (HAVE_riff | HAVE_wave))
-						return SFE_W64_NO_FMT ;
+						return SFE_WAV_NO_FMT ;
 
 					bytesread += psf_binheader_readf (psf, "e8", &chunk_size) ;
 					psf_log_printf (psf, " fmt : %D\n", chunk_size) ;
@@ -246,13 +278,13 @@ w64_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 					/* size of 16 byte marker and 8 byte chunk_size value. */
 					chunk_size -= 24 ;
 
-					if ((error = wav_w64_read_fmt_chunk (psf, &wav_fmt, (int) chunk_size)))
+					if ((error = wav_w64_read_fmt_chunk (psf, (int) chunk_size)))
 						return error ;
 
 					if (chunk_size % 8)
 						psf_binheader_readf (psf, "j", 8 - (chunk_size % 8)) ;
 
-					format		= wav_fmt.format ;
+					format		= wav_fmt->format ;
 					parsestage |= HAVE_fmt ;
 					break ;
 
@@ -290,12 +322,49 @@ w64_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 					psf_fseek (psf, chunk_size, SEEK_CUR) ;
 					break ;
 
+			case levl_HASH16 :
+					psf_binheader_readf (psf, "e8", &chunk_size) ;
+					psf_log_printf (psf, "levl : %D\n", chunk_size) ;
+					dword = chunk_size ;
+					psf_binheader_readf (psf, "j", dword - 24) ;
+					break ;
+
+			case list_HASH16 :
+					psf_binheader_readf (psf, "e8", &chunk_size) ;
+					psf_log_printf (psf, "list : %D\n", chunk_size) ;
+					dword = chunk_size ;
+					psf_binheader_readf (psf, "j", dword - 24) ;
+					break ;
+
+			case junk_HASH16 :
+					psf_binheader_readf (psf, "e8", &chunk_size) ;
+					psf_log_printf (psf, "junk : %D\n", chunk_size) ;
+					dword = chunk_size ;
+					psf_binheader_readf (psf, "j", dword - 24) ;
+					break ;
+
+			case bext_MARKER :
+					psf_binheader_readf (psf, "e8", &chunk_size) ;
+					psf_log_printf (psf, "bext : %D\n", chunk_size) ;
+					dword = chunk_size ;
+					psf_binheader_readf (psf, "j", dword - 24) ;
+					break ;
+
+			case MARKER_HASH16 :
+					psf_binheader_readf (psf, "e8", &chunk_size) ;
+					psf_log_printf (psf, "marker : %D\n", chunk_size) ;
+					dword = chunk_size ;
+					psf_binheader_readf (psf, "j", dword - 24) ;
+					break ;
+
+			case SUMLIST_HASH16 :
+					psf_binheader_readf (psf, "e8", &chunk_size) ;
+					psf_log_printf (psf, "summary list : %D\n", chunk_size) ;
+					dword = chunk_size ;
+					psf_binheader_readf (psf, "j", dword - 24) ;
+					break ;
+
 			default :
-					if (psf_ftell (psf) & 0x0F)
-					{	psf_log_printf (psf, "  Unknown chunk marker at position %d. Resynching.\n", dword - 4) ;
-						psf_binheader_readf (psf, "j", -3) ;
-						break ;
-						} ;
 					psf_log_printf (psf, "*** Unknown chunk marker : %X. Exiting parser.\n", marker) ;
 					done = SF_TRUE ;
 					break ;
@@ -308,10 +377,10 @@ w64_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 			break ;
 		} ; /* while (1) */
 
-	if (! psf->dataoffset)
+	if (psf->dataoffset <= 0)
 		return SFE_W64_NO_DATA ;
 
-	psf->endian = SF_ENDIAN_LITTLE ;		/* All WAV files are little endian. */
+	psf->endian = SF_ENDIAN_LITTLE ;		/* All W64 files are little endian. */
 
 	if (psf_ftell (psf) != psf->dataoffset)
 		psf_fseek (psf, psf->dataoffset, SEEK_SET) ;
@@ -340,14 +409,14 @@ w64_read_header	(SF_PRIVATE *psf, int *blockalign, int *framesperblock)
 
 		case WAVE_FORMAT_MS_ADPCM :
 					psf->sf.format = (SF_FORMAT_W64 | SF_FORMAT_MS_ADPCM) ;
-					*blockalign = wav_fmt.msadpcm.blockalign ;
-					*framesperblock = wav_fmt.msadpcm.samplesperblock ;
+					*blockalign = wav_fmt->msadpcm.blockalign ;
+					*framesperblock = wav_fmt->msadpcm.samplesperblock ;
 					break ;
 
 		case WAVE_FORMAT_IMA_ADPCM :
 					psf->sf.format = (SF_FORMAT_W64 | SF_FORMAT_IMA_ADPCM) ;
-					*blockalign = wav_fmt.ima.blockalign ;
-					*framesperblock = wav_fmt.ima.samplesperblock ;
+					*blockalign = wav_fmt->ima.blockalign ;
+					*framesperblock = wav_fmt->ima.samplesperblock ;
 					break ;
 
 		case WAVE_FORMAT_GSM610 :
@@ -390,9 +459,9 @@ w64_write_header (SF_PRIVATE *psf, int calc_length)
 	psf_fseek (psf, 0, SEEK_SET) ;
 
 	/* riff marker, length, wave and 'fmt ' markers. */
-	psf_binheader_writef (psf, "eh8hh", riff_MARKER16, psf->filelength - 8, wave_MARKER16, fmt_MARKER16) ;
+	psf_binheader_writef (psf, "eh8hh", riff_MARKER16, psf->filelength, wave_MARKER16, fmt_MARKER16) ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	switch (subformat)
 	{	case	SF_FORMAT_PCM_U8 :
@@ -568,11 +637,3 @@ w64_close (SF_PRIVATE *psf)
 	return 0 ;
 } /* w64_close */
 
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 9aa4e141-538a-4dd9-99c9-b3f0f2dd4f4a
-*/

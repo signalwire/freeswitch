@@ -23,11 +23,4 @@
 #define	HAS_UTIME_H	1		/* UTIME header file		*/
 
 #endif	/* CONFIG_H */
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 5338dfef-8e59-4f51-af47-627c9ea85353
-*/
 

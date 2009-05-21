@@ -51,10 +51,3 @@ str = sprintf ("save -mat-binary %s samplerate wavedata", filename) ;
 eval (str) ;
 
 endfunction
-
-# Do not edit or modify anything in this comment block.
-# The arch-tag line is a file identity tag for the GNU Arch 
-# revision control system.
-#
-# arch-tag: 5e44602b-940b-4927-af7c-47639769a40b
-

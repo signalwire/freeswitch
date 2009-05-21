@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +33,7 @@ int
 dwd_open	(SF_PRIVATE *psf)
 {	if (psf)
 		return SFE_UNIMPLEMENTED ;
-	return (psf && 0) ;
+	return 0 ;
 } /* dwd_open */
 
 #else
@@ -76,14 +76,14 @@ dwd_open (SF_PRIVATE *psf)
 			return error ;
 		} ;
 
-	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_DWD)
+	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_DWD)
 		return	SFE_BAD_OPEN_FORMAT ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
 	{
-		/*-psf->endian = psf->sf.format & SF_FORMAT_ENDMASK ;
+		/*-psf->endian = SF_ENDIAN (psf->sf.format) ;
 		if (CPU_IS_LITTLE_ENDIAN && psf->endian == SF_ENDIAN_CPU)
 			psf->endian = SF_ENDIAN_LITTLE ;
 		else if (psf->endian != SF_ENDIAN_LITTLE)
@@ -107,10 +107,8 @@ dwd_open (SF_PRIVATE *psf)
 */
 
 static int
-dwd_close	(SF_PRIVATE *psf)
+dwd_close	(SF_PRIVATE * UNUSED (psf))
 {
-	psf = psf ;
-
 	return 0 ;
 } /* dwd_close */
 
@@ -201,10 +199,4 @@ dwd_read_header (SF_PRIVATE *psf)
 */
 
 #endif
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: a5e1d2a6-a840-4039-a0e7-e1a43eb05a4f
-*/
+

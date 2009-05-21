@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -51,7 +51,7 @@ static SF_FORMAT_INFO const simple_formats [] =
 		"CAF (Apple 16 bit PCM)", "caf"
 		},
 
-#ifdef HAVE_FLAC_ALL_H
+#if HAVE_EXTERNAL_LIBS
 	{	SF_FORMAT_FLAC | SF_FORMAT_PCM_16,
 		"FLAC 16 bit", "flac"
 		},
@@ -60,6 +60,12 @@ static SF_FORMAT_INFO const simple_formats [] =
 	{	SF_FORMAT_RAW | SF_FORMAT_VOX_ADPCM,
 		"OKI Dialogic VOX ADPCM", "vox"
 		},
+
+#if HAVE_EXTERNAL_LIBS
+	{	SF_FORMAT_OGG | SF_FORMAT_VORBIS,
+		"Ogg Vorbis (Xiph Foundation)", "oga"
+		},
+#endif
 
 	{	SF_FORMAT_WAV | SF_FORMAT_PCM_16,
 		"WAV (Microsoft 16 bit PCM)", "wav"
@@ -93,7 +99,7 @@ psf_get_format_simple (SF_FORMAT_INFO *data)
 {	int indx ;
 
 	if (data->format < 0 || data->format >= (SIGNED_SIZEOF (simple_formats) / SIGNED_SIZEOF (SF_FORMAT_INFO)))
-		return SFE_BAD_CONTROL_CMD ;
+		return SFE_BAD_COMMAND_PARAM ;
 
 	indx = data->format ;
 	memcpy (data, &(simple_formats [indx]), SIGNED_SIZEOF (SF_FORMAT_INFO)) ;
@@ -111,13 +117,16 @@ static SF_FORMAT_INFO const major_formats [] =
 	{	SF_FORMAT_AU,		"AU (Sun/NeXT)", 						"au"	},
 	{	SF_FORMAT_AVR,		"AVR (Audio Visual Research)",	 		"avr"	},
 	{	SF_FORMAT_CAF,		"CAF (Apple Core Audio File)",	 		"caf"	},
-#ifdef HAVE_FLAC_ALL_H
+#if HAVE_EXTERNAL_LIBS
 	{	SF_FORMAT_FLAC,		"FLAC (FLAC Lossless Audio Codec)",	 	"flac"	},
 #endif
 	{	SF_FORMAT_HTK,		"HTK (HMM Tool Kit)",					"htk"	},
 	{	SF_FORMAT_SVX,		"IFF (Amiga IFF/SVX8/SV16)",			"iff"	},
 	{	SF_FORMAT_MAT4,		"MAT4 (GNU Octave 2.0 / Matlab 4.2)",	"mat"	},
 	{	SF_FORMAT_MAT5,		"MAT5 (GNU Octave 2.1 / Matlab 5.0)",	"mat"	},
+#if HAVE_EXTERNAL_LIBS
+	{	SF_FORMAT_OGG,		"OGG (OGG Container format)",		 	"oga"	},
+#endif
 	{	SF_FORMAT_PAF,		"PAF (Ensoniq PARIS)", 					"paf"	},
 	{	SF_FORMAT_PVF,		"PVF (Portable Voice Format)",			"pvf"	},
 	{	SF_FORMAT_RAW,		"RAW (header-less)",				 	"raw"	},
@@ -129,6 +138,7 @@ static SF_FORMAT_INFO const major_formats [] =
 	{	SF_FORMAT_WAV,		"WAV (Microsoft)",						"wav"	},
 	{	SF_FORMAT_NIST,		"WAV (NIST Sphere)",	 				"wav"	},
 	{	SF_FORMAT_WAVEX,	"WAVEX (Microsoft)",					"wav"	},
+	{	SF_FORMAT_WVE,		"WVE (Psion Series 3)",					"wve"	},
 	{	SF_FORMAT_XI,		"XI (FastTracker 2)",					"xi"	},
 
 } ; /* major_formats */
@@ -143,7 +153,7 @@ psf_get_format_major (SF_FORMAT_INFO *data)
 {	int indx ;
 
 	if (data->format < 0 || data->format >= (SIGNED_SIZEOF (major_formats) / SIGNED_SIZEOF (SF_FORMAT_INFO)))
-		return SFE_BAD_CONTROL_CMD ;
+		return SFE_BAD_COMMAND_PARAM ;
 
 	indx = data->format ;
 	memcpy (data, &(major_formats [indx]), SIGNED_SIZEOF (SF_FORMAT_INFO)) ;
@@ -183,7 +193,11 @@ static SF_FORMAT_INFO subtype_formats [] =
 	{	SF_FORMAT_VOX_ADPCM,	"VOX ADPCM",			"vox" 	},
 
 	{	SF_FORMAT_DPCM_16,		"16 bit DPCM",			NULL 	},
-	{	SF_FORMAT_DPCM_8,		"8 bit DPCM",			NULL 	}
+	{	SF_FORMAT_DPCM_8,		"8 bit DPCM",			NULL 	},
+
+#if HAVE_EXTERNAL_LIBS
+	{	SF_FORMAT_VORBIS,		"Vorbis",				NULL 	},
+#endif
 } ; /* subtype_formats */
 
 int
@@ -196,7 +210,7 @@ psf_get_format_subtype (SF_FORMAT_INFO *data)
 {	int indx ;
 
 	if (data->format < 0 || data->format >= (SIGNED_SIZEOF (subtype_formats) / SIGNED_SIZEOF (SF_FORMAT_INFO)))
-		return SFE_BAD_CONTROL_CMD ;
+		return SFE_BAD_COMMAND_PARAM ;
 
 	indx = data->format ;
 	memcpy (data, &(subtype_formats [indx]), sizeof (SF_FORMAT_INFO)) ;
@@ -211,8 +225,8 @@ int
 psf_get_format_info (SF_FORMAT_INFO *data)
 {	int k, format ;
 
-	if (data->format & SF_FORMAT_TYPEMASK)
-	{	format = data->format & SF_FORMAT_TYPEMASK ;
+	if (SF_CONTAINER (data->format))
+	{	format = SF_CONTAINER (data->format) ;
 
 		for (k = 0 ; k < (SIGNED_SIZEOF (major_formats) / SIGNED_SIZEOF (SF_FORMAT_INFO)) ; k++)
 		{	if (format == major_formats [k].format)
@@ -221,8 +235,8 @@ psf_get_format_info (SF_FORMAT_INFO *data)
 				} ;
 			} ;
 		}
-	else if (data->format & SF_FORMAT_SUBMASK)
-	{	format = data->format & SF_FORMAT_SUBMASK ;
+	else if (SF_CODEC (data->format))
+	{	format = SF_CODEC (data->format) ;
 
 		for (k = 0 ; k < (SIGNED_SIZEOF (subtype_formats) / SIGNED_SIZEOF (SF_FORMAT_INFO)) ; k++)
 		{	if (format == subtype_formats [k].format)
@@ -234,7 +248,7 @@ psf_get_format_info (SF_FORMAT_INFO *data)
 
 	memset (data, 0, sizeof (SF_FORMAT_INFO)) ;
 
-	return SFE_BAD_CONTROL_CMD ;
+	return SFE_BAD_COMMAND_PARAM ;
 } /* psf_get_format_info */
 
 /*==============================================================================
@@ -355,13 +369,6 @@ psf_get_max_all_channels (SF_PRIVATE *psf, double *peaks)
 		peaks [k] = psf->peak_info->peaks [k].value ;
 
 	return SF_TRUE ;
-}  /* psf_get_max_all_channels */
+} /* psf_get_max_all_channels */
 
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 0aae0d9d-ab2b-4d70-ade3-47a534666f8e
-*/

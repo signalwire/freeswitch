@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -16,8 +16,11 @@
 ** Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#include	"sfconfig.h"
+
+#include	<math.h>
+
 #include	"sndfile.h"
-#include	"float_cast.h"
 #include	"common.h"
 
 static sf_count_t alaw_read_alaw2s (SF_PRIVATE *psf, short *ptr, sf_count_t len) ;
@@ -535,10 +538,3 @@ alaw_write_d2alaw	(SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 	return total ;
 } /* alaw_write_d2alaw */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 289ccfc2-42a6-4f1f-a29f-4dcc9bfa8752
-*/

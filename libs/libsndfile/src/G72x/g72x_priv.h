@@ -107,12 +107,3 @@ int g723_40_decoder	(int code, G72x_STATE *state_ptr);
 void private_init_state (G72x_STATE *state_ptr) ;
 
 #endif /* G72X_PRIVATE_H */
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: d9ad4da7-0fa3-471d-8020-720b5cfb5e5b
-*/
-

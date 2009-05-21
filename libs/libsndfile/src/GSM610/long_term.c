@@ -9,8 +9,6 @@
 
 #include "gsm610_priv.h"
 
-#include "gsm.h"
-
 /*
  *  4.2.11 .. 4.2.12 LONG TERM PREDICTOR (LTP) SECTION
  */
@@ -401,6 +399,15 @@ static void Cut_Calculation_of_the_LTP_parameters (
 		STEP_A(32); STEP_B(33); STEP_C(34); STEP_D(35);
 		STEP_E(36); STEP_F(37); STEP_G(38); STEP_H(39);
 
+#		undef STEP_A
+#		undef STEP_B
+#		undef STEP_C
+#		undef STEP_D
+#		undef STEP_E
+#		undef STEP_F
+#		undef STEP_G
+#		undef STEP_H
+
 		if (S0 > L_max) { L_max = S0; Nc = lambda;     }
 		if (S1 > L_max) { L_max = S1; Nc = lambda + 1; }
 		if (S2 > L_max) { L_max = S2; Nc = lambda + 2; }
@@ -566,6 +573,15 @@ static void Calculation_of_the_LTP_parameters (
 
 		STEP_A(32); STEP_B(33); STEP_C(34); STEP_D(35);
 		STEP_E(36); STEP_F(37); STEP_G(38); STEP_H(39);
+
+#		undef STEP_A
+#		undef STEP_B
+#		undef STEP_C
+#		undef STEP_D
+#		undef STEP_E
+#		undef STEP_F
+#		undef STEP_G
+#		undef STEP_H
 
 		if (S0 > L_max) { L_max = S0; Nc = lambda;     }
 		if (S1 > L_max) { L_max = S1; Nc = lambda + 1; }
@@ -941,11 +957,3 @@ void Gsm_Long_Term_Synthesis_Filtering (
 
 	for (k = 0; k <= 119; k++) drp[ -120 + k ] = drp[ -80 + k ];
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: b369b90d-0284-42a0-87b0-99a25bbd93ac
-*/
-

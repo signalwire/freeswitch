@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 extern "C" {
 #endif	/* __cplusplus */
 
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,7 +41,7 @@ extern "C" {
 #define	PIPE_INDEX(x)	((x) + 500)
 #define	PIPE_TEST_LEN	12345
 
-#if (defined (WIN32) || defined (_WIN32))
+#if (defined (WIN32) || defined (_WIN32) || defined (__OS2__))
 #define	snprintf	_snprintf
 #endif
 
@@ -48,11 +49,15 @@ void gen_windowed_sine_float (float *data, int len, double maximum) ;
 void gen_windowed_sine_double (double *data, int len, double maximum) ;
 
 
-void	check_file_hash_or_die	(const char *filename, unsigned int target_hash, int line_num) ;
+void	create_short_sndfile (const char *filename, int format, int channels) ;
+
+void	check_file_hash_or_die	(const char *filename, uint64_t target_hash, int line_num) ;
 
 void	print_test_name (const char *test, const char *filename) ;
 
-void	dump_data_to_file (const char *filename, void *data, unsigned int datalen) ;
+void	dump_data_to_file (const char *filename, const void *data, unsigned int datalen) ;
+
+void	write_mono_file (const char * filename, int format, int srate, float * output, int len) ;
 
 static inline void
 exit_if_true (int test, const char *format, ...)
@@ -70,10 +75,10 @@ exit_if_true (int test, const char *format, ...)
 **	can then be loaded into GNU octave for comparison.
 */
 
-int	oct_save_short	(short *a, short *b, int len) ;
-int	oct_save_int	(int *a, int *b, int len) ;
-int	oct_save_float	(float *a, float *b, int len) ;
-int	oct_save_double	(double *a, double *b, int len) ;
+int	oct_save_short	(const short *a, const short *b, int len) ;
+int	oct_save_int	(const int *a, const int *b, int len) ;
+int	oct_save_float	(const float *a, const float *b, int len) ;
+int	oct_save_double	(const double *a, const double *b, int len) ;
 
 
 void	delete_file (int format, const char *filename) ;
@@ -139,12 +144,23 @@ void 	test_writef_double_or_die
 			(SNDFILE *file, int pass, const double *test, sf_count_t frames, int line_num) ;
 
 
+void compare_short_or_die (const short *left, const short *right, unsigned count, int line_num) ;
+void compare_int_or_die (const int *left, const int *right, unsigned count, int line_num) ;
+void compare_float_or_die (const float *left, const float *right, unsigned count, int line_num) ;
+void compare_double_or_die (const double *left, const double *right, unsigned count, int line_num) ;
+
+
+
+void	gen_lowpass_noise_float (float *data, int len) ;
+
+sf_count_t		file_length (const char * fname) ;
+sf_count_t		file_length_fd (int fd) ;
+
 #endif
 
 #ifdef __cplusplus
 }		/* extern "C" */
 #endif	/* __cplusplus */
-
 
 
 

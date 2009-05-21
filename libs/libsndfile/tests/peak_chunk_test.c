@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 
 
 static	void	test_float_peak	(const char *filename, int filetype) ;
+static	void	read_write_peak_test	(const char *filename, int filetype) ;
 
 static void		check_logged_peaks (char *buffer) ;
 
@@ -59,17 +60,22 @@ main (int argc, char *argv [])
 		exit (1) ;
 		} ;
 
-	do_all=!strcmp (argv [1], "all") ;
+	do_all = ! strcmp (argv [1], "all") ;
 
 	if (do_all || ! strcmp (argv [1], "wav"))
 	{	test_float_peak ("peak_float.wav", SF_FORMAT_WAV | SF_FORMAT_FLOAT) ;
 		test_float_peak ("peak_float.wavex", SF_FORMAT_WAVEX | SF_FORMAT_FLOAT) ;
 		test_float_peak ("peak_float.rifx", SF_ENDIAN_BIG | SF_FORMAT_WAV | SF_FORMAT_FLOAT) ;
+
+		read_write_peak_test ("rw_peak.wav", SF_FORMAT_WAV | SF_FORMAT_FLOAT) ;
+		read_write_peak_test ("rw_peak.wavex", SF_FORMAT_WAVEX | SF_FORMAT_FLOAT) ;
 		test_count++ ;
 		} ;
 
 	if (do_all || ! strcmp (argv [1], "aiff"))
 	{	test_float_peak	("peak_float.aiff", SF_FORMAT_AIFF | SF_FORMAT_FLOAT) ;
+
+		read_write_peak_test ("rw_peak.aiff", SF_FORMAT_AIFF | SF_FORMAT_FLOAT) ;
 		test_count++ ;
 		} ;
 
@@ -95,6 +101,7 @@ test_float_peak (const char *filename, int filetype)
 
 	print_test_name ("test_float_peak", filename) ;
 
+	memset (&sfinfo, 0, sizeof (sfinfo)) ;
 	sfinfo.samplerate	= 44100 ;
 	sfinfo.format		= filetype ;
 	sfinfo.channels		= 4 ;
@@ -267,12 +274,12 @@ check_logged_peaks (char *buffer)
 			} ;
 		if (position == 0)
 		{	printf ("\n\nLine %d: peak position for channel %d should not be at offset 0.\n", __LINE__, chan) ;
-			printf (buffer) ;
+			printf ("%s", buffer) ;
 			exit (1) ;
 			} ;
 		if (chan != k || fabs ((position) * 0.01 - value) > 1e-6)
 		{	printf ("\n\nLine %d: Error : peak value incorrect!\n", __LINE__) ;
-			printf (buffer) ;
+			printf ("%s", buffer) ;
 			printf ("\n\nLine %d: %d %f %f\n", __LINE__, chan, position * 0.01, value) ;
 			exit (1) ;
 			} ;
@@ -280,10 +287,62 @@ check_logged_peaks (char *buffer)
 		} ;
 
 } /* check_logged_peaks */
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: f10ca506-5808-4393-9d58-e3ec201fb7ee
-*/
+
+static	void
+read_write_peak_test (const char *filename, int filetype)
+{	SNDFILE	*file ;
+    SF_INFO	sfinfo ;
+
+    double   small_data [10] ;
+    double   max_peak = 0.0 ;
+    unsigned k ;
+
+	print_test_name (__func__, filename) ;
+
+    for (k = 0 ; k < ARRAY_LEN (small_data) ; k ++)
+        small_data [k] = 0.1 ;
+
+    sfinfo.samplerate	= 44100 ;
+    sfinfo.channels		= 2 ;
+    sfinfo.format		= filetype ;
+    sfinfo.frames		= 0 ;
+
+	/* Open the file, add peak chunk and write samples with value 0.1. */
+    file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_FALSE, __LINE__) ;
+
+    sf_command (file, SFC_SET_ADD_PEAK_CHUNK, NULL, SF_TRUE) ;
+
+	test_write_double_or_die (file, 0, small_data, ARRAY_LEN (small_data), __LINE__) ;
+
+    sf_close (file) ;
+
+    /* Open the fiel RDWR, write sample valied 1.25. */
+    file = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, SF_FALSE, __LINE__) ;
+
+    for (k = 0 ; k < ARRAY_LEN (small_data) ; k ++)
+        small_data [k] = 1.0 ;
+
+	test_write_double_or_die (file, 0, small_data, ARRAY_LEN (small_data), __LINE__) ;
+
+    sf_command (file, SFC_GET_SIGNAL_MAX, &max_peak, sizeof (max_peak)) ;
+
+    sf_close (file) ;
+
+    exit_if_true (max_peak < 0.1, "\n\nLine %d : max peak (%5.3f) should not be 0.1.\n\n", __LINE__, max_peak) ;
+
+    /* Open the file and test the values written to the PEAK chunk. */
+    file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_FALSE, __LINE__) ;
+
+	exit_if_true (sfinfo.channels * sfinfo.frames != 2 * ARRAY_LEN (small_data),
+			"Line %d : frame count is %ld, should be %d\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), 2 * ARRAY_LEN (small_data)) ;
+
+    sf_command (file, SFC_GET_SIGNAL_MAX, &max_peak, sizeof (double)) ;
+
+    sf_close (file) ;
+
+    exit_if_true (max_peak < 1.0, "\n\nLine %d : max peak (%5.3f) should be 1.0.\n\n", __LINE__, max_peak) ;
+
+	unlink (filename) ;
+	puts ("ok") ;
+} /* read_write_peak_test */
+

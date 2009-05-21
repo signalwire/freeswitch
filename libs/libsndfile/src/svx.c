@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -99,10 +99,10 @@ svx_open	(SF_PRIVATE *psf)
 	{	if (psf->is_pipe)
 			return SFE_NO_PIPE_WRITE ;
 
-		if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_SVX)
+		if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_SVX)
 			return	SFE_BAD_OPEN_FORMAT ;
 
-		psf->endian = psf->sf.format & SF_FORMAT_ENDMASK ;
+		psf->endian = SF_ENDIAN (psf->sf.format) ;
 
 		if (psf->endian == SF_ENDIAN_LITTLE || (CPU_IS_LITTLE_ENDIAN && psf->endian == SF_ENDIAN_CPU))
 			return SFE_BAD_ENDIAN ;
@@ -133,6 +133,9 @@ svx_read_header	(SF_PRIVATE *psf)
 	unsigned int	FORMsize, vhdrsize, dword, marker ;
 	int				filetype = 0, parsestage = 0, done = 0 ;
 	int 			bytecount = 0, channels ;
+
+	if (psf->filelength > SF_PLATFORM_S64 (0xffffffff))
+		psf_log_printf (psf, "Warning : filelength > 0xffffffff. This is bad!!!!\n") ;
 
 	memset (&vhdr, 0, sizeof (vhdr)) ;
 	psf_binheader_readf (psf, "p", 0) ;
@@ -223,6 +226,8 @@ svx_read_header	(SF_PRIVATE *psf)
 					psf->datalength = dword ;
 
 					psf->dataoffset = psf_ftell (psf) ;
+					if (psf->dataoffset < 0)
+						return SFE_SVX_NO_BODY ;
 
 					if (psf->datalength > psf->filelength - psf->dataoffset)
 					{	psf_log_printf (psf, " BODY : %D (should be %D)\n", psf->datalength, psf->filelength - psf->dataoffset) ;
@@ -400,11 +405,3 @@ svx_write_header (SF_PRIVATE *psf, int calc_length)
 	return psf->error ;
 } /* svx_write_header */
 
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: a80ab6fb-7d75-4d32-a6b0-0061a3f05d95
-*/

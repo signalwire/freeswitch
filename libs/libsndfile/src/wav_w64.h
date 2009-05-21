@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -256,6 +256,15 @@ typedef struct
 {	int frames ;
 } FACT_CHUNK ;
 
+typedef struct
+{	/* For ambisonic commands */
+	int	wavex_ambisonic ;
+
+	/* Set to true when 'fmt ' chunk is ambiguous.*/
+	int fmt_is_broken ;
+	WAV_FMT wav_fmt ;
+} WAV_PRIVATE ;
+
 #define		WAV_W64_GSM610_BLOCKSIZE	65
 #define		WAV_W64_GSM610_SAMPLES		320
 
@@ -273,14 +282,9 @@ void	msadpcm_write_adapt_coeffs (SF_PRIVATE *psf) ;
 
 int 	wav_w64_srate2blocksize (int srate_chan_product) ;
 char const* wav_w64_format_str (int k) ;
-int		wav_w64_read_fmt_chunk (SF_PRIVATE *psf, WAV_FMT *wav_fmt, int structsize) ;
+int		wav_w64_read_fmt_chunk (SF_PRIVATE *psf, int fmtsize) ;
 void	wavex_write_guid (SF_PRIVATE *psf, const EXT_SUBFORMAT * subformat) ;
+void	wav_w64_analyze (SF_PRIVATE *psf) ;
 
 #endif
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 877fde12-9be3-4a31-8a5a-fdae39958613
-*/
+

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2006 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -22,11 +22,11 @@
 #include	<fcntl.h>
 #include	<string.h>
 #include	<ctype.h>
+#include	<math.h>
 
 #include	"sndfile.h"
 #include	"sfendian.h"
 #include	"common.h"
-#include	"float_cast.h"
 
 /*------------------------------------------------------------------------------
 ** Information on how to decode and encode this file was obtained in a PDF
@@ -81,16 +81,16 @@ mat4_open	(SF_PRIVATE *psf)
 			return error ;
 		} ;
 
-	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_MAT4)
+	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_MAT4)
 		return	SFE_BAD_OPEN_FORMAT ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
 	{	if (psf->is_pipe)
 			return SFE_NO_PIPE_WRITE ;
 
-		psf->endian = psf->sf.format & SF_FORMAT_ENDMASK ;
+		psf->endian = SF_ENDIAN (psf->sf.format) ;
 		if (CPU_IS_LITTLE_ENDIAN && (psf->endian == SF_ENDIAN_CPU || psf->endian == 0))
 			psf->endian = SF_ENDIAN_LITTLE ;
 		else if (CPU_IS_BIG_ENDIAN && (psf->endian == SF_ENDIAN_CPU || psf->endian == 0))
@@ -162,7 +162,7 @@ mat4_write_header (SF_PRIVATE *psf, int calc_length)
 		psf->sf.frames = psf->datalength / (psf->bytewidth * psf->sf.channels) ;
 		} ;
 
-	encoding = mat4_format_to_encoding (psf->sf.format & SF_FORMAT_SUBMASK, psf->endian) ;
+	encoding = mat4_format_to_encoding (SF_CODEC (psf->sf.format), psf->endian) ;
 
 	if (encoding == -1)
 		return SFE_BAD_OPEN_FORMAT ;
@@ -206,7 +206,8 @@ mat4_write_header (SF_PRIVATE *psf, int calc_length)
 
 static int
 mat4_read_header (SF_PRIVATE *psf)
-{	int		marker, namesize, rows, cols, imag ;
+{	int		marker, rows, cols, imag ;
+	unsigned namesize ;
 	double	value ;
 	const char *marker_str ;
 	char	name [64] ;
@@ -243,7 +244,7 @@ mat4_read_header (SF_PRIVATE *psf)
 
 	psf_binheader_readf (psf, "d", &value) ;
 
-	LSF_SNPRINTF (psf->u.cbuf, sizeof (psf->u.cbuf), " Value : %f\n", value) ;
+	snprintf (psf->u.cbuf, sizeof (psf->u.cbuf), " Value : %f\n", value) ;
 	psf_log_printf (psf, psf->u.cbuf) ;
 
 	if ((rows != 1) || (cols != 1))
@@ -275,7 +276,7 @@ mat4_read_header (SF_PRIVATE *psf)
 
 	if (rows == 0 && cols == 0)
 	{	psf_log_printf (psf, "*** Error : zero channel count.\n") ;
-		return SFE_MAT4_ZERO_CHANNELS ;
+		return SFE_CHANNEL_COUNT_ZERO ;
 		} ;
 
 	psf->sf.channels	= rows ;
@@ -382,13 +383,7 @@ mat4_marker_to_str (int marker)
 
 	/* This is a little unsafe but is really only for debugging. */
 	str [sizeof (str) - 1] = 0 ;
-	LSF_SNPRINTF (str, sizeof (str) - 1, "%08X", marker) ;
+	snprintf (str, sizeof (str) - 1, "%08X", marker) ;
 	return str ;
 } /* mat4_marker_to_str */
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: f7e5f5d6-fc39-452e-bc4a-59627116ff59
-*/
+

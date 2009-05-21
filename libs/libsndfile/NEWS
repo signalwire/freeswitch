@@ -1,3 +1,13 @@
+Version 1.0.19 (2009-03-02)
+  * Fix for CVE-2009-0186 (Alin Rad Pop, Secunia Research).
+  * Huge number of minor bug fixes as a result of static analysis.
+
+Version 1.0.18 (2009-02-07)
+  * Add Ogg/Vorbis support (thanks to John ffitch).
+  * Remove captive FLAC library.
+  * Many new features and bug fixes.
+  * Generate Win32 and Win64 pre-compiled binaries.
+
 Version 1.0.17 (2006-08-31)
   * Add sndfile.hh C++ wrapper.
   * Update Win32 MinGW build instructions.

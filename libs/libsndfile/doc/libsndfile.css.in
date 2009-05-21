@@ -2,6 +2,7 @@ body {
 	background : @HTML_BGCOLOUR@ ;
 	color : @HTML_FGCOLOUR@ ;
 	font-family : arial, helvetica, sans-serif ;
+	line-height: 1.5 ;
 }
 td {
 	font-family : arial, helvetica, sans-serif ;

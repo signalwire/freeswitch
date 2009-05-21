@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003-2006 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -23,11 +23,11 @@
 #include <fcntl.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 #include "sndfile.h"
 #include "sfendian.h"
 #include "common.h"
-#include "float_cast.h"
 
 #define	MAX_XI_SAMPLES	16
 
@@ -80,10 +80,10 @@ xi_open	(SF_PRIVATE *psf)
 			return error ;
 		} ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
-	{	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_XI)
+	{	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_XI)
 			return	SFE_BAD_OPEN_FORMAT ;
 
 		psf->endian = SF_ENDIAN_LITTLE ;
@@ -95,7 +95,7 @@ xi_open	(SF_PRIVATE *psf)
 		memcpy (pxi->software, PACKAGE "-" VERSION "               ", sizeof (pxi->software)) ;
 
 		memset (pxi->sample_name, 0, sizeof (pxi->sample_name)) ;
-		LSF_SNPRINTF (pxi->sample_name, sizeof (pxi->sample_name), "%s", "Sample #1") ;
+		snprintf (pxi->sample_name, sizeof (pxi->sample_name), "%s", "Sample #1") ;
 
 		pxi->sample_flags = (subformat == SF_FORMAT_DPCM_16) ? 16 : 0 ;
 
@@ -128,10 +128,8 @@ xi_open	(SF_PRIVATE *psf)
 */
 
 static int
-xi_close	(SF_PRIVATE *psf)
+xi_close	(SF_PRIVATE * UNUSED (psf))
 {
-	psf = psf ;
-
 	return 0 ;
 } /* xi_close */
 
@@ -248,7 +246,7 @@ dpcm_seek (SF_PRIVATE *psf, int mode, sf_count_t offset)
 
 	psf_fseek (psf, psf->dataoffset, SEEK_SET) ;
 
-	if ((psf->sf.format & SF_FORMAT_SUBMASK) == SF_FORMAT_DPCM_16)
+	if ((SF_CODEC (psf->sf.format)) == SF_FORMAT_DPCM_16)
 	{	total = offset ;
 		bufferlen = ARRAY_LEN (psf->u.sbuf) ;
 		while (total > 0)
@@ -270,15 +268,13 @@ dpcm_seek (SF_PRIVATE *psf, int mode, sf_count_t offset)
 
 
 static int
-xi_write_header (SF_PRIVATE *psf, int calc_length)
+xi_write_header (SF_PRIVATE *psf, int UNUSED (calc_length))
 {	XI_PRIVATE	*pxi ;
 	sf_count_t	current ;
 	const char	*string ;
 
 	if ((pxi = psf->codec_data) == NULL)
 		return SFE_INTERNAL ;
-
-	calc_length = calc_length ; /* Avoid a compiler warning. */
 
 	current = psf_ftell (psf) ;
 
@@ -446,10 +442,14 @@ xi_read_header (SF_PRIVATE *psf)
 		return SFE_XI_EXCESS_SAMPLES ;
 		} ;
 
-	psf->dataoffset = psf_fseek (psf, 0, SEEK_CUR) ;
-	psf_log_printf (psf, "Data Offset : %D\n", psf->dataoffset) ;
-
 	psf->datalength = sample_sizes [0] ;
+
+	psf->dataoffset = psf_ftell (psf) ;
+	if (psf->dataoffset < 0)
+	{	psf_log_printf (psf, "*** Bad Data Offset : %D\n", psf->dataoffset) ;
+		return SFE_BAD_OFFSET ;
+		} ;
+	psf_log_printf (psf, "Data Offset : %D\n", psf->dataoffset) ;
 
 	if (psf->dataoffset + psf->datalength > psf->filelength)
 	{	psf_log_printf (psf, "*** File seems to be truncated. Should be at least %D bytes long.\n",
@@ -457,7 +457,7 @@ xi_read_header (SF_PRIVATE *psf)
 		psf->datalength = psf->filelength - psf->dataoffset ;
 		} ;
 
- 	if (psf_fseek (psf, psf->dataoffset, SEEK_SET) != psf->dataoffset)
+	if (psf_fseek (psf, psf->dataoffset, SEEK_SET) != psf->dataoffset)
 		return SFE_BAD_SEEK ;
 
 	psf->endian = SF_ENDIAN_LITTLE ;
@@ -1195,10 +1195,3 @@ d2dles_array (XI_PRIVATE *pxi, const double *src, short *dest, int count, double
 	pxi->last_16 = last_val ;
 } /* d2dles_array */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 1ab2dbe0-29af-4d80-9c6f-cb21b67521bc
-*/

@@ -57,10 +57,3 @@ if (status),
 	endif
 
 endfunction
-
-# Do not edit or modify anything in this comment block.
-# The arch-tag line is a file identity tag for the GNU Arch 
-# revision control system.
-#
-# arch-tag: 96fb14c8-2b5a-4b93-a576-ab83a6d9026b
-

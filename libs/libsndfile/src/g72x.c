@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -21,10 +21,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #include "sndfile.h"
 #include "sfendian.h"
-#include "float_cast.h"
 #include "common.h"
 #include "G72x/g72x.h"
 
@@ -90,7 +90,7 @@ g72x_init (SF_PRIVATE * psf)
 	pg72x->block_curr = 0 ;
 	pg72x->sample_curr = 0 ;
 
-	switch (psf->sf.format & SF_FORMAT_SUBMASK)
+	switch (SF_CODEC (psf->sf.format))
 	{	case SF_FORMAT_G721_32 :
 				codec = G721_32_BITS_PER_SAMPLE ;
 				bytesperblock = G721_32_BYTES_PER_BLOCK ;
@@ -343,12 +343,8 @@ g72x_read_d (SF_PRIVATE *psf, double *ptr, sf_count_t len)
 } /* g72x_read_d */
 
 static sf_count_t
-g72x_seek (SF_PRIVATE *psf, int mode, sf_count_t offset)
+g72x_seek (SF_PRIVATE *psf, int UNUSED (mode), sf_count_t UNUSED (offset))
 {
-	/* Prevent compiler warnings. */
-	mode ++ ;
-	offset ++ ;
-
 	psf_log_printf (psf, "seek unsupported\n") ;
 
 	/*	No simple solution. To do properly, would need to seek
@@ -606,10 +602,3 @@ g72x_close (SF_PRIVATE *psf)
 	return 0 ;
 } /* g72x_close */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 3cc5439e-7247-486b-b2e6-11a4affa5744
-*/

@@ -21,11 +21,4 @@ void gsm_destroy (gsm S)
 {
 	if (S) free((char *)S);
 }
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: f423d09b-6ccc-47e0-9b18-ee1cf7a8e473
-*/
 

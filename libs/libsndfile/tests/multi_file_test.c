@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 1999-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,7 +41,6 @@
 
 #define	DATA_LENGTH 		(512)
 
-static off_t get_file_length (int fd) ;
 static void write_file_at_end (int fd, int filetype, int channels, int file_num) ;
 
 static void multi_file_test (const char *filename, int *formats, int format_count) ;
@@ -131,31 +130,32 @@ multi_file_test (const char *filename, int *formats, int format_count)
 {	SNDFILE				*sndfile ;
 	SF_INFO				sfinfo ;
 	SF_EMBED_FILE_INFO	embed_info ;
-	off_t				file_length ;
-	int					fd, k, file_count = 0 ;
+	sf_count_t			filelen ;
+	int					fd, k, file_count = 0, open_perm ;
 
 	print_test_name ("multi_file_test", filename) ;
 
 	unlink (filename) ;
 
-	if ((fd = open (filename, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP )) < 0)
+	open_perm = OS_IS_WIN32 ? 0 : S_IRUSR | S_IWUSR | S_IRGRP ;
+
+	if ((fd = open (filename, O_RDWR | O_CREAT, open_perm)) < 0)
 	{	printf ("\n\nLine %d: open failed : %s\n", __LINE__, strerror (errno)) ;
 		exit (1) ;
 		} ;
 
-	write (fd, "1234", 4) ;
+	k = write (fd, "1234", 4) ;
 
 	for (k = 0 ; k < format_count ; k++)
 		write_file_at_end (fd, formats [k], 2, k) ;
 
-	file_length = get_file_length (fd) ;
+	filelen = file_length_fd (fd) ;
 
 	embed_info.offset = 4 ;
 	embed_info.length = 0 ;
 
-	file_count = 0 ;
 
-	while (embed_info.offset + embed_info.length < file_length)
+	for (file_count = 0 ; embed_info.offset + embed_info.length < filelen ; )
 	{
 		file_count ++ ;
 
@@ -237,22 +237,3 @@ write_file_at_end (int fd, int filetype, int channels, int file_num)
 	sf_close (sndfile) ;
 } /* write_file_at_end */
 
-static off_t
-get_file_length (int fd)
-{	struct stat statbuf ;
-
-	if (fstat (fd, &statbuf) == -1)
-	{	printf ("\n\nError : fstat error : %s\n\n", strerror (errno)) ;
-		exit (1) ;
-		} ;
-
-	return statbuf.st_size ;
-} /* get_file_length */
-
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: c1a09b0e-57c9-4306-b69e-a865d44eecb3
-*/

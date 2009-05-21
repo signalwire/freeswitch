@@ -50,10 +50,3 @@ else
 	endif
 
 endfunction
-
-# Do not edit or modify anything in this comment block.
-# The arch-tag line is a file identity tag for the GNU Arch 
-# revision control system.
-#
-# arch-tag: 9d7ed7ce-41fe-4efe-8bde-f5fc6f46bb03
-

@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -33,22 +33,22 @@
 #include "dft_cmp.h"
 #include "utils.h"
 
-#include "float_cast.h"
-
 #define	SAMPLE_RATE			16000
 
 static void	float_scaled_test	(const char *filename, int allow_exit, int replace_float, int filetype, double target_snr) ;
 static void	double_scaled_test	(const char *filename, int allow_exit, int replace_float, int filetype, double target_snr) ;
 
-[+ FOR float_type +][+ FOR int_type +][+ FOR endian_type 
+[+ FOR float_type +][+ FOR int_type +][+ FOR endian_type
 +]static void [+ (get "float_name") +]_[+ (get "int_name") +]_[+ (get "end_name") +]_test (const char * filename) ;
-[+ ENDFOR endian_type +][+ ENDFOR int_type +][+ ENDFOR float_type 
+[+ ENDFOR endian_type +][+ ENDFOR int_type +][+ ENDFOR float_type
 +]
 
 static	double	double_data [DFT_DATA_LENGTH] ;
-static	double	test_data [DFT_DATA_LENGTH] ;
+static	double	double_test [DFT_DATA_LENGTH] ;
 
 static float	float_data [DFT_DATA_LENGTH] ;
+static float	float_test [DFT_DATA_LENGTH] ;
+
 static double	double_data [DFT_DATA_LENGTH] ;
 static short	short_data [DFT_DATA_LENGTH] ;
 static int		int_data [DFT_DATA_LENGTH] ;
@@ -106,10 +106,12 @@ main (int argc, char *argv [])
 	float_scaled_test	("pcm_16.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_16, -140.0) ;
 	float_scaled_test	("pcm_24.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_24, -170.0) ;
 
-#ifdef HAVE_FLAC_ALL_H
+#if HAVE_EXTERNAL_LIBS
 	float_scaled_test	("flac_8.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_S8, -39.0) ;
 	float_scaled_test	("flac_16.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_16, -87.0) ;
 	float_scaled_test	("flac_24.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_24, -138.0) ;
+
+	float_scaled_test	("vorbis.oga", allow_exit, SF_FALSE, SF_FORMAT_OGG | SF_FORMAT_VORBIS, -31.0) ;
 #endif
 
 	float_scaled_test	("replace_float.raw", allow_exit, SF_TRUE, SF_ENDIAN_LITTLE | SF_FORMAT_RAW | SF_FORMAT_FLOAT, -163.0) ;
@@ -156,19 +158,21 @@ main (int argc, char *argv [])
 	double_scaled_test	("pcm_16.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_16, -140.0) ;
 	double_scaled_test	("pcm_24.sds", allow_exit, SF_FALSE, SF_FORMAT_SDS | SF_FORMAT_PCM_24, -180.0) ;
 
-#ifdef HAVE_FLAC_ALL_H
+#if HAVE_EXTERNAL_LIBS
 	double_scaled_test	("flac_8.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_S8, -39.0) ;
 	double_scaled_test	("flac_16.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_16, -87.0) ;
 	double_scaled_test	("flac_24.flac", allow_exit, SF_FALSE, SF_FORMAT_FLAC | SF_FORMAT_PCM_24, -138.0) ;
+
+	double_scaled_test	("vorbis.oga", allow_exit, SF_FALSE, SF_FORMAT_OGG | SF_FORMAT_VORBIS, -29.0) ;
 #endif
 
 	double_scaled_test	("replace_double.raw", allow_exit, SF_TRUE, SF_FORMAT_RAW | SF_FORMAT_DOUBLE, -300.0) ;
 
 	putchar ('\n') ;
 	/* Float int tests. */
-[+ FOR float_type +][+ FOR int_type +][+ FOR endian_type 
+[+ FOR float_type +][+ FOR int_type +][+ FOR endian_type
 +]	[+ (get "float_name") +]_[+ (get "int_name") +]_[+ (get "end_name") +]_test ("[+ (get "float_name") +]_[+ (get "int_name") +]_[+ (get "end_name") +].au") ;
-[+ ENDFOR endian_type +][+ ENDFOR int_type +][+ ENDFOR float_type 
+[+ ENDFOR endian_type +][+ ENDFOR int_type +][+ ENDFOR float_type
 +]
 
 	return 0 ;
@@ -180,20 +184,13 @@ main (int argc, char *argv [])
 
 static void
 float_scaled_test (const char *filename, int allow_exit, int replace_float, int filetype, double target_snr)
-{	static	float	float_orig [DFT_DATA_LENGTH] ;
-	static	float	float_test [DFT_DATA_LENGTH] ;
-
-	SNDFILE		*file ;
+{	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
-	int			k ;
 	double		snr ;
 
 	print_test_name ("float_scaled_test", filename) ;
 
-	gen_windowed_sine_double (double_data, DFT_DATA_LENGTH, 1.0) ;
-
-	for (k = 0 ; k < DFT_DATA_LENGTH ; k++)
-		float_orig [k] = double_data [k] ;
+	gen_windowed_sine_float (float_data, DFT_DATA_LENGTH, 1.0) ;
 
 	sfinfo.samplerate	= SAMPLE_RATE ;
 	sfinfo.frames		= DFT_DATA_LENGTH ;
@@ -203,7 +200,7 @@ float_scaled_test (const char *filename, int allow_exit, int replace_float, int 
 	file = test_open_file_or_die (filename, SFM_WRITE, &sfinfo, SF_TRUE, __LINE__) ;
 	sf_command (file, SFC_TEST_IEEE_FLOAT_REPLACE, NULL, replace_float) ;
 
-	test_write_float_or_die (file, 0, float_orig, DFT_DATA_LENGTH, __LINE__) ;
+	test_write_float_or_die (file, 0, float_data, DFT_DATA_LENGTH, __LINE__) ;
 
 	sf_close (file) ;
 
@@ -222,10 +219,7 @@ float_scaled_test (const char *filename, int allow_exit, int replace_float, int 
 
 	sf_close (file) ;
 
-	for (k = 0 ; k < DFT_DATA_LENGTH ; k++)
-		test_data [k] = float_test [k] ;
-
-	snr = dft_cmp (__LINE__, double_data, test_data, DFT_DATA_LENGTH, target_snr, allow_exit) ;
+	snr = dft_cmp_float (__LINE__, float_data, float_test, DFT_DATA_LENGTH, target_snr, allow_exit) ;
 
 	exit_if_true (snr > target_snr, "% 6.1fdB SNR\n\n    Error : should be better than % 6.1fdB\n\n", snr, target_snr) ;
 
@@ -258,7 +252,7 @@ double_scaled_test (const char *filename, int allow_exit, int replace_float, int
 
 	sf_close (file) ;
 
-	memset (test_data, 0, sizeof (test_data)) ;
+	memset (double_test, 0, sizeof (double_test)) ;
 
 	file = test_open_file_or_die (filename, SFM_READ, &sfinfo, SF_TRUE, __LINE__) ;
 	sf_command (file, SFC_TEST_IEEE_FLOAT_REPLACE, NULL, replace_float) ;
@@ -269,11 +263,11 @@ double_scaled_test (const char *filename, int allow_exit, int replace_float, int
 
 	check_log_buffer_or_die (file, __LINE__) ;
 
-	test_read_double_or_die (file, 0, test_data, DFT_DATA_LENGTH, __LINE__) ;
+	test_read_double_or_die (file, 0, double_test, DFT_DATA_LENGTH, __LINE__) ;
 
 	sf_close (file) ;
 
-	snr = dft_cmp (__LINE__, double_data, test_data, DFT_DATA_LENGTH, target_snr, allow_exit) ;
+	snr = dft_cmp_double (__LINE__, double_data, double_test, DFT_DATA_LENGTH, target_snr, allow_exit) ;
 
 	exit_if_true (snr > target_snr, "% 6.1fdB SNR\n\n    Error : should be better than % 6.1fdB\n\n", snr, target_snr) ;
 
@@ -287,7 +281,7 @@ double_scaled_test (const char *filename, int allow_exit, int replace_float, int
 /*==============================================================================
 */
 
-[+ FOR float_type +][+ FOR int_type +][+ FOR endian_type 
+[+ FOR float_type +][+ FOR int_type +][+ FOR endian_type
 +]
 static void
 [+ (get "float_name") +]_[+ (get "int_name") +]_[+ (get "end_name") +]_test (const char * filename)
@@ -327,7 +321,7 @@ static void
 
 	max = 0 ;
 	for (k = 0 ; k < ARRAY_LEN ([+ (get "int_name") +]_data) ; k++)
-		if (abs ([+ (get "int_name") +]_data [k]) > max)
+		if ((unsigned) abs ([+ (get "int_name") +]_data [k]) > max)
 			max = abs ([+ (get "int_name") +]_data [k]) ;
 
 	if (1.0 * abs (max - [+ (get "int_max") +]) / [+ (get "int_max") +] > 0.01)
@@ -340,12 +334,3 @@ static void
 } /* [+ (get "float_name") +]_[+ (get "int_name") +]_[+ (get "end_name") +]_test */
 [+ ENDFOR endian_type +][+ ENDFOR int_type +][+ ENDFOR float_type +]
 
-[+ COMMENT
-
- Do not edit or modify anything in this comment block.
- The arch-tag line is a file identity tag for the GNU Arch
- revision control system.
-
- arch-tag: c1043a35-f0aa-44af-9f7f-f193c67f140d
-
-+]

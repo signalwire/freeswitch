@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 1999-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ static int truncate (const char *filename, int ignored) ;
 #include	<sndfile.h>
 
 #include	"utils.h"
+#include	"generate.h"
 
 #define	SAMPLE_RATE			11025
 #define	DATA_LENGTH			(1<<12)
@@ -83,6 +84,8 @@ main (int argc, char **argv)
 		printf ("           voc   - Create Voice file functions\n") ;
 		printf ("           w64   - Sonic Foundry's W64 file functions\n") ;
 		printf ("           flac  - test FLAC file functions\n") ;
+		printf ("           mpc2k - test MPC 2000 file functions\n") ;
+		printf ("           rf64  - test RF64 file functions\n") ;
 		printf ("           all   - perform all tests\n") ;
 		exit (1) ;
 		} ;
@@ -311,6 +314,11 @@ main (int argc, char **argv)
 		test_count++ ;
 		} ;
 
+	if (do_all || ! strcmp (argv [1], "mpc2k"))
+	{	pcm_test_short	("short.mpc", SF_FORMAT_MPC2K | SF_FORMAT_PCM_16, SF_FALSE) ;
+		test_count++ ;
+		} ;
+
 	if (do_all || ! strcmp (argv [1], "avr"))
 	{	pcm_test_char 	("char_u8.avr"	, SF_FORMAT_AVR | SF_FORMAT_PCM_U8, SF_FALSE) ;
 		pcm_test_char 	("char_s8.avr"	, SF_FORMAT_AVR | SF_FORMAT_PCM_S8, SF_FALSE) ;
@@ -340,6 +348,10 @@ main (int argc, char **argv)
 	{	pcm_test_char	("char.sds"		, SF_FORMAT_SDS | SF_FORMAT_PCM_S8, SF_TRUE) ;
 		pcm_test_short	("short.sds"	, SF_FORMAT_SDS | SF_FORMAT_PCM_16, SF_TRUE) ;
 		pcm_test_24bit	("24bit.sds"	, SF_FORMAT_SDS | SF_FORMAT_PCM_24, SF_TRUE) ;
+
+		empty_file_test ("empty_char.sds", SF_FORMAT_SDS | SF_FORMAT_PCM_S8) ;
+		empty_file_test ("empty_short.sds", SF_FORMAT_SDS | SF_FORMAT_PCM_16) ;
+
 		test_count++ ;
 		} ;
 
@@ -351,14 +363,30 @@ main (int argc, char **argv)
 		} ;
 
 	if (do_all || ! strcmp (argv [1], "flac"))
-	{
-#ifdef HAVE_FLAC_ALL_H
-		pcm_test_char	("char.flac"	, SF_FORMAT_FLAC | SF_FORMAT_PCM_S8, SF_TRUE) ;
-		pcm_test_short	("short.flac"	, SF_FORMAT_FLAC | SF_FORMAT_PCM_16, SF_TRUE) ;
-		pcm_test_24bit	("24bit.flac"	, SF_FORMAT_FLAC | SF_FORMAT_PCM_24, SF_TRUE) ;
-#else
-		printf ("    **** flac not supported in this binary. ****\n") ;
-#endif
+	{	if (HAVE_EXTERNAL_LIBS)
+		{	pcm_test_char	("char.flac"	, SF_FORMAT_FLAC | SF_FORMAT_PCM_S8, SF_TRUE) ;
+			pcm_test_short	("short.flac"	, SF_FORMAT_FLAC | SF_FORMAT_PCM_16, SF_TRUE) ;
+			pcm_test_24bit	("24bit.flac"	, SF_FORMAT_FLAC | SF_FORMAT_PCM_24, SF_TRUE) ;
+			}
+		else
+			puts ("    No FLAC tests because FLAC support was not compiled in.") ;
+		test_count++ ;
+		} ;
+
+	if (do_all || ! strcmp (argv [1], "rf64"))
+	{	pcm_test_char	("char.rf64"	, SF_FORMAT_RF64 | SF_FORMAT_PCM_U8, SF_FALSE) ;
+		pcm_test_short	("short.rf64"	, SF_FORMAT_RF64 | SF_FORMAT_PCM_16, SF_FALSE) ;
+		pcm_test_24bit	("24bit.rf64"	, SF_FORMAT_RF64 | SF_FORMAT_PCM_24, SF_FALSE) ;
+		pcm_test_int	("int.rf64"		, SF_FORMAT_RF64 | SF_FORMAT_PCM_32, SF_FALSE) ;
+
+		/* Lite remove start */
+		pcm_test_float	("float.rf64"	, SF_FORMAT_RF64 | SF_FORMAT_FLOAT , SF_FALSE) ;
+		pcm_test_double	("double.rf64"	, SF_FORMAT_RF64 | SF_FORMAT_DOUBLE, SF_FALSE) ;
+		empty_file_test ("empty_char.rf64", SF_FORMAT_RF64 | SF_FORMAT_PCM_U8) ;
+		empty_file_test ("empty_short.rf64", SF_FORMAT_RF64 | SF_FORMAT_PCM_16) ;
+		empty_file_test ("empty_float.rf64", SF_FORMAT_RF64 | SF_FORMAT_FLOAT) ;
+		/* Lite remove end */
+
 		test_count++ ;
 		} ;
 
@@ -400,6 +428,8 @@ static void mono_[+ (get "type_name") +]_test (const char *filename, int format,
 static void stereo_[+ (get "type_name") +]_test (const char *filename, int format, int long_file_ok, int allow_fd) ;
 static void mono_rdwr_[+ (get "type_name") +]_test (const char *filename, int format, int long_file_ok, int allow_fd) ;
 static void new_rdwr_[+ (get "type_name") +]_test (const char *filename, int format, int allow_fd) ;
+static void multi_seek_test (const char * filename, int format) ;
+static void write_seek_extend_test (const char * filename, int format) ;
 
 static void
 pcm_test_[+ (get "type_name") +] (const char *filename, int format, int long_file_ok)
@@ -530,6 +560,7 @@ mono_[+ (get "type_name") +]_test (const char *filename, int format, int long_fi
 	for (k = 0 ; k < items ; k++)
 		if ([+ (get "error_func") +] (orig [k], test [k]))
 		{	printf ("\n\nLine %d: Mono : Incorrect sample A (#%d : [+ (get "format_char") +] => [+ (get "format_char") +]).\n", __LINE__, k, orig [k], test [k]) ;
+			oct_save_[+ (get "data_type") +] (orig, test, items) ;
 			exit (1) ;
 			} ;
 
@@ -604,6 +635,9 @@ mono_[+ (get "type_name") +]_test (const char *filename, int format, int long_fi
 	test_seek_or_die (file, 0, SEEK_CUR, sfinfo.frames, sfinfo.channels, __LINE__) ;
 
 	sf_close (file) ;
+
+	multi_seek_test (filename, format) ;
+	write_seek_extend_test (filename, format) ;
 
 } /* mono_[+ (get "type_name") +]_test */
 
@@ -806,7 +840,7 @@ mono_rdwr_[+ (get "type_name") +]_test (const char *filename, int format, int lo
 		/* Check the data. */
 		for (k = 0 ; k < DATA_LENGTH ; k++)
 			if ([+ (get "error_func") +] (orig [k], test [k]))
-			{	printf ("\n\nLine %d (pass %d): Error at sample %d ([+ (get "format_char") +] => [+ (get "format_char") +]).\n", __LINE__, pass, k, orig [k], test [k]) ;
+			{	printf ("\n\nLine %d (pass %d) A : Error at sample %d ([+ (get "format_char") +] => [+ (get "format_char") +]).\n", __LINE__, pass, k, orig [k], test [k]) ;
 				oct_save_[+ (get "data_type") +] (orig, test, DATA_LENGTH) ;
 				exit (1) ;
 				} ;
@@ -855,7 +889,7 @@ mono_rdwr_[+ (get "type_name") +]_test (const char *filename, int format, int lo
 		/* Check the data. */
 		for (k = 0 ; k < DATA_LENGTH ; k++)
 			if ([+ (get "error_func") +] (orig [k], test [k]))
-			{	printf ("\n\nLine %d (pass %d): Error at sample %d ([+ (get "format_char") +] => [+ (get "format_char") +]).\n", __LINE__, pass, k, orig [k], test [k]) ;
+			{	printf ("\n\nLine %d (pass %d) B : Error at sample %d ([+ (get "format_char") +] => [+ (get "format_char") +]).\n", __LINE__, pass, k, orig [k], test [k]) ;
 				oct_save_[+ (get "data_type") +] (orig, test, DATA_LENGTH) ;
 				exit (1) ;
 				} ;
@@ -892,7 +926,7 @@ new_rdwr_[+ (get "type_name") +]_test (const char *filename, int format, int all
 
 	rwfile = test_open_file_or_die (filename, SFM_RDWR, &sfinfo, allow_fd, __LINE__) ;
 	if (sfinfo.frames != 2 * frames)
-	{	printf ("\n\nLine %d : incorrect number of frames in file (%ld shold be %d)\n\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), frames) ;
+	{	printf ("\n\nLine %d : incorrect number of frames in file (%ld should be %d)\n\n", __LINE__, SF_COUNT_TO_LONG (sfinfo.frames), 2 * frames) ;
 		exit (1) ;
 		} ;
 
@@ -1020,12 +1054,100 @@ truncate (const char *filename, int ignored)
 
 #endif
 
-[+ COMMENT
+static void
+multi_seek_test (const char * filename, int format)
+{	SNDFILE * file ;
+	SF_INFO info ;
+	sf_count_t pos ;
+	int k ;
 
- Do not edit or modify anything in this comment block.
- The following line is a file identity tag for the GNU Arch
- revision control system.
+	/* This test doesn't work on the following. */
+	switch (format & SF_FORMAT_TYPEMASK)
+	{	case SF_FORMAT_RAW :
+			return ;
 
- arch-tag: 4187de93-d434-41a2-93a9-4f6e2995b5c1
+		default :
+			break ;
+		} ;
 
-+]
+	memset (&info, 0, sizeof (info)) ;
+
+	generate_file (filename, format, 88200) ;
+
+	file = test_open_file_or_die (filename, SFM_READ, &info, SF_FALSE, __LINE__) ;
+
+	for (k = 0 ; k < 10 ; k++)
+	{	pos = info.frames / (k + 2) ;
+		test_seek_or_die (file, pos, SEEK_SET, pos, info.channels, __LINE__) ;
+		} ;
+
+	sf_close (file) ;
+} /* multi_seek_test */
+
+static void
+write_seek_extend_test (const char * filename, int format)
+{	SNDFILE * file ;
+	SF_INFO info ;
+	short	*orig, *test ;
+	unsigned items, k ;
+
+	/* This test doesn't work on the following. */
+	switch (format & SF_FORMAT_TYPEMASK)
+	{	case SF_FORMAT_FLAC :
+		case SF_FORMAT_HTK :
+		case SF_FORMAT_PAF :
+		case SF_FORMAT_SDS :
+		case SF_FORMAT_SVX :
+			return ;
+
+		default :
+			break ;
+		} ;
+
+	memset (&info, 0, sizeof (info)) ;
+
+	info.samplerate = 48000 ;
+	info.channels = 1 ;
+	info.format = format ;
+
+	items = 512 ;
+	exit_if_true (items > ARRAY_LEN (orig_data.s), "Line %d : Bad assumption.\n", __LINE__) ;
+
+	orig = orig_data.s ;
+	test = test_data.s ;
+
+	for (k = 0 ; k < ARRAY_LEN (orig_data.s) ; k++)
+		orig [k] = 0x3fff ;
+
+	file = test_open_file_or_die (filename, SFM_WRITE, &info, SF_FALSE, __LINE__) ;
+	test_write_short_or_die (file, 0, orig, items, __LINE__) ;
+
+	/* Extend the file using a seek. */
+	test_seek_or_die (file, 2 * items, SEEK_SET, 2 * items, info.channels, __LINE__) ;
+
+	test_writef_short_or_die (file, 0, orig, items, __LINE__) ;
+	sf_close (file) ;
+
+	file = test_open_file_or_die (filename, SFM_READ, &info, SF_FALSE, __LINE__) ;
+	test_read_short_or_die (file, 0, test, 3 * items, __LINE__) ;
+	sf_close (file) ;
+
+	/* Can't do these formats due to scaling. */
+	switch (format & SF_FORMAT_SUBMASK)
+	{	case SF_FORMAT_PCM_S8 :
+		case SF_FORMAT_PCM_U8 :
+			return ;
+		default :
+			break ;
+		} ;
+
+	for (k = 0 ; k < items ; k++)
+	{	exit_if_true (test [k] != 0x3fff, "Line %d : test [%d] == %d, should be 0x3fff.\n", __LINE__, k, test [k]) ;
+		exit_if_true (test [items + k] != 0, "Line %d : test [%d] == %d, should be 0.\n", __LINE__, items + k, test [items + k]) ;
+		exit_if_true (test [2 * items + k] != 0x3fff, "Line %d : test [%d] == %d, should be 0x3fff.\n", __LINE__, 2 * items + k, test [2 * items + k]) ;
+		} ;
+
+	return ;
+} /* write_seek_extend_test */
+
+

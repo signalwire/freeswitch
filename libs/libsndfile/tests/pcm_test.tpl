@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 1999-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 1999-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -29,7 +30,6 @@
 
 #include <sndfile.h>
 
-#include "float_cast.h"
 #include "utils.h"
 
 #define	BUFFER_SIZE		(1<<12)
@@ -37,17 +37,17 @@
 static void	lrintf_test (void) ;
 
 [+ FOR data_type
-+]static void	pcm_test_[+ (get "name") +]	(const char *filename, int filetype, int hash) ;
++]static void	pcm_test_[+ (get "name") +]	(const char *filename, int filetype, uint64_t hash) ;
 [+ ENDFOR data_type
 +]
-static void pcm_test_float	(const char *filename, int filetype, int hash, int replace_float) ;
-static void pcm_test_double	(const char *filename, int filetype, int hash, int replace_float) ;
+static void pcm_test_float	(const char *filename, int filetype, uint64_t hash, int replace_float) ;
+static void pcm_test_double	(const char *filename, int filetype, uint64_t hash, int replace_float) ;
 
 typedef union
-{	double	d [BUFFER_SIZE + 1];
-	float	f [BUFFER_SIZE + 1];
-	int		i [BUFFER_SIZE + 1];
-	short	s [BUFFER_SIZE + 1];
+{	double	d [BUFFER_SIZE + 1] ;
+	float	f [BUFFER_SIZE + 1] ;
+	int		i [BUFFER_SIZE + 1] ;
+	short	s [BUFFER_SIZE + 1] ;
 } BUFFER ;
 
 /* Data written to the file. */
@@ -61,32 +61,32 @@ main (void)
 {
 	lrintf_test () ;
 
-	pcm_test_bits_8	("pcm-s8.raw", SF_FORMAT_RAW | SF_FORMAT_PCM_S8, 0x9ae33814) ;
-	pcm_test_bits_8	("pcm-u8.raw", SF_FORMAT_RAW | SF_FORMAT_PCM_U8, 0x651d4694) ;
+	pcm_test_bits_8	("pcm-s8.raw", SF_FORMAT_RAW | SF_FORMAT_PCM_S8, 0x1cda335091249dbfLL) ;
+	pcm_test_bits_8	("pcm-u8.raw", SF_FORMAT_RAW | SF_FORMAT_PCM_U8, 0x7f748c433d695f3fLL) ;
 
-	pcm_test_bits_16 ("le-pcm16.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_PCM_16, 0x16866fa0) ;
-	pcm_test_bits_16 ("be-pcm16.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_PCM_16, 0xc571826c) ;
+	pcm_test_bits_16 ("le-pcm16.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_PCM_16, 0x3a2b956c881ebf08LL) ;
+	pcm_test_bits_16 ("be-pcm16.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_PCM_16, 0xd9e2f840c55750f8LL) ;
 
-	pcm_test_bits_24 ("le-pcm24.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_PCM_24, 0x658e4bb6) ;
-	pcm_test_bits_24 ("be-pcm24.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_PCM_24, 0xbf8cde4a) ;
+	pcm_test_bits_24 ("le-pcm24.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_PCM_24, 0x933b6a759ab496f8LL) ;
+	pcm_test_bits_24 ("be-pcm24.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_PCM_24, 0xbb1f3eaf9c30b6f8LL) ;
 
-	pcm_test_bits_32 ("le-pcm32.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_PCM_32, 0x04c84a70) ;
-	pcm_test_bits_32 ("be-pcm32.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_PCM_32, 0x069c84f6) ;
+	pcm_test_bits_32 ("le-pcm32.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_PCM_32, 0xa77aece1c1c17f08LL) ;
+	pcm_test_bits_32 ("be-pcm32.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_PCM_32, 0x3099ddf142d0b0f8LL) ;
 
 	/* Lite remove start */
-	pcm_test_float	("le-float.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0xbb836603, SF_FALSE) ;
-	pcm_test_float	("be-float.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x903cd8fc, SF_FALSE) ;
+	pcm_test_float	("le-float.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x3c2ad04f7554267aLL, SF_FALSE) ;
+	pcm_test_float	("be-float.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x074de3e248fa9186LL, SF_FALSE) ;
 
-	pcm_test_double	("le-double.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xbf84448e, SF_FALSE) ;
-	pcm_test_double	("be-double.raw", SF_ENDIAN_BIG	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xaf3d9fb5, SF_FALSE) ;
+	pcm_test_double	("le-double.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xc682726f958f669cLL, SF_FALSE) ;
+	pcm_test_double	("be-double.raw", SF_ENDIAN_BIG	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xd9a3583f8ee51164LL, SF_FALSE) ;
 
 	puts ("Test IEEE replacement code.") ;
 
-	pcm_test_float	("le-float.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0xbb836603, SF_TRUE) ;
-	pcm_test_float	("be-float.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x903cd8fc, SF_TRUE) ;
+	pcm_test_float	("le-float.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x3c2ad04f7554267aLL, SF_TRUE) ;
+	pcm_test_float	("be-float.raw", SF_ENDIAN_BIG		| SF_FORMAT_RAW | SF_FORMAT_FLOAT, 0x074de3e248fa9186LL, SF_TRUE) ;
 
-	pcm_test_double	("le-double.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xbf84448e, SF_TRUE) ;
-	pcm_test_double	("be-double.raw", SF_ENDIAN_BIG	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xaf3d9fb5, SF_TRUE) ;
+	pcm_test_double	("le-double.raw", SF_ENDIAN_LITTLE	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xc682726f958f669cLL, SF_TRUE) ;
+	pcm_test_double	("be-double.raw", SF_ENDIAN_BIG	| SF_FORMAT_RAW | SF_FORMAT_DOUBLE, 0xd9a3583f8ee51164LL, SF_TRUE) ;
 	/* Lite remove end */
 
 	return 0 ;
@@ -126,7 +126,7 @@ lrintf_test (void)
 
 [+ FOR data_type
 +]static void
-pcm_test_[+ (get "name") +] (const char *filename, int filetype, int hash)
+pcm_test_[+ (get "name") +] (const char *filename, int filetype, uint64_t hash)
 {	SNDFILE		*file ;
 	SF_INFO		sfinfo ;
 	int			k, items, zero_count ;
@@ -399,7 +399,7 @@ pcm_test_[+ (get "name") +] (const char *filename, int filetype, int hash)
 */
 
 static void
-pcm_test_float (const char *filename, int filetype, int hash, int replace_float)
+pcm_test_float (const char *filename, int filetype, uint64_t hash, int replace_float)
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, items, frames ;
@@ -653,7 +653,7 @@ pcm_test_float (const char *filename, int filetype, int hash, int replace_float)
 } /* pcm_test_float */
 
 static void
-pcm_test_double (const char *filename, int	filetype, int hash, int replace_float)
+pcm_test_double (const char *filename, int	filetype, uint64_t hash, int replace_float)
 {	SNDFILE			*file ;
 	SF_INFO			sfinfo ;
 	int				k, items, frames ;
@@ -928,13 +928,3 @@ pcm_test_double (const char *filename, int	filetype, int hash, int replace_float
 
 /*==============================================================================
 */
-
-[+ COMMENT
-
- Do not edit or modify anything in this comment block.
- The following line is a file identity tag for the GNU Arch 
- revision control system.
-
- arch-tag: cad1443b-99d9-414e-883f-178817600d40
-
-+]

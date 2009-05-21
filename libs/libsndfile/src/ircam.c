@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -85,13 +85,13 @@ ircam_open	(SF_PRIVATE *psf)
 			return error ;
 		} ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
-	{	if ((psf->sf.format & SF_FORMAT_TYPEMASK) != SF_FORMAT_IRCAM)
+	{	if ((SF_CONTAINER (psf->sf.format)) != SF_FORMAT_IRCAM)
 			return	SFE_BAD_OPEN_FORMAT ;
 
-		psf->endian = psf->sf.format & SF_FORMAT_ENDMASK ;
+		psf->endian = SF_ENDIAN (psf->sf.format) ;
 		if (psf->endian == 0 || psf->endian == SF_ENDIAN_CPU)
 			psf->endian = (CPU_IS_BIG_ENDIAN) ? SF_ENDIAN_BIG : SF_ENDIAN_LITTLE ;
 
@@ -238,7 +238,7 @@ ircam_close	(SF_PRIVATE *psf)
 } /* ircam_close */
 
 static int
-ircam_write_header (SF_PRIVATE *psf, int calc_length)
+ircam_write_header (SF_PRIVATE *psf, int UNUSED (calc_length))
 {	int			encoding ;
 	float		samplerate ;
 	sf_count_t	current ;
@@ -248,10 +248,8 @@ ircam_write_header (SF_PRIVATE *psf, int calc_length)
 
 	current = psf_ftell (psf) ;
 
-	calc_length = calc_length ;
-
 	/* This also sets psf->endian. */
-	encoding = get_encoding (psf->sf.format & SF_FORMAT_SUBMASK) ;
+	encoding = get_encoding (SF_CODEC (psf->sf.format)) ;
 
 	if (encoding == 0)
 		return SFE_BAD_OPEN_FORMAT ;
@@ -322,10 +320,3 @@ get_encoding_str (int encoding)
 	return "Unknown encoding" ;
 } /* get_encoding_str */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: f2714ab8-f286-4c94-9740-edaf673a1c71
-*/

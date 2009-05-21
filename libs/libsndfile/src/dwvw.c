@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -31,10 +31,10 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<string.h>
+#include	<math.h>
 
 #include	"sndfile.h"
 #include	"sfendian.h"
-#include	"float_cast.h"
 #include	"common.h"
 
 typedef struct
@@ -154,10 +154,8 @@ dwvw_close (SF_PRIVATE *psf)
 } /* dwvw_close */
 
 static sf_count_t
-dwvw_seek	(SF_PRIVATE *psf, int mode, sf_count_t offset)
+dwvw_seek	(SF_PRIVATE *psf, int UNUSED (mode), sf_count_t offset)
 {	DWVW_PRIVATE *pdwvw ;
-
-	mode = mode ;
 
 	if (! psf->codec_data)
 	{	psf->error = SFE_INTERNAL ;
@@ -662,10 +660,3 @@ dwvw_write_d (SF_PRIVATE *psf, const double *ptr, sf_count_t len)
 	return total ;
 } /* dwvw_write_d */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 1ca09552-b01f-4d7f-9bcf-612f834fe41d
-*/

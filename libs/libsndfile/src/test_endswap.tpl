@@ -21,43 +21,25 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <inttypes.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
-#include <string.h>
-#include <errno.h>
-
 #include "common.h"
 #include "sfendian.h"
 
+#include "test_main.h"
+
 #define	FMT_SHORT	"0x%04x\n"
 #define	FMT_INT		"0x%08x\n"
-
-#if SIZEOF_INT64_T == SIZEOF_LONG
-#define	FMT_INT64	"0x%016lx\n"
-#else
-#define	FMT_INT64	"0x%016llx\n"
-#endif
-
-[+ FOR int_type
-+]static void test_endswap_[+ (get "name") +] (void) ;
-[+ ENDFOR int_type
-+]
-
-int
-main (void)
-{
-[+ FOR int_type
-+]	test_endswap_[+ (get "name") +] () ;
-[+ ENDFOR int_type
-+]
-	return 0 ;
-} /* main */
+#define	FMT_INT64	"0x%016" PRIx64 "\n"
 
 /*==============================================================================
-** Actual test functions.
+** Test functions.
 */
 
 [+ FOR int_type +]
@@ -76,7 +58,7 @@ test_endswap_[+ (get "name") +] (void)
 {	[+ (get "name") +] orig [4], first [4], second [4] ;
 	int k ;
 
-	printf ("    %-24s : ", "test_endswap_[+ (get "name") +]") ;
+	printf ("    %-40s : ", "test_endswap_[+ (get "name") +]") ;
 	fflush (stdout) ;
 
 	for (k = 0 ; k < ARRAY_LEN (orig) ; k++)
@@ -124,12 +106,12 @@ test_endswap_[+ (get "name") +] (void)
 +]
 
 
-[+ COMMENT
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: fd8887e8-8202-4f30-a419-0cf01a0e799b
-*/
+void
+test_endswap (void)
+{
+[+ FOR int_type
++]	test_endswap_[+ (get "name") +] () ;
+[+ ENDFOR int_type
 +]
+} /* test_endswap */
+

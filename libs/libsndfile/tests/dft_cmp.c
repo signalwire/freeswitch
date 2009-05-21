@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -30,25 +30,44 @@
 #define		DFT_SPEC_LENGTH		(DFT_DATA_LENGTH / 2)
 
 static void	dft_magnitude (const double *data, double *spectrum) ;
-static double calc_max_spectral_difference (double *spec1, double *spec2) ;
+static double calc_max_spectral_difference (const double *spec1, const double *spec2) ;
 
 /*--------------------------------------------------------------------------------
 **	Public functions.
 */
 
 double
-dft_cmp (int linenum, double *orig, double *test, int len, double target_snr, int allow_exit)
+dft_cmp_float (int linenum, const float *in_data, const float *test_data, int len, double target_snr, int allow_exit)
+{	static double orig [DFT_DATA_LENGTH] ;
+	static double test [DFT_DATA_LENGTH] ;
+	unsigned	k ;
+
+	if (len != DFT_DATA_LENGTH)
+	{	printf ("Error (line %d) : dft_cmp_float : Bad input array length.\n", linenum) ;
+		return 1 ;
+		} ;
+
+	for (k = 0 ; k < ARRAY_LEN (orig) ; k++)
+	{	test [k] = test_data [k] ;
+		orig [k] = in_data [k] ;
+		} ;
+
+	return dft_cmp_double (linenum, orig, test, len, target_snr, allow_exit) ;
+} /* dft_cmp_float */
+
+double
+dft_cmp_double (int linenum, const double *orig, const double *test, int len, double target_snr, int allow_exit)
 {	static double orig_spec [DFT_SPEC_LENGTH] ;
 	static double test_spec [DFT_SPEC_LENGTH] ;
 	double		snr ;
 
 	if (! orig || ! test)
-	{	printf ("Error (line % d) : dft_cmp : Bad input arrays.\n", linenum) ;
+	{	printf ("Error (line %d) : dft_cmp_double : Bad input arrays.\n", linenum) ;
 		return 1 ;
 		} ;
 
 	if (len != DFT_DATA_LENGTH)
-	{	printf ("Error (line % d) : dft_cmp : Bad input array length.\n", linenum) ;
+	{	printf ("Error (line %d) : dft_cmp_double : Bad input array length.\n", linenum) ;
 		return 1 ;
 		} ;
 
@@ -68,7 +87,7 @@ dft_cmp (int linenum, double *orig, double *test, int len, double target_snr, in
 		snr = -500.0 ;
 
 	return snr ;
-} /* dft_cmp */
+} /* dft_cmp_double */
 
 /*--------------------------------------------------------------------------------
 **	Quick dirty calculation of magnitude spectrum for real valued data using
@@ -112,7 +131,7 @@ dft_magnitude (const double *data, double *spectrum)
 } /* dft_magnitude */
 
 static double
-calc_max_spectral_difference (double *orig, double *test)
+calc_max_spectral_difference (const double *orig, const double *test)
 {	double orig_max = 0.0, max_diff = 0.0 ;
 	int	k ;
 
@@ -128,10 +147,3 @@ calc_max_spectral_difference (double *orig, double *test)
 
 	return 20.0 * log10 (max_diff / orig_max) ;
 } /* calc_max_spectral_difference */
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: cba7ffe2-bafe-44bd-b57a-15def3408410
-*/

@@ -76,25 +76,25 @@ top of file should you need to have a look at it.
 
 Step 5
 ------
-Add a call to your open read function from sf_open_read ().
+Add a call to your open function from psf_open_file ().
 
-Edit src/sndfile.c and find the switch statement in sf_open_read (). It starts
+Edit src/sndfile.c and find the switch statement in psf_open_file (). It starts
 like this:
 
 	switch (filetype)
 	{	case	SF_FORMAT_WAV :
-				sf_errno = wav_open_read (psf) ;
+				error = wav_open (psf) ;
 				break ;
 
 		case	SF_FORMAT_AIFF :
-				sf_errno = aiff_open_read (psf) ;
+				error = aiff_open (psf) ;
 				break ;
 
 Towards the bottom of this switch statement your should add one for the new file
 type. Something like:
 
 		case	SF_FORMAT_WACK :
-				sf_errno = whacky_open_read (psf) ;
+				sf_errno = whacky_open (psf) ;
 				break ;
 
 Setp 6
@@ -112,9 +112,9 @@ Implement your open read function. The best way to do this is by coding
 something much like one of the other file formats. The file src/au.c might be 
 a good place to start.
 
-In src/whacky.c you should now implement the function whacky_open_read() which 
+In src/whacky.c you should now implement the function whacky_open() which 
 was prototyped in src/common.h. This function should return 0 on success and 
-a negative number on error. 
+a non-zero number on error. 
 
 Error values are defined in src/common.h in a enum which starts at SFE_NO_ERROR.
 When adding a new error value, you also need to add an error string to the 

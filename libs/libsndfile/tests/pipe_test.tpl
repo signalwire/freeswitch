@@ -1,6 +1,6 @@
 [+ AutoGen5 template c +]
 /*
-** Copyright (C) 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ main (void)
 #include <unistd.h>
 #endif
 
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -95,7 +96,7 @@ main (void)
 {	int k ;
 
 	if (file_exists ("libsndfile.spec.in"))
-		chdir ("tests") ;
+		exit_if_true (chdir ("tests") != 0, "\n    Error : chdir ('tests') failed.\n") ;
 
 	for (k = 0 ; read_only_types [k].format ; k++)
 		pipe_read_test (read_only_types [k].format, read_only_types [k].ext) ;
@@ -193,7 +194,7 @@ useek_pipe_rw_[+ (get "type_name") +] (const char * ext, SF_INFO * psfinfo_write
 	/*
 	** Create the pipe.
 	*/
-	pipe (pipefd) ;
+	exit_if_true (pipe (pipefd) != 0, "\n\n%s %d : pipe failed : %s\n", __func__, __LINE__, strerror (errno)) ;
 
 	/*
 	** Attach the write end of the pipe to be written to.
@@ -371,12 +372,3 @@ file_exists (const char *filename)
 
 #endif
 
-[+ COMMENT
-
- Do not edit or modify anything in this comment block.
- The arch-tag line is a file identity tag for the GNU Arch
- revision control system.
-
- arch-tag: 968ad8d5-e724-41fe-8209-fa1578569dfe
-
-+]

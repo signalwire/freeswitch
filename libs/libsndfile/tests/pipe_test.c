@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ main (void)
 #include <unistd.h>
 #endif
 
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -94,7 +95,7 @@ main (void)
 {	int k ;
 
 	if (file_exists ("libsndfile.spec.in"))
-		chdir ("tests") ;
+		exit_if_true (chdir ("tests") != 0, "\n    Error : chdir ('tests') failed.\n") ;
 
 	for (k = 0 ; read_only_types [k].format ; k++)
 		pipe_read_test (read_only_types [k].format, read_only_types [k].ext) ;
@@ -192,7 +193,7 @@ useek_pipe_rw_short (const char * ext, SF_INFO * psfinfo_write, SF_INFO * psfinf
 	/*
 	** Create the pipe.
 	*/
-	pipe (pipefd) ;
+	exit_if_true (pipe (pipefd) != 0, "\n\n%s %d : pipe failed : %s\n", __func__, __LINE__, strerror (errno)) ;
 
 	/*
 	** Attach the write end of the pipe to be written to.
@@ -268,7 +269,7 @@ useek_pipe_rw_float (const char * ext, SF_INFO * psfinfo_write, SF_INFO * psfinf
 	/*
 	** Create the pipe.
 	*/
-	pipe (pipefd) ;
+	exit_if_true (pipe (pipefd) != 0, "\n\n%s %d : pipe failed : %s\n", __func__, __LINE__, strerror (errno)) ;
 
 	/*
 	** Attach the write end of the pipe to be written to.
@@ -344,7 +345,7 @@ useek_pipe_rw_double (const char * ext, SF_INFO * psfinfo_write, SF_INFO * psfin
 	/*
 	** Create the pipe.
 	*/
-	pipe (pipefd) ;
+	exit_if_true (pipe (pipefd) != 0, "\n\n%s %d : pipe failed : %s\n", __func__, __LINE__, strerror (errno)) ;
 
 	/*
 	** Attach the write end of the pipe to be written to.
@@ -521,5 +522,4 @@ file_exists (const char *filename)
 } /* file_exists */
 
 #endif
-
 

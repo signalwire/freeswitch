@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2002-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2002-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -30,6 +30,8 @@
 
 #include "common.h"
 
+#include "test_main.h"
+
 static void make_data (int *data, int len, int seed) ;
 
 static void file_open_test (const char *filename) ;
@@ -46,19 +48,6 @@ static void test_seek_or_die (SF_PRIVATE *psf, sf_count_t offset, int whence, sf
 
 
 
-int
-main (void)
-{	const char *filename = "file_io.dat" ;
-
-	file_open_test	(filename) ;
-	file_read_write_test	(filename) ;
-	file_truncate_test (filename) ;
-
-	unlink (filename) ;
-
-	return 0 ;
-} /* main */
-
 /*==============================================================================
 ** Actual test functions.
 */
@@ -68,8 +57,7 @@ file_open_test (const char *filename)
 {	SF_PRIVATE sf_data, *psf ;
 	int		error ;
 
-	printf ("    %-24s : ", "file_open_test") ;
-	fflush (stdout) ;
+	print_test_name ("Testing file open") ;
 
 	memset (&sf_data, 0, sizeof (sf_data)) ;
 	psf = &sf_data ;
@@ -80,7 +68,7 @@ file_open_test (const char *filename)
 		exit (1) ;
 		} ;
 
-	strncpy (psf->filename, filename, sizeof (psf->filename)) ;
+	snprintf (psf->filename, sizeof (psf->filename), "%s", filename) ;
 
 	/* Test that open for read fails if the file doesn't exist. */
 	error = psf_fopen (psf, psf->filename, SFM_READ) ;
@@ -129,12 +117,11 @@ file_read_write_test (const char *filename)
 	** write, test that psf_get_filelen() returns the new length.
 	*/
 
-	printf ("    %-24s : ", "file_write_test") ;
-	fflush (stdout) ;
+	print_test_name ("Testing file write") ;
 
 	memset (&sf_data, 0, sizeof (sf_data)) ;
 	psf = &sf_data ;
-	strncpy (psf->filename, filename, sizeof (psf->filename)) ;
+	snprintf (psf->filename, sizeof (psf->filename), "%s", filename) ;
 
 	/* Test file open in write mode. */
 	psf->mode = SFM_WRITE ;
@@ -166,8 +153,7 @@ file_read_write_test (const char *filename)
 	** that the data is correct.
 	*/
 
-	printf ("    %-24s : ", "file_read_test") ;
-	fflush (stdout) ;
+	print_test_name ("Testing file read") ;
 
 	/* Test file open in write mode. */
 	psf->mode = SFM_READ ;
@@ -191,8 +177,7 @@ file_read_write_test (const char *filename)
 	** go back and check that all three blocks are correct.
 	*/
 
-	printf ("    %-24s : ", "file_seek_test") ;
-	fflush (stdout) ;
+	print_test_name ("Testing file seek") ;
 
 	/* Test file open in read/write mode. */
 	psf->mode = SFM_RDWR ;
@@ -230,8 +215,7 @@ file_read_write_test (const char *filename)
 	** the file will actually be a seek to the value given by psf->fileoffset.
 	*/
 
-	printf ("    %-24s : ", "file_offset_test") ;
-	fflush (stdout) ;
+	print_test_name ("Testing file offset") ;
 
 	/* Test file open in read/write mode. */
 	psf->mode = SFM_RDWR ;
@@ -287,14 +271,13 @@ file_truncate_test (const char *filename)
 	** write, test that psf_get_filelen() returns the new length.
 	*/
 
-	printf ("    %-24s : ", "file_truncate_test") ;
-	fflush (stdout) ;
+	print_test_name ("Testing file truncate") ;
 
 	memset (&sf_data, 0, sizeof (sf_data)) ;
 	memset (buffer, 0xEE, sizeof (buffer)) ;
 
 	psf = &sf_data ;
-	strncpy (psf->filename, filename, sizeof (psf->filename)) ;
+	snprintf (psf->filename, sizeof (psf->filename), "%s", filename) ;
 
 	/*
 	** Open the file write mode, write 0xEE data and then extend the file
@@ -439,10 +422,15 @@ make_data (int *data, int len, int seed)
 		data [k] = rand () ;
 
 } /* make_data */
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 0a21fb93-78dd-4f72-8338-4bca9e77b8c8
-*/
+
+void
+test_file_io (void)
+{	const char *filename = "file_io.dat" ;
+
+	file_open_test	(filename) ;
+	file_read_write_test	(filename) ;
+	file_truncate_test (filename) ;
+
+	unlink (filename) ;
+} /* main */
+

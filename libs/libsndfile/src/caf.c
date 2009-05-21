@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2005, 2006 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2005-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -22,10 +22,10 @@
 #include	<stdlib.h>
 #include	<string.h>
 #include	<ctype.h>
+#include	<math.h>
 
 #include	"sndfile.h"
 #include	"sfendian.h"
-#include	"float_cast.h"
 #include	"common.h"
 
 /*------------------------------------------------------------------------------
@@ -103,13 +103,13 @@ caf_open (SF_PRIVATE *psf)
 			return error ;
 		} ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
 	{	if (psf->is_pipe)
 			return SFE_NO_PIPE_WRITE ;
 
-		format = psf->sf.format & SF_FORMAT_TYPEMASK ;
+		format = SF_CONTAINER (psf->sf.format) ;
 		if (format != SF_FORMAT_CAF)
 			return	SFE_BAD_OPEN_FORMAT ;
 
@@ -264,7 +264,7 @@ caf_read_header (SF_PRIVATE *psf)
 
 	psf_binheader_readf (psf, "mE8b", &marker, &chunk_size, psf->u.ucbuf, 8) ;
 	srate = double64_be_read (psf->u.ucbuf) ;
-	LSF_SNPRINTF (psf->u.cbuf, sizeof (psf->u.cbuf), "%5.3f", srate) ;
+	snprintf (psf->u.cbuf, sizeof (psf->u.cbuf), "%5.3f", srate) ;
 	psf_log_printf (psf, "%M : %D\n  Sample rate  : %s\n", marker, chunk_size, psf->u.cbuf) ;
 	if (marker != desc_MARKER)
 		return SFE_CAF_NO_DESC ;
@@ -281,6 +281,11 @@ caf_read_header (SF_PRIVATE *psf)
 	psf_log_printf (psf, "  Format id    : %M\n  Format flags : %x\n  Bytes / packet   : %u\n"
 			"  Frames / packet  : %u\n  Channels / frame : %u\n  Bits / channel   : %u\n",
 			desc.fmt_id, desc.fmt_flags, desc.pkt_bytes, desc.pkt_frames, desc.channels_per_frame, desc.bits_per_chan) ;
+
+	if (desc.channels_per_frame > 200)
+	{	psf_log_printf (psf, "**** Bad channels per frame value %u.\n", desc.channels_per_frame) ;
+		return SFE_MALFORMED_FILE ;
+		} ;
 
 	if (chunk_size > SIGNED_SIZEOF (DESC_CHUNK))
 		psf_binheader_readf (psf, "j", (int) (chunk_size - sizeof (DESC_CHUNK))) ;
@@ -315,7 +320,7 @@ caf_read_header (SF_PRIVATE *psf)
 					psf->peak_info->peaks [k].value = value ;
 					psf->peak_info->peaks [k].position = position ;
 
-					LSF_SNPRINTF (psf->u.cbuf, sizeof (psf->u.cbuf), "    %2d   %-12ld   %g\n", k, (long) position, value) ;
+					snprintf (psf->u.cbuf, sizeof (psf->u.cbuf), "    %2d   %-12ld   %g\n", k, (long) position, value) ;
 					psf_log_printf (psf, psf->u.cbuf) ;
 					} ;
 
@@ -400,9 +405,9 @@ caf_write_header (SF_PRIVATE *psf, int calc_length)
  	double64_be_write (1.0 * psf->sf.samplerate, psf->u.ucbuf) ;
 	psf_binheader_writef (psf, "b", psf->u.ucbuf, make_size_t (8)) ;
 
-	subformat = psf->sf.format & SF_FORMAT_SUBMASK ;
+	subformat = SF_CODEC (psf->sf.format) ;
 
-	psf->endian = psf->sf.format & SF_FORMAT_ENDMASK ;
+	psf->endian = SF_ENDIAN (psf->sf.format) ;
 
 	if (CPU_IS_BIG_ENDIAN && (psf->endian == 0 || psf->endian == SF_ENDIAN_CPU))
 		psf->endian = SF_ENDIAN_BIG ;
@@ -529,10 +534,3 @@ caf_write_header (SF_PRIVATE *psf, int calc_length)
 	return psf->error ;
 } /* caf_write_header */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch
-** revision control system.
-**
-** arch-tag: 65883e65-bd3c-4618-9241-d3c02fd630bd
-*/

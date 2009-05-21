@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2001-2004 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2001-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -34,7 +34,7 @@ int
 psf_store_string (SF_PRIVATE *psf, int str_type, const char *str)
 {	static char lsf_name [] = PACKAGE "-" VERSION ;
 	static char bracket_name [] = " (" PACKAGE "-" VERSION ")" ;
-	int		k, str_len, len_remaining, str_flags ;
+	int		k, str_len, len_remaining, str_flags, str_type_replace = 0 ;
 
 	if (str == NULL)
 		return SFE_STR_BAD_STRING ;
@@ -45,25 +45,30 @@ psf_store_string (SF_PRIVATE *psf, int str_type, const char *str)
 	if (psf->mode == SFM_WRITE || psf->mode == SFM_RDWR)
 	{	if ((psf->str_flags & SF_STR_ALLOW_START) == 0)
 			return SFE_STR_NO_SUPPORT ;
-		if ((psf->str_flags & SF_STR_ALLOW_END) == 0)
+		if (psf->have_written && (psf->str_flags & SF_STR_ALLOW_END) == 0)
 			return SFE_STR_NO_SUPPORT ;
 		/* Only allow zero length strings for software. */
 		if (str_type != SF_STR_SOFTWARE && str_len == 0)
 			return SFE_STR_BAD_STRING ;
 		} ;
 
+	/* Find the next free slot in table. */
+	for (k = 0 ; k < SF_MAX_STRINGS ; k++)
+	{	/* If we find a matching entry clear it. */
+		if (psf->strings [k].type == str_type)
+			psf->strings [k].type = -1 ;
+
+		if (psf->strings [k].type == 0)
+			break ;
+		} ;
+
 	/* Determine flags */
 	str_flags = SF_STR_LOCATE_START ;
-	if (psf->have_written)
+	if (psf->mode == SFM_RDWR || psf->have_written || str_type_replace)
 	{	if ((psf->str_flags & SF_STR_ALLOW_END) == 0)
 			return SFE_STR_NO_ADD_END ;
 		str_flags = SF_STR_LOCATE_END ;
 		} ;
-
-	/* Find next free slot in table. */
-	for (k = 0 ; k < SF_MAX_STRINGS ; k++)
-		if (psf->strings [k].type == 0)
-			break ;
 
 	/* More sanity checking. */
 	if (k >= SF_MAX_STRINGS)
@@ -82,13 +87,6 @@ psf_store_string (SF_PRIVATE *psf, int str_type, const char *str)
 	/* Special case for the first string. */
 	if (k == 0)
 		psf->str_end = psf->str_storage ;
-
-
-#if STRINGS_DEBUG
-	psf_log_printf (psf, "str_storage          : %X\n", (int) psf->str_storage) ;
-	psf_log_printf (psf, "str_end              : %X\n", (int) psf->str_end) ;
-	psf_log_printf (psf, "sizeof (str_storage) : %d\n", SIGNED_SIZEOF (psf->str_storage)) ;
-#endif
 
 	len_remaining = SIGNED_SIZEOF (psf->str_storage) - (psf->str_end - psf->str_storage) ;
 
@@ -130,6 +128,8 @@ psf_store_string (SF_PRIVATE *psf, int str_type, const char *str)
 		case SF_STR_ARTIST :
 		case SF_STR_COMMENT :
 		case SF_STR_DATE :
+		case SF_STR_ALBUM :
+		case SF_STR_LICENSE :
 				psf->strings [k].type = str_type ;
 				psf->strings [k].str = psf->str_end ;
 				psf->strings [k].flags = str_flags ;
@@ -140,12 +140,19 @@ psf_store_string (SF_PRIVATE *psf, int str_type, const char *str)
 				break ;
 
 		default :
+			psf_log_printf (psf, "%s : SFE_STR_BAD_TYPE\n", __func__) ;
 			return SFE_STR_BAD_TYPE ;
 		} ;
 
-	psf->str_flags |= (psf->have_written) ? SF_STR_LOCATE_END : SF_STR_LOCATE_START ;
+	psf->str_flags |= str_flags ;
 
 #if STRINGS_DEBUG
+	psf_log_printf (psf, "str_storage          : %X\n", (int) psf->str_storage) ;
+	psf_log_printf (psf, "str_end              : %X\n", (int) psf->str_end) ;
+	psf_log_printf (psf, "sizeof (str_storage) : %d\n", SIGNED_SIZEOF (psf->str_storage)) ;
+	psf_log_printf (psf, "used                 : %d\n", (int ) (psf->str_end - psf->str_storage)) ;
+	psf_log_printf (psf, "remaining            : %d\n", SIGNED_SIZEOF (psf->str_storage) - (psf->str_end - psf->str_storage)) ;
+
 	hexdump (psf->str_storage, 300) ;
 #endif
 
@@ -171,6 +178,20 @@ psf_get_string (SF_PRIVATE *psf, int str_type)
 	return NULL ;
 } /* psf_get_string */
 
+int
+psf_location_string_count (const SF_PRIVATE * psf, int location)
+{	int k, count = 0 ;
+
+	for (k = 0 ; k < SF_MAX_STRINGS ; k++)
+		if (psf->strings [k].type > 0 && psf->strings [k].flags & location)
+			count ++ ;
+
+	return count ;
+} /* psf_location_string_count */
+
+/*==============================================================================
+*/
+
 #if STRINGS_DEBUG
 
 #include <ctype.h>
@@ -195,10 +216,3 @@ hexdump (void *data, int len)
 } /* hexdump */
 
 #endif
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 04393aa1-9389-46fe-baf2-58a7bd544fd6
-*/

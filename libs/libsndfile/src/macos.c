@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2003-2005 Erik de Castro Lopo <erikd@mega-nerd.com>
+** Copyright (C) 2003-2009 Erik de Castro Lopo <erikd@mega-nerd.com>
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU Lesser General Public License as published by
@@ -29,12 +29,9 @@
 #define	STR_MARKER	MAKE_MARKER ('S', 'T', 'R', ' ')
 
 int
-macos_guess_file_type (SF_PRIVATE *psf, const char *filename)
+macos_guess_file_type (SF_PRIVATE * psf, const char *filename)
 {	static char rsrc_name [1024] ;
 	struct stat statbuf ;
-	int format ;
-
-	psf = psf ;
 
 	snprintf (rsrc_name, sizeof (rsrc_name), "%s/rsrc", filename) ;
 
@@ -49,15 +46,6 @@ macos_guess_file_type (SF_PRIVATE *psf, const char *filename)
 		return 0 ;
 		} ;
 
-	format = 0 ;
-
-	return format ;
+	return 0 ;
 } /* macos_guess_file_type */
 
-/*
-** Do not edit or modify anything in this comment block.
-** The arch-tag line is a file identity tag for the GNU Arch 
-** revision control system.
-**
-** arch-tag: 5fbf66d7-9547-442a-9c73-92fd164f3a95
-*/
