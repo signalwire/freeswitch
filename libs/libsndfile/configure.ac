@@ -291,17 +291,17 @@ EXTERNAL_LIBS=""
 # Check for pkg-config outside the if statement.
 PKG_PROG_PKG_CONFIG
 
-if test x$enable_external_libs = xno ; then
+#if test x$enable_external_libs = xno ; then
 	AC_MSG_WARN([[*** External libs (FLAC, Ogg, Vorbis) disabled. ***]])
-else
-	PKG_CHECK_MOD_VERSION(FLAC, flac >= 1.2.1, ac_cv_flac=yes, ac_cv_flac=no)
-	PKG_CHECK_MOD_VERSION(OGG, ogg >= 1.1.3, ac_cv_ogg=yes, ac_cv_ogg=no)
+#else
+#	PKG_CHECK_MOD_VERSION(FLAC, flac >= 1.2.1, ac_cv_flac=yes, ac_cv_flac=no)
+#	PKG_CHECK_MOD_VERSION(OGG, ogg >= 1.1.3, ac_cv_ogg=yes, ac_cv_ogg=no)
 
 	# Vorbis versions earlier than 1.2.1 are not const correct at the API level.
 	# Vorbis 1.2.2 adds vorbis_version_string.
-	PKG_CHECK_MOD_VERSION(VORBIS, vorbis >= 1.2.0, ac_cv_vorbis=yes, ac_cv_vorbis=no)
-	PKG_CHECK_MOD_VERSION(VORBISENC, vorbisenc >= 1.2.0, ac_cv_vorbisenc=yes, ac_cv_vorbisenc=no)
-	fi
+#	PKG_CHECK_MOD_VERSION(VORBIS, vorbis >= 1.2.0, ac_cv_vorbis=yes, ac_cv_vorbis=no)
+#	PKG_CHECK_MOD_VERSION(VORBISENC, vorbisenc >= 1.2.0, ac_cv_vorbisenc=yes, ac_cv_vorbisenc=no)
+#	fi
 
 HAVE_VORBIS_VERSION_STRING=0
 if test x$ac_cv_flac$ac_cv_ogg$ac_cv_vorbis$ac_cv_vorbisenc = "xyesyesyesyes" ; then
@@ -327,9 +327,9 @@ AC_DEFINE_UNQUOTED([HAVE_VORBIS_VERSION_STRING], $HAVE_VORBIS_VERSION_STRING, [S
 # Check for libsqlite3 (only used in regtest).
 
 ac_cv_sqlite3=no
-if test x$enable_sqlite != xno ; then
-	PKG_CHECK_MOD_VERSION(SQLITE3, sqlite3 >= 3.2, ac_cv_sqlite3=yes, ac_cv_sqlite3=no)
-	fi
+#if test x$enable_sqlite != xno ; then
+#	PKG_CHECK_MOD_VERSION(SQLITE3, sqlite3 >= 3.2, ac_cv_sqlite3=yes, ac_cv_sqlite3=no)
+#	fi
 
 if test x$ac_cv_sqlite3 = "xyes" ; then
 	HAVE_SQLITE3=1
@@ -342,7 +342,7 @@ AC_DEFINE_UNQUOTED([HAVE_SQLITE3],$HAVE_SQLITE3,[Set to 1 if you have libsqlite3
 #====================================================================================
 # Check for JACK (only used for examples/sndfile-jackplay).
 
-PKG_CHECK_MOD_VERSION(JACK, jack >= 0.100, ac_cv_jack=yes, ac_cv_jack=no)
+#PKG_CHECK_MOD_VERSION(JACK, jack >= 0.100, ac_cv_jack=yes, ac_cv_jack=no)
 
 if test x$ac_cv_jack = "xyes" ; then
 	HAVE_JACK=1
@@ -478,22 +478,22 @@ if test x$ac_cv_c_compiler_gnu = xyes ; then
 	AC_GCC_VERSION
 
 	if test "x$GCC_MAJOR_VERSION$GCC_MINOR_VERSION" = "x42" ; then
-		AC_MSG_WARN([****************************************************************])
-		AC_MSG_WARN([** GCC version 4.2 warns about the inline keyword for no good **])
-		AC_MSG_WARN([** reason but the maintainers do not see it as a bug.         **])
-		AC_MSG_WARN([** See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=33995      **])
-		AC_MSG_WARN([** Using -fgnu-inline to avoid this stupidity.                **])
-		AC_MSG_WARN([****************************************************************])
+#		AC_MSG_WARN([****************************************************************])
+#		AC_MSG_WARN([** GCC version 4.2 warns about the inline keyword for no good **])
+#		AC_MSG_WARN([** reason but the maintainers do not see it as a bug.         **])
+#		AC_MSG_WARN([** See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=33995      **])
+#		AC_MSG_WARN([** Using -fgnu-inline to avoid this stupidity.                **])
+#		AC_MSG_WARN([****************************************************************])
 		AC_ADD_CFLAGS([-fgnu89-inline])
 		fi
 
 	CFLAGS="$CFLAGS -Wall"
 	CXXFLAGS="$CXXFLAGS -Wall"
 
-	AC_ADD_CFLAGS([-Wextra])
+#	AC_ADD_CFLAGS([-Wextra])
 
 	AC_LANG_PUSH([C++])
-	AC_ADD_CXXFLAGS([-Wextra])
+#	AC_ADD_CXXFLAGS([-Wextra])
 	AC_LANG_POP([C++])
 
 	AC_ADD_CFLAGS([-Wdeclaration-after-statement])
