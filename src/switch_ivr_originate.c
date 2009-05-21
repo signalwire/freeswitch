@@ -623,7 +623,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_wait_for_answer(switch_core_session_t
 	switch_zmalloc(write_frame.data, SWITCH_RECOMMENDED_BUFFER_SIZE);
 	write_frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
-	if (caller_channel && (var = switch_channel_get_variable(caller_channel, "call_timeout"))) {
+	if (caller_channel && (var = switch_channel_get_variable(caller_channel, SWITCH_CALL_TIMEOUT_VARIABLE))) {
 		timelimit = atoi(var);
 		if (timelimit < 0) {
 			timelimit = 60;
