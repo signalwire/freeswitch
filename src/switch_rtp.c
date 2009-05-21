@@ -418,14 +418,11 @@ static void zrtp_security_event_callback(zrtp_stream_t *stream, unsigned event)
 {
 	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
 	zrtp_session_info_t zrtp_session_info;
+	zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info);
 
 	switch (event) {
-	case ZRTP_EVENT_IS_SECURE:
-		zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info);
-		zrtp_log_print_sessioninfo(&zrtp_session_info);
-
-		break;
 	default:
+		zrtp_log_print_sessioninfo(&zrtp_session_info);
 		break;
 	}
 }
@@ -452,11 +449,19 @@ static void zrtp_protocol_event_callback(zrtp_stream_t *stream, unsigned event)
 		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
 		break;
 	case ZRTP_EVENT_IS_CLIENT_ENROLLMENT:
+		break;
 	case ZRTP_EVENT_IS_CLEAR:
+		break;
 	case ZRTP_EVENT_IS_INITIATINGSECURE:
+		break;
 	case ZRTP_EVENT_IS_PENDINGSECURE:
+		break;
 	case ZRTP_EVENT_IS_PENDINGCLEAR:
+		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
+		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
+		break;
 	case ZRTP_EVENT_NO_ZRTP:
+		break;
 	case ZRTP_EVENT_LOCAL_SAS_UPDATED:
 		break;
 	default:
@@ -1038,12 +1043,12 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_clear_flag_locked(rtp_session, SWITCH_RTP_FLAG_NOBLOCK);
 	}
 
-	rtp_session->ready = 1;
-	*new_rtp_session = rtp_session;
 #ifdef ENABLE_ZRTP
 	if (zrtp_on) {
 		rtp_session->zrtp_profile = switch_core_alloc(rtp_session->pool, sizeof(*rtp_session->zrtp_profile));
 		zrtp_profile_defaults(rtp_session->zrtp_profile, zrtp_global);
+
+		rtp_session->zrtp_profile->allowclear = 1;
 	
 		if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, 1, &rtp_session->zrtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
@@ -1061,6 +1066,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		zrtp_stream_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
 	}
 #endif	
+
+	rtp_session->ready = 1;
+	*new_rtp_session = rtp_session;
 
 	return SWITCH_STATUS_SUCCESS;
 }
@@ -1851,6 +1859,7 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 				break;
 			case zrtp_status_drop:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+				break;
 			case zrtp_status_fail:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
 				ret = -1;
@@ -2440,8 +2449,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 				break;
 			case zrtp_status_drop:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+				break;
 			case zrtp_status_fail:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+				break;
 			default:
 				break;
 			}
@@ -2704,8 +2715,10 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 				break;
 			case zrtp_status_drop:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+				break;
 			case zrtp_status_fail:
 				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+				break;
 			default:
 				break;
 			}
