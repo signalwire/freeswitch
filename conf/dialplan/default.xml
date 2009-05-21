@@ -65,10 +65,6 @@
 	<action application="set" data="use_profile=${cond(${acl($${local_ip_v4} rfc1918)} == true ? nat : default)}"/>
 	<anti-action application="set" data="use_profile=${cond(${acl(${network_addr} rfc1918)} == true ? nat : default)}"/>
       </condition>
-      <!-- This will setup some variables if the user isn't authenticated. -->
-      <condition field="${numbering_plan}" expression="^$" break="never">
-	<action application="set_user" data="default@${domain_name}"/>
-      </condition>
       <condition field="${call_debug}" expression="^true$" break="never">
 	<action application="info"/>
       </condition>
