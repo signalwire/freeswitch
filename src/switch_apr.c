@@ -71,7 +71,11 @@
 
 SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void)
 {
+#ifndef WIN32
 	return apr_os_thread_current();
+#else
+	return (GetCurrentThreadId());
+#endif
 }
 
 SWITCH_DECLARE(void) switch_pool_clear(switch_memory_pool_t *p)
