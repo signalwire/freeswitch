@@ -304,6 +304,20 @@ SWITCH_DECLARE(char *) switch_core_perform_strdup(switch_memory_pool_t *pool, co
 	return duped;
 }
 
+SWITCH_DECLARE(void) switch_core_memory_pool_set_data(switch_memory_pool_t *pool, const char *key, void *data)
+{
+	apr_pool_userdata_set(data, key, NULL, pool);
+}
+
+SWITCH_DECLARE(void *) switch_core_memory_pool_get_data(switch_memory_pool_t *pool, const char *key)
+{
+	void *data = NULL;
+
+	apr_pool_userdata_get(&data, key, pool);
+
+	return data;
+}
+
 SWITCH_DECLARE(void) switch_core_memory_pool_tag(switch_memory_pool_t *pool, const char *tag)
 {
 	apr_pool_tag(pool, tag);

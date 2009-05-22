@@ -448,6 +448,11 @@ SWITCH_DECLARE(switch_status_t) switch_core_perform_destroy_memory_pool(_Inout_ 
 */
 #define switch_core_destroy_memory_pool(p) switch_core_perform_destroy_memory_pool(p, __FILE__, __SWITCH_FUNC__, __LINE__)
 
+
+SWITCH_DECLARE(void) switch_core_memory_pool_set_data(switch_memory_pool_t *pool, const char *key, void *data);
+SWITCH_DECLARE(void *) switch_core_memory_pool_get_data(switch_memory_pool_t *pool, const char *key);
+
+
 /*! 
   \brief Start the session's state machine
   \param session the session on which to start the state machine

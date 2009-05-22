@@ -920,7 +920,8 @@ typedef enum {
 	SFF_PLC = (1 << 3),
 	SFF_RFC2833 = (1 << 4),
 	SFF_PROXY_PACKET = (1 << 5),
-	SFF_DYNAMIC = (1 << 6)
+	SFF_DYNAMIC = (1 << 6),
+	SFF_ZRTP = (1 << 7)
 } switch_frame_flag_enum_t;
 typedef uint32_t switch_frame_flag_t;
 

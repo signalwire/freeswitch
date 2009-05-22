@@ -1206,6 +1206,8 @@ SWITCH_DECLARE(switch_core_session_t *) switch_core_session_request_uuid(switch_
 
 	session = switch_core_alloc(usepool, sizeof(*session));
 	session->pool = usepool;
+
+	switch_core_memory_pool_set_data(session->pool, "__session", session);
 	
 	if (switch_channel_alloc(&session->channel, direction, session->pool) != SWITCH_STATUS_SUCCESS) {
 		abort();

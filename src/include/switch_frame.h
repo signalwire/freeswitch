@@ -46,9 +46,11 @@ SWITCH_BEGIN_EXTERN_C
 	/*! the originating source of the frame */
 	const char *source;
 	/*! the raw packet */
-	void *packet;
+	void *packet;	
 	/*! the size of the raw packet when applicable */
 	uint32_t packetlen;
+	/*! the extra frame data */
+	void *extra_data;
 	/*! the frame data */
 	void *data;
 	/*! the size of the buffer that is in use */
