@@ -71,7 +71,6 @@ typedef srtp_hdr_t rtp_hdr_t;
 static zrtp_global_t *zrtp_global;
 static zrtp_zid_t zid = { "FreeSWITCH01" };
 static int zrtp_on = 0;
-#define SECRET_NEVER_EXPIRES 0xFFFFFFFF
 #endif
 
 #ifdef _MSC_VER
@@ -1049,8 +1048,6 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		zrtp_profile_defaults(rtp_session->zrtp_profile, zrtp_global);
 
 		rtp_session->zrtp_profile->allowclear = 1;
-		rtp_session->zrtp_profile->cache_ttl = SECRET_NEVER_EXPIRES; 
-		rtp_session->zrtp_profile->disclose_bit = 0;
 	
 		if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, 1, &rtp_session->zrtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
