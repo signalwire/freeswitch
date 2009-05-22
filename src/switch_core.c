@@ -1157,10 +1157,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_start(runtime.memory_pool);
 	}
+	switch_scheduler_task_thread_start();
+
 	switch_rtp_init(runtime.memory_pool);
+
 	runtime.running = 1;
 
-	switch_scheduler_task_thread_start();
 	runtime.initiated = switch_time_now();
 
 	switch_scheduler_add_task(switch_epoch_time_now(NULL), heartbeat_callback, "heartbeat", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);

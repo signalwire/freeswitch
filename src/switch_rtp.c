@@ -59,8 +59,6 @@
 #define RTP_MAGIC_NUMBER 42
 #define MAX_SRTP_ERRS 10
 
-
-
 static switch_port_t START_PORT = RTP_START_PORT;
 static switch_port_t END_PORT = RTP_END_PORT;
 static switch_port_t NEXT_PORT = RTP_START_PORT;
@@ -73,7 +71,7 @@ typedef srtp_hdr_t rtp_hdr_t;
 static zrtp_global_t *zrtp_global;
 static zrtp_zid_t zid = { "FreeSWITCH01" };
 static int zrtp_on = 0;
-
+#define SECRET_NEVER_EXPIRES 0xFFFFFFFF
 #endif
 
 #ifdef _MSC_VER
@@ -414,17 +412,13 @@ static void handle_ice(switch_rtp_t *rtp_session, void *data, switch_size_t len)
 }
 
 #ifdef ENABLE_ZRTP
-static void zrtp_security_event_callback(zrtp_stream_t *stream, unsigned event)
+SWITCH_STANDARD_SCHED_FUNC(zrtp_cache_save_callback)
 {
-	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
-	zrtp_session_info_t zrtp_session_info;
-	zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info);
+	zrtp_status_t status = zrtp_status_ok;
 
-	switch (event) {
-	default:
-		zrtp_log_print_sessioninfo(&zrtp_session_info);
-		break;
-	}
+	status = zrtp_def_cache_store(zrtp_global);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Saving ZRTP cache: %s\n", zrtp_status_ok == status ? "OK" : "FAIL");
+	task->runtime = switch_epoch_time_now(NULL) + 900;
 }
 
 static int zrtp_send_rtp_callback(const zrtp_stream_t* stream, char* rtp_packet, unsigned int rtp_packet_length)
@@ -437,7 +431,7 @@ static int zrtp_send_rtp_callback(const zrtp_stream_t* stream, char* rtp_packet,
 	return status;
 }
 
-static void zrtp_protocol_event_callback(zrtp_stream_t *stream, unsigned event)
+static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 {
 	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
 
@@ -510,12 +504,13 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 	if (zrtp_on) {
 		zrtp_config_defaults(&zrtp_config);
 		strcpy(zrtp_config.client_id, "FreeSWITCH");
+		zrtp_config.is_mitm = 1;
 		zrtp_config.lic_mode = ZRTP_LICENSE_MODE_ACTIVE;
 		switch_snprintf(zrtp_cache_path, sizeof(zrtp_cache_path), "%s%szrtp.dat", SWITCH_GLOBAL_dirs.db_dir, SWITCH_PATH_SEPARATOR);
 		zrtp_zstrcpyc( ZSTR_GV(zrtp_config.def_cache_path), zrtp_cache_path);
-		zrtp_config.cb.event_cb.on_zrtp_protocol_event = zrtp_protocol_event_callback;
+		zrtp_config.cb.event_cb.on_zrtp_protocol_event = zrtp_event_callback;
 		zrtp_config.cb.misc_cb.on_send_packet = zrtp_send_rtp_callback;
-		zrtp_config.cb.event_cb.on_zrtp_security_event = zrtp_security_event_callback;
+		zrtp_config.cb.event_cb.on_zrtp_security_event = zrtp_event_callback;
 		
 		zrtp_log_set_log_engine(zrtp_logger);
 		zrtp_log_set_level(4);
@@ -524,6 +519,7 @@ SWITCH_DECLARE(void) switch_rtp_init(switch_memory_pool_t *pool)
 		}
 		
 		memcpy(zid, zid_string, 12);
+		switch_scheduler_add_task(switch_epoch_time_now(NULL) + 900, zrtp_cache_save_callback, "zrtp_cache_save", "core", 0, NULL, SSHF_NONE | SSHF_NO_DEL);
 	}
 #endif
 	srtp_init();
@@ -559,6 +555,10 @@ SWITCH_DECLARE(void) switch_rtp_shutdown(void)
 
 #ifdef ENABLE_ZRTP
 	if (zrtp_on) {
+		zrtp_status_t status = zrtp_status_ok;
+
+		status = zrtp_def_cache_store(zrtp_global);
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Saving ZRTP cache: %s\n", zrtp_status_ok == status ? "OK" : "FAIL");
 		zrtp_down(zrtp_global);
 	}
 #endif
@@ -1049,6 +1049,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		zrtp_profile_defaults(rtp_session->zrtp_profile, zrtp_global);
 
 		rtp_session->zrtp_profile->allowclear = 1;
+		rtp_session->zrtp_profile->cache_ttl = SECRET_NEVER_EXPIRES; 
+		rtp_session->zrtp_profile->disclose_bit = 0;
 	
 		if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, 1, &rtp_session->zrtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
