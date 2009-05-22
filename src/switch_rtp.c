@@ -433,6 +433,7 @@ static int zrtp_send_rtp_callback(const zrtp_stream_t* stream, char* rtp_packet,
 static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 {
 	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
+	zrtp_session_info_t zrtp_session_info;
 
 	switch (event) {
 	case ZRTP_EVENT_IS_SECURE_DONE:
@@ -440,8 +441,27 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	case ZRTP_EVENT_IS_SECURE:
 		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
 		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
+		if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
+			if (zrtp_session_info.sas_is_ready) {
+				switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
+				switch_channel_t *channel = switch_core_session_get_channel(session);
+
+				switch_channel_set_variable(channel, "zrtp_sas1_string", rtp_session->zrtp_session->sas1.buffer);
+				switch_channel_set_variable(channel, "zrtp_sas2_string", rtp_session->zrtp_session->sas2.buffer);
+			}
+		}
 		break;
 	case ZRTP_EVENT_IS_CLIENT_ENROLLMENT:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enrolled complete!\n");
+		break;
+	case ZRTP_EVENT_USER_ALREADY_ENROLLED:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User already enrolled!\n");
+		break;
+	case ZRTP_EVENT_NEW_USER_ENROLLED:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New user enrolled!\n");
+		break;
+	case ZRTP_EVENT_USER_UNENROLLED:
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User unenrolled!\n");
 		break;
 	case ZRTP_EVENT_IS_CLEAR:
 		break;
@@ -1048,7 +1068,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		zrtp_profile_defaults(rtp_session->zrtp_profile, zrtp_global);
 
 		rtp_session->zrtp_profile->allowclear = 1;
-	
+		rtp_session->zrtp_profile->disclose_bit = 0;
+		rtp_session->zrtp_profile->cache_ttl = -1;
+
 		if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, 1, &rtp_session->zrtp_session)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
 			zrtp_session_down(rtp_session->zrtp_session);
@@ -1061,7 +1083,8 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 			abort();
 		}
 		zrtp_stream_set_userdata(rtp_session->zrtp_ctx, rtp_session);
-
+		/* used for mitm registration coming soom */
+		/* zrtp_stream_registration_start(rtp_session->zrtp_ctx, rtp_session->ssrc); */
 		zrtp_stream_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
 	}
 #endif	
