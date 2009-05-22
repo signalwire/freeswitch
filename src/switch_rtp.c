@@ -439,6 +439,8 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	case ZRTP_EVENT_IS_SECURE_DONE:
 		break;
 	case ZRTP_EVENT_IS_SECURE:
+		/* Flush buffer just in case we have packets that aren't encrypted */
+		rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
 		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
 		break;
@@ -451,6 +453,8 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	case ZRTP_EVENT_IS_PENDINGSECURE:
 		break;
 	case ZRTP_EVENT_IS_PENDINGCLEAR:
+		/* Flush buffer just in case we have packets that are encrypted */
+		rtp_flush_read_buffer(rtp_session, SWITCH_RTP_FLUSH_ONCE);
 		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
 		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
 		break;
