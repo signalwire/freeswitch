@@ -9,7 +9,7 @@
     <param name="context" value="public"/>
     <param name="message" value="Jingle all the way"/>
     <param name="rtp-ip" value="$${bind_server_ip}"/>
-    <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip"/> -->
+    <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip}"/> -->
     <param name="auto-login" value="true"/>
     <!-- SASL "plain" or "md5" -->
     <param name="sasl" value="plain"/>
