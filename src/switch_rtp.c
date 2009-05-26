@@ -2691,10 +2691,9 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 #ifdef ENABLE_ZRTP
 	if (zrtp_on && switch_test_flag(frame, SFF_ZRTP) && switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND)) {
-		zrtp_resolve_mitm_call(frame->extra_data, rtp_session->zrtp_ctx);
-		if (rtp_session->zrtp_mitm_tries > 10) {
+		
+		if (zrtp_status_ok == zrtp_resolve_mitm_call(frame->extra_data, rtp_session->zrtp_ctx)) {
 			switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM);
-			rtp_session->zrtp_mitm_tries = 0;
 		}
 		rtp_session->zrtp_mitm_tries++;
 	}
