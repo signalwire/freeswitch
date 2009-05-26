@@ -566,8 +566,11 @@ static switch_status_t channel_read_frame(switch_core_session_t *session, switch
 
 	assert(tech_pvt->zchan != NULL);
 
+	/* Digium Cards sometimes timeout several times in a row here. 
+	   Yes, we support digium cards, ain't we nice.......
+	   6 double length intervals should compensate */
 	chunk = tech_pvt->zchan->effective_interval * 2;
-	total_to = chunk * 2;
+	total_to = chunk * 6;
 
 	if (switch_test_flag(tech_pvt, TFLAG_DEAD)) {
 		return SWITCH_STATUS_FALSE;
