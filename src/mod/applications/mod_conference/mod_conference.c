@@ -627,13 +627,14 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_clear_flag(conference, CFLAG_WAIT_MOD);
 		}
 
-		if (conference->count > 1 && (!switch_test_flag(conference, CFLAG_WAIT_MOD))) {
-			if (conference->moh_sound) {
+		if (conference->count > 1) {
+			if (conference->moh_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
 				/* stop MoH if any */
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 			}
 			if (conference->enter_sound) {
-				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 1);
+				conference_play_file(conference, conference->enter_sound, CONF_DEFAULT_LEADIN, switch_core_session_get_channel(member->session), 
+									 switch_test_flag(conference, CFLAG_WAIT_MOD) ? 0 : 1);
 			}
 		}
 
@@ -650,7 +651,7 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 				if (conference->count >= conference->announce_count && conference->announce_count > 1) {
 					switch_snprintf(msg, sizeof(msg), "There are %d callers", conference->count);
 					conference_member_say(member, msg, CONF_DEFAULT_LEADIN);
-				} else if (conference->count == 1 && !conference->perpetual_sound) {
+				} else if (conference->count == 1 && !conference->perpetual_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
 					/* as long as its not a bridge_to conference, announce if person is alone */
 					if (!switch_test_flag(conference, CFLAG_BRIDGE_TO)) {
 						if (conference->alone_sound) {
@@ -788,7 +789,7 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 			if (conference->exit_sound) {
 				conference_play_file(conference, conference->exit_sound, 0, switch_core_session_get_channel(member->session), 0);
 			}
-			if (conference->count == 1 && conference->alone_sound) {
+			if (conference->count == 1 && conference->alone_sound && !switch_test_flag(conference, CFLAG_WAIT_MOD)) {
 				conference_stop_file(conference, FILE_STOP_ASYNC);
 				conference_play_file(conference, conference->alone_sound, 0, switch_core_session_get_channel(member->session), 1);
 			}
@@ -4558,7 +4559,7 @@ static switch_status_t conference_local_play_file(conference_obj_t *conference, 
 	return status;
 }
 
-static void set_mflags(char *flags, member_flag_t *f)
+static void set_mflags(const char *flags, member_flag_t *f)
 {
 	if (flags) {
 		char *dup = strdup(flags);
@@ -4600,7 +4601,7 @@ static void set_mflags(char *flags, member_flag_t *f)
 
 
 
-static void set_cflags(char *flags, member_flag_t *f)
+static void set_cflags(const char *flags, member_flag_t *f)
 {
 	if (flags) {
 		char *dup = strdup(flags);
@@ -4844,7 +4845,7 @@ SWITCH_STANDARD_APP(conference_function)
 	char *bridgeto = NULL;
 	char *profile_name = NULL;
 	switch_xml_t cxml = NULL, cfg = NULL, profiles = NULL;
-	char *flags_str;
+	const char *flags_str;
 	member_flag_t mflags = 0;
 	switch_core_session_message_t msg = { 0 };
 	uint8_t rl = 0, isbr = 0;
@@ -4874,12 +4875,13 @@ SWITCH_STANDARD_APP(conference_function)
 
 	if ((flags_str = strstr(mydata, flags_prefix))) {
 		char *p;
-
-		*flags_str = '\0';
+		*((char *)flags_str) = '\0';
 		flags_str += strlen(flags_prefix);
 		if ((p = strchr(flags_str, '}'))) {
 			*p = '\0';
 		}
+	} else {
+		flags_str = switch_channel_get_variable(channel, "conference_member_flags");
 	}
 
 	/* is this a bridging conference ? */
