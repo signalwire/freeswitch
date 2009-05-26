@@ -261,7 +261,7 @@ SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char clos
 		}
 	}
 
-	return (char *) e;
+	return (e && *e == close) ? (char *) e : NULL;
 }
 
 SWITCH_DECLARE(switch_size_t) switch_fd_read_line(int fd, char *buf, switch_size_t len)

@@ -1132,7 +1132,7 @@ SWITCH_DECLARE(switch_xml_t) switch_xml_parse_fd(int fd)
 	return &root->xml;
 }
 
-static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_t *newlen)
+static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_t *newlen, const char **err)
 {
 	char *var, *val;
 	char *rp = buf;
@@ -1161,6 +1161,8 @@ static char *expand_vars(char *buf, char *ebuf, switch_size_t elen, switch_size_
 					}
 				}
 				continue;
+			} else if (err) {
+				*err = "unterminated ${var}";
 			}
 		}
 
@@ -1267,7 +1269,8 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 	switch_size_t cur = 0, ml = 0;
 	char *q, *cmd, buf[2048], ebuf[8192];
 	char *tcmd, *targ;
-
+	int line = 0;
+	
 	if ((read_fd = open(file, O_RDONLY, 0)) < 0) {
 		const char *reason = strerror(errno);
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldnt open %s (%s)\n", file, reason);
@@ -1280,7 +1283,13 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 
 	while ((cur = switch_fd_read_line(read_fd, buf, sizeof(buf))) > 0) {
 		char *arg, *e;
-		char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur);
+		const char *err = NULL;
+		char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur, &err);
+		line++;
+		
+		if (err && stderr) {
+			fprintf(stderr, "Error [%s] in line %s line %d\n", err, file, line);
+		}
 
 		/* we ignore <include> or </include> for the sake of validators as well as <?xml version="1.0"?> type stuff */
 		if (strstr(buf, "<include>") || strstr(buf, "</include>") || strstr(buf, "<?")) {
