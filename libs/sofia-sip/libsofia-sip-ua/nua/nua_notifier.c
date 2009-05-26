@@ -672,7 +672,7 @@ int nua_notify_client_request(nua_client_request_t *cr,
 
   if (ss == NULL || nua_substate_make(ss->ss_substate) != nu->nu_substate) {
     if (nu->nu_substate == nua_substate_terminated)
-      expires = nu->nu_expires > now ? "noresource" : "timeout";
+      expires = nu->nu_expires > now ? "reason=noresource" : "reason=timeout";
 
     ss = sip_subscription_state_format(home, "%s;%s",
 				       nua_substate_name(nu->nu_substate),
