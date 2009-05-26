@@ -148,7 +148,8 @@ typedef enum {
 	MFLAG_RESTART = (1 << 12),
 	MFLAG_MINTWO = (1 << 13),
 	MFLAG_MUTE_DETECT = (1 << 14),
-	MFLAG_DIST_DTMF = (1 << 15)
+	MFLAG_DIST_DTMF = (1 << 15),
+	MFLAG_MOD = (1 << 16)
 } member_flag_t;
 
 typedef enum {
@@ -159,6 +160,7 @@ typedef enum {
 	CFLAG_LOCKED = (1 << 4),
 	CFLAG_ANSWERED = (1 << 5),
 	CFLAG_BRIDGE_TO = (1 << 6),
+	CFLAG_WAIT_MOD = (1 << 7)
 } conf_flag_t;
 
 typedef enum {
@@ -621,7 +623,11 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 			switch_event_fire(&event);
 		}
 
-		if (conference->count > 1) {
+		if (switch_test_flag(conference, CFLAG_WAIT_MOD) && switch_test_flag(member, MFLAG_MOD)) {
+			switch_clear_flag(conference, CFLAG_WAIT_MOD);
+		}
+
+		if (conference->count > 1 && (!switch_test_flag(conference, CFLAG_WAIT_MOD))) {
 			if (conference->moh_sound) {
 				/* stop MoH if any */
 				conference_stop_file(conference, FILE_STOP_ASYNC);
@@ -1853,7 +1859,8 @@ static void *SWITCH_THREAD_FUNC conference_loop_input(switch_thread_t *thread, v
 		}
 
 		/* skip frames that are not actual media or when we are muted or silent */
-		if ((switch_test_flag(member, MFLAG_TALKING) || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK)) {
+		if ((switch_test_flag(member, MFLAG_TALKING) || energy_level == 0) && switch_test_flag(member, MFLAG_CAN_SPEAK) && 
+			!switch_test_flag(member->conference, CFLAG_WAIT_MOD)) {
 			switch_audio_resampler_t *read_resampler = member->read_resampler;
 			void *data;
 			uint32_t datalen;
@@ -4578,6 +4585,8 @@ static void set_mflags(char *flags, member_flag_t *f)
 				*f |= MFLAG_MUTE_DETECT;
 			} else if (!strcasecmp(argv[i], "dist-dtmf")) {
 				*f |= MFLAG_DIST_DTMF;
+			} else if (!strcasecmp(argv[i], "moderator")) {
+				*f |= MFLAG_MOD;
 			} else if (!strcasecmp(argv[i], "endconf")) {
 				*f |= MFLAG_ENDCONF;
 			} else if (!strcasecmp(argv[i], "mintwo")) {
@@ -4588,6 +4597,35 @@ static void set_mflags(char *flags, member_flag_t *f)
 		free(dup);
 	}
 }
+
+
+
+static void set_cflags(char *flags, member_flag_t *f)
+{
+	if (flags) {
+		char *dup = strdup(flags);
+		char *p;
+		char *argv[10] = { 0 };
+		int i, argc = 0;
+
+		for(p = dup; p && *p; p++) {
+			if (*p == ',') {
+				*p = '|';
+			}
+		}
+
+		argc = switch_separate_string(dup, '|', argv, (sizeof(argv) / sizeof(argv[0])));
+
+		for(i = 0; i < argc && argv[i]; i++) {
+			if (!strcasecmp(argv[i], "wait-mod")) {
+				*f |= CFLAG_WAIT_MOD;
+			}
+		}
+
+		free(dup);
+	}
+}
+
 
 static void clear_eflags(char *events, uint32_t *f)
 {
@@ -5483,6 +5521,7 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 	char *caller_id_number = NULL;
 	char *caller_controls = NULL;
 	char *member_flags = NULL;
+	char *conference_flags = NULL;
 	char *perpetual_sound = NULL;
 	char *moh_sound = NULL;
 	uint32_t max_members = 0;
@@ -5570,6 +5609,8 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 			is_unlocked_sound = val;
 		} else if (!strcasecmp(var, "member-flags") && !switch_strlen_zero(val)) {
 			member_flags = val;
+		} else if (!strcasecmp(var, "conference-flags") && !switch_strlen_zero(val)) {
+			conference_flags = val;
 		} else if (!strcasecmp(var, "kicked-sound") && !switch_strlen_zero(val)) {
 			kicked_sound = val;
 		} else if (!strcasecmp(var, "pin") && !switch_strlen_zero(val)) {
@@ -5689,6 +5730,10 @@ static conference_obj_t *conference_new(char *name, conf_xml_cfg_t cfg, switch_m
 
 	if (member_flags) {
 		set_mflags(member_flags, &conference->mflags);
+	}
+
+	if (conference_flags) {
+		set_cflags(conference_flags, &conference->flags);
 	}
 
 	if (sound_prefix) {
