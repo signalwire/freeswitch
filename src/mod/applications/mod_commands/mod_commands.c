@@ -2062,12 +2062,13 @@ SWITCH_STANDARD_API(session_displace_function)
 SWITCH_STANDARD_API(break_function)
 {
 	switch_core_session_t *psession = NULL;
-	char *mycmd, *flag;
+	char *mycmd = NULL, *flag;
 	switch_channel_t *channel = NULL;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 
 	if (switch_strlen_zero(cmd)) {
 		stream->write_function(stream, "-USAGE: %s\n", BREAK_SYNTAX);
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	mycmd = strdup(cmd);
@@ -2079,7 +2080,7 @@ SWITCH_STANDARD_API(break_function)
 
 	if (!(psession = switch_core_session_locate(mycmd))) {
 		stream->write_function(stream, "-ERR No Such Channel!\n");
-		return SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 
 	if (flag && !strcasecmp(flag, "all")) {
@@ -2092,9 +2093,15 @@ SWITCH_STANDARD_API(break_function)
 	} else {
 		switch_channel_set_flag(channel, CF_BREAK);
 	}
-	switch_core_session_rwunlock(psession);
 
-	return SWITCH_STATUS_SUCCESS;
+ done:
+	if (psession) {
+		switch_core_session_rwunlock(psession);
+	}
+
+	switch_safe_free(mycmd);
+
+	return status;
 }
 
 #define PAUSE_SYNTAX "<uuid> <on|off>"
@@ -2340,8 +2347,6 @@ static void sch_api_callback(switch_scheduler_task_t *task)
 	if (api_task->recur) {
 		task->runtime = switch_epoch_time_now(NULL) + api_task->recur;
 	}
-
-
 }
 
 #define UNSCHED_SYNTAX "<task_id>"
@@ -2382,7 +2387,6 @@ SWITCH_STANDARD_API(sched_api_function)
 
 		if ((dcmd = strchr(group, ' '))) {
 			*dcmd++ = '\0';
-
 
 			if (*tm == '+') {
 				when = switch_epoch_time_now(NULL) + atol(tm + 1);
@@ -2432,8 +2436,9 @@ static void *SWITCH_THREAD_FUNC bgapi_exec(switch_thread_t *thread, void *obj)
 	char *arg;
 	switch_memory_pool_t *pool;
 
-	if (!job)
+	if (!job) {
 		return NULL;
+	}
 
 	switch_thread_rwlock_rdlock(bgapi_rwlock);
 
@@ -2622,7 +2627,6 @@ static int show_callback(void *pArg, int argc, char **argv, char **columnNames)
 #define COMPLETE_SYNTAX "add <word>|del [<word>|*]"
 SWITCH_STANDARD_API(complete_function)
 {
-
 	switch_status_t status;
 
 	if ((status = switch_console_set_complete(cmd)) == SWITCH_STATUS_SUCCESS) {
@@ -2637,7 +2641,6 @@ SWITCH_STANDARD_API(complete_function)
 #define ALIAS_SYNTAX "add <alias> <command> | del [<alias>|*]"
 SWITCH_STANDARD_API(alias_function)
 {
-
 	switch_status_t status;
 
 	if ((status = switch_console_set_alias(cmd)) == SWITCH_STATUS_SUCCESS) {
@@ -2958,7 +2961,6 @@ SWITCH_STANDARD_API(uuid_session_heartbeat_function)
 	switch_safe_free(mycmd);
 	stream->write_function(stream, "-ERR Usage: uuid_session_heartbeat %s", HEARTBEAT_SYNTAX);
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 SWITCH_STANDARD_API(uuid_flush_dtmf_function)
@@ -3156,7 +3158,6 @@ SWITCH_STANDARD_API(uuid_send_dtmf_function)
 
 usage:
 	stream->write_function(stream, "-USAGE: %s\n", UUID_SEND_DTMF_SYNTAX);
-	switch_safe_free(mycmd);
 
 done:
 	if (psession) {
@@ -3263,7 +3264,6 @@ SWITCH_STANDARD_API(global_setvar_function)
 #define GLOBAL_GETVAR_SYNTAX "<var>"
 SWITCH_STANDARD_API(global_getvar_function)
 {
-
 	if (switch_strlen_zero(cmd)) {
 		switch_core_dump_variables(stream);
 	} else {
@@ -3352,7 +3352,6 @@ SWITCH_STANDARD_API(hupall_api_function)
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 {
 	int x;
-	
 
 	for (x = 30; x > 0; x--) {
 		if (switch_thread_rwlock_trywrlock(bgapi_rwlock) == SWITCH_STATUS_SUCCESS) {
@@ -3371,7 +3370,6 @@ SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown)
 
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 {
