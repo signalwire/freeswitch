@@ -339,27 +339,32 @@ SWITCH_STANDARD_API(easyroute_function)
 	char *seperator = NULL;
 	int noat = 0;
 	easyroute_results_t results;
+	switch_status_t status = SWITCH_STATUS_SUCCESS;
 	
 	if (session) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "This function cannot be called from the dialplan.\n");
-		return SWITCH_STATUS_FALSE;
+		status = SWITCH_STATUS_FALSE;
+		goto done;
 	}
 
 #ifndef SWITCH_HAVE_ODBC
 	stream->write_function(stream, "mod_easyroute requires you enable core odbc support\n");
-	return SWITCH_STATUS_SUCCESS;
+	status = SWITCH_STATUS_SUCCESS;
+	goto done;
 #endif
 	
 	if (!cmd || !(mydata = strdup(cmd))) {
 		stream->write_function(stream, "Usage: easyroute <number>\n");
-		return SWITCH_STATUS_SUCCESS;
+		status = SWITCH_STATUS_SUCCESS;
+		goto done;
 	}
 	
 	if ((argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		destnum = argv[0];
 		if (argc < 1 || argc > 3){
 			stream->write_function(stream, "Invalid Input!\n");
-			return SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
+			goto done;
 		} 
 		if (argc == 2) {
 			if (!strcasecmp(argv[1], "noat")) {
@@ -374,7 +379,8 @@ SWITCH_STANDARD_API(easyroute_function)
 		
 		if (!route_lookup(destnum, &results, noat, seperator) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "No Match!\n");
-			return SWITCH_STATUS_SUCCESS;
+			status = SWITCH_STATUS_SUCCESS;
+			goto done;
 		}
 		if (argc != 2){
 			stream->write_function(stream, "Number    \tLimit     \tGroup    \tAcctCode  \tDialstring\n");
@@ -392,15 +398,17 @@ SWITCH_STANDARD_API(easyroute_function)
 				stream->write_function(stream, "%s", results.acctcode);
 			} else {
 				stream->write_function(stream, "Invalid Input!\n");
-				return SWITCH_STATUS_SUCCESS;
+				status = SWITCH_STATUS_SUCCESS;
+				goto done;
 			}
 		} 
 	} else {
 		stream->write_function(stream, "Invalid Input!\n");
 	}
 	
-	return SWITCH_STATUS_SUCCESS;
-
+ done:
+	switch_safe_free(mydata);
+	return status;
 }
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_easyroute_load)
