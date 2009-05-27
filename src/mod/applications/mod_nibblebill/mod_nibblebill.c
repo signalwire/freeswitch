@@ -42,7 +42,6 @@
  *
  * TODO: Fix what happens when the DB is not available
  * TODO: Fix what happens when the DB queries fail (right now, all are acting like success)
- * TODO: Make the actions function for when funds are depleted
  * TODO: Add buffering abilities
  * TODO: Make error handling for database, such that when the database is down (or not installed) we just log to a text file
  * FUTURE: Possibly make the hooks not tied per-channel, and instead just do this as a supervision style application with one thread that watches all calls
