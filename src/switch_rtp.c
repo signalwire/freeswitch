@@ -2266,7 +2266,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 			if (zrtp_session_info.sas_is_ready) {    
 				frame->extra_data = rtp_session->zrtp_ctx;
 				switch_set_flag(frame, SFF_ZRTP);
-				if (rtp_session->zrtp_mitm_tries > 20) {
+				if (rtp_session->zrtp_mitm_tries > 30) {
+					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
+									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
 					switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
 				}
 				rtp_session->zrtp_mitm_tries++;
@@ -2704,6 +2706,8 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 			if (zrtp_session_info.sas_is_ready) {    
 				if (zrtp_status_ok == zrtp_resolve_mitm_call(frame->extra_data, rtp_session->zrtp_ctx)) {
 					switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
+									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
 				}
 				rtp_session->zrtp_mitm_tries++;
 			}
