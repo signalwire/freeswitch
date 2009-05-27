@@ -1154,7 +1154,7 @@ SWITCH_STANDARD_API(presence_api_function)
 
 SWITCH_STANDARD_API(chat_api_function)
 {
-	char *lbuf, *argv[5];
+	char *lbuf = NULL, *argv[5];
 	int argc = 0;
 
 	if (!switch_strlen_zero(cmd) && (lbuf = strdup(cmd))
@@ -1170,6 +1170,7 @@ SWITCH_STANDARD_API(chat_api_function)
 		stream->write_function(stream, "Invalid");
 	}
 
+	switch_safe_free(lbuf);
 	return SWITCH_STATUS_SUCCESS;
 }
 
