@@ -1099,7 +1099,7 @@ SWITCH_STANDARD_API(strftime_api_function)
 SWITCH_STANDARD_API(presence_api_function)
 {
 	switch_event_t *event;
-	char *lbuf, *argv[4];
+	char *lbuf = NULL , *argv[4];
 	int argc = 0;
 	switch_event_types_t type = SWITCH_EVENT_PRESENCE_IN;
 	int need = 4;
@@ -1138,18 +1138,18 @@ SWITCH_STANDARD_API(presence_api_function)
 			switch_event_fire(&event);
 		}
 		stream->write_function(stream, "Event Sent");
-		switch_safe_free(lbuf);
 	} else {
 		goto error;
 	}
 
+	switch_safe_free(lbuf);
 	return SWITCH_STATUS_SUCCESS;
 
  error:
 
+	switch_safe_free(lbuf);
 	stream->write_function(stream, "Invalid: presence %s", PRESENCE_USAGE);
 	return SWITCH_STATUS_SUCCESS;
-
 }
 
 SWITCH_STANDARD_API(chat_api_function)
