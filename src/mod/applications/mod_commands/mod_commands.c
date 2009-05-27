@@ -2048,7 +2048,6 @@ SWITCH_STANDARD_API(session_displace_function)
 
   usage:
 	stream->write_function(stream, "-USAGE: %s\n", DISPLACE_SYNTAX);
-	switch_safe_free(mycmd);
 
   done:
 	if (rsession) {
