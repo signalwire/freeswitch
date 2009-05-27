@@ -29,13 +29,7 @@
 
   <!-- Enable ZRTP globally you can override this on a per channel basis -->
   <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
-  <!--
-      xmpp_client_profile and xmpp_server_profile
-      xmpp_client_profile can be any string. 
-      xmpp_server_profile is appended to "dingaling_" to form the database name
-      containing the "subscriptions" table.
-      used by: dingaling.conf.xml enum.conf.xml 
-  --> 
+
   <!-- 
        Examples of codec options: (module must be compiled and loaded)
        
@@ -88,6 +82,15 @@
   -->
   <X-PRE-PROCESS cmd="set" data="global_codec_prefs=G722,PCMU,PCMA,GSM"/>
   <X-PRE-PROCESS cmd="set" data="outbound_codec_prefs=PCMU,PCMA,GSM"/>
+
+  <!--
+      xmpp_client_profile and xmpp_server_profile
+      xmpp_client_profile can be any string. 
+      xmpp_server_profile is appended to "dingaling_" to form the database name
+      containing the "subscriptions" table.
+      used by: dingaling.conf.xml enum.conf.xml 
+  --> 
+
   <X-PRE-PROCESS cmd="set" data="xmpp_client_profile=xmppc"/>
   <X-PRE-PROCESS cmd="set" data="xmpp_server_profile=xmpps"/>
   <!-- 
