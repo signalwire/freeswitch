@@ -1337,7 +1337,7 @@ static void message_count(vm_profile_t *profile, const char *id_in, const char *
 	char msg_count[80] = "";
 	callback_t cbt = { 0 };
 	char sql[256];
-	char *myid;
+	char *myid = NULL;
 
 	cbt.buf = msg_count;
 	cbt.len = sizeof(msg_count);
@@ -1371,7 +1371,6 @@ static void message_count(vm_profile_t *profile, const char *id_in, const char *
 	if (myid != id_in) {
 		free(myid);
 	}
-
 }
 
 #define VM_STARTSAMPLES 1024 * 32
@@ -4003,7 +4002,6 @@ SWITCH_STANDARD_API(voicemail_api_function)
 	switch_safe_free(mydata);
 	return SWITCH_STATUS_SUCCESS;
 }
-
 
 SWITCH_MODULE_LOAD_FUNCTION(mod_voicemail_load)
 {
