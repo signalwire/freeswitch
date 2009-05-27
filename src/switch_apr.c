@@ -74,7 +74,7 @@ SWITCH_DECLARE(switch_thread_id_t) switch_thread_self(void)
 #ifndef WIN32
 	return apr_os_thread_current();
 #else
-	return (GetCurrentThreadId());
+	return (switch_thread_id_t)(GetCurrentThreadId());
 #endif
 }
 
