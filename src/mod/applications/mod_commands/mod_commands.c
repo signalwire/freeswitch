@@ -541,6 +541,7 @@ SWITCH_STANDARD_API(stun_function)
 	}
 
 	stun_ip = strdup(cmd);
+	switch_assert(stun_ip);
 
 	if ((p = strchr(stun_ip, ':'))) {
 		int iport;
