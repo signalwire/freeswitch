@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
     NOTICE:
     
@@ -8,8 +9,6 @@
     they can access.  You can also add a user in the directory with the cidr= attribute acl.conf.xml
     will build the domains acl using this value.
 -->
-
-<?xml version="1.0" encoding="utf-8"?>
 <!-- http://wiki.freeswitch.org/wiki/Dialplan_XML -->
 <include>
   <context name="default">
