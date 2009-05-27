@@ -1107,35 +1107,38 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		int initiator = 0;
 		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 		switch_channel_t *channel = switch_core_session_get_channel(session);
+		const char *zrtp_enabled = switch_channel_get_variable(channel, "zrtp_secure_media");
 
-		if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
-			initiator = 1;
-		}
-
-		rtp_session->zrtp_profile = switch_core_alloc(rtp_session->pool, sizeof(*rtp_session->zrtp_profile));
-		zrtp_profile_defaults(rtp_session->zrtp_profile, zrtp_global);
-
-		rtp_session->zrtp_profile->allowclear = 0;
-		rtp_session->zrtp_profile->disclose_bit = 0;
-		rtp_session->zrtp_profile->cache_ttl = -1;
-
-		if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, initiator, &rtp_session->zrtp_session)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
-			zrtp_session_down(rtp_session->zrtp_session);
-			rtp_session->zrtp_session = NULL;
-		}
-
-		zrtp_session_set_userdata(rtp_session->zrtp_session, rtp_session);
-	
-		if (zrtp_status_ok != zrtp_stream_attach(rtp_session->zrtp_session, &rtp_session->zrtp_ctx)) {
-			abort();
-		}
-		zrtp_stream_set_userdata(rtp_session->zrtp_ctx, rtp_session);
-		
-		if (switch_true(switch_channel_get_variable(channel, "zrtp_enrollment"))) {
-			zrtp_stream_registration_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
-		} else {
-			zrtp_stream_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
+		if (switch_true(zrtp_enabled)) {
+			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
+				initiator = 1;
+			}
+			
+			rtp_session->zrtp_profile = switch_core_alloc(rtp_session->pool, sizeof(*rtp_session->zrtp_profile));
+			zrtp_profile_defaults(rtp_session->zrtp_profile, zrtp_global);
+			
+			rtp_session->zrtp_profile->allowclear = 0;
+			rtp_session->zrtp_profile->disclose_bit = 0;
+			rtp_session->zrtp_profile->cache_ttl = -1;
+			
+			if (zrtp_status_ok != zrtp_session_init(zrtp_global, rtp_session->zrtp_profile, zid, initiator, &rtp_session->zrtp_session)) {
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error! zRTP INIT Failed\n");
+				zrtp_session_down(rtp_session->zrtp_session);
+				rtp_session->zrtp_session = NULL;
+			}
+			
+			zrtp_session_set_userdata(rtp_session->zrtp_session, rtp_session);
+			
+			if (zrtp_status_ok != zrtp_stream_attach(rtp_session->zrtp_session, &rtp_session->zrtp_ctx)) {
+				abort();
+			}
+			zrtp_stream_set_userdata(rtp_session->zrtp_ctx, rtp_session);
+			
+			if (switch_true(switch_channel_get_variable(channel, "zrtp_enrollment"))) {
+				zrtp_stream_registration_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
+			} else {
+				zrtp_stream_start(rtp_session->zrtp_ctx, rtp_session->ssrc);
+			}
 		}
 	}
 #endif	

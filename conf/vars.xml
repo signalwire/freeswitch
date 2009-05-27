@@ -26,6 +26,9 @@
   <X-PRE-PROCESS cmd="set" data="domain=$${local_ip_v4}"/>
   <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
+
+  <!-- Enable ZRTP globally you can override this on a per channel basis -->
+  <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
   <!--
       xmpp_client_profile and xmpp_server_profile
       xmpp_client_profile can be any string. 
