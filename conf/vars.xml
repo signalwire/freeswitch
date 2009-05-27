@@ -27,7 +27,11 @@
   <X-PRE-PROCESS cmd="set" data="domain_name=$${domain}"/>
   <X-PRE-PROCESS cmd="set" data="hold_music=local_stream://moh"/>
 
-  <!-- Enable ZRTP globally you can override this on a per channel basis -->
+  <!--
+      Enable ZRTP globally you can override this on a per channel basis
+      
+      http://wiki.freeswitch.org/wiki/ZRTP (on how to enable zrtp)
+  -->
   <X-PRE-PROCESS cmd="set" data="zrtp_secure_media=true"/>
 
   <!-- 
