@@ -492,5 +492,3 @@ support:
 
 coffee me_a_sandwich me_a_sammich:
 	@echo "Who do you think I am?  Make it yourself!"
-
-
