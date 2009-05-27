@@ -184,7 +184,6 @@ freeswitch_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 freeswitch_LDADD      += libs/libedit/src/.libs/libedit.a
 endif
 
-
 if ADD_LIBEDIT
 CORE_CFLAGS    += -Ilibs/libedit/src -DSWITCH_HAVE_LIBEDIT
 CORE_LIBS      += libs/libedit/src/.libs/libedit.a
