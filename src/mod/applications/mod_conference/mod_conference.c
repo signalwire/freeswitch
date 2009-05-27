@@ -440,6 +440,7 @@ static switch_status_t conference_add_event_member_data(conference_member_t *mem
 	}
 
 	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-ID", "%u", member->id);
+	switch_event_add_header(event, SWITCH_STACK_BOTTOM, "Member-Type", "%s", switch_test_flag(member, MFLAG_MOD) ? "moderator" : "member");
 
 	return status;
 }
