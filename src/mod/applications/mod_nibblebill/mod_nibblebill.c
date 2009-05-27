@@ -257,14 +257,13 @@ done:
 
 void debug_event_handler(switch_event_t *event)
 {
-	switch_event_header_t *event_header = NULL;
-
 	 if (!event) {
 		return;
 	}
 
 	/* Print out all event headers, for fun */
 	if (event->headers) {
+		switch_event_header_t *event_header = NULL;
 		for (event_header = event->headers; event_header; event_header = event_header->next) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Header info: %s => %s\n", event_header->name, event_header->value);
 		}
@@ -277,9 +276,15 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 	char *argv[4] = { 0 };
 	const char *uuid;
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	char *mydup;
 
-	/* TODO: dup dest first */
-	switch_separate_string(destination, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+	if (!destination) {
+		return;
+	}
+
+	mydup = strdup(destination);
+	switch_assert(mydup);
+	switch_separate_string(mydup, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
 
 	/* Find the uuid of our B leg. If it exists, transfer it first */
 	if ((uuid = switch_channel_get_variable(channel, SWITCH_SIGNAL_BOND_VARIABLE))) {
@@ -302,6 +307,7 @@ static void transfer_call(switch_core_session_t *session, char *destination)
 
 	/* Transfer the A leg */
 	switch_ivr_session_transfer(session, argv[0], argv[1], argv[2]);
+	free(mydup);
 }
 
 
@@ -312,7 +318,7 @@ static switch_status_t bill_event(float billamount, const char *billaccount)
 	char sql[1024] = "";
 	SQLHSTMT stmt;
 
-	snprintf(sql, 1024, SQL_SAVE, globals.db_table, globals.db_column_cash, globals.db_column_cash, billamount, globals.db_column_account, billaccount);
+	switch_snprintf(sql, 1024, SQL_SAVE, globals.db_table, globals.db_column_cash, globals.db_column_cash, billamount, globals.db_column_account, billaccount);
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,  "Doing update query\n[%s]\n", sql);
 
 	if (switch_odbc_handle_exec(globals.master_odbc, sql, &stmt) != SWITCH_ODBC_SUCCESS) {
@@ -339,7 +345,7 @@ static float get_balance(const char *billaccount)
 #ifdef SWITCH_HAVE_ODBC
 	char sql[1024] = "";
 	nibblebill_results_t pdata;
-	float balance = 0.00;
+	float balance = 0.00f;
 
 	memset(&pdata, 0, sizeof(pdata));
 	snprintf(sql, 1024, SQL_LOOKUP, globals.db_column_cash, globals.db_table, globals.db_column_account, billaccount);
@@ -375,7 +381,6 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	switch_time_t ts = switch_micro_time_now();
 	float billamount;
 	char date[80] = "";
-	char *tmp;
 	char *uuid;
 	switch_size_t retsize;
 	switch_time_exp_t tm;
@@ -438,9 +443,6 @@ static switch_status_t do_billing(switch_core_session_t *session)
 	/* Have we done any billing on this channel yet? If no, set up vars for doing so */
 	if (!nibble_data) {
 		nibble_data = switch_core_session_alloc(session, sizeof(*nibble_data));
-		if (!nibble_data) {
-			switch_assert(nibble_data);
-		}
 		memset(nibble_data, 0, sizeof(*nibble_data));
 
 		/* Setup new billing data (based on call answer time, in case this module started late with active calls) */
@@ -470,9 +472,7 @@ static switch_status_t do_billing(switch_core_session_t *session)
 			nibble_data->bill_adjustments = 0;
 
 			/* Update channel variable with current billing */
-			tmp = switch_mprintf("%f", nibble_data->total);
-			switch_channel_set_variable(channel, "nibble_total_billed", tmp);
-			switch_safe_free(tmp);
+			switch_channel_set_variable_printf(channel, "nibble_total_billed", "%f", nibble_data->total);
 		} else {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "Failed to log to database!\n");
 		}
@@ -726,7 +726,7 @@ SWITCH_STANDARD_APP(nibblebill_app_function)
 	char *lbuf = NULL;
 	char *argv[3] = { 0 };
 
-	if (!switch_strlen_zero(data) && (lbuf = switch_core_session_strdup(session, data))
+	if (!switch_strlen_zero(data) && (lbuf = strdup(data))
 		&& (argc = switch_separate_string(lbuf, ' ', argv, (sizeof(argv) / sizeof(argv[0]))))) {
 		if (!strcasecmp(argv[0], "adjust") && argc == 2) {
 			nibblebill_adjust(session, (float)atof(argv[1]));
@@ -744,6 +744,7 @@ SWITCH_STANDARD_APP(nibblebill_app_function)
 			switch_core_session_enable_heartbeat(session, atoi(argv[1]));
 		}
 	}
+	switch_safe_free(lbuf);
 }
 
 /* We get here from the API only (theoretically) */
@@ -786,7 +787,7 @@ SWITCH_STANDARD_API(nibblebill_api_function)
 			stream->write_function(stream, "-USAGE: %s\n", API_SYNTAX);
 		}
 	}
-
+	switch_safe_free(mycmd);
 	return SWITCH_STATUS_SUCCESS;
 }
 
