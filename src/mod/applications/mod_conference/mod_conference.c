@@ -4282,7 +4282,6 @@ SWITCH_STANDARD_API(conf_api_main)
 	switch_safe_free(lbuf);
 
 	return status;
-
 }
 
 /* generate an outbound call from the conference */
@@ -5363,7 +5362,6 @@ static switch_status_t chat_send(const char *proto, const char *from, const char
 	} else {
 		switch_copy_string(name, to, sizeof(name));
 	}
-
 
 	if (!(conference = conference_find(name))) {
 		switch_core_chat_send(proto, CONF_CHAT_PROTO, to, hint && strchr(hint, '/') ? hint : from, "", "Conference not active.", NULL, NULL);
