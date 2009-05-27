@@ -596,6 +596,8 @@
 	<action application="answer"/>
 	<action application="execute_extension" data="is_secure XML features"/>
 	<action application="playback" data="$${hold_music}"/>
+	<!-- This really should be an IVR for zrtp enrollment but this is just a demo-->
+	<anti-action application="set" data="zrtp_enrollment=true"/>
 	<anti-action application="answer"/>
 	<anti-action application="playback" data="$${hold_music}"/>
       </condition>
