@@ -347,7 +347,7 @@ static float get_balance(const char *billaccount)
 	if (switch_odbc_handle_callback_exec(globals.master_odbc, sql, nibblebill_callback, &pdata) != SWITCH_ODBC_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error running this query: [%s]\n", sql);
 #endif
-		/* TODO: Return -1 for safety */
+		/* Return -1 for safety */
 
 		return -1.00;
 #ifdef SWITCH_HAVE_ODBC
