@@ -2198,7 +2198,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 												 switch_caller_profile_t *outbound_profile,
 												 switch_core_session_t **new_session, switch_memory_pool_t **pool, switch_originate_flag_t flags)
 {
-	char *group;
+	char *group = NULL;
 	switch_call_cause_t cause = SWITCH_CAUSE_NONE;
 	char *template = NULL, *dest = NULL;
 	switch_originate_flag_t myflags = SOF_NONE;
@@ -2223,7 +2223,6 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 		goto done;
 	}
 
-
 	if (var_event && (skip=switch_event_get_header(var_event, "group_recurse_variables")) && switch_false(skip)) {
 		if ((var = switch_event_get_header(var_event, SWITCH_CALL_TIMEOUT_VARIABLE)) || 
 			(var = switch_event_get_header(var_event, "leg_timeout"))) {
@@ -2231,8 +2230,6 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 		}
 		var_event = NULL;
 	}
-
-
 
 	template = switch_mprintf("${group_call(%s@%s)}", group, domain);
 	
@@ -2293,6 +2290,7 @@ static switch_call_cause_t group_outgoing_channel(switch_core_session_t *session
 	}
 	
 	switch_safe_free(template);	
+	switch_safe_free(group);	
 
 	if (cause == SWITCH_CAUSE_NONE) {
 		cause = SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER;
@@ -2616,7 +2614,7 @@ static switch_status_t api_chat_send(const char *proto, const char *from, const 
 	if (to) { 
 		const char *v;
 		switch_stream_handle_t stream = { 0 };
-		char *cmd, *arg;
+		char *cmd = NULL, *arg;
 		
 		if (!(v = switch_core_get_variable(to))) {
 			v = to;
