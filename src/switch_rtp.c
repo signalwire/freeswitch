@@ -1923,13 +1923,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 #ifdef ENABLE_ZRTP
 		/* ZRTP Recv */
-
 		if (bytes && switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV)) {
 			unsigned int sbytes = (int) bytes;
 			zrtp_status_t stat = 0;
-
+			
 			stat = zrtp_process_srtp(rtp_session->zrtp_ctx, (void *)&rtp_session->recv_msg, &sbytes);
-
+			
 			switch (stat) {
 			case zrtp_status_ok:
 				break;
@@ -2532,11 +2531,10 @@ static int rtp_common_write(switch_rtp_t *rtp_session,
 		}
 #ifdef ENABLE_ZRTP
 		/* ZRTP Send */
-
 		if (switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND)) {
 			unsigned int sbytes = (int) bytes;
 			zrtp_status_t stat = zrtp_status_fail;
-
+			
 			stat = zrtp_process_rtp(rtp_session->zrtp_ctx, (void*)send_msg, &sbytes);
 
 			switch (stat) {
@@ -2813,29 +2811,28 @@ SWITCH_DECLARE(int) switch_rtp_write_manual(switch_rtp_t *rtp_session,
 		bytes = sbytes;
 	}
 #ifdef ENABLE_ZRTP
-		/* ZRTP Send */
-
-		if (switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND)) {
-			unsigned int sbytes = (int) bytes;
-			zrtp_status_t stat = zrtp_status_fail;
-
-			stat = zrtp_process_rtp(rtp_session->zrtp_ctx, (void*)&rtp_session->write_msg, &sbytes);
-
-			switch (stat) {
-			case zrtp_status_ok:
-				break;
-			case zrtp_status_drop:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
-				break;
-			case zrtp_status_fail:
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
-				break;
-			default:
-				break;
-			}
-			
-			bytes = sbytes;
+	/* ZRTP Send */
+	if (switch_test_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND)) {
+		unsigned int sbytes = (int) bytes;
+		zrtp_status_t stat = zrtp_status_fail;
+		
+		stat = zrtp_process_rtp(rtp_session->zrtp_ctx, (void*)&rtp_session->write_msg, &sbytes);
+		
+		switch (stat) {
+		case zrtp_status_ok:
+			break;
+		case zrtp_status_drop:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection drop with code %d\n", stat);
+			break;
+		case zrtp_status_fail:
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error: zRTP protection fail with code %d\n", stat);
+			break;
+		default:
+			break;
 		}
+		
+		bytes = sbytes;
+	}
 #endif
 	if (switch_socket_sendto(rtp_session->sock_output, rtp_session->remote_addr, 0, (void *) &rtp_session->write_msg, &bytes) != SWITCH_STATUS_SUCCESS) {
 		rtp_session->seq--;
