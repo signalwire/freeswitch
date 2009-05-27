@@ -103,8 +103,6 @@ src/switch_pcm.c\
 libs/libteletone/src/libteletone_detect.c\
 libs/libteletone/src/libteletone_generate.c
 
-
-
 library_includedir      = $(PREFIX)/include
 
 library_include_HEADERS = \
