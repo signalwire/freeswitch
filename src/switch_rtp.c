@@ -1108,6 +1108,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 		switch_channel_t *channel = switch_core_session_get_channel(session);
 		const char *zrtp_enabled = switch_channel_get_variable(channel, "zrtp_secure_media");
+		const char *srtp_enabled = switch_channel_get_variable(channel, "sip_secure_media");
+
+		if (switch_true(srtp_enabled)) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You can not have ZRTP and SRTP enabled simultaneously, ZRTP will be disabled for this call!\n");
+			switch_channel_set_variable(channel, "zrtp_secure_media", NULL);
+			zrtp_enabled = NULL;
+		}
 
 		if (switch_true(zrtp_enabled)) {
 			if (switch_channel_direction(channel) == SWITCH_CALL_DIRECTION_OUTBOUND) {
