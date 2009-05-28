@@ -683,11 +683,11 @@ SWITCH_DECLARE(switch_status_t) switch_socket_send(switch_socket_t *sock, const 
 		need = req - wrote;
 		status = apr_socket_send(sock, buf + wrote, &need);
 		if (status == SWITCH_STATUS_BREAK || status == 730035) {
-			if (++to_count > 10000) {
+			if (++to_count > 10000000) {
 				status = SWITCH_STATUS_FALSE;
 				break;
 			}
-			switch_cond_next();
+			switch_yield(10000);
 		} else {
 			to_count = 0;
 		}
