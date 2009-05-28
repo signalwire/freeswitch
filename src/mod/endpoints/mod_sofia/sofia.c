@@ -5070,7 +5070,7 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", acp->caller_id_name, acp->caller_id_number);
 				}
 				nua_update(b_tech_pvt->nh,
-						   SIPTAG_HEADER_STR(message),
+						   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
 						   TAG_END());
 			}
 		}
