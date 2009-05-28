@@ -1256,7 +1256,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				} else {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
 					nua_update(tech_pvt->nh,
-							   TAG_IF(!switch_strlen_zero(message), SIPTAG_HEADER_STR(message)),
+							   SIPTAG_HEADER_STR(message),
 							   TAG_END());
 				}
 			}
