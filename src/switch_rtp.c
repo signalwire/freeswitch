@@ -71,6 +71,7 @@ typedef srtp_hdr_t rtp_hdr_t;
 static zrtp_global_t *zrtp_global;
 static zrtp_zid_t zid = { "FreeSWITCH01" };
 static int zrtp_on = 0;
+#define ZRTP_MITM_TRIES 30
 #endif
 
 #ifdef _MSC_VER
@@ -509,6 +510,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	case ZRTP_EVENT_IS_PENDINGSECURE:
 		break;
 	case ZRTP_EVENT_IS_PENDINGCLEAR:
+		switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "false");
 		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
 		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
 		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
@@ -516,6 +518,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 		rtp_session->zrtp_mitm_tries = 0;
 		break;
 	case ZRTP_EVENT_NO_ZRTP:
+		switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "false");
 		break;
 	default:
 		break;
@@ -2275,7 +2278,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_zerocopy_read_frame(switch_rtp_t *rtp
 			if (zrtp_session_info.sas_is_ready) {    
 				frame->extra_data = rtp_session->zrtp_ctx;
 				switch_set_flag(frame, SFF_ZRTP);
-				if (rtp_session->zrtp_mitm_tries > 30) {
+				if (rtp_session->zrtp_mitm_tries > ZRTP_MITM_TRIES) {
 					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
 									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
 					switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
@@ -2712,12 +2715,14 @@ SWITCH_DECLARE(int) switch_rtp_write_frame(switch_rtp_t *rtp_session, switch_fra
 
 		if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) { 
 			if (zrtp_session_info.sas_is_ready) {    
-				if (zrtp_status_ok == zrtp_resolve_mitm_call(frame->extra_data, rtp_session->zrtp_ctx)) {
+				if (rtp_session->zrtp_mitm_tries > ZRTP_MITM_TRIES) {
+					switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+				} else if(zrtp_status_ok == zrtp_resolve_mitm_call(frame->extra_data, rtp_session->zrtp_ctx)) {
 					switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
 					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
 									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+					rtp_session->zrtp_mitm_tries++;
 				}
-				rtp_session->zrtp_mitm_tries++;
 			}
 		}
 	}
