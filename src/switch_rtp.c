@@ -71,7 +71,7 @@ typedef srtp_hdr_t rtp_hdr_t;
 static zrtp_global_t *zrtp_global;
 static zrtp_zid_t zid = { "FreeSWITCH01" };
 static int zrtp_on = 0;
-#define ZRTP_MITM_TRIES 30
+#define ZRTP_MITM_TRIES 50
 #endif
 
 #ifdef _MSC_VER
@@ -441,85 +441,93 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	zrtp_session_info_t zrtp_session_info;
 
 	switch (event) {
-	case ZRTP_EVENT_IS_SECURE_DONE:
-		break;
 	case ZRTP_EVENT_IS_SECURE:
-		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
-		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
-		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
-		switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-		if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
-			if (zrtp_session_info.sas_is_ready) {
-
-				switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "true");
-				switch_channel_set_variable(channel, "zrtp_sas1_string", rtp_session->zrtp_session->sas1.buffer);
-				switch_channel_set_variable(channel, "zrtp_sas2_string", rtp_session->zrtp_session->sas2.buffer);
-
-				zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
-								  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
-
+		{
+			switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
+			switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
+			switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+			switch_set_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+			if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
+				if (zrtp_session_info.sas_is_ready) {
+					
+					switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "true");
+					switch_channel_set_variable(channel, "zrtp_sas1_string", rtp_session->zrtp_session->sas1.buffer);
+					switch_channel_set_variable(channel, "zrtp_sas2_string", rtp_session->zrtp_session->sas2.buffer);
+					
+					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
+									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+					
+				}
 			}
 		}
 		break;
+
 	case ZRTP_EVENT_IS_CLIENT_ENROLLMENT:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enrolled complete!\n");
-		switch_channel_set_variable(channel, "zrtp_enroll_complete", "true");
-
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enrolled complete!\n");
+			switch_channel_set_variable(channel, "zrtp_enroll_complete", "true");
+		}
 		break;
+
 	case ZRTP_EVENT_USER_ALREADY_ENROLLED:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User already enrolled!\n");
-		switch_channel_set_variable(channel, "zrtp_already_enrolled", "true");
-
-		if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
-			if (zrtp_session_info.sas_is_ready) {
-				zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
-								  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User already enrolled!\n");
+			switch_channel_set_variable(channel, "zrtp_already_enrolled", "true");
+			
+			if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
+				if (zrtp_session_info.sas_is_ready) {
+					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
+									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+				}
 			}
 		}
 		break;
+
 	case ZRTP_EVENT_NEW_USER_ENROLLED:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New user enrolled!\n");
-		switch_channel_set_variable(channel, "zrtp_new_user_enrolled", "true");
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "New user enrolled!\n");
+			switch_channel_set_variable(channel, "zrtp_new_user_enrolled", "true");
 
-		if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
-			if (zrtp_session_info.sas_is_ready) {
-				zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
-								  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+			if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
+				if (zrtp_session_info.sas_is_ready) {
+					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
+									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+				}
 			}
 		}
 		break;
+		
 	case ZRTP_EVENT_USER_UNENROLLED:
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User unenrolled!\n");
-		switch_channel_set_variable(channel, "zrtp_user_unenrolled", "true");
-
-		if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
-			if (zrtp_session_info.sas_is_ready) {
-				zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
-								  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+		{
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "User unenrolled!\n");
+			switch_channel_set_variable(channel, "zrtp_user_unenrolled", "true");
+			
+			if (zrtp_status_ok == zrtp_session_get(rtp_session->zrtp_session, &zrtp_session_info)) {
+				if (zrtp_session_info.sas_is_ready) {
+					zrtp_verified_set(zrtp_global, &rtp_session->zrtp_session->zid, 
+									  &rtp_session->zrtp_session->peer_zid, zrtp_session_info.sas_is_verified^1);
+				}
 			}
 		}
 		break;
-	case ZRTP_EVENT_IS_CLEAR:
-		break;
-	case ZRTP_EVENT_IS_INITIATINGSECURE:
-		break;
-	case ZRTP_EVENT_LOCAL_SAS_UPDATED:
-		break;
-	case ZRTP_EVENT_REMOTE_SAS_UPDATED:
-		break;
-	case ZRTP_EVENT_IS_PENDINGSECURE:
-		break;
+
 	case ZRTP_EVENT_IS_PENDINGCLEAR:
-		switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "false");
-		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
-		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
-		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
-		switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
-		rtp_session->zrtp_mitm_tries = 0;
+		{
+			switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "false");
+			switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_SEND);
+			switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_RECV);
+			switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_SEND);
+			switch_clear_flag(rtp_session, SWITCH_ZRTP_FLAG_SECURE_MITM_RECV);
+			rtp_session->zrtp_mitm_tries = 0;
+		}
 		break;
+
 	case ZRTP_EVENT_NO_ZRTP:
-		switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "false");
+		{
+			switch_channel_set_variable(channel, "zrtp_secure_media_confirmed", "false");
+		}
 		break;
+
 	default:
 		break;
 	}
@@ -1113,7 +1121,7 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_create(switch_rtp_t **new_rtp_session
 		const char *zrtp_enabled = switch_channel_get_variable(channel, "zrtp_secure_media");
 		const char *srtp_enabled = switch_channel_get_variable(channel, "sip_secure_media");
 
-		if (switch_true(srtp_enabled)) {
+		if (switch_true(srtp_enabled) && switch_true(zrtp_enabled)) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "You can not have ZRTP and SRTP enabled simultaneously, ZRTP will be disabled for this call!\n");
 			switch_channel_set_variable(channel, "zrtp_secure_media", NULL);
 			zrtp_enabled = NULL;
