@@ -312,7 +312,7 @@
       <prompt phrase="Your call has been terminated." filename="misc-your_call_has_been_terminated.wav"/>
     </misc>
     <zrtp>
-	  <!-- base256 prompts for SAS -->
+      <!-- base256 prompts for SAS -->
       <prompt phrase="Algol" filename="Algol.wav"/>
       <prompt phrase="Apollo" filename="Apollo.wav"/>
       <prompt phrase="Athens" filename="Athens.wav"/>
@@ -826,22 +826,21 @@
       <prompt phrase="woodlark" filename="woodlark.wav"/>
       <prompt phrase="yesteryear" filename="yesteryear.wav"/>
       <!-- Event prompts -->
-      <prompt phrase="Something's wrong" filename="zrtp-somethings_wrong.wav"/>
+      <prompt phrase="Welcome to the ZRTP security enrollment agent." filename="zrtp-enroll_welcome.wav"/>
       <prompt phrase="You must check the authentication string with your partner. If it doesn't match, it indicates the presence of a wire tapper." filename="zrtp-check_sas.wav"/>
-      <prompt phrase="Welcome to the PBX ZRTP security enrollment agent." filename="zrtp-enroll_welcome.wav"
-      <prompt phrase="Only phones that are recognized by this PBX as SIP-registered to this PBX can be configured to trust this PBX to relay ZRTP secured calls. Your phone is not SIP-registered with this PBX, so this call will have no effect. Thank you, goodbye." filename="zrtp-enroll_not_sip_registered.wav"/>
-      <prompt phrase="Your phone indicates that it already trusts this PBX to relay ZRTP secured calls, so you do not need to do anything more. Thank you for calling. Goodbye." filename="zrtp-enroll_already_enrolled.wav"/>
-      <prompt phrase="Only phones equipped with the ZRTP protocol can use this extension. Your phone is not a ZRTP-enable phone, so this call will have no effect. Thank you for calling. Goodbye." filename="zrtp-enroll_notzrtp.wav"/>
-      <prompt phrase="This PBX is equipped to handle ZRTP encrypted phone calls. You must decide if you want to allow this PBX to be in a position to intercept and possibly monitor your secure phone calls. If you trust this PBX to relay ZRTP secured calls, press the appropriate button on your phone to enroll and bind this PBX to your phone. You may hang up after you've done this." filename="zrtp-enroll_confirmed.wav"/>
-      <prompt phrase="NULL" filename="zrtp-event_secure.wav"/> <!-- bing tone sound -->
-      <prompt phrase="Call is secure. Verbally compare this authentication code with your partner." filename="zrtp-is_secure.wav"/>
+      <prompt phrase="Only phones that are authenticated can be configured to trust this system to relay ZRTP secured calls. Your phone is not authenticated with this system, so this call will have no effect." filename="zrtp-enroll_not_sip_registered.wav"/>
+      <prompt phrase="Your phone indicates that it already trusts this system to relay ZRTP secured calls, so you do not need to do anything more." filename="zrtp-enroll_already_enrolled.wav"/>
+      <prompt phrase="Only phones equipped with the ZRTP protocol can use this extension. Your phone is not a ZRTP-enable phone, so this call will have no effect." filename="zrtp-enroll_notzrtp.wav"/>
+      <prompt phrase="This system is equipped to handle ZRTP encrypted phone calls. You must decide if you want to allow this system to be in a position to intercept and possibly monitor your secure phone calls. You may hang up after you've done this." filename="zrtp-enroll_confirmed.wav"/>
+      <prompt phrase="Verbally compare this authentication code with your partner." filename="zrtp-is_secure.wav"/>
       <prompt phrase="Authentication code is now unverified." filename="zrtp-is_unverified.wav"/>
       <prompt phrase="Authentication code is now verified." filename="zrtp-is_verified.wav"/>
-      <prompt phrase="Press clear." filename="zrtp-press_clear.wav"/>
+      <prompt phrase="Thank you for calling. Goodbye." filename="zrtp-thankyou_goodbye.wav"/>
+      <prompt phrase="Something's wrong" filename="zrtp-somethings_wrong.wav"/>
       <prompt phrase="Error." filename="zrtp-status_error.wav"/>
       <prompt phrase="Call is not secure." filename="zrtp-status_notsecure.wav"/>
       <prompt phrase="Call is secure." filename="zrtp-status_secure.wav"/>
       <prompt phrase="Securing call." filename="zrtp-status_securing.wav"/>
-	</zrtp>
+    </zrtp>
   </en>
 </language>
