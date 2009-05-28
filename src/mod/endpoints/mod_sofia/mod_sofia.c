@@ -175,6 +175,22 @@ static switch_status_t sofia_on_execute(switch_core_session_t *session)
 	return SWITCH_STATUS_SUCCESS;
 }
 
+char * generate_pai_str(switch_core_session_t *session) 
+{
+	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
+	const char *callee_name = NULL, *callee_number = NULL;
+
+	if (!(callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name"))) {
+		callee_name = "";
+	}
+
+	if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number"))) {
+		callee_number = tech_pvt->caller_profile->destination_number;
+	}
+
+	return switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
+}
+
 /* map QSIG cause codes to SIP from RFC4497 section 8.4.1 */
 static int hangup_cause_to_sip(switch_call_cause_t cause)
 {
@@ -523,7 +539,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			return status;
 		}
-
+		
 		sofia_glue_set_local_sdp(tech_pvt, NULL, 0, NULL, 0);
 		if (sofia_glue_activate_rtp(tech_pvt, 0) != SWITCH_STATUS_SUCCESS) {
 			switch_channel_hangup(channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -555,6 +571,7 @@ static switch_status_t sofia_answer_channel(switch_core_session_t *session)
 		nua_respond(tech_pvt->nh, SIP_200_OK,
 					NUTAG_AUTOANSWER(0),
 					TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+					SIPTAG_HEADER_STR(generate_pai_str(session)),
 					NUTAG_SESSION_TIMER(session_timeout),
 					SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 					SIPTAG_CALL_INFO_STR(switch_channel_get_variable(tech_pvt->channel, SOFIA_SIP_HEADER_PREFIX "call_info")),
@@ -1231,8 +1248,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		{
 			if (!switch_strlen_zero(msg->string_arg)) {
 				char message[256] = "";
-				snprintf(message, sizeof(message), "From:\r\nTo: \"%s\"\r\n", msg->string_arg);
-				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+
+				if (ua && switch_stristr("snom", ua)) {
+					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\"\r\n", msg->string_arg);
+					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+				} else {
+					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
+					nua_update(tech_pvt->nh,
+							   TAG_IF(!switch_strlen_zero(message), SIPTAG_HEADER_STR(message)),
+							   TAG_END());
+				}
 			}
 		}
 		break;
@@ -1387,7 +1413,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 	case SWITCH_MESSAGE_INDICATE_RINGING:
 		if (!switch_channel_test_flag(channel, CF_RING_READY) && !sofia_test_flag(tech_pvt, TFLAG_BYE) &&
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
-			nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), TAG_END());
+			nua_respond(tech_pvt->nh, SIP_180_RINGING, SIPTAG_CONTACT_STR(tech_pvt->reply_contact), SIPTAG_HEADER_STR(generate_pai_str(session)), TAG_END());
 			switch_channel_mark_ring_ready(channel);
 		}
 		break;
@@ -1463,6 +1489,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 								SIP_183_SESSION_PROGRESS,
 								NUTAG_AUTOANSWER(0),
 								TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
+								SIPTAG_HEADER_STR(generate_pai_str(session)),
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 								SOATAG_REUSE_REJECTED(1),
 								SOATAG_ORDERED_USER(1),

@@ -5050,23 +5050,29 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 		switch_channel_t *channel = switch_core_session_get_channel(bleg);
 		const char *ua = switch_channel_get_variable(channel, "sip_user_agent");
 		
-		if (ua && !switch_stristr("snom", ua)) {
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "If you were using a Snom phone, we would have updated the caller id display on your phone for you!\n");
-			return;
-		}
-
 		a_tech_pvt = (private_object_t *) switch_core_session_get_private(aleg);
 		b_tech_pvt = (private_object_t *) switch_core_session_get_private(bleg);
 
 		if (b_tech_pvt && a_tech_pvt && a_tech_pvt->caller_profile) {
 			switch_caller_profile_t *acp = a_tech_pvt->caller_profile;
-
-			if (switch_strlen_zero(acp->caller_id_name)) {
-				snprintf(message, sizeof(message), "From:\r\nTo: %s\r\n", acp->caller_id_number);
+			
+			if (ua && switch_stristr("snom", ua)) {
+				if (switch_strlen_zero(acp->caller_id_name)) {
+					snprintf(message, sizeof(message), "From:\r\nTo: %s\r\n", acp->caller_id_number);
+				} else {
+					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);
+				}
+				nua_info(b_tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
 			} else {
-				snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);
+				if (switch_strlen_zero(acp->caller_id_name)) {
+					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", acp->caller_id_number, acp->caller_id_number);
+				} else {
+					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", acp->caller_id_name, acp->caller_id_number);
+				}
+				nua_update(b_tech_pvt->nh,
+						   TAG_IF(!switch_strlen_zero(message), SIPTAG_HEADER_STR(message)),
+						   TAG_END());
 			}
-			nua_info(b_tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
 		}
 	}
 }
