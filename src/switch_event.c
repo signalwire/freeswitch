@@ -177,6 +177,7 @@ static char *EVENT_NAMES[] = {
 	"SERVER_DISCONNECTED",
 	"SEND_INFO",
 	"RECV_INFO",
+	"CALL_SECURE",
 	"ALL"
 };
 
