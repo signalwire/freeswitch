@@ -466,7 +466,7 @@ SWITCH_DECLARE(void) switch_core_session_run(switch_core_session_t *session)
 						switch_safe_free(stream.data);
 					}
 
-					if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP) == SWITCH_STATUS_SUCCESS) {
+					if (switch_event_create(&event, SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE) == SWITCH_STATUS_SUCCESS) {
 						switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Hangup-Cause", switch_channel_cause2str(cause));
 						switch_channel_event_set_data(session->channel, event);
 						switch_event_fire(&event);
