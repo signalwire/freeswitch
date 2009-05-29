@@ -1251,7 +1251,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 
 				if (ua && switch_stristr("snom", ua)) {
-					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\"\r\n", msg->string_arg);
+					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
 					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
 				} else {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
