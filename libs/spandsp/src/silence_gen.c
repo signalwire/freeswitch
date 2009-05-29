@@ -53,7 +53,7 @@
 
 #include "spandsp/private/silence_gen.h"
 
-SPAN_DECLARE(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len)
+SPAN_DECLARE_NONSTD(int) silence_gen(silence_gen_state_t *s, int16_t *amp, int max_len)
 {
     if (s->remaining_samples != INT_MAX)
     {

@@ -198,7 +198,7 @@ SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_rx_s
     \param amp The audio sample buffer.
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed. */
-SPAN_DECLARE(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len);
+SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len);
 
 /*! Fake processing of a missing block of received V.29 modem audio samples.
     (e.g due to packet loss).

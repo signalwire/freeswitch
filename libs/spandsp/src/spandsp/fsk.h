@@ -214,7 +214,7 @@ SPAN_DECLARE(int) fsk_rx_free(fsk_rx_state_t *s);
     \param len The number of samples in the buffer.
     \return The number of samples unprocessed.
 */
-SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len);
+SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len);
 
 /*! Fake processing of a missing block of received FSK modem audio samples
     (e.g due to packet loss).

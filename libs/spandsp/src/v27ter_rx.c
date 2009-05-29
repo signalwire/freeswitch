@@ -753,7 +753,7 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
+SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], int len)
 {
     int i;
     int step;

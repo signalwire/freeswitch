@@ -333,7 +333,7 @@ static void report_status_change(fsk_rx_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
+SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
 {
     int buf_ptr;
     int baudstate;
