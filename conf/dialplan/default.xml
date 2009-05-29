@@ -292,7 +292,7 @@
 	     Known working with Polycom and Snom maybe others.
 	-->
 	<!--
-	<action application="set" data="exec_after_bridge_app=${sched_api(+2 zrtp expand uuid_display ${uuid} \${uuid_getvar(\${uuid_getvar(${uuid} signal_bond)} zrtp_sas1_string )}  \${uuid_getvar(\${uuid_getvar(${uuid} signal_bond)} zrtp_sas2_string )} )}"/>
+	<action application="set" data="exec_after_bridge_app=${sched_api(+4 zrtp expand uuid_display ${uuid} \${uuid_getvar(\${uuid_getvar(${uuid} signal_bond)} zrtp_sas1_string )}  \${uuid_getvar(\${uuid_getvar(${uuid} signal_bond)} zrtp_sas2_string )} )}"/>
 	<action application="export" data="nolocal:zrtp_secure_media=true"/>
 	-->
 	<action application="bridge" data="sofia/${use_profile}/$1@conference.freeswitch.org"/>
