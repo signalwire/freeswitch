@@ -4035,6 +4035,10 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 					int tmp;
 					/* move signal_ptr where we need it (right past Signal=) */
 					signal_ptr = signal_ptr + 7;
+
+					/* handle broken devices with spaces after the = (cough) VegaStream (cough) */
+					while (*signal_ptr && *signal_ptr == ' ') signal_ptr++;
+
 					if (*signal_ptr && (*signal_ptr == '*' || *signal_ptr == '#' || *signal_ptr == 'A' || *signal_ptr == 'B' || *signal_ptr == 'C' || *signal_ptr == 'D')) {
 						dtmf.digit = *signal_ptr;
 					} else {
@@ -4049,6 +4053,9 @@ void sofia_handle_sip_i_info(nua_t *nua, sofia_profile_t *profile, nua_handle_t 
 				if ((signal_ptr = switch_stristr("Duration=", sip->sip_payload->pl_data))) {
 					int tmp;
 					signal_ptr += 9;
+
+					/* handle broken devices with spaces after the = (cough) VegaStream (cough) */
+					while (*signal_ptr && *signal_ptr == ' ') signal_ptr++;
 					
 					if ((tmp = atoi(signal_ptr)) <= 0) {
 						tmp = switch_core_default_dtmf_duration(0);
