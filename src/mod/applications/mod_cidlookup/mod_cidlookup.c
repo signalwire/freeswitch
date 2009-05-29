@@ -255,7 +255,7 @@ static char *string_digitsonly(switch_memory_pool_t *pool, const char *str)
 
 static char *check_cache(switch_memory_pool_t *pool, const char *number) {
 	char *cmd;
-	char *name;
+	char *name = NULL;
 	switch_stream_handle_t stream = { 0 };
 	
 	SWITCH_STANDARD_STREAM(stream);
