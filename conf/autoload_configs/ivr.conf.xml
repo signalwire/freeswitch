@@ -3,11 +3,11 @@
     <!-- demo IVR setup -->
     <!-- demo IVR, Main Menu -->
     <menu name="demo_ivr"
-          greet-long="phrase:demo_ivr_main_menu"
-          greet-short="phrase:demo_ivr_main_menu_short"
-          invalid-sound="ivr/ivr-that_was_an_invalid_entry.wav"
-          exit-sound="voicemail/vm-goodbye.wav"
-          timeout ="10000"
+	  greet-long="phrase:demo_ivr_main_menu"
+	  greet-short="phrase:demo_ivr_main_menu_short"
+	  invalid-sound="ivr/ivr-that_was_an_invalid_entry.wav"
+	  exit-sound="voicemail/vm-goodbye.wav"
+	  timeout="10000"
 	  inter-digit-timeout="2000"
 	  max-failures="3"
 	  max-timeouts="3"
