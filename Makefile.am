@@ -101,7 +101,18 @@ src/switch_cpp.cpp\
 src/g711.c\
 src/switch_pcm.c\
 libs/libteletone/src/libteletone_detect.c\
-libs/libteletone/src/libteletone_generate.c
+libs/libteletone/src/libteletone_generate.c\
+libs/miniupnpc/miniwget.c\
+libs/miniupnpc/minixml.c\
+libs/miniupnpc/igd_desc_parse.c\
+libs/miniupnpc/minisoap.c \
+libs/miniupnpc/miniupnpc.c\
+libs/miniupnpc/upnpreplyparse.c\
+libs/miniupnpc/upnpcommands.c\
+libs/miniupnpc/minissdpc.c \
+libs/miniupnpc/upnperrors.c \
+libs/libnatpmp/natpmp.c \
+libs/libnatpmp/getgateway.c
 
 library_includedir      = $(PREFIX)/include
 
