@@ -158,7 +158,7 @@ libfreeswitch_la_CFLAGS   = $(CORE_CFLAGS) $(AM_CFLAGS)
 libfreeswitch_la_LDFLAGS  = -version-info 1:0:0 $(AM_LDFLAGS) $(PLATFORM_CORE_DEPLIBS)
 libfreeswitch_la_LIBADD  = $(CORE_LIBS)
 libfreeswitch_la_DEPENDENCIES = $(BUILT_SOURCES)
-nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h
+nodist_libfreeswitch_la_SOURCES = src/include/switch_version.h src/include/switch_swigable_cpp.h src/include/switch_frame.h
 
 MOD_LINK       = $(BASE)/libfreeswitch.la
 
@@ -207,7 +207,7 @@ src/include/switch_swigable_cpp.h: src/include/switch_cpp.h
 libs/libedit/src/.libs/libedit.a:
 	cd libs/libedit && $(MAKE)
 
-$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool modules.conf
+$(libfreeswitch_la_SOURCES): $(CORE_LIBS) $(switch_builddir)/quiet_libtool modules.conf 
 
 $(switch_builddir)/quiet_libtool: $(switch_builddir)/libtool
 	@cat libtool | sed -e 's|$$show "$$command"|if test -z "$$suppress_output" ; then $$show "Compiling $$srcfile ..." ; fi|' > quiet_libtool
