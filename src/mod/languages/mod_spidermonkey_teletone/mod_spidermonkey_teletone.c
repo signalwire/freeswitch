@@ -234,6 +234,7 @@ static JSBool teletone_generate(JSContext * cx, JSObject * obj, uintN argc, jsva
 		session = tto->session;
 		write_frame.codec = &tto->codec;
 		write_frame.data = fdata;
+		write_frame.buflen = sizeof(fdata);
 
 		channel = switch_core_session_get_channel(session);
 

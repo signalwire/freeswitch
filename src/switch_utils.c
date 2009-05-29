@@ -82,12 +82,19 @@ SWITCH_DECLARE(switch_status_t) switch_frame_dup(switch_frame_t *orig, switch_fr
 {
 	switch_frame_t *new_frame;
 
+	if (!orig) {
+		return SWITCH_STATUS_FALSE;
+	}
+
+	switch_assert(orig->buflen);
+
 	new_frame = malloc(sizeof(*new_frame));
 
 	switch_assert(new_frame);
 	
 	*new_frame = *orig;
 	switch_set_flag(new_frame, SFF_DYNAMIC);
+
 	new_frame->data = malloc(new_frame->buflen);
 	switch_assert(new_frame->data);
 
@@ -104,8 +111,8 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 	if (!frame || !*frame || !switch_test_flag((*frame), SFF_DYNAMIC)) {
 		return SWITCH_STATUS_FALSE;
 	}
-
-	free((*frame)->data);
+	
+	switch_safe_free((*frame)->data);
 	free(*frame);
 	*frame = NULL;
 

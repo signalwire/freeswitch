@@ -731,6 +731,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_gentones(switch_core_session_t *sessi
 	memset(&ts, 0, sizeof(ts));
 	write_frame.codec = &write_codec;
 	write_frame.data = data;
+	write_frame.buflen = sizeof(data);
 
 	switch_buffer_create_dynamic(&audio_buffer, 512, 1024, 0);
 	teletone_init_session(&ts, 0, teletone_handler, audio_buffer);
