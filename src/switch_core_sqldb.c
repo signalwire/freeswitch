@@ -387,6 +387,18 @@ static void core_event_handler(switch_event_t *event)
 			}
 			break;
 		}
+	case SWITCH_EVENT_CALL_SECURE:
+		{
+			const char *type = switch_event_get_header_nil(event, "secure_type");
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Secure Type: %s\n", type);
+			if (switch_strlen_zero(type)) {
+				break;
+			}
+			sql = switch_mprintf("update channels set secure='%s' where uuid='%s'",
+								 type,
+								 switch_event_get_header_nil(event, "caller-unique-id"));
+			break;
+		}
 	default:
 		break;
 	}
@@ -454,7 +466,8 @@ void switch_core_sqldb_start(switch_memory_pool_t *pool)
 			"   read_codec  VARCHAR(255),\n" 
 			"   read_rate  VARCHAR(255),\n" 
 			"   write_codec  VARCHAR(255),\n" 
-			"   write_rate  VARCHAR(255)\n" 
+			"   write_rate  VARCHAR(255),\n" 
+			"   secure VARCHAR(255)\n"
 			");\ncreate index uuindex on channels (uuid);\n";
 		char create_calls_sql[] =
 			"CREATE TABLE calls (\n"

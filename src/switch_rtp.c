@@ -437,6 +437,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 	switch_rtp_t *rtp_session = zrtp_stream_get_userdata(stream);
 	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
 	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_event_t *fsevent = NULL;
 	
 	zrtp_session_info_t zrtp_session_info;
 
@@ -459,6 +460,12 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 					
 				}
 			}
+		}
+		if (switch_event_create(&fsevent, SWITCH_EVENT_CALL_SECURE) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "zrtp:%s:%s",
+									rtp_session->zrtp_session->sas1.buffer, rtp_session->zrtp_session->sas2.buffer);
+			switch_event_add_header_string(fsevent, SWITCH_STACK_BOTTOM, "caller-unique-id", switch_channel_get_uuid(channel));
+			switch_event_fire(&fsevent);
 		}
 		break;
 
@@ -909,6 +916,9 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 	srtp_policy_t *policy;
 	err_status_t stat;
 	switch_status_t status = SWITCH_STATUS_SUCCESS;
+	switch_core_session_t *session = switch_core_memory_pool_get_data(rtp_session->pool, "__session");
+	switch_channel_t *channel = switch_core_session_get_channel(session);
+	switch_event_t *fsevent = NULL;
 
 	if (direction >= SWITCH_RTP_CRYPTO_MAX || keylen > SWITCH_RTP_MAX_CRYPTO_LEN) {
 		return SWITCH_STATUS_FALSE;
@@ -995,6 +1005,13 @@ SWITCH_DECLARE(switch_status_t) switch_rtp_add_crypto_key(switch_rtp_t *rtp_sess
 		abort();
 		break;
 	}
+
+	if (switch_event_create(&fsevent, SWITCH_EVENT_CALL_SECURE) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header(fsevent, SWITCH_STACK_BOTTOM, "secure_type", "srtp:%s", switch_channel_get_variable(channel, "sip_has_crypto"));
+		switch_event_add_header_string(fsevent, SWITCH_STACK_BOTTOM, "caller-unique-id", switch_channel_get_uuid(channel));
+		switch_event_fire(&fsevent);
+	}
+
 
 	return SWITCH_STATUS_SUCCESS;
 }
