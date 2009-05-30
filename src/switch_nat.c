@@ -57,19 +57,20 @@ static int init_upnp (void)
 	struct UPNPDev * dev;
 	char * descXML;
 	int descXMLsize = 0;
-    const char * multicastif = 0;
-    const char * minissdpdpath = 0;
+	const char * multicastif = 0;
+	const char * minissdpdpath = 0;
 	int r = -2;
 
 	memset(&nat_globals.urls, 0, sizeof(struct UPNPUrls));
 	memset(&nat_globals.data, 0, sizeof(struct IGDdatas));
-	devlist = upnpDiscover(2000, multicastif, minissdpdpath, 0);
+	devlist = upnpDiscover(1000, multicastif, minissdpdpath, 0);
 
 	if (devlist) {
 		dev = devlist;
 		while (dev) {
-			if (strstr (dev->st, "InternetGatewayDevice"))
+			if (strstr (dev->st, "InternetGatewayDevice")) {
 				break;
+			}
 			dev = dev->pNext;
 		}
 		if (!dev) {
