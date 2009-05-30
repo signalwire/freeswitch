@@ -181,13 +181,15 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
 		r = readnatpmpresponseorretry(&nat_globals.natpmp, &response);
 	} while(r == NATPMP_TRYAGAIN);
-	
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mapped public port %hu protocol %s to localport %hu\n",
-					  response.pnu.newportmapping.mappedpublicport,
-					  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
-					  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
-					  response.pnu.newportmapping.privateport);
-	status = SWITCH_STATUS_SUCCESS;
+
+	if (r == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mapped public port %hu protocol %s to localport %hu\n",
+						  response.pnu.newportmapping.mappedpublicport,
+						  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
+						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
+						  response.pnu.newportmapping.privateport);
+		status = SWITCH_STATUS_SUCCESS;
+	}
 
 	return status;
 }
@@ -211,6 +213,7 @@ static switch_status_t switch_nat_add_mapping_upnp(switch_port_t port, switch_na
 						  (proto == SWITCH_NAT_TCP) ? "TCP" : (proto == SWITCH_NAT_UDP ? "UDP" : "UNKNOWN"), port_str);
 						  status = SWITCH_STATUS_SUCCESS;
 	}
+
 	return status;
 }
 
@@ -235,13 +238,15 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
 		r = readnatpmpresponseorretry(&nat_globals.natpmp, &response);
 	} while(r == NATPMP_TRYAGAIN);
-		
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unmapped public port %hu protocol %s to localport %hu\n",
-					  response.pnu.newportmapping.mappedpublicport,
-					  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
-					  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
-					  response.pnu.newportmapping.privateport);
-	status = SWITCH_STATUS_SUCCESS;
+
+	if (r == 0) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unmapped public port %hu protocol %s to localport %hu\n",
+						  response.pnu.newportmapping.mappedpublicport,
+						  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
+						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
+						  response.pnu.newportmapping.privateport);
+		status = SWITCH_STATUS_SUCCESS;
+	}
 
 	return status;
 }
