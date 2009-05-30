@@ -187,7 +187,8 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 					  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
 					  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
 					  response.pnu.newportmapping.privateport);
-	
+	status = SWITCH_STATUS_SUCCESS;
+
 	return status;
 }
 
@@ -240,6 +241,7 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 					  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
 					  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
 					  response.pnu.newportmapping.privateport);
+	status = SWITCH_STATUS_SUCCESS;
 
 	return status;
 }
@@ -248,7 +250,6 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char port_str[16];
-	int r = -1;
 
 	sprintf(port_str, "%d", port);
 
@@ -258,11 +259,10 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 		UPNP_DeletePortMapping(nat_globals.urls.controlURL, nat_globals.data.servicetype, port_str, "UDP", 0);
 	}
 
-	if (r == 0) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "mapped public port %s protocol %s to localport %s\n", port_str,
-						  (proto == SWITCH_NAT_TCP) ? "TCP" : (proto == SWITCH_NAT_UDP ? "UDP" : "UNKNOWN"), port_str);
-						  status = SWITCH_STATUS_SUCCESS;
-	}
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unmapped public port %s protocol %s to localport %s\n", port_str,
+					  (proto == SWITCH_NAT_TCP) ? "TCP" : (proto == SWITCH_NAT_UDP ? "UDP" : "UNKNOWN"), port_str);
+	status = SWITCH_STATUS_SUCCESS;
+
 	return status;
 }
 
