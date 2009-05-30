@@ -468,7 +468,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 			switch_event_fire(&fsevent);
 		}
 		break;
-
+#if 0
 	case ZRTP_EVENT_NO_ZRTP_QUICK:
 		{
 			if (rtp_session->zrtp_ctx != NULL) {
@@ -476,7 +476,7 @@ static void zrtp_event_callback(zrtp_stream_t *stream, unsigned event)
 			}
 		}
 		break;
-
+#endif
 	case ZRTP_EVENT_IS_CLIENT_ENROLLMENT:
 		{
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Enrolled complete!\n");
