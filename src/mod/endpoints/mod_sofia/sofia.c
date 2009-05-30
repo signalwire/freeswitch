@@ -494,6 +494,8 @@ void sofia_event_callback(nua_event_t event,
 	case nua_i_info:
 		sofia_handle_sip_i_info(nua, profile, nh, session, sip, tags);
 		break;
+	case nua_r_update:
+		break;
 	case nua_r_refer:
 		break;
 	case nua_i_refer:
