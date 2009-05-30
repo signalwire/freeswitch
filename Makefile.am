@@ -91,6 +91,7 @@ src/switch_ivr_play_say.c \
 src/switch_ivr_menu.c \
 src/switch_ivr.c \
 src/switch_stun.c\
+src/switch_nat.c\
 src/switch_log.c\
 src/switch_xml.c\
 src/switch_xml_config.c\
@@ -142,6 +143,7 @@ src/include/switch_types.h\
 src/include/switch_utils.h\
 src/include/switch_rtp.h\
 src/include/switch_stun.h\
+src/include/switch_nat.h\
 src/include/switch_log.h\
 src/include/switch_xml.h\
 src/include/switch_xml_config.h\

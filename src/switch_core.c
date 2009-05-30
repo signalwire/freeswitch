@@ -37,6 +37,7 @@
 
 #include <switch.h>
 #include <switch_stun.h>
+#include <switch_nat.h>
 #include <switch_version.h>
 #include "private/switch_core_pvt.h"
 #ifndef WIN32
@@ -1160,6 +1161,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_scheduler_task_thread_start();
 
 	switch_rtp_init(runtime.memory_pool);
+	switch_nat_init(runtime.memory_pool);
 
 	runtime.running = 1;
 
@@ -1558,6 +1560,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_destroy(void)
 	switch_scheduler_task_thread_stop();
 	
 	switch_rtp_shutdown();
+	switch_nat_shutdown();
 	switch_xml_destroy();
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CONSOLE, "Closing Event Engine.\n");
