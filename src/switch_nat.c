@@ -53,12 +53,12 @@ static nat_globals_t nat_globals;
 
 static int init_upnp (void)
 {
-	struct UPNPDev * devlist;
-	struct UPNPDev * dev;
+	struct UPNPDev *devlist;
+	struct UPNPDev *dev;
 	char * descXML;
 	int descXMLsize = 0;
-	const char * multicastif = 0;
-	const char * minissdpdpath = 0;
+	const char *multicastif = 0;
+	const char *minissdpdpath = 0;
 	int r = -2;
 
 	memset(&nat_globals.urls, 0, sizeof(struct UPNPUrls));
@@ -157,7 +157,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 		switch_core_set_variable("nat_private_addr", nat_globals.pvt_addr);
 		switch_core_set_variable("nat_type", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No NAT Detected!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No PMP or uPNP NAT device detected!\n");
 	}
 }
 
