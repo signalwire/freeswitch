@@ -62,7 +62,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool);
 SWITCH_DECLARE(void) switch_nat_shutdown(void);
 
 SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto);
-SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto);
+SWITCH_DECLARE(switch_status_t) switch_nat_del_mapping(switch_port_t port, switch_nat_ip_proto_t proto);
 
 
 SWITCH_END_EXTERN_C
