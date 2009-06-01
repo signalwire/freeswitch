@@ -90,7 +90,7 @@ static int once;
 #include "tport_tls.h"
 
 char const tls_version[] = OPENSSL_VERSION_TEXT;
-int tls_ex_data_idx = -1; /* see SSL_get_ex_new_index(3ssl) */
+static int tls_ex_data_idx = -1; /* see SSL_get_ex_new_index(3ssl) */
 
 static void
 tls_init_once(void)
