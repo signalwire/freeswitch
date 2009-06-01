@@ -44,6 +44,53 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load);
 SWITCH_MODULE_SHUTDOWN_FUNCTION(mod_commands_shutdown);
 SWITCH_MODULE_DEFINITION(mod_commands, mod_commands_load, mod_commands_shutdown, NULL);
 
+SWITCH_STANDARD_API(nat_map_function)
+{
+	int argc;
+	char *mydata = NULL, *argv[4];
+	switch_nat_ip_proto_t proto = SWITCH_NAT_UDP;
+
+	if (!cmd) {
+		goto error;
+	}
+
+	mydata = strdup(cmd);
+	switch_assert(mydata);
+
+	argc = switch_separate_string(mydata, ' ', argv, (sizeof(argv) / sizeof(argv[0])));
+
+	if (argc < 3) {
+		goto error;
+	}
+
+	if (argv[2] && switch_stristr("tcp", argv[2])) {
+		proto = SWITCH_NAT_TCP;
+	} else if (argv[2] && switch_stristr("udp", argv[2])) {
+		proto = SWITCH_NAT_UDP;
+	}
+
+	if (argv[0] && switch_stristr("add", argv[0])) {
+		if (switch_nat_add_mapping(atoi(argv[1]), proto) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "true");
+			goto ok;
+		}
+	} else if (argv[0] && switch_stristr("del", argv[0])) {
+		if (switch_nat_del_mapping(atoi(argv[1]), proto) == SWITCH_STATUS_SUCCESS) {
+			stream->write_function(stream, "true");
+			goto ok;
+		}
+	}
+
+  error:
+
+	stream->write_function(stream, "false");
+
+  ok:
+
+	switch_safe_free(mydata);
+
+	return SWITCH_STATUS_SUCCESS;
+}
 
 SWITCH_STANDARD_API(time_test_function)
 {
@@ -3483,6 +3530,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_commands_load)
 	SWITCH_ADD_API(commands_api_interface, "stun", "stun", stun_function, "<stun_server>[:port]");
 	SWITCH_ADD_API(commands_api_interface, "system", "Execute a system command", system_function, SYSTEM_SYNTAX);
 	SWITCH_ADD_API(commands_api_interface, "time_test", "time_test", time_test_function, "<mss>");
+	SWITCH_ADD_API(commands_api_interface, "nat_map", "nat_map", nat_map_function, "[add|del] <port> [tcp|udp]");
 
 	/* indicate that the module should continue to be loaded */
 	return SWITCH_STATUS_NOUNLOAD;
