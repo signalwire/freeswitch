@@ -850,6 +850,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -871,6 +872,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -896,6 +898,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -917,6 +920,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -942,6 +946,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -963,6 +968,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -988,6 +994,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127;4389;4706"
 						/>
 					</FileConfiguration>
@@ -1009,6 +1016,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127;4389;4706"
 						/>
 					</FileConfiguration>
@@ -1034,6 +1042,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1055,6 +1064,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1080,6 +1090,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1101,6 +1112,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1126,6 +1138,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1147,6 +1160,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1172,6 +1186,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1193,6 +1208,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1218,6 +1234,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1239,6 +1256,7 @@
 						<Tool
 							Name="VCCLCompilerTool"
 							PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;STATICLIB"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100;4127"
 						/>
 					</FileConfiguration>
@@ -1266,6 +1284,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100"
 						/>
 					</FileConfiguration>
@@ -1285,6 +1304,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100"
 						/>
 					</FileConfiguration>
@@ -1308,6 +1328,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100"
 						/>
 					</FileConfiguration>
@@ -1327,6 +1348,7 @@
 						>
 						<Tool
 							Name="VCCLCompilerTool"
+							UsePrecompiledHeader="0"
 							DisableSpecificWarnings="4100"
 						/>
 					</FileConfiguration>
