@@ -1128,8 +1128,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.flags = flags;
 	runtime.sps_total = 30;
 
-	
-
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET6);
@@ -1138,6 +1136,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_core_set_serial();
 
 	switch_event_init(runtime.memory_pool);
+
+	switch_nat_init(runtime.memory_pool);
 
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
@@ -1161,7 +1161,6 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	switch_scheduler_task_thread_start();
 
 	switch_rtp_init(runtime.memory_pool);
-	switch_nat_init(runtime.memory_pool);
 
 	runtime.running = 1;
 
