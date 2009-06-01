@@ -7196,6 +7196,7 @@ nta_outgoing_t *nta_outgoing_tcreate(nta_leg_t *leg,
   sip_t *sip;
   nta_outgoing_t *orq = NULL;
   ta_list ta;
+  tagi_t const *tagi;
 
   if (leg == NULL)
     return NULL;
@@ -7209,8 +7210,15 @@ nta_outgoing_t *nta_outgoing_tcreate(nta_leg_t *leg,
 
   ta_start(ta, tag, value);
 
-  if (sip_add_tl(msg, sip, ta_tags(ta)) < 0)
-    ;
+  tagi = ta_args(ta);
+
+  if (sip_add_tagis(msg, sip, &tagi) < 0) {
+    if (tagi && tagi->t_tag) {
+      tag_type_t t = tagi->t_tag;
+      SU_DEBUG_5(("%s(): bad tag %s::%s\n", __func__,
+		  t->tt_ns ? t->tt_ns : "", t->tt_name ? t->tt_name : ""));
+    }
+  }
   else if (route_url == NULL && leg->leg_route &&
 	   leg->leg_loose_route &&
 	   !(route_url = (url_string_t *)leg->leg_route->r_url))
