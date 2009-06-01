@@ -431,14 +431,14 @@
 		<prompt phrase="Почтовый ящик переполнен. Пожалуйста перезвоните позже" filename="vm-mailbox_full.wav"/><!--  That mailbox is full. Please try your call again later.  -->
 	</voicemail>
 	<conference>
-		<prompt phrase="NULL" filename="conf-ack type.wav"/><!--    -->
-		<prompt phrase="NULL" filename="conf-nack type.wav"/><!--    -->
+		<prompt phrase="NULL" filename="conf-ack.wav" type="tone"/><!--    -->
+		<prompt phrase="NULL" filename="conf-nack.wav" type="tone"/><!--    -->
 		<prompt phrase="Ваш микрофон отключен" filename="conf-muted.wav"/><!-- You are now muted.   -->
 		<prompt phrase="Ваш микрофон включён" filename="conf-unmuted.wav"/><!-- You are now unmuted.   -->
 		<prompt phrase="Вы единственный участник конференции" filename="conf-alone.wav"/><!-- You are currently the only person in this conference.   -->
-		<prompt phrase="NULL" filename="conf-perpetual type.wav"/><!--    -->
-		<prompt phrase="NULL" filename="conf-enter type.wav"/><!--    -->
-		<prompt phrase="NULL" filename="conf-exit type.wav"/><!--    -->
+		<prompt phrase="NULL" filename="conf-perpetual.wav" type="tone"/><!--    -->
+		<prompt phrase="NULL" filename="conf-enter.wav" type="tone"/><!--    -->
+		<prompt phrase="NULL" filename="conf-exit.wav" type="tone"/><!--    -->
 		<prompt phrase="Вы были отключены от конференции" filename="conf-kicked.wav"/><!--  You have been kicked from this conference.  -->
 		<prompt phrase="Эта конференция заблокирована" filename="conf-locked.wav"/><!--  This conference is locked.  -->
 		<prompt phrase="Конференция заблокирована" filename="conf-is-locked.wav"/><!--  The conference is now locked.  -->
