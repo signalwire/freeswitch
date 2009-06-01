@@ -70,12 +70,12 @@ SWITCH_STANDARD_API(nat_map_function)
 	}
 
 	if (argv[0] && switch_stristr("add", argv[0])) {
-		if (switch_nat_add_mapping(atoi(argv[1]), proto) == SWITCH_STATUS_SUCCESS) {
+		if (switch_nat_add_mapping((switch_port_t)atoi(argv[1]), proto) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "true");
 			goto ok;
 		}
 	} else if (argv[0] && switch_stristr("del", argv[0])) {
-		if (switch_nat_del_mapping(atoi(argv[1]), proto) == SWITCH_STATUS_SUCCESS) {
+		if (switch_nat_del_mapping((switch_port_t)atoi(argv[1]), proto) == SWITCH_STATUS_SUCCESS) {
 			stream->write_function(stream, "true");
 			goto ok;
 		}
