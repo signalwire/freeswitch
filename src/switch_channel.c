@@ -1359,6 +1359,7 @@ SWITCH_DECLARE(void) switch_channel_event_set_extended_data(switch_channel_t *ch
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_PROGRESS_MEDIA ||
 		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP ||
+		event->event_id == SWITCH_EVENT_CHANNEL_HANGUP_COMPLETE ||
 		event->event_id == SWITCH_EVENT_REQUEST_PARAMS ||
 		event->event_id == SWITCH_EVENT_CHANNEL_DATA ||
 		event->event_id == SWITCH_EVENT_CHANNEL_EXECUTE_COMPLETE ||
