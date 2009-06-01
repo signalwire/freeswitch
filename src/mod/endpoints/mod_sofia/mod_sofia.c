@@ -179,21 +179,15 @@ char * generate_pai_str(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	const char *callee_name = NULL, *callee_number = NULL;
-	const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+	char *pai = NULL;
 
-	if (ua && switch_stristr("polycom", ua)) {
-		if (!(callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name"))) {
-			callee_name = "";
-		}
-
+	if ((callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name"))) {
 		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number"))) {
 			callee_number = tech_pvt->caller_profile->destination_number;
 		}
-
-		return switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
+		pai = switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
 	}
-
-	return NULL;
+	return pai;
 }
 
 /* map QSIG cause codes to SIP from RFC4497 section 8.4.1 */
