@@ -5072,7 +5072,7 @@ static void sofia_info_send_sipfrag(switch_core_session_t *aleg, switch_core_ses
 					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", acp->caller_id_name, acp->caller_id_number);
 				}
 				nua_info(b_tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
-			} else {
+			} else if (ua && switch_stristr("polycom", ua)) {
 				if (switch_strlen_zero(acp->caller_id_name)) {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", acp->caller_id_number, acp->caller_id_number);
 				} else {

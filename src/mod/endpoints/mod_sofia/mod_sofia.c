@@ -179,16 +179,21 @@ char * generate_pai_str(switch_core_session_t *session)
 {
 	private_object_t *tech_pvt = (private_object_t *) switch_core_session_get_private(session);
 	const char *callee_name = NULL, *callee_number = NULL;
+	const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
 
-	if (!(callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name"))) {
-		callee_name = "";
+	if (ua && switch_stristr("polycom", ua)) {
+		if (!(callee_name = switch_channel_get_variable(tech_pvt->channel, "callee_id_name"))) {
+			callee_name = "";
+		}
+
+		if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number"))) {
+			callee_number = tech_pvt->caller_profile->destination_number;
+		}
+
+		return switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
 	}
 
-	if (!(callee_number = switch_channel_get_variable(tech_pvt->channel, "callee_id_number"))) {
-		callee_number = tech_pvt->caller_profile->destination_number;
-	}
-
-	return switch_core_session_sprintf(tech_pvt->session, "P-Asserted-Identity: \"%s\" <%s>", callee_name, callee_number);
+	return NULL;
 }
 
 /* map QSIG cause codes to SIP from RFC4497 section 8.4.1 */
@@ -1258,7 +1263,7 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 				if (ua && switch_stristr("snom", ua)) {
 					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
 					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
-				} else {
+				} else if (ua && switch_stristr("polycom", ua)) {
 					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
 					nua_update(tech_pvt->nh,
 							   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
@@ -1274,8 +1279,17 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 			sofia_glue_do_invite(session);
 			if (!switch_strlen_zero(msg->string_arg)) {
 				char message[256] = "";
-				snprintf(message, sizeof(message), "From:\r\nTo: \"%s\"\r\n", msg->string_arg);
-				nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+				const char *ua = switch_channel_get_variable(tech_pvt->channel, "sip_user_agent");
+
+				if (ua && switch_stristr("snom", ua)) {
+					snprintf(message, sizeof(message), "From:\r\nTo: \"%s\" %s\r\n", msg->string_arg, tech_pvt->caller_profile->destination_number);
+					nua_info(tech_pvt->nh, SIPTAG_CONTENT_TYPE_STR("message/sipfrag"), SIPTAG_PAYLOAD_STR(message), TAG_END());
+				} else if (ua && switch_stristr("polycom", ua)) {
+					snprintf(message, sizeof(message), "P-Asserted-Identity: \"%s\" <%s>", msg->string_arg, tech_pvt->caller_profile->destination_number);
+					nua_update(tech_pvt->nh,
+							   TAG_IF(!switch_strlen_zero_buf(message), SIPTAG_HEADER_STR(message)),
+							   TAG_END());
+				}
 			}
 		}
 		break;
