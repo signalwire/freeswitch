@@ -967,9 +967,17 @@ tag_typedef_t ntatag_pass_100 = BOOLTAG_TYPEDEF(pass_100);
  * to a request within half of the SIP T2 (the default value for T2 is 4000
  * milliseconds, so the extra <i>100 Trying</i> would be sent after 2 seconds).
  *
+ * At agent level, this option applies to retransmissions of both non-INVITE
+ * and INVITE transactions.
+ *
+ * At incoming request level, this option can disable sending the 100 Trying for
+ * both retransmissions (if set at agent level) and N1 firings, for just a given
+ * incoming request.
+ *
  * @par Used with
  *    nua_create(), nua_set_params(),
- *    nta_agent_create(), nta_agent_set_params()
+ *    nta_agent_create(), nta_agent_set_params(),
+ *    nta_incoming_set_params()
  *
  * @par Parameter type
  *    boolean: true (non-zero or non-NULL pointer)
@@ -979,9 +987,12 @@ tag_typedef_t ntatag_pass_100 = BOOLTAG_TYPEDEF(pass_100);
  *    - true - send extra 100 Trying if application does not respond
  *    - false - do not send 100 Trying
  *
- * @par Default Value
+ * @par Default Value at Agent level
  *    - 0 (false, do not respond with 100 Trying to retransmissions)
-
+ *
+ * @par Default Value at incoming transaction level
+ *    - 1 (true, respond with 100 Trying to retransmissions and when N1 fired)
+ *
  * @sa @RFC4320, NTATAG_PASS_408(), NTATAG_TIMEOUT_408()
  */
 tag_typedef_t ntatag_extra_100 = BOOLTAG_TYPEDEF(extra_100);

@@ -440,6 +440,7 @@ struct nta_incoming_s
   unsigned irq_reliable_tp:1;	/**< Transport is reliable */
   unsigned irq_sigcomp_zap:1;	/**< Reset SigComp */
   unsigned irq_must_100rel:1;	/**< 100rel is required */
+  unsigned irq_extra_100:1;	/**< 100 Trying should be sent */
   unsigned irq_tag_set:1;	/**< Tag is not from request */
   unsigned :0;
 
@@ -5274,6 +5275,7 @@ nta_incoming_t *incoming_create(nta_agent_t *agent,
     }
     irq->irq_branch  = sip->sip_via->v_branch;
     irq->irq_reliable_tp = tport_is_reliable(tport);
+    irq->irq_extra_100 = 1; /* Sending extra 100 trying true by default */
 
     if (sip->sip_timestamp)
       irq->irq_timestamp = sip_timestamp_copy(home, sip->sip_timestamp);
@@ -6016,8 +6018,9 @@ incoming_recv(nta_incoming_t *irq, msg_t *msg, sip_t *sip, tport_t *tport)
 		sip->sip_request->rq_method_name, irq->irq_status));
     incoming_retransmit_reply(irq, tport);
   }
-  else if (irq->irq_agent->sa_extra_100) {
-    /* Answer automatically with 100 Trying */
+  else if (irq->irq_agent->sa_extra_100 &&
+           irq->irq_extra_100) {
+    /* Agent and Irq configured to answer automatically with 100 Trying */
     if (irq->irq_method == sip_method_invite ||
 	/*
 	 * Send 100 trying to non-invite if at least half of T2 has expired
@@ -6184,11 +6187,11 @@ incoming_call_callback(nta_incoming_t *irq, msg_t *msg, sip_t *sip)
 
 /**Set server transaction parameters.
  *
- * Sets the server transaction parameters. The parameters determine the way
+ * Sets the server transaction parameters. Among others, parameters determine the way
  * the SigComp compression is handled.
  *
  * @TAGS
- * NTATAG_COMP(), and NTATAG_SIGCOMP_CLOSE().
+ * NTATAG_COMP(), NTATAG_SIGCOMP_CLOSE() and NTATAG_EXTRA_100().
  *
  * @retval number of set parameters when succesful
  * @retval -1 upon an error
@@ -6234,6 +6237,9 @@ int incoming_set_params(nta_incoming_t *irq, tagi_t const *tags)
 
     else if (tptag_compartment == tt)
       cc = (void *)t->t_value, retval++;
+
+    else if (ntatag_extra_100 == tt)
+      irq->irq_extra_100 = t->t_value != 0, retval++;
   }
 
   if (cc != NONE) {
@@ -6848,9 +6854,16 @@ static void incoming_timer(nta_agent_t *sa)
     }
     else {
       /* Timer N1 */
-      SU_DEBUG_5(("nta: timer N1 fired, sending %u %s\n", SIP_100_TRYING));
       incoming_reset_timer(irq);
-      nta_incoming_treply(irq, SIP_100_TRYING, TAG_END());
+
+      if(irq->irq_extra_100) {
+        SU_DEBUG_5(("nta: timer N1 fired, sending %u %s\n", SIP_100_TRYING));
+        nta_incoming_treply(irq, SIP_100_TRYING, TAG_END());
+      }
+      else {
+        SU_DEBUG_5(("nta: timer N1 fired, but avoided sending %u %s\n",
+                    SIP_100_TRYING));
+      }
     }
   }
 
