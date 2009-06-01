@@ -772,8 +772,8 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		conference->count--;
 
 		if (switch_test_flag(member, MFLAG_ENDCONF)) {
-			if (!--member->conference->end_count) {
-			switch_set_flag_locked(member->conference, CFLAG_DESTRUCT);
+			if (!--conference->end_count) {
+				switch_set_flag_locked(conference, CFLAG_DESTRUCT);
 			}
 		}
 
