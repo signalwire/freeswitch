@@ -279,6 +279,7 @@ typedef struct conference_obj {
 	int video_running;
 	uint32_t eflags;
 	uint32_t verbose_events;
+	int end_count;
 } conference_obj_t;
 
 /* Relationship with another member */
@@ -609,6 +610,11 @@ static switch_status_t conference_add_member(conference_obj_t *conference, confe
 
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
 		conference->count++;
+
+		if (switch_test_flag(member, MFLAG_ENDCONF)) {
+			if (conference->end_count++);
+		}
+
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
@@ -756,10 +762,6 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 		switch_core_speech_close(&member->lsh, &flags);
 	}
 
-	if (switch_test_flag(member, MFLAG_ENDCONF)) {
-		switch_set_flag_locked(member->conference, CFLAG_DESTRUCT);
-	}
-
 	if (member == member->conference->floor_holder) {
 		member->conference->floor_holder = NULL;
 	}
@@ -768,6 +770,14 @@ static switch_status_t conference_del_member(conference_obj_t *conference, confe
 
 	if (!switch_test_flag(member, MFLAG_NOCHANNEL)) {
 		conference->count--;
+
+		if (switch_test_flag(member, MFLAG_ENDCONF)) {
+			if (!--member->conference->end_count) {
+			switch_set_flag_locked(member->conference, CFLAG_DESTRUCT);
+			}
+		}
+
+
 		if (switch_event_create(&event, SWITCH_EVENT_PRESENCE_IN) == SWITCH_STATUS_SUCCESS) {
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
 			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
