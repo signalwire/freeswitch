@@ -17,7 +17,11 @@
 #define __GETGATEWAY_H__
 
 #ifdef WIN32
+#ifdef _MSC_VER
+typedef unsigned __int32 uint32_t;
+#else
 #include <stdint.h>
+#endif
 #define in_addr_t uint32_t
 #endif
 #include "declspec.h"

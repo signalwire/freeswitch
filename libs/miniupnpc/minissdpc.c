@@ -8,7 +8,15 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef _MSC_VER
+#include <io.h>
+typedef intptr_t ssize_t;
+#define read _read
+#define write _write
+#define close _close
+#else
 #include <unistd.h>
+#endif
 #include <sys/types.h>
 #ifdef WIN32
 #include <winsock2.h>
@@ -27,6 +35,10 @@
 struct UPNPDev *
 getDevicesFromMiniSSDPD(const char * devtype, const char * socketpath)
 {
+#ifdef _MSC_VER
+	/* sockaddr_un not supported on msvc*/
+	return NULL;
+#else
 	struct UPNPDev * tmp;
 	struct UPNPDev * devlist = NULL;
 	unsigned char buffer[2048];
@@ -105,5 +117,6 @@ getDevicesFromMiniSSDPD(const char * devtype, const char * socketpath)
 	}
 	close(s);
 	return devlist;
+#endif
 }
 

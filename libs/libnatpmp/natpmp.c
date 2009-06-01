@@ -16,13 +16,28 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 #include <string.h>
 #include <time.h>
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
 #ifdef WIN32
 #include <winsock2.h>
 #include <Ws2tcpip.h>
 #include <io.h>
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #define ECONNREFUSED WSAECONNREFUSED
+
+static int gettimeofday(struct timeval* p, void* tz /* IGNORED */) {
+  union {
+   long long ns100; /*time since 1 Jan 1601 in 100ns units */
+   FILETIME ft;
+  } _now;
+
+  GetSystemTimeAsFileTime( &(_now.ft) );
+  p->tv_usec=(long)((_now.ns100 / 10LL) % 1000000LL );
+  p->tv_sec= (long)((_now.ns100-(116444736000000000LL))/10000000LL);
+  return 0;
+}
+
 #else
 #include <errno.h>
 #include <unistd.h>
@@ -150,7 +165,7 @@ int sendnewportmappingrequest(natpmp_t * p, int protocol,
 	if(!p || (protocol!=NATPMP_PROTOCOL_TCP && protocol!=NATPMP_PROTOCOL_UDP))
 		return NATPMP_ERR_INVALIDARGS;
 	p->pending_request[0] = 0;
-	p->pending_request[1] = protocol;
+	p->pending_request[1] = (char)protocol;
 	p->pending_request[2] = 0;
 	p->pending_request[3] = 0;
 	*((uint16_t *)(p->pending_request + 4)) = htons(privateport);
@@ -162,7 +177,7 @@ int sendnewportmappingrequest(natpmp_t * p, int protocol,
 
 int readnatpmpresponse(natpmp_t * p, natpmpresp_t * response)
 {
-	unsigned char buf[16];
+	char buf[16];
 	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
 	int n;

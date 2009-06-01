@@ -18,7 +18,9 @@
 #ifndef WIN32
 #include <netinet/in.h>
 #endif
+#ifndef _MSC_VER
 #include <sys/param.h>
+#endif
 /* There is no portable method to get the default route gateway.
  * So below are three differents functions implementing this.
  * Parsing /proc/net/route is for linux.
@@ -271,10 +273,10 @@ int getdefaultgateway(in_addr_t * addr)
 	DWORD numSubKeys = 0;
 	TCHAR keyName[MAX_KEY_LENGTH];
 	DWORD keyNameLength = MAX_KEY_LENGTH;
-	TCHAR keyValue[MAX_VALUE_LENGTH];
+	BYTE keyValue[MAX_VALUE_LENGTH];
 	DWORD keyValueLength = MAX_VALUE_LENGTH;
 	DWORD keyValueType = REG_SZ;
-	TCHAR gatewayValue[MAX_VALUE_LENGTH];
+	BYTE gatewayValue[MAX_VALUE_LENGTH];
 	DWORD gatewayValueLength = MAX_VALUE_LENGTH;
 	DWORD gatewayValueType = REG_MULTI_SZ;
 	int done = 0;
@@ -369,7 +371,7 @@ int getdefaultgateway(in_addr_t * addr)
 				{
 					//printf("keyValue: %s\n", keyValue);
 					
-					if(RegOpenKeyEx(interfacesKey, keyValue, 0, KEY_READ, &interfaceKey) == ERROR_SUCCESS)
+					if(RegOpenKeyEx(interfacesKey, (char *)keyValue, 0, KEY_READ, &interfaceKey) == ERROR_SUCCESS)
 					{
 						gatewayValueLength = MAX_VALUE_LENGTH;
 						if(ERROR_SUCCESS == RegQueryValueEx(interfaceKey,         // Open registry key
@@ -413,7 +415,7 @@ int getdefaultgateway(in_addr_t * addr)
 	
 	if(done)
 	{
-		*addr = inet_addr(gatewayValue);
+		*addr = inet_addr((char *)gatewayValue);
 		return 0;
 	}
 	

@@ -21,10 +21,17 @@
 #define NATPMP_PORT (5351)
 
 #include <time.h>
+#ifndef _MSC_VER
 #include <sys/time.h>
+#endif
 #ifdef WIN32
 #include <winsock2.h>
+#ifdef _MSC_VER
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int16 uint16_t;
+#else
 #include <stdint.h>
+#endif
 #define in_addr_t uint32_t
 #include "declspec.h"
 #else
@@ -36,7 +43,7 @@ typedef struct {
 	int s;	/* socket */
 	in_addr_t gateway;	/* default gateway (IPv4) */
 	int has_pending_request;
-	unsigned char pending_request[12];
+	char pending_request[12];
 	int pending_request_len;
 	int try_number;
 	struct timeval retry_time;
