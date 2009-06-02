@@ -259,7 +259,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	
 	cid = "";
 	if (!switch_strlen_zero(cur_route->cid)) {
-		cid = switch_core_sprintf(pool, ",effective_caller_id_number=%s", 
+		cid = switch_core_sprintf(pool, ",origination_caller_id_number=%s", 
 								  do_cid(pool, cur_route->cid, caller_id));
 	}
 	
