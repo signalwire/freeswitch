@@ -268,6 +268,8 @@ struct mod_sofia_globals {
 	switch_event_node_t *roster_node;
 	switch_event_node_t *custom_node;
 	switch_event_node_t *mwi_node;
+	int guess_mask;
+	char guess_mask_str[16];
 	int debug_presence;
 	int auto_restart;
 };

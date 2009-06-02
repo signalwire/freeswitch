@@ -172,7 +172,7 @@ SWITCH_STANDARD_APP(bcast_function)
 		if ((var = switch_channel_get_variable(channel, "esf_broadcast_ip"))) {
 			esf_broadcast_ip = switch_core_session_strdup(session, var);
 		} else {
-			switch_find_local_ip(guess_ip, sizeof(guess_ip), AF_INET);
+			switch_find_local_ip(guess_ip, sizeof(guess_ip), NULL, AF_INET);
 			esf_broadcast_ip = guess_ip;
 		}
 

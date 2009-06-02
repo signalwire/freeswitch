@@ -144,7 +144,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 	memset(&nat_globals, 0, sizeof(nat_globals));
 	nat_globals.pool = pool;
 
-	switch_find_local_ip(nat_globals.pvt_addr, sizeof(nat_globals.pvt_addr), AF_INET);
+	switch_find_local_ip(nat_globals.pvt_addr, sizeof(nat_globals.pvt_addr), NULL, AF_INET);
 
 	init_pmp();
 

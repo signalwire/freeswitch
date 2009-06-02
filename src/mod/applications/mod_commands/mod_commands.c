@@ -608,7 +608,7 @@ SWITCH_STANDARD_API(stun_function)
 	if (pip) {
 		switch_copy_string(ip_buf, pip, sizeof(ip_buf));
 	} else {
-		switch_find_local_ip(ip_buf, sizeof(ip_buf), AF_INET);
+		switch_find_local_ip(ip_buf, sizeof(ip_buf), NULL, AF_INET);
 	}
 
 	switch_core_new_memory_pool(&pool);

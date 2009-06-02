@@ -171,7 +171,7 @@ void WINAPI ServiceCtrlHandler(DWORD control)
 /* the main service entry point */
 void WINAPI service_main(DWORD numArgs, char **args)
 {
-	switch_core_flag_t flags = SCF_USE_SQL;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
 	const char *err = NULL;		/* error value for return from freeswitch initialization */
 	/*  we have to initialize the service-specific stuff */
 	memset(&status, 0, sizeof(SERVICE_STATUS));
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 	int alt_dirs = 0;
 	int known_opt;
 	int high_prio = 0;
-	switch_core_flag_t flags = SCF_USE_SQL;
+	switch_core_flag_t flags = SCF_USE_SQL | SCF_USE_AUTO_NAT;
 	int ret = 0;
 	switch_status_t destroy_status;
 	switch_file_t *fd;
@@ -306,6 +306,7 @@ int main(int argc, char *argv[])
 		"\t-hp                    -- enable high priority settings\n"
 		"\t-vg                    -- run under valgrind\n"
 		"\t-nosql                 -- disable internal sql scoreboard\n"
+		"\t-nonat                 -- disable auto nat detection\n"
 		"\t-stop                  -- stop freeswitch\n"
 		"\t-nc                    -- do not output to a console and background\n"
 		"\t-c                     -- output to a console and stay in the foreground\n"
@@ -460,6 +461,11 @@ int main(int argc, char *argv[])
 
 		if (argv[x] && !strcmp(argv[x], "-nosql")) {
 			flags &= ~SCF_USE_SQL;
+			known_opt++;
+		}
+
+		if (argv[x] && !strcmp(argv[x], "-nonat")) {
+			flags &= ~SCF_USE_AUTO_NAT;
 			known_opt++;
 		}
 

@@ -574,8 +574,8 @@ SWITCH_DECLARE(switch_status_t) switch_event_init(switch_memory_pool_t *pool)
 
 	switch_threadattr_create(&thd_attr, pool);
 	gethostname(hostname, sizeof(hostname));
-	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), AF_INET);
-	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), AF_INET6);
+	switch_find_local_ip(guess_ip_v4, sizeof(guess_ip_v4), NULL, AF_INET);
+	switch_find_local_ip(guess_ip_v6, sizeof(guess_ip_v6), NULL, AF_INET6);
 
 
 	switch_queue_create(&EVENT_QUEUE[0], POOL_COUNT_MAX + 10, THRUNTIME_POOL);

@@ -44,6 +44,7 @@ struct switch_network_node {
 	uint32_t bits;
 	switch_bool_t ok;
 	char *token;
+	char *str;
 	struct switch_network_node *next;
 };
 typedef struct switch_network_node switch_network_node_t;
@@ -52,6 +53,7 @@ struct switch_network_list {
 	struct switch_network_node *node_head;
 	switch_bool_t default_type;
 	switch_memory_pool_t *pool;
+	char *name;
 };
 
 #ifndef WIN32
@@ -119,7 +121,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame)
 	return SWITCH_STATUS_SUCCESS;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool)
+SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type, switch_memory_pool_t *pool)
 {
 	switch_network_list_t *new_list;
 
@@ -130,6 +132,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t
 	new_list = switch_core_alloc(pool, sizeof(**list));
 	new_list->pool = pool;
 	new_list->default_type = default_type;
+	new_list->name = switch_core_strdup(new_list->pool, name);
 
 	*list = new_list;
 
@@ -176,6 +179,7 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_networ
 	node->mask = mask;
 	node->ok = ok;
 	node->bits = bits;
+	node->str = switch_core_strdup(list->pool, cidr_str);
 
 	if (!switch_strlen_zero(token)) {
 		node->token = switch_core_strdup(list->pool, token);
@@ -197,15 +201,16 @@ SWITCH_DECLARE(switch_status_t) switch_network_list_add_host_mask(switch_network
 
 	node = switch_core_alloc(list->pool, sizeof(*node));
 
-	node->ip = ip;
-	node->mask = mask;
+	node->ip = ntohl(ip);
+	node->mask = ntohl(mask);
 	node->ok = ok;
 
 	/* http://graphics.stanford.edu/~seander/bithacks.html */
 	mask = mask - ((mask >> 1) & 0x55555555);
 	mask = (mask & 0x33333333) + ((mask >> 2) & 0x33333333);
 	node->bits = (((mask + (mask >> 4)) & 0xF0F0F0F) * 0x1010101) >> 24;
-
+	node->str = switch_core_sprintf(list->pool, "%s:%s", host, mask_str);
+	
 	node->next = list->node_head;
 	list->node_head = node;
 
@@ -735,7 +740,33 @@ SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 	return NULL;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int family)
+#ifndef WIN32
+#include <ifaddrs.h>
+
+static int get_netmask(struct sockaddr_in *me, int *mask)
+{
+	struct ifaddrs *ifaddrs, *i = NULL;
+
+	if (getifaddrs(&ifaddrs) < 0) {
+		return -1;
+	}	
+
+	for(i = ifaddrs; i; i = i->ifa_next) {
+		struct sockaddr_in *s = (struct sockaddr_in *)i->ifa_addr;
+		struct sockaddr_in *m = (struct sockaddr_in *)i->ifa_netmask;
+
+		if (s->sin_addr.s_addr == me->sin_addr.s_addr) {
+			*mask = m->sin_addr.s_addr;
+			return 0;
+		}
+	}
+	
+
+	return -2;
+}
+#endif
+
+SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *mask, int family)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	char *base;
@@ -758,7 +789,6 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 	if (len < 16) {
 		return status;
 	}
-
 	
 	switch (family) {
 	case AF_INET:
@@ -788,6 +818,10 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 		if (address_info)
 			freeaddrinfo(address_info);
 		return status;
+	}
+
+	if (mask) {
+		*mask = 0;  // find the right one
 	}
 
 	closesocket(tmp_socket);
@@ -832,6 +866,10 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int fam
 			}
 
 			switch_copy_string(buf, get_addr(abuf, sizeof(abuf), (struct sockaddr*)&iface_out, sizeof(iface_out)), len);
+			if (mask) {
+				get_netmask((struct sockaddr_in*)&iface_out, mask);
+			}
+
 			status = SWITCH_STATUS_SUCCESS;
 		}
 		break;

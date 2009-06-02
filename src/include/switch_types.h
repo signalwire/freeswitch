@@ -232,7 +232,8 @@ typedef enum {
 	SCF_CRASH_PROT = (1 << 3),
 	SCF_VG = (1 << 4),
 	SCF_RESTART = (1 << 5),
-	SCF_SHUTDOWN_REQUESTED = (1 << 6)
+	SCF_SHUTDOWN_REQUESTED = (1 << 6),
+	SCF_USE_AUTO_NAT = (1 << 7)
 } switch_core_flag_enum_t;
 typedef uint32_t switch_core_flag_t;
 

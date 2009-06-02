@@ -1045,7 +1045,7 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 		switch_mutex_lock(profile->ireg_mutex);
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		
-		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), AF_INET);
+		switch_find_local_ip(guess_ip4, sizeof(guess_ip4), NULL, AF_INET);
 		sql = switch_mprintf("insert into sip_registrations "
 							 "(call_id,sip_user,sip_host,presence_hosts,contact,status,rpid,expires,"
 							 "user_agent,server_user,server_host,profile_name,hostname,network_ip,network_port,sip_username,sip_realm) "

@@ -1484,7 +1484,7 @@ static switch_status_t place_call(char **argv, int argc, switch_stream_handle_t 
 			tech_pvt->codec_ms = atoi(argv[5]);
 		}
 
-		switch_find_local_ip(ip, sizeof(ip), AF_INET);
+		switch_find_local_ip(ip, sizeof(ip), NULL, AF_INET);
 
 		if ((tech_pvt->caller_profile = switch_caller_profile_new(switch_core_session_get_pool(session),
 																  NULL,

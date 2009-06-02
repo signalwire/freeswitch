@@ -2215,7 +2215,7 @@ static switch_status_t load_config(void)
 	memset(&globals, 0, sizeof(globals));
 	globals.running = 1;
 
-	switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), AF_INET);
+	switch_find_local_ip(globals.guess_ip, sizeof(globals.guess_ip), NULL, AF_INET);
 
 	switch_core_hash_init(&globals.profile_hash, module_pool);
 

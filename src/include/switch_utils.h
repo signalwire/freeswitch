@@ -172,7 +172,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
   \return SWITCH_STATUS_SUCCESSS for success, otherwise failure
 */
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len)
-													 char *buf, _In_ int len, _In_ int family);
+													 char *buf, _In_ int len, _In_ int *mask, _In_ int family);
 
 /*!
   \brief find the char representation of an ip adress
@@ -550,7 +550,7 @@ SWITCH_DECLARE(switch_bool_t) switch_simple_email(const char *to, const char *fr
 SWITCH_DECLARE(char *) switch_find_end_paren(const char *s, char open, char close);
 
 SWITCH_DECLARE(int) switch_parse_cidr(const char *string, uint32_t *ip, uint32_t *mask, uint32_t *bitp);
-SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, switch_bool_t default_type, switch_memory_pool_t *pool);
+SWITCH_DECLARE(switch_status_t) switch_network_list_create(switch_network_list_t **list, const char *name, switch_bool_t default_type, switch_memory_pool_t *pool);
 SWITCH_DECLARE(switch_status_t) switch_network_list_add_cidr_token(switch_network_list_t *list, const char *cidr_str, switch_bool_t ok, const char *token);
 #define switch_network_list_add_cidr(_list, _cidr_str, _ok) switch_network_list_add_cidr_token(_list, _cidr_str, _ok, NULL)
 

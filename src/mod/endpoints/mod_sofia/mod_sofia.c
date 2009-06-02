@@ -3204,7 +3204,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	mod_sofia_globals.pool = pool;
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
 
-	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), AF_INET);
+	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
+	switch_set_string(mod_sofia_globals.guess_mask_str, inet_ntoa(*(struct in_addr *)&mod_sofia_globals.guess_mask));
 	gethostname(mod_sofia_globals.hostname, sizeof(mod_sofia_globals.hostname));
 
 
