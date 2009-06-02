@@ -203,7 +203,6 @@ SWITCH_DECLARE(void) consoleCleanLog(char *msg);
 		 char *xml_cdr_text;
 		 void store_file_handle(switch_file_handle_t *fh);
 		 void *on_hangup;		// language specific callback function, cast as void * 
-		 switch_file_handle_t local_fh;
 		 switch_file_handle_t *fhp;
 		 char dtmf_buf[512];
 

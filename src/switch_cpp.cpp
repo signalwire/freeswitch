@@ -829,6 +829,7 @@ SWITCH_DECLARE(int) CoreSession::streamFile(char *file, int starting_sample_coun
     switch_status_t status;
     //switch_file_handle_t fh = { 0 };
 	const char *prebuf;
+	switch_file_handle_t local_fh;
 
 	this_check(-1);
     sanity_check(-1);
@@ -978,6 +979,7 @@ SWITCH_DECLARE(int) CoreSession::originate(CoreSession *a_leg_session, char *des
 SWITCH_DECLARE(int) CoreSession::recordFile(char *file_name, int time_limit, int silence_threshold, int silence_hits) 
 {
 	switch_status_t status;
+	switch_file_handle_t local_fh;
 
 	this_check(-1);
 	sanity_check(-1);
