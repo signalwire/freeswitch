@@ -3976,15 +3976,15 @@ int sofia_glue_get_user_host(char *in, char **user, char **host)
 
 	/* Clean out the host part of any suffix */
 	if ((p = strchr(h, ':'))) {
-		*p = 0;
+		*p = '\0';
 	}
 	
 	if ((p = strchr(h, ';'))) {
-		*p = 0;
+		*p = '\0';
 	}
 	
 	if ((p = strchr(h, ' '))) {
-		*p = 0;
+		*p = '\0';
 	}
 
 	*user = u;
