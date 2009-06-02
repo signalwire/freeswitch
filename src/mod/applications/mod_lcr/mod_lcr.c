@@ -132,6 +132,7 @@ struct profile_obj {
 	
 	switch_bool_t reorder_by_rate;
 	switch_bool_t quote_in_list;
+	switch_bool_t info_in_headers;
 };
 typedef struct profile_obj profile_t;
 
@@ -219,7 +220,7 @@ done:
 	return number;
 }
 
-static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, char *caller_id, lcr_route cur_route)
+static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, char *caller_id, lcr_route cur_route, profile_t *profile)
 {
 	size_t lstrip;
 	size_t  tstrip;
@@ -228,6 +229,7 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 	char *orig_destination_number = NULL; 
 	char *codec = NULL;
 	char *cid = NULL;
+	char *header = NULL;
 
 	orig_destination_number = destination_number = switch_core_strdup(pool, dialed_number);
 	
@@ -261,9 +263,16 @@ static char *get_bridge_data(switch_memory_pool_t *pool, char *dialed_number, ch
 								  do_cid(pool, cur_route->cid, caller_id));
 	}
 	
-	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s]%s%s%s%s%s"
+	header = "";
+	if (profile->info_in_headers) {
+		header = switch_core_sprintf(pool, ",sip_h_X-LCR-INFO=lcr_rate=%s;lcr_carrier=%s",
+									  cur_route->rate_str, 
+									  cur_route->carrier_name);
+	}
+	
+	data = switch_core_sprintf(pool, "[lcr_carrier=%s,lcr_rate=%s%s%s%s]%s%s%s%s%s"
 								, cur_route->carrier_name, cur_route->rate_str
-								, codec, cid
+								, codec, cid, header
 								, cur_route->gw_prefix, cur_route->prefix
 								, destination_number, cur_route->suffix, cur_route->gw_suffix);
 			
@@ -546,7 +555,7 @@ static int route_add_callback(void *pArg, int argc, char **argv, char **columnNa
 	if (argc > LCR_CID_PLACE) {
 		additional->cid = switch_core_strdup(pool, switch_str_nil(argv[LCR_CID_PLACE]));
 	}
-	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional);
+	additional->dialstring = get_bridge_data(pool, cbt->lookup_number, cbt->cid, additional, cbt->profile);
 
 	if (cbt->head == NULL) {
 		key = switch_core_sprintf(pool, "%s:%s", additional->gw_prefix, additional->gw_suffix);
@@ -783,6 +792,7 @@ static switch_status_t lcr_load_config()
 			switch_stream_handle_t *thisorder = NULL;
 			char *reorder_by_rate = NULL;
 			char *quote_in_list = NULL;
+			char *info_in_headers = NULL;
 			char *id_s = NULL;
 			char *custom_sql = NULL;
 			int argc, x = 0;
@@ -835,6 +845,8 @@ static switch_status_t lcr_load_config()
 					custom_sql = val;
 				} else if (!strcasecmp(var, "reorder_by_rate") && !switch_strlen_zero(val)) {
 					reorder_by_rate = val;
+				} else if (!strcasecmp(var, "info_in_headers") && !switch_strlen_zero(val)) {
+					info_in_headers = val;
 				} else if (!strcasecmp(var, "quote_in_list") && !switch_strlen_zero(val)) {
 					quote_in_list = val;
 				}
@@ -911,6 +923,10 @@ static switch_status_t lcr_load_config()
 				
 				if (!switch_strlen_zero(reorder_by_rate)) {
 					profile->reorder_by_rate = switch_true(reorder_by_rate);
+				}
+				
+				if (!switch_strlen_zero(info_in_headers)) {
+					profile->info_in_headers = switch_true(info_in_headers);
 				}
 				
 				if (!switch_strlen_zero(quote_in_list)) {
@@ -1207,7 +1223,7 @@ SWITCH_STANDARD_API(dialplan_lcr_function)
 			current = cb_struct.head;
 			while (current) {
 
-				dialstring = get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current);
+				dialstring = get_bridge_data(pool, cb_struct.lookup_number, cb_struct.cid, current, cb_struct.profile);
 
 				stream->write_function(stream, " | %s", current->digit_str);
 				str_repeat((maximum_lengths.digit_str - current->digit_len), " ", stream);
@@ -1300,6 +1316,8 @@ SWITCH_STANDARD_API(dialplan_lcr_admin_function)
 				}
 				stream->write_function(stream, " Reorder rate:\t%s\n", 
 										profile->reorder_by_rate ? "enabled" : "disabled");
+				stream->write_function(stream, " Info in headers:\t%s\n", 
+										profile->info_in_headers ? "enabled" : "disabled");
 				stream->write_function(stream, " Quote IN() List:\t%s\n", 
 										profile->quote_in_list ? "enabled" : "disabled");
 				stream->write_function(stream, "\n");
