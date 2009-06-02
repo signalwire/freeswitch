@@ -217,7 +217,7 @@ static abyss_bool http_directory_auth(TSession *r, char *domain_name)
 				}
 
 				switch_event_destroy(&params);
-				box = switch_xml_attr_soft(x_user, "number-alias");
+				box = switch_xml_attr(x_user, "number-alias");
 
 				if ((x_params = switch_xml_child(x_domain, "params"))) {
 				
