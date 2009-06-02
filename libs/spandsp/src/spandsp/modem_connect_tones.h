@@ -125,7 +125,7 @@ SPAN_DECLARE(int) modem_connect_tones_tx_free(modem_connect_tones_tx_state_t *s)
     \param len The number of samples to generate.
     \return The number of samples generated.
 */
-SPAN_DECLARE(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
+SPAN_DECLARE_NONSTD(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
                                          int16_t amp[],
                                          int len);
 

@@ -252,7 +252,7 @@ static __inline__ void hdlc_rx_put_bit_core(hdlc_rx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
+SPAN_DECLARE_NONSTD(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit)
 {
     if (new_bit < 0)
     {
@@ -545,7 +545,7 @@ SPAN_DECLARE(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
+SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
 {
     int txbit;
 

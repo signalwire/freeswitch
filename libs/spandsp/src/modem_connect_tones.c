@@ -87,7 +87,7 @@ SPAN_DECLARE(const char *) modem_connect_tone_to_str(int tone)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
+SPAN_DECLARE_NONSTD(int) modem_connect_tones_tx(modem_connect_tones_tx_state_t *s,
                                          int16_t amp[],
                                          int len)
 {

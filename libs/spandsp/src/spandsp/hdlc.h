@@ -154,7 +154,7 @@ SPAN_DECLARE(int) hdlc_rx_get_stats(hdlc_rx_state_t *s,
     \param s A pointer to an HDLC receiver context.
     \param new_bit The bit.
 */
-SPAN_DECLARE(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit);
+SPAN_DECLARE_NONSTD(void) hdlc_rx_put_bit(hdlc_rx_state_t *s, int new_bit);
 
 /*! \brief Put a byte of data to an HDLC receiver.
     \param s A pointer to an HDLC receiver context.
@@ -228,7 +228,7 @@ SPAN_DECLARE(int) hdlc_tx_abort(hdlc_tx_state_t *s);
     \param s A pointer to an HDLC transmitter context.
     \return The next bit for transmission.
 */
-SPAN_DECLARE(int) hdlc_tx_get_bit(hdlc_tx_state_t *s);
+SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s);
 
 /*! \brief Get the next byte for transmission.
     \param s A pointer to an HDLC transmitter context.
