@@ -101,11 +101,11 @@ static int init_upnp (void)
 
 static int init_pmp(void)
 {
-	int r = 0;
+	int r = 0, i = 0, max = 5;
 	natpmpresp_t response;
 	char *pubaddr = NULL;
 	fd_set fds;
-	struct timeval timeout;
+
 
 	initnatpmp(&nat_globals.natpmp);
 	r = sendpublicaddressrequest(&nat_globals.natpmp);
@@ -115,12 +115,16 @@ static int init_pmp(void)
 	}
 
 	do {
+		struct timeval timeout = { 1, 0};
+		i++;
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP %d/%d\n", i, max);
+
 		FD_ZERO(&fds);
 		FD_SET(nat_globals.natpmp.s, &fds);
 		getnatpmprequesttimeout(&nat_globals.natpmp, &timeout);
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
 		r = readnatpmpresponseorretry(&nat_globals.natpmp, &response);
-	} while(r == NATPMP_TRYAGAIN);
+	} while(r == NATPMP_TRYAGAIN && i < max);
 
 	if (r < 0) {
 		goto end;
@@ -147,13 +151,12 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 	switch_find_local_ip(nat_globals.pvt_addr, sizeof(nat_globals.pvt_addr), NULL, AF_INET);
 
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Detecting NAT\n");
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Scanning for NAT\n");
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP\n");
 	init_pmp();
 
-	if (nat_globals.nat_type) {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for UPNP\n");
+	if (!nat_globals.nat_type) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for UPnP\n");
 		init_upnp();
 	}
 	
@@ -163,7 +166,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 		switch_core_set_variable("nat_type", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp");
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "NAT detected type: %s\n", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No PMP or uPNP NAT device detected!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No PMP or UPnP NAT detected!\n");
 	}
 }
 
