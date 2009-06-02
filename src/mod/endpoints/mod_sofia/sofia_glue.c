@@ -3961,20 +3961,30 @@ int sofia_glue_get_user_host(char *in, char **user, char **host)
 	*user = NULL;
 	*host = NULL;
 
-	if (!strncasecmp(u, "sip:", 4)) {
-		u += 4;
-	}
-
+	/* First isolate the host part from the user part */
 	if ((h = strchr(u, '@'))) {
 		*h++ = '\0';
 	} else {
 		return 0;
 	}
 
-	p = h + strlen(h) - 1;
+	/* Clean out the user part of its protocol prefix (if any) */
+	if ((p = strchr(u, ':'))) {
+		*p++ = '\0';
+		u = p;
+	}
 
-	if (p && (*p == ':' || *p == ';' || *p == ' ')) {
-		*p = '\0';
+	/* Clean out the host part of any suffix */
+	if ((p = strchr(h, ':'))) {
+		*p = 0;
+	}
+	
+	if ((p = strchr(h, ';'))) {
+		*p = 0;
+	}
+	
+	if ((p = strchr(h, ' '))) {
+		*p = 0;
 	}
 
 	*user = u;
