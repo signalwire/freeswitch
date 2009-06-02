@@ -1287,8 +1287,8 @@ static int preprocess(const char *cwd, const char *file, int write_fd, int rleve
 		char *bp = expand_vars(buf, ebuf, sizeof(ebuf), &cur, &err);
 		line++;
 		
-		if (err && stderr) {
-			fprintf(stderr, "Error [%s] in file %s line %d\n", err, file, line);
+		if (err) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error [%s] in file %s line %d\n", err, file, line);
 		}
 
 		/* we ignore <include> or </include> for the sake of validators as well as <?xml version="1.0"?> type stuff */

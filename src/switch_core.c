@@ -1176,6 +1176,12 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	runtime.flags = flags;
 	runtime.sps_total = 30;
 
+	*err = NULL;
+
+	if (console) {
+		runtime.console = stdout;
+	}
+
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
 	switch_core_set_variable("local_mask_v4", inet_ntoa(*(struct in_addr *)&mask));
@@ -1188,25 +1194,21 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_event_init(runtime.memory_pool);
 
-	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
-		switch_nat_init(runtime.memory_pool);
-	}
-
 	if (switch_xml_init(runtime.memory_pool, err) != SWITCH_STATUS_SUCCESS) {
 		apr_terminate();
 		return SWITCH_STATUS_MEMERR;
 	}
 
+	if (switch_test_flag((&runtime), SCF_USE_AUTO_NAT)) {
+		switch_nat_init(runtime.memory_pool);
+	}
+	
+	switch_log_init(runtime.memory_pool, runtime.colorize_console);
+
 	switch_load_core_config("switch.conf");
 
-	switch_log_init(runtime.memory_pool, runtime.colorize_console);
+
 	switch_core_state_machine_init(runtime.memory_pool);
-
-	*err = NULL;
-
-	if (console) {
-		runtime.console = stdout;
-	}
 
 	if (switch_test_flag((&runtime), SCF_USE_SQL)) {
 		switch_core_sqldb_start(runtime.memory_pool);

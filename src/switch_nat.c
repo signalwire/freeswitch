@@ -146,9 +146,14 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 
 	switch_find_local_ip(nat_globals.pvt_addr, sizeof(nat_globals.pvt_addr), NULL, AF_INET);
 
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "Detecting NAT\n");
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP\n");
 	init_pmp();
 
-	if (!nat_globals.nat_type) {
+	if (nat_globals.nat_type) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for UPNP\n");
 		init_upnp();
 	}
 	
@@ -156,8 +161,9 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 		switch_core_set_variable("nat_public_addr", nat_globals.pub_addr);
 		switch_core_set_variable("nat_private_addr", nat_globals.pvt_addr);
 		switch_core_set_variable("nat_type", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "NAT detected type: %s\n", nat_globals.nat_type == SWITCH_NAT_TYPE_PMP ? "pmp" : "upnp");
 	} else {
-		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "No PMP or uPNP NAT device detected!\n");
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_INFO, "No PMP or uPNP NAT device detected!\n");
 	}
 }
 
