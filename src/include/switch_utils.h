@@ -172,7 +172,7 @@ SWITCH_DECLARE(switch_status_t) switch_frame_free(switch_frame_t **frame);
   \return SWITCH_STATUS_SUCCESSS for success, otherwise failure
 */
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(_Out_opt_bytecapcount_(len)
-													 char *buf, _In_ int len, _In_ int *mask, _In_ int family);
+													 char *buf, _In_ int len, _In_opt_ int *mask, _In_ int family);
 
 /*!
   \brief find the char representation of an ip adress
