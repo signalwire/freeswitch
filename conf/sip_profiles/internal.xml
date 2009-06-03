@@ -56,6 +56,11 @@
     <!--<param name="enable-100rel" value="true"/>-->
     <!--<param name="minimum-session-expires" value="120"/>-->
     <param name="apply-inbound-acl" value="domains"/>
+    <!--
+	This defines your local network, by default we detect your local network
+	and create this localnet.auto ACL for this.
+    -->
+    <param name="local-network-acl" value="localnet.auto"/>
     <!--<param name="apply-register-acl" value="domains"/>-->
     <!--<param name="dtmf-type" value="info"/>-->
     <param name="record-template" value="$${base_dir}/recordings/${caller_id_number}.${target_domain}.${strftime(%Y-%m-%d-%H-%M-%S)}.wav"/>
@@ -140,6 +145,12 @@
     <param name="inbound-reg-force-matching-username" value="true"/>
     <!-- on authed calls, authenticate *all* the packets not just invite -->
     <param name="auth-all-packets" value="false"/>
+    <!--
+	Possible options for ext-rtp-ip or ext-sip-ip 
+
+	auto     - Use guessed ip.
+	auto-nat - Use ip learned from NAT-PMP or UPNP
+    -->
     <!-- <param name="ext-rtp-ip" value="$${external_rtp_ip}"/> -->
     <!-- <param name="ext-sip-ip" value="$${external_sip_ip}"/> -->
     <!-- rtp inactivity timeout -->

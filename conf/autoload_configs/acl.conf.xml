@@ -4,8 +4,9 @@
 	 These ACL's are automatically created on startup.
 
 	 rfc1918.auto  - RFC1918 Space
-	 nat.auto      - RFC1918 Minus your local lan.
+	 nat.auto      - RFC1918 Excluding your local lan.
 	 localnet.auto - ACL for your local lan.
+	 loopback.auto - ACL for your local lan.
     -->
 
     <list name="lan" default="allow">
