@@ -115,6 +115,7 @@ static struct {
 	char *acl[MAX_ACL];
 	uint32_t acl_count;
 	uint32_t id;
+	int nat_map;
 } prefs;
 
 
@@ -2211,6 +2212,10 @@ static int config(void)
 					set_pref_ip(val);
 				} else if (!strcmp(var, "debug")) {
 					globals.debug = atoi(val);
+				} else if (!strcmp(var, "nat-map")) {
+					if (switch_true(val)) {
+						prefs.nat_map = 1;
+					}
 				} else if (!strcmp(var, "listen-port")) {
 					prefs.port = (uint16_t) atoi(val);
 				} else if (!strcmp(var, "password")) {
@@ -2233,6 +2238,10 @@ static int config(void)
 
 	if (switch_strlen_zero(prefs.password)) {
 		set_pref_pass("ClueCon");
+	}
+
+	if (!prefs.nat_map) {
+		prefs.nat_map = 0;
 	}
 
 	if (!prefs.port) {
@@ -2276,6 +2285,11 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		if (rv)
 			goto sock_fail;
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket up listening on %s:%u\n", prefs.ip, prefs.port);
+
+		if (prefs.nat_map) {
+			switch_nat_add_mapping(prefs.port, SWITCH_NAT_TCP);
+		}
+
 		break;
 	  sock_fail:
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Socket Error! Could not listen on %s:%u\n", prefs.ip, prefs.port);
@@ -2326,6 +2340,10 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 	}
 
 	close_socket(&listen_list.sock);
+	
+	if (prefs.nat_map) {
+		switch_nat_del_mapping(prefs.port, SWITCH_NAT_TCP);
+	}
 
 	if (pool) {
 		switch_core_destroy_memory_pool(&pool);
