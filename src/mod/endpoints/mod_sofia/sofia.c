@@ -406,8 +406,7 @@ void sofia_event_callback(nua_event_t event,
 
 		if (authorization) {
 			char network_ip[80];
-			su_addrinfo_t *addrinfo = msg_addrinfo(nua_current_request(nua));
-			get_addr(network_ip, sizeof(network_ip), addrinfo->ai_addr, addrinfo->ai_addrlen);
+			sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), NULL);
 			auth_res = sofia_reg_parse_auth(profile, authorization, sip,
 											(char *) sip->sip_request->rq_method_name, tech_pvt->key, strlen(tech_pvt->key), network_ip, NULL, 0,
 											REG_INVITE, NULL, NULL);
@@ -762,10 +761,23 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									use_timer ? "timer, " : ""
 									);
 
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
+		}
+		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_TCP) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created TCP nat mapping for %s port %d\n", profile->name, profile->sip_port);
+		}
+		if(sofia_test_pflag(profile, PFLAG_TLS) && switch_nat_add_mapping(profile->tls_sip_port, SWITCH_NAT_TCP) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created TCP/TLS nat mapping for %s port %d\n", profile->name, profile->tls_sip_port);
+		}
+	}
+
 	profile->nua = nua_create(profile->s_root,	/* Event loop */
 							  sofia_event_callback,	/* Callback for processing events */
 							  profile,	/* Additional data to pass to callback */
 							  NUTAG_URL(profile->bindurl),
+							  NTATAG_USER_VIA(1),
 							  TAG_IF(!strchr(profile->sipip, ':'), SOATAG_AF(SOA_AF_IP4_ONLY)),
 							  TAG_IF(strchr(profile->sipip, ':'), SOATAG_AF(SOA_AF_IP6_ONLY)),
 							  TAG_IF(sofia_test_pflag(profile, PFLAG_TLS), NUTAG_SIPS_URL(profile->tls_bindurl)), 
@@ -937,6 +949,18 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 			switch_event_add_header_string(s_event, SWITCH_STACK_BOTTOM, "profile_tls_uri", profile->tls_url);
 		}
 		switch_event_fire(&s_event);
+	}
+
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+		if (switch_nat_del_mapping(profile->sip_port, SWITCH_NAT_UDP) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
+		}
+		if (switch_nat_del_mapping(profile->sip_port, SWITCH_NAT_TCP) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted TCP nat mapping for %s port %d\n", profile->name, profile->sip_port);
+		}
+		if(sofia_test_pflag(profile, PFLAG_TLS) && switch_nat_del_mapping(profile->tls_sip_port, SWITCH_NAT_TCP) == SWITCH_STATUS_SUCCESS) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Deleted TCP/TLS nat mapping for %s port %d\n", profile->name, profile->tls_sip_port);
+		}
 	}
 
 	sofia_glue_sql_close(profile);
@@ -1757,8 +1781,10 @@ switch_status_t reconfig_sofia(sofia_profile_t *profile)
 						} else {
 							sofia_clear_pflag(profile, PFLAG_AUTH_CALLS);
 						}
-					} else if(!strcasecmp(var, "context")) {
+					} else if (!strcasecmp(var, "context")) {
 						profile->context = switch_core_strdup(profile->pool, val);
+					} else if (!strcasecmp(var, "local-network-acl")) {
+						profile->local_network = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-domain")) {
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-db-domain")) {
@@ -2145,7 +2171,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "cng-pt") && !sofia_test_pflag(profile, PFLAG_SUPPRESS_CNG)) {
 						profile->cng_pt = (switch_payload_t) atoi(val);
 					} else if (!strcasecmp(var, "sip-port")) {
-						profile->sip_port = atoi(val);
+						profile->sip_port = (switch_port_t)atoi(val);
 					} else if (!strcasecmp(var, "vad")) {
 						if (!strcasecmp(val, "in")) {
 							sofia_set_flag(profile, TFLAG_VAD_IN);
@@ -2163,9 +2189,12 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							
 							if (!strcmp(val, "0.0.0.0")) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
+							} else if (!strcasecmp(val, "auto-nat")) {
+								ip = mod_sofia_globals.auto_nat ? switch_core_get_variable("nat_public_addr") : mod_sofia_globals.guess_ip; 
 							} else {
-									ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
+								ip = strcasecmp(val, "auto") ? val : mod_sofia_globals.guess_ip;
 							}
+							sofia_set_pflag(profile, PFLAG_AUTO_NAT);
 							profile->extrtpip = switch_core_strdup(profile->pool, ip);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-rtp-ip\n");
@@ -2198,6 +2227,8 @@ switch_status_t config_sofia(int reload, char *profile_name)
 							
 							if (!strcasecmp(val, "0.0.0.0")) {
 								switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_WARNING, "Invalid IP 0.0.0.0 replaced with %s\n", mod_sofia_globals.guess_ip);
+							} else if (!strcasecmp(val, "auto-nat")) {
+								ip = mod_sofia_globals.auto_nat ? switch_core_get_variable("nat_public_addr") : mod_sofia_globals.guess_ip;
 							} else if (strcasecmp(val, "auto")) {
 								switch_port_t port = 0;
 								if (sofia_glue_ext_address_lookup(profile, NULL, &myip, &port, val, profile->pool) == SWITCH_STATUS_SUCCESS) {
@@ -2206,10 +2237,13 @@ switch_status_t config_sofia(int reload, char *profile_name)
 									switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Failed to get external ip.\n");
 								}
 							}
+							sofia_set_pflag(profile, PFLAG_AUTO_NAT);
 							profile->extsipip = switch_core_strdup(profile->pool, ip);
 						} else {
 							switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Invalid ext-sip-ip\n");
 						}
+					} else if (!strcasecmp(var, "local-network-acl")) {
+						profile->local_network = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-domain")) {
 						profile->reg_domain = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "force-register-db-domain")) {
@@ -2264,7 +2298,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "manage-shared-appearance")) {
 						if (switch_true(val)) {
 							sofia_set_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE);
-							profile->sla_contact = switch_core_sprintf(profile->pool, "sip:sla-agent@%s", profile->sipip);
+							profile->sla_contact = switch_core_sprintf(profile->pool, "sla-agent");
 						}
 					} else if (!strcasecmp(var, "disable-srv")) {
 						if (switch_true(val)) {
@@ -2466,7 +2500,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 					} else if (!strcasecmp(var, "tls-bind-params")) {
 						profile->tls_bind_params = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-sip-port")) {
-						profile->tls_sip_port = atoi(val);
+						profile->tls_sip_port = (switch_port_t)atoi(val);
 					} else if (!strcasecmp(var, "tls-cert-dir")) {
 						profile->tls_cert_dir = switch_core_strdup(profile->pool, val);
 					} else if (!strcasecmp(var, "tls-version")) {
@@ -2534,7 +2568,7 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 				if (!profile->sip_port) {
-					profile->sip_port = atoi(SOFIA_DEFAULT_PORT);
+					profile->sip_port = (switch_port_t)atoi(SOFIA_DEFAULT_PORT);
 				}
 
 				if (!profile->dialplan) {
@@ -2548,7 +2582,18 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				if (!profile->sipdomain) {
 					profile->sipdomain = switch_core_strdup(profile->pool, profile->sipip);
 				}
-				if (profile->extsipip) {
+				if (profile->extsipip && sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+					char *ipv6 = strchr(profile->extsipip, ':');
+					profile->public_url = switch_core_sprintf(profile->pool,
+															  "sip:%s@%s%s%s:%d",
+															  profile->contact_user,
+															  ipv6 ? "[" : "",
+															  profile->extsipip,
+															  ipv6 ? "]" : "",
+															  profile->sip_port);
+				}
+
+				if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
 					char *ipv6 = strchr(profile->extsipip, ':');
 					profile->url = switch_core_sprintf(profile->pool,
 														"sip:%s@%s%s%s:%d",
@@ -2571,7 +2616,11 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				}
 
 				profile->tcp_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->url);
-				
+
+				if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+					profile->tcp_public_contact = switch_core_sprintf(profile->pool, "%s;transport=tcp", profile->public_url);
+				}
+
 				if (profile->bind_params) {
 					char *bindurl = profile->bindurl;
 					profile->bindurl = switch_core_sprintf(profile->pool, "%s;%s", bindurl, profile->bind_params);
@@ -2582,10 +2631,21 @@ switch_status_t config_sofia(int reload, char *profile_name)
 				 */
 				if (sofia_test_pflag(profile, PFLAG_TLS)) {
 					if (!profile->tls_sip_port) {
-						profile->tls_sip_port = atoi(SOFIA_DEFAULT_TLS_PORT);
+						profile->tls_sip_port = (switch_port_t)atoi(SOFIA_DEFAULT_TLS_PORT);
 					}
 
-					if (profile->extsipip) {
+					if (profile->extsipip && sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+						char *ipv6 = strchr(profile->extsipip, ':');
+						profile->tls_public_url = switch_core_sprintf(profile->pool,
+																  "sip:%s@%s%s%s:%d",
+																  profile->contact_user,
+																  ipv6 ? "[" : "",
+																  profile->extsipip,
+																  ipv6 ? "]" : "",
+																  profile->tls_sip_port);
+					}
+					
+					if (profile->extsipip && !sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
 						char *ipv6 = strchr(profile->extsipip, ':');
 						profile->tls_url = 
 							switch_core_sprintf(profile->pool,
@@ -2632,6 +2692,9 @@ switch_status_t config_sofia(int reload, char *profile_name)
 						profile->tls_cert_dir = switch_core_sprintf(profile->pool, "%s/ssl", SWITCH_GLOBAL_dirs.conf_dir);
 					}
 					profile->tls_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_url);
+					if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
+						profile->tls_public_contact = switch_core_sprintf(profile->pool, "%s;transport=tls", profile->tls_public_url);
+					}
 				}
 			}
 			if (profile) {
@@ -2774,13 +2837,11 @@ static void sofia_handle_sip_r_invite(switch_core_session_t *session, int status
 		const char *uuid;
 		switch_core_session_t *other_session;
 		private_object_t *tech_pvt = switch_core_session_get_private(session);
-		su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 		char network_ip[80];
 		int network_port = 0;
 		switch_caller_profile_t *caller_profile = NULL;
 
-		get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
-		network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+		sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
 		switch_channel_set_variable(channel, "sip_reply_host", network_ip);
 		switch_channel_set_variable_printf(channel, "sip_reply_port", "%d", network_port);
@@ -4282,10 +4343,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	uint32_t sess_count = switch_core_session_count();
 	uint32_t sess_max = switch_core_session_limit(0);
 	int is_auth = 0, calling_myself = 0;
-	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	int network_port = 0;
 	char *is_nat = NULL;
 	char acl_token[512] = "";
+	sofia_transport_t transport;
 
 	profile->ib_calls++;
 
@@ -4306,8 +4367,7 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 		goto fail;
 	}
 
-	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
-	network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
 	if (sofia_test_pflag(profile, PFLAG_AGGRESSIVE_NAT_DETECTION)) {
 		if (sip && sip->sip_via) {
@@ -4444,9 +4504,10 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {
 		char tmp[35] = "";
-		sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
-
 		const char *ipv6 = strchr(tech_pvt->remote_ip, ':');
+
+		transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+
 		tech_pvt->record_route =
 			switch_core_session_sprintf(session,
 			"sip:%s@%s%s%s:%d;transport=%s",
@@ -4573,7 +4634,6 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 	if (sip->sip_to && sip->sip_to->a_url) {
 		const char *host, *user;
 		int port;
-		sofia_transport_t transport;
 		url_t *transport_url;
 
 		if (sip->sip_record_route && sip->sip_record_route->r_url) {
@@ -4623,14 +4683,21 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				if (sofia_test_pflag(profile, PFLAG_MANAGE_SHARED_APPEARANCE)) {
 					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<sip:%s@%s>", user, host);
 				} else {
+					const char *url = NULL;
 					
-					const char *url;
-					
-					if ((url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url)) {
+					if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
+						url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_public_url : profile->public_url;
+					} else { 
+						url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
+					}			
+
+					if (url) {
 						if (strchr(url, '>')) {
-							tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url, sofia_glue_transport2str(transport));
+							tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
+																				  sofia_glue_transport2str(transport));
 						} else {
-							tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url, sofia_glue_transport2str(transport));
+							tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url,
+																				  sofia_glue_transport2str(transport));
 						}
 					} else {
 						switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
@@ -4638,18 +4705,29 @@ void sofia_handle_sip_i_invite(nua_t *nua, sofia_profile_t *profile, nua_handle_
 				}
 			}
 		} else {
-			const char *url;
-
-			if ((url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url)) {
+			const char *url = NULL;
+			if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
+			url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_public_url : profile->public_url;
+			} else { 
+				url = (sofia_glue_transport_has_tls(transport)) ? profile->tls_url : profile->url;
+			}			
+			
+			if (url) {
 				if (strchr(url, '>')) {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url, sofia_glue_transport2str(transport));
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "%s;transport=%s", url,
+																		  sofia_glue_transport2str(transport));
 				} else {
-					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", url, sofia_glue_transport2str(transport));
+					tech_pvt->reply_contact = switch_core_session_sprintf(session, "<%s;transport=%s>", profile->url,
+																		  sofia_glue_transport2str(transport));
 				}
 			} else {
 				switch_channel_hangup(tech_pvt->channel, SWITCH_CAUSE_DESTINATION_OUT_OF_ORDER);
 			}
 		}
+	}
+	
+	if (sofia_glue_check_nat(profile, tech_pvt->remote_ip)) {
+		tech_pvt->user_via = sofia_glue_create_external_via(session, profile, tech_pvt->transport);
 	}
 
 	if (sip->sip_contact && sip->sip_contact->m_url) {

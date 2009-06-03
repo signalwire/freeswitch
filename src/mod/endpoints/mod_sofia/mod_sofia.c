@@ -394,6 +394,7 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 			if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 				nua_bye(tech_pvt->nh, 
 						SIPTAG_REASON_STR(reason),
+						TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 						TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 						TAG_END());
 			}
@@ -406,7 +407,6 @@ switch_status_t sofia_on_hangup(switch_core_session_t *session)
 				if (!sofia_test_flag(tech_pvt, TFLAG_BYE)) {
 					nua_cancel(tech_pvt->nh, 
 							   SIPTAG_REASON_STR(reason), 
-							   TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 							   TAG_IF(!switch_strlen_zero(bye_headers), SIPTAG_HEADER_STR(bye_headers)),
 							   TAG_END());
 				}
@@ -2694,6 +2694,8 @@ static switch_call_cause_t sofia_outgoing_channel(switch_core_session_t *session
 		}
 	}
 
+	sofia_glue_get_user_host(switch_core_session_strdup(nsession, tech_pvt->dest), NULL, &tech_pvt->remote_ip);
+
 	if (dest_to) {
 		if (strchr(dest_to, '@')) {
 			tech_pvt->dest_to = switch_core_session_sprintf(nsession, "sip:%s", dest_to);
@@ -3216,6 +3218,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_mutex_lock(mod_sofia_globals.mutex);
 	mod_sofia_globals.running = 1;
 	switch_mutex_unlock(mod_sofia_globals.mutex);
+
+	mod_sofia_globals.auto_nat = (switch_core_get_variable("nat_type") ? 1 : 0);
 
 	switch_queue_create(&mod_sofia_globals.presence_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);
 	switch_queue_create(&mod_sofia_globals.mwi_queue, SOFIA_QUEUE_SIZE, mod_sofia_globals.pool);

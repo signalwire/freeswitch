@@ -192,6 +192,7 @@ typedef enum {
 	PFLAG_MESSAGE_QUERY_ON_REGISTER,
 	PFLAG_RTP_AUTOFLUSH_DURING_BRIDGE,
 	PFLAG_PROXY_FOLLOW_REDIRECT,
+	PFLAG_AUTO_NAT,
 	/* No new flags below this line */
 	PFLAG_MAX
 } PFLAGS;
@@ -272,6 +273,7 @@ struct mod_sofia_globals {
 	char guess_mask_str[16];
 	int debug_presence;
 	int auto_restart;
+	int auto_nat;
 };
 extern struct mod_sofia_globals mod_sofia_globals;
 
@@ -408,9 +410,13 @@ struct sofia_profile {
 	char *extsipip;
 	char *username;
 	char *url;
+	char *public_url;
 	char *bindurl;
 	char *tls_url;
+	char *tls_public_url;
 	char *tls_bindurl;
+	char *tcp_public_contact;
+	char *tls_public_contact;
 	char *tcp_contact;
 	char *tls_contact;
 	char *sla_contact;
@@ -430,8 +436,8 @@ struct sofia_profile {
 	sofia_cid_type_t cid_type;
 	sofia_dtmf_t dtmf_type;
 	int auto_restart;
-	int sip_port;
-	int tls_sip_port;
+	switch_port_t sip_port;
+	switch_port_t tls_sip_port;
 	int tls_version;
 	char *codec_string;
 	int running;
@@ -489,6 +495,7 @@ struct sofia_profile {
 	uint32_t timer_t2;
 	uint32_t timer_t4;
 	char *contact_user;
+	char *local_network;
 };
 
 struct private_object {
@@ -613,6 +620,7 @@ struct private_object {
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_codec_implementation_t read_impl;
 	switch_codec_implementation_t write_impl;
+	char *user_via;
 };
 
 struct callback_t {
@@ -822,7 +830,9 @@ sofia_transport_t sofia_glue_str2transport(const char *str);
 
 const char *sofia_glue_transport2str(const sofia_transport_t tp);
 char * sofia_glue_find_parameter(const char *str, const char *param);
-
+char *sofia_glue_create_via(switch_core_session_t *session, const char *ip, switch_port_t port, sofia_transport_t transport);
+char *sofia_glue_create_external_via(switch_core_session_t *session, sofia_profile_t *profile, sofia_transport_t transport);
+int sofia_glue_check_nat(sofia_profile_t *profile, const char *network_ip);
 int sofia_glue_transport_has_tls(const sofia_transport_t tp);
 const char *sofia_glue_get_unknown_header(sip_t const *sip, const char *name);
 switch_status_t sofia_glue_build_crypto(private_object_t *tech_pvt, int index, switch_rtp_crypto_key_type_t type, switch_rtp_crypto_direction_t direction);
@@ -835,7 +845,7 @@ switch_status_t sofia_glue_tech_set_video_codec(private_object_t *tech_pvt, int 
 const char *sofia_glue_strip_proto(const char *uri);
 switch_status_t reconfig_sofia(sofia_profile_t *profile);
 void sofia_glue_del_gateway(sofia_gateway_t *gp);
-void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent);
+void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent, const char *network_ip);
 void sofia_glue_restart_all_profiles(void);
 void sofia_glue_toggle_hold(private_object_t *tech_pvt, int sendonly);
 const char * sofia_state_string(int state);
@@ -877,3 +887,4 @@ int sofia_get_loglevel(const char *name);
 sofia_cid_type_t sofia_cid_name2type(const char *name);
 void sofia_glue_tech_set_local_sdp(private_object_t *tech_pvt, const char *sdp_str, switch_bool_t dup);
 void sofia_glue_set_rtp_stats(private_object_t *tech_pvt);
+void sofia_glue_get_addr(msg_t *msg, char *buf, size_t buflen, int *port);

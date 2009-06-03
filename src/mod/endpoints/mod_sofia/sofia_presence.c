@@ -375,11 +375,11 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 	}
 
 	if (for_everyone) {
-		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q' "
+		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
 							 "from sip_registrations where sip_user='%q' and sip_host='%q'", 
 							 stream.data, user, host);
 	} else if (call_id) {
-		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,'%q' "
+		sql = switch_mprintf("select sip_user,sip_host,contact,profile_name,network_ip,'%q' "
 							 "from sip_registrations where sip_user='%q' and sip_host='%q' and call_id='%q'", 
 							 stream.data, user, host, call_id);
 	}
@@ -1401,13 +1401,14 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	char *event = "message-summary";
 	char *contact, *o_contact = argv[2];
 	char *profile_name = argv[3];
-	char *body = argv[4];
+	char *network_ip = argv[4];
+	char *body = argv[5];
 	char *id = NULL;
 	nua_handle_t *nh;
 	struct mwi_helper *h = (struct mwi_helper *) pArg;
 	sofia_profile_t *ext_profile = NULL, *profile = h->profile;
-	char *route = NULL, *route_uri = NULL;
-	char *p;
+	char *route = NULL, *route_uri = NULL, *user_via = NULL;
+	char *p, *contact_str;
 
 	if (profile_name && strcasecmp(profile_name, h->profile->name)) {
 		if ((ext_profile = sofia_glue_find_profile(profile_name))) {
@@ -1415,9 +1416,41 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		}
 	}
 
-	id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
-
 	contact = sofia_glue_get_url_from_contact(o_contact, 1);
+
+	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && profile->local_network &&
+		!switch_check_network_list_ip(network_ip, profile->local_network)) {
+		char *ptr = NULL;
+		const char *transport_str = NULL;
+
+		id = switch_mprintf("sip:%s@%s", sub_to_user, profile->extsipip);
+
+		if ((ptr = sofia_glue_find_parameter(o_contact, "transport="))) {
+			sofia_transport_t transport = sofia_glue_str2transport(ptr);
+			transport_str = sofia_glue_transport2str(transport);
+
+			switch (transport) {
+			case SOFIA_TRANSPORT_TCP:
+				contact_str = profile->tcp_public_contact;
+				break;
+			case SOFIA_TRANSPORT_TCP_TLS:
+				contact_str = profile->tls_public_contact;
+				break;
+			default:
+				contact_str = profile->public_url;
+				break;
+			}
+			user_via = sofia_glue_create_external_via(NULL, profile, transport);
+		} else {
+			user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
+			contact_str = profile->public_url;
+		}
+		
+	} else {
+		contact_str = profile->url;
+		id = switch_mprintf("sip:%s@%s", sub_to_user, sub_to_host);
+	}
+
 	if ((route = strstr(contact, ";fs_path=")) && (route = strdup(route + 9))) {
 		
 		for (p = route; p && *p ; p++) {
@@ -1455,17 +1488,24 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 		}
 	}
 	
-	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact), SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id), SIPTAG_CONTACT_STR(h->profile->url), TAG_END());
+	nh = nua_handle(profile->nua, NULL, NUTAG_URL(contact),
+					SIPTAG_FROM_STR(id), SIPTAG_TO_STR(id),
+					SIPTAG_CONTACT_STR(contact_str), TAG_END());
 	nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 
 	nua_notify(nh,
 			   NUTAG_NEWSUB(1),
 			   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
-			   SIPTAG_EVENT_STR(event), SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"), SIPTAG_PAYLOAD_STR(body), TAG_END());
+			   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+			   SIPTAG_EVENT_STR(event),
+			   SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
+			   SIPTAG_PAYLOAD_STR(body), TAG_END());
 
 	switch_safe_free(contact);
 	switch_safe_free(id);
 	switch_safe_free(route);
+	switch_safe_free(user_via);
+
 	if (ext_profile) {
 		sofia_glue_release_profile(ext_profile);
 	}
@@ -1501,13 +1541,13 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		switch_event_t *sevent;
 		int sub_state;
 		int sent_reply = 0;
-		su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 		int network_port = 0;
 		char network_ip[80];
 		const char *contact_host, *contact_user;
 		char *port;
 		char new_port[25] = "";
 		char *is_nat = NULL;
+		int is_auto_nat = 0;
 		const char *ipv6;
 
 		if (!(contact && sip->sip_contact->m_url)) {
@@ -1515,8 +1555,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 			return;
 		}
 
-		get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
-		network_port = ntohs(((struct sockaddr_in *) msg_addrinfo(nua_current_request(nua))->ai_addr)->sin_port);
+		sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
+
+		if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && profile->local_network &&
+			!switch_check_network_list_ip(network_ip, profile->local_network)) {
+			is_auto_nat = 1;
+		}	
 
 		tl_gets(tags, NUTAG_SUBSTATE_REF(sub_state), TAG_END());
 
@@ -1777,19 +1821,35 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 										network_port,
 										params);
 			}
-			
-			if (switch_stristr("port=tcp", contact->m_url->url_params)) {
-				contactstr = profile->tcp_contact;
-			} else if (switch_stristr("port=tls", contact->m_url->url_params)) {
-				contactstr = profile->tls_contact;
+
+			if (is_auto_nat) {
+				contactstr = profile->public_url;
+			} else {
+				contactstr = profile->url;
 			}
 
 			
+			if (switch_stristr("port=tcp", contact->m_url->url_params)) {
+				if (is_auto_nat) {
+					contactstr = profile->tcp_public_contact;
+				} else {
+					contactstr = profile->tcp_contact;
+				}
+			} else if (switch_stristr("port=tls", contact->m_url->url_params)) {
+				if (is_auto_nat) {
+					contactstr = profile->tls_contact;
+				} else {
+					contactstr = profile->tls_public_contact;
+				}
+			}
+
 			if (nh && nh->nh_ds && nh->nh_ds->ds_usage) {
 				nua_dialog_usage_set_refresh_range(nh->nh_ds->ds_usage, exp_delta + SUB_OVERLAP, exp_delta + SUB_OVERLAP);
 			}
 
-			nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(contactstr), NUTAG_WITH_THIS(nua), 
+			nua_respond(nh, SIP_202_ACCEPTED,
+						SIPTAG_CONTACT_STR(contactstr),
+						NUTAG_WITH_THIS(nua), 
 						SIPTAG_SUBSCRIPTION_STATE_STR(sstr),
 						SIPTAG_EXPIRES_STR(exp_delta_str),
 						TAG_IF(sticky, NUTAG_PROXY(sticky)), TAG_END());

@@ -76,6 +76,10 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	struct sla_helper sh = { { 0 } };
 	char *contact_str = strip_uri(full_contact);
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
+	char network_ip[80];
+	int network_port = 0;
+
+	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
 	sql = switch_mprintf("select call_id from sip_shared_appearance_dialogs where hostname='%q' and profile_name='%q' and contact_str='%q'", 
 						 mod_sofia_globals.hostname, profile->name, contact_str);
@@ -99,8 +103,13 @@ void sofia_sla_handle_register(nua_t *nua, sofia_profile_t *profile, sip_t const
 	nua_handle_bind(nh, &mod_sofia_globals.keep_private);
 
 	switch_snprintf(exp_str, sizeof(exp_str), "%ld", exptime + 30);
-	switch_snprintf(my_contact, sizeof(my_contact), "<%s;transport=%s>;expires=%s", profile->sla_contact, sofia_glue_transport2str(transport), exp_str);
-
+	if (sofia_glue_check_nat(profile, network_ip)) { 
+		switch_snprintf(my_contact, sizeof(my_contact), "<sip:%s@%s;transport=%s>;expires=%s", profile->sla_contact, 
+						profile->extsipip, sofia_glue_transport2str(transport), exp_str);
+	} else {
+		switch_snprintf(my_contact, sizeof(my_contact), "<sip:%s@%s;transport=%s>;expires=%s", profile->sla_contact, 
+						profile->sipip, sofia_glue_transport2str(transport), exp_str);
+	}
 	nua_subscribe(nh,
 				  SIPTAG_TO(sip->sip_to),
 				  SIPTAG_FROM(sip->sip_to),
@@ -125,8 +134,11 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 	char *sql = NULL;
 	char *route_uri = NULL;
 	char *sla_contact = NULL;
+	char network_ip[80];
+	int network_port = 0;
 	sofia_transport_t transport = sofia_glue_url2transport(sip->sip_contact->m_url);
 
+	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 	/*
 	 * XXX MTK FIXME - we don't look at the tag to see if NUTAG_SUBSTATE(nua_substate_terminated) or
 	 * a Subscription-State header with state "terminated" and/or expiration of 0. So we never forget
@@ -141,8 +153,9 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 	 * so we do what openser's pua_bla does and...
 	 */
 
+	/* We always store the AOR as the sipip and not the request so SLA works with NAT inside out */
 	aor = switch_mprintf("sip:%s@%s;transport=%s", sip->sip_contact->m_url->url_user,
-						 sip->sip_from->a_url->url_host, sofia_glue_transport2str(transport));
+						 profile->sipip, sofia_glue_transport2str(transport));
 
 	/*
 	 * ok, and now that we HAVE the AOR, we REALLY should go check in the XML config and see if this particular
@@ -163,9 +176,9 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 	}
 
 	if ((sql =
-		 switch_mprintf("insert into sip_shared_appearance_subscriptions (subscriber, call_id, aor, profile_name, hostname, contact_str) "
-		               "values ('%q','%q','%q','%q','%q','%q')",
-		                subscriber, sip->sip_call_id->i_id, aor, profile->name, mod_sofia_globals.hostname, contact_str))) {
+		 switch_mprintf("insert into sip_shared_appearance_subscriptions (subscriber, call_id, aor, profile_name, hostname, contact_str, network_ip) "
+		               "values ('%q','%q','%q','%q','%q','%q','%q')",
+		                subscriber, sip->sip_call_id->i_id, aor, profile->name, mod_sofia_globals.hostname, contact_str, network_ip))) {
 		sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 	}
 
@@ -187,8 +200,11 @@ void sofia_sla_handle_sip_i_subscribe(nua_t *nua, const char *contact_str, sofia
 			*p++ = '\0';
 		}
 	}
-
-	sla_contact = switch_mprintf("<%s;transport=%s>", profile->sla_contact, sofia_glue_transport2str(transport));
+	if (sofia_glue_check_nat(profile, network_ip)) { 
+		sla_contact = switch_mprintf("<sip:%s@%s;transport=%s>", profile->sla_contact, profile->extsipip, sofia_glue_transport2str(transport));
+	} else {
+		sla_contact = switch_mprintf("<sip:%s@%s;transport=%s>", profile->sla_contact, profile->sipip, sofia_glue_transport2str(transport));
+	}
 
 	nua_respond(nh, SIP_202_ACCEPTED, SIPTAG_CONTACT_STR(sla_contact), NUTAG_WITH_THIS(nua),
 				TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
@@ -276,8 +292,9 @@ void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_han
 	}
 
 	/* calculate the AOR we're trying to tell people about. should probably double-check before derferencing XXX MTK */
+	/* We always store the AOR as the sipip and not the request so SLA works with NAT inside out */
 	aor = switch_mprintf("sip:%s@%s;transport=%s", sip->sip_to->a_url->url_user,
-						 sip->sip_to->a_url->url_host, sofia_glue_transport2str(transport));
+						 profile->sipip, sofia_glue_transport2str(transport));
 
 	/* this isn't sufficient because on things like the polycom, the subscriber is the 'main' ext number, but the
 	 * 'main' ext number isn't in ANY of the headers they send us in the notify. of course.
@@ -290,10 +307,9 @@ void sofia_sla_handle_sip_i_notify(nua_t *nua, sofia_profile_t *profile, nua_han
 							 sip->sip_contact->m_url->url_host, sofia_glue_transport2str(transport));
 
 	if (sip->sip_payload && sip->sip_payload->pl_data) {
-		sql = switch_mprintf("select subscriber,call_id,aor,profile_name,hostname,contact_str from sip_shared_appearance_subscriptions where "
-		"aor='%q' and subscriber<>'%q' and profile_name='%q' and hostname='%q'",
-		aor, contact, profile->name, mod_sofia_globals.hostname); 
-
+		sql = switch_mprintf("select subscriber,call_id,aor,profile_name,hostname,contact_str,network_ip from sip_shared_appearance_subscriptions where "
+		"aor='%q' and profile_name='%q' and hostname='%q'",
+		aor, profile->name, mod_sofia_globals.hostname); 
 
 		helper.profile = profile;
 		helper.payload = sip->sip_payload->pl_data; 	/* could just send the WHOLE payload. you'd get the type that way. */
@@ -316,10 +332,11 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 	/* char *profile_name = argv[3]; */
 	/* char *hostname = argv[4]; */
 	char *contact_str = argv[5];
+	char *network_ip = argv[6];
 	nua_handle_t *nh;
 	char *route_uri = NULL;
-
-
+	char *xml_fixup = NULL;
+	char *fixup = NULL;
 	nh = nua_handle_by_call_id(helper->profile->nua, call_id);  /* that's all you need to find the subscription's nh */
 
 	if (nh) {
@@ -343,13 +360,27 @@ static int sofia_sla_sub_callback(void *pArg, int argc, char **argv, char **colu
 			}
 		}
 
+		if (sofia_test_pflag(helper->profile, PFLAG_AUTO_NAT)) {
+			if (sofia_glue_check_nat(helper->profile, network_ip)) { 
+				fixup = switch_string_replace(helper->payload, helper->profile->sipip, helper->profile->extsipip);
+			} else  {
+				fixup = switch_string_replace(helper->payload, helper->profile->extsipip, helper->profile->sipip);
+			}
+			xml_fixup = fixup;
+		} else {
+			xml_fixup = helper->payload;
+		}
+		
 		nua_notify(nh,
 				   SIPTAG_SUBSCRIPTION_STATE_STR("active;expires=300"), /* XXX MTK FIXME - this is totally fake calculation */
 				   TAG_IF(route_uri, NUTAG_PROXY(route_uri)),
 				   SIPTAG_CONTENT_TYPE_STR("application/dialog-info+xml"),	/* could've just kept the type from the payload */
-				   SIPTAG_PAYLOAD_STR(helper->payload),
+				   SIPTAG_PAYLOAD_STR(xml_fixup),
 				   TAG_END());
 		switch_safe_free(route_uri);
+		if (fixup && fixup != helper->payload) { 
+			free(fixup);
+		}
 	}
 	return 0;
 }

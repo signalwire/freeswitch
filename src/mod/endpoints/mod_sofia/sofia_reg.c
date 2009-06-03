@@ -402,11 +402,13 @@ int sofia_sub_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	return 0;
 }
 
-void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent)
+void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const char *host, const char *contact, const char *user_agent, const char *network_ip)
 {
 	const char *event = "check-sync";
 	nua_handle_t *nh;
 	char *contact_url = NULL;
+	char *contact_str = NULL;
+	char *user_via = NULL;
 	char *id = NULL;
 
 	if (switch_stristr("snom", user_agent)) {
@@ -417,22 +419,52 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 
 	if ((contact_url = sofia_glue_get_url_from_contact((char *)contact, 1))) {
 		char *p;
-		id = switch_mprintf("sip:%s@%s", user, host);
+		id = switch_mprintf("sip:%s@%s", user, network_ip);
 
 		if ((p = strstr(contact_url, ";fs_"))) {
 			*p = '\0';
 		}
+		if (sofia_glue_check_nat(profile, network_ip)) {
+			char *ptr = NULL;
+			const char *transport_str = NULL;
+			
+			if ((ptr = sofia_glue_find_parameter(contact_url, "transport="))) {
+				sofia_transport_t transport = sofia_glue_str2transport(ptr);
+				transport_str = sofia_glue_transport2str(transport);
+				
+				switch (transport) {
+				case SOFIA_TRANSPORT_TCP:
+					contact_str = profile->tcp_public_contact;
+					break;
+				case SOFIA_TRANSPORT_TCP_TLS:
+					contact_str = profile->tls_public_contact;
+					break;
+				default:
+					contact_str = profile->public_url;
+					break;
+				}
+				
+				user_via = sofia_glue_create_external_via(NULL, profile, transport);
+			} else {
+				user_via = sofia_glue_create_external_via(NULL, profile, SOFIA_TRANSPORT_UDP);
+				contact_str = profile->public_url;
+			}
 		
+		} else {
+			contact_str = profile->url;
+		}
+
 		nh = nua_handle(profile->nua, NULL, 
 						NUTAG_URL(contact_url), 
 						SIPTAG_FROM_STR(id), 
 						SIPTAG_TO_STR(id), 
-						SIPTAG_CONTACT_STR(profile->url), 
+						SIPTAG_CONTACT_STR(contact_str), 
 						TAG_END());
 
 		nua_handle_bind(nh, &mod_sofia_globals.destroy_private);
 		nua_notify(nh,
 				   NUTAG_NEWSUB(1),
+				   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 				   SIPTAG_EVENT_STR(event), 
 				   SIPTAG_CONTENT_TYPE_STR("application/simple-message-summary"),
 				   SIPTAG_PAYLOAD_STR(""),
@@ -442,6 +474,7 @@ void sofia_reg_send_reboot(sofia_profile_t *profile, const char *user, const cha
 		free(contact_url);
 	}
 
+	switch_safe_free(user_via);
 	switch_safe_free(id);
 }
 
@@ -462,8 +495,8 @@ int sofia_reg_del_callback(void *pArg, int argc, char **argv, char **columnNames
 	switch_event_t *s_event;
 	sofia_profile_t *profile = (sofia_profile_t *) pArg;
 	
-	if (argc > 11 && atoi(argv[11]) == 1) {
-		sofia_reg_send_reboot(profile, argv[1], argv[2], argv[3], argv[7]);
+	if (argc > 12 && atoi(argv[12]) == 1) {
+		sofia_reg_send_reboot(profile, argv[1], argv[2], argv[3], argv[7], argv[11]);
 	}
 
 	if (argc >= 3) {
@@ -508,7 +541,8 @@ void sofia_reg_expire_call_id(sofia_profile_t *profile, const char *call_id, int
 		switch_snprintf(sqlextra, sizeof(sqlextra), " or (sip_user='%s' and sip_host='%s')", user, host);
 	}
 
-	switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name"
+	switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires"
+					",user_agent,server_user,server_host,profile_name,network_ip"
 					",%d from sip_registrations where call_id='%s' %s", 
 					reboot, call_id, sqlextra);
 	
@@ -548,10 +582,12 @@ void sofia_reg_check_expire(sofia_profile_t *profile, time_t now, int reboot)
 	switch_mutex_lock(profile->ireg_mutex);
 
 	if (now) {
-		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name"
+		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires"
+						",user_agent,server_user,server_host,profile_name,network_ip"
 						",%d from sip_registrations where expires > 0 and expires <= %ld", reboot, (long) now);
 	} else {
-		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires,user_agent,server_user,server_host,profile_name"
+		switch_snprintf(sql, sizeof(sql), "select call_id,sip_user,sip_host,contact,status,rpid,expires"
+						",user_agent,server_user,server_host,profile_name,network_ip"
 						",%d from sip_registrations where expires > 0", reboot);
 	}
 
@@ -725,19 +761,17 @@ uint8_t sofia_reg_handle_register(nua_t *nua, sofia_profile_t *profile, nua_hand
 	char *force_user;
 	char received_data[128] = "";
 	char *path_val = NULL;
-	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	switch_event_t *auth_params = NULL;
 	int r = 0;
 
 	/* all callers must confirm that sip, sip->sip_request and sip->sip_contact are not NULL */
 	switch_assert(sip != NULL && sip->sip_contact != NULL && sip->sip_request != NULL);
 
-	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr,my_addrinfo->ai_addrlen);
-	network_port = get_port(my_addrinfo->ai_addr);
+	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
 	snprintf(network_port_c, sizeof(network_port_c), "%d", network_port);
 
-	snprintf(url_ip, sizeof(url_ip), my_addrinfo->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
+	snprintf(url_ip, sizeof(url_ip), (msg_addrinfo(nua_current_request(nua)))->ai_addr->sa_family == AF_INET6 ? "[%s]" : "%s", network_ip);
 
 	expires = sip->sip_expires;
 	authorization = sip->sip_authorization;
@@ -1249,15 +1283,11 @@ void sofia_reg_handle_sip_i_register(nua_t *nua, sofia_profile_t *profile, nua_h
 	char key[128] = "";
 	switch_event_t *v_event = NULL;
 	char network_ip[80];
-	su_addrinfo_t *my_addrinfo = msg_addrinfo(nua_current_request(nua));
 	sofia_regtype_t type = REG_REGISTER;
 	int network_port = 0;
 	char *is_nat = NULL;
 
-
-	get_addr(network_ip, sizeof(network_ip), my_addrinfo->ai_addr, my_addrinfo->ai_addrlen);
-	network_port = get_port(msg_addrinfo(nua_current_request(nua))->ai_addr);
-
+	sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
 	if (!(sip->sip_contact && sip->sip_contact->m_url)) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "NO CONTACT!\n");
