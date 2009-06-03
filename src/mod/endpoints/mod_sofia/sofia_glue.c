@@ -644,13 +644,14 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 
 	tech_pvt->local_sdp_audio_ip = ip;
+
 	if (!(tech_pvt->local_sdp_audio_port = switch_rtp_request_port(tech_pvt->profile->rtpip))) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "No RTP ports available!\n");
 		return SWITCH_STATUS_FALSE;
 	}
 	sdp_port = tech_pvt->local_sdp_audio_port;
 
-	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip"))) {
+	if (!(use_ip = switch_channel_get_variable(tech_pvt->channel, "rtp_adv_audio_ip")) && !sofia_test_pflag(tech_pvt->profile, PFLAG_AUTO_NAT)) {
 		if (tech_pvt->profile->extrtpip) {
 			use_ip = tech_pvt->profile->extrtpip;
 		}
@@ -705,8 +706,8 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 
 
 	if (tech_pvt->profile->extrtpip) {
-		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, tech_pvt->profile->extrtpip, switch_core_session_get_pool(tech_pvt->session)) !=
-			SWITCH_STATUS_SUCCESS) {
+		if (sofia_glue_ext_address_lookup(tech_pvt->profile, tech_pvt, &ip, &sdp_port, tech_pvt->profile->extrtpip,
+										  switch_core_session_get_pool(tech_pvt->session)) != SWITCH_STATUS_SUCCESS) {
 			return SWITCH_STATUS_FALSE;
 		}
 	}
