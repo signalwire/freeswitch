@@ -2244,7 +2244,7 @@ static int config(void)
 		prefs.nat_map = 0;
 	}
 
-	if (prefs.nat_map && !switch_check_network_list_ip(prefs.ip, "loopback.auto")) {
+	if (prefs.nat_map && switch_check_network_list_ip(prefs.ip, "loopback.auto")) {
 		prefs.nat_map = 0;
 	}
 
