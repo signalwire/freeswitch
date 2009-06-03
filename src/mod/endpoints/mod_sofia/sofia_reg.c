@@ -134,11 +134,14 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 		for (gw_sub_ptr = gateway_ptr->subscriptions; gw_sub_ptr; gw_sub_ptr = gw_sub_ptr->next) {
 			int ss_state = nua_callstate_authenticating;
 			sub_state_t ostate = gw_sub_ptr->state;
+			char *user_via = NULL;
 			
 			if (!now) {
 				gw_sub_ptr->state = ostate = SUB_STATE_UNSUBED;
 				gw_sub_ptr->expires_str = "0";
 			}
+
+			user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
 			
 			switch (ostate) {
 			case SUB_STATE_NOSUB:
@@ -152,18 +155,20 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 
 				/* not tested .. */
 				nua_unsubscribe(gateway_ptr->nh,
-						NUTAG_URL(gateway_ptr->register_url),
-						SIPTAG_EVENT_STR(gw_sub_ptr->event),
-						SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
-						SIPTAG_TO_STR(gateway_ptr->register_from),
-						SIPTAG_FROM_STR(gateway_ptr->register_from),
-						SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
-						TAG_NULL());
+								NUTAG_URL(gateway_ptr->register_url),
+								TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+								SIPTAG_EVENT_STR(gw_sub_ptr->event),
+								SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
+								SIPTAG_TO_STR(gateway_ptr->register_from),
+								SIPTAG_FROM_STR(gateway_ptr->register_from),
+								SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+								TAG_NULL());
 				
 				break;
 			case SUB_STATE_UNSUBED:
 				gateway_ptr->sub_nh = nua_handle(gateway_ptr->profile->nua, NULL,
 												 NUTAG_URL(gateway_ptr->register_proxy),
+												 TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 												 SIPTAG_TO_STR(gateway_ptr->register_to),
 												 NUTAG_CALLSTATE_REF(ss_state), 
 												 SIPTAG_FROM_STR(gateway_ptr->register_from), TAG_END());
@@ -179,25 +184,27 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 
 				if (now) {
 					nua_subscribe(gateway_ptr->sub_nh,
-							NUTAG_URL(gateway_ptr->register_url),
-							SIPTAG_EVENT_STR(gw_sub_ptr->event),
-							SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),  
-							SIPTAG_TO_STR(gateway_ptr->register_from),
-							SIPTAG_FROM_STR(gateway_ptr->register_from),
-							SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
-							SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),  // sofia stack bases its auto-refresh stuff on this
-							TAG_NULL());
+								  NUTAG_URL(gateway_ptr->register_url),
+								  TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+								  SIPTAG_EVENT_STR(gw_sub_ptr->event),
+								  SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),  
+								  SIPTAG_TO_STR(gateway_ptr->register_from),
+								  SIPTAG_FROM_STR(gateway_ptr->register_from),
+								  SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+								  SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),  // sofia stack bases its auto-refresh stuff on this
+								  TAG_NULL());
 					gw_sub_ptr->retry = now + gw_sub_ptr->retry_seconds;
 				} else {
 					nua_unsubscribe(gateway_ptr->sub_nh,
-							NUTAG_URL(gateway_ptr->register_url),
-							SIPTAG_EVENT_STR(gw_sub_ptr->event),
-							SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
-							SIPTAG_FROM_STR(gateway_ptr->register_from),
-							SIPTAG_TO_STR(gateway_ptr->register_from),
-							SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
-							SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),
-							TAG_NULL());
+									NUTAG_URL(gateway_ptr->register_url),
+									TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
+									SIPTAG_EVENT_STR(gw_sub_ptr->event),
+									SIPTAG_ACCEPT_STR(gw_sub_ptr->content_type),
+									SIPTAG_FROM_STR(gateway_ptr->register_from),
+									SIPTAG_TO_STR(gateway_ptr->register_from),
+									SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+									SIPTAG_EXPIRES_STR(gw_sub_ptr->expires_str),
+									TAG_NULL());
 				}
 				gw_sub_ptr->state = SUB_STATE_TRYING;
 				break;
@@ -215,6 +222,7 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 				}
 				break;
 			}
+			switch_safe_free(user_via);
 		}
 	}
 }
@@ -248,6 +256,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 
 	for (gateway_ptr = profile->gateways; gateway_ptr; gateway_ptr = gateway_ptr->next) {
 		reg_state_t ostate = gateway_ptr->state;
+		char *user_via = NULL;
 
 		if (!now) {
 			gateway_ptr->state = ostate = REG_STATE_UNREGED;
@@ -301,16 +310,19 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 
 			sofia_reg_new_handle(gateway_ptr, now ? 1 : 0);
-			
+
+			user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
+
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "Registering %s\n", gateway_ptr->name);
 			
 			if (now) {
 				nua_register(gateway_ptr->nh,
 							 NUTAG_URL(gateway_ptr->register_url),
 							 TAG_IF(gateway_ptr->register_sticky_proxy, NUTAG_PROXY(gateway_ptr->register_sticky_proxy)),
+							 TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 							 SIPTAG_TO_STR(gateway_ptr->register_from),
-							 SIPTAG_FROM_STR(gateway_ptr->register_from),
 							 SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
+							 SIPTAG_FROM_STR(gateway_ptr->register_from),							 
 							 SIPTAG_EXPIRES_STR(gateway_ptr->expires_str),
 							 NUTAG_REGISTRAR(gateway_ptr->register_proxy),
 							 NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
@@ -318,6 +330,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			} else {
 				nua_unregister(gateway_ptr->nh,
 							   NUTAG_URL(gateway_ptr->register_url),
+							   TAG_IF(user_via, SIPTAG_VIA_STR(user_via)),
 							   SIPTAG_FROM_STR(gateway_ptr->register_from),
 							   SIPTAG_TO_STR(gateway_ptr->register_from),
 							   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
@@ -327,6 +340,8 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 			}
 			gateway_ptr->retry = now + gateway_ptr->retry_seconds;
 			gateway_ptr->state = REG_STATE_TRYING;
+			
+			switch_safe_free(user_via);
 			
 			break;
 
