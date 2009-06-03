@@ -42,10 +42,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_cluechoo_load);
  */
 SWITCH_MODULE_DEFINITION(mod_cluechoo, mod_cluechoo_load, mod_cluechoo_shutdown, NULL);
 
-int add_D51();
-int add_sl();
-int add_man();
-int add_smoke();
+int add_D51(int x);
+int add_sl(int x);
+int add_man(int y, int x);
+int add_smoke(int y, int x);
 int go(int i);
 int vgo(int i, switch_core_session_t *session);
 
