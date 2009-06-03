@@ -740,9 +740,8 @@ SWITCH_DECLARE(const char *) switch_stristr(const char *instr, const char *str)
 	return NULL;
 }
 
-#ifndef WIN32
+#ifdef HAVE_GETIFADDRS
 #include <ifaddrs.h>
-
 static int get_netmask(struct sockaddr_in *me, int *mask)
 {
 	struct ifaddrs *ifaddrs, *i = NULL;
@@ -761,9 +760,78 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 		}
 	}
 	
-
+	freeifaddrs(ifaddrs);
+	
 	return -2;
 }
+#elif defined(__linux__)
+
+#include <sys/ioctl.h>
+#include <net/if.h>
+static int get_netmask(struct sockaddr_in *me, int *mask)
+{
+
+	static struct ifreq ifreqs[20] = { {{{0}}} };
+	struct ifconf ifconf;
+	int  nifaces, i;
+	int sock;
+	int r = -1;
+	
+	memset(&ifconf,0,sizeof(ifconf));
+	ifconf.ifc_buf = (char*) (ifreqs);
+	ifconf.ifc_len = sizeof(ifreqs);
+	
+
+	if ((sock = socket(AF_INET,SOCK_STREAM, 0)) < 0) {
+		goto end;
+	}
+
+	if (ioctl(sock, SIOCGIFCONF, (char *) &ifconf) < 0) {
+		goto end;
+	}
+
+	nifaces = ifconf.ifc_len / sizeof(struct ifreq);
+
+	for(i = 0; i < nifaces; i++) {
+		struct sockaddr_in *sin = NULL;
+		struct in_addr ip;
+
+		ioctl(sock, SIOCGIFADDR, &ifreqs[i]);
+		sin = (struct sockaddr_in *)&ifreqs[i].ifr_addr;
+		ip = sin->sin_addr;
+
+		if (ip.s_addr == me->sin_addr.s_addr) {
+			ioctl(sock, SIOCGIFNETMASK, &ifreqs[i]);
+			sin = (struct sockaddr_in *)&ifreqs[i].ifr_addr;
+			//mask = sin->sin_addr;
+			*mask = sin->sin_addr.s_addr;
+			r = 0;
+			break;
+		}
+
+	}
+	
+ end:
+	
+	close(sock);
+	return r;
+
+}
+
+#elif defined(WIN32)
+
+static int get_netmask(struct sockaddr_in *me, int *mask)
+{
+	return -1;
+}
+
+#else
+
+static int get_netmask(struct sockaddr_in *me, int *mask)
+{
+	return -1;
+}
+
 #endif
 
 SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *mask, int family)
