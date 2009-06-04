@@ -1086,7 +1086,10 @@ SWITCH_STANDARD_APP(lcr_app_function)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "LCR Lookup on %s using profile %s\n", dest, lcr_profile);
 		routes.lookup_number = dest;
 		if (caller_profile) {
-			routes.cid = (char *) caller_profile->caller_id_number;
+			routes.cid = (char *) switch_channel_get_variable(channel, "effective_caller_id_number");
+			if (!routes.cid) {
+				routes.cid = (char *) caller_profile->caller_id_number;
+			}
 		}
 	
 		if (!(routes.profile = locate_profile(lcr_profile))) {
