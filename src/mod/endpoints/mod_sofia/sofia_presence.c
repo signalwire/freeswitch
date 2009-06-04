@@ -209,7 +209,7 @@ void sofia_presence_cancel(void)
 	
 	if ((sql = switch_mprintf(
 							  "select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-							  "full_via,expires,user_agent,accept,profile_name"
+							  "full_via,expires,user_agent,accept,profile_name,network_ip"
 							  ",-1,'unavailable','unavailable' from sip_subscriptions where event='presence' and hostname='%q'", 
 							  mod_sofia_globals.hostname))) {
 		switch_mutex_lock(mod_sofia_globals.hash_mutex);
@@ -354,13 +354,13 @@ static void actual_sofia_presence_mwi_event_handler(switch_event_t *event)
 
 	if (for_everyone) {
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-							 "full_via,expires,user_agent,accept,profile_name"
+							 "full_via,expires,user_agent,accept,profile_name,network_ip"
 							 ",'%q','%q' from sip_subscriptions where event='message-summary' "
 							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%')",
 							 stream.data, host, user, host, host);
 	} else if (sub_call_id) {
 		sql = switch_mprintf("select proto,sip_user,sip_host,sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-							 "full_via,expires,user_agent,accept,profile_name"
+							 "full_via,expires,user_agent,accept,profile_name,network_ip"
 							 ",'%q','%q' from sip_subscriptions where event='message-summary' "
 							 "and sub_to_user='%q' and (sub_to_host='%q' or presence_hosts like '%%%q%%' and call_id='%q')",
 							 stream.data, host, user, host, host, sub_call_id);
@@ -446,7 +446,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
 								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
 								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
-								 "sip_subscriptions.accept,sip_subscriptions.profile_name"
+								 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
 								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
 								 "from sip_subscriptions left join sip_presence on "
 								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
@@ -459,7 +459,7 @@ static void actual_sofia_presence_event_handler(switch_event_t *event)
 								 "sip_subscriptions.sub_to_user,sip_subscriptions.sub_to_host,sip_subscriptions.event,"
 								 "sip_subscriptions.contact,sip_subscriptions.call_id,sip_subscriptions.full_from,"
 								 "sip_subscriptions.full_via,sip_subscriptions.expires,sip_subscriptions.user_agent,"
-								 "sip_subscriptions.accept,sip_subscriptions.profile_name"
+								 "sip_subscriptions.accept,sip_subscriptions.profile_name,sip_subscriptions.network_ip"
 								 ",1,'%q','%q',sip_presence.status,sip_presence.rpid "
 								 "from sip_subscriptions left join sip_presence on "
 								 "(sip_subscriptions.sub_to_user=sip_presence.sip_user and sip_subscriptions.sub_to_host=sip_presence.sip_host and "
@@ -1777,15 +1777,12 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 			sql = switch_mprintf("insert into sip_subscriptions "
 								 "(proto,sip_user,sip_host,sub_to_user,sub_to_host,presence_hosts,event,contact,call_id,full_from,"
-								 "full_via,expires,user_agent,accept,profile_name,hostname) "
-								 "values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q','%q','%q')",
+								 "full_via,expires,user_agent,accept,profile_name,hostname,network_ip) "
+								 "values ('%q','%q','%q','%q','%q','%q','%q','%q','%q','%q','%q',%ld,'%q','%q','%q','%q','%q')",
 								 proto, from_user, from_host, to_user, to_host, profile->presence_hosts ? profile->presence_hosts : to_host, 
 								 event, contact_str, call_id, full_from, full_via, 
-
 								 exp_delta * -1, 
-								 //exp_abs + SUB_OVERLAP, 
-
-								 full_agent, accept, profile->name,mod_sofia_globals.hostname);
+								 full_agent, accept, profile->name,mod_sofia_globals.hostname, network_ip);
 								 
 			
 			if (mod_sofia_globals.debug_presence > 0) {
