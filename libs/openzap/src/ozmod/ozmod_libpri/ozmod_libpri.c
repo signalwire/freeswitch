@@ -900,7 +900,7 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_INFO_RECEIVED, on_info);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_RESTART, on_restart);
 			LPWRAP_MAP_PRI_EVENT(isdn_data->spri, LPWRAP_PRI_EVENT_IO_FAIL, on_io_fail);
-			
+
 			if (down) {
 				zap_log(ZAP_LOG_INFO, "PRI back up on span %d\n", isdn_data->spri.span->span_id);
 				zap_set_state_all(span, ZAP_CHANNEL_STATE_RESTART);
@@ -910,9 +910,9 @@ static void *zap_libpri_run(zap_thread_t *me, void *obj)
 			isdn_data->spri.on_loop = check_flags;
 			isdn_data->spri.private_info = span;
 			lpwrap_run_pri(&isdn_data->spri);
-			
+
 		}
-		
+
 		if (!zap_running() || zap_test_flag(span, ZAP_SPAN_STOP_THREAD)) {
 			break;
 		}
