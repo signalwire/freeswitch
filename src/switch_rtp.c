@@ -212,6 +212,7 @@ struct switch_rtp {
 	uint32_t cng_count;
 	switch_rtp_bug_flag_t rtp_bugs;
 	switch_rtp_stats_t stats;
+	int hot_hits;
 
 #ifdef ENABLE_ZRTP
 	zrtp_session_t *zrtp_session;
@@ -1764,15 +1765,26 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 			if ((switch_test_flag(rtp_session, SWITCH_RTP_FLAG_AUTOFLUSH) || switch_test_flag(rtp_session, SWITCH_RTP_FLAG_STICKY_FLUSH)) &&
 				rtp_session->read_pollfd) {
 				if (switch_poll(rtp_session->read_pollfd, 1, &fdr, 1) == SWITCH_STATUS_SUCCESS) {
-					hot_socket = 1;
+					if (++rtp_session->hot_hits >= 10) {
+						hot_socket = 1;
+					}
+				} else {
+					rtp_session->hot_hits = 0;
 				}
 			}
-			if (!hot_socket) {
+
+			if (hot_socket) {
+				switch_core_timer_sync(&rtp_session->timer);
+			} else {
 				switch_core_timer_next(&rtp_session->timer);
 			}
 		}
 
 	recvfrom:
+
+		if (!switch_rtp_ready(rtp_session)) {
+			break;
+		}
 
 		if (!rtp_session->timer.interval && rtp_session->read_pollfd) {
 			poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, poll_sec * 1000000);
@@ -2101,6 +2113,12 @@ static int rtp_common_read(switch_rtp_t *rtp_session, switch_payload_t *payload_
 
 		if (do_cng) {
 			uint8_t *data = (uint8_t *) rtp_session->recv_msg.body;
+			int fdr;
+			
+			if ((poll_status = switch_poll(rtp_session->read_pollfd, 1, &fdr, 1)) == SWITCH_STATUS_SUCCESS) {
+				goto recvfrom;
+			}
+
 			memset(data, 0, 2);
 			data[0] = 65;
 			rtp_session->recv_msg.header.pt = (uint32_t) rtp_session->cng_pt ? rtp_session->cng_pt : SWITCH_RTP_CNG_PAYLOAD;
