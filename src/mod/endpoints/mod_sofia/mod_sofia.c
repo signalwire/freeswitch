@@ -1427,7 +1427,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 		if (!switch_channel_test_flag(channel, CF_RING_READY) && !sofia_test_flag(tech_pvt, TFLAG_BYE) &&
 			!switch_channel_test_flag(channel, CF_EARLY_MEDIA) && !switch_channel_test_flag(channel, CF_ANSWERED)) {
 			nua_respond(tech_pvt->nh, SIP_180_RINGING,
-						TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 						SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
 						SIPTAG_HEADER_STR(generate_pai_str(session)), TAG_END());
 			switch_channel_mark_ring_ready(channel);
@@ -1504,7 +1503,6 @@ static switch_status_t sofia_receive_message(switch_core_session_t *session, swi
 					nua_respond(tech_pvt->nh,
 								SIP_183_SESSION_PROGRESS,
 								NUTAG_AUTOANSWER(0),
-								TAG_IF(!switch_strlen_zero(tech_pvt->user_via), SIPTAG_VIA_STR(tech_pvt->user_via)),
 								TAG_IF(sticky, NUTAG_PROXY(tech_pvt->record_route)),
 								SIPTAG_HEADER_STR(generate_pai_str(session)),
 								SIPTAG_CONTACT_STR(tech_pvt->reply_contact),
