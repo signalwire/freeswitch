@@ -1417,9 +1417,7 @@ static int sofia_presence_mwi_callback2(void *pArg, int argc, char **argv, char 
 	}
 
 	contact = sofia_glue_get_url_from_contact(o_contact, 1);
-
-	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && profile->local_network &&
-		!switch_check_network_list_ip(network_ip, profile->local_network)) {
+	if (sofia_glue_check_nat(profile, network_ip)) {
 		char *ptr = NULL;
 		const char *transport_str = NULL;
 
@@ -1557,8 +1555,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
-		if (sofia_test_pflag(profile, PFLAG_AUTO_NAT) && profile->local_network &&
-			!switch_check_network_list_ip(network_ip, profile->local_network)) {
+		if (sofia_glue_check_nat(profile, network_ip)) {
 			is_auto_nat = 1;
 		}	
 
