@@ -1003,9 +1003,9 @@ void launch_sofia_profile_thread(sofia_profile_t *profile)
 static void logger(void *logarg, char const *fmt, va_list ap)
 {
 	if (fmt && ap) {
-		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, fmt, ap);
+		switch_log_vprintf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, fmt, ap);
 	} else if (fmt && !ap) {
-		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_CONSOLE, "%s", fmt);
+		switch_log_printf(SWITCH_CHANNEL_LOG_CLEAN, SWITCH_LOG_INFO, "%s", fmt);
 	}
 }
 
