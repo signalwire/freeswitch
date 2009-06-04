@@ -141,8 +141,10 @@ void sofia_sub_check_gateway(sofia_profile_t *profile, time_t now)
 				gw_sub_ptr->expires_str = "0";
 			}
 
-			user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
-			
+			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
+				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
+			}
+
 			switch (ostate) {
 			case SUB_STATE_NOSUB:
 				break;
