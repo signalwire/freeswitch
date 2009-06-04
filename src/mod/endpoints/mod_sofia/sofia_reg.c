@@ -310,7 +310,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		case REG_STATE_UNREGED:
 			gateway_ptr->status = SOFIA_GATEWAY_DOWN;
 
-			sofia_reg_new_handle(gateway_ptr, now ? 1 : 0);
+			if (!gateway_ptr->nh) sofia_reg_new_handle(gateway_ptr, now ? 1 : 0);
 
 			if (sofia_glue_check_nat(gateway_ptr->profile, gateway_ptr->register_proxy)) {
 				user_via = sofia_glue_create_external_via(NULL, gateway_ptr->profile, gateway_ptr->register_transport);
@@ -1422,6 +1422,15 @@ void sofia_reg_handle_sip_r_register(int status,
 	
 					if (expi > 0 && expi != sofia_private->gateway->freq) {
 						sofia_private->gateway->freq = expi;
+						sofia_private->gateway->expires_str = switch_core_sprintf(sofia_private->gateway->pool, "%d", expi);
+
+						if (expi > 60) {
+							sofia_private->gateway->expires = switch_epoch_time_now(NULL) + (expi - 15);
+						} else {
+							sofia_private->gateway->expires = switch_epoch_time_now(NULL) + (expi - 2);
+						}
+
+
 						switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG,
 										  "Changing expire time to %d by request of proxy %s\n", expi, sofia_private->gateway->register_proxy);
 					}
