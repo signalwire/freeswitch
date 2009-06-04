@@ -372,25 +372,6 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 					zchan->native_codec = zchan->effective_codec = type;
 
 				}
-                if(zt_globals.rxgain || zt_globals.txgain) {
-                    struct zt_gains gains;
-                    memset(&gains, 0, sizeof(gains));
-
-                    gains.chan_no = ztp.chan_no;
-                    zt_build_gains(&gains, zt_globals.rxgain, zt_globals.txgain, zchan->native_codec);
-
-                    if(zt_globals.rxgain)
-                        zap_log(ZAP_LOG_INFO, "Setting rxgain to %f on channel %d\n", zt_globals.rxgain, gains.chan_no);
-
-                    if(zt_globals.txgain)
-                        zap_log(ZAP_LOG_INFO, "Setting txgain to %f on channel %d\n", zt_globals.txgain, gains.chan_no);
-
-        			if (ioctl(sockfd, codes.SETGAINS, &gains) < 0) {
-        				zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
-        				close(sockfd);
-        				continue;
-        			}
-                }
 			}
 
 			ztp.wink_time = zt_globals.wink_ms;
@@ -582,6 +563,35 @@ static ZIO_OPEN_FUNCTION(zt_open)
 				}
 			}
 		}
+        if(zt_globals.rxgain || zt_globals.txgain) {
+            struct zt_gains gains;
+            memset(&gains, 0, sizeof(gains));
+
+            gains.chan_no = zchan->physical_chan_id;
+            zt_build_gains(&gains, zt_globals.rxgain, zt_globals.txgain, zchan->native_codec);
+
+            if(zt_globals.rxgain)
+                zap_log(ZAP_LOG_INFO, "Setting rxgain to %f on channel %d\n", zt_globals.rxgain, gains.chan_no);
+
+            if(zt_globals.txgain)
+                zap_log(ZAP_LOG_INFO, "Setting txgain to %f on channel %d\n", zt_globals.txgain, gains.chan_no);
+
+			if (ioctl(zchan->sockfd, codes.SETGAINS, &gains) < 0) {
+				zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, zchan->sockfd);
+   			}
+        }
+
+        int len = zt_globals.eclevel;
+       	zap_log(ZAP_LOG_INFO, "Setting echo cancel to %d taps for %d:%d\n", len, zchan->span_id, zchan->chan_id);
+        if (ioctl(zchan->sockfd, codes.ECHOCANCEL, &len)) {
+                zap_log(ZAP_LOG_WARNING, "Echo cancel not available for %d:%d\n", zchan->span_id, zchan->chan_id);
+        } else {
+                len = zt_globals.etlevel;
+               	if (ioctl(zchan->sockfd, codes.ECHOTRAIN, &len)) {
+                        zap_log(ZAP_LOG_WARNING, "Echo training not available for %d:%d\n", zchan->span_id, zchan->chan_id);
+                }
+       	}
+
 	}
 	return ZAP_SUCCESS;
 }
