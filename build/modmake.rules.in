@@ -57,7 +57,7 @@ RECURSE_SOURCEFILE=`if test -f $$modname.cpp; then echo $$modname.cpp; else echo
 RECURSE_OUR_DEPS=`test -z "$(WANT_CURL)" || if test ! -z "$(LIBCURL_DEPS)"; then echo $(CURLLA); fi `
 RECURSE_OUR_CFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL_CPPFLAGS) ; $(LOCAL_INSERT_CFLAGS) `
 RECURSE_OUR_LDFLAGS=`test -z "$(WANT_CURL)" || echo $(LIBCURL) ; $(LOCAL_INSERT_LDFLAGS) `
-RECURSE_MAKE=modname="$(RECURSE_MODNAME)" ; \
+RECURSE_MAKE=+modname="$(RECURSE_MODNAME)" ; \
 		sourcefile="$(RECURSE_SOURCEFILE)" ; \
 		osarch=`uname -s` ; \
 		ourdefs="$(RECURSE_OUR_DEPS)" ; \
