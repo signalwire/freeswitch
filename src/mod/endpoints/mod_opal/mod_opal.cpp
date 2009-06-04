@@ -995,9 +995,9 @@ switch_status_t FSConnection::receive_message(switch_core_session_message_t *msg
 
     case SWITCH_MESSAGE_INDICATE_DEFLECT:
     {
-        char transfer_to[128] = "";
-        switch_set_string(transfer_to, msg->string_arg);
-        GetCall().Transfer(transfer_to);
+        PSafePtr<OpalConnection> other = GetOtherPartyConnection();
+        if (other != NULL)
+          other->TransferConnection(msg->string_arg);
         break;
     }
 
