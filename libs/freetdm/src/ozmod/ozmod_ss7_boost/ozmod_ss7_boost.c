@@ -193,6 +193,8 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 	ss7bc_event_t event = {0};
 	int sanity = 5000;
 	ss7_boost_request_status_t st;
+	char ani[128] = "";
+	char *gr = NULL;
 
 	if (zap_test_flag(span, ZAP_SPAN_SUSPENDED)) {
 		zap_log(ZAP_LOG_CRIT, "SPAN is not online.\n");
@@ -213,7 +215,39 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 		return ZAP_FAIL;
 	}
 
-	ss7bc_call_init(&event, caller_data->cid_num.digits, caller_data->ani.digits, r);
+
+	zap_set_string(ani, caller_data->ani.digits);
+
+	if ((gr = strchr(ani, '@'))) {
+		*gr++ = '\0';
+	}
+
+	ss7bc_call_init(&event, caller_data->cid_num.digits, ani, r);
+	
+	if (gr) {
+		switch(*gr) {
+			event.trunk_group = atoi(gr+1);
+
+        case 'g':
+            event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
+            break;
+        case 'G':
+            event.hunt_group = SIGBOOST_HUNTGRP_SEQ_DESC;
+            break;
+        case 'r':
+            event.hunt_group = SIGBOOST_HUNTGRP_RR_ASC;
+            break;
+        case 'R':
+            event.hunt_group = SIGBOOST_HUNTGRP_RR_DESC;
+            break;
+        default:
+			zap_log(ZAP_LOG_WARNING,
+					"Failed to determine huntgroup (%s)\n",
+					gr);
+            event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
+		}
+	}
+
 	zap_set_string(event.calling_name, caller_data->cid_name);
 	zap_set_string(event.isup_in_rdnis, caller_data->rdnis.digits);
     if (strlen(caller_data->rdnis.digits)) {
