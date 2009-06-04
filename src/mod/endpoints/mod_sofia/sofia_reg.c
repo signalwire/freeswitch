@@ -342,10 +342,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 							   NUTAG_OUTBOUND("no-options-keepalive"), NUTAG_OUTBOUND("no-validate"), NUTAG_KEEPALIVE(0), TAG_NULL());
 			}
 			gateway_ptr->retry = now + gateway_ptr->retry_seconds;
-			gateway_ptr->state = REG_STATE_TRYING;
-			
-			switch_safe_free(user_via);
-			
+			gateway_ptr->state = REG_STATE_TRYING;			
 			break;
 
 		case REG_STATE_FAILED:
@@ -374,6 +371,7 @@ void sofia_reg_check_gateway(sofia_profile_t *profile, time_t now)
 		if (ostate != gateway_ptr->state) {
 			sofia_reg_fire_custom_gateway_state_event(gateway_ptr);
 		}
+		switch_safe_free(user_via);
 	}
 }
 
