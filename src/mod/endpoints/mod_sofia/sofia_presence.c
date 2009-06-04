@@ -1866,7 +1866,7 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 
 		if ((sql = switch_mprintf(
 								  "select proto,sip_user,'%q',sub_to_user,sub_to_host,event,contact,call_id,full_from,"
-								  "full_via,expires,user_agent,accept,profile_name"
+								  "full_via,expires,user_agent,accept,profile_name,network_ip"
 								  " from sip_subscriptions where sip_user='%q' and (sip_host='%q' or presence_hosts like '%%%q%%')", 
 								  to_host, to_user, to_host, to_host))) {
 			sofia_glue_execute_sql_callback(profile, SWITCH_FALSE, profile->ireg_mutex, sql, sofia_presence_sub_reg_callback, profile);
