@@ -237,13 +237,16 @@ void sofia_sla_handle_sip_r_subscribe(int status,
 		time_t expires = switch_epoch_time_now(NULL);
 		char *sql;
 		char *contact_str = strip_uri(full_contact);
+		char network_ip[80];
+		int network_port = 0;
 
 		if (sip && sip->sip_expires) {
 			expires += sip->sip_expires->ex_delta + 30;
 		}
+		sofia_glue_get_addr(nua_current_request(nua), network_ip,  sizeof(network_ip), &network_port);
 
-		if ((sql = switch_mprintf("insert into sip_shared_appearance_dialogs (profile_name, hostname, contact_str, call_id, expires) "
-								  "values ('%q','%q','%q','%q','%ld')", 
+		if ((sql = switch_mprintf("insert into sip_shared_appearance_dialogs (profile_name, hostname, contact_str, call_id, expires, network_ip) "
+								  "values ('%q','%q','%q','%q','%ld','%q')", 
 								  profile->name, mod_sofia_globals.hostname, contact_str, sip->sip_call_id->i_id, (long)expires))) {
 			sofia_glue_execute_sql(profile, &sql, SWITCH_TRUE);
 		}

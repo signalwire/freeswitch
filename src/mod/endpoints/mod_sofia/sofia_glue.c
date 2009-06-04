@@ -3600,7 +3600,8 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		"   hostname          VARCHAR(255),\n"
 		"   contact_str       VARCHAR(255),\n"
 		"   call_id           VARCHAR(255),\n"
-		"   expires           INTEGER\n"
+		"   expires           INTEGER,\n"
+		"   network_ip        VARCHAR(255)\n"
 		");\n";
 
 	if (profile->odbc_dsn) {
@@ -3645,6 +3646,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 			"create index ssd_contact_str on sip_shared_appearance_dialogs (contact_str)",
 			"create index ssd_call_id on sip_shared_appearance_dialogs (call_id)",
 			"create index ssd_expires on sip_shared_appearance_dialogs (expires)",
+			"create index ssd_expires on sip_shared_appearance_dialogs (network_ip)",
 			NULL	
 		};
 
@@ -3709,7 +3711,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		free(test_sql);
 
 
-		test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str='' or hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str='' or network_ip='%q'", mod_sofia_globals.hostname);
 		if (switch_odbc_handle_exec(profile->master_odbc, test_sql, NULL) != SWITCH_ODBC_SUCCESS) {
 			switch_odbc_handle_exec(profile->master_odbc, "DROP TABLE sip_shared_appearance_dialogs", NULL);
 			switch_odbc_handle_exec(profile->master_odbc, shared_appearance_dialogs_sql, NULL);
@@ -3759,7 +3761,7 @@ int sofia_glue_init_sql(sofia_profile_t *profile)
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_shared_appearance_subscriptions", shared_appearance_sql);
 		free(test_sql);
 
-		test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str = '' or hostname='%q'", mod_sofia_globals.hostname);
+		test_sql = switch_mprintf("delete from sip_shared_appearance_dialogs where contact_str = '' or network_ip='%q'", mod_sofia_globals.hostname);
 		switch_core_db_test_reactive(profile->master_db, test_sql, "DROP TABLE sip_shared_appearance_dialogs", shared_appearance_dialogs_sql);
 		free(test_sql);
 		
