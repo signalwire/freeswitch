@@ -85,7 +85,6 @@ static void sofia_reg_kill_reg(sofia_gateway_t *gateway_ptr)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "UN-Registering %s\n", gateway_ptr->name);
 		nua_unregister(gateway_ptr->nh,
 					   NUTAG_URL(gateway_ptr->register_url),
-					   SIPTAG_CONTACT_STR(gateway_ptr->register_contact),
 					   NUTAG_REGISTRAR(gateway_ptr->register_proxy), 
 					   TAG_END());
 	}
