@@ -822,7 +822,34 @@ static int get_netmask(struct sockaddr_in *me, int *mask)
 
 static int get_netmask(struct sockaddr_in *me, int *mask)
 {
-	return -1;
+	SOCKET sock = WSASocket(AF_INET, SOCK_DGRAM, 0, 0, 0, 0);
+	INTERFACE_INFO interfaces[20];
+	unsigned long bytes;
+	int interface_count, x;
+
+	*mask = 0;
+
+	if (sock == SOCKET_ERROR) {
+		return -1;
+	}
+
+	if (WSAIoctl(sock, SIO_GET_INTERFACE_LIST, 0, 0, &interfaces, sizeof(interfaces), &bytes, 0, 0) == SOCKET_ERROR) {
+		return -1;
+	}
+
+    interface_count = bytes / sizeof(INTERFACE_INFO);
+
+	for (x = 0; x < interface_count; ++x) {
+		struct sockaddr_in *addr = (struct sockaddr_in *) & (interfaces[x].iiAddress);
+
+		if (addr->sin_addr.s_addr == me->sin_addr.s_addr) {
+			struct sockaddr_in *netmask = (struct sockaddr_in *) & (interfaces[x].iiNetmask);
+			*mask = netmask->sin_addr.s_addr;
+			break;
+		}
+    }
+
+	return 0;
 }
 
 #else
@@ -888,17 +915,15 @@ SWITCH_DECLARE(switch_status_t) switch_find_local_ip(char *buf, int len, int *ma
 		return status;
 	}
 
-	if (mask) {
-		*mask = 0;  // find the right one
-	}
 
 	closesocket(tmp_socket);
 	freeaddrinfo(address_info);
 
 	if (!getnameinfo((const struct sockaddr *) &l_address, l_address_len, buf, len, NULL, 0, NI_NUMERICHOST)) {
-
-		status = SWITCH_STATUS_SUCCESS;
-
+		status = SWITCH_STATUS_SUCCESS;	
+		if (mask) {
+			get_netmask((struct sockaddr_in *) &l_address, mask);
+		}
 	}
 #else
 
