@@ -14,7 +14,7 @@
 	<param name="register" value="$${default_provider_register}"/>
 	<param name="retry-seconds" value="30"/>
 	<param name="extension" value="$${default_provider_contact}"/>
-	<param name="contact-params" value="domain_name=$${domain}"/>
+	<!--<param name="contact-params" value="domain_name=$${domain}"/>-->
 	<param name="context" value="public"/>
       </gateway>
     </gateways>
