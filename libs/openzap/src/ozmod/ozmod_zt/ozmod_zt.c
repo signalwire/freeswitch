@@ -42,6 +42,8 @@ static struct {
 	uint32_t flash_ms;
 	uint32_t eclevel;
 	uint32_t etlevel;
+    float rxgain;
+    float txgain;
 } zt_globals;
 
 struct ioctl_codes {
@@ -164,6 +166,57 @@ static zap_socket_t CONTROL_FD = ZT_INVALID_SOCKET;
 
 ZIO_SPAN_NEXT_EVENT_FUNCTION(zt_next_event);
 ZIO_SPAN_POLL_EVENT_FUNCTION(zt_poll_event);
+
+static void zt_build_gains(struct zt_gains *g, float rxgain, float txgain, int codec)
+{
+	int j;
+	int k;
+	float linear_rxgain = pow(10.0, rxgain / 20.0);
+    float linear_txgain = pow(10.0, txgain / 20.0);
+
+	switch (codec) {
+	case ZAP_CODEC_ALAW:
+		for (j = 0; j < (sizeof(g->receive_gain) / sizeof(g->receive_gain[0])); j++) {
+			if (rxgain) {
+				k = (int) (((float) alaw_to_linear(j)) * linear_rxgain);
+				if (k > 32767) k = 32767;
+				if (k < -32767) k = -32767;
+				g->receive_gain[j] = linear_to_alaw(k);
+			} else {
+				g->receive_gain[j] = j;
+			}
+			if (txgain) {
+				k = (int) (((float) alaw_to_linear(j)) * linear_txgain);
+				if (k > 32767) k = 32767;
+				if (k < -32767) k = -32767;
+				g->transmit_gain[j] = linear_to_alaw(k);
+			} else {
+				g->transmit_gain[j] = j;
+			}
+		}
+		break;
+	case ZAP_CODEC_ULAW:
+		for (j = 0; j < (sizeof(g->receive_gain) / sizeof(g->receive_gain[0])); j++) {
+			if (rxgain) {
+				k = (int) (((float) ulaw_to_linear(j)) * linear_rxgain);
+				if (k > 32767) k = 32767;
+				if (k < -32767) k = -32767;
+				g->receive_gain[j] = linear_to_ulaw(k);
+			} else {
+				g->receive_gain[j] = j;
+			}
+			if (txgain) {
+				k = (int) (((float) ulaw_to_linear(j)) * linear_txgain);
+				if (k > 32767) k = 32767;
+				if (k < -32767) k = -32767;
+				g->transmit_gain[j] = linear_to_ulaw(k);
+			} else {
+				g->transmit_gain[j] = j;
+			}
+		}
+		break;
+	}
+}
 
 static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, zap_chan_type_t type, char *name, char *number, unsigned char cas_bits)
 {
@@ -319,8 +372,26 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 					zchan->native_codec = zchan->effective_codec = type;
 
 				}
+                if(zt_globals.rxgain || zt_globals.txgain) {
+                    struct zt_gains gains;
+                    memset(&gains, 0, sizeof(gains));
+
+                    gains.chan_no = ztp.chan_no;
+                    zt_build_gains(&gains, zt_globals.rxgain, zt_globals.txgain, zchan->native_codec);
+
+                    if(zt_globals.rxgain)
+                        zap_log(ZAP_LOG_INFO, "Setting rxgain to %f on channel %d\n", zt_globals.rxgain, gains.chan_no);
+
+                    if(zt_globals.txgain)
+                        zap_log(ZAP_LOG_INFO, "Setting txgain to %f on channel %d\n", zt_globals.txgain, gains.chan_no);
+
+        			if (ioctl(sockfd, codes.SETGAINS, &gains) < 0) {
+        				zap_log(ZAP_LOG_ERROR, "failure configuring device %s as OpenZAP device %d:%d fd:%d\n", chanpath, zchan->span_id, zchan->chan_id, sockfd);
+        				close(sockfd);
+        				continue;
+        			}
+                }
 			}
-			
 
 			ztp.wink_time = zt_globals.wink_ms;
 			ztp.flash_time = zt_globals.flash_ms;
@@ -330,7 +401,6 @@ static unsigned zt_open_range(zap_span_t *span, unsigned start, unsigned end, za
 				close(sockfd);
 				continue;
 			}
-		
 
 			if (!zap_strlen_zero(name)) {
 				zap_copy_string(zchan->chan_name, name, sizeof(zchan->chan_name));
@@ -414,6 +484,7 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
 {
 
 	int num;
+    float fnum;
 
 	if (!strcasecmp(category, "defaults")) {
 		if (!strcasecmp(var, "codec_ms")) {
@@ -443,6 +514,24 @@ static ZIO_CONFIGURE_FUNCTION(zt_configure)
                 zap_log(ZAP_LOG_WARNING, "invalid echo can val at line %d\n", lineno);
             } else {
                 zt_globals.eclevel = num;
+            }
+			
+		} else if (!strcasecmp(var, "rxgain")) {
+			fnum = (float)atof(val);
+			if (fnum < -100.0 || fnum > 100.0) {
+                zap_log(ZAP_LOG_WARNING, "invalid rxgain val at line %d\n", lineno);
+            } else {
+                zt_globals.rxgain = fnum;
+                zap_log(ZAP_LOG_INFO, "Setting rxgain val to %f\n", fnum);
+            }
+			
+		} else if (!strcasecmp(var, "txgain")) {
+			fnum = (float)atof(val);
+			if (fnum < -100.0 || fnum > 100.0) {
+                zap_log(ZAP_LOG_WARNING, "invalid txgain val at line %d\n", lineno);
+            } else {
+                zt_globals.txgain = fnum;
+                zap_log(ZAP_LOG_INFO, "Setting txgain val to %f\n", fnum);
             }
 			
 		}
