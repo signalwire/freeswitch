@@ -102,7 +102,7 @@ SWITCH_DECLARE(void) switch_core_media_bug_flush(switch_media_bug_t *bug)
 	}
 }
 
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame)
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *bug, switch_frame_t *frame, switch_bool_t fill)
 {
 	switch_size_t bytes = 0, datalen = 0;
 	int16_t *dp, *fp;
@@ -131,7 +131,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	
 	switch_mutex_lock(bug->read_mutex);
 	frame->datalen = (uint32_t) switch_buffer_read(bug->raw_read_buffer, frame->data, bytes);
-	if (frame->datalen < bytes) {
+	if (fill && frame->datalen < bytes) {
 		memset(((unsigned char *)frame->data) + frame->datalen, 0, bytes - frame->datalen);
 		frame->datalen = bytes;
 	}
@@ -141,7 +141,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 		switch_assert(bug->raw_write_buffer);
 		switch_mutex_lock(bug->write_mutex);
 		datalen = (uint32_t) switch_buffer_read(bug->raw_write_buffer, bug->data, bytes);
-		if (datalen < bytes) {
+		if (fill && datalen < bytes) {
 			memset(((unsigned char *)bug->data) + datalen, 0, bytes - datalen);
 			datalen = bytes;
 		}
@@ -154,6 +154,14 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(switch_media_bug_t *b
 	rlen = frame->datalen / 2;
 	wlen = datalen / 2;
 	blen = bytes / 2;
+
+	if (!fill && rlen == 0 && wlen == 0) {
+		frame->datalen = 0;
+		frame->samples = 0;
+		frame->rate = read_impl.actual_samples_per_second;
+		frame->codec = NULL;
+		return SWITCH_STATUS_FALSE;
+	}
 	
 	if (switch_test_flag(bug, SMBF_STEREO)) {
 		for (x = 0; x < blen; x++) {

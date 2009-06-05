@@ -238,7 +238,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_media_bug_remove_all(_In_ switch_cor
   \param frame the frame to write the data to
   \return the amount of data 
 */
-SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame);
+SWITCH_DECLARE(switch_status_t) switch_core_media_bug_read(_In_ switch_media_bug_t *bug, _In_ switch_frame_t *frame, switch_bool_t fill);
 
 /*!
   \brief Flush the read and write buffers for the bug

@@ -1159,7 +1159,7 @@ static switch_bool_t telecast_callback(switch_media_bug_t *bug, void *user_data,
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
 		if (buffer) {
-			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				switch_buffer_lock(buffer);
 				switch_buffer_write(buffer, frame.data, frame.datalen);
 				switch_buffer_unlock(buffer);

@@ -424,9 +424,11 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_displace_session(switch_core_session_
 	return SWITCH_STATUS_SUCCESS;
 }
 
+#define LEAD_IN 25
 struct record_helper {
 	char *file;
 	switch_file_handle_t *fh;
+	int lead_in;
 };
 
 static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, switch_abc_type_t type)
@@ -447,6 +449,24 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			switch_channel_set_private(channel, rh->file, NULL);
 			
 			if (rh->fh) {
+				if (switch_channel_test_flag(channel, CF_ANSWERED) || !switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
+					switch_size_t len;
+					uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
+					switch_frame_t frame = { 0 };
+					int cnt = LEAD_IN;
+					
+					frame.data = data;
+					frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
+					
+					for (; cnt; cnt--) {
+						if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+							len = (switch_size_t) frame.datalen / 2;
+							switch_core_file_write(rh->fh, data, &len);
+						} 
+					}
+						   
+				}
+
 				switch_core_file_close(rh->fh);
 				if (rh->fh->samples_out < read_impl.samples_per_second * 3) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Discarding short file %s\n", rh->file);
@@ -457,6 +477,10 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
+		if (rh->lead_in) {
+			rh->lead_in--;
+		} else
+
 		if (rh->fh) {
 			switch_size_t len;
 			uint8_t data[SWITCH_RECOMMENDED_BUFFER_SIZE];
@@ -465,17 +489,15 @@ static switch_bool_t record_callback(switch_media_bug_t *bug, void *user_data, s
 			frame.data = data;
 			frame.buflen = SWITCH_RECOMMENDED_BUFFER_SIZE;
 
-			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
-				int doit = 1;
-				if (!switch_channel_test_flag(channel, CF_ANSWERED) && switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
-					doit = 0;
-				}
-
-				if (doit) {
+			if (switch_channel_test_flag(channel, CF_ANSWERED) || !switch_core_media_bug_test_flag(bug, SMBF_RECORD_ANSWER_REQ)) {
+				int loops = LEAD_IN;
+				while (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS && frame.datalen) {
 					len = (switch_size_t) frame.datalen / 2;
 					switch_core_file_write(rh->fh, data, &len);
+					if (!--loops) break;
 				}
 			}
+			rh->lead_in = LEAD_IN;
 		}
 		break;
 	case SWITCH_ABC_TYPE_WRITE:
@@ -528,7 +550,7 @@ static switch_bool_t eavesdrop_callback(switch_media_bug_t *bug, void *user_data
 		break;
 	case SWITCH_ABC_TYPE_READ_PING:
 		if (ep->buffer) {			
-			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				switch_buffer_lock(ep->buffer);
 				switch_buffer_zwrite(ep->buffer, frame.data, frame.datalen);
 				switch_buffer_unlock(ep->buffer);
@@ -949,6 +971,7 @@ SWITCH_DECLARE(switch_status_t) switch_ivr_record_session(switch_core_session_t 
 	rh = switch_core_session_alloc(session, sizeof(*rh));
 	rh->fh = fh;
 	rh->file = switch_core_session_strdup(session, file);
+	rh->lead_in = LEAD_IN;
 
 	if ((status = switch_core_media_bug_add(session, record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
@@ -991,8 +1014,8 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 					switch_channel_queue_dtmf(channel, &dtmf);
 					p++;
 				}
-				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 			}
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}
 		break;
@@ -1942,7 +1965,7 @@ static switch_bool_t speech_callback(switch_media_bug_t *bug, void *user_data, s
 		break;
 	case SWITCH_ABC_TYPE_READ:
 		if (sth->ah) {
-			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
+			if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
 				if (switch_core_asr_feed(sth->ah, frame.data, frame.datalen, &flags) != SWITCH_STATUS_SUCCESS) {
 					switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Error Feeding Data\n");
 					return SWITCH_FALSE;
