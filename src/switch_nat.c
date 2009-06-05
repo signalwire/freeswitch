@@ -184,7 +184,7 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 
 	do {
 		fd_set fds;
-		struct timeval timeout;
+		struct timeval timeout = { 1, 0 };
 		FD_ZERO(&fds);
 		FD_SET(nat_globals.natpmp.s, &fds);
 		getnatpmprequesttimeout(&nat_globals.natpmp, &timeout);
