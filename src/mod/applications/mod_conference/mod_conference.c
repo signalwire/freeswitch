@@ -3933,15 +3933,17 @@ static switch_status_t conf_api_sub_transfer(conference_obj_t *conference, switc
 
 			/* move the member from the old conference to the new one */
 			switch_mutex_lock(member->control_mutex);
-			conference_del_member(conference, member);
-			conference_add_member(new_conference, member);
+			if (conference != new_conference) {
+				conference_del_member(conference, member);
+				conference_add_member(new_conference, member);
 
-			if (conference->rate != new_conference->rate) {
-				if (setup_media(member, new_conference)) {
-					switch_clear_flag_locked(member, MFLAG_RUNNING);
-				} else {
-					switch_channel_set_app_flag(channel, CF_APP_TAGGED);
-					switch_set_flag_locked(member, MFLAG_RESTART);
+				if (conference->rate != new_conference->rate) {
+					if (setup_media(member, new_conference)) {
+						switch_clear_flag_locked(member, MFLAG_RUNNING);
+					} else {
+						switch_channel_set_app_flag(channel, CF_APP_TAGGED);
+						switch_set_flag_locked(member, MFLAG_RESTART);
+					}
 				}
 			}
 
