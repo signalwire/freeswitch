@@ -167,68 +167,6 @@ Index: src/switch_rtp.c
  			goto end;
  		}
  
-Index: src/mod/loggers/mod_logfile/mod_logfile.c
-===================================================================
---- src/mod/loggers/mod_logfile/mod_logfile.c	(revision 13639)
-+++ src/mod/loggers/mod_logfile/mod_logfile.c	(working copy)
-@@ -93,7 +93,7 @@
- 	flags |= SWITCH_FOPEN_WRITE;
- 	flags |= SWITCH_FOPEN_APPEND;
- 
--	stat = switch_file_open(&afd, profile->logfile, flags, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, module_pool);
-+	stat = switch_file_open(&afd, profile->logfile, flags, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_WREAD, module_pool);
- 	if (stat != SWITCH_STATUS_SUCCESS) {
- 		return SWITCH_STATUS_FALSE;
- 	}
-Index: src/mod/xml_int/mod_xml_cdr/mod_xml_cdr.c
-===================================================================
---- src/mod/xml_int/mod_xml_cdr/mod_xml_cdr.c	(revision 13639)
-+++ src/mod/xml_int/mod_xml_cdr/mod_xml_cdr.c	(working copy)
-@@ -113,7 +113,7 @@
- 
- 	if (!switch_strlen_zero(logdir)) {
- 		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
--			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR| S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
- 				int wrote;
- 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
- 				close(fd);
-@@ -222,7 +222,7 @@
- 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
- 
- 		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", globals.err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
--			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
-+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
- 				int wrote;
- 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
- 				close(fd);
-Index: src/mod/formats/mod_shout/mod_shout.c
-===================================================================
---- src/mod/formats/mod_shout/mod_shout.c	(revision 13639)
-+++ src/mod/formats/mod_shout/mod_shout.c	(working copy)
-@@ -1159,7 +1159,7 @@
- 		break;
- 	case SWITCH_ABC_TYPE_READ_PING:
- 		if (buffer) {
--			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
-+			if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
- 				switch_buffer_lock(buffer);
- 				switch_buffer_write(buffer, frame.data, frame.datalen);
- 				switch_buffer_unlock(buffer);
-Index: src/include/switch_channel.h
-===================================================================
---- src/include/switch_channel.h	(revision 13639)
-+++ src/include/switch_channel.h	(working copy)
-@@ -69,6 +69,9 @@
- SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_state(switch_channel_t *channel);
- SWITCH_DECLARE(switch_channel_state_t) switch_channel_get_running_state(switch_channel_t *channel);
- 
-+//Dozier -- get micro for DTMF debugging
-+SWITCH_DECLARE(int32_t) switch_channel_get_micro(switch_channel_t *channel);
-+
- /*!
-   \brief Determine if a channel is ready for io
-   \param channel channel to test
 Index: src/include/switch_core.h
 ===================================================================
 --- src/include/switch_core.h	(revision 13639)
@@ -242,24 +180,3 @@ Index: src/include/switch_core.h
  
  /*!
    \brief Flush the read and write buffers for the bug
-Index: src/switch_channel.c
-===================================================================
---- src/switch_channel.c	(revision 13639)
-+++ src/switch_channel.c	(working copy)
-@@ -2326,6 +2326,16 @@
- 	return status;
- }
- 
-+//Dozier -- getting micro time from the channel
-+SWITCH_DECLARE(int32_t) switch_channel_get_micro(switch_channel_t *channel)
-+{
-+        switch_time_t now = switch_micro_time_now();
-+        switch_time_exp_t tm;
-+        switch_time_exp_lt(&tm, now);
-+        return tm.tm_usec;
-+}
-+
-+
- SWITCH_DECLARE(switch_status_t) switch_channel_set_timestamps(switch_channel_t *channel)
- {
- 	switch_status_t status = SWITCH_STATUS_SUCCESS;
