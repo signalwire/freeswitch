@@ -104,7 +104,9 @@ static void check_ip(void) {
 		switch_set_string(main_ip4, guess_ip4);
 	} else {
 		if (!(ok4 = !strcmp(main_ip4, guess_ip4))) {
-			struct in_addr in = { mask };
+			struct in_addr in;
+
+			in.s_addr = mask;
 			switch_set_string(old_ip4, main_ip4);
 			switch_set_string(main_ip4, guess_ip4);
 			switch_core_set_variable("local_ip_v4", guess_ip4);
