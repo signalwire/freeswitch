@@ -495,7 +495,7 @@ SWITCH_DECLARE(const char *) switch_channel_get_variable(switch_channel_t *chann
 
 	switch_mutex_lock(channel->profile_mutex);
 	if (!channel->variables || !(v = switch_event_get_header(channel->variables, varname))) {
-		switch_caller_profile_t *cp = channel->caller_profile;
+		switch_caller_profile_t *cp = switch_channel_get_caller_profile(channel);
 
 		if (cp) {
 			if (!strncmp(varname, "aleg_", 5)) {
@@ -1460,7 +1460,7 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(swit
 	switch_caller_profile_t *profile;
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->profile_mutex);
-	profile = channel->caller_profile;
+	profile = channel->hunt_caller_profile ? channel->hunt_caller_profile : channel->caller_profile;
 	switch_mutex_unlock(channel->profile_mutex);
 	return profile;
 }
