@@ -41,7 +41,6 @@
 typedef struct {
 	switch_memory_pool_t *pool;
 	switch_nat_type_t nat_type;
-	natpmp_t natpmp;
 	struct UPNPUrls urls;
 	struct IGDdatas data;
 	char pub_addr[16];
@@ -105,10 +104,11 @@ static int init_pmp(void)
 	natpmpresp_t response;
 	char *pubaddr = NULL;
 	fd_set fds;
+	natpmp_t natpmp;
 
 
-	initnatpmp(&nat_globals.natpmp);
-	r = sendpublicaddressrequest(&nat_globals.natpmp);
+	initnatpmp(&natpmp);
+	r = sendpublicaddressrequest(&natpmp);
 
 	if (r < 0) {
 		goto end;
@@ -120,10 +120,10 @@ static int init_pmp(void)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Checking for PMP %d/%d\n", i, max);
 
 		FD_ZERO(&fds);
-		FD_SET(nat_globals.natpmp.s, &fds);
-		getnatpmprequesttimeout(&nat_globals.natpmp, &timeout);
+		FD_SET(natpmp.s, &fds);
+		getnatpmprequesttimeout(&natpmp, &timeout);
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-		r = readnatpmpresponseorretry(&nat_globals.natpmp, &response);
+		r = readnatpmpresponseorretry(&natpmp, &response);
 	} while(r == NATPMP_TRYAGAIN && i < max);
 
 	if (r < 0) {
@@ -134,9 +134,7 @@ static int init_pmp(void)
 	switch_set_string(nat_globals.pub_addr, pubaddr);
 	nat_globals.nat_type = SWITCH_NAT_TYPE_PMP;
 	
-	if (r) {
-		closenatpmp(&nat_globals.natpmp);
-	}
+	closenatpmp(&natpmp);
 
  end:
 
@@ -175,21 +173,24 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	natpmpresp_t response;
 	int r;
+	natpmp_t natpmp;
 
+	initnatpmp(&natpmp);
+	
 	if (proto == SWITCH_NAT_TCP) {
-		sendnewportmappingrequest(&nat_globals.natpmp, NATPMP_PROTOCOL_TCP, port, port, 31104000);
+		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 31104000);
 	} else if(proto == SWITCH_NAT_UDP) {
-		sendnewportmappingrequest(&nat_globals.natpmp, NATPMP_PROTOCOL_UDP, port, port, 31104000);
+		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_UDP, port, port, 31104000);
 	}
 
 	do {
 		fd_set fds;
 		struct timeval timeout = { 1, 0 };
 		FD_ZERO(&fds);
-		FD_SET(nat_globals.natpmp.s, &fds);
-		getnatpmprequesttimeout(&nat_globals.natpmp, &timeout);
+		FD_SET(natpmp.s, &fds);
+		getnatpmprequesttimeout(&natpmp, &timeout);
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-		r = readnatpmpresponseorretry(&nat_globals.natpmp, &response);
+		r = readnatpmpresponseorretry(&natpmp, &response);
 	} while(r == NATPMP_TRYAGAIN);
 
 	if (r == 0) {
@@ -210,7 +211,9 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 						
 		status = SWITCH_STATUS_SUCCESS;
 	}
-
+	
+	closenatpmp(&natpmp);
+	
 	return status;
 }
 
@@ -244,21 +247,24 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	natpmpresp_t response;
 	int r;
+	natpmp_t natpmp;
+	
+	initnatpmp(&natpmp);
 
 	if (proto == SWITCH_NAT_TCP) {
-		sendnewportmappingrequest(&nat_globals.natpmp, NATPMP_PROTOCOL_TCP, port, port, 0);
+		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_TCP, port, port, 0);
 	} else if(proto == SWITCH_NAT_UDP) {
-		sendnewportmappingrequest(&nat_globals.natpmp, NATPMP_PROTOCOL_UDP, port, port, 0);
+		sendnewportmappingrequest(&natpmp, NATPMP_PROTOCOL_UDP, port, port, 0);
 	}
 
 	do {
 		fd_set fds;
 		struct timeval timeout;
 		FD_ZERO(&fds);
-		FD_SET(nat_globals.natpmp.s, &fds);
-		getnatpmprequesttimeout(&nat_globals.natpmp, &timeout);
+		FD_SET(natpmp.s, &fds);
+		getnatpmprequesttimeout(&natpmp, &timeout);
 		select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-		r = readnatpmpresponseorretry(&nat_globals.natpmp, &response);
+		r = readnatpmpresponseorretry(&natpmp, &response);
 	} while(r == NATPMP_TRYAGAIN);
 
 	if (r == 0) {
@@ -269,6 +275,8 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 						  response.pnu.newportmapping.privateport);
 		status = SWITCH_STATUS_SUCCESS;
 	}
+	
+	closenatpmp(&natpmp);
 
 	return status;
 }
@@ -337,9 +345,7 @@ SWITCH_DECLARE(switch_status_t) switch_nat_del_mapping(switch_port_t port, switc
 
 SWITCH_DECLARE(void) switch_nat_shutdown(void)
 {
-	if (nat_globals.nat_type == SWITCH_NAT_TYPE_PMP) {
-		closenatpmp(&nat_globals.natpmp);
-	}
+
 }
 
 
