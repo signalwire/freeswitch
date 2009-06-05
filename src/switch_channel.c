@@ -1460,7 +1460,9 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_channel_get_caller_profile(swit
 	switch_caller_profile_t *profile;
 	switch_assert(channel != NULL);
 	switch_mutex_lock(channel->profile_mutex);
-	profile = channel->hunt_caller_profile ? channel->hunt_caller_profile : channel->caller_profile;
+	if ((profile = channel->caller_profile) && profile->hunt_caller_profile) {
+		profile = profile->hunt_caller_profile;
+	}
 	switch_mutex_unlock(channel->profile_mutex);
 	return profile;
 }
