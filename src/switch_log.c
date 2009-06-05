@@ -266,7 +266,8 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 	char *content = NULL;
 	switch_time_t now = switch_micro_time_now();
 	uint32_t len;
-	const char *extra_fmt = "%s [%s] %s:%d %s()%c%s";
+	//const char *extra_fmt = "%s [%s] %s:%d %s()%c%s";
+	const char *extra_fmt = "%s [%s] %s:%d%c%s";
 
 	if (level > runtime.hard_log_level) {
 		return;
@@ -278,16 +279,20 @@ SWITCH_DECLARE(void) switch_log_vprintf(switch_text_channel_t channel, const cha
 
 	if (channel != SWITCH_CHANNEL_ID_LOG_CLEAN) {
 		char date[80] = "";
-		switch_size_t retsize;
+		//switch_size_t retsize;
 		switch_time_exp_t tm;
 
 		switch_time_exp_lt(&tm, now);
-		switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+		switch_snprintf(date, sizeof(date), "%0.4d-%0.2d-%0.2d %0.2d:%0.2d:%0.2d.%d", 
+						tm.tm_year + 1900, tm.tm_mon+1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, tm.tm_usec);
 
-		len = (uint32_t) (strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
+		//switch_strftime_nocheck(date, &retsize, sizeof(date), "%Y-%m-%d %T", &tm);
+
+		//len = (uint32_t) (strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(funcp) + strlen(fmt));
+		len = (uint32_t) (strlen(extra_fmt) + strlen(date) + strlen(filep) + 32 + strlen(fmt));
 		new_fmt = malloc(len + 1);
 		switch_assert(new_fmt);
-		switch_snprintf(new_fmt, len, extra_fmt, date, switch_log_level2str(level), filep, line, funcp, 128, fmt);
+		switch_snprintf(new_fmt, len, extra_fmt, date, switch_log_level2str(level), filep, line, 128, fmt);
 		fmt = new_fmt;
 	}
 
