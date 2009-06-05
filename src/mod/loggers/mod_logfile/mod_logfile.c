@@ -93,7 +93,7 @@ static switch_status_t mod_logfile_openlogfile(logfile_profile_t *profile, switc
 	flags |= SWITCH_FOPEN_WRITE;
 	flags |= SWITCH_FOPEN_APPEND;
 
-	stat = switch_file_open(&afd, profile->logfile, flags, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE, module_pool);
+	stat = switch_file_open(&afd, profile->logfile, flags, SWITCH_FPROT_UREAD | SWITCH_FPROT_UWRITE | SWITCH_FPROT_WREAD, module_pool);
 	if (stat != SWITCH_STATUS_SUCCESS) {
 		return SWITCH_STATUS_FALSE;
 	}
