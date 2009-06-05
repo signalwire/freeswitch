@@ -269,7 +269,7 @@ static switch_status_t switch_nat_del_mapping_pmp(switch_port_t port, switch_nat
 
 	if (r == 0) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "unmapped public port %hu protocol %s to localport %hu\n",
-						  response.pnu.newportmapping.mappedpublicport,
+						  response.pnu.newportmapping.privateport, /* This might be wrong but its so 0 isn't displayed */
 						  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
 						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
 						  response.pnu.newportmapping.privateport);
