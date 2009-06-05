@@ -870,9 +870,11 @@ SWITCH_DECLARE(void) switch_load_network_lists(switch_bool_t reload)
 	char guess_mask[16] = "";
 	char *tmp_name;
 	int ip_tmp = 0;
+	struct in_addr in;
 
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
-	switch_set_string(guess_mask, inet_ntoa(*(struct in_addr *)&mask));
+	in.s_addr = mask;
+	switch_set_string(guess_mask, inet_ntoa(in));
 	
 	switch_mutex_lock(runtime.global_mutex);
 
@@ -1130,6 +1132,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 	char guess_ip[256];
 	char *dir_path;
 	int mask = 0;
+	struct in_addr in;
 
 	memset(&runtime, 0, sizeof(runtime));
 
@@ -1191,7 +1194,8 @@ SWITCH_DECLARE(switch_status_t) switch_core_init(switch_core_flag_t flags, switc
 
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), &mask, AF_INET);
 	switch_core_set_variable("local_ip_v4", guess_ip);
-	switch_core_set_variable("local_mask_v4", inet_ntoa(*(struct in_addr *)&mask));
+	in.s_addr = mask;
+	switch_core_set_variable("local_mask_v4", inet_ntoa(in));
 
 
 	switch_find_local_ip(guess_ip, sizeof(guess_ip), NULL, AF_INET6);
