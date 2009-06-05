@@ -1483,6 +1483,19 @@ SWITCH_DECLARE(void) switch_channel_set_originator_caller_profile(switch_channel
 	switch_mutex_unlock(channel->profile_mutex);
 }
 
+SWITCH_DECLARE(void) switch_channel_set_hunt_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
+{
+	switch_assert(channel != NULL);
+	switch_assert(channel->caller_profile != NULL);
+
+	switch_mutex_lock(channel->profile_mutex);
+	channel->caller_profile->hunt_caller_profile = NULL;
+	if (channel->caller_profile && caller_profile) {
+		channel->caller_profile->hunt_caller_profile = caller_profile;
+	}
+	switch_mutex_unlock(channel->profile_mutex);
+}
+
 SWITCH_DECLARE(void) switch_channel_set_originatee_caller_profile(switch_channel_t *channel, switch_caller_profile_t *caller_profile)
 {
 	switch_assert(channel != NULL);
