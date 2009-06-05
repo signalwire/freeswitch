@@ -50,9 +50,8 @@ SWITCH_DECLARE(switch_caller_profile_t *) switch_caller_profile_new(switch_memor
 	switch_caller_profile_t *profile = NULL;
 
 	profile = switch_core_alloc(pool, sizeof(*profile));
+	switch_assert(profile != NULL);	
 	memset(profile, 0, sizeof(*profile));
-	
-	switch_assert(profile != NULL);
 
 	if (!context) {
 		context = "default";

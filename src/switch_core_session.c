@@ -1524,9 +1524,7 @@ SWITCH_DECLARE(switch_status_t) switch_core_session_execute_exten(switch_core_se
 		new_profile->context = switch_core_strdup(new_profile->pool, context);
 	}
 
-	dpstr = switch_core_session_strdup(session, new_profile->dialplan);
-	
-	
+	dpstr = switch_core_session_strdup(session, new_profile->dialplan);	
 
 	switch_channel_set_hunt_caller_profile(channel, new_profile);
 	argc = switch_separate_string(dpstr, ',', dp, (sizeof(dp) / sizeof(dp[0])));
