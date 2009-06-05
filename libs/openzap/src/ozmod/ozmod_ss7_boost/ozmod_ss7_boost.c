@@ -224,10 +224,10 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
 
 	ss7bc_call_init(&event, caller_data->cid_num.digits, ani, r);
 	
-	if (gr) {
-		switch(*gr) {
-			event.trunk_group = atoi(gr+1);
+	if (gr && *(gr+1)) {
+		event.trunk_group = atoi(gr+1);
 
+		switch(*gr) {
         case 'g':
             event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
             break;
@@ -241,9 +241,7 @@ static ZIO_CHANNEL_REQUEST_FUNCTION(ss7_boost_channel_request)
             event.hunt_group = SIGBOOST_HUNTGRP_RR_DESC;
             break;
         default:
-			zap_log(ZAP_LOG_WARNING,
-					"Failed to determine huntgroup (%s)\n",
-					gr);
+			zap_log(ZAP_LOG_WARNING, "Failed to determine huntgroup (%s)\n", gr);
             event.hunt_group = SIGBOOST_HUNTGRP_SEQ_ASC;
 		}
 	}
