@@ -1014,8 +1014,8 @@ static switch_bool_t inband_dtmf_callback(switch_media_bug_t *bug, void *user_da
 					switch_channel_queue_dtmf(channel, &dtmf);
 					p++;
 				}
+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 			}
-			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
 			switch_core_media_bug_set_read_replace_frame(bug, frame);
 		}
 		break;
