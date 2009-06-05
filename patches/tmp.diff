@@ -179,3 +179,16 @@ Index: src/include/switch_core.h
  
  /*!
    \brief Flush the read and write buffers for the bug
+Index: src/mod/formats/mod_shout/mod_shout.c
+===================================================================
+--- src/mod/formats/mod_shout/mod_shout.c	(revision 13639)
++++ src/mod/formats/mod_shout/mod_shout.c	(working copy)
+@@ -1159,7 +1159,7 @@
+ 		break;
+ 	case SWITCH_ABC_TYPE_READ_PING:
+ 		if (buffer) {
+-			if (switch_core_media_bug_read(bug, &frame) == SWITCH_STATUS_SUCCESS) {
++			if (switch_core_media_bug_read(bug, &frame, SWITCH_TRUE) == SWITCH_STATUS_SUCCESS) {
+ 				switch_buffer_lock(buffer);
+ 				switch_buffer_write(buffer, frame.data, frame.datalen);
+ 				switch_buffer_unlock(buffer);
