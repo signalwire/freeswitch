@@ -3195,6 +3195,7 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_chat_interface_t *chat_interface;
 	switch_api_interface_t *api_interface;
 	switch_management_interface_t *management_interface;
+	struct in_addr in;
 
 	silence_frame.data = silence_data;
 	silence_frame.datalen = sizeof(silence_data);
@@ -3209,7 +3210,8 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_sofia_load)
 	switch_mutex_init(&mod_sofia_globals.mutex, SWITCH_MUTEX_NESTED, mod_sofia_globals.pool);
 
 	switch_find_local_ip(mod_sofia_globals.guess_ip, sizeof(mod_sofia_globals.guess_ip), &mod_sofia_globals.guess_mask, AF_INET);
-	switch_set_string(mod_sofia_globals.guess_mask_str, inet_ntoa(*(struct in_addr *)&mod_sofia_globals.guess_mask));
+	in.s_addr = mod_sofia_globals.guess_mask;
+	switch_set_string(mod_sofia_globals.guess_mask_str, inet_ntoa(in));
 	gethostname(mod_sofia_globals.hostname, sizeof(mod_sofia_globals.hostname));
 
 
