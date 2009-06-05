@@ -1319,7 +1319,7 @@ switch_status_t sofia_glue_do_invite(switch_core_session_t *session)
 		const char* format;
 		const char *alt = NULL;
 
-		if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->profile->local_network)) {
+		if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 			sipip = tech_pvt->profile->extsipip;
 		} else {
 			sipip = tech_pvt->profile->extsipip ? tech_pvt->profile->extsipip : tech_pvt->profile->sipip;
