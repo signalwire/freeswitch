@@ -39,7 +39,7 @@
  * 
  * Anthony Minessale II <anthmct@yahoo.com>
  * Michael B. Murdock <mike@mmurdock.org>
- * Boris Buklov <buklov@mail.ru>
+ * Boris Buklov (BBV) <buklov@mail.ru>
  *
  * mod_say_ru.c -- Say for Russian
  *

@@ -1,3 +1,12 @@
+/* Contributor(s):
+ *
+ * Boris Buklov (BBV) <buklov@mail.ru>
+ *
+ * mod_say_ru.c -- Say for Russian
+ *
+ */
+         
+
 //слишком много падежей поэтому пришлось сделать массив значений
 //пример таблицы склонений для 1 ниже по ссылкам
 //http://ru.wiktionary.org/wiki/%D0%BE%D0%B4%D0%B8%D0%BD
@@ -136,9 +145,9 @@ struct say_t{
 
 //женский
 #define m_12 {\
-	{"","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
-	{"","","","","","","","","","","","","",""},\
+	{"0","h-1xx","h-2xx","h-3xx","h-4xx","h-5xx","h-","xx"},\
+	{"","","1xx","thousands-i","h-2xx","thousands","h-3xx","thousands","h-4xx","thousands","h-5xx","thousands","h-","xx"},\
+	{"","","1x","million-a","h-2xx","millions","h-3xx","millions","h-4xx","millions","h-5xx","millions","h-","xx"},\
 	0,\
 }\
 
