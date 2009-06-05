@@ -113,7 +113,11 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 
 	if (!switch_strlen_zero(logdir)) {
 		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", logdir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
+#ifdef _MSC_VER
+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+#else
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR| S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+#endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
 				close(fd);
@@ -222,7 +226,11 @@ static switch_status_t my_on_reporting(switch_core_session_t *session)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Unable to post to web server, writing to file\n");
 
 		if ((path = switch_mprintf("%s%s%s%s.cdr.xml", globals.err_log_dir, SWITCH_PATH_SEPARATOR, a_prefix, switch_core_session_get_uuid(session)))) {
+#ifdef _MSC_VER
+			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR)) > -1) {
+#else
 			if ((fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)) > -1) {
+#endif
 				int wrote;
 				wrote = write(fd, xml_text, (unsigned) strlen(xml_text));
 				close(fd);
