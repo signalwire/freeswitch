@@ -137,16 +137,15 @@ Index: src/switch_ivr_async.c
  
  	if ((status = switch_core_media_bug_add(session, record_callback, rh, to, flags, &bug)) != SWITCH_STATUS_SUCCESS) {
  		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Error adding media bug for file %s\n", file);
-@@ -991,7 +1013,7 @@
+@@ -991,7 +1013,6 @@
  					switch_channel_queue_dtmf(channel, &dtmf);
  					p++;
  				}
 -				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "DTMF DETECTED: [%s]\n", digit_str);
-+				switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_NOTICE, "%i %s DTMF DETECTED: %s\n", (int) switch_channel_get_micro(channel), switch_core_session_get_uuid(pvt->session), digit_str);
  			}
  			switch_core_media_bug_set_read_replace_frame(bug, frame);
  		}
-@@ -1942,7 +1964,7 @@
+@@ -1942,7 +1963,7 @@
  		break;
  	case SWITCH_ABC_TYPE_READ:
  		if (sth->ah) {
