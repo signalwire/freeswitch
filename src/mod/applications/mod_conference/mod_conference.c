@@ -4613,7 +4613,7 @@ static void set_mflags(const char *flags, member_flag_t *f)
 
 
 
-static void set_cflags(const char *flags, member_flag_t *f)
+static void set_cflags(const char *flags, uint32_t *f)
 {
 	if (flags) {
 		char *dup = strdup(flags);
