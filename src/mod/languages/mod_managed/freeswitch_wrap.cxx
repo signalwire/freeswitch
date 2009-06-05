@@ -5446,15 +5446,17 @@ SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_remove_all(void * jarg1)
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_read(void * jarg1, void * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_switch_core_media_bug_read(void * jarg1, void * jarg2, int jarg3) {
   int jresult ;
   switch_media_bug_t *arg1 = (switch_media_bug_t *) 0 ;
   switch_frame_t *arg2 = (switch_frame_t *) 0 ;
+  switch_bool_t arg3 ;
   switch_status_t result;
   
   arg1 = (switch_media_bug_t *)jarg1; 
   arg2 = (switch_frame_t *)jarg2; 
-  result = (switch_status_t)switch_core_media_bug_read(arg1,arg2);
+  arg3 = (switch_bool_t)jarg3; 
+  result = (switch_status_t)switch_core_media_bug_read(arg1,arg2,arg3);
   jresult = result; 
   return jresult;
 }
@@ -9984,6 +9986,29 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_switch_caller_profile_originatee_caller_pro
   
   arg1 = (switch_caller_profile *)jarg1; 
   result = (switch_caller_profile *) ((arg1)->originatee_caller_profile);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_caller_profile_hunt_caller_profile_set(void * jarg1, void * jarg2) {
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  switch_caller_profile *arg2 = (switch_caller_profile *) 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  arg2 = (switch_caller_profile *)jarg2; 
+  if (arg1) (arg1)->hunt_caller_profile = arg2;
+  
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_switch_caller_profile_hunt_caller_profile_get(void * jarg1) {
+  void * jresult ;
+  switch_caller_profile *arg1 = (switch_caller_profile *) 0 ;
+  switch_caller_profile *result = 0 ;
+  
+  arg1 = (switch_caller_profile *)jarg1; 
+  result = (switch_caller_profile *) ((arg1)->hunt_caller_profile);
   jresult = (void *)result; 
   return jresult;
 }
@@ -18794,6 +18819,16 @@ SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_originator_caller_profile(
   arg1 = (switch_channel_t *)jarg1; 
   arg2 = (switch_caller_profile_t *)jarg2; 
   switch_channel_set_originator_caller_profile(arg1,arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_switch_channel_set_hunt_caller_profile(void * jarg1, void * jarg2) {
+  switch_channel_t *arg1 = (switch_channel_t *) 0 ;
+  switch_caller_profile_t *arg2 = (switch_caller_profile_t *) 0 ;
+  
+  arg1 = (switch_channel_t *)jarg1; 
+  arg2 = (switch_caller_profile_t *)jarg2; 
+  switch_channel_set_hunt_caller_profile(arg1,arg2);
 }
 
 
