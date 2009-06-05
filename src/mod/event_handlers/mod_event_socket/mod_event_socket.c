@@ -2291,7 +2291,7 @@ SWITCH_MODULE_RUNTIME_FUNCTION(mod_event_socket_runtime)
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Socket up listening on %s:%u\n", prefs.ip, prefs.port);
 
 		if (prefs.nat_map) {
-			switch_nat_add_mapping(prefs.port, SWITCH_NAT_TCP);
+			switch_nat_add_mapping(prefs.port, SWITCH_NAT_TCP, NULL);
 		}
 
 		break;

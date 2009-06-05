@@ -59,9 +59,22 @@ typedef enum {
   \note Generally called by the core_init
 */
 SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool);
+/*!
+ \brief Shuts down the NAT Traversal System
+*/
 SWITCH_DECLARE(void) switch_nat_shutdown(void);
 
-SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto);
+/*!
+ \brief Maps a port through the NAT Traversal System
+ \param port Internal port to map
+ \param proto Protocol
+ \param external_port [out] Mapped external port 
+*/
+SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port);
+/*!
+ \brief Deletes a NAT mapping
+ \param proto Protocol
+*/
 SWITCH_DECLARE(switch_status_t) switch_nat_del_mapping(switch_port_t port, switch_nat_ip_proto_t proto);
 
 

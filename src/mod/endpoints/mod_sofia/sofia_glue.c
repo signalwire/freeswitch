@@ -630,6 +630,7 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 	switch_port_t sdp_port;
 	char tmp[50];
 	const char *use_ip = NULL;
+	switch_port_t external_port = 0;
 
 	if (!force) {
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) ||
@@ -667,12 +668,12 @@ switch_status_t sofia_glue_tech_choose_port(private_object_t *tech_pvt, int forc
 
 	if (tech_pvt->profile->extrtpip && sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
 		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, tech_pvt->profile->extrtpip);
-		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP);
+		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port);
 	} else {
 		tech_pvt->adv_sdp_audio_ip = switch_core_session_strdup(tech_pvt->session, ip);
 	}
 	
-	tech_pvt->adv_sdp_audio_port = sdp_port;
+	tech_pvt->adv_sdp_audio_port = external_port != 0 ? external_port : sdp_port;
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", sdp_port);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_MEDIA_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);
@@ -686,6 +687,7 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 	char *ip = tech_pvt->profile->rtpip;
 	switch_port_t sdp_port;
 	char tmp[50];
+	switch_port_t external_port = 0;
 
 	if (!force) {
 		if (switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MODE) || switch_channel_test_flag(tech_pvt->channel, CF_PROXY_MEDIA)
@@ -712,11 +714,11 @@ switch_status_t sofia_glue_tech_choose_video_port(private_object_t *tech_pvt, in
 		}
 	}
 
-	tech_pvt->adv_sdp_video_port = sdp_port;
-
 	if (sofia_glue_check_nat(tech_pvt->profile, tech_pvt->remote_ip)) {
-		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP);
+		switch_nat_add_mapping((switch_port_t)sdp_port, SWITCH_NAT_UDP, &external_port);
 	}
+	
+	tech_pvt->adv_sdp_video_port = external_port != 0 ? external_port : sdp_port;
 
 	switch_snprintf(tmp, sizeof(tmp), "%d", sdp_port);
 	switch_channel_set_variable(tech_pvt->channel, SWITCH_LOCAL_VIDEO_IP_VARIABLE, tech_pvt->adv_sdp_audio_ip);

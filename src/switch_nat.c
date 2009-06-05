@@ -170,7 +170,7 @@ SWITCH_DECLARE(void) switch_nat_init(switch_memory_pool_t *pool)
 	}
 }
 
-static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat_ip_proto_t proto)
+static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 	natpmpresp_t response;
@@ -198,6 +198,16 @@ static switch_status_t switch_nat_add_mapping_pmp(switch_port_t port, switch_nat
 						  response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
 						  (response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
 						  response.pnu.newportmapping.privateport);
+		if (external_port) {
+			*external_port = response.pnu.newportmapping.mappedpublicport;
+		} else if (response.pnu.newportmapping.mappedpublicport != response.pnu.newportmapping.privateport) {
+			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_CRIT, "External port %hu protocol %s was not available, it was instead mapped to %hu",
+				response.pnu.newportmapping.privateport,
+				response.type == NATPMP_RESPTYPE_UDPPORTMAPPING ? "UDP" :
+			  	(response.type == NATPMP_RESPTYPE_TCPPORTMAPPING ? "TCP" : "UNKNOWN"),
+				response.pnu.newportmapping.mappedpublicport);
+		}
+						
 		status = SWITCH_STATUS_SUCCESS;
 	}
 
@@ -285,16 +295,20 @@ static switch_status_t switch_nat_del_mapping_upnp(switch_port_t port, switch_na
 	return status;
 }
 
-SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto)
+SWITCH_DECLARE(switch_status_t) switch_nat_add_mapping(switch_port_t port, switch_nat_ip_proto_t proto, switch_port_t *external_port)
 {
 	switch_status_t status = SWITCH_STATUS_FALSE;
 
 	switch (nat_globals.nat_type) {
 	case SWITCH_NAT_TYPE_PMP:
-		status = switch_nat_add_mapping_pmp(port, proto);
+		status = switch_nat_add_mapping_pmp(port, proto, external_port);
 		break;
 	case SWITCH_NAT_TYPE_UPNP:
-		status = switch_nat_add_mapping_upnp(port, proto);
+		if ((status = switch_nat_add_mapping_upnp(port, proto)) && status == SWITCH_STATUS_SUCCESS) {
+			if (external_port) {
+				*external_port = port;
+			}	
+		}
 		break;
 	default:
 		break;

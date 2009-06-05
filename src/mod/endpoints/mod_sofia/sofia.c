@@ -762,13 +762,13 @@ void *SWITCH_THREAD_FUNC sofia_profile_thread_run(switch_thread_t *thread, void 
 									);
 
 	if (sofia_test_pflag(profile, PFLAG_AUTO_NAT)) {
-		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP) == SWITCH_STATUS_SUCCESS) {
+		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_UDP, NULL) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created UDP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
-		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_TCP) == SWITCH_STATUS_SUCCESS) {
+		if (switch_nat_add_mapping(profile->sip_port, SWITCH_NAT_TCP, NULL) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created TCP nat mapping for %s port %d\n", profile->name, profile->sip_port);
 		}
-		if(sofia_test_pflag(profile, PFLAG_TLS) && switch_nat_add_mapping(profile->tls_sip_port, SWITCH_NAT_TCP) == SWITCH_STATUS_SUCCESS) {
+		if(sofia_test_pflag(profile, PFLAG_TLS) && switch_nat_add_mapping(profile->tls_sip_port, SWITCH_NAT_TCP, NULL) == SWITCH_STATUS_SUCCESS) {
 			switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "Created TCP/TLS nat mapping for %s port %d\n", profile->name, profile->tls_sip_port);
 		}
 	}
